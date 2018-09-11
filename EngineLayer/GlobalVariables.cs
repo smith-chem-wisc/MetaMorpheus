@@ -59,7 +59,9 @@ namespace EngineLayer
             UniprotDeseralized = UsefulProteomicsDatabases.Loaders.LoadUniprot(Path.Combine(DataDir, @"Data", @"ptmlist.txt"), formalChargesDictionary).ToList();
 
             foreach (var modFile in Directory.GetFiles(Path.Combine(DataDir, @"Mods")))
+            {
                 AddMods(UsefulProteomicsDatabases.PtmListLoader.ReadModsFromFile(modFile));
+            }
 
             // TODO: need to add motif to Unimod/UniProt ID
             //AddMods(UnimodDeserialized.OfType<Modification>());
@@ -68,6 +70,7 @@ namespace EngineLayer
             GlobalSettings = Toml.ReadFile<GlobalSettings>(Path.Combine(DataDir, @"settings.toml"));
         }
 
+        public static List<string> ErrorsReadingMods = new List<string>();
         // File locations
         public static string DataDir { get; }
         public static bool StopLoops { get; set; }
@@ -81,22 +84,41 @@ namespace EngineLayer
         public static IEnumerable<string> AllModTypesKnown { get { return _AllModTypesKnown.AsEnumerable(); } }
         public static string ExperimentalDesignFileName { get; }
 
-        public static void AddMods(IEnumerable<Modification> enumerable)
+        public static void AddMods(IEnumerable<Modification> modifications)
         {
-            foreach (var ye in enumerable)
+            foreach (var mod in modifications)
             {
-                if (string.IsNullOrEmpty(ye.ModificationType) || string.IsNullOrEmpty(ye.IdWithMotif))
-                    throw new MetaMorpheusException(ye.ToString() + Environment.NewLine + " has null or empty modification type");
-                if (AllModsKnown.Any(b => b.IdWithMotif.Equals(ye.IdWithMotif) && b.ModificationType.Equals(ye.ModificationType) && !b.Equals(ye)))
+                if (string.IsNullOrEmpty(mod.ModificationType) || string.IsNullOrEmpty(mod.IdWithMotif))
                 {
-                    throw new MetaMorpheusException("Modification id and type are equal, but some fields are not! Please modify/remove one of the modifications: " + Environment.NewLine + Environment.NewLine + ye.ToString() + Environment.NewLine + Environment.NewLine + " has same and id and modification type as " + Environment.NewLine + Environment.NewLine + AllModsKnown.First(b => b.IdWithMotif.Equals(ye.IdWithMotif) && b.ModificationType.Equals(ye.ModificationType)) + Environment.NewLine + Environment.NewLine);
-                }
-                else if (AllModsKnown.Any(b => b.IdWithMotif.Equals(ye.IdWithMotif) && b.ModificationType.Equals(ye.ModificationType)))
+                    ErrorsReadingMods.Add(mod.ToString() + Environment.NewLine + " has null or empty modification type");
                     continue;
+                }
+                if (AllModsKnown.Any(b => b.IdWithMotif.Equals(mod.IdWithMotif) && b.ModificationType.Equals(mod.ModificationType) && !b.Equals(mod)))
+                {
+                    ErrorsReadingMods.Add("Modification id and type are equal, but some fields are not! " +
+                        "The following mod was not read in: " + Environment.NewLine + mod.ToString());
+                    continue;
+                }
+                else if (AllModsKnown.Any(b => b.IdWithMotif.Equals(mod.IdWithMotif) && b.ModificationType.Equals(mod.ModificationType)))
+                {
+                    // same ID, same mod type, and same mod properties; continue and don't output an error message
+                    // this could result from reading in an XML database with mods annotated at the top
+                    // that are already loaded in MetaMorpheus
+                    continue;
+                }
+                else if (AllModsKnown.Any(m => m.IdWithMotif == mod.IdWithMotif))
+                {
+                    // same ID but different mod types. This can happen if the user names a mod the same as a UniProt mod
+                    // this is problematic because if a mod is annotated in the database, all we have to go on is an ID ("description" tag).
+                    // so we don't know which mod to use, causing unnecessary ambiguity
+                    ErrorsReadingMods.Add("Duplicate mod IDs! Skipping " + mod.ModificationType + ":" + mod.IdWithMotif);
+                    continue;
+                }
                 else
                 {
-                    _AllModsKnown.Add(ye);
-                    _AllModTypesKnown.Add(ye.ModificationType);
+                    // no errors! add the mod
+                    _AllModsKnown.Add(mod);
+                    _AllModTypesKnown.Add(mod.ModificationType);
                 }
             }
         }
@@ -113,45 +135,5 @@ namespace EngineLayer
             }
         }
 
-        public static Dictionary<string, Protease> LoadProteaseDictionary(string proteasesLocation)
-        {
-            Dictionary<string, Protease> dict = new Dictionary<string, Protease>();
-            using (StreamReader proteases = new StreamReader(proteasesLocation))
-            {
-                proteases.ReadLine();
-
-                while (proteases.Peek() != -1)
-                {
-                    string line = proteases.ReadLine();
-                    string[][] fields = line.Split('\t').Select(x => x.Split('|')).ToArray();
-                    string name = fields[0][0];
-                    string[] preventing;
-                    List<Tuple<string, FragmentationTerminus>> sequences_inducing_cleavage = new List<Tuple<string, FragmentationTerminus>>();
-                    List<Tuple<string, FragmentationTerminus>> sequences_preventing_cleavage = new List<Tuple<string, FragmentationTerminus>>();
-                    for (int i = 0; i < fields[1].Length; i++)
-                    {
-                        if (!fields[1][i].Equals(""))
-                        {
-                            sequences_inducing_cleavage.Add(new Tuple<string, FragmentationTerminus>(fields[1][i], ((FragmentationTerminus)Enum.Parse(typeof(FragmentationTerminus), fields[3][i], true))));
-                            if (!fields[2].Contains(""))
-                            {
-                                preventing = (fields[2][i].Split(new char[] { ',' }, StringSplitOptions.RemoveEmptyEntries));
-                                for (int j = 0; j < preventing.Length; j++)
-                                {
-                                    sequences_preventing_cleavage.Add(new Tuple<string, FragmentationTerminus>(preventing[j], (FragmentationTerminus)Enum.Parse(typeof(FragmentationTerminus), fields[3][i], true)));
-                                }
-                            }
-                        }
-                    }
-                    var cleavage_specificity = ((CleavageSpecificity)Enum.Parse(typeof(CleavageSpecificity), fields[4][0], true));
-                    string psi_ms_accession_number = fields[5][0];
-                    string psi_ms_name = fields[6][0];
-                    string site_regexp = fields[7][0];
-                    var protease = new Protease(name, sequences_inducing_cleavage, sequences_preventing_cleavage, cleavage_specificity, psi_ms_accession_number, psi_ms_name, site_regexp);
-                    dict.Add(protease.Name, protease);
-                }
-            }
-            return dict;
-        }
     }
 }

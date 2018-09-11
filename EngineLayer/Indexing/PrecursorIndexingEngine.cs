@@ -46,8 +46,6 @@ namespace EngineLayer.Indexing
             double progress = 0;
             int oldPercentProgress = 0;
             
-
-
             // digest database
             HashSet<PeptideWithSetModifications> peptideToId = new HashSet<PeptideWithSetModifications>();
 
@@ -66,8 +64,6 @@ namespace EngineLayer.Indexing
                     {
                         foreach (var pepWithSetMods in ProteinList[i].Digest(digestionParams, FixedModifications, VariableModifications))
                         {
-                            //CompactPeptide compactPeptide = pepWithSetMods.CompactPeptide(commonParameters.FragmentationTerminus, commonParameters.DissociationType);
-
                             var observed = peptideToId.Contains(pepWithSetMods);
                             if (observed)
                                 continue;
@@ -102,7 +98,7 @@ namespace EngineLayer.Indexing
             {
                 if (!Double.IsNaN(peptidesSortedByMass[i].MonoisotopicMass))
                 {
-                    maxFragmentMass = (int)Math.Ceiling(Chemistry.ClassExtensions.ToMz(peptidesSortedByMass[i].MonoisotopicMass, 1));
+                    maxFragmentMass = (int)Math.Min(MaxFragmentSize, (int)Math.Ceiling(Chemistry.ClassExtensions.ToMz(peptidesSortedByMass[i].MonoisotopicMass, 1)));
                     break;
                 }
             }
@@ -117,6 +113,11 @@ namespace EngineLayer.Indexing
                 double mz = Chemistry.ClassExtensions.ToMz(peptidesSortedByMass[i].MonoisotopicMass, 1);
                 if (!Double.IsNaN(mz))
                 {
+                    if (mz < MaxFragmentSize) //if the precursor is larger than the index allows, then stop adding precursors
+                    {
+                        break;
+                    }
+
                     int fragmentBin = (int)Math.Round(mz * FragmentBinsPerDalton);
 
                     if (fragmentIndex[fragmentBin] == null)

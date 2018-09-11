@@ -22,6 +22,9 @@
   </ItemGroup>
 
   <ItemGroup>
+    <None Update="Contaminants\MPI_Contaminants.fasta">
+      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+    </None>
     <None Update="Data\combos.txt">
       <CopyToOutputDirectory>Always</CopyToOutputDirectory>
     </None>
@@ -52,7 +55,7 @@
     <None Update="Mods\FallOff.txt">
       <CopyToOutputDirectory>Always</CopyToOutputDirectory>
     </None>
-    <None Update="Mods\glyco.txt">
+    <None Update="Mods\Glyco.txt">
       <CopyToOutputDirectory>Always</CopyToOutputDirectory>
     </None>
     <None Update="Mods\Missing.txt">

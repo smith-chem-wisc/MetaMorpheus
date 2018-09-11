@@ -13,6 +13,7 @@ using System.Net.Http;
 using System.Threading.Tasks;
 using System.Windows;
 using System.Windows.Controls;
+using System.Windows.Documents;
 using System.Windows.Input;
 using TaskLayer;
 
@@ -70,7 +71,16 @@ namespace MetaMorpheusGUI
             FileSpecificParameters.ValidateFileSpecificVariableNames();
 
             // LOAD GUI SETTINGS
-            GuiGlobalParams = Toml.ReadFile<GuiGlobalParams>(Path.Combine(GlobalVariables.DataDir, @"GUIsettings.toml"));
+
+            if (File.Exists(Path.Combine(GlobalVariables.DataDir, @"GUIsettings.toml")))
+            {
+                GuiGlobalParams = Toml.ReadFile<GuiGlobalParams>(Path.Combine(GlobalVariables.DataDir, @"GUIsettings.toml"));
+            }
+            else
+            {
+                Toml.WriteFile(GuiGlobalParams, Path.Combine(GlobalVariables.DataDir, @"GUIsettings.toml"), MetaMorpheusTask.tomlConfig);
+                notificationsTextBox.Document = YoutubeWikiNotification();
+            }
 
             if (GlobalVariables.MetaMorpheusVersion.Contains("Not a release version"))
                 GuiGlobalParams.AskAboutUpdating = false;
@@ -81,13 +91,50 @@ namespace MetaMorpheusGUI
             }
             catch (Exception e)
             {
-                GuiWarnHandler(null, new StringEventArgs("Could not get newest MM version from web: " + e.Message, null));
+                GuiWarnHandler(null, new StringEventArgs("Could not get newest version from web: " + e.Message, null));
             }
+        }
+        
+        private FlowDocument YoutubeWikiNotification()
+        {
+
+            FlowDocument doc = notificationsTextBox.Document;
+            Paragraph p = new Paragraph();
+            Run run1 = new Run("Visit our ");
+            Run run2 = new Run("Wiki");
+            Run run3 = new Run(" or ");
+            Run run4 = new Run("Youtube channel");
+            Run run5 = new Run(" to check out what MetaMorpheus can do!" + System.Environment.NewLine);
+
+            Hyperlink wikiLink = new Hyperlink(run2);
+            wikiLink.NavigateUri = new Uri(@"https://github.com/smith-chem-wisc/MetaMorpheus/wiki");
+
+            Hyperlink youtubeLink = new Hyperlink(run4);
+            youtubeLink.NavigateUri = new Uri(@"https://www.youtube.com/playlist?list=PLVk5tTSZ1aWlhNPh7jxPQ8pc0ElyzSUQb");
+
+            var links = new List<Hyperlink> {wikiLink, youtubeLink};
+
+            p.Inlines.Add(run1);
+            p.Inlines.Add(wikiLink);
+            p.Inlines.Add(run3);
+            p.Inlines.Add(youtubeLink);
+            p.Inlines.Add(run5);
+
+            foreach (Hyperlink link in links)
+            {
+                link.RequestNavigate += (sender, e) =>
+                {
+                    System.Diagnostics.Process.Start(e.Uri.ToString());
+                };
+            }
+
+            doc.Blocks.Add(p);
+            return doc;
         }
 
         public static string NewestKnownVersion { get; private set; }
 
-        internal GuiGlobalParams GuiGlobalParams { get; }
+        internal GuiGlobalParams GuiGlobalParams = new GuiGlobalParams();
 
         private static void GetVersionNumbersFromWeb()
         {
@@ -102,7 +149,8 @@ namespace MetaMorpheusGUI
                     JObject deserialized = JObject.Parse(json);
                     var assets = deserialized["assets"].Select(b => b["name"].ToString()).ToList();
                     if (!assets.Contains("MetaMorpheusInstaller.msi"))
-                        throw new MetaMorpheusException("Necessary files do not exist!");
+                        throw new MetaMorpheusException("A new version of MetaMorpheus was detected, but the files haven't been" +
+                            " uploaded yet. Try again in a few minutes.");
                     NewestKnownVersion = deserialized["tag_name"].ToString();
                 }
             }
@@ -128,6 +176,8 @@ namespace MetaMorpheusGUI
             // hide the "InProgress" column
             dataGridProteinDatabases.Columns.Where(p => p.Header.Equals(nameof(ProteinDbForDataGrid.InProgress))).First().Visibility = Visibility.Hidden;
             dataGridSpectraFiles.Columns.Where(p => p.Header.Equals(nameof(RawDataForDataGrid.InProgress))).First().Visibility = Visibility.Hidden;
+
+            PrintErrorsReadingMods();
         }
 
         private void EverythingRunnerEngine_FinishedWritingAllResultsFileHandler(object sender, StringEventArgs e)
@@ -476,6 +526,8 @@ namespace MetaMorpheusGUI
                             try
                             {
                                 GlobalVariables.AddMods(UsefulProteomicsDatabases.ProteinDbLoader.GetPtmListFromProteinXml(draggedFilePath).OfType<Modification>());
+
+                                PrintErrorsReadingMods();
                             }
                             catch (Exception ee)
                             {
@@ -973,7 +1025,6 @@ namespace MetaMorpheusGUI
                 addGPTMDTaskButton.IsEnabled = false;
                 addSearchTaskButton.IsEnabled = false;
                 btnAddCrosslinkSearch.IsEnabled = false;
-                //addNeoTaskButton.IsEnabled = false;
 
                 AddXML.IsEnabled = false;
                 ClearXML.IsEnabled = false;
@@ -1040,7 +1091,6 @@ namespace MetaMorpheusGUI
             addGPTMDTaskButton.IsEnabled = true;
             addSearchTaskButton.IsEnabled = true;
             btnAddCrosslinkSearch.IsEnabled = true;
-            //addNeoTaskButton.IsEnabled = true;
             ResetTasksButton.IsEnabled = false;
             OutputFolderTextBox.IsEnabled = true;
 
@@ -1323,6 +1373,32 @@ namespace MetaMorpheusGUI
         {
             System.Diagnostics.Process.Start(Path.Combine(GlobalVariables.DataDir, @"GUIsettings.toml"));
             Application.Current.Shutdown();
+        }
+
+        private void MetaDrawMenu_Click(object sender, RoutedEventArgs e)
+        {
+            MetaDraw metaDrawGui = new MetaDraw();
+            metaDrawGui.Show();
+        }
+
+        private void PrintErrorsReadingMods()
+        {
+            // print any error messages reading the mods to the notifications area
+            foreach (var error in GlobalVariables.ErrorsReadingMods)
+            {
+                GuiWarnHandler(null, new StringEventArgs(error, null));
+            }
+            GlobalVariables.ErrorsReadingMods.Clear();
+        }
+
+        private void AddContaminantXML_Click(object sender, RoutedEventArgs e)
+        {
+            string[] contaminantFiles = Directory.GetFiles(Path.Combine(GlobalVariables.DataDir, "Contaminants"));
+            foreach (string contaminantFile in contaminantFiles)
+            {
+                AddAFile(contaminantFile);
+            }
+            dataGridProteinDatabases.Items.Refresh();
         }
     }
 }

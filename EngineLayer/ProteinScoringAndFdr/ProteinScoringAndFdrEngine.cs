@@ -24,7 +24,6 @@ namespace EngineLayer
         protected override MetaMorpheusEngineResults RunSpecific()
         {
             ProteinScoringAndFdrResults myAnalysisResults = new ProteinScoringAndFdrResults(this);
-            Status("Running protein scoring and FDR engine!");
 
             ScoreProteinGroups(ProteinGroups, NewPsms);
             myAnalysisResults.SortedAndScoredProteinGroups = DoProteinFdr(ProteinGroups);
@@ -39,8 +38,6 @@ namespace EngineLayer
 
         private void ScoreProteinGroups(List<ProteinGroup> proteinGroups, IEnumerable<PeptideSpectralMatch> psmList)
         {
-            Status("Scoring protein groups...");
-
             // add each protein groups PSMs
             var peptideToPsmMatching = new Dictionary<PeptideWithSetModifications, HashSet<PeptideSpectralMatch>>();
             foreach (var psm in psmList)
@@ -78,8 +75,10 @@ namespace EngineLayer
 
             // score the group
             foreach (var proteinGroup in proteinGroups)
+            {
                 proteinGroup.Score();
-
+            }
+            
             if (MergeIndistinguishableProteinGroups)
             {
                 // merge protein groups that are indistinguishable after scoring
@@ -96,7 +95,7 @@ namespace EngineLayer
                             var seqs1 = new HashSet<string>(p.AllPeptides.Select(x => x.FullSequence + x.DigestionParams.Protease));
                             var seqs2 = new HashSet<string>(pg[i].AllPeptides.Select(x => x.FullSequence + x.DigestionParams.Protease));
 
-                            if (p != pg[i] && seqs1.SetEquals(seqs2))
+                            if (p != pg[i] && seqs1.SetEquals(seqs2) && psms1.SetEquals(psms2))
                             {
                                 pg[i].MergeProteinGroupWith(p);
                             }
@@ -115,8 +114,6 @@ namespace EngineLayer
 
         private List<ProteinGroup> DoProteinFdr(List<ProteinGroup> proteinGroups)
         {
-            Status("Calculating protein FDR...");
-
             if (NoOneHitWonders)
             {
                 if (TreatModPeptidesAsDifferentPeptides)

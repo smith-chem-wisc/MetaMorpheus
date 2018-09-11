@@ -70,7 +70,7 @@ namespace MetaMorpheusGUI
         internal SearchTask TheTask { get; private set; }
 
         private void CheckIfNumber(object sender, TextCompositionEventArgs e)
-        { 
+        {
             e.Handled = !GlobalGuiSettings.CheckIsNumber(e.Text);
         }
 
@@ -193,9 +193,23 @@ namespace MetaMorpheusGUI
             MinRatioTextBox.Text = task.CommonParameters.MinRatio.ToString(CultureInfo.InvariantCulture);
             maxThreadsTextBox.Text = task.CommonParameters.MaxThreadsToUsePerFile.ToString(CultureInfo.InvariantCulture);
 
+            if (task.CommonParameters.QValueOutputFilter < 1)
+            {
+                QValueTextBox.Text = task.CommonParameters.QValueOutputFilter.ToString(CultureInfo.InvariantCulture);
+                QValueCheckBox.IsChecked = true;
+            }
+            else
+            {
+                QValueTextBox.Text = "0.01";
+                QValueCheckBox.IsChecked = false;
+            }
+
             OutputFileNameTextBox.Text = task.CommonParameters.TaskDescriptor;
             //ckbPepXML.IsChecked = task.SearchParameters.OutPepXML;
-            ckbMzId.IsChecked = task.SearchParameters.OutMzId;
+            ckbMzId.IsChecked = task.SearchParameters.WriteMzId;
+            writeDecoyCheckBox.IsChecked = task.SearchParameters.WriteDecoys;
+            writeContaminantCheckBox.IsChecked = task.SearchParameters.WriteContaminants;
+
             foreach (var mod in task.CommonParameters.ListOfModsFixed)
             {
                 var theModType = FixedModTypeForTreeViewObservableCollection.FirstOrDefault(b => b.DisplayName.Equals(mod.Item1));
@@ -278,7 +292,6 @@ namespace MetaMorpheusGUI
 
         private void SaveButton_Click(object sender, RoutedEventArgs e)
         {
-
             if (nonSpecificSearchRadioButton1.IsChecked.Value || semiSpecificSearchRadioButton.IsChecked.Value)
             {
                 if ((bCheckBox.IsChecked.Value || cCheckBox.IsChecked.Value) && (yCheckBox.IsChecked.Value || zdotCheckBox.IsChecked.Value))
@@ -324,15 +337,15 @@ namespace MetaMorpheusGUI
                     }
                 }
                 if (!addCompIonCheckBox.IsChecked.Value)
+                {
                     MessageBox.Show("Warning: Complementary ions are strongly recommended when using this algorithm.");
+                }
             }
 
-
-            
-           if (!GlobalGuiSettings.CheckTaskSettingsValidity(precursorMassToleranceTextBox.Text, productMassToleranceTextBox.Text, missedCleavagesTextBox.Text,
+            if (!GlobalGuiSettings.CheckTaskSettingsValidity(precursorMassToleranceTextBox.Text, productMassToleranceTextBox.Text, missedCleavagesTextBox.Text,
                 maxModificationIsoformsTextBox.Text, MinPeptideLengthTextBox.Text, MaxPeptideLengthTextBox.Text, maxThreadsTextBox.Text, minScoreAllowed.Text,
                 peakFindingToleranceTextBox.Text, histogramBinWidthTextBox.Text, DeconvolutionMaxAssumedChargeStateTextBox.Text, TopNPeaksTextBox.Text,
-                MinRatioTextBox.Text, numberOfDatabaseSearchesTextBox.Text, MaxModNumTextBox.Text, MaxFragmentMassTextBox.Text))
+                MinRatioTextBox.Text, numberOfDatabaseSearchesTextBox.Text, MaxModNumTextBox.Text, MaxFragmentMassTextBox.Text, QValueTextBox.Text))
             {
                 return;
             }
@@ -392,16 +405,22 @@ namespace MetaMorpheusGUI
                 listOfModsFixed.AddRange(heh.Children.Where(b => b.Use).Select(b => (b.Parent.DisplayName, b.DisplayName)));
             }
 
+            if (!GlobalGuiSettings.VariableModCheck(listOfModsVariable))
+            {
+                return;
+            }
+
             bool TrimMs1Peaks = trimMs1.IsChecked.Value;
             bool TrimMsMsPeaks = trimMsMs.IsChecked.Value;
             int TopNpeaks = int.Parse(TopNPeaksTextBox.Text);
             double MinRatio = double.Parse(MinRatioTextBox.Text);
 
-
             //TODO redo
             DissociationType t = DissociationType.CID;
 
             CommonParameters CommonParamsToSave = new CommonParameters(
+                taskDescriptor: OutputFileNameTextBox.Text != "" ? OutputFileNameTextBox.Text : "SearchTask",
+                maxThreadsToUsePerFile: parseMaxThreadsPerFile ? int.Parse(maxThreadsTextBox.Text, CultureInfo.InvariantCulture) : new CommonParameters().MaxThreadsToUsePerFile,
                 useDeltaScore: deltaScoreCheckBox.IsChecked.Value,
                 reportAllAmbiguity: allAmbiguity.IsChecked.Value,
                 deconvolutionMaxAssumedChargeState: int.Parse(DeconvolutionMaxAssumedChargeStateTextBox.Text, CultureInfo.InvariantCulture),
@@ -420,16 +439,8 @@ namespace MetaMorpheusGUI
                 trimMsMsPeaks: TrimMsMsPeaks,
                 topNpeaks: TopNpeaks,
                 minRatio: MinRatio,
-                addCompIons: addCompIonCheckBox.IsChecked.Value);
-
-            if (OutputFileNameTextBox.Text != "")
-            {
-                CommonParamsToSave.TaskDescriptor = OutputFileNameTextBox.Text;
-            }
-            else
-            {
-                CommonParamsToSave.TaskDescriptor = "SearchTask";
-            }
+                addCompIons: addCompIonCheckBox.IsChecked.Value,
+                qValueOutputFilter: QValueCheckBox.IsChecked.Value ? double.Parse(QValueTextBox.Text, CultureInfo.InvariantCulture) : 1.0);
 
             if (classicSearchRadioButton.IsChecked.Value)
             {
@@ -452,7 +463,9 @@ namespace MetaMorpheusGUI
             TheTask.SearchParameters.ModPeptidesAreDifferent = modPepsAreUnique.IsChecked.Value;
             TheTask.SearchParameters.QuantifyPpmTol = double.Parse(peakFindingToleranceTextBox.Text, CultureInfo.InvariantCulture);
             TheTask.SearchParameters.SearchTarget = checkBoxTarget.IsChecked.Value;
-            TheTask.SearchParameters.OutMzId = ckbMzId.IsChecked.Value;
+            TheTask.SearchParameters.WriteMzId = ckbMzId.IsChecked.Value;
+            TheTask.SearchParameters.WriteDecoys = writeDecoyCheckBox.IsChecked.Value;
+            TheTask.SearchParameters.WriteContaminants = writeContaminantCheckBox.IsChecked.Value;
             //TheTask.SearchParameters.OutPepXML = ckbPepXML.IsChecked.Value;
 
             if (checkBoxDecoy.IsChecked.Value)
@@ -471,10 +484,6 @@ namespace MetaMorpheusGUI
                 TheTask.SearchParameters.DecoyType = DecoyType.None;
             }
 
-            if (!maxThreadsTextBox.Text.Equals("") && (int.Parse(maxThreadsTextBox.Text) <= Environment.ProcessorCount && int.Parse(maxThreadsTextBox.Text) > 0))
-            {
-                CommonParamsToSave.MaxThreadsToUsePerFile = int.Parse(maxThreadsTextBox.Text, CultureInfo.InvariantCulture);
-            }
             if (massDiffAcceptExact.IsChecked.HasValue && massDiffAcceptExact.IsChecked.Value)
             {
                 TheTask.SearchParameters.MassDiffAcceptorType = MassDiffAcceptorType.Exact;
@@ -505,6 +514,19 @@ namespace MetaMorpheusGUI
                 TheTask.SearchParameters.CustomMdac = customkMdacTextBox.Text;
             }
 
+            // displays warning if classic search is enabled with an open search mode
+            if (TheTask.SearchParameters.SearchType == SearchType.Classic &&
+                (TheTask.SearchParameters.MassDiffAcceptorType == MassDiffAcceptorType.ModOpen || TheTask.SearchParameters.MassDiffAcceptorType == MassDiffAcceptorType.Open))
+            {
+                MessageBoxResult result = MessageBox.Show("Modern Search mode is recommended when conducting open precursor mass searches to reduce search time.\n\n" +
+                    "Continue anyway?", "Modern search recommended", MessageBoxButton.OKCancel);
+
+                if (result == MessageBoxResult.Cancel)
+                {
+                    return;
+                }
+            }
+
             TheTask.SearchParameters.DoHistogramAnalysis = checkBoxHistogramAnalysis.IsChecked.Value;
             TheTask.SearchParameters.HistogramBinTolInDaltons = double.Parse(histogramBinWidthTextBox.Text, CultureInfo.InvariantCulture);
 
@@ -512,7 +534,7 @@ namespace MetaMorpheusGUI
 
             SetModSelectionForPrunedDB();
 
-            TheTask.CommonParameters = CommonParamsToSave;
+            TheTask.CommonParameters = commonParamsToSave;
 
             DialogResult = true;
         }
@@ -650,6 +672,18 @@ namespace MetaMorpheusGUI
         private void SemiSpecificUpdate(object sender, RoutedEventArgs e)
         {
             addCompIonCheckBox.IsChecked = semiSpecificSearchRadioButton.IsChecked.Value;
+        }
+
+        private void KeyPressed(object sender, KeyEventArgs e)
+        {
+            if (e.Key == Key.Return)
+            {
+                SaveButton_Click(sender, e);
+            }
+            else if (e.Key == Key.Escape)
+            {
+                CancelButton_Click(sender, e);
+            }
         }
     }
 

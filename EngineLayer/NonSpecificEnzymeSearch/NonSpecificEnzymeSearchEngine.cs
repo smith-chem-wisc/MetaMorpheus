@@ -65,6 +65,7 @@ namespace EngineLayer.NonSpecificEnzymeSearch
 
                     foreach (ProductType pt in DissociationTypeCollection.ProductsFromDissociationType[commonParameters.DissociationType].Intersect(TerminusSpecificProductTypes.ProductIonTypesFromSpecifiedTerminus[commonParameters.FragmentationTerminus]).ToList())
                     {
+                        //TODO: check that this is correct (Zach)
                         int binShift = (int)Math.Round((DissociationTypeCollection.GetMassShiftFromProductType(pt) + WaterMonoisotopicMass) * FragmentBinsPerDalton);//if unit test fails try subtracting water
 
                         for (int j = 0; j < binsToSearch.Count; j++)

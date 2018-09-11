@@ -32,7 +32,7 @@ namespace TaskLayer
             LoadModifications(taskId, out var variableModifications, out var fixedModifications, out var localizeableModificationTypes);
 
             // load proteins
-            List<Protein> proteinList = LoadProteins(taskId, dbFilenameList, true, XlSearchParameters.DecoyType, localizeableModificationTypes);
+            List<Protein> proteinList = LoadProteins(taskId, dbFilenameList, true, XlSearchParameters.DecoyType, localizeableModificationTypes, CommonParameters);
 
             // what types of fragment ions to search for
             var ionTypes = DissociationTypeCollection.ProductsFromDissociationType[CommonParameters.DissociationType];
@@ -86,7 +86,7 @@ namespace TaskLayer
                 var thisId = new List<string> { taskId, "Individual Spectra Files", origDataFile };
                 NewCollection(Path.GetFileName(origDataFile), thisId);
                 Status("Loading spectra file...", thisId);
-                MsDataFile myMsDataFile = myFileManager.LoadFile(origDataFile, combinedParams.TopNpeaks, combinedParams.MinRatio, combinedParams.TrimMs1Peaks, combinedParams.TrimMsMsPeaks);
+                MsDataFile myMsDataFile = myFileManager.LoadFile(origDataFile, combinedParams.TopNpeaks, combinedParams.MinRatio, combinedParams.TrimMs1Peaks, combinedParams.TrimMsMsPeaks, combinedParams);
                 Status("Getting ms2 scans...", thisId);
                 Ms2ScanWithSpecificMass[] arrayOfMs2ScansSortedByMass = GetMs2Scans(myMsDataFile, origDataFile, combinedParams.DoPrecursorDeconvolution, combinedParams.UseProvidedPrecursorInfo, combinedParams.DeconvolutionIntensityRatio, combinedParams.DeconvolutionMaxAssumedChargeState, combinedParams.DeconvolutionMassTolerance).OrderBy(b => b.PrecursorMass).ToArray();
 
@@ -105,13 +105,13 @@ namespace TaskLayer
 
                     Status("Searching files...", taskId);
 
-                    new TwoPassCrosslinkSearchEngine(newPsms, arrayOfMs2ScansSortedByMass, peptideIndex, fragmentIndex, ionTypes, currentPartition, combinedParams, false, XlSearchParameters.XlPrecusorMsTl, crosslinker, XlSearchParameters.CrosslinkSearchTop, XlSearchParameters.CrosslinkSearchTopNum, XlSearchParameters.XlQuench_H2O, XlSearchParameters.XlQuench_NH2, XlSearchParameters.XlQuench_Tris, XlSearchParameters.XlCharge_2_3, XlSearchParameters.XlCharge_2_3_PrimeFragment, thisId).Run();
+                    new TwoPassCrosslinkSearchEngine(newPsms, arrayOfMs2ScansSortedByMass, peptideIndex, fragmentIndex, ionTypes, currentPartition, combinedParams, false, XlSearchParameters.SearchGlyco, XlSearchParameters.SearchGlycoWithBgYgIndex, XlSearchParameters.XlPrecusorMsTl, crosslinker, XlSearchParameters.CrosslinkSearchTop, XlSearchParameters.CrosslinkSearchTopNum, XlSearchParameters.XlQuench_H2O, XlSearchParameters.XlQuench_NH2, XlSearchParameters.XlQuench_Tris, XlSearchParameters.XlCharge_2_3, thisId).Run();
                     ReportProgress(new ProgressEventArgs(100, "Done with search " + (currentPartition + 1) + "/" + CommonParameters.TotalPartitions + "!", thisId));
                 }
 
                 lock (psmLock)
                 {
-                    allPsms.AddRange(newPsms);
+                    allPsms.AddRange(newPsms.Where(p => p != null));
                 }
 
                 completedFiles++;
@@ -208,7 +208,9 @@ namespace TaskLayer
                 WriteSingleToTsv(loopPsmsFDR, OutputFolder, "loop_fdr", new List<string> { taskId });
             }
 
-            var deadendPsms = allPsms.Where(p => p.CrossType == PsmCrossType.DeadEnd || p.CrossType == PsmCrossType.DeadEndH2O || p.CrossType == PsmCrossType.DeadEndNH2 || p.CrossType == PsmCrossType.DeadEndTris).OrderByDescending(p => p.XLTotalScore).ToList();
+                        var writtenFileLoop = Path.Combine(OutputFolder, "loop_fdr" + ".tsv");
+                        WritePsmCrossToTsv(loopPsmsFDR, writtenFileLoop, 1);
+                        FinishedWritingFile(writtenFileLoop, new List<string> { taskId });
 
             deadendPsms.AddRange(allPsms.Where(p => p.CrossType == PsmCrossType.Single && p.FullSequence != null && p.FullSequence.Contains("Crosslink")).ToList());
             var deadendPsmsFDR = SingleFDRAnalysis(deadendPsms).ToList();
@@ -250,7 +252,6 @@ namespace TaskLayer
                     throw;
                 }
             }
-
             return MyTaskResults;
         }
 

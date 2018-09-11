@@ -179,7 +179,7 @@ namespace MetaMorpheusGUI
 
             if (!GlobalGuiSettings.CheckTaskSettingsValidity(precursorMassToleranceTextBox.Text, productMassToleranceTextBox.Text, missedCleavagesTextBox.Text,
                  maxModificationIsoformsTextBox.Text, MinPeptideLengthTextBox.Text, MaxPeptideLengthTextBox.Text, maxThreadsTextBox.Text, minScoreAllowed.Text,
-                 fieldNotUsed, fieldNotUsed, fieldNotUsed, fieldNotUsed, fieldNotUsed, fieldNotUsed, fieldNotUsed, fieldNotUsed))
+                 fieldNotUsed, fieldNotUsed, fieldNotUsed, fieldNotUsed, fieldNotUsed, fieldNotUsed, fieldNotUsed, fieldNotUsed, fieldNotUsed))
             {
                 return;
             }
@@ -200,6 +200,11 @@ namespace MetaMorpheusGUI
             foreach (var heh in VariableModTypeForTreeViewObservableCollection)
             {
                 listOfModsVariable.AddRange(heh.Children.Where(b => b.Use).Select(b => (b.Parent.DisplayName, b.DisplayName)));
+            }
+
+            if (!GlobalGuiSettings.VariableModCheck(listOfModsVariable))
+            {
+                return;
             }
 
             var listOfModsFixed = new List<(string, string)>();
@@ -226,7 +231,12 @@ namespace MetaMorpheusGUI
             {
                 PrecursorMassTolerance = new PpmTolerance(double.Parse(precursorMassToleranceTextBox.Text, CultureInfo.InvariantCulture));
             }
-            CommonParameters CommonParamsToSave = new CommonParameters(
+
+            bool parseMaxThreadsPerFile = int.Parse(maxThreadsTextBox.Text, CultureInfo.InvariantCulture) <= Environment.ProcessorCount && int.Parse(maxThreadsTextBox.Text, CultureInfo.InvariantCulture) > 0;
+
+            CommonParameters commonParamsToSave = new CommonParameters(
+                taskDescriptor: OutputFileNameTextBox.Text != "" ? OutputFileNameTextBox.Text : "CalibrateTask",
+                maxThreadsToUsePerFile: parseMaxThreadsPerFile ? int.Parse(maxThreadsTextBox.Text, CultureInfo.InvariantCulture) : new CommonParameters().MaxThreadsToUsePerFile,
                 digestionParams: digestionParamsToSave,
                 dissociationType: (DissociationType) DissociationTypeComboBox.SelectedItem,
                 scoreCutoff: double.Parse(minScoreAllowed.Text, CultureInfo.InvariantCulture),
@@ -235,36 +245,26 @@ namespace MetaMorpheusGUI
                 productMassTolerance: ProductMassTolerance,
                 precursorMassTolerance: PrecursorMassTolerance);
 
-            if (int.Parse(maxThreadsTextBox.Text, CultureInfo.InvariantCulture) <= Environment.ProcessorCount && int.Parse(maxThreadsTextBox.Text, CultureInfo.InvariantCulture) > 0)
-            {
-                CommonParamsToSave.MaxThreadsToUsePerFile = int.Parse(maxThreadsTextBox.Text, CultureInfo.InvariantCulture);
-            }
-            if (OutputFileNameTextBox.Text != "")
-            {
-                CommonParamsToSave.TaskDescriptor = OutputFileNameTextBox.Text;
-            }
-            else
-            {
-                CommonParamsToSave.TaskDescriptor = "CalibrateTask";
-            }
-
-            TheTask.CommonParameters = CommonParamsToSave;
+            TheTask.CommonParameters = commonParamsToSave;
 
             DialogResult = true;
-        }
-
-        private void Row_DoubleClick(object sender, MouseButtonEventArgs e)
-        {
-            var ye = sender as DataGridCell;
-            if (ye.Content is TextBlock hm && !string.IsNullOrEmpty(hm.Text))
-            {
-                System.Diagnostics.Process.Start(hm.Text);
-            }
         }
 
         private void CheckIfNumber(object sender, TextCompositionEventArgs e)
         {
             e.Handled = !GlobalGuiSettings.CheckIsNumber(e.Text);
+        }
+
+        private void KeyPressed(object sender, KeyEventArgs e)
+        {
+            if (e.Key == Key.Return)
+            {
+                SaveButton_Click(sender, e);
+            }
+            else if (e.Key == Key.Escape)
+            {
+                CancelButton_Click(sender, e);
+            }
         }
     }
 }

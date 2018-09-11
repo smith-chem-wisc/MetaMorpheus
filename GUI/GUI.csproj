@@ -43,7 +43,7 @@
     <LangVersion>7</LangVersion>
   </PropertyGroup>
   <PropertyGroup>
-    <ApplicationIcon>MMnice.ico</ApplicationIcon>
+    <ApplicationIcon>Icons\MMnice.ico</ApplicationIcon>
   </PropertyGroup>
   <PropertyGroup />
   <PropertyGroup>
@@ -58,6 +58,9 @@
     </Reference>
     <Reference Include="ManagedThermoHelperLayer, Version=1.0.355.0, Culture=neutral, processorArchitecture=AMD64">
       <HintPath>..\packages\mzLib.1.0.355\lib\net471\ManagedThermoHelperLayer.dll</HintPath>
+    </Reference>
+    <Reference Include="ManagedThermoHelperLayer, Version=1.0.331.0, Culture=neutral, processorArchitecture=AMD64">
+      <HintPath>..\packages\mzLib.1.0.331\lib\net471\ManagedThermoHelperLayer.dll</HintPath>
     </Reference>
     <Reference Include="MassSpectrometry, Version=1.0.0.0, Culture=neutral, processorArchitecture=AMD64">
       <HintPath>..\packages\mzLib.1.0.355\lib\net471\MassSpectrometry.dll</HintPath>
@@ -82,6 +85,12 @@
     </Reference>
     <Reference Include="Newtonsoft.Json, Version=11.0.0.0, Culture=neutral, PublicKeyToken=30ad4fe6b2a6aeed, processorArchitecture=MSIL">
       <HintPath>..\packages\Newtonsoft.Json.11.0.1\lib\net45\Newtonsoft.Json.dll</HintPath>
+    </Reference>
+    <Reference Include="OxyPlot, Version=1.0.0.0, Culture=neutral, PublicKeyToken=638079a8f0bd61e9, processorArchitecture=MSIL">
+      <HintPath>..\packages\OxyPlot.Core.1.0.0\lib\net45\OxyPlot.dll</HintPath>
+    </Reference>
+    <Reference Include="OxyPlot.Wpf, Version=1.0.0.0, Culture=neutral, PublicKeyToken=75e952ba404cdbb0, processorArchitecture=MSIL">
+      <HintPath>..\packages\OxyPlot.Wpf.1.0.0\lib\net45\OxyPlot.Wpf.dll</HintPath>
     </Reference>
     <Reference Include="PepXML, Version=1.0.0.0, Culture=neutral, processorArchitecture=AMD64">
       <HintPath>..\packages\mzLib.1.0.355\lib\net471\PepXML.dll</HintPath>
@@ -121,6 +130,8 @@
     </Reference>
     <Reference Include="System" />
     <Reference Include="System.Core" />
+    <Reference Include="System.Data" />
+    <Reference Include="System.Drawing" />
     <Reference Include="System.Numerics" />
     <Reference Include="System.Runtime.Serialization" />
     <Reference Include="System.Xaml">
@@ -141,29 +152,36 @@
       <Generator>MSBuild:Compile</Generator>
       <SubType>Designer</SubType>
     </ApplicationDefinition>
-    <Compile Include="BooleanInverter.cs" />
+    <Compile Include="MetaDraw.xaml.cs">
+      <DependentUpon>MetaDraw.xaml</DependentUpon>
+    </Compile>
+    <Compile Include="MetaDraw\BaseSequenceAnnotation.cs" />
+    <Compile Include="MetaDraw\MetaDrawPsm.cs" />
+    <Compile Include="MetaDraw\PdfWriter.cs" />
+    <Compile Include="Util\BooleanInverter.cs" />
     <Compile Include="CalibrateTaskWindow.xaml.cs">
       <DependentUpon>CalibrateTaskWindow.xaml</DependentUpon>
     </Compile>
     <Compile Include="FileSpecificParametersWindow.xaml.cs">
       <DependentUpon>FileSpecificParametersWindow.xaml</DependentUpon>
     </Compile>
-    <Compile Include="CollectionForTreeView.cs" />
+    <Compile Include="Util\CollectionForTreeView.cs" />
     <Compile Include="ForDisplayingInDataGrids\ExperimentalDesignForDataGrid.cs" />
-    <Compile Include="ForTreeView.cs" />
-    <Compile Include="GlobalGuiSettings.cs" />
+    <Compile Include="Util\ForTreeView.cs" />
+    <Compile Include="Util\GlobalGuiSettings.cs" />
     <Compile Include="GlobalSettingsWindow.xaml.cs">
       <DependentUpon>GlobalSettingsWindow.xaml</DependentUpon>
     </Compile>
-    <Compile Include="GuiGlobalParams.cs" />
+    <Compile Include="Util\GuiGlobalParams.cs" />
     <Compile Include="MetaUpdater.xaml.cs">
       <DependentUpon>MetaUpdater.xaml</DependentUpon>
     </Compile>
-    <Compile Include="ModForTreeView.cs" />
-    <Compile Include="ModTypeForGrid.cs" />
-    <Compile Include="ModTypeForLoc.cs" />
-    <Compile Include="ModTypeForTreeView.cs" />
-    <Compile Include="OutputFileForTreeView.cs" />
+    <Compile Include="MetaDraw\PsmAnnotationViewModel.cs" />
+    <Compile Include="Util\ModForTreeView.cs" />
+    <Compile Include="Util\ModTypeForGrid.cs" />
+    <Compile Include="Util\ModTypeForLoc.cs" />
+    <Compile Include="Util\ModTypeForTreeView.cs" />
+    <Compile Include="Util\OutputFileForTreeView.cs" />
     <Compile Include="ForDisplayingInDataGrids\FinishedFileForDataGrid.cs" />
     <Compile Include="ForDisplayingInDataGrids\ModListForCalibrationTask.cs" />
     <Compile Include="ForDisplayingInDataGrids\ModListForGptmdTask.cs" />
@@ -174,7 +192,7 @@
     </Compile>
     <Compile Include="ForDisplayingInDataGrids\RawDataForDataGrid.cs" />
     <Compile Include="ForDisplayingInDataGrids\PreRunTask.cs" />
-    <Compile Include="Parameter.cs" />
+    <Compile Include="Util\Parameter.cs" />
     <Compile Include="ExperimentalDesignWindow.xaml.cs">
       <DependentUpon>ExperimentalDesignWindow.xaml</DependentUpon>
     </Compile>
@@ -215,6 +233,10 @@
       <DependentUpon>MainWindow.xaml</DependentUpon>
       <SubType>Code</SubType>
     </Compile>
+    <Page Include="MetaDraw.xaml">
+      <Generator>MSBuild:Compile</Generator>
+      <SubType>Designer</SubType>
+    </Page>
     <Page Include="MetaUpdater.xaml">
       <Generator>MSBuild:Compile</Generator>
       <SubType>Designer</SubType>
@@ -263,9 +285,6 @@
       <LastGenOutput>Settings.Designer.cs</LastGenOutput>
     </None>
     <AppDesigner Include="Properties\" />
-    <None Include="GUIsettings.toml">
-      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
-    </None>
   </ItemGroup>
   <ItemGroup>
     <None Include="App.config" />
@@ -281,17 +300,17 @@
     </ProjectReference>
   </ItemGroup>
   <ItemGroup>
-    <Resource Include="MMnice.ico" />
+    <Resource Include="Icons\MMnice.ico" />
   </ItemGroup>
   <ItemGroup>
-    <Resource Include="wiki_20.bmp" />
+    <Resource Include="Icons\wiki_20.bmp" />
   </ItemGroup>
   <ItemGroup>
-    <Resource Include="Blogger_20.bmp" />
-    <Resource Include="git_20.bmp" />
-    <Resource Include="mail_20.bmp" />
-    <Resource Include="update_20.bmp" />
-    <Resource Include="youtube_20.bmp" />
+    <Resource Include="Icons\Blogger_20.bmp" />
+    <Resource Include="Icons\git_20.bmp" />
+    <Resource Include="Icons\mail_20.bmp" />
+    <Resource Include="Icons\update_20.bmp" />
+    <Resource Include="Icons\youtube_20.bmp" />
   </ItemGroup>
   <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />
   <!-- To modify your build process, add your task inside one of the targets below and uncomment it. 

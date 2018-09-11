@@ -62,8 +62,19 @@ namespace MetaMorpheusCommandLine
                     MetaMorpheusTask.FinishedWritingFileHandler += MyTaskEngine_finishedWritingFileHandler;
 
                     foreach (var db in p.Object.Databases)
+                    {
                         if (!Path.GetExtension(db).Equals(".fasta"))
-                            GlobalVariables.AddMods(UsefulProteomicsDatabases.ProteinDbLoader.GetPtmListFromProteinXml(db).OfType<Modification>());
+                        {
+                            GlobalVariables.AddMods(UsefulProteomicsDatabases.ProteinDbLoader.GetPtmListFromProteinXml(db).OfType<ModificationWithLocation>());
+
+                        // print any error messages reading the mods to the console
+                        foreach (var error in GlobalVariables.ErrorsReadingMods)
+                            {
+                                Console.WriteLine(error);
+                            }
+                            GlobalVariables.ErrorsReadingMods.Clear();
+                        }
+                    }
 
                     List<(string, MetaMorpheusTask)> taskList = new List<(string, MetaMorpheusTask)>();
 
@@ -94,11 +105,7 @@ namespace MetaMorpheusCommandLine
                                 var ye4 = Toml.ReadFile<XLSearchTask>(filePath, MetaMorpheusTask.tomlConfig);
                                 taskList.Add(("Task" + (i + 1) + "XLSearchTask", ye4));
                                 break;
-
-                            case "Neo":
-                                Console.WriteLine("Neo tasks are meta-tasks that rely on several other tasks. Please use -m for meta instead of -t. Skipping.");
-                                break;
-
+                                
                             default:
                                 Console.WriteLine(uhum.Get<string>("TaskType") + " is not a known task type! Skipping.");
                                 break;
