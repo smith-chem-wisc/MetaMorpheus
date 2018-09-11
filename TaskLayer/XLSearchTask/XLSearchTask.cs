@@ -28,20 +28,14 @@ namespace TaskLayer
         {
             MyTaskResults = new MyTaskResults(this);
             List<CrosslinkSpectralMatch> allPsms = new List<CrosslinkSpectralMatch>();
-            var compactPeptideToProteinPeptideMatch = new Dictionary<CompactPeptideBase, HashSet<PeptideWithSetModifications>>();
 
-            Status("Loading modifications...", taskId);
-
-            List<Modification> variableModifications = GlobalVariables.AllModsKnown.OfType<Modification>().Where(b => CommonParameters.ListOfModsVariable.Contains((b.ModificationType, b.IdWithMotif))).ToList();
-            List<Modification> fixedModifications = GlobalVariables.AllModsKnown.OfType<Modification>().Where(b => CommonParameters.ListOfModsFixed.Contains((b.ModificationType, b.IdWithMotif))).ToList();
-            List<string> localizeableModificationTypes = GlobalVariables.AllModTypesKnown.ToList();
+            LoadModifications(taskId, out var variableModifications, out var fixedModifications, out var localizeableModificationTypes);
 
             // load proteins
             List<Protein> proteinList = LoadProteins(taskId, dbFilenameList, true, XlSearchParameters.DecoyType, localizeableModificationTypes);
 
             // what types of fragment ions to search for
-            List<ProductType> ionTypes = new List<ProductType>();
-            ionTypes.AddRange(DissociationTypeCollection.ProductsFromDissociationType[CommonParameters.DissociationType]);
+            var ionTypes = DissociationTypeCollection.ProductsFromDissociationType[CommonParameters.DissociationType];
 
             var crosslinker = new Crosslinker();
             crosslinker.SelectCrosslinker(XlSearchParameters.CrosslinkerType);

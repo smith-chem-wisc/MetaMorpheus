@@ -326,18 +326,7 @@ namespace TaskLayer
                         }
                         else
                         {
-                            if (proteinGroup.AllPsmsBelowOnePercentFDR.Count(v => v.FullSequence != null) > 0)
-                            {
-                                //TODO This if clase didn't exist before.
-                                if (!proteinGroup.IsDecoy)
-                                    throw new MetaMorpheusException("Could not get intensity back from FlashLFQ! " + proteinGroup.ProteinGroupName);
-                            }
-                            else
-                            {
-                                // this is pretty rare... PSMs below 1% FDR were observed for this protein in this file, but they were all ambiguous PSMs
-                                // in this case, set the protein quantity to 0 for this file (FlashLFQ didn't quantify it because there were no valid PSMs)
-                                proteinGroup.IntensitiesByFile.Add(spectraFile, 0);
-                            }
+                            proteinGroup.IntensitiesByFile.Add(spectraFile, 0);
                         }
                     }
                 }

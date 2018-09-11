@@ -1,4 +1,5 @@
-﻿using MathNet.Numerics.Statistics;
+﻿using Chemistry;
+using MathNet.Numerics.Statistics;
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -39,7 +40,7 @@ namespace EngineLayer.Calibration
             PsmPrecursorIqrPpmError = Statistics.InterquartileRange(precursorErrors);
             PsmPrecursorMedianPpmError = Statistics.Median(precursorErrors);
 
-            var productErrors = new List<double> { };//we'll have to fix this.
+            var productErrors = psms.Where(p => p.MatchedFragmentIons != null).SelectMany(p => p.MatchedFragmentIons).Select(p => (p.Mz.ToMass(p.Charge) - p.NeutralTheoreticalProduct.NeutralMass) / p.NeutralTheoreticalProduct.NeutralMass * 1e6).ToList();
             PsmProductIqrPpmError = Statistics.InterquartileRange(productErrors);
             PsmProductMedianPpmError = Statistics.Median(productErrors);
         }

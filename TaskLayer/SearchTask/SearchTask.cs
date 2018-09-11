@@ -68,12 +68,8 @@ namespace TaskLayer
                 SearchParameters.DoQuantification = false;
             }
 
-            // load modifications
-            Status("Loading modifications...", taskId);
-            List<Modification> variableModifications = GlobalVariables.AllModsKnown.OfType<Modification>().Where(b => CommonParameters.ListOfModsVariable.Contains((b.ModificationType, b.IdWithMotif))).ToList();
-            List<Modification> fixedModifications = GlobalVariables.AllModsKnown.OfType<Modification>().Where(b => CommonParameters.ListOfModsFixed.Contains((b.ModificationType, b.IdWithMotif))).ToList();
-            List<string> localizeableModificationTypes = GlobalVariables.AllModTypesKnown.ToList();
-
+            LoadModifications(taskId, out var variableModifications, out var fixedModifications, out var localizeableModificationTypes);
+            
             // load proteins
             List<Protein> proteinList = LoadProteins(taskId, dbFilenameList, SearchParameters.SearchTarget, SearchParameters.DecoyType, localizeableModificationTypes);
 

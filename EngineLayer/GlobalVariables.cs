@@ -63,7 +63,7 @@ namespace EngineLayer
 
             // TODO: need to add motif to Unimod/UniProt ID
             //AddMods(UnimodDeserialized.OfType<Modification>());
-            //AddMods(UniprotDeseralized.OfType<Modification>());
+            AddMods(UniprotDeseralized.OfType<Modification>());
 
             GlobalSettings = Toml.ReadFile<GlobalSettings>(Path.Combine(DataDir, @"settings.toml"));
         }

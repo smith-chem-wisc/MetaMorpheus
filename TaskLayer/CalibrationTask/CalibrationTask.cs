@@ -7,9 +7,7 @@ using MassSpectrometry;
 using MzLibUtil;
 using Nett;
 using Proteomics;
-using Proteomics.AminoAcidPolymer;
 using Proteomics.Fragmentation;
-using Proteomics.ProteolyticDigestion;
 using System;
 using System.Collections.Generic;
 using System.IO;
@@ -36,15 +34,10 @@ namespace TaskLayer
 
         protected override MyTaskResults RunSpecific(string OutputFolder, List<DbForTask> dbFilenameList, List<string> currentRawFileList, string taskId, FileSpecificParameters[] fileSettingsList)
         {
-            // load modifications
-            Status("Loading modifications...", new List<string> { taskId });
-            List<Modification> variableModifications = GlobalVariables.AllModsKnown.OfType<Modification>().Where(b => CommonParameters.ListOfModsVariable.Contains((b.ModificationType, b.IdWithMotif))).ToList();
-            List<Modification> fixedModifications = GlobalVariables.AllModsKnown.OfType<Modification>().Where(b => CommonParameters.ListOfModsFixed.Contains((b.ModificationType, b.IdWithMotif))).ToList();
-            List<string> localizeableModificationTypes = GlobalVariables.AllModTypesKnown.ToList();
+            LoadModifications(taskId, out var variableModifications, out var fixedModifications, out var localizeableModificationTypes);
 
             // what types of fragment ions to search for
-            List<ProductType> ionTypes = new List<ProductType>();
-            ionTypes.AddRange(DissociationTypeCollection.ProductsFromDissociationType[CommonParameters.DissociationType]);
+            var ionTypes = DissociationTypeCollection.ProductsFromDissociationType[CommonParameters.DissociationType];
 
             // load proteins
             List<Protein> proteinList = LoadProteins(taskId, dbFilenameList, true, DecoyType.Reverse, localizeableModificationTypes);

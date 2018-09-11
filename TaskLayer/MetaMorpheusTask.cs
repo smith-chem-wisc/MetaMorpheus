@@ -321,6 +321,24 @@ namespace TaskLayer
             return proteinList.Where(p => p.BaseSequence.Length > 0).ToList();
         }
 
+        protected void LoadModifications(string taskId, out List<Modification> variableModifications, out List<Modification> fixedModifications, out List<string> localizableModificationTypes)
+        {
+            // load modifications
+            Status("Loading modifications...", taskId);
+            variableModifications = GlobalVariables.AllModsKnown.OfType<Modification>().Where(b => CommonParameters.ListOfModsVariable.Contains((b.ModificationType, b.IdWithMotif))).ToList();
+            fixedModifications = GlobalVariables.AllModsKnown.OfType<Modification>().Where(b => CommonParameters.ListOfModsFixed.Contains((b.ModificationType, b.IdWithMotif))).ToList();
+            localizableModificationTypes = GlobalVariables.AllModTypesKnown.ToList();
+
+            var recognizedVariable = variableModifications.Select(p => p.IdWithMotif);
+            var recognizedFixed = fixedModifications.Select(p => p.IdWithMotif);
+            var unknownMods = CommonParameters.ListOfModsVariable.Select(p => p.Item2).Except(recognizedVariable).ToList();
+            unknownMods.AddRange(CommonParameters.ListOfModsFixed.Select(p => p.Item2).Except(recognizedFixed));
+            foreach (var unrecognizedMod in unknownMods)
+            {
+                Warn("Unrecognized mod " + unrecognizedMod + "; are you using an old .toml?");
+            }
+        }
+
         protected static void WritePsmsToTsv(IEnumerable<PeptideSpectralMatch> items, string filePath, IReadOnlyDictionary<string, int> ModstoWritePruned)
         {
             using (StreamWriter output = new StreamWriter(filePath))
