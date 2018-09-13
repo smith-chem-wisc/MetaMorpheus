@@ -13,6 +13,7 @@ using System.Net.Http;
 using System.Threading.Tasks;
 using System.Windows;
 using System.Windows.Controls;
+using System.Windows.Documents;
 using System.Windows.Input;
 using TaskLayer;
 
@@ -69,7 +70,16 @@ namespace MetaMorpheusGUI
             FileSpecificParameters.ValidateFileSpecificVariableNames();
 
             // LOAD GUI SETTINGS
-            GuiGlobalParams = Toml.ReadFile<GuiGlobalParams>(Path.Combine(GlobalVariables.DataDir, @"GUIsettings.toml"));
+
+            if (File.Exists(Path.Combine(GlobalVariables.DataDir, @"GUIsettings.toml")))
+            {
+                GuiGlobalParams = Toml.ReadFile<GuiGlobalParams>(Path.Combine(GlobalVariables.DataDir, @"GUIsettings.toml"));
+            }
+            else
+            {
+                Toml.WriteFile(GuiGlobalParams, Path.Combine(GlobalVariables.DataDir, @"GUIsettings.toml"), MetaMorpheusTask.tomlConfig);
+                notificationsTextBox.Document = YoutubeWikiNotification();
+            }
 
             if (GlobalVariables.MetaMorpheusVersion.Contains("Not a release version"))
                 GuiGlobalParams.AskAboutUpdating = false;
@@ -83,10 +93,47 @@ namespace MetaMorpheusGUI
                 GuiWarnHandler(null, new StringEventArgs("Could not get newest version from web: " + e.Message, null));
             }
         }
+        
+        private FlowDocument YoutubeWikiNotification()
+        {
+
+            FlowDocument doc = notificationsTextBox.Document;
+            Paragraph p = new Paragraph();
+            Run run1 = new Run("Visit our ");
+            Run run2 = new Run("Wiki");
+            Run run3 = new Run(" or ");
+            Run run4 = new Run("Youtube channel");
+            Run run5 = new Run(" to check out what MetaMorpheus can do!" + System.Environment.NewLine);
+
+            Hyperlink wikiLink = new Hyperlink(run2);
+            wikiLink.NavigateUri = new Uri(@"https://github.com/smith-chem-wisc/MetaMorpheus/wiki");
+
+            Hyperlink youtubeLink = new Hyperlink(run4);
+            youtubeLink.NavigateUri = new Uri(@"https://www.youtube.com/playlist?list=PLVk5tTSZ1aWlhNPh7jxPQ8pc0ElyzSUQb");
+
+            var links = new List<Hyperlink> {wikiLink, youtubeLink};
+
+            p.Inlines.Add(run1);
+            p.Inlines.Add(wikiLink);
+            p.Inlines.Add(run3);
+            p.Inlines.Add(youtubeLink);
+            p.Inlines.Add(run5);
+
+            foreach (Hyperlink link in links)
+            {
+                link.RequestNavigate += (sender, e) =>
+                {
+                    System.Diagnostics.Process.Start(e.Uri.ToString());
+                };
+            }
+
+            doc.Blocks.Add(p);
+            return doc;
+        }
 
         public static string NewestKnownVersion { get; private set; }
 
-        internal GuiGlobalParams GuiGlobalParams { get; }
+        internal GuiGlobalParams GuiGlobalParams = new GuiGlobalParams();
 
         private static void GetVersionNumbersFromWeb()
         {
@@ -470,7 +517,7 @@ namespace MetaMorpheusGUI
                             try
                             {
                                 GlobalVariables.AddMods(UsefulProteomicsDatabases.ProteinDbLoader.GetPtmListFromProteinXml(draggedFilePath).OfType<ModificationWithLocation>());
-                                
+
                                 PrintErrorsReadingMods();
                             }
                             catch (Exception ee)
@@ -778,7 +825,7 @@ namespace MetaMorpheusGUI
                 UpdateTaskGuiStuff();
             }
         }
-        
+
         // deletes the selected task
         private void DeleteSelectedTask(object sender, RoutedEventArgs e)
         {
