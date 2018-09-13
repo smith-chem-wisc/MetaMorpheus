@@ -339,16 +339,17 @@ namespace TaskLayer
             bool compressed = theExtension.EndsWith("gz"); // allows for .bgz and .tgz, too which are used on occasion
             theExtension = compressed ? Path.GetExtension(Path.GetFileNameWithoutExtension(fileName)).ToLowerInvariant() : theExtension;
 
+            DecoyType decoyDontGenerateForShuffleYet = decoyType == DecoyType.Shuffle ? DecoyType.None : decoyType;
             if (theExtension.Equals(".fasta") || theExtension.Equals(".fa"))
             {
                 um = null;
-                proteinList = ProteinDbLoader.LoadProteinFasta(fileName, generateTargets, decoyType, isContaminant, ProteinDbLoader.UniprotAccessionRegex, ProteinDbLoader.UniprotFullNameRegex, ProteinDbLoader.UniprotFullNameRegex, ProteinDbLoader.UniprotGeneNameRegex,
-                    ProteinDbLoader.UniprotOrganismRegex, out dbErrors, commonParameters.MaxThreadsToUsePerFile);
+                proteinList = ProteinDbLoader.LoadProteinFasta(fileName, generateTargets, decoyDontGenerateForShuffleYet, isContaminant, ProteinDbLoader.UniprotAccessionRegex, 
+                    ProteinDbLoader.UniprotFullNameRegex, ProteinDbLoader.UniprotFullNameRegex, ProteinDbLoader.UniprotGeneNameRegex, ProteinDbLoader.UniprotOrganismRegex, out dbErrors, commonParameters.MaxThreadsToUsePerFile);
             }
             else
             {
                 List<string> modTypesToExclude = GlobalVariables.AllModTypesKnown.Where(b => !localizeableModificationTypes.Contains(b)).ToList();
-                proteinList = ProteinDbLoader.LoadProteinXML(fileName, generateTargets, decoyType, GlobalVariables.AllModsKnown, isContaminant, modTypesToExclude, out um, commonParameters.MaxThreadsToUsePerFile);
+                proteinList = ProteinDbLoader.LoadProteinXML(fileName, generateTargets, decoyDontGenerateForShuffleYet, GlobalVariables.AllModsKnown, isContaminant, modTypesToExclude, out um, commonParameters.MaxThreadsToUsePerFile);
             }
 
             emptyEntriesCount = proteinList.Count(p => p.BaseSequence.Length == 0);

@@ -23,6 +23,7 @@ namespace MetaMorpheusGUI
             string peakFindingTolerance,
             string histogramBinWidth,
             string deconMaxAssumedCharge,
+            string numDecoyDatabases,
             string numPeaks,
             string minRatio,
             string numberOfDatabaseSearches,
@@ -45,6 +46,7 @@ namespace MetaMorpheusGUI
             results.Add((CheckPeakFindingTolerance(peakFindingTolerance)));
             results.Add((CheckHistogramBinWidth(histogramBinWidth)));
             results.Add((CheckDeconvolutionMaxAssumedChargeState(deconMaxAssumedCharge)));
+            results.Add((CheckNumDecoyDatabases(numDecoyDatabases)));
             results.Add((CheckTopNPeaks(numPeaks)));
             results.Add((CheckMinRatio(minRatio)));
             results.Add((CheckNumberOfDatabasePartitions(numberOfDatabaseSearches)));
@@ -84,6 +86,16 @@ namespace MetaMorpheusGUI
                 text = int.MaxValue.ToString();
             }
             return text;
+        }
+
+        public static bool CheckNumDecoyDatabases(string text)
+        {
+            if (!int.TryParse(text, out int numDecoyDatabases))
+            {
+                MessageBox.Show("The number of shuffled decoy databases is not valid.");
+                return false;
+            }
+            return true;
         }
 
         public static bool CheckDeconvolutionMaxAssumedChargeState(string text)

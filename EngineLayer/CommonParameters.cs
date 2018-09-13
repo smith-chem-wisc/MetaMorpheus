@@ -17,6 +17,8 @@ namespace EngineLayer
 
         public CommonParameters(
             string taskDescriptor = null,
+            bool doGenerateShuffledDecoys = false,
+            int numDecoyDatabases = 1,
             bool bIons = true,
             bool yIons = true,
             bool zDotIons = false,
@@ -45,6 +47,8 @@ namespace EngineLayer
             double qValueOutputFilter = 1.0)
         {
             TaskDescriptor = taskDescriptor;
+            DoGenerateShuffledDecoys = doGenerateShuffledDecoys;
+            NumDecoyDatabases = numDecoyDatabases;
             BIons = bIons;
             YIons = yIons;
             ZdotIons = zDotIons;
@@ -81,6 +85,8 @@ namespace EngineLayer
         // 2) All setters should be private unless necessary
 
         public string TaskDescriptor { get; private set; }
+        public bool DoGenerateShuffledDecoys { get; private set; }
+        public int NumDecoyDatabases { get; private set; }
         public int MaxThreadsToUsePerFile { get; private set; }
         public IEnumerable<(string, string)> ListOfModsFixed { get; private set; }
         public IEnumerable<(string, string)> ListOfModsVariable { get; private set; }
