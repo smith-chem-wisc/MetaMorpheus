@@ -148,7 +148,7 @@ namespace Test
             Assert.AreEqual(2, proteinGroups.First().AllPsmsBelowOnePercentFDR.Count);
             Assert.AreEqual(2, proteinGroups.First().ProteinGroupScore);
         }
-        
+
         [Test]
         public static void TestPTMOutput()
         {

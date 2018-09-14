@@ -12,7 +12,7 @@ namespace TaskLayer
 {
     public static class PepXMLWriter
     {
-        public static void WritePepXml(List<PeptideSpectralMatch> psms, List<DbForTask> database, List<ModificationWithMass> variableModifications, List<ModificationWithMass> fixedModifications, CommonParameters CommonParameters, string outputPath, double qValueFilter)
+        public static void WritePepXml(List<PeptideSpectralMatch> psms, List<DbForTask> database, List<Modification> variableModifications, List<Modification> fixedModifications, CommonParameters CommonParameters, string outputPath, double qValueFilter)
         {
             // TODO: needs a unit test
             psms = psms.Where(p => p.FdrInfo.QValue <= qValueFilter && p.FdrInfo.QValueNotch < qValueFilter).ToList();

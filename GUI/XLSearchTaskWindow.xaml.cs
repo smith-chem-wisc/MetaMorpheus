@@ -131,22 +131,22 @@ namespace MetaMorpheusGUI
         private void UpdateFieldsFromTask(XLSearchTask task)
         {
             //Crosslink search para
-            RbSearchCrosslink.IsChecked = !task.XlSearchParameters.SearchGlyco;
+            //RbSearchCrosslink.IsChecked = !task.XlSearchParameters.SearchGlyco;
             //RbSearchGlyco.IsChecked = task.XlSearchParameters.SearchGlyco;
             //CkbSearchGlycoWithBgYgIndex.IsChecked = task.XlSearchParameters.SearchGlycoWithBgYgIndex;
             cbCrosslinker.SelectedIndex = (int)task.XlSearchParameters.CrosslinkerType;
-            ckbXLTopNum.IsChecked = task.XlSearchParameters.CrosslinkSearchTop;
+            ckbXLTopNum.IsChecked = task.XlSearchParameters.RestrictToTopNHits;
             txtXLTopNum.Text = task.XlSearchParameters.CrosslinkSearchTopNum.ToString(CultureInfo.InvariantCulture);
             ckbQuenchH2O.IsChecked = task.XlSearchParameters.XlQuench_H2O;
             ckbQuenchNH2.IsChecked = task.XlSearchParameters.XlQuench_NH2;
             ckbQuenchTris.IsChecked = task.XlSearchParameters.XlQuench_Tris;
-            txtUdXLKerName.Text = task.XlSearchParameters.UdXLkerName;
-            ckbUdXLkerCleavable.IsChecked = task.XlSearchParameters.UdXLkerCleavable;
-            txtUdXLkerTotalMs.Text = task.XlSearchParameters.UdXLkerTotalMass.HasValue ? task.XlSearchParameters.UdXLkerTotalMass.Value.ToString(CultureInfo.InvariantCulture) : "";
-            txtUdXLkerShortMass.Text = task.XlSearchParameters.UdXLkerShortMass.HasValue ? task.XlSearchParameters.UdXLkerShortMass.Value.ToString(CultureInfo.InvariantCulture) : "";
-            txtUdXLkerLongMass.Text = task.XlSearchParameters.UdXLkerLongMass.HasValue ? task.XlSearchParameters.UdXLkerLongMass.Value.ToString(CultureInfo.InvariantCulture) : "";
-            txtUdXLkerAminoAcids.Text = task.XlSearchParameters.UdXLkerResidues;
-            txtUdXLkerAminoAcids2.Text = task.XlSearchParameters.UdXLkerResidues2;
+            txtUdXLKerName.Text = task.XlSearchParameters.CrosslinkerName;
+            ckbUdXLkerCleavable.IsChecked = task.XlSearchParameters.IsCleavable;
+            txtUdXLkerTotalMs.Text = task.XlSearchParameters.CrosslinkerTotalMass.HasValue ? task.XlSearchParameters.CrosslinkerTotalMass.Value.ToString(CultureInfo.InvariantCulture) : "";
+            txtUdXLkerShortMass.Text = task.XlSearchParameters.CrosslinkerShortMass.HasValue ? task.XlSearchParameters.CrosslinkerShortMass.Value.ToString(CultureInfo.InvariantCulture) : "";
+            txtUdXLkerLongMass.Text = task.XlSearchParameters.CrosslinkerLongMass.HasValue ? task.XlSearchParameters.CrosslinkerLongMass.Value.ToString(CultureInfo.InvariantCulture) : "";
+            txtUdXLkerAminoAcids.Text = task.XlSearchParameters.CrosslinkerResidues;
+            txtUdXLkerAminoAcids2.Text = task.XlSearchParameters.CrosslinkerResidues2;
             cbbXLprecusorMsTl.SelectedIndex = task.XlSearchParameters.XlPrecusorMsTl is AbsoluteTolerance ? 0 : 1;
             XLPrecusorMsTlTextBox.Text = task.XlSearchParameters.XlPrecusorMsTl.Value.ToString(CultureInfo.InvariantCulture);
             trimMs1.IsChecked = task.CommonParameters.TrimMs1Peaks;
@@ -258,7 +258,7 @@ namespace MetaMorpheusGUI
 
             //TheTask.XlSearchParameters.SearchGlyco = RbSearchGlyco.IsChecked.Value;
             //TheTask.XlSearchParameters.SearchGlycoWithBgYgIndex = CkbSearchGlycoWithBgYgIndex.IsChecked.Value;
-            TheTask.XlSearchParameters.CrosslinkSearchTop = ckbXLTopNum.IsChecked.Value;
+            TheTask.XlSearchParameters.RestrictToTopNHits = ckbXLTopNum.IsChecked.Value;
             TheTask.XlSearchParameters.CrosslinkSearchTopNum = int.Parse(txtXLTopNum.Text, CultureInfo.InvariantCulture);
             TheTask.XlSearchParameters.CrosslinkerType = (CrosslinkerType)cbCrosslinker.SelectedIndex;
 
@@ -277,13 +277,13 @@ namespace MetaMorpheusGUI
 
             if (TheTask.XlSearchParameters.CrosslinkerType == CrosslinkerType.UserDefined)
             {
-                TheTask.XlSearchParameters.UdXLkerName = txtUdXLKerName.Text;
-                TheTask.XlSearchParameters.UdXLkerCleavable = ckbUdXLkerCleavable.IsChecked.Value;
-                TheTask.XlSearchParameters.UdXLkerResidues = txtUdXLkerAminoAcids.Text;
-                TheTask.XlSearchParameters.UdXLkerResidues2 = txtUdXLkerAminoAcids2.Text;
-                TheTask.XlSearchParameters.UdXLkerLongMass = string.IsNullOrEmpty(txtUdXLkerLongMass.Text) ? (double?)null : double.Parse(txtUdXLkerLongMass.Text, CultureInfo.InvariantCulture);
-                TheTask.XlSearchParameters.UdXLkerShortMass = string.IsNullOrEmpty(txtUdXLkerShortMass.Text) ? (double?)null : double.Parse(txtUdXLkerShortMass.Text, CultureInfo.InvariantCulture);
-                TheTask.XlSearchParameters.UdXLkerTotalMass = string.IsNullOrEmpty(txtUdXLkerTotalMs.Text) ? (double?)null : double.Parse(txtUdXLkerTotalMs.Text, CultureInfo.InvariantCulture);
+                TheTask.XlSearchParameters.CrosslinkerName = txtUdXLKerName.Text;
+                TheTask.XlSearchParameters.IsCleavable = ckbUdXLkerCleavable.IsChecked.Value;
+                TheTask.XlSearchParameters.CrosslinkerResidues = txtUdXLkerAminoAcids.Text;
+                TheTask.XlSearchParameters.CrosslinkerResidues2 = txtUdXLkerAminoAcids2.Text;
+                TheTask.XlSearchParameters.CrosslinkerLongMass = string.IsNullOrEmpty(txtUdXLkerLongMass.Text) ? (double?)null : double.Parse(txtUdXLkerLongMass.Text, CultureInfo.InvariantCulture);
+                TheTask.XlSearchParameters.CrosslinkerShortMass = string.IsNullOrEmpty(txtUdXLkerShortMass.Text) ? (double?)null : double.Parse(txtUdXLkerShortMass.Text, CultureInfo.InvariantCulture);
+                TheTask.XlSearchParameters.CrosslinkerTotalMass = string.IsNullOrEmpty(txtUdXLkerTotalMs.Text) ? (double?)null : double.Parse(txtUdXLkerTotalMs.Text, CultureInfo.InvariantCulture);
             }
 
             TheTask.XlSearchParameters.DecoyType = checkBoxDecoy.IsChecked.Value ? DecoyType.Reverse : DecoyType.None;

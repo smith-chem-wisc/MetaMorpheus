@@ -290,7 +290,7 @@ namespace TaskLayer
 
             new ClassicSearchEngine(allPsmsArray, listOfSortedms2Scans, variableModifications, fixedModifications, proteinList, searchMode, combinedParameters, new List<string> { taskId, "Individual Spectra Files", fileNameWithoutExtension }).Run();
 
-            List<PeptideSpectralMatch> allPsms = allPsmsArray.ToList();
+            List<PeptideSpectralMatch> allPsms = allPsmsArray.Where(b => b != null).ToList();
 
             allPsms = allPsms.OrderByDescending(b => b.Score)
                 .ThenBy(b => b.PeptideMonisotopicMass.HasValue ? Math.Abs(b.ScanPrecursorMass - b.PeptideMonisotopicMass.Value) : double.MaxValue)

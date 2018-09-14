@@ -33,7 +33,6 @@ namespace EngineLayer
             if (!allPsms.Any())
             {
                 FdrFilteredPsms = new List<PeptideSpectralMatch>();
-                return;
             }
 
             // parsimony will only use non-ambiguous, high-confidence PSMs
@@ -161,7 +160,7 @@ namespace EngineLayer
                     }
                 }
             }
-            
+
             // Parsimony stage 1: add proteins with unique peptides (for each protease)
             var peptidesGroupedByProtease = FdrFilteredPeptides.GroupBy(p => p.DigestionParams.Protease);
             foreach (var peptidesForThisProtease in peptidesGroupedByProtease)

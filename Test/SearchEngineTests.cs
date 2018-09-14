@@ -180,7 +180,7 @@ namespace Test
             CommonParameters CommonParameters = new CommonParameters(
                 productMassTolerance: new AbsoluteTolerance(100), // super large tolerance (100 Da)
                 digestionParams: new DigestionParams(
-                    protease: "Customized Protease",
+                    protease: "trypsin",
                     minPeptideLength: 1),
                 scoreCutoff: 1,
                 addCompIons: true);

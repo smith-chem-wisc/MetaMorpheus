@@ -48,7 +48,7 @@ namespace Test
             ClassicSearchEngine cse = new ClassicSearchEngine(globalPsms, arrayOfSortedMS2Scans, new List<Modification>(), new List<Modification>(), new List<Protein> { prot }, new OpenSearchMode(), CommonParameters, new List<string>());
 
             cse.Run();
-            Assert.AreEqual(globalPsms[0].MatchedFragmentIons.Count, 3);
+            Assert.AreEqual(3, globalPsms[0].MatchedFragmentIons.Count);
         }
 
         [Test]

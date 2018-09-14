@@ -43,9 +43,9 @@
         public double DeadendMassNH2 { get; set; }
         public double DeadendMassTris { get; set; }
 
-        public Crosslinker SelectCrosslinker(CrosslinkerType name)
+        public Crosslinker SelectCrosslinker(CrosslinkerType type)
         {
-            if (name == CrosslinkerType.DSSO)
+            if (type == CrosslinkerType.DSSO)
             {
                 CrosslinkerName = "DSSO";
                 Cleavable = true;
@@ -58,9 +58,8 @@
                 DeadendMassH2O = 176.0143;
                 DeadendMassNH2 = 175.0303;
                 DeadendMassTris = 279.0777;
-                /*Residue.TryGetResidue("K", out CrosslinkerModSite)*/
             }
-            if (name == CrosslinkerType.DisulfideBond)
+            else if (type == CrosslinkerType.DisulfideBond)
             {
                 CrosslinkerName = "DisulfideBond";
                 Cleavable = true;
@@ -70,7 +69,7 @@
                 CrosslinkerModSites = "C";
                 CrosslinkerModSites2 = "C";
             }
-            if (name == CrosslinkerType.DSS)
+            else if (type == CrosslinkerType.DSS)
             {
                 CrosslinkerName = "DSS";
                 Cleavable = false;
@@ -82,7 +81,7 @@
                 DeadendMassNH2 = 155.0946;
                 DeadendMassTris = 259.142;
             }
-            if (name == CrosslinkerType.DSBU)
+            else if (type == CrosslinkerType.DSBU)
             {
                 CrosslinkerName = "DSBU";
                 Cleavable = true;

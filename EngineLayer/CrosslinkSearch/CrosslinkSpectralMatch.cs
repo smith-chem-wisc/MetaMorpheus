@@ -21,13 +21,14 @@ namespace EngineLayer.CrosslinkSearch
         public CrosslinkSpectralMatch(PeptideWithSetModifications theBestPeptide, int notch, double score, int scanIndex, Ms2ScanWithSpecificMass scan, DigestionParams digestionParams, List<MatchedFragmentIon> matchedFragmentIons)
             : base(theBestPeptide, notch, score, scanIndex, scan, digestionParams, matchedFragmentIons)
         {
-
+            this.BestScore = score;
+            this.XLTotalScore = score;
         }
-        
+
         public CrosslinkSpectralMatch BetaPeptide { get; set; }
         public double BestScore { get; set; } //For the current psmCross
         public List<int> ModPositions { get; set; }
-        public double DScore { get; set; }
+        public double DeltaScore { get; set; }
         public double XLTotalScore { get; set; } //alpha + beta psmCross
         public double XLQvalueTotalScore { get; set; } //Calc based on XLtotalScore for Qvalue
         public int XlProteinPos { get; set; }
@@ -37,24 +38,19 @@ namespace EngineLayer.CrosslinkSearch
         public List<int> ParentIonMaxIntensityRanks { get; set; }
         public PsmCrossType CrossType { get; set; }
 
-        public static List<int> GetPossibleCrosslinkerModSites(string crosslinkerModSites, PeptideWithSetModifications peptide)
+        public static List<int> GetPossibleCrosslinkerModSites(char[] crosslinkerModSites, PeptideWithSetModifications peptide)
         {
             List<int> possibleXlPositions = new List<int>();
-            
-            foreach (char crosslinkerSite in crosslinkerModSites)
-            {
-                for (int r = 0; r < peptide.BaseSequence.Length; r++)
-                {
-                    char residue = peptide.BaseSequence[r];
+            bool wildcard = crosslinkerModSites.Any(p => p == 'X');
 
-                    if (crosslinkerSite == residue)
-                    {
-                        possibleXlPositions.Add(r + 1);
-                    }
+            for (int r = 0; r < peptide.BaseSequence.Length; r++)
+            {
+                if (crosslinkerModSites.Contains(peptide.BaseSequence[r]) || wildcard)
+                {
+                    possibleXlPositions.Add(r + 1);
                 }
             }
 
-            possibleXlPositions.Sort();
             return possibleXlPositions;
         }
 
@@ -87,7 +83,7 @@ namespace EngineLayer.CrosslinkSearch
                 }
             }
         }
-        
+
         /// <summary>
         /// Rank experimental mass spectral peaks by intensity
         /// </summary>

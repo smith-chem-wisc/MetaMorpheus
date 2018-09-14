@@ -95,7 +95,7 @@ namespace EngineLayer
                             var seqs1 = new HashSet<string>(p.AllPeptides.Select(x => x.FullSequence + x.DigestionParams.Protease));
                             var seqs2 = new HashSet<string>(pg[i].AllPeptides.Select(x => x.FullSequence + x.DigestionParams.Protease));
 
-                            if (p != pg[i] && seqs1.SetEquals(seqs2) && psms1.SetEquals(psms2))
+                            if (p != pg[i] && seqs1.SetEquals(seqs2))
                             {
                                 pg[i].MergeProteinGroupWith(p);
                             }

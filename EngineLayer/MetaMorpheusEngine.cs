@@ -14,7 +14,10 @@ namespace EngineLayer
         protected static readonly Dictionary<DissociationType, double> complementaryIonConversionDictionary = new Dictionary<DissociationType, double>
         {
             { DissociationType.HCD, Constants.ProtonMass },
-            { DissociationType.ETD, 2*Constants.ProtonMass }
+            { DissociationType.ETD, 2 * Constants.ProtonMass }, //presence of zplusone (zdot) makes this two instead of one
+            { DissociationType.CID, Constants.ProtonMass },
+            //TODO: refactor such that complementary ions are generated specifically for their complementary pair. 
+            //TODO: create a method to auto-determine the conversion
         };
 
         protected readonly CommonParameters commonParameters;
@@ -36,7 +39,7 @@ namespace EngineLayer
         public static event EventHandler<StringEventArgs> WarnHandler;
 
         public static event EventHandler<ProgressEventArgs> OutProgressHandler;
-        
+
         public static double CalculatePeptideScore(MsDataScan thisScan, List<MatchedFragmentIon> matchedFragmentIons, double maximumMassThatFragmentIonScoreIsDoubled)
         {
             // scoring if some fragments get doubled for scoring purposes
@@ -64,7 +67,7 @@ namespace EngineLayer
             // normal scoring
             return matchedFragmentIons.Count + (matchedFragmentIons.Sum(v => v.Intensity) / thisScan.TotalIonCurrent);
         }
-        
+
         public static List<MatchedFragmentIon> MatchFragmentIons(MzSpectrum spectrum, List<Product> theoreticalProducts, CommonParameters commonParameters)
         {
             var matchedFragmentIons = new List<MatchedFragmentIon>();

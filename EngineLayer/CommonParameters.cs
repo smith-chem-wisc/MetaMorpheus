@@ -17,12 +17,13 @@ namespace EngineLayer
         {
         }
 
-        public CommonParameters(DissociationType dissociationType = DissociationType.HCD, bool doPrecursorDeconvolution = true,
+        public CommonParameters(string taskDescriptor = null, DissociationType dissociationType = DissociationType.HCD, FragmentationTerminus fragmentationTerminus = FragmentationTerminus.Both, bool doPrecursorDeconvolution = true,
             bool useProvidedPrecursorInfo = true, double deconvolutionIntensityRatio = 3, int deconvolutionMaxAssumedChargeState = 12, bool reportAllAmbiguity = true,
             bool addCompIons = false, int totalPartitions = 1, double scoreCutoff = 5, int topNpeaks = 200, double minRatio = 0.01, bool trimMs1Peaks = false,
             bool trimMsMsPeaks = true, bool useDeltaScore = false, bool calculateEValue = false, Tolerance productMassTolerance = null, Tolerance precursorMassTolerance = null, Tolerance deconvolutionMassTolerance = null,
-            int maxThreadsToUsePerFile = -1, DigestionParams digestionParams = null, IEnumerable<(string, string)> listOfModsVariable = null, IEnumerable<(string, string)> listOfModsFixed = null)
+            int maxThreadsToUsePerFile = -1, DigestionParams digestionParams = null, IEnumerable<(string, string)> listOfModsVariable = null, IEnumerable<(string, string)> listOfModsFixed = null, double qValueOutputFilter = 1.0)
         {
+            TaskDescriptor = taskDescriptor;
             DoPrecursorDeconvolution = doPrecursorDeconvolution;
             UseProvidedPrecursorInfo = useProvidedPrecursorInfo;
             DeconvolutionIntensityRatio = deconvolutionIntensityRatio;
@@ -45,7 +46,8 @@ namespace EngineLayer
             DigestionParams = digestionParams ?? new DigestionParams();
             ListOfModsVariable = listOfModsVariable ?? new List<(string, string)> { ("Common Variable", "Oxidation on M") };
             ListOfModsFixed = listOfModsFixed ?? new List<(string, string)> { ("Common Fixed", "Carbamidomethyl on C"), ("Common Fixed", "Carbamidomethyl on U") };
-
+            DissociationType = dissociationType;
+            FragmentationTerminus = fragmentationTerminus;
             QValueOutputFilter = qValueOutputFilter;
         }
 
@@ -78,38 +80,9 @@ namespace EngineLayer
         public bool UseDeltaScore { get; private set; }
         public bool CalculateEValue { get; private set; }
         public double QValueOutputFilter { get; private set; }
-
-        //public CommonParameters Clone()
-        //{
-        //    return new CommonParameters(
-        //        bIons: this.BIons,
-        //        yIons: this.YIons,
-        //        zDotIons: this.ZdotIons,
-        //        cIons: this.CIons,
-        //        doPrecursorDeconvolution: this.DoPrecursorDeconvolution,
-        //        useProvidedPrecursorInfo: this.UseProvidedPrecursorInfo,
-        //        deconvolutionIntensityRatio: this.DeconvolutionIntensityRatio,
-        //        deconvolutionMaxAssumedChargeState: this.DeconvolutionMaxAssumedChargeState,
-        //        reportAllAmbiguity: this.ReportAllAmbiguity,
-        //        addCompIons: this.AddCompIons,
-        //        totalPartitions: this.TotalPartitions,
-        //        scoreCutoff: this.ScoreCutoff,
-        //        topNpeaks: this.TopNpeaks,
-        //        minRatio: this.MinRatio,
-        //        trimMs1Peaks: this.TrimMs1Peaks,
-        //        trimMsMsPeaks: this.TrimMsMsPeaks,
-        //        useDeltaScore: this.UseDeltaScore,
-        //        calculateEValue: this.CalculateEValue,
-        //        productMassTolerance: this.ProductMassTolerance,
-        //        precursorMassTolerance: this.PrecursorMassTolerance,
-        //        deconvolutionMassTolerance: this.DeconvolutionMassTolerance,
-        //        maxThreadsToUsePerFile: this.MaxThreadsToUsePerFile,
-        //        digestionParams: this.DigestionParams,
-        //        listOfModsVariable: this.ListOfModsVariable,
-        //        listOfModsFixed: this.ListOfModsFixed
-        //    );
-        //}
-
+        public DissociationType DissociationType { get; private set; }
+        public FragmentationTerminus FragmentationTerminus { get; private set; }
+        
         public CommonParameters Clone()
         {
             CommonParameters c = new CommonParameters();

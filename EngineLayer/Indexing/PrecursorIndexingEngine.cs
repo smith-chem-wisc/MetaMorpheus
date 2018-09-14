@@ -27,7 +27,9 @@ namespace EngineLayer.Indexing
             sb.AppendLine("Number of proteins: " + ProteinList.Count);
             sb.AppendLine("Number of fixed mods: " + FixedModifications.Count);
             sb.AppendLine("Number of variable mods: " + VariableModifications.Count);
-            sb.AppendLine("lp: " + string.Join(",", ProductTypes));
+
+            // TODO: dissociation type?
+            //sb.AppendLine("lp: " + string.Join(",", ProductTypes));
             foreach (var digestionParams in CollectionOfDigestionParams)
             {
                 sb.AppendLine("protease: " + digestionParams.Protease);
@@ -45,12 +47,14 @@ namespace EngineLayer.Indexing
         {
             double progress = 0;
             int oldPercentProgress = 0;
-            
+
             // digest database
-            HashSet<PeptideWithSetModifications> peptideToId = new HashSet<PeptideWithSetModifications>();
+            List<PeptideWithSetModifications> globalPeptides = new List<PeptideWithSetModifications>();
 
             Parallel.ForEach(Partitioner.Create(0, ProteinList.Count), new ParallelOptions { MaxDegreeOfParallelism = commonParameters.MaxThreadsToUsePerFile }, (range, loopState) =>
             {
+                List<PeptideWithSetModifications> localPeptides = new List<PeptideWithSetModifications>();
+
                 for (int i = range.Item1; i < range.Item2; i++)
                 {
                     // Stop loop if canceled
@@ -62,19 +66,7 @@ namespace EngineLayer.Indexing
 
                     foreach (var digestionParams in CollectionOfDigestionParams)
                     {
-                        foreach (var pepWithSetMods in ProteinList[i].Digest(digestionParams, FixedModifications, VariableModifications))
-                        {
-                            var observed = peptideToId.Contains(pepWithSetMods);
-                            if (observed)
-                                continue;
-                            lock (peptideToId)
-                            {
-                                observed = peptideToId.Contains(pepWithSetMods);
-                                if (observed)
-                                    continue;
-                                peptideToId.Add(pepWithSetMods);
-                            }
-                        }
+                        localPeptides.AddRange(ProteinList[i].Digest(digestionParams, FixedModifications, VariableModifications));
                     }
 
                     progress++;
@@ -86,11 +78,15 @@ namespace EngineLayer.Indexing
                         ReportProgress(new ProgressEventArgs(percentProgress, "Digesting proteins for precursor...", nestedIds));
                     }
                 }
+                lock (globalPeptides)
+                {
+                    globalPeptides.AddRange(localPeptides);
+                }
             });
 
             // sort peptides by mass
-            var peptidesSortedByMass = peptideToId.AsParallel().WithDegreeOfParallelism(commonParameters.MaxThreadsToUsePerFile).OrderBy(p => p.MonoisotopicMass).ToList();
-            peptideToId = null;
+            var peptidesSortedByMass = globalPeptides.AsParallel().WithDegreeOfParallelism(commonParameters.MaxThreadsToUsePerFile).OrderBy(p => p.MonoisotopicMass).ToList();
+            globalPeptides = null;
 
             // create fragment index
             int maxFragmentMass = 0;
@@ -113,7 +109,7 @@ namespace EngineLayer.Indexing
                 double mz = Chemistry.ClassExtensions.ToMz(peptidesSortedByMass[i].MonoisotopicMass, 1);
                 if (!Double.IsNaN(mz))
                 {
-                    if (mz < MaxFragmentSize) //if the precursor is larger than the index allows, then stop adding precursors
+                    if (mz > MaxFragmentSize) //if the precursor is larger than the index allows, then stop adding precursors
                     {
                         break;
                     }

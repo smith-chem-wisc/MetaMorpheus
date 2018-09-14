@@ -34,7 +34,7 @@ namespace EngineLayer.NonSpecificEnzymeSearch
 
             byte byteScoreCutoff = (byte)commonParameters.ScoreCutoff;
 
-            Parallel.ForEach(Partitioner.Create(0, ListOfSortedms2Scans.Length), new ParallelOptions { MaxDegreeOfParallelism = commonParameters.MaxThreadsToUsePerFile }, range =>
+            Parallel.ForEach(Partitioner.Create(0, ListOfSortedMs2Scans.Length), new ParallelOptions { MaxDegreeOfParallelism = commonParameters.MaxThreadsToUsePerFile }, range =>
             {
                 byte[] scoringTable = new byte[PeptideIndex.Count];
                 HashSet<int> idsOfPeptidesPossiblyObserved = new HashSet<int>();
@@ -44,10 +44,10 @@ namespace EngineLayer.NonSpecificEnzymeSearch
                     // empty the scoring table to score the new scan (conserves memory compared to allocating a new array)
                     Array.Clear(scoringTable, 0, scoringTable.Length);
                     idsOfPeptidesPossiblyObserved.Clear();
-                    var scan = ListOfSortedms2Scans[i];
+                    var scan = ListOfSortedMs2Scans[i];
 
                     //get bins to add points to
-                    List<int> allBinsToSearch = GetBinsToSearch(scan, commonParameters, FragmentIndex);
+                    List<int> allBinsToSearch = GetBinsToSearch(scan);
 
                     for (int j = 0; j < allBinsToSearch.Count; j++)
                     {
@@ -66,12 +66,12 @@ namespace EngineLayer.NonSpecificEnzymeSearch
                     foreach (ProductType pt in DissociationTypeCollection.ProductsFromDissociationType[commonParameters.DissociationType].Intersect(TerminusSpecificProductTypes.ProductIonTypesFromSpecifiedTerminus[commonParameters.FragmentationTerminus]).ToList())
                     {
                         //TODO: check that this is correct (Zach)
-                        int binShift = (int)Math.Round((DissociationTypeCollection.GetMassShiftFromProductType(pt) + WaterMonoisotopicMass) * FragmentBinsPerDalton);//if unit test fails try subtracting water
+                        int binShift = (int)Math.Round((WaterMonoisotopicMass - DissociationTypeCollection.GetMassShiftFromProductType(pt)) * FragmentBinsPerDalton);//if unit test fails try subtracting water
 
                         for (int j = 0; j < binsToSearch.Count; j++)
                         {
                             int bin = binsToSearch[j] - binShift;
-                            if (bin < base.FragmentIndex.Length && base.FragmentIndex[bin] != null)
+                            if (bin < FragmentIndex.Length && FragmentIndex[bin] != null)
                             {
                                 FragmentIndex[bin].ForEach(id => idsOfPeptidesPossiblyObserved.Add(id));
                             }
@@ -98,8 +98,12 @@ namespace EngineLayer.NonSpecificEnzymeSearch
                             foreach (var id in idsOfPeptidesPossiblyObserved.Where(id => scoringTable[id] == maxInitialScore))
                             {
                                 PeptideWithSetModifications peptide = PeptideIndex[id];
+                                List<Product> peptideTheorProducts = new List<Product>();
+                                lock (peptide)
+                                {
+                                    peptideTheorProducts = peptide.Fragment(commonParameters.DissociationType, commonParameters.FragmentationTerminus).ToList();
+                                }
 
-                                List<Product> peptideTheorProducts = peptide.Fragment(commonParameters.DissociationType, commonParameters.FragmentationTerminus).ToList();
                                 List<MatchedFragmentIon> matchedIons = MatchFragmentIons(scan.TheScan.MassSpectrum, peptideTheorProducts, commonParameters);
 
                                 if (commonParameters.AddCompIons)
@@ -188,7 +192,22 @@ namespace EngineLayer.NonSpecificEnzymeSearch
                                     for (int pwsmIndex = 1; pwsmIndex < updatedPwsmsWithNotches.Count; pwsmIndex++)
                                     {
                                         var currentPwsmWithNotch = updatedPwsmsWithNotches[pwsmIndex];
-                                        updatedPSM.AddOrReplace(currentPwsmWithNotch.pwsm, PSM.Score, currentPwsmWithNotch.notch, commonParameters.ReportAllAmbiguity, PSM.PeptidesToMatchingFragments[currentPwsmWithNotch.pwsm]);
+
+                                        //TODO: This is unnecesary, should be able to back cleave fragments
+                                        List<Product> peptideTheorProducts = new List<Product>();
+                                        lock (currentPwsmWithNotch.pwsm)
+                                        {
+                                            peptideTheorProducts = currentPwsmWithNotch.pwsm.Fragment(commonParameters.DissociationType, commonParameters.FragmentationTerminus).ToList();
+                                        }
+                                        List<MatchedFragmentIon> matchedIons = MatchFragmentIons(scan.TheScan.MassSpectrum, peptideTheorProducts, commonParameters);
+
+                                        if (commonParameters.AddCompIons)
+                                        {
+                                            MzSpectrum complementarySpectrum = GenerateComplementarySpectrum(scan.TheScan.MassSpectrum, scan.PrecursorMass, commonParameters.DissociationType);
+                                            matchedIons.AddRange(MatchFragmentIons(complementarySpectrum, peptideTheorProducts, commonParameters));
+                                        }
+
+                                        updatedPSM.AddOrReplace(currentPwsmWithNotch.pwsm, PSM.Score, currentPwsmWithNotch.notch, commonParameters.ReportAllAmbiguity, matchedIons);
                                     }
                                     PeptideSpectralMatches[i] = updatedPSM;
                                     break;
@@ -198,7 +217,7 @@ namespace EngineLayer.NonSpecificEnzymeSearch
                     }
                     // report search progress
                     progress++;
-                    var percentProgress = (int)((progress / ListOfSortedms2Scans.Length) * 100);
+                    var percentProgress = (int)((progress / ListOfSortedMs2Scans.Length) * 100);
 
                     if (percentProgress > oldPercentProgress)
                     {
@@ -209,6 +228,121 @@ namespace EngineLayer.NonSpecificEnzymeSearch
             });
             return new MetaMorpheusEngineResults(this);
         }
+
+        //public static IEnumerable<Product> Fragment( DissociationType dissociationType, FragmentationTerminus fragmentationTerminus, PeptideWithSetModifications pwsm)
+        //{
+        //    // molecular ion
+        //    //yield return new Product(ProductType.M, new NeutralTerminusFragment(FragmentationTerminus.None, this.MonoisotopicMass, Length, Length), 0);
+
+        //    var productCollection = TerminusSpecificProductTypes.ProductIonTypesFromSpecifiedTerminus[fragmentationTerminus].Intersect(DissociationTypeCollection.ProductsFromDissociationType[dissociationType]);
+
+        //    List<(ProductType, int)> skippers = new List<(ProductType, int)>();
+        //    foreach (var product in productCollection.Where(f => f != ProductType.zPlusOne))
+        //    {
+        //        skippers.Add((product, pwsm.BaseSequence.Length));
+        //    }
+
+        //    switch (dissociationType)
+        //    {
+        //        case DissociationType.CID:
+        //            skippers.Add((ProductType.b, 1));
+        //            break;
+
+        //        case DissociationType.ETD:
+        //        case DissociationType.ECD:
+        //            break;
+        //    }
+        //         Dictionary<FragmentationTerminus, CompactPeptide> _compactPeptides = new Dictionary<FragmentationTerminus, CompactPeptide>();
+
+        //    foreach (var productType in productCollection)
+        //    {
+        //        // we're separating the N and C terminal masses and computing a separate compact peptide for each one
+        //        // this speeds calculations up without producing unnecessary terminus fragment info
+        //        FragmentationTerminus temporaryFragmentationTerminus = TerminusSpecificProductTypes.ProductTypeToFragmentationTerminus[productType];
+
+        //NeutralTerminusFragment[] terminalMasses = CompactPeptide(_compactPeptides, temporaryFragmentationTerminus, pwsm).TerminalMasses;
+
+        //        for (int f = 0; f < terminalMasses.Length; f++)
+        //        {
+        //            // fragments with neutral loss
+        //            if (pwsm.AllModsOneIsNterminus.TryGetValue(terminalMasses[f].AminoAcidPosition + 1, out Modification mod) && mod.NeutralLosses != null
+        //                && mod.NeutralLosses.TryGetValue(dissociationType, out List<double> neutralLosses))
+        //            {
+        //                foreach (double neutralLoss in mod.NeutralLosses[dissociationType])
+        //                {
+        //                    if (neutralLoss == 0)
+        //                    {
+        //                        continue;
+        //                    }
+
+        //                    for (int n = f; n < terminalMasses.Length; n++)
+        //                    {
+        //                        if (!skippers.Contains((productType, terminalMasses[n].FragmentNumber)))
+        //                        {
+        //                            yield return new Product(productType, terminalMasses[n], neutralLoss);
+        //                        }
+        //                    }
+        //                }
+        //            }
+
+        //            // "normal" fragment without neutral loss
+        //            if (!skippers.Contains((productType, terminalMasses[f].FragmentNumber)))
+        //            {
+        //                yield return new Product(productType, terminalMasses[f], 0);
+        //            }
+        //        }
+        //    }
+
+        //    if (pwsm.AllModsOneIsNterminus != null)
+        //    {
+        //        foreach (Modification mod in pwsm.AllModsOneIsNterminus.Values)
+        //        {
+        //            // molecular ion minus neutral losses
+        //            if (mod.NeutralLosses != null && mod.NeutralLosses.TryGetValue(dissociationType, out List<double> losses))
+        //            {
+        //                foreach (double neutralLoss in losses)
+        //                {
+        //                    if (neutralLoss != 0)
+        //                    {
+        //                        yield return new Product(ProductType.M, new NeutralTerminusFragment(FragmentationTerminus.Both, pwsm.MonoisotopicMass, 0, 0), neutralLoss);
+        //                    }
+        //                }
+        //            }
+
+        //            // diagnostic ions
+        //            if (mod.DiagnosticIons != null && mod.DiagnosticIons.TryGetValue(dissociationType, out List<double> diagnosticIons))
+        //            {
+        //                foreach (double diagnosticIon in diagnosticIons)
+        //                {
+        //                    // the diagnostic ion is assumed to be annotated in the mod info as the *neutral mass* of the diagnostic ion, not the ionized species
+        //                    yield return new Product(ProductType.D, new NeutralTerminusFragment(FragmentationTerminus.Both, diagnosticIon, 0, 0), 0);
+        //                }
+        //            }
+        //        }
+        //    }
+        //}
+
+
+        //public static CompactPeptide CompactPeptide(Dictionary<FragmentationTerminus, CompactPeptide> _compactPeptides, FragmentationTerminus fragmentationTerminus, PeptideWithSetModifications pwsm)
+        //{
+        //    // need this for deserialization
+        //    if (_compactPeptides == null)
+        //    {
+        //        _compactPeptides = new Dictionary<FragmentationTerminus, CompactPeptide>();
+        //    }
+
+        //    if (_compactPeptides.TryGetValue(fragmentationTerminus, out CompactPeptide compactPeptide))
+        //    {
+        //        return compactPeptide;
+        //    }
+        //    else
+        //    {
+        //        CompactPeptide cp = new CompactPeptide(pwsm, fragmentationTerminus);
+        //        _compactPeptides.Add(fragmentationTerminus, cp);
+        //        return cp;
+        //    }
+        //}
+
 
         private Tuple<int, double> Accepts(double scanPrecursorMass, PeptideWithSetModifications peptide, FragmentationTerminus fragmentationTerminus, MassDiffAcceptor searchMode)
         {
@@ -257,6 +391,10 @@ namespace EngineLayer.NonSpecificEnzymeSearch
                     {
                         return oneBasedIndexToLookAt;
                     }
+                }
+                else if (residue_variable_mod.NeutralLosses == null || residue_variable_mod.NeutralLosses.Count == 0)
+                {
+                    // TODO: missing case: mod is present and no neutral loss??
                 }
                 else if (residue_variable_mod.NeutralLosses.Count == 1)
                 {

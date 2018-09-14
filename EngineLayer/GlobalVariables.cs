@@ -60,12 +60,24 @@ namespace EngineLayer
 
             foreach (var modFile in Directory.GetFiles(Path.Combine(DataDir, @"Mods")))
             {
-                AddMods(UsefulProteomicsDatabases.PtmListLoader.ReadModsFromFile(modFile));
+                AddMods(UsefulProteomicsDatabases.PtmListLoader.ReadModsFromFile(modFile, out var errorMods));
             }
 
             // TODO: need to add motif to Unimod/UniProt ID
             //AddMods(UnimodDeserialized.OfType<Modification>());
             AddMods(UniprotDeseralized.OfType<Modification>());
+
+            // populate dictionaries of known mods/proteins for deserialization
+
+            AllModsKnownDictionary = new Dictionary<string, Modification>();
+            foreach (Modification mod in AllModsKnown)
+            {
+                if (!AllModsKnownDictionary.ContainsKey(mod.IdWithMotif))
+                {
+                    AllModsKnownDictionary.Add(mod.IdWithMotif, mod);
+                }
+                // no error thrown if multiple mods with this ID are present - just pick one
+            }
 
             GlobalSettings = Toml.ReadFile<GlobalSettings>(Path.Combine(DataDir, @"settings.toml"));
         }
@@ -82,6 +94,7 @@ namespace EngineLayer
         public static UsefulProteomicsDatabases.Generated.obo PsiModDeserialized { get; }
         public static IEnumerable<Modification> AllModsKnown { get { return _AllModsKnown.AsEnumerable(); } }
         public static IEnumerable<string> AllModTypesKnown { get { return _AllModTypesKnown.AsEnumerable(); } }
+        public static Dictionary<string, Modification> AllModsKnownDictionary { get; private set; }
         public static string ExperimentalDesignFileName { get; }
 
         public static void AddMods(IEnumerable<Modification> modifications)

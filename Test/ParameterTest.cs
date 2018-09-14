@@ -1,6 +1,8 @@
 ﻿using EngineLayer;
+using MassSpectrometry;
 using MzLibUtil;
 using NUnit.Framework;
+using Proteomics.Fragmentation;
 using Proteomics.ProteolyticDigestion;
 using System;
 using System.Collections.Generic;
@@ -17,10 +19,8 @@ namespace Test
         {
             CommonParameters defaultParameters = new CommonParameters();
             CommonParameters notDefaultParameters = new CommonParameters(
-                bIons: false,
-                yIons: false,
-                zDotIons: true,
-                cIons: true,
+                dissociationType: DissociationType.ETD,
+                fragmentationTerminus: FragmentationTerminus.N,
                 doPrecursorDeconvolution: false,
                 useProvidedPrecursorInfo: false,
                 deconvolutionIntensityRatio: 69,
@@ -48,7 +48,7 @@ namespace Test
                     initiatorMethionineBehavior: InitiatorMethionineBehavior.Retain,
                     maxModsForPeptides: 69,
                     semiProteaseDigestion: true,
-                    terminusTypeSemiProtease: TerminusType.C
+                    terminusTypeSemiProtease: FragmentationTerminus.C
                     ),
                 listOfModsVariable: new List<(string, string)> { ("asdf", "asdf") },
                 listOfModsFixed: new List<(string, string)> { ("asdf", "asdf") }
@@ -56,10 +56,8 @@ namespace Test
 
             //check that the defaults are not the same as the not defaults.
             //IF ONE OF THESE FAILS, PLEASE UPDATE THE "notDefaultParameters"
-            Assert.AreNotEqual(defaultParameters.BIons, notDefaultParameters.BIons);
-            Assert.AreNotEqual(defaultParameters.YIons, notDefaultParameters.YIons);
-            Assert.AreNotEqual(defaultParameters.ZdotIons, notDefaultParameters.ZdotIons);
-            Assert.AreNotEqual(defaultParameters.CIons, notDefaultParameters.CIons);
+            Assert.AreNotEqual(defaultParameters.DissociationType, notDefaultParameters.DissociationType);
+            Assert.AreNotEqual(defaultParameters.FragmentationTerminus, notDefaultParameters.FragmentationTerminus);
             Assert.AreNotEqual(defaultParameters.DoPrecursorDeconvolution, notDefaultParameters.DoPrecursorDeconvolution);
             Assert.AreNotEqual(defaultParameters.UseProvidedPrecursorInfo, notDefaultParameters.UseProvidedPrecursorInfo);
             Assert.AreNotEqual(defaultParameters.DeconvolutionIntensityRatio, notDefaultParameters.DeconvolutionIntensityRatio);
@@ -86,10 +84,8 @@ namespace Test
             CommonParameters updatedParameters = MetaMorpheusTask.SetAllFileSpecificCommonParams(notDefaultParameters, emptyFileSpecificParameters);
 
             //CHECK THAT NOTHING CHANGED
-            Assert.AreEqual(updatedParameters.BIons, notDefaultParameters.BIons);
-            Assert.AreEqual(updatedParameters.YIons, notDefaultParameters.YIons);
-            Assert.AreEqual(updatedParameters.ZdotIons, notDefaultParameters.ZdotIons);
-            Assert.AreEqual(updatedParameters.CIons, notDefaultParameters.CIons);
+            Assert.AreEqual(updatedParameters.DissociationType, notDefaultParameters.DissociationType);
+            Assert.AreEqual(updatedParameters.FragmentationTerminus, notDefaultParameters.FragmentationTerminus);
             Assert.AreEqual(updatedParameters.DoPrecursorDeconvolution, notDefaultParameters.DoPrecursorDeconvolution);
             Assert.AreEqual(updatedParameters.UseProvidedPrecursorInfo, notDefaultParameters.UseProvidedPrecursorInfo);
             Assert.AreEqual(updatedParameters.DeconvolutionIntensityRatio, notDefaultParameters.DeconvolutionIntensityRatio);
@@ -116,24 +112,18 @@ namespace Test
             {
                 PrecursorMassTolerance = new PpmTolerance(10),
                 ProductMassTolerance = new PpmTolerance(30),
-                Protease = new Protease("Arg-C", new List<Tuple<string, TerminusType>> { new Tuple<string, TerminusType>("K", TerminusType.C) }, new List<Tuple<string, TerminusType>>(), CleavageSpecificity.Full, null, null, null),
+                Protease = new Protease("Arg-C", new List<Tuple<string, FragmentationTerminus>> { new Tuple<string, FragmentationTerminus>("K", FragmentationTerminus.C) }, new List<Tuple<string, FragmentationTerminus>>(), CleavageSpecificity.Full, null, null, null),
                 MinPeptideLength = 1,
                 MaxPeptideLength = 50,
                 MaxMissedCleavages = 2,
                 MaxModsForPeptide = 1,
-                BIons = true,
-                YIons = true,
-                CIons = false,
-                ZdotIons = false
+                DissociationType = DissociationType.CID
             };
             updatedParameters = MetaMorpheusTask.SetAllFileSpecificCommonParams(notDefaultParameters, basicFileSpecificParameters);
             //CHECK THAT SOMETHINGS CHANGED AND OTHERS DIDN'T
-            Assert.AreEqual(updatedParameters.BIons, basicFileSpecificParameters.BIons);
-            Assert.AreEqual(updatedParameters.YIons, basicFileSpecificParameters.YIons);
-            Assert.AreEqual(updatedParameters.ZdotIons, basicFileSpecificParameters.ZdotIons);
+            Assert.AreEqual(updatedParameters.DissociationType, basicFileSpecificParameters.DissociationType);
             Assert.AreEqual(updatedParameters.ProductMassTolerance, basicFileSpecificParameters.ProductMassTolerance);
             Assert.AreEqual(updatedParameters.PrecursorMassTolerance, basicFileSpecificParameters.PrecursorMassTolerance);
-            Assert.AreEqual(updatedParameters.CIons, basicFileSpecificParameters.CIons);
             Assert.AreEqual(updatedParameters.DigestionParams.MaxModsForPeptide, basicFileSpecificParameters.MaxModsForPeptide);
             Assert.AreEqual(updatedParameters.DigestionParams.MaxMissedCleavages, basicFileSpecificParameters.MaxMissedCleavages);
             Assert.AreEqual(updatedParameters.DigestionParams.MinPeptideLength, basicFileSpecificParameters.MinPeptideLength);

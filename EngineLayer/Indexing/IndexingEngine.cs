@@ -1,5 +1,4 @@
-﻿using MassSpectrometry;
-using Proteomics;
+﻿using Proteomics;
 using Proteomics.Fragmentation;
 using Proteomics.ProteolyticDigestion;
 using System;
@@ -64,10 +63,12 @@ namespace EngineLayer.Indexing
             int oldPercentProgress = 0;
 
             // digest database
-            HashSet<PeptideWithSetModifications> peptideToId = new HashSet<PeptideWithSetModifications>();
+            List<PeptideWithSetModifications> globalPeptides = new List<PeptideWithSetModifications>();
 
             Parallel.ForEach(Partitioner.Create(0, ProteinList.Count), new ParallelOptions { MaxDegreeOfParallelism = commonParameters.MaxThreadsToUsePerFile }, (range, loopState) =>
             {
+                List<PeptideWithSetModifications> localPeptides = new List<PeptideWithSetModifications>();
+
                 for (int i = range.Item1; i < range.Item2; i++)
                 {
                     // Stop loop if canceled
@@ -79,21 +80,7 @@ namespace EngineLayer.Indexing
 
                     foreach (var digestionParams in CollectionOfDigestionParams)
                     {
-                        foreach (var pepWithSetMods in ProteinList[i].Digest(digestionParams, FixedModifications, VariableModifications))
-                        {
-                            //CompactPeptide compactPeptide = pepWithSetMods.CompactPeptide(commonParameters.FragmentationTerminus, commonParameters.DissociationType);
-
-                            var observed = peptideToId.Contains(pepWithSetMods);
-                            if (observed)
-                                continue;
-                            lock (peptideToId)
-                            {
-                                observed = peptideToId.Contains(pepWithSetMods);
-                                if (observed)
-                                    continue;
-                                peptideToId.Add(pepWithSetMods);
-                            }
-                        }
+                        localPeptides.AddRange(ProteinList[i].Digest(digestionParams, FixedModifications, VariableModifications));
                     }
 
                     progress++;
@@ -105,11 +92,16 @@ namespace EngineLayer.Indexing
                         ReportProgress(new ProgressEventArgs(percentProgress, "Digesting proteins...", nestedIds));
                     }
                 }
+
+                lock (globalPeptides)
+                {
+                    globalPeptides.AddRange(localPeptides);
+                }
             });
 
             // sort peptides by mass
-            var peptidesSortedByMass = peptideToId.AsParallel().WithDegreeOfParallelism(commonParameters.MaxThreadsToUsePerFile).OrderBy(p => p.MonoisotopicMass).ToList();
-            peptideToId = null;
+            var peptidesSortedByMass = globalPeptides.AsParallel().WithDegreeOfParallelism(commonParameters.MaxThreadsToUsePerFile).OrderBy(p => p.MonoisotopicMass).ToList();
+            globalPeptides = null;
 
             // create fragment index
             List<int>[] fragmentIndex;
@@ -128,7 +120,6 @@ namespace EngineLayer.Indexing
             oldPercentProgress = 0;
             for (int peptideId = 0; peptideId < peptidesSortedByMass.Count; peptideId++)
             {
-                var fragments = peptidesSortedByMass[peptideId].Fragment(commonParameters.DissociationType, commonParameters.FragmentationTerminus).ToList();
                 var fragmentMasses = peptidesSortedByMass[peptideId].Fragment(commonParameters.DissociationType, commonParameters.FragmentationTerminus).Select(m => m.NeutralMass).ToList();
 
                 foreach (var theoreticalFragmentMass in fragmentMasses)
@@ -150,10 +141,10 @@ namespace EngineLayer.Indexing
                 if (percentProgress > oldPercentProgress)
                 {
                     oldPercentProgress = percentProgress;
-                    ReportProgress(new ProgressEventArgs(percentProgress, "Creating fragment index...", nestedIds));
+                    ReportProgress(new ProgressEventArgs(percentProgress, "Fragmenting peptides...", nestedIds));
                 }
             }
-
+            
             return new IndexingResults(peptidesSortedByMass, fragmentIndex, this);
         }
     }

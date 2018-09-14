@@ -205,7 +205,9 @@ namespace TaskLayer
                 maxThreadsToUsePerFile: commonParams.MaxThreadsToUsePerFile,
                 listOfModsVariable: commonParams.ListOfModsVariable,
                 listOfModsFixed: commonParams.ListOfModsFixed,
-                qValueOutputFilter: commonParams.QValueOutputFilter
+                qValueOutputFilter: commonParams.QValueOutputFilter,
+                fragmentationTerminus: commonParams.FragmentationTerminus,
+                taskDescriptor: commonParams.TaskDescriptor
                 );
 
             return returnParams;
@@ -220,7 +222,7 @@ namespace TaskLayer
             FinishedWritingFile(tomlFileName, new List<string> { displayName });
 
             MetaMorpheusEngine.FinishedSingleEngineHandler += SingleEngineHandlerInTask;
-            //try
+            try
             {
                 var stopWatch = new Stopwatch();
                 stopWatch.Start();
@@ -260,24 +262,24 @@ namespace TaskLayer
                 FinishedWritingFile(resultsFileName, new List<string> { displayName });
                 FinishedSingleTask(displayName);
             }
-            //catch (Exception e)
-            //{
-            //    MetaMorpheusEngine.FinishedSingleEngineHandler -= SingleEngineHandlerInTask;
-            //    var resultsFileName = Path.Combine(output_folder, "results.txt");
-            //    e.Data.Add("folder", output_folder);
-            //    using (StreamWriter file = new StreamWriter(resultsFileName))
-            //    {
-            //        file.WriteLine(GlobalVariables.MetaMorpheusVersion.Equals("1.0.0.0") ? "MetaMorpheus: Not a release version" : "MetaMorpheus: version " + GlobalVariables.MetaMorpheusVersion);
-            //        file.WriteLine(SystemInfo.CompleteSystemInfo()); //OS, OS Version, .Net Version, RAM, processor count, MSFileReader .dll versions X3
-            //        file.Write("e: " + e);
-            //        file.Write("e.Message: " + e.Message);
-            //        file.Write("e.InnerException: " + e.InnerException);
-            //        file.Write("e.Source: " + e.Source);
-            //        file.Write("e.StackTrace: " + e.StackTrace);
-            //        file.Write("e.TargetSite: " + e.TargetSite);
-            //    }
-            //    throw;
-            //}
+            catch (Exception e)
+            {
+                MetaMorpheusEngine.FinishedSingleEngineHandler -= SingleEngineHandlerInTask;
+                var resultsFileName = Path.Combine(output_folder, "results.txt");
+                e.Data.Add("folder", output_folder);
+                using (StreamWriter file = new StreamWriter(resultsFileName))
+                {
+                    file.WriteLine(GlobalVariables.MetaMorpheusVersion.Equals("1.0.0.0") ? "MetaMorpheus: Not a release version" : "MetaMorpheus: version " + GlobalVariables.MetaMorpheusVersion);
+                    file.WriteLine(SystemInfo.CompleteSystemInfo()); //OS, OS Version, .Net Version, RAM, processor count, MSFileReader .dll versions X3
+                    file.Write("e: " + e);
+                    file.Write("e.Message: " + e.Message);
+                    file.Write("e.InnerException: " + e.InnerException);
+                    file.Write("e.Source: " + e.Source);
+                    file.Write("e.StackTrace: " + e.StackTrace);
+                    file.Write("e.TargetSite: " + e.TargetSite);
+                }
+                throw;
+            }
 
             {
                 var proseFilePath = Path.Combine(output_folder, "prose.txt");
@@ -539,7 +541,7 @@ namespace TaskLayer
                 Status("Writing params...", new List<string> { taskId });
                 var paramsFile = Path.Combine(output_folderForIndices, "indexEngine.params");
                 WriteIndexEngineParams(indexEngine, paramsFile);
-                SucessfullyFinishedWritingFile(paramsFile, new List<string> { taskId });
+                FinishedWritingFile(paramsFile, new List<string> { taskId });
 
                 Status("Running Index Engine...", new List<string> { taskId });
                 var indexResults = (IndexingResults)indexEngine.Run();
@@ -549,12 +551,12 @@ namespace TaskLayer
                 Status("Writing peptide index...", new List<string> { taskId });
                 var peptideIndexFile = Path.Combine(output_folderForIndices, "peptideIndex.ind");
                 WritePeptideIndex(peptideIndex, peptideIndexFile);
-                SucessfullyFinishedWritingFile(peptideIndexFile, new List<string> { taskId });
+                FinishedWritingFile(peptideIndexFile, new List<string> { taskId });
 
                 Status("Writing fragment index...", new List<string> { taskId });
                 var fragmentIndexFile = Path.Combine(output_folderForIndices, "fragmentIndex.ind");
                 WriteFragmentIndexNetSerializer(fragmentIndex, fragmentIndexFile);
-                SucessfullyFinishedWritingFile(fragmentIndexFile, new List<string> { taskId });
+                FinishedWritingFile(fragmentIndexFile, new List<string> { taskId });
             }
             else
             {
@@ -566,18 +568,8 @@ namespace TaskLayer
                     peptideIndex = (List<PeptideWithSetModifications>)ser.Deserialize(file);
                 }
 
-                // populate dictionaries of known mods/proteins for deserialization
-                Dictionary<string, Modification> modsDictionary = new Dictionary<string, Modification>();
+                // populate dictionaries of known proteins for deserialization
                 Dictionary<string, Protein> proteinDictionary = new Dictionary<string, Protein>();
-
-                foreach (Modification mod in allKnownModifications)
-                {
-                    if (!modsDictionary.ContainsKey(mod.IdWithMotif))
-                    {
-                        modsDictionary.Add(mod.IdWithMotif, mod);
-                    }
-                    // no error thrown if multiple mods with this ID are present - just pick one
-                }
 
                 foreach (Protein protein in allKnownProteins)
                 {
@@ -594,7 +586,7 @@ namespace TaskLayer
                 // get non-serialized information for the peptides (proteins, mod info)
                 foreach (var peptide in peptideIndex)
                 {
-                    peptide.SetNonSerializedPeptideInfo(modsDictionary, proteinDictionary);
+                    peptide.SetNonSerializedPeptideInfo(GlobalVariables.AllModsKnownDictionary, proteinDictionary);
                 }
 
                 Status("Reading fragment index...", new List<string> { taskId });

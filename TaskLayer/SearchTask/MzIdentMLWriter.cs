@@ -19,7 +19,7 @@ namespace TaskLayer
         {
             psms = psms.Where(p => p.FdrInfo.QValue <= qValueFilter && p.FdrInfo.QValueNotch <= qValueFilter);
 
-            List<PeptideWithSetModifications> peptides = psms.SelectMany(i => i.CompactPeptides.SelectMany(c => c.Value.Item2)).Distinct().ToList();
+            List<PeptideWithSetModifications> peptides = psms.SelectMany(i => i.BestMatchingPeptideWithSetMods.Select(v => v.Pwsm)).Distinct().ToList();
             List<Protein> proteins = peptides.Select(p => p.Protein).Distinct().ToList();
             List<string> filenames = psms.Select(i => i.FullFilePath).Distinct().ToList();
             Dictionary<string, string> database_reference = new Dictionary<string, string>();

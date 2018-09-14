@@ -1,4 +1,5 @@
 ﻿using MassSpectrometry;
+using Proteomics;
 using Proteomics.Fragmentation;
 using Proteomics.ProteolyticDigestion;
 using System;
@@ -9,166 +10,81 @@ namespace EngineLayer.CrosslinkSearch
 {
     public class CrosslinkedPeptide
     {
-        public static Dictionary<List<int>, List<Product>> XlGetTheoreticalFragmentIons(DissociationType dissociationType, bool Charge_2_3, Crosslinker crosslinker, List<int> possiblePositionsOfMod, double modMass, PeptideWithSetModifications peptide)
+        public static IEnumerable<Tuple<int, List<Product>>> XlGetTheoreticalFragments(DissociationType dissociationType, bool Charge_2_3, Crosslinker crosslinker, List<int> possiblePositionsOfMod, double modMass, PeptideWithSetModifications peptide)
         {
-            Dictionary<List<int>, List<Product>> AllTheoreticalFragmentsLists = new Dictionary<List<int>, List<Product>>();
-
-            List<Product> baseTheoreticalFragmentIons = peptide.Fragment(dissociationType, FragmentationTerminus.Both).ToList();
-
-            foreach (var crosslinkerPosition in possiblePositionsOfMod)
+            List<double> massesToLocalize = new List<double>();
+            if (crosslinker.Cleavable)
             {
-                List<Product> currentProducts = new List<Product>();
-
-                // add signature ions (molecular ion plus short or long piece of the crosslinker)
-                if (crosslinker.Cleavable)
-                {
-                    currentProducts.Add(new Product(ProductType.M, new NeutralTerminusFragment(FragmentationTerminus.None, peptide.MonoisotopicMass + crosslinker.CleaveMassShort, peptide.Length, peptide.Length), 0));
-                    currentProducts.Add(new Product(ProductType.M, new NeutralTerminusFragment(FragmentationTerminus.None, peptide.MonoisotopicMass + crosslinker.CleaveMassLong, peptide.Length, peptide.Length), 0));
-                }
-
-                foreach (var product in baseTheoreticalFragmentIons)
-                {
-                    var productType = product.ProductType;
-
-                    //TODO: use dissociation type and not ProductType to figure out product masses because UVPD could generate C ions and fragment the cleavable crosslinker, etc
-                    switch (productType)
-                    {
-                        case ProductType.b:
-                            if (product.TerminusFragment.AminoAcidPosition < crosslinkerPosition)
-                            {
-                                currentProducts.Add(product);
-                            }
-                            else
-                            {
-                                if (crosslinker.Cleavable)
-                                {
-                                    // cleavable crosslinker fragment mass; the mass is the fragment mass plus either the short or long piece of the fragmented crosslinker
-                                    currentProducts.Add(new Product(product.ProductType, new NeutralTerminusFragment(product.TerminusFragment.Terminus, product.NeutralMass + crosslinker.CleaveMassShort, product.TerminusFragment.FragmentNumber, product.TerminusFragment.AminoAcidPosition), 0));
-                                    currentProducts.Add(new Product(product.ProductType, new NeutralTerminusFragment(product.TerminusFragment.Terminus, product.NeutralMass + crosslinker.CleaveMassLong, product.TerminusFragment.FragmentNumber, product.TerminusFragment.AminoAcidPosition), 0));
-                                }
-                                else
-                                {
-                                    // non cleavable crosslinker mass; modMass is the mass of the thing it's crosslinked to (e.g., the other peptide, RNA, etc)
-                                    currentProducts.Add(new Product(product.ProductType, new NeutralTerminusFragment(product.TerminusFragment.Terminus, product.NeutralMass + modMass + crosslinker.TotalMass, product.TerminusFragment.FragmentNumber, product.TerminusFragment.AminoAcidPosition), 0));
-                                }
-                            }
-                            break;
-                        case ProductType.c:
-                            if (product.TerminusFragment.AminoAcidPosition < crosslinkerPosition)
-                            {
-                                currentProducts.Add(product);
-                            }
-                            else
-                            {
-                                currentProducts.Add(new Product(product.ProductType, new NeutralTerminusFragment(product.TerminusFragment.Terminus, product.NeutralMass + modMass + crosslinker.TotalMass, product.TerminusFragment.FragmentNumber, product.TerminusFragment.AminoAcidPosition), 0));
-                            }
-                            break;
-                        case ProductType.y:
-                            if (product.TerminusFragment.AminoAcidPosition < crosslinkerPosition)
-                            {
-                                currentProducts.Add(product);
-                            }
-                            else
-                            {
-                                if (crosslinker.Cleavable)
-                                {
-                                    currentProducts.Add(new Product(product.ProductType, new NeutralTerminusFragment(product.TerminusFragment.Terminus, product.NeutralMass + crosslinker.CleaveMassShort, product.TerminusFragment.FragmentNumber, product.TerminusFragment.AminoAcidPosition), 0));
-                                    currentProducts.Add(new Product(product.ProductType, new NeutralTerminusFragment(product.TerminusFragment.Terminus, product.NeutralMass + crosslinker.CleaveMassLong, product.TerminusFragment.FragmentNumber, product.TerminusFragment.AminoAcidPosition), 0));
-                                }
-                                else
-                                {
-                                    currentProducts.Add(new Product(product.ProductType, new NeutralTerminusFragment(product.TerminusFragment.Terminus, product.NeutralMass + modMass + crosslinker.TotalMass, product.TerminusFragment.FragmentNumber, product.TerminusFragment.AminoAcidPosition), 0));
-                                }
-                            }
-                            break;
-                        case ProductType.zPlusOne:
-                            if (product.TerminusFragment.AminoAcidPosition < crosslinkerPosition)
-                            {
-                                currentProducts.Add(product);
-                            }
-                            else
-                            {
-                                currentProducts.Add(new Product(product.ProductType, new NeutralTerminusFragment(product.TerminusFragment.Terminus, product.NeutralMass + modMass + crosslinker.TotalMass, product.TerminusFragment.FragmentNumber, product.TerminusFragment.AminoAcidPosition), 0));
-                            }
-                            break;
-                        default:
-                            break;
-                    }
-                }
-
-                AllTheoreticalFragmentsLists.Add(new List<int> { crosslinkerPosition }, currentProducts);
+                massesToLocalize.Add(crosslinker.CleaveMassShort);
+                massesToLocalize.Add(crosslinker.CleaveMassLong);
+            }
+            else
+            {
+                massesToLocalize.Add(crosslinker.TotalMass + modMass);
             }
 
-            return AllTheoreticalFragmentsLists;
+            foreach (int crosslinkerPosition in possiblePositionsOfMod)
+            {
+                foreach (double massToLocalize in massesToLocalize)
+                {
+                    List<Product> theoreticalProducts = new List<Product>();
+                    Dictionary<int, Modification> testMods = new Dictionary<int, Modification> { { crosslinkerPosition + 1, new Modification(_monoisotopicMass: massToLocalize) } };
+                    var testPeptide = new PeptideWithSetModifications(peptide.Protein, peptide.DigestionParams, peptide.OneBasedStartResidueInProtein, peptide.OneBasedEndResidueInProtein, peptide.PeptideDescription, peptide.MissedCleavages, testMods, peptide.NumFixedMods);
+
+                    // add fragmentation ions for this crosslinker position guess
+                    theoreticalProducts.AddRange(testPeptide.Fragment(dissociationType, FragmentationTerminus.Both));
+
+                    // add signature ions
+                    if (crosslinker.Cleavable)
+                    {
+                        theoreticalProducts.Add(new Product(ProductType.M, new NeutralTerminusFragment(FragmentationTerminus.None, peptide.MonoisotopicMass + crosslinker.CleaveMassShort, peptide.Length, peptide.Length), 0));
+                        theoreticalProducts.Add(new Product(ProductType.M, new NeutralTerminusFragment(FragmentationTerminus.None, peptide.MonoisotopicMass + crosslinker.CleaveMassLong, peptide.Length, peptide.Length), 0));
+                    }
+
+                    yield return new Tuple<int, List<Product>>(crosslinkerPosition, theoreticalProducts);
+                }
+            }
         }
 
-        //TO DO: the second ModPostion jPos is not recorded. 
-        public static Dictionary<List<int>, List<Product>> XlLoopGetTheoreticalFragmentIons(DissociationType dissociationType, bool Charge_2_3, Crosslinker crosslinker, List<int> modPos, double modMass, PeptideWithSetModifications peptide)
+        public static Dictionary<Tuple<int, int>, List<Product>> XlLoopGetTheoreticalFragments(DissociationType dissociationType, bool Charge_2_3, Modification loopMass, List<int> modPos, PeptideWithSetModifications peptide)
         {
-            Dictionary<List<int>, List<Product>> AllTheoreticalFragmentsLists = new Dictionary<List<int>, List<Product>>();
+            Dictionary<Tuple<int, int>, List<Product>> AllTheoreticalFragmentsLists = new Dictionary<Tuple<int, int>, List<Product>>();
+            var originalFragments = peptide.Fragment(dissociationType, FragmentationTerminus.Both).ToList();
 
-            List<Product> baseTheoreticalFragmentIons = peptide.Fragment(dissociationType, FragmentationTerminus.Both).ToList();
-
-            if (modPos.Count >= 2)
+            foreach (int position1 in modPos)
             {
-                for (int iPos = 0; iPos < modPos.Count - 1; iPos++)
+                foreach (int position2 in modPos)
                 {
-                    for (int jPos = iPos + 1; jPos < modPos.Count; jPos++)
+                    if (position2 == position1)
                     {
-                        List<Product> currentProducts = new List<Product>();
-
-                        foreach (var product in baseTheoreticalFragmentIons)
-                        {
-                            var iType = product.ProductType;
-                            switch (iType)
-                            {
-                                case ProductType.b:
-                                    if (product.TerminusFragment.FragmentNumber < modPos[iPos])
-                                    {
-                                        currentProducts.Add(product);
-                                    }
-                                    else if (product.TerminusFragment.FragmentNumber >= modPos[jPos])
-                                    {
-                                        currentProducts.Add(new Product(product.ProductType, new NeutralTerminusFragment(product.TerminusFragment.Terminus, product.NeutralMass + crosslinker.LoopMass, product.TerminusFragment.FragmentNumber, product.TerminusFragment.AminoAcidPosition), 0));
-                                    }
-                                    break;
-                                case ProductType.c:
-                                    if (product.TerminusFragment.FragmentNumber < modPos[iPos])
-                                    {
-                                        currentProducts.Add(product);
-                                    }
-                                    else if (product.TerminusFragment.FragmentNumber >= modPos[jPos])
-                                    {
-                                        currentProducts.Add(new Product(product.ProductType, new NeutralTerminusFragment(product.TerminusFragment.Terminus, product.NeutralMass + crosslinker.LoopMass, product.TerminusFragment.FragmentNumber, product.TerminusFragment.AminoAcidPosition), 0));
-                                    }
-                                    break;
-                                case ProductType.y:
-                                    if (product.TerminusFragment.FragmentNumber < peptide.Length - modPos[jPos] + 1)
-                                    {
-                                        currentProducts.Add(product);
-                                    }
-                                    else if (product.TerminusFragment.FragmentNumber >= peptide.Length - modPos[iPos] + 1)
-                                    {
-                                        currentProducts.Add(new Product(product.ProductType, new NeutralTerminusFragment(product.TerminusFragment.Terminus, product.NeutralMass + crosslinker.LoopMass, product.TerminusFragment.FragmentNumber, product.TerminusFragment.AminoAcidPosition), 0));
-                                    }
-                                    break;
-                                case ProductType.zPlusOne:
-                                    if (product.TerminusFragment.FragmentNumber < peptide.Length - modPos[jPos] + 1)
-                                    {
-                                        currentProducts.Add(product);
-                                    }
-                                    else if (product.TerminusFragment.FragmentNumber >= peptide.Length - modPos[iPos] + 1)
-                                    {
-                                        currentProducts.Add(new Product(product.ProductType, new NeutralTerminusFragment(product.TerminusFragment.Terminus, product.NeutralMass + crosslinker.LoopMass, product.TerminusFragment.FragmentNumber, product.TerminusFragment.AminoAcidPosition), 0));                                        
-                                    }
-                                    break;
-                                default:
-                                    break;
-                            }
-                        }
-
-                        AllTheoreticalFragmentsLists.Add(new List<int> { modPos[iPos], modPos[jPos] }, currentProducts);
+                        continue;
                     }
+
+                    // add fragments before/after the loop
+                    Tuple<int, int> loopPositions = new Tuple<int, int>(position1, position2);
+                    List<Product> loopFragments = originalFragments
+                        .Where(p => p.TerminusFragment.Terminus == FragmentationTerminus.N && p.TerminusFragment.AminoAcidPosition < position1
+                        || p.TerminusFragment.Terminus == FragmentationTerminus.C && p.TerminusFragment.AminoAcidPosition > position2).ToList();
+
+                    // add fragments with the loop mass
+
+                    Dictionary<int, Modification> modDict = new Dictionary<int, Modification>();
+                    if (peptide.AllModsOneIsNterminus.Any())
+                    {
+                        double combinedModMass = loopMass.MonoisotopicMass.Value + peptide.AllModsOneIsNterminus.Sum(p => p.Value.MonoisotopicMass.Value);
+                        Modification combined = new Modification(_monoisotopicMass: combinedModMass);
+                        modDict.Add(position1 + 1, combined);
+                    }
+                    else
+                    {
+                        modDict.Add(position1 + 1, loopMass);
+                    }
+                    PeptideWithSetModifications peptideWithLoop = new PeptideWithSetModifications(peptide.Protein, peptide.DigestionParams, peptide.OneBasedStartResidueInProtein, peptide.OneBasedEndResidueInProtein, peptide.PeptideDescription, peptide.MissedCleavages, modDict, peptide.NumFixedMods);
+                    loopFragments.AddRange(peptideWithLoop.Fragment(dissociationType, FragmentationTerminus.Both)
+                        .Where(p => p.TerminusFragment.Terminus == FragmentationTerminus.N && p.TerminusFragment.AminoAcidPosition >= position1
+                        || p.TerminusFragment.Terminus == FragmentationTerminus.C && p.TerminusFragment.AminoAcidPosition <= position2));
+
+                    AllTheoreticalFragmentsLists.Add(loopPositions, loopFragments);
                 }
             }
 

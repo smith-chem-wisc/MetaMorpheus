@@ -21,7 +21,7 @@ namespace Test
         public static void TestEverythingRunner()
         {
             foreach (var modFile in Directory.GetFiles(@"Mods"))
-                GlobalVariables.AddMods(PtmListLoader.ReadModsFromFile(modFile));
+                GlobalVariables.AddMods(PtmListLoader.ReadModsFromFile(modFile, out var fmww));
 
             CalibrationTask task1 = new CalibrationTask
             {
@@ -103,7 +103,7 @@ namespace Test
         public static void TestMultipleFilesRunner()
         {
             foreach (var modFile in Directory.GetFiles(@"Mods"))
-                GlobalVariables.AddMods(PtmListLoader.ReadModsFromFile(modFile));
+                GlobalVariables.AddMods(PtmListLoader.ReadModsFromFile(modFile, out var fmww));
 
             CalibrationTask task1 = new CalibrationTask
             {
@@ -225,7 +225,7 @@ namespace Test
 
             string mzmlName = @"MakeSureFdrDoesntSkip.mzML";
 
-            {
+            
                 var theProteins = ProteinDbLoader.LoadProteinXML(xmlName, true, DecoyType.Reverse, new List<Modification>(), false, new List<string>(), out Dictionary<string, Modification> ok);
 
                 List<Modification> fixedModifications = new List<Modification>();
@@ -259,7 +259,7 @@ namespace Test
                 myMsDataFile.ReplaceFirstScanArrays(mz, intensities);
 
                 IO.MzML.MzmlMethods.CreateAndWriteMyMzmlWithCalibratedSpectra(myMsDataFile, mzmlName, false);
-            }
+            
 
             // RUN!
             var theStringResult = task.RunTask(TestContext.CurrentContext.TestDirectory, new List<DbForTask> { new DbForTask(xmlName, false) }, new List<string> { mzmlName }, "taskId1").ToString();
@@ -436,7 +436,7 @@ namespace Test
                 "AllQuantifiedPeptides_BaseSequences.tsv", "AllQuantifiedPeptides_FullSequences.tsv", "prose.txt", "results.txt", "SearchTaskconfig.toml" };
 
             HashSet<string> files = new HashSet<string>(Directory.GetFiles(Path.Combine(thisTaskOutputFolder, "SingleMassSpectraFileOutput")).Select(v => Path.GetFileName(v)));
-            
+
             // these 2 lines are for debug purposes, so you can see which files you're missing (if any)
             var missingFiles = expectedFiles.Except(files);
             var extraFiles = files.Except(expectedFiles);
@@ -482,15 +482,15 @@ namespace Test
             File.WriteAllLines(filePath, new string[] { modToWrite });
 
             // read the mod
-            GlobalVariables.AddMods(PtmListLoader.ReadModsFromFile(filePath));
-            Assert.That(GlobalVariables.AllModsKnown.Where(v => v.id == "Hydroxyproline").Count() == 1);
+            GlobalVariables.AddMods(PtmListLoader.ReadModsFromFile(filePath, out var fmww));
+            Assert.That(GlobalVariables.AllModsKnown.Where(v => v.IdWithMotif == "Hydroxyproline on P").Count() == 1);
 
             // should have an error message...
             Assert.That(GlobalVariables.ErrorsReadingMods.Where(v => v.Contains("Hydroxyproline")).Count() > 0);
         }
 
         /// <summary>
-        /// Tests that pepXML is output
+        /// Tests that pepXML is written
         /// 
         /// TODO: Assert pepXML properties
         /// </summary>
@@ -529,22 +529,26 @@ namespace Test
                     SearchType = SearchType.Modern
                 }
             };
+            List<int> counts = new List<int>();
+            for(int i=0; i<20; i++)
+            {
+                List<(string, MetaMorpheusTask)> taskList = new List<(string, MetaMorpheusTask)> { ("ClassicSearch", classicSearch), ("ModernSearch", modernSearch) };
 
-            List<(string, MetaMorpheusTask)> taskList = new List<(string, MetaMorpheusTask)> { ("ClassicSearch", classicSearch), ("ModernSearch", modernSearch) };
+                string mzmlName = @"TestData\PrunedDbSpectra.mzml";
+                string fastaName = @"TestData\DbForPrunedDb.fasta";
 
-            string mzmlName = @"TestData\PrunedDbSpectra.mzml";
-            string fastaName = @"TestData\DbForPrunedDb.fasta";
+                var engine = new EverythingRunnerEngine(taskList, new List<string> { mzmlName }, new List<DbForTask> { new DbForTask(fastaName, false) }, Environment.CurrentDirectory);
+                engine.Run();
 
-            var engine = new EverythingRunnerEngine(taskList, new List<string> { mzmlName }, new List<DbForTask> { new DbForTask(fastaName, false) }, Environment.CurrentDirectory);
-            engine.Run();
+                string classicPath = Path.Combine(TestContext.CurrentContext.TestDirectory, @"ClassicSearch\AllPSMs.psmtsv");
+                var classicPsms = File.ReadAllLines(classicPath).ToList();
 
-            string classicPath = Path.Combine(TestContext.CurrentContext.TestDirectory, @"ClassicSearch\AllPSMs.psmtsv");
-            var classicPsms = File.ReadAllLines(classicPath).ToList();
-
-            string modernPath = Path.Combine(TestContext.CurrentContext.TestDirectory, @"ModernSearch\AllPSMs.psmtsv");
-            var modernPsms = File.ReadAllLines(modernPath).ToList();
-            
-            Assert.That(modernPsms.SequenceEqual(classicPsms));
+                string modernPath = Path.Combine(TestContext.CurrentContext.TestDirectory, @"ModernSearch\AllPSMs.psmtsv");
+                var modernPsms = File.ReadAllLines(modernPath).ToList();
+                counts.Add(modernPsms.Count);
+            }
+            Assert.AreEqual(0, 1);
+            // Assert.That(modernPsms.SequenceEqual(classicPsms));
         }
     }
 }
