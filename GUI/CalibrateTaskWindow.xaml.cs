@@ -178,7 +178,7 @@ namespace MetaMorpheusGUI
 
             if (!GlobalGuiSettings.CheckTaskSettingsValidity(precursorMassToleranceTextBox.Text, productMassToleranceTextBox.Text, missedCleavagesTextBox.Text,
                  maxModificationIsoformsTextBox.Text, MinPeptideLengthTextBox.Text, MaxPeptideLengthTextBox.Text, maxThreadsTextBox.Text, minScoreAllowed.Text,
-                 fieldNotUsed, fieldNotUsed, fieldNotUsed, fieldNotUsed, fieldNotUsed, fieldNotUsed, fieldNotUsed, fieldNotUsed))
+                 fieldNotUsed, fieldNotUsed, fieldNotUsed, fieldNotUsed, fieldNotUsed, fieldNotUsed, fieldNotUsed, fieldNotUsed, fieldNotUsed))
             {
                 return;
             }
@@ -199,6 +199,11 @@ namespace MetaMorpheusGUI
             foreach (var heh in VariableModTypeForTreeViewObservableCollection)
             {
                 listOfModsVariable.AddRange(heh.Children.Where(b => b.Use).Select(b => (b.Parent.DisplayName, b.DisplayName)));
+            }
+
+            if (!GlobalGuiSettings.VariableModCheck(listOfModsVariable))
+            {
+                return;
             }
 
             var listOfModsFixed = new List<(string, string)>();
@@ -247,18 +252,21 @@ namespace MetaMorpheusGUI
             DialogResult = true;
         }
 
-        private void Row_DoubleClick(object sender, MouseButtonEventArgs e)
-        {
-            var ye = sender as DataGridCell;
-            if (ye.Content is TextBlock hm && !string.IsNullOrEmpty(hm.Text))
-            {
-                System.Diagnostics.Process.Start(hm.Text);
-            }
-        }
-
         private void CheckIfNumber(object sender, TextCompositionEventArgs e)
         {
             e.Handled = !GlobalGuiSettings.CheckIsNumber(e.Text);
+        }
+
+        private void KeyPressed(object sender, KeyEventArgs e)
+        {
+            if (e.Key == Key.Return)
+            {
+                SaveButton_Click(sender, e);
+            }
+            else if (e.Key == Key.Escape)
+            {
+                CancelButton_Click(sender, e);
+            }
         }
     }
 }

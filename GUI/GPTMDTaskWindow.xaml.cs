@@ -56,6 +56,9 @@ namespace MetaMorpheusGUI
 
         private void UpdateFieldsFromTask(GptmdTask task)
         {
+            useProvidedPrecursor.IsChecked = task.CommonParameters.UseProvidedPrecursorInfo;
+            deconvolutePrecursors.IsChecked = task.CommonParameters.DoPrecursorDeconvolution;
+            DeconvolutionMaxAssumedChargeStateTextBox.Text = task.CommonParameters.DeconvolutionMaxAssumedChargeState.ToString();
             missedCleavagesTextBox.Text = task.CommonParameters.DigestionParams.MaxMissedCleavages == int.MaxValue ? "" : task.CommonParameters.DigestionParams.MaxMissedCleavages.ToString(CultureInfo.InvariantCulture);
             MinPeptideLengthTextBox.Text = task.CommonParameters.DigestionParams.MinPeptideLength.ToString(CultureInfo.InvariantCulture);
             MaxPeptideLengthTextBox.Text = task.CommonParameters.DigestionParams.MaxPeptideLength == int.MaxValue ? "" : task.CommonParameters.DigestionParams.MaxPeptideLength.ToString(CultureInfo.InvariantCulture);
@@ -227,7 +230,8 @@ namespace MetaMorpheusGUI
 
             if (!GlobalGuiSettings.CheckTaskSettingsValidity(precursorMassToleranceTextBox.Text, productMassToleranceTextBox.Text, missedCleavagesTextBox.Text,
                  maxModificationIsoformsTextBox.Text, MinPeptideLengthTextBox.Text, MaxPeptideLengthTextBox.Text, maxThreadsTextBox.Text, minScoreAllowed.Text,
-                fieldNotUsed, fieldNotUsed, fieldNotUsed, fieldNotUsed, fieldNotUsed, fieldNotUsed, fieldNotUsed, fieldNotUsed))
+                fieldNotUsed, fieldNotUsed, DeconvolutionMaxAssumedChargeStateTextBox.Text, fieldNotUsed, fieldNotUsed, fieldNotUsed, fieldNotUsed, fieldNotUsed, fieldNotUsed))
+
             {
                 return;
             }
@@ -264,15 +268,23 @@ namespace MetaMorpheusGUI
             {
                 listOfModsVariable.AddRange(heh.Children.Where(b => b.Use).Select(b => (b.Parent.DisplayName, b.DisplayName)));
             }
+
+            if (!GlobalGuiSettings.VariableModCheck(listOfModsVariable))
+            {
+                return;
+            }
+
             var listOfModsFixed = new List<(string, string)>();
             foreach (var heh in fixedModTypeForTreeViewObservableCollection)
             {
                 listOfModsFixed.AddRange(heh.Children.Where(b => b.Use).Select(b => (b.Parent.DisplayName, b.DisplayName)));
             }
-
             bool parseMaxThreadsPerFile = int.Parse(maxThreadsTextBox.Text, CultureInfo.InvariantCulture) <= Environment.ProcessorCount && int.Parse(maxThreadsTextBox.Text, CultureInfo.InvariantCulture) > 0;
 
             CommonParameters commonParamsToSave = new CommonParameters(
+                useProvidedPrecursorInfo: useProvidedPrecursor.IsChecked.Value,
+                deconvolutionMaxAssumedChargeState: int.Parse(DeconvolutionMaxAssumedChargeStateTextBox.Text, CultureInfo.InvariantCulture),
+                doPrecursorDeconvolution: deconvolutePrecursors.IsChecked.Value,
                 taskDescriptor: OutputFileNameTextBox.Text != "" ? OutputFileNameTextBox.Text : "GPTMDTask",
                 maxThreadsToUsePerFile: parseMaxThreadsPerFile ? int.Parse(maxThreadsTextBox.Text, CultureInfo.InvariantCulture) : new CommonParameters().MaxThreadsToUsePerFile,
                 digestionParams: new DigestionParams(
@@ -306,6 +318,18 @@ namespace MetaMorpheusGUI
         private void CheckIfNumber(object sender, TextCompositionEventArgs e)
         {
             e.Handled = !GlobalGuiSettings.CheckIsNumber(e.Text);
+        }
+
+        private void KeyPressed(object sender, KeyEventArgs e)
+        {
+            if (e.Key == Key.Return)
+            {
+                SaveButton_Click(sender, e);
+            }
+            else if (e.Key == Key.Escape)
+            {
+                CancelButton_Click(sender, e);
+            }
         }
     }
 }

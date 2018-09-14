@@ -24,14 +24,14 @@ namespace Test
 
             var thisTaskOutputFolder = MySetUpClass.outputFolder;
 
-            var peaks = Path.Combine(thisTaskOutputFolder, "Task", "sliced-raw_QuantifiedPeaks.tsv");
+            var peaks = Path.Combine(thisTaskOutputFolder, "Task", "AllQuantifiedPeaks.tsv");
 
             Assert.AreEqual(2, File.ReadLines(peaks).Count());
 
-            var psms = Path.Combine(thisTaskOutputFolder, "Task", "sliced-raw_PSMs.psmtsv");
+            var psms = Path.Combine(thisTaskOutputFolder, "Task", "AllPSMs.psmtsv");
 
             Assert.AreEqual(3, File.ReadLines(psms).Count());
-            var protGroups = Path.Combine(thisTaskOutputFolder, "Task", "sliced-raw_ProteinGroups.tsv");
+            var protGroups = Path.Combine(thisTaskOutputFolder, "Task", "AllProteinGroups.tsv");
 
             Assert.AreEqual(2, File.ReadLines(protGroups).Count());
         }
@@ -49,14 +49,14 @@ namespace Test
 
             var thisTaskOutputFolder = MySetUpClass.outputFolder;
 
-            var peaks = Path.Combine(thisTaskOutputFolder, "Task", "sliced-raw_QuantifiedPeaks.tsv");
+            var peaks = Path.Combine(thisTaskOutputFolder, "Task", "AllQuantifiedPeaks.tsv");
 
             Assert.AreEqual(2, File.ReadLines(peaks).Count());
 
-            var psms = Path.Combine(thisTaskOutputFolder, "Task", "sliced-raw_PSMs.psmtsv");
+            var psms = Path.Combine(thisTaskOutputFolder, "Task", "AllPSMs.psmtsv");
 
             Assert.AreEqual(3, File.ReadLines(psms).Count());
-            var protGroups = Path.Combine(thisTaskOutputFolder, "Task", "sliced-raw_ProteinGroups.tsv");
+            var protGroups = Path.Combine(thisTaskOutputFolder, "Task", "AllProteinGroups.tsv");
 
             Assert.AreEqual(2, File.ReadLines(protGroups).Count());
         }

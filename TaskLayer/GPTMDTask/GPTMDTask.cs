@@ -56,7 +56,7 @@ namespace TaskLayer
                 ionTypes.Add(ProductType.C);
 
             // load proteins
-            List<Protein> proteinList = LoadProteins(taskId, dbFilenameList, true, DecoyType.Reverse, localizeableModificationTypes);
+            List<Protein> proteinList = LoadProteins(taskId, dbFilenameList, true, DecoyType.Reverse, localizeableModificationTypes, CommonParameters);
 
             List<PeptideSpectralMatch> allPsms = new List<PeptideSpectralMatch>();
 
@@ -113,7 +113,7 @@ namespace TaskLayer
                 NewCollection(Path.GetFileName(origDataFile), new List<string> { taskId, "Individual Spectra Files", origDataFile });
 
                 Status("Loading spectra file...", new List<string> { taskId, "Individual Spectra Files", origDataFile });
-                MsDataFile myMsDataFile = myFileManager.LoadFile(origDataFile, combinedParams.TopNpeaks, combinedParams.MinRatio, combinedParams.TrimMs1Peaks, combinedParams.TrimMsMsPeaks);
+                MsDataFile myMsDataFile = myFileManager.LoadFile(origDataFile, combinedParams.TopNpeaks, combinedParams.MinRatio, combinedParams.TrimMs1Peaks, combinedParams.TrimMsMsPeaks, combinedParams);
                 Status("Getting ms2 scans...", new List<string> { taskId, "Individual Spectra Files", origDataFile });
                 Ms2ScanWithSpecificMass[] arrayOfMs2ScansSortedByMass = GetMs2Scans(myMsDataFile, origDataFile, combinedParams.DoPrecursorDeconvolution, combinedParams.UseProvidedPrecursorInfo, combinedParams.DeconvolutionIntensityRatio, combinedParams.DeconvolutionMaxAssumedChargeState, combinedParams.DeconvolutionMassTolerance).OrderBy(b => b.PrecursorMass).ToArray();
                 myFileManager.DoneWithFile(origDataFile);
@@ -147,7 +147,7 @@ namespace TaskLayer
 
             var writtenFile = Path.Combine(OutputFolder, "GPTMD_Candidates.psmtsv");
             WritePsmsToTsv(allPsms, writtenFile, new Dictionary<string, int>());
-            SucessfullyFinishedWritingFile(writtenFile, new List<string> { taskId });
+            FinishedWritingFile(writtenFile, new List<string> { taskId });
 
             // get file-specific precursor mass tolerances for the GPTMD engine
             var filePathToPrecursorMassTolerance = new Dictionary<string, Tolerance>();
@@ -183,7 +183,7 @@ namespace TaskLayer
 
                 var newModsActuallyWritten = ProteinDbWriter.WriteXmlDatabase(gptmdResults.Mods, proteinList.Where(b => !b.IsDecoy && !b.IsContaminant).ToList(), outputXMLdbFullName);
 
-                SucessfullyFinishedWritingFile(outputXMLdbFullName, new List<string> { taskId });
+                FinishedWritingFile(outputXMLdbFullName, new List<string> { taskId });
 
                 MyTaskResults.NewDatabases.Add(new DbForTask(outputXMLdbFullName, false));
                 MyTaskResults.AddNiceText("Modifications added: " + newModsActuallyWritten.Select(b => b.Value).Sum());
@@ -205,7 +205,7 @@ namespace TaskLayer
 
                 var newModsActuallyWritten = ProteinDbWriter.WriteXmlDatabase(gptmdResults.Mods, proteinList.Where(b => !b.IsDecoy && b.IsContaminant).ToList(), outputXMLdbFullNameContaminants);
 
-                SucessfullyFinishedWritingFile(outputXMLdbFullNameContaminants, new List<string> { taskId });
+                FinishedWritingFile(outputXMLdbFullNameContaminants, new List<string> { taskId });
 
                 MyTaskResults.NewDatabases.Add(new DbForTask(outputXMLdbFullNameContaminants, true));
                 MyTaskResults.AddNiceText("Contaminant modifications added: " + newModsActuallyWritten.Select(b => b.Value).Sum());

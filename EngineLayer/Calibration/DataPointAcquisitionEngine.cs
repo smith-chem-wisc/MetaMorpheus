@@ -125,8 +125,8 @@ namespace EngineLayer.Calibration
             // datapoints are ordered because they were acquired in a parallized search and we want repeatable results
             return new DataPointAquisitionResults(this,
                 GoodIdentifications,
-                Ms1List.OrderBy(p => p.RetentionTime).ThenBy(p => p.ExperimentalMz).ToList(),
-                Ms2List.OrderBy(p => p.RetentionTime).ThenBy(p => p.ExperimentalMz).ToList(),
+                Ms1List.OrderBy(p => p.ScanNumber).ThenBy(p => p.ExperimentalMz).ToList(),
+                Ms2List.OrderBy(p => p.ScanNumber).ThenBy(p => p.ExperimentalMz).ToList(),
                 numMs1MassChargeCombinationsConsidered,
                 numMs1MassChargeCombinationsThatAreIgnoredBecauseOfTooManyPeaks,
                 numMs2MassChargeCombinationsConsidered,
@@ -193,7 +193,7 @@ namespace EngineLayer.Calibration
                         var closestPeakMZ = fullMS1spectrum.XArray[closestPeakIndex.Value];
 
                         highestKnownChargeForThisPeptide = Math.Max(highestKnownChargeForThisPeptide, chargeToLookAt);
-                        trainingPointsToAverage.Add(new LabeledDataPoint(closestPeakMZ, double.NaN, double.NaN, double.NaN, Math.Log(fullMS1spectrum.YArray[closestPeakIndex.Value]), theMZ, null));
+                        trainingPointsToAverage.Add(new LabeledDataPoint(closestPeakMZ, -1, double.NaN, double.NaN, Math.Log(fullMS1spectrum.YArray[closestPeakIndex.Value]), theMZ, null));
                     }
                     // If started adding and suddnely stopped, go to next one, no need to look at higher charges
                     if (trainingPointsToAverage.Count == 0 && startingToAddCharges)
@@ -214,7 +214,7 @@ namespace EngineLayer.Calibration
                         startingToAddCharges = true;
                         countForThisScan++;
                         result.Add(new LabeledDataPoint(trainingPointsToAverage.Select(b => b.ExperimentalMz).Average(),
-                                                             fullMS1scan.RetentionTime,
+                                                             fullMS1scan.OneBasedScanNumber,
                                                              Math.Log(fullMS1scan.TotalIonCurrent),
                                                              fullMS1scan.InjectionTime.HasValue ? Math.Log(fullMS1scan.InjectionTime.Value) : double.NaN,
                                                              trainingPointsToAverage.Select(b => b.LogIntensity).Average(),
@@ -244,7 +244,7 @@ namespace EngineLayer.Calibration
                 result.Add(
                     new LabeledDataPoint(
                         exptPeakMz,
-                        ms2DataScan.RetentionTime,
+                        ms2DataScan.OneBasedScanNumber,
                         Math.Log(ms2DataScan.TotalIonCurrent),
                         Math.Log(injTime),
                         Math.Log(exptPeakIntensity),

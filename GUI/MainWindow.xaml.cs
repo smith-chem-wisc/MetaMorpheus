@@ -80,7 +80,7 @@ namespace MetaMorpheusGUI
             }
             catch (Exception e)
             {
-                GuiWarnHandler(null, new StringEventArgs("Could not get newest MM version from web: " + e.Message, null));
+                GuiWarnHandler(null, new StringEventArgs("Could not get newest version from web: " + e.Message, null));
             }
         }
 
@@ -101,7 +101,8 @@ namespace MetaMorpheusGUI
                     JObject deserialized = JObject.Parse(json);
                     var assets = deserialized["assets"].Select(b => b["name"].ToString()).ToList();
                     if (!assets.Contains("MetaMorpheusInstaller.msi"))
-                        throw new MetaMorpheusException("Necessary files do not exist!");
+                        throw new MetaMorpheusException("A new version of MetaMorpheus was detected, but the files haven't been" +
+                            " uploaded yet. Try again in a few minutes.");
                     NewestKnownVersion = deserialized["tag_name"].ToString();
                 }
             }
@@ -127,6 +128,8 @@ namespace MetaMorpheusGUI
             // hide the "InProgress" column
             dataGridProteinDatabases.Columns.Where(p => p.Header.Equals(nameof(ProteinDbForDataGrid.InProgress))).First().Visibility = Visibility.Hidden;
             dataGridSpectraFiles.Columns.Where(p => p.Header.Equals(nameof(RawDataForDataGrid.InProgress))).First().Visibility = Visibility.Hidden;
+
+            PrintErrorsReadingMods();
         }
 
         private void EverythingRunnerEngine_FinishedWritingAllResultsFileHandler(object sender, StringEventArgs e)
@@ -467,6 +470,8 @@ namespace MetaMorpheusGUI
                             try
                             {
                                 GlobalVariables.AddMods(UsefulProteomicsDatabases.ProteinDbLoader.GetPtmListFromProteinXml(draggedFilePath).OfType<ModificationWithLocation>());
+                                
+                                PrintErrorsReadingMods();
                             }
                             catch (Exception ee)
                             {
@@ -514,12 +519,6 @@ namespace MetaMorpheusGUI
                                 case "XLSearch":
                                     var ye4 = Toml.ReadFile<XLSearchTask>(draggedFilePath, MetaMorpheusTask.tomlConfig);
                                     AddTaskToCollection(ye4);
-                                    break;
-
-                                case "Neo":
-                                    var ye5 = Toml.ReadFile<NeoSearchTask>(draggedFilePath, MetaMorpheusTask.tomlConfig);
-                                    foreach (MetaMorpheusTask task in NeoLoadTomls.LoadTomls(ye5))
-                                        AddTaskToCollection(task);
                                     break;
                             }
                         }
@@ -779,19 +778,7 @@ namespace MetaMorpheusGUI
                 UpdateTaskGuiStuff();
             }
         }
-
-        private void AddNeoTaskButton_Click(object sender, RoutedEventArgs e)
-        {
-            var dialog = new NeoSearchTaskWindow();
-            if (dialog.ShowDialog() == true)
-            {
-                var ye5 = dialog.TheTask;
-                foreach (MetaMorpheusTask task in NeoLoadTomls.LoadTomls(ye5))
-                    AddTaskToCollection(task);
-                UpdateTaskGuiStuff();
-            }
-        }
-
+        
         // deletes the selected task
         private void DeleteSelectedTask(object sender, RoutedEventArgs e)
         {
@@ -982,7 +969,6 @@ namespace MetaMorpheusGUI
                 addGPTMDTaskButton.IsEnabled = false;
                 addSearchTaskButton.IsEnabled = false;
                 btnAddCrosslinkSearch.IsEnabled = false;
-                //addNeoTaskButton.IsEnabled = false;
 
                 AddXML.IsEnabled = false;
                 ClearXML.IsEnabled = false;
@@ -1049,7 +1035,6 @@ namespace MetaMorpheusGUI
             addGPTMDTaskButton.IsEnabled = true;
             addSearchTaskButton.IsEnabled = true;
             btnAddCrosslinkSearch.IsEnabled = true;
-            //addNeoTaskButton.IsEnabled = true;
             ResetTasksButton.IsEnabled = false;
             OutputFolderTextBox.IsEnabled = true;
 
@@ -1105,13 +1090,6 @@ namespace MetaMorpheusGUI
                         var XLSearchdialog = new XLSearchTaskWindow(preRunTask.metaMorpheusTask as XLSearchTask);
                         XLSearchdialog.ShowDialog();
                         preRunTask.DisplayName = "Task" + (StaticTasksObservableCollection.IndexOf(preRunTask) + 1) + "-" + XLSearchdialog.TheTask.CommonParameters.TaskDescriptor;
-                        tasksTreeView.Items.Refresh();
-                        return;
-
-                    case MyTask.Neo:
-                        var Neodialog = new NeoSearchTaskWindow(preRunTask.metaMorpheusTask as NeoSearchTask);
-                        Neodialog.ShowDialog();
-                        preRunTask.DisplayName = "Task" + (StaticTasksObservableCollection.IndexOf(preRunTask) + 1) + "-" + Neodialog.TheTask.CommonParameters.TaskDescriptor;
                         tasksTreeView.Items.Refresh();
                         return;
                 }
@@ -1339,6 +1317,32 @@ namespace MetaMorpheusGUI
         {
             System.Diagnostics.Process.Start(Path.Combine(GlobalVariables.DataDir, @"GUIsettings.toml"));
             Application.Current.Shutdown();
+        }
+
+        private void MetaDrawMenu_Click(object sender, RoutedEventArgs e)
+        {
+            MetaDraw metaDrawGui = new MetaDraw();
+            metaDrawGui.Show();
+        }
+
+        private void PrintErrorsReadingMods()
+        {
+            // print any error messages reading the mods to the notifications area
+            foreach (var error in GlobalVariables.ErrorsReadingMods)
+            {
+                GuiWarnHandler(null, new StringEventArgs(error, null));
+            }
+            GlobalVariables.ErrorsReadingMods.Clear();
+        }
+
+        private void AddContaminantXML_Click(object sender, RoutedEventArgs e)
+        {
+            string[] contaminantFiles = Directory.GetFiles(Path.Combine(GlobalVariables.DataDir, "Contaminants"));
+            foreach (string contaminantFile in contaminantFiles)
+            {
+                AddAFile(contaminantFile);
+            }
+            dataGridProteinDatabases.Items.Refresh();
         }
     }
 }
