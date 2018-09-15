@@ -225,41 +225,41 @@ namespace Test
 
             string mzmlName = @"MakeSureFdrDoesntSkip.mzML";
 
-            
-                var theProteins = ProteinDbLoader.LoadProteinXML(xmlName, true, DecoyType.Reverse, new List<Modification>(), false, new List<string>(), out Dictionary<string, Modification> ok);
 
-                List<Modification> fixedModifications = new List<Modification>();
+            var theProteins = ProteinDbLoader.LoadProteinXML(xmlName, true, DecoyType.Reverse, new List<Modification>(), false, new List<string>(), out Dictionary<string, Modification> ok);
 
-                var targetDigested = theProteins[0].Digest(task.CommonParameters.DigestionParams, fixedModifications, GlobalVariables.AllModsKnown.OfType<Modification>().ToList()).ToList();
+            List<Modification> fixedModifications = new List<Modification>();
 
-                PeptideWithSetModifications targetGood = targetDigested.First();
+            var targetDigested = theProteins[0].Digest(task.CommonParameters.DigestionParams, fixedModifications, GlobalVariables.AllModsKnown.OfType<Modification>().ToList()).ToList();
 
-                TestDataFile myMsDataFile = new TestDataFile(new List<PeptideWithSetModifications> { targetGood }, true);
+            PeptideWithSetModifications targetGood = targetDigested.First();
 
-                var ii = myMsDataFile.GetOneBasedScan(1).MassSpectrum.YArray.ToList();
+            TestDataFile myMsDataFile = new TestDataFile(new List<PeptideWithSetModifications> { targetGood }, true);
 
-                ii.Add(1);
-                ii.Add(1);
-                ii.Add(1);
-                ii.Add(1);
+            var ii = myMsDataFile.GetOneBasedScan(1).MassSpectrum.YArray.ToList();
 
-                var intensities = ii.ToArray();
+            ii.Add(1);
+            ii.Add(1);
+            ii.Add(1);
+            ii.Add(1);
 
-                var mm = myMsDataFile.GetOneBasedScan(1).MassSpectrum.XArray.ToList();
+            var intensities = ii.ToArray();
 
-                var hah = 104.35352;
-                mm.Add(hah);
-                mm.Add(hah + 1);
-                mm.Add(hah + 2);
+            var mm = myMsDataFile.GetOneBasedScan(1).MassSpectrum.XArray.ToList();
 
-                var mz = mm.ToArray();
+            var hah = 104.35352;
+            mm.Add(hah);
+            mm.Add(hah + 1);
+            mm.Add(hah + 2);
 
-                Array.Sort(mz, intensities);
+            var mz = mm.ToArray();
 
-                myMsDataFile.ReplaceFirstScanArrays(mz, intensities);
+            Array.Sort(mz, intensities);
 
-                IO.MzML.MzmlMethods.CreateAndWriteMyMzmlWithCalibratedSpectra(myMsDataFile, mzmlName, false);
-            
+            myMsDataFile.ReplaceFirstScanArrays(mz, intensities);
+
+            IO.MzML.MzmlMethods.CreateAndWriteMyMzmlWithCalibratedSpectra(myMsDataFile, mzmlName, false);
+
 
             // RUN!
             var theStringResult = task.RunTask(TestContext.CurrentContext.TestDirectory, new List<DbForTask> { new DbForTask(xmlName, false) }, new List<string> { mzmlName }, "taskId1").ToString();
@@ -530,25 +530,23 @@ namespace Test
                 }
             };
             List<int> counts = new List<int>();
-            for(int i=0; i<20; i++)
-            {
-                List<(string, MetaMorpheusTask)> taskList = new List<(string, MetaMorpheusTask)> { ("ClassicSearch", classicSearch), ("ModernSearch", modernSearch) };
 
-                string mzmlName = @"TestData\PrunedDbSpectra.mzml";
-                string fastaName = @"TestData\DbForPrunedDb.fasta";
+            List<(string, MetaMorpheusTask)> taskList = new List<(string, MetaMorpheusTask)> { ("ClassicSearch", classicSearch), ("ModernSearch", modernSearch) };
 
-                var engine = new EverythingRunnerEngine(taskList, new List<string> { mzmlName }, new List<DbForTask> { new DbForTask(fastaName, false) }, Environment.CurrentDirectory);
-                engine.Run();
+            string mzmlName = @"TestData\PrunedDbSpectra.mzml";
+            string fastaName = @"TestData\DbForPrunedDb.fasta";
 
-                string classicPath = Path.Combine(TestContext.CurrentContext.TestDirectory, @"ClassicSearch\AllPSMs.psmtsv");
-                var classicPsms = File.ReadAllLines(classicPath).ToList();
+            var engine = new EverythingRunnerEngine(taskList, new List<string> { mzmlName }, new List<DbForTask> { new DbForTask(fastaName, false) }, Environment.CurrentDirectory);
+            engine.Run();
 
-                string modernPath = Path.Combine(TestContext.CurrentContext.TestDirectory, @"ModernSearch\AllPSMs.psmtsv");
-                var modernPsms = File.ReadAllLines(modernPath).ToList();
-                counts.Add(modernPsms.Count);
-            }
-            Assert.AreEqual(0, 1);
-            // Assert.That(modernPsms.SequenceEqual(classicPsms));
+            string classicPath = Path.Combine(TestContext.CurrentContext.TestDirectory, @"ClassicSearch\AllPSMs.psmtsv");
+            var classicPsms = File.ReadAllLines(classicPath).ToList();
+
+            string modernPath = Path.Combine(TestContext.CurrentContext.TestDirectory, @"ModernSearch\AllPSMs.psmtsv");
+            var modernPsms = File.ReadAllLines(modernPath).ToList();
+            counts.Add(modernPsms.Count);
+
+            Assert.That(modernPsms.SequenceEqual(classicPsms));
         }
     }
 }
