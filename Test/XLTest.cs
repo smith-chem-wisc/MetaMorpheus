@@ -3,12 +3,9 @@ using EngineLayer;
 using EngineLayer.CrosslinkSearch;
 using EngineLayer.Indexing;
 using MassSpectrometry;
+using MzLibUtil;
 using Nett;
 using NUnit.Framework;
-using OxyPlot;
-using OxyPlot.Annotations;
-using OxyPlot.Axes;
-using OxyPlot.Series;
 using Proteomics;
 using Proteomics.AminoAcidPolymer;
 using Proteomics.Fragmentation;
@@ -106,7 +103,7 @@ namespace Test
             var variableModifications = new List<Modification>() { mod1 };
             var fixedModifications = new List<Modification>() { mod2 };
             var localizeableModifications = new List<Modification>();
-            
+
             //Run index engine
             var indexEngine = new IndexingEngine(proteinList, variableModifications, fixedModifications, 1, DecoyType.Reverse, new List<DigestionParams>
             { commonParameters.DigestionParams }, commonParameters, 30000, new List<string>());
@@ -123,10 +120,10 @@ namespace Test
 
             //Generate crosslinker, which is DSSO here.
             Crosslinker crosslinker = new Crosslinker().SelectCrosslinker(CrosslinkerType.DSSO);
-            
+
             CrosslinkSpectralMatch[] possiblePsms = new CrosslinkSpectralMatch[listOfSortedms2Scans.Length];
-            new TwoPassCrosslinkSearchEngine(possiblePsms, listOfSortedms2Scans, indexResults.PeptideIndex, indexResults.FragmentIndex, 0, commonParameters, false, xlSearchParameters.XlPrecusorMsTl, crosslinker, xlSearchParameters.RestrictToTopNHits, xlSearchParameters.CrosslinkSearchTopNum, xlSearchParameters.XlQuench_H2O, xlSearchParameters.XlQuench_NH2, xlSearchParameters.XlQuench_Tris, xlSearchParameters.XlCharge_2_3, false, new List<string> { }).Run();
-            
+            new TwoPassCrosslinkSearchEngine(possiblePsms, listOfSortedms2Scans, indexResults.PeptideIndex, indexResults.FragmentIndex, 0, commonParameters, crosslinker, xlSearchParameters.RestrictToTopNHits, xlSearchParameters.CrosslinkSearchTopNum, xlSearchParameters.XlQuench_H2O, xlSearchParameters.XlQuench_NH2, xlSearchParameters.XlQuench_Tris, xlSearchParameters.XlCharge_2_3, false, new List<string> { }).Run();
+
             var newPsms = possiblePsms.Where(p => p != null).ToList();
             foreach (var item in newPsms)
             {
@@ -233,7 +230,7 @@ namespace Test
 
             //TwoPassCrosslinkSearchEngine.Run().
             CrosslinkSpectralMatch[] possiblePsms = new CrosslinkSpectralMatch[listOfSortedms2Scans.Length];
-            new TwoPassCrosslinkSearchEngine(possiblePsms, listOfSortedms2Scans, indexResults.PeptideIndex, indexResults.FragmentIndex, 0, commonParameters, false, xlSearchParameters.XlPrecusorMsTl, crosslinker, xlSearchParameters.RestrictToTopNHits, xlSearchParameters.CrosslinkSearchTopNum, xlSearchParameters.XlQuench_H2O, xlSearchParameters.XlQuench_NH2, xlSearchParameters.XlQuench_Tris, xlSearchParameters.XlCharge_2_3, false, new List<string> { }).Run();
+            new TwoPassCrosslinkSearchEngine(possiblePsms, listOfSortedms2Scans, indexResults.PeptideIndex, indexResults.FragmentIndex, 0, commonParameters, crosslinker, xlSearchParameters.RestrictToTopNHits, xlSearchParameters.CrosslinkSearchTopNum, xlSearchParameters.XlQuench_H2O, xlSearchParameters.XlQuench_NH2, xlSearchParameters.XlQuench_Tris, xlSearchParameters.XlCharge_2_3, false, new List<string> { }).Run();
 
             var newPsms = possiblePsms.Where(p => p != null).ToList();
             Assert.AreEqual(1, newPsms.Count);
@@ -257,17 +254,14 @@ namespace Test
 
             XLSearchTask xLSearchTask = new XLSearchTask()
             {
-                XlSearchParameters = new XlSearchParameters()
-                {
-                    XlPrecusorMsTl = new MzLibUtil.PpmTolerance(51000),
-                }
+                CommonParameters = new CommonParameters(precursorMassTolerance: new PpmTolerance(51000))
             };
 
             XLSearchTask xLSearchTask2 = new XLSearchTask()
             {
+                CommonParameters = new CommonParameters(precursorMassTolerance: new PpmTolerance(112000)),
                 XlSearchParameters = new XlSearchParameters()
                 {
-                    XlPrecusorMsTl = new MzLibUtil.PpmTolerance(112000),
                     XlQuench_Tris = false,
                     XlQuench_H2O = false,
                     XlQuench_NH2 = true
@@ -277,7 +271,7 @@ namespace Test
             xLSearchTask.RunTask(outputFolder, new List<DbForTask> { new DbForTask(myDatabaseXl, false) }, new List<string> { myFileXl }, "test");
             xLSearchTask2.RunTask(outputFolder, new List<DbForTask> { new DbForTask(myDatabaseXl, false) }, new List<string> { myFileXl }, "test");
         }
-        
+
         /// <summary>
         /// Makes sure helper methods that generate indices function properly
         /// </summary>
@@ -314,6 +308,259 @@ namespace Test
             var lines3 = File.ReadAllLines(Path.Combine(folderPath, @"TestNoParams\xl_intra_fdr.tsv"));
 
             Assert.That(lines.SequenceEqual(lines2) && lines2.SequenceEqual(lines3));
+        }
+
+        /// <summary>
+        /// Tests that a crosslinker that links at proline ("P") generates the correct indices
+        /// of potential crosslink sites in the sequence PEPTIDE. The indices should be positions 1 and 3
+        /// </summary>
+        [Test]
+        public static void TestGetPossibleCrosslinkerSites()
+        {
+            PeptideWithSetModifications peptide = new PeptideWithSetModifications("PEPTIDE", null);
+            List<int> sites = CrosslinkSpectralMatch.GetPossibleCrosslinkerModSites(new char[] { 'P' }, peptide);
+            Assert.That(sites.SequenceEqual(new int[] { 1, 3 }));
+        }
+
+        /// <summary>
+        /// Generate and test fragments for this loop-linked peptide:
+        ///    _
+        ///   | |
+        /// PEPTIDE
+        /// </summary>
+        [Test]
+        public static void TestTheoreticalFragmentsLoop()
+        {
+            Protein p = new Protein("PEPTIDE", "");
+            var peptide = p.Digest(new DigestionParams(), new List<Modification>(), new List<Modification>()).First();
+
+            ModificationMotif.TryGetMotif("X", out ModificationMotif motif);
+            var loopMod = new Modification("Loop", _modificationType: "XLTest", _target: motif, _locationRestriction: "Anywhere.", _monoisotopicMass: 10000);
+
+            var loopLocationsWithFragments = CrosslinkedPeptide.XlLoopGetTheoreticalFragments(DissociationType.HCD, loopMod, new List<int> { 3, 5 },
+                peptide);
+
+            Assert.That(loopLocationsWithFragments.Count == 1);
+            var loopLocationWithFragments = loopLocationsWithFragments.First();
+
+            Assert.That(loopLocationWithFragments.Key.Item1 == 3);
+            Assert.That(loopLocationWithFragments.Key.Item2 == 5);
+
+            var fragments = loopLocationWithFragments.Value;
+
+            var bIons = fragments.Where(v => v.ProductType == ProductType.b).ToList();
+            Assert.That(bIons.Select(v => (int)v.NeutralMass).SequenceEqual(new int[] { 97, 226, 10537, 10652 }));
+
+            var yIons = fragments.Where(v => v.ProductType == ProductType.y).ToList();
+            Assert.That(yIons.Select(v => (int)v.NeutralMass).SequenceEqual(new int[] { 147, 262, 10573, 10702 }));
+        }
+
+        /// <summary>
+        /// Generate and test fragments for loop-linked peptides with a mod placed at several different locations
+        /// </summary>
+        [Test]
+        public static void TestTheoreticalLoopFragmentsWithMod()
+        {
+            int[] modPositions = new int[] { 2, 3, 4, 5, 6 };
+
+            foreach (var modPosition in modPositions)
+            {
+                var phosphoOnT = GlobalVariables.AllModsKnown.Where(v => v.IdWithMotif == "Phospho on T").First();
+                Dictionary<int, List<Modification>> oneBasedMods = new Dictionary<int, List<Modification>>
+                    { { modPosition, new List<Modification> { phosphoOnT } } };
+                Protein p = new Protein("PTTTTTE", "", oneBasedModifications: oneBasedMods);
+                var peptide = p.Digest(new DigestionParams(), new List<Modification>(), new List<Modification>())
+                    .Where(v => v.AllModsOneIsNterminus.Count == 1).First();
+
+                ModificationMotif.TryGetMotif("X", out ModificationMotif motif);
+                var loopMod = new Modification("Loop", _modificationType: "XLTest", _target: motif,
+                    _locationRestriction: "Anywhere.", _monoisotopicMass: 10000);
+
+                var loopLocationsWithFragments = CrosslinkedPeptide.XlLoopGetTheoreticalFragments(DissociationType.HCD,
+                    loopMod, new List<int> { 3, 5 },
+                    peptide);
+
+                Assert.That(loopLocationsWithFragments.Count == 1);
+                var loopLocationWithFragments = loopLocationsWithFragments.First();
+
+                Assert.That(loopLocationWithFragments.Key.Item1 == 3);
+                Assert.That(loopLocationWithFragments.Key.Item2 == 5);
+
+                var fragments = loopLocationWithFragments.Value;
+
+                var bIons = fragments.Where(v => v.ProductType == ProductType.b).ToList();
+                var yIons = fragments.Where(v => v.ProductType == ProductType.y).ToList();
+
+                if (modPosition == 2)
+                {
+                    //             _
+                    //            | |
+                    // PT[Phospho]TTTTE
+                    Assert.That(bIons.Select(v => (int)v.NeutralMass).SequenceEqual(new int[] { 97, 278, 10581, 10682 }));
+                    Assert.That(yIons.Select(v => (int)v.NeutralMass).SequenceEqual(new int[] { 147, 248, 10551, 10732 }));
+                }
+                else if (modPosition == 3)
+                {
+                    //    __________
+                    //   |          |
+                    // PTT[Phospho]TTTE
+                    Assert.That(bIons.Select(v => (int)v.NeutralMass).SequenceEqual(new int[] { 97, 198, 10581, 10682 }));
+                    Assert.That(yIons.Select(v => (int)v.NeutralMass).SequenceEqual(new int[] { 147, 248, 10631, 10732 }));
+                }
+                else if (modPosition == 4)
+                {
+                    //    __________
+                    //   |          |
+                    // PTTT[Phospho]TTE
+                    Assert.That(bIons.Select(v => (int)v.NeutralMass).SequenceEqual(new int[] { 97, 198, 10581, 10682 }));
+                    Assert.That(yIons.Select(v => (int)v.NeutralMass).SequenceEqual(new int[] { 147, 248, 10631, 10732 }));
+                }
+                else if (modPosition == 5)
+                {
+                    //    _
+                    //   | |
+                    // PTTTT[Phospho]TE
+                    Assert.That(bIons.Select(v => (int)v.NeutralMass).SequenceEqual(new int[] { 97, 198, 10581, 10682 }));
+                    Assert.That(yIons.Select(v => (int)v.NeutralMass).SequenceEqual(new int[] { 147, 248, 10631, 10732 }));
+                }
+                else if (modPosition == 6)
+                {
+                    //    _
+                    //   | |
+                    // PTTTTT[Phospho]E
+                    Assert.That(bIons.Select(v => (int)v.NeutralMass).SequenceEqual(new int[] { 97, 198, 10501, 10682 }));
+                    Assert.That(yIons.Select(v => (int)v.NeutralMass).SequenceEqual(new int[] { 147, 328, 10631, 10732 }));
+                }
+            }
+        }
+        
+        /// <summary>
+        /// Generate and test fragments for this dead-end peptide (quenched with tris):
+        ///   
+        ///   |
+        /// PEPTIDE[Methyl]
+        /// </summary>
+        [Test]
+        public static void TestDeadendTris()
+        {
+            Protein protein = new Protein("PEPTIDE", "");
+            var csms = new CrosslinkSpectralMatch[1];
+
+            // generate the scan with the deadend mod peptide's fragments
+            var scans = new Ms2ScanWithSpecificMass[1];
+            ModificationMotif.TryGetMotif("T", out var motif);
+            var crosslinker = new Crosslinker("T", "T", "test", false, 100, 0, 0, 0, 0, 0, 50);
+            Modification deadend = new Modification("TestId", _target: motif, _locationRestriction: "Anywhere.", _monoisotopicMass: crosslinker.DeadendMassTris, _modificationType: "Test");
+
+            var deadendPeptide = protein.Digest(new DigestionParams(), new List<Modification> { deadend }, new List<Modification>()).First();
+
+            double[] mz = deadendPeptide.Fragment(DissociationType.HCD, FragmentationTerminus.Both).Select(p => p.NeutralMass.ToMz(1)).OrderBy(v => v).ToArray();
+            double[] intensities = new[] { 1.0, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1 };
+
+            MzSpectrum spectrum = new MzSpectrum(mz, intensities, false);
+            MsDataScan sc = new MsDataScan(spectrum, 1, 2, true, Polarity.Positive, 1, spectrum.Range, "",
+                MZAnalyzerType.Orbitrap, 12, 1.0, null, null);
+            scans[0] = new Ms2ScanWithSpecificMass(sc, deadendPeptide.MonoisotopicMass.ToMz(2), 2, "");
+
+            // search the data with the peptide WITHOUT the deadend mod annotated in the search database.
+            // the search engine should be able to correctly identify the deadend mod on T
+            var indexingResults = (IndexingResults)new IndexingEngine(new List<Protein> { protein }, new List<Modification>(), new List<Modification>(), 0, DecoyType.None,
+                new List<DigestionParams> { new DigestionParams() }, new CommonParameters(), 1000, new List<string>()).Run();
+
+            new TwoPassCrosslinkSearchEngine(csms, scans, indexingResults.PeptideIndex, indexingResults.FragmentIndex, 0, new CommonParameters(), crosslinker,
+                false, 0, false, false, true, false, false, new List<string>()).Run();
+
+            CrosslinkSpectralMatch csm = csms.First();
+            Assert.That(csm.CrossType == PsmCrossType.DeadEndTris);
+            Assert.That(csm.MatchedFragmentIons.Count == 12);
+        }
+
+        /// <summary>
+        /// Generate and test fragments for this crosslinked peptide pair that was crosslinked
+        /// with a non-cleavable crosslinker:
+        ///  PRLTEIN
+        ///   |
+        /// PEPTIDE
+        /// </summary>
+        [Test]
+        public static void TestTheoreticalFragmentsNonCleavableCrosslink()
+        {
+            Crosslinker c = new Crosslinker("P", "R", "Test", false, 1000, 0, 0, 1000, 5, 5, 5);
+
+            Protein p1 = new Protein("PEPTIDE", "");
+            var alphaPeptide = p1.Digest(new DigestionParams(), new List<Modification>(), new List<Modification>()).First();
+
+            Protein p2 = new Protein("PRLTEIN", "");
+            var betaPeptide = p2.Digest(new DigestionParams(), new List<Modification>(), new List<Modification>()).Where(v => v.MissedCleavages == 1).First();
+
+            var theoreticalCrosslinkFragments = CrosslinkedPeptide.XlGetTheoreticalFragments(DissociationType.HCD,
+                c, new List<int> { 3 }, betaPeptide.MonoisotopicMass, alphaPeptide).ToList();
+
+            Assert.That(theoreticalCrosslinkFragments.Count == 1);
+            var loopLocationWithFragments = theoreticalCrosslinkFragments.First();
+
+            Assert.That(loopLocationWithFragments.Item1 == 3);
+
+            var fragments = loopLocationWithFragments.Item2;
+
+            var bIons = fragments.Where(v => v.ProductType == ProductType.b).ToList();
+            Assert.That(bIons.Select(v => (int)v.NeutralMass).SequenceEqual(new int[] { 97, 226, 2164, 2265, 2378, 2493 }));
+
+            var yIons = fragments.Where(v => v.ProductType == ProductType.y).ToList();
+            Assert.That(yIons.Select(v => (int)v.NeutralMass).SequenceEqual(new int[] { 147, 262, 375, 476, 2414, 2543 }));
+        }
+
+        /// <summary>
+        /// Generate and test fragments for this crosslinked peptide pair that was crosslinked
+        /// with a cleavable crosslinker:
+        ///   PROTEIN
+        ///   |
+        /// PEPTIDE
+        /// </summary>
+        [Test]
+        public static void TestTheoreticalFragmentsCleavableCrosslink()
+        {
+            Crosslinker c = new Crosslinker("P", "R", "Test", true, 1000, 15, 25, 1000, 5, 5, 5);
+
+            Protein p1 = new Protein("PEPTIDE", "");
+            var alphaPeptide = p1.Digest(new DigestionParams(), new List<Modification>(), new List<Modification>()).First();
+
+            Protein p2 = new Protein("PRLTEIN", "");
+            var betaPeptide = p2.Digest(new DigestionParams(), new List<Modification>(), new List<Modification>()).Where(v => v.MissedCleavages == 1).First();
+
+            var theoreticalCrosslinkFragments = CrosslinkedPeptide.XlGetTheoreticalFragments(DissociationType.HCD,
+                c, new List<int> { 3 }, 10000, alphaPeptide).ToList();
+
+            Assert.That(theoreticalCrosslinkFragments.Count == 2);
+
+            // cleaved+short fragments
+            var loopLocationWithFragmentsShort = theoreticalCrosslinkFragments[0];
+
+            Assert.That(loopLocationWithFragmentsShort.Item1 == 3);
+            var fragmentsWithShortMass = loopLocationWithFragmentsShort.Item2;
+
+            var bIons = fragmentsWithShortMass.Where(v => v.ProductType == ProductType.b).ToList();
+            Assert.That(bIons.Select(v => (int)v.NeutralMass).SequenceEqual(new int[] { 97, 226, 338, 439, 552, 667 }));
+
+            var yIons = fragmentsWithShortMass.Where(v => v.ProductType == ProductType.y).ToList();
+            Assert.That(yIons.Select(v => (int)v.NeutralMass).SequenceEqual(new int[] { 147, 262, 375, 476, 588, 717 }));
+
+            var signatureIons = fragmentsWithShortMass.Where(v => v.ProductType == ProductType.M).ToList();
+            Assert.That(signatureIons.Select(v => (int)v.NeutralMass).SequenceEqual(new int[] { (int)(alphaPeptide.MonoisotopicMass + c.CleaveMassShort) }));
+
+            // cleaved+long fragments
+            var loopLocationWithFragmentsLong = theoreticalCrosslinkFragments[1];
+            Assert.That(loopLocationWithFragmentsLong.Item1 == 3);
+            var fragmentsWithLongMass = loopLocationWithFragmentsLong.Item2;
+
+            bIons = fragmentsWithLongMass.Where(v => v.ProductType == ProductType.b).ToList();
+            Assert.That(bIons.Select(v => (int)v.NeutralMass).SequenceEqual(new int[] { 97, 226, 348, 449, 562, 677 }));
+
+            yIons = fragmentsWithLongMass.Where(v => v.ProductType == ProductType.y).ToList();
+            Assert.That(yIons.Select(v => (int)v.NeutralMass).SequenceEqual(new int[] { 147, 262, 375, 476, 598, 727 }));
+
+            signatureIons = fragmentsWithLongMass.Where(v => v.ProductType == ProductType.M).ToList();
+            Assert.That(signatureIons.Select(v => (int)v.NeutralMass).SequenceEqual(new int[] { (int)(alphaPeptide.MonoisotopicMass + c.CleaveMassLong) }));
         }
     }
 

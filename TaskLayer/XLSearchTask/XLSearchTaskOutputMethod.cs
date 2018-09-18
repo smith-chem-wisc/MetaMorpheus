@@ -41,7 +41,7 @@ namespace TaskLayer
                 }
             }
         }
-        
+
         public void WriteAllToTsv(List<CrosslinkSpectralMatch> items, string outputFolder, string fileName, List<string> nestedIds)
         {
             var writtenFile = Path.Combine(outputFolder, fileName + ".tsv");
@@ -216,39 +216,38 @@ namespace TaskLayer
 
         public void WritePepXML_xl(List<CrosslinkSpectralMatch> items, List<Protein> proteinList, string databasePath, List<Modification> variableModifications, List<Modification> fixedModifications, List<string> localizeableModificationTypes, string outputFolder, string fileName, List<string> nestedIds)
         {
-            if (items.Count==0)
+            if (!items.Any())
             {
                 return;
             }
+
             XmlSerializer _indexedSerializer = new XmlSerializer(typeof(pepXML.Generated.msms_pipeline_analysis));
             var _pepxml = new pepXML.Generated.msms_pipeline_analysis();
 
             _pepxml.date = DateTime.Now;
-            _pepxml.summary_xml = items[0].FullFilePath + ".pep.xml";
+            _pepxml.summary_xml = items[0].FullFilePath + ".pep.XML";
 
             string proteaseC = ""; string proteaseNC = "";
             foreach (var x in CommonParameters.DigestionParams.Protease.SequencesInducingCleavage) { proteaseC += x; }
             foreach (var x in CommonParameters.DigestionParams.Protease.SequencesPreventingCleavage) { proteaseNC += x; }
 
             Crosslinker crosslinker = new Crosslinker().SelectCrosslinker(XlSearchParameters.CrosslinkerType);
-
-            uint proteinTot = Convert.ToUInt32(proteinList.Count);
-
+            
             string fileNameNoExtension = Path.GetFileNameWithoutExtension(items[0].FullFilePath);
             string filePathNoExtension = Path.ChangeExtension(items[0].FullFilePath, null);
 
             var para = new List<pepXML.Generated.nameValueType>();
             {
-                para.Add(new pepXML.Generated.nameValueType { name = "threads", value = "" });
+                para.Add(new pepXML.Generated.nameValueType { name = "threads", value = CommonParameters.MaxThreadsToUsePerFile.ToString() });
                 para.Add(new pepXML.Generated.nameValueType { name = "database", value = databasePath });
                 para.Add(new pepXML.Generated.nameValueType { name = "MS_data_file", value = items[0].FullFilePath });
-                para.Add(new pepXML.Generated.nameValueType { name = "Cross-link Precusor Mass Tolence", value = XlSearchParameters.XlPrecusorMsTl.ToString() });
-                para.Add(new pepXML.Generated.nameValueType { name = "Cross-linker Type", value = crosslinker.CrosslinkerName });
+                para.Add(new pepXML.Generated.nameValueType { name = "Cross-link precursor Mass Tolerance", value = CommonParameters.PrecursorMassTolerance.ToString() });
+                para.Add(new pepXML.Generated.nameValueType { name = "Cross-linker type", value = crosslinker.CrosslinkerName });
                 para.Add(new pepXML.Generated.nameValueType { name = "Cross-linker mass", value = crosslinker.TotalMass.ToString() });
                 para.Add(new pepXML.Generated.nameValueType { name = "Cross-linker cleavable", value = crosslinker.Cleavable.ToString() });
                 para.Add(new pepXML.Generated.nameValueType { name = "Cross-linker cleavable long mass", value = crosslinker.CleaveMassLong.ToString() });
                 para.Add(new pepXML.Generated.nameValueType { name = "Cross-linker cleavable short mass", value = crosslinker.CleaveMassShort.ToString() });
-                para.Add(new pepXML.Generated.nameValueType { name = "Cross-linker xl site", value = crosslinker.CrosslinkerModSites.ToString() });
+                para.Add(new pepXML.Generated.nameValueType { name = "Cross-linker xl site", value = crosslinker.CrosslinkerModSites });
 
                 para.Add(new pepXML.Generated.nameValueType { name = "Generate decoy proteins", value = XlSearchParameters.DecoyType.ToString() });
                 para.Add(new pepXML.Generated.nameValueType { name = "MaxMissed Cleavages", value = CommonParameters.DigestionParams.MaxMissedCleavages.ToString() });
@@ -258,15 +257,16 @@ namespace TaskLayer
                 para.Add(new pepXML.Generated.nameValueType { name = "Min Peptide Len", value = CommonParameters.DigestionParams.MinPeptideLength.ToString() });
                 para.Add(new pepXML.Generated.nameValueType { name = "Max Peptide Len", value = CommonParameters.DigestionParams.MaxPeptideLength.ToString() });
                 para.Add(new pepXML.Generated.nameValueType { name = "Product Mass Tolerance", value = CommonParameters.ProductMassTolerance.ToString() });
-                para.Add(new pepXML.Generated.nameValueType { name = "Ions to search", value = "B " + String.Join(", ", DissociationTypeCollection.ProductsFromDissociationType[CommonParameters.DissociationType]) });
-                para.Add(new pepXML.Generated.nameValueType { name = "Allowed Beta Precusor Mass Difference", value = XlSearchParameters.XlPrecusorMsTl.ToString() });
-                foreach (var item in fixedModifications)
+                para.Add(new pepXML.Generated.nameValueType { name = "Ions to search", value = String.Join(", ", DissociationTypeCollection.ProductsFromDissociationType[CommonParameters.DissociationType]) });
+                para.Add(new pepXML.Generated.nameValueType { name = "Allowed Beta Precusor Mass Difference", value = CommonParameters.PrecursorMassTolerance.ToString() });
+
+                foreach (var fixedMod in fixedModifications)
                 {
-                    para.Add(new pepXML.Generated.nameValueType { name = "Fixed Modifications: " + item.IdWithMotif, value = item.MonoisotopicMass.ToString() });
+                    para.Add(new pepXML.Generated.nameValueType { name = "Fixed Modifications: " + fixedMod.IdWithMotif, value = fixedMod.MonoisotopicMass.ToString() });
                 }
-                foreach (var item in variableModifications)
+                foreach (var variableMod in variableModifications)
                 {
-                    para.Add(new pepXML.Generated.nameValueType { name = "Variable Modifications: " + item.IdWithMotif, value = item.MonoisotopicMass.ToString() });
+                    para.Add(new pepXML.Generated.nameValueType { name = "Variable Modifications: " + variableMod.IdWithMotif, value = variableMod.MonoisotopicMass.ToString() });
                 }
 
                 para.Add(new pepXML.Generated.nameValueType { name = "Localize All Modifications", value = "true" });
@@ -297,7 +297,6 @@ namespace TaskLayer
                      new pepXML.Generated.msms_pipeline_analysisMsms_run_summarySearch_summary
                      {
                          base_name = filePathNoExtension,
-                         //search_engine = pepXML.Generated.engineType.Kojak,
                          search_engine_version = GlobalVariables.MetaMorpheusVersion,
                          precursor_mass_type = pepXML.Generated.massType.monoisotopic,
                          fragment_mass_type = pepXML.Generated.massType.monoisotopic,
@@ -325,42 +324,46 @@ namespace TaskLayer
             var searchHits = new List<pepXML.Generated.msms_pipeline_analysisMsms_run_summarySpectrum_querySearch_resultSearch_hit>();
             for (int i = 0; i < items.Count; i++)
             {
-                int modsFixedNum = items[i].BestMatchingPeptideWithSetMods.First().Pwsm.AllModsOneIsNterminus.Count;
                 var mods = new List<pepXML.Generated.modInfoDataTypeMod_aminoacid_mass>();
-                for (int j = 0; j < modsFixedNum; j++)
+                var alphaPeptide = items[i].BestMatchingPeptideWithSetMods.First().Pwsm;
+
+                foreach (var modification in alphaPeptide.AllModsOneIsNterminus)
                 {
                     var mod = new pepXML.Generated.modInfoDataTypeMod_aminoacid_mass
                     {
-                        mass = items[i].BestMatchingPeptideWithSetMods.First().Pwsm.AllModsOneIsNterminus.Values.Select(p => (double)p.MonoisotopicMass).ToList()[j],
-                        position = (items[i].BestMatchingPeptideWithSetMods.First().Pwsm.AllModsOneIsNterminus.Keys.ToList()[j] - 1).ToString()
+                        mass = modification.Value.MonoisotopicMass.Value,
+
+                        // convert from one-based to zero-based (N-term is zero in the pepXML output)
+                        position = (modification.Key - 1).ToString()
                     };
                     mods.Add(mod);
                 }
-
+                
                 if (items[i].CrossType == PsmCrossType.Single)
                 {
                     var searchHit = new pepXML.Generated.msms_pipeline_analysisMsms_run_summarySpectrum_querySearch_resultSearch_hit
                     {
+                        
                         hit_rank = 1,
-                        peptide = items[i].BaseSequence,
-                        peptide_prev_aa = items[i].BestMatchingPeptideWithSetMods.First().Pwsm.PreviousAminoAcid.ToString(),
-                        peptide_next_aa = items[i].BestMatchingPeptideWithSetMods.First().Pwsm.NextAminoAcid.ToString(),
-                        protein = items[i].BestMatchingPeptideWithSetMods.First().Pwsm.Protein.Accession,
+                        peptide = alphaPeptide.BaseSequence,
+                        peptide_prev_aa = alphaPeptide.PreviousAminoAcid.ToString(),
+                        peptide_next_aa = alphaPeptide.NextAminoAcid.ToString(),
+                        protein = alphaPeptide.Protein.Accession,
                         num_tot_proteins = 1,
-                        calc_neutral_pep_mass = (float)items[i].ScanPrecursorMonoisotopicPeakMz * items[i].ScanPrecursorCharge,
+                        calc_neutral_pep_mass = (float)items[i].ScanPrecursorMass,
                         massdiff = (items[i].ScanPrecursorMass - items[i].PeptideMonisotopicMass.Value).ToString(),
                         xlink_typeSpecified = true,
                         xlink_type = pepXML.Generated.msms_pipeline_analysisMsms_run_summarySpectrum_querySearch_resultSearch_hitXlink_type.na,
                         modification_info = new pepXML.Generated.modInfoDataType { mod_aminoacid_mass = mods.ToArray() },
                         search_score = new pepXML.Generated.nameValueType[]
                                     {
-                                        new pepXML.Generated.nameValueType{ name = "xlTotalScore", value = items[i].XLTotalScore.ToString()},
+                                        new pepXML.Generated.nameValueType{ name = "xlscore", value = items[i].XLTotalScore.ToString()},
                                         new pepXML.Generated.nameValueType{ name = "Qvalue", value = items[i].FdrInfo.QValue.ToString() }
                                     },
                     };
                     searchHits.Add(searchHit);
                 }
-                if (items[i].CrossType == PsmCrossType.DeadEnd || items[i].CrossType == PsmCrossType.DeadEndH2O || items[i].CrossType == PsmCrossType.DeadEndNH2 || items[i].CrossType == PsmCrossType.DeadEndTris)
+                else if (items[i].CrossType == PsmCrossType.DeadEnd || items[i].CrossType == PsmCrossType.DeadEndH2O || items[i].CrossType == PsmCrossType.DeadEndNH2 || items[i].CrossType == PsmCrossType.DeadEndTris)
                 {
                     double crosslinkerDeadEndMass = 0;
                     switch (items[i].CrossType)
@@ -382,64 +385,67 @@ namespace TaskLayer
                     var searchHit = new pepXML.Generated.msms_pipeline_analysisMsms_run_summarySpectrum_querySearch_resultSearch_hit
                     {
                         hit_rank = 1,
-                        peptide = items[i].BaseSequence,
-                        peptide_prev_aa = items[i].BestMatchingPeptideWithSetMods.First().Pwsm.PreviousAminoAcid.ToString(),
-                        peptide_next_aa = items[i].BestMatchingPeptideWithSetMods.First().Pwsm.NextAminoAcid.ToString(),
-                        protein = items[i].BestMatchingPeptideWithSetMods.First().Pwsm.Protein.Accession,
+                        peptide = alphaPeptide.BaseSequence,
+                        peptide_prev_aa = alphaPeptide.PreviousAminoAcid.ToString(),
+                        peptide_next_aa = alphaPeptide.NextAminoAcid.ToString(),
+                        protein = alphaPeptide.Protein.Accession,
                         num_tot_proteins = 1,
-                        calc_neutral_pep_mass = (float)items[i].ScanPrecursorMonoisotopicPeakMz * items[i].ScanPrecursorCharge,
+                        calc_neutral_pep_mass = (float)items[i].ScanPrecursorMass,
                         massdiff = (items[i].ScanPrecursorMass - items[i].PeptideMonisotopicMass.Value - crosslinkerDeadEndMass).ToString(),
                         xlink_typeSpecified = true,
                         xlink_type = pepXML.Generated.msms_pipeline_analysisMsms_run_summarySpectrum_querySearch_resultSearch_hitXlink_type.na,
                         modification_info = new pepXML.Generated.modInfoDataType { mod_aminoacid_mass = mods.ToArray() },
                         search_score = new pepXML.Generated.nameValueType[]
                                     {
-                                        new pepXML.Generated.nameValueType{ name = "xlTotalScore", value = items[i].XLTotalScore.ToString()},
+                                        new pepXML.Generated.nameValueType{ name = "xlscore", value = items[i].XLTotalScore.ToString()},
                                         new pepXML.Generated.nameValueType{ name = "Qvalue", value = items[i].FdrInfo.QValue.ToString() }
                                     },
                     };
                     searchHits.Add(searchHit);
                 }
-                if (items[i].CrossType == PsmCrossType.Inter || items[i].CrossType == PsmCrossType.Intra || items[i].CrossType == PsmCrossType.Cross)
+                else if (items[i].CrossType == PsmCrossType.Inter || items[i].CrossType == PsmCrossType.Intra || items[i].CrossType == PsmCrossType.Cross)
                 {
-                    int modsFixedNumBeta = items[i].BestMatchingPeptideWithSetMods.First().Pwsm.AllModsOneIsNterminus.Count;
+                    var betaPeptide = items[i].BetaPeptide.BestMatchingPeptideWithSetMods.First().Pwsm;
                     var modsBeta = new List<pepXML.Generated.modInfoDataTypeMod_aminoacid_mass>();
-                    for (int j = 0; j < modsFixedNumBeta; j++)
+
+                    foreach (var mod in betaPeptide.AllModsOneIsNterminus)
                     {
                         var modBeta = new pepXML.Generated.modInfoDataTypeMod_aminoacid_mass
                         {
-                            mass = items[i].BetaPeptide.BestMatchingPeptideWithSetMods.First().Pwsm.AllModsOneIsNterminus.Values.Select(p => p.MonoisotopicMass.Value).ToList()[j],
-                            position = items[i].BetaPeptide.BestMatchingPeptideWithSetMods.First().Pwsm.AllModsOneIsNterminus.Keys.ToList()[j].ToString()
+                            mass = mod.Value.MonoisotopicMass.Value,
+
+                            // convert from one-based to zero-based (N-term is zero in the pepXML output)
+                            position = (mod.Key - 1).ToString()
                         };
                         modsBeta.Add(modBeta);
                     }
 
                     var alpha = new pepXML.Generated.msms_pipeline_analysisMsms_run_summarySpectrum_querySearch_resultSearch_hitXlinkLinked_peptide
                     {
-                        peptide = items[i].BaseSequence,
-                        peptide_prev_aa = items[i].BestMatchingPeptideWithSetMods.First().Pwsm.PreviousAminoAcid.ToString(),
-                        peptide_next_aa = items[i].BestMatchingPeptideWithSetMods.First().Pwsm.NextAminoAcid.ToString(),
-                        protein = items[i].BestMatchingPeptideWithSetMods.First().Pwsm.Protein.Accession,
+                        peptide = alphaPeptide.BaseSequence,
+                        peptide_prev_aa = alphaPeptide.PreviousAminoAcid.ToString(),
+                        peptide_next_aa = alphaPeptide.NextAminoAcid.ToString(),
+                        protein = alphaPeptide.Protein.Accession,
                         num_tot_proteins = 1,
                         calc_neutral_pep_mass = (float)items[i].PeptideMonisotopicMass.Value,
-                        complement_mass = (float)(items[i].ScanPrecursorMass - items[i].PeptideMonisotopicMass.Value),
+                        complement_mass = (float)(items[i].ScanPrecursorMass - alphaPeptide.MonoisotopicMass),
                         designation = "alpha",
                         modification_info = new pepXML.Generated.modInfoDataType { mod_aminoacid_mass = mods.ToArray() },
                         xlink_score = new pepXML.Generated.nameValueType[]
                                                 {
-                                                    new pepXML.Generated.nameValueType{ name = "xlscore", value = items[i].BestScore.ToString() },
+                                                    new pepXML.Generated.nameValueType{ name = "xlscore", value = items[i].XLTotalScore.ToString() },
                                                     new pepXML.Generated.nameValueType{name = "link", value = items[i].ModPositions.First().ToString() },
                                                 }
                     };
                     var beta = new pepXML.Generated.msms_pipeline_analysisMsms_run_summarySpectrum_querySearch_resultSearch_hitXlinkLinked_peptide
                     {
-                        peptide = items[i].BetaPeptide.BaseSequence,
-                        peptide_prev_aa = items[i].BetaPeptide.BestMatchingPeptideWithSetMods.First().Pwsm.PreviousAminoAcid.ToString(),
-                        peptide_next_aa = items[i].BetaPeptide.BestMatchingPeptideWithSetMods.First().Pwsm.NextAminoAcid.ToString(),
-                        protein = items[i].BetaPeptide.BestMatchingPeptideWithSetMods.First().Pwsm.Protein.Accession,
+                        peptide = betaPeptide.BaseSequence,
+                        peptide_prev_aa = betaPeptide.PreviousAminoAcid.ToString(),
+                        peptide_next_aa = betaPeptide.NextAminoAcid.ToString(),
+                        protein = betaPeptide.Protein.Accession,
                         num_tot_proteins = 1,
-                        calc_neutral_pep_mass = (float)items[i].BetaPeptide.PeptideMonisotopicMass.Value,
-                        complement_mass = (float)(items[i].ScanPrecursorMass - items[i].PeptideMonisotopicMass.Value),
+                        calc_neutral_pep_mass = (float)betaPeptide.MonoisotopicMass,
+                        complement_mass = (float)(items[i].ScanPrecursorMass - betaPeptide.MonoisotopicMass),
                         designation = "beta",
                         modification_info = new pepXML.Generated.modInfoDataType { mod_aminoacid_mass = modsBeta.ToArray() },
                         xlink_score = new pepXML.Generated.nameValueType[]
@@ -457,8 +463,8 @@ namespace TaskLayer
                         peptide_next_aa = "-",
                         protein = "-",
                         num_tot_proteins = 1,
-                        calc_neutral_pep_mass = (float)items[i].ScanPrecursorMonoisotopicPeakMz * items[i].ScanPrecursorCharge,
-                        massdiff = (items[i].ScanPrecursorMass - items[i].BetaPeptide.PeptideMonisotopicMass.Value - items[i].PeptideMonisotopicMass.Value - crosslinker.TotalMass).ToString(),
+                        calc_neutral_pep_mass = (float)items[i].ScanPrecursorMass,
+                        massdiff = (items[i].ScanPrecursorMass - betaPeptide.MonoisotopicMass - alphaPeptide.MonoisotopicMass - crosslinker.TotalMass).ToString(),
                         xlink_typeSpecified = true,
                         xlink_type = pepXML.Generated.msms_pipeline_analysisMsms_run_summarySpectrum_querySearch_resultSearch_hitXlink_type.xl,
                         xlink = new pepXML.Generated.msms_pipeline_analysisMsms_run_summarySpectrum_querySearch_resultSearch_hitXlink
@@ -469,13 +475,13 @@ namespace TaskLayer
                         },
                         search_score = new pepXML.Generated.nameValueType[]
                                     {
-                                        new pepXML.Generated.nameValueType{ name = "xlTotalScore", value = items[i].XLTotalScore.ToString()},
+                                        new pepXML.Generated.nameValueType{ name = "xlscore", value = items[i].XLTotalScore.ToString()},
                                         new pepXML.Generated.nameValueType{ name = "Qvalue", value = items[i].FdrInfo.QValue.ToString() }
                                     }
                     };
                     searchHits.Add(searchHit);
                 }
-                if (items[i].CrossType == PsmCrossType.Loop)
+                else if (items[i].CrossType == PsmCrossType.Loop)
                 {
                     var thePeptide = new pepXML.Generated.msms_pipeline_analysisMsms_run_summarySpectrum_querySearch_resultSearch_hitXlinkLinked_peptide
                     {
@@ -489,13 +495,13 @@ namespace TaskLayer
                     var searchHit = new pepXML.Generated.msms_pipeline_analysisMsms_run_summarySpectrum_querySearch_resultSearch_hit
                     {
                         hit_rank = 1,
-                        peptide = items[i].BaseSequence,
-                        peptide_prev_aa = items[i].BestMatchingPeptideWithSetMods.First().Pwsm.PreviousAminoAcid.ToString(),
-                        peptide_next_aa = items[i].BestMatchingPeptideWithSetMods.First().Pwsm.NextAminoAcid.ToString(),
-                        protein = items[i].BestMatchingPeptideWithSetMods.First().Pwsm.Protein.Accession,
+                        peptide = alphaPeptide.BaseSequence,
+                        peptide_prev_aa = alphaPeptide.PreviousAminoAcid.ToString(),
+                        peptide_next_aa = alphaPeptide.NextAminoAcid.ToString(),
+                        protein = alphaPeptide.Protein.Accession,
                         num_tot_proteins = 1,
-                        calc_neutral_pep_mass = (float)items[i].ScanPrecursorMonoisotopicPeakMz * items[i].ScanPrecursorCharge,
-                        massdiff = (items[i].ScanPrecursorMass - items[i].PeptideMonisotopicMass.Value - crosslinker.LoopMass).ToString(),
+                        calc_neutral_pep_mass = (float)items[i].ScanPrecursorMass,
+                        massdiff = (items[i].ScanPrecursorMass - alphaPeptide.MonoisotopicMass - crosslinker.LoopMass).ToString(),
                         xlink_typeSpecified = true,
                         xlink_type = pepXML.Generated.msms_pipeline_analysisMsms_run_summarySpectrum_querySearch_resultSearch_hitXlink_type.loop,
                         modification_info = new pepXML.Generated.modInfoDataType { mod_aminoacid_mass = mods.ToArray() },
@@ -507,7 +513,7 @@ namespace TaskLayer
                         },
                         search_score = new pepXML.Generated.nameValueType[]
                                     {
-                                        new pepXML.Generated.nameValueType{ name = "xlTotalScore", value = items[i].XLTotalScore.ToString()},
+                                        new pepXML.Generated.nameValueType{ name = "xlscore", value = items[i].XLTotalScore.ToString()},
                                         new pepXML.Generated.nameValueType{ name = "Qvalue", value = items[i].FdrInfo.QValue.ToString() }
                                     }
                     };
@@ -522,10 +528,10 @@ namespace TaskLayer
                     spectrum = fileNameNoExtension + "." + items[i].ScanNumber.ToString(),
                     start_scan = Convert.ToUInt32(items[i].ScanNumber),
                     end_scan = Convert.ToUInt32(items[i].ScanNumber),
-                    precursor_neutral_mass = (float)items[i].ScanPrecursorMonoisotopicPeakMz * items[i].ScanPrecursorCharge,
+                    precursor_neutral_mass = (float)items[i].ScanPrecursorMass,
                     assumed_charge = items[i].ScanPrecursorCharge.ToString(),
                     index = Convert.ToUInt32(i + 1),
-                    retention_time_sec = (float)items[i].ScanRetentionTime,
+                    retention_time_sec = (float)(items[i].ScanRetentionTime * 60),
                     search_result = new pepXML.Generated.msms_pipeline_analysisMsms_run_summarySpectrum_querySearch_result[1]
                     {
                         new pepXML.Generated.msms_pipeline_analysisMsms_run_summarySpectrum_querySearch_result
@@ -539,10 +545,10 @@ namespace TaskLayer
                 };
             }
 
-            TextWriter writer = new StreamWriter(Path.Combine(outputFolder, fileName + ".pep.xml"));
+            TextWriter writer = new StreamWriter(Path.Combine(outputFolder, fileName + ".pep.XML"));
             _indexedSerializer.Serialize(writer, _pepxml);
             writer.Close();
-            FinishedWritingFile(Path.Combine(outputFolder, fileName + ".pep.xml"), nestedIds);
+            FinishedWritingFile(Path.Combine(outputFolder, fileName + ".pep.XML"), nestedIds);
         }
     }
 }
