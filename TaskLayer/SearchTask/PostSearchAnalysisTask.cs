@@ -51,9 +51,9 @@ namespace TaskLayer
             //update all psms with peptide info
             Parameters.AllPsms.ForEach(psm => psm.ResolveAllAmbiguities());
 
-            //squash duplicate PSMs
-            Parameters.AllPsms = Parameters.AllPsms.GroupBy(b => new Tuple<string, int, double?>(b.FullFilePath, b.ScanNumber, b.PeptideMonisotopicMass)).Select(b => b.First()).ToList();
-
+            Parameters.AllPsms = Parameters.AllPsms.OrderByDescending(b => b.Score)
+               .ThenBy(b => b.PeptideMonisotopicMass.HasValue ? Math.Abs(b.ScanPrecursorMass - b.PeptideMonisotopicMass.Value) : double.MaxValue)
+               .GroupBy(b => (b.FullFilePath, b.ScanNumber, b.PeptideMonisotopicMass)).Select(b => b.First()).ToList();
 
             CalculatePsmFdr();
             DoMassDifferenceLocalizationAnalysis();
