@@ -144,7 +144,6 @@ namespace Test
             Assert.IsTrue(allPsmsArray2[0].Score <= allPsmsArray[0].Score * 2 && allPsmsArray2[0].Score > allPsmsArray[0].Score + 3);
         }
 
-        [Test]
         public static void TestCompIons_MatchIonsScore()
         {
             TestDataFile t = new TestDataFile();
@@ -152,10 +151,26 @@ namespace Test
             double precursorMass = 300;
             //The below theoretical does not accurately represent B-Y ions
             double[] sorted_theoretical_product_masses_for_this_peptide = new double[] { precursorMass + (2 * Constants.ProtonMass) - 275.1350, precursorMass + (2 * Constants.ProtonMass) - 258.127, precursorMass + (2 * Constants.ProtonMass) - 257.1244, 50, 60, 70, 147.0764, precursorMass + (2 * Constants.ProtonMass) - 147.0764, precursorMass + (2 * Constants.ProtonMass) - 70, precursorMass + (2 * Constants.ProtonMass) - 60, precursorMass + (2 * Constants.ProtonMass) - 50, 257.1244, 258.127, 275.1350 }; //{ 50, 60, 70, 147.0764, 257.1244, 258.127, 275.1350 }
-            List<ProductType> lp = new List<ProductType> { ProductType.b, ProductType.y };
-            //double scoreT = MetaMorpheusEngine.CalculatePeptideScore(t.GetOneBasedScan(2), productMassTolerance, DissociationType.HCD, sorted_theoretical_product_masses_for_this_peptide, precursorMass, true, 0);
-            //double scoreF = MetaMorpheusEngine.CalculatePeptideScore(t.GetOneBasedScan(2), productMassTolerance, DissociationType.HCD, sorted_theoretical_product_masses_for_this_peptide, precursorMass, false, 0);
-            //Assert.IsTrue(scoreT == scoreF * 2 && scoreT > scoreF + 1);
+            List<Product> productsWithLocalizedMassDiff = new List<Product>();
+            foreach (double d in sorted_theoretical_product_masses_for_this_peptide)
+            {
+                NeutralTerminusFragment frag = new NeutralTerminusFragment(FragmentationTerminus.Both, d, 1, 1);
+                productsWithLocalizedMassDiff.Add(new Product(ProductType.b, frag, 0));
+            }
+            CommonParameters commonParametersNoComp = new CommonParameters { ProductMassTolerance = new AbsoluteTolerance(0.01) };
+            CommonParameters commonParametersWithComp = new CommonParameters(productMassTolerance: new AbsoluteTolerance(0.01), addCompIons: true);
+
+            MsDataScan scan = t.GetOneBasedScan(2);
+            List<MatchedFragmentIon> matchedIons = MetaMorpheusEngine.MatchFragmentIons(scan.MassSpectrum, productsWithLocalizedMassDiff, commonParametersNoComp, precursorMass);
+
+            List<MatchedFragmentIon> matchedCompIons = MetaMorpheusEngine.MatchFragmentIons(scan.MassSpectrum, productsWithLocalizedMassDiff, commonParametersWithComp, precursorMass);
+            matchedCompIons.AddRange(matchedIons);
+
+            // score when the mass-diff is on this residue
+            double localizedScore = MetaMorpheusEngine.CalculatePeptideScore(scan, matchedIons, 0);
+            double scoreNormal = MetaMorpheusEngine.CalculatePeptideScore(scan, matchedIons, 0);
+            double scoreComp = MetaMorpheusEngine.CalculatePeptideScore(scan, matchedCompIons, 0);
+            Assert.IsTrue(scoreNormal * 2 == scoreComp && scoreComp > scoreNormal + 1);
         }
 
         [Test]

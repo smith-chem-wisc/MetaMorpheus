@@ -17,32 +17,23 @@ namespace EngineLayer.Localization
     public class LocalizationEngine : MetaMorpheusEngine
     {
         private readonly IEnumerable<PeptideSpectralMatch> AllResultingIdentifications;
-        private readonly List<ProductType> ProductTypes;
         private readonly MsDataFile MyMsDataFile;
 
-
-        public LocalizationEngine(IEnumerable<PeptideSpectralMatch> allResultingIdentifications, List<ProductType> lp, MsDataFile myMsDataFile, CommonParameters commonParameters, List<string> nestedIds) : base(commonParameters, nestedIds)
+        public LocalizationEngine(IEnumerable<PeptideSpectralMatch> allResultingIdentifications, MsDataFile myMsDataFile, CommonParameters commonParameters, List<string> nestedIds) : base(commonParameters, nestedIds)
         {
             AllResultingIdentifications = allResultingIdentifications;
-            ProductTypes = lp;
             MyMsDataFile = myMsDataFile;
-
         }
 
         protected override MetaMorpheusEngineResults RunSpecific()
         {
-            foreach (PeptideSpectralMatch psm in AllResultingIdentifications.Where(b => b.NumDifferentMatchingPeptides == 1))
+            // don't try to localize mass differences for ambiguous peptides
+            foreach (PeptideSpectralMatch psm in AllResultingIdentifications.Where(b => b.FullSequence != null))
             {
                 // Stop loop if canceled
                 if (GlobalVariables.StopLoops)
                 {
                     break;
-                }
-                
-                // don't try to localize mass-differences for ambiguous sequences
-                if (psm.FullSequence == null)
-                {
-                    continue;
                 }
 
                 MsDataScan scan = MyMsDataFile.GetOneBasedScan(psm.ScanNumber);
@@ -59,17 +50,11 @@ namespace EngineLayer.Localization
                     // this is the list of theoretical products for this peptide with mass-difference on this residue
                     List<Product> productsWithLocalizedMassDiff = peptideWithLocalizedMassDiff.Fragment(commonParameters.DissociationType, commonParameters.FragmentationTerminus).ToList();
 
-                    var matchedIons = MatchFragmentIons(scan.MassSpectrum, productsWithLocalizedMassDiff, commonParameters);
-
-                    if (commonParameters.AddCompIons)
-                    {
-                        MzSpectrum complementarySpectrum = GenerateComplementarySpectrum(scan.MassSpectrum, psm.ScanPrecursorMass, commonParameters.DissociationType);
-                        matchedIons.AddRange(MatchFragmentIons(complementarySpectrum, productsWithLocalizedMassDiff, commonParameters));
-                    }
+                    var matchedIons = MatchFragmentIons(scan.MassSpectrum, productsWithLocalizedMassDiff, commonParameters, psm.ScanPrecursorMass);
 
                     // score when the mass-diff is on this residue
                     double localizedScore = CalculatePeptideScore(scan, matchedIons, 0);
-                    
+
                     localizedScores.Add(localizedScore);
                 }
 

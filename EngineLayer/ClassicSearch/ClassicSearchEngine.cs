@@ -68,13 +68,7 @@ namespace EngineLayer.ClassicSearch
 
                             foreach (ScanWithIndexAndNotchInfo scan in GetAcceptableScans(peptide.MonoisotopicMass, SearchMode))
                             {
-                                var matchedIons = MatchFragmentIons(scan.TheScan.TheScan.MassSpectrum, peptideTheorProducts, commonParameters);
-
-                                if (commonParameters.AddCompIons)
-                                {
-                                    MzSpectrum complementarySpectrum = GenerateComplementarySpectrum(scan.TheScan.TheScan.MassSpectrum, scan.TheScan.PrecursorMass, commonParameters.DissociationType);
-                                    matchedIons.AddRange(MatchFragmentIons(complementarySpectrum, peptideTheorProducts, commonParameters));
-                                }
+                                List<MatchedFragmentIon> matchedIons = MatchFragmentIons(scan.TheScan.TheScan.MassSpectrum, peptideTheorProducts, commonParameters, scan.TheScan.PrecursorMass);
 
                                 double thisScore = CalculatePeptideScore(scan.TheScan.TheScan, matchedIons, 0);
 
@@ -139,7 +133,7 @@ namespace EngineLayer.ClassicSearch
             {
                 psm.ResolveAllAmbiguities();
             }
-            
+
             return new MetaMorpheusEngineResults(this);
         }
 

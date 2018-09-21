@@ -17,7 +17,6 @@ namespace EngineLayer.ModernSearch
         protected readonly PeptideSpectralMatch[] PeptideSpectralMatches;
         protected readonly Ms2ScanWithSpecificMass[] ListOfSortedMs2Scans;
         protected readonly List<PeptideWithSetModifications> PeptideIndex;
-        protected readonly List<ProductType> ProductTypes;
         protected readonly int CurrentPartition;
         protected readonly MassDiffAcceptor MassDiffAcceptor;
         protected readonly DissociationType DissociationType;
@@ -29,7 +28,6 @@ namespace EngineLayer.ModernSearch
             ListOfSortedMs2Scans = listOfSortedms2Scans;
             PeptideIndex = peptideIndex;
             FragmentIndex = fragmentIndex;
-            ProductTypes = DissociationTypeCollection.ProductsFromDissociationType[commonParameters.DissociationType].Intersect(TerminusSpecificProductTypes.ProductIonTypesFromSpecifiedTerminus[commonParameters.FragmentationTerminus]).ToList();
             CurrentPartition = currentPartition + 1;
             MassDiffAcceptor = massDiffAcceptor;
             DissociationType = commonParameters.DissociationType;
@@ -106,13 +104,8 @@ namespace EngineLayer.ModernSearch
                             peptideTheorProducts = peptide.Fragment(commonParameters.DissociationType, FragmentationTerminus.Both).ToList();
                         }
 
-                        List<MatchedFragmentIon> matchedIons = MatchFragmentIons(scan.TheScan.MassSpectrum, peptideTheorProducts, commonParameters);
+                        List<MatchedFragmentIon> matchedIons = MatchFragmentIons(scan.TheScan.MassSpectrum, peptideTheorProducts, commonParameters, scan.PrecursorMass);
 
-                        if (commonParameters.AddCompIons)
-                        {
-                            MzSpectrum complementarySpectrum = GenerateComplementarySpectrum(scan.TheScan.MassSpectrum, scan.PrecursorMass, commonParameters.DissociationType);
-                            matchedIons.AddRange(MatchFragmentIons(complementarySpectrum, peptideTheorProducts, commonParameters));
-                        }
 
                         double thisScore = CalculatePeptideScore(scan.TheScan, matchedIons, 0);
                         int notch = MassDiffAcceptor.Accepts(scan.PrecursorMass, peptide.MonoisotopicMass);

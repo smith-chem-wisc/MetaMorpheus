@@ -18,7 +18,6 @@ namespace EngineLayer.Indexing
 
         protected readonly List<Modification> FixedModifications;
         protected readonly List<Modification> VariableModifications;
-        protected readonly List<ProductType> ProductTypes;
         protected readonly int CurrentPartition;
         protected readonly DecoyType DecoyType;
         protected readonly IEnumerable<DigestionParams> CollectionOfDigestionParams;

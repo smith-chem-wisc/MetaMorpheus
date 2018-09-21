@@ -58,7 +58,7 @@ namespace EngineLayer.CrosslinkSearch
         {
             foreach (var listOfProducts in productsForEachModPosition)
             {
-                List<MatchedFragmentIon> matchedIons = MetaMorpheusEngine.MatchFragmentIons(theScan.TheScan.MassSpectrum, listOfProducts.Value, commonParameters);
+                List<MatchedFragmentIon> matchedIons = MetaMorpheusEngine.MatchFragmentIons(theScan.TheScan.MassSpectrum, listOfProducts.Value, commonParameters, theScan.PrecursorMass);
                 double score = MetaMorpheusEngine.CalculatePeptideScore(theScan.TheScan, matchedIons, 0);
 
                 if (score > BestScore)

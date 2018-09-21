@@ -41,8 +41,7 @@ namespace Test
 
             var peptidesWithSetModifications = new List<PeptideWithSetModifications> { modPep };
             PeptideSpectralMatch newPsm = new PeptideSpectralMatch(peptidesWithSetModifications.First(), 0, 0, 0, scan, digestionParams, new List<MatchedFragmentIon>());
-
-            List<ProductType> lp = new List<ProductType> { ProductType.b, ProductType.y };
+            
             Tolerance fragmentTolerance = new AbsoluteTolerance(0.01);
 
             newPsm.SetFdrValues(1, 0, 0, 1, 0, 0, 0, 0, 0, false);
@@ -76,7 +75,7 @@ namespace Test
             var peptidesWithSetModifications = new List<PeptideWithSetModifications> { modPep };
             PeptideSpectralMatch match = new PeptideSpectralMatch(peptidesWithSetModifications.First(), 0, 0, 0, scan, digestionParams, new List<MatchedFragmentIon>());
             PeptideSpectralMatch newPsm = new PeptideSpectralMatch(peptidesWithSetModifications.First(), 0, 0, 0, scan, digestionParams, new List<MatchedFragmentIon>());
-
+            
             Tolerance fragmentTolerance = new AbsoluteTolerance(0.01);
 
             match.SetFdrValues(1, 0, 0, 1, 0, 0, 0, 0, 0, false);

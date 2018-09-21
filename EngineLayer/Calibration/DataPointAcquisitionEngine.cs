@@ -22,7 +22,6 @@ namespace EngineLayer.Calibration
         private readonly Tolerance MzToleranceForMs2Search;
         private readonly int MinMS1isotopicPeaksNeededForConfirmedIdentification;
         private readonly int MinMS2isotopicPeaksNeededForConfirmedIdentification;
-        private readonly List<ProductType> ProtductTypesForCalibration;
 
         public DataPointAcquisitionEngine(
             List<PeptideSpectralMatch> goodIdentifications,
@@ -32,7 +31,6 @@ namespace EngineLayer.Calibration
             int numFragmentsNeededForEveryIdentification,
             int minMS1isotopicPeaksNeededForConfirmedIdentification,
             int minMS2isotopicPeaksNeededForConfirmedIdentification,
-            List<ProductType> productTypesForCalibration,
             CommonParameters commonParameters,
             List<string> nestedIds) : base(commonParameters, nestedIds)
         {
@@ -43,7 +41,6 @@ namespace EngineLayer.Calibration
             NumFragmentsNeededForEveryIdentification = numFragmentsNeededForEveryIdentification;
             MinMS1isotopicPeaksNeededForConfirmedIdentification = minMS1isotopicPeaksNeededForConfirmedIdentification;
             MinMS2isotopicPeaksNeededForConfirmedIdentification = minMS2isotopicPeaksNeededForConfirmedIdentification;
-            ProtductTypesForCalibration = productTypesForCalibration;
         }
 
         protected override MetaMorpheusEngineResults RunSpecific()

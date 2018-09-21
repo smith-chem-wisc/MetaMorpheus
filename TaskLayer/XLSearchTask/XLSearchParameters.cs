@@ -22,7 +22,6 @@ namespace TaskLayer
             CrosslinkerDeadEndMassTris = null;
             CrosslinkerResidues = "K";
             CrosslinkerResidues2 = "K";
-            XlPrecusorMsTl = new PpmTolerance(10);
             XlQuench_H2O = true;
             XlQuench_NH2 = false;
             XlQuench_Tris = true;
@@ -49,8 +48,6 @@ namespace TaskLayer
         public double? CrosslinkerDeadEndMassNH2 { get; set; }
         public double? CrosslinkerDeadEndMassTris { get; set; }
         
-        public Tolerance XlPrecusorMsTl { get; set; }
-
         // TODO: 2+ 3+ prime fragments?
         public bool IsCleavable { get; set; }
         public bool RestrictToTopNHits { get; set; }
