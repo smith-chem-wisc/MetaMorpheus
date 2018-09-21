@@ -215,7 +215,19 @@ namespace EngineLayer
         /// </summary>
         public void TrimProteinMatches(HashSet<Protein> parsimoniousProteins)
         {
-            _bestMatchingPeptideWithetMods.RemoveAll(p => !parsimoniousProteins.Contains(p.Item2.Protein));
+            if (IsDecoy)
+            {
+                if (_bestMatchingPeptideWithetMods.Any(p => parsimoniousProteins.Contains(p.Pwsm.Protein) && p.Pwsm.Protein.IsDecoy))
+                {
+                    _bestMatchingPeptideWithetMods.RemoveAll(p => !parsimoniousProteins.Contains(p.Item2.Protein));
+                }
+                // else do nothing
+            }
+            else
+            {
+                _bestMatchingPeptideWithetMods.RemoveAll(p => !parsimoniousProteins.Contains(p.Item2.Protein));
+            }
+
             ResolveAllAmbiguities();
         }
 
