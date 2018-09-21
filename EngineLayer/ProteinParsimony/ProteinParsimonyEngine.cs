@@ -361,16 +361,17 @@ namespace EngineLayer
             }
 
             // Parsimony stage 5: remove peptide objects that do not have proteins in the parsimonious list
-            foreach (PeptideSpectralMatch psm in AllPsms)
-            {
-                // if this PSM has a protein in the parsimonious list, it removes the proteins NOT in the parsimonious list
-                // otherwise, no proteins are removed (i.e., for PSMs that cannot be explained by a parsimonious protein, 
-                // no protein associations are removed)
-                if (psm.BestMatchingPeptideWithSetMods.Any(p => parsimoniousProteinList.Contains(p.Pwsm.Protein)))
-                {
-                    psm.TrimProteinMatches(parsimoniousProteinList);
-                }
-            }
+            //TODO: uncomment this once merged
+            //foreach (PeptideSpectralMatch psm in AllPsms)
+            //{
+            //    // if this PSM has a protein in the parsimonious list, it removes the proteins NOT in the parsimonious list
+            //    // otherwise, no proteins are removed (i.e., for PSMs that cannot be explained by a parsimonious protein, 
+            //    // no protein associations are removed)
+            //    if (psm.BestMatchingPeptideWithSetMods.Any(p => parsimoniousProteinList.Contains(p.Pwsm.Protein)))
+            //    {
+            //        psm.TrimProteinMatches(parsimoniousProteinList);
+            //    }
+            //}
 
             // construct protein groups
             List<ProteinGroup> proteinGroups = ConstructProteinGroups(uniquePeptides);
