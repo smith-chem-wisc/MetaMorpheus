@@ -20,7 +20,7 @@ namespace EngineLayer
 
         public const double ToleranceForScoreDifferentiation = 1e-9;
 
-        public PeptideSpectralMatch(CompactPeptideBase peptide, int notch, double score, int scanIndex, IScan scan, DigestionParams digestionParams)
+        public PeptideSpectralMatch(CompactPeptideBase peptide, int notch, double score, int scanIndex, IScan scan, DigestionParams digestionParams, List<MatchedFragmentIon> matchedFragments = null)
         {
             ScanIndex = scanIndex;
             FullFilePath = scan.FullFilePath;
@@ -32,7 +32,7 @@ namespace EngineLayer
             ScanPrecursorCharge = scan.PrecursorCharge;
             ScanPrecursorMonoisotopicPeakMz = scan.PrecursorMonoisotopicPeakMz;
             ScanPrecursorMass = scan.PrecursorMass;
-            AddOrReplace(peptide, score, notch, true);
+            AddOrReplace(peptide, score, notch, true, matchedFragments);
             AllScores = new List<double>();
             DigestionParams = digestionParams;
             MatchedIonSeriesDict = new Dictionary<ProductType, int[]>();
@@ -40,7 +40,8 @@ namespace EngineLayer
             MatchedIonIntensitiesDict = new Dictionary<ProductType, double[]>();
             ProductMassErrorDa = new Dictionary<ProductType, double[]>();
             ProductMassErrorPpm = new Dictionary<ProductType, double[]>();
-            MatchedFragmentIons = new List<MatchedFragmentIon>();
+            if (MatchedFragmentIons == null)
+                MatchedFragmentIons = new List<MatchedFragmentIon>();
         }
 
         public ChemicalFormula ModsChemicalFormula { get; private set; }
@@ -81,6 +82,7 @@ namespace EngineLayer
         public readonly DigestionParams DigestionParams;
         public List<double> AllScores { get; set; }
         public List<MatchedFragmentIon> MatchedFragmentIons { get; private set; }
+        public bool IsContaminant { get; private set; }
 
         public double[] Features
         {
@@ -95,12 +97,7 @@ namespace EngineLayer
             return String.Join("\t", DataDictionary(null, null).Keys);
         }
 
-        public void SetMatchedFragments(List<MatchedFragmentIon> matchedFragmentIons)
-        {
-            MatchedFragmentIons = matchedFragmentIons;
-        }
-
-        public void AddOrReplace(CompactPeptideBase compactPeptide, double score, int notch, bool reportAllAmbiguity)
+        public void AddOrReplace(CompactPeptideBase compactPeptide, double score, int notch, bool reportAllAmbiguity, List<MatchedFragmentIon> matchedFragmentIons)
         {
             if (score - Score > ToleranceForScoreDifferentiation) //if new score beat the old score, overwrite it
             {
@@ -113,6 +110,7 @@ namespace EngineLayer
                     RunnerUpScore = Score;
                 }
                 Score = score;
+                MatchedFragmentIons = matchedFragmentIons;
             }
             else if (score - Score > -ToleranceForScoreDifferentiation && reportAllAmbiguity) //else if the same score and ambiguity is allowed
             {
@@ -152,6 +150,7 @@ namespace EngineLayer
             }
             var pepsWithMods = CompactPeptides.SelectMany(b => b.Value.Item2);
             IsDecoy = CompactPeptides.Any(b => b.Value.Item2.Any(c => c.Protein.IsDecoy));
+            IsContaminant = CompactPeptides.Any(b => b.Value.Item2.Any(c => c.Protein.IsContaminant));
             FullSequence = Resolve(pepsWithMods.Select(b => b.Sequence)).Item2;
             BaseSequence = Resolve(pepsWithMods.Select(b => b.BaseSequence)).Item2;
             PeptideLength = Resolve(pepsWithMods.Select(b => b.Length)).Item2;
