@@ -20,7 +20,7 @@ namespace EngineLayer
 
         public const double ToleranceForScoreDifferentiation = 1e-9;
 
-        public PeptideSpectralMatch(CompactPeptideBase peptide, int notch, double score, int scanIndex, IScan scan, DigestionParams digestionParams)
+        public PeptideSpectralMatch(CompactPeptideBase peptide, int notch, double score, int scanIndex, IScan scan, DigestionParams digestionParams, List<MatchedFragmentIon> matchedFragments = null)
         {
             ScanIndex = scanIndex;
             FullFilePath = scan.FullFilePath;
@@ -32,7 +32,7 @@ namespace EngineLayer
             ScanPrecursorCharge = scan.PrecursorCharge;
             ScanPrecursorMonoisotopicPeakMz = scan.PrecursorMonoisotopicPeakMz;
             ScanPrecursorMass = scan.PrecursorMass;
-            AddOrReplace(peptide, score, notch, true);
+            AddOrReplace(peptide, score, notch, true, matchedFragments);
             AllScores = new List<double>();
             DigestionParams = digestionParams;
             MatchedIonSeriesDict = new Dictionary<ProductType, int[]>();
@@ -40,7 +40,8 @@ namespace EngineLayer
             MatchedIonIntensitiesDict = new Dictionary<ProductType, double[]>();
             ProductMassErrorDa = new Dictionary<ProductType, double[]>();
             ProductMassErrorPpm = new Dictionary<ProductType, double[]>();
-            MatchedFragmentIons = new List<MatchedFragmentIon>();
+            if (MatchedFragmentIons == null)
+                MatchedFragmentIons = new List<MatchedFragmentIon>();
         }
 
         public ChemicalFormula ModsChemicalFormula { get; private set; }
@@ -96,12 +97,7 @@ namespace EngineLayer
             return String.Join("\t", DataDictionary(null, null).Keys);
         }
 
-        public void SetMatchedFragments(List<MatchedFragmentIon> matchedFragmentIons)
-        {
-            MatchedFragmentIons = matchedFragmentIons;
-        }
-
-        public void AddOrReplace(CompactPeptideBase compactPeptide, double score, int notch, bool reportAllAmbiguity)
+        public void AddOrReplace(CompactPeptideBase compactPeptide, double score, int notch, bool reportAllAmbiguity, List<MatchedFragmentIon> matchedFragmentIons)
         {
             if (score - Score > ToleranceForScoreDifferentiation) //if new score beat the old score, overwrite it
             {
@@ -114,6 +110,7 @@ namespace EngineLayer
                     RunnerUpScore = Score;
                 }
                 Score = score;
+                MatchedFragmentIons = matchedFragmentIons;
             }
             else if (score - Score > -ToleranceForScoreDifferentiation && reportAllAmbiguity) //else if the same score and ambiguity is allowed
             {
