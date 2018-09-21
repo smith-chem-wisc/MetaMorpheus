@@ -123,7 +123,7 @@ namespace EngineLayer.NonSpecificEnzymeSearch
                                     if (PeptideSpectralMatches[i] == null)
                                         PeptideSpectralMatches[i] = new PeptideSpectralMatch(cp, notchAndPrecursor.Item1, peptideScore, i, scan, commonParameters.DigestionParams);
                                     else
-                                        PeptideSpectralMatches[i].AddOrReplace(cp, peptideScore, notchAndPrecursor.Item1, commonParameters.ReportAllAmbiguity);
+                                        PeptideSpectralMatches[i].AddOrReplace(cp, peptideScore, notchAndPrecursor.Item1, commonParameters.ReportAllAmbiguity, null);
                                 }
                             }
                             if (PeptideSpectralMatches[i] != null)

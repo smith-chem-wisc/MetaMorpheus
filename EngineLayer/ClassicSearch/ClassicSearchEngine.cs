@@ -101,15 +101,12 @@ namespace EngineLayer.ClassicSearch
                                         {
                                             if (PeptideSpectralMatches[scan.ScanIndex] == null)
                                             {
-                                                PeptideSpectralMatches[scan.ScanIndex] = new PeptideSpectralMatch(compactPeptide, scan.Notch, thisScore, scan.ScanIndex, scan.TheScan, commonParameters.DigestionParams);
+                                                PeptideSpectralMatches[scan.ScanIndex] = new PeptideSpectralMatch(compactPeptide, scan.Notch, thisScore, scan.ScanIndex, scan.TheScan, commonParameters.DigestionParams, matchedIons);
                                             }
                                             else
                                             {
-                                                PeptideSpectralMatches[scan.ScanIndex].AddOrReplace(compactPeptide, thisScore, scan.Notch, commonParameters.ReportAllAmbiguity);
+                                                PeptideSpectralMatches[scan.ScanIndex].AddOrReplace(compactPeptide, thisScore, scan.Notch, commonParameters.ReportAllAmbiguity, matchedIons);
                                             }
-
-                                            //TODO: move this into the PeptideSpectralMatch constructor
-                                            PeptideSpectralMatches[scan.ScanIndex].SetMatchedFragments(matchedIons);
                                         }
 
                                         if (commonParameters.CalculateEValue)
