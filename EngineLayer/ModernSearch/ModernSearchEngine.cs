@@ -108,6 +108,7 @@ namespace EngineLayer.ModernSearch
 
                         if (commonParameters.AddCompIons)
                         {
+                            //test
                             MzSpectrum complementarySpectrum = GenerateComplementarySpectrum(scan.TheScan.MassSpectrum, scan.PrecursorMass, commonParameters.DissociationType);
                             matchedIons.AddRange(MatchFragmentIons(complementarySpectrum, peptideTheorProducts, commonParameters));
                         }
