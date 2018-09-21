@@ -51,7 +51,6 @@ namespace Test
 
             psm3.AddOrReplace(pep4, 1, 1, true, new List<MatchedFragmentIon>());
 
-
             var newPsms = new List<PeptideSpectralMatch> { psm1, psm2, psm3 };
             foreach (PeptideSpectralMatch psm in newPsms)
             {
