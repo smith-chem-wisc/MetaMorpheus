@@ -68,7 +68,7 @@ namespace EngineLayer
             return matchedFragmentIons.Count + (matchedFragmentIons.Sum(v => v.Intensity) / thisScan.TotalIonCurrent);
         }
 
-        public static List<MatchedFragmentIon> MatchFragmentIons(MzSpectrum spectrum, List<Product> theoreticalProducts, CommonParameters commonParameters)
+        public static List<MatchedFragmentIon> MatchFragmentIons(MzSpectrum spectrum, List<Product> theoreticalProducts, CommonParameters commonParameters, double precursorMass)
         {
             var matchedFragmentIons = new List<MatchedFragmentIon>();
             var alreadyCountedMzs = new HashSet<double>();
@@ -92,38 +92,46 @@ namespace EngineLayer
                 int matchedPeakIndex = spectrum.GetClosestPeakIndex(product.NeutralMass.ToMz(1)).Value;
 
                 double mz = spectrum.XArray[matchedPeakIndex];
-                double intensity = spectrum.YArray[matchedPeakIndex];
 
                 // is the mass error acceptable and has it been counted already?
                 if (commonParameters.ProductMassTolerance.Within(mz, product.NeutralMass.ToMz(1)) && !alreadyCountedMzs.Contains(mz))
                 {
-                    matchedFragmentIons.Add(new MatchedFragmentIon(product, mz, intensity, 1));
+                    matchedFragmentIons.Add(new MatchedFragmentIon(product, mz, spectrum.YArray[matchedPeakIndex], 1));
                     alreadyCountedMzs.Add(mz);
+                }
+            }
+            if (commonParameters.AddCompIons)//needs to be separate to account for ppm error differences
+            {
+                alreadyCountedMzs.Clear(); //we want to be able to recount for comp ions
+                double protonMassShift = complementaryIonConversionDictionary[commonParameters.DissociationType].ToMass(1);
+                double sumOfCompIonsMz = (precursorMass + protonMassShift).ToMz(1); //FIXME, not valid for all fragmentation (b+y+H = precursor, but c+zdot+2H = precursor)
+                foreach (Product product in theoreticalProducts)
+                {
+                    // unknown fragment mass; this only happens rarely for sequences with unknown amino acids
+                    if (double.IsNaN(product.NeutralMass))
+                    {
+                        continue;
+                    }
+
+                    // get the closest peak in the spectrum to the theoretical peak assuming z=1
+                    //generate a "comp" product
+                    double theoreticalCompMz = sumOfCompIonsMz - product.NeutralMass; //This is NOT the m/z of the product, 
+                    //but the m/z of the theoretical complementary that we are looking for in the experimental spectrum.
+                    //The complementary to this experimental match will match to the original theoretical product
+                    int matchedPeakIndex = spectrum.GetClosestPeakIndex(theoreticalCompMz).Value; //search for the comp ion
+                    double mzToCompare = spectrum.XArray[matchedPeakIndex]; //we need the original mz to know the error associated with the comp mz
+
+                    // is the mass error acceptable and has it been counted already?
+                    //Need to compare the "noncomplementary" peaks so that the correct mass tolerance is used for Ppm tolerances
+                    if (commonParameters.ProductMassTolerance.Within(mzToCompare, theoreticalCompMz) && !alreadyCountedMzs.Contains(mzToCompare))
+                    {
+                        matchedFragmentIons.Add(new MatchedFragmentIon(product, (sumOfCompIonsMz - spectrum.XArray[matchedPeakIndex]).ToMz(1), spectrum.YArray[matchedPeakIndex], 1)); //the sumOfCompIons - original peak must be converted to mz, because subtracting an mz from an mz creates a mass difference, not an mz (5-3 (m/z) = 2 = 4-2 (mass))
+                        alreadyCountedMzs.Add(mzToCompare);
+                    }
                 }
             }
 
             return matchedFragmentIons;
-        }
-
-        public static MzSpectrum GenerateComplementarySpectrum(MzSpectrum spectrum, double precursorMass, DissociationType dissociationType)
-        {
-            double protonMassShift = complementaryIonConversionDictionary[dissociationType].ToMass(1);
-
-            double[] newMzSpectrum = new double[spectrum.Size];
-            double[] intensity = new double[spectrum.Size];
-
-            for (int i = spectrum.Size - 1; i >= 0; i--)
-            {
-                int j = spectrum.Size - i - 1;
-
-                double mz = spectrum.XArray[i];
-                double compFragmentMass = (precursorMass + protonMassShift) - mz.ToMass(1); //FIXME, not valid for all fragmentation (b+y+H = precursor, but c+zdot+2H = precursor)
-
-                newMzSpectrum[j] = compFragmentMass.ToMz(1);
-                intensity[j] = spectrum.YArray[i];
-            }
-
-            return new MzSpectrum(newMzSpectrum, intensity, false);
         }
 
         public MetaMorpheusEngineResults Run()
@@ -142,7 +150,7 @@ namespace EngineLayer
         {
             return string.Join(",", nestedIds);
         }
-        
+
         protected void Warn(string v)
         {
             WarnHandler?.Invoke(this, new StringEventArgs(v, nestedIds));

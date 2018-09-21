@@ -18,7 +18,7 @@ namespace EngineLayer.Localization
     {
         private readonly IEnumerable<PeptideSpectralMatch> AllResultingIdentifications;
         private readonly MsDataFile MyMsDataFile;
-        
+
         public LocalizationEngine(IEnumerable<PeptideSpectralMatch> allResultingIdentifications, MsDataFile myMsDataFile, CommonParameters commonParameters, List<string> nestedIds) : base(commonParameters, nestedIds)
         {
             AllResultingIdentifications = allResultingIdentifications;
@@ -35,7 +35,7 @@ namespace EngineLayer.Localization
                 {
                     break;
                 }
-                
+
                 MsDataScan scan = MyMsDataFile.GetOneBasedScan(psm.ScanNumber);
                 PeptideWithSetModifications peptide = psm.BestMatchingPeptideWithSetMods.First().Pwsm;
                 double massDifference = psm.ScanPrecursorMass - peptide.MonoisotopicMass;
@@ -50,17 +50,11 @@ namespace EngineLayer.Localization
                     // this is the list of theoretical products for this peptide with mass-difference on this residue
                     List<Product> productsWithLocalizedMassDiff = peptideWithLocalizedMassDiff.Fragment(commonParameters.DissociationType, commonParameters.FragmentationTerminus).ToList();
 
-                    var matchedIons = MatchFragmentIons(scan.MassSpectrum, productsWithLocalizedMassDiff, commonParameters);
-
-                    if (commonParameters.AddCompIons)
-                    {
-                        MzSpectrum complementarySpectrum = GenerateComplementarySpectrum(scan.MassSpectrum, psm.ScanPrecursorMass, commonParameters.DissociationType);
-                        matchedIons.AddRange(MatchFragmentIons(complementarySpectrum, productsWithLocalizedMassDiff, commonParameters));
-                    }
+                    var matchedIons = MatchFragmentIons(scan.MassSpectrum, productsWithLocalizedMassDiff, commonParameters, psm.ScanPrecursorMass);
 
                     // score when the mass-diff is on this residue
                     double localizedScore = CalculatePeptideScore(scan, matchedIons, 0);
-                    
+
                     localizedScores.Add(localizedScore);
                 }
 

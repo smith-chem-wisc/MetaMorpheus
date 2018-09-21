@@ -157,13 +157,13 @@ namespace Test
                 NeutralTerminusFragment frag = new NeutralTerminusFragment(FragmentationTerminus.Both, d, 1, 1);
                 productsWithLocalizedMassDiff.Add(new Product(ProductType.b, frag, 0));
             }
-            CommonParameters commonParameters = new CommonParameters { ProductMassTolerance = new AbsoluteTolerance(0.01) };
+            CommonParameters commonParametersNoComp = new CommonParameters { ProductMassTolerance = new AbsoluteTolerance(0.01) };
+            CommonParameters commonParametersWithComp = new CommonParameters(productMassTolerance: new AbsoluteTolerance(0.01), addCompIons: true);
 
             MsDataScan scan = t.GetOneBasedScan(2);
-            List<MatchedFragmentIon> matchedIons = MetaMorpheusEngine.MatchFragmentIons(scan.MassSpectrum, productsWithLocalizedMassDiff, commonParameters);
-            
-            MzSpectrum complementarySpectrum = MetaMorpheusEngine.GenerateComplementarySpectrum(scan.MassSpectrum, precursorMass, commonParameters.DissociationType);
-            List<MatchedFragmentIon> matchedCompIons = MetaMorpheusEngine.MatchFragmentIons(complementarySpectrum, productsWithLocalizedMassDiff, commonParameters);
+            List<MatchedFragmentIon> matchedIons = MetaMorpheusEngine.MatchFragmentIons(scan.MassSpectrum, productsWithLocalizedMassDiff, commonParametersNoComp, precursorMass);
+
+            List<MatchedFragmentIon> matchedCompIons = MetaMorpheusEngine.MatchFragmentIons(scan.MassSpectrum, productsWithLocalizedMassDiff, commonParametersWithComp, precursorMass);
             matchedCompIons.AddRange(matchedIons);
 
             // score when the mass-diff is on this residue
