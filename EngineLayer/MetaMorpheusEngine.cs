@@ -71,7 +71,6 @@ namespace EngineLayer
         public static List<MatchedFragmentIon> MatchFragmentIons(MzSpectrum spectrum, List<Product> theoreticalProducts, CommonParameters commonParameters, double precursorMass)
         {
             var matchedFragmentIons = new List<MatchedFragmentIon>();
-            var alreadyCountedMzs = new HashSet<double>();
 
             // if the spectrum has no peaks
             if (spectrum.Size == 0)
@@ -94,15 +93,13 @@ namespace EngineLayer
                 double mz = spectrum.XArray[matchedPeakIndex];
 
                 // is the mass error acceptable and has it been counted already?
-                if (commonParameters.ProductMassTolerance.Within(mz, product.NeutralMass.ToMz(1)) && !alreadyCountedMzs.Contains(mz))
+                if (commonParameters.ProductMassTolerance.Within(mz, product.NeutralMass.ToMz(1)))
                 {
                     matchedFragmentIons.Add(new MatchedFragmentIon(product, mz, spectrum.YArray[matchedPeakIndex], 1));
-                    alreadyCountedMzs.Add(mz);
                 }
             }
             if (commonParameters.AddCompIons)//needs to be separate to account for ppm error differences
             {
-                alreadyCountedMzs.Clear(); //we want to be able to recount for comp ions
                 double protonMassShift = complementaryIonConversionDictionary[commonParameters.DissociationType].ToMass(1);
                 double sumOfCompIonsMz = (precursorMass + protonMassShift).ToMz(1); //FIXME, not valid for all fragmentation (b+y+H = precursor, but c+zdot+2H = precursor)
                 foreach (Product product in theoreticalProducts)
@@ -123,10 +120,9 @@ namespace EngineLayer
 
                     // is the mass error acceptable and has it been counted already?
                     //Need to compare the "noncomplementary" peaks so that the correct mass tolerance is used for Ppm tolerances
-                    if (commonParameters.ProductMassTolerance.Within(mzToCompare, theoreticalCompMz) && !alreadyCountedMzs.Contains(mzToCompare))
+                    if (commonParameters.ProductMassTolerance.Within(mzToCompare, theoreticalCompMz))
                     {
                         matchedFragmentIons.Add(new MatchedFragmentIon(product, (sumOfCompIonsMz - spectrum.XArray[matchedPeakIndex]).ToMz(1), spectrum.YArray[matchedPeakIndex], 1)); //the sumOfCompIons - original peak must be converted to mz, because subtracting an mz from an mz creates a mass difference, not an mz (5-3 (m/z) = 2 = 4-2 (mass))
-                        alreadyCountedMzs.Add(mzToCompare);
                     }
                 }
             }
