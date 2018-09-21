@@ -1,4 +1,4 @@
-﻿﻿UserCustomModifications
+﻿UserCustomModifications
 ID   MyFirstModification
 TG   K
 PP   Anywhere.

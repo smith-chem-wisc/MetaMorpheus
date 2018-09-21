@@ -171,14 +171,6 @@ namespace Test
             Assert.IsNull(globalPsms[0]);
         }
 
-        //[Test] MOVED TO MZLIB
-        //public static void TestGoodPeptide()
-        //public static void TestNoCleavage()
-        //public static void TestBadPeptide()
-        //public static void TestPeptideWithSetModifications()
-        //public static void TestPeptideWithFixedModifications()
-        //public static void TestDigestIndices()
-        //public static void TestDigestDecoy()
-        //public static void TestGoodPeptideWithLength()
+        
     }
 }

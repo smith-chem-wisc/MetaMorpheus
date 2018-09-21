@@ -1,4 +1,4 @@
-Fixed modifications
+﻿Fixed modifications
 ID   Carbamidomethyl of C
 TG   C
 PP   Anywhere.

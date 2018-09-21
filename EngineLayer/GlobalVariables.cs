@@ -1,4 +1,5 @@
-﻿using Nett;
+﻿using MassSpectrometry;
+using Nett;
 using Proteomics;
 using Proteomics.Fragmentation;
 using Proteomics.ProteolyticDigestion;
@@ -80,6 +81,18 @@ namespace EngineLayer
             }
 
             GlobalSettings = Toml.ReadFile<GlobalSettings>(Path.Combine(DataDir, @"settings.toml"));
+            AllSupportedDissociationTypes = new Dictionary<string, DissociationType> {
+                { DissociationType.CID.ToString(), DissociationType.CID },
+                { DissociationType.ECD.ToString(), DissociationType.ECD },
+                { DissociationType.ETD.ToString(), DissociationType.ETD },
+                { DissociationType.HCD.ToString(), DissociationType.HCD },
+                { DissociationType.EThcD.ToString(), DissociationType.EThcD },
+
+                // TODO: allow custom fragmentation type
+                //{ DissociationType.Custom.ToString(), DissociationType.Custom }
+
+                // TODO: allow reading from scan header (autodetect dissociation type)
+            };
         }
 
         public static List<string> ErrorsReadingMods = new List<string>();
@@ -95,6 +108,8 @@ namespace EngineLayer
         public static IEnumerable<Modification> AllModsKnown { get { return _AllModsKnown.AsEnumerable(); } }
         public static IEnumerable<string> AllModTypesKnown { get { return _AllModTypesKnown.AsEnumerable(); } }
         public static Dictionary<string, Modification> AllModsKnownDictionary { get; private set; }
+        public static Dictionary<string, DissociationType> AllSupportedDissociationTypes { get; private set; }
+
         public static string ExperimentalDesignFileName { get; }
 
         public static void AddMods(IEnumerable<Modification> modifications)

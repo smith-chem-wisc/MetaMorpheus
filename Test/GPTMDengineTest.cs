@@ -77,8 +77,6 @@ namespace Test
             PeptideSpectralMatch match = new PeptideSpectralMatch(peptidesWithSetModifications.First(), 0, 0, 0, scan, digestionParams, new List<MatchedFragmentIon>());
             PeptideSpectralMatch newPsm = new PeptideSpectralMatch(peptidesWithSetModifications.First(), 0, 0, 0, scan, digestionParams, new List<MatchedFragmentIon>());
 
-            List<ProductType> lp = new List<ProductType> { ProductType.b, ProductType.y };
-
             Tolerance fragmentTolerance = new AbsoluteTolerance(0.01);
 
             match.SetFdrValues(1, 0, 0, 1, 0, 0, 0, 0, 0, false);
@@ -90,6 +88,35 @@ namespace Test
             Assert.AreEqual(6, res.Mods["accession"].Count);
             Assert.AreEqual(3, res.Mods["accession"].Where(b => b.Item2.OriginalId.Equals("21")).Count());
             Assert.AreEqual(3, res.Mods["accession"].Where(b => b.Item2.OriginalId.Equals("16")).Count());
+        }
+
+        [Test]
+        [TestCase("P", "PETID", "junk", 1, 5, 1, false)]
+        [TestCase("P", "PETID", "Unassigned.", 1, 5, 1, false)]
+        [TestCase("P", "PETID", "Anywhere.", 1, 5, 1, true)]
+        [TestCase("P", "PETID", "N-terminal.", 1, 5, 1, true)]
+        [TestCase("P", "PETID", "Peptide N-terminal.", 1, 5, 1, true)]
+        [TestCase("P", "PETID", "C-terminal.", 1, 5, 1, false)]
+        [TestCase("P", "PETID", "Peptide C-terminal.", 1, 5, 1, false)]
+        [TestCase("E", "PETID", "Anywhere.", 2, 5, 2, true)]
+        [TestCase("E", "PETID", "N-terminal.", 2, 5, 2, false)]
+        [TestCase("E", "PETID", "Peptide N-terminal.", 2, 5, 2, false)]
+        [TestCase("E", "PETID", "C-terminal.", 2, 5, 2, false)]
+        [TestCase("E", "PETID", "Peptide C-terminal.", 2, 5, 2, false)]
+        [TestCase("D", "PETID", "Anywhere.", 5, 5, 5, true)]
+        [TestCase("D", "PETID", "N-terminal.", 5, 5, 5, false)]
+        [TestCase("D", "PETID", "Peptide N-terminal.", 5, 5, 5, false)]
+        [TestCase("D", "PETID", "C-terminal.", 5, 5, 5, true)]
+        [TestCase("D", "PETID", "Peptide C-terminal.", 5, 5, 5, true)]
+        public static void Test_GptmdEngineModFits(string targetAminoAcid, string proteinSequence, string locationRestriction, int peptideOneBasedIndex, int peptideLength, int proteinOneBasedIndex, bool result)
+        {
+            ModificationMotif.TryGetMotif(targetAminoAcid, out ModificationMotif motif);
+            Modification attemptToLocalize = new Modification(null, null, null, null, _target: motif, _locationRestriction: locationRestriction, _chemicalFormula: null, _monoisotopicMass: 1, _databaseReference: null, _taxonomicRange: null, _keywords: null, _neutralLosses: null, _diagnosticIons: null, _fileOrigin: null);
+            Dictionary<int, List<Modification>> oneBasedModifications = new Dictionary<int, List<Modification>>();
+            oneBasedModifications.Add(proteinOneBasedIndex, new List<Modification>() { attemptToLocalize });
+            Protein protein = new Protein(proteinSequence, null, null, null, oneBasedModifications, null, null, null, false, false, null, null, null, "");
+
+            Assert.AreEqual(result, GptmdEngine.ModFits(attemptToLocalize, protein, peptideOneBasedIndex, peptideLength, proteinOneBasedIndex));
         }
     }
 }

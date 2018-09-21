@@ -18,7 +18,6 @@ using System.Collections.Generic;
 using System.IO;
 using System.Linq;
 using UsefulProteomicsDatabases;
-using Proteomics.Fragmentation;
 using Proteomics.ProteolyticDigestion;
 
 namespace TaskLayer
@@ -42,9 +41,6 @@ namespace TaskLayer
             // TODO: print error messages loading GPTMD mods
             List<Modification> gptmdModifications = GlobalVariables.AllModsKnown.OfType<Modification>().Where(b => GptmdParameters.ListOfModsGptmd.Contains((b.ModificationType, b.IdWithMotif))).ToList();
             IEnumerable<Tuple<double, double>> combos = LoadCombos(gptmdModifications).ToList();
-
-            // what types of fragment ions to search for
-            var ionTypes = DissociationTypeCollection.ProductsFromDissociationType[CommonParameters.DissociationType];
 
             // load proteins
             List<Protein> proteinList = LoadProteins(taskId, dbFilenameList, true, DecoyType.Reverse, localizeableModificationTypes, CommonParameters);
@@ -120,7 +116,7 @@ namespace TaskLayer
                 .ThenBy(b => b.PeptideMonisotopicMass.HasValue ? Math.Abs(b.ScanPrecursorMass - b.PeptideMonisotopicMass.Value) : double.MaxValue)
                 .GroupBy(b => new Tuple<string, int, double?>(b.FullFilePath, b.ScanNumber, b.PeptideMonisotopicMass))
                 .Select(b => b.First()).ToList();
-            
+
             new FdrAnalysisEngine(allPsms, tempSearchMode.NumNotches, CommonParameters, new List<string> { taskId }).Run();
 
             var writtenFile = Path.Combine(OutputFolder, "GPTMD_Candidates.psmtsv");
@@ -211,7 +207,7 @@ namespace TaskLayer
 
         private static IEnumerable<double> GetAcceptableMassShifts(List<Modification> fixedMods, List<Modification> variableMods, List<Modification> gptmdMods, IEnumerable<Tuple<double, double>> combos)
         {
-            IEnumerable<double> gptmdNotches = gptmdMods.Where(b=>b.ValidModification == true).Select(b => (double)b.MonoisotopicMass);
+            IEnumerable<double> gptmdNotches = gptmdMods.Where(b => b.ValidModification == true).Select(b => (double)b.MonoisotopicMass);
             IEnumerable<double> gptmdMinusOtherModsNotches = GetObservedMasses(variableMods.Concat(fixedMods), gptmdMods);
             IEnumerable<double> multipleGptmdNotches = combos.Select(b => b.Item1 + b.Item2);
             IEnumerable<double> zeroNotch = new List<double> { 0 };

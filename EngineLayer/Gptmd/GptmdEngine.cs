@@ -24,6 +24,8 @@ namespace EngineLayer.Gptmd
 
         public static bool ModFits(Modification attemptToLocalize, Protein protein, int peptideOneBasedIndex, int peptideLength, int proteinOneBasedIndex)
         {
+            //the peptideOneBasedIndex and proteinOneBasedIndex are for the position of the modification on the sequence
+
             var motif = attemptToLocalize.Target;
             // First find the capital letter...
             var hehe = motif.ToString().IndexOf(motif.ToString().First(b => char.IsUpper(b)));
@@ -37,15 +39,17 @@ namespace EngineLayer.Gptmd
                     return false;
                 indexUp++;
             }
-            if (attemptToLocalize.LocationRestriction == "N-terminal." && (proteinOneBasedIndex > 2))
-                return false;
-            if (attemptToLocalize.LocationRestriction == "Peptide N-terminal." && peptideOneBasedIndex > 1)
-                return false;
-            if (attemptToLocalize.LocationRestriction == "Peptide C-terminal." && peptideOneBasedIndex < peptideLength)
-                return false;
-            if (attemptToLocalize.LocationRestriction == "C-terminal." && proteinOneBasedIndex < protein.Length)
-                return false;
-            return true;
+            if (attemptToLocalize.LocationRestriction == "Anywhere.")
+                return true;
+            if (attemptToLocalize.LocationRestriction == "N-terminal." && (proteinOneBasedIndex <= 2))
+                return true;
+            if (attemptToLocalize.LocationRestriction == "Peptide N-terminal." && peptideOneBasedIndex == 1)
+                return true;
+            if (attemptToLocalize.LocationRestriction == "Peptide C-terminal." && peptideOneBasedIndex == peptideLength)
+                return true;
+            if (attemptToLocalize.LocationRestriction == "C-terminal." && proteinOneBasedIndex == protein.Length)
+                return true;
+            return false;
         }
 
         protected override MetaMorpheusEngineResults RunSpecific()
@@ -104,6 +108,8 @@ namespace EngineLayer.Gptmd
                     if (modOnPsm.Target.Equals(Mod.Target))
                     {
                         if (precursorTolerance.Within(totalMassToGetTo, peptideWithSetModifications.MonoisotopicMass + (double)Mod.MonoisotopicMass - (double)modOnPsm.MonoisotopicMass))
+
+                            //TODO: not necessarily here. I think we're creating ambiguity. If we're going to add a gptmd mod to a peptide that already has that mod, then we need info to suggest that it is at a postion other than that in the database. could be presence of frag for unmodified or presence of frag with modified at alternative location.
                             yield return Mod;
                     }
             }

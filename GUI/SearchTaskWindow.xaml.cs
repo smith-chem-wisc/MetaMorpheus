@@ -96,7 +96,7 @@ namespace MetaMorpheusGUI
                 initiatorMethionineBehaviorComboBox.Items.Add(initiatior_methionine_behavior);
             }
 
-            foreach (string dissassociationType in Enum.GetNames(typeof(MassSpectrometry.DissociationType)))
+            foreach (string dissassociationType in GlobalVariables.AllSupportedDissociationTypes.Keys)
             {
                 dissassociationTypeComboBox.Items.Add(dissassociationType);
             }
@@ -166,11 +166,12 @@ namespace MetaMorpheusGUI
             MinPeptideLengthTextBox.Text = task.CommonParameters.DigestionParams.MinPeptideLength.ToString(CultureInfo.InvariantCulture);
             MaxPeptideLengthTextBox.Text = task.CommonParameters.DigestionParams.MaxPeptideLength == int.MaxValue ? "" : task.CommonParameters.DigestionParams.MaxPeptideLength.ToString(CultureInfo.InvariantCulture);
             proteaseComboBox.SelectedItem = task.CommonParameters.DigestionParams.Protease;
+            //TODO update index
             maxModificationIsoformsTextBox.Text = task.CommonParameters.DigestionParams.MaxModificationIsoforms.ToString(CultureInfo.InvariantCulture);
             MaxModNumTextBox.Text = task.CommonParameters.DigestionParams.MaxModsForPeptide.ToString(CultureInfo.InvariantCulture);
             initiatorMethionineBehaviorComboBox.SelectedIndex = (int)task.CommonParameters.DigestionParams.InitiatorMethionineBehavior;
-
-
+            dissassociationTypeComboBox.SelectedItem = task.CommonParameters.DissociationType.ToString();
+            //TODO update index
 
             productMassToleranceTextBox.Text = task.CommonParameters.ProductMassTolerance.Value.ToString(CultureInfo.InvariantCulture);
             productMassToleranceComboBox.SelectedIndex = task.CommonParameters.ProductMassTolerance is AbsoluteTolerance ? 0 : 1;
@@ -294,27 +295,28 @@ namespace MetaMorpheusGUI
         {
             if (nonSpecificSearchRadioButton1.IsChecked.Value || semiSpecificSearchRadioButton.IsChecked.Value)
             {
-                if ((bCheckBox.IsChecked.Value || cCheckBox.IsChecked.Value) && (yCheckBox.IsChecked.Value || zdotCheckBox.IsChecked.Value))
-                {
-                    //MessageBox.Show("Only ion types from a single terminus are allowed for this search algorithm. \ne.g. b- and/or c-ions OR y- and/or zdot-ions. \nC-terminal ions (y and/or zdot) will be chosen by default.");
-                    bCheckBox.IsChecked = false;
-                    cCheckBox.IsChecked = false;
-                }
+                //TODO: UPDATE FOR DISSOCIATION
+                //if ((bCheckBox.IsChecked.Value || cCheckBox.IsChecked.Value) && (yCheckBox.IsChecked.Value || zdotCheckBox.IsChecked.Value))
+                //{
+                //    //MessageBox.Show("Only ion types from a single terminus are allowed for this search algorithm. \ne.g. b- and/or c-ions OR y- and/or zdot-ions. \nC-terminal ions (y and/or zdot) will be chosen by default.");
+                //    bCheckBox.IsChecked = false;
+                //    cCheckBox.IsChecked = false;
+                //}
                 if (((Protease)proteaseComboBox.SelectedItem).Name.Contains("non-specific"))
                 {
                     proteaseComboBox.SelectedItem = proteaseComboBox.Items.CurrentItem;
-                    if ((bCheckBox.IsChecked.Value || cCheckBox.IsChecked.Value))
-                    {
-                        for (int i = 0; i < proteaseComboBox.Items.Count; i++)
-                        {
-                            if (((Protease)proteaseComboBox.Items[i]).Name.Equals("singleN"))
-                            {
-                                proteaseComboBox.SelectedItem = proteaseComboBox.Items[i];
-                                break;
-                            }
-                        }
-                    }
-                    else
+                    //if ((bCheckBox.IsChecked.Value || cCheckBox.IsChecked.Value))
+                    //{
+                    //    for (int i = 0; i < proteaseComboBox.Items.Count; i++)
+                    //    {
+                    //        if (((Protease)proteaseComboBox.Items[i]).Name.Equals("singleN"))
+                    //        {
+                    //            proteaseComboBox.SelectedItem = proteaseComboBox.Items[i];
+                    //            break;
+                    //        }
+                    //    }
+                    //}
+                    //else
                     {
                         for (int i = 0; i < proteaseComboBox.Items.Count; i++)
                         {
@@ -351,8 +353,10 @@ namespace MetaMorpheusGUI
             }
 
             Protease protease = (Protease)proteaseComboBox.SelectedItem;
+            DissociationType dissociationType = GlobalVariables.AllSupportedDissociationTypes[dissassociationTypeComboBox.SelectedItem.ToString()];
             bool semiProteaseDigestion = (semiSpecificSearchRadioButton.IsChecked.Value && ((Protease)proteaseComboBox.SelectedItem).CleavageSpecificity != CleavageSpecificity.SingleN && ((Protease)proteaseComboBox.SelectedItem).CleavageSpecificity != CleavageSpecificity.SingleC);
-            FragmentationTerminus terminusTypeSemiProtease = (bCheckBox.IsChecked.Value || cCheckBox.IsChecked.Value ? FragmentationTerminus.N : FragmentationTerminus.C);
+            //TODO: UPDATE
+            //FragmentationTerminus terminusTypeSemiProtease = (bCheckBox.IsChecked.Value || cCheckBox.IsChecked.Value ? FragmentationTerminus.N : FragmentationTerminus.C);
             int maxMissedCleavages = string.IsNullOrEmpty(missedCleavagesTextBox.Text) ? int.MaxValue : (int.Parse(missedCleavagesTextBox.Text, NumberStyles.Any, CultureInfo.InvariantCulture));
             int minPeptideLengthValue = (int.Parse(MinPeptideLengthTextBox.Text, NumberStyles.Any, CultureInfo.InvariantCulture));
             int maxPeptideLengthValue = string.IsNullOrEmpty(MaxPeptideLengthTextBox.Text) ? int.MaxValue : (int.Parse(MaxPeptideLengthTextBox.Text, NumberStyles.Any, CultureInfo.InvariantCulture));
@@ -360,11 +364,11 @@ namespace MetaMorpheusGUI
             int maxModsForPeptideValue = (int.Parse(MaxModNumTextBox.Text, CultureInfo.InvariantCulture));
             InitiatorMethionineBehavior initiatorMethionineBehavior = ((InitiatorMethionineBehavior)initiatorMethionineBehaviorComboBox.SelectedIndex);
 
-
             DigestionParams digestionParamsToSave = new DigestionParams(
                 protease: protease.Name,
                 semiProteaseDigestion: semiProteaseDigestion,
-                terminusTypeSemiProtease: terminusTypeSemiProtease,
+                //TODO UPDATE
+                //terminusTypeSemiProtease: terminusTypeSemiProtease,
                 maxMissedCleavages: maxMissedCleavages,
                 minPeptideLength: minPeptideLengthValue,
                 maxPeptideLength: maxPeptideLengthValue,
@@ -417,9 +421,6 @@ namespace MetaMorpheusGUI
 
             bool parseMaxThreadsPerFile = !maxThreadsTextBox.Text.Equals("") && (int.Parse(maxThreadsTextBox.Text) <= Environment.ProcessorCount && int.Parse(maxThreadsTextBox.Text) > 0);
 
-            //TODO redo
-            DissociationType t = DissociationType.CID;
-
             CommonParameters commonParamsToSave = new CommonParameters(
                 taskDescriptor: OutputFileNameTextBox.Text != "" ? OutputFileNameTextBox.Text : "SearchTask",
                 maxThreadsToUsePerFile: parseMaxThreadsPerFile ? int.Parse(maxThreadsTextBox.Text, CultureInfo.InvariantCulture) : new CommonParameters().MaxThreadsToUsePerFile,
@@ -433,7 +434,7 @@ namespace MetaMorpheusGUI
                 calculateEValue: eValueCheckBox.IsChecked.Value,
                 listOfModsFixed: listOfModsFixed,
                 listOfModsVariable: listOfModsVariable,
-                dissociationType: t,
+                dissociationType: dissociationType,
                 precursorMassTolerance: PrecursorMassTolerance,
                 productMassTolerance: ProductMassTolerance,
                 digestionParams: digestionParamsToSave,
@@ -686,6 +687,11 @@ namespace MetaMorpheusGUI
             {
                 CancelButton_Click(sender, e);
             }
+        }
+
+        private void dissassociationTypeComboBox_SelectionChanged(object sender, SelectionChangedEventArgs e)
+        {
+
         }
     }
 
