@@ -37,9 +37,7 @@ namespace Test
             List<PeptideWithSetModifications> allPeptidesWithSetModifications = parentProteinForMatch.Digest(digestionParams, new List<Modification>(), variableModifications).ToList();
             Assert.AreEqual(4, allPeptidesWithSetModifications.Count());
             PeptideWithSetModifications ps = allPeptidesWithSetModifications.First();
-
-            List<ProductType> lp = new List<ProductType> { ProductType.b, ProductType.y };
-
+            
             PeptideWithSetModifications pepWithSetModsForSpectrum = allPeptidesWithSetModifications[1];
             MsDataFile myMsDataFile = new TestDataFile(new List<PeptideWithSetModifications> { pepWithSetModsForSpectrum });
             Tolerance fragmentTolerance = new AbsoluteTolerance(0.01);
@@ -53,7 +51,7 @@ namespace Test
 
             CommonParameters commonParameters = new CommonParameters(productMassTolerance: fragmentTolerance);
 
-            LocalizationEngine f = new LocalizationEngine(new List<PeptideSpectralMatch> { newPsm }, lp, myMsDataFile, commonParameters, new List<string>());
+            LocalizationEngine f = new LocalizationEngine(new List<PeptideSpectralMatch> { newPsm }, myMsDataFile, commonParameters, new List<string>());
             f.Run();
 
             // single peak matches

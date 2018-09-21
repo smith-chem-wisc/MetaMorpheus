@@ -17,7 +17,6 @@ namespace EngineLayer.ModernSearch
         protected readonly PeptideSpectralMatch[] PeptideSpectralMatches;
         protected readonly Ms2ScanWithSpecificMass[] ListOfSortedMs2Scans;
         protected readonly List<PeptideWithSetModifications> PeptideIndex;
-        protected readonly List<ProductType> ProductTypes;
         protected readonly int CurrentPartition;
         protected readonly MassDiffAcceptor MassDiffAcceptor;
         protected readonly DissociationType DissociationType;
@@ -29,7 +28,6 @@ namespace EngineLayer.ModernSearch
             ListOfSortedMs2Scans = listOfSortedms2Scans;
             PeptideIndex = peptideIndex;
             FragmentIndex = fragmentIndex;
-            ProductTypes = DissociationTypeCollection.ProductsFromDissociationType[commonParameters.DissociationType].Intersect(TerminusSpecificProductTypes.ProductIonTypesFromSpecifiedTerminus[commonParameters.FragmentationTerminus]).ToList();
             CurrentPartition = currentPartition + 1;
             MassDiffAcceptor = massDiffAcceptor;
             DissociationType = commonParameters.DissociationType;

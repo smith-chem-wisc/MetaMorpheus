@@ -28,7 +28,6 @@ namespace Test
         private static List<Protein> proteinList { get; set; }
         private static List<Modification> variableModifications { get; set; }
         private static List<Modification> fixedModifications { get; set; }
-        private static List<ProductType> lp { get; set; }
         private static Crosslinker crosslinker { get; set; }
         private static List<PeptideWithSetModifications> digestedList { get; set; }
 
@@ -193,8 +192,7 @@ namespace Test
             var variableModifications = new List<Modification>() { mod1 };
             var fixedModifications = new List<Modification>();
             var localizeableModifications = new List<Modification>();
-
-            var lp = new List<ProductType> { ProductType.b, ProductType.y };
+            
             Dictionary<Modification, ushort> modsDictionary = new Dictionary<Modification, ushort>();
 
             int i = 1;

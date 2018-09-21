@@ -142,24 +142,7 @@ namespace EngineLayer
         {
             return string.Join(",", nestedIds);
         }
-
-        public static List<DissociationType> DetermineDissociationType(List<ProductType> lp)
-        {
-            List<DissociationType> dissociationTypes = new List<DissociationType>();
-
-            if (lp.Contains(ProductType.b) || lp.Contains(ProductType.y))
-            {
-                dissociationTypes.Add(DissociationType.HCD);
-            }
-
-            if (lp.Contains(ProductType.c) || lp.Contains(ProductType.zPlusOne))
-            {
-                dissociationTypes.Add(DissociationType.ETD);
-            }
-
-            return dissociationTypes;
-        }
-
+        
         protected void Warn(string v)
         {
             WarnHandler?.Invoke(this, new StringEventArgs(v, nestedIds));
