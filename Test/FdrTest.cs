@@ -52,7 +52,7 @@ namespace Test
             PeptideSpectralMatch psm3 = new PeptideSpectralMatch(peptide3, 0, 1, 2, scan3, digestionParams);
 
             CompactPeptide peptide4 = new CompactPeptide(pep4, TerminusType.None);
-            psm3.AddOrReplace(peptide4, 1, 1, true);
+            psm3.AddOrReplace(peptide4, 1, 1, true, new List<EngineLayer.MatchedFragmentIon>());
 
             Dictionary<CompactPeptideBase, HashSet<PeptideWithSetModifications>> matching = new Dictionary<CompactPeptideBase, HashSet<PeptideWithSetModifications>>
             {

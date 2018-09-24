@@ -117,7 +117,7 @@ namespace EngineLayer.ModernSearch
                             }
                             else
                             {
-                                PeptideSpectralMatches[i].AddOrReplace(compactPeptide, thisScore, notch, commonParameters.ReportAllAmbiguity);
+                                PeptideSpectralMatches[i].AddOrReplace(compactPeptide, thisScore, notch, commonParameters.ReportAllAmbiguity, null);
                             }
 
                             if (commonParameters.CalculateEValue)
