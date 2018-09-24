@@ -58,13 +58,10 @@ namespace TaskLayer
             CalculatePsmFdr();
             DoMassDifferenceLocalizationAnalysis();
             ProteinAnalysis();
-
-            if (Parameters.SearchParameters.DoQuantification)
-            {
-                QuantificationAnalysis();
-            }
+            QuantificationAnalysis();
 
             ReportProgress(new ProgressEventArgs(100, "Done!", new List<string> { Parameters.SearchTaskId, "Individual Spectra Files" }));
+
             HistogramAnalysis();
             WritePsmResults();
             WriteProteinResults();
@@ -93,25 +90,7 @@ namespace TaskLayer
             int massDiffAcceptorNumNotches = Parameters.NumNotches;
             var fdrAnalysisResults = (FdrAnalysisResults)(new FdrAnalysisEngine(Parameters.AllPsms, massDiffAcceptorNumNotches, CommonParameters, new List<string> { Parameters.SearchTaskId }).Run());
 
-            // sort the list of psms by the score (for FDR analysis)
-
-            // do protein parsimony and protein scoring/FDR
-            if (Parameters.SearchParameters.DoParsimony)
-            {
-                Status("Running protein analysis...", Parameters.SearchTaskId);
-                var fdrFilteredPsms = Parameters.AllPsms.Where(p => p.FdrInfo.QValue <= 0.01 && p.FdrInfo.QValueNotch <= 0.01);
-
-                if (Parameters.SearchParameters.ModPeptidesAreDifferent)
-                {
-                    fdrFilteredPsms = fdrFilteredPsms.Where(p => p.FullSequence != null);
-                }
-                else
-                {
-                    fdrFilteredPsms = fdrFilteredPsms.Where(p => p.BaseSequence != null);
-                }
-
-                Status("Done estimating PSM FDR!", Parameters.SearchTaskId);
-            }
+            Status("Done estimating PSM FDR!", Parameters.SearchTaskId);
         }
 
         private void ProteinAnalysis()
@@ -152,7 +131,7 @@ namespace TaskLayer
                     var origDataFile = Parameters.CurrentRawFileList[spectraFileIndex];
                     Status("Running mass-difference localization analysis...", new List<string> { Parameters.SearchTaskId, "Individual Spectra Files", origDataFile });
                     MsDataFile myMsDataFile = Parameters.MyFileManager.LoadFile(origDataFile, combinedParams.TopNpeaks, combinedParams.MinRatio, combinedParams.TrimMs1Peaks, combinedParams.TrimMsMsPeaks, combinedParams);
-                    new LocalizationEngine(Parameters.AllPsms.Where(b => b.FullFilePath.Equals(origDataFile)).ToList(), 
+                    new LocalizationEngine(Parameters.AllPsms.Where(b => b.FullFilePath.Equals(origDataFile)).ToList(),
                         myMsDataFile, combinedParams, new List<string> { Parameters.SearchTaskId, "Individual Spectra Files", origDataFile }).Run();
                     Parameters.MyFileManager.DoneWithFile(origDataFile);
                     ReportProgress(new ProgressEventArgs(100, "Done with localization analysis!", new List<string> { Parameters.SearchTaskId, "Individual Spectra Files", origDataFile }));
@@ -165,6 +144,11 @@ namespace TaskLayer
 
         private void QuantificationAnalysis()
         {
+            if (!Parameters.SearchParameters.DoQuantification)
+            {
+                return;
+            }
+
             // pass quantification parameters to FlashLFQ
             Status("Quantifying...", Parameters.SearchTaskId);
 
@@ -668,17 +652,16 @@ namespace TaskLayer
                             //Add if observed (regardless if in database)
                             var tempMod = observedMod.Item2;
 
-                            if (modificationsToWriteIfObserved.Contains(tempMod as Modification))
+                            if (modificationsToWriteIfObserved.Contains(tempMod))
                             {
                                 if (!modsToWrite.ContainsKey(observedMod.Item1))
                                 {
-                                    modsToWrite.Add(observedMod.Item1, new List<Modification> { observedMod.Item2 as Modification });
+                                    modsToWrite.Add(observedMod.Item1, new List<Modification> { observedMod.Item2});
                                 }
                                 else
                                 {
-                                    modsToWrite[observedMod.Item1].Add(observedMod.Item2 as Modification);
+                                    modsToWrite[observedMod.Item1].Add(observedMod.Item2);
                                 }
-                                continue;
                             }
                         }
 
@@ -688,9 +671,9 @@ namespace TaskLayer
                             foreach (var mod in modkv.Value)
                             {
                                 //Add if always In Database or if was observed and in database and not set to not include
-                                if (modificationsToWriteIfInDatabase.Contains(mod as Modification) ||
-                                    (modsObservedOnThisProtein.Contains(new Tuple<int, Modification>(modkv.Key, mod as Modification))
-                                        && modificationsToWriteIfBoth.Contains(mod as Modification)))
+                                if (modificationsToWriteIfInDatabase.Contains(mod) ||
+                                    (modsObservedOnThisProtein.Contains(new Tuple<int, Modification>(modkv.Key, mod))
+                                        && modificationsToWriteIfBoth.Contains(mod)))
                                 {
                                     if (!modsToWrite.ContainsKey(modkv.Key))
                                     {
