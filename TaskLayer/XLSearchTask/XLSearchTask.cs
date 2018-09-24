@@ -129,11 +129,11 @@ namespace TaskLayer
                 csm.XlProteinPos = csm.OneBasedStartResidueInProtein.Value + csm.ModPositions.First() - 1;
 
                 // beta crosslink residue in protein
-                csm.BetaPeptide.XlProteinPos = csm.BetaPeptide.BestMatchingPeptideWithSetMods.First().Pwsm.OneBasedStartResidueInProtein + csm.BetaPeptide.ModPositions.First() - 1;
+                csm.BetaPeptide.XlProteinPos = csm.BetaPeptide.BestMatchingPeptides.First().Peptide.OneBasedStartResidueInProtein + csm.BetaPeptide.ModPositions.First() - 1;
             }
 
             //Write Inter Psms FDR
-            var interPsmsXL = allPsmsXL.Where(p => !p.BestMatchingPeptideWithSetMods.First().Pwsm.Protein.Accession.Equals(p.BetaPeptide.BestMatchingPeptideWithSetMods.First().Pwsm.Protein.Accession)).OrderByDescending(p => p.XLQvalueTotalScore).ToList();
+            var interPsmsXL = allPsmsXL.Where(p => !p.BestMatchingPeptides.First().Peptide.Protein.Accession.Equals(p.BetaPeptide.BestMatchingPeptides.First().Peptide.Protein.Accession)).OrderByDescending(p => p.XLQvalueTotalScore).ToList();
             foreach (var item in interPsmsXL)
             {
                 item.CrossType = PsmCrossType.Inter;
@@ -154,7 +154,7 @@ namespace TaskLayer
             }
 
             //Write Intra Psms FDR
-            var intraPsmsXL = allPsmsXL.Where(p => p.BestMatchingPeptideWithSetMods.First().Pwsm.Protein.Accession.Equals(p.BetaPeptide.BestMatchingPeptideWithSetMods.First().Pwsm.Protein.Accession)).OrderByDescending(p => p.XLQvalueTotalScore).ToList();
+            var intraPsmsXL = allPsmsXL.Where(p => p.BestMatchingPeptides.First().Peptide.Protein.Accession.Equals(p.BetaPeptide.BestMatchingPeptides.First().Peptide.Protein.Accession)).OrderByDescending(p => p.XLQvalueTotalScore).ToList();
             foreach (var item in intraPsmsXL)
             {
                 item.CrossType = PsmCrossType.Intra;

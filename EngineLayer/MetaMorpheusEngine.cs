@@ -51,7 +51,7 @@ namespace EngineLayer
                 {
                     double fragmentScore = 1 + (fragment.Intensity / thisScan.TotalIonCurrent);
 
-                    if (fragment.NeutralTheoreticalProduct.NeutralMass <= maximumMassThatFragmentIonScoreIsDoubled) // TODO: not sure if this is supposed to be neutral mass or mz
+                    if (fragment.NeutralTheoreticalProduct.NeutralMass <= maximumMassThatFragmentIonScoreIsDoubled)
                     {
                         score += fragmentScore * 2;
                     }

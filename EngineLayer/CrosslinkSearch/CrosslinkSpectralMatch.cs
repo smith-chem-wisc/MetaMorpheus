@@ -214,7 +214,7 @@ namespace EngineLayer.CrosslinkSearch
             sb.Append(CrossType.ToString()); sb.Append("\t");
 
             sb.Append(""); sb.Append("\t");
-            sb.Append(BestMatchingPeptideWithSetMods.First().Pwsm.Protein.Accession); sb.Append("\t");
+            sb.Append(BestMatchingPeptides.First().Peptide.Protein.Accession); sb.Append("\t");
             sb.Append(XlProteinPos); sb.Append("\t");
             sb.Append(BaseSequence); sb.Append("\t");
             sb.Append(FullSequence + position); sb.Append("\t");

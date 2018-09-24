@@ -282,7 +282,7 @@ namespace EngineLayer
                 // null BaseSequence means that the amino acid sequence is ambiguous; do not use these to calculate sequence coverage
                 if (psm.BaseSequence != null)
                 {
-                    var peptides = psm.BestMatchingPeptideWithSetMods.Select(p => p.Pwsm);
+                    var peptides = psm.BestMatchingPeptides.Select(p => p.Peptide);
                     foreach (var peptide in peptides)
                     {
                         // might be unambiguous but also shared; make sure this protein group contains this peptide+protein combo
@@ -455,7 +455,7 @@ namespace EngineLayer
         public ProteinGroup ConstructSubsetProteinGroup(string fullFilePath)
         {
             var allPsmsForThisFile = new HashSet<PeptideSpectralMatch>(this.AllPsmsBelowOnePercentFDR.Where(p => p.FullFilePath.Equals(fullFilePath)));
-            var allPeptidesForThisFile = new HashSet<PeptideWithSetModifications>(allPsmsForThisFile.SelectMany(p => p.BestMatchingPeptideWithSetMods.Select(v => v.Pwsm)));
+            var allPeptidesForThisFile = new HashSet<PeptideWithSetModifications>(allPsmsForThisFile.SelectMany(p => p.BestMatchingPeptides.Select(v => v.Peptide)));
             var allUniquePeptidesForThisFile = new HashSet<PeptideWithSetModifications>(this.UniquePeptides.Intersect(allPeptidesForThisFile));
 
             ProteinGroup subsetPg = new ProteinGroup(this.Proteins, allPeptidesForThisFile, allUniquePeptidesForThisFile)

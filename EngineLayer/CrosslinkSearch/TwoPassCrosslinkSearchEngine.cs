@@ -129,12 +129,6 @@ namespace EngineLayer.CrosslinkSearch
                         {
                             PeptideWithSetModifications peptide = PeptideIndex[id];
 
-                            // Need to lock and fragment this because of a parallization bug w/ fragmentation
-                            lock (peptide)
-                            {
-                                peptide.Fragment(commonParameters.DissociationType, FragmentationTerminus.Both);
-                            }
-
                             int notch = MassDiffAcceptor.Accepts(scan.PrecursorMass, peptide.MonoisotopicMass);
                             bestPeptideScoreNotchList.Add(new BestPeptideScoreNotch(peptide, scoringTable[id], notch));
                         }
@@ -188,12 +182,7 @@ namespace EngineLayer.CrosslinkSearch
             for (int alphaIndex = 0; alphaIndex < theScanBestPeptide.Count; alphaIndex++)
             {
                 PeptideWithSetModifications bestPeptide = theScanBestPeptide[alphaIndex].BestPeptide;
-                List<Product> products = null;
-
-                lock (bestPeptide)
-                {
-                    products = bestPeptide.Fragment(commonParameters.DissociationType, FragmentationTerminus.Both).ToList();
-                }
+                List<Product> products = bestPeptide.Fragment(commonParameters.DissociationType, FragmentationTerminus.Both).ToList();
 
                 var matchedFragmentIons = MatchFragmentIons(theScan.TheScan.MassSpectrum, products, commonParameters, theScan.PrecursorMass);
                 double score = CalculatePeptideScore(theScan.TheScan, matchedFragmentIons, 0);
@@ -250,12 +239,7 @@ namespace EngineLayer.CrosslinkSearch
                             var psmCrossAlpha = new CrosslinkSpectralMatch(alphaPeptide, theScanBestPeptide[alphaIndex].BestNotch, theScanBestPeptide[alphaIndex].BestScore, scanIndex, theScan, commonParameters.DigestionParams, matchedFragmentIons);
 
                             // score beta peptide
-                            List<Product> betaProducts = null;
-
-                            lock (betaPeptide)
-                            {
-                                betaProducts = betaPeptide.Fragment(commonParameters.DissociationType, FragmentationTerminus.Both).ToList();
-                            }
+                            List<Product> betaProducts = betaPeptide.Fragment(commonParameters.DissociationType, FragmentationTerminus.Both).ToList();
 
                             var betaMatchedIons = MatchFragmentIons(theScan.TheScan.MassSpectrum, betaProducts, commonParameters, theScan.PrecursorMass);
 
@@ -304,8 +288,8 @@ namespace EngineLayer.CrosslinkSearch
             psmCrossAlpha.ResolveAllAmbiguities();
             psmCrossBeta.ResolveAllAmbiguities();
             CrosslinkSpectralMatch localizedCrosslinkedSpectralMatch = null;
-            PeptideWithSetModifications alphaPeptide = psmCrossAlpha.BestMatchingPeptideWithSetMods.First().Pwsm;
-            PeptideWithSetModifications betaPeptide = psmCrossBeta.BestMatchingPeptideWithSetMods.First().Pwsm;
+            PeptideWithSetModifications alphaPeptide = psmCrossAlpha.BestMatchingPeptides.First().Peptide;
+            PeptideWithSetModifications betaPeptide = psmCrossBeta.BestMatchingPeptides.First().Peptide;
 
             List<Tuple<List<int>, List<int>>> pairs = new List<Tuple<List<int>, List<int>>>();
 

@@ -97,12 +97,7 @@ namespace EngineLayer.ModernSearch
                     {
                         PeptideWithSetModifications peptide = PeptideIndex[id];
 
-                        List<Product> peptideTheorProducts = null;
-
-                        lock (peptide)
-                        {
-                            peptideTheorProducts = peptide.Fragment(commonParameters.DissociationType, FragmentationTerminus.Both).ToList();
-                        }
+                        List<Product> peptideTheorProducts = peptide.Fragment(commonParameters.DissociationType, FragmentationTerminus.Both).ToList();
 
                         List<MatchedFragmentIon> matchedIons = MatchFragmentIons(scan.TheScan.MassSpectrum, peptideTheorProducts, commonParameters, scan.PrecursorMass);
 

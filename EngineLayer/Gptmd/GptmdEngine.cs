@@ -65,7 +65,7 @@ namespace EngineLayer.Gptmd
                 Tolerance precursorMassTolerance = FilePathToPrecursorMassTolerance[psm.FullFilePath];
 
                 // get mods to annotate database with
-                foreach (var pepWithSetMods in psm.BestMatchingPeptideWithSetMods.Select(v => v.Pwsm))
+                foreach (var pepWithSetMods in psm.BestMatchingPeptides.Select(v => v.Peptide))
                 {
                     foreach (Modification mod in GetPossibleMods(psm.ScanPrecursorMass, GptmdModifications, Combos, precursorMassTolerance, pepWithSetMods))
                     {

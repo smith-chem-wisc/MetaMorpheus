@@ -59,7 +59,7 @@ namespace EngineLayer.ModificationAnalysis
             HashSet<(string, string, int)> modsOnProteins = new HashSet<(string, string, int)>();
             foreach (var psm in forObserved)
             {
-                var singlePeptide = psm.BestMatchingPeptideWithSetMods.First().Pwsm;
+                var singlePeptide = psm.BestMatchingPeptides.First().Peptide;
                 foreach (var modInProtein in singlePeptide.Protein.OneBasedPossibleLocalizedModifications.Where(b => b.Key >= singlePeptide.OneBasedStartResidueInProtein && b.Key <= singlePeptide.OneBasedEndResidueInProtein))
 
                     foreach (var huh in modInProtein.Value)
@@ -70,7 +70,7 @@ namespace EngineLayer.ModificationAnalysis
             HashSet<(string, string, int)> modsSeenAndLocalized = new HashSet<(string, string, int)>();
             foreach (var psm in forUnambiguouslyLocalized)
             {
-                var singlePeptide = psm.BestMatchingPeptideWithSetMods.First().Pwsm;
+                var singlePeptide = psm.BestMatchingPeptides.First().Peptide;
                 foreach (var nice in singlePeptide.AllModsOneIsNterminus)
                 {
                     int locInProtein;

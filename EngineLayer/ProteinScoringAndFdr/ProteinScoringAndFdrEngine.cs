@@ -46,7 +46,7 @@ namespace EngineLayer
                 {
                     if ((TreatModPeptidesAsDifferentPeptides && psm.FullSequence != null) || (!TreatModPeptidesAsDifferentPeptides && psm.BaseSequence != null))
                     {
-                        foreach (var pepWithSetMods in psm.BestMatchingPeptideWithSetMods.Select(p => p.Pwsm))
+                        foreach (var pepWithSetMods in psm.BestMatchingPeptides.Select(p => p.Peptide))
                         {
                             if (!peptideToPsmMatching.TryGetValue(pepWithSetMods, out HashSet<PeptideSpectralMatch> psmsForThisPeptide))
                                 peptideToPsmMatching.Add(pepWithSetMods, new HashSet<PeptideSpectralMatch> { psm });

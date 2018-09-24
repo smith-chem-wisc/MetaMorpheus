@@ -598,14 +598,6 @@ namespace TaskLayer
                     fragmentIndex = (List<int>[])ser.Deserialize(file);
                 }
             }
-
-            // Note: this is a deliberately useless assignment. The monoisotopic mass for a peptide is calculated on-the-fly
-            // and can get messed up by parallel threads trying to calculate it at the same time. Do not remove this until this bug is fixed in mzLib!
-            // TODO: fix bug in mzLib
-            foreach (var peptide in peptideIndex)
-            {
-                double f = peptide.MonoisotopicMass;
-            }
         }
     }
 }

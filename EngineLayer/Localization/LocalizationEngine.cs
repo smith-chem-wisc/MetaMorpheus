@@ -37,7 +37,7 @@ namespace EngineLayer.Localization
                 }
 
                 MsDataScan scan = MyMsDataFile.GetOneBasedScan(psm.ScanNumber);
-                PeptideWithSetModifications peptide = psm.BestMatchingPeptideWithSetMods.First().Pwsm;
+                PeptideWithSetModifications peptide = psm.BestMatchingPeptides.First().Peptide;
                 double massDifference = psm.ScanPrecursorMass - peptide.MonoisotopicMass;
 
                 // this section will iterate through all residues of the peptide and try to localize the mass-diff at each residue and report a score for each residue

@@ -81,14 +81,14 @@ namespace EngineLayer.Calibration
                     if (identification.FullSequence == null)
                         continue;
 
-                    var representativeSinglePeptide = identification.BestMatchingPeptideWithSetMods.First().Pwsm;
+                    var representativeSinglePeptide = identification.BestMatchingPeptides.First().Peptide;
 
                     // Get the peptide, don't forget to add the modifications!!!!
                     var SequenceWithChemicalFormulas = representativeSinglePeptide.SequenceWithChemicalFormulas;
                     if (SequenceWithChemicalFormulas == null || representativeSinglePeptide.AllModsOneIsNterminus.Any(b => b.Value.NeutralLosses != null))
                         continue;
 
-                    Proteomics.AminoAcidPolymer.Peptide coolPeptide = new Proteomics.AminoAcidPolymer.Peptide(SequenceWithChemicalFormulas);
+                    Peptide coolPeptide = new Peptide(SequenceWithChemicalFormulas);
 
                     var ms2tuple = SearchMS2Spectrum(MyMsDataFile.GetOneBasedScan(ms2scanNumber), identification);
 

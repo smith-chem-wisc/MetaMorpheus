@@ -119,7 +119,7 @@ namespace Test
             proteinGroups = proteinScoringAndFdrResults.SortedAndScoredProteinGroups;
 
             // select the PSMs' proteins
-            List<string> parsimonyProteinSequences = psms.SelectMany(p => p.BestMatchingPeptideWithSetMods.Select(v => v.Pwsm.Protein)).Select(v => v.BaseSequence).Distinct().ToList();
+            List<string> parsimonyProteinSequences = psms.SelectMany(p => p.BestMatchingPeptides.Select(v => v.Peptide.Protein)).Select(v => v.BaseSequence).Distinct().ToList();
 
             // check that correct proteins are in parsimony list
             Assert.Contains("AB--------", parsimonyProteinSequences);

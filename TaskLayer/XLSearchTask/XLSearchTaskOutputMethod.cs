@@ -77,7 +77,7 @@ namespace TaskLayer
                             + "\t" + item.ScanPrecursorMass.ToString(CultureInfo.InvariantCulture)
                             + "\t" + item.CrossType.ToString()
                             + "\t"
-                            + "\t" + item.BestMatchingPeptideWithSetMods.First().Pwsm.Protein.Accession.ToString(CultureInfo.InvariantCulture)
+                            + "\t" + item.BestMatchingPeptides.First().Peptide.Protein.Accession.ToString(CultureInfo.InvariantCulture)
                             + "\t" + item.BaseSequence + position
                             + "\t" + item.FullSequence
                             + "\t" + (item.PeptideMonisotopicMass.HasValue ? item.PeptideMonisotopicMass.Value.ToString(CultureInfo.InvariantCulture) : "---")
@@ -96,7 +96,7 @@ namespace TaskLayer
                                                 + "\t" + item.ScanPrecursorMass.ToString(CultureInfo.InvariantCulture)
                                                 + "\t" + item.CrossType.ToString()
                                                 + "\t"
-                                                + "\t" + item.BestMatchingPeptideWithSetMods.First().Pwsm.Protein.Accession.ToString(CultureInfo.InvariantCulture)
+                                                + "\t" + item.BestMatchingPeptides.First().Peptide.Protein.Accession.ToString(CultureInfo.InvariantCulture)
                                                        + "(" + (item.XlProteinPos).ToString(CultureInfo.InvariantCulture) + ")"
                                                 + "\t" + item.BaseSequence + "(" + item.ModPositions.First().ToString(CultureInfo.InvariantCulture) + ")"
                                                 + "\t" + item.FullSequence
@@ -105,7 +105,7 @@ namespace TaskLayer
                                                 + "\t" + item.BestScore.ToString(CultureInfo.InvariantCulture)
                                                 + "\t" + item.XlRank[0].ToString(CultureInfo.InvariantCulture)
                                                 + "\t"
-                                                + "\t" + item.BetaPeptide.BestMatchingPeptideWithSetMods.First().Pwsm.Protein.Accession.ToString(CultureInfo.InvariantCulture)
+                                                + "\t" + item.BetaPeptide.BestMatchingPeptides.First().Peptide.Protein.Accession.ToString(CultureInfo.InvariantCulture)
                                                        + "(" + (item.XlProteinPos).ToString(CultureInfo.InvariantCulture) + ")"
                                                 + "\t" + item.BetaPeptide.BaseSequence + "(" + item.BetaPeptide.ModPositions.First().ToString(CultureInfo.InvariantCulture) + ")"
                                                 + "\t" + item.BetaPeptide.FullSequence
@@ -158,7 +158,7 @@ namespace TaskLayer
                         + "\t" + item.ScanPrecursorMass.ToString(CultureInfo.InvariantCulture)
                         + "\t" + item.CrossType.ToString()
                         + "\t"
-                        + "\t" + item.BestMatchingPeptideWithSetMods.First().Pwsm.Protein.Accession.ToString(CultureInfo.InvariantCulture)
+                        + "\t" + item.BestMatchingPeptides.First().Peptide.Protein.Accession.ToString(CultureInfo.InvariantCulture)
                         + "\t" + item.BaseSequence + position
                         + "\t" + item.FullSequence
                         + "\t" + (item.PeptideMonisotopicMass.HasValue ? item.PeptideMonisotopicMass.Value.ToString(CultureInfo.InvariantCulture) : "---")
@@ -203,9 +203,9 @@ namespace TaskLayer
                             + "\t" + item.BaseSequence.Length.ToString(CultureInfo.InvariantCulture)
                             + "\t" + (item.BetaPeptide.BaseSequence.Length + item.BaseSequence.Length).ToString(CultureInfo.InvariantCulture)
                             + "\t" + "-." + item.BaseSequence + item.ModPositions.First().ToString(CultureInfo.InvariantCulture) + "--" + item.BetaPeptide.BaseSequence + item.BetaPeptide.ModPositions.First().ToString(CultureInfo.InvariantCulture) + ".-"
-                            + "\t" + item.BestMatchingPeptideWithSetMods.First().Pwsm.Protein.Accession.ToString(CultureInfo.InvariantCulture)
+                            + "\t" + item.BestMatchingPeptides.First().Peptide.Protein.Accession.ToString(CultureInfo.InvariantCulture)
                                    + "(" + item.XlProteinPos.ToString(CultureInfo.InvariantCulture) + ")"
-                            + "\t" + item.BetaPeptide.BestMatchingPeptideWithSetMods.First().Pwsm.Protein.Accession.ToString(CultureInfo.InvariantCulture)
+                            + "\t" + item.BetaPeptide.BestMatchingPeptides.First().Peptide.Protein.Accession.ToString(CultureInfo.InvariantCulture)
                                    + "(" + item.BetaPeptide.XlProteinPos.ToString(CultureInfo.InvariantCulture) + ")"
                             );
                     }
@@ -325,7 +325,7 @@ namespace TaskLayer
             for (int i = 0; i < items.Count; i++)
             {
                 var mods = new List<pepXML.Generated.modInfoDataTypeMod_aminoacid_mass>();
-                var alphaPeptide = items[i].BestMatchingPeptideWithSetMods.First().Pwsm;
+                var alphaPeptide = items[i].BestMatchingPeptides.First().Peptide;
 
                 foreach (var modification in alphaPeptide.AllModsOneIsNterminus)
                 {
@@ -405,7 +405,7 @@ namespace TaskLayer
                 }
                 else if (items[i].CrossType == PsmCrossType.Inter || items[i].CrossType == PsmCrossType.Intra || items[i].CrossType == PsmCrossType.Cross)
                 {
-                    var betaPeptide = items[i].BetaPeptide.BestMatchingPeptideWithSetMods.First().Pwsm;
+                    var betaPeptide = items[i].BetaPeptide.BestMatchingPeptides.First().Peptide;
                     var modsBeta = new List<pepXML.Generated.modInfoDataTypeMod_aminoacid_mass>();
 
                     foreach (var mod in betaPeptide.AllModsOneIsNterminus)

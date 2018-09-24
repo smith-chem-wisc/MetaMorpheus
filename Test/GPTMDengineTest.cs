@@ -98,7 +98,7 @@ namespace Test
         [TestCase("P", "PETID", "C-terminal.", 1, 5, 1, false)]
         [TestCase("P", "PETID", "Peptide C-terminal.", 1, 5, 1, false)]
         [TestCase("E", "PETID", "Anywhere.", 2, 5, 2, true)]
-        [TestCase("E", "PETID", "N-terminal.", 2, 5, 2, false)]
+        [TestCase("E", "PETID", "N-terminal.", 2, 5, 2, true)]
         [TestCase("E", "PETID", "Peptide N-terminal.", 2, 5, 2, false)]
         [TestCase("E", "PETID", "C-terminal.", 2, 5, 2, false)]
         [TestCase("E", "PETID", "Peptide C-terminal.", 2, 5, 2, false)]

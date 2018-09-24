@@ -259,7 +259,7 @@ namespace TaskLayer
                 var accessionToPg = new Dictionary<string, FlashLFQ.ProteinGroup>();
                 foreach (var psm in unambiguousPsmsBelowOnePercentFdr)
                 {
-                    var proteins = psm.BestMatchingPeptideWithSetMods.Select(b => b.Pwsm.Protein).Distinct();
+                    var proteins = psm.BestMatchingPeptides.Select(b => b.Peptide.Protein).Distinct();
 
                     foreach (var protein in proteins)
                     {
@@ -597,7 +597,7 @@ namespace TaskLayer
                 // associate all confident PSMs with all possible proteins they could be digest products of (before or after parsimony)
                 foreach (PeptideSpectralMatch psm in confidentPsms)
                 {
-                    var myPepsWithSetMods = psm.BestMatchingPeptideWithSetMods.Select(p => p.Pwsm);
+                    var myPepsWithSetMods = psm.BestMatchingPeptides.Select(p => p.Peptide);
 
                     foreach (var peptide in myPepsWithSetMods)
                     {
@@ -635,7 +635,7 @@ namespace TaskLayer
 
                 foreach (PeptideSpectralMatch psm in ModPsms)
                 {
-                    var myPepsWithSetMods = psm.BestMatchingPeptideWithSetMods.Select(p => p.Pwsm);
+                    var myPepsWithSetMods = psm.BestMatchingPeptides.Select(p => p.Peptide);
 
                     foreach (var peptide in myPepsWithSetMods)
                     {
@@ -824,7 +824,7 @@ namespace TaskLayer
                     output.Write('\t' + string.Join("\t", psm.Features));
 
                     // HACKY: Ignores all ambiguity
-                    var pwsm = psm.BestMatchingPeptideWithSetMods.First().Pwsm;
+                    var pwsm = psm.BestMatchingPeptides.First().Peptide;
 
                     output.Write('\t' + (pwsm.PreviousAminoAcid + "." + pwsm.FullSequence + "." + pwsm.NextAminoAcid).ToString());
                     output.Write('\t' + (pwsm.Protein.Accession).ToString());

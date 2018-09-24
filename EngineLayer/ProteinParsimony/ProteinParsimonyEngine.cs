@@ -28,8 +28,7 @@ namespace EngineLayer
         public ProteinParsimonyEngine(List<PeptideSpectralMatch> allPsms, bool modPeptidesAreDifferent, CommonParameters commonParameters, List<string> nestedIds) : base(commonParameters, nestedIds)
         {
             TreatModPeptidesAsDifferentPeptides = modPeptidesAreDifferent;
-
-            // TODO: consider scenario in which no PSMs are observed (to prevent downstream crashes)
+            
             if (!allPsms.Any())
             {
                 FdrFilteredPsms = new List<PeptideSpectralMatch>();
@@ -54,21 +53,21 @@ namespace EngineLayer
             {
                 if (psm.IsDecoy)
                 {
-                    foreach (var peptide in psm.BestMatchingPeptideWithSetMods.Select(p => p.Pwsm).Where(p => p.Protein.IsDecoy))
+                    foreach (var peptide in psm.BestMatchingPeptides.Select(p => p.Peptide).Where(p => p.Protein.IsDecoy))
                     {
                         FdrFilteredPeptides.Add(peptide);
                     }
                 }
                 else if (psm.IsContaminant)
                 {
-                    foreach (var peptide in psm.BestMatchingPeptideWithSetMods.Select(p => p.Pwsm).Where(p => p.Protein.IsContaminant))
+                    foreach (var peptide in psm.BestMatchingPeptides.Select(p => p.Peptide).Where(p => p.Protein.IsContaminant))
                     {
                         FdrFilteredPeptides.Add(peptide);
                     }
                 }
                 else // PSM is target
                 {
-                    foreach (var peptide in psm.BestMatchingPeptideWithSetMods.Select(p => p.Pwsm).Where(p => !p.Protein.IsDecoy && !p.Protein.IsContaminant))
+                    foreach (var peptide in psm.BestMatchingPeptides.Select(p => p.Peptide).Where(p => !p.Protein.IsDecoy && !p.Protein.IsContaminant))
                     {
                         FdrFilteredPeptides.Add(peptide);
                     }
@@ -90,7 +89,8 @@ namespace EngineLayer
         }
 
         /// <summary>
-        /// TODO: Summarize parsimony; link to Nesviskii paper (https://www.ncbi.nlm.nih.gov/pubmed/14632076) Anal Chem. 2003 Sep 1;75(17):4646-58.
+        /// TODO: Summarize parsimony;
+        /// Parsimony algorithm based on: https://www.ncbi.nlm.nih.gov/pubmed/14632076 Anal Chem. 2003 Sep 1;75(17):4646-58.
         /// TODO: Note describing that peptide objects with the same sequence are associated with different proteins
         /// </summary>
         private List<ProteinGroup> RunProteinParsimonyEngine()
@@ -130,18 +130,18 @@ namespace EngineLayer
                     // create new peptide-protein associations
                     foreach (var baseSequence in sequenceWithPsms)
                     {
-                        var peptidesWithNotchInfo = baseSequence.Value.SelectMany(p => p.BestMatchingPeptideWithSetMods).Distinct().ToList();
+                        var peptidesWithNotchInfo = baseSequence.Value.SelectMany(p => p.BestMatchingPeptides).Distinct().ToList();
 
                         // if the base seq has >1 PeptideWithSetMods object and has >0 mods, it might need to be matched to new proteins
-                        if (peptidesWithNotchInfo.Count > 1 && peptidesWithNotchInfo.Any(p => p.Pwsm.NumMods > 0))
+                        if (peptidesWithNotchInfo.Count > 1 && peptidesWithNotchInfo.Any(p => p.Peptide.NumMods > 0))
                         {
                             // list of proteins along with start/end residue in protein and the # missed cleavages
                             // this is needed to create new PeptideWithSetModification objects
                             var peptideInProteinInfo = new List<Tuple<Protein, DigestionParams, int, int, int, int>>();
                             foreach (var peptide in peptidesWithNotchInfo)
                             {
-                                peptideInProteinInfo.Add(new Tuple<Protein, DigestionParams, int, int, int, int>(peptide.Pwsm.Protein, peptide.Pwsm.DigestionParams,
-                                    peptide.Pwsm.OneBasedStartResidueInProtein, peptide.Pwsm.OneBasedEndResidueInProtein, peptide.Pwsm.MissedCleavages, peptide.Notch));
+                                peptideInProteinInfo.Add(new Tuple<Protein, DigestionParams, int, int, int, int>(peptide.Peptide.Protein, peptide.Peptide.DigestionParams,
+                                    peptide.Peptide.OneBasedStartResidueInProtein, peptide.Peptide.OneBasedEndResidueInProtein, peptide.Peptide.MissedCleavages, peptide.Notch));
                             }
 
                             // add the protein associations to the PSM
@@ -150,8 +150,8 @@ namespace EngineLayer
                                 foreach (var proteinInfo in peptideInProteinInfo)
                                 {
                                     var pep = new PeptideWithSetModifications(proteinInfo.Item1, proteinInfo.Item2, proteinInfo.Item3, proteinInfo.Item4,
-                                        psm.BestMatchingPeptideWithSetMods.First().Pwsm.PeptideDescription, proteinInfo.Item5, psm.BestMatchingPeptideWithSetMods.First().Pwsm.AllModsOneIsNterminus,
-                                        psm.BestMatchingPeptideWithSetMods.First().Pwsm.NumFixedMods);
+                                        psm.BestMatchingPeptides.First().Peptide.PeptideDescription, proteinInfo.Item5, psm.BestMatchingPeptides.First().Peptide.AllModsOneIsNterminus,
+                                        psm.BestMatchingPeptides.First().Peptide.NumFixedMods);
                                     FdrFilteredPeptides.Add(pep);
                                     psm.AddProteinMatch((proteinInfo.Item6, pep));
                                 }
@@ -361,17 +361,16 @@ namespace EngineLayer
             }
 
             // Parsimony stage 5: remove peptide objects that do not have proteins in the parsimonious list
-            //TODO: uncomment this once merged
-            //foreach (PeptideSpectralMatch psm in AllPsms)
-            //{
-            //    // if this PSM has a protein in the parsimonious list, it removes the proteins NOT in the parsimonious list
-            //    // otherwise, no proteins are removed (i.e., for PSMs that cannot be explained by a parsimonious protein, 
-            //    // no protein associations are removed)
-            //    if (psm.BestMatchingPeptideWithSetMods.Any(p => parsimoniousProteinList.Contains(p.Pwsm.Protein)))
-            //    {
-            //        psm.TrimProteinMatches(parsimoniousProteinList);
-            //    }
-            //}
+            foreach (PeptideSpectralMatch psm in AllPsms)
+            {
+                // if this PSM has a protein in the parsimonious list, it removes the proteins NOT in the parsimonious list
+                // otherwise, no proteins are removed (i.e., for PSMs that cannot be explained by a parsimonious protein, 
+                // no protein associations are removed)
+                if (psm.BestMatchingPeptides.Any(p => parsimoniousProteinList.Contains(p.Peptide.Protein)))
+                {
+                    psm.TrimProteinMatches(parsimoniousProteinList);
+                }
+            }
 
             // construct protein groups
             List<ProteinGroup> proteinGroups = ConstructProteinGroups(uniquePeptides);

@@ -98,11 +98,7 @@ namespace EngineLayer.NonSpecificEnzymeSearch
                             foreach (var id in idsOfPeptidesPossiblyObserved.Where(id => scoringTable[id] == maxInitialScore))
                             {
                                 PeptideWithSetModifications peptide = PeptideIndex[id];
-                                List<Product> peptideTheorProducts = new List<Product>();
-                                lock (peptide)
-                                {
-                                    peptideTheorProducts = peptide.Fragment(commonParameters.DissociationType, commonParameters.FragmentationTerminus).ToList();
-                                }
+                                List<Product> peptideTheorProducts = peptide.Fragment(commonParameters.DissociationType, commonParameters.FragmentationTerminus).ToList();
 
                                 List<MatchedFragmentIon> matchedIons = MatchFragmentIons(scan.TheScan.MassSpectrum, peptideTheorProducts, commonParameters, scan.PrecursorMass);
 
@@ -124,7 +120,7 @@ namespace EngineLayer.NonSpecificEnzymeSearch
 
                             if (PSM != null) //if we have a match
                             {
-                                List<(int notch, PeptideWithSetModifications pwsm)> originalPwsmsWithNotches = PSM.BestMatchingPeptideWithSetMods.ToList();
+                                List<(int notch, PeptideWithSetModifications pwsm)> originalPwsmsWithNotches = PSM.BestMatchingPeptides.ToList();
                                 List<(int notch, PeptideWithSetModifications pwsm)> updatedPwsmsWithNotches = new List<(int notch, PeptideWithSetModifications pwsm)>();
 
                                 foreach ((int notch, PeptideWithSetModifications pwsm) originalPwsmWithNotch in originalPwsmsWithNotches)
@@ -188,11 +184,8 @@ namespace EngineLayer.NonSpecificEnzymeSearch
                                         var currentPwsmWithNotch = updatedPwsmsWithNotches[pwsmIndex];
 
                                         //TODO: This is unnecesary, should be able to back cleave fragments
-                                        List<Product> peptideTheorProducts = new List<Product>();
-                                        lock (currentPwsmWithNotch.pwsm)
-                                        {
-                                            peptideTheorProducts = currentPwsmWithNotch.pwsm.Fragment(commonParameters.DissociationType, commonParameters.FragmentationTerminus).ToList();
-                                        }
+                                        List<Product> peptideTheorProducts = currentPwsmWithNotch.pwsm.Fragment(commonParameters.DissociationType, commonParameters.FragmentationTerminus).ToList();
+
                                         List<MatchedFragmentIon> matchedIons = MatchFragmentIons(scan.TheScan.MassSpectrum, peptideTheorProducts, commonParameters, scan.PrecursorMass);
 
                                         updatedPSM.AddOrReplace(currentPwsmWithNotch.pwsm, PSM.Score, currentPwsmWithNotch.notch, commonParameters.ReportAllAmbiguity, matchedIons);
@@ -265,11 +258,7 @@ namespace EngineLayer.NonSpecificEnzymeSearch
                         return oneBasedIndexToLookAt;
                     }
                 }
-                else if (residue_variable_mod.NeutralLosses == null || residue_variable_mod.NeutralLosses.Count == 0)
-                {
-                    // TODO: missing case: mod is present and no neutral loss??
-                }
-                else if (residue_variable_mod.NeutralLosses.Count == 1)
+                else if (residue_variable_mod.NeutralLosses != null && residue_variable_mod.NeutralLosses.Count == 1)
                 {
                     double monoisotopic = residue_variable_mod.MonoisotopicMass ?? 0;
                     prevMass += monoisotopic - residue_variable_mod.NeutralLosses[commonParameters.DissociationType].First();
@@ -278,7 +267,7 @@ namespace EngineLayer.NonSpecificEnzymeSearch
                         return oneBasedIndexToLookAt;
                     }
                 }
-                else
+                else if (residue_variable_mod.NeutralLosses != null)
                 {
                     foreach (double nl in residue_variable_mod.NeutralLosses[commonParameters.DissociationType])
                     {
