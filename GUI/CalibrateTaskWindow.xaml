@@ -10,15 +10,6 @@
         KeyDown="KeyPressed"
         Title="Calibrate Task" Width="750" Height="750"  WindowStartupLocation="CenterScreen">
 
-    <Window.Resources>
-        <ObjectDataProvider x:Key="DissociationEnum" MethodName="GetValues"
-                        ObjectType="{x:Type sys:Enum}">
-            <ObjectDataProvider.MethodParameters>
-                <x:Type TypeName="mzl:DissociationType"/>
-            </ObjectDataProvider.MethodParameters>
-        </ObjectDataProvider>
-    </Window.Resources>
-
     <Grid>
         <Grid.RowDefinitions>
             <RowDefinition Height="*" />
@@ -184,7 +175,7 @@
                                                 </TextBlock>
                                             </Label.ToolTip>
                                         </Label>
-                                        <ComboBox x:Name="DissociationTypeComboBox" HorizontalAlignment="Center" VerticalAlignment="Center" MinWidth="150" SelectedIndex="5" ItemsSource="{Binding Source={StaticResource DissociationEnum}}" />
+                                        <ComboBox x:Name="DissociationTypeComboBox" HorizontalAlignment="Center" VerticalAlignment="Center" />
                                     </StackPanel>
                                     <StackPanel Orientation="Horizontal" Margin="5">
                                         <Label Content="Max Threads" />

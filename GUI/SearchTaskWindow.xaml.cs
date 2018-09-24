@@ -98,7 +98,7 @@ namespace MetaMorpheusGUI
 
             foreach (string dissassociationType in GlobalVariables.AllSupportedDissociationTypes.Keys)
             {
-                dissassociationTypeComboBox.Items.Add(dissassociationType);
+                dissociationTypeComboBox.Items.Add(dissassociationType);
             }
 
             productMassToleranceComboBox.Items.Add("Da");
@@ -169,15 +169,12 @@ namespace MetaMorpheusGUI
             maxModificationIsoformsTextBox.Text = task.CommonParameters.DigestionParams.MaxModificationIsoforms.ToString(CultureInfo.InvariantCulture);
             MaxModNumTextBox.Text = task.CommonParameters.DigestionParams.MaxModsForPeptide.ToString(CultureInfo.InvariantCulture);
             initiatorMethionineBehaviorComboBox.SelectedIndex = (int)task.CommonParameters.DigestionParams.InitiatorMethionineBehavior;
-            dissassociationTypeComboBox.SelectedItem = task.CommonParameters.DissociationType.ToString();
-
+            dissociationTypeComboBox.SelectedItem = task.CommonParameters.DissociationType.ToString();
             productMassToleranceTextBox.Text = task.CommonParameters.ProductMassTolerance.Value.ToString(CultureInfo.InvariantCulture);
             productMassToleranceComboBox.SelectedIndex = task.CommonParameters.ProductMassTolerance is AbsoluteTolerance ? 0 : 1;
             precursorMassToleranceTextBox.Text = task.CommonParameters.PrecursorMassTolerance.Value.ToString(CultureInfo.InvariantCulture);
             precursorMassToleranceComboBox.SelectedIndex = task.CommonParameters.PrecursorMassTolerance is AbsoluteTolerance ? 0 : 1;
             addCompIonCheckBox.IsChecked = task.CommonParameters.AddCompIons;
-
-            dissassociationTypeComboBox.SelectedItem = task.CommonParameters.DissociationType;
             numberOfDatabaseSearchesTextBox.Text = task.CommonParameters.TotalPartitions.ToString(CultureInfo.InvariantCulture);
             deconvolutePrecursors.IsChecked = task.CommonParameters.DoPrecursorDeconvolution;
             useProvidedPrecursor.IsChecked = task.CommonParameters.UseProvidedPrecursorInfo;
@@ -351,7 +348,7 @@ namespace MetaMorpheusGUI
             }
 
             Protease protease = (Protease)proteaseComboBox.SelectedItem;
-            DissociationType dissociationType = GlobalVariables.AllSupportedDissociationTypes[dissassociationTypeComboBox.SelectedItem.ToString()];
+            DissociationType dissociationType = GlobalVariables.AllSupportedDissociationTypes[dissociationTypeComboBox.SelectedItem.ToString()];
             bool semiProteaseDigestion = (semiSpecificSearchRadioButton.IsChecked.Value && ((Protease)proteaseComboBox.SelectedItem).CleavageSpecificity != CleavageSpecificity.SingleN && ((Protease)proteaseComboBox.SelectedItem).CleavageSpecificity != CleavageSpecificity.SingleC);
             //TODO: UPDATE
             //FragmentationTerminus terminusTypeSemiProtease = (bCheckBox.IsChecked.Value || cCheckBox.IsChecked.Value ? FragmentationTerminus.N : FragmentationTerminus.C);

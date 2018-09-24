@@ -397,8 +397,8 @@
                                     </StackPanel>
                                     <StackPanel Grid.Column="1">
                                         <StackPanel Orientation="Horizontal" Margin="5">
-                                        <Label x:Name="dissassociationTypeLabel" Content="Dissassociation Type" />
-                                        <ComboBox x:Name="dissassociationTypeComboBox" ToolTipService.ShowDuration="999999" ToolTipService.InitialShowDelay="500" SelectionChanged="dissassociationTypeComboBox_SelectionChanged">
+                                        <Label x:Name="dissociationTypeLabel" Content="Dissociation Type" />
+                                            <ComboBox x:Name="dissociationTypeComboBox" ToolTipService.ShowDuration="999999" ToolTipService.InitialShowDelay="500" SelectionChanged="dissassociationTypeComboBox_SelectionChanged">
                                             <ComboBox.ToolTip>
                                                 <TextBlock>
 

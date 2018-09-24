@@ -53,18 +53,14 @@ namespace MetaMorpheusGUI
             proteaseComboBox.SelectedItem = task.CommonParameters.DigestionParams.Protease;
             maxModificationIsoformsTextBox.Text = task.CommonParameters.DigestionParams.MaxModificationIsoforms.ToString(CultureInfo.InvariantCulture);
             initiatorMethionineBehaviorComboBox.SelectedIndex = (int)task.CommonParameters.DigestionParams.InitiatorMethionineBehavior;
-
-            
-
+            DissociationTypeComboBox.SelectedItem = task.CommonParameters.DissociationType.ToString();
             maxThreadsTextBox.Text = task.CommonParameters.MaxThreadsToUsePerFile.ToString(CultureInfo.InvariantCulture);
 
             productMassToleranceTextBox.Text = task.CommonParameters.ProductMassTolerance.Value.ToString(CultureInfo.InvariantCulture);
             productMassToleranceComboBox.SelectedIndex = task.CommonParameters.ProductMassTolerance is AbsoluteTolerance ? 0 : 1;
             precursorMassToleranceTextBox.Text = task.CommonParameters.PrecursorMassTolerance.Value.ToString(CultureInfo.InvariantCulture);
             precursorMassToleranceComboBox.SelectedIndex = task.CommonParameters.PrecursorMassTolerance is AbsoluteTolerance ? 0 : 1;
-
-
-
+            
             //writeIntermediateFilesCheckBox.IsChecked = task.CalibrationParameters.WriteIntermediateFiles;
 
             minScoreAllowed.Text = task.CommonParameters.ScoreCutoff.ToString(CultureInfo.InvariantCulture);
@@ -136,6 +132,11 @@ namespace MetaMorpheusGUI
                 initiatorMethionineBehaviorComboBox.Items.Add(initiatior_methionine_behavior);
             }
 
+            foreach (string dissassociationType in GlobalVariables.AllSupportedDissociationTypes.Keys)
+            {
+                DissociationTypeComboBox.Items.Add(dissassociationType);
+            }
+
             productMassToleranceComboBox.Items.Add("Da");
             productMassToleranceComboBox.Items.Add("ppm");
             precursorMassToleranceComboBox.Items.Add("Da");
@@ -189,6 +190,8 @@ namespace MetaMorpheusGUI
             int MinPeptideLength = int.Parse(MinPeptideLengthTextBox.Text, NumberStyles.Any, CultureInfo.InvariantCulture);
             int MaxPeptideLength = string.IsNullOrEmpty(MaxPeptideLengthTextBox.Text) ? int.MaxValue : (int.Parse(MaxPeptideLengthTextBox.Text, NumberStyles.Any, CultureInfo.InvariantCulture));
             int MaxModificationIsoforms = int.Parse(maxModificationIsoformsTextBox.Text, CultureInfo.InvariantCulture);
+            DissociationType dissociationType = GlobalVariables.AllSupportedDissociationTypes[DissociationTypeComboBox.SelectedItem.ToString()];
+
             DigestionParams digestionParamsToSave = new DigestionParams(
                 protease: protease.Name,
                 maxMissedCleavages: MaxMissedCleavages, 
@@ -238,7 +241,7 @@ namespace MetaMorpheusGUI
                 taskDescriptor: OutputFileNameTextBox.Text != "" ? OutputFileNameTextBox.Text : "CalibrateTask",
                 maxThreadsToUsePerFile: parseMaxThreadsPerFile ? int.Parse(maxThreadsTextBox.Text, CultureInfo.InvariantCulture) : new CommonParameters().MaxThreadsToUsePerFile,
                 digestionParams: digestionParamsToSave,
-                dissociationType: (DissociationType) DissociationTypeComboBox.SelectedItem,
+                dissociationType: dissociationType,
                 scoreCutoff: double.Parse(minScoreAllowed.Text, CultureInfo.InvariantCulture),
                 listOfModsFixed: listOfModsFixed,
                 listOfModsVariable: listOfModsVariable,

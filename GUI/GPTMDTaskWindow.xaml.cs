@@ -66,7 +66,7 @@ namespace MetaMorpheusGUI
             proteaseComboBox.SelectedItem = task.CommonParameters.DigestionParams.Protease;
             maxModificationIsoformsTextBox.Text = task.CommonParameters.DigestionParams.MaxModificationIsoforms.ToString(CultureInfo.InvariantCulture);
             initiatorMethionineBehaviorComboBox.SelectedIndex = (int)task.CommonParameters.DigestionParams.InitiatorMethionineBehavior;
-
+            DissociationTypeComboBox.SelectedItem = task.CommonParameters.DissociationType.ToString();
             productMassToleranceTextBox.Text = task.CommonParameters.ProductMassTolerance.Value.ToString(CultureInfo.InvariantCulture);
             productMassToleranceComboBox.SelectedIndex = task.CommonParameters.ProductMassTolerance is AbsoluteTolerance ? 0 : 1;
             precursorMassToleranceTextBox.Text = task.CommonParameters.PrecursorMassTolerance.Value.ToString(CultureInfo.InvariantCulture);
@@ -180,6 +180,11 @@ namespace MetaMorpheusGUI
                 initiatorMethionineBehaviorComboBox.Items.Add(initiatior_methionine_behavior);
             }
 
+            foreach (string dissassociationType in GlobalVariables.AllSupportedDissociationTypes.Keys)
+            {
+                DissociationTypeComboBox.Items.Add(dissassociationType);
+            }
+
             productMassToleranceComboBox.Items.Add("Da");
             productMassToleranceComboBox.Items.Add("ppm");
             precursorMassToleranceComboBox.Items.Add("Da");
@@ -241,6 +246,7 @@ namespace MetaMorpheusGUI
             int MaxPeptideLength = string.IsNullOrEmpty(MaxPeptideLengthTextBox.Text) ? int.MaxValue : (int.Parse(MaxPeptideLengthTextBox.Text, NumberStyles.Any, CultureInfo.InvariantCulture));
             int MaxModificationIsoforms = int.Parse(maxModificationIsoformsTextBox.Text, CultureInfo.InvariantCulture);
             InitiatorMethionineBehavior InitiatorMethionineBehavior = (InitiatorMethionineBehavior)initiatorMethionineBehaviorComboBox.SelectedIndex;
+            DissociationType dissociationType = GlobalVariables.AllSupportedDissociationTypes[DissociationTypeComboBox.SelectedItem.ToString()];
 
             Tolerance ProductMassTolerance;
             if (productMassToleranceComboBox.SelectedIndex == 0)
@@ -293,7 +299,7 @@ namespace MetaMorpheusGUI
                     maxPeptideLength: MaxPeptideLength,
                     maxModificationIsoforms: MaxModificationIsoforms,
                     initiatorMethionineBehavior: InitiatorMethionineBehavior),
-                    dissociationType: (DissociationType)DissociationTypeComboBox.SelectedItem,
+                    dissociationType: dissociationType,
                     scoreCutoff: double.Parse(minScoreAllowed.Text, CultureInfo.InvariantCulture),
                     precursorMassTolerance: PrecursorMassTolerance,
                     productMassTolerance: ProductMassTolerance,
