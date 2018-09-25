@@ -42,7 +42,7 @@ namespace EngineLayer.Indexing
             sb.AppendLine("Number of proteins: " + ProteinList.Count);
             sb.AppendLine("Number of fixed mods: " + FixedModifications.Count);
             sb.AppendLine("Number of variable mods: " + VariableModifications.Count);
-            //sb.AppendLine("lp: " + string.Join(",", ProductTypes));
+            sb.AppendLine("Dissociation Type: " + commonParameters.DissociationType);
             foreach (var digestionParams in CollectionOfDigestionParams)
             {
                 sb.AppendLine("protease: " + digestionParams.Protease);
@@ -51,6 +51,10 @@ namespace EngineLayer.Indexing
                 sb.AppendLine("minPeptideLength: " + digestionParams.MinPeptideLength);
                 sb.AppendLine("maxPeptideLength: " + digestionParams.MaxPeptideLength);
                 sb.AppendLine("maximumVariableModificationIsoforms: " + digestionParams.MaxModificationIsoforms);
+                sb.AppendLine("digestionTerminus: " + digestionParams.FragmentationTerminus);
+                sb.AppendLine("maxModsForEachPeptide: " + digestionParams.MaxModsForPeptide);
+                sb.AppendLine("cleavageSpecificity: " + digestionParams.SearchModeType);
+                sb.AppendLine("specificProtease: " + digestionParams.SpecificProtease);
             }
             sb.Append("Localizeable mods: " + ProteinList.Select(b => b.OneBasedPossibleLocalizedModifications.Count).Sum());
             return sb.ToString();
