@@ -1,11 +1,9 @@
 ﻿using EngineLayer.ProteinParsimony;
 using Proteomics;
-using Proteomics.Fragmentation;
 using Proteomics.ProteolyticDigestion;
 using System;
 using System.Collections.Concurrent;
 using System.Collections.Generic;
-using System.Globalization;
 using System.Linq;
 using System.Threading.Tasks;
 
@@ -16,68 +14,68 @@ namespace EngineLayer
         /// <summary>
         /// All peptides meeting the prefiltering criteria for parsimony (e.g., peptides from non-ambiguous high-confidence PSMs)
         /// </summary>
-        private readonly HashSet<PeptideWithSetModifications> FdrFilteredPeptides;
-        private readonly List<PeptideSpectralMatch> FdrFilteredPsms;
-        private readonly List<PeptideSpectralMatch> AllPsms;
-        private static double FdrCutoffForParsimony = 0.01;
+        private readonly HashSet<PeptideWithSetModifications> _fdrFilteredPeptides;
+        private readonly List<PeptideSpectralMatch> _fdrFilteredPsms;
+        private readonly List<PeptideSpectralMatch> _allPsms;
+        private const double FdrCutoffForParsimony = 0.01;
 
         /// <summary>
         /// User-selectable option that treats differently-modified forms of a peptide as different peptides for the purposes of parsimony
         /// </summary>
-        private readonly bool TreatModPeptidesAsDifferentPeptides;
+        private readonly bool _treatModPeptidesAsDifferentPeptides;
 
         public ProteinParsimonyEngine(List<PeptideSpectralMatch> allPsms, bool modPeptidesAreDifferent, CommonParameters commonParameters, List<string> nestedIds) : base(commonParameters, nestedIds)
         {
-            TreatModPeptidesAsDifferentPeptides = modPeptidesAreDifferent;
+            _treatModPeptidesAsDifferentPeptides = modPeptidesAreDifferent;
             
             if (!allPsms.Any())
             {
-                FdrFilteredPsms = new List<PeptideSpectralMatch>();
+                _fdrFilteredPsms = new List<PeptideSpectralMatch>();
             }
 
             // parsimony will only use non-ambiguous, high-confidence PSMs
             // KEEP decoys and contaminants for use in parsimony!
             if (modPeptidesAreDifferent)
             {
-                FdrFilteredPsms = allPsms.Where(p => p.FullSequence != null && p.FdrInfo.QValue <= FdrCutoffForParsimony && p.FdrInfo.QValueNotch <= FdrCutoffForParsimony).ToList();
+                _fdrFilteredPsms = allPsms.Where(p => p.FullSequence != null && p.FdrInfo.QValue <= FdrCutoffForParsimony && p.FdrInfo.QValueNotch <= FdrCutoffForParsimony).ToList();
             }
             else
             {
-                FdrFilteredPsms = allPsms.Where(p => p.BaseSequence != null && p.FdrInfo.QValue <= FdrCutoffForParsimony && p.FdrInfo.QValueNotch <= FdrCutoffForParsimony).ToList();
+                _fdrFilteredPsms = allPsms.Where(p => p.BaseSequence != null && p.FdrInfo.QValue <= FdrCutoffForParsimony && p.FdrInfo.QValueNotch <= FdrCutoffForParsimony).ToList();
             }
 
             // if PSM is a decoy, add only decoy sequences; same for contaminants
             // peptides to use in parsimony = peptides observed in high-confidence PSMs
-            FdrFilteredPeptides = new HashSet<PeptideWithSetModifications>();
+            _fdrFilteredPeptides = new HashSet<PeptideWithSetModifications>();
 
-            foreach (var psm in FdrFilteredPsms)
+            foreach (var psm in _fdrFilteredPsms)
             {
                 if (psm.IsDecoy)
                 {
                     foreach (var peptide in psm.BestMatchingPeptides.Select(p => p.Peptide).Where(p => p.Protein.IsDecoy))
                     {
-                        FdrFilteredPeptides.Add(peptide);
+                        _fdrFilteredPeptides.Add(peptide);
                     }
                 }
                 else if (psm.IsContaminant)
                 {
                     foreach (var peptide in psm.BestMatchingPeptides.Select(p => p.Peptide).Where(p => p.Protein.IsContaminant))
                     {
-                        FdrFilteredPeptides.Add(peptide);
+                        _fdrFilteredPeptides.Add(peptide);
                     }
                 }
                 else // PSM is target
                 {
                     foreach (var peptide in psm.BestMatchingPeptides.Select(p => p.Peptide).Where(p => !p.Protein.IsDecoy && !p.Protein.IsContaminant))
                     {
-                        FdrFilteredPeptides.Add(peptide);
+                        _fdrFilteredPeptides.Add(peptide);
                     }
                 }
             }
 
             // we're storing all PSMs (not just FDR-filtered ones) here because we will remove some protein associations 
             // from low-confidence PSMs if they can be explained by a parsimonious protein
-            AllPsms = allPsms;
+            _allPsms = allPsms;
         }
 
         protected override MetaMorpheusEngineResults RunSpecific()
@@ -103,15 +101,15 @@ namespace EngineLayer
             HashSet<PeptideWithSetModifications> uniquePeptides = new HashSet<PeptideWithSetModifications>();
 
             // if there are no peptides observed, there are no proteins; return an empty list of protein groups
-            if (FdrFilteredPeptides.Count == 0)
+            if (_fdrFilteredPeptides.Count == 0)
             {
                 return new List<ProteinGroup>();
             }
 
             // Parsimony stage 0: create peptide-protein associations if needed because the user wants a modification-agnostic parsimony
-            if (!TreatModPeptidesAsDifferentPeptides)
+            if (!_treatModPeptidesAsDifferentPeptides)
             {
-                foreach (var protease in FdrFilteredPsms.GroupBy(p => p.DigestionParams.Protease))
+                foreach (var protease in _fdrFilteredPsms.GroupBy(p => p.DigestionParams.Protease))
                 {
                     Dictionary<string, List<PeptideSpectralMatch>> sequenceWithPsms = new Dictionary<string, List<PeptideSpectralMatch>>();
 
@@ -153,7 +151,7 @@ namespace EngineLayer
                                     var pep = new PeptideWithSetModifications(proteinInfo.Item1, proteinInfo.Item2, proteinInfo.Item3, proteinInfo.Item4,
                                         psm.BestMatchingPeptides.First().Peptide.PeptideDescription, proteinInfo.Item5, psm.BestMatchingPeptides.First().Peptide.AllModsOneIsNterminus,
                                         psm.BestMatchingPeptides.First().Peptide.NumFixedMods);
-                                    FdrFilteredPeptides.Add(pep);
+                                    _fdrFilteredPeptides.Add(pep);
                                     psm.AddProteinMatch((proteinInfo.Item6, pep));
                                 }
                             }
@@ -163,7 +161,7 @@ namespace EngineLayer
             }
 
             // Parsimony stage 1: add proteins with unique peptides (for each protease)
-            var peptidesGroupedByProtease = FdrFilteredPeptides.GroupBy(p => p.DigestionParams.Protease);
+            var peptidesGroupedByProtease = _fdrFilteredPeptides.GroupBy(p => p.DigestionParams.Protease);
             foreach (var peptidesForThisProtease in peptidesGroupedByProtease)
             {
                 Dictionary<string, List<Protein>> peptideSequenceToProteinsForThisProtease = new Dictionary<string, List<Protein>>();
@@ -172,7 +170,7 @@ namespace EngineLayer
                 foreach (PeptideWithSetModifications peptide in peptidesForThisProtease)
                 {
                     string sequence = peptide.BaseSequence;
-                    if (TreatModPeptidesAsDifferentPeptides)
+                    if (_treatModPeptidesAsDifferentPeptides)
                     {
                         //these and next set to full sequence but might be base sequence. treat modified as unique makes sense to use full
                         sequence = peptide.FullSequence;
@@ -217,9 +215,9 @@ namespace EngineLayer
             // this is used in case of greedy algorithm ties to figure out which protein has more total peptides observed
             Dictionary<Protein, HashSet<ParsimonySequence>> proteinToPepSeqMatch = new Dictionary<Protein, HashSet<ParsimonySequence>>();
 
-            foreach (var peptide in FdrFilteredPeptides)
+            foreach (var peptide in _fdrFilteredPeptides)
             {
-                ParsimonySequence sequence = new ParsimonySequence(peptide, TreatModPeptidesAsDifferentPeptides);
+                ParsimonySequence sequence = new ParsimonySequence(peptide, _treatModPeptidesAsDifferentPeptides);
                 
                 if (peptideSequenceToProteins.TryGetValue(sequence, out List<Protein> proteinsForThisPeptideSequence))
                 {
@@ -264,19 +262,18 @@ namespace EngineLayer
                 // this data structure makes parsimony easier because the algorithm can look up a protein's peptides 
                 // to remove them from the list of available peptides. this list will shrink as the algorithm progresses
                 var algDictionary = new Dictionary<Protein, HashSet<string>>(); 
-                var algDictionary_Protease = new Dictionary<Protein, HashSet<ParsimonySequence>>();
+                var algDictionaryProtease = new Dictionary<Protein, HashSet<ParsimonySequence>>();
                 foreach (var kvp in peptideSequenceToProteins)
                 {
-                    
                     foreach (var protein in kvp.Value)
                     {
-                        if (algDictionary_Protease.TryGetValue(protein, out HashSet<ParsimonySequence> peptideSequences_WithProtease))
+                        if (algDictionaryProtease.TryGetValue(protein, out HashSet<ParsimonySequence> peptideSequencesWithProtease))
                         {
-                            peptideSequences_WithProtease.Add(kvp.Key);
+                            peptideSequencesWithProtease.Add(kvp.Key);
                         }
                         else
                         {
-                            algDictionary_Protease.Add(protein, new HashSet<ParsimonySequence> { kvp.Key });
+                            algDictionaryProtease.Add(protein, new HashSet<ParsimonySequence> { kvp.Key });
                         }
 
                         if (algDictionary.TryGetValue(protein, out HashSet<string> peptideSequences))
@@ -309,7 +306,7 @@ namespace EngineLayer
                     parsimoniousProteinList.Add(bestProtein);
 
                     // remove observed peptide seqs
-                    List<ParsimonySequence> temp = algDictionary_Protease[bestProtein].ToList();
+                    List<ParsimonySequence> temp = algDictionaryProtease[bestProtein].ToList();
                     foreach (ParsimonySequence peptideSequence in temp)
                     {
                         List<Protein> proteinsWithThisPeptide = peptideSequenceToProteins[peptideSequence];
@@ -317,10 +314,12 @@ namespace EngineLayer
                         foreach (var protein in proteinsWithThisPeptide)
                         {
                             algDictionary[protein].Remove(peptideSequence.Sequence);
+                            algDictionaryProtease[protein].Remove(peptideSequence);
                         }
                     }
 
                     algDictionary.Remove(bestProtein);
+                    algDictionaryProtease.Remove(bestProtein);
                     numNewSeqs = algDictionary.Any() ? algDictionary.Max(p => p.Value.Count) : 0;
                 }
 
@@ -349,7 +348,6 @@ namespace EngineLayer
                                     foreach (var parsimonyProtein in parsimonyProteinsWithSameNumPeptides)
                                     {
                                         // if the two proteins have the same set of peptide sequences, they're indistinguishable
-                                        // TODO: consider multiprotease here?
                                         if (parsimonyProtein != otherProtein && proteinToPepSeqMatch[parsimonyProtein].SetEquals(proteinToPepSeqMatch[otherProtein]))
                                         {
                                             indistinguishableProteins.Add(otherProtein);
@@ -368,7 +366,7 @@ namespace EngineLayer
             }
 
             // Parsimony stage 5: remove peptide objects that do not have proteins in the parsimonious list
-            foreach (PeptideSpectralMatch psm in AllPsms)
+            foreach (PeptideSpectralMatch psm in _allPsms)
             {
                 // if this PSM has a protein in the parsimonious list, it removes the proteins NOT in the parsimonious list
                 // otherwise, no proteins are removed (i.e., for PSMs that cannot be explained by a parsimonious protein, 
@@ -396,7 +394,7 @@ namespace EngineLayer
             List<ProteinGroup> proteinGroups = new List<ProteinGroup>();
             var proteinToPeptidesMatching = new Dictionary<Protein, HashSet<PeptideWithSetModifications>>();
 
-            foreach (var peptide in FdrFilteredPeptides)
+            foreach (var peptide in _fdrFilteredPeptides)
             {
                 if (proteinToPeptidesMatching.TryGetValue(peptide.Protein, out HashSet<PeptideWithSetModifications> peptidesHere))
                 {
@@ -413,13 +411,13 @@ namespace EngineLayer
                 var allPeptidesHere = proteinToPeptidesMatching[kvp.Key];
                 var uniquePeptidesHere = new HashSet<PeptideWithSetModifications>(allPeptidesHere.Where(p => uniquePeptides.Contains(p)));
 
-                proteinGroups.Add(new ProteinGroup(new HashSet<Protein>() { kvp.Key }, allPeptidesHere, uniquePeptidesHere));
+                proteinGroups.Add(new ProteinGroup(new HashSet<Protein> { kvp.Key }, allPeptidesHere, uniquePeptidesHere));
             }
 
             foreach (var proteinGroup in proteinGroups)
             {
                 proteinGroup.AllPeptides.RemoveWhere(p => !proteinGroup.Proteins.Contains(p.Protein));
-                proteinGroup.DisplayModsOnPeptides = TreatModPeptidesAsDifferentPeptides;
+                proteinGroup.DisplayModsOnPeptides = _treatModPeptidesAsDifferentPeptides;
             }
 
             return proteinGroups;

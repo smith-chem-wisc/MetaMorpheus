@@ -1,7 +1,6 @@
 ﻿using Chemistry;
 using MassSpectrometry;
 using MzLibUtil;
-using Proteomics.Fragmentation;
 using Proteomics.AminoAcidPolymer;
 using System;
 using System.Collections.Concurrent;
@@ -17,30 +16,21 @@ namespace EngineLayer.Calibration
 
         private readonly List<PeptideSpectralMatch> GoodIdentifications;
         private readonly MsDataFile MyMsDataFile;
-        private readonly int NumFragmentsNeededForEveryIdentification;
         private readonly Tolerance MzToleranceForMs1Search;
-        private readonly Tolerance MzToleranceForMs2Search;
         private readonly int MinMS1isotopicPeaksNeededForConfirmedIdentification;
-        private readonly int MinMS2isotopicPeaksNeededForConfirmedIdentification;
 
         public DataPointAcquisitionEngine(
             List<PeptideSpectralMatch> goodIdentifications,
             MsDataFile myMsDataFile,
             Tolerance mzToleranceForMs1Search,
-            Tolerance mzToleranceForMs2Search,
-            int numFragmentsNeededForEveryIdentification,
             int minMS1isotopicPeaksNeededForConfirmedIdentification,
-            int minMS2isotopicPeaksNeededForConfirmedIdentification,
             CommonParameters commonParameters,
             List<string> nestedIds) : base(commonParameters, nestedIds)
         {
             GoodIdentifications = goodIdentifications;
             MyMsDataFile = myMsDataFile;
             MzToleranceForMs1Search = mzToleranceForMs1Search;
-            MzToleranceForMs2Search = mzToleranceForMs2Search;
-            NumFragmentsNeededForEveryIdentification = numFragmentsNeededForEveryIdentification;
             MinMS1isotopicPeaksNeededForConfirmedIdentification = minMS1isotopicPeaksNeededForConfirmedIdentification;
-            MinMS2isotopicPeaksNeededForConfirmedIdentification = minMS2isotopicPeaksNeededForConfirmedIdentification;
         }
 
         protected override MetaMorpheusEngineResults RunSpecific()
@@ -56,10 +46,7 @@ namespace EngineLayer.Calibration
             List<LabeledDataPoint> Ms2List = new List<LabeledDataPoint>();
 
             int numIdentifications = GoodIdentifications.Count;
-
-            // Loop over identifications
-            HashSet<string> sequences = new HashSet<string>();
-
+            
             object lockObj = new object();
             object lockObj2 = new object();
             Parallel.ForEach(Partitioner.Create(0, numIdentifications), new ParallelOptions { MaxDegreeOfParallelism = commonParameters.MaxThreadsToUsePerFile }, (fff, loopState) =>
@@ -247,7 +234,7 @@ namespace EngineLayer.Calibration
                         Math.Log(ms2DataScan.TotalIonCurrent),
                         Math.Log(injTime),
                         Math.Log(exptPeakIntensity),
-                        matchedIon.NeutralTheoreticalProduct.NeutralMass.ToMz(1),
+                        matchedIon.NeutralTheoreticalProduct.NeutralMass.ToMz(matchedIon.Charge),
                         identification));
             }
             return result;
