@@ -1,28 +1,20 @@
-﻿using System.Collections.Generic;
+﻿using Proteomics.Fragmentation;
+using Proteomics.ProteolyticDigestion;
+using System.Collections.Generic;
 using System.Text;
 
 namespace EngineLayer.Indexing
 {
     public class IndexingResults : MetaMorpheusEngineResults
     {
-        #region Public Constructors
-
-        public IndexingResults(List<CompactPeptide> peptideIndex, List<int>[] fragmentIndex, IndexingEngine indexParams) : base(indexParams)
+        public IndexingResults(List<PeptideWithSetModifications> peptideIndex, List<int>[] fragmentIndex, IndexingEngine indexParams) : base(indexParams)
         {
-            this.PeptideIndex = peptideIndex;
-            this.FragmentIndex = fragmentIndex;
+            PeptideIndex = peptideIndex;
+            FragmentIndex = fragmentIndex;
         }
 
-        #endregion Public Constructors
-
-        #region Public Properties
-
         public List<int>[] FragmentIndex { get; private set; }
-        public List<CompactPeptide> PeptideIndex { get; private set; }
-
-        #endregion Public Properties
-
-        #region Public Methods
+        public List<PeptideWithSetModifications> PeptideIndex { get; private set; }
 
         public override string ToString()
         {
@@ -32,7 +24,5 @@ namespace EngineLayer.Indexing
             sb.AppendLine("\t\tpeptideIndex.Count: " + PeptideIndex.Count);
             return sb.ToString();
         }
-
-        #endregion Public Methods
     }
 }

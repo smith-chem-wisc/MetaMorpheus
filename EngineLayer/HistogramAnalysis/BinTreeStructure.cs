@@ -1,26 +1,18 @@
-﻿using MathNet.Numerics.Statistics;
+﻿using MassSpectrometry;
+using MathNet.Numerics.Statistics;
 using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Text;
+using Proteomics.Fragmentation;
 
 namespace EngineLayer.HistogramAnalysis
 {
     public class BinTreeStructure
     {
-        #region Private Fields
-
-        private const int minAdditionalPsmsInBin = 1;
-
-        #endregion Private Fields
-
-        #region Public Properties
+        private const int MinAdditionalPsmsInBin = 1;
 
         public List<Bin> FinalBins { get; private set; }
-
-        #endregion Public Properties
-
-        #region Public Methods
 
         public void GenerateBins(List<PeptideSpectralMatch> targetAndDecoyMatches, double dc)
         {
@@ -66,21 +58,21 @@ namespace EngineLayer.HistogramAnalysis
                 listokbin.Add(new OkBin(listOfMassShifts[i], sigma[i], p[i]));
 
             var prelimBins = new HashSet<double>();
-            foreach (OkBin okbin in listokbin.OrderByDescending(b => b.p))
+            foreach (OkBin okbin in listokbin.OrderByDescending(b => b.P))
             {
-                if (okbin.sigma < dc || okbin.p < minAdditionalPsmsInBin)
+                if (okbin.Sigma < dc || okbin.P < MinAdditionalPsmsInBin)
                     continue;
                 bool add = true;
                 foreach (double a in prelimBins)
                 {
-                    if (Math.Abs(okbin.massShift - a) <= dc)
+                    if (Math.Abs(okbin.MassShift - a) <= dc)
                     {
                         add = false;
                         break;
                     }
                 }
                 if (add)
-                    prelimBins.Add(okbin.massShift);
+                    prelimBins.Add(okbin.MassShift);
             }
 
             var forFinalBins = new Dictionary<double, List<double>>();
@@ -115,16 +107,10 @@ namespace EngineLayer.HistogramAnalysis
             IdentifyAAsInCommon();
 
             IdentifyMine(dc);
-
-            OverlappingIonSequences();
-
+            
             IdentifyFracWithSingle();
             IdentifyMedianLength();
         }
-
-        #endregion Public Methods
-
-        #region Private Methods
 
         private static double GetSigma(double thisMassShift, int thisP, int i, List<double> listOfMassShifts, int[] p)
         {
@@ -152,29 +138,14 @@ namespace EngineLayer.HistogramAnalysis
                 }
             }
         }
-
-        private void OverlappingIonSequences()
-        {
-            foreach (Bin bin in FinalBins)
-                foreach (var hm in bin.uniquePSMs.Where(b => !b.Value.Item3.IsDecoy && b.Value.Item3.MatchedIonDictOnlyMatches.Any()))
-                {
-                    var ya = hm.Value.Item3.MatchedIonDictOnlyMatches;
-                    if (ya.ContainsKey(ProductType.B)
-                        && ya.ContainsKey(ProductType.Y)
-                        && ya[ProductType.B].Any(b => b > 0)
-                        && ya[ProductType.Y].Any(b => b > 0)
-                        && ya[ProductType.B].Last(b => b > 0) + ya[ProductType.Y].Last(b => b > 0) > hm.Value.Item3.PeptideMonisotopicMass.Value)
-                        bin.Overlapping++;
-                }
-        }
-
+        
         private void IdentifyFracWithSingle()
         {
             foreach (Bin bin in FinalBins)
             {
-                var numTarget = bin.uniquePSMs.Values.Count(b => !b.Item3.IsDecoy);
+                var numTarget = bin.UniquePSMs.Values.Count(b => !b.Item3.IsDecoy);
                 if (numTarget > 0)
-                    bin.FracWithSingle = (double)bin.uniquePSMs.Values.Count(b => !b.Item3.IsDecoy && b.Item3.NumDifferentCompactPeptides == 1) / numTarget;
+                    bin.FracWithSingle = (double)bin.UniquePSMs.Values.Count(b => !b.Item3.IsDecoy && b.Item3.NumDifferentMatchingPeptides == 1) / numTarget;
             }
         }
 
@@ -182,9 +153,9 @@ namespace EngineLayer.HistogramAnalysis
         {
             foreach (Bin bin in FinalBins)
             {
-                var numTarget = bin.uniquePSMs.Values.Count(b => !b.Item3.IsDecoy);
+                var numTarget = bin.UniquePSMs.Values.Count(b => !b.Item3.IsDecoy);
                 if (numTarget > 0)
-                    bin.MedianLength = Statistics.Median(bin.uniquePSMs.Values.Where(b => !b.Item3.IsDecoy).Where(b => b.Item3.PeptideLength.HasValue).Select(b => (double)b.Item3.PeptideLength.Value));
+                    bin.MedianLength = Statistics.Median(bin.UniquePSMs.Values.Where(b => !b.Item3.IsDecoy).Where(b => b.Item3.PeptideLength.HasValue).Select(b => (double)b.Item3.PeptideLength.Value));
             }
         }
 
@@ -193,7 +164,7 @@ namespace EngineLayer.HistogramAnalysis
             foreach (Bin bin in FinalBins)
             {
                 bin.AAsInCommon = new Dictionary<char, int>();
-                foreach (var hehe in bin.uniquePSMs.Values.Where(b => !b.Item3.IsDecoy))
+                foreach (var hehe in bin.UniquePSMs.Values.Where(b => !b.Item3.IsDecoy))
                 {
                     var chars = new HashSet<char>();
                     for (int i = 0; i < hehe.Item1.Count(); i++)
@@ -211,8 +182,8 @@ namespace EngineLayer.HistogramAnalysis
         {
             foreach (Bin bin in FinalBins)
             {
-                bin.modsInCommon = new Dictionary<string, int>();
-                foreach (var hehe in bin.uniquePSMs.Values.Where(b => !b.Item3.IsDecoy))
+                bin.ModsInCommon = new Dictionary<string, int>();
+                foreach (var hehe in bin.UniquePSMs.Values.Where(b => !b.Item3.IsDecoy))
                 {
                     int inModLevel = 0;
                     StringBuilder currentMod = new StringBuilder();
@@ -242,10 +213,10 @@ namespace EngineLayer.HistogramAnalysis
                     }
                     foreach (var modInHS in modsHere)
                     {
-                        if (bin.modsInCommon.ContainsKey(modInHS))
-                            bin.modsInCommon[modInHS]++;
+                        if (bin.ModsInCommon.ContainsKey(modInHS))
+                            bin.ModsInCommon[modInHS]++;
                         else
-                            bin.modsInCommon.Add(modInHS, 1);
+                            bin.ModsInCommon.Add(modInHS, 1);
                     }
                 }
             }
@@ -330,7 +301,5 @@ namespace EngineLayer.HistogramAnalysis
                         bin.Mine = myInfo.infostring;
             }
         }
-
-        #endregion Private Methods
     }
 }

@@ -2,6 +2,7 @@
 using MassSpectrometry;
 using NUnit.Framework;
 using Proteomics;
+using Proteomics.ProteolyticDigestion;
 using System;
 using System.Collections.Generic;
 using System.IO;
@@ -14,19 +15,13 @@ namespace Test
     [TestFixture]
     public static class BinGenerationTest
     {
-        #region Public Methods
-
         [Test]
         public static void TestBinGeneration()
         {
             SearchTask st = new SearchTask
             {
-                CommonParameters = new CommonParameters
-                {
-                    ScoreCutoff = 1,
-                    DigestionParams = new DigestionParams(MinPeptideLength: 5, InitiatorMethionineBehavior: InitiatorMethionineBehavior.Retain),
-                    ConserveMemory = false,
-                },
+                CommonParameters = new CommonParameters(scoreCutoff: 1, digestionParams: new DigestionParams(minPeptideLength: 5, initiatorMethionineBehavior: InitiatorMethionineBehavior.Retain)),
+
                 SearchParameters = new SearchParameters
                 {
                     DoHistogramAnalysis = true,
@@ -44,21 +39,21 @@ namespace Test
             Protein prot2 = new Protein("MENEEK", "prot2");
 
             ModificationMotif.TryGetMotif("D", out ModificationMotif motif);
-            ModificationWithMass mod = new ModificationWithMass(null, null, motif, TerminusLocalization.Any, 10);
+            Modification mod = new Modification(_target: motif, _locationRestriction: "Anywhere.", _monoisotopicMass: 10);
 
-            var pep1_0 = prot1.Digest(st.CommonParameters.DigestionParams, new List<ModificationWithMass>(), new List<ModificationWithMass>()).First();
-            var pep1_10 = prot1.Digest(st.CommonParameters.DigestionParams, new List<ModificationWithMass>(), new List<ModificationWithMass>()).Last();
+            var pep1_0 = prot1.Digest(st.CommonParameters.DigestionParams, new List<Modification>(), new List<Modification>()).First();
+            var pep1_10 = prot1.Digest(st.CommonParameters.DigestionParams, new List<Modification>(), new List<Modification>()).Last();
 
             Protein prot3 = new Protein("MAAADAAAAAAAAAAAAAAA", "prot3");
 
-            var pep2_0 = prot3.Digest(st.CommonParameters.DigestionParams, new List<ModificationWithMass>(), new List<ModificationWithMass>()).First();
-            var pep2_10 = prot3.Digest(st.CommonParameters.DigestionParams, new List<ModificationWithMass>(), new List<ModificationWithMass> { mod }).Last();
+            var pep2_0 = prot3.Digest(st.CommonParameters.DigestionParams, new List<Modification>(), new List<Modification>()).First();
+            var pep2_10 = prot3.Digest(st.CommonParameters.DigestionParams, new List<Modification>(), new List<Modification> { mod }).Last();
 
             Protein prot4 = new Protein("MNNDNNNN", "prot4");
-            var pep3_10 = prot4.Digest(st.CommonParameters.DigestionParams, new List<ModificationWithMass>(), new List<ModificationWithMass> { mod }).Last();
+            var pep3_10 = prot4.Digest(st.CommonParameters.DigestionParams, new List<Modification>(), new List<Modification> { mod }).Last();
 
             List<PeptideWithSetModifications> pepsWithSetMods = new List<PeptideWithSetModifications> { pep1_0, pep1_10, pep2_0, pep2_10, pep3_10 };
-            IMsDataFile<IMsDataScan<IMzSpectrum<IMzPeak>>> myMsDataFile = new TestDataFile(pepsWithSetMods);
+            MsDataFile myMsDataFile = new TestDataFile(pepsWithSetMods);
 
             List<Protein> proteinList = new List<Protein> { prot1, prot2, prot3, prot4 };
 
@@ -73,7 +68,7 @@ namespace Test
                 new List<string> { mzmlFilePath },
                 null);
 
-            Assert.AreEqual(3, File.ReadLines(Path.Combine(output_folder, @"aggregate.mytsv")).Count());
+            Assert.AreEqual(3, File.ReadLines(Path.Combine(output_folder, @"MassDifferenceHistogram.tsv")).Count());
         }
 
         [Test]
@@ -81,12 +76,13 @@ namespace Test
         {
             SearchTask st = new SearchTask()
             {
-                CommonParameters = new CommonParameters
-                {
-                    ScoreCutoff = 1,
-                    DigestionParams = new DigestionParams(MaxMissedCleavages: 0, MinPeptideLength: 5, InitiatorMethionineBehavior: InitiatorMethionineBehavior.Retain),
-                    ConserveMemory = false,
-                },
+                CommonParameters = new CommonParameters(
+                    scoreCutoff: 1,
+                    digestionParams: new DigestionParams(
+                        maxMissedCleavages: 0,
+                        minPeptideLength: 5,
+                        initiatorMethionineBehavior: InitiatorMethionineBehavior.Retain)),
+
                 SearchParameters = new SearchParameters
                 {
                     DoHistogramAnalysis = true,
@@ -101,7 +97,7 @@ namespace Test
             string mzmlFilePath2 = Path.Combine(TestContext.CurrentContext.TestDirectory, "TestProteinSplitAcrossFiles2.mzML");
 
             ModificationMotif.TryGetMotif("D", out ModificationMotif motif);
-            ModificationWithMass mod = new ModificationWithMass("mod1", "mt", motif, TerminusLocalization.Any, 10);
+            Modification mod = new Modification(_originalId: "mod1 on D", _modificationType: "mt", _target: motif, _locationRestriction: "Anywhere.", _monoisotopicMass: 10);
 
             IDictionary<int, List<Modification>> oneBasedModification = new Dictionary<int, List<Modification>>
             {
@@ -110,13 +106,13 @@ namespace Test
 
             Protein prot1 = new Protein("MEDEEK", "prot1", oneBasedModifications: oneBasedModification);
 
-            var pep1 = prot1.Digest(st.CommonParameters.DigestionParams, new List<ModificationWithMass>(), new List<ModificationWithMass>()).First();
-            var pep2 = prot1.Digest(st.CommonParameters.DigestionParams, new List<ModificationWithMass>(), new List<ModificationWithMass>()).Last();
+            var pep1 = prot1.Digest(st.CommonParameters.DigestionParams, new List<Modification>(), new List<Modification>()).First();
+            var pep2 = prot1.Digest(st.CommonParameters.DigestionParams, new List<Modification>(), new List<Modification>()).Last();
 
             List<PeptideWithSetModifications> listForFile1 = new List<PeptideWithSetModifications> { pep1, pep2 };
             List<PeptideWithSetModifications> listForFile2 = new List<PeptideWithSetModifications> { pep2 };
-            IMsDataFile<IMsDataScan<IMzSpectrum<IMzPeak>>> myMsDataFile1 = new TestDataFile(listForFile1);
-            IMsDataFile<IMsDataScan<IMzSpectrum<IMzPeak>>> myMsDataFile2 = new TestDataFile(listForFile2);
+            MsDataFile myMsDataFile1 = new TestDataFile(listForFile1);
+            MsDataFile myMsDataFile2 = new TestDataFile(listForFile2);
 
             List<Protein> proteinList = new List<Protein> { prot1 };
 
@@ -133,7 +129,5 @@ namespace Test
                 new List<string> { mzmlFilePath1, mzmlFilePath2, },
                 null);
         }
-
-        #endregion Public Methods
     }
 }

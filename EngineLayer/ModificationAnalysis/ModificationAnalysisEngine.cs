@@ -6,22 +6,12 @@ namespace EngineLayer.ModificationAnalysis
 {
     public class ModificationAnalysisEngine : MetaMorpheusEngine
     {
-        #region Private Fields
+        private readonly List<PeptideSpectralMatch> NewPsms;
 
-        private readonly List<PeptideSpectralMatch> newPsms;
-
-        #endregion Private Fields
-
-        #region Public Constructors
-
-        public ModificationAnalysisEngine(List<PeptideSpectralMatch> newPsms, List<string> nestedIds) : base(nestedIds)
+        public ModificationAnalysisEngine(List<PeptideSpectralMatch> newPsms, CommonParameters commonParameters, List<string> nestedIds) : base(commonParameters, nestedIds)
         {
-            this.newPsms = newPsms;
+            NewPsms = newPsms;
         }
-
-        #endregion Public Constructors
-
-        #region Protected Methods
 
         protected override MetaMorpheusEngineResults RunSpecific()
         {
@@ -29,19 +19,30 @@ namespace EngineLayer.ModificationAnalysis
 
             ModificationAnalysisResults myAnalysisResults = new ModificationAnalysisResults(this);
 
-            var confidentTargetPsms = newPsms.Where(b => b.FdrInfo.QValue <= 0.01 && !b.IsDecoy).ToList();
+            var confidentTargetPsms = NewPsms.Where(b => b.FdrInfo.QValue <= 0.01 && !b.IsDecoy).ToList();
 
             // For the database ones, only need un-ambiguous protein and location in protein
             var forObserved = confidentTargetPsms
-                .Where(b => b.ProteinAccesion != null && b.OneBasedEndResidueInProtein != null && b.OneBasedStartResidueInProtein != null);
+                .Where(b => b.ProteinAccession != null && b.OneBasedEndResidueInProtein != null && b.OneBasedStartResidueInProtein != null);
 
             // For the unambiguously localized ones, need FullSequence and un-ambiguous protein and location in protein
             var forUnambiguouslyLocalized = confidentTargetPsms
-                .Where(b => b.FullSequence != null && b.ProteinAccesion != null && b.OneBasedEndResidueInProtein != null && b.OneBasedStartResidueInProtein != null);
+                .Where(b => b.FullSequence != null && b.ProteinAccession != null && b.OneBasedEndResidueInProtein != null && b.OneBasedStartResidueInProtein != null);
+
+            //**DEBUG
+            List<PeptideSpectralMatch> toby = new List<PeptideSpectralMatch>();
+            foreach (PeptideSpectralMatch psm in confidentTargetPsms)
+            {
+                if (psm.FullSequence != null && psm.ProteinAccession != null && psm.OneBasedEndResidueInProtein != null && psm.OneBasedStartResidueInProtein != null)
+                    toby.Add(psm);
+            }
+
+            int i = forUnambiguouslyLocalized.Count() + toby.Count();
+            //**END DEBUG
 
             // For the localized but ambiguous ones, need FullSequence
             var forAmbiguousButLocalized = confidentTargetPsms
-                .Where(b => b.FullSequence != null && !(b.ProteinAccesion != null && b.OneBasedEndResidueInProtein != null && b.OneBasedStartResidueInProtein != null))
+                .Where(b => b.FullSequence != null && !(b.ProteinAccession != null && b.OneBasedEndResidueInProtein != null && b.OneBasedStartResidueInProtein != null))
                 .GroupBy(b => b.FullSequence);
 
             // For unlocalized but identified modifications, skip ones with full sequences!
@@ -58,19 +59,19 @@ namespace EngineLayer.ModificationAnalysis
             HashSet<(string, string, int)> modsOnProteins = new HashSet<(string, string, int)>();
             foreach (var psm in forObserved)
             {
-                var singlePeptide = psm.CompactPeptides.First().Value.Item2.First();
+                var singlePeptide = psm.BestMatchingPeptides.First().Peptide;
                 foreach (var modInProtein in singlePeptide.Protein.OneBasedPossibleLocalizedModifications.Where(b => b.Key >= singlePeptide.OneBasedStartResidueInProtein && b.Key <= singlePeptide.OneBasedEndResidueInProtein))
 
                     foreach (var huh in modInProtein.Value)
-                        modsOnProteins.Add((singlePeptide.Protein.Accession, huh.id, modInProtein.Key));
+                        modsOnProteins.Add((singlePeptide.Protein.Accession, huh.IdWithMotif, modInProtein.Key));
             }
 
             // We do not want to double-count modifications. Hence the HashSet!!!
             HashSet<(string, string, int)> modsSeenAndLocalized = new HashSet<(string, string, int)>();
             foreach (var psm in forUnambiguouslyLocalized)
             {
-                var singlePeptide = psm.CompactPeptides.First().Value.Item2.First();
-                foreach (var nice in singlePeptide.allModsOneIsNterminus)
+                var singlePeptide = psm.BestMatchingPeptides.First().Peptide;
+                foreach (var nice in singlePeptide.AllModsOneIsNterminus)
                 {
                     int locInProtein;
                     if (nice.Key == 1)
@@ -79,7 +80,7 @@ namespace EngineLayer.ModificationAnalysis
                         locInProtein = singlePeptide.OneBasedEndResidueInProtein;
                     else
                         locInProtein = singlePeptide.OneBasedStartResidueInProtein + nice.Key - 2;
-                    modsSeenAndLocalized.Add((singlePeptide.Protein.Accession, nice.Value.id, locInProtein));
+                    modsSeenAndLocalized.Add((singlePeptide.Protein.Accession, nice.Value.IdWithMotif, locInProtein));
                 }
             }
 
@@ -119,15 +120,13 @@ namespace EngineLayer.ModificationAnalysis
                     unlocalizedFormulas.Add(representativePsm.ModsChemicalFormula, 1);
             }
 
-            myAnalysisResults.AllModsOnProteins = modsOnProteins.GroupBy(b => b.Item2).ToDictionary(b => b.Key, b => b.Count());
-            myAnalysisResults.ModsSeenAndLocalized = modsSeenAndLocalized.GroupBy(b => b.Item2).ToDictionary(b => b.Key, b => b.Count());
-            myAnalysisResults.AmbiguousButLocalizedModsSeen = ambiguousButLocalizedModsSeen;
-            myAnalysisResults.UnlocalizedMods = unlocalizedMods;
-            myAnalysisResults.UnlocalizedFormulas = unlocalizedFormulas;
+            myAnalysisResults.CountOfEachModSeenOnProteins = modsOnProteins.GroupBy(b => b.Item2).ToDictionary(b => b.Key, b => b.Count());
+            myAnalysisResults.CountOfModsSeenAndLocalized = modsSeenAndLocalized.GroupBy(b => b.Item2).ToDictionary(b => b.Key, b => b.Count());
+            myAnalysisResults.CountOfAmbiguousButLocalizedModsSeen = ambiguousButLocalizedModsSeen;
+            myAnalysisResults.CountOfUnlocalizedMods = unlocalizedMods;
+            myAnalysisResults.CountOfUnlocalizedFormulas = unlocalizedFormulas;
 
             return myAnalysisResults;
         }
-
-        #endregion Protected Methods
     }
 }

@@ -1,18 +1,18 @@
 ﻿using EngineLayer;
 using MzLibUtil;
 using Nett;
+using Proteomics.ProteolyticDigestion;
+using MassSpectrometry;
 
 namespace TaskLayer
 {
     public class FileSpecificParameters
     {
-        #region Public Constructors
-
         public FileSpecificParameters(TomlTable tomlTable)
         {
-            foreach(var keyValuePair in tomlTable)
+            foreach (var keyValuePair in tomlTable)
             {
-                switch(keyValuePair.Key)
+                switch (keyValuePair.Key)
                 {
                     // we're using the name of the variable here and not a fixed string
                     // in case the variable name changes at some point
@@ -30,14 +30,12 @@ namespace TaskLayer
                         MaxMissedCleavages = keyValuePair.Value.Get<int>(); break;
                     case nameof(MaxModsForPeptide):
                         MaxModsForPeptide = keyValuePair.Value.Get<int>(); break;
-                    case nameof(BIons):
-                        BIons = keyValuePair.Value.Get<bool>(); break;
-                    case nameof(YIons):
-                        YIons = keyValuePair.Value.Get<bool>(); break;
-                    case nameof(CIons):
-                        CIons = keyValuePair.Value.Get<bool>(); break;
-                    case nameof(ZdotIons):
-                        ZdotIons = keyValuePair.Value.Get<bool>(); break;
+
+
+                    case nameof(DissociationType):
+                        DissociationType = keyValuePair.Value.Get<MassSpectrometry.DissociationType>(); break;
+
+
                     default:
                         throw new MetaMorpheusException("Unrecognized parameter \"" + keyValuePair.Key + "\" in file-specific parameters toml");
                 }
@@ -49,10 +47,6 @@ namespace TaskLayer
             // everything initialized to null
         }
 
-        #endregion Public Constructors
-
-        #region Public Properties
-
         public Tolerance PrecursorMassTolerance { get; set; }
         public Tolerance ProductMassTolerance { get; set; }
         public Protease Protease { get; set; }
@@ -60,14 +54,7 @@ namespace TaskLayer
         public int? MaxPeptideLength { get; set; }
         public int? MaxMissedCleavages { get; set; }
         public int? MaxModsForPeptide { get; set; }
-        public bool? BIons { get; set; }
-        public bool? YIons { get; set; }
-        public bool? CIons { get; set; }
-        public bool? ZdotIons { get; set; }
-
-        #endregion Public Properties
-
-        #region Public Methods
+        public DissociationType? DissociationType { get; set; }
 
         // This method is to make sure developers keep consistent naming between CommonParameters and FileSpecificParameters.
         // It's supposed to immediately crash MetaMorpheus if you rename a Common Parameter and don't rename it here.
@@ -76,7 +63,7 @@ namespace TaskLayer
         public static void ValidateFileSpecificVariableNames()
         {
             CommonParameters temp = new CommonParameters();
-            
+
             if (!nameof(temp.PrecursorMassTolerance).Equals(nameof(PrecursorMassTolerance)))
                 throw new MetaMorpheusException("Precursor tol variable name is inconsistent");
             if (!nameof(temp.ProductMassTolerance).Equals(nameof(ProductMassTolerance)))
@@ -91,21 +78,12 @@ namespace TaskLayer
                 throw new MetaMorpheusException("Max missed cleavages variable name is inconsistent");
             if (!nameof(temp.DigestionParams.MaxModsForPeptide).Equals(nameof(MaxModsForPeptide)))
                 throw new MetaMorpheusException("Max mods per peptide variable name is inconsistent");
-            if (!nameof(temp.BIons).Equals(nameof(BIons)))
-                throw new MetaMorpheusException("B ion variable name is inconsistent");
-            if (!nameof(temp.YIons).Equals(nameof(YIons)))
-                throw new MetaMorpheusException("Y ion variable name is inconsistent");
-            if (!nameof(temp.ZdotIons).Equals(nameof(ZdotIons)))
-                throw new MetaMorpheusException("Zdot ion variable name is inconsistent");
-            if (!nameof(temp.CIons).Equals(nameof(CIons)))
-                throw new MetaMorpheusException("C ion variable name is inconsistent");
+
         }
 
         public FileSpecificParameters Clone()
         {
             return (FileSpecificParameters)this.MemberwiseClone();
         }
-
-        #endregion Public Methods
     }
 }

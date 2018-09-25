@@ -114,19 +114,6 @@ PP   Anywhere.
 MT   Mod
 CF   H2 C2 O1
 //
-ID   Acetylation+Methionine
-TG   mX
-PP   N-terminal.
-NL   C7 H11 N1 O2 S or H0
-MT   ProteinTermMod
-CF   C7 H11 N1 O2 S
-//
-ID   Carboxymethyl+Methionine
-TG   mX
-PP   N-terminal.
-MT   ProteinTermMod
-CF   C7 H11 N1 O3 S1
-//
 ID   Lysine not cleaved at C-term
 TG   Xk
 PP   Peptide C-terminal.
@@ -180,18 +167,6 @@ TG   L or I or P or W or S
 PP   Anywhere.
 MT   Mod
 CF   H-2 O1
-//
-ID   Met loss + Acetylation
-TG   M
-PP   N-terminal.
-MT   ProteinTermMod
-CF   H-7 C-3 N-1 S-1
-//
-ID   Met loss + acetaldehyde
-TG   M
-PP   N-terminal.
-MT   ProteinTermMod
-CF   C-3 H-7 N-1 O-1 S-1
 //
 ID   Oxidation of W to Kynurenine
 TG   W
@@ -369,13 +344,13 @@ NL   H0 or H24 C15
 MT   Mod
 CF   H24 C15
 //
-ID   Succinylation
+ID   Succinylation of K
 TG   K
 PP   Anywhere.
 MT   Mod
 CF   C4 H4 O3
 //
-ID   Succinylation
+ID   Succinylation of N-Term
 TG   X
 PP   N-terminal.
 MT   ProteinTermMod

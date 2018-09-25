@@ -1,29 +1,29 @@
 ﻿using EngineLayer;
 using EngineLayer.FdrAnalysis;
 using EngineLayer.ModificationAnalysis;
+using MassSpectrometry;
 using NUnit.Framework;
 using Proteomics;
+using Proteomics.Fragmentation;
+using Proteomics.ProteolyticDigestion;
 using System.Collections.Generic;
 using System.Linq;
-using TaskLayer;
 
 namespace Test
 {
     [TestFixture]
     public static class ModificationAnalysisTest
     {
-        #region Public Methods
-
         [Test]
         public static void TestModificationAnalysis()
         {
             IScan scan = new ThisTestScan();
 
             ModificationMotif.TryGetMotif("N", out ModificationMotif motif1);
-            ModificationWithMass mod1 = new ModificationWithMass("mod1", null, motif1, TerminusLocalization.Any, 10);
+            Modification mod1 = new Modification(_originalId: "mod1", _modificationType: "myModType", _target: motif1, _locationRestriction: "Anywhere.", _monoisotopicMass: 10);
 
             ModificationMotif.TryGetMotif("L", out ModificationMotif motif2);
-            ModificationWithMass mod2 = new ModificationWithMass("mod2", null, motif2, TerminusLocalization.Any, 10);
+            Modification mod2 = new Modification(_originalId: "mod2", _modificationType: "myModType", _target: motif2, _locationRestriction: "Anywhere.", _monoisotopicMass: 10);
 
             IDictionary<int, List<Modification>> oneBasedModifications = new Dictionary<int, List<Modification>>
             {
@@ -33,81 +33,72 @@ namespace Test
             };
             Protein protein1 = new Protein("MNLDLDNDL", "prot1", oneBasedModifications: oneBasedModifications);
 
-            Dictionary<int, ModificationWithMass> allModsOneIsNterminus1 = new Dictionary<int, ModificationWithMass>
+            Dictionary<int, Modification> allModsOneIsNterminus1 = new Dictionary<int, Modification>
             {
                 {2, mod1},
             };
-            PeptideWithSetModifications pwsm1 = new PeptideWithSetModifications(0, protein1, 2, 9, allModsOneIsNterminus1);
-            CompactPeptideBase pep1 = new CompactPeptide(pwsm1, TerminusType.None);
+            PeptideWithSetModifications pwsm1 = new PeptideWithSetModifications(protein1, new DigestionParams(), 2, 9, null, 0, allModsOneIsNterminus1, 0);
 
-            Dictionary<int, ModificationWithMass> allModsOneIsNterminus2 = new Dictionary<int, ModificationWithMass>
+            Dictionary<int, Modification> allModsOneIsNterminus2 = new Dictionary<int, Modification>
             {
                 {2, mod1},
                 {7, mod1},
             };
-            PeptideWithSetModifications pwsm2 = new PeptideWithSetModifications(0, protein1, 2, 9, allModsOneIsNterminus2);
-            CompactPeptideBase pep2 = new CompactPeptide(pwsm2, TerminusType.None);
+            PeptideWithSetModifications pwsm2 = new PeptideWithSetModifications(protein1, new DigestionParams(), 2, 9, null, 0, allModsOneIsNterminus2, 0);
 
-            Dictionary<int, ModificationWithMass> allModsOneIsNterminus3 = new Dictionary<int, ModificationWithMass>
+            Dictionary<int, Modification> allModsOneIsNterminus3 = new Dictionary<int, Modification>
             {
                 {7, mod1},
             };
-            PeptideWithSetModifications pwsm3 = new PeptideWithSetModifications(0, protein1, 2, 9, allModsOneIsNterminus3);
-            CompactPeptideBase pep3 = new CompactPeptide(pwsm3, TerminusType.None);
+            PeptideWithSetModifications pwsm3 = new PeptideWithSetModifications(protein1, new DigestionParams(), 2, 9, null, 0, allModsOneIsNterminus3, 0);
 
-            Dictionary<int, ModificationWithMass> allModsOneIsNterminus4 = new Dictionary<int, ModificationWithMass>
+            Dictionary<int, Modification> allModsOneIsNterminus4 = new Dictionary<int, Modification>
             {
                 {8, mod1},
             };
-            PeptideWithSetModifications pwsm4 = new PeptideWithSetModifications(0, protein1, 1, 9, allModsOneIsNterminus4);
-            CompactPeptideBase pep4 = new CompactPeptide(pwsm4, TerminusType.None);
+            PeptideWithSetModifications pwsm4 = new PeptideWithSetModifications(protein1, new DigestionParams(), 1, 9, null, 0, allModsOneIsNterminus4, 0);
 
-            CommonParameters CommonParameters = new CommonParameters
-            {
-                DigestionParams = new DigestionParams(MaxMissedCleavages: 0, MinPeptideLength: 1, MaxModificationIsoforms: int.MaxValue),
-                ConserveMemory = false,
-                ScoreCutoff = 1,
-            };
+            CommonParameters CommonParameters = new CommonParameters(
+                digestionParams: new DigestionParams(
+                    maxMissedCleavages: 0,
+                    minPeptideLength: 1,
+                    maxModificationIsoforms: int.MaxValue),
+                scoreCutoff: 1);
 
             var newPsms = new List<PeptideSpectralMatch>
             {
-                new PeptideSpectralMatch(pep1, 0,10,0,scan,CommonParameters.DigestionParams),
-                new PeptideSpectralMatch(pep1, 0,10,0,scan, CommonParameters.DigestionParams),
-                new PeptideSpectralMatch(pep2, 0,10,0,scan, CommonParameters.DigestionParams),
-                new PeptideSpectralMatch(pep3, 0,10,0,scan, CommonParameters.DigestionParams),
-                new PeptideSpectralMatch(pep4, 0,10,0,scan,CommonParameters.DigestionParams),
+                new PeptideSpectralMatch(pwsm1, 0, 10, 0, scan, CommonParameters.DigestionParams, new List<MatchedFragmentIon>()),
+                new PeptideSpectralMatch(pwsm1, 0, 10, 0, scan, CommonParameters.DigestionParams, new List<MatchedFragmentIon>()),
+                new PeptideSpectralMatch(pwsm2, 0, 10, 0, scan, CommonParameters.DigestionParams, new List<MatchedFragmentIon>()),
+                new PeptideSpectralMatch(pwsm3, 0, 10, 0, scan, CommonParameters.DigestionParams, new List<MatchedFragmentIon>()),
+                new PeptideSpectralMatch(pwsm4, 0, 10, 0, scan, CommonParameters.DigestionParams, new List<MatchedFragmentIon>()),
             };
+
+            foreach (var psm in newPsms)
+            {
+                psm.ResolveAllAmbiguities();
+            }
 
             MassDiffAcceptor searchMode = new SinglePpmAroundZeroSearchMode(5);
             List<Protein> proteinList = new List<Protein> { protein1 };
 
-          
-
-            SequencesToActualProteinPeptidesEngine sequencesToActualProteinPeptidesEngine = new SequencesToActualProteinPeptidesEngine
-            (newPsms, proteinList, new List<ModificationWithMass>(), new List<ModificationWithMass>(), new List<ProductType>
-            { ProductType.B, ProductType.Y }, new List<DigestionParams> { CommonParameters.DigestionParams }, CommonParameters.ReportAllAmbiguity, new List<string>());
-            var nice = (SequencesToActualProteinPeptidesEngineResults)sequencesToActualProteinPeptidesEngine.Run();
-            foreach (var psm in newPsms)
-            {
-                psm.MatchToProteinLinkedPeptides(nice.CompactPeptideToProteinPeptideMatching);
-            }
             FdrAnalysisEngine fdrAnalysisEngine = new FdrAnalysisEngine(newPsms, searchMode.NumNotches, CommonParameters, new List<string>());
             fdrAnalysisEngine.Run();
-            ModificationAnalysisEngine modificationAnalysisEngine = new ModificationAnalysisEngine(newPsms, new List<string>());
+            ModificationAnalysisEngine modificationAnalysisEngine = new ModificationAnalysisEngine(newPsms, new CommonParameters(), new List<string>());
             var res = (ModificationAnalysisResults)modificationAnalysisEngine.Run();
 
-            Assert.AreEqual(2, res.AllModsOnProteins.Count());
-            Assert.AreEqual(2, res.AllModsOnProteins[mod1.id]);
-            Assert.AreEqual(1, res.AllModsOnProteins[mod2.id]);
+            Assert.AreEqual(2, res.CountOfEachModSeenOnProteins.Count());
+            Assert.AreEqual(2, res.CountOfEachModSeenOnProteins[mod1.IdWithMotif]);
+            Assert.AreEqual(1, res.CountOfEachModSeenOnProteins[mod2.IdWithMotif]);
 
-            Assert.AreEqual(1, res.ModsSeenAndLocalized.Count());
-            Assert.AreEqual(2, res.ModsSeenAndLocalized[mod1.id]);
+            Assert.AreEqual(1, res.CountOfModsSeenAndLocalized.Count());
+            Assert.AreEqual(2, res.CountOfModsSeenAndLocalized[mod1.IdWithMotif]);
 
-            Assert.AreEqual(0, res.AmbiguousButLocalizedModsSeen.Count());
+            Assert.AreEqual(0, res.CountOfAmbiguousButLocalizedModsSeen.Count());
 
-            Assert.AreEqual(0, res.UnlocalizedMods.Count());
+            Assert.AreEqual(0, res.CountOfUnlocalizedMods.Count());
 
-            Assert.AreEqual(0, res.UnlocalizedFormulas.Count());
+            Assert.AreEqual(0, res.CountOfUnlocalizedFormulas.Count());
         }
 
         [Test]
@@ -116,7 +107,7 @@ namespace Test
             IScan scan = new ThisTestScan();
 
             ModificationMotif.TryGetMotif("N", out ModificationMotif motif1);
-            ModificationWithMass mod1 = new ModificationWithMass("mod1", "mt", motif1, TerminusLocalization.Any, 10, neutralLosses: new List<double> { 10 });
+            Modification mod1 = new Modification(_originalId: "mod1", _modificationType: "mt", _target: motif1, _locationRestriction: "Anywhere.", _monoisotopicMass: 10, _neutralLosses: new Dictionary<DissociationType, List<double>> { { MassSpectrometry.DissociationType.AnyActivationType, new List<double> { 10 } } });
 
             IDictionary<int, List<Modification>> oneBasedModifications = new Dictionary<int, List<Modification>>
             {
@@ -125,71 +116,44 @@ namespace Test
             };
             Protein protein1 = new Protein("MNLDLDNDL", "prot1", oneBasedModifications: oneBasedModifications);
 
-            Dictionary<int, ModificationWithMass> allModsOneIsNterminus1 = new Dictionary<int, ModificationWithMass>
+            Dictionary<int, Modification> allModsOneIsNterminus1 = new Dictionary<int, Modification>
             {
                 {2, mod1},
             };
-            PeptideWithSetModifications pwsm1 = new PeptideWithSetModifications(0, protein1, 2, 9, allModsOneIsNterminus1);
-            CompactPeptideBase pep1 = new CompactPeptide(pwsm1, TerminusType.None);
+            PeptideWithSetModifications pwsm1 = new PeptideWithSetModifications(protein1, new DigestionParams(), 2, 9, null, 0, allModsOneIsNterminus1, 0);
 
-            Dictionary<int, ModificationWithMass> allModsOneIsNterminus3 = new Dictionary<int, ModificationWithMass>
+            Dictionary<int, Modification> allModsOneIsNterminus3 = new Dictionary<int, Modification>
             {
                 {7, mod1},
             };
-            PeptideWithSetModifications pwsm3 = new PeptideWithSetModifications(0, protein1, 2, 9, allModsOneIsNterminus3);
-            CompactPeptideBase pep3 = new CompactPeptide(pwsm3, TerminusType.None);
+            PeptideWithSetModifications pwsm2 = new PeptideWithSetModifications(protein1, new DigestionParams(), 2, 9, null, 0, allModsOneIsNterminus3, 0);
 
-            CommonParameters CommonParameters = new CommonParameters
-            {
-                DigestionParams = new DigestionParams(MaxMissedCleavages: 0, MinPeptideLength: 1),
-                ConserveMemory = false,
-                ScoreCutoff = 1,
-            };
+            CommonParameters CommonParameters = new CommonParameters(digestionParams: new DigestionParams(maxMissedCleavages: 0, minPeptideLength: 1), scoreCutoff: 1);
 
-            var newPsms = new List<PeptideSpectralMatch>
-            {
-                new PeptideSpectralMatch(pep1, 0,10,0,scan, CommonParameters.DigestionParams),
-                new PeptideSpectralMatch(pep3, 0,10,0,scan, CommonParameters.DigestionParams),
-            };
+            PeptideSpectralMatch myPsm = new PeptideSpectralMatch(pwsm1, 0, 10, 0, scan, new DigestionParams(), new List<MatchedFragmentIon>());
+            myPsm.AddOrReplace(pwsm2, 10, 0, true, new List<MatchedFragmentIon>());
+            
+            myPsm.ResolveAllAmbiguities();
 
             MassDiffAcceptor searchMode = new SinglePpmAroundZeroSearchMode(5);
             List<Protein> proteinList = new List<Protein> { protein1 };
 
-           
-            SequencesToActualProteinPeptidesEngine sequencesToActualProteinPeptidesEngine = new SequencesToActualProteinPeptidesEngine(newPsms, proteinList, new List<ModificationWithMass>(), new List<ModificationWithMass>(), new List<ProductType> { ProductType.B, ProductType.Y }, new List<DigestionParams> { CommonParameters.DigestionParams }, CommonParameters.ReportAllAmbiguity, new List<string>());
-
-            var nice = (SequencesToActualProteinPeptidesEngineResults)sequencesToActualProteinPeptidesEngine.Run();
-            foreach (var psm in newPsms)
-            {
-                psm.MatchToProteinLinkedPeptides(nice.CompactPeptideToProteinPeptideMatching);
-            }
-
-            Assert.AreEqual(2, nice.CompactPeptideToProteinPeptideMatching[pep1].Count);
-
-            FdrAnalysisEngine fdrAnalysisEngine = new FdrAnalysisEngine(newPsms, searchMode.NumNotches, CommonParameters, new List<string>());
+            FdrAnalysisEngine fdrAnalysisEngine = new FdrAnalysisEngine(new List<PeptideSpectralMatch> { myPsm }, searchMode.NumNotches, CommonParameters, new List<string>());
             fdrAnalysisEngine.Run();
-            ModificationAnalysisEngine modificationAnalysisEngine = new ModificationAnalysisEngine(newPsms, new List<string>());
+            ModificationAnalysisEngine modificationAnalysisEngine = new ModificationAnalysisEngine(new List<PeptideSpectralMatch> { myPsm }, new CommonParameters(), new List<string>());
             var res = (ModificationAnalysisResults)modificationAnalysisEngine.Run();
 
-            Assert.AreEqual(1, res.AllModsOnProteins.Count());
-            Assert.AreEqual(2, res.AllModsOnProteins[mod1.id]);
-
-            Assert.AreEqual(0, res.ModsSeenAndLocalized.Count());
-
-            Assert.AreEqual(0, res.AmbiguousButLocalizedModsSeen.Count);
-
-            Assert.AreEqual(1, res.UnlocalizedMods[mod1.id]); // Saw it, but not sure where!
-
-            Assert.AreEqual(0, res.UnlocalizedFormulas.Count());
+            Assert.AreEqual(1, res.CountOfEachModSeenOnProteins.Count());
+            Assert.AreEqual(2, res.CountOfEachModSeenOnProteins[mod1.IdWithMotif]);
+            Assert.AreEqual(0, res.CountOfModsSeenAndLocalized.Count());
+            Assert.AreEqual(0, res.CountOfAmbiguousButLocalizedModsSeen.Count);
+            Assert.AreEqual(1, res.CountOfUnlocalizedMods[mod1.IdWithMotif]); // Saw it, but not sure where!
+            Assert.AreEqual(0, res.CountOfUnlocalizedFormulas.Count());
         }
-
-        #endregion Public Methods
     }
 
     internal class ThisTestScan : IScan
     {
-        #region Public Properties
-
         public string FullFilePath => null;
 
         public int OneBasedScanNumber => 0;
@@ -207,7 +171,5 @@ namespace Test
         public double PrecursorMonoisotopicPeakMz => 0;
 
         public double PrecursorMass => 0;
-
-        #endregion Public Properties
     }
 }

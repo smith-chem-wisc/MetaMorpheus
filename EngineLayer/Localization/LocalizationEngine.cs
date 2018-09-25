@@ -1,92 +1,67 @@
 ﻿using MassSpectrometry;
-using MzLibUtil;
+using Proteomics.Fragmentation;
+using Proteomics.ProteolyticDigestion;
 using System;
 using System.Collections.Generic;
 using System.Linq;
+
+/// <summary>
+/// The mass difference between an experimental precursor and the theoretical mass of the assigned peptide is determined. The LocalizationEngine attempts
+/// to localize this mass to one of the residues. It does this by adding the mass difference to each theoretical ion mass and looking for additional matches
+/// in the experimental spectrum. This engine should only be run for open, notch or custom searches. It should not be run for exact mass or missed
+/// monoisopic searches.
+/// </summary>
 
 namespace EngineLayer.Localization
 {
     public class LocalizationEngine : MetaMorpheusEngine
     {
-        #region Private Fields
+        private readonly IEnumerable<PeptideSpectralMatch> AllResultingIdentifications;
+        private readonly MsDataFile MyMsDataFile;
 
-        private readonly IEnumerable<PeptideSpectralMatch> allResultingIdentifications;
-        private readonly List<ProductType> lp;
-        private readonly IMsDataFile<IMsDataScan<IMzSpectrum<IMzPeak>>> myMsDataFile;
-        private readonly Tolerance fragmentTolerance;
-        private readonly bool addCompIons;
-        private readonly List<DissociationType> dissociationTypes;
-
-        #endregion Private Fields
-
-        #region Public Constructors
-
-        public LocalizationEngine(IEnumerable<PeptideSpectralMatch> allResultingIdentifications, List<ProductType> lp, IMsDataFile<IMsDataScan<IMzSpectrum<IMzPeak>>> myMsDataFile, Tolerance fragmentTolerance, List<string> nestedIds, bool addCompIons) : base(nestedIds)
+        public LocalizationEngine(IEnumerable<PeptideSpectralMatch> allResultingIdentifications, MsDataFile myMsDataFile, CommonParameters commonParameters, List<string> nestedIds) : base(commonParameters, nestedIds)
         {
-            this.allResultingIdentifications = allResultingIdentifications;
-            this.lp = lp;
-            this.myMsDataFile = myMsDataFile;
-            this.fragmentTolerance = fragmentTolerance;
-            this.addCompIons = addCompIons;
-            this.dissociationTypes = DetermineDissociationType(lp);
+            AllResultingIdentifications = allResultingIdentifications;
+            MyMsDataFile = myMsDataFile;
         }
-
-        #endregion Public Constructors
-
-        #region Protected Methods
 
         protected override MetaMorpheusEngineResults RunSpecific()
         {
-            TerminusType terminusType = ProductTypeMethod.IdentifyTerminusType(lp);
-
-            foreach (var ok in allResultingIdentifications)
+            // don't try to localize mass differences for ambiguous peptides
+            foreach (PeptideSpectralMatch psm in AllResultingIdentifications.Where(b => b.FullSequence != null))
             {
-                ok.MatchedIonDictOnlyMatches = new Dictionary<ProductType, double[]>();
-                ok.ProductMassErrorDa = new Dictionary<ProductType, double[]>();
-                ok.ProductMassErrorPpm = new Dictionary<ProductType, double[]>();
-                var theScan = myMsDataFile.GetOneBasedScan(ok.ScanNumber);
-                double thePrecursorMass = ok.ScanPrecursorMass;
-                foreach (var huh in lp)
+                // Stop loop if canceled
+                if (GlobalVariables.StopLoops)
                 {
-                    var ionMasses = ok.CompactPeptides.First().Key.ProductMassesMightHaveDuplicatesAndNaNs(new List<ProductType> { huh });
-                    Array.Sort(ionMasses);
-                    List<double> matchedIonMassesList = new List<double>();
-                    List<double> productMassErrorDaList = new List<double>();
-                    List<double> productMassErrorPpmList = new List<double>();
-                    MatchIons(theScan, fragmentTolerance, ionMasses, matchedIonMassesList, productMassErrorDaList, productMassErrorPpmList, thePrecursorMass, dissociationTypes, addCompIons);
-                    double[] matchedIonMassesOnlyMatches = matchedIonMassesList.ToArray();
-                    ok.MatchedIonDictOnlyMatches.Add(huh, matchedIonMassesOnlyMatches);
-                    ok.ProductMassErrorDa.Add(huh, productMassErrorDaList.ToArray());
-                    ok.ProductMassErrorPpm.Add(huh, productMassErrorPpmList.ToArray());
+                    break;
                 }
-            }
 
-            foreach (var ok in allResultingIdentifications.Where(b => b.NumDifferentCompactPeptides == 1))
-            {
-                var theScan = myMsDataFile.GetOneBasedScan(ok.ScanNumber);
-                double thePrecursorMass = ok.ScanPrecursorMass;
+                MsDataScan scan = MyMsDataFile.GetOneBasedScan(psm.ScanNumber);
+                PeptideWithSetModifications peptide = psm.BestMatchingPeptides.First().Peptide;
+                double massDifference = psm.ScanPrecursorMass - peptide.MonoisotopicMass;
 
-                if (ok.FullSequence == null)
-                    continue;
-
-                var representative = ok.CompactPeptides.First().Value.Item2.First();
-
+                // this section will iterate through all residues of the peptide and try to localize the mass-diff at each residue and report a score for each residue
                 var localizedScores = new List<double>();
-                for (int indexToLocalize = 0; indexToLocalize < representative.Length; indexToLocalize++)
+                for (int r = 0; r < peptide.Length; r++)
                 {
-                    PeptideWithSetModifications localizedPeptide = representative.Localize(indexToLocalize, ok.ScanPrecursorMass - representative.MonoisotopicMass);
+                    // create new PeptideWithSetMods with unidentified mass difference at the given residue
+                    PeptideWithSetModifications peptideWithLocalizedMassDiff = peptide.Localize(r, massDifference);
 
-                    var gg = localizedPeptide.CompactPeptide(terminusType).ProductMassesMightHaveDuplicatesAndNaNs(lp);
-                    Array.Sort(gg);
-                    var score = CalculatePeptideScore(theScan, fragmentTolerance, gg, thePrecursorMass, dissociationTypes, addCompIons, 0);
-                    localizedScores.Add(score);
+                    // this is the list of theoretical products for this peptide with mass-difference on this residue
+                    List<Product> productsWithLocalizedMassDiff = peptideWithLocalizedMassDiff.Fragment(commonParameters.DissociationType, commonParameters.DigestionParams.FragmentationTerminus).ToList();
+
+                    var matchedIons = MatchFragmentIons(scan.MassSpectrum, productsWithLocalizedMassDiff, commonParameters, psm.ScanPrecursorMass);
+
+                    // score when the mass-diff is on this residue
+                    double localizedScore = CalculatePeptideScore(scan, matchedIons, 0);
+
+                    localizedScores.Add(localizedScore);
                 }
 
-                ok.LocalizedScores = localizedScores;
+                psm.LocalizedScores = localizedScores;
             }
+
             return new LocalizationEngineResults(this);
         }
-
-        #endregion Protected Methods
     }
 }
