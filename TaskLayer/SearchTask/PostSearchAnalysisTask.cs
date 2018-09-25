@@ -3,12 +3,10 @@ using EngineLayer.FdrAnalysis;
 using EngineLayer.HistogramAnalysis;
 using EngineLayer.Localization;
 using EngineLayer.ModificationAnalysis;
-using EngineLayer.NonSpecificEnzymeSearch;
 using FlashLFQ;
 using MassSpectrometry;
 using MathNet.Numerics.Distributions;
 using Proteomics;
-using Proteomics.Fragmentation;
 using Proteomics.ProteolyticDigestion;
 using System;
 using System.Collections.Generic;
@@ -308,7 +306,8 @@ namespace TaskLayer
                 ppmTolerance: Parameters.SearchParameters.QuantifyPpmTol,
                 matchBetweenRuns: Parameters.SearchParameters.MatchBetweenRuns,
                 silent: true,
-                optionalPeriodicTablePath: GlobalVariables.ElementsLocation);
+                optionalPeriodicTablePath: GlobalVariables.ElementsLocation, 
+                maxThreads: CommonParameters.MaxThreadsToUsePerFile);
 
             if (flashLFQIdentifications.Any())
             {
