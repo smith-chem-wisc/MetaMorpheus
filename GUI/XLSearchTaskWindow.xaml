@@ -5,6 +5,8 @@
         xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
         xmlns:local="clr-namespace:MetaMorpheusGUI"
         mc:Ignorable="d"
+        xmlns:sys="clr-namespace:System;assembly=mscorlib"
+        xmlns:mzl="clr-namespace:MassSpectrometry;assembly=MassSpectrometry"
         KeyDown="KeyPressed"
         Title="XL Search Task" Width="750" Height="750" WindowStartupLocation="CenterScreen">
     <Grid>
@@ -53,7 +55,7 @@
                             <RowDefinition Height="1*" />
                             <RowDefinition Height="1*" />
                         </Grid.RowDefinitions>
-                        <RadioButton x:Name="RbSearchCrosslink" Content="Crosslink Search" GroupName="SearchType"></RadioButton>
+                        <!--<RadioButton x:Name="RbSearchCrosslink" Content="Crosslink Search" GroupName="SearchType"></RadioButton>-->
                         <!--<RadioButton x:Name="RbSearchGlyco" Content="Glyco Search" GroupName="SearchType" Grid.Column="1"></RadioButton>-->
                         <StackPanel Orientation="Horizontal" Grid.Row="1" Grid.Column="0" Margin="5">
                             <Label x:Name="lblXLprecusorMsTl"  Content="Precusor mass tolerance" />
@@ -256,17 +258,6 @@
                                             <TextBox x:Name="minScoreAllowed" PreviewTextInput="CheckIfNumber" Width="45" />
                                         </StackPanel>
                                     </StackPanel>
-                                    <StackPanel Grid.Column="1">
-                                        <StackPanel Orientation="Horizontal" Margin="5">
-                                            <Label x:Name="label4" Content="Ions to search" />
-                                            <CheckBox x:Name="bCheckBox" Content="b ions" />
-                                            <CheckBox x:Name="yCheckBox" Content="y ions" />
-                                        </StackPanel>
-                                        <StackPanel Orientation="Horizontal" Margin="89,10,-69,10">
-                                            <CheckBox x:Name="cCheckBox" Content="c ions" />
-                                            <CheckBox x:Name="zdotCheckBox" Content="zdot ions" />
-                                        </StackPanel>
-                                    </StackPanel>
                                     <StackPanel Grid.Column="2">
                                         <StackPanel Orientation="Horizontal" Margin="5">
                                             <Label Content="Max Threads" />
@@ -279,6 +270,16 @@
                                                     </TextBlock>
                                                 </TextBox.ToolTip>
                                             </TextBox>
+                                        </StackPanel>
+                                        <StackPanel Orientation="Horizontal" Margin="5">
+                                            <Label x:Name="ionsToSearchLabel" Content="Dissociation Type" ToolTipService.ShowDuration="999999" ToolTipService.InitialShowDelay="500">
+                                                <Label.ToolTip>
+                                                    <TextBlock>
+                                                        The type of fragmentation.
+                                                    </TextBlock>
+                                                </Label.ToolTip>
+                                            </Label>
+                                            <ComboBox x:Name="DissociationTypeComboBox" HorizontalAlignment="Center" VerticalAlignment="Center" />
                                         </StackPanel>
                                     </StackPanel>
                                 </Grid>
