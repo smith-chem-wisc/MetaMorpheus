@@ -306,10 +306,7 @@ namespace TaskLayer
                     goodIdentifications,
                     myMsDataFile,
                     initPrecTol,
-                    initProdTol,
-                    CalibrationParameters.NumFragmentsNeededForEveryIdentification,
                     CalibrationParameters.MinMS1IsotopicPeaksNeededForConfirmedIdentification,
-                    CalibrationParameters.MinMS2IsotopicPeaksNeededForConfirmedIdentification,
                     CommonParameters,
                     new List<string> { taskId, "Individual Spectra Files", fileNameWithoutExtension }).Run();
 
