@@ -96,7 +96,7 @@ namespace MetaMorpheusGUI
 
             foreach (var psm in TsvResultReader.ReadTsv(filename))
             {
-                if (psm.FileName == fileNameWithExtension || psm.FileName == fileNameWithoutExtension)
+                if (psm.Filename == fileNameWithExtension || psm.Filename == fileNameWithoutExtension)
                 {
                     Dispatcher.BeginInvoke(new Action(() =>
                     {
@@ -109,7 +109,7 @@ namespace MetaMorpheusGUI
         private void DrawPsm(int oneBasedScanNumber, string fullSequence = null)
         {
             MsDataScan msDataScanToDraw = MsDataFile.GetOneBasedScan(oneBasedScanNumber);
-            IEnumerable<MetaDrawPsm> scanPsms = peptideSpectralMatches.Where(p => p.ScanNum == oneBasedScanNumber);
+            IEnumerable<MetaDrawPsm> scanPsms = peptideSpectralMatches.Where(p => p.Ms2ScanNumber == oneBasedScanNumber);
 
             if (fullSequence != null)
             {
@@ -145,7 +145,7 @@ namespace MetaMorpheusGUI
                 propertyView.Rows.Add(temp[i].Name, temp[i].GetValue(row, null));
             }
             dataGridProperties.Items.Refresh();
-            DrawPsm(row.ScanNum, row.FullSequence);
+            DrawPsm(row.Ms2ScanNumber, row.FullSequence);
         }
 
         private void selectSpectraFileButton_Click(object sender, RoutedEventArgs e)
@@ -234,7 +234,7 @@ namespace MetaMorpheusGUI
                 peptideSpectralMatchesView.Filter = obj =>
                 {
                     MetaDrawPsm psm = obj as MetaDrawPsm;
-                    return ((psm.ScanNum.ToString()).StartsWith(txt) || psm.FullSequence.ToUpper().Contains(txt.ToUpper()));
+                    return ((psm.Ms2ScanNumber.ToString()).StartsWith(txt) || psm.FullSequence.ToUpper().Contains(txt.ToUpper()));
                 };
             }
         }
@@ -245,13 +245,13 @@ namespace MetaMorpheusGUI
             BaseDraw.clearCanvas(canvas);
 
             // draw base sequence
-            for (int r = 0; r < psm.BaseSequence.Length; r++)
+            for (int r = 0; r < psm.BaseSeq.Length; r++)
             {
-                BaseDraw.txtDrawing(canvas, new Point(r * spacing + 10, 10), psm.BaseSequence[r].ToString(), Brushes.Black);
+                BaseDraw.txtDrawing(canvas, new Point(r * spacing + 10, 10), psm.BaseSeq[r].ToString(), Brushes.Black);
             }
 
             // draw b ions
-            foreach (var bIon in psm.FragmentIons.Where(p => p.NeutralTheoreticalProduct.ProductType == ProductType.b))
+            foreach (var bIon in psm.MatchedIons.Where(p => p.NeutralTheoreticalProduct.ProductType == ProductType.b))
             {
                 int residue = bIon.NeutralTheoreticalProduct.TerminusFragment.AminoAcidPosition;
                 string annotation = bIon.NeutralTheoreticalProduct.ProductType.ToString() + bIon.NeutralTheoreticalProduct.TerminusFragment.FragmentNumber;
@@ -265,7 +265,7 @@ namespace MetaMorpheusGUI
             }
 
             // draw c ions
-            foreach (var cIon in psm.FragmentIons.Where(p => p.NeutralTheoreticalProduct.ProductType == ProductType.c))
+            foreach (var cIon in psm.MatchedIons.Where(p => p.NeutralTheoreticalProduct.ProductType == ProductType.c))
             {
                 int residue = cIon.NeutralTheoreticalProduct.TerminusFragment.AminoAcidPosition;
                 string annotation = cIon.NeutralTheoreticalProduct.ProductType.ToString() + cIon.NeutralTheoreticalProduct.TerminusFragment.FragmentNumber;
@@ -279,7 +279,7 @@ namespace MetaMorpheusGUI
             }
 
             // draw y ions
-            foreach (var yIon in psm.FragmentIons.Where(p => p.NeutralTheoreticalProduct.ProductType == ProductType.y))
+            foreach (var yIon in psm.MatchedIons.Where(p => p.NeutralTheoreticalProduct.ProductType == ProductType.y))
             {
                 int residue = yIon.NeutralTheoreticalProduct.TerminusFragment.AminoAcidPosition;
                 string annotation = yIon.NeutralTheoreticalProduct.ProductType.ToString() + yIon.NeutralTheoreticalProduct.TerminusFragment.FragmentNumber;
@@ -293,7 +293,7 @@ namespace MetaMorpheusGUI
             }
 
             // draw zdot ions
-            foreach (var zDotIon in psm.FragmentIons.Where(p => p.NeutralTheoreticalProduct.ProductType == ProductType.zPlusOne))
+            foreach (var zDotIon in psm.MatchedIons.Where(p => p.NeutralTheoreticalProduct.ProductType == ProductType.zPlusOne))
             {
                 int residue = zDotIon.NeutralTheoreticalProduct.TerminusFragment.AminoAcidPosition;
                 string annotation = zDotIon.NeutralTheoreticalProduct.ProductType.ToString() + zDotIon.NeutralTheoreticalProduct.TerminusFragment.FragmentNumber;
@@ -353,7 +353,7 @@ namespace MetaMorpheusGUI
             foreach (object selectedItem in dataGridScanNums.SelectedItems)
             {
                 MetaDrawPsm psm = (MetaDrawPsm)selectedItem;
-                ExportToPdf(psm, Path.Combine(writeDirectory, psm.ScanNum + "_" + psm.FullSequence + ".pdf"));
+                ExportToPdf(psm, Path.Combine(writeDirectory, psm.Ms2ScanNumber + "_" + psm.FullSequence + ".pdf"));
             }
 
             dataGridScanNums.SelectedItem = dataGridScanNums.SelectedItem;
@@ -369,7 +369,7 @@ namespace MetaMorpheusGUI
                 propertyView.Rows.Add(temp[i].Name, temp[i].GetValue(psm, null));
             }
             dataGridProperties.Items.Refresh();
-            DrawPsm(psm.ScanNum, psm.FullSequence);
+            DrawPsm(psm.Ms2ScanNumber, psm.FullSequence);
 
             double wid = 0;
             dataGridProperties.HorizontalScrollBarVisibility = ScrollBarVisibility.Disabled;

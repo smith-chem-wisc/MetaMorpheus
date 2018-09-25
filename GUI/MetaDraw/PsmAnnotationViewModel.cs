@@ -74,7 +74,7 @@ namespace ViewModels
             // draw the matched peaks; if the PSM is null, we're just drawing the peaks in the scan without annotation, so skip this part
             if (psmToDraw != null)
             {
-                foreach (var peak in psmToDraw.FragmentIons)
+                foreach (var peak in psmToDraw.MatchedIons)
                 {
                     OxyColor ionColor = productTypeDrawColors[peak.NeutralTheoreticalProduct.ProductType];
 
