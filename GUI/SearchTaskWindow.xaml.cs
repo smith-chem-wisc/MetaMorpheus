@@ -347,7 +347,7 @@ namespace MetaMorpheusGUI
             {
                 fragmentationTerminus = FragmentationTerminus.C;
             }
-            else //why would you want this
+            else if (!nTerminalIons.IsChecked.Value && !cTerminalIons.IsChecked.Value) //why would you want this
             {
                 fragmentationTerminus = FragmentationTerminus.None;
                 MessageBox.Show("Warning: No ion types were selected. MetaMorpheus will be unable to search MS/MS spectra.");
