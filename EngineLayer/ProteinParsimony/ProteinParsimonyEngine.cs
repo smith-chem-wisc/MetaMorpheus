@@ -1,4 +1,5 @@
-﻿using Proteomics;
+﻿using EngineLayer.ProteinParsimony;
+using Proteomics;
 using Proteomics.Fragmentation;
 using Proteomics.ProteolyticDigestion;
 using System;
@@ -210,21 +211,16 @@ namespace EngineLayer
 
             // Parsimony stage 2: build the peptide-protein matching structure for the parsimony greedy algorithm
             // and remove all peptides observed by proteins with unique peptides
-            Dictionary<string, List<Protein>> peptideSequenceToProteins = new Dictionary<string, List<Protein>>();
+            Dictionary<ParsimonySequence, List<Protein>> peptideSequenceToProteins = new Dictionary<ParsimonySequence, List<Protein>>();
 
             // this dictionary associates proteins w/ all peptide sequences (list will NOT shrink over time)
             // this is used in case of greedy algorithm ties to figure out which protein has more total peptides observed
-            Dictionary<Protein, HashSet<string>> proteinToPepSeqMatch = new Dictionary<Protein, HashSet<string>>();
+            Dictionary<Protein, HashSet<ParsimonySequence>> proteinToPepSeqMatch = new Dictionary<Protein, HashSet<ParsimonySequence>>();
 
             foreach (var peptide in FdrFilteredPeptides)
             {
-                string sequence = peptide.BaseSequence;
-                if (TreatModPeptidesAsDifferentPeptides)
-                {
-                    //using full sequence for next three instances. might be base sequence.
-                    sequence = peptide.FullSequence;
-                }
-
+                ParsimonySequence sequence = new ParsimonySequence(peptide, TreatModPeptidesAsDifferentPeptides);
+                
                 if (peptideSequenceToProteins.TryGetValue(sequence, out List<Protein> proteinsForThisPeptideSequence))
                 {
                     proteinsForThisPeptideSequence.Add(peptide.Protein);
@@ -240,12 +236,12 @@ namespace EngineLayer
                 }
                 else
                 {
-                    proteinToPepSeqMatch.Add(peptide.Protein, new HashSet<string> { sequence });
+                    proteinToPepSeqMatch.Add(peptide.Protein, new HashSet<ParsimonySequence> { sequence });
                 }
             }
 
             // remove the peptides observed by proteins with unique peptides
-            HashSet<string> toRemove = new HashSet<string>();
+            HashSet<ParsimonySequence> toRemove = new HashSet<ParsimonySequence>();
             foreach (var seq in peptideSequenceToProteins)
             {
                 bool observedAlready = seq.Value.Any(p => parsimoniousProteinList.Contains(p));
@@ -255,7 +251,7 @@ namespace EngineLayer
                     toRemove.Add(seq.Key);
                 }
             }
-            foreach (string sequence in toRemove)
+            foreach (var sequence in toRemove)
             {
                 peptideSequenceToProteins.Remove(sequence);
             }
@@ -267,18 +263,29 @@ namespace EngineLayer
                 // dictionary with proteins as keys and list of associated peptide sequences as the values.
                 // this data structure makes parsimony easier because the algorithm can look up a protein's peptides 
                 // to remove them from the list of available peptides. this list will shrink as the algorithm progresses
-                var algDictionary = new Dictionary<Protein, HashSet<string>>();
+                var algDictionary = new Dictionary<Protein, HashSet<string>>(); 
+                var algDictionary_Protease = new Dictionary<Protein, HashSet<ParsimonySequence>>();
                 foreach (var kvp in peptideSequenceToProteins)
                 {
+                    
                     foreach (var protein in kvp.Value)
                     {
-                        if (algDictionary.TryGetValue(protein, out HashSet<string> peptideSequences))
+                        if (algDictionary_Protease.TryGetValue(protein, out HashSet<ParsimonySequence> peptideSequences_WithProtease))
                         {
-                            peptideSequences.Add(kvp.Key);
+                            peptideSequences_WithProtease.Add(kvp.Key);
                         }
                         else
                         {
-                            algDictionary.Add(protein, new HashSet<string> { kvp.Key });
+                            algDictionary_Protease.Add(protein, new HashSet<ParsimonySequence> { kvp.Key });
+                        }
+
+                        if (algDictionary.TryGetValue(protein, out HashSet<string> peptideSequences))
+                        {
+                            peptideSequences.Add(kvp.Key.Sequence);
+                        }
+                        else
+                        {
+                            algDictionary.Add(protein, new HashSet<string> { kvp.Key.Sequence });
                         }
                     }
                 }
@@ -302,14 +309,14 @@ namespace EngineLayer
                     parsimoniousProteinList.Add(bestProtein);
 
                     // remove observed peptide seqs
-                    List<string> temp = algDictionary[bestProtein].ToList();
-                    foreach (string peptideSequence in temp)
+                    List<ParsimonySequence> temp = algDictionary_Protease[bestProtein].ToList();
+                    foreach (ParsimonySequence peptideSequence in temp)
                     {
                         List<Protein> proteinsWithThisPeptide = peptideSequenceToProteins[peptideSequence];
 
                         foreach (var protein in proteinsWithThisPeptide)
                         {
-                            algDictionary[protein].Remove(peptideSequence);
+                            algDictionary[protein].Remove(peptideSequence.Sequence);
                         }
                     }
 
