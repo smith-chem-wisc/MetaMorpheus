@@ -63,7 +63,7 @@ namespace EngineLayer.NonSpecificEnzymeSearch
                         binsToSearch.Add(fragmentBin);
                     }
 
-                    foreach (ProductType pt in DissociationTypeCollection.ProductsFromDissociationType[commonParameters.DissociationType].Intersect(TerminusSpecificProductTypes.ProductIonTypesFromSpecifiedTerminus[commonParameters.FragmentationTerminus]).ToList())
+                    foreach (ProductType pt in DissociationTypeCollection.ProductsFromDissociationType[commonParameters.DissociationType].Intersect(TerminusSpecificProductTypes.ProductIonTypesFromSpecifiedTerminus[commonParameters.DigestionParams.FragmentationTerminus]).ToList())
                     {
                         //TODO: check that this is correct (Zach)
                         int binShift = (int)Math.Round((WaterMonoisotopicMass - DissociationTypeCollection.GetMassShiftFromProductType(pt)) * FragmentBinsPerDalton);//if unit test fails try subtracting water
@@ -98,13 +98,13 @@ namespace EngineLayer.NonSpecificEnzymeSearch
                             foreach (var id in idsOfPeptidesPossiblyObserved.Where(id => scoringTable[id] == maxInitialScore))
                             {
                                 PeptideWithSetModifications peptide = PeptideIndex[id];
-                                List<Product> peptideTheorProducts = peptide.Fragment(commonParameters.DissociationType, commonParameters.FragmentationTerminus).ToList();
+                                List<Product> peptideTheorProducts = peptide.Fragment(commonParameters.DissociationType, commonParameters.DigestionParams.FragmentationTerminus).ToList();
 
                                 List<MatchedFragmentIon> matchedIons = MatchFragmentIons(scan.TheScan.MassSpectrum, peptideTheorProducts, commonParameters, scan.PrecursorMass);
 
                                 double thisScore = CalculatePeptideScore(scan.TheScan, matchedIons, MaxMassThatFragmentIonScoreIsDoubled);
 
-                                Tuple<int, double> notchAndPrecursor = Accepts(scan.PrecursorMass, peptide, commonParameters.FragmentationTerminus, MassDiffAcceptor);
+                                Tuple<int, double> notchAndPrecursor = Accepts(scan.PrecursorMass, peptide, commonParameters.DigestionParams.FragmentationTerminus, MassDiffAcceptor);
                                 if (notchAndPrecursor.Item1 >= 0)
                                 {
                                     if (PSM == null)
@@ -145,7 +145,7 @@ namespace EngineLayer.NonSpecificEnzymeSearch
                                         double finalMass = initialMass + WaterMonoisotopicMass;
 
                                         //generate correct sequence
-                                        if (commonParameters.FragmentationTerminus == FragmentationTerminus.N)
+                                        if (commonParameters.DigestionParams.FragmentationTerminus == FragmentationTerminus.N)
                                         {
                                             int index = ComputePeptideIndexes(pwsm, ref finalMass, 1, 1, scan.PrecursorMass, MassDiffAcceptor);
 
@@ -184,7 +184,7 @@ namespace EngineLayer.NonSpecificEnzymeSearch
                                         var currentPwsmWithNotch = updatedPwsmsWithNotches[pwsmIndex];
 
                                         //TODO: This is unnecesary, should be able to back cleave fragments
-                                        List<Product> peptideTheorProducts = currentPwsmWithNotch.pwsm.Fragment(commonParameters.DissociationType, commonParameters.FragmentationTerminus).ToList();
+                                        List<Product> peptideTheorProducts = currentPwsmWithNotch.pwsm.Fragment(commonParameters.DissociationType, commonParameters.DigestionParams.FragmentationTerminus).ToList();
 
                                         List<MatchedFragmentIon> matchedIons = MatchFragmentIons(scan.TheScan.MassSpectrum, peptideTheorProducts, commonParameters, scan.PrecursorMass);
 

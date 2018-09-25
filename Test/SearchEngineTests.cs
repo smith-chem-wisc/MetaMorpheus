@@ -321,10 +321,9 @@ namespace Test
             };
             Protease protease = new Protease("single N", new List<Tuple<string, FragmentationTerminus>> { new Tuple<string, FragmentationTerminus>("K", FragmentationTerminus.Both), new Tuple<string, FragmentationTerminus>("G", FragmentationTerminus.Both) }, new List<Tuple<string, FragmentationTerminus>>(), CleavageSpecificity.SingleN, null, null, null);
             ProteaseDictionary.Dictionary.Add(protease.Name, protease);
-            DigestionParams dp = new DigestionParams(protease: protease.Name, minPeptideLength: 1);
+            DigestionParams dp = new DigestionParams(protease: protease.Name, minPeptideLength: 1, fragmentationTerminus: FragmentationTerminus.N, searchModeType: CleavageSpecificity.None);
             CommonParameters CommonParameters = new CommonParameters(
                 dissociationType: DissociationType.HCD,
-                fragmentationTerminus: FragmentationTerminus.N,
                 precursorMassTolerance: new PpmTolerance(5),
                 digestionParams: dp,
                 scoreCutoff: 1,
@@ -400,11 +399,10 @@ namespace Test
             };
             Protease protease = new Protease("single C", new List<Tuple<string, FragmentationTerminus>> { new Tuple<string, FragmentationTerminus>("K", FragmentationTerminus.Both), new Tuple<string, FragmentationTerminus>("G", FragmentationTerminus.Both) }, new List<Tuple<string, FragmentationTerminus>>(), CleavageSpecificity.SingleC, null, null, null);
             ProteaseDictionary.Dictionary.Add(protease.Name, protease);
-            var dp = new DigestionParams(protease: protease.Name, minPeptideLength: 1);
+            DigestionParams dp = new DigestionParams(protease: protease.Name, minPeptideLength: 1, fragmentationTerminus: FragmentationTerminus.C, searchModeType: CleavageSpecificity.None);
 
             CommonParameters CommonParameters = new CommonParameters(
                 dissociationType: DissociationType.HCD,
-                fragmentationTerminus: FragmentationTerminus.C,
                 digestionParams: dp,
                 scoreCutoff: 4,
                 precursorMassTolerance: new PpmTolerance(5),
@@ -528,9 +526,8 @@ namespace Test
             ProteaseDictionary.Dictionary.Add(protease.Name, protease);
             CommonParameters CommonParameters = new CommonParameters(
                 dissociationType: DissociationType.HCD,
-                fragmentationTerminus: FragmentationTerminus.N,
                 productMassTolerance: productMassTolerance,
-                digestionParams: new DigestionParams(protease: protease.Name, minPeptideLength: 5, maxModsForPeptides: 2, semiProteaseDigestion: true),
+                digestionParams: new DigestionParams(protease: protease.Name, minPeptideLength: 5, maxModsForPeptides: 2, fragmentationTerminus:FragmentationTerminus.N, searchModeType:CleavageSpecificity.Semi),
                 scoreCutoff: 2,
                 addCompIons: true);
 
@@ -596,13 +593,12 @@ namespace Test
 
             var productMassTolerance = new AbsoluteTolerance(0.01);
             var searchModes = new SinglePpmAroundZeroSearchMode(5);
-            var protease = new Protease("SingleC", new List<Tuple<string, FragmentationTerminus>> { new Tuple<string, FragmentationTerminus>("G", FragmentationTerminus.C) }, new List<Tuple<string, FragmentationTerminus>>(), CleavageSpecificity.None, null, null, null);
+            Protease protease = new Protease("SingleC", new List<Tuple<string, FragmentationTerminus>> { new Tuple<string, FragmentationTerminus>("G", FragmentationTerminus.C) }, new List<Tuple<string, FragmentationTerminus>>(), CleavageSpecificity.None, null, null, null);
             ProteaseDictionary.Dictionary.Add(protease.Name, protease);
             CommonParameters CommonParameters = new CommonParameters(
-                fragmentationTerminus: FragmentationTerminus.C,
                 scoreCutoff: 1,
                 productMassTolerance: productMassTolerance,
-                digestionParams: new DigestionParams(protease: protease.Name, maxMissedCleavages: 5, minPeptideLength: 5, semiProteaseDigestion: true, terminusTypeSemiProtease: FragmentationTerminus.C),
+                digestionParams: new DigestionParams(protease: protease.Name, maxMissedCleavages: 5, minPeptideLength: 5, searchModeType: CleavageSpecificity.None, fragmentationTerminus: FragmentationTerminus.C),
                 dissociationType: DissociationType.HCD,
                 addCompIons: true);
 

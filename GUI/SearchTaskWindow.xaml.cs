@@ -288,42 +288,31 @@ namespace MetaMorpheusGUI
 
         private void SaveButton_Click(object sender, RoutedEventArgs e)
         {
-            if (nonSpecificSearchRadioButton1.IsChecked.Value || semiSpecificSearchRadioButton.IsChecked.Value)
+            CleavageSpecificity searchModeType = CleavageSpecificity.Full; //classic and modern by default
+            if (semiSpecificSearchRadioButton.IsChecked.Value) //semi
             {
-                //TODO: UPDATE FOR DISSOCIATION
-                //if ((bCheckBox.IsChecked.Value || cCheckBox.IsChecked.Value) && (yCheckBox.IsChecked.Value || zdotCheckBox.IsChecked.Value))
-                //{
-                //    //MessageBox.Show("Only ion types from a single terminus are allowed for this search algorithm. \ne.g. b- and/or c-ions OR y- and/or zdot-ions. \nC-terminal ions (y and/or zdot) will be chosen by default.");
-                //    bCheckBox.IsChecked = false;
-                //    cCheckBox.IsChecked = false;
-                //}
+                searchModeType = CleavageSpecificity.Semi;
+            }
+            else if (nonSpecificSearchRadioButton1.IsChecked.Value) //non
+            {
+                searchModeType = CleavageSpecificity.None;
+            }
+            //else it's the default of full
+
+            if (searchModeType != CleavageSpecificity.Full)
+            {
                 if (((Protease)proteaseComboBox.SelectedItem).Name.Contains("non-specific"))
                 {
-                    proteaseComboBox.SelectedItem = proteaseComboBox.Items.CurrentItem;
-                    //if ((bCheckBox.IsChecked.Value || cCheckBox.IsChecked.Value))
-                    //{
-                    //    for (int i = 0; i < proteaseComboBox.Items.Count; i++)
-                    //    {
-                    //        if (((Protease)proteaseComboBox.Items[i]).Name.Equals("singleN"))
-                    //        {
-                    //            proteaseComboBox.SelectedItem = proteaseComboBox.Items[i];
-                    //            break;
-                    //        }
-                    //    }
-                    //}
-                    //else
+                    if (nTerminalIons.IsChecked.Value)
                     {
-                        for (int i = 0; i < proteaseComboBox.Items.Count; i++)
-                        {
-                            if (((Protease)proteaseComboBox.Items[i]).Name.Equals("singleC"))
-                            {
-                                proteaseComboBox.SelectedItem = proteaseComboBox.Items[i];
-                                break;
-                            }
-                        }
+                        cTerminalIons.IsChecked = false;
+                    }
+                    else //we're not allowing no ion types. It must have C if it doesn't have N.
+                    {
+                        cTerminalIons.IsChecked = true;
                     }
                 }
-                if (((Protease)proteaseComboBox.SelectedItem).Name.Contains("semi-trypsin"))
+                if (((Protease)proteaseComboBox.SelectedItem).Name.Contains("semi-trypsin")) //you can't use this protease with the fast semi search
                 {
                     proteaseComboBox.Items.MoveCurrentToFirst();
                     proteaseComboBox.SelectedItem = proteaseComboBox.Items.CurrentItem;
@@ -349,9 +338,22 @@ namespace MetaMorpheusGUI
 
             Protease protease = (Protease)proteaseComboBox.SelectedItem;
             DissociationType dissociationType = GlobalVariables.AllSupportedDissociationTypes[dissociationTypeComboBox.SelectedItem.ToString()];
+            FragmentationTerminus fragmentationTerminus = FragmentationTerminus.Both;
+            if (nTerminalIons.IsChecked.Value && !cTerminalIons.IsChecked.Value)
+            {
+                fragmentationTerminus = FragmentationTerminus.N;
+            }
+            else if (!nTerminalIons.IsChecked.Value && cTerminalIons.IsChecked.Value)
+            {
+                fragmentationTerminus = FragmentationTerminus.C;
+            }
+            else //why would you want this
+            {
+                fragmentationTerminus = FragmentationTerminus.None;
+                MessageBox.Show("Warning: No ion types were selected. MetaMorpheus will be unable to search MS/MS spectra.");
+            }
+
             bool semiProteaseDigestion = (semiSpecificSearchRadioButton.IsChecked.Value && ((Protease)proteaseComboBox.SelectedItem).CleavageSpecificity != CleavageSpecificity.SingleN && ((Protease)proteaseComboBox.SelectedItem).CleavageSpecificity != CleavageSpecificity.SingleC);
-            //TODO: UPDATE
-            //FragmentationTerminus terminusTypeSemiProtease = (bCheckBox.IsChecked.Value || cCheckBox.IsChecked.Value ? FragmentationTerminus.N : FragmentationTerminus.C);
             int maxMissedCleavages = string.IsNullOrEmpty(missedCleavagesTextBox.Text) ? int.MaxValue : (int.Parse(missedCleavagesTextBox.Text, NumberStyles.Any, CultureInfo.InvariantCulture));
             int minPeptideLengthValue = (int.Parse(MinPeptideLengthTextBox.Text, NumberStyles.Any, CultureInfo.InvariantCulture));
             int maxPeptideLengthValue = string.IsNullOrEmpty(MaxPeptideLengthTextBox.Text) ? int.MaxValue : (int.Parse(MaxPeptideLengthTextBox.Text, NumberStyles.Any, CultureInfo.InvariantCulture));
@@ -361,15 +363,14 @@ namespace MetaMorpheusGUI
 
             DigestionParams digestionParamsToSave = new DigestionParams(
                 protease: protease.Name,
-                semiProteaseDigestion: semiProteaseDigestion,
-                //TODO UPDATE
-                //terminusTypeSemiProtease: terminusTypeSemiProtease,
                 maxMissedCleavages: maxMissedCleavages,
                 minPeptideLength: minPeptideLengthValue,
                 maxPeptideLength: maxPeptideLengthValue,
                 maxModificationIsoforms: maxModificationIsoformsValue,
                 initiatorMethionineBehavior: initiatorMethionineBehavior,
-                maxModsForPeptides: maxModsForPeptideValue);
+                maxModsForPeptides: maxModsForPeptideValue,
+                searchModeType: searchModeType,
+                fragmentationTerminus: fragmentationTerminus);
 
             Tolerance ProductMassTolerance;
             if (productMassToleranceComboBox.SelectedIndex == 0)
@@ -448,7 +449,7 @@ namespace MetaMorpheusGUI
             {
                 TheTask.SearchParameters.SearchType = SearchType.Modern;
             }
-            else //if (nonSpecificSearchRadioButton.IsChecked.Value)
+            else //both semi and nonspecific are termed "nonspecific", because they both contain at least one nonspecific cleavage and they share the same algorithm
             {
                 TheTask.SearchParameters.SearchType = SearchType.NonSpecific;
             }

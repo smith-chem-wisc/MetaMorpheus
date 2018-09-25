@@ -20,7 +20,6 @@ namespace Test
             CommonParameters defaultParameters = new CommonParameters();
             CommonParameters notDefaultParameters = new CommonParameters(
                 dissociationType: DissociationType.ETD,
-                fragmentationTerminus: FragmentationTerminus.N,
                 doPrecursorDeconvolution: false,
                 useProvidedPrecursorInfo: false,
                 deconvolutionIntensityRatio: 69,
@@ -47,8 +46,8 @@ namespace Test
                     maxModificationIsoforms: 69,
                     initiatorMethionineBehavior: InitiatorMethionineBehavior.Retain,
                     maxModsForPeptides: 69,
-                    semiProteaseDigestion: true,
-                    terminusTypeSemiProtease: FragmentationTerminus.C
+                    searchModeType: CleavageSpecificity.Semi,
+                    fragmentationTerminus: FragmentationTerminus.C
                     ),
                 listOfModsVariable: new List<(string, string)> { ("asdf", "asdf") },
                 listOfModsFixed: new List<(string, string)> { ("asdf", "asdf") }
@@ -57,7 +56,6 @@ namespace Test
             //check that the defaults are not the same as the not defaults.
             //IF ONE OF THESE FAILS, PLEASE UPDATE THE "notDefaultParameters"
             Assert.AreNotEqual(defaultParameters.DissociationType, notDefaultParameters.DissociationType);
-            Assert.AreNotEqual(defaultParameters.FragmentationTerminus, notDefaultParameters.FragmentationTerminus);
             Assert.AreNotEqual(defaultParameters.DoPrecursorDeconvolution, notDefaultParameters.DoPrecursorDeconvolution);
             Assert.AreNotEqual(defaultParameters.UseProvidedPrecursorInfo, notDefaultParameters.UseProvidedPrecursorInfo);
             Assert.AreNotEqual(defaultParameters.DeconvolutionIntensityRatio, notDefaultParameters.DeconvolutionIntensityRatio);
@@ -85,7 +83,6 @@ namespace Test
 
             //CHECK THAT NOTHING CHANGED
             Assert.AreEqual(updatedParameters.DissociationType, notDefaultParameters.DissociationType);
-            Assert.AreEqual(updatedParameters.FragmentationTerminus, notDefaultParameters.FragmentationTerminus);
             Assert.AreEqual(updatedParameters.DoPrecursorDeconvolution, notDefaultParameters.DoPrecursorDeconvolution);
             Assert.AreEqual(updatedParameters.UseProvidedPrecursorInfo, notDefaultParameters.UseProvidedPrecursorInfo);
             Assert.AreEqual(updatedParameters.DeconvolutionIntensityRatio, notDefaultParameters.DeconvolutionIntensityRatio);

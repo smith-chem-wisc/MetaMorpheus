@@ -170,8 +170,8 @@ namespace TaskLayer
                 //NEED THESE OR THEY'LL BE OVERWRITTEN
                 maxModificationIsoforms: commonParams.DigestionParams.MaxModificationIsoforms,
                 initiatorMethionineBehavior: commonParams.DigestionParams.InitiatorMethionineBehavior,
-                semiProteaseDigestion: commonParams.DigestionParams.SemiProteaseDigestion,
-                terminusTypeSemiProtease: commonParams.DigestionParams.TerminusTypeSemiProtease
+                fragmentationTerminus: commonParams.DigestionParams.FragmentationTerminus,
+                searchModeType: commonParams.DigestionParams.SearchModeType
                 );
 
             // set the rest of the file-specific parameters
@@ -206,7 +206,6 @@ namespace TaskLayer
                 listOfModsVariable: commonParams.ListOfModsVariable,
                 listOfModsFixed: commonParams.ListOfModsFixed,
                 qValueOutputFilter: commonParams.QValueOutputFilter,
-                fragmentationTerminus: commonParams.FragmentationTerminus,
                 taskDescriptor: commonParams.TaskDescriptor
                 );
 

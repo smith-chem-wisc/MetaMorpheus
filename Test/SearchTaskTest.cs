@@ -83,7 +83,7 @@ namespace Test
                 {
                     SearchType = SearchType.NonSpecific,
                 },
-                CommonParameters = new CommonParameters(fragmentationTerminus:FragmentationTerminus.C, addCompIons:true)
+                CommonParameters = new CommonParameters(addCompIons:true, digestionParams: new DigestionParams(searchModeType:CleavageSpecificity.Semi, fragmentationTerminus: FragmentationTerminus.C))
             };
 
             string outputFolder = Path.Combine(TestContext.CurrentContext.TestDirectory, @"TestSameSettingsOutput");
