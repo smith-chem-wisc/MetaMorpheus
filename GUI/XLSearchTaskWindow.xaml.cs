@@ -70,29 +70,19 @@ namespace MetaMorpheusGUI
             e.Handled = !GlobalGuiSettings.CheckIsNumber(e.Text);
         }
         
-        private void Row_DoubleClick(object sender, MouseButtonEventArgs e)
-        {
-            var ye = sender as DataGridCell;
-            if (ye.Content is TextBlock hm && !string.IsNullOrEmpty(hm.Text))
-            {
-                System.Diagnostics.Process.Start(hm.Text);
-            }
-        }
-
         private void PopulateChoices()
         {
             foreach (string crosslinkerName in Enum.GetNames(typeof(CrosslinkerType)))
                 cbCrosslinker.Items.Add(crosslinkerName);
 
-            //foreach (string fragmentationType in Enum.GetNames(typeof(FragmentaionType)))
-            //    cbFragmentation.Items.Add(fragmentationType);
+            foreach (string dissassociationType in GlobalVariables.AllSupportedDissociationTypes.Keys)
+            {
+                DissociationTypeComboBox.Items.Add(dissassociationType);
+            }
 
             cbbXLprecusorMsTl.Items.Add("Da");
             cbbXLprecusorMsTl.Items.Add("ppm");
-
-            //cbbXLBetaprecusorMsTl.Items.Add("Absolute");
-            //cbbXLBetaprecusorMsTl.Items.Add("ppm");
-
+            
             foreach (Protease protease in ProteaseDictionary.Dictionary.Values)
                 proteaseComboBox.Items.Add(protease);
             proteaseComboBox.SelectedIndex = 12;
@@ -102,10 +92,7 @@ namespace MetaMorpheusGUI
 
             productMassToleranceComboBox.Items.Add("Da");
             productMassToleranceComboBox.Items.Add("ppm");
-
-            //foreach (string toleranceUnit in Enum.GetNames(typeof(ToleranceUnit)))
-            //    productMassToleranceComboBox.Items.Add(toleranceUnit);
-
+            
             foreach (var hm in GlobalVariables.AllModsKnown.GroupBy(b => b.ModificationType))
             {
                 var theModType = new ModTypeForTreeView(hm.Key, false);
@@ -153,6 +140,7 @@ namespace MetaMorpheusGUI
             trimMsMs.IsChecked = task.CommonParameters.TrimMsMsPeaks;
             TopNPeaksTextBox.Text = task.CommonParameters.TopNpeaks.ToString(CultureInfo.InvariantCulture);
             MinRatioTextBox.Text = task.CommonParameters.MinRatio.ToString(CultureInfo.InvariantCulture);
+            DissociationTypeComboBox.SelectedItem = task.CommonParameters.DissociationType.ToString();
 
             ckbCharge_2_3.IsChecked = task.XlSearchParameters.XlCharge_2_3;
             checkBoxDecoy.IsChecked = task.XlSearchParameters.DecoyType != DecoyType.None;
@@ -166,10 +154,7 @@ namespace MetaMorpheusGUI
             initiatorMethionineBehaviorComboBox.SelectedIndex = (int)task.CommonParameters.DigestionParams.InitiatorMethionineBehavior;
             productMassToleranceTextBox.Text = task.CommonParameters.ProductMassTolerance.Value.ToString(CultureInfo.InvariantCulture);
             productMassToleranceComboBox.SelectedIndex = task.CommonParameters.ProductMassTolerance is AbsoluteTolerance ? 0 : 1;
-
-
-            //DissociationTypeComboBox.SelectedItem = DissociationType.HCD;
-
+            DissociationTypeComboBox.SelectedItem = task.CommonParameters.DissociationType.ToString();
             minScoreAllowed.Text = task.CommonParameters.ScoreCutoff.ToString(CultureInfo.InvariantCulture);
             numberOfDatabaseSearchesTextBox.Text = task.CommonParameters.TotalPartitions.ToString(CultureInfo.InvariantCulture);
             maxThreadsTextBox.Text = task.CommonParameters.MaxThreadsToUsePerFile.ToString(CultureInfo.InvariantCulture);
@@ -256,6 +241,7 @@ namespace MetaMorpheusGUI
                 return;
             }
 
+            DissociationType dissociationType = GlobalVariables.AllSupportedDissociationTypes[DissociationTypeComboBox.SelectedItem.ToString()];
             //TheTask.XlSearchParameters.SearchGlyco = RbSearchGlyco.IsChecked.Value;
             //TheTask.XlSearchParameters.SearchGlycoWithBgYgIndex = CkbSearchGlycoWithBgYgIndex.IsChecked.Value;
             TheTask.XlSearchParameters.RestrictToTopNHits = ckbXLTopNum.IsChecked.Value;
@@ -340,7 +326,7 @@ namespace MetaMorpheusGUI
                 trimMsMsPeaks: trimMsMs.IsChecked.Value,
                 topNpeaks: int.Parse(TopNPeaksTextBox.Text),
                 minRatio: double.Parse(MinRatioTextBox.Text),
-                dissociationType: (DissociationType)DissociationTypeComboBox.SelectedItem,
+                dissociationType: dissociationType,
                 scoreCutoff: double.Parse(minScoreAllowed.Text, CultureInfo.InvariantCulture),
                 totalPartitions: int.Parse(numberOfDatabaseSearchesTextBox.Text, CultureInfo.InvariantCulture),
                 listOfModsVariable: listOfModsVariable,
