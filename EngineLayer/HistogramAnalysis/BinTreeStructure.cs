@@ -4,6 +4,7 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Text;
+using Proteomics.Fragmentation;
 
 namespace EngineLayer.HistogramAnalysis
 {
@@ -106,9 +107,7 @@ namespace EngineLayer.HistogramAnalysis
             IdentifyAAsInCommon();
 
             IdentifyMine(dc);
-
-            OverlappingIonSequences();
-
+            
             IdentifyFracWithSingle();
             IdentifyMedianLength();
         }
@@ -139,29 +138,14 @@ namespace EngineLayer.HistogramAnalysis
                 }
             }
         }
-
-        private void OverlappingIonSequences()
-        {
-            foreach (Bin bin in FinalBins)
-                foreach (var hm in bin.UniquePSMs.Where(b => !b.Value.Item3.IsDecoy && b.Value.Item3.MatchedIonMassToChargeRatioDict.Any()))
-                {
-                    var ya = hm.Value.Item3.MatchedIonMassToChargeRatioDict;
-                    if (ya.ContainsKey(ProductType.B)
-                        && ya.ContainsKey(ProductType.Y)
-                        && ya[ProductType.B].Any(b => b > 0)
-                        && ya[ProductType.Y].Any(b => b > 0)
-                        && ya[ProductType.B].Last(b => b > 0) + ya[ProductType.Y].Last(b => b > 0) > hm.Value.Item3.PeptideMonisotopicMass.Value)
-                        bin.Overlapping++;
-                }
-        }
-
+        
         private void IdentifyFracWithSingle()
         {
             foreach (Bin bin in FinalBins)
             {
                 var numTarget = bin.UniquePSMs.Values.Count(b => !b.Item3.IsDecoy);
                 if (numTarget > 0)
-                    bin.FracWithSingle = (double)bin.UniquePSMs.Values.Count(b => !b.Item3.IsDecoy && b.Item3.NumDifferentCompactPeptides == 1) / numTarget;
+                    bin.FracWithSingle = (double)bin.UniquePSMs.Values.Count(b => !b.Item3.IsDecoy && b.Item3.NumDifferentMatchingPeptides == 1) / numTarget;
             }
         }
 
