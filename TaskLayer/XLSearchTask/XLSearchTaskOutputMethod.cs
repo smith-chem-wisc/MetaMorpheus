@@ -53,7 +53,7 @@ namespace TaskLayer
                     "\tSummary\tTotalScore\tMass diff\tQValue\tParentIons\tCharge2Number");
                 foreach (var item in items)
                 {
-                    if (item.CrossType != PsmCrossType.Cross || item.CrossType != PsmCrossType.Inter || item.CrossType != PsmCrossType.Intra)
+                    if (item.CrossType != PsmCrossType.Cross && item.CrossType != PsmCrossType.Inter && item.CrossType != PsmCrossType.Intra)
                     {
                         string position = "";
                         switch (item.CrossType)
