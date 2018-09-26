@@ -65,10 +65,10 @@ namespace MetaMorpheusCommandLine
                     {
                         if (!Path.GetExtension(db).Equals(".fasta"))
                         {
-                            GlobalVariables.AddMods(UsefulProteomicsDatabases.ProteinDbLoader.GetPtmListFromProteinXml(db).OfType<ModificationWithLocation>());
+                            GlobalVariables.AddMods(UsefulProteomicsDatabases.ProteinDbLoader.GetPtmListFromProteinXml(db).OfType<Modification>());
 
-                            // print any error messages reading the mods to the console
-                            foreach (var error in GlobalVariables.ErrorsReadingMods)
+                        // print any error messages reading the mods to the console
+                        foreach (var error in GlobalVariables.ErrorsReadingMods)
                             {
                                 Console.WriteLine(error);
                             }

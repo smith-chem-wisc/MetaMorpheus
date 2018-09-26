@@ -106,6 +106,5 @@ namespace Test
             Assert.AreEqual("Asp-N", c.DigestionParams.Protease.Name);
             Assert.AreEqual(2, c.DigestionParams.MaxMissedCleavages);
         }
-
     }
 }

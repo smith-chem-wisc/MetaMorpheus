@@ -16,6 +16,7 @@ using System.Data;
 using System.Windows.Data;
 using System.Windows.Media;
 using System.Windows.Media.Imaging;
+using Proteomics.Fragmentation;
 
 namespace MetaMorpheusGUI
 {
@@ -250,31 +251,59 @@ namespace MetaMorpheusGUI
             }
 
             // draw b ions
-            foreach (var bIon in psm.FragmentIons.Where(p => p.ProductType == ProductType.B))
+            foreach (var bIon in psm.FragmentIons.Where(p => p.NeutralTheoreticalProduct.ProductType == ProductType.b))
             {
-                int residue = bIon.IonNumber;
-                BaseDraw.botSplittingDrawing(canvas, new Point(residue * spacing + 8, 50), Colors.Blue, bIon.ProductType.ToString().ToLower() + bIon.IonNumber);
+                int residue = bIon.NeutralTheoreticalProduct.TerminusFragment.AminoAcidPosition;
+                string annotation = bIon.NeutralTheoreticalProduct.ProductType.ToString() + bIon.NeutralTheoreticalProduct.TerminusFragment.FragmentNumber;
+
+                if (bIon.NeutralTheoreticalProduct.NeutralLoss != 0)
+                {
+                    annotation += "-" + bIon.NeutralTheoreticalProduct.NeutralLoss;
+                }
+
+                BaseDraw.botSplittingDrawing(canvas, new Point(residue * spacing + 8, 50), Colors.Blue, annotation);
             }
 
             // draw c ions
-            foreach (var cIon in psm.FragmentIons.Where(p => p.ProductType == ProductType.C))
+            foreach (var cIon in psm.FragmentIons.Where(p => p.NeutralTheoreticalProduct.ProductType == ProductType.c))
             {
-                int residue = psm.BaseSequence.Length - cIon.IonNumber;
-                BaseDraw.botSplittingDrawing(canvas, new Point(residue * spacing + 8, 50), Colors.Gold, cIon.ProductType.ToString().ToLower() + cIon.IonNumber);
+                int residue = cIon.NeutralTheoreticalProduct.TerminusFragment.AminoAcidPosition;
+                string annotation = cIon.NeutralTheoreticalProduct.ProductType.ToString() + cIon.NeutralTheoreticalProduct.TerminusFragment.FragmentNumber;
+
+                if (cIon.NeutralTheoreticalProduct.NeutralLoss != 0)
+                {
+                    annotation += "-" + cIon.NeutralTheoreticalProduct.NeutralLoss;
+                }
+
+                BaseDraw.botSplittingDrawing(canvas, new Point(residue * spacing + 8, 50), Colors.Gold, annotation);
             }
 
             // draw y ions
-            foreach (var yIon in psm.FragmentIons.Where(p => p.ProductType == ProductType.Y))
+            foreach (var yIon in psm.FragmentIons.Where(p => p.NeutralTheoreticalProduct.ProductType == ProductType.y))
             {
-                int residue = psm.BaseSequence.Length - yIon.IonNumber;
-                BaseDraw.topSplittingDrawing(canvas, new Point(residue * spacing + 8, 0), Colors.Purple, yIon.ProductType.ToString().ToLower() + yIon.IonNumber);
+                int residue = yIon.NeutralTheoreticalProduct.TerminusFragment.AminoAcidPosition;
+                string annotation = yIon.NeutralTheoreticalProduct.ProductType.ToString() + yIon.NeutralTheoreticalProduct.TerminusFragment.FragmentNumber;
+
+                if (yIon.NeutralTheoreticalProduct.NeutralLoss != 0)
+                {
+                    annotation += "-" + yIon.NeutralTheoreticalProduct.NeutralLoss;
+                }
+
+                BaseDraw.topSplittingDrawing(canvas, new Point(residue * spacing + 8, 0), Colors.Purple, annotation);
             }
 
             // draw zdot ions
-            foreach (var zDotIon in psm.FragmentIons.Where(p => p.ProductType == ProductType.Zdot))
+            foreach (var zDotIon in psm.FragmentIons.Where(p => p.NeutralTheoreticalProduct.ProductType == ProductType.zPlusOne))
             {
-                int residue = zDotIon.IonNumber;
-                BaseDraw.topSplittingDrawing(canvas, new Point(residue * spacing + 8, 0), Colors.Orange, zDotIon.ProductType.ToString().ToLower() + zDotIon.IonNumber);
+                int residue = zDotIon.NeutralTheoreticalProduct.TerminusFragment.AminoAcidPosition;
+                string annotation = zDotIon.NeutralTheoreticalProduct.ProductType.ToString() + zDotIon.NeutralTheoreticalProduct.TerminusFragment.FragmentNumber;
+
+                if (zDotIon.NeutralTheoreticalProduct.NeutralLoss != 0)
+                {
+                    annotation += "-" + zDotIon.NeutralTheoreticalProduct.NeutralLoss;
+                }
+
+                BaseDraw.topSplittingDrawing(canvas, new Point(residue * spacing + 8, 0), Colors.Orange, annotation);
             }
 
             // draw modifications
@@ -341,7 +370,7 @@ namespace MetaMorpheusGUI
             }
             dataGridProperties.Items.Refresh();
             DrawPsm(psm.ScanNum, psm.FullSequence);
-            
+
             double wid = 0;
             dataGridProperties.HorizontalScrollBarVisibility = ScrollBarVisibility.Disabled;
             dataGridProperties.VerticalScrollBarVisibility = ScrollBarVisibility.Disabled;

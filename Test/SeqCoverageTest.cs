@@ -1,9 +1,11 @@
 ﻿using EngineLayer;
 using NUnit.Framework;
 using Proteomics;
+using Proteomics.Fragmentation;
 using Proteomics.ProteolyticDigestion;
 using System.Collections.Generic;
 using System.Linq;
+using MassSpectrometry;
 
 namespace Test
 {
@@ -16,25 +18,25 @@ namespace Test
             var prot1 = new Protein("MMKMMK", "prot1");
 
             ModificationMotif.TryGetMotif("M", out ModificationMotif motifM);
-            ModificationWithMass mod1 = new ModificationWithMass("mod1", "mt", motifM, TerminusLocalization.NProt, 10);
-            ModificationWithMass mod2 = new ModificationWithMass("mod2", "mt", motifM, TerminusLocalization.NPep, 10);
-            ModificationWithMass mod3 = new ModificationWithMass("mod3", "mt", motifM, TerminusLocalization.Any, 10);
+            Modification mod1 = new Modification(_originalId: "mod1", _modificationType: "mt", _target: motifM, _locationRestriction: "N-terminal.", _monoisotopicMass: 10);
+            Modification mod2 = new Modification(_originalId: "mod2", _modificationType: "mt", _target: motifM, _locationRestriction: "Peptide N-terminal.", _monoisotopicMass: 10);
+            Modification mod3 = new Modification(_originalId: "mod3", _modificationType: "mt", _target: motifM, _locationRestriction: "Anywhere.", _monoisotopicMass: 10);
             ModificationMotif.TryGetMotif("K", out ModificationMotif motifK);
-            ModificationWithMass mod4 = new ModificationWithMass("mod4", "mt", motifK, TerminusLocalization.PepC, 10);
-            ModificationWithMass mod5 = new ModificationWithMass("mod5", "mt", motifK, TerminusLocalization.ProtC, 10);
+            Modification mod4 = new Modification(_originalId: "mod4", _modificationType: "mt", _target: motifK, _locationRestriction: "Peptide C-terminal.", _monoisotopicMass: 10);
+            Modification mod5 = new Modification(_originalId: "mod5", _modificationType: "mt", _target: motifK, _locationRestriction: "C-terminal.", _monoisotopicMass: 10);
 
-            Dictionary<int, ModificationWithMass> modsFor1 = new Dictionary<int, ModificationWithMass>
+            Dictionary<int, Modification> modsFor1 = new Dictionary<int, Modification>
             {
                 {1, mod1},
                 {3, mod3},
                 {5, mod4},
             };
-            Dictionary<int, ModificationWithMass> modsFor2 = new Dictionary<int, ModificationWithMass>
+            Dictionary<int, Modification> modsFor2 = new Dictionary<int, Modification>
             {
                 {1, mod2},
                 {5, mod5},
             };
-            Dictionary<int, ModificationWithMass> modsFor3 = new Dictionary<int, ModificationWithMass>
+            Dictionary<int, Modification> modsFor3 = new Dictionary<int, Modification>
             {
                 {1, mod1},
                 {5, mod3},
@@ -53,23 +55,16 @@ namespace Test
                 pwsm3,
             };
 
-            Dictionary<CompactPeptideBase, HashSet<PeptideWithSetModifications>> matching = new Dictionary<CompactPeptideBase, HashSet<PeptideWithSetModifications>>
-            {
-                { pwsm1.CompactPeptide(TerminusType.None), new HashSet<PeptideWithSetModifications>{ pwsm1 } },
-                { pwsm2.CompactPeptide(TerminusType.None), new HashSet<PeptideWithSetModifications>{ pwsm2 } },
-                { pwsm3.CompactPeptide(TerminusType.None), new HashSet<PeptideWithSetModifications>{ pwsm3 } },
-            };
-
             IScan scan = new ThisTestScan();
-            var psm1 = new PeptideSpectralMatch(pwsm1.CompactPeptide(TerminusType.None), 0, 1, 0, scan, digestionParams);
+            var psm1 = new PeptideSpectralMatch(pwsm1, 0, 1, 0, scan, digestionParams, new List<MatchedFragmentIon>());
             psm1.SetFdrValues(0, 0, 0, 0, 0, 0, 0, 0, 0, false);
-            psm1.MatchToProteinLinkedPeptides(matching);
-            var psm2 = new PeptideSpectralMatch(pwsm2.CompactPeptide(TerminusType.None), 0, 1, 0, scan, digestionParams);
+
+            var psm2 = new PeptideSpectralMatch(pwsm2, 0, 1, 0, scan, digestionParams, new List<MatchedFragmentIon>());
             psm2.SetFdrValues(0, 0, 0, 0, 0, 0, 0, 0, 0, false);
-            psm2.MatchToProteinLinkedPeptides(matching);
-            var psm3 = new PeptideSpectralMatch(pwsm3.CompactPeptide(TerminusType.None), 0, 1, 0, scan, digestionParams);
+
+            var psm3 = new PeptideSpectralMatch(pwsm3, 0, 1, 0, scan, digestionParams, new List<MatchedFragmentIon>());
             psm3.SetFdrValues(0, 0, 0, 0, 0, 0, 0, 0, 0, false);
-            psm3.MatchToProteinLinkedPeptides(matching);
+
 
             List<PeptideSpectralMatch> newPsms = new List<PeptideSpectralMatch>
             {
@@ -78,7 +73,9 @@ namespace Test
                 psm3,
             };
 
-            ProteinParsimonyEngine ppe = new ProteinParsimonyEngine(matching, true, new CommonParameters(), new List<string>());
+            newPsms.ForEach(p => p.ResolveAllAmbiguities());
+
+            ProteinParsimonyEngine ppe = new ProteinParsimonyEngine(newPsms, true, new CommonParameters(), new List<string>());
             ProteinParsimonyResults fjkd = (ProteinParsimonyResults)ppe.Run();
 
             ProteinScoringAndFdrEngine psafe = new ProteinScoringAndFdrEngine(fjkd.ProteinGroups, newPsms, true, true, true, new CommonParameters(), new List<string>());
@@ -90,21 +87,15 @@ namespace Test
             var firstSequenceCoverageDisplayList = fjkd.ProteinGroups.First().SequenceCoverageDisplayList.First();
             Assert.AreEqual("MMKMMK", firstSequenceCoverageDisplayList);
             var firstSequenceCoverageDisplayListWithMods = fjkd.ProteinGroups.First().SequenceCoverageDisplayListWithMods.First();
-            Assert.AreEqual("[mod1]-MM[mod3]KM[mod3]MK-[mod5]", firstSequenceCoverageDisplayListWithMods);
+            Assert.AreEqual("[mod1 on M]-MM[mod3 on M]KM[mod3 on M]MK-[mod5 on K]", firstSequenceCoverageDisplayListWithMods);
 
             var firstModInfo = fjkd.ProteinGroups.First().ModsInfo.First();
-            Assert.IsTrue(firstModInfo.Contains(@"#aa1[mod1,info:occupancy=1.00(2/2)]"));
-            Assert.IsTrue(firstModInfo.Contains(@"#aa2[mod3,info:occupancy=0.50(1/2)]"));
+            Assert.IsTrue(firstModInfo.Contains(@"#aa1[mod1 on M,info:occupancy=1.00(2/2)]"));
+            Assert.IsTrue(firstModInfo.Contains(@"#aa2[mod3 on M,info:occupancy=0.50(1/2)]"));
             Assert.IsFalse(firstModInfo.Contains(@"#aa3"));
-            Assert.IsTrue(firstModInfo.Contains(@"#aa4[mod3,info:occupancy=0.50(1/2)]"));
+            Assert.IsTrue(firstModInfo.Contains(@"#aa4[mod3 on M,info:occupancy=0.50(1/2)]"));
             Assert.IsFalse(firstModInfo.Contains(@"#aa5"));
-            Assert.IsTrue(firstModInfo.Contains(@"#aa6[mod5,info:occupancy=1.00(2/2)]"));
+            Assert.IsTrue(firstModInfo.Contains(@"#aa6[mod5 on K,info:occupancy=1.00(2/2)]"));
         }
-
-        //[Test] MOVED TO MZLIB
-        //public static void MultipleProteaseSelectionTest()
-        //public static void MultipleProteaseSelectionTestMissedCleavage()
-        //public static void MultipleProteaseSelectionTestPreventCleavage()
-        //public static void ReadCustomFile()
     }
 }

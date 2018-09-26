@@ -3,7 +3,6 @@ using EngineLayer.FdrAnalysis;
 using EngineLayer.HistogramAnalysis;
 using EngineLayer.Localization;
 using EngineLayer.ModificationAnalysis;
-using EngineLayer.NonSpecificEnzymeSearch;
 using FlashLFQ;
 using MassSpectrometry;
 using MathNet.Numerics.Distributions;
@@ -20,51 +19,53 @@ namespace TaskLayer
 {
     public class PostSearchAnalysisTask : MetaMorpheusTask
     {
+        public PostSearchAnalysisParameters Parameters { get; set; }
+        private List<EngineLayer.ProteinGroup> ProteinGroups { get; set; }
+        private IEnumerable<IGrouping<string, PeptideSpectralMatch>> PsmsGroupedByFile { get; set; }
+
         public PostSearchAnalysisTask()
             : base(MyTask.Search)
         {
         }
-
-        public PostSearchAnalysisParameters Parameters { get; set; }
-
-        private List<EngineLayer.ProteinGroup> ProteinGroups { get; set; }
-        private IEnumerable<IGrouping<string, PeptideSpectralMatch>> PsmsGroupedByFile { get; set; }
 
         public MyTaskResults Run()
         {
             // Stop loop if canceled
             if (GlobalVariables.StopLoops) { return Parameters.SearchTaskResults; }
 
-            ProteinAndFdrAnalysis();
-
-            // this code block is true/makes sense, but all the matched ion info is written in the localization engine
-            // need to rework some more code before we can skip the localization engine entirely
-            //if (Parameters.SearchParameters.MassDiffAcceptorType == MassDiffAcceptorType.ModOpen
-            //    || Parameters.SearchParameters.MassDiffAcceptorType == MassDiffAcceptorType.Open
-            //    || Parameters.SearchParameters.MassDiffAcceptorType == MassDiffAcceptorType.Custom
-            //    )
-            //{
-            //    // This only makes sense if there is a mass difference that you want to localize. No use for exact and missed monoisotopic mass searches.
-            //    Parameters.SearchParameters.DoLocalizationAnalysis = true;
-            //}
-            //else
-            //{
-            //    Parameters.SearchParameters.DoLocalizationAnalysis = false;
-            //}
-
-            ModificationAnalysis();
-
-            if (Parameters.SearchParameters.DoQuantification)
+            if (Parameters.SearchParameters.MassDiffAcceptorType == MassDiffAcceptorType.ModOpen
+                || Parameters.SearchParameters.MassDiffAcceptorType == MassDiffAcceptorType.Open
+                || Parameters.SearchParameters.MassDiffAcceptorType == MassDiffAcceptorType.Custom
+                )
             {
-                QuantificationAnalysis();
+                // This only makes sense if there is a mass difference that you want to localize. No use for exact and missed monoisotopic mass searches.
+                Parameters.SearchParameters.DoLocalizationAnalysis = true;
+            }
+            else
+            {
+                Parameters.SearchParameters.DoLocalizationAnalysis = false;
             }
 
+            //update all psms with peptide info
+            Parameters.AllPsms.ForEach(psm => psm.ResolveAllAmbiguities());
+
+            Parameters.AllPsms = Parameters.AllPsms.OrderByDescending(b => b.Score)
+               .ThenBy(b => b.PeptideMonisotopicMass.HasValue ? Math.Abs(b.ScanPrecursorMass - b.PeptideMonisotopicMass.Value) : double.MaxValue)
+               .GroupBy(b => (b.FullFilePath, b.ScanNumber, b.PeptideMonisotopicMass)).Select(b => b.First()).ToList();
+
+            CalculatePsmFdr();
+            DoMassDifferenceLocalizationAnalysis();
+            ProteinAnalysis();
+            QuantificationAnalysis();
+
             ReportProgress(new ProgressEventArgs(100, "Done!", new List<string> { Parameters.SearchTaskId, "Individual Spectra Files" }));
+
             HistogramAnalysis();
-            WritePSMResults();
+            WritePsmResults();
             WriteProteinResults();
             WriteQuantificationResults();
             WritePrunedDatabase();
+
             return Parameters.SearchTaskResults;
         }
 
@@ -74,116 +75,78 @@ namespace TaskLayer
         }
 
         /// <summary>
-        /// Constructs protein groups; calculates false discovery rate (FDR) for PSMs and protein groups
+        /// Calculate estimated false-discovery rate (FDR) for peptide spectral matches (PSMs)
         /// </summary>
-        private void ProteinAndFdrAnalysis()
+        private void CalculatePsmFdr()
         {
-            // match compact peptides (fragmentation info) to peptide sequence/protein info
-            Status("Matching peptides to proteins...", Parameters.SearchTaskId);
-            Dictionary<CompactPeptideBase, HashSet<PeptideWithSetModifications>> compactPeptideToProteinPeptideMatching = new Dictionary<CompactPeptideBase, HashSet<PeptideWithSetModifications>>();
+            // TODO: because FDR is done before parsimony, if a PSM matches to a target and a decoy protein, there may be conflicts between how it's handled in parsimony and the FDR engine here
+            // for example, here it may be treated as a decoy PSM, where as in parsimony it will be determined by the parsimony algorithm which is agnostic of target/decoy assignments
+            // this could cause weird PSM FDR issues
 
-            if (Parameters.ProteinList.Any())
-            {
-                if (Parameters.SearchParameters.SearchType == SearchType.NonSpecific)
-                {
-                    List<List<ProductType>> terminusSeparatedIons = ProductTypeMethods.SeparateIonsByTerminus(Parameters.IonTypes);
-                    MassDiffAcceptor massDiffAcceptor = SearchTask.GetMassDiffAcceptor(CommonParameters.PrecursorMassTolerance, Parameters.SearchParameters.MassDiffAcceptorType, Parameters.SearchParameters.CustomMdac);
-                    foreach (List<ProductType> terminusSpecificIons in terminusSeparatedIons)
-                    {
-                        new NonSpecificEnzymeSequencesToActualPeptides(compactPeptideToProteinPeptideMatching, Parameters.AllPsms, Parameters.ProteinList, Parameters.FixedModifications,
-                            Parameters.VariableModifications, terminusSpecificIons, Parameters.ListOfDigestionParams, massDiffAcceptor,
-                            CommonParameters.ReportAllAmbiguity, CommonParameters, new List<string> { Parameters.SearchTaskId }).Run();
-                    }
-                }
-                else
-                {
-                    SequencesToActualProteinPeptidesEngine sequencesToActualProteinPeptidesEngine = new SequencesToActualProteinPeptidesEngine(Parameters.AllPsms, Parameters.ProteinList,
-                        Parameters.FixedModifications, Parameters.VariableModifications, Parameters.IonTypes, Parameters.ListOfDigestionParams,
-                        CommonParameters.ReportAllAmbiguity, CommonParameters, new List<string> { Parameters.SearchTaskId });
-                    var res = (SequencesToActualProteinPeptidesEngineResults)sequencesToActualProteinPeptidesEngine.Run();
-                    compactPeptideToProteinPeptideMatching = res.CompactPeptideToProteinPeptideMatching;
-                }
-            }
+            Status("Estimating PSM FDR...", Parameters.SearchTaskId);
 
-            foreach (var psm in Parameters.AllPsms)
-            {
-                psm.MatchToProteinLinkedPeptides(compactPeptideToProteinPeptideMatching);
-            }
-
-            Parameters.AllPsms = Parameters.AllPsms.OrderByDescending(b => b.Score)
-                .ThenBy(b => b.PeptideMonisotopicMass.HasValue ? Math.Abs(b.ScanPrecursorMass - b.PeptideMonisotopicMass.Value) : double.MaxValue)
-                .GroupBy(b => (b.FullFilePath, b.ScanNumber, b.PeptideMonisotopicMass)).Select(b => b.First()).ToList();
-
-            // calculate FDR (q-values)
-            Status("Running FDR analysis...", Parameters.SearchTaskId);
             int massDiffAcceptorNumNotches = Parameters.NumNotches;
             var fdrAnalysisResults = (FdrAnalysisResults)(new FdrAnalysisEngine(Parameters.AllPsms, massDiffAcceptorNumNotches, CommonParameters, new List<string> { Parameters.SearchTaskId }).Run());
 
-            //sort the list of psms by the delta score if this was used for FDR calculation
-            if (fdrAnalysisResults.DeltaScoreImprovement)
-            {
-                Parameters.AllPsms = Parameters.AllPsms.OrderByDescending(b => b.DeltaScore)
-                    .ThenBy(b => b.PeptideMonisotopicMass.HasValue ? Math.Abs(b.ScanPrecursorMass - b.PeptideMonisotopicMass.Value) : double.MaxValue)
-                    .GroupBy(b => new Tuple<string, int, double?>(b.FullFilePath, b.ScanNumber, b.PeptideMonisotopicMass)).Select(b => b.First()).ToList();
-            }
-
-            // do protein parsimony and protein scoring/FDR
-            ProteinParsimonyResults proteinAnalysisResults = null;
-            if (Parameters.SearchParameters.DoParsimony)
-            {
-                Status("Running protein analysis...", Parameters.SearchTaskId);
-                var fdrFilteredPsms = Parameters.AllPsms.Where(p => p.FdrInfo.QValue <= 0.01 && p.FdrInfo.QValueNotch <= 0.01);
-
-                if (Parameters.SearchParameters.ModPeptidesAreDifferent)
-                {
-                    fdrFilteredPsms = fdrFilteredPsms.Where(p => p.FullSequence != null);
-                }
-                else
-                {
-                    fdrFilteredPsms = fdrFilteredPsms.Where(p => p.BaseSequence != null);
-                }
-
-                var fdrFilteredPeptides = new HashSet<PeptideWithSetModifications>(fdrFilteredPsms.SelectMany(p => p.CompactPeptides.SelectMany(v => v.Value.Item2)));
-                var fdrFilteredCompactPepToProteinPepDictionary = compactPeptideToProteinPeptideMatching.ToDictionary(p => p.Key, p => new HashSet<PeptideWithSetModifications>(p.Value.Where(v => fdrFilteredPeptides.Contains(v))));
-                fdrFilteredCompactPepToProteinPepDictionary = fdrFilteredCompactPepToProteinPepDictionary.Where(p => p.Value.Count > 0).ToDictionary(p => p.Key, p => p.Value);
-                proteinAnalysisResults = (ProteinParsimonyResults)(new ProteinParsimonyEngine(fdrFilteredCompactPepToProteinPepDictionary, Parameters.SearchParameters.ModPeptidesAreDifferent, CommonParameters, new List<string> { Parameters.SearchTaskId }).Run());
-
-                foreach (var huh in fdrFilteredPsms)
-                {
-                    huh.MatchToProteinLinkedPeptides(fdrFilteredCompactPepToProteinPepDictionary);
-                }
-
-                var proteinScoringAndFdrResults = (ProteinScoringAndFdrResults)new ProteinScoringAndFdrEngine(proteinAnalysisResults.ProteinGroups, Parameters.AllPsms,
-                    Parameters.SearchParameters.NoOneHitWonders, Parameters.SearchParameters.ModPeptidesAreDifferent, true, CommonParameters, new List<string> { Parameters.SearchTaskId }).Run();
-
-                ProteinGroups = proteinScoringAndFdrResults.SortedAndScoredProteinGroups;
-            }
+            Status("Done estimating PSM FDR!", Parameters.SearchTaskId);
         }
 
-        private void ModificationAnalysis()
+        private void ProteinAnalysis()
+        {
+            if (!Parameters.SearchParameters.DoParsimony)
+            {
+                return;
+            }
+
+            Status("Constructing protein groups...", Parameters.SearchTaskId);
+
+            // run parsimony
+            ProteinParsimonyResults proteinAnalysisResults = (ProteinParsimonyResults)(new ProteinParsimonyEngine(Parameters.AllPsms, Parameters.SearchParameters.ModPeptidesAreDifferent, CommonParameters, new List<string> { Parameters.SearchTaskId }).Run());
+
+            // score protein groups and calculate FDR
+            ProteinScoringAndFdrResults proteinScoringAndFdrResults = (ProteinScoringAndFdrResults)new ProteinScoringAndFdrEngine(proteinAnalysisResults.ProteinGroups, Parameters.AllPsms,
+                Parameters.SearchParameters.NoOneHitWonders, Parameters.SearchParameters.ModPeptidesAreDifferent, true, CommonParameters, new List<string> { Parameters.SearchTaskId }).Run();
+
+            ProteinGroups = proteinScoringAndFdrResults.SortedAndScoredProteinGroups;
+
+            foreach (PeptideSpectralMatch psm in Parameters.AllPsms)
+            {
+                psm.ResolveAllAmbiguities();
+            }
+
+            Status("Done constructing protein groups!", Parameters.SearchTaskId);
+        }
+
+        private void DoMassDifferenceLocalizationAnalysis()
         {
             if (Parameters.SearchParameters.DoLocalizationAnalysis)
             {
-                Status("Running localization analysis...", Parameters.SearchTaskId);
+                Status("Running mass-difference localization analysis...", Parameters.SearchTaskId);
                 for (int spectraFileIndex = 0; spectraFileIndex < Parameters.CurrentRawFileList.Count; spectraFileIndex++)
                 {
                     CommonParameters combinedParams = SetAllFileSpecificCommonParams(CommonParameters, Parameters.FileSettingsList[spectraFileIndex]);
 
                     var origDataFile = Parameters.CurrentRawFileList[spectraFileIndex];
-                    Status("Running localization analysis...", new List<string> { Parameters.SearchTaskId, "Individual Spectra Files", origDataFile });
+                    Status("Running mass-difference localization analysis...", new List<string> { Parameters.SearchTaskId, "Individual Spectra Files", origDataFile });
                     MsDataFile myMsDataFile = Parameters.MyFileManager.LoadFile(origDataFile, combinedParams.TopNpeaks, combinedParams.MinRatio, combinedParams.TrimMs1Peaks, combinedParams.TrimMsMsPeaks, combinedParams);
-                    new LocalizationEngine(Parameters.AllPsms.Where(b => b.FullFilePath.Equals(origDataFile)).ToList(), Parameters.IonTypes,
+                    new LocalizationEngine(Parameters.AllPsms.Where(b => b.FullFilePath.Equals(origDataFile)).ToList(),
                         myMsDataFile, combinedParams, new List<string> { Parameters.SearchTaskId, "Individual Spectra Files", origDataFile }).Run();
                     Parameters.MyFileManager.DoneWithFile(origDataFile);
                     ReportProgress(new ProgressEventArgs(100, "Done with localization analysis!", new List<string> { Parameters.SearchTaskId, "Individual Spectra Files", origDataFile }));
                 }
             }
 
+            // count different modifications observed
             new ModificationAnalysisEngine(Parameters.AllPsms, CommonParameters, new List<string> { Parameters.SearchTaskId }).Run();
         }
 
         private void QuantificationAnalysis()
         {
+            if (!Parameters.SearchParameters.DoQuantification)
+            {
+                return;
+            }
+
             // pass quantification parameters to FlashLFQ
             Status("Quantifying...", Parameters.SearchTaskId);
 
@@ -243,7 +206,7 @@ namespace TaskLayer
                 p.FdrInfo.QValue <= 0.01
                 && p.FdrInfo.QValueNotch <= 0.01
                 && !p.IsDecoy
-                && p.FullSequence != null);
+                && p.FullSequence != null).ToList();
 
             var psmsGroupedByFile = unambiguousPsmsBelowOnePercentFdr.GroupBy(p => p.FullFilePath);
 
@@ -259,7 +222,7 @@ namespace TaskLayer
                         string.Join("|", proteinsOrderedByAccession.Select(p => p.GeneNames.Select(x => x.Item2).FirstOrDefault())),
                         string.Join("|", proteinsOrderedByAccession.Select(p => p.Organism).Distinct()));
 
-                    foreach (var psm in proteinGroup.AllPsmsBelowOnePercentFDR)
+                    foreach (var psm in proteinGroup.AllPsmsBelowOnePercentFDR.Where(v => v.FullSequence != null))
                     {
                         if (psmToProteinGroups.TryGetValue(psm, out var flashLfqProteinGroups))
                         {
@@ -278,7 +241,7 @@ namespace TaskLayer
                 var accessionToPg = new Dictionary<string, FlashLFQ.ProteinGroup>();
                 foreach (var psm in unambiguousPsmsBelowOnePercentFdr)
                 {
-                    var proteins = psm.CompactPeptides.SelectMany(b => b.Value.Item2).Select(b => b.Protein).Distinct();
+                    var proteins = psm.BestMatchingPeptides.Select(b => b.Peptide.Protein).Distinct();
 
                     foreach (var protein in proteins)
                     {
@@ -304,7 +267,7 @@ namespace TaskLayer
             var undefinedPg = new FlashLFQ.ProteinGroup("UNDEFINED", "", "");
             //sort the unambiguous psms by protease to make MBR compatible with multiple proteases
             Dictionary<Protease, List<PeptideSpectralMatch>> proteaseSortedPsms = new Dictionary<Protease, List<PeptideSpectralMatch>>();
-            Dictionary<Protease, FlashLFQResults> proteaseSortedFlashLFQResults = new Dictionary<Protease, FlashLFQResults>();
+            Dictionary<Protease, FlashLfqResults> proteaseSortedFlashLFQResults = new Dictionary<Protease, FlashLfqResults>();
 
             foreach (DigestionParams dp in Parameters.ListOfDigestionParams)
             {
@@ -343,7 +306,8 @@ namespace TaskLayer
                 ppmTolerance: Parameters.SearchParameters.QuantifyPpmTol,
                 matchBetweenRuns: Parameters.SearchParameters.MatchBetweenRuns,
                 silent: true,
-                optionalPeriodicTablePath: GlobalVariables.ElementsLocation);
+                optionalPeriodicTablePath: GlobalVariables.ElementsLocation, 
+                maxThreads: CommonParameters.MaxThreadsToUsePerFile);
 
             if (flashLFQIdentifications.Any())
             {
@@ -403,16 +367,9 @@ namespace TaskLayer
 
                     foreach (var spectraFile in proteinGroup.FilesForQuantification)
                     {
-                        if (Parameters.FlashLfqResults.proteinGroups.TryGetValue(proteinGroup.ProteinGroupName, out var flashLfqProteinGroup))
+                        if (Parameters.FlashLfqResults.ProteinGroups.TryGetValue(proteinGroup.ProteinGroupName, out var flashLfqProteinGroup))
                         {
-                            if (flashLfqProteinGroup.intensities.TryGetValue(spectraFile, out double intensity))
-                            {
-                                proteinGroup.IntensitiesByFile.Add(spectraFile, intensity);
-                            }
-                            else
-                            {
-                                proteinGroup.IntensitiesByFile.Add(spectraFile, 0);
-                            }
+                            proteinGroup.IntensitiesByFile.Add(spectraFile, flashLfqProteinGroup.GetIntensity(spectraFile));
                         }
                         else
                         {
@@ -440,11 +397,11 @@ namespace TaskLayer
             }
         }
 
-        private void WritePSMResults()
+        private void WritePsmResults()
         {
             Status("Writing results...", Parameters.SearchTaskId);
             List<PeptideSpectralMatch> filteredPsmListForOutput = Parameters.AllPsms
-                .Where(p => p.FdrInfo.QValue <= CommonParameters.QValueOutputFilter 
+                .Where(p => p.FdrInfo.QValue <= CommonParameters.QValueOutputFilter
                 && p.FdrInfo.QValueNotch <= CommonParameters.QValueOutputFilter).ToList();
 
             if (!Parameters.SearchParameters.WriteDecoys)
@@ -599,7 +556,7 @@ namespace TaskLayer
                 // write individual results
                 if (Parameters.CurrentRawFileList.Count > 1)
                 {
-                    foreach (var file in Parameters.FlashLfqResults.peaks)
+                    foreach (var file in Parameters.FlashLfqResults.Peaks)
                     {
                         WritePeakQuantificationResultsToTsv(Parameters.FlashLfqResults, Parameters.IndividualResultsOutputFolder,
                             file.Key.FilenameWithoutExtension + "_QuantifiedPeaks", new List<string> { Parameters.SearchTaskId, "Individual Spectra Files", file.Key.FullFilePathWithExtension });
@@ -623,7 +580,7 @@ namespace TaskLayer
                 // associate all confident PSMs with all possible proteins they could be digest products of (before or after parsimony)
                 foreach (PeptideSpectralMatch psm in confidentPsms)
                 {
-                    var myPepsWithSetMods = psm.CompactPeptides.SelectMany(p => p.Value.Item2);
+                    var myPepsWithSetMods = psm.BestMatchingPeptides.Select(p => p.Peptide);
 
                     foreach (var peptide in myPepsWithSetMods)
                     {
@@ -643,25 +600,25 @@ namespace TaskLayer
                 {
                     if (modType.Value == 1) // Write if observed and in database
                     {
-                        modificationsToWriteIfBoth.AddRange(GlobalVariables.AllModsKnown.Where(b => b.modificationType.Equals(modType.Key)));
+                        modificationsToWriteIfBoth.AddRange(GlobalVariables.AllModsKnown.Where(b => b.ModificationType.Equals(modType.Key)));
                     }
                     if (modType.Value == 2) // Write if in database
                     {
-                        modificationsToWriteIfInDatabase.AddRange(GlobalVariables.AllModsKnown.Where(b => b.modificationType.Equals(modType.Key)));
+                        modificationsToWriteIfInDatabase.AddRange(GlobalVariables.AllModsKnown.Where(b => b.ModificationType.Equals(modType.Key)));
                     }
                     if (modType.Value == 3) // Write if observed
                     {
-                        modificationsToWriteIfObserved.AddRange(GlobalVariables.AllModsKnown.Where(b => b.modificationType.Equals(modType.Key)));
+                        modificationsToWriteIfObserved.AddRange(GlobalVariables.AllModsKnown.Where(b => b.ModificationType.Equals(modType.Key)));
                     }
                 }
 
                 //generates dictionary of proteins with only localized modifications
-                var ModPsms = Parameters.AllPsms.Where(b => b.FdrInfo.QValueNotch <= 0.01 && b.FdrInfo.QValue <= 0.01 && !b.IsDecoy && b.BaseSequence != null && b.FullSequence != null).ToList();
+                var ModPsms = Parameters.AllPsms.Where(b => b.FdrInfo.QValueNotch <= 0.01 && b.FdrInfo.QValue <= 0.01 && !b.IsDecoy && b.FullSequence != null).ToList();
                 var proteinToConfidentModifiedSequences = new Dictionary<Protein, List<PeptideWithSetModifications>>();
 
                 foreach (PeptideSpectralMatch psm in ModPsms)
                 {
-                    var myPepsWithSetMods = psm.CompactPeptides.SelectMany(p => p.Value.Item2);
+                    var myPepsWithSetMods = psm.BestMatchingPeptides.Select(p => p.Peptide);
 
                     foreach (var peptide in myPepsWithSetMods)
                     {
@@ -681,10 +638,10 @@ namespace TaskLayer
                 {
                     if (!protein.IsDecoy)
                     {
-                        HashSet<Tuple<int, ModificationWithMass>> modsObservedOnThisProtein = new HashSet<Tuple<int, ModificationWithMass>>();
+                        HashSet<Tuple<int, Modification>> modsObservedOnThisProtein = new HashSet<Tuple<int, Modification>>();
                         if (proteinToConfidentModifiedSequences.ContainsKey(protein))
                         {
-                            modsObservedOnThisProtein = new HashSet<Tuple<int, ModificationWithMass>>(proteinToConfidentModifiedSequences[protein].SelectMany(b => b.AllModsOneIsNterminus.Select(c => new Tuple<int, ModificationWithMass>(GetOneBasedIndexInProtein(c.Key, b), c.Value))));
+                            modsObservedOnThisProtein = new HashSet<Tuple<int, Modification>>(proteinToConfidentModifiedSequences[protein].SelectMany(b => b.AllModsOneIsNterminus.Select(c => new Tuple<int, Modification>(GetOneBasedIndexInProtein(c.Key, b), c.Value))));
                         }
 
                         IDictionary<int, List<Modification>> modsToWrite = new Dictionary<int, List<Modification>>();
@@ -694,17 +651,16 @@ namespace TaskLayer
                             //Add if observed (regardless if in database)
                             var tempMod = observedMod.Item2;
 
-                            if (modificationsToWriteIfObserved.Contains(tempMod as Modification))
+                            if (modificationsToWriteIfObserved.Contains(tempMod))
                             {
                                 if (!modsToWrite.ContainsKey(observedMod.Item1))
                                 {
-                                    modsToWrite.Add(observedMod.Item1, new List<Modification> { observedMod.Item2 as Modification });
+                                    modsToWrite.Add(observedMod.Item1, new List<Modification> { observedMod.Item2});
                                 }
                                 else
                                 {
-                                    modsToWrite[observedMod.Item1].Add(observedMod.Item2 as Modification);
+                                    modsToWrite[observedMod.Item1].Add(observedMod.Item2);
                                 }
-                                continue;
                             }
                         }
 
@@ -714,9 +670,9 @@ namespace TaskLayer
                             foreach (var mod in modkv.Value)
                             {
                                 //Add if always In Database or if was observed and in database and not set to not include
-                                if (modificationsToWriteIfInDatabase.Contains(mod as Modification) ||
-                                    (modsObservedOnThisProtein.Contains(new Tuple<int, ModificationWithMass>(modkv.Key, mod as ModificationWithMass))
-                                        && modificationsToWriteIfBoth.Contains(mod as Modification)))
+                                if (modificationsToWriteIfInDatabase.Contains(mod) ||
+                                    (modsObservedOnThisProtein.Contains(new Tuple<int, Modification>(modkv.Key, mod))
+                                        && modificationsToWriteIfBoth.Contains(mod)))
                                 {
                                     if (!modsToWrite.ContainsKey(modkv.Key))
                                     {
@@ -850,9 +806,9 @@ namespace TaskLayer
                     output.Write('\t' + string.Join("\t", psm.Features));
 
                     // HACKY: Ignores all ambiguity
-                    var pwsm = psm.CompactPeptides.First().Value.Item2.First();
+                    var pwsm = psm.BestMatchingPeptides.First().Peptide;
 
-                    output.Write('\t' + (pwsm.PreviousAminoAcid + "." + pwsm.Sequence + "." + pwsm.NextAminoAcid).ToString());
+                    output.Write('\t' + (pwsm.PreviousAminoAcid + "." + pwsm.FullSequence + "." + pwsm.NextAminoAcid).ToString());
                     output.Write('\t' + (pwsm.Protein.Accession).ToString());
                     output.WriteLine();
                 }
@@ -884,7 +840,7 @@ namespace TaskLayer
             }
         }
 
-        private void WritePeptideQuantificationResultsToTsv(FlashLFQResults flashLFQResults, string outputFolder, string fileName, List<string> nestedIds)
+        private void WritePeptideQuantificationResultsToTsv(FlashLfqResults flashLFQResults, string outputFolder, string fileName, List<string> nestedIds)
         {
             var baseSeqPath = Path.Combine(outputFolder, fileName + "_BaseSequences.tsv");
             var fullSeqPath = Path.Combine(outputFolder, fileName + "_FullSequences.tsv");
@@ -895,7 +851,7 @@ namespace TaskLayer
             FinishedWritingFile(fullSeqPath, nestedIds);
         }
 
-        private void WritePeakQuantificationResultsToTsv(FlashLFQResults flashLFQResults, string outputFolder, string fileName, List<string> nestedIds)
+        private void WritePeakQuantificationResultsToTsv(FlashLfqResults flashLFQResults, string outputFolder, string fileName, List<string> nestedIds)
         {
             var peaksPath = Path.Combine(outputFolder, fileName + ".tsv");
 

@@ -2,6 +2,7 @@
 using FlashLFQ;
 using MassSpectrometry;
 using Proteomics;
+using Proteomics.Fragmentation;
 using Proteomics.ProteolyticDigestion;
 using System.Collections.Generic;
 
@@ -13,12 +14,11 @@ namespace TaskLayer
         public string SearchTaskId { get; set; }
         public SearchParameters SearchParameters { get; set; }
         public List<Protein> ProteinList { get; set; }
-        public List<ProductType> IonTypes { get; set; }
-        public List<ModificationWithMass> VariableModifications { get; set; }
+        public List<Modification> VariableModifications { get; set; }
         public HashSet<DigestionParams> ListOfDigestionParams { get; set; }
         public List<PeptideSpectralMatch> AllPsms { get; set; }
-        public FlashLFQResults FlashLfqResults { get; set; }
-        public List<ModificationWithMass> FixedModifications { get; set; }
+        public FlashLfqResults FlashLfqResults { get; set; }
+        public List<Modification> FixedModifications { get; set; }
         public int NumNotches { get; set; }
         public string OutputFolder { get; set; }
         public string IndividualResultsOutputFolder { get; set; }
