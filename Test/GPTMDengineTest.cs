@@ -5,6 +5,7 @@ using MassSpectrometry;
 using MzLibUtil;
 using NUnit.Framework;
 using Proteomics;
+using Proteomics.Fragmentation;
 using Proteomics.ProteolyticDigestion;
 using System;
 using System.Collections.Generic;
@@ -20,7 +21,7 @@ namespace Test
         {
             List<PeptideSpectralMatch> allResultingIdentifications = null;
             ModificationMotif.TryGetMotif("N", out ModificationMotif motifN);
-            var gptmdModifications = new List<ModificationWithMass> { new ModificationWithMass("21", "mt", motifN, TerminusLocalization.Any, 21.981943) };
+            var gptmdModifications = new List<Modification> { new Modification(_originalId: "21", _modificationType: "mt", _target: motifN, _locationRestriction: "Anywhere.", _monoisotopicMass: 21.981943) };
             IEnumerable<Tuple<double, double>> combos = new List<Tuple<double, double>>();
             Tolerance precursorMassTolerance = new PpmTolerance(10);
 
@@ -35,21 +36,13 @@ namespace Test
             var parentProtein = new Protein("NNNNN", "accession");
 
             DigestionParams digestionParams = new DigestionParams(minPeptideLength: 5);
-            List<ModificationWithMass> variableModifications = new List<ModificationWithMass>();
-            var modPep = parentProtein.Digest(digestionParams, new List<ModificationWithMass>(), variableModifications).First();
+            List<Modification> variableModifications = new List<Modification>();
+            var modPep = parentProtein.Digest(digestionParams, new List<Modification>(), variableModifications).First();
 
             var peptidesWithSetModifications = new List<PeptideWithSetModifications> { modPep };
-            PeptideSpectralMatch newPsm = new PeptideSpectralMatch(peptidesWithSetModifications.First().CompactPeptide(TerminusType.None), 0, 0, 0, scan, digestionParams);
-
-            Dictionary<ModificationWithMass, ushort> modsDictionary = new Dictionary<ModificationWithMass, ushort>();
-            Dictionary<CompactPeptideBase, HashSet<PeptideWithSetModifications>> matching = new Dictionary<CompactPeptideBase, HashSet<PeptideWithSetModifications>>
-            {
-                {peptidesWithSetModifications.First().CompactPeptide(TerminusType.None), new HashSet<PeptideWithSetModifications>{ peptidesWithSetModifications.First() } }
-            };
-
-            List<ProductType> lp = new List<ProductType> { ProductType.B, ProductType.Y };
+            PeptideSpectralMatch newPsm = new PeptideSpectralMatch(peptidesWithSetModifications.First(), 0, 0, 0, scan, digestionParams, new List<MatchedFragmentIon>());
+            
             Tolerance fragmentTolerance = new AbsoluteTolerance(0.01);
-            newPsm.MatchToProteinLinkedPeptides(matching);
 
             newPsm.SetFdrValues(1, 0, 0, 1, 0, 0, 0, 0, 0, false);
             allResultingIdentifications.Add(newPsm);
@@ -66,8 +59,8 @@ namespace Test
             List<PeptideSpectralMatch> allIdentifications = null;
             ModificationMotif.TryGetMotif("N", out ModificationMotif motifN);
             ModificationMotif.TryGetMotif("P", out ModificationMotif motifP);
-            var gptmdModifications = new List<ModificationWithMass> { new ModificationWithMass("21", "mt", motifN, TerminusLocalization.Any, 21.981943,null),
-                                                                      new ModificationWithMass("16",  "mt", motifP, TerminusLocalization.Any, 15.994915,null) };
+            var gptmdModifications = new List<Modification> { new Modification(_originalId: "21", _modificationType: "mt", _target: motifN, _locationRestriction: "Anywhere.", _monoisotopicMass: 21.981943),
+                                                                      new Modification(_originalId: "16",  _modificationType: "mt", _target: motifP, _locationRestriction: "Anywhere.", _monoisotopicMass: 15.994915) };
             IEnumerable<Tuple<double, double>> combos = new List<Tuple<double, double>> { new Tuple<double, double>(21.981943, 15.994915) };
             Tolerance precursorMassTolerance = new PpmTolerance(10);
 
@@ -76,23 +69,14 @@ namespace Test
 
             var parentProtein = new Protein("NNNPPP", "accession");
             DigestionParams digestionParams = new DigestionParams(minPeptideLength: 5);
-            List<ModificationWithMass> variableModifications = new List<ModificationWithMass>();
-            var modPep = parentProtein.Digest(digestionParams, new List<ModificationWithMass>(), variableModifications).First();
+            List<Modification> variableModifications = new List<Modification>();
+            var modPep = parentProtein.Digest(digestionParams, new List<Modification>(), variableModifications).First();
 
             var peptidesWithSetModifications = new List<PeptideWithSetModifications> { modPep };
-            PeptideSpectralMatch match = new PeptideSpectralMatch(peptidesWithSetModifications.First().CompactPeptide(TerminusType.None), 0, 0, 0, scan, digestionParams);
-            PeptideSpectralMatch newPsm = new PeptideSpectralMatch(peptidesWithSetModifications.First().CompactPeptide(TerminusType.None), 0, 0, 0, scan, digestionParams);
-            Dictionary<ModificationWithMass, ushort> modsDictionary = new Dictionary<ModificationWithMass, ushort>();
-            Dictionary<CompactPeptideBase, HashSet<PeptideWithSetModifications>> matching = new Dictionary<CompactPeptideBase, HashSet<PeptideWithSetModifications>>
-            {
-                {peptidesWithSetModifications.First().CompactPeptide(TerminusType.None), new HashSet<PeptideWithSetModifications>{ peptidesWithSetModifications.First() } }
-            };
-
-            List<ProductType> lp = new List<ProductType> { ProductType.B, ProductType.Y };
-
+            PeptideSpectralMatch match = new PeptideSpectralMatch(peptidesWithSetModifications.First(), 0, 0, 0, scan, digestionParams, new List<MatchedFragmentIon>());
+            PeptideSpectralMatch newPsm = new PeptideSpectralMatch(peptidesWithSetModifications.First(), 0, 0, 0, scan, digestionParams, new List<MatchedFragmentIon>());
+            
             Tolerance fragmentTolerance = new AbsoluteTolerance(0.01);
-
-            match.MatchToProteinLinkedPeptides(matching);
 
             match.SetFdrValues(1, 0, 0, 1, 0, 0, 0, 0, 0, false);
             allIdentifications = new List<PeptideSpectralMatch> { match };
@@ -101,8 +85,37 @@ namespace Test
             var res = (GptmdResults)engine.Run();
             Assert.AreEqual(1, res.Mods.Count);
             Assert.AreEqual(6, res.Mods["accession"].Count);
-            Assert.AreEqual(3, res.Mods["accession"].Where(b => b.Item2.id.Equals("21")).Count());
-            Assert.AreEqual(3, res.Mods["accession"].Where(b => b.Item2.id.Equals("16")).Count());
+            Assert.AreEqual(3, res.Mods["accession"].Where(b => b.Item2.OriginalId.Equals("21")).Count());
+            Assert.AreEqual(3, res.Mods["accession"].Where(b => b.Item2.OriginalId.Equals("16")).Count());
+        }
+
+        [Test]
+        [TestCase("P", "PETID", "junk", 1, 5, 1, false)]
+        [TestCase("P", "PETID", "Unassigned.", 1, 5, 1, false)]
+        [TestCase("P", "PETID", "Anywhere.", 1, 5, 1, true)]
+        [TestCase("P", "PETID", "N-terminal.", 1, 5, 1, true)]
+        [TestCase("P", "PETID", "Peptide N-terminal.", 1, 5, 1, true)]
+        [TestCase("P", "PETID", "C-terminal.", 1, 5, 1, false)]
+        [TestCase("P", "PETID", "Peptide C-terminal.", 1, 5, 1, false)]
+        [TestCase("E", "PETID", "Anywhere.", 2, 5, 2, true)]
+        [TestCase("E", "PETID", "N-terminal.", 2, 5, 2, true)]
+        [TestCase("E", "PETID", "Peptide N-terminal.", 2, 5, 2, false)]
+        [TestCase("E", "PETID", "C-terminal.", 2, 5, 2, false)]
+        [TestCase("E", "PETID", "Peptide C-terminal.", 2, 5, 2, false)]
+        [TestCase("D", "PETID", "Anywhere.", 5, 5, 5, true)]
+        [TestCase("D", "PETID", "N-terminal.", 5, 5, 5, false)]
+        [TestCase("D", "PETID", "Peptide N-terminal.", 5, 5, 5, false)]
+        [TestCase("D", "PETID", "C-terminal.", 5, 5, 5, true)]
+        [TestCase("D", "PETID", "Peptide C-terminal.", 5, 5, 5, true)]
+        public static void Test_GptmdEngineModFits(string targetAminoAcid, string proteinSequence, string locationRestriction, int peptideOneBasedIndex, int peptideLength, int proteinOneBasedIndex, bool result)
+        {
+            ModificationMotif.TryGetMotif(targetAminoAcid, out ModificationMotif motif);
+            Modification attemptToLocalize = new Modification(null, null, null, null, _target: motif, _locationRestriction: locationRestriction, _chemicalFormula: null, _monoisotopicMass: 1, _databaseReference: null, _taxonomicRange: null, _keywords: null, _neutralLosses: null, _diagnosticIons: null, _fileOrigin: null);
+            Dictionary<int, List<Modification>> oneBasedModifications = new Dictionary<int, List<Modification>>();
+            oneBasedModifications.Add(proteinOneBasedIndex, new List<Modification>() { attemptToLocalize });
+            Protein protein = new Protein(proteinSequence, null, null, null, oneBasedModifications, null, null, null, false, false, null, null, null, "");
+
+            Assert.AreEqual(result, GptmdEngine.ModFits(attemptToLocalize, protein, peptideOneBasedIndex, peptideLength, proteinOneBasedIndex));
         }
     }
 }

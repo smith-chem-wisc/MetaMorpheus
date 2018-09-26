@@ -1,4 +1,5 @@
 using MassSpectrometry;
+using Proteomics.Fragmentation;
 using System.Collections.Generic;
 
 namespace MetaMorpheusGUI
@@ -8,7 +9,7 @@ namespace MetaMorpheusGUI
         public int ScanNum { get; private set; }
         public string FullSequence { get; private set; }
         public string FileName { get; private set; }
-        public List<TheoreticalFragmentIon> FragmentIons { get; private set; }
+        public List<MatchedFragmentIon> FragmentIons { get; private set; }
         public int NumExperimentalPeaks { get; private set; }
         public double TotalIonCurrent { get; private set; }
         public int PrecursorScanNumber { get; private set; }
@@ -58,7 +59,7 @@ namespace MetaMorpheusGUI
         public string CumulativeTargetNotch { get; private set; }
         public string CumulativeDecoyNotch { get; private set; }
         
-        public MetaDrawPsm(int oneBasedScanNumber, string fileName, string fullSequence, List<TheoreticalFragmentIon> fragmentIons, int expPeaks, double ionNum, int preScan, int preChar, double preMZ, double preMass, double score, double dlScore, string notch, int diffpeak,string pepshare, string bseq, string esseq, string mods, string modscf, string modsccf, string nvm, string misscleav, string pepmonomass, string mdda, string mdppm, string proteinacc, string proteinname, string gamename, string seqvar, string orgname, string con, string dec, string pepdes, string strtendresinprotein, string prevamino, string nxtamino, string allscores, string theosearch, string deccontaminatetarget, string matchioncount, string matchionseries, string matchionmasstocharge, string matchedionmdda, string matchedionmdppm, string matchedionint, string localscores, string improvposs, string cumutarget, string cumudeco, string qvalue, string cumutarnotch, string cumudecnotch)
+        public MetaDrawPsm(int oneBasedScanNumber, string fileName, string fullSequence, List<MatchedFragmentIon> fragmentIons, int expPeaks, double ionNum, int preScan, int preChar, double preMZ, double preMass, double score, double dlScore, string notch, int diffpeak,string pepshare, string bseq, string esseq, string mods, string modscf, string modsccf, string nvm, string misscleav, string pepmonomass, string mdda, string mdppm, string proteinacc, string proteinname, string gamename, string seqvar, string orgname, string con, string dec, string pepdes, string strtendresinprotein, string prevamino, string nxtamino, string allscores, string theosearch, string deccontaminatetarget, string matchioncount, string matchionseries, string matchionmasstocharge, string matchedionmdda, string matchedionmdppm, string matchedionint, string localscores, string improvposs, string cumutarget, string cumudeco, string qvalue, string cumutarnotch, string cumudecnotch)
         {
             this.ScanNum = oneBasedScanNumber;
             this.FileName = fileName;

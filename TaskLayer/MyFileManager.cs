@@ -19,7 +19,7 @@ namespace TaskLayer
 {
     public class MyFileManager
     {
-        public enum ThermoMsFileReaderVersionCheck { DllsNotFound, IncorrectVersion, CorrectVersion };
+        public enum ThermoMsFileReaderVersionCheck { DllsNotFound, IncorrectVersion, CorrectVersion, SomeDllsMissing };
 
         private readonly bool DisposeOfFileWhenDone;
         private readonly Dictionary<string, MsDataFile> MyMsDataFiles = new Dictionary<string, MsDataFile>();
@@ -61,6 +61,10 @@ namespace TaskLayer
                 {
                     return ThermoMsFileReaderVersionCheck.IncorrectVersion;
                 }
+            }
+            else if(File.Exists(fileIoAssumedPath) || File.Exists(fregistryAssumedPath) || File.Exists(xRawFileAssumedPath))
+            {
+                return ThermoMsFileReaderVersionCheck.SomeDllsMissing;
             }
 
             return ThermoMsFileReaderVersionCheck.DllsNotFound;

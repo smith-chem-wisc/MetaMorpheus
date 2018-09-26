@@ -2,7 +2,7 @@
 {
     public enum PsmCrossType
     {
-        Singe,
+        Single,
         Cross,
         DeadEnd,
         Loop,
