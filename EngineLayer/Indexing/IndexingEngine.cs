@@ -68,7 +68,7 @@ namespace EngineLayer.Indexing
             // digest database
             List<PeptideWithSetModifications> globalPeptides = new List<PeptideWithSetModifications>();
 
-            Parallel.ForEach(Partitioner.Create(0, ProteinList.Count), new ParallelOptions { MaxDegreeOfParallelism = 1 }, (range, loopState) =>
+            Parallel.ForEach(Partitioner.Create(0, ProteinList.Count), new ParallelOptions { MaxDegreeOfParallelism = commonParameters.MaxThreadsToUsePerFile }, (range, loopState) =>
             {
                 List<PeptideWithSetModifications> localPeptides = new List<PeptideWithSetModifications>();
 
