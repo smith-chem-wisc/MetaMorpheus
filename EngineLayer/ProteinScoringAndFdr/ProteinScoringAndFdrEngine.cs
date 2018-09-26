@@ -42,11 +42,11 @@ namespace EngineLayer
             var peptideToPsmMatching = new Dictionary<PeptideWithSetModifications, HashSet<PeptideSpectralMatch>>();
             foreach (var psm in psmList)
             {
-                if (psm.FdrInfo.QValueNotch < 0.01 && psm.FdrInfo.QValue < 0.01)
+                if (psm.FdrInfo.QValueNotch <= 0.01 && psm.FdrInfo.QValue <= 0.01)
                 {
                     if ((TreatModPeptidesAsDifferentPeptides && psm.FullSequence != null) || (!TreatModPeptidesAsDifferentPeptides && psm.BaseSequence != null))
                     {
-                        foreach (var pepWithSetMods in psm.CompactPeptides.SelectMany(b => b.Value.Item2))
+                        foreach (var pepWithSetMods in psm.BestMatchingPeptides.Select(p => p.Peptide))
                         {
                             if (!peptideToPsmMatching.TryGetValue(pepWithSetMods, out HashSet<PeptideSpectralMatch> psmsForThisPeptide))
                                 peptideToPsmMatching.Add(pepWithSetMods, new HashSet<PeptideSpectralMatch> { psm });
@@ -92,12 +92,10 @@ namespace EngineLayer
                         // check to make sure they have the same peptides, then merge them
                         foreach (var p in pgsWithThisScore)
                         {
-                            var seqs1 = new HashSet<string>(p.AllPeptides.Select(x => x.Sequence));
-                            var seqs2 = new HashSet<string>(pg[i].AllPeptides.Select(x => x.Sequence));
-                            var psms1 = p.AllPsmsBelowOnePercentFDR;
-                            var psms2 = pg[i].AllPsmsBelowOnePercentFDR;
+                            var seqs1 = new HashSet<string>(p.AllPeptides.Select(x => x.FullSequence + x.DigestionParams.Protease));
+                            var seqs2 = new HashSet<string>(pg[i].AllPeptides.Select(x => x.FullSequence + x.DigestionParams.Protease));
 
-                            if (p != pg[i] && seqs1.SetEquals(seqs2) && psms1.SetEquals(psms2))
+                            if (p != pg[i] && seqs1.SetEquals(seqs2))
                             {
                                 pg[i].MergeProteinGroupWith(p);
                             }
@@ -119,7 +117,7 @@ namespace EngineLayer
             if (NoOneHitWonders)
             {
                 if (TreatModPeptidesAsDifferentPeptides)
-                    proteinGroups = proteinGroups.Where(p => p.IsDecoy || new HashSet<string>(p.AllPeptides.Select(x => x.Sequence)).Count > 1).ToList();
+                    proteinGroups = proteinGroups.Where(p => p.IsDecoy || new HashSet<string>(p.AllPeptides.Select(x => x.FullSequence)).Count > 1).ToList();
                 else
                     proteinGroups = proteinGroups.Where(p => p.IsDecoy || new HashSet<string>(p.AllPeptides.Select(x => x.BaseSequence)).Count > 1).ToList();
             }

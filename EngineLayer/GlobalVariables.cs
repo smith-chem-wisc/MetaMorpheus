@@ -1,5 +1,7 @@
-﻿using Nett;
+﻿using MassSpectrometry;
+using Nett;
 using Proteomics;
+using Proteomics.Fragmentation;
 using Proteomics.ProteolyticDigestion;
 using System;
 using System.Collections.Generic;
@@ -59,12 +61,38 @@ namespace EngineLayer
 
             foreach (var modFile in Directory.GetFiles(Path.Combine(DataDir, @"Mods")))
             {
-                AddMods(UsefulProteomicsDatabases.PtmListLoader.ReadModsFromFile(modFile));
+                AddMods(UsefulProteomicsDatabases.PtmListLoader.ReadModsFromFile(modFile, out var errorMods));
             }
-            AddMods(UnimodDeserialized.OfType<ModificationWithLocation>());
-            AddMods(UniprotDeseralized.OfType<ModificationWithLocation>());
+
+            // TODO: need to add motif to Unimod/UniProt ID
+            //AddMods(UnimodDeserialized.OfType<Modification>());
+            AddMods(UniprotDeseralized.OfType<Modification>());
+
+            // populate dictionaries of known mods/proteins for deserialization
+
+            AllModsKnownDictionary = new Dictionary<string, Modification>();
+            foreach (Modification mod in AllModsKnown)
+            {
+                if (!AllModsKnownDictionary.ContainsKey(mod.IdWithMotif))
+                {
+                    AllModsKnownDictionary.Add(mod.IdWithMotif, mod);
+                }
+                // no error thrown if multiple mods with this ID are present - just pick one
+            }
 
             GlobalSettings = Toml.ReadFile<GlobalSettings>(Path.Combine(DataDir, @"settings.toml"));
+            AllSupportedDissociationTypes = new Dictionary<string, DissociationType> {
+                { DissociationType.CID.ToString(), DissociationType.CID },
+                { DissociationType.ECD.ToString(), DissociationType.ECD },
+                { DissociationType.ETD.ToString(), DissociationType.ETD },
+                { DissociationType.HCD.ToString(), DissociationType.HCD },
+                { DissociationType.EThcD.ToString(), DissociationType.EThcD },
+
+                // TODO: allow custom fragmentation type
+                //{ DissociationType.Custom.ToString(), DissociationType.Custom }
+
+                // TODO: allow reading from scan header (autodetect dissociation type)
+            };
         }
 
         public static List<string> ErrorsReadingMods = new List<string>();
@@ -79,43 +107,46 @@ namespace EngineLayer
         public static UsefulProteomicsDatabases.Generated.obo PsiModDeserialized { get; }
         public static IEnumerable<Modification> AllModsKnown { get { return _AllModsKnown.AsEnumerable(); } }
         public static IEnumerable<string> AllModTypesKnown { get { return _AllModTypesKnown.AsEnumerable(); } }
+        public static Dictionary<string, Modification> AllModsKnownDictionary { get; private set; }
+        public static Dictionary<string, DissociationType> AllSupportedDissociationTypes { get; private set; }
+
         public static string ExperimentalDesignFileName { get; }
 
         public static void AddMods(IEnumerable<Modification> modifications)
         {
             foreach (var mod in modifications)
             {
-                if (string.IsNullOrEmpty(mod.modificationType) || string.IsNullOrEmpty(mod.id))
+                if (string.IsNullOrEmpty(mod.ModificationType) || string.IsNullOrEmpty(mod.IdWithMotif))
                 {
                     ErrorsReadingMods.Add(mod.ToString() + Environment.NewLine + " has null or empty modification type");
                     continue;
                 }
-                if (AllModsKnown.Any(b => b.id.Equals(mod.id) && b.modificationType.Equals(mod.modificationType) && !b.Equals(mod)))
+                if (AllModsKnown.Any(b => b.IdWithMotif.Equals(mod.IdWithMotif) && b.ModificationType.Equals(mod.ModificationType) && !b.Equals(mod)))
                 {
                     ErrorsReadingMods.Add("Modification id and type are equal, but some fields are not! " +
                         "The following mod was not read in: " + Environment.NewLine + mod.ToString());
                     continue;
                 }
-                else if (AllModsKnown.Any(b => b.id.Equals(mod.id) && b.modificationType.Equals(mod.modificationType)))
+                else if (AllModsKnown.Any(b => b.IdWithMotif.Equals(mod.IdWithMotif) && b.ModificationType.Equals(mod.ModificationType)))
                 {
                     // same ID, same mod type, and same mod properties; continue and don't output an error message
                     // this could result from reading in an XML database with mods annotated at the top
                     // that are already loaded in MetaMorpheus
                     continue;
                 }
-                else if (AllModsKnown.Any(m => m.id == mod.id))
+                else if (AllModsKnown.Any(m => m.IdWithMotif == mod.IdWithMotif))
                 {
                     // same ID but different mod types. This can happen if the user names a mod the same as a UniProt mod
                     // this is problematic because if a mod is annotated in the database, all we have to go on is an ID ("description" tag).
                     // so we don't know which mod to use, causing unnecessary ambiguity
-                    ErrorsReadingMods.Add("Duplicate mod IDs! Skipping " + mod.modificationType + ":" + mod.id);
+                    ErrorsReadingMods.Add("Duplicate mod IDs! Skipping " + mod.ModificationType + ":" + mod.IdWithMotif);
                     continue;
                 }
                 else
                 {
                     // no errors! add the mod
                     _AllModsKnown.Add(mod);
-                    _AllModTypesKnown.Add(mod.modificationType);
+                    _AllModTypesKnown.Add(mod.ModificationType);
                 }
             }
         }
@@ -131,5 +162,6 @@ namespace EngineLayer
                 return psmString;
             }
         }
+
     }
 }

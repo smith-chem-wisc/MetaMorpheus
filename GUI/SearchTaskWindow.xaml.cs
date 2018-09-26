@@ -11,7 +11,9 @@ using System.Windows.Controls;
 using System.Windows.Input;
 using TaskLayer;
 using UsefulProteomicsDatabases;
+using Proteomics.Fragmentation;
 using Proteomics.ProteolyticDigestion;
+using MassSpectrometry;
 
 namespace MetaMorpheusGUI
 {
@@ -94,42 +96,47 @@ namespace MetaMorpheusGUI
                 initiatorMethionineBehaviorComboBox.Items.Add(initiatior_methionine_behavior);
             }
 
+            foreach (string dissassociationType in GlobalVariables.AllSupportedDissociationTypes.Keys)
+            {
+                dissociationTypeComboBox.Items.Add(dissassociationType);
+            }
+
             productMassToleranceComboBox.Items.Add("Da");
             productMassToleranceComboBox.Items.Add("ppm");
 
             precursorMassToleranceComboBox.Items.Add("Da");
             precursorMassToleranceComboBox.Items.Add("ppm");
 
-            foreach (var hm in GlobalVariables.AllModsKnown.GroupBy(b => b.modificationType))
+            foreach (var hm in GlobalVariables.AllModsKnown.Where(b => b.ValidModification == true).GroupBy(b => b.ModificationType))
             {
                 var theModType = new ModTypeForGrid(hm.Key);
                 ModSelectionGridItems.Add(theModType);
             }
             ModSelectionGrid.ItemsSource = ModSelectionGridItems;
 
-            foreach (var hm in GlobalVariables.AllModsKnown.GroupBy(b => b.modificationType))
+            foreach (var hm in GlobalVariables.AllModsKnown.Where(b => b.ValidModification == true).GroupBy(b => b.ModificationType))
             {
                 var theModType = new ModTypeForTreeView(hm.Key, false);
                 FixedModTypeForTreeViewObservableCollection.Add(theModType);
                 foreach (var uah in hm)
                 {
-                    theModType.Children.Add(new ModForTreeView(uah.ToString(), false, uah.id, false, theModType));
+                    theModType.Children.Add(new ModForTreeView(uah.ToString(), false, uah.IdWithMotif, false, theModType));
                 }
             }
             fixedModsTreeView.DataContext = FixedModTypeForTreeViewObservableCollection;
 
-            foreach (var hm in GlobalVariables.AllModsKnown.GroupBy(b => b.modificationType))
+            foreach (var hm in GlobalVariables.AllModsKnown.Where(b => b.ValidModification == true).GroupBy(b => b.ModificationType))
             {
                 var theModType = new ModTypeForTreeView(hm.Key, false);
                 VariableModTypeForTreeViewObservableCollection.Add(theModType);
                 foreach (var uah in hm)
                 {
-                    theModType.Children.Add(new ModForTreeView(uah.ToString(), false, uah.id, false, theModType));
+                    theModType.Children.Add(new ModForTreeView(uah.ToString(), false, uah.IdWithMotif, false, theModType));
                 }
             }
             variableModsTreeView.DataContext = VariableModTypeForTreeViewObservableCollection;
 
-            foreach (var hm in GlobalVariables.AllModsKnown.GroupBy(b => b.modificationType))
+            foreach (var hm in GlobalVariables.AllModsKnown.Where(b => b.ValidModification == true).GroupBy(b => b.ModificationType))
             {
                 LocalizeModTypeForTreeViewObservableCollection.Add(new ModTypeForLoc(hm.Key));
             }
@@ -162,15 +169,12 @@ namespace MetaMorpheusGUI
             maxModificationIsoformsTextBox.Text = task.CommonParameters.DigestionParams.MaxModificationIsoforms.ToString(CultureInfo.InvariantCulture);
             MaxModNumTextBox.Text = task.CommonParameters.DigestionParams.MaxModsForPeptide.ToString(CultureInfo.InvariantCulture);
             initiatorMethionineBehaviorComboBox.SelectedIndex = (int)task.CommonParameters.DigestionParams.InitiatorMethionineBehavior;
+            dissociationTypeComboBox.SelectedItem = task.CommonParameters.DissociationType.ToString();
             productMassToleranceTextBox.Text = task.CommonParameters.ProductMassTolerance.Value.ToString(CultureInfo.InvariantCulture);
             productMassToleranceComboBox.SelectedIndex = task.CommonParameters.ProductMassTolerance is AbsoluteTolerance ? 0 : 1;
             precursorMassToleranceTextBox.Text = task.CommonParameters.PrecursorMassTolerance.Value.ToString(CultureInfo.InvariantCulture);
             precursorMassToleranceComboBox.SelectedIndex = task.CommonParameters.PrecursorMassTolerance is AbsoluteTolerance ? 0 : 1;
             addCompIonCheckBox.IsChecked = task.CommonParameters.AddCompIons;
-            bCheckBox.IsChecked = task.CommonParameters.BIons;
-            yCheckBox.IsChecked = task.CommonParameters.YIons;
-            cCheckBox.IsChecked = task.CommonParameters.CIons;
-            zdotCheckBox.IsChecked = task.CommonParameters.ZdotIons;
             numberOfDatabaseSearchesTextBox.Text = task.CommonParameters.TotalPartitions.ToString(CultureInfo.InvariantCulture);
             deconvolutePrecursors.IsChecked = task.CommonParameters.DoPrecursorDeconvolution;
             useProvidedPrecursor.IsChecked = task.CommonParameters.UseProvidedPrecursorInfo;
@@ -284,41 +288,31 @@ namespace MetaMorpheusGUI
 
         private void SaveButton_Click(object sender, RoutedEventArgs e)
         {
-            if (nonSpecificSearchRadioButton1.IsChecked.Value || semiSpecificSearchRadioButton.IsChecked.Value)
+            CleavageSpecificity searchModeType = CleavageSpecificity.Full; //classic and modern by default
+            if (semiSpecificSearchRadioButton.IsChecked.Value) //semi
             {
-                if ((bCheckBox.IsChecked.Value || cCheckBox.IsChecked.Value) && (yCheckBox.IsChecked.Value || zdotCheckBox.IsChecked.Value))
-                {
-                    //MessageBox.Show("Only ion types from a single terminus are allowed for this search algorithm. \ne.g. b- and/or c-ions OR y- and/or zdot-ions. \nC-terminal ions (y and/or zdot) will be chosen by default.");
-                    bCheckBox.IsChecked = false;
-                    cCheckBox.IsChecked = false;
-                }
+                searchModeType = CleavageSpecificity.Semi;
+            }
+            else if (nonSpecificSearchRadioButton1.IsChecked.Value) //non
+            {
+                searchModeType = CleavageSpecificity.None;
+            }
+            //else it's the default of full
+
+            if (searchModeType != CleavageSpecificity.Full)
+            {
                 if (((Protease)proteaseComboBox.SelectedItem).Name.Contains("non-specific"))
                 {
-                    proteaseComboBox.SelectedItem = proteaseComboBox.Items.CurrentItem;
-                    if ((bCheckBox.IsChecked.Value || cCheckBox.IsChecked.Value))
+                    if (nTerminalIons.IsChecked.Value)
                     {
-                        for (int i = 0; i < proteaseComboBox.Items.Count; i++)
-                        {
-                            if (((Protease)proteaseComboBox.Items[i]).Name.Equals("singleN"))
-                            {
-                                proteaseComboBox.SelectedItem = proteaseComboBox.Items[i];
-                                break;
-                            }
-                        }
+                        cTerminalIons.IsChecked = false;
                     }
-                    else
+                    else //we're not allowing no ion types. It must have C if it doesn't have N.
                     {
-                        for (int i = 0; i < proteaseComboBox.Items.Count; i++)
-                        {
-                            if (((Protease)proteaseComboBox.Items[i]).Name.Equals("singleC"))
-                            {
-                                proteaseComboBox.SelectedItem = proteaseComboBox.Items[i];
-                                break;
-                            }
-                        }
+                        cTerminalIons.IsChecked = true;
                     }
                 }
-                if (((Protease)proteaseComboBox.SelectedItem).Name.Contains("semi-trypsin"))
+                if (((Protease)proteaseComboBox.SelectedItem).Name.Contains("semi-trypsin")) //you can't use this protease with the fast semi search
                 {
                     proteaseComboBox.Items.MoveCurrentToFirst();
                     proteaseComboBox.SelectedItem = proteaseComboBox.Items.CurrentItem;
@@ -343,24 +337,40 @@ namespace MetaMorpheusGUI
             }
 
             Protease protease = (Protease)proteaseComboBox.SelectedItem;
+            DissociationType dissociationType = GlobalVariables.AllSupportedDissociationTypes[dissociationTypeComboBox.SelectedItem.ToString()];
+            FragmentationTerminus fragmentationTerminus = FragmentationTerminus.Both;
+            if (nTerminalIons.IsChecked.Value && !cTerminalIons.IsChecked.Value)
+            {
+                fragmentationTerminus = FragmentationTerminus.N;
+            }
+            else if (!nTerminalIons.IsChecked.Value && cTerminalIons.IsChecked.Value)
+            {
+                fragmentationTerminus = FragmentationTerminus.C;
+            }
+            else if (!nTerminalIons.IsChecked.Value && !cTerminalIons.IsChecked.Value) //why would you want this
+            {
+                fragmentationTerminus = FragmentationTerminus.None;
+                MessageBox.Show("Warning: No ion types were selected. MetaMorpheus will be unable to search MS/MS spectra.");
+            }
+
             bool semiProteaseDigestion = (semiSpecificSearchRadioButton.IsChecked.Value && ((Protease)proteaseComboBox.SelectedItem).CleavageSpecificity != CleavageSpecificity.SingleN && ((Protease)proteaseComboBox.SelectedItem).CleavageSpecificity != CleavageSpecificity.SingleC);
-            TerminusType terminusTypeSemiProtease = (bCheckBox.IsChecked.Value || cCheckBox.IsChecked.Value ? TerminusType.N : TerminusType.C);
             int maxMissedCleavages = string.IsNullOrEmpty(missedCleavagesTextBox.Text) ? int.MaxValue : (int.Parse(missedCleavagesTextBox.Text, NumberStyles.Any, CultureInfo.InvariantCulture));
             int minPeptideLengthValue = (int.Parse(MinPeptideLengthTextBox.Text, NumberStyles.Any, CultureInfo.InvariantCulture));
             int maxPeptideLengthValue = string.IsNullOrEmpty(MaxPeptideLengthTextBox.Text) ? int.MaxValue : (int.Parse(MaxPeptideLengthTextBox.Text, NumberStyles.Any, CultureInfo.InvariantCulture));
             int maxModificationIsoformsValue = (int.Parse(maxModificationIsoformsTextBox.Text, CultureInfo.InvariantCulture));
             int maxModsForPeptideValue = (int.Parse(MaxModNumTextBox.Text, CultureInfo.InvariantCulture));
             InitiatorMethionineBehavior initiatorMethionineBehavior = ((InitiatorMethionineBehavior)initiatorMethionineBehaviorComboBox.SelectedIndex);
+
             DigestionParams digestionParamsToSave = new DigestionParams(
                 protease: protease.Name,
-                semiProteaseDigestion: semiProteaseDigestion,
-                terminusTypeSemiProtease: terminusTypeSemiProtease,
                 maxMissedCleavages: maxMissedCleavages,
                 minPeptideLength: minPeptideLengthValue,
                 maxPeptideLength: maxPeptideLengthValue,
                 maxModificationIsoforms: maxModificationIsoformsValue,
                 initiatorMethionineBehavior: initiatorMethionineBehavior,
-                maxModsForPeptides: maxModsForPeptideValue);
+                maxModsForPeptides: maxModsForPeptideValue,
+                searchModeType: searchModeType,
+                fragmentationTerminus: fragmentationTerminus);
 
             Tolerance ProductMassTolerance;
             if (productMassToleranceComboBox.SelectedIndex == 0)
@@ -420,10 +430,7 @@ namespace MetaMorpheusGUI
                 calculateEValue: eValueCheckBox.IsChecked.Value,
                 listOfModsFixed: listOfModsFixed,
                 listOfModsVariable: listOfModsVariable,
-                bIons: bCheckBox.IsChecked.Value,
-                yIons: yCheckBox.IsChecked.Value,
-                cIons: cCheckBox.IsChecked.Value,
-                zDotIons: zdotCheckBox.IsChecked.Value,
+                dissociationType: dissociationType,
                 precursorMassTolerance: PrecursorMassTolerance,
                 productMassTolerance: ProductMassTolerance,
                 digestionParams: digestionParamsToSave,
@@ -442,7 +449,7 @@ namespace MetaMorpheusGUI
             {
                 TheTask.SearchParameters.SearchType = SearchType.Modern;
             }
-            else //if (nonSpecificSearchRadioButton.IsChecked.Value)
+            else //both semi and nonspecific are termed "nonspecific", because they both contain at least one nonspecific cleavage and they share the same algorithm
             {
                 TheTask.SearchParameters.SearchType = SearchType.NonSpecific;
             }
@@ -676,6 +683,11 @@ namespace MetaMorpheusGUI
             {
                 CancelButton_Click(sender, e);
             }
+        }
+
+        private void dissassociationTypeComboBox_SelectionChanged(object sender, SelectionChangedEventArgs e)
+        {
+
         }
     }
 
