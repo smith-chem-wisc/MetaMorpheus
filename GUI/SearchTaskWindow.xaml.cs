@@ -325,7 +325,7 @@ namespace MetaMorpheusGUI
                             proteaseComboBox.SelectedItem = proteaseComboBox.Items.CurrentItem;
                         }
                     }
-                    searchModeType = CleavageSpecificity.Full; //we're going to change this to override the semi, or the singleN/C proteases will get be treated as semi instead of full
+                    searchModeType = CleavageSpecificity.Full; //we're going to change this to override the semi, or the singleN/C proteases will be treated as semi instead of full
                 }
                 else if (((Protease)proteaseComboBox.SelectedItem).Name.Contains("semi-trypsin")) //you can't use this protease with the fast semi search
                 {
