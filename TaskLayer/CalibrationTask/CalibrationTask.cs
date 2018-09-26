@@ -36,9 +36,6 @@ namespace TaskLayer
         {
             LoadModifications(taskId, out var variableModifications, out var fixedModifications, out var localizeableModificationTypes);
 
-            // what types of fragment ions to search for
-            var ionTypes = DissociationTypeCollection.ProductsFromDissociationType[CommonParameters.DissociationType];
-
             // load proteins
             List<Protein> proteinList = LoadProteins(taskId, dbFilenameList, true, DecoyType.Reverse, localizeableModificationTypes, CommonParameters);
 
@@ -67,13 +64,14 @@ namespace TaskLayer
                 NewFileSpecificTomls = new List<string>()
             };
 
-            object lock1 = new object();
-
             var myFileManager = new MyFileManager(true);
+            List<string> spectraFilesAfterCalibration = new List<string>();
 
             for (int spectraFileIndex = 0; spectraFileIndex < currentRawFileList.Count; spectraFileIndex++)
             {
                 if (GlobalVariables.StopLoops) { break; }
+
+                bool couldNotFindEnoughDatapoints = false;
 
                 // get filename stuff
                 var originalUncalibratedFilePath = currentRawFileList[spectraFileIndex];
@@ -84,16 +82,12 @@ namespace TaskLayer
                 StartingDataFile(originalUncalibratedFilePath, new List<string> { taskId, "Individual Spectra Files", originalUncalibratedFilePath });
 
                 CommonParameters combinedParams = SetAllFileSpecificCommonParams(CommonParameters, fileSettingsList[spectraFileIndex]);
-
-                MsDataFile myMsDataFile;
-
+                
                 // load the file
                 Status("Loading spectra file...", new List<string> { taskId, "Individual Spectra Files" });
-                lock (lock1)
-                {
-                    myMsDataFile = myFileManager.LoadFile(originalUncalibratedFilePath, CommonParameters.TopNpeaks, CommonParameters.MinRatio, CommonParameters.TrimMs1Peaks, CommonParameters.TrimMsMsPeaks, CommonParameters);
-                }
 
+                var myMsDataFile = myFileManager.LoadFile(originalUncalibratedFilePath, CommonParameters.TopNpeaks, CommonParameters.MinRatio, CommonParameters.TrimMs1Peaks, CommonParameters.TrimMsMsPeaks, CommonParameters);
+                
                 // get datapoints to fit calibration function to
                 Status("Acquiring calibration data points...", new List<string> { taskId, "Individual Spectra Files" });
                 DataPointAquisitionResults acquisitionResults = null;
@@ -137,13 +131,22 @@ namespace TaskLayer
                         {
                             Warn("Calibration failure! Could not find enough MS2 datapoints. Required " + NumRequiredMs2Datapoints + ", saw " + acquisitionResults.Ms2List.Count);
                         }
+
+                        couldNotFindEnoughDatapoints = true;
                         FinishedDataFile(originalUncalibratedFilePath, new List<string> { taskId, "Individual Spectra Files", originalUncalibratedFilePath });
-                        return MyTaskResults;
+                        break;
                     }
 
                     Warn("Could not find enough PSMs to calibrate with; opening up tolerances to " +
                     Math.Round(CommonParameters.PrecursorMassTolerance.Value, 2) + " ppm precursor and " +
                     Math.Round(CommonParameters.ProductMassTolerance.Value, 2) + " ppm product");
+                }
+
+                if (couldNotFindEnoughDatapoints)
+                {
+                    spectraFilesAfterCalibration.Add(Path.GetFileNameWithoutExtension(currentRawFileList[spectraFileIndex]));
+                    ReportProgress(new ProgressEventArgs(100, "Failed to calibrate!", new List<string> { taskId, "Individual Spectra Files", originalUncalibratedFilenameWithoutExtension }));
+                    continue;
                 }
 
                 // stats before calibration
@@ -158,7 +161,7 @@ namespace TaskLayer
 
                 //update file
                 myMsDataFile = engine.CalibratedDataFile;
-              
+
                 // do another search to evaluate calibration results
                 Status("Post-calibration search...", new List<string> { taskId, "Individual Spectra Files" });
                 acquisitionResults = GetDataAcquisitionResults(myMsDataFile, originalUncalibratedFilePath, variableModifications, fixedModifications, proteinList, taskId, combinedParams, combinedParams.PrecursorMassTolerance, combinedParams.ProductMassTolerance);
@@ -203,6 +206,7 @@ namespace TaskLayer
                 FinishedWritingFile(newTomlFileName, new List<string> { taskId, "Individual Spectra Files", originalUncalibratedFilenameWithoutExtension });
 
                 // finished calibrating this file
+                spectraFilesAfterCalibration.Add(Path.GetFileNameWithoutExtension(calibratedFilePath));
                 FinishedWritingFile(calibratedFilePath, new List<string> { taskId, "Individual Spectra Files", originalUncalibratedFilenameWithoutExtension });
                 MyTaskResults.NewSpectra.Add(calibratedFilePath);
                 MyTaskResults.NewFileSpecificTomls.Add(newTomlFileName);
@@ -213,34 +217,12 @@ namespace TaskLayer
             // re-write experimental design (if it has been defined) with new calibrated file names
             string assumedPathToExperDesign = Directory.GetParent(currentRawFileList.First()).FullName;
             assumedPathToExperDesign = Path.Combine(assumedPathToExperDesign, GlobalVariables.ExperimentalDesignFileName);
-            List<string> newExperimentalDesignOutput = new List<string>();
+            
             if (File.Exists(assumedPathToExperDesign))
             {
-                var lines = File.ReadAllLines(assumedPathToExperDesign);
-
-                for (int i = 0; i < lines.Length; i++)
-                {
-                    // header of experimental design file
-                    if (i == 0)
-                    {
-                        newExperimentalDesignOutput.Add(lines[i]);
-                    }
-                    else
-                    {
-                        var split = lines[i].Split('\t');
-                        string newline = Path.GetFileNameWithoutExtension(split[0]) + CalibSuffix + "\t";
-                        for (int j = 1; j < split.Length; j++)
-                        {
-                            newline += split[j] + "\t";
-                        }
-
-                        newExperimentalDesignOutput.Add(newline);
-                    }
-                }
+                WriteNewExperimentalDesignFile(assumedPathToExperDesign, OutputFolder, spectraFilesAfterCalibration);
             }
-
-            File.WriteAllLines(Path.Combine(OutputFolder, GlobalVariables.ExperimentalDesignFileName), newExperimentalDesignOutput);
-
+            
             // finished calibrating all files for the task
             ReportProgress(new ProgressEventArgs(100, "Done!", new List<string> { taskId, "Individual Spectra Files" }));
 
@@ -250,7 +232,7 @@ namespace TaskLayer
         private int NumRequiredPsms = 20;
         private int NumRequiredMs1Datapoints = 50;
         private int NumRequiredMs2Datapoints = 100;
-        private const string CalibSuffix = "-calib";
+        public const string CalibSuffix = "-calib";
 
         private bool ImprovGlobal(double prevPrecTol, double prevProdTol, int prevPsmCount, int thisRoundPsmCount, double thisRoundPrecTol, double thisRoundProdTol)
         {
@@ -281,7 +263,7 @@ namespace TaskLayer
             var listOfSortedms2Scans = GetMs2Scans(myMsDataFile, currentDataFile, combinedParameters.DoPrecursorDeconvolution, combinedParameters.UseProvidedPrecursorInfo, combinedParameters.DeconvolutionIntensityRatio, combinedParameters.DeconvolutionMaxAssumedChargeState, combinedParameters.DeconvolutionMassTolerance).OrderBy(b => b.PrecursorMass).ToArray();
 
             PeptideSpectralMatch[] allPsmsArray = new PeptideSpectralMatch[listOfSortedms2Scans.Length];
-            
+
             Log("Searching with searchMode: " + searchMode, new List<string> { taskId, "Individual Spectra Files", fileNameWithoutExtension });
             Log("Searching with productMassTolerance: " + initProdTol, new List<string> { taskId, "Individual Spectra Files", fileNameWithoutExtension });
 
@@ -311,6 +293,41 @@ namespace TaskLayer
                     new List<string> { taskId, "Individual Spectra Files", fileNameWithoutExtension }).Run();
 
             return currentResult;
+        }
+
+        private static void WriteNewExperimentalDesignFile(string assumedPathToExperDesign, string outputFolder, List<string> spectraFilesAfterCalibration)
+        {
+            List<string> newExperimentalDesignOutput = new List<string>();
+            var lines = File.ReadAllLines(assumedPathToExperDesign);
+
+            for (int i = 0; i < lines.Length; i++)
+            {
+                // header of experimental design file
+                if (i == 0)
+                {
+                    newExperimentalDesignOutput.Add(lines[i]);
+                }
+                else
+                {
+                    var split = lines[i].Split('\t');
+                    string newFileName = Path.GetFileNameWithoutExtension(split[0]) + CalibSuffix;
+                    string newline = newFileName + "\t";
+
+                    if (!spectraFilesAfterCalibration.Contains(newFileName))
+                    {
+                        newline = Path.GetFileNameWithoutExtension(split[0]) + "\t";
+                    }
+                    
+                    for (int j = 1; j < split.Length; j++)
+                    {
+                        newline += split[j] + "\t";
+                    }
+
+                    newExperimentalDesignOutput.Add(newline);
+                }
+            }
+
+            File.WriteAllLines(Path.Combine(outputFolder, GlobalVariables.ExperimentalDesignFileName), newExperimentalDesignOutput);
         }
     }
 }
