@@ -68,7 +68,7 @@ namespace EngineLayer.Indexing
             // digest database
             List<PeptideWithSetModifications> globalPeptides = new List<PeptideWithSetModifications>();
 
-            Parallel.ForEach(Partitioner.Create(0, ProteinList.Count), new ParallelOptions { MaxDegreeOfParallelism = commonParameters.MaxThreadsToUsePerFile }, (range, loopState) =>
+            Parallel.ForEach(Partitioner.Create(0, ProteinList.Count), new ParallelOptions { MaxDegreeOfParallelism = 1 }, (range, loopState) =>
             {
                 List<PeptideWithSetModifications> localPeptides = new List<PeptideWithSetModifications>();
 
@@ -83,7 +83,10 @@ namespace EngineLayer.Indexing
 
                     foreach (var digestionParams in CollectionOfDigestionParams)
                     {
-                        localPeptides.AddRange(ProteinList[i].Digest(digestionParams, FixedModifications, VariableModifications));
+                        var asdf = ProteinList[i].Digest(digestionParams, FixedModifications, VariableModifications);
+                        if(ProteinList[i].Accession.Equals("P35579"))
+                        { }
+                        localPeptides.AddRange(asdf);
                     }
 
                     progress++;
@@ -123,6 +126,8 @@ namespace EngineLayer.Indexing
             oldPercentProgress = 0;
             for (int peptideId = 0; peptideId < peptidesSortedByMass.Count; peptideId++)
             {
+                if(peptidesSortedByMass[peptideId].BaseSequence.Contains("EEVDGKADGAEAKPAE"))
+                { }
                 var fragmentMasses = peptidesSortedByMass[peptideId].Fragment(commonParameters.DissociationType, commonParameters.DigestionParams.FragmentationTerminus).Select(m => m.NeutralMass).ToList();
 
                 foreach (var theoreticalFragmentMass in fragmentMasses)
