@@ -83,10 +83,7 @@ namespace EngineLayer.Indexing
 
                     foreach (var digestionParams in CollectionOfDigestionParams)
                     {
-                        var asdf = ProteinList[i].Digest(digestionParams, FixedModifications, VariableModifications);
-                        if(ProteinList[i].Accession.Equals("P35579"))
-                        { }
-                        localPeptides.AddRange(asdf);
+                        localPeptides.AddRange(ProteinList[i].Digest(digestionParams, FixedModifications, VariableModifications));
                     }
 
                     progress++;
@@ -126,8 +123,6 @@ namespace EngineLayer.Indexing
             oldPercentProgress = 0;
             for (int peptideId = 0; peptideId < peptidesSortedByMass.Count; peptideId++)
             {
-                if(peptidesSortedByMass[peptideId].BaseSequence.Contains("EEVDGKADGAEAKPAE"))
-                { }
                 var fragmentMasses = peptidesSortedByMass[peptideId].Fragment(commonParameters.DissociationType, commonParameters.DigestionParams.FragmentationTerminus).Select(m => m.NeutralMass).ToList();
 
                 foreach (var theoreticalFragmentMass in fragmentMasses)
