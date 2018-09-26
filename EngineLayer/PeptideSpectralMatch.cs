@@ -431,7 +431,7 @@ namespace EngineLayer
 
             s["All Scores"] = allScores;
             s["Theoreticals Searched"] = theoreticalsSearched;
-            s["Decoy/Contaminant/Target"] = pepWithModsIsNull ? " " : psm.IsDecoy ? "D" : pepsWithMods.Any(c => c.Protein.IsContaminant) ? "C" : "T";
+            s["Decoy/Contaminant/Target"] = pepWithModsIsNull ? " " : psm.IsDecoy ? "D" : psm.IsContaminant ? "C" : "T";
         }
 
         /// <summary>
@@ -446,36 +446,78 @@ namespace EngineLayer
             StringBuilder fragmentDaErrorStringBuilder = new StringBuilder();
             StringBuilder fragmentPpmErrorStringBuilder = new StringBuilder();
             StringBuilder fragmentIntensityStringBuilder = new StringBuilder();
+            List<StringBuilder> stringBuilders = new List<StringBuilder> { seriesStringBuilder, mzStringBuilder, fragmentDaErrorStringBuilder, fragmentPpmErrorStringBuilder, fragmentIntensityStringBuilder };
 
-            //not sure what to do if matched fragment ions is null. added the second condition
-            if (!nullPsm && psm.MatchedFragmentIons != null)
+            if (!nullPsm)
             {
+                var matchedIons = psm.MatchedFragmentIons;
+                if (matchedIons == null)
+                {
+                    matchedIons = psm.PeptidesToMatchingFragments.First().Value;
+                }
+
                 // using ", " instead of "," improves human readability
                 const string delimiter = ", ";
 
-                var matchedIonsGroupedByProductType = psm.MatchedFragmentIons.GroupBy(i => i.NeutralTheoreticalProduct.ProductType).OrderBy(i => i.Key).ToList();
+                var matchedIonsGroupedByProductType = matchedIons.GroupBy(i => i.NeutralTheoreticalProduct.ProductType).OrderBy(i => i.Key).ToList();
 
                 foreach (var productType in matchedIonsGroupedByProductType)
                 {
-                    // write ion series (b1, b2, b3 ...)
-                    seriesStringBuilder.Append("[" + string.Join(delimiter, productType.Select(i => i.NeutralTheoreticalProduct.ProductType + "" + i.NeutralTheoreticalProduct.TerminusFragment.FragmentNumber + "+" + i.Charge)) + "];");
+                    var products = productType.OrderBy(p => p.NeutralTheoreticalProduct.TerminusFragment.FragmentNumber)
+                        .ToList();
 
-                    // write m/z values
-                    mzStringBuilder.Append("[" + string.Join(delimiter, productType.Select(i => i.Mz.ToString("F5"))) + "];");
+                    stringBuilders.ForEach(p => p.Append("["));
 
-                    // write fragment Da errors
-                    fragmentDaErrorStringBuilder.Append("[" + string.Join(delimiter, productType.Select(i => (i.Mz.ToMass(i.Charge) - i.NeutralTheoreticalProduct.NeutralMass).ToString("F5"))) + "];");
+                    for (int i = 0; i < products.Count; i++)
+                    {
+                        MatchedFragmentIon ion = products[i];
+                        string ionLabel;
 
-                    // write fragment ppm errors
-                    fragmentPpmErrorStringBuilder.Append("[" + string.Join(delimiter, productType.Select(i => ((i.Mz.ToMass(i.Charge) - i.NeutralTheoreticalProduct.NeutralMass) / i.NeutralTheoreticalProduct.NeutralMass * 1e6).ToString("F2"))) + "];");
+                        double massError = ion.Mz.ToMass(ion.Charge) - ion.NeutralTheoreticalProduct.NeutralMass;
+                        double ppmMassError = massError / ion.NeutralTheoreticalProduct.NeutralMass * 1e6;
 
-                    // write fragment intensities
-                    fragmentIntensityStringBuilder.Append("[" + string.Join(delimiter, productType.Select(i => i.Intensity.ToString("F0"))) + "];");
+                        if (ion.NeutralTheoreticalProduct.NeutralLoss == 0)
+                        {
+                            // no neutral loss
+                            ionLabel = ion.NeutralTheoreticalProduct.ProductType + "" + ion.NeutralTheoreticalProduct.TerminusFragment.FragmentNumber + "+" + ion.Charge;
+                        }
+                        else
+                        {
+                            // ion label with neutral loss
+                            ionLabel = "(" + ion.NeutralTheoreticalProduct.ProductType + "" + ion.NeutralTheoreticalProduct.TerminusFragment.FragmentNumber
+                                + "-" + ion.NeutralTheoreticalProduct.NeutralLoss + ")" + "+" + ion.Charge;
+                        }
+
+                        // append ion label
+                        seriesStringBuilder.Append(ionLabel);
+
+                        // append experimental m/z
+                        mzStringBuilder.Append(ionLabel + ":" + ion.Mz.ToString("F5"));
+
+                        // append absolute mass error
+                        fragmentDaErrorStringBuilder.Append(ionLabel + ":" + massError.ToString("F5"));
+
+                        // append ppm mass error
+                        fragmentPpmErrorStringBuilder.Append(ionLabel + ":" + ppmMassError.ToString("F2"));
+
+                        // append fragment ion intensity
+                        fragmentIntensityStringBuilder.Append(ionLabel + ":" + ion.Intensity.ToString("F0"));
+
+                        // append delimiter ", "
+                        if (i < products.Count - 1)
+                        {
+                            stringBuilders.ForEach(p => p.Append(delimiter));
+                        }
+                    }
+
+                    // append product type delimiter
+                    stringBuilders.ForEach(p => p.Append("];"));
                 }
             }
 
             // save ion series strings to output dictionary
-            s["Matched Ion Mass-To-Charge Ratios"] = nullPsm ? " " : seriesStringBuilder.ToString().TrimEnd(';');
+            s["Matched Ion Series"] = nullPsm ? " " : seriesStringBuilder.ToString().TrimEnd(';');
+            s["Matched Ion Mass-To-Charge Ratios"] = nullPsm ? " " : mzStringBuilder.ToString().TrimEnd(';');
             s["Matched Ion Mass Diff (Da)"] = nullPsm ? " " : fragmentDaErrorStringBuilder.ToString().TrimEnd(';');
             s["Matched Ion Mass Diff (Ppm)"] = nullPsm ? " " : fragmentPpmErrorStringBuilder.ToString().TrimEnd(';');
             s["Matched Ion Intensities"] = nullPsm ? " " : fragmentIntensityStringBuilder.ToString().TrimEnd(';');

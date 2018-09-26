@@ -407,14 +407,14 @@
                                             </ComboBox>
                                         </StackPanel>
                                         <StackPanel Orientation="Horizontal">
-                                            <CheckBox x:Name="nTerminalIons" Content="N-Terminal Ions" Margin="1" DockPanel.Dock="Top" ToolTipService.ShowDuration="999999" ToolTipService.InitialShowDelay="500">
+                                            <CheckBox x:Name="nTerminalIons" Content="N-Terminal Ions" Margin="1" DockPanel.Dock="Top" ToolTipService.ShowDuration="999999" ToolTipService.InitialShowDelay="500" IsChecked="True">
                                                 <CheckBox.ToolTip>
                                                     <TextBlock>
                                                     Search for theoretical ions from the N-Terminus. The specific ion series are specified through the dissociation type.
                                                     </TextBlock>
                                                 </CheckBox.ToolTip>
                                             </CheckBox>
-                                            <CheckBox x:Name="cTerminalIons" Content="C-Terminal Ions" Margin="1" DockPanel.Dock="Top" ToolTipService.ShowDuration="999999" ToolTipService.InitialShowDelay="500">
+                                            <CheckBox x:Name="cTerminalIons" Content="C-Terminal Ions" Margin="1" DockPanel.Dock="Top" ToolTipService.ShowDuration="999999" ToolTipService.InitialShowDelay="500" IsChecked="True">
                                                 <CheckBox.ToolTip>
                                                     <TextBlock>
                                                     Search for theoretical ions from the C-Terminus. The specific ion series are specified through the dissociation type.
