@@ -485,7 +485,7 @@ namespace EngineLayer
                         {
                             // ion label with neutral loss
                             ionLabel = "(" + ion.NeutralTheoreticalProduct.ProductType + "" + ion.NeutralTheoreticalProduct.TerminusFragment.FragmentNumber
-                                + "-" + ion.NeutralTheoreticalProduct.NeutralLoss + ")" + "+" + ion.Charge;
+                                + "-" + ion.NeutralTheoreticalProduct.NeutralLoss.ToString("F2") + ")" + "+" + ion.Charge;
                         }
 
                         // append ion label
