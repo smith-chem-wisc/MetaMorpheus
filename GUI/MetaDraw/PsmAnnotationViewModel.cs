@@ -88,6 +88,12 @@ namespace ViewModels
                     allIons[i].Points.Add(new DataPoint(peak.Mz, spectrumIntensities[i]));
 
                     // peak annotation
+                    string peakAnnotationText = peak.NeutralTheoreticalProduct.ProductType.ToString().ToLower() + peak.NeutralTheoreticalProduct.TerminusFragment.FragmentNumber + " (" + peak.Mz.ToString("F3") + ")";
+                    if (peak.NeutralTheoreticalProduct.NeutralLoss != 0)
+                    {
+                        peakAnnotationText = peak.NeutralTheoreticalProduct.ProductType.ToString().ToLower() + peak.NeutralTheoreticalProduct.TerminusFragment.FragmentNumber + "-" + peak.NeutralTheoreticalProduct.NeutralLoss.ToString("F2") + " (" + peak.Mz.ToString("F3") + ")";
+                    }
+                    
                     var peakAnnotation = new TextAnnotation();
                     peakAnnotation.TextRotation = -60;
                     peakAnnotation.Font = "Arial";
@@ -95,7 +101,7 @@ namespace ViewModels
                     peakAnnotation.FontWeight = 2.0;
                     peakAnnotation.TextColor = ionColor;
                     peakAnnotation.StrokeThickness = 0;
-                    peakAnnotation.Text = "(" + peak.Mz.ToString("F3") + ") " + peak.NeutralTheoreticalProduct.ProductType.ToString().ToLower() + peak.NeutralTheoreticalProduct.TerminusFragment.FragmentNumber;
+                    peakAnnotation.Text = peakAnnotationText;
                     peakAnnotation.TextPosition = new DataPoint(allIons[i].Points[1].X, allIons[i].Points[1].Y + peakAnnotation.Text.Length * 1.5 / 4);
                     peakAnnotation.TextHorizontalAlignment = HorizontalAlignment.Left;
                     model.Annotations.Add(peakAnnotation);

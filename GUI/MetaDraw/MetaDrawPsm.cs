@@ -13,7 +13,7 @@ namespace MetaMorpheusGUI
     public class MetaDrawPsm
     {
         private static readonly Regex IonParser = new Regex(@"([a-zA-Z]+)(\d+)");
-        private static readonly char[] MzSplit = { '[', ',', ']', ';', '(', ')' };
+        private static readonly char[] MzSplit = { '[', ',', ']', ';' };
         
         public string FullSequence { get; }
         public int Ms2ScanNumber { get; }
@@ -80,12 +80,14 @@ namespace MetaMorpheusGUI
             QValue = double.Parse(spl[parsedHeader[TsvResultReader.QValueLabel]].Trim());
             QValueNotch = double.Parse(spl[parsedHeader[TsvResultReader.QValueNotchLabel]].Trim());
 
-            MatchedIons = ReadFragmentIonsFromString(spl[parsedHeader[TsvResultReader.MatchedIonsLabel]].Trim(), FullSequence);
+            MatchedIons = ReadFragmentIonsFromString(spl[parsedHeader[TsvResultReader.MatchedIonsLabel]].Trim(), BaseSeq);
         }
 
-        private static List<MatchedFragmentIon> ReadFragmentIonsFromString(string matchedMzString, string peptideFullSequence)
+        private static List<MatchedFragmentIon> ReadFragmentIonsFromString(string matchedMzString, string peptideBaseSequence)
         {
-            var peaks = matchedMzString.Split(MzSplit, StringSplitOptions.RemoveEmptyEntries).Select(v => v.Trim());
+            var peaks = matchedMzString.Split(MzSplit, StringSplitOptions.RemoveEmptyEntries).Select(v => v.Trim())
+                .ToList();
+            peaks.RemoveAll(p => p.Contains("\""));
             
             List<MatchedFragmentIon> matchedIons = new List<MatchedFragmentIon>();
 
@@ -97,18 +99,32 @@ namespace MetaMorpheusGUI
                 Match result = IonParser.Match(ionTypeAndNumber);
 
                 ProductType productType = (ProductType)Enum.Parse(typeof(ProductType), result.Groups[1].Value);
-                int fragmentNumber = int.Parse(result.Groups[2].Value);
 
+                int fragmentNumber = int.Parse(result.Groups[2].Value);
                 int z = int.Parse(split[1]);
                 double mz = double.Parse(split[2]);
+                double neutralLoss = 0;
 
-                //TODO: fix this, this is a placeholder!
-
+                // check for neutral loss
+                if (ionTypeAndNumber.Contains("-"))
+                {
+                    string temp = ionTypeAndNumber.Replace("(", "");
+                    temp = temp.Replace(")", "");
+                    var split2 = temp.Split('-');
+                    neutralLoss = double.Parse(split2[1]);
+                }
+                
                 FragmentationTerminus terminus = TerminusSpecificProductTypes.ProductTypeToFragmentationTerminus[productType];
 
-                var t = new NeutralTerminusFragment(terminus, mz.ToMass(z) - DissociationTypeCollection.GetMassShiftFromProductType(productType), fragmentNumber, 0);
-                Product p = new Product(productType, t, 0);
-                matchedIons.Add(new MatchedFragmentIon(p, mz, 1, z));
+                int aminoAcidPosition = fragmentNumber;
+                if (terminus == FragmentationTerminus.C)
+                {
+                    aminoAcidPosition = peptideBaseSequence.Length - fragmentNumber;
+                }
+
+                var t = new NeutralTerminusFragment(terminus, mz.ToMass(z) - DissociationTypeCollection.GetMassShiftFromProductType(productType), fragmentNumber, aminoAcidPosition);
+                Product p = new Product(productType, t, neutralLoss);
+                matchedIons.Add(new MatchedFragmentIon(p, mz, 1.0, z));
             }
 
             return matchedIons;

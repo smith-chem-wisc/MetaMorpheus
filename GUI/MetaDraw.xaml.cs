@@ -10,13 +10,13 @@ using MassSpectrometry;
 using TaskLayer;
 using System.ComponentModel;
 using System.Threading.Tasks;
-using System.Windows.Threading;
 using System;
 using System.Data;
 using System.Windows.Data;
 using System.Windows.Media;
 using System.Windows.Media.Imaging;
 using Proteomics.Fragmentation;
+using Proteomics.ProteolyticDigestion;
 
 namespace MetaMorpheusGUI
 {
@@ -33,6 +33,8 @@ namespace MetaMorpheusGUI
         private readonly DataTable propertyView;
         private string spectraFilePath;
         private string tsvResultsFilePath;
+        private Dictionary<ProductType, double> productTypeToYOffset;
+        private Dictionary<ProductType, Color> productTypeToColor;
 
         public MetaDraw()
         {
@@ -49,7 +51,24 @@ namespace MetaMorpheusGUI
             dataGridProperties.DataContext = propertyView.DefaultView;
             Title = "MetaDraw: version " + GlobalVariables.MetaMorpheusVersion;
             spectraFileManager = new MyFileManager(true);
+            SetUpDictionaries();
+        }
 
+        private void SetUpDictionaries()
+        {
+            // colors of each fragment
+            productTypeToColor = ((ProductType[])Enum.GetValues(typeof(ProductType))).ToDictionary(p => p, p => Colors.Aqua);
+            productTypeToColor[ProductType.b] = Colors.Blue;
+            productTypeToColor[ProductType.y] = Colors.Purple;
+            productTypeToColor[ProductType.zPlusOne] = Colors.SeaGreen;
+            productTypeToColor[ProductType.c] = Colors.Orange;
+            
+            // offset for annotation on base sequence
+            productTypeToYOffset = ((ProductType[])Enum.GetValues(typeof(ProductType))).ToDictionary(p => p, p => 0.0);
+            productTypeToYOffset[ProductType.b] = 50;
+            productTypeToYOffset[ProductType.y] = 0;
+            productTypeToYOffset[ProductType.zPlusOne] = 50;
+            productTypeToYOffset[ProductType.c] = 0;
         }
 
         private void Window_Drop(object sender, DragEventArgs e)
@@ -76,6 +95,7 @@ namespace MetaMorpheusGUI
             {
                 case ".raw":
                 case ".mzml":
+                case ".mgf":
                     spectraFilePath = filePath;
                     spectraFileNameLabel.Text = filePath;
                     break;
@@ -244,89 +264,46 @@ namespace MetaMorpheusGUI
             double spacing = 22;
             BaseDraw.clearCanvas(canvas);
 
+            // don't draw ambiguous sequences
+            if (psm.FullSequence.Contains("|"))
+            {
+                return;
+            }
+
             // draw base sequence
             for (int r = 0; r < psm.BaseSeq.Length; r++)
             {
                 BaseDraw.txtDrawing(canvas, new Point(r * spacing + 10, 10), psm.BaseSeq[r].ToString(), Brushes.Black);
             }
 
-            // draw b ions
-            foreach (var bIon in psm.MatchedIons.Where(p => p.NeutralTheoreticalProduct.ProductType == ProductType.b))
+            // draw the fragment ion annotations on the base sequence
+            foreach (var ion in psm.MatchedIons)
             {
-                int residue = bIon.NeutralTheoreticalProduct.TerminusFragment.AminoAcidPosition;
-                string annotation = bIon.NeutralTheoreticalProduct.ProductType.ToString() + bIon.NeutralTheoreticalProduct.TerminusFragment.FragmentNumber;
+                int residue = ion.NeutralTheoreticalProduct.TerminusFragment.AminoAcidPosition;
+                string annotation = ion.NeutralTheoreticalProduct.ProductType + "" + ion.NeutralTheoreticalProduct.TerminusFragment.FragmentNumber;
 
-                if (bIon.NeutralTheoreticalProduct.NeutralLoss != 0)
+                //if (ion.NeutralTheoreticalProduct.NeutralLoss != 0)
+                //{
+                //    annotation += "-" + ion.NeutralTheoreticalProduct.NeutralLoss;
+                //}
+
+                if (ion.NeutralTheoreticalProduct.TerminusFragment.Terminus == FragmentationTerminus.C)
                 {
-                    annotation += "-" + bIon.NeutralTheoreticalProduct.NeutralLoss;
+                    BaseDraw.topSplittingDrawing(canvas, new Point(residue * spacing + 8,
+                        productTypeToYOffset[ion.NeutralTheoreticalProduct.ProductType]), productTypeToColor[ion.NeutralTheoreticalProduct.ProductType], annotation);
                 }
-
-                BaseDraw.botSplittingDrawing(canvas, new Point(residue * spacing + 8, 50), Colors.Blue, annotation);
-            }
-
-            // draw c ions
-            foreach (var cIon in psm.MatchedIons.Where(p => p.NeutralTheoreticalProduct.ProductType == ProductType.c))
-            {
-                int residue = cIon.NeutralTheoreticalProduct.TerminusFragment.AminoAcidPosition;
-                string annotation = cIon.NeutralTheoreticalProduct.ProductType.ToString() + cIon.NeutralTheoreticalProduct.TerminusFragment.FragmentNumber;
-
-                if (cIon.NeutralTheoreticalProduct.NeutralLoss != 0)
+                else if (ion.NeutralTheoreticalProduct.TerminusFragment.Terminus == FragmentationTerminus.N)
                 {
-                    annotation += "-" + cIon.NeutralTheoreticalProduct.NeutralLoss;
+                    BaseDraw.botSplittingDrawing(canvas, new Point(residue * spacing + 8,
+                        productTypeToYOffset[ion.NeutralTheoreticalProduct.ProductType]), productTypeToColor[ion.NeutralTheoreticalProduct.ProductType], annotation);
                 }
-
-                BaseDraw.botSplittingDrawing(canvas, new Point(residue * spacing + 8, 50), Colors.Gold, annotation);
-            }
-
-            // draw y ions
-            foreach (var yIon in psm.MatchedIons.Where(p => p.NeutralTheoreticalProduct.ProductType == ProductType.y))
-            {
-                int residue = yIon.NeutralTheoreticalProduct.TerminusFragment.AminoAcidPosition;
-                string annotation = yIon.NeutralTheoreticalProduct.ProductType.ToString() + yIon.NeutralTheoreticalProduct.TerminusFragment.FragmentNumber;
-
-                if (yIon.NeutralTheoreticalProduct.NeutralLoss != 0)
-                {
-                    annotation += "-" + yIon.NeutralTheoreticalProduct.NeutralLoss;
-                }
-
-                BaseDraw.topSplittingDrawing(canvas, new Point(residue * spacing + 8, 0), Colors.Purple, annotation);
-            }
-
-            // draw zdot ions
-            foreach (var zDotIon in psm.MatchedIons.Where(p => p.NeutralTheoreticalProduct.ProductType == ProductType.zPlusOne))
-            {
-                int residue = zDotIon.NeutralTheoreticalProduct.TerminusFragment.AminoAcidPosition;
-                string annotation = zDotIon.NeutralTheoreticalProduct.ProductType.ToString() + zDotIon.NeutralTheoreticalProduct.TerminusFragment.FragmentNumber;
-
-                if (zDotIon.NeutralTheoreticalProduct.NeutralLoss != 0)
-                {
-                    annotation += "-" + zDotIon.NeutralTheoreticalProduct.NeutralLoss;
-                }
-
-                BaseDraw.topSplittingDrawing(canvas, new Point(residue * spacing + 8, 0), Colors.Orange, annotation);
             }
 
             // draw modifications
-            int aa = 0;
-            bool currentlyReadingMod = false;
-            for (int c = 0; c < psm.FullSequence.Length; c++)
+            var peptide = new PeptideWithSetModifications(psm.FullSequence, GlobalVariables.AllModsKnownDictionary);
+            foreach (var mod in peptide.AllModsOneIsNterminus)
             {
-                switch (psm.FullSequence[c])
-                {
-                    case '[':
-                        currentlyReadingMod = true;
-                        BaseDraw.circledTxtDraw(canvas, new Point(aa * spacing - 17, 12), Brushes.Yellow);
-                        break;
-                    case ']':
-                        currentlyReadingMod = false;
-                        break;
-                    default:
-                        if (!currentlyReadingMod)
-                        {
-                            aa++;
-                        }
-                        break;
-                }
+                BaseDraw.circledTxtDraw(canvas, new Point((mod.Key - 1) * spacing - 17, 12), Brushes.Yellow);
             }
         }
 
@@ -396,7 +373,7 @@ namespace MetaMorpheusGUI
             using (var stream = new MemoryStream())
             {
                 encoder.Save(stream);
-                var img = System.Drawing.Bitmap.FromStream(stream);
+                var img = System.Drawing.Image.FromStream(stream);
                 PdfWriter.WriteToPdf(img, (int)(wid + gbPSM.ActualWidth) + 11, 600, path);
             }
 
