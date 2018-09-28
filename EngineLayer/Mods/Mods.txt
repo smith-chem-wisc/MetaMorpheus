@@ -135,26 +135,26 @@ TG   K
 PP   Anywhere.
 CF   C10 H14 N2 O2 S1
 MM   226.077599
-DI   HCD:310.1584
+DI   HCD:309.151123533
 //
 ID   Butyryl
 TG   K
 PP   Anywhere.
-DI   HCD:154.1226
+DI   HCD:153.115323533
 CF   C4 H6 O1
 MM   70.041865
 //
 ID   Crotonyl
 TG   K
 PP   Anywhere.
-DI   HCD:152.1070
+DI   HCD:151.099723533
 CF   C4 H4 O1
 MM   68.026215
 //
 ID   Glutaryl
 TG   K
 PP   Anywhere.
-DI   HCD:182.1176
+DI   HCD:181.110323533
 NL   ETD:115.0395
 CF   C5 H6 O3
 MM   114.031694
@@ -162,7 +162,7 @@ MM   114.031694
 ID   Hydroxybutyryl
 TG   K
 PP   Anywhere.
-DI   HCD:170.1176
+DI   HCD:169.110323533
 CF   C4 H7 O2
 MM   87.044604
 //
@@ -170,7 +170,7 @@ ID   Malonyl
 TG   K
 PP   Anywhere.
 DI   HCD:C7 H11 N1 O1
-DI   HCD:170.0812
+DI   HCD:169.073923533
 NL   HCD:43.9898
 NL   ETD:87.0082
 CF   C3 H2 O3
@@ -179,14 +179,14 @@ MM   86.000394
 ID   Propionyl
 TG   K
 PP   Anywhere.
-DI   HCD:140.10710
+DI   HCD:139.099823533
 CF   C3 H4 O1
 MM   56.026215
 //
 ID   Citrulline
 TG   R
 PP   Anywhere.
-DI   HCD:130.0975
+DI   HCD:129.090223533
 NL   HCD:43.0058
 CF   H-1 N-1 O1
 MM   0.984016
@@ -196,14 +196,14 @@ TG   P
 PP   Anywhere.
 CF   O1
 MM   15.994915
-DI   HCD:171.0674
+DI   HCD:170.060123533
 //
 ID   Nitro
 TG   Y
 PP   Anywhere.
 CF   H-1 N1 O2
 MM   44.985078
-DI   HCD:181.0608
+DI   HCD:180.053523533
 //
 ID   Lysine not cleaved at C-term
 TG   Xk
@@ -306,7 +306,7 @@ ID   Formylation
 TG   K
 PP   Anywhere.
 MT   Mod
-DI   HCD:112.0757
+DI   HCD:111.068423533
 CF   C1 O1
 //
 ID   Zinc
@@ -425,7 +425,7 @@ ID   GG of K (Ubiquitination Site)
 TG   Lysine
 PP   Anywhere.
 MT   TrypsinDigestedMod
-DI   HCD:115.0502
+DI   HCD:114.042923533
 CF   H6 C4 N2 O2
 //
 ID   DVIEVYQEQTGG of D (SUMO-1 Site human)
@@ -457,7 +457,7 @@ ID   Succinylation
 TG   K
 PP   Anywhere.
 MT   Mod
-DI   HCD:184.0968
+DI   HCD:183.089523533
 NL   ETD:101.0239
 CF   C4 H4 O3
 //
