@@ -98,14 +98,14 @@ CF   C1 O2
 ID   Phospho
 TG   S or T
 PP   Anywhere.
-NL   H0 or H3 O4 P1
+NL   HCD:H0 or HCD:H3 O4 P1
 MT   Mod
 CF   H1 O3 P1
 //
 ID   Phospho
 TG   Y
 PP   Anywhere.
-NL   H0 or H3 O4 P1
+NL   HCD:H0 or HCD:H3 O4 P1
 MT   Mod
 CF   H1 O3 P1
 DI   HCD:C8 H10 N1 O4 P1
