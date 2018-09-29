@@ -64,7 +64,7 @@ namespace EngineLayer.ClassicSearch
                         // digest each protein into peptides and search for each peptide in all spectra within precursor mass tolerance
                         foreach (PeptideWithSetModifications peptide in Proteins[i].Digest(commonParameters.DigestionParams, FixedModifications, VariableModifications))
                         {
-                            List<Product> peptideTheorProducts = peptide.Fragment(commonParameters.DissociationType, commonParameters.DigestionParams.FragmentationTerminus).ToList();
+                            IEnumerable<Product> peptideTheorProducts = peptide.Fragment(commonParameters.DissociationType, commonParameters.DigestionParams.FragmentationTerminus);
 
                             foreach (ScanWithIndexAndNotchInfo scan in GetAcceptableScans(peptide.MonoisotopicMass, SearchMode))
                             {
@@ -128,7 +128,7 @@ namespace EngineLayer.ClassicSearch
                     }
                 }
             }
-
+            
             foreach (PeptideSpectralMatch psm in PeptideSpectralMatches.Where(p => p != null))
             {
                 psm.ResolveAllAmbiguities();
