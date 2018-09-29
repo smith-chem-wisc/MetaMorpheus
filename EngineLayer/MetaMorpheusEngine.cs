@@ -58,7 +58,7 @@ namespace EngineLayer
             return score;
         }
 
-        public static List<MatchedFragmentIon> MatchFragmentIons(MzSpectrum spectrum, List<Product> theoreticalProducts, CommonParameters commonParameters, double precursorMass)
+        public static List<MatchedFragmentIon> MatchFragmentIons(MzSpectrum spectrum, IEnumerable<Product> theoreticalProducts, CommonParameters commonParameters, double precursorMass)
         {
             var matchedFragmentIons = new List<MatchedFragmentIon>();
 
