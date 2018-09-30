@@ -12,7 +12,7 @@ using System.Threading.Tasks;
 
 namespace EngineLayer.CrosslinkSearch
 {
-    public class TwoPassCrosslinkSearchEngine : ModernSearchEngine
+    public class CrosslinkSearchEngine : ModernSearchEngine
     {
         protected readonly CrosslinkSpectralMatch[] GlobalCsms;
 
@@ -32,7 +32,7 @@ namespace EngineLayer.CrosslinkSearch
         private Modification NH2DeadEnd;
         private Modification Loop;
 
-        public TwoPassCrosslinkSearchEngine(CrosslinkSpectralMatch[] globalCsms, Ms2ScanWithSpecificMass[] listOfSortedms2Scans, List<PeptideWithSetModifications> peptideIndex,
+        public CrosslinkSearchEngine(CrosslinkSpectralMatch[] globalCsms, Ms2ScanWithSpecificMass[] listOfSortedms2Scans, List<PeptideWithSetModifications> peptideIndex,
             List<int>[] fragmentIndex, int currentPartition, CommonParameters commonParameters, Crosslinker crosslinker, bool CrosslinkSearchTop, int CrosslinkSearchTopNum,
             bool quench_H2O, bool quench_NH2, bool quench_Tris, bool charge_2_3, bool charge_2_3_PrimeFragment, List<string> nestedIds)
             : base(null, listOfSortedms2Scans, peptideIndex, fragmentIndex, currentPartition + 1, commonParameters, new OpenSearchMode(), 0, nestedIds)

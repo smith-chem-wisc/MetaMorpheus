@@ -247,15 +247,7 @@ namespace MetaMorpheusGUI
             TheTask.XlSearchParameters.RestrictToTopNHits = ckbXLTopNum.IsChecked.Value;
             TheTask.XlSearchParameters.CrosslinkSearchTopNum = int.Parse(txtXLTopNum.Text, CultureInfo.InvariantCulture);
             TheTask.XlSearchParameters.CrosslinkerType = (CrosslinkerType)cbCrosslinker.SelectedIndex;
-
-            if (cbbXLprecusorMsTl.SelectedIndex == 0)
-            {
-                TheTask.CommonParameters.PrecursorMassTolerance = new AbsoluteTolerance(double.Parse(XLPrecusorMsTlTextBox.Text, CultureInfo.InvariantCulture));
-            }
-            else
-            {
-                TheTask.CommonParameters.PrecursorMassTolerance = new PpmTolerance(double.Parse(XLPrecusorMsTlTextBox.Text, CultureInfo.InvariantCulture));
-            }
+            
             TheTask.XlSearchParameters.XlCharge_2_3 = ckbCharge_2_3.IsChecked.Value;
             TheTask.XlSearchParameters.XlQuench_H2O = ckbQuenchH2O.IsChecked.Value;
             TheTask.XlSearchParameters.XlQuench_NH2 = ckbQuenchNH2.IsChecked.Value;
@@ -298,6 +290,16 @@ namespace MetaMorpheusGUI
                 ProductMassTolerance = new PpmTolerance(double.Parse(productMassToleranceTextBox.Text, CultureInfo.InvariantCulture));
             }
 
+            Tolerance PrecursorMassTolerance;
+            if (cbbXLprecusorMsTl.SelectedIndex == 0)
+            {
+                PrecursorMassTolerance = new AbsoluteTolerance(double.Parse(XLPrecusorMsTlTextBox.Text, CultureInfo.InvariantCulture));
+            }
+            else
+            {
+                PrecursorMassTolerance = new PpmTolerance(double.Parse(XLPrecusorMsTlTextBox.Text, CultureInfo.InvariantCulture));
+            }
+
             TheTask.XlSearchParameters.XlOutPercolator = ckbPercolator.IsChecked.Value;
             TheTask.XlSearchParameters.XlOutPepXML = ckbPepXML.IsChecked.Value;
             TheTask.XlSearchParameters.XlOutAll = ckbAllResults.IsChecked.Value;
@@ -317,6 +319,7 @@ namespace MetaMorpheusGUI
             }
 
             CommonParameters commonParamsToSave = new CommonParameters(
+                precursorMassTolerance: PrecursorMassTolerance,
                 taskDescriptor: OutputFileNameTextBox.Text != "" ? OutputFileNameTextBox.Text : "XLSearchTask",
                 productMassTolerance: ProductMassTolerance,
                 doPrecursorDeconvolution: deconvolutePrecursors.IsChecked.Value,
