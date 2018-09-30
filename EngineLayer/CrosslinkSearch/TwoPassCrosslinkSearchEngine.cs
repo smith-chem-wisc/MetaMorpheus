@@ -395,7 +395,7 @@ namespace EngineLayer.CrosslinkSearch
         }
 
         /// <summary>
-        /// 
+        /// Localizes the deadend mod to a residue
         /// </summary>
         private CrosslinkSpectralMatch LocalizeDeadEndSite(PeptideWithSetModifications originalPeptide, Ms2ScanWithSpecificMass theScan, CommonParameters commonParameters,
             List<int> possiblePositions, Modification deadEndMod, int notch, int scanIndex, int peptideIndex)
@@ -410,8 +410,8 @@ namespace EngineLayer.CrosslinkSearch
                 Dictionary<int, Modification> mods = originalPeptide.AllModsOneIsNterminus.ToDictionary(p => p.Key, p => p.Value);
                 if (mods.ContainsKey(location + 1))
                 {
-                    var alreadyAnnotatedMod = mods[location];
-                    double combinedMass = mods[location].MonoisotopicMass.Value + deadEndMod.MonoisotopicMass.Value;
+                    var alreadyAnnotatedMod = mods[location + 1];
+                    double combinedMass = mods[location + 1].MonoisotopicMass.Value + deadEndMod.MonoisotopicMass.Value;
                     Modification combinedMod = new Modification(_originalId: alreadyAnnotatedMod.OriginalId + "+" + deadEndMod.OriginalId, _modificationType: "Crosslink", _target: alreadyAnnotatedMod.Target, _locationRestriction: "Anywhere.", _monoisotopicMass: combinedMass);
                     mods[location + 1] = combinedMod;
                 }
@@ -464,7 +464,7 @@ namespace EngineLayer.CrosslinkSearch
         }
 
         /// <summary>
-        /// 
+        /// Localizes the loop to a begin and end residue
         /// </summary>
         private CrosslinkSpectralMatch LocalizeLoopSites(PeptideWithSetModifications originalPeptide, Ms2ScanWithSpecificMass theScan, CommonParameters commonParameters,
             List<int> possiblePositions, Modification loopMod, int notch, int scanIndex, int peptideIndex)
