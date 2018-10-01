@@ -82,12 +82,12 @@ namespace TaskLayer
                 StartingDataFile(originalUncalibratedFilePath, new List<string> { taskId, "Individual Spectra Files", originalUncalibratedFilePath });
 
                 CommonParameters combinedParams = SetAllFileSpecificCommonParams(CommonParameters, fileSettingsList[spectraFileIndex]);
-                
+
                 // load the file
                 Status("Loading spectra file...", new List<string> { taskId, "Individual Spectra Files" });
 
                 var myMsDataFile = myFileManager.LoadFile(originalUncalibratedFilePath, CommonParameters.TopNpeaks, CommonParameters.MinRatio, CommonParameters.TrimMs1Peaks, CommonParameters.TrimMsMsPeaks, CommonParameters);
-                
+
                 // get datapoints to fit calibration function to
                 Status("Acquiring calibration data points...", new List<string> { taskId, "Individual Spectra Files" });
                 DataPointAquisitionResults acquisitionResults = null;
@@ -217,12 +217,12 @@ namespace TaskLayer
             // re-write experimental design (if it has been defined) with new calibrated file names
             string assumedPathToExperDesign = Directory.GetParent(currentRawFileList.First()).FullName;
             assumedPathToExperDesign = Path.Combine(assumedPathToExperDesign, GlobalVariables.ExperimentalDesignFileName);
-            
+
             if (File.Exists(assumedPathToExperDesign))
             {
                 WriteNewExperimentalDesignFile(assumedPathToExperDesign, OutputFolder, spectraFilesAfterCalibration);
             }
-            
+
             // finished calibrating all files for the task
             ReportProgress(new ProgressEventArgs(100, "Done!", new List<string> { taskId, "Individual Spectra Files" }));
 
@@ -297,34 +297,35 @@ namespace TaskLayer
 
         private static void WriteNewExperimentalDesignFile(string assumedPathToExperDesign, string outputFolder, List<string> spectraFilesAfterCalibration)
         {
-            List<string> newExperimentalDesignOutput = new List<string>();
             var lines = File.ReadAllLines(assumedPathToExperDesign);
+            List<string> newExperimentalDesignOutput = new List<string> { lines[0] };
 
-            for (int i = 0; i < lines.Length; i++)
+            for (int i = 1; i < lines.Length; i++)
             {
-                // header of experimental design file
-                if (i == 0)
+                var split = lines[i].Split('\t');
+                string oldFileName = Path.GetFileNameWithoutExtension(split[0]);
+                string newFileName = oldFileName + CalibSuffix;
+                string newline;
+
+                if (!spectraFilesAfterCalibration.Contains(newFileName))
                 {
-                    newExperimentalDesignOutput.Add(lines[i]);
+                    // file was not successfully calibrated
+                    newline = oldFileName + "\t";
                 }
                 else
                 {
-                    var split = lines[i].Split('\t');
-                    string newFileName = Path.GetFileNameWithoutExtension(split[0]) + CalibSuffix;
-                    string newline = newFileName + "\t";
-
-                    if (!spectraFilesAfterCalibration.Contains(newFileName))
-                    {
-                        newline = Path.GetFileNameWithoutExtension(split[0]) + "\t";
-                    }
-                    
-                    for (int j = 1; j < split.Length; j++)
-                    {
-                        newline += split[j] + "\t";
-                    }
-
-                    newExperimentalDesignOutput.Add(newline);
+                    // file was successfully calibrated
+                    newline = newFileName + "\t";
                 }
+
+                // add condition, biorep, etc info
+                for (int j = 1; j < split.Length; j++)
+                {
+                    newline += split[j] + "\t";
+                }
+
+                // write the line
+                newExperimentalDesignOutput.Add(newline);
             }
 
             File.WriteAllLines(Path.Combine(outputFolder, GlobalVariables.ExperimentalDesignFileName), newExperimentalDesignOutput);
