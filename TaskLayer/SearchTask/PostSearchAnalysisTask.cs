@@ -47,13 +47,23 @@ namespace TaskLayer
             }
 
             //update all psms with peptide info
-            Parameters.AllPsms.ForEach(psm => psm.ResolveAllAmbiguities());
+            Parameters.AllPsms.ToList()
+                .Where(psmArray=>psmArray!=null).ToList()
+                .ForEach(psmArray => psmArray.Where(psm => psm != null).ToList()
+                .ForEach(psm => psm.ResolveAllAmbiguities()));
 
-            Parameters.AllPsms = Parameters.AllPsms.OrderByDescending(b => b.Score)
-               .ThenBy(b => b.PeptideMonisotopicMass.HasValue ? Math.Abs(b.ScanPrecursorMass - b.PeptideMonisotopicMass.Value) : double.MaxValue)
-               .GroupBy(b => (b.FullFilePath, b.ScanNumber, b.PeptideMonisotopicMass)).Select(b => b.First()).ToList();
+            foreach (var psmsArray in Parameters.AllPsms)
+            {
+                if (psmsArray != null)
+                {
+                    var cleanedPsmsArray = psmsArray.OrderByDescending(b => b.Score)
+                       .ThenBy(b => b.PeptideMonisotopicMass.HasValue ? Math.Abs(b.ScanPrecursorMass - b.PeptideMonisotopicMass.Value) : double.MaxValue)
+                       .GroupBy(b => (b.FullFilePath, b.ScanNumber, b.PeptideMonisotopicMass)).Select(b => b.First()).ToList();
 
-            CalculatePsmFdr();
+                    CalculatePsmFdr(cleanedPsmsArray);
+                }
+            }
+            DetermineBestCategoryPsms();
             DoMassDifferenceLocalizationAnalysis();
             ProteinAnalysis();
             QuantificationAnalysis();
@@ -77,7 +87,7 @@ namespace TaskLayer
         /// <summary>
         /// Calculate estimated false-discovery rate (FDR) for peptide spectral matches (PSMs)
         /// </summary>
-        private void CalculatePsmFdr()
+        private void CalculatePsmFdr(List<PeptideSpectralMatch> psmArray)
         {
             // TODO: because FDR is done before parsimony, if a PSM matches to a target and a decoy protein, there may be conflicts between how it's handled in parsimony and the FDR engine here
             // for example, here it may be treated as a decoy PSM, where as in parsimony it will be determined by the parsimony algorithm which is agnostic of target/decoy assignments
@@ -86,7 +96,7 @@ namespace TaskLayer
             Status("Estimating PSM FDR...", Parameters.SearchTaskId);
 
             int massDiffAcceptorNumNotches = Parameters.NumNotches;
-            var fdrAnalysisResults = (FdrAnalysisResults)(new FdrAnalysisEngine(Parameters.AllPsms, massDiffAcceptorNumNotches, CommonParameters, new List<string> { Parameters.SearchTaskId }).Run());
+            new FdrAnalysisEngine(psmArray, massDiffAcceptorNumNotches, CommonParameters, new List<string> { Parameters.SearchTaskId }).Run();
 
             Status("Done estimating PSM FDR!", Parameters.SearchTaskId);
         }
@@ -858,6 +868,45 @@ namespace TaskLayer
             flashLFQResults.WriteResults(peaksPath, null, null, null);
 
             FinishedWritingFile(peaksPath, nestedIds);
+        }
+
+        private void DetermineBestCategoryPsms()
+        {
+            int[] ranking = new int[Parameters.AllPsms.Length]; //high int is good ranking
+            List<int> indexesOfInterest = new List<int>();
+            for(int i=0; i<ranking.Length; i++)
+            {
+                if(Parameters.AllPsms[i]!=null)
+                {
+                    ranking[i] = Parameters.AllPsms[i].Count(x => x.FdrInfo.QValue <= 0.01);
+                    indexesOfInterest.Add(i);
+                }
+            }
+
+            int numTotalSpectra = Parameters.AllPsms[indexesOfInterest[0]].Count;
+            List<PeptideSpectralMatch> bestPsmsList = new List<PeptideSpectralMatch>();
+            for (int i = 0; i < numTotalSpectra; i++)
+            {
+                PeptideSpectralMatch bestPsm = null;
+                double lowestQ = double.MaxValue;
+                foreach(int index in indexesOfInterest)
+                {
+                    PeptideSpectralMatch currentPsm = Parameters.AllPsms[index][i];
+                    if (currentPsm != null)
+                    {
+                        double currentQValue = currentPsm.FdrInfo.QValue;
+                        if (currentQValue <= lowestQ)
+                        {
+                            if(currentQValue==lowestQ)
+                            {
+
+                            }
+                            bestPsm = currentPsm;
+                            lowestQ = currentQValue;
+                        }
+                    }
+                }
+            }
         }
     }
 }

@@ -69,7 +69,7 @@ namespace TaskLayer
             }
 
             LoadModifications(taskId, out var variableModifications, out var fixedModifications, out var localizeableModificationTypes);
-            
+
             // load proteins
             List<Protein> proteinList = LoadProteins(taskId, dbFilenameList, SearchParameters.SearchTarget, SearchParameters.DecoyType, localizeableModificationTypes, CommonParameters);
 
@@ -93,7 +93,13 @@ namespace TaskLayer
 
             // start the search task
             MyTaskResults = new MyTaskResults(this);
-            List<PeptideSpectralMatch> allPsms = new List<PeptideSpectralMatch>();
+            int numFdrCategories = (int)(Enum.GetValues(typeof(FdrCategory)).Cast<FdrCategory>().Last());
+            List<PeptideSpectralMatch>[] allPsms = new List<PeptideSpectralMatch>[numFdrCategories];
+            foreach (int localFDRCategory in SearchParameters.LocalFdrCategories) //only add if we're using for FDR, else ignore it as null.
+            {
+                allPsms[localFDRCategory] = new List<PeptideSpectralMatch>();
+            }
+
             FlashLfqResults flashLfqResults = null;
 
             MyFileManager myFileManager = new MyFileManager(SearchParameters.DisposeOfFileWhenDone);
@@ -131,7 +137,12 @@ namespace TaskLayer
                 numMs2SpectraPerFile.Add(Path.GetFileNameWithoutExtension(origDataFile), new int[] { myMsDataFile.GetAllScansList().Count(p => p.MsnOrder == 2), arrayOfMs2ScansSortedByMass.Length });
                 myFileManager.DoneWithFile(origDataFile);
 
-                var fileSpecificPsms = new PeptideSpectralMatch[arrayOfMs2ScansSortedByMass.Length];
+                PeptideSpectralMatch[][] fileSpecificPsms = new PeptideSpectralMatch[numFdrCategories][]; //generate an array of all possible locals
+                foreach (int localFDRCategory in SearchParameters.LocalFdrCategories) //only add if we're using for FDR, else ignore it as null.
+                {
+                    fileSpecificPsms[localFDRCategory] = new PeptideSpectralMatch[arrayOfMs2ScansSortedByMass.Length];
+                }
+
                 // modern search
                 if (SearchParameters.SearchType == SearchType.Modern)
                 {
@@ -176,7 +187,7 @@ namespace TaskLayer
                         List<PeptideWithSetModifications> peptideIndexPrecursor = null;
                         List<Protein> proteinListSubsetPrecursor = proteinList.GetRange(currentPartition * proteinList.Count() / combinedParams.TotalPartitions, ((currentPartition + 1) * proteinList.Count() / combinedParams.TotalPartitions) - (currentPartition * proteinList.Count() / combinedParams.TotalPartitions));
                         List<int>[] fragmentIndexPrecursor = new List<int>[1];
-                        
+
                         var indexEnginePrecursor = new PrecursorIndexingEngine(proteinListSubsetPrecursor, variableModifications, fixedModifications, currentPartition, SearchParameters.DecoyType, ListOfDigestionParams, combinedParams, 0, new List<string> { taskId });
                         lock (indexLock)
                             GenerateIndexes(indexEnginePrecursor, dbFilenameList, ref peptideIndexPrecursor, ref fragmentIndexPrecursor, proteinList, GlobalVariables.AllModsKnown.ToList(), taskId);
@@ -202,7 +213,13 @@ namespace TaskLayer
 
                 lock (psmLock)
                 {
-                    allPsms.AddRange(fileSpecificPsms.Where(p => p != null));
+                    for (int i = 0; i < allPsms.Length; i++)
+                    {
+                        if (allPsms[i] != null)
+                        {
+                            allPsms[i].AddRange(fileSpecificPsms[i]);
+                        }
+                    }
                 }
 
                 completedFiles++;
@@ -217,7 +234,6 @@ namespace TaskLayer
             parameters.SearchTaskId = taskId;
             parameters.SearchParameters = SearchParameters;
             parameters.ProteinList = proteinList;
-            //parameters.IonTypes = ionTypes;
             parameters.AllPsms = allPsms;
             parameters.FixedModifications = fixedModifications;
             parameters.VariableModifications = variableModifications;
@@ -231,9 +247,11 @@ namespace TaskLayer
             parameters.FileSettingsList = fileSettingsList;
             parameters.NumMs2SpectraPerFile = numMs2SpectraPerFile;
             parameters.DatabaseFilenameList = dbFilenameList;
-            PostSearchAnalysisTask postProcessing = new PostSearchAnalysisTask();
-            postProcessing.Parameters = parameters;
-            postProcessing.CommonParameters = CommonParameters;
+            PostSearchAnalysisTask postProcessing = new PostSearchAnalysisTask
+            {
+                Parameters = parameters,
+                CommonParameters = CommonParameters
+            };
             return postProcessing.Run();
         }
 

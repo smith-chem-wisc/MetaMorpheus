@@ -301,6 +301,8 @@ namespace MetaMorpheusGUI
             }
             //else it's the default of full
 
+            bool classicSemiSpecific = false;
+
             if (searchModeType != CleavageSpecificity.Full)
             {
                 if (((Protease)proteaseComboBox.SelectedItem).Name.Contains("non-specific"))
@@ -327,20 +329,17 @@ namespace MetaMorpheusGUI
                     }
                     searchModeType = CleavageSpecificity.Full; //we're going to change this to override the semi, or the singleN/C proteases will be treated as semi instead of full
                 }
-                else if (((Protease)proteaseComboBox.SelectedItem).Name.Contains("semi-trypsin")) //you can't use this protease with the fast semi search
-                {
-                    proteaseComboBox.Items.MoveCurrentToFirst();
-                    proteaseComboBox.SelectedItem = proteaseComboBox.Items.CurrentItem;
-                    while (!((Protease)proteaseComboBox.SelectedItem).Name.Equals("trypsin"))
-                    {
-                        proteaseComboBox.Items.MoveCurrentToNext();
-                        proteaseComboBox.SelectedItem = proteaseComboBox.Items.CurrentItem;
-                    }
-                }
-                //else do nothing
                 if (!addCompIonCheckBox.IsChecked.Value)
                 {
                     MessageBox.Show("Warning: Complementary ions are strongly recommended when using this algorithm.");
+                }
+            }
+            else //it is full
+            {
+                //check if it's classic semi
+                if(checkBoxClassicSemiSpecific.IsChecked.Value)
+                {
+                    classicSemiSpecific = true;
                 }
             }
 
@@ -353,6 +352,19 @@ namespace MetaMorpheusGUI
             }
 
             Protease protease = (Protease)proteaseComboBox.SelectedItem;
+            if (classicSemiSpecific)
+            {
+                //make a new semi protease
+                string semiName = "semi-" + protease.Name;
+                if (!ProteaseDictionary.Dictionary.Keys.Contains(semiName)) //don't double add if previously added
+                {
+                    ProteaseDictionary.Dictionary[semiName]
+                        = new Protease(semiName, protease.SequencesInducingCleavage, protease.SequencesPreventingCleavage,
+                        CleavageSpecificity.Semi, protease.PsiMsAccessionNumber, protease.PsiMsName, protease.SiteRegexp);
+                }
+                protease = ProteaseDictionary.Dictionary[semiName];
+            }
+
             DissociationType dissociationType = GlobalVariables.AllSupportedDissociationTypes[dissociationTypeComboBox.SelectedItem.ToString()];
             FragmentationTerminus fragmentationTerminus = FragmentationTerminus.Both;
             if (nTerminalIons.IsChecked.Value && !cTerminalIons.IsChecked.Value)
@@ -528,6 +540,19 @@ namespace MetaMorpheusGUI
                 TheTask.SearchParameters.MassDiffAcceptorType = MassDiffAcceptorType.Custom;
                 TheTask.SearchParameters.CustomMdac = customkMdacTextBox.Text;
             }
+
+            //determine if semi or nonspecific with a specific protease. Full is already added by default.
+            if(searchModeType == CleavageSpecificity.Semi || protease.CleavageSpecificity==CleavageSpecificity.Semi)
+            {
+                TheTask.SearchParameters.LocalFdrCategories.Add(FdrCategory.SemiSpecific);
+            }
+            else if(searchModeType==CleavageSpecificity.None && protease.CleavageSpecificity!=CleavageSpecificity.None)
+            {
+                TheTask.SearchParameters.LocalFdrCategories.Add(FdrCategory.SemiSpecific);
+                TheTask.SearchParameters.LocalFdrCategories.Add(FdrCategory.NonSpecific);
+            }
+            // else do nothing
+
 
             // displays warning if classic search is enabled with an open search mode
             if (TheTask.SearchParameters.SearchType == SearchType.Classic &&
