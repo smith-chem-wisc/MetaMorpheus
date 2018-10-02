@@ -17,6 +17,7 @@ using System.Windows.Media;
 using System.Windows.Media.Imaging;
 using Proteomics.Fragmentation;
 using Proteomics.ProteolyticDigestion;
+using System.Text.RegularExpressions;
 
 namespace MetaMorpheusGUI
 {
@@ -35,6 +36,8 @@ namespace MetaMorpheusGUI
         private string tsvResultsFilePath;
         private Dictionary<ProductType, double> productTypeToYOffset;
         private Dictionary<ProductType, Color> productTypeToColor;
+        private SolidColorBrush modificationAnnotationColor;
+        Regex illegalInFileName = new Regex(@"[\\/:*?""<>|]");
 
         public MetaDraw()
         {
@@ -52,6 +55,7 @@ namespace MetaMorpheusGUI
             Title = "MetaDraw: version " + GlobalVariables.MetaMorpheusVersion;
             spectraFileManager = new MyFileManager(true);
             SetUpDictionaries();
+            modificationAnnotationColor = Brushes.Yellow;
         }
 
         private void SetUpDictionaries()
@@ -282,10 +286,10 @@ namespace MetaMorpheusGUI
                 int residue = ion.NeutralTheoreticalProduct.TerminusFragment.AminoAcidPosition;
                 string annotation = ion.NeutralTheoreticalProduct.ProductType + "" + ion.NeutralTheoreticalProduct.TerminusFragment.FragmentNumber;
 
-                //if (ion.NeutralTheoreticalProduct.NeutralLoss != 0)
-                //{
-                //    annotation += "-" + ion.NeutralTheoreticalProduct.NeutralLoss;
-                //}
+                if (ion.NeutralTheoreticalProduct.NeutralLoss != 0)
+                {
+                    annotation += "-" + ion.NeutralTheoreticalProduct.NeutralLoss;
+                }
 
                 if (ion.NeutralTheoreticalProduct.TerminusFragment.Terminus == FragmentationTerminus.C)
                 {
@@ -303,7 +307,7 @@ namespace MetaMorpheusGUI
             var peptide = new PeptideWithSetModifications(psm.FullSequence, GlobalVariables.AllModsKnownDictionary);
             foreach (var mod in peptide.AllModsOneIsNterminus)
             {
-                BaseDraw.circledTxtDraw(canvas, new Point((mod.Key - 1) * spacing - 17, 12), Brushes.Yellow);
+                BaseDraw.circledTxtDraw(canvas, new Point((mod.Key - 1) * spacing - 17, 12), modificationAnnotationColor);
             }
         }
 
@@ -330,7 +334,8 @@ namespace MetaMorpheusGUI
             foreach (object selectedItem in dataGridScanNums.SelectedItems)
             {
                 MetaDrawPsm psm = (MetaDrawPsm)selectedItem;
-                ExportToPdf(psm, Path.Combine(writeDirectory, psm.Ms2ScanNumber + "_" + psm.FullSequence + ".pdf"));
+                string myString = illegalInFileName.Replace(psm.FullSequence, "").Substring(0, 40);
+                ExportToPdf(psm, Path.Combine(writeDirectory, psm.Ms2ScanNumber + "_" + myString + ".pdf"));
             }
 
             dataGridScanNums.SelectedItem = dataGridScanNums.SelectedItem;
