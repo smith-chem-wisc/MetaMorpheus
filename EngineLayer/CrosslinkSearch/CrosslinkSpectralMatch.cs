@@ -13,11 +13,6 @@ namespace EngineLayer.CrosslinkSearch
 {
     public class CrosslinkSpectralMatch : PeptideSpectralMatch
     {
-        private static readonly double waterMonoisotopicMass = PeriodicTable.GetElement("H").PrincipalIsotope.AtomicMass * 2 + PeriodicTable.GetElement("O").PrincipalIsotope.AtomicMass;
-        private static readonly double nitrogenAtomMonoisotopicMass = PeriodicTable.GetElement("N").PrincipalIsotope.AtomicMass;
-        private static readonly double oxygenAtomMonoisotopicMass = PeriodicTable.GetElement("O").PrincipalIsotope.AtomicMass;
-        private static readonly double hydrogenAtomMonoisotopicMass = PeriodicTable.GetElement("H").PrincipalIsotope.AtomicMass;
-
         public CrosslinkSpectralMatch(PeptideWithSetModifications theBestPeptide, int notch, double score, int scanIndex, Ms2ScanWithSpecificMass scan, DigestionParams digestionParams, List<MatchedFragmentIon> matchedFragmentIons)
             : base(theBestPeptide, notch, score, scanIndex, scan, digestionParams, matchedFragmentIons)
         {
@@ -53,37 +48,7 @@ namespace EngineLayer.CrosslinkSearch
 
             return possibleXlPositions;
         }
-
-        public void GetBestMatch(Ms2ScanWithSpecificMass theScan, Dictionary<List<int>, List<Product>> productsForEachModPosition, CommonParameters commonParameters)
-        {
-            foreach (var listOfProducts in productsForEachModPosition)
-            {
-                List<MatchedFragmentIon> matchedIons = MetaMorpheusEngine.MatchFragmentIons(theScan.TheScan.MassSpectrum, listOfProducts.Value, commonParameters, theScan.PrecursorMass);
-                double score = MetaMorpheusEngine.CalculatePeptideScore(theScan.TheScan, matchedIons, 0);
-
-                if (score > BestScore)
-                {
-                    BestScore = score;
-                    MatchedFragmentIons = matchedIons;
-                    ModPositions = listOfProducts.Key;
-                }
-            }
-
-            if (MatchedFragmentIons != null)
-            {
-                double[] experimental_intensities = theScan.TheScan.MassSpectrum.YArray;
-                int[] experimental_intensities_rank = GenerateIntensityRanks(experimental_intensities);
-                foreach (var matchedIon in MatchedFragmentIons)
-                {
-                    // get the closest peak in the spectrum to the theoretical peak
-                    int matchedPeakIndex = theScan.TheScan.MassSpectrum.GetClosestPeakIndex(matchedIon.Mz).Value;
-
-                    // TODO: add intensity rank in mzLib
-                    //matchedIon.IntensityRank = experimental_intensities_rank[matchedPeakIndex];
-                }
-            }
-        }
-
+        
         /// <summary>
         /// Rank experimental mass spectral peaks by intensity
         /// </summary>
