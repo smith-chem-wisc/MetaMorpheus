@@ -216,7 +216,12 @@ namespace TaskLayer
         {
             StartingSingleTask(displayName);
 
-            var tomlFileName = Path.Combine(output_folder, GetType().Name + "config.toml");
+            var path = output_folder;
+            if (!output_folder.Contains("netcoreapp2.0") && !(output_folder == ""))
+            {
+                path = Directory.GetParent(output_folder).FullName;
+            }
+            var tomlFileName = Path.Combine(path, "Task Settings", GetType().Name + "config.toml");
             Toml.WriteFile(this, tomlFileName, tomlConfig);
             FinishedWritingFile(tomlFileName, new List<string> { displayName });
 
