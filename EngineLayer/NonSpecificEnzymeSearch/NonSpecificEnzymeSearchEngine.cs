@@ -90,7 +90,6 @@ namespace EngineLayer.NonSpecificEnzymeSearch
                     // done with initial scoring; refine scores and create PSMs
                     if (idsOfPeptidesPossiblyObserved.Any())
                     {
-                        PeptideSpectralMatch PSM = null;
                         int maxInitialScore = idsOfPeptidesPossiblyObserved.Max(id => scoringTable[id]) + 1;
                         while (maxInitialScore > commonParameters.ScoreCutoff) //go through all until we hit the end
                         {
@@ -107,7 +106,7 @@ namespace EngineLayer.NonSpecificEnzymeSearch
                                 Tuple<int, PeptideWithSetModifications> notchAndUpdatedPeptide = Accepts(peptideTheorProducts, scan.PrecursorMass, peptide, commonParameters.DigestionParams.FragmentationTerminus, MassDiffAcceptor);
                                 if (notchAndUpdatedPeptide.Item1 >= 0)
                                 {
-                                    PeptideSpectralMatch[] localPeptideSpectralMatches = PeptideSpectralMatches[(int)FdrClassifier.GetCleavageSpecificityCategory(notchAndUpdatedPeptide.Item2.CleavageSpecificity)];
+                                    PeptideSpectralMatch[] localPeptideSpectralMatches = PeptideSpectralMatches[(int)FdrClassifier.GetCleavageSpecificityCategory(notchAndUpdatedPeptide.Item2.CleavageSpecificityForFdrCategory)];
                                     if (localPeptideSpectralMatches != null)
                                     {
                                         if (localPeptideSpectralMatches[i] == null)
@@ -200,7 +199,7 @@ namespace EngineLayer.NonSpecificEnzymeSearch
                         Dictionary<int, Modification> allModsOneIsNTerminus = originalPwsm.AllModsOneIsNterminus
                         .Where(b => b.Key > 1 && b.Key <= (1 + index)).ToDictionary(b => b.Key, b => b.Value);
 
-                        actualPwsm = new PeptideWithSetModifications(originalPwsm.Protein, commonParameters.DigestionParams, originalPwsm.OneBasedStartResidueInProtein, originalPwsm.OneBasedStartResidueInProtein + index - 1, originalPwsm.PeptideDescription, originalPwsm.MissedCleavages, allModsOneIsNTerminus, originalPwsm.NumFixedMods);
+                        actualPwsm = new PeptideWithSetModifications(originalPwsm.Protein, commonParameters.DigestionParams, originalPwsm.OneBasedStartResidueInProtein, originalPwsm.OneBasedStartResidueInProtein + index - 1, CleavageSpecificity.Unknown, originalPwsm.PeptideDescription, originalPwsm.MissedCleavages, allModsOneIsNTerminus, originalPwsm.NumFixedMods);
                         break;
                     }
                 }
@@ -213,7 +212,7 @@ namespace EngineLayer.NonSpecificEnzymeSearch
                         Dictionary<int, Modification> allModsOneIsNTerminus = originalPwsm.AllModsOneIsNterminus
                         .Where(b => b.Key > index && b.Key <= (2 + originalPwsm.OneBasedEndResidueInProtein - originalPwsm.OneBasedStartResidueInProtein)).ToDictionary(b => (b.Key + index - 1), b => b.Value);
 
-                        actualPwsm = new PeptideWithSetModifications(originalPwsm.Protein, commonParameters.DigestionParams, originalPwsm.OneBasedStartResidueInProtein + index - 1, originalPwsm.OneBasedEndResidueInProtein, originalPwsm.PeptideDescription, originalPwsm.MissedCleavages, allModsOneIsNTerminus, originalPwsm.NumFixedMods);
+                        actualPwsm = new PeptideWithSetModifications(originalPwsm.Protein, commonParameters.DigestionParams, originalPwsm.OneBasedStartResidueInProtein + index - 1, originalPwsm.OneBasedEndResidueInProtein, CleavageSpecificity.Unknown, originalPwsm.PeptideDescription, originalPwsm.MissedCleavages, allModsOneIsNTerminus, originalPwsm.NumFixedMods);
                         break;
                     }
                 }

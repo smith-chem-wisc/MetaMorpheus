@@ -105,7 +105,7 @@ namespace EngineLayer.ModernSearch
                         double thisScore = CalculatePeptideScore(scan.TheScan, matchedIons, 0);
                         int notch = MassDiffAcceptor.Accepts(scan.PrecursorMass, peptide.MonoisotopicMass);
 
-                        PeptideSpectralMatch[] localPeptideSpectralMatches = PeptideSpectralMatches[(int)FdrClassifier.GetCleavageSpecificityCategory(peptide.CleavageSpecificity)];
+                        PeptideSpectralMatch[] localPeptideSpectralMatches = PeptideSpectralMatches[(int)FdrClassifier.GetCleavageSpecificityCategory(peptide.CleavageSpecificityForFdrCategory)];
                         if (localPeptideSpectralMatches != null)
                         {
                             bool meetsScoreCutoff = thisScore >= commonParameters.ScoreCutoff;

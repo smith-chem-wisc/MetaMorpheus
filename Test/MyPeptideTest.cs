@@ -36,7 +36,7 @@ namespace Test
             MzSpectrum massSpectrum = new MzSpectrum(mz, intensities, false);
             MsDataScan scan = new MsDataScan(massSpectrum, 1, 1, true, Polarity.Positive, 1, new MzRange(300, 2000), "", MZAnalyzerType.Unknown, massSpectrum.SumOfAllY, null, null, "scan=1", 0, null, null, 0, null, DissociationType.Unknown, 1, null);
 
-            PeptideSpectralMatch[][] globalPsmss = new PeptideSpectralMatch[0][];
+            PeptideSpectralMatch[][] globalPsmss = new PeptideSpectralMatch[1][];
             globalPsmss[0] = new PeptideSpectralMatch[1];
             PeptideSpectralMatch[] globalPsms = globalPsmss[0];
             Ms2ScanWithSpecificMass[] arrayOfSortedMS2Scans = { new Ms2ScanWithSpecificMass(scan, 0, 0, null) };
@@ -69,7 +69,7 @@ namespace Test
             MzSpectrum massSpectrum = new MzSpectrum(mz, intensities, false);
             MsDataScan scan = new MsDataScan(massSpectrum, 1, 1, true, Polarity.Positive, 1, new MzRange(300, 2000), "", MZAnalyzerType.Unknown, massSpectrum.SumOfAllY, null, null, "scan=1", 0, null, null, 0, null, DissociationType.Unknown, 1, null);
 
-            PeptideSpectralMatch[][] globalPsmss = new PeptideSpectralMatch[0][];
+            PeptideSpectralMatch[][] globalPsmss = new PeptideSpectralMatch[1][];
             globalPsmss[0] = new PeptideSpectralMatch[1];
             PeptideSpectralMatch[] globalPsms = globalPsmss[0];
             Ms2ScanWithSpecificMass[] arrayOfSortedMS2Scans = { new Ms2ScanWithSpecificMass(scan, 0, 0, null) };
@@ -104,7 +104,7 @@ namespace Test
             MzSpectrum massSpectrum = new MzSpectrum(mz, intensities, false);
             MsDataScan scan = new MsDataScan(massSpectrum, 1, 1, true, Polarity.Positive, 1, new MzRange(300, 2000), "", MZAnalyzerType.Unknown, massSpectrum.SumOfAllY, null, null, "scan=1", 0, null, null, 0, null, DissociationType.Unknown, 1, null);
 
-            PeptideSpectralMatch[][] globalPsmss = new PeptideSpectralMatch[0][];
+            PeptideSpectralMatch[][] globalPsmss = new PeptideSpectralMatch[1][];
             globalPsmss[0] = new PeptideSpectralMatch[1];
             PeptideSpectralMatch[] globalPsms = globalPsmss[0];
             Ms2ScanWithSpecificMass[] arrayOfSortedMS2Scans = { new Ms2ScanWithSpecificMass(scan, 0, 0, null) };
@@ -139,7 +139,7 @@ namespace Test
             MzSpectrum massSpectrum = new MzSpectrum(mz, intensities, false);
             MsDataScan scan = new MsDataScan(massSpectrum, 1, 1, true, Polarity.Positive, 1, new MzRange(300, 2000), "", MZAnalyzerType.Unknown, massSpectrum.SumOfAllY, null, null, "scan=1", 0, null, null, 0, null, DissociationType.Unknown, 1, null);
 
-            PeptideSpectralMatch[][] globalPsmss = new PeptideSpectralMatch[0][];
+            PeptideSpectralMatch[][] globalPsmss = new PeptideSpectralMatch[1][];
             globalPsmss[0] = new PeptideSpectralMatch[1];
             PeptideSpectralMatch[] globalPsms = globalPsmss[0];
             Ms2ScanWithSpecificMass[] arrayOfSortedMS2Scans = { new Ms2ScanWithSpecificMass(scan, 600, 1, null) };
@@ -169,7 +169,7 @@ namespace Test
             MzSpectrum massSpectrum = new MzSpectrum(mz, intensities, false);
             MsDataScan scan = new MsDataScan(massSpectrum, 1, 1, true, Polarity.Positive, 1, new MzRange(300, 2000), "", MZAnalyzerType.Unknown, massSpectrum.SumOfAllY, null, null, "scan=1", 0, null, null, 0, null, DissociationType.Unknown, 1, null);
 
-            PeptideSpectralMatch[][] globalPsmss = new PeptideSpectralMatch[0][];
+            PeptideSpectralMatch[][] globalPsmss = new PeptideSpectralMatch[1][];
             globalPsmss[0] = new PeptideSpectralMatch[1];
             PeptideSpectralMatch[] globalPsms = globalPsmss[0];
             Ms2ScanWithSpecificMass[] arrayOfSortedMS2Scans = { new Ms2ScanWithSpecificMass(scan, 0, 0, null) };

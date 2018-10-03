@@ -81,7 +81,7 @@ namespace EngineLayer.ClassicSearch
                                     // valid hit (met the cutoff score); lock the scan to prevent other threads from accessing it
                                     lock (myLocks[scan.ScanIndex])
                                     {
-                                        PeptideSpectralMatch[] localPeptideSpectralMatches = PeptideSpectralMatches[(int)FdrClassifier.GetCleavageSpecificityCategory(peptide.CleavageSpecificity)];
+                                        PeptideSpectralMatch[] localPeptideSpectralMatches = PeptideSpectralMatches[(int)FdrClassifier.GetCleavageSpecificityCategory(peptide.CleavageSpecificityForFdrCategory)];
                                         if (localPeptideSpectralMatches != null)
                                         {
                                             bool scoreImprovement = localPeptideSpectralMatches[scan.ScanIndex] == null || (thisScore - localPeptideSpectralMatches[scan.ScanIndex].RunnerUpScore) > -PeptideSpectralMatch.ToleranceForScoreDifferentiation;
