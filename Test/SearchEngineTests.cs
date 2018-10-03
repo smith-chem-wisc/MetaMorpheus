@@ -685,8 +685,6 @@ namespace Test
                 digestionParams: new DigestionParams(protease: protease.Name, maxMissedCleavages: 5)
                 );
 
-            HashSet<DigestionParams> digestParams = new HashSet<DigestionParams> { CommonParameters.DigestionParams };
-
             bool DoPrecursorDeconvolution = true;
             bool UseProvidedPrecursorInfo = true;
             double DeconvolutionIntensityRatio = 4;
@@ -695,8 +693,9 @@ namespace Test
 
             var listOfSortedms2Scans = MetaMorpheusTask.GetMs2Scans(myMsDataFile, null, DoPrecursorDeconvolution, UseProvidedPrecursorInfo, DeconvolutionIntensityRatio, DeconvolutionMaxAssumedChargeState, DeconvolutionMassTolerance).OrderBy(b => b.PrecursorMass).ToArray();
 
-            PeptideSpectralMatch[][] allPsmsArrays = new PeptideSpectralMatch[1][];
+            PeptideSpectralMatch[][] allPsmsArrays = new PeptideSpectralMatch[2][];
             allPsmsArrays[0] = new PeptideSpectralMatch[listOfSortedms2Scans.Length];
+            allPsmsArrays[1] = new PeptideSpectralMatch[listOfSortedms2Scans.Length];
             PeptideSpectralMatch[] allPsmsArray = allPsmsArrays[0];
             new ClassicSearchEngine(allPsmsArrays, listOfSortedms2Scans, variableModifications, fixedModifications, proteinList, searchModes, CommonParameters, new List<string>()).Run();
 

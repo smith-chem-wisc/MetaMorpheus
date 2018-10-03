@@ -40,7 +40,7 @@ namespace EngineLayer.ClassicSearch
             int oldPercentProgress = 0;
 
             // one lock for each MS2 scan; a scan can only be accessed by one thread at a time
-            var myLocks = new object[PeptideSpectralMatches.Length];
+            var myLocks = new object[PeptideSpectralMatches[0].Length];
             for (int i = 0; i < myLocks.Length; i++)
             {
                 myLocks[i] = new object();

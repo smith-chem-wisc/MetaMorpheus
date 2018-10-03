@@ -56,11 +56,21 @@ namespace TaskLayer
             {
                 if (psmsArray != null)
                 {
-                    var cleanedPsmsArray = psmsArray.OrderByDescending(b => b.Score)
+                    var cleanedPsmsArray = psmsArray.Where(b=>b!=null).OrderByDescending(b => b.Score)
                        .ThenBy(b => b.PeptideMonisotopicMass.HasValue ? Math.Abs(b.ScanPrecursorMass - b.PeptideMonisotopicMass.Value) : double.MaxValue)
                        .GroupBy(b => (b.FullFilePath, b.ScanNumber, b.PeptideMonisotopicMass)).Select(b => b.First()).ToList();
 
                     CalculatePsmFdr(cleanedPsmsArray);
+                    for(int i=0; i<psmsArray.Count; i++)
+                    {
+                        if(psmsArray[i]!=null)
+                        {
+                            if(psmsArray[i].FdrInfo==null) //if it was grouped in the cleanedPsmsArray
+                            {
+                                psmsArray[i] = null;
+                            }
+                        }
+                    }
                 }
             }
             DetermineBestCategoryPsms();
@@ -879,7 +889,7 @@ namespace TaskLayer
             {
                 if(Parameters.AllPsms[i]!=null)
                 {
-                    ranking[i] = Parameters.AllPsms[i].Count(x => x.FdrInfo.QValue <= 0.01); //set ranking as number of psms above 1% FDR
+                    ranking[i] = Parameters.AllPsms[i].Where(x=>x!=null).Count(x => x.FdrInfo.QValue <= 0.01); //set ranking as number of psms above 1% FDR
                     indexesOfInterest.Add(i);
                 }
             }
