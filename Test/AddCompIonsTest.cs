@@ -46,15 +46,19 @@ namespace Test
                 digestionParams: new DigestionParams(protease: protease.Name, maxMissedCleavages: 0, minPeptideLength: 1),
                 scoreCutoff: 1,
                 addCompIons: false);
-            PeptideSpectralMatch[] allPsmsArray = new PeptideSpectralMatch[listOfSortedms2Scans.Length];
-            new ClassicSearchEngine(allPsmsArray, listOfSortedms2Scans, variableModifications, fixedModifications, proteinList, searchModes, CommonParameters, new List<string>()).Run();
+            PeptideSpectralMatch[][] allPsmsArrays = new PeptideSpectralMatch[0][];
+            allPsmsArrays[0] = new PeptideSpectralMatch[listOfSortedms2Scans.Length];
+            PeptideSpectralMatch[] allPsmsArray = allPsmsArrays[0];
+            new ClassicSearchEngine(allPsmsArrays, listOfSortedms2Scans, variableModifications, fixedModifications, proteinList, searchModes, CommonParameters, new List<string>()).Run();
 
             CommonParameters CommonParameters2 = new CommonParameters(
                 digestionParams: new DigestionParams(protease: protease.Name, maxMissedCleavages: 0, minPeptideLength: 1),
                 scoreCutoff: 1,
                 addCompIons: true);
-            PeptideSpectralMatch[] allPsmsArray2 = new PeptideSpectralMatch[listOfSortedms2Scans.Length];
-            new ClassicSearchEngine(allPsmsArray2, listOfSortedms2Scans, variableModifications, fixedModifications, proteinList, searchModes, CommonParameters2, new List<string>()).Run();
+            PeptideSpectralMatch[][] allPsmsArrays2 = new PeptideSpectralMatch[0][];
+            allPsmsArrays2[0] = new PeptideSpectralMatch[listOfSortedms2Scans.Length];
+            PeptideSpectralMatch[] allPsmsArray2 = allPsmsArrays2[0];
+            new ClassicSearchEngine(allPsmsArrays2, listOfSortedms2Scans, variableModifications, fixedModifications, proteinList, searchModes, CommonParameters2, new List<string>()).Run();
 
             double scoreT = allPsmsArray2[0].Score;
             double scoreF = allPsmsArray[0].Score;
@@ -122,12 +126,16 @@ namespace Test
             MassDiffAcceptor massDiffAcceptor = SearchTask.GetMassDiffAcceptor(CommonParameters.PrecursorMassTolerance, SearchParameters.MassDiffAcceptorType, SearchParameters.CustomMdac);
 
             // without complementary ions
-            PeptideSpectralMatch[] allPsmsArray = new PeptideSpectralMatch[listOfSortedms2Scans.Length];
-            new ModernSearchEngine(allPsmsArray, listOfSortedms2Scans, indexResults.PeptideIndex, indexResults.FragmentIndex, 0, CommonParameters, massDiffAcceptor, SearchParameters.MaximumMassThatFragmentIonScoreIsDoubled, new List<string>()).Run();
+            PeptideSpectralMatch[][] allPsmsArrays = new PeptideSpectralMatch[0][];
+            allPsmsArrays[0] = new PeptideSpectralMatch[listOfSortedms2Scans.Length];
+            PeptideSpectralMatch[] allPsmsArray = allPsmsArrays[0];
+            new ModernSearchEngine(allPsmsArrays, listOfSortedms2Scans, indexResults.PeptideIndex, indexResults.FragmentIndex, 0, CommonParameters, massDiffAcceptor, SearchParameters.MaximumMassThatFragmentIonScoreIsDoubled, new List<string>()).Run();
 
             // with complementary ions
-            PeptideSpectralMatch[] allPsmsArray2 = new PeptideSpectralMatch[listOfSortedms2Scans.Length];
-            new ModernSearchEngine(allPsmsArray2, listOfSortedms2Scans, indexResults.PeptideIndex, indexResults.FragmentIndex, 0, withCompIons, massDiffAcceptor, SearchParameters.MaximumMassThatFragmentIonScoreIsDoubled, new List<string>()).Run();
+            PeptideSpectralMatch[][] allPsmsArrays2 = new PeptideSpectralMatch[0][];
+            allPsmsArrays2[0] = new PeptideSpectralMatch[listOfSortedms2Scans.Length];
+            PeptideSpectralMatch[] allPsmsArray2 = allPsmsArrays2[0];
+            new ModernSearchEngine(allPsmsArrays2, listOfSortedms2Scans, indexResults.PeptideIndex, indexResults.FragmentIndex, 0, withCompIons, massDiffAcceptor, SearchParameters.MaximumMassThatFragmentIonScoreIsDoubled, new List<string>()).Run();
 
             // Single search mode
             Assert.AreEqual(allPsmsArray.Length, allPsmsArray2.Length);

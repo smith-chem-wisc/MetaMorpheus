@@ -261,15 +261,15 @@ namespace TaskLayer
                 new SingleAbsoluteAroundZeroSearchMode(initPrecTol.Value);
 
             var listOfSortedms2Scans = GetMs2Scans(myMsDataFile, currentDataFile, combinedParameters.DoPrecursorDeconvolution, combinedParameters.UseProvidedPrecursorInfo, combinedParameters.DeconvolutionIntensityRatio, combinedParameters.DeconvolutionMaxAssumedChargeState, combinedParameters.DeconvolutionMassTolerance).OrderBy(b => b.PrecursorMass).ToArray();
-
-            PeptideSpectralMatch[] allPsmsArray = new PeptideSpectralMatch[listOfSortedms2Scans.Length];
+            PeptideSpectralMatch[][] allPsmsArray = new PeptideSpectralMatch[1][]; //generate an array of all possible locals
+            allPsmsArray[0] = new PeptideSpectralMatch[listOfSortedms2Scans.Length];
 
             Log("Searching with searchMode: " + searchMode, new List<string> { taskId, "Individual Spectra Files", fileNameWithoutExtension });
             Log("Searching with productMassTolerance: " + initProdTol, new List<string> { taskId, "Individual Spectra Files", fileNameWithoutExtension });
 
             new ClassicSearchEngine(allPsmsArray, listOfSortedms2Scans, variableModifications, fixedModifications, proteinList, searchMode, combinedParameters, new List<string> { taskId, "Individual Spectra Files", fileNameWithoutExtension }).Run();
 
-            List<PeptideSpectralMatch> allPsms = allPsmsArray.Where(b => b != null).ToList();
+            List<PeptideSpectralMatch> allPsms = allPsmsArray[0].Where(b => b != null).ToList();
 
             allPsms = allPsms.OrderByDescending(b => b.Score)
                 .ThenBy(b => b.PeptideMonisotopicMass.HasValue ? Math.Abs(b.ScanPrecursorMass - b.PeptideMonisotopicMass.Value) : double.MaxValue)
