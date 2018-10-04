@@ -16,7 +16,7 @@ namespace TaskLayer
 
         private readonly StringBuilder niceText = new StringBuilder();
 
-        internal MyTaskResults(MetaMorpheusTask s)
+        public MyTaskResults(MetaMorpheusTask s)
         {
             resultTexts = new List<string>();
         }

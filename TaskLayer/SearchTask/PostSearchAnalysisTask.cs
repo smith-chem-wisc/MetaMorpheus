@@ -54,6 +54,12 @@ namespace TaskLayer
                .GroupBy(b => (b.FullFilePath, b.ScanNumber, b.PeptideMonisotopicMass)).Select(b => b.First()).ToList();
 
             CalculatePsmFdr();
+
+            //need to order by Qvalue after FDR calculation becasue when multiprotease searching is used, all psms will be sorted by protease after FDR calculation
+            Parameters.AllPsms = Parameters.AllPsms.OrderBy(b => b.FdrInfo.QValue)
+              .ThenBy(b => b.PeptideMonisotopicMass.HasValue ? Math.Abs(b.ScanPrecursorMass - b.PeptideMonisotopicMass.Value) : double.MaxValue)
+              .GroupBy(b => (b.FullFilePath, b.ScanNumber, b.PeptideMonisotopicMass)).Select(b => b.First()).ToList();
+
             DoMassDifferenceLocalizationAnalysis();
             ProteinAnalysis();
             QuantificationAnalysis();
