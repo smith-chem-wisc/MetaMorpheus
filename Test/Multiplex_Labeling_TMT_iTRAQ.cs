@@ -64,6 +64,8 @@ namespace Test
         [TestCase("C3 N1 H13 C{13}3 N{15}1", 117.114972828)]
         [TestCase("C5 N2 H13 C{13}2 O{18}1", 145.113742711)]
         [TestCase("C4 N1O1 H13 C{13}3 N{15}1", 145.109887447)]
+        [TestCase("C7 N3O3 H25 C{13}7 N{15}1", 305.213184422)]
+        [TestCase("C8 N2O3 H25 C{13}6 N{15}2", 305.206864482)]
         public static void TestChemicalFormulaWithIsotopes_iTRAQ(string formula, double mass)
         {
             ChemicalFormula cf = ChemicalFormula.ParseFormula(formula);
