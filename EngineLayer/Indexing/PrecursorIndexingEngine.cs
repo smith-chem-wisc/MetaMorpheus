@@ -24,25 +24,6 @@ namespace EngineLayer.Indexing
             sb.Append("Precursor Mass Only ");
             IndexingEngine tempEngine = new IndexingEngine(ProteinList, VariableModifications, FixedModifications, CurrentPartition, DecoyType, commonParameters, MaxFragmentSize, nestedIds);
             sb.Append(tempEngine.ToString());
-            //sb.AppendLine("Index partitions: " + CurrentPartition + "/" + commonParameters.TotalPartitions);
-            //sb.AppendLine("Search Decoys: " + DecoyType);
-            //sb.AppendLine("Number of proteins: " + ProteinList.Count);
-            //sb.AppendLine("Number of fixed mods: " + FixedModifications.Count);
-            //sb.AppendLine("Number of variable mods: " + VariableModifications.Count);
-
-            //// TODO: dissociation type?
-            ////sb.AppendLine("lp: " + string.Join(",", ProductTypes));
-            //foreach (var digestionParams in CollectionOfDigestionParams)
-            //{
-            //    sb.AppendLine("protease: " + digestionParams.Protease);
-            //    sb.AppendLine("initiatorMethionineBehavior: " + digestionParams.InitiatorMethionineBehavior);
-            //    sb.AppendLine("maximumMissedCleavages: " + digestionParams.MaxMissedCleavages);
-            //    sb.AppendLine("minPeptideLength: " + digestionParams.MinPeptideLength);
-            //    sb.AppendLine("maxPeptideLength: " + digestionParams.MaxPeptideLength);
-            //    sb.AppendLine("maximumVariableModificationIsoforms: " + digestionParams.MaxModificationIsoforms);
-            //    sb.AppendLine("Cleavage specificity: " +cleavage)
-            //}
-            //sb.Append("Localizeable mods: " + ProteinList.Select(b => b.OneBasedPossibleLocalizedModifications.Count).Sum());
             return sb.ToString();
         }
 
