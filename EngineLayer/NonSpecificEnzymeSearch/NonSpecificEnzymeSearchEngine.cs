@@ -108,8 +108,6 @@ namespace EngineLayer.NonSpecificEnzymeSearch
                                     if (notchAndUpdatedPeptide.Item1 >= 0)
                                     {
                                         PeptideSpectralMatch[] localPeptideSpectralMatches = PeptideSpectralMatches[(int)FdrClassifier.GetCleavageSpecificityCategory(notchAndUpdatedPeptide.Item2.CleavageSpecificityForFdrCategory)];
-                                        //if (localPeptideSpectralMatches != null)
-                                        //{
                                         if (localPeptideSpectralMatches[i] == null)
                                         {
                                             localPeptideSpectralMatches[i] = new PeptideSpectralMatch(notchAndUpdatedPeptide.Item2, notchAndUpdatedPeptide.Item1, thisScore, i, scan, commonParameters.DigestionParams, matchedIons);
@@ -117,8 +115,7 @@ namespace EngineLayer.NonSpecificEnzymeSearch
                                         else
                                         {
                                             localPeptideSpectralMatches[i].AddOrReplace(notchAndUpdatedPeptide.Item2, thisScore, notchAndUpdatedPeptide.Item1, commonParameters.ReportAllAmbiguity, matchedIons);
-                                        }
-                                        // }
+                                        }                        
                                     }
                                 }
                             }
