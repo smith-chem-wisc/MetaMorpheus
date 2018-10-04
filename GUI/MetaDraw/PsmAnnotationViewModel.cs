@@ -76,7 +76,12 @@ namespace ViewModels
             {
                 foreach (var peak in psmToDraw.MatchedIons)
                 {
-                    OxyColor ionColor = productTypeDrawColors[peak.NeutralTheoreticalProduct.ProductType];
+                    OxyColor ionColor = OxyColors.Turquoise;
+
+                    if (productTypeDrawColors.ContainsKey(peak.NeutralTheoreticalProduct.ProductType))
+                    {
+                        ionColor = productTypeDrawColors[peak.NeutralTheoreticalProduct.ProductType];
+                    }
 
                     int i = msDataScan.MassSpectrum.GetClosestPeakIndex(peak.NeutralTheoreticalProduct.NeutralMass.ToMz(1)).Value;
 
@@ -93,7 +98,7 @@ namespace ViewModels
                     {
                         peakAnnotationText = peak.NeutralTheoreticalProduct.ProductType.ToString().ToLower() + peak.NeutralTheoreticalProduct.TerminusFragment.FragmentNumber + "-" + peak.NeutralTheoreticalProduct.NeutralLoss.ToString("F2") + " (" + peak.Mz.ToString("F3") + ")";
                     }
-                    
+
                     var peakAnnotation = new TextAnnotation();
                     peakAnnotation.TextRotation = -60;
                     peakAnnotation.Font = "Arial";

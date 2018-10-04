@@ -66,7 +66,7 @@ namespace MetaMorpheusGUI
             productTypeToColor[ProductType.y] = Colors.Purple;
             productTypeToColor[ProductType.zPlusOne] = Colors.SeaGreen;
             productTypeToColor[ProductType.c] = Colors.Orange;
-            
+
             // offset for annotation on base sequence
             productTypeToYOffset = ((ProductType[])Enum.GetValues(typeof(ProductType))).ToDictionary(p => p, p => 0.0);
             productTypeToYOffset[ProductType.b] = 50;
@@ -301,6 +301,7 @@ namespace MetaMorpheusGUI
                     BaseDraw.botSplittingDrawing(canvas, new Point(residue * spacing + 8,
                         productTypeToYOffset[ion.NeutralTheoreticalProduct.ProductType]), productTypeToColor[ion.NeutralTheoreticalProduct.ProductType], annotation);
                 }
+                // don't draw diagnostic ions, precursor ions, etc
             }
 
             // draw modifications
