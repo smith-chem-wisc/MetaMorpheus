@@ -1,4 +1,6 @@
 ﻿using EngineLayer;
+using EngineLayer.ClassicSearch;
+using EngineLayer.FdrAnalysis;
 using MassSpectrometry;
 using NUnit.Framework;
 using Proteomics;
@@ -984,6 +986,81 @@ namespace Test
             Assert.AreEqual("2", proteinGroups.ElementAt(0).ProteinGroupName);
             Assert.AreEqual(2, proteinGroups.ElementAt(0).AllPeptides.Count);
 
+
+        }
+        /// <summary>
+        /// This test ensures that FDR for each psm is calculated accoriding to its protease
+        /// </summary>
+        [Test]
+        public static void MultiProteaseParsimony_TestingProteaseSpecificFDRCalculations()
+        {
+            Protein TargetProtein = new Protein("-ABCD-EFGXYZ", "accessionT", isDecoy: false);
+            Protein DecoyProtein = new Protein("ZYXGFE-DCBA-", "accessiond", isDecoy: true);
+
+            List<Tuple<string, FragmentationTerminus>> sequencesInducingCleavage = new List<Tuple<string, FragmentationTerminus>> { new Tuple<string, FragmentationTerminus>("-", FragmentationTerminus.C), new Tuple<string, FragmentationTerminus>("-", FragmentationTerminus.N) };
+            List<Tuple<string, FragmentationTerminus>> sequencesInducingCleavage2 = new List<Tuple<string, FragmentationTerminus>> { new Tuple<string, FragmentationTerminus>("G", FragmentationTerminus.C) };
+
+            var protease = new Protease("proteaseDash", sequencesInducingCleavage, new List<Tuple<string, FragmentationTerminus>>(), CleavageSpecificity.Full, null, null, null);
+            ProteaseDictionary.Dictionary.Add(protease.Name, protease);
+            var protease2 = new Protease("proteaseG", sequencesInducingCleavage2, new List<Tuple<string, FragmentationTerminus>>(), CleavageSpecificity.Full, null, null, null);
+            ProteaseDictionary.Dictionary.Add(protease2.Name, protease2);
+
+            DigestionParams digestionParams = new DigestionParams(protease: protease.Name, minPeptideLength: 1);
+            DigestionParams digestionParams2 = new DigestionParams(protease: protease2.Name, minPeptideLength: 1);
+            PeptideWithSetModifications TargetA = new PeptideWithSetModifications(protein: TargetProtein, digestionParams: digestionParams, oneBasedStartResidueInProtein: 2, oneBasedEndResidueInProtein: 5, peptideDescription: "ABCD", missedCleavages: 0, allModsOneIsNterminus: new Dictionary<int, Modification>(), numFixedMods: 0);
+            PeptideWithSetModifications TargetB = new PeptideWithSetModifications(protein: TargetProtein, digestionParams: digestionParams2, oneBasedStartResidueInProtein: 10, oneBasedEndResidueInProtein: 12, peptideDescription: "XYZ", missedCleavages: 0, allModsOneIsNterminus: new Dictionary<int, Modification>(), numFixedMods: 0);
+            PeptideWithSetModifications DecoyA = new PeptideWithSetModifications(protein: DecoyProtein, digestionParams: digestionParams, oneBasedStartResidueInProtein: 8, oneBasedEndResidueInProtein: 11, peptideDescription: "DCBA", missedCleavages: 0, allModsOneIsNterminus: new Dictionary<int, Modification>(), numFixedMods: 0);
+            PeptideWithSetModifications DecoyB = new PeptideWithSetModifications(protein: DecoyProtein, digestionParams: digestionParams2, oneBasedStartResidueInProtein: 5, oneBasedEndResidueInProtein: 11, peptideDescription: "FE-DCBA-", missedCleavages: 0, allModsOneIsNterminus: new Dictionary<int, Modification>(), numFixedMods: 0);
+
+            MsDataScan dfb = new MsDataScan(new MzSpectrum(new double[] { 1 }, new double[] { 1 }, false), 0, 1, true, Polarity.Positive, double.NaN, null, null, MZAnalyzerType.Orbitrap, double.NaN, null, null, "scan=1", double.NaN, null, null, double.NaN, null, DissociationType.AnyActivationType, 0, null);
+            Ms2ScanWithSpecificMass scan = new Ms2ScanWithSpecificMass(dfb, 2, 0, "File");
+            // PSMs proteaseA
+            var psm1 = new PeptideSpectralMatch(TargetA, 0, 10, 0, scan, digestionParams, new List<MatchedFragmentIon>());
+            var psm3 = new PeptideSpectralMatch(TargetA, 0, 10, 0, scan, digestionParams, new List<MatchedFragmentIon>());
+            var psm7 = new PeptideSpectralMatch(TargetA, 0, 10, 0, scan, digestionParams, new List<MatchedFragmentIon>());
+            var psm8 = new PeptideSpectralMatch(DecoyA, 0, 10, 0, scan, digestionParams, new List<MatchedFragmentIon>());//decoy
+            var psm9 = new PeptideSpectralMatch(DecoyA, 0, 10, 0, scan, digestionParams, new List<MatchedFragmentIon>());//decoy
+            var psm10 = new PeptideSpectralMatch(TargetA, 0, 10, 0, scan, digestionParams, new List<MatchedFragmentIon>());
+            // PSMs proteaseB
+            var psm2 = new PeptideSpectralMatch(TargetB, 0, 10, 0, scan, digestionParams2, new List<MatchedFragmentIon>());
+            var psm4 = new PeptideSpectralMatch(TargetB, 0, 10, 0, scan, digestionParams2, new List<MatchedFragmentIon>());
+            var psm5 = new PeptideSpectralMatch(DecoyB, 0, 10, 0, scan, digestionParams2, new List<MatchedFragmentIon>());//decoy
+            var psm6 = new PeptideSpectralMatch(TargetB, 0, 10, 0, scan, digestionParams2, new List<MatchedFragmentIon>());
+            
+            List<PeptideSpectralMatch> allPSMsBoth = new List<PeptideSpectralMatch>();
+            allPSMsBoth.Add(psm1);
+            allPSMsBoth.Add(psm2);
+            allPSMsBoth.Add(psm3);
+            allPSMsBoth.Add(psm4);
+            allPSMsBoth.Add(psm5);
+            allPSMsBoth.Add(psm6);
+            allPSMsBoth.Add(psm7);
+            allPSMsBoth.Add(psm8);
+            allPSMsBoth.Add(psm9);
+            allPSMsBoth.Add(psm10);
+            foreach (var psm in allPSMsBoth)
+            {
+                psm.ResolveAllAmbiguities();
+            }
+            var psmsGroupedByProtease = allPSMsBoth.GroupBy(p => p.DigestionParams.Protease);
+            List<PeptideSpectralMatch> allPsms = new List<PeptideSpectralMatch>();
+            foreach (var proteases in psmsGroupedByProtease)
+            {
+                var selectedProteasePsms = proteases.Select(p => p).ToList();
+                var fdrAnalysisResults = (FdrAnalysisResults)(new FdrAnalysisEngine(selectedProteasePsms, 4, new CommonParameters(), new List<string> { "search" }).Run());
+                allPsms.AddRange(selectedProteasePsms);
+            }
+            allPSMsBoth = allPsms;
+            Assert.AreEqual(0, allPSMsBoth.ElementAt(0).FdrInfo.QValue);
+            Assert.AreEqual(0, allPSMsBoth.ElementAt(1).FdrInfo.QValue);
+            Assert.AreEqual(0, allPSMsBoth.ElementAt(2).FdrInfo.QValue);
+            Assert.AreEqual("0.333333333333333", allPSMsBoth.ElementAt(3).FdrInfo.QValue.ToString());
+            Assert.AreEqual(0.5, allPSMsBoth.ElementAt(4).FdrInfo.QValue);
+            Assert.AreEqual(0.5, allPSMsBoth.ElementAt(5).FdrInfo.QValue);
+            Assert.AreEqual(0, allPSMsBoth.ElementAt(6).FdrInfo.QValue);
+            Assert.AreEqual(0, allPSMsBoth.ElementAt(7).FdrInfo.QValue);
+            Assert.AreEqual("0.333333333333333", allPSMsBoth.ElementAt(8).FdrInfo.QValue.ToString());
+            Assert.AreEqual("0.333333333333333", allPSMsBoth.ElementAt(9).FdrInfo.QValue.ToString());
 
         }
     }
