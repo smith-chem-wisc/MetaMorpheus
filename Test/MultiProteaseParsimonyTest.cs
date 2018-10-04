@@ -731,7 +731,7 @@ namespace Test
         /// </summary>
 
         [Test]
-        public static void TestPSMFdrFitering_RealFile()
+        public static void TestPSMFdrFiltering_RealFile()
         {
             SearchTask Task1 = new SearchTask
             {
@@ -750,9 +750,12 @@ namespace Test
             };
             string mzmlName = @"TestData\PrunedDbSpectra.mzml";
             string fastaName = @"TestData\DbForPrunedDb.fasta";
-            var results = Task1.RunTask(Environment.CurrentDirectory, new List<DbForTask>() { new DbForTask(fastaName, false) }, new List<string>() { mzmlName }, "test");
+            string outputFolder = Path.Combine(TestContext.CurrentContext.TestDirectory, @"TestPSMFdrFiltering_RealFileTest");
 
-            var thisTaskOutputFolder = MySetUpClass.outputFolder;
+            var engine = new EverythingRunnerEngine(new List<(string, MetaMorpheusTask)> { ("TestPSMFdrFiltering_RealFile", Task1) }, new List<string> { mzmlName }, new List<DbForTask> { new DbForTask(fastaName, false) }, outputFolder);
+            engine.Run();
+
+            var thisTaskOutputFolder = Path.Combine(MySetUpClass.outputFolder, @"TestPSMFdrFiltering_RealFile");
 
             var psms = Path.Combine(thisTaskOutputFolder, "AllPSMs.psmtsv");
 

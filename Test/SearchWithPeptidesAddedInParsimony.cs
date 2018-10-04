@@ -5,6 +5,7 @@ using Proteomics;
 using Proteomics.ProteolyticDigestion;
 using System;
 using System.Collections.Generic;
+using System.IO;
 using System.Linq;
 using TaskLayer;
 using UsefulProteomicsDatabases;
@@ -73,8 +74,10 @@ namespace Test
             MsDataFile myMsDataFile = new TestDataFile(new List<PeptideWithSetModifications> { pepMA, pepMG, pepMA111 }, true);
 
             IO.MzML.MzmlMethods.CreateAndWriteMyMzmlWithCalibratedSpectra(myMsDataFile, mzmlName, false);
+            string outputFolder = Path.Combine(TestContext.CurrentContext.TestDirectory, @"TestSearchWithPeptidesAddedInParsimony");
+            Directory.CreateDirectory(outputFolder);
 
-            st.RunTask("",
+            st.RunTask(outputFolder,
                 new List<DbForTask> { new DbForTask(xmlName, false) },
                 new List<string> { mzmlName }, "");
         }
