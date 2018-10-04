@@ -82,6 +82,11 @@ namespace Test
                 SearchParameters = new SearchParameters
                 {
                     SearchType = SearchType.NonSpecific,
+                    LocalFdrCategories = new List<FdrCategory>
+                    {
+                        FdrCategory.FullySpecific,
+                        FdrCategory.SemiSpecific
+                    }
                 },
                 CommonParameters = new CommonParameters(addCompIons:true, digestionParams: new DigestionParams(searchModeType:CleavageSpecificity.Semi, fragmentationTerminus: FragmentationTerminus.C))
             };
