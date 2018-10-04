@@ -94,7 +94,7 @@ namespace TaskLayer
 
             // start the search task
             MyTaskResults = new MyTaskResults(this);
-            int numFdrCategories = (int)(Enum.GetValues(typeof(FdrCategory)).Cast<FdrCategory>().Last());
+            int numFdrCategories = (int)(Enum.GetValues(typeof(FdrCategory)).Cast<FdrCategory>().Last() + 1); //+1 because it starts at zero
             List<PeptideSpectralMatch>[] allPsms = new List<PeptideSpectralMatch>[numFdrCategories];
             foreach (int localFDRCategory in SearchParameters.LocalFdrCategories) //only add if we're using for FDR, else ignore it as null.
             {

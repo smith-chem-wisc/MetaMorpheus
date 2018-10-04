@@ -674,7 +674,7 @@ namespace MetaMorpheusGUI
 
         private void NonSpecificUpdate(object sender, TextChangedEventArgs e)
         {
-            if (((Protease)proteaseComboBox.SelectedItem).Name.Contains("non-specific"))
+            if (((Protease)proteaseComboBox.SelectedItem).Name.Contains("non-specific") || nonSpecificSearchRadioButton.IsChecked.Value)
             {
                 try
                 {
