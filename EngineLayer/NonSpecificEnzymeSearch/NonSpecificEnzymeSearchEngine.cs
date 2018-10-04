@@ -190,7 +190,9 @@ namespace EngineLayer.NonSpecificEnzymeSearch
                 int notch = searchMode.Accepts(scanPrecursorMass, totalMass);
                 if (notch >= 0)
                 {
-                    return new Tuple<int, PeptideWithSetModifications>(notch, peptide);
+                    //need to update so that the cleavage specificity is recorded
+                    var updatedPwsm = new PeptideWithSetModifications(peptide.Protein, peptide.DigestionParams, peptide.OneBasedStartResidueInProtein, peptide.OneBasedEndResidueInProtein, CleavageSpecificity.Unknown, "", 0, peptide.AllModsOneIsNterminus, peptide.NumFixedMods);
+                    return new Tuple<int, PeptideWithSetModifications>(notch, updatedPwsm);
                 }
             }
             return new Tuple<int, PeptideWithSetModifications>(-1, null);
