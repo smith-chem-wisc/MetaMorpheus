@@ -183,8 +183,6 @@ namespace EngineLayer.CrosslinkSearch
             {
                 PeptideWithSetModifications bestPeptide = theScanBestPeptide[alphaIndex].BestPeptide;
                 List<Product> products = bestPeptide.Fragment(commonParameters.DissociationType, FragmentationTerminus.Both).ToList();
-                if(bestPeptide.OneBasedEndResidueInProtein<0 || bestPeptide.OneBasedStartResidueInProtein<0)
-                { }
                 var matchedFragmentIons = MatchFragmentIons(theScan.TheScan.MassSpectrum, products, commonParameters, theScan.PrecursorMass);
                 double score = CalculatePeptideScore(theScan.TheScan, matchedFragmentIons, 0);
                 List<int> possibleCrosslinkLocations = CrosslinkSpectralMatch.GetPossibleCrosslinkerModSites(allCrosslinkerSites, bestPeptide);
