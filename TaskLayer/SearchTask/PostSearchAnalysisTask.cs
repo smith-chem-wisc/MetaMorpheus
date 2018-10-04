@@ -89,30 +89,16 @@ namespace TaskLayer
             Status("Estimating PSM FDR...", Parameters.SearchTaskId);
             int massDiffAcceptorNumNotches = Parameters.NumNotches;
             //list of proteases            
-            var listOfProteases = Parameters.ListOfDigestionParams.Select(p => p.Protease).Distinct().ToList();
-            if (listOfProteases.Count > 1)
-            {               
-                Dictionary<Protease, List<PeptideSpectralMatch>> proteaseSpecificPSMs = new Dictionary<Protease, List<PeptideSpectralMatch>>();
-                foreach (var protease in listOfProteases)
-                {
-                    List<PeptideSpectralMatch> proteasePsms = Parameters.AllPsms.Where(p => p.DigestionParams.Protease == protease).ToList();
-                    proteaseSpecificPSMs.Add(protease, proteasePsms);
-                }
-                List<PeptideSpectralMatch> allPsms = new List<PeptideSpectralMatch>();
-                foreach (var protease in proteaseSpecificPSMs)
-                {
-                    var fdrAnalysisResults = (FdrAnalysisResults)(new FdrAnalysisEngine(protease.Value, massDiffAcceptorNumNotches, CommonParameters, new List<string> { Parameters.SearchTaskId }).Run());
-                    allPsms.AddRange(protease.Value);
-                }
-                Parameters.AllPsms = allPsms;
-                
-            }
-            else
+            var psmsGroupedByProtease = Parameters.AllPsms.GroupBy(p => p.DigestionParams.Protease);
+            List<PeptideSpectralMatch> allPsms = new List<PeptideSpectralMatch>();
+            foreach (var protease in psmsGroupedByProtease)
             {
-                var fdrAnalysisResults = (FdrAnalysisResults)(new FdrAnalysisEngine(Parameters.AllPsms, massDiffAcceptorNumNotches, CommonParameters, new List<string> { Parameters.SearchTaskId }).Run());
+                var selectedProteasePsms = protease.Select(p => p).ToList();
+                var fdrAnalysisResults = (FdrAnalysisResults)(new FdrAnalysisEngine(selectedProteasePsms, massDiffAcceptorNumNotches, CommonParameters, new List<string> { Parameters.SearchTaskId }).Run());
+                allPsms.AddRange(selectedProteasePsms);
             }
+            Parameters.AllPsms = allPsms;
             
-
             Status("Done estimating PSM FDR!", Parameters.SearchTaskId);
         }
 
