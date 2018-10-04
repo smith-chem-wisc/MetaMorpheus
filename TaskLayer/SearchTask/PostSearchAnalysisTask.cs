@@ -83,10 +83,35 @@ namespace TaskLayer
             // for example, here it may be treated as a decoy PSM, where as in parsimony it will be determined by the parsimony algorithm which is agnostic of target/decoy assignments
             // this could cause weird PSM FDR issues
 
-            Status("Estimating PSM FDR...", Parameters.SearchTaskId);
 
+            //For Multiprotease Parsimony want to calcualte FDR on a per protease basis (targets and decoys for a specific protease)
+            //filter by protease, calc FDR, then recombine into All Psms before moving forward
+            Status("Estimating PSM FDR...", Parameters.SearchTaskId);
             int massDiffAcceptorNumNotches = Parameters.NumNotches;
-            var fdrAnalysisResults = (FdrAnalysisResults)(new FdrAnalysisEngine(Parameters.AllPsms, massDiffAcceptorNumNotches, CommonParameters, new List<string> { Parameters.SearchTaskId }).Run());
+            //list of proteases            
+            var listOfProteases = Parameters.ListOfDigestionParams.Select(p => p.Protease).Distinct().ToList();
+            if (listOfProteases.Count > 1)
+            {               
+                Dictionary<Protease, List<PeptideSpectralMatch>> proteaseSpecificPSMs = new Dictionary<Protease, List<PeptideSpectralMatch>>();
+                foreach (var protease in listOfProteases)
+                {
+                    List<PeptideSpectralMatch> proteasePsms = Parameters.AllPsms.Where(p => p.DigestionParams.Protease == protease).ToList();
+                    proteaseSpecificPSMs.Add(protease, proteasePsms);
+                }
+                List<PeptideSpectralMatch> allPsms = new List<PeptideSpectralMatch>();
+                foreach (var protease in proteaseSpecificPSMs)
+                {
+                    var fdrAnalysisResults = (FdrAnalysisResults)(new FdrAnalysisEngine(protease.Value, massDiffAcceptorNumNotches, CommonParameters, new List<string> { Parameters.SearchTaskId }).Run());
+                    allPsms.AddRange(protease.Value);
+                }
+                Parameters.AllPsms = allPsms;
+                
+            }
+            else
+            {
+                var fdrAnalysisResults = (FdrAnalysisResults)(new FdrAnalysisEngine(Parameters.AllPsms, massDiffAcceptorNumNotches, CommonParameters, new List<string> { Parameters.SearchTaskId }).Run());
+            }
+            
 
             Status("Done estimating PSM FDR!", Parameters.SearchTaskId);
         }
