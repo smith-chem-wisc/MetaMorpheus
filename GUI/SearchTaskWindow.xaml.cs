@@ -170,6 +170,8 @@ namespace MetaMorpheusGUI
             MaxModNumTextBox.Text = task.CommonParameters.DigestionParams.MaxModsForPeptide.ToString(CultureInfo.InvariantCulture);
             initiatorMethionineBehaviorComboBox.SelectedIndex = (int)task.CommonParameters.DigestionParams.InitiatorMethionineBehavior;
             dissociationTypeComboBox.SelectedItem = task.CommonParameters.DissociationType.ToString();
+            nTerminalIons.IsChecked = task.CommonParameters.DigestionParams.FragmentationTerminus == FragmentationTerminus.Both || task.CommonParameters.DigestionParams.FragmentationTerminus == FragmentationTerminus.N;
+            cTerminalIons.IsChecked = task.CommonParameters.DigestionParams.FragmentationTerminus == FragmentationTerminus.Both || task.CommonParameters.DigestionParams.FragmentationTerminus == FragmentationTerminus.C;
             productMassToleranceTextBox.Text = task.CommonParameters.ProductMassTolerance.Value.ToString(CultureInfo.InvariantCulture);
             productMassToleranceComboBox.SelectedIndex = task.CommonParameters.ProductMassTolerance is AbsoluteTolerance ? 0 : 1;
             precursorMassToleranceTextBox.Text = task.CommonParameters.PrecursorMassTolerance.Value.ToString(CultureInfo.InvariantCulture);
@@ -306,13 +308,26 @@ namespace MetaMorpheusGUI
                     if (nTerminalIons.IsChecked.Value)
                     {
                         cTerminalIons.IsChecked = false;
+                        proteaseComboBox.Items.MoveCurrentToFirst();
+                        proteaseComboBox.SelectedItem = proteaseComboBox.Items.CurrentItem;
+                        while (!((Protease)proteaseComboBox.SelectedItem).Name.Equals("singleN"))
+                        {
+                            proteaseComboBox.Items.MoveCurrentToNext();
+                            proteaseComboBox.SelectedItem = proteaseComboBox.Items.CurrentItem;
+                        }
                     }
                     else //we're not allowing no ion types. It must have C if it doesn't have N.
                     {
                         cTerminalIons.IsChecked = true;
+                        while (!((Protease)proteaseComboBox.SelectedItem).Name.Equals("singleC"))
+                        {
+                            proteaseComboBox.Items.MoveCurrentToNext();
+                            proteaseComboBox.SelectedItem = proteaseComboBox.Items.CurrentItem;
+                        }
                     }
+                    searchModeType = CleavageSpecificity.Full; //we're going to change this to override the semi, or the singleN/C proteases will be treated as semi instead of full
                 }
-                if (((Protease)proteaseComboBox.SelectedItem).Name.Contains("semi-trypsin")) //you can't use this protease with the fast semi search
+                else if (((Protease)proteaseComboBox.SelectedItem).Name.Contains("semi-trypsin")) //you can't use this protease with the fast semi search
                 {
                     proteaseComboBox.Items.MoveCurrentToFirst();
                     proteaseComboBox.SelectedItem = proteaseComboBox.Items.CurrentItem;
@@ -322,6 +337,7 @@ namespace MetaMorpheusGUI
                         proteaseComboBox.SelectedItem = proteaseComboBox.Items.CurrentItem;
                     }
                 }
+                //else do nothing
                 if (!addCompIonCheckBox.IsChecked.Value)
                 {
                     MessageBox.Show("Warning: Complementary ions are strongly recommended when using this algorithm.");
@@ -352,8 +368,8 @@ namespace MetaMorpheusGUI
                 fragmentationTerminus = FragmentationTerminus.None;
                 MessageBox.Show("Warning: No ion types were selected. MetaMorpheus will be unable to search MS/MS spectra.");
             }
+            //else both
 
-            bool semiProteaseDigestion = (semiSpecificSearchRadioButton.IsChecked.Value && ((Protease)proteaseComboBox.SelectedItem).CleavageSpecificity != CleavageSpecificity.SingleN && ((Protease)proteaseComboBox.SelectedItem).CleavageSpecificity != CleavageSpecificity.SingleC);
             int maxMissedCleavages = string.IsNullOrEmpty(missedCleavagesTextBox.Text) ? int.MaxValue : (int.Parse(missedCleavagesTextBox.Text, NumberStyles.Any, CultureInfo.InvariantCulture));
             int minPeptideLengthValue = (int.Parse(MinPeptideLengthTextBox.Text, NumberStyles.Any, CultureInfo.InvariantCulture));
             int maxPeptideLengthValue = string.IsNullOrEmpty(MaxPeptideLengthTextBox.Text) ? int.MaxValue : (int.Parse(MaxPeptideLengthTextBox.Text, NumberStyles.Any, CultureInfo.InvariantCulture));
