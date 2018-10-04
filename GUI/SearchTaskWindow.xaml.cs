@@ -146,8 +146,8 @@ namespace MetaMorpheusGUI
         {
             classicSearchRadioButton.IsChecked = task.SearchParameters.SearchType == SearchType.Classic;
             modernSearchRadioButton.IsChecked = task.SearchParameters.SearchType == SearchType.Modern;
-            nonSpecificSearchRadioButton.IsChecked = task.SearchParameters.SearchType == SearchType.NonSpecific && task.CommonParameters.DigestionParams.Protease.Name.Contains("non-specific");
-            semiSpecificSearchRadioButton.IsChecked = task.SearchParameters.SearchType == SearchType.NonSpecific && !task.CommonParameters.DigestionParams.Protease.Name.Contains("non-specific");
+            nonSpecificSearchRadioButton.IsChecked = task.SearchParameters.SearchType == SearchType.NonSpecific && task.CommonParameters.DigestionParams.SearchModeType == CleavageSpecificity.None;
+            semiSpecificSearchRadioButton.IsChecked = task.SearchParameters.SearchType == SearchType.NonSpecific && task.CommonParameters.DigestionParams.SearchModeType != CleavageSpecificity.None;
             MaxFragmentMassTextBox.Text = task.SearchParameters.MaxFragmentSize.ToString(CultureInfo.InvariantCulture);
             checkBoxParsimony.IsChecked = task.SearchParameters.DoParsimony;
             checkBoxNoOneHitWonders.IsChecked = task.SearchParameters.NoOneHitWonders;
@@ -165,7 +165,7 @@ namespace MetaMorpheusGUI
             missedCleavagesTextBox.Text = task.CommonParameters.DigestionParams.MaxMissedCleavages == int.MaxValue ? "" : task.CommonParameters.DigestionParams.MaxMissedCleavages.ToString(CultureInfo.InvariantCulture);
             MinPeptideLengthTextBox.Text = task.CommonParameters.DigestionParams.MinPeptideLength.ToString(CultureInfo.InvariantCulture);
             MaxPeptideLengthTextBox.Text = task.CommonParameters.DigestionParams.MaxPeptideLength == int.MaxValue ? "" : task.CommonParameters.DigestionParams.MaxPeptideLength.ToString(CultureInfo.InvariantCulture);
-            proteaseComboBox.SelectedItem = task.CommonParameters.DigestionParams.Protease;
+            proteaseComboBox.SelectedItem = task.CommonParameters.DigestionParams.SpecificProtease;
             maxModificationIsoformsTextBox.Text = task.CommonParameters.DigestionParams.MaxModificationIsoforms.ToString(CultureInfo.InvariantCulture);
             MaxModNumTextBox.Text = task.CommonParameters.DigestionParams.MaxModsForPeptide.ToString(CultureInfo.InvariantCulture);
             initiatorMethionineBehaviorComboBox.SelectedIndex = (int)task.CommonParameters.DigestionParams.InitiatorMethionineBehavior;
@@ -714,6 +714,11 @@ namespace MetaMorpheusGUI
         {
             addCompIonCheckBox.IsChecked = semiSpecificSearchRadioButton.IsChecked.Value;
             checkBoxClassicSemiSpecific.IsChecked = semiSpecificSearchRadioButton.IsChecked.Value;
+            if (semiSpecificSearchRadioButton.IsChecked.Value)
+            {
+                missedCleavagesTextBox.Text = "2";
+                MaxPeptideLengthTextBox.Text = "50";
+            }
         }
 
         private void KeyPressed(object sender, KeyEventArgs e)
