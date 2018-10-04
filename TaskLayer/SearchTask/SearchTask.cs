@@ -170,11 +170,11 @@ namespace TaskLayer
                 else if (SearchParameters.SearchType == SearchType.NonSpecific)
                 {
                     List<CommonParameters> paramsToUse = new List<CommonParameters> { combinedParams };
-                    if(combinedParams.DigestionParams.SearchModeType == CleavageSpecificity.Semi) //if semi, we need to do both N and C to hit everything
+                    if (combinedParams.DigestionParams.SearchModeType == CleavageSpecificity.Semi) //if semi, we need to do both N and C to hit everything
                     {
                         paramsToUse.Clear();
                         List<FragmentationTerminus> terminiToUse = new List<FragmentationTerminus> { FragmentationTerminus.N, FragmentationTerminus.C };
-                        foreach(FragmentationTerminus terminus in terminiToUse) //set both termini
+                        foreach (FragmentationTerminus terminus in terminiToUse) //set both termini
                         {
                             paramsToUse.Add(combinedParams.CloneWithNewTerminus(terminus));
                         }
@@ -183,8 +183,7 @@ namespace TaskLayer
                     {
                         for (int currentPartition = 0; currentPartition < paramToUse.TotalPartitions; currentPartition++)
                         {
-                            //List<CompactPeptide> peptideIndex = null;
-                            List<PeptideWithSetModifications> peptideIndex = null;//changed in update
+                            List<PeptideWithSetModifications> peptideIndex = null;
 
                             List<Protein> proteinListSubset = proteinList.GetRange(currentPartition * proteinList.Count() / paramToUse.TotalPartitions, ((currentPartition + 1) * proteinList.Count() / paramToUse.TotalPartitions) - (currentPartition * proteinList.Count() / paramToUse.TotalPartitions));
 
@@ -204,7 +203,7 @@ namespace TaskLayer
                             lock (indexLock)
                                 GenerateIndexes(indexEnginePrecursor, dbFilenameList, ref peptideIndexPrecursor, ref fragmentIndexPrecursor, proteinList, GlobalVariables.AllModsKnown.ToList(), taskId);
 
-                            if (peptideIndex.Count != peptideIndexPrecursor.Count)
+                            if (peptideIndex.Count != peptideIndexPrecursor.Count) //built in unit test...
                                 throw new MetaMorpheusException("peptideIndex not identical between indexing engines");
 
                             Status("Searching files...", taskId);
