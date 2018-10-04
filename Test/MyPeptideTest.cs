@@ -145,7 +145,7 @@ namespace Test
             Ms2ScanWithSpecificMass[] arrayOfSortedMS2Scans = { new Ms2ScanWithSpecificMass(scan, 600, 1, null) };
             CommonParameters CommonParameters = new CommonParameters(productMassTolerance: new PpmTolerance(5), scoreCutoff: 1, digestionParams: new DigestionParams(maxMissedCleavages: 0, minPeptideLength: 1, maxModificationIsoforms: int.MaxValue, initiatorMethionineBehavior: InitiatorMethionineBehavior.Retain));
 
-            var indexEngine = new IndexingEngine(new List<Protein> { prot }, new List<Modification>(), new List<Modification>(), 1, DecoyType.Reverse, CommonParameters, 30000, new List<string>());
+            var indexEngine = new IndexingEngine(new List<Protein> { prot }, new List<Modification>(), new List<Modification>(), 1, DecoyType.Reverse, CommonParameters, 30000, false, new List<string>());
             var indexResults = (IndexingResults)indexEngine.Run();
             var cse = new ModernSearchEngine(globalPsmss, arrayOfSortedMS2Scans, indexResults.PeptideIndex, indexResults.FragmentIndex, 0, CommonParameters, new OpenSearchMode(), 0, new List<string>());
 

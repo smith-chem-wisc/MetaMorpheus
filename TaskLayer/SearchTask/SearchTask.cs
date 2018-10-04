@@ -152,11 +152,12 @@ namespace TaskLayer
                         List<Protein> proteinListSubset = proteinList.GetRange(currentPartition * proteinList.Count() / combinedParams.TotalPartitions, ((currentPartition + 1) * proteinList.Count() / combinedParams.TotalPartitions) - (currentPartition * proteinList.Count() / combinedParams.TotalPartitions));
 
                         Status("Getting fragment dictionary...", new List<string> { taskId });
-                        var indexEngine = new IndexingEngine(proteinListSubset, variableModifications, fixedModifications, currentPartition, SearchParameters.DecoyType, combinedParams, SearchParameters.MaxFragmentSize, new List<string> { taskId });
+                        var indexEngine = new IndexingEngine(proteinListSubset, variableModifications, fixedModifications, currentPartition, SearchParameters.DecoyType, combinedParams, SearchParameters.MaxFragmentSize, false, new List<string> { taskId });
                         List<int>[] fragmentIndex = null;
+                        List<int>[] precursorIndex = null;
                         lock (indexLock)
                         {
-                            GenerateIndexes(indexEngine, dbFilenameList, ref peptideIndex, ref fragmentIndex, proteinList, GlobalVariables.AllModsKnown.ToList(), taskId);
+                            GenerateIndexes(indexEngine, dbFilenameList, ref peptideIndex, ref fragmentIndex, ref precursorIndex, proteinList, GlobalVariables.AllModsKnown.ToList(), taskId);
                         }
 
                         Status("Searching files...", taskId);
@@ -188,27 +189,16 @@ namespace TaskLayer
                             List<Protein> proteinListSubset = proteinList.GetRange(currentPartition * proteinList.Count() / paramToUse.TotalPartitions, ((currentPartition + 1) * proteinList.Count() / paramToUse.TotalPartitions) - (currentPartition * proteinList.Count() / paramToUse.TotalPartitions));
 
                             List<int>[] fragmentIndex = new List<int>[1];
+                            List<int>[] precursorIndex = new List<int>[1];
 
                             Status("Getting fragment dictionary...", new List<string> { taskId });
-                            var indexEngine = new IndexingEngine(proteinListSubset, variableModifications, fixedModifications, currentPartition, SearchParameters.DecoyType, paramToUse, SearchParameters.MaxFragmentSize, new List<string> { taskId });
+                            var indexEngine = new IndexingEngine(proteinListSubset, variableModifications, fixedModifications, currentPartition, SearchParameters.DecoyType, paramToUse, SearchParameters.MaxFragmentSize, true, new List<string> { taskId });
                             lock (indexLock)
-                                GenerateIndexes(indexEngine, dbFilenameList, ref peptideIndex, ref fragmentIndex, proteinList, GlobalVariables.AllModsKnown.ToList(), taskId);
-
-                            Status("Getting precursor dictionary...", new List<string> { taskId });
-                            List<PeptideWithSetModifications> peptideIndexPrecursor = null;
-                            List<Protein> proteinListSubsetPrecursor = proteinList.GetRange(currentPartition * proteinList.Count() / paramToUse.TotalPartitions, ((currentPartition + 1) * proteinList.Count() / paramToUse.TotalPartitions) - (currentPartition * proteinList.Count() / paramToUse.TotalPartitions));
-                            List<int>[] fragmentIndexPrecursor = new List<int>[1];
-
-                            var indexEnginePrecursor = new PrecursorIndexingEngine(proteinListSubsetPrecursor, variableModifications, fixedModifications, currentPartition, SearchParameters.DecoyType, paramToUse, 0, new List<string> { taskId });
-                            lock (indexLock)
-                                GenerateIndexes(indexEnginePrecursor, dbFilenameList, ref peptideIndexPrecursor, ref fragmentIndexPrecursor, proteinList, GlobalVariables.AllModsKnown.ToList(), taskId);
-
-                            if (peptideIndex.Count != peptideIndexPrecursor.Count) //built in unit test...
-                                throw new MetaMorpheusException("peptideIndex not identical between indexing engines");
-
+                                GenerateIndexes(indexEngine, dbFilenameList, ref peptideIndex, ref fragmentIndex, ref precursorIndex, proteinList, GlobalVariables.AllModsKnown.ToList(), taskId);
+                            
                             Status("Searching files...", taskId);
 
-                            new NonSpecificEnzymeSearchEngine(fileSpecificPsms, arrayOfMs2ScansSortedByMass, peptideIndex, fragmentIndex, fragmentIndexPrecursor, currentPartition, paramToUse, massDiffAcceptor, SearchParameters.MaximumMassThatFragmentIonScoreIsDoubled, thisId).Run();
+                            new NonSpecificEnzymeSearchEngine(fileSpecificPsms, arrayOfMs2ScansSortedByMass, peptideIndex, fragmentIndex, precursorIndex, currentPartition, paramToUse, massDiffAcceptor, SearchParameters.MaximumMassThatFragmentIonScoreIsDoubled, thisId).Run();
 
                             ReportProgress(new ProgressEventArgs(100, "Done with search " + (currentPartition + 1) + "/" + paramToUse.TotalPartitions + "!", thisId));
                         }

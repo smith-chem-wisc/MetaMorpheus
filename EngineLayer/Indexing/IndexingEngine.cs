@@ -13,16 +13,17 @@ namespace EngineLayer.Indexing
 {
     public class IndexingEngine : MetaMorpheusEngine
     {
-        protected const int FragmentBinsPerDalton = 1000;
-        protected readonly List<Protein> ProteinList;
+        private const int FragmentBinsPerDalton = 1000;
+        private readonly List<Protein> ProteinList;
 
-        protected readonly List<Modification> FixedModifications;
-        protected readonly List<Modification> VariableModifications;
-        protected readonly int CurrentPartition;
-        protected readonly DecoyType DecoyType;
-        protected readonly double MaxFragmentSize;
+        private readonly List<Modification> FixedModifications;
+        private readonly List<Modification> VariableModifications;
+        private readonly int CurrentPartition;
+        private readonly DecoyType DecoyType;
+        private readonly double MaxFragmentSize;
+        public readonly bool GeneratePrecursorIndex;
 
-        public IndexingEngine(List<Protein> proteinList, List<Modification> variableModifications, List<Modification> fixedModifications, int currentPartition, DecoyType decoyType, CommonParameters commonParams, double maxFragmentSize, List<string> nestedIds) : base(commonParams, nestedIds)
+        public IndexingEngine(List<Protein> proteinList, List<Modification> variableModifications, List<Modification> fixedModifications, int currentPartition, DecoyType decoyType, CommonParameters commonParams, double maxFragmentSize, bool generatePrecursorIndex, List<string> nestedIds) : base(commonParams, nestedIds)
         {
             ProteinList = proteinList;
             VariableModifications = variableModifications;
@@ -30,12 +31,14 @@ namespace EngineLayer.Indexing
             CurrentPartition = currentPartition + 1;
             DecoyType = decoyType;
             MaxFragmentSize = maxFragmentSize;
+            GeneratePrecursorIndex = generatePrecursorIndex;
         }
 
         public override string ToString()
         {
             var sb = new StringBuilder();
             sb.AppendLine("Partitions: " + CurrentPartition + "/" + commonParameters.TotalPartitions);
+            sb.AppendLine("Precursor Index: " + GeneratePrecursorIndex);
             sb.AppendLine("Search Decoys: " + DecoyType);
             sb.AppendLine("Number of proteins: " + ProteinList.Count);
             sb.AppendLine("Number of fixed mods: " + FixedModifications.Count);
@@ -144,7 +147,52 @@ namespace EngineLayer.Indexing
                 }
             }
 
-            return new IndexingResults(peptidesSortedByMass, fragmentIndex, this);
+            List<int>[] precursorIndex = null;
+
+            if (GeneratePrecursorIndex)
+            {
+                // create precursor index
+                try
+                {
+                    precursorIndex = new List<int>[(int)Math.Ceiling(MaxFragmentSize) * FragmentBinsPerDalton + 1];
+                }
+                catch (OutOfMemoryException)
+                {
+                    throw new MetaMorpheusException("Max precursor mass too large for indexing engine; try \"Classic Search\" mode, or make the maximum fragment mass smaller");
+                }
+                progress = 0;
+                oldPercentProgress = 0;
+                ReportProgress(new ProgressEventArgs(0, "Creating precursor index...", nestedIds));
+
+                for (int i = 0; i < peptidesSortedByMass.Count; i++)
+                {
+                    double mz = Chemistry.ClassExtensions.ToMz(peptidesSortedByMass[i].MonoisotopicMass, 1);
+                    if (!Double.IsNaN(mz))
+                    {
+                        if (mz > MaxFragmentSize) //if the precursor is larger than the index allows, then stop adding precursors
+                        {
+                            break;
+                        }
+
+                        int precursorBin = (int)Math.Round(mz * FragmentBinsPerDalton);
+
+                        if (precursorIndex[precursorBin] == null)
+                            precursorIndex[precursorBin] = new List<int> { i };
+                        else
+                            precursorIndex[precursorBin].Add(i);
+                    }
+                    progress++;
+                    var percentProgress = (int)((progress / peptidesSortedByMass.Count) * 100);
+
+                    if (percentProgress > oldPercentProgress)
+                    {
+                        oldPercentProgress = percentProgress;
+                        ReportProgress(new ProgressEventArgs(percentProgress, "Creating precursor index...", nestedIds));
+                    }
+                }
+            }
+
+            return new IndexingResults(peptidesSortedByMass, fragmentIndex, precursorIndex, this);
         }
     }
 }

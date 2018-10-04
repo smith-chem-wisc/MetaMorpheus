@@ -111,7 +111,7 @@ namespace Test
             CommonParameters withCompIons = new CommonParameters(digestionParams: new DigestionParams(protease: protease.Name, minPeptideLength: 1), scoreCutoff: 1, addCompIons: true);
 
             var indexEngine = new IndexingEngine(proteinList, variableModifications, fixedModifications,
-                 1, DecoyType.Reverse, CommonParameters, SearchParameters.MaxFragmentSize, new List<string>());
+                 1, DecoyType.Reverse, CommonParameters, SearchParameters.MaxFragmentSize, false, new List<string>());
 
             var indexResults = (IndexingResults)indexEngine.Run();
 
