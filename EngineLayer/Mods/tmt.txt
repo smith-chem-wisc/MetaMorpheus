@@ -1,15 +1,177 @@
-﻿Fixed modifications
-ID   TMT_tag_lysine
-TG   Lysine
-PP   Anywhere.
-MT   FixedTMT
-MM   229.1629321568
-MT   TandemMassTag
-//
-ID   TMT_tag_terminal
+﻿TMT 10-Plex
+ID   TMT10-126
 TG   X
+MT   Multiplex Label
 PP   Peptide N-terminal.
-MT   FixedTMT
-MM   229.1629321568
-MT   TandemMassTag
+CF   C8 N1 H20 C{13}4 N{15}1
+NL   HCD:C8 N1 H16
+DI   HCD:C8 N1 H16
+//
+ID   TMT10-127N
+TG   X
+MT   Multiplex Label
+PP   Peptide N-terminal.
+CF   C7 N2 H20 C{13}5
+NL   HCD:C8 H16 N{15}1
+DI   HCD:C8 H16 N{15}1
+//
+ID   TMT10-128N
+TG   X
+MT   Multiplex Label
+PP   Peptide N-terminal.
+CF   C7 N2 H20 C{13}5
+NL   HCD:C7 H16 C{13}1 N{15}1
+DI   HCD:C7 H16 C{13}1 N{15}1
+//
+ID   TMT10-129N
+TG   X
+MT   Multiplex Label
+PP   Peptide N-terminal.
+CF   C7 N2 H20 C{13}5
+NL   HCD:C6 H16 C{13}2 N{15}1
+DI   HCD:C6 H16 C{13}2 N{15}1
+//
+ID   TMT10-130N
+TG   X
+MT   Multiplex Label
+PP   Peptide N-terminal.
+CF   C7 N2 H20 C{13}5
+NL   HCD:C5 H16 C{13}3 N{15}1
+DI   HCD:C5 H16 C{13}3 N{15}1
+//
+ID   TMT10-131
+TG   X
+MT   Multiplex Label
+PP   Peptide N-terminal.
+CF   C7 N2 H20 C{13}5
+NL   HCD:C3 N1 H16 C{13}5
+DI   HCD:C3 N1 H16 C{13}5
+//
+ID   TMT10-127C
+TG   X
+MT   Multiplex Label
+PP   Peptide N-terminal.
+CF   C9 H20 C{13}3 N{15}2
+NL   HCD:C7 N1 H16 C{13}1
+DI   HCD:C7 N1 H16 C{13}1
+//
+ID   TMT10-128C
+TG   X
+MT   Multiplex Label
+PP   Peptide N-terminal.
+CF   C9 H20 C{13}3 N{15}2
+NL   HCD:C6 N1 H16 C{13}2
+DI   HCD:C6 N1 H16 C{13}2
+//
+ID   TMT10-129C
+TG   X
+MT   Multiplex Label
+PP   Peptide N-terminal.
+CF   C9 H20 C{13}3 N{15}2
+NL   HCD:C5 N1 H16 C{13}3
+DI   HCD:C5 N1 H16 C{13}3
+//
+ID   TMT10-130C
+TG   X
+MT   Multiplex Label
+PP   Peptide N-terminal.
+CF   C9 H20 C{13}3 N{15}2
+NL   HCD:C4 N1 H16 C{13}4
+DI   HCD:C4 N1 H16 C{13}4
+//
+ID   TMT10-131C
+TG   X
+MT   Multiplex Label
+PP   Peptide N-terminal.
+CF   C9 H20 C{13}3 N{15}2
+NL   HCD:C4 H16 C{13}4 N{15}1
+DI   HCD:C4 H16 C{13}4 N{15}1
+//
+ID   TMT10-126
+TG   K
+MT   Multiplex Label
+PP   Anywhere.
+CF   C8 N1 H20 C{13}4 N{15}1
+NL   HCD:C8 N1 H16
+DI   HCD:C8 N1 H16
+//
+ID   TMT10-127N
+TG   K
+MT   Multiplex Label
+PP   Anywhere.
+CF   C7 N2 H20 C{13}5
+NL   HCD:C8 H16 N{15}1
+DI   HCD:C8 H16 N{15}1
+//
+ID   TMT10-128N
+TG   K
+MT   Multiplex Label
+PP   Anywhere.
+CF   C7 N2 H20 C{13}5
+NL   HCD:C7 H16 C{13}1 N{15}1
+DI   HCD:C7 H16 C{13}1 N{15}1
+//
+ID   TMT10-129N
+TG   K
+MT   Multiplex Label
+PP   Anywhere.
+CF   C7 N2 H20 C{13}5
+NL   HCD:C6 H16 C{13}2 N{15}1
+DI   HCD:C6 H16 C{13}2 N{15}1
+//
+ID   TMT10-130N
+TG   K
+MT   Multiplex Label
+PP   Anywhere.
+CF   C7 N2 H20 C{13}5
+NL   HCD:C5 H16 C{13}3 N{15}1
+DI   HCD:C5 H16 C{13}3 N{15}1
+//
+ID   TMT10-131
+TG   K
+MT   Multiplex Label
+PP   Anywhere.
+CF   C7 N2 H20 C{13}5
+NL   HCD:C3 N1 H16 C{13}5
+DI   HCD:C3 N1 H16 C{13}5
+//
+ID   TMT10-127C
+TG   K
+MT   Multiplex Label
+PP   Anywhere.
+CF   C9 H20 C{13}3 N{15}2
+NL   HCD:C7 N1 H16 C{13}1
+DI   HCD:C7 N1 H16 C{13}1
+//
+ID   TMT10-128C
+TG   K
+MT   Multiplex Label
+PP   Anywhere.
+CF   C9 H20 C{13}3 N{15}2
+NL   HCD:C6 N1 H16 C{13}2
+DI   HCD:C6 N1 H16 C{13}2
+//
+ID   TMT10-129C
+TG   K
+MT   Multiplex Label
+PP   Anywhere.
+CF   C9 H20 C{13}3 N{15}2
+NL   HCD:C5 N1 H16 C{13}3
+DI   HCD:C5 N1 H16 C{13}3
+//
+ID   TMT10-130C
+TG   K
+MT   Multiplex Label
+PP   Anywhere.
+CF   C9 H20 C{13}3 N{15}2
+NL   HCD:C4 N1 H16 C{13}4
+DI   HCD:C4 N1 H16 C{13}4
+//
+ID   TMT10-131C
+TG   K
+MT   Multiplex Label
+PP   Anywhere.
+CF   C9 H20 C{13}3 N{15}2
+NL   HCD:C4 H16 C{13}4 N{15}1
+DI   HCD:C4 H16 C{13}4 N{15}1
 //
