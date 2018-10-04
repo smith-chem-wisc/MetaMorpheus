@@ -146,7 +146,7 @@ namespace MetaMorpheusGUI
         {
             classicSearchRadioButton.IsChecked = task.SearchParameters.SearchType == SearchType.Classic;
             modernSearchRadioButton.IsChecked = task.SearchParameters.SearchType == SearchType.Modern;
-            nonSpecificSearchRadioButton1.IsChecked = task.SearchParameters.SearchType == SearchType.NonSpecific && task.CommonParameters.DigestionParams.Protease.Name.Contains("non-specific");
+            nonSpecificSearchRadioButton.IsChecked = task.SearchParameters.SearchType == SearchType.NonSpecific && task.CommonParameters.DigestionParams.Protease.Name.Contains("non-specific");
             semiSpecificSearchRadioButton.IsChecked = task.SearchParameters.SearchType == SearchType.NonSpecific && !task.CommonParameters.DigestionParams.Protease.Name.Contains("non-specific");
             MaxFragmentMassTextBox.Text = task.SearchParameters.MaxFragmentSize.ToString(CultureInfo.InvariantCulture);
             checkBoxParsimony.IsChecked = task.SearchParameters.DoParsimony;
@@ -295,7 +295,7 @@ namespace MetaMorpheusGUI
             {
                 searchModeType = CleavageSpecificity.Semi;
             }
-            else if (nonSpecificSearchRadioButton1.IsChecked.Value) //non
+            else if (nonSpecificSearchRadioButton.IsChecked.Value) //non
             {
                 searchModeType = CleavageSpecificity.None;
             }
@@ -652,7 +652,7 @@ namespace MetaMorpheusGUI
 
         private void NonSpecificUsingNonSpecific(object sender, RoutedEventArgs e)
         {
-            if (nonSpecificSearchRadioButton1.IsChecked.Value)
+            if (nonSpecificSearchRadioButton.IsChecked.Value)
             {
                 proteaseComboBox.Items.MoveCurrentToFirst();
                 proteaseComboBox.SelectedItem = proteaseComboBox.Items.CurrentItem;
@@ -661,13 +661,14 @@ namespace MetaMorpheusGUI
                     proteaseComboBox.Items.MoveCurrentToNext();
                     proteaseComboBox.SelectedItem = proteaseComboBox.Items.CurrentItem;
                 }
-                proteaseComboBox.IsEnabled = false;
                 addCompIonCheckBox.IsChecked = true;
+                checkBoxClassicSemiSpecific.IsEnabled = false;
             }
             else
             {
-                proteaseComboBox.IsEnabled = true;
                 addCompIonCheckBox.IsChecked = false;
+                checkBoxClassicSemiSpecific.IsEnabled = true;
+                checkBoxClassicSemiSpecific.IsChecked = false;
             }
         }
 
@@ -712,6 +713,7 @@ namespace MetaMorpheusGUI
         private void SemiSpecificUpdate(object sender, RoutedEventArgs e)
         {
             addCompIonCheckBox.IsChecked = semiSpecificSearchRadioButton.IsChecked.Value;
+            checkBoxClassicSemiSpecific.IsChecked = semiSpecificSearchRadioButton.IsChecked.Value;
         }
 
         private void KeyPressed(object sender, KeyEventArgs e)
