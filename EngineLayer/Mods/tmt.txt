@@ -1,4 +1,4 @@
-﻿TMT 10-Plex
+﻿TMT Multiplex
 ID   TMT10-126
 TG   X
 MT   Multiplex Label
@@ -172,6 +172,102 @@ TG   K
 MT   Multiplex Label
 PP   Anywhere.
 CF   C9 H20 C{13}3 N{15}2
+NL   HCD:C4 H16 C{13}4 N{15}1
+DI   HCD:C4 H16 C{13}4 N{15}1
+//
+ID   TMT6-126
+TG   X
+MT   Multiplex Label
+PP   Peptide N-terminal.
+CF   C8 N1 H20 C{13}4 N{15}1
+NL   HCD:C8 N1 H16
+DI   HCD:C8 N1 H16
+//
+ID   TMT6-127
+TG   X
+MT   Multiplex Label
+PP   Peptide N-terminal.
+CF   C8 N1 H20 C{13}4 N{15}1
+NL   HCD:C8 H16 N{15}1
+DI   HCD:C8 H16 N{15}1
+//
+ID   TMT6-128
+TG   X
+MT   Multiplex Label
+PP   Peptide N-terminal.
+CF   C8 N1 H20 C{13}4 N{15}1
+NL   HCD:C6 N1 H16 C{13}2
+DI   HCD:C6 N1 H16 C{13}2
+//
+ID   TMT6-129
+TG   X
+MT   Multiplex Label
+PP   Peptide N-terminal.
+CF   C8 N1 H20 C{13}4 N{15}1
+NL   HCD:C6 H16 C{13}2 N{15}1
+DI   HCD:C6 H16 C{13}2 N{15}1
+//
+ID   TMT6-130
+TG   X
+MT   Multiplex Label
+PP   Peptide N-terminal.
+CF   C8 N1 H20 C{13}4 N{15}1
+NL   HCD:C4 N1 H16 C{13}4
+DI   HCD:C4 N1 H16 C{13}4
+//
+ID   TMT6-131
+TG   X
+MT   Multiplex Label
+PP   Peptide N-terminal.
+CF   C8 N1 H20 C{13}4 N{15}1
+NL   HCD:C4 H16 C{13}4 N{15}1
+DI   HCD:C4 H16 C{13}4 N{15}1
+//
+ID   TMT6-126
+TG   K
+MT   Multiplex Label
+PP   Anywhere.
+CF   C8 N1 H20 C{13}4 N{15}1
+NL   HCD:C8 N1 H16
+DI   HCD:C8 N1 H16
+//
+ID   TMT6-127
+TG   K
+MT   Multiplex Label
+PP   Anywhere.
+CF   C8 N1 H20 C{13}4 N{15}1
+NL   HCD:C8 H16 N{15}1
+DI   HCD:C8 H16 N{15}1
+//
+ID   TMT6-128
+TG   K
+MT   Multiplex Label
+PP   Anywhere.
+CF   C8 N1 H20 C{13}4 N{15}1
+NL   HCD:C6 N1 H16 C{13}2
+DI   HCD:C6 N1 H16 C{13}2
+//
+ID   TMT6-129
+TG   K
+MT   Multiplex Label
+PP   Anywhere.
+CF   C8 N1 H20 C{13}4 N{15}1
+NL   HCD:C6 H16 C{13}2 N{15}1
+DI   HCD:C6 H16 C{13}2 N{15}1
+//
+ID   TMT6-130
+TG   K
+MT   Multiplex Label
+PP   Anywhere.
+CF   C8 N1 H20 C{13}4 N{15}1
+NL   HCD:C4 N1 H16 C{13}4
+DI   HCD:C4 N1 H16 C{13}4
+//
+ID   TMT6-131
+TG   K
+MT   Multiplex Label
+PP   Anywhere.
+CF   C8 N1 H20 C{13}4 N{15}1
 NL   HCD:C4 H16 C{13}4 N{15}1
 DI   HCD:C4 H16 C{13}4 N{15}1
 //
