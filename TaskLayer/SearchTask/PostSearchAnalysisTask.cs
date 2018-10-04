@@ -915,7 +915,7 @@ namespace TaskLayer
                 int minorCategoryIndex = indexesOfInterest[i];
                 if(minorCategoryIndex != majorCategoryIndex)
                 {
-                    List<PeptideSpectralMatch> minorCategoryPsms = Parameters.AllPsms[majorCategoryIndex].Where(x => x != null).OrderByDescending(x => x.Score).ToList(); //get sorted minor category
+                    List<PeptideSpectralMatch> minorCategoryPsms = Parameters.AllPsms[minorCategoryIndex].Where(x => x != null).OrderByDescending(x => x.Score).ToList(); //get sorted minor category
                     int minorPsmIndex = 0;
                     int majorPsmIndex = 0;
                     while(minorPsmIndex<minorCategoryPsms.Count && majorPsmIndex<majorCategoryPsms.Count) //while in the lists

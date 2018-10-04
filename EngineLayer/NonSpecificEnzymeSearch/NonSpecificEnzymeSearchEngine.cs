@@ -34,7 +34,7 @@ namespace EngineLayer.NonSpecificEnzymeSearch
 
             byte byteScoreCutoff = (byte)commonParameters.ScoreCutoff;
 
-            Parallel.ForEach(Partitioner.Create(0, ListOfSortedMs2Scans.Length), new ParallelOptions { MaxDegreeOfParallelism = 1 }, range =>
+            Parallel.ForEach(Partitioner.Create(0, ListOfSortedMs2Scans.Length), new ParallelOptions { MaxDegreeOfParallelism = commonParameters.MaxThreadsToUsePerFile }, range =>
             {
                 byte[] scoringTable = new byte[PeptideIndex.Count];
                 HashSet<int> idsOfPeptidesPossiblyObserved = new HashSet<int>();
@@ -102,13 +102,14 @@ namespace EngineLayer.NonSpecificEnzymeSearch
                                 List<MatchedFragmentIon> matchedIons = MatchFragmentIons(scan.TheScan.MassSpectrum, peptideTheorProducts, commonParameters, scan.PrecursorMass);
 
                                 double thisScore = CalculatePeptideScore(scan.TheScan, matchedIons, MaxMassThatFragmentIonScoreIsDoubled);
-
-                                Tuple<int, PeptideWithSetModifications> notchAndUpdatedPeptide = Accepts(peptideTheorProducts, scan.PrecursorMass, peptide, commonParameters.DigestionParams.FragmentationTerminus, MassDiffAcceptor);
-                                if (notchAndUpdatedPeptide.Item1 >= 0)
+                                if (thisScore > commonParameters.ScoreCutoff)
                                 {
-                                    PeptideSpectralMatch[] localPeptideSpectralMatches = PeptideSpectralMatches[(int)FdrClassifier.GetCleavageSpecificityCategory(notchAndUpdatedPeptide.Item2.CleavageSpecificityForFdrCategory)];
-                                    //if (localPeptideSpectralMatches != null)
-                                    //{
+                                    Tuple<int, PeptideWithSetModifications> notchAndUpdatedPeptide = Accepts(peptideTheorProducts, scan.PrecursorMass, peptide, commonParameters.DigestionParams.FragmentationTerminus, MassDiffAcceptor);
+                                    if (notchAndUpdatedPeptide.Item1 >= 0)
+                                    {
+                                        PeptideSpectralMatch[] localPeptideSpectralMatches = PeptideSpectralMatches[(int)FdrClassifier.GetCleavageSpecificityCategory(notchAndUpdatedPeptide.Item2.CleavageSpecificityForFdrCategory)];
+                                        //if (localPeptideSpectralMatches != null)
+                                        //{
                                         if (localPeptideSpectralMatches[i] == null)
                                         {
                                             localPeptideSpectralMatches[i] = new PeptideSpectralMatch(notchAndUpdatedPeptide.Item2, notchAndUpdatedPeptide.Item1, thisScore, i, scan, commonParameters.DigestionParams, matchedIons);
@@ -117,7 +118,8 @@ namespace EngineLayer.NonSpecificEnzymeSearch
                                         {
                                             localPeptideSpectralMatches[i].AddOrReplace(notchAndUpdatedPeptide.Item2, thisScore, notchAndUpdatedPeptide.Item1, commonParameters.ReportAllAmbiguity, matchedIons);
                                         }
-                                   // }
+                                        // }
+                                    }
                                 }
                             }
                         }
@@ -151,7 +153,7 @@ namespace EngineLayer.NonSpecificEnzymeSearch
                     PeptideWithSetModifications updatedPwsm = null;
                     if(fragmentationTerminus == FragmentationTerminus.N)
                     {
-                        int endResidue = peptide.OneBasedStartResidueInProtein + fragment.TerminusFragment.FragmentNumber;
+                        int endResidue = peptide.OneBasedStartResidueInProtein + fragment.TerminusFragment.FragmentNumber -1; //-1 for one based index
                         Dictionary<int, Modification> updatedMods = new Dictionary<int, Modification>();
                         foreach(var mod in peptide.AllModsOneIsNterminus)
                         {
@@ -196,104 +198,5 @@ namespace EngineLayer.NonSpecificEnzymeSearch
             }
             return new Tuple<int, PeptideWithSetModifications>(-1, null);
         }
-
-        //private PeptideWithSetModifications UpdatePWSM(PeptideWithSetModifications originalPwsm, double scanPrecursorMass)
-        //{
-        //    List<double> initialMasses = new List<double>();
-        //    if (originalPwsm.AllModsOneIsNterminus.TryGetValue(1, out Modification pep_n_term_variable_mod)) //get terminal mods
-        //    {
-        //        foreach (double nl in pep_n_term_variable_mod.NeutralLosses[commonParameters.DissociationType])
-        //        {
-        //            double monoisotopicMass = pep_n_term_variable_mod.MonoisotopicMass ?? 0;
-        //            initialMasses.Add(monoisotopicMass - nl);
-        //        }
-        //    }
-        //    else
-        //    {
-        //        initialMasses.Add(0);
-        //    }
-
-        //    PeptideWithSetModifications actualPwsm = null;
-        //    foreach (double initialMass in initialMasses)
-        //    {
-        //        double finalMass = initialMass + WaterMonoisotopicMass;
-
-        //        //generate correct sequence
-        //        if (commonParameters.DigestionParams.FragmentationTerminus == FragmentationTerminus.N)
-        //        {
-        //            int index = ComputePeptideIndexes(originalPwsm, ref finalMass, 1, 1, scanPrecursorMass, MassDiffAcceptor);
-
-        //            if (index >= 0 && index >= MinimumPeptideLength)
-        //            {
-        //                Dictionary<int, Modification> allModsOneIsNTerminus = originalPwsm.AllModsOneIsNterminus
-        //                .Where(b => b.Key > 1 && b.Key <= (1 + index)).ToDictionary(b => b.Key, b => b.Value);
-
-        //                actualPwsm = new PeptideWithSetModifications(originalPwsm.Protein, commonParameters.DigestionParams, originalPwsm.OneBasedStartResidueInProtein, originalPwsm.OneBasedStartResidueInProtein + index - 1, CleavageSpecificity.Unknown, originalPwsm.PeptideDescription, originalPwsm.MissedCleavages, allModsOneIsNTerminus, originalPwsm.NumFixedMods);
-        //                break;
-        //            }
-        //        }
-        //        else //if C terminus
-        //        {
-        //            int index = ComputePeptideIndexes(originalPwsm, ref finalMass, originalPwsm.Length, -1, scanPrecursorMass, MassDiffAcceptor);
-
-        //            if (index >= 0 && (originalPwsm.OneBasedEndResidueInProtein - (originalPwsm.OneBasedStartResidueInProtein + index - 2)) >= MinimumPeptideLength)
-        //            {
-        //                Dictionary<int, Modification> allModsOneIsNTerminus = originalPwsm.AllModsOneIsNterminus
-        //                .Where(b => b.Key > index && b.Key <= (2 + originalPwsm.OneBasedEndResidueInProtein - originalPwsm.OneBasedStartResidueInProtein)).ToDictionary(b => (b.Key + index - 1), b => b.Value);
-
-        //                actualPwsm = new PeptideWithSetModifications(originalPwsm.Protein, commonParameters.DigestionParams, originalPwsm.OneBasedStartResidueInProtein + index - 1, originalPwsm.OneBasedEndResidueInProtein, CleavageSpecificity.Unknown, originalPwsm.PeptideDescription, originalPwsm.MissedCleavages, allModsOneIsNTerminus, originalPwsm.NumFixedMods);
-        //                break;
-        //            }
-        //        }
-        //    }
-        //    return actualPwsm;
-        //}
-
-        //private int ComputePeptideIndexes(PeptideWithSetModifications yyy, ref double prevMass, int oneBasedIndexToLookAt, int direction, double precursorMass, MassDiffAcceptor massDiffAcceptor)
-        //{
-        //    Modification residue_variable_mod = null;
-        //    do
-        //    {
-        //        prevMass += Residue.ResidueMonoisotopicMass[yyy[oneBasedIndexToLookAt - 1]];
-
-        //        yyy.AllModsOneIsNterminus.TryGetValue(oneBasedIndexToLookAt + 1, out residue_variable_mod);
-        //        if (residue_variable_mod == null)
-        //        {
-        //            if (massDiffAcceptor.Accepts(precursorMass, prevMass) >= 0)
-        //            {
-        //                return oneBasedIndexToLookAt;
-        //            }
-        //        }
-        //        else if (residue_variable_mod.NeutralLosses != null && residue_variable_mod.NeutralLosses.Count == 1)
-        //        {
-        //            double monoisotopic = residue_variable_mod.MonoisotopicMass ?? 0;
-        //            prevMass += monoisotopic - residue_variable_mod.NeutralLosses[commonParameters.DissociationType].First();
-        //            if (massDiffAcceptor.Accepts(precursorMass, prevMass) >= 0)
-        //            {
-        //                return oneBasedIndexToLookAt;
-        //            }
-        //        }
-        //        else if (residue_variable_mod.NeutralLosses != null)
-        //        {
-        //            foreach (double nl in residue_variable_mod.NeutralLosses[commonParameters.DissociationType])
-        //            {
-        //                double monoisotopic = residue_variable_mod.MonoisotopicMass ?? 0;
-        //                prevMass += monoisotopic - nl;
-        //                if (massDiffAcceptor.Accepts(precursorMass, prevMass) >= 0)
-        //                {
-        //                    return oneBasedIndexToLookAt;
-        //                }
-        //                if ((direction == 1 && oneBasedIndexToLookAt + direction < yyy.Length) ||
-        //                    (direction == -1 && oneBasedIndexToLookAt + direction > 1))
-        //                {
-        //                    return ComputePeptideIndexes(yyy, ref prevMass, oneBasedIndexToLookAt + direction, direction, precursorMass, massDiffAcceptor);
-        //                }
-        //            }
-        //            break;
-        //        }
-        //        oneBasedIndexToLookAt += direction;
-        //    } while ((oneBasedIndexToLookAt >= 1 && direction == -1) || (oneBasedIndexToLookAt <= yyy.Length && direction == 1));
-        //    return -1;
-        //}
     }
 }
