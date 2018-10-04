@@ -384,7 +384,7 @@ namespace EngineLayer
             s["Sequence Variations"] = pepWithModsIsNull ? " " :
                 Resolve(pepsWithMods.Select(b => string.Join(", ", b.Protein.SequenceVariations
                     .Where(d => peptide.OneBasedStartResidueInProtein <= d.OneBasedBeginPosition && d.OneBasedBeginPosition <= peptide.OneBasedEndResidueInProtein)
-                    .Select(d => SequenceVariantPrefix(b.Protein, d) + d.OriginalSequence + d.OneBasedBeginPosition.ToString() + d.VariantSequence)
+                    .Select(d => d.OriginalSequence + d.OneBasedBeginPosition.ToString() + d.VariantSequence + SuffixIsSequenceVariantApplied(b.Protein, d))
                     .Distinct()))).Item1;
             s["Organism Name"] = pepWithModsIsNull ? " " : Resolve(pepsWithMods.Select(b => b.Protein.Organism)).Item1;
             s["Contaminant"] = pepWithModsIsNull ? " " : Resolve(pepsWithMods.Select(b => b.Protein.IsContaminant ? "Y" : "N")).Item1;
@@ -415,7 +415,7 @@ namespace EngineLayer
         /// <param name="p"></param>
         /// <param name="d"></param>
         /// <returns></returns>
-        private static string SequenceVariantPrefix(Protein p, SequenceVariation d)
+        private static string SuffixIsSequenceVariantApplied(Protein p, SequenceVariation d)
         {
             int lengthWithVariantSequence = d.OneBasedBeginPosition - 1 + d.VariantSequence.Length;
             bool hasVariantSequence = lengthWithVariantSequence <= p.BaseSequence.Length
