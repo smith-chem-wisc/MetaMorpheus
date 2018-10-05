@@ -1,0 +1,14 @@
+﻿More Mods
+ID   PyroGlu from Gln
+TG   Q
+PP   N-terminal.
+MT   Common Biological
+CF   H-3 N-1
+//
+ID   Hydroxylation
+TG   K or N
+PP   Anywhere.
+CF   O1
+MM   15.994915
+MT   Common Biological
+//
