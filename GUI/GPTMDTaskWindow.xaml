@@ -5,7 +5,11 @@
         xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
         xmlns:local="clr-namespace:MetaMorpheusGUI"
         mc:Ignorable="d"
+        xmlns:sys="clr-namespace:System;assembly=mscorlib"
+        xmlns:mzl="clr-namespace:MassSpectrometry;assembly=MassSpectrometry"
+        KeyDown="KeyPressed"
         Title="GPTMD Task" Width="750" Height="750" WindowStartupLocation="CenterScreen">
+
     <Grid>
         <Grid.RowDefinitions>
             <RowDefinition Height="*" />
@@ -152,7 +156,7 @@
                                         </TextBox>
                                     </StackPanel>
                                     <StackPanel Orientation="Horizontal" Margin="5">
-                                    <Label x:Name="lblMaxPeptideLength" Content="Max Peptide Len" />
+                                        <Label x:Name="lblMaxPeptideLength" Content="Max Peptide Len" />
                                         <TextBox x:Name="MaxPeptideLengthTextBox" PreviewTextInput="CheckIfNumber" Width="45" ToolTipService.ShowDuration="999999" ToolTipService.InitialShowDelay="500">
                                             <TextBox.ToolTip>
                                                 <TextBlock>
@@ -198,19 +202,14 @@
                                         </TextBox>
                                     </StackPanel>
                                     <StackPanel Orientation="Horizontal" Margin="5">
-                                        <Label x:Name="ionsToSearchLabel" Content="Ions to search" ToolTipService.ShowDuration="999999" ToolTipService.InitialShowDelay="500">
+                                        <Label x:Name="ionsToSearchLabel" Content="Dissociation Type" ToolTipService.ShowDuration="999999" ToolTipService.InitialShowDelay="500">
                                             <Label.ToolTip>
                                                 <TextBlock>
-                                                        The expected product ions produced by fragmentation.
+                                                        The type of fragmentation.
                                                 </TextBlock>
                                             </Label.ToolTip>
                                         </Label>
-                                        <CheckBox x:Name="bCheckBox" Content="b ions" />
-                                        <CheckBox x:Name="yCheckBox" Content="y ions" />
-                                    </StackPanel>
-                                    <StackPanel Orientation="Horizontal" Margin="89,10,-69,10">
-                                        <CheckBox x:Name="cCheckBox" Content="c ions" />
-                                        <CheckBox x:Name="zdotCheckBox" Content="zdot ions" />
+                                        <ComboBox x:Name="DissociationTypeComboBox" HorizontalAlignment="Center" VerticalAlignment="Center" />
                                     </StackPanel>
                                     <StackPanel Orientation="Horizontal" Margin="5">
                                         <Label Content="Max Threads" />

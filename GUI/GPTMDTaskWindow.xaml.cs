@@ -10,6 +10,7 @@ using System.Windows.Controls;
 using System.Windows.Input;
 using TaskLayer;
 using Proteomics.ProteolyticDigestion;
+using MassSpectrometry;
 
 namespace MetaMorpheusGUI
 {
@@ -65,16 +66,11 @@ namespace MetaMorpheusGUI
             proteaseComboBox.SelectedItem = task.CommonParameters.DigestionParams.Protease;
             maxModificationIsoformsTextBox.Text = task.CommonParameters.DigestionParams.MaxModificationIsoforms.ToString(CultureInfo.InvariantCulture);
             initiatorMethionineBehaviorComboBox.SelectedIndex = (int)task.CommonParameters.DigestionParams.InitiatorMethionineBehavior;
-
+            DissociationTypeComboBox.SelectedItem = task.CommonParameters.DissociationType.ToString();
             productMassToleranceTextBox.Text = task.CommonParameters.ProductMassTolerance.Value.ToString(CultureInfo.InvariantCulture);
             productMassToleranceComboBox.SelectedIndex = task.CommonParameters.ProductMassTolerance is AbsoluteTolerance ? 0 : 1;
             precursorMassToleranceTextBox.Text = task.CommonParameters.PrecursorMassTolerance.Value.ToString(CultureInfo.InvariantCulture);
             precursorMassToleranceComboBox.SelectedIndex = task.CommonParameters.PrecursorMassTolerance is AbsoluteTolerance ? 0 : 1;
-
-            bCheckBox.IsChecked = task.CommonParameters.BIons;
-            yCheckBox.IsChecked = task.CommonParameters.YIons;
-            cCheckBox.IsChecked = task.CommonParameters.CIons;
-            zdotCheckBox.IsChecked = task.CommonParameters.ZdotIons;
             minScoreAllowed.Text = task.CommonParameters.ScoreCutoff.ToString(CultureInfo.InvariantCulture);
             maxThreadsTextBox.Text = task.CommonParameters.MaxThreadsToUsePerFile.ToString(CultureInfo.InvariantCulture);
 
@@ -181,39 +177,44 @@ namespace MetaMorpheusGUI
                 initiatorMethionineBehaviorComboBox.Items.Add(initiatior_methionine_behavior);
             }
 
+            foreach (string dissassociationType in GlobalVariables.AllSupportedDissociationTypes.Keys)
+            {
+                DissociationTypeComboBox.Items.Add(dissassociationType);
+            }
+
             productMassToleranceComboBox.Items.Add("Da");
             productMassToleranceComboBox.Items.Add("ppm");
             precursorMassToleranceComboBox.Items.Add("Da");
             precursorMassToleranceComboBox.Items.Add("ppm");
 
-            foreach (var hm in GlobalVariables.AllModsKnown.GroupBy(b => b.modificationType))
+            foreach (var hm in GlobalVariables.AllModsKnown.GroupBy(b => b.ModificationType))
             {
                 var theModType = new ModTypeForTreeView(hm.Key, false);
                 fixedModTypeForTreeViewObservableCollection.Add(theModType);
                 foreach (var uah in hm)
                 {
-                    theModType.Children.Add(new ModForTreeView(uah.ToString(), false, uah.id, false, theModType));
+                    theModType.Children.Add(new ModForTreeView(uah.ToString(), false, uah.IdWithMotif, false, theModType));
                 }
             }
             fixedModsTreeView.DataContext = fixedModTypeForTreeViewObservableCollection;
-            foreach (var hm in GlobalVariables.AllModsKnown.GroupBy(b => b.modificationType))
+            foreach (var hm in GlobalVariables.AllModsKnown.GroupBy(b => b.ModificationType))
             {
                 var theModType = new ModTypeForTreeView(hm.Key, false);
                 variableModTypeForTreeViewObservableCollection.Add(theModType);
                 foreach (var uah in hm)
                 {
-                    theModType.Children.Add(new ModForTreeView(uah.ToString(), false, uah.id, false, theModType));
+                    theModType.Children.Add(new ModForTreeView(uah.ToString(), false, uah.IdWithMotif, false, theModType));
                 }
             }
             variableModsTreeView.DataContext = variableModTypeForTreeViewObservableCollection;
 
-            foreach (var hm in GlobalVariables.AllModsKnown.GroupBy(b => b.modificationType))
+            foreach (var hm in GlobalVariables.AllModsKnown.GroupBy(b => b.ModificationType))
             {
                 var theModType = new ModTypeForTreeView(hm.Key, false);
                 gptmdModTypeForTreeViewObservableCollection.Add(theModType);
                 foreach (var uah in hm)
                 {
-                    theModType.Children.Add(new ModForTreeView(uah.ToString(), false, uah.id, false, theModType));
+                    theModType.Children.Add(new ModForTreeView(uah.ToString(), false, uah.IdWithMotif, false, theModType));
                 }
             }
             gptmdModsTreeView.DataContext = gptmdModTypeForTreeViewObservableCollection;
@@ -242,6 +243,7 @@ namespace MetaMorpheusGUI
             int MaxPeptideLength = string.IsNullOrEmpty(MaxPeptideLengthTextBox.Text) ? int.MaxValue : (int.Parse(MaxPeptideLengthTextBox.Text, NumberStyles.Any, CultureInfo.InvariantCulture));
             int MaxModificationIsoforms = int.Parse(maxModificationIsoformsTextBox.Text, CultureInfo.InvariantCulture);
             InitiatorMethionineBehavior InitiatorMethionineBehavior = (InitiatorMethionineBehavior)initiatorMethionineBehaviorComboBox.SelectedIndex;
+            DissociationType dissociationType = GlobalVariables.AllSupportedDissociationTypes[DissociationTypeComboBox.SelectedItem.ToString()];
 
             Tolerance ProductMassTolerance;
             if (productMassToleranceComboBox.SelectedIndex == 0)
@@ -294,15 +296,12 @@ namespace MetaMorpheusGUI
                     maxPeptideLength: MaxPeptideLength,
                     maxModificationIsoforms: MaxModificationIsoforms,
                     initiatorMethionineBehavior: InitiatorMethionineBehavior),
-                bIons: bCheckBox.IsChecked.Value,
-                yIons: yCheckBox.IsChecked.Value,
-                cIons: cCheckBox.IsChecked.Value,
-                zDotIons: zdotCheckBox.IsChecked.Value,
-                scoreCutoff: double.Parse(minScoreAllowed.Text, CultureInfo.InvariantCulture),
-                precursorMassTolerance: PrecursorMassTolerance,
-                productMassTolerance: ProductMassTolerance,
-                listOfModsFixed: listOfModsFixed,
-                listOfModsVariable: listOfModsVariable);
+                    dissociationType: dissociationType,
+                    scoreCutoff: double.Parse(minScoreAllowed.Text, CultureInfo.InvariantCulture),
+                    precursorMassTolerance: PrecursorMassTolerance,
+                    productMassTolerance: ProductMassTolerance,
+                    listOfModsFixed: listOfModsFixed,
+                    listOfModsVariable: listOfModsVariable);
 
             TheTask.GptmdParameters.ListOfModsGptmd = new List<(string, string)>();
             foreach (var heh in gptmdModTypeForTreeViewObservableCollection)
@@ -318,6 +317,18 @@ namespace MetaMorpheusGUI
         private void CheckIfNumber(object sender, TextCompositionEventArgs e)
         {
             e.Handled = !GlobalGuiSettings.CheckIsNumber(e.Text);
+        }
+
+        private void KeyPressed(object sender, KeyEventArgs e)
+        {
+            if (e.Key == Key.Return)
+            {
+                SaveButton_Click(sender, e);
+            }
+            else if (e.Key == Key.Escape)
+            {
+                CancelButton_Click(sender, e);
+            }
         }
     }
 }

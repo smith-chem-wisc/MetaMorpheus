@@ -4,6 +4,8 @@ using System;
 using System.Collections.Generic;
 using System.IO;
 using TaskLayer;
+using Proteomics.ProteolyticDigestion;
+using Proteomics.Fragmentation;
 
 namespace Test
 {
@@ -74,12 +76,14 @@ namespace Test
         [Test]
         public static void SemiSpecificTest()
         {
+            //DigestionParams digestParams = new DigestionParams(semiProteaseDigestion: true);
             SearchTask searchTask = new SearchTask()
             {
                 SearchParameters = new SearchParameters
                 {
-                    SearchType = SearchType.NonSpecific
+                    SearchType = SearchType.NonSpecific,
                 },
+                CommonParameters = new CommonParameters(addCompIons:true, digestionParams: new DigestionParams(searchModeType:CleavageSpecificity.Semi, fragmentationTerminus: FragmentationTerminus.C))
             };
 
             string outputFolder = Path.Combine(TestContext.CurrentContext.TestDirectory, @"TestSameSettingsOutput");

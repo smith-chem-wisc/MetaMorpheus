@@ -3,6 +3,7 @@ using EngineLayer.Indexing;
 using MassSpectrometry;
 using NUnit.Framework;
 using Proteomics;
+using Proteomics.Fragmentation;
 using Proteomics.ProteolyticDigestion;
 using System;
 using System.Collections.Generic;
@@ -18,11 +19,11 @@ namespace Test
         public static void TestIndexEngine()
         {
             var proteinList = new List<Protein> { new Protein("MNNNKQQQ", null) };
-            var variableModifications = new List<ModificationWithMass>();
-            var fixedModifications = new List<ModificationWithMass>();
-            var localizeableModifications = new List<ModificationWithMass>();
+            var variableModifications = new List<Modification>();
+            var fixedModifications = new List<Modification>();
+            var localizeableModifications = new List<Modification>();
 
-            Dictionary<ModificationWithMass, ushort> modsDictionary = new Dictionary<ModificationWithMass, ushort>();
+            Dictionary<Modification, ushort> modsDictionary = new Dictionary<Modification, ushort>();
             foreach (var mod in fixedModifications)
                 modsDictionary.Add(mod, 0);
             int i = 1;
@@ -37,23 +38,22 @@ namespace Test
                 i++;
             }
 
-            Protease p = new Protease("Custom Protease2", new List<Tuple<string, TerminusType>> { new Tuple<string, TerminusType>("K", TerminusType.C) }, new List<Tuple<string, TerminusType>>(), CleavageSpecificity.Full, null, null, null);
+            Protease p = new Protease("Custom Protease2", new List<Tuple<string, FragmentationTerminus>> { new Tuple<string, FragmentationTerminus>("K", FragmentationTerminus.C) }, new List<Tuple<string, FragmentationTerminus>>(), CleavageSpecificity.Full, null, null, null);
             ProteaseDictionary.Dictionary.Add(p.Name, p);
             CommonParameters CommonParameters = new CommonParameters(scoreCutoff: 1, digestionParams: new DigestionParams(protease: p.Name, minPeptideLength: 1));
 
-            var engine = new IndexingEngine(proteinList, variableModifications, fixedModifications, new List<ProductType>
-            { ProductType.B, ProductType.Y }, 1, DecoyType.Reverse, new List<DigestionParams> { CommonParameters.DigestionParams }, CommonParameters, 30000, new List<string>());
+            var engine = new IndexingEngine(proteinList, variableModifications, fixedModifications, 1, DecoyType.Reverse, new List<DigestionParams> { CommonParameters.DigestionParams }, CommonParameters, 30000, new List<string>());
 
             var results = (IndexingResults)engine.Run();
 
             Assert.AreEqual(5, results.PeptideIndex.Count);
 
-            var digestedList = proteinList[0].Digest(CommonParameters.DigestionParams, new List<ModificationWithMass>(), variableModifications).ToList();
+            var digestedList = proteinList[0].Digest(CommonParameters.DigestionParams, new List<Modification>(), variableModifications).ToList();
 
             Assert.AreEqual(5, digestedList.Count);
             foreach (var fdfd in digestedList)
             {
-                Assert.Contains(fdfd.CompactPeptide(TerminusType.None), results.PeptideIndex);
+                Assert.Contains(fdfd, results.PeptideIndex);
             }
         }
 
@@ -61,11 +61,11 @@ namespace Test
         public static void TestIndexEngineWithWeirdSeq()
         {
             var proteinList = new List<Protein> { new Protein("MQXQ", null) };
-            var variableModifications = new List<ModificationWithMass>();
-            var fixedModifications = new List<ModificationWithMass>();
-            var localizeableModifications = new List<ModificationWithMass>();
+            var variableModifications = new List<Modification>();
+            var fixedModifications = new List<Modification>();
+            var localizeableModifications = new List<Modification>();
 
-            Dictionary<ModificationWithMass, ushort> modsDictionary = new Dictionary<ModificationWithMass, ushort>();
+            Dictionary<Modification, ushort> modsDictionary = new Dictionary<Modification, ushort>();
             foreach (var mod in fixedModifications)
             {
                 modsDictionary.Add(mod, 0);
@@ -82,7 +82,7 @@ namespace Test
                 i++;
             }
 
-            Protease protease = new Protease("Custom Protease", new List<Tuple<string, TerminusType>> { new Tuple<string, TerminusType>("K", TerminusType.C) }, new List<Tuple<string, TerminusType>>(), CleavageSpecificity.Full, null, null, null);
+            Protease protease = new Protease("Custom Protease", new List<Tuple<string, FragmentationTerminus>> { new Tuple<string, FragmentationTerminus>("K", FragmentationTerminus.C) }, new List<Tuple<string, FragmentationTerminus>>(), CleavageSpecificity.Full, null, null, null);
             ProteaseDictionary.Dictionary.Add(protease.Name, protease);
             CommonParameters CommonParameters = new CommonParameters(
                 digestionParams: new DigestionParams(
@@ -91,13 +91,13 @@ namespace Test
                     initiatorMethionineBehavior: InitiatorMethionineBehavior.Retain),
                 scoreCutoff: 1);
 
-            var engine = new IndexingEngine(proteinList, variableModifications, fixedModifications, new List<ProductType> { ProductType.B, ProductType.Y }, 1, DecoyType.Reverse, new List<DigestionParams> { CommonParameters.DigestionParams }, CommonParameters, 30000, new List<string>());
+            var engine = new IndexingEngine(proteinList, variableModifications, fixedModifications, 1, DecoyType.Reverse, new List<DigestionParams> { CommonParameters.DigestionParams }, CommonParameters, 30000, new List<string>());
 
             var results = (IndexingResults)engine.Run();
 
             Assert.AreEqual(1, results.PeptideIndex.Count);
 
-            Assert.IsNaN(results.PeptideIndex[0].MonoisotopicMassIncludingFixedMods);
+            Assert.IsNaN(results.PeptideIndex[0].MonoisotopicMass);
             Assert.AreEqual(30000000 + 1, results.FragmentIndex.Length);
         }
     }

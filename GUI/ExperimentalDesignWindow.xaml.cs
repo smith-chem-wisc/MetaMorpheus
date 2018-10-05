@@ -5,6 +5,7 @@ using System.Collections.ObjectModel;
 using System.IO;
 using System.Linq;
 using System.Windows;
+using System.Windows.Input;
 
 namespace MetaMorpheusGUI
 {
@@ -224,6 +225,18 @@ namespace MetaMorpheusGUI
             }
 
             return null;
+        }
+
+        private void KeyPressed(object sender, KeyEventArgs e)
+        {
+            if (e.Key == Key.Return)
+            {
+                BtnSaveQuant_Click(sender, e);
+            }
+            else if (e.Key == Key.Escape)
+            {
+                BtnCancelQuant_Click(sender, e);
+            }
         }
     }
 }

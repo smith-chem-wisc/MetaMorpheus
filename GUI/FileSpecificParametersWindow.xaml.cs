@@ -283,5 +283,17 @@ namespace MetaMorpheusGUI
         {
             e.Handled = !GlobalGuiSettings.CheckIsNumber(e.Text);
         }
+
+        private void KeyPressed(object sender, KeyEventArgs e)
+        {
+            if (e.Key == Key.Return)
+            {
+                Save_Click(sender, e);
+            }
+            else if (e.Key == Key.Escape)
+            {
+                Cancel_Click(sender, e);
+            }
+        }
     }
 }

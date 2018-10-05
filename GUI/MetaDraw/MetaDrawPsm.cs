@@ -1,117 +1,133 @@
+using EngineLayer;
 using MassSpectrometry;
+using Proteomics.Fragmentation;
+using Proteomics.ProteolyticDigestion;
+using System;
 using System.Collections.Generic;
+using System.Linq;
+using System.Text.RegularExpressions;
+using Chemistry;
 
 namespace MetaMorpheusGUI
 {
     public class MetaDrawPsm
     {
-        public int ScanNum { get; private set; }
-        public string FullSequence { get; private set; }
-        public string FileName { get; private set; }
-        public List<TheoreticalFragmentIon> FragmentIons { get; private set; }
-        public int NumExperimentalPeaks { get; private set; }
-        public double TotalIonCurrent { get; private set; }
-        public int PrecursorScanNumber { get; private set; }
-        public int PrecursorCharge { get; private set; }
-        public double PrecursorMZ { get; private set; }
-        public double PrecursorMass { get; private set; }
-        public double Score { get; private set; }
-        public double DeltaScore { get; private set; }
-        public string Notch { get; private set; }
-        public int DifferentPeakMatches { get; private set; }
-        public string PeptidesSharingSamePeaks { get; private set; }
-        public string BaseSequence { get; private set; }
-        public string EssentialSequence { get; private set; }
-        public string Mods { get; private set; }
-        public string ModsChemicalFormulas { get; private set; }
-        public string ModsCombinedChemicalFormula { get; private set; }
-        public string NumVariableMods { get; private set; }
-        public string MissedCleavages { get; private set; }
-        public string PeptideMonoisotopicMass { get; private set; }
-        public string MassDiffDa { get; private set; }
-        public string MassDiffppm { get; private set; }
-        public string ProteinAccession { get; private set; }
-        public string ProteinName { get; private set; }
-        public string GeneName { get; private set; }
-        public string SequenceVariations { get; private set; }
-        public string OrganismName { get; private set; }
-        public string Contaminant { get; private set; }
-        public string Decoy { get; private set; }
-        public string PeptideDescription { get; private set; }
-        public string StartandEndResiduesInProtein { get; private set; }
-        public string PreviousAminoAcid { get; private set; }
-        public string NextAminoAcid { get; private set; }
-        public string AllScores { get; private set; }
-        public string TheoreticalsSearched { get; private set; }
-        public string DecoyContaminantTarget      {get;private set;}
-        public string MatchedIonCounts { get; private set; }
-        public string MatchedIonSeries { get; private set; }
-        public string MatchedIonMassToChargeRatios{get;private set;}
-        public string MatchedIonMassDiffDa { get; private set; }
-        public string MatchedIonMassDiffPpm { get; private set; }
-        public string MatchedIonIntensities { get; private set; }
-        public string LocalizedScores { get; private set; }
-        public string ImprovementPossible { get; private set; }
-        public string CumulativeTarget { get; private set; }
-        public string CumulativeDecoy { get; private set; }
-        public string QValue { get; private set; }
-        public string CumulativeTargetNotch { get; private set; }
-        public string CumulativeDecoyNotch { get; private set; }
+        private static readonly Regex IonParser = new Regex(@"([a-zA-Z]+)(\d+)");
+        private static readonly char[] MzSplit = { '[', ',', ']', ';' };
         
-        public MetaDrawPsm(int oneBasedScanNumber, string fileName, string fullSequence, List<TheoreticalFragmentIon> fragmentIons, int expPeaks, double ionNum, int preScan, int preChar, double preMZ, double preMass, double score, double dlScore, string notch, int diffpeak,string pepshare, string bseq, string esseq, string mods, string modscf, string modsccf, string nvm, string misscleav, string pepmonomass, string mdda, string mdppm, string proteinacc, string proteinname, string gamename, string seqvar, string orgname, string con, string dec, string pepdes, string strtendresinprotein, string prevamino, string nxtamino, string allscores, string theosearch, string deccontaminatetarget, string matchioncount, string matchionseries, string matchionmasstocharge, string matchedionmdda, string matchedionmdppm, string matchedionint, string localscores, string improvposs, string cumutarget, string cumudeco, string qvalue, string cumutarnotch, string cumudecnotch)
+        public string FullSequence { get; }
+        public int Ms2ScanNumber { get; }
+        public string Filename { get; }
+        public double TotalIonCurrent { get; }
+        public int PrecursorScanNum { get; }
+        public int PrecursorCharge { get; }
+        public double PrecursorMz { get; }
+        public double PrecursorMass { get; }
+        public double Score { get; }
+        public double DeltaScore { get; }
+        public string Notch { get; }
+        public string BaseSeq { get; }
+        public string EssentialSeq { get; }
+        public string MissedCleavage { get; }
+        public string PeptideMonoMass { get; }
+        public string MassDiffDa { get; }
+        public string MassDiffPpm { get; }
+        public string ProteinAccession { get; }
+        public string ProteinName { get; }
+        public string GeneName { get; }
+        public string SequenceVariations { get; }
+        public string OrganismName { get; }
+        public string PeptideDesicription { get; }
+        public string StartAndEndResiduesInProtein { get; }
+        public string PreviousAminoAcid { get; }
+        public string NextAminoAcid { get; }
+        public string DecoyContamTarget { get; }
+        public List<MatchedFragmentIon> MatchedIons { get; }
+        public double QValue { get; }
+        public double QValueNotch { get; }
+
+        public MetaDrawPsm(string line, char[] split, Dictionary<string, int> parsedHeader)
         {
-            this.ScanNum = oneBasedScanNumber;
-            this.FileName = fileName;
-            this.FullSequence = fullSequence;
-            this.FragmentIons = fragmentIons;
-            this.NumExperimentalPeaks = expPeaks;
-            this.TotalIonCurrent = ionNum;
-            this.PrecursorScanNumber = preScan;
-            this.PrecursorCharge = preChar;
-            this.PrecursorMZ = preMZ;
-            this.PrecursorMass = preMass;
-            this.Score = score;
-            this.DeltaScore = dlScore;
-            this.Notch = notch;
-            this.DifferentPeakMatches = diffpeak;
-            this.PeptidesSharingSamePeaks = pepshare;
-            this.BaseSequence = bseq;
-            this.EssentialSequence = esseq;
-            this.Mods = mods;
-            this.ModsChemicalFormulas = modscf;
-            this.ModsCombinedChemicalFormula = modsccf;
-            this.NumVariableMods = nvm; 
-            this.MissedCleavages = misscleav; 
-            this.PeptideMonoisotopicMass = pepmonomass; 
-            this.MassDiffDa = mdda; 
-            this.MassDiffppm = mdppm; 
-            this.ProteinAccession = proteinacc; 
-            this.ProteinName = proteinname; 
-            this.GeneName = gamename; 
-            this.SequenceVariations = seqvar; 
-            this.OrganismName = orgname; 
-            this.Contaminant = con; 
-            this.Decoy = dec;  
-            this.PeptideDescription = pepdes; 
-            this.StartandEndResiduesInProtein = strtendresinprotein; 
-            this.PreviousAminoAcid = prevamino;                
-            this.NextAminoAcid = nxtamino;
-            this.AllScores = allscores;
-            this.TheoreticalsSearched = theosearch;
-            this.DecoyContaminantTarget = deccontaminatetarget;
-            this.MatchedIonCounts = matchioncount;
-            this.MatchedIonSeries = matchionseries;
-            this.MatchedIonMassToChargeRatios = matchionmasstocharge;
-            this.MatchedIonMassDiffDa = matchedionmdda;
-            this.MatchedIonMassDiffPpm = matchedionmdppm;
-            this.MatchedIonIntensities = matchedionint;
-            this.LocalizedScores = localscores;
-            this.ImprovementPossible = improvposs;
-            this.CumulativeTarget = cumutarget;
-            this.CumulativeDecoy = cumudeco;
-            this.QValue = qvalue;
-            this.CumulativeTargetNotch = cumutarnotch;
-            this.CumulativeDecoyNotch = cumudecnotch;
+            var spl = line.Split(split);
+
+            FullSequence = spl[parsedHeader[TsvResultReader.FullSequenceLabel]];
+            Ms2ScanNumber = int.Parse(spl[parsedHeader[TsvResultReader.Ms2ScanNumberLabel]]);
+            Filename = spl[parsedHeader[TsvResultReader.FilenameLabel]].Trim();
+            TotalIonCurrent = double.Parse(spl[parsedHeader[TsvResultReader.TotalIonCurrentLabel]].Trim());
+            PrecursorScanNum = int.Parse(spl[parsedHeader[TsvResultReader.PrecursorScanNumLabel]].Trim());
+            PrecursorCharge = (int)double.Parse(spl[parsedHeader[TsvResultReader.PrecursorChargeLabel]].Trim());
+            PrecursorMz = double.Parse(spl[parsedHeader[TsvResultReader.PrecursorMzLabel]].Trim());
+            PrecursorMass = double.Parse(spl[parsedHeader[TsvResultReader.PrecursorMassLabel]].Trim());
+            Score = double.Parse(spl[parsedHeader[TsvResultReader.ScoreLabel]].Trim());
+            DeltaScore = double.Parse(spl[parsedHeader[TsvResultReader.DeltaScoreLabel]].Trim());
+            Notch = spl[parsedHeader[TsvResultReader.NotchLabel]].Trim();
+            BaseSeq = spl[parsedHeader[TsvResultReader.BaseSeqLabel]].Trim();
+            EssentialSeq = spl[parsedHeader[TsvResultReader.EssentialSeqLabel]].Trim();
+            MissedCleavage = spl[parsedHeader[TsvResultReader.MissedCleavageLabel]].Trim();
+            PeptideMonoMass = spl[parsedHeader[TsvResultReader.PeptideMonoMassLabel]].Trim();
+            MassDiffDa = spl[parsedHeader[TsvResultReader.MassDiffDaLabel]].Trim();
+            MassDiffPpm = spl[parsedHeader[TsvResultReader.MassDiffPpmLabel]].Trim();
+            ProteinAccession = spl[parsedHeader[TsvResultReader.ProteinAccessionLabel]].Trim();
+            ProteinName = spl[parsedHeader[TsvResultReader.ProteinNameLabel]].Trim();
+            GeneName = spl[parsedHeader[TsvResultReader.GeneNameLabel]].Trim();
+            SequenceVariations = spl[parsedHeader[TsvResultReader.SequenceVariationsLabel]].Trim();
+            OrganismName = spl[parsedHeader[TsvResultReader.OrganismNameLabel]].Trim();
+            PeptideDesicription = spl[parsedHeader[TsvResultReader.PeptideDesicriptionLabel]].Trim();
+            StartAndEndResiduesInProtein = spl[parsedHeader[TsvResultReader.StartAndEndResiduesInProteinLabel]].Trim();
+            PreviousAminoAcid = spl[parsedHeader[TsvResultReader.PreviousAminoAcidLabel]].Trim();
+            NextAminoAcid = spl[parsedHeader[TsvResultReader.NextAminoAcidLabel]].Trim();
+            DecoyContamTarget = spl[parsedHeader[TsvResultReader.DecoyContamTargetLabel]].Trim();
+            QValue = double.Parse(spl[parsedHeader[TsvResultReader.QValueLabel]].Trim());
+            QValueNotch = double.Parse(spl[parsedHeader[TsvResultReader.QValueNotchLabel]].Trim());
+
+            MatchedIons = ReadFragmentIonsFromString(spl[parsedHeader[TsvResultReader.MatchedIonsLabel]].Trim(), BaseSeq);
+        }
+
+        private static List<MatchedFragmentIon> ReadFragmentIonsFromString(string matchedMzString, string peptideBaseSequence)
+        {
+            var peaks = matchedMzString.Split(MzSplit, StringSplitOptions.RemoveEmptyEntries).Select(v => v.Trim())
+                .ToList();
+            peaks.RemoveAll(p => p.Contains("\""));
+            
+            List<MatchedFragmentIon> matchedIons = new List<MatchedFragmentIon>();
+
+            foreach (var peak in peaks)
+            {
+                var split = peak.Split(new char[] { '+', ':' });
+
+                string ionTypeAndNumber = split[0];
+                Match result = IonParser.Match(ionTypeAndNumber);
+
+                ProductType productType = (ProductType)Enum.Parse(typeof(ProductType), result.Groups[1].Value);
+
+                int fragmentNumber = int.Parse(result.Groups[2].Value);
+                int z = int.Parse(split[1]);
+                double mz = double.Parse(split[2]);
+                double neutralLoss = 0;
+
+                // check for neutral loss
+                if (ionTypeAndNumber.Contains("-"))
+                {
+                    string temp = ionTypeAndNumber.Replace("(", "");
+                    temp = temp.Replace(")", "");
+                    var split2 = temp.Split('-');
+                    neutralLoss = double.Parse(split2[1]);
+                }
+                
+                FragmentationTerminus terminus = TerminusSpecificProductTypes.ProductTypeToFragmentationTerminus[productType];
+
+                int aminoAcidPosition = fragmentNumber;
+                if (terminus == FragmentationTerminus.C)
+                {
+                    aminoAcidPosition = peptideBaseSequence.Length - fragmentNumber;
+                }
+
+                var t = new NeutralTerminusFragment(terminus, mz.ToMass(z) - DissociationTypeCollection.GetMassShiftFromProductType(productType), fragmentNumber, aminoAcidPosition);
+                Product p = new Product(productType, t, neutralLoss);
+                matchedIons.Add(new MatchedFragmentIon(p, mz, 1.0, z));
+            }
+
+            return matchedIons;
         }
     }
 }

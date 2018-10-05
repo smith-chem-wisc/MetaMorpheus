@@ -13,6 +13,7 @@ using System.Net.Http;
 using System.Threading.Tasks;
 using System.Windows;
 using System.Windows.Controls;
+using System.Windows.Documents;
 using System.Windows.Input;
 using TaskLayer;
 
@@ -28,6 +29,7 @@ namespace MetaMorpheusGUI
         private readonly ObservableCollection<PreRunTask> StaticTasksObservableCollection = new ObservableCollection<PreRunTask>();
         private readonly ObservableCollection<RawDataForDataGrid> SelectedRawFiles = new ObservableCollection<RawDataForDataGrid>();
         private ObservableCollection<InRunTask> DynamicTasksObservableCollection;
+        private bool WarnedAboutThermoAlready = false;
 
         public MainWindow()
         {
@@ -69,7 +71,16 @@ namespace MetaMorpheusGUI
             FileSpecificParameters.ValidateFileSpecificVariableNames();
 
             // LOAD GUI SETTINGS
-            GuiGlobalParams = Toml.ReadFile<GuiGlobalParams>(Path.Combine(GlobalVariables.DataDir, @"GUIsettings.toml"));
+
+            if (File.Exists(Path.Combine(GlobalVariables.DataDir, @"GUIsettings.toml")))
+            {
+                GuiGlobalParams = Toml.ReadFile<GuiGlobalParams>(Path.Combine(GlobalVariables.DataDir, @"GUIsettings.toml"));
+            }
+            else
+            {
+                Toml.WriteFile(GuiGlobalParams, Path.Combine(GlobalVariables.DataDir, @"GUIsettings.toml"), MetaMorpheusTask.tomlConfig);
+                notificationsTextBox.Document = YoutubeWikiNotification();
+            }
 
             if (GlobalVariables.MetaMorpheusVersion.Contains("Not a release version"))
                 GuiGlobalParams.AskAboutUpdating = false;
@@ -83,10 +94,47 @@ namespace MetaMorpheusGUI
                 GuiWarnHandler(null, new StringEventArgs("Could not get newest version from web: " + e.Message, null));
             }
         }
+        
+        private FlowDocument YoutubeWikiNotification()
+        {
+
+            FlowDocument doc = notificationsTextBox.Document;
+            Paragraph p = new Paragraph();
+            Run run1 = new Run("Visit our ");
+            Run run2 = new Run("Wiki");
+            Run run3 = new Run(" or ");
+            Run run4 = new Run("Youtube channel");
+            Run run5 = new Run(" to check out what MetaMorpheus can do!" + System.Environment.NewLine);
+
+            Hyperlink wikiLink = new Hyperlink(run2);
+            wikiLink.NavigateUri = new Uri(@"https://github.com/smith-chem-wisc/MetaMorpheus/wiki");
+
+            Hyperlink youtubeLink = new Hyperlink(run4);
+            youtubeLink.NavigateUri = new Uri(@"https://www.youtube.com/playlist?list=PLVk5tTSZ1aWlhNPh7jxPQ8pc0ElyzSUQb");
+
+            var links = new List<Hyperlink> {wikiLink, youtubeLink};
+
+            p.Inlines.Add(run1);
+            p.Inlines.Add(wikiLink);
+            p.Inlines.Add(run3);
+            p.Inlines.Add(youtubeLink);
+            p.Inlines.Add(run5);
+
+            foreach (Hyperlink link in links)
+            {
+                link.RequestNavigate += (sender, e) =>
+                {
+                    System.Diagnostics.Process.Start(e.Uri.ToString());
+                };
+            }
+
+            doc.Blocks.Add(p);
+            return doc;
+        }
 
         public static string NewestKnownVersion { get; private set; }
 
-        internal GuiGlobalParams GuiGlobalParams { get; }
+        internal GuiGlobalParams GuiGlobalParams = new GuiGlobalParams();
 
         private static void GetVersionNumbersFromWeb()
         {
@@ -212,12 +260,21 @@ namespace MetaMorpheusGUI
             }
             else
             {
-                foreach (var uu in SpectraFilesObservableCollection)
+                var newFiles = e.StringList.ToList();
+                foreach (var oldFile in SpectraFilesObservableCollection)
                 {
-                    uu.Use = false;
+                    if (!newFiles.Contains(oldFile.FilePath))
+                    {
+                        oldFile.Use = false;
+                    }
                 }
-                foreach (var newRawData in e.StringList)
+
+                var files = SpectraFilesObservableCollection.Select(p => p.FilePath).ToList();
+                foreach (var newRawData in newFiles.Where(p => !files.Contains(p)))
+                {
                     SpectraFilesObservableCollection.Add(new RawDataForDataGrid(newRawData));
+                }
+
                 UpdateOutputFolderTextbox();
             }
         }
@@ -415,28 +472,36 @@ namespace MetaMorpheusGUI
             switch (theExtension)
             {
                 case ".raw":
-                    // check for MSFileReader and display a warning if the expected DLLs are not found
-                    var versionCheckerResult = MyFileManager.ValidateThermoMsFileReaderVersion();
-
-                    if (versionCheckerResult.Equals(MyFileManager.ThermoMsFileReaderVersionCheck.IncorrectVersion))
+                    if (!WarnedAboutThermoAlready)
                     {
-                        GuiWarnHandler(null, new StringEventArgs("Warning! Thermo MSFileReader is not version 3.0 SP2; a crash may result from searching this .raw file", null));
-                    }
-                    else if (versionCheckerResult.Equals(MyFileManager.ThermoMsFileReaderVersionCheck.DllsNotFound))
-                    {
-                        GuiWarnHandler(null, new StringEventArgs("Warning! Cannot find Thermo MSFileReader (v3.0 SP2 is preferred); a crash may result from searching this .raw file", null));
+                        // check for MSFileReader and display a warning if the expected DLLs are not found
+                        var versionCheckerResult = MyFileManager.ValidateThermoMsFileReaderVersion();
+
+                        if (versionCheckerResult.Equals(MyFileManager.ThermoMsFileReaderVersionCheck.IncorrectVersion))
+                        {
+                            GuiWarnHandler(null, new StringEventArgs("Warning! Thermo MSFileReader is not version 3.0 SP2; a crash may result from searching this .raw file", null));
+                        }
+                        else if (versionCheckerResult.Equals(MyFileManager.ThermoMsFileReaderVersionCheck.DllsNotFound))
+                        {
+                            GuiWarnHandler(null, new StringEventArgs("Warning! Cannot find Thermo MSFileReader (v3.0 SP2 is preferred); a crash may result from searching this .raw file", null));
+                        }
+                        else if (versionCheckerResult.Equals(MyFileManager.ThermoMsFileReaderVersionCheck.SomeDllsMissing))
+                        {
+                            GuiWarnHandler(null, new StringEventArgs("Warning! Found only some of the expected Thermo MSFileReader .dll files; a crash may result from searching this .raw file", null));
+                        }
+
+                        // check for ManagedThermoHelperLayer.dll and display a warning if it's not found
+                        // this is one hacky way of checking if the user has C++ redistributable installed
+                        string assumedManagedThermoHelperLayerDllPath = Path.Combine(Environment.CurrentDirectory, "ManagedThermoHelperLayer.dll");
+                        if (!File.Exists(assumedManagedThermoHelperLayerDllPath))
+                        {
+                            GuiWarnHandler(null, new StringEventArgs("Warning! Cannot find Microsoft Visual C++ Redistributable; " +
+                                "a crash may result from searching this .raw file. If you have just installed the C++ redistributable, " +
+                                "please uninstall and reinstall MetaMorpheus", null));
+                        }
                     }
 
-                    // check for ManagedThermoHelperLayer.dll and display a warning if it's not found
-                    // this is one hacky way of checking if the user has C++ redistributable installed
-                    string assumedManagedThermoHelperLayerDllPath = Path.Combine(Environment.CurrentDirectory, "ManagedThermoHelperLayer.dll");
-                    if (!File.Exists(assumedManagedThermoHelperLayerDllPath))
-                    {
-                        GuiWarnHandler(null, new StringEventArgs("Warning! Cannot find Microsoft Visual C++ Redistributable; " +
-                            "a crash may result from searching this .raw file. If you have just installed the C++ redistributable, " +
-                            "please uninstall and reinstall MetaMorpheus", null));
-                    }
-
+                    WarnedAboutThermoAlready = true;
                     goto case ".mzml";
 
                 case ".mgf":
@@ -469,8 +534,8 @@ namespace MetaMorpheusGUI
                         {
                             try
                             {
-                                GlobalVariables.AddMods(UsefulProteomicsDatabases.ProteinDbLoader.GetPtmListFromProteinXml(draggedFilePath).OfType<ModificationWithLocation>());
-                                
+                                GlobalVariables.AddMods(UsefulProteomicsDatabases.ProteinDbLoader.GetPtmListFromProteinXml(draggedFilePath).OfType<Modification>());
+
                                 PrintErrorsReadingMods();
                             }
                             catch (Exception ee)
@@ -778,7 +843,7 @@ namespace MetaMorpheusGUI
                 UpdateTaskGuiStuff();
             }
         }
-        
+
         // deletes the selected task
         private void DeleteSelectedTask(object sender, RoutedEventArgs e)
         {

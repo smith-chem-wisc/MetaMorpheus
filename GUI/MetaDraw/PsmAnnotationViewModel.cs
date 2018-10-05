@@ -10,6 +10,8 @@ using MetaMorpheusGUI;
 using System.IO;
 using MassSpectrometry;
 using System.Collections.Generic;
+using Proteomics.Fragmentation;
+using Chemistry;
 
 namespace ViewModels
 {
@@ -20,11 +22,10 @@ namespace ViewModels
         private PlotModel privateModel;
 
         private static Dictionary<ProductType, OxyColor> productTypeDrawColors = new Dictionary<ProductType, OxyColor>
-        { { ProductType.B, OxyColors.Blue },
-          { ProductType.BnoB1ions, OxyColors.Blue },
-          { ProductType.Y, OxyColors.Purple },
-          { ProductType.C, OxyColors.Gold },
-          { ProductType.Zdot, OxyColors.Orange } };
+        { { ProductType.b, OxyColors.Blue },
+          { ProductType.y, OxyColors.Purple },
+          { ProductType.c, OxyColors.Gold },
+          { ProductType.zPlusOne, OxyColors.Orange } };
 
         public PlotModel Model
         {
@@ -73,11 +74,11 @@ namespace ViewModels
             // draw the matched peaks; if the PSM is null, we're just drawing the peaks in the scan without annotation, so skip this part
             if (psmToDraw != null)
             {
-                foreach (var peak in psmToDraw.FragmentIons)
+                foreach (var peak in psmToDraw.MatchedIons)
                 {
-                    OxyColor ionColor = productTypeDrawColors[peak.ProductType];
+                    OxyColor ionColor = productTypeDrawColors[peak.NeutralTheoreticalProduct.ProductType];
 
-                    int i = msDataScan.MassSpectrum.GetClosestPeakIndex(peak.Mz).Value;
+                    int i = msDataScan.MassSpectrum.GetClosestPeakIndex(peak.NeutralTheoreticalProduct.NeutralMass.ToMz(1)).Value;
 
                     // peak line
                     allIons[i] = new LineSeries();
@@ -87,6 +88,12 @@ namespace ViewModels
                     allIons[i].Points.Add(new DataPoint(peak.Mz, spectrumIntensities[i]));
 
                     // peak annotation
+                    string peakAnnotationText = peak.NeutralTheoreticalProduct.ProductType.ToString().ToLower() + peak.NeutralTheoreticalProduct.TerminusFragment.FragmentNumber + " (" + peak.Mz.ToString("F3") + ")";
+                    if (peak.NeutralTheoreticalProduct.NeutralLoss != 0)
+                    {
+                        peakAnnotationText = peak.NeutralTheoreticalProduct.ProductType.ToString().ToLower() + peak.NeutralTheoreticalProduct.TerminusFragment.FragmentNumber + "-" + peak.NeutralTheoreticalProduct.NeutralLoss.ToString("F2") + " (" + peak.Mz.ToString("F3") + ")";
+                    }
+                    
                     var peakAnnotation = new TextAnnotation();
                     peakAnnotation.TextRotation = -60;
                     peakAnnotation.Font = "Arial";
@@ -94,7 +101,7 @@ namespace ViewModels
                     peakAnnotation.FontWeight = 2.0;
                     peakAnnotation.TextColor = ionColor;
                     peakAnnotation.StrokeThickness = 0;
-                    peakAnnotation.Text = "(" + peak.Mz.ToString("F3") + ") " + peak.ProductType.ToString().ToLower() + peak.IonNumber;
+                    peakAnnotation.Text = peakAnnotationText;
                     peakAnnotation.TextPosition = new DataPoint(allIons[i].Points[1].X, allIons[i].Points[1].Y + peakAnnotation.Text.Length * 1.5 / 4);
                     peakAnnotation.TextHorizontalAlignment = HorizontalAlignment.Left;
                     model.Annotations.Add(peakAnnotation);
