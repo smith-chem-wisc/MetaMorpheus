@@ -334,13 +334,13 @@ namespace MetaMorpheusGUI
                     MessageBox.Show("Warning: Complementary ions are strongly recommended when using this algorithm.");
                 }
                 //only use N or C termini, not both
-                if(nTerminalIons.IsChecked.Value)
+                if(cTerminalIons.IsChecked.Value)
                 {
-                    cTerminalIons.IsChecked = false;
+                    nTerminalIons.IsChecked = false;
                 }
                 else
                 {
-                    cTerminalIons.IsChecked = true;
+                    nTerminalIons.IsChecked = true;
                 }
             }
             else //it is full
