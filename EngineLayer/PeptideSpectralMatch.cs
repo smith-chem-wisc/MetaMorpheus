@@ -409,7 +409,7 @@ namespace EngineLayer
             s["Gene Name"] = pepWithModsIsNull ? " " : Resolve(pepsWithMods.Select(b => string.Join(", ", b.Protein.GeneNames.Select(d => d.Item1 + ":" + d.Item2)))).ResolvedString;
             s["Sequence Variations"] = pepWithModsIsNull ? " " :
                 Resolve(pepsWithMods.Select(b => string.Join(", ", b.Protein.SequenceVariations
-                    .Where(d => peptide.OneBasedStartResidueInProtein <= d.OneBasedBeginPosition && d.OneBasedBeginPosition <= peptide.OneBasedEndResidueInProtein)
+                    .Where(d => psm.OneBasedStartResidueInProtein <= d.OneBasedBeginPosition && d.OneBasedBeginPosition <= psm.OneBasedEndResidueInProtein)
                     .Select(d => d.OriginalSequence + d.OneBasedBeginPosition.ToString() + d.VariantSequence + SuffixIsSequenceVariantApplied(b.Protein, d))
                     .Distinct()))).Item1;
             s["Organism Name"] = pepWithModsIsNull ? " " : Resolve(pepsWithMods.Select(b => b.Protein.Organism)).Item1;
@@ -449,8 +449,9 @@ namespace EngineLayer
             return hasVariantSequence ? "+" : "-";
         }
 
-        private static void AddMatchedIonsData(Dictionary<string, string> s, PeptideSpectralMatch peptide)
+        private static void AddMatchedIonsData(Dictionary<string, string> s, PeptideSpectralMatch psm)
         {
+            bool nullPsm = (psm == null);
 
             StringBuilder seriesStringBuilder = new StringBuilder();
             StringBuilder mzStringBuilder = new StringBuilder();
