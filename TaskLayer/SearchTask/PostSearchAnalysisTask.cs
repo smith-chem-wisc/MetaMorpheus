@@ -584,13 +584,14 @@ namespace TaskLayer
 
                     foreach (var peptide in myPepsWithSetMods)
                     {
-                        if (proteinToConfidentBaseSequences.TryGetValue(peptide.Protein, out var myPepList))
+                        Protein protein = peptide.Protein as ProteinWithAppliedVariants != null ? (peptide.Protein as ProteinWithAppliedVariants).Protein : peptide.Protein;
+                        if (proteinToConfidentBaseSequences.TryGetValue(protein, out var myPepList))
                         {
                             myPepList.Add(peptide);
                         }
                         else
                         {
-                            proteinToConfidentBaseSequences.Add(peptide.Protein, new List<PeptideWithSetModifications> { peptide });
+                            proteinToConfidentBaseSequences.Add(protein, new List<PeptideWithSetModifications> { peptide });
                         }
                     }
                 }
@@ -622,13 +623,14 @@ namespace TaskLayer
 
                     foreach (var peptide in myPepsWithSetMods)
                     {
-                        if (proteinToConfidentModifiedSequences.TryGetValue(peptide.Protein, out var myPepList))
+                        Protein protein = peptide.Protein as ProteinWithAppliedVariants != null ? (peptide.Protein as ProteinWithAppliedVariants).Protein : peptide.Protein;
+                        if (proteinToConfidentModifiedSequences.TryGetValue(protein, out var myPepList))
                         {
                             myPepList.Add(peptide);
                         }
                         else
                         {
-                            proteinToConfidentModifiedSequences.Add(peptide.Protein, new List<PeptideWithSetModifications> { peptide });
+                            proteinToConfidentModifiedSequences.Add(protein, new List<PeptideWithSetModifications> { peptide });
                         }
                     }
                 }
