@@ -32,10 +32,8 @@ namespace Test
         }
 
         [Test]
-        [TestCase("PEPTIDE", 1)]
-        //[TestCase("PEPTIDEK", 1)]
-        //[TestCase("PK", 1)]
-        //[TestCase("KP", 1)]
+        [TestCase("PEPTIDE", 1029.5302)]
+        [TestCase("PEPTIDEK", 1386.7881)]
         public static void TestPeptideLabelledWithTMT(string peptide, double totalMass)
         {
             List<Modification> gptmdModifications = new List<Modification>();
@@ -51,10 +49,49 @@ namespace Test
             productMasses.Distinct();
             productMasses.Sort();
 
-            Assert.AreEqual(1029.5302, ClassExtensions.RoundedDouble(p.MonoisotopicMass.ToMz(1),4));
+            Assert.AreEqual(totalMass, ClassExtensions.RoundedDouble(p.MonoisotopicMass.ToMz(1), 4));
+        }
 
-            Assert.AreEqual(11, f.Where(z => z.ProductType == ProductType.D).ToList().Count());
-            Assert.AreEqual(11, f.Where(z => z.ProductType == ProductType.M).ToList().Count());
+        [Test]
+        [TestCase("PEPTIDE", 944.4712)]
+        [TestCase("PEPTIDEK", 1216.6702)]
+        public static void TestPeptideLabelledWith_iTRAQ_4plex(string peptide, double totalMass)
+        {
+            List<Modification> gptmdModifications = new List<Modification>();
+            gptmdModifications.AddRange(GlobalVariables.AllModsKnown);
+            List<Modification> itraq4plex = gptmdModifications.Where(m => m.ModificationType == "Multiplex Label" && m.IdWithMotif.Contains("iTRAQ-4plex")).ToList();
+
+            Protein P = new Protein(peptide, "", "", null, null, null, null, null, false, false, null, null, null, null);
+            CommonParameters CommonParameters = new CommonParameters(digestionParams: new DigestionParams(minPeptideLength: 1));
+            var p = P.Digest(CommonParameters.DigestionParams, itraq4plex, new List<Modification>()).First();
+            var f = p.Fragment(DissociationType.HCD, FragmentationTerminus.Both);
+
+            List<double> productMasses = f.Select(m => m.NeutralMass.ToMz(1)).ToList();
+            productMasses.Distinct();
+            productMasses.Sort();
+
+            Assert.AreEqual(totalMass, ClassExtensions.RoundedDouble(p.MonoisotopicMass.ToMz(1), 4));
+        }
+
+        [Test]
+        [TestCase("PEPTIDE", 1104.5694)]
+        [TestCase("PEPTIDEK", 1536.8666)]
+        public static void TestPeptideLabelledWith_iTRAQ_8plex(string peptide, double totalMass)
+        {
+            List<Modification> gptmdModifications = new List<Modification>();
+            gptmdModifications.AddRange(GlobalVariables.AllModsKnown);
+            List<Modification> itraq8plex = gptmdModifications.Where(m => m.ModificationType == "Multiplex Label" && m.IdWithMotif.Contains("iTRAQ-8plex")).ToList();
+
+            Protein P = new Protein(peptide, "", "", null, null, null, null, null, false, false, null, null, null, null);
+            CommonParameters CommonParameters = new CommonParameters(digestionParams: new DigestionParams(minPeptideLength: 1));
+            var p = P.Digest(CommonParameters.DigestionParams, itraq8plex, new List<Modification>()).First();
+            var f = p.Fragment(DissociationType.HCD, FragmentationTerminus.Both);
+
+            List<double> productMasses = f.Select(m => m.NeutralMass.ToMz(1)).ToList();
+            productMasses.Distinct();
+            productMasses.Sort();
+
+            Assert.AreEqual(totalMass, ClassExtensions.RoundedDouble(p.MonoisotopicMass.ToMz(1), 4));
         }
 
         [Test]
@@ -62,10 +99,10 @@ namespace Test
         [TestCase("C4 N2 H13 C{13}2", 115.114583098)]
         [TestCase("C4 N1 H13 C{13}2 N{15}1", 116.111617992)]
         [TestCase("C3 N1 H13 C{13}3 N{15}1", 117.114972828)]
-        [TestCase("C5 N2 H13 C{13}2 O{18}1", 145.113742711)]
-        [TestCase("C4 N1O1 H13 C{13}3 N{15}1", 145.109887447)]
-        [TestCase("C7 N3O3 H25 C{13}7 N{15}1", 305.213184422)]
-        [TestCase("C8 N2O3 H25 C{13}6 N{15}2", 305.206864482)]
+        [TestCase("C5 N2 H12 C{13}2 O{18}1", 144.105917679)]
+        [TestCase("C4 N1O1 H12 C{13}3 N{15}1", 144.102062415)]
+        [TestCase("C7 N3O3 H24 C{13}7 N{15}1", 304.205359390)]
+        [TestCase("C8 N2O3 H24 C{13}6 N{15}2", 304.199039449)]
         public static void TestChemicalFormulaWithIsotopes_iTRAQ(string formula, double mass)
         {
             ChemicalFormula cf = ChemicalFormula.ParseFormula(formula);
