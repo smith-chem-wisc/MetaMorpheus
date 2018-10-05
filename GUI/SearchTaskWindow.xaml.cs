@@ -333,6 +333,15 @@ namespace MetaMorpheusGUI
                 {
                     MessageBox.Show("Warning: Complementary ions are strongly recommended when using this algorithm.");
                 }
+                //only use N or C termini, not both
+                if(nTerminalIons.IsChecked.Value)
+                {
+                    cTerminalIons.IsChecked = false;
+                }
+                else
+                {
+                    cTerminalIons.IsChecked = true;
+                }
             }
             else //it is full
             {
@@ -669,6 +678,8 @@ namespace MetaMorpheusGUI
                 addCompIonCheckBox.IsChecked = false;
                 checkBoxClassicSemiSpecific.IsEnabled = true;
                 checkBoxClassicSemiSpecific.IsChecked = false;
+                nTerminalIons.IsChecked = true;
+                cTerminalIons.IsChecked = true;
             }
         }
 
@@ -718,6 +729,11 @@ namespace MetaMorpheusGUI
             {
                 missedCleavagesTextBox.Text = "2";
                 MaxPeptideLengthTextBox.Text = "50";
+            }
+            else
+            {
+                nTerminalIons.IsChecked = true;
+                cTerminalIons.IsChecked = true;
             }
         }
 
