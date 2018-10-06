@@ -995,68 +995,50 @@ namespace Test
         public static void MultiProteaseParsimony_TestingProteaseSpecificFDRCalculations()
         {
             // two protease options
-            DigestionParams trypsin = new DigestionParams(protease: "trypsin");
+            DigestionParams tryp = new DigestionParams(protease: "trypsin");
             DigestionParams gluC = new DigestionParams(protease: "Glu-C");
 
             // target or decoy protein
-            Protein pr = new Protein("P", "1");
-            Protein decoyProtein = new Protein("P", "2", isDecoy: true);
+            Protein t = new Protein("P", "1");
+            Protein d = new Protein("P", "2", isDecoy: true);
 
-            MsDataScan dfb = new MsDataScan(new MzSpectrum(new double[] { 1 }, new double[] { 1 }, false), 0, 1, true, Polarity.Positive, double.NaN, null, null, MZAnalyzerType.Orbitrap, double.NaN, null, null, "scan=1", double.NaN, null, null, double.NaN, null, DissociationType.AnyActivationType, 0, null);
+            MsDataScan dfb = new MsDataScan(new MzSpectrum(new double[1], new double[1], false),
+                0, 1, true, Polarity.Positive, double.NaN, null, null, MZAnalyzerType.Orbitrap,
+                double.NaN, null, null, "scan=1", double.NaN, null, null, double.NaN, null,
+                DissociationType.AnyActivationType, 0, null);
+
             Ms2ScanWithSpecificMass scan = new Ms2ScanWithSpecificMass(dfb, 2, 0, "File");
+            List<MatchedFragmentIon> f = new List<MatchedFragmentIon>();
 
             List<PeptideSpectralMatch> psms = new List<PeptideSpectralMatch>
             {
-                new PeptideSpectralMatch(new PeptideWithSetModifications("P", null, 0, trypsin, p: pr, oneBasedStartResidueInProtein: pr.Length, oneBasedEndResidueInProtein: pr.Length), 0, 20, 1, scan, trypsin, new List<MatchedFragmentIon>()),
-                new PeptideSpectralMatch(new PeptideWithSetModifications("PL", null, 0, gluC, p: pr, oneBasedStartResidueInProtein: pr.Length, oneBasedEndResidueInProtein: pr.Length), 0, 19, 1, scan, gluC, new List<MatchedFragmentIon>()),
-                new PeptideSpectralMatch(new PeptideWithSetModifications("PLL", null, 0, trypsin, p: pr, oneBasedStartResidueInProtein: pr.Length, oneBasedEndResidueInProtein: pr.Length), 0, 18, 1, scan, trypsin, new List<MatchedFragmentIon>()),
-                new PeptideSpectralMatch(new PeptideWithSetModifications("PLLL", null, 0, gluC, p: pr, oneBasedStartResidueInProtein: pr.Length, oneBasedEndResidueInProtein: pr.Length), 0, 17, 1, scan, gluC, new List<MatchedFragmentIon>()),
-                new PeptideSpectralMatch(new PeptideWithSetModifications("PLLLL", null, 0, gluC, p: decoyProtein, oneBasedStartResidueInProtein: decoyProtein.Length, oneBasedEndResidueInProtein: decoyProtein.Length), 0, 16, 1, scan, gluC, new List<MatchedFragmentIon>()),
-                new PeptideSpectralMatch(new PeptideWithSetModifications("PLLLLL", null, 0, gluC, p: pr, oneBasedStartResidueInProtein: pr.Length, oneBasedEndResidueInProtein: pr.Length), 0, 15, 1, scan, gluC, new List<MatchedFragmentIon>()),
-                new PeptideSpectralMatch(new PeptideWithSetModifications("PLLLLLL", null, 0, trypsin, p: pr, oneBasedStartResidueInProtein: pr.Length, oneBasedEndResidueInProtein: pr.Length), 0, 14, 1, scan, trypsin, new List<MatchedFragmentIon>()),
-                new PeptideSpectralMatch(new PeptideWithSetModifications("PLLLLLLL", null, 0, trypsin, p: decoyProtein, oneBasedStartResidueInProtein: decoyProtein.Length, oneBasedEndResidueInProtein: decoyProtein.Length), 0, 13, 1, scan, trypsin, new List<MatchedFragmentIon>()),
-                new PeptideSpectralMatch(new PeptideWithSetModifications("PLLLLLLLL", null, 0, trypsin, p: decoyProtein, oneBasedStartResidueInProtein: decoyProtein.Length, oneBasedEndResidueInProtein: decoyProtein.Length), 0, 12, 1, scan, trypsin, new List<MatchedFragmentIon>()),
-                new PeptideSpectralMatch(new PeptideWithSetModifications("PLLLLLLLLL", null, 0, trypsin, p: pr, oneBasedStartResidueInProtein: pr.Length, oneBasedEndResidueInProtein: pr.Length), 0, 11, 1, scan, trypsin, new List<MatchedFragmentIon>()),
+                new PeptideSpectralMatch(new PeptideWithSetModifications("P", null, digestionParams: tryp, p: t), 0, 20, 1, scan, tryp, f),
+                new PeptideSpectralMatch(new PeptideWithSetModifications("P", null, digestionParams: gluC, p: t), 0, 19, 1, scan, gluC, f),
+                new PeptideSpectralMatch(new PeptideWithSetModifications("P", null, digestionParams: tryp, p: t), 0, 18, 1, scan, tryp, f),
+                new PeptideSpectralMatch(new PeptideWithSetModifications("P", null, digestionParams: gluC, p: t), 0, 17, 1, scan, gluC, f),
+                new PeptideSpectralMatch(new PeptideWithSetModifications("P", null, digestionParams: gluC, p: d), 0, 16, 1, scan, gluC, f),
+                new PeptideSpectralMatch(new PeptideWithSetModifications("P", null, digestionParams: gluC, p: t), 0, 15, 1, scan, gluC, f),
+                new PeptideSpectralMatch(new PeptideWithSetModifications("P", null, digestionParams: tryp, p: t), 0, 14, 1, scan, tryp, f),
+                new PeptideSpectralMatch(new PeptideWithSetModifications("P", null, digestionParams: tryp, p: d), 0, 13, 1, scan, tryp, f),
+                new PeptideSpectralMatch(new PeptideWithSetModifications("P", null, digestionParams: tryp, p: d), 0, 12, 1, scan, tryp, f),
+                new PeptideSpectralMatch(new PeptideWithSetModifications("P", null, digestionParams: tryp, p: t), 0, 11, 1, scan, tryp, f),
             };
 
             psms.ForEach(p => p.ResolveAllAmbiguities());
 
-            PostSearchAnalysisParameters parameters = new PostSearchAnalysisParameters();
-            parameters.SearchTaskResults = new MyTaskResults(new SearchTask());
-            parameters.SearchTaskId = "";
-            parameters.SearchParameters = new SearchParameters { DoParsimony = false, DoQuantification = false };
-            parameters.ProteinList = new List<Protein>();
-            parameters.AllPsms = psms;
-            parameters.FixedModifications = new List<Modification>();
-            parameters.VariableModifications = new List<Modification>();
-            parameters.ListOfDigestionParams = new HashSet<DigestionParams> { trypsin, gluC };
-            parameters.CurrentRawFileList = new List<string>();
-            parameters.MyFileManager = new MyFileManager(true);
-            parameters.NumNotches = 0;
-            parameters.OutputFolder = TestContext.CurrentContext.TestDirectory; //TEMP
-            parameters.IndividualResultsOutputFolder = Path.Combine(parameters.OutputFolder, "Individual File Results");
-            parameters.FlashLfqResults = null;
-            parameters.FileSettingsList = null;
-            parameters.NumMs2SpectraPerFile = new Dictionary<string, int[]> { { "File", new int[] { 0, 0 } } };
-            parameters.DatabaseFilenameList = null;
-            PostSearchAnalysisTask postProcessing = new PostSearchAnalysisTask();
-            postProcessing.Parameters = parameters;
-            postProcessing.CommonParameters = new CommonParameters();
-            postProcessing.Run();
-            Assert.AreEqual(0, parameters.AllPsms.ElementAt(0).FdrInfo.QValue);
-            Assert.AreEqual(0, parameters.AllPsms.ElementAt(1).FdrInfo.QValue);
-            Assert.AreEqual(0, parameters.AllPsms.ElementAt(2).FdrInfo.QValue);           
-            Assert.AreEqual(0, parameters.AllPsms.ElementAt(3).FdrInfo.QValue);
-            Assert.AreEqual(0, parameters.AllPsms.ElementAt(4).FdrInfo.QValue);
-            Assert.AreEqual("0.333333333333333", parameters.AllPsms.ElementAt(5).FdrInfo.QValue.ToString());
-            Assert.AreEqual("0.333333333333333", parameters.AllPsms.ElementAt(6).FdrInfo.QValue.ToString());
-            Assert.AreEqual("0.333333333333333", parameters.AllPsms.ElementAt(7).FdrInfo.QValue.ToString());
-            Assert.AreEqual(0.5, parameters.AllPsms.ElementAt(8).FdrInfo.QValue);
-            Assert.AreEqual(0.5, parameters.AllPsms.ElementAt(9).FdrInfo.QValue);
+            new FdrAnalysisEngine(psms, 0, new CommonParameters(), new List<string>()).Run();
+            psms = psms.OrderByDescending(p => p.Score).ToList();
 
-
-
-
+            Assert.AreEqual(0.00, Math.Round(psms[0].FdrInfo.QValue, 2));
+            Assert.AreEqual(0.00, Math.Round(psms[1].FdrInfo.QValue, 2));
+            Assert.AreEqual(0.00, Math.Round(psms[2].FdrInfo.QValue, 2));
+            Assert.AreEqual(0.00, Math.Round(psms[3].FdrInfo.QValue, 2));
+            Assert.AreEqual(0.50, Math.Round(psms[4].FdrInfo.QValue, 2));
+            Assert.AreEqual(0.50, Math.Round(psms[5].FdrInfo.QValue, 2));
+            Assert.AreEqual(0.00, Math.Round(psms[6].FdrInfo.QValue, 2));
+            Assert.AreEqual(0.33, Math.Round(psms[7].FdrInfo.QValue, 2));
+            Assert.AreEqual(0.67, Math.Round(psms[8].FdrInfo.QValue, 2));
+            Assert.AreEqual(0.67, Math.Round(psms[9].FdrInfo.QValue, 2));
         }
     }
 }

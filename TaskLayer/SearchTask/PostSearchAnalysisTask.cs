@@ -54,12 +54,6 @@ namespace TaskLayer
                .GroupBy(b => (b.FullFilePath, b.ScanNumber, b.PeptideMonisotopicMass)).Select(b => b.First()).ToList();
 
             CalculatePsmFdr();
-
-            //need to order by Qvalue after FDR calculation becasue when multiprotease searching is used, all psms will be sorted by protease after FDR calculation
-            Parameters.AllPsms = Parameters.AllPsms.OrderBy(b => b.FdrInfo.QValue)
-              .ThenBy(b => b.PeptideMonisotopicMass.HasValue ? Math.Abs(b.ScanPrecursorMass - b.PeptideMonisotopicMass.Value) : double.MaxValue)
-              .GroupBy(b => (b.FullFilePath, b.ScanNumber, b.PeptideMonisotopicMass)).Select(b => b.First()).ToList();
-
             DoMassDifferenceLocalizationAnalysis();
             ProteinAnalysis();
             QuantificationAnalysis();
@@ -88,23 +82,12 @@ namespace TaskLayer
             // TODO: because FDR is done before parsimony, if a PSM matches to a target and a decoy protein, there may be conflicts between how it's handled in parsimony and the FDR engine here
             // for example, here it may be treated as a decoy PSM, where as in parsimony it will be determined by the parsimony algorithm which is agnostic of target/decoy assignments
             // this could cause weird PSM FDR issues
-
-
-            //For Multiprotease Parsimony want to calcualte FDR on a per protease basis (targets and decoys for a specific protease)
-            //filter by protease, calc FDR, then recombine into All Psms before moving forward
+            
             Status("Estimating PSM FDR...", Parameters.SearchTaskId);
             int massDiffAcceptorNumNotches = Parameters.NumNotches;
-            //list of proteases            
-            var psmsGroupedByProtease = Parameters.AllPsms.GroupBy(p => p.DigestionParams.Protease);
-            List<PeptideSpectralMatch> allPsms = new List<PeptideSpectralMatch>();
-            foreach (var protease in psmsGroupedByProtease)
-            {
-                var selectedProteasePsms = protease.Select(p => p).ToList();
-                var fdrAnalysisResults = (FdrAnalysisResults)(new FdrAnalysisEngine(selectedProteasePsms, massDiffAcceptorNumNotches, CommonParameters, new List<string> { Parameters.SearchTaskId }).Run());
-                allPsms.AddRange(selectedProteasePsms);
-            }
-            Parameters.AllPsms = allPsms;
-            
+
+            var fdrAnalysisResults = (FdrAnalysisResults)(new FdrAnalysisEngine(Parameters.AllPsms, massDiffAcceptorNumNotches, CommonParameters, new List<string> { Parameters.SearchTaskId }).Run());
+
             Status("Done estimating PSM FDR!", Parameters.SearchTaskId);
         }
 
