@@ -83,7 +83,7 @@ namespace ViewModels
                         ionColor = productTypeDrawColors[peak.NeutralTheoreticalProduct.ProductType];
                     }
 
-                    int i = msDataScan.MassSpectrum.GetClosestPeakIndex(peak.NeutralTheoreticalProduct.NeutralMass.ToMz(1)).Value;
+                    int i = msDataScan.MassSpectrum.GetClosestPeakIndex(peak.NeutralTheoreticalProduct.NeutralMass.ToMz(peak.Charge)).Value;
 
                     // peak line
                     allIons[i] = new LineSeries();
