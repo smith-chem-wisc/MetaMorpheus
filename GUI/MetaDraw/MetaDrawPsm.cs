@@ -14,7 +14,7 @@ namespace MetaMorpheusGUI
     {
         private static readonly Regex IonParser = new Regex(@"([a-zA-Z]+)(\d+)");
         private static readonly char[] MzSplit = { '[', ',', ']', ';' };
-        
+
         public string FullSequence { get; }
         public int Ms2ScanNumber { get; }
         public string Filename { get; }
@@ -88,7 +88,7 @@ namespace MetaMorpheusGUI
             var peaks = matchedMzString.Split(MzSplit, StringSplitOptions.RemoveEmptyEntries).Select(v => v.Trim())
                 .ToList();
             peaks.RemoveAll(p => p.Contains("\""));
-            
+
             List<MatchedFragmentIon> matchedIons = new List<MatchedFragmentIon>();
 
             foreach (var peak in peaks)
@@ -113,8 +113,12 @@ namespace MetaMorpheusGUI
                     var split2 = temp.Split('-');
                     neutralLoss = double.Parse(split2[1]);
                 }
-                
-                FragmentationTerminus terminus = TerminusSpecificProductTypes.ProductTypeToFragmentationTerminus[productType];
+
+                FragmentationTerminus terminus = FragmentationTerminus.None;
+                if (TerminusSpecificProductTypes.ProductTypeToFragmentationTerminus.ContainsKey(productType))
+                {
+                    terminus = TerminusSpecificProductTypes.ProductTypeToFragmentationTerminus[productType];
+                }
 
                 int aminoAcidPosition = fragmentNumber;
                 if (terminus == FragmentationTerminus.C)
