@@ -3,11 +3,8 @@ using OxyPlot;
 using OxyPlot.Axes;
 using OxyPlot.Series;
 using OxyPlot.Annotations;
-using EngineLayer.CrosslinkSearch;
-using EngineLayer;
 using System.ComponentModel;
 using MetaMorpheusGUI;
-using System.IO;
 using MassSpectrometry;
 using System.Collections.Generic;
 using Proteomics.Fragmentation;
@@ -22,10 +19,14 @@ namespace ViewModels
         private PlotModel privateModel;
 
         private static Dictionary<ProductType, OxyColor> productTypeDrawColors = new Dictionary<ProductType, OxyColor>
-        { { ProductType.b, OxyColors.Blue },
+        {
+          { ProductType.b, OxyColors.Blue },
           { ProductType.y, OxyColors.Purple },
           { ProductType.c, OxyColors.Gold },
-          { ProductType.zPlusOne, OxyColors.Orange } };
+          { ProductType.zPlusOne, OxyColors.Orange },
+          { ProductType.D, OxyColors.DodgerBlue },
+          { ProductType.M, OxyColors.Firebrick }
+        };
 
         public PlotModel Model
         {
@@ -76,11 +77,15 @@ namespace ViewModels
             {
                 foreach (var peak in psmToDraw.MatchedIons)
                 {
-                    OxyColor ionColor = OxyColors.Turquoise;
+                    OxyColor ionColor;
 
                     if (productTypeDrawColors.ContainsKey(peak.NeutralTheoreticalProduct.ProductType))
                     {
                         ionColor = productTypeDrawColors[peak.NeutralTheoreticalProduct.ProductType];
+                    }
+                    else
+                    {
+                        ionColor = OxyColors.Turquoise;
                     }
 
                     int i = msDataScan.MassSpectrum.GetClosestPeakIndex(peak.NeutralTheoreticalProduct.NeutralMass.ToMz(peak.Charge)).Value;

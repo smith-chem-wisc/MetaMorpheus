@@ -60,12 +60,12 @@ namespace MetaMorpheusGUI
 
         private void SetUpDictionaries()
         {
-            // colors of each fragment
+            // colors of each fragment to annotate on base sequence
             productTypeToColor = ((ProductType[])Enum.GetValues(typeof(ProductType))).ToDictionary(p => p, p => Colors.Aqua);
             productTypeToColor[ProductType.b] = Colors.Blue;
             productTypeToColor[ProductType.y] = Colors.Purple;
-            productTypeToColor[ProductType.zPlusOne] = Colors.SeaGreen;
-            productTypeToColor[ProductType.c] = Colors.Orange;
+            productTypeToColor[ProductType.zPlusOne] = Colors.Orange;
+            productTypeToColor[ProductType.c] = Colors.Gold;
 
             // offset for annotation on base sequence
             productTypeToYOffset = ((ProductType[])Enum.GetValues(typeof(ProductType))).ToDictionary(p => p, p => 0.0);
