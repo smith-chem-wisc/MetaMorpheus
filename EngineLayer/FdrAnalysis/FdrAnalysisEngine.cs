@@ -159,16 +159,8 @@ namespace EngineLayer.FdrAnalysis
                     psm.SetFdrValues(cumulativeTarget, cumulativeDecoy, qValue, cumulativeTargetPerNotch[notch], cumulativeDecoyPerNotch[notch], qValueNotch, maximumLikelihood, eValue, eScore, CalculateEValue);
                 }
 
-                //Populate min qValues
-                double min_q_value = double.PositiveInfinity;
-                double[] min_q_value_notch = new double[MassDiffAcceptorNumNotches + 1];
-                for (int i = 0; i < MassDiffAcceptorNumNotches + 1; i++)
-                {
-                    min_q_value_notch[i] = double.PositiveInfinity;
-                }
-
-                //The idea here is to set previous qValues as thresholds,
-                //such that a lower scoring PSM can't have a higher confidence than a higher scoring PSM
+                // set q-value thresholds such that a lower scoring PSM can't have 
+                // a higher confidence than a higher scoring PSM
                 double qThrehold = 0;
                 double[] notchQThresholds = new double[MassDiffAcceptorNumNotches + 1];
                 for(int i = 0; i < psms.Count; i++)
@@ -184,7 +176,7 @@ namespace EngineLayer.FdrAnalysis
                         psm.FdrInfo.QValue = qThrehold;
                     }
 
-                    int notch = psm.Notch ?? MassDiffAcceptorNumNotches - 1;
+                    int notch = psm.Notch ?? MassDiffAcceptorNumNotches;
                     if (psm.FdrInfo.QValueNotch > notchQThresholds[notch])
                     {
                         notchQThresholds[notch] = psm.FdrInfo.QValueNotch;
