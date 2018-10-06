@@ -1,4 +1,6 @@
 ﻿using EngineLayer;
+using EngineLayer.ClassicSearch;
+using EngineLayer.FdrAnalysis;
 using MassSpectrometry;
 using NUnit.Framework;
 using Proteomics;
@@ -912,7 +914,7 @@ namespace Test
             List<ProteinGroup> proteinGroups = results.SortedAndScoredProteinGroups;
             Assert.AreEqual(1, proteinGroups.Count);
             Assert.AreEqual("1|2", proteinGroups.ElementAt(0).ProteinGroupName);
-            Assert.AreEqual(8, proteinGroups.ElementAt(0).AllPeptides.Count);            
+            Assert.AreEqual(8, proteinGroups.ElementAt(0).AllPeptides.Count);
         }
 
         /// <summary>
@@ -956,7 +958,7 @@ namespace Test
             psmABC_Dash.AddOrReplace(pepABC_2Dash, 10, 0, true, new List<MatchedFragmentIon>());
             PeptideSpectralMatch psmABC_G = new PeptideSpectralMatch(pepABC_2G, 0, 10, 0, scan, digestionParams2, new List<MatchedFragmentIon>());
             psmABC_G.AddOrReplace(pepABC_3G, 10, 0, true, new List<MatchedFragmentIon>());
-            
+
             List<PeptideSpectralMatch> psms = new List<PeptideSpectralMatch> { psmABC_Dash, psmABC_G };
             psms.ForEach(j => j.ResolveAllAmbiguities());
             psms.ForEach(j => j.SetFdrValues(1, 0, 0, 1, 0, 0, double.NaN, double.NaN, double.NaN, false));
@@ -985,6 +987,58 @@ namespace Test
             Assert.AreEqual(2, proteinGroups.ElementAt(0).AllPeptides.Count);
 
 
+        }
+        /// <summary>
+        /// This test ensures that FDR for each psm is calculated accoriding to its protease
+        /// </summary>
+        [Test]
+        public static void MultiProteaseParsimony_TestingProteaseSpecificFDRCalculations()
+        {
+            // two protease options
+            DigestionParams tryp = new DigestionParams(protease: "trypsin");
+            DigestionParams gluC = new DigestionParams(protease: "Glu-C");
+
+            // target or decoy protein
+            Protein t = new Protein("P", "1");
+            Protein d = new Protein("P", "2", isDecoy: true);
+
+            MsDataScan dfb = new MsDataScan(new MzSpectrum(new double[1], new double[1], false),
+                0, 1, true, Polarity.Positive, double.NaN, null, null, MZAnalyzerType.Orbitrap,
+                double.NaN, null, null, "scan=1", double.NaN, null, null, double.NaN, null,
+                DissociationType.AnyActivationType, 0, null);
+
+            Ms2ScanWithSpecificMass scan = new Ms2ScanWithSpecificMass(dfb, 2, 0, "File");
+            List<MatchedFragmentIon> f = new List<MatchedFragmentIon>();
+
+            List<PeptideSpectralMatch> psms = new List<PeptideSpectralMatch>
+            {
+                new PeptideSpectralMatch(new PeptideWithSetModifications("P", null, digestionParams: tryp, p: t), 0, 20, 1, scan, tryp, f),
+                new PeptideSpectralMatch(new PeptideWithSetModifications("P", null, digestionParams: gluC, p: t), 0, 19, 1, scan, gluC, f),
+                new PeptideSpectralMatch(new PeptideWithSetModifications("P", null, digestionParams: tryp, p: t), 0, 18, 1, scan, tryp, f),
+                new PeptideSpectralMatch(new PeptideWithSetModifications("P", null, digestionParams: gluC, p: t), 0, 17, 1, scan, gluC, f),
+                new PeptideSpectralMatch(new PeptideWithSetModifications("P", null, digestionParams: gluC, p: d), 0, 16, 1, scan, gluC, f),
+                new PeptideSpectralMatch(new PeptideWithSetModifications("P", null, digestionParams: gluC, p: t), 0, 15, 1, scan, gluC, f),
+                new PeptideSpectralMatch(new PeptideWithSetModifications("P", null, digestionParams: tryp, p: t), 0, 14, 1, scan, tryp, f),
+                new PeptideSpectralMatch(new PeptideWithSetModifications("P", null, digestionParams: tryp, p: d), 0, 13, 1, scan, tryp, f),
+                new PeptideSpectralMatch(new PeptideWithSetModifications("P", null, digestionParams: tryp, p: d), 0, 12, 1, scan, tryp, f),
+                new PeptideSpectralMatch(new PeptideWithSetModifications("P", null, digestionParams: tryp, p: t), 0, 11, 1, scan, tryp, f),
+            };
+
+            psms.ForEach(p => p.ResolveAllAmbiguities());
+
+            new FdrAnalysisEngine(psms, 0, new CommonParameters(), new List<string>()).Run();
+            psms = psms.OrderByDescending(p => p.Score).ToList();
+
+            Assert.AreEqual(0.00, Math.Round(psms[0].FdrInfo.QValue, 2));
+            Assert.AreEqual(0.00, Math.Round(psms[1].FdrInfo.QValue, 2));
+            Assert.AreEqual(0.00, Math.Round(psms[2].FdrInfo.QValue, 2));
+            Assert.AreEqual(0.00, Math.Round(psms[3].FdrInfo.QValue, 2));
+            Assert.AreEqual(0.50, Math.Round(psms[4].FdrInfo.QValue, 2));
+            Assert.AreEqual(0.50, Math.Round(psms[5].FdrInfo.QValue, 2));
+            Assert.AreEqual(0.00, Math.Round(psms[6].FdrInfo.QValue, 2));
+            Assert.AreEqual(0.33, Math.Round(psms[7].FdrInfo.QValue, 2));
+            Assert.AreEqual(0.67, Math.Round(psms[8].FdrInfo.QValue, 2));
+            Assert.AreEqual(0.67, Math.Round(psms[9].FdrInfo.QValue, 2));
         }
     }
 }

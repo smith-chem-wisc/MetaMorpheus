@@ -7,7 +7,7 @@ namespace EngineLayer.FdrAnalysis
 {
     public class FdrAnalysisEngine : MetaMorpheusEngine
     {
-        private List<PeptideSpectralMatch> Psms;
+        private List<PeptideSpectralMatch> AllPsms;
         private readonly int MassDiffAcceptorNumNotches;
         private readonly bool UseDeltaScore;
         private readonly bool CalculateEValue;
@@ -15,7 +15,7 @@ namespace EngineLayer.FdrAnalysis
 
         public FdrAnalysisEngine(List<PeptideSpectralMatch> psms, int massDiffAcceptorNumNotches, CommonParameters commonParameters, List<string> nestedIds) : base(commonParameters, nestedIds)
         {
-            Psms = psms;
+            AllPsms = psms;
             MassDiffAcceptorNumNotches = massDiffAcceptorNumNotches;
             UseDeltaScore = commonParameters.UseDeltaScore;
             ScoreCutoff = commonParameters.ScoreCutoff;
@@ -29,7 +29,7 @@ namespace EngineLayer.FdrAnalysis
             Status("Running FDR analysis...");
             DoFalseDiscoveryRateAnalysis(myAnalysisResults);
 
-            myAnalysisResults.PsmsWithin1PercentFdr = Psms.Count(b => b.FdrInfo.QValue < 0.01);
+            myAnalysisResults.PsmsWithin1PercentFdr = AllPsms.Count(b => b.FdrInfo.QValue < 0.01);
 
             return myAnalysisResults;
         }
@@ -39,148 +39,152 @@ namespace EngineLayer.FdrAnalysis
             // Stop if canceled
             if (GlobalVariables.StopLoops) { return; }
 
-            // generate the null distribution for e-value calculations
-            double globalMeanScore = 0;
-            int globalMeanCount = 0;
+            // calculate FDR on a per-protease basis (targets and decoys for a specific protease)
+            var psmsGroupedByProtease = AllPsms.GroupBy(p => p.DigestionParams.Protease);
 
-            if (CalculateEValue && Psms.Any())
+            foreach (var proteasePsms in psmsGroupedByProtease)
             {
-                List<double> combinedScores = new List<double>();
+                var psms = proteasePsms.ToList();
+                
+                // generate the null distribution for e-value calculations
+                double globalMeanScore = 0;
+                int globalMeanCount = 0;
 
-                foreach (PeptideSpectralMatch psm in Psms)
+                if (CalculateEValue && psms.Any())
                 {
-                    psm.AllScores.Sort();
-                    combinedScores.AddRange(psm.AllScores);
+                    List<double> combinedScores = new List<double>();
 
-                    //remove top scoring peptide
+                    foreach (PeptideSpectralMatch psm in psms)
+                    {
+                        psm.AllScores.Sort();
+                        combinedScores.AddRange(psm.AllScores);
+
+                        //remove top scoring peptide
+                        if (combinedScores.Any())
+                        {
+                            combinedScores.RemoveAt(combinedScores.Count - 1);
+                        }
+                    }
+
                     if (combinedScores.Any())
                     {
-                        combinedScores.RemoveAt(combinedScores.Count - 1);
+                        globalMeanScore = combinedScores.Average();
+                        globalMeanCount = (int)((double)combinedScores.Count / psms.Count);
+                    }
+                    else
+                    {
+                        // should be a very rare case... if there are PSMs but each PSM only has one hit
+                        globalMeanScore = 0;
+                        globalMeanCount = 0;
                     }
                 }
 
-                if (combinedScores.Any())
+                int cumulativeTarget = 0;
+                int cumulativeDecoy = 0;
+
+                //Calculate delta scores for the psms (regardless of if we are using them)
+                foreach (PeptideSpectralMatch psm in psms)
                 {
-                    globalMeanScore = combinedScores.Average();
-                    globalMeanCount = (int)((double)combinedScores.Count / Psms.Count);
-                }
-                else
-                {
-                    // should be a very rare case... if there are PSMs but each PSM only has one hit
-                    globalMeanScore = 0;
-                    globalMeanCount = 0;
-                }
-            }
-
-            int cumulativeTarget = 0;
-            int cumulativeDecoy = 0;
-
-            //Calculate delta scores for the psms (regardless of if we are using them)
-            foreach (PeptideSpectralMatch psm in Psms)
-            {
-                if (psm != null)
-                {
-                    psm.CalculateDeltaScore(ScoreCutoff);
-                }
-            }
-
-            //determine if Score or DeltaScore performs better
-            if (UseDeltaScore)
-            {
-                const double qValueCutoff = 0.01; //optimize to get the most PSMs at a 1% FDR
-
-                List<PeptideSpectralMatch> scoreSorted = Psms.OrderByDescending(b => b.Score).ThenBy(b => b.PeptideMonisotopicMass.HasValue ? Math.Abs(b.ScanPrecursorMass - b.PeptideMonisotopicMass.Value) : double.MaxValue).GroupBy(b => new Tuple<string, int, double?>(b.FullFilePath, b.ScanNumber, b.PeptideMonisotopicMass)).Select(b => b.First()).ToList();
-                int ScorePSMs = GetNumPSMsAtqValueCutoff(scoreSorted, qValueCutoff);
-                scoreSorted = Psms.OrderByDescending(b => b.DeltaScore).ThenBy(b => b.PeptideMonisotopicMass.HasValue ? Math.Abs(b.ScanPrecursorMass - b.PeptideMonisotopicMass.Value) : double.MaxValue).GroupBy(b => new Tuple<string, int, double?>(b.FullFilePath, b.ScanNumber, b.PeptideMonisotopicMass)).Select(b => b.First()).ToList();
-                int DeltaScorePSMs = GetNumPSMsAtqValueCutoff(scoreSorted, qValueCutoff);
-
-                //sort by best method
-                myAnalysisResults.DeltaScoreImprovement = DeltaScorePSMs > ScorePSMs;
-                Psms = myAnalysisResults.DeltaScoreImprovement ?
-                    Psms.OrderByDescending(b => b.DeltaScore).ThenBy(b => b.PeptideMonisotopicMass.HasValue ? Math.Abs(b.ScanPrecursorMass - b.PeptideMonisotopicMass.Value) : double.MaxValue).ToList() :
-                    Psms.OrderByDescending(b => b.Score).ThenBy(b => b.PeptideMonisotopicMass.HasValue ? Math.Abs(b.ScanPrecursorMass - b.PeptideMonisotopicMass.Value) : double.MaxValue).ToList();
-            }
-            else //sort by score
-            {
-                Psms = Psms.OrderByDescending(b => b.Score).ThenBy(b => b.PeptideMonisotopicMass.HasValue ? Math.Abs(b.ScanPrecursorMass - b.PeptideMonisotopicMass.Value) : double.MaxValue).ToList();
-            }
-
-            //set up arrays for local FDRs
-            int[] cumulativeTargetPerNotch = new int[MassDiffAcceptorNumNotches + 1];
-            int[] cumulativeDecoyPerNotch = new int[MassDiffAcceptorNumNotches + 1];
-
-            //Assign FDR values to PSMs
-            for (int i = 0; i < Psms.Count; i++)
-            {
-                // Stop if canceled
-                if (GlobalVariables.StopLoops) { break; }
-
-                var psm = Psms[i];
-                int notch = psm.Notch ?? MassDiffAcceptorNumNotches;
-                if (psm.IsDecoy)
-                {
-                    cumulativeDecoy++;
-                    cumulativeDecoyPerNotch[notch]++;
-                }
-                else
-                {
-                    cumulativeTarget++;
-                    cumulativeTargetPerNotch[notch]++;
+                    if (psm != null)
+                    {
+                        psm.CalculateDeltaScore(ScoreCutoff);
+                    }
                 }
 
-                double qValue = (double)cumulativeDecoy / cumulativeTarget;
-                double qValueNotch = (double)cumulativeDecoyPerNotch[notch] / cumulativeTargetPerNotch[notch];
+                //determine if Score or DeltaScore performs better
+                if (UseDeltaScore)
+                {
+                    const double qValueCutoff = 0.01; //optimize to get the most PSMs at a 1% FDR
 
-                double maximumLikelihood = 0;
-                double eValue = 0;
-                double eScore = 0;
-                if (CalculateEValue)
+                    List<PeptideSpectralMatch> scoreSorted = psms.OrderByDescending(b => b.Score).ThenBy(b => b.PeptideMonisotopicMass.HasValue ? Math.Abs(b.ScanPrecursorMass - b.PeptideMonisotopicMass.Value) : double.MaxValue).GroupBy(b => new Tuple<string, int, double?>(b.FullFilePath, b.ScanNumber, b.PeptideMonisotopicMass)).Select(b => b.First()).ToList();
+                    int ScorePSMs = GetNumPSMsAtqValueCutoff(scoreSorted, qValueCutoff);
+                    scoreSorted = psms.OrderByDescending(b => b.DeltaScore).ThenBy(b => b.PeptideMonisotopicMass.HasValue ? Math.Abs(b.ScanPrecursorMass - b.PeptideMonisotopicMass.Value) : double.MaxValue).GroupBy(b => new Tuple<string, int, double?>(b.FullFilePath, b.ScanNumber, b.PeptideMonisotopicMass)).Select(b => b.First()).ToList();
+                    int DeltaScorePSMs = GetNumPSMsAtqValueCutoff(scoreSorted, qValueCutoff);
+
+                    //sort by best method
+                    myAnalysisResults.DeltaScoreImprovement = DeltaScorePSMs > ScorePSMs;
+                    psms = myAnalysisResults.DeltaScoreImprovement ?
+                        psms.OrderByDescending(b => b.DeltaScore).ThenBy(b => b.PeptideMonisotopicMass.HasValue ? Math.Abs(b.ScanPrecursorMass - b.PeptideMonisotopicMass.Value) : double.MaxValue).ToList() :
+                        psms.OrderByDescending(b => b.Score).ThenBy(b => b.PeptideMonisotopicMass.HasValue ? Math.Abs(b.ScanPrecursorMass - b.PeptideMonisotopicMass.Value) : double.MaxValue).ToList();
+                }
+                else //sort by score
                 {
-                    eValue = GetEValue(psm, globalMeanCount, globalMeanScore, out maximumLikelihood);
-                    eScore = -Math.Log(eValue, 10);
+                    psms = psms.OrderByDescending(b => b.Score).ThenBy(b => b.PeptideMonisotopicMass.HasValue ? Math.Abs(b.ScanPrecursorMass - b.PeptideMonisotopicMass.Value) : double.MaxValue).ToList();
                 }
 
-                if (qValue > 1)
+                //set up arrays for local FDRs
+                int[] cumulativeTargetPerNotch = new int[MassDiffAcceptorNumNotches + 1];
+                int[] cumulativeDecoyPerNotch = new int[MassDiffAcceptorNumNotches + 1];
+
+                //Assign FDR values to PSMs
+                for (int i = 0; i < psms.Count; i++)
                 {
-                    qValue = 1;
-                }
-                if (qValueNotch > 1)
-                {
-                    qValueNotch = 1;
+                    // Stop if canceled
+                    if (GlobalVariables.StopLoops) { break; }
+
+                    var psm = psms[i];
+                    int notch = psm.Notch ?? MassDiffAcceptorNumNotches;
+                    if (psm.IsDecoy)
+                    {
+                        cumulativeDecoy++;
+                        cumulativeDecoyPerNotch[notch]++;
+                    }
+                    else
+                    {
+                        cumulativeTarget++;
+                        cumulativeTargetPerNotch[notch]++;
+                    }
+
+                    double qValue = (double)cumulativeDecoy / cumulativeTarget;
+                    double qValueNotch = (double)cumulativeDecoyPerNotch[notch] / cumulativeTargetPerNotch[notch];
+
+                    double maximumLikelihood = 0;
+                    double eValue = 0;
+                    double eScore = 0;
+                    if (CalculateEValue)
+                    {
+                        eValue = GetEValue(psm, globalMeanCount, globalMeanScore, out maximumLikelihood);
+                        eScore = -Math.Log(eValue, 10);
+                    }
+
+                    if (qValue > 1)
+                    {
+                        qValue = 1;
+                    }
+                    if (qValueNotch > 1)
+                    {
+                        qValueNotch = 1;
+                    }
+
+                    psm.SetFdrValues(cumulativeTarget, cumulativeDecoy, qValue, cumulativeTargetPerNotch[notch], cumulativeDecoyPerNotch[notch], qValueNotch, maximumLikelihood, eValue, eScore, CalculateEValue);
                 }
 
-                psm.SetFdrValues(cumulativeTarget, cumulativeDecoy, qValue, cumulativeTargetPerNotch[notch], cumulativeDecoyPerNotch[notch], qValueNotch, maximumLikelihood, eValue, eScore, CalculateEValue);
-            }
+                // set q-value thresholds such that a lower scoring PSM can't have 
+                // a higher confidence than a higher scoring PSM
+                double qThrehold = 0;
+                double[] notchQThresholds = new double[MassDiffAcceptorNumNotches + 1];
+                for(int i = 0; i < psms.Count; i++)
+                {
+                    PeptideSpectralMatch psm = psms[i];
 
-            //Populate min qValues
-            double min_q_value = double.PositiveInfinity;
-            double[] min_q_value_notch = new double[MassDiffAcceptorNumNotches + 1];
-            for (int i = 0; i < MassDiffAcceptorNumNotches + 1; i++)
-            {
-                min_q_value_notch[i] = double.PositiveInfinity;
-            }
+                    if (psm.FdrInfo.QValue > qThrehold)
+                    {
+                        qThrehold = psm.FdrInfo.QValue;
+                    }
+                    else
+                    {
+                        psm.FdrInfo.QValue = qThrehold;
+                    }
 
-            //The idea here is to set previous qValues as thresholds,
-            //such that a lower scoring PSM can't have a higher confidence than a higher scoring PSM
-            for (int i = Psms.Count - 1; i >= 0; i--)
-            {
-                PeptideSpectralMatch psm = Psms[i];
-                if (psm.FdrInfo.QValue > min_q_value)
-                {
-                    psm.FdrInfo.QValue = min_q_value;
-                }
-                else if (psm.FdrInfo.QValue < min_q_value)
-                {
-                    min_q_value = psm.FdrInfo.QValue;
-                }
-                int notch = psm.Notch ?? MassDiffAcceptorNumNotches;
-                if (psm.FdrInfo.QValueNotch > min_q_value_notch[notch])
-                {
-                    psm.FdrInfo.QValueNotch = min_q_value_notch[notch];
-                }
-                else if (psm.FdrInfo.QValueNotch < min_q_value_notch[notch])
-                {
-                    min_q_value_notch[notch] = psm.FdrInfo.QValueNotch;
+                    int notch = psm.Notch ?? MassDiffAcceptorNumNotches;
+                    if (psm.FdrInfo.QValueNotch > notchQThresholds[notch])
+                    {
+                        notchQThresholds[notch] = psm.FdrInfo.QValueNotch;
+                    }
+                    else
+                    {
+                        psm.FdrInfo.QValueNotch = notchQThresholds[notch];
+                    }
                 }
             }
         }
