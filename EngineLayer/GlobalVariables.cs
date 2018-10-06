@@ -146,7 +146,7 @@ namespace EngineLayer
                     // so we don't know which mod to use, causing unnecessary ambiguity
                     if (modsAreFromTheTopOfProteinXml)
                     {
-                        _AllModsKnown.RemoveAll(p => p.IdWithMotif.Equals(mod.IdWithMotif) && p.ModificationType.Equals(mod.ModificationType) && !p.Equals(mod));
+                        _AllModsKnown.RemoveAll(p => p.IdWithMotif.Equals(mod.IdWithMotif) && !p.Equals(mod));
                         _AllModsKnown.Add(mod);
                         _AllModTypesKnown.Add(mod.ModificationType);
                     }
