@@ -88,6 +88,12 @@ namespace TaskLayer
 
             var fdrAnalysisResults = (FdrAnalysisResults)(new FdrAnalysisEngine(Parameters.AllPsms, massDiffAcceptorNumNotches, CommonParameters, new List<string> { Parameters.SearchTaskId }).Run());
 
+            Parameters.AllPsms = Parameters.AllPsms
+                .OrderBy(p => p.FdrInfo.QValue)
+                .ThenByDescending(p => p.Score)
+                .ThenBy(p => Math.Abs(p.ScanPrecursorMass - p.BestMatchingPeptides.First().Peptide.MonoisotopicMass))
+                .ToList();
+
             Status("Done estimating PSM FDR!", Parameters.SearchTaskId);
         }
 
