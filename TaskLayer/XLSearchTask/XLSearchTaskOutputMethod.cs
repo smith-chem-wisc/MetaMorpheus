@@ -232,9 +232,14 @@ namespace TaskLayer
             foreach (var x in CommonParameters.DigestionParams.Protease.SequencesPreventingCleavage) { proteaseNC += x; }
 
             Crosslinker crosslinker = new Crosslinker().SelectCrosslinker(XlSearchParameters.CrosslinkerType);
-            
+            if (XlSearchParameters.CrosslinkerType == CrosslinkerType.UserDefined)
+            {
+                crosslinker = GenerateUserDefinedCrosslinker(XlSearchParameters);
+            }
+
             string fileNameNoExtension = Path.GetFileNameWithoutExtension(items[0].FullFilePath);
             string filePathNoExtension = Path.ChangeExtension(items[0].FullFilePath, null);
+            string modSites = crosslinker.CrosslinkerModSites.ToCharArray().Concat(crosslinker.CrosslinkerModSites2.ToCharArray()).Distinct().ToString();
 
             var para = new List<pepXML.Generated.nameValueType>();
             {
@@ -247,7 +252,7 @@ namespace TaskLayer
                 para.Add(new pepXML.Generated.nameValueType { name = "Cross-linker cleavable", value = crosslinker.Cleavable.ToString() });
                 para.Add(new pepXML.Generated.nameValueType { name = "Cross-linker cleavable long mass", value = crosslinker.CleaveMassLong.ToString() });
                 para.Add(new pepXML.Generated.nameValueType { name = "Cross-linker cleavable short mass", value = crosslinker.CleaveMassShort.ToString() });
-                para.Add(new pepXML.Generated.nameValueType { name = "Cross-linker xl site", value = crosslinker.CrosslinkerModSites });
+                para.Add(new pepXML.Generated.nameValueType { name = "Cross-linker xl site", value = modSites });
 
                 para.Add(new pepXML.Generated.nameValueType { name = "Generate decoy proteins", value = XlSearchParameters.DecoyType.ToString() });
                 para.Add(new pepXML.Generated.nameValueType { name = "MaxMissed Cleavages", value = CommonParameters.DigestionParams.MaxMissedCleavages.ToString() });
@@ -258,7 +263,6 @@ namespace TaskLayer
                 para.Add(new pepXML.Generated.nameValueType { name = "Max Peptide Len", value = CommonParameters.DigestionParams.MaxPeptideLength.ToString() });
                 para.Add(new pepXML.Generated.nameValueType { name = "Product Mass Tolerance", value = CommonParameters.ProductMassTolerance.ToString() });
                 para.Add(new pepXML.Generated.nameValueType { name = "Ions to search", value = String.Join(", ", DissociationTypeCollection.ProductsFromDissociationType[CommonParameters.DissociationType]) });
-                para.Add(new pepXML.Generated.nameValueType { name = "Allowed Beta Precusor Mass Difference", value = CommonParameters.PrecursorMassTolerance.ToString() });
 
                 foreach (var fixedMod in fixedModifications)
                 {
@@ -338,12 +342,12 @@ namespace TaskLayer
                     };
                     mods.Add(mod);
                 }
-                
+
                 if (items[i].CrossType == PsmCrossType.Single)
                 {
                     var searchHit = new pepXML.Generated.msms_pipeline_analysisMsms_run_summarySpectrum_querySearch_resultSearch_hit
                     {
-                        
+
                         hit_rank = 1,
                         peptide = alphaPeptide.BaseSequence,
                         peptide_prev_aa = alphaPeptide.PreviousAminoAcid.ToString(),
@@ -357,7 +361,7 @@ namespace TaskLayer
                         modification_info = new pepXML.Generated.modInfoDataType { mod_aminoacid_mass = mods.ToArray() },
                         search_score = new pepXML.Generated.nameValueType[]
                                     {
-                                        new pepXML.Generated.nameValueType{ name = "xlscore", value = items[i].XLTotalScore.ToString()},
+                                        new pepXML.Generated.nameValueType{ name = "xlTotalScore", value = items[i].XLTotalScore.ToString()},
                                         new pepXML.Generated.nameValueType{ name = "Qvalue", value = items[i].FdrInfo.QValue.ToString() }
                                     },
                     };
@@ -397,7 +401,7 @@ namespace TaskLayer
                         modification_info = new pepXML.Generated.modInfoDataType { mod_aminoacid_mass = mods.ToArray() },
                         search_score = new pepXML.Generated.nameValueType[]
                                     {
-                                        new pepXML.Generated.nameValueType{ name = "xlscore", value = items[i].XLTotalScore.ToString()},
+                                        new pepXML.Generated.nameValueType{ name = "xlTotalScore", value = items[i].XLTotalScore.ToString()},
                                         new pepXML.Generated.nameValueType{ name = "Qvalue", value = items[i].FdrInfo.QValue.ToString() }
                                     },
                     };
@@ -475,7 +479,7 @@ namespace TaskLayer
                         },
                         search_score = new pepXML.Generated.nameValueType[]
                                     {
-                                        new pepXML.Generated.nameValueType{ name = "xlscore", value = items[i].XLTotalScore.ToString()},
+                                        new pepXML.Generated.nameValueType{ name = "xlTotalScore", value = items[i].XLTotalScore.ToString()},
                                         new pepXML.Generated.nameValueType{ name = "Qvalue", value = items[i].FdrInfo.QValue.ToString() }
                                     }
                     };
@@ -513,7 +517,7 @@ namespace TaskLayer
                         },
                         search_score = new pepXML.Generated.nameValueType[]
                                     {
-                                        new pepXML.Generated.nameValueType{ name = "xlscore", value = items[i].XLTotalScore.ToString()},
+                                        new pepXML.Generated.nameValueType{ name = "xlTotalScore", value = items[i].XLTotalScore.ToString()},
                                         new pepXML.Generated.nameValueType{ name = "Qvalue", value = items[i].FdrInfo.QValue.ToString() }
                                     }
                     };
