@@ -299,9 +299,9 @@ namespace Test
             //tests without .params files
             xlSearchTask.RunTask(Path.Combine(folderPath, @"TestNoParams"), new List<DbForTask> { db }, new List<string> { myFile }, "normal");
 
-            var lines = File.ReadAllLines(Path.Combine(folderPath, @"CreateParams\xl_intra_fdr.tsv"));
-            var lines2 = File.ReadAllLines(Path.Combine(folderPath, @"TestParams\xl_intra_fdr.tsv"));
-            var lines3 = File.ReadAllLines(Path.Combine(folderPath, @"TestNoParams\xl_intra_fdr.tsv"));
+            var lines = File.ReadAllLines(Path.Combine(folderPath, @"CreateParams\XL_Intralinks.tsv"));
+            var lines2 = File.ReadAllLines(Path.Combine(folderPath, @"TestParams\XL_Intralinks.tsv"));
+            var lines3 = File.ReadAllLines(Path.Combine(folderPath, @"TestNoParams\XL_Intralinks.tsv"));
 
             Assert.That(lines.SequenceEqual(lines2) && lines2.SequenceEqual(lines3));
         }
