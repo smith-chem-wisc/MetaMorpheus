@@ -90,5 +90,44 @@ namespace EngineLayer
             }
             return c;
         }
+
+        public CommonParameters CloneWithNewTerminus(FragmentationTerminus terminus) //for use with speedy semi-specific searches to get both termini
+        {
+            return new CommonParameters(
+                                TaskDescriptor,
+                                DissociationType,
+                                DoPrecursorDeconvolution,
+                                UseProvidedPrecursorInfo,
+                                DeconvolutionIntensityRatio,
+                                DeconvolutionMaxAssumedChargeState,
+                                ReportAllAmbiguity,
+                                AddCompIons,
+                                TotalPartitions,
+                                ScoreCutoff,
+                                TopNpeaks,
+                                MinRatio,
+                                TrimMs1Peaks,
+                                TrimMsMsPeaks,
+                                UseDeltaScore,
+                                CalculateEValue,
+                                ProductMassTolerance,
+                                PrecursorMassTolerance,
+                                DeconvolutionMassTolerance,
+                                MaxThreadsToUsePerFile,
+                                new DigestionParams(
+                                    DigestionParams.Protease.Name,
+                                    DigestionParams.MaxMissedCleavages,
+                                    DigestionParams.MinPeptideLength,
+                                    DigestionParams.MaxPeptideLength,
+                                    DigestionParams.MaxModificationIsoforms,
+                                    DigestionParams.InitiatorMethionineBehavior,
+                                    DigestionParams.MaxModsForPeptide,
+                                    DigestionParams.SearchModeType,
+                                    terminus //it's all for this
+                                ),
+                                ListOfModsVariable,
+                                ListOfModsFixed,
+                                QValueOutputFilter);
+        }
     }
 }

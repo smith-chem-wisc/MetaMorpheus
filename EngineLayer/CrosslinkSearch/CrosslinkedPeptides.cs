@@ -31,7 +31,7 @@ namespace EngineLayer.CrosslinkSearch
                     List<Product> theoreticalProducts = new List<Product>();
                     Dictionary<int, Modification> testMods = new Dictionary<int, Modification> { { crosslinkerPosition + 1, new Modification(_monoisotopicMass: massToLocalize) } };
                     var testPeptide = new PeptideWithSetModifications(peptide.Protein, peptide.DigestionParams, peptide.OneBasedStartResidueInProtein, 
-                        peptide.OneBasedEndResidueInProtein, peptide.PeptideDescription, peptide.MissedCleavages, testMods, peptide.NumFixedMods);
+                        peptide.OneBasedEndResidueInProtein, peptide.CleavageSpecificityForFdrCategory, peptide.PeptideDescription, peptide.MissedCleavages, testMods, peptide.NumFixedMods);
 
                     // add fragmentation ions for this crosslinker position guess
                     theoreticalProducts.AddRange(testPeptide.Fragment(dissociationType, FragmentationTerminus.Both));
@@ -87,7 +87,8 @@ namespace EngineLayer.CrosslinkSearch
                         modDict.Add(position1 + 1, loopMass);
                     }
                     PeptideWithSetModifications peptideWithLoop = new PeptideWithSetModifications(peptide.Protein, peptide.DigestionParams, 
-                        peptide.OneBasedStartResidueInProtein, peptide.OneBasedEndResidueInProtein, peptide.PeptideDescription, peptide.MissedCleavages, modDict, peptide.NumFixedMods);
+                        peptide.OneBasedStartResidueInProtein, peptide.OneBasedEndResidueInProtein, peptide.CleavageSpecificityForFdrCategory, 
+                        peptide.PeptideDescription, peptide.MissedCleavages, modDict, peptide.NumFixedMods);
                     loopFragments.AddRange(peptideWithLoop.Fragment(dissociationType, FragmentationTerminus.Both)
                         .Where(p => p.TerminusFragment.Terminus == FragmentationTerminus.N && p.TerminusFragment.AminoAcidPosition >= position2));
                     
@@ -109,7 +110,8 @@ namespace EngineLayer.CrosslinkSearch
                         modDict.Add(position2 + 1, loopMass);
                     }
                     peptideWithLoop = new PeptideWithSetModifications(peptide.Protein, peptide.DigestionParams,
-                        peptide.OneBasedStartResidueInProtein, peptide.OneBasedEndResidueInProtein, peptide.PeptideDescription, peptide.MissedCleavages, modDict, peptide.NumFixedMods);
+                        peptide.OneBasedStartResidueInProtein, peptide.OneBasedEndResidueInProtein, peptide.CleavageSpecificityForFdrCategory, 
+                        peptide.PeptideDescription, peptide.MissedCleavages, modDict, peptide.NumFixedMods);
                     loopFragments.AddRange(peptideWithLoop.Fragment(dissociationType, FragmentationTerminus.Both)
                         .Where(p => p.TerminusFragment.Terminus == FragmentationTerminus.C && p.TerminusFragment.AminoAcidPosition <= position1));
 
