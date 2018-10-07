@@ -159,7 +159,6 @@ namespace EngineLayer.ModernSearch
                 psm.ResolveAllAmbiguities();
             }
             
-
             return new MetaMorpheusEngineResults(this);
         }
 
