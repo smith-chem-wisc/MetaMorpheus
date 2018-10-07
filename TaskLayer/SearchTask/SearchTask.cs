@@ -171,7 +171,7 @@ namespace TaskLayer
                 else if (SearchParameters.SearchType == SearchType.NonSpecific)
                 {
                     PeptideSpectralMatch[][] fileSpecificPsmsSeparatedByFdrCategory = new PeptideSpectralMatch[numFdrCategories][]; //generate an array of all possible locals
-                    for(int i=0; i<numFdrCategories; i++) //only add if we're using for FDR, else ignore it as null.
+                    for (int i = 0; i < numFdrCategories; i++) //only add if we're using for FDR, else ignore it as null.
                     {
                         fileSpecificPsmsSeparatedByFdrCategory[i] = new PeptideSpectralMatch[arrayOfMs2ScansSortedByMass.Length];
                     }
