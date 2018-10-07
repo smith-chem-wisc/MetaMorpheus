@@ -1,5 +1,4 @@
 using EngineLayer.CrosslinkSearch;
-using MzLibUtil;
 using UsefulProteomicsDatabases;
 
 namespace TaskLayer
@@ -25,13 +24,9 @@ namespace TaskLayer
             XlQuench_H2O = true;
             XlQuench_NH2 = false;
             XlQuench_Tris = true;
-
-            XlOutAll = true;
-            XlOutCrosslink = true;
-            XlOutPercolator = false;
-            XlOutPepXML = true;
-
-            XlCharge_2_3 = true;
+            WriteOutputForPercolator = false;
+            WritePepXml = true;
+            //XlCharge_2_3 = true;
         }
         
         public DecoyType DecoyType { get; set; }
@@ -51,14 +46,11 @@ namespace TaskLayer
         // TODO: 2+ 3+ prime fragments?
         public bool IsCleavable { get; set; }
         public bool RestrictToTopNHits { get; set; }
-        public bool DisposeOfFileWhenDone { get; set; }
-        public bool XlOutPercolator { get; set; }
-        public bool XlOutAll { get; set; }
-        public bool XlOutPepXML { get; set; }
-        public bool XlOutCrosslink { get; set; }
+        public bool WriteOutputForPercolator { get; set; }
+        public bool WritePepXml { get; set; }
         public bool XlQuench_H2O { get; set; }
         public bool XlQuench_Tris { get; set; }
         public bool XlQuench_NH2 { get; set; }
-        public bool XlCharge_2_3 { get; set; }
+        //public bool XlCharge_2_3 { get; set; }
     }
 }
