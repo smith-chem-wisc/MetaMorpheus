@@ -48,17 +48,14 @@ namespace TaskLayer
 
             //update all psms with peptide info
             Parameters.AllPsms = Parameters.AllPsms.Where(psm => psm != null).ToList();
-            foreach (PeptideSpectralMatch psm in Parameters.AllPsms)
-            {
-                psm.ResolveAllAmbiguities();
-            }
+            Parameters.AllPsms.ForEach(psm => psm.ResolveAllAmbiguities());
 
-                    Parameters.AllPsms = Parameters.AllPsms.OrderByDescending(b => b.Score)
-                       .ThenBy(b => b.PeptideMonisotopicMass.HasValue ? Math.Abs(b.ScanPrecursorMass - b.PeptideMonisotopicMass.Value) : double.MaxValue)
-                       .GroupBy(b => (b.FullFilePath, b.ScanNumber, b.PeptideMonisotopicMass)).Select(b => b.First()).ToList();
+            Parameters.AllPsms = Parameters.AllPsms.OrderByDescending(b => b.Score)
+               .ThenBy(b => b.PeptideMonisotopicMass.HasValue ? Math.Abs(b.ScanPrecursorMass - b.PeptideMonisotopicMass.Value) : double.MaxValue)
+               .GroupBy(b => (b.FullFilePath, b.ScanNumber, b.PeptideMonisotopicMass)).Select(b => b.First()).ToList();
 
-                    CalculatePsmFdr(Parameters.AllPsms);
-            
+            CalculatePsmFdr();
+
             DoMassDifferenceLocalizationAnalysis();
             ProteinAnalysis();
             QuantificationAnalysis();
@@ -82,15 +79,19 @@ namespace TaskLayer
         /// <summary>
         /// Calculate estimated false-discovery rate (FDR) for peptide spectral matches (PSMs)
         /// </summary>
-        private void CalculatePsmFdr(List<PeptideSpectralMatch> psmArray)
+        private void CalculatePsmFdr()
         {
             // TODO: because FDR is done before parsimony, if a PSM matches to a target and a decoy protein, there may be conflicts between how it's handled in parsimony and the FDR engine here
             // for example, here it may be treated as a decoy PSM, where as in parsimony it will be determined by the parsimony algorithm which is agnostic of target/decoy assignments
             // this could cause weird PSM FDR issues
-            
+
             Status("Estimating PSM FDR...", Parameters.SearchTaskId);
             int massDiffAcceptorNumNotches = Parameters.NumNotches;
-            new FdrAnalysisEngine(psmArray, massDiffAcceptorNumNotches, CommonParameters, new List<string> { Parameters.SearchTaskId }).Run();
+            new FdrAnalysisEngine(Parameters.AllPsms, massDiffAcceptorNumNotches, CommonParameters, new List<string> { Parameters.SearchTaskId }).Run();
+
+            // sort by q-value because of group FDR stuff
+            // e.g. multiprotease FDR, non/semi-specific protease, etc
+            Parameters.AllPsms = Parameters.AllPsms.OrderBy(p => p.FdrInfo.QValue).ThenBy(p => p.Score).ThenBy(p => p.FdrInfo.CumulativeTarget).ToList();
 
             Status("Done estimating PSM FDR!", Parameters.SearchTaskId);
         }
@@ -443,7 +444,7 @@ namespace TaskLayer
             }
 
             PsmsGroupedByFile = filteredPsmListForOutput.GroupBy(p => p.FullFilePath);
-            
+
             foreach (var file in PsmsGroupedByFile)
             {
                 // write summary text

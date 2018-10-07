@@ -81,24 +81,23 @@ namespace EngineLayer.ClassicSearch
                                     // valid hit (met the cutoff score); lock the scan to prevent other threads from accessing it
                                     lock (myLocks[scan.ScanIndex])
                                     {
-                                        PeptideSpectralMatch peptideSpectralMatchOfInterest = PeptideSpectralMatches[scan.ScanIndex];
-                                        bool scoreImprovement = peptideSpectralMatchOfInterest == null || (thisScore - peptideSpectralMatchOfInterest.RunnerUpScore) > -PeptideSpectralMatch.ToleranceForScoreDifferentiation;
+                                        bool scoreImprovement = PeptideSpectralMatches[scan.ScanIndex] == null || (thisScore - PeptideSpectralMatches[scan.ScanIndex].RunnerUpScore) > -PeptideSpectralMatch.ToleranceForScoreDifferentiation;
 
                                         if (scoreImprovement)
                                         {
-                                            if (peptideSpectralMatchOfInterest == null)
+                                            if (PeptideSpectralMatches[scan.ScanIndex] == null)
                                             {
                                                 PeptideSpectralMatches[scan.ScanIndex] = new PeptideSpectralMatch(peptide, scan.Notch, thisScore, scan.ScanIndex, scan.TheScan, commonParameters.DigestionParams, matchedIons);
                                             }
                                             else
                                             {
-                                                peptideSpectralMatchOfInterest.AddOrReplace(peptide, thisScore, scan.Notch, commonParameters.ReportAllAmbiguity, matchedIons);
+                                                PeptideSpectralMatches[scan.ScanIndex].AddOrReplace(peptide, thisScore, scan.Notch, commonParameters.ReportAllAmbiguity, matchedIons);
                                             }
                                         }
 
                                         if (commonParameters.CalculateEValue)
                                         {
-                                            peptideSpectralMatchOfInterest.AllScores.Add(thisScore);
+                                            PeptideSpectralMatches[scan.ScanIndex].AllScores.Add(thisScore);
                                         }
                                     }
                                 }
@@ -129,11 +128,11 @@ namespace EngineLayer.ClassicSearch
                     }
                 }
             }
+
             foreach (PeptideSpectralMatch psm in PeptideSpectralMatches.Where(p => p != null))
             {
                 psm.ResolveAllAmbiguities();
             }
-
 
             return new MetaMorpheusEngineResults(this);
         }
