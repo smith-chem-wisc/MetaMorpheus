@@ -135,7 +135,6 @@ namespace Test
             //Test Output
             var task = new XLSearchTask();
             task.WritePepXML_xl(newPsms, proteinList, null, variableModifications, fixedModifications, null, TestContext.CurrentContext.TestDirectory, "pep.XML", new List<string> { });
-            task.WriteSingleToTsv(newPsms.Where(p => p.CrossType == PsmCrossType.Single).ToList(), TestContext.CurrentContext.TestDirectory, "singlePsms", new List<string> { });
 
             //Test PsmCross.XlCalculateTotalProductMasses
             //var psmCrossAlpha = new CrosslinkSpectralMatch(digestedList[1], 0, 0, 0, listOfSortedms2Scans[0], commonParameters.DigestionParams, new List<MatchedFragmentIon>());
