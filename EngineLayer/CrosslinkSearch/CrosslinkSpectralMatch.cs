@@ -215,8 +215,8 @@ namespace EngineLayer.CrosslinkSearch
                 // mass of crosslinker
                 sb.Append(((PeptideMonisotopicMass.HasValue) ? (ScanPrecursorMass - BetaPeptide.PeptideMonisotopicMass - PeptideMonisotopicMass.Value).ToString() : "---")); sb.Append("\t");
 
-                int alphaNumParentIons = this.MatchedFragmentIons.Count(p => p.NeutralTheoreticalProduct.ProductType == ProductType.M);
-                int betaNumParentIons = this.MatchedFragmentIons.Count(p => p.NeutralTheoreticalProduct.ProductType == ProductType.M);
+                int alphaNumParentIons = MatchedFragmentIons.Count(p => p.NeutralTheoreticalProduct.ProductType == ProductType.M);
+                int betaNumParentIons = BetaPeptide.MatchedFragmentIons.Count(p => p.NeutralTheoreticalProduct.ProductType == ProductType.M);
 
                 sb.Append(alphaNumParentIons + ";" + betaNumParentIons + "\t");
                 sb.Append(alphaNumParentIons + betaNumParentIons + "\t");

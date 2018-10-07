@@ -527,36 +527,23 @@ namespace Test
             var theoreticalCrosslinkFragments = CrosslinkedPeptide.XlGetTheoreticalFragments(DissociationType.HCD,
                 c, new List<int> { 3 }, 10000, alphaPeptide).ToList();
 
-            Assert.That(theoreticalCrosslinkFragments.Count == 2);
+            Assert.That(theoreticalCrosslinkFragments.Count == 1);
 
-            // cleaved+short fragments
-            var loopLocationWithFragmentsShort = theoreticalCrosslinkFragments[0];
+            // cleaved fragments
+            var linkLocationWithFragments = theoreticalCrosslinkFragments[0];
 
-            Assert.That(loopLocationWithFragmentsShort.Item1 == 3);
-            var fragmentsWithShortMass = loopLocationWithFragmentsShort.Item2;
+            Assert.That(linkLocationWithFragments.Item1 == 3);
+            var fragmentsWithCleavedXlPieces = linkLocationWithFragments.Item2;
 
-            var bIons = fragmentsWithShortMass.Where(v => v.ProductType == ProductType.b).ToList();
-            Assert.That(bIons.Select(v => (int)v.NeutralMass).SequenceEqual(new int[] { 97, 226, 338, 439, 552, 667 }));
+            var bIons = fragmentsWithCleavedXlPieces.Where(v => v.ProductType == ProductType.b).ToList();
+            Assert.That(bIons.Select(v => (int)v.NeutralMass).SequenceEqual(new int[] { 97, 226, 338, 439, 552, 667, 348, 449, 562, 677 }));
 
-            var yIons = fragmentsWithShortMass.Where(v => v.ProductType == ProductType.y).ToList();
-            Assert.That(yIons.Select(v => (int)v.NeutralMass).SequenceEqual(new int[] { 147, 262, 375, 476, 588, 717 }));
+            var yIons = fragmentsWithCleavedXlPieces.Where(v => v.ProductType == ProductType.y).ToList();
+            Assert.That(yIons.Select(v => (int)v.NeutralMass).SequenceEqual(new int[] { 147, 262, 375, 476, 588, 717, 598, 727 }));
 
-            var signatureIons = fragmentsWithShortMass.Where(v => v.ProductType == ProductType.M).ToList();
-            Assert.That(signatureIons.Select(v => (int)v.NeutralMass).SequenceEqual(new int[] { (int)(alphaPeptide.MonoisotopicMass + c.CleaveMassShort) }));
-
-            // cleaved+long fragments
-            var loopLocationWithFragmentsLong = theoreticalCrosslinkFragments[1];
-            Assert.That(loopLocationWithFragmentsLong.Item1 == 3);
-            var fragmentsWithLongMass = loopLocationWithFragmentsLong.Item2;
-
-            bIons = fragmentsWithLongMass.Where(v => v.ProductType == ProductType.b).ToList();
-            Assert.That(bIons.Select(v => (int)v.NeutralMass).SequenceEqual(new int[] { 97, 226, 348, 449, 562, 677 }));
-
-            yIons = fragmentsWithLongMass.Where(v => v.ProductType == ProductType.y).ToList();
-            Assert.That(yIons.Select(v => (int)v.NeutralMass).SequenceEqual(new int[] { 147, 262, 375, 476, 598, 727 }));
-
-            signatureIons = fragmentsWithLongMass.Where(v => v.ProductType == ProductType.M).ToList();
-            Assert.That(signatureIons.Select(v => (int)v.NeutralMass).SequenceEqual(new int[] { (int)(alphaPeptide.MonoisotopicMass + c.CleaveMassLong) }));
+            var signatureIons = fragmentsWithCleavedXlPieces.Where(v => v.ProductType == ProductType.M).ToList();
+            Assert.That(signatureIons.Count == 2);
+            Assert.That(signatureIons.Select(v => (int)v.NeutralMass).SequenceEqual(new int[] { 814, 824 }));
         }
     }
 
