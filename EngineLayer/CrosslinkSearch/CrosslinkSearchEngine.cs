@@ -370,7 +370,6 @@ namespace EngineLayer.CrosslinkSearch
 
                     localizedAlpha.XlRank = new List<int> { ind, inx };
                     localizedAlpha.XLTotalScore = localizedAlpha.Score + localizedBeta.Score;
-                    localizedAlpha.XLQvalueTotalScore = Math.Sqrt(localizedAlpha.BestScore) * localizedBeta.BestScore;
                     localizedAlpha.BetaPeptide = localizedBeta;
 
                     if (crosslinker.Cleavable)
@@ -384,8 +383,8 @@ namespace EngineLayer.CrosslinkSearch
 
                     localizedAlpha.CrossType = PsmCrossType.Cross;
                     localizedCrosslinkedSpectralMatch = localizedAlpha;
-                    localizedCrosslinkedSpectralMatch.ModPositions = new List<int> { bestAlphaSite };
-                    localizedCrosslinkedSpectralMatch.BetaPeptide.ModPositions = new List<int> { bestBetaSite };
+                    localizedCrosslinkedSpectralMatch.LinkPositions = new List<int> { bestAlphaSite };
+                    localizedCrosslinkedSpectralMatch.BetaPeptide.LinkPositions = new List<int> { bestBetaSite };
                 }
             }
 
@@ -455,7 +454,7 @@ namespace EngineLayer.CrosslinkSearch
                 csm.CrossType = PsmCrossType.DeadEndNH2;
             }
 
-            csm.ModPositions = new List<int> { bestPosition };
+            csm.LinkPositions = new List<int> { bestPosition };
             csm.XlRank = new List<int> { peptideIndex };
 
             return csm;
@@ -494,7 +493,7 @@ namespace EngineLayer.CrosslinkSearch
             var csm = new CrosslinkSpectralMatch(originalPeptide, notch, bestScore, scanIndex, theScan, originalPeptide.DigestionParams, bestMatchingFragments);
             csm.CrossType = PsmCrossType.Loop;
             csm.XlRank = new List<int> { peptideIndex };
-            csm.ModPositions = new List<int> { bestModPositionSites.Item1, bestModPositionSites.Item2 };
+            csm.LinkPositions = new List<int> { bestModPositionSites.Item1, bestModPositionSites.Item2 };
 
             return csm;
         }

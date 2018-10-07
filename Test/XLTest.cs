@@ -121,7 +121,7 @@ namespace Test
             Crosslinker crosslinker = new Crosslinker().SelectCrosslinker(CrosslinkerType.DSSO);
 
             CrosslinkSpectralMatch[] possiblePsms = new CrosslinkSpectralMatch[listOfSortedms2Scans.Length];
-            new CrosslinkSearchEngine(possiblePsms, listOfSortedms2Scans, indexResults.PeptideIndex, indexResults.FragmentIndex, 0, commonParameters, crosslinker, xlSearchParameters.RestrictToTopNHits, xlSearchParameters.CrosslinkSearchTopNum, xlSearchParameters.XlQuench_H2O, xlSearchParameters.XlQuench_NH2, xlSearchParameters.XlQuench_Tris, xlSearchParameters.XlCharge_2_3, false, new List<string> { }).Run();
+            new CrosslinkSearchEngine(possiblePsms, listOfSortedms2Scans, indexResults.PeptideIndex, indexResults.FragmentIndex, 0, commonParameters, crosslinker, xlSearchParameters.RestrictToTopNHits, xlSearchParameters.CrosslinkSearchTopNum, xlSearchParameters.XlQuench_H2O, xlSearchParameters.XlQuench_NH2, xlSearchParameters.XlQuench_Tris, false, false, new List<string> { }).Run();
 
             var newPsms = possiblePsms.Where(p => p != null).ToList();
             foreach (var item in newPsms)
@@ -134,9 +134,7 @@ namespace Test
 
             //Test Output
             var task = new XLSearchTask();
-            task.WriteAllToTsv(newPsms, TestContext.CurrentContext.TestDirectory, "allPsms", new List<string> { });
             task.WritePepXML_xl(newPsms, proteinList, null, variableModifications, fixedModifications, null, TestContext.CurrentContext.TestDirectory, "pep.XML", new List<string> { });
-            task.WriteSingleToTsv(newPsms.Where(p => p.CrossType == PsmCrossType.Single).ToList(), TestContext.CurrentContext.TestDirectory, "singlePsms", new List<string> { });
 
             //Test PsmCross.XlCalculateTotalProductMasses
             //var psmCrossAlpha = new CrosslinkSpectralMatch(digestedList[1], 0, 0, 0, listOfSortedms2Scans[0], commonParameters.DigestionParams, new List<MatchedFragmentIon>());
@@ -228,7 +226,7 @@ namespace Test
 
             //TwoPassCrosslinkSearchEngine.Run().
             CrosslinkSpectralMatch[] possiblePsms = new CrosslinkSpectralMatch[listOfSortedms2Scans.Length];
-            new CrosslinkSearchEngine(possiblePsms, listOfSortedms2Scans, indexResults.PeptideIndex, indexResults.FragmentIndex, 0, commonParameters, crosslinker, xlSearchParameters.RestrictToTopNHits, xlSearchParameters.CrosslinkSearchTopNum, xlSearchParameters.XlQuench_H2O, xlSearchParameters.XlQuench_NH2, xlSearchParameters.XlQuench_Tris, xlSearchParameters.XlCharge_2_3, false, new List<string> { }).Run();
+            new CrosslinkSearchEngine(possiblePsms, listOfSortedms2Scans, indexResults.PeptideIndex, indexResults.FragmentIndex, 0, commonParameters, crosslinker, xlSearchParameters.RestrictToTopNHits, xlSearchParameters.CrosslinkSearchTopNum, xlSearchParameters.XlQuench_H2O, xlSearchParameters.XlQuench_NH2, xlSearchParameters.XlQuench_Tris, false, false, new List<string> { }).Run();
 
             var newPsms = possiblePsms.Where(p => p != null).ToList();
             Assert.AreEqual(1, newPsms.Count);
@@ -301,9 +299,9 @@ namespace Test
             //tests without .params files
             xlSearchTask.RunTask(Path.Combine(folderPath, @"TestNoParams"), new List<DbForTask> { db }, new List<string> { myFile }, "normal");
 
-            var lines = File.ReadAllLines(Path.Combine(folderPath, @"CreateParams\xl_intra_fdr.tsv"));
-            var lines2 = File.ReadAllLines(Path.Combine(folderPath, @"TestParams\xl_intra_fdr.tsv"));
-            var lines3 = File.ReadAllLines(Path.Combine(folderPath, @"TestNoParams\xl_intra_fdr.tsv"));
+            var lines = File.ReadAllLines(Path.Combine(folderPath, @"CreateParams\XL_Intralinks.tsv"));
+            var lines2 = File.ReadAllLines(Path.Combine(folderPath, @"TestParams\XL_Intralinks.tsv"));
+            var lines3 = File.ReadAllLines(Path.Combine(folderPath, @"TestNoParams\XL_Intralinks.tsv"));
 
             Assert.That(lines.SequenceEqual(lines2) && lines2.SequenceEqual(lines3));
         }
