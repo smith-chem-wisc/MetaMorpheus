@@ -104,26 +104,30 @@ namespace EngineLayer.ModernSearch
                         double thisScore = CalculatePeptideScore(scan.TheScan, matchedIons, 0);
                         int notch = MassDiffAcceptor.Accepts(scan.PrecursorMass, peptide.MonoisotopicMass);
 
-                        bool meetsScoreCutoff = thisScore >= commonParameters.ScoreCutoff;
-                        bool scoreImprovement = PeptideSpectralMatches[i] == null || (thisScore - PeptideSpectralMatches[i].RunnerUpScore) > -PeptideSpectralMatch.ToleranceForScoreDifferentiation;
-
-                        if (meetsScoreCutoff && scoreImprovement || commonParameters.CalculateEValue)
+                        if (PeptideSpectralMatches != null)
                         {
-                            if (PeptideSpectralMatches[i] == null)
-                            {
-                                PeptideSpectralMatches[i] = new PeptideSpectralMatch(peptide, notch, thisScore, i, scan, commonParameters.DigestionParams, matchedIons);
-                            }
-                            else
-                            {
-                                PeptideSpectralMatches[i].AddOrReplace(peptide, thisScore, notch, commonParameters.ReportAllAmbiguity, matchedIons);
-                            }
+                            bool meetsScoreCutoff = thisScore >= commonParameters.ScoreCutoff;
+                            bool scoreImprovement = PeptideSpectralMatches[i] == null || (thisScore - PeptideSpectralMatches[i].RunnerUpScore) > -PeptideSpectralMatch.ToleranceForScoreDifferentiation;
 
-                            if (commonParameters.CalculateEValue)
+                            if (meetsScoreCutoff && scoreImprovement || commonParameters.CalculateEValue)
                             {
-                                PeptideSpectralMatches[i].AllScores.Add(thisScore);
+                                if (PeptideSpectralMatches[i] == null)
+                                {
+                                    PeptideSpectralMatches[i] = new PeptideSpectralMatch(peptide, notch, thisScore, i, scan, commonParameters.DigestionParams, matchedIons);
+                                }
+                                else
+                                {
+                                    PeptideSpectralMatches[i].AddOrReplace(peptide, thisScore, notch, commonParameters.ReportAllAmbiguity, matchedIons);
+                                }
+
+                                if (commonParameters.CalculateEValue)
+                                {
+                                    PeptideSpectralMatches[i].AllScores.Add(thisScore);
+                                }
                             }
                         }
                     }
+                
 
                     // report search progress
                     progress++;
@@ -153,6 +157,7 @@ namespace EngineLayer.ModernSearch
             {
                 psm.ResolveAllAmbiguities();
             }
+            
 
             return new MetaMorpheusEngineResults(this);
         }

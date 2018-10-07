@@ -48,11 +48,12 @@ namespace TaskLayer
 
             //update all psms with peptide info
             Parameters.AllPsms = Parameters.AllPsms.Where(psm => psm != null).ToList();
+
             Parameters.AllPsms.ForEach(psm => psm.ResolveAllAmbiguities());
 
-            Parameters.AllPsms = Parameters.AllPsms.OrderByDescending(b => b.Score)
-               .ThenBy(b => b.PeptideMonisotopicMass.HasValue ? Math.Abs(b.ScanPrecursorMass - b.PeptideMonisotopicMass.Value) : double.MaxValue)
-               .GroupBy(b => (b.FullFilePath, b.ScanNumber, b.PeptideMonisotopicMass)).Select(b => b.First()).ToList();
+                    Parameters.AllPsms = Parameters.AllPsms.OrderByDescending(b => b.Score)
+                       .ThenBy(b => b.PeptideMonisotopicMass.HasValue ? Math.Abs(b.ScanPrecursorMass - b.PeptideMonisotopicMass.Value) : double.MaxValue)
+                       .GroupBy(b => (b.FullFilePath, b.ScanNumber, b.PeptideMonisotopicMass)).Select(b => b.First()).ToList();
 
             CalculatePsmFdr();
 
@@ -79,7 +80,7 @@ namespace TaskLayer
         /// <summary>
         /// Calculate estimated false-discovery rate (FDR) for peptide spectral matches (PSMs)
         /// </summary>
-        private void CalculatePsmFdr()
+        private void CalculatePsmFdr(List<PeptideSpectralMatch> psmArray)
         {
             // TODO: because FDR is done before parsimony, if a PSM matches to a target and a decoy protein, there may be conflicts between how it's handled in parsimony and the FDR engine here
             // for example, here it may be treated as a decoy PSM, where as in parsimony it will be determined by the parsimony algorithm which is agnostic of target/decoy assignments
@@ -87,6 +88,7 @@ namespace TaskLayer
 
             Status("Estimating PSM FDR...", Parameters.SearchTaskId);
             int massDiffAcceptorNumNotches = Parameters.NumNotches;
+            
             new FdrAnalysisEngine(Parameters.AllPsms, massDiffAcceptorNumNotches, CommonParameters, new List<string> { Parameters.SearchTaskId }).Run();
 
             // sort by q-value because of group FDR stuff
