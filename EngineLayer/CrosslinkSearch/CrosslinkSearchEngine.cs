@@ -159,7 +159,7 @@ namespace EngineLayer.CrosslinkSearch
             for (int alphaIndex = 0; alphaIndex < theScanBestPeptide.Count; alphaIndex++)
             {
                 PeptideWithSetModifications bestPeptide = theScanBestPeptide[alphaIndex].BestPeptide;
-                
+
                 //Single Peptide
                 if (XLPrecusorSearchMode.Accepts(theScan.PrecursorMass, bestPeptide.MonoisotopicMass) >= 0)
                 {
@@ -419,7 +419,7 @@ namespace EngineLayer.CrosslinkSearch
                 }
 
                 var localizedPeptide = new PeptideWithSetModifications(originalPeptide.Protein, originalPeptide.DigestionParams, originalPeptide.OneBasedStartResidueInProtein,
-                    originalPeptide.OneBasedEndResidueInProtein, originalPeptide.PeptideDescription, originalPeptide.MissedCleavages, mods, originalPeptide.NumFixedMods);
+                    originalPeptide.OneBasedEndResidueInProtein, originalPeptide.CleavageSpecificityForFdrCategory, originalPeptide.PeptideDescription, originalPeptide.MissedCleavages, mods, originalPeptide.NumFixedMods);
 
                 var products = localizedPeptide.Fragment(commonParameters.DissociationType, FragmentationTerminus.Both).ToList();
                 var matchedFragmentIons = MatchFragmentIons(theScan.TheScan.MassSpectrum, products, commonParameters, theScan.PrecursorMass);

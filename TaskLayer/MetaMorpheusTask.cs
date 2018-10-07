@@ -221,8 +221,8 @@ namespace TaskLayer
             FinishedWritingFile(tomlFileName, new List<string> { displayName });
 
             MetaMorpheusEngine.FinishedSingleEngineHandler += SingleEngineHandlerInTask;
-            try
-            {
+            //try
+            //{
                 var stopWatch = new Stopwatch();
                 stopWatch.Start();
 
@@ -260,25 +260,25 @@ namespace TaskLayer
                 }
                 FinishedWritingFile(resultsFileName, new List<string> { displayName });
                 FinishedSingleTask(displayName);
-            }
-            catch (Exception e)
-            {
-                MetaMorpheusEngine.FinishedSingleEngineHandler -= SingleEngineHandlerInTask;
-                var resultsFileName = Path.Combine(output_folder, "results.txt");
-                e.Data.Add("folder", output_folder);
-                using (StreamWriter file = new StreamWriter(resultsFileName))
-                {
-                    file.WriteLine(GlobalVariables.MetaMorpheusVersion.Equals("1.0.0.0") ? "MetaMorpheus: Not a release version" : "MetaMorpheus: version " + GlobalVariables.MetaMorpheusVersion);
-                    file.WriteLine(SystemInfo.CompleteSystemInfo()); //OS, OS Version, .Net Version, RAM, processor count, MSFileReader .dll versions X3
-                    file.Write("e: " + e);
-                    file.Write("e.Message: " + e.Message);
-                    file.Write("e.InnerException: " + e.InnerException);
-                    file.Write("e.Source: " + e.Source);
-                    file.Write("e.StackTrace: " + e.StackTrace);
-                    file.Write("e.TargetSite: " + e.TargetSite);
-                }
-                throw;
-            }
+        //}
+        //    catch (Exception e)
+        //    {
+        //        MetaMorpheusEngine.FinishedSingleEngineHandler -= SingleEngineHandlerInTask;
+        //        var resultsFileName = Path.Combine(output_folder, "results.txt");
+        //            e.Data.Add("folder", output_folder);
+        //        using (StreamWriter file = new StreamWriter(resultsFileName))
+        //        {
+        //            file.WriteLine(GlobalVariables.MetaMorpheusVersion.Equals("1.0.0.0") ? "MetaMorpheus: Not a release version" : "MetaMorpheus: version " + GlobalVariables.MetaMorpheusVersion);
+        //            file.WriteLine(SystemInfo.CompleteSystemInfo()); //OS, OS Version, .Net Version, RAM, processor count, MSFileReader .dll versions X3
+        //            file.Write("e: " + e);
+        //            file.Write("e.Message: " + e.Message);
+        //            file.Write("e.InnerException: " + e.InnerException);
+        //            file.Write("e.Source: " + e.Source);
+        //            file.Write("e.StackTrace: " + e.StackTrace);
+        //            file.Write("e.TargetSite: " + e.TargetSite);
+        //        }
+        //        throw;
+        //    }
 
             {
                 var proseFilePath = Path.Combine(output_folder, "prose.txt");
@@ -507,6 +507,7 @@ namespace TaskLayer
                     if (File.Exists(Path.Combine(possibleFolder.FullName, "indexEngine.params")) &&
                         File.Exists(Path.Combine(possibleFolder.FullName, "peptideIndex.ind")) &&
                         File.Exists(Path.Combine(possibleFolder.FullName, "fragmentIndex.ind")) &&
+                        (File.Exists(Path.Combine(possibleFolder.FullName, "precursorIndex.ind")) || !indexEngine.GeneratePrecursorIndex) &&
                         SameSettings(Path.Combine(possibleFolder.FullName, "indexEngine.params"), indexEngine))
                     {
                         return possibleFolder.FullName;
@@ -531,7 +532,7 @@ namespace TaskLayer
             return folder;
         }
 
-        public void GenerateIndexes(IndexingEngine indexEngine, List<DbForTask> dbFilenameList, ref List<PeptideWithSetModifications> peptideIndex, ref List<int>[] fragmentIndex, List<Protein> allKnownProteins, List<Modification> allKnownModifications, string taskId)
+        public void GenerateIndexes(IndexingEngine indexEngine, List<DbForTask> dbFilenameList, ref List<PeptideWithSetModifications> peptideIndex, ref List<int>[] fragmentIndex, ref List<int>[] precursorIndex, List<Protein> allKnownProteins, List<Modification> allKnownModifications, string taskId)
         {
             string pathToFolderWithIndices = GetExistingFolderWithIndices(indexEngine, dbFilenameList);
             if (pathToFolderWithIndices == null)
@@ -546,6 +547,7 @@ namespace TaskLayer
                 var indexResults = (IndexingResults)indexEngine.Run();
                 peptideIndex = indexResults.PeptideIndex;
                 fragmentIndex = indexResults.FragmentIndex;
+                precursorIndex = indexResults.PrecursorIndex;
 
                 Status("Writing peptide index...", new List<string> { taskId });
                 var peptideIndexFile = Path.Combine(output_folderForIndices, "peptideIndex.ind");
@@ -556,6 +558,14 @@ namespace TaskLayer
                 var fragmentIndexFile = Path.Combine(output_folderForIndices, "fragmentIndex.ind");
                 WriteFragmentIndexNetSerializer(fragmentIndex, fragmentIndexFile);
                 FinishedWritingFile(fragmentIndexFile, new List<string> { taskId });
+
+                if(indexEngine.GeneratePrecursorIndex)
+                {
+                    Status("Writing precursor index...", new List<string> { taskId });
+                    var precursorIndexFile = Path.Combine(output_folderForIndices, "precursorIndex.ind");
+                    WriteFragmentIndexNetSerializer(precursorIndex, precursorIndexFile);
+                    FinishedWritingFile(precursorIndexFile, new List<string> { taskId });
+                }
             }
             else
             {
@@ -592,9 +602,19 @@ namespace TaskLayer
                 messageTypes = GetSubclassesAndItself(typeof(List<int>[]));
                 ser = new NetSerializer.Serializer(messageTypes);
                 using (var file = File.OpenRead(Path.Combine(pathToFolderWithIndices, "fragmentIndex.ind")))
-
                 {
                     fragmentIndex = (List<int>[])ser.Deserialize(file);
+                }
+
+                if(indexEngine.GeneratePrecursorIndex)
+                {
+                    Status("Reading precursor index...", new List<string> { taskId });
+                    messageTypes = GetSubclassesAndItself(typeof(List<int>[]));
+                    ser = new NetSerializer.Serializer(messageTypes);
+                    using (var file = File.OpenRead(Path.Combine(pathToFolderWithIndices, "precursorIndex.ind")))
+                    {
+                        precursorIndex = (List<int>[])ser.Deserialize(file);
+                    }
                 }
             }
         }

@@ -105,8 +105,7 @@ namespace Test
             var localizeableModifications = new List<Modification>();
 
             //Run index engine
-            var indexEngine = new IndexingEngine(proteinList, variableModifications, fixedModifications, 1, DecoyType.Reverse, new List<DigestionParams>
-            { commonParameters.DigestionParams }, commonParameters, 30000, new List<string>());
+            var indexEngine = new IndexingEngine(proteinList, variableModifications, fixedModifications, 1, DecoyType.Reverse, commonParameters, 30000, false, new List<string>());
 
             var indexResults = (IndexingResults)indexEngine.Run();
 
@@ -216,7 +215,7 @@ namespace Test
             }
 
             //Run index engine
-            var indexEngine = new IndexingEngine(proteinList, variableModifications, fixedModifications, 1, DecoyType.Reverse, new List<DigestionParams> { commonParameters.DigestionParams }, commonParameters, 30000, new List<string>());
+            var indexEngine = new IndexingEngine(proteinList, variableModifications, fixedModifications, 1, DecoyType.Reverse, commonParameters, 30000, false, new List<string>());
 
             var indexResults = (IndexingResults)indexEngine.Run();
 
@@ -464,7 +463,7 @@ namespace Test
             // search the data with the peptide WITHOUT the deadend mod annotated in the search database.
             // the search engine should be able to correctly identify the deadend mod on T
             var indexingResults = (IndexingResults)new IndexingEngine(new List<Protein> { protein }, new List<Modification>(), new List<Modification>(), 0, DecoyType.None,
-                new List<DigestionParams> { new DigestionParams() }, new CommonParameters(), 1000, new List<string>()).Run();
+                new CommonParameters(), 1000, false, new List<string>()).Run();
 
             new CrosslinkSearchEngine(csms, scans, indexingResults.PeptideIndex, indexingResults.FragmentIndex, 0, new CommonParameters(), crosslinker,
                 false, 0, false, false, true, false, false, new List<string>()).Run();
