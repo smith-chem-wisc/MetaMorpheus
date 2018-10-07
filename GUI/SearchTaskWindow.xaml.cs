@@ -343,14 +343,6 @@ namespace MetaMorpheusGUI
                     nTerminalIons.IsChecked = true;
                 }
             }
-            else //it is full
-            {
-                //check if it's classic semi
-                if(checkBoxClassicSemiSpecific.IsChecked.Value)
-                {
-                    classicSemiSpecific = true;
-                }
-            }
 
             if (!GlobalGuiSettings.CheckTaskSettingsValidity(precursorMassToleranceTextBox.Text, productMassToleranceTextBox.Text, missedCleavagesTextBox.Text,
                 maxModificationIsoformsTextBox.Text, MinPeptideLengthTextBox.Text, MaxPeptideLengthTextBox.Text, maxThreadsTextBox.Text, minScoreAllowed.Text,
@@ -671,13 +663,10 @@ namespace MetaMorpheusGUI
                     proteaseComboBox.SelectedItem = proteaseComboBox.Items.CurrentItem;
                 }
                 addCompIonCheckBox.IsChecked = true;
-                checkBoxClassicSemiSpecific.IsEnabled = false;
             }
             else
             {
                 addCompIonCheckBox.IsChecked = false;
-                checkBoxClassicSemiSpecific.IsEnabled = true;
-                checkBoxClassicSemiSpecific.IsChecked = false;
                 nTerminalIons.IsChecked = true;
                 cTerminalIons.IsChecked = true;
             }
@@ -724,7 +713,6 @@ namespace MetaMorpheusGUI
         private void SemiSpecificUpdate(object sender, RoutedEventArgs e)
         {
             addCompIonCheckBox.IsChecked = semiSpecificSearchRadioButton.IsChecked.Value;
-            checkBoxClassicSemiSpecific.IsChecked = semiSpecificSearchRadioButton.IsChecked.Value;
             if (semiSpecificSearchRadioButton.IsChecked.Value)
             {
                 missedCleavagesTextBox.Text = "2";

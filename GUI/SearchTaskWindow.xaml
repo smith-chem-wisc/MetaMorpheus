@@ -303,13 +303,6 @@
                                                     </TextBlock>
                                                 </ComboBox.ToolTip>
                                             </ComboBox>
-                                            <CheckBox x:Name="checkBoxClassicSemiSpecific" Content="Semi-Specific Digestion" Margin="6" DockPanel.Dock="Top" ToolTipService.ShowDuration="999999" ToolTipService.InitialShowDelay="500">
-                                                <CheckBox.ToolTip>
-                                                    <TextBlock>
-                                                    Search for semi-specific cleavages, where at least one terminus is specifically cleaved according to the selected protease.
-                                                    </TextBlock>
-                                                </CheckBox.ToolTip>
-                                            </CheckBox>
                                         </StackPanel>
                                     </StackPanel>
                                     <StackPanel Grid.Column="1">

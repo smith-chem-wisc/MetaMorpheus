@@ -1,4 +1,5 @@
 ﻿using Chemistry;
+using EngineLayer.FdrAnalysis;
 using EngineLayer.ModernSearch;
 using MassSpectrometry;
 using Proteomics;
@@ -17,13 +18,15 @@ namespace EngineLayer.NonSpecificEnzymeSearch
     {
         private static readonly double WaterMonoisotopicMass = PeriodicTable.GetElement("H").PrincipalIsotope.AtomicMass * 2 + PeriodicTable.GetElement("O").PrincipalIsotope.AtomicMass;
 
-        private readonly List<int>[] fragmentIndexPrecursor;
+        private readonly List<int>[] FragmentIndexPrecursor;
         private readonly int MinimumPeptideLength;
+        PeptideSpectralMatch[][] GlobalCategorySpecificPsms;
 
-        public NonSpecificEnzymeSearchEngine(PeptideSpectralMatch[][] globalPsms, Ms2ScanWithSpecificMass[] listOfSortedms2Scans, List<PeptideWithSetModifications> peptideIndex, List<int>[] fragmentIndex, List<int>[] fragmentIndexPrecursor, int currentPartition, CommonParameters CommonParameters, MassDiffAcceptor massDiffAcceptor, double maximumMassThatFragmentIonScoreIsDoubled, List<string> nestedIds) : base(globalPsms, listOfSortedms2Scans, peptideIndex, fragmentIndex, currentPartition, CommonParameters, massDiffAcceptor, maximumMassThatFragmentIonScoreIsDoubled, nestedIds)
+        public NonSpecificEnzymeSearchEngine(PeptideSpectralMatch[][] globalPsms, Ms2ScanWithSpecificMass[] listOfSortedms2Scans, List<PeptideWithSetModifications> peptideIndex, List<int>[] fragmentIndex, List<int>[] fragmentIndexPrecursor, int currentPartition, CommonParameters CommonParameters, MassDiffAcceptor massDiffAcceptor, double maximumMassThatFragmentIonScoreIsDoubled, List<string> nestedIds) : base(null, listOfSortedms2Scans, peptideIndex, fragmentIndex, currentPartition, CommonParameters, massDiffAcceptor, maximumMassThatFragmentIonScoreIsDoubled, nestedIds)
         {
-            this.fragmentIndexPrecursor = fragmentIndexPrecursor;
+            this.FragmentIndexPrecursor = fragmentIndexPrecursor;
             MinimumPeptideLength = commonParameters.DigestionParams.MinPeptideLength;
+            GlobalCategorySpecificPsms = globalPsms;
         }
 
         protected override MetaMorpheusEngineResults RunSpecific()
@@ -81,9 +84,9 @@ namespace EngineLayer.NonSpecificEnzymeSearch
                     for (int j = 0; j < binsToSearch.Count; j++)
                     {
                         int bin = binsToSearch[j];
-                        if (bin < fragmentIndexPrecursor.Length && fragmentIndexPrecursor[bin] != null)
+                        if (bin < FragmentIndexPrecursor.Length && FragmentIndexPrecursor[bin] != null)
                         {
-                            fragmentIndexPrecursor[bin].ForEach(id => idsOfPeptidesPossiblyObserved.Add(id));
+                            FragmentIndexPrecursor[bin].ForEach(id => idsOfPeptidesPossiblyObserved.Add(id));
                         }
                     }
 
@@ -107,7 +110,7 @@ namespace EngineLayer.NonSpecificEnzymeSearch
                                     Tuple<int, PeptideWithSetModifications> notchAndUpdatedPeptide = Accepts(peptideTheorProducts, scan.PrecursorMass, peptide, commonParameters.DigestionParams.FragmentationTerminus, MassDiffAcceptor);
                                     if (notchAndUpdatedPeptide.Item1 >= 0)
                                     {
-                                        PeptideSpectralMatch[] localPeptideSpectralMatches = PeptideSpectralMatches[(int)FdrClassifier.GetCleavageSpecificityCategory(notchAndUpdatedPeptide.Item2.CleavageSpecificityForFdrCategory)];
+                                        PeptideSpectralMatch[] localPeptideSpectralMatches = GlobalCategorySpecificPsms[(int)FdrClassifier.GetCleavageSpecificityCategory(notchAndUpdatedPeptide.Item2.CleavageSpecificityForFdrCategory)];
                                         if (localPeptideSpectralMatches[i] == null)
                                         {
                                             localPeptideSpectralMatches[i] = new PeptideSpectralMatch(notchAndUpdatedPeptide.Item2, notchAndUpdatedPeptide.Item1, thisScore, i, scan, commonParameters.DigestionParams, matchedIons);
@@ -196,6 +199,132 @@ namespace EngineLayer.NonSpecificEnzymeSearch
                 }
             }
             return new Tuple<int, PeptideWithSetModifications>(-1, null);
+        }
+
+        private static List<PeptideSpectralMatch> ResolveFdrCategorySpecificPsms(List<PeptideSpectralMatch>[] AllPsms, int numNotches, string taskId, CommonParameters commonParameters)
+        {
+            //update all psms with peptide info
+            AllPsms.ToList()
+                .Where(psmArray => psmArray != null).ToList()
+                .ForEach(psmArray => psmArray.Where(psm => psm != null).ToList()
+                .ForEach(psm => psm.ResolveAllAmbiguities()));
+
+            foreach (var psmsArray in AllPsms)
+            {
+                if (psmsArray != null)
+                {
+                    var cleanedPsmsArray = psmsArray.Where(b => b != null).OrderByDescending(b => b.Score)
+                       .ThenBy(b => b.PeptideMonisotopicMass.HasValue ? Math.Abs(b.ScanPrecursorMass - b.PeptideMonisotopicMass.Value) : double.MaxValue)
+                       .GroupBy(b => (b.FullFilePath, b.ScanNumber, b.PeptideMonisotopicMass)).Select(b => b.First()).ToList();
+
+                    new FdrAnalysisEngine(cleanedPsmsArray, numNotches, commonParameters, new List<string> { taskId }).Run();
+
+                    for (int i = 0; i < psmsArray.Count; i++)
+                    {
+                        if (psmsArray[i] != null)
+                        {
+                            if (psmsArray[i].FdrInfo == null) //if it was grouped in the cleanedPsmsArray
+                            {
+                                psmsArray[i] = null;
+                            }
+                        }
+                    }
+                }
+            }
+
+            int[] ranking = new int[AllPsms.Length]; //high int is good ranking
+            List<int> indexesOfInterest = new List<int>();
+            for (int i = 0; i < ranking.Length; i++)
+            {
+                if (AllPsms[i] != null)
+                {
+                    ranking[i] = AllPsms[i].Where(x => x != null).Count(x => x.FdrInfo.QValue <= 0.01); //set ranking as number of psms above 1% FDR
+                    indexesOfInterest.Add(i);
+                }
+            }
+
+            //get the index of the category with the highest ranking
+            int majorCategoryIndex = indexesOfInterest[0];
+            for (int i = 1; i < indexesOfInterest.Count; i++)
+            {
+                int currentCategoryIndex = indexesOfInterest[i];
+                if (ranking[currentCategoryIndex] > ranking[majorCategoryIndex])
+                {
+                    majorCategoryIndex = currentCategoryIndex;
+                }
+            }
+
+            //update other category q-values
+            //There's a chance of weird categories getting a random decoy before a random target, but we don't want to give that target a q value of zero.
+            //We can't just take the q of the first decoy, because if the target wasn't random (score = 40), but there are no other targets before the decoy (score = 5), then we're incorrectly dinging the target
+            //The current solution is such that if a minor category has a lower q value than it's corresponding score in the major category, then its q-value is changed to what it would be in the major category
+            List<PeptideSpectralMatch> majorCategoryPsms = AllPsms[majorCategoryIndex].Where(x => x != null).OrderByDescending(x => x.Score).ToList(); //get sorted major category
+            for (int i = 0; i < indexesOfInterest.Count; i++)
+            {
+                int minorCategoryIndex = indexesOfInterest[i];
+                if (minorCategoryIndex != majorCategoryIndex)
+                {
+                    List<PeptideSpectralMatch> minorCategoryPsms = AllPsms[minorCategoryIndex].Where(x => x != null).OrderByDescending(x => x.Score).ToList(); //get sorted minor category
+                    int minorPsmIndex = 0;
+                    int majorPsmIndex = 0;
+                    while (minorPsmIndex < minorCategoryPsms.Count && majorPsmIndex < majorCategoryPsms.Count) //while in the lists
+                    {
+                        var majorPsm = majorCategoryPsms[majorPsmIndex];
+                        var minorPsm = minorCategoryPsms[minorPsmIndex];
+                        //major needs to be a lower score than the minor
+                        if (majorPsm.Score > minorPsm.Score)
+                        {
+                            majorPsmIndex++;
+                        }
+                        else
+                        {
+                            if (majorPsm.FdrInfo.QValue > minorPsm.FdrInfo.QValue)
+                            {
+                                minorPsm.FdrInfo.QValue = majorPsm.FdrInfo.QValue;
+                            }
+                            minorPsmIndex++;
+                        }
+                    }
+                    //wrap up if we hit the end of the major category
+                    while (minorPsmIndex < minorCategoryPsms.Count)
+                    {
+                        var majorPsm = majorCategoryPsms[majorPsmIndex - 1]; //-1 because it's out of index right now
+                        var minorPsm = minorCategoryPsms[minorPsmIndex];
+                        if (majorPsm.FdrInfo.QValue > minorPsm.FdrInfo.QValue)
+                        {
+                            minorPsm.FdrInfo.QValue = majorPsm.FdrInfo.QValue;
+                        }
+                        minorPsmIndex++;
+                    }
+                }
+            }
+
+            int numTotalSpectraWithPrecursors = AllPsms[indexesOfInterest[0]].Count;
+            List<PeptideSpectralMatch> bestPsmsList = new List<PeptideSpectralMatch>();
+            for (int i = 0; i < numTotalSpectraWithPrecursors; i++)
+            {
+                PeptideSpectralMatch bestPsm = null;
+                double lowestQ = double.MaxValue;
+                foreach (int index in indexesOfInterest) //foreach category
+                {
+                    PeptideSpectralMatch currentPsm = AllPsms[index][i];
+                    if (currentPsm != null)
+                    {
+                        double currentQValue = currentPsm.FdrInfo.QValue;
+                        if (currentQValue < lowestQ //if the new one is better
+                            || (currentQValue == lowestQ && currentPsm.Score > bestPsm.Score))
+                        {
+                            bestPsm = currentPsm;
+                            lowestQ = currentQValue;
+                        }
+                    }
+                }
+                if (bestPsm != null)
+                {
+                    bestPsmsList.Add(bestPsm);
+                }
+            }
+            return bestPsmsList.OrderBy(b => b.FdrInfo.QValue).ThenByDescending(b => b.Score).ToList();
         }
     }
 }

@@ -17,11 +17,11 @@ namespace EngineLayer.ClassicSearch
         private readonly List<Protein> Proteins;
         private readonly List<Modification> FixedModifications;
         private readonly List<Modification> VariableModifications;
-        private readonly PeptideSpectralMatch[][] PeptideSpectralMatches;
+        private readonly PeptideSpectralMatch[] PeptideSpectralMatches;
         private readonly Ms2ScanWithSpecificMass[] ArrayOfSortedMS2Scans;
         private readonly double[] MyScanPrecursorMasses;
 
-        public ClassicSearchEngine(PeptideSpectralMatch[][] globalPsms, Ms2ScanWithSpecificMass[] arrayOfSortedMS2Scans, List<Modification> variableModifications, List<Modification> fixedModifications, List<Protein> proteinList, MassDiffAcceptor searchMode, CommonParameters commonParameters, List<string> nestedIds) : base(commonParameters, nestedIds)
+        public ClassicSearchEngine(PeptideSpectralMatch[] globalPsms, Ms2ScanWithSpecificMass[] arrayOfSortedMS2Scans, List<Modification> variableModifications, List<Modification> fixedModifications, List<Protein> proteinList, MassDiffAcceptor searchMode, CommonParameters commonParameters, List<string> nestedIds) : base(commonParameters, nestedIds)
         {
             PeptideSpectralMatches = globalPsms;
             ArrayOfSortedMS2Scans = arrayOfSortedMS2Scans;
@@ -40,7 +40,7 @@ namespace EngineLayer.ClassicSearch
             int oldPercentProgress = 0;
 
             // one lock for each MS2 scan; a scan can only be accessed by one thread at a time
-            var myLocks = new object[PeptideSpectralMatches[0].Length];
+            var myLocks = new object[PeptideSpectralMatches.Length];
             for (int i = 0; i < myLocks.Length; i++)
             {
                 myLocks[i] = new object();
@@ -81,27 +81,24 @@ namespace EngineLayer.ClassicSearch
                                     // valid hit (met the cutoff score); lock the scan to prevent other threads from accessing it
                                     lock (myLocks[scan.ScanIndex])
                                     {
-                                        PeptideSpectralMatch[] localPeptideSpectralMatches = PeptideSpectralMatches[(int)FdrClassifier.GetCleavageSpecificityCategory(peptide.CleavageSpecificityForFdrCategory)];
-                                        if (localPeptideSpectralMatches != null)
+                                        PeptideSpectralMatch peptideSpectralMatchOfInterest = PeptideSpectralMatches[scan.ScanIndex];
+                                        bool scoreImprovement = peptideSpectralMatchOfInterest == null || (thisScore - peptideSpectralMatchOfInterest.RunnerUpScore) > -PeptideSpectralMatch.ToleranceForScoreDifferentiation;
+
+                                        if (scoreImprovement)
                                         {
-                                            bool scoreImprovement = localPeptideSpectralMatches[scan.ScanIndex] == null || (thisScore - localPeptideSpectralMatches[scan.ScanIndex].RunnerUpScore) > -PeptideSpectralMatch.ToleranceForScoreDifferentiation;
-
-                                            if (scoreImprovement)
+                                            if (peptideSpectralMatchOfInterest == null)
                                             {
-                                                if (localPeptideSpectralMatches[scan.ScanIndex] == null)
-                                                {
-                                                    localPeptideSpectralMatches[scan.ScanIndex] = new PeptideSpectralMatch(peptide, scan.Notch, thisScore, scan.ScanIndex, scan.TheScan, commonParameters.DigestionParams, matchedIons);
-                                                }
-                                                else
-                                                {
-                                                    localPeptideSpectralMatches[scan.ScanIndex].AddOrReplace(peptide, thisScore, scan.Notch, commonParameters.ReportAllAmbiguity, matchedIons);
-                                                }
+                                                PeptideSpectralMatches[scan.ScanIndex] = new PeptideSpectralMatch(peptide, scan.Notch, thisScore, scan.ScanIndex, scan.TheScan, commonParameters.DigestionParams, matchedIons);
                                             }
-
-                                            if (commonParameters.CalculateEValue)
+                                            else
                                             {
-                                                localPeptideSpectralMatches[scan.ScanIndex].AllScores.Add(thisScore);
+                                                peptideSpectralMatchOfInterest.AddOrReplace(peptide, thisScore, scan.Notch, commonParameters.ReportAllAmbiguity, matchedIons);
                                             }
+                                        }
+
+                                        if (commonParameters.CalculateEValue)
+                                        {
+                                            peptideSpectralMatchOfInterest.AllScores.Add(thisScore);
                                         }
                                     }
                                 }
@@ -124,24 +121,19 @@ namespace EngineLayer.ClassicSearch
             // remove peptides below the score cutoff that were stored to calculate expectation values
             if (commonParameters.CalculateEValue)
             {
-                foreach (PeptideSpectralMatch[] psmArray in PeptideSpectralMatches.Where(p => p != null))
+                for (int i = 0; i < PeptideSpectralMatches.Length; i++)
                 {
-                    for (int i = 0; i < psmArray.Length; i++)
+                    if (PeptideSpectralMatches[i] != null && PeptideSpectralMatches[i].Score < commonParameters.ScoreCutoff)
                     {
-                        if (psmArray[i] != null && psmArray[i].Score < commonParameters.ScoreCutoff)
-                        {
-                            psmArray[i] = null;
-                        }
+                        PeptideSpectralMatches[i] = null;
                     }
                 }
             }
-            foreach (PeptideSpectralMatch[] psmArray in PeptideSpectralMatches.Where(p => p != null))
+            foreach (PeptideSpectralMatch psm in PeptideSpectralMatches.Where(p => p != null))
             {
-                foreach (PeptideSpectralMatch psm in psmArray.Where(p => p != null))
-                {
-                    psm.ResolveAllAmbiguities();
-                }
+                psm.ResolveAllAmbiguities();
             }
+
 
             return new MetaMorpheusEngineResults(this);
         }
