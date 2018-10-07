@@ -38,7 +38,7 @@ namespace EngineLayer.ModernSearch
         {
             if (PeptideSpectralMatches == null)
             {
-                new MetaMorpheusEngineResults(this);
+                return new MetaMorpheusEngineResults(this);
             }
 
             double progress = 0;
