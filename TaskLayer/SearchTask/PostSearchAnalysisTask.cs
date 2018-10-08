@@ -91,7 +91,11 @@ namespace TaskLayer
 
             // sort by q-value because of group FDR stuff
             // e.g. multiprotease FDR, non/semi-specific protease, etc
-            Parameters.AllPsms = Parameters.AllPsms.OrderBy(p => p.FdrInfo.QValue).ThenBy(p => p.Score).ThenBy(p => p.FdrInfo.CumulativeTarget).ToList();
+            Parameters.AllPsms = Parameters.AllPsms
+                .OrderBy(p => p.FdrInfo.QValue)
+                .ThenByDescending(p => p.Score)
+                .ThenBy(p => p.FdrInfo.CumulativeTarget)
+                .ToList();
 
             Status("Done estimating PSM FDR!", Parameters.SearchTaskId);
         }
