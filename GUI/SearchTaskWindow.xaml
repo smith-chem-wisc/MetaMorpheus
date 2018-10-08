@@ -196,24 +196,20 @@
                                                             <TextBlock>
                                                                 A novel indexed search designed for semi-specific digestion.
                                                                 <LineBreak/>
-                                                                This search requires the user to select ions from a single terminus only. The choice does not matter. 
-                                                                <LineBreak/>
-                                                                Example: HCD: "b" OR "y". ETD: "c" OR "zdot". EThcD: ("b" AND "c") OR ("y" AND "zdot")
-                                                                <LineBreak/>
                                                                 Simply select the protease used, e.g. "LysC" becomes "semi-LysC".
                                                             </TextBlock>
                                                         </RadioButton.ToolTip>
                                                     </RadioButton>
                                                 </StackPanel>
                                                 <StackPanel Grid.Column="3">
-                                                    <RadioButton x:Name="nonSpecificSearchRadioButton1" Content="Non-Specific Search" GroupName="SearchType" ToolTipService.ShowDuration="999999" ToolTipService.InitialShowDelay="500" Checked="NonSpecificUsingNonSpecific" Unchecked="NonSpecificUsingNonSpecific">
+                                                    <RadioButton x:Name="nonSpecificSearchRadioButton" Content="Non-Specific Search" GroupName="SearchType" ToolTipService.ShowDuration="999999" ToolTipService.InitialShowDelay="500" Checked="NonSpecificUsingNonSpecific" Unchecked="NonSpecificUsingNonSpecific">
                                                         <RadioButton.ToolTip>
                                                             <TextBlock>
-                                                            A novel indexed search designed for non-specific digestion.
-                                                            <LineBreak/>
-                                                            This search requires the user to select ions from a single terminus only. The choice does not matter. 
-                                                            <LineBreak/>
-                                                            Example: HCD: "b" OR "y". ETD: "c" OR "zdot". EThcD: ("b" AND "c") OR ("y" AND "zdot")
+                                                                A novel indexed search designed for non-specific digestion.
+                                                                <LineBreak/>
+                                                                If a specific protease (e.g. LysC) is selected, then peptides will be stratified based on cleavage specificity.
+                                                                <LineBreak/>
+                                                                Stratification is chosen based on category specific q-values.
                                                             </TextBlock>
                                                         </RadioButton.ToolTip>
                                                     </RadioButton>

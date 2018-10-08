@@ -13,49 +13,49 @@ namespace EngineLayer.Indexing
 {
     public class IndexingEngine : MetaMorpheusEngine
     {
-        protected const int FragmentBinsPerDalton = 1000;
-        protected readonly List<Protein> ProteinList;
+        private const int FragmentBinsPerDalton = 1000;
+        private readonly List<Protein> ProteinList;
 
-        protected readonly List<Modification> FixedModifications;
-        protected readonly List<Modification> VariableModifications;
-        protected readonly int CurrentPartition;
-        protected readonly DecoyType DecoyType;
-        protected readonly IEnumerable<DigestionParams> CollectionOfDigestionParams;
-        protected readonly double MaxFragmentSize;
+        private readonly List<Modification> FixedModifications;
+        private readonly List<Modification> VariableModifications;
+        private readonly int CurrentPartition;
+        private readonly DecoyType DecoyType;
+        private readonly double MaxFragmentSize;
+        public readonly bool GeneratePrecursorIndex;
 
-        public IndexingEngine(List<Protein> proteinList, List<Modification> variableModifications, List<Modification> fixedModifications, int currentPartition, DecoyType decoyType, IEnumerable<DigestionParams> collectionOfDigestionParams, CommonParameters commonParams, double maxFragmentSize, List<string> nestedIds) : base(commonParams, nestedIds)
+        public IndexingEngine(List<Protein> proteinList, List<Modification> variableModifications, List<Modification> fixedModifications, int currentPartition, DecoyType decoyType, CommonParameters commonParams, double maxFragmentSize, bool generatePrecursorIndex, List<string> nestedIds) : base(commonParams, nestedIds)
         {
             ProteinList = proteinList;
             VariableModifications = variableModifications;
             FixedModifications = fixedModifications;
             CurrentPartition = currentPartition + 1;
             DecoyType = decoyType;
-            CollectionOfDigestionParams = collectionOfDigestionParams;
             MaxFragmentSize = maxFragmentSize;
+            GeneratePrecursorIndex = generatePrecursorIndex;
         }
 
         public override string ToString()
         {
             var sb = new StringBuilder();
             sb.AppendLine("Partitions: " + CurrentPartition + "/" + commonParameters.TotalPartitions);
+            sb.AppendLine("Precursor Index: " + GeneratePrecursorIndex);
             sb.AppendLine("Search Decoys: " + DecoyType);
             sb.AppendLine("Number of proteins: " + ProteinList.Count);
             sb.AppendLine("Number of fixed mods: " + FixedModifications.Count);
             sb.AppendLine("Number of variable mods: " + VariableModifications.Count);
             sb.AppendLine("Dissociation Type: " + commonParameters.DissociationType);
-            foreach (var digestionParams in CollectionOfDigestionParams)
-            {
-                sb.AppendLine("protease: " + digestionParams.Protease);
-                sb.AppendLine("initiatorMethionineBehavior: " + digestionParams.InitiatorMethionineBehavior);
-                sb.AppendLine("maximumMissedCleavages: " + digestionParams.MaxMissedCleavages);
-                sb.AppendLine("minPeptideLength: " + digestionParams.MinPeptideLength);
-                sb.AppendLine("maxPeptideLength: " + digestionParams.MaxPeptideLength);
-                sb.AppendLine("maximumVariableModificationIsoforms: " + digestionParams.MaxModificationIsoforms);
-                sb.AppendLine("digestionTerminus: " + digestionParams.FragmentationTerminus);
-                sb.AppendLine("maxModsForEachPeptide: " + digestionParams.MaxModsForPeptide);
-                sb.AppendLine("cleavageSpecificity: " + digestionParams.SearchModeType);
-                sb.AppendLine("specificProtease: " + digestionParams.SpecificProtease);
-            }
+
+            sb.AppendLine("protease: " + commonParameters.DigestionParams.Protease);
+            sb.AppendLine("initiatorMethionineBehavior: " + commonParameters.DigestionParams.InitiatorMethionineBehavior);
+            sb.AppendLine("maximumMissedCleavages: " + commonParameters.DigestionParams.MaxMissedCleavages);
+            sb.AppendLine("minPeptideLength: " + commonParameters.DigestionParams.MinPeptideLength);
+            sb.AppendLine("maxPeptideLength: " + commonParameters.DigestionParams.MaxPeptideLength);
+            sb.AppendLine("maximumVariableModificationIsoforms: " + commonParameters.DigestionParams.MaxModificationIsoforms);
+            sb.AppendLine("digestionTerminus: " + commonParameters.DigestionParams.FragmentationTerminus);
+            sb.AppendLine("maxModsForEachPeptide: " + commonParameters.DigestionParams.MaxModsForPeptide);
+            sb.AppendLine("cleavageSpecificity: " + commonParameters.DigestionParams.SearchModeType);
+            sb.AppendLine("specificProtease: " + commonParameters.DigestionParams.SpecificProtease);
+
             sb.Append("Localizeable mods: " + ProteinList.Select(b => b.OneBasedPossibleLocalizedModifications.Count).Sum());
             return sb.ToString();
         }
@@ -81,10 +81,9 @@ namespace EngineLayer.Indexing
                         return;
                     }
 
-                    foreach (var digestionParams in CollectionOfDigestionParams)
-                    {
-                        localPeptides.AddRange(ProteinList[i].Digest(digestionParams, FixedModifications, VariableModifications));
-                    }
+
+                    localPeptides.AddRange(ProteinList[i].Digest(commonParameters.DigestionParams, FixedModifications, VariableModifications));
+
 
                     progress++;
                     var percentProgress = (int)((progress / ProteinList.Count) * 100);
@@ -147,8 +146,53 @@ namespace EngineLayer.Indexing
                     ReportProgress(new ProgressEventArgs(percentProgress, "Fragmenting peptides...", nestedIds));
                 }
             }
-            
-            return new IndexingResults(peptidesSortedByMass, fragmentIndex, this);
+
+            List<int>[] precursorIndex = null;
+
+            if (GeneratePrecursorIndex)
+            {
+                // create precursor index
+                try
+                {
+                    precursorIndex = new List<int>[(int)Math.Ceiling(MaxFragmentSize) * FragmentBinsPerDalton + 1];
+                }
+                catch (OutOfMemoryException)
+                {
+                    throw new MetaMorpheusException("Max precursor mass too large for indexing engine; try \"Classic Search\" mode, or make the maximum fragment mass smaller");
+                }
+                progress = 0;
+                oldPercentProgress = 0;
+                ReportProgress(new ProgressEventArgs(0, "Creating precursor index...", nestedIds));
+
+                for (int i = 0; i < peptidesSortedByMass.Count; i++)
+                {
+                    double mz = Chemistry.ClassExtensions.ToMz(peptidesSortedByMass[i].MonoisotopicMass, 1);
+                    if (!Double.IsNaN(mz))
+                    {
+                        if (mz > MaxFragmentSize) //if the precursor is larger than the index allows, then stop adding precursors
+                        {
+                            break;
+                        }
+
+                        int precursorBin = (int)Math.Round(mz * FragmentBinsPerDalton);
+
+                        if (precursorIndex[precursorBin] == null)
+                            precursorIndex[precursorBin] = new List<int> { i };
+                        else
+                            precursorIndex[precursorBin].Add(i);
+                    }
+                    progress++;
+                    var percentProgress = (int)((progress / peptidesSortedByMass.Count) * 100);
+
+                    if (percentProgress > oldPercentProgress)
+                    {
+                        oldPercentProgress = percentProgress;
+                        ReportProgress(new ProgressEventArgs(percentProgress, "Creating precursor index...", nestedIds));
+                    }
+                }
+            }
+
+            return new IndexingResults(peptidesSortedByMass, fragmentIndex, precursorIndex, this);
         }
     }
 }
