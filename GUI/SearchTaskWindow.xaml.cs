@@ -301,18 +301,13 @@ namespace MetaMorpheusGUI
             }
             //else it's the default of full
 
-            bool classicSemiSpecific = false;
-
             if (searchModeType != CleavageSpecificity.Full)
             {
                 if (((Protease)proteaseComboBox.SelectedItem).Name.Contains("non-specific"))
                 {
-                    if (nTerminalIons.IsChecked.Value)
+                    if (cTerminalIons.IsChecked.Value)
                     {
-                        cTerminalIons.IsChecked = false;
-                        proteaseComboBox.Items.MoveCurrentToFirst();
-                        proteaseComboBox.SelectedItem = proteaseComboBox.Items.CurrentItem;
-                        while (!((Protease)proteaseComboBox.SelectedItem).Name.Equals("singleN"))
+                        while (!((Protease)proteaseComboBox.SelectedItem).Name.Equals("singleC"))
                         {
                             proteaseComboBox.Items.MoveCurrentToNext();
                             proteaseComboBox.SelectedItem = proteaseComboBox.Items.CurrentItem;
@@ -320,8 +315,7 @@ namespace MetaMorpheusGUI
                     }
                     else //we're not allowing no ion types. It must have C if it doesn't have N.
                     {
-                        cTerminalIons.IsChecked = true;
-                        while (!((Protease)proteaseComboBox.SelectedItem).Name.Equals("singleC"))
+                        while (!((Protease)proteaseComboBox.SelectedItem).Name.Equals("singleN"))
                         {
                             proteaseComboBox.Items.MoveCurrentToNext();
                             proteaseComboBox.SelectedItem = proteaseComboBox.Items.CurrentItem;
@@ -353,18 +347,6 @@ namespace MetaMorpheusGUI
             }
 
             Protease protease = (Protease)proteaseComboBox.SelectedItem;
-            if (classicSemiSpecific)
-            {
-                //make a new semi protease
-                string semiName = "semi-" + protease.Name;
-                if (!ProteaseDictionary.Dictionary.Keys.Contains(semiName)) //don't double add if previously added
-                {
-                    ProteaseDictionary.Dictionary[semiName]
-                        = new Protease(semiName, protease.SequencesInducingCleavage, protease.SequencesPreventingCleavage,
-                        CleavageSpecificity.Semi, protease.PsiMsAccessionNumber, protease.PsiMsName, protease.SiteRegexp);
-                }
-                protease = ProteaseDictionary.Dictionary[semiName];
-            }
 
             DissociationType dissociationType = GlobalVariables.AllSupportedDissociationTypes[dissociationTypeComboBox.SelectedItem.ToString()];
             FragmentationTerminus fragmentationTerminus = FragmentationTerminus.Both;
