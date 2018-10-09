@@ -76,31 +76,44 @@ namespace Test
         [Test]
         public static void SemiSpecificTest()
         {
-            //DigestionParams digestParams = new DigestionParams(semiProteaseDigestion: true);
-            SearchTask searchTask = new SearchTask()
+            List<FragmentationTerminus> terminiToTest = new List<FragmentationTerminus>
             {
-                SearchParameters = new SearchParameters
-                {
-                    SearchType = SearchType.NonSpecific,
-                },
-                CommonParameters = new CommonParameters(addCompIons:true, digestionParams: new DigestionParams(searchModeType:CleavageSpecificity.Semi, fragmentationTerminus: FragmentationTerminus.C))
+                FragmentationTerminus.N,
+                FragmentationTerminus.C
             };
+            foreach (FragmentationTerminus fragTerm in terminiToTest)
+            {
+                SearchTask searchTask = new SearchTask()
+                {
+                    SearchParameters = new SearchParameters
+                    {
+                        SearchType = SearchType.NonSpecific,
+                        LocalFdrCategories = new List<FdrCategory>
+                        {
+                            FdrCategory.FullySpecific,
+                            FdrCategory.SemiSpecific
+                        }
+                    },
+                    CommonParameters = new CommonParameters(scoreCutoff: 4, addCompIons: true,
+                    digestionParams: new DigestionParams(searchModeType: CleavageSpecificity.Semi, fragmentationTerminus: fragTerm))
+                };
 
-            string outputFolder = Path.Combine(TestContext.CurrentContext.TestDirectory, @"TestSameSettingsOutput");
-            string myFile = Path.Combine(TestContext.CurrentContext.TestDirectory, @"TestData\PrunedDbSpectra.mzml");
-            string myDatabase = Path.Combine(TestContext.CurrentContext.TestDirectory, @"TestData\DbForPrunedDb.fasta");
-            DbForTask db = new DbForTask(myDatabase, false);
+                string outputFolder = Path.Combine(TestContext.CurrentContext.TestDirectory, @"TestSameSettingsOutput");
+                string myFile = Path.Combine(TestContext.CurrentContext.TestDirectory, @"TestData\PrunedDbSpectra.mzml");
+                string myDatabase = Path.Combine(TestContext.CurrentContext.TestDirectory, @"TestData\DbForPrunedDb.fasta");
+                DbForTask db = new DbForTask(myDatabase, false);
 
-            List<(string, MetaMorpheusTask)> taskList = new List<(string, MetaMorpheusTask)> { ("TestSemiSpecific", searchTask) };
+                List<(string, MetaMorpheusTask)> taskList = new List<(string, MetaMorpheusTask)> { ("TestSemiSpecific", searchTask) };
 
-            var engine = new EverythingRunnerEngine(taskList, new List<string> { myFile }, new List<DbForTask> { new DbForTask(myDatabase, false) }, Environment.CurrentDirectory);
-            engine.Run();
+                var engine = new EverythingRunnerEngine(taskList, new List<string> { myFile }, new List<DbForTask> { new DbForTask(myDatabase, false) }, Environment.CurrentDirectory);
+                engine.Run();
 
-            string outputPath = Path.Combine(TestContext.CurrentContext.TestDirectory, @"TestSemiSpecific\AllPSMs.psmtsv");
-            var output = File.ReadAllLines(outputPath);
-            Assert.That(output.Length == 9);
+                string outputPath = Path.Combine(TestContext.CurrentContext.TestDirectory, @"TestSemiSpecific\AllPSMs.psmtsv");
+                var output = File.ReadAllLines(outputPath);
+                Assert.That(output.Length == 11); //if N is only producing 10 lines, then the c is not being searched with it.
+            }
         }
-
+               
         /// <summary>
         /// Tests that normalization in a search task works properly with an Experimental Design file read in,
         /// and crashes when that file is absent
