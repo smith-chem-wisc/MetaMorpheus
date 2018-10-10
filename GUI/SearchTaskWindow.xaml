@@ -196,24 +196,20 @@
                                                             <TextBlock>
                                                                 A novel indexed search designed for semi-specific digestion.
                                                                 <LineBreak/>
-                                                                This search requires the user to select ions from a single terminus only. The choice does not matter. 
-                                                                <LineBreak/>
-                                                                Example: HCD: "b" OR "y". ETD: "c" OR "zdot". EThcD: ("b" AND "c") OR ("y" AND "zdot")
-                                                                <LineBreak/>
                                                                 Simply select the protease used, e.g. "LysC" becomes "semi-LysC".
                                                             </TextBlock>
                                                         </RadioButton.ToolTip>
                                                     </RadioButton>
                                                 </StackPanel>
                                                 <StackPanel Grid.Column="3">
-                                                    <RadioButton x:Name="nonSpecificSearchRadioButton1" Content="Non-Specific Search" GroupName="SearchType" ToolTipService.ShowDuration="999999" ToolTipService.InitialShowDelay="500" Checked="NonSpecificUsingNonSpecific" Unchecked="NonSpecificUsingNonSpecific">
+                                                    <RadioButton x:Name="nonSpecificSearchRadioButton" Content="Non-Specific Search" GroupName="SearchType" ToolTipService.ShowDuration="999999" ToolTipService.InitialShowDelay="500" Checked="NonSpecificUsingNonSpecific" Unchecked="NonSpecificUsingNonSpecific">
                                                         <RadioButton.ToolTip>
                                                             <TextBlock>
-                                                            A novel indexed search designed for non-specific digestion.
-                                                            <LineBreak/>
-                                                            This search requires the user to select ions from a single terminus only. The choice does not matter. 
-                                                            <LineBreak/>
-                                                            Example: HCD: "b" OR "y". ETD: "c" OR "zdot". EThcD: ("b" AND "c") OR ("y" AND "zdot")
+                                                                A novel indexed search designed for non-specific digestion.
+                                                                <LineBreak/>
+                                                                If a specific protease (e.g. LysC) is selected, then peptides will be stratified based on cleavage specificity.
+                                                                <LineBreak/>
+                                                                Stratification is chosen based on category specific q-values.
                                                             </TextBlock>
                                                         </RadioButton.ToolTip>
                                                     </RadioButton>
@@ -397,19 +393,30 @@
                                     </StackPanel>
                                     <StackPanel Grid.Column="1">
                                         <StackPanel Orientation="Horizontal" Margin="5">
-                                            <Label x:Name="ionsToSearchLabel" Content="Ions to search" ToolTipService.ShowDuration="999999" ToolTipService.InitialShowDelay="500">
-                                                <Label.ToolTip>
+                                            <Label x:Name="dissociationTypeLabel" Content="Dissociation Type" />
+                                            <ComboBox x:Name="dissociationTypeComboBox" ToolTipService.ShowDuration="999999" ToolTipService.InitialShowDelay="500" SelectionChanged="dissassociationTypeComboBox_SelectionChanged">
+                                                <ComboBox.ToolTip>
                                                     <TextBlock>
-                                                        The expected product ions produced by fragmentation.
+                                                        The dissociation type used for MS/MS.
                                                     </TextBlock>
-                                                </Label.ToolTip>
-                                            </Label>
-                                            <CheckBox x:Name="bCheckBox" Content="b ions" />
-                                            <CheckBox x:Name="yCheckBox" Content="y ions" />
+                                                </ComboBox.ToolTip>
+                                            </ComboBox>
                                         </StackPanel>
-                                        <StackPanel Orientation="Horizontal" Margin="87,5,5,5">
-                                            <CheckBox x:Name="cCheckBox" Content="c ions" />
-                                            <CheckBox x:Name="zdotCheckBox" Content="zdot ions" />
+                                        <StackPanel Orientation="Horizontal">
+                                            <CheckBox x:Name="nTerminalIons" Content="N-Terminal Ions" Margin="1" DockPanel.Dock="Top" ToolTipService.ShowDuration="999999" ToolTipService.InitialShowDelay="500" IsChecked="True">
+                                                <CheckBox.ToolTip>
+                                                    <TextBlock>
+                                                    Search for theoretical ions from the N-Terminus. The specific ion series are specified through the dissociation type.
+                                                    </TextBlock>
+                                                </CheckBox.ToolTip>
+                                            </CheckBox>
+                                            <CheckBox x:Name="cTerminalIons" Content="C-Terminal Ions" Margin="1" DockPanel.Dock="Top" ToolTipService.ShowDuration="999999" ToolTipService.InitialShowDelay="500" IsChecked="True">
+                                                <CheckBox.ToolTip>
+                                                    <TextBlock>
+                                                    Search for theoretical ions from the C-Terminus. The specific ion series are specified through the dissociation type.
+                                                    </TextBlock>
+                                                </CheckBox.ToolTip>
+                                            </CheckBox>
                                         </StackPanel>
                                     </StackPanel>
                                     <StackPanel Grid.Column="2">
@@ -510,42 +517,51 @@
                                     </StackPanel>
                                 </Grid>
                             </GroupBox>
-                            <StackPanel Orientation="Horizontal" Margin="5">
-                                <Label x:Name="minScoreAllowedLabel" Content="Minimum score allowed:" />
-                                <TextBox x:Name="minScoreAllowed" PreviewTextInput="CheckIfNumber" Width="45" ToolTipService.ShowDuration="999999" ToolTipService.InitialShowDelay="500">
-                                    <TextBox.ToolTip>
-                                        <TextBlock>
+                            <GroupBox Header="Scoring Options">
+                                <Grid>
+                                    <Grid.ColumnDefinitions>
+                                        <ColumnDefinition Width="1*" />
+                                    </Grid.ColumnDefinitions>
+                                    <StackPanel>
+                                        <StackPanel Orientation="Horizontal" Margin="5">
+                                            <Label x:Name="minScoreAllowedLabel" Content="Minimum score allowed:" />
+                                            <TextBox x:Name="minScoreAllowed" PreviewTextInput="CheckIfNumber" Width="45" ToolTipService.ShowDuration="999999" ToolTipService.InitialShowDelay="500">
+                                                <TextBox.ToolTip>
+                                                    <TextBlock>
                                             The minimum MetaMorpheus score allowed for a PSM to be reportable.
                                             <LineBreak/>
                                             Decreasing this number increases search time.
-                                        </TextBlock>
-                                    </TextBox.ToolTip>
-                                </TextBox>
-                            </StackPanel>
-                            <StackPanel Orientation="Horizontal" Margin="5">
-                                <CheckBox x:Name="deltaScoreCheckBox" Content="Use Delta Scores For FDR"  Margin="5" ToolTipService.ShowDuration="999999" ToolTipService.InitialShowDelay="500">
-                                    <CheckBox.ToolTip>
-                                        <TextBlock>
+                                                    </TextBlock>
+                                                </TextBox.ToolTip>
+                                            </TextBox>
+                                        </StackPanel>
+                                        <StackPanel Orientation="Horizontal" Margin="5">
+                                            <CheckBox x:Name="deltaScoreCheckBox" Content="Use Delta Scores For FDR"  Margin="5" ToolTipService.ShowDuration="999999" ToolTipService.InitialShowDelay="500">
+                                                <CheckBox.ToolTip>
+                                                    <TextBlock>
                                             This allows delta scores (the difference between the top two highest scoring candidates) to be considered in q-value calculations.
                                             <LineBreak/>
                                             MetaMorpheus automatically checks that delta scores improve the number of PSMs at a 1% FDR. 
                                             <LineBreak/>
                                             If there is no improvement, then the standard score is used.
-                                        </TextBlock>
-                                    </CheckBox.ToolTip>
-                                </CheckBox>
-                                <CheckBox x:Name="eValueCheckBox" Content="Calculate eValues"  Margin="5" ToolTipService.ShowDuration="999999" ToolTipService.InitialShowDelay="500">
-                                    <CheckBox.ToolTip>
-                                        <TextBlock>
+                                                    </TextBlock>
+                                                </CheckBox.ToolTip>
+                                            </CheckBox>
+                                            <CheckBox x:Name="eValueCheckBox" Content="Calculate eValues"  Margin="5" ToolTipService.ShowDuration="999999" ToolTipService.InitialShowDelay="500">
+                                                <CheckBox.ToolTip>
+                                                    <TextBlock>
                                             This estimates the expectation value (eValue) for each PSM, which is the probability of a PSM obtaining its given score by random chance.
                                             <LineBreak/>
                                             There is a significant increase in search time.
                                             <LineBreak/>
                                             eValues are not used for FDR and are only calculated for the user's review.
-                                        </TextBlock>
-                                    </CheckBox.ToolTip>
-                                </CheckBox>
-                            </StackPanel>
+                                                    </TextBlock>
+                                                </CheckBox.ToolTip>
+                                            </CheckBox>
+                                        </StackPanel>
+                                    </StackPanel>
+                                </Grid>
+                            </GroupBox>
                         </StackPanel>
                     </Expander>
                 </GroupBox>

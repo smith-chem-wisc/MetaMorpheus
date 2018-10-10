@@ -19,13 +19,13 @@ namespace Test
             using (StreamWriter output = new StreamWriter(filePath))
             {
                 output.WriteLine("FileName\tCondition\tBiorep\tFraction\tTechrep");
-                output.WriteLine("SmallCalibratable_Yeast" + "\t" + "condition" + "\t" + "1" + "\t" + "1" + "\t" + "1");
+                output.WriteLine("SmallCalibratible_Yeast" + "\t" + "condition" + "\t" + "1" + "\t" + "1" + "\t" + "1");
             }
 
             calibrationTask.RunTask(outputFolder, new List<DbForTask> { new DbForTask(myDatabase, false) }, new List<string> { myFile }, "test");
             var expDesignPath = Path.Combine(outputFolder, @"ExperimentalDesign.tsv");
             var expDesign = File.ReadAllLines(expDesignPath);
-            Assert.That(expDesign[1].Contains("SmallCalibratable_Yeast-calib"));
+            Assert.That(expDesign[1].Contains("SmallCalibratible_Yeast-calib"));
             Assert.That(File.Exists(Path.Combine(outputFolder, @"SmallCalibratible_Yeast-calib.mzML")));
             Assert.That(File.Exists(Path.Combine(outputFolder, @"SmallCalibratible_Yeast-calib.toml")));
             var lines = File.ReadAllLines(Path.Combine(outputFolder, @"SmallCalibratible_Yeast-calib.toml"));
