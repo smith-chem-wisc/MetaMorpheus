@@ -21,7 +21,7 @@ namespace Test
         public static void TestEverythingRunner()
         {
             foreach (var modFile in Directory.GetFiles(@"Mods"))
-                GlobalVariables.AddMods(PtmListLoader.ReadModsFromFile(modFile));
+                GlobalVariables.AddMods(PtmListLoader.ReadModsFromFile(modFile, out var fmww), false);
 
             CalibrationTask task1 = new CalibrationTask
             {
@@ -65,8 +65,8 @@ namespace Test
                 ("task3", task3),
                 ("task4", task4),};
 
-            List<ModificationWithMass> variableModifications = GlobalVariables.AllModsKnown.OfType<ModificationWithMass>().Where(b => task1.CommonParameters.ListOfModsVariable.Contains((b.modificationType, b.id))).ToList();
-            List<ModificationWithMass> fixedModifications = GlobalVariables.AllModsKnown.OfType<ModificationWithMass>().Where(b => task1.CommonParameters.ListOfModsFixed.Contains((b.modificationType, b.id))).ToList();
+            List<Modification> variableModifications = GlobalVariables.AllModsKnown.OfType<Modification>().Where(b => task1.CommonParameters.ListOfModsVariable.Contains((b.ModificationType, b.IdWithMotif))).ToList();
+            List<Modification> fixedModifications = GlobalVariables.AllModsKnown.OfType<Modification>().Where(b => task1.CommonParameters.ListOfModsFixed.Contains((b.ModificationType, b.IdWithMotif))).ToList();
 
             // Generate data for files
             Protein ParentProtein = new Protein("MPEPTIDEKANTHE", "accession1");
@@ -81,7 +81,7 @@ namespace Test
 
             var dictHere = new Dictionary<int, List<Modification>>();
             ModificationMotif.TryGetMotif("E", out ModificationMotif motif);
-            dictHere.Add(3, new List<Modification> { new ModificationWithMass("21", null, motif, TerminusLocalization.Any, 21.981943) });
+            dictHere.Add(3, new List<Modification> { new Modification(_originalId: "21", _target: motif, _locationRestriction: "Anywhere.", _monoisotopicMass: 21.981943) });
             Protein ParentProteinToNotInclude = new Protein("MPEPTIDEK", "accession2", "organism", new List<Tuple<string, string>>(), dictHere);
             digestedList = ParentProteinToNotInclude.Digest(task1.CommonParameters.DigestionParams, fixedModifications, variableModifications).ToList();
 
@@ -103,15 +103,15 @@ namespace Test
         public static void TestMultipleFilesRunner()
         {
             foreach (var modFile in Directory.GetFiles(@"Mods"))
-                GlobalVariables.AddMods(PtmListLoader.ReadModsFromFile(modFile));
+                GlobalVariables.AddMods(PtmListLoader.ReadModsFromFile(modFile, out var fmww), false);
 
             CalibrationTask task1 = new CalibrationTask
             {
                 CommonParameters = new CommonParameters
                 (
                     digestionParams: new DigestionParams(maxMissedCleavages: 0, minPeptideLength: 1, initiatorMethionineBehavior: InitiatorMethionineBehavior.Retain),
-                    listOfModsVariable: new List<(string, string)> { ("Common Variable", "Oxidation of M") },
-                    listOfModsFixed: new List<(string, string)> { ("Common Fixed", "Carbamidomethyl of C") },
+                    listOfModsVariable: new List<(string, string)> { ("Common Variable", "Oxidation on M") },
+                    listOfModsFixed: new List<(string, string)> { ("Common Fixed", "Carbamidomethyl on C") },
                     productMassTolerance: new AbsoluteTolerance(0.01)
                 ),
                 CalibrationParameters = new CalibrationParameters
@@ -154,8 +154,8 @@ namespace Test
                 ("task3", task3),
                 ("task4", task4),};
 
-            List<ModificationWithMass> variableModifications = GlobalVariables.AllModsKnown.OfType<ModificationWithMass>().Where(b => task1.CommonParameters.ListOfModsVariable.Contains((b.modificationType, b.id))).ToList();
-            List<ModificationWithMass> fixedModifications = GlobalVariables.AllModsKnown.OfType<ModificationWithMass>().Where(b => task1.CommonParameters.ListOfModsFixed.Contains((b.modificationType, b.id))).ToList();
+            List<Modification> variableModifications = GlobalVariables.AllModsKnown.OfType<Modification>().Where(b => task1.CommonParameters.ListOfModsVariable.Contains((b.ModificationType, b.IdWithMotif))).ToList();
+            List<Modification> fixedModifications = GlobalVariables.AllModsKnown.OfType<Modification>().Where(b => task1.CommonParameters.ListOfModsFixed.Contains((b.ModificationType, b.IdWithMotif))).ToList();
 
             // Generate data for files
             Protein ParentProtein = new Protein("MPEPTIDEKANTHE", "accession1");
@@ -170,7 +170,7 @@ namespace Test
 
             var dictHere = new Dictionary<int, List<Modification>>();
             ModificationMotif.TryGetMotif("E", out ModificationMotif motif);
-            dictHere.Add(3, new List<Modification> { new ModificationWithMass("21", null, motif, TerminusLocalization.Any, 21.981943) });
+            dictHere.Add(3, new List<Modification> { new Modification(_originalId: "21", _modificationType: "myModType", _target: motif, _locationRestriction: "Anywhere.", _monoisotopicMass: 21.981943) });
             Protein ParentProteinToNotInclude = new Protein("MPEPTIDEK", "accession2", "organism", new List<Tuple<string, string>>(), dictHere);
             digestedList = ParentProteinToNotInclude.Digest(task1.CommonParameters.DigestionParams, fixedModifications, variableModifications).ToList();
             Assert.AreEqual(4, digestedList.Count);
@@ -225,41 +225,41 @@ namespace Test
 
             string mzmlName = @"MakeSureFdrDoesntSkip.mzML";
 
-            {
-                var theProteins = ProteinDbLoader.LoadProteinXML(xmlName, true, DecoyType.Reverse, new List<Modification>(), false, new List<string>(), out Dictionary<string, Modification> ok);
 
-                List<ModificationWithMass> fixedModifications = new List<ModificationWithMass>();
+            var theProteins = ProteinDbLoader.LoadProteinXML(xmlName, true, DecoyType.Reverse, new List<Modification>(), false, new List<string>(), out Dictionary<string, Modification> ok);
 
-                var targetDigested = theProteins[0].Digest(task.CommonParameters.DigestionParams, fixedModifications, GlobalVariables.AllModsKnown.OfType<ModificationWithMass>().ToList()).ToList();
+            List<Modification> fixedModifications = new List<Modification>();
 
-                PeptideWithSetModifications targetGood = targetDigested.First();
+            var targetDigested = theProteins[0].Digest(task.CommonParameters.DigestionParams, fixedModifications, GlobalVariables.AllModsKnown.OfType<Modification>().ToList()).ToList();
 
-                TestDataFile myMsDataFile = new TestDataFile(new List<PeptideWithSetModifications> { targetGood }, true);
+            PeptideWithSetModifications targetGood = targetDigested.First();
 
-                var ii = myMsDataFile.GetOneBasedScan(1).MassSpectrum.YArray.ToList();
+            TestDataFile myMsDataFile = new TestDataFile(new List<PeptideWithSetModifications> { targetGood }, true);
 
-                ii.Add(1);
-                ii.Add(1);
-                ii.Add(1);
-                ii.Add(1);
+            var ii = myMsDataFile.GetOneBasedScan(1).MassSpectrum.YArray.ToList();
 
-                var intensities = ii.ToArray();
+            ii.Add(1);
+            ii.Add(1);
+            ii.Add(1);
+            ii.Add(1);
 
-                var mm = myMsDataFile.GetOneBasedScan(1).MassSpectrum.XArray.ToList();
+            var intensities = ii.ToArray();
 
-                var hah = 104.35352;
-                mm.Add(hah);
-                mm.Add(hah + 1);
-                mm.Add(hah + 2);
+            var mm = myMsDataFile.GetOneBasedScan(1).MassSpectrum.XArray.ToList();
 
-                var mz = mm.ToArray();
+            var hah = 104.35352;
+            mm.Add(hah);
+            mm.Add(hah + 1);
+            mm.Add(hah + 2);
 
-                Array.Sort(mz, intensities);
+            var mz = mm.ToArray();
 
-                myMsDataFile.ReplaceFirstScanArrays(mz, intensities);
+            Array.Sort(mz, intensities);
 
-                IO.MzML.MzmlMethods.CreateAndWriteMyMzmlWithCalibratedSpectra(myMsDataFile, mzmlName, false);
-            }
+            myMsDataFile.ReplaceFirstScanArrays(mz, intensities);
+
+            IO.MzML.MzmlMethods.CreateAndWriteMyMzmlWithCalibratedSpectra(myMsDataFile, mzmlName, false);
+
 
             // RUN!
             var theStringResult = task.RunTask(TestContext.CurrentContext.TestDirectory, new List<DbForTask> { new DbForTask(xmlName, false) }, new List<string> { mzmlName }, "taskId1").ToString();
@@ -273,7 +273,9 @@ namespace Test
 
             {
                 ModificationMotif.TryGetMotif("T", out ModificationMotif motif);
-                GlobalVariables.AddMods(new List<ModificationWithMass> { new ModificationWithMass("ok", "okType", motif, TerminusLocalization.Any, 229) });
+                Modification myNewMod = new Modification(_originalId: "ok", _modificationType: "okType", _target: motif, _locationRestriction: "Anywhere.", _monoisotopicMass: 229);
+
+                GlobalVariables.AddMods(new List<Modification> { myNewMod }, false);
                 task1 = new GptmdTask
                 {
                     CommonParameters = new CommonParameters
@@ -287,7 +289,7 @@ namespace Test
 
                     GptmdParameters = new GptmdParameters
                     {
-                        ListOfModsGptmd = new List<(string, string)> { ("okType", "ok") },
+                        ListOfModsGptmd = new List<(string, string)> { ("okType", "ok on T") },
                     }
                 };
             }
@@ -304,9 +306,9 @@ namespace Test
             {
                 var theProteins = ProteinDbLoader.LoadProteinXML(xmlName, true, DecoyType.Reverse, new List<Modification>(), false, new List<string>(), out Dictionary<string, Modification> ok);
 
-                List<ModificationWithMass> fixedModifications = new List<ModificationWithMass>();
+                List<Modification> fixedModifications = new List<Modification>();
 
-                var targetDigested = theProteins[0].Digest(task1.CommonParameters.DigestionParams, fixedModifications, GlobalVariables.AllModsKnown.OfType<ModificationWithMass>().Where(b => b.id.Equals("ok")).ToList()).ToList();
+                var targetDigested = theProteins[0].Digest(task1.CommonParameters.DigestionParams, fixedModifications, GlobalVariables.AllModsKnown.OfType<Modification>().Where(b => b.OriginalId.Equals("ok")).ToList()).ToList();
 
                 ModificationMotif.TryGetMotif("T", out ModificationMotif motif);
                 PeptideWithSetModifications targetGood = targetDigested[0];
@@ -347,20 +349,20 @@ namespace Test
 
             ModificationMotif.TryGetMotif("P", out ModificationMotif motif);
 
-            var testUniqeMod = new ModificationWithMass("testPeptideMod", "mt", motif, TerminusLocalization.Any, 10);
-            GlobalVariables.AddMods(new List<ModificationWithLocation>
+            var testUniqeMod = new Modification(_originalId: "testPeptideMod", _modificationType: "mt", _target: motif, _locationRestriction: "Anywhere.", _monoisotopicMass: 10);
+            GlobalVariables.AddMods(new List<Modification>
             {
                 testUniqeMod
-            });
+            }, false);
 
             //create modification lists
 
-            List<ModificationWithMass> variableModifications = GlobalVariables.AllModsKnown.OfType<ModificationWithMass>().Where
-                (b => testPeptides.CommonParameters.ListOfModsVariable.Contains((b.modificationType, b.id))).ToList();
+            List<Modification> variableModifications = GlobalVariables.AllModsKnown.OfType<Modification>().Where
+                (b => testPeptides.CommonParameters.ListOfModsVariable.Contains((b.ModificationType, b.IdWithMotif))).ToList();
 
             //add modification to Protein object
             var modDictionary = new Dictionary<int, List<Modification>>();
-            ModificationWithMass modToAdd = testUniqeMod;
+            Modification modToAdd = testUniqeMod;
             modDictionary.Add(1, new List<Modification> { modToAdd });
             modDictionary.Add(3, new List<Modification> { modToAdd });
 
@@ -382,7 +384,7 @@ namespace Test
 
             //now write MZML file
             var protein = ProteinDbLoader.LoadProteinXML(xmlName, true, DecoyType.Reverse, new List<Modification>(), false, new List<string>(), out Dictionary<string, Modification> ok);
-            var setList1 = protein[0].Digest(testPeptides.CommonParameters.DigestionParams, new List<ModificationWithMass> { }, variableModifications).ToList();
+            var setList1 = protein[0].Digest(testPeptides.CommonParameters.DigestionParams, new List<Modification> { }, variableModifications).ToList();
             Assert.AreEqual(4, setList1.Count);
 
             //Finally Write MZML file
@@ -434,7 +436,7 @@ namespace Test
                 "AllQuantifiedPeptides_BaseSequences.tsv", "AllQuantifiedPeptides_FullSequences.tsv", "prose.txt", "results.txt", "SearchTaskconfig.toml" };
 
             HashSet<string> files = new HashSet<string>(Directory.GetFiles(Path.Combine(thisTaskOutputFolder, "SingleMassSpectraFileOutput")).Select(v => Path.GetFileName(v)));
-            
+
             // these 2 lines are for debug purposes, so you can see which files you're missing (if any)
             var missingFiles = expectedFiles.Except(files);
             var extraFiles = files.Except(expectedFiles);
@@ -480,15 +482,15 @@ namespace Test
             File.WriteAllLines(filePath, new string[] { modToWrite });
 
             // read the mod
-            GlobalVariables.AddMods(PtmListLoader.ReadModsFromFile(filePath));
-            Assert.That(GlobalVariables.AllModsKnown.Where(v => v.id == "Hydroxyproline").Count() == 1);
+            GlobalVariables.AddMods(PtmListLoader.ReadModsFromFile(filePath, out var fmww), false);
+            Assert.That(GlobalVariables.AllModsKnown.Where(v => v.IdWithMotif == "Hydroxyproline on P").Count() == 1);
 
             // should have an error message...
             Assert.That(GlobalVariables.ErrorsReadingMods.Where(v => v.Contains("Hydroxyproline")).Count() > 0);
         }
 
         /// <summary>
-        /// Tests that pepXML is output
+        /// Tests that pepXML is written
         /// 
         /// TODO: Assert pepXML properties
         /// </summary>
@@ -527,6 +529,7 @@ namespace Test
                     SearchType = SearchType.Modern
                 }
             };
+            List<int> counts = new List<int>();
 
             List<(string, MetaMorpheusTask)> taskList = new List<(string, MetaMorpheusTask)> { ("ClassicSearch", classicSearch), ("ModernSearch", modernSearch) };
 
@@ -541,7 +544,8 @@ namespace Test
 
             string modernPath = Path.Combine(TestContext.CurrentContext.TestDirectory, @"ModernSearch\AllPSMs.psmtsv");
             var modernPsms = File.ReadAllLines(modernPath).ToList();
-            
+            counts.Add(modernPsms.Count);
+
             Assert.That(modernPsms.SequenceEqual(classicPsms));
         }
     }

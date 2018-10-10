@@ -2,6 +2,7 @@
 using MzLibUtil;
 using Nett;
 using Proteomics.ProteolyticDigestion;
+using MassSpectrometry;
 
 namespace TaskLayer
 {
@@ -29,14 +30,12 @@ namespace TaskLayer
                         MaxMissedCleavages = keyValuePair.Value.Get<int>(); break;
                     case nameof(MaxModsForPeptide):
                         MaxModsForPeptide = keyValuePair.Value.Get<int>(); break;
-                    case nameof(BIons):
-                        BIons = keyValuePair.Value.Get<bool>(); break;
-                    case nameof(YIons):
-                        YIons = keyValuePair.Value.Get<bool>(); break;
-                    case nameof(CIons):
-                        CIons = keyValuePair.Value.Get<bool>(); break;
-                    case nameof(ZdotIons):
-                        ZdotIons = keyValuePair.Value.Get<bool>(); break;
+
+
+                    case nameof(DissociationType):
+                        DissociationType = keyValuePair.Value.Get<MassSpectrometry.DissociationType>(); break;
+
+
                     default:
                         throw new MetaMorpheusException("Unrecognized parameter \"" + keyValuePair.Key + "\" in file-specific parameters toml");
                 }
@@ -55,10 +54,7 @@ namespace TaskLayer
         public int? MaxPeptideLength { get; set; }
         public int? MaxMissedCleavages { get; set; }
         public int? MaxModsForPeptide { get; set; }
-        public bool? BIons { get; set; }
-        public bool? YIons { get; set; }
-        public bool? CIons { get; set; }
-        public bool? ZdotIons { get; set; }
+        public DissociationType? DissociationType { get; set; }
 
         // This method is to make sure developers keep consistent naming between CommonParameters and FileSpecificParameters.
         // It's supposed to immediately crash MetaMorpheus if you rename a Common Parameter and don't rename it here.
@@ -82,14 +78,7 @@ namespace TaskLayer
                 throw new MetaMorpheusException("Max missed cleavages variable name is inconsistent");
             if (!nameof(temp.DigestionParams.MaxModsForPeptide).Equals(nameof(MaxModsForPeptide)))
                 throw new MetaMorpheusException("Max mods per peptide variable name is inconsistent");
-            if (!nameof(temp.BIons).Equals(nameof(BIons)))
-                throw new MetaMorpheusException("B ion variable name is inconsistent");
-            if (!nameof(temp.YIons).Equals(nameof(YIons)))
-                throw new MetaMorpheusException("Y ion variable name is inconsistent");
-            if (!nameof(temp.ZdotIons).Equals(nameof(ZdotIons)))
-                throw new MetaMorpheusException("Zdot ion variable name is inconsistent");
-            if (!nameof(temp.CIons).Equals(nameof(CIons)))
-                throw new MetaMorpheusException("C ion variable name is inconsistent");
+
         }
 
         public FileSpecificParameters Clone()

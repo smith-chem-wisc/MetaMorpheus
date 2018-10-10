@@ -1,5 +1,6 @@
 ﻿using EngineLayer;
 using Proteomics;
+using Proteomics.Fragmentation;
 using Proteomics.ProteolyticDigestion;
 using System;
 using System.Collections.Generic;
@@ -11,7 +12,7 @@ namespace TaskLayer
 {
     public static class PepXMLWriter
     {
-        public static void WritePepXml(List<PeptideSpectralMatch> psms, List<DbForTask> database, List<ModificationWithMass> variableModifications, List<ModificationWithMass> fixedModifications, CommonParameters CommonParameters, string outputPath, double qValueFilter)
+        public static void WritePepXml(List<PeptideSpectralMatch> psms, List<DbForTask> database, List<Modification> variableModifications, List<Modification> fixedModifications, CommonParameters CommonParameters, string outputPath, double qValueFilter)
         {
             // TODO: needs a unit test
             psms = psms.Where(p => p.FdrInfo.QValue <= qValueFilter && p.FdrInfo.QValueNotch < qValueFilter).ToList();
@@ -46,15 +47,16 @@ namespace TaskLayer
                 para.Add(new pepXML.Generated.nameValueType { name = "Min Peptide Len", value = CommonParameters.DigestionParams.MinPeptideLength.ToString() });
                 para.Add(new pepXML.Generated.nameValueType { name = "Max Peptide Len", value = CommonParameters.DigestionParams.MaxPeptideLength.ToString() });
                 para.Add(new pepXML.Generated.nameValueType { name = "Product Mass Tolerance", value = CommonParameters.ProductMassTolerance.ToString() });
-                para.Add(new pepXML.Generated.nameValueType { name = "Ions to search", value = "B " + CommonParameters.BIons.ToString() + " Y " + CommonParameters.YIons.ToString() + " C " + CommonParameters.CIons.ToString() + " Z " + CommonParameters.ZdotIons.ToString() });
+                // TODO: check this
+                para.Add(new pepXML.Generated.nameValueType { name = "Ions to search", value = string.Join(", ", DissociationTypeCollection.ProductsFromDissociationType[CommonParameters.DissociationType]) });
                 para.Add(new pepXML.Generated.nameValueType { name = "Q-value Filter", value = CommonParameters.QValueOutputFilter.ToString() });
                 foreach (var item in fixedModifications)
                 {
-                    para.Add(new pepXML.Generated.nameValueType { name = "Fixed Modifications: " + item.id, value = item.monoisotopicMass.ToString() });
+                    para.Add(new pepXML.Generated.nameValueType { name = "Fixed Modifications: " + item.IdWithMotif, value = item.MonoisotopicMass.ToString() });
                 }
                 foreach (var item in variableModifications)
                 {
-                    para.Add(new pepXML.Generated.nameValueType { name = "Variable Modifications: " + item.id, value = item.monoisotopicMass.ToString() });
+                    para.Add(new pepXML.Generated.nameValueType { name = "Variable Modifications: " + item.IdWithMotif, value = item.MonoisotopicMass.ToString() });
                 }
 
                 para.Add(new pepXML.Generated.nameValueType { name = "Localize All Modifications", value = "true" });
@@ -118,20 +120,20 @@ namespace TaskLayer
 
             foreach (var psm in psms)
             {
-                PeptideWithSetModifications peptide = psm.CompactPeptides.First().Value.Item2.First();
+                PeptideWithSetModifications peptide = psm.BestMatchingPeptides.First().Peptide;
 
                 var mods = new List<pepXML.Generated.modInfoDataTypeMod_aminoacid_mass>();
                 foreach (var mod in peptide.AllModsOneIsNterminus)
                 {
                     var pepXmlMod = new pepXML.Generated.modInfoDataTypeMod_aminoacid_mass
                     {
-                        mass = mod.Value.monoisotopicMass,
+                        mass = (double)mod.Value.MonoisotopicMass,
                         position = (mod.Key - 1).ToString()
                     };
                     mods.Add(pepXmlMod);
                 }
 
-                var proteinAccessions = psm.CompactPeptides.SelectMany(b => b.Value.Item2).Select(b => b.Protein.Accession).Distinct();
+                var proteinAccessions = psm.BestMatchingPeptides.Select(p => p.Peptide.Protein.Accession).Distinct();
 
                 var searchHit = new pepXML.Generated.msms_pipeline_analysisMsms_run_summarySpectrum_querySearch_resultSearch_hit
                 {
