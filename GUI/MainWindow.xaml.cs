@@ -6,6 +6,7 @@ using Proteomics;
 using System;
 using System.Collections.Generic;
 using System.Collections.ObjectModel;
+using System.ComponentModel;
 using System.Globalization;
 using System.IO;
 using System.Linq;
@@ -92,6 +93,8 @@ namespace MetaMorpheusGUI
             {
                 GuiWarnHandler(null, new StringEventArgs("Could not get newest version from web: " + e.Message, null));
             }
+
+            Application.Current.MainWindow.Closing += new CancelEventHandler(MainWindow_Closing);
         }
         
         private FlowDocument YoutubeWikiNotification()
@@ -1390,6 +1393,19 @@ namespace MetaMorpheusGUI
                 AddAFile(contaminantFile);
             }
             dataGridProteinDatabases.Items.Refresh();
+        }
+
+        // handle window closing
+        private void MainWindow_Closing(object sender, CancelEventArgs e)
+        {
+            if (!GuiGlobalParams.AskCloseWindow)
+            {
+                e.Cancel = true;
+                var exit = MessageBox.Show("Are you sure?", "Exit MetaMorpheus", MessageBoxButton.YesNo, MessageBoxImage.Question);
+
+                if (exit == MessageBoxResult.Yes)
+                    e.Cancel = false;
+            }
         }
     }
 }
