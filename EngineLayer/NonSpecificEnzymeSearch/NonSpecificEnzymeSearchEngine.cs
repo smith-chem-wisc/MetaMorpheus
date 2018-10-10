@@ -201,7 +201,7 @@ namespace EngineLayer.NonSpecificEnzymeSearch
             return new Tuple<int, PeptideWithSetModifications>(-1, null);
         }
 
-        private static List<PeptideSpectralMatch> ResolveFdrCategorySpecificPsms(List<PeptideSpectralMatch>[] AllPsms, int numNotches, string taskId, CommonParameters commonParameters)
+        public static List<PeptideSpectralMatch> ResolveFdrCategorySpecificPsms(List<PeptideSpectralMatch>[] AllPsms, int numNotches, string taskId, CommonParameters commonParameters)
         {
             //update all psms with peptide info
             AllPsms.ToList()
