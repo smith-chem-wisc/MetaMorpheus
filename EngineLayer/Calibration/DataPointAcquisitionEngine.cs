@@ -16,33 +16,21 @@ namespace EngineLayer.Calibration
 
         private readonly List<PeptideSpectralMatch> GoodIdentifications;
         private readonly MsDataFile MyMsDataFile;
-        private readonly int NumFragmentsNeededForEveryIdentification;
         private readonly Tolerance MzToleranceForMs1Search;
-        private readonly Tolerance MzToleranceForMs2Search;
         private readonly int MinMS1isotopicPeaksNeededForConfirmedIdentification;
-        private readonly int MinMS2isotopicPeaksNeededForConfirmedIdentification;
-        private readonly FragmentTypes FragmentTypesForCalibration;
 
         public DataPointAcquisitionEngine(
             List<PeptideSpectralMatch> goodIdentifications,
             MsDataFile myMsDataFile,
             Tolerance mzToleranceForMs1Search,
-            Tolerance mzToleranceForMs2Search,
-            int numFragmentsNeededForEveryIdentification,
             int minMS1isotopicPeaksNeededForConfirmedIdentification,
-            int minMS2isotopicPeaksNeededForConfirmedIdentification,
-            FragmentTypes fragmentTypesForCalibration,
             CommonParameters commonParameters,
             List<string> nestedIds) : base(commonParameters, nestedIds)
         {
             GoodIdentifications = goodIdentifications;
             MyMsDataFile = myMsDataFile;
             MzToleranceForMs1Search = mzToleranceForMs1Search;
-            MzToleranceForMs2Search = mzToleranceForMs2Search;
-            NumFragmentsNeededForEveryIdentification = numFragmentsNeededForEveryIdentification;
             MinMS1isotopicPeaksNeededForConfirmedIdentification = minMS1isotopicPeaksNeededForConfirmedIdentification;
-            MinMS2isotopicPeaksNeededForConfirmedIdentification = minMS2isotopicPeaksNeededForConfirmedIdentification;
-            FragmentTypesForCalibration = fragmentTypesForCalibration;
         }
 
         protected override MetaMorpheusEngineResults RunSpecific()
@@ -58,10 +46,7 @@ namespace EngineLayer.Calibration
             List<LabeledDataPoint> Ms2List = new List<LabeledDataPoint>();
 
             int numIdentifications = GoodIdentifications.Count;
-
-            // Loop over identifications
-            HashSet<string> sequences = new HashSet<string>();
-
+            
             object lockObj = new object();
             object lockObj2 = new object();
             Parallel.ForEach(Partitioner.Create(0, numIdentifications), new ParallelOptions { MaxDegreeOfParallelism = commonParameters.MaxThreadsToUsePerFile }, (fff, loopState) =>
@@ -83,13 +68,14 @@ namespace EngineLayer.Calibration
                     if (identification.FullSequence == null)
                         continue;
 
-                    var representativeSinglePeptide = identification.CompactPeptides.First().Value.Item2.First();
+                    var representativeSinglePeptide = identification.BestMatchingPeptides.First().Peptide;
 
                     // Get the peptide, don't forget to add the modifications!!!!
                     var SequenceWithChemicalFormulas = representativeSinglePeptide.SequenceWithChemicalFormulas;
-                    if (SequenceWithChemicalFormulas == null || representativeSinglePeptide.AllModsOneIsNterminus.Any(b => b.Value.neutralLosses.Count != 1 || b.Value.neutralLosses.First() != 0))
+                    if (SequenceWithChemicalFormulas == null || representativeSinglePeptide.AllModsOneIsNterminus.Any(b => b.Value.NeutralLosses != null))
                         continue;
-                    Proteomics.AminoAcidPolymer.Peptide coolPeptide = new Proteomics.AminoAcidPolymer.Peptide(SequenceWithChemicalFormulas);
+
+                    Peptide coolPeptide = new Peptide(SequenceWithChemicalFormulas);
 
                     var ms2tuple = SearchMS2Spectrum(MyMsDataFile.GetOneBasedScan(ms2scanNumber), identification);
 
@@ -248,7 +234,7 @@ namespace EngineLayer.Calibration
                         Math.Log(ms2DataScan.TotalIonCurrent),
                         Math.Log(injTime),
                         Math.Log(exptPeakIntensity),
-                        matchedIon.TheoreticalFragmentIon.Mz,
+                        matchedIon.NeutralTheoreticalProduct.NeutralMass.ToMz(matchedIon.Charge),
                         identification));
             }
             return result;

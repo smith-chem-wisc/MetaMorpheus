@@ -164,7 +164,7 @@ namespace EngineLayer
             if (!DisplayModsOnPeptides)
                 sb.Append(GlobalVariables.CheckLengthOfOutput(string.Join("|", UniquePeptides.Select(p => p.BaseSequence).Distinct())));
             else
-                sb.Append(GlobalVariables.CheckLengthOfOutput(string.Join("|", UniquePeptides.Select(p => p.Sequence).Distinct())));
+                sb.Append(GlobalVariables.CheckLengthOfOutput(string.Join("|", UniquePeptides.Select(p => p.FullSequence).Distinct())));
             sb.Append("\t");
 
             // list of shared peptides
@@ -172,21 +172,21 @@ namespace EngineLayer
             if (!DisplayModsOnPeptides)
                 sb.Append(GlobalVariables.CheckLengthOfOutput(string.Join("|", SharedPeptides.Select(p => p.BaseSequence).Distinct())));
             else
-                sb.Append(GlobalVariables.CheckLengthOfOutput(string.Join("|", SharedPeptides.Select(p => p.Sequence).Distinct())));
+                sb.Append(GlobalVariables.CheckLengthOfOutput(string.Join("|", SharedPeptides.Select(p => p.FullSequence).Distinct())));
             sb.Append("\t");
 
             // number of peptides
             if (!DisplayModsOnPeptides)
                 sb.Append("" + AllPeptides.Select(p => p.BaseSequence).Distinct().Count());
             else
-                sb.Append("" + AllPeptides.Select(p => p.Sequence).Distinct().Count());
+                sb.Append("" + AllPeptides.Select(p => p.FullSequence).Distinct().Count());
             sb.Append("\t");
 
             // number of unique peptides
             if (!DisplayModsOnPeptides)
                 sb.Append("" + UniquePeptides.Select(p => p.BaseSequence).Distinct().Count());
             else
-                sb.Append("" + UniquePeptides.Select(p => p.Sequence).Distinct().Count());
+                sb.Append("" + UniquePeptides.Select(p => p.FullSequence).Distinct().Count());
             sb.Append("\t");
 
             // sequence coverage percent
@@ -282,18 +282,18 @@ namespace EngineLayer
                 // null BaseSequence means that the amino acid sequence is ambiguous; do not use these to calculate sequence coverage
                 if (psm.BaseSequence != null)
                 {
-                    var PepsWithSetMods = psm.CompactPeptides.SelectMany(b => b.Value.Item2);
-                    foreach (var pepWithSetMods in PepsWithSetMods)
+                    var peptides = psm.BestMatchingPeptides.Select(p => p.Peptide);
+                    foreach (var peptide in peptides)
                     {
                         // might be unambiguous but also shared; make sure this protein group contains this peptide+protein combo
-                        if (Proteins.Contains(pepWithSetMods.Protein))
+                        if (Proteins.Contains(peptide.Protein))
                         {
-                            proteinsWithUnambigSeqPsms[pepWithSetMods.Protein].Add(pepWithSetMods);
+                            proteinsWithUnambigSeqPsms[peptide.Protein].Add(peptide);
 
                             // null FullSequence means that mods were not successfully localized; do not display them on the sequence coverage mods info
                             if (psm.FullSequence != null)
                             {
-                                proteinsWithPsmsWithLocalizedMods[pepWithSetMods.Protein].Add(pepWithSetMods);
+                                proteinsWithPsmsWithLocalizedMods[peptide.Protein].Add(peptide);
                             }
                         }
                     }
@@ -348,13 +348,13 @@ namespace EngineLayer
                 if (!errorResult)
                 {
                     // get mods to display in sequence (only unambiguously identified mods)
-                    var modsOnThisProtein = new HashSet<KeyValuePair<int, ModificationWithMass>>();
+                    var modsOnThisProtein = new HashSet<KeyValuePair<int, Modification>>();
                     foreach (var pep in proteinsWithPsmsWithLocalizedMods[protein])
                     {
                         foreach (var mod in pep.AllModsOneIsNterminus)
                         {
-                            if (!mod.Value.modificationType.Contains("PeptideTermMod") && !mod.Value.modificationType.Contains("Common Variable") && !mod.Value.modificationType.Contains("Common Fixed"))
-                                modsOnThisProtein.Add(new KeyValuePair<int, ModificationWithMass>(pep.OneBasedStartResidueInProtein + mod.Key - 2, mod.Value));
+                            if (!mod.Value.ModificationType.Contains("PeptideTermMod") && !mod.Value.ModificationType.Contains("Common Variable") && !mod.Value.ModificationType.Contains("Common Fixed"))
+                                modsOnThisProtein.Add(new KeyValuePair<int, Modification>(pep.OneBasedStartResidueInProtein + mod.Key - 2, mod.Value));
                         }
                     }
 
@@ -362,15 +362,15 @@ namespace EngineLayer
 
                     foreach (var mod in temp1)
                     {
-                        if (mod.Value.terminusLocalization.Equals(TerminusLocalization.NProt))
-                            sequenceCoverageDisplay = sequenceCoverageDisplay.Insert(0, "[" + mod.Value.id + "]-");
-                        else if (mod.Value.terminusLocalization.Equals(TerminusLocalization.Any))
+                        if (mod.Value.LocationRestriction.Equals("N-terminal."))
+                            sequenceCoverageDisplay = sequenceCoverageDisplay.Insert(0, "[" + mod.Value.IdWithMotif + "]-");
+                        else if (mod.Value.LocationRestriction.Equals("Anywhere."))
                         {
                             int modStringIndex = sequenceCoverageDisplay.Length - (protein.Length - mod.Key);
-                            sequenceCoverageDisplay = sequenceCoverageDisplay.Insert(modStringIndex, "[" + mod.Value.id + "]");
+                            sequenceCoverageDisplay = sequenceCoverageDisplay.Insert(modStringIndex, "[" + mod.Value.IdWithMotif + "]");
                         }
-                        else if (mod.Value.terminusLocalization.Equals(TerminusLocalization.ProtC))
-                            sequenceCoverageDisplay = sequenceCoverageDisplay.Insert(sequenceCoverageDisplay.Length, "-[" + mod.Value.id + "]");
+                        else if (mod.Value.LocationRestriction.Equals("C-terminal."))
+                            sequenceCoverageDisplay = sequenceCoverageDisplay.Insert(sequenceCoverageDisplay.Length, "-[" + mod.Value.IdWithMotif + "]");
                     }
 
                     SequenceCoverageDisplayListWithMods.Add(sequenceCoverageDisplay);
@@ -389,22 +389,23 @@ namespace EngineLayer
                             foreach (var mod in pep.AllModsOneIsNterminus)
                             {
                                 int tempPepNumTotal = 0; //For one mod, The total Pep Num
-                                if (!mod.Value.modificationType.Contains("Common Variable") && !mod.Value.modificationType.Contains("Common Fixed") && !mod.Value.terminusLocalization.Equals(TerminusLocalization.PepC) && !mod.Value.terminusLocalization.Equals(TerminusLocalization.NPep))
+                                if (!mod.Value.ModificationType.Contains("Common Variable") && !mod.Value.ModificationType.Contains("Common Fixed") && !mod.Value.LocationRestriction.Equals(ModLocationOnPeptideOrProtein.PepC) && !mod.Value.LocationRestriction.Equals(ModLocationOnPeptideOrProtein.NPep))
                                 {
                                     int tempIndexInProtein;
-                                    if (mod.Value.terminusLocalization.Equals(TerminusLocalization.NProt))
+                                    if (mod.Value.LocationRestriction.Equals("N-terminal."))
                                         tempIndexInProtein = 1;
-                                    else if (mod.Value.terminusLocalization.Equals(TerminusLocalization.Any))
+                                    else if (mod.Value.LocationRestriction.Equals("Anywhere."))
                                     {
                                         tempIndexInProtein = pep.OneBasedStartResidueInProtein + mod.Key - 2;
                                     }
-                                    else if (mod.Value.terminusLocalization.Equals(TerminusLocalization.ProtC))
+                                    else if (mod.Value.LocationRestriction.Equals("C-terminal."))
                                         tempIndexInProtein = protein.Length;
                                     else
-                                        // In case it's a peptide mod, skip!
+                                        // In case it's a peptide terminal mod, skip!
+                                        // we don't want this annotated in the protein's modifications
                                         continue;
 
-                                    if (tempModIndex.Contains(tempIndexInProtein) && tempPepModValues[tempModIndex.IndexOf(tempIndexInProtein)] == mod.Value.id)
+                                    if (tempModIndex.Contains(tempIndexInProtein) && tempPepModValues[tempModIndex.IndexOf(tempIndexInProtein)] == mod.Value.IdWithMotif)
                                     {
                                         tempPepModTotals[tempModIndex.IndexOf(tempIndexInProtein)] += 1;
                                     }
@@ -419,7 +420,7 @@ namespace EngineLayer
                                             }
                                         }
                                         tempPepTotals.Add(tempPepNumTotal);
-                                        tempPepModValues.Add(mod.Value.id);
+                                        tempPepModValues.Add(mod.Value.IdWithMotif);
                                         tempPepModTotals.Add(1);
                                     }
                                 }
@@ -454,7 +455,7 @@ namespace EngineLayer
         public ProteinGroup ConstructSubsetProteinGroup(string fullFilePath)
         {
             var allPsmsForThisFile = new HashSet<PeptideSpectralMatch>(this.AllPsmsBelowOnePercentFDR.Where(p => p.FullFilePath.Equals(fullFilePath)));
-            var allPeptidesForThisFile = new HashSet<PeptideWithSetModifications>(allPsmsForThisFile.SelectMany(p => p.CompactPeptides.SelectMany(b => b.Value.Item2)));
+            var allPeptidesForThisFile = new HashSet<PeptideWithSetModifications>(allPsmsForThisFile.SelectMany(p => p.BestMatchingPeptides.Select(v => v.Peptide)));
             var allUniquePeptidesForThisFile = new HashSet<PeptideWithSetModifications>(this.UniquePeptides.Intersect(allPeptidesForThisFile));
 
             ProteinGroup subsetPg = new ProteinGroup(this.Proteins, allPeptidesForThisFile, allUniquePeptidesForThisFile)

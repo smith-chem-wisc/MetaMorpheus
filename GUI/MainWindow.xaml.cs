@@ -30,6 +30,7 @@ namespace MetaMorpheusGUI
         private readonly ObservableCollection<PreRunTask> StaticTasksObservableCollection = new ObservableCollection<PreRunTask>();
         private readonly ObservableCollection<RawDataForDataGrid> SelectedRawFiles = new ObservableCollection<RawDataForDataGrid>();
         private ObservableCollection<InRunTask> DynamicTasksObservableCollection;
+        private bool WarnedAboutThermoAlready = false;
 
         public MainWindow()
         {
@@ -262,12 +263,21 @@ namespace MetaMorpheusGUI
             }
             else
             {
-                foreach (var uu in SpectraFilesObservableCollection)
+                var newFiles = e.StringList.ToList();
+                foreach (var oldFile in SpectraFilesObservableCollection)
                 {
-                    uu.Use = false;
+                    if (!newFiles.Contains(oldFile.FilePath))
+                    {
+                        oldFile.Use = false;
+                    }
                 }
-                foreach (var newRawData in e.StringList)
+
+                var files = SpectraFilesObservableCollection.Select(p => p.FilePath).ToList();
+                foreach (var newRawData in newFiles.Where(p => !files.Contains(p)))
+                {
                     SpectraFilesObservableCollection.Add(new RawDataForDataGrid(newRawData));
+                }
+
                 UpdateOutputFolderTextbox();
             }
         }
@@ -465,28 +475,36 @@ namespace MetaMorpheusGUI
             switch (theExtension)
             {
                 case ".raw":
-                    // check for MSFileReader and display a warning if the expected DLLs are not found
-                    var versionCheckerResult = MyFileManager.ValidateThermoMsFileReaderVersion();
-
-                    if (versionCheckerResult.Equals(MyFileManager.ThermoMsFileReaderVersionCheck.IncorrectVersion))
+                    if (!WarnedAboutThermoAlready)
                     {
-                        GuiWarnHandler(null, new StringEventArgs("Warning! Thermo MSFileReader is not version 3.0 SP2; a crash may result from searching this .raw file", null));
-                    }
-                    else if (versionCheckerResult.Equals(MyFileManager.ThermoMsFileReaderVersionCheck.DllsNotFound))
-                    {
-                        GuiWarnHandler(null, new StringEventArgs("Warning! Cannot find Thermo MSFileReader (v3.0 SP2 is preferred); a crash may result from searching this .raw file", null));
+                        // check for MSFileReader and display a warning if the expected DLLs are not found
+                        var versionCheckerResult = MyFileManager.ValidateThermoMsFileReaderVersion();
+
+                        if (versionCheckerResult.Equals(MyFileManager.ThermoMsFileReaderVersionCheck.IncorrectVersion))
+                        {
+                            GuiWarnHandler(null, new StringEventArgs("Warning! Thermo MSFileReader is not version 3.0 SP2; a crash may result from searching this .raw file", null));
+                        }
+                        else if (versionCheckerResult.Equals(MyFileManager.ThermoMsFileReaderVersionCheck.DllsNotFound))
+                        {
+                            GuiWarnHandler(null, new StringEventArgs("Warning! Cannot find Thermo MSFileReader (v3.0 SP2 is preferred); a crash may result from searching this .raw file", null));
+                        }
+                        else if (versionCheckerResult.Equals(MyFileManager.ThermoMsFileReaderVersionCheck.SomeDllsMissing))
+                        {
+                            GuiWarnHandler(null, new StringEventArgs("Warning! Found only some of the expected Thermo MSFileReader .dll files; a crash may result from searching this .raw file", null));
+                        }
+
+                        // check for ManagedThermoHelperLayer.dll and display a warning if it's not found
+                        // this is one hacky way of checking if the user has C++ redistributable installed
+                        string assumedManagedThermoHelperLayerDllPath = Path.Combine(Environment.CurrentDirectory, "ManagedThermoHelperLayer.dll");
+                        if (!File.Exists(assumedManagedThermoHelperLayerDllPath))
+                        {
+                            GuiWarnHandler(null, new StringEventArgs("Warning! Cannot find Microsoft Visual C++ Redistributable; " +
+                                "a crash may result from searching this .raw file. If you have just installed the C++ redistributable, " +
+                                "please uninstall and reinstall MetaMorpheus", null));
+                        }
                     }
 
-                    // check for ManagedThermoHelperLayer.dll and display a warning if it's not found
-                    // this is one hacky way of checking if the user has C++ redistributable installed
-                    string assumedManagedThermoHelperLayerDllPath = Path.Combine(Environment.CurrentDirectory, "ManagedThermoHelperLayer.dll");
-                    if (!File.Exists(assumedManagedThermoHelperLayerDllPath))
-                    {
-                        GuiWarnHandler(null, new StringEventArgs("Warning! Cannot find Microsoft Visual C++ Redistributable; " +
-                            "a crash may result from searching this .raw file. If you have just installed the C++ redistributable, " +
-                            "please uninstall and reinstall MetaMorpheus", null));
-                    }
-
+                    WarnedAboutThermoAlready = true;
                     goto case ".mzml";
 
                 case ".mgf":
@@ -519,7 +537,7 @@ namespace MetaMorpheusGUI
                         {
                             try
                             {
-                                GlobalVariables.AddMods(UsefulProteomicsDatabases.ProteinDbLoader.GetPtmListFromProteinXml(draggedFilePath).OfType<ModificationWithLocation>());
+                                GlobalVariables.AddMods(UsefulProteomicsDatabases.ProteinDbLoader.GetPtmListFromProteinXml(draggedFilePath).OfType<Modification>());
 
                                 PrintErrorsReadingMods();
                             }
