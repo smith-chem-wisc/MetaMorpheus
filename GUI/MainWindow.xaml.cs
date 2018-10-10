@@ -1416,7 +1416,7 @@ namespace MetaMorpheusGUI
         // handle window closing
         private void MainWindow_Closing(object sender, CancelEventArgs e)
         {
-            if (!GuiGlobalParams.AskCloseWindow)
+            if (!GuiGlobalParams.DisableCloseWindow)
             {
                 e.Cancel = true;
                 var exit = MessageBox.Show("Are you sure?", "Exit MetaMorpheus", MessageBoxButton.YesNo, MessageBoxImage.Question);
