@@ -85,6 +85,7 @@ namespace Test
             var xlResultsToml = File.ReadAllLines(Path.Combine(outputFolder, @"XLSearchTOML\xl_intra_fdr.tsv"));
 
             Assert.That(xlResults.SequenceEqual(xlResultsToml));
+            Directory.Delete(outputFolder, true);
         }
 
         [Test]

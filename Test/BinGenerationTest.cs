@@ -69,6 +69,9 @@ namespace Test
                 null);
 
             Assert.AreEqual(3, File.ReadLines(Path.Combine(output_folder, @"MassDifferenceHistogram.tsv")).Count());
+            Directory.Delete(output_folder, true);
+            File.Delete(proteinDbFilePath);
+            File.Delete(mzmlFilePath);
         }
 
         [Test]
@@ -128,6 +131,10 @@ namespace Test
                 new List<DbForTask> { new DbForTask(proteinDbFilePath, false) },
                 new List<string> { mzmlFilePath1, mzmlFilePath2, },
                 null);
+            Directory.Delete(output_folder, true);
+            File.Delete(proteinDbFilePath);
+            File.Delete(mzmlFilePath1);
+            File.Delete(mzmlFilePath2);
         }
     }
 }

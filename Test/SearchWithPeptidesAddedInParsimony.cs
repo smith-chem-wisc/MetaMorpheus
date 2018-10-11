@@ -80,6 +80,9 @@ namespace Test
             st.RunTask(outputFolder,
                 new List<DbForTask> { new DbForTask(xmlName, false) },
                 new List<string> { mzmlName }, "");
+            Directory.Delete(outputFolder, true);
+            File.Delete(mzmlName);
+            File.Delete(xmlName);
         }
     }
 }

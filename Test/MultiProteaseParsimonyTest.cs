@@ -763,6 +763,7 @@ namespace Test
             var protGroups = Path.Combine(thisTaskOutputFolder, "AllProteinGroups.tsv");
 
             Assert.AreEqual(7, File.ReadLines(protGroups).Count());
+            Directory.Delete(outputFolder, true);
         }
         /// <summary>
         /// In this test, the peptide sequence ABC  results in a unique peptide for protein 1 when the sample is digested with protease alpha.

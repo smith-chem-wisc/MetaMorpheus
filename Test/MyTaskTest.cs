@@ -94,9 +94,11 @@ namespace Test
             string xmlName = "okk.xml";
             ProteinDbWriter.WriteXmlDatabase(new Dictionary<string, HashSet<Tuple<int, Modification>>>(), new List<Protein> { ParentProtein, proteinWithChain }, xmlName);
 
+            string outputFolder = Path.Combine(TestContext.CurrentContext.TestDirectory, @"TestEverythingRunner");
             // RUN!
-            var engine = new EverythingRunnerEngine(taskList, new List<string> { mzmlName }, new List<DbForTask> { new DbForTask(xmlName, false) }, Environment.CurrentDirectory);
+            var engine = new EverythingRunnerEngine(taskList, new List<string> { mzmlName }, new List<DbForTask> { new DbForTask(xmlName, false) }, outputFolder);
             engine.Run();
+            Directory.Delete(outputFolder, true);
         }
 
         [Test]
@@ -191,9 +193,14 @@ namespace Test
             string xmlName = "okk.xml";
             ProteinDbWriter.WriteXmlDatabase(new Dictionary<string, HashSet<Tuple<int, Modification>>>(), new List<Protein> { ParentProtein, proteinWithChain1, proteinWithChain2 }, xmlName);
 
+            string outputFolder = Path.Combine(TestContext.CurrentContext.TestDirectory, @"TestMultipleFilesRunner");
             // RUN!
-            var engine = new EverythingRunnerEngine(taskList, new List<string> { mzmlName1, mzmlName2 }, new List<DbForTask> { new DbForTask(xmlName, false) }, Environment.CurrentDirectory);
+            var engine = new EverythingRunnerEngine(taskList, new List<string> { mzmlName1, mzmlName2 }, new List<DbForTask> { new DbForTask(xmlName, false) }, outputFolder);
             engine.Run();
+            Directory.Delete(outputFolder, true);
+            File.Delete(xmlName);
+            File.Delete(mzmlName1);
+            File.Delete(mzmlName2);
         }
 
         [Test]
@@ -265,6 +272,9 @@ namespace Test
             // RUN!
             var theStringResult = task.RunTask(outputFolder, new List<DbForTask> { new DbForTask(xmlName, false) }, new List<string> { mzmlName }, "taskId1").ToString();
             Assert.IsTrue(theStringResult.Contains("All target PSMS within 1% FDR: 1"));
+            Directory.Delete(outputFolder, true);
+            File.Delete(xmlName);
+            File.Delete(mzmlName);
         }
 
         [Test]
@@ -325,6 +335,9 @@ namespace Test
             // RUN!
             var theStringResult = task1.RunTask(outputFolder, new List<DbForTask> { new DbForTask(xmlName, false) }, new List<string> { mzmlName }, "taskId1").ToString();
             Assert.IsTrue(theStringResult.Contains("Modifications added: 1"));
+            Directory.Delete(outputFolder, true);
+            File.Delete(xmlName);
+            File.Delete(mzmlName);
         }
 
         [Test]
@@ -395,8 +408,8 @@ namespace Test
             string mzmlName = @"singleProteinWithRepeatedMods.mzML";
             IO.MzML.MzmlMethods.CreateAndWriteMyMzmlWithCalibratedSpectra(myMsDataFile, mzmlName, false);
 
-            string outputFolderInThisTest = MySetUpClass.outputFolder;
-            var engine = new EverythingRunnerEngine(taskList, new List<string> { mzmlName }, new List<DbForTask> { new DbForTask(xmlName, false) }, Environment.CurrentDirectory);
+            string outputFolder = Path.Combine(TestContext.CurrentContext.TestDirectory, @"TestMultipleFilesRunner");
+            var engine = new EverythingRunnerEngine(taskList, new List<string> { mzmlName }, new List<DbForTask> { new DbForTask(xmlName, false) }, outputFolder);
             engine.Run();
 
             string line;
@@ -413,6 +426,9 @@ namespace Test
                 }
             }
             Assert.IsTrue(foundD);
+            Directory.Delete(outputFolder, true);
+            File.Delete(mzmlName);
+            File.Delete(xmlName);
         }
 
         [Test]
@@ -436,7 +452,7 @@ namespace Test
             // test single file output
             HashSet<string> expectedFiles = new HashSet<string> {
                 "AllPeptides.psmtsv", "AllProteinGroups.tsv", "AllPSMs.psmtsv", "AllPSMs_FormattedForPercolator.tsv", "AllQuantifiedPeaks.tsv",
-                "AllQuantifiedPeptides_BaseSequences.tsv", "AllQuantifiedPeptides_FullSequences.tsv", "prose.txt", "results.txt", "SearchTaskconfig.toml" };
+                "AllQuantifiedPeptides_BaseSequences.tsv", "AllQuantifiedPeptides_FullSequences.tsv", "prose.txt", "results.txt" };
 
             HashSet<string> files = new HashSet<string>(Directory.GetFiles(Path.Combine(thisTaskOutputFolder, "SingleMassSpectraFileOutput")).Select(v => Path.GetFileName(v)));
 
@@ -466,6 +482,12 @@ namespace Test
             extraFiles = files.Except(expectedFiles);
 
             Assert.That(files.SetEquals(expectedFiles));
+
+            files = new HashSet<string>(Directory.GetFiles(Path.Combine(thisTaskOutputFolder, "Task Settings")).Select(v => Path.GetFileName(v)));
+            expectedFiles = new HashSet<string> {
+                "MultipleMassSpectraFileOutputconfig.toml", "SingleMassSpectraFileOutputconfig.toml" };
+            Assert.That(files.SetEquals(expectedFiles));
+            Directory.Delete(thisTaskOutputFolder, true);
         }
 
         /// <summary>
@@ -490,6 +512,7 @@ namespace Test
 
             // should have an error message...
             Assert.That(GlobalVariables.ErrorsReadingMods.Where(v => v.Contains("Hydroxyproline")).Count() > 0);
+            Directory.Delete(outputDir, true);
         }
 
         /// <summary>
@@ -512,12 +535,14 @@ namespace Test
 
             string mzmlName = @"TestData\PrunedDbSpectra.mzml";
             string fastaName = @"TestData\DbForPrunedDb.fasta";
+            string outputFolder = Path.Combine(TestContext.CurrentContext.TestDirectory, @"TestPepXmlOutput");
 
-            var engine = new EverythingRunnerEngine(taskList, new List<string> { mzmlName }, new List<DbForTask> { new DbForTask(fastaName, false) }, Environment.CurrentDirectory);
+            var engine = new EverythingRunnerEngine(taskList, new List<string> { mzmlName }, new List<DbForTask> { new DbForTask(fastaName, false) }, outputFolder);
             engine.Run();
 
-            string outputPepXmlPath = Path.Combine(TestContext.CurrentContext.TestDirectory, @"TestPepXmlOutput\Individual File Results\PrunedDbSpectra.pep.XML");
+            string outputPepXmlPath = Path.Combine(outputFolder, @"TestPepXmlOutput\Individual File Results\PrunedDbSpectra.pep.XML");
             Assert.That(File.Exists(outputPepXmlPath));
+            Directory.Delete(outputFolder, true);
         }
 
         [Test]
@@ -538,8 +563,9 @@ namespace Test
 
             string mzmlName = @"TestData\PrunedDbSpectra.mzml";
             string fastaName = @"TestData\DbForPrunedDb.fasta";
+            string outputFolder = Path.Combine(TestContext.CurrentContext.TestDirectory, @"TestPepXmlOutput");
 
-            var engine = new EverythingRunnerEngine(taskList, new List<string> { mzmlName }, new List<DbForTask> { new DbForTask(fastaName, false) }, Environment.CurrentDirectory);
+            var engine = new EverythingRunnerEngine(taskList, new List<string> { mzmlName }, new List<DbForTask> { new DbForTask(fastaName, false) }, outputFolder);
             engine.Run();
 
             string classicPath = Path.Combine(TestContext.CurrentContext.TestDirectory, @"ClassicSearch\AllPSMs.psmtsv");
@@ -550,6 +576,7 @@ namespace Test
             counts.Add(modernPsms.Count);
 
             Assert.That(modernPsms.SequenceEqual(classicPsms));
+            Directory.Delete(outputFolder, true);
         }
     }
 }
