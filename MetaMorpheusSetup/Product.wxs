@@ -257,6 +257,15 @@
       <Component Id="src_System.Xml.XPath.XDocument.dll" Guid="70f63556-f331-4c08-ac9f-3515dacbf0e9">
         <File Id="src_System.Xml.XPath.XDocument.dll" Name="System.Xml.XPath.XDocument.dll" Source="$(var.GUI_TargetDir)System.Xml.XPath.XDocument.dll" />
       </Component>
+      <Component Id="src_OxyPlot.dll">
+        <File Id="src_OxyPlot.dll" Name="OxyPlot.dll" Source="$(var.GUI_TargetDir)OxyPlot.dll" />
+      </Component>
+      <Component Id="src_OxyPlot.Wpf.dll">
+        <File Id="src_OxyPlot.Wpf.dll" Name="OxyPlot.Wpf.dll" Source="$(var.GUI_TargetDir)OxyPlot.Wpf.dll" />
+      </Component>
+      <Component Id="src_itextsharp.dll">
+        <File Id="src_itextsharp.dll" Name="itextsharp.dll" Source="$(var.GUI_TargetDir)itextsharp.dll" />
+      </Component>
     </ComponentGroup>
   </Fragment>
 
