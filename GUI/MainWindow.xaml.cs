@@ -534,7 +534,7 @@ namespace MetaMorpheusGUI
                         {
                             try
                             {
-                                GlobalVariables.AddMods(UsefulProteomicsDatabases.ProteinDbLoader.GetPtmListFromProteinXml(draggedFilePath).OfType<Modification>());
+                                GlobalVariables.AddMods(UsefulProteomicsDatabases.ProteinDbLoader.GetPtmListFromProteinXml(draggedFilePath).OfType<Modification>(), true);
 
                                 PrintErrorsReadingMods();
                             }
