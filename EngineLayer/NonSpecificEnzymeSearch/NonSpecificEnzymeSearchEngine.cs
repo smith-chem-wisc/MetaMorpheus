@@ -90,6 +90,11 @@ namespace EngineLayer.NonSpecificEnzymeSearch
                         }
                     }
 
+                    if(scan.OneBasedScanNumber==1800)
+                    {
+                        int max = scoringTable.Max();
+                    }
+
                     // done with initial scoring; refine scores and create PSMs
                     if (idsOfPeptidesPossiblyObserved.Any())
                     {
@@ -143,7 +148,7 @@ namespace EngineLayer.NonSpecificEnzymeSearch
             //all masses in N and CTerminalMasses are b-ion masses, which are one water away from a full peptide
             int localminPeptideLength = commonParameters.DigestionParams.MinPeptideLength;
 
-            for (int i = localminPeptideLength; i < fragments.Count; i++)
+            for (int i = localminPeptideLength-1; i < fragments.Count; i++) //minus one start, because fragment 1 is at index 0
             {
                 Product fragment = fragments[i];
                 double theoMass = fragment.NeutralMass - DissociationTypeCollection.GetMassShiftFromProductType(fragment.ProductType) + WaterMonoisotopicMass;
@@ -305,6 +310,7 @@ namespace EngineLayer.NonSpecificEnzymeSearch
             {
                 PeptideSpectralMatch bestPsm = null;
                 double lowestQ = double.MaxValue;
+                int bestIndex = -1;
                 foreach (int index in indexesOfInterest) //foreach category
                 {
                     PeptideSpectralMatch currentPsm = AllPsms[index][i];
@@ -314,8 +320,18 @@ namespace EngineLayer.NonSpecificEnzymeSearch
                         if (currentQValue < lowestQ //if the new one is better
                             || (currentQValue == lowestQ && currentPsm.Score > bestPsm.Score))
                         {
+                            if(bestIndex!=-1)
+                            {
+                                //remove the old one so we don't use it for fdr later
+                                AllPsms[bestIndex][i] = null;
+                            }
                             bestPsm = currentPsm;
                             lowestQ = currentQValue;
+                            bestIndex = index;
+                        }
+                        else //remove the old one so we don't use it for fdr later
+                        {
+                            AllPsms[index][i] = null;
                         }
                     }
                 }
@@ -324,6 +340,21 @@ namespace EngineLayer.NonSpecificEnzymeSearch
                     bestPsmsList.Add(bestPsm);
                 }
             }
+
+            //It's probable that psms from some categories were removed by psms from other categories.
+            //however, the fdr is still affected by their presence, since it was calculated before their removal.
+            foreach (var psmsArray in AllPsms)
+            {
+                if (psmsArray != null)
+                {
+                    var cleanedPsmsArray = psmsArray.Where(b => b != null).OrderByDescending(b => b.Score)
+                       .ThenBy(b => b.PeptideMonisotopicMass.HasValue ? Math.Abs(b.ScanPrecursorMass - b.PeptideMonisotopicMass.Value) : double.MaxValue)
+                       .ToList();
+
+                    new FdrAnalysisEngine(cleanedPsmsArray, numNotches, commonParameters, new List<string> { taskId }).Run();
+                }
+            }
+
             return bestPsmsList.OrderBy(b => b.FdrInfo.QValue).ThenByDescending(b => b.Score).ToList();
         }
     }
