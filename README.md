@@ -42,7 +42,7 @@ UniProt .XML or .fasta format; may be used in compressed (.gz) format. If you wo
 ## Test Installation (Windows GUI)
 
 1. Download the latest MetaMorpheusInstaller.msi [release](https://github.com/smith-chem-wisc/MetaMorpheus/releases), and install MetaMorpheus.
-2. Download the example spectra and database files from [https://uwmadison.box.com/v/MetaMorpheusPublic](https://uwmadison.box.com/s/7rjo9sohki6xrgltr0r56fjpyb9ni8cp).
+2. Download the example spectra and database files from [https://uwmadison.box.com/v/MetaMorpheusPublic](https://uwmadison.box.com/s/2u42qp0b8jllywqzeungmjj04gplw5in).
 3. Open MetaMorpheusGUI.exe, and drag and drop the raw spectra files and the compressed Uniprot .xml database into MetaMorpheus.
 4. Add a series of Tasks to make a workflow for MetaMorpheus to follow. Drag the .toml files (these files store MetaMorpheus's search parameters) **IN ORDER** (Task1 - Task5) into the application.
   * Task1SearchExample.toml - the standard search functionality.
@@ -64,7 +64,7 @@ UniProt .XML or .fasta format; may be used in compressed (.gz) format. If you wo
 ## Test Installation (Windows Command Line)
 
 1. Download the latest [release](https://github.com/smith-chem-wisc/MetaMorpheus/releases). Extract "MetaMorpheusDotNetFrameworkAppveyor.zip" using, for example, [7-Zip](http://www.7-zip.org/).
-2. Download the example spectra and database files at [https://uwmadison.box.com/v/MetaMorpheusPublic](https://uwmadison.box.com/s/7rjo9sohki6xrgltr0r56fjpyb9ni8cp) to the folder with the CMD.exe executable.
+2. Download the example spectra and database files at [https://uwmadison.box.com/v/MetaMorpheusPublic](https://uwmadison.box.com/s/2u42qp0b8jllywqzeungmjj04gplw5in) to the folder with the CMD.exe executable.
 3. Run the command:
 
 ```
@@ -76,7 +76,7 @@ CMD.exe -t Task1SearchExample.toml Task2CalibrationExample.toml Task3SearchExamp
 ## Test Installation (.NET Core)
 
 1. Download the latest [release](https://github.com/smith-chem-wisc/MetaMorpheus/releases). Extract files from "MetaMorpheusDotNetCoreAppveyor.zip".
-2. Download the files at [https://uwmadison.box.com/v/MetaMorpheusPublic](https://uwmadison.box.com/s/7rjo9sohki6xrgltr0r56fjpyb9ni8cp) to the folder with the CMD.dll file.
+2. Download the files at [https://uwmadison.box.com/v/MetaMorpheusPublic](https://uwmadison.box.com/s/2u42qp0b8jllywqzeungmjj04gplw5in) to the folder with the CMD.dll file.
 3. Run the command:
 
 ```
