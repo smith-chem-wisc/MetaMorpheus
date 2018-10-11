@@ -84,8 +84,6 @@ namespace EngineLayer.NonSpecificEnzymeSearch
                         }
                     }
 
-
-
                     // done with initial scoring; refine scores and create PSMs
                     if (idsOfPeptidesPossiblyObserved.Any())
                     {
