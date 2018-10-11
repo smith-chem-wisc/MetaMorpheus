@@ -37,7 +37,7 @@ namespace MetaMorpheusGUI
         private Dictionary<ProductType, double> productTypeToYOffset;
         private Dictionary<ProductType, Color> productTypeToColor;
         private SolidColorBrush modificationAnnotationColor;
-        Regex illegalInFileName = new Regex(@"[\\/:*?""<>|]");
+        private Regex illegalInFileName = new Regex(@"[\\/:*?""<>|]");
 
         public MetaDraw()
         {
@@ -60,13 +60,13 @@ namespace MetaMorpheusGUI
 
         private void SetUpDictionaries()
         {
-            // colors of each fragment
+            // colors of each fragment to annotate on base sequence
             productTypeToColor = ((ProductType[])Enum.GetValues(typeof(ProductType))).ToDictionary(p => p, p => Colors.Aqua);
             productTypeToColor[ProductType.b] = Colors.Blue;
             productTypeToColor[ProductType.y] = Colors.Purple;
-            productTypeToColor[ProductType.zPlusOne] = Colors.SeaGreen;
-            productTypeToColor[ProductType.c] = Colors.Orange;
-            
+            productTypeToColor[ProductType.zPlusOne] = Colors.Orange;
+            productTypeToColor[ProductType.c] = Colors.Gold;
+
             // offset for annotation on base sequence
             productTypeToYOffset = ((ProductType[])Enum.GetValues(typeof(ProductType))).ToDictionary(p => p, p => 0.0);
             productTypeToYOffset[ProductType.b] = 50;
@@ -164,9 +164,16 @@ namespace MetaMorpheusGUI
             MetaDrawPsm row = (MetaDrawPsm)dataGridScanNums.SelectedItem;
             System.Reflection.PropertyInfo[] temp = row.GetType().GetProperties();
 
-            for (int i = 4; i < temp.Length; i++)
+            for (int i = 0; i < temp.Length; i++)
             {
-                propertyView.Rows.Add(temp[i].Name, temp[i].GetValue(row, null));
+                if (temp[i].Name == nameof(row.MatchedIons))
+                {
+                    propertyView.Rows.Add(temp[i].Name, string.Join(", ", row.MatchedIons.Select(p => p.Annotation)));
+                }
+                else
+                {
+                    propertyView.Rows.Add(temp[i].Name, temp[i].GetValue(row, null));
+                }
             }
             dataGridProperties.Items.Refresh();
             DrawPsm(row.Ms2ScanNumber, row.FullSequence);
@@ -301,6 +308,7 @@ namespace MetaMorpheusGUI
                     BaseDraw.botSplittingDrawing(canvas, new Point(residue * spacing + 8,
                         productTypeToYOffset[ion.NeutralTheoreticalProduct.ProductType]), productTypeToColor[ion.NeutralTheoreticalProduct.ProductType], annotation);
                 }
+                // don't draw diagnostic ions, precursor ions, etc
             }
 
             // draw modifications
@@ -316,75 +324,75 @@ namespace MetaMorpheusGUI
             (sender as DataGrid).UnselectAll();
         }
 
-        private void PDFButton_Click(object sender, RoutedEventArgs e)
-        {
-            if (dataGridScanNums.SelectedCells.Count == 0)
-            {
-                MessageBox.Show("Please select at least one scan to export");
-            }
+        //private void PDFButton_Click(object sender, RoutedEventArgs e)
+        //{
+        //    if (dataGridScanNums.SelectedCells.Count == 0)
+        //    {
+        //        MessageBox.Show("Please select at least one scan to export");
+        //    }
 
-            int num = dataGridScanNums.SelectedItems.Count;
-            string writeDirectory = Path.Combine(Directory.GetParent(tsvResultsFilePath).FullName, "PDF");
+        //    int num = dataGridScanNums.SelectedItems.Count;
+        //    string writeDirectory = Path.Combine(Directory.GetParent(tsvResultsFilePath).FullName, "PDF");
 
-            if (!Directory.Exists(writeDirectory))
-            {
-                Directory.CreateDirectory(writeDirectory);
-            }
+        //    if (!Directory.Exists(writeDirectory))
+        //    {
+        //        Directory.CreateDirectory(writeDirectory);
+        //    }
 
-            foreach (object selectedItem in dataGridScanNums.SelectedItems)
-            {
-                MetaDrawPsm psm = (MetaDrawPsm)selectedItem;
-                string myString = illegalInFileName.Replace(psm.FullSequence, "").Substring(0, 40);
-                ExportToPdf(psm, Path.Combine(writeDirectory, psm.Ms2ScanNumber + "_" + myString + ".pdf"));
-            }
+        //    foreach (object selectedItem in dataGridScanNums.SelectedItems)
+        //    {
+        //        MetaDrawPsm psm = (MetaDrawPsm)selectedItem;
+        //        string myString = illegalInFileName.Replace(psm.FullSequence, "").Substring(0, 40);
+        //        ExportToPdf(psm, Path.Combine(writeDirectory, psm.Ms2ScanNumber + "_" + myString + ".pdf"));
+        //    }
 
-            dataGridScanNums.SelectedItem = dataGridScanNums.SelectedItem;
-            MessageBox.Show(string.Format("{0} PDFs exported to " + writeDirectory, num));
-        }
+        //    dataGridScanNums.SelectedItem = dataGridScanNums.SelectedItem;
+        //    MessageBox.Show(string.Format("{0} PDFs exported to " + writeDirectory, num));
+        //}
 
-        private void ExportToPdf(MetaDrawPsm psm, string path)
-        {
-            System.Reflection.PropertyInfo[] temp = psm.GetType().GetProperties();
+        //private void ExportToPdf(MetaDrawPsm psm, string path)
+        //{
+        //    System.Reflection.PropertyInfo[] temp = psm.GetType().GetProperties();
 
-            for (int i = 4; i < temp.Length; i++)
-            {
-                propertyView.Rows.Add(temp[i].Name, temp[i].GetValue(psm, null));
-            }
-            dataGridProperties.Items.Refresh();
-            DrawPsm(psm.Ms2ScanNumber, psm.FullSequence);
+        //    for (int i = 4; i < temp.Length; i++)
+        //    {
+        //        propertyView.Rows.Add(temp[i].Name, temp[i].GetValue(psm, null));
+        //    }
+        //    dataGridProperties.Items.Refresh();
+        //    DrawPsm(psm.Ms2ScanNumber, psm.FullSequence);
 
-            double wid = 0;
-            dataGridProperties.HorizontalScrollBarVisibility = ScrollBarVisibility.Disabled;
-            dataGridProperties.VerticalScrollBarVisibility = ScrollBarVisibility.Disabled;
-            foreach (DataGridColumn col in dataGridProperties.Columns)
-            {
-                wid += col.ActualWidth;
-            }
-            PDFOutPut.Background = Brushes.White;
-            PDFOutPut.ColumnDefinitions[0].Width = new GridLength(wid + 10);
-            PDFOutPut.Measure(new Size(wid + gbPSM.ActualWidth + 10, 600));
-            PDFOutPut.Arrange(new Rect(new Size(wid + gbPSM.ActualWidth + 10, 600)));
-            dataGridProperties.Measure(new Size(wid + 22, 600));
-            dataGridProperties.Arrange(new Rect(new Size(wid + 5, 600)));
+        //    double wid = 0;
+        //    dataGridProperties.HorizontalScrollBarVisibility = ScrollBarVisibility.Disabled;
+        //    dataGridProperties.VerticalScrollBarVisibility = ScrollBarVisibility.Disabled;
+        //    foreach (DataGridColumn col in dataGridProperties.Columns)
+        //    {
+        //        wid += col.ActualWidth;
+        //    }
+        //    PDFOutPut.Background = Brushes.White;
+        //    PDFOutPut.ColumnDefinitions[0].Width = new GridLength(wid + 10);
+        //    PDFOutPut.Measure(new Size(wid + gbPSM.ActualWidth + 10, 600));
+        //    PDFOutPut.Arrange(new Rect(new Size(wid + gbPSM.ActualWidth + 10, 600)));
+        //    dataGridProperties.Measure(new Size(wid + 22, 600));
+        //    dataGridProperties.Arrange(new Rect(new Size(wid + 5, 600)));
 
-            dataGridProperties.Arrange(new Rect(new Size(wid + 5, 600)));
-            var rtb = new RenderTargetBitmap((int)(wid + gbPSM.ActualWidth) + 11, 600, 96, 96, PixelFormats.Pbgra32);
+        //    dataGridProperties.Arrange(new Rect(new Size(wid + 5, 600)));
+        //    var rtb = new RenderTargetBitmap((int)(wid + gbPSM.ActualWidth) + 11, 600, 96, 96, PixelFormats.Pbgra32);
 
-            rtb.Render(PDFOutPut);
-            BitmapFrame bf = BitmapFrame.Create(rtb);
+        //    rtb.Render(PDFOutPut);
+        //    BitmapFrame bf = BitmapFrame.Create(rtb);
 
-            var encoder = new BmpBitmapEncoder();
-            encoder.Frames.Add(bf);
-            using (var stream = new MemoryStream())
-            {
-                encoder.Save(stream);
-                var img = System.Drawing.Image.FromStream(stream);
-                PdfWriter.WriteToPdf(img, (int)(wid + gbPSM.ActualWidth) + 11, 600, path);
-            }
+        //    var encoder = new BmpBitmapEncoder();
+        //    encoder.Frames.Add(bf);
+        //    using (var stream = new MemoryStream())
+        //    {
+        //        encoder.Save(stream);
+        //        var img = System.Drawing.Image.FromStream(stream);
+        //        PdfWriter.WriteToPdf(img, (int)(wid + gbPSM.ActualWidth) + 11, 600, path);
+        //    }
 
-            dataGridProperties.HorizontalScrollBarVisibility = ScrollBarVisibility.Visible;
-            dataGridProperties.VerticalScrollBarVisibility = ScrollBarVisibility.Visible;
-            PDFOutPut.ColumnDefinitions[0].Width = new GridLength(1, GridUnitType.Star);
-        }
+        //    dataGridProperties.HorizontalScrollBarVisibility = ScrollBarVisibility.Visible;
+        //    dataGridProperties.VerticalScrollBarVisibility = ScrollBarVisibility.Visible;
+        //    PDFOutPut.ColumnDefinitions[0].Width = new GridLength(1, GridUnitType.Star);
+        //}
     }
 }

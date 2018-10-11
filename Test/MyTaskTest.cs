@@ -21,7 +21,7 @@ namespace Test
         public static void TestEverythingRunner()
         {
             foreach (var modFile in Directory.GetFiles(@"Mods"))
-                GlobalVariables.AddMods(PtmListLoader.ReadModsFromFile(modFile, out var fmww));
+                GlobalVariables.AddMods(PtmListLoader.ReadModsFromFile(modFile, out var fmww), false);
 
             CalibrationTask task1 = new CalibrationTask
             {
@@ -105,7 +105,7 @@ namespace Test
         public static void TestMultipleFilesRunner()
         {
             foreach (var modFile in Directory.GetFiles(@"Mods"))
-                GlobalVariables.AddMods(PtmListLoader.ReadModsFromFile(modFile, out var fmww));
+                GlobalVariables.AddMods(PtmListLoader.ReadModsFromFile(modFile, out var fmww), false);
 
             CalibrationTask task1 = new CalibrationTask
             {
@@ -286,7 +286,7 @@ namespace Test
                 ModificationMotif.TryGetMotif("T", out ModificationMotif motif);
                 Modification myNewMod = new Modification(_originalId: "ok", _modificationType: "okType", _target: motif, _locationRestriction: "Anywhere.", _monoisotopicMass: 229);
 
-                GlobalVariables.AddMods(new List<Modification> { myNewMod });
+                GlobalVariables.AddMods(new List<Modification> { myNewMod }, false);
                 task1 = new GptmdTask
                 {
                     CommonParameters = new CommonParameters
@@ -369,7 +369,7 @@ namespace Test
             GlobalVariables.AddMods(new List<Modification>
             {
                 testUniqeMod
-            });
+            }, false);
 
             //create modification lists
 
@@ -507,7 +507,7 @@ namespace Test
             File.WriteAllLines(filePath, new string[] { modToWrite });
 
             // read the mod
-            GlobalVariables.AddMods(PtmListLoader.ReadModsFromFile(filePath, out var fmww));
+            GlobalVariables.AddMods(PtmListLoader.ReadModsFromFile(filePath, out var fmww), false);
             Assert.That(GlobalVariables.AllModsKnown.Where(v => v.IdWithMotif == "Hydroxyproline on P").Count() == 1);
 
             // should have an error message...

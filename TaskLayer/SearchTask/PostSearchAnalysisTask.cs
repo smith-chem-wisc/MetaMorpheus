@@ -47,6 +47,7 @@ namespace TaskLayer
             }
 
             //update all psms with peptide info
+            Parameters.AllPsms = Parameters.AllPsms.Where(psm => psm != null).ToList();
             Parameters.AllPsms.ForEach(psm => psm.ResolveAllAmbiguities());
 
             Parameters.AllPsms = Parameters.AllPsms.OrderByDescending(b => b.Score)
@@ -54,6 +55,7 @@ namespace TaskLayer
                .GroupBy(b => (b.FullFilePath, b.ScanNumber, b.PeptideMonisotopicMass)).Select(b => b.First()).ToList();
 
             CalculatePsmFdr();
+
             DoMassDifferenceLocalizationAnalysis();
             ProteinAnalysis();
             QuantificationAnalysis();
@@ -84,9 +86,16 @@ namespace TaskLayer
             // this could cause weird PSM FDR issues
 
             Status("Estimating PSM FDR...", Parameters.SearchTaskId);
-
             int massDiffAcceptorNumNotches = Parameters.NumNotches;
-            var fdrAnalysisResults = (FdrAnalysisResults)(new FdrAnalysisEngine(Parameters.AllPsms, massDiffAcceptorNumNotches, CommonParameters, new List<string> { Parameters.SearchTaskId }).Run());
+            new FdrAnalysisEngine(Parameters.AllPsms, massDiffAcceptorNumNotches, CommonParameters, new List<string> { Parameters.SearchTaskId }).Run();
+
+            // sort by q-value because of group FDR stuff
+            // e.g. multiprotease FDR, non/semi-specific protease, etc
+            Parameters.AllPsms = Parameters.AllPsms
+                .OrderBy(p => p.FdrInfo.QValue)
+                .ThenByDescending(p => p.Score)
+                .ThenBy(p => p.FdrInfo.CumulativeTarget)
+                .ToList();
 
             Status("Done estimating PSM FDR!", Parameters.SearchTaskId);
         }
@@ -439,7 +448,7 @@ namespace TaskLayer
             }
 
             PsmsGroupedByFile = filteredPsmListForOutput.GroupBy(p => p.FullFilePath);
-            
+
             foreach (var file in PsmsGroupedByFile)
             {
                 // write summary text
