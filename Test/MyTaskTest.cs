@@ -568,10 +568,10 @@ namespace Test
             var engine = new EverythingRunnerEngine(taskList, new List<string> { mzmlName }, new List<DbForTask> { new DbForTask(fastaName, false) }, outputFolder);
             engine.Run();
 
-            string classicPath = Path.Combine(TestContext.CurrentContext.TestDirectory, @"ClassicSearch\AllPSMs.psmtsv");
+            string classicPath = Path.Combine(outputFolder, @"ClassicSearch\AllPSMs.psmtsv");
             var classicPsms = File.ReadAllLines(classicPath).ToList();
 
-            string modernPath = Path.Combine(TestContext.CurrentContext.TestDirectory, @"ModernSearch\AllPSMs.psmtsv");
+            string modernPath = Path.Combine(outputFolder, @"ModernSearch\AllPSMs.psmtsv");
             var modernPsms = File.ReadAllLines(modernPath).ToList();
             counts.Add(modernPsms.Count);
 
