@@ -44,9 +44,9 @@ namespace Test
             };
 
             DigestionParams digestionParams = new DigestionParams();
-            var pwsm1 = new PeptideWithSetModifications(protein: prot1, digestionParams: digestionParams, oneBasedStartResidueInProtein: 1, oneBasedEndResidueInProtein: 3, peptideDescription: "", missedCleavages: 0, allModsOneIsNterminus: modsFor1, numFixedMods: 0);
-            var pwsm2 = new PeptideWithSetModifications(protein: prot1, digestionParams: digestionParams, oneBasedStartResidueInProtein: 4, oneBasedEndResidueInProtein: 6, peptideDescription: "", missedCleavages: 0, allModsOneIsNterminus: modsFor2, numFixedMods: 0);
-            var pwsm3 = new PeptideWithSetModifications(protein: prot1, digestionParams: digestionParams, oneBasedStartResidueInProtein: 1, oneBasedEndResidueInProtein: 6, peptideDescription: "", missedCleavages: 0, allModsOneIsNterminus: modsFor3, numFixedMods: 0);
+            var pwsm1 = new PeptideWithSetModifications(prot1, digestionParams, 1, 3, CleavageSpecificity.Unknown, "",  0,  modsFor1,  0);
+            var pwsm2 = new PeptideWithSetModifications(prot1, digestionParams, 4, 6, CleavageSpecificity.Unknown, "",  0,  modsFor2,  0);
+            var pwsm3 = new PeptideWithSetModifications(prot1, digestionParams, 1, 6, CleavageSpecificity.Unknown, "",  0,  modsFor3,  0);
 
             HashSet<PeptideWithSetModifications> peptides = new HashSet<PeptideWithSetModifications>
             {

@@ -1,5 +1,6 @@
 using System.Collections.Generic;
 using UsefulProteomicsDatabases;
+using EngineLayer;
 
 namespace TaskLayer
 {
@@ -48,6 +49,7 @@ namespace TaskLayer
             };
             WriteDecoys = true;
             WriteContaminants = true;
+            LocalFdrCategories = new List<FdrCategory> { FdrCategory.FullySpecific };
         }
 
         public bool DisposeOfFileWhenDone { get; set; }
@@ -66,6 +68,7 @@ namespace TaskLayer
         public bool DoLocalizationAnalysis { get; set; }
         public bool DoQuantification { get; set; }
         public SearchType SearchType { get; set; }
+        public List<FdrCategory> LocalFdrCategories { get; set; }
         public string CustomMdac { get; set; }
         public double MaxFragmentSize { get; set; }
         public double HistogramBinTolInDaltons { get; set; }

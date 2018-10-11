@@ -3,11 +3,8 @@ using OxyPlot;
 using OxyPlot.Axes;
 using OxyPlot.Series;
 using OxyPlot.Annotations;
-using EngineLayer.CrosslinkSearch;
-using EngineLayer;
 using System.ComponentModel;
 using MetaMorpheusGUI;
-using System.IO;
 using MassSpectrometry;
 using System.Collections.Generic;
 using Proteomics.Fragmentation;
@@ -22,10 +19,14 @@ namespace ViewModels
         private PlotModel privateModel;
 
         private static Dictionary<ProductType, OxyColor> productTypeDrawColors = new Dictionary<ProductType, OxyColor>
-        { { ProductType.b, OxyColors.Blue },
+        {
+          { ProductType.b, OxyColors.Blue },
           { ProductType.y, OxyColors.Purple },
           { ProductType.c, OxyColors.Gold },
-          { ProductType.zPlusOne, OxyColors.Orange } };
+          { ProductType.zPlusOne, OxyColors.Orange },
+          { ProductType.D, OxyColors.DodgerBlue },
+          { ProductType.M, OxyColors.Firebrick }
+        };
 
         public PlotModel Model
         {
@@ -76,9 +77,18 @@ namespace ViewModels
             {
                 foreach (var peak in psmToDraw.MatchedIons)
                 {
-                    OxyColor ionColor = productTypeDrawColors[peak.NeutralTheoreticalProduct.ProductType];
+                    OxyColor ionColor;
 
-                    int i = msDataScan.MassSpectrum.GetClosestPeakIndex(peak.NeutralTheoreticalProduct.NeutralMass.ToMz(1)).Value;
+                    if (productTypeDrawColors.ContainsKey(peak.NeutralTheoreticalProduct.ProductType))
+                    {
+                        ionColor = productTypeDrawColors[peak.NeutralTheoreticalProduct.ProductType];
+                    }
+                    else
+                    {
+                        ionColor = OxyColors.Turquoise;
+                    }
+
+                    int i = msDataScan.MassSpectrum.GetClosestPeakIndex(peak.NeutralTheoreticalProduct.NeutralMass.ToMz(peak.Charge)).Value;
 
                     // peak line
                     allIons[i] = new LineSeries();
@@ -93,7 +103,7 @@ namespace ViewModels
                     {
                         peakAnnotationText = peak.NeutralTheoreticalProduct.ProductType.ToString().ToLower() + peak.NeutralTheoreticalProduct.TerminusFragment.FragmentNumber + "-" + peak.NeutralTheoreticalProduct.NeutralLoss.ToString("F2") + " (" + peak.Mz.ToString("F3") + ")";
                     }
-                    
+
                     var peakAnnotation = new TextAnnotation();
                     peakAnnotation.TextRotation = -60;
                     peakAnnotation.Font = "Arial";
