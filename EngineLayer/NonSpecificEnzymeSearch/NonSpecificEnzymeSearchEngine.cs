@@ -59,21 +59,16 @@ namespace EngineLayer.NonSpecificEnzymeSearch
                     }
 
                     //populate ids of possibly observed with those containing allowed precursor masses
-                    List<int> binsToSearch = new List<int>();
                     int obsPrecursorFloorMz = (int)Math.Floor(commonParameters.PrecursorMassTolerance.GetMinimumValue(scan.PrecursorMass) * FragmentBinsPerDalton);
                     int obsPrecursorCeilingMz = (int)Math.Ceiling(commonParameters.PrecursorMassTolerance.GetMaximumValue(scan.PrecursorMass) * FragmentBinsPerDalton);
-                    for (int fragmentBin = obsPrecursorFloorMz; fragmentBin <= obsPrecursorCeilingMz; fragmentBin++)
-                    {
-                        binsToSearch.Add(fragmentBin);
-                    }
 
                     foreach (ProductType pt in DissociationTypeCollection.ProductsFromDissociationType[commonParameters.DissociationType].Intersect(TerminusSpecificProductTypes.ProductIonTypesFromSpecifiedTerminus[commonParameters.DigestionParams.FragmentationTerminus]).ToList())
                     {
                         int binShift = (int)Math.Round((WaterMonoisotopicMass - DissociationTypeCollection.GetMassShiftFromProductType(pt)) * FragmentBinsPerDalton);
 
-                        for (int j = 0; j < binsToSearch.Count; j++)
+                        for (int j = obsPrecursorFloorMz; j <= obsPrecursorCeilingMz; j++)
                         {
-                            int bin = binsToSearch[j] - binShift;
+                            int bin = j - binShift;
                             if (bin < FragmentIndex.Length && FragmentIndex[bin] != null)
                             {
                                 FragmentIndex[bin].ForEach(id => idsOfPeptidesPossiblyObserved.Add(id));
@@ -81,19 +76,15 @@ namespace EngineLayer.NonSpecificEnzymeSearch
                         }
                     }
 
-                    for (int j = 0; j < binsToSearch.Count; j++)
+                    for (int bin = obsPrecursorFloorMz; bin <= obsPrecursorCeilingMz; bin++)
                     {
-                        int bin = binsToSearch[j];
                         if (bin < FragmentIndexPrecursor.Length && FragmentIndexPrecursor[bin] != null)
                         {
                             FragmentIndexPrecursor[bin].ForEach(id => idsOfPeptidesPossiblyObserved.Add(id));
                         }
                     }
 
-                    if(scan.OneBasedScanNumber==1800)
-                    {
-                        int max = scoringTable.Max();
-                    }
+
 
                     // done with initial scoring; refine scores and create PSMs
                     if (idsOfPeptidesPossiblyObserved.Any())
