@@ -69,13 +69,15 @@ namespace EngineLayer.Gptmd
                 {
                     foreach (Modification mod in GetPossibleMods(psm.ScanPrecursorMass, GptmdModifications, Combos, precursorMassTolerance, pepWithSetMods))
                     {
-                        var proteinAccession = pepWithSetMods.Protein.Accession;
+                        var variantProtein = pepWithSetMods.Protein as ProteinWithAppliedVariants;
+                        var protein = variantProtein != null ? variantProtein.Protein : pepWithSetMods.Protein;
+                        var proteinAccession = protein.Accession;
 
                         for (int i = 0; i < pepWithSetMods.Length; i++)
                         {
                             int indexInProtein = pepWithSetMods.OneBasedStartResidueInProtein + i;
 
-                            if (ModFits(mod, pepWithSetMods.Protein, i + 1, pepWithSetMods.Length, indexInProtein))
+                            if (ModFits(mod, variantProtein ?? protein, i + 1, pepWithSetMods.Length, indexInProtein))
                             {
                                 if (!Mods.ContainsKey(proteinAccession))
                                 {
