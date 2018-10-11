@@ -81,6 +81,9 @@ namespace Test
                 FragmentationTerminus.N,
                 FragmentationTerminus.C
             };
+            string outputFolder = Path.Combine(TestContext.CurrentContext.TestDirectory, @"TestSemiSpecific");
+            string myFile = Path.Combine(TestContext.CurrentContext.TestDirectory, @"TestData\PrunedDbSpectra.mzml");
+            string myDatabase = Path.Combine(TestContext.CurrentContext.TestDirectory, @"TestData\DbForPrunedDb.fasta");
             foreach (FragmentationTerminus fragTerm in terminiToTest)
             {
                 SearchTask searchTask = new SearchTask()
@@ -98,9 +101,6 @@ namespace Test
                     digestionParams: new DigestionParams(searchModeType: CleavageSpecificity.Semi, fragmentationTerminus: fragTerm))
                 };
 
-                string outputFolder = Path.Combine(TestContext.CurrentContext.TestDirectory, @"TestSameSettingsOutput");
-                string myFile = Path.Combine(TestContext.CurrentContext.TestDirectory, @"TestData\PrunedDbSpectra.mzml");
-                string myDatabase = Path.Combine(TestContext.CurrentContext.TestDirectory, @"TestData\DbForPrunedDb.fasta");
                 DbForTask db = new DbForTask(myDatabase, false);
 
                 List<(string, MetaMorpheusTask)> taskList = new List<(string, MetaMorpheusTask)> { ("TestSemiSpecific", searchTask) };
@@ -111,8 +111,8 @@ namespace Test
                 string outputPath = Path.Combine(TestContext.CurrentContext.TestDirectory, @"TestSemiSpecific\AllPSMs.psmtsv");
                 var output = File.ReadAllLines(outputPath);
                 Assert.That(output.Length == 11); //if N is only producing 10 lines, then the c is not being searched with it.
-                Directory.Delete(outputFolder, true);
             }
+            Directory.Delete(outputFolder, true);
         }
                
         /// <summary>
