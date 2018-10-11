@@ -93,7 +93,7 @@ namespace Test
             GlobalVariables.AddMods(new List<Modification>
             {
                 connorMod
-            });
+            }, false);
 
             //create modification lists
             List<Modification> variableModifications = GlobalVariables.AllModsKnown.OfType<Modification>().Where
@@ -212,7 +212,7 @@ namespace Test
                 connorMod2,
                 connorMod3,
                 connorMod4
-            });
+            }, false);
 
             //create modification lists
             List<Modification> variableModifications = GlobalVariables.AllModsKnown.OfType<Modification>().Where(b => task5.CommonParameters.ListOfModsVariable.Contains
