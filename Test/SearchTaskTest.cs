@@ -148,7 +148,7 @@ namespace Test
                 Assert.That(output.Length == 12); //if N is only producing 11 lines, then the c is not being searched with it.
             }
         }
-               
+
         /// <summary>
         /// Tests that normalization in a search task works properly with an Experimental Design file read in,
         /// and crashes when that file is absent

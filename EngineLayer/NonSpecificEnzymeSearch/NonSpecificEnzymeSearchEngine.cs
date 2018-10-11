@@ -112,7 +112,7 @@ namespace EngineLayer.NonSpecificEnzymeSearch
                                         else
                                         {
                                             localPeptideSpectralMatches[i].AddOrReplace(notchAndUpdatedPeptide.Item2, thisScore, notchAndUpdatedPeptide.Item1, commonParameters.ReportAllAmbiguity, matchedIons);
-                                        }                        
+                                        }
                                     }
                                 }
                             }
@@ -137,7 +137,7 @@ namespace EngineLayer.NonSpecificEnzymeSearch
             //all masses in N and CTerminalMasses are b-ion masses, which are one water away from a full peptide
             int localminPeptideLength = commonParameters.DigestionParams.MinPeptideLength;
 
-            for (int i = localminPeptideLength-1; i < fragments.Count; i++) //minus one start, because fragment 1 is at index 0
+            for (int i = localminPeptideLength - 1; i < fragments.Count; i++) //minus one start, because fragment 1 is at index 0
             {
                 Product fragment = fragments[i];
                 double theoMass = fragment.NeutralMass - DissociationTypeCollection.GetMassShiftFromProductType(fragment.ProductType) + WaterMonoisotopicMass;
@@ -145,13 +145,13 @@ namespace EngineLayer.NonSpecificEnzymeSearch
                 if (notch >= 0)
                 {
                     PeptideWithSetModifications updatedPwsm = null;
-                    if(fragmentationTerminus == FragmentationTerminus.N)
+                    if (fragmentationTerminus == FragmentationTerminus.N)
                     {
-                        int endResidue = peptide.OneBasedStartResidueInProtein + fragment.TerminusFragment.FragmentNumber -1; //-1 for one based index
+                        int endResidue = peptide.OneBasedStartResidueInProtein + fragment.TerminusFragment.FragmentNumber - 1; //-1 for one based index
                         Dictionary<int, Modification> updatedMods = new Dictionary<int, Modification>();
-                        foreach(var mod in peptide.AllModsOneIsNterminus)
+                        foreach (var mod in peptide.AllModsOneIsNterminus)
                         {
-                            if(mod.Key<endResidue-peptide.OneBasedStartResidueInProtein) //check if we cleaved it off
+                            if (mod.Key < endResidue - peptide.OneBasedStartResidueInProtein) //check if we cleaved it off
                             {
                                 updatedMods.Add(mod.Key, mod.Value);
                             }
@@ -160,7 +160,7 @@ namespace EngineLayer.NonSpecificEnzymeSearch
                     }
                     else
                     {
-                        int startResidue = peptide.OneBasedEndResidueInProtein - fragment.TerminusFragment.FragmentNumber+1; //plus one for one based index
+                        int startResidue = peptide.OneBasedEndResidueInProtein - fragment.TerminusFragment.FragmentNumber + 1; //plus one for one based index
                         Dictionary<int, Modification> updatedMods = new Dictionary<int, Modification>();  //updateMods
                         int indexShift = startResidue - peptide.OneBasedStartResidueInProtein;
                         foreach (var mod in peptide.AllModsOneIsNterminus)
@@ -309,7 +309,7 @@ namespace EngineLayer.NonSpecificEnzymeSearch
                         if (currentQValue < lowestQ //if the new one is better
                             || (currentQValue == lowestQ && currentPsm.Score > bestPsm.Score))
                         {
-                            if(bestIndex!=-1)
+                            if (bestIndex != -1)
                             {
                                 //remove the old one so we don't use it for fdr later
                                 AllPsms[bestIndex][i] = null;
