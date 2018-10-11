@@ -306,7 +306,7 @@ namespace Test
             //tests without .params files
             xlSearchTask.RunTask(folderPath, new List<DbForTask> { db }, new List<string> { myFile }, "normal");
 
-            var lines = File.ReadAllLines(Path.Combine(folderPath, @"XL_Intralinks.tsv.tsv"));
+            var lines = File.ReadAllLines(Path.Combine(folderPath, @"XL_Intralinks.tsv"));
             Assert.That(lines.Length == 2);
             Directory.Delete(folderPath, true);
         }
