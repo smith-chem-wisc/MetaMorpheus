@@ -58,7 +58,7 @@
                         <!--<RadioButton x:Name="RbSearchCrosslink" Content="Crosslink Search" GroupName="SearchType"></RadioButton>-->
                         <!--<RadioButton x:Name="RbSearchGlyco" Content="Glyco Search" GroupName="SearchType" Grid.Column="1"></RadioButton>-->
                         <StackPanel Orientation="Horizontal" Grid.Row="1" Grid.Column="0" Margin="5">
-                            <Label x:Name="lblXLprecusorMsTl"  Content="Precusor mass tolerance" />
+                            <Label x:Name="lblXLprecusorMsTl"  Content="Precursor mass tolerance" />
                             <TextBox x:Name="XLPrecusorMsTlTextBox" PreviewTextInput="CheckIfNumber" Width="45" />
                             <ComboBox x:Name="cbbXLprecusorMsTl" />
                         </StackPanel>
