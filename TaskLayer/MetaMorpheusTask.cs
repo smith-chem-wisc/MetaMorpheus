@@ -492,39 +492,15 @@ namespace TaskLayer
                 ser.Serialize(file, fragmentIndex);
         }
 
-        // create new method check if indexes file exists IF partition > 1
-        private static string CheckIndexesFolder(IndexingEngine indexEngine, List<DbForTask> dbFilenameList)
-        {
-            foreach (var ok in dbFilenameList)
-            {
-                var baseDir = Path.GetDirectoryName(ok.FilePath);
-                var directory = new DirectoryInfo(baseDir);
-                DirectoryInfo[] directories = directory.GetDirectories(); // all subdirectories in base directory
-
-                // index engine is specific to each!
-                // Look at every subdirectory...
-                foreach (DirectoryInfo possibleFolder in directories)
-                {
-                    if (File.Exists(Path.Combine(possibleFolder.FullName, "Indexes")))
-                        return possibleFolder.FullName;
-                }
-            }
-            return null;
-        }
-
         private static string GetExistingFolderWithIndices(IndexingEngine indexEngine, List<DbForTask> dbFilenameList)
         {
-            // if true, check if indexes folder exists. if not, return null
-            // if exists, check if subdirectory exist
-
             // In every database location...
             foreach (var ok in dbFilenameList)
             {
                 var baseDir = Path.GetDirectoryName(ok.FilePath);
                 var directory = new DirectoryInfo(baseDir);
-                DirectoryInfo[] directories = directory.GetDirectories(); // all subdirectories in base directory
+                DirectoryInfo[] directories = directory.GetDirectories();
 
-                // index engine is specific to each!
                 // Look at every subdirectory...
                 foreach (DirectoryInfo possibleFolder in directories)
                 {
@@ -541,27 +517,6 @@ namespace TaskLayer
             return null;
         }
 
-        // overload method
-        private static string GetExistingFolderWithIndices(IndexingEngine indexEngine, string dir)
-        {
-            var directory = new DirectoryInfo(dir);
-            DirectoryInfo[] directories = directory.GetDirectories(); // all subdirectories in base directory
-
-            // Look at every subdirectory...
-            foreach (DirectoryInfo possibleFolder in directories)
-            {
-                if (File.Exists(Path.Combine(possibleFolder.FullName, "indexEngine.params")) &&
-                    File.Exists(Path.Combine(possibleFolder.FullName, "peptideIndex.ind")) &&
-                    File.Exists(Path.Combine(possibleFolder.FullName, "fragmentIndex.ind")) &&
-                    (File.Exists(Path.Combine(possibleFolder.FullName, "precursorIndex.ind")) || !indexEngine.GeneratePrecursorIndex) &&
-                    SameSettings(Path.Combine(possibleFolder.FullName, "indexEngine.params"), indexEngine))
-                {
-                    return possibleFolder.FullName;
-                }
-            }
-            return null;
-        }
-
         private static void WriteIndexEngineParams(IndexingEngine indexEngine, string fileName)
         {
             using (StreamWriter output = new StreamWriter(fileName))
@@ -570,37 +525,19 @@ namespace TaskLayer
             }
         }
 
-        private static string GenerateIndexesFolder(List<DbForTask> dbFilenameList)
+        private static string GenerateOutputFolderForIndices(List<DbForTask> dbFilenameList)
         {
-            var folder = Path.Combine(Path.GetDirectoryName(dbFilenameList.First().FilePath), "Indexes"));
-            Directory.CreateDirectory(folder);
-            return folder;
-        }
-
-        private static string GenerateOutputFolderForIndices(string dir)
-        {
-            var folder = Path.Combine(dir, DateTime.Now.ToString("yyyy-MM-dd-HH-mm-ss", CultureInfo.InvariantCulture));
+            var folder = Path.Combine(Path.GetDirectoryName(dbFilenameList.First().FilePath), DateTime.Now.ToString("yyyy-MM-dd-HH-mm-ss", CultureInfo.InvariantCulture));
             Directory.CreateDirectory(folder);
             return folder;
         }
 
         public void GenerateIndexes(IndexingEngine indexEngine, List<DbForTask> dbFilenameList, ref List<PeptideWithSetModifications> peptideIndex, ref List<int>[] fragmentIndex, ref List<int>[] precursorIndex, List<Protein> allKnownProteins, List<Modification> allKnownModifications, string taskId)
         {
-            // if no indexes folder - create one
-            // if got, check if partition folder exists
-            // if not, create one if necessary
-            string pathToFolderWithIndices;
-            var parentFolder = CheckIndexesFolder(indexEngine, dbFilenameList);
-
-            if (parentFolder != null)
-                pathToFolderWithIndices = GetExistingFolderWithIndices(indexEngine, parentFolder); // if > 1 partitions, store index files in parent folder
-            else
-                pathToFolderWithIndices = GetExistingFolderWithIndices(indexEngine, dbFilenameList);
-
+            string pathToFolderWithIndices = GetExistingFolderWithIndices(indexEngine, dbFilenameList);
             if (pathToFolderWithIndices == null)
             {
-                var output_indexesFolder = GenerateIndexesFolder(dbFilenameList);
-                var output_folderForIndices = GenerateOutputFolderForIndices(output_indexesFolder);
+                var output_folderForIndices = GenerateOutputFolderForIndices(dbFilenameList);
                 Status("Writing params...", new List<string> { taskId });
                 var paramsFile = Path.Combine(output_folderForIndices, "indexEngine.params");
                 WriteIndexEngineParams(indexEngine, paramsFile);
