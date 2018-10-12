@@ -529,7 +529,6 @@ namespace Test
                     SearchType = SearchType.Modern
                 }
             };
-
             List<int> counts = new List<int>();
 
             List<(string, MetaMorpheusTask)> taskList = new List<(string, MetaMorpheusTask)> { ("ClassicSearch", classicSearch), ("ModernSearch", modernSearch) };
