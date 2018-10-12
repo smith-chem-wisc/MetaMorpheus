@@ -18,7 +18,7 @@ MT   PeptideTermMod
 CF   H1 N1 O-1
 //
 ID   Ammonia loss
-TG   Q or C
+TG   C
 PP   Peptide N-terminal.
 MT   PeptideTermMod
 CF   H-3 N-1
@@ -525,4 +525,17 @@ TG   D or S or T
 PP   Anywhere.
 MT   Mod
 CF   O-1
+//
+ID   PyroGlu from Gln
+TG   Q
+PP   N-terminal.
+MT   Mod
+CF   H-3 N-1
+//
+ID   Hydroxylation
+TG   K or N
+PP   Anywhere.
+CF   O1
+MM   15.994915
+MT   Mod
 //
