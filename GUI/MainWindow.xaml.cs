@@ -97,7 +97,7 @@ namespace MetaMorpheusGUI
 
             Application.Current.MainWindow.Closing += new CancelEventHandler(MainWindow_Closing);
         }
-        
+
         private FlowDocument YoutubeWikiNotification()
         {
 
@@ -1419,10 +1419,18 @@ namespace MetaMorpheusGUI
             if (!GuiGlobalParams.DisableCloseWindow)
             {
                 e.Cancel = true;
-                var exit = MessageBox.Show("Are you sure?", "Exit MetaMorpheus", MessageBoxButton.YesNo, MessageBoxImage.Question);
+                var exit = CustomMsgBox.Show("Are you sure you want to exit MetaMorpheus?", "Exit MetaMorpheus", "Yes", "No", "Yes and don't ask me again");
 
-                if (exit == MessageBoxResult.Yes)
+                if (exit == System.Windows.Forms.DialogResult.Yes)
+                {
                     e.Cancel = false;
+                }
+                else if (exit == System.Windows.Forms.DialogResult.OK)
+                {
+                    GuiGlobalParams.DisableCloseWindow = true;
+                    Toml.WriteFile(GuiGlobalParams, Path.Combine(GlobalVariables.DataDir, @"GUIsettings.toml"), MetaMorpheusTask.tomlConfig);
+                    e.Cancel = false;
+                }
             }
         }
     }
