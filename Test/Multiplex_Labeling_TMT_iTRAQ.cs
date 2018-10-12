@@ -117,7 +117,8 @@ namespace Test
 
         [Test]
         [TestCase("C5 N2 H12 C{13}1", 114.110679698, true)]
-        [TestCase("C4 N2 H12 C{13}2", 115.114034533, true)]
+        //[TestCase("C4 N2 H12 C{13}2", 115.114034533, true)] this is old style (ABI or Thermo, don't know). no longer used
+        [TestCase("C5 C{13}1 N1 N{15}1 H12", 115.107714592, true)]
         [TestCase("C4 N1 H12 C{13}2 N{15}1", 116.111069427, true)]
         [TestCase("C3 N1 H12 C{13}3 N{15}1", 117.114424262, true)]
         [TestCase("C5 N2 H12 C{13}2 O{18}1", 144.105917679, false)]
