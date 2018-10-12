@@ -260,12 +260,21 @@ namespace MetaMorpheusGUI
             }
             else
             {
-                foreach (var uu in SpectraFilesObservableCollection)
+                var newFiles = e.StringList.ToList();
+                foreach (var oldFile in SpectraFilesObservableCollection)
                 {
-                    uu.Use = false;
+                    if (!newFiles.Contains(oldFile.FilePath))
+                    {
+                        oldFile.Use = false;
+                    }
                 }
-                foreach (var newRawData in e.StringList)
+
+                var files = SpectraFilesObservableCollection.Select(p => p.FilePath).ToList();
+                foreach (var newRawData in newFiles.Where(p => !files.Contains(p)))
+                {
                     SpectraFilesObservableCollection.Add(new RawDataForDataGrid(newRawData));
+                }
+
                 UpdateOutputFolderTextbox();
             }
         }
@@ -525,7 +534,7 @@ namespace MetaMorpheusGUI
                         {
                             try
                             {
-                                GlobalVariables.AddMods(UsefulProteomicsDatabases.ProteinDbLoader.GetPtmListFromProteinXml(draggedFilePath).OfType<Modification>());
+                                GlobalVariables.AddMods(UsefulProteomicsDatabases.ProteinDbLoader.GetPtmListFromProteinXml(draggedFilePath).OfType<Modification>(), true);
 
                                 PrintErrorsReadingMods();
                             }

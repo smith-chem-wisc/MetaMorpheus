@@ -47,6 +47,7 @@ namespace TaskLayer
             }
 
             //update all psms with peptide info
+            Parameters.AllPsms = Parameters.AllPsms.Where(psm => psm != null).ToList();
             Parameters.AllPsms.ForEach(psm => psm.ResolveAllAmbiguities());
 
             Parameters.AllPsms = Parameters.AllPsms.OrderByDescending(b => b.Score)
@@ -54,6 +55,7 @@ namespace TaskLayer
                .GroupBy(b => (b.FullFilePath, b.ScanNumber, b.PeptideMonisotopicMass)).Select(b => b.First()).ToList();
 
             CalculatePsmFdr();
+
             DoMassDifferenceLocalizationAnalysis();
             ProteinAnalysis();
             QuantificationAnalysis();
@@ -84,9 +86,16 @@ namespace TaskLayer
             // this could cause weird PSM FDR issues
 
             Status("Estimating PSM FDR...", Parameters.SearchTaskId);
-
             int massDiffAcceptorNumNotches = Parameters.NumNotches;
-            var fdrAnalysisResults = (FdrAnalysisResults)(new FdrAnalysisEngine(Parameters.AllPsms, massDiffAcceptorNumNotches, CommonParameters, new List<string> { Parameters.SearchTaskId }).Run());
+            new FdrAnalysisEngine(Parameters.AllPsms, massDiffAcceptorNumNotches, CommonParameters, new List<string> { Parameters.SearchTaskId }).Run();
+
+            // sort by q-value because of group FDR stuff
+            // e.g. multiprotease FDR, non/semi-specific protease, etc
+            Parameters.AllPsms = Parameters.AllPsms
+                .OrderBy(p => p.FdrInfo.QValue)
+                .ThenByDescending(p => p.Score)
+                .ThenBy(p => p.FdrInfo.CumulativeTarget)
+                .ToList();
 
             Status("Done estimating PSM FDR!", Parameters.SearchTaskId);
         }
@@ -306,7 +315,7 @@ namespace TaskLayer
                 ppmTolerance: Parameters.SearchParameters.QuantifyPpmTol,
                 matchBetweenRuns: Parameters.SearchParameters.MatchBetweenRuns,
                 silent: true,
-                optionalPeriodicTablePath: GlobalVariables.ElementsLocation, 
+                optionalPeriodicTablePath: GlobalVariables.ElementsLocation,
                 maxThreads: CommonParameters.MaxThreadsToUsePerFile);
 
             if (flashLFQIdentifications.Any())
@@ -440,20 +449,23 @@ namespace TaskLayer
 
             PsmsGroupedByFile = filteredPsmListForOutput.GroupBy(p => p.FullFilePath);
 
-            // writes all individual spectra file search results to subdirectory
-            if (Parameters.CurrentRawFileList.Count > 1)
+            foreach (var file in PsmsGroupedByFile)
             {
-                // create individual files subdirectory
-                Directory.CreateDirectory(Parameters.IndividualResultsOutputFolder);
+                // write summary text
+                var psmsForThisFile = file.ToList();
+                string strippedFileName = Path.GetFileNameWithoutExtension(file.First().FullFilePath);
+                var peptidesForFile = psmsForThisFile.GroupBy(b => b.FullSequence).Select(b => b.FirstOrDefault()).ToList();
 
-                foreach (var file in PsmsGroupedByFile)
+                Parameters.SearchTaskResults.AddNiceText("MS2 spectra in " + strippedFileName + ": " + Parameters.NumMs2SpectraPerFile[strippedFileName][0]);
+                Parameters.SearchTaskResults.AddNiceText("Precursors fragmented in " + strippedFileName + ": " + Parameters.NumMs2SpectraPerFile[strippedFileName][1]);
+                Parameters.SearchTaskResults.AddNiceText("Target PSMs within 1% FDR in " + strippedFileName + ": " + psmsForThisFile.Count(a => a.FdrInfo.QValue <= 0.01 && !a.IsDecoy));
+                Parameters.SearchTaskResults.AddNiceText("Target peptides within 1% FDR in " + strippedFileName + ": " + peptidesForFile.Count(a => a.FdrInfo.QValue <= 0.01 && !a.IsDecoy) + Environment.NewLine);
+
+                // writes all individual spectra file search results to subdirectory
+                if (Parameters.CurrentRawFileList.Count > 1)
                 {
-                    // write summary text
-                    var psmsForThisFile = file.ToList();
-                    var strippedFileName = Path.GetFileNameWithoutExtension(file.First().FullFilePath);
-                    Parameters.SearchTaskResults.AddNiceText("MS2 spectra in " + strippedFileName + ": " + Parameters.NumMs2SpectraPerFile[strippedFileName][0]);
-                    Parameters.SearchTaskResults.AddNiceText("Precursors fragmented in " + strippedFileName + ": " + Parameters.NumMs2SpectraPerFile[strippedFileName][1]);
-                    Parameters.SearchTaskResults.AddNiceText("Target PSMs within 1% FDR in " + strippedFileName + ": " + psmsForThisFile.Count(a => a.FdrInfo.QValue <= 0.01 && !a.IsDecoy));
+                    // create individual files subdirectory
+                    Directory.CreateDirectory(Parameters.IndividualResultsOutputFolder);
 
                     // write PSMs
                     writtenFile = Path.Combine(Parameters.IndividualResultsOutputFolder, strippedFileName + "_PSMs.psmtsv");
@@ -466,12 +478,9 @@ namespace TaskLayer
                     FinishedWritingFile(writtenFile, new List<string> { Parameters.SearchTaskId, "Individual Spectra Files", file.First().FullFilePath });
 
                     // write best (highest-scoring) PSM per peptide
-                    var peptidesForFile = psmsForThisFile.GroupBy(b => b.FullSequence).Select(b => b.FirstOrDefault()).ToList();
                     writtenFile = Path.Combine(Parameters.IndividualResultsOutputFolder, strippedFileName + "_Peptides.psmtsv");
                     WritePsmsToTsv(peptidesForFile, writtenFile, Parameters.SearchParameters.ModsToWriteSelection);
                     FinishedWritingFile(writtenFile, new List<string> { Parameters.SearchTaskId, "Individual Spectra Files", file.First().FullFilePath });
-
-                    Parameters.SearchTaskResults.AddNiceText("Target peptides within 1% FDR in " + strippedFileName + ": " + peptidesForFile.Count(a => a.FdrInfo.QValue <= 0.01 && !a.IsDecoy) + Environment.NewLine);
                 }
             }
         }
@@ -655,7 +664,7 @@ namespace TaskLayer
                             {
                                 if (!modsToWrite.ContainsKey(observedMod.Item1))
                                 {
-                                    modsToWrite.Add(observedMod.Item1, new List<Modification> { observedMod.Item2});
+                                    modsToWrite.Add(observedMod.Item1, new List<Modification> { observedMod.Item2 });
                                 }
                                 else
                                 {
