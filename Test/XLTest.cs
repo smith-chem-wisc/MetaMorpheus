@@ -545,6 +545,34 @@ namespace Test
             Assert.That(signatureIons.Count == 2);
             Assert.That(signatureIons.Select(v => (int)v.NeutralMass).SequenceEqual(new int[] { 814, 824 }));
         }
+
+        [Test]
+        public static void TestWriteToPercolator()
+        {
+            XLSearchTask xlst = new XLSearchTask()
+            {
+                XlSearchParameters = new XlSearchParameters
+                {
+                    WriteOutputForPercolator = true
+                }
+            };
+
+            string myFileXl = Path.Combine(TestContext.CurrentContext.TestDirectory, @"XlTestData\BSA_DSSO_ETchD6010.mgf");
+            string myDatabaseXl = Path.Combine(TestContext.CurrentContext.TestDirectory, @"XlTestData\BSA.fasta");
+            string outputFolder = Path.Combine(TestContext.CurrentContext.TestDirectory, @"TestXLSearch");
+            DbForTask db = new DbForTask(myDatabaseXl, false);
+
+            List<(string, MetaMorpheusTask)> taskList = new List<(string, MetaMorpheusTask)> { ("TestPercolator", xlst) };
+
+            var engine = new EverythingRunnerEngine(taskList, new List<string> { myFileXl }, new List<DbForTask> { db }, outputFolder);
+            engine.Run();
+
+            var results = Path.Combine(outputFolder, @"TestPercolator\XL_Intralinks_Percolator.txt");
+            var lines = File.ReadAllLines(results);
+            Assert.That(lines[0].Equals("SpecId\tLabel\tScannr\tScore\tdScore\tNormRank\tCharge\tMass\tPPM\tLenShort\tLenLong\tLenSum\tPeptide\tProtein"));
+            Assert.That(lines[1].Equals("T-1-30.6190992666667\t1\t1\t21.0683048346133\t0\t7\t3\t1994.05202313843\t0.664979354397676\t7\t9\t16\t-.EKVLTSSAR2--LSQKFPK4.-\t3336842(211)\t3336842(245)"));
+            Directory.Delete(outputFolder, true);
+        }
     }
 
     internal class XLTestDataFile : MsDataFile
