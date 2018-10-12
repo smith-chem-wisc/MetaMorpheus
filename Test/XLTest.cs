@@ -573,6 +573,12 @@ namespace Test
             Assert.That(lines[1].Equals("T-1-30.6190992666667\t1\t1\t21.0683048346133\t0\t7\t3\t1994.05202313843\t0.664979354397676\t7\t9\t16\t-.EKVLTSSAR2--LSQKFPK4.-\t3336842(211)\t3336842(245)"));
             Directory.Delete(outputFolder, true);
         }
+
+        [Test]
+        public static void TestWriteNonSingleCross()
+        {
+
+        }
     }
 
     internal class XLTestDataFile : MsDataFile
