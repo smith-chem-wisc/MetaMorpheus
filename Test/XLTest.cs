@@ -364,13 +364,14 @@ namespace Test
         [Test]
         public static void TestTheoreticalLoopFragmentsWithMod()
         {
+            ModificationMotif.TryGetMotif("T", out var tMotif);
+            Modification phospho = new Modification(_originalId: "Phospho", _modificationType: "Mod", _locationRestriction: "Anywhere.", _monoisotopicMass: 79.98, _target: tMotif);
             int[] modPositions = new int[] { 2, 3, 4, 5, 6 };
 
             foreach (var modPosition in modPositions)
             {
-                var phosphoOnT = GlobalVariables.AllModsKnown.Where(v => v.IdWithMotif == "Phospho on T").First();
                 Dictionary<int, List<Modification>> oneBasedMods = new Dictionary<int, List<Modification>>
-                    { { modPosition, new List<Modification> { phosphoOnT } } };
+                    { { modPosition, new List<Modification> { phospho } } };
                 Protein p = new Protein("PTTTTTE", "", oneBasedModifications: oneBasedMods);
                 var peptide = p.Digest(new DigestionParams(), new List<Modification>(), new List<Modification>())
                     .Where(v => v.AllModsOneIsNterminus.Count == 1).First();
