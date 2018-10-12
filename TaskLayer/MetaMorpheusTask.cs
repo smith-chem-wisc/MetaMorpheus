@@ -260,12 +260,12 @@ namespace TaskLayer
                 }
                 FinishedWritingFile(resultsFileName, new List<string> { displayName });
                 FinishedSingleTask(displayName);
-        }
+            }
             catch (Exception e)
             {
                 MetaMorpheusEngine.FinishedSingleEngineHandler -= SingleEngineHandlerInTask;
                 var resultsFileName = Path.Combine(output_folder, "results.txt");
-        e.Data.Add("folder", output_folder);
+                e.Data.Add("folder", output_folder);
                 using (StreamWriter file = new StreamWriter(resultsFileName))
                 {
                     file.WriteLine(GlobalVariables.MetaMorpheusVersion.Equals("1.0.0.0") ? "MetaMorpheus: Not a release version" : "MetaMorpheus: version " + GlobalVariables.MetaMorpheusVersion);
@@ -492,27 +492,50 @@ namespace TaskLayer
                 ser.Serialize(file, fragmentIndex);
         }
 
+        // combine with check indices
         private static string GetExistingFolderWithIndices(IndexingEngine indexEngine, List<DbForTask> dbFilenameList)
         {
-            // In every database location...
             foreach (var ok in dbFilenameList)
             {
                 var baseDir = Path.GetDirectoryName(ok.FilePath);
                 var directory = new DirectoryInfo(baseDir);
-                DirectoryInfo[] directories = directory.GetDirectories();
+                DirectoryInfo[] directories = directory.GetDirectories(); // all subdirectories in base directory
 
-                // Look at every subdirectory...
+                // Look at every subdirectory to find parent folder...
                 foreach (DirectoryInfo possibleFolder in directories)
                 {
-                    if (File.Exists(Path.Combine(possibleFolder.FullName, "indexEngine.params")) &&
-                        File.Exists(Path.Combine(possibleFolder.FullName, "peptideIndex.ind")) &&
-                        File.Exists(Path.Combine(possibleFolder.FullName, "fragmentIndex.ind")) &&
-                        (File.Exists(Path.Combine(possibleFolder.FullName, "precursorIndex.ind")) || !indexEngine.GeneratePrecursorIndex) &&
-                        SameSettings(Path.Combine(possibleFolder.FullName, "indexEngine.params"), indexEngine))
+                    string path = Path.Combine(possibleFolder.FullName, "Indexes");
+
+                    // parent folder exists
+                    if (File.Exists(path))
                     {
-                        return possibleFolder.FullName;
+                        var newDirectory = new DirectoryInfo(path);
+                        DirectoryInfo[] newDirectories = directory.GetDirectories(); // all subdirectories in base directory
+
+                        // Look at every subdirectory...
+                        foreach (DirectoryInfo folder in newDirectories)
+                        {
+                            if (CheckFiles(indexEngine, folder) != null)
+                            {
+                                return folder.FullName;
+                            }
+                        }
+                        return null;
                     }
                 }
+            }
+            return null;
+        }
+
+        private static string CheckFiles(IndexingEngine indexEngine, DirectoryInfo folder)
+        {
+            if (File.Exists(Path.Combine(folder.FullName, "indexEngine.params")) &&
+                File.Exists(Path.Combine(folder.FullName, "peptideIndex.ind")) &&
+                File.Exists(Path.Combine(folder.FullName, "fragmentIndex.ind")) &&
+                (File.Exists(Path.Combine(folder.FullName, "precursorIndex.ind")) || !indexEngine.GeneratePrecursorIndex) &&
+                SameSettings(Path.Combine(folder.FullName, "indexEngine.params"), indexEngine))
+            {
+                return folder.FullName;
             }
             return null;
         }
@@ -525,19 +548,29 @@ namespace TaskLayer
             }
         }
 
-        private static string GenerateOutputFolderForIndices(List<DbForTask> dbFilenameList)
+        private static string GenerateIndexesFolder(List<DbForTask> dbFilenameList)
         {
-            var folder = Path.Combine(Path.GetDirectoryName(dbFilenameList.First().FilePath), DateTime.Now.ToString("yyyy-MM-dd-HH-mm-ss", CultureInfo.InvariantCulture));
+            // creates a parent folder to store all indexes files
+            var folder = Path.Combine(Path.GetDirectoryName(dbFilenameList.First().FilePath), "Indexes");
+            Directory.CreateDirectory(folder);
+            return folder;
+        }
+
+        private static string GenerateOutputFolderForIndices(string dir)
+        {
+            var folder = Path.Combine(dir, DateTime.Now.ToString("yyyy-MM-dd-HH-mm-ss", CultureInfo.InvariantCulture));
             Directory.CreateDirectory(folder);
             return folder;
         }
 
         public void GenerateIndexes(IndexingEngine indexEngine, List<DbForTask> dbFilenameList, ref List<PeptideWithSetModifications> peptideIndex, ref List<int>[] fragmentIndex, ref List<int>[] precursorIndex, List<Protein> allKnownProteins, List<Modification> allKnownModifications, string taskId)
         {
-            string pathToFolderWithIndices = GetExistingFolderWithIndices(indexEngine, dbFilenameList);
+            var pathToFolderWithIndices = GetExistingFolderWithIndices(indexEngine, dbFilenameList);
+
             if (pathToFolderWithIndices == null)
             {
-                var output_folderForIndices = GenerateOutputFolderForIndices(dbFilenameList);
+                var output_parentFolder = GenerateIndexesFolder(dbFilenameList);
+                var output_folderForIndices = GenerateOutputFolderForIndices(output_parentFolder);
                 Status("Writing params...", new List<string> { taskId });
                 var paramsFile = Path.Combine(output_folderForIndices, "indexEngine.params");
                 WriteIndexEngineParams(indexEngine, paramsFile);
@@ -559,7 +592,7 @@ namespace TaskLayer
                 WriteFragmentIndexNetSerializer(fragmentIndex, fragmentIndexFile);
                 FinishedWritingFile(fragmentIndexFile, new List<string> { taskId });
 
-                if(indexEngine.GeneratePrecursorIndex)
+                if (indexEngine.GeneratePrecursorIndex)
                 {
                     Status("Writing precursor index...", new List<string> { taskId });
                     var precursorIndexFile = Path.Combine(output_folderForIndices, "precursorIndex.ind");
@@ -606,7 +639,7 @@ namespace TaskLayer
                     fragmentIndex = (List<int>[])ser.Deserialize(file);
                 }
 
-                if(indexEngine.GeneratePrecursorIndex)
+                if (indexEngine.GeneratePrecursorIndex)
                 {
                     Status("Reading precursor index...", new List<string> { taskId });
                     messageTypes = GetSubclassesAndItself(typeof(List<int>[]));
