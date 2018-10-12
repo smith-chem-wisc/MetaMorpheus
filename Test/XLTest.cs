@@ -577,7 +577,35 @@ namespace Test
         [Test]
         public static void TestWriteNonSingleCross()
         {
+            XLSearchTask xlst = new XLSearchTask();
+            Protein protein = new Protein("PEPTIDE", "");
+            var csms = new CrosslinkSpectralMatch[1];
 
+            // generate the scan with the deadend mod peptide's fragments
+            var scans = new Ms2ScanWithSpecificMass[1];
+            ModificationMotif.TryGetMotif("T", out var motif);
+            var crosslinker = new Crosslinker("T", "T", "test", false, 100, 0, 0, 0, 0, 0, 50);
+            Modification deadend = new Modification("TestId", _target: motif, _locationRestriction: "Anywhere.", _monoisotopicMass: crosslinker.DeadendMassTris, _modificationType: "Test");
+
+            var deadendPeptide = protein.Digest(new DigestionParams(), new List<Modification> { deadend }, new List<Modification>()).First();
+
+            double[] mz = deadendPeptide.Fragment(DissociationType.HCD, FragmentationTerminus.Both).Select(p => p.NeutralMass.ToMz(1)).OrderBy(v => v).ToArray();
+            double[] intensities = new[] { 1.0, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1 };
+
+            MzSpectrum spectrum = new MzSpectrum(mz, intensities, false);
+            MsDataScan sc = new MsDataScan(spectrum, 1, 2, true, Polarity.Positive, 1, spectrum.Range, "",
+                MZAnalyzerType.Orbitrap, 12, 1.0, null, null);
+            scans[0] = new Ms2ScanWithSpecificMass(sc, deadendPeptide.MonoisotopicMass.ToMz(2), 2, "");
+
+            var indexingResults = (IndexingResults)new IndexingEngine(new List<Protein> { protein }, new List<Modification>(), new List<Modification>(), 0, DecoyType.None,
+                new CommonParameters(), 1000, false, new List<string>()).Run();
+
+            new CrosslinkSearchEngine(csms, scans, indexingResults.PeptideIndex, indexingResults.FragmentIndex, 0, new CommonParameters(), crosslinker,
+                false, 0, false, false, true, false, false, new List<string>()).Run();
+
+            csms[0].SetFdrValues(0,0,0.1,0,0,0,0,0,0,false);
+
+            xlst.WritePepXML_xl(csms.ToList(), new List<Protein>(), "", new List<Modification> { deadend }, new List<Modification> { deadend }, new List<string>(), TestContext.CurrentContext.TestDirectory, "fdfd", new List<string>());
         }
     }
 
