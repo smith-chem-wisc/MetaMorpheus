@@ -83,6 +83,7 @@ namespace Test
             Directory.Delete(outputFolder, true);
             File.Delete(mzmlName);
             File.Delete(xmlName);
+            Directory.Delete(Path.Combine(TestContext.CurrentContext.TestDirectory, @"Task Settings"), true);
         }
     }
 }

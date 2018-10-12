@@ -72,6 +72,7 @@ namespace Test
             Directory.Delete(output_folder, true);
             File.Delete(proteinDbFilePath);
             File.Delete(mzmlFilePath);
+            Directory.Delete(Path.Combine(TestContext.CurrentContext.TestDirectory, @"Task Settings"), true);
         }
 
         [Test]
@@ -135,6 +136,7 @@ namespace Test
             File.Delete(proteinDbFilePath);
             File.Delete(mzmlFilePath1);
             File.Delete(mzmlFilePath2);
+            Directory.Delete(Path.Combine(TestContext.CurrentContext.TestDirectory, @"Task Settings"), true);
         }
     }
 }

@@ -38,6 +38,7 @@ namespace Test
             Assert.That(lines[1].Contains("ProductMassTolerance"));
             File.Delete(filePath);
             Directory.Delete(outputFolder, true);
+            Directory.Delete(Path.Combine(TestContext.CurrentContext.TestDirectory, @"Task Settings"), true);
         }
     }
 }

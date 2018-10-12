@@ -272,6 +272,7 @@ namespace Test
             xLSearchTask.RunTask(outputFolder, new List<DbForTask> { new DbForTask(myDatabaseXl, false) }, new List<string> { myFileXl }, "test");
             xLSearchTask2.RunTask(outputFolder, new List<DbForTask> { new DbForTask(myDatabaseXl, false) }, new List<string> { myFileXl }, "test");
             Directory.Delete(outputFolder, true);
+            Directory.Delete(Path.Combine(TestContext.CurrentContext.TestDirectory, @"Task Settings"), true);
         }
 
         /// <summary>
@@ -309,6 +310,7 @@ namespace Test
             var lines = File.ReadAllLines(Path.Combine(folderPath, @"XL_Intralinks.tsv"));
             Assert.That(lines.Length == 2);
             Directory.Delete(folderPath, true);
+            Directory.Delete(Path.Combine(TestContext.CurrentContext.TestDirectory, @"Task Settings"), true);
         }
 
         /// <summary>

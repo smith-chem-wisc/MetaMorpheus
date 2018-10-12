@@ -98,6 +98,8 @@ namespace Test
             // RUN!
             var engine = new EverythingRunnerEngine(taskList, new List<string> { mzmlName }, new List<DbForTask> { new DbForTask(xmlName, false) }, outputFolder);
             engine.Run();
+            File.Delete(Path.Combine(TestContext.CurrentContext.TestDirectory, mzmlName));
+            File.Delete(Path.Combine(TestContext.CurrentContext.TestDirectory, xmlName));
             Directory.Delete(outputFolder, true);
         }
 
@@ -338,6 +340,7 @@ namespace Test
             Directory.Delete(outputFolder, true);
             File.Delete(xmlName);
             File.Delete(mzmlName);
+            Directory.Delete(Path.Combine(TestContext.CurrentContext.TestDirectory, @"Task Settings"), true);
         }
 
         [Test]
