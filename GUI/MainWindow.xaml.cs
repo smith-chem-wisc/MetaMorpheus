@@ -1416,13 +1416,16 @@ namespace MetaMorpheusGUI
         // handle window closing
         private void MainWindow_Closing(object sender, CancelEventArgs e)
         {
+            // CREATE CUSTOM MESSAGE BOX CLASS!
             if (!GuiGlobalParams.DisableCloseWindow)
             {
                 e.Cancel = true;
-                var exit = MessageBox.Show("Are you sure?", "Exit MetaMorpheus", MessageBoxButton.YesNo, MessageBoxImage.Question);
+                var exit = MessageBox.Show("Are you sure you want to exit MetaMorpheus?", "Exit MetaMorpheus", MessageBoxButton.YesNo, MessageBoxImage.Question);
 
                 if (exit == MessageBoxResult.Yes)
+                {
                     e.Cancel = false;
+                }
             }
         }
     }
