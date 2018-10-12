@@ -525,17 +525,18 @@ namespace MetaMorpheusGUI
             }
 
             //determine if semi or nonspecific with a specific protease.
-            TheTask.SearchParameters.LocalFdrCategories = new List<FdrCategory> { FdrCategory.FullySpecific }; //set the default again to reset the list
             if(searchModeType == CleavageSpecificity.Semi || protease.CleavageSpecificity==CleavageSpecificity.Semi)
             {
-                TheTask.SearchParameters.LocalFdrCategories.Add(FdrCategory.SemiSpecific);
+                TheTask.SearchParameters.LocalFdrCategories= new List<FdrCategory> { FdrCategory.FullySpecific, FdrCategory.SemiSpecific };
             }
             else if(searchModeType==CleavageSpecificity.None && protease.CleavageSpecificity!=CleavageSpecificity.None)
             {
-                TheTask.SearchParameters.LocalFdrCategories.Add(FdrCategory.SemiSpecific);
-                TheTask.SearchParameters.LocalFdrCategories.Add(FdrCategory.NonSpecific);
+                TheTask.SearchParameters.LocalFdrCategories = new List<FdrCategory> { FdrCategory.FullySpecific, FdrCategory.SemiSpecific, FdrCategory.NonSpecific };
             }
-            // else do nothing
+            else
+            {
+                TheTask.SearchParameters.LocalFdrCategories = new List<FdrCategory> { FdrCategory.FullySpecific };
+            }
 
 
             // displays warning if classic search is enabled with an open search mode
