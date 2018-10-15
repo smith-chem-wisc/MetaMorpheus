@@ -31,6 +31,12 @@ namespace EngineLayer.NonSpecificEnzymeSearch
 
         protected override MetaMorpheusEngineResults RunSpecific()
         {
+            if (commonParameters.DeconvoluteMs2)
+            {
+                Status("Deconvoluting MS2 scans...");
+                DeconvoluteAndStoreMs2(ListOfSortedMs2Scans.Select(p => p.TheScan).Distinct().ToArray());
+            }
+
             double progress = 0;
             int oldPercentProgress = 0;
             ReportProgress(new ProgressEventArgs(oldPercentProgress, "Performing nonspecific search... " + CurrentPartition + "/" + commonParameters.TotalPartitions, nestedIds));
@@ -102,7 +108,7 @@ namespace EngineLayer.NonSpecificEnzymeSearch
                                 PeptideWithSetModifications peptide = PeptideIndex[id];
                                 List<Product> peptideTheorProducts = peptide.Fragment(commonParameters.DissociationType, commonParameters.DigestionParams.FragmentationTerminus).ToList();
 
-                                List<MatchedFragmentIon> matchedIons = MatchFragmentIons(scan.TheScan.MassSpectrum, peptideTheorProducts, commonParameters, scan.PrecursorMass);
+                                List<MatchedFragmentIon> matchedIons = MatchFragmentIons(scan.TheScan, peptideTheorProducts, commonParameters, scan.PrecursorMass, scan.PrecursorCharge, DeconvolutedMs2IsotopicEnvelopes, DeconvolutedPeakMzs);
 
                                 double thisScore = CalculatePeptideScore(scan.TheScan, matchedIons, MaxMassThatFragmentIonScoreIsDoubled);
                                 if (thisScore > commonParameters.ScoreCutoff)

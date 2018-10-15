@@ -34,7 +34,11 @@ namespace EngineLayer.ClassicSearch
 
         protected override MetaMorpheusEngineResults RunSpecific()
         {
-            Status("Getting ms2 scans...");
+            if (commonParameters.DeconvoluteMs2)
+            {
+                Status("Deconvoluting MS2 scans...");
+                DeconvoluteAndStoreMs2(ArrayOfSortedMS2Scans.Select(p => p.TheScan).Distinct().ToArray());
+            }
 
             double proteinsSearched = 0;
             int oldPercentProgress = 0;
@@ -68,7 +72,7 @@ namespace EngineLayer.ClassicSearch
 
                             foreach (ScanWithIndexAndNotchInfo scan in GetAcceptableScans(peptide.MonoisotopicMass, SearchMode))
                             {
-                                List<MatchedFragmentIon> matchedIons = MatchFragmentIons(scan.TheScan.TheScan.MassSpectrum, peptideTheorProducts, commonParameters, scan.TheScan.PrecursorMass);
+                                List<MatchedFragmentIon> matchedIons = MatchFragmentIons(scan.TheScan.TheScan, peptideTheorProducts, commonParameters, scan.TheScan.PrecursorMass, scan.TheScan.PrecursorCharge, DeconvolutedMs2IsotopicEnvelopes, DeconvolutedPeakMzs);
 
                                 double thisScore = CalculatePeptideScore(scan.TheScan.TheScan, matchedIons, 0);
 
@@ -133,7 +137,7 @@ namespace EngineLayer.ClassicSearch
             {
                 psm.ResolveAllAmbiguities();
             }
-
+            
             return new MetaMorpheusEngineResults(this);
         }
 

@@ -45,11 +45,11 @@ namespace Test
             Ms2ScanWithSpecificMass scan = new Ms2ScanWithSpecificMass(myMsDataFile.GetAllScansList().Last(), pepWithSetModsForSpectrum.MonoisotopicMass.ToMz(1), 1, null);
 
             var theoreticalProducts = ps.Fragment(DissociationType.HCD, FragmentationTerminus.Both).ToList();
-            var matchedIons = MetaMorpheusEngine.MatchFragmentIons(scan.TheScan.MassSpectrum, theoreticalProducts, new CommonParameters(), scan.PrecursorMass);
+            var matchedIons = MetaMorpheusEngine.MatchFragmentIons(scan.TheScan, theoreticalProducts, new CommonParameters(deconvoluteMs2: false), scan.PrecursorMass, 1, null, null);
             PeptideSpectralMatch newPsm = new PeptideSpectralMatch(ps, 0, 0, 2, scan, digestionParams, matchedIons);
             newPsm.ResolveAllAmbiguities();
 
-            CommonParameters commonParameters = new CommonParameters(productMassTolerance: fragmentTolerance);
+            CommonParameters commonParameters = new CommonParameters(productMassTolerance: fragmentTolerance, deconvoluteMs2: false);
 
             LocalizationEngine f = new LocalizationEngine(new List<PeptideSpectralMatch> { newPsm }, myMsDataFile, commonParameters, new List<string>());
             f.Run();

@@ -162,9 +162,9 @@ namespace Test
             CommonParameters commonParametersWithComp = new CommonParameters(productMassTolerance: new AbsoluteTolerance(0.01), addCompIons: true);
 
             MsDataScan scan = t.GetOneBasedScan(2);
-            List<MatchedFragmentIon> matchedIons = MetaMorpheusEngine.MatchFragmentIons(scan.MassSpectrum, productsWithLocalizedMassDiff, commonParametersNoComp, precursorMass);
+            List<MatchedFragmentIon> matchedIons = MetaMorpheusEngine.MatchFragmentIons(scan, productsWithLocalizedMassDiff, commonParametersNoComp, precursorMass, 1, null, null);
 
-            List<MatchedFragmentIon> matchedCompIons = MetaMorpheusEngine.MatchFragmentIons(scan.MassSpectrum, productsWithLocalizedMassDiff, commonParametersWithComp, precursorMass);
+            List<MatchedFragmentIon> matchedCompIons = MetaMorpheusEngine.MatchFragmentIons(scan, productsWithLocalizedMassDiff, commonParametersWithComp, precursorMass, 1, null, null);
             matchedCompIons.AddRange(matchedIons);
 
             // score when the mass-diff is on this residue

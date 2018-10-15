@@ -66,9 +66,6 @@
                             <CheckBox x:Name="ckbXLTopNum" VerticalAlignment="Center" Content="Top N peptides per precursor" />
                             <TextBox x:Name="txtXLTopNum" PreviewTextInput="CheckIfNumber" Width="45" Margin="2" IsEnabled="{Binding IsChecked, ElementName=ckbXLTopNum}" />
                         </StackPanel>
-                        <!--<StackPanel Orientation="Vertical" Grid.Row="2" Grid.Column="0" Margin="5">
-                            <CheckBox x:Name="ckbCharge_2_3"  VerticalAlignment="Center" Content="Search for charge 2+ 3+ fragments" />
-                        </StackPanel>-->
                     </Grid>
                 </StackPanel>
                 <GroupBox Header="Crosslink Search" DockPanel.Dock="Top">
@@ -260,6 +257,15 @@
                                             <Label x:Name="ffdf" Content="Minimum score allowed:" />
                                             <TextBox x:Name="minScoreAllowed" PreviewTextInput="CheckIfNumber" Width="45" />
                                         </StackPanel>
+                                        <StackPanel>
+                                            <CheckBox x:Name="deconvoluteMs2" Content="Deconvolute Fragments" IsChecked="True" ToolTipService.ShowDuration="999999" ToolTipService.InitialShowDelay="500">
+                                                <CheckBox.ToolTip>
+                                                    <TextBlock>
+                                                        Search for higher-charge fragments. If this is unchecked, fragments are assumed to be charge 1.
+                                                    </TextBlock>
+                                                </CheckBox.ToolTip>
+                                            </CheckBox>
+                                        </StackPanel>
                                     </StackPanel>
                                     <StackPanel Grid.Column="2">
                                         <StackPanel Orientation="Horizontal" Margin="5">
@@ -344,30 +350,6 @@
                                                     <TextBlock Text="{Binding DisplayName}" />
                                                 </StackPanel>
                                             </DataTemplate>
-                                        </TreeView.Resources>
-                                    </TreeView>
-                                </StackPanel>
-                                <StackPanel Grid.Column="2">
-                                    <Label Content="Database Localized" />
-                                    <CheckBox x:Name="localizeAllCheckBox" Content="Localize All Modifications" IsChecked="True" />
-                                    <TreeView x:Name="localizeModsTreeView" ItemsSource="{Binding}" Height="400">
-                                        <TreeView.Style>
-                                            <Style TargetType="{x:Type TreeView}">
-                                                <Setter Property="Visibility" Value="Visible" />
-                                                <Style.Triggers>
-                                                    <DataTrigger Binding="{Binding ElementName=localizeAllCheckBox, Path=IsChecked}" Value="True">
-                                                        <Setter Property="Visibility" Value="Hidden" />
-                                                    </DataTrigger>
-                                                </Style.Triggers>
-                                            </Style>
-                                        </TreeView.Style>
-                                        <TreeView.Resources>
-                                            <HierarchicalDataTemplate DataType="{x:Type local:ModTypeForLoc}">
-                                                <StackPanel Orientation="Horizontal">
-                                                    <CheckBox IsChecked="{Binding Use}" />
-                                                    <TextBlock Text="{Binding DisplayName}" />
-                                                </StackPanel>
-                                            </HierarchicalDataTemplate>
                                         </TreeView.Resources>
                                     </TreeView>
                                 </StackPanel>

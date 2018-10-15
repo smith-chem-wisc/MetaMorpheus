@@ -89,7 +89,8 @@ namespace Test
         {
             //Generate parameters
             var commonParameters = new CommonParameters(doPrecursorDeconvolution: false, dissociationType: DissociationType.EThcD, 
-                scoreCutoff: 1, digestionParams: new DigestionParams(minPeptideLength: 5), precursorMassTolerance: new PpmTolerance(10));
+                scoreCutoff: 1, digestionParams: new DigestionParams(minPeptideLength: 5), precursorMassTolerance: new PpmTolerance(10),
+                deconvoluteMs2: false);
 
             var xlSearchParameters = new XlSearchParameters();
 
@@ -170,7 +171,7 @@ namespace Test
         public static void XlTest_DiffCrosslinkSites()
         {
             //Generate parameters
-            var commonParameters = new CommonParameters(doPrecursorDeconvolution: false, scoreCutoff: 1, digestionParams: new DigestionParams(minPeptideLength: 4));
+            var commonParameters = new CommonParameters(doPrecursorDeconvolution: false, scoreCutoff: 1, digestionParams: new DigestionParams(minPeptideLength: 4), deconvoluteMs2: false);
 
             var xlSearchParameters = new XlSearchParameters
             {
@@ -275,6 +276,7 @@ namespace Test
         public static void XLSearchWithGeneratedIndices()
         {
             XLSearchTask xlSearchTask = new XLSearchTask();
+            xlSearchTask.CommonParameters = new CommonParameters(deconvoluteMs2: false);
             string myFile = Path.Combine(TestContext.CurrentContext.TestDirectory, @"XlTestData\BSA_DSSO_ETchD6010.mgf");
             string myDatabase = Path.Combine(TestContext.CurrentContext.TestDirectory, @"XlTestData\BSA.fasta");
             string folderPath = Path.Combine(TestContext.CurrentContext.TestDirectory, @"TestXLSearch");
@@ -462,9 +464,9 @@ namespace Test
             // search the data with the peptide WITHOUT the deadend mod annotated in the search database.
             // the search engine should be able to correctly identify the deadend mod on T
             var indexingResults = (IndexingResults)new IndexingEngine(new List<Protein> { protein }, new List<Modification>(), new List<Modification>(), 0, DecoyType.None,
-                new CommonParameters(), 1000, false, new List<string>()).Run();
+                new CommonParameters(deconvoluteMs2: false), 1000, false, new List<string>()).Run();
 
-            new CrosslinkSearchEngine(csms, scans, indexingResults.PeptideIndex, indexingResults.FragmentIndex, 0, new CommonParameters(), crosslinker,
+            new CrosslinkSearchEngine(csms, scans, indexingResults.PeptideIndex, indexingResults.FragmentIndex, 0, new CommonParameters(deconvoluteMs2: false), crosslinker,
                 false, 0, false, false, true, false, false, new List<string>()).Run();
 
             CrosslinkSpectralMatch csm = csms.First();

@@ -24,12 +24,12 @@ namespace Test
             //Create Search Task
             GptmdTask task1 = new GptmdTask
             {
-                CommonParameters = new CommonParameters(),
+                CommonParameters = new CommonParameters(deconvoluteMs2: false),
             };
 
             SearchTask task2 = new SearchTask
             {
-                CommonParameters = new CommonParameters(),
+                CommonParameters = new CommonParameters(deconvoluteMs2: false),
 
                 SearchParameters = new SearchParameters
                 {
