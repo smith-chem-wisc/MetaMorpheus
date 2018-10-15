@@ -105,7 +105,7 @@ namespace EngineLayer.ModernSearch
 
                         List<Product> peptideTheorProducts = peptide.Fragment(commonParameters.DissociationType, FragmentationTerminus.Both).ToList();
 
-                        List<MatchedFragmentIon> matchedIons = MatchFragmentIons(scan.TheScan, peptideTheorProducts, commonParameters, scan.PrecursorMass, scan.PrecursorCharge, DeconvolutedMs2IsotopicEnvelopes, DeconvolutedPeakMzs);
+                        List<MatchedFragmentIon> matchedIons = MatchFragmentIons(scan.TheScan, peptideTheorProducts, commonParameters, scan.PrecursorMass, scan.PrecursorCharge, StoredDeconvolutedMs2Envelopes);
                         
                         double thisScore = CalculatePeptideScore(scan.TheScan, matchedIons, 0);
                         int notch = MassDiffAcceptor.Accepts(scan.PrecursorMass, peptide.MonoisotopicMass);
@@ -170,7 +170,7 @@ namespace EngineLayer.ModernSearch
 
             if (commonParameters.DeconvoluteMs2)
             {
-                foreach (IsotopicEnvelope deconvolutedEnvelope in DeconvolutedMs2IsotopicEnvelopes[scan.OneBasedScanNumber])
+                foreach (IsotopicEnvelope deconvolutedEnvelope in StoredDeconvolutedMs2Envelopes.IsotopicEnvelopesInScan(scan.OneBasedScanNumber))
                 {
                     // search mass bins within a tolerance
                     int obsFragmentFloorMass = (int)Math.Floor((commonParameters.ProductMassTolerance.GetMinimumValue(deconvolutedEnvelope.monoisotopicMass)) * FragmentBinsPerDalton);

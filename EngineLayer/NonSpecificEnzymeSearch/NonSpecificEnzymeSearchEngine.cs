@@ -108,7 +108,7 @@ namespace EngineLayer.NonSpecificEnzymeSearch
                                 PeptideWithSetModifications peptide = PeptideIndex[id];
                                 List<Product> peptideTheorProducts = peptide.Fragment(commonParameters.DissociationType, commonParameters.DigestionParams.FragmentationTerminus).ToList();
 
-                                List<MatchedFragmentIon> matchedIons = MatchFragmentIons(scan.TheScan, peptideTheorProducts, commonParameters, scan.PrecursorMass, scan.PrecursorCharge, DeconvolutedMs2IsotopicEnvelopes, DeconvolutedPeakMzs);
+                                List<MatchedFragmentIon> matchedIons = MatchFragmentIons(scan.TheScan, peptideTheorProducts, commonParameters, scan.PrecursorMass, scan.PrecursorCharge, StoredDeconvolutedMs2Envelopes);
 
                                 double thisScore = CalculatePeptideScore(scan.TheScan, matchedIons, MaxMassThatFragmentIonScoreIsDoubled);
                                 if (thisScore > commonParameters.ScoreCutoff)

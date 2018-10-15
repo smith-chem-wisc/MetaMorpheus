@@ -170,7 +170,7 @@ namespace EngineLayer.CrosslinkSearch
                 if (XLPrecusorSearchMode.Accepts(theScan.PrecursorMass, bestPeptide.MonoisotopicMass) >= 0)
                 {
                     List<Product> products = bestPeptide.Fragment(commonParameters.DissociationType, FragmentationTerminus.Both).ToList();
-                    var matchedFragmentIons = MatchFragmentIons(theScan.TheScan, products, commonParameters, theScan.PrecursorMass, theScan.PrecursorCharge, DeconvolutedMs2IsotopicEnvelopes, DeconvolutedPeakMzs);
+                    var matchedFragmentIons = MatchFragmentIons(theScan.TheScan, products, commonParameters, theScan.PrecursorMass, theScan.PrecursorCharge, StoredDeconvolutedMs2Envelopes);
                     double score = CalculatePeptideScore(theScan.TheScan, matchedFragmentIons, 0);
 
                     var psmCrossSingle = new CrosslinkSpectralMatch(bestPeptide, theScanBestPeptide[alphaIndex].BestNotch, score, scanIndex, theScan, commonParameters.DigestionParams, matchedFragmentIons);
@@ -328,7 +328,7 @@ namespace EngineLayer.CrosslinkSearch
                     {
                         foreach (var setOfFragments in fragmentsForEachAlphaLocalizedPossibility.Where(v => v.Item1 == possibleSite))
                         {
-                            var matchedIons = MatchFragmentIons(theScan.TheScan, setOfFragments.Item2, commonParameters, theScan.PrecursorMass, theScan.PrecursorCharge, DeconvolutedMs2IsotopicEnvelopes, DeconvolutedPeakMzs);
+                            var matchedIons = MatchFragmentIons(theScan.TheScan, setOfFragments.Item2, commonParameters, theScan.PrecursorMass, theScan.PrecursorCharge, StoredDeconvolutedMs2Envelopes);
                             double score = CalculatePeptideScore(theScan.TheScan, matchedIons, 0);
 
                             if (score > bestAlphaLocalizedScore)
@@ -349,7 +349,7 @@ namespace EngineLayer.CrosslinkSearch
                     {
                         foreach (var setOfFragments in fragmentsForEachBetaLocalizedPossibility.Where(v => v.Item1 == possibleSite))
                         {
-                            var matchedIons = MatchFragmentIons(theScan.TheScan, setOfFragments.Item2, commonParameters, theScan.PrecursorMass, theScan.PrecursorCharge, DeconvolutedMs2IsotopicEnvelopes, DeconvolutedPeakMzs);
+                            var matchedIons = MatchFragmentIons(theScan.TheScan, setOfFragments.Item2, commonParameters, theScan.PrecursorMass, theScan.PrecursorCharge, StoredDeconvolutedMs2Envelopes);
 
                             // remove any matched beta ions that also matched to the alpha peptide
                             matchedIons.RemoveAll(p => alphaMz.Contains(p.Mz));
@@ -427,7 +427,7 @@ namespace EngineLayer.CrosslinkSearch
                     originalPeptide.OneBasedEndResidueInProtein, originalPeptide.CleavageSpecificityForFdrCategory, originalPeptide.PeptideDescription, originalPeptide.MissedCleavages, mods, originalPeptide.NumFixedMods);
 
                 var products = localizedPeptide.Fragment(commonParameters.DissociationType, FragmentationTerminus.Both).ToList();
-                var matchedFragmentIons = MatchFragmentIons(theScan.TheScan, products, commonParameters, theScan.PrecursorMass, theScan.PrecursorCharge, DeconvolutedMs2IsotopicEnvelopes, DeconvolutedPeakMzs);
+                var matchedFragmentIons = MatchFragmentIons(theScan.TheScan, products, commonParameters, theScan.PrecursorMass, theScan.PrecursorCharge, StoredDeconvolutedMs2Envelopes);
 
                 double score = CalculatePeptideScore(theScan.TheScan, matchedFragmentIons, 0);
 
@@ -479,7 +479,7 @@ namespace EngineLayer.CrosslinkSearch
 
             foreach (var setOfPositions in possibleFragmentSets)
             {
-                var matchedFragmentIons = MatchFragmentIons(theScan.TheScan, setOfPositions.Value, commonParameters, theScan.PrecursorMass, theScan.PrecursorCharge, DeconvolutedMs2IsotopicEnvelopes, DeconvolutedPeakMzs);
+                var matchedFragmentIons = MatchFragmentIons(theScan.TheScan, setOfPositions.Value, commonParameters, theScan.PrecursorMass, theScan.PrecursorCharge, StoredDeconvolutedMs2Envelopes);
 
                 double score = CalculatePeptideScore(theScan.TheScan, matchedFragmentIons, 0);
 

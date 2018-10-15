@@ -72,7 +72,7 @@ namespace EngineLayer.ClassicSearch
 
                             foreach (ScanWithIndexAndNotchInfo scan in GetAcceptableScans(peptide.MonoisotopicMass, SearchMode))
                             {
-                                List<MatchedFragmentIon> matchedIons = MatchFragmentIons(scan.TheScan.TheScan, peptideTheorProducts, commonParameters, scan.TheScan.PrecursorMass, scan.TheScan.PrecursorCharge, DeconvolutedMs2IsotopicEnvelopes, DeconvolutedPeakMzs);
+                                List<MatchedFragmentIon> matchedIons = MatchFragmentIons(scan.TheScan.TheScan, peptideTheorProducts, commonParameters, scan.TheScan.PrecursorMass, scan.TheScan.PrecursorCharge, StoredDeconvolutedMs2Envelopes);
 
                                 double thisScore = CalculatePeptideScore(scan.TheScan.TheScan, matchedIons, 0);
 

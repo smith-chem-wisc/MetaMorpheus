@@ -2,12 +2,10 @@
 using MassSpectrometry;
 using MzLibUtil;
 using System;
-using System.Collections;
 using System.Collections.Generic;
 using System.Diagnostics;
 using System.Linq;
 using Proteomics.Fragmentation;
-using ClassExtensions = Chemistry.ClassExtensions;
 
 namespace EngineLayer
 {
@@ -26,23 +24,14 @@ namespace EngineLayer
 
         protected readonly List<string> nestedIds;
 
-        /// <summary>
-        /// This is where deconvoluted MS2 isotopic envelopes are stored for fragment matching. The first int key is the
-        /// one-based MS2 scan number, and the second int key is the rounded mass (to the nearest Dalton).
-        /// </summary>
-        protected Dictionary<int, IsotopicEnvelope[]> DeconvolutedMs2IsotopicEnvelopes;
-
-        protected Dictionary<int, HashSet<double>> DeconvolutedPeakMzs;
-
-        private static GlobalVariables.ValueComparer<IsotopicEnvelope> IsotopicEnvelopeMassComparer;
+        protected StoredDeconvolutedMs2Envelopes StoredDeconvolutedMs2Envelopes;
 
         protected MetaMorpheusEngine(CommonParameters commonParameters, List<string> nestedIds)
         {
             this.commonParameters = commonParameters;
             this.nestedIds = nestedIds;
-            IsotopicEnvelopeMassComparer = new GlobalVariables.ValueComparer<IsotopicEnvelope>(f => f.monoisotopicMass);
         }
-        
+
         public static event EventHandler<SingleEngineEventArgs> StartingSingleEngineHander;
 
         public static event EventHandler<SingleEngineFinishedEventArgs> FinishedSingleEngineHandler;
@@ -55,40 +44,7 @@ namespace EngineLayer
 
         public void DeconvoluteAndStoreMs2(MsDataScan[] ms2Scans)
         {
-            DeconvolutedMs2IsotopicEnvelopes = new Dictionary<int, IsotopicEnvelope[]>();
-            DeconvolutedPeakMzs = new Dictionary<int, HashSet<double>>();
-
-            double ms2DeconvolutionPpmTolerance = 5.0;
-            int minZ = 1;
-            int maxZ = 10;
-
-            foreach (MsDataScan scan in ms2Scans)
-            {
-                if (DeconvolutedMs2IsotopicEnvelopes.ContainsKey(scan.OneBasedScanNumber))
-                {
-                    continue;
-                }
-
-                // deconvolute the scan
-                var isotopicEnvelopes = scan.MassSpectrum.Deconvolute(scan.MassSpectrum.Range, minZ, maxZ,
-                    ms2DeconvolutionPpmTolerance, commonParameters.DeconvolutionIntensityRatio).OrderBy(p => p.monoisotopicMass).ToArray();
-
-                // store the scan's deconvoluted envelopes
-                DeconvolutedMs2IsotopicEnvelopes.Add(scan.OneBasedScanNumber, isotopicEnvelopes);
-
-                // store the scan's deconvoluted envelope peaks
-                HashSet<double> deconvolutedMzForThisScan = new HashSet<double>();
-
-                foreach (IsotopicEnvelope isotopicEnvelope in isotopicEnvelopes)
-                {
-                    foreach (var peak in isotopicEnvelope.peaks)
-                    {
-                        deconvolutedMzForThisScan.Add(ClassExtensions.RoundedDouble(peak.mz).Value);
-                    }
-                }
-
-                DeconvolutedPeakMzs.Add(scan.OneBasedScanNumber, deconvolutedMzForThisScan);
-            }
+            StoredDeconvolutedMs2Envelopes = StoredDeconvolutedMs2Envelopes.DeconvoluteAndStoreMs2Scans(ms2Scans, commonParameters);
         }
 
         public static double CalculatePeptideScore(MsDataScan thisScan, List<MatchedFragmentIon> matchedFragmentIons, double maximumMassThatFragmentIonScoreIsDoubled)
@@ -109,8 +65,8 @@ namespace EngineLayer
             return score;
         }
 
-        public static List<MatchedFragmentIon> MatchFragmentIons(MsDataScan scan, List<Product> theoreticalProducts, CommonParameters commonParameters,
-            double precursorMass, int precursorCharge, Dictionary<int, IsotopicEnvelope[]> deconvolutedMs2IsotopicEnvelopes, Dictionary<int, HashSet<double>> deconvolutedPeakMzs)
+        public static List<MatchedFragmentIon> MatchFragmentIons(MsDataScan scan, List<Product> theoreticalProducts, CommonParameters commonParameters, double precursorMass, 
+            int precursorCharge, StoredDeconvolutedMs2Envelopes storedDeconvolutedMs2Envelopes)
         {
             var matchedFragmentIons = new List<MatchedFragmentIon>();
 
@@ -124,7 +80,7 @@ namespace EngineLayer
             foreach (Product product in theoreticalProducts)
             {
                 // unknown fragment mass; this only happens rarely for sequences with unknown amino acids
-                if (double.IsNaN(product.NeutralMass) || product.NeutralMass <= 0)
+                if (double.IsNaN(product.NeutralMass))
                 {
                     continue;
                 }
@@ -132,7 +88,7 @@ namespace EngineLayer
                 // look for higher-charge fragments via deconvolution
                 if (commonParameters.DeconvoluteMs2)
                 {
-                    IsotopicEnvelope bestEnvelope = BinarySearchForDeconvolutedMass(deconvolutedMs2IsotopicEnvelopes[scan.OneBasedScanNumber], product);
+                    IsotopicEnvelope bestEnvelope = storedDeconvolutedMs2Envelopes.BinarySearchForDeconvolutedMass(scan.OneBasedScanNumber, product);
 
                     if (bestEnvelope != null && commonParameters.ProductMassTolerance.Within(bestEnvelope.monoisotopicMass, product.NeutralMass) && bestEnvelope.charge <= precursorCharge)
                     {
@@ -149,8 +105,8 @@ namespace EngineLayer
                     double mz = scan.MassSpectrum.XArray[matchedPeakIndex];
 
                     // is the mass error acceptable and make sure it is not part a deconvoluted isotopic envelope
-                    if (commonParameters.ProductMassTolerance.Within(mz, product.NeutralMass.ToMz(1)) 
-                        && (deconvolutedPeakMzs == null || !deconvolutedPeakMzs[scan.OneBasedScanNumber].Contains(ClassExtensions.RoundedDouble(mz).Value)))
+                    if (commonParameters.ProductMassTolerance.Within(mz, product.NeutralMass.ToMz(1))
+                        && (storedDeconvolutedMs2Envelopes == null || !storedDeconvolutedMs2Envelopes.HasClaimedMzPeak(scan.OneBasedScanNumber, mz)))
                     {
                         matchedFragmentIons.Add(new MatchedFragmentIon(product, mz, scan.MassSpectrum.YArray[matchedPeakIndex], 1));
                     }
@@ -232,42 +188,6 @@ namespace EngineLayer
         private void FinishedSingleEngine(MetaMorpheusEngineResults myResults)
         {
             FinishedSingleEngineHandler?.Invoke(this, new SingleEngineFinishedEventArgs(myResults));
-        }
-
-        private static IsotopicEnvelope BinarySearchForDeconvolutedMass(IsotopicEnvelope[] deconvolutedEnvsForThisScan, Product product)
-        {
-            if (deconvolutedEnvsForThisScan.Length == 0)
-            {
-                return null;
-            }
-
-            int index = Array.BinarySearch(deconvolutedEnvsForThisScan, new IsotopicEnvelope(null, product.NeutralMass, 0, 0, 0, 0),
-                IsotopicEnvelopeMassComparer);
-
-            if (index >= 0)
-            {
-                return deconvolutedEnvsForThisScan[index];
-            }
-
-            index = ~index;
-
-            if (index >= deconvolutedEnvsForThisScan.Length)
-            {
-                return deconvolutedEnvsForThisScan[index - 1];
-            }
-
-            if (index == 0)
-            {
-                return deconvolutedEnvsForThisScan[index];
-            }
-
-            if (product.NeutralMass - deconvolutedEnvsForThisScan[index - 1].monoisotopicMass >
-                deconvolutedEnvsForThisScan[index].monoisotopicMass - product.NeutralMass)
-            {
-                return deconvolutedEnvsForThisScan[index];
-            }
-
-            return deconvolutedEnvsForThisScan[index - 1];
         }
     }
 }

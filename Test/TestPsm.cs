@@ -37,7 +37,7 @@ namespace Test
             Ms2ScanWithSpecificMass scan = new Ms2ScanWithSpecificMass(scann, 4, 1, null);
 
             var theoreticalIons = pepWithSetMods.Fragment(DissociationType.HCD, FragmentationTerminus.Both).ToList();
-            var matchedIons = MetaMorpheusEngine.MatchFragmentIons(scan.TheScan, theoreticalIons, new CommonParameters(deconvoluteMs2: false), scan.PrecursorMass, 1, null, null);
+            var matchedIons = MetaMorpheusEngine.MatchFragmentIons(scan.TheScan, theoreticalIons, new CommonParameters(deconvoluteMs2: false), scan.PrecursorMass, 1, null);
             PeptideSpectralMatch psm = new PeptideSpectralMatch(pepWithSetMods, 1, 2, 3, scan, digestionParams, matchedIons);
             psm.ResolveAllAmbiguities();
 
