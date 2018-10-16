@@ -71,6 +71,42 @@ namespace Test
         }
 
         /// <summary>
+        /// Ensures that the minimum peptide length is observed (KLEDHPK)
+        /// Ensures semispecific search finds peptides that were cleaved correctly during the first digestion (precursor index is made and searched correctly) (KEDEEDKFDAMGNK)
+        /// </summary>
+        [Test]
+        public static void SemiSpecificFullAndSmallMatches()
+        {
+            SearchTask searchTask = new SearchTask()
+            {
+                SearchParameters = new SearchParameters
+                {
+                    SearchType = SearchType.NonSpecific,
+                    LocalFdrCategories = new List<FdrCategory>
+                        {
+                            FdrCategory.FullySpecific,
+                            FdrCategory.SemiSpecific
+                        }
+                },
+                CommonParameters = new CommonParameters(addCompIons: true, scoreCutoff: 11,
+                    digestionParams: new DigestionParams(minPeptideLength: 7, searchModeType: CleavageSpecificity.Semi, fragmentationTerminus: FragmentationTerminus.N))
+            };
+
+            string myFile = Path.Combine(TestContext.CurrentContext.TestDirectory, @"TestData\tinySemi.mgf");
+            string myDatabase = Path.Combine(TestContext.CurrentContext.TestDirectory, @"TestData\semiTest.fasta");
+            DbForTask db = new DbForTask(myDatabase, false);
+
+            List<(string, MetaMorpheusTask)> taskList = new List<(string, MetaMorpheusTask)> { ("TestSemiSpecificSmall", searchTask) };
+
+            var engine = new EverythingRunnerEngine(taskList, new List<string> { myFile }, new List<DbForTask> { new DbForTask(myDatabase, false) }, Environment.CurrentDirectory);
+            engine.Run();
+
+            string outputPath = Path.Combine(TestContext.CurrentContext.TestDirectory, @"TestSemiSpecificSmall\AllPSMs.psmtsv");
+            var output = File.ReadAllLines(outputPath);
+            Assert.IsTrue(output.Length == 3);
+        }
+
+        /// <summary>
         /// Ensures semispecific search runs and outputs properly
         /// </summary>
         [Test]
@@ -110,11 +146,11 @@ namespace Test
 
                 string outputPath = Path.Combine(TestContext.CurrentContext.TestDirectory, @"TestSemiSpecific\TestSemiSpecific\AllPSMs.psmtsv");
                 var output = File.ReadAllLines(outputPath);
-                Assert.That(output.Length == 11); //if N is only producing 10 lines, then the c is not being searched with it.
+                Assert.That(output.Length == 12); //if N is only producing 11 lines, then the c is not being searched with it.
             }
             Directory.Delete(outputFolder, true);
         }
-               
+
         /// <summary>
         /// Tests that normalization in a search task works properly with an Experimental Design file read in,
         /// and crashes when that file is absent
