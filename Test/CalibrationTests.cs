@@ -16,6 +16,7 @@ namespace Test
             string myFile = Path.Combine(TestContext.CurrentContext.TestDirectory, @"TestData\SmallCalibratible_Yeast.mzML");
             string myDatabase = Path.Combine(TestContext.CurrentContext.TestDirectory, @"TestData\smalldb.fasta");
             string filePath = Path.Combine(TestContext.CurrentContext.TestDirectory, @"TestData\ExperimentalDesign.tsv");
+            Directory.CreateDirectory(outputFolder);
             using (StreamWriter output = new StreamWriter(filePath))
             {
                 output.WriteLine("FileName\tCondition\tBiorep\tFraction\tTechrep");
@@ -36,6 +37,8 @@ namespace Test
             Assert.That(lines[0].Contains("PrecursorMassTolerance"));
             Assert.That(lines[1].Contains("ProductMassTolerance"));
             File.Delete(filePath);
+            Directory.Delete(outputFolder, true);
+            Directory.Delete(Path.Combine(TestContext.CurrentContext.TestDirectory, @"Task Settings"), true);
         }
     }
 }

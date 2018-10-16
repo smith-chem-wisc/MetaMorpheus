@@ -93,6 +93,7 @@ namespace Test
 
             var lines2 = File.ReadAllLines(psmFile);
             Assert.That(lines2.Length == 7);
+            Directory.Delete(outputFolder, true);
         }
 
         [Test]
@@ -169,6 +170,7 @@ namespace Test
             string psmFile = Path.Combine(outputFolder, @"NoFilterTest\AllPSMs.psmtsv");
             var lines = File.ReadAllLines(psmFile);
             Assert.That(lines.Length == 12);
+            Directory.Delete(outputFolder, true);
         }
     }
 }

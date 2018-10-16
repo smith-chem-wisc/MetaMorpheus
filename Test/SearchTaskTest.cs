@@ -117,6 +117,9 @@ namespace Test
                 FragmentationTerminus.N,
                 FragmentationTerminus.C
             };
+            string outputFolder = Path.Combine(TestContext.CurrentContext.TestDirectory, @"TestSemiSpecific");
+            string myFile = Path.Combine(TestContext.CurrentContext.TestDirectory, @"TestData\PrunedDbSpectra.mzml");
+            string myDatabase = Path.Combine(TestContext.CurrentContext.TestDirectory, @"TestData\DbForPrunedDb.fasta");
             foreach (FragmentationTerminus fragTerm in terminiToTest)
             {
                 SearchTask searchTask = new SearchTask()
@@ -136,17 +139,19 @@ namespace Test
 
                 string myFile = Path.Combine(TestContext.CurrentContext.TestDirectory, @"TestData\PrunedDbSpectra.mzml");
                 string myDatabase = Path.Combine(TestContext.CurrentContext.TestDirectory, @"TestData\DbForPrunedDb.fasta");
+
                 DbForTask db = new DbForTask(myDatabase, false);
 
                 List<(string, MetaMorpheusTask)> taskList = new List<(string, MetaMorpheusTask)> { ("TestSemiSpecific", searchTask) };
 
-                var engine = new EverythingRunnerEngine(taskList, new List<string> { myFile }, new List<DbForTask> { new DbForTask(myDatabase, false) }, Environment.CurrentDirectory);
+                var engine = new EverythingRunnerEngine(taskList, new List<string> { myFile }, new List<DbForTask> { new DbForTask(myDatabase, false) }, outputFolder);
                 engine.Run();
 
-                string outputPath = Path.Combine(TestContext.CurrentContext.TestDirectory, @"TestSemiSpecific\AllPSMs.psmtsv");
+                string outputPath = Path.Combine(TestContext.CurrentContext.TestDirectory, @"TestSemiSpecific\TestSemiSpecific\AllPSMs.psmtsv");
                 var output = File.ReadAllLines(outputPath);
                 Assert.That(output.Length == 12); //if N is only producing 11 lines, then the c is not being searched with it.
             }
+            Directory.Delete(outputFolder, true);
         }
 
         /// <summary>
@@ -174,6 +179,7 @@ namespace Test
                 output.WriteLine("PrunedDbSpectra" + "\t" + "condition" + "\t" + "1" + "\t" + "1" + "\t" + "1");
             }
             DbForTask db = new DbForTask(myDatabase, false);
+            Directory.CreateDirectory(folderPath);
 
             searchTask.RunTask(folderPath, new List<DbForTask> { db }, new List<string> { myFile }, "normal");
 
@@ -181,6 +187,7 @@ namespace Test
 
             Assert.That(() => searchTask.RunTask(folderPath, new List<DbForTask> { db }, new List<string> { myFile }, "normal"),
                Throws.TypeOf<MetaMorpheusException>());
+            Directory.Delete(folderPath, true);
         }
 
         /// <summary>
@@ -202,8 +209,10 @@ namespace Test
             string folderPath = Path.Combine(TestContext.CurrentContext.TestDirectory, @"TestProteinGroupsNoParsimony");
 
             DbForTask db = new DbForTask(myDatabase, false);
+            Directory.CreateDirectory(folderPath);
 
             searchTask.RunTask(folderPath, new List<DbForTask> { db }, new List<string> { myFile }, "normal");
+            Directory.Delete(folderPath, true);
         }
 
         /// <summary>
@@ -227,11 +236,13 @@ namespace Test
 
             // contaminant DB
             DbForTask db = new DbForTask(myDatabase, true);
+            Directory.CreateDirectory(folderPath);
 
             searchTask.RunTask(folderPath, new List<DbForTask> { db }, new List<string> { myFile }, "normal");
 
             Assert.That(File.ReadAllLines(Path.Combine(folderPath, @"DbForPrunedDbproteinPruned.xml")).Length > 0);
             Assert.That(File.ReadAllLines(Path.Combine(folderPath, @"DbForPrunedDbPruned.xml")).Length > 0);
+            Directory.Delete(folderPath, true);
         }
     }
 }
