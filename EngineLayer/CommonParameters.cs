@@ -83,7 +83,6 @@ namespace EngineLayer
         public bool CalculateEValue { get; private set; }
         public double QValueOutputFilter { get; private set; }
         public DissociationType DissociationType { get; private set; }
-        public bool DeconvoluteMs2 { get; private set; }
         public bool AssumeFragmentsAreZ1 { get; private set; }
 
         public CommonParameters Clone()
@@ -132,7 +131,8 @@ namespace EngineLayer
                                 ),
                                 ListOfModsVariable,
                                 ListOfModsFixed,
-                                QValueOutputFilter);
+                                QValueOutputFilter,
+                                AssumeFragmentsAreZ1);
         }
     }
 }

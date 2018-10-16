@@ -63,12 +63,12 @@ namespace EngineLayer
             var matchedFragmentIons = new List<MatchedFragmentIon>();
 
             // if the spectrum has no peaks
-            if (!scan.NeutralExperimentalFragmentMasses.Any())
+            if (!scan.ExperimentalFragments.Any())
             {
                 return matchedFragmentIons;
             }
 
-            //search for ions in the spectrum
+            // search for ions in the spectrum
             foreach (Product product in theoreticalProducts)
             {
                 // unknown fragment mass; this only happens rarely for sequences with unknown amino acids
@@ -80,16 +80,17 @@ namespace EngineLayer
                 // get the closest peak in the spectrum to the theoretical peak
                 var closestExperimentalMass = scan.GetClosestExperimentalFragmentMass(product.NeutralMass);
                 
-                // is the mass error acceptable and make sure it is not part a deconvoluted isotopic envelope
+                // is the mass error acceptable?
                 if (commonParameters.ProductMassTolerance.Within(closestExperimentalMass.monoisotopicMass, product.NeutralMass) && closestExperimentalMass.charge <= scan.PrecursorCharge)
                 {
                     matchedFragmentIons.Add(new MatchedFragmentIon(product, closestExperimentalMass.monoisotopicMass.ToMz(closestExperimentalMass.charge), 
                         closestExperimentalMass.totalIntensity, closestExperimentalMass.charge));
                 }
             }
-            if (commonParameters.AddCompIons)//needs to be separate to account for ppm error differences
+            if (commonParameters.AddCompIons)
             {
                 double protonMassShift = complementaryIonConversionDictionary[commonParameters.DissociationType].ToMass(1);
+
                 foreach (Product product in theoreticalProducts)
                 {
                     // unknown fragment mass; this only happens rarely for sequences with unknown amino acids

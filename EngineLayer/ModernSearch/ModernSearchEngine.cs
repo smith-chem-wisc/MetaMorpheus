@@ -162,7 +162,7 @@ namespace EngineLayer.ModernSearch
             int obsPreviousFragmentCeilingMz = 0;
             List<int> binsToSearch = new List<int>();
             
-            foreach (var envelope in scan.NeutralExperimentalFragmentMasses)
+            foreach (var envelope in scan.ExperimentalFragments)
             {
                 // assume charge state 1 to calculate mass tolerance
                 double experimentalFragmentMass = envelope.monoisotopicMass;

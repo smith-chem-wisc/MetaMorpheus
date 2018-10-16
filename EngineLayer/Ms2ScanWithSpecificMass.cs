@@ -3,7 +3,6 @@ using System.Collections.Generic;
 using System.Linq;
 using Chemistry;
 using MassSpectrometry;
-using Proteomics.Fragmentation;
 
 namespace EngineLayer
 {
@@ -18,11 +17,11 @@ namespace EngineLayer
 
             TheScan = mzLibScan;
 
-            NeutralExperimentalFragmentMasses = neutralExperimentalFragments ?? GetNeutralExperimentalFragments(mzLibScan, commonParam);
+            ExperimentalFragments = neutralExperimentalFragments ?? GetNeutralExperimentalFragments(mzLibScan, commonParam);
 
-            if (NeutralExperimentalFragmentMasses.Any())
+            if (ExperimentalFragments.Any())
             {
-                DeconvolutedMonoisotopicMasses = NeutralExperimentalFragmentMasses.Select(p => p.monoisotopicMass).ToArray();
+                DeconvolutedMonoisotopicMasses = ExperimentalFragments.Select(p => p.monoisotopicMass).ToArray();
             }
         }
 
@@ -31,7 +30,7 @@ namespace EngineLayer
         public double PrecursorMass { get; }
         public int PrecursorCharge { get; }
         public string FullFilePath { get; }
-        public IsotopicEnvelope[] NeutralExperimentalFragmentMasses { get; private set; }
+        public IsotopicEnvelope[] ExperimentalFragments { get; private set; }
         private double[] DeconvolutedMonoisotopicMasses;
 
         public int OneBasedScanNumber => TheScan.OneBasedScanNumber;
@@ -81,7 +80,7 @@ namespace EngineLayer
             {
                 return null;
             }
-            return NeutralExperimentalFragmentMasses[GetClosestFragmentMass(theoreticalNeutralMass).Value];
+            return ExperimentalFragments[GetClosestFragmentMass(theoreticalNeutralMass).Value];
         }
 
         private int? GetClosestFragmentMass(double mass)
