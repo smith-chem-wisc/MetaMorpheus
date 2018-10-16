@@ -34,10 +34,10 @@ namespace Test
                     .Digest(digestionParams, new List<Modification>(), new List<Modification>()).First();
             MsDataFile myMsDataFile = new TestDataFile(pepWithSetMods, "quadratic");
             MsDataScan scann = myMsDataFile.GetOneBasedScan(2);
-            Ms2ScanWithSpecificMass scan = new Ms2ScanWithSpecificMass(scann, 4, 1, null);
+            Ms2ScanWithSpecificMass scan = new Ms2ScanWithSpecificMass(scann, 4, 1, null, new CommonParameters());
 
             var theoreticalIons = pepWithSetMods.Fragment(DissociationType.HCD, FragmentationTerminus.Both).ToList();
-            var matchedIons = MetaMorpheusEngine.MatchFragmentIons(scan.TheScan, theoreticalIons, new CommonParameters(deconvoluteMs2: false), scan.PrecursorMass, 1, null);
+            var matchedIons = MetaMorpheusEngine.MatchFragmentIons(scan, theoreticalIons, new CommonParameters());
             PeptideSpectralMatch psm = new PeptideSpectralMatch(pepWithSetMods, 1, 2, 3, scan, digestionParams, matchedIons);
             psm.ResolveAllAmbiguities();
 
@@ -48,7 +48,7 @@ namespace Test
             Assert.AreEqual(psm.ToString().Count(f => f == '\t'), PeptideSpectralMatch.GetTabSeparatedHeader().Count(f => f == '\t'));
 
             Tolerance fragmentTolerance = new PpmTolerance(10);
-            new LocalizationEngine(new List<PeptideSpectralMatch> { psm }, myMsDataFile, new CommonParameters(productMassTolerance: fragmentTolerance, deconvoluteMs2: false), new List<string>()).Run();
+            new LocalizationEngine(new List<PeptideSpectralMatch> { psm }, myMsDataFile, new CommonParameters(productMassTolerance: fragmentTolerance), new List<string>()).Run();
 
             Assert.AreEqual(psm.ToString().Count(f => f == '\t'), PeptideSpectralMatch.GetTabSeparatedHeader().Count(f => f == '\t'));
 

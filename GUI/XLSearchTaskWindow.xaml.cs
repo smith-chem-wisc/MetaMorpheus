@@ -150,7 +150,6 @@ namespace MetaMorpheusGUI
             checkBoxDecoy.IsChecked = task.XlSearchParameters.DecoyType != DecoyType.None;
             deconvolutePrecursors.IsChecked = task.CommonParameters.DoPrecursorDeconvolution;
             useProvidedPrecursor.IsChecked = task.CommonParameters.UseProvidedPrecursorInfo;
-            deconvoluteMs2.IsChecked = task.CommonParameters.DeconvoluteMs2;
             missedCleavagesTextBox.Text = task.CommonParameters.DigestionParams.MaxMissedCleavages.ToString(CultureInfo.InvariantCulture);
             MinPeptideLengthTextBox.Text = task.CommonParameters.DigestionParams.MinPeptideLength.ToString(CultureInfo.InvariantCulture);
             MaxPeptideLengthTextBox.Text = task.CommonParameters.DigestionParams.MaxPeptideLength == int.MaxValue ? "" : task.CommonParameters.DigestionParams.MaxPeptideLength.ToString(CultureInfo.InvariantCulture);
@@ -345,7 +344,6 @@ namespace MetaMorpheusGUI
                 totalPartitions: int.Parse(numberOfDatabaseSearchesTextBox.Text, CultureInfo.InvariantCulture),
                 listOfModsVariable: listOfModsVariable,
                 listOfModsFixed: listOfModsFixed,
-                deconvoluteMs2: deconvoluteMs2.IsChecked.Value,
                 assumeFragmentsAreZ1: protease.Name != "top-down");
 
             TheTask.CommonParameters = commonParamsToSave;

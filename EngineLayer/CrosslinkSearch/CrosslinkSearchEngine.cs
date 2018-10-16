@@ -23,8 +23,6 @@ namespace EngineLayer.CrosslinkSearch
         private readonly bool QuenchH2O;
         private readonly bool QuenchNH2;
         private readonly bool QuenchTris;
-        private readonly bool Charge_2_3;
-        private readonly bool Charge_2_3_PrimeFragment;
         private MassDiffAcceptor XLPrecusorSearchMode;
         private Modification TrisDeadEnd;
         private Modification H2ODeadEnd;
@@ -34,7 +32,7 @@ namespace EngineLayer.CrosslinkSearch
 
         public CrosslinkSearchEngine(CrosslinkSpectralMatch[] globalCsms, Ms2ScanWithSpecificMass[] listOfSortedms2Scans, List<PeptideWithSetModifications> peptideIndex,
             List<int>[] fragmentIndex, int currentPartition, CommonParameters commonParameters, Crosslinker crosslinker, bool CrosslinkSearchTop, int CrosslinkSearchTopNum,
-            bool quench_H2O, bool quench_NH2, bool quench_Tris, bool charge_2_3, bool charge_2_3_PrimeFragment, List<string> nestedIds)
+            bool quench_H2O, bool quench_NH2, bool quench_Tris, List<string> nestedIds)
             : base(null, listOfSortedms2Scans, peptideIndex, fragmentIndex, currentPartition, commonParameters, new OpenSearchMode(), 0, nestedIds)
         {
             this.GlobalCsms = globalCsms;
@@ -44,8 +42,6 @@ namespace EngineLayer.CrosslinkSearch
             this.QuenchH2O = quench_H2O;
             this.QuenchNH2 = quench_NH2;
             this.QuenchTris = quench_Tris;
-            this.Charge_2_3 = charge_2_3;
-            this.Charge_2_3_PrimeFragment = charge_2_3_PrimeFragment;
             GenerateCrosslinkModifications(crosslinker);
             AllCrosslinkerSites = Crosslinker.CrosslinkerModSites.ToCharArray().Concat(Crosslinker.CrosslinkerModSites2.ToCharArray()).Distinct().ToArray();
 
@@ -61,12 +57,6 @@ namespace EngineLayer.CrosslinkSearch
 
         protected override MetaMorpheusEngineResults RunSpecific()
         {
-            if (commonParameters.DeconvoluteMs2)
-            {
-                Status("Deconvoluting MS2 scans...");
-                DeconvoluteAndStoreMs2(ListOfSortedMs2Scans.Select(p => p.TheScan).Distinct().ToArray());
-            }
-
             double progress = 0;
             int oldPercentProgress = 0;
             ReportProgress(new ProgressEventArgs(oldPercentProgress, "Performing crosslink search... " + CurrentPartition + "/" + commonParameters.TotalPartitions, nestedIds));
@@ -170,7 +160,7 @@ namespace EngineLayer.CrosslinkSearch
                 if (XLPrecusorSearchMode.Accepts(theScan.PrecursorMass, bestPeptide.MonoisotopicMass) >= 0)
                 {
                     List<Product> products = bestPeptide.Fragment(commonParameters.DissociationType, FragmentationTerminus.Both).ToList();
-                    var matchedFragmentIons = MatchFragmentIons(theScan.TheScan, products, commonParameters, theScan.PrecursorMass, theScan.PrecursorCharge, StoredDeconvolutedMs2Envelopes);
+                    var matchedFragmentIons = MatchFragmentIons(theScan, products, commonParameters);
                     double score = CalculatePeptideScore(theScan.TheScan, matchedFragmentIons, 0);
 
                     var psmCrossSingle = new CrosslinkSpectralMatch(bestPeptide, theScanBestPeptide[alphaIndex].BestNotch, score, scanIndex, theScan, commonParameters.DigestionParams, matchedFragmentIons);
@@ -328,7 +318,7 @@ namespace EngineLayer.CrosslinkSearch
                     {
                         foreach (var setOfFragments in fragmentsForEachAlphaLocalizedPossibility.Where(v => v.Item1 == possibleSite))
                         {
-                            var matchedIons = MatchFragmentIons(theScan.TheScan, setOfFragments.Item2, commonParameters, theScan.PrecursorMass, theScan.PrecursorCharge, StoredDeconvolutedMs2Envelopes);
+                            var matchedIons = MatchFragmentIons(theScan, setOfFragments.Item2, commonParameters);
                             double score = CalculatePeptideScore(theScan.TheScan, matchedIons, 0);
 
                             if (score > bestAlphaLocalizedScore)
@@ -349,7 +339,7 @@ namespace EngineLayer.CrosslinkSearch
                     {
                         foreach (var setOfFragments in fragmentsForEachBetaLocalizedPossibility.Where(v => v.Item1 == possibleSite))
                         {
-                            var matchedIons = MatchFragmentIons(theScan.TheScan, setOfFragments.Item2, commonParameters, theScan.PrecursorMass, theScan.PrecursorCharge, StoredDeconvolutedMs2Envelopes);
+                            var matchedIons = MatchFragmentIons(theScan, setOfFragments.Item2, commonParameters);
 
                             // remove any matched beta ions that also matched to the alpha peptide
                             matchedIons.RemoveAll(p => alphaMz.Contains(p.Mz));
@@ -427,7 +417,7 @@ namespace EngineLayer.CrosslinkSearch
                     originalPeptide.OneBasedEndResidueInProtein, originalPeptide.CleavageSpecificityForFdrCategory, originalPeptide.PeptideDescription, originalPeptide.MissedCleavages, mods, originalPeptide.NumFixedMods);
 
                 var products = localizedPeptide.Fragment(commonParameters.DissociationType, FragmentationTerminus.Both).ToList();
-                var matchedFragmentIons = MatchFragmentIons(theScan.TheScan, products, commonParameters, theScan.PrecursorMass, theScan.PrecursorCharge, StoredDeconvolutedMs2Envelopes);
+                var matchedFragmentIons = MatchFragmentIons(theScan, products, commonParameters);
 
                 double score = CalculatePeptideScore(theScan.TheScan, matchedFragmentIons, 0);
 
@@ -479,7 +469,7 @@ namespace EngineLayer.CrosslinkSearch
 
             foreach (var setOfPositions in possibleFragmentSets)
             {
-                var matchedFragmentIons = MatchFragmentIons(theScan.TheScan, setOfPositions.Value, commonParameters, theScan.PrecursorMass, theScan.PrecursorCharge, StoredDeconvolutedMs2Envelopes);
+                var matchedFragmentIons = MatchFragmentIons(theScan, setOfPositions.Value, commonParameters);
 
                 double score = CalculatePeptideScore(theScan.TheScan, matchedFragmentIons, 0);
 

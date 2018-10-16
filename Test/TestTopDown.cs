@@ -24,7 +24,6 @@ namespace Test
             CommonParameters CommonParameters = new CommonParameters(
                 digestionParams: new DigestionParams(protease: "top-down"),
                 scoreCutoff: 1,
-                deconvoluteMs2: true,
                 assumeFragmentsAreZ1: false);
 
             var variableModifications = new List<Modification>();
@@ -44,8 +43,7 @@ namespace Test
             int DeconvolutionMaxAssumedChargeState = 60;
             Tolerance DeconvolutionMassTolerance = new PpmTolerance(5);
 
-            var listOfSortedms2Scans = MetaMorpheusTask.GetMs2Scans(myMsDataFile, null, DoPrecursorDeconvolution, UseProvidedPrecursorInfo, DeconvolutionIntensityRatio, 
-                DeconvolutionMaxAssumedChargeState, DeconvolutionMassTolerance).OrderBy(b => b.PrecursorMass).ToArray();
+            var listOfSortedms2Scans = MetaMorpheusTask.GetMs2Scans(myMsDataFile, null, new CommonParameters()).OrderBy(b => b.PrecursorMass).ToArray();
 
             PeptideSpectralMatch[] allPsmsArray = new PeptideSpectralMatch[listOfSortedms2Scans.Length];
             new ClassicSearchEngine(allPsmsArray, listOfSortedms2Scans, variableModifications, fixedModifications, proteinList, searchMode, CommonParameters, new List<string>()).Run();
@@ -60,7 +58,6 @@ namespace Test
             CommonParameters CommonParameters = new CommonParameters(
                 digestionParams: new DigestionParams(protease: "top-down"),
                 scoreCutoff: 1,
-                deconvoluteMs2: true,
                 assumeFragmentsAreZ1: false);
 
             var variableModifications = new List<Modification>();
@@ -80,8 +77,7 @@ namespace Test
             int DeconvolutionMaxAssumedChargeState = 60;
             Tolerance DeconvolutionMassTolerance = new PpmTolerance(5);
 
-            var listOfSortedms2Scans = MetaMorpheusTask.GetMs2Scans(myMsDataFile, null, DoPrecursorDeconvolution, UseProvidedPrecursorInfo, DeconvolutionIntensityRatio,
-                DeconvolutionMaxAssumedChargeState, DeconvolutionMassTolerance).OrderBy(b => b.PrecursorMass).ToArray();
+            var listOfSortedms2Scans = MetaMorpheusTask.GetMs2Scans(myMsDataFile, null, new CommonParameters()).OrderBy(b => b.PrecursorMass).ToArray();
 
             PeptideSpectralMatch[] allPsmsArray = new PeptideSpectralMatch[listOfSortedms2Scans.Length];
             

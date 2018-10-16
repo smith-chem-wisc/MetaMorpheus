@@ -190,7 +190,6 @@ namespace MetaMorpheusGUI
             TopNPeaksTextBox.Text = task.CommonParameters.TopNpeaks == int.MaxValue ? "" : task.CommonParameters.TopNpeaks.ToString(CultureInfo.InvariantCulture);
             MinRatioTextBox.Text = task.CommonParameters.MinRatio.ToString(CultureInfo.InvariantCulture);
             maxThreadsTextBox.Text = task.CommonParameters.MaxThreadsToUsePerFile.ToString(CultureInfo.InvariantCulture);
-            deconvoluteMs2.IsChecked = task.CommonParameters.DeconvoluteMs2;
 
             if (task.CommonParameters.QValueOutputFilter < 1)
             {
@@ -452,7 +451,6 @@ namespace MetaMorpheusGUI
                 minRatio: MinRatio,
                 addCompIons: addCompIonCheckBox.IsChecked.Value,
                 qValueOutputFilter: QValueCheckBox.IsChecked.Value ? double.Parse(QValueTextBox.Text, CultureInfo.InvariantCulture) : 1.0,
-                deconvoluteMs2: deconvoluteMs2.IsChecked.Value,
                 assumeFragmentsAreZ1: protease.Name != "top-down");
 
             if (classicSearchRadioButton.IsChecked.Value)

@@ -22,7 +22,7 @@ namespace EngineLayer
             bool addCompIons = false, int totalPartitions = 1, double scoreCutoff = 5, int topNpeaks = 200, double minRatio = 0.01, bool trimMs1Peaks = false,
             bool trimMsMsPeaks = true, bool useDeltaScore = false, bool calculateEValue = false, Tolerance productMassTolerance = null, Tolerance precursorMassTolerance = null, Tolerance deconvolutionMassTolerance = null,
             int maxThreadsToUsePerFile = -1, DigestionParams digestionParams = null, IEnumerable<(string, string)> listOfModsVariable = null, IEnumerable<(string, string)> listOfModsFixed = null, double qValueOutputFilter = 1.0,
-            bool assumeFragmentsAreZ1 = true, bool deconvoluteMs2 = true)
+            bool assumeFragmentsAreZ1 = true)
         {
             TaskDescriptor = taskDescriptor;
             DoPrecursorDeconvolution = doPrecursorDeconvolution;
@@ -50,7 +50,6 @@ namespace EngineLayer
             DissociationType = dissociationType;
             QValueOutputFilter = qValueOutputFilter;
             
-            DeconvoluteMs2 = deconvoluteMs2;
             AssumeFragmentsAreZ1 = assumeFragmentsAreZ1;
         }
 

@@ -25,12 +25,6 @@ namespace EngineLayer.Localization
 
         protected override MetaMorpheusEngineResults RunSpecific()
         {
-            if (commonParameters.DeconvoluteMs2)
-            {
-                Status("Deconvoluting MS2 scans...");
-                DeconvoluteAndStoreMs2(MyMsDataFile.GetAllScansList().Where(p => p.MsnOrder > 1).ToArray());
-            }
-
             // don't try to localize mass differences for ambiguous peptides
             foreach (PeptideSpectralMatch psm in AllResultingIdentifications.Where(b => b.FullSequence != null))
             {
@@ -41,6 +35,7 @@ namespace EngineLayer.Localization
                 }
 
                 MsDataScan scan = MyMsDataFile.GetOneBasedScan(psm.ScanNumber);
+                Ms2ScanWithSpecificMass scanWithSpecificMass = new Ms2ScanWithSpecificMass(scan, psm.ScanPrecursorMonoisotopicPeakMz, psm.ScanPrecursorCharge, psm.FullFilePath, commonParameters);
                 PeptideWithSetModifications peptide = psm.BestMatchingPeptides.First().Peptide;
                 double massDifference = psm.ScanPrecursorMass - peptide.MonoisotopicMass;
 
@@ -54,7 +49,7 @@ namespace EngineLayer.Localization
                     // this is the list of theoretical products for this peptide with mass-difference on this residue
                     List<Product> productsWithLocalizedMassDiff = peptideWithLocalizedMassDiff.Fragment(commonParameters.DissociationType, commonParameters.DigestionParams.FragmentationTerminus).ToList();
 
-                    var matchedIons = MatchFragmentIons(scan, productsWithLocalizedMassDiff, commonParameters, psm.ScanPrecursorMass, psm.ScanPrecursorCharge, StoredDeconvolutedMs2Envelopes);
+                    var matchedIons = MatchFragmentIons(scanWithSpecificMass, productsWithLocalizedMassDiff, commonParameters);
 
                     // score when the mass-diff is on this residue
                     double localizedScore = CalculatePeptideScore(scan, matchedIons, 0);

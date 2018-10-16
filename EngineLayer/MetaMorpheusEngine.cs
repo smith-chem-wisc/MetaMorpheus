@@ -23,9 +23,7 @@ namespace EngineLayer
         protected readonly CommonParameters commonParameters;
 
         protected readonly List<string> nestedIds;
-
-        protected StoredDeconvolutedMs2Envelopes StoredDeconvolutedMs2Envelopes;
-
+        
         protected MetaMorpheusEngine(CommonParameters commonParameters, List<string> nestedIds)
         {
             this.commonParameters = commonParameters;
@@ -41,12 +39,7 @@ namespace EngineLayer
         public static event EventHandler<StringEventArgs> WarnHandler;
 
         public static event EventHandler<ProgressEventArgs> OutProgressHandler;
-
-        public void DeconvoluteAndStoreMs2(MsDataScan[] ms2Scans)
-        {
-            StoredDeconvolutedMs2Envelopes = StoredDeconvolutedMs2Envelopes.DeconvoluteAndStoreMs2Scans(ms2Scans, commonParameters);
-        }
-
+        
         public static double CalculatePeptideScore(MsDataScan thisScan, List<MatchedFragmentIon> matchedFragmentIons, double maximumMassThatFragmentIonScoreIsDoubled)
         {
             double score = 0;
@@ -65,13 +58,12 @@ namespace EngineLayer
             return score;
         }
 
-        public static List<MatchedFragmentIon> MatchFragmentIons(MsDataScan scan, List<Product> theoreticalProducts, CommonParameters commonParameters, double precursorMass, 
-            int precursorCharge, StoredDeconvolutedMs2Envelopes storedDeconvolutedMs2Envelopes)
+        public static List<MatchedFragmentIon> MatchFragmentIons(Ms2ScanWithSpecificMass scan, List<Product> theoreticalProducts, CommonParameters commonParameters)
         {
             var matchedFragmentIons = new List<MatchedFragmentIon>();
 
             // if the spectrum has no peaks
-            if (scan.MassSpectrum.Size == 0)
+            if (!scan.NeutralExperimentalFragmentMasses.Any())
             {
                 return matchedFragmentIons;
             }
@@ -85,37 +77,19 @@ namespace EngineLayer
                     continue;
                 }
 
-                // look for higher-charge fragments via deconvolution
-                if (commonParameters.DeconvoluteMs2)
+                // get the closest peak in the spectrum to the theoretical peak
+                var closestExperimentalMass = scan.GetClosestExperimentalFragmentMass(product.NeutralMass);
+                
+                // is the mass error acceptable and make sure it is not part a deconvoluted isotopic envelope
+                if (commonParameters.ProductMassTolerance.Within(closestExperimentalMass.monoisotopicMass, product.NeutralMass) && closestExperimentalMass.charge <= scan.PrecursorCharge)
                 {
-                    IsotopicEnvelope bestEnvelope = storedDeconvolutedMs2Envelopes.BinarySearchForDeconvolutedMass(scan.OneBasedScanNumber, product);
-
-                    if (bestEnvelope != null && commonParameters.ProductMassTolerance.Within(bestEnvelope.monoisotopicMass, product.NeutralMass) && bestEnvelope.charge <= precursorCharge)
-                    {
-                        matchedFragmentIons.Add(new MatchedFragmentIon(product, bestEnvelope.monoisotopicMass.ToMz(bestEnvelope.charge), bestEnvelope.totalIntensity, bestEnvelope.charge));
-                    }
-                }
-
-                // look for z=1 fragments without requiring a second isotope peak to be present
-                if (commonParameters.AssumeFragmentsAreZ1)
-                {
-                    // get the closest peak in the spectrum to the theoretical peak assuming z=1
-                    int matchedPeakIndex = scan.MassSpectrum.GetClosestPeakIndex(product.NeutralMass.ToMz(1)).Value;
-
-                    double mz = scan.MassSpectrum.XArray[matchedPeakIndex];
-
-                    // is the mass error acceptable and make sure it is not part a deconvoluted isotopic envelope
-                    if (commonParameters.ProductMassTolerance.Within(mz, product.NeutralMass.ToMz(1))
-                        && (storedDeconvolutedMs2Envelopes == null || !storedDeconvolutedMs2Envelopes.HasClaimedMzPeak(scan.OneBasedScanNumber, mz)))
-                    {
-                        matchedFragmentIons.Add(new MatchedFragmentIon(product, mz, scan.MassSpectrum.YArray[matchedPeakIndex], 1));
-                    }
+                    matchedFragmentIons.Add(new MatchedFragmentIon(product, closestExperimentalMass.monoisotopicMass.ToMz(closestExperimentalMass.charge), 
+                        closestExperimentalMass.totalIntensity, closestExperimentalMass.charge));
                 }
             }
             if (commonParameters.AddCompIons)//needs to be separate to account for ppm error differences
             {
                 double protonMassShift = complementaryIonConversionDictionary[commonParameters.DissociationType].ToMass(1);
-                double sumOfCompIonsMz = (precursorMass + protonMassShift).ToMz(1); //FIXME, not valid for all fragmentation (b+y+H = precursor, but c+zdot+2H = precursor)
                 foreach (Product product in theoreticalProducts)
                 {
                     // unknown fragment mass; this only happens rarely for sequences with unknown amino acids
@@ -123,22 +97,17 @@ namespace EngineLayer
                     {
                         continue;
                     }
+                    
+                    double compIonMass = scan.PrecursorMass + protonMassShift - product.NeutralMass;
 
-                    // get the closest peak in the spectrum to the theoretical peak assuming z=1
-                    //generate a "comp" product
-                    double theoreticalCompMz = sumOfCompIonsMz - product.NeutralMass; //This is NOT the m/z of the product, 
-                    //but the m/z of the theoretical complementary that we are looking for in the experimental spectrum.
-                    //The complementary to this experimental match will match to the original theoretical product
-                    int matchedPeakIndex = scan.MassSpectrum.GetClosestPeakIndex(theoreticalCompMz).Value; //search for the comp ion
-                    double mzToCompare = scan.MassSpectrum.XArray[matchedPeakIndex]; //we need the original mz to know the error associated with the comp mz
+                    // get the closest peak in the spectrum to the theoretical peak
+                    var closestExperimentalMass = scan.GetClosestExperimentalFragmentMass(compIonMass);
 
-                    // is the mass error acceptable and has it been counted already?
-                    //Need to compare the "noncomplementary" peaks so that the correct mass tolerance is used for Ppm tolerances
-                    if (commonParameters.ProductMassTolerance.Within(mzToCompare, theoreticalCompMz))
+                    // is the mass error acceptable?
+                    if (commonParameters.ProductMassTolerance.Within(closestExperimentalMass.monoisotopicMass, compIonMass) && closestExperimentalMass.charge <= scan.PrecursorCharge)
                     {
-                        //the sumOfCompIons - original peak must be converted to mz, because subtracting an mz from an mz creates a mass difference, not an mz (5-3 (m/z) = 2 = 4-2 (mass))
-                        matchedFragmentIons.Add(new MatchedFragmentIon(product, (sumOfCompIonsMz - scan.MassSpectrum.XArray[matchedPeakIndex]).ToMz(1),
-                            scan.MassSpectrum.YArray[matchedPeakIndex], 1));
+                        matchedFragmentIons.Add(new MatchedFragmentIon(product, closestExperimentalMass.monoisotopicMass.ToMz(closestExperimentalMass.charge),
+                            closestExperimentalMass.totalIntensity, closestExperimentalMass.charge));
                     }
                 }
             }

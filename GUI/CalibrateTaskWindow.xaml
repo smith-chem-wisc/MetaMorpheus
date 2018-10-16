@@ -189,13 +189,6 @@
                                             </TextBox.ToolTip>
                                         </TextBox>
                                     </StackPanel>
-                                    <CheckBox x:Name="deconvoluteMs2" Content="Deconvolute Fragments" IsChecked="True" ToolTipService.ShowDuration="999999" ToolTipService.InitialShowDelay="500">
-                                        <CheckBox.ToolTip>
-                                            <TextBlock>
-                                                Search for higher-charge fragments. If this is unchecked, fragments are assumed to be charge 1.
-                                            </TextBlock>
-                                        </CheckBox.ToolTip>
-                                    </CheckBox>
                                 </StackPanel>
                             </Grid>
                             <!--<CheckBox x:Name="conserveMemoryCheckBox" Content="Conserve memory (might be slow)" />-->

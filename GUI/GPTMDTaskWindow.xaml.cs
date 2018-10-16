@@ -73,7 +73,6 @@ namespace MetaMorpheusGUI
             precursorMassToleranceComboBox.SelectedIndex = task.CommonParameters.PrecursorMassTolerance is AbsoluteTolerance ? 0 : 1;
             minScoreAllowed.Text = task.CommonParameters.ScoreCutoff.ToString(CultureInfo.InvariantCulture);
             maxThreadsTextBox.Text = task.CommonParameters.MaxThreadsToUsePerFile.ToString(CultureInfo.InvariantCulture);
-            deconvoluteMs2.IsChecked = task.CommonParameters.DeconvoluteMs2;
 
             OutputFileNameTextBox.Text = task.CommonParameters.TaskDescriptor;
 
@@ -303,7 +302,6 @@ namespace MetaMorpheusGUI
                     productMassTolerance: ProductMassTolerance,
                     listOfModsFixed: listOfModsFixed,
                     listOfModsVariable: listOfModsVariable,
-                    deconvoluteMs2: deconvoluteMs2.IsChecked.Value,
                     assumeFragmentsAreZ1: protease.Name != "top-down");
 
             TheTask.GptmdParameters.ListOfModsGptmd = new List<(string, string)>();
