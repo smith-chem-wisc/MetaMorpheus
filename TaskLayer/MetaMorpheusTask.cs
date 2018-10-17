@@ -245,7 +245,7 @@ namespace TaskLayer
         {
             StartingSingleTask(displayName);
 
-            var tomlFileName = Path.Combine(output_folder, GetType().Name + "config.toml");
+            var tomlFileName = Path.Combine(Directory.GetParent(output_folder).ToString(), "Task Settings", displayName + "config.toml");
             Toml.WriteFile(this, tomlFileName, tomlConfig);
             FinishedWritingFile(tomlFileName, new List<string> { displayName });
 

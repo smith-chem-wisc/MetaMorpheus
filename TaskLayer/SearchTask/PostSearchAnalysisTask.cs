@@ -47,14 +47,17 @@ namespace TaskLayer
             }
 
             //update all psms with peptide info
-            Parameters.AllPsms = Parameters.AllPsms.Where(psm => psm != null).ToList();
-            Parameters.AllPsms.ForEach(psm => psm.ResolveAllAmbiguities());
+            if (Parameters.SearchParameters.SearchType != SearchType.NonSpecific) //if it hasn't been done already
+            {
+                Parameters.AllPsms = Parameters.AllPsms.Where(psm => psm != null).ToList();
+                Parameters.AllPsms.ForEach(psm => psm.ResolveAllAmbiguities());
 
-            Parameters.AllPsms = Parameters.AllPsms.OrderByDescending(b => b.Score)
-               .ThenBy(b => b.PeptideMonisotopicMass.HasValue ? Math.Abs(b.ScanPrecursorMass - b.PeptideMonisotopicMass.Value) : double.MaxValue)
-               .GroupBy(b => (b.FullFilePath, b.ScanNumber, b.PeptideMonisotopicMass)).Select(b => b.First()).ToList();
+                Parameters.AllPsms = Parameters.AllPsms.OrderByDescending(b => b.Score)
+                   .ThenBy(b => b.PeptideMonisotopicMass.HasValue ? Math.Abs(b.ScanPrecursorMass - b.PeptideMonisotopicMass.Value) : double.MaxValue)
+                   .GroupBy(b => (b.FullFilePath, b.ScanNumber, b.PeptideMonisotopicMass)).Select(b => b.First()).ToList();
 
-            CalculatePsmFdr();
+                CalculatePsmFdr();
+            }
 
             DoMassDifferenceLocalizationAnalysis();
             ProteinAnalysis();
