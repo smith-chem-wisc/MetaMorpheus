@@ -301,7 +301,8 @@ namespace MetaMorpheusGUI
                     precursorMassTolerance: PrecursorMassTolerance,
                     productMassTolerance: ProductMassTolerance,
                     listOfModsFixed: listOfModsFixed,
-                    listOfModsVariable: listOfModsVariable);
+                    listOfModsVariable: listOfModsVariable,
+                    assumeOrphanPeaksAreZ1Fragments: protease.Name != "top-down");
 
             TheTask.GptmdParameters.ListOfModsGptmd = new List<(string, string)>();
             foreach (var heh in gptmdModTypeForTreeViewObservableCollection)

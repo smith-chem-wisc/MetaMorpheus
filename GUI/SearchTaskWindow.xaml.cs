@@ -450,7 +450,8 @@ namespace MetaMorpheusGUI
                 topNpeaks: TopNpeaks,
                 minRatio: MinRatio,
                 addCompIons: addCompIonCheckBox.IsChecked.Value,
-                qValueOutputFilter: QValueCheckBox.IsChecked.Value ? double.Parse(QValueTextBox.Text, CultureInfo.InvariantCulture) : 1.0);
+                qValueOutputFilter: QValueCheckBox.IsChecked.Value ? double.Parse(QValueTextBox.Text, CultureInfo.InvariantCulture) : 1.0,
+                assumeOrphanPeaksAreZ1Fragments: protease.Name != "top-down");
 
             if (classicSearchRadioButton.IsChecked.Value)
             {

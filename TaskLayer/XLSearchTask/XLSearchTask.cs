@@ -88,7 +88,7 @@ namespace TaskLayer
                 MsDataFile myMsDataFile = myFileManager.LoadFile(origDataFile, combinedParams.TopNpeaks, combinedParams.MinRatio, combinedParams.TrimMs1Peaks, combinedParams.TrimMsMsPeaks, combinedParams);
 
                 Status("Getting ms2 scans...", thisId);
-                Ms2ScanWithSpecificMass[] arrayOfMs2ScansSortedByMass = GetMs2Scans(myMsDataFile, origDataFile, combinedParams.DoPrecursorDeconvolution, combinedParams.UseProvidedPrecursorInfo, combinedParams.DeconvolutionIntensityRatio, combinedParams.DeconvolutionMaxAssumedChargeState, combinedParams.DeconvolutionMassTolerance).OrderBy(b => b.PrecursorMass).ToArray();
+                Ms2ScanWithSpecificMass[] arrayOfMs2ScansSortedByMass = GetMs2Scans(myMsDataFile, origDataFile, combinedParams).OrderBy(b => b.PrecursorMass).ToArray();
 
                 CrosslinkSpectralMatch[] newPsms = new CrosslinkSpectralMatch[arrayOfMs2ScansSortedByMass.Length];
                 for (int currentPartition = 0; currentPartition < CommonParameters.TotalPartitions; currentPartition++)
@@ -106,9 +106,7 @@ namespace TaskLayer
                     Status("Searching files...", taskId);
                     new CrosslinkSearchEngine(newPsms, arrayOfMs2ScansSortedByMass, peptideIndex, fragmentIndex, currentPartition, combinedParams, crosslinker,
                         XlSearchParameters.RestrictToTopNHits, XlSearchParameters.CrosslinkSearchTopNum, XlSearchParameters.XlQuench_H2O,
-                        XlSearchParameters.XlQuench_NH2, XlSearchParameters.XlQuench_Tris, 
-                        false, false, // TODO: re-enable searching for 2+, 3+ fragments
-                        thisId).Run();
+                        XlSearchParameters.XlQuench_NH2, XlSearchParameters.XlQuench_Tris, thisId).Run();
 
                     ReportProgress(new ProgressEventArgs(100, "Done with search " + (currentPartition + 1) + "/" + CommonParameters.TotalPartitions + "!", thisId));
                 }

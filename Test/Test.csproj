@@ -73,6 +73,9 @@
     <None Update="TestData\smalldb.fasta">
       <CopyToOutputDirectory>Always</CopyToOutputDirectory>
     </None>
+    <None Update="TopDownTestData\slicedTDYeast.mzML">
+      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+    </None>
     <None Update="TestData\tinySemi.mgf">
       <CopyToOutputDirectory>Always</CopyToOutputDirectory>
     </None>
