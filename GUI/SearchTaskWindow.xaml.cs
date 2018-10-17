@@ -451,7 +451,7 @@ namespace MetaMorpheusGUI
                 minRatio: MinRatio,
                 addCompIons: addCompIonCheckBox.IsChecked.Value,
                 qValueOutputFilter: QValueCheckBox.IsChecked.Value ? double.Parse(QValueTextBox.Text, CultureInfo.InvariantCulture) : 1.0,
-                assumeFragmentsAreZ1: protease.Name != "top-down");
+                assumeOrphanPeaksAreZ1Fragments: protease.Name != "top-down");
 
             if (classicSearchRadioButton.IsChecked.Value)
             {

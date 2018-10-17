@@ -302,7 +302,7 @@ namespace MetaMorpheusGUI
                     productMassTolerance: ProductMassTolerance,
                     listOfModsFixed: listOfModsFixed,
                     listOfModsVariable: listOfModsVariable,
-                    assumeFragmentsAreZ1: protease.Name != "top-down");
+                    assumeOrphanPeaksAreZ1Fragments: protease.Name != "top-down");
 
             TheTask.GptmdParameters.ListOfModsGptmd = new List<(string, string)>();
             foreach (var heh in gptmdModTypeForTreeViewObservableCollection)

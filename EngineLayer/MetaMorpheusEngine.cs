@@ -84,7 +84,7 @@ namespace EngineLayer
                 if (commonParameters.ProductMassTolerance.Within(closestExperimentalMass.monoisotopicMass, product.NeutralMass) && closestExperimentalMass.charge <= scan.PrecursorCharge)
                 {
                     matchedFragmentIons.Add(new MatchedFragmentIon(product, closestExperimentalMass.monoisotopicMass.ToMz(closestExperimentalMass.charge), 
-                        closestExperimentalMass.totalIntensity, closestExperimentalMass.charge));
+                        closestExperimentalMass.peaks.First().intensity, closestExperimentalMass.charge));
                 }
             }
             if (commonParameters.AddCompIons)

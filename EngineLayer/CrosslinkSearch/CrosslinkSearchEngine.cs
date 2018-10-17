@@ -92,8 +92,6 @@ namespace EngineLayer.CrosslinkSearch
                     // done with indexed scoring; refine scores and create PSMs
                     if (idsOfPeptidesPossiblyObserved.Any())
                     {
-                        List<int> idsRankedByScore = new List<int>();
-
                         if (CrosslinkSearchTopN)
                         {
                             // take top N hits for this scan
@@ -110,6 +108,11 @@ namespace EngineLayer.CrosslinkSearch
 
                         // combine individual peptide hits with crosslinker mass to find best crosslink PSM hit
                         var csm = FindCrosslinkedPeptide(scan, bestPeptideScoreNotchList, scanIndex);
+
+                        if (csm == null)
+                        {
+                            continue;
+                        }
 
                         // this scan might already have a hit from a different database partition; check to see if the score improves
                         if (GlobalCsms[scanIndex] == null || GlobalCsms[scanIndex].XLTotalScore < csm.XLTotalScore)

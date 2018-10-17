@@ -22,7 +22,7 @@ namespace EngineLayer
             bool addCompIons = false, int totalPartitions = 1, double scoreCutoff = 5, int topNpeaks = 200, double minRatio = 0.01, bool trimMs1Peaks = false,
             bool trimMsMsPeaks = true, bool useDeltaScore = false, bool calculateEValue = false, Tolerance productMassTolerance = null, Tolerance precursorMassTolerance = null, Tolerance deconvolutionMassTolerance = null,
             int maxThreadsToUsePerFile = -1, DigestionParams digestionParams = null, IEnumerable<(string, string)> listOfModsVariable = null, IEnumerable<(string, string)> listOfModsFixed = null, double qValueOutputFilter = 1.0,
-            bool assumeFragmentsAreZ1 = true)
+            bool assumeOrphanPeaksAreZ1Fragments = true)
         {
             TaskDescriptor = taskDescriptor;
             DoPrecursorDeconvolution = doPrecursorDeconvolution;
@@ -50,7 +50,7 @@ namespace EngineLayer
             DissociationType = dissociationType;
             QValueOutputFilter = qValueOutputFilter;
             
-            AssumeFragmentsAreZ1 = assumeFragmentsAreZ1;
+            AssumeOrphanPeaksAreZ1Fragments = assumeOrphanPeaksAreZ1Fragments;
         }
 
         // Notes:
@@ -83,7 +83,7 @@ namespace EngineLayer
         public bool CalculateEValue { get; private set; }
         public double QValueOutputFilter { get; private set; }
         public DissociationType DissociationType { get; private set; }
-        public bool AssumeFragmentsAreZ1 { get; private set; }
+        public bool AssumeOrphanPeaksAreZ1Fragments { get; private set; }
 
         public CommonParameters Clone()
         {
@@ -132,7 +132,7 @@ namespace EngineLayer
                                 ListOfModsVariable,
                                 ListOfModsFixed,
                                 QValueOutputFilter,
-                                AssumeFragmentsAreZ1);
+                                AssumeOrphanPeaksAreZ1Fragments);
         }
     }
 }

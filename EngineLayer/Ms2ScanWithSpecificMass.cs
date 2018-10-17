@@ -50,13 +50,13 @@ namespace EngineLayer
             int minZ = 1;
             int maxZ = 10;
 
-            var neutralExperimentalFragmentMasses = scan.MassSpectrum.Deconvolute(scan.MassSpectrum.Range, minZ, maxZ,
-                ms2DeconvolutionPpmTolerance, deconRatio).ToList();
-
-            if (commonParam.AssumeFragmentsAreZ1)
+            var neutralExperimentalFragmentMasses = scan.MassSpectrum.Deconvolute(scan.MassSpectrum.Range, 
+                minZ, maxZ,ms2DeconvolutionPpmTolerance, deconRatio).ToList();
+            
+            if (commonParam.AssumeOrphanPeaksAreZ1Fragments)
             {
-                HashSet<double> alreadyClaimedMzs = new HashSet<double>(neutralExperimentalFragmentMasses.SelectMany(
-                    p => p.peaks.Select(v => ClassExtensions.RoundedDouble(v.mz).Value)));
+                HashSet<double> alreadyClaimedMzs = new HashSet<double>(neutralExperimentalFragmentMasses
+                    .SelectMany(p => p.peaks.Select(v => ClassExtensions.RoundedDouble(v.mz).Value)));
 
                 for (int i = 0; i < scan.MassSpectrum.XArray.Length; i++)
                 {
@@ -71,6 +71,7 @@ namespace EngineLayer
                     }
                 }
             }
+
             return neutralExperimentalFragmentMasses.OrderBy(p => p.monoisotopicMass).ToArray();
         }
 

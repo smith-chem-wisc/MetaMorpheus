@@ -24,7 +24,7 @@ namespace Test
             CommonParameters CommonParameters = new CommonParameters(
                 digestionParams: new DigestionParams(protease: "top-down"),
                 scoreCutoff: 1,
-                assumeFragmentsAreZ1: false);
+                assumeOrphanPeaksAreZ1Fragments: false);
 
             var variableModifications = new List<Modification>();
             var fixedModifications = new List<Modification>();
@@ -58,7 +58,7 @@ namespace Test
             CommonParameters CommonParameters = new CommonParameters(
                 digestionParams: new DigestionParams(protease: "top-down"),
                 scoreCutoff: 1,
-                assumeFragmentsAreZ1: false);
+                assumeOrphanPeaksAreZ1Fragments: false);
 
             var variableModifications = new List<Modification>();
             var fixedModifications = new List<Modification>();

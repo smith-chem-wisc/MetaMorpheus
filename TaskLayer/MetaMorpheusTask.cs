@@ -235,7 +235,7 @@ namespace TaskLayer
                 listOfModsFixed: commonParams.ListOfModsFixed,
                 qValueOutputFilter: commonParams.QValueOutputFilter,
                 taskDescriptor: commonParams.TaskDescriptor,
-                assumeFragmentsAreZ1: commonParams.AssumeFragmentsAreZ1
+                assumeOrphanPeaksAreZ1Fragments: commonParams.AssumeOrphanPeaksAreZ1Fragments
                 );
 
             return returnParams;
