@@ -1,5 +1,5 @@
-﻿using MassSpectrometry;
-using Proteomics;
+﻿using Proteomics;
+using Proteomics.Fragmentation;
 using Proteomics.ProteolyticDigestion;
 using System;
 using System.Collections.Concurrent;
@@ -16,20 +16,18 @@ namespace EngineLayer.Indexing
         protected const int FragmentBinsPerDalton = 1000;
         protected readonly List<Protein> ProteinList;
 
-        protected readonly List<ModificationWithMass> FixedModifications;
-        protected readonly List<ModificationWithMass> VariableModifications;
-        protected readonly List<ProductType> ProductTypes;
+        protected readonly List<Modification> FixedModifications;
+        protected readonly List<Modification> VariableModifications;
         protected readonly int CurrentPartition;
         protected readonly DecoyType DecoyType;
         protected readonly IEnumerable<DigestionParams> CollectionOfDigestionParams;
         protected readonly double MaxFragmentSize;
 
-        public IndexingEngine(List<Protein> proteinList, List<ModificationWithMass> variableModifications, List<ModificationWithMass> fixedModifications, List<ProductType> productTypes, int currentPartition, DecoyType decoyType, IEnumerable<DigestionParams> collectionOfDigestionParams, CommonParameters commonParams, double maxFragmentSize, List<string> nestedIds) : base(commonParams, nestedIds)
+        public IndexingEngine(List<Protein> proteinList, List<Modification> variableModifications, List<Modification> fixedModifications, int currentPartition, DecoyType decoyType, IEnumerable<DigestionParams> collectionOfDigestionParams, CommonParameters commonParams, double maxFragmentSize, List<string> nestedIds) : base(commonParams, nestedIds)
         {
             ProteinList = proteinList;
             VariableModifications = variableModifications;
             FixedModifications = fixedModifications;
-            ProductTypes = productTypes;
             CurrentPartition = currentPartition + 1;
             DecoyType = decoyType;
             CollectionOfDigestionParams = collectionOfDigestionParams;
@@ -44,7 +42,7 @@ namespace EngineLayer.Indexing
             sb.AppendLine("Number of proteins: " + ProteinList.Count);
             sb.AppendLine("Number of fixed mods: " + FixedModifications.Count);
             sb.AppendLine("Number of variable mods: " + VariableModifications.Count);
-            sb.AppendLine("lp: " + string.Join(",", ProductTypes));
+            sb.AppendLine("Dissociation Type: " + commonParameters.DissociationType);
             foreach (var digestionParams in CollectionOfDigestionParams)
             {
                 sb.AppendLine("protease: " + digestionParams.Protease);
@@ -53,6 +51,10 @@ namespace EngineLayer.Indexing
                 sb.AppendLine("minPeptideLength: " + digestionParams.MinPeptideLength);
                 sb.AppendLine("maxPeptideLength: " + digestionParams.MaxPeptideLength);
                 sb.AppendLine("maximumVariableModificationIsoforms: " + digestionParams.MaxModificationIsoforms);
+                sb.AppendLine("digestionTerminus: " + digestionParams.FragmentationTerminus);
+                sb.AppendLine("maxModsForEachPeptide: " + digestionParams.MaxModsForPeptide);
+                sb.AppendLine("cleavageSpecificity: " + digestionParams.SearchModeType);
+                sb.AppendLine("specificProtease: " + digestionParams.SpecificProtease);
             }
             sb.Append("Localizeable mods: " + ProteinList.Select(b => b.OneBasedPossibleLocalizedModifications.Count).Sum());
             return sb.ToString();
@@ -62,13 +64,14 @@ namespace EngineLayer.Indexing
         {
             double progress = 0;
             int oldPercentProgress = 0;
-            TerminusType terminusType = ProductTypeMethods.IdentifyTerminusType(ProductTypes);
 
             // digest database
-            HashSet<CompactPeptide> peptideToId = new HashSet<CompactPeptide>();
+            List<PeptideWithSetModifications> globalPeptides = new List<PeptideWithSetModifications>();
 
             Parallel.ForEach(Partitioner.Create(0, ProteinList.Count), new ParallelOptions { MaxDegreeOfParallelism = commonParameters.MaxThreadsToUsePerFile }, (range, loopState) =>
             {
+                List<PeptideWithSetModifications> localPeptides = new List<PeptideWithSetModifications>();
+
                 for (int i = range.Item1; i < range.Item2; i++)
                 {
                     // Stop loop if canceled
@@ -80,21 +83,7 @@ namespace EngineLayer.Indexing
 
                     foreach (var digestionParams in CollectionOfDigestionParams)
                     {
-                        foreach (var pepWithSetMods in ProteinList[i].Digest(digestionParams, FixedModifications, VariableModifications))
-                        {
-                            CompactPeptide compactPeptide = pepWithSetMods.CompactPeptide(terminusType);
-
-                            var observed = peptideToId.Contains(compactPeptide);
-                            if (observed)
-                                continue;
-                            lock (peptideToId)
-                            {
-                                observed = peptideToId.Contains(compactPeptide);
-                                if (observed)
-                                    continue;
-                                peptideToId.Add(compactPeptide);
-                            }
-                        }
+                        localPeptides.AddRange(ProteinList[i].Digest(digestionParams, FixedModifications, VariableModifications));
                     }
 
                     progress++;
@@ -106,11 +95,16 @@ namespace EngineLayer.Indexing
                         ReportProgress(new ProgressEventArgs(percentProgress, "Digesting proteins...", nestedIds));
                     }
                 }
+
+                lock (globalPeptides)
+                {
+                    globalPeptides.AddRange(localPeptides);
+                }
             });
 
             // sort peptides by mass
-            var peptidesSortedByMass = peptideToId.AsParallel().WithDegreeOfParallelism(commonParameters.MaxThreadsToUsePerFile).OrderBy(p => p.MonoisotopicMassIncludingFixedMods).ToList();
-            peptideToId = null;
+            var peptidesSortedByMass = globalPeptides.AsParallel().WithDegreeOfParallelism(commonParameters.MaxThreadsToUsePerFile).OrderBy(p => p.MonoisotopicMass).ToList();
+            globalPeptides = null;
 
             // create fragment index
             List<int>[] fragmentIndex;
@@ -129,9 +123,9 @@ namespace EngineLayer.Indexing
             oldPercentProgress = 0;
             for (int peptideId = 0; peptideId < peptidesSortedByMass.Count; peptideId++)
             {
-                var validFragments = peptidesSortedByMass[peptideId].ProductMassesMightHaveDuplicatesAndNaNs(ProductTypes).Distinct().Where(p => !Double.IsNaN(p));
+                var fragmentMasses = peptidesSortedByMass[peptideId].Fragment(commonParameters.DissociationType, commonParameters.DigestionParams.FragmentationTerminus).Select(m => m.NeutralMass).ToList();
 
-                foreach (var theoreticalFragmentMass in validFragments)
+                foreach (var theoreticalFragmentMass in fragmentMasses)
                 {
                     if (theoreticalFragmentMass < MaxFragmentSize && theoreticalFragmentMass > 0)
                     {
@@ -150,10 +144,10 @@ namespace EngineLayer.Indexing
                 if (percentProgress > oldPercentProgress)
                 {
                     oldPercentProgress = percentProgress;
-                    ReportProgress(new ProgressEventArgs(percentProgress, "Creating fragment index...", nestedIds));
+                    ReportProgress(new ProgressEventArgs(percentProgress, "Fragmenting peptides...", nestedIds));
                 }
             }
-
+            
             return new IndexingResults(peptidesSortedByMass, fragmentIndex, this);
         }
     }

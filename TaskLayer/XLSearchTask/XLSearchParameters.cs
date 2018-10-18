@@ -8,58 +8,57 @@ namespace TaskLayer
     {
         public XlSearchParameters()
         {
-            SearchGlyco = false;
-            SearchGlycoWithBgYgIndex = false;
             DecoyType = DecoyType.Reverse;
             CrosslinkerType = CrosslinkerType.DSSO;
-            CrosslinkSearchTop = true;
+            RestrictToTopNHits = true;
             CrosslinkSearchTopNum = 300;
-            UdXLkerName = null;
-            UdXLkerCleavable = false;
-            UdXLkerShortMass = null;
-            UdXLkerLongMass = null;
-            UdXLkerTotalMass = null;
-            UdXLkerResidues = "K";
-            UdXLkerResidues2 = "K";
-            XlPrecusorMsTl = new PpmTolerance(10);
+            CrosslinkerName = null;
+            IsCleavable = false;
+            CrosslinkerShortMass = null;
+            CrosslinkerLongMass = null;
+            CrosslinkerTotalMass = null;
+            CrosslinkerDeadEndMassH2O = null;
+            CrosslinkerDeadEndMassNH2 = null;
+            CrosslinkerDeadEndMassTris = null;
+            CrosslinkerResidues = "K";
+            CrosslinkerResidues2 = "K";
             XlQuench_H2O = true;
             XlQuench_NH2 = false;
             XlQuench_Tris = true;
 
-            XlOutAll = false;
+            XlOutAll = true;
             XlOutCrosslink = true;
             XlOutPercolator = false;
-            XlOutPepXML = false;
+            XlOutPepXML = true;
 
             XlCharge_2_3 = true;
         }
-
-        public bool SearchGlyco { get; set; }
-        public bool SearchGlycoWithBgYgIndex { get ;set;}
+        
         public DecoyType DecoyType { get; set; }
         public CrosslinkerType CrosslinkerType { get; set; }
-        public bool CrosslinkSearchTop { get; set; }
         public int CrosslinkSearchTopNum { get; set; }
-        public string UdXLkerName { get; set; }
-        public bool UdXLkerCleavable { get; set; }
-        public double? UdXLkerTotalMass { get; set; }
-        public double? UdXLkerShortMass { get; set; }
-        public double? UdXLkerLongMass { get; set; }
-        public string UdXLkerResidues { get; set; }
-        public string UdXLkerResidues2 { get; set; }
-
-        public Tolerance XlPrecusorMsTl { get; set; }
+        public string CrosslinkerName { get; set; }
+        public double? CrosslinkerTotalMass { get; set; }
+        public double? CrosslinkerShortMass { get; set; }
+        public double? CrosslinkerLongMass { get; set; }
+        public double? CrosslinkerLoopMass { get; set; }
+        public string CrosslinkerResidues { get; set; }
+        public string CrosslinkerResidues2 { get; set; }
+        public double? CrosslinkerDeadEndMassH2O { get; set; }
+        public double? CrosslinkerDeadEndMassNH2 { get; set; }
+        public double? CrosslinkerDeadEndMassTris { get; set; }
+        
+        // TODO: 2+ 3+ prime fragments?
+        public bool IsCleavable { get; set; }
+        public bool RestrictToTopNHits { get; set; }
         public bool DisposeOfFileWhenDone { get; set; }
-
         public bool XlOutPercolator { get; set; }
         public bool XlOutAll { get; set; }
         public bool XlOutPepXML { get; set; }
         public bool XlOutCrosslink { get; set; }
-
         public bool XlQuench_H2O { get; set; }
         public bool XlQuench_Tris { get; set; }
         public bool XlQuench_NH2 { get; set; }
-
         public bool XlCharge_2_3 { get; set; }
     }
 }

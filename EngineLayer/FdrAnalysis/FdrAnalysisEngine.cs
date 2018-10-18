@@ -96,11 +96,11 @@ namespace EngineLayer.FdrAnalysis
                 scoreSorted = Psms.OrderByDescending(b => b.DeltaScore).ThenBy(b => b.PeptideMonisotopicMass.HasValue ? Math.Abs(b.ScanPrecursorMass - b.PeptideMonisotopicMass.Value) : double.MaxValue).GroupBy(b => new Tuple<string, int, double?>(b.FullFilePath, b.ScanNumber, b.PeptideMonisotopicMass)).Select(b => b.First()).ToList();
                 int DeltaScorePSMs = GetNumPSMsAtqValueCutoff(scoreSorted, qValueCutoff);
 
-                //sort by best method BUT DON'T GROUP BECAUSE WE NEED THAT FOR LOCALIZATION
-                Psms = (DeltaScorePSMs > ScorePSMs) ?
+                //sort by best method
+                myAnalysisResults.DeltaScoreImprovement = DeltaScorePSMs > ScorePSMs;
+                Psms = myAnalysisResults.DeltaScoreImprovement ?
                     Psms.OrderByDescending(b => b.DeltaScore).ThenBy(b => b.PeptideMonisotopicMass.HasValue ? Math.Abs(b.ScanPrecursorMass - b.PeptideMonisotopicMass.Value) : double.MaxValue).ToList() :
                     Psms.OrderByDescending(b => b.Score).ThenBy(b => b.PeptideMonisotopicMass.HasValue ? Math.Abs(b.ScanPrecursorMass - b.PeptideMonisotopicMass.Value) : double.MaxValue).ToList();
-                myAnalysisResults.DeltaScoreImprovement = DeltaScorePSMs > ScorePSMs;
             }
             else //sort by score
             {

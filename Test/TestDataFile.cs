@@ -1,5 +1,6 @@
 ﻿using Chemistry;
 using MassSpectrometry;
+using Proteomics.Fragmentation;
 using Proteomics.ProteolyticDigestion;
 using System;
 using System.Collections.Generic;
@@ -92,10 +93,10 @@ namespace Test
                     additionalMassesArray = new List<double> { 260.08307817722, 397.14199003569, 498.18966850487, 612.23259594625, 683.2697097314, 146.10552769922, 217.14264148437 };
                 else
                     additionalMassesArray = new List<double>();
-                foreach (var aok in pepWithSetMods.CompactPeptide(TerminusType.None).ProductMassesMightHaveDuplicatesAndNaNs(new List<ProductType> { ProductType.B, ProductType.Y }).Concat(additionalMassesArray))
+                foreach (var aok in pepWithSetMods.Fragment(DissociationType.HCD, FragmentationTerminus.Both))
                 {
-                    mz2.Add(aok.ToMz(1));
-                    mz2.Add((aok + 1.003).ToMz(1));
+                    mz2.Add(aok.NeutralMass.ToMz(1));
+                    mz2.Add((aok.NeutralMass + 1.003).ToMz(1));
                     intensities2.Add(1);
                     intensities2.Add(1);
                 }
@@ -115,10 +116,10 @@ namespace Test
 
             List<double> mz2 = new List<double>();
             List<double> intensities2 = new List<double>();
-            foreach (var aok in pepWithSetMods.CompactPeptide(TerminusType.None).ProductMassesMightHaveDuplicatesAndNaNs(new List<ProductType> { ProductType.B, ProductType.Y }))
+            foreach (var aok in pepWithSetMods.Fragment(DissociationType.HCD, FragmentationTerminus.Both))
             {
-                mz2.Add(aok.ToMz(1));
-                mz2.Add((aok + 1.003).ToMz(1));
+                mz2.Add(aok.NeutralMass.ToMz(1));
+                mz2.Add((aok.NeutralMass + 1.003).ToMz(1));
                 intensities2.Add(1);
                 intensities2.Add(1);
             }
@@ -139,12 +140,12 @@ namespace Test
 
                 List<double> mz2 = new List<double>();
                 List<double> intensities2 = new List<double>();
-                foreach (var aok in pepWithSetMods.CompactPeptide(TerminusType.None).ProductMassesMightHaveDuplicatesAndNaNs(new List<ProductType> { ProductType.B, ProductType.Y }))
+                foreach (var aok in pepWithSetMods.Fragment(DissociationType.HCD, FragmentationTerminus.Both))
                 {
-                    var t1 = aok.ToMz(1);
+                    var t1 = aok.NeutralMass.ToMz(1);
                     var c = 0.0000001;
                     mz2.Add(t1 + c * Math.Pow(t1, 2));
-                    var t2 = (aok + 1.003).ToMz(1);
+                    var t2 = (aok.NeutralMass + 1.003).ToMz(1);
                     mz2.Add(t2 + c * Math.Pow(t2, 2));
                     intensities2.Add(1);
                     intensities2.Add(1);
@@ -170,10 +171,10 @@ namespace Test
 
             List<double> mz2 = new List<double>();
             List<double> intensities2 = new List<double>();
-            foreach (var aok in pepWithSetMods.CompactPeptide(TerminusType.None).ProductMassesMightHaveDuplicatesAndNaNs(new List<ProductType> { ProductType.B, ProductType.Y }))
+            foreach (var aok in pepWithSetMods.Fragment(DissociationType.HCD,FragmentationTerminus.Both))
             {
-                mz2.Add(aok.ToMz(1));
-                mz2.Add((aok + 1.003).ToMz(1));
+                mz2.Add(aok.NeutralMass.ToMz(1));
+                mz2.Add((aok.NeutralMass + 1.003).ToMz(1));
                 intensities2.Add(intensity);
                 intensities2.Add(intensity);
             }

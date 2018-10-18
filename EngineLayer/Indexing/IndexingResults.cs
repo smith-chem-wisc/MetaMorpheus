@@ -1,4 +1,5 @@
-﻿using Proteomics.ProteolyticDigestion;
+﻿using Proteomics.Fragmentation;
+using Proteomics.ProteolyticDigestion;
 using System.Collections.Generic;
 using System.Text;
 
@@ -6,14 +7,14 @@ namespace EngineLayer.Indexing
 {
     public class IndexingResults : MetaMorpheusEngineResults
     {
-        public IndexingResults(List<CompactPeptide> peptideIndex, List<int>[] fragmentIndex, IndexingEngine indexParams) : base(indexParams)
+        public IndexingResults(List<PeptideWithSetModifications> peptideIndex, List<int>[] fragmentIndex, IndexingEngine indexParams) : base(indexParams)
         {
             PeptideIndex = peptideIndex;
             FragmentIndex = fragmentIndex;
         }
 
         public List<int>[] FragmentIndex { get; private set; }
-        public List<CompactPeptide> PeptideIndex { get; private set; }
+        public List<PeptideWithSetModifications> PeptideIndex { get; private set; }
 
         public override string ToString()
         {
