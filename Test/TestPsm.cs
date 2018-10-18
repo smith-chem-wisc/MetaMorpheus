@@ -34,10 +34,10 @@ namespace Test
                     .Digest(digestionParams, new List<Modification>(), new List<Modification>()).First();
             MsDataFile myMsDataFile = new TestDataFile(pepWithSetMods, "quadratic");
             MsDataScan scann = myMsDataFile.GetOneBasedScan(2);
-            Ms2ScanWithSpecificMass scan = new Ms2ScanWithSpecificMass(scann, 4, 1, null);
+            Ms2ScanWithSpecificMass scan = new Ms2ScanWithSpecificMass(scann, 4, 1, null, new CommonParameters());
 
             var theoreticalIons = pepWithSetMods.Fragment(DissociationType.HCD, FragmentationTerminus.Both).ToList();
-            var matchedIons = MetaMorpheusEngine.MatchFragmentIons(scan.TheScan.MassSpectrum, theoreticalIons, new CommonParameters(), scan.PrecursorMass);
+            var matchedIons = MetaMorpheusEngine.MatchFragmentIons(scan, theoreticalIons, new CommonParameters());
             PeptideSpectralMatch psm = new PeptideSpectralMatch(pepWithSetMods, 1, 2, 3, scan, digestionParams, matchedIons);
             psm.ResolveAllAmbiguities();
 

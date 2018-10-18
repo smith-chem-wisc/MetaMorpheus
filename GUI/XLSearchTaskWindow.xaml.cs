@@ -24,7 +24,6 @@ namespace MetaMorpheusGUI
         private readonly ObservableCollection<SearchModeForDataGrid> SearchModesForThisTask = new ObservableCollection<SearchModeForDataGrid>();
         private readonly ObservableCollection<ModTypeForTreeView> FixedModTypeForTreeViewObservableCollection = new ObservableCollection<ModTypeForTreeView>();
         private readonly ObservableCollection<ModTypeForTreeView> VariableModTypeForTreeViewObservableCollection = new ObservableCollection<ModTypeForTreeView>();
-        private readonly ObservableCollection<ModTypeForLoc> LocalizeModTypeForTreeViewObservableCollection = new ObservableCollection<ModTypeForLoc>();
 
         public XLSearchTaskWindow()
         {
@@ -108,10 +107,6 @@ namespace MetaMorpheusGUI
                     theModType.Children.Add(new ModForTreeView(uah.ToString(), false, uah.IdWithMotif, false, theModType));
             }
             variableModsTreeView.DataContext = VariableModTypeForTreeViewObservableCollection;
-
-            foreach (var hm in GlobalVariables.AllModsKnown.GroupBy(b => b.ModificationType))
-                LocalizeModTypeForTreeViewObservableCollection.Add(new ModTypeForLoc(hm.Key));
-            localizeModsTreeView.DataContext = LocalizeModTypeForTreeViewObservableCollection;
         }
 
         private void UpdateFieldsFromTask(XLSearchTask task)
@@ -217,11 +212,7 @@ namespace MetaMorpheusGUI
                     theModType.Children.Add(new ModForTreeView("UNKNOWN MODIFICATION!", true, mod.Item2, true, theModType));
                 }
             }
-
-            foreach (var heh in LocalizeModTypeForTreeViewObservableCollection)
-            {
-                heh.Use = false;
-            }
+            
             foreach (var ye in VariableModTypeForTreeViewObservableCollection)
             {
                 ye.VerifyCheckState();
@@ -352,7 +343,8 @@ namespace MetaMorpheusGUI
                 scoreCutoff: double.Parse(minScoreAllowed.Text, CultureInfo.InvariantCulture),
                 totalPartitions: int.Parse(numberOfDatabaseSearchesTextBox.Text, CultureInfo.InvariantCulture),
                 listOfModsVariable: listOfModsVariable,
-                listOfModsFixed: listOfModsFixed);
+                listOfModsFixed: listOfModsFixed,
+                assumeOrphanPeaksAreZ1Fragments: protease.Name != "top-down");
 
             TheTask.CommonParameters = commonParamsToSave;
 
