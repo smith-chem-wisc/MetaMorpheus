@@ -22,7 +22,7 @@ namespace Test
             var sections = resultsPath[1].Split('\t');
             Assert.That(resultsPath.Length == 2);
             Assert.That(sections.Length == 31);
-
+            Directory.Delete(outputFolder, true);
         }
     }
 }
