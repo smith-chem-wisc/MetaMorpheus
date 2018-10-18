@@ -66,9 +66,6 @@
                             <CheckBox x:Name="ckbXLTopNum" VerticalAlignment="Center" Content="Top N peptides per precursor" />
                             <TextBox x:Name="txtXLTopNum" PreviewTextInput="CheckIfNumber" Width="45" Margin="2" IsEnabled="{Binding IsChecked, ElementName=ckbXLTopNum}" />
                         </StackPanel>
-                        <!--<StackPanel Orientation="Vertical" Grid.Row="2" Grid.Column="0" Margin="5">
-                            <CheckBox x:Name="ckbCharge_2_3"  VerticalAlignment="Center" Content="Search for charge 2+ 3+ fragments" />
-                        </StackPanel>-->
                     </Grid>
                 </StackPanel>
                 <GroupBox Header="Crosslink Search" DockPanel.Dock="Top">
@@ -344,30 +341,6 @@
                                                     <TextBlock Text="{Binding DisplayName}" />
                                                 </StackPanel>
                                             </DataTemplate>
-                                        </TreeView.Resources>
-                                    </TreeView>
-                                </StackPanel>
-                                <StackPanel Grid.Column="2">
-                                    <Label Content="Database Localized" />
-                                    <CheckBox x:Name="localizeAllCheckBox" Content="Localize All Modifications" IsChecked="True" />
-                                    <TreeView x:Name="localizeModsTreeView" ItemsSource="{Binding}" Height="400">
-                                        <TreeView.Style>
-                                            <Style TargetType="{x:Type TreeView}">
-                                                <Setter Property="Visibility" Value="Visible" />
-                                                <Style.Triggers>
-                                                    <DataTrigger Binding="{Binding ElementName=localizeAllCheckBox, Path=IsChecked}" Value="True">
-                                                        <Setter Property="Visibility" Value="Hidden" />
-                                                    </DataTrigger>
-                                                </Style.Triggers>
-                                            </Style>
-                                        </TreeView.Style>
-                                        <TreeView.Resources>
-                                            <HierarchicalDataTemplate DataType="{x:Type local:ModTypeForLoc}">
-                                                <StackPanel Orientation="Horizontal">
-                                                    <CheckBox IsChecked="{Binding Use}" />
-                                                    <TextBlock Text="{Binding DisplayName}" />
-                                                </StackPanel>
-                                            </HierarchicalDataTemplate>
                                         </TreeView.Resources>
                                     </TreeView>
                                 </StackPanel>

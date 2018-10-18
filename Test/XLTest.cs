@@ -115,13 +115,13 @@ namespace Test
 
             //Get MS2 scans.
             var myMsDataFile = new XLTestDataFile();
-            var listOfSortedms2Scans = MetaMorpheusTask.GetMs2Scans(myMsDataFile, null, commonParameters.DoPrecursorDeconvolution, commonParameters.UseProvidedPrecursorInfo, commonParameters.DeconvolutionIntensityRatio, commonParameters.DeconvolutionMaxAssumedChargeState, commonParameters.DeconvolutionMassTolerance).OrderBy(b => b.PrecursorMass).ToArray();
+            var listOfSortedms2Scans = MetaMorpheusTask.GetMs2Scans(myMsDataFile, null, new CommonParameters()).OrderBy(b => b.PrecursorMass).ToArray();
 
             //Generate crosslinker, which is DSSO here.
             Crosslinker crosslinker = new Crosslinker().SelectCrosslinker(CrosslinkerType.DSSO);
 
             CrosslinkSpectralMatch[] possiblePsms = new CrosslinkSpectralMatch[listOfSortedms2Scans.Length];
-            new CrosslinkSearchEngine(possiblePsms, listOfSortedms2Scans, indexResults.PeptideIndex, indexResults.FragmentIndex, 0, commonParameters, crosslinker, xlSearchParameters.RestrictToTopNHits, xlSearchParameters.CrosslinkSearchTopNum, xlSearchParameters.XlQuench_H2O, xlSearchParameters.XlQuench_NH2, xlSearchParameters.XlQuench_Tris, false, false, new List<string> { }).Run();
+            new CrosslinkSearchEngine(possiblePsms, listOfSortedms2Scans, indexResults.PeptideIndex, indexResults.FragmentIndex, 0, commonParameters, crosslinker, xlSearchParameters.RestrictToTopNHits, xlSearchParameters.CrosslinkSearchTopNum, xlSearchParameters.XlQuench_H2O, xlSearchParameters.XlQuench_NH2, xlSearchParameters.XlQuench_Tris, new List<string> { }).Run();
 
             var newPsms = possiblePsms.Where(p => p != null).ToList();
             foreach (var item in newPsms)
@@ -142,16 +142,20 @@ namespace Test
             //var linkPos = CrosslinkSpectralMatch.GetPossibleCrosslinkerModSites(crosslinker.CrosslinkerModSites.ToCharArray(), digestedList[1]);
             //var productMassesAlphaList = CrosslinkedPeptide.XlGetTheoreticalFragments(DissociationType.EThcD, false, crosslinker, linkPos, digestedList[2].MonoisotopicMass, digestedList[1]);
             //Assert.AreEqual(productMassesAlphaList.First().Value.Count, 50); //TO DO: The number here should be manually verified.
+            File.Delete(@"singlePsms.tsv");
+            File.Delete(@"pep.XML.pep.xml");
+            File.Delete(@"allPsms.tsv");
         }
 
         [Test]
         public static void XlTest_BSA_DSS_file()
         {
             var task = Toml.ReadFile<XLSearchTask>(Path.Combine(TestContext.CurrentContext.TestDirectory, @"XlTestData/XLSearchTaskconfig_BSA_DSS_23747.toml"), MetaMorpheusTask.tomlConfig);
-
+            Directory.CreateDirectory(Path.Combine(Environment.CurrentDirectory, @"TESTXlTestData"));
             DbForTask db = new DbForTask(Path.Combine(TestContext.CurrentContext.TestDirectory, @"XlTestData/BSA.fasta"), false);
             string raw = Path.Combine(TestContext.CurrentContext.TestDirectory, @"XlTestData/BSA_DSS_23747.mzML");
-            new EverythingRunnerEngine(new List<(string, MetaMorpheusTask)> { ("Task", task) }, new List<string> { raw }, new List<DbForTask> { db }, Path.Combine(Environment.CurrentDirectory, @"XlTestData")).Run();
+            new EverythingRunnerEngine(new List<(string, MetaMorpheusTask)> { ("Task", task) }, new List<string> { raw }, new List<DbForTask> { db }, Path.Combine(Environment.CurrentDirectory, @"TESTXlTestData")).Run();
+            Directory.Delete(Path.Combine(Environment.CurrentDirectory, @"TESTXlTestData"), true);
         }
 
         [Test]
@@ -219,14 +223,14 @@ namespace Test
 
             //Get MS2 scans.
             var myMsDataFile = new XLTestDataFileDiffSite();
-            var listOfSortedms2Scans = MetaMorpheusTask.GetMs2Scans(myMsDataFile, null, commonParameters.DoPrecursorDeconvolution, commonParameters.UseProvidedPrecursorInfo, commonParameters.DeconvolutionIntensityRatio, commonParameters.DeconvolutionMaxAssumedChargeState, commonParameters.DeconvolutionMassTolerance).OrderBy(b => b.PrecursorMass).ToArray();
+            var listOfSortedms2Scans = MetaMorpheusTask.GetMs2Scans(myMsDataFile, null, new CommonParameters()).OrderBy(b => b.PrecursorMass).ToArray();
 
             //Generate crosslinker, which is UserDefined here.
             var crosslinker = XLSearchTask.GenerateUserDefinedCrosslinker(xlSearchParameters);
 
             //TwoPassCrosslinkSearchEngine.Run().
             CrosslinkSpectralMatch[] possiblePsms = new CrosslinkSpectralMatch[listOfSortedms2Scans.Length];
-            new CrosslinkSearchEngine(possiblePsms, listOfSortedms2Scans, indexResults.PeptideIndex, indexResults.FragmentIndex, 0, commonParameters, crosslinker, xlSearchParameters.RestrictToTopNHits, xlSearchParameters.CrosslinkSearchTopNum, xlSearchParameters.XlQuench_H2O, xlSearchParameters.XlQuench_NH2, xlSearchParameters.XlQuench_Tris, false, false, new List<string> { }).Run();
+            new CrosslinkSearchEngine(possiblePsms, listOfSortedms2Scans, indexResults.PeptideIndex, indexResults.FragmentIndex, 0, commonParameters, crosslinker, xlSearchParameters.RestrictToTopNHits, xlSearchParameters.CrosslinkSearchTopNum, xlSearchParameters.XlQuench_H2O, xlSearchParameters.XlQuench_NH2, xlSearchParameters.XlQuench_Tris, new List<string> { }).Run();
 
             var newPsms = possiblePsms.Where(p => p != null).ToList();
             Assert.AreEqual(1, newPsms.Count);
@@ -246,7 +250,7 @@ namespace Test
         {
             string myFileXl = Path.Combine(TestContext.CurrentContext.TestDirectory, @"XlTestData\BSA_DSSO_ETchD6010.mgf");
             string myDatabaseXl = Path.Combine(TestContext.CurrentContext.TestDirectory, @"XlTestData\BSA.fasta");
-            string outputFolder = Path.Combine(TestContext.CurrentContext.TestDirectory, @"TestXLSearch\DeadendPeptide");
+            string outputFolder = Path.Combine(TestContext.CurrentContext.TestDirectory, @"TestDeadendPeptide");
 
             XLSearchTask xLSearchTask = new XLSearchTask()
             {
@@ -263,9 +267,12 @@ namespace Test
                     XlQuench_NH2 = true
                 }
             };
+            Directory.CreateDirectory(outputFolder);
 
             xLSearchTask.RunTask(outputFolder, new List<DbForTask> { new DbForTask(myDatabaseXl, false) }, new List<string> { myFileXl }, "test");
             xLSearchTask2.RunTask(outputFolder, new List<DbForTask> { new DbForTask(myDatabaseXl, false) }, new List<string> { myFileXl }, "test");
+            Directory.Delete(outputFolder, true);
+            Directory.Delete(Path.Combine(TestContext.CurrentContext.TestDirectory, @"Task Settings"), true);
         }
 
         /// <summary>
@@ -275,16 +282,18 @@ namespace Test
         public static void XLSearchWithGeneratedIndices()
         {
             XLSearchTask xlSearchTask = new XLSearchTask();
+            xlSearchTask.CommonParameters = new CommonParameters();
             string myFile = Path.Combine(TestContext.CurrentContext.TestDirectory, @"XlTestData\BSA_DSSO_ETchD6010.mgf");
             string myDatabase = Path.Combine(TestContext.CurrentContext.TestDirectory, @"XlTestData\BSA.fasta");
             string folderPath = Path.Combine(TestContext.CurrentContext.TestDirectory, @"TestXLSearch");
             DbForTask db = new DbForTask(myDatabase, false);
             List<(string, MetaMorpheusTask)> taskList = new List<(string, MetaMorpheusTask)> { ("TestXLSearch", xlSearchTask) };
+            Directory.CreateDirectory(folderPath);
 
             //creates .params files if they do not exist
-            xlSearchTask.RunTask(Path.Combine(folderPath, @"CreateParams"), new List<DbForTask> { db }, new List<string> { myFile }, "normal");
+            xlSearchTask.RunTask(folderPath, new List<DbForTask> { db }, new List<string> { myFile }, "normal");
             //tests .params files
-            xlSearchTask.RunTask(Path.Combine(folderPath, @"TestParams"), new List<DbForTask> { db }, new List<string> { myFile }, "normal");
+            xlSearchTask.RunTask(folderPath, new List<DbForTask> { db }, new List<string> { myFile }, "normal");
 
             var baseDir = Path.GetDirectoryName(db.FilePath);
             var directory = new DirectoryInfo(baseDir);
@@ -297,13 +306,12 @@ namespace Test
                 }
             }
             //tests without .params files
-            xlSearchTask.RunTask(Path.Combine(folderPath, @"TestNoParams"), new List<DbForTask> { db }, new List<string> { myFile }, "normal");
+            xlSearchTask.RunTask(folderPath, new List<DbForTask> { db }, new List<string> { myFile }, "normal");
 
-            var lines = File.ReadAllLines(Path.Combine(folderPath, @"CreateParams\XL_Intralinks.tsv"));
-            var lines2 = File.ReadAllLines(Path.Combine(folderPath, @"TestParams\XL_Intralinks.tsv"));
-            var lines3 = File.ReadAllLines(Path.Combine(folderPath, @"TestNoParams\XL_Intralinks.tsv"));
-
-            Assert.That(lines.SequenceEqual(lines2) && lines2.SequenceEqual(lines3));
+            var lines = File.ReadAllLines(Path.Combine(folderPath, @"XL_Intralinks.tsv"));
+            Assert.That(lines.Length == 2);
+            Directory.Delete(folderPath, true);
+            Directory.Delete(Path.Combine(TestContext.CurrentContext.TestDirectory, @"Task Settings"), true);
         }
 
         /// <summary>
@@ -457,7 +465,7 @@ namespace Test
             MzSpectrum spectrum = new MzSpectrum(mz, intensities, false);
             MsDataScan sc = new MsDataScan(spectrum, 1, 2, true, Polarity.Positive, 1, spectrum.Range, "",
                 MZAnalyzerType.Orbitrap, 12, 1.0, null, null);
-            scans[0] = new Ms2ScanWithSpecificMass(sc, deadendPeptide.MonoisotopicMass.ToMz(2), 2, "");
+            scans[0] = new Ms2ScanWithSpecificMass(sc, deadendPeptide.MonoisotopicMass.ToMz(2), 2, "", new CommonParameters());
 
             // search the data with the peptide WITHOUT the deadend mod annotated in the search database.
             // the search engine should be able to correctly identify the deadend mod on T
@@ -465,7 +473,7 @@ namespace Test
                 new CommonParameters(), 1000, false, new List<string>()).Run();
 
             new CrosslinkSearchEngine(csms, scans, indexingResults.PeptideIndex, indexingResults.FragmentIndex, 0, new CommonParameters(), crosslinker,
-                false, 0, false, false, true, false, false, new List<string>()).Run();
+                false, 0, false, false, true, new List<string>()).Run();
 
             CrosslinkSpectralMatch csm = csms.First();
             Assert.That(csm.CrossType == PsmCrossType.DeadEndTris);

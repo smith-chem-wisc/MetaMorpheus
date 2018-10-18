@@ -7,12 +7,14 @@ using Nett;
 using Proteomics;
 using Proteomics.ProteolyticDigestion;
 using System;
+using System.Collections.Concurrent;
 using System.Collections.Generic;
 using System.Diagnostics;
 using System.Globalization;
 using System.IO;
 using System.Linq;
 using System.Text;
+using System.Threading.Tasks;
 using UsefulProteomicsDatabases;
 
 namespace TaskLayer
@@ -83,68 +85,94 @@ namespace TaskLayer
 
         public CommonParameters CommonParameters { get; set; }
 
-        public static IEnumerable<Ms2ScanWithSpecificMass> GetMs2Scans(
-            MsDataFile myMSDataFile,
-            string fullFilePath,
-            bool doPrecursorDeconvolution,
-            bool useProvidedPrecursorInfo,
-            double deconvolutionIntensityRatio,
-            int deconvolutionMaxAssumedChargeState,
-            Tolerance deconvolutionMassTolerance)
+        public static IEnumerable<Ms2ScanWithSpecificMass> GetMs2Scans(MsDataFile myMSDataFile, string fullFilePath, CommonParameters commonParameters)
         {
-            foreach (var ms2scan in myMSDataFile.GetAllScansList().Where(x => x.MsnOrder != 1))
-            {
-                if (GlobalVariables.StopLoops) { break; }
-                List<(double, int)> isolatedStuff = new List<(double, int)>();
-                if (ms2scan.OneBasedPrecursorScanNumber.HasValue)
+            var ms2Scans = myMSDataFile.GetAllScansList().Where(x => x.MsnOrder > 1).ToArray();
+            List<Ms2ScanWithSpecificMass>[] scansWithPrecursors = new List<Ms2ScanWithSpecificMass>[ms2Scans.Length];
+
+            Parallel.ForEach(Partitioner.Create(0, ms2Scans.Length), new ParallelOptions { MaxDegreeOfParallelism = commonParameters.MaxThreadsToUsePerFile },
+                (partitionRange, loopState) =>
                 {
-                    var precursorSpectrum = myMSDataFile.GetOneBasedScan(ms2scan.OneBasedPrecursorScanNumber.Value);
-
-                    try
+                    for (int i = partitionRange.Item1; i < partitionRange.Item2; i++)
                     {
-                        ms2scan.RefineSelectedMzAndIntensity(precursorSpectrum.MassSpectrum);
-                    }
-                    catch (MzLibException ex)
-                    {
-                        Warn("Could not get precursor ion for MS2 scan #" + ms2scan.OneBasedScanNumber + "; " + ex.Message);
-                        continue;
-                    }
-
-                    if (ms2scan.SelectedIonMonoisotopicGuessMz.HasValue)
-                    {
-                        ms2scan.ComputeMonoisotopicPeakIntensity(precursorSpectrum.MassSpectrum);
-                    }
-
-                    if (doPrecursorDeconvolution)
-                    {
-                        foreach (var envelope in ms2scan.GetIsolatedMassesAndCharges(precursorSpectrum.MassSpectrum, 1, deconvolutionMaxAssumedChargeState, deconvolutionMassTolerance.Value, deconvolutionIntensityRatio))
+                        if (GlobalVariables.StopLoops)
                         {
-                            var monoPeakMz = envelope.monoisotopicMass.ToMz(envelope.charge);
-                            isolatedStuff.Add((monoPeakMz, envelope.charge));
+                            break;
+                        }
+
+                        MsDataScan ms2scan = ms2Scans[i];
+                        
+                        List<(double, int)> precursors = new List<(double, int)>();
+                        if (ms2scan.OneBasedPrecursorScanNumber.HasValue)
+                        {
+                            var precursorSpectrum = myMSDataFile.GetOneBasedScan(ms2scan.OneBasedPrecursorScanNumber.Value);
+
+                            try
+                            {
+                                ms2scan.RefineSelectedMzAndIntensity(precursorSpectrum.MassSpectrum);
+                            }
+                            catch (MzLibException ex)
+                            {
+                                Warn("Could not get precursor ion for MS2 scan #" + ms2scan.OneBasedScanNumber + "; " + ex.Message);
+                                continue;
+                            }
+
+                            if (ms2scan.SelectedIonMonoisotopicGuessMz.HasValue)
+                            {
+                                ms2scan.ComputeMonoisotopicPeakIntensity(precursorSpectrum.MassSpectrum);
+                            }
+
+                            if (commonParameters.DoPrecursorDeconvolution)
+                            {
+                                foreach (var envelope in ms2scan.GetIsolatedMassesAndCharges(
+                                    precursorSpectrum.MassSpectrum, 1,
+                                    commonParameters.DeconvolutionMaxAssumedChargeState,
+                                    commonParameters.DeconvolutionMassTolerance.Value,
+                                    commonParameters.DeconvolutionIntensityRatio))
+                                {
+                                    var monoPeakMz = envelope.monoisotopicMass.ToMz(envelope.charge);
+                                    precursors.Add((monoPeakMz, envelope.charge));
+                                }
+                            }
+                        }
+
+                        if (commonParameters.UseProvidedPrecursorInfo && ms2scan.SelectedIonChargeStateGuess.HasValue)
+                        {
+                            var precursorCharge = ms2scan.SelectedIonChargeStateGuess.Value;
+                            if (ms2scan.SelectedIonMonoisotopicGuessMz.HasValue)
+                            {
+                                double precursorMZ = ms2scan.SelectedIonMonoisotopicGuessMz.Value;
+                                if (!precursors.Any(b =>
+                                    commonParameters.DeconvolutionMassTolerance.Within(
+                                        precursorMZ.ToMass(precursorCharge), b.Item1.ToMass(b.Item2))))
+                                {
+                                    precursors.Add((precursorMZ, precursorCharge));
+                                }
+                            }
+                            else
+                            {
+                                double precursorMZ = ms2scan.SelectedIonMZ.Value;
+                                if (!precursors.Any(b =>
+                                    commonParameters.DeconvolutionMassTolerance.Within(
+                                        precursorMZ.ToMass(precursorCharge), b.Item1.ToMass(b.Item2))))
+                                {
+                                    precursors.Add((precursorMZ, precursorCharge));
+                                }
+                            }
+                        }
+
+                        scansWithPrecursors[i] = new List<Ms2ScanWithSpecificMass>();
+                        IsotopicEnvelope[] neutralExperimentalFragments = Ms2ScanWithSpecificMass.GetNeutralExperimentalFragments(ms2scan, commonParameters);
+
+                        foreach (var precursor in precursors)
+                        {
+                            scansWithPrecursors[i].Add(new Ms2ScanWithSpecificMass(ms2scan, precursor.Item1,
+                                precursor.Item2, fullFilePath, commonParameters, neutralExperimentalFragments));
                         }
                     }
-                }
+                });
 
-                if (useProvidedPrecursorInfo && ms2scan.SelectedIonChargeStateGuess.HasValue)
-                {
-                    var precursorCharge = ms2scan.SelectedIonChargeStateGuess.Value;
-                    if (ms2scan.SelectedIonMonoisotopicGuessMz.HasValue)
-                    {
-                        var precursorMZ = ms2scan.SelectedIonMonoisotopicGuessMz.Value;
-                        if (!isolatedStuff.Any(b => deconvolutionMassTolerance.Within(precursorMZ.ToMass(precursorCharge), b.Item1.ToMass(b.Item2))))
-                            isolatedStuff.Add((precursorMZ, precursorCharge));
-                    }
-                    else
-                    {
-                        var precursorMZ = ms2scan.SelectedIonMZ;
-                        if (!isolatedStuff.Any(b => deconvolutionMassTolerance.Within(precursorMZ.Value.ToMass(precursorCharge), b.Item1.ToMass(b.Item2))))
-                            isolatedStuff.Add((precursorMZ.Value, precursorCharge));
-                    }
-                }
-
-                foreach (var heh in isolatedStuff)
-                    yield return new Ms2ScanWithSpecificMass(ms2scan, heh.Item1, heh.Item2, fullFilePath);
-            }
+            return scansWithPrecursors.SelectMany(p => p);
         }
 
         public static CommonParameters SetAllFileSpecificCommonParams(CommonParameters commonParams, FileSpecificParameters fileSpecificParams)
@@ -206,7 +234,8 @@ namespace TaskLayer
                 listOfModsVariable: commonParams.ListOfModsVariable,
                 listOfModsFixed: commonParams.ListOfModsFixed,
                 qValueOutputFilter: commonParams.QValueOutputFilter,
-                taskDescriptor: commonParams.TaskDescriptor
+                taskDescriptor: commonParams.TaskDescriptor,
+                assumeOrphanPeaksAreZ1Fragments: commonParams.AssumeOrphanPeaksAreZ1Fragments
                 );
 
             return returnParams;
@@ -216,7 +245,7 @@ namespace TaskLayer
         {
             StartingSingleTask(displayName);
 
-            var tomlFileName = Path.Combine(output_folder, GetType().Name + "config.toml");
+            var tomlFileName = Path.Combine(Directory.GetParent(output_folder).ToString(), "Task Settings", displayName + "config.toml");
             Toml.WriteFile(this, tomlFileName, tomlConfig);
             FinishedWritingFile(tomlFileName, new List<string> { displayName });
 
@@ -260,12 +289,12 @@ namespace TaskLayer
                 }
                 FinishedWritingFile(resultsFileName, new List<string> { displayName });
                 FinishedSingleTask(displayName);
-        }
+            }
             catch (Exception e)
             {
                 MetaMorpheusEngine.FinishedSingleEngineHandler -= SingleEngineHandlerInTask;
                 var resultsFileName = Path.Combine(output_folder, "results.txt");
-        e.Data.Add("folder", output_folder);
+                e.Data.Add("folder", output_folder);
                 using (StreamWriter file = new StreamWriter(resultsFileName))
                 {
                     file.WriteLine(GlobalVariables.MetaMorpheusVersion.Equals("1.0.0.0") ? "MetaMorpheus: Not a release version" : "MetaMorpheus: version " + GlobalVariables.MetaMorpheusVersion);
@@ -559,7 +588,7 @@ namespace TaskLayer
                 WriteFragmentIndexNetSerializer(fragmentIndex, fragmentIndexFile);
                 FinishedWritingFile(fragmentIndexFile, new List<string> { taskId });
 
-                if(indexEngine.GeneratePrecursorIndex)
+                if (indexEngine.GeneratePrecursorIndex)
                 {
                     Status("Writing precursor index...", new List<string> { taskId });
                     var precursorIndexFile = Path.Combine(output_folderForIndices, "precursorIndex.ind");
@@ -606,7 +635,7 @@ namespace TaskLayer
                     fragmentIndex = (List<int>[])ser.Deserialize(file);
                 }
 
-                if(indexEngine.GeneratePrecursorIndex)
+                if (indexEngine.GeneratePrecursorIndex)
                 {
                     Status("Reading precursor index...", new List<string> { taskId });
                     messageTypes = GetSubclassesAndItself(typeof(List<int>[]));
