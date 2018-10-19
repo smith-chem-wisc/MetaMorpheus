@@ -1,19 +1,17 @@
 ﻿using MassSpectrometry;
 using Proteomics.Fragmentation;
 using Proteomics.ProteolyticDigestion;
-using System;
 using System.Collections.Generic;
 using System.Linq;
 
-/// <summary>
-/// The mass difference between an experimental precursor and the theoretical mass of the assigned peptide is determined. The LocalizationEngine attempts
-/// to localize this mass to one of the residues. It does this by adding the mass difference to each theoretical ion mass and looking for additional matches
-/// in the experimental spectrum. This engine should only be run for open, notch or custom searches. It should not be run for exact mass or missed
-/// monoisopic searches.
-/// </summary>
-
 namespace EngineLayer.Localization
 {
+    /// <summary>
+    /// The mass difference between an experimental precursor and the theoretical mass of the assigned peptide is determined. The LocalizationEngine attempts
+    /// to localize this mass to one of the residues. It does this by adding the mass difference to each theoretical ion mass and looking for additional matches
+    /// in the experimental spectrum. This engine should only be run for open, notch or custom searches. It should not be run for exact mass or missed
+    /// monoisopic searches.
+    /// </summary>
     public class LocalizationEngine : MetaMorpheusEngine
     {
         private readonly IEnumerable<PeptideSpectralMatch> AllResultingIdentifications;
@@ -37,6 +35,7 @@ namespace EngineLayer.Localization
                 }
 
                 MsDataScan scan = MyMsDataFile.GetOneBasedScan(psm.ScanNumber);
+                Ms2ScanWithSpecificMass scanWithSpecificMass = new Ms2ScanWithSpecificMass(scan, psm.ScanPrecursorMonoisotopicPeakMz, psm.ScanPrecursorCharge, psm.FullFilePath, commonParameters);
                 PeptideWithSetModifications peptide = psm.BestMatchingPeptides.First().Peptide;
                 double massDifference = psm.ScanPrecursorMass - peptide.MonoisotopicMass;
 
@@ -50,7 +49,7 @@ namespace EngineLayer.Localization
                     // this is the list of theoretical products for this peptide with mass-difference on this residue
                     List<Product> productsWithLocalizedMassDiff = peptideWithLocalizedMassDiff.Fragment(commonParameters.DissociationType, commonParameters.DigestionParams.FragmentationTerminus).ToList();
 
-                    var matchedIons = MatchFragmentIons(scan.MassSpectrum, productsWithLocalizedMassDiff, commonParameters, psm.ScanPrecursorMass);
+                    var matchedIons = MatchFragmentIons(scanWithSpecificMass, productsWithLocalizedMassDiff, commonParameters);
 
                     // score when the mass-diff is on this residue
                     double localizedScore = CalculatePeptideScore(scan, matchedIons, 0);
