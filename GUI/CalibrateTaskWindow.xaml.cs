@@ -246,7 +246,8 @@ namespace MetaMorpheusGUI
                 listOfModsFixed: listOfModsFixed,
                 listOfModsVariable: listOfModsVariable,
                 productMassTolerance: ProductMassTolerance,
-                precursorMassTolerance: PrecursorMassTolerance);
+                precursorMassTolerance: PrecursorMassTolerance,
+                assumeOrphanPeaksAreZ1Fragments: protease.Name != "top-down");
 
             TheTask.CommonParameters = commonParamsToSave;
 

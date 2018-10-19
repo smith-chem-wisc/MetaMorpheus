@@ -15,12 +15,11 @@ namespace MetaMorpheusGUI
         public CustomMsgBox()
         {
             InitializeComponent();
-            this.button1.Click += new EventHandler(button1_Click);
-            this.button2.Click += new EventHandler(button2_Click);
-            this.button3.Click += new EventHandler(button3_Click);
+            this.button1.Click += new EventHandler(Button1_Click);
+            this.button2.Click += new EventHandler(Button2_Click);
+            this.button3.Click += new EventHandler(Button3_Click);
         }
 
-        //internal GuiGlobalParams GuiGlobalParams = new GuiGlobalParams();
         static CustomMsgBox MsgBox;
         static DialogResult result = DialogResult.No;
         public static DialogResult Show(string text, string caption, string btnYes, string btnNo, string btnStop)
@@ -35,19 +34,19 @@ namespace MetaMorpheusGUI
             return result;
         }
 
-        private void button1_Click(object sender, EventArgs e)
+        private void Button1_Click(object sender, EventArgs e)
         {
             result = DialogResult.Yes;
             MsgBox.Close();
         }
 
-        private void button2_Click(object sender, EventArgs e)
+        private void Button2_Click(object sender, EventArgs e)
         {
             result = DialogResult.No;
             MsgBox.Close();
         }
 
-        private void button3_Click(object sender, EventArgs e)
+        private void Button3_Click(object sender, EventArgs e)
         {
             result = DialogResult.OK;
             MsgBox.Close();

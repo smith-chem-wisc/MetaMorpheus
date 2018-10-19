@@ -18,7 +18,8 @@ namespace Test
 
             DbForTask db = new DbForTask(Path.Combine(TestContext.CurrentContext.TestDirectory, @"sliced-db.fasta"), false);
             string raw = Path.Combine(TestContext.CurrentContext.TestDirectory, @"sliced-raw.mzML");
-            EverythingRunnerEngine a = new EverythingRunnerEngine(new List<(string, MetaMorpheusTask)> { ("Task", task) }, new List<string> { raw }, new List<DbForTask> { db }, Environment.CurrentDirectory);
+            string outputFolder = Path.Combine(TestContext.CurrentContext.TestDirectory, @"TestSlicedTest1");
+            EverythingRunnerEngine a = new EverythingRunnerEngine(new List<(string, MetaMorpheusTask)> { ("Task", task) }, new List<string> { raw }, new List<DbForTask> { db }, outputFolder);
 
             a.Run();
 
@@ -34,6 +35,7 @@ namespace Test
             var protGroups = Path.Combine(thisTaskOutputFolder, "Task", "AllProteinGroups.tsv");
 
             Assert.AreEqual(2, File.ReadLines(protGroups).Count());
+            Directory.Delete(outputFolder, true);
         }
 
         [Test]
@@ -43,7 +45,8 @@ namespace Test
 
             DbForTask db = new DbForTask(Path.Combine(TestContext.CurrentContext.TestDirectory, @"sliced-db.fa"), false);
             string raw = Path.Combine(TestContext.CurrentContext.TestDirectory, @"sliced-raw.mzML");
-            EverythingRunnerEngine a = new EverythingRunnerEngine(new List<(string, MetaMorpheusTask)> { ("Task", task) }, new List<string> { raw }, new List<DbForTask> { db }, Environment.CurrentDirectory);
+            string outputFolder = Path.Combine(TestContext.CurrentContext.TestDirectory, @"FaFormatTest");
+            EverythingRunnerEngine a = new EverythingRunnerEngine(new List<(string, MetaMorpheusTask)> { ("Task", task) }, new List<string> { raw }, new List<DbForTask> { db }, outputFolder);
 
             a.Run();
 
@@ -59,6 +62,7 @@ namespace Test
             var protGroups = Path.Combine(thisTaskOutputFolder, "Task", "AllProteinGroups.tsv");
 
             Assert.AreEqual(2, File.ReadLines(protGroups).Count());
+            Directory.Delete(outputFolder, true);
         }
     }
 }
