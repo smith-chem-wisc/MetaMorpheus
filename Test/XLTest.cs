@@ -88,7 +88,7 @@ namespace Test
         public static void XlTest_BSA_DSSO()
         {
             //Generate parameters
-            var commonParameters = new CommonParameters(doPrecursorDeconvolution: false, dissociationType: DissociationType.EThcD, 
+            var commonParameters = new CommonParameters(doPrecursorDeconvolution: false, dissociationType: DissociationType.EThcD,
                 scoreCutoff: 1, digestionParams: new DigestionParams(minPeptideLength: 5), precursorMassTolerance: new PpmTolerance(10));
 
             var xlSearchParameters = new XlSearchParameters();
@@ -193,7 +193,7 @@ namespace Test
             var variableModifications = new List<Modification>() { mod1 };
             var fixedModifications = new List<Modification>();
             var localizeableModifications = new List<Modification>();
-            
+
             Dictionary<Modification, ushort> modsDictionary = new Dictionary<Modification, ushort>();
 
             int i = 1;
@@ -438,7 +438,7 @@ namespace Test
                 }
             }
         }
-        
+
         /// <summary>
         /// Generate and test fragments for this dead-end peptide (quenched with tris):
         ///   
@@ -579,7 +579,7 @@ namespace Test
             var results = Path.Combine(outputFolder, @"TestPercolator\XL_Intralinks_Percolator.txt");
             var lines = File.ReadAllLines(results);
             Assert.That(lines[0].Equals("SpecId\tLabel\tScannr\tScore\tdScore\tNormRank\tCharge\tMass\tPPM\tLenShort\tLenLong\tLenSum\tPeptide\tProtein"));
-            Assert.That(lines[1].Equals("T-1-30.6190992666667\t1\t1\t21.0683048346133\t0\t7\t3\t1994.05202313843\t0.664979354397676\t7\t9\t16\t-.EKVLTSSAR2--LSQKFPK4.-\t3336842(211)\t3336842(245)"));
+            Assert.That(lines[1].Equals("T-1-30.6190992666667\t1\t1\t20.0641008915522\t0\t7\t3\t1994.05202313843\t0.664979354397676\t7\t9\t16\t-.EKVLTSSAR2--LSQKFPK4.-\t3336842(211)\t3336842(245)"));
             Directory.Delete(outputFolder, true);
         }
 
@@ -604,15 +604,14 @@ namespace Test
             MzSpectrum spectrum = new MzSpectrum(mz, intensities, false);
             MsDataScan sc = new MsDataScan(spectrum, 1, 2, true, Polarity.Positive, 1, spectrum.Range, "",
                 MZAnalyzerType.Orbitrap, 12, 1.0, null, null);
-            scans[0] = new Ms2ScanWithSpecificMass(sc, deadendPeptide.MonoisotopicMass.ToMz(2), 2, "");
+            scans[0] = new Ms2ScanWithSpecificMass(sc, deadendPeptide.MonoisotopicMass.ToMz(2), 2, "", new CommonParameters());
 
             var indexingResults = (IndexingResults)new IndexingEngine(new List<Protein> { protein }, new List<Modification>(), new List<Modification>(), 0, DecoyType.None,
                 new CommonParameters(), 1000, false, new List<string>()).Run();
 
-            new CrosslinkSearchEngine(csms, scans, indexingResults.PeptideIndex, indexingResults.FragmentIndex, 0, new CommonParameters(), crosslinker,
-                false, 0, false, false, true, false, false, new List<string>()).Run();
+            new CrosslinkSearchEngine(csms, scans, indexingResults.PeptideIndex, indexingResults.FragmentIndex, 0, new CommonParameters(), crosslinker, false, 0, false, false, true, new List<string>()).Run();
 
-            csms[0].SetFdrValues(0,0,0.1,0,0,0,0,0,0,false);
+            csms[0].SetFdrValues(0, 0, 0.1, 0, 0, 0, 0, 0, 0, false);
 
             xlst.WritePepXML_xl(csms.ToList(), new List<Protein>(), "", new List<Modification> { deadend }, new List<Modification> { deadend }, new List<string>(), TestContext.CurrentContext.TestDirectory, "test", new List<string>());
             File.Delete(Path.Combine(TestContext.CurrentContext.TestDirectory, @"test.pep.XML"));
