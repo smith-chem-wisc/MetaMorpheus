@@ -1,9 +1,7 @@
 ﻿using Chemistry;
 using EngineLayer.FdrAnalysis;
 using EngineLayer.ModernSearch;
-using MassSpectrometry;
 using Proteomics;
-using Proteomics.AminoAcidPolymer;
 using Proteomics.Fragmentation;
 using Proteomics.ProteolyticDigestion;
 using System;
