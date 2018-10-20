@@ -11,9 +11,11 @@ namespace Test
         [Test]
         public void WriteTsvTest()
         {
-            string outputFolder = Path.Combine(TestContext.CurrentContext.TestDirectory, @"XLTestData\OutputTest1");
-            string myFile = Path.Combine(TestContext.CurrentContext.TestDirectory, @"XLTestData\BSA_DSS_23747.mzML");
-            string myDatabase = Path.Combine(TestContext.CurrentContext.TestDirectory, @"XLTestData\BSA.fasta");
+            string outputFolder = Path.Combine(TestContext.CurrentContext.TestDirectory, @"XlOutputTest1");
+            string myFile = Path.Combine(TestContext.CurrentContext.TestDirectory, @"XlTestData\BSA_DSS_23747.mzML");
+            string myDatabase = Path.Combine(TestContext.CurrentContext.TestDirectory, @"XlTestData\BSA.fasta");
+
+            Directory.CreateDirectory(outputFolder);
 
             XLSearchTask xLSearch = new XLSearchTask();
             xLSearch.RunTask(outputFolder, new List<DbForTask> { new DbForTask(myDatabase, false) }, new List<string> { myFile }, "test");
