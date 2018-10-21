@@ -19,7 +19,8 @@ namespace Test
         public static void TestParsimony()
         {
             // creates some proteins to test parsimony with
-            string[] proteinSequences = { "AB--------",   // 1: contains unique
+            string[] proteinSequences = {
+                                   "AB--------",   // 1: contains unique
                                    "--C-------",   // 2: one hit wonder
                                    "---D---HHH--", // 3: subset
                                    "-B-D---HHH--", // 4: D should go to 4, not 3 (3 is subset)
@@ -125,7 +126,6 @@ namespace Test
             Assert.Contains("AB--------", parsimonyProteinSequences);
             Assert.Contains("--C-------", parsimonyProteinSequences);
             Assert.Contains("-B-D---HHH--", parsimonyProteinSequences);
-            Assert.Contains("-----F----*", parsimonyProteinSequences);
             Assert.Contains("----E----**", parsimonyProteinSequences);
             Assert.Contains("-B------I-", parsimonyProteinSequences);
             Assert.Contains("----EFG---", parsimonyProteinSequences);
@@ -142,7 +142,7 @@ namespace Test
             }
 
             // test protein groups
-            Assert.AreEqual(4, proteinGroups.Count);
+            Assert.AreEqual(3, proteinGroups.Count);
             Assert.AreEqual(1, proteinGroups.First().Proteins.Count);
             Assert.AreEqual("AB--------", proteinGroups.First().Proteins.First().BaseSequence);
             Assert.AreEqual(2, proteinGroups.First().AllPsmsBelowOnePercentFDR.Count);

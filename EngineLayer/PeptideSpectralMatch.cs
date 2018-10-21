@@ -209,16 +209,13 @@ namespace EngineLayer
 
                 foreach (var hit in hits)
                 {
-                    // if all the peptides for this sequence are decoys, move on
-                    if (hit.All(p => p.Pwsm.Protein.IsDecoy))
+                    if (hit.Any(p => p.Pwsm.Protein.IsDecoy) && hit.Any(p => !p.Pwsm.Protein.IsDecoy))
                     {
-                        continue;
+                        // at least one peptide with this sequence is a target and at least one is a decoy
+                        // remove the decoys with this sequence
+                        _bestMatchingPeptides.RemoveAll(p => p.Pwsm.FullSequence == hit.Key && p.Pwsm.Protein.IsDecoy);
+                        removedPeptides = true;
                     }
-
-                    // at least one peptide with this sequence is a target and at least one is a decoy
-                    // remove the decoys with this sequence
-                    _bestMatchingPeptides.RemoveAll(p => p.Pwsm.FullSequence == hit.Key && p.Pwsm.Protein.IsDecoy);
-                    removedPeptides = true;
                 }
 
                 if (removedPeptides)
