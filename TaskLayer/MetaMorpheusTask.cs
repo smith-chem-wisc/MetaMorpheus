@@ -318,7 +318,7 @@ namespace TaskLayer
                     file.Write(SystemInfo.SystemProse().Replace(Environment.NewLine, "") + " ");
                     file.WriteLine("The total time to perform the " + TaskType + " task on " + currentRawDataFilepathList.Count + " spectra file(s) was " + String.Format("{0:0.00}", MyTaskResults.Time.TotalMinutes) + " minutes.");
                     file.WriteLine();
-                    file.WriteLine("Published works using MetaMorpheus software are encouraged to cite: Solntsev, S. K.; Shortreed, M. R.; Frey, B. L.; Smith, L. M. Enhanced Global Post-translational Modification Discovery with MetaMoprheus. Journal of Proteome Research. 2018, 17 (5), 1844-1851.");
+                    file.WriteLine("Published works using MetaMorpheus software are encouraged to cite: Solntsev, S. K.; Shortreed, M. R.; Frey, B. L.; Smith, L. M. Enhanced Global Post-translational Modification Discovery with MetaMorpheus. Journal of Proteome Research. 2018, 17 (5), 1844-1851.");
 
                     file.WriteLine();
                     file.WriteLine("Spectra files: ");
