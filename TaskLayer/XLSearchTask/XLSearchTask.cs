@@ -9,6 +9,7 @@ using System.IO;
 using System.Linq;
 using MzLibUtil;
 using EngineLayer.FdrAnalysis;
+using System;
 
 namespace TaskLayer
 {
@@ -273,20 +274,23 @@ namespace TaskLayer
                     cumulativeTarget++;
                 }
 
-                double qValue = (double)cumulativeDecoy / cumulativeTarget;
+                double qValue = Math.Min(1, (double)cumulativeDecoy / cumulativeTarget);
                 csm.SetFdrValues(cumulativeTarget, cumulativeDecoy, qValue, 0, 0, 0, 0, 0, 0, false);
             }
 
-            double qThreshold = 0;
-            foreach (CrosslinkSpectralMatch csm in csms)
+            double qValueThreshold = 1.0;
+            for (int i = csms.Count - 1; i >= 0; i--)
             {
-                if (csm.FdrInfo.QValue > qThreshold)
+                CrosslinkSpectralMatch csm = csms[i];
+
+                // threshold q-values
+                if (csm.FdrInfo.QValue > qValueThreshold)
                 {
-                    qThreshold = csm.FdrInfo.QValue;
+                    csm.FdrInfo.QValue = qValueThreshold;
                 }
-                else
+                else if (csm.FdrInfo.QValue < qValueThreshold)
                 {
-                    csm.FdrInfo.QValue = qThreshold;
+                    qValueThreshold = csm.FdrInfo.QValue;
                 }
             }
         }
