@@ -93,8 +93,8 @@ namespace EngineLayer
 
                 foreach (Product product in theoreticalProducts)
                 {
-                    // unknown fragment mass; this only happens rarely for sequences with unknown amino acids
-                    if (double.IsNaN(product.NeutralMass))
+                    // unknown fragment mass or diagnostic ion or precursor; skip those
+                    if (double.IsNaN(product.NeutralMass) || product.ProductType == ProductType.D || product.ProductType == ProductType.M)
                     {
                         continue;
                     }
