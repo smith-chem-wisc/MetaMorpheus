@@ -410,7 +410,12 @@ namespace EngineLayer
             s["Sequence Variations"] = pepWithModsIsNull ? " " :
                 Resolve(pepsWithMods.Select(b => string.Join(", ", b.Protein.SequenceVariations
                     .Where(d => psm.OneBasedStartResidueInProtein <= d.OneBasedBeginPosition && d.OneBasedBeginPosition <= psm.OneBasedEndResidueInProtein)
-                    .Select(d => d.OriginalSequence + d.OneBasedBeginPosition.ToString() + d.VariantSequence + SuffixIsSequenceVariantApplied(b.Protein, d))
+                    .Select(d => d.SimpleString() + SuffixIsSequenceVariantApplied(b.Protein, d))
+                    .Distinct()))).Item1;
+            s["Splice Sites"] = pepWithModsIsNull ? " " :
+                Resolve(pepsWithMods.Select(b => string.Join(", ", b.Protein.SpliceSites
+                    .Where(d => psm.OneBasedStartResidueInProtein <= d.OneBasedBeginPosition && d.OneBasedBeginPosition <= psm.OneBasedEndResidueInProtein)
+                    .Select(d => $"{d.OneBasedBeginPosition.ToString()}-{d.OneBasedEndPosition.ToString()}+")
                     .Distinct()))).Item1;
             s["Organism Name"] = pepWithModsIsNull ? " " : Resolve(pepsWithMods.Select(b => b.Protein.Organism)).Item1;
             s["Contaminant"] = pepWithModsIsNull ? " " : Resolve(pepsWithMods.Select(b => b.Protein.IsContaminant ? "Y" : "N")).Item1;

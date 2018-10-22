@@ -55,6 +55,8 @@ namespace MetaMorpheusGUI
             initiatorMethionineBehaviorComboBox.SelectedIndex = (int)task.CommonParameters.DigestionParams.InitiatorMethionineBehavior;
             DissociationTypeComboBox.SelectedItem = task.CommonParameters.DissociationType.ToString();
             maxThreadsTextBox.Text = task.CommonParameters.MaxThreadsToUsePerFile.ToString(CultureInfo.InvariantCulture);
+            MinVariantDepthTextBox.Text = task.CommonParameters.MinVariantDepth.ToString(CultureInfo.InvariantCulture);
+            MaxHeterozygousVariantsTextBox.Text = task.CommonParameters.MaxHeterozygousVariants.ToString(CultureInfo.InvariantCulture);
 
             productMassToleranceTextBox.Text = task.CommonParameters.ProductMassTolerance.Value.ToString(CultureInfo.InvariantCulture);
             productMassToleranceComboBox.SelectedIndex = task.CommonParameters.ProductMassTolerance is AbsoluteTolerance ? 0 : 1;
@@ -189,6 +191,8 @@ namespace MetaMorpheusGUI
             int MaxMissedCleavages = string.IsNullOrEmpty(missedCleavagesTextBox.Text) ? int.MaxValue : (int.Parse(missedCleavagesTextBox.Text, CultureInfo.InvariantCulture));
             int MinPeptideLength = int.Parse(MinPeptideLengthTextBox.Text, NumberStyles.Any, CultureInfo.InvariantCulture);
             int MaxPeptideLength = string.IsNullOrEmpty(MaxPeptideLengthTextBox.Text) ? int.MaxValue : (int.Parse(MaxPeptideLengthTextBox.Text, NumberStyles.Any, CultureInfo.InvariantCulture));
+            int MinVariantDepth = int.Parse(MinVariantDepthTextBox.Text, NumberStyles.Any, CultureInfo.InvariantCulture);
+            int MaxHeterozygousVariants = int.Parse(MaxHeterozygousVariantsTextBox.Text, NumberStyles.Any, CultureInfo.InvariantCulture);
             int MaxModificationIsoforms = int.Parse(maxModificationIsoformsTextBox.Text, CultureInfo.InvariantCulture);
             DissociationType dissociationType = GlobalVariables.AllSupportedDissociationTypes[DissociationTypeComboBox.SelectedItem.ToString()];
 
@@ -246,7 +250,9 @@ namespace MetaMorpheusGUI
                 listOfModsFixed: listOfModsFixed,
                 listOfModsVariable: listOfModsVariable,
                 productMassTolerance: ProductMassTolerance,
-                precursorMassTolerance: PrecursorMassTolerance);
+                precursorMassTolerance: PrecursorMassTolerance,
+                minVariantDepth: MinVariantDepth,
+                maxHeterozygousVariants: MaxHeterozygousVariants);
 
             TheTask.CommonParameters = commonParamsToSave;
 

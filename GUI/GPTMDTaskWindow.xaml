@@ -166,6 +166,26 @@
                                         </TextBox>
                                     </StackPanel>
                                     <StackPanel Orientation="Horizontal" Margin="5">
+                                        <Label x:Name="LbMinVariantDepth" Content="Min read depth for variants" />
+                                        <TextBox x:Name="MinVariantDepthTextBox" PreviewTextInput="CheckIfNumber" Width="45" ToolTipService.ShowDuration="999999" ToolTipService.InitialShowDelay="500">
+                                            <TextBox.ToolTip>
+                                                <TextBlock>
+                                                    The minimum number of reads to consider a nucleic acid sequence variant.
+                                                </TextBlock>
+                                            </TextBox.ToolTip>
+                                        </TextBox>
+                                    </StackPanel>
+                                    <StackPanel Orientation="Horizontal" Margin="5">
+                                        <Label x:Name="LbMaxHeterozygousVariants" Content="Max heterozygous variants for combinitorics" />
+                                        <TextBox x:Name="MaxHeterozygousVariantsTextBox" PreviewTextInput="CheckIfNumber" Width="45" ToolTipService.ShowDuration="999999" ToolTipService.InitialShowDelay="500">
+                                            <TextBox.ToolTip>
+                                                <TextBlock>
+                                                    The maximum number of heterozygous variants for combinitorics.
+                                                </TextBlock>
+                                            </TextBox.ToolTip>
+                                        </TextBox>
+                                    </StackPanel>
+                                    <StackPanel Orientation="Horizontal" Margin="5">
                                         <Label x:Name="minimumScoreLabel" Content="Minimum score allowed:" />
                                         <TextBox x:Name="minScoreAllowed" PreviewTextInput="CheckIfNumber" Width="45" ToolTipService.ShowDuration="999999" ToolTipService.InitialShowDelay="500">
                                             <TextBox.ToolTip>

@@ -10,6 +10,8 @@ using Proteomics.ProteolyticDigestion;
 using System;
 using System.Collections.Generic;
 using System.Linq;
+using TaskLayer;
+using UsefulProteomicsDatabases;
 
 namespace Test
 {
@@ -44,7 +46,7 @@ namespace Test
 
             var peptidesWithSetModifications = new List<PeptideWithSetModifications> { modPep };
             PeptideSpectralMatch newPsm = new PeptideSpectralMatch(peptidesWithSetModifications.First(), 0, 0, 0, scan, digestionParams, new List<MatchedFragmentIon>());
-            
+
             Tolerance fragmentTolerance = new AbsoluteTolerance(0.01);
 
             newPsm.SetFdrValues(1, 0, 0, 1, 0, 0, 0, 0, 0, false);
@@ -57,9 +59,10 @@ namespace Test
         }
 
         [Test]
-        [TestCase("NNNPPP", "accession", @"not applied", 6, 3, 3)]
-        [TestCase("NNNPPP", "accession", @"1\t50000000\t.\tA\tG\t.\tPASS\tANN=\tGT:AD:DP\t1/1:30,30:30", 5, 2, 3)]
-        public static void TestCombos(string proteinSequence, string accession, string sequenceVariantDescription, int numModifiedResidues, int numModifiedResiduesN, int numModifiedResiduesP)
+        [TestCase("NNNPPP", "accession", "A", @"not applied", 1, 6, 3, 3, 0)]
+        [TestCase("NNNPPP", "accession", "A", @"1\t50000000\t.\tA\tG\t.\tPASS\tANN=\tGT:AD:DP\t1/1:30,30:30", 1, 5, 2, 3, 0)]
+        [TestCase("NNNPPP", "accession", "P", @"1\t50000000\t.\tA\tG\t.\tPASS\tANN=\tGT:AD:DP\t1/1:30,30:30", 2, 5, 2, 3, 1)]
+        public static void TestCombos(string proteinSequence, string accession, string variantAA, string sequenceVariantDescription, int numModHashes, int numModifiedResidues, int numModifiedResiduesN, int numModifiedResiduesP, int numModifiedResiduesNP)
         {
             List<PeptideSpectralMatch> allIdentifications = null;
             ModificationMotif.TryGetMotif("N", out ModificationMotif motifN);
@@ -69,7 +72,7 @@ namespace Test
             IEnumerable<Tuple<double, double>> combos = new List<Tuple<double, double>> { new Tuple<double, double>(21.981943, 15.994915) };
             Tolerance precursorMassTolerance = new PpmTolerance(10);
 
-            var parentProtein = new Protein(proteinSequence, accession, sequenceVariations: new List<SequenceVariation> { new SequenceVariation(1, "N", "A", sequenceVariantDescription) });
+            var parentProtein = new Protein(proteinSequence, accession, sequenceVariations: new List<SequenceVariation> { new SequenceVariation(1, "N", variantAA, sequenceVariantDescription) });
             var variantProteins = parentProtein.GetVariantProteins();
 
             DigestionParams digestionParams = new DigestionParams(minPeptideLength: 5);
@@ -82,7 +85,7 @@ namespace Test
             var peptidesWithSetModifications = new List<PeptideWithSetModifications> { modPep };
             PeptideSpectralMatch match = new PeptideSpectralMatch(peptidesWithSetModifications.First(), 0, 0, 0, scan, digestionParams, new List<MatchedFragmentIon>());
             PeptideSpectralMatch newPsm = new PeptideSpectralMatch(peptidesWithSetModifications.First(), 0, 0, 0, scan, digestionParams, new List<MatchedFragmentIon>());
-            
+
             Tolerance fragmentTolerance = new AbsoluteTolerance(0.01);
 
             match.SetFdrValues(1, 0, 0, 1, 0, 0, 0, 0, 0, false);
@@ -90,10 +93,104 @@ namespace Test
 
             var engine = new GptmdEngine(allIdentifications, gptmdModifications, combos, new Dictionary<string, Tolerance> { { "filepath", precursorMassTolerance } }, new CommonParameters(), new List<string>());
             var res = (GptmdResults)engine.Run();
-            Assert.AreEqual(1, res.Mods.Count);
+            Assert.AreEqual(numModHashes, res.Mods.Count);
             Assert.AreEqual(numModifiedResidues, res.Mods["accession"].Count);
             Assert.AreEqual(numModifiedResiduesN, res.Mods["accession"].Where(b => b.Item2.OriginalId.Equals("21")).Count());
             Assert.AreEqual(numModifiedResiduesP, res.Mods["accession"].Where(b => b.Item2.OriginalId.Equals("16")).Count());
+            res.Mods.TryGetValue("accession_N1P", out var hash);
+            Assert.AreEqual(numModifiedResiduesNP, (hash ?? new HashSet<Tuple<int, Modification>>()).Count);
+        }
+
+        //[Test]
+        //public static void LoadOriginalMismatchedModifications()
+        //{
+        //    var protein = ProteinDbLoader.LoadProteinXML(Path.Combine(TestContext.CurrentContext.TestDirectory, "oblm.xml"), true, DecoyType.Reverse, null, false, null, out var unknownModifications);
+        //    Assert.AreEqual(0, protein[0].OneBasedPossibleLocalizedModifications.Count);
+        //    protein[0].RestoreUnfilteredModifications();
+        //    Assert.AreEqual(1, protein[0].OneBasedPossibleLocalizedModifications.Count);
+        //}
+
+        [Test]
+        public static void TestSearchPtmVariantDatabase()
+        {
+            //Create Search Task
+            SearchTask task1 = new SearchTask
+            {
+                SearchParameters = new SearchParameters
+                {
+                    SearchTarget = true,
+                    MassDiffAcceptorType = MassDiffAcceptorType.Exact,
+                },
+                CommonParameters = new CommonParameters(digestionParams: new DigestionParams(minPeptideLength: 5))
+            };
+
+            //add task to task list
+            var taskList = new List<(string, MetaMorpheusTask)> { ("task1", task1) };
+
+            //create modification lists
+            List<Modification> variableModifications = GlobalVariables.AllModsKnown.OfType<Modification>().Where
+                (b => task1.CommonParameters.ListOfModsVariable.Contains((b.ModificationType, b.IdWithMotif))).ToList();
+
+            //protein Creation (One with mod and one without)
+            ModificationMotif.TryGetMotif("P", out ModificationMotif motifP);
+            ModificationMotif.TryGetMotif("K", out ModificationMotif motifK);
+            var variant = new SequenceVariation(3, "P", "K", @"1\t50000000\t.\tA\tG\t.\tPASS\tANN=\tGT:AD:DP\t1/1:30,30:30");
+            Protein testProteinWithMod = new Protein("PEPTID", "accession1", sequenceVariations: new List<SequenceVariation> { variant });
+            string variantAcc = VariantApplication.GetAccession(testProteinWithMod, new[] { variant });
+            //First Write XML Database
+            string xmlName = "oblm.xml";
+
+            //Add Mod to list and write XML input database
+            var modList = new Dictionary<string, HashSet<Tuple<int, Modification>>>();
+            var hash = new HashSet<Tuple<int, Modification>>
+            {
+                new Tuple<int, Modification>(1, new Modification(_originalId: "acetyl on P", _modificationType: "type", _target: motifP, _monoisotopicMass: 42, _locationRestriction: "Anywhere.")),
+            };
+            var hashVar = new HashSet<Tuple<int, Modification>>
+            {
+                new Tuple<int, Modification>(3, new Modification(_originalId: "acetyl on K", _modificationType: "type", _target: motifK, _monoisotopicMass: 42, _locationRestriction: "Anywhere.")),
+            };
+            modList.Add(testProteinWithMod.Accession, hash);
+            modList.Add(variantAcc, hashVar);
+            ProteinDbWriter.WriteXmlDatabase(modList, new List<Protein> { testProteinWithMod }, xmlName);
+
+            //now write MZML file
+            var protein = ProteinDbLoader.LoadProteinXML(xmlName, true, DecoyType.Reverse, null, false, null, out var unknownModifications);
+            Assert.AreEqual(0, unknownModifications.Count);
+
+            Assert.AreEqual(2, protein.Count); // target & decoy
+            Assert.AreEqual(1, protein[0].OneBasedPossibleLocalizedModifications.Count);
+            var variantProtein = protein[0].GetVariantProteins()[0];
+            Assert.AreEqual(2, variantProtein.OneBasedPossibleLocalizedModifications.Count);
+            List<int> foundResidueIndicies = variantProtein.OneBasedPossibleLocalizedModifications.Select(k => k.Key).ToList();
+            List<int> expectedResidueIndices = new List<int>() { 1, 3 };
+            Assert.That(foundResidueIndicies, Is.EquivalentTo(expectedResidueIndices));
+            Assert.AreEqual(1, protein[1].OneBasedPossibleLocalizedModifications.Count);
+            var variantDecoy = protein[1].GetVariantProteins()[0];
+            Assert.AreEqual(2, variantDecoy.OneBasedPossibleLocalizedModifications.Count);
+            foundResidueIndicies = variantDecoy.OneBasedPossibleLocalizedModifications.Select(k => k.Key).ToList();
+            expectedResidueIndices = new List<int>() { 5, 6 }; //originally modified residues are now at the end in the decoy
+            Assert.That(foundResidueIndicies, Is.EquivalentTo(expectedResidueIndices));
+
+            var thisOk = unknownModifications;//for debugging
+            var commonParamsAtThisPoint = task1.CommonParameters.DigestionParams; //for debugging
+
+            var digestedList = protein[0].GetVariantProteins()[0].Digest(task1.CommonParameters.DigestionParams, new List<Modification>(), variableModifications).ToList();
+            Assert.AreEqual(4, digestedList.Count);
+
+            //Set Peptide with 1 mod at position 3
+            PeptideWithSetModifications pepWithSetMods1 = digestedList[1];
+
+            //Finally Write MZML file
+            Assert.AreEqual("PEK[type:acetyl on K]TID", pepWithSetMods1.FullSequence);//this might be base sequence
+            MsDataFile myMsDataFile = new TestDataFile(new List<PeptideWithSetModifications> { pepWithSetMods1 });
+            string mzmlName = @"hello.mzML";
+            IO.MzML.MzmlMethods.CreateAndWriteMyMzmlWithCalibratedSpectra(myMsDataFile, mzmlName, false);
+
+            //run!
+            var engine = new EverythingRunnerEngine(taskList, new List<string> { mzmlName },
+                new List<DbForTask> { new DbForTask(xmlName, false) }, Environment.CurrentDirectory);
+            engine.Run();
         }
 
         [Test]
@@ -120,7 +217,7 @@ namespace Test
             Modification attemptToLocalize = new Modification(null, null, null, null, _target: motif, _locationRestriction: locationRestriction, _chemicalFormula: null, _monoisotopicMass: 1, _databaseReference: null, _taxonomicRange: null, _keywords: null, _neutralLosses: null, _diagnosticIons: null, _fileOrigin: null);
             Dictionary<int, List<Modification>> oneBasedModifications = new Dictionary<int, List<Modification>>();
             oneBasedModifications.Add(proteinOneBasedIndex, new List<Modification>() { attemptToLocalize });
-            Protein protein = new Protein(proteinSequence, null, null, null, oneBasedModifications, null, null, null, false, false, null, null, null, "");
+            Protein protein = new Protein(proteinSequence, null, null, null, oneBasedModifications, null, null, null, false, false, null, null, null, null, "");
 
             Assert.AreEqual(result, GptmdEngine.ModFits(attemptToLocalize, protein, peptideOneBasedIndex, peptideLength, proteinOneBasedIndex));
         }

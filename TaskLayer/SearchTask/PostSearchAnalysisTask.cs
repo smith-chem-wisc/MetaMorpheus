@@ -579,9 +579,9 @@ namespace TaskLayer
             if (Parameters.SearchParameters.WritePrunedDatabase)
             {
                 Status("Writing Pruned Database...", new List<string> { Parameters.SearchTaskId });
-                List<Modification> modificationsToWriteIfBoth = new List<Modification>();
-                List<Modification> modificationsToWriteIfInDatabase = new List<Modification>();
-                List<Modification> modificationsToWriteIfObserved = new List<Modification>();
+                HashSet<Modification> modificationsToWriteIfBoth = new HashSet<Modification>();
+                HashSet<Modification> modificationsToWriteIfInDatabase = new HashSet<Modification>();
+                HashSet<Modification> modificationsToWriteIfObserved = new HashSet<Modification>();
 
                 var confidentPsms = Parameters.AllPsms.Where(b => b.FdrInfo.QValueNotch <= 0.01 && b.FdrInfo.QValue <= 0.01 && !b.IsDecoy && b.BaseSequence != null).ToList();
                 var proteinToConfidentBaseSequences = new Dictionary<Protein, List<PeptideWithSetModifications>>();
@@ -593,14 +593,13 @@ namespace TaskLayer
 
                     foreach (var peptide in myPepsWithSetMods)
                     {
-                        Protein protein = peptide.Protein as ProteinWithAppliedVariants != null ? (peptide.Protein as ProteinWithAppliedVariants).Protein : peptide.Protein;
-                        if (proteinToConfidentBaseSequences.TryGetValue(protein, out var myPepList))
+                        if (proteinToConfidentBaseSequences.TryGetValue(peptide.Protein.NonVariantProtein, out var myPepList))
                         {
                             myPepList.Add(peptide);
                         }
                         else
                         {
-                            proteinToConfidentBaseSequences.Add(protein, new List<PeptideWithSetModifications> { peptide });
+                            proteinToConfidentBaseSequences.Add(peptide.Protein.NonVariantProtein, new List<PeptideWithSetModifications> { peptide });
                         }
                     }
                 }
@@ -608,17 +607,20 @@ namespace TaskLayer
                 // Add user mod selection behavours to Pruned DB
                 foreach (var modType in Parameters.SearchParameters.ModsToWriteSelection)
                 {
-                    if (modType.Value == 1) // Write if observed and in database
+                    foreach (Modification mod in GlobalVariables.AllModsKnown.Where(b => b.ModificationType.Equals(modType.Key)))
                     {
-                        modificationsToWriteIfBoth.AddRange(GlobalVariables.AllModsKnown.Where(b => b.ModificationType.Equals(modType.Key)));
-                    }
-                    if (modType.Value == 2) // Write if in database
-                    {
-                        modificationsToWriteIfInDatabase.AddRange(GlobalVariables.AllModsKnown.Where(b => b.ModificationType.Equals(modType.Key)));
-                    }
-                    if (modType.Value == 3) // Write if observed
-                    {
-                        modificationsToWriteIfObserved.AddRange(GlobalVariables.AllModsKnown.Where(b => b.ModificationType.Equals(modType.Key)));
+                        if (modType.Value == 1) // Write if observed and in database
+                        {
+                            modificationsToWriteIfBoth.Add(mod);
+                        }
+                        if (modType.Value == 2) // Write if in database
+                        {
+                            modificationsToWriteIfInDatabase.Add(mod);
+                        }
+                        if (modType.Value == 3) // Write if observed
+                        {
+                            modificationsToWriteIfObserved.Add(mod);
+                        }
                     }
                 }
 
@@ -632,14 +634,13 @@ namespace TaskLayer
 
                     foreach (var peptide in myPepsWithSetMods)
                     {
-                        Protein protein = peptide.Protein as ProteinWithAppliedVariants != null ? (peptide.Protein as ProteinWithAppliedVariants).Protein : peptide.Protein;
-                        if (proteinToConfidentModifiedSequences.TryGetValue(protein, out var myPepList))
+                        if (proteinToConfidentModifiedSequences.TryGetValue(peptide.Protein.NonVariantProtein, out var myPepList))
                         {
                             myPepList.Add(peptide);
                         }
                         else
                         {
-                            proteinToConfidentModifiedSequences.Add(protein, new List<PeptideWithSetModifications> { peptide });
+                            proteinToConfidentModifiedSequences.Add(peptide.Protein.NonVariantProtein, new List<PeptideWithSetModifications> { peptide });
                         }
                     }
                 }
@@ -649,11 +650,9 @@ namespace TaskLayer
                 {
                     if (!protein.IsDecoy)
                     {
-                        HashSet<Tuple<int, Modification>> modsObservedOnThisProtein = new HashSet<Tuple<int, Modification>>();
-                        if (proteinToConfidentModifiedSequences.ContainsKey(protein))
-                        {
-                            modsObservedOnThisProtein = new HashSet<Tuple<int, Modification>>(proteinToConfidentModifiedSequences[protein].SelectMany(b => b.AllModsOneIsNterminus.Select(c => new Tuple<int, Modification>(GetOneBasedIndexInProtein(c.Key, b), c.Value))));
-                        }
+                        HashSet<(int, Modification)> modsObservedOnThisProtein = proteinToConfidentModifiedSequences.TryGetValue(protein.NonVariantProtein, out var psms) ?
+                            new HashSet<(int, Modification)>(psms.SelectMany(b => b.AllModsOneIsNterminus.Select(c => (GetOneBasedIndexInProtein(c.Key, b), c.Value)))) :
+                            new HashSet<(int, Modification)>();
 
                         IDictionary<int, List<Modification>> modsToWrite = new Dictionary<int, List<Modification>>();
 
@@ -682,8 +681,7 @@ namespace TaskLayer
                             {
                                 //Add if always In Database or if was observed and in database and not set to not include
                                 if (modificationsToWriteIfInDatabase.Contains(mod) ||
-                                    (modsObservedOnThisProtein.Contains(new Tuple<int, Modification>(modkv.Key, mod))
-                                        && modificationsToWriteIfBoth.Contains(mod)))
+                                    (modificationsToWriteIfBoth.Contains(mod) && modsObservedOnThisProtein.Contains((modkv.Key, mod))))
                                 {
                                     if (!modsToWrite.ContainsKey(modkv.Key))
                                     {
@@ -697,16 +695,25 @@ namespace TaskLayer
                             }
                         }
 
-                        if (proteinToConfidentBaseSequences.TryGetValue(protein, out var peptideSequences))
+                        if (proteinToConfidentBaseSequences.ContainsKey(protein))
                         {
-                            // removes all annotated mods on proteins
-                            if (protein.Accession == protein.Accession)
+                            // adds confidently localized and identified mods
+                            protein.OneBasedPossibleLocalizedModifications.Clear();
+                            foreach (var sv in protein.SequenceVariations)
                             {
-                                protein.OneBasedPossibleLocalizedModifications.Clear();
-                                // adds confidently localized and identified mods
-                                foreach (var kvp in modsToWrite)
+                                sv.OneBasedModifications.Clear();
+                            }
+                            foreach (var kvp in modsToWrite)
+                            {
+                                SequenceVariation appliedVariantWithMod = protein.AppliedSequenceVariations.FirstOrDefault(v => VariantApplication.IsSequenceVariantModification(v, kvp.Key));
+                                SequenceVariation unappliedVariant = protein.SequenceVariations.FirstOrDefault(v => v.Description.Equals(appliedVariantWithMod.Description));
+                                if (appliedVariantWithMod != null && unappliedVariant != null)
                                 {
-                                    protein.OneBasedPossibleLocalizedModifications.Add(kvp);
+                                    unappliedVariant.OneBasedModifications.Add(VariantApplication.RestoreModificationIndex(protein, kvp.Key), kvp.Value);                                        
+                                }
+                                else
+                                {
+                                    protein.OneBasedPossibleLocalizedModifications.Add(VariantApplication.RestoreModificationIndex(protein, kvp.Key), kvp.Value);
                                 }
                             }
                         }

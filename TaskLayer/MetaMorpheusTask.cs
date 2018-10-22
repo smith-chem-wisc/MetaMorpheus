@@ -265,7 +265,7 @@ namespace TaskLayer
             {
                 MetaMorpheusEngine.FinishedSingleEngineHandler -= SingleEngineHandlerInTask;
                 var resultsFileName = Path.Combine(output_folder, "results.txt");
-        e.Data.Add("folder", output_folder);
+                e.Data.Add("folder", output_folder);
                 using (StreamWriter file = new StreamWriter(resultsFileName))
                 {
                     file.WriteLine(GlobalVariables.MetaMorpheusVersion.Equals("1.0.0.0") ? "MetaMorpheus: Not a release version" : "MetaMorpheus: version " + GlobalVariables.MetaMorpheusVersion);
@@ -346,7 +346,7 @@ namespace TaskLayer
             else
             {
                 List<string> modTypesToExclude = GlobalVariables.AllModTypesKnown.Where(b => !localizeableModificationTypes.Contains(b)).ToList();
-                proteinList = ProteinDbLoader.LoadProteinXML(fileName, generateTargets, decoyType, GlobalVariables.AllModsKnown, isContaminant, modTypesToExclude, out um, commonParameters.MaxThreadsToUsePerFile);
+                proteinList = ProteinDbLoader.LoadProteinXML(fileName, generateTargets, decoyType, GlobalVariables.AllModsKnown, isContaminant, modTypesToExclude, out um, commonParameters.MaxThreadsToUsePerFile, commonParameters.MaxHeterozygousVariants, commonParameters.MinVariantDepth);
             }
 
             emptyEntriesCount = proteinList.Count(p => p.BaseSequence.Length == 0);

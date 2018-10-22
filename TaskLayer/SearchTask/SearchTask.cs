@@ -73,7 +73,7 @@ namespace TaskLayer
             LoadModifications(taskId, out var variableModifications, out var fixedModifications, out var localizeableModificationTypes);
 
             // load proteins
-            List<Protein> proteinList = LoadProteins(taskId, dbFilenameList, SearchParameters.SearchTarget, SearchParameters.DecoyType, localizeableModificationTypes, CommonParameters);
+            List<Protein> proteinList = LoadProteins(taskId, dbFilenameList, SearchParameters.SearchTarget, SearchParameters.DecoyType, localizeableModificationTypes, CommonParameters).ToList();
 
             // write prose settings
             ProseCreatedWhileRunning.Append("The following search settings were used: ");
@@ -149,7 +149,8 @@ namespace TaskLayer
                     for (int currentPartition = 0; currentPartition < combinedParams.TotalPartitions; currentPartition++)
                     {
                         List<PeptideWithSetModifications> peptideIndex = null;
-                        List<Protein> proteinListSubset = proteinList.GetRange(currentPartition * proteinList.Count() / combinedParams.TotalPartitions, ((currentPartition + 1) * proteinList.Count() / combinedParams.TotalPartitions) - (currentPartition * proteinList.Count() / combinedParams.TotalPartitions));
+                        List<Protein> proteinListSubset = proteinList.GetRange(currentPartition * proteinList.Count() / combinedParams.TotalPartitions, ((currentPartition + 1) * proteinList.Count() / combinedParams.TotalPartitions) - (currentPartition * proteinList.Count() / combinedParams.TotalPartitions))
+                            .OfType<Protein>().ToList();
 
                         Status("Getting fragment dictionary...", new List<string> { taskId });
                         var indexEngine = new IndexingEngine(proteinListSubset, variableModifications, fixedModifications, currentPartition, SearchParameters.DecoyType, combinedParams, SearchParameters.MaxFragmentSize, false, new List<string> { taskId });
@@ -157,7 +158,7 @@ namespace TaskLayer
                         List<int>[] precursorIndex = null;
                         lock (indexLock)
                         {
-                            GenerateIndexes(indexEngine, dbFilenameList, ref peptideIndex, ref fragmentIndex, ref precursorIndex, proteinList, GlobalVariables.AllModsKnown.ToList(), taskId);
+                            GenerateIndexes(indexEngine, dbFilenameList, ref peptideIndex, ref fragmentIndex, ref precursorIndex, proteinList.OfType<Protein>().ToList(), GlobalVariables.AllModsKnown.ToList(), taskId);
                         }
 
                         Status("Searching files...", taskId);
@@ -192,7 +193,8 @@ namespace TaskLayer
                         {
                             List<PeptideWithSetModifications> peptideIndex = null;
 
-                            List<Protein> proteinListSubset = proteinList.GetRange(currentPartition * proteinList.Count() / paramToUse.TotalPartitions, ((currentPartition + 1) * proteinList.Count() / paramToUse.TotalPartitions) - (currentPartition * proteinList.Count() / paramToUse.TotalPartitions));
+                            List<Protein> proteinListSubset = proteinList.GetRange(currentPartition * proteinList.Count() / paramToUse.TotalPartitions, ((currentPartition + 1) * proteinList.Count() / paramToUse.TotalPartitions) - (currentPartition * proteinList.Count() / paramToUse.TotalPartitions))
+                                .OfType<Protein>().ToList();
 
                             List<int>[] fragmentIndex = new List<int>[1];
                             List<int>[] precursorIndex = new List<int>[1];
@@ -200,7 +202,7 @@ namespace TaskLayer
                             Status("Getting fragment dictionary...", new List<string> { taskId });
                             var indexEngine = new IndexingEngine(proteinListSubset, variableModifications, fixedModifications, currentPartition, SearchParameters.DecoyType, paramToUse, SearchParameters.MaxFragmentSize, true, new List<string> { taskId });
                             lock (indexLock)
-                                GenerateIndexes(indexEngine, dbFilenameList, ref peptideIndex, ref fragmentIndex, ref precursorIndex, proteinList, GlobalVariables.AllModsKnown.ToList(), taskId);
+                                GenerateIndexes(indexEngine, dbFilenameList, ref peptideIndex, ref fragmentIndex, ref precursorIndex, proteinList.OfType<Protein>().ToList(), GlobalVariables.AllModsKnown.ToList(), taskId);
 
                             Status("Searching files...", taskId);
 
