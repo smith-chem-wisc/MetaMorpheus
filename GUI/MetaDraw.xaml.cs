@@ -71,8 +71,8 @@ namespace MetaMorpheusGUI
             productTypeToYOffset = ((ProductType[])Enum.GetValues(typeof(ProductType))).ToDictionary(p => p, p => 0.0);
             productTypeToYOffset[ProductType.b] = 50;
             productTypeToYOffset[ProductType.y] = 0;
-            productTypeToYOffset[ProductType.zPlusOne] = 50;
-            productTypeToYOffset[ProductType.c] = 0;
+            productTypeToYOffset[ProductType.c] = 50;
+            productTypeToYOffset[ProductType.zPlusOne] = 0;
         }
 
         private void Window_Drop(object sender, DragEventArgs e)
