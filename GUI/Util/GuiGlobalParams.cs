@@ -1,6 +1,6 @@
 ﻿namespace MetaMorpheusGUI
 {
-    internal class GuiGlobalParams
+    class GuiGlobalParams
     {
         public bool AskAboutUpdating { get; internal set; }
     }

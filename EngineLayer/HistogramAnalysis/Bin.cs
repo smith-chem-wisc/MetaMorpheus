@@ -115,13 +115,15 @@ namespace EngineLayer.HistogramAnalysis
 
         public void IdentifyUniprotBins(double v)
         {
-            var ok = new HashSet<string>();
-            foreach (var hm in GlobalVariables.UniprotDeseralized)
+            var modIdOptions = new HashSet<string>();
+            foreach (Modification mod in GlobalVariables.UniprotDeseralized)
             {
-                if (hm is ModificationWithMass theMod && Math.Abs(theMod.monoisotopicMass - MassShift) <= v)
-                    ok.Add(hm.id);
+                if (mod.MonoisotopicMass.HasValue && Math.Abs(mod.MonoisotopicMass.Value - MassShift) <= v)
+                {
+                    modIdOptions.Add(mod.IdWithMotif);
+                }
             }
-            UniprotID = string.Join("|", ok);
+            UniprotID = string.Join("|", modIdOptions);
         }
 
         public void IdentifyAA(double v)
@@ -157,12 +159,12 @@ namespace EngineLayer.HistogramAnalysis
             var okDiff = new HashSet<double>();
             foreach (var hm in GlobalVariables.UnimodDeserialized)
             {
-                var theMod = hm as ModificationWithMassAndCf;
-                if (Math.Abs(theMod.monoisotopicMass - MassShift) <= v)
+                var theMod = hm as Modification;
+                if (Math.Abs(theMod.MonoisotopicMass.Value - MassShift) <= v)
                 {
-                    ok.Add(hm.id);
-                    okformula.Add(theMod.chemicalFormula.Formula);
-                    okDiff.Add(theMod.monoisotopicMass - MassShift);
+                    ok.Add(hm.IdWithMotif);
+                    okformula.Add(theMod.ChemicalFormula.Formula);
+                    okDiff.Add(theMod.MonoisotopicMass.Value - MassShift);
                 }
             }
             UnimodId = string.Join("|", ok);
