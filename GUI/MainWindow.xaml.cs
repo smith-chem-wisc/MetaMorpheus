@@ -1419,13 +1419,13 @@ namespace MetaMorpheusGUI
             if (!GuiGlobalParams.DisableCloseWindow && !GlobalVariables.MetaMorpheusVersion.Contains("DEBUG"))
             {
                 e.Cancel = true;
-                var exit = CustomMsgBox.Show("Are you sure you want to exit MetaMorpheus?", "Exit MetaMorpheus", "Yes", "No", "Yes and don't ask me again");
+                var exit = CustomMsgBox.Show("Exit MetaMorpheus", "Are you sure you want to exit MetaMorpheus?", "Yes", "No", "Yes and don't ask me again");
 
-                if (exit == System.Windows.Forms.DialogResult.Yes)
+                if (exit == MessageBoxResult.Yes)
                 {
                     e.Cancel = false;
                 }
-                else if (exit == System.Windows.Forms.DialogResult.OK)
+                else if (exit == MessageBoxResult.OK)
                 {
                     GuiGlobalParams.DisableCloseWindow = true;
                     Toml.WriteFile(GuiGlobalParams, Path.Combine(GlobalVariables.DataDir, @"GUIsettings.toml"), MetaMorpheusTask.tomlConfig);
