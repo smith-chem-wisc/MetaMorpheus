@@ -11,6 +11,8 @@ using System.Windows.Input;
 using TaskLayer;
 using Proteomics.ProteolyticDigestion;
 using MassSpectrometry;
+using System.Windows.Threading;
+using MetaMorpheusGUI.Util;
 
 namespace MetaMorpheusGUI
 {
@@ -333,5 +335,63 @@ namespace MetaMorpheusGUI
                 CancelButton_Click(sender, e);
             }
         }
+
+        internal SearchModifications SearchMod = new SearchModifications();
+        private bool GPTMDSearch { get; set; }
+
+        private void TextChanged_Fixed(object sender, TextChangedEventArgs args)
+        {
+            SearchMod.FixedSearch = true;
+            SetTimer();
+        }
+
+        private void TextChanged_Var(object sender, TextChangedEventArgs args)
+        {
+            SearchMod.VarSearch = true;
+            SetTimer();
+        }
+
+        private void TextChanged_GPTMD(object sender, TextChangedEventArgs args)
+        {
+            GPTMDSearch = true;
+            SetTimer();
+        }
+
+        private void SetTimer()
+        {
+            if (!SearchMod.TimerCreated)
+            {
+                SearchMod.Timer.Tick += new EventHandler(TextChangeTimerHandler);
+                SearchMod.TimerCreated = true;
+            }
+            SearchMod.SetTimer();
+        }
+
+        private void TextChangeTimerHandler(object sender, EventArgs e)
+        {
+            var timer = sender as DispatcherTimer;
+
+            if (timer == null)
+            {
+                return;
+            }
+
+            if (SearchMod.FixedSearch)
+            {
+                SearchMod.FilterTree(SearchFixMod, fixedModsTreeView, fixedModTypeForTreeViewObservableCollection);
+                SearchMod.FixedSearch = false;
+            }
+            else if (SearchMod.VarSearch)
+            {
+                SearchMod.FilterTree(SearchVarMod, variableModsTreeView, variableModTypeForTreeViewObservableCollection);
+                SearchMod.VarSearch = false;
+            }
+            else if (GPTMDSearch)
+            {
+                SearchMod.FilterTree(SearchGPTMD, gptmdModsTreeView, gptmdModTypeForTreeViewObservableCollection);
+                GPTMDSearch = false;
+            }
+        }
+
     }
 }

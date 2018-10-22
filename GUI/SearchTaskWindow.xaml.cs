@@ -14,6 +14,8 @@ using UsefulProteomicsDatabases;
 using Proteomics.Fragmentation;
 using Proteomics.ProteolyticDigestion;
 using MassSpectrometry;
+using System.Windows.Threading;
+using MetaMorpheusGUI.Util;
 
 namespace MetaMorpheusGUI
 {
@@ -328,7 +330,7 @@ namespace MetaMorpheusGUI
                     MessageBox.Show("Warning: Complementary ions are strongly recommended when using this algorithm.");
                 }
                 //only use N or C termini, not both
-                if(cTerminalIons.IsChecked.Value)
+                if (cTerminalIons.IsChecked.Value)
                 {
                     nTerminalIons.IsChecked = false;
                 }
@@ -526,11 +528,11 @@ namespace MetaMorpheusGUI
             }
 
             //determine if semi or nonspecific with a specific protease.
-            if(searchModeType == CleavageSpecificity.Semi || protease.CleavageSpecificity==CleavageSpecificity.Semi)
+            if (searchModeType == CleavageSpecificity.Semi || protease.CleavageSpecificity == CleavageSpecificity.Semi)
             {
-                TheTask.SearchParameters.LocalFdrCategories= new List<FdrCategory> { FdrCategory.FullySpecific, FdrCategory.SemiSpecific };
+                TheTask.SearchParameters.LocalFdrCategories = new List<FdrCategory> { FdrCategory.FullySpecific, FdrCategory.SemiSpecific };
             }
-            else if(searchModeType==CleavageSpecificity.None && protease.CleavageSpecificity!=CleavageSpecificity.None)
+            else if (searchModeType == CleavageSpecificity.None && protease.CleavageSpecificity != CleavageSpecificity.None)
             {
                 TheTask.SearchParameters.LocalFdrCategories = new List<FdrCategory> { FdrCategory.FullySpecific, FdrCategory.SemiSpecific, FdrCategory.NonSpecific };
             }
@@ -726,6 +728,52 @@ namespace MetaMorpheusGUI
         {
 
         }
+
+        internal SearchModifications SearchMod = new SearchModifications();
+
+        private void TextChanged_Fixed(object sender, TextChangedEventArgs args)
+        {
+            SearchMod.FixedSearch = true;
+            SetTimer();
+        }
+
+        private void TextChanged_Var(object sender, TextChangedEventArgs args)
+        {
+            SearchMod.VarSearch = true;
+            SetTimer();
+        }
+
+        private void SetTimer()
+        {
+            if (!SearchMod.TimerCreated)
+            {
+                SearchMod.Timer.Tick += new EventHandler(TextChangeTimerHandler);
+                SearchMod.TimerCreated = true;
+            }
+            SearchMod.SetTimer();
+        }
+
+        private void TextChangeTimerHandler(object sender, EventArgs e)
+        {
+            var timer = sender as DispatcherTimer;
+
+            if (timer == null)
+            {
+                return;
+            }
+
+            if (SearchMod.FixedSearch)
+            {
+                SearchMod.FilterTree(SearchFixMod, fixedModsTreeView, FixedModTypeForTreeViewObservableCollection);
+                SearchMod.FixedSearch = false;
+            }
+            else if (SearchMod.VarSearch)
+            {
+                SearchMod.FilterTree(SearchVarMod, variableModsTreeView, VariableModTypeForTreeViewObservableCollection);
+                SearchMod.VarSearch = false;
+            }
+        }
+
     }
 
     public class DataContextForSearchTaskWindow : INotifyPropertyChanged
@@ -782,5 +830,6 @@ namespace MetaMorpheusGUI
         {
             PropertyChanged?.Invoke(this, new PropertyChangedEventArgs(name));
         }
+
     }
 }

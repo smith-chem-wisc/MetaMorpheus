@@ -11,6 +11,8 @@ using System.Windows.Input;
 using TaskLayer;
 using Proteomics.ProteolyticDigestion;
 using MassSpectrometry;
+using System.Windows.Threading;
+using MetaMorpheusGUI.Util;
 
 namespace MetaMorpheusGUI
 {
@@ -22,12 +24,12 @@ namespace MetaMorpheusGUI
         private readonly ObservableCollection<ModTypeForTreeView> FixedModTypeForTreeViewObservableCollection = new ObservableCollection<ModTypeForTreeView>();
         private readonly ObservableCollection<ModTypeForTreeView> VariableModTypeForTreeViewObservableCollection = new ObservableCollection<ModTypeForTreeView>();
         private readonly ObservableCollection<ModTypeForLoc> LocalizeModTypeForTreeViewObservableCollection = new ObservableCollection<ModTypeForLoc>();
-        
+
         public CalibrateTaskWindow()
         {
             InitializeComponent();
             PopulateChoices();
-            
+
             TheTask = new CalibrationTask();
             UpdateFieldsFromTask(TheTask);
 
@@ -60,7 +62,7 @@ namespace MetaMorpheusGUI
             productMassToleranceComboBox.SelectedIndex = task.CommonParameters.ProductMassTolerance is AbsoluteTolerance ? 0 : 1;
             precursorMassToleranceTextBox.Text = task.CommonParameters.PrecursorMassTolerance.Value.ToString(CultureInfo.InvariantCulture);
             precursorMassToleranceComboBox.SelectedIndex = task.CommonParameters.PrecursorMassTolerance is AbsoluteTolerance ? 0 : 1;
-            
+
             //writeIntermediateFilesCheckBox.IsChecked = task.CalibrationParameters.WriteIntermediateFiles;
 
             minScoreAllowed.Text = task.CommonParameters.ScoreCutoff.ToString(CultureInfo.InvariantCulture);
@@ -194,9 +196,9 @@ namespace MetaMorpheusGUI
 
             DigestionParams digestionParamsToSave = new DigestionParams(
                 protease: protease.Name,
-                maxMissedCleavages: MaxMissedCleavages, 
-                minPeptideLength: MinPeptideLength, 
-                maxPeptideLength: MaxPeptideLength, 
+                maxMissedCleavages: MaxMissedCleavages,
+                minPeptideLength: MinPeptideLength,
+                maxPeptideLength: MaxPeptideLength,
                 maxModificationIsoforms: MaxModificationIsoforms);
 
             var listOfModsVariable = new List<(string, string)>();
@@ -268,6 +270,51 @@ namespace MetaMorpheusGUI
             else if (e.Key == Key.Escape)
             {
                 CancelButton_Click(sender, e);
+            }
+        }
+
+        internal SearchModifications SearchMod = new SearchModifications();
+
+        private void TextChanged_Fixed(object sender, TextChangedEventArgs args)
+        {
+            SearchMod.FixedSearch = true;
+            SetTimer();
+        }
+
+        private void TextChanged_Var(object sender, TextChangedEventArgs args)
+        {
+            SearchMod.VarSearch = true;
+            SetTimer();
+        }
+
+        private void SetTimer()
+        {
+            if (!SearchMod.TimerCreated)
+            {
+                SearchMod.Timer.Tick += new EventHandler(TextChangeTimerHandler);
+                SearchMod.TimerCreated = true;
+            }
+            SearchMod.SetTimer();
+        }
+
+        private void TextChangeTimerHandler(object sender, EventArgs e)
+        {
+            var timer = sender as DispatcherTimer;
+
+            if (timer == null)
+            {
+                return;
+            }
+
+            if (SearchMod.FixedSearch)
+            {
+                SearchMod.FilterTree(SearchFixMod, fixedModsTreeView, FixedModTypeForTreeViewObservableCollection);
+                SearchMod.FixedSearch = false;
+            }
+            else if (SearchMod.VarSearch)
+            {
+                SearchMod.FilterTree(SearchVarMod, variableModsTreeView, VariableModTypeForTreeViewObservableCollection);
+                SearchMod.VarSearch = false;
             }
         }
     }
