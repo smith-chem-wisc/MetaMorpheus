@@ -1161,7 +1161,14 @@ namespace MetaMorpheusGUI
 
             if (a.SelectedItem is OutputFileForTreeView fileThing)
             {
-                System.Diagnostics.Process.Start(fileThing.FullPath);
+                if (File.Exists(fileThing.FullPath))
+                {
+                    System.Diagnostics.Process.Start(fileThing.FullPath);
+                }
+                else
+                {
+                    MessageBox.Show("File " + Path.GetFileName(fileThing.FullPath) + " does not exist");
+                }
             }
         }
 
