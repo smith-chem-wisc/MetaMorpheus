@@ -196,9 +196,9 @@ namespace MetaMorpheusGUI
 
             DigestionParams digestionParamsToSave = new DigestionParams(
                 protease: protease.Name,
-                maxMissedCleavages: MaxMissedCleavages,
-                minPeptideLength: MinPeptideLength,
-                maxPeptideLength: MaxPeptideLength,
+                maxMissedCleavages: MaxMissedCleavages, 
+                minPeptideLength: MinPeptideLength, 
+                maxPeptideLength: MaxPeptideLength, 
                 maxModificationIsoforms: MaxModificationIsoforms);
 
             var listOfModsVariable = new List<(string, string)>();

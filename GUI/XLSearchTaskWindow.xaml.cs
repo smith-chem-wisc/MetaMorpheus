@@ -126,11 +126,11 @@ namespace MetaMorpheusGUI
             ckbQuenchTris.IsChecked = task.XlSearchParameters.XlQuench_Tris;
             txtUdXLKerName.Text = task.XlSearchParameters.CrosslinkerName;
             ckbUdXLkerCleavable.IsChecked = task.XlSearchParameters.IsCleavable;
-            txtUdXLkerTotalMs.Text = task.XlSearchParameters.CrosslinkerTotalMass.HasValue ?
+            txtUdXLkerTotalMs.Text = task.XlSearchParameters.CrosslinkerTotalMass.HasValue ? 
                 task.XlSearchParameters.CrosslinkerTotalMass.Value.ToString(CultureInfo.InvariantCulture) : "";
-            txtUdXLkerShortMass.Text = task.XlSearchParameters.CrosslinkerShortMass.HasValue ?
+            txtUdXLkerShortMass.Text = task.XlSearchParameters.CrosslinkerShortMass.HasValue ? 
                 task.XlSearchParameters.CrosslinkerShortMass.Value.ToString(CultureInfo.InvariantCulture) : "";
-            txtUdXLkerLongMass.Text = task.XlSearchParameters.CrosslinkerLongMass.HasValue ?
+            txtUdXLkerLongMass.Text = task.XlSearchParameters.CrosslinkerLongMass.HasValue ? 
                 task.XlSearchParameters.CrosslinkerLongMass.Value.ToString(CultureInfo.InvariantCulture) : "";
             txtH2OQuenchMass.Text = task.XlSearchParameters.CrosslinkerDeadEndMassH2O.HasValue ?
                 task.XlSearchParameters.CrosslinkerDeadEndMassH2O.Value.ToString(CultureInfo.InvariantCulture) : "";
@@ -289,10 +289,10 @@ namespace MetaMorpheusGUI
             InitiatorMethionineBehavior InitiatorMethionineBehavior = ((InitiatorMethionineBehavior)initiatorMethionineBehaviorComboBox.SelectedIndex);
             DigestionParams digestionParamsToSave = new DigestionParams(
                 protease: protease.Name,
-                maxMissedCleavages: MaxMissedCleavages,
-                minPeptideLength: MinPeptideLength,
-                maxPeptideLength: MaxPeptideLength,
-                maxModificationIsoforms: MaxModificationIsoforms,
+                maxMissedCleavages: MaxMissedCleavages, 
+                minPeptideLength: MinPeptideLength, 
+                maxPeptideLength: MaxPeptideLength, 
+                maxModificationIsoforms: MaxModificationIsoforms, 
                 initiatorMethionineBehavior: InitiatorMethionineBehavior);
 
             Tolerance ProductMassTolerance;
