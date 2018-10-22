@@ -134,9 +134,11 @@
     <Reference Include="System.Drawing" />
     <Reference Include="System.Numerics" />
     <Reference Include="System.Runtime.Serialization" />
+    <Reference Include="System.Windows.Forms" />
     <Reference Include="System.Xaml">
       <RequiredTargetFramework>4.0</RequiredTargetFramework>
     </Reference>
+    <Reference Include="System.Xml" />
     <Reference Include="Thermo, Version=1.0.372.0, Culture=neutral, processorArchitecture=AMD64">
       <HintPath>..\packages\mzLib.1.0.372\lib\net471\Thermo.dll</HintPath>
     </Reference>
@@ -152,6 +154,9 @@
       <Generator>MSBuild:Compile</Generator>
       <SubType>Designer</SubType>
     </ApplicationDefinition>
+    <Compile Include="CustomMsgBox.xaml.cs">
+      <DependentUpon>CustomMsgBox.xaml</DependentUpon>
+    </Compile>
     <Compile Include="MetaDraw.xaml.cs">
       <DependentUpon>MetaDraw.xaml</DependentUpon>
     </Compile>
@@ -207,6 +212,10 @@
       <DependentUpon>XLSearchTaskWindow.xaml</DependentUpon>
     </Compile>
     <Page Include="CalibrateTaskWindow.xaml">
+      <SubType>Designer</SubType>
+      <Generator>MSBuild:Compile</Generator>
+    </Page>
+    <Page Include="CustomMsgBox.xaml">
       <SubType>Designer</SubType>
       <Generator>MSBuild:Compile</Generator>
     </Page>
