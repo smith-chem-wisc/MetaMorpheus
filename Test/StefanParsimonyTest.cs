@@ -186,10 +186,10 @@ namespace Test
 
             int countOfProteinGroups = results.SortedAndScoredProteinGroups.Count;
 
-            // only decoy protein gets generated
+            // only target protein gets generated
             Assert.That(countOfProteinGroups == 1);
             Assert.That(results.SortedAndScoredProteinGroups.First().Proteins.Count == 1);
-            Assert.That(results.SortedAndScoredProteinGroups.First().IsDecoy);
+            Assert.That(!results.SortedAndScoredProteinGroups.First().IsDecoy);
         }
     }
 }
