@@ -155,27 +155,25 @@ namespace Test
             ProteinDbWriter.WriteXmlDatabase(modList, new List<Protein> { testProteinWithMod }, xmlName);
 
             //now write MZML file
-            var protein = ProteinDbLoader.LoadProteinXML(xmlName, true, DecoyType.Reverse, null, false, null, out var unknownModifications);
+            var variantProteins = ProteinDbLoader.LoadProteinXML(xmlName, true, DecoyType.Reverse, null, false, null, out var unknownModifications);
+            var variantProtein = variantProteins[0];
+            var variantDecoy = variantProteins[1];
             Assert.AreEqual(0, unknownModifications.Count);
 
-            Assert.AreEqual(2, protein.Count); // target & decoy
-            Assert.AreEqual(1, protein[0].OneBasedPossibleLocalizedModifications.Count);
-            var variantProtein = protein[0].GetVariantProteins()[0];
-            Assert.AreEqual(2, variantProtein.OneBasedPossibleLocalizedModifications.Count);
+            Assert.AreEqual(2, variantProteins.Count); // target & decoy
+            Assert.AreEqual(2, variantProteins[0].OneBasedPossibleLocalizedModifications.Count);
             List<int> foundResidueIndicies = variantProtein.OneBasedPossibleLocalizedModifications.Select(k => k.Key).ToList();
             List<int> expectedResidueIndices = new List<int>() { 1, 3 };
             Assert.That(foundResidueIndicies, Is.EquivalentTo(expectedResidueIndices));
-            Assert.AreEqual(1, protein[1].OneBasedPossibleLocalizedModifications.Count);
-            var variantDecoy = protein[1].GetVariantProteins()[0];
             Assert.AreEqual(2, variantDecoy.OneBasedPossibleLocalizedModifications.Count);
             foundResidueIndicies = variantDecoy.OneBasedPossibleLocalizedModifications.Select(k => k.Key).ToList();
-            expectedResidueIndices = new List<int>() { 5, 6 }; //originally modified residues are now at the end in the decoy
+            expectedResidueIndices = new List<int>() { 4, 6 }; //originally modified residues are now at the end in the decoy
             Assert.That(foundResidueIndicies, Is.EquivalentTo(expectedResidueIndices));
 
             var thisOk = unknownModifications;//for debugging
             var commonParamsAtThisPoint = task1.CommonParameters.DigestionParams; //for debugging
 
-            var digestedList = protein[0].GetVariantProteins()[0].Digest(task1.CommonParameters.DigestionParams, new List<Modification>(), variableModifications).ToList();
+            var digestedList = variantProteins[0].GetVariantProteins()[0].Digest(task1.CommonParameters.DigestionParams, new List<Modification>(), variableModifications).ToList();
             Assert.AreEqual(4, digestedList.Count);
 
             //Set Peptide with 1 mod at position 3

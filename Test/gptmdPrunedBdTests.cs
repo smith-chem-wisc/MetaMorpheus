@@ -96,8 +96,8 @@ namespace Test
             }, false);
 
             //create modification lists
-            List<Modification> variableModifications = GlobalVariables.AllModsKnown.OfType<Modification>().Where
-                (b => task1.CommonParameters.ListOfModsVariable.Contains((b.ModificationType, b.IdWithMotif))).ToList();
+            List<Modification> variableModifications = GlobalVariables.AllModsKnown.OfType<Modification>()
+                .Where(b => task1.CommonParameters.ListOfModsVariable.Contains((b.ModificationType, b.IdWithMotif))).ToList();
 
             //add modification to Protein object
             var dictHere = new Dictionary<int, List<Modification>>();
@@ -165,9 +165,9 @@ namespace Test
 
             var proteins = ProteinDbLoader.LoadProteinXML(final, true, DecoyType.Reverse, new List<Modification>(), false, new List<string>(), out ok);
             //check length
-            Assert.AreEqual(proteins[0].OneBasedPossibleLocalizedModifications.Count, 1);
+            Assert.AreEqual(1, proteins[0].OneBasedPossibleLocalizedModifications.Count);
             //check location (key)
-            Assert.AreEqual(proteins[0].OneBasedPossibleLocalizedModifications.ContainsKey(3), true);
+            Assert.AreEqual(true, proteins[0].OneBasedPossibleLocalizedModifications.ContainsKey(3));
             List<Modification> listOfMods = proteins[0].OneBasedPossibleLocalizedModifications[3];
             //check Type, count, ID
             Assert.AreEqual(listOfMods[0].ModificationType, "ConnorModType");

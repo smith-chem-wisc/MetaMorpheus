@@ -695,7 +695,7 @@ namespace TaskLayer
                             }
                         }
 
-                        if (proteinToConfidentBaseSequences.ContainsKey(protein))
+                        if (proteinToConfidentBaseSequences.ContainsKey(protein.NonVariantProtein))
                         {
                             // adds confidently localized and identified mods
                             protein.OneBasedPossibleLocalizedModifications.Clear();

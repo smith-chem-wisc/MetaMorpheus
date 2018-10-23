@@ -106,7 +106,7 @@ namespace EngineLayer.Gptmd
                                         // otherwise back calculate the index to the original protein sequence
                                         if (modIsBeforeVariant)
                                         {
-                                            AddIndexedMod(modDict, pepWithSetMods.Protein.Accession, new Tuple<int, Modification>(indexInProtein - offset, mod));
+                                            AddIndexedMod(modDict, pepWithSetMods.Protein.NonVariantProtein.Accession, new Tuple<int, Modification>(indexInProtein - offset, mod));
                                             modsAdded++;
                                             foundSite = true;
                                             break;
@@ -116,7 +116,7 @@ namespace EngineLayer.Gptmd
                                     }
                                     if (!foundSite)
                                     {
-                                        AddIndexedMod(modDict, pepWithSetMods.Protein.Accession, new Tuple<int, Modification>(indexInProtein - offset, mod));
+                                        AddIndexedMod(modDict, pepWithSetMods.Protein.NonVariantProtein.Accession, new Tuple<int, Modification>(indexInProtein - offset, mod));
                                         modsAdded++;
                                     }
                                 }
