@@ -16,12 +16,13 @@ namespace EngineLayer
     {
         private const double ToleranceForDoubleResolution = 1e-6;
 
-        private List<(int Notch, PeptideWithSetModifications Pwsm)> _bestMatchingPeptides = new List<(int, PeptideWithSetModifications)>(); //the int is the notch
+        private List<(int Notch, PeptideWithSetModifications Pwsm)> _bestMatchingPeptides;
 
         public const double ToleranceForScoreDifferentiation = 1e-9;
 
         public PeptideSpectralMatch(PeptideWithSetModifications peptide, int notch, double score, int scanIndex, IScan scan, DigestionParams digestionParams, List<MatchedFragmentIon> matchedFragmentIons)
         {
+            _bestMatchingPeptides = new List<(int, PeptideWithSetModifications)>();
             ScanIndex = scanIndex;
             FullFilePath = scan.FullFilePath;
             ScanNumber = scan.OneBasedScanNumber;
@@ -160,16 +161,16 @@ namespace EngineLayer
             DeltaScore = Score - Math.Max(RunnerUpScore, scoreCutoff);
         }
 
-        public void SetFdrValues(int cumulativeTarget, int cumulativeDecoy, double tempQValue, int cumulativeTargetNotch, int cumulativeDecoyNotch, double tempQValueNotch, double maximumLikelihood, double eValue, double eScore, bool calculateEValue)
+        public void SetFdrValues(double cumulativeTarget, double cumulativeDecoy, double qValue, double cumulativeTargetNotch, double cumulativeDecoyNotch, double qValueNotch, double maximumLikelihood, double eValue, double eScore, bool calculateEValue)
         {
             FdrInfo = new FdrInfo
             {
                 CumulativeTarget = cumulativeTarget,
                 CumulativeDecoy = cumulativeDecoy,
-                QValue = tempQValue,
+                QValue = qValue,
                 CumulativeTargetNotch = cumulativeTargetNotch,
                 CumulativeDecoyNotch = cumulativeDecoyNotch,
-                QValueNotch = tempQValueNotch,
+                QValueNotch = qValueNotch,
                 MaximumLikelihood = maximumLikelihood,
                 EScore = eScore,
                 EValue = eValue,
@@ -199,6 +200,29 @@ namespace EngineLayer
             ModsIdentified = Resolve(_bestMatchingPeptides.Select(b => b.Pwsm.AllModsOneIsNterminus)).ResolvedValue;
             ModsChemicalFormula = Resolve(_bestMatchingPeptides.Select(b => b.Pwsm.AllModsOneIsNterminus.Select(c => (c.Value)))).ResolvedValue;
             Notch = Resolve(_bestMatchingPeptides.Select(b => b.Notch)).ResolvedValue;
+
+            // if the PSM matches a target and a decoy and they are the SAME SEQUENCE, remove the decoy
+            if (IsDecoy)
+            {
+                bool removedPeptides = false;
+                var hits = _bestMatchingPeptides.GroupBy(p => p.Pwsm.FullSequence);
+
+                foreach (var hit in hits)
+                {
+                    if (hit.Any(p => p.Pwsm.Protein.IsDecoy) && hit.Any(p => !p.Pwsm.Protein.IsDecoy))
+                    {
+                        // at least one peptide with this sequence is a target and at least one is a decoy
+                        // remove the decoys with this sequence
+                        _bestMatchingPeptides.RemoveAll(p => p.Pwsm.FullSequence == hit.Key && p.Pwsm.Protein.IsDecoy);
+                        removedPeptides = true;
+                    }
+                }
+
+                if (removedPeptides)
+                {
+                    ResolveAllAmbiguities();
+                }
+            }
 
             // TODO: technically, different peptide options for this PSM can have different matched ions
             // we can write a Resolve method for this if we want...

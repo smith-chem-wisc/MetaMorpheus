@@ -1,9 +1,7 @@
 ﻿using Chemistry;
 using EngineLayer.FdrAnalysis;
 using EngineLayer.ModernSearch;
-using MassSpectrometry;
 using Proteomics;
-using Proteomics.AminoAcidPolymer;
 using Proteomics.Fragmentation;
 using Proteomics.ProteolyticDigestion;
 using System;
@@ -59,21 +57,16 @@ namespace EngineLayer.NonSpecificEnzymeSearch
                     }
 
                     //populate ids of possibly observed with those containing allowed precursor masses
-                    List<int> binsToSearch = new List<int>();
                     int obsPrecursorFloorMz = (int)Math.Floor(commonParameters.PrecursorMassTolerance.GetMinimumValue(scan.PrecursorMass) * FragmentBinsPerDalton);
                     int obsPrecursorCeilingMz = (int)Math.Ceiling(commonParameters.PrecursorMassTolerance.GetMaximumValue(scan.PrecursorMass) * FragmentBinsPerDalton);
-                    for (int fragmentBin = obsPrecursorFloorMz; fragmentBin <= obsPrecursorCeilingMz; fragmentBin++)
-                    {
-                        binsToSearch.Add(fragmentBin);
-                    }
 
                     foreach (ProductType pt in DissociationTypeCollection.ProductsFromDissociationType[commonParameters.DissociationType].Intersect(TerminusSpecificProductTypes.ProductIonTypesFromSpecifiedTerminus[commonParameters.DigestionParams.FragmentationTerminus]).ToList())
                     {
                         int binShift = (int)Math.Round((WaterMonoisotopicMass - DissociationTypeCollection.GetMassShiftFromProductType(pt)) * FragmentBinsPerDalton);
 
-                        for (int j = 0; j < binsToSearch.Count; j++)
+                        for (int j = obsPrecursorFloorMz; j <= obsPrecursorCeilingMz; j++)
                         {
-                            int bin = binsToSearch[j] - binShift;
+                            int bin = j - binShift;
                             if (bin < FragmentIndex.Length && FragmentIndex[bin] != null)
                             {
                                 FragmentIndex[bin].ForEach(id => idsOfPeptidesPossiblyObserved.Add(id));
@@ -81,9 +74,8 @@ namespace EngineLayer.NonSpecificEnzymeSearch
                         }
                     }
 
-                    for (int j = 0; j < binsToSearch.Count; j++)
+                    for (int bin = obsPrecursorFloorMz; bin <= obsPrecursorCeilingMz; bin++)
                     {
-                        int bin = binsToSearch[j];
                         if (bin < FragmentIndexPrecursor.Length && FragmentIndexPrecursor[bin] != null)
                         {
                             FragmentIndexPrecursor[bin].ForEach(id => idsOfPeptidesPossiblyObserved.Add(id));
@@ -102,7 +94,7 @@ namespace EngineLayer.NonSpecificEnzymeSearch
                                 PeptideWithSetModifications peptide = PeptideIndex[id];
                                 List<Product> peptideTheorProducts = peptide.Fragment(commonParameters.DissociationType, commonParameters.DigestionParams.FragmentationTerminus).ToList();
 
-                                List<MatchedFragmentIon> matchedIons = MatchFragmentIons(scan.TheScan.MassSpectrum, peptideTheorProducts, commonParameters, scan.PrecursorMass);
+                                List<MatchedFragmentIon> matchedIons = MatchFragmentIons(scan, peptideTheorProducts, commonParameters);
 
                                 double thisScore = CalculatePeptideScore(scan.TheScan, matchedIons, MaxMassThatFragmentIonScoreIsDoubled);
                                 if (thisScore > commonParameters.ScoreCutoff)
@@ -118,7 +110,7 @@ namespace EngineLayer.NonSpecificEnzymeSearch
                                         else
                                         {
                                             localPeptideSpectralMatches[i].AddOrReplace(notchAndUpdatedPeptide.Item2, thisScore, notchAndUpdatedPeptide.Item1, commonParameters.ReportAllAmbiguity, matchedIons);
-                                        }                        
+                                        }
                                     }
                                 }
                             }
@@ -143,7 +135,7 @@ namespace EngineLayer.NonSpecificEnzymeSearch
             //all masses in N and CTerminalMasses are b-ion masses, which are one water away from a full peptide
             int localminPeptideLength = commonParameters.DigestionParams.MinPeptideLength;
 
-            for (int i = localminPeptideLength; i < fragments.Count; i++)
+            for (int i = localminPeptideLength - 1; i < fragments.Count; i++) //minus one start, because fragment 1 is at index 0
             {
                 Product fragment = fragments[i];
                 double theoMass = fragment.NeutralMass - DissociationTypeCollection.GetMassShiftFromProductType(fragment.ProductType) + WaterMonoisotopicMass;
@@ -151,13 +143,13 @@ namespace EngineLayer.NonSpecificEnzymeSearch
                 if (notch >= 0)
                 {
                     PeptideWithSetModifications updatedPwsm = null;
-                    if(fragmentationTerminus == FragmentationTerminus.N)
+                    if (fragmentationTerminus == FragmentationTerminus.N)
                     {
-                        int endResidue = peptide.OneBasedStartResidueInProtein + fragment.TerminusFragment.FragmentNumber -1; //-1 for one based index
+                        int endResidue = peptide.OneBasedStartResidueInProtein + fragment.TerminusFragment.FragmentNumber - 1; //-1 for one based index
                         Dictionary<int, Modification> updatedMods = new Dictionary<int, Modification>();
-                        foreach(var mod in peptide.AllModsOneIsNterminus)
+                        foreach (var mod in peptide.AllModsOneIsNterminus)
                         {
-                            if(mod.Key<endResidue-peptide.OneBasedStartResidueInProtein) //check if we cleaved it off
+                            if (mod.Key < endResidue - peptide.OneBasedStartResidueInProtein) //check if we cleaved it off
                             {
                                 updatedMods.Add(mod.Key, mod.Value);
                             }
@@ -166,7 +158,7 @@ namespace EngineLayer.NonSpecificEnzymeSearch
                     }
                     else
                     {
-                        int startResidue = peptide.OneBasedEndResidueInProtein - fragment.TerminusFragment.FragmentNumber+1; //plus one for one based index
+                        int startResidue = peptide.OneBasedEndResidueInProtein - fragment.TerminusFragment.FragmentNumber + 1; //plus one for one based index
                         Dictionary<int, Modification> updatedMods = new Dictionary<int, Modification>();  //updateMods
                         int indexShift = startResidue - peptide.OneBasedStartResidueInProtein;
                         foreach (var mod in peptide.AllModsOneIsNterminus)
@@ -305,6 +297,7 @@ namespace EngineLayer.NonSpecificEnzymeSearch
             {
                 PeptideSpectralMatch bestPsm = null;
                 double lowestQ = double.MaxValue;
+                int bestIndex = -1;
                 foreach (int index in indexesOfInterest) //foreach category
                 {
                     PeptideSpectralMatch currentPsm = AllPsms[index][i];
@@ -314,8 +307,18 @@ namespace EngineLayer.NonSpecificEnzymeSearch
                         if (currentQValue < lowestQ //if the new one is better
                             || (currentQValue == lowestQ && currentPsm.Score > bestPsm.Score))
                         {
+                            if (bestIndex != -1)
+                            {
+                                //remove the old one so we don't use it for fdr later
+                                AllPsms[bestIndex][i] = null;
+                            }
                             bestPsm = currentPsm;
                             lowestQ = currentQValue;
+                            bestIndex = index;
+                        }
+                        else //remove the old one so we don't use it for fdr later
+                        {
+                            AllPsms[index][i] = null;
                         }
                     }
                 }
@@ -324,6 +327,21 @@ namespace EngineLayer.NonSpecificEnzymeSearch
                     bestPsmsList.Add(bestPsm);
                 }
             }
+
+            //It's probable that psms from some categories were removed by psms from other categories.
+            //however, the fdr is still affected by their presence, since it was calculated before their removal.
+            foreach (var psmsArray in AllPsms)
+            {
+                if (psmsArray != null)
+                {
+                    var cleanedPsmsArray = psmsArray.Where(b => b != null).OrderByDescending(b => b.Score)
+                       .ThenBy(b => b.PeptideMonisotopicMass.HasValue ? Math.Abs(b.ScanPrecursorMass - b.PeptideMonisotopicMass.Value) : double.MaxValue)
+                       .ToList();
+
+                    new FdrAnalysisEngine(cleanedPsmsArray, numNotches, commonParameters, new List<string> { taskId }).Run();
+                }
+            }
+
             return bestPsmsList.OrderBy(b => b.FdrInfo.QValue).ThenByDescending(b => b.Score).ToList();
         }
     }

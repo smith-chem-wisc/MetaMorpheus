@@ -48,7 +48,7 @@ namespace Test
                 0, 1, true, Polarity.Positive, double.NaN, null, null, MZAnalyzerType.Orbitrap, double.NaN, null,
                 null, "scan=1", double.NaN, null, null, double.NaN, null, DissociationType.AnyActivationType, 0, null);
 
-            Ms2ScanWithSpecificMass scan = new Ms2ScanWithSpecificMass(fakeScan, 2, 0, "File");
+            Ms2ScanWithSpecificMass scan = new Ms2ScanWithSpecificMass(fakeScan, 2, 0, "File", new CommonParameters());
 
             PeptideSpectralMatch psm1 = new PeptideSpectralMatch(modifiedPeptide, 0, 10, 1, scan, new DigestionParams(), new List<MatchedFragmentIon>());
             psm1.SetFdrValues(0, 0, 0, 0, 0, 0, 0, 0, 0, false);
@@ -115,7 +115,7 @@ namespace Test
                 0, 1, true, Polarity.Positive, double.NaN, null, null, MZAnalyzerType.Orbitrap, double.NaN, null,
                 null, "scan=1", double.NaN, null, null, double.NaN, null, DissociationType.AnyActivationType, 0, null);
 
-            Ms2ScanWithSpecificMass scan = new Ms2ScanWithSpecificMass(fakeScan, 2, 0, "File");
+            Ms2ScanWithSpecificMass scan = new Ms2ScanWithSpecificMass(fakeScan, 2, 0, "File", new CommonParameters());
 
             PeptideSpectralMatch psm1 = new PeptideSpectralMatch(modifiedPeptide, 0, 10, 1, scan, new DigestionParams(), new List<MatchedFragmentIon>());
             psm1.SetFdrValues(0, 0, 0, 0, 0, 0, 0, 0, 0, false);
@@ -161,7 +161,7 @@ namespace Test
 
             // build the dictionary for input to parsimony
             MsDataScan dfb = new MsDataScan(new MzSpectrum(new double[] { 1 }, new double[] { 1 }, false), 0, 1, true, Polarity.Positive, double.NaN, null, null, MZAnalyzerType.Orbitrap, double.NaN, null, null, "scan=1", double.NaN, null, null, double.NaN, null, DissociationType.AnyActivationType, 0, null);
-            Ms2ScanWithSpecificMass scan = new Ms2ScanWithSpecificMass(dfb, 2, 0, "File");
+            Ms2ScanWithSpecificMass scan = new Ms2ScanWithSpecificMass(dfb, 2, 0, "File", new CommonParameters());
 
             List<PeptideSpectralMatch> psms = new List<PeptideSpectralMatch>
             {
@@ -186,10 +186,10 @@ namespace Test
 
             int countOfProteinGroups = results.SortedAndScoredProteinGroups.Count;
 
-            // only decoy protein gets generated
+            // only target protein gets generated
             Assert.That(countOfProteinGroups == 1);
             Assert.That(results.SortedAndScoredProteinGroups.First().Proteins.Count == 1);
-            Assert.That(results.SortedAndScoredProteinGroups.First().IsDecoy);
+            Assert.That(!results.SortedAndScoredProteinGroups.First().IsDecoy);
         }
     }
 }
