@@ -23,7 +23,8 @@ namespace ViewModels
           { ProductType.b, OxyColors.Blue },
           { ProductType.y, OxyColors.Purple },
           { ProductType.c, OxyColors.Gold },
-          { ProductType.zPlusOne, OxyColors.Orange },
+          { ProductType.zPlusOne, OxyColors.Orange }, // TODO: Remove
+          { ProductType.zDot, OxyColors.Orange },
           { ProductType.D, OxyColors.DodgerBlue },
           { ProductType.M, OxyColors.Firebrick }
         };

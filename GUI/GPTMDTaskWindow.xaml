@@ -140,7 +140,7 @@
                                                 <TextBlock>
                                                         Protease used for digestion.
                                                         <LineBreak/>
-                                                        Novel proteases can be added/modified by the user at "...MetaMorpheus\\EngineLayer\\Data\\proteases.tsv"
+                                                        Proteases can be added/modified by the user at "Data -> Open folder with mods/data files -> ProteolyticDigestion -> proteases.tsv"
                                                 </TextBlock>
                                             </ComboBox.ToolTip>
                                         </ComboBox>
