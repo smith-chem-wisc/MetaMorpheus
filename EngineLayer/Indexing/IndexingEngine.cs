@@ -166,15 +166,15 @@ namespace EngineLayer.Indexing
 
                 for (int i = 0; i < peptidesSortedByMass.Count; i++)
                 {
-                    double mz = Chemistry.ClassExtensions.ToMz(peptidesSortedByMass[i].MonoisotopicMass, 1);
-                    if (!Double.IsNaN(mz))
+                    double mass = peptidesSortedByMass[i].MonoisotopicMass;
+                    if (!Double.IsNaN(mass))
                     {
-                        if (mz > MaxFragmentSize) //if the precursor is larger than the index allows, then stop adding precursors
+                        if (mass > MaxFragmentSize) //if the precursor is larger than the index allows, then stop adding precursors
                         {
                             break;
                         }
 
-                        int precursorBin = (int)Math.Round(mz * FragmentBinsPerDalton);
+                        int precursorBin = (int)Math.Round(mass * FragmentBinsPerDalton);
 
                         if (precursorIndex[precursorBin] == null)
                             precursorIndex[precursorBin] = new List<int> { i };

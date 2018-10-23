@@ -144,6 +144,7 @@ namespace MetaMorpheusGUI
 
         private void UpdateFieldsFromTask(SearchTask task)
         {
+            proteaseComboBox.SelectedItem = task.CommonParameters.DigestionParams.SpecificProtease; //needs to be first, or nonspecific overwrites for missed cleavages/max length
             classicSearchRadioButton.IsChecked = task.SearchParameters.SearchType == SearchType.Classic;
             modernSearchRadioButton.IsChecked = task.SearchParameters.SearchType == SearchType.Modern;
             nonSpecificSearchRadioButton.IsChecked = task.SearchParameters.SearchType == SearchType.NonSpecific && task.CommonParameters.DigestionParams.SearchModeType == CleavageSpecificity.None;
@@ -165,7 +166,6 @@ namespace MetaMorpheusGUI
             missedCleavagesTextBox.Text = task.CommonParameters.DigestionParams.MaxMissedCleavages == int.MaxValue ? "" : task.CommonParameters.DigestionParams.MaxMissedCleavages.ToString(CultureInfo.InvariantCulture);
             MinPeptideLengthTextBox.Text = task.CommonParameters.DigestionParams.MinPeptideLength.ToString(CultureInfo.InvariantCulture);
             MaxPeptideLengthTextBox.Text = task.CommonParameters.DigestionParams.MaxPeptideLength == int.MaxValue ? "" : task.CommonParameters.DigestionParams.MaxPeptideLength.ToString(CultureInfo.InvariantCulture);
-            proteaseComboBox.SelectedItem = task.CommonParameters.DigestionParams.SpecificProtease;
             maxModificationIsoformsTextBox.Text = task.CommonParameters.DigestionParams.MaxModificationIsoforms.ToString(CultureInfo.InvariantCulture);
             MaxModNumTextBox.Text = task.CommonParameters.DigestionParams.MaxModsForPeptide.ToString(CultureInfo.InvariantCulture);
             initiatorMethionineBehaviorComboBox.SelectedIndex = (int)task.CommonParameters.DigestionParams.InitiatorMethionineBehavior;
@@ -455,6 +455,7 @@ namespace MetaMorpheusGUI
                 minRatio: MinRatio,
                 addCompIons: addCompIonCheckBox.IsChecked.Value,
                 qValueOutputFilter: QValueCheckBox.IsChecked.Value ? double.Parse(QValueTextBox.Text, CultureInfo.InvariantCulture) : 1.0,
+                assumeOrphanPeaksAreZ1Fragments: protease.Name != "top-down",
                 minVariantDepth: MinVariantDepth,
                 maxHeterozygousVariants: MaxHeterozygousVariants);
 
@@ -530,17 +531,19 @@ namespace MetaMorpheusGUI
                 TheTask.SearchParameters.CustomMdac = customkMdacTextBox.Text;
             }
 
-            //determine if semi or nonspecific with a specific protease. Full is already added by default.
+            //determine if semi or nonspecific with a specific protease.
             if(searchModeType == CleavageSpecificity.Semi || protease.CleavageSpecificity==CleavageSpecificity.Semi)
             {
-                TheTask.SearchParameters.LocalFdrCategories.Add(FdrCategory.SemiSpecific);
+                TheTask.SearchParameters.LocalFdrCategories= new List<FdrCategory> { FdrCategory.FullySpecific, FdrCategory.SemiSpecific };
             }
             else if(searchModeType==CleavageSpecificity.None && protease.CleavageSpecificity!=CleavageSpecificity.None)
             {
-                TheTask.SearchParameters.LocalFdrCategories.Add(FdrCategory.SemiSpecific);
-                TheTask.SearchParameters.LocalFdrCategories.Add(FdrCategory.NonSpecific);
+                TheTask.SearchParameters.LocalFdrCategories = new List<FdrCategory> { FdrCategory.FullySpecific, FdrCategory.SemiSpecific, FdrCategory.NonSpecific };
             }
-            // else do nothing
+            else
+            {
+                TheTask.SearchParameters.LocalFdrCategories = new List<FdrCategory> { FdrCategory.FullySpecific };
+            }
 
 
             // displays warning if classic search is enabled with an open search mode

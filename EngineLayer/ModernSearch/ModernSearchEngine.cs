@@ -99,7 +99,7 @@ namespace EngineLayer.ModernSearch
 
                         List<Product> peptideTheorProducts = peptide.Fragment(commonParameters.DissociationType, FragmentationTerminus.Both).ToList();
 
-                        List<MatchedFragmentIon> matchedIons = MatchFragmentIons(scan.TheScan.MassSpectrum, peptideTheorProducts, commonParameters, scan.PrecursorMass);
+                        List<MatchedFragmentIon> matchedIons = MatchFragmentIons(scan, peptideTheorProducts, commonParameters);
                         
                         double thisScore = CalculatePeptideScore(scan.TheScan, matchedIons, 0);
                         int notch = MassDiffAcceptor.Accepts(scan.PrecursorMass, peptide.MonoisotopicMass);
@@ -161,10 +161,11 @@ namespace EngineLayer.ModernSearch
         {
             int obsPreviousFragmentCeilingMz = 0;
             List<int> binsToSearch = new List<int>();
-            foreach (var peakMz in scan.TheScan.MassSpectrum.XArray)
+            
+            foreach (var envelope in scan.ExperimentalFragments)
             {
                 // assume charge state 1 to calculate mass tolerance
-                double experimentalFragmentMass = ClassExtensions.ToMass(peakMz, 1);
+                double experimentalFragmentMass = envelope.monoisotopicMass;
 
                 // get theoretical fragment bins within mass tolerance
                 int obsFragmentFloorMass = (int)Math.Floor((commonParameters.ProductMassTolerance.GetMinimumValue(experimentalFragmentMass)) * FragmentBinsPerDalton);

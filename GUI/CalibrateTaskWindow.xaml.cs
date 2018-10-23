@@ -251,6 +251,7 @@ namespace MetaMorpheusGUI
                 listOfModsVariable: listOfModsVariable,
                 productMassTolerance: ProductMassTolerance,
                 precursorMassTolerance: PrecursorMassTolerance,
+                assumeOrphanPeaksAreZ1Fragments: protease.Name != "top-down",
                 minVariantDepth: MinVariantDepth,
                 maxHeterozygousVariants: MaxHeterozygousVariants);
 

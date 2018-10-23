@@ -73,6 +73,7 @@ namespace MetaMorpheusGUI
             precursorMassToleranceComboBox.SelectedIndex = task.CommonParameters.PrecursorMassTolerance is AbsoluteTolerance ? 0 : 1;
             minScoreAllowed.Text = task.CommonParameters.ScoreCutoff.ToString(CultureInfo.InvariantCulture);
             maxThreadsTextBox.Text = task.CommonParameters.MaxThreadsToUsePerFile.ToString(CultureInfo.InvariantCulture);
+            addCompIonCheckBox.IsChecked = task.CommonParameters.AddCompIons;
             MinVariantDepthTextBox.Text = task.CommonParameters.MinVariantDepth.ToString(CultureInfo.InvariantCulture);
             MaxHeterozygousVariantsTextBox.Text = task.CommonParameters.MaxHeterozygousVariants.ToString(CultureInfo.InvariantCulture);
 
@@ -306,6 +307,8 @@ namespace MetaMorpheusGUI
                     productMassTolerance: ProductMassTolerance,
                     listOfModsFixed: listOfModsFixed,
                     listOfModsVariable: listOfModsVariable,
+                    assumeOrphanPeaksAreZ1Fragments: protease.Name != "top-down",
+                    addCompIons: addCompIonCheckBox.IsChecked.Value,
                     minVariantDepth: MinVariantDepth,
                     maxHeterozygousVariants: MaxHeterozygousVariants);
 
