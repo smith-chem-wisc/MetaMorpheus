@@ -14,7 +14,8 @@ namespace EngineLayer
 {
     public class PeptideSpectralMatch
     {
-        private const double ToleranceForDoubleResolution = 1e-6;
+        private const double ToleranceForDoubleResolutionF5 = 1e-6;
+        private const double ToleranceForDoubleResolutionF2 = 1e-3;
 
         private List<(int Notch, PeptideWithSetModifications Pwsm)> _bestMatchingPeptides;
 
@@ -337,7 +338,7 @@ namespace EngineLayer
         private static (string ResolvedString, double? ResolvedValue) ResolveF2(IEnumerable<double> enumerable)
         {
             var list = enumerable.ToList();
-            if (list.Max() - list.Min() < ToleranceForDoubleResolution)
+            if (list.Max() - list.Min() < ToleranceForDoubleResolutionF2)
             {
                 return (list.Average().ToString("F2", CultureInfo.InvariantCulture), list.Average());
             }
@@ -351,7 +352,7 @@ namespace EngineLayer
         private static (string ResolvedString, double? ResolvedValue) Resolve(IEnumerable<double> enumerable)
         {
             var list = enumerable.ToList();
-            if (list.Max() - list.Min() < ToleranceForDoubleResolution)
+            if (list.Max() - list.Min() < ToleranceForDoubleResolutionF5)
             {
                 return (list.Average().ToString("F5", CultureInfo.InvariantCulture), list.Average());
             }
@@ -393,6 +394,28 @@ namespace EngineLayer
             }
         }
 
+        private static (string ResolvedString, string ResolvedValue) Resolve(IEnumerable<string> enumerable, List<IEnumerable<string>> otherEnumerables)
+        {
+            var list = enumerable.ToList();
+            string first = list.FirstOrDefault(b => b != null);
+            // Only first if list is either all null or all equal to the first
+            if (list.All(b => b == null) || list.All(b => first.Equals(b)))
+            {
+                return (first, first);
+            }
+            // use only distinct names if all of the base sequences are the same
+            else if (otherEnumerables.All(e => e != null && e.All(b => b == null) || e.All(b => first.Equals(b))))
+            {
+                var returnString = GlobalVariables.CheckLengthOfOutput(string.Join("|", list.Distinct()));
+                return (returnString, null);
+            }
+            else
+            {
+                var returnString = GlobalVariables.CheckLengthOfOutput(string.Join("|", list));
+                return (returnString, null);
+            }
+        }
+
         private static void AddBasicMatchData(Dictionary<string, string> s, PeptideSpectralMatch psm)
         {
             s["File Name"] = psm == null ? " " : Path.GetFileNameWithoutExtension(psm.FullFilePath);
@@ -416,9 +439,14 @@ namespace EngineLayer
 
             var pepsWithMods = pepWithModsIsNull ? null : psm.BestMatchingPeptides.Select(p => p.Peptide).ToList();
 
-            s["Base Sequence"] = pepWithModsIsNull ? " " : Resolve(pepsWithMods.Select(b => b.BaseSequence)).ResolvedString;
-            s["Full Sequence"] = pepWithModsIsNull ? " " : Resolve(pepsWithMods.Select(b => b.FullSequence)).ResolvedString;
-            s["Essential Sequence"] = pepWithModsIsNull ? " " : Resolve(pepsWithMods.Select(b => b.EssentialSequence(ModsToWritePruned))).ResolvedString;
+            var baseSequences = pepWithModsIsNull ? null : pepsWithMods.Select(b => b.BaseSequence);
+            var fullSequences = pepWithModsIsNull ? null : pepsWithMods.Select(b => b.FullSequence);
+            var essentialSequences = pepWithModsIsNull ? null : pepsWithMods.Select(b => b.EssentialSequence(ModsToWritePruned));
+            var checksForDistinctNames = new List<IEnumerable<string>> { baseSequences, fullSequences, essentialSequences };
+
+            s["Base Sequence"] = pepWithModsIsNull ? " " : Resolve(baseSequences).ResolvedString;
+            s["Full Sequence"] = pepWithModsIsNull ? " " : Resolve(fullSequences).ResolvedString;
+            s["Essential Sequence"] = pepWithModsIsNull ? " " : Resolve(essentialSequences).ResolvedString;
             s["Mods"] = pepWithModsIsNull ? " " : Resolve(pepsWithMods.Select(b => b.AllModsOneIsNterminus)).ResolvedString;
             s["Mods Chemical Formulas"] = pepWithModsIsNull ? " " :
                 Resolve(pepsWithMods.Select(p => p.AllModsOneIsNterminus.Select(v => v.Value))).ResolvedString;
@@ -428,9 +456,9 @@ namespace EngineLayer
             s["Peptide Monoisotopic Mass"] = pepWithModsIsNull ? " " : Resolve(pepsWithMods.Select(b => b.MonoisotopicMass)).ResolvedString;
             s["Mass Diff (Da)"] = pepWithModsIsNull ? " " : Resolve(pepsWithMods.Select(b => psm.ScanPrecursorMass - b.MonoisotopicMass)).ResolvedString;
             s["Mass Diff (ppm)"] = pepWithModsIsNull ? " " : ResolveF2(pepsWithMods.Select(b => ((psm.ScanPrecursorMass - b.MonoisotopicMass) / b.MonoisotopicMass * 1e6))).ResolvedString;
-            s["Protein Accession"] = pepWithModsIsNull ? " " : Resolve(pepsWithMods.Select(b => b.Protein.Accession)).ResolvedString;
-            s["Protein Name"] = pepWithModsIsNull ? " " : Resolve(pepsWithMods.Select(b => b.Protein.FullName)).ResolvedString;
-            s["Gene Name"] = pepWithModsIsNull ? " " : Resolve(pepsWithMods.Select(b => string.Join(", ", b.Protein.GeneNames.Select(d => d.Item1 + ":" + d.Item2)))).ResolvedString;
+            s["Protein Accession"] = pepWithModsIsNull ? " " : Resolve(pepsWithMods.Select(b => b.Protein.Accession), checksForDistinctNames).ResolvedString;
+            s["Protein Name"] = pepWithModsIsNull ? " " : Resolve(pepsWithMods.Select(b => b.Protein.FullName), checksForDistinctNames).ResolvedString;
+            s["Gene Name"] = pepWithModsIsNull ? " " : Resolve(pepsWithMods.Select(b => string.Join(", ", b.Protein.GeneNames.Select(d => $"{d.Item1}:{d.Item2}"))), checksForDistinctNames).ResolvedString;
             s["Sequence Variations"] = pepWithModsIsNull ? " " :
                 Resolve(pepsWithMods.Select(b => string.Join(", ", b.Protein.SequenceVariations
                     .Where(d => psm.OneBasedStartResidueInProtein <= d.OneBasedBeginPosition && d.OneBasedBeginPosition <= psm.OneBasedEndResidueInProtein)
@@ -445,9 +473,8 @@ namespace EngineLayer
             s["Contaminant"] = pepWithModsIsNull ? " " : Resolve(pepsWithMods.Select(b => b.Protein.IsContaminant ? "Y" : "N")).Item1;
             s["Decoy"] = pepWithModsIsNull ? " " : Resolve(pepsWithMods.Select(b => b.Protein.IsDecoy ? "Y" : "N")).Item1;
             s["Peptide Description"] = pepWithModsIsNull ? " " : Resolve(pepsWithMods.Select(b => b.PeptideDescription)).Item1;
-            s["Start and End Residues In Protein"] =
-                pepWithModsIsNull ? " " : Resolve(pepsWithMods.Select(b => ("[" + b.OneBasedStartResidueInProtein.ToString(CultureInfo.InvariantCulture) + " to " +
-                    b.OneBasedEndResidueInProtein.ToString(CultureInfo.InvariantCulture) + "]"))).ResolvedString;
+            s["Start and End Residues In Protein"] = pepWithModsIsNull ? " " : 
+                Resolve(pepsWithMods.Select(b => ($"[{b.OneBasedStartResidueInProtein.ToString(CultureInfo.InvariantCulture)} to {b.OneBasedEndResidueInProtein.ToString(CultureInfo.InvariantCulture)}]")), checksForDistinctNames).ResolvedString;
             s["Previous Amino Acid"] = pepWithModsIsNull ? " " : Resolve(pepsWithMods.Select(b => b.PreviousAminoAcid.ToString())).ResolvedString;
             s["Next Amino Acid"] = pepWithModsIsNull ? " " : Resolve(pepsWithMods.Select(b => b.NextAminoAcid.ToString())).ResolvedString;
 
