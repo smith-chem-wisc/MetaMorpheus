@@ -437,11 +437,11 @@ namespace EngineLayer
         {
             bool pepWithModsIsNull = psm == null || psm.BestMatchingPeptides == null || !psm.BestMatchingPeptides.Any();
 
-            var pepsWithMods = pepWithModsIsNull ? null : psm.BestMatchingPeptides.Select(p => p.Peptide).ToList();
+            List<PeptideWithSetModifications> pepsWithMods = pepWithModsIsNull ? null : psm.BestMatchingPeptides.Select(p => p.Peptide).ToList();
 
-            var baseSequences = pepWithModsIsNull ? null : pepsWithMods.Select(b => b.BaseSequence);
-            var fullSequences = pepWithModsIsNull ? null : pepsWithMods.Select(b => b.FullSequence);
-            var essentialSequences = pepWithModsIsNull ? null : pepsWithMods.Select(b => b.EssentialSequence(ModsToWritePruned));
+            IEnumerable<string> baseSequences = pepWithModsIsNull ? null : pepsWithMods.Select(b => b.BaseSequence);
+            IEnumerable<string> fullSequences = pepWithModsIsNull ? null : pepsWithMods.Select(b => b.FullSequence);
+            IEnumerable<string> essentialSequences = pepWithModsIsNull ? null : pepsWithMods.Select(b => b.EssentialSequence(ModsToWritePruned));
             var checksForDistinctNames = new List<IEnumerable<string>> { baseSequences, fullSequences, essentialSequences };
 
             s["Base Sequence"] = pepWithModsIsNull ? " " : Resolve(baseSequences).ResolvedString;
