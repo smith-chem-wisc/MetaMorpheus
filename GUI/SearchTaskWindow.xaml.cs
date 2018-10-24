@@ -89,7 +89,7 @@ namespace MetaMorpheusGUI
             {
                 proteaseComboBox.Items.Add(protease);
             }
-            proteaseComboBox.SelectedIndex = 12;
+            proteaseComboBox.SelectedIndex = 11;
 
             foreach (string initiatior_methionine_behavior in Enum.GetNames(typeof(InitiatorMethionineBehavior)))
             {
@@ -144,11 +144,30 @@ namespace MetaMorpheusGUI
 
         private void UpdateFieldsFromTask(SearchTask task)
         {
-            proteaseComboBox.SelectedItem = task.CommonParameters.DigestionParams.SpecificProtease; //needs to be first, or nonspecific overwrites for missed cleavages/max length
+            proteaseComboBox.SelectedItem = task.CommonParameters.DigestionParams.SpecificProtease; //needs to be first, so nonspecific can override if necessary
             classicSearchRadioButton.IsChecked = task.SearchParameters.SearchType == SearchType.Classic;
             modernSearchRadioButton.IsChecked = task.SearchParameters.SearchType == SearchType.Modern;
-            nonSpecificSearchRadioButton.IsChecked = task.SearchParameters.SearchType == SearchType.NonSpecific && task.CommonParameters.DigestionParams.SearchModeType == CleavageSpecificity.None;
-            semiSpecificSearchRadioButton.IsChecked = task.SearchParameters.SearchType == SearchType.NonSpecific && task.CommonParameters.DigestionParams.SearchModeType != CleavageSpecificity.None;
+            //do these in if statements so as not to trigger the change
+            if (task.SearchParameters.SearchType == SearchType.NonSpecific && task.CommonParameters.DigestionParams.SearchModeType == CleavageSpecificity.None)
+            {
+                nonSpecificSearchRadioButton.IsChecked = true; //when this is changed it overrides the protease
+                if (task.CommonParameters.DigestionParams.SpecificProtease.Name.Equals("singleC") || task.CommonParameters.DigestionParams.SpecificProtease.Name.Equals("singleN"))
+                {
+                    while (!((Protease)proteaseComboBox.SelectedItem).Name.Equals("non-specific"))
+                    {
+                        proteaseComboBox.Items.MoveCurrentToNext();
+                        proteaseComboBox.SelectedItem = proteaseComboBox.Items.CurrentItem;
+                    }
+                }
+                else
+                {
+                    proteaseComboBox.SelectedItem = task.CommonParameters.DigestionParams.SpecificProtease; 
+                }
+            }
+            if(task.SearchParameters.SearchType == SearchType.NonSpecific && task.CommonParameters.DigestionParams.SearchModeType != CleavageSpecificity.None)
+            {
+                semiSpecificSearchRadioButton.IsChecked = true;
+            }
             MaxFragmentMassTextBox.Text = task.SearchParameters.MaxFragmentSize.ToString(CultureInfo.InvariantCulture);
             checkBoxParsimony.IsChecked = task.SearchParameters.DoParsimony;
             checkBoxNoOneHitWonders.IsChecked = task.SearchParameters.NoOneHitWonders;
@@ -305,6 +324,8 @@ namespace MetaMorpheusGUI
             {
                 if (((Protease)proteaseComboBox.SelectedItem).Name.Contains("non-specific"))
                 {
+                    searchModeType = CleavageSpecificity.None; //prevents an accidental semi attempt of a non-specific protease
+
                     if (cTerminalIons.IsChecked.Value)
                     {
                         while (!((Protease)proteaseComboBox.SelectedItem).Name.Equals("singleC"))
