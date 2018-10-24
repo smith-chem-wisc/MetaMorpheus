@@ -161,10 +161,10 @@ namespace MetaMorpheusGUI
                 }
                 else
                 {
-                    proteaseComboBox.SelectedItem = task.CommonParameters.DigestionParams.SpecificProtease; 
+                    proteaseComboBox.SelectedItem = task.CommonParameters.DigestionParams.SpecificProtease;
                 }
             }
-            if(task.SearchParameters.SearchType == SearchType.NonSpecific && task.CommonParameters.DigestionParams.SearchModeType != CleavageSpecificity.None)
+            if (task.SearchParameters.SearchType == SearchType.NonSpecific && task.CommonParameters.DigestionParams.SearchModeType != CleavageSpecificity.None)
             {
                 semiSpecificSearchRadioButton.IsChecked = true;
             }
