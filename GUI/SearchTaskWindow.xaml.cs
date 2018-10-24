@@ -313,7 +313,7 @@ namespace MetaMorpheusGUI
                             proteaseComboBox.SelectedItem = proteaseComboBox.Items.CurrentItem;
                         }
                     }
-                    else //we're not allowing no ion types. It must have C if it doesn't have N.
+                    else //we're not allowing no ion types. It must have N if it doesn't have C.
                     {
                         while (!((Protease)proteaseComboBox.SelectedItem).Name.Equals("singleN"))
                         {
@@ -321,14 +321,13 @@ namespace MetaMorpheusGUI
                             proteaseComboBox.SelectedItem = proteaseComboBox.Items.CurrentItem;
                         }
                     }
-                    searchModeType = CleavageSpecificity.Full; //we're going to change this to override the semi, or the singleN/C proteases will be treated as semi instead of full
                 }
                 if (!addCompIonCheckBox.IsChecked.Value)
                 {
                     MessageBox.Show("Warning: Complementary ions are strongly recommended when using this algorithm.");
                 }
                 //only use N or C termini, not both
-                if(cTerminalIons.IsChecked.Value)
+                if (cTerminalIons.IsChecked.Value)
                 {
                     nTerminalIons.IsChecked = false;
                 }
@@ -526,11 +525,11 @@ namespace MetaMorpheusGUI
             }
 
             //determine if semi or nonspecific with a specific protease.
-            if(searchModeType == CleavageSpecificity.Semi || protease.CleavageSpecificity==CleavageSpecificity.Semi)
+            if (searchModeType == CleavageSpecificity.Semi || protease.CleavageSpecificity == CleavageSpecificity.Semi)
             {
-                TheTask.SearchParameters.LocalFdrCategories= new List<FdrCategory> { FdrCategory.FullySpecific, FdrCategory.SemiSpecific };
+                TheTask.SearchParameters.LocalFdrCategories = new List<FdrCategory> { FdrCategory.FullySpecific, FdrCategory.SemiSpecific };
             }
-            else if(searchModeType==CleavageSpecificity.None && protease.CleavageSpecificity!=CleavageSpecificity.None)
+            else if (searchModeType == CleavageSpecificity.None && protease.CleavageSpecificity != CleavageSpecificity.None)
             {
                 TheTask.SearchParameters.LocalFdrCategories = new List<FdrCategory> { FdrCategory.FullySpecific, FdrCategory.SemiSpecific, FdrCategory.NonSpecific };
             }
