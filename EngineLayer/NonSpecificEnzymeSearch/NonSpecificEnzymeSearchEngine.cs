@@ -94,22 +94,25 @@ namespace EngineLayer.NonSpecificEnzymeSearch
                                 PeptideWithSetModifications peptide = PeptideIndex[id];
                                 List<Product> peptideTheorProducts = peptide.Fragment(commonParameters.DissociationType, commonParameters.DigestionParams.FragmentationTerminus).ToList();
 
-                                List<MatchedFragmentIon> matchedIons = MatchFragmentIons(scan, peptideTheorProducts, commonParameters);
-
-                                double thisScore = CalculatePeptideScore(scan.TheScan, matchedIons, MaxMassThatFragmentIonScoreIsDoubled);
-                                if (thisScore > commonParameters.ScoreCutoff)
+                                Tuple<int, PeptideWithSetModifications> notchAndUpdatedPeptide = Accepts(peptideTheorProducts, scan.PrecursorMass, peptide, commonParameters.DigestionParams.FragmentationTerminus, MassDiffAcceptor);
+                                int notch = notchAndUpdatedPeptide.Item1;
+                                if (notch >= 0)
                                 {
-                                    Tuple<int, PeptideWithSetModifications> notchAndUpdatedPeptide = Accepts(peptideTheorProducts, scan.PrecursorMass, peptide, commonParameters.DigestionParams.FragmentationTerminus, MassDiffAcceptor);
-                                    if (notchAndUpdatedPeptide.Item1 >= 0)
+                                    peptide = notchAndUpdatedPeptide.Item2;
+                                    peptideTheorProducts = peptide.Fragment(commonParameters.DissociationType, FragmentationTerminus.Both).ToList();
+                                    List<MatchedFragmentIon> matchedIons = MatchFragmentIons(scan, peptideTheorProducts, commonParameters);
+
+                                    double thisScore = CalculatePeptideScore(scan.TheScan, matchedIons, MaxMassThatFragmentIonScoreIsDoubled);
+                                    if (thisScore > commonParameters.ScoreCutoff)
                                     {
-                                        PeptideSpectralMatch[] localPeptideSpectralMatches = GlobalCategorySpecificPsms[(int)FdrClassifier.GetCleavageSpecificityCategory(notchAndUpdatedPeptide.Item2.CleavageSpecificityForFdrCategory)];
+                                        PeptideSpectralMatch[] localPeptideSpectralMatches = GlobalCategorySpecificPsms[(int)FdrClassifier.GetCleavageSpecificityCategory(peptide.CleavageSpecificityForFdrCategory)];
                                         if (localPeptideSpectralMatches[i] == null)
                                         {
-                                            localPeptideSpectralMatches[i] = new PeptideSpectralMatch(notchAndUpdatedPeptide.Item2, notchAndUpdatedPeptide.Item1, thisScore, i, scan, commonParameters.DigestionParams, matchedIons);
+                                            localPeptideSpectralMatches[i] = new PeptideSpectralMatch(peptide, notch, thisScore, i, scan, commonParameters.DigestionParams, matchedIons);
                                         }
                                         else
                                         {
-                                            localPeptideSpectralMatches[i].AddOrReplace(notchAndUpdatedPeptide.Item2, thisScore, notchAndUpdatedPeptide.Item1, commonParameters.ReportAllAmbiguity, matchedIons);
+                                            localPeptideSpectralMatches[i].AddOrReplace(peptide, thisScore, notch, commonParameters.ReportAllAmbiguity, matchedIons);
                                         }
                                     }
                                 }
