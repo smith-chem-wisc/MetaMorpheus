@@ -39,18 +39,18 @@ namespace Test
             Protein prot2 = new Protein("MENEEK", "prot2");
 
             ModificationMotif.TryGetMotif("D", out ModificationMotif motif);
-            ModificationWithMass mod = new ModificationWithMass(null, null, motif, TerminusLocalization.Any, 10);
+            Modification mod = new Modification(_target: motif, _locationRestriction: "Anywhere.", _monoisotopicMass: 10);
 
-            var pep1_0 = prot1.Digest(st.CommonParameters.DigestionParams, new List<ModificationWithMass>(), new List<ModificationWithMass>()).First();
-            var pep1_10 = prot1.Digest(st.CommonParameters.DigestionParams, new List<ModificationWithMass>(), new List<ModificationWithMass>()).Last();
+            var pep1_0 = prot1.Digest(st.CommonParameters.DigestionParams, new List<Modification>(), new List<Modification>()).First();
+            var pep1_10 = prot1.Digest(st.CommonParameters.DigestionParams, new List<Modification>(), new List<Modification>()).Last();
 
             Protein prot3 = new Protein("MAAADAAAAAAAAAAAAAAA", "prot3");
 
-            var pep2_0 = prot3.Digest(st.CommonParameters.DigestionParams, new List<ModificationWithMass>(), new List<ModificationWithMass>()).First();
-            var pep2_10 = prot3.Digest(st.CommonParameters.DigestionParams, new List<ModificationWithMass>(), new List<ModificationWithMass> { mod }).Last();
+            var pep2_0 = prot3.Digest(st.CommonParameters.DigestionParams, new List<Modification>(), new List<Modification>()).First();
+            var pep2_10 = prot3.Digest(st.CommonParameters.DigestionParams, new List<Modification>(), new List<Modification> { mod }).Last();
 
             Protein prot4 = new Protein("MNNDNNNN", "prot4");
-            var pep3_10 = prot4.Digest(st.CommonParameters.DigestionParams, new List<ModificationWithMass>(), new List<ModificationWithMass> { mod }).Last();
+            var pep3_10 = prot4.Digest(st.CommonParameters.DigestionParams, new List<Modification>(), new List<Modification> { mod }).Last();
 
             List<PeptideWithSetModifications> pepsWithSetMods = new List<PeptideWithSetModifications> { pep1_0, pep1_10, pep2_0, pep2_10, pep3_10 };
             MsDataFile myMsDataFile = new TestDataFile(pepsWithSetMods);
@@ -69,6 +69,10 @@ namespace Test
                 null);
 
             Assert.AreEqual(3, File.ReadLines(Path.Combine(output_folder, @"MassDifferenceHistogram.tsv")).Count());
+            Directory.Delete(output_folder, true);
+            File.Delete(proteinDbFilePath);
+            File.Delete(mzmlFilePath);
+            Directory.Delete(Path.Combine(TestContext.CurrentContext.TestDirectory, @"Task Settings"), true);
         }
 
         [Test]
@@ -97,7 +101,7 @@ namespace Test
             string mzmlFilePath2 = Path.Combine(TestContext.CurrentContext.TestDirectory, "TestProteinSplitAcrossFiles2.mzML");
 
             ModificationMotif.TryGetMotif("D", out ModificationMotif motif);
-            ModificationWithMass mod = new ModificationWithMass("mod1", "mt", motif, TerminusLocalization.Any, 10);
+            Modification mod = new Modification(_originalId: "mod1 on D", _modificationType: "mt", _target: motif, _locationRestriction: "Anywhere.", _monoisotopicMass: 10);
 
             IDictionary<int, List<Modification>> oneBasedModification = new Dictionary<int, List<Modification>>
             {
@@ -106,8 +110,8 @@ namespace Test
 
             Protein prot1 = new Protein("MEDEEK", "prot1", oneBasedModifications: oneBasedModification);
 
-            var pep1 = prot1.Digest(st.CommonParameters.DigestionParams, new List<ModificationWithMass>(), new List<ModificationWithMass>()).First();
-            var pep2 = prot1.Digest(st.CommonParameters.DigestionParams, new List<ModificationWithMass>(), new List<ModificationWithMass>()).Last();
+            var pep1 = prot1.Digest(st.CommonParameters.DigestionParams, new List<Modification>(), new List<Modification>()).First();
+            var pep2 = prot1.Digest(st.CommonParameters.DigestionParams, new List<Modification>(), new List<Modification>()).Last();
 
             List<PeptideWithSetModifications> listForFile1 = new List<PeptideWithSetModifications> { pep1, pep2 };
             List<PeptideWithSetModifications> listForFile2 = new List<PeptideWithSetModifications> { pep2 };
@@ -128,6 +132,11 @@ namespace Test
                 new List<DbForTask> { new DbForTask(proteinDbFilePath, false) },
                 new List<string> { mzmlFilePath1, mzmlFilePath2, },
                 null);
+            Directory.Delete(output_folder, true);
+            File.Delete(proteinDbFilePath);
+            File.Delete(mzmlFilePath1);
+            File.Delete(mzmlFilePath2);
+            Directory.Delete(Path.Combine(TestContext.CurrentContext.TestDirectory, @"Task Settings"), true);
         }
     }
 }

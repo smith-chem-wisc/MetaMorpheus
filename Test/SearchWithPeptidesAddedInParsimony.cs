@@ -5,6 +5,7 @@ using Proteomics;
 using Proteomics.ProteolyticDigestion;
 using System;
 using System.Collections.Generic;
+using System.IO;
 using System.Linq;
 using TaskLayer;
 using UsefulProteomicsDatabases;
@@ -41,9 +42,9 @@ namespace Test
                     maxModsForPeptides: 1));
 
             ModificationMotif.TryGetMotif("A", out ModificationMotif motifA);
-            ModificationWithMass alanineMod = new ModificationWithMass("111", "mt", motifA, TerminusLocalization.Any, 111);
+            Modification alanineMod = new Modification(_originalId: "111", _modificationType: "mt", _target: motifA, _locationRestriction: "Anywhere.", _monoisotopicMass: 111);
 
-            var variableModifications = new List<ModificationWithMass>();
+            var variableModifications = new List<Modification>();
             IDictionary<int, List<Modification>> oneBasedModifications1 = new Dictionary<int, List<Modification>>
                 {
                     {2, new List<Modification>{ alanineMod } }
@@ -53,7 +54,7 @@ namespace Test
 
             ModificationMotif.TryGetMotif("G", out ModificationMotif motif1);
 
-            ModificationWithMass glycineMod = new ModificationWithMass("CH2 on Glycine", "mt", motif1, TerminusLocalization.Any, Chemistry.ChemicalFormula.ParseFormula("CH2").MonoisotopicMass);
+            Modification glycineMod = new Modification(_originalId: "CH2 on Glycine", _modificationType: "mt", _target: motif1, _locationRestriction: "Anywhere.", _monoisotopicMass: Chemistry.ChemicalFormula.ParseFormula("CH2").MonoisotopicMass);
 
             IDictionary<int, List<Modification>> oneBasedModifications2 = new Dictionary<int, List<Modification>>
                 {
@@ -61,10 +62,10 @@ namespace Test
                 };
             Protein protein2 = new Protein("MG", "protein3", oneBasedModifications: oneBasedModifications2);
 
-            PeptideWithSetModifications pepMA = protein1.Digest(CommonParameters.DigestionParams, new List<ModificationWithMass>(), variableModifications).First();
-            PeptideWithSetModifications pepMA111 = protein1.Digest(CommonParameters.DigestionParams, new List<ModificationWithMass>(), variableModifications).Last();
+            PeptideWithSetModifications pepMA = protein1.Digest(CommonParameters.DigestionParams, new List<Modification>(), variableModifications).First();
+            PeptideWithSetModifications pepMA111 = protein1.Digest(CommonParameters.DigestionParams, new List<Modification>(), variableModifications).Last();
 
-            var pepMG = protein2.Digest(CommonParameters.DigestionParams, new List<ModificationWithMass>(), variableModifications).First();
+            var pepMG = protein2.Digest(CommonParameters.DigestionParams, new List<Modification>(), variableModifications).First();
 
             ProteinDbWriter.WriteXmlDatabase(new Dictionary<string, HashSet<Tuple<int, Modification>>>(), new List<Protein> { protein1, protein2 }, xmlName);
 
@@ -73,10 +74,16 @@ namespace Test
             MsDataFile myMsDataFile = new TestDataFile(new List<PeptideWithSetModifications> { pepMA, pepMG, pepMA111 }, true);
 
             IO.MzML.MzmlMethods.CreateAndWriteMyMzmlWithCalibratedSpectra(myMsDataFile, mzmlName, false);
+            string outputFolder = Path.Combine(TestContext.CurrentContext.TestDirectory, @"TestSearchWithPeptidesAddedInParsimony");
+            Directory.CreateDirectory(outputFolder);
 
-            st.RunTask("",
+            st.RunTask(outputFolder,
                 new List<DbForTask> { new DbForTask(xmlName, false) },
                 new List<string> { mzmlName }, "");
+            Directory.Delete(outputFolder, true);
+            File.Delete(mzmlName);
+            File.Delete(xmlName);
+            Directory.Delete(Path.Combine(TestContext.CurrentContext.TestDirectory, @"Task Settings"), true);
         }
     }
 }

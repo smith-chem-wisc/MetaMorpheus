@@ -10,12 +10,14 @@ using MassSpectrometry;
 using TaskLayer;
 using System.ComponentModel;
 using System.Threading.Tasks;
-using System.Windows.Threading;
 using System;
 using System.Data;
 using System.Windows.Data;
 using System.Windows.Media;
 using System.Windows.Media.Imaging;
+using Proteomics.Fragmentation;
+using Proteomics.ProteolyticDigestion;
+using System.Text.RegularExpressions;
 
 namespace MetaMorpheusGUI
 {
@@ -32,6 +34,10 @@ namespace MetaMorpheusGUI
         private readonly DataTable propertyView;
         private string spectraFilePath;
         private string tsvResultsFilePath;
+        private Dictionary<ProductType, double> productTypeToYOffset;
+        private Dictionary<ProductType, Color> productTypeToColor;
+        private SolidColorBrush modificationAnnotationColor;
+        private Regex illegalInFileName = new Regex(@"[\\/:*?""<>|]");
 
         public MetaDraw()
         {
@@ -48,7 +54,25 @@ namespace MetaMorpheusGUI
             dataGridProperties.DataContext = propertyView.DefaultView;
             Title = "MetaDraw: version " + GlobalVariables.MetaMorpheusVersion;
             spectraFileManager = new MyFileManager(true);
+            SetUpDictionaries();
+            modificationAnnotationColor = Brushes.Yellow;
+        }
 
+        private void SetUpDictionaries()
+        {
+            // colors of each fragment to annotate on base sequence
+            productTypeToColor = ((ProductType[])Enum.GetValues(typeof(ProductType))).ToDictionary(p => p, p => Colors.Aqua);
+            productTypeToColor[ProductType.b] = Colors.Blue;
+            productTypeToColor[ProductType.y] = Colors.Purple;
+            productTypeToColor[ProductType.zPlusOne] = Colors.Orange;
+            productTypeToColor[ProductType.c] = Colors.Gold;
+
+            // offset for annotation on base sequence
+            productTypeToYOffset = ((ProductType[])Enum.GetValues(typeof(ProductType))).ToDictionary(p => p, p => 0.0);
+            productTypeToYOffset[ProductType.b] = 50;
+            productTypeToYOffset[ProductType.y] = 0;
+            productTypeToYOffset[ProductType.zPlusOne] = 50;
+            productTypeToYOffset[ProductType.c] = 0;
         }
 
         private void Window_Drop(object sender, DragEventArgs e)
@@ -75,6 +99,7 @@ namespace MetaMorpheusGUI
             {
                 case ".raw":
                 case ".mzml":
+                case ".mgf":
                     spectraFilePath = filePath;
                     spectraFileNameLabel.Text = filePath;
                     break;
@@ -95,7 +120,7 @@ namespace MetaMorpheusGUI
 
             foreach (var psm in TsvResultReader.ReadTsv(filename))
             {
-                if (psm.FileName == fileNameWithExtension || psm.FileName == fileNameWithoutExtension)
+                if (psm.Filename == fileNameWithExtension || psm.Filename == fileNameWithoutExtension)
                 {
                     Dispatcher.BeginInvoke(new Action(() =>
                     {
@@ -108,7 +133,7 @@ namespace MetaMorpheusGUI
         private void DrawPsm(int oneBasedScanNumber, string fullSequence = null)
         {
             MsDataScan msDataScanToDraw = MsDataFile.GetOneBasedScan(oneBasedScanNumber);
-            IEnumerable<MetaDrawPsm> scanPsms = peptideSpectralMatches.Where(p => p.ScanNum == oneBasedScanNumber);
+            IEnumerable<MetaDrawPsm> scanPsms = peptideSpectralMatches.Where(p => p.Ms2ScanNumber == oneBasedScanNumber);
 
             if (fullSequence != null)
             {
@@ -139,12 +164,19 @@ namespace MetaMorpheusGUI
             MetaDrawPsm row = (MetaDrawPsm)dataGridScanNums.SelectedItem;
             System.Reflection.PropertyInfo[] temp = row.GetType().GetProperties();
 
-            for (int i = 4; i < temp.Length; i++)
+            for (int i = 0; i < temp.Length; i++)
             {
-                propertyView.Rows.Add(temp[i].Name, temp[i].GetValue(row, null));
+                if (temp[i].Name == nameof(row.MatchedIons))
+                {
+                    propertyView.Rows.Add(temp[i].Name, string.Join(", ", row.MatchedIons.Select(p => p.Annotation)));
+                }
+                else
+                {
+                    propertyView.Rows.Add(temp[i].Name, temp[i].GetValue(row, null));
+                }
             }
             dataGridProperties.Items.Refresh();
-            DrawPsm(row.ScanNum, row.FullSequence);
+            DrawPsm(row.Ms2ScanNumber, row.FullSequence);
         }
 
         private void selectSpectraFileButton_Click(object sender, RoutedEventArgs e)
@@ -233,7 +265,7 @@ namespace MetaMorpheusGUI
                 peptideSpectralMatchesView.Filter = obj =>
                 {
                     MetaDrawPsm psm = obj as MetaDrawPsm;
-                    return ((psm.ScanNum.ToString()).StartsWith(txt) || psm.FullSequence.ToUpper().Contains(txt.ToUpper()));
+                    return ((psm.Ms2ScanNumber.ToString()).StartsWith(txt) || psm.FullSequence.ToUpper().Contains(txt.ToUpper()));
                 };
             }
         }
@@ -243,61 +275,47 @@ namespace MetaMorpheusGUI
             double spacing = 22;
             BaseDraw.clearCanvas(canvas);
 
+            // don't draw ambiguous sequences
+            if (psm.FullSequence.Contains("|"))
+            {
+                return;
+            }
+
             // draw base sequence
-            for (int r = 0; r < psm.BaseSequence.Length; r++)
+            for (int r = 0; r < psm.BaseSeq.Length; r++)
             {
-                BaseDraw.txtDrawing(canvas, new Point(r * spacing + 10, 10), psm.BaseSequence[r].ToString(), Brushes.Black);
+                BaseDraw.txtDrawing(canvas, new Point(r * spacing + 10, 10), psm.BaseSeq[r].ToString(), Brushes.Black);
             }
 
-            // draw b ions
-            foreach (var bIon in psm.FragmentIons.Where(p => p.ProductType == ProductType.B))
+            // draw the fragment ion annotations on the base sequence
+            foreach (var ion in psm.MatchedIons)
             {
-                int residue = bIon.IonNumber;
-                BaseDraw.botSplittingDrawing(canvas, new Point(residue * spacing + 8, 50), Colors.Blue, bIon.ProductType.ToString().ToLower() + bIon.IonNumber);
-            }
+                int residue = ion.NeutralTheoreticalProduct.TerminusFragment.AminoAcidPosition;
+                string annotation = ion.NeutralTheoreticalProduct.ProductType + "" + ion.NeutralTheoreticalProduct.TerminusFragment.FragmentNumber;
 
-            // draw c ions
-            foreach (var cIon in psm.FragmentIons.Where(p => p.ProductType == ProductType.C))
-            {
-                int residue = psm.BaseSequence.Length - cIon.IonNumber;
-                BaseDraw.botSplittingDrawing(canvas, new Point(residue * spacing + 8, 50), Colors.Gold, cIon.ProductType.ToString().ToLower() + cIon.IonNumber);
-            }
+                if (ion.NeutralTheoreticalProduct.NeutralLoss != 0)
+                {
+                    annotation += "-" + ion.NeutralTheoreticalProduct.NeutralLoss;
+                }
 
-            // draw y ions
-            foreach (var yIon in psm.FragmentIons.Where(p => p.ProductType == ProductType.Y))
-            {
-                int residue = psm.BaseSequence.Length - yIon.IonNumber;
-                BaseDraw.topSplittingDrawing(canvas, new Point(residue * spacing + 8, 0), Colors.Purple, yIon.ProductType.ToString().ToLower() + yIon.IonNumber);
-            }
-
-            // draw zdot ions
-            foreach (var zDotIon in psm.FragmentIons.Where(p => p.ProductType == ProductType.Zdot))
-            {
-                int residue = zDotIon.IonNumber;
-                BaseDraw.topSplittingDrawing(canvas, new Point(residue * spacing + 8, 0), Colors.Orange, zDotIon.ProductType.ToString().ToLower() + zDotIon.IonNumber);
+                if (ion.NeutralTheoreticalProduct.TerminusFragment.Terminus == FragmentationTerminus.C)
+                {
+                    BaseDraw.topSplittingDrawing(canvas, new Point(residue * spacing + 8,
+                        productTypeToYOffset[ion.NeutralTheoreticalProduct.ProductType]), productTypeToColor[ion.NeutralTheoreticalProduct.ProductType], annotation);
+                }
+                else if (ion.NeutralTheoreticalProduct.TerminusFragment.Terminus == FragmentationTerminus.N)
+                {
+                    BaseDraw.botSplittingDrawing(canvas, new Point(residue * spacing + 8,
+                        productTypeToYOffset[ion.NeutralTheoreticalProduct.ProductType]), productTypeToColor[ion.NeutralTheoreticalProduct.ProductType], annotation);
+                }
+                // don't draw diagnostic ions, precursor ions, etc
             }
 
             // draw modifications
-            int aa = 0;
-            bool currentlyReadingMod = false;
-            for (int c = 0; c < psm.FullSequence.Length; c++)
+            var peptide = new PeptideWithSetModifications(psm.FullSequence, GlobalVariables.AllModsKnownDictionary);
+            foreach (var mod in peptide.AllModsOneIsNterminus)
             {
-                switch (psm.FullSequence[c])
-                {
-                    case '[':
-                        currentlyReadingMod = true;
-                        BaseDraw.circledTxtDraw(canvas, new Point(aa * spacing - 17, 12), Brushes.Yellow);
-                        break;
-                    case ']':
-                        currentlyReadingMod = false;
-                        break;
-                    default:
-                        if (!currentlyReadingMod)
-                        {
-                            aa++;
-                        }
-                        break;
-                }
+                BaseDraw.circledTxtDraw(canvas, new Point((mod.Key - 1) * spacing - 17, 12), modificationAnnotationColor);
             }
         }
 
@@ -306,74 +324,75 @@ namespace MetaMorpheusGUI
             (sender as DataGrid).UnselectAll();
         }
 
-        private void PDFButton_Click(object sender, RoutedEventArgs e)
-        {
-            if (dataGridScanNums.SelectedCells.Count == 0)
-            {
-                MessageBox.Show("Please select at least one scan to export");
-            }
+        //private void PDFButton_Click(object sender, RoutedEventArgs e)
+        //{
+        //    if (dataGridScanNums.SelectedCells.Count == 0)
+        //    {
+        //        MessageBox.Show("Please select at least one scan to export");
+        //    }
 
-            int num = dataGridScanNums.SelectedItems.Count;
-            string writeDirectory = Path.Combine(Directory.GetParent(tsvResultsFilePath).FullName, "PDF");
+        //    int num = dataGridScanNums.SelectedItems.Count;
+        //    string writeDirectory = Path.Combine(Directory.GetParent(tsvResultsFilePath).FullName, "PDF");
 
-            if (!Directory.Exists(writeDirectory))
-            {
-                Directory.CreateDirectory(writeDirectory);
-            }
+        //    if (!Directory.Exists(writeDirectory))
+        //    {
+        //        Directory.CreateDirectory(writeDirectory);
+        //    }
 
-            foreach (object selectedItem in dataGridScanNums.SelectedItems)
-            {
-                MetaDrawPsm psm = (MetaDrawPsm)selectedItem;
-                ExportToPdf(psm, Path.Combine(writeDirectory, psm.ScanNum + "_" + psm.FullSequence + ".pdf"));
-            }
+        //    foreach (object selectedItem in dataGridScanNums.SelectedItems)
+        //    {
+        //        MetaDrawPsm psm = (MetaDrawPsm)selectedItem;
+        //        string myString = illegalInFileName.Replace(psm.FullSequence, "").Substring(0, 40);
+        //        ExportToPdf(psm, Path.Combine(writeDirectory, psm.Ms2ScanNumber + "_" + myString + ".pdf"));
+        //    }
 
-            dataGridScanNums.SelectedItem = dataGridScanNums.SelectedItem;
-            MessageBox.Show(string.Format("{0} PDFs exported to " + writeDirectory, num));
-        }
+        //    dataGridScanNums.SelectedItem = dataGridScanNums.SelectedItem;
+        //    MessageBox.Show(string.Format("{0} PDFs exported to " + writeDirectory, num));
+        //}
 
-        private void ExportToPdf(MetaDrawPsm psm, string path)
-        {
-            System.Reflection.PropertyInfo[] temp = psm.GetType().GetProperties();
+        //private void ExportToPdf(MetaDrawPsm psm, string path)
+        //{
+        //    System.Reflection.PropertyInfo[] temp = psm.GetType().GetProperties();
 
-            for (int i = 4; i < temp.Length; i++)
-            {
-                propertyView.Rows.Add(temp[i].Name, temp[i].GetValue(psm, null));
-            }
-            dataGridProperties.Items.Refresh();
-            DrawPsm(psm.ScanNum, psm.FullSequence);
-            
-            double wid = 0;
-            dataGridProperties.HorizontalScrollBarVisibility = ScrollBarVisibility.Disabled;
-            dataGridProperties.VerticalScrollBarVisibility = ScrollBarVisibility.Disabled;
-            foreach (DataGridColumn col in dataGridProperties.Columns)
-            {
-                wid += col.ActualWidth;
-            }
-            PDFOutPut.Background = Brushes.White;
-            PDFOutPut.ColumnDefinitions[0].Width = new GridLength(wid + 10);
-            PDFOutPut.Measure(new Size(wid + gbPSM.ActualWidth + 10, 600));
-            PDFOutPut.Arrange(new Rect(new Size(wid + gbPSM.ActualWidth + 10, 600)));
-            dataGridProperties.Measure(new Size(wid + 22, 600));
-            dataGridProperties.Arrange(new Rect(new Size(wid + 5, 600)));
+        //    for (int i = 4; i < temp.Length; i++)
+        //    {
+        //        propertyView.Rows.Add(temp[i].Name, temp[i].GetValue(psm, null));
+        //    }
+        //    dataGridProperties.Items.Refresh();
+        //    DrawPsm(psm.Ms2ScanNumber, psm.FullSequence);
 
-            dataGridProperties.Arrange(new Rect(new Size(wid + 5, 600)));
-            var rtb = new RenderTargetBitmap((int)(wid + gbPSM.ActualWidth) + 11, 600, 96, 96, PixelFormats.Pbgra32);
+        //    double wid = 0;
+        //    dataGridProperties.HorizontalScrollBarVisibility = ScrollBarVisibility.Disabled;
+        //    dataGridProperties.VerticalScrollBarVisibility = ScrollBarVisibility.Disabled;
+        //    foreach (DataGridColumn col in dataGridProperties.Columns)
+        //    {
+        //        wid += col.ActualWidth;
+        //    }
+        //    PDFOutPut.Background = Brushes.White;
+        //    PDFOutPut.ColumnDefinitions[0].Width = new GridLength(wid + 10);
+        //    PDFOutPut.Measure(new Size(wid + gbPSM.ActualWidth + 10, 600));
+        //    PDFOutPut.Arrange(new Rect(new Size(wid + gbPSM.ActualWidth + 10, 600)));
+        //    dataGridProperties.Measure(new Size(wid + 22, 600));
+        //    dataGridProperties.Arrange(new Rect(new Size(wid + 5, 600)));
 
-            rtb.Render(PDFOutPut);
-            BitmapFrame bf = BitmapFrame.Create(rtb);
+        //    dataGridProperties.Arrange(new Rect(new Size(wid + 5, 600)));
+        //    var rtb = new RenderTargetBitmap((int)(wid + gbPSM.ActualWidth) + 11, 600, 96, 96, PixelFormats.Pbgra32);
 
-            var encoder = new BmpBitmapEncoder();
-            encoder.Frames.Add(bf);
-            using (var stream = new MemoryStream())
-            {
-                encoder.Save(stream);
-                var img = System.Drawing.Bitmap.FromStream(stream);
-                PdfWriter.WriteToPdf(img, (int)(wid + gbPSM.ActualWidth) + 11, 600, path);
-            }
+        //    rtb.Render(PDFOutPut);
+        //    BitmapFrame bf = BitmapFrame.Create(rtb);
 
-            dataGridProperties.HorizontalScrollBarVisibility = ScrollBarVisibility.Visible;
-            dataGridProperties.VerticalScrollBarVisibility = ScrollBarVisibility.Visible;
-            PDFOutPut.ColumnDefinitions[0].Width = new GridLength(1, GridUnitType.Star);
-        }
+        //    var encoder = new BmpBitmapEncoder();
+        //    encoder.Frames.Add(bf);
+        //    using (var stream = new MemoryStream())
+        //    {
+        //        encoder.Save(stream);
+        //        var img = System.Drawing.Image.FromStream(stream);
+        //        PdfWriter.WriteToPdf(img, (int)(wid + gbPSM.ActualWidth) + 11, 600, path);
+        //    }
+
+        //    dataGridProperties.HorizontalScrollBarVisibility = ScrollBarVisibility.Visible;
+        //    dataGridProperties.VerticalScrollBarVisibility = ScrollBarVisibility.Visible;
+        //    PDFOutPut.ColumnDefinitions[0].Width = new GridLength(1, GridUnitType.Star);
+        //}
     }
 }

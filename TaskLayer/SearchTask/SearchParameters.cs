@@ -1,5 +1,6 @@
 using System.Collections.Generic;
 using UsefulProteomicsDatabases;
+using EngineLayer;
 
 namespace TaskLayer
 {
@@ -46,6 +47,9 @@ namespace TaskLayer
                 ////{"ProteinTermMod", 3},
                 //{"UniProt", 3},
             };
+            WriteDecoys = true;
+            WriteContaminants = true;
+            LocalFdrCategories = new List<FdrCategory> { FdrCategory.FullySpecific };
         }
 
         public bool DisposeOfFileWhenDone { get; set; }
@@ -64,6 +68,7 @@ namespace TaskLayer
         public bool DoLocalizationAnalysis { get; set; }
         public bool DoQuantification { get; set; }
         public SearchType SearchType { get; set; }
+        public List<FdrCategory> LocalFdrCategories { get; set; }
         public string CustomMdac { get; set; }
         public double MaxFragmentSize { get; set; }
         public double HistogramBinTolInDaltons { get; set; }
@@ -71,5 +76,7 @@ namespace TaskLayer
         public double MaximumMassThatFragmentIonScoreIsDoubled { get; set; }
         public bool WriteMzId { get; set; }
         public bool WritePepXml { get; set; }
+        public bool WriteDecoys { get; set; }
+        public bool WriteContaminants { get; set; }
     }
 }
