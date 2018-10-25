@@ -7,7 +7,6 @@
   </PropertyGroup>
 
   <ItemGroup>
-    <PackageReference Include="MessagePack" Version="1.7.3.4" />
     <PackageReference Include="mzLib" Version="1.0.376" />
     <PackageReference Include="Nett" Version="0.8.0" />
     <PackageReference Include="Newtonsoft.Json" Version="11.0.1" />
