@@ -19,12 +19,14 @@ namespace EngineLayer.NonSpecificEnzymeSearch
         private readonly List<int>[] PrecursorIndex;
         private readonly int MinimumPeptideLength;
         PeptideSpectralMatch[][] GlobalCategorySpecificPsms;
+        CommonParameters ModifiedParametersNoComp;
 
         public NonSpecificEnzymeSearchEngine(PeptideSpectralMatch[][] globalPsms, Ms2ScanWithSpecificMass[] listOfSortedms2Scans, List<PeptideWithSetModifications> peptideIndex, List<int>[] fragmentIndex, List<int>[] precursorIndex, int currentPartition, CommonParameters CommonParameters, MassDiffAcceptor massDiffAcceptor, double maximumMassThatFragmentIonScoreIsDoubled, List<string> nestedIds) : base(null, listOfSortedms2Scans, peptideIndex, fragmentIndex, currentPartition, CommonParameters, massDiffAcceptor, maximumMassThatFragmentIonScoreIsDoubled, nestedIds)
         {
             PrecursorIndex = precursorIndex;
             MinimumPeptideLength = commonParameters.DigestionParams.MinPeptideLength;
             GlobalCategorySpecificPsms = globalPsms;
+            ModifiedParametersNoComp = commonParameters.CloneWithNewTerminus(addCompIons: false);
         }
 
         protected override MetaMorpheusEngineResults RunSpecific()
@@ -100,7 +102,7 @@ namespace EngineLayer.NonSpecificEnzymeSearch
                                 {
                                     peptide = notchAndUpdatedPeptide.Item2;
                                     peptideTheorProducts = peptide.Fragment(commonParameters.DissociationType, FragmentationTerminus.Both).ToList();
-                                    List<MatchedFragmentIon> matchedIons = MatchFragmentIons(scan, peptideTheorProducts, commonParameters);
+                                    List<MatchedFragmentIon> matchedIons = MatchFragmentIons(scan, peptideTheorProducts, ModifiedParametersNoComp);
 
                                     double thisScore = CalculatePeptideScore(scan.TheScan, matchedIons, MaxMassThatFragmentIonScoreIsDoubled);
                                     if (thisScore > commonParameters.ScoreCutoff)
