@@ -101,7 +101,7 @@ namespace TaskLayer
                         }
 
                         MsDataScan ms2scan = ms2Scans[i];
-                        
+
                         List<(double, int)> precursors = new List<(double, int)>();
                         if (ms2scan.OneBasedPrecursorScanNumber.HasValue)
                         {
@@ -530,18 +530,38 @@ namespace TaskLayer
                 var directory = new DirectoryInfo(baseDir);
                 DirectoryInfo[] directories = directory.GetDirectories();
 
-                // Look at every subdirectory...
+                // Look at every subdirectory to find indexes folder...
                 foreach (DirectoryInfo possibleFolder in directories)
                 {
-                    if (File.Exists(Path.Combine(possibleFolder.FullName, "indexEngine.params")) &&
-                        File.Exists(Path.Combine(possibleFolder.FullName, "peptideIndex.ind")) &&
-                        File.Exists(Path.Combine(possibleFolder.FullName, "fragmentIndex.ind")) &&
-                        (File.Exists(Path.Combine(possibleFolder.FullName, "precursorIndex.ind")) || !indexEngine.GeneratePrecursorIndex) &&
-                        SameSettings(Path.Combine(possibleFolder.FullName, "indexEngine.params"), indexEngine))
+                    string pathToIndexes = Path.Combine(possibleFolder.FullName, "Indexes");
+                    if (File.Exists(pathToIndexes))
                     {
-                        return possibleFolder.FullName;
+                        var newDirectory = new DirectoryInfo(pathToIndexes);
+                        DirectoryInfo[] newDirectories = newDirectory.GetDirectories(); // all individual indices folders 
+
+                        foreach (DirectoryInfo folder in newDirectories)
+                        {
+                            var found = CheckFiles(indexEngine, folder);
+                            if (found != null)
+                            {
+                                return found;
+                            }
+                        }
                     }
                 }
+            }
+            return null;
+        }
+
+        private static string CheckFiles(IndexingEngine indexEngine, DirectoryInfo folder)
+        {
+            if (File.Exists(Path.Combine(folder.FullName, "indexEngine.params")) &&
+                File.Exists(Path.Combine(folder.FullName, "peptideIndex.ind")) &&
+                File.Exists(Path.Combine(folder.FullName, "fragmentIndex.ind")) &&
+                (File.Exists(Path.Combine(folder.FullName, "precursorIndex.ind")) || !indexEngine.GeneratePrecursorIndex) &&
+                SameSettings(Path.Combine(folder.FullName, "indexEngine.params"), indexEngine))
+            {
+                return folder.FullName;
             }
             return null;
         }
@@ -556,7 +576,12 @@ namespace TaskLayer
 
         private static string GenerateOutputFolderForIndices(List<DbForTask> dbFilenameList)
         {
-            var folder = Path.Combine(Path.GetDirectoryName(dbFilenameList.First().FilePath), DateTime.Now.ToString("yyyy-MM-dd-HH-mm-ss", CultureInfo.InvariantCulture));
+            var pathToIndexes = Path.Combine(Path.GetDirectoryName(dbFilenameList.First().FilePath), "Indexes");
+            if (!File.Exists(pathToIndexes))
+            {
+                Directory.CreateDirectory(pathToIndexes);
+            }
+            var folder = Path.Combine(pathToIndexes, DateTime.Now.ToString("yyyy-MM-dd-HH-mm-ss", CultureInfo.InvariantCulture));
             Directory.CreateDirectory(folder);
             return folder;
         }
