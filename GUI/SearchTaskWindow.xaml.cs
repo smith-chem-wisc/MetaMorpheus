@@ -538,15 +538,6 @@ namespace MetaMorpheusGUI
             DialogResult = true;
         }
 
-        private void AddCustomMod_Click(object sender, RoutedEventArgs e)
-        {
-            var dialog = new AddCustomModWindow();
-            if (dialog.ShowDialog() == true)
-            {
-                
-            }
-        }
-
         private void ApmdExpander_Collapsed(object sender, RoutedEventArgs e)
         {
             DataContextForSearchTaskWindow.ExpanderTitle = string.Join(", ", SearchModesForThisTask.Where(b => b.Use).Select(b => b.Name));

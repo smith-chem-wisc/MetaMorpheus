@@ -152,6 +152,9 @@
       <Generator>MSBuild:Compile</Generator>
       <SubType>Designer</SubType>
     </ApplicationDefinition>
+    <Compile Include="CustomModButton.xaml.cs">
+      <DependentUpon>CustomModButton.xaml</DependentUpon>
+    </Compile>
     <Compile Include="MetaDraw.xaml.cs">
       <DependentUpon>MetaDraw.xaml</DependentUpon>
     </Compile>
@@ -206,11 +209,11 @@
     <Compile Include="XLSearchTaskWindow.xaml.cs">
       <DependentUpon>XLSearchTaskWindow.xaml</DependentUpon>
     </Compile>
-    <Page Include="AddCustomModWindow.xaml">
+    <Page Include="CalibrateTaskWindow.xaml">
       <SubType>Designer</SubType>
       <Generator>MSBuild:Compile</Generator>
     </Page>
-    <Page Include="CalibrateTaskWindow.xaml">
+    <Page Include="CustomModButton.xaml">
       <SubType>Designer</SubType>
       <Generator>MSBuild:Compile</Generator>
     </Page>
