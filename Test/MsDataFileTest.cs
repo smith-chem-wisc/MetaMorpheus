@@ -1,6 +1,7 @@
 ﻿using NUnit.Framework;
 using System;
 using System.Collections.Generic;
+using System.IO;
 using TaskLayer;
 
 namespace Test
@@ -22,6 +23,7 @@ namespace Test
             //there should be a check that prevents mgfs from using that feature.
             string mgfName = @"TestData\ok.mgf";
             string xmlName = @"TestData\okk.xml";
+            string outputFolder = Path.Combine(TestContext.CurrentContext.TestDirectory, @"TestLoadAndRunMgf");
 
             SearchTask task1 = new SearchTask
             {
@@ -37,9 +39,10 @@ namespace Test
             };
             //run!
 
-            var engine = new EverythingRunnerEngine(taskList, new List<string> { mgfName }, new List<DbForTask> { new DbForTask(xmlName, false) }, Environment.CurrentDirectory);
+            var engine = new EverythingRunnerEngine(taskList, new List<string> { mgfName }, new List<DbForTask> { new DbForTask(xmlName, false) }, outputFolder);
             engine.Run();
             //Just don't crash! There should also be at least one psm at 1% FDR, but can't check for that.
+            Directory.Delete(outputFolder, true);
         }
     }
 }

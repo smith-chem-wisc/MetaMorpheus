@@ -65,10 +65,10 @@ namespace MetaMorpheusCommandLine
                     {
                         if (!Path.GetExtension(db).Equals(".fasta"))
                         {
-                            GlobalVariables.AddMods(UsefulProteomicsDatabases.ProteinDbLoader.GetPtmListFromProteinXml(db).OfType<Modification>());
+                            GlobalVariables.AddMods(UsefulProteomicsDatabases.ProteinDbLoader.GetPtmListFromProteinXml(db).OfType<Modification>(), true);
 
-                        // print any error messages reading the mods to the console
-                        foreach (var error in GlobalVariables.ErrorsReadingMods)
+                            // print any error messages reading the mods to the console
+                            foreach (var error in GlobalVariables.ErrorsReadingMods)
                             {
                                 Console.WriteLine(error);
                             }
@@ -105,7 +105,7 @@ namespace MetaMorpheusCommandLine
                                 var ye4 = Toml.ReadFile<XLSearchTask>(filePath, MetaMorpheusTask.tomlConfig);
                                 taskList.Add(("Task" + (i + 1) + "XLSearchTask", ye4));
                                 break;
-                                
+
                             default:
                                 Console.WriteLine(uhum.Get<string>("TaskType") + " is not a known task type! Skipping.");
                                 break;
@@ -133,7 +133,7 @@ namespace MetaMorpheusCommandLine
                             case "XLSearch":
                                 Console.WriteLine("XLSearch tasks are individual tasks. Please use -t for task instead of -m. Skipping.");
                                 break;
-                                
+
                             default:
                                 Console.WriteLine(uhum.Get<string>("TaskType") + " is not a known task type! Skipping.");
                                 break;

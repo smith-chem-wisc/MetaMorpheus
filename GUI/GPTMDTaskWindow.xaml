@@ -140,7 +140,7 @@
                                                 <TextBlock>
                                                         Protease used for digestion.
                                                         <LineBreak/>
-                                                        Novel proteases can be added/modified by the user at "...MetaMorpheus\\EngineLayer\\Data\\proteases.tsv"
+                                                        Proteases can be added/modified by the user at "Data -> Open folder with mods/data files -> ProteolyticDigestion -> proteases.tsv"
                                                 </TextBlock>
                                             </ComboBox.ToolTip>
                                         </ComboBox>
@@ -222,6 +222,17 @@
                                                 </TextBlock>
                                             </TextBox.ToolTip>
                                         </TextBox>
+                                    </StackPanel>
+                                    <StackPanel Orientation="Horizontal" Margin="5">
+                                        <CheckBox x:Name="addCompIonCheckBox" Content="Generate Complementary Ions" ToolTipService.ShowDuration="999999" ToolTipService.InitialShowDelay="500">
+                                            <CheckBox.ToolTip>
+                                                <TextBlock>
+                                                    Generates experimental (not theoretical) complementary ions for each MS2.
+                                                    <LineBreak/>
+                                                    Useful for localization of modifications.
+                                                </TextBlock>
+                                            </CheckBox.ToolTip>
+                                        </CheckBox>
                                     </StackPanel>
                                 </StackPanel>
                             </Grid>

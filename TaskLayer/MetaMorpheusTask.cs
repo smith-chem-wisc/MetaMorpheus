@@ -7,12 +7,14 @@ using Nett;
 using Proteomics;
 using Proteomics.ProteolyticDigestion;
 using System;
+using System.Collections.Concurrent;
 using System.Collections.Generic;
 using System.Diagnostics;
 using System.Globalization;
 using System.IO;
 using System.Linq;
 using System.Text;
+using System.Threading.Tasks;
 using UsefulProteomicsDatabases;
 
 namespace TaskLayer
@@ -83,68 +85,94 @@ namespace TaskLayer
 
         public CommonParameters CommonParameters { get; set; }
 
-        public static IEnumerable<Ms2ScanWithSpecificMass> GetMs2Scans(
-            MsDataFile myMSDataFile,
-            string fullFilePath,
-            bool doPrecursorDeconvolution,
-            bool useProvidedPrecursorInfo,
-            double deconvolutionIntensityRatio,
-            int deconvolutionMaxAssumedChargeState,
-            Tolerance deconvolutionMassTolerance)
+        public static IEnumerable<Ms2ScanWithSpecificMass> GetMs2Scans(MsDataFile myMSDataFile, string fullFilePath, CommonParameters commonParameters)
         {
-            foreach (var ms2scan in myMSDataFile.GetAllScansList().Where(x => x.MsnOrder != 1))
-            {
-                if (GlobalVariables.StopLoops) { break; }
-                List<(double, int)> isolatedStuff = new List<(double, int)>();
-                if (ms2scan.OneBasedPrecursorScanNumber.HasValue)
+            var ms2Scans = myMSDataFile.GetAllScansList().Where(x => x.MsnOrder > 1).ToArray();
+            List<Ms2ScanWithSpecificMass>[] scansWithPrecursors = new List<Ms2ScanWithSpecificMass>[ms2Scans.Length];
+
+            Parallel.ForEach(Partitioner.Create(0, ms2Scans.Length), new ParallelOptions { MaxDegreeOfParallelism = commonParameters.MaxThreadsToUsePerFile },
+                (partitionRange, loopState) =>
                 {
-                    var precursorSpectrum = myMSDataFile.GetOneBasedScan(ms2scan.OneBasedPrecursorScanNumber.Value);
-
-                    try
+                    for (int i = partitionRange.Item1; i < partitionRange.Item2; i++)
                     {
-                        ms2scan.RefineSelectedMzAndIntensity(precursorSpectrum.MassSpectrum);
-                    }
-                    catch (MzLibException ex)
-                    {
-                        Warn("Could not get precursor ion for MS2 scan #" + ms2scan.OneBasedScanNumber + "; " + ex.Message);
-                        continue;
-                    }
-
-                    if (ms2scan.SelectedIonMonoisotopicGuessMz.HasValue)
-                    {
-                        ms2scan.ComputeMonoisotopicPeakIntensity(precursorSpectrum.MassSpectrum);
-                    }
-
-                    if (doPrecursorDeconvolution)
-                    {
-                        foreach (var envelope in ms2scan.GetIsolatedMassesAndCharges(precursorSpectrum.MassSpectrum, 1, deconvolutionMaxAssumedChargeState, deconvolutionMassTolerance.Value, deconvolutionIntensityRatio))
+                        if (GlobalVariables.StopLoops)
                         {
-                            var monoPeakMz = envelope.monoisotopicMass.ToMz(envelope.charge);
-                            isolatedStuff.Add((monoPeakMz, envelope.charge));
+                            break;
+                        }
+
+                        MsDataScan ms2scan = ms2Scans[i];
+                        
+                        List<(double, int)> precursors = new List<(double, int)>();
+                        if (ms2scan.OneBasedPrecursorScanNumber.HasValue)
+                        {
+                            var precursorSpectrum = myMSDataFile.GetOneBasedScan(ms2scan.OneBasedPrecursorScanNumber.Value);
+
+                            try
+                            {
+                                ms2scan.RefineSelectedMzAndIntensity(precursorSpectrum.MassSpectrum);
+                            }
+                            catch (MzLibException ex)
+                            {
+                                Warn("Could not get precursor ion for MS2 scan #" + ms2scan.OneBasedScanNumber + "; " + ex.Message);
+                                continue;
+                            }
+
+                            if (ms2scan.SelectedIonMonoisotopicGuessMz.HasValue)
+                            {
+                                ms2scan.ComputeMonoisotopicPeakIntensity(precursorSpectrum.MassSpectrum);
+                            }
+
+                            if (commonParameters.DoPrecursorDeconvolution)
+                            {
+                                foreach (var envelope in ms2scan.GetIsolatedMassesAndCharges(
+                                    precursorSpectrum.MassSpectrum, 1,
+                                    commonParameters.DeconvolutionMaxAssumedChargeState,
+                                    commonParameters.DeconvolutionMassTolerance.Value,
+                                    commonParameters.DeconvolutionIntensityRatio))
+                                {
+                                    var monoPeakMz = envelope.monoisotopicMass.ToMz(envelope.charge);
+                                    precursors.Add((monoPeakMz, envelope.charge));
+                                }
+                            }
+                        }
+
+                        if (commonParameters.UseProvidedPrecursorInfo && ms2scan.SelectedIonChargeStateGuess.HasValue)
+                        {
+                            var precursorCharge = ms2scan.SelectedIonChargeStateGuess.Value;
+                            if (ms2scan.SelectedIonMonoisotopicGuessMz.HasValue)
+                            {
+                                double precursorMZ = ms2scan.SelectedIonMonoisotopicGuessMz.Value;
+                                if (!precursors.Any(b =>
+                                    commonParameters.DeconvolutionMassTolerance.Within(
+                                        precursorMZ.ToMass(precursorCharge), b.Item1.ToMass(b.Item2))))
+                                {
+                                    precursors.Add((precursorMZ, precursorCharge));
+                                }
+                            }
+                            else
+                            {
+                                double precursorMZ = ms2scan.SelectedIonMZ.Value;
+                                if (!precursors.Any(b =>
+                                    commonParameters.DeconvolutionMassTolerance.Within(
+                                        precursorMZ.ToMass(precursorCharge), b.Item1.ToMass(b.Item2))))
+                                {
+                                    precursors.Add((precursorMZ, precursorCharge));
+                                }
+                            }
+                        }
+
+                        scansWithPrecursors[i] = new List<Ms2ScanWithSpecificMass>();
+                        IsotopicEnvelope[] neutralExperimentalFragments = Ms2ScanWithSpecificMass.GetNeutralExperimentalFragments(ms2scan, commonParameters);
+
+                        foreach (var precursor in precursors)
+                        {
+                            scansWithPrecursors[i].Add(new Ms2ScanWithSpecificMass(ms2scan, precursor.Item1,
+                                precursor.Item2, fullFilePath, commonParameters, neutralExperimentalFragments));
                         }
                     }
-                }
+                });
 
-                if (useProvidedPrecursorInfo && ms2scan.SelectedIonChargeStateGuess.HasValue)
-                {
-                    var precursorCharge = ms2scan.SelectedIonChargeStateGuess.Value;
-                    if (ms2scan.SelectedIonMonoisotopicGuessMz.HasValue)
-                    {
-                        var precursorMZ = ms2scan.SelectedIonMonoisotopicGuessMz.Value;
-                        if (!isolatedStuff.Any(b => deconvolutionMassTolerance.Within(precursorMZ.ToMass(precursorCharge), b.Item1.ToMass(b.Item2))))
-                            isolatedStuff.Add((precursorMZ, precursorCharge));
-                    }
-                    else
-                    {
-                        var precursorMZ = ms2scan.SelectedIonMZ;
-                        if (!isolatedStuff.Any(b => deconvolutionMassTolerance.Within(precursorMZ.Value.ToMass(precursorCharge), b.Item1.ToMass(b.Item2))))
-                            isolatedStuff.Add((precursorMZ.Value, precursorCharge));
-                    }
-                }
-
-                foreach (var heh in isolatedStuff)
-                    yield return new Ms2ScanWithSpecificMass(ms2scan, heh.Item1, heh.Item2, fullFilePath);
-            }
+            return scansWithPrecursors.SelectMany(p => p);
         }
 
         public static CommonParameters SetAllFileSpecificCommonParams(CommonParameters commonParams, FileSpecificParameters fileSpecificParams)
@@ -206,7 +234,8 @@ namespace TaskLayer
                 listOfModsVariable: commonParams.ListOfModsVariable,
                 listOfModsFixed: commonParams.ListOfModsFixed,
                 qValueOutputFilter: commonParams.QValueOutputFilter,
-                taskDescriptor: commonParams.TaskDescriptor
+                taskDescriptor: commonParams.TaskDescriptor,
+                assumeOrphanPeaksAreZ1Fragments: commonParams.AssumeOrphanPeaksAreZ1Fragments
                 );
 
             return returnParams;
@@ -216,7 +245,7 @@ namespace TaskLayer
         {
             StartingSingleTask(displayName);
 
-            var tomlFileName = Path.Combine(output_folder, GetType().Name + "config.toml");
+            var tomlFileName = Path.Combine(Directory.GetParent(output_folder).ToString(), "Task Settings", displayName + "config.toml");
             Toml.WriteFile(this, tomlFileName, tomlConfig);
             FinishedWritingFile(tomlFileName, new List<string> { displayName });
 
@@ -289,7 +318,7 @@ namespace TaskLayer
                     file.Write(SystemInfo.SystemProse().Replace(Environment.NewLine, "") + " ");
                     file.WriteLine("The total time to perform the " + TaskType + " task on " + currentRawDataFilepathList.Count + " spectra file(s) was " + String.Format("{0:0.00}", MyTaskResults.Time.TotalMinutes) + " minutes.");
                     file.WriteLine();
-                    file.WriteLine("Published works using MetaMorpheus software are encouraged to cite: Solntsev, S. K.; Shortreed, M. R.; Frey, B. L.; Smith, L. M. Enhanced Global Post-translational Modification Discovery with MetaMoprheus. Journal of Proteome Research. 2018, 17 (5), 1844-1851.");
+                    file.WriteLine("Published works using MetaMorpheus software are encouraged to cite: Solntsev, S. K.; Shortreed, M. R.; Frey, B. L.; Smith, L. M. Enhanced Global Post-translational Modification Discovery with MetaMorpheus. Journal of Proteome Research. 2018, 17 (5), 1844-1851.");
 
                     file.WriteLine();
                     file.WriteLine("Spectra files: ");
@@ -507,6 +536,7 @@ namespace TaskLayer
                     if (File.Exists(Path.Combine(possibleFolder.FullName, "indexEngine.params")) &&
                         File.Exists(Path.Combine(possibleFolder.FullName, "peptideIndex.ind")) &&
                         File.Exists(Path.Combine(possibleFolder.FullName, "fragmentIndex.ind")) &&
+                        (File.Exists(Path.Combine(possibleFolder.FullName, "precursorIndex.ind")) || !indexEngine.GeneratePrecursorIndex) &&
                         SameSettings(Path.Combine(possibleFolder.FullName, "indexEngine.params"), indexEngine))
                     {
                         return possibleFolder.FullName;
@@ -531,7 +561,7 @@ namespace TaskLayer
             return folder;
         }
 
-        public void GenerateIndexes(IndexingEngine indexEngine, List<DbForTask> dbFilenameList, ref List<PeptideWithSetModifications> peptideIndex, ref List<int>[] fragmentIndex, List<Protein> allKnownProteins, List<Modification> allKnownModifications, string taskId)
+        public void GenerateIndexes(IndexingEngine indexEngine, List<DbForTask> dbFilenameList, ref List<PeptideWithSetModifications> peptideIndex, ref List<int>[] fragmentIndex, ref List<int>[] precursorIndex, List<Protein> allKnownProteins, List<Modification> allKnownModifications, string taskId)
         {
             string pathToFolderWithIndices = GetExistingFolderWithIndices(indexEngine, dbFilenameList);
             if (pathToFolderWithIndices == null)
@@ -546,6 +576,7 @@ namespace TaskLayer
                 var indexResults = (IndexingResults)indexEngine.Run();
                 peptideIndex = indexResults.PeptideIndex;
                 fragmentIndex = indexResults.FragmentIndex;
+                precursorIndex = indexResults.PrecursorIndex;
 
                 Status("Writing peptide index...", new List<string> { taskId });
                 var peptideIndexFile = Path.Combine(output_folderForIndices, "peptideIndex.ind");
@@ -556,6 +587,14 @@ namespace TaskLayer
                 var fragmentIndexFile = Path.Combine(output_folderForIndices, "fragmentIndex.ind");
                 WriteFragmentIndexNetSerializer(fragmentIndex, fragmentIndexFile);
                 FinishedWritingFile(fragmentIndexFile, new List<string> { taskId });
+
+                if (indexEngine.GeneratePrecursorIndex)
+                {
+                    Status("Writing precursor index...", new List<string> { taskId });
+                    var precursorIndexFile = Path.Combine(output_folderForIndices, "precursorIndex.ind");
+                    WriteFragmentIndexNetSerializer(precursorIndex, precursorIndexFile);
+                    FinishedWritingFile(precursorIndexFile, new List<string> { taskId });
+                }
             }
             else
             {
@@ -576,9 +615,9 @@ namespace TaskLayer
                     {
                         proteinDictionary.Add(protein.Accession, protein);
                     }
-                    else
+                    else if (proteinDictionary[protein.Accession].BaseSequence != protein.BaseSequence)
                     {
-                        throw new MetaMorpheusException("The protein database contained multiple proteins with the same accession! This is not allowed for index-based searches (modern, non-specific, crosslink searches)");
+                        throw new MetaMorpheusException("The protein database contained multiple proteins with accession" + protein.Accession + "! This is not allowed for index-based searches (modern, non-specific, crosslink searches)");
                     }
                 }
 
@@ -592,9 +631,19 @@ namespace TaskLayer
                 messageTypes = GetSubclassesAndItself(typeof(List<int>[]));
                 ser = new NetSerializer.Serializer(messageTypes);
                 using (var file = File.OpenRead(Path.Combine(pathToFolderWithIndices, "fragmentIndex.ind")))
-
                 {
                     fragmentIndex = (List<int>[])ser.Deserialize(file);
+                }
+
+                if (indexEngine.GeneratePrecursorIndex)
+                {
+                    Status("Reading precursor index...", new List<string> { taskId });
+                    messageTypes = GetSubclassesAndItself(typeof(List<int>[]));
+                    ser = new NetSerializer.Serializer(messageTypes);
+                    using (var file = File.OpenRead(Path.Combine(pathToFolderWithIndices, "precursorIndex.ind")))
+                    {
+                        precursorIndex = (List<int>[])ser.Deserialize(file);
+                    }
                 }
             }
         }

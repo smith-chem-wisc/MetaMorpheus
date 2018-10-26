@@ -42,22 +42,20 @@ namespace Test
             List<(string, MetaMorpheusTask)> taskList = new List<(string, MetaMorpheusTask)> { ("task1", task1), ("task2", task2) };
             string mzmlName = @"TestData\PrunedDbSpectra.mzml";
             string fastaName = @"TestData\DbForPrunedDb.fasta";
-            var engine = new EverythingRunnerEngine(taskList, new List<string> { mzmlName }, new List<DbForTask> { new DbForTask(fastaName, false) }, Environment.CurrentDirectory);
+            string outputFolder = Path.Combine(TestContext.CurrentContext.TestDirectory, @"TestPrunedGeneration");
+            var engine = new EverythingRunnerEngine(taskList, new List<string> { mzmlName }, new List<DbForTask> { new DbForTask(fastaName, false) }, outputFolder);
             engine.Run();
             string final = Path.Combine(MySetUpClass.outputFolder, "task2", "DbForPrunedDbGPTMDproteinPruned.xml");
             List<Protein> proteins = ProteinDbLoader.LoadProteinXML(final, true, DecoyType.Reverse, new List<Modification>(), false, new List<string>(), out var ok);
             //ensures that protein out put contins the correct number of proteins to match the folowing conditions. 
                 // all proteins in DB have baseSequence!=null (not ambiguous)
                 // all proteins that belong to a protein group are written to DB
-            Assert.AreEqual(20, proteins.Count());
-            int totalNumberOfMods = 0;
-            foreach (Protein p in proteins)
-            {
-                int numberOfMods = p.OneBasedPossibleLocalizedModifications.Count();
-                totalNumberOfMods = totalNumberOfMods + numberOfMods;
-            }
+            Assert.AreEqual(20, proteins.Count);
+            int totalNumberOfMods = proteins.Sum(p => p.OneBasedPossibleLocalizedModifications.Count);
+
             //tests that modifications are being done correctly
             Assert.AreEqual(0, totalNumberOfMods);
+            Directory.Delete(outputFolder, true);
         }
 
         //test if prunedDatabase matches expected output
@@ -93,7 +91,7 @@ namespace Test
             GlobalVariables.AddMods(new List<Modification>
             {
                 connorMod
-            });
+            }, false);
 
             //create modification lists
             List<Modification> variableModifications = GlobalVariables.AllModsKnown.OfType<Modification>().Where
@@ -157,8 +155,9 @@ namespace Test
             IO.MzML.MzmlMethods.CreateAndWriteMyMzmlWithCalibratedSpectra(myMsDataFile, mzmlName, false);
 
             //run!
+            string outputFolder = Path.Combine(TestContext.CurrentContext.TestDirectory, @"TestPrunedDatabase");
             var engine = new EverythingRunnerEngine(taskList, new List<string> { mzmlName },
-                new List<DbForTask> { new DbForTask(xmlName, false) }, Environment.CurrentDirectory);
+                new List<DbForTask> { new DbForTask(xmlName, false) }, outputFolder);
             engine.Run();
 
             string final = Path.Combine(MySetUpClass.outputFolder, "task1", "okkkpruned.xml");
@@ -173,6 +172,9 @@ namespace Test
             Assert.AreEqual(listOfMods[0].ModificationType, "ConnorModType");
             Assert.AreEqual(listOfMods[0].IdWithMotif, "ConnorMod on P");
             Assert.AreEqual(listOfMods.Count, 1);
+            Directory.Delete(outputFolder, true);
+            File.Delete(xmlName);
+            File.Delete(mzmlName);
         }
 
         [Test]
@@ -212,7 +214,7 @@ namespace Test
                 connorMod2,
                 connorMod3,
                 connorMod4
-            });
+            }, false);
 
             //create modification lists
             List<Modification> variableModifications = GlobalVariables.AllModsKnown.OfType<Modification>().Where(b => task5.CommonParameters.ListOfModsVariable.Contains
@@ -284,7 +286,8 @@ namespace Test
 
             //make sure this runs correctly
             //run!
-            var engine = new EverythingRunnerEngine(taskList, new List<string> { mzmlName }, new List<DbForTask> { new DbForTask(xmlName, false) }, Environment.CurrentDirectory);
+            string outputFolder = Path.Combine(TestContext.CurrentContext.TestDirectory, @"TestUserModSelectionInPrunedDB");
+            var engine = new EverythingRunnerEngine(taskList, new List<string> { mzmlName }, new List<DbForTask> { new DbForTask(xmlName, false) }, outputFolder);
             engine.Run();
             string final = Path.Combine(MySetUpClass.outputFolder, "task5", "selectedModspruned.xml");
             var proteins = ProteinDbLoader.LoadProteinXML(final, true, DecoyType.Reverse, new List<Modification>(), false, new List<string>(), out ok);
@@ -308,6 +311,10 @@ namespace Test
             //Makes sure Mod that was not in the DB but was observed is in pruned DB
             Assert.AreEqual(listOfLocalMods[2].IdWithMotif, "ModObservedNotinDB on E");
             Assert.AreEqual(listOfLocalMods.Count, 3);
+            Directory.Delete(outputFolder, true);
+            File.Delete(mzmlName);
+            File.Delete(xmlName);
+            File.Delete(xmlName2);
         }
     }
 }

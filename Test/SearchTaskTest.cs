@@ -71,34 +71,84 @@ namespace Test
         }
 
         /// <summary>
-        /// Ensures semispecific search runs and outputs properly
+        /// Ensures that the minimum peptide length is observed (KLEDHPK)
+        /// Ensures semispecific search finds peptides that were cleaved correctly during the first digestion (precursor index is made and searched correctly) (KEDEEDKFDAMGNK)
         /// </summary>
         [Test]
-        public static void SemiSpecificTest()
+        public static void SemiSpecificFullAndSmallMatches()
         {
-            //DigestionParams digestParams = new DigestionParams(semiProteaseDigestion: true);
             SearchTask searchTask = new SearchTask()
             {
                 SearchParameters = new SearchParameters
                 {
                     SearchType = SearchType.NonSpecific,
+                    LocalFdrCategories = new List<FdrCategory>
+                        {
+                            FdrCategory.FullySpecific,
+                            FdrCategory.SemiSpecific
+                        }
                 },
-                CommonParameters = new CommonParameters(addCompIons:true, digestionParams: new DigestionParams(searchModeType:CleavageSpecificity.Semi, fragmentationTerminus: FragmentationTerminus.C))
+                CommonParameters = new CommonParameters(addCompIons: true, scoreCutoff: 11,
+                    digestionParams: new DigestionParams(minPeptideLength: 7, searchModeType: CleavageSpecificity.Semi, fragmentationTerminus: FragmentationTerminus.N))
             };
 
-            string outputFolder = Path.Combine(TestContext.CurrentContext.TestDirectory, @"TestSameSettingsOutput");
-            string myFile = Path.Combine(TestContext.CurrentContext.TestDirectory, @"TestData\PrunedDbSpectra.mzml");
-            string myDatabase = Path.Combine(TestContext.CurrentContext.TestDirectory, @"TestData\DbForPrunedDb.fasta");
+            string myFile = Path.Combine(TestContext.CurrentContext.TestDirectory, @"TestData\tinySemi.mgf");
+            string myDatabase = Path.Combine(TestContext.CurrentContext.TestDirectory, @"TestData\semiTest.fasta");
             DbForTask db = new DbForTask(myDatabase, false);
 
-            List<(string, MetaMorpheusTask)> taskList = new List<(string, MetaMorpheusTask)> { ("TestSemiSpecific", searchTask) };
+            List<(string, MetaMorpheusTask)> taskList = new List<(string, MetaMorpheusTask)> { ("TestSemiSpecificSmall", searchTask) };
 
             var engine = new EverythingRunnerEngine(taskList, new List<string> { myFile }, new List<DbForTask> { new DbForTask(myDatabase, false) }, Environment.CurrentDirectory);
             engine.Run();
 
-            string outputPath = Path.Combine(TestContext.CurrentContext.TestDirectory, @"TestSemiSpecific\AllPSMs.psmtsv");
+            string outputPath = Path.Combine(TestContext.CurrentContext.TestDirectory, @"TestSemiSpecificSmall\AllPSMs.psmtsv");
             var output = File.ReadAllLines(outputPath);
-            Assert.That(output.Length == 9);
+            Assert.IsTrue(output.Length == 3);
+        }
+
+        /// <summary>
+        /// Ensures semispecific search runs and outputs properly
+        /// </summary>
+        [Test]
+        public static void SemiSpecificTest()
+        {
+            List<FragmentationTerminus> terminiToTest = new List<FragmentationTerminus>
+            {
+                FragmentationTerminus.N,
+                FragmentationTerminus.C
+            };
+            string outputFolder = Path.Combine(TestContext.CurrentContext.TestDirectory, @"TestSemiSpecific");
+            string myFile = Path.Combine(TestContext.CurrentContext.TestDirectory, @"TestData\PrunedDbSpectra.mzml");
+            string myDatabase = Path.Combine(TestContext.CurrentContext.TestDirectory, @"TestData\DbForPrunedDb.fasta");
+            foreach (FragmentationTerminus fragTerm in terminiToTest)
+            {
+                SearchTask searchTask = new SearchTask()
+                {
+                    SearchParameters = new SearchParameters
+                    {
+                        SearchType = SearchType.NonSpecific,
+                        LocalFdrCategories = new List<FdrCategory>
+                        {
+                            FdrCategory.FullySpecific,
+                            FdrCategory.SemiSpecific
+                        }
+                    },
+                    CommonParameters = new CommonParameters(scoreCutoff: 4, addCompIons: true,
+                    digestionParams: new DigestionParams(searchModeType: CleavageSpecificity.Semi, fragmentationTerminus: fragTerm))
+                };
+
+                DbForTask db = new DbForTask(myDatabase, false);
+
+                List<(string, MetaMorpheusTask)> taskList = new List<(string, MetaMorpheusTask)> { ("TestSemiSpecific", searchTask) };
+
+                var engine = new EverythingRunnerEngine(taskList, new List<string> { myFile }, new List<DbForTask> { new DbForTask(myDatabase, false) }, outputFolder);
+                engine.Run();
+
+                string outputPath = Path.Combine(TestContext.CurrentContext.TestDirectory, @"TestSemiSpecific\TestSemiSpecific\AllPSMs.psmtsv");
+                var output = File.ReadAllLines(outputPath);
+                Assert.That(output.Length == 12); //if N is only producing 11 lines, then the c is not being searched with it.
+            }
+            Directory.Delete(outputFolder, true);
         }
 
         /// <summary>
@@ -126,6 +176,7 @@ namespace Test
                 output.WriteLine("PrunedDbSpectra" + "\t" + "condition" + "\t" + "1" + "\t" + "1" + "\t" + "1");
             }
             DbForTask db = new DbForTask(myDatabase, false);
+            Directory.CreateDirectory(folderPath);
 
             searchTask.RunTask(folderPath, new List<DbForTask> { db }, new List<string> { myFile }, "normal");
 
@@ -133,6 +184,7 @@ namespace Test
 
             Assert.That(() => searchTask.RunTask(folderPath, new List<DbForTask> { db }, new List<string> { myFile }, "normal"),
                Throws.TypeOf<MetaMorpheusException>());
+            Directory.Delete(folderPath, true);
         }
 
         /// <summary>
@@ -154,8 +206,10 @@ namespace Test
             string folderPath = Path.Combine(TestContext.CurrentContext.TestDirectory, @"TestProteinGroupsNoParsimony");
 
             DbForTask db = new DbForTask(myDatabase, false);
+            Directory.CreateDirectory(folderPath);
 
             searchTask.RunTask(folderPath, new List<DbForTask> { db }, new List<string> { myFile }, "normal");
+            Directory.Delete(folderPath, true);
         }
 
         /// <summary>
@@ -179,11 +233,13 @@ namespace Test
 
             // contaminant DB
             DbForTask db = new DbForTask(myDatabase, true);
+            Directory.CreateDirectory(folderPath);
 
             searchTask.RunTask(folderPath, new List<DbForTask> { db }, new List<string> { myFile }, "normal");
 
             Assert.That(File.ReadAllLines(Path.Combine(folderPath, @"DbForPrunedDbproteinPruned.xml")).Length > 0);
             Assert.That(File.ReadAllLines(Path.Combine(folderPath, @"DbForPrunedDbPruned.xml")).Length > 0);
+            Directory.Delete(folderPath, true);
         }
     }
 }

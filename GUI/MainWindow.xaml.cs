@@ -6,6 +6,7 @@ using Proteomics;
 using System;
 using System.Collections.Generic;
 using System.Collections.ObjectModel;
+using System.ComponentModel;
 using System.Globalization;
 using System.IO;
 using System.Linq;
@@ -93,8 +94,10 @@ namespace MetaMorpheusGUI
             {
                 GuiWarnHandler(null, new StringEventArgs("Could not get newest version from web: " + e.Message, null));
             }
+
+            Application.Current.MainWindow.Closing += new CancelEventHandler(MainWindow_Closing);
         }
-        
+
         private FlowDocument YoutubeWikiNotification()
         {
 
@@ -260,12 +263,21 @@ namespace MetaMorpheusGUI
             }
             else
             {
-                foreach (var uu in SpectraFilesObservableCollection)
+                var newFiles = e.StringList.ToList();
+                foreach (var oldFile in SpectraFilesObservableCollection)
                 {
-                    uu.Use = false;
+                    if (!newFiles.Contains(oldFile.FilePath))
+                    {
+                        oldFile.Use = false;
+                    }
                 }
-                foreach (var newRawData in e.StringList)
+
+                var files = SpectraFilesObservableCollection.Select(p => p.FilePath).ToList();
+                foreach (var newRawData in newFiles.Where(p => !files.Contains(p)))
+                {
                     SpectraFilesObservableCollection.Add(new RawDataForDataGrid(newRawData));
+                }
+
                 UpdateOutputFolderTextbox();
             }
         }
@@ -525,7 +537,7 @@ namespace MetaMorpheusGUI
                         {
                             try
                             {
-                                GlobalVariables.AddMods(UsefulProteomicsDatabases.ProteinDbLoader.GetPtmListFromProteinXml(draggedFilePath).OfType<Modification>());
+                                GlobalVariables.AddMods(UsefulProteomicsDatabases.ProteinDbLoader.GetPtmListFromProteinXml(draggedFilePath).OfType<Modification>(), true);
 
                                 PrintErrorsReadingMods();
                             }
@@ -1152,7 +1164,14 @@ namespace MetaMorpheusGUI
 
             if (a.SelectedItem is OutputFileForTreeView fileThing)
             {
-                System.Diagnostics.Process.Start(fileThing.FullPath);
+                if (File.Exists(fileThing.FullPath))
+                {
+                    System.Diagnostics.Process.Start(fileThing.FullPath);
+                }
+                else
+                {
+                    MessageBox.Show("File " + Path.GetFileName(fileThing.FullPath) + " does not exist");
+                }
             }
         }
 
@@ -1358,6 +1377,16 @@ namespace MetaMorpheusGUI
             System.Diagnostics.Process.Start(@"https://github.com/smith-chem-wisc/MetaMorpheus/issues/new");
         }
 
+        private void MenuItem_Twitter(object sender, RoutedEventArgs e)
+        {
+            System.Diagnostics.Process.Start(@"https://twitter.com/Smith_Chem_Wisc");
+        }
+
+        private void MenuItem_Slack(object sender, RoutedEventArgs e)
+        {
+            System.Diagnostics.Process.Start(@"https://join.slack.com/t/smith-chem-public/shared_invite/enQtNDYzNTM5Mzg5NzY0LTRiYWQ5MzVmYmExZWIyMTcyZmNlODJjMWI0YjVhNGM2MmQ2NjE4ZDAzNmM4NWYxMDFhNTQyNDBiM2E0MWE0NGU");
+        }
+
         private void MenuItem_Click_6(object sender, RoutedEventArgs e)
         {
             System.Diagnostics.Process.Start(GlobalVariables.DataDir);
@@ -1406,6 +1435,27 @@ namespace MetaMorpheusGUI
             var dialog = new CustomModButtonWindow();
             if (dialog.ShowDialog() == true)
             {
+            }
+        }
+
+        // handle window closing
+        private void MainWindow_Closing(object sender, CancelEventArgs e)
+        {
+            if (!GuiGlobalParams.DisableCloseWindow && !GlobalVariables.MetaMorpheusVersion.Contains("DEBUG"))
+            {
+                e.Cancel = true;
+                var exit = CustomMsgBox.Show("Exit MetaMorpheus", "Are you sure you want to exit MetaMorpheus?", "Yes", "No", "Yes and don't ask me again");
+
+                if (exit == MessageBoxResult.Yes)
+                {
+                    e.Cancel = false;
+                }
+                else if (exit == MessageBoxResult.OK)
+                {
+                    GuiGlobalParams.DisableCloseWindow = true;
+                    Toml.WriteFile(GuiGlobalParams, Path.Combine(GlobalVariables.DataDir, @"GUIsettings.toml"), MetaMorpheusTask.tomlConfig);
+                    e.Cancel = false;
+                }
 
             }
         }
