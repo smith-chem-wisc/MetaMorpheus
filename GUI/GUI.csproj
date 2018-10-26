@@ -156,6 +156,7 @@
     </ApplicationDefinition>
     <Compile Include="CustomModButton.xaml.cs">
       <DependentUpon>CustomModButton.xaml</DependentUpon>
+    </Compile>
     <Compile Include="CustomMsgBox.xaml.cs">
       <DependentUpon>CustomMsgBox.xaml</DependentUpon>
     </Compile>
