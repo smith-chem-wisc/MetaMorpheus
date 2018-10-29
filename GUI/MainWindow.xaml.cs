@@ -1433,9 +1433,7 @@ namespace MetaMorpheusGUI
         private void AddCustomMod_Click(object sender, RoutedEventArgs e)
         {
             var dialog = new CustomModButtonWindow();
-            if (dialog.ShowDialog() == true)
-            {
-            }
+            dialog.ShowDialog();
         }
 
         // handle window closing

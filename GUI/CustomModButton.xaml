@@ -175,7 +175,7 @@
             <StackPanel Orientation="Horizontal">
                 <Label Content="Location Restriction" Width="175"></Label>
                 <Label Content="*" Foreground="Red" FontWeight="Bold" />
-                <ComboBox Name="locationRestrictionComboBox" Width="155" Height="20"></ComboBox>
+                <ComboBox Name="locationRestrictionComboBox" Width="155" Height="23"></ComboBox>
             </StackPanel>
             <StackPanel Orientation="Vertical" Background="LightGray" Height="75">
                 <StackPanel Orientation="Horizontal">

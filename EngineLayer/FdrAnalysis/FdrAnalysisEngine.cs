@@ -12,7 +12,6 @@ namespace EngineLayer.FdrAnalysis
         private readonly bool UseDeltaScore;
         private readonly bool CalculateEValue;
         private readonly double ScoreCutoff;
-        private readonly double QValueCutoff;
 
         public FdrAnalysisEngine(List<PeptideSpectralMatch> psms, int massDiffAcceptorNumNotches, CommonParameters commonParameters, List<string> nestedIds) : base(commonParameters, nestedIds)
         {
@@ -21,7 +20,6 @@ namespace EngineLayer.FdrAnalysis
             UseDeltaScore = commonParameters.UseDeltaScore;
             ScoreCutoff = commonParameters.ScoreCutoff;
             CalculateEValue = commonParameters.CalculateEValue;
-            QValueCutoff = commonParameters.QValueOutputFilter;
         }
 
         protected override MetaMorpheusEngineResults RunSpecific()
@@ -110,8 +108,7 @@ namespace EngineLayer.FdrAnalysis
                 {
                     psms = psms.OrderByDescending(b => b.Score).ThenBy(b => b.PeptideMonisotopicMass.HasValue ? Math.Abs(b.ScanPrecursorMass - b.PeptideMonisotopicMass.Value) : double.MaxValue).ToList();
                 }
-
-
+                
                 double cumulativeTarget = 0;
                 double cumulativeDecoy = 0;
 
