@@ -89,12 +89,9 @@ namespace MetaMorpheusGUI
             {
                 proteaseComboBox.Items.Add(protease);
             }
-            proteaseComboBox.SelectedIndex = 1;
-            while (!((Protease)proteaseComboBox.SelectedItem).Name.Equals("trypsin")) //set the default to trypsin
-            {
-                proteaseComboBox.Items.MoveCurrentToNext();
-                proteaseComboBox.SelectedItem = proteaseComboBox.Items.CurrentItem;
-            }
+            Protease trypsin = ProteaseDictionary.Dictionary["trypsin"];
+            proteaseComboBox.SelectedItem = trypsin;
+
             foreach (string initiatior_methionine_behavior in Enum.GetNames(typeof(InitiatorMethionineBehavior)))
             {
                 initiatorMethionineBehaviorComboBox.Items.Add(initiatior_methionine_behavior);
@@ -157,11 +154,8 @@ namespace MetaMorpheusGUI
                 nonSpecificSearchRadioButton.IsChecked = true; //when this is changed it overrides the protease
                 if (task.CommonParameters.DigestionParams.SpecificProtease.Name.Equals("singleC") || task.CommonParameters.DigestionParams.SpecificProtease.Name.Equals("singleN"))
                 {
-                    while (!((Protease)proteaseComboBox.SelectedItem).Name.Equals("non-specific"))
-                    {
-                        proteaseComboBox.Items.MoveCurrentToNext();
-                        proteaseComboBox.SelectedItem = proteaseComboBox.Items.CurrentItem;
-                    }
+                    Protease nonspecific = ProteaseDictionary.Dictionary["non-specific"];
+                    proteaseComboBox.SelectedItem = nonspecific;
                 }
                 else
                 {
@@ -332,19 +326,13 @@ namespace MetaMorpheusGUI
 
                     if (cTerminalIons.IsChecked.Value)
                     {
-                        while (!((Protease)proteaseComboBox.SelectedItem).Name.Equals("singleC"))
-                        {
-                            proteaseComboBox.Items.MoveCurrentToNext();
-                            proteaseComboBox.SelectedItem = proteaseComboBox.Items.CurrentItem;
-                        }
+                        Protease singleC = ProteaseDictionary.Dictionary["singleC"];
+                        proteaseComboBox.SelectedItem = singleC;
                     }
                     else //we're not allowing no ion types. It must have N if it doesn't have C.
                     {
-                        while (!((Protease)proteaseComboBox.SelectedItem).Name.Equals("singleN"))
-                        {
-                            proteaseComboBox.Items.MoveCurrentToNext();
-                            proteaseComboBox.SelectedItem = proteaseComboBox.Items.CurrentItem;
-                        }
+                        Protease singleN = ProteaseDictionary.Dictionary["singleN"];
+                        proteaseComboBox.SelectedItem = singleN;
                     }
                 }
                 if (!addCompIonCheckBox.IsChecked.Value)
@@ -664,13 +652,8 @@ namespace MetaMorpheusGUI
         {
             if (nonSpecificSearchRadioButton.IsChecked.Value)
             {
-                proteaseComboBox.Items.MoveCurrentToFirst();
-                proteaseComboBox.SelectedItem = proteaseComboBox.Items.CurrentItem;
-                while (!((Protease)proteaseComboBox.SelectedItem).Name.Contains("non-specific"))
-                {
-                    proteaseComboBox.Items.MoveCurrentToNext();
-                    proteaseComboBox.SelectedItem = proteaseComboBox.Items.CurrentItem;
-                }
+                Protease nonspecific = ProteaseDictionary.Dictionary["non-specific"];
+                proteaseComboBox.SelectedItem = nonspecific;
                 addCompIonCheckBox.IsChecked = true;
             }
             else

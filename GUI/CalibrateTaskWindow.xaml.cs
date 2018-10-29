@@ -125,12 +125,8 @@ namespace MetaMorpheusGUI
                 proteaseComboBox.Items.Add(protease);
             }
 
-            proteaseComboBox.SelectedIndex = 1;
-            while (!((Protease)proteaseComboBox.SelectedItem).Name.Equals("trypsin")) //set the default to trypsin
-            {
-                proteaseComboBox.Items.MoveCurrentToNext();
-                proteaseComboBox.SelectedItem = proteaseComboBox.Items.CurrentItem;
-            }
+            Protease trypsin = ProteaseDictionary.Dictionary["trypsin"];
+            proteaseComboBox.SelectedItem = trypsin;
 
             foreach (string initiatior_methionine_behavior in Enum.GetNames(typeof(InitiatorMethionineBehavior)))
             {
