@@ -180,7 +180,7 @@
             <StackPanel Orientation="Vertical" Background="LightGray" Height="75">
                 <StackPanel Orientation="Horizontal">
                     <Label Content="Dissociation Type" Width="190"></Label>
-                    <ComboBox Name="dissociationTypeComboBox" Width="155" Height="20">
+                    <ComboBox Name="dissociationTypeComboBox" Width="155" Height="23">
                         <ToolTipService.ToolTip>
                             <ToolTip Content="Dissociation Type required if neutral loss or diagnostic ions are specified"/>
                         </ToolTipService.ToolTip>
