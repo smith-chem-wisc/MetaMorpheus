@@ -236,6 +236,7 @@
                                             </DataTemplate>
                                         </TreeView.Resources>
                                     </TreeView>
+                                    
                                 </StackPanel>
                                 <StackPanel Grid.Column="1">
                                     <Label Content="Variable" />
@@ -254,6 +255,11 @@
                                                 </StackPanel>
                                             </DataTemplate>
                                         </TreeView.Resources>
+                                        <TreeView.ItemContainerStyle>
+                                            <Style TargetType="TreeViewItem">
+                                                <Setter Property="IsExpanded" Value="{Binding Expanded}"/>
+                                            </Style>
+                                        </TreeView.ItemContainerStyle>
                                     </TreeView>
                                 </StackPanel>
                                 <TextBox x:Name="SearchFixMod" TextChanged="TextChanged_Fixed" HorizontalAlignment="Left" Margin="82,4,0,410" TextWrapping="Wrap" Width="140">
@@ -304,6 +310,7 @@
                                         </Style>
                                     </TextBox.Style>
                                 </TextBox>
+                                
                                 <!--<StackPanel Grid.Column="2">
                                     <Label Content="Database Localized" />
                                     <CheckBox x:Name="localizeAllCheckBox" Content="Localize All Modifications" IsChecked="True" />

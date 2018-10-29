@@ -12,7 +12,6 @@ using TaskLayer;
 using Proteomics.ProteolyticDigestion;
 using MassSpectrometry;
 using System.Windows.Threading;
-using MetaMorpheusGUI.Util;
 
 namespace MetaMorpheusGUI
 {

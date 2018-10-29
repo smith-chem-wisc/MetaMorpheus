@@ -12,7 +12,6 @@ using TaskLayer;
 using UsefulProteomicsDatabases;
 using Proteomics.ProteolyticDigestion;
 using MassSpectrometry;
-using MetaMorpheusGUI.Util;
 using System.Windows.Controls;
 using System.Windows.Threading;
 
