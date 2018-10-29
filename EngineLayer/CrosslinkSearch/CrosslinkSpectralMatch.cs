@@ -4,6 +4,8 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Text;
+using Proteomics;
+
 
 namespace EngineLayer.CrosslinkSearch
 {
@@ -15,9 +17,10 @@ namespace EngineLayer.CrosslinkSearch
             this.XLTotalScore = score;
         }
 
-        public CrosslinkSpectralMatch BetaPeptide { get; set; }
-        public List<int> LinkPositions { get; set; }
         public double DeltaScore { get; set; }
+        //Crosslink properties
+        public CrosslinkSpectralMatch BetaPeptide { get; set; }
+        public List<int> LinkPositions { get; set; }       
         public double XLTotalScore { get; set; } //alpha + beta psmCross
         public int XlProteinPos { get; set; }
         public List<int> XlRank { get; set; } //only contain 2 intger, consider change to Tuple
@@ -25,6 +28,9 @@ namespace EngineLayer.CrosslinkSearch
         public int ParentIonExistNum { get; set; }
         public List<int> ParentIonMaxIntensityRanks { get; set; }
         public PsmCrossType CrossType { get; set; }
+        //Glyco properties
+        public List<Glycan> Glycan { get; set; }
+        public List<int> GlycanSites { get; set; }
 
         public static List<int> GetPossibleCrosslinkerModSites(char[] crosslinkerModSites, PeptideWithSetModifications peptide)
         {
@@ -40,6 +46,23 @@ namespace EngineLayer.CrosslinkSearch
             }
 
             return possibleXlPositions;
+        }
+
+        //Motif considered
+        public static List<int> GetPossibleModSites(char[] ModSites, PeptideWithSetModifications peptide, string[] motifs)
+        {
+            List<int> possibleModSites = new List<int>();
+            //FullSequence is used here to avoid duplicated modification on same sites.
+            List<ModificationMotif> acceptableMotifs = new List<ModificationMotif>();
+            foreach (var mtf in motifs)
+            {
+                if (ModificationMotif.TryGetMotif(mtf, out ModificationMotif aMotif))
+                {
+                    acceptableMotifs.Add(aMotif);
+                }
+            }
+
+            return possibleModSites;
         }
 
         /// <summary>

@@ -52,7 +52,7 @@ namespace EngineLayer
         public int? ProteinLength { get; private set; }
         public string ProteinAccession { get; private set; }
         public string Organism { get; private set; }
-        public List<MatchedFragmentIon> MatchedFragmentIons { get; protected set; }
+        public List<MatchedFragmentIon> MatchedFragmentIons { get; set; }
 
         // these should never be null under normal circumstances
         public Dictionary<string, int> ModsIdentified { get; private set; }

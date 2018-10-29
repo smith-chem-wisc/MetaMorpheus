@@ -8,7 +8,7 @@
         xmlns:sys="clr-namespace:System;assembly=mscorlib"
         xmlns:mzl="clr-namespace:MassSpectrometry;assembly=MassSpectrometry"
         KeyDown="KeyPressed"
-        Title="XL Search Task" Width="750" Height="750" WindowStartupLocation="CenterScreen">
+        Title="XL/Gly Search Task" Width="750" Height="750" WindowStartupLocation="CenterScreen">
     <Grid>
         <Grid.RowDefinitions>
             <RowDefinition Height="*" />
@@ -55,8 +55,8 @@
                             <RowDefinition Height="1*" />
                             <RowDefinition Height="1*" />
                         </Grid.RowDefinitions>
-                        <!--<RadioButton x:Name="RbSearchCrosslink" Content="Crosslink Search" GroupName="SearchType"></RadioButton>-->
-                        <!--<RadioButton x:Name="RbSearchGlyco" Content="Glyco Search" GroupName="SearchType" Grid.Column="1"></RadioButton>-->
+                        <RadioButton x:Name="RbSearchCrosslink" Content="Crosslink Search" GroupName="SearchType"></RadioButton>
+                        <RadioButton x:Name="RbSearchGlyco" Content="Glyco Search" GroupName="SearchType" Grid.Column="1"></RadioButton>
                         <StackPanel Orientation="Horizontal" Grid.Row="1" Grid.Column="0" Margin="5">
                             <Label x:Name="lblXLprecusorMsTl"  Content="Precursor mass tolerance" />
                             <TextBox x:Name="XLPrecusorMsTlTextBox" PreviewTextInput="CheckIfNumber" Width="45" />
@@ -151,15 +151,16 @@
                         </StackPanel>
                     </Expander>
                 </GroupBox>
-                <!--<GroupBox Header="Glyco Search" DockPanel.Dock="Top">
+                <GroupBox Header="Glyco Search" DockPanel.Dock="Top">
                     <Expander x:Name="GlycoSearchExpander">
                         <StackPanel Orientation="Vertical">
                             <StackPanel Orientation="Horizontal" Margin="5">
-                                <CheckBox x:Name="CkbSearchGlycoWithBgYgIndex"  VerticalAlignment="Center" Content="Search Glycopeptides with BgYg index" />
+                                <RadioButton x:Name="RbSearchNGlyco" Content="N-Glycopeptide Search" GroupName="GlycoSearchType"></RadioButton>
+                                <RadioButton x:Name="RbSearchOGlyco" Content="O-Glycopeptide Search" GroupName="GlycoSearchType" ></RadioButton>
                             </StackPanel>
                         </StackPanel>
                     </Expander>
-                </GroupBox>-->
+                </GroupBox>
                 <GroupBox Header="Search Parameters" DockPanel.Dock="Top">
                     <Expander x:Name="SearchModeExpander">
                         <Expander.Style>
