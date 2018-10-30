@@ -59,28 +59,32 @@ namespace EngineLayer.NonSpecificEnzymeSearch
                     }
 
                     //populate ids of possibly observed with those containing allowed precursor masses
-                    int obsPrecursorFloorMz = (int)Math.Floor(commonParameters.PrecursorMassTolerance.GetMinimumValue(scan.PrecursorMass) * FragmentBinsPerDalton);
-                    int obsPrecursorCeilingMz = (int)Math.Ceiling(commonParameters.PrecursorMassTolerance.GetMaximumValue(scan.PrecursorMass) * FragmentBinsPerDalton);
-
-                    foreach (ProductType pt in DissociationTypeCollection.ProductsFromDissociationType[commonParameters.DissociationType].Intersect(TerminusSpecificProductTypes.ProductIonTypesFromSpecifiedTerminus[commonParameters.DigestionParams.FragmentationTerminus]).ToList())
+                    IEnumerable< AllowedIntervalWithNotch> validIntervals = MassDiffAcceptor.GetAllowedPrecursorMassIntervals(scan.PrecursorMass);
+                    foreach (AllowedIntervalWithNotch interval in validIntervals)
                     {
-                        int binShift = (int)Math.Round((WaterMonoisotopicMass - DissociationTypeCollection.GetMassShiftFromProductType(pt)) * FragmentBinsPerDalton);
+                        int obsPrecursorFloorMz = (int)Math.Floor(interval.AllowedInterval.Minimum * FragmentBinsPerDalton);
+                        int obsPrecursorCeilingMz = (int)Math.Ceiling(interval.AllowedInterval.Maximum * FragmentBinsPerDalton);
 
-                        for (int j = obsPrecursorFloorMz; j <= obsPrecursorCeilingMz; j++)
+                        foreach (ProductType pt in DissociationTypeCollection.ProductsFromDissociationType[commonParameters.DissociationType].Intersect(TerminusSpecificProductTypes.ProductIonTypesFromSpecifiedTerminus[commonParameters.DigestionParams.FragmentationTerminus]).ToList())
                         {
-                            int bin = j - binShift;
-                            if (bin < FragmentIndex.Length && FragmentIndex[bin] != null)
+                            int binShift = (int)Math.Round((WaterMonoisotopicMass - DissociationTypeCollection.GetMassShiftFromProductType(pt)) * FragmentBinsPerDalton);
+                            int lowestBin = obsPrecursorFloorMz - binShift;
+                            int highestBin = obsPrecursorCeilingMz - binShift;
+                            for (int bin = lowestBin; bin <= highestBin; bin++)
                             {
-                                FragmentIndex[bin].ForEach(id => idsOfPeptidesPossiblyObserved.Add(id));
+                                if (bin < FragmentIndex.Length && FragmentIndex[bin] != null)
+                                {
+                                    FragmentIndex[bin].ForEach(id => idsOfPeptidesPossiblyObserved.Add(id));
+                                }
                             }
                         }
-                    }
 
-                    for (int bin = obsPrecursorFloorMz; bin <= obsPrecursorCeilingMz; bin++)
-                    {
-                        if (bin < PrecursorIndex.Length && PrecursorIndex[bin] != null)
+                        for (int bin = obsPrecursorFloorMz; bin <= obsPrecursorCeilingMz; bin++) //no bin shift, since they're precursor masses
                         {
-                            PrecursorIndex[bin].ForEach(id => idsOfPeptidesPossiblyObserved.Add(id));
+                            if (bin < PrecursorIndex.Length && PrecursorIndex[bin] != null)
+                            {
+                                PrecursorIndex[bin].ForEach(id => idsOfPeptidesPossiblyObserved.Add(id));
+                            }
                         }
                     }
 
