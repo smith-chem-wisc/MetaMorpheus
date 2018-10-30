@@ -105,7 +105,7 @@ namespace EngineLayer.Indexing
             });
 
             // sort peptides by mass
-            var peptidesSortedByMass = globalPeptides.AsParallel().WithDegreeOfParallelism(commonParameters.MaxThreadsToUsePerFile).OrderBy(p => p.MonoisotopicMass).ToList();
+            var peptidesSortedByMass = globalPeptides.OrderBy(p => p.MonoisotopicMass).ToList();
             globalPeptides = null;
 
             // create fragment index
