@@ -85,6 +85,8 @@ namespace TaskLayer
 
         public CommonParameters CommonParameters { get; set; }
 
+        public const string IndexFolderName = "DatabaseIndex";
+
         public static IEnumerable<Ms2ScanWithSpecificMass> GetMs2Scans(MsDataFile myMSDataFile, string fullFilePath, CommonParameters commonParameters)
         {
             var ms2Scans = myMSDataFile.GetAllScansList().Where(x => x.MsnOrder > 1).ToArray();
@@ -523,33 +525,31 @@ namespace TaskLayer
 
         private static string GetExistingFolderWithIndices(IndexingEngine indexEngine, List<DbForTask> dbFilenameList)
         {
-            // In every database location...
-            foreach (var ok in dbFilenameList)
+            foreach (var database in dbFilenameList)
             {
-                var baseDir = Path.GetDirectoryName(ok.FilePath);
-                var directory = new DirectoryInfo(baseDir);
-                DirectoryInfo[] directories = directory.GetDirectories();
+                string baseDir = Path.GetDirectoryName(database.FilePath);
+                DirectoryInfo indexDirectory = new DirectoryInfo(Path.Combine(baseDir, IndexFolderName));
 
-                // Look at every subdirectory to find indexes folder...
+                if (!Directory.Exists(indexDirectory.FullName))
+                {
+                    return null;
+                }
+
+                // all directories in the same directory as the protein database
+                DirectoryInfo[] directories = indexDirectory.GetDirectories();
+
+                // look in each subdirectory to find indexes folder
                 foreach (DirectoryInfo possibleFolder in directories)
                 {
-                    string pathToIndexes = Path.Combine(possibleFolder.FullName, "Indexes");
-                    if (File.Exists(pathToIndexes))
-                    {
-                        var newDirectory = new DirectoryInfo(pathToIndexes);
-                        DirectoryInfo[] newDirectories = newDirectory.GetDirectories(); // all individual indices folders 
+                    string result = CheckFiles(indexEngine, possibleFolder);
 
-                        foreach (DirectoryInfo folder in newDirectories)
-                        {
-                            var found = CheckFiles(indexEngine, folder);
-                            if (found != null)
-                            {
-                                return found;
-                            }
-                        }
+                    if (result != null)
+                    {
+                        return result;
                     }
                 }
             }
+
             return null;
         }
 
@@ -576,7 +576,7 @@ namespace TaskLayer
 
         private static string GenerateOutputFolderForIndices(List<DbForTask> dbFilenameList)
         {
-            var pathToIndexes = Path.Combine(Path.GetDirectoryName(dbFilenameList.First().FilePath), "Indexes");
+            var pathToIndexes = Path.Combine(Path.GetDirectoryName(dbFilenameList.First().FilePath), IndexFolderName);
             if (!File.Exists(pathToIndexes))
             {
                 Directory.CreateDirectory(pathToIndexes);
