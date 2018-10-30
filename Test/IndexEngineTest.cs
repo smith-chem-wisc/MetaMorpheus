@@ -7,6 +7,7 @@ using Proteomics.Fragmentation;
 using Proteomics.ProteolyticDigestion;
 using System;
 using System.Collections.Generic;
+using System.IO;
 using System.Linq;
 using UsefulProteomicsDatabases;
 
@@ -42,7 +43,7 @@ namespace Test
             ProteaseDictionary.Dictionary.Add(p.Name, p);
             CommonParameters CommonParameters = new CommonParameters(scoreCutoff: 1, digestionParams: new DigestionParams(protease: p.Name, minPeptideLength: 1));
 
-            var engine = new IndexingEngine(proteinList, variableModifications, fixedModifications, 1, DecoyType.Reverse, CommonParameters, 30000, false, new List<string>());
+            var engine = new IndexingEngine(proteinList, variableModifications, fixedModifications, 1, DecoyType.Reverse, CommonParameters, 30000, false, new List<FileInfo>(), new List<string>());
 
             var results = (IndexingResults)engine.Run();
 
@@ -91,7 +92,7 @@ namespace Test
                     initiatorMethionineBehavior: InitiatorMethionineBehavior.Retain),
                 scoreCutoff: 1);
 
-            var engine = new IndexingEngine(proteinList, variableModifications, fixedModifications, 1, DecoyType.Reverse, CommonParameters, 30000, false, new List<string>());
+            var engine = new IndexingEngine(proteinList, variableModifications, fixedModifications, 1, DecoyType.Reverse, CommonParameters, 30000, false, new List<FileInfo>(), new List<string>());
 
             var results = (IndexingResults)engine.Run();
 
