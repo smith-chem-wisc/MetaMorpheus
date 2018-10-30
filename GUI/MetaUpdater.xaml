@@ -5,7 +5,7 @@
         xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
         xmlns:local="clr-namespace:MetaMorpheusGUI"
         mc:Ignorable="d"
-        Title="MetaUpdater" Height="450" Width="430" ResizeMode="NoResize" Topmost="True" WindowStartupLocation="CenterScreen">
+        Title="MetaUpdater" Height="470" Width="430" ResizeMode="NoResize" Topmost="True" WindowStartupLocation="CenterScreen">
     <StackPanel>
         <TextBlock Name="lbl" TextWrapping="Wrap" FontSize="15" VerticalAlignment="Top" Margin="5" />
         <ScrollViewer Height="327">
