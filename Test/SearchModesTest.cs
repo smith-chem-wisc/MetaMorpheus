@@ -83,9 +83,14 @@ namespace Test
                 return scanPrecursorMass * peptideMass >= 1 ? 1 : -1;
             }
 
-            public override IEnumerable<AllowedIntervalWithNotch> GetAllowedPrecursorMassIntervalsForTheoreticalMass(double peptideMonoisotopicMass)
+            public override IEnumerable<AllowedIntervalWithNotch> GetAllowedPrecursorMassIntervalsFromTheoreticalMass(double peptideMonoisotopicMass)
             {
                 yield return new AllowedIntervalWithNotch(new DoubleRange(1 / peptideMonoisotopicMass, double.MaxValue), 1);
+            }
+
+            public override IEnumerable<AllowedIntervalWithNotch> GetAllowedPrecursorMassIntervalsFromObservedMass(double peptideMonoisotopicMass)
+            {
+                yield return new AllowedIntervalWithNotch(new DoubleRange(double.MinValue, 1 / peptideMonoisotopicMass), 1);
             }
 
             public override string ToProseString()
