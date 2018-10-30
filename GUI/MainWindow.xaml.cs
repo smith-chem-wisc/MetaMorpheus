@@ -1454,7 +1454,6 @@ namespace MetaMorpheusGUI
                     Toml.WriteFile(GuiGlobalParams, Path.Combine(GlobalVariables.DataDir, @"GUIsettings.toml"), MetaMorpheusTask.tomlConfig);
                     e.Cancel = false;
                 }
-
             }
         }
     }

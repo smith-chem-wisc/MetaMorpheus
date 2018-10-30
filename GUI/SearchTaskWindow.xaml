@@ -633,9 +633,6 @@
                                     </TreeView>
                                 </StackPanel>
                             </Grid>
-                            <!--<StackPanel HorizontalAlignment="Left" Margin="5">
-                                <Button Content="Add custom modification" Width="200" Height="20" Click="AddCustomMod_Click"></Button>
-                            </StackPanel>-->
                         </StackPanel>
                     </Expander>
                 </GroupBox>

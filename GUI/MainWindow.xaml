@@ -15,8 +15,6 @@
             </MenuItem>
             <MenuItem Header="Data">
                 <MenuItem Header="Open folder with mods/data files" Click="MenuItem_Click_6"></MenuItem>
-                <!-- MetaDraw is temporarily disabled until neutral losses are correctly labeled -->
-                <!--<MenuItem Header="MetaDraw: Spectrum Annotation" Click="MetaDrawMenu_Click"></MenuItem>-->
                 <MenuItem Header="Create new modification" Click="AddCustomMod_Click"></MenuItem>
                 <MenuItem Header="MetaDraw: Spectrum Annotation" Click="MetaDrawMenu_Click"></MenuItem>
             </MenuItem>
