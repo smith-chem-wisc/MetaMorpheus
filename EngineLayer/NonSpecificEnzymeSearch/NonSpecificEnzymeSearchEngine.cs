@@ -20,6 +20,7 @@ namespace EngineLayer.NonSpecificEnzymeSearch
         private readonly int MinimumPeptideLength;
         PeptideSpectralMatch[][] GlobalCategorySpecificPsms;
         CommonParameters ModifiedParametersNoComp;
+        List<ProductType> ProductTypesToSearch;
 
         public NonSpecificEnzymeSearchEngine(PeptideSpectralMatch[][] globalPsms, Ms2ScanWithSpecificMass[] listOfSortedms2Scans, List<PeptideWithSetModifications> peptideIndex, List<int>[] fragmentIndex, List<int>[] precursorIndex, int currentPartition, CommonParameters CommonParameters, MassDiffAcceptor massDiffAcceptor, double maximumMassThatFragmentIonScoreIsDoubled, List<string> nestedIds) : base(null, listOfSortedms2Scans, peptideIndex, fragmentIndex, currentPartition, CommonParameters, massDiffAcceptor, maximumMassThatFragmentIonScoreIsDoubled, nestedIds)
         {
@@ -27,6 +28,7 @@ namespace EngineLayer.NonSpecificEnzymeSearch
             MinimumPeptideLength = commonParameters.DigestionParams.MinPeptideLength;
             GlobalCategorySpecificPsms = globalPsms;
             ModifiedParametersNoComp = commonParameters.CloneWithNewTerminus(addCompIons: false);
+            ProductTypesToSearch = DissociationTypeCollection.ProductsFromDissociationType[commonParameters.DissociationType].Intersect(TerminusSpecificProductTypes.ProductIonTypesFromSpecifiedTerminus[commonParameters.DigestionParams.FragmentationTerminus]).ToList();
         }
 
         protected override MetaMorpheusEngineResults RunSpecific()
@@ -59,17 +61,17 @@ namespace EngineLayer.NonSpecificEnzymeSearch
                     }
 
                     //populate ids of possibly observed with those containing allowed precursor masses
-                    IEnumerable< AllowedIntervalWithNotch> validIntervals = MassDiffAcceptor.GetAllowedPrecursorMassIntervals(scan.PrecursorMass);
+                    List<AllowedIntervalWithNotch> validIntervals = MassDiffAcceptor.GetAllowedPrecursorMassIntervalsFromObservedMass(scan.PrecursorMass).ToList(); //get all valid notches
                     foreach (AllowedIntervalWithNotch interval in validIntervals)
                     {
                         int obsPrecursorFloorMz = (int)Math.Floor(interval.AllowedInterval.Minimum * FragmentBinsPerDalton);
                         int obsPrecursorCeilingMz = (int)Math.Ceiling(interval.AllowedInterval.Maximum * FragmentBinsPerDalton);
 
-                        foreach (ProductType pt in DissociationTypeCollection.ProductsFromDissociationType[commonParameters.DissociationType].Intersect(TerminusSpecificProductTypes.ProductIonTypesFromSpecifiedTerminus[commonParameters.DigestionParams.FragmentationTerminus]).ToList())
+                        foreach (ProductType pt in ProductTypesToSearch)
                         {
-                            int binShift = (int)Math.Round((WaterMonoisotopicMass - DissociationTypeCollection.GetMassShiftFromProductType(pt)) * FragmentBinsPerDalton);
-                            int lowestBin = obsPrecursorFloorMz - binShift;
-                            int highestBin = obsPrecursorCeilingMz - binShift;
+                            int dissociationBinShift = (int)Math.Round((WaterMonoisotopicMass - DissociationTypeCollection.GetMassShiftFromProductType(pt)) * FragmentBinsPerDalton);
+                            int lowestBin = obsPrecursorFloorMz - dissociationBinShift;
+                            int highestBin = obsPrecursorCeilingMz - dissociationBinShift;
                             for (int bin = lowestBin; bin <= highestBin; bin++)
                             {
                                 if (bin < FragmentIndex.Length && FragmentIndex[bin] != null)

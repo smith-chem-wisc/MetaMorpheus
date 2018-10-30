@@ -18,7 +18,12 @@ namespace EngineLayer
             return Math.Abs(((scanPrecursorMass - peptideMass) / (peptideMass)) * 1e6) < PpmTolerance ? 0 : -1;
         }
 
-        public override IEnumerable<AllowedIntervalWithNotch> GetAllowedPrecursorMassIntervals(double peptideMonoisotopicMass)
+        public override IEnumerable<AllowedIntervalWithNotch> GetAllowedPrecursorMassIntervalsFromTheoreticalMass(double peptideMonoisotopicMass)
+        {
+            var diff = PpmTolerance / 1e6 * peptideMonoisotopicMass;
+            yield return new AllowedIntervalWithNotch(new DoubleRange(peptideMonoisotopicMass - diff, peptideMonoisotopicMass + diff), 0);
+        }
+        public override IEnumerable<AllowedIntervalWithNotch> GetAllowedPrecursorMassIntervalsFromObservedMass(double peptideMonoisotopicMass)
         {
             var diff = PpmTolerance / 1e6 * peptideMonoisotopicMass;
             yield return new AllowedIntervalWithNotch(new DoubleRange(peptideMonoisotopicMass - diff, peptideMonoisotopicMass + diff), 0);

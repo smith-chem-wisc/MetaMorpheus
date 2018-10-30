@@ -70,7 +70,7 @@ namespace EngineLayer.ModernSearch
                     // note that this is the OPPOSITE of the classic search (which calculates experimental masses from theoretical values)
                     // this is just PRELIMINARY precursor-mass filtering
                     // additional checks are made later to ensure that the theoretical precursor mass is acceptable
-                    var notches = MassDiffAcceptor.GetAllowedPrecursorMassIntervals(scan.PrecursorMass);
+                    var notches = MassDiffAcceptor.GetAllowedPrecursorMassIntervalsFromTheoreticalMass(scan.PrecursorMass);
 
                     double lowestMassPeptideToLookFor = Double.NegativeInfinity;
                     double highestMassPeptideToLookFor = Double.PositiveInfinity;
