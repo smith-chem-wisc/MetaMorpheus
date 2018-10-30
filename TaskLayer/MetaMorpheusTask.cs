@@ -85,6 +85,8 @@ namespace TaskLayer
 
         public CommonParameters CommonParameters { get; set; }
 
+        public const string IndexFolderName = "DatabaseIndex";
+
         public static IEnumerable<Ms2ScanWithSpecificMass> GetMs2Scans(MsDataFile myMSDataFile, string fullFilePath, CommonParameters commonParameters)
         {
             var ms2Scans = myMSDataFile.GetAllScansList().Where(x => x.MsnOrder > 1).ToArray();
@@ -101,7 +103,7 @@ namespace TaskLayer
                         }
 
                         MsDataScan ms2scan = ms2Scans[i];
-                        
+
                         List<(double, int)> precursors = new List<(double, int)>();
                         if (ms2scan.OneBasedPrecursorScanNumber.HasValue)
                         {
@@ -523,25 +525,43 @@ namespace TaskLayer
 
         private static string GetExistingFolderWithIndices(IndexingEngine indexEngine, List<DbForTask> dbFilenameList)
         {
-            // In every database location...
-            foreach (var ok in dbFilenameList)
+            foreach (var database in dbFilenameList)
             {
-                var baseDir = Path.GetDirectoryName(ok.FilePath);
-                var directory = new DirectoryInfo(baseDir);
-                DirectoryInfo[] directories = directory.GetDirectories();
+                string baseDir = Path.GetDirectoryName(database.FilePath);
+                DirectoryInfo indexDirectory = new DirectoryInfo(Path.Combine(baseDir, IndexFolderName));
 
-                // Look at every subdirectory...
+                if (!Directory.Exists(indexDirectory.FullName))
+                {
+                    return null;
+                }
+
+                // all directories in the same directory as the protein database
+                DirectoryInfo[] directories = indexDirectory.GetDirectories();
+
+                // look in each subdirectory to find indexes folder
                 foreach (DirectoryInfo possibleFolder in directories)
                 {
-                    if (File.Exists(Path.Combine(possibleFolder.FullName, "indexEngine.params")) &&
-                        File.Exists(Path.Combine(possibleFolder.FullName, "peptideIndex.ind")) &&
-                        File.Exists(Path.Combine(possibleFolder.FullName, "fragmentIndex.ind")) &&
-                        (File.Exists(Path.Combine(possibleFolder.FullName, "precursorIndex.ind")) || !indexEngine.GeneratePrecursorIndex) &&
-                        SameSettings(Path.Combine(possibleFolder.FullName, "indexEngine.params"), indexEngine))
+                    string result = CheckFiles(indexEngine, possibleFolder);
+
+                    if (result != null)
                     {
-                        return possibleFolder.FullName;
+                        return result;
                     }
                 }
+            }
+
+            return null;
+        }
+
+        private static string CheckFiles(IndexingEngine indexEngine, DirectoryInfo folder)
+        {
+            if (File.Exists(Path.Combine(folder.FullName, "indexEngine.params")) &&
+                File.Exists(Path.Combine(folder.FullName, "peptideIndex.ind")) &&
+                File.Exists(Path.Combine(folder.FullName, "fragmentIndex.ind")) &&
+                (File.Exists(Path.Combine(folder.FullName, "precursorIndex.ind")) || !indexEngine.GeneratePrecursorIndex) &&
+                SameSettings(Path.Combine(folder.FullName, "indexEngine.params"), indexEngine))
+            {
+                return folder.FullName;
             }
             return null;
         }
@@ -556,7 +576,12 @@ namespace TaskLayer
 
         private static string GenerateOutputFolderForIndices(List<DbForTask> dbFilenameList)
         {
-            var folder = Path.Combine(Path.GetDirectoryName(dbFilenameList.First().FilePath), DateTime.Now.ToString("yyyy-MM-dd-HH-mm-ss", CultureInfo.InvariantCulture));
+            var pathToIndexes = Path.Combine(Path.GetDirectoryName(dbFilenameList.First().FilePath), IndexFolderName);
+            if (!File.Exists(pathToIndexes))
+            {
+                Directory.CreateDirectory(pathToIndexes);
+            }
+            var folder = Path.Combine(pathToIndexes, DateTime.Now.ToString("yyyy-MM-dd-HH-mm-ss", CultureInfo.InvariantCulture));
             Directory.CreateDirectory(folder);
             return folder;
         }
