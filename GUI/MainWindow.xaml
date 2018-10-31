@@ -38,6 +38,16 @@
                         <Image Source="Icons\mail_20.bmp"/>
                     </MenuItem.Icon>
                 </MenuItem>
+                <MenuItem Header="Join the discussion on Slack" Click="MenuItem_Slack" >
+                    <MenuItem.Icon>
+                        <Image Source="Icons\Slack_Mark_Web.bmp"/>
+                    </MenuItem.Icon>
+                </MenuItem>
+                <MenuItem Header="Follow us on Twitter for news and updates" Click="MenuItem_Twitter" >
+                    <MenuItem.Icon>
+                        <Image Source="Icons\Twitter_Logo_Blue.bmp"/>
+                    </MenuItem.Icon>
+                </MenuItem>
                 <MenuItem Header="MetaMorpheus YouTube Help Videos" Click="MenuItem_YouTube" >
                     <MenuItem.Icon>
                         <Image Source="Icons\youtube_20.bmp"/>
