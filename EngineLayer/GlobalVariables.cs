@@ -1,8 +1,6 @@
 ﻿using MassSpectrometry;
 using Nett;
 using Proteomics;
-using Proteomics.Fragmentation;
-using Proteomics.ProteolyticDigestion;
 using System;
 using System.Collections.Generic;
 using System.IO;
@@ -61,15 +59,13 @@ namespace EngineLayer
 
             foreach (var modFile in Directory.GetFiles(Path.Combine(DataDir, @"Mods")))
             {
-                AddMods(UsefulProteomicsDatabases.PtmListLoader.ReadModsFromFile(modFile, out var errorMods));
+                AddMods(UsefulProteomicsDatabases.PtmListLoader.ReadModsFromFile(modFile, out var errorMods), false);
             }
 
-            // TODO: need to add motif to Unimod/UniProt ID
-            //AddMods(UnimodDeserialized.OfType<Modification>());
-            AddMods(UniprotDeseralized.OfType<Modification>());
-
+            AddMods(UniprotDeseralized.OfType<Modification>(), false);
+            AddMods(UnimodDeserialized.OfType<Modification>(), false);
+            
             // populate dictionaries of known mods/proteins for deserialization
-
             AllModsKnownDictionary = new Dictionary<string, Modification>();
             foreach (Modification mod in AllModsKnown)
             {
@@ -112,7 +108,7 @@ namespace EngineLayer
 
         public static string ExperimentalDesignFileName { get; }
 
-        public static void AddMods(IEnumerable<Modification> modifications)
+        public static void AddMods(IEnumerable<Modification> modifications, bool modsAreFromTheTopOfProteinXml)
         {
             foreach (var mod in modifications)
             {
@@ -123,8 +119,17 @@ namespace EngineLayer
                 }
                 if (AllModsKnown.Any(b => b.IdWithMotif.Equals(mod.IdWithMotif) && b.ModificationType.Equals(mod.ModificationType) && !b.Equals(mod)))
                 {
-                    ErrorsReadingMods.Add("Modification id and type are equal, but some fields are not! " +
-                        "The following mod was not read in: " + Environment.NewLine + mod.ToString());
+                    if (modsAreFromTheTopOfProteinXml)
+                    {
+                        _AllModsKnown.RemoveAll(p => p.IdWithMotif.Equals(mod.IdWithMotif) && p.ModificationType.Equals(mod.ModificationType) && !p.Equals(mod));
+                        _AllModsKnown.Add(mod);
+                        _AllModTypesKnown.Add(mod.ModificationType);
+                    }
+                    else
+                    {
+                        ErrorsReadingMods.Add("Modification id and type are equal, but some fields are not! " +
+                            "The following mod was not read in: " + Environment.NewLine + mod.ToString());
+                    }
                     continue;
                 }
                 else if (AllModsKnown.Any(b => b.IdWithMotif.Equals(mod.IdWithMotif) && b.ModificationType.Equals(mod.ModificationType)))
@@ -139,7 +144,16 @@ namespace EngineLayer
                     // same ID but different mod types. This can happen if the user names a mod the same as a UniProt mod
                     // this is problematic because if a mod is annotated in the database, all we have to go on is an ID ("description" tag).
                     // so we don't know which mod to use, causing unnecessary ambiguity
-                    ErrorsReadingMods.Add("Duplicate mod IDs! Skipping " + mod.ModificationType + ":" + mod.IdWithMotif);
+                    if (modsAreFromTheTopOfProteinXml)
+                    {
+                        _AllModsKnown.RemoveAll(p => p.IdWithMotif.Equals(mod.IdWithMotif) && !p.Equals(mod));
+                        _AllModsKnown.Add(mod);
+                        _AllModTypesKnown.Add(mod.ModificationType);
+                    }
+                    else if (!mod.ModificationType.Equals("Unimod"))
+                    {
+                        ErrorsReadingMods.Add("Duplicate mod IDs! Skipping " + mod.ModificationType + ":" + mod.IdWithMotif);
+                    }
                     continue;
                 }
                 else
@@ -162,6 +176,5 @@ namespace EngineLayer
                 return psmString;
             }
         }
-
     }
 }

@@ -37,26 +37,26 @@ namespace Test
             {
                 {2, mod1},
             };
-            PeptideWithSetModifications pwsm1 = new PeptideWithSetModifications(protein1, new DigestionParams(), 2, 9, null, 0, allModsOneIsNterminus1, 0);
+            PeptideWithSetModifications pwsm1 = new PeptideWithSetModifications(protein1, new DigestionParams(), 2, 9, CleavageSpecificity.Unknown, null, 0, allModsOneIsNterminus1, 0);
 
             Dictionary<int, Modification> allModsOneIsNterminus2 = new Dictionary<int, Modification>
             {
                 {2, mod1},
                 {7, mod1},
             };
-            PeptideWithSetModifications pwsm2 = new PeptideWithSetModifications(protein1, new DigestionParams(), 2, 9, null, 0, allModsOneIsNterminus2, 0);
+            PeptideWithSetModifications pwsm2 = new PeptideWithSetModifications(protein1, new DigestionParams(), 2, 9, CleavageSpecificity.Unknown, null, 0, allModsOneIsNterminus2, 0);
 
             Dictionary<int, Modification> allModsOneIsNterminus3 = new Dictionary<int, Modification>
             {
                 {7, mod1},
             };
-            PeptideWithSetModifications pwsm3 = new PeptideWithSetModifications(protein1, new DigestionParams(), 2, 9, null, 0, allModsOneIsNterminus3, 0);
+            PeptideWithSetModifications pwsm3 = new PeptideWithSetModifications(protein1, new DigestionParams(), 2, 9, CleavageSpecificity.Unknown, null, 0, allModsOneIsNterminus3, 0);
 
             Dictionary<int, Modification> allModsOneIsNterminus4 = new Dictionary<int, Modification>
             {
                 {8, mod1},
             };
-            PeptideWithSetModifications pwsm4 = new PeptideWithSetModifications(protein1, new DigestionParams(), 1, 9, null, 0, allModsOneIsNterminus4, 0);
+            PeptideWithSetModifications pwsm4 = new PeptideWithSetModifications(protein1, new DigestionParams(), 1, 9, CleavageSpecificity.Unknown, null, 0, allModsOneIsNterminus4, 0);
 
             CommonParameters CommonParameters = new CommonParameters(
                 digestionParams: new DigestionParams(
@@ -120,13 +120,13 @@ namespace Test
             {
                 {2, mod1},
             };
-            PeptideWithSetModifications pwsm1 = new PeptideWithSetModifications(protein1, new DigestionParams(), 2, 9, null, 0, allModsOneIsNterminus1, 0);
+            PeptideWithSetModifications pwsm1 = new PeptideWithSetModifications(protein1, new DigestionParams(), 2, 9, CleavageSpecificity.Unknown, null, 0, allModsOneIsNterminus1, 0);
 
             Dictionary<int, Modification> allModsOneIsNterminus3 = new Dictionary<int, Modification>
             {
                 {7, mod1},
             };
-            PeptideWithSetModifications pwsm2 = new PeptideWithSetModifications(protein1, new DigestionParams(), 2, 9, null, 0, allModsOneIsNterminus3, 0);
+            PeptideWithSetModifications pwsm2 = new PeptideWithSetModifications(protein1, new DigestionParams(), 2, 9, CleavageSpecificity.Unknown, null, 0, allModsOneIsNterminus3, 0);
 
             CommonParameters CommonParameters = new CommonParameters(digestionParams: new DigestionParams(maxMissedCleavages: 0, minPeptideLength: 1), scoreCutoff: 1);
 

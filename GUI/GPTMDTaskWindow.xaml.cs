@@ -73,6 +73,7 @@ namespace MetaMorpheusGUI
             precursorMassToleranceComboBox.SelectedIndex = task.CommonParameters.PrecursorMassTolerance is AbsoluteTolerance ? 0 : 1;
             minScoreAllowed.Text = task.CommonParameters.ScoreCutoff.ToString(CultureInfo.InvariantCulture);
             maxThreadsTextBox.Text = task.CommonParameters.MaxThreadsToUsePerFile.ToString(CultureInfo.InvariantCulture);
+            addCompIonCheckBox.IsChecked = task.CommonParameters.AddCompIons;
 
             OutputFileNameTextBox.Text = task.CommonParameters.TaskDescriptor;
 
@@ -170,7 +171,8 @@ namespace MetaMorpheusGUI
             {
                 proteaseComboBox.Items.Add(protease);
             }
-            proteaseComboBox.SelectedIndex = 12;
+            Protease trypsin = ProteaseDictionary.Dictionary["trypsin"];
+            proteaseComboBox.SelectedItem = trypsin;
 
             foreach (string initiatior_methionine_behavior in Enum.GetNames(typeof(InitiatorMethionineBehavior)))
             {
@@ -301,7 +303,9 @@ namespace MetaMorpheusGUI
                     precursorMassTolerance: PrecursorMassTolerance,
                     productMassTolerance: ProductMassTolerance,
                     listOfModsFixed: listOfModsFixed,
-                    listOfModsVariable: listOfModsVariable);
+                    listOfModsVariable: listOfModsVariable,
+                    assumeOrphanPeaksAreZ1Fragments: protease.Name != "top-down",
+                    addCompIons: addCompIonCheckBox.IsChecked.Value);
 
             TheTask.GptmdParameters.ListOfModsGptmd = new List<(string, string)>();
             foreach (var heh in gptmdModTypeForTreeViewObservableCollection)

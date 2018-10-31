@@ -148,9 +148,10 @@ namespace EngineLayer
                             {
                                 foreach (var proteinInfo in peptideInProteinInfo)
                                 {
+                                    var originalPep = psm.BestMatchingPeptides.First().Peptide;
                                     var pep = new PeptideWithSetModifications(proteinInfo.Item1, proteinInfo.Item2, proteinInfo.Item3, proteinInfo.Item4,
-                                        psm.BestMatchingPeptides.First().Peptide.PeptideDescription, proteinInfo.Item5, psm.BestMatchingPeptides.First().Peptide.AllModsOneIsNterminus,
-                                        psm.BestMatchingPeptides.First().Peptide.NumFixedMods);
+                                        originalPep.CleavageSpecificityForFdrCategory, originalPep.PeptideDescription, proteinInfo.Item5, originalPep.AllModsOneIsNterminus,
+                                        originalPep.NumFixedMods);
                                     _fdrFilteredPeptides.Add(pep);
                                     psm.AddProteinMatch((proteinInfo.Item6, pep));
                                 }

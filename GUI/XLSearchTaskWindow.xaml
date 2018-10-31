@@ -58,16 +58,13 @@
                         <!--<RadioButton x:Name="RbSearchCrosslink" Content="Crosslink Search" GroupName="SearchType"></RadioButton>-->
                         <!--<RadioButton x:Name="RbSearchGlyco" Content="Glyco Search" GroupName="SearchType" Grid.Column="1"></RadioButton>-->
                         <StackPanel Orientation="Horizontal" Grid.Row="1" Grid.Column="0" Margin="5">
-                            <Label x:Name="lblXLprecusorMsTl"  Content="Precusor mass tolerance" />
+                            <Label x:Name="lblXLprecusorMsTl"  Content="Precursor mass tolerance" />
                             <TextBox x:Name="XLPrecusorMsTlTextBox" PreviewTextInput="CheckIfNumber" Width="45" />
                             <ComboBox x:Name="cbbXLprecusorMsTl" />
                         </StackPanel>
                         <StackPanel Orientation="Horizontal" Grid.Row="1" Grid.Column="1" Margin="5">
                             <CheckBox x:Name="ckbXLTopNum" VerticalAlignment="Center" Content="Top N peptides per precursor" />
                             <TextBox x:Name="txtXLTopNum" PreviewTextInput="CheckIfNumber" Width="45" Margin="2" IsEnabled="{Binding IsChecked, ElementName=ckbXLTopNum}" />
-                        </StackPanel>
-                        <StackPanel Orientation="Vertical" Grid.Row="2" Grid.Column="0" Margin="5">
-                            <CheckBox x:Name="ckbCharge_2_3"  VerticalAlignment="Center" Content="Search for charge 2+ 3+ fragments" />
                         </StackPanel>
                     </Grid>
                 </StackPanel>
@@ -113,38 +110,41 @@
                                                 <Label x:Name="lblUdXLkerName" Content="Crosslinker Name"  />
                                                 <TextBox x:Name="txtUdXLKerName" Width="60" />
                                             </StackPanel>
-                                            <CheckBox x:Name="ckbUdXLkerCleavable" Content="Cleavable" Grid.Column="1" Grid.Row="0" />
                                             <StackPanel Orientation="Horizontal" Grid.Column="0" Grid.Row="1">
                                                 <Label x:Name="lblUdXLkerTotalMass" Content="Crosslinker Total Mass" />
                                                 <TextBox x:Name="txtUdXLkerTotalMs" PreviewTextInput="CheckIfNumber" Width="60"/>
                                             </StackPanel>
+                                            <CheckBox x:Name="ckbUdXLkerCleavable" Content="Cleavable" Grid.Column="0" Grid.Row="2" />
                                             <StackPanel Orientation="Horizontal" Grid.Column="0" Grid.Row="3">
                                                 <Label x:Name="lblUdXLkerShortMass" Content="Crosslinker Short Mass"  />
                                                 <TextBox x:Name="txtUdXLkerShortMass" PreviewTextInput="CheckIfNumber" Width="60" IsEnabled="{Binding IsChecked, ElementName=ckbUdXLkerCleavable}" />
                                             </StackPanel>
-                                            <StackPanel Orientation="Horizontal" Grid.Column="1" Grid.Row="3">
+                                            <StackPanel Orientation="Horizontal" Grid.Column="0" Grid.Row="4">
                                                 <Label x:Name="lblUdXLkerLongMass" Content="Crosslinker Long Mass" />
                                                 <TextBox x:Name="txtUdXLkerLongMass" PreviewTextInput="CheckIfNumber" Width="60" IsEnabled="{Binding IsChecked, ElementName=ckbUdXLkerCleavable}" />
                                             </StackPanel>
-                                            <StackPanel Orientation="Horizontal" Grid.Column="0" Grid.Row="2">
+
+                                            <StackPanel Orientation="Horizontal" Grid.Column="1" Grid.Row="0">
                                                 <Label x:Name="lblUdXLkerAminoAcid" Content="Crosslinker Amino Acids" />
                                                 <TextBox x:Name="txtUdXLkerAminoAcids" Width="60"  />
                                             </StackPanel>
-                                            <StackPanel Orientation="Horizontal" Grid.Column="1" Grid.Row="2">
+                                            <StackPanel Orientation="Horizontal" Grid.Column="1" Grid.Row="1">
                                                 <Label x:Name="lblUdXLkerAminoAcid2" Content="Crosslinker Amino Acids 2" />
                                                 <TextBox x:Name="txtUdXLkerAminoAcids2" Width="60"  />
                                             </StackPanel>
+                                            <StackPanel Orientation="Horizontal" Grid.Column="1" Grid.Row="2">
+                                                <Label Content="H2O Quench Mass" />
+                                                <TextBox x:Name="txtH2OQuenchMass" PreviewTextInput="CheckIfNumber" Width="60" IsEnabled="{Binding IsChecked, ElementName=ckbQuenchH2O}"  />
+                                            </StackPanel>
+                                            <StackPanel Orientation="Horizontal" Grid.Column="1" Grid.Row="3">
+                                                <Label Content="NH2 Quench Mass" />
+                                                <TextBox x:Name="txtNH2QuenchMass" PreviewTextInput="CheckIfNumber" Width="60" IsEnabled="{Binding IsChecked, ElementName=ckbQuenchNH2}"  />
+                                            </StackPanel>
+                                            <StackPanel Orientation="Horizontal" Grid.Column="1" Grid.Row="4">
+                                                <Label Content="Tris Quench Mass" />
+                                                <TextBox x:Name="txtTrisQuenchMass" PreviewTextInput="CheckIfNumber" Width="60" IsEnabled="{Binding IsChecked, ElementName=ckbQuenchTris}"  />
+                                            </StackPanel>
                                         </Grid>
-                                    </StackPanel>
-                                </Expander>
-                            </GroupBox>
-                            <GroupBox Header="Output Options" DockPanel.Dock="Top">
-                                <Expander x:Name="OutputExpander">
-                                    <StackPanel Orientation="Vertical">
-                                        <CheckBox x:Name="ckbPercolator" Content="Write .TSV for Percolator" />
-                                        <CheckBox x:Name="ckbPepXML" Content="Write .pep.XML" />
-                                        <CheckBox x:Name="ckbCrosslink" Content="Write inter-crosslink and intra-crosslink" />
-                                        <CheckBox x:Name="ckbAllResults" Content="Write 'All', 'Single', 'Loop', 'Deadend' peptide types" />
                                     </StackPanel>
                                 </Expander>
                             </GroupBox>
@@ -344,35 +344,18 @@
                                         </TreeView.Resources>
                                     </TreeView>
                                 </StackPanel>
-                                <StackPanel Grid.Column="2">
-                                    <Label Content="Database Localized" />
-                                    <CheckBox x:Name="localizeAllCheckBox" Content="Localize All Modifications" IsChecked="True" />
-                                    <TreeView x:Name="localizeModsTreeView" ItemsSource="{Binding}" Height="400">
-                                        <TreeView.Style>
-                                            <Style TargetType="{x:Type TreeView}">
-                                                <Setter Property="Visibility" Value="Visible" />
-                                                <Style.Triggers>
-                                                    <DataTrigger Binding="{Binding ElementName=localizeAllCheckBox, Path=IsChecked}" Value="True">
-                                                        <Setter Property="Visibility" Value="Hidden" />
-                                                    </DataTrigger>
-                                                </Style.Triggers>
-                                            </Style>
-                                        </TreeView.Style>
-                                        <TreeView.Resources>
-                                            <HierarchicalDataTemplate DataType="{x:Type local:ModTypeForLoc}">
-                                                <StackPanel Orientation="Horizontal">
-                                                    <CheckBox IsChecked="{Binding Use}" />
-                                                    <TextBlock Text="{Binding DisplayName}" />
-                                                </StackPanel>
-                                            </HierarchicalDataTemplate>
-                                        </TreeView.Resources>
-                                    </TreeView>
-                                </StackPanel>
                             </Grid>
                         </StackPanel>
                     </Expander>
                 </GroupBox>
-
+                <GroupBox Header="Output Options" DockPanel.Dock="Top">
+                    <Expander x:Name="OutputExpander">
+                        <StackPanel Orientation="Vertical">
+                            <CheckBox x:Name="ckbPercolator" Content="Write .TSV for Percolator" />
+                            <CheckBox x:Name="ckbPepXML" Content="Write .pep.XML" />
+                        </StackPanel>
+                    </Expander>
+                </GroupBox>
             </DockPanel>
         </ScrollViewer>
         <StackPanel  Orientation="Horizontal" HorizontalAlignment="Center" Grid.Row="1"  Margin="188.333,5,261,5" Grid.Column="1">

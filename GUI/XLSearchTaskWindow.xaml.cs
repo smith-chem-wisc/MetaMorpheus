@@ -7,7 +7,6 @@ using System.Collections.ObjectModel;
 using System.Globalization;
 using System.Linq;
 using System.Windows;
-using System.Windows.Controls;
 using System.Windows.Input;
 using TaskLayer;
 using UsefulProteomicsDatabases;
@@ -25,7 +24,6 @@ namespace MetaMorpheusGUI
         private readonly ObservableCollection<SearchModeForDataGrid> SearchModesForThisTask = new ObservableCollection<SearchModeForDataGrid>();
         private readonly ObservableCollection<ModTypeForTreeView> FixedModTypeForTreeViewObservableCollection = new ObservableCollection<ModTypeForTreeView>();
         private readonly ObservableCollection<ModTypeForTreeView> VariableModTypeForTreeViewObservableCollection = new ObservableCollection<ModTypeForTreeView>();
-        private readonly ObservableCollection<ModTypeForLoc> LocalizeModTypeForTreeViewObservableCollection = new ObservableCollection<ModTypeForLoc>();
 
         public XLSearchTaskWindow()
         {
@@ -82,13 +80,18 @@ namespace MetaMorpheusGUI
 
             cbbXLprecusorMsTl.Items.Add("Da");
             cbbXLprecusorMsTl.Items.Add("ppm");
-            
+
             foreach (Protease protease in ProteaseDictionary.Dictionary.Values)
+            {
                 proteaseComboBox.Items.Add(protease);
-            proteaseComboBox.SelectedIndex = 12;
+            }
+            Protease trypsin = ProteaseDictionary.Dictionary["trypsin"];
+            proteaseComboBox.SelectedItem = trypsin;
 
             foreach (string initiatior_methionine_behavior in Enum.GetNames(typeof(InitiatorMethionineBehavior)))
+            {
                 initiatorMethionineBehaviorComboBox.Items.Add(initiatior_methionine_behavior);
+            }
 
             productMassToleranceComboBox.Items.Add("Da");
             productMassToleranceComboBox.Items.Add("ppm");
@@ -106,7 +109,9 @@ namespace MetaMorpheusGUI
                 var theModType = new ModTypeForTreeView(hm.Key, false);
                 VariableModTypeForTreeViewObservableCollection.Add(theModType);
                 foreach (var uah in hm)
+                {
                     theModType.Children.Add(new ModForTreeView(uah.ToString(), false, uah.IdWithMotif, false, theModType));
+                }
             }
             variableModsTreeView.DataContext = VariableModTypeForTreeViewObservableCollection;
 
@@ -129,9 +134,19 @@ namespace MetaMorpheusGUI
             ckbQuenchTris.IsChecked = task.XlSearchParameters.XlQuench_Tris;
             txtUdXLKerName.Text = task.XlSearchParameters.CrosslinkerName;
             ckbUdXLkerCleavable.IsChecked = task.XlSearchParameters.IsCleavable;
-            txtUdXLkerTotalMs.Text = task.XlSearchParameters.CrosslinkerTotalMass.HasValue ? task.XlSearchParameters.CrosslinkerTotalMass.Value.ToString(CultureInfo.InvariantCulture) : "";
-            txtUdXLkerShortMass.Text = task.XlSearchParameters.CrosslinkerShortMass.HasValue ? task.XlSearchParameters.CrosslinkerShortMass.Value.ToString(CultureInfo.InvariantCulture) : "";
-            txtUdXLkerLongMass.Text = task.XlSearchParameters.CrosslinkerLongMass.HasValue ? task.XlSearchParameters.CrosslinkerLongMass.Value.ToString(CultureInfo.InvariantCulture) : "";
+            txtUdXLkerTotalMs.Text = task.XlSearchParameters.CrosslinkerTotalMass.HasValue ? 
+                task.XlSearchParameters.CrosslinkerTotalMass.Value.ToString(CultureInfo.InvariantCulture) : "";
+            txtUdXLkerShortMass.Text = task.XlSearchParameters.CrosslinkerShortMass.HasValue ? 
+                task.XlSearchParameters.CrosslinkerShortMass.Value.ToString(CultureInfo.InvariantCulture) : "";
+            txtUdXLkerLongMass.Text = task.XlSearchParameters.CrosslinkerLongMass.HasValue ? 
+                task.XlSearchParameters.CrosslinkerLongMass.Value.ToString(CultureInfo.InvariantCulture) : "";
+            txtH2OQuenchMass.Text = task.XlSearchParameters.CrosslinkerDeadEndMassH2O.HasValue ?
+                task.XlSearchParameters.CrosslinkerDeadEndMassH2O.Value.ToString(CultureInfo.InvariantCulture) : "";
+            txtNH2QuenchMass.Text = task.XlSearchParameters.CrosslinkerDeadEndMassNH2.HasValue ?
+                task.XlSearchParameters.CrosslinkerDeadEndMassNH2.Value.ToString(CultureInfo.InvariantCulture) : "";
+            txtTrisQuenchMass.Text = task.XlSearchParameters.CrosslinkerDeadEndMassTris.HasValue ?
+                task.XlSearchParameters.CrosslinkerDeadEndMassTris.Value.ToString(CultureInfo.InvariantCulture) : "";
+            
             txtUdXLkerAminoAcids.Text = task.XlSearchParameters.CrosslinkerResidues;
             txtUdXLkerAminoAcids2.Text = task.XlSearchParameters.CrosslinkerResidues2;
             cbbXLprecusorMsTl.SelectedIndex = task.CommonParameters.PrecursorMassTolerance is AbsoluteTolerance ? 0 : 1;
@@ -142,7 +157,7 @@ namespace MetaMorpheusGUI
             MinRatioTextBox.Text = task.CommonParameters.MinRatio.ToString(CultureInfo.InvariantCulture);
             DissociationTypeComboBox.SelectedItem = task.CommonParameters.DissociationType.ToString();
 
-            ckbCharge_2_3.IsChecked = task.XlSearchParameters.XlCharge_2_3;
+            //ckbCharge_2_3.IsChecked = task.XlSearchParameters.XlCharge_2_3;
             checkBoxDecoy.IsChecked = task.XlSearchParameters.DecoyType != DecoyType.None;
             deconvolutePrecursors.IsChecked = task.CommonParameters.DoPrecursorDeconvolution;
             useProvidedPrecursor.IsChecked = task.CommonParameters.UseProvidedPrecursorInfo;
@@ -158,11 +173,9 @@ namespace MetaMorpheusGUI
             minScoreAllowed.Text = task.CommonParameters.ScoreCutoff.ToString(CultureInfo.InvariantCulture);
             numberOfDatabaseSearchesTextBox.Text = task.CommonParameters.TotalPartitions.ToString(CultureInfo.InvariantCulture);
             maxThreadsTextBox.Text = task.CommonParameters.MaxThreadsToUsePerFile.ToString(CultureInfo.InvariantCulture);
-
-            ckbAllResults.IsChecked = task.XlSearchParameters.XlOutAll;
-            ckbPercolator.IsChecked = task.XlSearchParameters.XlOutPercolator;
-            ckbCrosslink.IsChecked = task.XlSearchParameters.XlOutCrosslink;
-            ckbPepXML.IsChecked = task.XlSearchParameters.XlOutPepXML;
+            
+            ckbPercolator.IsChecked = task.XlSearchParameters.WriteOutputForPercolator;
+            ckbPepXML.IsChecked = task.XlSearchParameters.WritePepXml;
 
             OutputFileNameTextBox.Text = task.CommonParameters.TaskDescriptor;
 
@@ -210,11 +223,7 @@ namespace MetaMorpheusGUI
                     theModType.Children.Add(new ModForTreeView("UNKNOWN MODIFICATION!", true, mod.Item2, true, theModType));
                 }
             }
-
-            foreach (var heh in LocalizeModTypeForTreeViewObservableCollection)
-            {
-                heh.Use = false;
-            }
+            
             foreach (var ye in VariableModTypeForTreeViewObservableCollection)
             {
                 ye.VerifyCheckState();
@@ -247,16 +256,8 @@ namespace MetaMorpheusGUI
             TheTask.XlSearchParameters.RestrictToTopNHits = ckbXLTopNum.IsChecked.Value;
             TheTask.XlSearchParameters.CrosslinkSearchTopNum = int.Parse(txtXLTopNum.Text, CultureInfo.InvariantCulture);
             TheTask.XlSearchParameters.CrosslinkerType = (CrosslinkerType)cbCrosslinker.SelectedIndex;
-
-            if (cbbXLprecusorMsTl.SelectedIndex == 0)
-            {
-                TheTask.CommonParameters.PrecursorMassTolerance = new AbsoluteTolerance(double.Parse(XLPrecusorMsTlTextBox.Text, CultureInfo.InvariantCulture));
-            }
-            else
-            {
-                TheTask.CommonParameters.PrecursorMassTolerance = new PpmTolerance(double.Parse(XLPrecusorMsTlTextBox.Text, CultureInfo.InvariantCulture));
-            }
-            TheTask.XlSearchParameters.XlCharge_2_3 = ckbCharge_2_3.IsChecked.Value;
+            
+            //TheTask.XlSearchParameters.XlCharge_2_3 = ckbCharge_2_3.IsChecked.Value;
             TheTask.XlSearchParameters.XlQuench_H2O = ckbQuenchH2O.IsChecked.Value;
             TheTask.XlSearchParameters.XlQuench_NH2 = ckbQuenchNH2.IsChecked.Value;
             TheTask.XlSearchParameters.XlQuench_Tris = ckbQuenchTris.IsChecked.Value;
@@ -267,9 +268,23 @@ namespace MetaMorpheusGUI
                 TheTask.XlSearchParameters.IsCleavable = ckbUdXLkerCleavable.IsChecked.Value;
                 TheTask.XlSearchParameters.CrosslinkerResidues = txtUdXLkerAminoAcids.Text;
                 TheTask.XlSearchParameters.CrosslinkerResidues2 = txtUdXLkerAminoAcids2.Text;
-                TheTask.XlSearchParameters.CrosslinkerLongMass = string.IsNullOrEmpty(txtUdXLkerLongMass.Text) ? (double?)null : double.Parse(txtUdXLkerLongMass.Text, CultureInfo.InvariantCulture);
-                TheTask.XlSearchParameters.CrosslinkerShortMass = string.IsNullOrEmpty(txtUdXLkerShortMass.Text) ? (double?)null : double.Parse(txtUdXLkerShortMass.Text, CultureInfo.InvariantCulture);
-                TheTask.XlSearchParameters.CrosslinkerTotalMass = string.IsNullOrEmpty(txtUdXLkerTotalMs.Text) ? (double?)null : double.Parse(txtUdXLkerTotalMs.Text, CultureInfo.InvariantCulture);
+                TheTask.XlSearchParameters.CrosslinkerLongMass = string.IsNullOrEmpty(txtUdXLkerLongMass.Text) ? 
+                    (double?)null : double.Parse(txtUdXLkerLongMass.Text, CultureInfo.InvariantCulture);
+
+                TheTask.XlSearchParameters.CrosslinkerShortMass = string.IsNullOrEmpty(txtUdXLkerShortMass.Text) ? 
+                    (double?)null : double.Parse(txtUdXLkerShortMass.Text, CultureInfo.InvariantCulture);
+
+                TheTask.XlSearchParameters.CrosslinkerTotalMass = string.IsNullOrEmpty(txtUdXLkerTotalMs.Text) ? 
+                    (double?)null : double.Parse(txtUdXLkerTotalMs.Text, CultureInfo.InvariantCulture);
+
+                TheTask.XlSearchParameters.CrosslinkerDeadEndMassH2O = string.IsNullOrEmpty(txtH2OQuenchMass.Text) ?
+                    (double?)null : double.Parse(txtH2OQuenchMass.Text, CultureInfo.InvariantCulture);
+
+                TheTask.XlSearchParameters.CrosslinkerDeadEndMassNH2 = string.IsNullOrEmpty(txtNH2QuenchMass.Text) ?
+                    (double?)null : double.Parse(txtNH2QuenchMass.Text, CultureInfo.InvariantCulture);
+
+                TheTask.XlSearchParameters.CrosslinkerDeadEndMassTris = string.IsNullOrEmpty(txtTrisQuenchMass.Text) ?
+                    (double?)null : double.Parse(txtTrisQuenchMass.Text, CultureInfo.InvariantCulture);
             }
 
             TheTask.XlSearchParameters.DecoyType = checkBoxDecoy.IsChecked.Value ? DecoyType.Reverse : DecoyType.None;
@@ -298,10 +313,18 @@ namespace MetaMorpheusGUI
                 ProductMassTolerance = new PpmTolerance(double.Parse(productMassToleranceTextBox.Text, CultureInfo.InvariantCulture));
             }
 
-            TheTask.XlSearchParameters.XlOutPercolator = ckbPercolator.IsChecked.Value;
-            TheTask.XlSearchParameters.XlOutPepXML = ckbPepXML.IsChecked.Value;
-            TheTask.XlSearchParameters.XlOutAll = ckbAllResults.IsChecked.Value;
-            TheTask.XlSearchParameters.XlOutCrosslink = ckbCrosslink.IsChecked.Value;
+            Tolerance PrecursorMassTolerance;
+            if (cbbXLprecusorMsTl.SelectedIndex == 0)
+            {
+                PrecursorMassTolerance = new AbsoluteTolerance(double.Parse(XLPrecusorMsTlTextBox.Text, CultureInfo.InvariantCulture));
+            }
+            else
+            {
+                PrecursorMassTolerance = new PpmTolerance(double.Parse(XLPrecusorMsTlTextBox.Text, CultureInfo.InvariantCulture));
+            }
+
+            TheTask.XlSearchParameters.WriteOutputForPercolator = ckbPercolator.IsChecked.Value;
+            TheTask.XlSearchParameters.WritePepXml = ckbPepXML.IsChecked.Value;
             //TheTask.UseProvidedPrecursorInfo = useProvidedPrecursor.IsChecked.Value;
 
             var listOfModsVariable = new List<(string, string)>();
@@ -317,6 +340,7 @@ namespace MetaMorpheusGUI
             }
 
             CommonParameters commonParamsToSave = new CommonParameters(
+                precursorMassTolerance: PrecursorMassTolerance,
                 taskDescriptor: OutputFileNameTextBox.Text != "" ? OutputFileNameTextBox.Text : "XLSearchTask",
                 productMassTolerance: ProductMassTolerance,
                 doPrecursorDeconvolution: deconvolutePrecursors.IsChecked.Value,
@@ -330,7 +354,8 @@ namespace MetaMorpheusGUI
                 scoreCutoff: double.Parse(minScoreAllowed.Text, CultureInfo.InvariantCulture),
                 totalPartitions: int.Parse(numberOfDatabaseSearchesTextBox.Text, CultureInfo.InvariantCulture),
                 listOfModsVariable: listOfModsVariable,
-                listOfModsFixed: listOfModsFixed);
+                listOfModsFixed: listOfModsFixed,
+                assumeOrphanPeaksAreZ1Fragments: protease.Name != "top-down");
 
             TheTask.CommonParameters = commonParamsToSave;
 
