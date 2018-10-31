@@ -61,7 +61,7 @@ namespace EngineLayer.ModernSearch
                     // empty the scoring table to score the new scan (conserves memory compared to allocating a new array)
                     Array.Clear(scoringTable, 0, scoringTable.Length);
                     idsOfPeptidesPossiblyObserved.Clear();
-                    var scan = ListOfSortedMs2Scans[i];
+                    Ms2ScanWithSpecificMass scan = ListOfSortedMs2Scans[i];
 
                     // get fragment bins for this scan
                     List<int> allBinsToSearch = GetBinsToSearch(scan);
@@ -70,24 +70,10 @@ namespace EngineLayer.ModernSearch
                     // note that this is the OPPOSITE of the classic search (which calculates experimental masses from theoretical values)
                     // this is just PRELIMINARY precursor-mass filtering
                     // additional checks are made later to ensure that the theoretical precursor mass is acceptable
-                    var notches = MassDiffAcceptor.GetAllowedPrecursorMassIntervalsFromTheoreticalMass(scan.PrecursorMass);
+                    IEnumerable<AllowedIntervalWithNotch> notches = MassDiffAcceptor.GetAllowedPrecursorMassIntervalsFromObservedMass(scan.PrecursorMass);
 
-                    double lowestMassPeptideToLookFor = Double.NegativeInfinity;
-                    double highestMassPeptideToLookFor = Double.PositiveInfinity;
-
-                    double largestMassDiff = notches.Max(p => p.AllowedInterval.Maximum);
-                    double smallestMassDiff = notches.Min(p => p.AllowedInterval.Minimum);
-
-                    if (!Double.IsInfinity(largestMassDiff))
-                    {
-                        double largestOppositeMassDiff = -1 * (notches.Max(p => p.AllowedInterval.Maximum) - scan.PrecursorMass);
-                        lowestMassPeptideToLookFor = scan.PrecursorMass + largestOppositeMassDiff;
-                    }
-                    if (!Double.IsNegativeInfinity(smallestMassDiff))
-                    {
-                        double smallestOppositeMassDiff = -1 * (notches.Min(p => p.AllowedInterval.Minimum) - scan.PrecursorMass);
-                        highestMassPeptideToLookFor = scan.PrecursorMass + smallestOppositeMassDiff;
-                    }
+                    double lowestMassPeptideToLookFor = notches.Min(p => p.AllowedInterval.Minimum);
+                    double highestMassPeptideToLookFor = notches.Max(p => p.AllowedInterval.Maximum);
 
                     // first-pass scoring
                     IndexedScoring(allBinsToSearch, scoringTable, byteScoreCutoff, idsOfPeptidesPossiblyObserved, scan.PrecursorMass, lowestMassPeptideToLookFor, highestMassPeptideToLookFor, PeptideIndex, MassDiffAcceptor, MaxMassThatFragmentIonScoreIsDoubled);
