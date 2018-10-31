@@ -272,8 +272,24 @@ namespace TaskLayer
             };
             return postProcessing.Run();
         }
-        
-        public static MassDiffAcceptor ParseSearchMode(string text)
+
+        private int GetNumNotches(MassDiffAcceptorType massDiffAcceptorType, string customMdac)
+        {
+            switch (massDiffAcceptorType)
+            {
+                case MassDiffAcceptorType.Exact: return 1;
+                case MassDiffAcceptorType.OneMM: return 2;
+                case MassDiffAcceptorType.TwoMM: return 3;
+                case MassDiffAcceptorType.ThreeMM: return 4;
+                case MassDiffAcceptorType.ModOpen: return 1;
+                case MassDiffAcceptorType.Open: return 1;
+                case MassDiffAcceptorType.Custom: return ParseSearchMode(customMdac).NumNotches;
+
+                default: throw new MetaMorpheusException("Unknown mass difference acceptor type");
+            }
+        }
+
+        private static MassDiffAcceptor ParseSearchMode(string text)
         {
             MassDiffAcceptor massDiffAcceptor = null;
 
@@ -325,22 +341,6 @@ namespace TaskLayer
             }
             
             return massDiffAcceptor;
-        }
-
-        private int GetNumNotches(MassDiffAcceptorType massDiffAcceptorType, string customMdac)
-        {
-            switch (massDiffAcceptorType)
-            {
-                case MassDiffAcceptorType.Exact: return 1;
-                case MassDiffAcceptorType.OneMM: return 2;
-                case MassDiffAcceptorType.TwoMM: return 3;
-                case MassDiffAcceptorType.ThreeMM: return 4;
-                case MassDiffAcceptorType.ModOpen: return 1;
-                case MassDiffAcceptorType.Open: return 1;
-                case MassDiffAcceptorType.Custom: return ParseSearchMode(customMdac).NumNotches;
-
-                default: throw new MetaMorpheusException("Unknown mass difference acceptor type");
-            }
         }
     }
 }
