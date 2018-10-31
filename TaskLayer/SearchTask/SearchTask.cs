@@ -272,6 +272,60 @@ namespace TaskLayer
             };
             return postProcessing.Run();
         }
+        
+        public static MassDiffAcceptor ParseSearchMode(string text)
+        {
+            MassDiffAcceptor massDiffAcceptor = null;
+
+            try
+            {
+                var split = text.Split(' ');
+
+                switch (split[1])
+                {
+                    case "dot":
+                        double[] massShifts = Array.ConvertAll(split[4].Split(','), Double.Parse);
+                        string newString = split[2].Replace("�", "");
+                        double toleranceValue = double.Parse(newString, CultureInfo.InvariantCulture);
+                        if (split[3].ToUpperInvariant().Equals("PPM"))
+                        {
+                            massDiffAcceptor = new DotMassDiffAcceptor(split[0], massShifts, new PpmTolerance(toleranceValue));
+                        }
+                        else if (split[3].ToUpperInvariant().Equals("DA"))
+                        {
+                            massDiffAcceptor = new DotMassDiffAcceptor(split[0], massShifts, new AbsoluteTolerance(toleranceValue));
+                        }
+
+                        break;
+
+                    case "interval":
+                        IEnumerable<DoubleRange> doubleRanges = Array.ConvertAll(split[2].Split(';'), b => new DoubleRange(double.Parse(b.Trim(new char[] { '[', ']' }).Split(',')[0], CultureInfo.InvariantCulture), double.Parse(b.Trim(new char[] { '[', ']' }).Split(',')[1], CultureInfo.InvariantCulture)));
+                        massDiffAcceptor = new IntervalMassDiffAcceptor(split[0], doubleRanges);
+                        break;
+
+                    case "OpenSearch":
+                        massDiffAcceptor = new OpenSearchMode();
+                        break;
+
+                    case "daltonsAroundZero":
+                        massDiffAcceptor = new SingleAbsoluteAroundZeroSearchMode(double.Parse(split[2], CultureInfo.InvariantCulture));
+                        break;
+
+                    case "ppmAroundZero":
+                        massDiffAcceptor = new SinglePpmAroundZeroSearchMode(double.Parse(split[2], CultureInfo.InvariantCulture));
+                        break;
+
+                    default:
+                        throw new MetaMorpheusException("Unrecognized search mode type: " + split[1]);
+                }
+            }
+            catch (Exception e)
+            {
+                throw new MetaMorpheusException("Could not parse search mode string: " + e.Message);
+            }
+            
+            return massDiffAcceptor;
+        }
 
         private int GetNumNotches(MassDiffAcceptorType massDiffAcceptorType, string customMdac)
         {
@@ -285,50 +339,8 @@ namespace TaskLayer
                 case MassDiffAcceptorType.Open: return 1;
                 case MassDiffAcceptorType.Custom: return ParseSearchMode(customMdac).NumNotches;
 
-                default: throw new MetaMorpheusException("Unknown MassDiffAcceptorType");
+                default: throw new MetaMorpheusException("Unknown mass difference acceptor type");
             }
-        }
-
-        private static MassDiffAcceptor ParseSearchMode(string text)
-        {
-            MassDiffAcceptor ye = null;
-
-            var split = text.Split(' ');
-
-            switch (split[1])
-            {
-                case "dot":
-
-                    var massShifts = Array.ConvertAll(split[4].Split(','), Double.Parse);
-                    var newString = split[2].Replace("�", "");
-                    var toleranceValue = double.Parse(newString, CultureInfo.InvariantCulture);
-                    if (split[3].ToUpperInvariant().Equals("PPM"))
-                        ye = new DotMassDiffAcceptor(split[0], massShifts, new PpmTolerance(toleranceValue));
-                    else if (split[3].ToUpperInvariant().Equals("DA"))
-                        ye = new DotMassDiffAcceptor(split[0], massShifts, new AbsoluteTolerance(toleranceValue));
-                    break;
-
-                case "interval":
-                    IEnumerable<DoubleRange> doubleRanges = Array.ConvertAll(split[2].Split(','), b => new DoubleRange(double.Parse(b.Trim(new char[] { '[', ']' }).Split(';')[0], CultureInfo.InvariantCulture), double.Parse(b.Trim(new char[] { '[', ']' }).Split(';')[1], CultureInfo.InvariantCulture)));
-                    ye = new IntervalMassDiffAcceptor(split[0], doubleRanges);
-                    break;
-
-                case "OpenSearch":
-                    ye = new OpenSearchMode();
-                    break;
-
-                case "daltonsAroundZero":
-                    ye = new SingleAbsoluteAroundZeroSearchMode(double.Parse(split[2], CultureInfo.InvariantCulture));
-                    break;
-
-                case "ppmAroundZero":
-                    ye = new SinglePpmAroundZeroSearchMode(double.Parse(split[2], CultureInfo.InvariantCulture));
-                    break;
-
-                default:
-                    throw new MetaMorpheusException("Could not parse search mode string");
-            }
-            return ye;
         }
     }
 }
