@@ -29,35 +29,23 @@ namespace MetaMorpheusGUI
         private readonly ObservableCollection<ModTypeForTreeView> VariableModTypeForTreeViewObservableCollection = new ObservableCollection<ModTypeForTreeView>();
         private readonly ObservableCollection<ModTypeForLoc> LocalizeModTypeForTreeViewObservableCollection = new ObservableCollection<ModTypeForLoc>();
         private readonly ObservableCollection<ModTypeForGrid> ModSelectionGridItems = new ObservableCollection<ModTypeForGrid>();
+        private readonly SearchModifications SearchMod = new SearchModifications();
 
-        public SearchTaskWindow()
+        public SearchTaskWindow() : this(null)
         {
-            InitializeComponent();
-            TheTask = new SearchTask();
-
-            PopulateChoices();
-
-            UpdateFieldsFromTask(TheTask);
-
-            this.saveButton.Content = "Add the Search Task";
-
-            DataContextForSearchTaskWindow = new DataContextForSearchTaskWindow
-            {
-                ExpanderTitle = string.Join(", ", SearchModesForThisTask.Where(b => b.Use).Select(b => b.Name)),
-                AnalysisExpanderTitle = "Some analysis properties...",
-                SearchModeExpanderTitle = "Some search properties..."
-            };
-            this.DataContext = DataContextForSearchTaskWindow;
         }
 
         public SearchTaskWindow(SearchTask task)
         {
             InitializeComponent();
-            TheTask = task;
-
+            TheTask = task ?? new SearchTask();
             PopulateChoices();
-
             UpdateFieldsFromTask(TheTask);
+            
+            if (task == null)
+            {
+                this.saveButton.Content = "Add the Search Task";
+            }
 
             DataContextForSearchTaskWindow = new DataContextForSearchTaskWindow
             {
@@ -66,6 +54,7 @@ namespace MetaMorpheusGUI
                 SearchModeExpanderTitle = "Some search properties..."
             };
             this.DataContext = DataContextForSearchTaskWindow;
+            SearchMod.Timer.Tick += new EventHandler(TextChangeTimerHandler);
         }
 
         internal SearchTask TheTask { get; private set; }
@@ -728,30 +717,19 @@ namespace MetaMorpheusGUI
 
         }
 
-        internal SearchModifications SearchMod = new SearchModifications();
-
         private void TextChanged_Fixed(object sender, TextChangedEventArgs args)
         {
             SearchMod.FixedSearch = true;
-            SetTimer();
+            SearchMod.SetTimer();
         }
 
         private void TextChanged_Var(object sender, TextChangedEventArgs args)
         {
             SearchMod.VarSearch = true;
-            SetTimer();
-        }
-
-        private void SetTimer()
-        {
-            if (!SearchMod.TimerCreated)
-            {
-                SearchMod.Timer.Tick += new EventHandler(TextChangeTimerHandler);
-                SearchMod.TimerCreated = true;
-            }
             SearchMod.SetTimer();
         }
 
+        // handles text changed event after user stops typing (timer elapses)
         private void TextChangeTimerHandler(object sender, EventArgs e)
         {
             var timer = sender as DispatcherTimer;
@@ -763,12 +741,12 @@ namespace MetaMorpheusGUI
 
             if (SearchMod.FixedSearch)
             {
-                SearchMod.FilterTree(SearchFixMod, fixedModsTreeView, FixedModTypeForTreeViewObservableCollection);
+                SearchModifications.FilterTree(SearchFixMod, fixedModsTreeView, FixedModTypeForTreeViewObservableCollection);
                 SearchMod.FixedSearch = false;
             }
             else if (SearchMod.VarSearch)
             {
-                SearchMod.FilterTree(SearchVarMod, variableModsTreeView, VariableModTypeForTreeViewObservableCollection);
+                SearchModifications.FilterTree(SearchVarMod, variableModsTreeView, VariableModTypeForTreeViewObservableCollection);
                 SearchMod.VarSearch = false;
             }
         }

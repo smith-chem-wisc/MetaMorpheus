@@ -24,16 +24,10 @@ namespace MetaMorpheusGUI
         private readonly ObservableCollection<ModTypeForTreeView> variableModTypeForTreeViewObservableCollection = new ObservableCollection<ModTypeForTreeView>();
         private readonly ObservableCollection<ModTypeForLoc> localizeModTypeForTreeViewObservableCollection = new ObservableCollection<ModTypeForLoc>();
         private readonly ObservableCollection<ModTypeForTreeView> gptmdModTypeForTreeViewObservableCollection = new ObservableCollection<ModTypeForTreeView>();
+        private readonly SearchModifications SearchMod = new SearchModifications();
 
-        public GptmdTaskWindow()
-        {
-            InitializeComponent();
-            PopulateChoices();
-
-            TheTask = new GptmdTask();
-            UpdateFieldsFromTask(TheTask);
-
-            this.saveButton.Content = "Add the GPTMD Task";
+        public GptmdTaskWindow() : this(null)
+        {          
         }
 
         public GptmdTaskWindow(GptmdTask myGPTMDtask)
@@ -41,11 +35,18 @@ namespace MetaMorpheusGUI
             InitializeComponent();
             PopulateChoices();
 
-            TheTask = myGPTMDtask;
+            TheTask = myGPTMDtask ?? new GptmdTask();
             UpdateFieldsFromTask(TheTask);
+
+            if (myGPTMDtask == null)
+            {
+                this.saveButton.Content = "Add the GPTMD Task";
+            }
+            SearchMod.Timer.Tick += new EventHandler(TextChangeTimerHandler);
         }
 
         internal GptmdTask TheTask { get; private set; }
+        private static bool GPTMDSearch { get; set; }
 
         private void Row_DoubleClick(object sender, MouseButtonEventArgs e)
         {
@@ -334,38 +335,26 @@ namespace MetaMorpheusGUI
                 CancelButton_Click(sender, e);
             }
         }
-
-        internal SearchModifications SearchMod = new SearchModifications();
-        private bool GPTMDSearch { get; set; }
-
+        
         private void TextChanged_Fixed(object sender, TextChangedEventArgs args)
         {
             SearchMod.FixedSearch = true;
-            SetTimer();
+            SearchMod.SetTimer();
         }
 
         private void TextChanged_Var(object sender, TextChangedEventArgs args)
         {
             SearchMod.VarSearch = true;
-            SetTimer();
+            SearchMod.SetTimer();
         }
 
         private void TextChanged_GPTMD(object sender, TextChangedEventArgs args)
         {
             GPTMDSearch = true;
-            SetTimer();
-        }
-
-        private void SetTimer()
-        {
-            if (!SearchMod.TimerCreated)
-            {
-                SearchMod.Timer.Tick += new EventHandler(TextChangeTimerHandler);
-                SearchMod.TimerCreated = true;
-            }
             SearchMod.SetTimer();
         }
 
+        // handles text changed event after user stops typing (timer elapses)
         private void TextChangeTimerHandler(object sender, EventArgs e)
         {
             var timer = sender as DispatcherTimer;
@@ -377,17 +366,17 @@ namespace MetaMorpheusGUI
 
             if (SearchMod.FixedSearch)
             {
-                SearchMod.FilterTree(SearchFixMod, fixedModsTreeView, fixedModTypeForTreeViewObservableCollection);
+                SearchModifications.FilterTree(SearchFixMod, fixedModsTreeView, fixedModTypeForTreeViewObservableCollection);
                 SearchMod.FixedSearch = false;
             }
             else if (SearchMod.VarSearch)
             {
-                SearchMod.FilterTree(SearchVarMod, variableModsTreeView, variableModTypeForTreeViewObservableCollection);
+                SearchModifications.FilterTree(SearchVarMod, variableModsTreeView, variableModTypeForTreeViewObservableCollection);
                 SearchMod.VarSearch = false;
             }
             else if (GPTMDSearch)
             {
-                SearchMod.FilterTree(SearchGPTMD, gptmdModsTreeView, gptmdModTypeForTreeViewObservableCollection);
+                SearchModifications.FilterTree(SearchGPTMD, gptmdModsTreeView, gptmdModTypeForTreeViewObservableCollection);
                 GPTMDSearch = false;
             }
         }

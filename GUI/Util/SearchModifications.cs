@@ -9,55 +9,57 @@ namespace MetaMorpheusGUI
     class SearchModifications
     {
         public DispatcherTimer Timer;
-        public bool TimerCreated { get; set; }
-        public bool FixedSearch { get; set; }
-        public bool VarSearch { get; set; }
+        public bool FixedSearch { get; set; } // true if fixed mods search box used
+        public bool VarSearch { get; set; } // true if var mods search box used
 
         public SearchModifications()
         {
             Timer = new DispatcherTimer();
             Timer.Interval = TimeSpan.FromMilliseconds(300);
-            TimerCreated = false;
         }
 
+        // starts timer to keep track of user keystrokes
         public void SetTimer()
         {
             Timer.Stop(); // Resets the timer
             Timer.Start();
         }
         
-        public void FilterTree(TextBox textbox, TreeView tree, ObservableCollection<ModTypeForTreeView> collection)
+        // filters and expands tree according to user mod search
+        public static void FilterTree(TextBox textbox, TreeView tree, ObservableCollection<ModTypeForTreeView> collection)
         {
-            if (textbox.Text == "")
+            string key = textbox.Text.ToLower();
+            if (key == "")
             {
                 tree.DataContext = collection; // shows full tree if nothing is searched
             }
             else
             {
-                var parent = collection.Where(d => d.DisplayName.ToLower().Contains(textbox.Text.ToLower()));
-                if (parent.Count() == 0)
+                var parentMod = collection.Where(p => p.DisplayName.ToLower().Contains(key));
+                if (parentMod.Count() == 0) // no parent mod type matches key
                 {
-                    var list = new ObservableCollection<ModTypeForTreeView>(); // new collection containing filtered mods
-                    var parents = collection.Where(p => p.Children.Any(y => y.DisplayName.ToLower().Contains(textbox.Text.ToLower())));
-                    if (parents.Count() != 0)
-                    {
-                        foreach (var x in parents.ToList())
-                        {
-                            var temp = new ModTypeForTreeView(x.DisplayName, false);
-                            list.Add(temp);
-                            temp.Use = false;
+                    var modMatches = new ObservableCollection<ModTypeForTreeView>(); // new collection containing mod types that match key
+                    var parentChildMatch = collection.Where(p => p.Children.Any(c => c.DisplayName.ToLower().Contains(key))); // parent mod types of children that matches key
 
-                            // fix: use status!
-                            var children = x.Children.Where(y => y.DisplayName.ToLower().Contains(textbox.Text.ToLower()));
-                            foreach (var child in children)
+                    if (parentChildMatch.Count() != 0)
+                    {
+                        foreach (ModTypeForTreeView parent in parentChildMatch.ToList())
+                        {
+                            var newParent = new ModTypeForTreeView(parent.DisplayName, false);
+                            modMatches.Add(newParent);
+                            newParent.Use = false;
+                            newParent.Expanded = true;
+                            
+                            var children = parent.Children.Where(y => y.DisplayName.ToLower().Contains(key));
+                            foreach (ModForTreeView child in children)
                             {
-                                temp.Children.Add(child);
+                                newParent.Children.Add(child);
                             }
                         }
-                    }
-                    parent = list;
+                        parentMod = modMatches;
+                    } 
                 }
-                tree.DataContext = parent;
+                tree.DataContext = parentMod;
             }
         }
     }

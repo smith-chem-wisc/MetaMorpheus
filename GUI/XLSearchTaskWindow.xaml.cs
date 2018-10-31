@@ -26,34 +26,23 @@ namespace MetaMorpheusGUI
         private readonly ObservableCollection<SearchModeForDataGrid> SearchModesForThisTask = new ObservableCollection<SearchModeForDataGrid>();
         private readonly ObservableCollection<ModTypeForTreeView> FixedModTypeForTreeViewObservableCollection = new ObservableCollection<ModTypeForTreeView>();
         private readonly ObservableCollection<ModTypeForTreeView> VariableModTypeForTreeViewObservableCollection = new ObservableCollection<ModTypeForTreeView>();
+        private readonly SearchModifications SearchMod = new SearchModifications();
 
-        public XLSearchTaskWindow()
+        public XLSearchTaskWindow() : this(null)
         {
-            InitializeComponent();
-            PopulateChoices();
-
-            TheTask = new XLSearchTask();
-            UpdateFieldsFromTask(TheTask);
-
-            this.saveButton.Content = "Add the XLSearch Task";
-
-            DataContextForSearchTaskWindow = new DataContextForSearchTaskWindow()
-            {
-                ExpanderTitle = string.Join(", ", SearchModesForThisTask.Where(b => b.Use).Select(b => b.Name)),
-                AnalysisExpanderTitle = "Some analysis properties...",
-                SearchModeExpanderTitle = "Some search properties..."
-            };
-            this.DataContext = DataContextForSearchTaskWindow;
         }
 
         public XLSearchTaskWindow(XLSearchTask task)
         {
             InitializeComponent();
             PopulateChoices();
-
-            TheTask = task;
+            TheTask = task ?? new XLSearchTask();
             UpdateFieldsFromTask(TheTask);
 
+            if (task == null)
+            {
+                this.saveButton.Content = "Add the XLSearch Task";
+            }
             DataContextForSearchTaskWindow = new DataContextForSearchTaskWindow()
             {
                 ExpanderTitle = string.Join(", ", SearchModesForThisTask.Where(b => b.Use).Select(b => b.Name)),
@@ -61,6 +50,7 @@ namespace MetaMorpheusGUI
                 SearchModeExpanderTitle = "Some search properties..."
             };
             this.DataContext = DataContextForSearchTaskWindow;
+            SearchMod.Timer.Tick += new EventHandler(TextChangeTimerHandler);
         }
 
         internal XLSearchTask TheTask { get; private set; }
@@ -393,30 +383,19 @@ namespace MetaMorpheusGUI
             }
         }
 
-        internal SearchModifications SearchMod = new SearchModifications();
-
         private void TextChanged_Fixed(object sender, TextChangedEventArgs args)
         {
             SearchMod.FixedSearch = true;
-            SetTimer();
+            SearchMod.SetTimer();
         }
 
         private void TextChanged_Var(object sender, TextChangedEventArgs args)
         {
             SearchMod.VarSearch = true;
-            SetTimer();
-        }
-
-        private void SetTimer()
-        {
-            if (!SearchMod.TimerCreated)
-            {
-                SearchMod.Timer.Tick += new EventHandler(TextChangeTimerHandler);
-                SearchMod.TimerCreated = true;
-            }
             SearchMod.SetTimer();
         }
 
+        // handles text changed event after user stops typing (timer elapses)
         private void TextChangeTimerHandler(object sender, EventArgs e)
         {
             var timer = sender as DispatcherTimer;
@@ -428,12 +407,12 @@ namespace MetaMorpheusGUI
 
             if (SearchMod.FixedSearch)
             {
-                SearchMod.FilterTree(SearchFixMod, fixedModsTreeView, FixedModTypeForTreeViewObservableCollection);
+                SearchModifications.FilterTree(SearchFixMod, fixedModsTreeView, FixedModTypeForTreeViewObservableCollection);
                 SearchMod.FixedSearch = false;
             }
             else if (SearchMod.VarSearch)
             {
-                SearchMod.FilterTree(SearchVarMod, variableModsTreeView, VariableModTypeForTreeViewObservableCollection);
+                SearchModifications.FilterTree(SearchVarMod, variableModsTreeView, VariableModTypeForTreeViewObservableCollection);
                 SearchMod.VarSearch = false;
             }
         }

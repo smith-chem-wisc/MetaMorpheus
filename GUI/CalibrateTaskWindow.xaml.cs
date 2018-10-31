@@ -23,25 +23,24 @@ namespace MetaMorpheusGUI
         private readonly ObservableCollection<ModTypeForTreeView> FixedModTypeForTreeViewObservableCollection = new ObservableCollection<ModTypeForTreeView>();
         private readonly ObservableCollection<ModTypeForTreeView> VariableModTypeForTreeViewObservableCollection = new ObservableCollection<ModTypeForTreeView>();
         private readonly ObservableCollection<ModTypeForLoc> LocalizeModTypeForTreeViewObservableCollection = new ObservableCollection<ModTypeForLoc>();
+        private readonly SearchModifications SearchMod = new SearchModifications();
 
-        public CalibrateTaskWindow()
+        public CalibrateTaskWindow() : this(null)
         {
-            InitializeComponent();
-            PopulateChoices();
-
-            TheTask = new CalibrationTask();
-            UpdateFieldsFromTask(TheTask);
-
-            this.saveButton.Content = "Add the Calibration Task";
         }
 
         public CalibrateTaskWindow(CalibrationTask myCalibrateTask)
         {
             InitializeComponent();
             PopulateChoices();
-
-            TheTask = myCalibrateTask;
+            TheTask = myCalibrateTask ?? new CalibrationTask();
             UpdateFieldsFromTask(TheTask);
+
+            if (myCalibrateTask == null)
+            {
+                this.saveButton.Content = "Add the Calibration Task";
+            }
+            SearchMod.Timer.Tick += new EventHandler(TextChangeTimerHandler);
         }
 
         internal CalibrationTask TheTask { get; private set; }
@@ -272,30 +271,19 @@ namespace MetaMorpheusGUI
             }
         }
 
-        internal SearchModifications SearchMod = new SearchModifications();
-
         private void TextChanged_Fixed(object sender, TextChangedEventArgs args)
         {
             SearchMod.FixedSearch = true;
-            SetTimer();
+            SearchMod.SetTimer();
         }
 
         private void TextChanged_Var(object sender, TextChangedEventArgs args)
         {
             SearchMod.VarSearch = true;
-            SetTimer();
-        }
-
-        private void SetTimer()
-        {
-            if (!SearchMod.TimerCreated)
-            {
-                SearchMod.Timer.Tick += new EventHandler(TextChangeTimerHandler);
-                SearchMod.TimerCreated = true;
-            }
             SearchMod.SetTimer();
         }
-
+        
+        // handles text changed event after user stops typing (timer elapses)
         private void TextChangeTimerHandler(object sender, EventArgs e)
         {
             var timer = sender as DispatcherTimer;
@@ -307,12 +295,12 @@ namespace MetaMorpheusGUI
 
             if (SearchMod.FixedSearch)
             {
-                SearchMod.FilterTree(SearchFixMod, fixedModsTreeView, FixedModTypeForTreeViewObservableCollection);
+                SearchModifications.FilterTree(SearchFixMod, fixedModsTreeView, FixedModTypeForTreeViewObservableCollection);
                 SearchMod.FixedSearch = false;
             }
             else if (SearchMod.VarSearch)
             {
-                SearchMod.FilterTree(SearchVarMod, variableModsTreeView, VariableModTypeForTreeViewObservableCollection);
+                SearchModifications.FilterTree(SearchVarMod, variableModsTreeView, VariableModTypeForTreeViewObservableCollection);
                 SearchMod.VarSearch = false;
             }
         }
