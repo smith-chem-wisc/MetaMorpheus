@@ -1,5 +1,6 @@
 ﻿using Chemistry;
 using EngineLayer;
+using Proteomics;
 using System;
 using System.Collections.Generic;
 using System.IO;
@@ -156,20 +157,21 @@ namespace MetaMorpheusGUI
             if (!string.IsNullOrEmpty(chemicalFormulaText))
             {
                 chemicalFormula = ChemicalFormula.ParseFormula(chemicalFormulaText);
-            }else
+            }
+            else
             {
                 chemicalFormula = null;
             }
             double? modMass = null;
             if (!string.IsNullOrEmpty(modMassText))
             {
-                double.Parse(modMassText);
+                modMass = double.Parse(modMassText);
             }
 
-            Proteomics.Modification newMod = new Proteomics.Modification(myModName, null, modificationTypeText, null, finalMotif, locationRestriction,
+            Modification newMod = new Modification(myModName, null, modificationTypeText, null, finalMotif, locationRestriction,
                 chemicalFormula, modMass, null, null, null, neutralLosses, diagnosticIons, null);
 
-            GlobalVariables.AddMods(new List<Proteomics.Modification> { newMod });
+            GlobalVariables.AddMods(new List<Modification> { newMod });
 
             DialogResult = true;
         }
