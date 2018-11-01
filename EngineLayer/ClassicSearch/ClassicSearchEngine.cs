@@ -139,7 +139,7 @@ namespace EngineLayer.ClassicSearch
 
         private IEnumerable<ScanWithIndexAndNotchInfo> GetAcceptableScans(double peptideMonoisotopicMass, MassDiffAcceptor searchMode)
         {
-            foreach (AllowedIntervalWithNotch allowedIntervalWithNotch in searchMode.GetAllowedPrecursorMassIntervals(peptideMonoisotopicMass).ToList())
+            foreach (AllowedIntervalWithNotch allowedIntervalWithNotch in searchMode.GetAllowedPrecursorMassIntervalsFromTheoreticalMass(peptideMonoisotopicMass).ToList())
             {
                 DoubleRange allowedInterval = allowedIntervalWithNotch.AllowedInterval;
                 int scanIndex = GetFirstScanWithMassOverOrEqual(allowedInterval.Minimum);
