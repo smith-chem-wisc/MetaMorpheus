@@ -301,7 +301,18 @@ namespace EngineLayer
                     // the protein with the most total peptide sequences wins in this case (doesn't matter if parsimony has grabbed them or not)
                     if (possibleBestProteinList.Count > 1)
                     {
-                        bestProtein = possibleBestProteinList.OrderByDescending(kvp => proteinToPepSeqMatch[kvp.Key].Count).First().Key;
+                        int highestNumTotalPep = proteinToPepSeqMatch[bestProtein].Count;
+                        foreach (var kvp in possibleBestProteinList)
+                        {
+                            if (proteinToPepSeqMatch[kvp.Key].Count > highestNumTotalPep)
+                            {
+                                highestNumTotalPep = proteinToPepSeqMatch[kvp.Key].Count;
+                                bestProtein = kvp.Key;
+                            }
+                        }
+                        //bestProtein = possibleBestProteinList.OrderByDescending(kvp => proteinToPepSeqMatch[kvp.Key].Count).First().Key;
+                        //int highestNumTotalPep = possibleBestProteinList.Max(kvp => proteinToPepSeqMatch[kvp.Key].Count);
+                        //bestProtein = possibleBestProteinList.First(kvp => proteinToPepSeqMatch[kvp.Key].Count == highestNumTotalPep).Key;
                     }
 
                     parsimoniousProteinList.Add(bestProtein);

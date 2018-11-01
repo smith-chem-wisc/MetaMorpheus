@@ -10,9 +10,6 @@ namespace EngineLayer
 {
     public class ProteinGroup
     {
-        public readonly bool IsDecoy;
-        public readonly bool IsContaminant;
-
         public ProteinGroup(HashSet<Protein> proteins, HashSet<PeptideWithSetModifications> peptides, HashSet<PeptideWithSetModifications> uniquePeptides)
         {
             Proteins = proteins;
@@ -46,6 +43,10 @@ namespace EngineLayer
                 }
             }
         }
+
+        public bool IsDecoy { get; }
+
+        public bool IsContaminant { get; }
 
         public List<SpectraFileInfo> FilesForQuantification { get; set; }
 

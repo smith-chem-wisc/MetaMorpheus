@@ -661,7 +661,9 @@ namespace TaskLayer
                             {
                                 int proteinIdx = GetOneBasedIndexInProtein(idxModKV.Key, psm);
                                 SequenceVariation relevantVariant = psm.Protein.AppliedSequenceVariations.FirstOrDefault(sv => VariantApplication.IsSequenceVariantModification(sv, proteinIdx));
-                                SequenceVariation unappliedVariant = psm.Protein.SequenceVariations.FirstOrDefault(sv => sv.Description.Equals(relevantVariant.Description));
+                                SequenceVariation unappliedVariant = 
+                                    relevantVariant == null ? null : // it's not a sequence variant mod
+                                    psm.Protein.SequenceVariations.FirstOrDefault(sv => sv.Description != null && sv.Description.Equals(relevantVariant.Description));
                                 modsObservedOnThisProtein.Add((VariantApplication.RestoreModificationIndex(psm.Protein, proteinIdx), idxModKV.Value, unappliedVariant));
                             }
                         }

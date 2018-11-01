@@ -80,12 +80,12 @@ namespace EngineLayer.ModernSearch
 
                     if (!Double.IsInfinity(largestMassDiff))
                     {
-                        double largestOppositeMassDiff = -1 * (notches.Max(p => p.AllowedInterval.Maximum) - scan.PrecursorMass);
+                        double largestOppositeMassDiff = -1 * (largestMassDiff - scan.PrecursorMass);
                         lowestMassPeptideToLookFor = scan.PrecursorMass + largestOppositeMassDiff;
                     }
                     if (!Double.IsNegativeInfinity(smallestMassDiff))
                     {
-                        double smallestOppositeMassDiff = -1 * (notches.Min(p => p.AllowedInterval.Minimum) - scan.PrecursorMass);
+                        double smallestOppositeMassDiff = -1 * (smallestMassDiff - scan.PrecursorMass);
                         highestMassPeptideToLookFor = scan.PrecursorMass + smallestOppositeMassDiff;
                     }
 

@@ -20,7 +20,7 @@ namespace Test
     {
         [Test]
         [TestCase("NNNNN", "accession", @"not applied", 5)]
-        [TestCase("NNNNN", "accession", @"1\t50000000\t.\tA\tG\t.\tPASS\tANN=\tGT:AD:DP\t1/1:30,30:30", 4)]
+        [TestCase("NNNNN", "accession", @"1\t50000000\t.\tA\tG\t.\tPASS\tANN=G||||||||||||||||\tGT:AD:DP\t1/1:30,30:30", 4)]
         public static void TestGptmdEngine(string proteinSequence, string accession, string sequenceVariantDescription, int numModifiedResidues)
         {
             List<PeptideSpectralMatch> allResultingIdentifications = null;
@@ -60,8 +60,8 @@ namespace Test
 
         [Test]
         [TestCase("NNNPPP", "accession", "A", @"not applied", 1, 6, 3, 3, 0)]
-        [TestCase("NNNPPP", "accession", "A", @"1\t50000000\t.\tA\tG\t.\tPASS\tANN=\tGT:AD:DP\t1/1:30,30:30", 1, 5, 2, 3, 0)]
-        [TestCase("NNNPPP", "accession", "P", @"1\t50000000\t.\tA\tG\t.\tPASS\tANN=\tGT:AD:DP\t1/1:30,30:30", 2, 5, 2, 3, 1)]
+        [TestCase("NNNPPP", "accession", "A", @"1\t50000000\t.\tA\tG\t.\tPASS\tANN=G||||||||||||||||\tGT:AD:DP\t1/1:30,30:30", 1, 5, 2, 3, 0)]
+        [TestCase("NNNPPP", "accession", "P", @"1\t50000000\t.\tA\tG\t.\tPASS\tANN=G||||||||||||||||\tGT:AD:DP\t1/1:30,30:30", 2, 5, 2, 3, 1)]
         public static void TestCombos(string proteinSequence, string accession, string variantAA, string sequenceVariantDescription, int numModHashes, int numModifiedResidues, int numModifiedResiduesN, int numModifiedResiduesP, int numModifiedResiduesNP)
         {
             List<PeptideSpectralMatch> allIdentifications = null;
@@ -134,7 +134,7 @@ namespace Test
             //protein Creation (One with mod and one without)
             ModificationMotif.TryGetMotif("P", out ModificationMotif motifP);
             ModificationMotif.TryGetMotif("K", out ModificationMotif motifK);
-            var variant = new SequenceVariation(3, "P", "K", @"1\t50000000\t.\tA\tG\t.\tPASS\tANN=\tGT:AD:DP\t1/1:30,30:30");
+            var variant = new SequenceVariation(3, "P", "K", @"1\t50000000\t.\tA\tG\t.\tPASS\tANN=G|||||||||||||||||||\tGT:AD:DP\t1/1:30,30:30");
             Protein testProteinWithMod = new Protein("PEPTID", "accession1", sequenceVariations: new List<SequenceVariation> { variant });
             string variantAcc = VariantApplication.GetAccession(testProteinWithMod, new[] { variant });
             //First Write XML Database
@@ -215,7 +215,7 @@ namespace Test
             Modification attemptToLocalize = new Modification(null, null, null, null, _target: motif, _locationRestriction: locationRestriction, _chemicalFormula: null, _monoisotopicMass: 1, _databaseReference: null, _taxonomicRange: null, _keywords: null, _neutralLosses: null, _diagnosticIons: null, _fileOrigin: null);
             Dictionary<int, List<Modification>> oneBasedModifications = new Dictionary<int, List<Modification>>();
             oneBasedModifications.Add(proteinOneBasedIndex, new List<Modification>() { attemptToLocalize });
-            Protein protein = new Protein(proteinSequence, null, null, null, oneBasedModifications, null, null, null, false, false, null, null, null, null, "");
+            Protein protein = new Protein(proteinSequence, null, null, null, oneBasedModifications, null, null, null, false, false, null, null, null, null, null, null, "");
 
             Assert.AreEqual(result, GptmdEngine.ModFits(attemptToLocalize, protein, peptideOneBasedIndex, peptideLength, proteinOneBasedIndex));
         }
