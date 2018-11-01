@@ -173,7 +173,9 @@ namespace EngineLayer.ModernSearch
 
                 // prevents double-counting peaks close in m/z and lower-bound out of range exceptions
                 if (obsFragmentFloorMass < obsPreviousFragmentCeilingMz)
+                {
                     obsFragmentFloorMass = obsPreviousFragmentCeilingMz;
+                }
                 obsPreviousFragmentCeilingMz = obsFragmentCeilingMass + 1;
 
                 // prevent upper-bound index out of bounds errors;
@@ -183,13 +185,19 @@ namespace EngineLayer.ModernSearch
                     obsFragmentCeilingMass = FragmentIndex.Length - 1;
 
                     if (obsFragmentFloorMass >= FragmentIndex.Length)
+                    {
                         obsFragmentFloorMass = FragmentIndex.Length - 1;
+                    }
                 }
 
                 // search mass bins within a tolerance
                 for (int fragmentBin = obsFragmentFloorMass; fragmentBin <= obsFragmentCeilingMass; fragmentBin++)
+                {
                     if (FragmentIndex[fragmentBin] != null)
+                    {
                         binsToSearch.Add(fragmentBin);
+                    }
+                }
 
                 // add complementary ions
                 if (commonParameters.AddCompIons)
@@ -211,15 +219,22 @@ namespace EngineLayer.ModernSearch
                                 compFragmentFloorMass = FragmentIndex.Length - 1;
                         }
                         if (compFragmentFloorMass < 0)
+                        {
                             compFragmentFloorMass = 0;
+                        }
 
                         for (int fragmentBin = compFragmentFloorMass; fragmentBin <= compFragmentCeilingMass; fragmentBin++)
+                        {
                             if (FragmentIndex[fragmentBin] != null)
+                            {
                                 binsToSearch.Add(fragmentBin);
+                            }
+                        }
                     }
                     else
+                    {
                         throw new NotImplementedException();
-
+                    }
                 }
             }
             return binsToSearch;

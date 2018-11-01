@@ -49,7 +49,7 @@ namespace EngineLayer
             ListOfModsFixed = listOfModsFixed ?? new List<(string, string)> { ("Common Fixed", "Carbamidomethyl on C"), ("Common Fixed", "Carbamidomethyl on U") };
             DissociationType = dissociationType;
             QValueOutputFilter = qValueOutputFilter;
-            
+
             AssumeOrphanPeaksAreZ1Fragments = assumeOrphanPeaksAreZ1Fragments;
 
             MaxHeterozygousVariants = maxHeterozygousVariants;
@@ -100,8 +100,16 @@ namespace EngineLayer
             return c;
         }
 
-        public CommonParameters CloneWithNewTerminus(FragmentationTerminus terminus) //for use with speedy semi-specific searches to get both termini
+        public CommonParameters CloneWithNewTerminus(FragmentationTerminus? terminus = null, bool? addCompIons = null) //for use with speedy semi-specific searches to get both termini
         {
+            if (terminus == null)
+            {
+                terminus = DigestionParams.FragmentationTerminus;
+            }
+            if (addCompIons == null)
+            {
+                addCompIons = AddCompIons;
+            }
             return new CommonParameters(
                                 TaskDescriptor,
                                 DissociationType,
@@ -110,7 +118,7 @@ namespace EngineLayer
                                 DeconvolutionIntensityRatio,
                                 DeconvolutionMaxAssumedChargeState,
                                 ReportAllAmbiguity,
-                                AddCompIons,
+                                addCompIons.Value,//possibly changed
                                 TotalPartitions,
                                 ScoreCutoff,
                                 TopNpeaks,
@@ -132,7 +140,7 @@ namespace EngineLayer
                                     DigestionParams.InitiatorMethionineBehavior,
                                     DigestionParams.MaxModsForPeptide,
                                     DigestionParams.SearchModeType,
-                                    terminus //it's all for this
+                                    terminus.Value //possibly changed
                                 ),
                                 ListOfModsVariable,
                                 ListOfModsFixed,

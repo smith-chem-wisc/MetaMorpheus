@@ -152,7 +152,7 @@ namespace TaskLayer
                             .OfType<Protein>().ToList();
 
                         Status("Getting fragment dictionary...", new List<string> { taskId });
-                        var indexEngine = new IndexingEngine(proteinListSubset, variableModifications, fixedModifications, currentPartition, SearchParameters.DecoyType, combinedParams, SearchParameters.MaxFragmentSize, false, new List<string> { taskId });
+                        var indexEngine = new IndexingEngine(proteinListSubset, variableModifications, fixedModifications, currentPartition, SearchParameters.DecoyType, combinedParams, SearchParameters.MaxFragmentSize, false, dbFilenameList.Select(p => new FileInfo(p.FilePath)).ToList(), new List<string> { taskId });
                         List<int>[] fragmentIndex = null;
                         List<int>[] precursorIndex = null;
                         lock (indexLock)
@@ -199,7 +199,7 @@ namespace TaskLayer
                             List<int>[] precursorIndex = new List<int>[1];
 
                             Status("Getting fragment dictionary...", new List<string> { taskId });
-                            var indexEngine = new IndexingEngine(proteinListSubset, variableModifications, fixedModifications, currentPartition, SearchParameters.DecoyType, paramToUse, SearchParameters.MaxFragmentSize, true, new List<string> { taskId });
+                            var indexEngine = new IndexingEngine(proteinListSubset, variableModifications, fixedModifications, currentPartition, SearchParameters.DecoyType, paramToUse, SearchParameters.MaxFragmentSize, true, dbFilenameList.Select(p => new FileInfo(p.FilePath)).ToList(), new List<string> { taskId });
                             lock (indexLock)
                                 GenerateIndexes(indexEngine, dbFilenameList, ref peptideIndex, ref fragmentIndex, ref precursorIndex, proteinList.OfType<Protein>().ToList(), GlobalVariables.AllModsKnown.ToList(), taskId);
 
@@ -287,50 +287,62 @@ namespace TaskLayer
                 case MassDiffAcceptorType.Open: return 1;
                 case MassDiffAcceptorType.Custom: return ParseSearchMode(customMdac).NumNotches;
 
-                default: throw new MetaMorpheusException("Unknown MassDiffAcceptorType");
+                default: throw new MetaMorpheusException("Unknown mass difference acceptor type");
             }
         }
 
         private static MassDiffAcceptor ParseSearchMode(string text)
         {
-            MassDiffAcceptor ye = null;
+            MassDiffAcceptor massDiffAcceptor = null;
 
-            var split = text.Split(' ');
-
-            switch (split[1])
+            try
             {
-                case "dot":
+                var split = text.Split(' ');
 
-                    var massShifts = Array.ConvertAll(split[4].Split(','), Double.Parse);
-                    var newString = split[2].Replace("�", "");
-                    var toleranceValue = double.Parse(newString, CultureInfo.InvariantCulture);
-                    if (split[3].ToUpperInvariant().Equals("PPM"))
-                        ye = new DotMassDiffAcceptor(split[0], massShifts, new PpmTolerance(toleranceValue));
-                    else if (split[3].ToUpperInvariant().Equals("DA"))
-                        ye = new DotMassDiffAcceptor(split[0], massShifts, new AbsoluteTolerance(toleranceValue));
-                    break;
+                switch (split[1])
+                {
+                    case "dot":
+                        double[] massShifts = Array.ConvertAll(split[4].Split(','), Double.Parse);
+                        string newString = split[2].Replace("�", "");
+                        double toleranceValue = double.Parse(newString, CultureInfo.InvariantCulture);
+                        if (split[3].ToUpperInvariant().Equals("PPM"))
+                        {
+                            massDiffAcceptor = new DotMassDiffAcceptor(split[0], massShifts, new PpmTolerance(toleranceValue));
+                        }
+                        else if (split[3].ToUpperInvariant().Equals("DA"))
+                        {
+                            massDiffAcceptor = new DotMassDiffAcceptor(split[0], massShifts, new AbsoluteTolerance(toleranceValue));
+                        }
 
-                case "interval":
-                    IEnumerable<DoubleRange> doubleRanges = Array.ConvertAll(split[2].Split(','), b => new DoubleRange(double.Parse(b.Trim(new char[] { '[', ']' }).Split(';')[0], CultureInfo.InvariantCulture), double.Parse(b.Trim(new char[] { '[', ']' }).Split(';')[1], CultureInfo.InvariantCulture)));
-                    ye = new IntervalMassDiffAcceptor(split[0], doubleRanges);
-                    break;
+                        break;
 
-                case "OpenSearch":
-                    ye = new OpenSearchMode();
-                    break;
+                    case "interval":
+                        IEnumerable<DoubleRange> doubleRanges = Array.ConvertAll(split[2].Split(';'), b => new DoubleRange(double.Parse(b.Trim(new char[] { '[', ']' }).Split(',')[0], CultureInfo.InvariantCulture), double.Parse(b.Trim(new char[] { '[', ']' }).Split(',')[1], CultureInfo.InvariantCulture)));
+                        massDiffAcceptor = new IntervalMassDiffAcceptor(split[0], doubleRanges);
+                        break;
 
-                case "daltonsAroundZero":
-                    ye = new SingleAbsoluteAroundZeroSearchMode(double.Parse(split[2], CultureInfo.InvariantCulture));
-                    break;
+                    case "OpenSearch":
+                        massDiffAcceptor = new OpenSearchMode();
+                        break;
 
-                case "ppmAroundZero":
-                    ye = new SinglePpmAroundZeroSearchMode(double.Parse(split[2], CultureInfo.InvariantCulture));
-                    break;
+                    case "daltonsAroundZero":
+                        massDiffAcceptor = new SingleAbsoluteAroundZeroSearchMode(double.Parse(split[2], CultureInfo.InvariantCulture));
+                        break;
 
-                default:
-                    throw new MetaMorpheusException("Could not parse search mode string");
+                    case "ppmAroundZero":
+                        massDiffAcceptor = new SinglePpmAroundZeroSearchMode(double.Parse(split[2], CultureInfo.InvariantCulture));
+                        break;
+
+                    default:
+                        throw new MetaMorpheusException("Unrecognized search mode type: " + split[1]);
+                }
             }
-            return ye;
+            catch (Exception e)
+            {
+                throw new MetaMorpheusException("Could not parse search mode string: " + e.Message);
+            }
+            
+            return massDiffAcceptor;
         }
     }
 }

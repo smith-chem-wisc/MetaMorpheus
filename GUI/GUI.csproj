@@ -154,6 +154,9 @@
       <Generator>MSBuild:Compile</Generator>
       <SubType>Designer</SubType>
     </ApplicationDefinition>
+    <Compile Include="CustomModButton.xaml.cs">
+      <DependentUpon>CustomModButton.xaml</DependentUpon>
+    </Compile>
     <Compile Include="CustomMsgBox.xaml.cs">
       <DependentUpon>CustomMsgBox.xaml</DependentUpon>
     </Compile>
@@ -214,6 +217,10 @@
     <Page Include="CalibrateTaskWindow.xaml">
       <SubType>Designer</SubType>
       <Generator>MSBuild:Compile</Generator>
+    </Page>
+    <Page Include="CustomModButton.xaml">
+      <Generator>MSBuild:Compile</Generator>
+      <SubType>Designer</SubType>
     </Page>
     <Page Include="CustomMsgBox.xaml">
       <SubType>Designer</SubType>
@@ -321,6 +328,16 @@
     <Resource Include="Icons\mail_20.bmp" />
     <Resource Include="Icons\update_20.bmp" />
     <Resource Include="Icons\youtube_20.bmp" />
+  </ItemGroup>
+  <ItemGroup>
+    <Resource Include="Icons\Twitter_Logo_Blue.bmp">
+      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+    </Resource>
+  </ItemGroup>
+  <ItemGroup>
+    <Resource Include="Icons\Slack_Mark_Web.bmp">
+      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+    </Resource>
   </ItemGroup>
   <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />
   <!-- To modify your build process, add your task inside one of the targets below and uncomment it. 
