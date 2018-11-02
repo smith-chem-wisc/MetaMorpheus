@@ -111,7 +111,7 @@ namespace Test
 
             var indexedFragments = indexResults.FragmentIndex.Where(p => p != null).SelectMany(v => v).ToList();
             Assert.AreEqual(82, indexedFragments.Count);
-            Assert.AreEqual(3, indexResults.PeptideIndex.Count);
+            Assert.AreEqual(3, indexResults.PeptideIndex.Length);
 
             //Get MS2 scans.
             var myMsDataFile = new XLTestDataFile();

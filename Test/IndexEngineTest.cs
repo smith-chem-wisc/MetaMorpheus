@@ -47,7 +47,7 @@ namespace Test
 
             var results = (IndexingResults)engine.Run();
 
-            Assert.AreEqual(5, results.PeptideIndex.Count);
+            Assert.AreEqual(5, results.PeptideIndex.Length);
 
             var digestedList = proteinList[0].Digest(CommonParameters.DigestionParams, new List<Modification>(), variableModifications).ToList();
 
@@ -96,7 +96,7 @@ namespace Test
 
             var results = (IndexingResults)engine.Run();
 
-            Assert.AreEqual(1, results.PeptideIndex.Count);
+            Assert.AreEqual(1, results.PeptideIndex.Length);
 
             Assert.IsNaN(results.PeptideIndex[0].MonoisotopicMass);
             Assert.AreEqual(30000000 + 1, results.FragmentIndex.Length);
