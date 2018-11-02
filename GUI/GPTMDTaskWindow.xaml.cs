@@ -369,12 +369,12 @@ namespace MetaMorpheusGUI
                 SearchModifications.FilterTree(SearchFixMod, fixedModsTreeView, fixedModTypeForTreeViewObservableCollection);
                 SearchMod.FixedSearch = false;
             }
-            else if (SearchMod.VarSearch)
+            if (SearchMod.VarSearch)
             {
                 SearchModifications.FilterTree(SearchVarMod, variableModsTreeView, variableModTypeForTreeViewObservableCollection);
                 SearchMod.VarSearch = false;
             }
-            else if (GPTMDSearch)
+            if (GPTMDSearch)
             {
                 SearchModifications.FilterTree(SearchGPTMD, gptmdModsTreeView, gptmdModTypeForTreeViewObservableCollection);
                 GPTMDSearch = false;

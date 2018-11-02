@@ -298,7 +298,7 @@ namespace MetaMorpheusGUI
                 SearchModifications.FilterTree(SearchFixMod, fixedModsTreeView, FixedModTypeForTreeViewObservableCollection);
                 SearchMod.FixedSearch = false;
             }
-            else if (SearchMod.VarSearch)
+            if (SearchMod.VarSearch)
             {
                 SearchModifications.FilterTree(SearchVarMod, variableModsTreeView, VariableModTypeForTreeViewObservableCollection);
                 SearchMod.VarSearch = false;
