@@ -310,9 +310,6 @@ namespace EngineLayer
                                 bestProtein = kvp.Key;
                             }
                         }
-                        //bestProtein = possibleBestProteinList.OrderByDescending(kvp => proteinToPepSeqMatch[kvp.Key].Count).First().Key;
-                        //int highestNumTotalPep = possibleBestProteinList.Max(kvp => proteinToPepSeqMatch[kvp.Key].Count);
-                        //bestProtein = possibleBestProteinList.First(kvp => proteinToPepSeqMatch[kvp.Key].Count == highestNumTotalPep).Key;
                     }
 
                     parsimoniousProteinList.Add(bestProtein);
