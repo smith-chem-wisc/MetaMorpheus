@@ -155,14 +155,9 @@ namespace EngineLayer.Indexing
             if (GeneratePrecursorIndex)
             {
                 // create precursor index
-                try
-                {
-                    precursorIndex = new List<int>[(int)Math.Ceiling(MaxFragmentSize) * FragmentBinsPerDalton + 1];
-                }
-                catch (OutOfMemoryException)
-                {
-                    throw new MetaMorpheusException("Max precursor mass too large for indexing engine; try \"Classic Search\" mode, or make the maximum fragment mass smaller");
-                }
+
+                precursorIndex = new List<int>[(int)Math.Ceiling(MaxFragmentSize) * FragmentBinsPerDalton + 1];
+
                 progress = 0;
                 oldPercentProgress = 0;
                 ReportProgress(new ProgressEventArgs(0, "Creating precursor index...", nestedIds));
@@ -194,8 +189,21 @@ namespace EngineLayer.Indexing
                     }
                 }
             }
+            int[][] fragmentIndexArray = new int[fragmentIndex.Length][];
+            int[][] precursorIndexArray = new int[precursorIndex.Length][];
+            for (int i = 0; i < fragmentIndex.Length; i++)
+            {
+                if (fragmentIndex[i] != null)
+                {
+                    fragmentIndexArray[i] = fragmentIndex[i].ToArray();
+                }
+                if (precursorIndex[i] != null)
+                {
+                    precursorIndexArray[i] = precursorIndex[i].ToArray();
+                }
+            }
 
-            return new IndexingResults(peptidesSortedByMass, fragmentIndex, precursorIndex, this);
+            return new IndexingResults(peptidesSortedByMass.ToArray(), fragmentIndexArray, precursorIndexArray, this);
         }
     }
 }

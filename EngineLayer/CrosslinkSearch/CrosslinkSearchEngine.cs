@@ -30,8 +30,8 @@ namespace EngineLayer.CrosslinkSearch
         private Modification Loop;
         private char[] AllCrosslinkerSites;
 
-        public CrosslinkSearchEngine(CrosslinkSpectralMatch[] globalCsms, Ms2ScanWithSpecificMass[] listOfSortedms2Scans, List<PeptideWithSetModifications> peptideIndex,
-            List<int>[] fragmentIndex, int currentPartition, CommonParameters commonParameters, Crosslinker crosslinker, bool CrosslinkSearchTop, int CrosslinkSearchTopNum,
+        public CrosslinkSearchEngine(CrosslinkSpectralMatch[] globalCsms, Ms2ScanWithSpecificMass[] listOfSortedms2Scans, PeptideWithSetModifications[] peptideIndex,
+            int[][] fragmentIndex, int currentPartition, CommonParameters commonParameters, Crosslinker crosslinker, bool CrosslinkSearchTop, int CrosslinkSearchTopNum,
             bool quench_H2O, bool quench_NH2, bool quench_Tris, List<string> nestedIds)
             : base(null, listOfSortedms2Scans, peptideIndex, fragmentIndex, currentPartition, commonParameters, new OpenSearchMode(), 0, nestedIds)
         {
@@ -65,7 +65,7 @@ namespace EngineLayer.CrosslinkSearch
 
             Parallel.ForEach(Partitioner.Create(0, ListOfSortedMs2Scans.Length), new ParallelOptions { MaxDegreeOfParallelism = commonParameters.MaxThreadsToUsePerFile }, (range, loopState) =>
             {
-                byte[] scoringTable = new byte[PeptideIndex.Count];
+                byte[] scoringTable = new byte[PeptideIndex.Length];
                 List<int> idsOfPeptidesPossiblyObserved = new List<int>();
 
                 for (int scanIndex = range.Item1; scanIndex < range.Item2; scanIndex++)

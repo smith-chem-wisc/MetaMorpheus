@@ -16,13 +16,13 @@ namespace EngineLayer.NonSpecificEnzymeSearch
     {
         private static readonly double WaterMonoisotopicMass = PeriodicTable.GetElement("H").PrincipalIsotope.AtomicMass * 2 + PeriodicTable.GetElement("O").PrincipalIsotope.AtomicMass;
 
-        private readonly List<int>[] PrecursorIndex;
+        private readonly int[][] PrecursorIndex;
         private readonly int MinimumPeptideLength;
         PeptideSpectralMatch[][] GlobalCategorySpecificPsms;
         CommonParameters ModifiedParametersNoComp;
         List<ProductType> ProductTypesToSearch;
 
-        public NonSpecificEnzymeSearchEngine(PeptideSpectralMatch[][] globalPsms, Ms2ScanWithSpecificMass[] listOfSortedms2Scans, List<PeptideWithSetModifications> peptideIndex, List<int>[] fragmentIndex, List<int>[] precursorIndex, int currentPartition, CommonParameters CommonParameters, MassDiffAcceptor massDiffAcceptor, double maximumMassThatFragmentIonScoreIsDoubled, List<string> nestedIds) : base(null, listOfSortedms2Scans, peptideIndex, fragmentIndex, currentPartition, CommonParameters, massDiffAcceptor, maximumMassThatFragmentIonScoreIsDoubled, nestedIds)
+        public NonSpecificEnzymeSearchEngine(PeptideSpectralMatch[][] globalPsms, Ms2ScanWithSpecificMass[] listOfSortedms2Scans, PeptideWithSetModifications[] peptideIndex, int[][] fragmentIndex, int[][] precursorIndex, int currentPartition, CommonParameters CommonParameters, MassDiffAcceptor massDiffAcceptor, double maximumMassThatFragmentIonScoreIsDoubled, List<string> nestedIds) : base(null, listOfSortedms2Scans, peptideIndex, fragmentIndex, currentPartition, CommonParameters, massDiffAcceptor, maximumMassThatFragmentIonScoreIsDoubled, nestedIds)
         {
             PrecursorIndex = precursorIndex;
             MinimumPeptideLength = commonParameters.DigestionParams.MinPeptideLength;
@@ -41,7 +41,7 @@ namespace EngineLayer.NonSpecificEnzymeSearch
 
             Parallel.ForEach(Partitioner.Create(0, ListOfSortedMs2Scans.Length), new ParallelOptions { MaxDegreeOfParallelism = commonParameters.MaxThreadsToUsePerFile }, range =>
             {
-                byte[] scoringTable = new byte[PeptideIndex.Count];
+                byte[] scoringTable = new byte[PeptideIndex.Length];
                 HashSet<int> idsOfPeptidesPossiblyObserved = new HashSet<int>();
 
                 for (int i = range.Item1; i < range.Item2; i++)
@@ -57,7 +57,11 @@ namespace EngineLayer.NonSpecificEnzymeSearch
                     //the entire indexed scoring is done here
                     for (int j = 0; j < allBinsToSearch.Count; j++)
                     {
-                        FragmentIndex[allBinsToSearch[j]].ForEach(id => scoringTable[id]++);
+                        int[] indexes = FragmentIndex[allBinsToSearch[j]];
+                        for(int k=0; k<indexes.Length; k++)
+                        {
+                            scoringTable[indexes[k]]++;
+                        }
                     }
 
                     //populate ids of possibly observed with those containing allowed precursor masses
@@ -76,7 +80,11 @@ namespace EngineLayer.NonSpecificEnzymeSearch
                             {
                                 if (bin < FragmentIndex.Length && FragmentIndex[bin] != null)
                                 {
-                                    FragmentIndex[bin].ForEach(id => idsOfPeptidesPossiblyObserved.Add(id));
+                                    int[] idsToAdd = FragmentIndex[bin];
+                                    for(int idIndex = 0; idIndex<idsToAdd.Length; idIndex++)
+                                    {
+                                        idsOfPeptidesPossiblyObserved.Add(idsToAdd[idIndex]);
+                                    }
                                 }
                             }
                         }
@@ -85,7 +93,11 @@ namespace EngineLayer.NonSpecificEnzymeSearch
                         {
                             if (bin < PrecursorIndex.Length && PrecursorIndex[bin] != null)
                             {
-                                PrecursorIndex[bin].ForEach(id => idsOfPeptidesPossiblyObserved.Add(id));
+                                int[] idsToAdd = PrecursorIndex[bin];
+                                for (int idIndex = 0; idIndex < idsToAdd.Length; idIndex++)
+                                {
+                                    idsOfPeptidesPossiblyObserved.Add(idsToAdd[idIndex]);
+                                }
                             }
                         }
                     }
