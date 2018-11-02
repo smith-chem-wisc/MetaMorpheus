@@ -3,7 +3,6 @@ using MzLibUtil;
 using System;
 using System.Collections.Generic;
 using System.Collections.ObjectModel;
-using System.Diagnostics;
 using System.Globalization;
 using System.Linq;
 using System.Windows;
@@ -12,7 +11,6 @@ using System.Windows.Input;
 using TaskLayer;
 using Proteomics.ProteolyticDigestion;
 using MassSpectrometry;
-using System.Windows.Threading;
 
 namespace MetaMorpheusGUI
 {

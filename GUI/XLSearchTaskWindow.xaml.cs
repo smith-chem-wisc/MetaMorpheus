@@ -13,7 +13,6 @@ using UsefulProteomicsDatabases;
 using Proteomics.ProteolyticDigestion;
 using MassSpectrometry;
 using System.Windows.Controls;
-using System.Windows.Threading;
 
 namespace MetaMorpheusGUI
 {

@@ -14,7 +14,6 @@ using UsefulProteomicsDatabases;
 using Proteomics.Fragmentation;
 using Proteomics.ProteolyticDigestion;
 using MassSpectrometry;
-using System.Windows.Threading;
 
 namespace MetaMorpheusGUI
 {
