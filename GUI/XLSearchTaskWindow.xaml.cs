@@ -26,7 +26,6 @@ namespace MetaMorpheusGUI
         private readonly ObservableCollection<SearchModeForDataGrid> SearchModesForThisTask = new ObservableCollection<SearchModeForDataGrid>();
         private readonly ObservableCollection<ModTypeForTreeView> FixedModTypeForTreeViewObservableCollection = new ObservableCollection<ModTypeForTreeView>();
         private readonly ObservableCollection<ModTypeForTreeView> VariableModTypeForTreeViewObservableCollection = new ObservableCollection<ModTypeForTreeView>();
-        private readonly SearchModifications SearchMod = new SearchModifications();
 
         public XLSearchTaskWindow() : this(null)
         {

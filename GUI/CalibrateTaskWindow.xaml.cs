@@ -23,7 +23,6 @@ namespace MetaMorpheusGUI
         private readonly ObservableCollection<ModTypeForTreeView> FixedModTypeForTreeViewObservableCollection = new ObservableCollection<ModTypeForTreeView>();
         private readonly ObservableCollection<ModTypeForTreeView> VariableModTypeForTreeViewObservableCollection = new ObservableCollection<ModTypeForTreeView>();
         private readonly ObservableCollection<ModTypeForLoc> LocalizeModTypeForTreeViewObservableCollection = new ObservableCollection<ModTypeForLoc>();
-        private readonly SearchModifications SearchMod = new SearchModifications();
 
         public CalibrateTaskWindow() : this(null)
         {

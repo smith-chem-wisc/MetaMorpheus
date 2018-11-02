@@ -29,7 +29,6 @@ namespace MetaMorpheusGUI
         private readonly ObservableCollection<ModTypeForTreeView> VariableModTypeForTreeViewObservableCollection = new ObservableCollection<ModTypeForTreeView>();
         private readonly ObservableCollection<ModTypeForLoc> LocalizeModTypeForTreeViewObservableCollection = new ObservableCollection<ModTypeForLoc>();
         private readonly ObservableCollection<ModTypeForGrid> ModSelectionGridItems = new ObservableCollection<ModTypeForGrid>();
-        private readonly SearchModifications SearchMod = new SearchModifications();
 
         public SearchTaskWindow() : this(null)
         {
