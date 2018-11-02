@@ -149,14 +149,14 @@ namespace EngineLayer.Indexing
                     ReportProgress(new ProgressEventArgs(percentProgress, "Fragmenting peptides...", nestedIds));
                 }
             }
-
-            List<int>[] precursorIndex = null;
+            
+            int[][] precursorIndexArray = null;
 
             if (GeneratePrecursorIndex)
             {
                 // create precursor index
 
-                precursorIndex = new List<int>[(int)Math.Ceiling(MaxFragmentSize) * FragmentBinsPerDalton + 1];
+                List<int>[] precursorIndex = new List<int>[(int)Math.Ceiling(MaxFragmentSize) * FragmentBinsPerDalton + 1];
 
                 progress = 0;
                 oldPercentProgress = 0;
@@ -165,7 +165,7 @@ namespace EngineLayer.Indexing
                 for (int i = 0; i < peptidesSortedByMass.Count; i++)
                 {
                     double mass = peptidesSortedByMass[i].MonoisotopicMass;
-                    if (!Double.IsNaN(mass))
+                    if (!double.IsNaN(mass))
                     {
                         if (mass > MaxFragmentSize) //if the precursor is larger than the index allows, then stop adding precursors
                         {
@@ -175,9 +175,13 @@ namespace EngineLayer.Indexing
                         int precursorBin = (int)Math.Round(mass * FragmentBinsPerDalton);
 
                         if (precursorIndex[precursorBin] == null)
+                        {
                             precursorIndex[precursorBin] = new List<int> { i };
+                        }
                         else
+                        {
                             precursorIndex[precursorBin].Add(i);
+                        }
                     }
                     progress++;
                     var percentProgress = (int)((progress / peptidesSortedByMass.Count) * 100);
@@ -188,18 +192,22 @@ namespace EngineLayer.Indexing
                         ReportProgress(new ProgressEventArgs(percentProgress, "Creating precursor index...", nestedIds));
                     }
                 }
+                precursorIndexArray = new int[precursorIndex.Length][];
+                for (int i = 0; i < fragmentIndex.Length; i++)
+                {
+                    if (precursorIndex[i] != null)
+                    {
+                        precursorIndexArray[i] = precursorIndex[i].ToArray();
+                    }
+                }
             }
+
             int[][] fragmentIndexArray = new int[fragmentIndex.Length][];
-            int[][] precursorIndexArray = new int[precursorIndex.Length][];
             for (int i = 0; i < fragmentIndex.Length; i++)
             {
                 if (fragmentIndex[i] != null)
                 {
                     fragmentIndexArray[i] = fragmentIndex[i].ToArray();
-                }
-                if (precursorIndex[i] != null)
-                {
-                    precursorIndexArray[i] = precursorIndex[i].ToArray();
                 }
             }
 
