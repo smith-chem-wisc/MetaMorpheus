@@ -29,34 +29,21 @@ namespace MetaMorpheusGUI
         private readonly ObservableCollection<ModTypeForLoc> LocalizeModTypeForTreeViewObservableCollection = new ObservableCollection<ModTypeForLoc>();
         private readonly ObservableCollection<ModTypeForGrid> ModSelectionGridItems = new ObservableCollection<ModTypeForGrid>();
 
-        public SearchTaskWindow()
+        public SearchTaskWindow() : this(null)
         {
-            InitializeComponent();
-            TheTask = new SearchTask();
-
-            PopulateChoices();
-
-            UpdateFieldsFromTask(TheTask);
-
-            this.saveButton.Content = "Add the Search Task";
-
-            DataContextForSearchTaskWindow = new DataContextForSearchTaskWindow
-            {
-                ExpanderTitle = string.Join(", ", SearchModesForThisTask.Where(b => b.Use).Select(b => b.Name)),
-                AnalysisExpanderTitle = "Some analysis properties...",
-                SearchModeExpanderTitle = "Some search properties..."
-            };
-            this.DataContext = DataContextForSearchTaskWindow;
         }
 
         public SearchTaskWindow(SearchTask task)
         {
             InitializeComponent();
-            TheTask = task;
-
+            TheTask = task ?? new SearchTask();
             PopulateChoices();
-
             UpdateFieldsFromTask(TheTask);
+            
+            if (task == null)
+            {
+                this.saveButton.Content = "Add the Search Task";
+            }
 
             DataContextForSearchTaskWindow = new DataContextForSearchTaskWindow
             {
@@ -65,6 +52,7 @@ namespace MetaMorpheusGUI
                 SearchModeExpanderTitle = "Some search properties..."
             };
             this.DataContext = DataContextForSearchTaskWindow;
+            SearchModifications.Timer.Tick += new EventHandler(TextChangeTimerHandler);
         }
 
         internal SearchTask TheTask { get; private set; }
@@ -739,9 +727,31 @@ namespace MetaMorpheusGUI
             }
         }
 
-        private void dissassociationTypeComboBox_SelectionChanged(object sender, SelectionChangedEventArgs e)
+        private void TextChanged_Fixed(object sender, TextChangedEventArgs args)
         {
+            SearchModifications.SetTimer();
+            SearchModifications.FixedSearch = true;
+        }
 
+        private void TextChanged_Var(object sender, TextChangedEventArgs args)
+        {
+            SearchModifications.SetTimer();
+            SearchModifications.VariableSearch = true;
+        }
+        
+        private void TextChangeTimerHandler(object sender, EventArgs e)
+        {
+            if (SearchModifications.FixedSearch)
+            {
+                SearchModifications.FilterTree(SearchFixMod, fixedModsTreeView, FixedModTypeForTreeViewObservableCollection);
+                SearchModifications.FixedSearch = false;
+            }
+
+            if (SearchModifications.VariableSearch)
+            {
+                SearchModifications.FilterTree(SearchVarMod, variableModsTreeView, VariableModTypeForTreeViewObservableCollection);
+                SearchModifications.VariableSearch = false;
+            }
         }
     }
 
