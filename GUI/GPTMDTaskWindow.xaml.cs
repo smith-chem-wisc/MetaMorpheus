@@ -3,6 +3,7 @@ using MzLibUtil;
 using System;
 using System.Collections.Generic;
 using System.Collections.ObjectModel;
+using System.Diagnostics;
 using System.Globalization;
 using System.Linq;
 using System.Windows;
@@ -24,10 +25,9 @@ namespace MetaMorpheusGUI
         private readonly ObservableCollection<ModTypeForTreeView> variableModTypeForTreeViewObservableCollection = new ObservableCollection<ModTypeForTreeView>();
         private readonly ObservableCollection<ModTypeForLoc> localizeModTypeForTreeViewObservableCollection = new ObservableCollection<ModTypeForLoc>();
         private readonly ObservableCollection<ModTypeForTreeView> gptmdModTypeForTreeViewObservableCollection = new ObservableCollection<ModTypeForTreeView>();
-        private readonly SearchModifications SearchMod = new SearchModifications();
 
         public GptmdTaskWindow() : this(null)
-        {          
+        {
         }
 
         public GptmdTaskWindow(GptmdTask myGPTMDtask)
@@ -42,11 +42,11 @@ namespace MetaMorpheusGUI
             {
                 this.saveButton.Content = "Add the GPTMD Task";
             }
-            SearchMod.Timer.Tick += new EventHandler(TextChangeTimerHandler);
+
+            SearchModifications.Timer.Tick += new EventHandler(TextChangeTimerHandler);
         }
 
         internal GptmdTask TheTask { get; private set; }
-        private static bool GPTMDSearch { get; set; }
 
         private void Row_DoubleClick(object sender, MouseButtonEventArgs e)
         {
@@ -335,51 +335,44 @@ namespace MetaMorpheusGUI
                 CancelButton_Click(sender, e);
             }
         }
-        
+
         private void TextChanged_Fixed(object sender, TextChangedEventArgs args)
         {
-            SearchMod.FixedSearch = true;
-            SearchMod.SetTimer();
+            SearchModifications.SetTimer();
+            SearchModifications.FixedSearch = true;
         }
 
         private void TextChanged_Var(object sender, TextChangedEventArgs args)
         {
-            SearchMod.VarSearch = true;
-            SearchMod.SetTimer();
+            SearchModifications.SetTimer();
+            SearchModifications.VariableSearch = true;
         }
 
         private void TextChanged_GPTMD(object sender, TextChangedEventArgs args)
         {
-            GPTMDSearch = true;
-            SearchMod.SetTimer();
+            SearchModifications.SetTimer();
+            SearchModifications.GptmdSearch = true;
         }
 
-        // handles text changed event after user stops typing (timer elapses)
         private void TextChangeTimerHandler(object sender, EventArgs e)
         {
-            var timer = sender as DispatcherTimer;
-
-            if (timer == null)
-            {
-                return;
-            }
-
-            if (SearchMod.FixedSearch)
+            if (SearchModifications.FixedSearch)
             {
                 SearchModifications.FilterTree(SearchFixMod, fixedModsTreeView, fixedModTypeForTreeViewObservableCollection);
-                SearchMod.FixedSearch = false;
+                SearchModifications.FixedSearch = false;
             }
-            if (SearchMod.VarSearch)
+
+            if (SearchModifications.VariableSearch)
             {
                 SearchModifications.FilterTree(SearchVarMod, variableModsTreeView, variableModTypeForTreeViewObservableCollection);
-                SearchMod.VarSearch = false;
+                SearchModifications.VariableSearch = false;
             }
-            if (GPTMDSearch)
+
+            if (SearchModifications.GptmdSearch)
             {
                 SearchModifications.FilterTree(SearchGPTMD, gptmdModsTreeView, gptmdModTypeForTreeViewObservableCollection);
-                GPTMDSearch = false;
+                SearchModifications.GptmdSearch = false;
             }
         }
-
     }
 }

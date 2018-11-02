@@ -8,20 +8,22 @@ namespace MetaMorpheusGUI
 {
     class SearchModifications
     {
-        public DispatcherTimer Timer;
-        public bool FixedSearch { get; set; } // true if fixed mods search box used
-        public bool VarSearch { get; set; } // true if var mods search box used
-
-        public SearchModifications()
+        public static DispatcherTimer Timer;
+        public static bool FixedSearch;
+        public static bool VariableSearch;
+        public static bool GptmdSearch;
+        
+        public static void SetUpModSearchBoxes()
         {
             Timer = new DispatcherTimer();
             Timer.Interval = TimeSpan.FromMilliseconds(300);
         }
 
         // starts timer to keep track of user keystrokes
-        public void SetTimer()
+        public static void SetTimer()
         {
-            Timer.Stop(); // Resets the timer
+            // Reset the timer
+            Timer.Stop();
             Timer.Start();
         }
 
@@ -29,31 +31,31 @@ namespace MetaMorpheusGUI
         public static void FilterTree(TextBox textbox, TreeView tree, ObservableCollection<ModTypeForTreeView> collection)
         {
             string key = textbox.Text.ToLower();
-            if (key == "")
+            if (string.IsNullOrEmpty(key))
             {
                 tree.DataContext = collection; // shows full tree if nothing is searched
                 return;
             }
 
-            var parentModsMatch = collection.Where(p => p.DisplayName.ToLower().Contains(key)); // parent mod types that match key
-            var childModsMatch = collection.Where(p => p.Children.Any(c => c.DisplayName.ToLower().Contains(key))); // parent of child mods that match key
+            var modTypesWithMatchingMods = collection.Where(p => p.Children.Any(c => c.DisplayName.ToLower().Contains(key))); // parent of child mods that match key
 
-            if (parentModsMatch.Count() == 0 && childModsMatch.Count() != 0)
+            var modsThatMatchSearchString = new ObservableCollection<ModTypeForTreeView>(); // new collection containing expanded mod types that match key 
+
+            foreach (ModTypeForTreeView modType in modTypesWithMatchingMods)
             {
-                var allModsMatch = new ObservableCollection<ModTypeForTreeView>(); // new collection containing expanded mod types that match key                  
-                foreach (ModTypeForTreeView parent in childModsMatch.ToList())
-                {
-                    var newParent = new ModTypeForTreeView(parent.DisplayName, false);
-                    allModsMatch.Add(newParent);
-                    newParent.Use = false;
-                    newParent.Expanded = true;
+                var textFilteredModType = new ModTypeForTreeView(modType.DisplayName, false);
+                modsThatMatchSearchString.Add(textFilteredModType);
+                textFilteredModType.Expanded = true;
+                textFilteredModType.Use = modType.Use;
 
-                    var children = parent.Children.Where(y => y.DisplayName.ToLower().Contains(key));
-                    children.ToList().ForEach(child => newParent.Children.Add(child));
+                var matchingChildren = modType.Children.Where(p => p.DisplayName.ToLower().Contains(key));
+                foreach (ModForTreeView mod in matchingChildren)
+                {
+                    textFilteredModType.Children.Add(mod);
                 }
-                parentModsMatch = allModsMatch;
             }
-            tree.DataContext = parentModsMatch;
+
+            tree.DataContext = modsThatMatchSearchString;
         }
     }
 }

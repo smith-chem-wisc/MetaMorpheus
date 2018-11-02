@@ -54,7 +54,7 @@ namespace MetaMorpheusGUI
                 SearchModeExpanderTitle = "Some search properties..."
             };
             this.DataContext = DataContextForSearchTaskWindow;
-            SearchMod.Timer.Tick += new EventHandler(TextChangeTimerHandler);
+            SearchModifications.Timer.Tick += new EventHandler(TextChangeTimerHandler);
         }
 
         internal SearchTask TheTask { get; private set; }
@@ -712,45 +712,32 @@ namespace MetaMorpheusGUI
             }
         }
 
-        private void dissassociationTypeComboBox_SelectionChanged(object sender, SelectionChangedEventArgs e)
-        {
-
-        }
-
         private void TextChanged_Fixed(object sender, TextChangedEventArgs args)
         {
-            SearchMod.FixedSearch = true;
-            SearchMod.SetTimer();
+            SearchModifications.SetTimer();
+            SearchModifications.FixedSearch = true;
         }
 
         private void TextChanged_Var(object sender, TextChangedEventArgs args)
         {
-            SearchMod.VarSearch = true;
-            SearchMod.SetTimer();
+            SearchModifications.SetTimer();
+            SearchModifications.VariableSearch = true;
         }
-
-        // handles text changed event after user stops typing (timer elapses)
+        
         private void TextChangeTimerHandler(object sender, EventArgs e)
         {
-            var timer = sender as DispatcherTimer;
-
-            if (timer == null)
-            {
-                return;
-            }
-
-            if (SearchMod.FixedSearch)
+            if (SearchModifications.FixedSearch)
             {
                 SearchModifications.FilterTree(SearchFixMod, fixedModsTreeView, FixedModTypeForTreeViewObservableCollection);
-                SearchMod.FixedSearch = false;
+                SearchModifications.FixedSearch = false;
             }
-            if (SearchMod.VarSearch)
+
+            if (SearchModifications.VariableSearch)
             {
                 SearchModifications.FilterTree(SearchVarMod, variableModsTreeView, VariableModTypeForTreeViewObservableCollection);
-                SearchMod.VarSearch = false;
+                SearchModifications.VariableSearch = false;
             }
         }
-
     }
 
     public class DataContextForSearchTaskWindow : INotifyPropertyChanged

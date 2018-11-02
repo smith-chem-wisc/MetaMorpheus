@@ -394,7 +394,7 @@
                                     <StackPanel Grid.Column="1">
                                         <StackPanel Orientation="Horizontal" Margin="5">
                                             <Label x:Name="dissociationTypeLabel" Content="Dissociation Type" />
-                                            <ComboBox x:Name="dissociationTypeComboBox" ToolTipService.ShowDuration="999999" ToolTipService.InitialShowDelay="500" SelectionChanged="dissassociationTypeComboBox_SelectionChanged">
+                                            <ComboBox x:Name="dissociationTypeComboBox" ToolTipService.ShowDuration="999999" ToolTipService.InitialShowDelay="500">
                                                 <ComboBox.ToolTip>
                                                     <TextBlock>
                                                         The dissociation type used for MS/MS.
