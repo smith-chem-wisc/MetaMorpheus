@@ -54,7 +54,7 @@ namespace Test
             result = SearchTask.GetMassDiffAcceptor(searchTask.CommonParameters.PrecursorMassTolerance, MassDiffAcceptorType.Custom, "TestCustom dot 5 da 0,1.0029,2.0052");
             Assert.That(result.NumNotches == 3);
 
-            result = SearchTask.GetMassDiffAcceptor(searchTask.CommonParameters.PrecursorMassTolerance, MassDiffAcceptorType.Custom, "TestCustom interval [0;5],[0;5]");
+            result = SearchTask.GetMassDiffAcceptor(searchTask.CommonParameters.PrecursorMassTolerance, MassDiffAcceptorType.Custom, "TestCustom interval [0,5];[0,5]");
             Assert.That(result.NumNotches == 1);
 
             result = SearchTask.GetMassDiffAcceptor(searchTask.CommonParameters.PrecursorMassTolerance, MassDiffAcceptorType.Custom, "TestCustom OpenSearch 5");
@@ -146,7 +146,7 @@ namespace Test
 
                 string outputPath = Path.Combine(TestContext.CurrentContext.TestDirectory, @"TestSemiSpecific\TestSemiSpecific\AllPSMs.psmtsv");
                 var output = File.ReadAllLines(outputPath);
-                Assert.That(output.Length == 12); //if N is only producing 11 lines, then the c is not being searched with it.
+                Assert.That(output.Length == 13); //if N is only producing 11 lines, then the c is not being searched with it. //If only 12 lines, maybe missed mono issue
             }
             Directory.Delete(outputFolder, true);
         }

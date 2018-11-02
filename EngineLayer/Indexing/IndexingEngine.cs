@@ -4,6 +4,7 @@ using Proteomics.ProteolyticDigestion;
 using System;
 using System.Collections.Concurrent;
 using System.Collections.Generic;
+using System.IO;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
@@ -15,15 +16,15 @@ namespace EngineLayer.Indexing
     {
         private const int FragmentBinsPerDalton = 1000;
         private readonly List<Protein> ProteinList;
-
         private readonly List<Modification> FixedModifications;
         private readonly List<Modification> VariableModifications;
         private readonly int CurrentPartition;
         private readonly DecoyType DecoyType;
         private readonly double MaxFragmentSize;
         public readonly bool GeneratePrecursorIndex;
+        public readonly List<FileInfo> ProteinDatabases;
 
-        public IndexingEngine(List<Protein> proteinList, List<Modification> variableModifications, List<Modification> fixedModifications, int currentPartition, DecoyType decoyType, CommonParameters commonParams, double maxFragmentSize, bool generatePrecursorIndex, List<string> nestedIds) : base(commonParams, nestedIds)
+        public IndexingEngine(List<Protein> proteinList, List<Modification> variableModifications, List<Modification> fixedModifications, int currentPartition, DecoyType decoyType, CommonParameters commonParams, double maxFragmentSize, bool generatePrecursorIndex, List<FileInfo> proteinDatabases, List<string> nestedIds) : base(commonParams, nestedIds)
         {
             ProteinList = proteinList;
             VariableModifications = variableModifications;
@@ -32,11 +33,13 @@ namespace EngineLayer.Indexing
             DecoyType = decoyType;
             MaxFragmentSize = maxFragmentSize;
             GeneratePrecursorIndex = generatePrecursorIndex;
+            this.ProteinDatabases = proteinDatabases;
         }
 
         public override string ToString()
         {
             var sb = new StringBuilder();
+            sb.AppendLine("Databases: " + string.Join(",", ProteinDatabases.OrderBy(p => p.Name).Select(p => p.Name + ":" + p.CreationTime)));
             sb.AppendLine("Partitions: " + CurrentPartition + "/" + commonParameters.TotalPartitions);
             sb.AppendLine("Precursor Index: " + GeneratePrecursorIndex);
             sb.AppendLine("Search Decoys: " + DecoyType);
@@ -102,7 +105,7 @@ namespace EngineLayer.Indexing
             });
 
             // sort peptides by mass
-            var peptidesSortedByMass = globalPeptides.AsParallel().WithDegreeOfParallelism(commonParameters.MaxThreadsToUsePerFile).OrderBy(p => p.MonoisotopicMass).ToList();
+            var peptidesSortedByMass = globalPeptides.OrderBy(p => p.MonoisotopicMass).ToList();
             globalPeptides = null;
 
             // create fragment index

@@ -1431,6 +1431,12 @@ namespace MetaMorpheusGUI
             dataGridProteinDatabases.Items.Refresh();
         }
 
+        private void AddCustomMod_Click(object sender, RoutedEventArgs e)
+        {
+            var dialog = new CustomModButtonWindow();
+            dialog.ShowDialog();
+        }
+
         // handle window closing
         private void MainWindow_Closing(object sender, CancelEventArgs e)
         {
