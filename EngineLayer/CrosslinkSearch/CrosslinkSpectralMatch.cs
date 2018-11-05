@@ -30,7 +30,6 @@ namespace EngineLayer.CrosslinkSearch
         public PsmCrossType CrossType { get; set; }
         //Glyco properties
         public List<Glycan> Glycan { get; set; }
-        public List<int> GlycanSites { get; set; }
 
         public static List<int> GetPossibleCrosslinkerModSites(char[] crosslinkerModSites, PeptideWithSetModifications peptide)
         {
@@ -164,18 +163,17 @@ namespace EngineLayer.CrosslinkSearch
             sb.Append("CrossType" + '\t');
 
             sb.Append("Pep" + '\t');
-            sb.Append("Pep Protein Access" + '\t');
-            sb.Append("Protein mod site" + '\t');
-            sb.Append("Pep Base sequence" + '\t');
-            sb.Append("Pep Full sequence" + '\t');
-            sb.Append("Pep mass" + '\t');
-            sb.Append("Pep BestScore" + '\t');
-            sb.Append("Pep Rank" + '\t');
-            sb.Append("Charge2/3Number" + '\t');
+            sb.Append("Protein Accession" + '\t');
+            sb.Append("Protein site" + '\t');
+            sb.Append("Base sequence" + '\t');
+            sb.Append("Full sequence" + '\t');
+            sb.Append("Peptide Monoisotopic mass" + '\t');
+            sb.Append("Score" + '\t');
+            sb.Append("Rank" + '\t');
             sb.Append("Target/Decoy" + '\t');
             sb.Append("QValue" + '\t');
-            sb.Append("GlyID" + '\t');
-            sb.Append("GlyMass" + '\t');
+            sb.Append("Glycan ID" + '\t');
+            sb.Append("Glycan Mass" + '\t');
             sb.Append("GlyStruct(H,N,A,G,F)" + '\t');
             return sb.ToString();
         }

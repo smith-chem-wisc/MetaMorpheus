@@ -105,7 +105,7 @@ namespace TaskLayer
                     GenerateIndexes(indexEngine, dbFilenameList, ref peptideIndex, ref fragmentIndex, ref precursorIndex, proteinList, GlobalVariables.AllModsKnown.ToList(), taskId);
 
                     Status("Searching files...", taskId);
-                    new CrosslinkSearchEngine(newPsms, arrayOfMs2ScansSortedByMass, peptideIndex, fragmentIndex, currentPartition, combinedParams, crosslinker,
+                    new CrosslinkSearchEngine(newPsms, arrayOfMs2ScansSortedByMass, peptideIndex, fragmentIndex, currentPartition, combinedParams, XlSearchParameters.SearchGlyco, crosslinker,
                         XlSearchParameters.RestrictToTopNHits, XlSearchParameters.CrosslinkSearchTopNum, XlSearchParameters.XlQuench_H2O,
                         XlSearchParameters.XlQuench_NH2, XlSearchParameters.XlQuench_Tris, thisId).Run();
 

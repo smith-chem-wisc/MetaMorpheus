@@ -15,9 +15,9 @@ namespace EngineLayer.CrosslinkSearch
     {
         protected readonly CrosslinkSpectralMatch[] GlobalCsms;
 
+        private bool SearchGlycan;
         // crosslinker molecule
         private readonly Crosslinker Crosslinker;
-
         private readonly bool CrosslinkSearchTopN;
         private readonly int TopN;
         private readonly bool QuenchH2O;
@@ -30,15 +30,13 @@ namespace EngineLayer.CrosslinkSearch
         private Modification Loop;
         private char[] AllCrosslinkerSites;
 
-        //Glyco 
-        private bool _searchGlycan;
-
         public CrosslinkSearchEngine(CrosslinkSpectralMatch[] globalCsms, Ms2ScanWithSpecificMass[] listOfSortedms2Scans, List<PeptideWithSetModifications> peptideIndex,
-            List<int>[] fragmentIndex, int currentPartition, CommonParameters commonParameters, Crosslinker crosslinker, bool CrosslinkSearchTop, int CrosslinkSearchTopNum,
+            List<int>[] fragmentIndex, int currentPartition, CommonParameters commonParameters, bool _searchGlycan, Crosslinker crosslinker, bool CrosslinkSearchTop, int CrosslinkSearchTopNum,
             bool quench_H2O, bool quench_NH2, bool quench_Tris, List<string> nestedIds)
             : base(null, listOfSortedms2Scans, peptideIndex, fragmentIndex, currentPartition, commonParameters, new OpenSearchMode(), 0, nestedIds)
         {
             this.GlobalCsms = globalCsms;
+            this.SearchGlycan = _searchGlycan;
             this.Crosslinker = crosslinker;
             this.CrosslinkSearchTopN = CrosslinkSearchTop;
             this.TopN = CrosslinkSearchTopNum;
@@ -57,7 +55,7 @@ namespace EngineLayer.CrosslinkSearch
                 XLPrecusorSearchMode = new SingleAbsoluteAroundZeroSearchMode(commonParameters.PrecursorMassTolerance.Value);
             }
 
-            if (_searchGlycan)
+            if (SearchGlycan)
             {
                 groupedGlycans = GlobalVariables.Glycans.GroupBy(p => p.Mass).ToDictionary(p => p.Key, p => p.ToList());
             }
@@ -129,7 +127,7 @@ namespace EngineLayer.CrosslinkSearch
                         }
 
                         CrosslinkSpectralMatch csm;
-                        if (_searchGlycan)
+                        if (SearchGlycan)
                         {
                             //Glycopeptide Search
                             csm = FindGlycopeptide(scan, bestPeptideScoreNotchList, scanIndex);
@@ -588,11 +586,11 @@ namespace EngineLayer.CrosslinkSearch
                                     }                          
                                 }
                             }
-
-                            var psmCross = new CrosslinkSpectralMatch(theScanBestPeptide[ind].BestPeptide, theScanBestPeptide[ind].BestNotch, bestLocalizedScore, scanIndex, theScan, commonParameters.DigestionParams, bestMatchedIons);
+                            PeptideWithSetModifications bestPeptide = theScanBestPeptide[ind].BestPeptide;
+                            var psmCross = new CrosslinkSpectralMatch(bestPeptide, theScanBestPeptide[ind].BestNotch, bestLocalizedScore, scanIndex, theScan, commonParameters.DigestionParams, bestMatchedIons);
                             psmCross.Glycan = new List<Glycan> { glycan };
                             psmCross.XlRank = new List<int> { ind };
-                            psmCross.GlycanSites = new List<int> { bestSite}; //TO DO: ambiguity modification site
+                            psmCross.LinkPositions = new List<int> { bestSite}; //TO DO: ambiguity modification site
                             possibleMatches.Add(psmCross);
                         }
                     }

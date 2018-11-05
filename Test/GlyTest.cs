@@ -69,44 +69,6 @@ namespace Test
         }
 
         [Test]
-        public static void GlyTest_Output()
-        {
-            //Generate parameters
-            var commonParameters = new CommonParameters(doPrecursorDeconvolution: false, deconvolutionMassTolerance:new PpmTolerance(20), precursorMassTolerance: new PpmTolerance(10));
-
-            var xlSearchParameters = new XlSearchParameters(searchGlycan:true);
-
-            //Create databases contain two protein.
-            var proteinList = new List<Protein> {new Protein("DANNTQFQFTSR", "accession") };
-
-            ModificationMotif.TryGetMotif("M", out ModificationMotif motif1);
-            Modification mod1 = new Modification(_originalId: "Oxidation of M", _modificationType: "Common Variable", _target: motif1, _locationRestriction: "Anywhere.", _monoisotopicMass: 15.99491461957);
-            ModificationMotif.TryGetMotif("C", out ModificationMotif motif2);
-            Modification mod2 = new Modification(_originalId: "Carbamidomethyl of C", _modificationType: "Common Fixed", _target: motif2, _locationRestriction: "Anywhere.", _monoisotopicMass: 57.02146372068994);
-            var variableModifications = new List<Modification>() { mod1 };
-            var fixedModifications = new List<Modification>() { mod2 };
-            var localizeableModifications = new List<Modification>();
-
-            //Run index engine
-            var indexEngine = new IndexingEngine(proteinList, variableModifications, fixedModifications, 1, DecoyType.Reverse, commonParameters, 30000, false, new List<string>());
-
-            var indexResults = (IndexingResults)indexEngine.Run();
-
-            var indexedFragments = indexResults.FragmentIndex.Where(p => p != null).SelectMany(v => v).ToList();
-
-            //Get MS2 scans.
-            string filePath = Path.Combine(TestContext.CurrentContext.TestDirectory, @"XlTestData/25170.mgf");
-            MyFileManager myFileManager = new MyFileManager(true);
-            var msDataFile = myFileManager.LoadFile(filePath, 300, 0.01, true, true, commonParameters);
-            var listOfSortedms2Scans = MetaMorpheusTask.GetMs2Scans(msDataFile, filePath, commonParameters).ToArray();
-            Crosslinker crosslinker = new Crosslinker().SelectCrosslinker(CrosslinkerType.DSSO); //Just used as a parameter
-
-            CrosslinkSpectralMatch[] possiblePsms = new CrosslinkSpectralMatch[listOfSortedms2Scans.Length];
-            new CrosslinkSearchEngine(possiblePsms, listOfSortedms2Scans, indexResults.PeptideIndex, indexResults.FragmentIndex, 0, commonParameters, crosslinker, xlSearchParameters.RestrictToTopNHits, xlSearchParameters.CrosslinkSearchTopNum, xlSearchParameters.XlQuench_H2O, xlSearchParameters.XlQuench_NH2, xlSearchParameters.XlQuench_Tris, new List<string> { }).Run();
-
-        }
-
-        [Test]
         public static void GlyTest_RunTask()
         {
             var task = Toml.ReadFile<XLSearchTask>(Path.Combine(TestContext.CurrentContext.TestDirectory, @"XlTestData/GlycoSearchTaskconfig.toml"), MetaMorpheusTask.tomlConfig);
@@ -114,7 +76,7 @@ namespace Test
             DbForTask db = new DbForTask(Path.Combine(TestContext.CurrentContext.TestDirectory, @"XlTestData/Q9C0Y4.fasta"), false);
             string raw = Path.Combine(TestContext.CurrentContext.TestDirectory, @"XlTestData/25170.mgf");
             new EverythingRunnerEngine(new List<(string, MetaMorpheusTask)> { ("Task", task) }, new List<string> { raw }, new List<DbForTask> { db }, Path.Combine(Environment.CurrentDirectory, @"TESTXlTestData")).Run();
-            Directory.Delete(Path.Combine(Environment.CurrentDirectory, @"TESTXlTestData"), true);
+            //Directory.Delete(Path.Combine(Environment.CurrentDirectory, @"TESTXlTestData"), true);
         }
 
         [Test]

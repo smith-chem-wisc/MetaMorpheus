@@ -50,7 +50,8 @@ namespace EngineLayer
             ElementsLocation = Path.Combine(DataDir, @"Data", @"elements.dat");
             UsefulProteomicsDatabases.Loaders.LoadElements(ElementsLocation);
 
-            string GlycanLocation = Path.Combine(DataDir, @"Data", @"pGlyco.gdb");
+            //TO DO: optimize this, only load when search Glycopeptides
+            string GlycanLocation = Path.Combine(DataDir, @"Data", @"NGlycan.gdb");
             Glycans = Glycan.LoadGlycan(GlycanLocation);
 
             ExperimentalDesignFileName = "ExperimentalDesign.tsv";
