@@ -4,7 +4,6 @@ ID   Hydroxylation
 TG   K or N
 PP   Anywhere.
 CF   O1
-MM   15.994915
 MT   Common Biological
 //
 ID   Carboxylation
@@ -180,6 +179,24 @@ NL   C8H13NO5
 CF   C8H13NO5
 MT   Common Biological
 //
+ID   ADP-ribosylation
+TG   S
+PP   Anywhere.
+MT   Common Biological
+CF   C15 H21 N5 O13 P2
+//
+ID   Pyridoxal phosphate
+TG   K
+PP   Anywhere.
+MT   Common Biological
+CF   C8 H8 N1 O5 P1
+//
+ID   Nitrosylation
+TG   C
+PP   Anywhere.
+MT   Common Biological
+CF   H-1 N1 O1
+//
 ################################## COMMON ARTIFACT MODS
 ID   Deamidation
 TG   N or Q
@@ -261,7 +278,7 @@ MT   Less Common
 CF   O2
 //
 ID   Oxidation
-TG   Y or W or P or F or D or E or V or H or K or N or R or C or U or I or L or Q or S or T
+TG   Y or W or P or F or D or E or V or H or R or C or U or I or L or Q or S or T
 PP   Anywhere.
 MT   Less Common
 CF   O1
@@ -504,6 +521,18 @@ TG   D or E
 PP   Anywhere.
 MT   Metal
 CF   H-2 Fe1
+//
+ID   Magnesium
+TG   D or E
+PP   Anywhere.
+MT   Metal
+CF   H-2 Mg1
+//
+ID   Cu[I]
+TG   D or E
+PP   Anywhere.
+MT   Metal
+CF   H-1 Cu1
 //
 ################################## PROTEASE-SPECIFIC
 ID   GG (Ubiquitination Site)
