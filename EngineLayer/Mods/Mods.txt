@@ -306,20 +306,20 @@ PP   Anywhere.
 MT   Less Common
 CF   H-2 O-1
 //
-ID   Oxidation of W to Kynurenine
+ID   Oxidation to Kynurenine
 TG   W
 PP   Anywhere.
 MT   Less Common
 DI   HCD:C9 H10 N2 O3
 CF   C-1 O1
 //
-ID   Dehydroalanine from Cysteine
+ID   Dehydroalanine
 TG   C
 PP   Anywhere.
 MT   Less Common
 CF   H-2 S-1
 //
-ID   Dehydroalanine from Serine
+ID   Dehydroalanine
 TG   S
 PP   Anywhere.
 MT   Less Common
@@ -403,7 +403,7 @@ PP   Anywhere.
 MT   Less Common
 CF   H-2 C-1 O-1
 //
-ID   Trioxidation of C
+ID   Trioxidation
 TG   C
 PP   Anywhere.
 MT   Less Common
@@ -417,48 +417,34 @@ MT   Less Common
 CF   O3 S1
 //
 ID   Farnesylation
-TG   Cysteine
+TG   C
 PP   Anywhere.
 NL   H0 or H24 C15
 MT   Less Common
 CF   H24 C15
 //
-ID   Succinylation of N-Term
+ID   Succinylation
 TG   X
 PP   N-terminal.
 MT   Less Common
 CF   C4 H4 O3
 //
-ID   Myristoylation of G
-TG   Glycine
+ID   Myristoylation
+TG   G
 MT   Less Common
 PP   N-terminal.
 NL   H0 or H26 C14 O1
 CF   H26 C14 O1
 //
-ID   Myristoylation of K
-TG   K
+ID   Myristoylation
+TG   C or K
 PP   Anywhere.
 MT   Less Common
 NL   H0 or H26 C14 O1
 CF   H26 C14 O1
-//
-ID   Myristoylation of C
-TG   Cysteine
-PP   Anywhere.
-MT   Less Common
-NL   H0 or H26 C14 O1
-CF   H26 C14 O1
-//
-ID   Palmitoylation of C
-TG   Cysteine
-PP   Anywhere.
-MT   Less Common
-NL   H0 or H30 C16 O1
-CF   H30 C16 O1
 //
 ID   Palmitoylation
-TG   K or S or T
+TG   K or S or T or C
 MT   Less Common
 PP   Anywhere.
 NL   H0 or H30 C16 O1
