@@ -89,14 +89,12 @@ MT   Common Biological
 DI   HCD:129.090223533
 NL   HCD:43.0058
 CF   H-1 N-1 O1
-MM   0.984016
 //
 ID   Hydroxylation
 TG   P
 PP   Anywhere.
 MT   Common Biological
 CF   O1
-MM   15.994915
 DI   HCD:170.060123533
 //
 ID   Nitrosylation
@@ -104,7 +102,6 @@ TG   Y
 PP   Anywhere.
 MT   Common Biological
 CF   H-1 N1 O2
-MM   44.985078
 DI   HCD:180.053523533
 //
 ID   Butyrylation
@@ -113,7 +110,6 @@ PP   Anywhere.
 MT   Common Biological
 DI   HCD:153.115323533
 CF   C4 H6 O1
-MM   70.041865
 //
 ID   Crotonylation
 TG   K
@@ -121,7 +117,6 @@ PP   Anywhere.
 MT   Common Biological
 DI   HCD:151.099723533
 CF   C4 H4 O1
-MM   68.026215
 //
 ID   Glutarylation
 TG   K
@@ -130,7 +125,6 @@ MT   Common Biological
 DI   HCD:181.110323533
 NL   ETD:115.0395
 CF   C5 H6 O3
-MM   114.031694
 //
 ID   Hydroxybutyrylation
 TG   K
@@ -138,7 +132,6 @@ PP   Anywhere.
 MT   Common Biological
 DI   HCD:169.110323533
 CF   C4 H7 O2
-MM   87.044604
 //
 ID   Malonylation
 TG   K
@@ -149,7 +142,6 @@ DI   HCD:169.073923533
 NL   HCD:43.9898
 NL   ETD:87.0082
 CF   C3 H2 O3
-MM   86.000394
 //
 ID   Succinylation
 TG   K
@@ -278,7 +270,7 @@ MT   Less Common
 CF   O2
 //
 ID   Oxidation
-TG   Y or W or P or F or D or E or V or H or R or C or U or I or L or Q or S or T
+TG   Y or W or F or D or E or V or H or R or C or U or I or L or Q or S or T
 PP   Anywhere.
 MT   Less Common
 CF   O1
@@ -306,7 +298,6 @@ TG   K
 PP   Anywhere.
 MT   Less Common
 CF   C10 H14 N2 O2 S1
-MM   226.077599
 DI   HCD:309.151123533
 //
 ID   Propionylation
@@ -315,7 +306,6 @@ PP   Anywhere.
 MT   Less Common
 DI   HCD:139.099823533
 CF   C3 H4 O1
-MM   56.026215
 //
 ID   Water loss
 TG   D
