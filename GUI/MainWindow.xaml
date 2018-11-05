@@ -15,6 +15,7 @@
             </MenuItem>
             <MenuItem Header="Data">
                 <MenuItem Header="Open folder with mods/data files" Click="MenuItem_Click_6"></MenuItem>
+                <MenuItem Header="Create new modification" Click="AddCustomMod_Click"></MenuItem>
                 <MenuItem Header="MetaDraw: Spectrum Annotation" Click="MetaDrawMenu_Click"></MenuItem>
             </MenuItem>
             <MenuItem Header="_Help">
@@ -36,6 +37,16 @@
                 <MenuItem Header="Email Support at mm__support@chem.wisc.edu" Click="MenuItem_Click_4" >
                     <MenuItem.Icon>
                         <Image Source="Icons\mail_20.bmp"/>
+                    </MenuItem.Icon>
+                </MenuItem>
+                <MenuItem Header="Join the discussion on Slack" Click="MenuItem_Slack" >
+                    <MenuItem.Icon>
+                        <Image Source="Icons\Slack_Mark_Web.bmp"/>
+                    </MenuItem.Icon>
+                </MenuItem>
+                <MenuItem Header="Follow us on Twitter for news and updates" Click="MenuItem_Twitter" >
+                    <MenuItem.Icon>
+                        <Image Source="Icons\Twitter_Logo_Blue.bmp"/>
                     </MenuItem.Icon>
                 </MenuItem>
                 <MenuItem Header="MetaMorpheus YouTube Help Videos" Click="MenuItem_YouTube" >

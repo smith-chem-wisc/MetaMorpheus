@@ -29,34 +29,21 @@ namespace MetaMorpheusGUI
         private readonly ObservableCollection<ModTypeForLoc> LocalizeModTypeForTreeViewObservableCollection = new ObservableCollection<ModTypeForLoc>();
         private readonly ObservableCollection<ModTypeForGrid> ModSelectionGridItems = new ObservableCollection<ModTypeForGrid>();
 
-        public SearchTaskWindow()
+        public SearchTaskWindow() : this(null)
         {
-            InitializeComponent();
-            TheTask = new SearchTask();
-
-            PopulateChoices();
-
-            UpdateFieldsFromTask(TheTask);
-
-            this.saveButton.Content = "Add the Search Task";
-
-            DataContextForSearchTaskWindow = new DataContextForSearchTaskWindow
-            {
-                ExpanderTitle = string.Join(", ", SearchModesForThisTask.Where(b => b.Use).Select(b => b.Name)),
-                AnalysisExpanderTitle = "Some analysis properties...",
-                SearchModeExpanderTitle = "Some search properties..."
-            };
-            this.DataContext = DataContextForSearchTaskWindow;
         }
 
         public SearchTaskWindow(SearchTask task)
         {
             InitializeComponent();
-            TheTask = task;
-
+            TheTask = task ?? new SearchTask();
             PopulateChoices();
-
             UpdateFieldsFromTask(TheTask);
+            
+            if (task == null)
+            {
+                this.saveButton.Content = "Add the Search Task";
+            }
 
             DataContextForSearchTaskWindow = new DataContextForSearchTaskWindow
             {
@@ -65,6 +52,7 @@ namespace MetaMorpheusGUI
                 SearchModeExpanderTitle = "Some search properties..."
             };
             this.DataContext = DataContextForSearchTaskWindow;
+            SearchModifications.Timer.Tick += new EventHandler(TextChangeTimerHandler);
         }
 
         internal SearchTask TheTask { get; private set; }
@@ -89,7 +77,8 @@ namespace MetaMorpheusGUI
             {
                 proteaseComboBox.Items.Add(protease);
             }
-            proteaseComboBox.SelectedIndex = 12;
+            Protease trypsin = ProteaseDictionary.Dictionary["trypsin"];
+            proteaseComboBox.SelectedItem = trypsin;
 
             foreach (string initiatior_methionine_behavior in Enum.GetNames(typeof(InitiatorMethionineBehavior)))
             {
@@ -144,11 +133,27 @@ namespace MetaMorpheusGUI
 
         private void UpdateFieldsFromTask(SearchTask task)
         {
-            proteaseComboBox.SelectedItem = task.CommonParameters.DigestionParams.SpecificProtease; //needs to be first, or nonspecific overwrites for missed cleavages/max length
+            proteaseComboBox.SelectedItem = task.CommonParameters.DigestionParams.SpecificProtease; //needs to be first, so nonspecific can override if necessary
             classicSearchRadioButton.IsChecked = task.SearchParameters.SearchType == SearchType.Classic;
             modernSearchRadioButton.IsChecked = task.SearchParameters.SearchType == SearchType.Modern;
-            nonSpecificSearchRadioButton.IsChecked = task.SearchParameters.SearchType == SearchType.NonSpecific && task.CommonParameters.DigestionParams.SearchModeType == CleavageSpecificity.None;
-            semiSpecificSearchRadioButton.IsChecked = task.SearchParameters.SearchType == SearchType.NonSpecific && task.CommonParameters.DigestionParams.SearchModeType != CleavageSpecificity.None;
+            //do these in if statements so as not to trigger the change
+            if (task.SearchParameters.SearchType == SearchType.NonSpecific && task.CommonParameters.DigestionParams.SearchModeType == CleavageSpecificity.None)
+            {
+                nonSpecificSearchRadioButton.IsChecked = true; //when this is changed it overrides the protease
+                if (task.CommonParameters.DigestionParams.SpecificProtease.Name.Equals("singleC") || task.CommonParameters.DigestionParams.SpecificProtease.Name.Equals("singleN"))
+                {
+                    Protease nonspecific = ProteaseDictionary.Dictionary["non-specific"];
+                    proteaseComboBox.SelectedItem = nonspecific;
+                }
+                else
+                {
+                    proteaseComboBox.SelectedItem = task.CommonParameters.DigestionParams.SpecificProtease;
+                }
+            }
+            if (task.SearchParameters.SearchType == SearchType.NonSpecific && task.CommonParameters.DigestionParams.SearchModeType != CleavageSpecificity.None)
+            {
+                semiSpecificSearchRadioButton.IsChecked = true;
+            }
             MaxFragmentMassTextBox.Text = task.SearchParameters.MaxFragmentSize.ToString(CultureInfo.InvariantCulture);
             checkBoxParsimony.IsChecked = task.SearchParameters.DoParsimony;
             checkBoxNoOneHitWonders.IsChecked = task.SearchParameters.NoOneHitWonders;
@@ -305,30 +310,25 @@ namespace MetaMorpheusGUI
             {
                 if (((Protease)proteaseComboBox.SelectedItem).Name.Contains("non-specific"))
                 {
+                    searchModeType = CleavageSpecificity.None; //prevents an accidental semi attempt of a non-specific protease
+
                     if (cTerminalIons.IsChecked.Value)
                     {
-                        while (!((Protease)proteaseComboBox.SelectedItem).Name.Equals("singleC"))
-                        {
-                            proteaseComboBox.Items.MoveCurrentToNext();
-                            proteaseComboBox.SelectedItem = proteaseComboBox.Items.CurrentItem;
-                        }
+                        Protease singleC = ProteaseDictionary.Dictionary["singleC"];
+                        proteaseComboBox.SelectedItem = singleC;
                     }
-                    else //we're not allowing no ion types. It must have C if it doesn't have N.
+                    else //we're not allowing no ion types. It must have N if it doesn't have C.
                     {
-                        while (!((Protease)proteaseComboBox.SelectedItem).Name.Equals("singleN"))
-                        {
-                            proteaseComboBox.Items.MoveCurrentToNext();
-                            proteaseComboBox.SelectedItem = proteaseComboBox.Items.CurrentItem;
-                        }
+                        Protease singleN = ProteaseDictionary.Dictionary["singleN"];
+                        proteaseComboBox.SelectedItem = singleN;
                     }
-                    searchModeType = CleavageSpecificity.Full; //we're going to change this to override the semi, or the singleN/C proteases will be treated as semi instead of full
                 }
                 if (!addCompIonCheckBox.IsChecked.Value)
                 {
                     MessageBox.Show("Warning: Complementary ions are strongly recommended when using this algorithm.");
                 }
                 //only use N or C termini, not both
-                if(cTerminalIons.IsChecked.Value)
+                if (cTerminalIons.IsChecked.Value)
                 {
                     nTerminalIons.IsChecked = false;
                 }
@@ -521,16 +521,26 @@ namespace MetaMorpheusGUI
             }
             if (massDiffAcceptCustom.IsChecked.HasValue && massDiffAcceptCustom.IsChecked.Value)
             {
+                try
+                {
+                    MassDiffAcceptor customMassDiffAcceptor = SearchTask.GetMassDiffAcceptor(null, MassDiffAcceptorType.Custom, customkMdacTextBox.Text);
+                }
+                catch (Exception ex)
+                {
+                    MessageBox.Show("Could not parse custom mass difference acceptor: " + ex.Message, "Error", MessageBoxButton.OK, MessageBoxImage.Error);
+                    return;
+                }
+                
                 TheTask.SearchParameters.MassDiffAcceptorType = MassDiffAcceptorType.Custom;
                 TheTask.SearchParameters.CustomMdac = customkMdacTextBox.Text;
             }
 
             //determine if semi or nonspecific with a specific protease.
-            if(searchModeType == CleavageSpecificity.Semi || protease.CleavageSpecificity==CleavageSpecificity.Semi)
+            if (searchModeType == CleavageSpecificity.Semi || protease.CleavageSpecificity == CleavageSpecificity.Semi)
             {
-                TheTask.SearchParameters.LocalFdrCategories= new List<FdrCategory> { FdrCategory.FullySpecific, FdrCategory.SemiSpecific };
+                TheTask.SearchParameters.LocalFdrCategories = new List<FdrCategory> { FdrCategory.FullySpecific, FdrCategory.SemiSpecific };
             }
-            else if(searchModeType==CleavageSpecificity.None && protease.CleavageSpecificity!=CleavageSpecificity.None)
+            else if (searchModeType == CleavageSpecificity.None && protease.CleavageSpecificity != CleavageSpecificity.None)
             {
                 TheTask.SearchParameters.LocalFdrCategories = new List<FdrCategory> { FdrCategory.FullySpecific, FdrCategory.SemiSpecific, FdrCategory.NonSpecific };
             }
@@ -640,13 +650,8 @@ namespace MetaMorpheusGUI
         {
             if (nonSpecificSearchRadioButton.IsChecked.Value)
             {
-                proteaseComboBox.Items.MoveCurrentToFirst();
-                proteaseComboBox.SelectedItem = proteaseComboBox.Items.CurrentItem;
-                while (!((Protease)proteaseComboBox.SelectedItem).Name.Contains("non-specific"))
-                {
-                    proteaseComboBox.Items.MoveCurrentToNext();
-                    proteaseComboBox.SelectedItem = proteaseComboBox.Items.CurrentItem;
-                }
+                Protease nonspecific = ProteaseDictionary.Dictionary["non-specific"];
+                proteaseComboBox.SelectedItem = nonspecific;
                 addCompIonCheckBox.IsChecked = true;
             }
             else
@@ -722,9 +727,31 @@ namespace MetaMorpheusGUI
             }
         }
 
-        private void dissassociationTypeComboBox_SelectionChanged(object sender, SelectionChangedEventArgs e)
+        private void TextChanged_Fixed(object sender, TextChangedEventArgs args)
         {
+            SearchModifications.SetTimer();
+            SearchModifications.FixedSearch = true;
+        }
 
+        private void TextChanged_Var(object sender, TextChangedEventArgs args)
+        {
+            SearchModifications.SetTimer();
+            SearchModifications.VariableSearch = true;
+        }
+        
+        private void TextChangeTimerHandler(object sender, EventArgs e)
+        {
+            if (SearchModifications.FixedSearch)
+            {
+                SearchModifications.FilterTree(SearchFixMod, fixedModsTreeView, FixedModTypeForTreeViewObservableCollection);
+                SearchModifications.FixedSearch = false;
+            }
+
+            if (SearchModifications.VariableSearch)
+            {
+                SearchModifications.FilterTree(SearchVarMod, variableModsTreeView, VariableModTypeForTreeViewObservableCollection);
+                SearchModifications.VariableSearch = false;
+            }
         }
     }
 

@@ -6,20 +6,20 @@
 
   <ItemGroup>
     <PackageReference Include="FluentCommandLineParser" Version="1.4.3" />
-    <PackageReference Include="Microsoft.NET.Test.Sdk" Version="15.9.0" />
-    <PackageReference Include="mzLib" Version="1.0.378" />
-    <PackageReference Include="NUnit" Version="3.11.0" />
-    <PackageReference Include="NUnit3TestAdapter" Version="3.11.0" />
+    <PackageReference Include="Microsoft.NET.Test.Sdk" Version="15.6.0" />
+    <PackageReference Include="mzLib" Version="1.0.377" />
+    <PackageReference Include="NUnit" Version="3.9.0" />
+    <PackageReference Include="NUnit3TestAdapter" Version="3.9.0" />
     <PackageReference Include="OxyPlot.Core" Version="1.0.0" />
-    <PackageReference Include="SharpLearning.Common.Interfaces" Version="0.28.4" />
-    <PackageReference Include="SharpLearning.Containers" Version="0.28.4" />
-    <PackageReference Include="SharpLearning.CrossValidation" Version="0.28.4" />
-    <PackageReference Include="SharpLearning.DecisionTrees" Version="0.28.4" />
-    <PackageReference Include="SharpLearning.GradientBoost" Version="0.28.4" />
-    <PackageReference Include="SharpLearning.InputOutput" Version="0.28.4" />
-    <PackageReference Include="SharpLearning.Metrics" Version="0.28.4" />
-    <PackageReference Include="SharpLearning.Optimization" Version="0.28.4" />
-    <PackageReference Include="SharpLearning.RandomForest" Version="0.28.4" />
+    <PackageReference Include="SharpLearning.Common.Interfaces" Version="0.26.9" />
+    <PackageReference Include="SharpLearning.Containers" Version="0.26.9" />
+    <PackageReference Include="SharpLearning.CrossValidation" Version="0.26.9" />
+    <PackageReference Include="SharpLearning.DecisionTrees" Version="0.26.9" />
+    <PackageReference Include="SharpLearning.GradientBoost" Version="0.26.9" />
+    <PackageReference Include="SharpLearning.InputOutput" Version="0.26.9" />
+    <PackageReference Include="SharpLearning.Metrics" Version="0.26.9" />
+    <PackageReference Include="SharpLearning.Optimization" Version="0.26.9" />
+    <PackageReference Include="SharpLearning.RandomForest" Version="0.26.9" />
   </ItemGroup>
 
   <ItemGroup>
@@ -90,12 +90,6 @@
     </None>
     <None Update="XlTestData\BSA_DSS_23747.mzML">
       <CopyToOutputDirectory>Always</CopyToOutputDirectory>
-    </None>
-    <None Update="XlTestData\GlycoSearchTaskconfig.toml">
-      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
-    </None>
-    <None Update="XlTestData\Q9C0Y4.fasta">
-      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
     </None>
     <None Update="XlTestData\XLSearchTaskconfig_BSA_DSS_23747.toml">
 	  <CopyToOutputDirectory>Always</CopyToOutputDirectory>

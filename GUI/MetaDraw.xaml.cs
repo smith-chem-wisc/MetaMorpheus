@@ -64,15 +64,17 @@ namespace MetaMorpheusGUI
             productTypeToColor = ((ProductType[])Enum.GetValues(typeof(ProductType))).ToDictionary(p => p, p => Colors.Aqua);
             productTypeToColor[ProductType.b] = Colors.Blue;
             productTypeToColor[ProductType.y] = Colors.Purple;
-            productTypeToColor[ProductType.zPlusOne] = Colors.Orange;
+            productTypeToColor[ProductType.zPlusOne] = Colors.Orange; // TODO: Remove
+            productTypeToColor[ProductType.zDot] = Colors.Orange;
             productTypeToColor[ProductType.c] = Colors.Gold;
 
             // offset for annotation on base sequence
             productTypeToYOffset = ((ProductType[])Enum.GetValues(typeof(ProductType))).ToDictionary(p => p, p => 0.0);
             productTypeToYOffset[ProductType.b] = 50;
             productTypeToYOffset[ProductType.y] = 0;
-            productTypeToYOffset[ProductType.zPlusOne] = 50;
-            productTypeToYOffset[ProductType.c] = 0;
+            productTypeToYOffset[ProductType.c] = 50;
+            productTypeToYOffset[ProductType.zPlusOne] = 0; // TODO: Remove
+            productTypeToYOffset[ProductType.zDot] = 0;
         }
 
         private void Window_Drop(object sender, DragEventArgs e)
