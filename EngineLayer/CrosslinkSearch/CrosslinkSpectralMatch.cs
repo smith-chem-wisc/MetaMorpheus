@@ -48,11 +48,11 @@ namespace EngineLayer.CrosslinkSearch
             return possibleXlPositions;
         }
 
-        //Motif considered
-        public static List<int> GetPossibleModSites(char[] ModSites, PeptideWithSetModifications peptide, string[] motifs)
+        //Motif should be writen with required form
+        public static List<int> GetPossibleModSites(PeptideWithSetModifications peptide, string[] motifs)
         {
             List<int> possibleModSites = new List<int>();
-            //FullSequence is used here to avoid duplicated modification on same sites.
+            
             List<ModificationMotif> acceptableMotifs = new List<ModificationMotif>();
             foreach (var mtf in motifs)
             {
@@ -62,6 +62,19 @@ namespace EngineLayer.CrosslinkSearch
                 }
             }
 
+            foreach (var mtf in acceptableMotifs)
+            {
+                for (int r = 0; r < peptide.Length; r++)
+                {
+                    Modification modWithMotif = new Modification(_target: mtf, _locationRestriction: "Anywhere.");
+                    //FullSequence is used here to avoid duplicated modification on same sites?
+                    if (ModificationLocalization.ModFits(modWithMotif, peptide.BaseSequence, r + 1, peptide.Length, r + 1))
+                    {
+                        possibleModSites.Add(r+1);
+                    }
+                }
+            }
+            
             return possibleModSites;
         }
 
@@ -259,6 +272,13 @@ namespace EngineLayer.CrosslinkSearch
 
             sb.Append(FdrInfo.QValue.ToString());
             sb.Append("\t");
+
+            if (Glycan != null)
+            {
+                sb.Append(string.Join("|", Glycan.Select(p => p.GlyId.ToString()).ToArray())); sb.Append("\t");
+                sb.Append(Glycan.First().Mass); sb.Append("\t");
+                sb.Append(string.Join("|", Glycan.First().Kind.Select(p => p.ToString()).ToArray())); sb.Append("\t");
+            }
 
             return sb.ToString();
         }

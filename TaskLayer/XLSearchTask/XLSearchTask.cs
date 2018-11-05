@@ -122,6 +122,17 @@ namespace TaskLayer
 
             allPsms = allPsms.OrderByDescending(p => p.XLTotalScore).ToList();
 
+            if (XlSearchParameters.SearchGlyco)
+            {
+                //TO DO: there may have a bug. I have to filter the following loopPsms, deadendPsms with a BestScore higher than 2, Or some of the Psms will have everything be 0!
+                var allPsmsGly = allPsms.Where(p => p.Glycan != null && p.Score > 2).OrderByDescending(p => p.XLTotalScore).ToList();
+
+                SingleFDRAnalysis(allPsms, new List<string> { taskId });
+                var writtenFileInter = Path.Combine(OutputFolder, "glyco_fdr" + ".mytsv");
+                WritePsmCrossToTsv(allPsms, writtenFileInter, 3);
+                return MyTaskResults;
+            }
+
             var allPsmsXL = allPsms.Where(p => p.CrossType == PsmCrossType.Cross).ToList();
 
             // inter-crosslinks; different proteins are linked

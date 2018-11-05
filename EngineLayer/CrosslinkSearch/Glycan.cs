@@ -2,11 +2,13 @@
 using System.IO;
 using System.Linq;
 using System;
+using Chemistry;
 
 namespace EngineLayer
 {
     public class Glycan
     {
+        private static readonly double hydrogenAtomMonoisotopicMass = PeriodicTable.GetElement("H").PrincipalIsotope.AtomicMass;
         public Glycan(string struc, double mass, int[] kind, List<GlycanIon> ions)
         {
             Struc = struc;
@@ -27,21 +29,21 @@ namespace EngineLayer
             Dictionary<int, double> diagnosticIons = new Dictionary<int, double>();
             if (Kind[1] >= 1)
             {
-                diagnosticIons.Add(126, 126.055);
-                diagnosticIons.Add(138, 138.055);
-                diagnosticIons.Add(144, 144.065);
-                diagnosticIons.Add(168, 168.066);
-                diagnosticIons.Add(186, 186.076);
-                diagnosticIons.Add(204, 204.087);
+                diagnosticIons.Add(126, 126.055 - hydrogenAtomMonoisotopicMass);
+                diagnosticIons.Add(138, 138.055 - hydrogenAtomMonoisotopicMass);
+                diagnosticIons.Add(144, 144.065 - hydrogenAtomMonoisotopicMass);
+                diagnosticIons.Add(168, 168.066 - hydrogenAtomMonoisotopicMass);
+                diagnosticIons.Add(186, 186.076 - hydrogenAtomMonoisotopicMass);
+                diagnosticIons.Add(204, 204.087 - hydrogenAtomMonoisotopicMass);
             }
             if (Kind[1] >= 1 && Kind[0] >= 1)
             {
-                diagnosticIons.Add(366, 366.140);
+                diagnosticIons.Add(366, 366.140 - hydrogenAtomMonoisotopicMass);
             }
             if (Kind[2] >= 1)
             {
-                diagnosticIons.Add(274, 274.092);
-                diagnosticIons.Add(292, 292.103);
+                diagnosticIons.Add(274, 274.092 - hydrogenAtomMonoisotopicMass);
+                diagnosticIons.Add(292, 292.103 - hydrogenAtomMonoisotopicMass);
             }
             return diagnosticIons;
         }
@@ -202,14 +204,18 @@ namespace EngineLayer
             double mass = GetMass(theGlycanStruct);
             int[] kind = GetKind(theGlycanStruct);
             List<GlycanIon> glycanIons = new List<GlycanIon>();
+            HashSet<double> ionMasses = new HashSet<double>();
             foreach (var aNodeIon in nodeIons)
-            {
+            {               
                 var ionMass = GetMass(PrintOutGlycan(aNodeIon));
-                var ionKind = GetKind(PrintOutGlycan(aNodeIon));
-                GlycanIon glycanIon = new GlycanIon(0, ionMass, ionKind);
-                glycanIons.Add(glycanIon);
+                if (!ionMasses.Contains(ionMass))
+                {
+                    ionMasses.Add(ionMass);
+                    var ionKind = GetKind(PrintOutGlycan(aNodeIon));
+                    GlycanIon glycanIon = new GlycanIon(0, ionMass, ionKind);
+                    glycanIons.Add(glycanIon);
+                }      
             }
-
                 glycanIons = glycanIons.OrderBy(p => p.IonMass).ToList();
                 glycanIons.RemoveAt(glycanIons.Count - 1);
                

@@ -319,7 +319,7 @@ namespace Test
         /// of potential crosslink sites in the sequence PEPTIDE. The indices should be positions 1 and 3
         /// </summary>
         [Test]
-        public static void TestGetPossibleCrosslinkerSites()
+        public static void XlTestGetPossibleCrosslinkerSites()
         {
             PeptideWithSetModifications peptide = new PeptideWithSetModifications("PEPTIDE", null);
             List<int> sites = CrosslinkSpectralMatch.GetPossibleCrosslinkerModSites(new char[] { 'P' }, peptide);
