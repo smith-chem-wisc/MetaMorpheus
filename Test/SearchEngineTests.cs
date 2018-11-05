@@ -775,12 +775,6 @@ namespace Test
 
             HashSet<DigestionParams> digestParams2 = new HashSet<DigestionParams> { CommonParameters2.DigestionParams };
 
-            bool DoPrecursorDeconvolution2 = true;
-            bool UseProvidedPrecursorInfo2 = true;
-            double DeconvolutionIntensityRatio2 = 4;
-            int DeconvolutionMaxAssumedChargeState2 = 10;
-            Tolerance DeconvolutionMassTolerance2 = new PpmTolerance(5);
-
             var listOfSortedms2Scans2 = MetaMorpheusTask.GetMs2Scans(myMsDataFile, null, new CommonParameters()).OrderBy(b => b.PrecursorMass).ToArray();
 
             PeptideSpectralMatch[] allPsmsArray2 = new PeptideSpectralMatch[listOfSortedms2Scans.Length];
