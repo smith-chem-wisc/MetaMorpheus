@@ -102,7 +102,7 @@ namespace Test
             {
                 var pepWithSetMods = pepWithSetModss[i];
                 var mz1 = new double[] { pepWithSetMods.MonoisotopicMass.ToMz(3), (pepWithSetMods.MonoisotopicMass + Constants.C13MinusC12).ToMz(3), (pepWithSetMods.MonoisotopicMass + 2 * Constants.C13MinusC12).ToMz(3), pepWithSetMods.MonoisotopicMass.ToMz(2), (pepWithSetMods.MonoisotopicMass + Constants.C13MinusC12).ToMz(2), (pepWithSetMods.MonoisotopicMass + 2 * Constants.C13MinusC12).ToMz(2) };
-                var intensities1 = new double[] { 1, 1, 1, 1, 1, 1 };
+                var intensities1 = new double[] { 1, 0.5, 0.25, 1, 0.5, 0.25 };
                 var MassSpectrum1 = new MzSpectrum(mz1, intensities1, false);
 
                 ScansHere.Add(new MsDataScan(MassSpectrum1, 2 * i + 1, 1, true, Polarity.Positive, 2 * i, new MzLibUtil.MzRange(0, 10000), "gg", MZAnalyzerType.Orbitrap, 1000, 1, null, "scan=1"));

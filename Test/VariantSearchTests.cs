@@ -5,6 +5,7 @@ using Proteomics;
 using Proteomics.ProteolyticDigestion;
 using System;
 using System.Collections.Generic;
+using System.Diagnostics;
 using System.IO;
 using System.Linq;
 using TaskLayer;
@@ -17,16 +18,19 @@ namespace Test
     {
         [Test]
         [TestCase(0, 0, true, "P4V")] // variant is in the detected peptide
-        [TestCase(1, 1, false, "PT4KT")] // variant isn't really detected because PEK/TIDE is the same as PEP/TIDE if you only detect the second peptide
-        [TestCase(2, 0, true, "P4PPP")] // intersecting sequence between variant and detected peptide is smaller than the original sequence
+        [TestCase(1, 1, false, "PT4KT")] // variant intersects psm, but isn't really identified because PEK/TIDE is the same as PEP/TIDE if you only detect the second peptide
+        [TestCase(2, 0, true, "P4PPP")] // intersecting sequence between variant and detected peptide is smaller than the original sequence, so clearly identied
         [TestCase(3, 0, true, "PPP4P")] // peptide is different than original sequence, but the variant site is the same AA
-        [TestCase(4, 0, false, "PKPK4PK")] // peptide is different than original sequence, but the variant site is the same AA
-        [TestCase(5, 1, true, "PTA4KT")] // variant isn't really detected because PEK/TIDE is the same as PEP/TIDE if you only detect the second peptide
-        [TestCase(6, 0, false, "KKA4K")] // variant isn't really detected because PEK/TIDE is the same as PEP/TIDE if you only detect the second peptide
-        [TestCase(7, 1, true, "P4V[type:mod on V]")] // variant is in the detected peptide
-        [TestCase(8, 1, true, "P4PP[type:mod on P]P")] // intersecting sequence between variant and detected peptide is smaller than the original sequence
-        public static void SearchWithPeptidesAddedInParsimonyTest(int proteinIdx, int peptideIdx, bool containsVariant, string variantPsmShort)
+        [TestCase(4, 0, false, "PKPK4PK")]
+        [TestCase(5, 1, true, "PTA4KT")] // counterpoint to (1), where the second peptide does distinguish
+        [TestCase(6, 0, false, "KKA4K")] //
+        [TestCase(7, 1, true, "P4V[type:mod on V]")]
+        [TestCase(8, 1, true, "P4PP[type:mod on P]P")]
+        public static void SearchTests(int proteinIdx, int peptideIdx, bool containsVariant, string variantPsmShort)
         {
+            Stopwatch stopwatch = new Stopwatch();
+            stopwatch.Start();
+
             // Make sure can run the complete search task when multiple compact peptides may correspond to a single PWSM
             SearchTask st = new SearchTask
             {
@@ -81,10 +85,12 @@ namespace Test
             var psms = File.ReadAllLines(Path.Combine(outputFolder, "AllPSMs.psmtsv"));
             Assert.IsTrue(psms.Any(line => line.Contains($"\t{variantPsmShort}\t" + (containsVariant ? variantPsmShort : "\t"))));
 
-            //Directory.Delete(outputFolder, true);
-            //File.Delete(mzmlName);
-            //File.Delete(xmlName);
-            //Directory.Delete(Path.Combine(TestContext.CurrentContext.TestDirectory, @"Task Settings"), true);
+            Directory.Delete(outputFolder, true);
+            File.Delete(mzmlName);
+            File.Delete(xmlName);
+            Directory.Delete(Path.Combine(TestContext.CurrentContext.TestDirectory, @"Task Settings"), true);
+
+            Console.WriteLine($"Analysis time for VariantSearchTests.SearchTests({proteinIdx.ToString()},{peptideIdx.ToString()},{containsVariant.ToString()},{variantPsmShort}): {stopwatch.Elapsed.Hours}h {stopwatch.Elapsed.Minutes}m {stopwatch.Elapsed.Seconds}s");
         }
     }
 }
