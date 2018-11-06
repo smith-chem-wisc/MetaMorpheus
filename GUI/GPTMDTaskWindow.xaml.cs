@@ -24,15 +24,8 @@ namespace MetaMorpheusGUI
         private readonly ObservableCollection<ModTypeForLoc> localizeModTypeForTreeViewObservableCollection = new ObservableCollection<ModTypeForLoc>();
         private readonly ObservableCollection<ModTypeForTreeView> gptmdModTypeForTreeViewObservableCollection = new ObservableCollection<ModTypeForTreeView>();
 
-        public GptmdTaskWindow()
+        public GptmdTaskWindow() : this(null)
         {
-            InitializeComponent();
-            PopulateChoices();
-
-            TheTask = new GptmdTask();
-            UpdateFieldsFromTask(TheTask);
-
-            this.saveButton.Content = "Add the GPTMD Task";
         }
 
         public GptmdTaskWindow(GptmdTask myGPTMDtask)
@@ -40,8 +33,15 @@ namespace MetaMorpheusGUI
             InitializeComponent();
             PopulateChoices();
 
-            TheTask = myGPTMDtask;
+            TheTask = myGPTMDtask ?? new GptmdTask();
             UpdateFieldsFromTask(TheTask);
+
+            if (myGPTMDtask == null)
+            {
+                this.saveButton.Content = "Add the GPTMD Task";
+            }
+
+            SearchModifications.Timer.Tick += new EventHandler(TextChangeTimerHandler);
         }
 
         internal GptmdTask TheTask { get; private set; }
@@ -338,6 +338,45 @@ namespace MetaMorpheusGUI
             else if (e.Key == Key.Escape)
             {
                 CancelButton_Click(sender, e);
+            }
+        }
+
+        private void TextChanged_Fixed(object sender, TextChangedEventArgs args)
+        {
+            SearchModifications.SetTimer();
+            SearchModifications.FixedSearch = true;
+        }
+
+        private void TextChanged_Var(object sender, TextChangedEventArgs args)
+        {
+            SearchModifications.SetTimer();
+            SearchModifications.VariableSearch = true;
+        }
+
+        private void TextChanged_GPTMD(object sender, TextChangedEventArgs args)
+        {
+            SearchModifications.SetTimer();
+            SearchModifications.GptmdSearch = true;
+        }
+
+        private void TextChangeTimerHandler(object sender, EventArgs e)
+        {
+            if (SearchModifications.FixedSearch)
+            {
+                SearchModifications.FilterTree(SearchFixMod, fixedModsTreeView, fixedModTypeForTreeViewObservableCollection);
+                SearchModifications.FixedSearch = false;
+            }
+
+            if (SearchModifications.VariableSearch)
+            {
+                SearchModifications.FilterTree(SearchVarMod, variableModsTreeView, variableModTypeForTreeViewObservableCollection);
+                SearchModifications.VariableSearch = false;
+            }
+
+            if (SearchModifications.GptmdSearch)
+            {
+                SearchModifications.FilterTree(SearchGPTMD, gptmdModsTreeView, gptmdModTypeForTreeViewObservableCollection);
+                SearchModifications.GptmdSearch = false;
             }
         }
     }
