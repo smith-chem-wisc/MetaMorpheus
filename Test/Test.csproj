@@ -91,6 +91,12 @@
     <None Update="XlTestData\BSA_DSS_23747.mzML">
       <CopyToOutputDirectory>Always</CopyToOutputDirectory>
     </None>
+    <None Update="XlTestData\GlycoSearchTaskconfig.toml">
+      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+    </None>
+    <None Update="XlTestData\Q9C0Y4.fasta">
+      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+    </None>
     <None Update="XlTestData\XLSearchTaskconfig_BSA_DSS_23747.toml">
 	  <CopyToOutputDirectory>Always</CopyToOutputDirectory>
     </None>

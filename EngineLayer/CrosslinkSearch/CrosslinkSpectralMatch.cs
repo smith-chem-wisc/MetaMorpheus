@@ -162,7 +162,7 @@ namespace EngineLayer.CrosslinkSearch
             sb.Append("Precusor mass" + '\t');
             sb.Append("CrossType" + '\t');
 
-            sb.Append("Pep" + '\t');
+            sb.Append("Modification residue" + '\t');
             sb.Append("Protein Accession" + '\t');
             sb.Append("Protein site" + '\t');
             sb.Append("Base sequence" + '\t');

@@ -258,7 +258,7 @@ namespace EngineLayer.CrosslinkSearch
                     {
                         PeptideWithSetModifications betaPeptide = theScanBestPeptide[betaIndex].BestPeptide;
 
-                        if (XLPrecusorSearchMode.Accepts(theScan.PrecursorMass, alphaPeptide.MonoisotopicMass + betaPeptide.MonoisotopicMass + Crosslinker.TotalMass) >= 0)
+                        if (XLPrecusorSearchMode.Accepts(theScan.PrecursorMass, alphaPeptide.MonoisotopicMass + betaPeptide.MonoisotopicMass + Crosslinker.TotalMass + 1.0034) >= 0)
                         {
                             List<int> possibleBetaCrosslinkSites = CrosslinkSpectralMatch.GetPossibleCrosslinkerModSites(AllCrosslinkerSites, betaPeptide);
 
@@ -586,8 +586,7 @@ namespace EngineLayer.CrosslinkSearch
                                     }                          
                                 }
                             }
-                            PeptideWithSetModifications bestPeptide = theScanBestPeptide[ind].BestPeptide;
-                            var psmCross = new CrosslinkSpectralMatch(bestPeptide, theScanBestPeptide[ind].BestNotch, bestLocalizedScore, scanIndex, theScan, commonParameters.DigestionParams, bestMatchedIons);
+                            var psmCross = new CrosslinkSpectralMatch(theScanBestPeptide[ind].BestPeptide, theScanBestPeptide[ind].BestNotch, bestLocalizedScore, scanIndex, theScan, commonParameters.DigestionParams, bestMatchedIons);
                             psmCross.Glycan = new List<Glycan> { glycan };
                             psmCross.XlRank = new List<int> { ind };
                             psmCross.LinkPositions = new List<int> { bestSite}; //TO DO: ambiguity modification site
@@ -601,19 +600,10 @@ namespace EngineLayer.CrosslinkSearch
             {
                 possibleMatches = possibleMatches.OrderByDescending(p => p.Score).ToList();
                 bestPsmCross = possibleMatches.First();
+                bestPsmCross.ResolveAllAmbiguities();
                 if (possibleMatches.Count > 1)
                 {
                     bestPsmCross.DeltaScore = Math.Abs(possibleMatches.First().Score - possibleMatches[1].Score);
-                    for (int iPsm = 1; iPsm < possibleMatches.Count; iPsm++)
-                    {
-                        //TO DO: What if there are more than one peptide
-                        if (possibleMatches[iPsm].Score == bestPsmCross.Score)
-                        {
-                            //if (bestPsmCrossList[iPsm].compactPeptide.CTerminalMasses == bestPsmCross.compactPeptide.CTerminalMasses)
-                            bestPsmCross.Glycan.Add(possibleMatches[iPsm].Glycan.First());
-                        }
-
-                    }
                 }
             }
 
