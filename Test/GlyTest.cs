@@ -28,7 +28,7 @@ namespace Test
         [Test]
         public static void GlyTest_ModificationSites()
         {
-            PeptideWithSetModifications pep = new PeptideWithSetModifications("ELNPTPNVEVNVECR", null);
+            PeptideWithSetModifications pep = new PeptideWithSetModifications("ELNPTPNVEVNVECR", null); 
             string[] motifs = new string[] { "Nxs", "Nxt"};
             var sites = CrosslinkSpectralMatch.GetPossibleModSites(pep, motifs);
             Assert.That(sites.Count() == 1 && sites[0] == 2);
@@ -43,7 +43,7 @@ namespace Test
 
             string[] motifs = new string[] { "Nxs", "Nxt" };
             var sites = CrosslinkSpectralMatch.GetPossibleModSites(aPeptideWithSetModifications, motifs);
-            Glycan glycan = Glycan.Struct2Glycan("(N(N(H(H)(H(H)(H)))))");
+            Glycan glycan = Glycan.Struct2Glycan("(N(N(H(H)(H(H)(H)))))", 0);
             var fragmentIons = GlycoPeptides.GlyGetTheoreticalFragments(DissociationType.HCD, sites, aPeptideWithSetModifications, glycan).ToList();
 
             using (StreamWriter output = new StreamWriter(Path.Combine(TestContext.CurrentContext.TestDirectory, "GlycanFragmentions.txt")))

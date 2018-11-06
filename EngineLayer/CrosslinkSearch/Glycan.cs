@@ -105,8 +105,6 @@ namespace EngineLayer
             return trees;
         }
 
-
-
         public static string PrintOutGlycan(Node node)
         {
             string output = "";
@@ -197,7 +195,7 @@ namespace EngineLayer
             return masses;
         }
 
-        public static Glycan Struct2Glycan(string theGlycanStruct)
+        public static Glycan Struct2Glycan(string theGlycanStruct, int id)
         {
             Node node = ReadGlycan(theGlycanStruct);
             List<Node> nodeIons = GetAllChildrenCombination(node);
@@ -220,7 +218,7 @@ namespace EngineLayer
                 glycanIons.RemoveAt(glycanIons.Count - 1);
                
             Glycan glycan = new Glycan(theGlycanStruct, mass, kind, glycanIons);
-
+            glycan.GlyId = id;
             return glycan;
         }
 
@@ -228,10 +226,11 @@ namespace EngineLayer
         {
             using (StreamReader glycans = new StreamReader(filePath))
             {
+                int id = 1;
                 while (glycans.Peek() != -1)
                 {
                     string line = glycans.ReadLine();
-                    yield return Struct2Glycan(line);
+                    yield return Struct2Glycan(line, id++);
                 }
             }
         }
