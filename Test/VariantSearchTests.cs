@@ -23,7 +23,7 @@ namespace Test
         [TestCase(3, 0, true, "PPP4P")] // peptide is different than original sequence, but the variant site is the same AA
         [TestCase(4, 0, false, "PKPK4PK")]
         [TestCase(5, 1, true, "PTA4KT")] // counterpoint to (1), where the second peptide does distinguish
-        [TestCase(6, 0, false, "KKA4K")] //
+        [TestCase(6, 0, false, "KKA4K")]
         [TestCase(7, 1, true, "P4V[type:mod on V]")]
         [TestCase(8, 1, true, "P4PP[type:mod on P]P")]
         public static void SearchTests(int proteinIdx, int peptideIdx, bool containsVariant, string variantPsmShort)
