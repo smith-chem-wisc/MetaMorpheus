@@ -28,8 +28,8 @@ namespace TaskLayer
             _pepxml.date = DateTime.Now;
             _pepxml.summary_xml = psms[0].FullFilePath + ".pep.XML";
 
-            string proteaseNC = string.Join(string.Empty, CommonParameters.DigestionParams.Protease.SequencesPreventingCleavage);
-            string proteaseC = string.Join(string.Empty, CommonParameters.DigestionParams.Protease.SequencesInducingCleavage);
+            string proteaseNC = string.Join(string.Empty, CommonParameters.DigestionParams.Protease.DigestionMotifs.Select(m => m.InducingCleavage));
+            string proteaseC = string.Join(string.Empty, CommonParameters.DigestionParams.Protease.DigestionMotifs.Select(m => m.InducingCleavage));
 
             string fileNameNoExtension = Path.GetFileNameWithoutExtension(psms[0].FullFilePath);
             string filePathNoExtension = Path.ChangeExtension(psms[0].FullFilePath, null);
