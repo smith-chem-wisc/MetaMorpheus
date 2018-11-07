@@ -394,7 +394,7 @@ namespace EngineLayer
             }
         }
 
-        private static (string ResolvedString, string ResolvedValue) Resolve(IEnumerable<string> enumerable, List<IEnumerable<string>> otherEnumerables)
+        private static (string ResolvedString, string ResolvedValue) Resolve(IEnumerable<string> enumerable, string ambiguousIfNull)
         {
             var list = enumerable.ToList();
             string first = list.FirstOrDefault(b => b != null);
@@ -404,7 +404,7 @@ namespace EngineLayer
                 return (first, first);
             }
             // use only distinct names if all of the base sequences are the same
-            else if (otherEnumerables.All(e => e != null && e.All(b => b == null) || e.All(b => first.Equals(b))))
+            else if (ambiguousIfNull != null)
             {
                 var returnString = GlobalVariables.CheckLengthOfOutput(string.Join("|", list.Distinct()));
                 return (returnString, null);
@@ -439,14 +439,9 @@ namespace EngineLayer
 
             List<PeptideWithSetModifications> pepsWithMods = pepWithModsIsNull ? null : psm.BestMatchingPeptides.Select(p => p.Peptide).ToList();
 
-            IEnumerable<string> baseSequences = pepWithModsIsNull ? null : pepsWithMods.Select(b => b.BaseSequence);
-            IEnumerable<string> fullSequences = pepWithModsIsNull ? null : pepsWithMods.Select(b => b.FullSequence);
-            IEnumerable<string> essentialSequences = pepWithModsIsNull ? null : pepsWithMods.Select(b => b.EssentialSequence(ModsToWritePruned));
-            var checksForDistinctNames = new List<IEnumerable<string>> { baseSequences, fullSequences, essentialSequences };
-
-            s["Base Sequence"] = pepWithModsIsNull ? " " : Resolve(baseSequences).ResolvedString;
-            s["Full Sequence"] = pepWithModsIsNull ? " " : Resolve(fullSequences).ResolvedString;
-            s["Essential Sequence"] = pepWithModsIsNull ? " " : Resolve(essentialSequences).ResolvedString;
+            s["Base Sequence"] = pepWithModsIsNull ? " " : Resolve(pepWithModsIsNull ? null : pepsWithMods.Select(b => b.BaseSequence)).ResolvedString;
+            s["Full Sequence"] = pepWithModsIsNull ? " " : Resolve(pepWithModsIsNull ? null : pepsWithMods.Select(b => b.FullSequence)).ResolvedString;
+            s["Essential Sequence"] = pepWithModsIsNull ? " " : Resolve(pepWithModsIsNull ? null : pepsWithMods.Select(b => b.EssentialSequence(ModsToWritePruned))).ResolvedString;
             s["Mods"] = pepWithModsIsNull ? " " : Resolve(pepsWithMods.Select(b => b.AllModsOneIsNterminus)).ResolvedString;
             s["Mods Chemical Formulas"] = pepWithModsIsNull ? " " :
                 Resolve(pepsWithMods.Select(p => p.AllModsOneIsNterminus.Select(v => v.Value))).ResolvedString;
@@ -456,9 +451,9 @@ namespace EngineLayer
             s["Peptide Monoisotopic Mass"] = pepWithModsIsNull ? " " : Resolve(pepsWithMods.Select(b => b.MonoisotopicMass)).ResolvedString;
             s["Mass Diff (Da)"] = pepWithModsIsNull ? " " : Resolve(pepsWithMods.Select(b => psm.ScanPrecursorMass - b.MonoisotopicMass)).ResolvedString;
             s["Mass Diff (ppm)"] = pepWithModsIsNull ? " " : ResolveF2(pepsWithMods.Select(b => ((psm.ScanPrecursorMass - b.MonoisotopicMass) / b.MonoisotopicMass * 1e6))).ResolvedString;
-            s["Protein Accession"] = pepWithModsIsNull ? " " : Resolve(pepsWithMods.Select(b => b.Protein.Accession), checksForDistinctNames).ResolvedString;
-            s["Protein Name"] = pepWithModsIsNull ? " " : Resolve(pepsWithMods.Select(b => b.Protein.FullName), checksForDistinctNames).ResolvedString;
-            s["Gene Name"] = pepWithModsIsNull ? " " : Resolve(pepsWithMods.Select(b => string.Join(", ", b.Protein.GeneNames.Select(d => $"{d.Item1}:{d.Item2}"))), checksForDistinctNames).ResolvedString;
+            s["Protein Accession"] = pepWithModsIsNull ? " " : Resolve(pepsWithMods.Select(b => b.Protein.Accession), psm.FullSequence).ResolvedString;
+            s["Protein Name"] = pepWithModsIsNull ? " " : Resolve(pepsWithMods.Select(b => b.Protein.FullName), psm.FullSequence).ResolvedString;
+            s["Gene Name"] = pepWithModsIsNull ? " " : Resolve(pepsWithMods.Select(b => string.Join(", ", b.Protein.GeneNames.Select(d => $"{d.Item1}:{d.Item2}"))), psm.FullSequence).ResolvedString;
             s["Intersecting Sequence Variations"] = pepWithModsIsNull ? " " : 
                 Resolve(pepsWithMods.Select(b => string.Join(", ", b.Protein.AppliedSequenceVariations
                     .Where(av => IntersectsWithVariation(b, av, false))
@@ -476,7 +471,7 @@ namespace EngineLayer
             s["Decoy"] = pepWithModsIsNull ? " " : Resolve(pepsWithMods.Select(b => b.Protein.IsDecoy ? "Y" : "N")).Item1;
             s["Peptide Description"] = pepWithModsIsNull ? " " : Resolve(pepsWithMods.Select(b => b.PeptideDescription)).Item1;
             s["Start and End Residues In Protein"] = pepWithModsIsNull ? " " : 
-                Resolve(pepsWithMods.Select(b => ($"[{b.OneBasedStartResidueInProtein.ToString(CultureInfo.InvariantCulture)} to {b.OneBasedEndResidueInProtein.ToString(CultureInfo.InvariantCulture)}]")), checksForDistinctNames).ResolvedString;
+                Resolve(pepsWithMods.Select(b => ($"[{b.OneBasedStartResidueInProtein.ToString(CultureInfo.InvariantCulture)} to {b.OneBasedEndResidueInProtein.ToString(CultureInfo.InvariantCulture)}]")), psm.FullSequence).ResolvedString;
             s["Previous Amino Acid"] = pepWithModsIsNull ? " " : Resolve(pepsWithMods.Select(b => b.PreviousAminoAcid.ToString())).ResolvedString;
             s["Next Amino Acid"] = pepWithModsIsNull ? " " : Resolve(pepsWithMods.Select(b => b.NextAminoAcid.ToString())).ResolvedString;
 

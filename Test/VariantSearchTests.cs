@@ -4,6 +4,7 @@ using NUnit.Framework;
 using Proteomics;
 using Proteomics.ProteolyticDigestion;
 using System;
+using MzLibUtil;
 using System.Collections.Generic;
 using System.Diagnostics;
 using System.IO;
@@ -40,12 +41,11 @@ namespace Test
                     DecoyType = DecoyType.None,
                     ModPeptidesAreDifferent = false
                 },
-                CommonParameters = new CommonParameters(scoreCutoff: 1, digestionParams: new DigestionParams(minPeptideLength: 2)),
+                CommonParameters = new CommonParameters(scoreCutoff: 1, digestionParams: new DigestionParams(minPeptideLength: 2), precursorMassTolerance: new PpmTolerance(20)),
             };
 
             CommonParameters CommonParameters = new CommonParameters(
                 scoreCutoff: 1,
-                precursorMassTolerance: new MzLibUtil.PpmTolerance(10),
                 digestionParams: new DigestionParams(
                     maxMissedCleavages: 0,
                     minPeptideLength: 1,
@@ -71,18 +71,19 @@ namespace Test
             };
             PeptideWithSetModifications pep = proteins[proteinIdx].GetVariantProteins().SelectMany(p => p.Digest(CommonParameters.DigestionParams, null, null)).ToList()[peptideIdx];
 
-            string xmlName = "andguiaheov.xml";
+            string xmlName = $"andguiaheov{proteinIdx.ToString()}.xml";
             ProteinDbWriter.WriteXmlDatabase(null, new List<Protein> { proteins[proteinIdx] }, xmlName);
 
-            string mzmlName = @"ajgdiv.mzML";
+            string mzmlName = $"ajgdiv{proteinIdx.ToString()}.mzML";
             MsDataFile myMsDataFile = new TestDataFile(new List<PeptideWithSetModifications> { pep }, true);
 
             IO.MzML.MzmlMethods.CreateAndWriteMyMzmlWithCalibratedSpectra(myMsDataFile, mzmlName, false);
-            string outputFolder = Path.Combine(TestContext.CurrentContext.TestDirectory, @"TestSearchWithVariants");
+            string outputFolder = Path.Combine(TestContext.CurrentContext.TestDirectory, $"TestSearchWithVariants{proteinIdx.ToString()}");
             Directory.CreateDirectory(outputFolder);
 
             st.RunTask(outputFolder, new List<DbForTask> { new DbForTask(xmlName, false) }, new List<string> { mzmlName }, "");
             var psms = File.ReadAllLines(Path.Combine(outputFolder, "AllPSMs.psmtsv"));
+            
             Assert.IsTrue(psms.Any(line => line.Contains($"\t{variantPsmShort}\t" + (containsVariant ? variantPsmShort : "\t"))));
 
             Directory.Delete(outputFolder, true);
