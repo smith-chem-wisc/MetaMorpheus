@@ -103,11 +103,15 @@ namespace Test
                 "-XYZ-EFG-ABC",
             };
             //both proteases are cleaving at the same spots to simulate trypsin and argC producing the same peptides
-            List<Tuple<string, FragmentationTerminus>> sequencesInducingCleavage = new List<Tuple<string, FragmentationTerminus>> { new Tuple<string, FragmentationTerminus>("-", FragmentationTerminus.C), new Tuple<string, FragmentationTerminus>("Z", FragmentationTerminus.C) };
 
-            var protease1 = new Protease("proteaseA1", sequencesInducingCleavage, new List<Tuple<string, FragmentationTerminus>>(), CleavageSpecificity.Full, null, null, null);
+            List<DigestionMotif> motifs = new List<DigestionMotif>
+            {
+                new DigestionMotif("-", null, 1, null),
+                new DigestionMotif("Z", null, 1, null),
+            };
+            var protease1 = new Protease("proteaseA1", CleavageSpecificity.Full, null, null, motifs);
             ProteaseDictionary.Dictionary.Add(protease1.Name, protease1);
-            var protease2 = new Protease("proteaseB1", sequencesInducingCleavage, new List<Tuple<string, FragmentationTerminus>>(), CleavageSpecificity.Full, null, null, null);
+            var protease2 = new Protease("proteaseB1", CleavageSpecificity.Full, null, null, motifs);
             ProteaseDictionary.Dictionary.Add(protease2.Name, protease2);
 
             //a hashset of peptideWithSetModifications from all proteases
@@ -181,12 +185,12 @@ namespace Test
                 "-XYZ-EFGABC",
             };
 
-            List<Tuple<string, FragmentationTerminus>> sequencesInducingCleavage = new List<Tuple<string, FragmentationTerminus>> { new Tuple<string, FragmentationTerminus>("-", FragmentationTerminus.C), new Tuple<string, FragmentationTerminus>("Z", FragmentationTerminus.C) };
-            List<Tuple<string, FragmentationTerminus>> sequencesInducingCleavage2 = new List<Tuple<string, FragmentationTerminus>> { new Tuple<string, FragmentationTerminus>("G", FragmentationTerminus.C) };
+            List<DigestionMotif> motifs1 = new List<DigestionMotif> { new DigestionMotif("-", null, 1, null), new DigestionMotif("G", null, 1, null) };
+            List<DigestionMotif> motifs2 = new List<DigestionMotif> { new DigestionMotif("G", null, 1, null) };
 
-            var protease1 = new Protease("proteaseA", sequencesInducingCleavage, new List<Tuple<string, FragmentationTerminus>>(), CleavageSpecificity.Full, null, null, null);
+            var protease1 = new Protease("proteaseA", CleavageSpecificity.Full, null, null, motifs1);
             ProteaseDictionary.Dictionary.Add(protease1.Name, protease1);
-            var protease2 = new Protease("proteaseB", sequencesInducingCleavage2, new List<Tuple<string, FragmentationTerminus>>(), CleavageSpecificity.Full, null, null, null);
+            var protease2 = new Protease("proteaseB", CleavageSpecificity.Full, null, null, motifs2);
             ProteaseDictionary.Dictionary.Add(protease2.Name, protease2);
 
             //a hashset of peptideWithSetModifications from all proteases
@@ -282,12 +286,17 @@ namespace Test
                 "EFGABC",
             };
 
-            List<Tuple<string, FragmentationTerminus>> sequencesInducingCleavage = new List<Tuple<string, FragmentationTerminus>> { new Tuple<string, FragmentationTerminus>("C", FragmentationTerminus.C) };
-            List<Tuple<string, FragmentationTerminus>> sequencesInducingCleavage2 = new List<Tuple<string, FragmentationTerminus>> { new Tuple<string, FragmentationTerminus>("G", FragmentationTerminus.C) };
+            List<Tuple<string, FragmentationTerminus>> sequencesInducingCleavage = new List<Tuple<string, FragmentationTerminus>> {
+                new Tuple<string, FragmentationTerminus>("C", FragmentationTerminus.C) };
+            List<Tuple<string, FragmentationTerminus>> sequencesInducingCleavage2 = new List<Tuple<string, FragmentationTerminus>> {
+                new Tuple<string, FragmentationTerminus>("G", FragmentationTerminus.C) };
 
-            var protease = new Protease("testA", sequencesInducingCleavage, new List<Tuple<string, FragmentationTerminus>>(), CleavageSpecificity.Full, null, null, null);
+            List<DigestionMotif> motifs1 = new List<DigestionMotif> { new DigestionMotif("C", null, 1, null) };
+            List<DigestionMotif> motifs2 = new List<DigestionMotif> { new DigestionMotif("G", null, 1, null) };
+
+            var protease = new Protease("testA", CleavageSpecificity.Full, null, null, motifs1);
             ProteaseDictionary.Dictionary.Add(protease.Name, protease);
-            var protease2 = new Protease("testB", sequencesInducingCleavage2, new List<Tuple<string, FragmentationTerminus>>(), CleavageSpecificity.Full, null, null, null);
+            var protease2 = new Protease("testB", CleavageSpecificity.Full, null, null, motifs2);
             ProteaseDictionary.Dictionary.Add(protease2.Name, protease2);
             var peptideList = new HashSet<PeptideWithSetModifications>();
 
@@ -364,12 +373,13 @@ namespace Test
             string[] sequences = {
                 "-XYZ-EFGABC"
             };
-            List<Tuple<string, FragmentationTerminus>> sequencesInducingCleavage = new List<Tuple<string, FragmentationTerminus>> { new Tuple<string, FragmentationTerminus>("A", FragmentationTerminus.N), new Tuple<string, FragmentationTerminus>("Z", FragmentationTerminus.C) };
-            List<Tuple<string, FragmentationTerminus>> sequencesInducingCleavage2 = new List<Tuple<string, FragmentationTerminus>> { new Tuple<string, FragmentationTerminus>("G", FragmentationTerminus.C) };
 
-            var protease = new Protease("test1", sequencesInducingCleavage, new List<Tuple<string, FragmentationTerminus>>(), CleavageSpecificity.Full, null, null, null);
+            List<DigestionMotif> motifs1 = new List<DigestionMotif> { new DigestionMotif("A", null, 0, null), new DigestionMotif("Z", null, 1, null) };
+            List<DigestionMotif> motifs2 = new List<DigestionMotif> { new DigestionMotif("G", null, 1, null) };
+
+            var protease = new Protease("test1", CleavageSpecificity.Full, null, null, motifs1);
             ProteaseDictionary.Dictionary.Add(protease.Name, protease);
-            var protease2 = new Protease("test2", sequencesInducingCleavage2, new List<Tuple<string, FragmentationTerminus>>(), CleavageSpecificity.Full, null, null, null);
+            var protease2 = new Protease("test2", CleavageSpecificity.Full, null, null, motifs2);
             ProteaseDictionary.Dictionary.Add(protease2.Name, protease2);
 
             var p = new List<Protein>();
@@ -439,12 +449,12 @@ namespace Test
                 "-XYZ-GABC"
             };
 
-            List<Tuple<string, FragmentationTerminus>> sequencesInducingCleavage = new List<Tuple<string, FragmentationTerminus>> { new Tuple<string, FragmentationTerminus>("-", FragmentationTerminus.C), new Tuple<string, FragmentationTerminus>("Z", FragmentationTerminus.C) };
-            List<Tuple<string, FragmentationTerminus>> sequencesInducingCleavage2 = new List<Tuple<string, FragmentationTerminus>> { new Tuple<string, FragmentationTerminus>("G", FragmentationTerminus.C) };
+            List<DigestionMotif> motifs1 = new List<DigestionMotif> { new DigestionMotif("-", null, 1, null), new DigestionMotif("Z", null, 1, null) };
+            List<DigestionMotif> motifs2 = new List<DigestionMotif> { new DigestionMotif("G", null, 1, null) };
 
-            var protease = new Protease("test5", sequencesInducingCleavage, new List<Tuple<string, FragmentationTerminus>>(), CleavageSpecificity.Full, null, null, null);
+            var protease = new Protease("test5", CleavageSpecificity.Full, null, null, motifs1);
             ProteaseDictionary.Dictionary.Add(protease.Name, protease);
-            var protease2 = new Protease("test6", sequencesInducingCleavage2, new List<Tuple<string, FragmentationTerminus>>(), CleavageSpecificity.Full, null, null, null);
+            var protease2 = new Protease("test6", CleavageSpecificity.Full, null, null, motifs2);
             ProteaseDictionary.Dictionary.Add(protease2.Name, protease2);
             var peptideList = new HashSet<PeptideWithSetModifications>();
 
@@ -520,12 +530,13 @@ namespace Test
                 "-XYZ-GABC"
             };
 
-            List<Tuple<string, FragmentationTerminus>> sequencesInducingCleavage = new List<Tuple<string, FragmentationTerminus>> { new Tuple<string, FragmentationTerminus>("-", FragmentationTerminus.C), new Tuple<string, FragmentationTerminus>("Z", FragmentationTerminus.C) };
-            List<Tuple<string, FragmentationTerminus>> sequencesInducingCleavage2 = new List<Tuple<string, FragmentationTerminus>> { new Tuple<string, FragmentationTerminus>("G", FragmentationTerminus.C) };
+            List<DigestionMotif> motifs1 = new List<DigestionMotif> { new DigestionMotif("-", null, 1, null), new DigestionMotif("Z", null, 1, null) };
+            List<DigestionMotif> motifs2 = new List<DigestionMotif> { new DigestionMotif("G", null, 1, null) };
 
-            var protease = new Protease("test3", sequencesInducingCleavage, new List<Tuple<string, FragmentationTerminus>>(), CleavageSpecificity.Full, null, null, null);
+
+            var protease = new Protease("test3", CleavageSpecificity.Full, null, null, motifs1);
             ProteaseDictionary.Dictionary.Add(protease.Name, protease);
-            var protease2 = new Protease("test4", sequencesInducingCleavage2, new List<Tuple<string, FragmentationTerminus>>(), CleavageSpecificity.Full, null, null, null);
+            var protease2 = new Protease("test4", CleavageSpecificity.Full, null, null, motifs2);
             ProteaseDictionary.Dictionary.Add(protease2.Name, protease2);
 
             var peptideList = new List<PeptideWithSetModifications>();
@@ -592,13 +603,13 @@ namespace Test
                 "-XYZ--ABC",
                 "-XYZ-EFGABC",
             };
+            
+            List<DigestionMotif> motifs1 = new List<DigestionMotif> { new DigestionMotif("-", null, 1, null), new DigestionMotif("Z", null, 1, null) };
+            List<DigestionMotif> motifs2 = new List<DigestionMotif> { new DigestionMotif("G", null, 1, null) };
 
-            List<Tuple<string, FragmentationTerminus>> sequencesInducingCleavage = new List<Tuple<string, FragmentationTerminus>> { new Tuple<string, FragmentationTerminus>("-", FragmentationTerminus.C), new Tuple<string, FragmentationTerminus>("Z", FragmentationTerminus.C) };
-            List<Tuple<string, FragmentationTerminus>> sequencesInducingCleavage2 = new List<Tuple<string, FragmentationTerminus>> { new Tuple<string, FragmentationTerminus>("G", FragmentationTerminus.C) };
-
-            var protease = new Protease("testC", sequencesInducingCleavage, new List<Tuple<string, FragmentationTerminus>>(), CleavageSpecificity.Full, null, null, null);
+            var protease = new Protease("testC", CleavageSpecificity.Full, null, null, motifs1);
             ProteaseDictionary.Dictionary.Add(protease.Name, protease);
-            var protease2 = new Protease("testD", sequencesInducingCleavage2, new List<Tuple<string, FragmentationTerminus>>(), CleavageSpecificity.Full, null, null, null);
+            var protease2 = new Protease("testD", CleavageSpecificity.Full, null, null, motifs2);
             ProteaseDictionary.Dictionary.Add(protease2.Name, protease2);
             var peptideList = new List<PeptideWithSetModifications>();
 
@@ -784,12 +795,12 @@ namespace Test
                 p.Add(new Protein(sequences[i], (i + 1).ToString(), null, gn, new Dictionary<int, List<Modification>>()));
             }
 
-            List<Tuple<string, FragmentationTerminus>> sequencesInducingCleavage = new List<Tuple<string, FragmentationTerminus>> { new Tuple<string, FragmentationTerminus>("-", FragmentationTerminus.C), new Tuple<string, FragmentationTerminus>("Z", FragmentationTerminus.C) };
-            List<Tuple<string, FragmentationTerminus>> sequencesInducingCleavage2 = new List<Tuple<string, FragmentationTerminus>> { new Tuple<string, FragmentationTerminus>("G", FragmentationTerminus.C) };
+            List<DigestionMotif> motifs1 = new List<DigestionMotif> { new DigestionMotif("-", null, 1, null), new DigestionMotif("Z", null, 1, null) };
+            List<DigestionMotif> motifs2 = new List<DigestionMotif> { new DigestionMotif("G", null, 1, null) };
 
-            var protease = new Protease("proteaseAlpha", sequencesInducingCleavage, new List<Tuple<string, FragmentationTerminus>>(), CleavageSpecificity.Full, null, null, null);
+            var protease = new Protease("proteaseAlpha", CleavageSpecificity.Full, null, null, motifs1);
             ProteaseDictionary.Dictionary.Add(protease.Name, protease);
-            var protease2 = new Protease("proteaseBeta", sequencesInducingCleavage2, new List<Tuple<string, FragmentationTerminus>>(), CleavageSpecificity.Full, null, null, null);
+            var protease2 = new Protease("proteaseBeta", CleavageSpecificity.Full, null, null, motifs2);
             ProteaseDictionary.Dictionary.Add(protease2.Name, protease2);
 
             DigestionParams digestionParams = new DigestionParams(protease: protease.Name, minPeptideLength: 1);
@@ -928,13 +939,13 @@ namespace Test
             {
                 p.Add(new Protein(sequences[i], (i + 1).ToString(), null, gn, new Dictionary<int, List<Modification>>()));
             }
+            
+            List<DigestionMotif> motifs1 = new List<DigestionMotif> { new DigestionMotif("-", null, 0, null), new DigestionMotif("-", null, 1, null) };
+            List<DigestionMotif> motifs2 = new List<DigestionMotif> { new DigestionMotif("G", null, 1, null) };
 
-            List<Tuple<string, FragmentationTerminus>> sequencesInducingCleavage = new List<Tuple<string, FragmentationTerminus>> { new Tuple<string, FragmentationTerminus>("-", FragmentationTerminus.C), new Tuple<string, FragmentationTerminus>("-", FragmentationTerminus.N) };
-            List<Tuple<string, FragmentationTerminus>> sequencesInducingCleavage2 = new List<Tuple<string, FragmentationTerminus>> { new Tuple<string, FragmentationTerminus>("G", FragmentationTerminus.C) };
-
-            var protease = new Protease("proteaseDash", sequencesInducingCleavage, new List<Tuple<string, FragmentationTerminus>>(), CleavageSpecificity.Full, null, null, null);
+            var protease = new Protease("proteaseDash", CleavageSpecificity.Full, null, null, motifs1);
             ProteaseDictionary.Dictionary.Add(protease.Name, protease);
-            var protease2 = new Protease("proteaseG", sequencesInducingCleavage2, new List<Tuple<string, FragmentationTerminus>>(), CleavageSpecificity.Full, null, null, null);
+            var protease2 = new Protease("proteaseG", CleavageSpecificity.Full, null, null, motifs2);
             ProteaseDictionary.Dictionary.Add(protease2.Name, protease2);
 
             DigestionParams digestionParams = new DigestionParams(protease: protease.Name, minPeptideLength: 1);

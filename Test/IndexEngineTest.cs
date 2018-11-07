@@ -39,7 +39,8 @@ namespace Test
                 i++;
             }
 
-            Protease p = new Protease("Custom Protease2", new List<Tuple<string, FragmentationTerminus>> { new Tuple<string, FragmentationTerminus>("K", FragmentationTerminus.C) }, new List<Tuple<string, FragmentationTerminus>>(), CleavageSpecificity.Full, null, null, null);
+            List<DigestionMotif> motifs = new List<DigestionMotif> { new DigestionMotif("K", null, 1, null) };
+            Protease p = new Protease("Custom Protease2",CleavageSpecificity.Full, null, null, motifs);
             ProteaseDictionary.Dictionary.Add(p.Name, p);
             CommonParameters CommonParameters = new CommonParameters(scoreCutoff: 1, digestionParams: new DigestionParams(protease: p.Name, minPeptideLength: 1));
 
@@ -83,7 +84,8 @@ namespace Test
                 i++;
             }
 
-            Protease protease = new Protease("Custom Protease", new List<Tuple<string, FragmentationTerminus>> { new Tuple<string, FragmentationTerminus>("K", FragmentationTerminus.C) }, new List<Tuple<string, FragmentationTerminus>>(), CleavageSpecificity.Full, null, null, null);
+            List<DigestionMotif> motifs = new List<DigestionMotif> { new DigestionMotif("K", null, 1, null) };
+            Protease protease = new Protease("Custom Protease",  CleavageSpecificity.Full, null, null, motifs);
             ProteaseDictionary.Dictionary.Add(protease.Name, protease);
             CommonParameters CommonParameters = new CommonParameters(
                 digestionParams: new DigestionParams(
