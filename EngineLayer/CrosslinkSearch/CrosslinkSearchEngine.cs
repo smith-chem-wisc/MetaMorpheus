@@ -258,7 +258,7 @@ namespace EngineLayer.CrosslinkSearch
                     {
                         PeptideWithSetModifications betaPeptide = theScanBestPeptide[betaIndex].BestPeptide;
 
-                        if (XLPrecusorSearchMode.Accepts(theScan.PrecursorMass, alphaPeptide.MonoisotopicMass + betaPeptide.MonoisotopicMass + Crosslinker.TotalMass + 1.0034) >= 0)
+                        if (XLPrecusorSearchMode.Accepts(theScan.PrecursorMass, alphaPeptide.MonoisotopicMass + betaPeptide.MonoisotopicMass + Crosslinker.TotalMass) >= 0)
                         {
                             List<int> possibleBetaCrosslinkSites = CrosslinkSpectralMatch.GetPossibleCrosslinkerModSites(AllCrosslinkerSites, betaPeptide);
 
