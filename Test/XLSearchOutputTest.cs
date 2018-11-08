@@ -14,7 +14,11 @@ namespace Test
             string outputFolder = Path.Combine(TestContext.CurrentContext.TestDirectory, @"XlOutputTest1");
             string myFile = Path.Combine(TestContext.CurrentContext.TestDirectory, @"XlTestData\BSA_DSS_23747.mzML");
             string myDatabase = Path.Combine(TestContext.CurrentContext.TestDirectory, @"XlTestData\BSA.fasta");
-
+            string indexPath = Path.Combine(TestContext.CurrentContext.TestDirectory, @"XlTestData\", MetaMorpheusTask.IndexFolderName);
+            if (Directory.Exists(indexPath))
+            {
+                Directory.Delete(indexPath, true);
+            }
             Directory.CreateDirectory(outputFolder);
 
             XLSearchTask xLSearch = new XLSearchTask();

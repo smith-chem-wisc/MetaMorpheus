@@ -95,7 +95,11 @@ namespace Test
             string myFile = Path.Combine(TestContext.CurrentContext.TestDirectory, @"TestData\tinySemi.mgf");
             string myDatabase = Path.Combine(TestContext.CurrentContext.TestDirectory, @"TestData\semiTest.fasta");
             DbForTask db = new DbForTask(myDatabase, false);
-
+            string indexPath = Path.Combine(TestContext.CurrentContext.TestDirectory, @"TestData\", MetaMorpheusTask.IndexFolderName);
+            if (Directory.Exists(indexPath))
+            {
+                Directory.Delete(indexPath, true);
+            }
             List<(string, MetaMorpheusTask)> taskList = new List<(string, MetaMorpheusTask)> { ("TestSemiSpecificSmall", searchTask) };
 
             var engine = new EverythingRunnerEngine(taskList, new List<string> { myFile }, new List<DbForTask> { new DbForTask(myDatabase, false) }, Environment.CurrentDirectory);
@@ -120,6 +124,11 @@ namespace Test
             string outputFolder = Path.Combine(TestContext.CurrentContext.TestDirectory, @"TestSemiSpecific");
             string myFile = Path.Combine(TestContext.CurrentContext.TestDirectory, @"TestData\PrunedDbSpectra.mzml");
             string myDatabase = Path.Combine(TestContext.CurrentContext.TestDirectory, @"TestData\DbForPrunedDb.fasta");
+            string indexPath = Path.Combine(TestContext.CurrentContext.TestDirectory, @"TestData\", MetaMorpheusTask.IndexFolderName);
+            if (Directory.Exists(indexPath))
+            {
+                Directory.Delete(indexPath, true);
+            }
             foreach (FragmentationTerminus fragTerm in terminiToTest)
             {
                 SearchTask searchTask = new SearchTask()

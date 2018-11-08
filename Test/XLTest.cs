@@ -153,6 +153,11 @@ namespace Test
             var task = Toml.ReadFile<XLSearchTask>(Path.Combine(TestContext.CurrentContext.TestDirectory, @"XlTestData/XLSearchTaskconfig_BSA_DSS_23747.toml"), MetaMorpheusTask.tomlConfig);
             Directory.CreateDirectory(Path.Combine(Environment.CurrentDirectory, @"TESTXlTestData"));
             DbForTask db = new DbForTask(Path.Combine(TestContext.CurrentContext.TestDirectory, @"XlTestData/BSA.fasta"), false);
+            string indexPath = Path.Combine(TestContext.CurrentContext.TestDirectory, @"XlTestData\", MetaMorpheusTask.IndexFolderName);
+            if (Directory.Exists(indexPath))
+            {
+                Directory.Delete(indexPath, true);
+            }
             string raw = Path.Combine(TestContext.CurrentContext.TestDirectory, @"XlTestData/BSA_DSS_23747.mzML");
             new EverythingRunnerEngine(new List<(string, MetaMorpheusTask)> { ("Task", task) }, new List<string> { raw }, new List<DbForTask> { db }, Path.Combine(Environment.CurrentDirectory, @"TESTXlTestData")).Run();
             Directory.Delete(Path.Combine(Environment.CurrentDirectory, @"TESTXlTestData"), true);
@@ -251,7 +256,11 @@ namespace Test
             string myFileXl = Path.Combine(TestContext.CurrentContext.TestDirectory, @"XlTestData\BSA_DSSO_ETchD6010.mgf");
             string myDatabaseXl = Path.Combine(TestContext.CurrentContext.TestDirectory, @"XlTestData\BSA.fasta");
             string outputFolder = Path.Combine(TestContext.CurrentContext.TestDirectory, @"TestDeadendPeptide");
-
+            string indexPath = Path.Combine(TestContext.CurrentContext.TestDirectory, @"XlTestData\", MetaMorpheusTask.IndexFolderName);
+            if (Directory.Exists(indexPath))
+            {
+                Directory.Delete(indexPath, true);
+            }
             XLSearchTask xLSearchTask = new XLSearchTask()
             {
                 CommonParameters = new CommonParameters(precursorMassTolerance: new PpmTolerance(51000))
@@ -288,6 +297,11 @@ namespace Test
             string folderPath = Path.Combine(TestContext.CurrentContext.TestDirectory, @"TestXLSearch");
             DbForTask db = new DbForTask(myDatabase, false);
             List<(string, MetaMorpheusTask)> taskList = new List<(string, MetaMorpheusTask)> { ("TestXLSearch", xlSearchTask) };
+            string indexPath = Path.Combine(TestContext.CurrentContext.TestDirectory, @"XlTestData\", MetaMorpheusTask.IndexFolderName);
+            if (Directory.Exists(indexPath))
+            {
+                Directory.Delete(indexPath, true);
+            }
             Directory.CreateDirectory(folderPath);
 
             //creates .params files if they do not exist
@@ -569,6 +583,11 @@ namespace Test
             string myFileXl = Path.Combine(TestContext.CurrentContext.TestDirectory, @"XlTestData\BSA_DSSO_ETchD6010.mgf");
             string myDatabaseXl = Path.Combine(TestContext.CurrentContext.TestDirectory, @"XlTestData\BSA.fasta");
             string outputFolder = Path.Combine(TestContext.CurrentContext.TestDirectory, @"TestXLSearch");
+            string indexPath = Path.Combine(TestContext.CurrentContext.TestDirectory, @"XlTestData\", MetaMorpheusTask.IndexFolderName);
+            if (Directory.Exists(indexPath))
+            {
+                Directory.Delete(indexPath, true);
+            }
             DbForTask db = new DbForTask(myDatabaseXl, false);
 
             List<(string, MetaMorpheusTask)> taskList = new List<(string, MetaMorpheusTask)> { ("TestPercolator", xlst) };
