@@ -319,7 +319,7 @@
                                             <DataTemplate DataType="{x:Type local:ModForTreeView}">
                                                 <StackPanel Orientation="Horizontal" Background="{Binding Background}" ToolTip="{Binding ToolTipStuff}">
                                                     <CheckBox x:Name="checkBoxHistogramAnalysis" IsChecked="{Binding Use}" />
-                                                    <TextBlock Text="{Binding DisplayName}" />
+                                                    <TextBlock Text="{Binding ModName}" />
                                                 </StackPanel>
                                             </DataTemplate>
                                         </TreeView.Resources>
@@ -343,7 +343,7 @@
                                             <DataTemplate DataType="{x:Type local:ModForTreeView}">
                                                 <StackPanel Orientation="Horizontal" Background="{Binding Background}" ToolTip="{Binding ToolTipStuff}">
                                                     <CheckBox x:Name="checkBoxHistogramAnalysis" IsChecked="{Binding Use}" />
-                                                    <TextBlock Text="{Binding DisplayName}" />
+                                                    <TextBlock Text="{Binding ModName}" />
                                                 </StackPanel>
                                             </DataTemplate>
                                         </TreeView.Resources>
