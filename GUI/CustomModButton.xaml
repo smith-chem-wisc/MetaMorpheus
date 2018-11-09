@@ -53,7 +53,7 @@
                             <Style.Resources>
                                 <VisualBrush x:Key="CueBannerBrush" AlignmentX="Left" AlignmentY="Center" Stretch="None">
                                     <VisualBrush.Visual>
-                                        <Label Content="ex: 'modType'" Foreground="Gray" />
+                                        <Label Content="ex: 'Custom'" Foreground="Gray" />
                                     </VisualBrush.Visual>
                                 </VisualBrush>
                             </Style.Resources>
@@ -85,7 +85,7 @@
                             <Style.Resources>
                                 <VisualBrush x:Key="CueBannerBrush" AlignmentX="Left" AlignmentY="Center" Stretch="None">
                                     <VisualBrush.Visual>
-                                        <Label Content="ex: 'Aaa'" Foreground="Gray" />
+                                        <Label Content="ex: 'Skk'" Foreground="Gray" />
                                     </VisualBrush.Visual>
                                 </VisualBrush>
                             </Style.Resources>
@@ -117,7 +117,7 @@
                                 <Style.Resources>
                                     <VisualBrush x:Key="CueBannerBrush" AlignmentX="Left" AlignmentY="Center" Stretch="None">
                                         <VisualBrush.Visual>
-                                            <Label Content="ex: 'H1 O3 P1'" Foreground="Gray" />
+                                            <Label Content="ex: 'H3 P1 O4'" Foreground="Gray" />
                                         </VisualBrush.Visual>
                                     </VisualBrush>
                                 </Style.Resources>
@@ -136,8 +136,9 @@
                         </TextBox.Style>
                     </TextBox>
                 </StackPanel>
-                <StackPanel>
-                    <Label Content="and/or" Height="20" FontSize="9" Width="286"/>
+                <StackPanel Orientation="Horizontal">
+                    <Label Content="and/or" Height="20" FontSize="9" Width="175"/>
+                    <Label Content="*" Foreground="Red" FontWeight="Bold" />
                 </StackPanel>
                 <!--Monoisotopic mass-->
                 <StackPanel Orientation="Horizontal">
@@ -188,7 +189,7 @@
                 </StackPanel>
                 <!--Neutral losses-->
                 <StackPanel Orientation="Horizontal">
-                    <Label Content="Neutral Losses" Width="190" HorizontalContentAlignment="Center" FontSize="10"/>
+                    <Label Content="Neutral Losses (mass)" Width="190" HorizontalContentAlignment="Center" FontSize="10"/>
                     <TextBox x:Name="neutralLossTextBox" Width="155" Height="20">
                         <ToolTipService.ToolTip>
                             <ToolTip Content="Neutral loss (optional, separate with ',') example: '12.34, 56.78, 90.12'"/>
@@ -218,7 +219,7 @@
                     </TextBox>
                 </StackPanel>
                 <StackPanel Orientation="Horizontal">
-                    <Label Content="Diagnostic Ions" Width="190" HorizontalContentAlignment="Center" FontSize="10"></Label>
+                    <Label Content="Diagnostic Ions (m/z)" Width="190" HorizontalContentAlignment="Center" FontSize="10"></Label>
                     <TextBox Name="diagnosticIonTextBox" Width="155" Height="20">
                         <ToolTipService.ToolTip>
                             <ToolTip Content="Diagnostic Ions (optional, separate with ',') example: '12.34, 56.78, 90.12'"/>
