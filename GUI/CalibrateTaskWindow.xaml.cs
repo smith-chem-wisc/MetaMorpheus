@@ -22,25 +22,23 @@ namespace MetaMorpheusGUI
         private readonly ObservableCollection<ModTypeForTreeView> FixedModTypeForTreeViewObservableCollection = new ObservableCollection<ModTypeForTreeView>();
         private readonly ObservableCollection<ModTypeForTreeView> VariableModTypeForTreeViewObservableCollection = new ObservableCollection<ModTypeForTreeView>();
         private readonly ObservableCollection<ModTypeForLoc> LocalizeModTypeForTreeViewObservableCollection = new ObservableCollection<ModTypeForLoc>();
-        
-        public CalibrateTaskWindow()
-        {
-            InitializeComponent();
-            PopulateChoices();
-            
-            TheTask = new CalibrationTask();
-            UpdateFieldsFromTask(TheTask);
 
-            this.saveButton.Content = "Add the Calibration Task";
+        public CalibrateTaskWindow() : this(null)
+        {
         }
 
         public CalibrateTaskWindow(CalibrationTask myCalibrateTask)
         {
             InitializeComponent();
             PopulateChoices();
-
-            TheTask = myCalibrateTask;
+            TheTask = myCalibrateTask ?? new CalibrationTask();
             UpdateFieldsFromTask(TheTask);
+
+            if (myCalibrateTask == null)
+            {
+                this.saveButton.Content = "Add the Calibration Task";
+            }
+            SearchModifications.Timer.Tick += new EventHandler(TextChangeTimerHandler);
         }
 
         internal CalibrationTask TheTask { get; private set; }
@@ -55,12 +53,14 @@ namespace MetaMorpheusGUI
             initiatorMethionineBehaviorComboBox.SelectedIndex = (int)task.CommonParameters.DigestionParams.InitiatorMethionineBehavior;
             DissociationTypeComboBox.SelectedItem = task.CommonParameters.DissociationType.ToString();
             maxThreadsTextBox.Text = task.CommonParameters.MaxThreadsToUsePerFile.ToString(CultureInfo.InvariantCulture);
+            MinVariantDepthTextBox.Text = task.CommonParameters.MinVariantDepth.ToString(CultureInfo.InvariantCulture);
+            MaxHeterozygousVariantsTextBox.Text = task.CommonParameters.MaxHeterozygousVariants.ToString(CultureInfo.InvariantCulture);
 
             productMassToleranceTextBox.Text = task.CommonParameters.ProductMassTolerance.Value.ToString(CultureInfo.InvariantCulture);
             productMassToleranceComboBox.SelectedIndex = task.CommonParameters.ProductMassTolerance is AbsoluteTolerance ? 0 : 1;
             precursorMassToleranceTextBox.Text = task.CommonParameters.PrecursorMassTolerance.Value.ToString(CultureInfo.InvariantCulture);
             precursorMassToleranceComboBox.SelectedIndex = task.CommonParameters.PrecursorMassTolerance is AbsoluteTolerance ? 0 : 1;
-            
+
             //writeIntermediateFilesCheckBox.IsChecked = task.CalibrationParameters.WriteIntermediateFiles;
 
             minScoreAllowed.Text = task.CommonParameters.ScoreCutoff.ToString(CultureInfo.InvariantCulture);
@@ -72,7 +72,7 @@ namespace MetaMorpheusGUI
                 var theModType = FixedModTypeForTreeViewObservableCollection.FirstOrDefault(b => b.DisplayName.Equals(mod.Item1));
                 if (theModType != null)
                 {
-                    var theMod = theModType.Children.FirstOrDefault(b => b.DisplayName.Equals(mod.Item2));
+                    var theMod = theModType.Children.FirstOrDefault(b => b.ModName.Equals(mod.Item2));
                     if (theMod != null)
                         theMod.Use = true;
                     else
@@ -90,7 +90,7 @@ namespace MetaMorpheusGUI
                 var theModType = VariableModTypeForTreeViewObservableCollection.FirstOrDefault(b => b.DisplayName.Equals(mod.Item1));
                 if (theModType != null)
                 {
-                    var theMod = theModType.Children.FirstOrDefault(b => b.DisplayName.Equals(mod.Item2));
+                    var theMod = theModType.Children.FirstOrDefault(b => b.ModName.Equals(mod.Item2));
                     if (theMod != null)
                         theMod.Use = true;
                     else
@@ -125,7 +125,8 @@ namespace MetaMorpheusGUI
                 proteaseComboBox.Items.Add(protease);
             }
 
-            proteaseComboBox.SelectedIndex = 12;
+            Protease trypsin = ProteaseDictionary.Dictionary["trypsin"];
+            proteaseComboBox.SelectedItem = trypsin;
 
             foreach (string initiatior_methionine_behavior in Enum.GetNames(typeof(InitiatorMethionineBehavior)))
             {
@@ -189,6 +190,8 @@ namespace MetaMorpheusGUI
             int MaxMissedCleavages = string.IsNullOrEmpty(missedCleavagesTextBox.Text) ? int.MaxValue : (int.Parse(missedCleavagesTextBox.Text, CultureInfo.InvariantCulture));
             int MinPeptideLength = int.Parse(MinPeptideLengthTextBox.Text, NumberStyles.Any, CultureInfo.InvariantCulture);
             int MaxPeptideLength = string.IsNullOrEmpty(MaxPeptideLengthTextBox.Text) ? int.MaxValue : (int.Parse(MaxPeptideLengthTextBox.Text, NumberStyles.Any, CultureInfo.InvariantCulture));
+            int MinVariantDepth = int.Parse(MinVariantDepthTextBox.Text, NumberStyles.Any, CultureInfo.InvariantCulture);
+            int MaxHeterozygousVariants = int.Parse(MaxHeterozygousVariantsTextBox.Text, NumberStyles.Any, CultureInfo.InvariantCulture);
             int MaxModificationIsoforms = int.Parse(maxModificationIsoformsTextBox.Text, CultureInfo.InvariantCulture);
             DissociationType dissociationType = GlobalVariables.AllSupportedDissociationTypes[DissociationTypeComboBox.SelectedItem.ToString()];
 
@@ -202,7 +205,7 @@ namespace MetaMorpheusGUI
             var listOfModsVariable = new List<(string, string)>();
             foreach (var heh in VariableModTypeForTreeViewObservableCollection)
             {
-                listOfModsVariable.AddRange(heh.Children.Where(b => b.Use).Select(b => (b.Parent.DisplayName, b.DisplayName)));
+                listOfModsVariable.AddRange(heh.Children.Where(b => b.Use).Select(b => (b.Parent.DisplayName, b.ModName)));
             }
 
             if (!GlobalGuiSettings.VariableModCheck(listOfModsVariable))
@@ -213,7 +216,7 @@ namespace MetaMorpheusGUI
             var listOfModsFixed = new List<(string, string)>();
             foreach (var heh in FixedModTypeForTreeViewObservableCollection)
             {
-                listOfModsFixed.AddRange(heh.Children.Where(b => b.Use).Select(b => (b.Parent.DisplayName, b.DisplayName)));
+                listOfModsFixed.AddRange(heh.Children.Where(b => b.Use).Select(b => (b.Parent.DisplayName, b.ModName)));
             }
             Tolerance ProductMassTolerance;
             if (productMassToleranceComboBox.SelectedIndex == 0)
@@ -246,7 +249,10 @@ namespace MetaMorpheusGUI
                 listOfModsFixed: listOfModsFixed,
                 listOfModsVariable: listOfModsVariable,
                 productMassTolerance: ProductMassTolerance,
-                precursorMassTolerance: PrecursorMassTolerance);
+                precursorMassTolerance: PrecursorMassTolerance,
+                assumeOrphanPeaksAreZ1Fragments: protease.Name != "top-down",
+                minVariantDepth: MinVariantDepth,
+                maxHeterozygousVariants: MaxHeterozygousVariants);
 
             TheTask.CommonParameters = commonParamsToSave;
 
@@ -267,6 +273,33 @@ namespace MetaMorpheusGUI
             else if (e.Key == Key.Escape)
             {
                 CancelButton_Click(sender, e);
+            }
+        }
+
+        private void TextChanged_Fixed(object sender, TextChangedEventArgs args)
+        {
+            SearchModifications.SetTimer();
+            SearchModifications.FixedSearch = true;
+        }
+
+        private void TextChanged_Var(object sender, TextChangedEventArgs args)
+        {
+            SearchModifications.SetTimer();
+            SearchModifications.VariableSearch = true;
+        }
+
+        private void TextChangeTimerHandler(object sender, EventArgs e)
+        {
+            if (SearchModifications.FixedSearch)
+            {
+                SearchModifications.FilterTree(SearchFixMod, fixedModsTreeView, FixedModTypeForTreeViewObservableCollection);
+                SearchModifications.FixedSearch = false;
+            }
+
+            if (SearchModifications.VariableSearch)
+            {
+                SearchModifications.FilterTree(SearchVarMod, variableModsTreeView, VariableModTypeForTreeViewObservableCollection);
+                SearchModifications.VariableSearch = false;
             }
         }
     }

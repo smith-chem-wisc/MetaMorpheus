@@ -19,7 +19,8 @@ namespace Test
         public static void TestParsimony()
         {
             // creates some proteins to test parsimony with
-            string[] proteinSequences = { "AB--------",   // 1: contains unique
+            string[] proteinSequences = {
+                                   "AB--------",   // 1: contains unique
                                    "--C-------",   // 2: one hit wonder
                                    "---D---HHH--", // 3: subset
                                    "-B-D---HHH--", // 4: D should go to 4, not 3 (3 is subset)
@@ -42,20 +43,22 @@ namespace Test
             proteins.Add(new Protein("----E----**", "C2", isContaminant: true));
 
             // create the protease
-            IEnumerable<Tuple<string, FragmentationTerminus>> sequencesInducingCleavage = new List<Tuple<string, FragmentationTerminus>>
-            { new Tuple<string, FragmentationTerminus>("A", FragmentationTerminus.C),
-                new Tuple<string, FragmentationTerminus>("B", FragmentationTerminus.C),
-                new Tuple<string, FragmentationTerminus>("C", FragmentationTerminus.C),
-                new Tuple<string, FragmentationTerminus>("D", FragmentationTerminus.C),
-                new Tuple<string, FragmentationTerminus>("E", FragmentationTerminus.C),
-                new Tuple<string, FragmentationTerminus>("F", FragmentationTerminus.C),
-                new Tuple<string, FragmentationTerminus>("G", FragmentationTerminus.C),
-                new Tuple<string, FragmentationTerminus>("H", FragmentationTerminus.C),
-                new Tuple<string, FragmentationTerminus>("I", FragmentationTerminus.C),
-                new Tuple<string, FragmentationTerminus>("J", FragmentationTerminus.C),
-                new Tuple<string, FragmentationTerminus>("-", FragmentationTerminus.C) };
+            List<DigestionMotif> digestionMotifs = new List<DigestionMotif>
+            {
+                new DigestionMotif("A", null, 1, null),
+                new DigestionMotif("B", null, 1, null),
+                new DigestionMotif("C", null, 1, null),
+                new DigestionMotif("D", null, 1, null),
+                new DigestionMotif("E", null, 1, null),
+                new DigestionMotif("F", null, 1, null),
+                new DigestionMotif("G", null, 1, null),
+                new DigestionMotif("H", null, 1, null),
+                new DigestionMotif("I", null, 1, null),
+                new DigestionMotif("J", null, 1, null),
+                new DigestionMotif("-", null, 1, null),
+            };
 
-            var protease = new Protease("test", sequencesInducingCleavage, new List<Tuple<string, FragmentationTerminus>>(), CleavageSpecificity.Full, null, null, null);
+            var protease = new Protease("test", CleavageSpecificity.Full, null, null, digestionMotifs);
             ProteaseDictionary.Dictionary.Add(protease.Name, protease);
             DigestionParams digestionParams = new DigestionParams(protease: protease.Name, minPeptideLength: 1);
 
@@ -87,7 +90,7 @@ namespace Test
                 0, 1, true, Polarity.Positive, double.NaN, null, null, MZAnalyzerType.Orbitrap, double.NaN, null,
                 null, "scan=1", double.NaN, null, null, double.NaN, null, DissociationType.AnyActivationType, 0, null);
 
-            Ms2ScanWithSpecificMass scan = new Ms2ScanWithSpecificMass(fakeScan, 2, 0, "File");
+            Ms2ScanWithSpecificMass scan = new Ms2ScanWithSpecificMass(fakeScan, 2, 0, "File", new CommonParameters());
 
             foreach (var peptide in peptides)
             {
@@ -125,7 +128,6 @@ namespace Test
             Assert.Contains("AB--------", parsimonyProteinSequences);
             Assert.Contains("--C-------", parsimonyProteinSequences);
             Assert.Contains("-B-D---HHH--", parsimonyProteinSequences);
-            Assert.Contains("-----F----*", parsimonyProteinSequences);
             Assert.Contains("----E----**", parsimonyProteinSequences);
             Assert.Contains("-B------I-", parsimonyProteinSequences);
             Assert.Contains("----EFG---", parsimonyProteinSequences);
@@ -142,7 +144,7 @@ namespace Test
             }
 
             // test protein groups
-            Assert.AreEqual(4, proteinGroups.Count);
+            Assert.AreEqual(3, proteinGroups.Count);
             Assert.AreEqual(1, proteinGroups.First().Proteins.Count);
             Assert.AreEqual("AB--------", proteinGroups.First().Proteins.First().BaseSequence);
             Assert.AreEqual(2, proteinGroups.First().AllPsmsBelowOnePercentFDR.Count);
@@ -159,7 +161,7 @@ namespace Test
             variableModifications.Add(new Modification(_originalId: "resMod", _modificationType: "HaHa", _target: motif, _locationRestriction: "Anywhere.", _chemicalFormula: ChemicalFormula.ParseFormula("H")));
 
             var proteinList = new List<Protein> { new Protein("MNNNSKQQQ", "accession") };
-            var protease = new Protease("CustomProtease", new List<Tuple<string, FragmentationTerminus>> { new Tuple<string, FragmentationTerminus>("K", FragmentationTerminus.C) }, new List<Tuple<string, FragmentationTerminus>>(), CleavageSpecificity.Full, null, null, null);
+            var protease = new Protease("CustomProtease", CleavageSpecificity.Full, null, null, new List<DigestionMotif> { new DigestionMotif("K", null, 1, null) });
             ProteaseDictionary.Dictionary.Add(protease.Name, protease);
 
             Dictionary<Modification, ushort> modsDictionary = new Dictionary<Modification, ushort>
@@ -201,7 +203,7 @@ namespace Test
             }
 
             MsDataScan jdfk = new MsDataScan(new MzSpectrum(new double[] { 1 }, new double[] { 1 }, false), 0, 1, true, Polarity.Positive, double.NaN, null, null, MZAnalyzerType.Orbitrap, double.NaN, null, null, "scan=1", double.NaN, null, null, double.NaN, null, DissociationType.AnyActivationType, 0, null);
-            Ms2ScanWithSpecificMass ms2scan = new Ms2ScanWithSpecificMass(jdfk, 2, 0, "File");
+            Ms2ScanWithSpecificMass ms2scan = new Ms2ScanWithSpecificMass(jdfk, 2, 0, "File", new CommonParameters());
             
             Tolerance fragmentTolerance = new AbsoluteTolerance(0.01);
 

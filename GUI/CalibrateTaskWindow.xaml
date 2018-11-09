@@ -106,7 +106,7 @@
                                                 <TextBlock>
                                                         Protease used for digestion.
                                                         <LineBreak/>
-                                                        Novel proteases can be added/modified by the user at "...MetaMorpheus\\EngineLayer\\Data\\proteases.tsv"
+                                                        Proteases can be added/modified by the user at "Data -> Open folder with mods/data files -> ProteolyticDigestion -> proteases.tsv"
                                                 </TextBlock>
                                             </ComboBox.ToolTip>
                                         </ComboBox>
@@ -127,6 +127,26 @@
                                             <TextBox.ToolTip>
                                                 <TextBlock>
                                                         The maximum allowed peptide length. Leave empty for no limitation.
+                                                </TextBlock>
+                                            </TextBox.ToolTip>
+                                        </TextBox>
+                                    </StackPanel>
+                                    <StackPanel Orientation="Horizontal" Margin="5">
+                                        <Label x:Name="LbMinVariantDepth" Content="Min read depth for variants" />
+                                        <TextBox x:Name="MinVariantDepthTextBox" PreviewTextInput="CheckIfNumber" Width="45" ToolTipService.ShowDuration="999999" ToolTipService.InitialShowDelay="500">
+                                            <TextBox.ToolTip>
+                                                <TextBlock>
+                                                    The minimum number of reads to consider a nucleic acid sequence variant.
+                                                </TextBlock>
+                                            </TextBox.ToolTip>
+                                        </TextBox>
+                                    </StackPanel>
+                                    <StackPanel Orientation="Horizontal" Margin="5">
+                                        <Label x:Name="LbMaxHeterozygousVariants" Content="Max heterozygous variants for combinitorics" />
+                                        <TextBox x:Name="MaxHeterozygousVariantsTextBox" PreviewTextInput="CheckIfNumber" Width="45" ToolTipService.ShowDuration="999999" ToolTipService.InitialShowDelay="500">
+                                            <TextBox.ToolTip>
+                                                <TextBlock>
+                                                    The maximum number of heterozygous variants for combinitorics.
                                                 </TextBlock>
                                             </TextBox.ToolTip>
                                         </TextBox>
@@ -220,7 +240,7 @@
                                 </Grid.ColumnDefinitions>
                                 <StackPanel>
                                     <Label Content="Fixed" />
-                                    <TreeView x:Name="fixedModsTreeView" ItemsSource="{Binding}" Height="400">
+                                    <TreeView x:Name="fixedModsTreeView" ItemsSource="{Binding}" DataContext="{x:Type local:ModTypeForTreeView}" Height="400">
                                         <TreeView.Resources>
                                             <HierarchicalDataTemplate DataType="{x:Type local:ModTypeForTreeView}" ItemsSource="{Binding Children}">
                                                 <StackPanel Orientation="Horizontal" Background="{Binding Background}">
@@ -235,11 +255,17 @@
                                                 </StackPanel>
                                             </DataTemplate>
                                         </TreeView.Resources>
+                                        <TreeView.ItemContainerStyle>
+                                            <Style TargetType="TreeViewItem">
+                                                <Setter Property="IsExpanded" Value="{Binding Expanded}"/>
+                                            </Style>
+                                        </TreeView.ItemContainerStyle>
                                     </TreeView>
+                                    
                                 </StackPanel>
                                 <StackPanel Grid.Column="1">
                                     <Label Content="Variable" />
-                                    <TreeView x:Name="variableModsTreeView" ItemsSource="{Binding}" Height="400">
+                                    <TreeView x:Name="variableModsTreeView" ItemsSource="{Binding}" DataContext="{x:Type local:ModTypeForTreeView}" Height="400">
                                         <TreeView.Resources>
                                             <HierarchicalDataTemplate DataType="{x:Type local:ModTypeForTreeView}" ItemsSource="{Binding Children}">
                                                 <StackPanel Orientation="Horizontal" Background="{Binding Background}">
@@ -254,8 +280,62 @@
                                                 </StackPanel>
                                             </DataTemplate>
                                         </TreeView.Resources>
+                                        <TreeView.ItemContainerStyle>
+                                            <Style TargetType="TreeViewItem">
+                                                <Setter Property="IsExpanded" Value="{Binding Expanded}"/>
+                                            </Style>
+                                        </TreeView.ItemContainerStyle>
                                     </TreeView>
                                 </StackPanel>
+                                <TextBox x:Name="SearchFixMod" TextChanged="TextChanged_Fixed" HorizontalAlignment="Left" Margin="82,4,0,410" TextWrapping="Wrap" Width="140">
+                                    <TextBox.Style>
+                                        <Style TargetType="TextBox" xmlns:sys="clr-namespace:System;assembly=mscorlib">
+                                            <Style.Resources>
+                                                <VisualBrush x:Key="CueBannerBrush" AlignmentX="Left" AlignmentY="Center" Stretch="None">
+                                                    <VisualBrush.Visual>
+                                                        <Label Content="Search..." Foreground="Gray" />
+                                                    </VisualBrush.Visual>
+                                                </VisualBrush>
+                                            </Style.Resources>
+                                            <Style.Triggers>
+                                                <Trigger Property="Text" Value="{x:Static sys:String.Empty}">
+                                                    <Setter Property="Background" Value="{StaticResource CueBannerBrush}" />
+                                                </Trigger>
+                                                <Trigger Property="Text" Value="{x:Null}">
+                                                    <Setter Property="Background" Value="{StaticResource CueBannerBrush}" />
+                                                </Trigger>
+                                                <Trigger Property="IsKeyboardFocused" Value="True">
+                                                    <Setter Property="Background" Value="White" />
+                                                </Trigger>
+                                            </Style.Triggers>
+                                        </Style>
+                                    </TextBox.Style>
+                                </TextBox>
+                                <TextBox x:Name="SearchVarMod" TextChanged="TextChanged_Var" Grid.Column="1" HorizontalAlignment="Left" Margin="82,4,0,410" TextWrapping="Wrap" Width="140">
+                                    <TextBox.Style>
+                                        <Style TargetType="TextBox" xmlns:sys="clr-namespace:System;assembly=mscorlib">
+                                            <Style.Resources>
+                                                <VisualBrush x:Key="CueBannerBrush" AlignmentX="Left" AlignmentY="Center" Stretch="None">
+                                                    <VisualBrush.Visual>
+                                                        <Label Content="Search..." Foreground="Gray" />
+                                                    </VisualBrush.Visual>
+                                                </VisualBrush>
+                                            </Style.Resources>
+                                            <Style.Triggers>
+                                                <Trigger Property="Text" Value="{x:Static sys:String.Empty}">
+                                                    <Setter Property="Background" Value="{StaticResource CueBannerBrush}" />
+                                                </Trigger>
+                                                <Trigger Property="Text" Value="{x:Null}">
+                                                    <Setter Property="Background" Value="{StaticResource CueBannerBrush}" />
+                                                </Trigger>
+                                                <Trigger Property="IsKeyboardFocused" Value="True">
+                                                    <Setter Property="Background" Value="White" />
+                                                </Trigger>
+                                            </Style.Triggers>
+                                        </Style>
+                                    </TextBox.Style>
+                                </TextBox>
+                                
                                 <!--<StackPanel Grid.Column="2">
                                     <Label Content="Database Localized" />
                                     <CheckBox x:Name="localizeAllCheckBox" Content="Localize All Modifications" IsChecked="True" />

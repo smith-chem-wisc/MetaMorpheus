@@ -68,7 +68,7 @@ namespace EngineLayer.ClassicSearch
 
                             foreach (ScanWithIndexAndNotchInfo scan in GetAcceptableScans(peptide.MonoisotopicMass, SearchMode))
                             {
-                                List<MatchedFragmentIon> matchedIons = MatchFragmentIons(scan.TheScan.TheScan.MassSpectrum, peptideTheorProducts, commonParameters, scan.TheScan.PrecursorMass);
+                                List<MatchedFragmentIon> matchedIons = MatchFragmentIons(scan.TheScan, peptideTheorProducts, commonParameters);
 
                                 double thisScore = CalculatePeptideScore(scan.TheScan.TheScan, matchedIons, 0);
 
@@ -133,13 +133,13 @@ namespace EngineLayer.ClassicSearch
             {
                 psm.ResolveAllAmbiguities();
             }
-
+            
             return new MetaMorpheusEngineResults(this);
         }
 
         private IEnumerable<ScanWithIndexAndNotchInfo> GetAcceptableScans(double peptideMonoisotopicMass, MassDiffAcceptor searchMode)
         {
-            foreach (AllowedIntervalWithNotch allowedIntervalWithNotch in searchMode.GetAllowedPrecursorMassIntervals(peptideMonoisotopicMass).ToList())
+            foreach (AllowedIntervalWithNotch allowedIntervalWithNotch in searchMode.GetAllowedPrecursorMassIntervalsFromTheoreticalMass(peptideMonoisotopicMass).ToList())
             {
                 DoubleRange allowedInterval = allowedIntervalWithNotch.AllowedInterval;
                 int scanIndex = GetFirstScanWithMassOverOrEqual(allowedInterval.Minimum);

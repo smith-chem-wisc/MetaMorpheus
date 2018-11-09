@@ -12,6 +12,7 @@ using Proteomics.Fragmentation;
 using Proteomics.ProteolyticDigestion;
 using System;
 using System.Collections.Generic;
+using System.IO;
 using System.Linq;
 using TaskLayer;
 using UsefulProteomicsDatabases;
@@ -24,7 +25,7 @@ namespace Test
         [Test]
         public static void TestClassicSearchEngine()
         {
-            Protease protease = new Protease("Customized Protease", new List<Tuple<string, FragmentationTerminus>> { new Tuple<string, FragmentationTerminus>("K", FragmentationTerminus.C) }, new List<Tuple<string, FragmentationTerminus>>(), CleavageSpecificity.Full, null, null, null);
+            Protease protease = new Protease("Customized Protease", CleavageSpecificity.Full, null, null, new List<DigestionMotif> { new DigestionMotif("K", null, 1, "") });
             ProteaseDictionary.Dictionary.Add(protease.Name, protease);
             CommonParameters CommonParameters = new CommonParameters
                 (digestionParams: new DigestionParams(
@@ -39,13 +40,7 @@ namespace Test
 
             var searchModes = new SinglePpmAroundZeroSearchMode(5);
 
-            bool DoPrecursorDeconvolution = true;
-            bool UseProvidedPrecursorInfo = true;
-            double DeconvolutionIntensityRatio = 4;
-            int DeconvolutionMaxAssumedChargeState = 10;
-            Tolerance DeconvolutionMassTolerance = new PpmTolerance(5);
-
-            var listOfSortedms2Scans = MetaMorpheusTask.GetMs2Scans(myMsDataFile, null, DoPrecursorDeconvolution, UseProvidedPrecursorInfo, DeconvolutionIntensityRatio, DeconvolutionMaxAssumedChargeState, DeconvolutionMassTolerance).OrderBy(b => b.PrecursorMass).ToArray();
+            var listOfSortedms2Scans = MetaMorpheusTask.GetMs2Scans(myMsDataFile, null, new CommonParameters()).OrderBy(b => b.PrecursorMass).ToArray();
 
             PeptideSpectralMatch[] allPsmsArray = new PeptideSpectralMatch[listOfSortedms2Scans.Length];
             new ClassicSearchEngine(allPsmsArray, listOfSortedms2Scans, variableModifications, fixedModifications, proteinList, searchModes, CommonParameters, new List<string>()).Run();
@@ -79,13 +74,7 @@ namespace Test
 
             var searchModes = new OpenSearchMode();
 
-            bool DoPrecursorDeconvolution = true;
-            bool UseProvidedPrecursorInfo = true;
-            double DeconvolutionIntensityRatio = 4;
-            int DeconvolutionMaxAssumedChargeState = 10;
-            Tolerance DeconvolutionMassTolerance = new PpmTolerance(5);
-
-            var listOfSortedms2Scans = MetaMorpheusTask.GetMs2Scans(myMsDataFile, null, DoPrecursorDeconvolution, UseProvidedPrecursorInfo, DeconvolutionIntensityRatio, DeconvolutionMaxAssumedChargeState, DeconvolutionMassTolerance).OrderBy(b => b.PrecursorMass).ToArray();
+            var listOfSortedms2Scans = MetaMorpheusTask.GetMs2Scans(myMsDataFile, null, new CommonParameters()).OrderBy(b => b.PrecursorMass).ToArray();
 
             PeptideSpectralMatch[] allPsmsArray = new PeptideSpectralMatch[listOfSortedms2Scans.Length];
             new ClassicSearchEngine(allPsmsArray, listOfSortedms2Scans, variableModifications, fixedModifications, proteinList, searchModes, CommonParameters, new List<string>()).Run();
@@ -121,34 +110,13 @@ namespace Test
             var myMsDataFile = new TestDataFile();
             var variableModifications = new List<Modification>();
             var fixedModifications = new List<Modification>();
-            var localizeableModifications = new List<Modification>();
-            Dictionary<Modification, ushort> modsDictionary = new Dictionary<Modification, ushort>();
-            foreach (var mod in fixedModifications)
-                modsDictionary.Add(mod, 0);
-            int ii = 1;
-            foreach (var mod in variableModifications)
-            {
-                modsDictionary.Add(mod, (ushort)ii);
-                ii++;
-            }
-            foreach (var mod in localizeableModifications)
-            {
-                modsDictionary.Add(mod, (ushort)ii);
-                ii++;
-            }
 
             var proteinList = new List<Protein> { new Protein("MNNNKQQQ", null) };
 
-            var indexEngine = new IndexingEngine(proteinList, variableModifications, fixedModifications, 1, DecoyType.Reverse, CommonParameters, SearchParameters.MaxFragmentSize, false, new List<string>());
+            var indexEngine = new IndexingEngine(proteinList, variableModifications, fixedModifications, 1, DecoyType.Reverse, CommonParameters, SearchParameters.MaxFragmentSize, false, new List<FileInfo>(), new List<string>());
             var indexResults = (IndexingResults)indexEngine.Run();
 
-            bool DoPrecursorDeconvolution = true;
-            bool UseProvidedPrecursorInfo = true;
-            double DeconvolutionIntensityRatio = 4;
-            int DeconvolutionMaxAssumedChargeState = 10;
-            Tolerance DeconvolutionMassTolerance = new PpmTolerance(5);
-
-            var listOfSortedms2Scans = MetaMorpheusTask.GetMs2Scans(myMsDataFile, null, DoPrecursorDeconvolution, UseProvidedPrecursorInfo, DeconvolutionIntensityRatio, DeconvolutionMaxAssumedChargeState, DeconvolutionMassTolerance).OrderBy(b => b.PrecursorMass).ToArray();
+            var listOfSortedms2Scans = MetaMorpheusTask.GetMs2Scans(myMsDataFile, null, new CommonParameters()).OrderBy(b => b.PrecursorMass).ToArray();
 
             MassDiffAcceptor massDiffAcceptor = SearchTask.GetMassDiffAcceptor(CommonParameters.PrecursorMassTolerance, SearchParameters.MassDiffAcceptorType, SearchParameters.CustomMdac);
 
@@ -189,10 +157,10 @@ namespace Test
             var proteinList = new List<Protein> { new Protein("K", null) };
 
             var indexEngine = new IndexingEngine(proteinList, new List<Modification>(), new List<Modification>(), 1, DecoyType.Reverse,
-                CommonParameters, SearchParameters.MaxFragmentSize, false, new List<string>());
+                CommonParameters, SearchParameters.MaxFragmentSize, false, new List<FileInfo>(), new List<string>());
             var indexResults = (IndexingResults)indexEngine.Run();
 
-            var listOfSortedms2Scans = MetaMorpheusTask.GetMs2Scans(new TestDataFile(), null, true, true, 4, 10, new PpmTolerance(5)).OrderBy(b => b.PrecursorMass).ToArray();
+            var listOfSortedms2Scans = MetaMorpheusTask.GetMs2Scans(new TestDataFile(), null, new CommonParameters()).OrderBy(b => b.PrecursorMass).ToArray();
 
             MassDiffAcceptor massDiffAcceptor = SearchTask.GetMassDiffAcceptor(CommonParameters.PrecursorMassTolerance, SearchParameters.MassDiffAcceptorType, SearchParameters.CustomMdac);
 
@@ -218,36 +186,15 @@ namespace Test
             var myMsDataFile = new TestDataFile(true); //empty
             var variableModifications = new List<Modification>();
             var fixedModifications = new List<Modification>();
-            var localizeableModifications = new List<Modification>();
-            Dictionary<Modification, ushort> modsDictionary = new Dictionary<Modification, ushort>();
-            foreach (var mod in fixedModifications)
-                modsDictionary.Add(mod, 0);
-            int ii = 1;
-            foreach (var mod in variableModifications)
-            {
-                modsDictionary.Add(mod, (ushort)ii);
-                ii++;
-            }
-            foreach (var mod in localizeableModifications)
-            {
-                modsDictionary.Add(mod, (ushort)ii);
-                ii++;
-            }
 
             var proteinList = new List<Protein> { new Protein("MNNNKQQQ", null) };
 
             var searchModes = new SinglePpmAroundZeroSearchMode(5);
 
-            var indexEngine = new IndexingEngine(proteinList, variableModifications, fixedModifications, 1, DecoyType.Reverse, CommonParameters, SearchParameters.MaxFragmentSize, false, new List<string>());
+            var indexEngine = new IndexingEngine(proteinList, variableModifications, fixedModifications, 1, DecoyType.Reverse, CommonParameters, SearchParameters.MaxFragmentSize, false, new List<FileInfo>(), new List<string>());
             var indexResults = (IndexingResults)indexEngine.Run();
 
-            bool DoPrecursorDeconvolution = true;
-            bool UseProvidedPrecursorInfo = true;
-            double DeconvolutionIntensityRatio = 4;
-            int DeconvolutionMaxAssumedChargeState = 10;
-            Tolerance DeconvolutionMassTolerance = new PpmTolerance(5);
-
-            var listOfSortedms2Scans = MetaMorpheusTask.GetMs2Scans(myMsDataFile, null, DoPrecursorDeconvolution, UseProvidedPrecursorInfo, DeconvolutionIntensityRatio, DeconvolutionMaxAssumedChargeState, DeconvolutionMassTolerance).OrderBy(b => b.PrecursorMass).ToArray();
+            var listOfSortedms2Scans = MetaMorpheusTask.GetMs2Scans(myMsDataFile, null, new CommonParameters()).OrderBy(b => b.PrecursorMass).ToArray();
 
             PeptideSpectralMatch[][] allPsmsArrays = new PeptideSpectralMatch[1][];
             allPsmsArrays[0] = new PeptideSpectralMatch[listOfSortedms2Scans.Length];
@@ -285,7 +232,7 @@ namespace Test
 
             var proteinList = new List<Protein> { new Protein("MNNNKQXQ", null) };
 
-            var indexEngine = new IndexingEngine(proteinList, variableModifications, fixedModifications, 1, DecoyType.Reverse, CommonParameters, SearchParameters.MaxFragmentSize, false, new List<string>());
+            var indexEngine = new IndexingEngine(proteinList, variableModifications, fixedModifications, 1, DecoyType.Reverse, CommonParameters, SearchParameters.MaxFragmentSize, false, new List<FileInfo>(), new List<string>());
             var indexResults = (IndexingResults)indexEngine.Run();
 
             bool DoPrecursorDeconvolution = true;
@@ -294,7 +241,7 @@ namespace Test
             int DeconvolutionMaxAssumedChargeState = 10;
             Tolerance DeconvolutionMassTolerance = new PpmTolerance(5);
 
-            var listOfSortedms2Scans = MetaMorpheusTask.GetMs2Scans(myMsDataFile, null, DoPrecursorDeconvolution, UseProvidedPrecursorInfo, DeconvolutionIntensityRatio, DeconvolutionMaxAssumedChargeState, DeconvolutionMassTolerance).OrderBy(b => b.PrecursorMass).ToArray();
+            var listOfSortedms2Scans = MetaMorpheusTask.GetMs2Scans(myMsDataFile, null, new CommonParameters()).OrderBy(b => b.PrecursorMass).ToArray();
             MassDiffAcceptor massDiffAcceptor = SearchTask.GetMassDiffAcceptor(CommonParameters.PrecursorMassTolerance, SearchParameters.MassDiffAcceptorType, SearchParameters.CustomMdac);
 
             PeptideSpectralMatch[] allPsmsArray = new PeptideSpectralMatch[listOfSortedms2Scans.Length];
@@ -327,7 +274,14 @@ namespace Test
                     FdrCategory.NonSpecific
                 }
             };
-            Protease protease = new Protease("single N", new List<Tuple<string, FragmentationTerminus>> { new Tuple<string, FragmentationTerminus>("K", FragmentationTerminus.Both), new Tuple<string, FragmentationTerminus>("G", FragmentationTerminus.Both) }, new List<Tuple<string, FragmentationTerminus>>(), CleavageSpecificity.SingleN, null, null, null);
+            List<DigestionMotif> motifs = new List<DigestionMotif>
+            {
+                new DigestionMotif("K", null, 0, null),
+                new DigestionMotif("K", null, 1, null),
+                new DigestionMotif("G", null, 0, null),
+                new DigestionMotif("G", null, 1, null),
+            };
+            Protease protease = new Protease("single N", CleavageSpecificity.SingleN, null, null, motifs);
             ProteaseDictionary.Dictionary.Add(protease.Name, protease);
             DigestionParams dp = new DigestionParams(protease: protease.Name, minPeptideLength: 1, fragmentationTerminus: FragmentationTerminus.N, searchModeType: CleavageSpecificity.None);
             CommonParameters CommonParameters = new CommonParameters(
@@ -340,38 +294,15 @@ namespace Test
             var myMsDataFile = new TestDataFile("Yes, I'd like one slightly larger please");
             var variableModifications = new List<Modification>();
             var fixedModifications = new List<Modification>();
-            var localizeableModifications = new List<Modification>();
-            Dictionary<Modification, ushort> modsDictionary = new Dictionary<Modification, ushort>();
-            foreach (var mod in fixedModifications)
-            {
-                modsDictionary.Add(mod, 0);
-            }
-            int ii = 1;
-            foreach (var mod in variableModifications)
-            {
-                modsDictionary.Add(mod, (ushort)ii);
-                ii++;
-            }
-            foreach (var mod in localizeableModifications)
-            {
-                modsDictionary.Add(mod, (ushort)ii);
-                ii++;
-            }
 
             var proteinList = new List<Protein> { new Protein("GGGGGMNNNKQQQGGGGG", "TestProtein") };
 
-            var indexEngine = new IndexingEngine(proteinList, variableModifications, fixedModifications, 1, DecoyType.Reverse, CommonParameters, 100000, false, new List<string>());
+            var indexEngine = new IndexingEngine(proteinList, variableModifications, fixedModifications, 1, DecoyType.Reverse, CommonParameters, 100000, false, new List<FileInfo>(), new List<string>());
             var indexResults = (IndexingResults)indexEngine.Run();
             var peptideIndex = indexResults.PeptideIndex;
             var fragmentIndexDict = indexResults.FragmentIndex;
 
-            bool DoPrecursorDeconvolution = true;
-            bool UseProvidedPrecursorInfo = true;
-            double DeconvolutionIntensityRatio = 4;
-            int DeconvolutionMaxAssumedChargeState = 10;
-            Tolerance DeconvolutionMassTolerance = new PpmTolerance(5);
-
-            var listOfSortedms2Scans = MetaMorpheusTask.GetMs2Scans(myMsDataFile, null, DoPrecursorDeconvolution, UseProvidedPrecursorInfo, DeconvolutionIntensityRatio, DeconvolutionMaxAssumedChargeState, DeconvolutionMassTolerance).OrderBy(b => b.PrecursorMass).ToArray();
+            var listOfSortedms2Scans = MetaMorpheusTask.GetMs2Scans(myMsDataFile, null, new CommonParameters()).OrderBy(b => b.PrecursorMass).ToArray();
 
             MassDiffAcceptor massDiffAcceptor = SearchTask.GetMassDiffAcceptor(CommonParameters.PrecursorMassTolerance, SearchParameters.MassDiffAcceptorType, SearchParameters.CustomMdac);
 
@@ -401,6 +332,189 @@ namespace Test
         }
 
         [Test]
+        public static void TestNonSpecificEnzymeSearchEngineSingleCModifications()
+        {
+            SearchParameters SearchParameters = new SearchParameters
+            {
+                SearchTarget = true,
+                MassDiffAcceptorType = MassDiffAcceptorType.Exact,
+                LocalFdrCategories = new List<FdrCategory>
+                {
+                    FdrCategory.NonSpecific
+                }
+            };
+            DigestionParams dp = new DigestionParams("singleC", minPeptideLength: 1, fragmentationTerminus: FragmentationTerminus.C, searchModeType: CleavageSpecificity.None);
+
+            CommonParameters CommonParameters = new CommonParameters(
+                dissociationType: DissociationType.HCD,
+                digestionParams: dp,
+                scoreCutoff: 5,
+                precursorMassTolerance: new PpmTolerance(5),
+                addCompIons: true);
+
+            PeptideWithSetModifications guiltyPwsm = new PeptideWithSetModifications("DQPKLLGIETPLPKKE", null);
+            var fragments = guiltyPwsm.Fragment(CommonParameters.DissociationType, FragmentationTerminus.Both);
+
+
+            var myMsDataFile = new TestDataFile(guiltyPwsm.MonoisotopicMass, fragments.Select(x => x.NeutralMass.ToMz(1)).ToArray());
+            var variableModifications = new List<Modification>();
+            var fixedModifications = new List<Modification>();
+            ModificationMotif.TryGetMotif("C", out ModificationMotif motif2);
+            Modification mod2 = new Modification(_originalId: "Carbamidomethyl of C", _modificationType: "Common Fixed", _target: motif2, _locationRestriction: "Anywhere.", _monoisotopicMass: 57.02146372068994);
+            fixedModifications.Add(mod2);
+
+            var proteinList = new List<Protein> { new Protein("GGGGGCDQPKLLGIETPLPKKEGGGGG", null) };
+
+            var indexEngine = new IndexingEngine(proteinList, variableModifications, fixedModifications, 1, DecoyType.None, CommonParameters, SearchParameters.MaxFragmentSize,true, new List<FileInfo>(), new List<string>());
+
+            var indexResults = (IndexingResults)indexEngine.Run();
+            var peptideIndex = indexResults.PeptideIndex;
+            var fragmentIndexDict = indexResults.FragmentIndex;
+            var precursorIndexDict = indexResults.PrecursorIndex;
+
+            var listOfSortedms2Scans = MetaMorpheusTask.GetMs2Scans(myMsDataFile, null, new CommonParameters()).OrderBy(b => b.PrecursorMass).ToArray();
+            MassDiffAcceptor massDiffAcceptor = SearchTask.GetMassDiffAcceptor(CommonParameters.PrecursorMassTolerance, SearchParameters.MassDiffAcceptorType, SearchParameters.CustomMdac);
+
+            PeptideSpectralMatch[][] allPsmsArrays = new PeptideSpectralMatch[3][];
+            allPsmsArrays[0] = new PeptideSpectralMatch[listOfSortedms2Scans.Length];
+            allPsmsArrays[1] = new PeptideSpectralMatch[listOfSortedms2Scans.Length];
+            allPsmsArrays[2] = new PeptideSpectralMatch[listOfSortedms2Scans.Length];
+            PeptideSpectralMatch[] allPsmsArray = allPsmsArrays[2];
+            var engine = new NonSpecificEnzymeSearchEngine(allPsmsArrays, listOfSortedms2Scans, peptideIndex, fragmentIndexDict, precursorIndexDict, 0, CommonParameters, massDiffAcceptor, SearchParameters.MaximumMassThatFragmentIonScoreIsDoubled, new List<string>());
+            var searchResults = engine.Run();
+
+            allPsmsArray[0].ResolveAllAmbiguities();
+            //Check that there is no modification hanging out on the n-terminus
+            Assert.AreEqual(allPsmsArray[0].FullSequence,guiltyPwsm.FullSequence);
+
+
+            proteinList = new List<Protein> { new Protein("CDQPKLLGIETPLPKKEGGGGG", null) };
+            guiltyPwsm = new PeptideWithSetModifications("C[Common Fixed:Carbamidomethyl on C]DQPKLLGIETPLPKKE", new Dictionary<string, Modification> { { "Carbamidomethyl on C", mod2 } });
+            fragments = guiltyPwsm.Fragment(CommonParameters.DissociationType, FragmentationTerminus.Both);
+            myMsDataFile = new TestDataFile(guiltyPwsm.MonoisotopicMass, fragments.Select(x => x.NeutralMass.ToMz(1)).ToArray());
+            indexEngine = new IndexingEngine(proteinList, variableModifications, fixedModifications, 1, DecoyType.None, CommonParameters, SearchParameters.MaxFragmentSize, true, new List<FileInfo>(), new List<string>());
+            indexResults = (IndexingResults)indexEngine.Run();
+            precursorIndexDict = indexResults.PrecursorIndex;
+            peptideIndex = indexResults.PeptideIndex;
+            fragmentIndexDict = indexResults.FragmentIndex;
+            listOfSortedms2Scans = MetaMorpheusTask.GetMs2Scans(myMsDataFile, null, new CommonParameters()).OrderBy(b => b.PrecursorMass).ToArray();
+
+            allPsmsArrays[2] = new PeptideSpectralMatch[listOfSortedms2Scans.Length];
+            allPsmsArray = allPsmsArrays[2];
+            engine = new NonSpecificEnzymeSearchEngine(allPsmsArrays, listOfSortedms2Scans, peptideIndex, fragmentIndexDict, precursorIndexDict, 0, CommonParameters, massDiffAcceptor, SearchParameters.MaximumMassThatFragmentIonScoreIsDoubled, new List<string>());
+            searchResults = engine.Run();
+            allPsmsArray[0].ResolveAllAmbiguities();
+            //Check that there is a modification hanging out on the protein n-terminus
+            Assert.AreEqual(allPsmsArray[0].FullSequence, guiltyPwsm.FullSequence);
+
+            proteinList = new List<Protein> { new Protein("GGGGGCDQPKLLGIETPLPKKEGG", null) };
+            indexEngine = new IndexingEngine(proteinList, variableModifications, fixedModifications, 1, DecoyType.None, CommonParameters, SearchParameters.MaxFragmentSize, true, new List<FileInfo>(), new List<string>());
+            indexResults = (IndexingResults)indexEngine.Run();
+            peptideIndex = indexResults.PeptideIndex;
+            fragmentIndexDict = indexResults.FragmentIndex;
+            precursorIndexDict = indexResults.PrecursorIndex;
+            allPsmsArrays[2] = new PeptideSpectralMatch[listOfSortedms2Scans.Length];
+            allPsmsArray = allPsmsArrays[2];
+            engine = new NonSpecificEnzymeSearchEngine(allPsmsArrays, listOfSortedms2Scans, peptideIndex, fragmentIndexDict, precursorIndexDict, 0, CommonParameters, massDiffAcceptor, SearchParameters.MaximumMassThatFragmentIonScoreIsDoubled, new List<string>());
+            searchResults = engine.Run();
+            allPsmsArray[0].ResolveAllAmbiguities();
+            //Check that there is a modification hanging out on the peptide n-terminus
+            Assert.AreEqual(allPsmsArray[0].FullSequence, guiltyPwsm.FullSequence);
+        }
+
+        [Test]
+        public static void TestNonSpecificEnzymeSearchEngineSingleNModifications()
+        {
+            SearchParameters SearchParameters = new SearchParameters
+            {
+                SearchTarget = true,
+                MassDiffAcceptorType = MassDiffAcceptorType.Exact,
+                LocalFdrCategories = new List<FdrCategory>
+                {
+                    FdrCategory.NonSpecific
+                }
+            };
+            DigestionParams dp = new DigestionParams("singleN", minPeptideLength: 1, fragmentationTerminus: FragmentationTerminus.N, searchModeType: CleavageSpecificity.None);
+
+            CommonParameters CommonParameters = new CommonParameters(
+                dissociationType: DissociationType.HCD,
+                digestionParams: dp,
+                scoreCutoff: 5,
+                precursorMassTolerance: new PpmTolerance(5),
+                addCompIons: true);
+
+            PeptideWithSetModifications guiltyPwsm = new PeptideWithSetModifications("DQPKLLGIETPLPKKE", null);
+            var fragments = guiltyPwsm.Fragment(CommonParameters.DissociationType, FragmentationTerminus.Both);
+
+
+            var myMsDataFile = new TestDataFile(guiltyPwsm.MonoisotopicMass, fragments.Select(x => x.NeutralMass.ToMz(1)).ToArray());
+            var variableModifications = new List<Modification>();
+            var fixedModifications = new List<Modification>();
+            ModificationMotif.TryGetMotif("C", out ModificationMotif motif2);
+            Modification mod2 = new Modification(_originalId: "Carbamidomethyl of C", _modificationType: "Common Fixed", _target: motif2, _locationRestriction: "Anywhere.", _monoisotopicMass: 57.02146372068994);
+            fixedModifications.Add(mod2);
+
+            var proteinList = new List<Protein> { new Protein("GGDQPKLLGIETPLPKKECGGGGG", null) };
+
+            var indexEngine = new IndexingEngine(proteinList, variableModifications, fixedModifications, 1, DecoyType.None, CommonParameters, SearchParameters.MaxFragmentSize, true, new List<FileInfo>(), new List<string>());
+
+            var indexResults = (IndexingResults)indexEngine.Run();
+            var peptideIndex = indexResults.PeptideIndex;
+            var fragmentIndexDict = indexResults.FragmentIndex;
+            var precursorIndexDict = indexResults.PrecursorIndex;
+
+            var listOfSortedms2Scans = MetaMorpheusTask.GetMs2Scans(myMsDataFile, null, new CommonParameters()).OrderBy(b => b.PrecursorMass).ToArray();
+            MassDiffAcceptor massDiffAcceptor = SearchTask.GetMassDiffAcceptor(CommonParameters.PrecursorMassTolerance, SearchParameters.MassDiffAcceptorType, SearchParameters.CustomMdac);
+
+            PeptideSpectralMatch[][] allPsmsArrays = new PeptideSpectralMatch[3][];
+            allPsmsArrays[0] = new PeptideSpectralMatch[listOfSortedms2Scans.Length];
+            allPsmsArrays[1] = new PeptideSpectralMatch[listOfSortedms2Scans.Length];
+            allPsmsArrays[2] = new PeptideSpectralMatch[listOfSortedms2Scans.Length];
+            PeptideSpectralMatch[] allPsmsArray = allPsmsArrays[2];
+            var engine = new NonSpecificEnzymeSearchEngine(allPsmsArrays, listOfSortedms2Scans, peptideIndex, fragmentIndexDict, precursorIndexDict, 0, CommonParameters, massDiffAcceptor, SearchParameters.MaximumMassThatFragmentIonScoreIsDoubled, new List<string>());
+            var searchResults = engine.Run();
+
+            allPsmsArray[0].ResolveAllAmbiguities();
+            //Check that there is no modification hanging out on the n-terminus
+            Assert.AreEqual(allPsmsArray[0].FullSequence, guiltyPwsm.FullSequence);
+
+
+            proteinList = new List<Protein> { new Protein("GGGGGDQPKLLGIETPLPKKEC", null) };
+            guiltyPwsm = new PeptideWithSetModifications("GGDQPKLLGIETPLPKKEC[Common Fixed:Carbamidomethyl on C]", new Dictionary<string, Modification> { { "Carbamidomethyl on C", mod2 } });
+            fragments = guiltyPwsm.Fragment(CommonParameters.DissociationType, FragmentationTerminus.Both);
+            myMsDataFile = new TestDataFile(guiltyPwsm.MonoisotopicMass, fragments.Select(x => x.NeutralMass.ToMz(1)).ToArray());
+            indexEngine = new IndexingEngine(proteinList, variableModifications, fixedModifications, 1, DecoyType.None, CommonParameters, SearchParameters.MaxFragmentSize, true, new List<FileInfo>(), new List<string>());
+            indexResults = (IndexingResults)indexEngine.Run();
+            precursorIndexDict = indexResults.PrecursorIndex;
+            peptideIndex = indexResults.PeptideIndex;
+            fragmentIndexDict = indexResults.FragmentIndex;
+            listOfSortedms2Scans = MetaMorpheusTask.GetMs2Scans(myMsDataFile, null, new CommonParameters()).OrderBy(b => b.PrecursorMass).ToArray();
+
+            allPsmsArrays[2] = new PeptideSpectralMatch[listOfSortedms2Scans.Length];
+            allPsmsArray = allPsmsArrays[2];
+            engine = new NonSpecificEnzymeSearchEngine(allPsmsArrays, listOfSortedms2Scans, peptideIndex, fragmentIndexDict, precursorIndexDict, 0, CommonParameters, massDiffAcceptor, SearchParameters.MaximumMassThatFragmentIonScoreIsDoubled, new List<string>());
+            searchResults = engine.Run();
+            allPsmsArray[0].ResolveAllAmbiguities();
+            //Check that there is a modification hanging out on the protein n-terminus
+            Assert.AreEqual(allPsmsArray[0].FullSequence, guiltyPwsm.FullSequence);
+
+            proteinList = new List<Protein> { new Protein("GGDQPKLLGIETPLPKKECGGGGG", null) };
+            indexEngine = new IndexingEngine(proteinList, variableModifications, fixedModifications, 1, DecoyType.None, CommonParameters, SearchParameters.MaxFragmentSize, true, new List<FileInfo>(), new List<string>());
+            indexResults = (IndexingResults)indexEngine.Run();
+            peptideIndex = indexResults.PeptideIndex;
+            fragmentIndexDict = indexResults.FragmentIndex;
+            precursorIndexDict = indexResults.PrecursorIndex;
+            allPsmsArrays[2] = new PeptideSpectralMatch[listOfSortedms2Scans.Length];
+            allPsmsArray = allPsmsArrays[2];
+            engine = new NonSpecificEnzymeSearchEngine(allPsmsArrays, listOfSortedms2Scans, peptideIndex, fragmentIndexDict, precursorIndexDict, 0, CommonParameters, massDiffAcceptor, SearchParameters.MaximumMassThatFragmentIonScoreIsDoubled, new List<string>());
+            searchResults = engine.Run();
+            allPsmsArray[0].ResolveAllAmbiguities();
+            //Check that there is a modification hanging out on the peptide n-terminus
+            Assert.AreEqual(allPsmsArray[0].FullSequence, guiltyPwsm.FullSequence);
+        }
+
+
+        [Test]
         public static void TestNonSpecificEnzymeSearchEngineSingleC()
         {
             SearchParameters SearchParameters = new SearchParameters
@@ -414,7 +528,15 @@ namespace Test
                     FdrCategory.NonSpecific
                 }
             };
-            Protease protease = new Protease("single C", new List<Tuple<string, FragmentationTerminus>> { new Tuple<string, FragmentationTerminus>("K", FragmentationTerminus.Both), new Tuple<string, FragmentationTerminus>("G", FragmentationTerminus.Both) }, new List<Tuple<string, FragmentationTerminus>>(), CleavageSpecificity.SingleC, null, null, null);
+
+            List<DigestionMotif> motifs = new List<DigestionMotif>
+            {
+                new DigestionMotif("K", null, 0, null),
+                new DigestionMotif("K", null, 1, null),
+                new DigestionMotif("G", null, 0, null),
+                new DigestionMotif("G", null, 1, null),
+            };
+            Protease protease = new Protease("single C", CleavageSpecificity.SingleC, null, null, motifs);
             ProteaseDictionary.Dictionary.Add(protease.Name, protease);
             DigestionParams dp = new DigestionParams(protease: protease.Name, minPeptideLength: 1, fragmentationTerminus: FragmentationTerminus.C, searchModeType: CleavageSpecificity.None);
 
@@ -429,36 +551,16 @@ namespace Test
             var variableModifications = new List<Modification>();
             var fixedModifications = new List<Modification>();
             var localizeableModifications = new List<Modification>();
-            Dictionary<Modification, ushort> modsDictionary = new Dictionary<Modification, ushort>();
-            foreach (var mod in fixedModifications)
-                modsDictionary.Add(mod, 0);
-            int ii = 1;
-            foreach (var mod in variableModifications)
-            {
-                modsDictionary.Add(mod, (ushort)ii);
-                ii++;
-            }
-            foreach (var mod in localizeableModifications)
-            {
-                modsDictionary.Add(mod, (ushort)ii);
-                ii++;
-            }
 
             var proteinList = new List<Protein> { new Protein("GGGGGMNNNKQQQGGGGG", null) };
 
-            var indexEngine = new IndexingEngine(proteinList, variableModifications, fixedModifications, 1, DecoyType.Reverse, CommonParameters, SearchParameters.MaxFragmentSize, false, new List<string>());
+            var indexEngine = new IndexingEngine(proteinList, variableModifications, fixedModifications, 1, DecoyType.Reverse, CommonParameters, SearchParameters.MaxFragmentSize, false, new List<FileInfo>(), new List<string>());
 
             var indexResults = (IndexingResults)indexEngine.Run();
             var peptideIndex = indexResults.PeptideIndex;
             var fragmentIndexDict = indexResults.FragmentIndex;
 
-            bool DoPrecursorDeconvolution = true;
-            bool UseProvidedPrecursorInfo = true;
-            double DeconvolutionIntensityRatio = 4;
-            int DeconvolutionMaxAssumedChargeState = 10;
-            Tolerance DeconvolutionMassTolerance = new PpmTolerance(5);
-
-            var listOfSortedms2Scans = MetaMorpheusTask.GetMs2Scans(myMsDataFile, null, DoPrecursorDeconvolution, UseProvidedPrecursorInfo, DeconvolutionIntensityRatio, DeconvolutionMaxAssumedChargeState, DeconvolutionMassTolerance).OrderBy(b => b.PrecursorMass).ToArray();
+            var listOfSortedms2Scans = MetaMorpheusTask.GetMs2Scans(myMsDataFile, null, new CommonParameters()).OrderBy(b => b.PrecursorMass).ToArray();
             MassDiffAcceptor massDiffAcceptor = SearchTask.GetMassDiffAcceptor(CommonParameters.PrecursorMassTolerance, SearchParameters.MassDiffAcceptorType, SearchParameters.CustomMdac);
 
             PeptideSpectralMatch[][] allPsmsArrays = new PeptideSpectralMatch[3][];
@@ -486,7 +588,21 @@ namespace Test
         public static void TestNonSpecificEnzymeVariableModificationHandlingNTerm()
         {
             var protein = new Protein("MGGGGGMNNNKQQQMGGGGMGM", "TestProtein");
-            var protease = new Protease("singleN2", new List<Tuple<string, FragmentationTerminus>> { new Tuple<string, FragmentationTerminus>("K", FragmentationTerminus.Both), new Tuple<string, FragmentationTerminus>("G", FragmentationTerminus.Both), new Tuple<string, FragmentationTerminus>("M", FragmentationTerminus.Both), new Tuple<string, FragmentationTerminus>("N", FragmentationTerminus.Both), new Tuple<string, FragmentationTerminus>("Q", FragmentationTerminus.Both) }, new List<Tuple<string, FragmentationTerminus>>(), CleavageSpecificity.SingleN, null, null, null);
+
+            List<DigestionMotif> motifs = new List<DigestionMotif>
+            {
+                new DigestionMotif("K", null, 0, null),
+                new DigestionMotif("K", null, 1, null),
+                new DigestionMotif("G", null, 0, null),
+                new DigestionMotif("G", null, 1, null),
+                new DigestionMotif("M", null, 0, null),
+                new DigestionMotif("M", null, 1, null),
+                new DigestionMotif("N", null, 0, null),
+                new DigestionMotif("N", null, 1, null),
+                new DigestionMotif("Q", null, 0, null),
+                new DigestionMotif("Q", null, 1, null),
+            };
+            var protease = new Protease("singleN2", CleavageSpecificity.SingleN, null, null, motifs);
             ProteaseDictionary.Dictionary.Add(protease.Name, protease);
             ModificationMotif.TryGetMotif("M", out ModificationMotif motifM);
             var variableModifications = new List<Modification> { new Modification(_originalId: "16", _target: motifM, _locationRestriction: "Anywhere.", _monoisotopicMass: 15.994915) };
@@ -503,7 +619,20 @@ namespace Test
         public static void TestNonSpecificEnzymeVariableModificationHandlingCTerm()
         {
             var protein = new Protein("MGGGGGMNNNKQQQMGGGGMGM", "TestProtein");
-            var protease = new Protease("singleC2", new List<Tuple<string, FragmentationTerminus>> { new Tuple<string, FragmentationTerminus>("K", FragmentationTerminus.Both), new Tuple<string, FragmentationTerminus>("G", FragmentationTerminus.Both), new Tuple<string, FragmentationTerminus>("M", FragmentationTerminus.Both), new Tuple<string, FragmentationTerminus>("N", FragmentationTerminus.Both), new Tuple<string, FragmentationTerminus>("Q", FragmentationTerminus.Both) }, new List<Tuple<string, FragmentationTerminus>>(), CleavageSpecificity.SingleC, null, null, null);
+            List<DigestionMotif> motifs = new List<DigestionMotif>
+            {
+                new DigestionMotif("K", null, 0, null),
+                new DigestionMotif("K", null, 1, null),
+                new DigestionMotif("G", null, 0, null),
+                new DigestionMotif("G", null, 1, null),
+                new DigestionMotif("M", null, 0, null),
+                new DigestionMotif("M", null, 1, null),
+                new DigestionMotif("N", null, 0, null),
+                new DigestionMotif("N", null, 1, null),
+                new DigestionMotif("Q", null, 0, null),
+                new DigestionMotif("Q", null, 1, null),
+            };
+            var protease = new Protease("singleC2", CleavageSpecificity.SingleC, null, null, motifs);
             ProteaseDictionary.Dictionary.Add(protease.Name, protease);
             ModificationMotif.TryGetMotif("M", out ModificationMotif motifM);
             var variableModifications = new List<Modification> { new Modification(_originalId: "16", _target: motifM, _locationRestriction: "Anywhere.", _monoisotopicMass: 15.994915) };
@@ -542,7 +671,11 @@ namespace Test
 
             var productMassTolerance = new AbsoluteTolerance(0.01);
             var searchModes = new SinglePpmAroundZeroSearchMode(5);
-            var protease = new Protease("SingleN", new List<Tuple<string, FragmentationTerminus>> { new Tuple<string, FragmentationTerminus>("K", FragmentationTerminus.C) }, new List<Tuple<string, FragmentationTerminus>>(), CleavageSpecificity.None, null, null, null);
+            List<DigestionMotif> motifs = new List<DigestionMotif>
+            {
+                new DigestionMotif("K", null, 1, null),
+            };
+            var protease = new Protease("SingleN", CleavageSpecificity.None, null, null, motifs);
             ProteaseDictionary.Dictionary.Add(protease.Name, protease);
             CommonParameters CommonParameters = new CommonParameters(
                 dissociationType: DissociationType.HCD,
@@ -552,7 +685,7 @@ namespace Test
                 addCompIons: true);
 
             HashSet<DigestionParams> digestParams = new HashSet<DigestionParams> { CommonParameters.DigestionParams };
-            var indexEngine = new IndexingEngine(proteinList, variableModifications, fixedModifications, 1, DecoyType.Reverse, CommonParameters, 100000, true, new List<string>());
+            var indexEngine = new IndexingEngine(proteinList, variableModifications, fixedModifications, 1, DecoyType.Reverse, CommonParameters, 100000, true, new List<FileInfo>(), new List<string>());
             var indexResults = (IndexingResults)indexEngine.Run();
             var peptideIndex = indexResults.PeptideIndex;
             var fragmentIndexDict = indexResults.FragmentIndex;
@@ -564,7 +697,7 @@ namespace Test
             int DeconvolutionMaxAssumedChargeState = 10;
             Tolerance DeconvolutionMassTolerance = new PpmTolerance(5);
 
-            var listOfSortedms2Scans = MetaMorpheusTask.GetMs2Scans(myMsDataFile, null, DoPrecursorDeconvolution, UseProvidedPrecursorInfo, DeconvolutionIntensityRatio, DeconvolutionMaxAssumedChargeState, DeconvolutionMassTolerance).OrderBy(b => b.PrecursorMass).ToArray();
+            var listOfSortedms2Scans = MetaMorpheusTask.GetMs2Scans(myMsDataFile, null, new CommonParameters()).OrderBy(b => b.PrecursorMass).ToArray();
 
             PeptideSpectralMatch[][] allPsmsArrays = new PeptideSpectralMatch[2][];
             allPsmsArrays[0] = new PeptideSpectralMatch[listOfSortedms2Scans.Length];
@@ -613,7 +746,7 @@ namespace Test
 
             var productMassTolerance = new AbsoluteTolerance(0.01);
             var searchModes = new SinglePpmAroundZeroSearchMode(5);
-            Protease protease = new Protease("SingleC", new List<Tuple<string, FragmentationTerminus>> { new Tuple<string, FragmentationTerminus>("G", FragmentationTerminus.C) }, new List<Tuple<string, FragmentationTerminus>>(), CleavageSpecificity.None, null, null, null);
+            Protease protease = new Protease("SingleC", CleavageSpecificity.Full, null, null, new List<DigestionMotif>());
             ProteaseDictionary.Dictionary.Add(protease.Name, protease);
             CommonParameters CommonParameters = new CommonParameters(
                 scoreCutoff: 1,
@@ -623,7 +756,7 @@ namespace Test
                 addCompIons: true);
 
             HashSet<DigestionParams> digestParams = new HashSet<DigestionParams> { CommonParameters.DigestionParams };
-            var indexEngine = new IndexingEngine(proteinList, variableModifications, fixedModifications, 1, DecoyType.Reverse, CommonParameters, 30000, false, new List<string>());
+            var indexEngine = new IndexingEngine(proteinList, variableModifications, fixedModifications, 1, DecoyType.Reverse, CommonParameters, 30000, false, new List<FileInfo>(), new List<string>());
             var indexResults = (IndexingResults)indexEngine.Run();
             var peptideIndex = indexResults.PeptideIndex;
             var fragmentIndexDict = indexResults.FragmentIndex;
@@ -634,12 +767,13 @@ namespace Test
             int DeconvolutionMaxAssumedChargeState = 10;
             Tolerance DeconvolutionMassTolerance = new PpmTolerance(5);
 
-            var listOfSortedms2Scans = MetaMorpheusTask.GetMs2Scans(myMsDataFile, null, DoPrecursorDeconvolution, UseProvidedPrecursorInfo, DeconvolutionIntensityRatio, DeconvolutionMaxAssumedChargeState, DeconvolutionMassTolerance).OrderBy(b => b.PrecursorMass).ToArray();
+            var listOfSortedms2Scans = MetaMorpheusTask.GetMs2Scans(myMsDataFile, null, new CommonParameters()).OrderBy(b => b.PrecursorMass).ToArray();
 
-            PeptideSpectralMatch[][] allPsmsArrays = new PeptideSpectralMatch[2][];
+            PeptideSpectralMatch[][] allPsmsArrays = new PeptideSpectralMatch[3][];
             allPsmsArrays[0] = new PeptideSpectralMatch[listOfSortedms2Scans.Length];
             allPsmsArrays[1] = new PeptideSpectralMatch[listOfSortedms2Scans.Length];
-            PeptideSpectralMatch[] allPsmsArray = allPsmsArrays[1];
+            allPsmsArrays[2] = new PeptideSpectralMatch[listOfSortedms2Scans.Length];
+            PeptideSpectralMatch[] allPsmsArray = allPsmsArrays[2];
             var engine = new NonSpecificEnzymeSearchEngine(allPsmsArrays, listOfSortedms2Scans, peptideIndex, fragmentIndexDict, fragmentIndexDict, 1, CommonParameters, searchModes, 0, new List<string>());
             var searchResults = engine.Run();
 
@@ -681,8 +815,19 @@ namespace Test
 
             var productMassTolerance = new AbsoluteTolerance(0.01);
             var searchModes = new SinglePpmAroundZeroSearchMode(5);
-            var protease = new Protease("semi-trypsin1", new List<Tuple<string, FragmentationTerminus>> { new Tuple<string, FragmentationTerminus>("G", FragmentationTerminus.C) }, new List<Tuple<string, FragmentationTerminus>>(), CleavageSpecificity.Semi, null, null, null);
-            var protease2 = new Protease("semi-trypsin2", new List<Tuple<string, FragmentationTerminus>> { new Tuple<string, FragmentationTerminus>("N", FragmentationTerminus.C) }, new List<Tuple<string, FragmentationTerminus>>(), CleavageSpecificity.Semi, null, null, null);
+
+            List<DigestionMotif> motifs1 = new List<DigestionMotif>
+            {
+                new DigestionMotif("G", null, 1, null),
+            };
+            List<DigestionMotif> motifs2 = new List<DigestionMotif>
+            {
+                new DigestionMotif("N", null, 1, null),
+            };
+
+            var protease = new Protease("semi-trypsin1", CleavageSpecificity.Semi, null, null, motifs1);
+            var protease2 = new Protease("semi-trypsin2", CleavageSpecificity.Semi, null, null, motifs2);
+
             ProteaseDictionary.Dictionary.Add(protease.Name, protease);
             ProteaseDictionary.Dictionary.Add(protease2.Name, protease2);
             CommonParameters CommonParameters = new CommonParameters(
@@ -696,7 +841,7 @@ namespace Test
             int DeconvolutionMaxAssumedChargeState = 10;
             Tolerance DeconvolutionMassTolerance = new PpmTolerance(5);
 
-            var listOfSortedms2Scans = MetaMorpheusTask.GetMs2Scans(myMsDataFile, null, DoPrecursorDeconvolution, UseProvidedPrecursorInfo, DeconvolutionIntensityRatio, DeconvolutionMaxAssumedChargeState, DeconvolutionMassTolerance).OrderBy(b => b.PrecursorMass).ToArray();
+            var listOfSortedms2Scans = MetaMorpheusTask.GetMs2Scans(myMsDataFile, null, new CommonParameters()).OrderBy(b => b.PrecursorMass).ToArray();
 
             PeptideSpectralMatch[] allPsmsArray = new PeptideSpectralMatch[listOfSortedms2Scans.Length];
             new ClassicSearchEngine(allPsmsArray, listOfSortedms2Scans, variableModifications, fixedModifications, proteinList, searchModes, CommonParameters, new List<string>()).Run();
@@ -717,7 +862,7 @@ namespace Test
             int DeconvolutionMaxAssumedChargeState2 = 10;
             Tolerance DeconvolutionMassTolerance2 = new PpmTolerance(5);
 
-            var listOfSortedms2Scans2 = MetaMorpheusTask.GetMs2Scans(myMsDataFile, null, DoPrecursorDeconvolution2, UseProvidedPrecursorInfo2, DeconvolutionIntensityRatio2, DeconvolutionMaxAssumedChargeState2, DeconvolutionMassTolerance2).OrderBy(b => b.PrecursorMass).ToArray();
+            var listOfSortedms2Scans2 = MetaMorpheusTask.GetMs2Scans(myMsDataFile, null, new CommonParameters()).OrderBy(b => b.PrecursorMass).ToArray();
 
             PeptideSpectralMatch[] allPsmsArray2 = new PeptideSpectralMatch[listOfSortedms2Scans.Length];
             new ClassicSearchEngine(allPsmsArray2, listOfSortedms2Scans2, variableModifications, fixedModifications, proteinList, searchModes, CommonParameters2, new List<string>()).Run();
@@ -763,7 +908,11 @@ namespace Test
             List<ProteolysisProduct> protprod = new List<ProteolysisProduct> { new ProteolysisProduct(9, 21, "chain") };
             var proteinList = new List<Protein> { new Protein("MGGGGGMKNNNQQQGGGGKLKGKKNKKGN", "hello", null, null, null, protprod) };
 
-            var protease = new Protease("semi-Trypsin", new List<Tuple<string, FragmentationTerminus>> { new Tuple<string, FragmentationTerminus>("G", FragmentationTerminus.C) }, new List<Tuple<string, FragmentationTerminus>>(), CleavageSpecificity.Semi, null, null, null);
+            List<DigestionMotif> motifs1 = new List<DigestionMotif>
+            {
+                new DigestionMotif("G", null, 1, null),
+            };
+            var protease = new Protease("semi-Trypsin", CleavageSpecificity.Semi, null, null, motifs1);
             ProteaseDictionary.Dictionary.Add(protease.Name, protease);
             DigestionParams digestParams = new DigestionParams(protease: protease.Name, minPeptideLength: 2);
 
@@ -818,7 +967,7 @@ namespace Test
             double precursorMz = 884.4541;
             int precursorCharge = 2;
             string filePath = "path";
-            scans[0] = new Ms2ScanWithSpecificMass(msDataScanArray[0], precursorMz, precursorCharge, filePath);
+            scans[0] = new Ms2ScanWithSpecificMass(msDataScanArray[0], precursorMz, precursorCharge, filePath, new CommonParameters());
 
             //set digestion parameters and digest the protein
             DigestionParams testDigestionParams = new DigestionParams(

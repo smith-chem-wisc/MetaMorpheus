@@ -14,14 +14,16 @@ namespace EngineLayer
 {
     public class PeptideSpectralMatch
     {
-        private const double ToleranceForDoubleResolution = 1e-6;
+        private const double ToleranceForDoubleResolutionF5 = 1e-6;
+        private const double ToleranceForDoubleResolutionF2 = 1e-3;
 
-        private List<(int Notch, PeptideWithSetModifications Pwsm)> _bestMatchingPeptides = new List<(int, PeptideWithSetModifications)>(); //the int is the notch
+        private List<(int Notch, PeptideWithSetModifications Pwsm)> _bestMatchingPeptides;
 
         public const double ToleranceForScoreDifferentiation = 1e-9;
 
         public PeptideSpectralMatch(PeptideWithSetModifications peptide, int notch, double score, int scanIndex, IScan scan, DigestionParams digestionParams, List<MatchedFragmentIon> matchedFragmentIons)
         {
+            _bestMatchingPeptides = new List<(int, PeptideWithSetModifications)>();
             ScanIndex = scanIndex;
             FullFilePath = scan.FullFilePath;
             ScanNumber = scan.OneBasedScanNumber;
@@ -100,7 +102,7 @@ namespace EngineLayer
 
         public static string GetTabSeparatedHeader()
         {
-            return String.Join("\t", DataDictionary(null, null).Keys);
+            return string.Join("\t", DataDictionary(null, null).Keys);
         }
 
         public void AddOrReplace(PeptideWithSetModifications pwsm, double newScore, int notch, bool reportAllAmbiguity, List<MatchedFragmentIon> matchedFragmentIons)
@@ -160,16 +162,16 @@ namespace EngineLayer
             DeltaScore = Score - Math.Max(RunnerUpScore, scoreCutoff);
         }
 
-        public void SetFdrValues(int cumulativeTarget, int cumulativeDecoy, double tempQValue, int cumulativeTargetNotch, int cumulativeDecoyNotch, double tempQValueNotch, double maximumLikelihood, double eValue, double eScore, bool calculateEValue)
+        public void SetFdrValues(double cumulativeTarget, double cumulativeDecoy, double qValue, double cumulativeTargetNotch, double cumulativeDecoyNotch, double qValueNotch, double maximumLikelihood, double eValue, double eScore, bool calculateEValue)
         {
             FdrInfo = new FdrInfo
             {
                 CumulativeTarget = cumulativeTarget,
                 CumulativeDecoy = cumulativeDecoy,
-                QValue = tempQValue,
+                QValue = qValue,
                 CumulativeTargetNotch = cumulativeTargetNotch,
                 CumulativeDecoyNotch = cumulativeDecoyNotch,
-                QValueNotch = tempQValueNotch,
+                QValueNotch = qValueNotch,
                 MaximumLikelihood = maximumLikelihood,
                 EScore = eScore,
                 EValue = eValue,
@@ -199,6 +201,29 @@ namespace EngineLayer
             ModsIdentified = Resolve(_bestMatchingPeptides.Select(b => b.Pwsm.AllModsOneIsNterminus)).ResolvedValue;
             ModsChemicalFormula = Resolve(_bestMatchingPeptides.Select(b => b.Pwsm.AllModsOneIsNterminus.Select(c => (c.Value)))).ResolvedValue;
             Notch = Resolve(_bestMatchingPeptides.Select(b => b.Notch)).ResolvedValue;
+
+            // if the PSM matches a target and a decoy and they are the SAME SEQUENCE, remove the decoy
+            if (IsDecoy)
+            {
+                bool removedPeptides = false;
+                var hits = _bestMatchingPeptides.GroupBy(p => p.Pwsm.FullSequence);
+
+                foreach (var hit in hits)
+                {
+                    if (hit.Any(p => p.Pwsm.Protein.IsDecoy) && hit.Any(p => !p.Pwsm.Protein.IsDecoy))
+                    {
+                        // at least one peptide with this sequence is a target and at least one is a decoy
+                        // remove the decoys with this sequence
+                        _bestMatchingPeptides.RemoveAll(p => p.Pwsm.FullSequence == hit.Key && p.Pwsm.Protein.IsDecoy);
+                        removedPeptides = true;
+                    }
+                }
+
+                if (removedPeptides)
+                {
+                    ResolveAllAmbiguities();
+                }
+            }
 
             // TODO: technically, different peptide options for this PSM can have different matched ions
             // we can write a Resolve method for this if we want...
@@ -313,7 +338,7 @@ namespace EngineLayer
         private static (string ResolvedString, double? ResolvedValue) ResolveF2(IEnumerable<double> enumerable)
         {
             var list = enumerable.ToList();
-            if (list.Max() - list.Min() < ToleranceForDoubleResolution)
+            if (list.Max() - list.Min() < ToleranceForDoubleResolutionF2)
             {
                 return (list.Average().ToString("F2", CultureInfo.InvariantCulture), list.Average());
             }
@@ -327,7 +352,7 @@ namespace EngineLayer
         private static (string ResolvedString, double? ResolvedValue) Resolve(IEnumerable<double> enumerable)
         {
             var list = enumerable.ToList();
-            if (list.Max() - list.Min() < ToleranceForDoubleResolution)
+            if (list.Max() - list.Min() < ToleranceForDoubleResolutionF5)
             {
                 return (list.Average().ToString("F5", CultureInfo.InvariantCulture), list.Average());
             }
@@ -369,6 +394,28 @@ namespace EngineLayer
             }
         }
 
+        private static (string ResolvedString, string ResolvedValue) Resolve(IEnumerable<string> enumerable, string ambiguousIfNull)
+        {
+            var list = enumerable.ToList();
+            string first = list.FirstOrDefault(b => b != null);
+            // Only first if list is either all null or all equal to the first
+            if (list.All(b => b == null) || list.All(b => first.Equals(b)))
+            {
+                return (first, first);
+            }
+            // use only distinct names if all of the base sequences are the same
+            else if (ambiguousIfNull != null)
+            {
+                var returnString = GlobalVariables.CheckLengthOfOutput(string.Join("|", list.Distinct()));
+                return (returnString, null);
+            }
+            else
+            {
+                var returnString = GlobalVariables.CheckLengthOfOutput(string.Join("|", list));
+                return (returnString, null);
+            }
+        }
+
         private static void AddBasicMatchData(Dictionary<string, string> s, PeptideSpectralMatch psm)
         {
             s["File Name"] = psm == null ? " " : Path.GetFileNameWithoutExtension(psm.FullFilePath);
@@ -390,11 +437,11 @@ namespace EngineLayer
         {
             bool pepWithModsIsNull = psm == null || psm.BestMatchingPeptides == null || !psm.BestMatchingPeptides.Any();
 
-            var pepsWithMods = pepWithModsIsNull ? null : psm.BestMatchingPeptides.Select(p => p.Peptide).ToList();
+            List<PeptideWithSetModifications> pepsWithMods = pepWithModsIsNull ? null : psm.BestMatchingPeptides.Select(p => p.Peptide).ToList();
 
-            s["Base Sequence"] = pepWithModsIsNull ? " " : Resolve(pepsWithMods.Select(b => b.BaseSequence)).ResolvedString;
-            s["Full Sequence"] = pepWithModsIsNull ? " " : Resolve(pepsWithMods.Select(b => b.FullSequence)).ResolvedString;
-            s["Essential Sequence"] = pepWithModsIsNull ? " " : Resolve(pepsWithMods.Select(b => b.EssentialSequence(ModsToWritePruned))).ResolvedString;
+            s["Base Sequence"] = pepWithModsIsNull ? " " : Resolve(pepWithModsIsNull ? null : pepsWithMods.Select(b => b.BaseSequence)).ResolvedString;
+            s["Full Sequence"] = pepWithModsIsNull ? " " : Resolve(pepWithModsIsNull ? null : pepsWithMods.Select(b => b.FullSequence)).ResolvedString;
+            s["Essential Sequence"] = pepWithModsIsNull ? " " : Resolve(pepWithModsIsNull ? null : pepsWithMods.Select(b => b.EssentialSequence(ModsToWritePruned))).ResolvedString;
             s["Mods"] = pepWithModsIsNull ? " " : Resolve(pepsWithMods.Select(b => b.AllModsOneIsNterminus)).ResolvedString;
             s["Mods Chemical Formulas"] = pepWithModsIsNull ? " " :
                 Resolve(pepsWithMods.Select(p => p.AllModsOneIsNterminus.Select(v => v.Value))).ResolvedString;
@@ -404,20 +451,27 @@ namespace EngineLayer
             s["Peptide Monoisotopic Mass"] = pepWithModsIsNull ? " " : Resolve(pepsWithMods.Select(b => b.MonoisotopicMass)).ResolvedString;
             s["Mass Diff (Da)"] = pepWithModsIsNull ? " " : Resolve(pepsWithMods.Select(b => psm.ScanPrecursorMass - b.MonoisotopicMass)).ResolvedString;
             s["Mass Diff (ppm)"] = pepWithModsIsNull ? " " : ResolveF2(pepsWithMods.Select(b => ((psm.ScanPrecursorMass - b.MonoisotopicMass) / b.MonoisotopicMass * 1e6))).ResolvedString;
-            s["Protein Accession"] = pepWithModsIsNull ? " " : Resolve(pepsWithMods.Select(b => b.Protein.Accession)).ResolvedString;
-            s["Protein Name"] = pepWithModsIsNull ? " " : Resolve(pepsWithMods.Select(b => b.Protein.FullName)).ResolvedString;
-            s["Gene Name"] = pepWithModsIsNull ? " " : Resolve(pepsWithMods.Select(b => string.Join(", ", b.Protein.GeneNames.Select(d => d.Item1 + ":" + d.Item2)))).ResolvedString;
-            s["Sequence Variations"] = pepWithModsIsNull ? " " :
-                Resolve(pepsWithMods.Select(b => string.Join(", ", b.Protein.SequenceVariations
-                    .Where(d => psm.OneBasedStartResidueInProtein <= d.OneBasedBeginPosition && d.OneBasedBeginPosition <= psm.OneBasedEndResidueInProtein)
-                    .Select(d => d.OriginalSequence + d.OneBasedBeginPosition.ToString() + d.VariantSequence)))).ResolvedString;
-            s["Organism Name"] = pepWithModsIsNull ? " " : Resolve(pepsWithMods.Select(b => b.Protein.Organism)).ResolvedString;
-            s["Contaminant"] = pepWithModsIsNull ? " " : Resolve(pepsWithMods.Select(b => b.Protein.IsContaminant ? "Y" : "N")).ResolvedString;
-            s["Decoy"] = pepWithModsIsNull ? " " : Resolve(pepsWithMods.Select(b => b.Protein.IsDecoy ? "Y" : "N")).ResolvedString;
-            s["Peptide Description"] = pepWithModsIsNull ? " " : Resolve(pepsWithMods.Select(b => b.PeptideDescription)).ResolvedString;
-            s["Start and End Residues In Protein"] =
-                pepWithModsIsNull ? " " : Resolve(pepsWithMods.Select(b => ("[" + b.OneBasedStartResidueInProtein.ToString(CultureInfo.InvariantCulture) + " to " +
-                    b.OneBasedEndResidueInProtein.ToString(CultureInfo.InvariantCulture) + "]"))).ResolvedString;
+            s["Protein Accession"] = pepWithModsIsNull ? " " : Resolve(pepsWithMods.Select(b => b.Protein.Accession), psm.FullSequence).ResolvedString;
+            s["Protein Name"] = pepWithModsIsNull ? " " : Resolve(pepsWithMods.Select(b => b.Protein.FullName), psm.FullSequence).ResolvedString;
+            s["Gene Name"] = pepWithModsIsNull ? " " : Resolve(pepsWithMods.Select(b => string.Join(", ", b.Protein.GeneNames.Select(d => $"{d.Item1}:{d.Item2}"))), psm.FullSequence).ResolvedString;
+            s["Intersecting Sequence Variations"] = pepWithModsIsNull ? " " : 
+                Resolve(pepsWithMods.Select(b => string.Join(", ", b.Protein.AppliedSequenceVariations
+                    .Where(av => IntersectsWithVariation(b, av, false))
+                    .Select(av => SequenceVariantString(b, av))))).ResolvedString;
+            s["Identified Sequence Variations"] = pepWithModsIsNull ? " " :
+                Resolve(pepsWithMods.Select(b => string.Join(", ", b.Protein.AppliedSequenceVariations
+                    .Where(av => IntersectsWithVariation(b, av, true))
+                    .Select(av => SequenceVariantString(b, av))))).ResolvedString;
+            s["Splice Sites"] = pepWithModsIsNull ? " " :
+                Resolve(pepsWithMods.Select(b => string.Join(", ", b.Protein.SpliceSites
+                    .Where(d => Includes(b, d))
+                    .Select(d => $"{d.OneBasedBeginPosition.ToString()}-{d.OneBasedEndPosition.ToString()}")))).ResolvedString;
+            s["Organism Name"] = pepWithModsIsNull ? " " : Resolve(pepsWithMods.Select(b => b.Protein.Organism)).Item1;
+            s["Contaminant"] = pepWithModsIsNull ? " " : Resolve(pepsWithMods.Select(b => b.Protein.IsContaminant ? "Y" : "N")).Item1;
+            s["Decoy"] = pepWithModsIsNull ? " " : Resolve(pepsWithMods.Select(b => b.Protein.IsDecoy ? "Y" : "N")).Item1;
+            s["Peptide Description"] = pepWithModsIsNull ? " " : Resolve(pepsWithMods.Select(b => b.PeptideDescription)).Item1;
+            s["Start and End Residues In Protein"] = pepWithModsIsNull ? " " : 
+                Resolve(pepsWithMods.Select(b => ($"[{b.OneBasedStartResidueInProtein.ToString(CultureInfo.InvariantCulture)} to {b.OneBasedEndResidueInProtein.ToString(CultureInfo.InvariantCulture)}]")), psm.FullSequence).ResolvedString;
             s["Previous Amino Acid"] = pepWithModsIsNull ? " " : Resolve(pepsWithMods.Select(b => b.PreviousAminoAcid.ToString())).ResolvedString;
             s["Next Amino Acid"] = pepWithModsIsNull ? " " : Resolve(pepsWithMods.Select(b => b.NextAminoAcid.ToString())).ResolvedString;
 
@@ -435,8 +489,69 @@ namespace EngineLayer
         }
 
         /// <summary>
-        ///
+        /// Determines whether a peptide includes a splice site
         /// </summary>
+        /// <param name="pep"></param>
+        /// <param name="site"></param>
+        /// <returns></returns>
+        private static bool Includes(PeptideWithSetModifications pep, SpliceSite site)
+        {
+            return pep.OneBasedStartResidueInProtein <= site.OneBasedBeginPosition && pep.OneBasedEndResidueInProtein >= site.OneBasedEndPosition;
+        }
+
+        /// <summary>
+        /// Checks for an intersection between a peptide and applied variant that shows a sequence change.
+        /// </summary>
+        /// <param name="pep"></param>
+        /// <param name="appliedVariation"></param>
+        /// <returns></returns>
+        private static bool IntersectsWithVariation(PeptideWithSetModifications pep, SequenceVariation appliedVariation, bool checkUnique)
+        {
+            // does it intersect? 
+            int intersectOneBasedStart = Math.Max(pep.OneBasedStartResidueInProtein, appliedVariation.OneBasedBeginPosition);
+            int intersectOneBasedEnd = Math.Min(pep.OneBasedEndResidueInProtein, appliedVariation.OneBasedEndPosition);
+            if (intersectOneBasedEnd < intersectOneBasedStart)
+            {
+                return false;
+            }
+            else if (!checkUnique)
+            {
+                return true;
+            }
+            else
+            { 
+                // if the original sequence is too short or long, the intersect of the peptide and variant is unique
+                int intersectSize = intersectOneBasedEnd - intersectOneBasedStart + 1;
+                int variantStart = intersectOneBasedStart - appliedVariation.OneBasedBeginPosition;
+                bool origSeqIsShort = appliedVariation.OriginalSequence.Length - variantStart + 1 < intersectSize;
+                bool origSeqIsLong = appliedVariation.OriginalSequence.Length > intersectSize && pep.OneBasedEndResidueInProtein > intersectOneBasedEnd;
+                if (origSeqIsShort || origSeqIsLong)
+                {
+                    return true;
+                }
+
+                // is the variant sequence intersecting the peptide different than the original sequence?
+                string originalAtIntersect = appliedVariation.OriginalSequence.Substring(intersectOneBasedStart - appliedVariation.OneBasedBeginPosition, intersectSize);
+                string variantAtIntersect = appliedVariation.VariantSequence.Substring(intersectOneBasedStart - appliedVariation.OneBasedBeginPosition, intersectSize);
+                return originalAtIntersect != variantAtIntersect;
+            }
+        }
+
+        /// <summary>
+        /// Makes the string representing a detected sequence variation, including any modifications on a variant amino acid
+        /// </summary>
+        /// <param name="p"></param>
+        /// <param name="d"></param>
+        /// <returns></returns>
+        private static string SequenceVariantString(PeptideWithSetModifications p, SequenceVariation applied)
+        {
+            var modsOnVariantOneIsNTerm = p.AllModsOneIsNterminus
+                .Where(kv => kv.Key == 1 && applied.OneBasedBeginPosition == 1 || applied.OneBasedBeginPosition <= kv.Key - 2 + p.OneBasedStartResidueInProtein && kv.Key - 2 + p.OneBasedStartResidueInProtein <= applied.OneBasedEndPosition)
+                .ToDictionary(kv => kv.Key - applied.OneBasedBeginPosition + 1, kv => kv.Value);
+            PeptideWithSetModifications variantWithAnyMods = new PeptideWithSetModifications(p.Protein, p.DigestionParams, applied.OneBasedBeginPosition, applied.OneBasedEndPosition, p.CleavageSpecificityForFdrCategory, p.PeptideDescription, p.MissedCleavages, modsOnVariantOneIsNTerm, p.NumFixedMods);
+            return $"{applied.OriginalSequence}{applied.OneBasedBeginPosition}{variantWithAnyMods.FullSequence}";
+        }
+
         private static void AddMatchedIonsData(Dictionary<string, string> s, PeptideSpectralMatch psm)
         {
             bool nullPsm = (psm == null);

@@ -1,4 +1,5 @@
 ﻿using EngineLayer;
+using EngineLayer.FdrAnalysis;
 using EngineLayer.Localization;
 using MassSpectrometry;
 using MzLibUtil;
@@ -34,10 +35,10 @@ namespace Test
                     .Digest(digestionParams, new List<Modification>(), new List<Modification>()).First();
             MsDataFile myMsDataFile = new TestDataFile(pepWithSetMods, "quadratic");
             MsDataScan scann = myMsDataFile.GetOneBasedScan(2);
-            Ms2ScanWithSpecificMass scan = new Ms2ScanWithSpecificMass(scann, 4, 1, null);
+            Ms2ScanWithSpecificMass scan = new Ms2ScanWithSpecificMass(scann, 4, 1, null, new CommonParameters());
 
             var theoreticalIons = pepWithSetMods.Fragment(DissociationType.HCD, FragmentationTerminus.Both).ToList();
-            var matchedIons = MetaMorpheusEngine.MatchFragmentIons(scan.TheScan.MassSpectrum, theoreticalIons, new CommonParameters(), scan.PrecursorMass);
+            var matchedIons = MetaMorpheusEngine.MatchFragmentIons(scan, theoreticalIons, new CommonParameters());
             PeptideSpectralMatch psm = new PeptideSpectralMatch(pepWithSetMods, 1, 2, 3, scan, digestionParams, matchedIons);
             psm.ResolveAllAmbiguities();
 
@@ -93,6 +94,7 @@ namespace Test
 
             var lines2 = File.ReadAllLines(psmFile);
             Assert.That(lines2.Length == 7);
+            Directory.Delete(outputFolder, true);
         }
 
         [Test]
@@ -169,6 +171,61 @@ namespace Test
             string psmFile = Path.Combine(outputFolder, @"NoFilterTest\AllPSMs.psmtsv");
             var lines = File.ReadAllLines(psmFile);
             Assert.That(lines.Length == 12);
+            Directory.Delete(outputFolder, true);
+        }
+
+        [Test]
+        public static void TestPsmMatchingToTargetAndDecoyWithSameSequence()
+        {
+            DigestionParams digest = new DigestionParams();
+            List<Modification> mods = new List<Modification>();
+
+            PeptideWithSetModifications target = new Protein("PEPTIDE", "").Digest(digest, mods, mods).First();
+            PeptideWithSetModifications decoy = new Protein("PEPTIDE", "", isDecoy: true).Digest(digest, mods, mods).First();
+
+            MsDataFile msDataFile = new TestDataFile(target);
+            MsDataScan msDataScan = msDataFile.GetOneBasedScan(2);
+            Ms2ScanWithSpecificMass scanWithMass = new Ms2ScanWithSpecificMass(msDataScan, 4, 1, null, new CommonParameters());
+
+            PeptideSpectralMatch psm = new PeptideSpectralMatch(target, 0, 1, 1, scanWithMass, digest, null);
+            psm.AddOrReplace(decoy, 1, 0, true, null);
+
+            Assert.AreEqual(2, psm.BestMatchingPeptides.Count());
+            Assert.That(psm.BestMatchingPeptides.Any(p => p.Peptide.Protein.IsDecoy));
+
+            psm.ResolveAllAmbiguities();
+
+            Assert.AreEqual(1, psm.BestMatchingPeptides.Count());
+            Assert.That(psm.BestMatchingPeptides.All(p => !p.Peptide.Protein.IsDecoy));
+            Assert.That(!psm.IsDecoy);
+        }
+
+        [Test]
+        public static void TestPsmMatchingToTargetAndDecoyWithDifferentSequences()
+        {
+            DigestionParams digest = new DigestionParams();
+            List<Modification> mods = new List<Modification>();
+
+            PeptideWithSetModifications target = new Protein("PEPTIDE", "").Digest(digest, mods, mods).First();
+            PeptideWithSetModifications decoy = new Protein("PEPTIDEL", "", isDecoy: true).Digest(digest, mods, mods).First();
+
+            MsDataFile msDataFile = new TestDataFile(target);
+            MsDataScan msDataScan = msDataFile.GetOneBasedScan(2);
+            Ms2ScanWithSpecificMass scanWithMass = new Ms2ScanWithSpecificMass(msDataScan, 4, 1, null, new CommonParameters());
+
+            PeptideSpectralMatch psm = new PeptideSpectralMatch(target, 0, 1, 1, scanWithMass, digest, null);
+            psm.AddOrReplace(decoy, 1, 0, true, null);
+
+            Assert.AreEqual(2, psm.BestMatchingPeptides.Count());
+            Assert.That(psm.BestMatchingPeptides.Any(p => p.Peptide.Protein.IsDecoy));
+
+            psm.ResolveAllAmbiguities();
+
+            Assert.AreEqual(2, psm.BestMatchingPeptides.Count());
+            Assert.That(psm.IsDecoy);
+
+            new FdrAnalysisEngine(new List<PeptideSpectralMatch> { psm }, 1, new CommonParameters(), new List<string>()).Run();
+            Assert.AreEqual(0.5, psm.FdrInfo.CumulativeDecoy);
         }
     }
 }

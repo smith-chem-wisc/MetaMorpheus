@@ -61,7 +61,7 @@ namespace EngineLayer.ModernSearch
                     // empty the scoring table to score the new scan (conserves memory compared to allocating a new array)
                     Array.Clear(scoringTable, 0, scoringTable.Length);
                     idsOfPeptidesPossiblyObserved.Clear();
-                    var scan = ListOfSortedMs2Scans[i];
+                    Ms2ScanWithSpecificMass scan = ListOfSortedMs2Scans[i];
 
                     // get fragment bins for this scan
                     List<int> allBinsToSearch = GetBinsToSearch(scan);
@@ -70,24 +70,10 @@ namespace EngineLayer.ModernSearch
                     // note that this is the OPPOSITE of the classic search (which calculates experimental masses from theoretical values)
                     // this is just PRELIMINARY precursor-mass filtering
                     // additional checks are made later to ensure that the theoretical precursor mass is acceptable
-                    var notches = MassDiffAcceptor.GetAllowedPrecursorMassIntervals(scan.PrecursorMass);
+                    IEnumerable<AllowedIntervalWithNotch> notches = MassDiffAcceptor.GetAllowedPrecursorMassIntervalsFromObservedMass(scan.PrecursorMass);
 
-                    double lowestMassPeptideToLookFor = Double.NegativeInfinity;
-                    double highestMassPeptideToLookFor = Double.PositiveInfinity;
-
-                    double largestMassDiff = notches.Max(p => p.AllowedInterval.Maximum);
-                    double smallestMassDiff = notches.Min(p => p.AllowedInterval.Minimum);
-
-                    if (!Double.IsInfinity(largestMassDiff))
-                    {
-                        double largestOppositeMassDiff = -1 * (notches.Max(p => p.AllowedInterval.Maximum) - scan.PrecursorMass);
-                        lowestMassPeptideToLookFor = scan.PrecursorMass + largestOppositeMassDiff;
-                    }
-                    if (!Double.IsNegativeInfinity(smallestMassDiff))
-                    {
-                        double smallestOppositeMassDiff = -1 * (notches.Min(p => p.AllowedInterval.Minimum) - scan.PrecursorMass);
-                        highestMassPeptideToLookFor = scan.PrecursorMass + smallestOppositeMassDiff;
-                    }
+                    double lowestMassPeptideToLookFor = notches.Min(p => p.AllowedInterval.Minimum);
+                    double highestMassPeptideToLookFor = notches.Max(p => p.AllowedInterval.Maximum);
 
                     // first-pass scoring
                     IndexedScoring(allBinsToSearch, scoringTable, byteScoreCutoff, idsOfPeptidesPossiblyObserved, scan.PrecursorMass, lowestMassPeptideToLookFor, highestMassPeptideToLookFor, PeptideIndex, MassDiffAcceptor, MaxMassThatFragmentIonScoreIsDoubled);
@@ -99,7 +85,7 @@ namespace EngineLayer.ModernSearch
 
                         List<Product> peptideTheorProducts = peptide.Fragment(commonParameters.DissociationType, FragmentationTerminus.Both).ToList();
 
-                        List<MatchedFragmentIon> matchedIons = MatchFragmentIons(scan.TheScan.MassSpectrum, peptideTheorProducts, commonParameters, scan.PrecursorMass);
+                        List<MatchedFragmentIon> matchedIons = MatchFragmentIons(scan, peptideTheorProducts, commonParameters);
                         
                         double thisScore = CalculatePeptideScore(scan.TheScan, matchedIons, 0);
                         int notch = MassDiffAcceptor.Accepts(scan.PrecursorMass, peptide.MonoisotopicMass);
@@ -161,10 +147,11 @@ namespace EngineLayer.ModernSearch
         {
             int obsPreviousFragmentCeilingMz = 0;
             List<int> binsToSearch = new List<int>();
-            foreach (var peakMz in scan.TheScan.MassSpectrum.XArray)
+            
+            foreach (var envelope in scan.ExperimentalFragments)
             {
                 // assume charge state 1 to calculate mass tolerance
-                double experimentalFragmentMass = ClassExtensions.ToMass(peakMz, 1);
+                double experimentalFragmentMass = envelope.monoisotopicMass;
 
                 // get theoretical fragment bins within mass tolerance
                 int obsFragmentFloorMass = (int)Math.Floor((commonParameters.ProductMassTolerance.GetMinimumValue(experimentalFragmentMass)) * FragmentBinsPerDalton);
@@ -172,7 +159,9 @@ namespace EngineLayer.ModernSearch
 
                 // prevents double-counting peaks close in m/z and lower-bound out of range exceptions
                 if (obsFragmentFloorMass < obsPreviousFragmentCeilingMz)
+                {
                     obsFragmentFloorMass = obsPreviousFragmentCeilingMz;
+                }
                 obsPreviousFragmentCeilingMz = obsFragmentCeilingMass + 1;
 
                 // prevent upper-bound index out of bounds errors;
@@ -182,13 +171,19 @@ namespace EngineLayer.ModernSearch
                     obsFragmentCeilingMass = FragmentIndex.Length - 1;
 
                     if (obsFragmentFloorMass >= FragmentIndex.Length)
+                    {
                         obsFragmentFloorMass = FragmentIndex.Length - 1;
+                    }
                 }
 
                 // search mass bins within a tolerance
                 for (int fragmentBin = obsFragmentFloorMass; fragmentBin <= obsFragmentCeilingMass; fragmentBin++)
+                {
                     if (FragmentIndex[fragmentBin] != null)
+                    {
                         binsToSearch.Add(fragmentBin);
+                    }
+                }
 
                 // add complementary ions
                 if (commonParameters.AddCompIons)
@@ -210,15 +205,22 @@ namespace EngineLayer.ModernSearch
                                 compFragmentFloorMass = FragmentIndex.Length - 1;
                         }
                         if (compFragmentFloorMass < 0)
+                        {
                             compFragmentFloorMass = 0;
+                        }
 
                         for (int fragmentBin = compFragmentFloorMass; fragmentBin <= compFragmentCeilingMass; fragmentBin++)
+                        {
                             if (FragmentIndex[fragmentBin] != null)
+                            {
                                 binsToSearch.Add(fragmentBin);
+                            }
+                        }
                     }
                     else
+                    {
                         throw new NotImplementedException();
-
+                    }
                 }
             }
             return binsToSearch;
