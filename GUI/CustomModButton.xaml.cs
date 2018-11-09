@@ -48,7 +48,7 @@ namespace MetaMorpheusGUI
         public void SaveCustomMod_Click(object sender, RoutedEventArgs e)
         {
             string modsDirectory = Path.Combine(GlobalVariables.DataDir, @"Mods");
-            string customModsPath = Path.Combine(modsDirectory, @"UserCustomModifications.txt");
+            string customModsPath = Path.Combine(modsDirectory, @"CustomModifications.txt");
             List<string> customModsText = new List<string>();
 
             if (!File.Exists(customModsPath))
@@ -90,7 +90,7 @@ namespace MetaMorpheusGUI
             {
                 diagnosticIons = new Dictionary<DissociationType, List<double>>()
                 {
-                    { disType, diagnosticIonText.Split(',').Select(double.Parse).ToList() }
+                    { disType, diagnosticIonText.Split(',').Select(p => double.Parse(p).ToMass(1)).ToList() }
                 };
             }
 
@@ -118,8 +118,14 @@ namespace MetaMorpheusGUI
                 _neutralLosses: neutralLosses,
                 _diagnosticIons: diagnosticIons);
 
+            if (GlobalVariables.AllModsKnownDictionary.ContainsKey(modification.IdWithMotif))
+            {
+                MessageBox.Show("A modification already exists with the name: " + modification.IdWithMotif, "Error", MessageBoxButton.OK, MessageBoxImage.Hand);
+                return;
+            }
+
             // write custom mod to mods file
-            
+
             // write/read temp file to make sure the mod is readable, then delete it
             string tempPath = Path.Combine(modsDirectory, @"temp.txt");
             try
