@@ -551,7 +551,6 @@ namespace TaskLayer
                     semiSpecific = protease.CleavageSpecificity == CleavageSpecificity.Semi,
                     missedCleavagesSpecified = true,
                     missedCleavages = missedCleavages,
-                    SiteRegexp = protease.SiteRegexp,
                     EnzymeName = new mzIdentML110.Generated.ParamListType()
                     {
                         Items = new mzIdentML110.Generated.AbstractParamType[1]

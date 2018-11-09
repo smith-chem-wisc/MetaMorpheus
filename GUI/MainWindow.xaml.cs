@@ -70,6 +70,7 @@ namespace MetaMorpheusGUI
             UpdateTaskGuiStuff();
             UpdateOutputFolderTextbox();
             FileSpecificParameters.ValidateFileSpecificVariableNames();
+            SearchModifications.SetUpModSearchBoxes();
 
             // LOAD GUI SETTINGS
 
@@ -1428,6 +1429,12 @@ namespace MetaMorpheusGUI
                 AddAFile(contaminantFile);
             }
             dataGridProteinDatabases.Items.Refresh();
+        }
+
+        private void AddCustomMod_Click(object sender, RoutedEventArgs e)
+        {
+            var dialog = new CustomModButtonWindow();
+            dialog.ShowDialog();
         }
 
         // handle window closing

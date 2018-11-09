@@ -35,7 +35,8 @@ namespace Test
         public static void XlTestXlPosCal()
         {
             var prot = new Protein("MNNNKQQQQ", null);
-            Protease protease = new Protease("New Custom Protease", new List<Tuple<string, FragmentationTerminus>> { new Tuple<string, FragmentationTerminus>("K", FragmentationTerminus.C) }, new List<Tuple<string, FragmentationTerminus>>(), CleavageSpecificity.Full, null, null, null);
+            List<DigestionMotif> motifs = new List<DigestionMotif> { new DigestionMotif("K", null, 1, null) };
+            Protease protease = new Protease("New Custom Protease", CleavageSpecificity.Full, null, null, motifs);
             ProteaseDictionary.Dictionary.Add(protease.Name, protease);
             DigestionParams digestionParams = new DigestionParams(protease: protease.Name, minPeptideLength: 1, initiatorMethionineBehavior: InitiatorMethionineBehavior.Retain);
             List<Modification> variableModifications = new List<Modification>();
@@ -105,7 +106,7 @@ namespace Test
             var localizeableModifications = new List<Modification>();
 
             //Run index engine
-            var indexEngine = new IndexingEngine(proteinList, variableModifications, fixedModifications, 1, DecoyType.Reverse, commonParameters, 30000, false, new List<string>());
+            var indexEngine = new IndexingEngine(proteinList, variableModifications, fixedModifications, 1, DecoyType.Reverse, commonParameters, 30000, false, new List<FileInfo>(), new List<string>());
 
             var indexResults = (IndexingResults)indexEngine.Run();
 
@@ -217,7 +218,7 @@ namespace Test
             }
 
             //Run index engine
-            var indexEngine = new IndexingEngine(proteinList, variableModifications, fixedModifications, 1, DecoyType.Reverse, commonParameters, 30000, false, new List<string>());
+            var indexEngine = new IndexingEngine(proteinList, variableModifications, fixedModifications, 1, DecoyType.Reverse, commonParameters, 30000, false, new List<FileInfo>(), new List<string>());
 
             var indexResults = (IndexingResults)indexEngine.Run();
 
@@ -470,7 +471,7 @@ namespace Test
             // search the data with the peptide WITHOUT the deadend mod annotated in the search database.
             // the search engine should be able to correctly identify the deadend mod on T
             var indexingResults = (IndexingResults)new IndexingEngine(new List<Protein> { protein }, new List<Modification>(), new List<Modification>(), 0, DecoyType.None,
-                new CommonParameters(), 1000, false, new List<string>()).Run();
+                new CommonParameters(), 1000, false, new List<FileInfo>(), new List<string>()).Run();
 
             new CrosslinkSearchEngine(csms, scans, indexingResults.PeptideIndex, indexingResults.FragmentIndex, 0, new CommonParameters(), crosslinker,
                 false, 0, false, false, true, new List<string>()).Run();
@@ -607,7 +608,7 @@ namespace Test
             scans[0] = new Ms2ScanWithSpecificMass(sc, deadendPeptide.MonoisotopicMass.ToMz(2), 2, "", new CommonParameters());
 
             var indexingResults = (IndexingResults)new IndexingEngine(new List<Protein> { protein }, new List<Modification>(), new List<Modification>(), 0, DecoyType.None,
-                new CommonParameters(), 1000, false, new List<string>()).Run();
+                new CommonParameters(), 1000, false, new List<FileInfo>(), new List<string>()).Run();
 
             new CrosslinkSearchEngine(csms, scans, indexingResults.PeptideIndex, indexingResults.FragmentIndex, 0, new CommonParameters(), crosslinker, false, 0, false, false, true, new List<string>()).Run();
 

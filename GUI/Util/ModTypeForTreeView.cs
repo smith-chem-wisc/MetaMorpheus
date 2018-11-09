@@ -11,6 +11,7 @@ namespace MetaMorpheusGUI
         public ModTypeForTreeView(string displayName, bool bad)
         {
             Children = new ObservableCollection<ModForTreeView>();
+            Expanded = false;
             DisplayName = displayName;
             if (bad)
                 Background = new SolidColorBrush(Colors.Red);
@@ -31,6 +32,8 @@ namespace MetaMorpheusGUI
                 SetUseStatus(value);
             }
         }
+
+        public bool Expanded { get; set; }
 
         public string DisplayName { get; }
 

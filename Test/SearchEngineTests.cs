@@ -12,6 +12,7 @@ using Proteomics.Fragmentation;
 using Proteomics.ProteolyticDigestion;
 using System;
 using System.Collections.Generic;
+using System.IO;
 using System.Linq;
 using TaskLayer;
 using UsefulProteomicsDatabases;
@@ -24,7 +25,7 @@ namespace Test
         [Test]
         public static void TestClassicSearchEngine()
         {
-            Protease protease = new Protease("Customized Protease", new List<Tuple<string, FragmentationTerminus>> { new Tuple<string, FragmentationTerminus>("K", FragmentationTerminus.C) }, new List<Tuple<string, FragmentationTerminus>>(), CleavageSpecificity.Full, null, null, null);
+            Protease protease = new Protease("Customized Protease", CleavageSpecificity.Full, null, null, new List<DigestionMotif> { new DigestionMotif("K", null, 1, "") });
             ProteaseDictionary.Dictionary.Add(protease.Name, protease);
             CommonParameters CommonParameters = new CommonParameters
                 (digestionParams: new DigestionParams(
@@ -112,7 +113,7 @@ namespace Test
 
             var proteinList = new List<Protein> { new Protein("MNNNKQQQ", null) };
 
-            var indexEngine = new IndexingEngine(proteinList, variableModifications, fixedModifications, 1, DecoyType.Reverse, CommonParameters, SearchParameters.MaxFragmentSize, false, new List<string>());
+            var indexEngine = new IndexingEngine(proteinList, variableModifications, fixedModifications, 1, DecoyType.Reverse, CommonParameters, SearchParameters.MaxFragmentSize, false, new List<FileInfo>(), new List<string>());
             var indexResults = (IndexingResults)indexEngine.Run();
 
             var listOfSortedms2Scans = MetaMorpheusTask.GetMs2Scans(myMsDataFile, null, new CommonParameters()).OrderBy(b => b.PrecursorMass).ToArray();
@@ -156,7 +157,7 @@ namespace Test
             var proteinList = new List<Protein> { new Protein("K", null) };
 
             var indexEngine = new IndexingEngine(proteinList, new List<Modification>(), new List<Modification>(), 1, DecoyType.Reverse,
-                CommonParameters, SearchParameters.MaxFragmentSize, false, new List<string>());
+                CommonParameters, SearchParameters.MaxFragmentSize, false, new List<FileInfo>(), new List<string>());
             var indexResults = (IndexingResults)indexEngine.Run();
 
             var listOfSortedms2Scans = MetaMorpheusTask.GetMs2Scans(new TestDataFile(), null, new CommonParameters()).OrderBy(b => b.PrecursorMass).ToArray();
@@ -190,7 +191,7 @@ namespace Test
 
             var searchModes = new SinglePpmAroundZeroSearchMode(5);
 
-            var indexEngine = new IndexingEngine(proteinList, variableModifications, fixedModifications, 1, DecoyType.Reverse, CommonParameters, SearchParameters.MaxFragmentSize, false, new List<string>());
+            var indexEngine = new IndexingEngine(proteinList, variableModifications, fixedModifications, 1, DecoyType.Reverse, CommonParameters, SearchParameters.MaxFragmentSize, false, new List<FileInfo>(), new List<string>());
             var indexResults = (IndexingResults)indexEngine.Run();
 
             var listOfSortedms2Scans = MetaMorpheusTask.GetMs2Scans(myMsDataFile, null, new CommonParameters()).OrderBy(b => b.PrecursorMass).ToArray();
@@ -231,7 +232,7 @@ namespace Test
 
             var proteinList = new List<Protein> { new Protein("MNNNKQXQ", null) };
 
-            var indexEngine = new IndexingEngine(proteinList, variableModifications, fixedModifications, 1, DecoyType.Reverse, CommonParameters, SearchParameters.MaxFragmentSize, false, new List<string>());
+            var indexEngine = new IndexingEngine(proteinList, variableModifications, fixedModifications, 1, DecoyType.Reverse, CommonParameters, SearchParameters.MaxFragmentSize, false, new List<FileInfo>(), new List<string>());
             var indexResults = (IndexingResults)indexEngine.Run();
 
             bool DoPrecursorDeconvolution = true;
@@ -273,7 +274,14 @@ namespace Test
                     FdrCategory.NonSpecific
                 }
             };
-            Protease protease = new Protease("single N", new List<Tuple<string, FragmentationTerminus>> { new Tuple<string, FragmentationTerminus>("K", FragmentationTerminus.Both), new Tuple<string, FragmentationTerminus>("G", FragmentationTerminus.Both) }, new List<Tuple<string, FragmentationTerminus>>(), CleavageSpecificity.SingleN, null, null, null);
+            List<DigestionMotif> motifs = new List<DigestionMotif>
+            {
+                new DigestionMotif("K", null, 0, null),
+                new DigestionMotif("K", null, 1, null),
+                new DigestionMotif("G", null, 0, null),
+                new DigestionMotif("G", null, 1, null),
+            };
+            Protease protease = new Protease("single N", CleavageSpecificity.SingleN, null, null, motifs);
             ProteaseDictionary.Dictionary.Add(protease.Name, protease);
             DigestionParams dp = new DigestionParams(protease: protease.Name, minPeptideLength: 1, fragmentationTerminus: FragmentationTerminus.N, searchModeType: CleavageSpecificity.None);
             CommonParameters CommonParameters = new CommonParameters(
@@ -289,7 +297,7 @@ namespace Test
 
             var proteinList = new List<Protein> { new Protein("GGGGGMNNNKQQQGGGGG", "TestProtein") };
 
-            var indexEngine = new IndexingEngine(proteinList, variableModifications, fixedModifications, 1, DecoyType.Reverse, CommonParameters, 100000, false, new List<string>());
+            var indexEngine = new IndexingEngine(proteinList, variableModifications, fixedModifications, 1, DecoyType.Reverse, CommonParameters, 100000, false, new List<FileInfo>(), new List<string>());
             var indexResults = (IndexingResults)indexEngine.Run();
             var peptideIndex = indexResults.PeptideIndex;
             var fragmentIndexDict = indexResults.FragmentIndex;
@@ -357,7 +365,7 @@ namespace Test
 
             var proteinList = new List<Protein> { new Protein("GGGGGCDQPKLLGIETPLPKKEGGGGG", null) };
 
-            var indexEngine = new IndexingEngine(proteinList, variableModifications, fixedModifications, 1, DecoyType.None, CommonParameters, SearchParameters.MaxFragmentSize,true, new List<string>());
+            var indexEngine = new IndexingEngine(proteinList, variableModifications, fixedModifications, 1, DecoyType.None, CommonParameters, SearchParameters.MaxFragmentSize,true, new List<FileInfo>(), new List<string>());
 
             var indexResults = (IndexingResults)indexEngine.Run();
             var peptideIndex = indexResults.PeptideIndex;
@@ -384,7 +392,7 @@ namespace Test
             guiltyPwsm = new PeptideWithSetModifications("C[Common Fixed:Carbamidomethyl on C]DQPKLLGIETPLPKKE", new Dictionary<string, Modification> { { "Carbamidomethyl on C", mod2 } });
             fragments = guiltyPwsm.Fragment(CommonParameters.DissociationType, FragmentationTerminus.Both);
             myMsDataFile = new TestDataFile(guiltyPwsm.MonoisotopicMass, fragments.Select(x => x.NeutralMass.ToMz(1)).ToArray());
-            indexEngine = new IndexingEngine(proteinList, variableModifications, fixedModifications, 1, DecoyType.None, CommonParameters, SearchParameters.MaxFragmentSize, true, new List<string>());
+            indexEngine = new IndexingEngine(proteinList, variableModifications, fixedModifications, 1, DecoyType.None, CommonParameters, SearchParameters.MaxFragmentSize, true, new List<FileInfo>(), new List<string>());
             indexResults = (IndexingResults)indexEngine.Run();
             precursorIndexDict = indexResults.PrecursorIndex;
             peptideIndex = indexResults.PeptideIndex;
@@ -400,7 +408,7 @@ namespace Test
             Assert.AreEqual(allPsmsArray[0].FullSequence, guiltyPwsm.FullSequence);
 
             proteinList = new List<Protein> { new Protein("GGGGGCDQPKLLGIETPLPKKEGG", null) };
-            indexEngine = new IndexingEngine(proteinList, variableModifications, fixedModifications, 1, DecoyType.None, CommonParameters, SearchParameters.MaxFragmentSize, true, new List<string>());
+            indexEngine = new IndexingEngine(proteinList, variableModifications, fixedModifications, 1, DecoyType.None, CommonParameters, SearchParameters.MaxFragmentSize, true, new List<FileInfo>(), new List<string>());
             indexResults = (IndexingResults)indexEngine.Run();
             peptideIndex = indexResults.PeptideIndex;
             fragmentIndexDict = indexResults.FragmentIndex;
@@ -448,7 +456,7 @@ namespace Test
 
             var proteinList = new List<Protein> { new Protein("GGDQPKLLGIETPLPKKECGGGGG", null) };
 
-            var indexEngine = new IndexingEngine(proteinList, variableModifications, fixedModifications, 1, DecoyType.None, CommonParameters, SearchParameters.MaxFragmentSize, true, new List<string>());
+            var indexEngine = new IndexingEngine(proteinList, variableModifications, fixedModifications, 1, DecoyType.None, CommonParameters, SearchParameters.MaxFragmentSize, true, new List<FileInfo>(), new List<string>());
 
             var indexResults = (IndexingResults)indexEngine.Run();
             var peptideIndex = indexResults.PeptideIndex;
@@ -475,7 +483,7 @@ namespace Test
             guiltyPwsm = new PeptideWithSetModifications("GGDQPKLLGIETPLPKKEC[Common Fixed:Carbamidomethyl on C]", new Dictionary<string, Modification> { { "Carbamidomethyl on C", mod2 } });
             fragments = guiltyPwsm.Fragment(CommonParameters.DissociationType, FragmentationTerminus.Both);
             myMsDataFile = new TestDataFile(guiltyPwsm.MonoisotopicMass, fragments.Select(x => x.NeutralMass.ToMz(1)).ToArray());
-            indexEngine = new IndexingEngine(proteinList, variableModifications, fixedModifications, 1, DecoyType.None, CommonParameters, SearchParameters.MaxFragmentSize, true, new List<string>());
+            indexEngine = new IndexingEngine(proteinList, variableModifications, fixedModifications, 1, DecoyType.None, CommonParameters, SearchParameters.MaxFragmentSize, true, new List<FileInfo>(), new List<string>());
             indexResults = (IndexingResults)indexEngine.Run();
             precursorIndexDict = indexResults.PrecursorIndex;
             peptideIndex = indexResults.PeptideIndex;
@@ -491,7 +499,7 @@ namespace Test
             Assert.AreEqual(allPsmsArray[0].FullSequence, guiltyPwsm.FullSequence);
 
             proteinList = new List<Protein> { new Protein("GGDQPKLLGIETPLPKKECGGGGG", null) };
-            indexEngine = new IndexingEngine(proteinList, variableModifications, fixedModifications, 1, DecoyType.None, CommonParameters, SearchParameters.MaxFragmentSize, true, new List<string>());
+            indexEngine = new IndexingEngine(proteinList, variableModifications, fixedModifications, 1, DecoyType.None, CommonParameters, SearchParameters.MaxFragmentSize, true, new List<FileInfo>(), new List<string>());
             indexResults = (IndexingResults)indexEngine.Run();
             peptideIndex = indexResults.PeptideIndex;
             fragmentIndexDict = indexResults.FragmentIndex;
@@ -520,7 +528,15 @@ namespace Test
                     FdrCategory.NonSpecific
                 }
             };
-            Protease protease = new Protease("single C", new List<Tuple<string, FragmentationTerminus>> { new Tuple<string, FragmentationTerminus>("K", FragmentationTerminus.Both), new Tuple<string, FragmentationTerminus>("G", FragmentationTerminus.Both) }, new List<Tuple<string, FragmentationTerminus>>(), CleavageSpecificity.SingleC, null, null, null);
+
+            List<DigestionMotif> motifs = new List<DigestionMotif>
+            {
+                new DigestionMotif("K", null, 0, null),
+                new DigestionMotif("K", null, 1, null),
+                new DigestionMotif("G", null, 0, null),
+                new DigestionMotif("G", null, 1, null),
+            };
+            Protease protease = new Protease("single C", CleavageSpecificity.SingleC, null, null, motifs);
             ProteaseDictionary.Dictionary.Add(protease.Name, protease);
             DigestionParams dp = new DigestionParams(protease: protease.Name, minPeptideLength: 1, fragmentationTerminus: FragmentationTerminus.C, searchModeType: CleavageSpecificity.None);
 
@@ -538,7 +554,7 @@ namespace Test
 
             var proteinList = new List<Protein> { new Protein("GGGGGMNNNKQQQGGGGG", null) };
 
-            var indexEngine = new IndexingEngine(proteinList, variableModifications, fixedModifications, 1, DecoyType.Reverse, CommonParameters, SearchParameters.MaxFragmentSize, false, new List<string>());
+            var indexEngine = new IndexingEngine(proteinList, variableModifications, fixedModifications, 1, DecoyType.Reverse, CommonParameters, SearchParameters.MaxFragmentSize, false, new List<FileInfo>(), new List<string>());
 
             var indexResults = (IndexingResults)indexEngine.Run();
             var peptideIndex = indexResults.PeptideIndex;
@@ -572,7 +588,21 @@ namespace Test
         public static void TestNonSpecificEnzymeVariableModificationHandlingNTerm()
         {
             var protein = new Protein("MGGGGGMNNNKQQQMGGGGMGM", "TestProtein");
-            var protease = new Protease("singleN2", new List<Tuple<string, FragmentationTerminus>> { new Tuple<string, FragmentationTerminus>("K", FragmentationTerminus.Both), new Tuple<string, FragmentationTerminus>("G", FragmentationTerminus.Both), new Tuple<string, FragmentationTerminus>("M", FragmentationTerminus.Both), new Tuple<string, FragmentationTerminus>("N", FragmentationTerminus.Both), new Tuple<string, FragmentationTerminus>("Q", FragmentationTerminus.Both) }, new List<Tuple<string, FragmentationTerminus>>(), CleavageSpecificity.SingleN, null, null, null);
+
+            List<DigestionMotif> motifs = new List<DigestionMotif>
+            {
+                new DigestionMotif("K", null, 0, null),
+                new DigestionMotif("K", null, 1, null),
+                new DigestionMotif("G", null, 0, null),
+                new DigestionMotif("G", null, 1, null),
+                new DigestionMotif("M", null, 0, null),
+                new DigestionMotif("M", null, 1, null),
+                new DigestionMotif("N", null, 0, null),
+                new DigestionMotif("N", null, 1, null),
+                new DigestionMotif("Q", null, 0, null),
+                new DigestionMotif("Q", null, 1, null),
+            };
+            var protease = new Protease("singleN2", CleavageSpecificity.SingleN, null, null, motifs);
             ProteaseDictionary.Dictionary.Add(protease.Name, protease);
             ModificationMotif.TryGetMotif("M", out ModificationMotif motifM);
             var variableModifications = new List<Modification> { new Modification(_originalId: "16", _target: motifM, _locationRestriction: "Anywhere.", _monoisotopicMass: 15.994915) };
@@ -589,7 +619,20 @@ namespace Test
         public static void TestNonSpecificEnzymeVariableModificationHandlingCTerm()
         {
             var protein = new Protein("MGGGGGMNNNKQQQMGGGGMGM", "TestProtein");
-            var protease = new Protease("singleC2", new List<Tuple<string, FragmentationTerminus>> { new Tuple<string, FragmentationTerminus>("K", FragmentationTerminus.Both), new Tuple<string, FragmentationTerminus>("G", FragmentationTerminus.Both), new Tuple<string, FragmentationTerminus>("M", FragmentationTerminus.Both), new Tuple<string, FragmentationTerminus>("N", FragmentationTerminus.Both), new Tuple<string, FragmentationTerminus>("Q", FragmentationTerminus.Both) }, new List<Tuple<string, FragmentationTerminus>>(), CleavageSpecificity.SingleC, null, null, null);
+            List<DigestionMotif> motifs = new List<DigestionMotif>
+            {
+                new DigestionMotif("K", null, 0, null),
+                new DigestionMotif("K", null, 1, null),
+                new DigestionMotif("G", null, 0, null),
+                new DigestionMotif("G", null, 1, null),
+                new DigestionMotif("M", null, 0, null),
+                new DigestionMotif("M", null, 1, null),
+                new DigestionMotif("N", null, 0, null),
+                new DigestionMotif("N", null, 1, null),
+                new DigestionMotif("Q", null, 0, null),
+                new DigestionMotif("Q", null, 1, null),
+            };
+            var protease = new Protease("singleC2", CleavageSpecificity.SingleC, null, null, motifs);
             ProteaseDictionary.Dictionary.Add(protease.Name, protease);
             ModificationMotif.TryGetMotif("M", out ModificationMotif motifM);
             var variableModifications = new List<Modification> { new Modification(_originalId: "16", _target: motifM, _locationRestriction: "Anywhere.", _monoisotopicMass: 15.994915) };
@@ -628,7 +671,11 @@ namespace Test
 
             var productMassTolerance = new AbsoluteTolerance(0.01);
             var searchModes = new SinglePpmAroundZeroSearchMode(5);
-            var protease = new Protease("SingleN", new List<Tuple<string, FragmentationTerminus>> { new Tuple<string, FragmentationTerminus>("K", FragmentationTerminus.C) }, new List<Tuple<string, FragmentationTerminus>>(), CleavageSpecificity.None, null, null, null);
+            List<DigestionMotif> motifs = new List<DigestionMotif>
+            {
+                new DigestionMotif("K", null, 1, null),
+            };
+            var protease = new Protease("SingleN", CleavageSpecificity.None, null, null, motifs);
             ProteaseDictionary.Dictionary.Add(protease.Name, protease);
             CommonParameters CommonParameters = new CommonParameters(
                 dissociationType: DissociationType.HCD,
@@ -638,7 +685,7 @@ namespace Test
                 addCompIons: true);
 
             HashSet<DigestionParams> digestParams = new HashSet<DigestionParams> { CommonParameters.DigestionParams };
-            var indexEngine = new IndexingEngine(proteinList, variableModifications, fixedModifications, 1, DecoyType.Reverse, CommonParameters, 100000, true, new List<string>());
+            var indexEngine = new IndexingEngine(proteinList, variableModifications, fixedModifications, 1, DecoyType.Reverse, CommonParameters, 100000, true, new List<FileInfo>(), new List<string>());
             var indexResults = (IndexingResults)indexEngine.Run();
             var peptideIndex = indexResults.PeptideIndex;
             var fragmentIndexDict = indexResults.FragmentIndex;
@@ -699,7 +746,7 @@ namespace Test
 
             var productMassTolerance = new AbsoluteTolerance(0.01);
             var searchModes = new SinglePpmAroundZeroSearchMode(5);
-            Protease protease = new Protease("SingleC", new List<Tuple<string, FragmentationTerminus>>(), new List<Tuple<string, FragmentationTerminus>>(), CleavageSpecificity.SingleC, null, null, null);
+            Protease protease = new Protease("SingleC", CleavageSpecificity.Full, null, null, new List<DigestionMotif>());
             ProteaseDictionary.Dictionary.Add(protease.Name, protease);
             CommonParameters CommonParameters = new CommonParameters(
                 scoreCutoff: 1,
@@ -709,7 +756,7 @@ namespace Test
                 addCompIons: true);
 
             HashSet<DigestionParams> digestParams = new HashSet<DigestionParams> { CommonParameters.DigestionParams };
-            var indexEngine = new IndexingEngine(proteinList, variableModifications, fixedModifications, 1, DecoyType.Reverse, CommonParameters, 30000, false, new List<string>());
+            var indexEngine = new IndexingEngine(proteinList, variableModifications, fixedModifications, 1, DecoyType.Reverse, CommonParameters, 30000, false, new List<FileInfo>(), new List<string>());
             var indexResults = (IndexingResults)indexEngine.Run();
             var peptideIndex = indexResults.PeptideIndex;
             var fragmentIndexDict = indexResults.FragmentIndex;
@@ -768,8 +815,19 @@ namespace Test
 
             var productMassTolerance = new AbsoluteTolerance(0.01);
             var searchModes = new SinglePpmAroundZeroSearchMode(5);
-            var protease = new Protease("semi-trypsin1", new List<Tuple<string, FragmentationTerminus>> { new Tuple<string, FragmentationTerminus>("G", FragmentationTerminus.C) }, new List<Tuple<string, FragmentationTerminus>>(), CleavageSpecificity.Semi, null, null, null);
-            var protease2 = new Protease("semi-trypsin2", new List<Tuple<string, FragmentationTerminus>> { new Tuple<string, FragmentationTerminus>("N", FragmentationTerminus.C) }, new List<Tuple<string, FragmentationTerminus>>(), CleavageSpecificity.Semi, null, null, null);
+
+            List<DigestionMotif> motifs1 = new List<DigestionMotif>
+            {
+                new DigestionMotif("G", null, 1, null),
+            };
+            List<DigestionMotif> motifs2 = new List<DigestionMotif>
+            {
+                new DigestionMotif("N", null, 1, null),
+            };
+
+            var protease = new Protease("semi-trypsin1", CleavageSpecificity.Semi, null, null, motifs1);
+            var protease2 = new Protease("semi-trypsin2", CleavageSpecificity.Semi, null, null, motifs2);
+
             ProteaseDictionary.Dictionary.Add(protease.Name, protease);
             ProteaseDictionary.Dictionary.Add(protease2.Name, protease2);
             CommonParameters CommonParameters = new CommonParameters(
@@ -850,7 +908,11 @@ namespace Test
             List<ProteolysisProduct> protprod = new List<ProteolysisProduct> { new ProteolysisProduct(9, 21, "chain") };
             var proteinList = new List<Protein> { new Protein("MGGGGGMKNNNQQQGGGGKLKGKKNKKGN", "hello", null, null, null, protprod) };
 
-            var protease = new Protease("semi-Trypsin", new List<Tuple<string, FragmentationTerminus>> { new Tuple<string, FragmentationTerminus>("G", FragmentationTerminus.C) }, new List<Tuple<string, FragmentationTerminus>>(), CleavageSpecificity.Semi, null, null, null);
+            List<DigestionMotif> motifs1 = new List<DigestionMotif>
+            {
+                new DigestionMotif("G", null, 1, null),
+            };
+            var protease = new Protease("semi-Trypsin", CleavageSpecificity.Semi, null, null, motifs1);
             ProteaseDictionary.Dictionary.Add(protease.Name, protease);
             DigestionParams digestParams = new DigestionParams(protease: protease.Name, minPeptideLength: 2);
 

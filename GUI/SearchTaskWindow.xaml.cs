@@ -29,34 +29,21 @@ namespace MetaMorpheusGUI
         private readonly ObservableCollection<ModTypeForLoc> LocalizeModTypeForTreeViewObservableCollection = new ObservableCollection<ModTypeForLoc>();
         private readonly ObservableCollection<ModTypeForGrid> ModSelectionGridItems = new ObservableCollection<ModTypeForGrid>();
 
-        public SearchTaskWindow()
+        public SearchTaskWindow() : this(null)
         {
-            InitializeComponent();
-            TheTask = new SearchTask();
-
-            PopulateChoices();
-
-            UpdateFieldsFromTask(TheTask);
-
-            this.saveButton.Content = "Add the Search Task";
-
-            DataContextForSearchTaskWindow = new DataContextForSearchTaskWindow
-            {
-                ExpanderTitle = string.Join(", ", SearchModesForThisTask.Where(b => b.Use).Select(b => b.Name)),
-                AnalysisExpanderTitle = "Some analysis properties...",
-                SearchModeExpanderTitle = "Some search properties..."
-            };
-            this.DataContext = DataContextForSearchTaskWindow;
         }
 
         public SearchTaskWindow(SearchTask task)
         {
             InitializeComponent();
-            TheTask = task;
-
+            TheTask = task ?? new SearchTask();
             PopulateChoices();
-
             UpdateFieldsFromTask(TheTask);
+            
+            if (task == null)
+            {
+                this.saveButton.Content = "Add the Search Task";
+            }
 
             DataContextForSearchTaskWindow = new DataContextForSearchTaskWindow
             {
@@ -65,6 +52,7 @@ namespace MetaMorpheusGUI
                 SearchModeExpanderTitle = "Some search properties..."
             };
             this.DataContext = DataContextForSearchTaskWindow;
+            SearchModifications.Timer.Tick += new EventHandler(TextChangeTimerHandler);
         }
 
         internal SearchTask TheTask { get; private set; }
@@ -207,6 +195,8 @@ namespace MetaMorpheusGUI
             TopNPeaksTextBox.Text = task.CommonParameters.TopNpeaks == int.MaxValue ? "" : task.CommonParameters.TopNpeaks.ToString(CultureInfo.InvariantCulture);
             MinRatioTextBox.Text = task.CommonParameters.MinRatio.ToString(CultureInfo.InvariantCulture);
             maxThreadsTextBox.Text = task.CommonParameters.MaxThreadsToUsePerFile.ToString(CultureInfo.InvariantCulture);
+            MinVariantDepthTextBox.Text = task.CommonParameters.MinVariantDepth.ToString(CultureInfo.InvariantCulture);
+            MaxHeterozygousVariantsTextBox.Text = task.CommonParameters.MaxHeterozygousVariants.ToString(CultureInfo.InvariantCulture);
 
             if (task.CommonParameters.QValueOutputFilter < 1)
             {
@@ -230,7 +220,7 @@ namespace MetaMorpheusGUI
                 var theModType = FixedModTypeForTreeViewObservableCollection.FirstOrDefault(b => b.DisplayName.Equals(mod.Item1));
                 if (theModType != null)
                 {
-                    var theMod = theModType.Children.FirstOrDefault(b => b.DisplayName.Equals(mod.Item2));
+                    var theMod = theModType.Children.FirstOrDefault(b => b.ModName.Equals(mod.Item2));
                     if (theMod != null)
                     {
                         theMod.Use = true;
@@ -252,7 +242,7 @@ namespace MetaMorpheusGUI
                 var theModType = VariableModTypeForTreeViewObservableCollection.FirstOrDefault(b => b.DisplayName.Equals(mod.Item1));
                 if (theModType != null)
                 {
-                    var theMod = theModType.Children.FirstOrDefault(b => b.DisplayName.Equals(mod.Item2));
+                    var theMod = theModType.Children.FirstOrDefault(b => b.ModName.Equals(mod.Item2));
                     if (theMod != null)
                     {
                         theMod.Use = true;
@@ -380,6 +370,8 @@ namespace MetaMorpheusGUI
             int maxMissedCleavages = string.IsNullOrEmpty(missedCleavagesTextBox.Text) ? int.MaxValue : (int.Parse(missedCleavagesTextBox.Text, NumberStyles.Any, CultureInfo.InvariantCulture));
             int minPeptideLengthValue = (int.Parse(MinPeptideLengthTextBox.Text, NumberStyles.Any, CultureInfo.InvariantCulture));
             int maxPeptideLengthValue = string.IsNullOrEmpty(MaxPeptideLengthTextBox.Text) ? int.MaxValue : (int.Parse(MaxPeptideLengthTextBox.Text, NumberStyles.Any, CultureInfo.InvariantCulture));
+            int MinVariantDepth = int.Parse(MinVariantDepthTextBox.Text, NumberStyles.Any, CultureInfo.InvariantCulture);
+            int MaxHeterozygousVariants = int.Parse(MaxHeterozygousVariantsTextBox.Text, NumberStyles.Any, CultureInfo.InvariantCulture);
             int maxModificationIsoformsValue = (int.Parse(maxModificationIsoformsTextBox.Text, CultureInfo.InvariantCulture));
             int maxModsForPeptideValue = (int.Parse(MaxModNumTextBox.Text, CultureInfo.InvariantCulture));
             InitiatorMethionineBehavior initiatorMethionineBehavior = ((InitiatorMethionineBehavior)initiatorMethionineBehaviorComboBox.SelectedIndex);
@@ -419,13 +411,13 @@ namespace MetaMorpheusGUI
             var listOfModsVariable = new List<(string, string)>();
             foreach (var heh in VariableModTypeForTreeViewObservableCollection)
             {
-                listOfModsVariable.AddRange(heh.Children.Where(b => b.Use).Select(b => (b.Parent.DisplayName, b.DisplayName)));
+                listOfModsVariable.AddRange(heh.Children.Where(b => b.Use).Select(b => (b.Parent.DisplayName, b.ModName)));
             }
 
             var listOfModsFixed = new List<(string, string)>();
             foreach (var heh in FixedModTypeForTreeViewObservableCollection)
             {
-                listOfModsFixed.AddRange(heh.Children.Where(b => b.Use).Select(b => (b.Parent.DisplayName, b.DisplayName)));
+                listOfModsFixed.AddRange(heh.Children.Where(b => b.Use).Select(b => (b.Parent.DisplayName, b.ModName)));
             }
 
             if (!GlobalGuiSettings.VariableModCheck(listOfModsVariable))
@@ -463,7 +455,9 @@ namespace MetaMorpheusGUI
                 minRatio: MinRatio,
                 addCompIons: addCompIonCheckBox.IsChecked.Value,
                 qValueOutputFilter: QValueCheckBox.IsChecked.Value ? double.Parse(QValueTextBox.Text, CultureInfo.InvariantCulture) : 1.0,
-                assumeOrphanPeaksAreZ1Fragments: protease.Name != "top-down");
+                assumeOrphanPeaksAreZ1Fragments: protease.Name != "top-down",
+                minVariantDepth: MinVariantDepth,
+                maxHeterozygousVariants: MaxHeterozygousVariants);
 
             if (classicSearchRadioButton.IsChecked.Value)
             {
@@ -533,6 +527,16 @@ namespace MetaMorpheusGUI
             }
             if (massDiffAcceptCustom.IsChecked.HasValue && massDiffAcceptCustom.IsChecked.Value)
             {
+                try
+                {
+                    MassDiffAcceptor customMassDiffAcceptor = SearchTask.GetMassDiffAcceptor(null, MassDiffAcceptorType.Custom, customkMdacTextBox.Text);
+                }
+                catch (Exception ex)
+                {
+                    MessageBox.Show("Could not parse custom mass difference acceptor: " + ex.Message, "Error", MessageBoxButton.OK, MessageBoxImage.Error);
+                    return;
+                }
+                
                 TheTask.SearchParameters.MassDiffAcceptorType = MassDiffAcceptorType.Custom;
                 TheTask.SearchParameters.CustomMdac = customkMdacTextBox.Text;
             }
@@ -729,9 +733,31 @@ namespace MetaMorpheusGUI
             }
         }
 
-        private void dissassociationTypeComboBox_SelectionChanged(object sender, SelectionChangedEventArgs e)
+        private void TextChanged_Fixed(object sender, TextChangedEventArgs args)
         {
+            SearchModifications.SetTimer();
+            SearchModifications.FixedSearch = true;
+        }
 
+        private void TextChanged_Var(object sender, TextChangedEventArgs args)
+        {
+            SearchModifications.SetTimer();
+            SearchModifications.VariableSearch = true;
+        }
+        
+        private void TextChangeTimerHandler(object sender, EventArgs e)
+        {
+            if (SearchModifications.FixedSearch)
+            {
+                SearchModifications.FilterTree(SearchFixMod, fixedModsTreeView, FixedModTypeForTreeViewObservableCollection);
+                SearchModifications.FixedSearch = false;
+            }
+
+            if (SearchModifications.VariableSearch)
+            {
+                SearchModifications.FilterTree(SearchVarMod, variableModsTreeView, VariableModTypeForTreeViewObservableCollection);
+                SearchModifications.VariableSearch = false;
+            }
         }
     }
 
