@@ -5,7 +5,7 @@ using System.Linq;
 using System.Text.RegularExpressions;
 using Chemistry;
 
-namespace MetaMorpheusGUI
+namespace EngineLayer
 {
     public class MetaDrawPsm
     {

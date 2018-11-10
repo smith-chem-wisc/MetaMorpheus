@@ -1,5 +1,4 @@
 ﻿using EngineLayer;
-using MetaMorpheusGUI;
 using NUnit.Framework;
 using System.Collections.Generic;
 using System.IO;
@@ -24,7 +23,7 @@ namespace Test
             Directory.CreateDirectory(folderPath);
 
             searchTask.RunTask(folderPath, new List<DbForTask> { db }, new List<string> { myFile }, "metadraw");
-            string psmFile = Directory.GetFiles(folderPath).First(p => p.Contains("AllPSMs.psmtsv"));
+            string psmFile = Directory.GetFiles(folderPath).First(f => f.Contains("AllPSMs.psmtsv"));
 
             List<MetaDrawPsm> parsedPsms = TsvResultReader.ReadTsv(psmFile, out var warnings);
 
