@@ -14,7 +14,6 @@ using System;
 using System.Data;
 using System.Windows.Data;
 using System.Windows.Media;
-using System.Windows.Media.Imaging;
 using Proteomics.Fragmentation;
 using Proteomics.ProteolyticDigestion;
 using System.Text.RegularExpressions;
@@ -120,15 +119,23 @@ namespace MetaMorpheusGUI
             string fileNameWithExtension = Path.GetFileName(spectraFilePath);
             string fileNameWithoutExtension = Path.GetFileNameWithoutExtension(spectraFilePath);
 
-            foreach (var psm in TsvResultReader.ReadTsv(filename))
+            try
             {
-                if (psm.Filename == fileNameWithExtension || psm.Filename == fileNameWithoutExtension)
+                List<string> warnings; // TODO: print warnings
+                foreach (var psm in TsvResultReader.ReadTsv(filename, out warnings))
                 {
-                    Dispatcher.BeginInvoke(new Action(() =>
+                    if (psm.Filename == fileNameWithExtension || psm.Filename == fileNameWithoutExtension)
                     {
-                        peptideSpectralMatches.Add(psm);
-                    }));
+                        Dispatcher.BeginInvoke(new Action(() =>
+                        {
+                            peptideSpectralMatches.Add(psm);
+                        }));
+                    }
                 }
+            }
+            catch (Exception e)
+            {
+                MessageBox.Show("Could not open PSM file:\n" + e.Message);
             }
         }
 

@@ -2,12 +2,6 @@
 using System.Collections.Generic;
 using System.Linq;
 using System.IO;
-using System.Text.RegularExpressions;
-using System.Windows;
-using MassSpectrometry;
-using Chemistry;
-using Proteomics.Fragmentation;
-using Proteomics.ProteolyticDigestion;
 using EngineLayer;
 
 namespace MetaMorpheusGUI
@@ -34,7 +28,6 @@ namespace MetaMorpheusGUI
         public const string ProteinAccessionLabel = "Protein Accession";
         public const string ProteinNameLabel = "Protein Name";
         public const string GeneNameLabel = "Gene Name";
-        public const string SequenceVariationsLabel = "Sequence Variations";
         public const string OrganismNameLabel = "Organism Name";
         public const string PeptideDesicriptionLabel = "Peptide Description";
         public const string StartAndEndResiduesInProteinLabel = "Start and End Residues In Protein";
@@ -47,9 +40,10 @@ namespace MetaMorpheusGUI
         
         private static readonly char[] Split = { '\t' };
         
-        public static List<MetaDrawPsm> ReadTsv(string filePath)
+        public static List<MetaDrawPsm> ReadTsv(string filePath, out List<string> warnings)
         {
             List<MetaDrawPsm> psms = new List<MetaDrawPsm>();
+            warnings = new List<string>();
 
             StreamReader reader = null;
             try
@@ -58,8 +52,7 @@ namespace MetaMorpheusGUI
             }
             catch (Exception e)
             {
-                MessageBox.Show("Could not read file: " + e.Message);
-                return psms;
+               throw new MetaMorpheusException("Could not read file: " + e.Message);
             }
 
             int lineCount = 0;
@@ -81,8 +74,7 @@ namespace MetaMorpheusGUI
 
                 if (parsedHeader.Values.Any(i => i < 0))
                 {
-                    MessageBox.Show("Could not read PSMs file. Is it from an older version of MetaMorpheus?");
-                    return psms;
+                    throw new MetaMorpheusException("Could not parse PSM header");
                 }
 
                 try
@@ -91,7 +83,7 @@ namespace MetaMorpheusGUI
                 }
                 catch (Exception)
                 {
-                    MessageBox.Show("Could not read line: " + lineCount);
+                    warnings.Add("Could not read line: " + lineCount);
                 }
             }
 
@@ -99,7 +91,7 @@ namespace MetaMorpheusGUI
 
             if ((lineCount - 1) != psms.Count)
             {
-                MessageBox.Show("Warning: " + ((lineCount - 1) - psms.Count) + " PSMs were not read.");
+                warnings.Add("Warning: " + ((lineCount - 1) - psms.Count) + " PSMs were not read.");
             }
 
             return psms;
@@ -130,7 +122,6 @@ namespace MetaMorpheusGUI
             parsedHeader.Add(ProteinAccessionLabel, Array.IndexOf(spl, ProteinAccessionLabel));
             parsedHeader.Add(ProteinNameLabel, Array.IndexOf(spl, ProteinNameLabel));
             parsedHeader.Add(GeneNameLabel, Array.IndexOf(spl, GeneNameLabel));
-            parsedHeader.Add(SequenceVariationsLabel, Array.IndexOf(spl, SequenceVariationsLabel));
             parsedHeader.Add(OrganismNameLabel, Array.IndexOf(spl, OrganismNameLabel));
             parsedHeader.Add(PeptideDesicriptionLabel, Array.IndexOf(spl, PeptideDesicriptionLabel));
             parsedHeader.Add(StartAndEndResiduesInProteinLabel, Array.IndexOf(spl, StartAndEndResiduesInProteinLabel));
