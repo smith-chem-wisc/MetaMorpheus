@@ -11,6 +11,7 @@ using Proteomics.Fragmentation;
 using Proteomics.ProteolyticDigestion;
 using System;
 using System.Collections.Generic;
+using System.IO;
 using System.Linq;
 using TaskLayer;
 using UsefulProteomicsDatabases;
@@ -39,7 +40,8 @@ namespace Test
 
             var listOfSortedms2Scans = MetaMorpheusTask.GetMs2Scans(myMsDataFile, null, new CommonParameters()).OrderBy(b => b.PrecursorMass).ToArray();
 
-            Protease protease = new Protease("Custom Protease3", new List<Tuple<string, FragmentationTerminus>> { new Tuple<string, FragmentationTerminus>("K", FragmentationTerminus.C) }, new List<Tuple<string, FragmentationTerminus>>(), CleavageSpecificity.Full, null, null, null);
+            List<DigestionMotif> motifs = new List<DigestionMotif> { new DigestionMotif("K", null, 1, null) };
+            Protease protease = new Protease("Custom Protease3", CleavageSpecificity.Full, null, null, motifs);
             ProteaseDictionary.Dictionary.Add(protease.Name, protease);
 
             CommonParameters CommonParameters = new CommonParameters(
@@ -102,13 +104,14 @@ namespace Test
                 MassDiffAcceptorType = MassDiffAcceptorType.Exact,
                 SearchTarget = true,
             };
-            Protease protease = new Protease("singleN4", new List<Tuple<string, FragmentationTerminus>> { new Tuple<string, FragmentationTerminus>("K", FragmentationTerminus.C) }, new List<Tuple<string, FragmentationTerminus>>(), CleavageSpecificity.Full, null, null, null);
+            List<DigestionMotif> motifs = new List<DigestionMotif> { new DigestionMotif("K", null, 1, null) };
+            Protease protease = new Protease("singleN4", CleavageSpecificity.Full, null, null, motifs);
             ProteaseDictionary.Dictionary.Add(protease.Name, protease);
             CommonParameters CommonParameters = new CommonParameters(digestionParams: new DigestionParams(protease: protease.Name, minPeptideLength: 1), scoreCutoff: 1);
             CommonParameters withCompIons = new CommonParameters(digestionParams: new DigestionParams(protease: protease.Name, minPeptideLength: 1), scoreCutoff: 1, addCompIons: true);
 
             var indexEngine = new IndexingEngine(proteinList, variableModifications, fixedModifications,
-                 1, DecoyType.Reverse, CommonParameters, SearchParameters.MaxFragmentSize, false, new List<string>());
+                 1, DecoyType.Reverse, CommonParameters, SearchParameters.MaxFragmentSize, false, new List<FileInfo>(), new List<string>());
 
             var indexResults = (IndexingResults)indexEngine.Run();
 

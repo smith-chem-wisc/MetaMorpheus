@@ -43,20 +43,22 @@ namespace Test
             proteins.Add(new Protein("----E----**", "C2", isContaminant: true));
 
             // create the protease
-            IEnumerable<Tuple<string, FragmentationTerminus>> sequencesInducingCleavage = new List<Tuple<string, FragmentationTerminus>>
-            { new Tuple<string, FragmentationTerminus>("A", FragmentationTerminus.C),
-                new Tuple<string, FragmentationTerminus>("B", FragmentationTerminus.C),
-                new Tuple<string, FragmentationTerminus>("C", FragmentationTerminus.C),
-                new Tuple<string, FragmentationTerminus>("D", FragmentationTerminus.C),
-                new Tuple<string, FragmentationTerminus>("E", FragmentationTerminus.C),
-                new Tuple<string, FragmentationTerminus>("F", FragmentationTerminus.C),
-                new Tuple<string, FragmentationTerminus>("G", FragmentationTerminus.C),
-                new Tuple<string, FragmentationTerminus>("H", FragmentationTerminus.C),
-                new Tuple<string, FragmentationTerminus>("I", FragmentationTerminus.C),
-                new Tuple<string, FragmentationTerminus>("J", FragmentationTerminus.C),
-                new Tuple<string, FragmentationTerminus>("-", FragmentationTerminus.C) };
+            List<DigestionMotif> digestionMotifs = new List<DigestionMotif>
+            {
+                new DigestionMotif("A", null, 1, null),
+                new DigestionMotif("B", null, 1, null),
+                new DigestionMotif("C", null, 1, null),
+                new DigestionMotif("D", null, 1, null),
+                new DigestionMotif("E", null, 1, null),
+                new DigestionMotif("F", null, 1, null),
+                new DigestionMotif("G", null, 1, null),
+                new DigestionMotif("H", null, 1, null),
+                new DigestionMotif("I", null, 1, null),
+                new DigestionMotif("J", null, 1, null),
+                new DigestionMotif("-", null, 1, null),
+            };
 
-            var protease = new Protease("test", sequencesInducingCleavage, new List<Tuple<string, FragmentationTerminus>>(), CleavageSpecificity.Full, null, null, null);
+            var protease = new Protease("test", CleavageSpecificity.Full, null, null, digestionMotifs);
             ProteaseDictionary.Dictionary.Add(protease.Name, protease);
             DigestionParams digestionParams = new DigestionParams(protease: protease.Name, minPeptideLength: 1);
 
@@ -159,7 +161,7 @@ namespace Test
             variableModifications.Add(new Modification(_originalId: "resMod", _modificationType: "HaHa", _target: motif, _locationRestriction: "Anywhere.", _chemicalFormula: ChemicalFormula.ParseFormula("H")));
 
             var proteinList = new List<Protein> { new Protein("MNNNSKQQQ", "accession") };
-            var protease = new Protease("CustomProtease", new List<Tuple<string, FragmentationTerminus>> { new Tuple<string, FragmentationTerminus>("K", FragmentationTerminus.C) }, new List<Tuple<string, FragmentationTerminus>>(), CleavageSpecificity.Full, null, null, null);
+            var protease = new Protease("CustomProtease", CleavageSpecificity.Full, null, null, new List<DigestionMotif> { new DigestionMotif("K", null, 1, null) });
             ProteaseDictionary.Dictionary.Add(protease.Name, protease);
 
             Dictionary<Modification, ushort> modsDictionary = new Dictionary<Modification, ushort>
