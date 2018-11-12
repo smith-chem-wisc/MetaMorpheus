@@ -4,10 +4,10 @@ using OxyPlot.Axes;
 using OxyPlot.Series;
 using OxyPlot.Annotations;
 using System.ComponentModel;
-using MetaMorpheusGUI;
 using MassSpectrometry;
 using System.Collections.Generic;
 using Proteomics.Fragmentation;
+using EngineLayer;
 using Chemistry;
 
 namespace ViewModels
