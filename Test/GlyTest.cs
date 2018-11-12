@@ -69,6 +69,28 @@ namespace Test
         }
 
         [Test]
+        public static void GlyTest_Topdown()
+        {
+            Protein pep = new Protein("MAVMAPRTLVLLLSGALALTQTWAGSHSMRYFFTSVSRPGRGEPRFIAVGYVDDTQFVRFDSDAASQRMEPRAPWIEQEGPEYWDGETRKVKAHSQTHRVDLGTLRGYYNQSEAGSHTVQRMYGCDVGSDWRFLRGYHQYAYDGKDYIALKEDLRSWTAADMAAQTTKHKWEAAHVAEQLRAYLEGTCVEWLRRYLENGKETLQRTDAPKTHMTHHAVSDHEATLRCWALSFYPAEITLTWQRDGEDQTQDTELVETRPAGDGTFQKWAAVVVPSGQEQRYTCHVQHEGLPKPLTLRWEPSSQPTIPIVGIIAGLVLFGAVITGAVVAAVMWRRKSSDRKGGSYSQAASSDSAQGSDVSLTACKV", "accession");
+            DigestionParams digestionParams = new DigestionParams(protease: "top-down");
+            var aPeptideWithSetModifications = pep.Digest(digestionParams, new List<Modification>(), new List<Modification>()).First();
+
+            string[] motifs = new string[] { "Nxs", "Nxt" };
+            var sites = CrosslinkSpectralMatch.GetPossibleModSites(aPeptideWithSetModifications, motifs);
+            Glycan glycan = Glycan.Struct2Glycan("(N(N(H(H)(H(H)(H)))))", 0);
+            var fragmentIons = GlycoPeptides.GlyGetTheoreticalFragments(DissociationType.HCD, sites, aPeptideWithSetModifications, glycan).ToList();
+
+            CommonParameters commonParameters = new CommonParameters(deconvolutionMassTolerance: new PpmTolerance(20));
+            string filePath = Path.Combine(TestContext.CurrentContext.TestDirectory, @"XlTestData/3554.mgf");
+            MyFileManager myFileManager = new MyFileManager(true);
+            var msDataFile = myFileManager.LoadFile(filePath, 500, 0.01, true, true, commonParameters);
+            var listOfSortedms2Scans = MetaMorpheusTask.GetMs2Scans(msDataFile, filePath, commonParameters).ToArray();
+            //TO DO: The neutroloss is not annotated well.
+            var matchedFragmentIons = MetaMorpheusEngine.MatchFragmentIons(listOfSortedms2Scans[0], fragmentIons.Select(p => p.Item2).ToList().First(), commonParameters);
+
+            DrawPeptideSpectralMatch(listOfSortedms2Scans[0].TheScan, matchedFragmentIons, pep.BaseSequence);
+        }
+        [Test]
         public static void GlyTest_RunTask()
         {
             var task = Toml.ReadFile<XLSearchTask>(Path.Combine(TestContext.CurrentContext.TestDirectory, @"XlTestData/GlycoSearchTaskconfig.toml"), MetaMorpheusTask.tomlConfig);
@@ -123,7 +145,7 @@ namespace Test
             var spectrumMzs = msDataScan.MassSpectrum.XArray;
             var spectrumIntensities = msDataScan.MassSpectrum.YArray;
 
-            string subTitle = sequence;
+            string subTitle = "---";//sequence;
 
             PlotModel model = new PlotModel { Title = "Spectrum Annotation of Scan #" + msDataScan.OneBasedScanNumber, DefaultFontSize = 15, Subtitle = subTitle };
             model.Axes.Add(new LinearAxis { Position = AxisPosition.Bottom, Title = "m/z", Minimum = 0, Maximum = spectrumMzs.Max() * 1.2, AbsoluteMinimum = 0, AbsoluteMaximum = spectrumMzs.Max() * 5 });
@@ -177,7 +199,7 @@ namespace Test
             // Axes are created automatically if they are not defined
 
             // Set the Model property, the INotifyPropertyChanged event will make the WPF Plot control update its content
-            using (var stream = File.Create(Path.Combine(TestContext.CurrentContext.TestDirectory, sequence + ".pdf")))
+            using (var stream = File.Create(Path.Combine(TestContext.CurrentContext.TestDirectory, "annotation.pdf")))
             {
                 PdfExporter pdf = new PdfExporter { Width = 500, Height = 210 };
                 pdf.Export(model, stream);
