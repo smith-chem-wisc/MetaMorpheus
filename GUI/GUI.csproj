@@ -65,8 +65,8 @@
     <Reference Include="MassSpectrometry, Version=1.0.0.0, Culture=neutral, processorArchitecture=AMD64">
       <HintPath>..\packages\mzLib.1.0.382\lib\net471\MassSpectrometry.dll</HintPath>
     </Reference>
-    <Reference Include="MathNet.Numerics, Version=4.7.0.0, Culture=neutral, processorArchitecture=MSIL">
-      <HintPath>..\packages\MathNet.Numerics.4.7.0\lib\net461\MathNet.Numerics.dll</HintPath>
+    <Reference Include="MathNet.Numerics, Version=4.5.1.0, Culture=neutral, processorArchitecture=MSIL">
+      <HintPath>..\packages\MathNet.Numerics.4.5.1\lib\net461\MathNet.Numerics.dll</HintPath>
     </Reference>
     <Reference Include="Mgf, Version=1.0.0.0, Culture=neutral, processorArchitecture=AMD64">
       <HintPath>..\packages\mzLib.1.0.382\lib\net471\Mgf.dll</HintPath>
@@ -80,11 +80,11 @@
     <Reference Include="MzML, Version=1.0.0.0, Culture=neutral, processorArchitecture=AMD64">
       <HintPath>..\packages\mzLib.1.0.382\lib\net471\MzML.dll</HintPath>
     </Reference>
-    <Reference Include="Nett, Version=0.10.0.0, Culture=neutral, PublicKeyToken=605dcfe7a1d3365b, processorArchitecture=MSIL">
-      <HintPath>..\packages\Nett.0.10.0\lib\Net40\Nett.dll</HintPath>
+    <Reference Include="Nett, Version=0.8.0.0, Culture=neutral, processorArchitecture=MSIL">
+      <HintPath>..\packages\Nett.0.8.0\lib\Net40\Nett.dll</HintPath>
     </Reference>
     <Reference Include="Newtonsoft.Json, Version=11.0.0.0, Culture=neutral, PublicKeyToken=30ad4fe6b2a6aeed, processorArchitecture=MSIL">
-      <HintPath>..\packages\Newtonsoft.Json.11.0.2\lib\net45\Newtonsoft.Json.dll</HintPath>
+      <HintPath>..\packages\Newtonsoft.Json.11.0.1\lib\net45\Newtonsoft.Json.dll</HintPath>
     </Reference>
     <Reference Include="OxyPlot, Version=1.0.0.0, Culture=neutral, PublicKeyToken=638079a8f0bd61e9, processorArchitecture=MSIL">
       <HintPath>..\packages\OxyPlot.Core.1.0.0\lib\net45\OxyPlot.dll</HintPath>
@@ -98,32 +98,32 @@
     <Reference Include="Proteomics, Version=1.0.0.0, Culture=neutral, processorArchitecture=AMD64">
       <HintPath>..\packages\mzLib.1.0.382\lib\net471\Proteomics.dll</HintPath>
     </Reference>
-    <Reference Include="SharpLearning.Common.Interfaces, Version=0.28.4.0, Culture=neutral, processorArchitecture=MSIL">
-      <HintPath>..\packages\SharpLearning.Common.Interfaces.0.28.4\lib\net461\SharpLearning.Common.Interfaces.dll</HintPath>
+    <Reference Include="SharpLearning.Common.Interfaces, Version=0.26.9.0, Culture=neutral, processorArchitecture=MSIL">
+      <HintPath>..\packages\SharpLearning.Common.Interfaces.0.26.9\lib\net461\SharpLearning.Common.Interfaces.dll</HintPath>
     </Reference>
-    <Reference Include="SharpLearning.Containers, Version=0.28.4.0, Culture=neutral, processorArchitecture=MSIL">
-      <HintPath>..\packages\SharpLearning.Containers.0.28.4\lib\net461\SharpLearning.Containers.dll</HintPath>
+    <Reference Include="SharpLearning.Containers, Version=0.26.9.0, Culture=neutral, processorArchitecture=MSIL">
+      <HintPath>..\packages\SharpLearning.Containers.0.26.9\lib\net461\SharpLearning.Containers.dll</HintPath>
     </Reference>
-    <Reference Include="SharpLearning.CrossValidation, Version=0.28.4.0, Culture=neutral, processorArchitecture=MSIL">
-      <HintPath>..\packages\SharpLearning.CrossValidation.0.28.4\lib\net461\SharpLearning.CrossValidation.dll</HintPath>
+    <Reference Include="SharpLearning.CrossValidation, Version=0.26.9.0, Culture=neutral, processorArchitecture=MSIL">
+      <HintPath>..\packages\SharpLearning.CrossValidation.0.26.9\lib\net461\SharpLearning.CrossValidation.dll</HintPath>
     </Reference>
-    <Reference Include="SharpLearning.DecisionTrees, Version=0.28.4.0, Culture=neutral, processorArchitecture=MSIL">
-      <HintPath>..\packages\SharpLearning.DecisionTrees.0.28.4\lib\net461\SharpLearning.DecisionTrees.dll</HintPath>
+    <Reference Include="SharpLearning.DecisionTrees, Version=0.26.9.0, Culture=neutral, processorArchitecture=MSIL">
+      <HintPath>..\packages\SharpLearning.DecisionTrees.0.26.9\lib\net461\SharpLearning.DecisionTrees.dll</HintPath>
     </Reference>
-    <Reference Include="SharpLearning.GradientBoost, Version=0.28.4.0, Culture=neutral, processorArchitecture=MSIL">
-      <HintPath>..\packages\SharpLearning.GradientBoost.0.28.4\lib\net461\SharpLearning.GradientBoost.dll</HintPath>
+    <Reference Include="SharpLearning.GradientBoost, Version=0.26.9.0, Culture=neutral, processorArchitecture=MSIL">
+      <HintPath>..\packages\SharpLearning.GradientBoost.0.26.9\lib\net461\SharpLearning.GradientBoost.dll</HintPath>
     </Reference>
-    <Reference Include="SharpLearning.InputOutput, Version=0.28.4.0, Culture=neutral, processorArchitecture=MSIL">
-      <HintPath>..\packages\SharpLearning.InputOutput.0.28.4\lib\net461\SharpLearning.InputOutput.dll</HintPath>
+    <Reference Include="SharpLearning.InputOutput, Version=0.26.9.0, Culture=neutral, processorArchitecture=MSIL">
+      <HintPath>..\packages\SharpLearning.InputOutput.0.26.9\lib\net461\SharpLearning.InputOutput.dll</HintPath>
     </Reference>
-    <Reference Include="SharpLearning.Metrics, Version=0.28.4.0, Culture=neutral, processorArchitecture=MSIL">
-      <HintPath>..\packages\SharpLearning.Metrics.0.28.4\lib\net461\SharpLearning.Metrics.dll</HintPath>
+    <Reference Include="SharpLearning.Metrics, Version=0.26.9.0, Culture=neutral, processorArchitecture=MSIL">
+      <HintPath>..\packages\SharpLearning.Metrics.0.26.9\lib\net461\SharpLearning.Metrics.dll</HintPath>
     </Reference>
-    <Reference Include="SharpLearning.Optimization, Version=0.28.4.0, Culture=neutral, processorArchitecture=MSIL">
-      <HintPath>..\packages\SharpLearning.Optimization.0.28.4\lib\net461\SharpLearning.Optimization.dll</HintPath>
+    <Reference Include="SharpLearning.Optimization, Version=0.26.9.0, Culture=neutral, processorArchitecture=MSIL">
+      <HintPath>..\packages\SharpLearning.Optimization.0.26.9\lib\net461\SharpLearning.Optimization.dll</HintPath>
     </Reference>
-    <Reference Include="SharpLearning.RandomForest, Version=0.28.4.0, Culture=neutral, processorArchitecture=MSIL">
-      <HintPath>..\packages\SharpLearning.RandomForest.0.28.4\lib\net461\SharpLearning.RandomForest.dll</HintPath>
+    <Reference Include="SharpLearning.RandomForest, Version=0.26.9.0, Culture=neutral, processorArchitecture=MSIL">
+      <HintPath>..\packages\SharpLearning.RandomForest.0.26.9\lib\net461\SharpLearning.RandomForest.dll</HintPath>
     </Reference>
     <Reference Include="Spectra, Version=1.0.0.0, Culture=neutral, processorArchitecture=AMD64">
       <HintPath>..\packages\mzLib.1.0.382\lib\net471\Spectra.dll</HintPath>
@@ -134,12 +134,11 @@
     <Reference Include="System.Drawing" />
     <Reference Include="System.Numerics" />
     <Reference Include="System.Runtime.Serialization" />
-    <Reference Include="System.ValueTuple, Version=4.0.3.0, Culture=neutral, PublicKeyToken=cc7b13ffcd2ddd51, processorArchitecture=MSIL">
-      <HintPath>..\packages\System.ValueTuple.4.5.0\lib\net47\System.ValueTuple.dll</HintPath>
-    </Reference>
+    <Reference Include="System.Windows.Forms" />
     <Reference Include="System.Xaml">
       <RequiredTargetFramework>4.0</RequiredTargetFramework>
     </Reference>
+    <Reference Include="System.Xml" />
     <Reference Include="Thermo, Version=1.0.382.0, Culture=neutral, processorArchitecture=AMD64">
       <HintPath>..\packages\mzLib.1.0.382\lib\net471\Thermo.dll</HintPath>
     </Reference>
@@ -155,13 +154,17 @@
       <Generator>MSBuild:Compile</Generator>
       <SubType>Designer</SubType>
     </ApplicationDefinition>
+    <Compile Include="CustomModButton.xaml.cs">
+      <DependentUpon>CustomModButton.xaml</DependentUpon>
+    </Compile>
+    <Compile Include="CustomMsgBox.xaml.cs">
+      <DependentUpon>CustomMsgBox.xaml</DependentUpon>
+    </Compile>
     <Compile Include="MetaDraw.xaml.cs">
       <DependentUpon>MetaDraw.xaml</DependentUpon>
     </Compile>
     <Compile Include="MetaDraw\BaseSequenceAnnotation.cs" />
-    <Compile Include="MetaDraw\MetaDrawPsm.cs" />
     <Compile Include="MetaDraw\PdfWriter.cs" />
-    <Compile Include="MetaDraw\TsvResultReader.cs" />
     <Compile Include="Util\BooleanInverter.cs" />
     <Compile Include="CalibrateTaskWindow.xaml.cs">
       <DependentUpon>CalibrateTaskWindow.xaml</DependentUpon>
@@ -205,11 +208,20 @@
       <DependentUpon>SearchTaskWindow.xaml</DependentUpon>
     </Compile>
     <Compile Include="ForDisplayingInDataGrids\ProteinDbForDataGrid.cs" />
+    <Compile Include="Util\SearchModifications.cs" />
     <Compile Include="Util\TheTemplateSelector.cs" />
     <Compile Include="XLSearchTaskWindow.xaml.cs">
       <DependentUpon>XLSearchTaskWindow.xaml</DependentUpon>
     </Compile>
     <Page Include="CalibrateTaskWindow.xaml">
+      <SubType>Designer</SubType>
+      <Generator>MSBuild:Compile</Generator>
+    </Page>
+    <Page Include="CustomModButton.xaml">
+      <Generator>MSBuild:Compile</Generator>
+      <SubType>Designer</SubType>
+    </Page>
+    <Page Include="CustomMsgBox.xaml">
       <SubType>Designer</SubType>
       <Generator>MSBuild:Compile</Generator>
     </Page>
@@ -316,6 +328,16 @@
     <Resource Include="Icons\update_20.bmp" />
     <Resource Include="Icons\youtube_20.bmp" />
   </ItemGroup>
+  <ItemGroup>
+    <Resource Include="Icons\Twitter_Logo_Blue.bmp">
+      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+    </Resource>
+  </ItemGroup>
+  <ItemGroup>
+    <Resource Include="Icons\Slack_Mark_Web.bmp">
+      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+    </Resource>
+  </ItemGroup>
   <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />
   <!-- To modify your build process, add your task inside one of the targets below and uncomment it. 
        Other similar extension points exist, see Microsoft.Common.targets.
@@ -328,13 +350,13 @@
     <AutoGenerateBindingRedirects>true</AutoGenerateBindingRedirects>
     <GenerateBindingRedirectsOutputType>true</GenerateBindingRedirectsOutputType>
   </PropertyGroup>
-  <Import Project="..\packages\MathNet.Numerics.MKL.Win.2.3.0\build\MathNet.Numerics.MKL.Win.targets" Condition="Exists('..\packages\MathNet.Numerics.MKL.Win.2.3.0\build\MathNet.Numerics.MKL.Win.targets')" />
   <Target Name="EnsureNuGetPackageBuildImports" BeforeTargets="PrepareForBuild">
     <PropertyGroup>
       <ErrorText>This project references NuGet package(s) that are missing on this computer. Use NuGet Package Restore to download them.  For more information, see http://go.microsoft.com/fwlink/?LinkID=322105. The missing file is {0}.</ErrorText>
     </PropertyGroup>
-    <Error Condition="!Exists('..\packages\MathNet.Numerics.MKL.Win.2.3.0\build\MathNet.Numerics.MKL.Win.targets')" Text="$([System.String]::Format('$(ErrorText)', '..\packages\MathNet.Numerics.MKL.Win.2.3.0\build\MathNet.Numerics.MKL.Win.targets'))" />
+    <Error Condition="!Exists('..\packages\MathNet.Numerics.MKL.Win.2.2.0\build\MathNet.Numerics.MKL.Win.targets')" Text="$([System.String]::Format('$(ErrorText)', '..\packages\MathNet.Numerics.MKL.Win.2.2.0\build\MathNet.Numerics.MKL.Win.targets'))" />
     <Error Condition="!Exists('..\packages\mzLib.1.0.382\build\net471\mzLib.targets')" Text="$([System.String]::Format('$(ErrorText)', '..\packages\mzLib.1.0.382\build\net471\mzLib.targets'))" />
   </Target>
+  <Import Project="..\packages\MathNet.Numerics.MKL.Win.2.2.0\build\MathNet.Numerics.MKL.Win.targets" Condition="Exists('..\packages\MathNet.Numerics.MKL.Win.2.2.0\build\MathNet.Numerics.MKL.Win.targets')" />
   <Import Project="..\packages\mzLib.1.0.382\build\net471\mzLib.targets" Condition="Exists('..\packages\mzLib.1.0.382\build\net471\mzLib.targets')" />
 </Project>

@@ -109,7 +109,7 @@ namespace Test
             {
                 PrecursorMassTolerance = new PpmTolerance(10),
                 ProductMassTolerance = new PpmTolerance(30),
-                Protease = new Protease("Arg-C", new List<Tuple<string, FragmentationTerminus>> { new Tuple<string, FragmentationTerminus>("K", FragmentationTerminus.C) }, new List<Tuple<string, FragmentationTerminus>>(), CleavageSpecificity.Full, null, null, null),
+                Protease = new Protease("Arg-C", CleavageSpecificity.Full, null, null, new List<DigestionMotif> { new DigestionMotif("K", null, 1, "") }),
                 MinPeptideLength = 1,
                 MaxPeptideLength = 50,
                 MaxMissedCleavages = 2,

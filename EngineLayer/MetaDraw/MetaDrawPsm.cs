@@ -1,14 +1,11 @@
-using EngineLayer;
-using MassSpectrometry;
 using Proteomics.Fragmentation;
-using Proteomics.ProteolyticDigestion;
 using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Text.RegularExpressions;
 using Chemistry;
 
-namespace MetaMorpheusGUI
+namespace EngineLayer
 {
     public class MetaDrawPsm
     {
@@ -35,7 +32,6 @@ namespace MetaMorpheusGUI
         public string ProteinAccession { get; }
         public string ProteinName { get; }
         public string GeneName { get; }
-        public string SequenceVariations { get; }
         public string OrganismName { get; }
         public string PeptideDesicription { get; }
         public string StartAndEndResiduesInProtein { get; }
@@ -70,7 +66,6 @@ namespace MetaMorpheusGUI
             ProteinAccession = spl[parsedHeader[TsvResultReader.ProteinAccessionLabel]].Trim();
             ProteinName = spl[parsedHeader[TsvResultReader.ProteinNameLabel]].Trim();
             GeneName = spl[parsedHeader[TsvResultReader.GeneNameLabel]].Trim();
-            SequenceVariations = spl[parsedHeader[TsvResultReader.SequenceVariationsLabel]].Trim();
             OrganismName = spl[parsedHeader[TsvResultReader.OrganismNameLabel]].Trim();
             PeptideDesicription = spl[parsedHeader[TsvResultReader.PeptideDesicriptionLabel]].Trim();
             StartAndEndResiduesInProtein = spl[parsedHeader[TsvResultReader.StartAndEndResiduesInProteinLabel]].Trim();

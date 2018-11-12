@@ -99,8 +99,8 @@ namespace TaskLayer
             _pepxml.summary_xml = items[0].FullFilePath + ".pep.XML";
 
             string proteaseC = ""; string proteaseNC = "";
-            foreach (var x in CommonParameters.DigestionParams.Protease.SequencesInducingCleavage) { proteaseC += x; }
-            foreach (var x in CommonParameters.DigestionParams.Protease.SequencesPreventingCleavage) { proteaseNC += x; }
+            foreach (var x in CommonParameters.DigestionParams.Protease.DigestionMotifs.Select(m => m.InducingCleavage)) { proteaseC += x; }
+            foreach (var x in CommonParameters.DigestionParams.Protease.DigestionMotifs.Select(m => m.PreventingCleavage)) { proteaseNC += x; }
 
             Crosslinker crosslinker = new Crosslinker().SelectCrosslinker(XlSearchParameters.CrosslinkerType);
             if (XlSearchParameters.CrosslinkerType == CrosslinkerType.UserDefined)

@@ -22,7 +22,7 @@ namespace EngineLayer
             bool addCompIons = false, int totalPartitions = 1, double scoreCutoff = 5, int topNpeaks = 200, double minRatio = 0.01, bool trimMs1Peaks = false,
             bool trimMsMsPeaks = true, bool useDeltaScore = false, bool calculateEValue = false, Tolerance productMassTolerance = null, Tolerance precursorMassTolerance = null, Tolerance deconvolutionMassTolerance = null,
             int maxThreadsToUsePerFile = -1, DigestionParams digestionParams = null, IEnumerable<(string, string)> listOfModsVariable = null, IEnumerable<(string, string)> listOfModsFixed = null, double qValueOutputFilter = 1.0,
-            bool assumeOrphanPeaksAreZ1Fragments = true)
+            bool assumeOrphanPeaksAreZ1Fragments = true, int maxHeterozygousVariants = 4, int minVariantDepth = 1)
         {
             TaskDescriptor = taskDescriptor;
             DoPrecursorDeconvolution = doPrecursorDeconvolution;
@@ -49,8 +49,11 @@ namespace EngineLayer
             ListOfModsFixed = listOfModsFixed ?? new List<(string, string)> { ("Common Fixed", "Carbamidomethyl on C"), ("Common Fixed", "Carbamidomethyl on U") };
             DissociationType = dissociationType;
             QValueOutputFilter = qValueOutputFilter;
-            
+
             AssumeOrphanPeaksAreZ1Fragments = assumeOrphanPeaksAreZ1Fragments;
+
+            MaxHeterozygousVariants = maxHeterozygousVariants;
+            MinVariantDepth = minVariantDepth;
         }
 
         // Notes:
@@ -84,6 +87,8 @@ namespace EngineLayer
         public double QValueOutputFilter { get; private set; }
         public DissociationType DissociationType { get; private set; }
         public bool AssumeOrphanPeaksAreZ1Fragments { get; private set; }
+        public int MaxHeterozygousVariants { get; private set; }
+        public int MinVariantDepth { get; private set; }
 
         public CommonParameters Clone()
         {
@@ -95,8 +100,16 @@ namespace EngineLayer
             return c;
         }
 
-        public CommonParameters CloneWithNewTerminus(FragmentationTerminus terminus) //for use with speedy semi-specific searches to get both termini
+        public CommonParameters CloneWithNewTerminus(FragmentationTerminus? terminus = null, bool? addCompIons = null) //for use with speedy semi-specific searches to get both termini
         {
+            if (terminus == null)
+            {
+                terminus = DigestionParams.FragmentationTerminus;
+            }
+            if (addCompIons == null)
+            {
+                addCompIons = AddCompIons;
+            }
             return new CommonParameters(
                                 TaskDescriptor,
                                 DissociationType,
@@ -105,7 +118,7 @@ namespace EngineLayer
                                 DeconvolutionIntensityRatio,
                                 DeconvolutionMaxAssumedChargeState,
                                 ReportAllAmbiguity,
-                                AddCompIons,
+                                addCompIons.Value,//possibly changed
                                 TotalPartitions,
                                 ScoreCutoff,
                                 TopNpeaks,
@@ -127,7 +140,7 @@ namespace EngineLayer
                                     DigestionParams.InitiatorMethionineBehavior,
                                     DigestionParams.MaxModsForPeptide,
                                     DigestionParams.SearchModeType,
-                                    terminus //it's all for this
+                                    terminus.Value //possibly changed
                                 ),
                                 ListOfModsVariable,
                                 ListOfModsFixed,

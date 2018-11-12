@@ -1,4 +1,5 @@
 ﻿using System.ComponentModel;
+using System.Linq;
 using System.Windows.Media;
 
 namespace MetaMorpheusGUI
@@ -7,12 +8,31 @@ namespace MetaMorpheusGUI
     {
         private bool _isChecked;
 
-        public ModForTreeView(string toolTip, bool use, string displayName, bool bad, ModTypeForTreeView parent)
+        public ModForTreeView(string toolTip, bool use, string modName, bool bad, ModTypeForTreeView parent)
         {
             ToolTipStuff = toolTip;
             Parent = parent;
             Use = use;
-            DisplayName = displayName;
+            ModName = modName;
+
+            DisplayName = modName;
+
+            if (toolTip.ToLower().Contains("terminal"))
+            {
+                var split = toolTip.Split('\n');
+
+                string location = split.First(p => p.StartsWith("PP   "));
+                location = location.Substring(5, location.Length - 5).Trim();
+
+                switch (location)
+                {
+                    case "N-terminal.": DisplayName += " (Prot N-Term)"; break;
+                    case "C-terminal.": DisplayName += " (Prot C-Term)"; break;
+                    case "Peptide N-terminal.": DisplayName += " (Pep N-Term)"; break;
+                    case "Peptide C-terminal.": DisplayName += " (Pep C-Term)"; break;
+                }
+            }
+
             if (bad)
                 Background = new SolidColorBrush(Colors.Red);
             else
@@ -36,6 +56,7 @@ namespace MetaMorpheusGUI
             }
         }
 
+        public string ModName { get; }
         public string DisplayName { get; }
         public Brush Background { get; }
 
