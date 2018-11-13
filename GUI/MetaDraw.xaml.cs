@@ -105,6 +105,7 @@ namespace MetaMorpheusGUI
                     spectraFileNameLabel.Text = filePath;
                     break;
                 case ".psmtsv":
+                case ".tsv":
                     tsvResultsFilePath = filePath;
                     psmFileNameLabel.Text = filePath;
                     break;
@@ -124,7 +125,7 @@ namespace MetaMorpheusGUI
                 List<string> warnings; // TODO: print warnings
                 foreach (var psm in TsvResultReader.ReadTsv(filename, out warnings))
                 {
-                    if (psm.Filename == fileNameWithExtension || psm.Filename == fileNameWithoutExtension)
+                    if (psm.Filename == fileNameWithExtension || psm.Filename == fileNameWithoutExtension || psm.Filename.Contains(fileNameWithoutExtension))
                     {
                         Dispatcher.BeginInvoke(new Action(() =>
                         {
@@ -155,7 +156,7 @@ namespace MetaMorpheusGUI
             mainViewModel.DrawPeptideSpectralMatch(msDataScanToDraw, psmToDraw);
 
             // draw annotated base sequence
-            DrawAnnotatedBaseSequence(psmToDraw);
+            //DrawAnnotatedBaseSequence(psmToDraw);
         }
 
         /// <summary>
