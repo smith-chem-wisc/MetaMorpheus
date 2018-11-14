@@ -589,7 +589,7 @@ namespace TaskLayer
         public void GenerateIndexes(IndexingEngine indexEngine, List<DbForTask> dbFilenameList, ref PeptideWithSetModifications[] peptideIndex, ref int[][] fragmentIndex, ref int[][] precursorIndex, List<Protein> allKnownProteins, List<Modification> allKnownModifications, string taskId)
         {
             string pathToFolderWithIndices = GetExistingFolderWithIndices(indexEngine, dbFilenameList);
-            if (pathToFolderWithIndices == null)
+            //if (pathToFolderWithIndices == null)
             {
                 var output_folderForIndices = GenerateOutputFolderForIndices(dbFilenameList);
                 Status("Writing params...", new List<string> { taskId });
@@ -621,56 +621,56 @@ namespace TaskLayer
                     FinishedWritingFile(precursorIndexFile, new List<string> { taskId });
                 }
             }
-            else
-            {
-                Status("Reading peptide index...", new List<string> { taskId });
-                var messageTypes = GetSubclassesAndItself(typeof(PeptideWithSetModifications[]));
-                var ser = new NetSerializer.Serializer(messageTypes);
-                using (var file = File.OpenRead(Path.Combine(pathToFolderWithIndices, "peptideIndex.ind")))
-                {
-                    peptideIndex = (PeptideWithSetModifications[])ser.Deserialize(file);
-                }
+            //else
+            //{
+            //    Status("Reading peptide index...", new List<string> { taskId });
+            //    var messageTypes = GetSubclassesAndItself(typeof(PeptideWithSetModifications[]));
+            //    var ser = new NetSerializer.Serializer(messageTypes);
+            //    using (var file = File.OpenRead(Path.Combine(pathToFolderWithIndices, "peptideIndex.ind")))
+            //    {
+            //        peptideIndex = (PeptideWithSetModifications[])ser.Deserialize(file);
+            //    }
 
-                // populate dictionaries of known proteins for deserialization
-                Dictionary<string, Protein> proteinDictionary = new Dictionary<string, Protein>();
+            //    // populate dictionaries of known proteins for deserialization
+            //    Dictionary<string, Protein> proteinDictionary = new Dictionary<string, Protein>();
 
-                foreach (Protein protein in allKnownProteins)
-                {
-                    if (!proteinDictionary.ContainsKey(protein.Accession))
-                    {
-                        proteinDictionary.Add(protein.Accession, protein);
-                    }
-                    else if (proteinDictionary[protein.Accession].BaseSequence != protein.BaseSequence)
-                    {
-                        throw new MetaMorpheusException("The protein database contained multiple proteins with accession" + protein.Accession + "! This is not allowed for index-based searches (modern, non-specific, crosslink searches)");
-                    }
-                }
+            //    foreach (Protein protein in allKnownProteins)
+            //    {
+            //        if (!proteinDictionary.ContainsKey(protein.Accession))
+            //        {
+            //            proteinDictionary.Add(protein.Accession, protein);
+            //        }
+            //        else if (proteinDictionary[protein.Accession].BaseSequence != protein.BaseSequence)
+            //        {
+            //            throw new MetaMorpheusException("The protein database contained multiple proteins with accession" + protein.Accession + "! This is not allowed for index-based searches (modern, non-specific, crosslink searches)");
+            //        }
+            //    }
 
-                // get non-serialized information for the peptides (proteins, mod info)
-                foreach (var peptide in peptideIndex)
-                {
-                    peptide.SetNonSerializedPeptideInfo(GlobalVariables.AllModsKnownDictionary, proteinDictionary);
-                }
+            //    // get non-serialized information for the peptides (proteins, mod info)
+            //    foreach (var peptide in peptideIndex)
+            //    {
+            //        peptide.SetNonSerializedPeptideInfo(GlobalVariables.AllModsKnownDictionary, proteinDictionary);
+            //    }
 
-                Status("Reading fragment index...", new List<string> { taskId });
-                messageTypes = GetSubclassesAndItself(typeof(int[][]));
-                ser = new NetSerializer.Serializer(messageTypes);
-                using (var file = File.OpenRead(Path.Combine(pathToFolderWithIndices, "fragmentIndex.ind")))
-                {
-                    fragmentIndex = (int[][])ser.Deserialize(file);
-                }
+            //    Status("Reading fragment index...", new List<string> { taskId });
+            //    messageTypes = GetSubclassesAndItself(typeof(int[][]));
+            //    ser = new NetSerializer.Serializer(messageTypes);
+            //    using (var file = File.OpenRead(Path.Combine(pathToFolderWithIndices, "fragmentIndex.ind")))
+            //    {
+            //        fragmentIndex = (int[][])ser.Deserialize(file);
+            //    }
 
-                if (indexEngine.GeneratePrecursorIndex)
-                {
-                    Status("Reading precursor index...", new List<string> { taskId });
-                    messageTypes = GetSubclassesAndItself(typeof(int[][]));
-                    ser = new NetSerializer.Serializer(messageTypes);
-                    using (var file = File.OpenRead(Path.Combine(pathToFolderWithIndices, "precursorIndex.ind")))
-                    {
-                        precursorIndex = (int[][])ser.Deserialize(file);
-                    }
-                }
-            }
+            //    if (indexEngine.GeneratePrecursorIndex)
+            //    {
+            //        Status("Reading precursor index...", new List<string> { taskId });
+            //        messageTypes = GetSubclassesAndItself(typeof(int[][]));
+            //        ser = new NetSerializer.Serializer(messageTypes);
+            //        using (var file = File.OpenRead(Path.Combine(pathToFolderWithIndices, "precursorIndex.ind")))
+            //        {
+            //            precursorIndex = (int[][])ser.Deserialize(file);
+            //        }
+            //    }
+            //}
         }
     }
 }
