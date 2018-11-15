@@ -156,7 +156,12 @@ namespace MetaMorpheusGUI
             mainViewModel.DrawPeptideSpectralMatch(msDataScanToDraw, psmToDraw);
 
             // draw annotated base sequence
-            //DrawAnnotatedBaseSequence(psmToDraw);
+            //TO DO: Annotate crosslinked peptide sequence           
+            if (psmToDraw.CrossType == null)  // if the psm is single peptide (not crosslinked).
+            {
+                DrawAnnotatedBaseSequence(psmToDraw);
+            }
+            
         }
 
         /// <summary>
