@@ -168,10 +168,11 @@ namespace EngineLayer.CrosslinkSearch
             sb.Append("Base sequence" + '\t');
             sb.Append("Full sequence" + '\t');
             sb.Append("Peptide Monoisotopic mass" + '\t');
-            sb.Append("Score" + '\t');
+            sb.Append("Score" + '\t');         
             sb.Append("Rank" + '\t');
             sb.Append("Target/Decoy" + '\t');
             sb.Append("QValue" + '\t');
+            sb.Append("TotalScore" + '\t');
             sb.Append("Glycan ID" + '\t');
             sb.Append("Glycan Mass" + '\t');
             sb.Append("GlyStruct(H,N,A,G,F)" + '\t');
@@ -273,6 +274,7 @@ namespace EngineLayer.CrosslinkSearch
 
             if (Glycan != null)
             {
+                sb.Append(XLTotalScore + "\t");
                 sb.Append(string.Join("|", Glycan.Select(p => p.GlyId.ToString()).ToArray())); sb.Append("\t");
                 sb.Append(Glycan.First().Mass); sb.Append("\t");
                 sb.Append(string.Join("|", Glycan.First().Kind.Select(p => p.ToString()).ToArray())); sb.Append("\t");

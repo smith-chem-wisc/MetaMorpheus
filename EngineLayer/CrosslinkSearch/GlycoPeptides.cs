@@ -32,7 +32,7 @@ namespace EngineLayer.CrosslinkSearch
         public static Modification GlycanToModification(Glycan glycan)
         {          
             Dictionary<DissociationType, List<double>> neutralLosses = new Dictionary<DissociationType, List<double>>();
-            List<double> lossMasses = glycan.Ions.Select(p => glycan.Mass - p.IonMass).OrderBy(p => p).ToList();
+            List<double> lossMasses = glycan.Ions.Where(p => p.IonMass <= 1000).Select(p => glycan.Mass - p.IonMass).OrderBy(p => p).ToList();
             lossMasses.Add(glycan.Mass - 83.038194);
             lossMasses.Add(glycan.Mass);        
             neutralLosses.Add(DissociationType.HCD, lossMasses);

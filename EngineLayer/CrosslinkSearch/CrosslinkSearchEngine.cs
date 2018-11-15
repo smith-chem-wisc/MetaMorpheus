@@ -8,6 +8,7 @@ using System.Collections.Concurrent;
 using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
+using MassSpectrometry;
 
 namespace EngineLayer.CrosslinkSearch
 {
@@ -546,7 +547,7 @@ namespace EngineLayer.CrosslinkSearch
                     possibleMatches.Add(psmCrossSingle);
                 }
                 //TO DO: add if the scan contains diagnostic ions
-                else if ((theScan.PrecursorMass - theScanBestPeptide[ind].BestPeptide.MonoisotopicMass >= 200) && ScanOxoniumIonFilter(theScan))
+                else if ((theScan.PrecursorMass - theScanBestPeptide[ind].BestPeptide.MonoisotopicMass >= 200) && ScanOxoniumIonFilter(theScan, commonParameters.DissociationType))
                 {
                     //Using glycanBoxes
                     var possibleGlycanMass = theScan.PrecursorMass - theScanBestPeptide[ind].BestPeptide.MonoisotopicMass;
@@ -569,6 +570,7 @@ namespace EngineLayer.CrosslinkSearch
                             {
                                 var fragmentsForEachGlycanLocalizedPossibility = GlycoPeptides.GlyGetTheoreticalFragments(commonParameters.DissociationType, modPos, theScanBestPeptide[ind].BestPeptide, glycan).ToList();
                                 double bestLocalizedScore = 0;
+                                //double xLTotalScore = 0;
                                 int bestSite = 0;
                                 List<MatchedFragmentIon> bestMatchedIons = new List<MatchedFragmentIon>();
                                 foreach (int possibleSite in modPos)
@@ -577,22 +579,23 @@ namespace EngineLayer.CrosslinkSearch
                                     {
                                         var matchedIons = MatchFragmentIons(theScan, setOfFragments.Item2, commonParameters);
                                         double score = CalculatePeptideScore(theScan.TheScan, matchedIons, 0);
-
+                                        
                                         if (score > bestLocalizedScore)
                                         {
                                             bestLocalizedScore = score;
                                             bestSite = possibleSite;
                                             bestMatchedIons = matchedIons;
+                                            //xLTotalScore = CalculatePeptideScore(theScan.TheScan, matchedIons, 0);
                                         }
                                     }
                                 }
 
                                 var psmCross = new CrosslinkSpectralMatch(theScanBestPeptide[ind].BestPeptide, theScanBestPeptide[ind].BestNotch, bestLocalizedScore, scanIndex, theScan, commonParameters.DigestionParams, bestMatchedIons);
-                                //psmCross.CrossType = PsmCrossType.Glyco;
                                 psmCross.Glycan = new List<Glycan> { glycan };
+                                //psmCross.XLTotalScore = xLTotalScore;
                                 psmCross.XlRank = new List<int> { ind };
                                 psmCross.LinkPositions = new List<int> { bestSite }; //TO DO: ambiguity modification site
-                                possibleMatches.Add(psmCross);
+                                possibleMatches.Add(psmCross);                               
 
                             }
                         }
@@ -624,8 +627,12 @@ namespace EngineLayer.CrosslinkSearch
             return bestPsmCross;
         }
 
-        public static bool ScanOxoniumIonFilter(Ms2ScanWithSpecificMass theScan)
+        public static bool ScanOxoniumIonFilter(Ms2ScanWithSpecificMass theScan, DissociationType dissociationType)
         {
+            if (dissociationType == DissociationType.ETD)
+            {
+                return true;
+            }
             var massDiffAcceptor = new SinglePpmAroundZeroSearchMode(10);
 
             int intensity204 = 101;
@@ -658,6 +665,27 @@ namespace EngineLayer.CrosslinkSearch
             }
 
             return false;
+        }
+
+        public static double CalculateGlycoPeptideScore(MsDataScan thisScan, List<MatchedFragmentIon> matchedFragmentIons, double maximumMassThatFragmentIonScoreIsDoubled)
+        {
+            double score = 0;
+
+            foreach (var fragment in matchedFragmentIons)
+            {
+                if (fragment.NeutralTheoreticalProduct.ProductType != ProductType.M && fragment.NeutralTheoreticalProduct.ProductType != ProductType.D)
+                {
+                    double fragmentScore = 1 + (fragment.Intensity / thisScan.TotalIonCurrent);
+                    score += fragmentScore;
+
+                    if (fragment.NeutralTheoreticalProduct.NeutralMass <= maximumMassThatFragmentIonScoreIsDoubled)
+                    {
+                        score += fragmentScore;
+                    }
+                }                
+            }
+
+            return score;
         }
     }
 }

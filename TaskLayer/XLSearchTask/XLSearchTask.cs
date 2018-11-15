@@ -124,12 +124,21 @@ namespace TaskLayer
 
             if (XlSearchParameters.SearchGlyco)
             {
+                SingleFDRAnalysis(allPsms, new List<string> { taskId });             
+                var writtenFileInter = Path.Combine(OutputFolder, "all_fdr" + ".mytsv");
+                WritePsmCrossToTsv(allPsms, writtenFileInter, 3);
+
+                var allPsmsSingle = allPsms.Where(p => p.Glycan == null && p.Score > 2).OrderByDescending(p => p.XLTotalScore).ToList();           
+                SingleFDRAnalysis(allPsmsSingle, new List<string> { taskId });
+                var writtenFileInter1 = Path.Combine(OutputFolder, "single_fdr" + ".mytsv");
+                WritePsmCrossToTsv(allPsmsSingle, writtenFileInter1, 1);
+
                 //TO DO: there may have a bug. I have to filter the following loopPsms, deadendPsms with a BestScore higher than 2, Or some of the Psms will have everything be 0!
                 var allPsmsGly = allPsms.Where(p => p.Glycan != null && p.Score > 2).OrderByDescending(p => p.XLTotalScore).ToList();
+                SingleFDRAnalysis(allPsmsGly, new List<string> { taskId });
+                var writtenFileInter2 = Path.Combine(OutputFolder, "glyco_fdr" + ".mytsv");
+                WritePsmCrossToTsv(allPsmsGly, writtenFileInter2, 3);
 
-                SingleFDRAnalysis(allPsms, new List<string> { taskId });
-                var writtenFileInter = Path.Combine(OutputFolder, "glyco_fdr" + ".mytsv");
-                WritePsmCrossToTsv(allPsms, writtenFileInter, 3);
                 return MyTaskResults;
             }
 
