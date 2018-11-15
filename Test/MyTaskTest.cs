@@ -33,6 +33,7 @@ namespace Test
                     NumFragmentsNeededForEveryIdentification = 6,
                 }
             };
+
             GptmdTask task2 = new GptmdTask
             {
                 CommonParameters = new CommonParameters()
@@ -59,6 +60,7 @@ namespace Test
                     SearchType = SearchType.Modern,
                 }
             };
+
             List<(string, MetaMorpheusTask)> taskList = new List<(string, MetaMorpheusTask)> {
                 ("task1", task1),
                 ("task2", task2),
