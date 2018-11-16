@@ -25,7 +25,7 @@ namespace MetaMorpheusGUI
         private readonly ObservableCollection<ModTypeForTreeView> FixedModTypeForTreeViewObservableCollection = new ObservableCollection<ModTypeForTreeView>();
         private readonly ObservableCollection<ModTypeForTreeView> VariableModTypeForTreeViewObservableCollection = new ObservableCollection<ModTypeForTreeView>();
         private readonly ObservableCollection<ModTypeForLoc> LocalizeModTypeForTreeViewObservableCollection = new ObservableCollection<ModTypeForLoc>();
-        private CustomDissociationTypeWindow CustomDTWindow;
+        private CustomFragmentationWindow CustomFragmentationWindow;
 
         public CalibrateTaskWindow() : this(null)
         {
@@ -64,7 +64,7 @@ namespace MetaMorpheusGUI
             productMassToleranceComboBox.SelectedIndex = task.CommonParameters.ProductMassTolerance is AbsoluteTolerance ? 0 : 1;
             precursorMassToleranceTextBox.Text = task.CommonParameters.PrecursorMassTolerance.Value.ToString(CultureInfo.InvariantCulture);
             precursorMassToleranceComboBox.SelectedIndex = task.CommonParameters.PrecursorMassTolerance is AbsoluteTolerance ? 0 : 1;
-            CustomDTWindow = new CustomDissociationTypeWindow(task.CommonParameters.CustomIons);
+            CustomFragmentationWindow = new CustomFragmentationWindow(task.CommonParameters.CustomIons);
 
             //writeIntermediateFilesCheckBox.IsChecked = task.CalibrationParameters.WriteIntermediateFiles;
 
@@ -204,7 +204,7 @@ namespace MetaMorpheusGUI
             if (dissociationType.Equals(DissociationType.Custom))
             {
                 var path = Path.Combine(GlobalVariables.DataDir, @"customDissociationType.toml");
-                CustomIons = CustomDissociationType.CustomFragmentationIons(Toml.ReadFile<CustomDissociationType>(path));
+                CustomIons = CustomFragmentation.CustomFragmentationIons(Toml.ReadFile<CustomFragmentation>(path));
                 File.Delete(path); // delete temporary toml file
             }
 
@@ -316,13 +316,12 @@ namespace MetaMorpheusGUI
                 SearchModifications.VariableSearch = false;
             }
         }
-
-        // launches custom dissociation type window if chosen
-        private void CustomDissociationTypeHandler(object sender, EventArgs e)
+        
+        private void CustomFragmentationHandler(object sender, EventArgs e)
         {
             if (DissociationTypeComboBox.SelectedItem.ToString().Equals(DissociationType.Custom.ToString()))
             {
-                CustomDTWindow.ShowDialog();
+                CustomFragmentationWindow.ShowDialog();
             }
         }
     }

@@ -25,7 +25,7 @@ namespace MetaMorpheusGUI
         private readonly ObservableCollection<ModTypeForTreeView> variableModTypeForTreeViewObservableCollection = new ObservableCollection<ModTypeForTreeView>();
         private readonly ObservableCollection<ModTypeForLoc> localizeModTypeForTreeViewObservableCollection = new ObservableCollection<ModTypeForLoc>();
         private readonly ObservableCollection<ModTypeForTreeView> gptmdModTypeForTreeViewObservableCollection = new ObservableCollection<ModTypeForTreeView>();
-        private CustomDissociationTypeWindow CustomDTWindow;
+        private CustomFragmentationWindow CustomFragmentationWindow;
 
         public GptmdTaskWindow() : this(null)
         {
@@ -79,7 +79,7 @@ namespace MetaMorpheusGUI
             addCompIonCheckBox.IsChecked = task.CommonParameters.AddCompIons;
             MinVariantDepthTextBox.Text = task.CommonParameters.MinVariantDepth.ToString(CultureInfo.InvariantCulture);
             MaxHeterozygousVariantsTextBox.Text = task.CommonParameters.MaxHeterozygousVariants.ToString(CultureInfo.InvariantCulture);
-            CustomDTWindow = new CustomDissociationTypeWindow(task.CommonParameters.CustomIons);
+            CustomFragmentationWindow = new CustomFragmentationWindow(task.CommonParameters.CustomIons);
             OutputFileNameTextBox.Text = task.CommonParameters.TaskDescriptor;
 
             foreach (var mod in task.CommonParameters.ListOfModsFixed)
@@ -258,7 +258,7 @@ namespace MetaMorpheusGUI
             if (dissociationType.Equals(DissociationType.Custom))
             {
                 var path = Path.Combine(GlobalVariables.DataDir, @"customDissociationType.toml");
-                CustomIons = CustomDissociationType.CustomFragmentationIons(Nett.Toml.ReadFile<CustomDissociationType>(path));
+                CustomIons = CustomFragmentation.CustomFragmentationIons(Nett.Toml.ReadFile<CustomFragmentation>(path));
                 File.Delete(path); // delete temporary toml file
             }
 
@@ -392,11 +392,11 @@ namespace MetaMorpheusGUI
             }
         }
 
-        private void CustomDissociationTypeHandler(object sender, EventArgs e)
+        private void CustomFragmentationHandler(object sender, EventArgs e)
         {
             if (DissociationTypeComboBox.SelectedItem.ToString().Equals(DissociationType.Custom.ToString()))
             {
-                CustomDTWindow.ShowDialog();
+                CustomFragmentationWindow.ShowDialog();
             }
         }
     }

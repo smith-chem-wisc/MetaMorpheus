@@ -27,7 +27,7 @@ namespace MetaMorpheusGUI
         private readonly ObservableCollection<SearchModeForDataGrid> SearchModesForThisTask = new ObservableCollection<SearchModeForDataGrid>();
         private readonly ObservableCollection<ModTypeForTreeView> FixedModTypeForTreeViewObservableCollection = new ObservableCollection<ModTypeForTreeView>();
         private readonly ObservableCollection<ModTypeForTreeView> VariableModTypeForTreeViewObservableCollection = new ObservableCollection<ModTypeForTreeView>();
-        private CustomDissociationTypeWindow CustomDTWindow;
+        private CustomFragmentationWindow CustomFragmentationWindow;
 
         public XLSearchTaskWindow() : this(null)
         {
@@ -162,7 +162,7 @@ namespace MetaMorpheusGUI
             minScoreAllowed.Text = task.CommonParameters.ScoreCutoff.ToString(CultureInfo.InvariantCulture);
             numberOfDatabaseSearchesTextBox.Text = task.CommonParameters.TotalPartitions.ToString(CultureInfo.InvariantCulture);
             maxThreadsTextBox.Text = task.CommonParameters.MaxThreadsToUsePerFile.ToString(CultureInfo.InvariantCulture);
-            CustomDTWindow = new CustomDissociationTypeWindow(task.CommonParameters.CustomIons);
+            CustomFragmentationWindow = new CustomFragmentationWindow(task.CommonParameters.CustomIons);
             ckbPercolator.IsChecked = task.XlSearchParameters.WriteOutputForPercolator;
             ckbPepXML.IsChecked = task.XlSearchParameters.WritePepXml;
 
@@ -244,7 +244,7 @@ namespace MetaMorpheusGUI
             if (dissociationType.Equals(DissociationType.Custom))
             {
                 var path = Path.Combine(GlobalVariables.DataDir, @"customDissociationType.toml");
-                customIons = CustomDissociationType.CustomFragmentationIons(Nett.Toml.ReadFile<CustomDissociationType>(path));
+                customIons = CustomFragmentation.CustomFragmentationIons(Nett.Toml.ReadFile<CustomFragmentation>(path));
                 File.Delete(path); // delete temporary toml file
             }
 
@@ -427,11 +427,11 @@ namespace MetaMorpheusGUI
             }
         }
 
-        private void CustomDissociationTypeHandler(object sender, EventArgs e)
+        private void CustomFragmentationHandler(object sender, EventArgs e)
         {
             if (DissociationTypeComboBox.SelectedItem.ToString().Equals(DissociationType.Custom.ToString()))
             {
-                CustomDTWindow.ShowDialog();
+                CustomFragmentationWindow.ShowDialog();
             }
         }
     }

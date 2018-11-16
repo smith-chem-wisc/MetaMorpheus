@@ -2,14 +2,14 @@
 using System.Collections.Generic;
 namespace MetaMorpheusGUI
 {
-    class CustomDissociationType
+    class CustomFragmentation
     {
         public bool BIons { get; set; }
         public bool CIons { get; set; }
         public bool YIons { get; set; }
         public bool ZDotIons { get; set; }
 
-        public static List<ProductType> CustomFragmentationIons(CustomDissociationType c)
+        public static List<ProductType> CustomFragmentationIons(CustomFragmentation c)
         {
             var fragmentationIons = new List<ProductType>();
 

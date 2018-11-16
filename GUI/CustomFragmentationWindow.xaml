@@ -1,11 +1,11 @@
-﻿<Window x:Class="MetaMorpheusGUI.CustomDissociationTypeWindow"
+﻿<Window x:Class="MetaMorpheusGUI.CustomFragmentationWindow"
         xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
         xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
         xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
         xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
         xmlns:local="clr-namespace:MetaMorpheusGUI"
         mc:Ignorable="d"
-        Title="Create Custom Dissociation Type" Height="180" Width="400" WindowStartupLocation="CenterScreen">
+        Title="Add Custom Dissociation Type" Height="180" Width="400" WindowStartupLocation="CenterScreen">
     <StackPanel>
         <StackPanel Orientation="Horizontal" Margin="100,15,100,0">
             <CheckBox x:Name="bCheckBox" VerticalAlignment="Center" Width="100" Content="b ions" IsEnabled="True" />
