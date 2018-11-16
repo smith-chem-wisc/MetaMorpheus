@@ -13,6 +13,8 @@ using UsefulProteomicsDatabases;
 using Proteomics.ProteolyticDigestion;
 using MassSpectrometry;
 using System.Windows.Controls;
+using Proteomics.Fragmentation;
+using System.IO;
 
 namespace MetaMorpheusGUI
 {
@@ -25,6 +27,7 @@ namespace MetaMorpheusGUI
         private readonly ObservableCollection<SearchModeForDataGrid> SearchModesForThisTask = new ObservableCollection<SearchModeForDataGrid>();
         private readonly ObservableCollection<ModTypeForTreeView> FixedModTypeForTreeViewObservableCollection = new ObservableCollection<ModTypeForTreeView>();
         private readonly ObservableCollection<ModTypeForTreeView> VariableModTypeForTreeViewObservableCollection = new ObservableCollection<ModTypeForTreeView>();
+        private CustomDissociationTypeWindow CustomDTWindow;
 
         public XLSearchTaskWindow() : this(null)
         {
@@ -159,7 +162,7 @@ namespace MetaMorpheusGUI
             minScoreAllowed.Text = task.CommonParameters.ScoreCutoff.ToString(CultureInfo.InvariantCulture);
             numberOfDatabaseSearchesTextBox.Text = task.CommonParameters.TotalPartitions.ToString(CultureInfo.InvariantCulture);
             maxThreadsTextBox.Text = task.CommonParameters.MaxThreadsToUsePerFile.ToString(CultureInfo.InvariantCulture);
-
+            CustomDTWindow = new CustomDissociationTypeWindow(task.CommonParameters.CustomIons);
             ckbPercolator.IsChecked = task.XlSearchParameters.WriteOutputForPercolator;
             ckbPepXML.IsChecked = task.XlSearchParameters.WritePepXml;
 
@@ -237,6 +240,14 @@ namespace MetaMorpheusGUI
             }
 
             DissociationType dissociationType = GlobalVariables.AllSupportedDissociationTypes[DissociationTypeComboBox.SelectedItem.ToString()];
+            List<ProductType> customIons = null;
+            if (dissociationType.Equals(DissociationType.Custom))
+            {
+                var path = Path.Combine(GlobalVariables.DataDir, @"customDissociationType.toml");
+                customIons = CustomDissociationType.CustomFragmentationIons(Nett.Toml.ReadFile<CustomDissociationType>(path));
+                File.Delete(path); // delete temporary toml file
+            }
+
             //TheTask.XlSearchParameters.SearchGlyco = RbSearchGlyco.IsChecked.Value;
             //TheTask.XlSearchParameters.SearchGlycoWithBgYgIndex = CkbSearchGlycoWithBgYgIndex.IsChecked.Value;
             TheTask.XlSearchParameters.RestrictToTopNHits = ckbXLTopNum.IsChecked.Value;
@@ -341,7 +352,8 @@ namespace MetaMorpheusGUI
                 totalPartitions: int.Parse(numberOfDatabaseSearchesTextBox.Text, CultureInfo.InvariantCulture),
                 listOfModsVariable: listOfModsVariable,
                 listOfModsFixed: listOfModsFixed,
-                assumeOrphanPeaksAreZ1Fragments: protease.Name != "top-down");
+                assumeOrphanPeaksAreZ1Fragments: protease.Name != "top-down",
+                customIons : customIons);
 
             TheTask.CommonParameters = commonParamsToSave;
 
@@ -412,6 +424,14 @@ namespace MetaMorpheusGUI
             {
                 SearchModifications.FilterTree(SearchVarMod, variableModsTreeView, VariableModTypeForTreeViewObservableCollection);
                 SearchModifications.VariableSearch = false;
+            }
+        }
+
+        private void CustomDissociationTypeHandler(object sender, EventArgs e)
+        {
+            if (DissociationTypeComboBox.SelectedItem.ToString().Equals(DissociationType.Custom.ToString()))
+            {
+                CustomDTWindow.ShowDialog();
             }
         }
     }

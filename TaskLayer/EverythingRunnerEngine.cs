@@ -74,6 +74,9 @@ namespace TaskLayer
                 }
                 var ok = TaskList[i];
 
+                // reset custom dissociation type product lists for each task
+                ok.Item2.CommonParameters.SetCustomDissociationType();
+
                 var outputFolderForThisTask = Path.Combine(OutputFolder, ok.Item1);
 
                 if (!Directory.Exists(outputFolderForThisTask))

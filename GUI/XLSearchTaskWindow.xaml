@@ -279,7 +279,7 @@
                                                     </TextBlock>
                                                 </Label.ToolTip>
                                             </Label>
-                                            <ComboBox x:Name="DissociationTypeComboBox" HorizontalAlignment="Center" VerticalAlignment="Center" />
+                                            <ComboBox x:Name="DissociationTypeComboBox" HorizontalAlignment="Center" VerticalAlignment="Center" DropDownClosed="CustomDissociationTypeHandler"/>
                                         </StackPanel>
                                     </StackPanel>
                                 </Grid>

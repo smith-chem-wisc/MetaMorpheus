@@ -11,6 +11,9 @@ using System.Windows.Input;
 using TaskLayer;
 using Proteomics.ProteolyticDigestion;
 using MassSpectrometry;
+using Proteomics.Fragmentation;
+using System.IO;
+using Nett;
 
 namespace MetaMorpheusGUI
 {
@@ -22,6 +25,7 @@ namespace MetaMorpheusGUI
         private readonly ObservableCollection<ModTypeForTreeView> FixedModTypeForTreeViewObservableCollection = new ObservableCollection<ModTypeForTreeView>();
         private readonly ObservableCollection<ModTypeForTreeView> VariableModTypeForTreeViewObservableCollection = new ObservableCollection<ModTypeForTreeView>();
         private readonly ObservableCollection<ModTypeForLoc> LocalizeModTypeForTreeViewObservableCollection = new ObservableCollection<ModTypeForLoc>();
+        private CustomDissociationTypeWindow CustomDTWindow;
 
         public CalibrateTaskWindow() : this(null)
         {
@@ -60,6 +64,7 @@ namespace MetaMorpheusGUI
             productMassToleranceComboBox.SelectedIndex = task.CommonParameters.ProductMassTolerance is AbsoluteTolerance ? 0 : 1;
             precursorMassToleranceTextBox.Text = task.CommonParameters.PrecursorMassTolerance.Value.ToString(CultureInfo.InvariantCulture);
             precursorMassToleranceComboBox.SelectedIndex = task.CommonParameters.PrecursorMassTolerance is AbsoluteTolerance ? 0 : 1;
+            CustomDTWindow = new CustomDissociationTypeWindow(task.CommonParameters.CustomIons);
 
             //writeIntermediateFilesCheckBox.IsChecked = task.CalibrationParameters.WriteIntermediateFiles;
 
@@ -195,6 +200,14 @@ namespace MetaMorpheusGUI
             int MaxModificationIsoforms = int.Parse(maxModificationIsoformsTextBox.Text, CultureInfo.InvariantCulture);
             DissociationType dissociationType = GlobalVariables.AllSupportedDissociationTypes[DissociationTypeComboBox.SelectedItem.ToString()];
 
+            List<ProductType> CustomIons = null;
+            if (dissociationType.Equals(DissociationType.Custom))
+            {
+                var path = Path.Combine(GlobalVariables.DataDir, @"customDissociationType.toml");
+                CustomIons = CustomDissociationType.CustomFragmentationIons(Toml.ReadFile<CustomDissociationType>(path));
+                File.Delete(path); // delete temporary toml file
+            }
+
             DigestionParams digestionParamsToSave = new DigestionParams(
                 protease: protease.Name,
                 maxMissedCleavages: MaxMissedCleavages, 
@@ -252,7 +265,8 @@ namespace MetaMorpheusGUI
                 precursorMassTolerance: PrecursorMassTolerance,
                 assumeOrphanPeaksAreZ1Fragments: protease.Name != "top-down",
                 minVariantDepth: MinVariantDepth,
-                maxHeterozygousVariants: MaxHeterozygousVariants);
+                maxHeterozygousVariants: MaxHeterozygousVariants,
+                customIons : CustomIons);
 
             TheTask.CommonParameters = commonParamsToSave;
 
@@ -300,6 +314,15 @@ namespace MetaMorpheusGUI
             {
                 SearchModifications.FilterTree(SearchVarMod, variableModsTreeView, VariableModTypeForTreeViewObservableCollection);
                 SearchModifications.VariableSearch = false;
+            }
+        }
+
+        // launches custom dissociation type window if chosen
+        private void CustomDissociationTypeHandler(object sender, EventArgs e)
+        {
+            if (DissociationTypeComboBox.SelectedItem.ToString().Equals(DissociationType.Custom.ToString()))
+            {
+                CustomDTWindow.ShowDialog();
             }
         }
     }

@@ -11,6 +11,8 @@ using System.Windows.Input;
 using TaskLayer;
 using Proteomics.ProteolyticDigestion;
 using MassSpectrometry;
+using Proteomics.Fragmentation;
+using System.IO;
 
 namespace MetaMorpheusGUI
 {
@@ -23,6 +25,7 @@ namespace MetaMorpheusGUI
         private readonly ObservableCollection<ModTypeForTreeView> variableModTypeForTreeViewObservableCollection = new ObservableCollection<ModTypeForTreeView>();
         private readonly ObservableCollection<ModTypeForLoc> localizeModTypeForTreeViewObservableCollection = new ObservableCollection<ModTypeForLoc>();
         private readonly ObservableCollection<ModTypeForTreeView> gptmdModTypeForTreeViewObservableCollection = new ObservableCollection<ModTypeForTreeView>();
+        private CustomDissociationTypeWindow CustomDTWindow;
 
         public GptmdTaskWindow() : this(null)
         {
@@ -76,7 +79,7 @@ namespace MetaMorpheusGUI
             addCompIonCheckBox.IsChecked = task.CommonParameters.AddCompIons;
             MinVariantDepthTextBox.Text = task.CommonParameters.MinVariantDepth.ToString(CultureInfo.InvariantCulture);
             MaxHeterozygousVariantsTextBox.Text = task.CommonParameters.MaxHeterozygousVariants.ToString(CultureInfo.InvariantCulture);
-
+            CustomDTWindow = new CustomDissociationTypeWindow(task.CommonParameters.CustomIons);
             OutputFileNameTextBox.Text = task.CommonParameters.TaskDescriptor;
 
             foreach (var mod in task.CommonParameters.ListOfModsFixed)
@@ -251,6 +254,14 @@ namespace MetaMorpheusGUI
             InitiatorMethionineBehavior InitiatorMethionineBehavior = (InitiatorMethionineBehavior)initiatorMethionineBehaviorComboBox.SelectedIndex;
             DissociationType dissociationType = GlobalVariables.AllSupportedDissociationTypes[DissociationTypeComboBox.SelectedItem.ToString()];
 
+            List<ProductType> CustomIons = null;
+            if (dissociationType.Equals(DissociationType.Custom))
+            {
+                var path = Path.Combine(GlobalVariables.DataDir, @"customDissociationType.toml");
+                CustomIons = CustomDissociationType.CustomFragmentationIons(Nett.Toml.ReadFile<CustomDissociationType>(path));
+                File.Delete(path); // delete temporary toml file
+            }
+
             Tolerance ProductMassTolerance;
             if (productMassToleranceComboBox.SelectedIndex == 0)
             {
@@ -311,7 +322,8 @@ namespace MetaMorpheusGUI
                     assumeOrphanPeaksAreZ1Fragments: protease.Name != "top-down",
                     addCompIons: addCompIonCheckBox.IsChecked.Value,
                     minVariantDepth: MinVariantDepth,
-                    maxHeterozygousVariants: MaxHeterozygousVariants);
+                    maxHeterozygousVariants: MaxHeterozygousVariants,
+                    customIons : CustomIons);
 
             TheTask.GptmdParameters.ListOfModsGptmd = new List<(string, string)>();
             foreach (var heh in gptmdModTypeForTreeViewObservableCollection)
@@ -377,6 +389,14 @@ namespace MetaMorpheusGUI
             {
                 SearchModifications.FilterTree(SearchGPTMD, gptmdModsTreeView, gptmdModTypeForTreeViewObservableCollection);
                 SearchModifications.GptmdSearch = false;
+            }
+        }
+
+        private void CustomDissociationTypeHandler(object sender, EventArgs e)
+        {
+            if (DissociationTypeComboBox.SelectedItem.ToString().Equals(DissociationType.Custom.ToString()))
+            {
+                CustomDTWindow.ShowDialog();
             }
         }
     }
