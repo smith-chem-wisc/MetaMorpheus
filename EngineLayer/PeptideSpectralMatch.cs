@@ -554,7 +554,7 @@ namespace EngineLayer
             return $"{applied.OriginalSequence}{applied.OneBasedBeginPosition}{variantWithAnyMods.FullSequence}";
         }
 
-        private static void AddMatchedIonsData(Dictionary<string, string> s, PeptideSpectralMatch psm)
+        public static void AddMatchedIonsData(Dictionary<string, string> s, PeptideSpectralMatch psm)
         {
             bool nullPsm = (psm == null);
 

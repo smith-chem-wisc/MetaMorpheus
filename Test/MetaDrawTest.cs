@@ -32,5 +32,27 @@ namespace Test
 
             Directory.Delete(folderPath, true);
         }
+
+        [Test]
+        public static void TestMetaDrawReadCrossPsmFile()
+        {
+            XLSearchTask searchTask = new XLSearchTask();
+            searchTask.XlSearchParameters.CrosslinkerType = EngineLayer.CrosslinkSearch.CrosslinkerType.DSS;
+
+            string myFile = Path.Combine(TestContext.CurrentContext.TestDirectory, @"XlTestData\BSA_DSS_23747.mzML");
+            string myDatabase = Path.Combine(TestContext.CurrentContext.TestDirectory, @"XlTestData\BSA.fasta");
+            string folderPath = Path.Combine(TestContext.CurrentContext.TestDirectory, @"TestMetaDrawReadPsmFile");
+
+            DbForTask db = new DbForTask(myDatabase, false);
+            Directory.CreateDirectory(folderPath);
+
+            searchTask.RunTask(folderPath, new List<DbForTask> { db }, new List<string> { myFile }, "metadraw");
+
+            string psmFile = Directory.GetFiles(folderPath).First(f => f.Contains("XL_Intralinks.tsv"));
+
+            List<MetaDrawPsm> parsedPsms = TsvResultReader.ReadTsv(psmFile, out var warnings);
+
+            Directory.Delete(folderPath, true);
+        }
     }
 }
