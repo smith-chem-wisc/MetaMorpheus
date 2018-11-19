@@ -184,6 +184,36 @@ namespace EngineLayer
             return kind;
         }
 
+        public static string GetKindString(string structure)
+        {
+            string H = (structure.Count(p => p == 'H') > 0) ? "H" + structure.Count(p => p == 'H').ToString() : "";
+            string N = (structure.Count(p => p == 'N') > 0) ? "N" + structure.Count(p => p == 'N').ToString() : "";
+            string A = (structure.Count(p => p == 'A') > 0) ? "A" + structure.Count(p => p == 'A').ToString() : "";
+            string G = (structure.Count(p => p == 'G') > 0) ? "G" + structure.Count(p => p == 'G').ToString() : "";
+            string F = (structure.Count(p => p == 'F') > 0) ? "F" + structure.Count(p => p == 'F').ToString() : "";
+            string kindString = H + N + A + G + F;
+            if (kindString == "")
+            {
+                kindString = "@";
+            }
+            return kindString;
+        }
+
+        public static string GetKindString(int[] Kind)
+        {
+            string H = (Kind[0] > 0) ? "H" + Kind[0].ToString() : "";
+            string N = (Kind[1] > 0) ? "N" + Kind[1].ToString() : "";
+            string A = (Kind[2] > 0) ? "A" + Kind[2].ToString() : "";
+            string G = (Kind[3] > 0) ? "G" + Kind[3].ToString() : "";
+            string F = (Kind[4] > 0) ? "F" + Kind[4].ToString() : "";
+            string kindString = H + N + A + G + F;
+            if (kindString == "")
+            {
+                kindString = "@";
+            }
+            return kindString;
+        }
+
         public static SortedSet<double> GetAllChildrenMass(Node node)
         {
             SortedSet<double> masses = new SortedSet<double>();
@@ -214,8 +244,10 @@ namespace EngineLayer
                     glycanIons.Add(glycanIon);
                 }      
             }
-                glycanIons = glycanIons.OrderBy(p => p.IonMass).ToList();
-                glycanIons.RemoveAt(glycanIons.Count - 1);
+            var halfIonKind = new int[] {0,0,0,0,0};
+            glycanIons.Add(new GlycanIon(0, 83.038194, halfIonKind)); //Cross-ring mass
+            glycanIons = glycanIons.OrderBy(p => p.IonMass).ToList();
+            //glycanIons.RemoveAt(glycanIons.Count - 1);
                
             Glycan glycan = new Glycan(theGlycanStruct, mass, kind, glycanIons);
             glycan.GlyId = id;

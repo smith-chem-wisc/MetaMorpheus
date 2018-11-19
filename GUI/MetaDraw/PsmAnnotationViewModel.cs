@@ -105,7 +105,7 @@ namespace ViewModels
                         ionColor = OxyColors.Turquoise;
                     }
 
-                    int i = msDataScan.MassSpectrum.GetClosestPeakIndex(peak.NeutralTheoreticalProduct.NeutralMass.ToMz(peak.Charge)).Value;
+                    int i = msDataScan.MassSpectrum.GetClosestPeakIndex(peak.Mz).Value;
 
                     // peak line
                     allIons[i] = new LineSeries();
@@ -118,7 +118,21 @@ namespace ViewModels
                     string peakAnnotationText = peak.NeutralTheoreticalProduct.ProductType.ToString().ToLower() + peak.NeutralTheoreticalProduct.TerminusFragment.FragmentNumber + " (" + peak.Mz.ToString("F3") + ")";
                     if (peak.NeutralTheoreticalProduct.NeutralLoss != 0)
                     {
-                        peakAnnotationText = peak.NeutralTheoreticalProduct.ProductType.ToString().ToLower() + peak.NeutralTheoreticalProduct.TerminusFragment.FragmentNumber + "-" + peak.NeutralTheoreticalProduct.NeutralLoss.ToString("F2") + " (" + peak.Mz.ToString("F3") + ")";
+                        MassDiffAcceptor massDiffAcceptor = new SinglePpmAroundZeroSearchMode(10);
+                        if (psmToDraw.glycan != null)
+                        {
+                            foreach (var glycanIon in psmToDraw.glycan.Ions)
+                            {
+                                if (massDiffAcceptor.Accepts(peak.NeutralTheoreticalProduct.NeutralLoss, psmToDraw.glycan.Mass - glycanIon.IonMass) >= 0)
+                                {
+                                    peakAnnotationText = peak.NeutralTheoreticalProduct.ProductType.ToString().ToLower() + peak.NeutralTheoreticalProduct.TerminusFragment.FragmentNumber + "-" + Glycan.GetKindString(glycanIon.IonKind) + " (" + peak.Mz.ToString("F3") + ")";
+                                }
+                            }
+                        }
+                        else
+                        {
+                            peakAnnotationText = peak.NeutralTheoreticalProduct.ProductType.ToString().ToLower() + peak.NeutralTheoreticalProduct.TerminusFragment.FragmentNumber + "-" + peak.NeutralTheoreticalProduct.NeutralLoss.ToString("F2") + " (" + peak.Mz.ToString("F3") + ")";
+                        }
                     }
 
                     var peakAnnotation = new TextAnnotation();
@@ -206,6 +220,5 @@ namespace ViewModels
             // Set the Model property, the INotifyPropertyChanged event will make the WPF Plot control update its content
             this.Model = model;
         }
-
     }
 }

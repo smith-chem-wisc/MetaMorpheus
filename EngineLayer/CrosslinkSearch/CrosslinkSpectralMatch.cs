@@ -4,6 +4,7 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Text;
+using Proteomics;
 
 namespace EngineLayer.CrosslinkSearch
 {
@@ -15,9 +16,10 @@ namespace EngineLayer.CrosslinkSearch
             this.XLTotalScore = score;
         }
 
-        public CrosslinkSpectralMatch BetaPeptide { get; set; }
-        public List<int> LinkPositions { get; set; }
         public double DeltaScore { get; set; }
+        //Crosslink properties
+        public CrosslinkSpectralMatch BetaPeptide { get; set; }
+        public List<int> LinkPositions { get; set; }      
         public double XLTotalScore { get; set; } //alpha + beta psmCross
         public int XlProteinPos { get; set; }
         public List<int> XlRank { get; set; } //only contain 2 intger, consider change to Tuple
@@ -25,6 +27,8 @@ namespace EngineLayer.CrosslinkSearch
         public int ParentIonExistNum { get; set; }
         public List<int> ParentIonMaxIntensityRanks { get; set; }
         public PsmCrossType CrossType { get; set; }
+        //Glyco properties
+        public List<Glycan> Glycan { get; set; }
 
         public static List<int> GetPossibleCrosslinkerModSites(char[] crosslinkerModSites, PeptideWithSetModifications peptide)
         {
@@ -40,6 +44,36 @@ namespace EngineLayer.CrosslinkSearch
             }
 
             return possibleXlPositions;
+        }
+
+        //Motif should be writen with required form
+        public static List<int> GetPossibleModSites(PeptideWithSetModifications peptide, string[] motifs)
+        {
+            List<int> possibleModSites = new List<int>();
+
+            List<ModificationMotif> acceptableMotifs = new List<ModificationMotif>();
+            foreach (var mtf in motifs)
+            {
+                if (ModificationMotif.TryGetMotif(mtf, out ModificationMotif aMotif))
+                {
+                    acceptableMotifs.Add(aMotif);
+                }
+            }
+
+            foreach (var mtf in acceptableMotifs)
+            {
+                for (int r = 0; r < peptide.Length; r++)
+                {
+                    Modification modWithMotif = new Modification(_target: mtf, _locationRestriction: "Anywhere.");
+                    //FullSequence is used here to avoid duplicated modification on same sites?
+                    if (ModificationLocalization.ModFits(modWithMotif, peptide.BaseSequence, r + 1, peptide.Length, r + 1))
+                    {
+                        possibleModSites.Add(r + 1);
+                    }
+                }
+            }
+
+            return possibleModSites;
         }
 
         /// <summary>
@@ -176,9 +210,11 @@ namespace EngineLayer.CrosslinkSearch
             sb.Append("Decoy/Contaminant/Target" + '\t');
             sb.Append("QValue" + '\t');
 
-            sb.Append("GlyID" + '\t');
-            sb.Append("GlyMass" + '\t');
-            sb.Append("GlyStruct(H,N,A,G,F)" + '\t');
+            sb.Append("XL Total Score" + '\t');
+            sb.Append("GlycanIDs" + '\t');
+            sb.Append("GlycanStructure" + '\t');
+            sb.Append("GlycanMass" + '\t');
+            sb.Append("GlycanComposition(H,N,A,G,F)" + '\t');
             return sb.ToString();
         }
 
@@ -289,9 +325,16 @@ namespace EngineLayer.CrosslinkSearch
                 sb.Append("\t");
             }
 
-            sb.Append(FdrInfo.QValue.ToString());
-            sb.Append("\t");
+            sb.Append(FdrInfo.QValue.ToString() + "\t");
 
+            if (Glycan != null)
+            {
+                sb.Append(XLTotalScore + "\t");
+                sb.Append(string.Join("|", Glycan.Select(p => p.GlyId.ToString()).ToArray())); sb.Append("\t");
+                sb.Append(Glycan.First().Struc); sb.Append("\t");
+                sb.Append(Glycan.First().Mass); sb.Append("\t");
+                sb.Append(string.Join("|", Glycan.First().Kind.Select(p => p.ToString()).ToArray())); sb.Append("\t");
+            }
 
             return sb.ToString();
         }

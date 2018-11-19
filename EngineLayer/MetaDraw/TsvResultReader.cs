@@ -53,6 +53,10 @@ namespace EngineLayer
         public const string XLTotalScoreLabel = "XL Total Score";
         public const string ParentIonsLabel = "Parent Ions";
 
+        //Glycopeptides
+        public const string GlycanIdLabel = "GlycanIDs";
+        public const string GlcanStructLabel = "GlycanStructure";
+
         private static readonly char[] Split = { '\t' };
         
         public static List<MetaDrawPsm> ReadTsv(string filePath, out List<string> warnings)
@@ -156,6 +160,9 @@ namespace EngineLayer
             parsedHeader.Add(BetaPeptideMatchedIonsLabel, Array.IndexOf(spl, BetaPeptideMatchedIonsLabel));
             parsedHeader.Add(XLTotalScoreLabel, Array.IndexOf(spl, XLTotalScoreLabel));
             parsedHeader.Add(ParentIonsLabel, Array.IndexOf(spl, ParentIonsLabel));
+
+            parsedHeader.Add(GlycanIdLabel, Array.IndexOf(spl, GlycanIdLabel));
+            parsedHeader.Add(GlcanStructLabel, Array.IndexOf(spl, GlcanStructLabel));
 
             return parsedHeader;
         }

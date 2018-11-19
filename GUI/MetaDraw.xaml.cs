@@ -106,6 +106,7 @@ namespace MetaMorpheusGUI
                     break;
                 case ".psmtsv":
                 case ".tsv":
+                case ".mytsv":
                     tsvResultsFilePath = filePath;
                     psmFileNameLabel.Text = filePath;
                     break;

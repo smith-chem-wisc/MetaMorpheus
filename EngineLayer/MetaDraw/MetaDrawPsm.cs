@@ -59,6 +59,9 @@ namespace EngineLayer
         public double? XLTotalScore { get; }
         public string ParentIons { get; }
 
+        //For Glycopeptides
+        public Glycan glycan { get; }
+
         public MetaDrawPsm(string line, char[] split, Dictionary<string, int> parsedHeader)
         {
             var spl = line.Split(split);
@@ -111,6 +114,12 @@ namespace EngineLayer
             BetaPeptideMatchedIons = (parsedHeader[TsvResultReader.BetaPeptideMatchedIonsLabel] < 0) ? null : ReadFragmentIonsFromString(spl[parsedHeader[TsvResultReader.BetaPeptideMatchedIonsLabel]].Trim(), BetaPeptideBaseSequence);
             XLTotalScore = (parsedHeader[TsvResultReader.XLTotalScoreLabel] < 0) ? null : (double?)double.Parse(spl[parsedHeader[TsvResultReader.XLTotalScoreLabel]].Trim());
             ParentIons= (parsedHeader[TsvResultReader.ParentIonsLabel] < 0) ? null : spl[parsedHeader[TsvResultReader.ParentIonsLabel]].Trim();
+
+            //For Glycopeptides
+            if (parsedHeader[TsvResultReader.GlycanIdLabel] >=0 && spl[parsedHeader[TsvResultReader.GlycanIdLabel]] != "")
+            {
+                glycan = Glycan.Struct2Glycan(spl[parsedHeader[TsvResultReader.GlcanStructLabel]], int.Parse(spl[parsedHeader[TsvResultReader.GlycanIdLabel]].Split('|').First().Trim()));
+            }
         }
 
         private static List<MatchedFragmentIon> ReadFragmentIonsFromString(string matchedMzString, string peptideBaseSequence)
@@ -163,5 +172,6 @@ namespace EngineLayer
 
             return matchedIons;
         }
+
     }
 }

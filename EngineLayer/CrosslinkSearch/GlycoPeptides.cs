@@ -33,8 +33,7 @@ namespace EngineLayer.CrosslinkSearch
         {          
             Dictionary<DissociationType, List<double>> neutralLosses = new Dictionary<DissociationType, List<double>>();
             List<double> lossMasses = glycan.Ions.Where(p => p.IonMass <= 1000).Select(p => glycan.Mass - p.IonMass).OrderBy(p => p).ToList();
-            lossMasses.Add(glycan.Mass - 83.038194);
-            lossMasses.Add(glycan.Mass);        
+            lossMasses.Add(glycan.Mass);
             neutralLosses.Add(DissociationType.HCD, lossMasses);
             neutralLosses.Add(DissociationType.CID, lossMasses);
             //TO DO: add diagnosticIons as a property for Glycan
