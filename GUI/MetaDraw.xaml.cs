@@ -63,7 +63,6 @@ namespace MetaMorpheusGUI
             productTypeToColor = ((ProductType[])Enum.GetValues(typeof(ProductType))).ToDictionary(p => p, p => Colors.Aqua);
             productTypeToColor[ProductType.b] = Colors.Blue;
             productTypeToColor[ProductType.y] = Colors.Purple;
-            productTypeToColor[ProductType.zPlusOne] = Colors.Orange; // TODO: Remove
             productTypeToColor[ProductType.zDot] = Colors.Orange;
             productTypeToColor[ProductType.c] = Colors.Gold;
 
@@ -72,7 +71,6 @@ namespace MetaMorpheusGUI
             productTypeToYOffset[ProductType.b] = 50;
             productTypeToYOffset[ProductType.y] = 0;
             productTypeToYOffset[ProductType.c] = 50;
-            productTypeToYOffset[ProductType.zPlusOne] = 0; // TODO: Remove
             productTypeToYOffset[ProductType.zDot] = 0;
         }
 
@@ -161,7 +159,6 @@ namespace MetaMorpheusGUI
             {
                 DrawAnnotatedBaseSequence(psmToDraw);
             }
-            
         }
 
         /// <summary>
