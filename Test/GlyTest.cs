@@ -37,28 +37,28 @@ namespace Test
         [Test]
         public static void GlyTest_GlyGetTheoreticalFragments()
         {
-            Protein pep = new Protein("DANNTQFQFTSR", "accession");
-            DigestionParams digestionParams = new DigestionParams(minPeptideLength: 2);
-            var aPeptideWithSetModifications = pep.Digest(digestionParams, new List<Modification>(), new List<Modification>()).First();
+            Protein pep = new Protein("TKPREEQYNSTYR", "accession");
+            DigestionParams digestionParams = new DigestionParams(minPeptideLength: 7);
+            var aPeptideWithSetModifications = pep.Digest(digestionParams, new List<Modification>(), new List<Modification>());
 
             string[] motifs = new string[] { "Nxs", "Nxt" };
-            var sites = CrosslinkSpectralMatch.GetPossibleModSites(aPeptideWithSetModifications, motifs);
-            Glycan glycan = Glycan.Struct2Glycan("(N(N(H(H)(H(H)(H)))))", 0);
-            var fragmentIons = GlycoPeptides.GlyGetTheoreticalFragments(DissociationType.HCD, sites, aPeptideWithSetModifications, glycan).ToList();
+            var sites = CrosslinkSpectralMatch.GetPossibleModSites(aPeptideWithSetModifications.Last(), motifs);
+            Glycan glycan = Glycan.Struct2Glycan("(N(F)(N(H(H(N))(H(N)))))", 0);
+            var fragmentIons = GlycoPeptides.GlyGetTheoreticalFragments(DissociationType.HCD, sites, aPeptideWithSetModifications.Last(), glycan).ToList();
 
-            using (StreamWriter output = new StreamWriter(Path.Combine(TestContext.CurrentContext.TestDirectory, "GlycanFragmentions.txt")))
-            {
-                foreach (var product in fragmentIons)
-                {
-                    foreach (var ion in product.Item2)
-                    {
-                        output.WriteLine(ion.Annotation + "\t" + ion.NeutralLoss.ToString() + "\t" + ion.NeutralMass.ToString());
-                    }
-                }
-            }
+            //using (StreamWriter output = new StreamWriter(Path.Combine(TestContext.CurrentContext.TestDirectory, "GlycanFragmentions.txt")))
+            //{
+            //    foreach (var product in fragmentIons)
+            //    {
+            //        foreach (var ion in product.Item2)
+            //        {
+            //            output.WriteLine(ion.Annotation + "\t" + ion.NeutralLoss.ToString() + "\t" + ion.NeutralMass.ToString());
+            //        }
+            //    }
+            //}
 
             CommonParameters commonParameters = new CommonParameters(deconvolutionMassTolerance: new PpmTolerance(20));
-            string filePath = Path.Combine(TestContext.CurrentContext.TestDirectory, @"XlTestData/25170.mgf");
+            string filePath = Path.Combine(TestContext.CurrentContext.TestDirectory, @"GlycoTestData/Glyco_3383.mgf"); //"XlTestData/25170.mgf"
             MyFileManager myFileManager = new MyFileManager(true);
             var msDataFile = myFileManager.LoadFile(filePath, 300, 0.01, true, true, commonParameters);
             var listOfSortedms2Scans = MetaMorpheusTask.GetMs2Scans(msDataFile, filePath, commonParameters).ToArray();
@@ -110,7 +110,7 @@ namespace Test
             var msDataFile = myFileManager.LoadFile(filePath, 300, 0.01, true, true, commonParameters);
             var listOfSortedms2Scans = MetaMorpheusTask.GetMs2Scans(msDataFile, filePath, commonParameters).ToArray();
             ////Tips: Using debug mode to check the number of oxoniumIons, in this case will be 7.
-            var oxoinumIonsExist = CrosslinkSearchEngine.ScanOxoniumIonFilter(listOfSortedms2Scans[0]);
+            var oxoinumIonsExist = CrosslinkSearchEngine.ScanOxoniumIonFilter(listOfSortedms2Scans[0], commonParameters.DissociationType);
             Assert.AreEqual(true, oxoinumIonsExist);
         }
 
