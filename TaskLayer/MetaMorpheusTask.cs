@@ -377,7 +377,7 @@ namespace TaskLayer
             else
             {
                 List<string> modTypesToExclude = GlobalVariables.AllModTypesKnown.Where(b => !localizeableModificationTypes.Contains(b)).ToList();
-                proteinList = ProteinDbLoader.LoadProteinXML(fileName, generateTargets, decoyType, GlobalVariables.AllModsKnown, isContaminant, modTypesToExclude, out um, commonParameters.MaxThreadsToUsePerFile);
+                proteinList = ProteinDbLoader.LoadProteinXML(fileName, generateTargets, decoyType, GlobalVariables.AllModsKnown, isContaminant, modTypesToExclude, out um, commonParameters.MaxThreadsToUsePerFile, commonParameters.MaxHeterozygousVariants, commonParameters.MinVariantDepth);
             }
 
             emptyEntriesCount = proteinList.Count(p => p.BaseSequence.Length == 0);
@@ -642,7 +642,7 @@ namespace TaskLayer
                     }
                     else if (proteinDictionary[protein.Accession].BaseSequence != protein.BaseSequence)
                     {
-                        throw new MetaMorpheusException("The protein database contained multiple proteins with accession" + protein.Accession + "! This is not allowed for index-based searches (modern, non-specific, crosslink searches)");
+                        throw new MetaMorpheusException($"The protein database contained multiple proteins with accession {protein.Accession} ! This is not allowed for index-based searches (modern, non-specific, crosslink searches)");
                     }
                 }
 

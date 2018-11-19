@@ -26,27 +26,28 @@ namespace TaskLayer
             MaxFragmentSize = 30000.0;
             WriteMzId = true;
             WritePepXml = false;
+
             ModsToWriteSelection = new Dictionary<string, int>
             {
-                ////Key is modification type.
-                ////Select from: Common Fixed; Common Variable; Artifact; Biological; Crosslink; Detached; fallOffN; fallOffC; N-linked glycosylation;
-                ////O -linked glycosylation; Other glycosylation; missing; Deprecated_Mod; Deprecated_PeptideTermMod; Deprecated_Metal;
-                ////Deprecated_ProteinTermMod; Deprecated_TrypsinDigestedMod; Deprecated_AnpN_DigestedMode; RNA; 1 nucleotide substitution;
-                ////2 + nucleotide substitution; Surfactant; TandemMassTag; Unimod; UniProt
+                //Key is modification type.
 
-                ////Value is integer 0, 1, 2 and 3 interpreted as:
-                ////   0:   Do not Write
-                ////   1:   Write if in DB and Observed
-                ////   2:   Write if in DB
-                ////   3:   Write if Observed
+                //Value is integer 0, 1, 2 and 3 interpreted as:
+                //   0:   Do not Write
+                //   1:   Write if in DB and Observed
+                //   2:   Write if in DB
+                //   3:   Write if Observed
 
-                {"ProteinTermMod", 3},
+                {"N-linked glycosylation", 3},
+                {"O-linked glycosylation", 3},
+                {"Other glycosylation", 3},
+                {"Common Biological", 3},
+                {"Less Common", 3},
+                {"Metal", 3},
+                {"2+ nucleotide substitution", 3},
+                {"1 nucleotide substitution", 3},
                 {"UniProt", 2},
-                
-                //{"Biological", 3},
-                ////{"ProteinTermMod", 3},
-                //{"UniProt", 3},
             };
+
             WriteDecoys = true;
             WriteContaminants = true;
             LocalFdrCategories = new List<FdrCategory> { FdrCategory.FullySpecific };

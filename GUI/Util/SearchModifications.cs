@@ -37,7 +37,7 @@ namespace MetaMorpheusGUI
                 return;
             }
 
-            var modTypesWithMatchingMods = collection.Where(p => p.Children.Any(c => c.DisplayName.ToLower().Contains(key))); // parent of child mods that match key
+            var modTypesWithMatchingMods = collection.Where(p => p.Children.Any(c => c.ModName.ToLower().Contains(key))); // parent of child mods that match key
 
             var modsThatMatchSearchString = new ObservableCollection<ModTypeForTreeView>(); // new collection containing expanded mod types that match key 
 
@@ -48,7 +48,7 @@ namespace MetaMorpheusGUI
                 textFilteredModType.Expanded = true;
                 textFilteredModType.Use = modType.Use;
 
-                var matchingChildren = modType.Children.Where(p => p.DisplayName.ToLower().Contains(key));
+                var matchingChildren = modType.Children.Where(p => p.ModName.ToLower().Contains(key));
                 foreach (ModForTreeView mod in matchingChildren)
                 {
                     textFilteredModType.Children.Add(mod);
