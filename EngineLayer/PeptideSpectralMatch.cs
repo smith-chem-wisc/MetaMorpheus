@@ -144,7 +144,7 @@ namespace EngineLayer
 
         public string ToString(IReadOnlyDictionary<string, int> ModstoWritePruned)
         {
-            return String.Join("\t", DataDictionary(this, ModstoWritePruned).Values);
+            return string.Join("\t", DataDictionary(this, ModstoWritePruned).Values);
         }
 
         public static Dictionary<string, string> DataDictionary(PeptideSpectralMatch psm, IReadOnlyDictionary<string, int> ModsToWritePruned)
@@ -269,21 +269,20 @@ namespace EngineLayer
         /// </summary>
         private static (string ResolvedString, ChemicalFormula ResolvedValue) Resolve(IEnumerable<IEnumerable<Modification>> enumerable)
         {
-            ChemicalFormula f = new ChemicalFormula();
+            var list = enumerable.ToList();
+            ChemicalFormula firstChemFormula = new ChemicalFormula();
+            foreach (var firstMods in list[0])
             {
-                var firstEnum = enumerable.First();
-                foreach (var mod in firstEnum)
+                if (firstMods == null || firstMods.ChemicalFormula == null)
                 {
-                    if (mod == null || mod.ChemicalFormula == null)
-                    {
-                        return ("unknown", null);
-                    }
-                    f.Add(mod.ChemicalFormula);
+                    return ("unknown", null);
                 }
+                firstChemFormula.Add(firstMods.ChemicalFormula);
             }
+
             bool equals = true;
             List<ChemicalFormula> formulas = new List<ChemicalFormula>();
-            foreach (var anEnum in enumerable)
+            foreach (var anEnum in list)
             {
                 ChemicalFormula fhere = new ChemicalFormula();
                 foreach (var mod in anEnum)
@@ -294,7 +293,7 @@ namespace EngineLayer
                     }
                     fhere.Add(mod.ChemicalFormula);
                 }
-                if (!f.Equals(fhere))
+                if (!firstChemFormula.Equals(fhere))
                 {
                     equals = false;
                 }
@@ -307,31 +306,34 @@ namespace EngineLayer
             }
             else
             {
-                return (f.Formula, f);
+                return (firstChemFormula.Formula, firstChemFormula);
             }
         }
 
         private static (string ResolvedString, Dictionary<string, int> ResolvedValue) Resolve(IEnumerable<Dictionary<int, Modification>> enumerable)
         {
-            Dictionary<string, int> ok = enumerable.First().Values.OrderBy(b => b.IdWithMotif).GroupBy(b => b.IdWithMotif).ToDictionary(b => b.Key, b => b.Count());
-            bool notEqual = false;
-            foreach (var ha in enumerable)
+            var list = enumerable.ToList();
+            Dictionary<string, int> firstDict = list[0].Values.OrderBy(b => b.IdWithMotif).GroupBy(b => b.IdWithMotif).ToDictionary(b => b.Key, b => b.Count());
+
+            bool equals = true;
+            foreach (var dict in list)
             {
-                Dictionary<string, int> okTest = ha.Values.OrderBy(b => b.IdWithMotif).GroupBy(b => b.IdWithMotif).ToDictionary(b => b.Key, b => b.Count());
-                if (!ok.SequenceEqual(okTest))
+                Dictionary<string, int> okTest = dict.Values.OrderBy(b => b.IdWithMotif).GroupBy(b => b.IdWithMotif).ToDictionary(b => b.Key, b => b.Count());
+                if (!firstDict.SequenceEqual(okTest))
                 {
-                    notEqual = true;
+                    equals = false;
                     break;
                 }
             }
-            if (notEqual)
+            if (!equals)
             {
-                var returnString = GlobalVariables.CheckLengthOfOutput(string.Join("|", enumerable.Select(b => string.Join(" ", b.Values.Select(c => c.IdWithMotif).OrderBy(c => c)))));
+                var returnString = string.Join("|", list.Select(b => string.Join(" ", b.Values.Select(c => c.IdWithMotif).OrderBy(c => c))));
+                returnString = GlobalVariables.CheckLengthOfOutput(returnString);
                 return (returnString, null);
             }
             else
             {
-                return (string.Join(" ", enumerable.First().Values.Select(c => c.IdWithMotif).OrderBy(c => c)), ok);
+                return (string.Join(" ", list[0].Values.Select(c => c.IdWithMotif).OrderBy(c => c)), firstDict);
             }
         }
 
@@ -522,8 +524,8 @@ namespace EngineLayer
             { 
                 // if the original sequence is too short or long, the intersect of the peptide and variant is unique
                 int intersectSize = intersectOneBasedEnd - intersectOneBasedStart + 1;
-                int variantStart = intersectOneBasedStart - appliedVariation.OneBasedBeginPosition;
-                bool origSeqIsShort = appliedVariation.OriginalSequence.Length - variantStart + 1 < intersectSize;
+                int variantZeroBasedStart = intersectOneBasedStart - appliedVariation.OneBasedBeginPosition;
+                bool origSeqIsShort = appliedVariation.OriginalSequence.Length - variantZeroBasedStart < intersectSize;
                 bool origSeqIsLong = appliedVariation.OriginalSequence.Length > intersectSize && pep.OneBasedEndResidueInProtein > intersectOneBasedEnd;
                 if (origSeqIsShort || origSeqIsLong)
                 {
@@ -552,7 +554,7 @@ namespace EngineLayer
             return $"{applied.OriginalSequence}{applied.OneBasedBeginPosition}{variantWithAnyMods.FullSequence}";
         }
 
-        private static void AddMatchedIonsData(Dictionary<string, string> s, PeptideSpectralMatch psm)
+        public static void AddMatchedIonsData(Dictionary<string, string> s, PeptideSpectralMatch psm)
         {
             bool nullPsm = (psm == null);
 
