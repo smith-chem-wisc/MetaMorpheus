@@ -23,7 +23,6 @@ namespace ViewModels
           { ProductType.b, OxyColors.Blue },
           { ProductType.y, OxyColors.Purple },
           { ProductType.c, OxyColors.Gold },
-          { ProductType.zPlusOne, OxyColors.Orange }, // TODO: Remove
           { ProductType.zDot, OxyColors.Orange },
           { ProductType.D, OxyColors.DodgerBlue },
           { ProductType.M, OxyColors.Firebrick }
@@ -34,10 +33,9 @@ namespace ViewModels
           { ProductType.b, OxyColors.LightBlue },
           { ProductType.y, OxyColors.MediumPurple },
           { ProductType.c, OxyColors.LightGoldenrodYellow },
-          { ProductType.zPlusOne, OxyColors.OrangeRed }, // TODO: Remove
           { ProductType.zDot, OxyColors.OrangeRed },
           { ProductType.D, OxyColors.AliceBlue },
-          { ProductType.M, OxyColors.MintCream }
+          { ProductType.M, OxyColors.LightCoral }
         };
 
         public PlotModel Model
