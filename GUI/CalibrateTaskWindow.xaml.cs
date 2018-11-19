@@ -11,9 +11,6 @@ using System.Windows.Input;
 using TaskLayer;
 using Proteomics.ProteolyticDigestion;
 using MassSpectrometry;
-using Proteomics.Fragmentation;
-using System.IO;
-using Nett;
 
 namespace MetaMorpheusGUI
 {
@@ -200,14 +197,6 @@ namespace MetaMorpheusGUI
             int MaxModificationIsoforms = int.Parse(maxModificationIsoformsTextBox.Text, CultureInfo.InvariantCulture);
             DissociationType dissociationType = GlobalVariables.AllSupportedDissociationTypes[DissociationTypeComboBox.SelectedItem.ToString()];
 
-            List<ProductType> CustomIons = null;
-            if (dissociationType.Equals(DissociationType.Custom))
-            {
-                var path = Path.Combine(GlobalVariables.DataDir, @"customDissociationType.toml");
-                CustomIons = CustomFragmentation.CustomFragmentationIons(Toml.ReadFile<CustomFragmentation>(path));
-                File.Delete(path); // delete temporary toml file
-            }
-
             DigestionParams digestionParamsToSave = new DigestionParams(
                 protease: protease.Name,
                 maxMissedCleavages: MaxMissedCleavages, 
@@ -265,8 +254,7 @@ namespace MetaMorpheusGUI
                 precursorMassTolerance: PrecursorMassTolerance,
                 assumeOrphanPeaksAreZ1Fragments: protease.Name != "top-down",
                 minVariantDepth: MinVariantDepth,
-                maxHeterozygousVariants: MaxHeterozygousVariants,
-                customIons : CustomIons);
+                maxHeterozygousVariants: MaxHeterozygousVariants);
 
             TheTask.CommonParameters = commonParamsToSave;
 

@@ -13,8 +13,6 @@ using UsefulProteomicsDatabases;
 using Proteomics.ProteolyticDigestion;
 using MassSpectrometry;
 using System.Windows.Controls;
-using Proteomics.Fragmentation;
-using System.IO;
 
 namespace MetaMorpheusGUI
 {
@@ -240,14 +238,7 @@ namespace MetaMorpheusGUI
             }
 
             DissociationType dissociationType = GlobalVariables.AllSupportedDissociationTypes[DissociationTypeComboBox.SelectedItem.ToString()];
-            List<ProductType> customIons = null;
-            if (dissociationType.Equals(DissociationType.Custom))
-            {
-                var path = Path.Combine(GlobalVariables.DataDir, @"customDissociationType.toml");
-                customIons = CustomFragmentation.CustomFragmentationIons(Nett.Toml.ReadFile<CustomFragmentation>(path));
-                File.Delete(path); // delete temporary toml file
-            }
-
+            
             //TheTask.XlSearchParameters.SearchGlyco = RbSearchGlyco.IsChecked.Value;
             //TheTask.XlSearchParameters.SearchGlycoWithBgYgIndex = CkbSearchGlycoWithBgYgIndex.IsChecked.Value;
             TheTask.XlSearchParameters.RestrictToTopNHits = ckbXLTopNum.IsChecked.Value;
@@ -352,8 +343,7 @@ namespace MetaMorpheusGUI
                 totalPartitions: int.Parse(numberOfDatabaseSearchesTextBox.Text, CultureInfo.InvariantCulture),
                 listOfModsVariable: listOfModsVariable,
                 listOfModsFixed: listOfModsFixed,
-                assumeOrphanPeaksAreZ1Fragments: protease.Name != "top-down",
-                customIons : customIons);
+                assumeOrphanPeaksAreZ1Fragments: protease.Name != "top-down");
 
             TheTask.CommonParameters = commonParamsToSave;
 

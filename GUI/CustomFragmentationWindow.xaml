@@ -5,20 +5,21 @@
         xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
         xmlns:local="clr-namespace:MetaMorpheusGUI"
         mc:Ignorable="d"
-        Title="Add Custom Dissociation Type" Height="180" Width="400" WindowStartupLocation="CenterScreen">
+        Title="Add Custom Dissociation Type" Height="191" Width="400" WindowStartupLocation="CenterScreen">
     <StackPanel>
-        <StackPanel Orientation="Horizontal" Margin="100,15,100,0">
-            <CheckBox x:Name="bCheckBox" VerticalAlignment="Center" Width="100" Content="b ions" IsEnabled="True" />
-            <CheckBox x:Name="yCheckBox" VerticalAlignment="Center" Width="100" Content="y ions" IsEnabled="True" />
+        <StackPanel>
+            <ListBox x:Name="ProductTypeList" Margin="60,10,60,20" Height="88" RenderTransformOrigin="0.493,0.393">
+                <ListBox.ItemTemplate>
+                    <DataTemplate>
+                        <CheckBox IsChecked="{Binding IsSelected}" Content="{Binding Type}"/>
+                    </DataTemplate>
+                </ListBox.ItemTemplate>
+            </ListBox>
         </StackPanel>
-        <StackPanel Orientation="Horizontal" Margin="100,15,100,0">
-            <CheckBox x:Name="cCheckBox" VerticalAlignment="Center" Width="100" Content="c ions" IsEnabled="True" />
-            <CheckBox x:Name="zdotCheckBox" VerticalAlignment="Center" Width="100" Content="zdot ions" IsEnabled="True" />
-        </StackPanel>
-        
-        <StackPanel Orientation="Horizontal" HorizontalAlignment="Center" Margin="0,30,0,5">
-            <Button x:Name="Save"  Height="40" Width="250" Content="Save" Click="Save_Click" FontSize="15" Grid.Row="3" />
-            <Button x:Name="Cancel" Height="40" Width="150" Content="Cancel" Click="Cancel_Click" FontSize="15" Grid.Row="3" />
+
+        <StackPanel Orientation="Horizontal" VerticalAlignment="Bottom" Height="40">
+            <Button x:Name="Save"  Height="30" Width="244" Content="Save" Click="Save_Click" FontSize="15" Grid.Row="3" />
+            <Button x:Name="Cancel" Height="30" Width="148" Content="Cancel" Click="Cancel_Click" FontSize="15" Grid.Row="3" />
         </StackPanel>
     </StackPanel>
 </Window>

@@ -74,8 +74,8 @@ namespace TaskLayer
                 }
                 var ok = TaskList[i];
 
-                // reset custom dissociation type product lists for each task
-                ok.Item2.CommonParameters.SetCustomDissociationType();
+                // reset product types for custom fragmentation
+                ok.Item2.CommonParameters.SetCustomProductTypes();
 
                 var outputFolderForThisTask = Path.Combine(OutputFolder, ok.Item1);
 

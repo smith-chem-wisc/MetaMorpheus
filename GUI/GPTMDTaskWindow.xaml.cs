@@ -11,8 +11,6 @@ using System.Windows.Input;
 using TaskLayer;
 using Proteomics.ProteolyticDigestion;
 using MassSpectrometry;
-using Proteomics.Fragmentation;
-using System.IO;
 
 namespace MetaMorpheusGUI
 {
@@ -254,14 +252,6 @@ namespace MetaMorpheusGUI
             InitiatorMethionineBehavior InitiatorMethionineBehavior = (InitiatorMethionineBehavior)initiatorMethionineBehaviorComboBox.SelectedIndex;
             DissociationType dissociationType = GlobalVariables.AllSupportedDissociationTypes[DissociationTypeComboBox.SelectedItem.ToString()];
 
-            List<ProductType> CustomIons = null;
-            if (dissociationType.Equals(DissociationType.Custom))
-            {
-                var path = Path.Combine(GlobalVariables.DataDir, @"customDissociationType.toml");
-                CustomIons = CustomFragmentation.CustomFragmentationIons(Nett.Toml.ReadFile<CustomFragmentation>(path));
-                File.Delete(path); // delete temporary toml file
-            }
-
             Tolerance ProductMassTolerance;
             if (productMassToleranceComboBox.SelectedIndex == 0)
             {
@@ -322,8 +312,7 @@ namespace MetaMorpheusGUI
                     assumeOrphanPeaksAreZ1Fragments: protease.Name != "top-down",
                     addCompIons: addCompIonCheckBox.IsChecked.Value,
                     minVariantDepth: MinVariantDepth,
-                    maxHeterozygousVariants: MaxHeterozygousVariants,
-                    customIons : CustomIons);
+                    maxHeterozygousVariants: MaxHeterozygousVariants);
 
             TheTask.GptmdParameters.ListOfModsGptmd = new List<(string, string)>();
             foreach (var heh in gptmdModTypeForTreeViewObservableCollection)

@@ -154,7 +154,6 @@
       <Generator>MSBuild:Compile</Generator>
       <SubType>Designer</SubType>
     </ApplicationDefinition>
-    <Compile Include="CustomFragmentation.cs" />
     <Compile Include="CustomFragmentationWindow.xaml.cs">
       <DependentUpon>CustomFragmentationWindow.xaml</DependentUpon>
     </Compile>

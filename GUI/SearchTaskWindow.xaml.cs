@@ -14,7 +14,6 @@ using UsefulProteomicsDatabases;
 using Proteomics.Fragmentation;
 using Proteomics.ProteolyticDigestion;
 using MassSpectrometry;
-using System.IO;
 
 namespace MetaMorpheusGUI
 {
@@ -354,14 +353,7 @@ namespace MetaMorpheusGUI
             Protease protease = (Protease)proteaseComboBox.SelectedItem;
             
             DissociationType dissociationType = GlobalVariables.AllSupportedDissociationTypes[dissociationTypeComboBox.SelectedItem.ToString()];
-            List<ProductType> CustomIons = null;
-            if (dissociationType.Equals(DissociationType.Custom))
-            {
-                var path = Path.Combine(GlobalVariables.DataDir, @"customDissociationType.toml");
-                CustomIons = CustomFragmentation.CustomFragmentationIons(Nett.Toml.ReadFile<CustomFragmentation>(path));
-                File.Delete(path); // delete temporary toml file
-            }
-
+           
             FragmentationTerminus fragmentationTerminus = FragmentationTerminus.Both;
             if (nTerminalIons.IsChecked.Value && !cTerminalIons.IsChecked.Value)
             {
@@ -468,8 +460,7 @@ namespace MetaMorpheusGUI
                 qValueOutputFilter: QValueCheckBox.IsChecked.Value ? double.Parse(QValueTextBox.Text, CultureInfo.InvariantCulture) : 1.0,
                 assumeOrphanPeaksAreZ1Fragments: protease.Name != "top-down",
                 minVariantDepth: MinVariantDepth,
-                maxHeterozygousVariants: MaxHeterozygousVariants,
-                customIons : CustomIons);
+                maxHeterozygousVariants: MaxHeterozygousVariants);
 
             if (classicSearchRadioButton.IsChecked.Value)
             {
