@@ -312,7 +312,7 @@ namespace TaskLayer
             }
 
             // run FlashLFQ
-            var FlashLfqEngine = new FlashLFQEngine(
+            var FlashLfqEngine = new FlashLfqEngine(
                 allIdentifications: flashLFQIdentifications,
                 normalize: Parameters.SearchParameters.Normalize,
                 ppmTolerance: Parameters.SearchParameters.QuantifyPpmTol,
@@ -894,12 +894,10 @@ namespace TaskLayer
 
         private void WritePeptideQuantificationResultsToTsv(FlashLfqResults flashLFQResults, string outputFolder, string fileName, List<string> nestedIds)
         {
-            var baseSeqPath = Path.Combine(outputFolder, fileName + "_BaseSequences.tsv");
-            var fullSeqPath = Path.Combine(outputFolder, fileName + "_FullSequences.tsv");
+            var fullSeqPath = Path.Combine(outputFolder, fileName + ".tsv");
 
-            flashLFQResults.WriteResults(null, fullSeqPath, baseSeqPath, null);
-
-            FinishedWritingFile(baseSeqPath, nestedIds);
+            flashLFQResults.WriteResults(null, fullSeqPath, null);
+            
             FinishedWritingFile(fullSeqPath, nestedIds);
         }
 
@@ -907,7 +905,7 @@ namespace TaskLayer
         {
             var peaksPath = Path.Combine(outputFolder, fileName + ".tsv");
 
-            flashLFQResults.WriteResults(peaksPath, null, null, null);
+            flashLFQResults.WriteResults(peaksPath, null, null);
 
             FinishedWritingFile(peaksPath, nestedIds);
         }
