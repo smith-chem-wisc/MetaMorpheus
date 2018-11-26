@@ -9,6 +9,7 @@ using System.Collections.Generic;
 using Proteomics.Fragmentation;
 using EngineLayer;
 using Chemistry;
+using System.Reflection;
 
 namespace ViewModels
 {
@@ -71,6 +72,12 @@ namespace ViewModels
         // single peptides (not crosslink)
         public void DrawPeptideSpectralMatch(MsDataScan msDataScan, MetaDrawPsm psmToDraw)
         {
+            // Set the Model property, the INotifyPropertyChanged event will make the WPF Plot control update its content
+            this.Model = Draw(msDataScan, psmToDraw);
+        }
+
+        private PlotModel Draw(MsDataScan msDataScan, MetaDrawPsm psmToDraw)
+        {
             // x is m/z, y is intensity
             var spectrumMzs = msDataScan.MassSpectrum.XArray;
             var spectrumIntensities = msDataScan.MassSpectrum.YArray;
@@ -80,7 +87,7 @@ namespace ViewModels
             {
                 subtitle = psmToDraw.FullSequence + "\n" + psmToDraw.BetaPeptideFullSequence;
             }
-            PlotModel model = new PlotModel { Title = "Spectrum Annotation of Scan #" + msDataScan.OneBasedScanNumber, DefaultFontSize = 15, Subtitle = subtitle};
+            PlotModel model = new PlotModel { Title = "Spectrum Annotation of Scan #" + msDataScan.OneBasedScanNumber, DefaultFontSize = 15, Subtitle = subtitle };
             model.Axes.Add(new LinearAxis { Position = AxisPosition.Bottom, Title = "m/z", Minimum = 0, Maximum = spectrumMzs.Max() * 1.02, AbsoluteMinimum = 0, AbsoluteMaximum = spectrumMzs.Max() * 5 });
             model.Axes.Add(new LinearAxis { Position = AxisPosition.Left, Title = "Intensity", Minimum = 0, Maximum = spectrumIntensities.Max() * 1.2, AbsoluteMinimum = 0, AbsoluteMaximum = spectrumIntensities.Max() * 1.3 });
             model.Axes[1].Zoom(0, spectrumIntensities.Max() * 1.1);
@@ -198,11 +205,63 @@ namespace ViewModels
                 allIons[i].Points.Add(new DataPoint(spectrumMzs[i], spectrumIntensities[i]));
                 model.Series.Add(allIons[i]);
             }
+            
+            // Axes are created automatically if they are not defined      
+            return model;
+        }
 
-            // Axes are created automatically if they are not defined
+        private PlotModel DrawPdf(MsDataScan msDataScan, System.Reflection.PropertyInfo[] properties, MetaDrawPsm psm, PlotModel model)
+        {
+            PlotModel pdfModel = Draw(msDataScan, psm); // new model with annotations
+            var y = model.DefaultYAxis.DataMaximum;
+            var x = model.DefaultXAxis.DataMaximum;
+            var diff = (y - (model.DefaultYAxis.ActualMaximum * 0.5)) / properties.Length;
 
-            // Set the Model property, the INotifyPropertyChanged event will make the WPF Plot control update its content
-            this.Model = model;
+            // properties to exclude
+            string[] exclude = { "PrecursorScanNum", "PrecursorMz", "MatchedIons",
+                "TotalIonCurrent", "Notch", " EssentialSeq", "MissedCleavage",
+                "OrganismName", "StartAndEndResiduesInProtein", "PreviousAminoAcid",
+                "NextAminoAcid", "Rank", "BetaPeptideMatchedIons", "BetaPeptideRank" };
+
+            var propertiesList = properties.ToList();
+            foreach (PropertyInfo property in properties.ToList())
+            {
+                if (exclude.Any(e => e.Contains(property.Name)))
+                {
+                    propertiesList.Remove(property);
+                }
+            }
+
+            var displayedProperties = propertiesList.Where(p => p.GetValue(psm) != null); // only display non-null properties
+            
+            foreach(PropertyInfo property in displayedProperties)
+            {
+                var propertyAnnotation = new TextAnnotation
+                {
+                    Text = property.Name + " = " + property.GetValue(psm),
+                    TextPosition = new DataPoint(x, y),
+                    FontSize = 9,
+                    StrokeThickness = 0,
+                    TextHorizontalAlignment = HorizontalAlignment.Right
+                };
+
+                y -= diff;
+                pdfModel.Annotations.Add(propertyAnnotation);
+            }
+
+            return pdfModel;
+        }
+
+        public void DrawPeptideSpectralMatchPdf(MsDataScan msDataScan, MetaDrawPsm psm, string fileName)
+        {
+            var properties = psm.GetType().GetProperties();
+            var pdfModel = DrawPdf(msDataScan, properties, psm, privateModel);
+
+            using (var stream = System.IO.File.Create(fileName))
+            {
+                PdfExporter pdf = new PdfExporter { Width = 800, Height = 800 };
+                pdf.Export(pdfModel, stream);
+            }
         }
 
     }
