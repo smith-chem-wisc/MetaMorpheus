@@ -1,14 +1,15 @@
-﻿using System.Linq;
+﻿using Chemistry;
+using EngineLayer;
+using MassSpectrometry;
 using OxyPlot;
+using OxyPlot.Annotations;
 using OxyPlot.Axes;
 using OxyPlot.Series;
-using OxyPlot.Annotations;
-using System.ComponentModel;
-using MassSpectrometry;
-using System.Collections.Generic;
 using Proteomics.Fragmentation;
-using EngineLayer;
-using Chemistry;
+using System.Collections.Generic;
+using System.ComponentModel;
+using System.IO;
+using System.Linq;
 using System.Reflection;
 
 namespace ViewModels
@@ -205,17 +206,21 @@ namespace ViewModels
                 allIons[i].Points.Add(new DataPoint(spectrumMzs[i], spectrumIntensities[i]));
                 model.Series.Add(allIons[i]);
             }
-            
+
             // Axes are created automatically if they are not defined      
             return model;
         }
 
-        private PlotModel DrawPdf(MsDataScan msDataScan, System.Reflection.PropertyInfo[] properties, MetaDrawPsm psm, PlotModel model)
+        private PlotModel DrawPdf(MsDataScan msDataScan, PropertyInfo[] properties, MetaDrawPsm psm, bool redraw)
         {
-            PlotModel pdfModel = Draw(msDataScan, psm); // new model with annotations
-            var y = model.DefaultYAxis.DataMaximum;
-            var x = model.DefaultXAxis.DataMaximum;
-            var diff = (y - (model.DefaultYAxis.ActualMaximum * 0.5)) / properties.Length;
+            if (redraw)
+            {
+                this.Model = Draw(msDataScan, psm);
+            }
+
+            var y = Model.DefaultYAxis.ActualMaximum - Model.DefaultYAxis.ActualMaximum * 0.03;
+            var x = Model.DefaultXAxis.ActualMaximum - Model.DefaultXAxis.ActualMaximum * 0.01;
+            var diff = (y - (Model.DefaultYAxis.ActualMaximum * 0.1)) / properties.Length;
 
             // properties to exclude
             string[] exclude = { "PrecursorScanNum", "PrecursorMz", "MatchedIons",
@@ -233,12 +238,12 @@ namespace ViewModels
             }
 
             var displayedProperties = propertiesList.Where(p => p.GetValue(psm) != null); // only display non-null properties
-            
-            foreach(PropertyInfo property in displayedProperties)
+
+            foreach (PropertyInfo property in displayedProperties)
             {
                 var propertyAnnotation = new TextAnnotation
                 {
-                    Text = property.Name + " = " + property.GetValue(psm),
+                    Text = property.Name + ": " + property.GetValue(psm),
                     TextPosition = new DataPoint(x, y),
                     FontSize = 9,
                     StrokeThickness = 0,
@@ -246,23 +251,28 @@ namespace ViewModels
                 };
 
                 y -= diff;
-                pdfModel.Annotations.Add(propertyAnnotation);
+                Model.Annotations.Add(propertyAnnotation);
             }
 
-            return pdfModel;
+            return Model;
         }
 
-        public void DrawPeptideSpectralMatchPdf(MsDataScan msDataScan, MetaDrawPsm psm, string fileName)
+        public void DrawPeptideSpectralMatchPdf(MsDataScan msDataScan, MetaDrawPsm psm, string fileName, bool redraw)
         {
             var properties = psm.GetType().GetProperties();
-            var pdfModel = DrawPdf(msDataScan, properties, psm, privateModel);
+            var pdfModel = DrawPdf(msDataScan, properties, psm, redraw);
 
-            using (var stream = System.IO.File.Create(fileName))
+            string dir = Path.GetDirectoryName(fileName);
+            if (!Directory.Exists(dir))
             {
-                PdfExporter pdf = new PdfExporter { Width = 800, Height = 800 };
+                Directory.CreateDirectory(dir);
+            }
+
+            using (var stream = File.Create(fileName))
+            {
+                PdfExporter pdf = new PdfExporter { Width = 800, Height = 500 };
                 pdf.Export(pdfModel, stream);
             }
         }
-
     }
 }

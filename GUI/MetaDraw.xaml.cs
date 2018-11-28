@@ -152,12 +152,7 @@ namespace MetaMorpheusGUI
 
             // draw annotated spectrum
             mainViewModel.DrawPeptideSpectralMatch(msDataScanToDraw, psmToDraw);
-
-            if (fileName != null)
-            {
-                mainViewModel.DrawPeptideSpectralMatchPdf(msDataScanToDraw, psmToDraw, fileName);
-            }
-
+            
             // draw annotated base sequence
             //TO DO: Annotate crosslinked peptide sequence           
             if (psmToDraw.CrossType == null)  // if the psm is single peptide (not crosslinked).
@@ -341,27 +336,43 @@ namespace MetaMorpheusGUI
             (sender as DataGrid).UnselectAll();
         }
         
-        private void ExportToPdf(MetaDrawPsm psm, string name)
-        {
-            DrawPsm(psm.Ms2ScanNumber, psm.FullSequence, name);
-        }
-
         private void PDFButton_Click(object sender, RoutedEventArgs e)
         {
+            MetaDrawPsm tempPsm = null;
             if (dataGridScanNums.SelectedCells.Count == 0)
             {
                 MessageBox.Show("Please select at least one scan to export");
             }
 
             int num = dataGridScanNums.SelectedItems.Count;
+            
             foreach (object selectedItem in dataGridScanNums.SelectedItems)
             {
                 MetaDrawPsm psm = (MetaDrawPsm)selectedItem;
+
+                if(tempPsm == null)
+                {
+                    tempPsm = psm;
+                }
+
+                MsDataScan msDataScanToDraw = MsDataFile.GetOneBasedScan(psm.Ms2ScanNumber);
+
                 string myString = illegalInFileName.Replace(psm.FullSequence, "");
-                ExportToPdf(psm, psm.Ms2ScanNumber + "_" + myString + ".pdf");
+
+                if(myString.Length > 30)
+                {
+                    myString = myString.Substring(0, 30);
+                }
+
+                string filePath = Path.Combine(Path.GetDirectoryName(tsvResultsFilePath), "MetaDrawExport", psm.Ms2ScanNumber + "_" + myString + ".pdf");
+
+                mainViewModel.DrawPeptideSpectralMatchPdf(msDataScanToDraw, psm, filePath, num > 1);
             }
 
             dataGridScanNums.SelectedItem = dataGridScanNums.SelectedItem;
+
+            DrawPsm(tempPsm.Ms2ScanNumber, tempPsm.FullSequence);
+
             MessageBox.Show(string.Format("{0} PDFs exported", num));
         }
     }
