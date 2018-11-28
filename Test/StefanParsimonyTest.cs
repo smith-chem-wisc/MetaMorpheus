@@ -140,11 +140,13 @@ namespace Test
 
             int countOfProteinGroups = results.SortedAndScoredProteinGroups.Count;
 
-            // because modified peptides were NOT considered as unique, then there should be one ambiguous protein group after parsimony, and two protein accessions for each peptide
-            Assert.That(countOfProteinGroups == 1);
-            Assert.That(results.SortedAndScoredProteinGroups.First().Proteins.Count == 2);
-            Assert.That(psm1.ProteinAccession == null);
-            Assert.That(psm2.ProteinAccession == null);
+            // because modified peptides were NOT considered as unique, 
+            // then there should be one ambiguous protein group after parsimony, 
+            // and two protein accessions for each peptide
+            Assert.AreEqual(1, countOfProteinGroups);
+            Assert.AreEqual(2, results.SortedAndScoredProteinGroups.First().Proteins.Count);
+            Assert.IsNull(psm1.ProteinAccession);
+            Assert.IsNull(psm2.ProteinAccession);
         }
 
         [Test]
