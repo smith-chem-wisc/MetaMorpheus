@@ -5,6 +5,7 @@ using System.ComponentModel;
 using MassSpectrometry;
 using System.Linq;
 using System.Collections.ObjectModel;
+using System;
 
 namespace MetaMorpheusGUI
 {
@@ -40,11 +41,15 @@ namespace MetaMorpheusGUI
         private void PopulateChoices()
         {
             TheList = new ObservableCollection<BoolStringClass>();
-            var productTypes = DissociationTypeCollection.ProductsFromDissociationType.Values.SelectMany(p => p).Distinct();
 
-            foreach (ProductType p in productTypes)
+            var knownProductTypes = Enum.GetValues(typeof(ProductType)).Cast<ProductType>().ToList();
+            knownProductTypes.Remove(ProductType.D);
+            knownProductTypes.Remove(ProductType.M);
+            knownProductTypes.Remove(ProductType.zPlusOne);
+
+            foreach (ProductType productType in knownProductTypes)
             {
-                TheList.Add(new BoolStringClass { IsSelected = false, Type = p });
+                TheList.Add(new BoolStringClass { IsSelected = false, Type = productType, ToolTip = DissociationTypeCollection.GetMassShiftFromProductType(productType).ToString("F4") + " Da" });
             }
 
             ProductTypeList.ItemsSource = TheList;
@@ -73,5 +78,6 @@ namespace MetaMorpheusGUI
     {
         public ProductType Type { get; set; }
         public bool IsSelected { get; set; }
+        public string ToolTip { get; set; }
     }
 }
