@@ -73,6 +73,7 @@ namespace TaskLayer
         public MsDataFile LoadFile(string origDataFile, int? topNpeaks, double? minRatio, bool trimMs1Peaks, bool trimMsMsPeaks, CommonParameters commonParameters)
         {
             FilteringParams filter = new FilteringParams(topNpeaks, minRatio, 1, trimMs1Peaks, trimMsMsPeaks);
+            //FilteringParams filter = new FilteringParams(10000, null, null, true, true);
             if (MyMsDataFiles.TryGetValue(origDataFile, out MsDataFile value) && value != null)
                 return value;
 
