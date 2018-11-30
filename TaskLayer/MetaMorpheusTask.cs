@@ -589,7 +589,7 @@ namespace TaskLayer
         public void GenerateIndexes(IndexingEngine indexEngine, List<DbForTask> dbFilenameList, ref PeptideWithSetModifications[] peptideIndex, ref int[][] fragmentIndex, ref int[][] precursorIndex, List<Protein> allKnownProteins, List<Modification> allKnownModifications, string taskId)
         {
             string pathToFolderWithIndices = GetExistingFolderWithIndices(indexEngine, dbFilenameList);
-            //if (pathToFolderWithIndices == null)
+            if (pathToFolderWithIndices == null)
             {
                 var output_folderForIndices = GenerateOutputFolderForIndices(dbFilenameList);
                 Status("Writing params...", new List<string> { taskId });
