@@ -238,6 +238,7 @@ namespace MetaMorpheusGUI
             }
 
             DissociationType dissociationType = GlobalVariables.AllSupportedDissociationTypes[DissociationTypeComboBox.SelectedItem.ToString()];
+            CustomFragmentationWindow.Close();
             
             //TheTask.XlSearchParameters.SearchGlyco = RbSearchGlyco.IsChecked.Value;
             //TheTask.XlSearchParameters.SearchGlycoWithBgYgIndex = CkbSearchGlycoWithBgYgIndex.IsChecked.Value;
@@ -421,7 +422,7 @@ namespace MetaMorpheusGUI
         {
             if (DissociationTypeComboBox.SelectedItem.ToString().Equals(DissociationType.Custom.ToString()))
             {
-                CustomFragmentationWindow.ShowDialog();
+                CustomFragmentationWindow.Show();
             }
         }
     }

@@ -353,7 +353,8 @@ namespace MetaMorpheusGUI
             Protease protease = (Protease)proteaseComboBox.SelectedItem;
             
             DissociationType dissociationType = GlobalVariables.AllSupportedDissociationTypes[dissociationTypeComboBox.SelectedItem.ToString()];
-           
+            CustomFragmentationWindow.Close();
+
             FragmentationTerminus fragmentationTerminus = FragmentationTerminus.Both;
             if (nTerminalIons.IsChecked.Value && !cTerminalIons.IsChecked.Value)
             {
@@ -767,7 +768,7 @@ namespace MetaMorpheusGUI
         {
             if (dissociationTypeComboBox.SelectedItem.ToString().Equals(DissociationType.Custom.ToString()))
             {
-                CustomFragmentationWindow.ShowDialog();
+                CustomFragmentationWindow.Show();
             }
         }
     }

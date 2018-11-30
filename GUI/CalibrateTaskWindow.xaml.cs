@@ -196,6 +196,7 @@ namespace MetaMorpheusGUI
             int MaxHeterozygousVariants = int.Parse(MaxHeterozygousVariantsTextBox.Text, NumberStyles.Any, CultureInfo.InvariantCulture);
             int MaxModificationIsoforms = int.Parse(maxModificationIsoformsTextBox.Text, CultureInfo.InvariantCulture);
             DissociationType dissociationType = GlobalVariables.AllSupportedDissociationTypes[DissociationTypeComboBox.SelectedItem.ToString()];
+            CustomFragmentationWindow.Close();
 
             DigestionParams digestionParamsToSave = new DigestionParams(
                 protease: protease.Name,
@@ -309,7 +310,7 @@ namespace MetaMorpheusGUI
         {
             if (DissociationTypeComboBox.SelectedItem.ToString().Equals(DissociationType.Custom.ToString()))
             {
-                CustomFragmentationWindow.ShowDialog();
+                CustomFragmentationWindow.Show();
             }
         }
     }

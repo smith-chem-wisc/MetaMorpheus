@@ -54,18 +54,22 @@ namespace MetaMorpheusGUI
         {
             var selectedIons = TheList.Where(p => p.IsSelected).Select(p => p.Type);
             DissociationTypeCollection.ProductsFromDissociationType[DissociationType.Custom] = selectedIons.ToList();
-            DialogResult = true;
+            this.Visibility = Visibility.Hidden;
         }
 
         private void Cancel_Click(object sender, RoutedEventArgs e)
         {
-            DialogResult = true;
+            this.Visibility = Visibility.Hidden;
         }
 
         private void OnClosing(object sender, CancelEventArgs e)
         {
-            this.Visibility = Visibility.Hidden;
-            e.Cancel = true;
+            // this window only closes when task is added
+            if (this.Visibility == Visibility.Visible)
+            { 
+                this.Visibility = Visibility.Hidden;
+                e.Cancel = true;
+            }
         }
     }
 
