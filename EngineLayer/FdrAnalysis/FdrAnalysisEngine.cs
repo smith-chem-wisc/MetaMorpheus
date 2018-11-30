@@ -273,10 +273,10 @@ namespace EngineLayer.FdrAnalysis
             return cumulative_target;
         }
 
-        private void CountPsm()
+        public void CountPsm()
         {
             // exclude ambiguous psms and has a fdr cutoff = 0.01
-            var psmsGroupedBySequence = AllPsms.Where(psm => psm.FullSequence != null && (psm.FdrInfo.QValue <= 0.01 || psm.FdrInfo.QValueNotch <= 0.01))
+            var psmsGroupedBySequence = AllPsms.Where(psm => psm.FullSequence != null && psm.FdrInfo.QValue <= 0.01 && psm.FdrInfo.QValueNotch <= 0.01)
                 .GroupBy(p => p.FullSequence).ToList();
 
             foreach (var group in psmsGroupedBySequence)
