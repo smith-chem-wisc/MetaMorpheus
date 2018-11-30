@@ -20,7 +20,8 @@ namespace Test
         [Test]
         public static void TestCoIsolation()
         {
-            Protease protease = new Protease("CustProtease", new List<Tuple<string, FragmentationTerminus>> { new Tuple<string, FragmentationTerminus>("K", FragmentationTerminus.C) }, new List<Tuple<string, FragmentationTerminus>>(), CleavageSpecificity.Full, null, null, null);
+            List<DigestionMotif> motifs = new List<DigestionMotif> { new DigestionMotif("K", null, 1, null) };
+            Protease protease = new Protease("CustProtease", CleavageSpecificity.Full, null, null, motifs);
             ProteaseDictionary.Dictionary.Add(protease.Name, protease);
             CommonParameters CommonParameters = new CommonParameters(scoreCutoff: 1, deconvolutionIntensityRatio: 50, digestionParams: new DigestionParams(protease.Name, minPeptideLength: 1));
 

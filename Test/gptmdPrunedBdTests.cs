@@ -51,7 +51,7 @@ namespace Test
                 // all proteins in DB have baseSequence!=null (not ambiguous)
                 // all proteins that belong to a protein group are written to DB
             Assert.AreEqual(20, proteins.Count);
-            int totalNumberOfMods = proteins.Sum(p => p.OneBasedPossibleLocalizedModifications.Count);
+            int totalNumberOfMods = proteins.Sum(p => p.OneBasedPossibleLocalizedModifications.Count + p.SequenceVariations.Sum(sv => sv.OneBasedModifications.Count));
 
             //tests that modifications are being done correctly
             Assert.AreEqual(0, totalNumberOfMods);
@@ -94,8 +94,8 @@ namespace Test
             }, false);
 
             //create modification lists
-            List<Modification> variableModifications = GlobalVariables.AllModsKnown.OfType<Modification>().Where
-                (b => task1.CommonParameters.ListOfModsVariable.Contains((b.ModificationType, b.IdWithMotif))).ToList();
+            List<Modification> variableModifications = GlobalVariables.AllModsKnown.OfType<Modification>()
+                .Where(b => task1.CommonParameters.ListOfModsVariable.Contains((b.ModificationType, b.IdWithMotif))).ToList();
 
             //add modification to Protein object
             var dictHere = new Dictionary<int, List<Modification>>();
@@ -164,9 +164,9 @@ namespace Test
 
             var proteins = ProteinDbLoader.LoadProteinXML(final, true, DecoyType.Reverse, new List<Modification>(), false, new List<string>(), out ok);
             //check length
-            Assert.AreEqual(proteins[0].OneBasedPossibleLocalizedModifications.Count, 1);
+            Assert.AreEqual(1, proteins[0].OneBasedPossibleLocalizedModifications.Count);
             //check location (key)
-            Assert.AreEqual(proteins[0].OneBasedPossibleLocalizedModifications.ContainsKey(3), true);
+            Assert.AreEqual(true, proteins[0].OneBasedPossibleLocalizedModifications.ContainsKey(3));
             List<Modification> listOfMods = proteins[0].OneBasedPossibleLocalizedModifications[3];
             //check Type, count, ID
             Assert.AreEqual(listOfMods[0].ModificationType, "ConnorModType");
@@ -291,7 +291,7 @@ namespace Test
             engine.Run();
             string final = Path.Combine(MySetUpClass.outputFolder, "task5", "selectedModspruned.xml");
             var proteins = ProteinDbLoader.LoadProteinXML(final, true, DecoyType.Reverse, new List<Modification>(), false, new List<string>(), out ok);
-            var Dlist = proteins[0].Digest(task5.CommonParameters.DigestionParams, fixedModifications, variableModifications).ToList();
+            var Dlist = proteins[0].GetVariantProteins().SelectMany(vp => vp.Digest(task5.CommonParameters.DigestionParams, fixedModifications, variableModifications)).ToList();
             Assert.AreEqual(Dlist[0].NumFixedMods, 1);
 
             //check length

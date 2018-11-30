@@ -14,7 +14,6 @@ using System;
 using System.Data;
 using System.Windows.Data;
 using System.Windows.Media;
-using System.Windows.Media.Imaging;
 using Proteomics.Fragmentation;
 using Proteomics.ProteolyticDigestion;
 using System.Text.RegularExpressions;
@@ -64,7 +63,6 @@ namespace MetaMorpheusGUI
             productTypeToColor = ((ProductType[])Enum.GetValues(typeof(ProductType))).ToDictionary(p => p, p => Colors.Aqua);
             productTypeToColor[ProductType.b] = Colors.Blue;
             productTypeToColor[ProductType.y] = Colors.Purple;
-            productTypeToColor[ProductType.zPlusOne] = Colors.Orange; // TODO: Remove
             productTypeToColor[ProductType.zDot] = Colors.Orange;
             productTypeToColor[ProductType.c] = Colors.Gold;
 
@@ -73,7 +71,6 @@ namespace MetaMorpheusGUI
             productTypeToYOffset[ProductType.b] = 50;
             productTypeToYOffset[ProductType.y] = 0;
             productTypeToYOffset[ProductType.c] = 50;
-            productTypeToYOffset[ProductType.zPlusOne] = 0; // TODO: Remove
             productTypeToYOffset[ProductType.zDot] = 0;
         }
 
@@ -106,6 +103,7 @@ namespace MetaMorpheusGUI
                     spectraFileNameLabel.Text = filePath;
                     break;
                 case ".psmtsv":
+                case ".tsv":
                     tsvResultsFilePath = filePath;
                     psmFileNameLabel.Text = filePath;
                     break;
@@ -120,15 +118,23 @@ namespace MetaMorpheusGUI
             string fileNameWithExtension = Path.GetFileName(spectraFilePath);
             string fileNameWithoutExtension = Path.GetFileNameWithoutExtension(spectraFilePath);
 
-            foreach (var psm in TsvResultReader.ReadTsv(filename))
+            try
             {
-                if (psm.Filename == fileNameWithExtension || psm.Filename == fileNameWithoutExtension)
+                List<string> warnings; // TODO: print warnings
+                foreach (var psm in TsvResultReader.ReadTsv(filename, out warnings))
                 {
-                    Dispatcher.BeginInvoke(new Action(() =>
+                    if (psm.Filename == fileNameWithExtension || psm.Filename == fileNameWithoutExtension || psm.Filename.Contains(fileNameWithoutExtension))
                     {
-                        peptideSpectralMatches.Add(psm);
-                    }));
+                        Dispatcher.BeginInvoke(new Action(() =>
+                        {
+                            peptideSpectralMatches.Add(psm);
+                        }));
+                    }
                 }
+            }
+            catch (Exception e)
+            {
+                MessageBox.Show("Could not open PSM file:\n" + e.Message);
             }
         }
 
@@ -148,7 +154,11 @@ namespace MetaMorpheusGUI
             mainViewModel.DrawPeptideSpectralMatch(msDataScanToDraw, psmToDraw);
 
             // draw annotated base sequence
-            DrawAnnotatedBaseSequence(psmToDraw);
+            //TO DO: Annotate crosslinked peptide sequence           
+            if (psmToDraw.CrossType == null)  // if the psm is single peptide (not crosslinked).
+            {
+                DrawAnnotatedBaseSequence(psmToDraw);
+            }
         }
 
         /// <summary>

@@ -74,14 +74,35 @@ namespace Test
             Scans = ScansHere.ToArray();
         }
 
-        public TestDataFile(List<PeptideWithSetModifications> pepWithSetModss, bool additionalMasses = false) : base(pepWithSetModss.Count * 2, new SourceFile(@"no nativeID format", "mzML format", null, "SHA-1", @"C:\fake.mzML", null))
+        public TestDataFile(double precursor, double[] products) : base(2, new SourceFile(null, null, null, null, null))
+        {
+            var mz1 = new double[] { precursor.ToMz(2) };
+            var intensities1 = new double[] { 1 };
+            var MassSpectrum1 = new MzSpectrum(mz1, intensities1, false);
+
+            var ScansHere = new List<MsDataScan> { new MsDataScan(MassSpectrum1, 1, 1, true, Polarity.Positive, 1, new MzLibUtil.MzRange(0, 10000), "ff", MZAnalyzerType.Unknown, 1000, 1, null, "scan=1") };
+            var mz2 = products;
+            var intensities2 = new double[products.Length];
+            for (int i = 0; i < intensities2.Length; i++)
+            {
+                intensities2[i] = 1;
+            }
+            var MassSpectrum2 = new MzSpectrum(mz2, intensities2, false);
+            ScansHere.Add(new MsDataScan(MassSpectrum2, 2, 2, true, Polarity.Positive, 2,
+                new MzLibUtil.MzRange(0, 10000), "f", MZAnalyzerType.Unknown, 100000, 1, null, "scan=2", precursor.ToMz(2), 2, 1, precursor.ToMz(2), 2, DissociationType.HCD, 1, precursor.ToMz(2)));
+
+            Scans = ScansHere.ToArray();
+        }
+
+        public TestDataFile(List<PeptideWithSetModifications> pepWithSetModss, bool additionalMasses = false) 
+            : base(pepWithSetModss.Count * 2, new SourceFile(@"no nativeID format", "mzML format", null, "SHA-1", @"C:\fake.mzML", null))
         {
             var ScansHere = new List<MsDataScan>();
             for (int i = 0; i < pepWithSetModss.Count; i++)
             {
                 var pepWithSetMods = pepWithSetModss[i];
-                var mz1 = new double[] { pepWithSetMods.MonoisotopicMass.ToMz(3), (pepWithSetMods.MonoisotopicMass + 1.003).ToMz(3), (pepWithSetMods.MonoisotopicMass + 2.005).ToMz(3), pepWithSetMods.MonoisotopicMass.ToMz(2), (pepWithSetMods.MonoisotopicMass + 1.003).ToMz(2), (pepWithSetMods.MonoisotopicMass + 2.005).ToMz(2) };
-                var intensities1 = new double[] { 1, 1, 1, 1, 1, 1 };
+                var mz1 = new double[] { pepWithSetMods.MonoisotopicMass.ToMz(3), (pepWithSetMods.MonoisotopicMass + Constants.C13MinusC12).ToMz(3), (pepWithSetMods.MonoisotopicMass + 2 * Constants.C13MinusC12).ToMz(3), pepWithSetMods.MonoisotopicMass.ToMz(2), (pepWithSetMods.MonoisotopicMass + Constants.C13MinusC12).ToMz(2), (pepWithSetMods.MonoisotopicMass + 2 * Constants.C13MinusC12).ToMz(2) };
+                var intensities1 = new double[] { 1, 0.5, 0.25, 1, 0.5, 0.25 };
                 var MassSpectrum1 = new MzSpectrum(mz1, intensities1, false);
 
                 ScansHere.Add(new MsDataScan(MassSpectrum1, 2 * i + 1, 1, true, Polarity.Positive, 2 * i, new MzLibUtil.MzRange(0, 10000), "gg", MZAnalyzerType.Orbitrap, 1000, 1, null, "scan=1"));
@@ -96,7 +117,7 @@ namespace Test
                 foreach (var aok in pepWithSetMods.Fragment(DissociationType.HCD, FragmentationTerminus.Both))
                 {
                     mz2.Add(aok.NeutralMass.ToMz(1));
-                    mz2.Add((aok.NeutralMass + 1.003).ToMz(1));
+                    mz2.Add((aok.NeutralMass + Constants.C13MinusC12).ToMz(1));
                     intensities2.Add(1);
                     intensities2.Add(1);
                 }
@@ -106,9 +127,10 @@ namespace Test
             Scans = ScansHere.ToArray();
         }
 
-        public TestDataFile(PeptideWithSetModifications pepWithSetMods) : base(2, new SourceFile(@"no nativeID format", "mzML format", null, "SHA-1", @"C:\fake.mzML", null))
+        public TestDataFile(PeptideWithSetModifications pepWithSetMods) 
+            : base(2, new SourceFile(@"no nativeID format", "mzML format", null, "SHA-1", @"C:\fake.mzML", null))
         {
-            var mz1 = new double[] { pepWithSetMods.MonoisotopicMass.ToMz(2), (pepWithSetMods.MonoisotopicMass + 1.003).ToMz(2), (pepWithSetMods.MonoisotopicMass + 2.005).ToMz(2) };
+            var mz1 = new double[] { pepWithSetMods.MonoisotopicMass.ToMz(2), (pepWithSetMods.MonoisotopicMass + Constants.C13MinusC12).ToMz(2), (pepWithSetMods.MonoisotopicMass + 2 * Constants.C13MinusC12).ToMz(2) };
             var intensities1 = new double[] { 1, 1, 1 };
             var MassSpectrum1 = new MzSpectrum(mz1, intensities1, false);
 
@@ -119,7 +141,7 @@ namespace Test
             foreach (var aok in pepWithSetMods.Fragment(DissociationType.HCD, FragmentationTerminus.Both))
             {
                 mz2.Add(aok.NeutralMass.ToMz(1));
-                mz2.Add((aok.NeutralMass + 1.003).ToMz(1));
+                mz2.Add((aok.NeutralMass + Constants.C13MinusC12).ToMz(1));
                 intensities2.Add(1);
                 intensities2.Add(1);
             }
@@ -136,7 +158,7 @@ namespace Test
             if (v.Equals("quadratic"))
             {
                 // Add three ms1 peaks with charge 2, exact
-                var MassSpectrum1 = new MzSpectrum(new double[] { pepWithSetMods.MonoisotopicMass.ToMz(2), (pepWithSetMods.MonoisotopicMass + 1.003).ToMz(2), (pepWithSetMods.MonoisotopicMass + 2.005).ToMz(2) }, new double[] { 1, 1, 1 }, false);
+                var MassSpectrum1 = new MzSpectrum(new double[] { pepWithSetMods.MonoisotopicMass.ToMz(2), (pepWithSetMods.MonoisotopicMass + Constants.C13MinusC12).ToMz(2), (pepWithSetMods.MonoisotopicMass + 2 * Constants.C13MinusC12).ToMz(2) }, new double[] { 1, 1, 1 }, false);
 
                 List<double> mz2 = new List<double>();
                 List<double> intensities2 = new List<double>();
@@ -145,7 +167,7 @@ namespace Test
                     var t1 = aok.NeutralMass.ToMz(1);
                     var c = 0.0000001;
                     mz2.Add(t1 + c * Math.Pow(t1, 2));
-                    var t2 = (aok.NeutralMass + 1.003).ToMz(1);
+                    var t2 = (aok.NeutralMass + Constants.C13MinusC12).ToMz(1);
                     mz2.Add(t2 + c * Math.Pow(t2, 2));
                     intensities2.Add(1);
                     intensities2.Add(1);

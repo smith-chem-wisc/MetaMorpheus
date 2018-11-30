@@ -33,6 +33,7 @@ namespace Test
                     NumFragmentsNeededForEveryIdentification = 6,
                 }
             };
+
             GptmdTask task2 = new GptmdTask
             {
                 CommonParameters = new CommonParameters()
@@ -59,6 +60,7 @@ namespace Test
                     SearchType = SearchType.Modern,
                 }
             };
+
             List<(string, MetaMorpheusTask)> taskList = new List<(string, MetaMorpheusTask)> {
                 ("task1", task1),
                 ("task2", task2),
@@ -455,7 +457,7 @@ namespace Test
             // test single file output
             HashSet<string> expectedFiles = new HashSet<string> {
                 "AllPeptides.psmtsv", "AllProteinGroups.tsv", "AllPSMs.psmtsv", "AllPSMs_FormattedForPercolator.tsv", "AllQuantifiedPeaks.tsv",
-                "AllQuantifiedPeptides_BaseSequences.tsv", "AllQuantifiedPeptides_FullSequences.tsv", "prose.txt", "results.txt" };
+                "AllQuantifiedPeptides.tsv", "prose.txt", "results.txt" };
 
             HashSet<string> files = new HashSet<string>(Directory.GetFiles(Path.Combine(thisTaskOutputFolder, "SingleMassSpectraFileOutput")).Select(v => Path.GetFileName(v)));
 
