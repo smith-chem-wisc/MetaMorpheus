@@ -19,7 +19,7 @@ namespace TaskLayer
         public EverythingRunnerEngine(List<(string, MetaMorpheusTask)> taskList, List<string> startingRawFilenameList, List<DbForTask> startingXmlDbFilenameList, string outputFolder)
         {
             TaskList = taskList;
-            OutputFolder = outputFolder;
+            OutputFolder = outputFolder.Trim('"');
 
             CurrentRawDataFilenameList = startingRawFilenameList;
             CurrentXmlDbFilenameList = startingXmlDbFilenameList;

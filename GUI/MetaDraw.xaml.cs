@@ -63,7 +63,6 @@ namespace MetaMorpheusGUI
             productTypeToColor = ((ProductType[])Enum.GetValues(typeof(ProductType))).ToDictionary(p => p, p => Colors.Aqua);
             productTypeToColor[ProductType.b] = Colors.Blue;
             productTypeToColor[ProductType.y] = Colors.Purple;
-            productTypeToColor[ProductType.zPlusOne] = Colors.Orange; // TODO: Remove
             productTypeToColor[ProductType.zDot] = Colors.Orange;
             productTypeToColor[ProductType.c] = Colors.Gold;
 
@@ -72,7 +71,6 @@ namespace MetaMorpheusGUI
             productTypeToYOffset[ProductType.b] = 50;
             productTypeToYOffset[ProductType.y] = 0;
             productTypeToYOffset[ProductType.c] = 50;
-            productTypeToYOffset[ProductType.zPlusOne] = 0; // TODO: Remove
             productTypeToYOffset[ProductType.zDot] = 0;
         }
 
@@ -105,6 +103,7 @@ namespace MetaMorpheusGUI
                     spectraFileNameLabel.Text = filePath;
                     break;
                 case ".psmtsv":
+                case ".tsv":
                     tsvResultsFilePath = filePath;
                     psmFileNameLabel.Text = filePath;
                     break;
@@ -124,7 +123,7 @@ namespace MetaMorpheusGUI
                 List<string> warnings; // TODO: print warnings
                 foreach (var psm in TsvResultReader.ReadTsv(filename, out warnings))
                 {
-                    if (psm.Filename == fileNameWithExtension || psm.Filename == fileNameWithoutExtension)
+                    if (psm.Filename == fileNameWithExtension || psm.Filename == fileNameWithoutExtension || psm.Filename.Contains(fileNameWithoutExtension))
                     {
                         Dispatcher.BeginInvoke(new Action(() =>
                         {
@@ -155,7 +154,11 @@ namespace MetaMorpheusGUI
             mainViewModel.DrawPeptideSpectralMatch(msDataScanToDraw, psmToDraw);
 
             // draw annotated base sequence
-            DrawAnnotatedBaseSequence(psmToDraw);
+            //TO DO: Annotate crosslinked peptide sequence           
+            if (psmToDraw.CrossType == null)  // if the psm is single peptide (not crosslinked).
+            {
+                DrawAnnotatedBaseSequence(psmToDraw);
+            }
         }
 
         /// <summary>
