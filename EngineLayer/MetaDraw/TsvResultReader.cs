@@ -36,7 +36,23 @@ namespace EngineLayer
         public const string MatchedIonsLabel = "Matched Ion Mass-To-Charge Ratios";
         public const string QValueLabel = "QValue";
         public const string QValueNotchLabel = "QValue Notch";
-        
+
+        //Crosslinks
+        public const string CrossTypeLabel = "Cross Type";
+        public const string LinkResiduesLabel = "Link Residues";
+        public const string ProteinLinkSiteLabel = "Protein Link Site";
+        public const string RankLabel = "Rank";
+        public const string BetaPeptideProteinAccessionLabel = "Beta Peptide Protein Accession";
+        public const string BetaPeptideProteinLinkSiteLabel = "Beta Peptide Protein LinkSite";
+        public const string BetaPeptideBaseSequenceLabel = "Beta Peptide Base Sequence";
+        public const string BetaPeptideFullSequenceLabel = "Beta Peptide Full Sequence";
+        public const string BetaPeptideTheoreticalMassLabel = "Beta Peptide Theoretical Mass";
+        public const string BetaPeptideScoreLabel = "Beta Peptide Score";
+        public const string BetaPeptideRankLabel = "Beta Peptide Rank";
+        public const string BetaPeptideMatchedIonsLabel = "Beta Peptide Matched Ion Mass-To-Charge Ratios";
+        public const string XLTotalScoreLabel = "XL Total Score";
+        public const string ParentIonsLabel = "Parent Ions";
+
         private static readonly char[] Split = { '\t' };
         
         public static List<MetaDrawPsm> ReadTsv(string filePath, out List<string> warnings)
@@ -69,11 +85,6 @@ namespace EngineLayer
                 {
                     parsedHeader = ParseHeader(line);
                     continue;
-                }
-
-                if (parsedHeader.Values.Any(i => i < 0))
-                {
-                    throw new MetaMorpheusException("Could not parse PSM header");
                 }
 
                 try
@@ -130,6 +141,21 @@ namespace EngineLayer
             parsedHeader.Add(MatchedIonsLabel, Array.IndexOf(spl, MatchedIonsLabel));
             parsedHeader.Add(QValueLabel, Array.IndexOf(spl, QValueLabel));
             parsedHeader.Add(QValueNotchLabel, Array.IndexOf(spl, QValueNotchLabel));
+
+            parsedHeader.Add(CrossTypeLabel, Array.IndexOf(spl, CrossTypeLabel));
+            parsedHeader.Add(LinkResiduesLabel, Array.IndexOf(spl, LinkResiduesLabel));
+            parsedHeader.Add(ProteinLinkSiteLabel, Array.IndexOf(spl, ProteinLinkSiteLabel));
+            parsedHeader.Add(RankLabel, Array.IndexOf(spl, RankLabel));
+            parsedHeader.Add(BetaPeptideProteinAccessionLabel, Array.IndexOf(spl, BetaPeptideProteinAccessionLabel));
+            parsedHeader.Add(BetaPeptideProteinLinkSiteLabel, Array.IndexOf(spl, BetaPeptideProteinLinkSiteLabel));
+            parsedHeader.Add(BetaPeptideBaseSequenceLabel, Array.IndexOf(spl, BetaPeptideBaseSequenceLabel));
+            parsedHeader.Add(BetaPeptideFullSequenceLabel, Array.IndexOf(spl, BetaPeptideFullSequenceLabel));
+            parsedHeader.Add(BetaPeptideTheoreticalMassLabel, Array.IndexOf(spl, BetaPeptideTheoreticalMassLabel));
+            parsedHeader.Add(BetaPeptideScoreLabel, Array.IndexOf(spl, BetaPeptideScoreLabel));
+            parsedHeader.Add(BetaPeptideRankLabel, Array.IndexOf(spl, BetaPeptideRankLabel));
+            parsedHeader.Add(BetaPeptideMatchedIonsLabel, Array.IndexOf(spl, BetaPeptideMatchedIonsLabel));
+            parsedHeader.Add(XLTotalScoreLabel, Array.IndexOf(spl, XLTotalScoreLabel));
+            parsedHeader.Add(ParentIonsLabel, Array.IndexOf(spl, ParentIonsLabel));
 
             return parsedHeader;
         }
