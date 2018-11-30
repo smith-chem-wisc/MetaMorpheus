@@ -3,6 +3,7 @@ using NUnit.Framework;
 using System;
 using System.Collections.Generic;
 using System.IO;
+using System.Linq;
 using TaskLayer;
 using Proteomics.ProteolyticDigestion;
 using Proteomics.Fragmentation;
@@ -239,6 +240,54 @@ namespace Test
 
             Assert.That(File.ReadAllLines(Path.Combine(folderPath, @"DbForPrunedDbproteinPruned.xml")).Length > 0);
             Assert.That(File.ReadAllLines(Path.Combine(folderPath, @"DbForPrunedDbPruned.xml")).Length > 0);
+            Directory.Delete(folderPath, true);
+        }
+
+        /// <summary>
+        /// Test ensures pruned databases are written when contaminant DB is searched
+        /// </summary>
+        [Test]
+        public static void PeptideFDRTest()
+        {
+            SearchTask searchTask = new SearchTask()
+            {
+                SearchParameters = new SearchParameters
+                {
+                    WritePrunedDatabase = true
+                },
+            };
+
+            string myFile = Path.Combine(TestContext.CurrentContext.TestDirectory, @"TestData\PrunedDbSpectra.mzml");
+            string myFile2 = Path.Combine(TestContext.CurrentContext.TestDirectory, @"TestData\PrunedDbSpectra2.mzml");
+            if (!File.Exists(myFile2)) { File.Copy(myFile, myFile2); }
+            string myDatabase = Path.Combine(TestContext.CurrentContext.TestDirectory, @"TestData\DbForPrunedDb.fasta");
+            string folderPath = Path.Combine(TestContext.CurrentContext.TestDirectory, @"TestPeptideFDR");
+            string filePath = Path.Combine(TestContext.CurrentContext.TestDirectory, @"TestData\ExperimentalDesign.tsv");
+            DbForTask db = new DbForTask(myDatabase, true);
+            Directory.CreateDirectory(folderPath);
+
+            // search something with multiple hits of the same peptide to see if peptide FDR is calculated at the end
+            searchTask.RunTask(folderPath, new List<DbForTask> { db }, new List<string> { myFile, myFile2 }, "normal");
+
+            List<string> columns = null;
+            int cumDecoys = 0;
+            int cumTargets = 0;
+            foreach (string line in File.ReadAllLines(Path.Combine(folderPath, @"AllPeptides.psmtsv")))
+            {
+                string[] lineline = line.Split('\t');
+                if (line.StartsWith("File Name")) // header
+                {
+                    columns = lineline.ToList();
+                }
+                else if (lineline[columns.IndexOf("Decoy/Contaminant/Target")] == "D")
+                {
+                    Assert.AreEqual(++cumDecoys, int.Parse(lineline[columns.IndexOf("Cumulative Decoy")]));
+                }
+                else
+                {
+                    Assert.AreEqual(++cumTargets, int.Parse(lineline[columns.IndexOf("Cumulative Target")]));
+                }
+            }
             Directory.Delete(folderPath, true);
         }
     }
