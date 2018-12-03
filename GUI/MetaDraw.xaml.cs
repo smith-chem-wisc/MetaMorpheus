@@ -138,7 +138,7 @@ namespace MetaMorpheusGUI
             }
         }
 
-        private void DrawPsm(int oneBasedScanNumber, string fullSequence = null)
+        private void DrawPsm(int oneBasedScanNumber, string fullSequence = null, string fileName = null)
         {
             MsDataScan msDataScanToDraw = MsDataFile.GetOneBasedScan(oneBasedScanNumber);
             IEnumerable<MetaDrawPsm> scanPsms = peptideSpectralMatches.Where(p => p.Ms2ScanNumber == oneBasedScanNumber);
@@ -152,7 +152,7 @@ namespace MetaMorpheusGUI
 
             // draw annotated spectrum
             mainViewModel.DrawPeptideSpectralMatch(msDataScanToDraw, psmToDraw);
-
+            
             // draw annotated base sequence
             //TO DO: Annotate crosslinked peptide sequence           
             if (psmToDraw.CrossType == null)  // if the psm is single peptide (not crosslinked).
@@ -335,76 +335,45 @@ namespace MetaMorpheusGUI
         {
             (sender as DataGrid).UnselectAll();
         }
+        
+        private void PDFButton_Click(object sender, RoutedEventArgs e)
+        {
+            MetaDrawPsm tempPsm = null;
+            if (dataGridScanNums.SelectedCells.Count == 0)
+            {
+                MessageBox.Show("Please select at least one scan to export");
+            }
 
-        //private void PDFButton_Click(object sender, RoutedEventArgs e)
-        //{
-        //    if (dataGridScanNums.SelectedCells.Count == 0)
-        //    {
-        //        MessageBox.Show("Please select at least one scan to export");
-        //    }
+            int num = dataGridScanNums.SelectedItems.Count;
+            
+            foreach (object selectedItem in dataGridScanNums.SelectedItems)
+            {
+                MetaDrawPsm psm = (MetaDrawPsm)selectedItem;
 
-        //    int num = dataGridScanNums.SelectedItems.Count;
-        //    string writeDirectory = Path.Combine(Directory.GetParent(tsvResultsFilePath).FullName, "PDF");
+                if(tempPsm == null)
+                {
+                    tempPsm = psm;
+                }
 
-        //    if (!Directory.Exists(writeDirectory))
-        //    {
-        //        Directory.CreateDirectory(writeDirectory);
-        //    }
+                MsDataScan msDataScanToDraw = MsDataFile.GetOneBasedScan(psm.Ms2ScanNumber);
 
-        //    foreach (object selectedItem in dataGridScanNums.SelectedItems)
-        //    {
-        //        MetaDrawPsm psm = (MetaDrawPsm)selectedItem;
-        //        string myString = illegalInFileName.Replace(psm.FullSequence, "").Substring(0, 40);
-        //        ExportToPdf(psm, Path.Combine(writeDirectory, psm.Ms2ScanNumber + "_" + myString + ".pdf"));
-        //    }
+                string myString = illegalInFileName.Replace(psm.FullSequence, "");
 
-        //    dataGridScanNums.SelectedItem = dataGridScanNums.SelectedItem;
-        //    MessageBox.Show(string.Format("{0} PDFs exported to " + writeDirectory, num));
-        //}
+                if(myString.Length > 30)
+                {
+                    myString = myString.Substring(0, 30);
+                }
 
-        //private void ExportToPdf(MetaDrawPsm psm, string path)
-        //{
-        //    System.Reflection.PropertyInfo[] temp = psm.GetType().GetProperties();
+                string filePath = Path.Combine(Path.GetDirectoryName(tsvResultsFilePath), "MetaDrawExport", psm.Ms2ScanNumber + "_" + myString + ".pdf");
 
-        //    for (int i = 4; i < temp.Length; i++)
-        //    {
-        //        propertyView.Rows.Add(temp[i].Name, temp[i].GetValue(psm, null));
-        //    }
-        //    dataGridProperties.Items.Refresh();
-        //    DrawPsm(psm.Ms2ScanNumber, psm.FullSequence);
+                mainViewModel.DrawPeptideSpectralMatchPdf(msDataScanToDraw, psm, filePath, num > 1);
+            }
 
-        //    double wid = 0;
-        //    dataGridProperties.HorizontalScrollBarVisibility = ScrollBarVisibility.Disabled;
-        //    dataGridProperties.VerticalScrollBarVisibility = ScrollBarVisibility.Disabled;
-        //    foreach (DataGridColumn col in dataGridProperties.Columns)
-        //    {
-        //        wid += col.ActualWidth;
-        //    }
-        //    PDFOutPut.Background = Brushes.White;
-        //    PDFOutPut.ColumnDefinitions[0].Width = new GridLength(wid + 10);
-        //    PDFOutPut.Measure(new Size(wid + gbPSM.ActualWidth + 10, 600));
-        //    PDFOutPut.Arrange(new Rect(new Size(wid + gbPSM.ActualWidth + 10, 600)));
-        //    dataGridProperties.Measure(new Size(wid + 22, 600));
-        //    dataGridProperties.Arrange(new Rect(new Size(wid + 5, 600)));
+            dataGridScanNums.SelectedItem = dataGridScanNums.SelectedItem;
 
-        //    dataGridProperties.Arrange(new Rect(new Size(wid + 5, 600)));
-        //    var rtb = new RenderTargetBitmap((int)(wid + gbPSM.ActualWidth) + 11, 600, 96, 96, PixelFormats.Pbgra32);
+            DrawPsm(tempPsm.Ms2ScanNumber, tempPsm.FullSequence);
 
-        //    rtb.Render(PDFOutPut);
-        //    BitmapFrame bf = BitmapFrame.Create(rtb);
-
-        //    var encoder = new BmpBitmapEncoder();
-        //    encoder.Frames.Add(bf);
-        //    using (var stream = new MemoryStream())
-        //    {
-        //        encoder.Save(stream);
-        //        var img = System.Drawing.Image.FromStream(stream);
-        //        PdfWriter.WriteToPdf(img, (int)(wid + gbPSM.ActualWidth) + 11, 600, path);
-        //    }
-
-        //    dataGridProperties.HorizontalScrollBarVisibility = ScrollBarVisibility.Visible;
-        //    dataGridProperties.VerticalScrollBarVisibility = ScrollBarVisibility.Visible;
-        //    PDFOutPut.ColumnDefinitions[0].Width = new GridLength(1, GridUnitType.Star);
-        //}
+            MessageBox.Show(string.Format("{0} PDFs exported", num));
+        }
     }
 }
