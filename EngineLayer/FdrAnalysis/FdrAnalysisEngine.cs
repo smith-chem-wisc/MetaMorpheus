@@ -281,7 +281,6 @@ namespace EngineLayer.FdrAnalysis
 
             foreach (var group in psmsGroupedBySequence)
             {
-                string fullSequence = group.Key;
                 List<PeptideSpectralMatch> temp = group.ToList();
                 temp.ForEach(psm => psm.PsmCount = temp.Count);
             }
