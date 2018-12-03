@@ -49,7 +49,11 @@ namespace MetaMorpheusGUI
 
             foreach (ProductType productType in knownProductTypes)
             {
-                TheList.Add(new BoolStringClass { IsSelected = false, Type = productType, ToolTip = DissociationTypeCollection.GetMassShiftFromProductType(productType).ToString("F4") + " Da" });
+                TheList.Add(new BoolStringClass {
+                    IsSelected = false,
+                    Type = productType,
+                    ToolTip = DissociationTypeCollection.GetMassShiftFromProductType(productType).ToString("F4") + " Da; " 
+                        + TerminusSpecificProductTypes.ProductTypeToFragmentationTerminus[productType] + " terminus" });
             }
 
             ProductTypeList.ItemsSource = TheList;
