@@ -22,6 +22,7 @@ namespace MetaMorpheusGUI
         private readonly ObservableCollection<ModTypeForTreeView> FixedModTypeForTreeViewObservableCollection = new ObservableCollection<ModTypeForTreeView>();
         private readonly ObservableCollection<ModTypeForTreeView> VariableModTypeForTreeViewObservableCollection = new ObservableCollection<ModTypeForTreeView>();
         private readonly ObservableCollection<ModTypeForLoc> LocalizeModTypeForTreeViewObservableCollection = new ObservableCollection<ModTypeForLoc>();
+        private CustomFragmentationWindow CustomFragmentationWindow;
 
         public CalibrateTaskWindow() : this(null)
         {
@@ -60,6 +61,7 @@ namespace MetaMorpheusGUI
             productMassToleranceComboBox.SelectedIndex = task.CommonParameters.ProductMassTolerance is AbsoluteTolerance ? 0 : 1;
             precursorMassToleranceTextBox.Text = task.CommonParameters.PrecursorMassTolerance.Value.ToString(CultureInfo.InvariantCulture);
             precursorMassToleranceComboBox.SelectedIndex = task.CommonParameters.PrecursorMassTolerance is AbsoluteTolerance ? 0 : 1;
+            CustomFragmentationWindow = new CustomFragmentationWindow(task.CommonParameters.CustomIons);
 
             //writeIntermediateFilesCheckBox.IsChecked = task.CalibrationParameters.WriteIntermediateFiles;
 
@@ -173,6 +175,7 @@ namespace MetaMorpheusGUI
         private void CancelButton_Click(object sender, RoutedEventArgs e)
         {
             DialogResult = false;
+            CustomFragmentationWindow.Close();
         }
 
         private void SaveButton_Click(object sender, RoutedEventArgs e)
@@ -194,6 +197,7 @@ namespace MetaMorpheusGUI
             int MaxHeterozygousVariants = int.Parse(MaxHeterozygousVariantsTextBox.Text, NumberStyles.Any, CultureInfo.InvariantCulture);
             int MaxModificationIsoforms = int.Parse(maxModificationIsoformsTextBox.Text, CultureInfo.InvariantCulture);
             DissociationType dissociationType = GlobalVariables.AllSupportedDissociationTypes[DissociationTypeComboBox.SelectedItem.ToString()];
+            CustomFragmentationWindow.Close();
 
             DigestionParams digestionParamsToSave = new DigestionParams(
                 protease: protease.Name,
@@ -300,6 +304,14 @@ namespace MetaMorpheusGUI
             {
                 SearchModifications.FilterTree(SearchVarMod, variableModsTreeView, VariableModTypeForTreeViewObservableCollection);
                 SearchModifications.VariableSearch = false;
+            }
+        }
+        
+        private void CustomFragmentationHandler(object sender, EventArgs e)
+        {
+            if (DissociationTypeComboBox.SelectedItem.ToString().Equals(DissociationType.Custom.ToString()))
+            {
+                CustomFragmentationWindow.Show();
             }
         }
     }
