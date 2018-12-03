@@ -262,6 +262,7 @@ namespace Test
             List<string> columns = null;
             int cumDecoys = 0;
             int cumTargets = 0;
+            double finalQValue = 0;
             foreach (string line in File.ReadAllLines(Path.Combine(folderPath, @"AllPeptides.psmtsv")))
             {
                 string[] lineline = line.Split('\t');
@@ -275,12 +276,18 @@ namespace Test
                 else if (lineline[columns.IndexOf("Decoy/Contaminant/Target")] == "D")
                 {
                     Assert.AreEqual(++cumDecoys, int.Parse(lineline[columns.IndexOf("Cumulative Decoy")]));
+                    finalQValue = double.Parse(lineline[columns.IndexOf("QValue")]);
                 }
                 else
                 {
                     Assert.AreEqual(++cumTargets, int.Parse(lineline[columns.IndexOf("Cumulative Target")]));
+                    finalQValue = double.Parse(lineline[columns.IndexOf("QValue")]);
                 }
             }
+
+            // test that the final q-value follows the (target / decoy) formula
+            // intermediate q-values no longer always follow this formula, so I'm not testing them here
+            Assert.AreEqual((double)cumDecoys / (double)cumTargets, finalQValue, 0.0001);
             Directory.Delete(folderPath, true);
         }
     }
