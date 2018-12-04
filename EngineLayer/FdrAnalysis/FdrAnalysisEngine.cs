@@ -12,24 +12,26 @@ namespace EngineLayer.FdrAnalysis
         private readonly bool UseDeltaScore;
         private readonly bool CalculateEValue;
         private readonly double ScoreCutoff;
+        private readonly string AnalysisType;
 
-        public FdrAnalysisEngine(List<PeptideSpectralMatch> psms, int massDiffAcceptorNumNotches, CommonParameters commonParameters, List<string> nestedIds) : base(commonParameters, nestedIds)
+        public FdrAnalysisEngine(List<PeptideSpectralMatch> psms, int massDiffAcceptorNumNotches, CommonParameters commonParameters, List<string> nestedIds, string analysisType = "PSM") : base(commonParameters, nestedIds)
         {
             AllPsms = psms;
             MassDiffAcceptorNumNotches = massDiffAcceptorNumNotches;
             UseDeltaScore = commonParameters.UseDeltaScore;
             ScoreCutoff = commonParameters.ScoreCutoff;
             CalculateEValue = commonParameters.CalculateEValue;
+            AnalysisType = analysisType;
         }
 
         protected override MetaMorpheusEngineResults RunSpecific()
         {
-            FdrAnalysisResults myAnalysisResults = new FdrAnalysisResults(this);
+            FdrAnalysisResults myAnalysisResults = new FdrAnalysisResults(this, AnalysisType);
 
             Status("Running FDR analysis...");
             DoFalseDiscoveryRateAnalysis(myAnalysisResults);
 
-            myAnalysisResults.PsmsWithin1PercentFdr = AllPsms.Count(b => b.FdrInfo.QValue < 0.01);
+            myAnalysisResults.PsmsWithin1PercentFdr = AllPsms.Count(b => b.FdrInfo.QValue <= 0.01 && !b.IsDecoy);
 
             return myAnalysisResults;
         }
