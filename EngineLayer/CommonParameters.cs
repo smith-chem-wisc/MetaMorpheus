@@ -48,6 +48,11 @@ namespace EngineLayer
             ListOfModsVariable = listOfModsVariable ?? new List<(string, string)> { ("Common Variable", "Oxidation on M") };
             ListOfModsFixed = listOfModsFixed ?? new List<(string, string)> { ("Common Fixed", "Carbamidomethyl on C"), ("Common Fixed", "Carbamidomethyl on U") };
             DissociationType = dissociationType;
+
+            CustomIons = DissociationTypeCollection.ProductsFromDissociationType[DissociationType.Custom];
+            // reset custom fragmentation product types to default empty list
+            DissociationTypeCollection.ProductsFromDissociationType[DissociationType.Custom] = new List<ProductType>() { };
+
             QValueOutputFilter = qValueOutputFilter;
 
             AssumeOrphanPeaksAreZ1Fragments = assumeOrphanPeaksAreZ1Fragments;
@@ -86,6 +91,7 @@ namespace EngineLayer
         public bool CalculateEValue { get; private set; }
         public double QValueOutputFilter { get; private set; }
         public DissociationType DissociationType { get; private set; }
+        public List<ProductType> CustomIons { get; private set; }
         public bool AssumeOrphanPeaksAreZ1Fragments { get; private set; }
         public int MaxHeterozygousVariants { get; private set; }
         public int MinVariantDepth { get; private set; }
@@ -146,6 +152,11 @@ namespace EngineLayer
                                 ListOfModsFixed,
                                 QValueOutputFilter,
                                 AssumeOrphanPeaksAreZ1Fragments);
+        }
+
+        public void SetCustomProductTypes()
+        {
+            DissociationTypeCollection.ProductsFromDissociationType[MassSpectrometry.DissociationType.Custom] = CustomIons;
         }
     }
 }

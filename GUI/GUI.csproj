@@ -154,6 +154,9 @@
       <Generator>MSBuild:Compile</Generator>
       <SubType>Designer</SubType>
     </ApplicationDefinition>
+    <Compile Include="CustomFragmentationWindow.xaml.cs">
+      <DependentUpon>CustomFragmentationWindow.xaml</DependentUpon>
+    </Compile>
     <Compile Include="CustomModButton.xaml.cs">
       <DependentUpon>CustomModButton.xaml</DependentUpon>
     </Compile>
@@ -214,6 +217,10 @@
       <DependentUpon>XLSearchTaskWindow.xaml</DependentUpon>
     </Compile>
     <Page Include="CalibrateTaskWindow.xaml">
+      <SubType>Designer</SubType>
+      <Generator>MSBuild:Compile</Generator>
+    </Page>
+    <Page Include="CustomFragmentationWindow.xaml">
       <SubType>Designer</SubType>
       <Generator>MSBuild:Compile</Generator>
     </Page>
