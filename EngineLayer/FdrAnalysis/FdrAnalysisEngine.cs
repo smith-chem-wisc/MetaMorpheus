@@ -203,6 +203,8 @@ namespace EngineLayer.FdrAnalysis
                     }
                 }
             }
+
+            CountPsm();
         }
 
         private static double GetEValue(PeptideSpectralMatch psm, int globalMeanCount, double globalMeanScore, out double maximumLikelihood)
@@ -271,6 +273,19 @@ namespace EngineLayer.FdrAnalysis
                     cumulative_target++;
             }
             return cumulative_target;
+        }
+
+        public void CountPsm()
+        {
+            // exclude ambiguous psms and has a fdr cutoff = 0.01
+            var psmsGroupedBySequence = AllPsms.Where(psm => psm.FullSequence != null && psm.FdrInfo.QValue <= 0.01 && psm.FdrInfo.QValueNotch <= 0.01)
+                .GroupBy(p => p.FullSequence).ToList();
+
+            foreach (var group in psmsGroupedBySequence)
+            {
+                List<PeptideSpectralMatch> temp = group.ToList();
+                temp.ForEach(psm => psm.PsmCount = temp.Count);
+            }
         }
     }
 }
