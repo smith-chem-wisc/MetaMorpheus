@@ -57,6 +57,7 @@ namespace EngineLayer
         public string ProteinAccession { get; private set; }
         public string Organism { get; private set; }
         public List<MatchedFragmentIon> MatchedFragmentIons { get; protected set; }
+        public int PsmCount { get; set; }
 
         // these should never be null under normal circumstances
         public Dictionary<string, int> ModsIdentified { get; private set; }
@@ -449,6 +450,7 @@ namespace EngineLayer
             s["Base Sequence"] = pepWithModsIsNull ? " " : Resolve(pepWithModsIsNull ? null : pepsWithMods.Select(b => b.BaseSequence)).ResolvedString;
             s["Full Sequence"] = pepWithModsIsNull ? " " : Resolve(pepWithModsIsNull ? null : pepsWithMods.Select(b => b.FullSequence)).ResolvedString;
             s["Essential Sequence"] = pepWithModsIsNull ? " " : Resolve(pepWithModsIsNull ? null : pepsWithMods.Select(b => b.EssentialSequence(ModsToWritePruned))).ResolvedString;
+            s["PSM Count"] = pepWithModsIsNull ? " " : psm.PsmCount.ToString();
             s["Mods"] = pepWithModsIsNull ? " " : Resolve(pepsWithMods.Select(b => b.AllModsOneIsNterminus)).ResolvedString;
             s["Mods Chemical Formulas"] = pepWithModsIsNull ? " " :
                 Resolve(pepsWithMods.Select(p => p.AllModsOneIsNterminus.Select(v => v.Value))).ResolvedString;
