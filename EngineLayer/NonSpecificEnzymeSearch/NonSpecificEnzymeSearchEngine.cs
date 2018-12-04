@@ -120,7 +120,7 @@ namespace EngineLayer.NonSpecificEnzymeSearch
                                         }
                                         else
                                         {
-                                            localPeptideSpectralMatches[i].AddOrReplace(peptide, thisScore, notch, commonParameters.ReportAllAmbiguity, matchedIons);
+                                            localPeptideSpectralMatches[i].AddOrReplace(peptide, thisScore, notch, commonParameters.ReportAllAmbiguity, matchedIons, 0);
                                         }
                                     }
                                 }
