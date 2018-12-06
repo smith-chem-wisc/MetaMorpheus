@@ -28,7 +28,7 @@ namespace MetaMorpheusGUI
         private PsmAnnotationViewModel mainViewModel;
         private MyFileManager spectraFileManager;
         private MsDataFile MsDataFile;
-        private readonly ObservableCollection<MetaDrawPsm> peptideSpectralMatches;
+        private readonly ObservableCollection<PsmFromTsv> peptideSpectralMatches;
         ICollectionView peptideSpectralMatchesView;
         private readonly DataTable propertyView;
         private string spectraFilePath;
@@ -44,7 +44,7 @@ namespace MetaMorpheusGUI
 
             mainViewModel = new PsmAnnotationViewModel();
             plotView.DataContext = mainViewModel;
-            peptideSpectralMatches = new ObservableCollection<MetaDrawPsm>();
+            peptideSpectralMatches = new ObservableCollection<PsmFromTsv>();
             propertyView = new DataTable();
             propertyView.Columns.Add("Name", typeof(string));
             propertyView.Columns.Add("Value", typeof(string));
@@ -121,7 +121,7 @@ namespace MetaMorpheusGUI
             try
             {
                 List<string> warnings; // TODO: print warnings
-                foreach (var psm in TsvResultReader.ReadTsv(filename, out warnings))
+                foreach (var psm in PsmTsvReader.ReadTsv(filename, out warnings))
                 {
                     if (psm.Filename == fileNameWithExtension || psm.Filename == fileNameWithoutExtension || psm.Filename.Contains(fileNameWithoutExtension))
                     {
@@ -141,14 +141,14 @@ namespace MetaMorpheusGUI
         private void DrawPsm(int oneBasedScanNumber, string fullSequence = null, string fileName = null)
         {
             MsDataScan msDataScanToDraw = MsDataFile.GetOneBasedScan(oneBasedScanNumber);
-            IEnumerable<MetaDrawPsm> scanPsms = peptideSpectralMatches.Where(p => p.Ms2ScanNumber == oneBasedScanNumber);
+            IEnumerable<PsmFromTsv> scanPsms = peptideSpectralMatches.Where(p => p.Ms2ScanNumber == oneBasedScanNumber);
 
             if (fullSequence != null)
             {
                 scanPsms = scanPsms.Where(p => p.FullSequence == fullSequence);
             }
 
-            MetaDrawPsm psmToDraw = scanPsms.FirstOrDefault();
+            PsmFromTsv psmToDraw = scanPsms.FirstOrDefault();
 
             // draw annotated spectrum
             mainViewModel.DrawPeptideSpectralMatch(msDataScanToDraw, psmToDraw);
@@ -173,7 +173,7 @@ namespace MetaMorpheusGUI
 
             // draw the selected PSM
             propertyView.Clear();
-            MetaDrawPsm row = (MetaDrawPsm)dataGridScanNums.SelectedItem;
+            PsmFromTsv row = (PsmFromTsv)dataGridScanNums.SelectedItem;
             System.Reflection.PropertyInfo[] temp = row.GetType().GetProperties();
 
             for (int i = 0; i < temp.Length; i++)
@@ -276,13 +276,13 @@ namespace MetaMorpheusGUI
             {
                 peptideSpectralMatchesView.Filter = obj =>
                 {
-                    MetaDrawPsm psm = obj as MetaDrawPsm;
+                    PsmFromTsv psm = obj as PsmFromTsv;
                     return ((psm.Ms2ScanNumber.ToString()).StartsWith(txt) || psm.FullSequence.ToUpper().Contains(txt.ToUpper()));
                 };
             }
         }
 
-        private void DrawAnnotatedBaseSequence(MetaDrawPsm psm)
+        private void DrawAnnotatedBaseSequence(PsmFromTsv psm)
         {
             double spacing = 22;
             BaseDraw.clearCanvas(canvas);
@@ -338,7 +338,7 @@ namespace MetaMorpheusGUI
         
         private void PDFButton_Click(object sender, RoutedEventArgs e)
         {
-            MetaDrawPsm tempPsm = null;
+            PsmFromTsv tempPsm = null;
             if (dataGridScanNums.SelectedCells.Count == 0)
             {
                 MessageBox.Show("Please select at least one scan to export");
@@ -348,7 +348,7 @@ namespace MetaMorpheusGUI
             
             foreach (object selectedItem in dataGridScanNums.SelectedItems)
             {
-                MetaDrawPsm psm = (MetaDrawPsm)selectedItem;
+                PsmFromTsv psm = (PsmFromTsv)selectedItem;
 
                 if(tempPsm == null)
                 {

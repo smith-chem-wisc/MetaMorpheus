@@ -71,13 +71,13 @@ namespace ViewModels
         }
 
         // single peptides (not crosslink)
-        public void DrawPeptideSpectralMatch(MsDataScan msDataScan, MetaDrawPsm psmToDraw)
+        public void DrawPeptideSpectralMatch(MsDataScan msDataScan, PsmFromTsv psmToDraw)
         {
             // Set the Model property, the INotifyPropertyChanged event will make the WPF Plot control update its content
             this.Model = Draw(msDataScan, psmToDraw);
         }
 
-        private PlotModel Draw(MsDataScan msDataScan, MetaDrawPsm psmToDraw)
+        private PlotModel Draw(MsDataScan msDataScan, PsmFromTsv psmToDraw)
         {
             // x is m/z, y is intensity
             var spectrumMzs = msDataScan.MassSpectrum.XArray;
@@ -211,7 +211,7 @@ namespace ViewModels
             return model;
         }
 
-        private PlotModel DrawPdf(MsDataScan msDataScan, PropertyInfo[] properties, MetaDrawPsm psm, bool redraw)
+        private PlotModel DrawPdf(MsDataScan msDataScan, PropertyInfo[] properties, PsmFromTsv psm, bool redraw)
         {
             if (redraw)
             {
@@ -257,7 +257,7 @@ namespace ViewModels
             return Model;
         }
 
-        public void DrawPeptideSpectralMatchPdf(MsDataScan msDataScan, MetaDrawPsm psm, string fileName, bool redraw)
+        public void DrawPeptideSpectralMatchPdf(MsDataScan msDataScan, PsmFromTsv psm, string fileName, bool redraw)
         {
             var properties = psm.GetType().GetProperties();
             var pdfModel = DrawPdf(msDataScan, properties, psm, redraw);
