@@ -52,7 +52,7 @@ namespace Test
 
             List<PsmFromTsv> parsedPsms = PsmTsvReader.ReadTsv(psmFile, out var warnings);
 
-            //Directory.Delete(folderPath, true);
+            Directory.Delete(folderPath, true);
         }
     }
 }
