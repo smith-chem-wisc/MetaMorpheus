@@ -38,7 +38,10 @@ namespace MetaMorpheusGUI
 
             foreach (DissociationType type in GlobalVariables.AllSupportedDissociationTypes.Values)
             {
-                dissociationTypeComboBox.Items.Add(type);
+                if (!type.Equals(DissociationType.Custom))
+                {
+                    dissociationTypeComboBox.Items.Add(type);
+                }
             }
 
             locationRestrictionComboBox.SelectedItem = "Anywhere";

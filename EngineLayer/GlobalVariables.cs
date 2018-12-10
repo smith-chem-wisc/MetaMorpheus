@@ -87,9 +87,7 @@ namespace EngineLayer
                 { DissociationType.ETD.ToString(), DissociationType.ETD },
                 { DissociationType.HCD.ToString(), DissociationType.HCD },
                 { DissociationType.EThcD.ToString(), DissociationType.EThcD },
-
-                // TODO: allow custom fragmentation type
-                //{ DissociationType.Custom.ToString(), DissociationType.Custom }
+                { DissociationType.Custom.ToString(), DissociationType.Custom }
 
                 // TODO: allow reading from scan header (autodetect dissociation type)
             };

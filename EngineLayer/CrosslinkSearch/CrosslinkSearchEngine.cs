@@ -142,6 +142,7 @@ namespace EngineLayer.CrosslinkSearch
 
                         if (csm == null)
                         {
+                            progress++;
                             continue;
                         }
 
@@ -166,7 +167,7 @@ namespace EngineLayer.CrosslinkSearch
 
             return new MetaMorpheusEngineResults(this);
         }
-
+        
         /// <summary>
         /// 
         /// </summary>

@@ -1,14 +1,16 @@
-﻿using System.Linq;
+﻿using Chemistry;
+using EngineLayer;
+using MassSpectrometry;
 using OxyPlot;
+using OxyPlot.Annotations;
 using OxyPlot.Axes;
 using OxyPlot.Series;
-using OxyPlot.Annotations;
-using System.ComponentModel;
-using MassSpectrometry;
-using System.Collections.Generic;
 using Proteomics.Fragmentation;
-using EngineLayer;
-using Chemistry;
+using System.Collections.Generic;
+using System.ComponentModel;
+using System.IO;
+using System.Linq;
+using System.Reflection;
 
 namespace ViewModels
 {
@@ -23,7 +25,6 @@ namespace ViewModels
           { ProductType.b, OxyColors.Blue },
           { ProductType.y, OxyColors.Purple },
           { ProductType.c, OxyColors.Gold },
-          { ProductType.zPlusOne, OxyColors.Orange }, // TODO: Remove
           { ProductType.zDot, OxyColors.Orange },
           { ProductType.D, OxyColors.DodgerBlue },
           { ProductType.M, OxyColors.Firebrick }
@@ -34,10 +35,9 @@ namespace ViewModels
           { ProductType.b, OxyColors.LightBlue },
           { ProductType.y, OxyColors.MediumPurple },
           { ProductType.c, OxyColors.LightGoldenrodYellow },
-          { ProductType.zPlusOne, OxyColors.OrangeRed }, // TODO: Remove
           { ProductType.zDot, OxyColors.OrangeRed },
           { ProductType.D, OxyColors.AliceBlue },
-          { ProductType.M, OxyColors.MintCream }
+          { ProductType.M, OxyColors.LightCoral }
         };
 
         public PlotModel Model
@@ -71,7 +71,13 @@ namespace ViewModels
         }
 
         // single peptides (not crosslink)
-        public void DrawPeptideSpectralMatch(MsDataScan msDataScan, MetaDrawPsm psmToDraw)
+        public void DrawPeptideSpectralMatch(MsDataScan msDataScan, PsmFromTsv psmToDraw)
+        {
+            // Set the Model property, the INotifyPropertyChanged event will make the WPF Plot control update its content
+            this.Model = Draw(msDataScan, psmToDraw);
+        }
+
+        private PlotModel Draw(MsDataScan msDataScan, PsmFromTsv psmToDraw)
         {
             // x is m/z, y is intensity
             var spectrumMzs = msDataScan.MassSpectrum.XArray;
@@ -82,7 +88,7 @@ namespace ViewModels
             {
                 subtitle = psmToDraw.FullSequence + "\n" + psmToDraw.BetaPeptideFullSequence;
             }
-            PlotModel model = new PlotModel { Title = "Spectrum Annotation of Scan #" + msDataScan.OneBasedScanNumber, DefaultFontSize = 15, Subtitle = subtitle};
+            PlotModel model = new PlotModel { Title = "Spectrum Annotation of Scan #" + msDataScan.OneBasedScanNumber, DefaultFontSize = 15, Subtitle = subtitle };
             model.Axes.Add(new LinearAxis { Position = AxisPosition.Bottom, Title = "m/z", Minimum = 0, Maximum = spectrumMzs.Max() * 1.02, AbsoluteMinimum = 0, AbsoluteMaximum = spectrumMzs.Max() * 5 });
             model.Axes.Add(new LinearAxis { Position = AxisPosition.Left, Title = "Intensity", Minimum = 0, Maximum = spectrumIntensities.Max() * 1.2, AbsoluteMinimum = 0, AbsoluteMaximum = spectrumIntensities.Max() * 1.3 });
             model.Axes[1].Zoom(0, spectrumIntensities.Max() * 1.1);
@@ -105,7 +111,7 @@ namespace ViewModels
                         ionColor = OxyColors.Turquoise;
                     }
 
-                    int i = msDataScan.MassSpectrum.GetClosestPeakIndex(peak.Mz).Value;
+                    int i = msDataScan.MassSpectrum.GetClosestPeakIndex(peak.NeutralTheoreticalProduct.NeutralMass.ToMz(peak.Charge)).Value;
 
                     // peak line
                     allIons[i] = new LineSeries();
@@ -118,21 +124,7 @@ namespace ViewModels
                     string peakAnnotationText = peak.NeutralTheoreticalProduct.ProductType.ToString().ToLower() + peak.NeutralTheoreticalProduct.TerminusFragment.FragmentNumber + " (" + peak.Mz.ToString("F3") + ")";
                     if (peak.NeutralTheoreticalProduct.NeutralLoss != 0)
                     {
-                        MassDiffAcceptor massDiffAcceptor = new SinglePpmAroundZeroSearchMode(10);
-                        if (psmToDraw.glycan != null)
-                        {
-                            foreach (var glycanIon in psmToDraw.glycan.Ions)
-                            {
-                                if (massDiffAcceptor.Accepts(peak.NeutralTheoreticalProduct.NeutralLoss, psmToDraw.glycan.Mass - glycanIon.IonMass) >= 0)
-                                {
-                                    peakAnnotationText = peak.NeutralTheoreticalProduct.ProductType.ToString().ToLower() + peak.NeutralTheoreticalProduct.TerminusFragment.FragmentNumber + "-" + Glycan.GetKindString(glycanIon.IonKind) + " (" + peak.Mz.ToString("F3") + ")";
-                                }
-                            }
-                        }
-                        else
-                        {
-                            peakAnnotationText = peak.NeutralTheoreticalProduct.ProductType.ToString().ToLower() + peak.NeutralTheoreticalProduct.TerminusFragment.FragmentNumber + "-" + peak.NeutralTheoreticalProduct.NeutralLoss.ToString("F2") + " (" + peak.Mz.ToString("F3") + ")";
-                        }
+                        peakAnnotationText = peak.NeutralTheoreticalProduct.ProductType.ToString().ToLower() + peak.NeutralTheoreticalProduct.TerminusFragment.FragmentNumber + "-" + peak.NeutralTheoreticalProduct.NeutralLoss.ToString("F2") + " (" + peak.Mz.ToString("F3") + ")";
                     }
 
                     var peakAnnotation = new TextAnnotation();
@@ -215,10 +207,72 @@ namespace ViewModels
                 model.Series.Add(allIons[i]);
             }
 
-            // Axes are created automatically if they are not defined
+            // Axes are created automatically if they are not defined      
+            return model;
+        }
 
-            // Set the Model property, the INotifyPropertyChanged event will make the WPF Plot control update its content
-            this.Model = model;
+        private PlotModel DrawPdf(MsDataScan msDataScan, PropertyInfo[] properties, PsmFromTsv psm, bool redraw)
+        {
+            if (redraw)
+            {
+                this.Model = Draw(msDataScan, psm);
+            }
+
+            var y = Model.DefaultYAxis.ActualMaximum - Model.DefaultYAxis.ActualMaximum * 0.03;
+            var x = Model.DefaultXAxis.ActualMaximum - Model.DefaultXAxis.ActualMaximum * 0.01;
+            var diff = (y - (Model.DefaultYAxis.ActualMaximum * 0.1)) / properties.Length;
+
+            // properties to exclude
+            string[] exclude = { "PrecursorScanNum", "PrecursorMz", "MatchedIons",
+                "TotalIonCurrent", "Notch", " EssentialSeq", "MissedCleavage",
+                "OrganismName", "StartAndEndResiduesInProtein", "PreviousAminoAcid",
+                "NextAminoAcid", "Rank", "BetaPeptideMatchedIons", "BetaPeptideRank" };
+
+            var propertiesList = properties.ToList();
+            foreach (PropertyInfo property in properties.ToList())
+            {
+                if (exclude.Any(e => e.Contains(property.Name)))
+                {
+                    propertiesList.Remove(property);
+                }
+            }
+
+            var displayedProperties = propertiesList.Where(p => p.GetValue(psm) != null); // only display non-null properties
+
+            foreach (PropertyInfo property in displayedProperties)
+            {
+                var propertyAnnotation = new TextAnnotation
+                {
+                    Text = property.Name + ": " + property.GetValue(psm),
+                    TextPosition = new DataPoint(x, y),
+                    FontSize = 9,
+                    StrokeThickness = 0,
+                    TextHorizontalAlignment = HorizontalAlignment.Right
+                };
+
+                y -= diff;
+                Model.Annotations.Add(propertyAnnotation);
+            }
+
+            return Model;
+        }
+
+        public void DrawPeptideSpectralMatchPdf(MsDataScan msDataScan, PsmFromTsv psm, string fileName, bool redraw)
+        {
+            var properties = psm.GetType().GetProperties();
+            var pdfModel = DrawPdf(msDataScan, properties, psm, redraw);
+
+            string dir = Path.GetDirectoryName(fileName);
+            if (!Directory.Exists(dir))
+            {
+                Directory.CreateDirectory(dir);
+            }
+
+            using (var stream = File.Create(fileName))
+            {
+                PdfExporter pdf = new PdfExporter { Width = 800, Height = 500 };
+                pdf.Export(pdfModel, stream);
+            }
         }
     }
 }
