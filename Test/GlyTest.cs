@@ -42,7 +42,7 @@ namespace Test
             PeptideWithSetModifications pep = new PeptideWithSetModifications("ELNPTPNVEVNVECR", null); 
             string[] motifs = new string[] { "Nxs", "Nxt"};
             var sites = CrosslinkSpectralMatch.GetPossibleModSites(pep, motifs);
-            Assert.That(sites.Count() == 1 && sites[0] == 2);
+            Assert.That(sites.Count() == 1 && sites[0] == 3);
         }
 
         [Test]
@@ -82,25 +82,28 @@ namespace Test
         [Test]
         public static void GlyTest_Topdown()
         {
-            Protein pep = new Protein("MAVMAPRTLVLLLSGALALTQTWAGSHSMRYFFTSVSRPGRGEPRFIAVGYVDDTQFVRFDSDAASQRMEPRAPWIEQEGPEYWDGETRKVKAHSQTHRVDLGTLRGYYNQSEAGSHTVQRMYGCDVGSDWRFLRGYHQYAYDGKDYIALKEDLRSWTAADMAAQTTKHKWEAAHVAEQLRAYLEGTCVEWLRRYLENGKETLQRTDAPKTHMTHHAVSDHEATLRCWALSFYPAEITLTWQRDGEDQTQDTELVETRPAGDGTFQKWAAVVVPSGQEQRYTCHVQHEGLPKPLTLRWEPSSQPTIPIVGIIAGLVLFGAVITGAVVAAVMWRRKSSDRKGGSYSQAASSDSAQGSDVSLTACKV", "accession");
-            DigestionParams digestionParams = new DigestionParams(protease: "top-down");
-            var aPeptideWithSetModifications = pep.Digest(digestionParams, new List<Modification>(), new List<Modification>()).First();
+            //TO DO: Find a better example
 
-            string[] motifs = new string[] { "Nxs", "Nxt" };
-            var sites = CrosslinkSpectralMatch.GetPossibleModSites(aPeptideWithSetModifications, motifs);
-            Glycan glycan = Glycan.Struct2Glycan("(N(N(H(H)(H(H)(H)))))", 0);
-            var fragmentIons = GlycoPeptides.GlyGetTheoreticalFragments(DissociationType.HCD, sites, aPeptideWithSetModifications, glycan).ToList();
+            //Protein pep = new Protein("MAVMAPRTLVLLLSGALALTQTWAGSHSMRYFFTSVSRPGRGEPRFIAVGYVDDTQFVRFDSDAASQRMEPRAPWIEQEGPEYWDGETRKVKAHSQTHRVDLGTLRGYYNQSEAGSHTVQRMYGCDVGSDWRFLRGYHQYAYDGKDYIALKEDLRSWTAADMAAQTTKHKWEAAHVAEQLRAYLEGTCVEWLRRYLENGKETLQRTDAPKTHMTHHAVSDHEATLRCWALSFYPAEITLTWQRDGEDQTQDTELVETRPAGDGTFQKWAAVVVPSGQEQRYTCHVQHEGLPKPLTLRWEPSSQPTIPIVGIIAGLVLFGAVITGAVVAAVMWRRKSSDRKGGSYSQAASSDSAQGSDVSLTACKV", "accession");
+            //DigestionParams digestionParams = new DigestionParams(protease: "top-down");
+            //var aPeptideWithSetModifications = pep.Digest(digestionParams, new List<Modification>(), new List<Modification>()).First();
 
-            CommonParameters commonParameters = new CommonParameters(deconvolutionMassTolerance: new PpmTolerance(20));
-            string filePath = Path.Combine(TestContext.CurrentContext.TestDirectory, @"XlTestData/3554.mgf");
-            MyFileManager myFileManager = new MyFileManager(true);
-            var msDataFile = myFileManager.LoadFile(filePath, 500, 0.01, true, true, commonParameters);
-            var listOfSortedms2Scans = MetaMorpheusTask.GetMs2Scans(msDataFile, filePath, commonParameters).ToArray();
-            //TO DO: The neutroloss is not annotated well.
-            var matchedFragmentIons = MetaMorpheusEngine.MatchFragmentIons(listOfSortedms2Scans[0], fragmentIons.Select(p => p.Item2).ToList().First(), commonParameters);
+            //string[] motifs = new string[] { "Nxs", "Nxt" };
+            //var sites = CrosslinkSpectralMatch.GetPossibleModSites(aPeptideWithSetModifications, motifs);
+            //Glycan glycan = Glycan.Struct2Glycan("(N(N(H(H)(H(H)(H)))))", 0);
+            //var fragmentIons = GlycoPeptides.GlyGetTheoreticalFragments(DissociationType.HCD, sites, aPeptideWithSetModifications, glycan).ToList();
 
-            DrawPeptideSpectralMatch(listOfSortedms2Scans[0].TheScan, matchedFragmentIons, pep.BaseSequence);
+            //CommonParameters commonParameters = new CommonParameters(deconvolutionMassTolerance: new PpmTolerance(20));
+            //string filePath = Path.Combine(TestContext.CurrentContext.TestDirectory, @"XlTestData/3554.mgf");
+            //MyFileManager myFileManager = new MyFileManager(true);
+            //var msDataFile = myFileManager.LoadFile(filePath, 500, 0.01, true, true, commonParameters);
+            //var listOfSortedms2Scans = MetaMorpheusTask.GetMs2Scans(msDataFile, filePath, commonParameters).ToArray();
+            ////TO DO: The neutroloss is not annotated well.
+            //var matchedFragmentIons = MetaMorpheusEngine.MatchFragmentIons(listOfSortedms2Scans[0], fragmentIons.Select(p => p.Item2).ToList().First(), commonParameters);
+
+            //DrawPeptideSpectralMatch(listOfSortedms2Scans[0].TheScan, matchedFragmentIons, pep.BaseSequence);
         }
+
         [Test]
         public static void GlyTest_RunTask()
         {

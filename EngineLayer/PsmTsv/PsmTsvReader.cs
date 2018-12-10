@@ -110,6 +110,9 @@ namespace EngineLayer
             parsedHeader.Add(PsmTsvHeader.XLTotalScoreLabel, Array.IndexOf(spl, PsmTsvHeader.XLTotalScoreLabel));
             parsedHeader.Add(PsmTsvHeader.ParentIonsLabel, Array.IndexOf(spl, PsmTsvHeader.ParentIonsLabel));
 
+            parsedHeader.Add(PsmTsvHeader.GlycanIdLabel, Array.IndexOf(spl, PsmTsvHeader.GlycanIdLabel));
+            parsedHeader.Add(PsmTsvHeader.GlcanStructLabel, Array.IndexOf(spl, PsmTsvHeader.GlcanStructLabel));
+
             return parsedHeader;
         }
     }

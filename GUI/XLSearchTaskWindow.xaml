@@ -154,10 +154,11 @@
                 <GroupBox Header="Glyco Search" DockPanel.Dock="Top">
                     <Expander x:Name="GlycoSearchExpander">
                         <StackPanel Orientation="Vertical">
-                            <StackPanel Orientation="Horizontal" Margin="5">
+                            <Label Content="N-Glycan search is only for testing."/>
+                            <!--<StackPanel Orientation="Horizontal" Margin="5">
                                 <RadioButton x:Name="RbSearchNGlyco" Content="N-Glycopeptide Search" GroupName="GlycoSearchType"></RadioButton>
                                 <RadioButton x:Name="RbSearchOGlyco" Content="O-Glycopeptide Search" GroupName="GlycoSearchType" ></RadioButton>
-                            </StackPanel>
+                            </StackPanel>-->
                         </StackPanel>
                     </Expander>
                 </GroupBox>

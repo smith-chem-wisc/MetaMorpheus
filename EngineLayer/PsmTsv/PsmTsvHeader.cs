@@ -84,5 +84,9 @@
         public const string BetaPeptideMatchedIonsLabel = "Beta Peptide Matched Ion Mass-To-Charge Ratios";
         public const string XLTotalScoreLabel = "XL Total Score";
         public const string ParentIonsLabel = "Parent Ions";
+
+        //Glycopeptides
+        public const string GlycanIdLabel = "GlycanIDs";
+        public const string GlcanStructLabel = "GlycanStructure";
     }
 }
