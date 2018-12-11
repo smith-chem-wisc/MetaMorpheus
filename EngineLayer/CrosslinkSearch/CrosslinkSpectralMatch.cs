@@ -299,7 +299,7 @@ namespace EngineLayer.CrosslinkSearch
         public static Dictionary<string, string> MatchedIonDataDictionary(PeptideSpectralMatch psm)
         {
             Dictionary<string, string> s = new Dictionary<string, string>();
-            AddMatchedIonsData(s, psm);
+            PsmTsvWriter.AddMatchedIonsData(s, psm);
             return s;
         }
     }
