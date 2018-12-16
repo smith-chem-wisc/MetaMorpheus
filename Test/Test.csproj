@@ -91,7 +91,7 @@
     <None Update="TestData\tinySemi.mgf">
       <CopyToOutputDirectory>Always</CopyToOutputDirectory>
     </None>
-    <None Update="XlTestData\25170.mgf">
+    <None Update="XlTestData\yeast_glycan_25170.mgf">
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
     </None>
     <None Update="XlTestData\BSA.fasta">

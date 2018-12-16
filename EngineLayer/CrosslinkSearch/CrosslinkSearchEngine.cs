@@ -164,10 +164,12 @@ namespace EngineLayer.CrosslinkSearch
                 if (XLPrecusorSearchMode.Accepts(theScan.PrecursorMass, bestPeptide.MonoisotopicMass) >= 0)
                 {
                     List<Product> products = bestPeptide.Fragment(commonParameters.DissociationType, FragmentationTerminus.Both).ToList();
-                    var matchedFragmentIons = MatchFragmentIons(theScan, products, commonParameters);
-                    double score = CalculatePeptideScore(theScan.TheScan, matchedFragmentIons, 0);
+                    var allMatchedFragmentIons = SpecialMatchFragmentIons(theScan, products, commonParameters);
+                    var matchedFragmentIons = allMatchedFragmentIons.SelectMany(p => p.Value).ToList();
+                    double score = SpecialCalculatePeptideScore(theScan.TheScan, allMatchedFragmentIons, 0);
 
                     var psmCrossSingle = new CrosslinkSpectralMatch(bestPeptide, theScanBestPeptide[alphaIndex].BestNotch, score, scanIndex, theScan, commonParameters.DigestionParams, matchedFragmentIons);
+                    psmCrossSingle.AllMatchedFragmentIons = allMatchedFragmentIons;
                     psmCrossSingle.CrossType = PsmCrossType.Single;
                     psmCrossSingle.XlRank = new List<int> { alphaIndex };
 
@@ -310,8 +312,8 @@ namespace EngineLayer.CrosslinkSearch
                 {
                     int bestAlphaSite = 0;
                     int bestBetaSite = 0;
-                    List<MatchedFragmentIon> bestMatchedAlphaIons = new List<MatchedFragmentIon>();
-                    List<MatchedFragmentIon> bestMatchedBetaIons = new List<MatchedFragmentIon>();
+                    Dictionary<int, List<MatchedFragmentIon>> allBestMatchedAlphaIons = new Dictionary<int, List<MatchedFragmentIon>>();
+                    Dictionary<int, List<MatchedFragmentIon>> allBestMatchedBetaIons = new Dictionary<int, List<MatchedFragmentIon>>();
                     double bestAlphaLocalizedScore = 0;
                     double bestBetaLocalizedScore = 0;
 
@@ -322,39 +324,40 @@ namespace EngineLayer.CrosslinkSearch
                     {
                         foreach (var setOfFragments in fragmentsForEachAlphaLocalizedPossibility.Where(v => v.Item1 == possibleSite))
                         {
-                            var matchedIons = MatchFragmentIons(theScan, setOfFragments.Item2, commonParameters);
-                            double score = CalculatePeptideScore(theScan.TheScan, matchedIons, 0);
+                            var matchedIons = SpecialMatchFragmentIons(theScan, setOfFragments.Item2, commonParameters);
+                            double score = SpecialCalculatePeptideScore(theScan.TheScan, matchedIons, 0);
 
                             if (score > bestAlphaLocalizedScore)
                             {
                                 bestAlphaLocalizedScore = score;
                                 bestAlphaSite = possibleSite;
-                                bestMatchedAlphaIons = matchedIons;
+                                allBestMatchedAlphaIons = matchedIons;
                             }
                         }
                     }
 
                     var fragmentsForEachBetaLocalizedPossibility = CrosslinkedPeptide.XlGetTheoreticalFragments(commonParameters.DissociationType,
                         Crosslinker, possibleBetaXlSites, alphaPeptide.BestPeptide.MonoisotopicMass, betaPeptide.BestPeptide).ToList();
-
-                    var alphaMz = new HashSet<double>(bestMatchedAlphaIons.Select(p => p.Mz));
+                    
+                    // remove any matched beta ions that also matched to the alpha peptide
+                    //var alphaMz = new HashSet<double>(bestMatchedAlphaIons.Select(p => p.Mz));
 
                     foreach (int possibleSite in possibleBetaXlSites)
                     {
                         foreach (var setOfFragments in fragmentsForEachBetaLocalizedPossibility.Where(v => v.Item1 == possibleSite))
                         {
-                            var matchedIons = MatchFragmentIons(theScan, setOfFragments.Item2, commonParameters);
+                            var matchedIons = SpecialMatchFragmentIons(theScan, setOfFragments.Item2, commonParameters);
 
                             // remove any matched beta ions that also matched to the alpha peptide
-                            matchedIons.RemoveAll(p => alphaMz.Contains(p.Mz));
+                            //matchedIons.RemoveAll(p => alphaMz.Contains(p.Mz));
 
-                            double score = CalculatePeptideScore(theScan.TheScan, matchedIons, 0);
+                            double score = SpecialCalculatePeptideScore(theScan.TheScan, matchedIons, 0);
 
                             if (score > bestBetaLocalizedScore)
                             {
                                 bestBetaLocalizedScore = score;
                                 bestBetaSite = possibleSite;
-                                bestMatchedBetaIons = matchedIons;
+                                allBestMatchedBetaIons = matchedIons;
                             }
                         }
                     }
@@ -365,9 +368,12 @@ namespace EngineLayer.CrosslinkSearch
                         return null;
                     }
 
+                    var bestMatchedAlphaIons = allBestMatchedAlphaIons.SelectMany(p => p.Value).ToList();
+                    var bestMatchedBetaIons = allBestMatchedBetaIons.SelectMany(p => p.Value).ToList();
                     var localizedAlpha = new CrosslinkSpectralMatch(alphaPeptide.BestPeptide, alphaPeptide.BestNotch, bestAlphaLocalizedScore, 0, theScan, alphaPeptide.BestPeptide.DigestionParams, bestMatchedAlphaIons);
                     var localizedBeta = new CrosslinkSpectralMatch(betaPeptide.BestPeptide, betaPeptide.BestNotch, bestBetaLocalizedScore, 0, theScan, betaPeptide.BestPeptide.DigestionParams, bestMatchedBetaIons);
-
+                    localizedAlpha.AllMatchedFragmentIons = allBestMatchedAlphaIons;
+                    localizedBeta.AllMatchedFragmentIons = allBestMatchedBetaIons;
                     localizedAlpha.XlRank = new List<int> { ind, inx };
                     localizedAlpha.XLTotalScore = localizedAlpha.Score + localizedBeta.Score;
                     localizedAlpha.BetaPeptide = localizedBeta;
@@ -398,7 +404,7 @@ namespace EngineLayer.CrosslinkSearch
             List<int> possiblePositions, Modification deadEndMod, int notch, int scanIndex, int peptideIndex)
         {
             double bestScore = 0;
-            List<MatchedFragmentIon> bestMatchingFragments = new List<MatchedFragmentIon>();
+            Dictionary<int, List<MatchedFragmentIon>> allBestMatchingFragments = new Dictionary<int, List<MatchedFragmentIon>>();
             PeptideWithSetModifications bestLocalizedPeptide = null;
             int bestPosition = 0;
 
@@ -421,13 +427,13 @@ namespace EngineLayer.CrosslinkSearch
                     originalPeptide.OneBasedEndResidueInProtein, originalPeptide.CleavageSpecificityForFdrCategory, originalPeptide.PeptideDescription, originalPeptide.MissedCleavages, mods, originalPeptide.NumFixedMods);
 
                 var products = localizedPeptide.Fragment(commonParameters.DissociationType, FragmentationTerminus.Both).ToList();
-                var matchedFragmentIons = MatchFragmentIons(theScan, products, commonParameters);
+                var matchedFragmentIons = SpecialMatchFragmentIons(theScan, products, commonParameters);
 
-                double score = CalculatePeptideScore(theScan.TheScan, matchedFragmentIons, 0);
+                double score = SpecialCalculatePeptideScore(theScan.TheScan, matchedFragmentIons, 0);
 
                 if (score > bestScore)
                 {
-                    bestMatchingFragments = matchedFragmentIons;
+                    allBestMatchingFragments = matchedFragmentIons;
                     bestScore = score;
                     bestLocalizedPeptide = localizedPeptide;
                     bestPosition = location;
@@ -439,8 +445,9 @@ namespace EngineLayer.CrosslinkSearch
                 return null;
             }
 
+            var bestMatchingFragments = allBestMatchingFragments.SelectMany(p => p.Value).ToList();
             var csm = new CrosslinkSpectralMatch(bestLocalizedPeptide, notch, bestScore, scanIndex, theScan, originalPeptide.DigestionParams, bestMatchingFragments);
-
+            csm.AllMatchedFragmentIons = allBestMatchingFragments;
             if (deadEndMod == TrisDeadEnd)
             {
                 csm.CrossType = PsmCrossType.DeadEndTris;
@@ -469,17 +476,17 @@ namespace EngineLayer.CrosslinkSearch
             var possibleFragmentSets = CrosslinkedPeptide.XlLoopGetTheoreticalFragments(commonParameters.DissociationType, Loop, possiblePositions, originalPeptide);
             double bestScore = 0;
             Tuple<int, int> bestModPositionSites = null;
-            List<MatchedFragmentIon> bestMatchingFragments = new List<MatchedFragmentIon>();
 
+            Dictionary<int, List<MatchedFragmentIon>> allBestMatchingFragments = new Dictionary<int, List<MatchedFragmentIon>>();
             foreach (var setOfPositions in possibleFragmentSets)
             {
-                var matchedFragmentIons = MatchFragmentIons(theScan, setOfPositions.Value, commonParameters);
+                var allMatchedFragmentIons = SpecialMatchFragmentIons(theScan, setOfPositions.Value, commonParameters);
 
-                double score = CalculatePeptideScore(theScan.TheScan, matchedFragmentIons, 0);
+                double score = SpecialCalculatePeptideScore(theScan.TheScan, allMatchedFragmentIons, 0);
 
                 if (score > bestScore)
                 {
-                    bestMatchingFragments = matchedFragmentIons;
+                    allBestMatchingFragments = allMatchedFragmentIons;
                     bestScore = score;
                     bestModPositionSites = setOfPositions.Key;
                 }
@@ -490,7 +497,9 @@ namespace EngineLayer.CrosslinkSearch
                 return null;
             }
 
+            var bestMatchingFragments = allBestMatchingFragments.SelectMany(p => p.Value).ToList();
             var csm = new CrosslinkSpectralMatch(originalPeptide, notch, bestScore, scanIndex, theScan, originalPeptide.DigestionParams, bestMatchingFragments);
+            csm.AllMatchedFragmentIons = allBestMatchingFragments; 
             csm.CrossType = PsmCrossType.Loop;
             csm.XlRank = new List<int> { peptideIndex };
             csm.LinkPositions = new List<int> { bestModPositionSites.Item1, bestModPositionSites.Item2 };

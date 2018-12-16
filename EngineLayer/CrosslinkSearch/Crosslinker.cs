@@ -51,7 +51,7 @@
                 Cleavable = true;
                 TotalMass = 158.0038;
                 CleaveMassShort = 54.01056;
-                CleaveMassLong = 103.9932;
+                CleaveMassLong = 85.982635; //DSSO actually generate 3 different cleavage mass. Previously, CleaveMassLong was set to 103.9932, but loss of a water may be more common. Need further validation.
                 CrosslinkerModSites = "K";
                 CrosslinkerModSites2 = "K";
                 LoopMass = 158.0038;
