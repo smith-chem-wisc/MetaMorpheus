@@ -65,7 +65,7 @@ namespace EngineLayer.Calibration
                     // Each identification has an MS2 spectrum attached to it.
                     int ms2scanNumber = identification.ScanNumber;
                     int peptideCharge = identification.ScanPrecursorCharge;
-                    if (identification.FullSequence == null)
+                    if (identification.FullSequence == null || identification.BestMatchingPeptides.Any(p => p.Peptide.AllModsOneIsNterminus.Any(m => m.Value.ChemicalFormula == null)))
                         continue;
 
                     var representativeSinglePeptide = identification.BestMatchingPeptides.First().Peptide;
