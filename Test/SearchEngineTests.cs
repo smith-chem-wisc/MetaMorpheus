@@ -60,19 +60,17 @@ namespace Test
         [Test]
         public static void TestClassicSearchEngineXcorr()
         {
-            Protease protease = new Protease("Customized Protease", CleavageSpecificity.Full, null, null, new List<DigestionMotif> { new DigestionMotif("K", null, 1, "") });
-            ProteaseDictionary.Dictionary.Add(protease.Name, protease);
+            //Protease protease = new Protease("Customized Protease", CleavageSpecificity.Full, null, null, new List<DigestionMotif> { new DigestionMotif("K", null, 1, "") });
+            //ProteaseDictionary.Dictionary.Add(protease.Name, protease);
             CommonParameters CommonParameters = new CommonParameters
-                (dissociationType: DissociationType.LowCID, digestionParams: new DigestionParams(
-                    protease: protease.Name,
-                    minPeptideLength: 1),
+                (dissociationType: DissociationType.LowCID,
                 scoreCutoff: 1);
 
             //var myMsDataFile = new TestDataFile();
 
             double[] mzs = new double[] { 130.0499, 148.0604, 199.1077, 209.0921, 227.1026, 245.0768, 263.0874, 296.1605, 306.1448, 324.1554, 358.1609, 376.1714, 397.2082, 407.1925, 425.2031, 459.2086, 477.2191, 510.2922, 520.2766, 538.2871, 556.2613, 574.2719, 625.3192, 635.3035, 653.3141, 685.3039, 703.3145, 782.3567, 800.3672 };
             double[] intensities = new double[] { 10, 10, 10, 10, 10, 10, 10, 10, 10, 10, 10, 10, 10, 10, 10, 10, 10, 10, 10, 10, 10, 10, 10, 10, 10, 10, 10, 10, 10 };
-            var myMsDataFile2 = new TestDataFile(mzs,intensities, 799.359968, 1, 1.0);
+            var myXcorrMsDataFile = new TestDataFile(mzs,intensities, 799.359968, 1, 1.0);
 
 
             var variableModifications = new List<Modification>();
@@ -81,17 +79,19 @@ namespace Test
 
             var searchModes = new SinglePpmAroundZeroSearchMode(5);
 
-            var listOfSortedms2Scans = MetaMorpheusTask.GetMs2Scans(myMsDataFile2, null, new CommonParameters()).OrderBy(b => b.PrecursorMass).ToArray();
+            var listOfSortedXcorrms2Scans = MetaMorpheusTask.GetMs2Scans(myXcorrMsDataFile, null, new CommonParameters()).OrderBy(b => b.PrecursorMass).ToArray();
 
             List<double> originalXarray = new List<double>() { 130.0499, 148.0604, 199.1077, 209.0921, 227.1026, 245.0768, 263.0874, 296.1605, 306.1448, 324.1554, 358.1609, 376.1714, 397.2082, 407.1925, 425.2031, 459.2086, 477.2191, 510.2922, 520.2766, 538.2871, 556.2613, 574.2719, 625.3192, 635.3035, 653.3141, 685.3039, 703.3145, 782.3567, 800.3672 };
             List<double> originalYarray = new List<double>() { 10, 10, 10, 10, 10, 10, 10, 10, 10, 10, 10, 10, 10, 10, 10, 10, 10, 10, 10, 10, 10, 10, 10, 10, 10, 10, 10, 10, 10 };
 
-            Assert.That(originalXarray.SequenceEqual(listOfSortedms2Scans[0].TheScan.MassSpectrum.XArray.ToList()));
-            Assert.That(originalYarray.SequenceEqual(listOfSortedms2Scans[0].TheScan.MassSpectrum.YArray.ToList()));
+            Assert.That(originalXarray.SequenceEqual(listOfSortedXcorrms2Scans[0].TheScan.MassSpectrum.XArray.ToList()));
+            Assert.That(originalYarray.SequenceEqual(listOfSortedXcorrms2Scans[0].TheScan.MassSpectrum.YArray.ToList()));
 
 
-            PeptideSpectralMatch[] allPsmsArray = new PeptideSpectralMatch[listOfSortedms2Scans.Length];
-            new ClassicSearchEngine(allPsmsArray, listOfSortedms2Scans, variableModifications, fixedModifications, proteinList, searchModes, CommonParameters, new List<string>()).Run();
+            PeptideSpectralMatch[] allPsmsArray = new PeptideSpectralMatch[listOfSortedXcorrms2Scans.Length];
+            new ClassicSearchEngine(allPsmsArray, listOfSortedXcorrms2Scans, variableModifications, fixedModifications, proteinList, searchModes, CommonParameters, new List<string>()).Run();
+
+            Assert.IsTrue(listOfSortedXcorrms2Scans[0].TheScan.MassSpectrum.XcorrProcessed);
 
             List<double> expectedXarray = new List<double>() { 130.07, 148.08, 199.1, 209.11, 227.12, 245.12, 263.13, 296.15, 306.16, 324.16, 358.18, 376.19, 397.2, 407.21, 425.22, 459.23, 477.24, 510.26, 520.26, 538.27, 556.28, 574.29, 625.32, 635.32, 653.33, 685.35, 703.36, 782.4 };
             List<double> expectedYarray = new List<double>() { 49.01, 48.68, 47.68, 48.01, 48.01, 47.68, 47.35, 47.68, 47.68, 47.68, 47.35, 47.68, 47.68, 47.68, 47.68, 47.68, 47.68, 47.68, 47.68, 48.01, 48.01, 47.68, 48.01, 48.01, 48.34, 48.34, 48.68, 49.67 };
@@ -99,10 +99,10 @@ namespace Test
             List<double> processedXarray = new List<double>();
             List<double> processedYarray = new List<double>();
 
-            for (int i = 0; i < listOfSortedms2Scans[0].TheScan.MassSpectrum.XArray.Length; i++)
+            for (int i = 0; i < listOfSortedXcorrms2Scans[0].TheScan.MassSpectrum.XArray.Length; i++)
             {
-                processedXarray.Add(Math.Round(listOfSortedms2Scans[0].TheScan.MassSpectrum.XArray[i], 2));
-                processedYarray.Add(Math.Round(listOfSortedms2Scans[0].TheScan.MassSpectrum.YArray[i], 2));
+                processedXarray.Add(Math.Round(listOfSortedXcorrms2Scans[0].TheScan.MassSpectrum.XArray[i], 2));
+                processedYarray.Add(Math.Round(listOfSortedXcorrms2Scans[0].TheScan.MassSpectrum.YArray[i], 2));
             }
 
             //this assures that the mass and intensities of the input spectrum have been xcorr processed and normalized. Note, the molecular ion has been removed
