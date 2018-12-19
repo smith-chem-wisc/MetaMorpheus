@@ -46,7 +46,7 @@ namespace MetaMorpheusGUI
             itemsControlSampleViewModel = new ItemsControlSampleViewModel();
             DataContext = itemsControlSampleViewModel;
             mainViewModel = new PsmAnnotationViewModel();
-            plotView.DataContext = mainViewModel;
+            //plotView.DataContext = mainViewModel;
             peptideSpectralMatches = new ObservableCollection<PsmFromTsv>();
             propertyView = new DataTable();
             propertyView.Columns.Add("Name", typeof(string));
@@ -154,7 +154,7 @@ namespace MetaMorpheusGUI
             PsmFromTsv psmToDraw = scanPsms.FirstOrDefault();
 
             //TO DO: optimize code
-            if (psmToDraw.MatchedIons.Count > 1)
+            if (psmToDraw.MatchedIons.Count >= 1)
             {
                 HashSet<int> theKeys = new HashSet<int>();
                 foreach (var theKey in psmToDraw.MatchedIons.Keys)

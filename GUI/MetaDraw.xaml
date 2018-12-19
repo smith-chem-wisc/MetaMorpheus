@@ -124,14 +124,14 @@
             <GroupBox Grid.Column="4" Header="PSM Annotation">
                 <Grid>
                     <Grid.RowDefinitions>
-                        <RowDefinition Height = "*"></RowDefinition>
+                        <!--<RowDefinition Height = "*"></RowDefinition>-->
                         <RowDefinition Height = "*"></RowDefinition>
                         <RowDefinition Height = "60"></RowDefinition>
                     </Grid.RowDefinitions>
 
                     <!--Spectrum annotation-->
-                    <oxy:PlotView Grid.Row="0" x:Name="plotView" Model="{Binding Model}" FontSize="16" FontStretch="Expanded"/>
-                    <DockPanel Grid.Row="1">
+                    <!--<oxy:PlotView Grid.Row="0" x:Name="plotView" Model="{Binding Model}" FontSize="16" FontStretch="Expanded"/>-->
+                    <DockPanel Grid.Row="0">
                         <ItemsControl ItemsSource="{Binding Data}">
                             <ItemsControl.ItemTemplate>
                                 <DataTemplate>
@@ -140,12 +140,12 @@
                                         <Grid>
                                             <Grid.RowDefinitions>
                                                 <RowDefinition Height="30"/>
-                                                <RowDefinition Height="180"/>
+                                                <RowDefinition Height="300"/>
                                             </Grid.RowDefinitions>
 
                                             <Label Content="{Binding SpectrumLabel}" />
 
-                                            <oxy:PlotView Model="{Binding PsmAnnotationViewModel.Model}" FontSize="16" FontStretch="Expanded" Grid.Row="1" Grid.ColumnSpan="3"/>
+                                            <oxy:PlotView Model="{Binding PsmAnnotationViewModel.Model}" FontSize="16" FontStretch="Expanded" Grid.Row="1"/>
                                         </Grid>
                                     </Border>
                                 </DataTemplate>
@@ -167,7 +167,7 @@
                         </ItemsControl>
                     </DockPanel>
                     <!--Canvas for drawing base sequence annotation-->
-                    <Canvas Margin="0 5 0 0" x:Name="canvas" Grid.Row="2" Height="60" Width="600" HorizontalAlignment="Stretch" VerticalAlignment="Stretch" />
+                    <Canvas Margin="0 5 0 0" x:Name="canvas" Grid.Row="1" Height="60" Width="600" HorizontalAlignment="Stretch" VerticalAlignment="Stretch" />
                 </Grid>
             </GroupBox>
         </Grid>
