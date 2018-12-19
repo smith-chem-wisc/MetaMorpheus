@@ -405,12 +405,6 @@ namespace MetaMorpheusGUI
 
             MessageBox.Show(string.Format("{0} PDFs exported", num));
         }
-
-        private void BtnMetaDrawScans_Click(object sender, RoutedEventArgs e)
-        {
-            MetaDrawScans metaDrawScanGui = new MetaDrawScans();
-            metaDrawScanGui.Show();
-        }
     }
 
     public class ItemsControlSampleViewModel
