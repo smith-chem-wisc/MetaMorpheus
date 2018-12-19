@@ -58,6 +58,74 @@ namespace Test
         }
 
         [Test]
+        public static void TestClassicSearchEngineXcorr()
+        {
+            Protease protease = new Protease("Customized Protease", CleavageSpecificity.Full, null, null, new List<DigestionMotif> { new DigestionMotif("K", null, 1, "") });
+            ProteaseDictionary.Dictionary.Add(protease.Name, protease);
+            CommonParameters CommonParameters = new CommonParameters
+                (dissociationType: DissociationType.LowCID, digestionParams: new DigestionParams(
+                    protease: protease.Name,
+                    minPeptideLength: 1),
+                scoreCutoff: 1);
+
+            //var myMsDataFile = new TestDataFile();
+
+            double[] mzs = new double[] { 130.0499, 148.0604, 199.1077, 209.0921, 227.1026, 245.0768, 263.0874, 296.1605, 306.1448, 324.1554, 358.1609, 376.1714, 397.2082, 407.1925, 425.2031, 459.2086, 477.2191, 510.2922, 520.2766, 538.2871, 556.2613, 574.2719, 625.3192, 635.3035, 653.3141, 685.3039, 703.3145, 782.3567, 800.3672 };
+            double[] intensities = new double[] { 10, 10, 10, 10, 10, 10, 10, 10, 10, 10, 10, 10, 10, 10, 10, 10, 10, 10, 10, 10, 10, 10, 10, 10, 10, 10, 10, 10, 10 };
+            var myMsDataFile2 = new TestDataFile(mzs,intensities, 799.359968, 1, 1.0);
+
+
+            var variableModifications = new List<Modification>();
+            var fixedModifications = new List<Modification>();
+            var proteinList = new List<Protein> { new Protein("PEPTIDE", null) };
+
+            var searchModes = new SinglePpmAroundZeroSearchMode(5);
+
+            var listOfSortedms2Scans = MetaMorpheusTask.GetMs2Scans(myMsDataFile2, null, new CommonParameters()).OrderBy(b => b.PrecursorMass).ToArray();
+
+            List<double> originalXarray = new List<double>() { 130.0499, 148.0604, 199.1077, 209.0921, 227.1026, 245.0768, 263.0874, 296.1605, 306.1448, 324.1554, 358.1609, 376.1714, 397.2082, 407.1925, 425.2031, 459.2086, 477.2191, 510.2922, 520.2766, 538.2871, 556.2613, 574.2719, 625.3192, 635.3035, 653.3141, 685.3039, 703.3145, 782.3567, 800.3672 };
+            List<double> originalYarray = new List<double>() { 10, 10, 10, 10, 10, 10, 10, 10, 10, 10, 10, 10, 10, 10, 10, 10, 10, 10, 10, 10, 10, 10, 10, 10, 10, 10, 10, 10, 10 };
+
+            Assert.That(originalXarray.SequenceEqual(listOfSortedms2Scans[0].TheScan.MassSpectrum.XArray.ToList()));
+            Assert.That(originalYarray.SequenceEqual(listOfSortedms2Scans[0].TheScan.MassSpectrum.YArray.ToList()));
+
+
+            PeptideSpectralMatch[] allPsmsArray = new PeptideSpectralMatch[listOfSortedms2Scans.Length];
+            new ClassicSearchEngine(allPsmsArray, listOfSortedms2Scans, variableModifications, fixedModifications, proteinList, searchModes, CommonParameters, new List<string>()).Run();
+
+            List<double> expectedXarray = new List<double>() { 130.07, 148.08, 199.1, 209.11, 227.12, 245.12, 263.13, 296.15, 306.16, 324.16, 358.18, 376.19, 397.2, 407.21, 425.22, 459.23, 477.24, 510.26, 520.26, 538.27, 556.28, 574.29, 625.32, 635.32, 653.33, 685.35, 703.36, 782.4 };
+            List<double> expectedYarray = new List<double>() { 49.01, 48.68, 47.68, 48.01, 48.01, 47.68, 47.35, 47.68, 47.68, 47.68, 47.35, 47.68, 47.68, 47.68, 47.68, 47.68, 47.68, 47.68, 47.68, 48.01, 48.01, 47.68, 48.01, 48.01, 48.34, 48.34, 48.68, 49.67 };
+
+            List<double> processedXarray = new List<double>();
+            List<double> processedYarray = new List<double>();
+
+            for (int i = 0; i < listOfSortedms2Scans[0].TheScan.MassSpectrum.XArray.Length; i++)
+            {
+                processedXarray.Add(Math.Round(listOfSortedms2Scans[0].TheScan.MassSpectrum.XArray[i], 2));
+                processedYarray.Add(Math.Round(listOfSortedms2Scans[0].TheScan.MassSpectrum.YArray[i], 2));
+            }
+
+            //this assures that the mass and intensities of the input spectrum have been xcorr processed and normalized. Note, the molecular ion has been removed
+            Assert.That(expectedXarray.SequenceEqual(processedXarray));
+            Assert.That(expectedYarray.SequenceEqual(processedYarray));
+
+            Assert.AreEqual(5, allPsmsArray[0].MatchedFragmentIons.Where(p => p.NeutralTheoreticalProduct.ProductType == ProductType.b).ToList().Count);
+            Assert.AreEqual(5, allPsmsArray[0].MatchedFragmentIons.Where(p => p.NeutralTheoreticalProduct.ProductType == ProductType.bDegree).ToList().Count);
+            Assert.AreEqual(6, allPsmsArray[0].MatchedFragmentIons.Where(p => p.NeutralTheoreticalProduct.ProductType == ProductType.y).ToList().Count);
+            Assert.AreEqual(6, allPsmsArray[0].MatchedFragmentIons.Where(p => p.NeutralTheoreticalProduct.ProductType == ProductType.yDegree).ToList().Count);
+
+            Assert.AreEqual(111.1, Math.Round(allPsmsArray[0].Score, 1));
+
+            // Single search mode
+            Assert.AreEqual(1, allPsmsArray.Length);
+
+            // One scan
+            Assert.AreEqual(1, allPsmsArray.Length);
+
+            Assert.IsTrue(allPsmsArray[0].Score > 1);
+        }
+
+        [Test]
         public static void TestClassicSearchEngineWithWeirdPeptide()
         {
             CommonParameters CommonParameters = new CommonParameters(
@@ -355,7 +423,6 @@ namespace Test
             PeptideWithSetModifications guiltyPwsm = new PeptideWithSetModifications("DQPKLLGIETPLPKKE", null);
             var fragments = guiltyPwsm.Fragment(CommonParameters.DissociationType, FragmentationTerminus.Both);
 
-
             var myMsDataFile = new TestDataFile(guiltyPwsm.MonoisotopicMass, fragments.Select(x => x.NeutralMass.ToMz(1)).ToArray());
             var variableModifications = new List<Modification>();
             var fixedModifications = new List<Modification>();
@@ -365,7 +432,7 @@ namespace Test
 
             var proteinList = new List<Protein> { new Protein("GGGGGCDQPKLLGIETPLPKKEGGGGG", null) };
 
-            var indexEngine = new IndexingEngine(proteinList, variableModifications, fixedModifications, 1, DecoyType.None, CommonParameters, SearchParameters.MaxFragmentSize,true, new List<FileInfo>(), new List<string>());
+            var indexEngine = new IndexingEngine(proteinList, variableModifications, fixedModifications, 1, DecoyType.None, CommonParameters, SearchParameters.MaxFragmentSize, true, new List<FileInfo>(), new List<string>());
 
             var indexResults = (IndexingResults)indexEngine.Run();
             var peptideIndex = indexResults.PeptideIndex;
@@ -385,8 +452,7 @@ namespace Test
 
             allPsmsArray[0].ResolveAllAmbiguities();
             //Check that there is no modification hanging out on the n-terminus
-            Assert.AreEqual(allPsmsArray[0].FullSequence,guiltyPwsm.FullSequence);
-
+            Assert.AreEqual(allPsmsArray[0].FullSequence, guiltyPwsm.FullSequence);
 
             proteinList = new List<Protein> { new Protein("CDQPKLLGIETPLPKKEGGGGG", null) };
             guiltyPwsm = new PeptideWithSetModifications("C[Common Fixed:Carbamidomethyl on C]DQPKLLGIETPLPKKE", new Dictionary<string, Modification> { { "Carbamidomethyl on C", mod2 } });
@@ -446,7 +512,6 @@ namespace Test
             PeptideWithSetModifications guiltyPwsm = new PeptideWithSetModifications("DQPKLLGIETPLPKKE", null);
             var fragments = guiltyPwsm.Fragment(CommonParameters.DissociationType, FragmentationTerminus.Both);
 
-
             var myMsDataFile = new TestDataFile(guiltyPwsm.MonoisotopicMass, fragments.Select(x => x.NeutralMass.ToMz(1)).ToArray());
             var variableModifications = new List<Modification>();
             var fixedModifications = new List<Modification>();
@@ -477,7 +542,6 @@ namespace Test
             allPsmsArray[0].ResolveAllAmbiguities();
             //Check that there is no modification hanging out on the n-terminus
             Assert.AreEqual(allPsmsArray[0].FullSequence, guiltyPwsm.FullSequence);
-
 
             proteinList = new List<Protein> { new Protein("GGGGGDQPKLLGIETPLPKKEC", null) };
             guiltyPwsm = new PeptideWithSetModifications("GGDQPKLLGIETPLPKKEC[Common Fixed:Carbamidomethyl on C]", new Dictionary<string, Modification> { { "Carbamidomethyl on C", mod2 } });
@@ -512,7 +576,6 @@ namespace Test
             //Check that there is a modification hanging out on the peptide n-terminus
             Assert.AreEqual(allPsmsArray[0].FullSequence, guiltyPwsm.FullSequence);
         }
-
 
         [Test]
         public static void TestNonSpecificEnzymeSearchEngineSingleC()
