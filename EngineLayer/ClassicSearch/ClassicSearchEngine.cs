@@ -68,16 +68,11 @@ namespace EngineLayer.ClassicSearch
 
                             foreach (ScanWithIndexAndNotchInfo scan in GetAcceptableScans(peptide.MonoisotopicMass, SearchMode))
                             {
+                                double thisScore = 0;
 
                                 List<MatchedFragmentIon> matchedIons = MatchFragmentIons(scan.TheScan, peptideTheorProducts, commonParameters);
 
-                                double thisScore = CalculatePeptideScore(scan.TheScan.TheScan, matchedIons, 0);
-                                double thisXcorr = CalculatePeptideXcorr(scan.TheScan.TheScan, peptideTheorProducts);
-
-                                double swapscore = 0;
-                                swapscore = thisScore;
-                                thisScore = thisXcorr;
-                                thisXcorr = swapscore;
+                                thisScore = CalculatePeptideScore(scan.TheScan.TheScan, matchedIons, 0);
 
                                 bool meetsScoreCutoff = thisScore >= commonParameters.ScoreCutoff;
 
@@ -94,11 +89,11 @@ namespace EngineLayer.ClassicSearch
                                         {
                                             if (PeptideSpectralMatches[scan.ScanIndex] == null)
                                             {
-                                                PeptideSpectralMatches[scan.ScanIndex] = new PeptideSpectralMatch(peptide, scan.Notch, thisScore, scan.ScanIndex, scan.TheScan, commonParameters.DigestionParams, matchedIons, thisXcorr);
+                                                PeptideSpectralMatches[scan.ScanIndex] = new PeptideSpectralMatch(peptide, scan.Notch, thisScore, scan.ScanIndex, scan.TheScan, commonParameters.DigestionParams, matchedIons, 0);
                                             }
                                             else
                                             {
-                                                PeptideSpectralMatches[scan.ScanIndex].AddOrReplace(peptide, thisScore, scan.Notch, commonParameters.ReportAllAmbiguity, matchedIons, thisXcorr);
+                                                PeptideSpectralMatches[scan.ScanIndex].AddOrReplace(peptide, thisScore, scan.Notch, commonParameters.ReportAllAmbiguity, matchedIons, 0);
                                             }
                                         }
 

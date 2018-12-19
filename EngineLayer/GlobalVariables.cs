@@ -64,7 +64,7 @@ namespace EngineLayer
 
             AddMods(UniprotDeseralized.OfType<Modification>(), false);
             AddMods(UnimodDeserialized.OfType<Modification>(), false);
-            
+
             // populate dictionaries of known mods/proteins for deserialization
             AllModsKnownDictionary = new Dictionary<string, Modification>();
             foreach (Modification mod in AllModsKnown)
@@ -83,15 +83,18 @@ namespace EngineLayer
                 { DissociationType.ETD.ToString(), DissociationType.ETD },
                 { DissociationType.HCD.ToString(), DissociationType.HCD },
                 { DissociationType.EThcD.ToString(), DissociationType.EThcD },
-                { DissociationType.Custom.ToString(), DissociationType.Custom }
+                { DissociationType.Custom.ToString(), DissociationType.Custom },
+                { DissociationType.LowCID.ToString(), DissociationType.LowCID}
 
                 // TODO: allow reading from scan header (autodetect dissociation type)
             };
         }
 
         public static List<string> ErrorsReadingMods = new List<string>();
+
         // File locations
         public static string DataDir { get; }
+
         public static bool StopLoops { get; set; }
         public static string ElementsLocation { get; }
         public static string MetaMorpheusVersion { get; }

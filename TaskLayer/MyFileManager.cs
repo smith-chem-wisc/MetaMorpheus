@@ -14,6 +14,7 @@ using System;
 using System.Collections.Generic;
 using System.Diagnostics;
 using System.IO;
+using System.Linq;
 
 namespace TaskLayer
 {
@@ -62,7 +63,7 @@ namespace TaskLayer
                     return ThermoMsFileReaderVersionCheck.IncorrectVersion;
                 }
             }
-            else if(File.Exists(fileIoAssumedPath) || File.Exists(fregistryAssumedPath) || File.Exists(xRawFileAssumedPath))
+            else if (File.Exists(fileIoAssumedPath) || File.Exists(fregistryAssumedPath) || File.Exists(xRawFileAssumedPath))
             {
                 return ThermoMsFileReaderVersionCheck.SomeDllsMissing;
             }
@@ -73,6 +74,12 @@ namespace TaskLayer
         public MsDataFile LoadFile(string origDataFile, int? topNpeaks, double? minRatio, bool trimMs1Peaks, bool trimMsMsPeaks, CommonParameters commonParameters)
         {
             FilteringParams filter = new FilteringParams(topNpeaks, minRatio, 1, trimMs1Peaks, trimMsMsPeaks);
+
+            if (commonParameters.DissociationType == DissociationType.LowCID)
+            {
+                filter = null;
+            }
+
             //FilteringParams filter = new FilteringParams(10000, null, null, true, true);
             if (MyMsDataFiles.TryGetValue(origDataFile, out MsDataFile value) && value != null)
                 return value;
@@ -96,6 +103,20 @@ namespace TaskLayer
                     Warn("No capability for reading " + origDataFile);
 #endif
                 }
+
+                if (commonParameters.DissociationType == DissociationType.LowCID)
+                {
+                    // call xcorr filtering on each ms2 scan
+
+                    foreach (var scan in MyMsDataFiles[origDataFile].GetAllScansList().Where(p => p.MsnOrder > 1))
+                    {
+                        var yArray = scan.MassSpectrum.YArray;
+                        var xArray = scan.MassSpectrum.XArray;
+
+                        scan.MassSpectrum.XCorrPrePreprocessing(0, 1969, scan.IsolationMz.Value);
+                    }
+                }
+
                 return MyMsDataFiles[origDataFile];
             }
         }

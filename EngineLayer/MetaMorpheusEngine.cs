@@ -43,89 +43,142 @@ namespace EngineLayer
         {
             double score = 0;
 
-            foreach (var fragment in matchedFragmentIons)
+            if (thisScan.MassSpectrum.XcorrProcessed)
             {
-                double fragmentScore = 1 + (fragment.Intensity / thisScan.TotalIonCurrent);
-                score += fragmentScore;
-
-                if (fragment.NeutralTheoreticalProduct.NeutralMass <= maximumMassThatFragmentIonScoreIsDoubled)
+                foreach (var fragment in matchedFragmentIons)
                 {
+                    switch (fragment.NeutralTheoreticalProduct.ProductType)
+                    {
+                        case ProductType.aDegree:
+                        case ProductType.aStar:
+                        case ProductType.bDegree:
+                        case ProductType.bStar:
+                        case ProductType.yDegree:
+                        case ProductType.yStar:
+                            score += 0.01 * fragment.Intensity;
+                            break;
+
+                        default:
+                            score += 1 * fragment.Intensity;
+                            break;
+                    }
+                }
+            }
+            else
+            {
+                foreach (var fragment in matchedFragmentIons)
+                {
+                    double fragmentScore = 1 + (fragment.Intensity / thisScan.TotalIonCurrent);
                     score += fragmentScore;
+
+                    if (fragment.NeutralTheoreticalProduct.NeutralMass <= maximumMassThatFragmentIonScoreIsDoubled)
+                    {
+                        score += fragmentScore;
+                    }
                 }
             }
 
             return score;
         }
 
-        public static double CalculatePeptideXcorr(MsDataScan thisScan, List<Product> peptideTheorProducts)
+        public static double CalculatePeptideXcorr(Ms2ScanWithSpecificMass thisScan, List<Product> peptideTheorProducts)
         {
             double xcorr = 0;
+            //double discreteMassBin = Constants.C13MinusC12;
+            //double discreteMassBin = 1.001123503868;
+            double discreteMassBin = 1.0005079;
+            //double discreteMassBin = 1.0005079/2;
+            //int multiplier = (int)Math.Round(2000 / discreteMassBin, 0);
+            //if (!thisScan.TheScan.MassSpectrum.XcorrProcessed)
+            //{
+            //    thisScan.TheScan.MassSpectrum.XCorrPrePreprocessing(0, multiplier * discreteMassBin, thisScan.TheScan.IsolationMz.Value, 1.5, discreteMassBin, 0.05);
+            //}
 
-            double[] scanMassArray = new double[thisScan.MassSpectrum.XArray.Count()];
-            double[] scanIntensityArray = new double[thisScan.MassSpectrum.YArray.Count()];
-
-            scanMassArray = thisScan.MassSpectrum.XArray.ToArray();
-            scanIntensityArray = thisScan.MassSpectrum.YArray.ToArray();
-            double scanRangeMinMz = 0;
-            double scanRangeMaxMz = 1968.999547;
-
-            MsDataFile.XCorrPrePreprocessing(ref scanIntensityArray, ref scanMassArray, scanRangeMinMz, scanRangeMaxMz, thisScan.IsolationMz.Value);
-
-
-            for (int i = 0; i < scanIntensityArray.Length; i++)
-            {
-                if (Double.IsNaN(scanIntensityArray[i])||Double.IsInfinity(scanIntensityArray[i]))
-                {
-                    scanIntensityArray[i] = 0;
-                }
-            }
-
-
-
-
-            double[] theoreticalFragmentIonMassArray = scanMassArray;
-            double[] theoreticalFragmentIonIntensityArray = new double[theoreticalFragmentIonMassArray.Count()];
+            SortedDictionary<int, double> massInt = new SortedDictionary<int, double>();
 
             for (int z = 1; z < 2; z++)
             //for (int z = 1; z < thisScan.SelectedIonChargeStateGuess; z++)
             {
                 foreach (Product theoreticalProduct in peptideTheorProducts)
                 {
-                    double theoreticalProductMass = Math.Round(theoreticalProduct.NeutralMass.ToMz(z) / 1.0005079, 0) * 1.0005079;
-                    int myIndex = FirstArrayIndexOfDouble(theoreticalFragmentIonMassArray, theoreticalProductMass, 0.000001);
-                    if(myIndex > -1)
+                    double theoreticalProductMass = Math.Round(theoreticalProduct.NeutralMass.ToMz(z) / discreteMassBin, 0) * discreteMassBin;
+
+                    int index = (int)Math.Round(theoreticalProductMass / discreteMassBin, 0);
+
+                    switch (theoreticalProduct.ProductType)
                     {
-                        switch (theoreticalProduct.ProductType)
-                        {
-                            case ProductType.aDegree:
-                            case ProductType.aStar:
-                            case ProductType.bDegree:
-                            case ProductType.bStar:
-                            case ProductType.yDegree:
-                            case ProductType.yStar:
-                                theoreticalFragmentIonIntensityArray[myIndex] += 0.2;
-                                break;
-                            default:
-                                theoreticalFragmentIonIntensityArray[myIndex] += 1;
-                                break;
+                        case ProductType.aDegree:
+                        case ProductType.aStar:
+                        case ProductType.bDegree:
+                        case ProductType.bStar:
+                        case ProductType.yDegree:
+                        case ProductType.yStar:
+                            if (massInt.Keys.Contains(index))
+                            {
+                                massInt[index] += 0.01;
+                            }
+                            else
+                            {
+                                massInt.Add(index, 0.01);
+                            }
+                            break;
 
-                        }
+                        default:
+                            if (massInt.Keys.Contains(index))
+                            {
+                                massInt[index] += 1;
+                            }
+                            else
+                            {
+                                massInt.Add(index, 1);
+                            }
+                            break;
                     }
-                    
-
                 }
             }
 
-            for (int i = 0; i < scanIntensityArray.Length; i++)
+            double[] theoreticalFragmentIonMassArray = new double[massInt.Keys.Count()];
+            double[] theoreticalFragmentIonIntensityArray = massInt.Values.ToArray();
+
+            int myI = 0;
+            foreach (int key in massInt.Keys)
             {
-                if (Double.IsNaN(scanIntensityArray[i])|| Double.IsNaN(theoreticalFragmentIonIntensityArray[i])   || Double.IsInfinity(scanIntensityArray[i]) || Double.IsInfinity(theoreticalFragmentIonIntensityArray[i]))
+                theoreticalFragmentIonMassArray[myI] = (double)key * discreteMassBin;
+                myI++;
+            }
+
+            int min = 0;
+            double tolerance = discreteMassBin / 2;
+            for (int i = 0; i < theoreticalFragmentIonMassArray.Length; i++)
+            {
+                for (int j = min; j < thisScan.TheScan.MassSpectrum.XArray.Length; j++)
                 {
-                    int bubba = 1;
+                    if (MassInTolerance(theoreticalFragmentIonMassArray[i], thisScan.TheScan.MassSpectrum.XArray[j], tolerance))
+                    {
+                        min = j;// no reason to start loop below this mass for next iteration.
+                        xcorr += theoreticalFragmentIonIntensityArray[i] * thisScan.TheScan.MassSpectrum.YArray[j];
+                        break;
+                    }
+                    if ((thisScan.TheScan.MassSpectrum.XArray[j] - tolerance) > theoreticalFragmentIonMassArray[i])
+                    {
+                        break;
+                    }
                 }
-                xcorr += scanIntensityArray[i] * theoreticalFragmentIonIntensityArray[i];
             }
 
             return xcorr;
+        }
+
+        private static bool MassInTolerance(double theoreticalMass, double experimentalMass, double thomsonTolerance)
+        {
+            if (Math.Abs(theoreticalMass - experimentalMass) < thomsonTolerance)
+            {
+                return true;
+            }
+            else
+            {
+                return false;
+            }
         }
 
         private static int FirstArrayIndexOfDouble(double[] a, double m, double t)
@@ -138,15 +191,25 @@ namespace EngineLayer
             return -1;
         }
 
-
         public static List<MatchedFragmentIon> MatchFragmentIons(Ms2ScanWithSpecificMass scan, List<Product> theoreticalProducts, CommonParameters commonParameters)
         {
             var matchedFragmentIons = new List<MatchedFragmentIon>();
+            double discreteMassBin = 1.0005079;
+            int multiplier = (int)Math.Round(2000 / discreteMassBin, 0);
 
             // if the spectrum has no peaks
             if (!scan.ExperimentalFragments.Any())
             {
                 return matchedFragmentIons;
+            }
+
+            if (commonParameters.DissociationType == MassSpectrometry.DissociationType.LowCID)
+            {
+                if (!scan.TheScan.MassSpectrum.XcorrProcessed)
+                {
+                    scan.TheScan.MassSpectrum.XCorrPrePreprocessing(0, multiplier * discreteMassBin, scan.TheScan.IsolationMz.Value, 1.5, discreteMassBin, 0.05);
+                    Ms2ScanWithSpecificMass.GetNeutralExperimentalFragments(scan.TheScan, commonParameters);
+                }
             }
 
             // search for ions in the spectrum

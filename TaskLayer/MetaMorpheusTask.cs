@@ -92,8 +92,7 @@ namespace TaskLayer
             var ms2Scans = myMSDataFile.GetAllScansList().Where(x => x.MsnOrder > 1).ToArray();
             List<Ms2ScanWithSpecificMass>[] scansWithPrecursors = new List<Ms2ScanWithSpecificMass>[ms2Scans.Length];
 
-            //Parallel.ForEach(Partitioner.Create(0, ms2Scans.Length), new ParallelOptions { MaxDegreeOfParallelism = commonParameters.MaxThreadsToUsePerFile },
-            Parallel.ForEach(Partitioner.Create(0, ms2Scans.Length), new ParallelOptions { MaxDegreeOfParallelism = 1 },
+            Parallel.ForEach(Partitioner.Create(0, ms2Scans.Length), new ParallelOptions { MaxDegreeOfParallelism = commonParameters.MaxThreadsToUsePerFile },
                 (partitionRange, loopState) =>
                 {
                     for (int i = partitionRange.Item1; i < partitionRange.Item2; i++)
@@ -165,7 +164,12 @@ namespace TaskLayer
                         }
 
                         scansWithPrecursors[i] = new List<Ms2ScanWithSpecificMass>();
-                        IsotopicEnvelope[] neutralExperimentalFragments = Ms2ScanWithSpecificMass.GetNeutralExperimentalFragments(ms2scan, commonParameters);
+                        IsotopicEnvelope[] neutralExperimentalFragments = null;// Ms2ScanWithSpecificMass.GetNeutralExperimentalFragments(ms2scan, commonParameters);
+
+                        if(commonParameters.DissociationType != DissociationType.LowCID)
+                        {
+                            neutralExperimentalFragments = Ms2ScanWithSpecificMass.GetNeutralExperimentalFragments(ms2scan, commonParameters);
+                        }
 
                         foreach (var precursor in precursors)
                         {
