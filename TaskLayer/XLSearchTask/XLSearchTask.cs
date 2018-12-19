@@ -110,6 +110,10 @@ namespace TaskLayer
                         XlSearchParameters.XlQuench_NH2, XlSearchParameters.XlQuench_Tris, thisId).Run();
 
                     ReportProgress(new ProgressEventArgs(100, "Done with search " + (currentPartition + 1) + "/" + CommonParameters.TotalPartitions + "!", thisId));
+                    if (GlobalVariables.StopLoops)
+                    {
+                        break;
+                    }
                 }
 
                 allPsms.AddRange(newPsms.Where(p => p != null));

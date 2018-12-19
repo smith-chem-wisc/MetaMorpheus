@@ -1041,6 +1041,7 @@ namespace MetaMorpheusGUI
 
                 AddXML.IsEnabled = false;
                 ClearXML.IsEnabled = false;
+                AddContaminantXML.IsEnabled = false;
                 AddRaw.IsEnabled = false;
                 ClearRaw.IsEnabled = false;
 
@@ -1112,6 +1113,7 @@ namespace MetaMorpheusGUI
 
             AddXML.IsEnabled = true;
             ClearXML.IsEnabled = true;
+            AddContaminantXML.IsEnabled = true;
             AddRaw.IsEnabled = true;
             ClearRaw.IsEnabled = true;
             BtnQuantSet.IsEnabled = true;
