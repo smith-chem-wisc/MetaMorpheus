@@ -25,7 +25,7 @@ namespace Test
             searchTask.RunTask(folderPath, new List<DbForTask> { db }, new List<string> { myFile }, "metadraw");
             string psmFile = Directory.GetFiles(folderPath).First(f => f.Contains("AllPSMs.psmtsv"));
 
-            List<MetaDrawPsm> parsedPsms = TsvResultReader.ReadTsv(psmFile, out var warnings);
+            List<PsmFromTsv> parsedPsms = PsmTsvReader.ReadTsv(psmFile, out var warnings);
 
             Assert.AreEqual(11, parsedPsms.Count);
             Assert.AreEqual(0, warnings.Count);
@@ -50,7 +50,7 @@ namespace Test
 
             string psmFile = Directory.GetFiles(folderPath).First(f => f.Contains("XL_Intralinks.tsv"));
 
-            List<MetaDrawPsm> parsedPsms = TsvResultReader.ReadTsv(psmFile, out var warnings);
+            List<PsmFromTsv> parsedPsms = PsmTsvReader.ReadTsv(psmFile, out var warnings);
 
             Directory.Delete(folderPath, true);
         }
