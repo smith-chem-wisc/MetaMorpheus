@@ -50,14 +50,16 @@ namespace EngineLayer.ClassicSearch
 
             if (Proteins.Any())
             {
-                Parallel.ForEach(Partitioner.Create(0, Proteins.Count), new ParallelOptions { MaxDegreeOfParallelism = commonParameters.MaxThreadsToUsePerFile }, (partitionRange, loopState) =>
+                int maxThreadsPerFile = commonParameters.MaxThreadsToUsePerFile;
+                int[] threads = Enumerable.Range(0, maxThreadsPerFile).ToArray();
+                Parallel.ForEach(threads, (i) =>
                 {
-                    for (int i = partitionRange.Item1; i < partitionRange.Item2; i++)
+                    for (; i < Proteins.Count; i += maxThreadsPerFile)
                     {
                         // Stop loop if canceled
                         if (GlobalVariables.StopLoops)
                         {
-                            loopState.Stop();
+                            i = Proteins.Count;
                             return;
                         }
 
@@ -133,7 +135,7 @@ namespace EngineLayer.ClassicSearch
             {
                 psm.ResolveAllAmbiguities();
             }
-            
+
             return new MetaMorpheusEngineResults(this);
         }
 

@@ -45,18 +45,19 @@ namespace EngineLayer.Calibration
             List<LabeledDataPoint> Ms1List = new List<LabeledDataPoint>();
             List<LabeledDataPoint> Ms2List = new List<LabeledDataPoint>();
 
-            int numIdentifications = GoodIdentifications.Count;
-            
             object lockObj = new object();
             object lockObj2 = new object();
-            Parallel.ForEach(Partitioner.Create(0, numIdentifications), new ParallelOptions { MaxDegreeOfParallelism = commonParameters.MaxThreadsToUsePerFile }, (fff, loopState) =>
+
+            int maxThreadsPerFile = commonParameters.MaxThreadsToUsePerFile;
+            int[] threads = Enumerable.Range(0, maxThreadsPerFile).ToArray();
+            Parallel.ForEach(threads, (matchIndex) =>
             {
-                for (int matchIndex = fff.Item1; matchIndex < fff.Item2; matchIndex++)
+                for (; matchIndex < GoodIdentifications.Count; matchIndex += maxThreadsPerFile)
                 {
                     // Stop loop if canceled
                     if (GlobalVariables.StopLoops)
                     {
-                        loopState.Stop();
+                        matchIndex = GoodIdentifications.Count;
                         return;
                     }
 
