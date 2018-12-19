@@ -482,7 +482,7 @@ namespace EngineLayer
                         stringBuilders.ForEach(p => p.Append("];"));
                     }
 
-                    stringBuilders.ForEach(p => p.Append("};"));
+                    stringBuilders.ForEach(p => p.Append("}"));
                 }
                 
             }

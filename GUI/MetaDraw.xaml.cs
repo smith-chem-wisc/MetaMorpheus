@@ -25,6 +25,7 @@ namespace MetaMorpheusGUI
     /// </summary>
     public partial class MetaDraw : Window
     {
+        private ItemsControlSampleViewModel itemsControlSampleViewModel;
         private PsmAnnotationViewModel mainViewModel;
         private MyFileManager spectraFileManager;
         private MsDataFile MsDataFile;
@@ -42,6 +43,8 @@ namespace MetaMorpheusGUI
         {
             InitializeComponent();
 
+            itemsControlSampleViewModel = new ItemsControlSampleViewModel();
+            DataContext = itemsControlSampleViewModel;
             mainViewModel = new PsmAnnotationViewModel();
             plotView.DataContext = mainViewModel;
             peptideSpectralMatches = new ObservableCollection<PsmFromTsv>();
@@ -150,6 +153,32 @@ namespace MetaMorpheusGUI
 
             PsmFromTsv psmToDraw = scanPsms.FirstOrDefault();
 
+            //TO DO: optimize code
+            if (psmToDraw.MatchedIons.Count > 1)
+            {
+                HashSet<int> theKeys = new HashSet<int>();
+                foreach (var theKey in psmToDraw.MatchedIons.Keys)
+                {
+                    theKeys.Add(theKey);
+                }
+                if (psmToDraw.BetaPeptideMatchedIons != null)
+                {
+                    foreach (var theKey in psmToDraw.BetaPeptideMatchedIons.Keys)
+                    {
+                        theKeys.Add(theKey);
+                    }
+                }
+
+                foreach (var theKey in theKeys)
+                {
+                    var alpha = psmToDraw.MatchedIons[theKey];
+                    var beta = psmToDraw.BetaPeptideMatchedIons[theKey];
+                    var psmModel = new PsmAnnotationViewModel();
+                    psmModel.DrawPeptideSpectralMatch(MsDataFile.GetOneBasedScan(theKey), alpha, beta);
+                    itemsControlSampleViewModel.AddNewRow(psmModel, theKey, MsDataFile.GetOneBasedScan(theKey).DissociationType.ToString());
+                }
+            }
+
             // draw annotated spectrum
             mainViewModel.DrawPeptideSpectralMatch(msDataScanToDraw, psmToDraw);
             
@@ -180,7 +209,7 @@ namespace MetaMorpheusGUI
             {
                 if (temp[i].Name == nameof(row.MatchedIons))
                 {
-                    propertyView.Rows.Add(temp[i].Name, string.Join(", ", row.MatchedIons.Select(p => p.Annotation)));
+                    propertyView.Rows.Add(temp[i].Name, string.Join(", ", row.MatchedIons.First().Value.Select(p => p.Annotation)));
                 }
                 else
                 {
@@ -188,6 +217,7 @@ namespace MetaMorpheusGUI
                 }
             }
             dataGridProperties.Items.Refresh();
+            itemsControlSampleViewModel.Data.Clear();
             DrawPsm(row.Ms2ScanNumber, row.FullSequence);
         }
 
@@ -300,7 +330,7 @@ namespace MetaMorpheusGUI
             }
 
             // draw the fragment ion annotations on the base sequence
-            foreach (var ion in psm.MatchedIons)
+            foreach (var ion in psm.MatchedIons.First().Value)
             {
                 int residue = ion.NeutralTheoreticalProduct.TerminusFragment.AminoAcidPosition;
                 string annotation = ion.NeutralTheoreticalProduct.ProductType + "" + ion.NeutralTheoreticalProduct.TerminusFragment.FragmentNumber;
@@ -375,5 +405,41 @@ namespace MetaMorpheusGUI
 
             MessageBox.Show(string.Format("{0} PDFs exported", num));
         }
+
+        private void BtnMetaDrawScans_Click(object sender, RoutedEventArgs e)
+        {
+            MetaDrawScans metaDrawScanGui = new MetaDrawScans();
+            metaDrawScanGui.Show();
+        }
     }
+
+    public class ItemsControlSampleViewModel
+    {
+        public ObservableCollection<ItemsControlSampleData> Data { get; set; }
+
+        public ItemsControlSampleViewModel()
+        {
+            var sampledata = new ItemsControlSampleData() {
+                PsmAnnotationViewModel = new PsmAnnotationViewModel(),
+                SpectrumLabel = "Annotation area"
+            };
+
+            Data = new ObservableCollection<ItemsControlSampleData>();
+            Data.Add(sampledata);
+        }
+
+        public void AddNewRow(PsmAnnotationViewModel psmAnnotationViewModel, int scanNum, string annotation)
+        {
+            Data.Add(new ItemsControlSampleData() { PsmAnnotationViewModel = psmAnnotationViewModel, SpectrumLabel = "scan: " + scanNum.ToString() + "-" + annotation});
+        }
+    }
+
+    public class ItemsControlSampleData
+    {
+        public PsmAnnotationViewModel PsmAnnotationViewModel { get; set; }
+
+        public string SpectrumLabel { get; set; }
+
+    }
+
 }

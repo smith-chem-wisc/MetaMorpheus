@@ -202,8 +202,8 @@ namespace EngineLayer.CrosslinkSearch
 
             var sb = new StringBuilder();
             sb.Append(FullFilePath + "\t");
-            var allScanNumber = String.Join("-", AllMatchedFragmentIons.Keys.ToArray());
-            sb.Append(allScanNumber + "\t");
+            //var allScanNumber = String.Join("-", AllMatchedFragmentIons.Keys.ToArray());
+            sb.Append(ScanNumber + "\t");
             sb.Append(PrecursorScanNumber + "\t");
             sb.Append(ScanPrecursorMonoisotopicPeakMz + "\t");
             sb.Append(ScanPrecursorCharge + "\t");

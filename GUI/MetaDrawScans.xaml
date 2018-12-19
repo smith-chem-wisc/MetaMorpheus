@@ -1,0 +1,60 @@
+﻿<Window x:Class="MetaMorpheusGUI.MetaDrawScans"
+        xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        xmlns:oxy ="http://oxyplot.org/wpf"
+        xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+        xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+        xmlns:local="clr-namespace:MetaMorpheusGUI"
+        mc:Ignorable="d"
+        Title="MetaDrawScans" Height="450" Width="800">
+    <DockPanel>
+        <Button Content="Add New Row" Command="{Binding AddNewRowCommand}"
+                DockPanel.Dock="Bottom"/>
+
+        <ItemsControl ItemsSource="{Binding Data}">
+            <ItemsControl.ItemTemplate>
+                <DataTemplate>
+                    <Border  BorderBrush="Black" Background="Gainsboro" BorderThickness="1" Margin="2">
+                        <!-- This is the Inner Grid for each element, which is represented in Brown color in your picture -->
+                        <Grid>
+                            <Grid.RowDefinitions>
+                                <RowDefinition Height="Auto"/>
+                                <RowDefinition Height="500"/>
+                            </Grid.RowDefinitions>
+
+                            <Grid.ColumnDefinitions>
+                                <ColumnDefinition/>
+                                <ColumnDefinition Width=".2*"/>
+                                <ColumnDefinition Width=".2*"/>
+                            </Grid.ColumnDefinitions>
+
+                            <Label Content="{Binding Label1Text}"
+                                   Margin="2"/>
+
+                            <Button Content="Button1" 
+                                    Command="{Binding DataContext.Command1, RelativeSource={RelativeSource AncestorType=ItemsControl}}"
+                                    CommandParameter="{Binding}"
+                                    Grid.Column="1" Margin="2"/>
+
+                            <oxy:PlotView Model="{Binding PsmAnnotationViewModel.Model}" FontSize="16" FontStretch="Expanded" Grid.Row="1" Grid.ColumnSpan="3"/>
+                        </Grid>
+                    </Border>
+                </DataTemplate>
+            </ItemsControl.ItemTemplate>
+
+            <ItemsControl.Template>
+                <ControlTemplate TargetType="ItemsControl">
+                    <ScrollViewer CanContentScroll="True">
+                        <ItemsPresenter/>
+                    </ScrollViewer>
+                </ControlTemplate>
+            </ItemsControl.Template>
+
+            <ItemsControl.ItemsPanel>
+                <ItemsPanelTemplate>
+                    <VirtualizingStackPanel/>
+                </ItemsPanelTemplate>
+            </ItemsControl.ItemsPanel>
+        </ItemsControl>
+    </DockPanel>
+</Window>

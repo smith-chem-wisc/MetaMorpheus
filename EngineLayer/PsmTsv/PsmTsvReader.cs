@@ -57,7 +57,7 @@ namespace EngineLayer
                 warnings.Add("Warning: " + ((lineCount - 1) - psms.Count) + " PSMs were not read.");
             }
 
-            return psms;
+             return psms;
         }
 
         private static Dictionary<string, int> ParseHeader(string header)

@@ -169,6 +169,9 @@
     <Compile Include="MetaDraw.xaml.cs">
       <DependentUpon>MetaDraw.xaml</DependentUpon>
     </Compile>
+    <Compile Include="MetaDrawScans.xaml.cs">
+      <DependentUpon>MetaDrawScans.xaml</DependentUpon>
+    </Compile>
     <Compile Include="MetaDraw\BaseSequenceAnnotation.cs" />
     <Compile Include="MetaDraw\PdfWriter.cs" />
     <Compile Include="Util\BooleanInverter.cs" />
@@ -262,6 +265,10 @@
     <Page Include="MetaDraw.xaml">
       <Generator>MSBuild:Compile</Generator>
       <SubType>Designer</SubType>
+    </Page>
+    <Page Include="MetaDrawScans.xaml">
+      <SubType>Designer</SubType>
+      <Generator>MSBuild:Compile</Generator>
     </Page>
     <Page Include="MetaUpdater.xaml">
       <Generator>MSBuild:Compile</Generator>
