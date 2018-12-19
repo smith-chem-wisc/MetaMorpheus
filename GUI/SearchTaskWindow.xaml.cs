@@ -28,6 +28,7 @@ namespace MetaMorpheusGUI
         private readonly ObservableCollection<ModTypeForTreeView> VariableModTypeForTreeViewObservableCollection = new ObservableCollection<ModTypeForTreeView>();
         private readonly ObservableCollection<ModTypeForLoc> LocalizeModTypeForTreeViewObservableCollection = new ObservableCollection<ModTypeForLoc>();
         private readonly ObservableCollection<ModTypeForGrid> ModSelectionGridItems = new ObservableCollection<ModTypeForGrid>();
+        private CustomFragmentationWindow CustomFragmentationWindow;
 
         public SearchTaskWindow() : this(null)
         {
@@ -197,6 +198,7 @@ namespace MetaMorpheusGUI
             maxThreadsTextBox.Text = task.CommonParameters.MaxThreadsToUsePerFile.ToString(CultureInfo.InvariantCulture);
             MinVariantDepthTextBox.Text = task.CommonParameters.MinVariantDepth.ToString(CultureInfo.InvariantCulture);
             MaxHeterozygousVariantsTextBox.Text = task.CommonParameters.MaxHeterozygousVariants.ToString(CultureInfo.InvariantCulture);
+            CustomFragmentationWindow = new CustomFragmentationWindow(task.CommonParameters.CustomIons);
 
             if (task.CommonParameters.QValueOutputFilter < 1)
             {
@@ -293,6 +295,7 @@ namespace MetaMorpheusGUI
         private void CancelButton_Click(object sender, RoutedEventArgs e)
         {
             DialogResult = false;
+            CustomFragmentationWindow.Close();
         }
 
         private void SaveButton_Click(object sender, RoutedEventArgs e)
@@ -349,8 +352,10 @@ namespace MetaMorpheusGUI
             }
 
             Protease protease = (Protease)proteaseComboBox.SelectedItem;
-
+            
             DissociationType dissociationType = GlobalVariables.AllSupportedDissociationTypes[dissociationTypeComboBox.SelectedItem.ToString()];
+            CustomFragmentationWindow.Close();
+
             FragmentationTerminus fragmentationTerminus = FragmentationTerminus.Both;
             if (nTerminalIons.IsChecked.Value && !cTerminalIons.IsChecked.Value)
             {
@@ -757,6 +762,14 @@ namespace MetaMorpheusGUI
             {
                 SearchModifications.FilterTree(SearchVarMod, variableModsTreeView, VariableModTypeForTreeViewObservableCollection);
                 SearchModifications.VariableSearch = false;
+            }
+        }
+      
+        private void CustomFragmentationHandler(object sender, EventArgs e)
+        {
+            if (dissociationTypeComboBox.SelectedItem.ToString().Equals(DissociationType.Custom.ToString()))
+            {
+                CustomFragmentationWindow.Show();
             }
         }
     }

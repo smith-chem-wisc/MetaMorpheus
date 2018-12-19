@@ -74,6 +74,9 @@ namespace TaskLayer
                 }
                 var ok = TaskList[i];
 
+                // reset product types for custom fragmentation
+                ok.Item2.CommonParameters.SetCustomProductTypes();
+
                 var outputFolderForThisTask = Path.Combine(OutputFolder, ok.Item1);
 
                 if (!Directory.Exists(outputFolderForThisTask))

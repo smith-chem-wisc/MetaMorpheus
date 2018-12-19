@@ -22,6 +22,7 @@ namespace TaskLayer
         public PostSearchAnalysisParameters Parameters { get; set; }
         private List<EngineLayer.ProteinGroup> ProteinGroups { get; set; }
         private IEnumerable<IGrouping<string, PeptideSpectralMatch>> PsmsGroupedByFile { get; set; }
+        private List<PeptideSpectralMatch> FilteredPsmListForOutput { get; set; }
 
         public PostSearchAnalysisTask()
             : base(MyTask.Search)
@@ -70,6 +71,7 @@ namespace TaskLayer
             WriteProteinResults();
             WriteQuantificationResults();
             WritePrunedDatabase();
+            WritePeptideResults(); // modifies the FDR results for PSMs, so do this last
 
             return Parameters.SearchTaskResults;
         }
@@ -89,8 +91,7 @@ namespace TaskLayer
             // this could cause weird PSM FDR issues
 
             Status("Estimating PSM FDR...", Parameters.SearchTaskId);
-            int massDiffAcceptorNumNotches = Parameters.NumNotches;
-            new FdrAnalysisEngine(Parameters.AllPsms, massDiffAcceptorNumNotches, CommonParameters, new List<string> { Parameters.SearchTaskId }).Run();
+            new FdrAnalysisEngine(Parameters.AllPsms, Parameters.NumNotches, CommonParameters, new List<string> { Parameters.SearchTaskId }).Run();
 
             // sort by q-value because of group FDR stuff
             // e.g. multiprotease FDR, non/semi-specific protease, etc
@@ -411,58 +412,49 @@ namespace TaskLayer
 
         private void WritePsmResults()
         {
-            Status("Writing results...", Parameters.SearchTaskId);
-            List<PeptideSpectralMatch> filteredPsmListForOutput = Parameters.AllPsms
+            Status("Writing PSM results...", Parameters.SearchTaskId);
+            FilteredPsmListForOutput = Parameters.AllPsms
                 .Where(p => p.FdrInfo.QValue <= CommonParameters.QValueOutputFilter
                 && p.FdrInfo.QValueNotch <= CommonParameters.QValueOutputFilter).ToList();
 
             if (!Parameters.SearchParameters.WriteDecoys)
             {
-                filteredPsmListForOutput.RemoveAll(b => b.IsDecoy);
+                FilteredPsmListForOutput.RemoveAll(b => b.IsDecoy);
             }
             if (!Parameters.SearchParameters.WriteContaminants)
             {
-                filteredPsmListForOutput.RemoveAll(b => b.IsContaminant);
+                FilteredPsmListForOutput.RemoveAll(b => b.IsContaminant);
             }
 
             // write PSMs
             string writtenFile = Path.Combine(Parameters.OutputFolder, "AllPSMs.psmtsv");
-            WritePsmsToTsv(filteredPsmListForOutput, writtenFile, Parameters.SearchParameters.ModsToWriteSelection);
+            WritePsmsToTsv(FilteredPsmListForOutput, writtenFile, Parameters.SearchParameters.ModsToWriteSelection);
             FinishedWritingFile(writtenFile, new List<string> { Parameters.SearchTaskId });
 
             // write PSMs for percolator
             writtenFile = Path.Combine(Parameters.OutputFolder, "AllPSMs_FormattedForPercolator.tsv");
-            WritePsmsForPercolator(filteredPsmListForOutput, writtenFile, CommonParameters.QValueOutputFilter);
-            FinishedWritingFile(writtenFile, new List<string> { Parameters.SearchTaskId });
-
-            // write best (highest-scoring) PSM per peptide
-            writtenFile = Path.Combine(Parameters.OutputFolder, "AllPeptides.psmtsv");
-            List<PeptideSpectralMatch> peptides = Parameters.AllPsms.GroupBy(b => b.FullSequence).Select(b => b.FirstOrDefault()).ToList();
-            WritePsmsToTsv(filteredPsmListForOutput.GroupBy(b => b.FullSequence).Select(b => b.FirstOrDefault()).ToList(), writtenFile, Parameters.SearchParameters.ModsToWriteSelection);
+            WritePsmsForPercolator(FilteredPsmListForOutput, writtenFile, CommonParameters.QValueOutputFilter);
             FinishedWritingFile(writtenFile, new List<string> { Parameters.SearchTaskId });
 
             // write summary text
             Parameters.SearchTaskResults.AddNiceText("All target PSMS within 1% FDR: " + Parameters.AllPsms.Count(a => a.FdrInfo.QValue <= 0.01 && !a.IsDecoy));
-            Parameters.SearchTaskResults.AddNiceText("All target peptides within 1% FDR: " + peptides.Count(a => a.FdrInfo.QValue <= 0.01 && !a.IsDecoy));
             if (Parameters.SearchParameters.DoParsimony)
             {
                 Parameters.SearchTaskResults.AddNiceText("All target protein groups within 1% FDR: " + ProteinGroups.Count(b => b.QValue <= 0.01 && !b.IsDecoy)
                     + Environment.NewLine);
             }
 
-            PsmsGroupedByFile = filteredPsmListForOutput.GroupBy(p => p.FullFilePath);
+            PsmsGroupedByFile = FilteredPsmListForOutput.GroupBy(p => p.FullFilePath);
 
             foreach (var file in PsmsGroupedByFile)
             {
                 // write summary text
                 var psmsForThisFile = file.ToList();
                 string strippedFileName = Path.GetFileNameWithoutExtension(file.First().FullFilePath);
-                var peptidesForFile = psmsForThisFile.GroupBy(b => b.FullSequence).Select(b => b.FirstOrDefault()).ToList();
 
                 Parameters.SearchTaskResults.AddNiceText("MS2 spectra in " + strippedFileName + ": " + Parameters.NumMs2SpectraPerFile[strippedFileName][0]);
                 Parameters.SearchTaskResults.AddNiceText("Precursors fragmented in " + strippedFileName + ": " + Parameters.NumMs2SpectraPerFile[strippedFileName][1]);
                 Parameters.SearchTaskResults.AddNiceText("Target PSMs within 1% FDR in " + strippedFileName + ": " + psmsForThisFile.Count(a => a.FdrInfo.QValue <= 0.01 && !a.IsDecoy));
-                Parameters.SearchTaskResults.AddNiceText("Target peptides within 1% FDR in " + strippedFileName + ": " + peptidesForFile.Count(a => a.FdrInfo.QValue <= 0.01 && !a.IsDecoy) + Environment.NewLine);
 
                 // writes all individual spectra file search results to subdirectory
                 if (Parameters.CurrentRawFileList.Count > 1)
@@ -479,12 +471,7 @@ namespace TaskLayer
                     writtenFile = Path.Combine(Parameters.IndividualResultsOutputFolder, strippedFileName + "_PSMsFormattedForPercolator.tsv");
                     WritePsmsForPercolator(psmsForThisFile, writtenFile, CommonParameters.QValueOutputFilter);
                     FinishedWritingFile(writtenFile, new List<string> { Parameters.SearchTaskId, "Individual Spectra Files", file.First().FullFilePath });
-
-                    // write best (highest-scoring) PSM per peptide
-                    writtenFile = Path.Combine(Parameters.IndividualResultsOutputFolder, strippedFileName + "_Peptides.psmtsv");
-                    WritePsmsToTsv(peptidesForFile, writtenFile, Parameters.SearchParameters.ModsToWriteSelection);
-                    FinishedWritingFile(writtenFile, new List<string> { Parameters.SearchTaskId, "Individual Spectra Files", file.First().FullFilePath });
-                }
+               }
             }
         }
 
@@ -780,6 +767,42 @@ namespace TaskLayer
                     string outputXMLdbFullNameContaminants = Path.Combine(Parameters.OutputFolder, string.Join("-", Parameters.DatabaseFilenameList.Where(b => b.IsContaminant).Select(b => Path.GetFileNameWithoutExtension(b.FilePath))) + "proteinPruned.xml");
                     ProteinDbWriter.WriteXmlDatabase(new Dictionary<string, HashSet<Tuple<int, Modification>>>(), proteinToConfidentBaseSequences.Keys.Where(b => !b.IsDecoy && b.IsContaminant).ToList(), outputXMLdbFullNameContaminants);
                     FinishedWritingFile(outputXMLdbFullNameContaminants, new List<string> { Parameters.SearchTaskId });
+                }
+            }
+        }
+
+        private void WritePeptideResults()
+        {
+            Status("Writing peptide results...", Parameters.SearchTaskId);
+
+            // write best (highest-scoring) PSM per peptide
+            string writtenFile = Path.Combine(Parameters.OutputFolder, "AllPeptides.psmtsv");
+            List<PeptideSpectralMatch> peptides = Parameters.AllPsms.GroupBy(b => b.FullSequence).Select(b => b.FirstOrDefault()).ToList();
+            new FdrAnalysisEngine(peptides, Parameters.NumNotches, CommonParameters, new List<string> { Parameters.SearchTaskId }, "Peptide").Run();
+            WritePsmsToTsv(FilteredPsmListForOutput.GroupBy(b => b.FullSequence).Select(b => b.FirstOrDefault()).ToList(), writtenFile, Parameters.SearchParameters.ModsToWriteSelection);
+            FinishedWritingFile(writtenFile, new List<string> { Parameters.SearchTaskId });
+
+            Parameters.SearchTaskResults.AddNiceText("All target peptides within 1% FDR: " + peptides.Count(a => a.FdrInfo.QValue <= 0.01 && !a.IsDecoy));
+
+            foreach (var file in PsmsGroupedByFile)
+            {
+                // write summary text
+                var psmsForThisFile = file.ToList();
+                string strippedFileName = Path.GetFileNameWithoutExtension(file.First().FullFilePath);
+                var peptidesForFile = psmsForThisFile.GroupBy(b => b.FullSequence).Select(b => b.FirstOrDefault()).ToList();
+                new FdrAnalysisEngine(peptidesForFile, Parameters.NumNotches, CommonParameters, new List<string> { Parameters.SearchTaskId }, "Peptide").Run();
+                Parameters.SearchTaskResults.AddNiceText("Target peptides within 1% FDR in " + strippedFileName + ": " + peptidesForFile.Count(a => a.FdrInfo.QValue <= 0.01 && !a.IsDecoy) + Environment.NewLine);
+
+                // writes all individual spectra file search results to subdirectory
+                if (Parameters.CurrentRawFileList.Count > 1)
+                {
+                    // create individual files subdirectory
+                    Directory.CreateDirectory(Parameters.IndividualResultsOutputFolder);
+
+                    // write best (highest-scoring) PSM per peptide
+                    writtenFile = Path.Combine(Parameters.IndividualResultsOutputFolder, strippedFileName + "_Peptides.psmtsv");
+                    WritePsmsToTsv(peptidesForFile, writtenFile, Parameters.SearchParameters.ModsToWriteSelection);
+                    FinishedWritingFile(writtenFile, new List<string> { Parameters.SearchTaskId, "Individual Spectra Files", file.First().FullFilePath });
                 }
             }
         }

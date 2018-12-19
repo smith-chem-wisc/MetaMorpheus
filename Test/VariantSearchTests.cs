@@ -137,12 +137,9 @@ namespace Test
 
             //Assert.IsTrue(psms.Any(line => line.Contains($"\t{variantPsmShort}\t" + (containsVariant ? variantPsmShort : "\t"))));
 
-            //Directory.Delete(outputFolder, true);
-            //File.Delete(mzmlName);
-            //File.Delete(xmlName);
+            Directory.Delete(outputFolder, true);
+            File.Delete(mzmlName);
             //Directory.Delete(Path.Combine(TestContext.CurrentContext.TestDirectory, @"Task Settings"), true);
-
-            //Console.WriteLine($"Analysis time for VariantSearchTests.SearchTests({proteinIdx.ToString()},{peptideIdx.ToString()},{containsVariant.ToString()},{variantPsmShort}): {stopwatch.Elapsed.Hours}h {stopwatch.Elapsed.Minutes}m {stopwatch.Elapsed.Seconds}s");
         }
     }
 }
