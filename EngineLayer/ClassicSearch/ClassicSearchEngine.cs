@@ -57,11 +57,7 @@ namespace EngineLayer.ClassicSearch
                     for (; i < Proteins.Count; i += maxThreadsPerFile)
                     {
                         // Stop loop if canceled
-                        if (GlobalVariables.StopLoops)
-                        {
-                            i = Proteins.Count;
-                            return;
-                        }
+                        if (GlobalVariables.StopLoops) { return; }
 
                         // digest each protein into peptides and search for each peptide in all spectra within precursor mass tolerance
                         foreach (PeptideWithSetModifications peptide in Proteins[i].Digest(commonParameters.DigestionParams, FixedModifications, VariableModifications))

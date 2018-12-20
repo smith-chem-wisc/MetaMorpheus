@@ -80,15 +80,9 @@ namespace EngineLayer.Indexing
                 for (; i < ProteinList.Count; i += maxThreadsPerFile)
                 {
                     // Stop loop if canceled
-                    if (GlobalVariables.StopLoops)
-                    {
-                        i = ProteinList.Count;
-                        return;
-                    }
-
+                    if (GlobalVariables.StopLoops) { return; }
 
                     localPeptides.AddRange(ProteinList[i].Digest(commonParameters.DigestionParams, FixedModifications, VariableModifications));
-
 
                     progress++;
                     var percentProgress = (int)((progress / ProteinList.Count) * 100);

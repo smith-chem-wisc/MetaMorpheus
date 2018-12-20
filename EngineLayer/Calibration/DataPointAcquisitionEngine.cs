@@ -55,11 +55,7 @@ namespace EngineLayer.Calibration
                 for (; matchIndex < GoodIdentifications.Count; matchIndex += maxThreadsPerFile)
                 {
                     // Stop loop if canceled
-                    if (GlobalVariables.StopLoops)
-                    {
-                        matchIndex = GoodIdentifications.Count;
-                        return;
-                    }
+                    if (GlobalVariables.StopLoops) { return; }
 
                     PeptideSpectralMatch identification = GoodIdentifications[matchIndex];
 

@@ -49,11 +49,7 @@ namespace EngineLayer.NonSpecificEnzymeSearch
                 for (; i < ListOfSortedMs2Scans.Length; i += maxThreadsPerFile)
                 {
                     // Stop loop if canceled
-                    if (GlobalVariables.StopLoops)
-                    {
-                        i = ListOfSortedMs2Scans.Length;
-                        return;
-                    }
+                    if (GlobalVariables.StopLoops) { return; }
 
                     // empty the scoring table to score the new scan (conserves memory compared to allocating a new array)
                     Array.Clear(scoringTable, 0, scoringTable.Length);
