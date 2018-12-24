@@ -17,7 +17,7 @@ namespace EngineLayer
         {
         }
 
-        public CommonParameters(string taskDescriptor = null, DissociationType dissociationType = DissociationType.HCD, bool doPrecursorDeconvolution = true,
+        public CommonParameters(string taskDescriptor = null, FragmentationType fragmentationType = FragmentationType.MS2, DissociationType dissociationType = DissociationType.HCD, bool doPrecursorDeconvolution = true,
             bool useProvidedPrecursorInfo = true, double deconvolutionIntensityRatio = 3, int deconvolutionMaxAssumedChargeState = 12, bool reportAllAmbiguity = true,
             bool addCompIons = false, int totalPartitions = 1, double scoreCutoff = 5, int topNpeaks = 200, double minRatio = 0.01, bool trimMs1Peaks = false,
             bool trimMsMsPeaks = true, bool useDeltaScore = false, bool calculateEValue = false, Tolerance productMassTolerance = null, Tolerance precursorMassTolerance = null, Tolerance deconvolutionMassTolerance = null,
@@ -48,6 +48,7 @@ namespace EngineLayer
             ListOfModsVariable = listOfModsVariable ?? new List<(string, string)> { ("Common Variable", "Oxidation on M") };
             ListOfModsFixed = listOfModsFixed ?? new List<(string, string)> { ("Common Fixed", "Carbamidomethyl on C"), ("Common Fixed", "Carbamidomethyl on U") };
             DissociationType = dissociationType;
+            FragmentationType = fragmentationType;
 
             CustomIons = DissociationTypeCollection.ProductsFromDissociationType[DissociationType.Custom];
             // reset custom fragmentation product types to default empty list
@@ -95,6 +96,7 @@ namespace EngineLayer
         public bool AssumeOrphanPeaksAreZ1Fragments { get; private set; }
         public int MaxHeterozygousVariants { get; private set; }
         public int MinVariantDepth { get; private set; }
+        public FragmentationType FragmentationType { get; set; }
 
         public CommonParameters Clone()
         {
@@ -118,6 +120,7 @@ namespace EngineLayer
             }
             return new CommonParameters(
                                 TaskDescriptor,
+                                FragmentationType,
                                 DissociationType,
                                 DoPrecursorDeconvolution,
                                 UseProvidedPrecursorInfo,

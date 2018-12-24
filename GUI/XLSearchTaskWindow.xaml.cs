@@ -61,6 +61,9 @@ namespace MetaMorpheusGUI
 
         private void PopulateChoices()
         {
+            foreach (string fragmentationType in Enum.GetNames(typeof(FragmentationType)))
+                CbbFragmentationType.Items.Add(fragmentationType);
+
             foreach (string crosslinkerName in Enum.GetNames(typeof(CrosslinkerType)))
                 cbCrosslinker.Items.Add(crosslinkerName);
 
@@ -112,7 +115,7 @@ namespace MetaMorpheusGUI
             //Crosslink search para
             //RbSearchCrosslink.IsChecked = !task.XlSearchParameters.SearchGlyco;
             //RbSearchGlyco.IsChecked = task.XlSearchParameters.SearchGlyco;
-            //CkbSearchGlycoWithBgYgIndex.IsChecked = task.XlSearchParameters.SearchGlycoWithBgYgIndex;
+            CbbFragmentationType.SelectedIndex = (int)task.CommonParameters.FragmentationType;
             cbCrosslinker.SelectedIndex = (int)task.XlSearchParameters.CrosslinkerType;
             ckbXLTopNum.IsChecked = task.XlSearchParameters.RestrictToTopNHits;
             txtXLTopNum.Text = task.XlSearchParameters.CrosslinkSearchTopNum.ToString(CultureInfo.InvariantCulture);
@@ -144,7 +147,6 @@ namespace MetaMorpheusGUI
             MinRatioTextBox.Text = task.CommonParameters.MinRatio.ToString(CultureInfo.InvariantCulture);
             DissociationTypeComboBox.SelectedItem = task.CommonParameters.DissociationType.ToString();
 
-            //ckbCharge_2_3.IsChecked = task.XlSearchParameters.XlCharge_2_3;
             checkBoxDecoy.IsChecked = task.XlSearchParameters.DecoyType != DecoyType.None;
             deconvolutePrecursors.IsChecked = task.CommonParameters.DoPrecursorDeconvolution;
             useProvidedPrecursor.IsChecked = task.CommonParameters.UseProvidedPrecursorInfo;
@@ -239,9 +241,10 @@ namespace MetaMorpheusGUI
 
             DissociationType dissociationType = GlobalVariables.AllSupportedDissociationTypes[DissociationTypeComboBox.SelectedItem.ToString()];
             CustomFragmentationWindow.Close();
-            
+
             //TheTask.XlSearchParameters.SearchGlyco = RbSearchGlyco.IsChecked.Value;
             //TheTask.XlSearchParameters.SearchGlycoWithBgYgIndex = CkbSearchGlycoWithBgYgIndex.IsChecked.Value;
+            FragmentationType fragmentationType = (FragmentationType)CbbFragmentationType.SelectedIndex;
             TheTask.XlSearchParameters.RestrictToTopNHits = ckbXLTopNum.IsChecked.Value;
             TheTask.XlSearchParameters.CrosslinkSearchTopNum = int.Parse(txtXLTopNum.Text, CultureInfo.InvariantCulture);
             TheTask.XlSearchParameters.CrosslinkerType = (CrosslinkerType)cbCrosslinker.SelectedIndex;
@@ -329,6 +332,7 @@ namespace MetaMorpheusGUI
             }
 
             CommonParameters commonParamsToSave = new CommonParameters(
+                fragmentationType: fragmentationType,
                 precursorMassTolerance: PrecursorMassTolerance,
                 taskDescriptor: OutputFileNameTextBox.Text != "" ? OutputFileNameTextBox.Text : "XLSearchTask",
                 productMassTolerance: ProductMassTolerance,

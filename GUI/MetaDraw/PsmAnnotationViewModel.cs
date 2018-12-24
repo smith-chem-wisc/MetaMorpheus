@@ -82,6 +82,30 @@ namespace ViewModels
             this.Model = DrawMatchedFragmentIons(msDataScan, MatchedIons, BetaMatchedIons);
         }
 
+        // To Control the zooming of Y Axis. Zooming from 0.
+        private void XAxisChanged(object sender, AxisChangedEventArgs e)
+        {          
+            double fold = (this.Model.Axes[0].ActualMaximum - this.Model.Axes[0].ActualMinimum) / (this.Model.Axes[0].AbsoluteMaximum - this.Model.Axes[0].AbsoluteMinimum);
+            this.Model.Axes[1].Minimum = 0;
+            this.Model.Axes[1].Maximum = this.Model.Axes[1].AbsoluteMaximum * 0.6 * fold;
+
+            foreach (var series in this.Model.Series)
+            {
+                if (series is LineSeries)
+                {
+                    var x = (LineSeries)series;
+                    if (x.Points[1].X >= this.Model.Axes[0].ActualMinimum && x.Points[1].X <= this.Model.Axes[0].ActualMaximum)
+                    {
+                        if (x.Points[1].Y > this.Model.Axes[1].Maximum)
+                        {
+                            this.Model.Axes[1].Maximum = x.Points[1].Y * 1.2;
+                        }
+                    }
+                    
+                }
+            }
+        }
+
         private PlotModel Draw(MsDataScan msDataScan, PsmFromTsv psmToDraw)
         {
             // x is m/z, y is intensity
@@ -94,9 +118,27 @@ namespace ViewModels
                 subtitle = psmToDraw.FullSequence + "\n" + psmToDraw.BetaPeptideFullSequence;
             }
             PlotModel model = new PlotModel { Title = "Spectrum Annotation of Scan #" + msDataScan.OneBasedScanNumber, DefaultFontSize = 15, Subtitle = subtitle };
-            model.Axes.Add(new LinearAxis { Position = AxisPosition.Bottom, Title = "m/z", Minimum = 0, Maximum = spectrumMzs.Max() * 1.02, AbsoluteMinimum = 0, AbsoluteMaximum = spectrumMzs.Max() * 5 });
-            model.Axes.Add(new LinearAxis { Position = AxisPosition.Left, Title = "Intensity", Minimum = 0, Maximum = spectrumIntensities.Max() * 1.2, AbsoluteMinimum = 0, AbsoluteMaximum = spectrumIntensities.Max() * 1.3 });
-            model.Axes[1].Zoom(0, spectrumIntensities.Max() * 1.1);
+            model.Axes.Add(new LinearAxis {
+                Position = AxisPosition.Bottom,
+                Title = "m/z",
+                Minimum = 0,
+                Maximum = spectrumMzs.Max() * 1.02,
+                AbsoluteMinimum = 0,
+                AbsoluteMaximum = spectrumMzs.Max() * 1.3,
+                
+            });
+            model.Axes.Add(new LinearAxis {
+                IsZoomEnabled = false,
+                IsPanEnabled = false,
+                Position = AxisPosition.Left,
+                Title = "Intensity",
+                Minimum = 0,
+                Maximum = spectrumIntensities.Max() * 1.2,
+                AbsoluteMinimum = 0,
+                AbsoluteMaximum = spectrumIntensities.Max() * 1.3             
+            });
+
+            
 
             LineSeries[] allIons = new LineSeries[spectrumMzs.Length];
 
@@ -223,9 +265,26 @@ namespace ViewModels
             var spectrumIntensities = msDataScan.MassSpectrum.YArray;
 
             PlotModel model = new PlotModel {};
-            model.Axes.Add(new LinearAxis { Position = AxisPosition.Bottom, Title = "m/z", Minimum = 0, Maximum = spectrumMzs.Max() * 1.02, AbsoluteMinimum = 0, AbsoluteMaximum = spectrumMzs.Max() * 5 });
-            model.Axes.Add(new LinearAxis { Position = AxisPosition.Left, Title = "Intensity", Minimum = 0, Maximum = spectrumIntensities.Max() * 1.2, AbsoluteMinimum = 0, AbsoluteMaximum = spectrumIntensities.Max() * 1.3 });
-            model.Axes[1].Zoom(0, spectrumIntensities.Max() * 1.1);
+            model.Axes.Add(new LinearAxis {
+                Position = AxisPosition.Bottom,
+                Title = "m/z",
+                Minimum = 0,
+                Maximum = spectrumMzs.Max() * 1.02,
+                AbsoluteMinimum = 0,
+                AbsoluteMaximum = spectrumMzs.Max() * 1.2
+            });
+            model.Axes.Add(new LinearAxis {
+                Position = AxisPosition.Left,
+                Title = "Intensity",
+                Minimum = 0,
+                Maximum = spectrumIntensities.Max() * 1.2,
+                AbsoluteMinimum = 0,
+                AbsoluteMaximum = spectrumIntensities.Max() * 2,
+                IsZoomEnabled = false,
+                IsPanEnabled = false
+            });
+
+            model.Axes[0].AxisChanged += XAxisChanged;
 
             LineSeries[] allIons = new LineSeries[spectrumMzs.Length];
 
