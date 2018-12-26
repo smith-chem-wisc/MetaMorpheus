@@ -116,57 +116,6 @@ namespace EngineLayer
             ParentIons = (parsedHeader[PsmTsvHeader.ParentIonsLabel] < 0) ? null : spl[parsedHeader[PsmTsvHeader.ParentIonsLabel]].Trim();
         }
 
-        //private static List<MatchedFragmentIon> ReadFragmentIonsFromString(string matchedMzString, string peptideBaseSequence)
-        //{
-        //    var peaks = matchedMzString.Split(MzSplit, StringSplitOptions.RemoveEmptyEntries).Select(v => v.Trim())
-        //        .ToList();
-        //    peaks.RemoveAll(p => p.Contains("\""));
-
-        //    List<MatchedFragmentIon> matchedIons = new List<MatchedFragmentIon>();
-
-        //    foreach (var peak in peaks)
-        //    {
-        //        var split = peak.Split(new char[] { '+', ':' });
-
-        //        string ionTypeAndNumber = split[0];
-        //        Match result = IonParser.Match(ionTypeAndNumber);
-
-        //        ProductType productType = (ProductType)Enum.Parse(typeof(ProductType), result.Groups[1].Value);
-
-        //        int fragmentNumber = int.Parse(result.Groups[2].Value);
-        //        int z = int.Parse(split[1]);
-        //        double mz = double.Parse(split[2]);
-        //        double neutralLoss = 0;
-
-        //        // check for neutral loss
-        //        if (ionTypeAndNumber.Contains("-"))
-        //        {
-        //            string temp = ionTypeAndNumber.Replace("(", "");
-        //            temp = temp.Replace(")", "");
-        //            var split2 = temp.Split('-');
-        //            neutralLoss = double.Parse(split2[1]);
-        //        }
-
-        //        FragmentationTerminus terminus = FragmentationTerminus.None;
-        //        if (TerminusSpecificProductTypes.ProductTypeToFragmentationTerminus.ContainsKey(productType))
-        //        {
-        //            terminus = TerminusSpecificProductTypes.ProductTypeToFragmentationTerminus[productType];
-        //        }
-
-        //        int aminoAcidPosition = fragmentNumber;
-        //        if (terminus == FragmentationTerminus.C)
-        //        {
-        //            aminoAcidPosition = peptideBaseSequence.Length - fragmentNumber;
-        //        }
-
-        //        var t = new NeutralTerminusFragment(terminus, mz.ToMass(z) - DissociationTypeCollection.GetMassShiftFromProductType(productType), fragmentNumber, aminoAcidPosition);
-        //        Product p = new Product(productType, t, neutralLoss);
-        //        matchedIons.Add(new MatchedFragmentIon(p, mz, 1.0, z));
-        //    }
-
-        //    return matchedIons;
-        //}
-
         private static Dictionary<int, List<MatchedFragmentIon>> ReadFragmentIonsFromString(string matchedMzString, string peptideBaseSequence, int MS2ScanNumber)
         {
             Dictionary<int, List<MatchedFragmentIon>> allMatchedIons = new Dictionary<int, List<MatchedFragmentIon>>();

@@ -131,41 +131,38 @@
 
                     <!--Spectrum annotation-->
                     <!--<oxy:PlotView Grid.Row="0" x:Name="plotView" Model="{Binding Model}" FontSize="16" FontStretch="Expanded"/>-->
-                    <DockPanel Grid.Row="0">
-                        <ItemsControl ItemsSource="{Binding Data}">
-                            <ItemsControl.ItemTemplate>
-                                <DataTemplate>
-                                    <Border  BorderBrush="Black" Background="LightBlue"  >
-                                        <!-- This is the Inner Grid for each element, which is represented in Brown color in your picture -->
-                                        <Grid>
-                                            <Grid.RowDefinitions>
-                                                <RowDefinition Height="30"/>
-                                                <RowDefinition Height="300"/>
-                                            </Grid.RowDefinitions>
+                    <ItemsControl ItemsSource="{Binding Data}">
+                        <ItemsControl.ItemTemplate>
+                            <DataTemplate>
+                                <Border  BorderBrush="Black" Background="LightBlue" >
+                                    <!-- This is the Inner Grid for each element -->
+                                    <Grid>
+                                        <Grid.RowDefinitions>
+                                            <RowDefinition Height="30"/>
+                                            <RowDefinition Height="*"/>
+                                        </Grid.RowDefinitions>
+                                        <Label Content="{Binding SpectrumLabel}" />
+                                        <oxy:PlotView Model="{Binding PsmAnnotationViewModel.Model}" FontSize="16" FontStretch="Expanded" Grid.Row="1" MinHeight="200"/>
+                                    </Grid>
+                                </Border>
+                            </DataTemplate>
+                        </ItemsControl.ItemTemplate>
 
-                                            <Label Content="{Binding SpectrumLabel}" />
+                        <ItemsControl.Template>
+                            <ControlTemplate TargetType="ItemsControl">
+                                <ScrollViewer CanContentScroll="True">
+                                    <ItemsPresenter/>
+                                </ScrollViewer>
+                            </ControlTemplate>
+                        </ItemsControl.Template>
 
-                                            <oxy:PlotView Model="{Binding PsmAnnotationViewModel.Model}" FontSize="16" FontStretch="Expanded" Grid.Row="1"/>
-                                        </Grid>
-                                    </Border>
-                                </DataTemplate>
-                            </ItemsControl.ItemTemplate>
-
-                            <ItemsControl.Template>
-                                <ControlTemplate TargetType="ItemsControl">
-                                    <ScrollViewer CanContentScroll="True">
-                                        <ItemsPresenter/>
-                                    </ScrollViewer>
-                                </ControlTemplate>
-                            </ItemsControl.Template>
-
-                            <ItemsControl.ItemsPanel>
-                                <ItemsPanelTemplate>
-                                    <VirtualizingStackPanel/>
-                                </ItemsPanelTemplate>
-                            </ItemsControl.ItemsPanel>
-                        </ItemsControl>
-                    </DockPanel>
+                        <ItemsControl.ItemsPanel>
+                            <ItemsPanelTemplate>
+                                <!--This here is very important for how multiple scans displayed. Useful parameters are (HorizontalAlignment="Stretch" or Columns="1")-->
+                                <UniformGrid HorizontalAlignment="Stretch"/>
+                            </ItemsPanelTemplate>
+                        </ItemsControl.ItemsPanel>
+                    </ItemsControl>
                     <!--Canvas for drawing base sequence annotation-->
                     <Canvas Margin="0 5 0 0" x:Name="canvas" Grid.Row="1" Height="60" Width="600" HorizontalAlignment="Stretch" VerticalAlignment="Stretch" />
                 </Grid>
