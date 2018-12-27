@@ -295,6 +295,10 @@ namespace TaskLayer
                                 theMs2ScanWithSpecificMass.childMs2ScanWithSpecificMass = new List<Ms2ScanWithSpecificMass>();
                                 foreach (var aScan in ms3Scans.Where(p => p.OneBasedPrecursorScanNumber == ms2scan.OneBasedScanNumber))
                                 {
+                                    if (aScan.TotalIonCurrent == 0)
+                                    {
+                                        continue;
+                                    }
                                     IsotopicEnvelope[] aScanNeutralExperimentalFragments = Ms2ScanWithSpecificMass.GetNeutralExperimentalFragments(aScan, commonParameters);
                                     int scanSelectedCharge = 0;
                                     if (aScan.SelectedIonChargeStateGuess.HasValue)
@@ -312,6 +316,10 @@ namespace TaskLayer
                                 var theChildMs2Scans = childMs2Scans.Where(p => p.OneBasedPrecursorScanNumber == ms2scan.OneBasedPrecursorScanNumber && commonParameters.PrecursorMassTolerance.Within(p.SelectedIonMZ.Value, ms2scan.SelectedIonMZ.Value)).ToList();
                                 foreach (var aScan in theChildMs2Scans)
                                 {
+                                    if (aScan.TotalIonCurrent == 0) //In some weird data, the scan can be empty. "PXD008418; DSSO_BSA-XL_InSol_T_SCX_500mM.raw; Scan29514"
+                                    {
+                                        continue;
+                                    }
                                     IsotopicEnvelope[] aScanNeutralExperimentalFragments = Ms2ScanWithSpecificMass.GetNeutralExperimentalFragments(aScan, commonParameters);
                                     int scanSelectedCharge = 0;
                                     if (aScan.SelectedIonChargeStateGuess.HasValue)
