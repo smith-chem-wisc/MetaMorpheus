@@ -201,11 +201,8 @@ namespace MetaMorpheusGUI
             mainViewModel.DrawPeptideSpectralMatch(msDataScanToDraw, psmToDraw);
             
             // draw annotated base sequence
-            //TO DO: Annotate crosslinked peptide sequence           
-            if (psmToDraw.CrossType == null)  // if the psm is single peptide (not crosslinked).
-            {
-                DrawAnnotatedBaseSequence(psmToDraw);
-            }
+            DrawAnnotatedBaseSequence(psmToDraw);
+
         }
 
         /// <summary>
@@ -377,6 +374,48 @@ namespace MetaMorpheusGUI
             {
                 BaseDraw.circledTxtDraw(canvas, new Point((mod.Key - 1) * spacing - 17, 12), modificationAnnotationColor);
             }
+
+            if (psm.BetaPeptideBaseSequence!= null)
+            {
+                for (int r = 0; r < psm.BetaPeptideBaseSequence.Length; r++)
+                {
+                    BaseDraw.txtDrawing(canvas, new Point(r * spacing + 10, 100), psm.BetaPeptideBaseSequence[r].ToString(), Brushes.Black);
+                }
+
+                foreach (var ion in psm.BetaPeptideMatchedIons.First().Value)
+                {
+                    int residue = ion.NeutralTheoreticalProduct.TerminusFragment.AminoAcidPosition;
+                    string annotation = ion.NeutralTheoreticalProduct.ProductType + "" + ion.NeutralTheoreticalProduct.TerminusFragment.FragmentNumber;
+
+                    if (ion.NeutralTheoreticalProduct.NeutralLoss != 0)
+                    {
+                        annotation += "-" + ion.NeutralTheoreticalProduct.NeutralLoss;
+                    }
+
+                    if (ion.NeutralTheoreticalProduct.TerminusFragment.Terminus == FragmentationTerminus.C)
+                    {
+                        BaseDraw.topSplittingDrawing(canvas, new Point(residue * spacing + 8,
+                            productTypeToYOffset[ion.NeutralTheoreticalProduct.ProductType] + 90), productTypeToColor[ion.NeutralTheoreticalProduct.ProductType], annotation);
+                    }
+                    else if (ion.NeutralTheoreticalProduct.TerminusFragment.Terminus == FragmentationTerminus.N)
+                    {
+                        BaseDraw.botSplittingDrawing(canvas, new Point(residue * spacing + 8,
+                            productTypeToYOffset[ion.NeutralTheoreticalProduct.ProductType] + 90), productTypeToColor[ion.NeutralTheoreticalProduct.ProductType], annotation);
+                    }
+                    // don't draw diagnostic ions, precursor ions, etc
+                }
+
+                var betaPeptide = new PeptideWithSetModifications(psm.BetaPeptideFullSequence, GlobalVariables.AllModsKnownDictionary);
+                foreach (var mod in betaPeptide.AllModsOneIsNterminus)
+                {
+                    BaseDraw.circledTxtDraw(canvas, new Point((mod.Key - 1) * spacing - 17, 12 + 90), modificationAnnotationColor);
+                }
+
+                int alphaSite = Int32.Parse(Regex.Match(psm.FullSequence, @"\d+").Value);
+                int betaSite = Int32.Parse(Regex.Match(psm.BetaPeptideFullSequence, @"\d+").Value);
+                BaseDraw.linkDrawing(canvas, new Point(alphaSite * spacing , 50), new Point(betaSite * spacing , 90), Colors.Black);
+            }
+
         }
 
         public void Export2Pdf(PsmFromTsv psm, Canvas canvas)
