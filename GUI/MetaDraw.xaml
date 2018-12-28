@@ -164,7 +164,14 @@
                         </ItemsControl.ItemsPanel>
                     </ItemsControl>
                     <!--Canvas for drawing base sequence annotation-->
-                    <Canvas Margin="0 5 0 0" x:Name="canvas" Grid.Row="1" Height="60" Width="600" HorizontalAlignment="Stretch" VerticalAlignment="Stretch" />
+                    <Grid Grid.Row="1">
+                        <Grid.ColumnDefinitions>
+                            <ColumnDefinition Width="*"/>
+                            <ColumnDefinition Width="30"/>
+                        </Grid.ColumnDefinitions>
+                        <Canvas Margin="0 5 0 0" x:Name="canvas" Height="60" Width="600" HorizontalAlignment="Stretch" VerticalAlignment="Stretch" />
+                        <Button x:Name="BtnSaveCanvas" Grid.Column="1" Content="Save" Click="BtnSaveCanvas_Click"/>
+                    </Grid>
                 </Grid>
             </GroupBox>
         </Grid>

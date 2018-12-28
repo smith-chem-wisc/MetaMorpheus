@@ -17,6 +17,9 @@ using System.Windows.Media;
 using Proteomics.Fragmentation;
 using Proteomics.ProteolyticDigestion;
 using System.Text.RegularExpressions;
+using System.IO.Packaging;
+using System.Windows.Xps.Packaging;
+using System.Windows.Xps;
 
 namespace MetaMorpheusGUI
 {
@@ -172,7 +175,17 @@ namespace MetaMorpheusGUI
                 foreach (var theKey in theKeys)
                 {
                     var alpha = psmToDraw.MatchedIons[theKey];
-                    var beta = psmToDraw.BetaPeptideMatchedIons[theKey];
+
+                    List<MatchedFragmentIon> beta = new List<MatchedFragmentIon>();
+                    if (psmToDraw.BetaPeptideMatchedIons != null)
+                    {
+                        beta = psmToDraw.BetaPeptideMatchedIons[theKey];
+                    }
+                    else
+                    {
+                        beta = null;
+                    }                        
+                        
                     var psmModel = new PsmAnnotationViewModel();
                     psmModel.DrawPeptideSpectralMatch(MsDataFile.GetOneBasedScan(theKey), alpha, beta);
                     string anno = "Scan:" + theKey.ToString()
@@ -366,13 +379,27 @@ namespace MetaMorpheusGUI
             }
         }
 
+        public void Export2Pdf(PsmFromTsv psm, Canvas canvas)
+        {
+            var fileName = Path.GetFullPath(tsvResultsFilePath) + psm.Ms2ScanNumber.ToString() + ".pdf";
+            MemoryStream lMemoryStream = new MemoryStream();
+            Package package = Package.Open(lMemoryStream, FileMode.Create);
+            XpsDocument doc = new XpsDocument(package);
+            XpsDocumentWriter writer = XpsDocument.CreateXpsDocumentWriter(doc);
+            writer.Write(canvas);
+            doc.Close();
+            package.Close();
+            var pdfXpsDoc = PdfSharp.Xps.XpsModel.XpsDocument.Open(lMemoryStream);
+            PdfSharp.Xps.XpsConverter.Convert(pdfXpsDoc, fileName, 0);
+        }
+
         private void dataGridProperties_SelectedCellsChanged(object sender, SelectedCellsChangedEventArgs e)
         {
             (sender as DataGrid).UnselectAll();
         }
         
         private void PDFButton_Click(object sender, RoutedEventArgs e)
-        {
+        {           
             PsmFromTsv tempPsm = null;
             if (dataGridScanNums.SelectedCells.Count == 0)
             {
@@ -383,9 +410,9 @@ namespace MetaMorpheusGUI
             
             foreach (object selectedItem in dataGridScanNums.SelectedItems)
             {
-                PsmFromTsv psm = (PsmFromTsv)selectedItem;
+                PsmFromTsv psm = (PsmFromTsv)selectedItem;              
 
-                if(tempPsm == null)
+                if (tempPsm == null)
                 {
                     tempPsm = psm;
                 }
@@ -409,6 +436,16 @@ namespace MetaMorpheusGUI
             DrawPsm(tempPsm.Ms2ScanNumber, tempPsm.FullSequence);
 
             MessageBox.Show(string.Format("{0} PDFs exported", num));
+        }
+
+        private void BtnSaveCanvas_Click(object sender, RoutedEventArgs e)
+        {
+            if (dataGridScanNums.SelectedItem == null)
+            {
+                return;
+            }
+            PsmFromTsv row = (PsmFromTsv)dataGridScanNums.SelectedItem;
+            Export2Pdf(row, canvas);
         }
     }
 
