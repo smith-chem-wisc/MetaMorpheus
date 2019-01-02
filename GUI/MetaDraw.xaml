@@ -102,6 +102,7 @@
                         </DataGrid.CellStyle>
                     </DataGrid>
                     <StackPanel Grid.Row="1">
+                        <Button x:Name="BtnGly" Content="Save Glycan" Click="BtnGly_Click"/>
                         <Canvas x:Name="glyCanvas" Height="400" Width="400" HorizontalAlignment="Stretch" VerticalAlignment="Stretch">
                         </Canvas>
                     </StackPanel>

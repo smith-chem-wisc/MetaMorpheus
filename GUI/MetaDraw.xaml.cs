@@ -387,5 +387,11 @@ namespace MetaMorpheusGUI
                 GlycanStructureAnnotation.DrawGlycan(glyCanvas, psm.glycan.Struc, 50);
             }
         }
+
+        private void BtnGly_Click(object sender, RoutedEventArgs e)
+        {
+            BaseDraw.clearCanvas(glyCanvas);
+            GlycanStructureAnnotation.DrawGlycan(glyCanvas, "(N(F)(N(H(H(N(H(N(H(N(H))))))(N(H(N(F)(H(N(F)(H(G))))))))(H(N(H(N(H(N(H(A)))))))(N(F)(H(N(F)(H(N(H)(F))))))))))", 50);
+        }
     }
 }

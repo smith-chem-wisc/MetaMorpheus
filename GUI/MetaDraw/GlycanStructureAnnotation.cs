@@ -220,7 +220,11 @@ namespace MetaMorpheusGUI
 
         public static void DrawShape(Canvas canvas, GlycanNode glycanNode)
         {
-            SolidColorBrush colorMan = new SolidColorBrush(color: Color.FromArgb(255, 0, 220, 0));
+            SolidColorBrush colorH = new SolidColorBrush(color: Color.FromArgb(255, 0, 166, 81));
+            SolidColorBrush colorN = new SolidColorBrush(color: Color.FromArgb(255, 0, 144, 188));
+            SolidColorBrush colorA = new SolidColorBrush(color: Color.FromArgb(255, 165, 67, 153));
+            SolidColorBrush colorG = new SolidColorBrush(color: Color.FromArgb(255, 143, 204, 233));
+            SolidColorBrush colorF = new SolidColorBrush(color: Color.FromArgb(255, 237, 28, 36));
             var point = glycanNode.point;
             PointCollection myPointCollection = new PointCollection();
             Polygon polygon = new Polygon();
@@ -234,7 +238,7 @@ namespace MetaMorpheusGUI
                         Height = 20,
                         Stroke = Brushes.Black,
                         StrokeThickness = 0.5,
-                        Fill = colorMan
+                        Fill = colorH
                     };
                     circle.Margin = new Thickness(point.X-10, point.Y-10, 0, 0);
                     Panel.SetZIndex(circle, 2);
@@ -251,7 +255,7 @@ namespace MetaMorpheusGUI
                         Points = myPointCollection,
                         Stroke = Brushes.Black,
                         StrokeThickness = 0.5,
-                        Fill = Brushes.Blue,
+                        Fill = colorN
                     };
                     Panel.SetZIndex(polygon, 2);
                     canvas.Children.Add(polygon);
@@ -267,7 +271,7 @@ namespace MetaMorpheusGUI
                         Points = myPointCollection,
                         Stroke = Brushes.Black,
                         StrokeThickness = 0.5,
-                        Fill = Brushes.Purple,
+                        Fill = colorA
                     };
                     Panel.SetZIndex(polygon, 2);
                     canvas.Children.Add(polygon);
@@ -283,7 +287,7 @@ namespace MetaMorpheusGUI
                         Points = myPointCollection,
                         Stroke = Brushes.Black,
                         StrokeThickness = 0.5,
-                        Fill = Brushes.SkyBlue,                 
+                        Fill = colorG                
                     };
                     Panel.SetZIndex(polygon, 2);
                     canvas.Children.Add(polygon);
@@ -299,7 +303,7 @@ namespace MetaMorpheusGUI
                         Points = myPointCollection,
                         Stroke = Brushes.Black,
                         StrokeThickness = 0.5,
-                        Fill = Brushes.Red,
+                        Fill = colorF
                     };
                     Panel.SetZIndex(polygon, 2);
                     canvas.Children.Add(polygon);
