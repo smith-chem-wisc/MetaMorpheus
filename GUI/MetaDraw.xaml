@@ -88,10 +88,11 @@
             <GroupBox Header="Properties" Name="gbProperties" Grid.Column="2">
                 <Grid>
                     <Grid.RowDefinitions>
+                        <RowDefinition Height="2*"/>
                         <RowDefinition Height="1*"/>
                     </Grid.RowDefinitions>
                     <DataGrid x:Name="dataGridProperties" VerticalAlignment="Stretch" ItemsSource="{Binding}" 
-                              AutoGenerateColumns="True" IsReadOnly="True" ScrollViewer.CanContentScroll="True" Grid.Row="1" Margin="0,0,0,0" 
+                              AutoGenerateColumns="True" IsReadOnly="True" ScrollViewer.CanContentScroll="True" Grid.Row="0" Margin="0,0,0,0" 
                               SelectedCellsChanged="dataGridProperties_SelectedCellsChanged">
                         <DataGrid.CellStyle>
                             <Style TargetType="DataGridCell">
@@ -100,6 +101,12 @@
                             </Style>
                         </DataGrid.CellStyle>
                     </DataGrid>
+                    <StackPanel Grid.Row="1">
+                        <Canvas x:Name="glyCanvas" Height="400" Width="400" HorizontalAlignment="Stretch" VerticalAlignment="Stretch">
+                        </Canvas>
+                    </StackPanel>
+                    
+                    
                 </Grid>
             </GroupBox>
 

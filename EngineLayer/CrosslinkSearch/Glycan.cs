@@ -55,7 +55,8 @@ namespace EngineLayer
 
         public static Node ReadGlycan(string theGlycanStruct)
         {
-            Node curr = new Node(theGlycanStruct[1]);
+            int level = 0;
+            Node curr = new Node(theGlycanStruct[1], level);
             for (int i = 2; i < theGlycanStruct.Length - 1; i++)
             {
 
@@ -68,18 +69,20 @@ namespace EngineLayer
                     if (theGlycanStruct[i] == ')')
                     {
                         curr = curr.father;
+                        level--;
                     }
                     else
                     {
+                        level++;
                         if (curr.lChild == null)
                         {
-                            curr.lChild = new Node(theGlycanStruct[i]);
+                            curr.lChild = new Node(theGlycanStruct[i], level);
                             curr.lChild.father = curr;
                             curr = curr.lChild;
                         }
                         else
                         {
-                            curr.rChild = new Node(theGlycanStruct[i]);
+                            curr.rChild = new Node(theGlycanStruct[i], level);
                             curr.rChild.father = curr;
                             curr = curr.rChild;
                         }

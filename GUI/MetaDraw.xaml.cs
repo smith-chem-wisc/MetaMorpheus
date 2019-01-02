@@ -160,6 +160,8 @@ namespace MetaMorpheusGUI
             {
                 DrawAnnotatedBaseSequence(psmToDraw);
             }
+
+            DrawGlycan(psmToDraw);
         }
 
         /// <summary>
@@ -375,6 +377,15 @@ namespace MetaMorpheusGUI
             DrawPsm(tempPsm.Ms2ScanNumber, tempPsm.FullSequence);
 
             MessageBox.Show(string.Format("{0} PDFs exported", num));
+        }
+
+        private void DrawGlycan(PsmFromTsv psm)
+        {
+            BaseDraw.clearCanvas(glyCanvas);
+            if (psm.glycan != null)
+            {
+                GlycanStructureAnnotation.DrawGlycan(glyCanvas, psm.glycan.Struc, 50);
+            }
         }
     }
 }
