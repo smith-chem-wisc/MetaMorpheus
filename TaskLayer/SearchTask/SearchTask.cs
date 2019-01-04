@@ -164,6 +164,7 @@ namespace TaskLayer
                         new ModernSearchEngine(fileSpecificPsms, arrayOfMs2ScansSortedByMass, peptideIndex, fragmentIndex, currentPartition, combinedParams, massDiffAcceptor, SearchParameters.MaximumMassThatFragmentIonScoreIsDoubled, thisId).Run();
 
                         ReportProgress(new ProgressEventArgs(100, "Done with search " + (currentPartition + 1) + "/" + combinedParams.TotalPartitions + "!", thisId));
+                        if (GlobalVariables.StopLoops) { break; }
                     }
                 }
                 // nonspecific search
@@ -208,6 +209,7 @@ namespace TaskLayer
                             new NonSpecificEnzymeSearchEngine(fileSpecificPsmsSeparatedByFdrCategory, arrayOfMs2ScansSortedByMass, peptideIndex, fragmentIndex, precursorIndex, currentPartition, paramToUse, massDiffAcceptor, SearchParameters.MaximumMassThatFragmentIonScoreIsDoubled, thisId).Run();
 
                             ReportProgress(new ProgressEventArgs(100, "Done with search " + (currentPartition + 1) + "/" + paramToUse.TotalPartitions + "!", thisId));
+                            if (GlobalVariables.StopLoops) { break; }
                         }
                     }
                     lock (psmLock)
@@ -341,7 +343,7 @@ namespace TaskLayer
             {
                 throw new MetaMorpheusException("Could not parse search mode string: " + e.Message);
             }
-            
+
             return massDiffAcceptor;
         }
     }
