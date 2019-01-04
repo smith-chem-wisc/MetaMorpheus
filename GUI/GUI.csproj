@@ -92,11 +92,8 @@
     <Reference Include="OxyPlot.Wpf, Version=1.0.0.0, Culture=neutral, PublicKeyToken=75e952ba404cdbb0, processorArchitecture=MSIL">
       <HintPath>..\packages\OxyPlot.Wpf.1.0.0\lib\net45\OxyPlot.Wpf.dll</HintPath>
     </Reference>
-    <Reference Include="PdfSharp-WPF">
-      <HintPath>C:\Users\Moon\Desktop\PdfSharp-WPF.dll</HintPath>
-    </Reference>
-    <Reference Include="PdfSharp.Xps">
-      <HintPath>C:\Users\Moon\Desktop\PdfSharp.Xps.dll</HintPath>
+    <Reference Include="PdfSharp.Xps, Version=1.0.0.0, Culture=neutral, PublicKeyToken=f94615aa0424f9eb, processorArchitecture=MSIL">
+      <HintPath>..\packages\PdfSharp.Xps.SimpleWPFReporting.1.0.0\lib\net45\PdfSharp.Xps.dll</HintPath>
     </Reference>
     <Reference Include="PepXML, Version=1.0.0.0, Culture=neutral, processorArchitecture=AMD64">
       <HintPath>..\packages\mzLib.1.0.387\lib\net471\PepXML.dll</HintPath>
@@ -178,6 +175,7 @@
       <DependentUpon>MetaDraw.xaml</DependentUpon>
     </Compile>
     <Compile Include="MetaDraw\BaseSequenceAnnotation.cs" />
+    <Compile Include="MetaDraw\ItemsControl.cs" />
     <Compile Include="MetaDraw\PdfWriter.cs" />
     <Compile Include="Util\BooleanInverter.cs" />
     <Compile Include="CalibrateTaskWindow.xaml.cs">

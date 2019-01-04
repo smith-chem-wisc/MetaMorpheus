@@ -194,6 +194,11 @@ namespace MetaMorpheusGUI
                         + " Mz:" + MsDataFile.GetOneBasedScan(theKey).SelectedIonMZ.Value.ToString("0.##")
                         + " RetentionTime:" + MsDataFile.GetOneBasedScan(theKey).RetentionTime.ToString("0.##");
                     itemsControlSampleViewModel.AddNewRow(psmModel, anno);
+
+                    if (itemsControlSampleViewModel.Data.Count > 1)
+                    {
+                        BtnChangeGridColumns.IsEnabled = true;
+                    }
                 }
             }
 
@@ -486,35 +491,14 @@ namespace MetaMorpheusGUI
             PsmFromTsv row = (PsmFromTsv)dataGridScanNums.SelectedItem;
             Export2Pdf(row, canvas);
         }
-    }
 
-    public class ItemsControlSampleViewModel
-    {
-        public ObservableCollection<ItemsControlSampleData> Data { get; set; }
-
-        public ItemsControlSampleViewModel()
+        private void BtnChangeGridColumns_Click(object sender, RoutedEventArgs e)
         {
-            var sampledata = new ItemsControlSampleData() {
-                PsmAnnotationViewModel = new PsmAnnotationViewModel(),
-                SpectrumLabel = "Spectra info here"
-            };
-
-            Data = new ObservableCollection<ItemsControlSampleData>();
-            Data.Add(sampledata);
-        }
-
-        public void AddNewRow(PsmAnnotationViewModel psmAnnotationViewModel, string annotation)
-        {
-            Data.Add(new ItemsControlSampleData() { PsmAnnotationViewModel = psmAnnotationViewModel, SpectrumLabel = annotation});
+            itemsControlSampleViewModel.MyColumnCount++;
+            if (itemsControlSampleViewModel.MyColumnCount > itemsControlSampleViewModel.Data.Count/3)
+            {
+                itemsControlSampleViewModel.MyColumnCount = 1;
+            }
         }
     }
-
-    public class ItemsControlSampleData
-    {
-        public PsmAnnotationViewModel PsmAnnotationViewModel { get; set; }
-
-        public string SpectrumLabel { get; set; }
-
-    }
-
 }

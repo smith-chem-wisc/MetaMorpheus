@@ -159,7 +159,7 @@
                         <ItemsControl.ItemsPanel>
                             <ItemsPanelTemplate>
                                 <!--This here is very important for how multiple scans displayed. Useful parameters are (HorizontalAlignment="Stretch" or Columns="1")-->
-                                <UniformGrid HorizontalAlignment="Stretch"/>
+                                <UniformGrid HorizontalAlignment="Stretch" Columns="{Binding Path=MyColumnCount}"/>
                             </ItemsPanelTemplate>
                         </ItemsControl.ItemsPanel>
                     </ItemsControl>
@@ -168,9 +168,11 @@
                         <Grid.ColumnDefinitions>
                             <ColumnDefinition Width="*"/>
                             <ColumnDefinition Width="30"/>
+                            <ColumnDefinition Width="30"/>
                         </Grid.ColumnDefinitions>
                         <Canvas Margin="0 5 0 0" x:Name="canvas" Height="150" Width="600" HorizontalAlignment="Stretch" VerticalAlignment="Stretch" />
-                        <Button x:Name="BtnSaveCanvas" Grid.Column="1" Content="Save" Click="BtnSaveCanvas_Click"/>
+                        <Button x:Name="BtnSaveCanvas" Grid.Column="2" Content="Save" Click="BtnSaveCanvas_Click"/>
+                        <Button x:Name="BtnChangeGridColumns" Grid.Column="1" Content="Collumn" IsEnabled="False" Click="BtnChangeGridColumns_Click"/>
                     </Grid>
                 </Grid>
             </GroupBox>
