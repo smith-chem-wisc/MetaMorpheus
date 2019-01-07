@@ -97,10 +97,7 @@ namespace TaskLayer
                 {
                     for (int i = partitionRange.Item1; i < partitionRange.Item2; i++)
                     {
-                        if (GlobalVariables.StopLoops)
-                        {
-                            break;
-                        }
+                        if (GlobalVariables.StopLoops) { break; }
 
                         MsDataScan ms2scan = ms2Scans[i];
 
