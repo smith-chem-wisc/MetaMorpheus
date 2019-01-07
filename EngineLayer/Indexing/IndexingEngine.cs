@@ -125,13 +125,21 @@ namespace EngineLayer.Indexing
             oldPercentProgress = 0;
             for (int peptideId = 0; peptideId < peptidesSortedByMass.Count; peptideId++)
             {
+                //var fragmentMasses = peptidesSortedByMass[peptideId].Fragment(commonParameters.DissociationType, commonParameters.DigestionParams.FragmentationTerminus).Where(x => x.ProductType == ProductType.b || x.ProductType == ProductType.y).Select(m => m.NeutralMass).ToList();
                 var fragmentMasses = peptidesSortedByMass[peptideId].Fragment(commonParameters.DissociationType, commonParameters.DigestionParams.FragmentationTerminus).Select(m => m.NeutralMass).ToList();
 
-                foreach (var theoreticalFragmentMass in fragmentMasses)
+                foreach (double theoreticalFragmentMass in fragmentMasses)
                 {
-                    if (theoreticalFragmentMass < MaxFragmentSize && theoreticalFragmentMass > 0)
+                    double tfm = theoreticalFragmentMass;
+                    //if low res round
+                    if (commonParameters.DissociationType == MassSpectrometry.DissociationType.LowCID)
                     {
-                        int fragmentBin = (int)Math.Round(theoreticalFragmentMass * FragmentBinsPerDalton);
+                        tfm = Math.Round(theoreticalFragmentMass / 1.0005079, 0) * 1.0005079;
+                    }
+
+                    if (tfm < MaxFragmentSize && tfm > 0)
+                    {
+                        int fragmentBin = (int)Math.Round(tfm * FragmentBinsPerDalton);
 
                         if (fragmentIndex[fragmentBin] == null)
                             fragmentIndex[fragmentBin] = new List<int> { peptideId };

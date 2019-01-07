@@ -31,6 +31,9 @@
     <None Update="elements.dat">
       <CopyToOutputDirectory>Always</CopyToOutputDirectory>
     </None>
+    <None Update="indexEngineTestFasta.fasta">
+      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+    </None>
     <None Update="sliced-db.fa">
       <CopyToOutputDirectory>Always</CopyToOutputDirectory>
     </None>
