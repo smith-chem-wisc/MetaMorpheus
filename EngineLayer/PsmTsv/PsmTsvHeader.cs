@@ -16,7 +16,7 @@
         public const string Score = "Score";
         public const string DeltaScore = "Delta Score";
         public const string Notch = "Notch";
-        public const string DifferentPeakMatches = "Different Peak Matches";
+        //public const string DifferentPeakMatches = "Different Peak Matches";
 
         // Sequence information
 

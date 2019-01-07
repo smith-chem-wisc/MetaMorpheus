@@ -188,7 +188,7 @@ namespace EngineLayer
             s[PsmTsvHeader.Score] = psm == null ? " " : psm.Score.ToString("F3", CultureInfo.InvariantCulture);
             s[PsmTsvHeader.DeltaScore] = psm == null ? " " : psm.DeltaScore.ToString("F3", CultureInfo.InvariantCulture);
             s[PsmTsvHeader.Notch] = psm == null ? " " : Resolve(psm.BestMatchingPeptides.Select(p => p.Notch)).ResolvedString;
-            s[PsmTsvHeader.DifferentPeakMatches] = psm == null ? " " : psm.NumDifferentMatchingPeptides.ToString("F5", CultureInfo.InvariantCulture);
+            //s[PsmTsvHeader.DifferentPeakMatches] = psm == null ? " " : psm.NumDifferentMatchingPeptides.ToString("F5", CultureInfo.InvariantCulture);
         }
 
         internal static void AddPeptideSequenceData(Dictionary<string, string> s, PeptideSpectralMatch psm, IReadOnlyDictionary<string, int> ModsToWritePruned)
