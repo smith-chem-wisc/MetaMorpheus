@@ -28,6 +28,21 @@
   </ItemGroup>
 
   <ItemGroup>
+    <None Update="CompressionTest\customBCZ.toml">
+      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+    </None>
+    <None Update="CompressionTest\DbForPrunedDb.fasta">
+      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+    </None>
+    <None Update="CompressionTest\okk.xml">
+      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+    </None>
+    <None Update="CompressionTest\PrunedDbSpectra.mzml">
+      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+    </None>
+    <None Update="CompressionTest\tinySemi.mgf">
+      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+    </None>
     <None Update="elements.dat">
       <CopyToOutputDirectory>Always</CopyToOutputDirectory>
     </None>
