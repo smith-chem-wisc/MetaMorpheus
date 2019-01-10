@@ -125,13 +125,13 @@ namespace Test
         [Test]
         public static void TestIndexEngineLowRes()
         {
-            //TaskLayer.DbForTask db = new TaskLayer.DbForTask(Path.Combine(TestContext.CurrentContext.TestDirectory, @"indexEngineTestFasta.fasta"), false);
+
 
 
             var proteinList = ProteinDbLoader.LoadProteinFasta(Path.Combine(TestContext.CurrentContext.TestDirectory, @"indexEngineTestFasta.fasta"), true, DecoyType.Reverse, false, ProteinDbLoader.UniprotAccessionRegex, ProteinDbLoader.UniprotFullNameRegex, ProteinDbLoader.UniprotFullNameRegex, ProteinDbLoader.UniprotGeneNameRegex,
                     ProteinDbLoader.UniprotOrganismRegex, out var dbErrors, -1);
 
-            //var proteinList = new List<Protein> { new Protein("MNNNKQQQ", null), new Protein("MQQQKNNN", "accession", isDecoy: true) };
+
             
             var variableModifications = new List<Modification>();
             var fixedModifications = new List<Modification>();

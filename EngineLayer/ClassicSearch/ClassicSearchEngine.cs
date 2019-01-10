@@ -3,7 +3,6 @@ using Proteomics;
 using Proteomics.Fragmentation;
 using Proteomics.ProteolyticDigestion;
 using System;
-using System.Collections.Concurrent;
 using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
@@ -49,17 +48,14 @@ namespace EngineLayer.ClassicSearch
 
             if (Proteins.Any())
             {
-                Parallel.ForEach(Partitioner.Create(0, Proteins.Count), new ParallelOptions { MaxDegreeOfParallelism = commonParameters.MaxThreadsToUsePerFile }, (partitionRange, loopState) =>
-                //Parallel.ForEach(Partitioner.Create(0, Proteins.Count), new ParallelOptions { MaxDegreeOfParallelism = 1 }, (partitionRange, loopState) =>
+                int maxThreadsPerFile = commonParameters.MaxThreadsToUsePerFile;
+                int[] threads = Enumerable.Range(0, maxThreadsPerFile).ToArray();
+                Parallel.ForEach(threads, (i) =>
                 {
-                    for (int i = partitionRange.Item1; i < partitionRange.Item2; i++)
+                    for (; i < Proteins.Count; i += maxThreadsPerFile)
                     {
                         // Stop loop if canceled
-                        if (GlobalVariables.StopLoops)
-                        {
-                            loopState.Stop();
-                            return;
-                        }
+                        if (GlobalVariables.StopLoops) { return; }
 
                         // digest each protein into peptides and search for each peptide in all spectra within precursor mass tolerance
                         foreach (PeptideWithSetModifications peptide in Proteins[i].Digest(commonParameters.DigestionParams, FixedModifications, VariableModifications))
@@ -68,11 +64,10 @@ namespace EngineLayer.ClassicSearch
 
                             foreach (ScanWithIndexAndNotchInfo scan in GetAcceptableScans(peptide.MonoisotopicMass, SearchMode))
                             {
-                                double thisScore = 0;
 
                                 List<MatchedFragmentIon> matchedIons = MatchFragmentIons(scan.TheScan, peptideTheorProducts, commonParameters);
 
-                                thisScore = CalculatePeptideScore(scan.TheScan.TheScan, matchedIons, 0);
+                                double thisScore = CalculatePeptideScore(scan.TheScan.TheScan, matchedIons, 0);
 
                                 bool meetsScoreCutoff = thisScore >= commonParameters.ScoreCutoff;
 

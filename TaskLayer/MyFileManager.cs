@@ -111,9 +111,6 @@ namespace TaskLayer
 
                     foreach (var scan in MyMsDataFiles[origDataFile].GetAllScansList().Where(p => p.MsnOrder > 1))
                     {
-                        var yArray = scan.MassSpectrum.YArray;
-                        var xArray = scan.MassSpectrum.XArray;
-
                         scan.MassSpectrum.XCorrPrePreprocessing(0, 1969, scan.IsolationMz.Value);
                     }
                 }
@@ -156,8 +153,6 @@ namespace TaskLayer
                             originalFileStream.CopyTo(compressionStream);
                         }
                     }
-
-                    
                 }
             }
 
