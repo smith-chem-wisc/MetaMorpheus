@@ -44,18 +44,19 @@ namespace EngineLayer.ModernSearch
             if (commonParameters.CalculateEValue)
                 byteScoreCutoff = 1;
 
-            Parallel.ForEach(Partitioner.Create(0, ListOfSortedMs2Scans.Length), new ParallelOptions { MaxDegreeOfParallelism = commonParameters.MaxThreadsToUsePerFile }, (range, loopState) =>
+            int maxThreadsPerFile = commonParameters.MaxThreadsToUsePerFile;
+            int[] threads = Enumerable.Range(0, maxThreadsPerFile).ToArray();
+            Parallel.ForEach(threads, (i) =>
             {
                 long[] scoringTable = new long[PeptideIndex.Count];
                 //double
                 List<int> idsOfPeptidesPossiblyObserved = new List<int>();
 
-                for (int i = range.Item1; i < range.Item2; i++)
+                for (; i < ListOfSortedMs2Scans.Length; i += maxThreadsPerFile)
                 {
                     // Stop loop if canceled
                     if (GlobalVariables.StopLoops)
                     {
-                        loopState.Stop();
                         return;
                     }
 
