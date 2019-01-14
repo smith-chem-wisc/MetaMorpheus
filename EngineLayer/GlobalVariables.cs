@@ -48,7 +48,7 @@ namespace EngineLayer
             }
 
             ElementsLocation = Path.Combine(DataDir, @"Data", @"elements.dat");
-            UsefulProteomicsDatabases.Loaders.LoadElements(ElementsLocation);
+            UsefulProteomicsDatabases.Loaders.LoadElements();
 
             ExperimentalDesignFileName = "ExperimentalDesign.tsv";
 

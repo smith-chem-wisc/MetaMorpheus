@@ -3,7 +3,6 @@ using MassSpectrometry;
 using Proteomics.Fragmentation;
 using Proteomics.ProteolyticDigestion;
 using System;
-using System.Collections.Concurrent;
 using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
@@ -49,7 +48,6 @@ namespace EngineLayer.ModernSearch
             Parallel.ForEach(threads, (i) =>
             {
                 long[] scoringTable = new long[PeptideIndex.Count];
-                //double
                 List<int> idsOfPeptidesPossiblyObserved = new List<int>();
 
                 for (; i < ListOfSortedMs2Scans.Length; i += maxThreadsPerFile)
@@ -161,25 +159,33 @@ namespace EngineLayer.ModernSearch
 
             if (commonParameters.DissociationType == DissociationType.LowCID)
             {
-                //hasn't this happened already?
-                scan.TheScan.MassSpectrum.XCorrPrePreprocessing(0, 2000, scan.PrecursorMonoisotopicPeakMz);
-
                 double[] masses = scan.TheScan.MassSpectrum.XArray;
                 double[] intensities = scan.TheScan.MassSpectrum.YArray;
 
                 for (int i = 0; i < masses.Length; i++)
                 {
                     //convert to an int since we're in discreet 1.0005...
-                    binsToSearch.Add((int)(Math.Round(masses[i] / 1.0005079) * 1.0005079 * FragmentBinsPerDalton));
-                    intensitiesToSearch.Add((int)Math.Round(intensities[i]));
+                    int fragmentBin = (int)(Math.Round(masses[i] / 1.0005079) * 1.0005079 * FragmentBinsPerDalton);
+
+                    if (FragmentIndex[fragmentBin] != null)
+                    {
+                        binsToSearch.Add(fragmentBin);
+                        intensitiesToSearch.Add((int)Math.Round(intensities[i]));
+                    }
+
                     // add complementary ions
                     if (commonParameters.AddCompIons)
                     {
                         if (complementaryIonConversionDictionary.TryGetValue(commonParameters.DissociationType, out double protonMassShift)) //TODO: this is broken for EThcD because that method needs two conversions
                         {
                             protonMassShift = ClassExtensions.ToMass(protonMassShift, 1);
-                            binsToSearch.Add((int)Math.Round((scan.PrecursorMass + protonMassShift - masses[i]) / 1.0005079));
-                            intensitiesToSearch.Add((int)Math.Round(intensities[i]));
+                            fragmentBin = (int)Math.Round((scan.PrecursorMass + protonMassShift - masses[i]) / 1.0005079);
+
+                            if (FragmentIndex[fragmentBin] != null)
+                            {
+                                binsToSearch.Add(fragmentBin);
+                                intensitiesToSearch.Add((int)Math.Round(intensities[i]));
+                            }
                         }
                         else
                         {
@@ -273,34 +279,30 @@ namespace EngineLayer.ModernSearch
         {
             int m = 0;
 
-            if(peptideIdsInThisBin != null)
+            int l = 0;
+            int peptidesInBin = 0;
+            if (peptideIdsInThisBin.Any())
             {
-                int l = 0;
-                int peptidesInBin = 0;
-                if (peptideIdsInThisBin.Any())
-                {
-                    peptidesInBin = peptideIdsInThisBin.Count;
-                }
-
-                int r = peptideIdsInThisBin.Count - 1;
-
-                // binary search in the fragment bin for precursor mass
-                while (l <= r)
-                {
-                    m = l + ((r - l) / 2);
-
-                    if (r - l < 2)
-                        break;
-                    if (peptideIndex[peptideIdsInThisBin[m]].MonoisotopicMass < peptideMassToLookFor)
-                        l = m + 1;
-                    else
-                        r = m - 1;
-                }
-                if (m > 0)
-                    m--;
+                peptidesInBin = peptideIdsInThisBin.Count;
             }
 
-            
+            int r = peptideIdsInThisBin.Count - 1;
+
+            // binary search in the fragment bin for precursor mass
+            while (l <= r)
+            {
+                m = l + ((r - l) / 2);
+
+                if (r - l < 2)
+                    break;
+                if (peptideIndex[peptideIdsInThisBin[m]].MonoisotopicMass < peptideMassToLookFor)
+                    l = m + 1;
+                else
+                    r = m - 1;
+            }
+            if (m > 0)
+                m--;
+
             return m;
         }
 
@@ -311,28 +313,18 @@ namespace EngineLayer.ModernSearch
             for (int i = 0; i < binsToSearch.Count; i++)
             {
                 List<int> peptideIdsInThisBin = FragmentIndex[binsToSearch[i]];
-                
+
                 //get index for minimum monoisotopic allowed
                 int lowestPeptideMassIndex = Double.IsInfinity(lowestMassPeptideToLookFor) ? 0 : BinarySearchBinForPrecursorIndex(peptideIdsInThisBin, lowestMassPeptideToLookFor, peptideIndex);
 
                 // get index for highest mass allowed
-                int highestPeptideMassIndex = 0;
-                if (peptideIdsInThisBin != null && peptideIdsInThisBin.Any())
-                {
-                    highestPeptideMassIndex = peptideIdsInThisBin.Count - 1;
-                }
+                int highestPeptideMassIndex = peptideIdsInThisBin.Count - 1;
 
                 if (!Double.IsInfinity(highestMassPeptideToLookFor))
                 {
                     highestPeptideMassIndex = BinarySearchBinForPrecursorIndex(peptideIdsInThisBin, highestMassPeptideToLookFor, peptideIndex);
 
-                    int topIndex = 0;
-                    if (peptideIdsInThisBin != null && peptideIdsInThisBin.Any())
-                    {
-                        topIndex = peptideIdsInThisBin.Count;
-                    }
-
-                    for (int j = highestPeptideMassIndex; j < topIndex; j++)
+                    for (int j = highestPeptideMassIndex; j < peptideIdsInThisBin.Count; j++)
                     {
                         int nextId = peptideIdsInThisBin[j];
                         var nextPep = peptideIndex[nextId];
@@ -345,20 +337,17 @@ namespace EngineLayer.ModernSearch
 
                 if (dissociationType == DissociationType.LowCID)
                 {
-                    if (peptideIdsInThisBin != null && peptideIdsInThisBin.Any())
+                    // add intensity for each peptide candidate in the scoring table up to the maximum allowed precursor mass
+                    for (int j = lowestPeptideMassIndex; j <= highestPeptideMassIndex; j++)
                     {
-                        // add intensity for each peptide candidate in the scoring table up to the maximum allowed precursor mass
-                        for (int j = lowestPeptideMassIndex; j <= highestPeptideMassIndex; j++)
-                        {
-                            int id = peptideIdsInThisBin[j];
+                        int id = peptideIdsInThisBin[j];
 
-                            // add possible search results to the hashset of id's (only once)
-                            if (scoringTable[id] == 0 && massDiffAcceptor.Accepts(scanPrecursorMass, peptideIndex[id].MonoisotopicMass) >= 0)
-                                idsOfPeptidesPossiblyObserved.Add(id);
+                        // add possible search results to the hashset of id's (only once)
+                        if (scoringTable[id] == 0 && massDiffAcceptor.Accepts(scanPrecursorMass, peptideIndex[id].MonoisotopicMass) >= 0)
+                            idsOfPeptidesPossiblyObserved.Add(id);
 
-                            //need to+=intensity of the match
-                            scoringTable[id] += intensitiesOfBins[i];
-                        }
+                        //need to+=intensity of the match
+                        scoringTable[id] += intensitiesOfBins[i];
                     }
                 }
                 else
@@ -372,7 +361,10 @@ namespace EngineLayer.ModernSearch
 
                         // add possible search results to the hashset of id's
                         if (scoringTable[id] == byteScoreCutoff && massDiffAcceptor.Accepts(scanPrecursorMass, peptideIndex[id].MonoisotopicMass) >= 0)
+                        {
                             idsOfPeptidesPossiblyObserved.Add(id);
+                        }
+                            
                     }
                 }
             }
