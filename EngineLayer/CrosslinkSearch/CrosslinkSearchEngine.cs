@@ -67,7 +67,7 @@ namespace EngineLayer.CrosslinkSearch
             int[] threads = Enumerable.Range(0, maxThreadsPerFile).ToArray();
             Parallel.ForEach(threads, (scanIndex) =>
             {
-                long[] scoringTable = new long[PeptideIndex.Count];
+                byte[] scoringTable = new byte[PeptideIndex.Count];
                 List<int> idsOfPeptidesPossiblyObserved = new List<int>();
 
                 for (; scanIndex < ListOfSortedMs2Scans.Length; scanIndex += maxThreadsPerFile)
@@ -81,11 +81,11 @@ namespace EngineLayer.CrosslinkSearch
                     var scan = ListOfSortedMs2Scans[scanIndex];
 
                     // get fragment bins for this scan
-                    List<int> allBinsToSearch = GetBinsToSearch(scan, null);
+                    List<int> allBinsToSearch = GetBinsToSearch(scan);
                     List<BestPeptideScoreNotch> bestPeptideScoreNotchList = new List<BestPeptideScoreNotch>();
 
                     // first-pass scoring
-                    IndexedScoring(allBinsToSearch, null, scoringTable, byteScoreCutoff, idsOfPeptidesPossiblyObserved, scan.PrecursorMass, Double.NegativeInfinity, Double.PositiveInfinity, PeptideIndex, MassDiffAcceptor, 0, commonParameters.DissociationType);
+                    IndexedScoring(allBinsToSearch, scoringTable, byteScoreCutoff, idsOfPeptidesPossiblyObserved, scan.PrecursorMass, Double.NegativeInfinity, Double.PositiveInfinity, PeptideIndex, MassDiffAcceptor, 0, commonParameters.DissociationType);
 
                     // done with indexed scoring; refine scores and create PSMs
                     if (idsOfPeptidesPossiblyObserved.Any())

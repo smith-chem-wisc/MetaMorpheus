@@ -57,7 +57,7 @@ namespace EngineLayer.NonSpecificEnzymeSearch
                     Ms2ScanWithSpecificMass scan = ListOfSortedMs2Scans[i];
 
                     //get bins to add points to
-                    List<int> allBinsToSearch = GetBinsToSearch(scan, null);
+                    List<int> allBinsToSearch = GetBinsToSearch(scan);
 
                     //the entire indexed scoring is done here
                     for (int j = 0; j < allBinsToSearch.Count; j++)
