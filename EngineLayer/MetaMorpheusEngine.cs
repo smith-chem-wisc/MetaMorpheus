@@ -113,16 +113,35 @@ namespace EngineLayer
                 return matchedFragmentIons;
             }
 
-            if (commonParameters.DissociationType == MassSpectrometry.DissociationType.LowCID)
+            if (commonParameters.DissociationType == DissociationType.LowCID)
             {
-                if (!scan.TheScan.MassSpectrum.XcorrProcessed)
-                {
-                    double discreteMassBin = 1.0005079;
-                    int multiplier = (int)Math.Round(2000 / discreteMassBin, 0);
+            //    if (!scan.TheScan.MassSpectrum.XcorrProcessed)
+            //    {
+            //        double discreteMassBin = 1.0005079;
+            //        int multiplier = (int)Math.Round(2000 / discreteMassBin, 0);
 
-                    scan.TheScan.MassSpectrum.XCorrPrePreprocessing(0, multiplier * discreteMassBin, scan.TheScan.IsolationMz.Value, 1.5, discreteMassBin, 0.05);
-                    Ms2ScanWithSpecificMass.GetNeutralExperimentalFragments(scan.TheScan, commonParameters);
+            //        scan.TheScan.MassSpectrum.XCorrPrePreprocessing(0, multiplier * discreteMassBin, scan.TheScan.IsolationMz.Value, 1.5, discreteMassBin, 0.05);
+            //        //Ms2ScanWithSpecificMass.GetNeutralExperimentalFragments(scan.TheScan, commonParameters);
+            //    }
+
+                foreach (Product product in theoreticalProducts)
+                {
+                    // unknown fragment mass; this only happens rarely for sequences with unknown amino acids
+                    if (double.IsNaN(product.NeutralMass))
+                    {
+                        continue;
+                    }
+
+                    double theoreticalFragmentMz = Math.Round(product.NeutralMass.ToMz(1) / 1.0005079, 0) * 1.0005079;
+                    var closestMzIndex = scan.TheScan.MassSpectrum.GetClosestPeakIndex(theoreticalFragmentMz).Value;
+
+                    if (commonParameters.ProductMassTolerance.Within(scan.TheScan.MassSpectrum.XArray[closestMzIndex], theoreticalFragmentMz))
+                    {
+                        matchedFragmentIons.Add(new MatchedFragmentIon(product, theoreticalFragmentMz, scan.TheScan.MassSpectrum.YArray[closestMzIndex], 1));
+                    }
                 }
+
+                return matchedFragmentIons;
             }
 
             // search for ions in the spectrum

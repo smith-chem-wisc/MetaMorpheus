@@ -88,7 +88,16 @@
     <None Update="TestData\gapdh.fasta.gz">
       <CopyToOutputDirectory>Always</CopyToOutputDirectory>
     </None>
+    <None Update="TestData\LEEGPPVTTVLTR_ms2.txt">
+      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+    </None>
+    <None Update="TestData\LEEGPPVTTVLTR_ms1.txt">
+      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+    </None>
     <None Update="TestData\LowResSnip_B6_mouse_11700_117500.xml.gz">
+      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+    </None>
+    <None Update="TestData\LowResSnip_B6_mouse_11700_117500.xmlpruned.xml">
       <CopyToOutputDirectory>Always</CopyToOutputDirectory>
     </None>
     <None Update="TestData\ok.mgf">
