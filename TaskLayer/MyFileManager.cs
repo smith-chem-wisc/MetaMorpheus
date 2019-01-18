@@ -81,7 +81,6 @@ namespace TaskLayer
                 filter = null;
             }
 
-            //FilteringParams filter = new FilteringParams(10000, null, null, true, true);
             if (MyMsDataFiles.TryGetValue(origDataFile, out MsDataFile value) && value != null)
                 return value;
 

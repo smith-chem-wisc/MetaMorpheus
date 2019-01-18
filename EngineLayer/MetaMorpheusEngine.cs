@@ -88,15 +88,6 @@ namespace EngineLayer
 
             if (commonParameters.DissociationType == DissociationType.LowCID)
             {
-                //    if (!scan.TheScan.MassSpectrum.XcorrProcessed)
-                //    {
-                //        double discreteMassBin = 1.0005079;
-                //        int multiplier = (int)Math.Round(2000 / discreteMassBin, 0);
-
-                //        scan.TheScan.MassSpectrum.XCorrPrePreprocessing(0, multiplier * discreteMassBin, scan.TheScan.IsolationMz.Value, 1.5, discreteMassBin, 0.05);
-                //        //Ms2ScanWithSpecificMass.GetNeutralExperimentalFragments(scan.TheScan, commonParameters);
-                //    }
-
                 foreach (Product product in theoreticalProducts)
                 {
                     // unknown fragment mass; this only happens rarely for sequences with unknown amino acids
