@@ -458,7 +458,6 @@ namespace Test
             foundScans.Sort();
 
             Assert.AreEqual(expectedScans, foundScans);
-
             Assert.AreEqual(35, goodPsm.Count());
         }
 
