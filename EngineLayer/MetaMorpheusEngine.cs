@@ -39,7 +39,7 @@ namespace EngineLayer
 
         public static event EventHandler<ProgressEventArgs> OutProgressHandler;
 
-        public static double CalculatePeptideScore(MsDataScan thisScan, List<MatchedFragmentIon> matchedFragmentIons, double maximumMassThatFragmentIonScoreIsDoubled)
+        public static double CalculatePeptideScore(MsDataScan thisScan, List<MatchedFragmentIon> matchedFragmentIons)
         {
             double score = 0;
 
@@ -70,37 +70,10 @@ namespace EngineLayer
                 {
                     double fragmentScore = 1 + (fragment.Intensity / thisScan.TotalIonCurrent);
                     score += fragmentScore;
-
-                    if (fragment.NeutralTheoreticalProduct.NeutralMass <= maximumMassThatFragmentIonScoreIsDoubled)
-                    {
-                        score += fragmentScore;
-                    }
                 }
             }
 
             return score;
-        }
-
-        private static bool MassInTolerance(double theoreticalMass, double experimentalMass, double thomsonTolerance)
-        {
-            if (Math.Abs(theoreticalMass - experimentalMass) < thomsonTolerance)
-            {
-                return true;
-            }
-            else
-            {
-                return false;
-            }
-        }
-
-        private static int FirstArrayIndexOfDouble(double[] a, double m, double t)
-        {
-            for (int i = 0; i < a.Length; i++)
-            {
-                if (((a[i] - t) < m) && ((a[i] + t) > m))
-                    return i;
-            }
-            return -1;
         }
 
         public static List<MatchedFragmentIon> MatchFragmentIons(Ms2ScanWithSpecificMass scan, List<Product> theoreticalProducts, CommonParameters commonParameters)
@@ -115,14 +88,14 @@ namespace EngineLayer
 
             if (commonParameters.DissociationType == DissociationType.LowCID)
             {
-            //    if (!scan.TheScan.MassSpectrum.XcorrProcessed)
-            //    {
-            //        double discreteMassBin = 1.0005079;
-            //        int multiplier = (int)Math.Round(2000 / discreteMassBin, 0);
+                //    if (!scan.TheScan.MassSpectrum.XcorrProcessed)
+                //    {
+                //        double discreteMassBin = 1.0005079;
+                //        int multiplier = (int)Math.Round(2000 / discreteMassBin, 0);
 
-            //        scan.TheScan.MassSpectrum.XCorrPrePreprocessing(0, multiplier * discreteMassBin, scan.TheScan.IsolationMz.Value, 1.5, discreteMassBin, 0.05);
-            //        //Ms2ScanWithSpecificMass.GetNeutralExperimentalFragments(scan.TheScan, commonParameters);
-            //    }
+                //        scan.TheScan.MassSpectrum.XCorrPrePreprocessing(0, multiplier * discreteMassBin, scan.TheScan.IsolationMz.Value, 1.5, discreteMassBin, 0.05);
+                //        //Ms2ScanWithSpecificMass.GetNeutralExperimentalFragments(scan.TheScan, commonParameters);
+                //    }
 
                 foreach (Product product in theoreticalProducts)
                 {

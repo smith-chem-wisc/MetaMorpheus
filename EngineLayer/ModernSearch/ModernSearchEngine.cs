@@ -95,7 +95,7 @@ namespace EngineLayer.ModernSearch
 
                         List<MatchedFragmentIon> matchedIons = MatchFragmentIons(scan, peptideTheorProducts, commonParameters);
 
-                        double thisScore = CalculatePeptideScore(scan.TheScan, matchedIons, 0);
+                        double thisScore = CalculatePeptideScore(scan.TheScan, matchedIons);
                         int notch = MassDiffAcceptor.Accepts(scan.PrecursorMass, peptide.MonoisotopicMass);
 
                         bool meetsScoreCutoff = thisScore >= commonParameters.ScoreCutoff;

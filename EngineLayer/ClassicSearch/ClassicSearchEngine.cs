@@ -67,7 +67,7 @@ namespace EngineLayer.ClassicSearch
 
                                 List<MatchedFragmentIon> matchedIons = MatchFragmentIons(scan.TheScan, peptideTheorProducts, commonParameters);
 
-                                double thisScore = CalculatePeptideScore(scan.TheScan.TheScan, matchedIons, 0);
+                                double thisScore = CalculatePeptideScore(scan.TheScan.TheScan, matchedIons);
 
                                 bool meetsScoreCutoff = thisScore >= commonParameters.ScoreCutoff;
 

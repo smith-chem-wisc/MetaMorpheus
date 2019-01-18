@@ -164,9 +164,9 @@ namespace Test
             matchedCompIons.AddRange(matchedIons);
 
             // score when the mass-diff is on this residue
-            double localizedScore = MetaMorpheusEngine.CalculatePeptideScore(scan, matchedIons, 0);
-            double scoreNormal = MetaMorpheusEngine.CalculatePeptideScore(scan, matchedIons, 0);
-            double scoreComp = MetaMorpheusEngine.CalculatePeptideScore(scan, matchedCompIons, 0);
+            double localizedScore = MetaMorpheusEngine.CalculatePeptideScore(scan, matchedIons);
+            double scoreNormal = MetaMorpheusEngine.CalculatePeptideScore(scan, matchedIons);
+            double scoreComp = MetaMorpheusEngine.CalculatePeptideScore(scan, matchedCompIons);
             Assert.IsTrue(scoreNormal * 2 == scoreComp && scoreComp > scoreNormal + 1);
         }
 

@@ -18,9 +18,9 @@ namespace EngineLayer.NonSpecificEnzymeSearch
 
         private readonly List<int>[] PrecursorIndex;
         private readonly int MinimumPeptideLength;
-        PeptideSpectralMatch[][] GlobalCategorySpecificPsms;
-        CommonParameters ModifiedParametersNoComp;
-        List<ProductType> ProductTypesToSearch;
+        readonly PeptideSpectralMatch[][] GlobalCategorySpecificPsms;
+        readonly CommonParameters ModifiedParametersNoComp;
+        readonly List<ProductType> ProductTypesToSearch;
 
         public NonSpecificEnzymeSearchEngine(PeptideSpectralMatch[][] globalPsms, Ms2ScanWithSpecificMass[] listOfSortedms2Scans, List<PeptideWithSetModifications> peptideIndex, List<int>[] fragmentIndex, List<int>[] precursorIndex, int currentPartition, CommonParameters CommonParameters, MassDiffAcceptor massDiffAcceptor, double maximumMassThatFragmentIonScoreIsDoubled, List<string> nestedIds) : base(null, listOfSortedms2Scans, peptideIndex, fragmentIndex, currentPartition, CommonParameters, massDiffAcceptor, maximumMassThatFragmentIonScoreIsDoubled, nestedIds)
         {
@@ -115,7 +115,7 @@ namespace EngineLayer.NonSpecificEnzymeSearch
                                     peptideTheorProducts = peptide.Fragment(commonParameters.DissociationType, FragmentationTerminus.Both).ToList();
                                     List<MatchedFragmentIon> matchedIons = MatchFragmentIons(scan, peptideTheorProducts, ModifiedParametersNoComp);
 
-                                    double thisScore = CalculatePeptideScore(scan.TheScan, matchedIons, MaxMassThatFragmentIonScoreIsDoubled);
+                                    double thisScore = CalculatePeptideScore(scan.TheScan, matchedIons);
                                     if (thisScore > commonParameters.ScoreCutoff)
                                     {
                                         PeptideSpectralMatch[] localPeptideSpectralMatches = GlobalCategorySpecificPsms[(int)FdrClassifier.GetCleavageSpecificityCategory(peptide.CleavageSpecificityForFdrCategory)];
