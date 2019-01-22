@@ -71,22 +71,18 @@ namespace EngineLayer.Indexing
             // digest database
             List<PeptideWithSetModifications> globalPeptides = new List<PeptideWithSetModifications>();
 
-            Parallel.ForEach(Partitioner.Create(0, ProteinList.Count), new ParallelOptions { MaxDegreeOfParallelism = commonParameters.MaxThreadsToUsePerFile }, (range, loopState) =>
+            int maxThreadsPerFile = commonParameters.MaxThreadsToUsePerFile;
+            int[] threads = Enumerable.Range(0, maxThreadsPerFile).ToArray();
+            Parallel.ForEach(threads, (i) =>
             {
                 List<PeptideWithSetModifications> localPeptides = new List<PeptideWithSetModifications>();
 
-                for (int i = range.Item1; i < range.Item2; i++)
+                for (; i < ProteinList.Count; i += maxThreadsPerFile)
                 {
                     // Stop loop if canceled
-                    if (GlobalVariables.StopLoops)
-                    {
-                        loopState.Stop();
-                        return;
-                    }
-
+                    if (GlobalVariables.StopLoops) { return; }
 
                     localPeptides.AddRange(ProteinList[i].Digest(commonParameters.DigestionParams, FixedModifications, VariableModifications));
-
 
                     progress++;
                     var percentProgress = (int)((progress / ProteinList.Count) * 100);

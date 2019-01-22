@@ -97,10 +97,7 @@ namespace TaskLayer
                 {
                     for (int i = partitionRange.Item1; i < partitionRange.Item2; i++)
                     {
-                        if (GlobalVariables.StopLoops)
-                        {
-                            break;
-                        }
+                        if (GlobalVariables.StopLoops) { break; }
 
                         MsDataScan ms2scan = ms2Scans[i];
 
@@ -237,8 +234,7 @@ namespace TaskLayer
                 listOfModsFixed: commonParams.ListOfModsFixed,
                 qValueOutputFilter: commonParams.QValueOutputFilter,
                 taskDescriptor: commonParams.TaskDescriptor,
-                assumeOrphanPeaksAreZ1Fragments: commonParams.AssumeOrphanPeaksAreZ1Fragments
-                );
+                assumeOrphanPeaksAreZ1Fragments: commonParams.AssumeOrphanPeaksAreZ1Fragments);
 
             return returnParams;
         }
