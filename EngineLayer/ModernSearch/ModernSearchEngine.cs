@@ -66,8 +66,6 @@ namespace EngineLayer.ModernSearch
                     // get fragment bins for this scan
                     List<int> allBinsToSearch = GetBinsToSearch(scan);
 
-                    //outbut bins AND intensities
-
                     // get allowed theoretical masses from the known experimental mass
                     // note that this is the OPPOSITE of the classic search (which calculates experimental masses from theoretical values)
                     // this is just PRELIMINARY precursor-mass filtering
@@ -79,12 +77,6 @@ namespace EngineLayer.ModernSearch
 
                     // first-pass scoring
                     IndexedScoring(allBinsToSearch, scoringTable, byteScoreCutoff, idsOfPeptidesPossiblyObserved, scan.PrecursorMass, lowestMassPeptideToLookFor, highestMassPeptideToLookFor, PeptideIndex, MassDiffAcceptor, MaxMassThatFragmentIonScoreIsDoubled, commonParameters.DissociationType);
-
-                    //Not necessary
-                    //get all psms for this scan
-                    //only grab the highest scoring scans (i.e. 15 peptides scored 22)
-                    //re-score those 15 peptides with intensities
-                    //save the highest
 
                     // done with indexed scoring; refine scores and create PSMs
                     foreach (int id in idsOfPeptidesPossiblyObserved)
@@ -275,14 +267,7 @@ namespace EngineLayer.ModernSearch
         protected static int BinarySearchBinForPrecursorIndex(List<int> peptideIdsInThisBin, double peptideMassToLookFor, List<PeptideWithSetModifications> peptideIndex)
         {
             int m = 0;
-
             int l = 0;
-            int peptidesInBin = 0;
-            if (peptideIdsInThisBin.Any())
-            {
-                peptidesInBin = peptideIdsInThisBin.Count;
-            }
-
             int r = peptideIdsInThisBin.Count - 1;
 
             // binary search in the fragment bin for precursor mass
