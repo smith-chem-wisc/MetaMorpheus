@@ -4,6 +4,7 @@ using Proteomics.Fragmentation;
 using Proteomics.ProteolyticDigestion;
 using System;
 using System.Collections.Generic;
+using System.IO;
 using System.Linq;
 
 namespace Test
@@ -22,6 +23,46 @@ namespace Test
             var MassSpectrum2 = new MzSpectrum(mz2, intensities2, false);
             ScansHere.Add(new MsDataScan(MassSpectrum2, 2, 2, true, Polarity.Positive, 2,
                 new MzLibUtil.MzRange(0, 10000), "f", MZAnalyzerType.Unknown, 100000, 1, null, "scan=2", 402.18629720155.ToMz(2), 2, 1, 402.18629720155.ToMz(2), 2, DissociationType.HCD, 1, 402.18629720155.ToMz(2)));
+
+            Scans = ScansHere.ToArray();
+        }
+
+        public TestDataFile(bool emptyScan, bool low) : base(2, new SourceFile(null, null, null, null, null))
+        {
+            List<double> mz1List = new List<double>();
+            List<double> int1List = new List<double>();
+
+            string[] lines1 = System.IO.File.ReadAllLines(Path.Combine(NUnit.Framework.TestContext.CurrentContext.TestDirectory, @"TestData\LEEGPPVTTVLTR_ms1.txt"));
+
+            foreach (string line in lines1)
+            {
+                string[] mzIntPair = line.Split("\t");
+                mz1List.Add(Convert.ToDouble(mzIntPair[0]));
+                int1List.Add(Convert.ToDouble(mzIntPair[1]));
+            }
+
+            List<double> mz2List = new List<double>();
+            List<double> int2List = new List<double>();
+
+            string[] lines2 = System.IO.File.ReadAllLines(Path.Combine(NUnit.Framework.TestContext.CurrentContext.TestDirectory, @"TestData\LEEGPPVTTVLTR_ms2.txt"));
+
+            foreach (string line in lines2)
+            {
+                string[] mzIntPair = line.Split("\t");
+                mz2List.Add(Convert.ToDouble(mzIntPair[0]));
+                int2List.Add(Convert.ToDouble(mzIntPair[1]));
+            }
+
+            var mz1 = mz1List.ToArray();
+            var intensities1 = int1List.ToArray();
+            var MassSpectrum1 = new MzSpectrum(mz1, intensities1, false);
+            var ScansHere = new List<MsDataScan> { new MsDataScan(MassSpectrum1, 1, 1, true, Polarity.Positive, 1, new MzLibUtil.MzRange(0, 10000), "ff", MZAnalyzerType.Unknown, 1000, 1, null, "scan=1") };
+
+            var mz2 = mz2List.ToArray();
+            var intensities2 = int2List.ToArray();
+            var MassSpectrum2 = new MzSpectrum(mz2, intensities2, false);
+            ScansHere.Add(new MsDataScan(MassSpectrum2, 2, 2, true, Polarity.Positive, 2,
+                new MzLibUtil.MzRange(200, 1400), "f", MZAnalyzerType.IonTrap3D, 5479023.20, 11.152, null, "scan=2", 706.3963, 2, 19013730, 706.3963, 0.7, DissociationType.LowCID, 1, 706.3963));
 
             Scans = ScansHere.ToArray();
         }
@@ -94,7 +135,7 @@ namespace Test
             Scans = ScansHere.ToArray();
         }
 
-        public TestDataFile(List<PeptideWithSetModifications> pepWithSetModss, bool additionalMasses = false) 
+        public TestDataFile(List<PeptideWithSetModifications> pepWithSetModss, bool additionalMasses = false)
             : base(pepWithSetModss.Count * 2, new SourceFile(@"no nativeID format", "mzML format", null, "SHA-1", @"C:\fake.mzML", null))
         {
             var ScansHere = new List<MsDataScan>();
@@ -127,7 +168,7 @@ namespace Test
             Scans = ScansHere.ToArray();
         }
 
-        public TestDataFile(PeptideWithSetModifications pepWithSetMods) 
+        public TestDataFile(PeptideWithSetModifications pepWithSetMods)
             : base(2, new SourceFile(@"no nativeID format", "mzML format", null, "SHA-1", @"C:\fake.mzML", null))
         {
             var mz1 = new double[] { pepWithSetMods.MonoisotopicMass.ToMz(2), (pepWithSetMods.MonoisotopicMass + Constants.C13MinusC12).ToMz(2), (pepWithSetMods.MonoisotopicMass + 2 * Constants.C13MinusC12).ToMz(2) };
@@ -193,7 +234,7 @@ namespace Test
 
             List<double> mz2 = new List<double>();
             List<double> intensities2 = new List<double>();
-            foreach (var aok in pepWithSetMods.Fragment(DissociationType.HCD,FragmentationTerminus.Both))
+            foreach (var aok in pepWithSetMods.Fragment(DissociationType.HCD, FragmentationTerminus.Both))
             {
                 mz2.Add(aok.NeutralMass.ToMz(1));
                 mz2.Add((aok.NeutralMass + 1.003).ToMz(1));
@@ -244,13 +285,13 @@ namespace Test
 
         public TestDataFile(double[] ms2Mz, double[] ms2Intensities, double precursorMass, int precursorZ, double rt = 1.0) : base(2, new SourceFile(null, null, null, null, null))
         {
-            var ms1 = new MzSpectrum(new double[] { precursorMass.ToMz(precursorZ), (precursorMass + 1.003).ToMz(precursorZ) }, new double[] { 1, 1}, false);
+            var ms1 = new MzSpectrum(new double[] { precursorMass.ToMz(precursorZ), (precursorMass + 1.003).ToMz(precursorZ) }, new double[] { 1, 1 }, false);
             var ms2 = new MzSpectrum(ms2Mz, ms2Intensities, false);
 
             var ScansHere = new List<MsDataScan> {
                 new MsDataScan(ms1, 1, 1, true, Polarity.Positive, rt, new MzLibUtil.MzRange(0, 10000), "ff", MZAnalyzerType.Unknown, 1000, 1, null, "scan=1"),
                 new MsDataScan(ms2, 1, 2, true, Polarity.Positive, rt + 0.01, new MzLibUtil.MzRange(0, 10000), "ff", MZAnalyzerType.Unknown, 1000, 1, null, "scan=2", precursorMass.ToMz(precursorZ), precursorZ, 1, precursorMass.ToMz(precursorZ), 1.0, DissociationType.HCD, 1, precursorMass.ToMz(precursorZ)) };
-            
+
             Scans = ScansHere.ToArray();
         }
 

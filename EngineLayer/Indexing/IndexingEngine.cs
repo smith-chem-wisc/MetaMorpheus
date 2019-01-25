@@ -1,8 +1,6 @@
 ﻿using Proteomics;
-using Proteomics.Fragmentation;
 using Proteomics.ProteolyticDigestion;
 using System;
-using System.Collections.Concurrent;
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
@@ -123,11 +121,18 @@ namespace EngineLayer.Indexing
             {
                 var fragmentMasses = peptidesSortedByMass[peptideId].Fragment(commonParameters.DissociationType, commonParameters.DigestionParams.FragmentationTerminus).Select(m => m.NeutralMass).ToList();
 
-                foreach (var theoreticalFragmentMass in fragmentMasses)
+                foreach (double theoreticalFragmentMass in fragmentMasses)
                 {
-                    if (theoreticalFragmentMass < MaxFragmentSize && theoreticalFragmentMass > 0)
+                    double tfm = theoreticalFragmentMass;
+                    //if low res round
+                    if (commonParameters.DissociationType == MassSpectrometry.DissociationType.LowCID)
                     {
-                        int fragmentBin = (int)Math.Round(theoreticalFragmentMass * FragmentBinsPerDalton);
+                        tfm = Math.Round(theoreticalFragmentMass / 1.0005079, 0) * 1.0005079;
+                    }
+
+                    if (tfm < MaxFragmentSize && tfm > 0)
+                    {
+                        int fragmentBin = (int)Math.Round(tfm * FragmentBinsPerDalton);
 
                         if (fragmentIndex[fragmentBin] == null)
                             fragmentIndex[fragmentBin] = new List<int> { peptideId };
