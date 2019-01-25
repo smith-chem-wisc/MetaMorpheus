@@ -7,6 +7,7 @@ namespace MetaMorpheusGUI
     public class ModTypeForTreeView : INotifyPropertyChanged
     {
         private bool? _isChecked;
+        private bool? _toGraph;
 
         public ModTypeForTreeView(string displayName, bool bad)
         {
@@ -29,6 +30,18 @@ namespace MetaMorpheusGUI
             set
             {
                 SetUseStatus(value);
+            }
+        }
+
+        public bool? Graph
+        {
+            get
+            {
+                return _toGraph;
+            }
+            set
+            {
+                _toGraph = value;
             }
         }
 

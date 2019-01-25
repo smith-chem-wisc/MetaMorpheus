@@ -158,6 +158,7 @@
     <Compile Include="MetaDraw\BaseSequenceAnnotation.cs" />
     <Compile Include="MetaDraw\MetaDrawPsm.cs" />
     <Compile Include="MetaDraw\PdfWriter.cs" />
+    <Compile Include="MetaDraw\PlotModelStat.cs" />
     <Compile Include="MetaDraw\TsvResultReader.cs" />
     <Compile Include="Util\BooleanInverter.cs" />
     <Compile Include="CalibrateTaskWindow.xaml.cs">

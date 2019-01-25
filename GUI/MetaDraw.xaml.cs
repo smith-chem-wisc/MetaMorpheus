@@ -18,6 +18,7 @@ using System.Windows.Media.Imaging;
 using Proteomics.Fragmentation;
 using Proteomics.ProteolyticDigestion;
 using System.Text.RegularExpressions;
+using System.Windows.Input;
 
 namespace MetaMorpheusGUI
 {
@@ -27,6 +28,7 @@ namespace MetaMorpheusGUI
     public partial class MetaDraw : Window
     {
         private PsmAnnotationViewModel mainViewModel;
+        //private PlotModelStat plotModel;
         private MyFileManager spectraFileManager;
         private MsDataFile MsDataFile;
         private readonly ObservableCollection<MetaDrawPsm> peptideSpectralMatches;
@@ -38,6 +40,8 @@ namespace MetaMorpheusGUI
         private Dictionary<ProductType, Color> productTypeToColor;
         private SolidColorBrush modificationAnnotationColor;
         private Regex illegalInFileName = new Regex(@"[\\/:*?""<>|]");
+        private ObservableCollection<ModTypeForTreeView> plotTypes;
+        private List<MetaDrawPsm> psms = new List<MetaDrawPsm>();
 
         public MetaDraw()
         {
@@ -50,12 +54,15 @@ namespace MetaMorpheusGUI
             propertyView.Columns.Add("Name", typeof(string));
             propertyView.Columns.Add("Value", typeof(string));
             peptideSpectralMatchesView = CollectionViewSource.GetDefaultView(peptideSpectralMatches);
+            //plotTypesTable.ItemsSource = plotTypes;
             dataGridScanNums.DataContext = peptideSpectralMatchesView;
             dataGridProperties.DataContext = propertyView.DefaultView;
             Title = "MetaDraw: version " + GlobalVariables.MetaMorpheusVersion;
             spectraFileManager = new MyFileManager(true);
             SetUpDictionaries();
             modificationAnnotationColor = Brushes.Yellow;
+            plotTypes = new ObservableCollection<ModTypeForTreeView>();
+            setUpPlots();
         }
 
         private void SetUpDictionaries()
@@ -106,6 +113,7 @@ namespace MetaMorpheusGUI
                 case ".psmtsv":
                     tsvResultsFilePath = filePath;
                     psmFileNameLabel.Text = filePath;
+                    psmFileNameLabelStat.Text = filePath;
                     break;
                 default:
                     MessageBox.Show("Cannot read file type: " + theExtension);
@@ -244,13 +252,36 @@ namespace MetaMorpheusGUI
 
             // load the PSMs
             this.prgsText.Content = "Loading PSMs...";
-            await Task.Run(() => LoadPsms(tsvResultsFilePath));
+            await Task.Run(() => loadPsmsStat(tsvResultsFilePath));
 
             // done loading - restore controls
             this.prgsFeed.IsOpen = false;
             (sender as Button).IsEnabled = true;
             selectSpectraFileButton.IsEnabled = true;
             selectPsmFileButton.IsEnabled = true;
+        }
+
+        private async void loadFilesButtonStat_Click(object sender, RoutedEventArgs e)
+        {
+            // check for validity
+            if (tsvResultsFilePath == null)
+            {
+                MessageBox.Show("Please add a search result file.");
+                return;
+            }
+
+            (sender as Button).IsEnabled = false;
+            selectPsmFileButtonStat.IsEnabled = false;
+            prgsFeedStat.IsOpen = true;
+
+            // load the PSMs
+            this.prgsTextStat.Content = "Loading PSMs...";
+            await Task.Run(() => loadPsmsStat(tsvResultsFilePath));
+
+            // done loading - restore controls
+            this.prgsFeedStat.IsOpen = false;
+            (sender as Button).IsEnabled = true;
+            selectPsmFileButtonStat.IsEnabled = true;
         }
 
         private void TextBox_TextChanged(object sender, TextChangedEventArgs e)
@@ -319,9 +350,67 @@ namespace MetaMorpheusGUI
             }
         }
 
+        private void setUpPlots()
+        {
+            PlotModelStat prelim = new PlotModelStat();
+            foreach (var plot in prelim.plotTypes())
+            {
+                var added = new ModTypeForTreeView(plot, false);
+                plotTypes.Add(added);
+            }
+            plotsTreeView.DataContext = plotTypes;
+            foreach (var ye in plotTypes)
+            {
+                ye.VerifyCheckState();
+            }
+        }
+
+        private void loadPsmsStat(string filePath)
+        {
+            foreach (var psm in TsvResultReader.ReadTsv(filePath))
+            {
+                psms.Add(psm);
+            }
+        }
+
         private void dataGridProperties_SelectedCellsChanged(object sender, SelectedCellsChangedEventArgs e)
         {
             (sender as DataGrid).UnselectAll();
+        }
+
+        private void createPdfButton_Click(object sender, RoutedEventArgs e)
+        {
+           foreach(var plot in plotTypes)
+           {
+                if (plot.Use == true)
+                {
+                    //add to pdf export
+                }
+           }
+        }
+
+        private void plot_MouseDoubleClick(object sender, MouseButtonEventArgs args)
+        {
+            if (sender is TreeViewItem)
+            {
+                if(!((TreeViewItem)sender).IsSelected)
+                {
+                    return;
+                }
+            }
+            var selected = (ModTypeForTreeView) plotsTreeView.SelectedItem;
+            if (psms.Count == 0) {
+                MessageBox.Show("There are no PSMs to analyze.\n\nLoad the current file or choose a new file.");
+                    return;
+            }
+            PlotModelStat plot = new PlotModelStat(selected.DisplayName , psms);
+            plotViewStat.DataContext = plot;
+
+        }
+
+        private void TabControl_SelectionChanged(object sender, SelectionChangedEventArgs e)
+        {
+
         }
 
         //private void PDFButton_Click(object sender, RoutedEventArgs e)
