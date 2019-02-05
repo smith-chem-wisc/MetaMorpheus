@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Globalization;
 using System.Windows;
 
 namespace MetaMorpheusGUI
@@ -113,7 +114,7 @@ namespace MetaMorpheusGUI
 
         public static bool CheckMinRatio(string text)
         {
-            if (!double.TryParse(text, out double minRatio) || minRatio < 0 || minRatio > 1)
+            if (!double.TryParse(text, NumberStyles.Any, CultureInfo.InvariantCulture, out double minRatio) || minRatio < 0 || minRatio > 1)
             {
                 MessageBox.Show("The minimum intensity ratio must be between zero and one. \n You entered " + '"' + text + '"');
                 return false;
@@ -124,7 +125,7 @@ namespace MetaMorpheusGUI
         public static bool CheckPrecursorMassTolerance(string text)
         {
 
-            if (!double.TryParse(text, out double precursorMassTolerance) || precursorMassTolerance <= 0)
+            if (!double.TryParse(text, NumberStyles.Any, CultureInfo.InvariantCulture, out double precursorMassTolerance) || precursorMassTolerance <= 0)
             {
                 MessageBox.Show("The precursor mass tolerance is invalid. \n You entered " + '"' + text + '"' + "\n Please enter a positive number.");
                 return false;
@@ -134,7 +135,7 @@ namespace MetaMorpheusGUI
 
         public static bool CheckProductMassTolerance(string text)
         {
-            if (!double.TryParse(text, out double productMassTolerance) || productMassTolerance <= 0)
+            if (!double.TryParse(text, NumberStyles.Any, CultureInfo.InvariantCulture, out double productMassTolerance) || productMassTolerance <= 0)
             {
                 MessageBox.Show("The product mass tolerance is invalid. \n You entered " + '"' + text + '"' + "\n Please enter a positive number.");
                 return false;
@@ -227,7 +228,7 @@ namespace MetaMorpheusGUI
 
         public static bool CheckMinScoreAllowed(string text)
         {
-            if (!double.TryParse(text, out double minScore) || minScore < 1)
+            if (!double.TryParse(text, NumberStyles.Any, CultureInfo.InvariantCulture, out double minScore) || minScore < 1)
             {
                 MessageBox.Show("The minimum score allowed is invalid. \n You entered " + '"' + text + '"' + "\n Please enter a positive, non-zero number.");
                 return false;
@@ -237,7 +238,7 @@ namespace MetaMorpheusGUI
 
         public static bool CheckPeakFindingTolerance(string text)
         {
-            if (!double.TryParse(text, out double peakFindingTolerance) || peakFindingTolerance <= 0)
+            if (!double.TryParse(text, NumberStyles.Any, CultureInfo.InvariantCulture, out double peakFindingTolerance) || peakFindingTolerance <= 0)
             {
                 MessageBox.Show("The peak finding tolerance is invalid. \n You entered " + '"' + text + '"' + "\n Please enter a positive number.");
                 return false;
@@ -257,7 +258,7 @@ namespace MetaMorpheusGUI
 
         public static bool CheckQValueFilter(string text)
         {
-            if (!double.TryParse(text, out double qValue) || qValue < 0 || qValue > 1)
+            if (!double.TryParse(text, NumberStyles.Any, CultureInfo.InvariantCulture, out double qValue) || qValue < 0 || qValue > 1)
             {
                 MessageBox.Show("The q-value cutoff must be a number between 0 and 1");
                 return false;
