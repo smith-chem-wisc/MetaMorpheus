@@ -237,11 +237,15 @@ namespace Test
             dictHere.Add(2, new List<Modification> { modToAdd2 }); //default
             dictHere.Add(3, new List<Modification> { modToAdd3 }); //Alway Appear
 
-            var dictHere2 = new Dictionary<int, List<Modification>>();
-            dictHere2.Add(1, new List<Modification> { modToAdd });
-            dictHere2.Add(2, new List<Modification> { modToAdd2 }); //default
-            dictHere2.Add(3, new List<Modification> { modToAdd3 }); //Alway Appear
-            dictHere2.Add(4, new List<Modification> { modToAdd4 });//observed
+
+            var dictHere2 = new Dictionary<int, List<Modification>>
+            {
+                { 1, new List<Modification> { modToAdd } },
+                { 2, new List<Modification> { modToAdd2 } }, //default
+                { 3, new List<Modification> { modToAdd3 } }, //Alway Appear
+                { 4, new List<Modification> { modToAdd4 } }//observed
+            };
+
             //protein Creation (One with mod and one without)
             Protein TestProteinWithModForDB = new Protein("PPPPPPPPPPE", "accession1", "organism", new List<Tuple<string, string>>(), dictHere);
             Protein TestProteinWithModObsevred = new Protein("PPPPPPPPPPE", "accession1", "organism", new List<Tuple<string, string>>(), dictHere2);

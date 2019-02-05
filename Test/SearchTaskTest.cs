@@ -7,6 +7,7 @@ using System.Linq;
 using TaskLayer;
 using Proteomics.ProteolyticDigestion;
 using Proteomics.Fragmentation;
+using System.Globalization;
 
 namespace Test
 {
@@ -276,12 +277,12 @@ namespace Test
                 else if (lineline[columns.IndexOf("Decoy/Contaminant/Target")] == "D")
                 {
                     Assert.AreEqual(++cumDecoys, int.Parse(lineline[columns.IndexOf("Cumulative Decoy")]));
-                    finalQValue = double.Parse(lineline[columns.IndexOf("QValue")]);
+                    finalQValue = double.Parse(lineline[columns.IndexOf("QValue")], CultureInfo.InvariantCulture);
                 }
                 else
                 {
                     Assert.AreEqual(++cumTargets, int.Parse(lineline[columns.IndexOf("Cumulative Target")]));
-                    finalQValue = double.Parse(lineline[columns.IndexOf("QValue")]);
+                    finalQValue = double.Parse(lineline[columns.IndexOf("QValue")], CultureInfo.InvariantCulture);
                 }
             }
 

@@ -16,10 +16,6 @@ namespace Test
         {
             var myMsDataFile = new TestDataFile(5);
 
-            bool DoPrecursorDeconvolution = true;
-            bool UseProvidedPrecursorInfo = true;
-            double DeconvolutionIntensityRatio = 4;
-            int DeconvolutionMaxAssumedChargeState = 10;
             Tolerance DeconvolutionMassTolerance = new PpmTolerance(5);
 
             var listOfSortedms2Scans = MetaMorpheusTask.GetMs2Scans(myMsDataFile, null, new CommonParameters()).OrderBy(b => b.PrecursorMass).ToArray();
@@ -37,8 +33,10 @@ namespace Test
                     if (ms2scan.OneBasedPrecursorScanNumber.HasValue)
                     {
                         listOfScanPrecusor.Add(ms2scan.OneBasedPrecursorScanNumber.Value, ms2scan.SelectedIonMZ.Value);
-                        List<int> currentScanMS2OneBasedScanNumber = new List<int>();
-                        currentScanMS2OneBasedScanNumber.Add(ms2scan.OneBasedScanNumber);
+                        List<int> currentScanMS2OneBasedScanNumber = new List<int>
+                        {
+                            ms2scan.OneBasedScanNumber
+                        };
                         var mz2 = ms2scan.MassSpectrum.XArray.ToList();
                         var intensities2 = ms2scan.MassSpectrum.YArray.ToList();
                         for (int i = 1; i < 7; i++)
@@ -73,11 +71,6 @@ namespace Test
             }
             var testToArray = test.OrderBy(b => b.PrecursorMass).ToArray();
 
-            //Using function to combine MS2MS3
-            //var listOfSortedms2Scans2 = MetaMorpheusTask.GetCombinedMs2Scans(myMsDataFile, null, DoPrecursorDeconvolution, UseProvidedPrecursorInfo, DeconvolutionIntensityRatio, DeconvolutionMaxAssumedChargeState, DeconvolutionMassTolerance).OrderBy(b => b.PrecursorMass).ToArray();
-
-            //Assert.AreEqual(5, myMsDataFile.NumSpectra);
-            //Assert.AreEqual(1, listOfSortedms2Scans2.Count());
         }
     }
 }

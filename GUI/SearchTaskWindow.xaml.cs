@@ -433,7 +433,7 @@ namespace MetaMorpheusGUI
             bool TrimMs1Peaks = trimMs1.IsChecked.Value;
             bool TrimMsMsPeaks = trimMsMs.IsChecked.Value;
             int TopNpeaks = int.Parse(TopNPeaksTextBox.Text);
-            double MinRatio = double.Parse(MinRatioTextBox.Text);
+            double MinRatio = double.Parse(MinRatioTextBox.Text, CultureInfo.InvariantCulture);
 
             bool parseMaxThreadsPerFile = !maxThreadsTextBox.Text.Equals("") && (int.Parse(maxThreadsTextBox.Text) <= Environment.ProcessorCount && int.Parse(maxThreadsTextBox.Text) > 0);
 
