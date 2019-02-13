@@ -188,7 +188,7 @@ namespace Test
             Ms2ScanWithSpecificMass scanWithMass = new Ms2ScanWithSpecificMass(msDataScan, 4, 1, null, new CommonParameters());
 
             PeptideSpectralMatch psm = new PeptideSpectralMatch(target, 0, 1, 1, scanWithMass, digest, null);
-            psm.AddOrReplace(decoy, 1, 0, true, null);
+            psm.AddOrReplace(decoy, 1, 0, true, null,0);
 
             Assert.AreEqual(2, psm.BestMatchingPeptides.Count());
             Assert.That(psm.BestMatchingPeptides.Any(p => p.Peptide.Protein.IsDecoy));
@@ -214,7 +214,7 @@ namespace Test
             Ms2ScanWithSpecificMass scanWithMass = new Ms2ScanWithSpecificMass(msDataScan, 4, 1, null, new CommonParameters());
 
             PeptideSpectralMatch psm = new PeptideSpectralMatch(target, 0, 1, 1, scanWithMass, digest, null);
-            psm.AddOrReplace(decoy, 1, 0, true, null);
+            psm.AddOrReplace(decoy, 1, 0, true, null,0);
 
             Assert.AreEqual(2, psm.BestMatchingPeptides.Count());
             Assert.That(psm.BestMatchingPeptides.Any(p => p.Peptide.Protein.IsDecoy));
