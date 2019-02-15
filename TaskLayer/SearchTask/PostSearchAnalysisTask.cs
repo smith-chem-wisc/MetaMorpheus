@@ -257,17 +257,20 @@ namespace TaskLayer
                 //PROTEIN LEVEL CHANGES
                 //Need to create the heavy proteins in our parsimony list and assign the heavy peptides to these heavy proteins
                 //During the search and protein parsimony, heavy and light peptides were considered to come from the same protein (light)
-                //Now, we want to quantify the light and heavy proteins separatly and we need to differentiate them.
+                //Now, we want to quantify the light and heavy proteins separately and we need to differentiate them.
                 if(ProteinGroups != null) //if we did parsimony
                 {
                     List<EngineLayer.ProteinGroup> silacProteinGroups = new List<EngineLayer.ProteinGroup>();
                     foreach(EngineLayer.ProteinGroup proteinGroup in ProteinGroups)
                     {
-                        HashSet<Protein> proteins = proteinGroup.Proteins;
-                        HashSet<PeptideWithSetModifications> allPeptides = unambiguousPsmsBelowOnePercentFdr.Where(x=>x.ProteinAccession.Equals(;
-                        HashSet<PeptideWithSetModifications> uniquePeptides = new HashSet<PeptideWithSetModifications>();
-                        silacProteinGroups.Add(new EngineLayer.ProteinGroup(proteins, allPeptides, uniquePeptides));
+                        //unlabeled
+                        silacProteinGroups.Add(GetSilacProteinGroups(unambiguousPsmsBelowOnePercentFdr, proteinGroup));
+                        foreach(SilacLabel label in allSilacLabels)
+                        {
+                            silacProteinGroups.Add(GetSilacProteinGroups(unambiguousPsmsBelowOnePercentFdr, proteinGroup, label));
+                        }
                     }
+                    ProteinGroups = silacProteinGroups;
                 }
             }
             
@@ -1008,6 +1011,39 @@ namespace TaskLayer
                 updatedBestMatchingPeptides.Add((notchAndPwsm.Notch, modifiedPwsm));
             }
             return psm.Clone(updatedBestMatchingPeptides);
+        }
+
+        private EngineLayer.ProteinGroup GetSilacProteinGroups(List<PeptideSpectralMatch> unambiguousPsmsBelowOnePercentFdr, EngineLayer.ProteinGroup proteinGroup, SilacLabel label = null)
+        {
+            HashSet<Protein> proteins = label == null ? 
+                proteinGroup.Proteins : 
+                new HashSet<Protein>(proteinGroup.Proteins.Select(x => new Protein(x.BaseSequence.Replace(label.OriginalAminoAcid, label.AminoAcidLabel), x.Accession + label.MassDifference)));
+            HashSet<PeptideWithSetModifications> allPeptides = new HashSet<PeptideWithSetModifications>();
+            HashSet<PeptideWithSetModifications> uniquePeptides = new HashSet<PeptideWithSetModifications>();
+            string firstAccession = proteins.First().Accession;
+            //go through all psms and find peptides that belong to this group
+            foreach (PeptideSpectralMatch psm in unambiguousPsmsBelowOnePercentFdr)
+            {
+                var bestMatchingPeptides = psm.BestMatchingPeptides;
+                if (bestMatchingPeptides.Count() == 1)//if unique
+                {
+                    if (firstAccession.Equals(psm.ProteinAccession)) //since unique, we know there's only one protein for this sequence
+                    {
+                        uniquePeptides.Add(bestMatchingPeptides.First().Peptide);
+                    }
+                }
+                else //not unique
+                {
+                    foreach (var peptide in bestMatchingPeptides.Select(x => x.Peptide))
+                    {
+                        if (firstAccession.Equals(peptide.Protein.Accession))
+                        {
+                            allPeptides.Add(peptide);
+                        }
+                    }
+                }
+            }
+            return new EngineLayer.ProteinGroup(proteins, allPeptides, uniquePeptides);
         }
     }
 }
