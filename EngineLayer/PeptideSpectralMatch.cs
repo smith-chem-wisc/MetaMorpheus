@@ -30,10 +30,8 @@ namespace EngineLayer
             AllScores = new List<double>();
             DigestionParams = digestionParams;
             PeptidesToMatchingFragments = new Dictionary<PeptideWithSetModifications, List<MatchedFragmentIon>>();
-
             Xcorr = xcorr;
             
-
             AddOrReplace(peptide, score, notch, true, matchedFragmentIons, xcorr);
         }
 
@@ -254,6 +252,38 @@ namespace EngineLayer
         {
             _BestMatchingPeptides.Add(peptideWithNotch);
             ResolveAllAmbiguities();
+        }
+
+        /// <summary>
+        /// This method is used by SILAC quantification to add heavy/light psms
+        /// Don't have access to the scans at that point, so a new contructor is needed
+        /// </summary>
+        public PeptideSpectralMatch Clone(List<(int Notch, PeptideWithSetModifications Peptide)> bestMatchingPeptides = null)
+        {
+            return new PeptideSpectralMatch(this, bestMatchingPeptides);
+        }
+
+        private PeptideSpectralMatch(PeptideSpectralMatch psm, List<(int Notch, PeptideWithSetModifications Peptide)> bestMatchingPeptides)
+        {
+            _BestMatchingPeptides = bestMatchingPeptides ?? psm.BestMatchingPeptides.ToList();
+
+            ScanIndex = psm.ScanIndex;
+            FullFilePath = psm.FullFilePath;
+            ScanNumber = psm.ScanNumber;
+            PrecursorScanNumber = psm.PrecursorScanNumber;
+            ScanRetentionTime = psm.ScanRetentionTime;
+            ScanExperimentalPeaks = psm.ScanExperimentalPeaks;
+            TotalIonCurrent = psm.TotalIonCurrent;
+            ScanPrecursorCharge = psm.ScanPrecursorCharge;
+            ScanPrecursorMonoisotopicPeakMz = psm.ScanPrecursorMonoisotopicPeakMz;
+            ScanPrecursorMass = psm.ScanPrecursorMass;
+            AllScores = new List<double>();
+            DigestionParams = psm.DigestionParams;
+            PeptidesToMatchingFragments = new Dictionary<PeptideWithSetModifications, List<MatchedFragmentIon>>();
+            Xcorr = psm.Xcorr;
+            Score = psm.Score;
+            PeptidesToMatchingFragments = psm.PeptidesToMatchingFragments;
+            RunnerUpScore = psm.RunnerUpScore;
         }
     }
 }

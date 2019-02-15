@@ -219,9 +219,58 @@ namespace TaskLayer
                 p.FdrInfo.QValue <= 0.01
                 && p.FdrInfo.QValueNotch <= 0.01
                 && !p.IsDecoy
-                && p.FullSequence != null).ToList();
+                && p.FullSequence != null).ToList(); //if ambiguous, there's no full sequence
 
-            var psmsGroupedByFile = unambiguousPsmsBelowOnePercentFdr.GroupBy(p => p.FullFilePath);
+            //If SILAC
+            if (Parameters.SilacLables != null)
+            {
+                //PEPTIDE LEVEL CHANGES
+                List<SilacLabel> allSilacLabels = Parameters.SilacLables;
+
+                //go through all the psms and duplicate them until a psm copy exists for the unlabeled and labeled proteins
+                //The number of psms should roughly increase by a factor of N, where N is the number of labels.
+                //It may not increase exactly by a factor of N if the amino acid that gets labeled doesn't exist in the peptide
+                List<PeptideSpectralMatch> silacPsms = new List<PeptideSpectralMatch>();
+                foreach (PeptideSpectralMatch psm in unambiguousPsmsBelowOnePercentFdr)
+                {
+                    //see which label, if any, this peptide has
+                    string peptideBaseSequence = psm.BaseSequence;
+                    SilacLabel observedLabel = allSilacLabels.Where(x => peptideBaseSequence.Contains(x.AminoAcidLabel)).FirstOrDefault(); //returns null if no label
+
+                    //if it's not the light form, make it the light form and add it
+                    PeptideSpectralMatch lightPsm = observedLabel == null ? psm : GetSilacPsm(psm, observedLabel, true);
+                    silacPsms.Add(lightPsm);
+
+                    //see which labels, if any, this peptide can have
+                    List<SilacLabel> labelsToModify = allSilacLabels.Where(x => peptideBaseSequence.Contains(x.OriginalAminoAcid)).ToList();
+                    //foreach of the possible labels this peptide can have, add a new psm for it
+                    foreach (SilacLabel label in labelsToModify)
+                    {
+                        silacPsms.Add(GetSilacPsm(lightPsm, label, false));
+                    }
+                }
+                //update the list for FlashLFQ
+                silacPsms.ForEach(x => x.ResolveAllAmbiguities());
+                unambiguousPsmsBelowOnePercentFdr = silacPsms;
+
+
+                //PROTEIN LEVEL CHANGES
+                //Need to create the heavy proteins in our parsimony list and assign the heavy peptides to these heavy proteins
+                //During the search and protein parsimony, heavy and light peptides were considered to come from the same protein (light)
+                //Now, we want to quantify the light and heavy proteins separatly and we need to differentiate them.
+                if(ProteinGroups != null) //if we did parsimony
+                {
+                    List<EngineLayer.ProteinGroup> silacProteinGroups = new List<EngineLayer.ProteinGroup>();
+                    foreach(EngineLayer.ProteinGroup proteinGroup in ProteinGroups)
+                    {
+                        HashSet<Protein> proteins = proteinGroup.Proteins;
+                        HashSet<PeptideWithSetModifications> allPeptides = unambiguousPsmsBelowOnePercentFdr.Where(x=>x.ProteinAccession.Equals(;
+                        HashSet<PeptideWithSetModifications> uniquePeptides = new HashSet<PeptideWithSetModifications>();
+                        silacProteinGroups.Add(new EngineLayer.ProteinGroup(proteins, allPeptides, uniquePeptides));
+                    }
+                }
+            }
+            
 
             // pass protein group info for each PSM
             var psmToProteinGroups = new Dictionary<PeptideSpectralMatch, List<FlashLFQ.ProteinGroup>>();
@@ -274,6 +323,9 @@ namespace TaskLayer
                     }
                 }
             }
+
+            //group psms by file
+            var psmsGroupedByFile = unambiguousPsmsBelowOnePercentFdr.GroupBy(p => p.FullFilePath);
 
             // some PSMs may not have protein groups (if 2 peptides are required to construct a protein group, some PSMs will be left over)
             // the peptides should still be quantified but not considered for protein quantification
@@ -931,6 +983,31 @@ namespace TaskLayer
             flashLFQResults.WriteResults(peaksPath, null, null);
 
             FinishedWritingFile(peaksPath, nestedIds);
+        }
+
+        private PeptideSpectralMatch GetSilacPsm(PeptideSpectralMatch psm, SilacLabel silacLabel, bool heavyToLight)
+        {
+            List<(int Notch, PeptideWithSetModifications Peptide)> updatedBestMatchingPeptides = new List<(int Notch, PeptideWithSetModifications Peptide)>();
+            foreach ((int Notch, PeptideWithSetModifications Peptide) notchAndPwsm in psm.BestMatchingPeptides)
+            {
+                PeptideWithSetModifications pwsm = notchAndPwsm.Peptide;
+                Protein originalProtein = pwsm.Protein;
+                Protein modifiedProtein = heavyToLight ?
+                    new Protein(originalProtein.BaseSequence.Replace(silacLabel.AminoAcidLabel, silacLabel.OriginalAminoAcid), originalProtein.Accession) : //create light protein
+                    new Protein(originalProtein.BaseSequence.Replace(silacLabel.OriginalAminoAcid, silacLabel.AminoAcidLabel), originalProtein.Accession + silacLabel.MassDifference); //create heavy protein with different accessions
+                PeptideWithSetModifications modifiedPwsm = new PeptideWithSetModifications(
+                    modifiedProtein,
+                    pwsm.DigestionParams,
+                    pwsm.OneBasedStartResidueInProtein,
+                    pwsm.OneBasedEndResidueInProtein,
+                    pwsm.CleavageSpecificityForFdrCategory,
+                    pwsm.PeptideDescription,
+                    pwsm.MissedCleavages,
+                    pwsm.AllModsOneIsNterminus,
+                    pwsm.NumFixedMods);
+                updatedBestMatchingPeptides.Add((notchAndPwsm.Notch, modifiedPwsm));
+            }
+            return psm.Clone(updatedBestMatchingPeptides);
         }
     }
 }
