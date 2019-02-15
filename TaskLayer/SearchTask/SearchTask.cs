@@ -7,6 +7,7 @@ using FlashLFQ;
 using MassSpectrometry;
 using MzLibUtil;
 using Proteomics;
+using Proteomics.AminoAcidPolymer;
 using Proteomics.Fragmentation;
 using Proteomics.ProteolyticDigestion;
 using System;
@@ -67,6 +68,21 @@ namespace TaskLayer
             if (SearchParameters.DoQuantification && currentRawFileList.Any(x => Path.GetExtension(x).Equals(".mgf", StringComparison.OrdinalIgnoreCase)))
             {
                 SearchParameters.DoQuantification = false;
+            }
+            else if (SearchParameters.DoQuantification && SearchParameters.SilacLabels != null) //if we're doing SILAC
+            {
+                //change the silac residues to lower case amino acids (currently null)
+                List<SilacLabel> updatedLabels = new List<SilacLabel>();
+                const char ASCII_a = 'a';
+                for (int i = 0; i < SearchParameters.SilacLabels.Count; i++)
+                {
+                    SilacLabel currentLabel = SearchParameters.SilacLabels[i];
+                    updatedLabels.Add(new SilacLabel(currentLabel.AminoAcidLabel, Convert.ToChar(ASCII_a + i), currentLabel.LabelChemicalFormula, Convert.ToDouble(currentLabel.MassDifference.Substring(2, currentLabel.MassDifference.Length - 3))));
+                }
+                SearchParameters.SilacLabels = updatedLabels;
+
+                //Add the silac residues to the dictionary
+                Residue.AddNewResiduesToDictionary(updatedLabels.Select(x => new Residue(x.MassDifference, x.AminoAcidLabel, x.AminoAcidLabel.ToString(), Chemistry.ChemicalFormula.ParseFormula(x.LabelChemicalFormula), ModificationSites.All)).ToList());
             }
 
             LoadModifications(taskId, out var variableModifications, out var fixedModifications, out var localizeableModificationTypes);
@@ -151,7 +167,7 @@ namespace TaskLayer
                         List<Protein> proteinListSubset = proteinList.GetRange(currentPartition * proteinList.Count / combinedParams.TotalPartitions, ((currentPartition + 1) * proteinList.Count / combinedParams.TotalPartitions) - (currentPartition * proteinList.Count / combinedParams.TotalPartitions));
 
                         Status("Getting fragment dictionary...", new List<string> { taskId });
-                        var indexEngine = new IndexingEngine(proteinListSubset, variableModifications, fixedModifications, currentPartition, SearchParameters.DecoyType, combinedParams, SearchParameters.MaxFragmentSize, false, dbFilenameList.Select(p => new FileInfo(p.FilePath)).ToList(), new List<string> { taskId });
+                        var indexEngine = new IndexingEngine(proteinListSubset, variableModifications, fixedModifications, SearchParameters.SilacLabels, currentPartition, SearchParameters.DecoyType, combinedParams, SearchParameters.MaxFragmentSize, false, dbFilenameList.Select(p => new FileInfo(p.FilePath)).ToList(), new List<string> { taskId });
                         List<int>[] fragmentIndex = null;
                         List<int>[] precursorIndex = null;
                         lock (indexLock)
@@ -198,7 +214,7 @@ namespace TaskLayer
                             List<int>[] precursorIndex = new List<int>[1];
 
                             Status("Getting fragment dictionary...", new List<string> { taskId });
-                            var indexEngine = new IndexingEngine(proteinListSubset, variableModifications, fixedModifications, currentPartition, SearchParameters.DecoyType, paramToUse, SearchParameters.MaxFragmentSize, true, dbFilenameList.Select(p => new FileInfo(p.FilePath)).ToList(), new List<string> { taskId });
+                            var indexEngine = new IndexingEngine(proteinListSubset, variableModifications, fixedModifications, SearchParameters.SilacLabels, currentPartition, SearchParameters.DecoyType, paramToUse, SearchParameters.MaxFragmentSize, true, dbFilenameList.Select(p => new FileInfo(p.FilePath)).ToList(), new List<string> { taskId });
                             lock (indexLock)
                             {
                                 GenerateIndexes(indexEngine, dbFilenameList, ref peptideIndex, ref fragmentIndex, ref precursorIndex, proteinList, GlobalVariables.AllModsKnown.ToList(), taskId);
@@ -227,7 +243,7 @@ namespace TaskLayer
                 else
                 {
                     Status("Starting search...", thisId);
-                    new ClassicSearchEngine(fileSpecificPsms, arrayOfMs2ScansSortedByMass, variableModifications, fixedModifications, proteinList, massDiffAcceptor, combinedParams, thisId).Run();
+                    new ClassicSearchEngine(fileSpecificPsms, arrayOfMs2ScansSortedByMass, variableModifications, fixedModifications, SearchParameters.SilacLabels, proteinList, massDiffAcceptor, combinedParams, thisId).Run();
 
                     ReportProgress(new ProgressEventArgs(100, "Done with search!", thisId));
                 }
