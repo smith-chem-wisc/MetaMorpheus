@@ -222,6 +222,8 @@ namespace TaskLayer
                 && p.FullSequence != null).ToList(); //if ambiguous, there's no full sequence
 
             //If SILAC
+            Dictionary<PeptideSpectralMatch, List<PeptideSpectralMatch>> silacPsmMatcher = new Dictionary<PeptideSpectralMatch, List<PeptideSpectralMatch>>(); //use for getting back info once we've separated light/heavy
+            Dictionary<EngineLayer.ProteinGroup, List<EngineLayer.ProteinGroup>> silacProteinGroupMatcher = new Dictionary<EngineLayer.ProteinGroup, List<EngineLayer.ProteinGroup>>(); //use for getting back info once we've separated light/heavy
             if (Parameters.SilacLables != null)
             {
                 //PEPTIDE LEVEL CHANGES
@@ -244,10 +246,9 @@ namespace TaskLayer
                     //see which labels, if any, this peptide can have
                     List<SilacLabel> labelsToModify = allSilacLabels.Where(x => peptideBaseSequence.Contains(x.OriginalAminoAcid)).ToList();
                     //foreach of the possible labels this peptide can have, add a new psm for it
-                    foreach (SilacLabel label in labelsToModify)
-                    {
-                        silacPsms.Add(GetSilacPsm(lightPsm, label, false));
-                    }
+                    List<PeptideSpectralMatch> addedSilacPsms = labelsToModify.Select(x => GetSilacPsm(lightPsm, x, false)).ToList();
+                    addedSilacPsms.ForEach(x => silacPsms.Add(x)); //add to psm list
+                    silacPsmMatcher[lightPsm] = addedSilacPsms; //add to match list
                 }
                 //update the list for FlashLFQ
                 silacPsms.ForEach(x => x.ResolveAllAmbiguities());
@@ -258,22 +259,22 @@ namespace TaskLayer
                 //Need to create the heavy proteins in our parsimony list and assign the heavy peptides to these heavy proteins
                 //During the search and protein parsimony, heavy and light peptides were considered to come from the same protein (light)
                 //Now, we want to quantify the light and heavy proteins separately and we need to differentiate them.
-                if(ProteinGroups != null) //if we did parsimony
+                if (ProteinGroups != null) //if we did parsimony
                 {
                     List<EngineLayer.ProteinGroup> silacProteinGroups = new List<EngineLayer.ProteinGroup>();
-                    foreach(EngineLayer.ProteinGroup proteinGroup in ProteinGroups)
+                    foreach (EngineLayer.ProteinGroup proteinGroup in ProteinGroups)
                     {
                         //unlabeled
                         silacProteinGroups.Add(GetSilacProteinGroups(unambiguousPsmsBelowOnePercentFdr, proteinGroup));
-                        foreach(SilacLabel label in allSilacLabels)
-                        {
-                            silacProteinGroups.Add(GetSilacProteinGroups(unambiguousPsmsBelowOnePercentFdr, proteinGroup, label));
-                        }
+                        //labeled
+                        List<EngineLayer.ProteinGroup> addedProteinGroups = allSilacLabels.Select(x => GetSilacProteinGroups(unambiguousPsmsBelowOnePercentFdr, proteinGroup, x)).ToList();
+                        addedProteinGroups.ForEach(x => silacProteinGroups.Add(x)); //add to psm list
+                        silacProteinGroupMatcher[proteinGroup] = addedProteinGroups; //add to match list
                     }
                     ProteinGroups = silacProteinGroups;
                 }
             }
-            
+
 
             // pass protein group info for each PSM
             var psmToProteinGroups = new Dictionary<PeptideSpectralMatch, List<FlashLFQ.ProteinGroup>>();
@@ -445,6 +446,63 @@ namespace TaskLayer
                         }
                     }
                 }
+            }
+
+            //If SILAC, compress the light/heavy proteins into the same protein but different files
+            //create new files for each silac label and each file so that "file 1" now becomes "file 1 (light)" and "file 1 (heavy)"
+            if (Parameters.SilacLables != null)
+            {
+                //update number of spectra files to include a new file for each label*condition
+                Dictionary<SpectraFileInfo, string> fileToLabelDictionary = new Dictionary<SpectraFileInfo, string>();
+                Dictionary<SpectraFileInfo, SpectraFileInfo> labeledToUnlabeledFile = new Dictionary<SpectraFileInfo, SpectraFileInfo>();
+                List<SpectraFileInfo> silacSpectraFileInfo = new List<SpectraFileInfo>();
+                foreach(SpectraFileInfo info in spectraFileInfo)
+                {
+                    silacSpectraFileInfo.Add(info);
+                    foreach (SilacLabel label in Parameters.SilacLables)
+                    {
+                        SpectraFileInfo silacFile = new SpectraFileInfo(info.FullFilePathWithExtension + "(" + label.OriginalAminoAcid + label.MassDifference + ")", info.Condition, info.BiologicalReplicate, info.TechnicalReplicate, info.Fraction);
+                        silacSpectraFileInfo.Add(silacFile);
+                        fileToLabelDictionary[silacFile] = label.MassDifference;
+                        labeledToUnlabeledFile[silacFile] = info;
+                    }
+                }
+                //update proteinGroups
+                List<EngineLayer.ProteinGroup> silacProteinGroups = new List<EngineLayer.ProteinGroup>();
+                //foreach protein group (which has its own quant for each file)
+                foreach (EngineLayer.ProteinGroup proteinGroup in ProteinGroups)
+                {
+                    proteinGroup.FilesForQuantification = silacSpectraFileInfo; //update files
+                    if (silacProteinGroupMatcher.TryGetValue(proteinGroup, out List<EngineLayer.ProteinGroup> silacSubGroup)) //try to find the light protein groups. If it's not light, toss it
+                    {
+                        //the out variable contains all the other heavy protein groups that were generated for this light protein group
+                        //go through the files and see if any of them contain the same label. If not, put zeroes for those missing "files"
+                        Dictionary<SpectraFileInfo, double> updatedIntensitiesByFile = proteinGroup.IntensitiesByFile;
+
+                        //go through all files (including "silac" files)
+                        foreach (SpectraFileInfo fileInfo in silacSpectraFileInfo)
+                        {
+                            //if it doesn't have an intensity already, then it's a silac file
+                            if(!updatedIntensitiesByFile.ContainsKey(fileInfo))
+                            {
+                                string labelSignature = fileToLabelDictionary[fileInfo]; //a string associated with a silac label
+                                EngineLayer.ProteinGroup foundGroup = silacSubGroup.Where(x => x.Proteins.Any(y => y.Accession.Contains(labelSignature))).FirstOrDefault(); //get the protein groups containing this label
+                                updatedIntensitiesByFile[fileInfo] = foundGroup == null ? 0 : foundGroup.IntensitiesByFile[labeledToUnlabeledFile[fileInfo]]; //update the intensity for that label in the light group
+                            }
+                            else //add the existing intensity for the light
+                            {
+                                updatedIntensitiesByFile[fileInfo] = proteinGroup.IntensitiesByFile[fileInfo];
+                            }
+                        }
+                        //foreach(EngineLayer.ProteinGroup silacProteinGroup in silacSubGroup)
+                        //{
+                        //    string labelString = fileToLabelDictionary.Keys.Where(x=>x.)
+                        //}
+                        proteinGroup.IntensitiesByFile = updatedIntensitiesByFile;
+                        silacProteinGroups.Add(proteinGroup);
+                    }
+                }
+                ProteinGroups = silacProteinGroups; //update
             }
         }
 

@@ -77,7 +77,7 @@ namespace TaskLayer
                 for (int i = 0; i < SearchParameters.SilacLabels.Count; i++)
                 {
                     SilacLabel currentLabel = SearchParameters.SilacLabels[i];
-                    updatedLabels.Add(new SilacLabel(currentLabel.AminoAcidLabel, Convert.ToChar(ASCII_a + i), currentLabel.LabelChemicalFormula, Convert.ToDouble(currentLabel.MassDifference.Substring(2, currentLabel.MassDifference.Length - 3))));
+                    updatedLabels.Add(new SilacLabel(currentLabel.OriginalAminoAcid, Convert.ToChar(ASCII_a + i), currentLabel.LabelChemicalFormula, Convert.ToDouble(currentLabel.MassDifference.Substring(2, currentLabel.MassDifference.Length - 3))));
                 }
                 SearchParameters.SilacLabels = updatedLabels;
 
