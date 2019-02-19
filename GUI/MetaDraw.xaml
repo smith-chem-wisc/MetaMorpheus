@@ -121,7 +121,7 @@
                           Width="3"/>
 
             <!--PSM annotated peaks-->
-            <GroupBox Grid.Column="4" Header="PSM Annotation">
+            <GroupBox Grid.Column="4" Header="PSM Annotation" Name="gbPSM">
                 <Grid>
                     <Grid.RowDefinitions>
                         <RowDefinition Height = "*"></RowDefinition>

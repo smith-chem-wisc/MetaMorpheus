@@ -1,5 +1,6 @@
 ﻿using Chemistry;
 using EngineLayer;
+using iTextSharp.text.pdf;
 using MassSpectrometry;
 using OxyPlot;
 using OxyPlot.Annotations;
@@ -241,9 +242,16 @@ namespace ViewModels
 
             foreach (PropertyInfo property in displayedProperties)
             {
+                // trim property values > 50 characters
+                var val = "" + property.GetValue(psm);
+                if (val.Length > 50)
+                {
+                    val = val.Substring(0, 50) + "...";
+                }
+
                 var propertyAnnotation = new TextAnnotation
                 {
-                    Text = property.Name + ": " + property.GetValue(psm),
+                    Text = property.Name + ": " + val,
                     TextPosition = new DataPoint(x, y),
                     FontSize = 9,
                     StrokeThickness = 0,
@@ -268,11 +276,30 @@ namespace ViewModels
                 Directory.CreateDirectory(dir);
             }
 
-            using (var stream = File.Create(fileName))
+            // exports plot to pdf
+            using (var stream = File.Create("sequence.pdf"))
             {
-                PdfExporter pdf = new PdfExporter { Width = 800, Height = 500 };
+                PdfExporter pdf = new PdfExporter { Width = 800, Height = 700 };
                 pdf.Export(pdfModel, stream);
             }
+
+            // adds base seq annotation to pdf
+            using (Stream inputPdfStream = new FileStream("sequence.pdf", FileMode.Open, FileAccess.Read, FileShare.Read))
+            using (Stream inputImageStream = new FileStream("annotation.png", FileMode.Open, FileAccess.Read, FileShare.Read))
+            using (Stream outputPdfStream = new FileStream(fileName, FileMode.Create, FileAccess.Write, FileShare.None))
+            {
+                var reader = new PdfReader(inputPdfStream);
+                var stamper = new PdfStamper(reader, outputPdfStream);
+                var pdfContentByte = stamper.GetOverContent(1);
+
+                var image = iTextSharp.text.Image.GetInstance(inputImageStream);
+                image.SetAbsolutePosition(100, 120);
+                pdfContentByte.AddImage(image);
+                stamper.Close();
+            }
+
+            File.Delete("sequence.pdf");
+            File.Delete("annotation.png");
         }
     }
 }

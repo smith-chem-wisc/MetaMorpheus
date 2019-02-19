@@ -17,6 +17,7 @@ using System.Windows.Media;
 using Proteomics.Fragmentation;
 using Proteomics.ProteolyticDigestion;
 using System.Text.RegularExpressions;
+using System.Windows.Media.Imaging;
 
 namespace MetaMorpheusGUI
 {
@@ -152,7 +153,7 @@ namespace MetaMorpheusGUI
 
             // draw annotated spectrum
             mainViewModel.DrawPeptideSpectralMatch(msDataScanToDraw, psmToDraw);
-            
+
             // draw annotated base sequence
             //TO DO: Annotate crosslinked peptide sequence           
             if (psmToDraw.CrossType == null)  // if the psm is single peptide (not crosslinked).
@@ -335,7 +336,7 @@ namespace MetaMorpheusGUI
         {
             (sender as DataGrid).UnselectAll();
         }
-        
+
         private void PDFButton_Click(object sender, RoutedEventArgs e)
         {
             PsmFromTsv tempPsm = null;
@@ -345,12 +346,12 @@ namespace MetaMorpheusGUI
             }
 
             int num = dataGridScanNums.SelectedItems.Count;
-            
+
             foreach (object selectedItem in dataGridScanNums.SelectedItems)
             {
                 PsmFromTsv psm = (PsmFromTsv)selectedItem;
 
-                if(tempPsm == null)
+                if (tempPsm == null)
                 {
                     tempPsm = psm;
                 }
@@ -359,13 +360,14 @@ namespace MetaMorpheusGUI
 
                 string myString = illegalInFileName.Replace(psm.FullSequence, "");
 
-                if(myString.Length > 30)
+                if (myString.Length > 30)
                 {
                     myString = myString.Substring(0, 30);
                 }
 
                 string filePath = Path.Combine(Path.GetDirectoryName(tsvResultsFilePath), "MetaDrawExport", psm.Ms2ScanNumber + "_" + myString + ".pdf");
 
+                DrawPdfAnnotatedBaseSequence(psm, canvas); // captures the annotation for the pdf
                 mainViewModel.DrawPeptideSpectralMatchPdf(msDataScanToDraw, psm, filePath, num > 1);
             }
 
@@ -374,6 +376,28 @@ namespace MetaMorpheusGUI
             DrawPsm(tempPsm.Ms2ScanNumber, tempPsm.FullSequence);
 
             MessageBox.Show(string.Format("{0} PDFs exported", num));
+        }
+
+        private void DrawPdfAnnotatedBaseSequence(PsmFromTsv psm, Canvas canvas)
+        {
+            if (psm.CrossType == null)
+            {
+                DrawAnnotatedBaseSequence(psm);
+            }
+
+            canvas.Measure(new Size((int)canvas.Width, 600));
+            canvas.Arrange(new Rect(new Size((int)canvas.Width, 600)));
+
+            RenderTargetBitmap renderBitmap = new RenderTargetBitmap((int)(canvas.Width), 600, 96, 96, PixelFormats.Pbgra32);
+
+            renderBitmap.Render(canvas);
+            PngBitmapEncoder encoder = new PngBitmapEncoder();
+            encoder.Frames.Add(BitmapFrame.Create(renderBitmap));
+
+            using (FileStream file = File.Create("annotation.png"))
+            {
+                encoder.Save(file);
+            }
         }
     }
 }
