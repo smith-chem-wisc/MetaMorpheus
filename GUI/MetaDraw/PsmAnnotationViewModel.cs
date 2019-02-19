@@ -279,7 +279,7 @@ namespace ViewModels
             // exports plot to pdf
             using (var stream = File.Create("sequence.pdf"))
             {
-                PdfExporter pdf = new PdfExporter { Width = 800, Height = 700 };
+                PdfExporter pdf = new PdfExporter { Width = 800, Height = 500 };
                 pdf.Export(pdfModel, stream);
             }
 
