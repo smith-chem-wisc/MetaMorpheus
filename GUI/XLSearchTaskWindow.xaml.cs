@@ -338,7 +338,7 @@ namespace MetaMorpheusGUI
                 trimMs1Peaks: trimMs1.IsChecked.Value,
                 trimMsMsPeaks: trimMsMs.IsChecked.Value,
                 topNpeaks: int.Parse(TopNPeaksTextBox.Text),
-                minRatio: double.Parse(MinRatioTextBox.Text),
+                minRatio: double.Parse(MinRatioTextBox.Text, CultureInfo.InvariantCulture),
                 dissociationType: dissociationType,
                 scoreCutoff: double.Parse(minScoreAllowed.Text, CultureInfo.InvariantCulture),
                 totalPartitions: int.Parse(numberOfDatabaseSearchesTextBox.Text, CultureInfo.InvariantCulture),
