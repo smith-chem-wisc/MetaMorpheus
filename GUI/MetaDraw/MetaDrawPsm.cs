@@ -45,6 +45,7 @@ namespace MetaMorpheusGUI
         public List<MatchedFragmentIon> MatchedIons { get; }
         public double QValue { get; }
         public double QValueNotch { get; }
+        public double RetentionTime { get; }
 
         public MetaDrawPsm(string line, char[] split, Dictionary<string, int> parsedHeader)
         {
@@ -79,6 +80,7 @@ namespace MetaMorpheusGUI
             DecoyContamTarget = spl[parsedHeader[TsvResultReader.DecoyContamTargetLabel]].Trim();
             QValue = double.Parse(spl[parsedHeader[TsvResultReader.QValueLabel]].Trim());
             QValueNotch = double.Parse(spl[parsedHeader[TsvResultReader.QValueNotchLabel]].Trim());
+            RetentionTime = double.Parse(spl[parsedHeader[TsvResultReader.RetentionTimeLabel]].Trim());
 
             MatchedIons = ReadFragmentIonsFromString(spl[parsedHeader[TsvResultReader.MatchedIonsLabel]].Trim(), BaseSeq);
         }

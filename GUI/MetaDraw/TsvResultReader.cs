@@ -44,7 +44,8 @@ namespace MetaMorpheusGUI
         public const string MatchedIonsLabel = "Matched Ion Mass-To-Charge Ratios";
         public const string QValueLabel = "QValue";
         public const string QValueNotchLabel = "QValue Notch";
-        
+        public const string RetentionTimeLabel = "Scan Retention Time";
+
         private static readonly char[] Split = { '\t' };
         
         public static List<MetaDrawPsm> ReadTsv(string filePath)
@@ -140,6 +141,7 @@ namespace MetaMorpheusGUI
             parsedHeader.Add(MatchedIonsLabel, Array.IndexOf(spl, MatchedIonsLabel));
             parsedHeader.Add(QValueLabel, Array.IndexOf(spl, QValueLabel));
             parsedHeader.Add(QValueNotchLabel, Array.IndexOf(spl, QValueNotchLabel));
+            parsedHeader.Add(RetentionTimeLabel, Array.IndexOf(spl, RetentionTimeLabel));
 
             return parsedHeader;
         }

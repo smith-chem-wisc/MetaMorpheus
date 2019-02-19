@@ -96,11 +96,11 @@ namespace ViewModels
             }
             else if (plotType.Equals("Precursor PPM Error vs. RT"))
             {
-
+                linePlot(1);
             }
             else if (plotType.Equals("Fragment PPM Error vs. RT"))
             {
-
+                linePlot(2);
             }
             else if (plotType.Equals("Histograms of Count of Different PTMs Seen at 1% FDR"))
             {
@@ -110,62 +110,68 @@ namespace ViewModels
 
         public void histogramPlot(int plotType)
         {
-            int binRange = allPSM.Count/6;
-            double dataCategory= 0;
+            double binSize = 0;
             SortedList<double,double> numCategory = new SortedList<double,double>();
-
-            int[] values = new int[binRange];
-            List<double> numbers = new List<double>();
+            IEnumerable<double> numbers = new List<double>();
             List<string> axes = new List<string>();
             var s1 = new ColumnSeries { ColumnWidth = 200, IsStacked = false };
-            foreach (var psm in allPSM)
+            switch (plotType)
             {
-                switch (plotType)
-                {
-                    case 1:
-                        dataCategory = psm.PrecursorMass;
-                        break;
-                    case 2:
-                        //dataCategory = psm.PrecursorCharge;
-                        break;
-                    case 3:
-                        dataCategory = psm.PrecursorCharge;
-                        break;
-                    case 4:
-                        //dataCategory = psm.PrecursorCharge.ToString();
-                        break;
-                    case 5:
-                        //dataCategory = psm.;
-                        break;
-                }
-                numbers.Add(dataCategory);
-                
+                case 1:
+                    numbers = allPSM.Where(p => !p.MassDiffDa.Contains("|") && Math.Round(double.Parse(p.MassDiffDa), 0) == 0).Select(p => double.Parse(p.MassDiffPpm));
+                    binSize = 0.1;
+                    break;
+                case 2:
+                    numbers = allPSM.SelectMany(p => p.MatchedIons.Select(v => v.MassErrorPpm));
+                    binSize = 0.1;
+                    break;
+                case 3:
+                    numbers = allPSM.Select(p => (double)(p.PrecursorCharge));
+                    binSize = 1;
+                    break;
+                case 4:
+                    numbers = allPSM.SelectMany(p => p.MatchedIons.Select(v => (double)v.Charge));
+                    binSize = 1;
+                    break;
+                case 5:
+                    //dataCategory = 
+                    binSize = 1;
+                    break;
             }
+            int[,] values = new int[numbers.Count(),2];
             double maxValue = numbers.Max();
-            int decimalPlaces = 1;
-            if (maxValue >= 100)
+            int decimalPlaces = 0;
+            int sign = 0;
+            if (binSize.Equals(0.1))
             {
-                decimalPlaces = 0;
+                decimalPlaces = 1;
             }
-            double valRange = maxValue / binRange;
-            foreach( var a in numbers)
+            foreach(var a in numbers)
             {
                 if (a == maxValue)
                 {
-                    values[binRange-1]++;
+                   values[numbers.Count()-1,0]++;
                 }
                 else
                 {
-                    values[(int)(a / valRange)]++;
+                    var current = a;
+                    if (a < 0)
+                    {
+                        current = a * -1;
+                        sign = 1;
+                    }
+                    values[(int) Math.Round(current, decimalPlaces),sign]++;
                 }
             }
             
-            for(int i = 0; i < binRange; i++)
+            foreach(var n in values)
             {
-                s1.Items.Add(new ColumnItem(values[i]));
-                var leftLimit = Math.Round(valRange * i, decimalPlaces);
-                var rightLimit = Math.Round(valRange * (i + 1), decimalPlaces);
-                axes.Add( leftLimit + " - " + rightLimit);
+                s1.Items.Add(new ColumnItem(values[n,0]));
+                s1.Items.Add(new ColumnItem(values[n,1]));
+                //var leftLimit = Math.Round(valRange * i, decimalPlaces);
+                //var rightLimit = Math.Round(valRange * (i + 1), decimalPlaces);
+                //axes.Add( leftLimit + " - " + rightLimit);
+                axes.Add(n.ToString());
             }
 
             privateModel.Series.Add(s1);
@@ -174,6 +180,34 @@ namespace ViewModels
                 Position = AxisPosition.Bottom,
                 ItemsSource = axes
             });
+        }
+
+        public void linePlot(int plotType)
+        {
+            ScatterSeries series = new ScatterSeries();
+            List<Tuple<double,double>> xy = new List<Tuple<double, double>>();
+            var filteredList = allPSM.Where(p => !p.MassDiffDa.Contains("|") && Math.Round(double.Parse(p.MassDiffDa), 0) == 0).ToList();
+            switch (plotType)
+            {
+                case 1:
+                    foreach (var psm in filteredList)
+                    {
+                        xy.Add(new Tuple<double, double>(double.Parse(psm.MassDiffPpm), psm.RetentionTime));
+                    }
+                    break;
+                case 2:
+                    foreach (var psm in filteredList)
+                    {
+                        xy.Add(new Tuple<double, double>(double.Parse(psm.MassDiffPpm), psm.RetentionTime));
+                    }
+                    break;
+            }
+            IOrderedEnumerable<Tuple<double, double>> sorted = xy.OrderBy(x => x.Item1);
+            foreach(var val in sorted)
+            {
+                series.Points.Add(new ScatterPoint(val.Item1, val.Item2));
+            }
+            privateModel.Series.Add(series);
         }
     }
 }
