@@ -471,7 +471,7 @@ namespace TaskLayer
                     //foreach label, add a new file with the label
                     foreach (SilacLabel label in silacLabels)
                     {
-                        SpectraFileInfo silacFile = new SpectraFileInfo(info.FilenameWithoutExtension + "(" + label.OriginalAminoAcid + label.MassDifference + ")" + info.FullFilePathWithExtension.Split('.').Last(), info.Condition, info.BiologicalReplicate, info.TechnicalReplicate, info.Fraction);
+                        SpectraFileInfo silacFile = new SpectraFileInfo(info.FilenameWithoutExtension + "(" + label.OriginalAminoAcid + label.MassDifference + ")." + info.FullFilePathWithExtension.Split('.').Last(), info.Condition, info.BiologicalReplicate, info.TechnicalReplicate, info.Fraction);
                         silacSpectraFileInfo.Add(silacFile);
                         fileToLabelDictionary[silacFile] = label.MassDifference;
                         labeledToUnlabeledFile[silacFile] = info;
