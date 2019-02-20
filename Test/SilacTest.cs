@@ -38,7 +38,7 @@ namespace Test
 
             PeptideWithSetModifications lightPeptide = new PeptideWithSetModifications("PEPTIDEK", new Dictionary<string, Proteomics.Modification>());
 
-            List<double> massDifferences = new List<double>{ heavyLysine.MonoisotopicMass - lightLysine.MonoisotopicMass };
+            List<double> massDifferences = new List<double> { heavyLysine.MonoisotopicMass - lightLysine.MonoisotopicMass };
             MsDataFile myMsDataFile1 = new TestDataFile(lightPeptide, massDifferences);
             string mzmlName = @"silac.mzML";
             IO.MzML.MzmlMethods.CreateAndWriteMyMzmlWithCalibratedSpectra(myMsDataFile1, mzmlName, false);
@@ -53,7 +53,33 @@ namespace Test
             Directory.CreateDirectory(outputFolder);
             var theStringResult = task.RunTask(outputFolder, new List<DbForTask> { new DbForTask(xmlName, false) }, new List<string> { mzmlName }, "taskId1").ToString();
 
-            Assert.IsTrue(theStringResult.Contains("All target PSMS within 1% FDR: 1"));
+            Assert.IsTrue(theStringResult.Contains("All target PSMS within 1% FDR: 1")); //it's not a psm, it's a MBR feature
+
+            //test proteins
+            string[] output = File.ReadAllLines(TestContext.CurrentContext.TestDirectory + @"/TestSilac/AllProteinGroups.tsv");
+            Assert.AreEqual(output.Length, 2);
+            Assert.IsTrue(output[0].Contains("Intensity_silac\tIntensity_silac(K+8.014)")); //test that two files were made
+            Assert.IsTrue(output[1].Contains("875000\t437500")); //test the heavy intensity is half that of the light (per the raw file)
+
+            //test peptides
+            output = File.ReadAllLines(TestContext.CurrentContext.TestDirectory + @"/TestSilac/AllQuantifiedPeptides.tsv");
+            Assert.AreEqual(output.Length, 3);
+            Assert.IsTrue(output[1].Contains("PEPTIDEK\taccession1\t"));//test the accession was not modified
+            Assert.IsTrue(output[1].Contains("875000")); //test intensity
+            Assert.IsTrue(output[2].Contains("PEPTIDEK(+8.014)\taccession1\t")); //test the accession was not modified
+            Assert.IsTrue(output[2].Contains("437500")); //test intensity
+
+            //test peaks
+            output = File.ReadAllLines(TestContext.CurrentContext.TestDirectory + @"/TestSilac/AllQuantifiedPeaks.tsv");
+            Assert.AreEqual(output.Length, 3);
+            Assert.IsTrue(output[1].Contains("silac\t")); //test the filename was NOT modified (it was for proteins, but we don't want it for peptides)
+            Assert.IsTrue(output[2].Contains("silac\t"));//test the filename was NOT modified (it was for proteins, but we don't want it for peptides)
+            Assert.IsTrue(output[1].Contains("PEPTIDEK\t")); //test light sequence was not modified
+            Assert.IsTrue(output[2].Contains("PEPTIDEK(+8.014)\t")); //test heavy sequence was output correctly (do NOT want "PEPTIDEa")
+            Assert.IsTrue(output[1].Contains("927.45")); //test light mass
+            Assert.IsTrue(output[2].Contains("935.46")); //test heavy mass
+
+            //delete files
             Directory.Delete(outputFolder, true);
             File.Delete(xmlName);
             File.Delete(mzmlName);
