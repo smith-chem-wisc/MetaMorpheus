@@ -177,15 +177,16 @@ namespace Test
 
             List<double> mz1 = new List<double>();
             List<double> intensities1 = new List<double>();
-            for (int i = 0; i < labelMassDifferences.Count; i++)
+            for (int z = 3; z >= 2; z--)
             {
-                double mass = labelMassDifferences[i];
-                for (int z = 3; z >= 2; z--)
+                for (int i = 0; i < labelMassDifferences.Count; i++)
                 {
+                    double mass = labelMassDifferences[i];
+
                     for (int isotope = 0; isotope < 3; isotope++)
                     {
-                        mz1.Add((lightMass+isotope*Constants.C13MinusC12).ToMz(z));
-                        intensities1.Add(Math.Pow(Math.Pow(0.5, isotope), i)); //makes each label half the intensity of the previous
+                        mz1.Add((mass + isotope * Constants.C13MinusC12).ToMz(z));
+                        intensities1.Add(Math.Pow(0.5, i) * (Math.Pow(0.5, isotope) * 1000000)); //makes each label half the intensity of the previous
                     }
                 }
             }

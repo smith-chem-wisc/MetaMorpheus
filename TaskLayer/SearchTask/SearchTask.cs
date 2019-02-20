@@ -77,10 +77,14 @@ namespace TaskLayer
                 for (int i = 0; i < SearchParameters.SilacLabels.Count; i++)
                 {
                     SilacLabel currentLabel = SearchParameters.SilacLabels[i];
-                    updatedLabels.Add(new SilacLabel(currentLabel.OriginalAminoAcid, Convert.ToChar(ASCII_a + i), currentLabel.LabelChemicalFormula, Convert.ToDouble(currentLabel.MassDifference.Substring(2, currentLabel.MassDifference.Length - 3))));
+                    double massDifference = Convert.ToDouble(currentLabel.MassDifference.Substring(1));
+                    if (currentLabel.MassDifference[0] == '-')
+                    {
+                        massDifference *= -1;
+                    }
+                    updatedLabels.Add(new SilacLabel(currentLabel.OriginalAminoAcid, Convert.ToChar(ASCII_a + i), currentLabel.LabelChemicalFormula, massDifference));
                 }
                 SearchParameters.SilacLabels = updatedLabels;
-
                 //Add the silac residues to the dictionary
                 Residue.AddNewResiduesToDictionary(updatedLabels.Select(x => new Residue(x.MassDifference, x.AminoAcidLabel, x.AminoAcidLabel.ToString(), Chemistry.ChemicalFormula.ParseFormula(x.LabelChemicalFormula), ModificationSites.All)).ToList());
             }

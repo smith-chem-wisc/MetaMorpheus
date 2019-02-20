@@ -285,5 +285,11 @@ namespace EngineLayer
             PeptidesToMatchingFragments = psm.PeptidesToMatchingFragments;
             RunnerUpScore = psm.RunnerUpScore;
         }
+
+        public void ConvertSilacLabelsToLightResidues(SilacLabel label)
+        {
+            BaseSequence = SilacConversions.GetSilacLightBaseSequence(BaseSequence, label);
+            FullSequence = SilacConversions.GetSilacLightFullSequence(FullSequence, label);
+        }
     }
 }
