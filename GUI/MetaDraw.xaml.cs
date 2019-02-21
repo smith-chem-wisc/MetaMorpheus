@@ -50,7 +50,7 @@ namespace MetaMorpheusGUI
             itemsControlSampleViewModel = new ItemsControlSampleViewModel();
             DataContext = itemsControlSampleViewModel;
             mainViewModel = new PsmAnnotationViewModel();
-            //plotView.DataContext = mainViewModel;
+            plotView.DataContext = mainViewModel;
             peptideSpectralMatches = new ObservableCollection<PsmFromTsv>();
             propertyView = new DataTable();
             propertyView.Columns.Add("Name", typeof(string));
