@@ -40,17 +40,36 @@ namespace EngineLayer
 
         public static event EventHandler<ProgressEventArgs> OutProgressHandler;
         
-        public static double CalculatePeptideScore(MsDataScan thisScan, List<MatchedFragmentIon> matchedFragmentIons, double maximumMassThatFragmentIonScoreIsDoubled)
+        public static double CalculatePeptideScore(MsDataScan thisScan, List<MatchedFragmentIon> matchedFragmentIons)
         {
             double score = 0;
 
-            foreach (var fragment in matchedFragmentIons)
+            if (thisScan.MassSpectrum.XcorrProcessed)
             {
-                double fragmentScore = 1 + (fragment.Intensity / thisScan.TotalIonCurrent);
-                score += fragmentScore;
-
-                if (fragment.NeutralTheoreticalProduct.NeutralMass <= maximumMassThatFragmentIonScoreIsDoubled)
+                foreach (var fragment in matchedFragmentIons)
                 {
+                    switch (fragment.NeutralTheoreticalProduct.ProductType)
+                    {
+                        case ProductType.aDegree:
+                        case ProductType.aStar:
+                        case ProductType.bDegree:
+                        case ProductType.bStar:
+                        case ProductType.yDegree:
+                        case ProductType.yStar:
+                            score += 0.01 * fragment.Intensity;
+                            break;
+
+                        default:
+                            score += 1 * fragment.Intensity;
+                            break;
+                    }
+                }
+            }
+            else
+            {
+                foreach (var fragment in matchedFragmentIons)
+                {
+                    double fragmentScore = 1 + (fragment.Intensity / thisScan.TotalIonCurrent);
                     score += fragmentScore;
                 }
             }
@@ -89,6 +108,28 @@ namespace EngineLayer
                 return matchedFragmentIons;
             }
 
+            if (commonParameters.DissociationType == DissociationType.LowCID)
+            {
+                foreach (Product product in theoreticalProducts)
+                {
+                    // unknown fragment mass; this only happens rarely for sequences with unknown amino acids
+                    if (double.IsNaN(product.NeutralMass))
+                    {
+                        continue;
+                    }
+
+                    double theoreticalFragmentMz = Math.Round(product.NeutralMass.ToMz(1) / 1.0005079, 0) * 1.0005079;
+                    var closestMzIndex = scan.TheScan.MassSpectrum.GetClosestPeakIndex(theoreticalFragmentMz).Value;
+
+                    if (commonParameters.ProductMassTolerance.Within(scan.TheScan.MassSpectrum.XArray[closestMzIndex], theoreticalFragmentMz))
+                    {
+                        matchedFragmentIons.Add(new MatchedFragmentIon(product, theoreticalFragmentMz, scan.TheScan.MassSpectrum.YArray[closestMzIndex], 1));
+                    }
+                }
+
+                return matchedFragmentIons;
+            }
+
             // search for ions in the spectrum
             foreach (Product product in theoreticalProducts)
             {
@@ -99,12 +140,12 @@ namespace EngineLayer
                 }
 
                 // get the closest peak in the spectrum to the theoretical peak
-                var closestExperimentalMass = scan.GetClosestExperimentalFragmentMass(scan.ExperimentalFragments, scan.DeconvolutedMonoisotopicMasses, product.NeutralMass);
-                
+                var closestExperimentalMass = scan.GetClosestExperimentalFragmentMass(product.NeutralMass);
+
                 // is the mass error acceptable?
                 if (commonParameters.ProductMassTolerance.Within(closestExperimentalMass.monoisotopicMass, product.NeutralMass) && closestExperimentalMass.charge <= scan.PrecursorCharge)
                 {
-                    matchedFragmentIons.Add(new MatchedFragmentIon(product, closestExperimentalMass.monoisotopicMass.ToMz(closestExperimentalMass.charge), 
+                    matchedFragmentIons.Add(new MatchedFragmentIon(product, closestExperimentalMass.monoisotopicMass.ToMz(closestExperimentalMass.charge),
                         closestExperimentalMass.peaks.First().intensity, closestExperimentalMass.charge));
                 }
             }
@@ -119,11 +160,11 @@ namespace EngineLayer
                     {
                         continue;
                     }
-                    
+
                     double compIonMass = scan.PrecursorMass + protonMassShift - product.NeutralMass;
 
                     // get the closest peak in the spectrum to the theoretical peak
-                    var closestExperimentalMass = scan.GetClosestExperimentalFragmentMass(scan.ExperimentalFragments, scan.DeconvolutedMonoisotopicMasses, compIonMass);
+                    var closestExperimentalMass = scan.GetClosestExperimentalFragmentMass(compIonMass);
 
                     // is the mass error acceptable?
                     if (commonParameters.ProductMassTolerance.Within(closestExperimentalMass.monoisotopicMass, compIonMass) && closestExperimentalMass.charge <= scan.PrecursorCharge)

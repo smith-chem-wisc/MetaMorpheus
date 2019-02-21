@@ -122,6 +122,44 @@ namespace EngineLayer
             return neutralExperimentalFragmentMasses.OrderBy(p => p.monoisotopicMass).ToArray();
         }
 
+        public IsotopicEnvelope GetClosestExperimentalFragmentMass(double theoreticalNeutralMass)
+        {
+            if (DeconvolutedMonoisotopicMasses.Length == 0)
+            {
+                return null;
+            }
+            return ExperimentalFragments[GetClosestFragmentMass(theoreticalNeutralMass).Value];
+        }
+
+        private int? GetClosestFragmentMass(double mass)
+        {
+            if (DeconvolutedMonoisotopicMasses.Length == 0)
+            {
+                return null;
+            }
+            int index = Array.BinarySearch(DeconvolutedMonoisotopicMasses, mass);
+            if (index >= 0)
+            {
+                return index;
+            }
+            index = ~index;
+
+            if (index >= DeconvolutedMonoisotopicMasses.Length)
+            {
+                return index - 1;
+            }
+            if (index == 0)
+            {
+                return index;
+            }
+
+            if (mass - DeconvolutedMonoisotopicMasses[index - 1] > DeconvolutedMonoisotopicMasses[index] - mass)
+            {
+                return index;
+            }
+            return index - 1;
+        }
+
         public IsotopicEnvelope GetClosestExperimentalFragmentMass(IsotopicEnvelope[] ExperimentalFragments, double[] DeconvolutedMonoisotopicMasses, double theoreticalNeutralMass)
         {
             if (DeconvolutedMonoisotopicMasses.Length == 0)
