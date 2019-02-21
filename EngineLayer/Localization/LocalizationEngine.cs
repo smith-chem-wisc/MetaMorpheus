@@ -49,7 +49,7 @@ namespace EngineLayer.Localization
                     var matchedIons = MatchFragmentIons(scanWithSpecificMass, productsWithLocalizedMassDiff, commonParameters);
 
                     // score when the mass-diff is on this residue
-                    double localizedScore = CalculatePeptideScore(scan, matchedIons, 0);
+                    double localizedScore = CalculatePeptideScore(scan, matchedIons);
 
                     localizedScores.Add(localizedScore);
                 }
