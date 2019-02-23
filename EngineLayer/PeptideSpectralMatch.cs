@@ -267,8 +267,21 @@ namespace EngineLayer
         {
             _BestMatchingPeptides = bestMatchingPeptides ?? psm.BestMatchingPeptides.ToList();
 
-            ScanIndex = psm.ScanIndex;
-            FullFilePath = psm.FullFilePath;
+            ModsChemicalFormula = psm.ModsChemicalFormula;
+            FullSequence = psm.FullSequence;
+            Notch = psm.Notch;
+            BaseSequence = psm.BaseSequence;
+            PeptideLength = psm.PeptideLength;
+            OneBasedStartResidueInProtein = psm.OneBasedStartResidueInProtein;
+            OneBasedEndResidueInProtein = psm.OneBasedEndResidueInProtein;
+            PeptideMonisotopicMass = psm.PeptideMonisotopicMass;
+            ProteinLength = psm.ProteinLength;
+            ProteinAccession = psm.ProteinAccession;
+            Organism = psm.Organism;
+            MatchedFragmentIons = psm.MatchedFragmentIons;
+            PsmCount = psm.PsmCount;
+            ModsIdentified = psm.ModsIdentified;
+            LocalizedScores = psm.LocalizedScores;
             ScanNumber = psm.ScanNumber;
             PrecursorScanNumber = psm.PrecursorScanNumber;
             ScanRetentionTime = psm.ScanRetentionTime;
@@ -277,19 +290,19 @@ namespace EngineLayer
             ScanPrecursorCharge = psm.ScanPrecursorCharge;
             ScanPrecursorMonoisotopicPeakMz = psm.ScanPrecursorMonoisotopicPeakMz;
             ScanPrecursorMass = psm.ScanPrecursorMass;
-            AllScores = new List<double>();
-            DigestionParams = psm.DigestionParams;
-            PeptidesToMatchingFragments = new Dictionary<PeptideWithSetModifications, List<MatchedFragmentIon>>();
-            Xcorr = psm.Xcorr;
+            FullFilePath = psm.FullFilePath;
+            ScanIndex = psm.ScanIndex;
+            FdrInfo = psm.FdrInfo;
             Score = psm.Score;
-            PeptidesToMatchingFragments = psm.PeptidesToMatchingFragments;
+            Xcorr = psm.Xcorr;
+            DeltaScore = psm.DeltaScore;
             RunnerUpScore = psm.RunnerUpScore;
-        }
-
-        public void ConvertSilacLabelsToLightResidues(SilacLabel label)
-        {
-            BaseSequence = SilacConversions.GetSilacLightBaseSequence(BaseSequence, label);
-            FullSequence = SilacConversions.GetSilacLightFullSequence(FullSequence, label);
+            IsDecoy = psm.IsDecoy;
+            IsContaminant = psm.IsContaminant;
+            DigestionParams = psm.DigestionParams;
+            AllScores = psm.AllScores;
+            PeptidesToMatchingFragments = psm.PeptidesToMatchingFragments;
         }
     }
 }
+ 

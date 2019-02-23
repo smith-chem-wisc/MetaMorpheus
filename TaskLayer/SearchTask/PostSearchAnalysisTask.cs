@@ -228,7 +228,7 @@ namespace TaskLayer
             {
                 //PEPTIDE LEVEL CHANGES
                 List<SilacLabel> allSilacLabels = Parameters.SilacLables;
-
+                
                 //go through all the psms and duplicate them until a psm copy exists for the unlabeled and labeled proteins
                 //The number of psms should roughly increase by a factor of N, where N is the number of labels.
                 //It may not increase exactly by a factor of N if the amino acid that gets labeled doesn't exist in the peptide
@@ -520,11 +520,22 @@ namespace TaskLayer
 
                 //UPDATE PEPTIDE INFO
                 //convert all psm/peptide/proteingroup sequences from the heavy label to the light label for output
-                foreach(PeptideSpectralMatch psm in Parameters.AllPsms)
+                List<PeptideSpectralMatch> allPsms = Parameters.AllPsms;
+                for(int i=0; i< allPsms.Count; i++)
                 {
+                    PeptideSpectralMatch psm = allPsms[i];
                     string baseSequence = psm.BaseSequence;
-                    SilacLabel label = silacLabels.Where(x => baseSequence.Contains(x.AminoAcidLabel)).FirstOrDefault();
-                    psm.ConvertSilacLabelsToLightResidues(label);
+                    if (baseSequence == null)
+                    {
+                        psm = SilacConversions.GetSilacPsmFromAmbiguousPsm(psm, silacLabels);
+                    }
+                    else
+                    {
+                        SilacLabel label = silacLabels.Where(x => baseSequence.Contains(x.AminoAcidLabel)).FirstOrDefault();
+                        psm = SilacConversions.GetSilacPsm(psm, label, true);
+                    }
+                    psm.ResolveAllAmbiguities();
+                    allPsms[i] = psm;
                 }
 
                 //Convert all lfqpeaks from heavy to light for output

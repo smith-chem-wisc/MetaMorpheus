@@ -13,25 +13,63 @@ namespace EngineLayer
     {
         public static PeptideSpectralMatch GetSilacPsm(PeptideSpectralMatch psm, SilacLabel silacLabel, bool heavyToLight)
         {
+            if (silacLabel == null)
+            {
+                return psm;
+            }
+            else
+            {
+                List<(int Notch, PeptideWithSetModifications Peptide)> updatedBestMatchingPeptides = new List<(int Notch, PeptideWithSetModifications Peptide)>();
+                foreach ((int Notch, PeptideWithSetModifications Peptide) notchAndPwsm in psm.BestMatchingPeptides)
+                {
+                    PeptideWithSetModifications pwsm = notchAndPwsm.Peptide;
+                    Protein originalProtein = pwsm.Protein;
+                    Protein modifiedProtein = heavyToLight ?
+                        new Protein(originalProtein, originalProtein.BaseSequence.Replace(silacLabel.AminoAcidLabel, silacLabel.OriginalAminoAcid), originalProtein.Accession.Replace(silacLabel.MassDifference, "")) : //create light protein
+                        new Protein(originalProtein, originalProtein.BaseSequence.Replace(silacLabel.OriginalAminoAcid, silacLabel.AminoAcidLabel), originalProtein.Accession + silacLabel.MassDifference); //create heavy protein with different accessions
+                    PeptideWithSetModifications modifiedPwsm = new PeptideWithSetModifications(
+                        modifiedProtein,
+                        pwsm.DigestionParams,
+                        pwsm.OneBasedStartResidueInProtein,
+                        pwsm.OneBasedEndResidueInProtein,
+                        pwsm.CleavageSpecificityForFdrCategory,
+                        pwsm.PeptideDescription,
+                        pwsm.MissedCleavages,
+                        pwsm.AllModsOneIsNterminus,
+                        pwsm.NumFixedMods);
+                    updatedBestMatchingPeptides.Add((notchAndPwsm.Notch, modifiedPwsm));
+                }
+                return psm.Clone(updatedBestMatchingPeptides);
+            }
+        }
+
+        public static PeptideSpectralMatch GetSilacPsmFromAmbiguousPsm(PeptideSpectralMatch psm, List<SilacLabel> silacLabels)
+        {
             List<(int Notch, PeptideWithSetModifications Peptide)> updatedBestMatchingPeptides = new List<(int Notch, PeptideWithSetModifications Peptide)>();
             foreach ((int Notch, PeptideWithSetModifications Peptide) notchAndPwsm in psm.BestMatchingPeptides)
             {
                 PeptideWithSetModifications pwsm = notchAndPwsm.Peptide;
                 Protein originalProtein = pwsm.Protein;
-                Protein modifiedProtein = heavyToLight ?
-                    new Protein(originalProtein.BaseSequence.Replace(silacLabel.AminoAcidLabel, silacLabel.OriginalAminoAcid), originalProtein.Accession) : //create light protein
-                    new Protein(originalProtein.BaseSequence.Replace(silacLabel.OriginalAminoAcid, silacLabel.AminoAcidLabel), originalProtein.Accession + silacLabel.MassDifference); //create heavy protein with different accessions
-                PeptideWithSetModifications modifiedPwsm = new PeptideWithSetModifications(
-                    modifiedProtein,
-                    pwsm.DigestionParams,
-                    pwsm.OneBasedStartResidueInProtein,
-                    pwsm.OneBasedEndResidueInProtein,
-                    pwsm.CleavageSpecificityForFdrCategory,
-                    pwsm.PeptideDescription,
-                    pwsm.MissedCleavages,
-                    pwsm.AllModsOneIsNterminus,
-                    pwsm.NumFixedMods);
-                updatedBestMatchingPeptides.Add((notchAndPwsm.Notch, modifiedPwsm));
+                SilacLabel silacLabel = silacLabels.Where(x => originalProtein.BaseSequence.Contains(x.AminoAcidLabel)).FirstOrDefault();
+                if (silacLabel == null)
+                {
+                    updatedBestMatchingPeptides.Add(notchAndPwsm);
+                }
+                else
+                {
+                    Protein modifiedProtein = new Protein(originalProtein, originalProtein.BaseSequence.Replace(silacLabel.AminoAcidLabel, silacLabel.OriginalAminoAcid), originalProtein.Accession.Replace(silacLabel.MassDifference, "")); //create light protein
+                    PeptideWithSetModifications modifiedPwsm = new PeptideWithSetModifications(
+                        modifiedProtein,
+                        pwsm.DigestionParams,
+                        pwsm.OneBasedStartResidueInProtein,
+                        pwsm.OneBasedEndResidueInProtein,
+                        pwsm.CleavageSpecificityForFdrCategory,
+                        pwsm.PeptideDescription,
+                        pwsm.MissedCleavages,
+                        pwsm.AllModsOneIsNterminus,
+                        pwsm.NumFixedMods);
+                    updatedBestMatchingPeptides.Add((notchAndPwsm.Notch, modifiedPwsm));
+                }
             }
             return psm.Clone(updatedBestMatchingPeptides);
         }
@@ -40,7 +78,7 @@ namespace EngineLayer
         {
             HashSet<Protein> proteins = label == null ?
                 proteinGroup.Proteins :
-                new HashSet<Protein>(proteinGroup.Proteins.Select(x => new Protein(x.BaseSequence.Replace(label.OriginalAminoAcid, label.AminoAcidLabel), x.Accession + label.MassDifference)));
+                new HashSet<Protein>(proteinGroup.Proteins.Select(x => new Protein(x, x.BaseSequence.Replace(label.OriginalAminoAcid, label.AminoAcidLabel), x.Accession + label.MassDifference)));
             HashSet<PeptideWithSetModifications> allPeptides = new HashSet<PeptideWithSetModifications>();
             HashSet<PeptideWithSetModifications> uniquePeptides = new HashSet<PeptideWithSetModifications>();
             string firstAccession = proteins.First().Accession;

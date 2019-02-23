@@ -64,29 +64,38 @@ namespace TaskLayer
 
         protected override MyTaskResults RunSpecific(string OutputFolder, List<DbForTask> dbFilenameList, List<string> currentRawFileList, string taskId, FileSpecificParameters[] fileSettingsList)
         {
-            // disable quantification if a .mgf is being used
-            if (SearchParameters.DoQuantification && currentRawFileList.Any(x => Path.GetExtension(x).Equals(".mgf", StringComparison.OrdinalIgnoreCase)))
+            if (SearchParameters.DoQuantification)
             {
-                SearchParameters.DoQuantification = false;
-            }
-            else if (SearchParameters.DoQuantification && SearchParameters.SilacLabels != null) //if we're doing SILAC
-            {
-                //change the silac residues to lower case amino acids (currently null)
-                List<SilacLabel> updatedLabels = new List<SilacLabel>();
-                const char ASCII_a = 'a';
-                for (int i = 0; i < SearchParameters.SilacLabels.Count; i++)
+                // disable quantification if a .mgf is being used
+                if (currentRawFileList.Any(x => Path.GetExtension(x).Equals(".mgf", StringComparison.OrdinalIgnoreCase)))
                 {
-                    SilacLabel currentLabel = SearchParameters.SilacLabels[i];
-                    double massDifference = Convert.ToDouble(currentLabel.MassDifference.Substring(1));
-                    if (currentLabel.MassDifference[0] == '-')
-                    {
-                        massDifference *= -1;
-                    }
-                    updatedLabels.Add(new SilacLabel(currentLabel.OriginalAminoAcid, Convert.ToChar(ASCII_a + i), currentLabel.LabelChemicalFormula, massDifference));
+                    SearchParameters.DoQuantification = false;
                 }
-                SearchParameters.SilacLabels = updatedLabels;
-                //Add the silac residues to the dictionary
-                Residue.AddNewResiduesToDictionary(updatedLabels.Select(x => new Residue(x.MassDifference, x.AminoAcidLabel, x.AminoAcidLabel.ToString(), Chemistry.ChemicalFormula.ParseFormula(x.LabelChemicalFormula), ModificationSites.All)).ToList());
+                //if we're doing SILAC, add the silac labels to the residue dictionary
+                else if (SearchParameters.SilacLabels != null) 
+                {
+                    //change the silac residues to lower case amino acids (currently null)
+                    List<SilacLabel> updatedLabels = new List<SilacLabel>();
+                    const char ASCII_a = 'a';
+                    for (int i = 0; i < SearchParameters.SilacLabels.Count; i++)
+                    {
+                        SilacLabel currentLabel = SearchParameters.SilacLabels[i];
+                        double massDifference = Convert.ToDouble(currentLabel.MassDifference.Substring(1));
+                        if (currentLabel.MassDifference[0] == '-')
+                        {
+                            massDifference *= -1;
+                        }
+                        updatedLabels.Add(new SilacLabel(currentLabel.OriginalAminoAcid, Convert.ToChar(ASCII_a + i), currentLabel.LabelChemicalFormula, massDifference));
+                    }
+                    SearchParameters.SilacLabels = updatedLabels;
+                    //Add the silac residues to the dictionary
+                    Residue.AddNewResiduesToDictionary(updatedLabels.Select(x => new Residue(x.MassDifference, x.AminoAcidLabel, x.AminoAcidLabel.ToString(), Chemistry.ChemicalFormula.ParseFormula(x.LabelChemicalFormula), ModificationSites.All)).ToList());
+                }
+            }
+            //if no quant, remove any silac labels that may have been added, because they screw up downstream analysis
+            if(!SearchParameters.DoQuantification) //using "if" instead of "else", because DoQuantification can change if it's an mgf
+            {
+                SearchParameters.SilacLabels = null;
             }
 
             LoadModifications(taskId, out var variableModifications, out var fixedModifications, out var localizeableModificationTypes);
