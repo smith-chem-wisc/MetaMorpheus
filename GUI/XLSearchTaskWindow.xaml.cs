@@ -164,6 +164,7 @@ namespace MetaMorpheusGUI
             maxThreadsTextBox.Text = task.CommonParameters.MaxThreadsToUsePerFile.ToString(CultureInfo.InvariantCulture);
             CustomFragmentationWindow = new CustomFragmentationWindow(task.CommonParameters.CustomIons);
             ckbPercolator.IsChecked = task.XlSearchParameters.WriteOutputForPercolator;
+            ckbXiNET.IsChecked = task.XlSearchParameters.WriteOutputForXiNET;
             ckbPepXML.IsChecked = task.XlSearchParameters.WritePepXml;
 
             OutputFileNameTextBox.Text = task.CommonParameters.TaskDescriptor;
@@ -316,6 +317,7 @@ namespace MetaMorpheusGUI
             }
 
             TheTask.XlSearchParameters.WriteOutputForPercolator = ckbPercolator.IsChecked.Value;
+            TheTask.XlSearchParameters.WriteOutputForXiNET = ckbXiNET.IsChecked.Value;
             TheTask.XlSearchParameters.WritePepXml = ckbPepXML.IsChecked.Value;
             //TheTask.UseProvidedPrecursorInfo = useProvidedPrecursor.IsChecked.Value;
 

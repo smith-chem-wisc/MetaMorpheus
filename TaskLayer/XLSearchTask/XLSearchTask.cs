@@ -184,6 +184,14 @@ namespace TaskLayer
                 var intraPsmsXLPercolator = intraCsms.Where(p => p.Score >= 2 && p.BetaPeptide.Score >= 2).OrderBy(p => p.ScanNumber).ToList();
                 WriteCrosslinkToTxtForPercolator(intraPsmsXLPercolator, OutputFolder, "XL_Intralinks_Percolator", crosslinker, new List<string> { taskId });
             }
+            if (XlSearchParameters.WriteOutputForXiNET)
+            {
+                var intraPsmsXLPercolator = intraCsms.Where(p => p.IsDecoy == false && p.FdrInfo.QValue<=0.01).ToList();
+                var interPsmsXLPercolator = interCsms.Where(p => p.IsDecoy == false && p.FdrInfo.QValue <= 0.01).ToList();
+
+                intraPsmsXLPercolator.AddRange(interPsmsXLPercolator);
+                WriteCrosslinkToTxtForXiNET(intraPsmsXLPercolator, OutputFolder, "XL_XiNET", crosslinker, new List<string> { taskId });         
+            }
 
             // write single peptides
             var singlePsms = allPsms.Where(p => p.CrossType == PsmCrossType.Single).ToList();

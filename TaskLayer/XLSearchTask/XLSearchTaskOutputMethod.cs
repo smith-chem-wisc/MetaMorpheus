@@ -85,6 +85,35 @@ namespace TaskLayer
             FinishedWritingFile(writtenFile, nestedIds);
         }
 
+        public void WriteCrosslinkToTxtForXiNET(List<CrosslinkSpectralMatch> items, string outputFolder, string fileName, Crosslinker crosslinker, List<string> nestedIds)
+        {
+            if (items.Count == 0)
+            { return; }
+            var writtenFile = Path.Combine(outputFolder, fileName + ".csv");
+            using (StreamWriter output = new StreamWriter(writtenFile))
+            {
+                output.WriteLine("Score,Protein1,LinkPos1,Protein2,LinkPos2,");
+                foreach (var item in items)
+                {
+                    if (item.BaseSequence != null && item.BetaPeptide.BaseSequence != null && item.ProteinAccession != null && item.BetaPeptide.ProteinAccession != null)
+                    {
+                        output.WriteLine(
+                            item.XLTotalScore.ToString(CultureInfo.InvariantCulture)
+
+                            + "," + item.BestMatchingPeptides.First().Peptide.Protein.Accession.ToString(CultureInfo.InvariantCulture)
+                            + "," + item.XlProteinPos.ToString(CultureInfo.InvariantCulture)
+
+                            + "," + item.BetaPeptide.BestMatchingPeptides.First().Peptide.Protein.Accession.ToString(CultureInfo.InvariantCulture)
+                            + "," + item.BetaPeptide.XlProteinPos.ToString(CultureInfo.InvariantCulture)
+
+                            
+                            );
+                    }
+                }
+            }
+            FinishedWritingFile(writtenFile, nestedIds);
+        }
+
         public void WritePepXML_xl(List<CrosslinkSpectralMatch> items, List<Protein> proteinList, string databasePath, List<Modification> variableModifications, List<Modification> fixedModifications, List<string> localizeableModificationTypes, string outputFolder, string fileName, List<string> nestedIds)
         {
             if (!items.Any())

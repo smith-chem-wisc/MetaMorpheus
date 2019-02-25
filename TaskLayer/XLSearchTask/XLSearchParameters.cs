@@ -25,8 +25,8 @@ namespace TaskLayer
             XlQuench_NH2 = false;
             XlQuench_Tris = true;
             WriteOutputForPercolator = false;
+            WriteOutputForXiNET = false;
             WritePepXml = true;
-            //XlCharge_2_3 = true;
         }
         
         public DecoyType DecoyType { get; set; }
@@ -43,14 +43,14 @@ namespace TaskLayer
         public double? CrosslinkerDeadEndMassNH2 { get; set; }
         public double? CrosslinkerDeadEndMassTris { get; set; }
         
-        // TODO: 2+ 3+ prime fragments?
         public bool IsCleavable { get; set; }
         public bool RestrictToTopNHits { get; set; }
         public bool WriteOutputForPercolator { get; set; }
+        public bool WriteOutputForXiNET { get; set; }
         public bool WritePepXml { get; set; }
         public bool XlQuench_H2O { get; set; }
         public bool XlQuench_Tris { get; set; }
         public bool XlQuench_NH2 { get; set; }
-        //public bool XlCharge_2_3 { get; set; }
+
     }
 }
