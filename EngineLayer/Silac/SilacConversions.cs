@@ -50,7 +50,7 @@ namespace EngineLayer
             {
                 PeptideWithSetModifications pwsm = notchAndPwsm.Peptide;
                 Protein originalProtein = pwsm.Protein;
-                SilacLabel silacLabel = silacLabels.Where(x => originalProtein.BaseSequence.Contains(x.AminoAcidLabel)).FirstOrDefault();
+                SilacLabel silacLabel = GetRelevantLabel(originalProtein.BaseSequence, silacLabels);
                 if (silacLabel == null)
                 {
                     updatedBestMatchingPeptides.Add(notchAndPwsm);
@@ -74,8 +74,11 @@ namespace EngineLayer
             return psm.Clone(updatedBestMatchingPeptides);
         }
 
+        //This method creates a protein group based on the provided silac label. The input "proteinGroup" is expected to be light. If the label is null, then the light protein group will be output.
+        //This method searches the provided psm list for which psms belong to the new/old protein group independent of the original proteinGroup's psms
         public static EngineLayer.ProteinGroup GetSilacProteinGroups(List<PeptideSpectralMatch> unambiguousPsmsBelowOnePercentFdr, EngineLayer.ProteinGroup proteinGroup, SilacLabel label = null)
         {
+            //keep the proteins as light, or convert them all into the heavy versions
             HashSet<Protein> proteins = label == null ?
                 proteinGroup.Proteins :
                 new HashSet<Protein>(proteinGroup.Proteins.Select(x => new Protein(x, x.BaseSequence.Replace(label.OriginalAminoAcid, label.AminoAcidLabel), x.Accession + label.MassDifference)));
@@ -83,13 +86,14 @@ namespace EngineLayer
             HashSet<PeptideWithSetModifications> uniquePeptides = new HashSet<PeptideWithSetModifications>();
             string firstAccession = proteins.First().Accession;
             HashSet<PeptideSpectralMatch> matchedPsms = new HashSet<PeptideSpectralMatch>();
+
             //go through all psms and find peptides that belong to this group
             foreach (PeptideSpectralMatch psm in unambiguousPsmsBelowOnePercentFdr)
             {
                 var bestMatchingPeptides = psm.BestMatchingPeptides.ToList();
                 if (bestMatchingPeptides.Count == 1)//if unique
                 {
-                    if (firstAccession.Equals(psm.ProteinAccession)) //since unique, we know there's only one protein for this sequence
+                    if (firstAccession.Equals(psm.ProteinAccession)) //since unique, we know there's only one protein for this sequence. Shared peptides are given multiple unique pwsms.
                     {
                         var peptide = bestMatchingPeptides.First().Peptide;
                         uniquePeptides.Add(peptide);
@@ -99,12 +103,13 @@ namespace EngineLayer
                 }
                 else //not unique
                 {
-                    foreach (var peptide in bestMatchingPeptides.Select(x => x.Peptide))
+                    foreach (var peptide in bestMatchingPeptides.Select(x => x.Peptide)) //go through all the peptides
                     {
-                        if (firstAccession.Equals(peptide.Protein.Accession))
+                        if (firstAccession.Equals(peptide.Protein.Accession)) //if one of them matches, then we'll add it.
                         {
                             allPeptides.Add(peptide);
                             matchedPsms.Add(psm);
+                            break;
                         }
                     }
                 }
@@ -117,7 +122,6 @@ namespace EngineLayer
 
         public static string GetSilacLightBaseSequence(string baseSequence, SilacLabel label)
         {
-            //overwrite base sequence
             return label == null ? baseSequence : baseSequence.Replace(label.AminoAcidLabel.ToString(), HeavyStringForPeptides(label));
         }
 
@@ -160,9 +164,51 @@ namespace EngineLayer
             }
         }
 
+        public static string GetAmbiguousLightSequence(string originalSequence, List<SilacLabel> labels, bool baseSequence)
+        {
+            string[] multipleSequences = originalSequence.Split('|').ToArray(); //if ambiguity
+            string localSequence = "";
+            foreach (string sequence in multipleSequences)
+            {
+                SilacLabel label = GetRelevantLabel(sequence, labels);
+                localSequence += (baseSequence ? GetSilacLightBaseSequence(sequence, label) : GetSilacLightFullSequence(sequence, label)) + "|";
+            }
+            if (localSequence.Length != 0)
+            {
+                localSequence = localSequence.Substring(0, localSequence.Length - 1); //remove last "|"
+            }
+            return localSequence;
+        }
+
+        public static List<PeptideSpectralMatch> UpdatePsmsForParsimony(List<SilacLabel> labels, List<PeptideSpectralMatch> psms)
+        {
+            //consider the heavy and light psms as being from the same protein
+            //currently they have different accessions and sequences (PROTEIN and PROTEIN+8.014)
+            List<PeptideSpectralMatch> psmsForProteinParsimony = new List<PeptideSpectralMatch>();
+            foreach (PeptideSpectralMatch psm in psms)
+            {
+                if (psm.BaseSequence == null)
+                {
+                    psmsForProteinParsimony.Add(GetSilacPsmFromAmbiguousPsm(psm, labels));
+                }
+                else
+                {
+                    SilacLabel label = GetRelevantLabel(psm.BaseSequence, labels);
+                    psmsForProteinParsimony.Add(GetSilacPsm(psm, label, true)); //if it's light, label will be null
+                }
+            }
+            return psmsForProteinParsimony;
+        }
+
+
         public static string HeavyStringForPeptides(SilacLabel label)
         {
             return label.OriginalAminoAcid + "(" + label.MassDifference + ")";
+        }
+
+        public static SilacLabel GetRelevantLabel(string baseSequence, List<SilacLabel> labels)
+        {
+            return labels.Where(x => baseSequence.Contains(x.AminoAcidLabel)).FirstOrDefault();
         }
     }
 }

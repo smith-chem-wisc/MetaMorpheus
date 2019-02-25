@@ -31,7 +31,7 @@ namespace EngineLayer
             DigestionParams = digestionParams;
             PeptidesToMatchingFragments = new Dictionary<PeptideWithSetModifications, List<MatchedFragmentIon>>();
             Xcorr = xcorr;
-            
+
             AddOrReplace(peptide, score, notch, true, matchedFragmentIons, xcorr);
         }
 
@@ -222,6 +222,20 @@ namespace EngineLayer
             // TODO: technically, different peptide options for this PSM can have different matched ions
             // we can write a Resolve method for this if we want...
             MatchedFragmentIons = PeptidesToMatchingFragments.First().Value;
+        }
+
+        /// <summary>
+        /// This method changes the base and full sequences to reflect heavy silac labels
+        /// </summary>
+        public void ResolveHeavySilacLabel(List<SilacLabel> labels)
+        {
+            //FullSequence
+            FullSequence = PsmTsvWriter.Resolve(_BestMatchingPeptides.Select(b => b.Pwsm.FullSequence)).ResolvedString; //string, not value
+            FullSequence = SilacConversions.GetAmbiguousLightSequence(FullSequence, labels, false);
+
+            //BaseSequence
+            BaseSequence = PsmTsvWriter.Resolve(_BestMatchingPeptides.Select(b => b.Pwsm.BaseSequence)).ResolvedString; //string, not value
+            BaseSequence = SilacConversions.GetAmbiguousLightSequence(BaseSequence, labels, true);
         }
 
         /// <summary>

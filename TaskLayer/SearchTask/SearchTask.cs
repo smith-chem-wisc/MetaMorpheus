@@ -289,7 +289,7 @@ namespace TaskLayer
                 AllPsms = allPsms,
                 VariableModifications = variableModifications,
                 FixedModifications = fixedModifications,
-                SilacLables = SearchParameters.SilacLabels,
+                SilacLabels = SearchParameters.SilacLabels,
                 ListOfDigestionParams = new HashSet<DigestionParams>(fileSpecificCommonParams.Select(p => p.DigestionParams)),
                 CurrentRawFileList = currentRawFileList,
                 MyFileManager = myFileManager,
