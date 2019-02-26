@@ -1,9 +1,11 @@
-﻿using MassSpectrometry;
+﻿using EngineLayer;
+using MassSpectrometry;
 using MetaMorpheusGUI;
 using OxyPlot;
 using OxyPlot.Axes;
 using OxyPlot.Series;
 using Proteomics.Fragmentation;
+using Proteomics.ProteolyticDigestion;
 using System;
 using System.Collections.Generic;
 using System.ComponentModel;
@@ -110,11 +112,12 @@ namespace ViewModels
 
         public void histogramPlot(int plotType)
         {
-            double binSize = 0;
-            SortedList<double,double> numCategory = new SortedList<double,double>();
+            double binSize = -1;
+            SortedList<double, double> numCategory = new SortedList<double, double>();
             IEnumerable<double> numbers = new List<double>();
-            List<string> axes = new List<string>();
-            var s1 = new ColumnSeries { ColumnWidth = 200, IsStacked = false };
+            Dictionary<string, int> dict = new Dictionary<string, int>();
+            ColumnSeries column = new ColumnSeries { ColumnWidth = 200, IsStacked = false };
+            HistogramSeries histogram = new HistogramSeries();
             switch (plotType)
             {
                 case 1:
@@ -134,52 +137,44 @@ namespace ViewModels
                     binSize = 1;
                     break;
                 case 5:
-                    //dataCategory = 
-                    binSize = 1;
+                    var psmsWithMods = allPSM.Where(p => !p.FullSequence.Contains("|") && p.FullSequence.Contains("["));
+                    var mods = psmsWithMods.Select(p => new PeptideWithSetModifications(p.FullSequence, GlobalVariables.AllModsKnownDictionary)).Select(p => p.AllModsOneIsNterminus).SelectMany(p => p.Values);
+                    var groupedMods = mods.GroupBy(p => p.IdWithMotif).ToList();
+                    dict = groupedMods.ToDictionary(p => p.Key, v => v.Count());
                     break;
             }
-            int[,] values = new int[numbers.Count(),2];
-            double maxValue = numbers.Max();
-            int decimalPlaces = 0;
-            int sign = 0;
-            if (binSize.Equals(0.1))
+            if (plotType == 5)
             {
-                decimalPlaces = 1;
-            }
-            foreach(var a in numbers)
-            {
-                if (a == maxValue)
+                var counter = 0;
+                String[] category = new string[dict.Count];
+                foreach (var d in dict)
                 {
-                   values[numbers.Count()-1,0]++;
+                    column.Items.Add(new ColumnItem(d.Value, counter));
+                    category[counter] = d.Key;
+                    counter++;
                 }
-                else
+                privateModel.Axes.Add(new CategoryAxis
                 {
-                    var current = a;
-                    if (a < 0)
-                    {
-                        current = a * -1;
-                        sign = 1;
-                    }
-                    values[(int) Math.Round(current, decimalPlaces),sign]++;
+                    ItemsSource = category
+                });
+                privateModel.Series.Add(column);
+            }
+            else
+            {
+                double end = numbers.Max();
+                double start = numbers.Min();
+                double bins = (end - start) / binSize;
+                double numbins = bins * Math.Pow(10, normalizeNumber(bins));
+                if (numbins == 0) { numbins++; end = end + binSize; }
+                IEnumerable<HistogramItem> bars = HistogramHelpers.Collect(numbers, start, end, (int)numbins, true);
+                foreach (var bar in bars)
+                {
+                    histogram.Items.Add(bar);
                 }
+                histogram.StrokeThickness = 0.5;
+                histogram.LabelFontSize = 12;
+                privateModel.Series.Add(histogram);
             }
-            
-            foreach(var n in values)
-            {
-                s1.Items.Add(new ColumnItem(values[n,0]));
-                s1.Items.Add(new ColumnItem(values[n,1]));
-                //var leftLimit = Math.Round(valRange * i, decimalPlaces);
-                //var rightLimit = Math.Round(valRange * (i + 1), decimalPlaces);
-                //axes.Add( leftLimit + " - " + rightLimit);
-                axes.Add(n.ToString());
-            }
-
-            privateModel.Series.Add(s1);
-            privateModel.Axes.Add(new CategoryAxis
-            {
-                Position = AxisPosition.Bottom,
-                ItemsSource = axes
-            });
         }
 
         public void linePlot(int plotType)
@@ -187,6 +182,7 @@ namespace ViewModels
             ScatterSeries series = new ScatterSeries();
             List<Tuple<double,double>> xy = new List<Tuple<double, double>>();
             var filteredList = allPSM.Where(p => !p.MassDiffDa.Contains("|") && Math.Round(double.Parse(p.MassDiffDa), 0) == 0).ToList();
+            var test = allPSM.SelectMany(p => p.MatchedIons.Select(v => v.MassErrorPpm));
             switch (plotType)
             {
                 case 1:
@@ -208,6 +204,13 @@ namespace ViewModels
                 series.Points.Add(new ScatterPoint(val.Item1, val.Item2));
             }
             privateModel.Series.Add(series);
+        }
+
+        public static int normalizeNumber(double number)
+        {
+            string s = number.ToString("00.00E0");
+            int i = Convert.ToInt32(s.Substring(s.Length - 1));
+            return i;
         }
     }
 }
