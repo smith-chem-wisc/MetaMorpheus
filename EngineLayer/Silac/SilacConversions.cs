@@ -114,10 +114,17 @@ namespace EngineLayer
                     }
                 }
             }
-            return new EngineLayer.ProteinGroup(proteins, allPeptides, uniquePeptides)
+            var updatedProtein = new EngineLayer.ProteinGroup(proteins, allPeptides, uniquePeptides)
             {
-                AllPsmsBelowOnePercentFDR = matchedPsms
+                AllPsmsBelowOnePercentFDR = matchedPsms,
+                CumulativeTarget = proteinGroup.CumulativeTarget,
+                CumulativeDecoy = proteinGroup.CumulativeDecoy,
+                QValue = proteinGroup.QValue,
+                BestPeptideScore = proteinGroup.BestPeptideScore,
+                BestPeptideQValue = proteinGroup.BestPeptideQValue
             };
+            updatedProtein.CalculateSequenceCoverage();
+            return updatedProtein;
         }
 
         public static string GetSilacLightBaseSequence(string baseSequence, SilacLabel label)
@@ -178,6 +185,15 @@ namespace EngineLayer
                 localSequence = localSequence.Substring(0, localSequence.Length - 1); //remove last "|"
             }
             return localSequence;
+        }
+
+        public static string GetProteinLightAccession(string proteinAccession, List<SilacLabel> labels)
+        {
+            foreach (SilacLabel label in labels)
+            {
+                proteinAccession = proteinAccession.Replace(label.MassDifference, "");
+            }
+            return proteinAccession;
         }
 
         public static List<PeptideSpectralMatch> UpdatePsmsForParsimony(List<SilacLabel> labels, List<PeptideSpectralMatch> psms)

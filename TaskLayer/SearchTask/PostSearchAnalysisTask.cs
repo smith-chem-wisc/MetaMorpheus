@@ -273,7 +273,9 @@ namespace TaskLayer
                     foreach (EngineLayer.ProteinGroup proteinGroup in ProteinGroups)
                     {
                         //add the unlabeled protein group
-                        silacProteinGroups.Add(SilacConversions.GetSilacProteinGroups(unambiguousPsmsBelowOnePercentFdr, proteinGroup)); //this method removes removes the heavy psms from the protein groups and adds their light replica
+                        //this method removes the heavy psms from the protein groups and adds their light replica
+                        EngineLayer.ProteinGroup unlabeledProteinGroup = SilacConversions.GetSilacProteinGroups(unambiguousPsmsBelowOnePercentFdr, proteinGroup);
+                        silacProteinGroups.Add(unlabeledProteinGroup); 
                         //add the labeled protein group(s)
                         List<EngineLayer.ProteinGroup> addedProteinGroups = allSilacLabels.Select(x => SilacConversions.GetSilacProteinGroups(unambiguousPsmsBelowOnePercentFdr, proteinGroup, x)).ToList(); //foreach label, create a new heavy protein group
                         addedProteinGroups.ForEach(x => silacProteinGroups.Add(x)); //add to psm list
@@ -546,7 +548,7 @@ namespace TaskLayer
                 List<PeptideSpectralMatch> allPsms = Parameters.AllPsms;
                 for (int i = 0; i < allPsms.Count; i++)
                 {
-                    allPsms[i].ResolveHeavySilacLabel(silacLabels);
+                    allPsms[i].ResolveHeavySilacLabel(silacLabels, Parameters.SearchParameters.ModsToWriteSelection);
                 }
 
                 //Convert all lfqpeaks from heavy to light for output
@@ -593,10 +595,12 @@ namespace TaskLayer
                             identifications.Add(updatedId);
                         }
                         FlashLFQ.ChromatographicPeak updatedPeak = new FlashLFQ.ChromatographicPeak(identifications.First(), peak.IsMbrPeak, peak.SpectraFileInfo);
-                        for (int j = 1; j < identifications.Count; j++)
+                        for (int j = 1; j < identifications.Count; j++) //add all the original identification
                         {
                             updatedPeak.MergeFeatureWith(new FlashLFQ.ChromatographicPeak(identifications[j], peak.IsMbrPeak, peak.SpectraFileInfo), FlashLfqEngine.Integrate);
                         }
+                        updatedPeak.IsotopicEnvelopes = peak.IsotopicEnvelopes; //need to set isotopicEnevelopes, since the new identifications didn't have them.
+                        updatedPeak.CalculateIntensityForThisFeature(FlashLfqEngine.Integrate); //needed to update info
                         peaks[i] = updatedPeak;
                     }
                 }

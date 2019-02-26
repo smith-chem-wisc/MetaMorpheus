@@ -37,6 +37,7 @@ namespace EngineLayer
 
         public ChemicalFormula ModsChemicalFormula { get; private set; } // these fields will be null if they are ambiguous
         public string FullSequence { get; private set; }
+        public string EssentialSequence { get; private set; }
         public int? Notch { get; private set; }
         public string BaseSequence { get; private set; }
         public int? PeptideLength { get; private set; }
@@ -227,7 +228,7 @@ namespace EngineLayer
         /// <summary>
         /// This method changes the base and full sequences to reflect heavy silac labels
         /// </summary>
-        public void ResolveHeavySilacLabel(List<SilacLabel> labels)
+        public void ResolveHeavySilacLabel(List<SilacLabel> labels, IReadOnlyDictionary<string, int> modsToWritePruned)
         {
             //FullSequence
             FullSequence = PsmTsvWriter.Resolve(_BestMatchingPeptides.Select(b => b.Pwsm.FullSequence)).ResolvedString; //string, not value
@@ -236,6 +237,13 @@ namespace EngineLayer
             //BaseSequence
             BaseSequence = PsmTsvWriter.Resolve(_BestMatchingPeptides.Select(b => b.Pwsm.BaseSequence)).ResolvedString; //string, not value
             BaseSequence = SilacConversions.GetAmbiguousLightSequence(BaseSequence, labels, true);
+
+            EssentialSequence = PsmTsvWriter.Resolve(_BestMatchingPeptides.Select(b => b.Pwsm.EssentialSequence(modsToWritePruned))).ResolvedString; //string, not value
+            EssentialSequence = SilacConversions.GetAmbiguousLightSequence(EssentialSequence, labels, false);
+
+            //Accession
+            ProteinAccession = PsmTsvWriter.Resolve(_BestMatchingPeptides.Select(x => x.Pwsm).Select(b => b.Protein.Accession), FullSequence).ResolvedString; //string, not value
+            ProteinAccession = SilacConversions.GetProteinLightAccession(ProteinAccession, labels);
         }
 
         /// <summary>
@@ -319,4 +327,3 @@ namespace EngineLayer
         }
     }
 }
- 
