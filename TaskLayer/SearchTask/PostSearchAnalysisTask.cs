@@ -551,7 +551,7 @@ namespace TaskLayer
                     allPsms[i].ResolveHeavySilacLabel(silacLabels, Parameters.SearchParameters.ModsToWriteSelection);
                 }
 
-                //Convert all lfqpeaks from heavy to light for output
+                //Convert all lfqpeaks from heavy (a) to light (K+8.014) for output
                 var lfqPeaks = Parameters.FlashLfqResults.Peaks;
                 List<SpectraFileInfo> peakKeys = lfqPeaks.Keys.ToList();
                 foreach (SpectraFileInfo key in peakKeys)
@@ -563,7 +563,7 @@ namespace TaskLayer
                         List<Identification> identifications = new List<Identification>();
                         foreach (var id in peak.Identifications)
                         {
-                            SilacLabel label = silacLabels.Where(x => id.BaseSequence.Contains(x.AminoAcidLabel)).FirstOrDefault();
+                            SilacLabel label = SilacConversions.GetRelevantLabel(id.BaseSequence, silacLabels);
                             HashSet<FlashLFQ.ProteinGroup> originalGroups = id.proteinGroups;
                             List<FlashLFQ.ProteinGroup> updatedGroups = new List<FlashLFQ.ProteinGroup>();
                             foreach (FlashLFQ.ProteinGroup group in originalGroups)
@@ -591,7 +591,6 @@ namespace TaskLayer
                                 id.OptionalChemicalFormula,
                                 id.UseForProteinQuant
                                 );
-
                             identifications.Add(updatedId);
                         }
                         FlashLFQ.ChromatographicPeak updatedPeak = new FlashLFQ.ChromatographicPeak(identifications.First(), peak.IsMbrPeak, peak.SpectraFileInfo);
@@ -611,7 +610,7 @@ namespace TaskLayer
                 foreach (string key in pwsmKeys)
                 {
                     Peptide originalPeptide = lfqPwsms[key];
-                    SilacLabel label = silacLabels.Where(x => originalPeptide.Sequence.Contains(x.AminoAcidLabel)).FirstOrDefault();
+                    SilacLabel label = SilacConversions.GetRelevantLabel(originalPeptide.Sequence, silacLabels);
                     if (label != null)
                     {
                         lfqPwsms.Remove(key);
