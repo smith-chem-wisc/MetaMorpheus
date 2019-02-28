@@ -1440,6 +1440,11 @@ namespace MetaMorpheusGUI
             dialog.ShowDialog();
         }
 
+        private void AddCrosslinker_Click(object sender, RoutedEventArgs e)
+        {
+
+        }
+
         // handle window closing
         private void MainWindow_Closing(object sender, CancelEventArgs e)
         {
