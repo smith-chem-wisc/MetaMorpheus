@@ -96,7 +96,7 @@ namespace Test
             {
                 if (temp.TryGetValue(peptide.BaseSequence, out var psm))
                 {
-                    psm.AddOrReplace(peptide, 1, 0, true, new List<MatchedFragmentIon>());
+                    psm.AddOrReplace(peptide, 1, 0, true, new List<MatchedFragmentIon>(),0);
                 }
                 else
                 {

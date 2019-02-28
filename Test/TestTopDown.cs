@@ -37,10 +37,6 @@ namespace Test
 
             var searchMode = new SinglePpmAroundZeroSearchMode(5);
 
-            bool DoPrecursorDeconvolution = true;
-            bool UseProvidedPrecursorInfo = false;
-            double DeconvolutionIntensityRatio = 4;
-            int DeconvolutionMaxAssumedChargeState = 60;
             Tolerance DeconvolutionMassTolerance = new PpmTolerance(5);
 
             var listOfSortedms2Scans = MetaMorpheusTask.GetMs2Scans(myMsDataFile, null, new CommonParameters()).OrderBy(b => b.PrecursorMass).ToArray();
@@ -71,10 +67,6 @@ namespace Test
 
             var searchMode = new SinglePpmAroundZeroSearchMode(5);
 
-            bool DoPrecursorDeconvolution = true;
-            bool UseProvidedPrecursorInfo = false;
-            double DeconvolutionIntensityRatio = 4;
-            int DeconvolutionMaxAssumedChargeState = 60;
             Tolerance DeconvolutionMassTolerance = new PpmTolerance(5);
 
             var listOfSortedms2Scans = MetaMorpheusTask.GetMs2Scans(myMsDataFile, null, new CommonParameters()).OrderBy(b => b.PrecursorMass).ToArray();
