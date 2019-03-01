@@ -50,6 +50,9 @@ namespace EngineLayer
             ElementsLocation = Path.Combine(DataDir, @"Data", @"elements.dat");
             UsefulProteomicsDatabases.Loaders.LoadElements();
 
+            string crosslinkerLocation = Path.Combine(DataDir, @"Data", @"Crosslinkers.tsv");
+            Crosslinkers = Crosslinker.LoadCrosslinkers(crosslinkerLocation);
+
             ExperimentalDesignFileName = "ExperimentalDesign.tsv";
 
             UnimodDeserialized = UsefulProteomicsDatabases.Loaders.LoadUnimod(Path.Combine(DataDir, @"Data", @"unimod.xml")).ToList();
@@ -108,6 +111,7 @@ namespace EngineLayer
         public static Dictionary<string, DissociationType> AllSupportedDissociationTypes { get; private set; }
 
         public static string ExperimentalDesignFileName { get; }
+        public static IEnumerable<Crosslinker> Crosslinkers { get; }
 
         public static void AddMods(IEnumerable<Modification> modifications, bool modsAreFromTheTopOfProteinXml)
         {

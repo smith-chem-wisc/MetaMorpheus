@@ -28,6 +28,9 @@
     <None Update="Data\combos.txt">
       <CopyToOutputDirectory>Always</CopyToOutputDirectory>
     </None>
+    <None Update="Data\Crosslinkers.tsv">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </None>
     <None Update="Data\elements.dat">
       <CopyToOutputDirectory>Always</CopyToOutputDirectory>
     </None>
@@ -35,7 +38,7 @@
       <CopyToOutputDirectory>Always</CopyToOutputDirectory>
     </None>
     <None Update="Data\ptmlist.txt">
-      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
     </None>
     <None Update="Data\unimod.xml">
       <CopyToOutputDirectory>Always</CopyToOutputDirectory>

@@ -1,4 +1,7 @@
-﻿namespace EngineLayer.CrosslinkSearch
+﻿using System.IO;
+using System.Collections.Generic;
+
+namespace EngineLayer
 {
     public enum CrosslinkerType
     {
@@ -97,6 +100,42 @@
             }
 
             return this;
+        }
+
+        public static IEnumerable<Crosslinker> LoadCrosslinkers(string CrosslinkerLocation)
+        {
+            using(StreamReader crosslinkers = new StreamReader(CrosslinkerLocation))
+            {
+                int lineCount = 0;
+                while (crosslinkers.Peek() != -1)
+                {
+                    lineCount++;
+                    string line = crosslinkers.ReadLine();
+                    if (lineCount == 1)
+                    {
+                        continue;
+                    }
+
+                    yield return GetCrosslinker(line);
+                }
+            }
+        }
+
+        public static Crosslinker GetCrosslinker(string line)
+        {
+            var split = line.Split('\t');
+            bool cleable = true;
+            if (split[3] == "F")
+            {
+                cleable = false;
+            }
+            //Name	CrosslinkAminoAcid	CrosslinkerAminoAcid2	Cleavable	CrosslinkerTotalMass	CrosslinkerShortMass	CrosslinkerLongMass	QuenchMassH2O	QuenchMassNH2	QuenchMassTris
+
+            Crosslinker crosslinker = new Crosslinker(split[1], split[2], split[0], cleable, 
+                double.Parse(split[4]), double.Parse(split[5]), double.Parse(split[6]), double.Parse(split[4]),
+                double.Parse(split[7]), double.Parse(split[8]), double.Parse(split[9]));
+
+            return crosslinker;
         }
     }
 }
