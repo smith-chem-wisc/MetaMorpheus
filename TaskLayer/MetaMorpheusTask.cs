@@ -385,6 +385,7 @@ namespace TaskLayer
                 digestionParams: fileSpecificDigestionParams,
 
                 //NEED THESE OR THEY'LL BE OVERWRITTEN
+                fragmentationType: commonParams.FragmentationType,
                 doPrecursorDeconvolution: commonParams.DoPrecursorDeconvolution,
                 useProvidedPrecursorInfo: commonParams.UseProvidedPrecursorInfo,
                 deconvolutionIntensityRatio: commonParams.DeconvolutionIntensityRatio,
