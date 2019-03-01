@@ -14,8 +14,8 @@ namespace EngineLayer
 
     public class Crosslinker
     {
-        public Crosslinker(string crosslinkerModSites, string crosslinkerModSites2, string crosslinkerName, bool cleavable, double totalMass,
-            double cleaveMassShort, double cleaveMassLong, double loopMass, double deadendMassH2O, double deadendMassNH2, double deadendMassTris)
+        public Crosslinker(string crosslinkerModSites = "K", string crosslinkerModSites2 ="K", string crosslinkerName = "DSSO", bool cleavable = true, double totalMass = 158.0038,
+            double cleaveMassShort = 54.01056, double cleaveMassLong = 85.982635, double loopMass = 158.0038, double deadendMassH2O = 176.0143, double deadendMassNH2 = 175.0303, double deadendMassTris = 279.0777)
         {
             CrosslinkerModSites = crosslinkerModSites;
             CrosslinkerModSites2 = crosslinkerModSites2;
@@ -54,7 +54,7 @@ namespace EngineLayer
                 Cleavable = true;
                 TotalMass = 158.0038;
                 CleaveMassShort = 54.01056;
-                CleaveMassLong = 103.9932;
+                CleaveMassLong = 85.982635;
                 CrosslinkerModSites = "K";
                 CrosslinkerModSites2 = "K";
                 LoopMass = 158.0038;
@@ -129,7 +129,6 @@ namespace EngineLayer
             {
                 cleable = false;
             }
-            //Name	CrosslinkAminoAcid	CrosslinkerAminoAcid2	Cleavable	CrosslinkerTotalMass	CrosslinkerShortMass	CrosslinkerLongMass	QuenchMassH2O	QuenchMassNH2	QuenchMassTris
 
             Crosslinker crosslinker = new Crosslinker(split[1], split[2], split[0], cleable, 
                 double.Parse(split[4]), double.Parse(split[5]), double.Parse(split[6]), double.Parse(split[4]),
