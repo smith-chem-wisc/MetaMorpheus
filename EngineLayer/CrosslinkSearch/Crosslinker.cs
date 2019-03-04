@@ -3,15 +3,6 @@ using System.Collections.Generic;
 
 namespace EngineLayer
 {
-    public enum CrosslinkerType
-    {
-        DSSO,
-        DSS,
-        DisulfideBond,
-        DSBU,
-        UserDefined
-    }
-
     public class Crosslinker
     {
         public Crosslinker(string crosslinkerModSites = "K", string crosslinkerModSites2 ="K", string crosslinkerName = "DSSO", bool cleavable = true, double totalMass = 158.0038,
@@ -46,62 +37,6 @@ namespace EngineLayer
         public double DeadendMassNH2 { get; set; }
         public double DeadendMassTris { get; set; }
 
-        public Crosslinker SelectCrosslinker(CrosslinkerType type)
-        {
-            if (type == CrosslinkerType.DSSO)
-            {
-                CrosslinkerName = "DSSO";
-                Cleavable = true;
-                TotalMass = 158.0038;
-                CleaveMassShort = 54.01056;
-                CleaveMassLong = 85.982635;
-                CrosslinkerModSites = "K";
-                CrosslinkerModSites2 = "K";
-                LoopMass = 158.0038;
-                DeadendMassH2O = 176.0143;
-                DeadendMassNH2 = 175.0303;
-                DeadendMassTris = 279.0777;
-            }
-            else if (type == CrosslinkerType.DisulfideBond)
-            {
-                CrosslinkerName = "DisulfideBond";
-                Cleavable = true;
-                TotalMass = -2.01565;
-                CleaveMassShort = -33.98772;
-                CleaveMassLong = 31.97207;
-                CrosslinkerModSites = "C";
-                CrosslinkerModSites2 = "C";
-            }
-            else if (type == CrosslinkerType.DSS)
-            {
-                CrosslinkerName = "DSS";
-                Cleavable = false;
-                TotalMass = 138.06808;
-                CrosslinkerModSites = "K";
-                CrosslinkerModSites2 = "K";
-                LoopMass = 138.06808;
-                DeadendMassH2O = 156.0786;
-                DeadendMassNH2 = 155.0946;
-                DeadendMassTris = 259.142;
-            }
-            else if (type == CrosslinkerType.DSBU)
-            {
-                CrosslinkerName = "DSBU";
-                Cleavable = true;
-                TotalMass = 196.0848;
-                CleaveMassShort = 85.05276;
-                CleaveMassLong = 111.0320;
-                CrosslinkerModSites = "K";
-                CrosslinkerModSites2 = "K";
-                LoopMass = 196.0848;
-                DeadendMassH2O = 214.0954;
-                DeadendMassNH2 = 213.1113;
-                DeadendMassTris = 317.1587;
-            }
-
-            return this;
-        }
-
         public static IEnumerable<Crosslinker> LoadCrosslinkers(string CrosslinkerLocation)
         {
             using(StreamReader crosslinkers = new StreamReader(CrosslinkerLocation))
@@ -130,9 +65,10 @@ namespace EngineLayer
                 cleable = false;
             }
 
-            Crosslinker crosslinker = new Crosslinker(split[1], split[2], split[0], cleable, 
-                double.Parse(split[4]), double.Parse(split[5]), double.Parse(split[6]), double.Parse(split[4]),
-                double.Parse(split[7]), double.Parse(split[8]), double.Parse(split[9]));
+            Crosslinker crosslinker = new Crosslinker(crosslinkerName: split[0], crosslinkerModSites : split[1], crosslinkerModSites2: split[2], 
+                cleavable: cleable, totalMass: double.Parse(split[4]), cleaveMassShort: double.Parse(split[5]), cleaveMassLong: double.Parse(split[6]), 
+                loopMass: double.Parse(split[4]),deadendMassH2O: double.Parse(split[7]), deadendMassNH2: double.Parse(split[8]), 
+                deadendMassTris: double.Parse(split[9]));
 
             return crosslinker;
         }

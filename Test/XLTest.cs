@@ -45,8 +45,7 @@ namespace Test
 
             var pep = ye[0];
             Assert.AreEqual(pep.BaseSequence, "MNNNK");
-            Crosslinker crosslinker = new Crosslinker();
-            crosslinker.SelectCrosslinker(CrosslinkerType.DSS);
+            Crosslinker crosslinker = GlobalVariables.Crosslinkers.Where(p=>p.CrosslinkerName == "DSS").First();
             Assert.AreEqual(crosslinker.CrosslinkerModSites, "K");
             Assert.AreEqual(Residue.GetResidue(crosslinker.CrosslinkerModSites).MonoisotopicMass, 128.09496301518999, 1e-9);
             var n = pep.Fragment(DissociationType.HCD, FragmentationTerminus.N);
@@ -119,7 +118,7 @@ namespace Test
             var listOfSortedms2Scans = MetaMorpheusTask.GetMs2Scans(myMsDataFile, null, new CommonParameters()).OrderBy(b => b.PrecursorMass).ToArray();
 
             //Generate crosslinker, which is DSSO here.
-            Crosslinker crosslinker = new Crosslinker().SelectCrosslinker(CrosslinkerType.DSSO);
+            Crosslinker crosslinker = GlobalVariables.Crosslinkers.Where(p => p.CrosslinkerName == "DSSO").First();
 
             CrosslinkSpectralMatch[] possiblePsms = new CrosslinkSpectralMatch[listOfSortedms2Scans.Length];
             new CrosslinkSearchEngine(possiblePsms, listOfSortedms2Scans, indexResults.PeptideIndex, indexResults.FragmentIndex, 0, commonParameters, crosslinker, xlSearchParameters.RestrictToTopNHits, xlSearchParameters.CrosslinkSearchTopNum, xlSearchParameters.XlQuench_H2O, xlSearchParameters.XlQuench_NH2, xlSearchParameters.XlQuench_Tris, new List<string> { }).Run();
@@ -160,18 +159,6 @@ namespace Test
         }
 
         [Test]
-        public static void XlTest_GenerateUserDefinedCrosslinker()
-        {
-            XlSearchParameters xlSearchParameters = new XlSearchParameters();
-            xlSearchParameters.CrosslinkerType = CrosslinkerType.UserDefined;
-            xlSearchParameters.CrosslinkerName = "CrossST-C";
-            xlSearchParameters.CrosslinkerResidues = "ST";
-            xlSearchParameters.CrosslinkerResidues2 = "C";
-            xlSearchParameters.CrosslinkerTotalMass = -18.01056;
-            var crosslinker = XLSearchTask.GenerateUserDefinedCrosslinker(xlSearchParameters);
-        }
-
-        [Test]
         public static void XlTest_DiffCrosslinkSites()
         {
             //Generate parameters
@@ -179,11 +166,7 @@ namespace Test
 
             var xlSearchParameters = new XlSearchParameters
             {
-                CrosslinkerType = CrosslinkerType.UserDefined,
-                CrosslinkerName = "CrossST-C",
-                CrosslinkerResidues = "ST",
-                CrosslinkerResidues2 = "C",
-                CrosslinkerTotalMass = -18.01056
+                Crosslinker = new Crosslinker(crosslinkerName: "CrossST-C", crosslinkerModSites: "ST", crosslinkerModSites2 : "C", totalMass: -18.01056)     
             };
 
             //Create databases contain two protein.
@@ -227,7 +210,7 @@ namespace Test
             var listOfSortedms2Scans = MetaMorpheusTask.GetMs2Scans(myMsDataFile, null, new CommonParameters()).OrderBy(b => b.PrecursorMass).ToArray();
 
             //Generate crosslinker, which is UserDefined here.
-            var crosslinker = XLSearchTask.GenerateUserDefinedCrosslinker(xlSearchParameters);
+            var crosslinker = xlSearchParameters.Crosslinker; 
 
             //TwoPassCrosslinkSearchEngine.Run().
             CrosslinkSpectralMatch[] possiblePsms = new CrosslinkSpectralMatch[listOfSortedms2Scans.Length];
@@ -235,15 +218,6 @@ namespace Test
 
             var newPsms = possiblePsms.Where(p => p != null).ToList();
             Assert.AreEqual(1, newPsms.Count);
-        }
-
-        /// <summary>
-        /// Verifies that crosslinker is generated properly
-        /// </summary>
-        [Test]
-        public static void CrosslinkCreateTest()
-        {
-            Assert.That((XLSearchTask.GenerateUserDefinedCrosslinker(new XlSearchParameters())).GetType().Equals(typeof(Crosslinker)));
         }
 
         [Test]

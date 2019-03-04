@@ -37,12 +37,7 @@ namespace TaskLayer
             // load proteins
             List<Protein> proteinList = LoadProteins(taskId, dbFilenameList, true, XlSearchParameters.DecoyType, localizeableModificationTypes, CommonParameters);
 
-            var crosslinker = new Crosslinker();
-            crosslinker = crosslinker.SelectCrosslinker(XlSearchParameters.CrosslinkerType);
-            if (XlSearchParameters.CrosslinkerType == CrosslinkerType.UserDefined)
-            {
-                crosslinker = GenerateUserDefinedCrosslinker(XlSearchParameters);
-            }
+            var crosslinker = XlSearchParameters.Crosslinker;
 
             MyFileManager myFileManager = new MyFileManager(true);
 
@@ -294,26 +289,6 @@ namespace TaskLayer
                     qValueThreshold = csm.FdrInfo.QValue;
                 }
             }
-        }
-        
-        //Generate user defined crosslinker
-        public static Crosslinker GenerateUserDefinedCrosslinker(XlSearchParameters xlSearchParameters)
-        {
-            var crosslinker = new Crosslinker(
-                xlSearchParameters.CrosslinkerResidues,
-                xlSearchParameters.CrosslinkerResidues2,
-                xlSearchParameters.CrosslinkerName,
-                xlSearchParameters.IsCleavable,
-                xlSearchParameters.CrosslinkerTotalMass ?? double.NaN,
-                xlSearchParameters.CrosslinkerShortMass ?? double.NaN,
-                xlSearchParameters.CrosslinkerLongMass ?? double.NaN,
-                xlSearchParameters.CrosslinkerLoopMass ?? double.NaN,
-                xlSearchParameters.CrosslinkerDeadEndMassH2O ?? double.NaN,
-                xlSearchParameters.CrosslinkerDeadEndMassNH2 ?? double.NaN,
-                xlSearchParameters.CrosslinkerDeadEndMassTris ?? double.NaN
-            );
-
-            return crosslinker;
-        }
+        }       
     }
 }
