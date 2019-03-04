@@ -53,8 +53,12 @@ namespace EngineLayer.Calibration
 
             //Populate the weighted average relative error for each scan, where index of returned array is the placement
             double[] ms1RelativeErrors = PopulateErrors(ms1Points, scanNumberToScanPlacement, ms1Scans.Count);
-            double[] ms2RelativeErrors = PopulateErrors(ms2Points, scanNumberToScanPlacement, ms2Scans.Count);
-
+            double[] ms2RelativeErrors = new double[ms2Scans.Count];
+            if(!(commonParameters.DissociationType == DissociationType.LowCID))
+            {
+                ms2RelativeErrors = PopulateErrors(ms2Points, scanNumberToScanPlacement, ms2Scans.Count);
+            }
+                
             //generate new scans
             MsDataScan[] calibratedScans = new MsDataScan[originalScans.Count];
 
@@ -66,7 +70,12 @@ namespace EngineLayer.Calibration
 
             //apply a smoothing function, so that outlier scans aren't wildly shifted
             double[] ms1SmoothedErrors = SmoothErrors(ms1RelativeErrors);
-            double[] ms2SmoothedErrors = SmoothErrors(ms2RelativeErrors);
+            double[] ms2SmoothedErrors = new double[ms2RelativeErrors.Length];
+            if (!(commonParameters.DissociationType == DissociationType.LowCID))
+            {
+                ms2SmoothedErrors = SmoothErrors(ms2RelativeErrors);
+            }
+            
 
             //calibrate the data
             int ms1Index = 0;
@@ -81,10 +90,15 @@ namespace EngineLayer.Calibration
                     calibratedScans[scanIndex] = CalibrateScan(originalScan, mostRecentMS1SmoothedError);
                     ms1Index++;
                 }
-                else //if ms2
+                else if (!(commonParameters.DissociationType == DissociationType.LowCID))
                 {
                     calibratedScans[scanIndex] = CalibrateScan(originalScan, ms2SmoothedErrors[ms2Index], mostRecentMS1SmoothedError);
                     ms2Index++;
+                }
+                else
+                {
+                    //no change for low res
+                    calibratedScans[scanIndex] = originalScan;
                 }
             }
 

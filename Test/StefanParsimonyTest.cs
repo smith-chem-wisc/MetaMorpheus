@@ -171,7 +171,7 @@ namespace Test
             };
 
             // this PSM has a target and a decoy
-            psms[0].AddOrReplace(pep2, 1, 0, true, null);
+            psms[0].AddOrReplace(pep2, 1, 0, true, null,0);
 
             psms.ForEach(p => p.ResolveAllAmbiguities());
             psms.ForEach(p => p.SetFdrValues(0, 0, 0, 0, 0, 0, 0, 0, 0, false));
