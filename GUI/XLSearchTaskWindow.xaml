@@ -81,7 +81,7 @@
                                 </Grid.RowDefinitions>
                                 <StackPanel Orientation="Horizontal" Grid.Row="0" Grid.Column="0" Margin="5">
                                     <Label x:Name="lblCrosslinker" Content="Crosslinker Type" />
-                                    <ComboBox x:Name="cbCrosslinker" ItemsSource="{Binding Path=Crosslinkers}" DisplayMemberPath="Name" SelectedValuePath="Name" SelectedValue ="{Binding Path=Crosslinker}" />
+                                    <ComboBox x:Name="cbCrosslinker" />
                                 </StackPanel>
                                 <StackPanel Orientation="Horizontal" Grid.Row="0" Grid.Column="1" Margin="5">
                                     <Label x:Name="lblQuenchMethods" Content="Quench Methods" />
@@ -90,13 +90,6 @@
                                     <CheckBox x:Name="ckbQuenchNH2"  VerticalAlignment="Center" Content="NH2" Margin="2" />
                                 </StackPanel>
                             </Grid>
-                            <GroupBox Header="User defined crosslinker">
-                                <Expander x:Name="UserDefineCrosslinker">
-                                    <StackPanel>
-                                        
-                                    </StackPanel>
-                                </Expander>
-                            </GroupBox>
                         </StackPanel>
                     </Expander>
                 </GroupBox>

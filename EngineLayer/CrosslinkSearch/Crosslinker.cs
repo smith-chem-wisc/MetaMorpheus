@@ -72,5 +72,22 @@ namespace EngineLayer
 
             return crosslinker;
         }
+
+        public override string ToString()
+        {
+            return CrosslinkerName;
+        }
+
+        public override bool Equals(object obj)
+        {
+            var a = obj as Crosslinker;
+            return a != null
+                && (a.CrosslinkerName == null && CrosslinkerName == null || a.CrosslinkerName.Equals(CrosslinkerName));
+        }
+
+        public override int GetHashCode()
+        {
+            return (CrosslinkerName ?? "").GetHashCode();
+        }
     }
 }

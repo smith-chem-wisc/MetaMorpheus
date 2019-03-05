@@ -61,10 +61,12 @@ namespace MetaMorpheusGUI
 
         private void PopulateChoices()
         {
-            //foreach (string crosslinkerName in Enum.GetNames(typeof(CrosslinkerType)))
-            //    cbCrosslinker.Items.Add(crosslinkerName);
-
-            cbCrosslinker.ItemsSource = GlobalVariables.Crosslinkers;
+            foreach (var crosslinker in GlobalVariables.Crosslinkers)
+            {
+                cbCrosslinker.Items.Add(crosslinker);
+            }
+            Crosslinker DSSO = GlobalVariables.Crosslinkers.First();
+            cbCrosslinker.SelectedItem = DSSO;
 
             foreach (string dissassociationType in GlobalVariables.AllSupportedDissociationTypes.Keys)
             {
