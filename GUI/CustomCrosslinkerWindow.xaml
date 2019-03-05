@@ -5,7 +5,7 @@
         xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
         xmlns:local="clr-namespace:MetaMorpheusGUI"
         mc:Ignorable="d"
-        Title="Add Custom Crosslinker" Height="200" Width="450" ResizeMode="NoResize" WindowStartupLocation="CenterScreen">
+        Title="Add Custom Crosslinker" Height="260" Width="450" ResizeMode="NoResize" WindowStartupLocation="CenterScreen">
     <Grid>
         <Grid.RowDefinitions>
             <RowDefinition Height="8*"/>

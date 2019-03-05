@@ -53,7 +53,7 @@ namespace MetaMorpheusGUI
 
             var newCrosslinker = new Crosslinker(crosslinkerName: name, crosslinkerModSites: aminoAcid1, crosslinkerModSites2: aminoAcid2, totalMass: mass, cleavable: isCleavable,
                     cleaveMassShort: shortMass, cleaveMassLong: longMass, loopMass: mass, deadendMassH2O: H2OQuenchMass, deadendMassNH2: NH2QuenchMass, deadendMassTris: TrisQuenchMass);
-            customCrosslinkerText.Add(newCrosslinker.ToString());
+            customCrosslinkerText.Add(newCrosslinker.ToString(true));
             try
             {                                 
                 File.Delete(customCrosslinkPath);
