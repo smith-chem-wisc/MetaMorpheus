@@ -78,6 +78,17 @@ namespace EngineLayer
             return CrosslinkerName;
         }
 
+        public string ToString(bool writeCrosslinker)
+        {
+            if (writeCrosslinker)
+            {
+                return (CrosslinkerName + "\t" + CrosslinkerModSites + "\t" + CrosslinkerModSites2 + "\t" + Cleavable + "\t" + TotalMass + "\t" + CleaveMassShort + "\t"
+                    + CleaveMassLong + "\t" + DeadendMassH2O + "\t" + DeadendMassNH2 + "\t" + DeadendMassTris);
+            }
+            else
+                return CrosslinkerName;
+        }
+
         public override bool Equals(object obj)
         {
             var a = obj as Crosslinker;

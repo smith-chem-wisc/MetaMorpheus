@@ -67,7 +67,7 @@ namespace MetaMorpheusGUI
             }
             Crosslinker DSSO = GlobalVariables.Crosslinkers.First();
             cbCrosslinker.SelectedItem = DSSO;
-
+            
             foreach (string dissassociationType in GlobalVariables.AllSupportedDissociationTypes.Keys)
             {
                 DissociationTypeComboBox.Items.Add(dissassociationType);
