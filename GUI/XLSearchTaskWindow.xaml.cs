@@ -63,10 +63,10 @@ namespace MetaMorpheusGUI
         {
             foreach (var crosslinker in GlobalVariables.Crosslinkers)
             {
-                cbCrosslinker.Items.Add(crosslinker);
+                cbCrosslinkers.Items.Add(crosslinker);
             }
             Crosslinker DSSO = GlobalVariables.Crosslinkers.First();
-            cbCrosslinker.SelectedItem = DSSO;
+            cbCrosslinkers.SelectedItem = DSSO;
             
             foreach (string dissassociationType in GlobalVariables.AllSupportedDissociationTypes.Keys)
             {
@@ -116,7 +116,7 @@ namespace MetaMorpheusGUI
             //Crosslink search para
             //RbSearchCrosslink.IsChecked = !task.XlSearchParameters.SearchGlyco;
             //RbSearchGlyco.IsChecked = task.XlSearchParameters.SearchGlyco;
-            cbCrosslinker.SelectedItem = task.XlSearchParameters.Crosslinker;
+            cbCrosslinkers.SelectedItem = task.XlSearchParameters.Crosslinker;
             ckbXLTopNum.IsChecked = task.XlSearchParameters.RestrictToTopNHits;
             txtXLTopNum.Text = task.XlSearchParameters.CrosslinkSearchTopNum.ToString(CultureInfo.InvariantCulture);
             ckbQuenchH2O.IsChecked = task.XlSearchParameters.XlQuench_H2O;
@@ -231,7 +231,7 @@ namespace MetaMorpheusGUI
             //TheTask.XlSearchParameters.SearchGlycoWithBgYgIndex = CkbSearchGlycoWithBgYgIndex.IsChecked.Value;
             TheTask.XlSearchParameters.RestrictToTopNHits = ckbXLTopNum.IsChecked.Value;
             TheTask.XlSearchParameters.CrosslinkSearchTopNum = int.Parse(txtXLTopNum.Text, CultureInfo.InvariantCulture);
-            TheTask.XlSearchParameters.Crosslinker = (Crosslinker)cbCrosslinker.SelectedItem;
+            TheTask.XlSearchParameters.Crosslinker = (Crosslinker)cbCrosslinkers.SelectedItem;
 
 
             TheTask.XlSearchParameters.XlQuench_H2O = ckbQuenchH2O.IsChecked.Value;

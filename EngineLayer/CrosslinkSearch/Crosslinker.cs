@@ -21,10 +21,6 @@ namespace EngineLayer
             DeadendMassTris = deadendMassTris;
         }
 
-        public Crosslinker()
-        {
-        }
-
         public string CrosslinkerModSites { get; set; }
         public string CrosslinkerModSites2 { get; set; }
         public string CrosslinkerName { get; set; }

@@ -8,7 +8,7 @@ namespace TaskLayer
         public XlSearchParameters()
         {
             DecoyType = DecoyType.Reverse;
-            Crosslinker = Crosslinker;
+            Crosslinker = new Crosslinker();
             RestrictToTopNHits = true;
             CrosslinkSearchTopNum = 300;
             XlQuench_H2O = true;

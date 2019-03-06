@@ -81,7 +81,7 @@
                                 </Grid.RowDefinitions>
                                 <StackPanel Orientation="Horizontal" Grid.Row="0" Grid.Column="0" Margin="5">
                                     <Label x:Name="lblCrosslinker" Content="Crosslinker Type" />
-                                    <ComboBox x:Name="cbCrosslinker" />
+                                    <ComboBox x:Name="cbCrosslinkers" />
                                 </StackPanel>
                                 <StackPanel Orientation="Horizontal" Grid.Row="0" Grid.Column="1" Margin="5">
                                     <Label x:Name="lblQuenchMethods" Content="Quench Methods" />
