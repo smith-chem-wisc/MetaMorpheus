@@ -185,18 +185,14 @@ namespace TaskLayer
             
             MsDataScan[] ms3Scans = new MsDataScan[] { };
 
-            if (commonParameters.FragmentationType == FragmentationType.MS2_MS3_CID_ETD ||
-                commonParameters.FragmentationType == FragmentationType.MS2_MS3_CID_HCD ||
-                commonParameters.FragmentationType == FragmentationType.MS2_MS3_CID_EThcD) //MS2-MS3 data. CID@HCD, or CID@ETD.
+            if (commonParameters.FragmentationType == FragmentationType.MS2_MS3) //MS2-MS3 data. CID@HCD, or CID@ETD.
             {
                 ms3Scans = myMSDataFile.GetAllScansList().Where(x => x.MsnOrder == 3).ToArray();
             }
 
             List<MsDataScan> childMs2Scans = new List<MsDataScan>();
 
-            if (commonParameters.FragmentationType == FragmentationType.MS2_MS2_CID_ETD ||
-                commonParameters.FragmentationType == FragmentationType.MS2_MS2_CID_HCD ||
-                commonParameters.FragmentationType == FragmentationType.MS2_MS2_CID_EThcD) //MS2-MS2 data. CID-HCD, or CID ETD.
+            if (commonParameters.FragmentationType == FragmentationType.MS2_MS2) //MS2-MS2 data. CID-HCD, or CID ETD.
             {
                 for (int i = 0; i < ms2Scans.Length-1; i++)
                 {

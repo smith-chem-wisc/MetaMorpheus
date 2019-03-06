@@ -17,7 +17,7 @@ namespace EngineLayer
         {
         }
 
-        public CommonParameters(string taskDescriptor = null, FragmentationType fragmentationType = FragmentationType.MS2, DissociationType dissociationType = DissociationType.HCD, bool doPrecursorDeconvolution = true,
+        public CommonParameters(string taskDescriptor = null, FragmentationType fragmentationType = FragmentationType.MS2, DissociationType dissociationType = DissociationType.HCD, DissociationType childScanDissociationType = DissociationType.Unknown, bool doPrecursorDeconvolution = true,
             bool useProvidedPrecursorInfo = true, double deconvolutionIntensityRatio = 3, int deconvolutionMaxAssumedChargeState = 12, bool reportAllAmbiguity = true,
             bool addCompIons = false, int totalPartitions = 1, double scoreCutoff = 5, int topNpeaks = 200, double minRatio = 0.01, bool trimMs1Peaks = false,
             bool trimMsMsPeaks = true, bool useDeltaScore = false, bool calculateEValue = false, Tolerance productMassTolerance = null, Tolerance precursorMassTolerance = null, Tolerance deconvolutionMassTolerance = null,
@@ -49,6 +49,7 @@ namespace EngineLayer
             ListOfModsFixed = listOfModsFixed ?? new List<(string, string)> { ("Common Fixed", "Carbamidomethyl on C"), ("Common Fixed", "Carbamidomethyl on U") };
             DissociationType = dissociationType;
             FragmentationType = fragmentationType;
+            ChildScanDissociationType = childScanDissociationType;
 
             CustomIons = DissociationTypeCollection.ProductsFromDissociationType[DissociationType.Custom];
             // reset custom fragmentation product types to default empty list
@@ -90,13 +91,15 @@ namespace EngineLayer
         public bool TrimMsMsPeaks { get; private set; }
         public bool UseDeltaScore { get; private set; }
         public bool CalculateEValue { get; private set; }
-        public double QValueOutputFilter { get; private set; }
-        public DissociationType DissociationType { get; private set; }
+        public double QValueOutputFilter { get; private set; }    
         public List<ProductType> CustomIons { get; private set; }
         public bool AssumeOrphanPeaksAreZ1Fragments { get; private set; }
         public int MaxHeterozygousVariants { get; private set; }
         public int MinVariantDepth { get; private set; }
         public FragmentationType FragmentationType { get; set; }
+        public DissociationType DissociationType { get; private set; }
+        public DissociationType ChildScanDissociationType { get; private set; }
+        
 
         public CommonParameters Clone()
         {
@@ -122,6 +125,7 @@ namespace EngineLayer
                                 TaskDescriptor,
                                 FragmentationType,
                                 DissociationType,
+                                ChildScanDissociationType,
                                 DoPrecursorDeconvolution,
                                 UseProvidedPrecursorInfo,
                                 DeconvolutionIntensityRatio,

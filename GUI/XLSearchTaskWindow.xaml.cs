@@ -70,6 +70,7 @@ namespace MetaMorpheusGUI
             foreach (string dissassociationType in GlobalVariables.AllSupportedDissociationTypes.Keys)
             {
                 DissociationTypeComboBox.Items.Add(dissassociationType);
+                ChildScanDissociationTypeComboBox.Items.Add(dissassociationType);
             }
 
             cbbXLprecusorMsTl.Items.Add("Da");
@@ -145,7 +146,7 @@ namespace MetaMorpheusGUI
             trimMsMs.IsChecked = task.CommonParameters.TrimMsMsPeaks;
             TopNPeaksTextBox.Text = task.CommonParameters.TopNpeaks.ToString(CultureInfo.InvariantCulture);
             MinRatioTextBox.Text = task.CommonParameters.MinRatio.ToString(CultureInfo.InvariantCulture);
-            DissociationTypeComboBox.SelectedItem = task.CommonParameters.DissociationType.ToString();
+            
 
             checkBoxDecoy.IsChecked = task.XlSearchParameters.DecoyType != DecoyType.None;
             deconvolutePrecursors.IsChecked = task.CommonParameters.DoPrecursorDeconvolution;
@@ -159,6 +160,7 @@ namespace MetaMorpheusGUI
             productMassToleranceTextBox.Text = task.CommonParameters.ProductMassTolerance.Value.ToString(CultureInfo.InvariantCulture);
             productMassToleranceComboBox.SelectedIndex = task.CommonParameters.ProductMassTolerance is AbsoluteTolerance ? 0 : 1;
             DissociationTypeComboBox.SelectedItem = task.CommonParameters.DissociationType.ToString();
+            ChildScanDissociationTypeComboBox.SelectedItem = task.CommonParameters.ChildScanDissociationType.ToString();
             minScoreAllowed.Text = task.CommonParameters.ScoreCutoff.ToString(CultureInfo.InvariantCulture);
             numberOfDatabaseSearchesTextBox.Text = task.CommonParameters.TotalPartitions.ToString(CultureInfo.InvariantCulture);
             maxThreadsTextBox.Text = task.CommonParameters.MaxThreadsToUsePerFile.ToString(CultureInfo.InvariantCulture);
@@ -241,6 +243,12 @@ namespace MetaMorpheusGUI
             }
 
             DissociationType dissociationType = GlobalVariables.AllSupportedDissociationTypes[DissociationTypeComboBox.SelectedItem.ToString()];
+            DissociationType childScanDissociationType = DissociationType.Unknown;
+            if (ChildScanDissociationTypeComboBox.SelectedItem != null)
+            {
+                childScanDissociationType = GlobalVariables.AllSupportedDissociationTypes[ChildScanDissociationTypeComboBox.SelectedItem.ToString()];
+            }
+
             CustomFragmentationWindow.Close();
 
             //TheTask.XlSearchParameters.SearchGlyco = RbSearchGlyco.IsChecked.Value;
@@ -429,6 +437,24 @@ namespace MetaMorpheusGUI
             if (DissociationTypeComboBox.SelectedItem.ToString().Equals(DissociationType.Custom.ToString()))
             {
                 CustomFragmentationWindow.Show();
+            }
+            
+            if (ChildScanDissociationTypeComboBox.SelectedItem != null && ChildScanDissociationTypeComboBox.SelectedItem.ToString().Equals(DissociationType.Custom.ToString()))
+            {
+                CustomFragmentationWindow.Show();
+            }
+
+            if (CbbFragmentationType.SelectedItem.ToString().Equals("MS2"))
+            {
+                ChildScanDissociationTypeComboBox.SelectedItem = null;
+            }
+        }
+
+        private void CbbFragmentationType_DropDownClosed(object sender, EventArgs e)
+        {
+            if (CbbFragmentationType.SelectedItem.ToString().Equals("MS2"))
+            {
+                ChildScanDissociationTypeComboBox.SelectedItem = null;
             }
         }
     }
