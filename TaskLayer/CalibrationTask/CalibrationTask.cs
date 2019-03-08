@@ -86,7 +86,7 @@ namespace TaskLayer
                 // load the file
                 Status("Loading spectra file...", new List<string> { taskId, "Individual Spectra Files" });
 
-                var myMsDataFile = myFileManager.LoadFile(originalUncalibratedFilePath, CommonParameters.TopNpeaks, CommonParameters.MinRatio, CommonParameters.TrimMs1Peaks, CommonParameters.TrimMsMsPeaks, CommonParameters);
+                var myMsDataFile = myFileManager.LoadFile(originalUncalibratedFilePath, CommonParameters.TopNpeaks, CommonParameters.MinRatio, combinedParams.NumWindows, CommonParameters.TrimMs1Peaks, CommonParameters.TrimMsMsPeaks, CommonParameters);
 
                 // get datapoints to fit calibration function to
                 Status("Acquiring calibration data points...", new List<string> { taskId, "Individual Spectra Files" });

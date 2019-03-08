@@ -229,6 +229,7 @@ namespace TaskLayer
                 scoreCutoff: commonParams.ScoreCutoff,
                 topNpeaks: commonParams.TopNpeaks,
                 minRatio: commonParams.MinRatio,
+                numWindows: commonParams.NumWindows,
                 trimMs1Peaks: commonParams.TrimMs1Peaks,
                 trimMsMsPeaks: commonParams.TrimMsMsPeaks,
                 useDeltaScore: commonParams.UseDeltaScore,

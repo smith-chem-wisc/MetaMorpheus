@@ -393,7 +393,7 @@ namespace Test
                 SearchType = SearchType.Modern
             };
 
-            MsDataFile myMsDataFile = myFileManager.LoadFile(origDataFile, CommonParameters.TopNpeaks, CommonParameters.MinRatio, CommonParameters.TrimMs1Peaks, CommonParameters.TrimMsMsPeaks, CommonParameters);
+            MsDataFile myMsDataFile = myFileManager.LoadFile(origDataFile, CommonParameters.TopNpeaks, CommonParameters.MinRatio, CommonParameters.NumWindows, CommonParameters.TrimMs1Peaks, CommonParameters.TrimMsMsPeaks, CommonParameters);
 
             Ms2ScanWithSpecificMass[] arrayOfMs2ScansSortedByMass = MetaMorpheusTask.GetMs2Scans(myMsDataFile, origDataFile, CommonParameters).OrderBy(b => b.PrecursorMass).ToArray();
             int numSpectra = myMsDataFile.GetAllScansList().Count(p => p.MsnOrder == 2);

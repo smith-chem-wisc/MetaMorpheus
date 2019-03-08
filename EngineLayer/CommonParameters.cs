@@ -19,7 +19,7 @@ namespace EngineLayer
 
         public CommonParameters(string taskDescriptor = null, DissociationType dissociationType = DissociationType.HCD, bool doPrecursorDeconvolution = true,
             bool useProvidedPrecursorInfo = true, double deconvolutionIntensityRatio = 3, int deconvolutionMaxAssumedChargeState = 12, bool reportAllAmbiguity = true,
-            bool addCompIons = false, int totalPartitions = 1, double scoreCutoff = 5, int topNpeaks = 200, double minRatio = 0.01, bool trimMs1Peaks = false,
+            bool addCompIons = false, int totalPartitions = 1, double scoreCutoff = 5, int topNpeaks = 200, double minRatio = 0.01, int numWindows = 1, bool trimMs1Peaks = false,
             bool trimMsMsPeaks = true, bool useDeltaScore = false, bool calculateEValue = false, Tolerance productMassTolerance = null, Tolerance precursorMassTolerance = null, Tolerance deconvolutionMassTolerance = null,
             int maxThreadsToUsePerFile = -1, DigestionParams digestionParams = null, IEnumerable<(string, string)> listOfModsVariable = null, IEnumerable<(string, string)> listOfModsFixed = null, double qValueOutputFilter = 1.0,
             bool assumeOrphanPeaksAreZ1Fragments = true, int maxHeterozygousVariants = 4, int minVariantDepth = 1)
@@ -35,6 +35,7 @@ namespace EngineLayer
             ScoreCutoff = scoreCutoff;
             TopNpeaks = topNpeaks;
             MinRatio = minRatio;
+            NumWindows = numWindows;
             TrimMs1Peaks = trimMs1Peaks;
             TrimMsMsPeaks = trimMsMsPeaks;
             UseDeltaScore = useDeltaScore;
@@ -85,6 +86,7 @@ namespace EngineLayer
         public bool ReportAllAmbiguity { get; private set; }
         public int TopNpeaks { get; private set; }
         public double MinRatio { get; private set; }
+        public int NumWindows { get; private set; }
         public bool TrimMs1Peaks { get; private set; }
         public bool TrimMsMsPeaks { get; private set; }
         public bool UseDeltaScore { get; private set; }
@@ -129,6 +131,7 @@ namespace EngineLayer
                                 ScoreCutoff,
                                 TopNpeaks,
                                 MinRatio,
+                                NumWindows,
                                 TrimMs1Peaks,
                                 TrimMsMsPeaks,
                                 UseDeltaScore,

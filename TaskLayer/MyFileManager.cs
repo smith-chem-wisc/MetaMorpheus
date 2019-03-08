@@ -72,9 +72,9 @@ namespace TaskLayer
             return ThermoMsFileReaderVersionCheck.DllsNotFound;
         }
 
-        public MsDataFile LoadFile(string origDataFile, int? topNpeaks, double? minRatio, bool trimMs1Peaks, bool trimMsMsPeaks, CommonParameters commonParameters)
+        public MsDataFile LoadFile(string origDataFile, int? topNpeaks, double? minRatio, int? numWindows, bool trimMs1Peaks, bool trimMsMsPeaks, CommonParameters commonParameters)
         {
-            FilteringParams filter = new FilteringParams(topNpeaks, minRatio, 1, trimMs1Peaks, trimMsMsPeaks);
+            FilteringParams filter = new FilteringParams(topNpeaks, minRatio, numWindows, trimMs1Peaks, trimMsMsPeaks);
 
             if (commonParameters.DissociationType == DissociationType.LowCID)
             {
