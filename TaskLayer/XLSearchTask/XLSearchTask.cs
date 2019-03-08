@@ -9,6 +9,7 @@ using System.IO;
 using System.Linq;
 using MzLibUtil;
 using EngineLayer.FdrAnalysis;
+using System;
 
 namespace TaskLayer
 {
@@ -88,7 +89,7 @@ namespace TaskLayer
                 MsDataFile myMsDataFile = myFileManager.LoadFile(origDataFile, combinedParams.TopNpeaks, combinedParams.MinRatio, combinedParams.TrimMs1Peaks, combinedParams.TrimMsMsPeaks, combinedParams);
 
                 Status("Getting ms2 scans...", thisId);
-                Ms2ScanWithSpecificMass[] arrayOfMs2ScansSortedByMass = GetMs2Scans(myMsDataFile, origDataFile, combinedParams.DoPrecursorDeconvolution, combinedParams.UseProvidedPrecursorInfo, combinedParams.DeconvolutionIntensityRatio, combinedParams.DeconvolutionMaxAssumedChargeState, combinedParams.DeconvolutionMassTolerance).OrderBy(b => b.PrecursorMass).ToArray();
+                Ms2ScanWithSpecificMass[] arrayOfMs2ScansSortedByMass = GetMs2Scans(myMsDataFile, origDataFile, combinedParams).OrderBy(b => b.PrecursorMass).ToArray();
 
                 CrosslinkSpectralMatch[] newPsms = new CrosslinkSpectralMatch[arrayOfMs2ScansSortedByMass.Length];
                 for (int currentPartition = 0; currentPartition < CommonParameters.TotalPartitions; currentPartition++)
@@ -97,7 +98,7 @@ namespace TaskLayer
                     List<Protein> proteinListSubset = proteinList.GetRange(currentPartition * proteinList.Count() / combinedParams.TotalPartitions, ((currentPartition + 1) * proteinList.Count() / combinedParams.TotalPartitions) - (currentPartition * proteinList.Count() / combinedParams.TotalPartitions));
 
                     Status("Getting fragment dictionary...", new List<string> { taskId });
-                    var indexEngine = new IndexingEngine(proteinListSubset, variableModifications, fixedModifications, currentPartition, UsefulProteomicsDatabases.DecoyType.Reverse, combinedParams, 30000.0, false, new List<string> { taskId });
+                    var indexEngine = new IndexingEngine(proteinListSubset, variableModifications, fixedModifications, currentPartition, UsefulProteomicsDatabases.DecoyType.Reverse, combinedParams, 30000.0, false, dbFilenameList.Select(p => new FileInfo(p.FilePath)).ToList(), new List<string> { taskId });
                     List<int>[] fragmentIndex = null;
                     List<int>[] precursorIndex = null;
 
@@ -106,11 +107,10 @@ namespace TaskLayer
                     Status("Searching files...", taskId);
                     new CrosslinkSearchEngine(newPsms, arrayOfMs2ScansSortedByMass, peptideIndex, fragmentIndex, currentPartition, combinedParams, crosslinker,
                         XlSearchParameters.RestrictToTopNHits, XlSearchParameters.CrosslinkSearchTopNum, XlSearchParameters.XlQuench_H2O,
-                        XlSearchParameters.XlQuench_NH2, XlSearchParameters.XlQuench_Tris, 
-                        false, false, // TODO: re-enable searching for 2+, 3+ fragments
-                        thisId).Run();
+                        XlSearchParameters.XlQuench_NH2, XlSearchParameters.XlQuench_Tris, thisId).Run();
 
                     ReportProgress(new ProgressEventArgs(100, "Done with search " + (currentPartition + 1) + "/" + CommonParameters.TotalPartitions + "!", thisId));
+                    if (GlobalVariables.StopLoops) { break; }
                 }
 
                 allPsms.AddRange(newPsms.Where(p => p != null));
@@ -275,20 +275,23 @@ namespace TaskLayer
                     cumulativeTarget++;
                 }
 
-                double qValue = (double)cumulativeDecoy / cumulativeTarget;
+                double qValue = Math.Min(1, (double)cumulativeDecoy / cumulativeTarget);
                 csm.SetFdrValues(cumulativeTarget, cumulativeDecoy, qValue, 0, 0, 0, 0, 0, 0, false);
             }
 
-            double qThreshold = 0;
-            foreach (CrosslinkSpectralMatch csm in csms)
+            double qValueThreshold = 1.0;
+            for (int i = csms.Count - 1; i >= 0; i--)
             {
-                if (csm.FdrInfo.QValue > qThreshold)
+                CrosslinkSpectralMatch csm = csms[i];
+
+                // threshold q-values
+                if (csm.FdrInfo.QValue > qValueThreshold)
                 {
-                    qThreshold = csm.FdrInfo.QValue;
+                    csm.FdrInfo.QValue = qValueThreshold;
                 }
-                else
+                else if (csm.FdrInfo.QValue < qValueThreshold)
                 {
-                    csm.FdrInfo.QValue = qThreshold;
+                    qValueThreshold = csm.FdrInfo.QValue;
                 }
             }
         }

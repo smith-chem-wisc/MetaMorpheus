@@ -73,7 +73,7 @@ namespace TaskLayer
                             + "\t" + item.BetaPeptide.BaseSequence.Length.ToString(CultureInfo.InvariantCulture)
                             + "\t" + item.BaseSequence.Length.ToString(CultureInfo.InvariantCulture)
                             + "\t" + (item.BetaPeptide.BaseSequence.Length + item.BaseSequence.Length).ToString(CultureInfo.InvariantCulture)
-                            + "\t" + "-." + item.BaseSequence + item.LinkPositions.First().ToString(CultureInfo.InvariantCulture) + "--" + item.BetaPeptide.BaseSequence + item.BetaPeptide.LinkPositions.First().ToString(CultureInfo.InvariantCulture) + ".-"
+                            + "\t" + "-." + item.FullSequence + item.LinkPositions.First().ToString(CultureInfo.InvariantCulture) + "--" + item.BetaPeptide.FullSequence + item.BetaPeptide.LinkPositions.First().ToString(CultureInfo.InvariantCulture) + ".-"
                             + "\t" + item.BestMatchingPeptides.First().Peptide.Protein.Accession.ToString(CultureInfo.InvariantCulture)
                                    + "(" + item.XlProteinPos.ToString(CultureInfo.InvariantCulture) + ")"
                             + "\t" + item.BetaPeptide.BestMatchingPeptides.First().Peptide.Protein.Accession.ToString(CultureInfo.InvariantCulture)
@@ -99,8 +99,8 @@ namespace TaskLayer
             _pepxml.summary_xml = items[0].FullFilePath + ".pep.XML";
 
             string proteaseC = ""; string proteaseNC = "";
-            foreach (var x in CommonParameters.DigestionParams.Protease.SequencesInducingCleavage) { proteaseC += x; }
-            foreach (var x in CommonParameters.DigestionParams.Protease.SequencesPreventingCleavage) { proteaseNC += x; }
+            foreach (var x in CommonParameters.DigestionParams.Protease.DigestionMotifs.Select(m => m.InducingCleavage)) { proteaseC += x; }
+            foreach (var x in CommonParameters.DigestionParams.Protease.DigestionMotifs.Select(m => m.PreventingCleavage)) { proteaseNC += x; }
 
             Crosslinker crosslinker = new Crosslinker().SelectCrosslinker(XlSearchParameters.CrosslinkerType);
             if (XlSearchParameters.CrosslinkerType == CrosslinkerType.UserDefined)

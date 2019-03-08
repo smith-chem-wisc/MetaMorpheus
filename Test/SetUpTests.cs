@@ -19,7 +19,7 @@ namespace Test
         public static void Setup()
         {
             Environment.CurrentDirectory = TestContext.CurrentContext.TestDirectory;
-            Loaders.LoadElements(Path.Combine(TestContext.CurrentContext.TestDirectory, elementsLocation));
+            Loaders.LoadElements();
 
             MetaMorpheusEngine.WarnHandler += WarnStatusHandler;
             MetaMorpheusTask.WarnHandler += WarnStatusHandler;

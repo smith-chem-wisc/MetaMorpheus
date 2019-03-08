@@ -19,6 +19,7 @@ using System.IO;
 using System.Linq;
 using UsefulProteomicsDatabases;
 using Proteomics.ProteolyticDigestion;
+using System.Globalization;
 
 namespace TaskLayer
 {
@@ -102,7 +103,7 @@ namespace TaskLayer
                 Status("Loading spectra file...", new List<string> { taskId, "Individual Spectra Files", origDataFile });
                 MsDataFile myMsDataFile = myFileManager.LoadFile(origDataFile, combinedParams.TopNpeaks, combinedParams.MinRatio, combinedParams.TrimMs1Peaks, combinedParams.TrimMsMsPeaks, combinedParams);
                 Status("Getting ms2 scans...", new List<string> { taskId, "Individual Spectra Files", origDataFile });
-                Ms2ScanWithSpecificMass[] arrayOfMs2ScansSortedByMass = GetMs2Scans(myMsDataFile, origDataFile, combinedParams.DoPrecursorDeconvolution, combinedParams.UseProvidedPrecursorInfo, combinedParams.DeconvolutionIntensityRatio, combinedParams.DeconvolutionMaxAssumedChargeState, combinedParams.DeconvolutionMassTolerance).OrderBy(b => b.PrecursorMass).ToArray();
+                Ms2ScanWithSpecificMass[] arrayOfMs2ScansSortedByMass = GetMs2Scans(myMsDataFile, origDataFile, combinedParams).OrderBy(b => b.PrecursorMass).ToArray();
                 myFileManager.DoneWithFile(origDataFile);
                 PeptideSpectralMatch[] allPsmsArray = new PeptideSpectralMatch[arrayOfMs2ScansSortedByMass.Length];
                 new ClassicSearchEngine(allPsmsArray, arrayOfMs2ScansSortedByMass, variableModifications, fixedModifications, proteinList, searchMode, combinedParams, new List<string> { taskId, "Individual Spectra Files", origDataFile }).Run();
@@ -196,8 +197,8 @@ namespace TaskLayer
                 while (r.Peek() >= 0)
                 {
                     var line = r.ReadLine().Split(' ');
-                    var mass1 = double.Parse(line[0]);
-                    var mass2 = double.Parse(line[1]);
+                    var mass1 = double.Parse(line[0], CultureInfo.InvariantCulture);
+                    var mass2 = double.Parse(line[1], CultureInfo.InvariantCulture);
                     if (modificationsThatCanBeCombined.Where(b => b.ValidModification == true).Any(b => Math.Abs((double)b.MonoisotopicMass - mass1) < tolForComboLoading) &&
                         modificationsThatCanBeCombined.Where(b => b.ValidModification == true).Any(b => Math.Abs((double)b.MonoisotopicMass - mass2) < tolForComboLoading))
                         yield return new Tuple<double, double>(mass1, mass2);
