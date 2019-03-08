@@ -63,11 +63,11 @@ namespace Test
 
             //test peptides
             output = File.ReadAllLines(TestContext.CurrentContext.TestDirectory + @"/TestSilac/AllQuantifiedPeptides.tsv");
-            Assert.AreEqual(output.Length, 3);
-            Assert.IsTrue(output[1].Contains("PEPTIDEK\taccession1\t"));//test the accession was not modified
+            Assert.AreEqual(output.Length, 2);
+            Assert.IsTrue(output[1].Contains("PEPTIDEK\taccession1\t"));//test the sequence and accession were not modified
             Assert.IsTrue(output[1].Contains("875000")); //test intensity
-            Assert.IsTrue(output[2].Contains("PEPTIDEK(+8.014)\taccession1\t")); //test the accession was not modified
-            Assert.IsTrue(output[2].Contains("437500")); //test intensity
+            Assert.IsFalse(output[1].Contains("PEPTIDEK(+8.014)")); //test the sequence was not doubled modified
+            Assert.IsTrue(output[1].Contains("437500")); //test intensity
 
             //test peaks
             output = File.ReadAllLines(TestContext.CurrentContext.TestDirectory + @"/TestSilac/AllQuantifiedPeaks.tsv");
