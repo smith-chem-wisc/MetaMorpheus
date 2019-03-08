@@ -22,14 +22,14 @@ namespace Test
     [TestFixture]
     public static class XLTest
     {
-        private static IndexingResults indexResults { get; set; }
-        private static CommonParameters commonParameters { get; set; }
-        private static XlSearchParameters xlSearchParameters { get; set; }
-        private static List<Protein> proteinList { get; set; }
-        private static List<Modification> variableModifications { get; set; }
-        private static List<Modification> fixedModifications { get; set; }
-        private static Crosslinker crosslinker { get; set; }
-        private static List<PeptideWithSetModifications> digestedList { get; set; }
+        private static IndexingResults IndexResults { get; set; }
+        private static CommonParameters CommonParameters { get; set; }
+        private static XlSearchParameters XlSearchParameters { get; set; }
+        private static List<Protein> ProteinList { get; set; }
+        private static List<Modification> VariableModifications { get; set; }
+        private static List<Modification> FixedModifications { get; set; }
+        private static Crosslinker Crosslinker { get; set; }
+        private static List<PeptideWithSetModifications> DigestedList { get; set; }
 
         [Test]
         public static void XlTestXlPosCal()
@@ -162,12 +162,14 @@ namespace Test
         [Test]
         public static void XlTest_GenerateUserDefinedCrosslinker()
         {
-            XlSearchParameters xlSearchParameters = new XlSearchParameters();
-            xlSearchParameters.CrosslinkerType = CrosslinkerType.UserDefined;
-            xlSearchParameters.CrosslinkerName = "CrossST-C";
-            xlSearchParameters.CrosslinkerResidues = "ST";
-            xlSearchParameters.CrosslinkerResidues2 = "C";
-            xlSearchParameters.CrosslinkerTotalMass = -18.01056;
+            XlSearchParameters xlSearchParameters = new XlSearchParameters
+            {
+                CrosslinkerType = CrosslinkerType.UserDefined,
+                CrosslinkerName = "CrossST-C",
+                CrosslinkerResidues = "ST",
+                CrosslinkerResidues2 = "C",
+                CrosslinkerTotalMass = -18.01056
+            };
             var crosslinker = XLSearchTask.GenerateUserDefinedCrosslinker(xlSearchParameters);
         }
 
@@ -282,8 +284,10 @@ namespace Test
         [Test]
         public static void XLSearchWithGeneratedIndices()
         {
-            XLSearchTask xlSearchTask = new XLSearchTask();
-            xlSearchTask.CommonParameters = new CommonParameters();
+            XLSearchTask xlSearchTask = new XLSearchTask
+            {
+                CommonParameters = new CommonParameters()
+            };
             string myFile = Path.Combine(TestContext.CurrentContext.TestDirectory, @"XlTestData\BSA_DSSO_ETchD6010.mgf");
             string myDatabase = Path.Combine(TestContext.CurrentContext.TestDirectory, @"XlTestData\BSA.fasta");
             string folderPath = Path.Combine(TestContext.CurrentContext.TestDirectory, @"TestXLSearch");

@@ -121,8 +121,8 @@ namespace MetaMorpheusGUI
 
             try
             {
-                List<string> warnings; // TODO: print warnings
-                foreach (var psm in PsmTsvReader.ReadTsv(filename, out warnings))
+                // TODO: print warnings
+                foreach (var psm in PsmTsvReader.ReadTsv(filename, out List<string> warnings))
                 {
                     if (psm.Filename == fileNameWithExtension || psm.Filename == fileNameWithoutExtension || psm.Filename.Contains(fileNameWithoutExtension))
                     {

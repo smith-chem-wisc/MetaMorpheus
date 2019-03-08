@@ -229,9 +229,9 @@ namespace TaskLayer
             return MyTaskResults;
         }
 
-        private int NumRequiredPsms = 20;
-        private int NumRequiredMs1Datapoints = 50;
-        private int NumRequiredMs2Datapoints = 100;
+        private readonly int NumRequiredPsms = 20;
+        private readonly int NumRequiredMs1Datapoints = 50;
+        private readonly int NumRequiredMs2Datapoints = 100;
         public const string CalibSuffix = "-calib";
 
         private bool ImprovGlobal(double prevPrecTol, double prevProdTol, int prevPsmCount, int thisRoundPsmCount, double thisRoundPrecTol, double thisRoundProdTol)
