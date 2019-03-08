@@ -388,7 +388,7 @@ namespace MetaMorpheusGUI
             var fileName = String.Concat(pdfPlot, ".pdf");           
             using (Stream writePDF = File.Create(Path.Combine(fileDirectory, fileName)))
             {
-                PdfExporter.Export(plot.Model, writePDF, 600, 400);
+                PdfExporter.Export(plot.Model, writePDF, 1000, 700);
             }
 
         }
