@@ -42,7 +42,7 @@ namespace MetaMorpheusGUI
             TheTask = task ?? new SearchTask();
             PopulateChoices();
             UpdateFieldsFromTask(TheTask);
-            
+
             if (task == null)
             {
                 this.saveButton.Content = "Add the Search Task";
@@ -57,6 +57,7 @@ namespace MetaMorpheusGUI
             this.DataContext = DataContextForSearchTaskWindow;
             SearchModifications.Timer.Tick += new EventHandler(TextChangeTimerHandler);
             dataGridSilacLabels.DataContext = StaticSilacLabelsObservableCollection;
+            base.Closing += this.OnClosing;
         }
 
         internal SearchTask TheTask { get; private set; }
@@ -361,7 +362,7 @@ namespace MetaMorpheusGUI
             }
 
             Protease protease = (Protease)proteaseComboBox.SelectedItem;
-            
+
             DissociationType dissociationType = GlobalVariables.AllSupportedDissociationTypes[dissociationTypeComboBox.SelectedItem.ToString()];
             CustomFragmentationWindow.Close();
 
@@ -553,7 +554,7 @@ namespace MetaMorpheusGUI
                     MessageBox.Show("Could not parse custom mass difference acceptor: " + ex.Message, "Error", MessageBoxButton.OK, MessageBoxImage.Error);
                     return;
                 }
-                
+
                 TheTask.SearchParameters.MassDiffAcceptorType = MassDiffAcceptorType.Custom;
                 TheTask.SearchParameters.CustomMdac = customkMdacTextBox.Text;
             }
@@ -761,7 +762,7 @@ namespace MetaMorpheusGUI
             SearchModifications.SetTimer();
             SearchModifications.VariableSearch = true;
         }
-        
+
         private void TextChangeTimerHandler(object sender, EventArgs e)
         {
             if (SearchModifications.FixedSearch)
@@ -776,7 +777,7 @@ namespace MetaMorpheusGUI
                 SearchModifications.VariableSearch = false;
             }
         }
-      
+
         private void CustomFragmentationHandler(object sender, EventArgs e)
         {
             if (dissociationTypeComboBox.SelectedItem.ToString().Equals(DissociationType.Custom.ToString()))
@@ -817,6 +818,10 @@ namespace MetaMorpheusGUI
         {
             StaticSilacLabelsObservableCollection.Clear();
             dataGridSilacLabels.Items.Refresh();
+
+        private void OnClosing(object sender, CancelEventArgs e)
+        {
+            CustomFragmentationWindow.Close();
         }
     }
 
