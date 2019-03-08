@@ -19,6 +19,8 @@ using Proteomics.Fragmentation;
 using Proteomics.ProteolyticDigestion;
 using System.Text.RegularExpressions;
 using System.Windows.Input;
+using OxyPlot;
+using OxyPlot.Reporting;
 
 namespace MetaMorpheusGUI
 {
@@ -42,6 +44,7 @@ namespace MetaMorpheusGUI
         private Regex illegalInFileName = new Regex(@"[\\/:*?""<>|]");
         private ObservableCollection<ModTypeForTreeView> plotTypes;
         private List<MetaDrawPsm> psms = new List<MetaDrawPsm>();
+        private string pdfPlot;
 
         public MetaDraw()
         {
@@ -380,32 +383,33 @@ namespace MetaMorpheusGUI
 
         private void createPdfButton_Click(object sender, RoutedEventArgs e)
         {
-           foreach(var plot in plotTypes)
-           {
-                if (plot.Use == true)
-                {
-                    //add to pdf export
-                }
-           }
+            PlotModelStat plot = new PlotModelStat(pdfPlot, psms);
+            var fileDirectory = Directory.GetParent(tsvResultsFilePath).ToString();
+            var fileName = String.Concat(pdfPlot, ".pdf");           
+            using (Stream writePDF = File.Create(Path.Combine(fileDirectory, fileName)))
+            {
+                PdfExporter.Export(plot.Model, writePDF, 600, 400);
+            }
+
+        }
+        private void HandleCheck(object sender, RoutedEventArgs e)
+        {
+            RadioButton r = sender as RadioButton;
+            pdfPlot = r.Content.ToString();
+            
         }
 
         private void plot_MouseDoubleClick(object sender, MouseButtonEventArgs args)
         {
-            if (sender is TreeViewItem)
+            TreeViewItem s = sender as TreeViewItem;
+            var selected = (ModTypeForTreeView)s.Header;
+            if (psms.Count == 0)
             {
-                if(!((TreeViewItem)sender).IsSelected)
-                {
-                    return;
-                }
-            }
-            var selected = (ModTypeForTreeView) plotsTreeView.SelectedItem;
-            if (psms.Count == 0) {
                 MessageBox.Show("There are no PSMs to analyze.\n\nLoad the current file or choose a new file.");
-                    return;
+                return;
             }
-            PlotModelStat plot = new PlotModelStat(selected.DisplayName , psms);
+            PlotModelStat plot = new PlotModelStat(selected.DisplayName, psms);
             plotViewStat.DataContext = plot;
-
         }
 
         private void TabControl_SelectionChanged(object sender, SelectionChangedEventArgs e)

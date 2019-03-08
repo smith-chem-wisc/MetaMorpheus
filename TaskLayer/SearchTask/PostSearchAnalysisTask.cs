@@ -216,6 +216,14 @@ namespace TaskLayer
                 && p.FdrInfo.QValueNotch <= 0.01
                 && !p.IsDecoy
                 && p.FullSequence != null).ToList();
+            
+            //Read in RT library
+            //Find the filepath
+
+            foreach (var unambiguousPsm in unambiguousPsmsBelowOnePercentFdr)
+            {
+                //unambiguousPsm.ScanRetentionTime
+            }
 
             var psmsGroupedByFile = unambiguousPsmsBelowOnePercentFdr.GroupBy(p => p.FullFilePath);
 

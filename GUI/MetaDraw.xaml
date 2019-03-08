@@ -422,8 +422,8 @@
                                                 <TreeView.Resources>
                                                     <HierarchicalDataTemplate DataType="{x:Type local:ModTypeForTreeView}">
                                                         <StackPanel Orientation="Horizontal" Background="{Binding Background}">
-                                                            <CheckBox IsChecked="False"/>
-                                                            <TextBlock Text="{Binding DisplayName}" />
+                                                            <RadioButton Content="{Binding DisplayName}" IsChecked="False" GroupName="plotPdf" Checked="HandleCheck"/>
+                                                            <!--<TextBlock Text="{Binding DisplayName}" />-->
                                                         </StackPanel>
                                                     </HierarchicalDataTemplate>
                                                 </TreeView.Resources>
@@ -434,8 +434,7 @@
                             </GroupBox>
 
                             <DockPanel Grid.Row="3" LastChildFill="False" Grid.ColumnSpan="2" Margin="0 1 0 1">
-                                <Button Name="generateGraph" Content="Graph" DockPanel.Dock="Left" Click="selectPsmFileButton_Click" Width="137" />
-                                <Button Name="createPdfButton" Content="Create PDF"  DockPanel.Dock="Left" Click="selectPsmFileButton_Click" Width="137" />
+                                <Button Name="createPdfButton" Content="Create PDF"  DockPanel.Dock="Bottom" Click="createPdfButton_Click" Width="137"/>
                             </DockPanel>
                         </Grid>
 

@@ -1,5 +1,4 @@
 ﻿using EngineLayer;
-using MassSpectrometry;
 using MetaMorpheusGUI;
 using OxyPlot;
 using OxyPlot.Axes;
@@ -13,7 +12,7 @@ using System.Linq;
 
 namespace ViewModels
 {
-    public class PlotModelStat : INotifyPropertyChanged
+    public class PlotModelStat : INotifyPropertyChanged , IPlotModel
     {
         private const double STROKE_THICKNESS_UNANNOTATED = 0.5;
         private const double STROKE_THICKNESS_ANNOTATED = 2.0;
@@ -41,14 +40,16 @@ namespace ViewModels
         {
             get
             {
-                return this.privateModel;
+                return privateModel;
             }
-            set
+            private set
             {
-                this.privateModel = value;
+                privateModel = value;
                 NotifyPropertyChanged("Model");
             }
         }
+
+        public OxyColor Background => OxyColors.White;
 
         public event PropertyChangedEventHandler PropertyChanged;
 
@@ -63,7 +64,7 @@ namespace ViewModels
 
         public PlotModelStat()
         {
-            
+
         }
 
         public PlotModelStat(string plotName, List<MetaDrawPsm> psms)
@@ -78,7 +79,7 @@ namespace ViewModels
             return plotNames;
         }
 
-        public void createPlot(string plotType)
+        private void createPlot(string plotType)
         {
             if (plotType.Equals("Histogram of Precursor PPM Errors (around 0 Da mass-difference notch only)"))
             {
@@ -110,14 +111,14 @@ namespace ViewModels
             }
         }
 
-        public void histogramPlot(int plotType)
+        private void histogramPlot(int plotType)
         {
             double binSize = -1;
             SortedList<double, double> numCategory = new SortedList<double, double>();
             IEnumerable<double> numbers = new List<double>();
             Dictionary<string, int> dict = new Dictionary<string, int>();
-            ColumnSeries column = new ColumnSeries { ColumnWidth = 200, IsStacked = false };
             HistogramSeries histogram = new HistogramSeries();
+
             switch (plotType)
             {
                 case 1:
@@ -130,11 +131,13 @@ namespace ViewModels
                     break;
                 case 3:
                     numbers = allPSM.Select(p => (double)(p.PrecursorCharge));
-                    binSize = 1;
+                    var results = numbers.GroupBy(p => p).OrderBy(p => p.Key).Select(p => p);
+                    dict = results.ToDictionary(p => p.Key.ToString(), v => v.Count());
                     break;
                 case 4:
                     numbers = allPSM.SelectMany(p => p.MatchedIons.Select(v => (double)v.Charge));
-                    binSize = 1;
+                    results = numbers.GroupBy(p => p).OrderBy(p => p.Key).Select(p => p);
+                    dict = results.ToDictionary(p => p.Key.ToString(), v => v.Count());
                     break;
                 case 5:
                     var psmsWithMods = allPSM.Where(p => !p.FullSequence.Contains("|") && p.FullSequence.Contains("["));
@@ -143,8 +146,9 @@ namespace ViewModels
                     dict = groupedMods.ToDictionary(p => p.Key, v => v.Count());
                     break;
             }
-            if (plotType == 5)
+            if (plotType >= 3)
             {
+                ColumnSeries column = new ColumnSeries { ColumnWidth = 200, IsStacked = false };
                 var counter = 0;
                 String[] category = new string[dict.Count];
                 foreach (var d in dict)
@@ -153,7 +157,7 @@ namespace ViewModels
                     category[counter] = d.Key;
                     counter++;
                 }
-                privateModel.Axes.Add(new CategoryAxis
+                this.privateModel.Axes.Add(new CategoryAxis
                 {
                     ItemsSource = category
                 });
@@ -177,10 +181,10 @@ namespace ViewModels
             }
         }
 
-        public void linePlot(int plotType)
+        private void linePlot(int plotType)
         {
             ScatterSeries series = new ScatterSeries();
-            List<Tuple<double,double>> xy = new List<Tuple<double, double>>();
+            List<Tuple<double, double>> xy = new List<Tuple<double, double>>();
             var filteredList = allPSM.Where(p => !p.MassDiffDa.Contains("|") && Math.Round(double.Parse(p.MassDiffDa), 0) == 0).ToList();
             var test = allPSM.SelectMany(p => p.MatchedIons.Select(v => v.MassErrorPpm));
             switch (plotType)
@@ -199,18 +203,34 @@ namespace ViewModels
                     break;
             }
             IOrderedEnumerable<Tuple<double, double>> sorted = xy.OrderBy(x => x.Item1);
-            foreach(var val in sorted)
+            foreach (var val in sorted)
             {
                 series.Points.Add(new ScatterPoint(val.Item1, val.Item2));
             }
             privateModel.Series.Add(series);
         }
 
-        public static int normalizeNumber(double number)
+        private static int normalizeNumber(double number)
         {
             string s = number.ToString("00.00E0");
             int i = Convert.ToInt32(s.Substring(s.Length - 1));
             return i;
         }
+
+        public void Update(bool updateData)
+        {
+            
+        }
+
+        public void Render(IRenderContext rc, double width, double height)
+        {
+            
+        }
+
+        public void AttachPlotView(IPlotView plotView)
+        {
+            
+        }
     }
 }
+
