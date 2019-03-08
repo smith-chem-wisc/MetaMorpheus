@@ -19,6 +19,7 @@ using System.IO;
 using System.Linq;
 using UsefulProteomicsDatabases;
 using Proteomics.ProteolyticDigestion;
+using System.Globalization;
 
 namespace TaskLayer
 {
@@ -196,8 +197,8 @@ namespace TaskLayer
                 while (r.Peek() >= 0)
                 {
                     var line = r.ReadLine().Split(' ');
-                    var mass1 = double.Parse(line[0]);
-                    var mass2 = double.Parse(line[1]);
+                    var mass1 = double.Parse(line[0], CultureInfo.InvariantCulture);
+                    var mass2 = double.Parse(line[1], CultureInfo.InvariantCulture);
                     if (modificationsThatCanBeCombined.Where(b => b.ValidModification == true).Any(b => Math.Abs((double)b.MonoisotopicMass - mass1) < tolForComboLoading) &&
                         modificationsThatCanBeCombined.Where(b => b.ValidModification == true).Any(b => Math.Abs((double)b.MonoisotopicMass - mass2) < tolForComboLoading))
                         yield return new Tuple<double, double>(mass1, mass2);

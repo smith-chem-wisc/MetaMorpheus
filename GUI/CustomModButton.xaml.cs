@@ -7,6 +7,7 @@ using System.Linq;
 using System.Windows;
 using MassSpectrometry;
 using Proteomics;
+using System.Globalization;
 
 namespace MetaMorpheusGUI
 {
@@ -84,7 +85,7 @@ namespace MetaMorpheusGUI
             {
                 neutralLosses = new Dictionary<DissociationType, List<double>>
                 {
-                    { disType, neutralLossText.Split(',').Select(double.Parse).ToList() }
+                    { disType, neutralLossText.Split(',').Select(p => double.Parse(p, CultureInfo.InvariantCulture)).ToList() }
                 };
             }
 
@@ -93,7 +94,7 @@ namespace MetaMorpheusGUI
             {
                 diagnosticIons = new Dictionary<DissociationType, List<double>>()
                 {
-                    { disType, diagnosticIonText.Split(',').Select(p => double.Parse(p).ToMass(1)).ToList() }
+                    { disType, diagnosticIonText.Split(',').Select(p => double.Parse(p, CultureInfo.InvariantCulture).ToMass(1)).ToList() }
                 };
             }
 
@@ -108,7 +109,7 @@ namespace MetaMorpheusGUI
             double? modMass = null;
             if (!string.IsNullOrEmpty(modMassText))
             {
-                modMass = double.Parse(modMassText);
+                modMass = double.Parse(modMassText, CultureInfo.InvariantCulture);
             }
 
             Modification modification = new Modification(
@@ -231,7 +232,7 @@ namespace MetaMorpheusGUI
                 }
             }
 
-            if (!string.IsNullOrEmpty(mass) && !double.TryParse(mass, out double dmass))
+            if (!string.IsNullOrEmpty(mass) && !double.TryParse(mass, NumberStyles.Any, CultureInfo.InvariantCulture, out double dmass))
             {
                 MessageBox.Show("Could not parse modification mass", "Error", MessageBoxButton.OK, MessageBoxImage.Hand);
                 return true;
@@ -241,11 +242,11 @@ namespace MetaMorpheusGUI
             {
                 if (!string.IsNullOrEmpty(neutralLoss))
                 {
-                    neutralLoss.Split(',').Select(double.Parse).ToList();
+                    neutralLoss.Split(',').Select(p => double.Parse(p, CultureInfo.InvariantCulture)).ToList();
                 }
                 if (!string.IsNullOrEmpty(diagnosticIon))
                 {
-                    diagnosticIon.Split(',').Select(double.Parse).ToList();
+                    diagnosticIon.Split(',').Select(p => double.Parse(p, CultureInfo.InvariantCulture)).ToList();
                 }
             }
             catch

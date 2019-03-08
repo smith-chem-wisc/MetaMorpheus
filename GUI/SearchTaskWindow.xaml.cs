@@ -40,7 +40,7 @@ namespace MetaMorpheusGUI
             TheTask = task ?? new SearchTask();
             PopulateChoices();
             UpdateFieldsFromTask(TheTask);
-            
+
             if (task == null)
             {
                 this.saveButton.Content = "Add the Search Task";
@@ -54,6 +54,7 @@ namespace MetaMorpheusGUI
             };
             this.DataContext = DataContextForSearchTaskWindow;
             SearchModifications.Timer.Tick += new EventHandler(TextChangeTimerHandler);
+            base.Closing += this.OnClosing;
         }
 
         internal SearchTask TheTask { get; private set; }
@@ -352,7 +353,7 @@ namespace MetaMorpheusGUI
             }
 
             Protease protease = (Protease)proteaseComboBox.SelectedItem;
-            
+
             DissociationType dissociationType = GlobalVariables.AllSupportedDissociationTypes[dissociationTypeComboBox.SelectedItem.ToString()];
             CustomFragmentationWindow.Close();
 
@@ -433,7 +434,7 @@ namespace MetaMorpheusGUI
             bool TrimMs1Peaks = trimMs1.IsChecked.Value;
             bool TrimMsMsPeaks = trimMsMs.IsChecked.Value;
             int TopNpeaks = int.Parse(TopNPeaksTextBox.Text);
-            double MinRatio = double.Parse(MinRatioTextBox.Text);
+            double MinRatio = double.Parse(MinRatioTextBox.Text, CultureInfo.InvariantCulture);
 
             bool parseMaxThreadsPerFile = !maxThreadsTextBox.Text.Equals("") && (int.Parse(maxThreadsTextBox.Text) <= Environment.ProcessorCount && int.Parse(maxThreadsTextBox.Text) > 0);
 
@@ -541,7 +542,7 @@ namespace MetaMorpheusGUI
                     MessageBox.Show("Could not parse custom mass difference acceptor: " + ex.Message, "Error", MessageBoxButton.OK, MessageBoxImage.Error);
                     return;
                 }
-                
+
                 TheTask.SearchParameters.MassDiffAcceptorType = MassDiffAcceptorType.Custom;
                 TheTask.SearchParameters.CustomMdac = customkMdacTextBox.Text;
             }
@@ -749,7 +750,7 @@ namespace MetaMorpheusGUI
             SearchModifications.SetTimer();
             SearchModifications.VariableSearch = true;
         }
-        
+
         private void TextChangeTimerHandler(object sender, EventArgs e)
         {
             if (SearchModifications.FixedSearch)
@@ -764,13 +765,18 @@ namespace MetaMorpheusGUI
                 SearchModifications.VariableSearch = false;
             }
         }
-      
+
         private void CustomFragmentationHandler(object sender, EventArgs e)
         {
             if (dissociationTypeComboBox.SelectedItem.ToString().Equals(DissociationType.Custom.ToString()))
             {
                 CustomFragmentationWindow.Show();
             }
+        }
+
+        private void OnClosing(object sender, CancelEventArgs e)
+        {
+            CustomFragmentationWindow.Close();
         }
     }
 

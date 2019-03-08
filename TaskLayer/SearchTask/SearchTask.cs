@@ -306,7 +306,7 @@ namespace TaskLayer
                 switch (split[1])
                 {
                     case "dot":
-                        double[] massShifts = Array.ConvertAll(split[4].Split(','), Double.Parse);
+                        double[] massShifts = split[4].Split(',').Select(p => double.Parse(p, CultureInfo.InvariantCulture)).ToArray();
                         string newString = split[2].Replace("�", "");
                         double toleranceValue = double.Parse(newString, CultureInfo.InvariantCulture);
                         if (split[3].ToUpperInvariant().Equals("PPM"))
