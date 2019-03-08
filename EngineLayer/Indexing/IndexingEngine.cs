@@ -23,7 +23,10 @@ namespace EngineLayer.Indexing
         public readonly bool GeneratePrecursorIndex;
         public readonly List<FileInfo> ProteinDatabases;
 
-        public IndexingEngine(List<Protein> proteinList, List<Modification> variableModifications, List<Modification> fixedModifications, List<SilacLabel> silacLabels, int currentPartition, DecoyType decoyType, CommonParameters commonParams, double maxFragmentSize, bool generatePrecursorIndex, List<FileInfo> proteinDatabases, List<string> nestedIds) : base(commonParams, nestedIds)
+        public IndexingEngine(List<Protein> proteinList, List<Modification> variableModifications, List<Modification> fixedModifications,
+            List<SilacLabel> silacLabels, int currentPartition, DecoyType decoyType, CommonParameters commonParams, double maxFragmentSize,
+            bool generatePrecursorIndex, List<FileInfo> proteinDatabases, List<string> nestedIds)
+            : base(commonParams, nestedIds)
         {
             ProteinList = proteinList;
             VariableModifications = variableModifications;

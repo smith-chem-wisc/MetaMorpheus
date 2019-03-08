@@ -275,7 +275,7 @@ namespace TaskLayer
                         //add the unlabeled protein group
                         //this method removes the heavy psms from the protein groups and adds their light replica
                         EngineLayer.ProteinGroup unlabeledProteinGroup = SilacConversions.GetSilacProteinGroups(unambiguousPsmsBelowOnePercentFdr, proteinGroup);
-                        silacProteinGroups.Add(unlabeledProteinGroup); 
+                        silacProteinGroups.Add(unlabeledProteinGroup);
                         //add the labeled protein group(s)
                         List<EngineLayer.ProteinGroup> addedProteinGroups = allSilacLabels.Select(x => SilacConversions.GetSilacProteinGroups(unambiguousPsmsBelowOnePercentFdr, proteinGroup, x)).ToList(); //foreach label, create a new heavy protein group
                         addedProteinGroups.ForEach(x => silacProteinGroups.Add(x)); //add to psm list
@@ -618,7 +618,7 @@ namespace TaskLayer
 
                 //convert all lfq peptides from heavy to light for output
                 Dictionary<string, Peptide> lfqPwsms = Parameters.FlashLfqResults.PeptideModifiedSequences;
-                List<string> pwsmKeys = lfqPwsms.Keys.ToList();             
+                List<string> pwsmKeys = lfqPwsms.Keys.ToList();
                 foreach (string key in pwsmKeys)
                 {
                     Peptide currentPeptide = lfqPwsms[key];

@@ -164,7 +164,7 @@ namespace MetaMorpheusGUI
             checkBoxNoOneHitWonders.IsChecked = task.SearchParameters.NoOneHitWonders;
             checkBoxNoQuant.IsChecked = !task.SearchParameters.DoQuantification;
             checkBoxLFQ.IsChecked = task.SearchParameters.DoQuantification;
-            if(task.SearchParameters.SilacLabels!=null && task.SearchParameters.SilacLabels.Count!=0)
+            if (task.SearchParameters.SilacLabels != null && task.SearchParameters.SilacLabels.Count != 0)
             {
                 checkBoxSILAC.IsChecked = true;
                 task.SearchParameters.SilacLabels.ForEach(x => StaticSilacLabelsObservableCollection.Add(new SilacInfoForDataGrid(x)));
@@ -490,8 +490,8 @@ namespace MetaMorpheusGUI
             TheTask.SearchParameters.DoParsimony = checkBoxParsimony.IsChecked.Value;
             TheTask.SearchParameters.NoOneHitWonders = checkBoxNoOneHitWonders.IsChecked.Value;
             TheTask.SearchParameters.DoQuantification = !checkBoxNoQuant.IsChecked.Value;
-            TheTask.SearchParameters.SilacLabels = checkBoxSILAC.IsChecked.Value && StaticSilacLabelsObservableCollection.Count == 0 ? 
-                null : 
+            TheTask.SearchParameters.SilacLabels = checkBoxSILAC.IsChecked.Value && StaticSilacLabelsObservableCollection.Count == 0 ?
+                null :
                 StaticSilacLabelsObservableCollection.Select(x => x.SilacLabel).ToList();
             TheTask.SearchParameters.Normalize = checkBoxNormalize.IsChecked.Value;
             TheTask.SearchParameters.MatchBetweenRuns = checkBoxMatchBetweenRuns.IsChecked.Value;
@@ -818,6 +818,7 @@ namespace MetaMorpheusGUI
         {
             StaticSilacLabelsObservableCollection.Clear();
             dataGridSilacLabels.Items.Refresh();
+        }
 
         private void OnClosing(object sender, CancelEventArgs e)
         {

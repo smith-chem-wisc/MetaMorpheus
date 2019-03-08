@@ -1,8 +1,4 @@
-﻿using EngineLayer;
-using System;
-using System.Collections.Generic;
-using System.Collections.ObjectModel;
-using System.IO;
+﻿using System;
 using System.Linq;
 using System.Windows;
 using System.Windows.Input;
@@ -27,8 +23,8 @@ namespace MetaMorpheusGUI
         private int OxygenCount;
         private int HydrogenCount;
         private int SulfurCount;
-        private double AminoAcidMonoisotopicMass = 0;
-        private char AminoAcid = '\0';
+        private double AminoAcidMonoisotopicMass; //starts 0
+        private char AminoAcid; //starts '\0'
         private bool ModifyingFormula;
 
         public SilacModificationWindow()

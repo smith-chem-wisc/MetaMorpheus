@@ -1,11 +1,7 @@
-﻿using EngineLayer;
-using Proteomics;
+﻿using Proteomics;
 using Proteomics.ProteolyticDigestion;
-using System;
 using System.Collections.Generic;
 using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
 
 namespace EngineLayer
 {
@@ -25,8 +21,12 @@ namespace EngineLayer
                     PeptideWithSetModifications pwsm = notchAndPwsm.Peptide;
                     Protein originalProtein = pwsm.Protein;
                     Protein modifiedProtein = heavyToLight ?
-                        new Protein(originalProtein, originalProtein.BaseSequence.Replace(silacLabel.AminoAcidLabel, silacLabel.OriginalAminoAcid), originalProtein.Accession.Replace(silacLabel.MassDifference, "")) : //create light protein
-                        new Protein(originalProtein, originalProtein.BaseSequence.Replace(silacLabel.OriginalAminoAcid, silacLabel.AminoAcidLabel), originalProtein.Accession + silacLabel.MassDifference); //create heavy protein with different accessions
+                        new Protein(originalProtein,
+                            originalProtein.BaseSequence.Replace(silacLabel.AminoAcidLabel, silacLabel.OriginalAminoAcid),
+                            originalProtein.Accession.Replace(silacLabel.MassDifference, "")) : //create light protein
+                        new Protein(originalProtein,
+                            originalProtein.BaseSequence.Replace(silacLabel.OriginalAminoAcid, silacLabel.AminoAcidLabel),
+                            originalProtein.Accession + silacLabel.MassDifference); //create heavy protein with different accessions
                     PeptideWithSetModifications modifiedPwsm = new PeptideWithSetModifications(
                         modifiedProtein,
                         pwsm.DigestionParams,
@@ -57,7 +57,9 @@ namespace EngineLayer
                 }
                 else
                 {
-                    Protein modifiedProtein = new Protein(originalProtein, originalProtein.BaseSequence.Replace(silacLabel.AminoAcidLabel, silacLabel.OriginalAminoAcid), originalProtein.Accession.Replace(silacLabel.MassDifference, "")); //create light protein
+                    Protein modifiedProtein = new Protein(originalProtein,
+                        originalProtein.BaseSequence.Replace(silacLabel.AminoAcidLabel, silacLabel.OriginalAminoAcid),
+                        originalProtein.Accession.Replace(silacLabel.MassDifference, "")); //create light protein
                     PeptideWithSetModifications modifiedPwsm = new PeptideWithSetModifications(
                         modifiedProtein,
                         pwsm.DigestionParams,

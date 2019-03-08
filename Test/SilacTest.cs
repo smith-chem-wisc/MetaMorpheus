@@ -7,7 +7,6 @@ using Proteomics.ProteolyticDigestion;
 using System;
 using System.Collections.Generic;
 using System.IO;
-using System.Text;
 using TaskLayer;
 using UsefulProteomicsDatabases;
 
@@ -33,8 +32,6 @@ namespace Test
                     SilacLabels = silacLabels
                 }
             };
-
-            List<(string, MetaMorpheusTask)> taskList = new List<(string, MetaMorpheusTask)> { ("1", task) };
 
             PeptideWithSetModifications lightPeptide = new PeptideWithSetModifications("PEPTIDEK", new Dictionary<string, Proteomics.Modification>());
 
