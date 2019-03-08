@@ -131,7 +131,7 @@ namespace Test
             CommonParameters CommonParameters = new CommonParameters(digestionParams: new DigestionParams(maxMissedCleavages: 0, minPeptideLength: 1), scoreCutoff: 1);
 
             PeptideSpectralMatch myPsm = new PeptideSpectralMatch(pwsm1, 0, 10, 0, scan, new DigestionParams(), new List<MatchedFragmentIon>());
-            myPsm.AddOrReplace(pwsm2, 10, 0, true, new List<MatchedFragmentIon>());
+            myPsm.AddOrReplace(pwsm2, 10, 0, true, new List<MatchedFragmentIon>(),0);
             
             myPsm.ResolveAllAmbiguities();
 

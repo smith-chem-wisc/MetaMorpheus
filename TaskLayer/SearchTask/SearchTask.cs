@@ -1,6 +1,5 @@
 ﻿using EngineLayer;
 using EngineLayer.ClassicSearch;
-using EngineLayer.FdrAnalysis;
 using EngineLayer.Indexing;
 using EngineLayer.ModernSearch;
 using EngineLayer.NonSpecificEnzymeSearch;
@@ -137,7 +136,7 @@ namespace TaskLayer
                 Status("Loading spectra file...", thisId);
                 MsDataFile myMsDataFile = myFileManager.LoadFile(origDataFile, combinedParams.TopNpeaks, combinedParams.MinRatio, combinedParams.TrimMs1Peaks, combinedParams.TrimMsMsPeaks, combinedParams);
                 Status("Getting ms2 scans...", thisId);
-                Ms2ScanWithSpecificMass[] arrayOfMs2ScansSortedByMass = GetMs2Scans(myMsDataFile, origDataFile, combinedParams.DoPrecursorDeconvolution, combinedParams.UseProvidedPrecursorInfo, combinedParams.DeconvolutionIntensityRatio, combinedParams.DeconvolutionMaxAssumedChargeState, combinedParams.DeconvolutionMassTolerance).OrderBy(b => b.PrecursorMass).ToArray();
+                Ms2ScanWithSpecificMass[] arrayOfMs2ScansSortedByMass = GetMs2Scans(myMsDataFile, origDataFile, combinedParams).OrderBy(b => b.PrecursorMass).ToArray();
                 numMs2SpectraPerFile.Add(Path.GetFileNameWithoutExtension(origDataFile), new int[] { myMsDataFile.GetAllScansList().Count(p => p.MsnOrder == 2), arrayOfMs2ScansSortedByMass.Length });
                 myFileManager.DoneWithFile(origDataFile);
 
@@ -149,10 +148,10 @@ namespace TaskLayer
                     for (int currentPartition = 0; currentPartition < combinedParams.TotalPartitions; currentPartition++)
                     {
                         List<PeptideWithSetModifications> peptideIndex = null;
-                        List<Protein> proteinListSubset = proteinList.GetRange(currentPartition * proteinList.Count() / combinedParams.TotalPartitions, ((currentPartition + 1) * proteinList.Count() / combinedParams.TotalPartitions) - (currentPartition * proteinList.Count() / combinedParams.TotalPartitions));
+                        List<Protein> proteinListSubset = proteinList.GetRange(currentPartition * proteinList.Count / combinedParams.TotalPartitions, ((currentPartition + 1) * proteinList.Count / combinedParams.TotalPartitions) - (currentPartition * proteinList.Count / combinedParams.TotalPartitions));
 
                         Status("Getting fragment dictionary...", new List<string> { taskId });
-                        var indexEngine = new IndexingEngine(proteinListSubset, variableModifications, fixedModifications, currentPartition, SearchParameters.DecoyType, combinedParams, SearchParameters.MaxFragmentSize, false, new List<string> { taskId });
+                        var indexEngine = new IndexingEngine(proteinListSubset, variableModifications, fixedModifications, currentPartition, SearchParameters.DecoyType, combinedParams, SearchParameters.MaxFragmentSize, false, dbFilenameList.Select(p => new FileInfo(p.FilePath)).ToList(), new List<string> { taskId });
                         List<int>[] fragmentIndex = null;
                         List<int>[] precursorIndex = null;
                         lock (indexLock)
@@ -165,6 +164,7 @@ namespace TaskLayer
                         new ModernSearchEngine(fileSpecificPsms, arrayOfMs2ScansSortedByMass, peptideIndex, fragmentIndex, currentPartition, combinedParams, massDiffAcceptor, SearchParameters.MaximumMassThatFragmentIonScoreIsDoubled, thisId).Run();
 
                         ReportProgress(new ProgressEventArgs(100, "Done with search " + (currentPartition + 1) + "/" + combinedParams.TotalPartitions + "!", thisId));
+                        if (GlobalVariables.StopLoops) { break; }
                     }
                 }
                 // nonspecific search
@@ -192,21 +192,24 @@ namespace TaskLayer
                         {
                             List<PeptideWithSetModifications> peptideIndex = null;
 
-                            List<Protein> proteinListSubset = proteinList.GetRange(currentPartition * proteinList.Count() / paramToUse.TotalPartitions, ((currentPartition + 1) * proteinList.Count() / paramToUse.TotalPartitions) - (currentPartition * proteinList.Count() / paramToUse.TotalPartitions));
+                            List<Protein> proteinListSubset = proteinList.GetRange(currentPartition * proteinList.Count / paramToUse.TotalPartitions, ((currentPartition + 1) * proteinList.Count / paramToUse.TotalPartitions) - (currentPartition * proteinList.Count / paramToUse.TotalPartitions));
 
                             List<int>[] fragmentIndex = new List<int>[1];
                             List<int>[] precursorIndex = new List<int>[1];
 
                             Status("Getting fragment dictionary...", new List<string> { taskId });
-                            var indexEngine = new IndexingEngine(proteinListSubset, variableModifications, fixedModifications, currentPartition, SearchParameters.DecoyType, paramToUse, SearchParameters.MaxFragmentSize, true, new List<string> { taskId });
+                            var indexEngine = new IndexingEngine(proteinListSubset, variableModifications, fixedModifications, currentPartition, SearchParameters.DecoyType, paramToUse, SearchParameters.MaxFragmentSize, true, dbFilenameList.Select(p => new FileInfo(p.FilePath)).ToList(), new List<string> { taskId });
                             lock (indexLock)
+                            {
                                 GenerateIndexes(indexEngine, dbFilenameList, ref peptideIndex, ref fragmentIndex, ref precursorIndex, proteinList, GlobalVariables.AllModsKnown.ToList(), taskId);
+                            }
 
                             Status("Searching files...", taskId);
 
                             new NonSpecificEnzymeSearchEngine(fileSpecificPsmsSeparatedByFdrCategory, arrayOfMs2ScansSortedByMass, peptideIndex, fragmentIndex, precursorIndex, currentPartition, paramToUse, massDiffAcceptor, SearchParameters.MaximumMassThatFragmentIonScoreIsDoubled, thisId).Run();
 
                             ReportProgress(new ProgressEventArgs(100, "Done with search " + (currentPartition + 1) + "/" + paramToUse.TotalPartitions + "!", thisId));
+                            if (GlobalVariables.StopLoops) { break; }
                         }
                     }
                     lock (psmLock)
@@ -248,24 +251,26 @@ namespace TaskLayer
                 allPsms = NonSpecificEnzymeSearchEngine.ResolveFdrCategorySpecificPsms(allCategorySpecificPsms, numNotches, taskId, CommonParameters);
             }
 
-            PostSearchAnalysisParameters parameters = new PostSearchAnalysisParameters();
-            parameters.SearchTaskResults = MyTaskResults;
-            parameters.SearchTaskId = taskId;
-            parameters.SearchParameters = SearchParameters;
-            parameters.ProteinList = proteinList;
-            parameters.AllPsms = allPsms;
-            parameters.FixedModifications = fixedModifications;
-            parameters.VariableModifications = variableModifications;
-            parameters.ListOfDigestionParams = new HashSet<DigestionParams>(fileSpecificCommonParams.Select(p => p.DigestionParams));
-            parameters.CurrentRawFileList = currentRawFileList;
-            parameters.MyFileManager = myFileManager;
-            parameters.NumNotches = numNotches;
-            parameters.OutputFolder = OutputFolder;
-            parameters.IndividualResultsOutputFolder = Path.Combine(OutputFolder, "Individual File Results");
-            parameters.FlashLfqResults = flashLfqResults;
-            parameters.FileSettingsList = fileSettingsList;
-            parameters.NumMs2SpectraPerFile = numMs2SpectraPerFile;
-            parameters.DatabaseFilenameList = dbFilenameList;
+            PostSearchAnalysisParameters parameters = new PostSearchAnalysisParameters
+            {
+                SearchTaskResults = MyTaskResults,
+                SearchTaskId = taskId,
+                SearchParameters = SearchParameters,
+                ProteinList = proteinList,
+                AllPsms = allPsms,
+                FixedModifications = fixedModifications,
+                VariableModifications = variableModifications,
+                ListOfDigestionParams = new HashSet<DigestionParams>(fileSpecificCommonParams.Select(p => p.DigestionParams)),
+                CurrentRawFileList = currentRawFileList,
+                MyFileManager = myFileManager,
+                NumNotches = numNotches,
+                OutputFolder = OutputFolder,
+                IndividualResultsOutputFolder = Path.Combine(OutputFolder, "Individual File Results"),
+                FlashLfqResults = flashLfqResults,
+                FileSettingsList = fileSettingsList,
+                NumMs2SpectraPerFile = numMs2SpectraPerFile,
+                DatabaseFilenameList = dbFilenameList
+            };
             PostSearchAnalysisTask postProcessing = new PostSearchAnalysisTask
             {
                 Parameters = parameters,
@@ -286,50 +291,62 @@ namespace TaskLayer
                 case MassDiffAcceptorType.Open: return 1;
                 case MassDiffAcceptorType.Custom: return ParseSearchMode(customMdac).NumNotches;
 
-                default: throw new MetaMorpheusException("Unknown MassDiffAcceptorType");
+                default: throw new MetaMorpheusException("Unknown mass difference acceptor type");
             }
         }
 
         private static MassDiffAcceptor ParseSearchMode(string text)
         {
-            MassDiffAcceptor ye = null;
+            MassDiffAcceptor massDiffAcceptor = null;
 
-            var split = text.Split(' ');
-
-            switch (split[1])
+            try
             {
-                case "dot":
+                var split = text.Split(' ');
 
-                    var massShifts = Array.ConvertAll(split[4].Split(','), Double.Parse);
-                    var newString = split[2].Replace("�", "");
-                    var toleranceValue = double.Parse(newString, CultureInfo.InvariantCulture);
-                    if (split[3].ToUpperInvariant().Equals("PPM"))
-                        ye = new DotMassDiffAcceptor(split[0], massShifts, new PpmTolerance(toleranceValue));
-                    else if (split[3].ToUpperInvariant().Equals("DA"))
-                        ye = new DotMassDiffAcceptor(split[0], massShifts, new AbsoluteTolerance(toleranceValue));
-                    break;
+                switch (split[1])
+                {
+                    case "dot":
+                        double[] massShifts = split[4].Split(',').Select(p => double.Parse(p, CultureInfo.InvariantCulture)).ToArray();
+                        string newString = split[2].Replace("�", "");
+                        double toleranceValue = double.Parse(newString, CultureInfo.InvariantCulture);
+                        if (split[3].ToUpperInvariant().Equals("PPM"))
+                        {
+                            massDiffAcceptor = new DotMassDiffAcceptor(split[0], massShifts, new PpmTolerance(toleranceValue));
+                        }
+                        else if (split[3].ToUpperInvariant().Equals("DA"))
+                        {
+                            massDiffAcceptor = new DotMassDiffAcceptor(split[0], massShifts, new AbsoluteTolerance(toleranceValue));
+                        }
 
-                case "interval":
-                    IEnumerable<DoubleRange> doubleRanges = Array.ConvertAll(split[2].Split(','), b => new DoubleRange(double.Parse(b.Trim(new char[] { '[', ']' }).Split(';')[0], CultureInfo.InvariantCulture), double.Parse(b.Trim(new char[] { '[', ']' }).Split(';')[1], CultureInfo.InvariantCulture)));
-                    ye = new IntervalMassDiffAcceptor(split[0], doubleRanges);
-                    break;
+                        break;
 
-                case "OpenSearch":
-                    ye = new OpenSearchMode();
-                    break;
+                    case "interval":
+                        IEnumerable<DoubleRange> doubleRanges = Array.ConvertAll(split[2].Split(';'), b => new DoubleRange(double.Parse(b.Trim(new char[] { '[', ']' }).Split(',')[0], CultureInfo.InvariantCulture), double.Parse(b.Trim(new char[] { '[', ']' }).Split(',')[1], CultureInfo.InvariantCulture)));
+                        massDiffAcceptor = new IntervalMassDiffAcceptor(split[0], doubleRanges);
+                        break;
 
-                case "daltonsAroundZero":
-                    ye = new SingleAbsoluteAroundZeroSearchMode(double.Parse(split[2], CultureInfo.InvariantCulture));
-                    break;
+                    case "OpenSearch":
+                        massDiffAcceptor = new OpenSearchMode();
+                        break;
 
-                case "ppmAroundZero":
-                    ye = new SinglePpmAroundZeroSearchMode(double.Parse(split[2], CultureInfo.InvariantCulture));
-                    break;
+                    case "daltonsAroundZero":
+                        massDiffAcceptor = new SingleAbsoluteAroundZeroSearchMode(double.Parse(split[2], CultureInfo.InvariantCulture));
+                        break;
 
-                default:
-                    throw new MetaMorpheusException("Could not parse search mode string");
+                    case "ppmAroundZero":
+                        massDiffAcceptor = new SinglePpmAroundZeroSearchMode(double.Parse(split[2], CultureInfo.InvariantCulture));
+                        break;
+
+                    default:
+                        throw new MetaMorpheusException("Unrecognized search mode type: " + split[1]);
+                }
             }
-            return ye;
+            catch (Exception e)
+            {
+                throw new MetaMorpheusException("Could not parse search mode string: " + e.Message);
+            }
+
+            return massDiffAcceptor;
         }
     }
 }

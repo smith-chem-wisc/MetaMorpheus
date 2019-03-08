@@ -7,11 +7,11 @@ namespace MetaMorpheusGUI
     public class ModTypeForTreeView : INotifyPropertyChanged
     {
         private bool? _isChecked;
-        private bool? _toGraph;
 
         public ModTypeForTreeView(string displayName, bool bad)
         {
             Children = new ObservableCollection<ModForTreeView>();
+            Expanded = false;
             DisplayName = displayName;
             if (bad)
                 Background = new SolidColorBrush(Colors.Red);
@@ -33,17 +33,7 @@ namespace MetaMorpheusGUI
             }
         }
 
-        public bool? Graph
-        {
-            get
-            {
-                return _toGraph;
-            }
-            set
-            {
-                _toGraph = value;
-            }
-        }
+        public bool Expanded { get; set; }
 
         public string DisplayName { get; }
 

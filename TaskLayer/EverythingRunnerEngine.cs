@@ -19,7 +19,7 @@ namespace TaskLayer
         public EverythingRunnerEngine(List<(string, MetaMorpheusTask)> taskList, List<string> startingRawFilenameList, List<DbForTask> startingXmlDbFilenameList, string outputFolder)
         {
             TaskList = taskList;
-            OutputFolder = outputFolder;
+            OutputFolder = outputFolder.Trim('"');
 
             CurrentRawDataFilenameList = startingRawFilenameList;
             CurrentXmlDbFilenameList = startingXmlDbFilenameList;
@@ -73,6 +73,9 @@ namespace TaskLayer
                     return;
                 }
                 var ok = TaskList[i];
+
+                // reset product types for custom fragmentation
+                ok.Item2.CommonParameters.SetCustomProductTypes();
 
                 var outputFolderForThisTask = Path.Combine(OutputFolder, ok.Item1);
 

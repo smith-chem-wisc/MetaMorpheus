@@ -22,6 +22,7 @@ namespace TaskLayer
         public PostSearchAnalysisParameters Parameters { get; set; }
         private List<EngineLayer.ProteinGroup> ProteinGroups { get; set; }
         private IEnumerable<IGrouping<string, PeptideSpectralMatch>> PsmsGroupedByFile { get; set; }
+        private List<PeptideSpectralMatch> FilteredPsmListForOutput { get; set; }
 
         public PostSearchAnalysisTask()
             : base(MyTask.Search)
@@ -47,14 +48,17 @@ namespace TaskLayer
             }
 
             //update all psms with peptide info
-            Parameters.AllPsms = Parameters.AllPsms.Where(psm => psm != null).ToList();
-            Parameters.AllPsms.ForEach(psm => psm.ResolveAllAmbiguities());
+            if (Parameters.SearchParameters.SearchType != SearchType.NonSpecific) //if it hasn't been done already
+            {
+                Parameters.AllPsms = Parameters.AllPsms.Where(psm => psm != null).ToList();
+                Parameters.AllPsms.ForEach(psm => psm.ResolveAllAmbiguities());
 
-            Parameters.AllPsms = Parameters.AllPsms.OrderByDescending(b => b.Score)
-               .ThenBy(b => b.PeptideMonisotopicMass.HasValue ? Math.Abs(b.ScanPrecursorMass - b.PeptideMonisotopicMass.Value) : double.MaxValue)
-               .GroupBy(b => (b.FullFilePath, b.ScanNumber, b.PeptideMonisotopicMass)).Select(b => b.First()).ToList();
+                Parameters.AllPsms = Parameters.AllPsms.OrderByDescending(b => b.Score)
+                   .ThenBy(b => b.PeptideMonisotopicMass.HasValue ? Math.Abs(b.ScanPrecursorMass - b.PeptideMonisotopicMass.Value) : double.MaxValue)
+                   .GroupBy(b => (b.FullFilePath, b.ScanNumber, b.PeptideMonisotopicMass)).Select(b => b.First()).ToList();
 
-            CalculatePsmFdr();
+                CalculatePsmFdr();
+            }
 
             DoMassDifferenceLocalizationAnalysis();
             ProteinAnalysis();
@@ -67,6 +71,7 @@ namespace TaskLayer
             WriteProteinResults();
             WriteQuantificationResults();
             WritePrunedDatabase();
+            WritePeptideResults(); // modifies the FDR results for PSMs, so do this last
 
             return Parameters.SearchTaskResults;
         }
@@ -86,8 +91,7 @@ namespace TaskLayer
             // this could cause weird PSM FDR issues
 
             Status("Estimating PSM FDR...", Parameters.SearchTaskId);
-            int massDiffAcceptorNumNotches = Parameters.NumNotches;
-            new FdrAnalysisEngine(Parameters.AllPsms, massDiffAcceptorNumNotches, CommonParameters, new List<string> { Parameters.SearchTaskId }).Run();
+            new FdrAnalysisEngine(Parameters.AllPsms, Parameters.NumNotches, CommonParameters, new List<string> { Parameters.SearchTaskId }).Run();
 
             // sort by q-value because of group FDR stuff
             // e.g. multiprotease FDR, non/semi-specific protease, etc
@@ -317,7 +321,7 @@ namespace TaskLayer
             }
 
             // run FlashLFQ
-            var FlashLfqEngine = new FlashLFQEngine(
+            var FlashLfqEngine = new FlashLfqEngine(
                 allIdentifications: flashLFQIdentifications,
                 normalize: Parameters.SearchParameters.Normalize,
                 ppmTolerance: Parameters.SearchParameters.QuantifyPpmTol,
@@ -416,58 +420,49 @@ namespace TaskLayer
 
         private void WritePsmResults()
         {
-            Status("Writing results...", Parameters.SearchTaskId);
-            List<PeptideSpectralMatch> filteredPsmListForOutput = Parameters.AllPsms
+            Status("Writing PSM results...", Parameters.SearchTaskId);
+            FilteredPsmListForOutput = Parameters.AllPsms
                 .Where(p => p.FdrInfo.QValue <= CommonParameters.QValueOutputFilter
                 && p.FdrInfo.QValueNotch <= CommonParameters.QValueOutputFilter).ToList();
 
             if (!Parameters.SearchParameters.WriteDecoys)
             {
-                filteredPsmListForOutput.RemoveAll(b => b.IsDecoy);
+                FilteredPsmListForOutput.RemoveAll(b => b.IsDecoy);
             }
             if (!Parameters.SearchParameters.WriteContaminants)
             {
-                filteredPsmListForOutput.RemoveAll(b => b.IsContaminant);
+                FilteredPsmListForOutput.RemoveAll(b => b.IsContaminant);
             }
 
             // write PSMs
             string writtenFile = Path.Combine(Parameters.OutputFolder, "AllPSMs.psmtsv");
-            WritePsmsToTsv(filteredPsmListForOutput, writtenFile, Parameters.SearchParameters.ModsToWriteSelection);
+            WritePsmsToTsv(FilteredPsmListForOutput, writtenFile, Parameters.SearchParameters.ModsToWriteSelection);
             FinishedWritingFile(writtenFile, new List<string> { Parameters.SearchTaskId });
 
             // write PSMs for percolator
             writtenFile = Path.Combine(Parameters.OutputFolder, "AllPSMs_FormattedForPercolator.tsv");
-            WritePsmsForPercolator(filteredPsmListForOutput, writtenFile, CommonParameters.QValueOutputFilter);
-            FinishedWritingFile(writtenFile, new List<string> { Parameters.SearchTaskId });
-
-            // write best (highest-scoring) PSM per peptide
-            writtenFile = Path.Combine(Parameters.OutputFolder, "AllPeptides.psmtsv");
-            List<PeptideSpectralMatch> peptides = Parameters.AllPsms.GroupBy(b => b.FullSequence).Select(b => b.FirstOrDefault()).ToList();
-            WritePsmsToTsv(filteredPsmListForOutput.GroupBy(b => b.FullSequence).Select(b => b.FirstOrDefault()).ToList(), writtenFile, Parameters.SearchParameters.ModsToWriteSelection);
+            WritePsmsForPercolator(FilteredPsmListForOutput, writtenFile, CommonParameters.QValueOutputFilter);
             FinishedWritingFile(writtenFile, new List<string> { Parameters.SearchTaskId });
 
             // write summary text
             Parameters.SearchTaskResults.AddNiceText("All target PSMS within 1% FDR: " + Parameters.AllPsms.Count(a => a.FdrInfo.QValue <= 0.01 && !a.IsDecoy));
-            Parameters.SearchTaskResults.AddNiceText("All target peptides within 1% FDR: " + peptides.Count(a => a.FdrInfo.QValue <= 0.01 && !a.IsDecoy));
             if (Parameters.SearchParameters.DoParsimony)
             {
                 Parameters.SearchTaskResults.AddNiceText("All target protein groups within 1% FDR: " + ProteinGroups.Count(b => b.QValue <= 0.01 && !b.IsDecoy)
                     + Environment.NewLine);
             }
 
-            PsmsGroupedByFile = filteredPsmListForOutput.GroupBy(p => p.FullFilePath);
+            PsmsGroupedByFile = FilteredPsmListForOutput.GroupBy(p => p.FullFilePath);
 
             foreach (var file in PsmsGroupedByFile)
             {
                 // write summary text
                 var psmsForThisFile = file.ToList();
                 string strippedFileName = Path.GetFileNameWithoutExtension(file.First().FullFilePath);
-                var peptidesForFile = psmsForThisFile.GroupBy(b => b.FullSequence).Select(b => b.FirstOrDefault()).ToList();
 
                 Parameters.SearchTaskResults.AddNiceText("MS2 spectra in " + strippedFileName + ": " + Parameters.NumMs2SpectraPerFile[strippedFileName][0]);
                 Parameters.SearchTaskResults.AddNiceText("Precursors fragmented in " + strippedFileName + ": " + Parameters.NumMs2SpectraPerFile[strippedFileName][1]);
                 Parameters.SearchTaskResults.AddNiceText("Target PSMs within 1% FDR in " + strippedFileName + ": " + psmsForThisFile.Count(a => a.FdrInfo.QValue <= 0.01 && !a.IsDecoy));
-                Parameters.SearchTaskResults.AddNiceText("Target peptides within 1% FDR in " + strippedFileName + ": " + peptidesForFile.Count(a => a.FdrInfo.QValue <= 0.01 && !a.IsDecoy) + Environment.NewLine);
 
                 // writes all individual spectra file search results to subdirectory
                 if (Parameters.CurrentRawFileList.Count > 1)
@@ -484,12 +479,7 @@ namespace TaskLayer
                     writtenFile = Path.Combine(Parameters.IndividualResultsOutputFolder, strippedFileName + "_PSMsFormattedForPercolator.tsv");
                     WritePsmsForPercolator(psmsForThisFile, writtenFile, CommonParameters.QValueOutputFilter);
                     FinishedWritingFile(writtenFile, new List<string> { Parameters.SearchTaskId, "Individual Spectra Files", file.First().FullFilePath });
-
-                    // write best (highest-scoring) PSM per peptide
-                    writtenFile = Path.Combine(Parameters.IndividualResultsOutputFolder, strippedFileName + "_Peptides.psmtsv");
-                    WritePsmsToTsv(peptidesForFile, writtenFile, Parameters.SearchParameters.ModsToWriteSelection);
-                    FinishedWritingFile(writtenFile, new List<string> { Parameters.SearchTaskId, "Individual Spectra Files", file.First().FullFilePath });
-                }
+               }
             }
         }
 
@@ -587,9 +577,9 @@ namespace TaskLayer
             if (Parameters.SearchParameters.WritePrunedDatabase)
             {
                 Status("Writing Pruned Database...", new List<string> { Parameters.SearchTaskId });
-                List<Modification> modificationsToWriteIfBoth = new List<Modification>();
-                List<Modification> modificationsToWriteIfInDatabase = new List<Modification>();
-                List<Modification> modificationsToWriteIfObserved = new List<Modification>();
+                HashSet<Modification> modificationsToWriteIfBoth = new HashSet<Modification>();
+                HashSet<Modification> modificationsToWriteIfInDatabase = new HashSet<Modification>();
+                HashSet<Modification> modificationsToWriteIfObserved = new HashSet<Modification>();
 
                 var confidentPsms = Parameters.AllPsms.Where(b => b.FdrInfo.QValueNotch <= 0.01 && b.FdrInfo.QValue <= 0.01 && !b.IsDecoy && b.BaseSequence != null).ToList();
                 var proteinToConfidentBaseSequences = new Dictionary<Protein, List<PeptideWithSetModifications>>();
@@ -601,13 +591,13 @@ namespace TaskLayer
 
                     foreach (var peptide in myPepsWithSetMods)
                     {
-                        if (proteinToConfidentBaseSequences.TryGetValue(peptide.Protein, out var myPepList))
+                        if (proteinToConfidentBaseSequences.TryGetValue(peptide.Protein.NonVariantProtein, out var myPepList))
                         {
                             myPepList.Add(peptide);
                         }
                         else
                         {
-                            proteinToConfidentBaseSequences.Add(peptide.Protein, new List<PeptideWithSetModifications> { peptide });
+                            proteinToConfidentBaseSequences.Add(peptide.Protein.NonVariantProtein, new List<PeptideWithSetModifications> { peptide });
                         }
                     }
                 }
@@ -615,17 +605,20 @@ namespace TaskLayer
                 // Add user mod selection behavours to Pruned DB
                 foreach (var modType in Parameters.SearchParameters.ModsToWriteSelection)
                 {
-                    if (modType.Value == 1) // Write if observed and in database
+                    foreach (Modification mod in GlobalVariables.AllModsKnown.Where(b => b.ModificationType.Equals(modType.Key)))
                     {
-                        modificationsToWriteIfBoth.AddRange(GlobalVariables.AllModsKnown.Where(b => b.ModificationType.Equals(modType.Key)));
-                    }
-                    if (modType.Value == 2) // Write if in database
-                    {
-                        modificationsToWriteIfInDatabase.AddRange(GlobalVariables.AllModsKnown.Where(b => b.ModificationType.Equals(modType.Key)));
-                    }
-                    if (modType.Value == 3) // Write if observed
-                    {
-                        modificationsToWriteIfObserved.AddRange(GlobalVariables.AllModsKnown.Where(b => b.ModificationType.Equals(modType.Key)));
+                        if (modType.Value == 1) // Write if observed and in database
+                        {
+                            modificationsToWriteIfBoth.Add(mod);
+                        }
+                        if (modType.Value == 2) // Write if in database
+                        {
+                            modificationsToWriteIfInDatabase.Add(mod);
+                        }
+                        if (modType.Value == 3) // Write if observed
+                        {
+                            modificationsToWriteIfObserved.Add(mod);
+                        }
                     }
                 }
 
@@ -639,80 +632,117 @@ namespace TaskLayer
 
                     foreach (var peptide in myPepsWithSetMods)
                     {
-                        if (proteinToConfidentModifiedSequences.TryGetValue(peptide.Protein, out var myPepList))
+                        if (proteinToConfidentModifiedSequences.TryGetValue(peptide.Protein.NonVariantProtein, out var myPepList))
                         {
                             myPepList.Add(peptide);
                         }
                         else
                         {
-                            proteinToConfidentModifiedSequences.Add(peptide.Protein, new List<PeptideWithSetModifications> { peptide });
+                            proteinToConfidentModifiedSequences.Add(peptide.Protein.NonVariantProtein, new List<PeptideWithSetModifications> { peptide });
                         }
                     }
                 }
 
                 // mods included in pruned database will only be confidently localized mods (peptide's FullSequence != null)
-                foreach (var protein in Parameters.ProteinList)
+                foreach (var nonVariantProtein in Parameters.ProteinList.Select(p => p.NonVariantProtein).Distinct())
                 {
-                    if (!protein.IsDecoy)
+                    if (!nonVariantProtein.IsDecoy)
                     {
-                        HashSet<Tuple<int, Modification>> modsObservedOnThisProtein = new HashSet<Tuple<int, Modification>>();
-                        if (proteinToConfidentModifiedSequences.ContainsKey(protein))
+                        proteinToConfidentModifiedSequences.TryGetValue(nonVariantProtein, out var psms);
+                        HashSet<(int, Modification, SequenceVariation)> modsObservedOnThisProtein = new HashSet<(int, Modification, SequenceVariation)>(); // sequence variant is null if mod is not on a variant
+                        foreach (PeptideWithSetModifications psm in psms ?? new List<PeptideWithSetModifications>())
                         {
-                            modsObservedOnThisProtein = new HashSet<Tuple<int, Modification>>(proteinToConfidentModifiedSequences[protein].SelectMany(b => b.AllModsOneIsNterminus.Select(c => new Tuple<int, Modification>(GetOneBasedIndexInProtein(c.Key, b), c.Value))));
+                            foreach (var idxModKV in psm.AllModsOneIsNterminus)
+                            {
+                                int proteinIdx = GetOneBasedIndexInProtein(idxModKV.Key, psm);
+                                SequenceVariation relevantVariant = psm.Protein.AppliedSequenceVariations.FirstOrDefault(sv => VariantApplication.IsSequenceVariantModification(sv, proteinIdx));
+                                SequenceVariation unappliedVariant = 
+                                    relevantVariant == null ? null : // it's not a sequence variant mod
+                                    psm.Protein.SequenceVariations.FirstOrDefault(sv => sv.Description != null && sv.Description.Equals(relevantVariant.Description));
+                                modsObservedOnThisProtein.Add((VariantApplication.RestoreModificationIndex(psm.Protein, proteinIdx), idxModKV.Value, unappliedVariant));
+                            }
                         }
 
-                        IDictionary<int, List<Modification>> modsToWrite = new Dictionary<int, List<Modification>>();
+                        IDictionary<(SequenceVariation, int), List<Modification>> modsToWrite = new Dictionary<(SequenceVariation, int), List<Modification>>();
 
+                        //Add if observed (regardless if in database)
                         foreach (var observedMod in modsObservedOnThisProtein)
                         {
-                            //Add if observed (regardless if in database)
                             var tempMod = observedMod.Item2;
 
                             if (modificationsToWriteIfObserved.Contains(tempMod))
                             {
-                                if (!modsToWrite.ContainsKey(observedMod.Item1))
+                                var svIdxKey = (observedMod.Item3, observedMod.Item1);
+                                if (!modsToWrite.ContainsKey(svIdxKey))
                                 {
-                                    modsToWrite.Add(observedMod.Item1, new List<Modification> { observedMod.Item2 });
+                                    modsToWrite.Add(svIdxKey, new List<Modification> { observedMod.Item2 });
                                 }
                                 else
                                 {
-                                    modsToWrite[observedMod.Item1].Add(observedMod.Item2);
+                                    modsToWrite[svIdxKey].Add(observedMod.Item2);
                                 }
                             }
                         }
 
-                        // Add if in database (two cases: always or if observed)
-                        foreach (var modkv in protein.OneBasedPossibleLocalizedModifications)
+                        // Add modification if in database (two cases: always or if observed)
+                        foreach (var modkv in nonVariantProtein.OneBasedPossibleLocalizedModifications)
                         {
                             foreach (var mod in modkv.Value)
                             {
                                 //Add if always In Database or if was observed and in database and not set to not include
                                 if (modificationsToWriteIfInDatabase.Contains(mod) ||
-                                    (modsObservedOnThisProtein.Contains(new Tuple<int, Modification>(modkv.Key, mod))
-                                        && modificationsToWriteIfBoth.Contains(mod)))
+                                    (modificationsToWriteIfBoth.Contains(mod) && modsObservedOnThisProtein.Contains((modkv.Key, mod, null))))
                                 {
-                                    if (!modsToWrite.ContainsKey(modkv.Key))
+                                    if (!modsToWrite.ContainsKey((null, modkv.Key)))
                                     {
-                                        modsToWrite.Add(modkv.Key, new List<Modification> { mod });
+                                        modsToWrite.Add((null, modkv.Key), new List<Modification> { mod });
                                     }
                                     else
                                     {
-                                        modsToWrite[modkv.Key].Add(mod);
+                                        modsToWrite[(null, modkv.Key)].Add(mod);
                                     }
                                 }
                             }
                         }
 
-                        if (proteinToConfidentBaseSequences.TryGetValue(protein, out var peptideSequences))
+                        // Add variant modification if in database (two cases: always or if observed)
+                        foreach (SequenceVariation sv in nonVariantProtein.SequenceVariations)
                         {
-                            // removes all annotated mods on proteins
-                            if (protein.Accession == protein.Accession)
+                            foreach (var modkv in sv.OneBasedModifications)
                             {
-                                protein.OneBasedPossibleLocalizedModifications.Clear();
-                                // adds confidently localized and identified mods
-                                foreach (var kvp in modsToWrite)
+                                foreach (var mod in modkv.Value)
                                 {
-                                    protein.OneBasedPossibleLocalizedModifications.Add(kvp);
+                                    //Add if always In Database or if was observed and in database and not set to not include
+                                    if (modificationsToWriteIfInDatabase.Contains(mod) ||
+                                        (modificationsToWriteIfBoth.Contains(mod) && modsObservedOnThisProtein.Contains((modkv.Key, mod, sv))))
+                                    {
+                                        if (!modsToWrite.ContainsKey((sv, modkv.Key)))
+                                        {
+                                            modsToWrite.Add((sv, modkv.Key), new List<Modification> { mod });
+                                        }
+                                        else
+                                        {
+                                            modsToWrite[(sv, modkv.Key)].Add(mod);
+                                        }
+                                    }
+                                }
+                            }
+                        }
+
+                        if (proteinToConfidentBaseSequences.ContainsKey(nonVariantProtein.NonVariantProtein))
+                        {
+                            // adds confidently localized and identified mods
+                            nonVariantProtein.OneBasedPossibleLocalizedModifications.Clear();
+                            foreach (var kvp in modsToWrite.Where(kv => kv.Key.Item1 == null))
+                            {
+                                nonVariantProtein.OneBasedPossibleLocalizedModifications.Add(kvp.Key.Item2, kvp.Value);
+                            }
+                            foreach (var sv in nonVariantProtein.SequenceVariations)
+                            {
+                                sv.OneBasedModifications.Clear();
+                                foreach (var kvp in modsToWrite.Where(kv => kv.Key.Item1 != null && kv.Key.Item1.Equals(sv)))
+                                {
+                                    sv.OneBasedModifications.Add(kvp.Key.Item2, kvp.Value);
                                 }
                             }
                         }
@@ -723,13 +753,13 @@ namespace TaskLayer
                 if (Parameters.DatabaseFilenameList.Any(b => !b.IsContaminant))
                 {
                     string outputXMLdbFullName = Path.Combine(Parameters.OutputFolder, string.Join("-", Parameters.DatabaseFilenameList.Where(b => !b.IsContaminant).Select(b => Path.GetFileNameWithoutExtension(b.FilePath))) + "pruned.xml");
-                    ProteinDbWriter.WriteXmlDatabase(new Dictionary<string, HashSet<Tuple<int, Modification>>>(), Parameters.ProteinList.Where(b => !b.IsDecoy && !b.IsContaminant).ToList(), outputXMLdbFullName);
+                    ProteinDbWriter.WriteXmlDatabase(new Dictionary<string, HashSet<Tuple<int, Modification>>>(), Parameters.ProteinList.Select(p => p.NonVariantProtein).Where(b => !b.IsDecoy && !b.IsContaminant).ToList(), outputXMLdbFullName);
                     FinishedWritingFile(outputXMLdbFullName, new List<string> { Parameters.SearchTaskId });
                 }
                 if (Parameters.DatabaseFilenameList.Any(b => b.IsContaminant))
                 {
                     string outputXMLdbFullNameContaminants = Path.Combine(Parameters.OutputFolder, string.Join("-", Parameters.DatabaseFilenameList.Where(b => b.IsContaminant).Select(b => Path.GetFileNameWithoutExtension(b.FilePath))) + "pruned.xml");
-                    ProteinDbWriter.WriteXmlDatabase(new Dictionary<string, HashSet<Tuple<int, Modification>>>(), Parameters.ProteinList.Where(b => !b.IsDecoy && b.IsContaminant).ToList(), outputXMLdbFullNameContaminants);
+                    ProteinDbWriter.WriteXmlDatabase(new Dictionary<string, HashSet<Tuple<int, Modification>>>(), Parameters.ProteinList.Select(p => p.NonVariantProtein).Where(b => !b.IsDecoy && b.IsContaminant).ToList(), outputXMLdbFullNameContaminants);
                     FinishedWritingFile(outputXMLdbFullNameContaminants, new List<string> { Parameters.SearchTaskId });
                 }
 
@@ -745,6 +775,42 @@ namespace TaskLayer
                     string outputXMLdbFullNameContaminants = Path.Combine(Parameters.OutputFolder, string.Join("-", Parameters.DatabaseFilenameList.Where(b => b.IsContaminant).Select(b => Path.GetFileNameWithoutExtension(b.FilePath))) + "proteinPruned.xml");
                     ProteinDbWriter.WriteXmlDatabase(new Dictionary<string, HashSet<Tuple<int, Modification>>>(), proteinToConfidentBaseSequences.Keys.Where(b => !b.IsDecoy && b.IsContaminant).ToList(), outputXMLdbFullNameContaminants);
                     FinishedWritingFile(outputXMLdbFullNameContaminants, new List<string> { Parameters.SearchTaskId });
+                }
+            }
+        }
+
+        private void WritePeptideResults()
+        {
+            Status("Writing peptide results...", Parameters.SearchTaskId);
+
+            // write best (highest-scoring) PSM per peptide
+            string writtenFile = Path.Combine(Parameters.OutputFolder, "AllPeptides.psmtsv");
+            List<PeptideSpectralMatch> peptides = Parameters.AllPsms.GroupBy(b => b.FullSequence).Select(b => b.FirstOrDefault()).ToList();
+            new FdrAnalysisEngine(peptides, Parameters.NumNotches, CommonParameters, new List<string> { Parameters.SearchTaskId }, "Peptide").Run();
+            WritePsmsToTsv(FilteredPsmListForOutput.GroupBy(b => b.FullSequence).Select(b => b.FirstOrDefault()).ToList(), writtenFile, Parameters.SearchParameters.ModsToWriteSelection);
+            FinishedWritingFile(writtenFile, new List<string> { Parameters.SearchTaskId });
+
+            Parameters.SearchTaskResults.AddNiceText("All target peptides within 1% FDR: " + peptides.Count(a => a.FdrInfo.QValue <= 0.01 && !a.IsDecoy));
+
+            foreach (var file in PsmsGroupedByFile)
+            {
+                // write summary text
+                var psmsForThisFile = file.ToList();
+                string strippedFileName = Path.GetFileNameWithoutExtension(file.First().FullFilePath);
+                var peptidesForFile = psmsForThisFile.GroupBy(b => b.FullSequence).Select(b => b.FirstOrDefault()).ToList();
+                new FdrAnalysisEngine(peptidesForFile, Parameters.NumNotches, CommonParameters, new List<string> { Parameters.SearchTaskId }, "Peptide").Run();
+                Parameters.SearchTaskResults.AddNiceText("Target peptides within 1% FDR in " + strippedFileName + ": " + peptidesForFile.Count(a => a.FdrInfo.QValue <= 0.01 && !a.IsDecoy) + Environment.NewLine);
+
+                // writes all individual spectra file search results to subdirectory
+                if (Parameters.CurrentRawFileList.Count > 1)
+                {
+                    // create individual files subdirectory
+                    Directory.CreateDirectory(Parameters.IndividualResultsOutputFolder);
+
+                    // write best (highest-scoring) PSM per peptide
+                    writtenFile = Path.Combine(Parameters.IndividualResultsOutputFolder, strippedFileName + "_Peptides.psmtsv");
+                    WritePsmsToTsv(peptidesForFile, writtenFile, Parameters.SearchParameters.ModsToWriteSelection);
+                    FinishedWritingFile(writtenFile, new List<string> { Parameters.SearchTaskId, "Individual Spectra Files", file.First().FullFilePath });
                 }
             }
         }
@@ -859,12 +925,10 @@ namespace TaskLayer
 
         private void WritePeptideQuantificationResultsToTsv(FlashLfqResults flashLFQResults, string outputFolder, string fileName, List<string> nestedIds)
         {
-            var baseSeqPath = Path.Combine(outputFolder, fileName + "_BaseSequences.tsv");
-            var fullSeqPath = Path.Combine(outputFolder, fileName + "_FullSequences.tsv");
+            var fullSeqPath = Path.Combine(outputFolder, fileName + ".tsv");
 
-            flashLFQResults.WriteResults(null, fullSeqPath, baseSeqPath, null);
-
-            FinishedWritingFile(baseSeqPath, nestedIds);
+            flashLFQResults.WriteResults(null, fullSeqPath, null);
+            
             FinishedWritingFile(fullSeqPath, nestedIds);
         }
 
@@ -872,7 +936,7 @@ namespace TaskLayer
         {
             var peaksPath = Path.Combine(outputFolder, fileName + ".tsv");
 
-            flashLFQResults.WriteResults(peaksPath, null, null, null);
+            flashLFQResults.WriteResults(peaksPath, null, null);
 
             FinishedWritingFile(peaksPath, nestedIds);
         }

@@ -6,6 +6,7 @@ using Proteomics;
 using System;
 using System.Collections.Generic;
 using System.Collections.ObjectModel;
+using System.ComponentModel;
 using System.Globalization;
 using System.IO;
 using System.Linq;
@@ -69,6 +70,7 @@ namespace MetaMorpheusGUI
             UpdateTaskGuiStuff();
             UpdateOutputFolderTextbox();
             FileSpecificParameters.ValidateFileSpecificVariableNames();
+            SearchModifications.SetUpModSearchBoxes();
 
             // LOAD GUI SETTINGS
 
@@ -93,8 +95,21 @@ namespace MetaMorpheusGUI
             {
                 GuiWarnHandler(null, new StringEventArgs("Could not get newest version from web: " + e.Message, null));
             }
+
+            // check for ManagedThermoHelperLayer.dll and display a warning if it's not found
+            // this is one hacky way of checking if the user has C++ redistributable installed
+            string assumedManagedThermoHelperLayerDllPath = Path.Combine(Environment.CurrentDirectory, "ManagedThermoHelperLayer.dll");
+            if (!File.Exists(assumedManagedThermoHelperLayerDllPath))
+            {
+                GuiWarnHandler(null, new StringEventArgs("Warning! Cannot find Microsoft Visual C++ Redistributable; a crash may result from searching. " +
+                    "\nPlease go to: \nhttps://support.microsoft.com/en-us/help/2977003/the-latest-supported-visual-c-downloads " +
+                    "\nto download and install vc_redist.x64.exe and vc_redist.x86.exe." +
+                    "\nIf you have just installed the C++ redistributable, please uninstall and reinstall MetaMorpheus.", null));
+            }
+
+            Application.Current.MainWindow.Closing += new CancelEventHandler(MainWindow_Closing);
         }
-        
+
         private FlowDocument YoutubeWikiNotification()
         {
 
@@ -488,16 +503,6 @@ namespace MetaMorpheusGUI
                         else if (versionCheckerResult.Equals(MyFileManager.ThermoMsFileReaderVersionCheck.SomeDllsMissing))
                         {
                             GuiWarnHandler(null, new StringEventArgs("Warning! Found only some of the expected Thermo MSFileReader .dll files; a crash may result from searching this .raw file", null));
-                        }
-
-                        // check for ManagedThermoHelperLayer.dll and display a warning if it's not found
-                        // this is one hacky way of checking if the user has C++ redistributable installed
-                        string assumedManagedThermoHelperLayerDllPath = Path.Combine(Environment.CurrentDirectory, "ManagedThermoHelperLayer.dll");
-                        if (!File.Exists(assumedManagedThermoHelperLayerDllPath))
-                        {
-                            GuiWarnHandler(null, new StringEventArgs("Warning! Cannot find Microsoft Visual C++ Redistributable; " +
-                                "a crash may result from searching this .raw file. If you have just installed the C++ redistributable, " +
-                                "please uninstall and reinstall MetaMorpheus", null));
                         }
                     }
 
@@ -1037,6 +1042,7 @@ namespace MetaMorpheusGUI
 
                 AddXML.IsEnabled = false;
                 ClearXML.IsEnabled = false;
+                AddContaminantXML.IsEnabled = false;
                 AddRaw.IsEnabled = false;
                 ClearRaw.IsEnabled = false;
 
@@ -1108,6 +1114,7 @@ namespace MetaMorpheusGUI
 
             AddXML.IsEnabled = true;
             ClearXML.IsEnabled = true;
+            AddContaminantXML.IsEnabled = true;
             AddRaw.IsEnabled = true;
             ClearRaw.IsEnabled = true;
             BtnQuantSet.IsEnabled = true;
@@ -1161,7 +1168,14 @@ namespace MetaMorpheusGUI
 
             if (a.SelectedItem is OutputFileForTreeView fileThing)
             {
-                System.Diagnostics.Process.Start(fileThing.FullPath);
+                if (File.Exists(fileThing.FullPath))
+                {
+                    System.Diagnostics.Process.Start(fileThing.FullPath);
+                }
+                else
+                {
+                    MessageBox.Show("File " + Path.GetFileName(fileThing.FullPath) + " does not exist");
+                }
             }
         }
 
@@ -1367,6 +1381,16 @@ namespace MetaMorpheusGUI
             System.Diagnostics.Process.Start(@"https://github.com/smith-chem-wisc/MetaMorpheus/issues/new");
         }
 
+        private void MenuItem_Twitter(object sender, RoutedEventArgs e)
+        {
+            System.Diagnostics.Process.Start(@"https://twitter.com/Smith_Chem_Wisc");
+        }
+
+        private void MenuItem_Slack(object sender, RoutedEventArgs e)
+        {
+            System.Diagnostics.Process.Start(@"https://join.slack.com/t/smith-chem-public/shared_invite/enQtNDYzNTM5Mzg5NzY0LTRiYWQ5MzVmYmExZWIyMTcyZmNlODJjMWI0YjVhNGM2MmQ2NjE4ZDAzNmM4NWYxMDFhNTQyNDBiM2E0MWE0NGU");
+        }
+
         private void MenuItem_Click_6(object sender, RoutedEventArgs e)
         {
             System.Diagnostics.Process.Start(GlobalVariables.DataDir);
@@ -1408,6 +1432,33 @@ namespace MetaMorpheusGUI
                 AddAFile(contaminantFile);
             }
             dataGridProteinDatabases.Items.Refresh();
+        }
+
+        private void AddCustomMod_Click(object sender, RoutedEventArgs e)
+        {
+            var dialog = new CustomModButtonWindow();
+            dialog.ShowDialog();
+        }
+
+        // handle window closing
+        private void MainWindow_Closing(object sender, CancelEventArgs e)
+        {
+            if (!GuiGlobalParams.DisableCloseWindow && !GlobalVariables.MetaMorpheusVersion.Contains("DEBUG"))
+            {
+                e.Cancel = true;
+                var exit = CustomMsgBox.Show("Exit MetaMorpheus", "Are you sure you want to exit MetaMorpheus?", "Yes", "No", "Yes and don't ask me again");
+
+                if (exit == MessageBoxResult.Yes)
+                {
+                    e.Cancel = false;
+                }
+                else if (exit == MessageBoxResult.OK)
+                {
+                    GuiGlobalParams.DisableCloseWindow = true;
+                    Toml.WriteFile(GuiGlobalParams, Path.Combine(GlobalVariables.DataDir, @"GUIsettings.toml"), MetaMorpheusTask.tomlConfig);
+                    e.Cancel = false;
+                }
+            }
         }
     }
 }
