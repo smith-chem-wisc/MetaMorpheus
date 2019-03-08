@@ -50,7 +50,7 @@ namespace EngineLayer
             {
                 PeptideWithSetModifications pwsm = notchAndPwsm.Peptide;
                 Protein originalProtein = pwsm.Protein;
-                SilacLabel silacLabel = GetRelevantLabel(originalProtein.BaseSequence, silacLabels);
+                SilacLabel silacLabel = GetRelevantLabelFromBaseSequence(originalProtein.BaseSequence, silacLabels);
                 if (silacLabel == null)
                 {
                     updatedBestMatchingPeptides.Add(notchAndPwsm);
@@ -132,7 +132,7 @@ namespace EngineLayer
             return label == null ? baseSequence : baseSequence.Replace(label.AminoAcidLabel.ToString(), HeavyStringForPeptides(label));
         }
 
-        public static string GetSilacLightFullSequence(string fullSequence, SilacLabel label)
+        public static string GetSilacLightFullSequence(string fullSequence, SilacLabel label, bool includeMassDifference = true)
         {
             //overwrite full sequence
             if (label == null)
@@ -141,7 +141,7 @@ namespace EngineLayer
             }
             else
             {
-                string replacementSequence = HeavyStringForPeptides(label);
+                string replacementSequence = includeMassDifference ? HeavyStringForPeptides(label) : label.OriginalAminoAcid.ToString();
 
                 bool inModification = false;
                 for (int i = 0; i < fullSequence.Length; i++)
@@ -177,7 +177,7 @@ namespace EngineLayer
             string localSequence = "";
             foreach (string sequence in multipleSequences)
             {
-                SilacLabel label = GetRelevantLabel(sequence, labels);
+                SilacLabel label = GetRelevantLabelFromBaseSequence(sequence, labels);
                 localSequence += (baseSequence ? GetSilacLightBaseSequence(sequence, label) : GetSilacLightFullSequence(sequence, label)) + "|";
             }
             if (localSequence.Length != 0)
@@ -209,7 +209,7 @@ namespace EngineLayer
                 }
                 else
                 {
-                    SilacLabel label = GetRelevantLabel(psm.BaseSequence, labels);
+                    SilacLabel label = GetRelevantLabelFromBaseSequence(psm.BaseSequence, labels);
                     psmsForProteinParsimony.Add(GetSilacPsm(psm, label, true)); //if it's light, label will be null
                 }
             }
@@ -222,9 +222,39 @@ namespace EngineLayer
             return label.OriginalAminoAcid + "(" + label.MassDifference + ")";
         }
 
-        public static SilacLabel GetRelevantLabel(string baseSequence, List<SilacLabel> labels)
+        public static SilacLabel GetRelevantLabelFromBaseSequence(string baseSequence, List<SilacLabel> labels)
         {
             return labels.Where(x => baseSequence.Contains(x.AminoAcidLabel)).FirstOrDefault();
+        }
+
+        public static SilacLabel GetRelevantLabelFromFullSequence(string fullSequence, List<SilacLabel> labels)
+        {
+            bool inModification = false;
+            List<char> labelResidues = labels.Select(x => x.AminoAcidLabel).ToList();
+            for (int i = 0; i < fullSequence.Length; i++)
+            {
+                if (inModification)
+                {
+                    if (fullSequence[i] == ']')
+                    {
+                        inModification = false;
+                    }
+                }
+                else
+                {
+                    char currentChar = fullSequence[i];
+                    if (currentChar == '[')
+                    {
+                        inModification = true;
+                    }
+                    else if (labelResidues.Contains(currentChar))
+                    {
+                        return labels.Where(x => currentChar == x.AminoAcidLabel).First();
+                    }
+                }
+            }
+            //if nothing
+            return null;
         }
     }
 }
