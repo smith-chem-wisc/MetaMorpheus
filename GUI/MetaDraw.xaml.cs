@@ -345,38 +345,40 @@ namespace MetaMorpheusGUI
             {
                 MessageBox.Show("Please select at least one scan to export");
             }
-
-            int num = dataGridScanNums.SelectedItems.Count;
-
-            foreach (object selectedItem in dataGridScanNums.SelectedItems)
+            else
             {
-                PsmFromTsv psm = (PsmFromTsv)selectedItem;
+                int num = dataGridScanNums.SelectedItems.Count;
 
-                if (tempPsm == null)
+                foreach (object selectedItem in dataGridScanNums.SelectedItems)
                 {
-                    tempPsm = psm;
+                    PsmFromTsv psm = (PsmFromTsv)selectedItem;
+
+                    if (tempPsm == null)
+                    {
+                        tempPsm = psm;
+                    }
+
+                    MsDataScan msDataScanToDraw = MsDataFile.GetOneBasedScan(psm.Ms2ScanNumber);
+
+                    string myString = illegalInFileName.Replace(psm.FullSequence, "");
+
+                    if (myString.Length > 30)
+                    {
+                        myString = myString.Substring(0, 30);
+                    }
+
+                    string filePath = Path.Combine(Path.GetDirectoryName(tsvResultsFilePath), "MetaDrawExport", psm.Ms2ScanNumber + "_" + myString + ".pdf");
+
+                    DrawPdfAnnotatedBaseSequence(psm, canvas); // captures the annotation for the pdf
+                    mainViewModel.DrawPeptideSpectralMatchPdf(msDataScanToDraw, psm, filePath, num > 1);
                 }
 
-                MsDataScan msDataScanToDraw = MsDataFile.GetOneBasedScan(psm.Ms2ScanNumber);
+                dataGridScanNums.SelectedItem = dataGridScanNums.SelectedItem;
 
-                string myString = illegalInFileName.Replace(psm.FullSequence, "");
+                DrawPsm(tempPsm.Ms2ScanNumber, tempPsm.FullSequence);
 
-                if (myString.Length > 30)
-                {
-                    myString = myString.Substring(0, 30);
-                }
-
-                string filePath = Path.Combine(Path.GetDirectoryName(tsvResultsFilePath), "MetaDrawExport", psm.Ms2ScanNumber + "_" + myString + ".pdf");
-
-                DrawPdfAnnotatedBaseSequence(psm, canvas); // captures the annotation for the pdf
-                mainViewModel.DrawPeptideSpectralMatchPdf(msDataScanToDraw, psm, filePath, num > 1);
+                MessageBox.Show(string.Format("{0} PDFs exported", num));
             }
-
-            dataGridScanNums.SelectedItem = dataGridScanNums.SelectedItem;
-
-            DrawPsm(tempPsm.Ms2ScanNumber, tempPsm.FullSequence);
-
-            MessageBox.Show(string.Format("{0} PDFs exported", num));
         }
 
         private void DrawPdfAnnotatedBaseSequence(PsmFromTsv psm, Canvas canvas)
