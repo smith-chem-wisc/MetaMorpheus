@@ -18,6 +18,7 @@ namespace Test
         [Test]
         public static void TestSilacQuantification()
         {
+            //make heavy residue and add to search task
             Residue heavyLysine = new Residue("a", 'a', "a", Chemistry.ChemicalFormula.ParseFormula("C{13}6H12N{15}2O"), ModificationSites.All); //+8 lysine
             Residue lightLysine = Residue.GetResidue('K');
             List<SilacLabel> silacLabels = new List<Proteomics.SilacLabel>
@@ -41,10 +42,8 @@ namespace Test
             IO.MzML.MzmlMethods.CreateAndWriteMyMzmlWithCalibratedSpectra(myMsDataFile1, mzmlName, false);
 
             string xmlName = "SilacDb.xml";
-            {
-                Protein theProtein = new Protein("PEPTIDEK", "accession1");
-                ProteinDbWriter.WriteXmlDatabase(new Dictionary<string, HashSet<Tuple<int, Modification>>>(), new List<Protein> { theProtein }, xmlName);
-            }
+            Protein theProtein = new Protein("PEPTIDEK", "accession1");
+            ProteinDbWriter.WriteXmlDatabase(new Dictionary<string, HashSet<Tuple<int, Modification>>>(), new List<Protein> { theProtein }, xmlName);
 
             string outputFolder = Path.Combine(TestContext.CurrentContext.TestDirectory, @"TestSilac");
             Directory.CreateDirectory(outputFolder);
@@ -52,6 +51,7 @@ namespace Test
 
             Assert.IsTrue(theStringResult.Contains("All target PSMS within 1% FDR: 1")); //it's not a psm, it's a MBR feature
 
+            ///Normal Peptide
             //test proteins
             string[] output = File.ReadAllLines(TestContext.CurrentContext.TestDirectory + @"/TestSilac/AllProteinGroups.tsv");
             Assert.AreEqual(output.Length, 2);
@@ -76,6 +76,44 @@ namespace Test
             Assert.IsTrue(output[1].Contains("927.45")); //test light mass
             Assert.IsTrue(output[2].Contains("935.46")); //test heavy mass
 
+            ///Ambiguous base sequence peptide
+            //Clear the old files
+            Directory.Delete(outputFolder, true);
+            File.Delete(xmlName);
+            File.Delete(mzmlName);
+
+            //make a heavy peptide
+            massDifferences = new List<double> { heavyLysine.MonoisotopicMass - lightLysine.MonoisotopicMass };
+            myMsDataFile1 = new TestDataFile(lightPeptide, massDifferences, true);
+            IO.MzML.MzmlMethods.CreateAndWriteMyMzmlWithCalibratedSpectra(myMsDataFile1, mzmlName, false);
+
+            //make an ambiguous database
+            Protein theProtein2 = new Protein("PEPTLDEKPEPTIDEK", "accession2");
+            ProteinDbWriter.WriteXmlDatabase(new Dictionary<string, HashSet<Tuple<int, Modification>>>(), new List<Protein> { theProtein, theProtein2 }, xmlName);
+
+            Directory.CreateDirectory(outputFolder);
+            theStringResult = task.RunTask(outputFolder, new List<DbForTask> { new DbForTask(xmlName, false) }, new List<string> { mzmlName }, "taskId1").ToString();
+
+            output = File.ReadAllLines(TestContext.CurrentContext.TestDirectory + @"/TestSilac/AllPSMs.psmtsv");
+            Assert.IsTrue(output[1].Contains("silac\t")); //test the filename was NOT modified (it was for proteins, but we don't want it for peptides)
+            Assert.IsTrue(output[1].Contains("PEPTIDEK(+8.014)|PEPTLDEK(+8.014)|PEPTIDEK(+8.014)")); //test the heavy ambiguous peptides were all found
+
+            ///Ambiguous proteinGroup
+            //Clear the old files
+            Directory.Delete(outputFolder, true);
+            File.Delete(xmlName);
+
+            //make an ambiguous database
+            theProtein2 = new Protein("PEPTIDEK", "accession2");
+            ProteinDbWriter.WriteXmlDatabase(new Dictionary<string, HashSet<Tuple<int, Modification>>>(), new List<Protein> { theProtein, theProtein2 }, xmlName);
+
+            Directory.CreateDirectory(outputFolder);
+            theStringResult = task.RunTask(outputFolder, new List<DbForTask> { new DbForTask(xmlName, false) }, new List<string> { mzmlName }, "taskId1").ToString();
+
+            output = File.ReadAllLines(TestContext.CurrentContext.TestDirectory + @"/TestSilac/AllPSMs.psmtsv");
+            Assert.IsTrue(output[1].Contains("accession1|accession2")); //test the heavy ambiguous peptides were all found
+            Assert.IsTrue(output[1].Contains("\tPEPTIDEK(+8.014)\t")); //test the heavy ambiguous peptides were all found
+            
             //delete files
             Directory.Delete(outputFolder, true);
             File.Delete(xmlName);

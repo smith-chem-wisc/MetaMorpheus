@@ -163,7 +163,7 @@ namespace Test
             Scans = ScansHere.ToArray();
         }
 
-        public TestDataFile(PeptideWithSetModifications pwsm, List<double> labelMassDifferences)
+        public TestDataFile(PeptideWithSetModifications pwsm, List<double> labelMassDifferences, bool includeMassDifferenceInPrecursor=false)
             : base(2, new SourceFile(@"no nativeID format", "mzML format", null, "SHA-1", @"C:\fake.mzML", null))
         {
             List<MsDataScan> ScansHere = new List<MsDataScan>();
@@ -202,6 +202,10 @@ namespace Test
                 mz2.Add((aok.NeutralMass + Constants.C13MinusC12).ToMz(1));
                 intensities2.Add(1);
                 intensities2.Add(1);
+            }
+            if(includeMassDifferenceInPrecursor)
+            {
+                lightMass = labelMassDifferences[1];
             }
             var MassSpectrum2 = new MzSpectrum(mz2.OrderBy(b => b).ToArray(), intensities2.ToArray(), false);
             ScansHere.Add(new MsDataScan(MassSpectrum2, 2, 2, true, Polarity.Positive, 1, new MzLibUtil.MzRange(0, 10000), "gg", MZAnalyzerType.Orbitrap, 234734, 1, null, "scan=2", lightMass.ToMz(2), 2, 1, lightMass.ToMz(2), 2, DissociationType.HCD, 1, lightMass.ToMz(2)));
