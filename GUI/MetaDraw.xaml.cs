@@ -292,12 +292,26 @@ namespace MetaMorpheusGUI
 
             // load the PSMs
             this.prgsTextStat.Content = "Loading PSMs...";
-            await Task.Run(() => LoadPsms(tsvResultsFilePath));
+            await Task.Run(() => LoadPsmsStat(tsvResultsFilePath));
 
             // done loading - restore controls
             this.prgsFeedStat.IsOpen = false;
             (sender as Button).IsEnabled = true;
             selectPsmFileButtonStat.IsEnabled = true;
+        }
+
+        private void LoadPsmsStat(string filepath)
+        {
+            List<string> warnings;
+            var f = PsmTsvReader.ReadTsv(filepath, out warnings);
+            foreach (var psm in PsmTsvReader.ReadTsv(filepath, out warnings))
+            {
+                Dispatcher.BeginInvoke(new Action(() =>
+                {
+                    peptideSpectralMatches.Add(psm);
+                }));
+            }
+
         }
 
         private void TextBox_TextChanged(object sender, TextChangedEventArgs e)
@@ -395,6 +409,7 @@ namespace MetaMorpheusGUI
             {
                 PdfExporter.Export(plot.Model, writePDF, 1000, 700);
             }
+            MessageBox.Show("PDF Created!");
 
         }
         private void HandleCheck(object sender, RoutedEventArgs e)
