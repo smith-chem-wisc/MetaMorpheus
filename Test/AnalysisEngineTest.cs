@@ -68,9 +68,6 @@ namespace Test
             PeptideWithSetModifications compactPeptide3 = value3.First();
             Assert.AreEqual("NNNK", value3.First().BaseSequence);
 
-            //newPsms[0] = new List<PsmParent>[] { new List<PsmParent>{ new PsmModern(compactPeptide1, null, 1,  1, 2, 2, 1,1, 1, 1, 3,0) },
-            //                                     new List<PsmParent>{  new PsmModern(compactPeptide2, null, 2,2+132.040,3,3,2,2,2,2,2,0) },
-            //                                     new List<PsmParent>{ new PsmModern(compactPeptide3, null, 3, 3, 4, 3, 3, 3, 3, 3, 3, 0)} };
 
             Ms2ScanWithSpecificMass scanA = new Ms2ScanWithSpecificMass(new MsDataScan(new MzSpectrum(new double[] { 1 }, new double[] { 1 }, false), 2, 1, true, Polarity.Positive, double.NaN, null, null, MZAnalyzerType.Orbitrap, double.NaN, null, null, "scan=1", double.NaN, null, null, double.NaN, null, DissociationType.AnyActivationType, 1, null), 1, 1, null, new CommonParameters());
             Ms2ScanWithSpecificMass scanB = new Ms2ScanWithSpecificMass(new MsDataScan(new MzSpectrum(new double[] { 1 }, new double[] { 1 }, false), 3, 1, true, Polarity.Positive, double.NaN, null, null, MZAnalyzerType.Orbitrap, double.NaN, null, null, "scan=2", double.NaN, null, null, double.NaN, null, DissociationType.AnyActivationType, 1, null), 2 + 132.040, 1, null, new CommonParameters());
@@ -87,10 +84,6 @@ namespace Test
             var searchMode = new SinglePpmAroundZeroSearchMode(5);
             Action<List<PeptideSpectralMatch>, string, List<string>> action2 = (List<PeptideSpectralMatch> l, string s, List<string> sdf) => {; };
 
-            bool DoPrecursorDeconvolution = true;
-            bool UseProvidedPrecursorInfo = true;
-            double DeconvolutionIntensityRatio = 4;
-            int DeconvolutionMaxAssumedChargeState = 10;
             Tolerance DeconvolutionMassTolerance = new PpmTolerance(5);
 
             var arrayOfMs2ScansSortedByMass = MetaMorpheusTask.GetMs2Scans(myMsDataFile, null, new CommonParameters()).OrderBy(b => b.PrecursorMass).ToArray();

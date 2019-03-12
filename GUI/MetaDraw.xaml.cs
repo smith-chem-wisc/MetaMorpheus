@@ -12,9 +12,9 @@ using System.ComponentModel;
 using System.Threading.Tasks;
 using System;
 using System.Data;
+
 using System.Windows.Data;
 using System.Windows.Media;
-using System.Windows.Media.Imaging;
 using Proteomics.Fragmentation;
 using Proteomics.ProteolyticDigestion;
 using System.Text.RegularExpressions;
@@ -29,7 +29,7 @@ namespace MetaMorpheusGUI
         private PsmAnnotationViewModel mainViewModel;
         private MyFileManager spectraFileManager;
         private MsDataFile MsDataFile;
-        private readonly ObservableCollection<MetaDrawPsm> peptideSpectralMatches;
+        private readonly ObservableCollection<PsmFromTsv> peptideSpectralMatches;
         ICollectionView peptideSpectralMatchesView;
         private readonly DataTable propertyView;
         private string spectraFilePath;
@@ -45,7 +45,7 @@ namespace MetaMorpheusGUI
 
             mainViewModel = new PsmAnnotationViewModel();
             plotView.DataContext = mainViewModel;
-            peptideSpectralMatches = new ObservableCollection<MetaDrawPsm>();
+            peptideSpectralMatches = new ObservableCollection<PsmFromTsv>();
             propertyView = new DataTable();
             propertyView.Columns.Add("Name", typeof(string));
             propertyView.Columns.Add("Value", typeof(string));
@@ -64,7 +64,6 @@ namespace MetaMorpheusGUI
             productTypeToColor = ((ProductType[])Enum.GetValues(typeof(ProductType))).ToDictionary(p => p, p => Colors.Aqua);
             productTypeToColor[ProductType.b] = Colors.Blue;
             productTypeToColor[ProductType.y] = Colors.Purple;
-            productTypeToColor[ProductType.zPlusOne] = Colors.Orange; // TODO: Remove
             productTypeToColor[ProductType.zDot] = Colors.Orange;
             productTypeToColor[ProductType.c] = Colors.Gold;
 
@@ -73,7 +72,6 @@ namespace MetaMorpheusGUI
             productTypeToYOffset[ProductType.b] = 50;
             productTypeToYOffset[ProductType.y] = 0;
             productTypeToYOffset[ProductType.c] = 50;
-            productTypeToYOffset[ProductType.zPlusOne] = 0; // TODO: Remove
             productTypeToYOffset[ProductType.zDot] = 0;
         }
 
@@ -106,6 +104,7 @@ namespace MetaMorpheusGUI
                     spectraFileNameLabel.Text = filePath;
                     break;
                 case ".psmtsv":
+                case ".tsv":
                     tsvResultsFilePath = filePath;
                     psmFileNameLabel.Text = filePath;
                     break;
@@ -120,35 +119,47 @@ namespace MetaMorpheusGUI
             string fileNameWithExtension = Path.GetFileName(spectraFilePath);
             string fileNameWithoutExtension = Path.GetFileNameWithoutExtension(spectraFilePath);
 
-            foreach (var psm in TsvResultReader.ReadTsv(filename))
+            try
             {
-                if (psm.Filename == fileNameWithExtension || psm.Filename == fileNameWithoutExtension)
+                List<string> warnings; // TODO: print warnings
+                foreach (var psm in PsmTsvReader.ReadTsv(filename, out warnings))
                 {
-                    Dispatcher.BeginInvoke(new Action(() =>
+                    if (psm.Filename == fileNameWithExtension || psm.Filename == fileNameWithoutExtension || psm.Filename.Contains(fileNameWithoutExtension))
                     {
-                        peptideSpectralMatches.Add(psm);
-                    }));
+                        Dispatcher.BeginInvoke(new Action(() =>
+                        {
+                            peptideSpectralMatches.Add(psm);
+                        }));
+                    }
                 }
+            }
+            catch (Exception e)
+            {
+                MessageBox.Show("Could not open PSM file:\n" + e.Message);
             }
         }
 
-        private void DrawPsm(int oneBasedScanNumber, string fullSequence = null)
+        private void DrawPsm(int oneBasedScanNumber, string fullSequence = null, string fileName = null)
         {
             MsDataScan msDataScanToDraw = MsDataFile.GetOneBasedScan(oneBasedScanNumber);
-            IEnumerable<MetaDrawPsm> scanPsms = peptideSpectralMatches.Where(p => p.Ms2ScanNumber == oneBasedScanNumber);
+            IEnumerable<PsmFromTsv> scanPsms = peptideSpectralMatches.Where(p => p.Ms2ScanNumber == oneBasedScanNumber);
 
             if (fullSequence != null)
             {
                 scanPsms = scanPsms.Where(p => p.FullSequence == fullSequence);
             }
 
-            MetaDrawPsm psmToDraw = scanPsms.FirstOrDefault();
+            PsmFromTsv psmToDraw = scanPsms.FirstOrDefault();
 
             // draw annotated spectrum
             mainViewModel.DrawPeptideSpectralMatch(msDataScanToDraw, psmToDraw);
-
+            
             // draw annotated base sequence
-            DrawAnnotatedBaseSequence(psmToDraw);
+            //TO DO: Annotate crosslinked peptide sequence           
+            if (psmToDraw.CrossType == null)  // if the psm is single peptide (not crosslinked).
+            {
+                DrawAnnotatedBaseSequence(psmToDraw);
+            }
         }
 
         /// <summary>
@@ -163,7 +174,7 @@ namespace MetaMorpheusGUI
 
             // draw the selected PSM
             propertyView.Clear();
-            MetaDrawPsm row = (MetaDrawPsm)dataGridScanNums.SelectedItem;
+            PsmFromTsv row = (PsmFromTsv)dataGridScanNums.SelectedItem;
             System.Reflection.PropertyInfo[] temp = row.GetType().GetProperties();
 
             for (int i = 0; i < temp.Length; i++)
@@ -266,13 +277,13 @@ namespace MetaMorpheusGUI
             {
                 peptideSpectralMatchesView.Filter = obj =>
                 {
-                    MetaDrawPsm psm = obj as MetaDrawPsm;
+                    PsmFromTsv psm = obj as PsmFromTsv;
                     return ((psm.Ms2ScanNumber.ToString()).StartsWith(txt) || psm.FullSequence.ToUpper().Contains(txt.ToUpper()));
                 };
             }
         }
 
-        private void DrawAnnotatedBaseSequence(MetaDrawPsm psm)
+        private void DrawAnnotatedBaseSequence(PsmFromTsv psm)
         {
             double spacing = 22;
             BaseDraw.clearCanvas(canvas);
@@ -325,76 +336,45 @@ namespace MetaMorpheusGUI
         {
             (sender as DataGrid).UnselectAll();
         }
+        
+        private void PDFButton_Click(object sender, RoutedEventArgs e)
+        {
+            PsmFromTsv tempPsm = null;
+            if (dataGridScanNums.SelectedCells.Count == 0)
+            {
+                MessageBox.Show("Please select at least one scan to export");
+            }
 
-        //private void PDFButton_Click(object sender, RoutedEventArgs e)
-        //{
-        //    if (dataGridScanNums.SelectedCells.Count == 0)
-        //    {
-        //        MessageBox.Show("Please select at least one scan to export");
-        //    }
+            int num = dataGridScanNums.SelectedItems.Count;
+            
+            foreach (object selectedItem in dataGridScanNums.SelectedItems)
+            {
+                PsmFromTsv psm = (PsmFromTsv)selectedItem;
 
-        //    int num = dataGridScanNums.SelectedItems.Count;
-        //    string writeDirectory = Path.Combine(Directory.GetParent(tsvResultsFilePath).FullName, "PDF");
+                if(tempPsm == null)
+                {
+                    tempPsm = psm;
+                }
 
-        //    if (!Directory.Exists(writeDirectory))
-        //    {
-        //        Directory.CreateDirectory(writeDirectory);
-        //    }
+                MsDataScan msDataScanToDraw = MsDataFile.GetOneBasedScan(psm.Ms2ScanNumber);
 
-        //    foreach (object selectedItem in dataGridScanNums.SelectedItems)
-        //    {
-        //        MetaDrawPsm psm = (MetaDrawPsm)selectedItem;
-        //        string myString = illegalInFileName.Replace(psm.FullSequence, "").Substring(0, 40);
-        //        ExportToPdf(psm, Path.Combine(writeDirectory, psm.Ms2ScanNumber + "_" + myString + ".pdf"));
-        //    }
+                string myString = illegalInFileName.Replace(psm.FullSequence, "");
 
-        //    dataGridScanNums.SelectedItem = dataGridScanNums.SelectedItem;
-        //    MessageBox.Show(string.Format("{0} PDFs exported to " + writeDirectory, num));
-        //}
+                if(myString.Length > 30)
+                {
+                    myString = myString.Substring(0, 30);
+                }
 
-        //private void ExportToPdf(MetaDrawPsm psm, string path)
-        //{
-        //    System.Reflection.PropertyInfo[] temp = psm.GetType().GetProperties();
+                string filePath = Path.Combine(Path.GetDirectoryName(tsvResultsFilePath), "MetaDrawExport", psm.Ms2ScanNumber + "_" + myString + ".pdf");
 
-        //    for (int i = 4; i < temp.Length; i++)
-        //    {
-        //        propertyView.Rows.Add(temp[i].Name, temp[i].GetValue(psm, null));
-        //    }
-        //    dataGridProperties.Items.Refresh();
-        //    DrawPsm(psm.Ms2ScanNumber, psm.FullSequence);
+                mainViewModel.DrawPeptideSpectralMatchPdf(msDataScanToDraw, psm, filePath, num > 1);
+            }
 
-        //    double wid = 0;
-        //    dataGridProperties.HorizontalScrollBarVisibility = ScrollBarVisibility.Disabled;
-        //    dataGridProperties.VerticalScrollBarVisibility = ScrollBarVisibility.Disabled;
-        //    foreach (DataGridColumn col in dataGridProperties.Columns)
-        //    {
-        //        wid += col.ActualWidth;
-        //    }
-        //    PDFOutPut.Background = Brushes.White;
-        //    PDFOutPut.ColumnDefinitions[0].Width = new GridLength(wid + 10);
-        //    PDFOutPut.Measure(new Size(wid + gbPSM.ActualWidth + 10, 600));
-        //    PDFOutPut.Arrange(new Rect(new Size(wid + gbPSM.ActualWidth + 10, 600)));
-        //    dataGridProperties.Measure(new Size(wid + 22, 600));
-        //    dataGridProperties.Arrange(new Rect(new Size(wid + 5, 600)));
+            dataGridScanNums.SelectedItem = dataGridScanNums.SelectedItem;
 
-        //    dataGridProperties.Arrange(new Rect(new Size(wid + 5, 600)));
-        //    var rtb = new RenderTargetBitmap((int)(wid + gbPSM.ActualWidth) + 11, 600, 96, 96, PixelFormats.Pbgra32);
+            DrawPsm(tempPsm.Ms2ScanNumber, tempPsm.FullSequence);
 
-        //    rtb.Render(PDFOutPut);
-        //    BitmapFrame bf = BitmapFrame.Create(rtb);
-
-        //    var encoder = new BmpBitmapEncoder();
-        //    encoder.Frames.Add(bf);
-        //    using (var stream = new MemoryStream())
-        //    {
-        //        encoder.Save(stream);
-        //        var img = System.Drawing.Image.FromStream(stream);
-        //        PdfWriter.WriteToPdf(img, (int)(wid + gbPSM.ActualWidth) + 11, 600, path);
-        //    }
-
-        //    dataGridProperties.HorizontalScrollBarVisibility = ScrollBarVisibility.Visible;
-        //    dataGridProperties.VerticalScrollBarVisibility = ScrollBarVisibility.Visible;
-        //    PDFOutPut.ColumnDefinitions[0].Width = new GridLength(1, GridUnitType.Star);
-        //}
+            MessageBox.Show(string.Format("{0} PDFs exported", num));
+        }
     }
 }

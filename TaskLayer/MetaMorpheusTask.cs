@@ -97,10 +97,7 @@ namespace TaskLayer
                 {
                     for (int i = partitionRange.Item1; i < partitionRange.Item2; i++)
                     {
-                        if (GlobalVariables.StopLoops)
-                        {
-                            break;
-                        }
+                        if (GlobalVariables.StopLoops) { break; }
 
                         MsDataScan ms2scan = ms2Scans[i];
 
@@ -164,7 +161,12 @@ namespace TaskLayer
                         }
 
                         scansWithPrecursors[i] = new List<Ms2ScanWithSpecificMass>();
-                        IsotopicEnvelope[] neutralExperimentalFragments = Ms2ScanWithSpecificMass.GetNeutralExperimentalFragments(ms2scan, commonParameters);
+                        IsotopicEnvelope[] neutralExperimentalFragments = null;
+
+                        if(commonParameters.DissociationType != DissociationType.LowCID)
+                        {
+                            neutralExperimentalFragments = Ms2ScanWithSpecificMass.GetNeutralExperimentalFragments(ms2scan, commonParameters);
+                        }
 
                         foreach (var precursor in precursors)
                         {
@@ -237,8 +239,7 @@ namespace TaskLayer
                 listOfModsFixed: commonParams.ListOfModsFixed,
                 qValueOutputFilter: commonParams.QValueOutputFilter,
                 taskDescriptor: commonParams.TaskDescriptor,
-                assumeOrphanPeaksAreZ1Fragments: commonParams.AssumeOrphanPeaksAreZ1Fragments
-                );
+                assumeOrphanPeaksAreZ1Fragments: commonParams.AssumeOrphanPeaksAreZ1Fragments);
 
             return returnParams;
         }
@@ -342,8 +343,7 @@ namespace TaskLayer
             List<Protein> proteinList = new List<Protein>();
             foreach (var db in dbFilenameList)
             {
-                int emptyProteinEntriesForThisDb = 0;
-                var dbProteinList = LoadProteinDb(db.FilePath, searchTarget, decoyType, localizeableModificationTypes, db.IsContaminant, out Dictionary<string, Modification> unknownModifications, out emptyProteinEntriesForThisDb, commonParameters);
+                var dbProteinList = LoadProteinDb(db.FilePath, searchTarget, decoyType, localizeableModificationTypes, db.IsContaminant, out Dictionary<string, Modification> unknownModifications, out int emptyProteinEntriesForThisDb, commonParameters);
                 proteinList = proteinList.Concat(dbProteinList).ToList();
                 emptyProteinEntries += emptyProteinEntriesForThisDb;
             }
@@ -642,7 +642,7 @@ namespace TaskLayer
                     }
                     else if (proteinDictionary[protein.Accession].BaseSequence != protein.BaseSequence)
                     {
-                        throw new MetaMorpheusException("The protein database contained multiple proteins with accession" + protein.Accession + "! This is not allowed for index-based searches (modern, non-specific, crosslink searches)");
+                        throw new MetaMorpheusException($"The protein database contained multiple proteins with accession {protein.Accession} ! This is not allowed for index-based searches (modern, non-specific, crosslink searches)");
                     }
                 }
 
