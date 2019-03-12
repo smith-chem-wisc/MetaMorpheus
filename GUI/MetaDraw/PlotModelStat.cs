@@ -10,7 +10,7 @@ using System.Collections.Generic;
 using System.ComponentModel;
 using System.Linq;
 
-namespace ViewModels
+namespace MetaMorpheusGUI
 {
     public class PlotModelStat : INotifyPropertyChanged , IPlotModel
     {
@@ -196,9 +196,12 @@ namespace ViewModels
                     }
                     break;
                 case 2:
-                    foreach (var psm in filteredList)
+                    foreach (var psm in allPSM)
                     {
-                        xy.Add(new Tuple<double, double>(double.Parse(psm.MassDiffPpm), psm.RetentionTime));
+                        foreach (var ion in psm.MatchedIons)
+                        {
+                            xy.Add(psm.RetentionTime, ion.MassErrorPpm);
+                        }
                     }
                     break;
             }
