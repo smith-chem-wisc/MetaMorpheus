@@ -293,7 +293,9 @@ namespace ViewModels
                 var pdfContentByte = stamper.GetOverContent(1);
 
                 var image = iTextSharp.text.Image.GetInstance(inputImageStream);
-                image.SetAbsolutePosition(100, 120);
+                image.ScaleAbsoluteHeight(500);
+                image.ScaleAbsoluteWidth(500);
+                image.SetAbsolutePosition(95, 190);
                 pdfContentByte.AddImage(image);
                 stamper.Close();
             }
