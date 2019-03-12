@@ -29,9 +29,10 @@ namespace EngineLayer.CrosslinkSearch
         private Modification NH2DeadEnd;
         private Modification Loop;
         private char[] AllCrosslinkerSites;
+        private readonly List<int>[] SecondFragmentIndex;
 
         public CrosslinkSearchEngine(CrosslinkSpectralMatch[] globalCsms, Ms2ScanWithSpecificMass[] listOfSortedms2Scans, List<PeptideWithSetModifications> peptideIndex,
-            List<int>[] fragmentIndex, int currentPartition, CommonParameters commonParameters, Crosslinker crosslinker, bool CrosslinkSearchTop, int CrosslinkSearchTopNum,
+            List<int>[] fragmentIndex, List<int>[] secondFragmentIndex, int currentPartition, CommonParameters commonParameters, Crosslinker crosslinker, bool CrosslinkSearchTop, int CrosslinkSearchTopNum,
             bool quench_H2O, bool quench_NH2, bool quench_Tris, List<string> nestedIds)
             : base(null, listOfSortedms2Scans, peptideIndex, fragmentIndex, currentPartition, commonParameters, new OpenSearchMode(), 0, nestedIds)
         {
@@ -42,6 +43,7 @@ namespace EngineLayer.CrosslinkSearch
             this.QuenchH2O = quench_H2O;
             this.QuenchNH2 = quench_NH2;
             this.QuenchTris = quench_Tris;
+            SecondFragmentIndex = secondFragmentIndex;
             GenerateCrosslinkModifications(crosslinker);
             AllCrosslinkerSites = Crosslinker.CrosslinkerModSites.ToCharArray().Concat(Crosslinker.CrosslinkerModSites2.ToCharArray()).Distinct().ToArray();
 
@@ -68,7 +70,9 @@ namespace EngineLayer.CrosslinkSearch
             Parallel.ForEach(threads, (scanIndex) =>
             {
                 byte[] scoringTable = new byte[PeptideIndex.Count];
+                byte[] secondScoringTable = new byte[PeptideIndex.Count];
                 List<int> idsOfPeptidesPossiblyObserved = new List<int>();
+                List<int> childIdsOfPeptidesPossiblyObserved = new List<int>();
 
                 for (; scanIndex < ListOfSortedMs2Scans.Length; scanIndex += maxThreadsPerFile)
                 {
@@ -76,19 +80,43 @@ namespace EngineLayer.CrosslinkSearch
                     if (GlobalVariables.StopLoops) { return; }
 
                     // empty the scoring table to score the new scan (conserves memory compared to allocating a new array)
-                    Array.Clear(scoringTable, 0, scoringTable.Length);
+                    Array.Clear(scoringTable, 0, scoringTable.Length);                    
                     idsOfPeptidesPossiblyObserved.Clear();
                     var scan = ListOfSortedMs2Scans[scanIndex];
 
                     // get fragment bins for this scan
-                    List<int> allBinsToSearch = GetBinsToSearch(scan);
+                    List<int> allBinsToSearch = GetBinsToSearch(scan, commonParameters.DissociationType);
                     List<BestPeptideScoreNotch> bestPeptideScoreNotchList = new List<BestPeptideScoreNotch>();
 
                     // first-pass scoring
                     IndexedScoring(allBinsToSearch, scoringTable, byteScoreCutoff, idsOfPeptidesPossiblyObserved, scan.PrecursorMass, Double.NegativeInfinity, Double.PositiveInfinity, PeptideIndex, MassDiffAcceptor, 0, commonParameters.DissociationType);
 
+                    //child scan first-pass scoring
+                    if (scan.childMs2ScanWithSpecificMass != null)
+                    {
+                        Array.Clear(secondScoringTable, 0, secondScoringTable.Length);
+                        childIdsOfPeptidesPossiblyObserved.Clear();
+                        List<int> childBinsToSearch = new List<int>();
+                        foreach (var aChildScan in scan.childMs2ScanWithSpecificMass)
+                        {
+                             var x = GetBinsToSearch(aChildScan, commonParameters.ChildScanDissociationType);
+                            childBinsToSearch.AddRange(x);
+                        }
+                        
+                        IndexedScoring(childBinsToSearch, secondScoringTable, byteScoreCutoff, childIdsOfPeptidesPossiblyObserved, scan.PrecursorMass, Double.NegativeInfinity, Double.PositiveInfinity, PeptideIndex, MassDiffAcceptor, 0, commonParameters.ChildScanDissociationType);
+                    }
+
+                    foreach (var childId in childIdsOfPeptidesPossiblyObserved)
+                    {
+                        if (!idsOfPeptidesPossiblyObserved.Contains(childId))
+                        {
+                            idsOfPeptidesPossiblyObserved.Add(childId);
+                        }                     
+                        scoringTable[childId] = (byte)(scoringTable[childId]  + secondScoringTable[childId]);
+                    }
+
                     // done with indexed scoring; refine scores and create PSMs
-                    if (idsOfPeptidesPossiblyObserved.Any())
+                     if (idsOfPeptidesPossiblyObserved.Any())
                     {
                         if (CrosslinkSearchTopN)
                         {

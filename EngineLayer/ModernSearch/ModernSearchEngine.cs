@@ -64,7 +64,7 @@ namespace EngineLayer.ModernSearch
                     Ms2ScanWithSpecificMass scan = ListOfSortedMs2Scans[i];
 
                     // get fragment bins for this scan
-                    List<int> allBinsToSearch = GetBinsToSearch(scan);
+                    List<int> allBinsToSearch = GetBinsToSearch(scan, commonParameters.DissociationType);
 
                     // get allowed theoretical masses from the known experimental mass
                     // note that this is the OPPOSITE of the classic search (which calculates experimental masses from theoretical values)
@@ -143,12 +143,12 @@ namespace EngineLayer.ModernSearch
             return new MetaMorpheusEngineResults(this);
         }
 
-        protected List<int> GetBinsToSearch(Ms2ScanWithSpecificMass scan)
+        protected List<int> GetBinsToSearch(Ms2ScanWithSpecificMass scan, DissociationType dissociationType)
         {
             int obsPreviousFragmentCeilingMz = 0;
             List<int> binsToSearch = new List<int>();
 
-            if (commonParameters.DissociationType == DissociationType.LowCID)
+            if (dissociationType == DissociationType.LowCID)
             {
                 double[] masses = scan.TheScan.MassSpectrum.XArray;
                 double[] intensities = scan.TheScan.MassSpectrum.YArray;
@@ -324,14 +324,13 @@ namespace EngineLayer.ModernSearch
                     {
                         int id = peptideIdsInThisBin[j];
 
+                        scoringTable[id]++;
                         // add possible search results to the hashset of id's (only once)
-                        if (scoringTable[id] == 0 && massDiffAcceptor.Accepts(scanPrecursorMass, peptideIndex[id].MonoisotopicMass) >= 0)
+                        if (scoringTable[id] == 2 && massDiffAcceptor.Accepts(scanPrecursorMass, peptideIndex[id].MonoisotopicMass) >= 0)
                         {
                             idsOfPeptidesPossiblyObserved.Add(id);
                         }
 
-                        // mark the peptide as potentially observed so it doesn't get added more than once
-                        scoringTable[id] = 1;
                     }
                 }
                 else

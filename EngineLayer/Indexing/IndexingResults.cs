@@ -7,14 +7,16 @@ namespace EngineLayer.Indexing
 {
     public class IndexingResults : MetaMorpheusEngineResults
     {
-        public IndexingResults(List<PeptideWithSetModifications> peptideIndex, List<int>[] fragmentIndex, List<int>[] precursorIndex, IndexingEngine indexParams) : base(indexParams)
+        public IndexingResults(List<PeptideWithSetModifications> peptideIndex, List<int>[] fragmentIndex, List<int>[] secondFragmentIndex, List<int>[] precursorIndex, IndexingEngine indexParams) : base(indexParams)
         {
             PeptideIndex = peptideIndex;
             FragmentIndex = fragmentIndex;
+            SecondFragmentIndex = secondFragmentIndex;
             PrecursorIndex = precursorIndex;
         }
 
         public List<int>[] FragmentIndex { get; private set; }
+        public List<int>[] SecondFragmentIndex { get; private set; }
         public List<int>[] PrecursorIndex { get; private set; }
         public List<PeptideWithSetModifications> PeptideIndex { get; private set; }
 
@@ -23,7 +25,8 @@ namespace EngineLayer.Indexing
             var sb = new StringBuilder();
             sb.AppendLine(base.ToString());
             sb.AppendLine("\t\tfragmentIndexDict.Count: " + FragmentIndex.Length);
-            if(PrecursorIndex!=null)
+            sb.AppendLine("\t\tsecondFragmentIndexDict.Count: " + SecondFragmentIndex.Length);
+            if (PrecursorIndex!=null)
             {
                 sb.AppendLine("\t\tprecursorIndexDict.Count: " + PrecursorIndex.Length);
             }

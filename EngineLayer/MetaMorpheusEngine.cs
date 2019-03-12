@@ -200,7 +200,7 @@ namespace EngineLayer
                 if (scan.AllowProductType(product))
                 {
                     // get the closest peak in the spectrum to the theoretical peak
-                    var closestExperimentalMass = scan.GetClosestExperimentalFragmentMass(scan.TheExperimentalFragments, scan.TheDeconvolutedMonoisotopicMasses, product.NeutralMass);
+                    var closestExperimentalMass = scan.GetClosestExperimentalFragmentMass(scan.ExperimentalFragments, scan.TheDeconvolutedMonoisotopicMasses, product.NeutralMass);
 
                     // is the mass error acceptable?
                     if (commonParameters.ProductMassTolerance.Within(closestExperimentalMass.monoisotopicMass, product.NeutralMass) && closestExperimentalMass.charge <= scan.PrecursorCharge)

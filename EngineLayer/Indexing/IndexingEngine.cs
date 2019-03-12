@@ -45,7 +45,7 @@ namespace EngineLayer.Indexing
             sb.AppendLine("Number of fixed mods: " + FixedModifications.Count);
             sb.AppendLine("Number of variable mods: " + VariableModifications.Count);
             sb.AppendLine("Dissociation Type: " + commonParameters.DissociationType);
-
+            sb.AppendLine("ChildScan Dissociation Type: " + commonParameters.ChildScanDissociationType);
             sb.AppendLine("protease: " + commonParameters.DigestionParams.Protease);
             sb.AppendLine("initiatorMethionineBehavior: " + commonParameters.DigestionParams.InitiatorMethionineBehavior);
             sb.AppendLine("maximumMissedCleavages: " + commonParameters.DigestionParams.MaxMissedCleavages);
@@ -104,10 +104,12 @@ namespace EngineLayer.Indexing
 
             // create fragment index
             List<int>[] fragmentIndex;
+            List<int>[] secondFragmentIndex;
 
             try
             {
                 fragmentIndex = new List<int>[(int)Math.Ceiling(MaxFragmentSize) * FragmentBinsPerDalton + 1];
+                secondFragmentIndex = new List<int>[(int)Math.Ceiling(MaxFragmentSize) * FragmentBinsPerDalton + 1];
             }
             catch (OutOfMemoryException)
             {
@@ -124,6 +126,7 @@ namespace EngineLayer.Indexing
                 foreach (double theoreticalFragmentMass in fragmentMasses)
                 {
                     double tfm = theoreticalFragmentMass;
+                    
                     //if low res round
                     if (commonParameters.DissociationType == MassSpectrometry.DissociationType.LowCID)
                     {
@@ -132,12 +135,27 @@ namespace EngineLayer.Indexing
 
                     if (tfm < MaxFragmentSize && tfm > 0)
                     {
-                        int fragmentBin = (int)Math.Round(tfm * FragmentBinsPerDalton);
+                        int fragmentBin = (int)Math.Round(tfm * FragmentBinsPerDalton);                       
 
                         if (fragmentIndex[fragmentBin] == null)
                             fragmentIndex[fragmentBin] = new List<int> { peptideId };
                         else
                             fragmentIndex[fragmentBin].Add(peptideId);
+                    }             
+
+                    if (commonParameters.FragmentationType == FragmentationType.MS2_MS3 && commonParameters.ChildScanDissociationType == MassSpectrometry.DissociationType.LowCID)
+                    {
+                        var childTfm = Math.Round(theoreticalFragmentMass / 1.0005079, 0) * 1.0005079;
+
+                        if (childTfm < MaxFragmentSize && childTfm > 0)
+                        {
+                            int fragmentBin = (int)Math.Round(childTfm * FragmentBinsPerDalton);
+
+                            if (secondFragmentIndex[fragmentBin] == null)
+                                secondFragmentIndex[fragmentBin] = new List<int> { peptideId };
+                            else
+                                secondFragmentIndex[fragmentBin].Add(peptideId);
+                        }
                     }
                 }
 
@@ -196,7 +214,7 @@ namespace EngineLayer.Indexing
                 }
             }
 
-            return new IndexingResults(peptidesSortedByMass, fragmentIndex, precursorIndex, this);
+            return new IndexingResults(peptidesSortedByMass, fragmentIndex, secondFragmentIndex, precursorIndex, this);
         }
     }
 }

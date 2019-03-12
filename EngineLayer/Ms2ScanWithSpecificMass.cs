@@ -19,7 +19,7 @@ namespace EngineLayer
             TheScan = mzLibScan;
 
             ExperimentalFragments = neutralExperimentalFragments ?? GetNeutralExperimentalFragments(mzLibScan, commonParam);
-            TheExperimentalFragments = ExperimentalFragments;
+
             if (ExperimentalFragments.Any())
             {
                 DeconvolutedMonoisotopicMasses = ExperimentalFragments.Select(p => p.monoisotopicMass).ToArray();
@@ -35,28 +35,9 @@ namespace EngineLayer
         public IsotopicEnvelope[] ExperimentalFragments { get; private set; }
         public double[] DeconvolutedMonoisotopicMasses { get; private set; }
 
-        public IsotopicEnvelope[] TheExperimentalFragments { get; private set; }
         public double[] TheDeconvolutedMonoisotopicMasses { get; private set; }
 
         public List<Ms2ScanWithSpecificMass> childMs2ScanWithSpecificMass { get; set; }
-        //Get all experimentalFragments from MS2 scan and its children scan.
-        public void GetAllNeutralExperimentalFragments(MsDataScan scan, CommonParameters commonParam)
-        {
-                     
-            if (childMs2ScanWithSpecificMass.Count > 0)
-            {
-                foreach (var aMsScan in childMs2ScanWithSpecificMass)
-                {
-                    aMsScan.ExperimentalFragments = GetNeutralExperimentalFragments(aMsScan.TheScan, commonParam);
-                    ExperimentalFragments = ExperimentalFragments.Concat(aMsScan.ExperimentalFragments).OrderBy(p => p.monoisotopicMass).ToArray();
-                }
-
-                if (ExperimentalFragments.Any())
-                {
-                    DeconvolutedMonoisotopicMasses = ExperimentalFragments.Select(p => p.monoisotopicMass).ToArray();
-                }
-            }
-        }
 
         //TO DO: Optimize the filter. (Whether a product ion can be found in this scan.)
         public bool AllowProductType(Product product)

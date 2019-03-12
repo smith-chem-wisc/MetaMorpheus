@@ -328,11 +328,7 @@ namespace TaskLayer
                                     theMs2ScanWithSpecificMass.childMs2ScanWithSpecificMass.Add(x);
                                 }
                             }
-
-                            if (ms3Scans.Count() > 0 || childMs2Scans.Count() > 0)
-                            {
-                                theMs2ScanWithSpecificMass.GetAllNeutralExperimentalFragments(ms2scan, commonParameters);
-                            }                            
+                  
                             scansWithPrecursors[i].Add(theMs2ScanWithSpecificMass);
                         }
                     }
@@ -749,7 +745,7 @@ namespace TaskLayer
             return folder;
         }
 
-        public void GenerateIndexes(IndexingEngine indexEngine, List<DbForTask> dbFilenameList, ref List<PeptideWithSetModifications> peptideIndex, ref List<int>[] fragmentIndex, ref List<int>[] precursorIndex, List<Protein> allKnownProteins, List<Modification> allKnownModifications, string taskId)
+        public void GenerateIndexes(IndexingEngine indexEngine, List<DbForTask> dbFilenameList, ref List<PeptideWithSetModifications> peptideIndex, ref List<int>[] fragmentIndex, ref List<int>[] secondFragmentIndex, ref List<int>[] precursorIndex, List<Protein> allKnownProteins, List<Modification> allKnownModifications, string taskId)
         {
             string pathToFolderWithIndices = GetExistingFolderWithIndices(indexEngine, dbFilenameList);
             if (pathToFolderWithIndices == null)
@@ -764,6 +760,7 @@ namespace TaskLayer
                 var indexResults = (IndexingResults)indexEngine.Run();
                 peptideIndex = indexResults.PeptideIndex;
                 fragmentIndex = indexResults.FragmentIndex;
+                secondFragmentIndex = indexResults.SecondFragmentIndex;
                 precursorIndex = indexResults.PrecursorIndex;
 
                 Status("Writing peptide index...", new List<string> { taskId });
@@ -774,6 +771,11 @@ namespace TaskLayer
                 Status("Writing fragment index...", new List<string> { taskId });
                 var fragmentIndexFile = Path.Combine(output_folderForIndices, "fragmentIndex.ind");
                 WriteFragmentIndexNetSerializer(fragmentIndex, fragmentIndexFile);
+                FinishedWritingFile(fragmentIndexFile, new List<string> { taskId });
+
+                Status("Writing secondfragment index...", new List<string> { taskId });
+                var secondFragmentIndexFile = Path.Combine(output_folderForIndices, "secondFragmentIndex.ind");
+                WriteFragmentIndexNetSerializer(secondFragmentIndex, secondFragmentIndexFile);
                 FinishedWritingFile(fragmentIndexFile, new List<string> { taskId });
 
                 if (indexEngine.GeneratePrecursorIndex)
@@ -821,6 +823,14 @@ namespace TaskLayer
                 using (var file = File.OpenRead(Path.Combine(pathToFolderWithIndices, "fragmentIndex.ind")))
                 {
                     fragmentIndex = (List<int>[])ser.Deserialize(file);
+                }
+
+                Status("Reading second fragment index...", new List<string> { taskId });
+                messageTypes = GetSubclassesAndItself(typeof(List<int>[]));
+                ser = new NetSerializer.Serializer(messageTypes);
+                using (var file = File.OpenRead(Path.Combine(pathToFolderWithIndices, "secondFragmentIndex.ind")))
+                {
+                    secondFragmentIndex = (List<int>[])ser.Deserialize(file);
                 }
 
                 if (indexEngine.GeneratePrecursorIndex)
