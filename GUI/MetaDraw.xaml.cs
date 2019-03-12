@@ -268,7 +268,7 @@ namespace MetaMorpheusGUI
 
             // load the PSMs
             this.prgsText.Content = "Loading PSMs...";
-            await Task.Run(() => loadPsmsStat(tsvResultsFilePath));
+            await Task.Run(() => LoadPsms(tsvResultsFilePath));
 
             // done loading - restore controls
             this.prgsFeed.IsOpen = false;
@@ -292,7 +292,7 @@ namespace MetaMorpheusGUI
 
             // load the PSMs
             this.prgsTextStat.Content = "Loading PSMs...";
-            await Task.Run(() => loadPsmsStat(tsvResultsFilePath));
+            await Task.Run(() => LoadPsms(tsvResultsFilePath));
 
             // done loading - restore controls
             this.prgsFeedStat.IsOpen = false;
@@ -378,14 +378,6 @@ namespace MetaMorpheusGUI
             foreach (var ye in plotTypes)
             {
                 ye.VerifyCheckState();
-            }
-        }
-
-        private void loadPsmsStat(string filePath)
-        {
-            foreach (var psm in TsvResultReader.ReadTsv(filePath))
-            {
-                psms.Add(psm);
             }
         }
 

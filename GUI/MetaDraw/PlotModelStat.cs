@@ -7,6 +7,7 @@ using Proteomics.Fragmentation;
 using Proteomics.ProteolyticDigestion;
 using System;
 using System.Collections.Generic;
+using System.Collections.ObjectModel;
 using System.ComponentModel;
 using System.Linq;
 
@@ -17,7 +18,7 @@ namespace MetaMorpheusGUI
         private const double STROKE_THICKNESS_UNANNOTATED = 0.5;
         private const double STROKE_THICKNESS_ANNOTATED = 2.0;
         private PlotModel privateModel;
-        private List<MetaDrawPsm> allPSM;
+        private ObservableCollection<PsmFromTsv> allPSM;
         public List<string> plotNames = new List<string>{ "Histogram of Precursor PPM Errors (around 0 Da mass-difference notch only)",
                                                           "Histogram of Fragment PPM Errors",
                                                           "Histogram of Precursor Charges",
@@ -67,7 +68,7 @@ namespace MetaMorpheusGUI
 
         }
 
-        public PlotModelStat(string plotName, List<MetaDrawPsm> psms)
+        public PlotModelStat(string plotName, ObservableCollection<PsmFromTsv> psms)
         {
             privateModel = new PlotModel { Title = plotName, Subtitle = "using OxyPlot" };
             allPSM = psms;
@@ -192,7 +193,7 @@ namespace MetaMorpheusGUI
                 case 1:
                     foreach (var psm in filteredList)
                     {
-                        xy.Add(new Tuple<double, double>(double.Parse(psm.MassDiffPpm), psm.RetentionTime));
+                        xy.Add(new Tuple<double, double>(double.Parse(psm.MassDiffPpm), (double)psm.RetentionTime));
                     }
                     break;
                 case 2:
@@ -200,7 +201,7 @@ namespace MetaMorpheusGUI
                     {
                         foreach (var ion in psm.MatchedIons)
                         {
-                            xy.Add(psm.RetentionTime, ion.MassErrorPpm);
+                            xy.Add(new Tuple<double,double>((double)psm.RetentionTime, ion.MassErrorPpm));
                         }
                     }
                     break;
