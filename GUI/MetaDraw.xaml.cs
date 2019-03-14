@@ -251,7 +251,7 @@ namespace MetaMorpheusGUI
             prgsFeed.IsOpen = true;
             prgsText.Content = "Loading spectra file...";
 
-            var slowProcess = Task<MsDataFile>.Factory.StartNew(() => spectraFileManager.LoadFile(spectraFilePath, null, null, 1, false, false, new CommonParameters()));
+            var slowProcess = Task<MsDataFile>.Factory.StartNew(() => spectraFileManager.LoadFile(spectraFilePath, new CommonParameters()));
             await slowProcess;
             MsDataFile = slowProcess.Result;
 

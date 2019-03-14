@@ -142,7 +142,7 @@ namespace MetaMorpheusGUI
             XLPrecusorMsTlTextBox.Text = task.CommonParameters.PrecursorMassTolerance.Value.ToString(CultureInfo.InvariantCulture);
             trimMs1.IsChecked = task.CommonParameters.TrimMs1Peaks;
             trimMsMs.IsChecked = task.CommonParameters.TrimMsMsPeaks;
-            TopNPeaksTextBox.Text = task.CommonParameters.TopNpeaks.ToString(CultureInfo.InvariantCulture);
+            TopNPeaksTextBox.Text = task.CommonParameters.NumberOfPeaksToKeepPerWindow.ToString(CultureInfo.InvariantCulture);
             MinRatioTextBox.Text = task.CommonParameters.MinRatio.ToString(CultureInfo.InvariantCulture);
             DissociationTypeComboBox.SelectedItem = task.CommonParameters.DissociationType.ToString();
 
@@ -339,7 +339,7 @@ namespace MetaMorpheusGUI
                 digestionParams: digestionParamsToSave,
                 trimMs1Peaks: trimMs1.IsChecked.Value,
                 trimMsMsPeaks: trimMsMs.IsChecked.Value,
-                topNpeaks: int.Parse(TopNPeaksTextBox.Text),
+                numberOfPeaksToKeepPerWindow: int.Parse(TopNPeaksTextBox.Text),
                 minRatio: double.Parse(MinRatioTextBox.Text, CultureInfo.InvariantCulture),
                 dissociationType: dissociationType,
                 scoreCutoff: double.Parse(minScoreAllowed.Text, CultureInfo.InvariantCulture),

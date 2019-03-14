@@ -265,7 +265,7 @@ namespace Test
                 calculateEValue: true,
                 maxThreadsToUsePerFile: 1,
                 precursorMassTolerance: new PpmTolerance(5),
-                topNpeaks: 200,
+                numberOfPeaksToKeepPerWindow: 200,
                 minRatio: 0.01,
                 trimMs1Peaks: false,
                 trimMsMsPeaks: false,
@@ -375,7 +375,7 @@ namespace Test
                 calculateEValue: true,
                 maxThreadsToUsePerFile: 1,
                 precursorMassTolerance: new PpmTolerance(5),
-                topNpeaks: 200,
+                numberOfPeaksToKeepPerWindow: 200,
                 minRatio: 0.01,
                 trimMs1Peaks: false,
                 trimMsMsPeaks: false,
@@ -393,7 +393,7 @@ namespace Test
                 SearchType = SearchType.Modern
             };
             //
-            MsDataFile myMsDataFile = myFileManager.LoadFile(origDataFile, CommonParameters.TopNpeaks, CommonParameters.MinRatio, CommonParameters.NominalWindowWidthDa, CommonParameters.TrimMs1Peaks, CommonParameters.TrimMsMsPeaks, CommonParameters);
+            MsDataFile myMsDataFile = myFileManager.LoadFile(origDataFile, CommonParameters);
 
             Ms2ScanWithSpecificMass[] arrayOfMs2ScansSortedByMass = MetaMorpheusTask.GetMs2Scans(myMsDataFile, origDataFile, CommonParameters).OrderBy(b => b.PrecursorMass).ToArray();
             int numSpectra = myMsDataFile.GetAllScansList().Count(p => p.MsnOrder == 2);

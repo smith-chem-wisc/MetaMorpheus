@@ -194,7 +194,7 @@ namespace MetaMorpheusGUI
             deltaScoreCheckBox.IsChecked = task.CommonParameters.UseDeltaScore;
             trimMs1.IsChecked = task.CommonParameters.TrimMs1Peaks;
             trimMsMs.IsChecked = task.CommonParameters.TrimMsMsPeaks;
-            TopNPeaksTextBox.Text = task.CommonParameters.TopNpeaks == int.MaxValue ? "" : task.CommonParameters.TopNpeaks.ToString(CultureInfo.InvariantCulture);
+            TopNPeaksTextBox.Text = task.CommonParameters.NumberOfPeaksToKeepPerWindow == int.MaxValue ? "" : task.CommonParameters.NumberOfPeaksToKeepPerWindow.ToString(CultureInfo.InvariantCulture);
             MinRatioTextBox.Text = task.CommonParameters.MinRatio.ToString(CultureInfo.InvariantCulture);
             maxThreadsTextBox.Text = task.CommonParameters.MaxThreadsToUsePerFile.ToString(CultureInfo.InvariantCulture);
             MinVariantDepthTextBox.Text = task.CommonParameters.MinVariantDepth.ToString(CultureInfo.InvariantCulture);
@@ -458,9 +458,9 @@ namespace MetaMorpheusGUI
                 digestionParams: digestionParamsToSave,
                 trimMs1Peaks: TrimMs1Peaks,
                 trimMsMsPeaks: TrimMsMsPeaks,
-                topNpeaks: TopNpeaks,
+                numberOfPeaksToKeepPerWindow: TopNpeaks,
                 minRatio: MinRatio,
-                nominalWindowWidth: windowWidthDaltons,
+                windowWidthDaltons: windowWidthDaltons,
                 addCompIons: addCompIonCheckBox.IsChecked.Value,
                 qValueOutputFilter: QValueCheckBox.IsChecked.Value ? double.Parse(QValueTextBox.Text, CultureInfo.InvariantCulture) : 1.0,
                 assumeOrphanPeaksAreZ1Fragments: protease.Name != "top-down",
