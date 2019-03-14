@@ -433,7 +433,8 @@ namespace MetaMorpheusGUI
 
             bool TrimMs1Peaks = trimMs1.IsChecked.Value;
             bool TrimMsMsPeaks = trimMsMs.IsChecked.Value;
-            int TopNpeaks = int.Parse(TopNPeaksTextBox.Text);
+            int TopNpeaks = int.Parse(TopNPeaksTextBox.Text, CultureInfo.InvariantCulture);
+            int windowWidthDaltons = int.Parse(WindowWidthDaTextBox.Text, CultureInfo.InvariantCulture);
             double MinRatio = double.Parse(MinRatioTextBox.Text, CultureInfo.InvariantCulture);
 
             bool parseMaxThreadsPerFile = !maxThreadsTextBox.Text.Equals("") && (int.Parse(maxThreadsTextBox.Text) <= Environment.ProcessorCount && int.Parse(maxThreadsTextBox.Text) > 0);
@@ -459,6 +460,7 @@ namespace MetaMorpheusGUI
                 trimMsMsPeaks: TrimMsMsPeaks,
                 topNpeaks: TopNpeaks,
                 minRatio: MinRatio,
+                nominalWindowWidth: windowWidthDaltons,
                 addCompIons: addCompIonCheckBox.IsChecked.Value,
                 qValueOutputFilter: QValueCheckBox.IsChecked.Value ? double.Parse(QValueTextBox.Text, CultureInfo.InvariantCulture) : 1.0,
                 assumeOrphanPeaksAreZ1Fragments: protease.Name != "top-down",
