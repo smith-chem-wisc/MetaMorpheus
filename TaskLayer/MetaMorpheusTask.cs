@@ -188,6 +188,13 @@ namespace TaskLayer
             if (commonParameters.FragmentationType == FragmentationType.MS2_MS3) //MS2-MS3 data. CID@HCD, or CID@ETD.
             {
                 ms3Scans = myMSDataFile.GetAllScansList().Where(x => x.MsnOrder == 3).ToArray();
+                if (commonParameters.ChildScanDissociationType == DissociationType.LowCID)
+                {
+                    foreach (var scan in ms3Scans)
+                    {
+                        scan.MassSpectrum.XCorrPrePreprocessing(0, 1969, scan.IsolationMz.Value);
+                    }
+                }
             }
 
             List<MsDataScan> childMs2Scans = new List<MsDataScan>();
@@ -199,6 +206,10 @@ namespace TaskLayer
                     if (ms2Scans[i].SelectedIonMZ.HasValue && ms2Scans[i + 1].SelectedIonMZ.HasValue
                         && commonParameters.PrecursorMassTolerance.Within(ms2Scans[i].SelectedIonMZ.Value, ms2Scans[i + 1].SelectedIonMZ.Value)) //ms2Scans[i].SelectedIonMZ.Value == ms2Scans[i+1].SelectedIonMZ.Value //The number changed a little bit later
                     {
+                        if (commonParameters.ChildScanDissociationType == DissociationType.LowCID)
+                        {
+                            ms2Scans[i + 1].MassSpectrum.XCorrPrePreprocessing(0, 1969, ms2Scans[i + 1].IsolationMz.Value);
+                        }
                         childMs2Scans.Add(ms2Scans[i + 1]);
                         ms2Scans[i + 1] = null;
                         i += 1;
@@ -281,8 +292,11 @@ namespace TaskLayer
                         }
 
                         scansWithPrecursors[i] = new List<Ms2ScanWithSpecificMass>();
-                        IsotopicEnvelope[] neutralExperimentalFragments = Ms2ScanWithSpecificMass.GetNeutralExperimentalFragments(ms2scan, commonParameters);
-
+                        IsotopicEnvelope[] neutralExperimentalFragments = null;
+                        if (commonParameters.DissociationType != DissociationType.LowCID)
+                        {
+                            neutralExperimentalFragments = Ms2ScanWithSpecificMass.GetNeutralExperimentalFragments(ms2scan, commonParameters);
+                        }
                         foreach (var precursor in precursors)
                         {
                             var theMs2ScanWithSpecificMass = new Ms2ScanWithSpecificMass(ms2scan, precursor.Item1,
@@ -297,7 +311,11 @@ namespace TaskLayer
                                     {
                                         continue;
                                     }
-                                    IsotopicEnvelope[] aScanNeutralExperimentalFragments = Ms2ScanWithSpecificMass.GetNeutralExperimentalFragments(aScan, commonParameters);
+                                    IsotopicEnvelope[] aScanNeutralExperimentalFragments = null;
+                                    if (commonParameters.ChildScanDissociationType != DissociationType.LowCID)
+                                    {
+                                        aScanNeutralExperimentalFragments = Ms2ScanWithSpecificMass.GetNeutralExperimentalFragments(aScan, commonParameters);
+                                    }
                                     int scanSelectedCharge = 0;
                                     if (aScan.SelectedIonChargeStateGuess.HasValue)
                                     {
@@ -318,7 +336,11 @@ namespace TaskLayer
                                     {
                                         continue;
                                     }
-                                    IsotopicEnvelope[] aScanNeutralExperimentalFragments = Ms2ScanWithSpecificMass.GetNeutralExperimentalFragments(aScan, commonParameters);
+                                    IsotopicEnvelope[] aScanNeutralExperimentalFragments = null;
+                                    if (commonParameters.ChildScanDissociationType != DissociationType.LowCID)
+                                    {
+                                        aScanNeutralExperimentalFragments = Ms2ScanWithSpecificMass.GetNeutralExperimentalFragments(aScan, commonParameters);
+                                    }                                  
                                     int scanSelectedCharge = 0;
                                     if (aScan.SelectedIonChargeStateGuess.HasValue)
                                     {

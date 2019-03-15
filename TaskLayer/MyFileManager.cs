@@ -108,11 +108,12 @@ namespace TaskLayer
                 {
                     // call xcorr filtering on each ms2 scan
 
-                    foreach (var scan in MyMsDataFiles[origDataFile].GetAllScansList().Where(p => p.MsnOrder > 1))
+                    foreach (var scan in MyMsDataFiles[origDataFile].GetAllScansList().Where(p => p.MsnOrder == 2))
                     {
                         scan.MassSpectrum.XCorrPrePreprocessing(0, 1969, scan.IsolationMz.Value);
                     }
                 }
+               
 
                 return MyMsDataFiles[origDataFile];
             }

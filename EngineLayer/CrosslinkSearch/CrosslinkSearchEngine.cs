@@ -85,35 +85,35 @@ namespace EngineLayer.CrosslinkSearch
                     var scan = ListOfSortedMs2Scans[scanIndex];
 
                     // get fragment bins for this scan
-                    List<int> allBinsToSearch = GetBinsToSearch(scan, commonParameters.DissociationType);
+                    List<int> allBinsToSearch = GetBinsToSearch(scan, FragmentIndex, commonParameters.DissociationType);
                     List<BestPeptideScoreNotch> bestPeptideScoreNotchList = new List<BestPeptideScoreNotch>();
 
                     // first-pass scoring
-                    IndexedScoring(allBinsToSearch, scoringTable, byteScoreCutoff, idsOfPeptidesPossiblyObserved, scan.PrecursorMass, Double.NegativeInfinity, Double.PositiveInfinity, PeptideIndex, MassDiffAcceptor, 0, commonParameters.DissociationType);
+                    IndexedScoring(FragmentIndex, allBinsToSearch, scoringTable, byteScoreCutoff, idsOfPeptidesPossiblyObserved, scan.PrecursorMass, Double.NegativeInfinity, Double.PositiveInfinity, PeptideIndex, MassDiffAcceptor, 0, commonParameters.DissociationType);
 
                     //child scan first-pass scoring
-                    if (scan.childMs2ScanWithSpecificMass != null)
+                    if (commonParameters.ChildScanDissociationType != MassSpectrometry.DissociationType.LowCID && scan.childMs2ScanWithSpecificMass != null)
                     {
                         Array.Clear(secondScoringTable, 0, secondScoringTable.Length);
                         childIdsOfPeptidesPossiblyObserved.Clear();
                         List<int> childBinsToSearch = new List<int>();
                         foreach (var aChildScan in scan.childMs2ScanWithSpecificMass)
                         {
-                             var x = GetBinsToSearch(aChildScan, commonParameters.ChildScanDissociationType);
+                             var x = GetBinsToSearch(aChildScan, SecondFragmentIndex, commonParameters.ChildScanDissociationType);
                             childBinsToSearch.AddRange(x);
                         }
                         
-                        IndexedScoring(childBinsToSearch, secondScoringTable, byteScoreCutoff, childIdsOfPeptidesPossiblyObserved, scan.PrecursorMass, Double.NegativeInfinity, Double.PositiveInfinity, PeptideIndex, MassDiffAcceptor, 0, commonParameters.ChildScanDissociationType);
-                    }
+                        IndexedScoring(SecondFragmentIndex, childBinsToSearch, secondScoringTable, byteScoreCutoff, childIdsOfPeptidesPossiblyObserved, scan.PrecursorMass, Double.NegativeInfinity, Double.PositiveInfinity, PeptideIndex, MassDiffAcceptor, 0, commonParameters.ChildScanDissociationType);
 
-                    foreach (var childId in childIdsOfPeptidesPossiblyObserved)
-                    {
-                        if (!idsOfPeptidesPossiblyObserved.Contains(childId))
+                        foreach (var childId in childIdsOfPeptidesPossiblyObserved)
                         {
-                            idsOfPeptidesPossiblyObserved.Add(childId);
-                        }                     
-                        scoringTable[childId] = (byte)(scoringTable[childId]  + secondScoringTable[childId]);
-                    }
+                            if (!idsOfPeptidesPossiblyObserved.Contains(childId))
+                            {
+                                idsOfPeptidesPossiblyObserved.Add(childId);
+                            }
+                            scoringTable[childId] = (byte)(scoringTable[childId] + secondScoringTable[childId]);
+                        }
+                    }                 
 
                     // done with indexed scoring; refine scores and create PSMs
                      if (idsOfPeptidesPossiblyObserved.Any())
@@ -192,7 +192,7 @@ namespace EngineLayer.CrosslinkSearch
                     List<Product> products = bestPeptide.Fragment(commonParameters.DissociationType, FragmentationTerminus.Both).ToList();
                     var allMatchedFragmentIons = SpecialMatchFragmentIons(theScan, products, commonParameters);
                     var matchedFragmentIons = allMatchedFragmentIons.SelectMany(p => p.Value).ToList();
-                    double score = SpecialCalculatePeptideScore(theScan.TheScan, allMatchedFragmentIons, 0);
+                    double score = SpecialCalculatePeptideScore(theScan, allMatchedFragmentIons, 0);
 
                     var psmCrossSingle = new CrosslinkSpectralMatch(bestPeptide, theScanBestPeptide[alphaIndex].BestNotch, score, scanIndex, theScan, commonParameters.DigestionParams, matchedFragmentIons);
                     psmCrossSingle.AllMatchedFragmentIons = allMatchedFragmentIons;
@@ -351,7 +351,7 @@ namespace EngineLayer.CrosslinkSearch
                         foreach (var setOfFragments in fragmentsForEachAlphaLocalizedPossibility.Where(v => v.Item1 == possibleSite))
                         {
                             var matchedIons = SpecialMatchFragmentIons(theScan, setOfFragments.Item2, commonParameters);
-                            double score = SpecialCalculatePeptideScore(theScan.TheScan, matchedIons, 0);
+                            double score = SpecialCalculatePeptideScore(theScan, matchedIons, 0);
 
                             if (score > bestAlphaLocalizedScore)
                             {
@@ -377,7 +377,7 @@ namespace EngineLayer.CrosslinkSearch
                             // remove any matched beta ions that also matched to the alpha peptide
                             //matchedIons.RemoveAll(p => alphaMz.Contains(p.Mz));
 
-                            double score = SpecialCalculatePeptideScore(theScan.TheScan, matchedIons, 0);
+                            double score = SpecialCalculatePeptideScore(theScan, matchedIons, 0);
 
                             if (score > bestBetaLocalizedScore)
                             {
@@ -455,7 +455,7 @@ namespace EngineLayer.CrosslinkSearch
                 var products = localizedPeptide.Fragment(commonParameters.DissociationType, FragmentationTerminus.Both).ToList();
                 var matchedFragmentIons = SpecialMatchFragmentIons(theScan, products, commonParameters);
 
-                double score = SpecialCalculatePeptideScore(theScan.TheScan, matchedFragmentIons, 0);
+                double score = SpecialCalculatePeptideScore(theScan, matchedFragmentIons, 0);
 
                 if (score > bestScore)
                 {
@@ -508,7 +508,7 @@ namespace EngineLayer.CrosslinkSearch
             {
                 var allMatchedFragmentIons = SpecialMatchFragmentIons(theScan, setOfPositions.Value, commonParameters);
 
-                double score = SpecialCalculatePeptideScore(theScan.TheScan, allMatchedFragmentIons, 0);
+                double score = SpecialCalculatePeptideScore(theScan, allMatchedFragmentIons, 0);
 
                 if (score > bestScore)
                 {

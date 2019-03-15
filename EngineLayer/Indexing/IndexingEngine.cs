@@ -143,13 +143,19 @@ namespace EngineLayer.Indexing
                             fragmentIndex[fragmentBin].Add(peptideId);
                     }             
 
-                    if (commonParameters.FragmentationType == FragmentationType.MS2_MS3 && commonParameters.ChildScanDissociationType == MassSpectrometry.DissociationType.LowCID)
-                    {
-                        var childTfm = Math.Round(theoreticalFragmentMass / 1.0005079, 0) * 1.0005079;
+                }
 
-                        if (childTfm < MaxFragmentSize && childTfm > 0)
+                //There is no reason to index low-res fragment for children scan
+                if (commonParameters.FragmentationType != FragmentationType.MS2 && commonParameters.ChildScanDissociationType != MassSpectrometry.DissociationType.LowCID && commonParameters.ChildScanDissociationType != commonParameters.DissociationType)
+                {
+                    var childFragmentMasses = peptidesSortedByMass[peptideId].Fragment(commonParameters.ChildScanDissociationType, commonParameters.DigestionParams.FragmentationTerminus).Select(m => m.NeutralMass).ToList();
+
+                    foreach (double theoreticalFragmentMass in childFragmentMasses)
+                    {
+                        double tfm = theoreticalFragmentMass;
+                        if (tfm < MaxFragmentSize && tfm > 0)
                         {
-                            int fragmentBin = (int)Math.Round(childTfm * FragmentBinsPerDalton);
+                            int fragmentBin = (int)Math.Round(tfm * FragmentBinsPerDalton);
 
                             if (secondFragmentIndex[fragmentBin] == null)
                                 secondFragmentIndex[fragmentBin] = new List<int> { peptideId };
