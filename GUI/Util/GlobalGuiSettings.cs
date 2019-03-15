@@ -118,7 +118,7 @@ namespace MetaMorpheusGUI
 
         public static bool CheckMinimumAllowedIntensityRatio(string text)
         {
-            if (!double.TryParse(text, NumberStyles.Any, CultureInfo.InvariantCulture, out double minRatio) || minRatio < 0 || minRatio > 1)
+            if (!double.TryParse(text, NumberStyles.Any, CultureInfo.InvariantCulture, out double minRatio) || minRatio < 0 || minRatio > 1 || text == null)
             {
                 MessageBox.Show("The minimum intensity ratio must be between zero and one. \n You entered " + '"' + text + '"');
                 return false;
@@ -128,7 +128,11 @@ namespace MetaMorpheusGUI
 
         public static bool CheckWindowWidthThomsons(string text)
         {
-            if (!double.TryParse(text, NumberStyles.Any, CultureInfo.InvariantCulture, out double windowWidthThomsons) || windowWidthThomsons > 0)
+            if (double.TryParse(text, NumberStyles.Any, CultureInfo.InvariantCulture, out double windowWidthThomsons))
+            {
+                return true;
+            }
+            else if (windowWidthThomsons < 0 || !string.IsNullOrWhiteSpace(text))
             {
                 MessageBox.Show("The value for window width in Thomsons must be greater than one. \n You entered " + '"' + text + '"');
                 return false;
@@ -138,9 +142,13 @@ namespace MetaMorpheusGUI
 
         public static bool CheckWindowMaxNormalizationValue(string text)
         {
-            if (!double.TryParse(text, NumberStyles.Any, CultureInfo.InvariantCulture, out double windowMaxNormalizationValue) || windowMaxNormalizationValue > 0)
+            if (double.TryParse(text, NumberStyles.Any, CultureInfo.InvariantCulture, out double windowMaxNormalizationValue))
             {
-                MessageBox.Show("The value for window max intensity normalization must be greater than one. \n You entered " + '"' + text + '"');
+                return true;
+            }
+            else if (windowMaxNormalizationValue < 0 || !string.IsNullOrWhiteSpace(text))
+            {
+                MessageBox.Show("The value for window max normalization value must be greater than one. \n You entered " + '"' + text + '"');
                 return false;
             }
             return true;
@@ -148,7 +156,6 @@ namespace MetaMorpheusGUI
 
         public static bool CheckPrecursorMassTolerance(string text)
         {
-
             if (!double.TryParse(text, NumberStyles.Any, CultureInfo.InvariantCulture, out double precursorMassTolerance) || precursorMassTolerance <= 0)
             {
                 MessageBox.Show("The precursor mass tolerance is invalid. \n You entered " + '"' + text + '"' + "\n Please enter a positive number.");
@@ -303,6 +310,6 @@ namespace MetaMorpheusGUI
             return true;
         }
 
-        #endregion
+        #endregion Check Task Validity
     }
 }
