@@ -89,7 +89,7 @@
                                     </CheckBox>
                                     <StackPanel Orientation="Horizontal" Margin="5">
                                         <Label Content="Top N peaks per m/z window" />
-                                        <TextBox x:Name="TopNPeaksTextBox" PreviewTextInput="CheckIfNumber" Width="45" ToolTipService.ShowDuration="999999" ToolTipService.InitialShowDelay="500">
+                                        <TextBox x:Name="NumberOfPeaksToKeepPerWindowTextBox" PreviewTextInput="CheckIfNumber" Width="45" ToolTipService.ShowDuration="999999" ToolTipService.InitialShowDelay="500">
                                             <ToolTipService.ToolTip>
                                                 <ToolTip Content="Use the N most intense peaks from the spectrum and remove all other peaks" />
                                             </ToolTipService.ToolTip>
@@ -97,7 +97,7 @@
                                     </StackPanel>
                                     <StackPanel Orientation="Horizontal" Margin="5">
                                         <Label Content="Minimum intensity ratio" />
-                                        <TextBox x:Name="MinRatioTextBox" PreviewTextInput="CheckIfNumber" Width="45" ToolTipService.ShowDuration="999999" ToolTipService.InitialShowDelay="500">
+                                        <TextBox x:Name="MinimumAllowedIntensityRatioToBasePeakTexBox" PreviewTextInput="CheckIfNumber" Width="45" ToolTipService.ShowDuration="999999" ToolTipService.InitialShowDelay="500">
                                             <ToolTipService.ToolTip>
                                                 <ToolTip Content="Peaks must be this intense compared to the base peak" />
                                             </ToolTipService.ToolTip>
@@ -105,7 +105,7 @@
                                     </StackPanel>
                                     <StackPanel Orientation="Horizontal" Margin="5">
                                         <Label Content="Nominal window width Thomsons" />
-                                        <TextBox x:Name="WindowWidthDaTextBox" PreviewTextInput="CheckIfNumber" Width="45" ToolTipService.ShowDuration="999999" ToolTipService.InitialShowDelay="500">
+                                        <TextBox x:Name="WindowWidthThomsonsTextBox" PreviewTextInput="CheckIfNumber" Width="45" ToolTipService.ShowDuration="999999" ToolTipService.InitialShowDelay="500">
                                             <ToolTipService.ToolTip>
                                                 <ToolTip Content="Divide the MS2 spectrum into windows N-Daltons wide before filtering peaks" />
                                             </ToolTipService.ToolTip>

@@ -142,8 +142,10 @@ namespace MetaMorpheusGUI
             XLPrecusorMsTlTextBox.Text = task.CommonParameters.PrecursorMassTolerance.Value.ToString(CultureInfo.InvariantCulture);
             trimMs1.IsChecked = task.CommonParameters.TrimMs1Peaks;
             trimMsMs.IsChecked = task.CommonParameters.TrimMsMsPeaks;
-            TopNPeaksTextBox.Text = task.CommonParameters.NumberOfPeaksToKeepPerWindow.ToString(CultureInfo.InvariantCulture);
-            MinRatioTextBox.Text = task.CommonParameters.MinRatio.ToString(CultureInfo.InvariantCulture);
+
+            TopNPeaksTextBox.Text = task.CommonParameters.NumberOfPeaksToKeepPerWindow == int.MaxValue || !task.CommonParameters.NumberOfPeaksToKeepPerWindow.HasValue ? "" : task.CommonParameters.NumberOfPeaksToKeepPerWindow.Value.ToString(CultureInfo.InvariantCulture);
+            MinRatioTextBox.Text = task.CommonParameters.MinimumAllowedIntensityRatioToBasePeak == double.MaxValue || !task.CommonParameters.MinimumAllowedIntensityRatioToBasePeak.HasValue ? "" : task.CommonParameters.MinimumAllowedIntensityRatioToBasePeak.Value.ToString(CultureInfo.InvariantCulture);
+
             DissociationTypeComboBox.SelectedItem = task.CommonParameters.DissociationType.ToString();
 
             //ckbCharge_2_3.IsChecked = task.XlSearchParameters.XlCharge_2_3;
@@ -234,7 +236,7 @@ namespace MetaMorpheusGUI
 
             if (!GlobalGuiSettings.CheckTaskSettingsValidity(XLPrecusorMsTlTextBox.Text, productMassToleranceTextBox.Text, missedCleavagesTextBox.Text,
                 maxModificationIsoformsTextBox.Text, MinPeptideLengthTextBox.Text, MaxPeptideLengthTextBox.Text, maxThreadsTextBox.Text, minScoreAllowed.Text,
-                fieldNotUsed, fieldNotUsed, fieldNotUsed, TopNPeaksTextBox.Text, MinRatioTextBox.Text, numberOfDatabaseSearchesTextBox.Text, fieldNotUsed, fieldNotUsed, fieldNotUsed))
+                fieldNotUsed, fieldNotUsed, fieldNotUsed, TopNPeaksTextBox.Text, MinRatioTextBox.Text, null, null, numberOfDatabaseSearchesTextBox.Text, fieldNotUsed, fieldNotUsed, fieldNotUsed))
             {
                 return;
             }
@@ -340,7 +342,7 @@ namespace MetaMorpheusGUI
                 trimMs1Peaks: trimMs1.IsChecked.Value,
                 trimMsMsPeaks: trimMsMs.IsChecked.Value,
                 numberOfPeaksToKeepPerWindow: int.Parse(TopNPeaksTextBox.Text),
-                minRatio: double.Parse(MinRatioTextBox.Text, CultureInfo.InvariantCulture),
+                minimumAllowedIntensityRatioToBasePeak: double.Parse(MinRatioTextBox.Text, CultureInfo.InvariantCulture),
                 dissociationType: dissociationType,
                 scoreCutoff: double.Parse(minScoreAllowed.Text, CultureInfo.InvariantCulture),
                 totalPartitions: int.Parse(numberOfDatabaseSearchesTextBox.Text, CultureInfo.InvariantCulture),

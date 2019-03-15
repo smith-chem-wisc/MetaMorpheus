@@ -19,7 +19,7 @@ namespace EngineLayer
 
         public CommonParameters(string taskDescriptor = null, DissociationType dissociationType = DissociationType.HCD, bool doPrecursorDeconvolution = true,
             bool useProvidedPrecursorInfo = true, double deconvolutionIntensityRatio = 3, int deconvolutionMaxAssumedChargeState = 12, bool reportAllAmbiguity = true,
-            bool addCompIons = false, int totalPartitions = 1, double scoreCutoff = 5, int numberOfPeaksToKeepPerWindow = 200, double minRatio = 0.01, double? windowWidthDaltons = null, int? numberOfWindows = null, double? windowMaxNormalizationValue = null, bool trimMs1Peaks = false,
+            bool addCompIons = false, int totalPartitions = 1, double scoreCutoff = 5, int? numberOfPeaksToKeepPerWindow = 200, double? minimumAllowedIntensityRatioToBasePeak = 0.01, double? windowWidthThomsons = null, int? numberOfWindows = null, double? windowMaxNormalizationValue = null, bool trimMs1Peaks = false,
             bool trimMsMsPeaks = true, bool useDeltaScore = false, bool calculateEValue = false, Tolerance productMassTolerance = null, Tolerance precursorMassTolerance = null, Tolerance deconvolutionMassTolerance = null,
             int maxThreadsToUsePerFile = -1, DigestionParams digestionParams = null, IEnumerable<(string, string)> listOfModsVariable = null, IEnumerable<(string, string)> listOfModsFixed = null, double qValueOutputFilter = 1.0,
             bool assumeOrphanPeaksAreZ1Fragments = true, int maxHeterozygousVariants = 4, int minVariantDepth = 1)
@@ -34,8 +34,8 @@ namespace EngineLayer
             TotalPartitions = totalPartitions;
             ScoreCutoff = scoreCutoff;
             NumberOfPeaksToKeepPerWindow = numberOfPeaksToKeepPerWindow;
-            MinRatio = minRatio;
-            WindowWidthDaltons = windowWidthDaltons;
+            MinimumAllowedIntensityRatioToBasePeak = minimumAllowedIntensityRatioToBasePeak;
+            WindowWidthThomsons = windowWidthThomsons;
             NumberOfWindows = numberOfWindows;
             WindowMaxNormalizationValue = windowMaxNormalizationValue;
             TrimMs1Peaks = trimMs1Peaks;
@@ -86,9 +86,9 @@ namespace EngineLayer
         public double ScoreCutoff { get; private set; }
         public DigestionParams DigestionParams { get; private set; }
         public bool ReportAllAmbiguity { get; private set; }
-        public int NumberOfPeaksToKeepPerWindow { get; private set; }
-        public double MinRatio { get; private set; }
-        public double? WindowWidthDaltons { get; private set; }
+        public int? NumberOfPeaksToKeepPerWindow { get; private set; }
+        public double? MinimumAllowedIntensityRatioToBasePeak { get; private set; }
+        public double? WindowWidthThomsons { get; private set; }
         public int? NumberOfWindows { get; private set; }
         public double? WindowMaxNormalizationValue { get; private set; }
         public bool TrimMs1Peaks { get; private set; }
@@ -134,8 +134,8 @@ namespace EngineLayer
                                 TotalPartitions,
                                 ScoreCutoff,
                                 NumberOfPeaksToKeepPerWindow,
-                                MinRatio,
-                                WindowWidthDaltons,
+                                MinimumAllowedIntensityRatioToBasePeak,
+                                WindowWidthThomsons,
                                 NumberOfWindows,
                                 WindowMaxNormalizationValue,
                                 TrimMs1Peaks,

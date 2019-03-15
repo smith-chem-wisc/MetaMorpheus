@@ -24,8 +24,10 @@ namespace MetaMorpheusGUI
             string peakFindingTolerance,
             string histogramBinWidth,
             string deconMaxAssumedCharge,
-            string numPeaks,
-            string minRatio,
+            string numberOfPeaksToKeepPerWindow,
+            string minimumAllowedIntensityRatio,
+            string windowWidthThomsons,
+            string windowMaxNormalizationValue,
             string numberOfDatabaseSearches,
             string maxModsPerPeptide,
             string maxFragmentMass,
@@ -46,8 +48,10 @@ namespace MetaMorpheusGUI
             results.Add((CheckPeakFindingTolerance(peakFindingTolerance)));
             results.Add((CheckHistogramBinWidth(histogramBinWidth)));
             results.Add((CheckDeconvolutionMaxAssumedChargeState(deconMaxAssumedCharge)));
-            results.Add((CheckTopNPeaks(numPeaks)));
-            results.Add((CheckMinRatio(minRatio)));
+            results.Add((CheckTopNPeaks(numberOfPeaksToKeepPerWindow)));
+            results.Add((CheckMinimumAllowedIntensityRatio(minimumAllowedIntensityRatio)));
+            results.Add((CheckWindowWidthThomsons(windowWidthThomsons)));
+            results.Add((CheckWindowMaxNormalizationValue(windowMaxNormalizationValue)));
             results.Add((CheckNumberOfDatabasePartitions(numberOfDatabaseSearches)));
             results.Add((CheckMaxModsPerPeptide(maxModsPerPeptide)));
             results.Add((CheckMaxFragementMass(maxFragmentMass)));
@@ -112,11 +116,31 @@ namespace MetaMorpheusGUI
             return true;
         }
 
-        public static bool CheckMinRatio(string text)
+        public static bool CheckMinimumAllowedIntensityRatio(string text)
         {
             if (!double.TryParse(text, NumberStyles.Any, CultureInfo.InvariantCulture, out double minRatio) || minRatio < 0 || minRatio > 1)
             {
                 MessageBox.Show("The minimum intensity ratio must be between zero and one. \n You entered " + '"' + text + '"');
+                return false;
+            }
+            return true;
+        }
+
+        public static bool CheckWindowWidthThomsons(string text)
+        {
+            if (!double.TryParse(text, NumberStyles.Any, CultureInfo.InvariantCulture, out double windowWidthThomsons) || windowWidthThomsons > 0)
+            {
+                MessageBox.Show("The value for window width in Thomsons must be greater than one. \n You entered " + '"' + text + '"');
+                return false;
+            }
+            return true;
+        }
+
+        public static bool CheckWindowMaxNormalizationValue(string text)
+        {
+            if (!double.TryParse(text, NumberStyles.Any, CultureInfo.InvariantCulture, out double windowMaxNormalizationValue) || windowMaxNormalizationValue > 0)
+            {
+                MessageBox.Show("The value for window max intensity normalization must be greater than one. \n You entered " + '"' + text + '"');
                 return false;
             }
             return true;

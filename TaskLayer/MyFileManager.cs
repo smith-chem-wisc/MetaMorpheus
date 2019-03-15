@@ -74,7 +74,7 @@ namespace TaskLayer
 
         public MsDataFile LoadFile(string origDataFile, CommonParameters commonParameters)
         {
-            FilteringParams filter = new FilteringParams(commonParameters.NumberOfPeaksToKeepPerWindow, commonParameters.MinRatio, commonParameters.WindowWidthDaltons, commonParameters.NumberOfWindows, commonParameters.WindowMaxNormalizationValue, commonParameters.TrimMs1Peaks, commonParameters.TrimMsMsPeaks);
+            FilteringParams filter = new FilteringParams(commonParameters.NumberOfPeaksToKeepPerWindow, commonParameters.MinimumAllowedIntensityRatioToBasePeak, commonParameters.WindowWidthThomsons, commonParameters.NumberOfWindows, commonParameters.WindowMaxNormalizationValue, commonParameters.TrimMs1Peaks, commonParameters.TrimMsMsPeaks);
 
             if (commonParameters.DissociationType == DissociationType.LowCID)
             {

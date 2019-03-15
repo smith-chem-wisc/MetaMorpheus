@@ -1,5 +1,8 @@
 ﻿using EngineLayer;
+using MassSpectrometry;
 using MzLibUtil;
+using Proteomics.Fragmentation;
+using Proteomics.ProteolyticDigestion;
 using System;
 using System.Collections.Generic;
 using System.Collections.ObjectModel;
@@ -11,9 +14,6 @@ using System.Windows.Controls;
 using System.Windows.Input;
 using TaskLayer;
 using UsefulProteomicsDatabases;
-using Proteomics.Fragmentation;
-using Proteomics.ProteolyticDigestion;
-using MassSpectrometry;
 
 namespace MetaMorpheusGUI
 {
@@ -194,8 +194,13 @@ namespace MetaMorpheusGUI
             deltaScoreCheckBox.IsChecked = task.CommonParameters.UseDeltaScore;
             trimMs1.IsChecked = task.CommonParameters.TrimMs1Peaks;
             trimMsMs.IsChecked = task.CommonParameters.TrimMsMsPeaks;
-            TopNPeaksTextBox.Text = task.CommonParameters.NumberOfPeaksToKeepPerWindow == int.MaxValue ? "" : task.CommonParameters.NumberOfPeaksToKeepPerWindow.ToString(CultureInfo.InvariantCulture);
-            MinRatioTextBox.Text = task.CommonParameters.MinRatio.ToString(CultureInfo.InvariantCulture);
+
+            NumberOfPeaksToKeepPerWindowTextBox.Text = task.CommonParameters.NumberOfPeaksToKeepPerWindow == int.MaxValue || !task.CommonParameters.NumberOfPeaksToKeepPerWindow.HasValue ? "" : task.CommonParameters.NumberOfPeaksToKeepPerWindow.Value.ToString(CultureInfo.InvariantCulture);
+            MinimumAllowedIntensityRatioToBasePeakTexBox.Text = task.CommonParameters.MinimumAllowedIntensityRatioToBasePeak == double.MaxValue || !task.CommonParameters.MinimumAllowedIntensityRatioToBasePeak.HasValue ? "" : task.CommonParameters.MinimumAllowedIntensityRatioToBasePeak.Value.ToString(CultureInfo.InvariantCulture);
+            WindowWidthThomsonsTextBox.Text = task.CommonParameters.WindowWidthThomsons == double.MaxValue || !task.CommonParameters.WindowWidthThomsons.HasValue ? "" : task.CommonParameters.WindowWidthThomsons.Value.ToString(CultureInfo.InvariantCulture);
+            NumberOfWindowsTextBox.Text = task.CommonParameters.NumberOfWindows == int.MaxValue || !task.CommonParameters.NumberOfWindows.HasValue ? "" : task.CommonParameters.NumberOfWindows.Value.ToString(CultureInfo.InvariantCulture);
+            WindowMaxNormalizationValueTextBox.Text = task.CommonParameters.WindowMaxNormalizationValue == double.MaxValue || !task.CommonParameters.WindowMaxNormalizationValue.HasValue ? "" : task.CommonParameters.WindowMaxNormalizationValue.Value.ToString(CultureInfo.InvariantCulture);
+
             maxThreadsTextBox.Text = task.CommonParameters.MaxThreadsToUsePerFile.ToString(CultureInfo.InvariantCulture);
             MinVariantDepthTextBox.Text = task.CommonParameters.MinVariantDepth.ToString(CultureInfo.InvariantCulture);
             MaxHeterozygousVariantsTextBox.Text = task.CommonParameters.MaxHeterozygousVariants.ToString(CultureInfo.InvariantCulture);
@@ -344,10 +349,11 @@ namespace MetaMorpheusGUI
                 }
             }
 
+            //TODO Check validity of new FilterParams
             if (!GlobalGuiSettings.CheckTaskSettingsValidity(precursorMassToleranceTextBox.Text, productMassToleranceTextBox.Text, missedCleavagesTextBox.Text,
                 maxModificationIsoformsTextBox.Text, MinPeptideLengthTextBox.Text, MaxPeptideLengthTextBox.Text, maxThreadsTextBox.Text, minScoreAllowed.Text,
-                peakFindingToleranceTextBox.Text, histogramBinWidthTextBox.Text, DeconvolutionMaxAssumedChargeStateTextBox.Text, TopNPeaksTextBox.Text,
-                MinRatioTextBox.Text, numberOfDatabaseSearchesTextBox.Text, MaxModNumTextBox.Text, MaxFragmentMassTextBox.Text, QValueTextBox.Text))
+                peakFindingToleranceTextBox.Text, histogramBinWidthTextBox.Text, DeconvolutionMaxAssumedChargeStateTextBox.Text, NumberOfPeaksToKeepPerWindowTextBox.Text,
+                MinimumAllowedIntensityRatioToBasePeakTexBox.Text, WindowWidthThomsonsTextBox.Text, WindowMaxNormalizationValueTextBox.Text, numberOfDatabaseSearchesTextBox.Text, MaxModNumTextBox.Text, MaxFragmentMassTextBox.Text, QValueTextBox.Text))
             {
                 return;
             }
@@ -433,9 +439,76 @@ namespace MetaMorpheusGUI
 
             bool TrimMs1Peaks = trimMs1.IsChecked.Value;
             bool TrimMsMsPeaks = trimMsMs.IsChecked.Value;
-            int TopNpeaks = int.Parse(TopNPeaksTextBox.Text, CultureInfo.InvariantCulture);
-            int windowWidthDaltons = int.Parse(WindowWidthDaTextBox.Text, CultureInfo.InvariantCulture);
-            double MinRatio = double.Parse(MinRatioTextBox.Text, CultureInfo.InvariantCulture);
+
+            int? numPeaksToKeep = null;
+            if (!string.IsNullOrWhiteSpace(NumberOfPeaksToKeepPerWindowTextBox.Text))
+            {
+                if (int.TryParse(NumberOfPeaksToKeepPerWindowTextBox.Text, out int numberOfPeaksToKeeep))
+                {
+                    numPeaksToKeep = numberOfPeaksToKeeep;
+                }
+                else
+                {
+                    MessageBox.Show("The value that you entered for number of peaks to keep is not acceptable. Try again.");
+                    return;
+                }
+            }
+
+            double? minimumAllowedIntensityRatioToBasePeak = null;
+            if (!string.IsNullOrWhiteSpace(MinimumAllowedIntensityRatioToBasePeakTexBox.Text))
+            {
+                if (double.TryParse(MinimumAllowedIntensityRatioToBasePeakTexBox.Text, out double minimumAllowedIntensityRatio))
+                {
+                    minimumAllowedIntensityRatioToBasePeak = minimumAllowedIntensityRatio;
+                }
+                else
+                {
+                    MessageBox.Show("The value that you entered for minimum allowed intensity ratio to keep is not acceptable. Try again.");
+                    return;
+                }
+            }
+
+            double? windowWidthThompsons = null;
+            if (!string.IsNullOrWhiteSpace(WindowWidthThomsonsTextBox.Text))
+            {
+                if (double.TryParse(WindowWidthThomsonsTextBox.Text, out double windowWidth))
+                {
+                    windowWidthThompsons = windowWidth;
+                }
+                else
+                {
+                    MessageBox.Show("The value that you entered for window width in Thomsons is not acceptable. Try again.");
+                    return;
+                }
+            }
+
+            int? numberOfWindows = null;
+            if (!string.IsNullOrWhiteSpace(NumberOfWindowsTextBox.Text))
+            {
+                if (int.TryParse(NumberOfWindowsTextBox.Text, out int numWindows))
+                {
+                    numberOfWindows = numWindows;
+                }
+                else
+                {
+                    MessageBox.Show("The value that you entered for number of windows is not acceptable. Try again.");
+                    return;
+                }
+            }
+
+            double? windowMaxNormalizationValue = null;
+            if (!string.IsNullOrWhiteSpace(WindowMaxNormalizationValueTextBox.Text))
+            {
+                if (double.TryParse(WindowMaxNormalizationValueTextBox.Text, out double normalizationValue))
+                {
+                    windowMaxNormalizationValue = normalizationValue;
+                }
+                else
+                {
+                    MessageBox.Show("The value that you entered for window max normalization value is not acceptable. Try again.");
+                    return;
+                }
+            }
 
             bool parseMaxThreadsPerFile = !maxThreadsTextBox.Text.Equals("") && (int.Parse(maxThreadsTextBox.Text) <= Environment.ProcessorCount && int.Parse(maxThreadsTextBox.Text) > 0);
 
@@ -458,9 +531,11 @@ namespace MetaMorpheusGUI
                 digestionParams: digestionParamsToSave,
                 trimMs1Peaks: TrimMs1Peaks,
                 trimMsMsPeaks: TrimMsMsPeaks,
-                numberOfPeaksToKeepPerWindow: TopNpeaks,
-                minRatio: MinRatio,
-                windowWidthDaltons: windowWidthDaltons,
+                numberOfPeaksToKeepPerWindow: numPeaksToKeep,
+                minimumAllowedIntensityRatioToBasePeak: minimumAllowedIntensityRatioToBasePeak,
+                windowWidthThomsons: windowWidthThompsons,
+                numberOfWindows: numberOfWindows,//maybe change this some day
+                windowMaxNormalizationValue: windowMaxNormalizationValue,//maybe change this some day
                 addCompIons: addCompIonCheckBox.IsChecked.Value,
                 qValueOutputFilter: QValueCheckBox.IsChecked.Value ? double.Parse(QValueTextBox.Text, CultureInfo.InvariantCulture) : 1.0,
                 assumeOrphanPeaksAreZ1Fragments: protease.Name != "top-down",
@@ -562,7 +637,6 @@ namespace MetaMorpheusGUI
             {
                 TheTask.SearchParameters.LocalFdrCategories = new List<FdrCategory> { FdrCategory.FullySpecific };
             }
-
 
             // displays warning if classic search is enabled with an open search mode
             if (TheTask.SearchParameters.SearchType == SearchType.Classic &&

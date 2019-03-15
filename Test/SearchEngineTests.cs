@@ -266,7 +266,7 @@ namespace Test
                 maxThreadsToUsePerFile: 1,
                 precursorMassTolerance: new PpmTolerance(5),
                 numberOfPeaksToKeepPerWindow: 200,
-                minRatio: 0.01,
+                minimumAllowedIntensityRatioToBasePeak: 0.01,
                 trimMs1Peaks: false,
                 trimMsMsPeaks: false,
                 digestionParams: new DigestionParams(
@@ -376,7 +376,7 @@ namespace Test
                 maxThreadsToUsePerFile: 1,
                 precursorMassTolerance: new PpmTolerance(5),
                 numberOfPeaksToKeepPerWindow: 200,
-                minRatio: 0.01,
+                minimumAllowedIntensityRatioToBasePeak: 0.01,
                 trimMs1Peaks: false,
                 trimMsMsPeaks: false,
                 digestionParams: new DigestionParams(
