@@ -1,19 +1,19 @@
 ﻿using EngineLayer;
 using EngineLayer.CrosslinkSearch;
+using MassSpectrometry;
 using MzLibUtil;
+using Proteomics.ProteolyticDigestion;
 using System;
 using System.Collections.Generic;
 using System.Collections.ObjectModel;
+using System.ComponentModel;
 using System.Globalization;
 using System.Linq;
 using System.Windows;
+using System.Windows.Controls;
 using System.Windows.Input;
 using TaskLayer;
 using UsefulProteomicsDatabases;
-using Proteomics.ProteolyticDigestion;
-using MassSpectrometry;
-using System.Windows.Controls;
-using System.ComponentModel;
 
 namespace MetaMorpheusGUI
 {
