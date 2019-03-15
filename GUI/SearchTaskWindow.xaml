@@ -107,7 +107,7 @@
                                         <Label Content="Nominal window width Thomsons" />
                                         <TextBox x:Name="WindowWidthThomsonsTextBox" PreviewTextInput="CheckIfNumber" Width="45" ToolTipService.ShowDuration="999999" ToolTipService.InitialShowDelay="500">
                                             <ToolTipService.ToolTip>
-                                                <ToolTip Content="Divide the MS2 spectrum into windows N-Daltons wide before filtering peaks" />
+                                                <ToolTip Content="Divide the MS2 spectrum into windows N-Thomsons wide before filtering peaks" />
                                             </ToolTipService.ToolTip>
                                         </TextBox>
                                     </StackPanel>
