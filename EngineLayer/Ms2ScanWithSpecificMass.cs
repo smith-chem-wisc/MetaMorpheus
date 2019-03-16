@@ -37,31 +37,7 @@ namespace EngineLayer
 
         public double[] TheDeconvolutedMonoisotopicMasses { get; private set; }
 
-        public List<Ms2ScanWithSpecificMass> childMs2ScanWithSpecificMass { get; set; }
-
-        //TO DO: Optimize the filter. (Whether a product ion can be found in this scan.)
-        public bool AllowProductType(Product product)
-        {
-            if (product.ProductType == ProductType.M || !TheScan.DissociationType.HasValue || TheScan.DissociationType.Value == DissociationType.Unknown) //!TheScan.DissociationType.HasValue or DissociationType.Unknown is used in XLtest
-            {
-                return true;
-            }
-            if(TheScan.DissociationType.Value == DissociationType.CID || TheScan.DissociationType.Value == DissociationType.HCD || TheScan.DissociationType.Value == DissociationType.EThcD)
-            {
-                if (product.ProductType == ProductType.b || product.ProductType == ProductType.y)
-                {
-                    return true;
-                }
-            }
-            if (TheScan.DissociationType.Value == DissociationType.ETD || TheScan.DissociationType.Value == DissociationType.EThcD)
-            {
-                if (product.ProductType == ProductType.c || product.ProductType == ProductType.zDot)
-                {
-                    return true;
-                }
-            }
-            return false;
-        }
+        public List<Ms2ScanWithSpecificMass> childMs2ScanWithSpecificMass { get; set; }       
 
         public int OneBasedScanNumber => TheScan.OneBasedScanNumber;
 

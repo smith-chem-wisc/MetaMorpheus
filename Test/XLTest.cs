@@ -500,7 +500,7 @@ namespace Test
             var betaPeptide = p2.Digest(new DigestionParams(), new List<Modification>(), new List<Modification>()).Where(v => v.MissedCleavages == 1).First();
 
             var theoreticalCrosslinkFragments = CrosslinkedPeptide.XlGetTheoreticalFragments(DissociationType.HCD,
-                c, new List<int> { 3 }, betaPeptide.MonoisotopicMass, alphaPeptide).ToList();
+                c, 3, betaPeptide.MonoisotopicMass, alphaPeptide).ToList();
 
             Assert.That(theoreticalCrosslinkFragments.Count == 1);
             var loopLocationWithFragments = theoreticalCrosslinkFragments.First();
@@ -535,7 +535,7 @@ namespace Test
             var betaPeptide = p2.Digest(new DigestionParams(), new List<Modification>(), new List<Modification>()).Where(v => v.MissedCleavages == 1).First();
 
             var theoreticalCrosslinkFragments = CrosslinkedPeptide.XlGetTheoreticalFragments(DissociationType.HCD,
-                c, new List<int> { 3 }, 10000, alphaPeptide).ToList();
+                c, 3, 10000, alphaPeptide).ToList();
 
             Assert.That(theoreticalCrosslinkFragments.Count == 1);
 

@@ -77,28 +77,6 @@ namespace EngineLayer
             return score;
         }
 
-        public static double SpecialCalculatePeptideScore(Ms2ScanWithSpecificMass thisScan, Dictionary<int, List<MatchedFragmentIon>> matchedFragmentIons, double maximumMassThatFragmentIonScoreIsDoubled)
-        {
-            double score = 0;
-
-            foreach (var aMatchedFragmentIons in matchedFragmentIons)
-            {
-
-                foreach (var fragment in aMatchedFragmentIons.Value)
-                {
-                    double fragmentScore = 1 + (fragment.Intensity / thisScan.TotalIonCurrent); //TO DO: change thisScan.TotalCurrent to its own scan totalcurrent.
-                    score += fragmentScore;
-
-                    if (fragment.NeutralTheoreticalProduct.NeutralMass <= maximumMassThatFragmentIonScoreIsDoubled)
-                    {
-                        score += fragmentScore;
-                    }
-                }
-            }           
-
-            return score;
-        }
-
         public static List<MatchedFragmentIon> MatchFragmentIons(Ms2ScanWithSpecificMass scan, List<Product> theoreticalProducts, CommonParameters commonParameters)
         {
             var matchedFragmentIons = new List<MatchedFragmentIon>();
@@ -109,7 +87,8 @@ namespace EngineLayer
                 return matchedFragmentIons;
             }
 
-            if (commonParameters.DissociationType == DissociationType.LowCID)
+            if ((scan.TheScan.MsnOrder == 2 && commonParameters.DissociationType == DissociationType.LowCID)
+                || (scan.TheScan.MsnOrder == 3 && commonParameters.ChildScanDissociationType == DissociationType.LowCID))
             {
                 foreach (Product product in theoreticalProducts)
                 {
@@ -176,96 +155,6 @@ namespace EngineLayer
                 }
             }
 
-            return matchedFragmentIons;
-        }
-
-        public static Dictionary<int, List<MatchedFragmentIon>> SpecialMatchFragmentIons(Ms2ScanWithSpecificMass scan, List<Product> theoreticalProducts, CommonParameters commonParameters)
-        {
-            var matchedFragmentIons = new Dictionary<int, List<MatchedFragmentIon>>();
-
-            // if the spectrum has no peaks
-            if (!scan.ExperimentalFragments.Any())
-            {
-                return matchedFragmentIons;
-            }
-
-            // search for ions in the spectrum
-            var fatherMatchedFragmentIons = new List<MatchedFragmentIon>();
-            foreach (Product product in theoreticalProducts)
-            {
-                // unknown fragment mass; this only happens rarely for sequences with unknown amino acids
-                if (double.IsNaN(product.NeutralMass))
-                {
-                    continue;
-                }
-                if (scan.AllowProductType(product))
-                {
-                    // get the closest peak in the spectrum to the theoretical peak
-                    var closestExperimentalMass = scan.GetClosestExperimentalFragmentMass(scan.ExperimentalFragments, scan.TheDeconvolutedMonoisotopicMasses, product.NeutralMass);
-
-                    // is the mass error acceptable?
-                    if (commonParameters.ProductMassTolerance.Within(closestExperimentalMass.monoisotopicMass, product.NeutralMass) && closestExperimentalMass.charge <= scan.PrecursorCharge)
-                    {
-                        fatherMatchedFragmentIons.Add(new MatchedFragmentIon(product, closestExperimentalMass.monoisotopicMass.ToMz(closestExperimentalMass.charge),
-                            closestExperimentalMass.peaks.First().intensity, closestExperimentalMass.charge));
-                    }
-                }
-                
-            }
-            matchedFragmentIons.Add(scan.OneBasedScanNumber, fatherMatchedFragmentIons);
-
-            if (scan.childMs2ScanWithSpecificMass!=null)
-            {
-                foreach (var aScan in scan.childMs2ScanWithSpecificMass)
-                {
-                    var aMatchedFragmentIons = new List<MatchedFragmentIon>();
-
-                    if (commonParameters.ChildScanDissociationType == DissociationType.LowCID)
-                    {
-                        foreach (Product product in theoreticalProducts)
-                        {
-                            // unknown fragment mass; this only happens rarely for sequences with unknown amino acids
-                            if (double.IsNaN(product.NeutralMass))
-                            {
-                                continue;
-                            }
-
-                            double theoreticalFragmentMz = Math.Round(product.NeutralMass.ToMz(1) / 1.0005079, 0) * 1.0005079;
-                            var closestMzIndex = aScan.TheScan.MassSpectrum.GetClosestPeakIndex(theoreticalFragmentMz).Value;
-
-                            if (commonParameters.ProductMassTolerance.Within(aScan.TheScan.MassSpectrum.XArray[closestMzIndex], theoreticalFragmentMz))
-                            {
-                                aMatchedFragmentIons.Add(new MatchedFragmentIon(product, theoreticalFragmentMz, scan.TheScan.MassSpectrum.YArray[closestMzIndex], 1));
-                            }
-                        }
-                    }
-                    else
-                    {
-                        foreach (Product product in theoreticalProducts)
-                        {
-                            // unknown fragment mass; this only happens rarely for sequences with unknown amino acids
-                            if (double.IsNaN(product.NeutralMass))
-                            {
-                                continue;
-                            }
-                            if (aScan.AllowProductType(product))
-                            {
-                                // get the closest peak in the spectrum to the theoretical peak
-                                var closestExperimentalMass = aScan.GetClosestExperimentalFragmentMass(aScan.ExperimentalFragments, aScan.DeconvolutedMonoisotopicMasses, product.NeutralMass);
-
-                                // is the mass error acceptable?
-                                if (commonParameters.ProductMassTolerance.Within(closestExperimentalMass.monoisotopicMass, product.NeutralMass) && closestExperimentalMass.charge <= scan.PrecursorCharge)
-                                {
-                                    aMatchedFragmentIons.Add(new MatchedFragmentIon(product, closestExperimentalMass.monoisotopicMass.ToMz(closestExperimentalMass.charge),
-                                        closestExperimentalMass.peaks.First().intensity, closestExperimentalMass.charge));
-                                }
-                            }
-                        }
-                    }
-                    matchedFragmentIons.Add(aScan.OneBasedScanNumber, aMatchedFragmentIons);
-                }
-            }
-            
             return matchedFragmentIons;
         }
 

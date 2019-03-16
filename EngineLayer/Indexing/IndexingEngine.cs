@@ -109,7 +109,7 @@ namespace EngineLayer.Indexing
             try
             {
                 fragmentIndex = new List<int>[(int)Math.Ceiling(MaxFragmentSize) * FragmentBinsPerDalton + 1];
-                secondFragmentIndex = new List<int>[(int)Math.Ceiling(MaxFragmentSize) * FragmentBinsPerDalton + 1];
+                secondFragmentIndex = new List<int>[0];
             }
             catch (OutOfMemoryException)
             {
@@ -146,8 +146,22 @@ namespace EngineLayer.Indexing
                 }
 
                 //There is no reason to index low-res fragment for children scan
-                if (commonParameters.FragmentationType != FragmentationType.MS2 && commonParameters.ChildScanDissociationType != MassSpectrometry.DissociationType.LowCID && commonParameters.ChildScanDissociationType != commonParameters.DissociationType)
+                if (commonParameters.FragmentationType != FragmentationType.MS2 && commonParameters.ChildScanDissociationType != MassSpectrometry.DissociationType.LowCID)
                 {
+                    if (!DissociationTypeGenerateSameTypeOfIons(commonParameters.DissociationType, commonParameters.ChildScanDissociationType))
+                    {
+                        continue;
+                    }
+                    
+                    try
+                    {
+                        secondFragmentIndex = new List<int>[(int)Math.Ceiling(MaxFragmentSize) * FragmentBinsPerDalton + 1];
+                    }
+                    catch (OutOfMemoryException)
+                    {
+                        throw new MetaMorpheusException("Max fragment mass too large for indexing engine; try \"Classic Search\" mode, or make the maximum fragment mass smaller");
+                    }
+
                     var childFragmentMasses = peptidesSortedByMass[peptideId].Fragment(commonParameters.ChildScanDissociationType, commonParameters.DigestionParams.FragmentationTerminus).Select(m => m.NeutralMass).ToList();
 
                     foreach (double theoreticalFragmentMass in childFragmentMasses)
@@ -221,6 +235,32 @@ namespace EngineLayer.Indexing
             }
 
             return new IndexingResults(peptidesSortedByMass, fragmentIndex, secondFragmentIndex, precursorIndex, this);
+        }
+
+        //TO DO: A better method can be implemented in mzLib.
+        public static bool DissociationTypeGenerateSameTypeOfIons(MassSpectrometry.DissociationType d, MassSpectrometry.DissociationType childD)
+        {
+            if (d == childD)
+            {
+                return true;
+            }
+            if (d == MassSpectrometry.DissociationType.CID && childD == MassSpectrometry.DissociationType.HCD)
+            {
+                return true;
+            }
+            if (d == MassSpectrometry.DissociationType.HCD && childD == MassSpectrometry.DissociationType.CID)
+            {
+                return true;
+            }
+            if (d == MassSpectrometry.DissociationType.ETD && childD == MassSpectrometry.DissociationType.ECD)
+            {
+                return true;
+            }
+            if (d == MassSpectrometry.DissociationType.ECD && childD == MassSpectrometry.DissociationType.ETD)
+            {
+                return true;
+            }
+            return false;
         }
     }
 }

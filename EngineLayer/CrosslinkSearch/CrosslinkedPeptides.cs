@@ -10,8 +10,8 @@ namespace EngineLayer.CrosslinkSearch
 {
     public class CrosslinkedPeptide
     {
-        public static IEnumerable<Tuple<int, List<Product>>> XlGetTheoreticalFragments(DissociationType dissociationType, Crosslinker crosslinker,
-            List<int> possibleCrosslinkerPositions, double otherPeptideMass, PeptideWithSetModifications peptide)
+        public static List<Tuple<double, List<Product>>> XlGetTheoreticalFragments(DissociationType dissociationType, Crosslinker crosslinker,
+            int crosslinkerPosition, double otherPeptideMass, PeptideWithSetModifications peptide)
         {
             List<double> massesToLocalize = new List<double>();
             if (crosslinker.Cleavable)
@@ -24,43 +24,44 @@ namespace EngineLayer.CrosslinkSearch
                 massesToLocalize.Add(crosslinker.TotalMass + otherPeptideMass);
             }
 
-            foreach (int crosslinkerPosition in possibleCrosslinkerPositions)
+            List<Tuple<double, List<Product>>> massToLocalizeWithTheoreticalProducts = new List<Tuple<double, List<Product>>>();
+            
+            foreach (double massToLocalize in massesToLocalize)
             {
-                List<Product> theoreticalProducts = new List<Product>();
                 HashSet<double> masses = new HashSet<double>();
+                List<Product> theoreticalProducts = new List<Product>();
+                Dictionary<int, Modification> testMods = new Dictionary<int, Modification> { { crosslinkerPosition + 1, new Modification(_monoisotopicMass: massToLocalize) } };
 
-                foreach (double massToLocalize in massesToLocalize)
+                foreach (var mod in peptide.AllModsOneIsNterminus)
                 {
-                    Dictionary<int, Modification> testMods = new Dictionary<int, Modification> { { crosslinkerPosition + 1, new Modification(_monoisotopicMass: massToLocalize) } };
+                    testMods.Add(mod.Key, mod.Value);
+                }
 
-                    foreach (var mod in peptide.AllModsOneIsNterminus)
-                    {
-                        testMods.Add(mod.Key, mod.Value);
-                    }
+                var testPeptide = new PeptideWithSetModifications(peptide.Protein, peptide.DigestionParams, peptide.OneBasedStartResidueInProtein,
+                    peptide.OneBasedEndResidueInProtein, peptide.CleavageSpecificityForFdrCategory, peptide.PeptideDescription, peptide.MissedCleavages, testMods, peptide.NumFixedMods);
 
-                    var testPeptide = new PeptideWithSetModifications(peptide.Protein, peptide.DigestionParams, peptide.OneBasedStartResidueInProtein,
-                        peptide.OneBasedEndResidueInProtein, peptide.CleavageSpecificityForFdrCategory, peptide.PeptideDescription, peptide.MissedCleavages, testMods, peptide.NumFixedMods);
-
-                    // add fragmentation ions for this crosslinker position guess
-                    foreach (var fragment in testPeptide.Fragment(dissociationType, FragmentationTerminus.Both))
+                // add fragmentation ions for this crosslinker position guess
+                foreach (var fragment in testPeptide.Fragment(dissociationType, FragmentationTerminus.Both))
+                {
+                    if (!masses.Contains(fragment.NeutralMass))
                     {
-                        if (!masses.Contains(fragment.NeutralMass))
-                        {
-                            theoreticalProducts.Add(fragment);
-                            masses.Add(fragment.NeutralMass);
-                        }
-                    }
-                    
-                    // add signature ions
-                    if (crosslinker.Cleavable)
-                    {
-                        theoreticalProducts.Add(new Product(ProductType.M, new NeutralTerminusFragment(FragmentationTerminus.None, peptide.MonoisotopicMass + massToLocalize,
-                            peptide.Length, peptide.Length), 0));
+                        theoreticalProducts.Add(fragment);
+                        masses.Add(fragment.NeutralMass);
                     }
                 }
-                
-                yield return new Tuple<int, List<Product>>(crosslinkerPosition, theoreticalProducts);
+
+                // add signature ions
+                if (crosslinker.Cleavable)
+                {
+                    theoreticalProducts.Add(new Product(ProductType.M, new NeutralTerminusFragment(FragmentationTerminus.None, peptide.MonoisotopicMass + massToLocalize,
+                        peptide.Length, peptide.Length), 0));
+                }
+
+                massToLocalizeWithTheoreticalProducts.Add(new Tuple<double, List<Product>>(massToLocalize, theoreticalProducts));
             }
+
+            return massToLocalizeWithTheoreticalProducts;
+
         }
 
         public static Dictionary<Tuple<int, int>, List<Product>> XlLoopGetTheoreticalFragments(DissociationType dissociationType, Modification loopMass,
@@ -135,6 +136,81 @@ namespace EngineLayer.CrosslinkSearch
             }
 
             return AllTheoreticalFragmentsLists;
+        }
+
+        //TO DO: Optimize the filter. (Whether a product ion can be found in this scan.)
+        public static List<Product> XLAllowedProducts(MsDataScan TheScan, List<Tuple<double, List<Product>>> massToLocalizeWithProducts, CommonParameters commonParameters, Crosslinker crosslinker, PeptideWithSetModifications peptide)
+        {
+            List<Product> allowedProducts = new List<Product>();
+
+            if (TheScan.MsnOrder == 3 && crosslinker.Cleavable)
+            {
+                var MS3ScanPrecursorFilter = new SinglePpmAroundZeroSearchMode(commonParameters.ProductMassTolerance.Value);
+                foreach (var aMassToLocalizeWithProduct in massToLocalizeWithProducts)
+                {
+                    var test1 = aMassToLocalizeWithProduct.Item1 + peptide.MonoisotopicMass;
+                    var test2 = TheScan.SelectedIonChargeStateGuess.Value * (TheScan.SelectedIonMonoisotopicGuessMz.Value - 1.0073);
+                    if (MS3ScanPrecursorFilter.Accepts(aMassToLocalizeWithProduct.Item1 + peptide.MonoisotopicMass, TheScan.SelectedIonChargeStateGuess.Value * (TheScan.SelectedIonMonoisotopicGuessMz.Value - 1.0073) )>=0)
+                    {
+                        foreach (var aProduct in aMassToLocalizeWithProduct.Item2)
+                        {
+                            if (!TheScan.DissociationType.HasValue || AllowedProductByDessociationType(aProduct, TheScan.DissociationType.Value))
+                            {
+                                allowedProducts.Add(aProduct);
+                            }
+                        }
+                    }
+                }
+            }
+            else
+            {
+                foreach (var aProduct in massToLocalizeWithProducts.SelectMany(p=>p.Item2).ToArray())
+                {
+                    //!TheScan.DissociationType.HasValue or DissociationType.Unknown is used in XLtest
+                    if (!TheScan.DissociationType.HasValue || AllowedProductByDessociationType(aProduct, TheScan.DissociationType.Value))
+                    {
+                        allowedProducts.Add(aProduct);
+                    }
+                }
+            }
+            
+            return allowedProducts;
+        }
+
+        public static List<Product> SingleAllowedProducts(MsDataScan TheScan, List<Product> products)
+        {
+            List<Product> allowedProducts = new List<Product>();
+            foreach (var aProduct in products)
+            {
+                if (!TheScan.DissociationType.HasValue || AllowedProductByDessociationType(aProduct, TheScan.DissociationType.Value))
+                {
+                    allowedProducts.Add(aProduct);
+                }
+            }
+            return allowedProducts;
+        }
+
+        public static bool AllowedProductByDessociationType(Product product, DissociationType dissociationType)
+        {
+            if (product.ProductType == ProductType.M || dissociationType == DissociationType.Unknown) 
+            {
+                return true;
+            }
+            if (dissociationType == DissociationType.CID || dissociationType == DissociationType.HCD || dissociationType == DissociationType.EThcD)
+            {
+                if (product.ProductType == ProductType.b || product.ProductType == ProductType.y)
+                {
+                    return true;
+                }
+            }
+            if (dissociationType == DissociationType.ETD || dissociationType == DissociationType.EThcD)
+            {
+                if (product.ProductType == ProductType.c || product.ProductType == ProductType.zDot)
+                {
+                    return true;
+                }
+            }
+            return false;
         }
     }
 }
