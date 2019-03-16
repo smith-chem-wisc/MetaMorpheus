@@ -148,8 +148,7 @@ namespace EngineLayer.CrosslinkSearch
                 var MS3ScanPrecursorFilter = new SinglePpmAroundZeroSearchMode(commonParameters.ProductMassTolerance.Value);
                 foreach (var aMassToLocalizeWithProduct in massToLocalizeWithProducts)
                 {
-                    var test1 = aMassToLocalizeWithProduct.Item1 + peptide.MonoisotopicMass;
-                    var test2 = TheScan.SelectedIonChargeStateGuess.Value * (TheScan.SelectedIonMonoisotopicGuessMz.Value - 1.0073);
+                    //This filter for MS3 low res scan may not working perfect. If signature ions are not selected.
                     if (MS3ScanPrecursorFilter.Accepts(aMassToLocalizeWithProduct.Item1 + peptide.MonoisotopicMass, TheScan.SelectedIonChargeStateGuess.Value * (TheScan.SelectedIonMonoisotopicGuessMz.Value - 1.0073) )>=0)
                     {
                         foreach (var aProduct in aMassToLocalizeWithProduct.Item2)
@@ -159,7 +158,7 @@ namespace EngineLayer.CrosslinkSearch
                                 allowedProducts.Add(aProduct);
                             }
                         }
-                    }
+                    } 
                 }
             }
             else

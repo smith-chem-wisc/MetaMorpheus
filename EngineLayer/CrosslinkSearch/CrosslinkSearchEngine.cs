@@ -399,12 +399,16 @@ namespace EngineLayer.CrosslinkSearch
                             foreach (var aScan in theScan.childMs2ScanWithSpecificMass)
                             {
                                 var childAllowedFragmentProduct = CrosslinkedPeptide.XLAllowedProducts(aScan.TheScan, fragmentsForEachAlphaLocalizedPossibility, commonParameters, crosslinker, alphaPeptide.BestPeptide);
-                                var childMatchedIons = MatchFragmentIons(aScan, childAllowedFragmentProduct, commonParameters);
-                                ScanNumWithMatchedFragmentIons.Add(aScan.OneBasedScanNumber, childMatchedIons);
-                                childScore = CalculatePeptideScore(aScan.TheScan, matchedIons);
+                                if (childAllowedFragmentProduct.Count!=0)
+                                {
+                                    var childMatchedIons = MatchFragmentIons(aScan, childAllowedFragmentProduct, commonParameters);
+                                    ScanNumWithMatchedFragmentIons.Add(aScan.OneBasedScanNumber, childMatchedIons);
+                                    childScore = CalculatePeptideScore(aScan.TheScan, matchedIons);
+                                }                               
                             }
                         }
 
+                        //TO DO: how to combine score...
                         if (childScore != 0)
                         {
                             score = (score * childScore) / (score + childScore);
@@ -432,7 +436,7 @@ namespace EngineLayer.CrosslinkSearch
                         Dictionary<int, List<MatchedFragmentIon>> ScanNumWithMatchedFragmentIons = new Dictionary<int, List<MatchedFragmentIon>>();
 
                         //Match father scan
-                        var allowedFragmentProduct = CrosslinkedPeptide.XLAllowedProducts(theScan.TheScan, fragmentsForEachBetaLocalizedPossibility, commonParameters, crosslinker, alphaPeptide.BestPeptide);
+                        var allowedFragmentProduct = CrosslinkedPeptide.XLAllowedProducts(theScan.TheScan, fragmentsForEachBetaLocalizedPossibility, commonParameters, crosslinker, betaPeptide.BestPeptide);
                         var matchedIons = MatchFragmentIons(theScan, allowedFragmentProduct, commonParameters);
                         ScanNumWithMatchedFragmentIons.Add(theScan.OneBasedScanNumber, matchedIons);
                         double score = CalculatePeptideScore(theScan.TheScan, matchedIons);
@@ -443,10 +447,13 @@ namespace EngineLayer.CrosslinkSearch
                         {
                             foreach (var aScan in theScan.childMs2ScanWithSpecificMass)
                             {
-                                var childAllowedFragmentProduct = CrosslinkedPeptide.XLAllowedProducts(aScan.TheScan, fragmentsForEachBetaLocalizedPossibility, commonParameters, crosslinker, alphaPeptide.BestPeptide);
-                                var childMatchedIons = MatchFragmentIons(aScan, childAllowedFragmentProduct, commonParameters);
-                                ScanNumWithMatchedFragmentIons.Add(aScan.OneBasedScanNumber, childMatchedIons);
-                                childScore = CalculatePeptideScore(aScan.TheScan, matchedIons);
+                                var childAllowedFragmentProduct = CrosslinkedPeptide.XLAllowedProducts(aScan.TheScan, fragmentsForEachBetaLocalizedPossibility, commonParameters, crosslinker, betaPeptide.BestPeptide);
+                                if (childAllowedFragmentProduct.Count!=0)
+                                {
+                                    var childMatchedIons = MatchFragmentIons(aScan, childAllowedFragmentProduct, commonParameters);
+                                    ScanNumWithMatchedFragmentIons.Add(aScan.OneBasedScanNumber, childMatchedIons);
+                                    childScore = CalculatePeptideScore(aScan.TheScan, matchedIons);
+                                }                            
                             }
                         }
 

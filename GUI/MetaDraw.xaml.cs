@@ -157,7 +157,6 @@ namespace MetaMorpheusGUI
 
             PsmFromTsv psmToDraw = scanPsms.FirstOrDefault();
 
-            //TO DO: optimize code
             if (psmToDraw.MatchedIons.Count >= 1)
             {
                 HashSet<int> theKeys = new HashSet<int>();
@@ -175,17 +174,17 @@ namespace MetaMorpheusGUI
 
                 foreach (var theKey in theKeys)
                 {
-                    var alpha = psmToDraw.MatchedIons[theKey];
+                    List<MatchedFragmentIon> alpha = new List<MatchedFragmentIon>();
+                    if (psmToDraw.MatchedIons.Keys.Contains(theKey))
+                    {
+                        alpha = psmToDraw.MatchedIons[theKey];
+                    }         
 
                     List<MatchedFragmentIon> beta = new List<MatchedFragmentIon>();
-                    if (psmToDraw.BetaPeptideMatchedIons != null)
+                    if (psmToDraw.BetaPeptideMatchedIons != null && psmToDraw.BetaPeptideMatchedIons.Keys.Contains(theKey))
                     {
                         beta = psmToDraw.BetaPeptideMatchedIons[theKey];
-                    }
-                    else
-                    {
-                        beta = null;
-                    }                        
+                    }             
                         
                     var psmModel = new PsmAnnotationViewModel();
                     psmModel.DrawPeptideSpectralMatch(MsDataFile.GetOneBasedScan(theKey), alpha, beta);

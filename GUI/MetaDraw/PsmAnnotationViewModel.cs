@@ -333,7 +333,7 @@ namespace ViewModels
                 model.Series.Add(allIons[i]);
             }
 
-            if (BetaMatchedIons != null)
+            if (BetaMatchedIons.Count != 0)
             {
                 foreach (var peak in BetaMatchedIons)
                 {
