@@ -25,7 +25,7 @@ namespace EngineLayer.CrosslinkSearch
         public int ParentIonExistNum { get; set; }
         public List<int> ParentIonMaxIntensityRanks { get; set; }
         public PsmCrossType CrossType { get; set; }
-        public Dictionary<int, List<MatchedFragmentIon>> AllMatchedFragmentIons { get; set;}
+        public Dictionary<int, List<MatchedFragmentIon>> AllMatchedFragmentIons { get; set; }
 
         public static List<int> GetPossibleCrosslinkerModSites(char[] crosslinkerModSites, PeptideWithSetModifications peptide)
         {

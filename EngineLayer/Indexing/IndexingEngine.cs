@@ -105,11 +105,26 @@ namespace EngineLayer.Indexing
             // create fragment index
             List<int>[] fragmentIndex;
             List<int>[] secondFragmentIndex;
+            bool generateSecondFragmentIndex = false;
 
             try
             {
                 fragmentIndex = new List<int>[(int)Math.Ceiling(MaxFragmentSize) * FragmentBinsPerDalton + 1];
                 secondFragmentIndex = new List<int>[0];
+                //There is no reason to index low-res fragment for children scan
+                if (commonParameters.FragmentationType != FragmentationType.MS2 && commonParameters.ChildScanDissociationType != MassSpectrometry.DissociationType.LowCID
+                    && !DissociationTypeGenerateSameTypeOfIons(commonParameters.DissociationType, commonParameters.ChildScanDissociationType))
+                {
+                    try
+                    {
+                        secondFragmentIndex = new List<int>[(int)Math.Ceiling(MaxFragmentSize) * FragmentBinsPerDalton + 1];
+                        generateSecondFragmentIndex = true;
+                    }
+                    catch (OutOfMemoryException)
+                    {
+                        throw new MetaMorpheusException("Max fragment mass too large for Second indexing engine; try report the issue, or make the maximum fragment mass smaller");
+                    }
+                }
             }
             catch (OutOfMemoryException)
             {
@@ -146,22 +161,8 @@ namespace EngineLayer.Indexing
                 }
 
                 //There is no reason to index low-res fragment for children scan
-                if (commonParameters.FragmentationType != FragmentationType.MS2 && commonParameters.ChildScanDissociationType != MassSpectrometry.DissociationType.LowCID)
+                if (generateSecondFragmentIndex)
                 {
-                    if (!DissociationTypeGenerateSameTypeOfIons(commonParameters.DissociationType, commonParameters.ChildScanDissociationType))
-                    {
-                        continue;
-                    }
-                    
-                    try
-                    {
-                        secondFragmentIndex = new List<int>[(int)Math.Ceiling(MaxFragmentSize) * FragmentBinsPerDalton + 1];
-                    }
-                    catch (OutOfMemoryException)
-                    {
-                        throw new MetaMorpheusException("Max fragment mass too large for indexing engine; try \"Classic Search\" mode, or make the maximum fragment mass smaller");
-                    }
-
                     var childFragmentMasses = peptidesSortedByMass[peptideId].Fragment(commonParameters.ChildScanDissociationType, commonParameters.DigestionParams.FragmentationTerminus).Select(m => m.NeutralMass).ToList();
 
                     foreach (double theoreticalFragmentMass in childFragmentMasses)

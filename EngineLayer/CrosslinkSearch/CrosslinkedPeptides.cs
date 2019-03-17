@@ -149,7 +149,9 @@ namespace EngineLayer.CrosslinkSearch
                 foreach (var aMassToLocalizeWithProduct in massToLocalizeWithProducts)
                 {
                     //This filter for MS3 low res scan may not working perfect. If signature ions are not selected.
-                    if (MS3ScanPrecursorFilter.Accepts(aMassToLocalizeWithProduct.Item1 + peptide.MonoisotopicMass, TheScan.SelectedIonChargeStateGuess.Value * (TheScan.SelectedIonMonoisotopicGuessMz.Value - 1.0073) )>=0)
+                    if ((TheScan.SelectedIonChargeStateGuess.HasValue && MS3ScanPrecursorFilter.Accepts(aMassToLocalizeWithProduct.Item1 + peptide.MonoisotopicMass, TheScan.SelectedIonChargeStateGuess.Value * (TheScan.SelectedIonMZ.Value - 1.0073) )>=0)
+                        || (MS3ScanPrecursorFilter.Accepts(aMassToLocalizeWithProduct.Item1 + peptide.MonoisotopicMass,  TheScan.SelectedIonMZ.Value - 1.0073) >= 0)
+                        || (MS3ScanPrecursorFilter.Accepts(aMassToLocalizeWithProduct.Item1 + peptide.MonoisotopicMass, 2*(TheScan.SelectedIonMZ.Value - 1.0073)) >= 0))
                     {
                         foreach (var aProduct in aMassToLocalizeWithProduct.Item2)
                         {
@@ -158,7 +160,7 @@ namespace EngineLayer.CrosslinkSearch
                                 allowedProducts.Add(aProduct);
                             }
                         }
-                    } 
+                    }
                 }
             }
             else

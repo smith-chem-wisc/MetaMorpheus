@@ -90,7 +90,7 @@ namespace TaskLayer
 
                 Status("Getting ms2 scans...", thisId);
 
-                Ms2ScanWithSpecificMass[] arrayOfMs2ScansSortedByMass = GetSpecialMs2Scans(myMsDataFile, origDataFile, combinedParams).OrderBy(b => b.PrecursorMass).Where(p=>p.OneBasedScanNumber == 10226).ToArray();
+                Ms2ScanWithSpecificMass[] arrayOfMs2ScansSortedByMass = GetSpecialMs2Scans(myMsDataFile, origDataFile, combinedParams).OrderBy(b => b.PrecursorMass).ToArray();
 
                 CrosslinkSpectralMatch[] newPsms = new CrosslinkSpectralMatch[arrayOfMs2ScansSortedByMass.Length];
                 for (int currentPartition = 0; currentPartition < CommonParameters.TotalPartitions; currentPartition++)
