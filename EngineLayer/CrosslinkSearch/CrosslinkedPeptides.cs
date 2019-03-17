@@ -19,10 +19,9 @@ namespace EngineLayer.CrosslinkSearch
                 massesToLocalize.Add(crosslinker.CleaveMassShort);
                 massesToLocalize.Add(crosslinker.CleaveMassLong);
             }
-            else
-            {
-                massesToLocalize.Add(crosslinker.TotalMass + otherPeptideMass);
-            }
+
+            //The cleavage of crosslinker depend on the crosslinker structure, dissociation type or energy. In theory it won't always break.
+            massesToLocalize.Add(crosslinker.TotalMass + otherPeptideMass);
 
             List<Tuple<double, List<Product>>> massToLocalizeWithTheoreticalProducts = new List<Tuple<double, List<Product>>>();
             
@@ -138,7 +137,7 @@ namespace EngineLayer.CrosslinkSearch
             return AllTheoreticalFragmentsLists;
         }
 
-        //TO DO: Optimize the filter. (Whether a product ion can be found in this scan.)
+        //TO DO: The situation can be very complicated. Currently only MS2(h), MS2(h)-MS2(h), MS2(h)-MS3(l) have been considered.
         public static List<Product> XLAllowedProducts(MsDataScan TheScan, List<Tuple<double, List<Product>>> massToLocalizeWithProducts, CommonParameters commonParameters, Crosslinker crosslinker, PeptideWithSetModifications peptide)
         {
             List<Product> allowedProducts = new List<Product>();
@@ -165,12 +164,17 @@ namespace EngineLayer.CrosslinkSearch
             }
             else
             {
+                HashSet<double> masses = new HashSet<double>();
                 foreach (var aProduct in massToLocalizeWithProducts.SelectMany(p=>p.Item2).ToArray())
                 {
                     //!TheScan.DissociationType.HasValue or DissociationType.Unknown is used in XLtest
                     if (!TheScan.DissociationType.HasValue || AllowedProductByDessociationType(aProduct, TheScan.DissociationType.Value))
                     {
-                        allowedProducts.Add(aProduct);
+                        if (!masses.Contains(aProduct.NeutralMass))
+                        {
+                            allowedProducts.Add(aProduct);
+                        }
+                       
                     }
                 }
             }
