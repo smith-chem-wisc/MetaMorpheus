@@ -23,7 +23,7 @@ using OxyPlot.Annotations;
 namespace Test
 {
     [TestFixture]
-    public static class GlyTest
+    public static class XLTestNGlyco
     {
         [Test]
         public static void GlyTest_GetKindString()
@@ -207,8 +207,6 @@ namespace Test
 
                 model.Series.Add(allIons[i]);
             }
-
-
 
             // Axes are created automatically if they are not defined
 

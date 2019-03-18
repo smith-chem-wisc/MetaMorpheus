@@ -110,8 +110,10 @@ namespace MetaMorpheusGUI
         private void UpdateFieldsFromTask(XLSearchTask task)
         {
             //Crosslink search para
-            RbSearchCrosslink.IsChecked = !task.XlSearchParameters.SearchGlyco;
-            RbSearchGlyco.IsChecked = task.XlSearchParameters.SearchGlyco;
+            RbSearchCrosslink.IsChecked = task.XlSearchParameters.OpenSearchType == OpenSearchType.Crosslink;
+            RbSearchNGlyco.IsChecked = task.XlSearchParameters.OpenSearchType == OpenSearchType.NGlyco;
+            RbSearchOGlyco.IsChecked = task.XlSearchParameters.OpenSearchType == OpenSearchType.OGlyco;
+
             cbCrosslinker.SelectedIndex = (int)task.XlSearchParameters.CrosslinkerType;
             ckbXLTopNum.IsChecked = task.XlSearchParameters.RestrictToTopNHits;
             txtXLTopNum.Text = task.XlSearchParameters.CrosslinkSearchTopNum.ToString(CultureInfo.InvariantCulture);
@@ -238,7 +240,19 @@ namespace MetaMorpheusGUI
 
             DissociationType dissociationType = GlobalVariables.AllSupportedDissociationTypes[DissociationTypeComboBox.SelectedItem.ToString()];
             CustomFragmentationWindow.Close();
-            TheTask.XlSearchParameters.SearchGlyco = RbSearchGlyco.IsChecked.Value;
+            if (RbSearchCrosslink.IsChecked.Value)
+            {
+                TheTask.XlSearchParameters.OpenSearchType = OpenSearchType.Crosslink;
+            }
+            if (RbSearchNGlyco.IsChecked.Value)
+            {
+                TheTask.XlSearchParameters.OpenSearchType = OpenSearchType.NGlyco;
+            }
+            if (RbSearchOGlyco.IsChecked.Value)
+            {
+                TheTask.XlSearchParameters.OpenSearchType = OpenSearchType.OGlyco;
+            }
+
             TheTask.XlSearchParameters.RestrictToTopNHits = ckbXLTopNum.IsChecked.Value;
             TheTask.XlSearchParameters.CrosslinkSearchTopNum = int.Parse(txtXLTopNum.Text, CultureInfo.InvariantCulture);
             TheTask.XlSearchParameters.CrosslinkerType = (CrosslinkerType)cbCrosslinker.SelectedIndex;

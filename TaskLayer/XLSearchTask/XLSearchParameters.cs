@@ -7,7 +7,7 @@ namespace TaskLayer
     {
         public XlSearchParameters()
         {
-            SearchGlyco = false;
+            OpenSearchType = OpenSearchType.Crosslink;
             DecoyType = DecoyType.Reverse;
             CrosslinkerType = CrosslinkerType.DSSO;
             RestrictToTopNHits = true;
@@ -29,7 +29,7 @@ namespace TaskLayer
             WritePepXml = true;
         }
         
-        public bool SearchGlyco { get; set; }
+        public OpenSearchType OpenSearchType { get; set; }
         public DecoyType DecoyType { get; set; }
         public CrosslinkerType CrosslinkerType { get; set; }
         public int CrosslinkSearchTopNum { get; set; }

@@ -105,7 +105,7 @@ namespace TaskLayer
                     GenerateIndexes(indexEngine, dbFilenameList, ref peptideIndex, ref fragmentIndex, ref precursorIndex, proteinList, GlobalVariables.AllModsKnown.ToList(), taskId);
 
                     Status("Searching files...", taskId);
-                    new CrosslinkSearchEngine(newPsms, arrayOfMs2ScansSortedByMass, peptideIndex, fragmentIndex, currentPartition, combinedParams, XlSearchParameters.SearchGlyco, crosslinker,
+                    new CrosslinkSearchEngine(newPsms, arrayOfMs2ScansSortedByMass, peptideIndex, fragmentIndex, currentPartition, combinedParams, XlSearchParameters.OpenSearchType, crosslinker,
                         XlSearchParameters.RestrictToTopNHits, XlSearchParameters.CrosslinkSearchTopNum, XlSearchParameters.XlQuench_H2O,
                         XlSearchParameters.XlQuench_NH2, XlSearchParameters.XlQuench_Tris, thisId).Run();
 
@@ -122,7 +122,7 @@ namespace TaskLayer
 
             allPsms = allPsms.OrderByDescending(p => p.XLTotalScore).ToList();
 
-            if (XlSearchParameters.SearchGlyco)
+            if (XlSearchParameters.OpenSearchType == OpenSearchType.NGlyco)
             {
                 SingleFDRAnalysis(allPsms, new List<string> { taskId });             
                 var writtenFileInter = Path.Combine(OutputFolder, "all_fdr" + ".mytsv");
