@@ -93,7 +93,7 @@ namespace Test
             Assert.IsTrue(listOfSortedXcorrms2Scans[0].TheScan.MassSpectrum.XcorrProcessed);
 
             List<double> expectedXarray = new List<double>() { 130.07, 148.08, 199.1, 209.11, 227.12, 245.12, 263.13, 296.15, 306.16, 324.16, 358.18, 376.19, 397.2, 407.21, 425.22, 459.23, 477.24, 510.26, 520.26, 538.27, 556.28, 574.29, 625.32, 635.32, 653.33, 685.35, 703.36, 782.4 };
-            List<double> expectedYarray = new List<double>() { 49.01, 48.68, 47.68, 48.01, 48.01, 47.68, 47.35, 47.68, 47.68, 47.68, 47.35, 47.68, 47.68, 47.68, 47.68, 47.68, 47.68, 47.68, 47.68, 48.01, 48.01, 47.68, 48.01, 48.01, 48.34, 48.34, 48.68, 49.67 };
+            List<double> expectedYarray = new List<double>() { 0.98, 0.97, 0.95, 0.96, 0.96, 0.95, 0.95, 0.95, 0.95, 0.95, 0.95, 0.95, 0.95, 0.95, 0.95, 0.95, 0.95, 0.95, 0.95, 0.96, 0.96, 0.95, 0.96, 0.96, 0.97, 0.97, 0.97, 0.99 };
 
             List<double> processedXarray = new List<double>();
             List<double> processedYarray = new List<double>();
@@ -113,7 +113,7 @@ namespace Test
             Assert.AreEqual(6, allPsmsArray[0].MatchedFragmentIons.Where(p => p.NeutralTheoreticalProduct.ProductType == ProductType.y).ToList().Count);
             Assert.AreEqual(6, allPsmsArray[0].MatchedFragmentIons.Where(p => p.NeutralTheoreticalProduct.ProductType == ProductType.yDegree).ToList().Count);
 
-            Assert.AreEqual(532.8, Math.Round(allPsmsArray[0].Score, 1));
+            Assert.AreEqual(10.7, Math.Round(allPsmsArray[0].Score, 1));
 
             // Single search mode
             Assert.AreEqual(1, allPsmsArray.Length);

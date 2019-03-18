@@ -119,14 +119,13 @@
                                             </ToolTipService.ToolTip>
                                         </TextBox>
                                     </StackPanel>
-                                    <StackPanel Orientation="Horizontal" Margin="5">
-                                        <Label Content="Peak intensity maximum normalization value" />
-                                        <TextBox x:Name="WindowMaxNormalizationValueTextBox" PreviewTextInput="CheckIfNumber" Width="45" ToolTipService.ShowDuration="999999" ToolTipService.InitialShowDelay="500">
-                                            <ToolTipService.ToolTip>
-                                                <ToolTip Content="Set the intensity of the maximum peak in the spectrum or window to this value and normalize the others accordingly." />
-                                            </ToolTipService.ToolTip>
-                                        </TextBox>
-                                    </StackPanel>
+                                    <CheckBox x:Name="normalizePeaksInWindowCheckBox" Content="Normalize peaks in each window" IsChecked="False" ToolTipService.ShowDuration="999999" ToolTipService.InitialShowDelay="500">
+                                        <CheckBox.ToolTip>
+                                            <TextBlock>
+                                                    Normalize the peaks in each window so that the maximum intensity is the same accross all windows.
+                                            </TextBlock>
+                                        </CheckBox.ToolTip>
+                                    </CheckBox>
                                 </StackPanel>
                             </GroupBox>
                         </StackPanel>

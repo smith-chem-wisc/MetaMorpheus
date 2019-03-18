@@ -199,7 +199,7 @@ namespace MetaMorpheusGUI
             MinimumAllowedIntensityRatioToBasePeakTexBox.Text = task.CommonParameters.MinimumAllowedIntensityRatioToBasePeak == double.MaxValue || !task.CommonParameters.MinimumAllowedIntensityRatioToBasePeak.HasValue ? "" : task.CommonParameters.MinimumAllowedIntensityRatioToBasePeak.Value.ToString(CultureInfo.InvariantCulture);
             WindowWidthThomsonsTextBox.Text = task.CommonParameters.WindowWidthThomsons == double.MaxValue || !task.CommonParameters.WindowWidthThomsons.HasValue ? "" : task.CommonParameters.WindowWidthThomsons.Value.ToString(CultureInfo.InvariantCulture);
             NumberOfWindowsTextBox.Text = task.CommonParameters.NumberOfWindows == int.MaxValue || !task.CommonParameters.NumberOfWindows.HasValue ? "" : task.CommonParameters.NumberOfWindows.Value.ToString(CultureInfo.InvariantCulture);
-            WindowMaxNormalizationValueTextBox.Text = task.CommonParameters.WindowMaxNormalizationValue == double.MaxValue || !task.CommonParameters.WindowMaxNormalizationValue.HasValue ? "" : task.CommonParameters.WindowMaxNormalizationValue.Value.ToString(CultureInfo.InvariantCulture);
+            normalizePeaksInWindowCheckBox.IsChecked = task.CommonParameters.NormalizePeaksAccrossAllWindows;
 
             maxThreadsTextBox.Text = task.CommonParameters.MaxThreadsToUsePerFile.ToString(CultureInfo.InvariantCulture);
             MinVariantDepthTextBox.Text = task.CommonParameters.MinVariantDepth.ToString(CultureInfo.InvariantCulture);
@@ -218,7 +218,6 @@ namespace MetaMorpheusGUI
             }
 
             OutputFileNameTextBox.Text = task.CommonParameters.TaskDescriptor;
-            //ckbPepXML.IsChecked = task.SearchParameters.OutPepXML;
             ckbMzId.IsChecked = task.SearchParameters.WriteMzId;
             writeDecoyCheckBox.IsChecked = task.SearchParameters.WriteDecoys;
             writeContaminantCheckBox.IsChecked = task.SearchParameters.WriteContaminants;
@@ -352,7 +351,7 @@ namespace MetaMorpheusGUI
             if (!GlobalGuiSettings.CheckTaskSettingsValidity(precursorMassToleranceTextBox.Text, productMassToleranceTextBox.Text, missedCleavagesTextBox.Text,
                 maxModificationIsoformsTextBox.Text, MinPeptideLengthTextBox.Text, MaxPeptideLengthTextBox.Text, maxThreadsTextBox.Text, minScoreAllowed.Text,
                 peakFindingToleranceTextBox.Text, histogramBinWidthTextBox.Text, DeconvolutionMaxAssumedChargeStateTextBox.Text, NumberOfPeaksToKeepPerWindowTextBox.Text,
-                MinimumAllowedIntensityRatioToBasePeakTexBox.Text, WindowWidthThomsonsTextBox.Text, WindowMaxNormalizationValueTextBox.Text, numberOfDatabaseSearchesTextBox.Text, MaxModNumTextBox.Text, MaxFragmentMassTextBox.Text, QValueTextBox.Text))
+                MinimumAllowedIntensityRatioToBasePeakTexBox.Text, WindowWidthThomsonsTextBox.Text, NumberOfWindowsTextBox.Text, numberOfDatabaseSearchesTextBox.Text, MaxModNumTextBox.Text, MaxFragmentMassTextBox.Text, QValueTextBox.Text))
             {
                 return;
             }
@@ -495,19 +494,7 @@ namespace MetaMorpheusGUI
                 }
             }
 
-            double? windowMaxNormalizationValue = null;
-            if (!string.IsNullOrWhiteSpace(WindowMaxNormalizationValueTextBox.Text))
-            {
-                if (double.TryParse(WindowMaxNormalizationValueTextBox.Text, out double normalizationValue))
-                {
-                    windowMaxNormalizationValue = normalizationValue;
-                }
-                else
-                {
-                    MessageBox.Show("The value that you entered for window max normalization value is not acceptable. Try again.");
-                    return;
-                }
-            }
+            bool normalizePeaksAccrossAllWindows = normalizePeaksInWindowCheckBox.IsChecked.Value;
 
             bool parseMaxThreadsPerFile = !maxThreadsTextBox.Text.Equals("") && (int.Parse(maxThreadsTextBox.Text) <= Environment.ProcessorCount && int.Parse(maxThreadsTextBox.Text) > 0);
 
@@ -534,7 +521,7 @@ namespace MetaMorpheusGUI
                 minimumAllowedIntensityRatioToBasePeak: minimumAllowedIntensityRatioToBasePeak,
                 windowWidthThomsons: windowWidthThompsons,
                 numberOfWindows: numberOfWindows,//maybe change this some day
-                windowMaxNormalizationValue: windowMaxNormalizationValue,//maybe change this some day
+                normalizePeaksAccrossAllWindows: normalizePeaksAccrossAllWindows,//maybe change this some day
                 addCompIons: addCompIonCheckBox.IsChecked.Value,
                 qValueOutputFilter: QValueCheckBox.IsChecked.Value ? double.Parse(QValueTextBox.Text, CultureInfo.InvariantCulture) : 1.0,
                 assumeOrphanPeaksAreZ1Fragments: protease.Name != "top-down",

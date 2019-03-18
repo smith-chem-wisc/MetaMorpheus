@@ -78,9 +78,9 @@ namespace EngineLayer
         {
             get
             {
-                return _BestMatchingPeptides.OrderBy(p => p.Item2.FullSequence)
-                    .ThenBy(p => p.Item2.Protein.Accession)
-                    .ThenBy(p => p.Item2.OneBasedStartResidueInProtein);
+                return _BestMatchingPeptides.OrderBy(p => p.Pwsm.FullSequence)
+                    .ThenBy(p => p.Pwsm.Protein.Accession)
+                    .ThenBy(p => p.Pwsm.OneBasedStartResidueInProtein);
             }
         }
 

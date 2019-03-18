@@ -232,6 +232,7 @@ namespace TaskLayer
                 windowWidthThomsons: commonParams.WindowWidthThomsons,
                 trimMs1Peaks: commonParams.TrimMs1Peaks,
                 trimMsMsPeaks: commonParams.TrimMsMsPeaks,
+                normalizePeaksAccrossAllWindows: commonParams.NormalizePeaksAccrossAllWindows,
                 useDeltaScore: commonParams.UseDeltaScore,
                 calculateEValue: commonParams.CalculateEValue,
                 deconvolutionMassTolerance: commonParams.DeconvolutionMassTolerance,

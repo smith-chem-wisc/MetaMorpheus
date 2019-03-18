@@ -19,7 +19,7 @@ namespace EngineLayer
 
         public CommonParameters(string taskDescriptor = null, DissociationType dissociationType = DissociationType.HCD, bool doPrecursorDeconvolution = true,
             bool useProvidedPrecursorInfo = true, double deconvolutionIntensityRatio = 3, int deconvolutionMaxAssumedChargeState = 12, bool reportAllAmbiguity = true,
-            bool addCompIons = false, int totalPartitions = 1, double scoreCutoff = 5, int? numberOfPeaksToKeepPerWindow = 200, double? minimumAllowedIntensityRatioToBasePeak = 0.01, double? windowWidthThomsons = null, int? numberOfWindows = null, double? windowMaxNormalizationValue = null, bool trimMs1Peaks = false,
+            bool addCompIons = false, int totalPartitions = 1, double scoreCutoff = 5, int? numberOfPeaksToKeepPerWindow = 200, double? minimumAllowedIntensityRatioToBasePeak = 0.01, double? windowWidthThomsons = null, int? numberOfWindows = null, bool normalizePeaksAccrossAllWindows = false, bool trimMs1Peaks = false,
             bool trimMsMsPeaks = true, bool useDeltaScore = false, bool calculateEValue = false, Tolerance productMassTolerance = null, Tolerance precursorMassTolerance = null, Tolerance deconvolutionMassTolerance = null,
             int maxThreadsToUsePerFile = -1, DigestionParams digestionParams = null, IEnumerable<(string, string)> listOfModsVariable = null, IEnumerable<(string, string)> listOfModsFixed = null, double qValueOutputFilter = 1.0,
             bool assumeOrphanPeaksAreZ1Fragments = true, int maxHeterozygousVariants = 4, int minVariantDepth = 1)
@@ -37,7 +37,7 @@ namespace EngineLayer
             MinimumAllowedIntensityRatioToBasePeak = minimumAllowedIntensityRatioToBasePeak;
             WindowWidthThomsons = windowWidthThomsons;
             NumberOfWindows = numberOfWindows;
-            WindowMaxNormalizationValue = windowMaxNormalizationValue;
+            NormalizePeaksAccrossAllWindows = normalizePeaksAccrossAllWindows;
             TrimMs1Peaks = trimMs1Peaks;
             TrimMsMsPeaks = trimMsMsPeaks;
             UseDeltaScore = useDeltaScore;
@@ -90,7 +90,7 @@ namespace EngineLayer
         public double? MinimumAllowedIntensityRatioToBasePeak { get; private set; }
         public double? WindowWidthThomsons { get; private set; }
         public int? NumberOfWindows { get; private set; }
-        public double? WindowMaxNormalizationValue { get; private set; }
+        public bool NormalizePeaksAccrossAllWindows { get; private set; }
         public bool TrimMs1Peaks { get; private set; }
         public bool TrimMsMsPeaks { get; private set; }
         public bool UseDeltaScore { get; private set; }
@@ -137,7 +137,7 @@ namespace EngineLayer
                                 MinimumAllowedIntensityRatioToBasePeak,
                                 WindowWidthThomsons,
                                 NumberOfWindows,
-                                WindowMaxNormalizationValue,
+                                NormalizePeaksAccrossAllWindows,
                                 TrimMs1Peaks,
                                 TrimMsMsPeaks,
                                 UseDeltaScore,
