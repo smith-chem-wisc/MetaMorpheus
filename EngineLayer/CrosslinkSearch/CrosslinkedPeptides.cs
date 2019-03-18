@@ -10,8 +10,8 @@ namespace EngineLayer.CrosslinkSearch
 {
     public class CrosslinkedPeptide
     {
-        public static List<Tuple<double, List<Product>>> XlGetTheoreticalFragments(DissociationType dissociationType, Crosslinker crosslinker,
-            int crosslinkerPosition, double otherPeptideMass, PeptideWithSetModifications peptide)
+        public static IEnumerable<Tuple<int, List<Product>>> XlGetTheoreticalFragments(DissociationType dissociationType, Crosslinker crosslinker,
+            List<int> possibleCrosslinkerPositions, double otherPeptideMass, PeptideWithSetModifications peptide)
         {
             List<double> massesToLocalize = new List<double>();
             if (crosslinker.Cleavable)
@@ -19,48 +19,42 @@ namespace EngineLayer.CrosslinkSearch
                 massesToLocalize.Add(crosslinker.CleaveMassShort);
                 massesToLocalize.Add(crosslinker.CleaveMassLong);
             }
-
-            //The cleavage of crosslinker depend on the crosslinker structure, dissociation type or energy. In theory it won't always break.
-            massesToLocalize.Add(crosslinker.TotalMass + otherPeptideMass);
-
-            List<Tuple<double, List<Product>>> massToLocalizeWithTheoreticalProducts = new List<Tuple<double, List<Product>>>();
-            
-            foreach (double massToLocalize in massesToLocalize)
+            else
             {
-                HashSet<double> masses = new HashSet<double>();
+                massesToLocalize.Add(crosslinker.TotalMass + otherPeptideMass);
+            }
+
+            foreach (int crosslinkerPosition in possibleCrosslinkerPositions)
+            {
                 List<Product> theoreticalProducts = new List<Product>();
-                Dictionary<int, Modification> testMods = new Dictionary<int, Modification> { { crosslinkerPosition + 1, new Modification(_monoisotopicMass: massToLocalize) } };
+                HashSet<double> masses = new HashSet<double>();
 
-                foreach (var mod in peptide.AllModsOneIsNterminus)
+                foreach (double massToLocalize in massesToLocalize)
                 {
-                    testMods.Add(mod.Key, mod.Value);
-                }
+                    Dictionary<int, Modification> testMods = new Dictionary<int, Modification> { { crosslinkerPosition + 1, new Modification(_monoisotopicMass: massToLocalize) } };
+                    var testPeptide = new PeptideWithSetModifications(peptide.Protein, peptide.DigestionParams, peptide.OneBasedStartResidueInProtein,
+                        peptide.OneBasedEndResidueInProtein, peptide.CleavageSpecificityForFdrCategory, peptide.PeptideDescription, peptide.MissedCleavages, testMods, peptide.NumFixedMods);
 
-                var testPeptide = new PeptideWithSetModifications(peptide.Protein, peptide.DigestionParams, peptide.OneBasedStartResidueInProtein,
-                    peptide.OneBasedEndResidueInProtein, peptide.CleavageSpecificityForFdrCategory, peptide.PeptideDescription, peptide.MissedCleavages, testMods, peptide.NumFixedMods);
-
-                // add fragmentation ions for this crosslinker position guess
-                foreach (var fragment in testPeptide.Fragment(dissociationType, FragmentationTerminus.Both))
-                {
-                    if (!masses.Contains(fragment.NeutralMass))
+                    // add fragmentation ions for this crosslinker position guess
+                    foreach (var fragment in testPeptide.Fragment(dissociationType, FragmentationTerminus.Both))
                     {
-                        theoreticalProducts.Add(fragment);
-                        masses.Add(fragment.NeutralMass);
+                        if (!masses.Contains(fragment.NeutralMass))
+                        {
+                            theoreticalProducts.Add(fragment);
+                            masses.Add(fragment.NeutralMass);
+                        }
+                    }
+
+                    // add signature ions
+                    if (crosslinker.Cleavable)
+                    {
+                        theoreticalProducts.Add(new Product(ProductType.M, new NeutralTerminusFragment(FragmentationTerminus.None, peptide.MonoisotopicMass + massToLocalize,
+                            peptide.Length, peptide.Length), 0));
                     }
                 }
 
-                // add signature ions
-                if (crosslinker.Cleavable)
-                {
-                    theoreticalProducts.Add(new Product(ProductType.M, new NeutralTerminusFragment(FragmentationTerminus.None, peptide.MonoisotopicMass + massToLocalize,
-                        peptide.Length, peptide.Length), 0));
-                }
-
-                massToLocalizeWithTheoreticalProducts.Add(new Tuple<double, List<Product>>(massToLocalize, theoreticalProducts));
+                yield return new Tuple<int, List<Product>>(crosslinkerPosition, theoreticalProducts);
             }
-
-            return massToLocalizeWithTheoreticalProducts;
-
         }
 
         public static Dictionary<Tuple<int, int>, List<Product>> XlLoopGetTheoreticalFragments(DissociationType dissociationType, Modification loopMass,
@@ -135,87 +129,6 @@ namespace EngineLayer.CrosslinkSearch
             }
 
             return AllTheoreticalFragmentsLists;
-        }
-
-        //TO DO: The situation can be very complicated. Currently only MS2(h), MS2(h)-MS2(h), MS2(h)-MS3(l) have been considered.
-        public static List<Product> XLAllowedProducts(MsDataScan TheScan, List<Tuple<double, List<Product>>> massToLocalizeWithProducts, CommonParameters commonParameters, Crosslinker crosslinker, PeptideWithSetModifications peptide)
-        {
-            List<Product> allowedProducts = new List<Product>();
-
-            if (TheScan.MsnOrder == 3 && crosslinker.Cleavable)
-            {
-                var MS3ScanPrecursorFilter = new SinglePpmAroundZeroSearchMode(commonParameters.ProductMassTolerance.Value);
-                foreach (var aMassToLocalizeWithProduct in massToLocalizeWithProducts)
-                {
-                    //This filter for MS3 low res scan may not working perfect. If signature ions are not selected.
-                    if ((TheScan.SelectedIonChargeStateGuess.HasValue && MS3ScanPrecursorFilter.Accepts(aMassToLocalizeWithProduct.Item1 + peptide.MonoisotopicMass, TheScan.SelectedIonChargeStateGuess.Value * (TheScan.SelectedIonMZ.Value - 1.0073) )>=0)
-                        || (MS3ScanPrecursorFilter.Accepts(aMassToLocalizeWithProduct.Item1 + peptide.MonoisotopicMass,  TheScan.SelectedIonMZ.Value - 1.0073) >= 0)
-                        || (MS3ScanPrecursorFilter.Accepts(aMassToLocalizeWithProduct.Item1 + peptide.MonoisotopicMass, 2*(TheScan.SelectedIonMZ.Value - 1.0073)) >= 0))
-                    {
-                        foreach (var aProduct in aMassToLocalizeWithProduct.Item2)
-                        {
-                            if (!TheScan.DissociationType.HasValue || AllowedProductByDessociationType(aProduct, TheScan.DissociationType.Value))
-                            {
-                                allowedProducts.Add(aProduct);
-                            }
-                        }
-                    }
-                }
-            }
-            else
-            {
-                HashSet<double> masses = new HashSet<double>();
-                foreach (var aProduct in massToLocalizeWithProducts.SelectMany(p=>p.Item2).ToArray())
-                {
-                    //!TheScan.DissociationType.HasValue or DissociationType.Unknown is used in XLtest
-                    if (!TheScan.DissociationType.HasValue || AllowedProductByDessociationType(aProduct, TheScan.DissociationType.Value))
-                    {
-                        if (!masses.Contains(aProduct.NeutralMass))
-                        {
-                            allowedProducts.Add(aProduct);
-                        }
-                       
-                    }
-                }
-            }
-            
-            return allowedProducts;
-        }
-
-        public static List<Product> SingleAllowedProducts(MsDataScan TheScan, List<Product> products)
-        {
-            List<Product> allowedProducts = new List<Product>();
-            foreach (var aProduct in products)
-            {
-                if (!TheScan.DissociationType.HasValue || AllowedProductByDessociationType(aProduct, TheScan.DissociationType.Value))
-                {
-                    allowedProducts.Add(aProduct);
-                }
-            }
-            return allowedProducts;
-        }
-
-        public static bool AllowedProductByDessociationType(Product product, DissociationType dissociationType)
-        {
-            if (product.ProductType == ProductType.M || dissociationType == DissociationType.Unknown) 
-            {
-                return true;
-            }
-            if (dissociationType == DissociationType.CID || dissociationType == DissociationType.HCD || dissociationType == DissociationType.EThcD)
-            {
-                if (product.ProductType == ProductType.b || product.ProductType == ProductType.y)
-                {
-                    return true;
-                }
-            }
-            if (dissociationType == DissociationType.ETD || dissociationType == DissociationType.EThcD)
-            {
-                if (product.ProductType == ProductType.c || product.ProductType == ProductType.zDot)
-                {
-                    return true;
-                }
-            }
-            return false;
         }
     }
 }

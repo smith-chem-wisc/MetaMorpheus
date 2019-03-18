@@ -89,7 +89,9 @@ namespace TaskLayer
 
         public static IEnumerable<Ms2ScanWithSpecificMass> GetMs2Scans(MsDataFile myMSDataFile, string fullFilePath, CommonParameters commonParameters)
         {
-            var ms2Scans = myMSDataFile.GetAllScansList().Where(x => x.MsnOrder > 1).ToArray();
+            var msNScans = myMSDataFile.GetAllScansList().Where(x => x.MsnOrder > 1).ToArray();
+            var ms2Scans = msNScans.Where(p => p.MsnOrder == 2).ToArray();
+            var ms3Scans = msNScans.Where(p => p.MsnOrder == 3).ToArray();
             List<Ms2ScanWithSpecificMass>[] scansWithPrecursors = new List<Ms2ScanWithSpecificMass>[ms2Scans.Length];
 
             Parallel.ForEach(Partitioner.Create(0, ms2Scans.Length), new ParallelOptions { MaxDegreeOfParallelism = commonParameters.MaxThreadsToUsePerFile },
@@ -163,200 +165,91 @@ namespace TaskLayer
                         scansWithPrecursors[i] = new List<Ms2ScanWithSpecificMass>();
                         IsotopicEnvelope[] neutralExperimentalFragments = null;
 
-                        if(commonParameters.DissociationType != DissociationType.LowCID)
-                        {
-                            neutralExperimentalFragments = Ms2ScanWithSpecificMass.GetNeutralExperimentalFragments(ms2scan, commonParameters);
-                        }
-
-                        foreach (var precursor in precursors)
-                        {
-                            scansWithPrecursors[i].Add(new Ms2ScanWithSpecificMass(ms2scan, precursor.Item1,
-                                precursor.Item2, fullFilePath, commonParameters, neutralExperimentalFragments));
-                        }
-                    }
-                });
-
-            return scansWithPrecursors.SelectMany(p => p);
-        }
-
-        public static IEnumerable<Ms2ScanWithSpecificMass> GetSpecialMs2Scans(MsDataFile myMSDataFile, string fullFilePath, CommonParameters commonParameters)
-        {
-            var ms2Scans = myMSDataFile.GetAllScansList().Where(x => x.MsnOrder == 2).ToArray();
-            
-            MsDataScan[] ms3Scans = new MsDataScan[] { };
-
-            if (commonParameters.FragmentationType == FragmentationType.MS2_MS3) //MS2-MS3 data. CID@HCD, or CID@ETD.
-            {
-                ms3Scans = myMSDataFile.GetAllScansList().Where(x => x.MsnOrder == 3).ToArray();
-                if (commonParameters.ChildScanDissociationType == DissociationType.LowCID)
-                {
-                    foreach (var scan in ms3Scans)
-                    {
-                        scan.MassSpectrum.XCorrPrePreprocessing(0, 1969, scan.IsolationMz.Value);
-                    }
-                }
-            }
-
-            List<MsDataScan> childMs2Scans = new List<MsDataScan>();
-
-            if (commonParameters.FragmentationType == FragmentationType.MS2_MS2) //MS2-MS2 data. CID-HCD, or CID ETD.
-            {
-                for (int i = 0; i < ms2Scans.Length-1; i++)
-                {
-                    if (ms2Scans[i].SelectedIonMZ.HasValue && ms2Scans[i + 1].SelectedIonMZ.HasValue
-                        && commonParameters.PrecursorMassTolerance.Within(ms2Scans[i].SelectedIonMZ.Value, ms2Scans[i + 1].SelectedIonMZ.Value)) //ms2Scans[i].SelectedIonMZ.Value == ms2Scans[i+1].SelectedIonMZ.Value //The number changed a little bit later
-                    {
-                        if (commonParameters.ChildScanDissociationType == DissociationType.LowCID)
-                        {
-                            ms2Scans[i + 1].MassSpectrum.XCorrPrePreprocessing(0, 1969, ms2Scans[i + 1].IsolationMz.Value);
-                        }
-                        childMs2Scans.Add(ms2Scans[i + 1]);
-                        ms2Scans[i + 1] = null;
-                        i += 1;
-                    }
-                }
-                ms2Scans = ms2Scans.Where(p => p != null).ToArray();
-            }           
-
-            List<Ms2ScanWithSpecificMass>[] scansWithPrecursors = new List<Ms2ScanWithSpecificMass>[ms2Scans.Length];
-
-            Parallel.ForEach(Partitioner.Create(0, ms2Scans.Length), new ParallelOptions { MaxDegreeOfParallelism = commonParameters.MaxThreadsToUsePerFile },
-                (partitionRange, loopState) =>
-                {
-                    for (int i = partitionRange.Item1; i < partitionRange.Item2; i++)
-                    {
-                        if (GlobalVariables.StopLoops)
-                        {
-                            break;
-                        }
-
-                        MsDataScan ms2scan = ms2Scans[i];
-
-                        List<(double, int)> precursors = new List<(double, int)>();
-                        if (ms2scan.OneBasedPrecursorScanNumber.HasValue)
-                        {
-                            var precursorSpectrum = myMSDataFile.GetOneBasedScan(ms2scan.OneBasedPrecursorScanNumber.Value);
-
-                            try
-                            {
-                                ms2scan.RefineSelectedMzAndIntensity(precursorSpectrum.MassSpectrum);
-                            }
-                            catch (MzLibException ex)
-                            {
-                                Warn("Could not get precursor ion for MS2 scan #" + ms2scan.OneBasedScanNumber + "; " + ex.Message);
-                                continue;
-                            }
-
-                            if (ms2scan.SelectedIonMonoisotopicGuessMz.HasValue)
-                            {
-                                ms2scan.ComputeMonoisotopicPeakIntensity(precursorSpectrum.MassSpectrum);
-                            }
-
-                            if (commonParameters.DoPrecursorDeconvolution)
-                            {
-                                foreach (var envelope in ms2scan.GetIsolatedMassesAndCharges(
-                                    precursorSpectrum.MassSpectrum, 1,
-                                    commonParameters.DeconvolutionMaxAssumedChargeState,
-                                    commonParameters.DeconvolutionMassTolerance.Value,
-                                    commonParameters.DeconvolutionIntensityRatio))
-                                {
-                                    var monoPeakMz = envelope.monoisotopicMass.ToMz(envelope.charge);
-                                    precursors.Add((monoPeakMz, envelope.charge));
-                                }
-                            }
-                        }
-
-                        if (commonParameters.UseProvidedPrecursorInfo && ms2scan.SelectedIonChargeStateGuess.HasValue)
-                        {
-                            var precursorCharge = ms2scan.SelectedIonChargeStateGuess.Value;
-                            if (ms2scan.SelectedIonMonoisotopicGuessMz.HasValue)
-                            {
-                                double precursorMZ = ms2scan.SelectedIonMonoisotopicGuessMz.Value;
-                                if (!precursors.Any(b =>
-                                    commonParameters.DeconvolutionMassTolerance.Within(
-                                        precursorMZ.ToMass(precursorCharge), b.Item1.ToMass(b.Item2))))
-                                {
-                                    precursors.Add((precursorMZ, precursorCharge));
-                                }
-                            }
-                            else
-                            {
-                                double precursorMZ = ms2scan.SelectedIonMZ.Value;
-                                if (!precursors.Any(b =>
-                                    commonParameters.DeconvolutionMassTolerance.Within(
-                                        precursorMZ.ToMass(precursorCharge), b.Item1.ToMass(b.Item2))))
-                                {
-                                    precursors.Add((precursorMZ, precursorCharge));
-                                }
-                            }
-                        }
-
-                        scansWithPrecursors[i] = new List<Ms2ScanWithSpecificMass>();
-                        IsotopicEnvelope[] neutralExperimentalFragments = null;
                         if (commonParameters.DissociationType != DissociationType.LowCID)
                         {
                             neutralExperimentalFragments = Ms2ScanWithSpecificMass.GetNeutralExperimentalFragments(ms2scan, commonParameters);
                         }
+
+                        // figure out child scans
+                        List<MsDataScan> ms2ChildScans = new List<MsDataScan>();
+                        List<MsDataScan> ms3ChildScans = new List<MsDataScan>();
+                        if (commonParameters.ChildScanDissociationType != DissociationType.Unknown)
+                        {
+                            ms3ChildScans = ms3Scans.Where(p => p.OneBasedPrecursorScanNumber == ms2scan.OneBasedScanNumber).ToList();
+
+                            ms2ChildScans = ms2Scans.Where(p => p.OneBasedPrecursorScanNumber == ms2scan.OneBasedPrecursorScanNumber 
+                                && p.OneBasedScanNumber > ms2scan.OneBasedScanNumber
+                                && commonParameters.PrecursorMassTolerance.Within(p.IsolationMz.Value, ms2scan.IsolationMz.Value)).ToList();
+                        }
+
                         foreach (var precursor in precursors)
                         {
-                            var theMs2ScanWithSpecificMass = new Ms2ScanWithSpecificMass(ms2scan, precursor.Item1,
+                            var scan = new Ms2ScanWithSpecificMass(ms2scan, precursor.Item1,
                                 precursor.Item2, fullFilePath, commonParameters, neutralExperimentalFragments);
 
-                            if (ms3Scans.Count() > 0)
+                            foreach (var ms2ChildScan in ms2ChildScans)
                             {
-                                theMs2ScanWithSpecificMass.childMs2ScanWithSpecificMass = new List<Ms2ScanWithSpecificMass>();
-                                foreach (var aScan in ms3Scans.Where(p => p.OneBasedPrecursorScanNumber == ms2scan.OneBasedScanNumber))
+                                IsotopicEnvelope[] childNeutralExperimentalFragments = null;
+
+                                if (commonParameters.ChildScanDissociationType != DissociationType.LowCID)
                                 {
-                                    if (aScan.TotalIonCurrent == 0)
-                                    {
-                                        continue;
-                                    }
-                                    IsotopicEnvelope[] aScanNeutralExperimentalFragments = null;
-                                    if (commonParameters.ChildScanDissociationType != DissociationType.LowCID)
-                                    {
-                                        aScanNeutralExperimentalFragments = Ms2ScanWithSpecificMass.GetNeutralExperimentalFragments(aScan, commonParameters);
-                                    }
-                                    int scanSelectedCharge = 0;
-                                    if (aScan.SelectedIonChargeStateGuess.HasValue)
-                                    {
-                                        scanSelectedCharge = aScan.SelectedIonChargeStateGuess.Value;
-                                    }
-                                    var x = new Ms2ScanWithSpecificMass(aScan, aScan.SelectedIonMZ.Value, scanSelectedCharge, fullFilePath, commonParameters, aScanNeutralExperimentalFragments);
-                                    theMs2ScanWithSpecificMass.childMs2ScanWithSpecificMass.Add(x);
+                                    childNeutralExperimentalFragments = Ms2ScanWithSpecificMass.GetNeutralExperimentalFragments(ms2ChildScan, commonParameters);
                                 }
+
+                                scan.ChildScans.Add(new Ms2ScanWithSpecificMass(ms2ChildScan, precursor.Item1,
+                                    precursor.Item2, fullFilePath, commonParameters, childNeutralExperimentalFragments));
                             }
 
-                            if (childMs2Scans.Count() > 0)
+                            foreach (var ms3ChildScan in ms3ChildScans)
                             {
-                                theMs2ScanWithSpecificMass.childMs2ScanWithSpecificMass = new List<Ms2ScanWithSpecificMass>();
-                                var theChildMs2Scans = childMs2Scans.Where(p => p.OneBasedPrecursorScanNumber == ms2scan.OneBasedPrecursorScanNumber && commonParameters.PrecursorMassTolerance.Within(p.SelectedIonMZ.Value, ms2scan.SelectedIonMZ.Value)).ToList();
-                                foreach (var aScan in theChildMs2Scans)
+                                int precursorCharge = 1;
+                                var precursorSpectrum = ms2scan;
+
+                                try
                                 {
-                                    if (aScan.TotalIonCurrent == 0) //In some weird data, the scan can be empty. "PXD008418; DSSO_BSA-XL_InSol_T_SCX_500mM.raw; Scan29514"
-                                    {
-                                        continue;
-                                    }
-                                    IsotopicEnvelope[] aScanNeutralExperimentalFragments = null;
-                                    if (commonParameters.ChildScanDissociationType != DissociationType.LowCID)
-                                    {
-                                        aScanNeutralExperimentalFragments = Ms2ScanWithSpecificMass.GetNeutralExperimentalFragments(aScan, commonParameters);
-                                    }                                  
-                                    int scanSelectedCharge = 0;
-                                    if (aScan.SelectedIonChargeStateGuess.HasValue)
-                                    {
-                                        scanSelectedCharge = aScan.SelectedIonChargeStateGuess.Value;
-                                    }
-                                    var x = new Ms2ScanWithSpecificMass(aScan, aScan.SelectedIonMZ.Value, scanSelectedCharge, fullFilePath, commonParameters, aScanNeutralExperimentalFragments);
-                                    theMs2ScanWithSpecificMass.childMs2ScanWithSpecificMass.Add(x);
+                                    ms3ChildScan.RefineSelectedMzAndIntensity(precursorSpectrum.MassSpectrum);
                                 }
+                                catch (MzLibException ex)
+                                {
+                                    Warn("Could not get precursor ion for MS3 scan #" + ms3ChildScan.OneBasedScanNumber + "; " + ex.Message);
+                                    continue;
+                                }
+
+                                if (ms3ChildScan.SelectedIonMonoisotopicGuessMz.HasValue)
+                                {
+                                    ms3ChildScan.ComputeMonoisotopicPeakIntensity(precursorSpectrum.MassSpectrum);
+                                }
+                                
+                                if (ms3ChildScan.SelectedIonChargeStateGuess.HasValue)
+                                {
+                                    precursorCharge = ms3ChildScan.SelectedIonChargeStateGuess.Value;
+                                }
+                                if (!ms3ChildScan.SelectedIonMonoisotopicGuessMz.HasValue)
+                                {
+                                    Warn("Could not get precursor ion m/z for MS3 scan #" + ms3ChildScan.OneBasedScanNumber);
+                                    continue;
+                                }
+
+                                IsotopicEnvelope[] childNeutralExperimentalFragments = null;
+
+                                if (commonParameters.ChildScanDissociationType != DissociationType.LowCID)
+                                {
+                                    childNeutralExperimentalFragments = Ms2ScanWithSpecificMass.GetNeutralExperimentalFragments(ms3ChildScan, commonParameters);
+                                }
+
+                                scan.ChildScans.Add(new Ms2ScanWithSpecificMass(ms3ChildScan, ms3ChildScan.SelectedIonMonoisotopicGuessMz.Value,
+                                    ms3ChildScan.SelectedIonChargeStateGuess.Value, fullFilePath, commonParameters, childNeutralExperimentalFragments));
                             }
-                  
-                            scansWithPrecursors[i].Add(theMs2ScanWithSpecificMass);
+
+                            scansWithPrecursors[i].Add(scan);
                         }
                     }
                 });
 
-            return scansWithPrecursors.SelectMany(p => p);
+            var childScanNumbers = new HashSet<int>(scansWithPrecursors.SelectMany(p => p.SelectMany(v => v.ChildScans.Select(x => x.OneBasedScanNumber))));
+            var parentScans = scansWithPrecursors.Where(p => !childScanNumbers.Contains(p.First().OneBasedScanNumber)).SelectMany(v => v);
+
+            return parentScans;
         }
 
         public static CommonParameters SetAllFileSpecificCommonParams(CommonParameters commonParams, FileSpecificParameters fileSpecificParams)
@@ -399,7 +292,6 @@ namespace TaskLayer
                 digestionParams: fileSpecificDigestionParams,
 
                 //NEED THESE OR THEY'LL BE OVERWRITTEN
-                fragmentationType: commonParams.FragmentationType,
                 doPrecursorDeconvolution: commonParams.DoPrecursorDeconvolution,
                 useProvidedPrecursorInfo: commonParams.UseProvidedPrecursorInfo,
                 deconvolutionIntensityRatio: commonParams.DeconvolutionIntensityRatio,
@@ -701,7 +593,9 @@ namespace TaskLayer
             var ser = new NetSerializer.Serializer(messageTypes);
 
             using (var file = File.Create(fragmentIndexFile))
+            {
                 ser.Serialize(file, fragmentIndex);
+            }
         }
 
         private static string GetExistingFolderWithIndices(IndexingEngine indexEngine, List<DbForTask> dbFilenameList)
@@ -767,7 +661,7 @@ namespace TaskLayer
             return folder;
         }
 
-        public void GenerateIndexes(IndexingEngine indexEngine, List<DbForTask> dbFilenameList, ref List<PeptideWithSetModifications> peptideIndex, ref List<int>[] fragmentIndex, ref List<int>[] secondFragmentIndex, ref List<int>[] precursorIndex, List<Protein> allKnownProteins, List<Modification> allKnownModifications, string taskId)
+        public void GenerateIndexes(IndexingEngine indexEngine, List<DbForTask> dbFilenameList, ref List<PeptideWithSetModifications> peptideIndex, ref List<int>[] fragmentIndex, ref List<int>[] precursorIndex, List<Protein> allKnownProteins, List<Modification> allKnownModifications, string taskId)
         {
             string pathToFolderWithIndices = GetExistingFolderWithIndices(indexEngine, dbFilenameList);
             if (pathToFolderWithIndices == null)
@@ -782,7 +676,6 @@ namespace TaskLayer
                 var indexResults = (IndexingResults)indexEngine.Run();
                 peptideIndex = indexResults.PeptideIndex;
                 fragmentIndex = indexResults.FragmentIndex;
-                secondFragmentIndex = indexResults.SecondFragmentIndex;
                 precursorIndex = indexResults.PrecursorIndex;
 
                 Status("Writing peptide index...", new List<string> { taskId });
@@ -793,11 +686,6 @@ namespace TaskLayer
                 Status("Writing fragment index...", new List<string> { taskId });
                 var fragmentIndexFile = Path.Combine(output_folderForIndices, "fragmentIndex.ind");
                 WriteFragmentIndexNetSerializer(fragmentIndex, fragmentIndexFile);
-                FinishedWritingFile(fragmentIndexFile, new List<string> { taskId });
-
-                Status("Writing secondfragment index...", new List<string> { taskId });
-                var secondFragmentIndexFile = Path.Combine(output_folderForIndices, "secondFragmentIndex.ind");
-                WriteFragmentIndexNetSerializer(secondFragmentIndex, secondFragmentIndexFile);
                 FinishedWritingFile(fragmentIndexFile, new List<string> { taskId });
 
                 if (indexEngine.GeneratePrecursorIndex)
@@ -845,14 +733,6 @@ namespace TaskLayer
                 using (var file = File.OpenRead(Path.Combine(pathToFolderWithIndices, "fragmentIndex.ind")))
                 {
                     fragmentIndex = (List<int>[])ser.Deserialize(file);
-                }
-
-                Status("Reading second fragment index...", new List<string> { taskId });
-                messageTypes = GetSubclassesAndItself(typeof(List<int>[]));
-                ser = new NetSerializer.Serializer(messageTypes);
-                using (var file = File.OpenRead(Path.Combine(pathToFolderWithIndices, "secondFragmentIndex.ind")))
-                {
-                    secondFragmentIndex = (List<int>[])ser.Deserialize(file);
                 }
 
                 if (indexEngine.GeneratePrecursorIndex)

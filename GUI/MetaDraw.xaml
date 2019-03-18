@@ -178,8 +178,8 @@
                             <ColumnDefinition Width="30"/>
                         </Grid.ColumnDefinitions>
                         <Canvas Margin="0 5 0 0" x:Name="canvas" Height="150" Width="600" HorizontalAlignment="Stretch" VerticalAlignment="Stretch" />
-                        <Button x:Name="BtnSaveCanvas" Grid.Column="2" Content="Save" Click="BtnSaveCanvas_Click"/>
-                        <Button x:Name="BtnChangeGridColumns" Grid.Column="1" Content="Collumn" Click="BtnChangeGridColumns_Click"/>
+                        <!--<Button x:Name="BtnSaveCanvas" Grid.Column="2" Content="Save" Click="BtnSaveCanvas_Click"/>
+                        <Button x:Name="BtnChangeGridColumns" Grid.Column="1" Content="Collumn" Click="BtnChangeGridColumns_Click"/>-->
                     </Grid>
                 </Grid>
             </GroupBox>

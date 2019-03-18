@@ -8,7 +8,6 @@ using System.Globalization;
 using System.IO;
 using System.Linq;
 using System.Text;
-using EngineLayer.CrosslinkSearch;
 
 namespace EngineLayer
 {
@@ -387,103 +386,6 @@ namespace EngineLayer
                     // append product type delimiter
                     stringBuilders.ForEach(p => p.Append("];"));
                 }
-            }
-
-            // save ion series strings to output dictionary
-            s[PsmTsvHeader.MatchedIonSeries] = nullPsm ? " " : seriesStringBuilder.ToString().TrimEnd(';');
-            s[PsmTsvHeader.MatchedIonMzRatios] = nullPsm ? " " : mzStringBuilder.ToString().TrimEnd(';');
-            s[PsmTsvHeader.MatchedIonMassDiffDa] = nullPsm ? " " : fragmentDaErrorStringBuilder.ToString().TrimEnd(';');
-            s[PsmTsvHeader.MatchedIonMassDiffPpm] = nullPsm ? " " : fragmentPpmErrorStringBuilder.ToString().TrimEnd(';');
-            s[PsmTsvHeader.MatchedIonIntensities] = nullPsm ? " " : fragmentIntensityStringBuilder.ToString().TrimEnd(';');
-
-            // number of matched ions
-            s[PsmTsvHeader.MatchedIonCounts] = nullPsm ? " " : psm.MatchedFragmentIons.Count.ToString();
-        }
-
-        internal static void SpecialAddMatchedIonsData(Dictionary<string, string> s, CrosslinkSpectralMatch psm)
-        {
-            bool nullPsm = (psm == null);
-
-            StringBuilder seriesStringBuilder = new StringBuilder();
-            StringBuilder mzStringBuilder = new StringBuilder();
-            StringBuilder fragmentDaErrorStringBuilder = new StringBuilder();
-            StringBuilder fragmentPpmErrorStringBuilder = new StringBuilder();
-            StringBuilder fragmentIntensityStringBuilder = new StringBuilder();
-            List<StringBuilder> stringBuilders = new List<StringBuilder> { seriesStringBuilder, mzStringBuilder, fragmentDaErrorStringBuilder, fragmentPpmErrorStringBuilder, fragmentIntensityStringBuilder };
-
-            if (!nullPsm)
-            {
-                var allMatchedIons = psm.AllMatchedFragmentIons;
-                //if (matchedIons == null)
-                //{
-                //    matchedIons = psm.PeptidesToMatchingFragments.First().Value;
-                //}
-
-                // using ", " instead of "," improves human readability
-                const string delimiter = ", ";
-                foreach (var aMatchedFragmentIons in allMatchedIons)
-                {
-
-                    stringBuilders.ForEach(p => p.Append("{" + aMatchedFragmentIons.Key.ToString()));
-
-                    var matchedIonsGroupedByProductType = aMatchedFragmentIons.Value.GroupBy(i => i.NeutralTheoreticalProduct.ProductType).OrderBy(i => i.Key).ToList();
-
-                    foreach (var productType in matchedIonsGroupedByProductType)
-                    {
-                        var products = productType.OrderBy(p => p.NeutralTheoreticalProduct.TerminusFragment.FragmentNumber)
-                            .ToList();
-
-                        stringBuilders.ForEach(p => p.Append("["));
-
-                        for (int i = 0; i < products.Count; i++)
-                        {
-                            MatchedFragmentIon ion = products[i];
-                            string ionLabel;
-
-                            double massError = ion.Mz.ToMass(ion.Charge) - ion.NeutralTheoreticalProduct.NeutralMass;
-                            double ppmMassError = massError / ion.NeutralTheoreticalProduct.NeutralMass * 1e6;
-
-                            if (ion.NeutralTheoreticalProduct.NeutralLoss == 0)
-                            {
-                                // no neutral loss
-                                ionLabel = ion.NeutralTheoreticalProduct.ProductType + "" + ion.NeutralTheoreticalProduct.TerminusFragment.FragmentNumber + "+" + ion.Charge;
-                            }
-                            else
-                            {
-                                // ion label with neutral loss
-                                ionLabel = "(" + ion.NeutralTheoreticalProduct.ProductType + "" + ion.NeutralTheoreticalProduct.TerminusFragment.FragmentNumber
-                                    + "-" + ion.NeutralTheoreticalProduct.NeutralLoss.ToString("F2") + ")" + "+" + ion.Charge;
-                            }
-
-                            // append ion label
-                            seriesStringBuilder.Append(ionLabel);
-
-                            // append experimental m/z
-                            mzStringBuilder.Append(ionLabel + ":" + ion.Mz.ToString("F5"));
-
-                            // append absolute mass error
-                            fragmentDaErrorStringBuilder.Append(ionLabel + ":" + massError.ToString("F5"));
-
-                            // append ppm mass error
-                            fragmentPpmErrorStringBuilder.Append(ionLabel + ":" + ppmMassError.ToString("F2"));
-
-                            // append fragment ion intensity
-                            fragmentIntensityStringBuilder.Append(ionLabel + ":" + ion.Intensity.ToString("F0"));
-
-                            // append delimiter ", "
-                            if (i < products.Count - 1)
-                            {
-                                stringBuilders.ForEach(p => p.Append(delimiter));
-                            }
-                        }
-
-                        // append product type delimiter
-                        stringBuilders.ForEach(p => p.Append("];"));
-                    }
-
-                    stringBuilders.ForEach(p => p.Append("}"));
-                }
-                
             }
 
             // save ion series strings to output dictionary

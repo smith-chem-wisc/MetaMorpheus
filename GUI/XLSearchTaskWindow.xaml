@@ -59,7 +59,7 @@
                         <!--<RadioButton x:Name="RbSearchGlyco" Content="Glyco Search" GroupName="SearchType" Grid.Column="1"></RadioButton>-->
                         <StackPanel Orientation="Horizontal" Grid.Row="0" Margin="5">
                             <Label x:Name="LblFragmentationType" Content="Fragmentation Method"/>
-                            <ComboBox x:Name="CbbFragmentationType" DropDownClosed="CbbFragmentationType_DropDownClosed"/>
+                            <ComboBox x:Name="CbbFragmentationType"/>
                         </StackPanel>
                         <StackPanel Orientation="Horizontal" Margin="5" Grid.Row="0" Grid.Column="1">
                             <Label x:Name="ionsToSearchLabel" Content="Dissociation Type" ToolTipService.ShowDuration="999999" ToolTipService.InitialShowDelay="500">

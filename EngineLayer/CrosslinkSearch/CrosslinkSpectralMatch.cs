@@ -36,15 +36,7 @@ namespace EngineLayer.CrosslinkSearch
             {
                 if (crosslinkerModSites.Contains(peptide.BaseSequence[r]) || wildcard)
                 {
-                    //Try to eliminate those site with mod on it. Consider the possibility that the site is at Protein N terminal. 
-                    if (!peptide.AllModsOneIsNterminus.Keys.Contains(r+2) )
-                    {
-                        possibleXlPositions.Add(r + 1);
-                    }
-                    else if (peptide.OneBasedStartResidueInProtein==0 && r==0 && !peptide.AllModsOneIsNterminus.Keys.Contains(1))
-                    {
-                        possibleXlPositions.Add(r + 1);
-                    }
+                    possibleXlPositions.Add(r + 1);
                 }
             }
 
@@ -210,7 +202,6 @@ namespace EngineLayer.CrosslinkSearch
 
             var sb = new StringBuilder();
             sb.Append(FullFilePath + "\t");
-            //var allScanNumber = String.Join("-", AllMatchedFragmentIons.Keys.ToArray());
             sb.Append(ScanNumber + "\t");
             sb.Append(PrecursorScanNumber + "\t");
             sb.Append(ScanPrecursorMonoisotopicPeakMz + "\t");
@@ -309,7 +300,7 @@ namespace EngineLayer.CrosslinkSearch
         public static Dictionary<string, string> MatchedIonDataDictionary(CrosslinkSpectralMatch psm)
         {
             Dictionary<string, string> s = new Dictionary<string, string>();
-            PsmTsvWriter.SpecialAddMatchedIonsData(s, psm);
+            PsmTsvWriter.AddMatchedIonsData(s, psm);
             return s;
         }
     }

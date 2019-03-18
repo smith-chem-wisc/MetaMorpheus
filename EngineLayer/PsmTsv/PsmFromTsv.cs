@@ -2,6 +2,7 @@ using Chemistry;
 using Proteomics.Fragmentation;
 using System;
 using System.Collections.Generic;
+using System.Globalization;
 using System.Linq;
 using System.Text.RegularExpressions;
 
@@ -11,8 +12,7 @@ namespace EngineLayer
     {
         private static readonly Regex IonParser = new Regex(@"([a-zA-Z]+)(\d+)");
         private static readonly char[] MzSplit = { '[', ',', ']', ';' };
-        private static readonly char[] ScanMzSplit = {'{', '}' };
-        private static readonly char[] ScanNumSplit = { '-' };
+
         public string FullSequence { get; }
         public int Ms2ScanNumber { get; }
         public string Filename { get; }
@@ -22,7 +22,7 @@ namespace EngineLayer
         public double PrecursorMass { get; }
         public double Score { get; }
         public string ProteinAccession { get; }
-        public Dictionary<int, List<MatchedFragmentIon>> MatchedIons { get; }
+        public List<MatchedFragmentIon> MatchedIons { get; }
         public double QValue { get; }
 
         public double? TotalIonCurrent { get; }
@@ -57,7 +57,7 @@ namespace EngineLayer
         public string BetaPeptideTheoreticalMass { get; }
         public double? BetaPeptideScore { get; }
         public int? BetaPeptideRank { get; }
-        public Dictionary<int, List<MatchedFragmentIon>> BetaPeptideMatchedIons { get; }
+        public List<MatchedFragmentIon> BetaPeptideMatchedIons { get; }
         public double? XLTotalScore { get; }
         public string ParentIons { get; }
 
@@ -67,23 +67,22 @@ namespace EngineLayer
 
             //Required properties
             Filename = spl[parsedHeader[PsmTsvHeader.FileName]].Trim();
-            //Ms2ScanNumber = spl[parsedHeader[PsmTsvHeader.Ms2ScanNumber]].Trim().Split(ScanNumSplit, StringSplitOptions.RemoveEmptyEntries).Select(v => Int32.Parse(v.Trim())).ToList();
-            Ms2ScanNumber = int.Parse(spl[parsedHeader[PsmTsvHeader.Ms2ScanNumber]].Trim());
+            Ms2ScanNumber = int.Parse(spl[parsedHeader[PsmTsvHeader.Ms2ScanNumber]]);
             PrecursorScanNum = int.Parse(spl[parsedHeader[PsmTsvHeader.PrecursorScanNum]].Trim());
-            PrecursorCharge = (int)double.Parse(spl[parsedHeader[PsmTsvHeader.PrecursorCharge]].Trim());
-            PrecursorMz = double.Parse(spl[parsedHeader[PsmTsvHeader.PrecursorMz]].Trim());
-            PrecursorMass = double.Parse(spl[parsedHeader[PsmTsvHeader.PrecursorMass]].Trim());
+            PrecursorCharge = (int)double.Parse(spl[parsedHeader[PsmTsvHeader.PrecursorCharge]].Trim(), CultureInfo.InvariantCulture);
+            PrecursorMz = double.Parse(spl[parsedHeader[PsmTsvHeader.PrecursorMz]].Trim(), CultureInfo.InvariantCulture);
+            PrecursorMass = double.Parse(spl[parsedHeader[PsmTsvHeader.PrecursorMass]].Trim(), CultureInfo.InvariantCulture);
             BaseSeq = spl[parsedHeader[PsmTsvHeader.BaseSequence]].Trim();
             FullSequence = spl[parsedHeader[PsmTsvHeader.FullSequence]];
             PeptideMonoMass = spl[parsedHeader[PsmTsvHeader.PeptideMonoMass]].Trim();
-            Score = double.Parse(spl[parsedHeader[PsmTsvHeader.Score]].Trim());
+            Score = double.Parse(spl[parsedHeader[PsmTsvHeader.Score]].Trim(), CultureInfo.InvariantCulture);
             DecoyContamTarget = spl[parsedHeader[PsmTsvHeader.DecoyContaminantTarget]].Trim();
-            QValue = double.Parse(spl[parsedHeader[PsmTsvHeader.QValue]].Trim());
-            MatchedIons = ReadFragmentIonsFromString(spl[parsedHeader[PsmTsvHeader.MatchedIonMzRatios]].Trim(), BaseSeq, Ms2ScanNumber);
+            QValue = double.Parse(spl[parsedHeader[PsmTsvHeader.QValue]].Trim(), CultureInfo.InvariantCulture);
+            MatchedIons = ReadFragmentIonsFromString(spl[parsedHeader[PsmTsvHeader.MatchedIonMzRatios]].Trim(), BaseSeq);
 
             //For general psms
-            TotalIonCurrent = (parsedHeader[PsmTsvHeader.TotalIonCurrent] < 0) ? null : (double?)double.Parse(spl[parsedHeader[PsmTsvHeader.TotalIonCurrent]].Trim());
-            DeltaScore = (parsedHeader[PsmTsvHeader.DeltaScore] < 0) ? null : (double?)double.Parse(spl[parsedHeader[PsmTsvHeader.DeltaScore]].Trim());
+            TotalIonCurrent = (parsedHeader[PsmTsvHeader.TotalIonCurrent] < 0) ? null : (double?)double.Parse(spl[parsedHeader[PsmTsvHeader.TotalIonCurrent]].Trim(), CultureInfo.InvariantCulture);
+            DeltaScore = (parsedHeader[PsmTsvHeader.DeltaScore] < 0) ? null : (double?)double.Parse(spl[parsedHeader[PsmTsvHeader.DeltaScore]].Trim(), CultureInfo.InvariantCulture);
             Notch = (parsedHeader[PsmTsvHeader.Notch] < 0) ? null : spl[parsedHeader[PsmTsvHeader.Notch]].Trim();
             EssentialSeq = (parsedHeader[PsmTsvHeader.EssentialSequence] < 0) ? null : spl[parsedHeader[PsmTsvHeader.EssentialSequence]].Trim();
             MissedCleavage = (parsedHeader[PsmTsvHeader.MissedCleavages] < 0) ? null : spl[parsedHeader[PsmTsvHeader.MissedCleavages]].Trim();
@@ -97,7 +96,7 @@ namespace EngineLayer
             StartAndEndResiduesInProtein = (parsedHeader[PsmTsvHeader.StartAndEndResiduesInProtein] < 0) ? null : spl[parsedHeader[PsmTsvHeader.StartAndEndResiduesInProtein]].Trim();
             PreviousAminoAcid = (parsedHeader[PsmTsvHeader.PreviousAminoAcid] < 0) ? null : spl[parsedHeader[PsmTsvHeader.PreviousAminoAcid]].Trim();
             NextAminoAcid = (parsedHeader[PsmTsvHeader.NextAminoAcid] < 0) ? null : spl[parsedHeader[PsmTsvHeader.NextAminoAcid]].Trim();
-            QValueNotch = (parsedHeader[PsmTsvHeader.QValueNotch] < 0) ? null : (double?)double.Parse(spl[parsedHeader[PsmTsvHeader.QValueNotch]].Trim());
+            QValueNotch = (parsedHeader[PsmTsvHeader.QValueNotch] < 0) ? null : (double?)double.Parse(spl[parsedHeader[PsmTsvHeader.QValueNotch]].Trim(), CultureInfo.InvariantCulture);
 
             //For crosslinks
             CrossType = (parsedHeader[PsmTsvHeader.CrossTypeLabel] < 0) ? null : spl[parsedHeader[PsmTsvHeader.CrossTypeLabel]].Trim();
@@ -109,52 +108,19 @@ namespace EngineLayer
             BetaPeptideBaseSequence = (parsedHeader[PsmTsvHeader.BetaPeptideBaseSequenceLabel] < 0) ? null : spl[parsedHeader[PsmTsvHeader.BetaPeptideBaseSequenceLabel]].Trim();
             BetaPeptideFullSequence = (parsedHeader[PsmTsvHeader.BetaPeptideFullSequenceLabel] < 0) ? null : spl[parsedHeader[PsmTsvHeader.BetaPeptideFullSequenceLabel]].Trim();
             BetaPeptideTheoreticalMass = (parsedHeader[PsmTsvHeader.BetaPeptideTheoreticalMassLabel] < 0) ? null : spl[parsedHeader[PsmTsvHeader.BetaPeptideTheoreticalMassLabel]].Trim();
-            BetaPeptideScore = (parsedHeader[PsmTsvHeader.BetaPeptideScoreLabel] < 0) ? null : (double?)double.Parse(spl[parsedHeader[PsmTsvHeader.BetaPeptideScoreLabel]].Trim());
+            BetaPeptideScore = (parsedHeader[PsmTsvHeader.BetaPeptideScoreLabel] < 0) ? null : (double?)double.Parse(spl[parsedHeader[PsmTsvHeader.BetaPeptideScoreLabel]].Trim(), CultureInfo.InvariantCulture);
             BetaPeptideRank = (parsedHeader[PsmTsvHeader.BetaPeptideRankLabel] < 0) ? null : (int?)int.Parse(spl[parsedHeader[PsmTsvHeader.BetaPeptideRankLabel]].Trim());
-            BetaPeptideMatchedIons = (parsedHeader[PsmTsvHeader.BetaPeptideMatchedIonsLabel] < 0) ? null : ReadFragmentIonsFromString(spl[parsedHeader[PsmTsvHeader.BetaPeptideMatchedIonsLabel]].Trim(), BetaPeptideBaseSequence, Ms2ScanNumber);
-            XLTotalScore = (parsedHeader[PsmTsvHeader.XLTotalScoreLabel] < 0) ? null : (double?)double.Parse(spl[parsedHeader[PsmTsvHeader.XLTotalScoreLabel]].Trim());
+            BetaPeptideMatchedIons = (parsedHeader[PsmTsvHeader.BetaPeptideMatchedIonsLabel] < 0) ? null : ReadFragmentIonsFromString(spl[parsedHeader[PsmTsvHeader.BetaPeptideMatchedIonsLabel]].Trim(), BetaPeptideBaseSequence);
+            XLTotalScore = (parsedHeader[PsmTsvHeader.XLTotalScoreLabel] < 0) ? null : (double?)double.Parse(spl[parsedHeader[PsmTsvHeader.XLTotalScoreLabel]].Trim(), CultureInfo.InvariantCulture);
             ParentIons = (parsedHeader[PsmTsvHeader.ParentIonsLabel] < 0) ? null : spl[parsedHeader[PsmTsvHeader.ParentIonsLabel]].Trim();
         }
 
-        private static Dictionary<int, List<MatchedFragmentIon>> ReadFragmentIonsFromString(string matchedMzString, string peptideBaseSequence, int MS2ScanNumber)
+        private static List<MatchedFragmentIon> ReadFragmentIonsFromString(string matchedMzString, string peptideBaseSequence)
         {
-            Dictionary<int, List<MatchedFragmentIon>> allMatchedIons = new Dictionary<int, List<MatchedFragmentIon>>();
-
-            if (matchedMzString.First() == '{')
-            {
-                var matchedMzStrings = matchedMzString.Split(ScanMzSplit, StringSplitOptions.RemoveEmptyEntries).Select(v => v.Trim()).ToList();
-
-
-                foreach (var aMatchedMzString in matchedMzStrings)
-                {
-                    var peaks = aMatchedMzString.Split(MzSplit, StringSplitOptions.RemoveEmptyEntries).Select(v => v.Trim())
-                    .ToList();
-                    peaks.RemoveAll(p => p.Contains("\""));
-                    int key = Int32.Parse(peaks.First());
-                    peaks.RemoveAt(0);
-                    List<MatchedFragmentIon> matchedIons = MatchPeak(peaks, peptideBaseSequence);
-
-                    allMatchedIons.Add(key, matchedIons);
-                }
-
-            }
-            else
-            {
-                var peaks = matchedMzString.Split(MzSplit, StringSplitOptions.RemoveEmptyEntries).Select(v => v.Trim())
+            var peaks = matchedMzString.Split(MzSplit, StringSplitOptions.RemoveEmptyEntries).Select(v => v.Trim())
                 .ToList();
-                peaks.RemoveAll(p => p.Contains("\""));
+            peaks.RemoveAll(p => p.Contains("\""));
 
-                List<MatchedFragmentIon> matchedIons = MatchPeak(peaks, peptideBaseSequence);
-
-                allMatchedIons.Add(MS2ScanNumber, matchedIons);
-            }
-
-
-            return allMatchedIons;
-        }
-
-        private static List<MatchedFragmentIon> MatchPeak(List<String> peaks, string peptideBaseSequence)
-        {
             List<MatchedFragmentIon> matchedIons = new List<MatchedFragmentIon>();
 
             foreach (var peak in peaks)
@@ -168,7 +134,7 @@ namespace EngineLayer
 
                 int fragmentNumber = int.Parse(result.Groups[2].Value);
                 int z = int.Parse(split[1]);
-                double mz = double.Parse(split[2]);
+                double mz = double.Parse(split[2], CultureInfo.InvariantCulture);
                 double neutralLoss = 0;
 
                 // check for neutral loss
@@ -177,7 +143,7 @@ namespace EngineLayer
                     string temp = ionTypeAndNumber.Replace("(", "");
                     temp = temp.Replace(")", "");
                     var split2 = temp.Split('-');
-                    neutralLoss = double.Parse(split2[1]);
+                    neutralLoss = double.Parse(split2[1], CultureInfo.InvariantCulture);
                 }
 
                 FragmentationTerminus terminus = FragmentationTerminus.None;

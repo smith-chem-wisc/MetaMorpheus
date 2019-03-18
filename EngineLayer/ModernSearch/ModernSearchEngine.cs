@@ -64,7 +64,7 @@ namespace EngineLayer.ModernSearch
                     Ms2ScanWithSpecificMass scan = ListOfSortedMs2Scans[i];
 
                     // get fragment bins for this scan
-                    List<int> allBinsToSearch = GetBinsToSearch(scan, FragmentIndex, commonParameters.DissociationType);
+                    List<int> allBinsToSearch = GetBinsToSearch(scan);
 
                     // get allowed theoretical masses from the known experimental mass
                     // note that this is the OPPOSITE of the classic search (which calculates experimental masses from theoretical values)
@@ -76,7 +76,7 @@ namespace EngineLayer.ModernSearch
                     double highestMassPeptideToLookFor = notches.Max(p => p.AllowedInterval.Maximum);
 
                     // first-pass scoring
-                    IndexedScoring(FragmentIndex, allBinsToSearch, scoringTable, byteScoreCutoff, idsOfPeptidesPossiblyObserved, scan.PrecursorMass, lowestMassPeptideToLookFor, highestMassPeptideToLookFor, PeptideIndex, MassDiffAcceptor, MaxMassThatFragmentIonScoreIsDoubled, commonParameters.DissociationType);
+                    IndexedScoring(allBinsToSearch, scoringTable, byteScoreCutoff, idsOfPeptidesPossiblyObserved, scan.PrecursorMass, lowestMassPeptideToLookFor, highestMassPeptideToLookFor, PeptideIndex, MassDiffAcceptor, MaxMassThatFragmentIonScoreIsDoubled, commonParameters.DissociationType);
 
                     // done with indexed scoring; refine scores and create PSMs
                     foreach (int id in idsOfPeptidesPossiblyObserved)
@@ -143,12 +143,12 @@ namespace EngineLayer.ModernSearch
             return new MetaMorpheusEngineResults(this);
         }
 
-        protected List<int> GetBinsToSearch(Ms2ScanWithSpecificMass scan, List<int>[] fragmentIndex, DissociationType dissociationType)
+        protected List<int> GetBinsToSearch(Ms2ScanWithSpecificMass scan)
         {
             int obsPreviousFragmentCeilingMz = 0;
             List<int> binsToSearch = new List<int>();
 
-            if (dissociationType == DissociationType.LowCID)
+            if (commonParameters.DissociationType == DissociationType.LowCID)
             {
                 double[] masses = scan.TheScan.MassSpectrum.XArray;
                 double[] intensities = scan.TheScan.MassSpectrum.YArray;
@@ -158,7 +158,7 @@ namespace EngineLayer.ModernSearch
                     //convert to an int since we're in discreet 1.0005...
                     int fragmentBin = (int)(Math.Round(masses[i].ToMass(1) / 1.0005079) * 1.0005079 * FragmentBinsPerDalton);
 
-                    if (fragmentIndex[fragmentBin] != null)
+                    if (FragmentIndex[fragmentBin] != null)
                     {
                         binsToSearch.Add(fragmentBin);
                     }
@@ -171,7 +171,7 @@ namespace EngineLayer.ModernSearch
                             protonMassShift = ClassExtensions.ToMass(protonMassShift, 1);
                             fragmentBin = (int)Math.Round((scan.PrecursorMass + protonMassShift - masses[i]) / 1.0005079);
 
-                            if (fragmentIndex[fragmentBin] != null)
+                            if (FragmentIndex[fragmentBin] != null)
                             {
                                 binsToSearch.Add(fragmentBin);
                             }
@@ -203,20 +203,20 @@ namespace EngineLayer.ModernSearch
 
                     // prevent upper-bound index out of bounds errors;
                     // lower-bound is handled by the previous "if (obsFragmentFloorMass < obsPreviousFragmentCeilingMz)" statement
-                    if (obsFragmentCeilingMass >= fragmentIndex.Length)
+                    if (obsFragmentCeilingMass >= FragmentIndex.Length)
                     {
-                        obsFragmentCeilingMass = fragmentIndex.Length - 1;
+                        obsFragmentCeilingMass = FragmentIndex.Length - 1;
 
-                        if (obsFragmentFloorMass >= fragmentIndex.Length)
+                        if (obsFragmentFloorMass >= FragmentIndex.Length)
                         {
-                            obsFragmentFloorMass = fragmentIndex.Length - 1;
+                            obsFragmentFloorMass = FragmentIndex.Length - 1;
                         }
                     }
 
                     // search mass bins within a tolerance
                     for (int fragmentBin = obsFragmentFloorMass; fragmentBin <= obsFragmentCeilingMass; fragmentBin++)
                     {
-                        if (fragmentIndex[fragmentBin] != null)
+                        if (FragmentIndex[fragmentBin] != null)
                         {
                             binsToSearch.Add(fragmentBin);
                         }
@@ -234,12 +234,12 @@ namespace EngineLayer.ModernSearch
                             int compFragmentCeilingMass = (int)Math.Round(((scan.PrecursorMass + protonMassShift) * FragmentBinsPerDalton)) - obsFragmentFloorMass;
 
                             // prevent index out of bounds errors
-                            if (compFragmentCeilingMass >= fragmentIndex.Length)
+                            if (compFragmentCeilingMass >= FragmentIndex.Length)
                             {
-                                compFragmentCeilingMass = fragmentIndex.Length - 1;
+                                compFragmentCeilingMass = FragmentIndex.Length - 1;
 
-                                if (compFragmentFloorMass >= fragmentIndex.Length)
-                                    compFragmentFloorMass = fragmentIndex.Length - 1;
+                                if (compFragmentFloorMass >= FragmentIndex.Length)
+                                    compFragmentFloorMass = FragmentIndex.Length - 1;
                             }
                             if (compFragmentFloorMass < 0)
                             {
@@ -248,7 +248,7 @@ namespace EngineLayer.ModernSearch
 
                             for (int fragmentBin = compFragmentFloorMass; fragmentBin <= compFragmentCeilingMass; fragmentBin++)
                             {
-                                if (fragmentIndex[fragmentBin] != null)
+                                if (FragmentIndex[fragmentBin] != null)
                                 {
                                     binsToSearch.Add(fragmentBin);
                                 }
@@ -288,13 +288,13 @@ namespace EngineLayer.ModernSearch
             return m;
         }
 
-        protected void IndexedScoring(List<int>[] fragmentIndex, List<int> binsToSearch, byte[] scoringTable, byte byteScoreCutoff, List<int> idsOfPeptidesPossiblyObserved, double scanPrecursorMass, double lowestMassPeptideToLookFor,
+        protected void IndexedScoring(List<int> binsToSearch, byte[] scoringTable, byte byteScoreCutoff, List<int> idsOfPeptidesPossiblyObserved, double scanPrecursorMass, double lowestMassPeptideToLookFor,
             double highestMassPeptideToLookFor, List<PeptideWithSetModifications> peptideIndex, MassDiffAcceptor massDiffAcceptor, double maxMassThatFragmentIonScoreIsDoubled, DissociationType dissociationType)
         {
             // get all theoretical fragments this experimental fragment could be
             for (int i = 0; i < binsToSearch.Count; i++)
             {
-                List<int> peptideIdsInThisBin = fragmentIndex[binsToSearch[i]];
+                List<int> peptideIdsInThisBin = FragmentIndex[binsToSearch[i]];
 
                 //get index for minimum monoisotopic allowed
                 int lowestPeptideMassIndex = Double.IsInfinity(lowestMassPeptideToLookFor) ? 0 : BinarySearchBinForPrecursorIndex(peptideIdsInThisBin, lowestMassPeptideToLookFor, peptideIndex);
@@ -324,13 +324,14 @@ namespace EngineLayer.ModernSearch
                     {
                         int id = peptideIdsInThisBin[j];
 
-                        scoringTable[id]++;
                         // add possible search results to the hashset of id's (only once)
-                        if (scoringTable[id] == 2 && massDiffAcceptor.Accepts(scanPrecursorMass, peptideIndex[id].MonoisotopicMass) >= 0)
+                        if (scoringTable[id] == 0 && massDiffAcceptor.Accepts(scanPrecursorMass, peptideIndex[id].MonoisotopicMass) >= 0)
                         {
                             idsOfPeptidesPossiblyObserved.Add(id);
                         }
 
+                        // mark the peptide as potentially observed so it doesn't get added more than once
+                        scoringTable[id] = 1;
                     }
                 }
                 else
@@ -350,6 +351,5 @@ namespace EngineLayer.ModernSearch
                 }
             }
         }
-
     }
 }

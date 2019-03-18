@@ -1,11 +1,10 @@
 ﻿using Chemistry;
 using MassSpectrometry;
-using MzLibUtil;
+using Proteomics.Fragmentation;
 using System;
 using System.Collections.Generic;
 using System.Diagnostics;
 using System.Linq;
-using Proteomics.Fragmentation;
 
 namespace EngineLayer
 {
@@ -16,14 +15,14 @@ namespace EngineLayer
             { DissociationType.HCD, Constants.ProtonMass },
             { DissociationType.ETD, 2 * Constants.ProtonMass }, //presence of zplusone (zdot) makes this two instead of one
             { DissociationType.CID, Constants.ProtonMass },
-            //TODO: refactor such that complementary ions are generated specifically for their complementary pair. 
+            //TODO: refactor such that complementary ions are generated specifically for their complementary pair.
             //TODO: create a method to auto-determine the conversion
         };
 
         protected readonly CommonParameters commonParameters;
 
         protected readonly List<string> nestedIds;
-        
+
         protected MetaMorpheusEngine(CommonParameters commonParameters, List<string> nestedIds)
         {
             this.commonParameters = commonParameters;
@@ -39,7 +38,7 @@ namespace EngineLayer
         public static event EventHandler<StringEventArgs> WarnHandler;
 
         public static event EventHandler<ProgressEventArgs> OutProgressHandler;
-        
+
         public static double CalculatePeptideScore(MsDataScan thisScan, List<MatchedFragmentIon> matchedFragmentIons)
         {
             double score = 0;
@@ -87,8 +86,7 @@ namespace EngineLayer
                 return matchedFragmentIons;
             }
 
-            if ((scan.TheScan.MsnOrder == 2 && commonParameters.DissociationType == DissociationType.LowCID)
-                || (scan.TheScan.MsnOrder == 3 && commonParameters.ChildScanDissociationType == DissociationType.LowCID))
+            if (commonParameters.DissociationType == DissociationType.LowCID)
             {
                 foreach (Product product in theoreticalProducts)
                 {

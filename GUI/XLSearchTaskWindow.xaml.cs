@@ -63,8 +63,8 @@ namespace MetaMorpheusGUI
 
         private void PopulateChoices()
         {
-            foreach (string fragmentationType in Enum.GetNames(typeof(FragmentationType)))
-                CbbFragmentationType.Items.Add(fragmentationType);
+            foreach (string experimentType in Enum.GetNames(typeof(ExperimentType)))
+                CbbFragmentationType.Items.Add(experimentType);
 
             foreach (string crosslinkerName in Enum.GetNames(typeof(CrosslinkerType)))
                 cbCrosslinker.Items.Add(crosslinkerName);
@@ -118,7 +118,7 @@ namespace MetaMorpheusGUI
             //Crosslink search para
             //RbSearchCrosslink.IsChecked = !task.XlSearchParameters.SearchGlyco;
             //RbSearchGlyco.IsChecked = task.XlSearchParameters.SearchGlyco;
-            CbbFragmentationType.SelectedIndex = (int)task.CommonParameters.FragmentationType;
+            //CkbSearchGlycoWithBgYgIndex.IsChecked = task.XlSearchParameters.SearchGlycoWithBgYgIndex;
             cbCrosslinker.SelectedIndex = (int)task.XlSearchParameters.CrosslinkerType;
             ckbXLTopNum.IsChecked = task.XlSearchParameters.RestrictToTopNHits;
             txtXLTopNum.Text = task.XlSearchParameters.CrosslinkSearchTopNum.ToString(CultureInfo.InvariantCulture);
@@ -148,8 +148,13 @@ namespace MetaMorpheusGUI
             trimMsMs.IsChecked = task.CommonParameters.TrimMsMsPeaks;
             TopNPeaksTextBox.Text = task.CommonParameters.TopNpeaks.ToString(CultureInfo.InvariantCulture);
             MinRatioTextBox.Text = task.CommonParameters.MinRatio.ToString(CultureInfo.InvariantCulture);
-            
+            DissociationTypeComboBox.SelectedItem = task.CommonParameters.DissociationType.ToString();
 
+            if (task.CommonParameters.ChildScanDissociationType != DissociationType.Unknown)
+            {
+                ChildScanDissociationTypeComboBox.SelectedItem = task.CommonParameters.ChildScanDissociationType.ToString();
+            }
+            
             checkBoxDecoy.IsChecked = task.XlSearchParameters.DecoyType != DecoyType.None;
             deconvolutePrecursors.IsChecked = task.CommonParameters.DoPrecursorDeconvolution;
             useProvidedPrecursor.IsChecked = task.CommonParameters.UseProvidedPrecursorInfo;
@@ -162,13 +167,11 @@ namespace MetaMorpheusGUI
             productMassToleranceTextBox.Text = task.CommonParameters.ProductMassTolerance.Value.ToString(CultureInfo.InvariantCulture);
             productMassToleranceComboBox.SelectedIndex = task.CommonParameters.ProductMassTolerance is AbsoluteTolerance ? 0 : 1;
             DissociationTypeComboBox.SelectedItem = task.CommonParameters.DissociationType.ToString();
-            ChildScanDissociationTypeComboBox.SelectedItem = task.CommonParameters.ChildScanDissociationType.ToString();
             minScoreAllowed.Text = task.CommonParameters.ScoreCutoff.ToString(CultureInfo.InvariantCulture);
             numberOfDatabaseSearchesTextBox.Text = task.CommonParameters.TotalPartitions.ToString(CultureInfo.InvariantCulture);
             maxThreadsTextBox.Text = task.CommonParameters.MaxThreadsToUsePerFile.ToString(CultureInfo.InvariantCulture);
             CustomFragmentationWindow = new CustomFragmentationWindow(task.CommonParameters.CustomIons);
             ckbPercolator.IsChecked = task.XlSearchParameters.WriteOutputForPercolator;
-            ckbXiNET.IsChecked = task.XlSearchParameters.WriteOutputForXiNET;
             ckbPepXML.IsChecked = task.XlSearchParameters.WritePepXml;
 
             OutputFileNameTextBox.Text = task.CommonParameters.TaskDescriptor;
@@ -245,21 +248,21 @@ namespace MetaMorpheusGUI
             }
 
             DissociationType dissociationType = GlobalVariables.AllSupportedDissociationTypes[DissociationTypeComboBox.SelectedItem.ToString()];
-            DissociationType childScanDissociationType = DissociationType.Unknown;
-            if (ChildScanDissociationTypeComboBox.SelectedItem != null)
-            {
-                childScanDissociationType = GlobalVariables.AllSupportedDissociationTypes[ChildScanDissociationTypeComboBox.SelectedItem.ToString()];
-            }
 
+            DissociationType childDissociationType = DissociationType.Unknown;
+            if (!string.IsNullOrWhiteSpace(ChildScanDissociationTypeComboBox.SelectedItem.ToString()))
+            {
+                childDissociationType = GlobalVariables.AllSupportedDissociationTypes[ChildScanDissociationTypeComboBox.SelectedItem.ToString()];
+            }
             CustomFragmentationWindow.Close();
 
             //TheTask.XlSearchParameters.SearchGlyco = RbSearchGlyco.IsChecked.Value;
             //TheTask.XlSearchParameters.SearchGlycoWithBgYgIndex = CkbSearchGlycoWithBgYgIndex.IsChecked.Value;
-            FragmentationType fragmentationType = (FragmentationType)CbbFragmentationType.SelectedIndex;
             TheTask.XlSearchParameters.RestrictToTopNHits = ckbXLTopNum.IsChecked.Value;
             TheTask.XlSearchParameters.CrosslinkSearchTopNum = int.Parse(txtXLTopNum.Text, CultureInfo.InvariantCulture);
             TheTask.XlSearchParameters.CrosslinkerType = (CrosslinkerType)cbCrosslinker.SelectedIndex;
 
+            //TheTask.XlSearchParameters.XlCharge_2_3 = ckbCharge_2_3.IsChecked.Value;
             TheTask.XlSearchParameters.XlQuench_H2O = ckbQuenchH2O.IsChecked.Value;
             TheTask.XlSearchParameters.XlQuench_NH2 = ckbQuenchNH2.IsChecked.Value;
             TheTask.XlSearchParameters.XlQuench_Tris = ckbQuenchTris.IsChecked.Value;
@@ -326,7 +329,6 @@ namespace MetaMorpheusGUI
             }
 
             TheTask.XlSearchParameters.WriteOutputForPercolator = ckbPercolator.IsChecked.Value;
-            TheTask.XlSearchParameters.WriteOutputForXiNET = ckbXiNET.IsChecked.Value;
             TheTask.XlSearchParameters.WritePepXml = ckbPepXML.IsChecked.Value;
             //TheTask.UseProvidedPrecursorInfo = useProvidedPrecursor.IsChecked.Value;
 
@@ -343,7 +345,6 @@ namespace MetaMorpheusGUI
             }
 
             CommonParameters commonParamsToSave = new CommonParameters(
-                fragmentationType: fragmentationType,
                 precursorMassTolerance: PrecursorMassTolerance,
                 taskDescriptor: OutputFileNameTextBox.Text != "" ? OutputFileNameTextBox.Text : "XLSearchTask",
                 productMassTolerance: ProductMassTolerance,
@@ -355,7 +356,7 @@ namespace MetaMorpheusGUI
                 topNpeaks: int.Parse(TopNPeaksTextBox.Text),
                 minRatio: double.Parse(MinRatioTextBox.Text, CultureInfo.InvariantCulture),
                 dissociationType: dissociationType,
-                childScanDissociationType: childScanDissociationType,
+                childScanDissociationType: childDissociationType,
                 scoreCutoff: double.Parse(minScoreAllowed.Text, CultureInfo.InvariantCulture),
                 totalPartitions: int.Parse(numberOfDatabaseSearchesTextBox.Text, CultureInfo.InvariantCulture),
                 listOfModsVariable: listOfModsVariable,
@@ -439,24 +440,6 @@ namespace MetaMorpheusGUI
             if (DissociationTypeComboBox.SelectedItem.ToString().Equals(DissociationType.Custom.ToString()))
             {
                 CustomFragmentationWindow.Show();
-            }
-            
-            if (ChildScanDissociationTypeComboBox.SelectedItem != null && ChildScanDissociationTypeComboBox.SelectedItem.ToString().Equals(DissociationType.Custom.ToString()))
-            {
-                CustomFragmentationWindow.Show();
-            }
-
-            if (CbbFragmentationType.SelectedItem.ToString().Equals("MS2"))
-            {
-                ChildScanDissociationTypeComboBox.SelectedItem = null;
-            }
-        }
-
-        private void CbbFragmentationType_DropDownClosed(object sender, EventArgs e)
-        {
-            if (CbbFragmentationType.SelectedItem.ToString().Equals("MS2"))
-            {
-                ChildScanDissociationTypeComboBox.SelectedItem = null;
             }
         }
 
