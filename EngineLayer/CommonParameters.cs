@@ -67,6 +67,8 @@ namespace EngineLayer
         //    the null setting will not be written to a toml
         //    and the default will override (so it's okay ONLY if the default is null)
         // 2) All setters should be private unless necessary
+        // 3) If you add a new property here, you must add it to MetaMorpheusTask.cs/SetAllFileSpecificCommonParams !!
+        //    If you forget this, and the user uses file-specific parameters, your settings will be overwritten by default values!
 
         public string TaskDescriptor { get; private set; }
         public int MaxThreadsToUsePerFile { get; private set; }

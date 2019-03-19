@@ -301,8 +301,7 @@ namespace TaskLayer
             Tolerance precursorMassTolerance = fileSpecificParams.PrecursorMassTolerance ?? commonParams.PrecursorMassTolerance;
             Tolerance productMassTolerance = fileSpecificParams.ProductMassTolerance ?? commonParams.ProductMassTolerance;
             DissociationType dissociationType = fileSpecificParams.DissociationType ?? commonParams.DissociationType;
-
-
+            
             CommonParameters returnParams = new CommonParameters(
                 dissociationType: dissociationType,
                 precursorMassTolerance: precursorMassTolerance,
@@ -310,6 +309,7 @@ namespace TaskLayer
                 digestionParams: fileSpecificDigestionParams,
 
                 //NEED THESE OR THEY'LL BE OVERWRITTEN
+                childScanDissociationType: commonParams.ChildScanDissociationType,
                 doPrecursorDeconvolution: commonParams.DoPrecursorDeconvolution,
                 useProvidedPrecursorInfo: commonParams.UseProvidedPrecursorInfo,
                 deconvolutionIntensityRatio: commonParams.DeconvolutionIntensityRatio,
@@ -330,7 +330,9 @@ namespace TaskLayer
                 listOfModsFixed: commonParams.ListOfModsFixed,
                 qValueOutputFilter: commonParams.QValueOutputFilter,
                 taskDescriptor: commonParams.TaskDescriptor,
-                assumeOrphanPeaksAreZ1Fragments: commonParams.AssumeOrphanPeaksAreZ1Fragments);
+                assumeOrphanPeaksAreZ1Fragments: commonParams.AssumeOrphanPeaksAreZ1Fragments,
+                maxHeterozygousVariants: commonParams.MaxHeterozygousVariants,
+                minVariantDepth: commonParams.MinVariantDepth);
 
             return returnParams;
         }
