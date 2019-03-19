@@ -409,6 +409,9 @@ namespace EngineLayer.CrosslinkSearch
                     localizedAlpha.XLTotalScore = localizedAlpha.Score + localizedBeta.Score;
                     localizedAlpha.BetaPeptide = localizedBeta;
 
+                    localizedAlpha.ChildMatchedFragmentIons = bestMatchedChildAlphaIons;
+                    localizedBeta.ChildMatchedFragmentIons = bestMatchedChildBetaIons;
+
                     if (crosslinker.Cleavable)
                     {
                         //TODO: re-enable intensity ranks

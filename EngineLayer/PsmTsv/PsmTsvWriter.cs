@@ -310,9 +310,9 @@ namespace EngineLayer
             return $"{applied.OriginalSequence}{applied.OneBasedBeginPosition}{variantWithAnyMods.FullSequence}";
         }
 
-        internal static void AddMatchedIonsData(Dictionary<string, string> s, PeptideSpectralMatch psm)
+        internal static void AddMatchedIonsData(Dictionary<string, string> s, List<MatchedFragmentIon> matchedIons)
         {
-            bool nullPsm = (psm == null);
+            bool nullPsm = matchedIons == null;
 
             StringBuilder seriesStringBuilder = new StringBuilder();
             StringBuilder mzStringBuilder = new StringBuilder();
@@ -323,12 +323,6 @@ namespace EngineLayer
 
             if (!nullPsm)
             {
-                var matchedIons = psm.MatchedFragmentIons;
-                if (matchedIons == null)
-                {
-                    matchedIons = psm.PeptidesToMatchingFragments.First().Value;
-                }
-
                 // using ", " instead of "," improves human readability
                 const string delimiter = ", ";
 
@@ -396,7 +390,7 @@ namespace EngineLayer
             s[PsmTsvHeader.MatchedIonIntensities] = nullPsm ? " " : fragmentIntensityStringBuilder.ToString().TrimEnd(';');
 
             // number of matched ions
-            s[PsmTsvHeader.MatchedIonCounts] = nullPsm ? " " : psm.MatchedFragmentIons.Count.ToString();
+            s[PsmTsvHeader.MatchedIonCounts] = nullPsm ? " " : matchedIons.Count.ToString();
         }
 
         internal static void AddMatchScoreData(Dictionary<string, string> s, PeptideSpectralMatch peptide)

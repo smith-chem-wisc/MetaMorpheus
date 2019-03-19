@@ -250,7 +250,7 @@ namespace MetaMorpheusGUI
             DissociationType dissociationType = GlobalVariables.AllSupportedDissociationTypes[DissociationTypeComboBox.SelectedItem.ToString()];
 
             DissociationType childDissociationType = DissociationType.Unknown;
-            if (!string.IsNullOrWhiteSpace(ChildScanDissociationTypeComboBox.SelectedItem.ToString()))
+            if (ChildScanDissociationTypeComboBox.SelectedItem != null)
             {
                 childDissociationType = GlobalVariables.AllSupportedDissociationTypes[ChildScanDissociationTypeComboBox.SelectedItem.ToString()];
             }
