@@ -23,7 +23,7 @@ namespace EngineLayer.Indexing
             var sb = new StringBuilder();
             sb.AppendLine(base.ToString());
             sb.AppendLine("\t\tfragmentIndexDict.Count: " + FragmentIndex.Length);
-            if(PrecursorIndex!=null)
+            if (PrecursorIndex != null)
             {
                 sb.AppendLine("\t\tprecursorIndexDict.Count: " + PrecursorIndex.Length);
             }

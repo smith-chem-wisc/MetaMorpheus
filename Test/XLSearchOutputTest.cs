@@ -23,7 +23,7 @@ namespace Test
             var resultsPath = File.ReadAllLines(Path.Combine(outputFolder, @"XL_Interlinks.tsv"));
             var sections = resultsPath[1].Split('\t');
             Assert.That(resultsPath.Length == 2);
-            Assert.That(sections.Length == 45);
+            Assert.That(sections.Length == 47);
             Directory.Delete(outputFolder, true);
         }
     }

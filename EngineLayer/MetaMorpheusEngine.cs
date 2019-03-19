@@ -86,7 +86,7 @@ namespace EngineLayer
                 return matchedFragmentIons;
             }
 
-            if (commonParameters.DissociationType == DissociationType.LowCID)
+            if (scan.TheScan.MassSpectrum.XcorrProcessed)
             {
                 foreach (Product product in theoreticalProducts)
                 {
