@@ -250,7 +250,7 @@ namespace EngineLayer
             return kindString;
         }
 
-        public static List<GlycanBox> BuildGlycanBoxes(List<Glycan> glycans)
+        public static List<GlycanBox> BuildGlycanBoxes(List<Glycan> glycans, int maxNum)
         {
             List<GlycanBox> glycanBoxes = new List<GlycanBox>();
 
@@ -316,9 +316,14 @@ namespace EngineLayer
 
     public class GlycanBox
     {
-        public double Mass { get; set; }
+        public double Mass {
+            get
+            {
+                return glycans.Sum(p=>p.Mass);
+            }
+        }
 
-        public List<Glycan> glycans { get; set; }
+        public List<Glycan> glycans { get; set; } = new List<Glycan>();
 
         public List<GlycanIon> CommonGlycanIons { get; set; }
 

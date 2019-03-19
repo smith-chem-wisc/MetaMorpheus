@@ -29,6 +29,7 @@ namespace EngineLayer.CrosslinkSearch
         public PsmCrossType CrossType { get; set; }
         //Glyco properties
         public List<Glycan> Glycan { get; set; }
+        public List<GlycanBox> glycanBoxes { get; set; }
 
         public static List<int> GetPossibleCrosslinkerModSites(char[] crosslinkerModSites, PeptideWithSetModifications peptide)
         {

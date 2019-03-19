@@ -51,8 +51,10 @@ namespace EngineLayer
             UsefulProteomicsDatabases.Loaders.LoadElements(ElementsLocation);
 
             //TO DO: optimize this, only load when search Glycopeptides
-            string GlycanLocation = Path.Combine(DataDir, @"Data", @"NGlycan.gdb");
-            Glycans = Glycan.LoadGlycan(GlycanLocation);
+            string NGlycanLocation = Path.Combine(DataDir, @"Data", @"NGlycan.gdb");
+            NGlycans = Glycan.LoadGlycan(NGlycanLocation);
+            string OGlycanLocation = Path.Combine(DataDir, @"Data", @"OGlycan.gdb");
+            OGlycans = Glycan.LoadGlycan(OGlycanLocation);
 
             ExperimentalDesignFileName = "ExperimentalDesign.tsv";
 
@@ -109,7 +111,8 @@ namespace EngineLayer
         public static Dictionary<string, DissociationType> AllSupportedDissociationTypes { get; private set; }
 
         public static string ExperimentalDesignFileName { get; }
-        public static IEnumerable<Glycan> Glycans { get; }
+        public static IEnumerable<Glycan> NGlycans { get; }
+        public static IEnumerable<Glycan> OGlycans { get; }
 
         public static void AddMods(IEnumerable<Modification> modifications, bool modsAreFromTheTopOfProteinXml)
         {

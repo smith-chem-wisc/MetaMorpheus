@@ -55,7 +55,7 @@ namespace Test
             string[] motifs = new string[] { "Nxs", "Nxt" };
             var sites = CrosslinkSpectralMatch.GetPossibleModSites(aPeptideWithSetModifications.Last(), motifs);
             Glycan glycan = Glycan.Struct2Glycan("(N(F)(N(H(H(N))(H(N)))))", 0);
-            var fragmentIons = GlycoPeptides.GlyGetTheoreticalFragments(DissociationType.HCD, sites, aPeptideWithSetModifications.Last(), glycan).ToList();
+            var fragmentIons = GlycoPeptides.NGlyGetTheoreticalFragments(DissociationType.HCD, sites, aPeptideWithSetModifications.Last(), glycan).ToList();
 
             //using (StreamWriter output = new StreamWriter(Path.Combine(TestContext.CurrentContext.TestDirectory, "GlycanFragmentions.txt")))
             //{

@@ -10,7 +10,7 @@ namespace EngineLayer.CrosslinkSearch
 {
     public class GlycoPeptides
     {
-        public static IEnumerable<Tuple<int, List<Product>>> GlyGetTheoreticalFragments(DissociationType dissociationType,
+        public static IEnumerable<Tuple<int, List<Product>>> NGlyGetTheoreticalFragments(DissociationType dissociationType,
     List<int> possibleModPositions, PeptideWithSetModifications peptide, Glycan glycan)
         {
             Modification modification = GlycanToModification(glycan);
@@ -43,6 +43,63 @@ namespace EngineLayer.CrosslinkSearch
 
             Modification modification = new Modification(_originalId:"Glycan", _monoisotopicMass: glycan.Mass, _neutralLosses: neutralLosses, _diagnosticIons : diagnosticIons);
             return modification;
+        }
+
+        public static IEnumerable<Tuple<int[] , Tuple<int[], List<Product>>>> OGlyGetTheoreticalFragments(DissociationType dissociationType, 
+            List<int> possibleModPositions, PeptideWithSetModifications peptide, GlycanBox glycanBox)
+        {
+            Modification[] modifications = new Modification[glycanBox.glycans.Count];
+
+            for (int i = 0; i < glycanBox.glycans.Count; i++)
+            {
+                modifications[i] = GlycanToModification(glycanBox.glycans[i]);
+            }
+
+            foreach (var modcombine in GetPermutations(Enumerable.Range(0, glycanBox.glycans.Count), glycanBox.glycans.Count))
+            {
+                foreach (var combine in GetKCombs(possibleModPositions, glycanBox.glycans.Count))
+                {
+                    Dictionary<int, Modification> testMods = new Dictionary<int, Modification>();
+
+                    for (int i = 0; i < glycanBox.glycans.Count; i++)
+                    {
+                        testMods.Add(combine.ElementAt(i), modifications[modcombine.ElementAt(i)]);
+                    }
+
+                    var testPeptide = new PeptideWithSetModifications(peptide.Protein, peptide.DigestionParams, peptide.OneBasedStartResidueInProtein,
+                    peptide.OneBasedEndResidueInProtein, peptide.CleavageSpecificityForFdrCategory, peptide.PeptideDescription, peptide.MissedCleavages, testMods, peptide.NumFixedMods);
+
+                    List<Product> theoreticalProducts = testPeptide.Fragment(dissociationType, FragmentationTerminus.Both).ToList();
+
+                    yield return new Tuple<int[], Tuple<int[], List<Product>>>(combine.ToArray(), new Tuple<int[], List<Product>>(modcombine.ToArray(), theoreticalProducts));
+                }
+            }
+
+
+        }
+
+        public static IEnumerable<IEnumerable<T>> GetKCombs<T>(IEnumerable<T> list, int length) where T : IComparable
+        {
+            if (length == 1) return list.Select(t => new T[] { t });
+            return GetKCombs(list, length - 1).SelectMany(t => list.Where(o => o.CompareTo(t.Last()) > 0), (t1, t2) => t1.Concat(new T[] { t2 }));
+        }
+
+        public static IEnumerable<IEnumerable<T>> GetKCombsWithRept<T>(IEnumerable<T> list, int length) where T : IComparable
+        {
+            if (length == 1) return list.Select(t => new T[] { t });
+            return GetKCombsWithRept(list, length - 1).SelectMany(t => list.Where(o => o.CompareTo(t.Last()) >= 0), (t1, t2) => t1.Concat(new T[] { t2 }));
+        }
+
+        public static IEnumerable<IEnumerable<T>>GetPermutations<T>(IEnumerable<T> list, int length)
+        {
+            if (length == 1) return list.Select(t => new T[] { t });
+            return GetPermutations(list, length - 1).SelectMany(t => list.Where(o => !t.Contains(o)), (t1, t2) => t1.Concat(new T[] { t2 }));
+        }
+
+        public static IEnumerable<IEnumerable<T>>GetPermutationsWithRept<T>(IEnumerable<T> list, int length)
+        {
+            if (length == 1) return list.Select(t => new T[] { t });
+            return GetPermutationsWithRept(list, length - 1).SelectMany(t => list, (t1, t2) => t1.Concat(new T[] { t2 }));
         }
     }
 }
