@@ -55,9 +55,9 @@ namespace EngineLayer.CrosslinkSearch
                 modifications[i] = GlycanToModification(glycanBox.glycans[i]);
             }
 
-            foreach (var modcombine in GetPermutations(Enumerable.Range(0, glycanBox.glycans.Count), glycanBox.glycans.Count))
+            foreach (var modcombine in Glycan.GetPermutations(Enumerable.Range(0, glycanBox.glycans.Count), glycanBox.glycans.Count))
             {
-                foreach (var combine in GetKCombs(possibleModPositions, glycanBox.glycans.Count))
+                foreach (var combine in Glycan.GetKCombs(possibleModPositions, glycanBox.glycans.Count))
                 {
                     Dictionary<int, Modification> testMods = new Dictionary<int, Modification>();
 
@@ -76,30 +76,6 @@ namespace EngineLayer.CrosslinkSearch
             }
 
 
-        }
-
-        public static IEnumerable<IEnumerable<T>> GetKCombs<T>(IEnumerable<T> list, int length) where T : IComparable
-        {
-            if (length == 1) return list.Select(t => new T[] { t });
-            return GetKCombs(list, length - 1).SelectMany(t => list.Where(o => o.CompareTo(t.Last()) > 0), (t1, t2) => t1.Concat(new T[] { t2 }));
-        }
-
-        public static IEnumerable<IEnumerable<T>> GetKCombsWithRept<T>(IEnumerable<T> list, int length) where T : IComparable
-        {
-            if (length == 1) return list.Select(t => new T[] { t });
-            return GetKCombsWithRept(list, length - 1).SelectMany(t => list.Where(o => o.CompareTo(t.Last()) >= 0), (t1, t2) => t1.Concat(new T[] { t2 }));
-        }
-
-        public static IEnumerable<IEnumerable<T>>GetPermutations<T>(IEnumerable<T> list, int length)
-        {
-            if (length == 1) return list.Select(t => new T[] { t });
-            return GetPermutations(list, length - 1).SelectMany(t => list.Where(o => !t.Contains(o)), (t1, t2) => t1.Concat(new T[] { t2 }));
-        }
-
-        public static IEnumerable<IEnumerable<T>>GetPermutationsWithRept<T>(IEnumerable<T> list, int length)
-        {
-            if (length == 1) return list.Select(t => new T[] { t });
-            return GetPermutationsWithRept(list, length - 1).SelectMany(t => list, (t1, t2) => t1.Concat(new T[] { t2 }));
         }
     }
 }

@@ -567,7 +567,7 @@ namespace EngineLayer.CrosslinkSearch
                     if (iD < 0) { iD = ~iD; }
                     if (iD < groupedGlycans.Count && iD > 0)
                     {
-                        if ((groupedGlycans.Keys.ElementAt(iD) - possibleGlycanMass) > (possibleGlycanMass - groupedGlycans.Keys.ElementAt(iD - 1))) { iD = iD - 1; }
+                        if ( (groupedGlycans.Keys.ElementAt(iD)- possibleGlycanMass) > (possibleGlycanMass - groupedGlycans.Keys.ElementAt(iD - 1))) { iD = iD - 1; }
                     }
                     if (iD >= groupedGlycans.Count)
                     {

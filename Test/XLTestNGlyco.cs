@@ -30,7 +30,7 @@ namespace Test
         {
             string structure = "(N(F)(N(H(H(N))(H(N)))))";
             string kindString = Glycan.GetKindString(structure);
-            int[] kind = new int[] {3, 4, 0, 0, 1 };
+            byte[] kind = new byte[] {3, 4, 0, 0, 1 };
             string kindString2 = Glycan.GetKindString(kind);
             Assert.AreEqual("H3N4F1", kindString);
             Assert.AreEqual("H3N4F1", kindString2);

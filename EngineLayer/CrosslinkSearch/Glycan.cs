@@ -2,6 +2,7 @@
 using System.IO;
 using System.Linq;
 using Chemistry;
+using System;
 
 namespace EngineLayer
 {
@@ -10,7 +11,7 @@ namespace EngineLayer
         private static readonly double hydrogenAtomMonoisotopicMass = PeriodicTable.GetElement("H").PrincipalIsotope.AtomicMass;
         private static Dictionary<char, double> CharMassDic = new Dictionary<char, double>() { { 'H', 162.0528 }, { 'N', 203.0794 }, { 'A', 291.0954 }, { 'G', 307.0903 }, { 'F', 146.0579 } };
 
-        public Glycan(string struc, double mass, int[] kind, List<GlycanIon> ions)
+        public Glycan(string struc, double mass, byte[] kind, List<GlycanIon> ions)
         {
             Struc = struc;
             Mass = mass;
@@ -21,7 +22,7 @@ namespace EngineLayer
         public int GlyType { get; set; }
         public string Struc { get; set; }
         public double Mass { get; set; }
-        public int[] Kind { get; set; }
+        public byte[] Kind { get; set; }
         public List<GlycanIon> Ions { get; set; }
         
         private static Node Struct2Node(string theGlycanStruct)
@@ -136,10 +137,9 @@ namespace EngineLayer
             return y;
         }
 
-        private static int[] GetKind(string structure)
+        private static byte[] GetKind(string structure)
         {
-
-            int[] kind = new int[] { structure.Count(p => p == 'H'), structure.Count(p => p == 'N'), structure.Count(p => p == 'A') , structure.Count(p => p == 'G') , structure.Count(p => p == 'F') };
+            byte[] kind = new byte[] { Convert.ToByte(structure.Count(p => p == 'H')), Convert.ToByte(structure.Count(p => p == 'N')), Convert.ToByte(structure.Count(p => p == 'A')) , Convert.ToByte(structure.Count(p => p == 'G')) , Convert.ToByte(structure.Count(p => p == 'F')) };
             return kind;
         }
 
@@ -152,7 +152,17 @@ namespace EngineLayer
                 masses.Add(GetMass(Node2Struct(aC)));
             }
             return masses;
-        }        
+        }
+
+        public static double GetMass(byte[] kind)
+        {
+            double y = CharMassDic['H'] * kind[0] +
+                CharMassDic['N'] * kind[1] +
+                CharMassDic['A'] * kind[2] +
+                CharMassDic['G'] * kind[3] +
+                CharMassDic['F'] * kind[4];
+            return y;
+        }
 
         public Dictionary<int, double> GetDiagnosticIons()
         {
@@ -183,7 +193,7 @@ namespace EngineLayer
             Node node = Struct2Node(theGlycanStruct);
             List<Node> nodeIons = GetAllChildrenCombination(node);
             double mass = GetMass(theGlycanStruct);
-            int[] kind = GetKind(theGlycanStruct);
+            byte[] kind = GetKind(theGlycanStruct);
             List<GlycanIon> glycanIons = new List<GlycanIon>();
             HashSet<double> ionMasses = new HashSet<double>();
             foreach (var aNodeIon in nodeIons)
@@ -197,7 +207,7 @@ namespace EngineLayer
                     glycanIons.Add(glycanIon);
                 }
             }
-            var halfIonKind = new int[] { 0, 0, 0, 0, 0 };
+            var halfIonKind = new byte[] { 0, 0, 0, 0, 0 };
             glycanIons.Add(new GlycanIon(0, 83.038194, halfIonKind)); //Cross-ring mass
             glycanIons = glycanIons.OrderBy(p => p.IonMass).ToList();
             //glycanIons.RemoveAt(glycanIons.Count - 1);
@@ -220,7 +230,7 @@ namespace EngineLayer
             }
         }
 
-        public static string GetKindString(int[] Kind)
+        public static string GetKindString(byte[] Kind)
         {
             string H = (Kind[0] > 0) ? "H" + Kind[0].ToString() : "";
             string N = (Kind[1] > 0) ? "N" + Kind[1].ToString() : "";
@@ -250,37 +260,47 @@ namespace EngineLayer
             return kindString;
         }
 
-        public static List<GlycanBox> BuildGlycanBoxes(List<Glycan> glycans, int maxNum)
+        public static IEnumerable<GlycanBox> BuildGlycanBoxes(IEnumerable<Glycan> glycans, int maxNum)
         {
-            List<GlycanBox> glycanBoxes = new List<GlycanBox>();
 
-            int length = glycans.Count();
-
-            for (int i = 0; i < length; i++)
+            for (int i = 1; i <= maxNum; i++)
             {
-                GlycanBox glycanBox1 = new GlycanBox();
-                glycanBox1.glycans.Add(glycans[i]);
-                glycanBoxes.Add(glycanBox1);
-
-                for (int j = i; j < length; j++)
+                foreach (var idCombine in GetKCombsWithRept(Enumerable.Range(0, glycans.Count()), i))
                 {
-                    GlycanBox glycanBox2 = new GlycanBox();
-                    glycanBox2.glycans.Add(glycans[i]);
-                    glycanBox2.glycans.Add(glycans[j]);
-                    glycanBoxes.Add(glycanBox2);
-
-                    for (int u = j; u < length; u++)
+                    GlycanBox glycanBox = new GlycanBox();
+                    foreach (var id in idCombine)
                     {
-                        GlycanBox glycanBox3 = new GlycanBox();
-                        glycanBox3.glycans.Add(glycans[i]);
-                        glycanBox3.glycans.Add(glycans[j]);
-                        glycanBox3.glycans.Add(glycans[u]);
-                        glycanBoxes.Add(glycanBox3);
+                        glycanBox.glycans.Add(glycans.ElementAt(id));
+
                     }
+                    yield return glycanBox;
                 }
             }
 
-            return glycanBoxes;
+        }
+
+        public static IEnumerable<IEnumerable<T>> GetKCombs<T>(IEnumerable<T> list, int length) where T : IComparable
+        {
+            if (length == 1) return list.Select(t => new T[] { t });
+            return GetKCombs(list, length - 1).SelectMany(t => list.Where(o => o.CompareTo(t.Last()) > 0), (t1, t2) => t1.Concat(new T[] { t2 }));
+        }
+
+        public static IEnumerable<IEnumerable<T>> GetKCombsWithRept<T>(IEnumerable<T> list, int length) where T : IComparable
+        {
+            if (length == 1) return list.Select(t => new T[] { t });
+            return GetKCombsWithRept(list, length - 1).SelectMany(t => list.Where(o => o.CompareTo(t.Last()) >= 0), (t1, t2) => t1.Concat(new T[] { t2 }));
+        }
+
+        public static IEnumerable<IEnumerable<T>> GetPermutations<T>(IEnumerable<T> list, int length)
+        {
+            if (length == 1) return list.Select(t => new T[] { t });
+            return GetPermutations(list, length - 1).SelectMany(t => list.Where(o => !t.Contains(o)), (t1, t2) => t1.Concat(new T[] { t2 }));
+        }
+
+        public static IEnumerable<IEnumerable<T>> GetPermutationsWithRept<T>(IEnumerable<T> list, int length)
+        {
+            if (length == 1) return list.Select(t => new T[] { t });
+            return GetPermutationsWithRept(list, length - 1).SelectMany(t => list, (t1, t2) => t1.Concat(new T[] { t2 }));
         }
 
         //Functions are not used now.      
@@ -303,7 +323,7 @@ namespace EngineLayer
 
     public class GlycanIon
     {
-        public GlycanIon(int ionStruct, double ionMass, int[] ionKind)
+        public GlycanIon(int ionStruct, double ionMass, byte[] ionKind)
         {
             IonStruct = ionStruct;
             IonMass = ionMass;
@@ -311,7 +331,7 @@ namespace EngineLayer
         }
         public int IonStruct { get; set; }
         public double IonMass { get; set; }
-        public int[] IonKind { get; set; }
+        public byte[] IonKind { get; set; }
     }
 
     public class GlycanBox
@@ -319,7 +339,7 @@ namespace EngineLayer
         public double Mass {
             get
             {
-                return glycans.Sum(p=>p.Mass);
+                return Glycan.GetMass(Kind);
             }
         }
 
@@ -328,6 +348,25 @@ namespace EngineLayer
         public List<GlycanIon> CommonGlycanIons { get; set; }
 
         public int NumberOfGlycans { get { return glycans.Count; } }
+
+        public byte[] Kind
+        {
+            get
+            {
+                byte[] kind = new byte[5] { 0,0,0,0,0};
+                foreach (var aglycan in glycans)
+                {
+                    for (int i = 0; i < 5; i++)
+                    {
+                        kind[i] += aglycan.Kind[i];
+                    }
+                }
+                return kind;
+
+               
+                
+            }
+        }
 
     }
 }
