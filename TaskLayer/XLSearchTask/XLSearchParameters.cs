@@ -25,7 +25,6 @@ namespace TaskLayer
             XlQuench_NH2 = false;
             XlQuench_Tris = true;
             WriteOutputForPercolator = false;
-            WriteOutputForXiNET = false;
             WritePepXml = true;
         }
         
@@ -46,7 +45,6 @@ namespace TaskLayer
         public bool IsCleavable { get; set; }
         public bool RestrictToTopNHits { get; set; }
         public bool WriteOutputForPercolator { get; set; }
-        public bool WriteOutputForXiNET { get; set; }
         public bool WritePepXml { get; set; }
         public bool XlQuench_H2O { get; set; }
         public bool XlQuench_Tris { get; set; }

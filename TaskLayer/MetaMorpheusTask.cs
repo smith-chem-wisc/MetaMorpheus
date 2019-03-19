@@ -170,16 +170,16 @@ namespace TaskLayer
                             neutralExperimentalFragments = Ms2ScanWithSpecificMass.GetNeutralExperimentalFragments(ms2scan, commonParameters);
                         }
 
-                        // figure out child scans
+                        // get child scans
                         List<MsDataScan> ms2ChildScans = new List<MsDataScan>();
                         List<MsDataScan> ms3ChildScans = new List<MsDataScan>();
                         if (commonParameters.ChildScanDissociationType != DissociationType.Unknown)
                         {
                             ms3ChildScans = ms3Scans.Where(p => p.OneBasedPrecursorScanNumber == ms2scan.OneBasedScanNumber).ToList();
 
-                            ms2ChildScans = ms2Scans.Where(p => p.OneBasedPrecursorScanNumber == ms2scan.OneBasedPrecursorScanNumber 
+                            ms2ChildScans = ms2Scans.Where(p => p.OneBasedPrecursorScanNumber == ms2scan.OneBasedPrecursorScanNumber
                                 && p.OneBasedScanNumber > ms2scan.OneBasedScanNumber
-                                && commonParameters.PrecursorMassTolerance.Within(p.IsolationMz.Value, ms2scan.IsolationMz.Value)).ToList();
+                                && Math.Abs(p.IsolationMz.Value - ms2scan.IsolationMz.Value) < 0.01).ToList();
                         }
 
                         foreach (var precursor in precursors)
@@ -219,7 +219,7 @@ namespace TaskLayer
                                 {
                                     ms3ChildScan.ComputeMonoisotopicPeakIntensity(precursorSpectrum.MassSpectrum);
                                 }
-                                
+
                                 if (ms3ChildScan.SelectedIonChargeStateGuess.HasValue)
                                 {
                                     precursorCharge = ms3ChildScan.SelectedIonChargeStateGuess.Value;
@@ -248,6 +248,24 @@ namespace TaskLayer
 
             var childScanNumbers = new HashSet<int>(scansWithPrecursors.SelectMany(p => p.SelectMany(v => v.ChildScans.Select(x => x.OneBasedScanNumber))));
             var parentScans = scansWithPrecursors.Where(p => !childScanNumbers.Contains(p.First().OneBasedScanNumber)).SelectMany(v => v);
+
+            // XCorr pre-processing for low-res data. this is here because the parent/child scans may have different 
+            // resolutions, so this pre-processing must take place after the parent/child scans have been determined
+            foreach (var parentScan in parentScans)
+            {
+                if (commonParameters.DissociationType == DissociationType.LowCID && !parentScan.TheScan.MassSpectrum.XcorrProcessed)
+                {
+                    parentScan.TheScan.MassSpectrum.XCorrPrePreprocessing(0, 1969, parentScan.TheScan.IsolationMz.Value);
+                }
+
+                foreach (var childScan in parentScan.ChildScans)
+                {
+                    if (commonParameters.ChildScanDissociationType == DissociationType.LowCID && !childScan.TheScan.MassSpectrum.XcorrProcessed)
+                    {
+                        childScan.TheScan.MassSpectrum.XCorrPrePreprocessing(0, 1969, childScan.TheScan.IsolationMz.Value);
+                    }
+                }
+            }
 
             return parentScans;
         }

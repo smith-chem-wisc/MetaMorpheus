@@ -122,7 +122,7 @@ namespace Test
             Crosslinker crosslinker = new Crosslinker().SelectCrosslinker(CrosslinkerType.DSSO);
 
             CrosslinkSpectralMatch[] possiblePsms = new CrosslinkSpectralMatch[listOfSortedms2Scans.Length];
-            new CrosslinkSearchEngine(possiblePsms, listOfSortedms2Scans, indexResults.PeptideIndex, indexResults.FragmentIndex, indexResults.SecondFragmentIndex, 0, commonParameters, crosslinker, xlSearchParameters.RestrictToTopNHits, xlSearchParameters.CrosslinkSearchTopNum, xlSearchParameters.XlQuench_H2O, xlSearchParameters.XlQuench_NH2, xlSearchParameters.XlQuench_Tris, new List<string> { }).Run();
+            new CrosslinkSearchEngine(possiblePsms, listOfSortedms2Scans, indexResults.PeptideIndex, indexResults.FragmentIndex, 0, commonParameters, crosslinker, xlSearchParameters.RestrictToTopNHits, xlSearchParameters.CrosslinkSearchTopNum, xlSearchParameters.XlQuench_H2O, xlSearchParameters.XlQuench_NH2, xlSearchParameters.XlQuench_Tris, new List<string> { }).Run();
 
             var newPsms = possiblePsms.Where(p => p != null).ToList();
             foreach (var item in newPsms)
@@ -231,7 +231,7 @@ namespace Test
 
             //TwoPassCrosslinkSearchEngine.Run().
             CrosslinkSpectralMatch[] possiblePsms = new CrosslinkSpectralMatch[listOfSortedms2Scans.Length];
-            new CrosslinkSearchEngine(possiblePsms, listOfSortedms2Scans, indexResults.PeptideIndex, indexResults.FragmentIndex, indexResults.SecondFragmentIndex, 0, commonParameters, crosslinker, xlSearchParameters.RestrictToTopNHits, xlSearchParameters.CrosslinkSearchTopNum, xlSearchParameters.XlQuench_H2O, xlSearchParameters.XlQuench_NH2, xlSearchParameters.XlQuench_Tris, new List<string> { }).Run();
+            new CrosslinkSearchEngine(possiblePsms, listOfSortedms2Scans, indexResults.PeptideIndex, indexResults.FragmentIndex, 0, commonParameters, crosslinker, xlSearchParameters.RestrictToTopNHits, xlSearchParameters.CrosslinkSearchTopNum, xlSearchParameters.XlQuench_H2O, xlSearchParameters.XlQuench_NH2, xlSearchParameters.XlQuench_Tris, new List<string> { }).Run();
 
             var newPsms = possiblePsms.Where(p => p != null).ToList();
             Assert.AreEqual(1, newPsms.Count);
@@ -473,7 +473,7 @@ namespace Test
             var indexingResults = (IndexingResults)new IndexingEngine(new List<Protein> { protein }, new List<Modification>(), new List<Modification>(), 0, DecoyType.None,
                 new CommonParameters(), 1000, false, new List<FileInfo>(), new List<string>()).Run();
 
-            new CrosslinkSearchEngine(csms, scans, indexingResults.PeptideIndex, indexingResults.FragmentIndex, indexingResults.SecondFragmentIndex, 0, new CommonParameters(), crosslinker,
+            new CrosslinkSearchEngine(csms, scans, indexingResults.PeptideIndex, indexingResults.FragmentIndex, 0, new CommonParameters(), crosslinker,
                 false, 0, false, false, true, new List<string>()).Run();
 
             CrosslinkSpectralMatch csm = csms.First();
@@ -500,12 +500,12 @@ namespace Test
             var betaPeptide = p2.Digest(new DigestionParams(), new List<Modification>(), new List<Modification>()).Where(v => v.MissedCleavages == 1).First();
 
             var theoreticalCrosslinkFragments = CrosslinkedPeptide.XlGetTheoreticalFragments(DissociationType.HCD,
-                c, 3, betaPeptide.MonoisotopicMass, alphaPeptide).ToList();
+                c, new List<int> { 3 }, betaPeptide.MonoisotopicMass, alphaPeptide).ToList();
 
             Assert.That(theoreticalCrosslinkFragments.Count == 1);
             var loopLocationWithFragments = theoreticalCrosslinkFragments.First();
 
-            Assert.That(loopLocationWithFragments.Item1 == betaPeptide.MonoisotopicMass + c.TotalMass);
+            Assert.That(loopLocationWithFragments.Item1 == 3);
 
             var fragments = loopLocationWithFragments.Item2;
 
@@ -535,41 +535,25 @@ namespace Test
             var betaPeptide = p2.Digest(new DigestionParams(), new List<Modification>(), new List<Modification>()).Where(v => v.MissedCleavages == 1).First();
 
             var theoreticalCrosslinkFragments = CrosslinkedPeptide.XlGetTheoreticalFragments(DissociationType.HCD,
-                c, 3, 10000, alphaPeptide).ToList();
+                c, new List<int> { 3 }, 10000, alphaPeptide).ToList();
 
-            Assert.That(theoreticalCrosslinkFragments.Count == 3);
+            Assert.That(theoreticalCrosslinkFragments.Count == 1);
 
-            // cleaved fragments short
+            // cleaved fragments
             var linkLocationWithFragments = theoreticalCrosslinkFragments[0];
 
-            Assert.That(linkLocationWithFragments.Item1 == c.CleaveMassShort);
+            Assert.That(linkLocationWithFragments.Item1 == 3);
             var fragmentsWithCleavedXlPieces = linkLocationWithFragments.Item2;
 
             var bIons = fragmentsWithCleavedXlPieces.Where(v => v.ProductType == ProductType.b).ToList();
-            Assert.That(bIons.Select(v => (int)v.NeutralMass).SequenceEqual(new int[] { 97, 226, 338, 439, 552, 667}));
+            Assert.That(bIons.Select(v => (int)v.NeutralMass).SequenceEqual(new int[] { 97, 226, 338, 439, 552, 667, 348, 449, 562, 677 }));
 
             var yIons = fragmentsWithCleavedXlPieces.Where(v => v.ProductType == ProductType.y).ToList();
-            Assert.That(yIons.Select(v => (int)v.NeutralMass).SequenceEqual(new int[] { 147, 262, 375, 476, 588, 717}));
+            Assert.That(yIons.Select(v => (int)v.NeutralMass).SequenceEqual(new int[] { 147, 262, 375, 476, 588, 717, 598, 727 }));
 
             var signatureIons = fragmentsWithCleavedXlPieces.Where(v => v.ProductType == ProductType.M).ToList();
-            Assert.That(signatureIons.Count == 1);
-            Assert.That(signatureIons.Select(v => (int)v.NeutralMass).SequenceEqual(new int[] { 814 }));
-
-            //cleaved fragments long
-            var linkLocationWithFragments1 = theoreticalCrosslinkFragments[1];
-
-            Assert.That(linkLocationWithFragments1.Item1 == c.CleaveMassLong);
-            var fragmentsWithCleavedXlPieces1 = linkLocationWithFragments1.Item2;
-
-            var bIons1 = fragmentsWithCleavedXlPieces1.Where(v => v.ProductType == ProductType.b).ToList();
-            Assert.That(bIons1.Select(v => (int)v.NeutralMass).SequenceEqual(new int[] { 97, 226, 348, 449, 562, 677 }));
-
-            var yIons1 = fragmentsWithCleavedXlPieces1.Where(v => v.ProductType == ProductType.y).ToList();
-            Assert.That(yIons1.Select(v => (int)v.NeutralMass).SequenceEqual(new int[] { 147, 262, 375, 476, 598, 727 }));
-
-            var signatureIons1 = fragmentsWithCleavedXlPieces1.Where(v => v.ProductType == ProductType.M).ToList();
-            Assert.That(signatureIons1.Count == 1);
-            Assert.That(signatureIons1.Select(v => (int)v.NeutralMass).SequenceEqual(new int[] { 824 }));
+            Assert.That(signatureIons.Count == 2);
+            Assert.That(signatureIons.Select(v => (int)v.NeutralMass).SequenceEqual(new int[] { 814, 824 }));
         }
 
         [Test]
@@ -596,10 +580,7 @@ namespace Test
             var results = Path.Combine(outputFolder, @"TestPercolator\XL_Intralinks_Percolator.txt");
             var lines = File.ReadAllLines(results);
             Assert.That(lines[0].Equals("SpecId\tLabel\tScannr\tScore\tdScore\tNormRank\tCharge\tMass\tPPM\tLenShort\tLenLong\tLenSum\tPeptide\tProtein"));
-            //Assert.That(lines[1].Equals("T-1-30.6190992666667\t1\t1\t26.0600453443446\t0\t7\t3\t1994.05202313843\t0.664979354397676\t7\t9\t16\t-.EKVLTSSAR2--LSQKFPK4.-\t3336842(211)\t3336842(245)"));
-            //TO DO: Need further test.
-            Assert.That(lines[1].Equals("T-1-30.6190992666667\t1\t1\t55.1658267180183\t0\t7\t3\t1994.05202313843\t0.664979354397676\t7\t9\t16\t-.EKVLTSSAR2--LSQKFPK4.-\t3336842(211)\t3336842(245)"));
-
+            Assert.That(lines[1].Equals("T-1-30.6190992666667\t1\t1\t20.0641008915522\t0\t7\t3\t1994.05202313843\t0.664979354397676\t7\t9\t16\t-.EKVLTSSAR2--LSQKFPK4.-\t3336842(211)\t3336842(245)"));
             Directory.Delete(outputFolder, true);
         }
 
@@ -629,7 +610,7 @@ namespace Test
             var indexingResults = (IndexingResults)new IndexingEngine(new List<Protein> { protein }, new List<Modification>(), new List<Modification>(), 0, DecoyType.None,
                 new CommonParameters(), 1000, false, new List<FileInfo>(), new List<string>()).Run();
 
-            new CrosslinkSearchEngine(csms, scans, indexingResults.PeptideIndex, indexingResults.FragmentIndex, indexingResults.SecondFragmentIndex, 0, new CommonParameters(), crosslinker, false, 0, false, false, true, new List<string>()).Run();
+            new CrosslinkSearchEngine(csms, scans, indexingResults.PeptideIndex, indexingResults.FragmentIndex, 0, new CommonParameters(), crosslinker, false, 0, false, false, true, new List<string>()).Run();
 
             csms[0].SetFdrValues(0, 0, 0.1, 0, 0, 0, 0, 0, 0, false);
 

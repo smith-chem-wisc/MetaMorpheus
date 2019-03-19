@@ -153,7 +153,6 @@ namespace TaskLayer
                         Status("Getting fragment dictionary...", new List<string> { taskId });
                         var indexEngine = new IndexingEngine(proteinListSubset, variableModifications, fixedModifications, currentPartition, SearchParameters.DecoyType, combinedParams, SearchParameters.MaxFragmentSize, false, dbFilenameList.Select(p => new FileInfo(p.FilePath)).ToList(), new List<string> { taskId });
                         List<int>[] fragmentIndex = null;
-                        List<int>[] secondFragmentIndex = null;
                         List<int>[] precursorIndex = null;
 
                         lock (indexLock)
@@ -197,7 +196,6 @@ namespace TaskLayer
                             List<Protein> proteinListSubset = proteinList.GetRange(currentPartition * proteinList.Count / paramToUse.TotalPartitions, ((currentPartition + 1) * proteinList.Count / paramToUse.TotalPartitions) - (currentPartition * proteinList.Count / paramToUse.TotalPartitions));
 
                             List<int>[] fragmentIndex = new List<int>[1];
-                            List<int>[] secondFragmentIndex = null;
                             List<int>[] precursorIndex = new List<int>[1];
 
                             Status("Getting fragment dictionary...", new List<string> { taskId });

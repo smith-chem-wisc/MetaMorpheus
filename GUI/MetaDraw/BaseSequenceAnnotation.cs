@@ -70,7 +70,7 @@ namespace MetaMorpheusGUI
             tb.Height = 30;
             tb.FontSize = 25;
             tb.FontWeight = FontWeights.Bold;
-            tb.FontFamily = new FontFamily("Times New Roman"); // monospaced font. Alternative "Courier New"
+            tb.FontFamily = new FontFamily("Courier New"); // monospaced font
 
             Canvas.SetTop(tb, loc.Y);
             Canvas.SetLeft(tb, loc.X);
@@ -111,16 +111,6 @@ namespace MetaMorpheusGUI
         public static void clearCanvas(Canvas cav)
         {
             cav.Children.Clear();
-        }
-
-        public static void linkDrawing(Canvas cav, Point alphaBotLoc, Point betaBotLoc, Color clr)
-        {
-            Polyline bot = new Polyline();
-            double distance = (betaBotLoc.Y - alphaBotLoc.Y) / 2;
-            bot.Points = new PointCollection() { alphaBotLoc, new Point(alphaBotLoc.X, alphaBotLoc.Y + distance), new Point(betaBotLoc.X, alphaBotLoc.Y + distance), betaBotLoc};
-            bot.Stroke = new SolidColorBrush(clr);
-            bot.StrokeThickness = 2;
-            cav.Children.Add(bot);
         }
     }
 }

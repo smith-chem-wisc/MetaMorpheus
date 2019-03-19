@@ -25,7 +25,7 @@ namespace EngineLayer.CrosslinkSearch
         public int ParentIonExistNum { get; set; }
         public List<int> ParentIonMaxIntensityRanks { get; set; }
         public PsmCrossType CrossType { get; set; }
-        public Dictionary<int, List<MatchedFragmentIon>> AllMatchedFragmentIons { get; set; }
+        public Dictionary<int, List<MatchedFragmentIon>> ChildMatchedFragmentIons { get; set; }
 
         public static List<int> GetPossibleCrosslinkerModSites(char[] crosslinkerModSites, PeptideWithSetModifications peptide)
         {
@@ -297,7 +297,7 @@ namespace EngineLayer.CrosslinkSearch
             return sb.ToString();
         }
 
-        public static Dictionary<string, string> MatchedIonDataDictionary(CrosslinkSpectralMatch psm)
+        public static Dictionary<string, string> MatchedIonDataDictionary(PeptideSpectralMatch psm)
         {
             Dictionary<string, string> s = new Dictionary<string, string>();
             PsmTsvWriter.AddMatchedIonsData(s, psm);
