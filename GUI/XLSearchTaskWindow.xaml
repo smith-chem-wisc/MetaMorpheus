@@ -57,10 +57,6 @@
                         </Grid.RowDefinitions>
                         <!--<RadioButton x:Name="RbSearchCrosslink" Content="Crosslink Search" GroupName="SearchType"></RadioButton>-->
                         <!--<RadioButton x:Name="RbSearchGlyco" Content="Glyco Search" GroupName="SearchType" Grid.Column="1"></RadioButton>-->
-                        <StackPanel Orientation="Horizontal" Grid.Row="0" Margin="5">
-                            <Label x:Name="LblFragmentationType" Content="Fragmentation Method"/>
-                            <ComboBox x:Name="CbbFragmentationType"/>
-                        </StackPanel>
                         <StackPanel Orientation="Horizontal" Margin="5" Grid.Row="0" Grid.Column="1">
                             <Label x:Name="ionsToSearchLabel" Content="Dissociation Type" ToolTipService.ShowDuration="999999" ToolTipService.InitialShowDelay="500">
                                 <Label.ToolTip>
@@ -70,10 +66,10 @@
                                 </Label.ToolTip>
                             </Label>
                             <ComboBox x:Name="DissociationTypeComboBox" HorizontalAlignment="Center" VerticalAlignment="Center" DropDownClosed="CustomFragmentationHandler"/>
-                            <Label x:Name="childScanIonsToSearchLabel" Content="Next Dissociation Type" ToolTipService.ShowDuration="999999" ToolTipService.InitialShowDelay="500">
+                            <Label x:Name="childScanIonsToSearchLabel" Content="Child Scan Dissocation" ToolTipService.ShowDuration="999999" ToolTipService.InitialShowDelay="500">
                                 <Label.ToolTip>
                                     <TextBlock>
-                                                        The type of fragmentation.
+                                                        The type of fragmentation of the child scan (second MS2, or MS3).
                                     </TextBlock>
                                 </Label.ToolTip>
                             </Label>

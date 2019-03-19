@@ -338,9 +338,9 @@ namespace EngineLayer.CrosslinkSearch
                                 }
 
                                 matchedChildAlphaIons.Add(childScan.OneBasedScanNumber, matchedChildIons);
-                                double childScore = CalculatePeptideScore(childScan.TheScan, matchedChildIons);
+                                //double childScore = CalculatePeptideScore(childScan.TheScan, matchedChildIons);
 
-                                score += childScore;
+                                //score += childScore;
                             }
 
                             if (score > bestAlphaLocalizedScore)
@@ -381,9 +381,9 @@ namespace EngineLayer.CrosslinkSearch
                                 }
 
                                 matchedChildBetaIons.Add(childScan.OneBasedScanNumber, matchedChildIons);
-                                double childScore = CalculatePeptideScore(childScan.TheScan, matchedChildIons);
+                                //double childScore = CalculatePeptideScore(childScan.TheScan, matchedChildIons);
 
-                                score += childScore;
+                                //score += childScore;
                             }
 
                             if (score > bestBetaLocalizedScore)

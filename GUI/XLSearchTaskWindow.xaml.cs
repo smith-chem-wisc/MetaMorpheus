@@ -63,9 +63,6 @@ namespace MetaMorpheusGUI
 
         private void PopulateChoices()
         {
-            foreach (string experimentType in Enum.GetNames(typeof(ExperimentType)))
-                CbbFragmentationType.Items.Add(experimentType);
-
             foreach (string crosslinkerName in Enum.GetNames(typeof(CrosslinkerType)))
                 cbCrosslinker.Items.Add(crosslinkerName);
 
