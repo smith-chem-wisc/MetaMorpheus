@@ -8,7 +8,6 @@ using System.Collections.Concurrent;
 using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
-using MassSpectrometry;
 
 namespace EngineLayer.CrosslinkSearch
 {
@@ -70,18 +69,6 @@ namespace EngineLayer.CrosslinkSearch
 
         public Dictionary<double, List<Glycan>> groupedGlycans { get; }
         public Dictionary<double, List<GlycanBox>> GroupedOGlycanBoxes { get; }
-        private static Dictionary<int, double> oxoniumIons = new Dictionary<int, double>()
-        {
-            { 126, 126.055 },
-            { 138, 138.055 },
-            { 144, 144.065 },
-            { 168, 168.066 },
-            { 186, 186.076 },
-            { 204, 204.087 },
-            { 366, 366.140 },
-            { 274, 274.092 },
-            { 292, 292.103 }
-        };
 
         protected override MetaMorpheusEngineResults RunSpecific()
         {
@@ -559,7 +546,7 @@ namespace EngineLayer.CrosslinkSearch
                     possibleMatches.Add(psmCrossSingle);
                 }
                 //TO DO: add if the scan contains diagnostic ions
-                else if ((theScan.PrecursorMass - theScanBestPeptide[ind].BestPeptide.MonoisotopicMass >= 200) && ScanOxoniumIonFilter(theScan, commonParameters.DissociationType))
+                else if ((theScan.PrecursorMass - theScanBestPeptide[ind].BestPeptide.MonoisotopicMass >= 200) && GlycoPeptides.ScanOxoniumIonFilter(theScan, commonParameters.DissociationType))
                 {
                     //Using glycanBoxes
                     var possibleGlycanMass = theScan.PrecursorMass - theScanBestPeptide[ind].BestPeptide.MonoisotopicMass;
@@ -581,6 +568,7 @@ namespace EngineLayer.CrosslinkSearch
                             foreach (var glycan in groupedGlycans.Values.ElementAt(iD))
                             {
                                 var fragmentsForEachGlycanLocalizedPossibility = GlycoPeptides.NGlyGetTheoreticalFragments(commonParameters.DissociationType, modPos, theScanBestPeptide[ind].BestPeptide, glycan).ToList();
+                
                                 double bestLocalizedScore = 0;
                                 //double xLTotalScore = 0;
                                 int bestSite = 0;
@@ -588,8 +576,12 @@ namespace EngineLayer.CrosslinkSearch
                                 foreach (int possibleSite in modPos)
                                 {
                                     foreach (var setOfFragments in fragmentsForEachGlycanLocalizedPossibility.Where(v => v.Item1 == possibleSite))
-                                    {
+                                    {                           
                                         var matchedIons = MatchFragmentIons(theScan, setOfFragments.Item2, commonParameters);
+                                        if (!GlycoPeptides.ScanTrimannosylCoreFilter(matchedIons, glycan))
+                                        {
+                                            continue;
+                                        }
                                         double score = CalculatePeptideScore(theScan.TheScan, matchedIons, 0);
 
                                         if (score > bestLocalizedScore)
@@ -639,67 +631,6 @@ namespace EngineLayer.CrosslinkSearch
             return bestPsmCross;
         }
 
-        public static bool ScanOxoniumIonFilter(Ms2ScanWithSpecificMass theScan, DissociationType dissociationType)
-        {
-            if (dissociationType == DissociationType.ETD)
-            {
-                return true;
-            }
-            var massDiffAcceptor = new SinglePpmAroundZeroSearchMode(10);
-
-            int intensity204 = 101;
-            int intensity366 = 101;
-            int totalNum = 0;
-
-            double[] experimental_intensities = theScan.TheScan.MassSpectrum.YArray;
-            int[] experimental_intensities_rank = CrosslinkSpectralMatch.GenerateIntensityRanks(experimental_intensities);
-
-            foreach (var ioxo in oxoniumIons)
-            {
-                int matchedPeakIndex = theScan.TheScan.MassSpectrum.GetClosestPeakIndex(ioxo.Value).Value;
-                if (massDiffAcceptor.Accepts(theScan.TheScan.MassSpectrum.XArray[matchedPeakIndex], ioxo.Value) >= 0)
-                {
-                    totalNum++;
-                    if (totalNum > 1)
-                    {
-                        return true;
-                    }
-                    if (ioxo.Key == 204)
-                        intensity204 = experimental_intensities_rank[matchedPeakIndex];
-                    if (ioxo.Key == 366)
-                        intensity366 = experimental_intensities_rank[matchedPeakIndex];
-                }
-            }
-
-            if (intensity204 < 101 || intensity366 < 101 || totalNum > 1)
-            {
-                return true;
-            }
-
-            return false;
-        }
-
-        public static double CalculateGlycoPeptideScore(MsDataScan thisScan, List<MatchedFragmentIon> matchedFragmentIons, double maximumMassThatFragmentIonScoreIsDoubled)
-        {
-            double score = 0;
-
-            foreach (var fragment in matchedFragmentIons)
-            {
-                if (fragment.NeutralTheoreticalProduct.ProductType != ProductType.M && fragment.NeutralTheoreticalProduct.ProductType != ProductType.D)
-                {
-                    double fragmentScore = 1 + (fragment.Intensity / thisScan.TotalIonCurrent);
-                    score += fragmentScore;
-
-                    if (fragment.NeutralTheoreticalProduct.NeutralMass <= maximumMassThatFragmentIonScoreIsDoubled)
-                    {
-                        score += fragmentScore;
-                    }
-                }                
-            }
-
-            return score;
-        }
-
         private CrosslinkSpectralMatch FindOGlycopeptide(Ms2ScanWithSpecificMass theScan, List<BestPeptideScoreNotch> theScanBestPeptide, int scanIndex)
         {
             List<CrosslinkSpectralMatch> possibleMatches = new List<CrosslinkSpectralMatch>();
@@ -719,7 +650,7 @@ namespace EngineLayer.CrosslinkSearch
                     possibleMatches.Add(psmCrossSingle);
                 }
                 //TO DO: add if the scan contains diagnostic ions
-                else if ((theScan.PrecursorMass - theScanBestPeptide[ind].BestPeptide.MonoisotopicMass >= 200) && ScanOxoniumIonFilter(theScan, commonParameters.DissociationType))
+                else if ((theScan.PrecursorMass - theScanBestPeptide[ind].BestPeptide.MonoisotopicMass >= 200) && GlycoPeptides.ScanOxoniumIonFilter(theScan, commonParameters.DissociationType))
                 {
                     //Using glycanBoxes
                     var possibleGlycanMass = theScan.PrecursorMass - theScanBestPeptide[ind].BestPeptide.MonoisotopicMass;

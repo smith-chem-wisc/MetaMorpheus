@@ -9,7 +9,44 @@ namespace EngineLayer
     public class Glycan
     {
         private static readonly double hydrogenAtomMonoisotopicMass = PeriodicTable.GetElement("H").PrincipalIsotope.AtomicMass;
-        private static Dictionary<char, double> CharMassDic = new Dictionary<char, double>() { { 'H', 162.0528 }, { 'N', 203.0794 }, { 'A', 291.0954 }, { 'G', 307.0903 }, { 'F', 146.0579 } };
+
+        //H: C6O5H10, N: C8O5NH13, A: C11O8NH17, G: C11H17NO9, F: C6O4H10
+        private static Dictionary<char, double> CharMassDic = new Dictionary<char, double>() { { 'H', 162.052823 }, { 'N', 203.079373 }, { 'A', 291.095417 }, { 'G', 307.090331 }, { 'F', 146.057909 } };
+
+        public static Dictionary<int, double> oxoniumIons = new Dictionary<int, double>()
+        {
+            { 126, 126.055 },
+            { 138, 138.055 },
+            { 144, 144.065 },
+            { 168, 168.066 },
+            { 186, 186.076 },
+            { 204, 204.087 },
+            { 366, 366.140 },
+            { 274, 274.092 },
+            { 292, 292.103 }
+        };
+
+        public static Dictionary<int, double> TrimannosylCores = new Dictionary<int, double>()
+        {
+            { 0, 0},
+            { 83, 83.038194},
+            { 203, 203.079373},
+            { 406, 406.158745},
+            { 568, 568.211568},
+            { 730, 730.264392},
+            { 892, 892.317215},
+            { 349, 349.137281},
+            { 552, 552.216654}
+            //{ "Y0", 0},
+            //{ "Y*", 83.038194},
+            //{ "Y1", 203.079373},
+            //{ "Y2", 406.158745},
+            //{ "Y3", 568.211568},
+            //{ "Y4", 730.264392},
+            //{ "Y5", 892.317215},
+            //{ "Y2F", 349.137281},
+            //{ "Y3F", 552.216654}
+        };
 
         public Glycan(string struc, double mass, byte[] kind, List<GlycanIon> ions)
         {

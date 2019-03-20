@@ -94,7 +94,7 @@
     <None Update="TestData\tinySemi.mgf">
       <CopyToOutputDirectory>Always</CopyToOutputDirectory>
     </None>
-    <None Update="XlTestData\25170.mgf">
+    <None Update="GlycoTestData\25170.mgf">
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
     </None>
     <None Update="XlTestData\3289.mgf">
@@ -115,10 +115,10 @@
     <None Update="XlTestData\BSA_DSS_23747.mzML">
       <CopyToOutputDirectory>Always</CopyToOutputDirectory>
     </None>
-    <None Update="XlTestData\GlycoSearchTaskconfig.toml">
+    <None Update="GlycoTestData\GlycoSearchTaskconfig.toml">
       <CopyToOutputDirectory>Always</CopyToOutputDirectory>
     </None>
-    <None Update="XlTestData\Q9C0Y4.fasta">
+    <None Update="GlycoTestData\Q9C0Y4.fasta">
       <CopyToOutputDirectory>Always</CopyToOutputDirectory>
     </None>
     <None Update="XlTestData\XLSearchTaskconfig_BSA_DSS_23747.toml">
