@@ -124,15 +124,63 @@
             <GroupBox Grid.Column="4" Header="PSM Annotation">
                 <Grid>
                     <Grid.RowDefinitions>
+                        <!--<RowDefinition Height = "*"></RowDefinition>-->
                         <RowDefinition Height = "*"></RowDefinition>
-                        <RowDefinition Height = "60"></RowDefinition>
+                        <RowDefinition Height = "150"></RowDefinition>
                     </Grid.RowDefinitions>
 
                     <!--Spectrum annotation-->
-                    <oxy:PlotView Grid.Row="0" x:Name="plotView" Model="{Binding Model}" FontSize="16" FontStretch="Expanded"/>
+                    <TabControl>
+                        <TabItem Header="SimpleView">
+                            <oxy:PlotView Grid.Row="0" x:Name="plotView" Model="{Binding Model}" FontSize="16" FontStretch="Expanded"/>
+                        </TabItem>
+                        <TabItem Header="AdvancedView">
+                            <ItemsControl ItemsSource="{Binding Data}">
+                                <ItemsControl.ItemTemplate>
+                                    <DataTemplate>
+                                        <Border  BorderBrush="Black" Background="LightBlue" >
+                                            <!-- This is the Inner Grid for each element -->
+                                            <Grid>
+                                                <Grid.RowDefinitions>
+                                                    <RowDefinition Height="30"/>
+                                                    <RowDefinition Height="*"/>
+                                                </Grid.RowDefinitions>
+                                                <Label Content="{Binding SpectrumLabel}" />
+                                                <oxy:PlotView Model="{Binding PsmAnnotationViewModel.Model}" FontSize="16" FontStretch="Expanded" Grid.Row="1" MinHeight="200"/>
+                                            </Grid>
+                                        </Border>
+                                    </DataTemplate>
+                                </ItemsControl.ItemTemplate>
+
+                                <ItemsControl.Template>
+                                    <ControlTemplate TargetType="ItemsControl">
+                                        <ScrollViewer CanContentScroll="True">
+                                            <ItemsPresenter/>
+                                        </ScrollViewer>
+                                    </ControlTemplate>
+                                </ItemsControl.Template>
+
+                                <ItemsControl.ItemsPanel>
+                                    <ItemsPanelTemplate>
+                                        <!--This here is very important for how multiple scans displayed. Useful parameters are (HorizontalAlignment="Stretch" or Columns="1")-->
+                                        <UniformGrid HorizontalAlignment="Stretch" Columns="{Binding Path=MyColumnCount}"/>
+                                    </ItemsPanelTemplate>
+                                </ItemsControl.ItemsPanel>
+                            </ItemsControl>
+                        </TabItem>
+                    </TabControl>
 
                     <!--Canvas for drawing base sequence annotation-->
-                    <Canvas Margin="0 5 0 0" x:Name="canvas" Grid.Row="1" Height="60" Width="600" HorizontalAlignment="Stretch" VerticalAlignment="Stretch" />
+                    <Grid Grid.Row="1">
+                        <Grid.ColumnDefinitions>
+                            <ColumnDefinition Width="*"/>
+                            <ColumnDefinition Width="30"/>
+                            <ColumnDefinition Width="30"/>
+                        </Grid.ColumnDefinitions>
+                        <Canvas Margin="0 5 0 0" x:Name="canvas" Height="150" Width="600" HorizontalAlignment="Stretch" VerticalAlignment="Stretch" />
+                        <!--<Button x:Name="BtnSaveCanvas" Grid.Column="2" Content="Save" Click="BtnSaveCanvas_Click"/>-->
+                        <Button x:Name="BtnChangeGridColumns" Grid.Column="1" Content="Column" Click="BtnChangeGridColumns_Click"/>
+                    </Grid>
                 </Grid>
             </GroupBox>
         </Grid>
