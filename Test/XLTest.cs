@@ -625,10 +625,10 @@ namespace Test
         [Test]
         public static void TestMixedMs2Ms2()
         {
-            CommonParameters commonParameters = new CommonParameters(dissociationType: DissociationType.CID, childScanDissociationType: DissociationType.ETD);
+            CommonParameters commonParameters = new CommonParameters(dissociationType: DissociationType.CID, childScanDissociationType: DissociationType.ETD, numberOfPeaksToKeepPerWindow: null, minimumAllowedIntensityRatioToBasePeak: null, trimMs1Peaks: false, trimMsMsPeaks: false);
 
             string spectraFile = Path.Combine(TestContext.CurrentContext.TestDirectory, @"XlTestData\ms2mixed_bsa_xlink.mzML");
-            var file = new MyFileManager(true).LoadFile(spectraFile, null, null, false, false, commonParameters);
+            var file = new MyFileManager(true).LoadFile(spectraFile, commonParameters);
 
             var scans = MetaMorpheusTask.GetMs2Scans(file, spectraFile, commonParameters).ToArray();
 
@@ -671,7 +671,7 @@ namespace Test
             CommonParameters commonParameters = new CommonParameters(dissociationType: DissociationType.CID, childScanDissociationType: DissociationType.LowCID, precursorMassTolerance: new PpmTolerance(10));
 
             string spectraFile = Path.Combine(TestContext.CurrentContext.TestDirectory, @"XlTestData\10226.mzML");
-            var file = new MyFileManager(true).LoadFile(spectraFile, null, null, false, false, commonParameters);
+            var file = new MyFileManager(true).LoadFile(spectraFile, commonParameters);
 
             var scans = MetaMorpheusTask.GetMs2Scans(file, spectraFile, commonParameters).ToArray();
 
