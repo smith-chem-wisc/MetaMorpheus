@@ -439,39 +439,27 @@ namespace MetaMorpheusGUI
             bool TrimMsMsPeaks = trimMsMs.IsChecked.Value;
 
             int? numPeaksToKeep = null;
-            if (!string.IsNullOrWhiteSpace(NumberOfPeaksToKeepPerWindowTextBox.Text))
+            if (int.TryParse(NumberOfPeaksToKeepPerWindowTextBox.Text, out int numberOfPeaksToKeeep))
             {
-                if (int.TryParse(NumberOfPeaksToKeepPerWindowTextBox.Text, out int numberOfPeaksToKeeep))
-                {
-                    numPeaksToKeep = numberOfPeaksToKeeep;
-                }
+                numPeaksToKeep = numberOfPeaksToKeeep;
             }
 
             double? minimumAllowedIntensityRatioToBasePeak = null;
-            if (!string.IsNullOrWhiteSpace(MinimumAllowedIntensityRatioToBasePeakTexBox.Text))
+            if (double.TryParse(MinimumAllowedIntensityRatioToBasePeakTexBox.Text, out double minimumAllowedIntensityRatio))
             {
-                if (double.TryParse(MinimumAllowedIntensityRatioToBasePeakTexBox.Text, out double minimumAllowedIntensityRatio))
-                {
-                    minimumAllowedIntensityRatioToBasePeak = minimumAllowedIntensityRatio;
-                }
+                minimumAllowedIntensityRatioToBasePeak = minimumAllowedIntensityRatio;
             }
 
             double? windowWidthThompsons = null;
-            if (!string.IsNullOrWhiteSpace(WindowWidthThomsonsTextBox.Text))
+            if (double.TryParse(WindowWidthThomsonsTextBox.Text, out double windowWidth))
             {
-                if (double.TryParse(WindowWidthThomsonsTextBox.Text, out double windowWidth))
-                {
-                    windowWidthThompsons = windowWidth;
-                }
+                windowWidthThompsons = windowWidth;
             }
 
             int? numberOfWindows = null;
-            if (!string.IsNullOrWhiteSpace(NumberOfWindowsTextBox.Text))
+            if (int.TryParse(NumberOfWindowsTextBox.Text, out int numWindows))
             {
-                if (int.TryParse(NumberOfWindowsTextBox.Text, out int numWindows))
-                {
-                    numberOfWindows = numWindows;
-                }
+                numberOfWindows = numWindows;
             }
 
             bool normalizePeaksAccrossAllWindows = normalizePeaksInWindowCheckBox.IsChecked.Value;
