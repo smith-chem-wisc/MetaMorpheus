@@ -445,11 +445,6 @@ namespace MetaMorpheusGUI
                 {
                     numPeaksToKeep = numberOfPeaksToKeeep;
                 }
-                else
-                {
-                    MessageBox.Show("The value that you entered for number of peaks to keep is not acceptable. Try again.");
-                    return;
-                }
             }
 
             double? minimumAllowedIntensityRatioToBasePeak = null;
@@ -458,11 +453,6 @@ namespace MetaMorpheusGUI
                 if (double.TryParse(MinimumAllowedIntensityRatioToBasePeakTexBox.Text, out double minimumAllowedIntensityRatio))
                 {
                     minimumAllowedIntensityRatioToBasePeak = minimumAllowedIntensityRatio;
-                }
-                else
-                {
-                    MessageBox.Show("The value that you entered for minimum allowed intensity ratio to keep is not acceptable. Try again.");
-                    return;
                 }
             }
 
@@ -473,11 +463,6 @@ namespace MetaMorpheusGUI
                 {
                     windowWidthThompsons = windowWidth;
                 }
-                else
-                {
-                    MessageBox.Show("The value that you entered for window width in Thomsons is not acceptable. Try again.");
-                    return;
-                }
             }
 
             int? numberOfWindows = null;
@@ -486,11 +471,6 @@ namespace MetaMorpheusGUI
                 if (int.TryParse(NumberOfWindowsTextBox.Text, out int numWindows))
                 {
                     numberOfWindows = numWindows;
-                }
-                else
-                {
-                    MessageBox.Show("The value that you entered for number of windows is not acceptable. Try again.");
-                    return;
                 }
             }
 
