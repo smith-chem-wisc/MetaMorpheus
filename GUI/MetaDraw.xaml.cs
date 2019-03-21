@@ -153,7 +153,7 @@ namespace MetaMorpheusGUI
 
             // draw annotated spectrum
             mainViewModel.DrawPeptideSpectralMatch(msDataScanToDraw, psmToDraw);
-            
+
             // draw annotated base sequence
             //TO DO: Annotate crosslinked peptide sequence           
             if (psmToDraw.CrossType == null)  // if the psm is single peptide (not crosslinked).
@@ -336,7 +336,7 @@ namespace MetaMorpheusGUI
         {
             (sender as DataGrid).UnselectAll();
         }
-        
+
         private void PDFButton_Click(object sender, RoutedEventArgs e)
         {
             PsmFromTsv tempPsm = null;
@@ -346,12 +346,12 @@ namespace MetaMorpheusGUI
             }
 
             int num = dataGridScanNums.SelectedItems.Count;
-            
+
             foreach (object selectedItem in dataGridScanNums.SelectedItems)
             {
                 PsmFromTsv psm = (PsmFromTsv)selectedItem;
 
-                if(tempPsm == null)
+                if (tempPsm == null)
                 {
                     tempPsm = psm;
                 }
@@ -360,7 +360,7 @@ namespace MetaMorpheusGUI
 
                 string myString = illegalInFileName.Replace(psm.FullSequence, "");
 
-                if(myString.Length > 30)
+                if (myString.Length > 30)
                 {
                     myString = myString.Substring(0, 30);
                 }

@@ -84,7 +84,7 @@ namespace TaskLayer
             }
             FinishedWritingFile(writtenFile, nestedIds);
         }
-
+        
         public void WritePepXML_xl(List<CrosslinkSpectralMatch> items, List<Protein> proteinList, string databasePath, List<Modification> variableModifications, List<Modification> fixedModifications, List<string> localizeableModificationTypes, string outputFolder, string fileName, List<string> nestedIds)
         {
             if (!items.Any())
