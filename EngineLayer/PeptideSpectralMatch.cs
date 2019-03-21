@@ -235,13 +235,13 @@ namespace EngineLayer
             {
                 if (_BestMatchingPeptides.Any(p => parsimoniousProteins.Contains(p.Pwsm.Protein) && p.Pwsm.Protein.IsDecoy))
                 {
-                    _BestMatchingPeptides.RemoveAll(p => !parsimoniousProteins.Contains(p.Item2.Protein));
+                    _BestMatchingPeptides.RemoveAll(p => !parsimoniousProteins.Contains(p.Pwsm.Protein));
                 }
                 // else do nothing
             }
             else
             {
-                _BestMatchingPeptides.RemoveAll(p => !parsimoniousProteins.Contains(p.Item2.Protein));
+                _BestMatchingPeptides.RemoveAll(p => !parsimoniousProteins.Contains(p.Pwsm.Protein));
             }
 
             ResolveAllAmbiguities();

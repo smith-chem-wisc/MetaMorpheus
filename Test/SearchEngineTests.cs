@@ -65,7 +65,7 @@ namespace Test
                 scoreCutoff: 1);
 
             double[] mzs = new double[] { 130.0499, 148.0604, 199.1077, 209.0921, 227.1026, 245.0768, 263.0874, 296.1605, 306.1448, 324.1554, 358.1609, 376.1714, 397.2082, 407.1925, 425.2031, 459.2086, 477.2191, 510.2922, 520.2766, 538.2871, 556.2613, 574.2719, 625.3192, 635.3035, 653.3141, 685.3039, 703.3145, 782.3567, 800.3672 };
-            double[] intensities = new double[] { 10, 10, 10, 10, 10, 10, 10, 10, 10, 10, 10, 10, 10, 10, 10, 10, 10, 10, 10, 10, 10, 10, 10, 10, 10, 10, 10, 10, 10 };
+            double[] intensities = new double[] {20, 10, 10, 10, 10, 10, 10, 10, 10, 10, 10, 10, 10, 10, 10, 10, 10, 10, 10, 10, 10, 10, 10, 10, 10, 10, 10, 10, 10 };
             var myXcorrMsDataFile = new TestDataFile(mzs, intensities, 799.359968, 1, 1.0);
 
             var variableModifications = new List<Modification>();
@@ -75,14 +75,13 @@ namespace Test
             var searchModes = new SinglePpmAroundZeroSearchMode(5);
 
             var listOfSortedXcorrms2Scans = MetaMorpheusTask.GetMs2Scans(myXcorrMsDataFile, null, new CommonParameters()).OrderBy(b => b.PrecursorMass).ToArray();
+            var copyOflistOfSortedXcorrms2Scans = listOfSortedXcorrms2Scans;
 
-            List<double> originalXarray = new List<double>() { 130.0499, 148.0604, 199.1077, 209.0921, 227.1026, 245.0768, 263.0874, 296.1605, 306.1448, 324.1554, 358.1609, 376.1714, 397.2082, 407.1925, 425.2031, 459.2086, 477.2191, 510.2922, 520.2766, 538.2871, 556.2613, 574.2719, 625.3192, 635.3035, 653.3141, 685.3039, 703.3145, 782.3567, 800.3672 };
-            List<double> originalYarray = new List<double>() { 10, 10, 10, 10, 10, 10, 10, 10, 10, 10, 10, 10, 10, 10, 10, 10, 10, 10, 10, 10, 10, 10, 10, 10, 10, 10, 10, 10, 10 };
 
-            Assert.That(originalXarray.SequenceEqual(listOfSortedXcorrms2Scans[0].TheScan.MassSpectrum.XArray.ToList()));
-            Assert.That(originalYarray.SequenceEqual(listOfSortedXcorrms2Scans[0].TheScan.MassSpectrum.YArray.ToList()));
+            Assert.That(mzs.ToList().SequenceEqual(listOfSortedXcorrms2Scans[0].TheScan.MassSpectrum.XArray.ToList()));
+            Assert.That(intensities.ToList().SequenceEqual(listOfSortedXcorrms2Scans[0].TheScan.MassSpectrum.YArray.ToList()));
 
-            foreach (var scan in listOfSortedXcorrms2Scans)
+            foreach (var scan in copyOflistOfSortedXcorrms2Scans)
             {
                 scan.TheScan.MassSpectrum.XCorrPrePreprocessing(0, 1969, scan.TheScan.IsolationMz.Value);
             }
@@ -92,17 +91,11 @@ namespace Test
 
             Assert.IsTrue(listOfSortedXcorrms2Scans[0].TheScan.MassSpectrum.XcorrProcessed);
 
-            List<double> expectedXarray = new List<double>() { 130.07, 148.08, 199.1, 209.11, 227.12, 245.12, 263.13, 296.15, 306.16, 324.16, 358.18, 376.19, 397.2, 407.21, 425.22, 459.23, 477.24, 510.26, 520.26, 538.27, 556.28, 574.29, 625.32, 635.32, 653.33, 685.35, 703.36, 782.4 };
-            List<double> expectedYarray = new List<double>() { 0.98, 0.97, 0.95, 0.96, 0.96, 0.95, 0.95, 0.95, 0.95, 0.95, 0.95, 0.95, 0.95, 0.95, 0.95, 0.95, 0.95, 0.95, 0.95, 0.96, 0.96, 0.95, 0.96, 0.96, 0.97, 0.97, 0.97, 0.99 };
+            List<double> expectedXarray = copyOflistOfSortedXcorrms2Scans[0].TheScan.MassSpectrum.XArray.ToList();
+            List<double> expectedYarray = copyOflistOfSortedXcorrms2Scans[0].TheScan.MassSpectrum.XArray.ToList();
 
-            List<double> processedXarray = new List<double>();
-            List<double> processedYarray = new List<double>();
-
-            for (int i = 0; i < listOfSortedXcorrms2Scans[0].TheScan.MassSpectrum.XArray.Length; i++)
-            {
-                processedXarray.Add(Math.Round(listOfSortedXcorrms2Scans[0].TheScan.MassSpectrum.XArray[i], 2));
-                processedYarray.Add(Math.Round(listOfSortedXcorrms2Scans[0].TheScan.MassSpectrum.YArray[i], 2));
-            }
+            List<double> processedXarray = listOfSortedXcorrms2Scans[0].TheScan.MassSpectrum.XArray.ToList();
+            List<double> processedYarray = listOfSortedXcorrms2Scans[0].TheScan.MassSpectrum.XArray.ToList();
 
             //this assures that the mass and intensities of the input spectrum have been xcorr processed and normalized. Note, the molecular ion has been removed
             Assert.That(expectedXarray.SequenceEqual(processedXarray));
@@ -113,7 +106,7 @@ namespace Test
             Assert.AreEqual(6, allPsmsArray[0].MatchedFragmentIons.Where(p => p.NeutralTheoreticalProduct.ProductType == ProductType.y).ToList().Count);
             Assert.AreEqual(6, allPsmsArray[0].MatchedFragmentIons.Where(p => p.NeutralTheoreticalProduct.ProductType == ProductType.yDegree).ToList().Count);
 
-            Assert.AreEqual(10.7, Math.Round(allPsmsArray[0].Score, 1));
+            Assert.AreEqual(14.0, Math.Round(allPsmsArray[0].Score, 1));
 
             // Single search mode
             Assert.AreEqual(1, allPsmsArray.Length);
@@ -452,13 +445,13 @@ namespace Test
             var goodScore = nonNullPsms.Where(p => p.FdrInfo.QValue <= 0.01).Select(s => s.Score).ToList();
             goodScore.Sort();
 
-            List<int> expectedScans = new List<int>() { 8, 47, 48, 49, 51, 53, 54, 74, 81, 82, 86, 90, 149, 151, 152, 153, 154, 157, 159, 160, 187, 189, 191, 193, 200, 206, 210, 211, 216, 217, 226, 230, 235, 238, 256 };
+            List<int> expectedScans = new List<int>() { 8, 10, 48, 49, 51, 53, 54, 74, 81, 86, 90, 116, 140, 149, 151, 152, 153, 154, 157, 159, 160, 187, 189, 191, 193, 197, 200, 210, 216, 217, 226, 230, 235, 238 };
             List<int> foundScans = new List<int>();
             foundScans.AddRange(goodPsm.Select(s => s.ScanNumber).ToList());
             foundScans.Sort();
 
             Assert.AreEqual(expectedScans, foundScans);
-            Assert.AreEqual(35, goodPsm.Count());
+            Assert.AreEqual(34, goodPsm.Count());
         }
 
         [Test]

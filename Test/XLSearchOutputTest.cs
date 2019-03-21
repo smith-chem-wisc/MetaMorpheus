@@ -6,7 +6,7 @@ using TaskLayer;
 namespace Test
 {
     [TestFixture]
-    class XLSearchOutputTest
+    internal class XLSearchOutputTest
     {
         [Test]
         public void WriteTsvTest()
