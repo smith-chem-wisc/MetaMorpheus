@@ -55,6 +55,8 @@ namespace Test
             string[] motifs = new string[] { "Nxs", "Nxt" };
             var sites = CrosslinkSpectralMatch.GetPossibleModSites(aPeptideWithSetModifications.Last(), motifs);
             Glycan glycan = Glycan.Struct2Glycan("(N(F)(N(H(H(N))(H(N)))))", 0);
+
+            var glycanMod = GlycoPeptides.GlycanToModification(glycan);
             var fragmentIons = GlycoPeptides.NGlyGetTheoreticalFragments(DissociationType.HCD, sites, aPeptideWithSetModifications.Last(), glycan).ToList();
 
             //using (StreamWriter output = new StreamWriter(Path.Combine(TestContext.CurrentContext.TestDirectory, "GlycanFragmentions.txt")))
@@ -73,10 +75,23 @@ namespace Test
             MyFileManager myFileManager = new MyFileManager(true);
             var msDataFile = myFileManager.LoadFile(filePath, 300, 0.01, true, true, commonParameters);
             var listOfSortedms2Scans = MetaMorpheusTask.GetMs2Scans(msDataFile, filePath, commonParameters).ToArray();
+
+            var glycanYIons = GlycoPeptides.GetGlycanYIons(listOfSortedms2Scans[0], glycan);
+            var matchedGlycanYIons = MetaMorpheusEngine.MatchFragmentIons(listOfSortedms2Scans[0], glycanYIons, commonParameters);
+            Assert.AreEqual(matchedGlycanYIons.Count, 16);
             //TO DO: The neutroloss is not annotated well.
             var matchedFragmentIons = MetaMorpheusEngine.MatchFragmentIons(listOfSortedms2Scans[0], fragmentIons.Select(p=>p.Item2).ToList().First(), commonParameters);
 
-            DrawPeptideSpectralMatch(listOfSortedms2Scans[0].TheScan, matchedFragmentIons, pep.BaseSequence);
+            var coreIons = GlycoPeptides.ScanGetTrimannosylCore(matchedFragmentIons, glycan);
+            Assert.AreEqual(coreIons.Count, 9);
+            var filter = GlycoPeptides.ScanTrimannosylCoreFilter(matchedFragmentIons, glycan);
+            Assert.AreEqual(filter, true);
+
+            var bestGlycans = GlycoPeptides.MatchBestGlycan(listOfSortedms2Scans[0], GlobalVariables.NGlycans.ToArray(), commonParameters).Where(p => p != null && p.Item2 >= 2).OrderByDescending(p => p.Item2).Take(100).OrderBy(p => p.Item3).ToArray(); ;
+
+            //Please keep the draw functions, they are important to debug visually.
+            //DrawPeptideSpectralMatch(listOfSortedms2Scans[0].TheScan, matchedFragmentIons, pep.BaseSequence);
+            //DrawPeptideSpectralMatch(listOfSortedms2Scans[0].TheScan, matchedGlycanYIons, pep.BaseSequence);
         }
 
         [Test]
@@ -107,16 +122,23 @@ namespace Test
         [Test]
         public static void GlyTest_BinarySearch()
         {
-            double[] array = new double[] { 3.44, 3.45, 4.55, 5.66 };
+            double[] array = new double[] { 3.44, 3.45, 4.55, 4.55, 4.55, 4.55, 4.55, 4.55, 4.55, 5.66 };
             double x = 3.43;
             double y = 4.44;
             double z = 5.67;
-            var xid = Array.BinarySearch(array, x);
-            if (xid < 0) { xid = ~xid; }
-            var yid = Array.BinarySearch(array, y);
-            if (yid < 0) { yid = ~yid; }
-            var zid = Array.BinarySearch(array, z);
-            if (zid < 0) { zid = ~zid; }
+            double d = 4.55;
+            double t = 4.56;
+            var xid = GlycoPeptides.BinarySearchGetIndex(array, x);
+            var yid = GlycoPeptides.BinarySearchGetIndex(array, y);
+            var zid = GlycoPeptides.BinarySearchGetIndex(array, z);
+            var did = GlycoPeptides.BinarySearchGetIndex(array, d);
+            var tid = GlycoPeptides.BinarySearchGetIndex(array, t);
+            Assert.AreEqual(xid, 0);
+            Assert.AreEqual(yid, 2);
+            Assert.AreEqual(zid, 10);
+            Assert.AreEqual(did, 2);
+            Assert.AreEqual(tid, 9);
+            
         }
 
         private static Dictionary<ProductType, OxyColor> productTypeDrawColors = new Dictionary<ProductType, OxyColor>

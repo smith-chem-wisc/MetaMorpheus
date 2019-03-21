@@ -53,16 +53,19 @@ namespace EngineLayer.CrosslinkSearch
             return false;
         }
 
-        private static Dictionary<int, double> ScanGetTrimannosylCore(List<MatchedFragmentIon> matchedFragmentIons, Glycan glycan)
+        public static Dictionary<int, double> ScanGetTrimannosylCore(List<MatchedFragmentIon> matchedFragmentIons, Glycan glycan)
         {
             Dictionary<int, double> cores = new Dictionary<int, double>();
-            MassDiffAcceptor massDiffAcceptor = new SinglePpmAroundZeroSearchMode(5);
+
             foreach (var fragment in matchedFragmentIons.Where(p=>p.NeutralTheoreticalProduct.ProductType == ProductType.M))
             {
                 if (Glycan.TrimannosylCores.ContainsKey((int)(glycan.Mass - fragment.NeutralTheoreticalProduct.NeutralLoss)))
                 {
                     var pair = Glycan.TrimannosylCores.Where(p=>p.Key == (int)(glycan.Mass - fragment.NeutralTheoreticalProduct.NeutralLoss)).FirstOrDefault();
-                    cores.Add(pair.Key, pair.Value);
+                    if (!cores.ContainsKey(pair.Key))
+                    {
+                        cores.Add(pair.Key, pair.Value);
+                    }            
                 }
 
             }
@@ -81,6 +84,68 @@ namespace EngineLayer.CrosslinkSearch
                 return true;
             }
             return false;
+        }
+
+        public static List<Product> GetGlycanYIons(Ms2ScanWithSpecificMass theScan, Glycan glycan)
+        {
+            double possiblePeptideMass = theScan.PrecursorMass - glycan.Mass;
+            List<Product> YIons = new List<Product>();
+            YIons.Add(new Product(ProductType.M, new NeutralTerminusFragment(FragmentationTerminus.Both, theScan.PrecursorMass, 0, 0), glycan.Mass)); //Y0 ion. Glycan totally loss.
+            foreach (var ion in glycan.Ions)
+            {
+                Product product = new Product(ProductType.M, new NeutralTerminusFragment(FragmentationTerminus.Both, theScan.PrecursorMass, 0, 0), ion.LossIonMass);
+                YIons.Add(product);
+            }
+            return YIons;
+        }
+
+        public static List<Product> GetGlycanYIons(PeptideWithSetModifications peptide, Glycan glycan)
+        {
+            double possiblePeptideMass = peptide.MonoisotopicMass;
+            List<Product> YIons = new List<Product>();
+            YIons.Add(new Product(ProductType.M, new NeutralTerminusFragment(FragmentationTerminus.Both, possiblePeptideMass + glycan.Mass, 0, 0), glycan.Mass));
+            foreach (var ion in glycan.Ions)
+            {
+                Product product = new Product(ProductType.M, new NeutralTerminusFragment(FragmentationTerminus.Both, possiblePeptideMass + glycan.Mass, 0, 0), ion.LossIonMass);
+                YIons.Add(product);
+            }
+            return YIons;
+        }
+       
+        public static Tuple<int, double, double>[] MatchBestGlycan(Ms2ScanWithSpecificMass theScan, Glycan[] glycans, CommonParameters commonParameters)
+        {
+            Tuple<int, double, double>[] tuples = new Tuple<int, double, double>[glycans.Length]; //Tuple<id, Yion matched score, glycan mass> 
+            //TO DO: Parallel this?
+            for (int i = 0; i < glycans.Length; i++)
+            {
+                if (theScan.PrecursorMass - glycans[i].Mass < 350) //Filter large glycans
+                {
+                    continue;
+                }
+                List<Product> YIons = GetGlycanYIons(theScan, glycans[i]);
+                List<MatchedFragmentIon> matchedFragmentIons = MetaMorpheusEngine.MatchFragmentIons(theScan, YIons, commonParameters);
+                if (ScanTrimannosylCoreFilter(matchedFragmentIons, glycans[i]))
+                {
+                    var score = MetaMorpheusEngine.CalculatePeptideScore(theScan.TheScan, matchedFragmentIons, 0);
+                    tuples[i] = new Tuple<int, double, double>(i, score, glycans[i].Mass);
+                }
+            }
+
+            return tuples;
+        }
+
+        public static int BinarySearchGetIndex(double[] massArray, double targetMass)
+        {
+            var iD = Array.BinarySearch(massArray, targetMass);
+            if (iD < 0) { iD = ~iD; }
+            else
+            {
+                while (massArray[iD-1] == targetMass)
+                {
+                    iD--;
+                }
+            }
+            return iD;
         }
 
         public static double CalculateGlycoPeptideScore(MsDataScan thisScan, List<MatchedFragmentIon> matchedFragmentIons, double maximumMassThatFragmentIonScoreIsDoubled)
@@ -121,7 +186,8 @@ namespace EngineLayer.CrosslinkSearch
                 var testPeptide = new PeptideWithSetModifications(peptide.Protein, peptide.DigestionParams, peptide.OneBasedStartResidueInProtein,
                     peptide.OneBasedEndResidueInProtein, peptide.CleavageSpecificityForFdrCategory, peptide.PeptideDescription, peptide.MissedCleavages, testMods, peptide.NumFixedMods);
 
-                List<Product> theoreticalProducts = testPeptide.Fragment(dissociationType, FragmentationTerminus.Both).ToList();
+                List<Product> theoreticalProducts = testPeptide.Fragment(dissociationType, FragmentationTerminus.Both).Where(p=>p.ProductType!= ProductType.M).ToList();
+                theoreticalProducts.AddRange(GetGlycanYIons(peptide, glycan));
 
                 yield return new Tuple<int, List<Product>>(position, theoreticalProducts);
             }
@@ -130,11 +196,10 @@ namespace EngineLayer.CrosslinkSearch
         public static Modification GlycanToModification(Glycan glycan)
         {          
             Dictionary<DissociationType, List<double>> neutralLosses = new Dictionary<DissociationType, List<double>>();
-            List<double> lossMasses = glycan.Ions.Where(p => p.IonMass <= 1000).Select(p => glycan.Mass - p.IonMass).OrderBy(p => p).ToList();
-            lossMasses.Add(glycan.Mass);
+            List<double> lossMasses = glycan.Ions.Where(p=>p.IonMass < 570).Select(p => p.LossIonMass).OrderBy(p => p).ToList(); //570 is a cutoff for glycan ion size 2N1H, which will generate fragment ions. 
             neutralLosses.Add(DissociationType.HCD, lossMasses);
             neutralLosses.Add(DissociationType.CID, lossMasses);
-            //TO DO: add diagnosticIons as a property for Glycan
+            
             Dictionary<DissociationType, List<double>> diagnosticIons = new Dictionary<DissociationType, List<double>>();
             diagnosticIons.Add(DissociationType.HCD, glycan.GetDiagnosticIons().Values.ToList());
             diagnosticIons.Add(DissociationType.CID, glycan.GetDiagnosticIons().Values.ToList());

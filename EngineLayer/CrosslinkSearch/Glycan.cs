@@ -191,6 +191,16 @@ namespace EngineLayer
             return masses;
         }
 
+        private static double GetIonLossMass(byte[] Kind, byte[] ionKind)
+        {
+            byte[] lossKind = new byte[Kind.Length];
+            for (int i = 0; i < Kind.Length; i++)
+            {
+                lossKind[i] = (byte)(Kind[i] - ionKind[i]);
+            }
+            return GetMass(lossKind);
+        }
+
         public static double GetMass(byte[] kind)
         {
             double y = CharMassDic['H'] * kind[0] +
@@ -236,16 +246,16 @@ namespace EngineLayer
             foreach (var aNodeIon in nodeIons)
             {
                 var ionMass = GetMass(Node2Struct(aNodeIon));
-                if (!ionMasses.Contains(ionMass))
+                if (!ionMasses.Contains(ionMass) && ionMass != mass)
                 {
                     ionMasses.Add(ionMass);
                     var ionKind = GetKind(Node2Struct(aNodeIon));
-                    GlycanIon glycanIon = new GlycanIon(0, ionMass, ionKind);
+                    var lossIonMass = GetIonLossMass(kind, ionKind);
+                    GlycanIon glycanIon = new GlycanIon(0, ionMass, ionKind, lossIonMass);
                     glycanIons.Add(glycanIon);
                 }
             }
-            var halfIonKind = new byte[] { 0, 0, 0, 0, 0 };
-            glycanIons.Add(new GlycanIon(0, 83.038194, halfIonKind)); //Cross-ring mass
+            glycanIons.Add(new GlycanIon(0, 83.038194, new byte[] { 0, 0, 0, 0, 0 }, mass - 83.038194)); //Cross-ring mass
             glycanIons = glycanIons.OrderBy(p => p.IonMass).ToList();
             //glycanIons.RemoveAt(glycanIons.Count - 1);
 
@@ -360,14 +370,16 @@ namespace EngineLayer
 
     public class GlycanIon
     {
-        public GlycanIon(int ionStruct, double ionMass, byte[] ionKind)
+        public GlycanIon(int ionStruct, double ionMass, byte[] ionKind, double lossIonMass)
         {
             IonStruct = ionStruct;
             IonMass = ionMass;
             IonKind = ionKind;
+            LossIonMass = lossIonMass;
         }
         public int IonStruct { get; set; }
         public double IonMass { get; set; }
+        public double LossIonMass { get; set; }//Glycan.Mass - IonMass
         public byte[] IonKind { get; set; }
     }
 

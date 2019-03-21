@@ -59,7 +59,7 @@ namespace Test
 
             Assert.AreEqual(allcombs_rep.Count(), 126);
 
-            //Permutation
+            //Permutation test
             var kperm = Glycan.GetPermutations(input, 3);
 
             Assert.AreEqual(kperm.Count(), 60);
@@ -68,8 +68,10 @@ namespace Test
 
             Assert.AreEqual(allperm.Count(), 120);
 
-            //
+            //Permutation test with repetition
+            var kperm_rep = Glycan.GetPermutationsWithRept(input, 3);
 
+            Assert.AreEqual(kperm_rep.Count(), 125);
 
         }
     }
