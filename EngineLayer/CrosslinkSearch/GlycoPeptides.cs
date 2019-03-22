@@ -169,7 +169,7 @@ namespace EngineLayer.CrosslinkSearch
             return score;
         }
 
-        public static IEnumerable<Tuple<int, List<Product>>> NGlyGetTheoreticalFragments(DissociationType dissociationType, 
+        public static IEnumerable<Tuple<int, List<Product>>> NGlyGetTheoreticalFragments(Ms2ScanWithSpecificMass theScan, DissociationType dissociationType, 
             List<int> possibleModPositions, PeptideWithSetModifications peptide, Glycan glycan)
         {
             Modification modification = GlycanToModification(glycan);
@@ -187,7 +187,7 @@ namespace EngineLayer.CrosslinkSearch
                     peptide.OneBasedEndResidueInProtein, peptide.CleavageSpecificityForFdrCategory, peptide.PeptideDescription, peptide.MissedCleavages, testMods, peptide.NumFixedMods);
 
                 List<Product> theoreticalProducts = testPeptide.Fragment(dissociationType, FragmentationTerminus.Both).Where(p=>p.ProductType!= ProductType.M).ToList();
-                theoreticalProducts.AddRange(GetGlycanYIons(peptide, glycan));
+                theoreticalProducts.AddRange(GetGlycanYIons(theScan, glycan));
 
                 yield return new Tuple<int, List<Product>>(position, theoreticalProducts);
             }

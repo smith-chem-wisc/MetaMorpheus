@@ -56,9 +56,7 @@ namespace Test
             var sites = CrosslinkSpectralMatch.GetPossibleModSites(aPeptideWithSetModifications.Last(), motifs);
             Glycan glycan = Glycan.Struct2Glycan("(N(F)(N(H(H(N))(H(N)))))", 0);
 
-            var glycanMod = GlycoPeptides.GlycanToModification(glycan);
-            var fragmentIons = GlycoPeptides.NGlyGetTheoreticalFragments(DissociationType.HCD, sites, aPeptideWithSetModifications.Last(), glycan).ToList();
-
+            
             //using (StreamWriter output = new StreamWriter(Path.Combine(TestContext.CurrentContext.TestDirectory, "GlycanFragmentions.txt")))
             //{
             //    foreach (var product in fragmentIons)
@@ -76,6 +74,9 @@ namespace Test
             var msDataFile = myFileManager.LoadFile(filePath, 300, 0.01, true, true, commonParameters);
             var listOfSortedms2Scans = MetaMorpheusTask.GetMs2Scans(msDataFile, filePath, commonParameters).ToArray();
 
+            var glycanMod = GlycoPeptides.GlycanToModification(glycan);
+            var fragmentIons = GlycoPeptides.NGlyGetTheoreticalFragments(listOfSortedms2Scans[0], DissociationType.HCD, sites, aPeptideWithSetModifications.Last(), glycan).ToList();
+
             var glycanYIons = GlycoPeptides.GetGlycanYIons(listOfSortedms2Scans[0], glycan);
             var matchedGlycanYIons = MetaMorpheusEngine.MatchFragmentIons(listOfSortedms2Scans[0], glycanYIons, commonParameters);
             Assert.AreEqual(matchedGlycanYIons.Count, 16);
@@ -90,7 +91,7 @@ namespace Test
             var bestGlycans = GlycoPeptides.MatchBestGlycan(listOfSortedms2Scans[0], GlobalVariables.NGlycans.ToArray(), commonParameters).Where(p => p != null && p.Item2 >= 2).OrderByDescending(p => p.Item2).Take(100).OrderBy(p => p.Item3).ToArray(); ;
 
             //Please keep the draw functions, they are important to debug visually.
-            //DrawPeptideSpectralMatch(listOfSortedms2Scans[0].TheScan, matchedFragmentIons, pep.BaseSequence);
+            DrawPeptideSpectralMatch(listOfSortedms2Scans[0].TheScan, matchedFragmentIons, pep.BaseSequence);
             //DrawPeptideSpectralMatch(listOfSortedms2Scans[0].TheScan, matchedGlycanYIons, pep.BaseSequence);
         }
 
