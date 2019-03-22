@@ -617,6 +617,96 @@ namespace Test
             xlst.WritePepXML_xl(csms.ToList(), new List<Protein>(), "", new List<Modification> { deadend }, new List<Modification> { deadend }, new List<string>(), TestContext.CurrentContext.TestDirectory, "test", new List<string>());
             File.Delete(Path.Combine(TestContext.CurrentContext.TestDirectory, @"test.pep.XML"));
         }
+
+        [Test]
+        public static void TestMixedMs2Ms2()
+        {
+            CommonParameters commonParameters = new CommonParameters(dissociationType: DissociationType.CID, childScanDissociationType: DissociationType.ETD);
+
+            string spectraFile = Path.Combine(TestContext.CurrentContext.TestDirectory, @"XlTestData\ms2mixed_bsa_xlink.mzML");
+            var file = new MyFileManager(true).LoadFile(spectraFile, null, null, false, false, commonParameters);
+
+            var scans = MetaMorpheusTask.GetMs2Scans(file, spectraFile, commonParameters).ToArray();
+
+            Assert.That(scans.First().ChildScans.Count == 1);
+            Assert.That(scans.Length == 1);
+
+            Protein bsa = new Protein("MKWVTFISLLLLFSSAYSRGVFRRDTHKSEIAHRFKDLGEEHFKGLVLIAFSQYL" +
+                "QQCPFDEHVKLVNELTEFAKTCVADESHAGCEKSLHTLFGDELCKVASLRETYGDMADCCEKQEPERNECFLSHKDDS" +
+                "PDLPKLKPDPNTLCDEFKADEKKFWGKYLYEIARRHPYFYAPELLYYANKYNGVFQECCQAEDKGACLLPKIETMRE" +
+                "KVLTSSARQRLRCASIQKFGERALKAWSVARLSQKFPKAEFVEVTKLVTDLTKVHKECCHGDLLECADDR" +
+                "ADLAKYICDNQDTISSKLKECCDKPLLEKSHCIAEVEKDAIPENLPPLTADFAEDKDVCKNYQEAKDAFL" +
+                "GSFLYEYSRRHPEYAVSVLLRLAKEYEATLEECCAKDDPHACYSTVFDKLKHLVDEPQNLIKQNCDQFEK" +
+                "LGEYGFQNALIVRYTRKVPQVSTPTLVEVSRSLGKVGTRCCTKPESERMPCTEDYLSLILNRLCVLHEKT" +
+                "PVSEKVTKCCTESLVNRRPCFSALTPDETYVPKAFDEKLFTFHADICTLPDTEKQIKKQTALVELLKHKP" +
+                "KATEEQLKTVMENFVAFVDKCCAADDKEACFAVEGPKLVVSTQTALA", "BSA");
+
+            var indexingResults = (IndexingResults)new IndexingEngine(new List<Protein> { bsa }, new List<Modification>(), new List<Modification>(), 0, DecoyType.None,
+                commonParameters, 5000, false, new List<FileInfo>(), new List<string>()).Run();
+            
+            var csms = new CrosslinkSpectralMatch[1];
+            new CrosslinkSearchEngine(csms, scans, indexingResults.PeptideIndex, indexingResults.FragmentIndex, 0, commonParameters, new Crosslinker().SelectCrosslinker(CrosslinkerType.DSSO), 
+                false, 0, false, false, true, new List<string>()).Run();
+
+            var csm = csms[0];
+
+            // test parent scan (CID)
+            Assert.That(csm.MatchedFragmentIons.Count == 13);
+            Assert.That(csm.ScanNumber == 2);
+
+            // test child scan (ETD)
+            Assert.That(csm.ChildMatchedFragmentIons.First().Key == 3);
+            Assert.That(csm.ChildMatchedFragmentIons.First().Value.Count == 17);
+            Assert.That(csm.BetaPeptide.ChildMatchedFragmentIons.First().Key == 3);
+            Assert.That(csm.BetaPeptide.ChildMatchedFragmentIons.First().Value.Count == 12);
+        }
+
+        [Test]
+        public static void TestMs2Ms3()
+        {
+            CommonParameters commonParameters = new CommonParameters(dissociationType: DissociationType.CID, childScanDissociationType: DissociationType.LowCID, precursorMassTolerance: new PpmTolerance(10));
+
+            string spectraFile = Path.Combine(TestContext.CurrentContext.TestDirectory, @"XlTestData\10226.mzML");
+            var file = new MyFileManager(true).LoadFile(spectraFile, null, null, false, false, commonParameters);
+
+            var scans = MetaMorpheusTask.GetMs2Scans(file, spectraFile, commonParameters).ToArray();
+
+            Assert.That(scans.First().ChildScans.Count == 4);
+            Assert.That(scans.Length == 2);
+
+            Protein bsa = new Protein("MKWVTFISLLLLFSSAYSRGVFRRDTHKSEIAHRFKDLGEEHFKGLVLIAFSQYL" +
+                "QQCPFDEHVKLVNELTEFAKTCVADESHAGCEKSLHTLFGDELCKVASLRETYGDMADCCEKQEPERNECFLSHKDDS" +
+                "PDLPKLKPDPNTLCDEFKADEKKFWGKYLYEIARRHPYFYAPELLYYANKYNGVFQECCQAEDKGACLLPKIETMRE" +
+                "KVLTSSARQRLRCASIQKFGERALKAWSVARLSQKFPKAEFVEVTKLVTDLTKVHKECCHGDLLECADDR" +
+                "ADLAKYICDNQDTISSKLKECCDKPLLEKSHCIAEVEKDAIPENLPPLTADFAEDKDVCKNYQEAKDAFL" +
+                "GSFLYEYSRRHPEYAVSVLLRLAKEYEATLEECCAKDDPHACYSTVFDKLKHLVDEPQNLIKQNCDQFEK" +
+                "LGEYGFQNALIVRYTRKVPQVSTPTLVEVSRSLGKVGTRCCTKPESERMPCTEDYLSLILNRLCVLHEKT" +
+                "PVSEKVTKCCTESLVNRRPCFSALTPDETYVPKAFDEKLFTFHADICTLPDTEKQIKKQTALVELLKHKP" +
+                "KATEEQLKTVMENFVAFVDKCCAADDKEACFAVEGPKLVVSTQTALA", "BSA");
+
+            var fixedMods = GlobalVariables.AllModsKnown.Where(p => p.IdWithMotif == "Carbamidomethyl on C").ToList();
+
+            var indexingResults = (IndexingResults)new IndexingEngine(new List<Protein> { bsa }, new List<Modification>(), fixedMods, 0, DecoyType.None,
+                commonParameters, 5000, false, new List<FileInfo>(), new List<string>()).Run();
+
+            var csms = new CrosslinkSpectralMatch[2];
+            new CrosslinkSearchEngine(csms, scans, indexingResults.PeptideIndex, indexingResults.FragmentIndex, 0, commonParameters, new Crosslinker().SelectCrosslinker(CrosslinkerType.DSSO),
+                false, 0, false, false, true, new List<string>()).Run();
+
+            var csm = csms[0];
+
+            // test parent scan (CID)
+            Assert.That(csm.MatchedFragmentIons.Count == 12);
+            Assert.That(csm.ScanNumber == 2);
+
+            // test child scan (low-resolution CID, alpha peptide signature ion)
+            Assert.That(csm.ChildMatchedFragmentIons.First().Key == 4);
+            Assert.That(csm.ChildMatchedFragmentIons.First().Value.Count == 63);
+
+            // test child scan (low-resolution CID, beta peptide signature ion)
+            Assert.That(csm.BetaPeptide.ChildMatchedFragmentIons.First().Key == 6);
+            Assert.That(csm.BetaPeptide.ChildMatchedFragmentIons.First().Value.Count == 43);
+        }
     }
 
     internal class XLTestDataFile : MsDataFile

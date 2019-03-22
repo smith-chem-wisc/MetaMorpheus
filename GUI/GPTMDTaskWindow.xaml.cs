@@ -11,6 +11,7 @@ using System.Windows.Input;
 using TaskLayer;
 using Proteomics.ProteolyticDigestion;
 using MassSpectrometry;
+using System.ComponentModel;
 
 namespace MetaMorpheusGUI
 {
@@ -43,6 +44,7 @@ namespace MetaMorpheusGUI
             }
 
             SearchModifications.Timer.Tick += new EventHandler(TextChangeTimerHandler);
+            base.Closing += this.OnClosing;
         }
 
         internal GptmdTask TheTask { get; private set; }
@@ -389,6 +391,11 @@ namespace MetaMorpheusGUI
             {
                 CustomFragmentationWindow.Show();
             }
+        }
+
+        private void OnClosing(object sender, CancelEventArgs e)
+        {
+            CustomFragmentationWindow.Close();
         }
     }
 }
