@@ -201,6 +201,25 @@ namespace EngineLayer
             return GetMass(lossKind);
         }
 
+        public static bool DistingushGlycans(Glycan glycan1, Glycan glycan2)
+        {
+            if (glycan1.Mass == glycan2.Mass)
+            {
+                if (glycan1.Ions.Count() == glycan2.Ions.Count())
+                {
+                    for (int i = 0; i < glycan1.Ions.Count(); i++)
+                    {
+                        if (glycan1.Ions[i].IonMass != glycan2.Ions[i].IonMass)
+                        {
+                            return false;
+                        }                   
+                    }
+                    return true;
+                }
+            }
+            return false;
+        }
+
         public static double GetMass(byte[] kind)
         {
             double y = CharMassDic['H'] * kind[0] +
@@ -392,6 +411,8 @@ namespace EngineLayer
             }
         }
 
+        public bool IsNGlycan;
+
         public List<Glycan> glycans { get; set; } = new List<Glycan>();
 
         public List<GlycanIon> CommonGlycanIons { get; set; }
@@ -401,19 +422,23 @@ namespace EngineLayer
         public byte[] Kind
         {
             get
-            {
-                byte[] kind = new byte[5] { 0,0,0,0,0};
-                foreach (var aglycan in glycans)
+            {          
+                if (IsNGlycan)
                 {
-                    for (int i = 0; i < 5; i++)
-                    {
-                        kind[i] += aglycan.Kind[i];
-                    }
+                    return glycans.First().Kind;
                 }
-                return kind;
-
-               
-                
+                else
+                {
+                    byte[] kind = new byte[5] { 0, 0, 0, 0, 0 };
+                    foreach (var aglycan in glycans)
+                    {
+                        for (int i = 0; i < 5; i++)
+                        {
+                            kind[i] += aglycan.Kind[i];
+                        }
+                    }
+                    return kind;
+                }                                 
             }
         }
 

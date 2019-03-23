@@ -121,6 +121,15 @@ namespace Test
         }
 
         [Test]
+        public static void GlyTest_DistinguishGlycans()
+        {
+            Glycan glycan = Glycan.Struct2Glycan("(N(N(H(H(H(H)))(H(H(H(H)))(H(H(H)))))))", 0);
+            Glycan glycan2 = Glycan.Struct2Glycan("(N(N(H(H(H))(H(H(H))(H(H(H(H(H)))))))))", 0);
+
+            var test = Glycan.DistingushGlycans(glycan, glycan2);
+        }
+
+        [Test]
         public static void GlyTest_BinarySearch()
         {
             double[] array = new double[] { 3.44, 3.45, 4.55, 4.55, 4.55, 4.55, 4.55, 4.55, 4.55, 5.66 };
