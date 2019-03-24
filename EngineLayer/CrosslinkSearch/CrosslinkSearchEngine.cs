@@ -70,7 +70,7 @@ namespace EngineLayer.CrosslinkSearch
 
         //public Dictionary<double, List<Glycan>> groupedGlycans { get; }
         private Glycan[] Glycans {get;}
-        public Dictionary<double, List<GlycanBox>> GroupedOGlycanBoxes { get; }
+        public Dictionary<int, List<GlycanBox>> GroupedOGlycanBoxes { get; }
 
         protected override MetaMorpheusEngineResults RunSpecific()
         {

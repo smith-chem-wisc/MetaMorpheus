@@ -28,19 +28,19 @@ namespace EngineLayer.CrosslinkSearch
 
             foreach (var ioxo in Glycan.oxoniumIons)
             {
-                int matchedPeakIndex = theScan.TheScan.MassSpectrum.GetClosestPeakIndex(ioxo.Value).Value;
-                if (massDiffAcceptor.Accepts(theScan.TheScan.MassSpectrum.XArray[matchedPeakIndex], ioxo.Value) >= 0)
+                int matchedPeakIndex = theScan.TheScan.MassSpectrum.GetClosestPeakIndex((double)ioxo/10E5).Value;
+                if (massDiffAcceptor.Accepts(theScan.TheScan.MassSpectrum.XArray[matchedPeakIndex], (double)ioxo/10E5) >= 0)
                 {
                     totalNum++;
                     if (totalNum > 1)
                     {
                         return true;
                     }
-                    if (ioxo.Key == 138)
+                    if (ioxo == 13805500)
                         intensity138 = experimental_intensities_rank[matchedPeakIndex];
-                    if (ioxo.Key == 204)
+                    if (ioxo == 20408700)
                         intensity204 = experimental_intensities_rank[matchedPeakIndex];
-                    if (ioxo.Key == 366)
+                    if (ioxo == 36614000)
                         intensity366 = experimental_intensities_rank[matchedPeakIndex];
                 }
             }
@@ -59,9 +59,9 @@ namespace EngineLayer.CrosslinkSearch
 
             foreach (var fragment in matchedFragmentIons.Where(p=>p.NeutralTheoreticalProduct.ProductType == ProductType.M))
             {
-                if (Glycan.TrimannosylCores.ContainsKey((int)(glycan.Mass - fragment.NeutralTheoreticalProduct.NeutralLoss)))
+                if (Glycan.TrimannosylCores.ContainsKey((int)((double)glycan.Mass/10E5 - fragment.NeutralTheoreticalProduct.NeutralLoss)))
                 {
-                    var pair = Glycan.TrimannosylCores.Where(p=>p.Key == (int)(glycan.Mass - fragment.NeutralTheoreticalProduct.NeutralLoss)).FirstOrDefault();
+                    var pair = Glycan.TrimannosylCores.Where(p=>p.Key == (int)((double)glycan.Mass/10E5 - fragment.NeutralTheoreticalProduct.NeutralLoss)).FirstOrDefault();
                     if (!cores.ContainsKey(pair.Key))
                     {
                         cores.Add(pair.Key, pair.Value);
@@ -88,12 +88,12 @@ namespace EngineLayer.CrosslinkSearch
 
         public static List<Product> GetGlycanYIons(Ms2ScanWithSpecificMass theScan, Glycan glycan)
         {
-            double possiblePeptideMass = theScan.PrecursorMass - glycan.Mass;
+            double possiblePeptideMass = theScan.PrecursorMass - (double)glycan.Mass/10E5;
             List<Product> YIons = new List<Product>();
-            YIons.Add(new Product(ProductType.M, new NeutralTerminusFragment(FragmentationTerminus.Both, theScan.PrecursorMass, 0, 0), glycan.Mass)); //Y0 ion. Glycan totally loss.
+            YIons.Add(new Product(ProductType.M, new NeutralTerminusFragment(FragmentationTerminus.Both, theScan.PrecursorMass, 0, 0), (double)glycan.Mass/10E5)); //Y0 ion. Glycan totally loss.
             foreach (var ion in glycan.Ions)
             {
-                Product product = new Product(ProductType.M, new NeutralTerminusFragment(FragmentationTerminus.Both, theScan.PrecursorMass, 0, 0), ion.LossIonMass);
+                Product product = new Product(ProductType.M, new NeutralTerminusFragment(FragmentationTerminus.Both, theScan.PrecursorMass, 0, 0), (double)ion.LossIonMass/10E5);
                 YIons.Add(product);
             }
             return YIons;
@@ -103,10 +103,10 @@ namespace EngineLayer.CrosslinkSearch
         {
             double possiblePeptideMass = peptide.MonoisotopicMass;
             List<Product> YIons = new List<Product>();
-            YIons.Add(new Product(ProductType.M, new NeutralTerminusFragment(FragmentationTerminus.Both, possiblePeptideMass + glycan.Mass, 0, 0), glycan.Mass));
+            YIons.Add(new Product(ProductType.M, new NeutralTerminusFragment(FragmentationTerminus.Both, possiblePeptideMass + (double)glycan.Mass/10E5, 0, 0), (double)glycan.Mass/10E5));
             foreach (var ion in glycan.Ions)
             {
-                Product product = new Product(ProductType.M, new NeutralTerminusFragment(FragmentationTerminus.Both, possiblePeptideMass + glycan.Mass, 0, 0), ion.LossIonMass);
+                Product product = new Product(ProductType.M, new NeutralTerminusFragment(FragmentationTerminus.Both, possiblePeptideMass + (double)glycan.Mass/10E5, 0, 0), (double)ion.LossIonMass/10E5);
                 YIons.Add(product);
             }
             return YIons;
@@ -118,7 +118,7 @@ namespace EngineLayer.CrosslinkSearch
             //TO DO: Parallel this?
             for (int i = 0; i < glycans.Length; i++)
             {
-                if (theScan.PrecursorMass - glycans[i].Mass < 350) //Filter large glycans
+                if (theScan.PrecursorMass - (double)glycans[i].Mass/10E5 < 350) //Filter large glycans
                 {
                     continue;
                 }
@@ -127,7 +127,7 @@ namespace EngineLayer.CrosslinkSearch
                 if (ScanTrimannosylCoreFilter(matchedFragmentIons, glycans[i]))
                 {
                     var score = MetaMorpheusEngine.CalculatePeptideScore(theScan.TheScan, matchedFragmentIons, 0);
-                    tuples[i] = new Tuple<int, double, double>(i, score, glycans[i].Mass);
+                    tuples[i] = new Tuple<int, double, double>(i, score, (double)glycans[i].Mass/10E5);
                 }
             }
 
@@ -196,7 +196,7 @@ namespace EngineLayer.CrosslinkSearch
         public static Modification GlycanToModification(Glycan glycan)
         {          
             Dictionary<DissociationType, List<double>> neutralLosses = new Dictionary<DissociationType, List<double>>();
-            List<double> lossMasses = glycan.Ions.Where(p=>p.IonMass < 570).Select(p => p.LossIonMass).OrderBy(p => p).ToList(); //570 is a cutoff for glycan ion size 2N1H, which will generate fragment ions. 
+            List<double> lossMasses = glycan.Ions.Where(p=>p.IonMass < 57000000).Select(p => (double)p.LossIonMass/10E5).OrderBy(p => p).ToList(); //570 is a cutoff for glycan ion size 2N1H, which will generate fragment ions. 
             neutralLosses.Add(DissociationType.HCD, lossMasses);
             neutralLosses.Add(DissociationType.CID, lossMasses);
             
@@ -204,7 +204,7 @@ namespace EngineLayer.CrosslinkSearch
             diagnosticIons.Add(DissociationType.HCD, glycan.GetDiagnosticIons().Values.ToList());
             diagnosticIons.Add(DissociationType.CID, glycan.GetDiagnosticIons().Values.ToList());
 
-            Modification modification = new Modification(_originalId:"Glycan", _monoisotopicMass: glycan.Mass, _neutralLosses: neutralLosses, _diagnosticIons : diagnosticIons);
+            Modification modification = new Modification(_originalId:"Glycan", _monoisotopicMass: (double)glycan.Mass/10E5, _neutralLosses: neutralLosses, _diagnosticIons : diagnosticIons);
             return modification;
         }
 

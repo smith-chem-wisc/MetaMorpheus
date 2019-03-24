@@ -8,26 +8,17 @@ namespace EngineLayer
 {
     public class Glycan
     {
-        private static readonly double hydrogenAtomMonoisotopicMass = PeriodicTable.GetElement("H").PrincipalIsotope.AtomicMass;
+        private static readonly int hydrogenAtomMonoisotopicMass =  Convert.ToInt32(PeriodicTable.GetElement("H").PrincipalIsotope.AtomicMass * 10E5);
 
         //H: C6O5H10, N: C8O5NH13, A: C11O8NH17, G: C11H17NO9, F: C6O4H10
-        private static Dictionary<char, double> CharMassDic = new Dictionary<char, double>() { { 'H', 162.052823 }, { 'N', 203.079373 }, { 'A', 291.095417 }, { 'G', 307.090331 }, { 'F', 146.057909 } };
+        private static Dictionary<char, int> CharMassDic = new Dictionary<char, int>() { { 'H', 16205282 }, { 'N', 20307937 }, { 'A', 29109542 }, { 'G', 30709033 }, { 'F', 14605791 } };
 
-        public static Dictionary<int, double> oxoniumIons = new Dictionary<int, double>()
-        {
-            { 126, 126.055 },
-            { 138, 138.055 },
-            { 144, 144.065 },
-            { 168, 168.066 },
-            { 186, 186.076 },
-            { 204, 204.087 },
-            { 366, 366.140 },
-            { 274, 274.092 },
-            { 292, 292.103 }
-        };
+        public static HashSet<int> oxoniumIons = new HashSet<int>()
+        {12605500, 13805500, 14406500, 16806600, 18607600, 20408700, 36614000, 27409200, 29210300 };
 
         public static Dictionary<int, double> TrimannosylCores = new Dictionary<int, double>()
         {
+            //HashSet {83038194, 20307937, 40615875, 56821157, 73026439, 89231722, 34913728, 55221665};
             { 0, 0},
             { 83, 83.038194},
             { 203, 203.079373},
@@ -48,7 +39,7 @@ namespace EngineLayer
             //{ "Y3F", 552.216654}
         };
 
-        public Glycan(string struc, double mass, byte[] kind, List<GlycanIon> ions)
+        public Glycan(string struc, int mass, byte[] kind, List<GlycanIon> ions)
         {
             Struc = struc;
             Mass = mass;
@@ -58,7 +49,7 @@ namespace EngineLayer
         public int GlyId { get; set; }
         public int GlyType { get; set; }
         public string Struc { get; set; }
-        public double Mass { get; set; }
+        public int Mass { get; set; }
         public byte[] Kind { get; set; }
         public List<GlycanIon> Ions { get; set; }
         
@@ -164,9 +155,9 @@ namespace EngineLayer
             return nodes; 
         }
 
-        private static double GetMass(string structure)
+        private static int GetMass(string structure)
         {
-            double y = CharMassDic['H'] * structure.Count(p => p == 'H') +
+            int y = CharMassDic['H'] * structure.Count(p => p == 'H') +
                 CharMassDic['N'] * structure.Count(p => p == 'N') +
                 CharMassDic['A'] * structure.Count(p => p == 'A') +
                 CharMassDic['G'] * structure.Count(p => p == 'G') +
@@ -180,9 +171,9 @@ namespace EngineLayer
             return kind;
         }
 
-        private static SortedSet<double> GetAllChildrenMass(Node node)
+        private static SortedSet<int> GetAllChildrenMass(Node node)
         {
-            SortedSet<double> masses = new SortedSet<double>();
+            SortedSet<int> masses = new SortedSet<int>();
             var allC = GetAllChildrenCombination(node);
             foreach (var aC in allC)
             {
@@ -191,7 +182,7 @@ namespace EngineLayer
             return masses;
         }
 
-        private static double GetIonLossMass(byte[] Kind, byte[] ionKind)
+        private static int GetIonLossMass(byte[] Kind, byte[] ionKind)
         {
             byte[] lossKind = new byte[Kind.Length];
             for (int i = 0; i < Kind.Length; i++)
@@ -207,6 +198,7 @@ namespace EngineLayer
             {
                 if (glycan1.Ions.Count() == glycan2.Ions.Count())
                 {
+
                     for (int i = 0; i < glycan1.Ions.Count(); i++)
                     {
                         if (glycan1.Ions[i].IonMass != glycan2.Ions[i].IonMass)
@@ -220,9 +212,9 @@ namespace EngineLayer
             return false;
         }
 
-        public static double GetMass(byte[] kind)
+        public static int GetMass(byte[] kind)
         {
-            double y = CharMassDic['H'] * kind[0] +
+            int y = CharMassDic['H'] * kind[0] +
                 CharMassDic['N'] * kind[1] +
                 CharMassDic['A'] * kind[2] +
                 CharMassDic['G'] * kind[3] +
@@ -258,7 +250,7 @@ namespace EngineLayer
         {
             Node node = Struct2Node(theGlycanStruct);
             List<Node> nodeIons = GetAllChildrenCombination(node);
-            double mass = GetMass(theGlycanStruct);
+            int mass = GetMass(theGlycanStruct);
             byte[] kind = GetKind(theGlycanStruct);
             List<GlycanIon> glycanIons = new List<GlycanIon>();
             HashSet<double> ionMasses = new HashSet<double>();
@@ -274,7 +266,7 @@ namespace EngineLayer
                     glycanIons.Add(glycanIon);
                 }
             }
-            glycanIons.Add(new GlycanIon(0, 83.038194, new byte[] { 0, 0, 0, 0, 0 }, mass - 83.038194)); //Cross-ring mass
+            glycanIons.Add(new GlycanIon(0, 8303819, new byte[] { 0, 0, 0, 0, 0 }, mass - 8303819)); //Cross-ring mass
             glycanIons = glycanIons.OrderBy(p => p.IonMass).ToList();
             //glycanIons.RemoveAt(glycanIons.Count - 1);
 
@@ -389,7 +381,7 @@ namespace EngineLayer
 
     public class GlycanIon
     {
-        public GlycanIon(int ionStruct, double ionMass, byte[] ionKind, double lossIonMass)
+        public GlycanIon(int ionStruct, int ionMass, byte[] ionKind, int lossIonMass)
         {
             IonStruct = ionStruct;
             IonMass = ionMass;
@@ -397,14 +389,14 @@ namespace EngineLayer
             LossIonMass = lossIonMass;
         }
         public int IonStruct { get; set; }
-        public double IonMass { get; set; }
-        public double LossIonMass { get; set; }//Glycan.Mass - IonMass
+        public int IonMass { get; set; }
+        public int LossIonMass { get; set; }//Glycan.Mass - IonMass
         public byte[] IonKind { get; set; }
     }
 
     public class GlycanBox
     {
-        public double Mass {
+        public int Mass {
             get
             {
                 return Glycan.GetMass(Kind);

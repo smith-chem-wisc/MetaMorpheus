@@ -333,7 +333,7 @@ namespace EngineLayer.CrosslinkSearch
                 sb.Append(XLTotalScore + "\t");
                 sb.Append(string.Join("|", Glycan.Select(p => p.GlyId.ToString()).ToArray())); sb.Append("\t");
                 sb.Append(Glycan.First().Struc); sb.Append("\t");
-                sb.Append(Glycan.First().Mass); sb.Append("\t");
+                sb.Append((double)Glycan.First().Mass/10E5); sb.Append("\t");
                 sb.Append(string.Join("|", Glycan.First().Kind.Select(p => p.ToString()).ToArray())); sb.Append("\t");
             }
 
