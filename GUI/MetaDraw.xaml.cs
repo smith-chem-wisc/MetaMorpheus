@@ -173,7 +173,7 @@ namespace MetaMorpheusGUI
                         + " Dissociation Type: " + parentScan.DissociationType.ToString()
                         + " MsOrder: " + parentScan.MsnOrder.ToString()
                         + " Selected Mz: " + parentScan.SelectedIonMZ.Value.ToString("0.##")
-                        + " RetentionTime: " + parentScan.RetentionTime.ToString("0.##");
+                        + " Retention Time: " + parentScan.RetentionTime.ToString("0.##");
 
                 itemsControlSampleViewModel.AddNewRow(parentPsmModel, parentAnnotation);
 

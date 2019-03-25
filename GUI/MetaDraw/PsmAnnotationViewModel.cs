@@ -137,10 +137,17 @@ namespace ViewModels
                     allIons[i].Points.Add(new DataPoint(peak.Mz, spectrumIntensities[i]));
 
                     // peak annotation
-                    string peakAnnotationText = peak.NeutralTheoreticalProduct.ProductType.ToString().ToLower() + peak.NeutralTheoreticalProduct.TerminusFragment.FragmentNumber + " (" + peak.Mz.ToString("F3") + ")";
+
+                    string add = "";
+                    if (psmToDraw.BetaPeptideBaseSequence != null)
+                    {
+                        add = "α-";
+                    }
+
+                    string peakAnnotationText = add + peak.NeutralTheoreticalProduct.ProductType.ToString().ToLower() + peak.NeutralTheoreticalProduct.TerminusFragment.FragmentNumber + " (" + peak.Mz.ToString("F3") + ")";
                     if (peak.NeutralTheoreticalProduct.NeutralLoss != 0)
                     {
-                        peakAnnotationText = peak.NeutralTheoreticalProduct.ProductType.ToString().ToLower() + peak.NeutralTheoreticalProduct.TerminusFragment.FragmentNumber + "-" + peak.NeutralTheoreticalProduct.NeutralLoss.ToString("F2") + " (" + peak.Mz.ToString("F3") + ")";
+                        peakAnnotationText = add + peak.NeutralTheoreticalProduct.ProductType.ToString().ToLower() + peak.NeutralTheoreticalProduct.TerminusFragment.FragmentNumber + "-" + peak.NeutralTheoreticalProduct.NeutralLoss.ToString("F2") + " (" + peak.Mz.ToString("F3") + ")";
                     }
 
                     var peakAnnotation = new TextAnnotation();
@@ -199,10 +206,10 @@ namespace ViewModels
                         allIons[i].Points.Add(new DataPoint(peak.Mz, spectrumIntensities[i]));
 
                         // peak annotation
-                        string peakAnnotationText = "beta-" + peak.NeutralTheoreticalProduct.ProductType.ToString().ToLower() + peak.NeutralTheoreticalProduct.TerminusFragment.FragmentNumber + " (" + peak.Mz.ToString("F3") + ")";
+                        string peakAnnotationText = "β-" + peak.NeutralTheoreticalProduct.ProductType.ToString().ToLower() + peak.NeutralTheoreticalProduct.TerminusFragment.FragmentNumber + " (" + peak.Mz.ToString("F3") + ")";
                         if (peak.NeutralTheoreticalProduct.NeutralLoss != 0)
                         {
-                            peakAnnotationText = "beta-" + peak.NeutralTheoreticalProduct.ProductType.ToString().ToLower() + peak.NeutralTheoreticalProduct.TerminusFragment.FragmentNumber + "-" + peak.NeutralTheoreticalProduct.NeutralLoss.ToString("F2") + " (" + peak.Mz.ToString("F3") + ")";
+                            peakAnnotationText = "β-" + peak.NeutralTheoreticalProduct.ProductType.ToString().ToLower() + peak.NeutralTheoreticalProduct.TerminusFragment.FragmentNumber + "-" + peak.NeutralTheoreticalProduct.NeutralLoss.ToString("F2") + " (" + peak.Mz.ToString("F3") + ")";
                         }
 
                         var peakAnnotation = new TextAnnotation();
