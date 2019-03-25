@@ -12,7 +12,7 @@ namespace EngineLayer.CrosslinkSearch
     {
         public static bool ScanOxoniumIonFilter(Ms2ScanWithSpecificMass theScan, DissociationType dissociationType)
         {
-            if (dissociationType == DissociationType.ETD)
+            if (dissociationType != DissociationType.ETD || dissociationType != DissociationType.ECD)
             {
                 return true;
             }
