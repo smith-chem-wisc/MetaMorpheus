@@ -8,13 +8,14 @@ namespace EngineLayer
 {
     public class Glycan
     {
-        private static readonly int hydrogenAtomMonoisotopicMass =  Convert.ToInt32(PeriodicTable.GetElement("H").PrincipalIsotope.AtomicMass * 10E5);
+        private static readonly int hydrogenAtomMonoisotopicMass =  Convert.ToInt32(PeriodicTable.GetElement("H").PrincipalIsotope.AtomicMass * 1E5);
 
         //H: C6O5H10, N: C8O5NH13, A: C11O8NH17, G: C11H17NO9, F: C6O4H10
         private static Dictionary<char, int> CharMassDic = new Dictionary<char, int>() { { 'H', 16205282 }, { 'N', 20307937 }, { 'A', 29109542 }, { 'G', 30709033 }, { 'F', 14605791 } };
 
         public static HashSet<int> oxoniumIons = new HashSet<int>()
-        {12605500, 13805500, 14406500, 16806600, 18607600, 20408700, 36614000, 27409200, 29210300 };
+        {13805550, 20408720, 36614002 };
+        //{10902895, 11503951, 12605550, 13805550, 14406607, 16306064, 16806607, 18607663, 20408720, 27409268, 29008759, 29210324, 30809816, 36614002 };
 
         public static Dictionary<int, double> TrimannosylCores = new Dictionary<int, double>()
         {
@@ -222,26 +223,37 @@ namespace EngineLayer
             return y;
         }
 
-        public Dictionary<int, double> GetDiagnosticIons()
+        public HashSet<int> GetDiagnosticIons()
         {
-            Dictionary<int, double> diagnosticIons = new Dictionary<int, double>();
+            HashSet<int> diagnosticIons = new HashSet<int>();
+            if (Kind[0] >= 1)
+            {
+                diagnosticIons.Add(10902895 - hydrogenAtomMonoisotopicMass);
+                diagnosticIons.Add(11503951 - hydrogenAtomMonoisotopicMass);
+                diagnosticIons.Add(16306064 - hydrogenAtomMonoisotopicMass);
+            }
             if (Kind[1] >= 1)
             {
-                diagnosticIons.Add(126, 126.055 - hydrogenAtomMonoisotopicMass);
-                diagnosticIons.Add(138, 138.055 - hydrogenAtomMonoisotopicMass);
-                diagnosticIons.Add(144, 144.065 - hydrogenAtomMonoisotopicMass);
-                diagnosticIons.Add(168, 168.066 - hydrogenAtomMonoisotopicMass);
-                diagnosticIons.Add(186, 186.076 - hydrogenAtomMonoisotopicMass);
-                diagnosticIons.Add(204, 204.087 - hydrogenAtomMonoisotopicMass);
+                diagnosticIons.Add(12605550 - hydrogenAtomMonoisotopicMass);
+                diagnosticIons.Add(13805550 - hydrogenAtomMonoisotopicMass);
+                diagnosticIons.Add(14406607 - hydrogenAtomMonoisotopicMass);
+                diagnosticIons.Add(16806607 - hydrogenAtomMonoisotopicMass);
+                diagnosticIons.Add(18607663 - hydrogenAtomMonoisotopicMass);
+                diagnosticIons.Add(20408720 - hydrogenAtomMonoisotopicMass);
             }
             if (Kind[1] >= 1 && Kind[0] >= 1)
             {
-                diagnosticIons.Add(366, 366.140 - hydrogenAtomMonoisotopicMass);
+                diagnosticIons.Add(36614002 - hydrogenAtomMonoisotopicMass);
             }
             if (Kind[2] >= 1)
             {
-                diagnosticIons.Add(274, 274.092 - hydrogenAtomMonoisotopicMass);
-                diagnosticIons.Add(292, 292.103 - hydrogenAtomMonoisotopicMass);
+                diagnosticIons.Add(27409268 - hydrogenAtomMonoisotopicMass);
+                diagnosticIons.Add(29210324 - hydrogenAtomMonoisotopicMass);
+            }
+            if (Kind[3] >= 1)
+            {
+                diagnosticIons.Add(29008759 - hydrogenAtomMonoisotopicMass);
+                diagnosticIons.Add(30809816 - hydrogenAtomMonoisotopicMass);
             }
             return diagnosticIons;
         }
