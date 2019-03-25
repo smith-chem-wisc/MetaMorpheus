@@ -17,9 +17,6 @@ using System.Windows.Data;
 using System.Windows.Media;
 using TaskLayer;
 using ViewModels;
-//using System.IO.Packaging;
-//using System.Windows.Xps.Packaging;
-//using System.Windows.Xps;
 
 namespace MetaMorpheusGUI
 {
@@ -61,6 +58,9 @@ namespace MetaMorpheusGUI
             spectraFileManager = new MyFileManager(true);
             SetUpDictionaries();
             modificationAnnotationColor = Brushes.Yellow;
+
+            ParentChildScanView.Visibility = Visibility.Collapsed;
+            ParentScanView.Visibility = Visibility.Collapsed;
         }
 
         private void SetUpDictionaries()
@@ -157,8 +157,12 @@ namespace MetaMorpheusGUI
             PsmFromTsv psmToDraw = scanPsms.FirstOrDefault();
 
             // if this spectrum has child scans, draw them in the "advanced" tab
-            if (psmToDraw.ChildScanMatchedIons.Count > 0 || psmToDraw.BetaPeptideChildScanMatchedIons.Count > 0)
+            if ((psmToDraw.ChildScanMatchedIons != null && psmToDraw.ChildScanMatchedIons.Count > 0)
+                || (psmToDraw.BetaPeptideChildScanMatchedIons != null && psmToDraw.BetaPeptideChildScanMatchedIons.Count > 0))
             {
+                ParentChildScanView.Visibility = Visibility.Visible;
+                ParentScanView.Visibility = Visibility.Visible;
+
                 // draw parent scans
                 var parentPsmModel = new PsmAnnotationViewModel();
                 MsDataScan parentScan = MsDataFile.GetOneBasedScan(psmToDraw.Ms2ScanNumber);
@@ -174,9 +178,17 @@ namespace MetaMorpheusGUI
                 itemsControlSampleViewModel.AddNewRow(parentPsmModel, parentAnnotation);
 
                 // draw child scans
+                HashSet<int> scansDrawn = new HashSet<int>();
                 foreach (var childScanMatchedIons in psmToDraw.ChildScanMatchedIons.Concat(psmToDraw.BetaPeptideChildScanMatchedIons))
                 {
                     int scanNumber = childScanMatchedIons.Key;
+
+                    if (scansDrawn.Contains(scanNumber))
+                    {
+                        continue;
+                    }
+                    scansDrawn.Add(scanNumber);
+
                     List<MatchedFragmentIon> matchedIons = childScanMatchedIons.Value;
 
                     var childPsmModel = new PsmAnnotationViewModel();
@@ -191,12 +203,29 @@ namespace MetaMorpheusGUI
                         + " RetentionTime: " + childScan.RetentionTime.ToString("0.##");
 
                     itemsControlSampleViewModel.AddNewRow(childPsmModel, childAnnotation);
-
-                    if (itemsControlSampleViewModel.Data.Count > 1)
-                    {
-                        BtnChangeGridColumns.IsEnabled = true;
-                    }
                 }
+            }
+            else
+            {
+                ParentChildScanView.Visibility = Visibility.Collapsed;
+                ParentScanView.Visibility = Visibility.Collapsed;
+            }
+
+            // if this is a crosslink spectrum match, there are two base sequence annotations to draw
+            // this makes the canvas taller to fit both of these peptide sequences
+            if (psmToDraw.BetaPeptideBaseSequence != null)
+            {
+                int height = 150;
+                
+                canvas.Height = height;
+                PsmAnnotationGrid.RowDefinitions[1].Height = new GridLength(height);
+            }
+            else
+            {
+                int height = 70;
+                
+                canvas.Height = height;
+                PsmAnnotationGrid.RowDefinitions[1].Height = new GridLength(height);
             }
 
             // draw annotated spectrum
@@ -275,6 +304,8 @@ namespace MetaMorpheusGUI
 
         private async void loadFilesButton_Click(object sender, RoutedEventArgs e)
         {
+            peptideSpectralMatches.Clear();
+
             // check for validity
             propertyView.Clear();
             if (spectraFilePath == null)
@@ -417,7 +448,7 @@ namespace MetaMorpheusGUI
                 //BaseDraw.linkDrawing(canvas, new Point(alphaSite * spacing, 50), new Point(betaSite * spacing, 90), Colors.Black);
             }
         }
-        
+
         private void dataGridProperties_SelectedCellsChanged(object sender, SelectedCellsChangedEventArgs e)
         {
             (sender as DataGrid).UnselectAll();
@@ -462,7 +493,7 @@ namespace MetaMorpheusGUI
 
             MessageBox.Show(string.Format("{0} PDFs exported", num));
         }
-        
+
         private void BtnChangeGridColumns_Click(object sender, RoutedEventArgs e)
         {
             itemsControlSampleViewModel.MyColumnCount++;
