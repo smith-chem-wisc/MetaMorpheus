@@ -31,6 +31,9 @@
     <None Update="Data\elements.dat">
       <CopyToOutputDirectory>Always</CopyToOutputDirectory>
     </None>
+    <None Update="Data\GlycansAIETD.gdb">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </None>
     <None Update="Data\NGlycan.gdb">
       <CopyToOutputDirectory>Always</CopyToOutputDirectory>
     </None>

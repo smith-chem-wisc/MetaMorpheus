@@ -172,17 +172,6 @@ namespace EngineLayer
             return kind;
         }
 
-        private static SortedSet<int> GetAllChildrenMass(Node node)
-        {
-            SortedSet<int> masses = new SortedSet<int>();
-            var allC = GetAllChildrenCombination(node);
-            foreach (var aC in allC)
-            {
-                masses.Add(GetMass(Node2Struct(aC)));
-            }
-            return masses;
-        }
-
         private static int GetIonLossMass(byte[] Kind, byte[] ionKind)
         {
             byte[] lossKind = new byte[Kind.Length];
@@ -221,6 +210,31 @@ namespace EngineLayer
                 CharMassDic['G'] * kind[3] +
                 CharMassDic['F'] * kind[4];
             return y;
+        }
+
+        public static SortedSet<int> GetAllChildrenMassFromKind(byte[] kind)
+        {
+            //TO DO: This is not right. 
+            SortedSet<int> vs = new SortedSet<int>();
+            for (byte g = 0; g <= kind[3]; g++)
+            {
+                for (byte a = 0; a <= kind[2]; a++)
+                {
+                    for (byte f = 0; f <= kind[4]; f++)
+                    {
+                        for (byte h  = 0; h <= kind[0]; h++)
+                        {
+                            for (byte n = 1; n <= kind[1]; n++)
+                            {
+                                byte[] akind = new byte[5] { h, n, f, a, g};
+                                int amass = GetMass(akind);
+                                vs.Add(amass);
+                            }
+                        }
+                    }
+                }
+            }
+            return vs;
         }
 
         public HashSet<int> GetDiagnosticIons()
@@ -387,6 +401,17 @@ namespace EngineLayer
                 node = node.father;
             }
             return node;
+        }
+
+        private static SortedSet<int> GetAllChildrenMass(Node node)
+        {
+            SortedSet<int> masses = new SortedSet<int>();
+            var allC = GetAllChildrenCombination(node);
+            foreach (var aC in allC)
+            {
+                masses.Add(GetMass(Node2Struct(aC)));
+            }
+            return masses;
         }
 
     }

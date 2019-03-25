@@ -51,7 +51,8 @@ namespace EngineLayer
             UsefulProteomicsDatabases.Loaders.LoadElements(ElementsLocation);
 
             //TO DO: optimize this, only load when search Glycopeptides
-            string NGlycanLocation = Path.Combine(DataDir, @"Data", @"NGlycan.gdb");
+            //string NGlycanLocation = Path.Combine(DataDir, @"Data", @"NGlycan.gdb");
+            string NGlycanLocation = Path.Combine(DataDir, @"Data", @"GlycansAIETD.gdb");
             NGlycans = Glycan.LoadGlycan(NGlycanLocation);
             string OGlycanLocation = Path.Combine(DataDir, @"Data", @"OGlycan.gdb");
             OGlycans = Glycan.LoadGlycan(OGlycanLocation);

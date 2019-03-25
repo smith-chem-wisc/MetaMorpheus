@@ -182,6 +182,7 @@ namespace Test
         [Test]
         public static void GlyTest_BinarySearch()
         {
+            //This is just to test how binary search works.
             double[] array = new double[] { 3.44, 3.45, 4.55, 4.55, 4.55, 4.55, 4.55, 4.55, 4.55, 5.66 };
             double x = 3.43;
             double y = 4.44;
@@ -197,9 +198,84 @@ namespace Test
             Assert.AreEqual(yid, 2);
             Assert.AreEqual(zid, 10);
             Assert.AreEqual(did, 2);
-            Assert.AreEqual(tid, 9);
-            
+            Assert.AreEqual(tid, 9);          
         }
+
+        [Test]
+        public static void GlyTest_GetAllChildrenMassFromKind()
+        {
+            byte[] kind = new byte[5] {2, 4, 0, 0, 2};
+            var test = Glycan.GetAllChildrenMassFromKind(kind);
+        }
+
+        /* //This is not exactly a test. The function is used for N-Glycan database generation. The function maybe usefun in the future.
+        [Test]
+        public static void GlyTest_GenerateDataBase()
+        {         
+            var glycans = GlobalVariables.NGlycans.ToArray();
+            string aietdpath = "E:\\MassData\\Glycan\\GlycanDatabase\\AIETD\\Glycans_AIETD.csv";
+            Dictionary<double, string> aietdGlycans = new Dictionary<double, string>();
+
+            List<string> aietdGlycanKinds = new List<string>();
+            using (StreamReader lines = new StreamReader(aietdpath))
+            {
+                while (lines.Peek() != -1)
+                {
+                    string line = lines.ReadLine();
+                    var kindstring = line.Split(',').First();
+                    aietdGlycanKinds.Add(kindstring);
+                }
+            }
+
+            List<int> noExists = new List<int>(); 
+            foreach (var aGlycanKind in aietdGlycanKinds)
+            {
+                byte[] kind = new byte[5] { 0,0,0,0,0};
+                var x = aGlycanKind.Split('(', ')');
+                int i = 0;
+                while (i < x.Length-1)
+                {
+                    switch (x[i])
+                    {
+                        case "Hex":
+                            kind[0] = byte.Parse(x[i + 1]);
+                            break;
+                        case "HexNAc":
+                            kind[1] = byte.Parse(x[i + 1]);
+                            break;
+                        case "NeuAc":
+                            kind[2] = byte.Parse(x[i + 1]);
+                            break;
+                        case "Fuc":
+                            kind[4] = byte.Parse(x[i + 1]);
+                            break;                 
+                        default:
+                            break;
+                    }
+                    i = i + 2;
+                }
+                var mass = Glycan.GetMass(kind);
+                var struc = glycans.Where(p=>p.Kind[3]==0).Where(p => p.Mass == mass);
+                if (struc.Count()>0)
+                {
+                    aietdGlycans.Add(mass, struc.First().Struc);
+                }
+                else
+                {
+                    noExists.Add(mass);
+                }
+            }
+
+            string aietdpathWritePath = "E:\\MassData\\Glycan\\GlycanDatabase\\AIETD\\GlycansAIETD.txt";
+            using (StreamWriter output = new StreamWriter(aietdpathWritePath))
+            {
+                foreach (var item in aietdGlycans)
+                {
+                    output.WriteLine(item.Key +"\t"+ item.Value);
+                }
+            }
+        }
+        */
 
         private static Dictionary<ProductType, OxyColor> productTypeDrawColors = new Dictionary<ProductType, OxyColor>
         {
