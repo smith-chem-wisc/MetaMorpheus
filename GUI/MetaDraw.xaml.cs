@@ -222,7 +222,7 @@ namespace MetaMorpheusGUI
             }
             else
             {
-                int height = 70;
+                int height = 60;
                 
                 canvas.Height = height;
                 PsmAnnotationGrid.RowDefinitions[1].Height = new GridLength(height);
