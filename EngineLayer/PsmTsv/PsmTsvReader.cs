@@ -109,6 +109,8 @@ namespace EngineLayer
             parsedHeader.Add(PsmTsvHeader.BetaPeptideMatchedIonsLabel, Array.IndexOf(spl, PsmTsvHeader.BetaPeptideMatchedIonsLabel));
             parsedHeader.Add(PsmTsvHeader.XLTotalScoreLabel, Array.IndexOf(spl, PsmTsvHeader.XLTotalScoreLabel));
             parsedHeader.Add(PsmTsvHeader.ParentIonsLabel, Array.IndexOf(spl, PsmTsvHeader.ParentIonsLabel));
+            parsedHeader.Add(PsmTsvHeader.ChildMatchedIons, Array.IndexOf(spl, PsmTsvHeader.ChildMatchedIons));
+            parsedHeader.Add(PsmTsvHeader.BetaPeptideChildMatchedIons, Array.IndexOf(spl, PsmTsvHeader.BetaPeptideChildMatchedIons));
 
             return parsedHeader;
         }
