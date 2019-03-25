@@ -69,7 +69,7 @@ namespace Test
             //}
 
             CommonParameters commonParameters = new CommonParameters(deconvolutionMassTolerance: new PpmTolerance(20));
-            string filePath = Path.Combine(TestContext.CurrentContext.TestDirectory, @"GlycoTestData/Glyco_3383.mgf"); //"XlTestData/25170.mgf"
+            string filePath = Path.Combine(TestContext.CurrentContext.TestDirectory, @"GlycoTestData/Glyco_3383.mgf"); //"25170.mgf"
             MyFileManager myFileManager = new MyFileManager(true);
             var msDataFile = myFileManager.LoadFile(filePath, 300, 0.01, true, true, commonParameters);
             var listOfSortedms2Scans = MetaMorpheusTask.GetMs2Scans(msDataFile, filePath, commonParameters).ToArray();
@@ -105,6 +105,50 @@ namespace Test
             string raw = Path.Combine(TestContext.CurrentContext.TestDirectory, @"GlycoTestData/25170.mgf");
             new EverythingRunnerEngine(new List<(string, MetaMorpheusTask)> { ("Task", task) }, new List<string> { raw }, new List<DbForTask> { db }, Path.Combine(Environment.CurrentDirectory, @"TESTGlycoData")).Run();
             Directory.Delete(Path.Combine(Environment.CurrentDirectory, @"TESTGlycoData"), true);
+        }
+
+        [Test]
+        public static void GlyTest_AIETD()
+        {
+            Protein pep = new Protein("TNSSFIQGFVDHVKEDCDR", "accession");
+            DigestionParams digestionParams = new DigestionParams(minPeptideLength: 19);
+            ModificationMotif.TryGetMotif("C", out ModificationMotif motif2);
+            Modification mod2 = new Modification(_originalId: "Carbamidomethyl of C", _modificationType: "Common Fixed", _target: motif2, _locationRestriction: "Anywhere.", _monoisotopicMass: 57.02146372068994);
+            var fixedModifications = new List<Modification>() { mod2 };
+            var aPeptideWithSetModifications = pep.Digest(digestionParams, fixedModifications, new List<Modification>());
+
+            string[] motifs = new string[] { "Nxs", "Nxt" };
+            var sites = CrosslinkSpectralMatch.GetPossibleModSites(aPeptideWithSetModifications.Last(), motifs);
+            Glycan glycan = Glycan.Struct2Glycan("(N(N(H(H(H(H)))(H(H(H(H(H))))))))", 0);
+
+            Tolerance tolerance = new PpmTolerance(20);
+            CommonParameters commonParameters = new CommonParameters(doPrecursorDeconvolution:false, trimMsMsPeaks:false, dissociationType:DissociationType.EThcD, productMassTolerance: tolerance);
+            string filePath = Path.Combine(TestContext.CurrentContext.TestDirectory, @"GlycoTestData/11901_AIETD.mgf"); 
+            MyFileManager myFileManager = new MyFileManager(true);
+            var msDataFile = myFileManager.LoadFile(filePath, null, null, false, false, commonParameters);
+            var listOfSortedms2Scans = MetaMorpheusTask.GetMs2Scans(msDataFile, filePath, commonParameters).ToArray();
+
+            var XLPrecusorSearchMode = new SinglePpmAroundZeroSearchMode(commonParameters.PrecursorMassTolerance.Value);
+            var precusorMatched = XLPrecusorSearchMode.Accepts(aPeptideWithSetModifications.Last().MonoisotopicMass + (double)glycan.Mass/1E5, listOfSortedms2Scans[0].PrecursorMass);
+            Assert.AreEqual(precusorMatched, 0);
+
+            var glycanMod = GlycoPeptides.GlycanToModification(glycan);
+            var fragmentIons = GlycoPeptides.NGlyGetTheoreticalFragments(listOfSortedms2Scans[0], DissociationType.EThcD, sites, aPeptideWithSetModifications.Last(), glycan).ToList();
+            var matchedFragmentIons = MetaMorpheusEngine.MatchFragmentIons(listOfSortedms2Scans[0], fragmentIons.Select(p => p.Item2).ToList().First(), commonParameters);
+
+            using (StreamWriter output = new StreamWriter(Path.Combine(TestContext.CurrentContext.TestDirectory, "11091_NGlyco_AIETD.tsv")))
+            {
+                foreach (var product in fragmentIons)
+                {
+                    foreach (var ion in product.Item2)
+                    {
+                        output.WriteLine(ion.Annotation + "\t" + ((double)glycan.Mass / 1E5 - ion.NeutralLoss).ToString() + "\t" + ion.NeutralMass.ToString());
+                    }
+                }
+            }
+
+            DrawPeptideSpectralMatch(listOfSortedms2Scans[0].TheScan, matchedFragmentIons, pep.BaseSequence);
+
         }
 
         [Test]
@@ -162,7 +206,7 @@ namespace Test
           { ProductType.b, OxyColors.Blue },
           { ProductType.y, OxyColors.Purple },
           { ProductType.c, OxyColors.Gold },
-          { ProductType.zPlusOne, OxyColors.Orange },
+          { ProductType.zDot, OxyColors.Orange },
           { ProductType.D, OxyColors.DodgerBlue },
           { ProductType.M, OxyColors.Firebrick }
         };

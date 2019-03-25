@@ -160,10 +160,10 @@ namespace EngineLayer.CrosslinkSearch
             foreach (var position in possibleModPositions)
             {               
                 Dictionary<int, Modification> testMods = new Dictionary<int, Modification> { { position + 1, modification } };
-
+     
                 foreach (var mod in peptide.AllModsOneIsNterminus)
                 {
-                    testMods.Append(mod);
+                    testMods.Add(mod.Key, mod.Value);
                 }
 
                 var testPeptide = new PeptideWithSetModifications(peptide.Protein, peptide.DigestionParams, peptide.OneBasedStartResidueInProtein,
@@ -182,10 +182,11 @@ namespace EngineLayer.CrosslinkSearch
             List<double> lossMasses = glycan.Ions.Where(p=>p.IonMass < 57000000).Select(p => (double)p.LossIonMass/1E5).OrderBy(p => p).ToList(); //570 is a cutoff for glycan ion size 2N1H, which will generate fragment ions. 
             neutralLosses.Add(DissociationType.HCD, lossMasses);
             neutralLosses.Add(DissociationType.CID, lossMasses);
-            
+
             Dictionary<DissociationType, List<double>> diagnosticIons = new Dictionary<DissociationType, List<double>>();
             diagnosticIons.Add(DissociationType.HCD, glycan.GetDiagnosticIons().Select(p=>(double)p/1E5).ToList());
             diagnosticIons.Add(DissociationType.CID, glycan.GetDiagnosticIons().Select(p => (double)p / 1E5).ToList());
+            diagnosticIons.Add(DissociationType.EThcD, glycan.GetDiagnosticIons().Select(p => (double)p / 1E5).ToList());
 
             Modification modification = new Modification(_originalId:"Glycan", _monoisotopicMass: (double)glycan.Mass/1E5, _neutralLosses: neutralLosses, _diagnosticIons : diagnosticIons);
             return modification;
