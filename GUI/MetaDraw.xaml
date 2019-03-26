@@ -122,14 +122,52 @@
 
             <!--PSM annotated peaks-->
             <GroupBox Grid.Column="4" Header="PSM Annotation">
-                <Grid>
+                <Grid Name="PsmAnnotationGrid">
                     <Grid.RowDefinitions>
                         <RowDefinition Height = "*"></RowDefinition>
                         <RowDefinition Height = "60"></RowDefinition>
                     </Grid.RowDefinitions>
 
                     <!--Spectrum annotation-->
-                    <oxy:PlotView Grid.Row="0" x:Name="plotView" Model="{Binding Model}" FontSize="16" FontStretch="Expanded"/>
+                    <TabControl>
+                        <TabItem Header="Parent Scan View" Name="ParentScanView">
+                            <oxy:PlotView Grid.Row="0" x:Name="plotView" Model="{Binding Model}" FontSize="16" FontStretch="Expanded"/>
+                        </TabItem>
+                        <TabItem Header="Parent/Child Scan View" Name="ParentChildScanView">
+                            <ItemsControl ItemsSource="{Binding Data}">
+                                <ItemsControl.ItemTemplate>
+                                    <DataTemplate>
+                                        <Border  BorderBrush="Black" Background="LightBlue" >
+                                            <!-- This is the Inner Grid for each element -->
+                                            <Grid>
+                                                <Grid.RowDefinitions>
+                                                    <RowDefinition Height="30"/>
+                                                    <RowDefinition Height="*"/>
+                                                </Grid.RowDefinitions>
+                                                <Label Content="{Binding SpectrumLabel}" />
+                                                <oxy:PlotView Model="{Binding PsmAnnotationViewModel.Model}" FontSize="16" FontStretch="Expanded" Grid.Row="1" MinHeight="200"/>
+                                            </Grid>
+                                        </Border>
+                                    </DataTemplate>
+                                </ItemsControl.ItemTemplate>
+
+                                <ItemsControl.Template>
+                                    <ControlTemplate TargetType="ItemsControl">
+                                        <ScrollViewer CanContentScroll="True">
+                                            <ItemsPresenter/>
+                                        </ScrollViewer>
+                                    </ControlTemplate>
+                                </ItemsControl.Template>
+
+                                <ItemsControl.ItemsPanel>
+                                    <ItemsPanelTemplate>
+                                        <!--This here is very important for how multiple scans displayed. Useful parameters are (HorizontalAlignment="Stretch" or Columns="1")-->
+                                        <UniformGrid HorizontalAlignment="Stretch" Columns="{Binding Path=MyColumnCount}"/>
+                                    </ItemsPanelTemplate>
+                                </ItemsControl.ItemsPanel>
+                            </ItemsControl>
+                        </TabItem>
+                    </TabControl>
 
                     <!--Canvas for drawing base sequence annotation-->
                     <Canvas Margin="0 5 0 0" x:Name="canvas" Grid.Row="1" Height="60" Width="600" HorizontalAlignment="Stretch" VerticalAlignment="Stretch" />

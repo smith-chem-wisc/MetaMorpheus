@@ -76,13 +76,15 @@ namespace TaskLayer
         {
             FilteringParams filter = new FilteringParams(topNpeaks, minRatio, 1, null, false, trimMs1Peaks, trimMsMsPeaks);
 
-            if (commonParameters.DissociationType == DissociationType.LowCID)
+            if (commonParameters.DissociationType == DissociationType.LowCID || commonParameters.ChildScanDissociationType == DissociationType.LowCID)
             {
                 filter = null;
             }
 
             if (MyMsDataFiles.TryGetValue(origDataFile, out MsDataFile value) && value != null)
+            {
                 return value;
+            }
 
             // By now know that need to load this file!!!
             lock (FileLoadingLock) // Lock because reading is sequential
@@ -104,16 +106,6 @@ namespace TaskLayer
 #endif
                 }
 
-                if (commonParameters.DissociationType == DissociationType.LowCID)
-                {
-                    // call xcorr filtering on each ms2 scan
-
-                    foreach (var scan in MyMsDataFiles[origDataFile].GetAllScansList().Where(p => p.MsnOrder > 1))
-                    {
-                        scan.MassSpectrum.XCorrPrePreprocessing(0, 1969, scan.IsolationMz.Value);
-                    }
-                }
-
                 return MyMsDataFiles[origDataFile];
             }
         }
@@ -121,7 +113,9 @@ namespace TaskLayer
         internal void DoneWithFile(string origDataFile)
         {
             if (DisposeOfFileWhenDone)
+            {
                 MyMsDataFiles[origDataFile] = null;
+            }
         }
 
         private void Warn(string v)

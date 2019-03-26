@@ -98,7 +98,23 @@ namespace ViewModels
             // draw the matched peaks; if the PSM is null, we're just drawing the peaks in the scan without annotation, so skip this part
             if (psmToDraw != null)
             {
-                foreach (var peak in psmToDraw.MatchedIons)
+                List<MatchedFragmentIon> ionsToDraw = new List<MatchedFragmentIon>();
+
+                // check to see if we're drawing a child scan or a parent scan
+                if (psmToDraw.Ms2ScanNumber == msDataScan.OneBasedScanNumber)
+                {
+                    // parent scan
+                    ionsToDraw = psmToDraw.MatchedIons;
+                }
+                else if (msDataScan.OneBasedScanNumber != psmToDraw.Ms2ScanNumber
+                    && psmToDraw.ChildScanMatchedIons.Keys.Any(p => p == msDataScan.OneBasedScanNumber))
+                {
+                    // child scan
+                    var scan = psmToDraw.ChildScanMatchedIons.FirstOrDefault(p => p.Key == msDataScan.OneBasedScanNumber);
+                    ionsToDraw = scan.Value;
+                }
+
+                foreach (MatchedFragmentIon peak in ionsToDraw)
                 {
                     OxyColor ionColor;
 
@@ -121,10 +137,17 @@ namespace ViewModels
                     allIons[i].Points.Add(new DataPoint(peak.Mz, spectrumIntensities[i]));
 
                     // peak annotation
-                    string peakAnnotationText = peak.NeutralTheoreticalProduct.ProductType.ToString().ToLower() + peak.NeutralTheoreticalProduct.TerminusFragment.FragmentNumber + " (" + peak.Mz.ToString("F3") + ")";
+
+                    string add = "";
+                    if (psmToDraw.BetaPeptideBaseSequence != null)
+                    {
+                        add = "α-";
+                    }
+
+                    string peakAnnotationText = add + peak.NeutralTheoreticalProduct.ProductType.ToString().ToLower() + peak.NeutralTheoreticalProduct.TerminusFragment.FragmentNumber + " (" + peak.Mz.ToString("F3") + ")";
                     if (peak.NeutralTheoreticalProduct.NeutralLoss != 0)
                     {
-                        peakAnnotationText = peak.NeutralTheoreticalProduct.ProductType.ToString().ToLower() + peak.NeutralTheoreticalProduct.TerminusFragment.FragmentNumber + "-" + peak.NeutralTheoreticalProduct.NeutralLoss.ToString("F2") + " (" + peak.Mz.ToString("F3") + ")";
+                        peakAnnotationText = add + peak.NeutralTheoreticalProduct.ProductType.ToString().ToLower() + peak.NeutralTheoreticalProduct.TerminusFragment.FragmentNumber + "-" + peak.NeutralTheoreticalProduct.NeutralLoss.ToString("F2") + " (" + peak.Mz.ToString("F3") + ")";
                     }
 
                     var peakAnnotation = new TextAnnotation();
@@ -144,7 +167,23 @@ namespace ViewModels
 
                 if (psmToDraw.BetaPeptideBaseSequence != null)
                 {
-                    foreach (var peak in psmToDraw.BetaPeptideMatchedIons)
+                    ionsToDraw = new List<MatchedFragmentIon>();
+
+                    // check to see if we're drawing a child scan or a parent scan
+                    if (psmToDraw.Ms2ScanNumber == msDataScan.OneBasedScanNumber)
+                    {
+                        // parent scan
+                        ionsToDraw = psmToDraw.BetaPeptideMatchedIons;
+                    }
+                    else if (msDataScan.OneBasedScanNumber != psmToDraw.Ms2ScanNumber
+                        && psmToDraw.BetaPeptideChildScanMatchedIons.Keys.Any(p => p == msDataScan.OneBasedScanNumber))
+                    {
+                        // child scan
+                        var scan = psmToDraw.BetaPeptideChildScanMatchedIons.FirstOrDefault(p => p.Key == msDataScan.OneBasedScanNumber);
+                        ionsToDraw = scan.Value;
+                    }
+
+                    foreach (var peak in ionsToDraw)
                     {
                         OxyColor ionColor;
 
@@ -167,10 +206,10 @@ namespace ViewModels
                         allIons[i].Points.Add(new DataPoint(peak.Mz, spectrumIntensities[i]));
 
                         // peak annotation
-                        string peakAnnotationText = "beta-" + peak.NeutralTheoreticalProduct.ProductType.ToString().ToLower() + peak.NeutralTheoreticalProduct.TerminusFragment.FragmentNumber + " (" + peak.Mz.ToString("F3") + ")";
+                        string peakAnnotationText = "β-" + peak.NeutralTheoreticalProduct.ProductType.ToString().ToLower() + peak.NeutralTheoreticalProduct.TerminusFragment.FragmentNumber + " (" + peak.Mz.ToString("F3") + ")";
                         if (peak.NeutralTheoreticalProduct.NeutralLoss != 0)
                         {
-                            peakAnnotationText = "beta-" + peak.NeutralTheoreticalProduct.ProductType.ToString().ToLower() + peak.NeutralTheoreticalProduct.TerminusFragment.FragmentNumber + "-" + peak.NeutralTheoreticalProduct.NeutralLoss.ToString("F2") + " (" + peak.Mz.ToString("F3") + ")";
+                            peakAnnotationText = "β-" + peak.NeutralTheoreticalProduct.ProductType.ToString().ToLower() + peak.NeutralTheoreticalProduct.TerminusFragment.FragmentNumber + "-" + peak.NeutralTheoreticalProduct.NeutralLoss.ToString("F2") + " (" + peak.Mz.ToString("F3") + ")";
                         }
 
                         var peakAnnotation = new TextAnnotation();

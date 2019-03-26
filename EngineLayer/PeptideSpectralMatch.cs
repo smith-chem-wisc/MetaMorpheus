@@ -147,7 +147,7 @@ namespace EngineLayer
             Dictionary<string, string> s = new Dictionary<string, string>();
             PsmTsvWriter.AddBasicMatchData(s, psm);
             PsmTsvWriter.AddPeptideSequenceData(s, psm, ModsToWritePruned);
-            PsmTsvWriter.AddMatchedIonsData(s, psm);
+            PsmTsvWriter.AddMatchedIonsData(s, psm == null ? null : psm.MatchedFragmentIons);
             PsmTsvWriter.AddMatchScoreData(s, psm);
             return s;
         }
