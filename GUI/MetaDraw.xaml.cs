@@ -48,6 +48,8 @@ namespace MetaMorpheusGUI
 
         public MetaDraw()
         {
+            UsefulProteomicsDatabases.Loaders.LoadElements();
+
             InitializeComponent();
 
             mainViewModel = new PsmAnnotationViewModel();

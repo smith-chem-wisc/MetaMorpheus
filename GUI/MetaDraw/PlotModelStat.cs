@@ -118,7 +118,11 @@ namespace MetaMorpheusGUI
             SortedList<double, double> numCategory = new SortedList<double, double>();
             IEnumerable<double> numbers = new List<double>();
             Dictionary<string, int> dict = new Dictionary<string, int>();
-            HistogramSeries histogram = new HistogramSeries();
+
+            List<string> axes = new List<string>();
+            var s1 = new ColumnSeries { ColumnWidth = 200, IsStacked = false, FillColor=OxyColors.Blue };
+
+            //HistogramSeries histogram = new HistogramSeries();
 
             switch (plotType)
             {
@@ -149,7 +153,7 @@ namespace MetaMorpheusGUI
             }
             if (plotType >= 3)
             {
-                ColumnSeries column = new ColumnSeries { ColumnWidth = 200, IsStacked = false };
+                ColumnSeries column = new ColumnSeries { ColumnWidth = 200, IsStacked = false, FillColor=OxyColors.Blue };
                 var counter = 0;
                 String[] category = new string[dict.Count];
                 foreach (var d in dict)
@@ -170,17 +174,67 @@ namespace MetaMorpheusGUI
                 double start = numbers.Min();
                 double bins = (end - start) / binSize;
                 double numbins = bins * Math.Pow(10, normalizeNumber(bins));
-                if (numbins == 0) { numbins++; end = end + binSize; }
-                IEnumerable<HistogramItem> bars = HistogramHelpers.Collect(numbers, start, end, (int)numbins, true);
-                foreach (var bar in bars)
+                int exp = (int)Math.Pow(10, normalizeNumber(end));
+                //double d = end * exp;
+
+                long size = Convert.ToInt64(end * exp + (-1 * start * exp)+ 1);
+                int[,] values = new int[size, 2];
+
+                int decimalPlaces = 0;
+
+                if (binSize.Equals(0.1))
                 {
-                    histogram.Items.Add(bar);
+                    decimalPlaces = 1;
                 }
-                histogram.StrokeThickness = 0.5;
-                histogram.LabelFontSize = 12;
-                privateModel.Series.Add(histogram);
+                foreach (var a in numbers)
+                {
+                    int sign = 0;
+                    var current = a * exp;
+
+                    if (a < 0)
+                    {
+                        current = a * -1;
+                        sign = 1;
+                    }
+                    values[(int)Math.Round(current, decimalPlaces), sign]++;
+                }
+
+                int zeroIndex = values.Length / 2;
+
+                //add negative value bars
+                for (int i = (values.Length / 2); i > 0; i--)
+                {
+                    s1.Items.Add(new ColumnItem(values[i - 1, 1], zeroIndex - i));
+                    axes.Add((-i).ToString());
+                }
+
+                s1.Items.Add(new ColumnItem(values[0, 0] + values[0, 1], zeroIndex));
+                axes.Add(0.ToString());
+                //add positive value bars
+                for (int i = 1; i < values.Length / 2; i++)
+                {
+                    s1.Items.Add(new ColumnItem(values[i, 0], zeroIndex + i));
+                    axes.Add(i.ToString());
+                }
+
+                privateModel.Series.Add(s1);
+                privateModel.Axes.Add(new CategoryAxis
+                {
+                    Position = AxisPosition.Bottom,
+                    ItemsSource = axes
+                });
             }
+            //if (numbins == 0) { numbins++; end = end + binSize; }
+            //IEnumerable<HistogramItem> bars = HistogramHelpers.Collect(numbers, start, end, (int)numbins, true);
+            //foreach (var bar in bars)
+            //{
+            //    histogram.Items.Add(bar);
+            //}
+            //histogram.StrokeThickness = 0.5;
+            //histogram.LabelFontSize = 12;
+            //privateModel.Series.Add(histogram);
         }
+        
 
         private void linePlot(int plotType)
         {
@@ -209,15 +263,17 @@ namespace MetaMorpheusGUI
             IOrderedEnumerable<Tuple<double, double>> sorted = xy.OrderBy(x => x.Item1);
             foreach (var val in sorted)
             {
-                series.Points.Add(new ScatterPoint(val.Item1, val.Item2));
+                series.Points.Add(new ScatterPoint(val.Item2, val.Item1));
             }
+            series.MarkerFill = OxyColors.Blue;
+            series.MarkerSize = 0.5;
             privateModel.Series.Add(series);
         }
 
         private static int normalizeNumber(double number)
         {
             string s = number.ToString("00.00E0");
-            int i = Convert.ToInt32(s.Substring(s.Length - 1));
+            int i = Convert.ToInt32(s.Substring(s.Length - 1))/10;
             return i;
         }
 

@@ -87,10 +87,10 @@
       <HintPath>..\packages\Newtonsoft.Json.11.0.1\lib\net45\Newtonsoft.Json.dll</HintPath>
     </Reference>
     <Reference Include="OxyPlot, Version=2.0.0.0, Culture=neutral, PublicKeyToken=638079a8f0bd61e9, processorArchitecture=MSIL">
-      <HintPath>..\packages\OxyPlot.Core.2.0.0-unstable1059\lib\net45\OxyPlot.dll</HintPath>
+      <HintPath>..\packages\OxyPlot.Core.2.0.0-unstable1035\lib\net45\OxyPlot.dll</HintPath>
     </Reference>
     <Reference Include="OxyPlot.Wpf, Version=2.0.0.0, Culture=neutral, PublicKeyToken=75e952ba404cdbb0, processorArchitecture=MSIL">
-      <HintPath>..\packages\OxyPlot.Wpf.2.0.0-unstable1059\lib\net452\OxyPlot.Wpf.dll</HintPath>
+      <HintPath>..\packages\OxyPlot.Wpf.2.0.0-unstable1035\lib\net452\OxyPlot.Wpf.dll</HintPath>
     </Reference>
     <Reference Include="PdfSharp.Charting, Version=1.32.3057.0, Culture=neutral, PublicKeyToken=f94615aa0424f9eb, processorArchitecture=MSIL">
       <HintPath>..\packages\PDFsharp-MigraDoc-GDI.1.32.4334.0\lib\net20\PdfSharp.Charting.dll</HintPath>
