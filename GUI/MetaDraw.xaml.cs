@@ -26,6 +26,7 @@ namespace MetaMorpheusGUI
     /// </summary>
     public partial class MetaDraw : Window
     {
+        private ItemsControlSampleViewModel itemsControlSampleViewModel;
         private PsmAnnotationViewModel mainViewModel;
         private MyFileManager spectraFileManager;
         private MsDataFile MsDataFile;
@@ -47,6 +48,8 @@ namespace MetaMorpheusGUI
         {
             InitializeComponent();
 
+            itemsControlSampleViewModel = new ItemsControlSampleViewModel();
+            DataContext = itemsControlSampleViewModel;
             mainViewModel = new PsmAnnotationViewModel();
             plotView.DataContext = mainViewModel;
             allPsms = new List<PsmFromTsv>();
@@ -67,6 +70,9 @@ namespace MetaMorpheusGUI
             qValueFilter = 0.01;
             showContaminants = true;
             showDecoys = false;
+
+            ParentChildScanView.Visibility = Visibility.Collapsed;
+            ParentScanView.Visibility = Visibility.Collapsed;
         }
 
         private void SetUpDictionaries()
@@ -180,15 +186,83 @@ namespace MetaMorpheusGUI
 
             PsmFromTsv psmToDraw = scanPsms.FirstOrDefault();
 
+            // if this spectrum has child scans, draw them in the "advanced" tab
+            if ((psmToDraw.ChildScanMatchedIons != null && psmToDraw.ChildScanMatchedIons.Count > 0)
+                || (psmToDraw.BetaPeptideChildScanMatchedIons != null && psmToDraw.BetaPeptideChildScanMatchedIons.Count > 0))
+            {
+                ParentChildScanView.Visibility = Visibility.Visible;
+                ParentScanView.Visibility = Visibility.Visible;
+
+                // draw parent scans
+                var parentPsmModel = new PsmAnnotationViewModel();
+                MsDataScan parentScan = MsDataFile.GetOneBasedScan(psmToDraw.Ms2ScanNumber);
+
+                parentPsmModel.DrawPeptideSpectralMatch(parentScan, psmToDraw);
+
+                string parentAnnotation = "Scan: " + parentScan.OneBasedScanNumber.ToString()
+                        + " Dissociation Type: " + parentScan.DissociationType.ToString()
+                        + " MsOrder: " + parentScan.MsnOrder.ToString()
+                        + " Selected Mz: " + parentScan.SelectedIonMZ.Value.ToString("0.##")
+                        + " Retention Time: " + parentScan.RetentionTime.ToString("0.##");
+
+                itemsControlSampleViewModel.AddNewRow(parentPsmModel, parentAnnotation);
+
+                // draw child scans
+                HashSet<int> scansDrawn = new HashSet<int>();
+                foreach (var childScanMatchedIons in psmToDraw.ChildScanMatchedIons.Concat(psmToDraw.BetaPeptideChildScanMatchedIons))
+                {
+                    int scanNumber = childScanMatchedIons.Key;
+
+                    if (scansDrawn.Contains(scanNumber))
+                    {
+                        continue;
+                    }
+                    scansDrawn.Add(scanNumber);
+
+                    List<MatchedFragmentIon> matchedIons = childScanMatchedIons.Value;
+
+                    var childPsmModel = new PsmAnnotationViewModel();
+                    MsDataScan childScan = MsDataFile.GetOneBasedScan(scanNumber);
+
+                    childPsmModel.DrawPeptideSpectralMatch(childScan, psmToDraw);
+
+                    string childAnnotation = "Scan: " + scanNumber.ToString()
+                        + " Dissociation Type: " + childScan.DissociationType.ToString()
+                        + " MsOrder: " + childScan.MsnOrder.ToString()
+                        + " Selected Mz: " + childScan.SelectedIonMZ.Value.ToString("0.##")
+                        + " RetentionTime: " + childScan.RetentionTime.ToString("0.##");
+
+                    itemsControlSampleViewModel.AddNewRow(childPsmModel, childAnnotation);
+                }
+            }
+            else
+            {
+                ParentChildScanView.Visibility = Visibility.Collapsed;
+                ParentScanView.Visibility = Visibility.Collapsed;
+            }
+
+            // if this is a crosslink spectrum match, there are two base sequence annotations to draw
+            // this makes the canvas taller to fit both of these peptide sequences
+            if (psmToDraw.BetaPeptideBaseSequence != null)
+            {
+                int height = 150;
+                
+                canvas.Height = height;
+                PsmAnnotationGrid.RowDefinitions[1].Height = new GridLength(height);
+            }
+            else
+            {
+                int height = 60;
+                
+                canvas.Height = height;
+                PsmAnnotationGrid.RowDefinitions[1].Height = new GridLength(height);
+            }
+
             // draw annotated spectrum
             mainViewModel.DrawPeptideSpectralMatch(msDataScanToDraw, psmToDraw, metaDrawGraphicalSettings.settings);
 
             // draw annotated base sequence
-            //TO DO: Annotate crosslinked peptide sequence           
-            if (psmToDraw.CrossType == null)  // if the psm is single peptide (not crosslinked).
-            {
-                DrawAnnotatedBaseSequence(psmToDraw);
-            }
+            DrawAnnotatedBaseSequence(psmToDraw);
         }
 
         /// <summary>
@@ -223,6 +297,7 @@ namespace MetaMorpheusGUI
                 }
             }
             dataGridProperties.Items.Refresh();
+            itemsControlSampleViewModel.Data.Clear();
             DrawPsm(row.Ms2ScanNumber, row.FullSequence);
         }
 
@@ -289,6 +364,8 @@ namespace MetaMorpheusGUI
 
         private async void loadFilesButton_Click(object sender, RoutedEventArgs e)
         {
+            peptideSpectralMatches.Clear();
+
             // check for validity
             propertyView.Clear();
             if (spectraFilePath == null)
@@ -389,6 +466,47 @@ namespace MetaMorpheusGUI
             {
                 BaseDraw.circledTxtDraw(canvas, new Point((mod.Key - 1) * spacing - 17, 12), modificationAnnotationColor);
             }
+
+            if (psm.BetaPeptideBaseSequence != null)
+            {
+                for (int r = 0; r < psm.BetaPeptideBaseSequence.Length; r++)
+                {
+                    BaseDraw.txtDrawing(canvas, new Point(r * spacing + 10, 100), psm.BetaPeptideBaseSequence[r].ToString(), Brushes.Black);
+                }
+
+                foreach (var ion in psm.BetaPeptideMatchedIons)
+                {
+                    int residue = ion.NeutralTheoreticalProduct.TerminusFragment.AminoAcidPosition;
+                    string annotation = ion.NeutralTheoreticalProduct.ProductType + "" + ion.NeutralTheoreticalProduct.TerminusFragment.FragmentNumber;
+
+                    if (ion.NeutralTheoreticalProduct.NeutralLoss != 0)
+                    {
+                        annotation += "-" + ion.NeutralTheoreticalProduct.NeutralLoss;
+                    }
+
+                    if (ion.NeutralTheoreticalProduct.TerminusFragment.Terminus == FragmentationTerminus.C)
+                    {
+                        BaseDraw.topSplittingDrawing(canvas, new Point(residue * spacing + 8,
+                            productTypeToYOffset[ion.NeutralTheoreticalProduct.ProductType] + 90), productTypeToColor[ion.NeutralTheoreticalProduct.ProductType], annotation);
+                    }
+                    else if (ion.NeutralTheoreticalProduct.TerminusFragment.Terminus == FragmentationTerminus.N)
+                    {
+                        BaseDraw.botSplittingDrawing(canvas, new Point(residue * spacing + 8,
+                            productTypeToYOffset[ion.NeutralTheoreticalProduct.ProductType] + 90), productTypeToColor[ion.NeutralTheoreticalProduct.ProductType], annotation);
+                    }
+                    // don't draw diagnostic ions, precursor ions, etc
+                }
+
+                var betaPeptide = new PeptideWithSetModifications(psm.BetaPeptideFullSequence, GlobalVariables.AllModsKnownDictionary);
+                foreach (var mod in betaPeptide.AllModsOneIsNterminus)
+                {
+                    BaseDraw.circledTxtDraw(canvas, new Point((mod.Key - 1) * spacing - 17, 12 + 90), modificationAnnotationColor);
+                }
+
+                int alphaSite = Int32.Parse(Regex.Match(psm.FullSequence, @"\d+").Value);
+                int betaSite = Int32.Parse(Regex.Match(psm.BetaPeptideFullSequence, @"\d+").Value);
+                //BaseDraw.linkDrawing(canvas, new Point(alphaSite * spacing, 50), new Point(betaSite * spacing, 90), Colors.Black);
+            }
         }
 
         private void dataGridProperties_SelectedCellsChanged(object sender, SelectedCellsChangedEventArgs e)
@@ -458,6 +576,15 @@ namespace MetaMorpheusGUI
             using (FileStream file = File.Create("annotation.png"))
             {
                 encoder.Save(file);
+            }
+        }
+
+        private void BtnChangeGridColumns_Click(object sender, RoutedEventArgs e)
+        {
+            itemsControlSampleViewModel.MyColumnCount++;
+            if (itemsControlSampleViewModel.MyColumnCount > itemsControlSampleViewModel.Data.Count / 3)
+            {
+                itemsControlSampleViewModel.MyColumnCount = 1;
             }
         }
     }

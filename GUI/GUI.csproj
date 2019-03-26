@@ -177,6 +177,7 @@
       <DependentUpon>MetaDrawSettingsWindow.xaml</DependentUpon>
     </Compile>
     <Compile Include="MetaDraw\BaseSequenceAnnotation.cs" />
+    <Compile Include="MetaDraw\ItemsControl.cs" />
     <Compile Include="MetaDraw\PdfWriter.cs" />
     <Compile Include="Util\BooleanInverter.cs" />
     <Compile Include="CalibrateTaskWindow.xaml.cs">

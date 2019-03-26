@@ -3,7 +3,6 @@
     public static class PsmTsvHeader
     {
         // File and scan information
-
         public const string FileName = "File Name";
         public const string Ms2ScanNumber = "Scan Number";
         public const string Ms2ScanRetentionTime = "Scan Retention Time";
@@ -18,7 +17,6 @@
         public const string Notch = "Notch";
 
         // Sequence information
-
         public const string BaseSequence = "Base Sequence";
         public const string FullSequence = "Full Sequence";
         public const string EssentialSequence = "Essential Sequence";
@@ -53,9 +51,9 @@
         public const string MatchedIonMassDiffPpm = "Matched Ion Mass Diff (Ppm)";
         public const string MatchedIonIntensities = "Matched Ion Intensities";
         public const string MatchedIonCounts = "Matched Ion Counts";
+        public const string ChildMatchedIons = "Child Scans Matched Ions";
 
         // Scoring
-
         public const string LocalizedScores = "Localized Scores";
         public const string ImprovementPossible = "Improvement Possible";
         public const string CumulativeTarget = "Cumulative Target";
@@ -68,7 +66,6 @@
         public const string EScore = "eScore";
 
         // Crosslinks
-
         public const string CrossTypeLabel = "Cross Type";
         public const string LinkResiduesLabel = "Link Residues";
         public const string ProteinLinkSiteLabel = "Protein Link Site";
@@ -83,5 +80,6 @@
         public const string BetaPeptideMatchedIonsLabel = "Beta Peptide Matched Ion Mass-To-Charge Ratios";
         public const string XLTotalScoreLabel = "XL Total Score";
         public const string ParentIonsLabel = "Parent Ions";
+        public const string BetaPeptideChildMatchedIons = "Beta Peptide Child Scans Matched Ions";
     }
 }
