@@ -155,11 +155,9 @@ namespace ViewModels
                     model.Series.Add(allIons[i]);
                 }
 
-
-                // TODO
                 if (psmToDraw.BetaPeptideBaseSequence != null)
                 {
-                    foreach (var peak in psmToDraw.BetaPeptideMatchedIons)
+                    foreach (MatchedFragmentIon peak in psmToDraw.BetaPeptideMatchedIons)
                     {
                         OxyColor ionColor;
 
@@ -182,17 +180,27 @@ namespace ViewModels
                         allIons[i].Points.Add(new DataPoint(peak.Mz, spectrumIntensities[i]));
 
                         // peak annotation
-                        string peakAnnotationText = "beta-" + peak.NeutralTheoreticalProduct.ProductType.ToString().ToLower() + peak.NeutralTheoreticalProduct.TerminusFragment.FragmentNumber + " (" + peak.Mz.ToString("F3") + ")";
+                        string peakAnnotationText = "beta-" + peak.NeutralTheoreticalProduct.ProductType.ToString().ToLower() + peak.NeutralTheoreticalProduct.TerminusFragment.FragmentNumber;
+                        
+                        if (settings != null && settings.ShowMzValues)
+                        {
+                            peakAnnotationText += " (" + peak.Mz.ToString("F3") + ")";
+                        }
+
+                        if (settings != null && settings.ShowAnnotationCharges)
+                        {
+                            peakAnnotationText += " +" + peak.Charge;
+                        }
+
                         if (peak.NeutralTheoreticalProduct.NeutralLoss != 0)
                         {
                             peakAnnotationText = "beta-" + peak.NeutralTheoreticalProduct.ProductType.ToString().ToLower() + peak.NeutralTheoreticalProduct.TerminusFragment.FragmentNumber + "-" + peak.NeutralTheoreticalProduct.NeutralLoss.ToString("F2") + " (" + peak.Mz.ToString("F3") + ")";
                         }
 
                         var peakAnnotation = new TextAnnotation();
-                        peakAnnotation.TextRotation = -60;
                         peakAnnotation.Font = "Arial";
-                        peakAnnotation.FontSize = 12;
-                        peakAnnotation.FontWeight = 2.0;
+                        peakAnnotation.FontSize = settings != null ? settings.Size : 12;
+                        peakAnnotation.FontWeight = settings != null && settings.BoldText ? FontWeights.Bold : 2.0;
                         peakAnnotation.TextColor = ionColor;
                         peakAnnotation.StrokeThickness = 0;
                         peakAnnotation.Text = peakAnnotationText;

@@ -10,6 +10,12 @@
         Title="MetaDraw" 
         Drop="Window_Drop" AllowDrop="true" WindowStartupLocation="CenterScreen" MinHeight="400" MinWidth="800" Height="600" Width="1200">
     <DockPanel>
+        <Menu x:Name="menu" DockPanel.Dock="Top" Height="19">
+            <MenuItem Header="Settings" Width="112">
+                <MenuItem Header="Edit Graphical Settings" Click="graphicalSettings_Click"></MenuItem>
+                <MenuItem Header="Edit Filter Settings" Click="filterSettings_Click"></MenuItem>
+            </MenuItem>
+        </Menu>
         <Grid>
             <Grid.ColumnDefinitions>
                 <ColumnDefinition Width="2*"/>
