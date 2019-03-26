@@ -1,5 +1,8 @@
-﻿using Proteomics;
+﻿using FlashLFQ;
+using Proteomics;
+using Proteomics.AminoAcidPolymer;
 using Proteomics.ProteolyticDigestion;
+using System;
 using System.Collections.Generic;
 using System.Linq;
 
@@ -7,6 +10,7 @@ namespace EngineLayer
 {
     public static class SilacConversions
     {
+        private static readonly string LABEL_DELIMITER = " & ";
         public static PeptideSpectralMatch GetSilacPsm(PeptideSpectralMatch psm, SilacLabel silacLabel, bool heavyToLight)
         {
             if (silacLabel == null)
@@ -18,58 +22,29 @@ namespace EngineLayer
                 List<(int Notch, PeptideWithSetModifications Peptide)> updatedBestMatchingPeptides = new List<(int Notch, PeptideWithSetModifications Peptide)>();
                 foreach ((int Notch, PeptideWithSetModifications Peptide) notchAndPwsm in psm.BestMatchingPeptides)
                 {
-                    PeptideWithSetModifications pwsm = notchAndPwsm.Peptide;
-                    Protein originalProtein = pwsm.Protein;
-                    Protein modifiedProtein = heavyToLight ?
-                        new Protein(originalProtein,
-                            originalProtein.BaseSequence.Replace(silacLabel.AminoAcidLabel, silacLabel.OriginalAminoAcid),
-                            originalProtein.Accession.Replace(silacLabel.MassDifference, "")) : //create light protein
-                        new Protein(originalProtein,
-                            originalProtein.BaseSequence.Replace(silacLabel.OriginalAminoAcid, silacLabel.AminoAcidLabel),
-                            originalProtein.Accession + silacLabel.MassDifference); //create heavy protein with different accessions
-                    PeptideWithSetModifications modifiedPwsm = new PeptideWithSetModifications(
-                        modifiedProtein,
-                        pwsm.DigestionParams,
-                        pwsm.OneBasedStartResidueInProtein,
-                        pwsm.OneBasedEndResidueInProtein,
-                        pwsm.CleavageSpecificityForFdrCategory,
-                        pwsm.PeptideDescription,
-                        pwsm.MissedCleavages,
-                        pwsm.AllModsOneIsNterminus,
-                        pwsm.NumFixedMods);
+                    PeptideWithSetModifications modifiedPwsm = CreateSilacPwsm(heavyToLight, silacLabel, notchAndPwsm.Peptide);
                     updatedBestMatchingPeptides.Add((notchAndPwsm.Notch, modifiedPwsm));
                 }
                 return psm.Clone(updatedBestMatchingPeptides);
             }
         }
 
+        //Needed for parsimony, where there are ambiguous psms
+        //Quantification ignores ambiguity
         public static PeptideSpectralMatch GetSilacPsmFromAmbiguousPsm(PeptideSpectralMatch psm, List<SilacLabel> silacLabels)
         {
             List<(int Notch, PeptideWithSetModifications Peptide)> updatedBestMatchingPeptides = new List<(int Notch, PeptideWithSetModifications Peptide)>();
             foreach ((int Notch, PeptideWithSetModifications Peptide) notchAndPwsm in psm.BestMatchingPeptides)
             {
                 PeptideWithSetModifications pwsm = notchAndPwsm.Peptide;
-                Protein originalProtein = pwsm.Protein;
-                SilacLabel silacLabel = GetRelevantLabelFromBaseSequence(originalProtein.BaseSequence, silacLabels);
+                SilacLabel silacLabel = GetRelevantLabelFromBaseSequence(pwsm.Protein.BaseSequence, silacLabels);
                 if (silacLabel == null)
                 {
                     updatedBestMatchingPeptides.Add(notchAndPwsm);
                 }
                 else
                 {
-                    Protein modifiedProtein = new Protein(originalProtein,
-                        originalProtein.BaseSequence.Replace(silacLabel.AminoAcidLabel, silacLabel.OriginalAminoAcid),
-                        originalProtein.Accession.Replace(silacLabel.MassDifference, "")); //create light protein
-                    PeptideWithSetModifications modifiedPwsm = new PeptideWithSetModifications(
-                        modifiedProtein,
-                        pwsm.DigestionParams,
-                        pwsm.OneBasedStartResidueInProtein,
-                        pwsm.OneBasedEndResidueInProtein,
-                        pwsm.CleavageSpecificityForFdrCategory,
-                        pwsm.PeptideDescription,
-                        pwsm.MissedCleavages,
-                        pwsm.AllModsOneIsNterminus,
-                        pwsm.NumFixedMods);
+                    PeptideWithSetModifications modifiedPwsm = CreateSilacPwsm(true, silacLabel, pwsm); //create light pwsm
                     updatedBestMatchingPeptides.Add((notchAndPwsm.Notch, modifiedPwsm));
                 }
             }
@@ -78,12 +53,12 @@ namespace EngineLayer
 
         //This method creates a protein group based on the provided silac label. The input "proteinGroup" is expected to be light. If the label is null, then the light protein group will be output.
         //This method searches the provided psm list for which psms belong to the new/old protein group independent of the original proteinGroup's psms
-        public static EngineLayer.ProteinGroup GetSilacProteinGroups(List<PeptideSpectralMatch> unambiguousPsmsBelowOnePercentFdr, EngineLayer.ProteinGroup proteinGroup, SilacLabel label = null)
+        public static ProteinGroup GetSilacProteinGroups(List<PeptideSpectralMatch> unambiguousPsmsBelowOnePercentFdr, ProteinGroup proteinGroup, SilacLabel label = null)
         {
             //keep the proteins as light, or convert them all into the heavy versions
             HashSet<Protein> proteins = label == null ?
                 proteinGroup.Proteins :
-                new HashSet<Protein>(proteinGroup.Proteins.Select(x => new Protein(x, x.BaseSequence.Replace(label.OriginalAminoAcid, label.AminoAcidLabel), x.Accession + label.MassDifference)));
+                new HashSet<Protein>(proteinGroup.Proteins.Select(x => CreateSilacProtein(false, label, x)));
             HashSet<PeptideWithSetModifications> allPeptides = new HashSet<PeptideWithSetModifications>();
             HashSet<PeptideWithSetModifications> uniquePeptides = new HashSet<PeptideWithSetModifications>();
             string firstAccession = proteins.First().Accession;
@@ -116,7 +91,7 @@ namespace EngineLayer
                     }
                 }
             }
-            var updatedProtein = new EngineLayer.ProteinGroup(proteins, allPeptides, uniquePeptides)
+            var updatedProtein = new ProteinGroup(proteins, allPeptides, uniquePeptides)
             {
                 AllPsmsBelowOnePercentFDR = matchedPsms,
                 CumulativeTarget = proteinGroup.CumulativeTarget,
@@ -129,48 +104,66 @@ namespace EngineLayer
             return updatedProtein;
         }
 
+        //Converts the heavy char label "a" into a human readable label "K+8.014"
         public static string GetSilacLightBaseSequence(string baseSequence, SilacLabel label)
         {
-            return label == null ? baseSequence : baseSequence.Replace(label.AminoAcidLabel.ToString(), HeavyStringForPeptides(label));
+            if (label != null)
+            {
+                baseSequence = baseSequence.Replace(label.AminoAcidLabel.ToString(), HeavyStringForPeptides(label));
+                if (label.AdditionalLabels != null)
+                {
+                    foreach (SilacLabel additionalLabel in label.AdditionalLabels)
+                    {
+                        baseSequence = baseSequence.Replace(additionalLabel.AminoAcidLabel.ToString(), HeavyStringForPeptides(additionalLabel));
+                    }
+                }
+            }
+            return baseSequence;
         }
 
+        //Converts the heavy char label "a" into a human readable label "K+8.014", but doesn't change mods containing the char like "Oxid'a'tion"
         public static string GetSilacLightFullSequence(string fullSequence, SilacLabel label, bool includeMassDifference = true)
         {
             //overwrite full sequence
-            if (label == null)
+            if (label != null)
             {
-                return fullSequence;
-            }
-            else
-            {
-                string replacementSequence = includeMassDifference ? HeavyStringForPeptides(label) : label.OriginalAminoAcid.ToString();
-
-                bool inModification = false;
-                for (int i = 0; i < fullSequence.Length; i++)
+                List<SilacLabel> labels = new List<SilacLabel> { label };
+                if (label.AdditionalLabels != null)
                 {
-                    if (inModification)
+                    labels.AddRange(label.AdditionalLabels);
+                }
+
+                foreach (SilacLabel additionalLabel in labels)
+                {
+                    string replacementSequence = includeMassDifference ? HeavyStringForPeptides(additionalLabel) : additionalLabel.OriginalAminoAcid.ToString();
+
+                    bool inModification = false;
+                    for (int i = 0; i < fullSequence.Length; i++)
                     {
-                        if (fullSequence[i] == ']')
+                        if (inModification)
                         {
-                            inModification = false;
+                            if (fullSequence[i] == ']')
+                            {
+                                inModification = false;
+                            }
                         }
-                    }
-                    else
-                    {
-                        char currentChar = fullSequence[i];
-                        if (currentChar == '[')
+                        else
                         {
-                            inModification = true;
-                        }
-                        else if (currentChar == label.AminoAcidLabel)
-                        {
-                            fullSequence = fullSequence.Substring(0, i) + replacementSequence + fullSequence.Substring(i + 1, fullSequence.Length - i - 1);
-                            i += replacementSequence.Length - 1; //-1 because we removed the label amino acid
+                            char currentChar = fullSequence[i];
+                            if (currentChar == '[')
+                            {
+                                inModification = true;
+                            }
+                            else if (currentChar == additionalLabel.AminoAcidLabel)
+                            {
+                                fullSequence = fullSequence.Substring(0, i) + replacementSequence + fullSequence.Substring(i + 1, fullSequence.Length - i - 1);
+                                i += replacementSequence.Length - 1; //-1 because we removed the label amino acid
+                            }
                         }
                     }
                 }
-                return fullSequence;
             }
+            return fullSequence;
         }
 
         public static string GetAmbiguousLightSequence(string originalSequence, List<SilacLabel> labels, bool baseSequence)
@@ -218,7 +211,6 @@ namespace EngineLayer
             return psmsForProteinParsimony;
         }
 
-
         public static string HeavyStringForPeptides(SilacLabel label)
         {
             return label.OriginalAminoAcid + "(" + label.MassDifference + ")";
@@ -226,7 +218,8 @@ namespace EngineLayer
 
         public static SilacLabel GetRelevantLabelFromBaseSequence(string baseSequence, List<SilacLabel> labels)
         {
-            return labels.Where(x => baseSequence.Contains(x.AminoAcidLabel)).FirstOrDefault();
+            return labels.Where(x => baseSequence.Contains(x.AminoAcidLabel) ||
+                (x.AdditionalLabels != null && x.AdditionalLabels.Any(y => baseSequence.Contains(y.AminoAcidLabel)))).FirstOrDefault();
         }
 
         public static SilacLabel GetRelevantLabelFromFullSequence(string fullSequence, List<SilacLabel> labels)
@@ -257,6 +250,85 @@ namespace EngineLayer
             }
             //if nothing
             return null;
+        }
+
+        public static Protein CreateSilacProtein(bool heavyToLight, SilacLabel silacLabel, Protein originalProtein)
+        {
+            string proteinSequence = originalProtein.BaseSequence;
+            string proteinAccession = originalProtein.Accession;
+
+            if (heavyToLight)
+            {
+                proteinSequence = proteinSequence.Replace(silacLabel.AminoAcidLabel, silacLabel.OriginalAminoAcid); //create light sequence
+                int labelStart = proteinAccession.IndexOf(silacLabel.MassDifference);
+                proteinAccession = proteinAccession.Substring(0, labelStart); //create light accession
+                if (silacLabel.AdditionalLabels != null)
+                {
+                    foreach (SilacLabel additionalLabel in silacLabel.AdditionalLabels)
+                    {
+                        proteinSequence = proteinSequence.Replace(additionalLabel.AminoAcidLabel, additionalLabel.OriginalAminoAcid); //create light sequence
+                    }
+                }
+            }
+            else
+            {
+                proteinSequence = proteinSequence.Replace(silacLabel.OriginalAminoAcid, silacLabel.AminoAcidLabel); //create heavy sequence
+                proteinAccession += silacLabel.MassDifference; //add heavy accession
+                if (silacLabel.AdditionalLabels != null)
+                {
+                    foreach (SilacLabel additionalLabel in silacLabel.AdditionalLabels)
+                    {
+                        proteinSequence = proteinSequence.Replace(additionalLabel.OriginalAminoAcid, additionalLabel.AminoAcidLabel); //create heavy sequence
+                        proteinAccession += LABEL_DELIMITER + additionalLabel.MassDifference; //add heavy accession
+                    }
+                }
+            }
+
+            return new Protein(originalProtein, proteinSequence, proteinAccession);
+        }
+
+        public static PeptideWithSetModifications CreateSilacPwsm(bool heavyToLight, SilacLabel silacLabel, PeptideWithSetModifications pwsm)
+        {
+            Protein modifiedProtein = CreateSilacProtein(heavyToLight, silacLabel, pwsm.Protein);
+
+            return new PeptideWithSetModifications(
+                modifiedProtein,
+                pwsm.DigestionParams,
+                pwsm.OneBasedStartResidueInProtein,
+                pwsm.OneBasedEndResidueInProtein,
+                pwsm.CleavageSpecificityForFdrCategory,
+                pwsm.PeptideDescription,
+                pwsm.MissedCleavages,
+                pwsm.AllModsOneIsNterminus,
+                pwsm.NumFixedMods);
+        }
+
+        public static SilacLabel AssignValidHeavyCharacter(SilacLabel originalLabel, char heavyLabel)
+        {
+            double massDifference = Convert.ToDouble(originalLabel.MassDifference.Substring(1));
+            if (originalLabel.MassDifference[0] == '-')
+            {
+                massDifference *= -1;
+            }
+            //Add the silac residues to the dictionary
+            Residue.AddNewResiduesToDictionary(new List<Residue> { new Residue(originalLabel.MassDifference, heavyLabel, heavyLabel.ToString(), Chemistry.ChemicalFormula.ParseFormula(originalLabel.LabelChemicalFormula), ModificationSites.All) });
+
+            return new SilacLabel(originalLabel.OriginalAminoAcid, heavyLabel, originalLabel.LabelChemicalFormula, massDifference);
+        }
+
+        public static SpectraFileInfo GetHeavyFileInfo(SpectraFileInfo originalFile, SilacLabel label)
+        {
+            string heavyFileName = originalFile.FilenameWithoutExtension + "(" + label.OriginalAminoAcid + label.MassDifference;
+            if(label.AdditionalLabels!=null)
+            {
+                foreach(SilacLabel additionaLabel in label.AdditionalLabels)
+                {
+                    heavyFileName += LABEL_DELIMITER + additionaLabel.OriginalAminoAcid + additionaLabel.MassDifference;
+                }
+            }
+            heavyFileName += ")." + originalFile.FullFilePathWithExtension.Split('.').Last(); //add extension
+
+            return new SpectraFileInfo(heavyFileName, originalFile.Condition, originalFile.BiologicalReplicate, originalFile.TechnicalReplicate, originalFile.Fraction);
         }
     }
 }

@@ -763,6 +763,7 @@
                                             <ToolTip Content="SILAC quantification is performed using peak finding and FlashLFQ" ToolTipService.ShowDuration="999999" ToolTipService.InitialShowDelay="500"/>
                                         </ToolTipService.ToolTip>
                                     </RadioButton>
+                                    <CheckBox x:Name="CheckBoxQuantifyUnlabeledForSilac" Content="Quantify unlabeled peptides/proteins" IsEnabled="{Binding IsChecked, ElementName=checkBoxSILAC}" Margin="20,0,0,0"/>
                                     <Grid>
                                         <Grid.RowDefinitions>
                                             <RowDefinition Height="0" />

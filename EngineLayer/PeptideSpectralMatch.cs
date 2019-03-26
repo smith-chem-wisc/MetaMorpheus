@@ -238,6 +238,7 @@ namespace EngineLayer
             BaseSequence = PsmTsvWriter.Resolve(_BestMatchingPeptides.Select(b => b.Pwsm.BaseSequence)).ResolvedString; //string, not value
             BaseSequence = SilacConversions.GetAmbiguousLightSequence(BaseSequence, labels, true);
 
+            //EssentialSequence
             EssentialSequence = PsmTsvWriter.Resolve(_BestMatchingPeptides.Select(b => b.Pwsm.EssentialSequence(modsToWritePruned))).ResolvedString; //string, not value
             EssentialSequence = SilacConversions.GetAmbiguousLightSequence(EssentialSequence, labels, false);
 

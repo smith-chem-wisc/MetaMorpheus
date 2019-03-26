@@ -37,11 +37,11 @@ namespace MetaMorpheusGUI
         {
             if (e.Key == Key.Return)
             {
-                SaveSilacLabel_Click(sender, e);
+                SaveSilacLabelsButton_Click(sender, e);
             }
             else if (e.Key == Key.Escape)
             {
-                CancelSilacLabel_Click(sender, e);
+                CancelSilacButton_Click(sender, e);
             }
         }
 
@@ -89,30 +89,6 @@ namespace MetaMorpheusGUI
                 MessageBox.Show('"' + letter.ToString() + '"' + " is not a valid amino acid. Please enter a single amino acid letter.");
                 txtBoxAminoAcidLookup.Text = "";
             }
-        }
-
-        private void SaveSilacLabel_Click(object sender, RoutedEventArgs e)
-        {
-            if (AminoAcid == '\0')
-            {
-                MessageBox.Show("Please select an amino acid to be labeled.");
-            }
-            else if (MassDifference.Text.Equals("0.000"))
-            {
-                MessageBox.Show("No heavy isotopes were specified.\n" +
-                    "Please type the number of each heavy isotope in the corresponding boxes.\n" +
-                    "Unlabeled " + '"' + "light" + '"' + "amino acids are automatically searched and should not be specified.");
-            }
-            else
-            {
-                SilacLabel = new SilacInfoForDataGrid(new SilacLabel(AminoAcid, '\0', ChemicalFormula.Text, Convert.ToDouble(MassDifference.Text)));
-                DialogResult = true;
-            }
-        }
-
-        private void CancelSilacLabel_Click(object sender, RoutedEventArgs e)
-        {
-            DialogResult = false;
         }
 
         private void AminoAcidCountsModified(object sender, System.Windows.Controls.TextChangedEventArgs e)
@@ -329,6 +305,63 @@ namespace MetaMorpheusGUI
         private void CheckIfNumber(object sender, TextCompositionEventArgs e)
         {
             e.Handled = !GlobalGuiSettings.CheckIsNumber(e.Text);
+        }
+
+        private void SaveSilacLabelsButton_Click(object sender, RoutedEventArgs e)
+        {
+            if (ValidateClick())
+            {
+                SilacLabel = SilacLabelStorageForMultiLabeledConditions ?? //use if labels have been added
+                    new SilacInfoForDataGrid(new SilacLabel(AminoAcid, '\0', ChemicalFormula.Text, Convert.ToDouble(MassDifference.Text)));
+
+                DialogResult = true;
+            }
+        }
+
+        private SilacInfoForDataGrid SilacLabelStorageForMultiLabeledConditions;
+
+        private void AddAdditionalButton_Click(object sender, RoutedEventArgs e)
+        {
+            if (ValidateClick())
+            {
+                //save current label
+                SilacLabel savedLabel = new SilacLabel(AminoAcid, '\0', ChemicalFormula.Text, Convert.ToDouble(MassDifference.Text));
+                SilacLabelStorageForMultiLabeledConditions = new SilacInfoForDataGrid(savedLabel);
+                
+                //open a new window to allow for more mods on this condition
+                var dialog = new SilacModificationWindow();
+
+                if (dialog.ShowDialog() == true)
+                {
+                    SilacLabelStorageForMultiLabeledConditions.AddAdditionalLabel(dialog.SilacLabel);
+                    SaveSilacLabelsButton_Click(sender, e);
+                }
+            }
+        }
+
+        private bool ValidateClick()
+        {
+            if (AminoAcid == '\0')
+            {
+                MessageBox.Show("Please select an amino acid to be labeled.");
+                return false;
+            }
+            else if (MassDifference.Text.Equals("0.000"))
+            {
+                MessageBox.Show("No heavy isotopes were specified.\n" +
+                    "Please type the number of each heavy isotope in the corresponding boxes.\n" +
+                    "Unlabeled " + '"' + "light" + '"' + "amino acids are automatically searched and should not be specified.");
+                return false;
+            }
+            else
+            {
+                return true;
+            }
+        }
+
+        private void CancelSilacButton_Click(object sender, RoutedEventArgs e)
+        {
+            DialogResult = false;
         }
     }
 }

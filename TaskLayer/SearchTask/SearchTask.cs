@@ -72,24 +72,27 @@ namespace TaskLayer
                     SearchParameters.DoQuantification = false;
                 }
                 //if we're doing SILAC, add the silac labels to the residue dictionary
-                else if (SearchParameters.SilacLabels != null) 
+                else if (SearchParameters.SilacLabels != null)
                 {
                     //change the silac residues to lower case amino acids (currently null)
                     List<SilacLabel> updatedLabels = new List<SilacLabel>();
-                    const char ASCII_a = 'a';
+                    char heavyLabel = 'a';
                     for (int i = 0; i < SearchParameters.SilacLabels.Count; i++)
                     {
                         SilacLabel currentLabel = SearchParameters.SilacLabels[i];
-                        double massDifference = Convert.ToDouble(currentLabel.MassDifference.Substring(1));
-                        if (currentLabel.MassDifference[0] == '-')
+                        SilacLabel updatedLabel = SilacConversions.AssignValidHeavyCharacter(currentLabel, heavyLabel);
+                        heavyLabel++;
+                        if (currentLabel.AdditionalLabels != null)
                         {
-                            massDifference *= -1;
+                            foreach (SilacLabel additionalLabel in currentLabel.AdditionalLabels)
+                            {
+                                updatedLabel.AddAdditionalSilacLabel(SilacConversions.AssignValidHeavyCharacter(additionalLabel, heavyLabel));
+                                heavyLabel++;
+                            }
                         }
-                        updatedLabels.Add(new SilacLabel(currentLabel.OriginalAminoAcid, Convert.ToChar(ASCII_a + i), currentLabel.LabelChemicalFormula, massDifference));
+                        updatedLabels.Add(updatedLabel);
                     }
                     SearchParameters.SilacLabels = updatedLabels;
-                    //Add the silac residues to the dictionary
-                    Residue.AddNewResiduesToDictionary(updatedLabels.Select(x => new Residue(x.MassDifference, x.AminoAcidLabel, x.AminoAcidLabel.ToString(), Chemistry.ChemicalFormula.ParseFormula(x.LabelChemicalFormula), ModificationSites.All)).ToList());
                 }
             }
             //if no quant, remove any silac labels that may have been added, because they screw up downstream analysis
