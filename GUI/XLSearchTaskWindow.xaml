@@ -57,6 +57,24 @@
                         </Grid.RowDefinitions>
                         <!--<RadioButton x:Name="RbSearchCrosslink" Content="Crosslink Search" GroupName="SearchType"></RadioButton>-->
                         <!--<RadioButton x:Name="RbSearchGlyco" Content="Glyco Search" GroupName="SearchType" Grid.Column="1"></RadioButton>-->
+                        <StackPanel Orientation="Horizontal" Margin="5" Grid.Row="0" Grid.Column="1">
+                            <Label x:Name="ionsToSearchLabel" Content="Dissociation Type" ToolTipService.ShowDuration="999999" ToolTipService.InitialShowDelay="500">
+                                <Label.ToolTip>
+                                    <TextBlock>
+                                                        The type of fragmentation.
+                                    </TextBlock>
+                                </Label.ToolTip>
+                            </Label>
+                            <ComboBox x:Name="DissociationTypeComboBox" HorizontalAlignment="Center" VerticalAlignment="Center" DropDownClosed="CustomFragmentationHandler"/>
+                            <Label x:Name="childScanIonsToSearchLabel" Content="Child Scan Dissocation" ToolTipService.ShowDuration="999999" ToolTipService.InitialShowDelay="500">
+                                <Label.ToolTip>
+                                    <TextBlock>
+                                                        The type of fragmentation of the child scan (second MS2, or MS3).
+                                    </TextBlock>
+                                </Label.ToolTip>
+                            </Label>
+                            <ComboBox x:Name="ChildScanDissociationTypeComboBox" AllowDrop="False" HorizontalAlignment="Center" VerticalAlignment="Center" DropDownClosed="CustomFragmentationHandler"/>
+                        </StackPanel>
                         <StackPanel Orientation="Horizontal" Grid.Row="1" Grid.Column="0" Margin="5">
                             <Label x:Name="lblXLprecusorMsTl"  Content="Precursor mass tolerance" />
                             <TextBox x:Name="XLPrecusorMsTlTextBox" PreviewTextInput="CheckIfNumber" Width="45" />
@@ -271,16 +289,6 @@
                                                 </TextBox.ToolTip>
                                             </TextBox>
                                         </StackPanel>
-                                        <StackPanel Orientation="Horizontal" Margin="5">
-                                            <Label x:Name="ionsToSearchLabel" Content="Dissociation Type" ToolTipService.ShowDuration="999999" ToolTipService.InitialShowDelay="500">
-                                                <Label.ToolTip>
-                                                    <TextBlock>
-                                                        The type of fragmentation.
-                                                    </TextBlock>
-                                                </Label.ToolTip>
-                                            </Label>
-                                            <ComboBox x:Name="DissociationTypeComboBox" HorizontalAlignment="Center" VerticalAlignment="Center" DropDownClosed="CustomFragmentationHandler"/>
-                                        </StackPanel>
                                     </StackPanel>
                                 </Grid>
                             </GroupBox>
@@ -412,6 +420,7 @@
                         <StackPanel Orientation="Vertical">
                             <CheckBox x:Name="ckbPercolator" Content="Write .TSV for Percolator" />
                             <CheckBox x:Name="ckbPepXML" Content="Write .pep.XML" />
+                            <CheckBox x:Name="ckbXiNET" Content="Write .csv for XiNET" />
                         </StackPanel>
                     </Expander>
                 </GroupBox>
