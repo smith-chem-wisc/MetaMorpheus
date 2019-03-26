@@ -642,7 +642,7 @@ namespace Test
                 "PVSEKVTKCCTESLVNRRPCFSALTPDETYVPKAFDEKLFTFHADICTLPDTEKQIKKQTALVELLKHKP" +
                 "KATEEQLKTVMENFVAFVDKCCAADDKEACFAVEGPKLVVSTQTALA", "BSA");
 
-            var indexingResults = (IndexingResults)new IndexingEngine(new List<Protein> { bsa }, new List<Modification>(), new List<Modification>(), 0, DecoyType.None,
+            var indexingResults = (IndexingResults)new IndexingEngine(new List<Protein> { bsa }, new List<Modification>(), new List<Modification>(), null, 0, DecoyType.None,
                 commonParameters, 5000, false, new List<FileInfo>(), new List<string>()).Run();
             
             var csms = new CrosslinkSpectralMatch[1];
@@ -705,7 +705,7 @@ namespace Test
 
             var fixedMods = GlobalVariables.AllModsKnown.Where(p => p.IdWithMotif == "Carbamidomethyl on C").ToList();
 
-            var indexingResults = (IndexingResults)new IndexingEngine(new List<Protein> { bsa }, new List<Modification>(), fixedMods, 0, DecoyType.None,
+            var indexingResults = (IndexingResults)new IndexingEngine(new List<Protein> { bsa }, new List<Modification>(), fixedMods, null, 0, DecoyType.None,
                 commonParameters, 5000, false, new List<FileInfo>(), new List<string>()).Run();
 
             var csms = new CrosslinkSpectralMatch[2];

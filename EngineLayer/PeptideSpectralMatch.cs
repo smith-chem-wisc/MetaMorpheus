@@ -227,6 +227,7 @@ namespace EngineLayer
 
         /// <summary>
         /// This method changes the base and full sequences to reflect heavy silac labels
+        /// translates SILAC sequence into the proper peptide sequence ("PEPTIDEa" into "PEPTIDEK(+8.014)")
         /// </summary>
         public void ResolveHeavySilacLabel(List<SilacLabel> labels, IReadOnlyDictionary<string, int> modsToWritePruned)
         {
