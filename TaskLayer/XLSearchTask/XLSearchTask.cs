@@ -124,9 +124,9 @@ namespace TaskLayer
 
             if (XlSearchParameters.OpenSearchType == OpenSearchType.NGlyco)
             {
-                SingleFDRAnalysis(allPsms, new List<string> { taskId });             
-                var writtenFileInter = Path.Combine(OutputFolder, "all_fdr" + ".mytsv");
-                WritePsmCrossToTsv(allPsms, writtenFileInter, 3);
+                //SingleFDRAnalysis(allPsms, new List<string> { taskId });             
+                //var writtenFileInter = Path.Combine(OutputFolder, "all_fdr" + ".mytsv");
+                //WritePsmCrossToTsv(allPsms, writtenFileInter, 3);
 
                 var allPsmsSingle = allPsms.Where(p => p.Glycan == null && p.Score > 2).OrderByDescending(p => p.XLTotalScore).ToList();           
                 SingleFDRAnalysis(allPsmsSingle, new List<string> { taskId });

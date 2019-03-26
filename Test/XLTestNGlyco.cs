@@ -208,7 +208,7 @@ namespace Test
             var test = Glycan.GetAllChildrenMassFromKind(kind);
         }
 
-        /* //This is not exactly a test. The function is used for N-Glycan database generation. The function maybe usefun in the future.
+        /* //This is not exactly a test. The function is used for N-Glycan database generation. The function maybe useful in the future.
         [Test]
         public static void GlyTest_GenerateDataBase()
         {         
