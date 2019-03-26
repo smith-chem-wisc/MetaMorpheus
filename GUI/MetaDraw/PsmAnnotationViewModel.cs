@@ -72,13 +72,13 @@ namespace ViewModels
         }
 
         // single peptides (not crosslink)
-        public void DrawPeptideSpectralMatch(MsDataScan msDataScan, PsmFromTsv psmToDraw)
+        public void DrawPeptideSpectralMatch(MsDataScan msDataScan, PsmFromTsv psmToDraw, MetaMorpheusGUI.MetaDrawSettings settings)
         {
             // Set the Model property, the INotifyPropertyChanged event will make the WPF Plot control update its content
-            this.Model = Draw(msDataScan, psmToDraw);
+            this.Model = Draw(msDataScan, psmToDraw, settings);
         }
 
-        private PlotModel Draw(MsDataScan msDataScan, PsmFromTsv psmToDraw)
+        private PlotModel Draw(MsDataScan msDataScan, PsmFromTsv psmToDraw, MetaMorpheusGUI.MetaDrawSettings settings = null)
         {
             // x is m/z, y is intensity
             var spectrumMzs = msDataScan.MassSpectrum.XArray;
@@ -101,40 +101,50 @@ namespace ViewModels
             // draw the matched peaks; if the PSM is null, we're just drawing the peaks in the scan without annotation, so skip this part
             if (psmToDraw != null)
             {
-                foreach (var peak in psmToDraw.MatchedIons)
+                foreach (MatchedFragmentIon matchedIon in psmToDraw.MatchedIons)
                 {
                     OxyColor ionColor;
 
-                    if (productTypeDrawColors.ContainsKey(peak.NeutralTheoreticalProduct.ProductType))
+                    if (productTypeDrawColors.ContainsKey(matchedIon.NeutralTheoreticalProduct.ProductType))
                     {
-                        ionColor = productTypeDrawColors[peak.NeutralTheoreticalProduct.ProductType];
+                        ionColor = productTypeDrawColors[matchedIon.NeutralTheoreticalProduct.ProductType];
                     }
                     else
                     {
                         ionColor = OxyColors.Turquoise;
                     }
 
-                    int i = msDataScan.MassSpectrum.GetClosestPeakIndex(peak.NeutralTheoreticalProduct.NeutralMass.ToMz(peak.Charge)).Value;
+                    int i = msDataScan.MassSpectrum.GetClosestPeakIndex(matchedIon.NeutralTheoreticalProduct.NeutralMass.ToMz(matchedIon.Charge)).Value;
 
                     // peak line
                     allIons[i] = new LineSeries();
                     allIons[i].Color = ionColor;
                     allIons[i].StrokeThickness = STROKE_THICKNESS_ANNOTATED;
-                    allIons[i].Points.Add(new DataPoint(peak.Mz, 0));
-                    allIons[i].Points.Add(new DataPoint(peak.Mz, spectrumIntensities[i]));
+                    allIons[i].Points.Add(new DataPoint(matchedIon.Mz, 0));
+                    allIons[i].Points.Add(new DataPoint(matchedIon.Mz, spectrumIntensities[i]));
 
                     // peak annotation
-                    string peakAnnotationText = peak.NeutralTheoreticalProduct.ProductType.ToString().ToLower() + peak.NeutralTheoreticalProduct.TerminusFragment.FragmentNumber + " (" + peak.Mz.ToString("F3") + ")";
-                    if (peak.NeutralTheoreticalProduct.NeutralLoss != 0)
+                    string peakAnnotationText = matchedIon.NeutralTheoreticalProduct.ProductType.ToString().ToLower() + matchedIon.NeutralTheoreticalProduct.TerminusFragment.FragmentNumber;
+                    
+                    if (settings != null && settings.ShowMzValues)
                     {
-                        peakAnnotationText = peak.NeutralTheoreticalProduct.ProductType.ToString().ToLower() + peak.NeutralTheoreticalProduct.TerminusFragment.FragmentNumber + "-" + peak.NeutralTheoreticalProduct.NeutralLoss.ToString("F2") + " (" + peak.Mz.ToString("F3") + ")";
+                        peakAnnotationText += " (" + matchedIon.Mz.ToString("F3") + ")";
+                    }
+
+                    if (settings != null && settings.ShowAnnotationCharges)
+                    {
+                        peakAnnotationText += " +" + matchedIon.Charge;
+                    }
+
+                    if (matchedIon.NeutralTheoreticalProduct.NeutralLoss != 0)
+                    {
+                        peakAnnotationText = matchedIon.NeutralTheoreticalProduct.ProductType.ToString().ToLower() + matchedIon.NeutralTheoreticalProduct.TerminusFragment.FragmentNumber + "-" + matchedIon.NeutralTheoreticalProduct.NeutralLoss.ToString("F2") + " (" + matchedIon.Mz.ToString("F3") + ")";
                     }
 
                     var peakAnnotation = new TextAnnotation();
-                    peakAnnotation.TextRotation = -60;
                     peakAnnotation.Font = "Arial";
-                    peakAnnotation.FontSize = 12;
-                    peakAnnotation.FontWeight = 2.0;
+                    peakAnnotation.FontSize = settings != null ? settings.Size : 12;
+                    peakAnnotation.FontWeight = settings != null && settings.BoldText ? FontWeights.Bold : 2.0;
                     peakAnnotation.TextColor = ionColor;
                     peakAnnotation.StrokeThickness = 0;
                     peakAnnotation.Text = peakAnnotationText;
@@ -145,6 +155,8 @@ namespace ViewModels
                     model.Series.Add(allIons[i]);
                 }
 
+
+                // TODO
                 if (psmToDraw.BetaPeptideBaseSequence != null)
                 {
                     foreach (var peak in psmToDraw.BetaPeptideMatchedIons)

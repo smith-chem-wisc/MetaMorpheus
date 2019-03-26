@@ -169,6 +169,13 @@
     <Compile Include="MetaDraw.xaml.cs">
       <DependentUpon>MetaDraw.xaml</DependentUpon>
     </Compile>
+    <Compile Include="MetaDrawFilterSettings.xaml.cs">
+      <DependentUpon>MetaDrawFilterSettings.xaml</DependentUpon>
+    </Compile>
+    <Compile Include="MetaDrawSettings.cs" />
+    <Compile Include="MetaDrawSettingsWindow.xaml.cs">
+      <DependentUpon>MetaDrawSettingsWindow.xaml</DependentUpon>
+    </Compile>
     <Compile Include="MetaDraw\BaseSequenceAnnotation.cs" />
     <Compile Include="MetaDraw\PdfWriter.cs" />
     <Compile Include="Util\BooleanInverter.cs" />
@@ -262,6 +269,14 @@
     <Page Include="MetaDraw.xaml">
       <Generator>MSBuild:Compile</Generator>
       <SubType>Designer</SubType>
+    </Page>
+    <Page Include="MetaDrawFilterSettings.xaml">
+      <SubType>Designer</SubType>
+      <Generator>MSBuild:Compile</Generator>
+    </Page>
+    <Page Include="MetaDrawSettingsWindow.xaml">
+      <SubType>Designer</SubType>
+      <Generator>MSBuild:Compile</Generator>
     </Page>
     <Page Include="MetaUpdater.xaml">
       <Generator>MSBuild:Compile</Generator>

@@ -1,24 +1,26 @@
+using EngineLayer;
+using MassSpectrometry;
+using Proteomics.Fragmentation;
+using Proteomics.ProteolyticDigestion;
+using System;
+using System.Collections.Generic;
+using System.Collections.ObjectModel;
+using System.ComponentModel;
+using System.Data;
+using System.IO;
 using System.Linq;
+using System.Text.RegularExpressions;
+using System.Threading.Tasks;
 using System.Windows;
 using System.Windows.Controls;
-using System.Collections.ObjectModel;
-using System.IO;
-using ViewModels;
-using EngineLayer;
-using System.Collections.Generic;
-using MassSpectrometry;
-using TaskLayer;
-using System.ComponentModel;
-using System.Threading.Tasks;
-using System;
-using System.Data;
-
 using System.Windows.Data;
 using System.Windows.Media;
 using Proteomics.Fragmentation;
 using Proteomics.ProteolyticDigestion;
 using System.Text.RegularExpressions;
 using System.Windows.Media.Imaging;
+using TaskLayer;
+using ViewModels;
 
 namespace MetaMorpheusGUI
 {
@@ -30,7 +32,8 @@ namespace MetaMorpheusGUI
         private PsmAnnotationViewModel mainViewModel;
         private MyFileManager spectraFileManager;
         private MsDataFile MsDataFile;
-        private readonly ObservableCollection<PsmFromTsv> peptideSpectralMatches;
+        private readonly List<PsmFromTsv> allPsms; // all loaded PSMs
+        private readonly ObservableCollection<PsmFromTsv> peptideSpectralMatches; // these are displayed
         ICollectionView peptideSpectralMatchesView;
         private readonly DataTable propertyView;
         private string spectraFilePath;
@@ -39,6 +42,9 @@ namespace MetaMorpheusGUI
         private Dictionary<ProductType, Color> productTypeToColor;
         private SolidColorBrush modificationAnnotationColor;
         private Regex illegalInFileName = new Regex(@"[\\/:*?""<>|]");
+        private double qValueFilter;
+        private bool showContaminants;
+        private bool showDecoys;
 
         public MetaDraw()
         {
@@ -46,6 +52,7 @@ namespace MetaMorpheusGUI
 
             mainViewModel = new PsmAnnotationViewModel();
             plotView.DataContext = mainViewModel;
+            allPsms = new List<PsmFromTsv>();
             peptideSpectralMatches = new ObservableCollection<PsmFromTsv>();
             propertyView = new DataTable();
             propertyView.Columns.Add("Name", typeof(string));
@@ -57,6 +64,12 @@ namespace MetaMorpheusGUI
             spectraFileManager = new MyFileManager(true);
             SetUpDictionaries();
             modificationAnnotationColor = Brushes.Yellow;
+            metaDrawGraphicalSettings = new MetaDrawGraphicalSettings();
+            metaDrawFilterSettings = new MetaDrawFilterSettings();
+            base.Closing += this.OnClosing;
+            qValueFilter = 0.01;
+            showContaminants = true;
+            showDecoys = false;
         }
 
         private void SetUpDictionaries()
@@ -127,16 +140,34 @@ namespace MetaMorpheusGUI
                 {
                     if (psm.Filename == fileNameWithExtension || psm.Filename == fileNameWithoutExtension || psm.Filename.Contains(fileNameWithoutExtension))
                     {
-                        Dispatcher.BeginInvoke(new Action(() =>
-                        {
-                            peptideSpectralMatches.Add(psm);
-                        }));
+                        allPsms.Add(psm);
                     }
                 }
             }
             catch (Exception e)
             {
                 MessageBox.Show("Could not open PSM file:\n" + e.Message);
+            }
+
+            DisplayLoadedAndFilteredPsms();
+        }
+
+        private void DisplayLoadedAndFilteredPsms()
+        {
+            Dispatcher.BeginInvoke(new Action(() =>
+            {
+                peptideSpectralMatches.Clear();
+            })); 
+
+            foreach (PsmFromTsv psm in allPsms.Where(p => p.QValue < qValueFilter && p.QValueNotch < qValueFilter))
+            {
+                if (psm.DecoyContamTarget == "T" || (psm.DecoyContamTarget == "D" && showDecoys) || (psm.DecoyContamTarget == "C" && showContaminants))
+                {
+                    Dispatcher.BeginInvoke(new Action(() =>
+                    {
+                        peptideSpectralMatches.Add(psm);
+                    })); 
+                }
             }
         }
 
@@ -153,7 +184,7 @@ namespace MetaMorpheusGUI
             PsmFromTsv psmToDraw = scanPsms.FirstOrDefault();
 
             // draw annotated spectrum
-            mainViewModel.DrawPeptideSpectralMatch(msDataScanToDraw, psmToDraw);
+            mainViewModel.DrawPeptideSpectralMatch(msDataScanToDraw, psmToDraw, metaDrawGraphicalSettings.settings);
 
             // draw annotated base sequence
             //TO DO: Annotate crosslinked peptide sequence           
@@ -167,6 +198,11 @@ namespace MetaMorpheusGUI
         /// Event triggers when a different cell is selected in the PSM data grid
         /// </summary>
         private void dataGridScanNums_SelectedCellsChanged(object sender, SelectedCellsChangedEventArgs e)
+        {
+            DrawPSM();
+        }
+
+        private void DrawPSM()
         {
             if (dataGridScanNums.SelectedItem == null)
             {
@@ -227,6 +263,31 @@ namespace MetaMorpheusGUI
                     LoadFile(filePath);
                 }
             }
+        }
+
+        private void OnClosing(object sender, CancelEventArgs e)
+        {
+            metaDrawGraphicalSettings.Close();
+            metaDrawFilterSettings.Close();
+        }
+
+        private MetaDrawGraphicalSettings metaDrawGraphicalSettings;
+        private MetaDrawFilterSettings metaDrawFilterSettings;
+
+        private void graphicalSettings_Click(object sender, RoutedEventArgs e)
+        {
+            metaDrawGraphicalSettings.ShowDialog();
+            DrawPSM();
+        }
+
+        private void filterSettings_Click(object sender, RoutedEventArgs e)
+        {
+            var result = metaDrawFilterSettings.ShowDialog();
+            qValueFilter = metaDrawFilterSettings.QValue;
+            showContaminants = metaDrawFilterSettings.ShowContaminants;
+            showDecoys = metaDrawFilterSettings.ShowDecoys;
+
+            DisplayLoadedAndFilteredPsms();
         }
 
         private async void loadFilesButton_Click(object sender, RoutedEventArgs e)
