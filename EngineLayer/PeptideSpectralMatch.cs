@@ -59,7 +59,7 @@ namespace EngineLayer
         public int ScanPrecursorCharge { get; }
         public double ScanPrecursorMonoisotopicPeakMz { get; }
         public double ScanPrecursorMass { get; }
-        public string FullFilePath { get; }
+        public string FullFilePath { get; private set; }
         public int ScanIndex { get; }
         public int NumDifferentMatchingPeptides { get { return _BestMatchingPeptides.Count; } }
         public FdrInfo FdrInfo { get; private set; }
@@ -246,6 +246,15 @@ namespace EngineLayer
             //Accession
             ProteinAccession = PsmTsvWriter.Resolve(_BestMatchingPeptides.Select(x => x.Pwsm).Select(b => b.Protein.Accession), FullSequence).ResolvedString; //string, not value
             ProteinAccession = SilacConversions.GetProteinLightAccession(ProteinAccession, labels);
+        }
+
+        /// <summary>
+        /// This method changes the full file path from the original (light) to the labeled
+        /// This is needed when the unlabeled peptides are not searched
+        /// </summary>
+        public void UpdateUnlabeledFilePathToHeavySilacPath(string fullFilePath)
+        {
+            FullFilePath = fullFilePath;
         }
 
         /// <summary>

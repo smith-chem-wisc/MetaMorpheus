@@ -327,14 +327,26 @@ namespace MetaMorpheusGUI
                 //save current label
                 SilacLabel savedLabel = new SilacLabel(AminoAcid, '\0', ChemicalFormula.Text, Convert.ToDouble(MassDifference.Text));
                 SilacLabelStorageForMultiLabeledConditions = new SilacInfoForDataGrid(savedLabel);
-                
+
                 //open a new window to allow for more mods on this condition
                 var dialog = new SilacModificationWindow();
 
                 if (dialog.ShowDialog() == true)
                 {
-                    SilacLabelStorageForMultiLabeledConditions.AddAdditionalLabel(dialog.SilacLabel);
-                    SaveSilacLabelsButton_Click(sender, e);
+                    char originalAminoAcid = SilacLabelStorageForMultiLabeledConditions.SilacLabel[0].OriginalAminoAcid;
+                    //As you loop throught this, the process looks something like addAdditional->addAdditional->Save (for 3 labels).
+                    //But the saving actually happens as Save->add->add by storing the list of labels in each dialog.SilacLabel
+                    //So you need to search against the dialog.silacLabel instead of the storage, which is only temporarily populated at the end.
+                    if (dialog.SilacLabel.SilacLabel.Any(x => x.OriginalAminoAcid == originalAminoAcid))
+                    {
+                        MessageBox.Show("The amino acid '" + originalAminoAcid.ToString() + "' was labeled multiple times for this condition. Please try again.");
+                        CancelSilacButton_Click(sender, e);
+                    }
+                    else
+                    {
+                        SilacLabelStorageForMultiLabeledConditions.AddAdditionalLabel(dialog.SilacLabel);
+                        SaveSilacLabelsButton_Click(sender, e);
+                    }
                 }
             }
         }

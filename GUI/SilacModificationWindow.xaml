@@ -144,7 +144,7 @@
                 <!--Save/cancel buttons-->
         <StackPanel Orientation="Horizontal" HorizontalAlignment="Center" Grid.Row="4" Height="25" VerticalAlignment="Bottom">
             <Button x:Name="SaveSilacLabelsButton" Content="Save Label(s)" Click="SaveSilacLabelsButton_Click"/>
-            <Button x:Name="AddAdditionalButton" Content="Add Additional Label to This Condition" Click="AddAdditionalButton_Click"/>
+            <Button x:Name="AddAdditionalButton" Content="Add Additional Labels to This Condition" Click="AddAdditionalButton_Click"/>
             <Button x:Name="CancelSilacButton" Content="Cancel" Click="CancelSilacButton_Click"/>
         </StackPanel>
     </Grid>

@@ -20,19 +20,71 @@ namespace Test
         public static void TestSilacNoLightProtein()
         {
             //The concern with multiple mods per label is the conversions back and forth between "light" and "heavy" labels
-            Residue heavyArginine = new Residue("b", 'b', "b", Chemistry.ChemicalFormula.ParseFormula("C{13}6H12N4O"), ModificationSites.All); //+6 arginine
+            Residue heavyArginine = new Residue("c", 'c', "c", Chemistry.ChemicalFormula.ParseFormula("C6H12N{15}4O"), ModificationSites.All); //+4 arginine
+            Residue heavierArginine = new Residue("d", 'd', "d", Chemistry.ChemicalFormula.ParseFormula("C{13}6H12N{15}4O"), ModificationSites.All); //+10 arginine
+            Residue.AddNewResiduesToDictionary(new List<Residue> { heavyArginine }); //These should be added in the  search task, but we need to add this one earlier so that we can create a heavy pwsm
+
             Residue lightArginine = Residue.GetResidue('R');
 
-            SilacLabel rLabel = new SilacLabel(lightArginine.Letter, heavyArginine.Letter, heavyArginine.ThisChemicalFormula.Formula, heavyArginine.MonoisotopicMass - lightArginine.MonoisotopicMass);
+            SilacLabel heavyLabel = new SilacLabel(lightArginine.Letter, heavyArginine.Letter, heavyArginine.ThisChemicalFormula.Formula, heavyArginine.MonoisotopicMass - lightArginine.MonoisotopicMass);
+            SilacLabel heavierLabel = new SilacLabel(lightArginine.Letter, heavierArginine.Letter, heavierArginine.ThisChemicalFormula.Formula, heavierArginine.MonoisotopicMass - lightArginine.MonoisotopicMass);
 
             SearchTask task = new SearchTask
             {
                 SearchParameters = new SearchParameters
                 {
-                    SilacLabels = new List<SilacLabel> { rLabel }
+                    SilacLabels = new List<SilacLabel> { heavyLabel, heavierLabel }
                 },
-                CommonParameters = new CommonParameters(digestionParams: new DigestionParams(generateUnlabeledProteinsForSilac: false))
+                CommonParameters = new CommonParameters(digestionParams: new DigestionParams(generateUnlabeledProteinsForSilac: false)) //this is the important part of the unit test
             };
+
+            PeptideWithSetModifications heavyPeptide = new PeptideWithSetModifications("PEPTIDEc", new Dictionary<string, Modification>());
+
+            List<double> massDifferences = new List<double> { heavierArginine.MonoisotopicMass - heavyArginine.MonoisotopicMass };
+            MsDataFile myMsDataFile1 = new TestDataFile(heavyPeptide, massDifferences);
+            string mzmlName = @"silac.mzML";
+            IO.MzML.MzmlMethods.CreateAndWriteMyMzmlWithCalibratedSpectra(myMsDataFile1, mzmlName, false);
+
+            string xmlName = "SilacDb.xml";
+            Protein theProtein = new Protein("PEPTIDER", "accession1");
+            ProteinDbWriter.WriteXmlDatabase(new Dictionary<string, HashSet<Tuple<int, Modification>>>(), new List<Protein> { theProtein }, xmlName);
+
+            string outputFolder = Path.Combine(TestContext.CurrentContext.TestDirectory, @"TestSilac");
+            Directory.CreateDirectory(outputFolder);
+            var theStringResult = task.RunTask(outputFolder, new List<DbForTask> { new DbForTask(xmlName, false) }, new List<string> { mzmlName }, "taskId1").ToString();
+
+            //test proteins
+            string[] output = File.ReadAllLines(TestContext.CurrentContext.TestDirectory + @"/TestSilac/AllProteinGroups.tsv");
+            Assert.AreEqual(output.Length, 2);
+            Assert.IsTrue(output[0].Contains("Modification Info List\tIntensity_silac(R+3.988)\tIntensity_silac(R+10.008)")); //test that two files were made and no light file
+            Assert.IsTrue(output[1].Contains("875000\t437500")); //test the heavier intensity is half that of the heavy (per the raw file)
+
+            //test peptides
+            output = File.ReadAllLines(TestContext.CurrentContext.TestDirectory + @"/TestSilac/AllQuantifiedPeptides.tsv");
+            Assert.AreEqual(output.Length, 2);
+            Assert.IsTrue(output[0].Contains("Organism\tIntensity_silac(R+3.988)\tIntensity_silac(R+10.008)")); //test the two files were made and no light file
+            Assert.IsTrue(output[1].Contains("875000\t437500")); //test intensity
+
+            //test peaks
+            output = File.ReadAllLines(TestContext.CurrentContext.TestDirectory + @"/TestSilac/AllQuantifiedPeaks.tsv");
+            Assert.AreEqual(output.Length, 3);
+            Assert.IsTrue(output[1].Contains("silac\t")); //test the filename was NOT modified (it was for proteins, but we don't want it for peptides)
+            Assert.IsTrue(output[2].Contains("silac\t"));//test the filename was NOT modified (it was for proteins, but we don't want it for peptides)
+            Assert.IsTrue(output[1].Contains("PEPTIDER(+3.988)\t")); //test light sequence was not modified
+            Assert.IsTrue(output[2].Contains("PEPTIDER(+10.008)\t")); //test heavy sequence was output correctly (do NOT want "PEPTIDEa")
+            Assert.IsTrue(output[1].Contains("959.44")); //test light mass
+            Assert.IsTrue(output[2].Contains("965.46")); //test heavy mass
+
+            //test PSMs
+            output = File.ReadAllLines(TestContext.CurrentContext.TestDirectory + @"/TestSilac/AllPSMs.psmtsv");
+            Assert.IsTrue(output[1].Contains("959.44")); //test the correct monoisotopic mass
+            Assert.IsTrue(output[1].Contains("PEPTIDER(+3.988)")); //test the correct psm
+            Assert.IsTrue(output[1].Contains("silac\t")); //test the filename was NOT modified (it was for proteins, but we don't want it for peptides)
+
+            //Clear the old files
+            Directory.Delete(outputFolder, true);
+            File.Delete(xmlName);
+            File.Delete(mzmlName);
         }
 
         [Test]
