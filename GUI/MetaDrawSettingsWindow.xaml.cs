@@ -1,5 +1,4 @@
-﻿using System;
-using System.ComponentModel;
+﻿using System.ComponentModel;
 using System.Windows;
 
 namespace MetaMorpheusGUI
@@ -39,6 +38,12 @@ namespace MetaMorpheusGUI
             {
                 if (int.TryParse(TextSizeBox.Text, out int fontSize))
                 {
+                    if (fontSize > 15)
+                    {
+                        MessageBox.Show("Font size must be <= 15");
+                        return;
+                    }
+
                     AnnotatedFontSize = fontSize;
                 }
                 else
@@ -47,7 +52,7 @@ namespace MetaMorpheusGUI
                     return;
                 }
             }
-            
+
             this.Visibility = Visibility.Hidden;
         }
 
