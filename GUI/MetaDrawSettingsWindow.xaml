@@ -5,22 +5,23 @@
         xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
         xmlns:local="clr-namespace:MetaMorpheusGUI"
         mc:Ignorable="d"
-        Title="Graphical Settings" Width="400" SizeToContent="Height" WindowStartupLocation="CenterScreen" Height="167.667">
+        Title="Graphical Settings" Width="400" SizeToContent="Height" WindowStartupLocation="CenterScreen">
     <StackPanel>
-        <DockPanel Height="98">
-            <Grid>
-                <CheckBox Name="MZCheckBox" Content="M/z values on identified peaks" Margin="10,4,190,78" Grid.ColumnSpan="2"/>
-                <CheckBox Name="ChargesCheckBox" Content="Annotation charges on identified peaks" Margin="10,25,109,57"/>
+        <StackPanel>
+            <CheckBox Name="MZCheckBox" Content="Annotate m/z values" Margin="5"/>
+            <CheckBox Name="ChargesCheckBox" Content="Annotate charges" Margin="5"/>
 
-                <Label Content="Text size:" Height="23" Margin="5,40,129,35"/>
-                <TextBox Name ="TextSizeBox" Margin="63,46,293,35"/>
-                <CheckBox Name="BoldTextCheckBox" Content="Bold text" Margin="10,68,115,14"/>
-            </Grid>
-        </DockPanel>
+            <StackPanel Orientation="Horizontal" Margin="5">
+                <Label Content="Text size:" />
+                <TextBox Name ="TextSizeBox" Width="60" Height="24" />
+            </StackPanel>
 
-        <StackPanel Orientation="Horizontal" VerticalAlignment="Bottom" Height="40">
-            <Button x:Name="Save"  Height="30" Width="199" Content="Save" Click="Save_Click" FontSize="15" Grid.Row="3" Margin="0,5" />
-            <Button x:Name="Cancel" Height="30" Width="193" Content="Cancel" Click="Cancel_Click" FontSize="15" Grid.Row="3" Margin="0,5" />
+            <CheckBox Name="BoldTextCheckBox" Content="Bold text" Margin="5"/>
+
+            <StackPanel Orientation="Horizontal" VerticalAlignment="Bottom" HorizontalAlignment="Center" >
+                <Button x:Name="Save" Content="Save" Click="Save_Click" FontSize="15" Width="100" Margin="0,5" />
+                <Button x:Name="Cancel" Content="Cancel" Click="Cancel_Click" FontSize="15" Width="100" Margin="0,5" />
+            </StackPanel>
         </StackPanel>
     </StackPanel>
 </Window>

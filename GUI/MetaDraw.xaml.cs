@@ -42,9 +42,6 @@ namespace MetaMorpheusGUI
         private Dictionary<ProductType, Color> productTypeToColor;
         private SolidColorBrush modificationAnnotationColor;
         private Regex illegalInFileName = new Regex(@"[\\/:*?""<>|]");
-        private double qValueFilter;
-        private bool showContaminants;
-        private bool showDecoys;
 
         public MetaDraw()
         {
@@ -69,9 +66,6 @@ namespace MetaMorpheusGUI
             metaDrawGraphicalSettings = new MetaDrawGraphicalSettings();
             metaDrawFilterSettings = new MetaDrawFilterSettings();
             base.Closing += this.OnClosing;
-            qValueFilter = 0.01;
-            showContaminants = true;
-            showDecoys = false;
 
             ParentChildScanView.Visibility = Visibility.Collapsed;
             ParentScanView.Visibility = Visibility.Collapsed;
@@ -162,9 +156,9 @@ namespace MetaMorpheusGUI
             filteredListOfPsms.Clear();
 
             var filteredList = allPsms.Where(p =>
-                p.QValue < qValueFilter
-                && (p.QValueNotch < qValueFilter || p.QValueNotch == null)
-                && (p.DecoyContamTarget == "T" || (p.DecoyContamTarget == "D" && showDecoys) || (p.DecoyContamTarget == "C" && showContaminants)));
+                p.QValue < metaDrawFilterSettings.QValueFilter
+                && (p.QValueNotch < metaDrawFilterSettings.QValueFilter || p.QValueNotch == null)
+                && (p.DecoyContamTarget == "T" || (p.DecoyContamTarget == "D" && metaDrawFilterSettings.ShowDecoys) || (p.DecoyContamTarget == "C" && metaDrawFilterSettings.ShowContaminants)));
 
             foreach (PsmFromTsv psm in filteredList)
             {
@@ -195,7 +189,7 @@ namespace MetaMorpheusGUI
                 var parentPsmModel = new PsmAnnotationViewModel();
                 MsDataScan parentScan = MsDataFile.GetOneBasedScan(psmToDraw.Ms2ScanNumber);
 
-                parentPsmModel.DrawPeptideSpectralMatch(parentScan, psmToDraw, metaDrawGraphicalSettings.settings);
+                parentPsmModel.DrawPeptideSpectralMatch(parentScan, psmToDraw);
 
                 string parentAnnotation = "Scan: " + parentScan.OneBasedScanNumber.ToString()
                         + " Dissociation Type: " + parentScan.DissociationType.ToString()
@@ -222,7 +216,8 @@ namespace MetaMorpheusGUI
                     var childPsmModel = new PsmAnnotationViewModel();
                     MsDataScan childScan = MsDataFile.GetOneBasedScan(scanNumber);
 
-                    childPsmModel.DrawPeptideSpectralMatch(childScan, psmToDraw, metaDrawGraphicalSettings.settings);
+                    childPsmModel.DrawPeptideSpectralMatch(childScan, psmToDraw, metaDrawGraphicalSettings.ShowMzValues,
+                        metaDrawGraphicalSettings.ShowAnnotationCharges, metaDrawGraphicalSettings.AnnotatedFontSize, metaDrawGraphicalSettings.BoldText);
 
                     string childAnnotation = "Scan: " + scanNumber.ToString()
                         + " Dissociation Type: " + childScan.DissociationType.ToString()
@@ -257,7 +252,8 @@ namespace MetaMorpheusGUI
             }
 
             // draw annotated spectrum
-            mainViewModel.DrawPeptideSpectralMatch(msDataScanToDraw, psmToDraw, metaDrawGraphicalSettings.settings);
+            mainViewModel.DrawPeptideSpectralMatch(msDataScanToDraw, psmToDraw, metaDrawGraphicalSettings.ShowMzValues,
+                metaDrawGraphicalSettings.ShowAnnotationCharges, metaDrawGraphicalSettings.AnnotatedFontSize, metaDrawGraphicalSettings.BoldText);
 
             // draw annotated base sequence
             DrawAnnotatedBaseSequence(psmToDraw);
@@ -340,19 +336,26 @@ namespace MetaMorpheusGUI
             metaDrawGraphicalSettings.Close();
             metaDrawFilterSettings.Close();
         }
-        
+
         private void graphicalSettings_Click(object sender, RoutedEventArgs e)
         {
+            metaDrawGraphicalSettings.MZCheckBox.IsChecked = metaDrawGraphicalSettings.ShowMzValues;
+            metaDrawGraphicalSettings.ChargesCheckBox.IsChecked = metaDrawGraphicalSettings.ShowAnnotationCharges;
+            metaDrawGraphicalSettings.BoldTextCheckBox.IsChecked = metaDrawGraphicalSettings.BoldText;
+            metaDrawGraphicalSettings.TextSizeBox.Text = metaDrawGraphicalSettings.AnnotatedFontSize.ToString();
+
             metaDrawGraphicalSettings.ShowDialog();
+
             OnSelectionChanged();
         }
 
         private void filterSettings_Click(object sender, RoutedEventArgs e)
         {
+            metaDrawFilterSettings.DecoysCheckBox.IsChecked = metaDrawFilterSettings.ShowDecoys;
+            metaDrawFilterSettings.ContaminantsCheckBox.IsChecked = metaDrawFilterSettings.ShowContaminants;
+            metaDrawFilterSettings.qValueBox.Text = metaDrawFilterSettings.QValueFilter.ToString();
+
             var result = metaDrawFilterSettings.ShowDialog();
-            qValueFilter = metaDrawFilterSettings.QValue;
-            showContaminants = metaDrawFilterSettings.ShowContaminants;
-            showDecoys = metaDrawFilterSettings.ShowDecoys;
 
             DisplayLoadedAndFilteredPsms();
         }

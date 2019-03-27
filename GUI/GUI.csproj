@@ -172,7 +172,6 @@
     <Compile Include="MetaDrawFilterSettings.xaml.cs">
       <DependentUpon>MetaDrawFilterSettings.xaml</DependentUpon>
     </Compile>
-    <Compile Include="MetaDrawSettings.cs" />
     <Compile Include="MetaDrawSettingsWindow.xaml.cs">
       <DependentUpon>MetaDrawSettingsWindow.xaml</DependentUpon>
     </Compile>

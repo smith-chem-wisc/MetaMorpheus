@@ -5,21 +5,21 @@
         xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
         xmlns:local="clr-namespace:MetaMorpheusGUI"
         mc:Ignorable="d"
-        Title="Filter Settings" Width="400" SizeToContent="Height" WindowStartupLocation="CenterScreen" Height="167.667">
+        Title="Filter Settings" Width="300" SizeToContent="Height" WindowStartupLocation="CenterScreen">
     <StackPanel>
-        <DockPanel Height="98">
-            <Grid>
-                <CheckBox Name="DecoysCheckBox" Content="Show decoys" Margin="14,18,186,64"/>
-                <CheckBox Name="ContaminantsCheckBox" Content="Show contaminants" IsChecked="True" Margin="14,39,105,43"/>
+        <StackPanel>
+            <CheckBox Name="DecoysCheckBox" Content="Show decoys" Margin="5 12 5 5" />
+            <CheckBox Name="ContaminantsCheckBox" Content="Show contaminants" Margin="5" />
 
-                <Label Content="q-value filter:" Margin="10,54,123,10"/>
-                <TextBox Name ="qValueBox" Margin="95,60,261,21"/>
-            </Grid>
-        </DockPanel>
+            <StackPanel Orientation="Horizontal">
+                <Label Content="Filter to q-value:" Margin="5"/>
+                <TextBox Name ="qValueBox" Width="60" Height="24" />
+            </StackPanel>
 
-        <StackPanel Orientation="Horizontal" VerticalAlignment="Bottom" Height="40">
-            <Button x:Name="Save"  Height="30" Width="199" Content="Save" Click="Save_Click" FontSize="15" Grid.Row="3" Margin="0,5" />
-            <Button x:Name="Cancel" Height="30" Width="193" Content="Cancel" Click="Cancel_Click" FontSize="15" Grid.Row="3" Margin="0,5" />
+            <StackPanel Orientation="Horizontal" HorizontalAlignment="Center">
+                <Button x:Name="Save" Width="100" Content="Save" Click="Save_Click" FontSize="15" Margin="0,5" />
+                <Button x:Name="Cancel" Width="100" Content="Cancel" Click="Cancel_Click" FontSize="15" Margin="0,5" />
+            </StackPanel>
         </StackPanel>
     </StackPanel>
 </Window>

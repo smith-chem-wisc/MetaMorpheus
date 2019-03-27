@@ -1,17 +1,5 @@
-﻿using System;
-using System.Collections.Generic;
-using System.ComponentModel;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
+﻿using System.ComponentModel;
 using System.Windows;
-using System.Windows.Controls;
-using System.Windows.Data;
-using System.Windows.Documents;
-using System.Windows.Input;
-using System.Windows.Media;
-using System.Windows.Media.Imaging;
-using System.Windows.Shapes;
 
 namespace MetaMorpheusGUI
 {
@@ -22,21 +10,18 @@ namespace MetaMorpheusGUI
     {
         public bool ShowDecoys { get; private set; }
         public bool ShowContaminants { get; private set; }
-        public double QValue { get; private set; }
-        public bool SelectContaminants { get; set; } = true;
+        public double QValueFilter { get; private set; }
 
-        public MetaDrawFilterSettings()
+        public MetaDrawFilterSettings(bool showDecoys = false, bool showContaminants = true, double qValueFilter = 0.01)
         {
             InitializeComponent();
-            ContaminantsCheckBox.IsChecked = true; 
             base.Closing += this.OnClosing;
 
-            // default values
-            QValue = 0.01;
-            ShowContaminants = true;
-            ShowDecoys = false;
+            QValueFilter = qValueFilter;
+            ShowContaminants = showContaminants;
+            ShowDecoys = showDecoys;
         }
-        
+
         private void Cancel_Click(object sender, RoutedEventArgs e)
         {
             this.Visibility = Visibility.Hidden;
@@ -44,11 +29,20 @@ namespace MetaMorpheusGUI
 
         private void Save_Click(object sender, RoutedEventArgs e)
         {
-            ShowDecoys = DecoysCheckBox.IsChecked == true ? true : false;
-            ShowContaminants = ContaminantsCheckBox.IsChecked == true ? true : false;
-            if (qValueBox.Text.Length > 0)
+            ShowDecoys = DecoysCheckBox.IsChecked.Value;
+            ShowContaminants = ContaminantsCheckBox.IsChecked.Value;
+
+            if (!string.IsNullOrWhiteSpace(qValueBox.Text))
             {
-                QValue = Convert.ToDouble(qValueBox.Text);
+                if (double.TryParse(qValueBox.Text, out double qValueFilter))
+                {
+                    QValueFilter = qValueFilter;
+                }
+                else
+                {
+                    MessageBox.Show("Could not parse q-value filter");
+                    return;
+                }
             }
 
             this.Visibility = Visibility.Hidden;
@@ -56,7 +50,6 @@ namespace MetaMorpheusGUI
 
         private void OnClosing(object sender, CancelEventArgs e)
         {
-            // this window only closes when task is added
             if (this.Visibility == Visibility.Visible)
             {
                 this.Visibility = Visibility.Hidden;
