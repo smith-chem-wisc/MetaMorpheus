@@ -7,6 +7,7 @@ using OxyPlot.Annotations;
 using OxyPlot.Axes;
 using OxyPlot.Series;
 using Proteomics.Fragmentation;
+using System;
 using System.Collections.Generic;
 using System.ComponentModel;
 using System.IO;
@@ -90,12 +91,32 @@ namespace ViewModels
                 subtitle = psmToDraw.FullSequence + "\n" + psmToDraw.BetaPeptideFullSequence;
             }
             PlotModel model = new PlotModel { Title = "Spectrum Annotation of Scan #" + msDataScan.OneBasedScanNumber, DefaultFontSize = 15, Subtitle = subtitle };
-            model.Axes.Add(new LinearAxis { Position = AxisPosition.Bottom, Title = "m/z", Minimum = 0,
-                Maximum = spectrumMzs.Max() * 1.02, AbsoluteMinimum = 0, AbsoluteMaximum = spectrumMzs.Max() * 5, MajorStep = System.Math.Round(spectrumMzs.Max() / 2)});
-            model.Axes.Add(new LinearAxis { Position = AxisPosition.Left, Title = "Intensity", Minimum = 0,
-                Maximum = spectrumIntensities.Max() * 1.2, AbsoluteMinimum = 0, AbsoluteMaximum = spectrumIntensities.Max() * 1.3, MajorStep = spectrumIntensities.Max(), MinorStep = spectrumIntensities.Max() / 2});
+            
+            model.Axes.Add(new LinearAxis
+            {
+                Position = AxisPosition.Bottom,
+                Title = "m/z",
+                Minimum = msDataScan.ScanWindowRange.Minimum,
+                Maximum = msDataScan.ScanWindowRange.Maximum,
+                AbsoluteMinimum = 0,
+                AbsoluteMaximum = msDataScan.ScanWindowRange.Maximum * 2,
+                MajorStep = Math.Round(msDataScan.ScanWindowRange.Maximum / 2),
+                MinorStep = Math.Round(msDataScan.ScanWindowRange.Maximum / 4)
+            });
+            model.Axes.Add(new LinearAxis
+            {
+                Position = AxisPosition.Left,
+                Title = "Intensity",
+                Minimum = 0,
+                Maximum = spectrumIntensities.Max(),
+                AbsoluteMinimum = 0,
+                AbsoluteMaximum = spectrumIntensities.Max() * 2,
+                MajorStep = spectrumIntensities.Max(),
+                MinorStep = spectrumIntensities.Max() / 2,
+                StringFormat = "0e-0",
+            });
             model.Axes[1].Zoom(0, spectrumIntensities.Max() * 1.1);
-           
+
             LineSeries[] allIons = new LineSeries[spectrumMzs.Length];
 
             // draw the matched peaks; if the PSM is null, we're just drawing the peaks in the scan without annotation, so skip this part
@@ -117,7 +138,7 @@ namespace ViewModels
                     ionsToDraw = scan.Value;
                 }
 
-                foreach (MatchedFragmentIon peak in ionsToDraw)
+                foreach (MatchedFragmentIon matchedIon in ionsToDraw)
                 {
                     OxyColor ionColor;
 
@@ -140,27 +161,29 @@ namespace ViewModels
                     allIons[i].Points.Add(new DataPoint(matchedIon.Mz, spectrumIntensities[i]));
 
                     // peak annotation
-                    string add = "";
+                    string prefix = "";
                     if (psmToDraw.BetaPeptideBaseSequence != null)
                     {
-                        add = "α-";
+                        prefix = "α";
                     }
 
-                    string peakAnnotationText = add + matchedIon.NeutralTheoreticalProduct.ProductType.ToString().ToLower() + matchedIon.NeutralTheoreticalProduct.TerminusFragment.FragmentNumber;
+                    string productType = matchedIon.NeutralTheoreticalProduct.ProductType.ToString().ToLower().Replace("star", "*").Replace("degree", "°").Replace("dot", "");
+                    string productNumber = matchedIon.NeutralTheoreticalProduct.TerminusFragment.FragmentNumber.ToString();
+                    string peakAnnotationText = prefix + productType + productNumber;
                     
-                    if (settings != null && settings.ShowMzValues)
+                    if (matchedIon.NeutralTheoreticalProduct.NeutralLoss != 0)
                     {
-                        peakAnnotationText += " (" + matchedIon.Mz.ToString("F3") + ")";
+                        peakAnnotationText += "-" + matchedIon.NeutralTheoreticalProduct.NeutralLoss.ToString("F2") + " (" + matchedIon.Mz.ToString("F3") + ")";
                     }
 
                     if (settings != null && settings.ShowAnnotationCharges)
                     {
-                        peakAnnotationText += " +" + matchedIon.Charge;
+                        peakAnnotationText += "+" + matchedIon.Charge;
                     }
 
-                    if (matchedIon.NeutralTheoreticalProduct.NeutralLoss != 0)
+                    if (settings != null && settings.ShowMzValues)
                     {
-                        peakAnnotationText = matchedIon.NeutralTheoreticalProduct.ProductType.ToString().ToLower() + matchedIon.NeutralTheoreticalProduct.TerminusFragment.FragmentNumber + "-" + matchedIon.NeutralTheoreticalProduct.NeutralLoss.ToString("F2") + " (" + matchedIon.Mz.ToString("F3") + ")";
+                        peakAnnotationText += " (" + matchedIon.Mz.ToString("F3") + ")";
                     }
 
                     var peakAnnotation = new TextAnnotation();
@@ -170,8 +193,8 @@ namespace ViewModels
                     peakAnnotation.TextColor = ionColor;
                     peakAnnotation.StrokeThickness = 0;
                     peakAnnotation.Text = peakAnnotationText;
-                    peakAnnotation.TextPosition = new DataPoint(allIons[i].Points[1].X, allIons[i].Points[1].Y + peakAnnotation.Text.Length * 1.5 / 4);
-                    peakAnnotation.TextHorizontalAlignment = HorizontalAlignment.Left;
+                    peakAnnotation.TextPosition = new DataPoint(allIons[i].Points[1].X, allIons[i].Points[1].Y);
+                    peakAnnotation.TextHorizontalAlignment = HorizontalAlignment.Center;
                     model.Annotations.Add(peakAnnotation);
 
                     model.Series.Add(allIons[i]);
@@ -218,21 +241,30 @@ namespace ViewModels
                         allIons[i].Points.Add(new DataPoint(peak.Mz, spectrumIntensities[i]));
 
                         // peak annotation
-                        string peakAnnotationText = "β-" + peak.NeutralTheoreticalProduct.ProductType.ToString().ToLower() + peak.NeutralTheoreticalProduct.TerminusFragment.FragmentNumber;
-                        
-                        if (settings != null && settings.ShowMzValues)
+                        // peak annotation
+                        string prefix = "";
+                        if (psmToDraw.BetaPeptideBaseSequence != null)
                         {
-                            peakAnnotationText += " (" + peak.Mz.ToString("F3") + ")";
+                            prefix = "β";
+                        }
+
+                        string productType = peak.NeutralTheoreticalProduct.ProductType.ToString().ToLower().Replace("star", "*").Replace("degree", "°").Replace("dot", "");
+                        string productNumber = peak.NeutralTheoreticalProduct.TerminusFragment.FragmentNumber.ToString();
+                        string peakAnnotationText = prefix + productType + productNumber;
+
+                        if (peak.NeutralTheoreticalProduct.NeutralLoss != 0)
+                        {
+                            peakAnnotationText += "-" + peak.NeutralTheoreticalProduct.NeutralLoss.ToString("F2") + " (" + peak.Mz.ToString("F3") + ")";
                         }
 
                         if (settings != null && settings.ShowAnnotationCharges)
                         {
-                            peakAnnotationText += " +" + peak.Charge;
+                            peakAnnotationText += "+" + peak.Charge;
                         }
-                        
-                        if (peak.NeutralTheoreticalProduct.NeutralLoss != 0)
+
+                        if (settings != null && settings.ShowMzValues)
                         {
-                            peakAnnotationText = "β-" + peak.NeutralTheoreticalProduct.ProductType.ToString().ToLower() + peak.NeutralTheoreticalProduct.TerminusFragment.FragmentNumber + "-" + peak.NeutralTheoreticalProduct.NeutralLoss.ToString("F2") + " (" + peak.Mz.ToString("F3") + ")";
+                            peakAnnotationText += " (" + peak.Mz.ToString("F3") + ")";
                         }
 
                         var peakAnnotation = new TextAnnotation();
@@ -242,8 +274,8 @@ namespace ViewModels
                         peakAnnotation.TextColor = ionColor;
                         peakAnnotation.StrokeThickness = 0;
                         peakAnnotation.Text = peakAnnotationText;
-                        peakAnnotation.TextPosition = new DataPoint(allIons[i].Points[1].X, allIons[i].Points[1].Y + peakAnnotation.Text.Length * 1.5 / 4);
-                        peakAnnotation.TextHorizontalAlignment = HorizontalAlignment.Left;
+                        peakAnnotation.TextPosition = new DataPoint(allIons[i].Points[1].X, allIons[i].Points[1].Y);
+                        peakAnnotation.TextHorizontalAlignment = HorizontalAlignment.Center;
                         model.Annotations.Add(peakAnnotation);
 
                         model.Series.Add(allIons[i]);
@@ -283,21 +315,25 @@ namespace ViewModels
             var x = Model.DefaultXAxis.ActualMaximum - Model.DefaultXAxis.ActualMaximum * 0.01;
             var diff = (y - (Model.DefaultYAxis.ActualMaximum * 0.1)) / properties.Length;
 
-            // properties to exclude
-            string[] exclude = { "PrecursorScanNum", "PrecursorMz", "MatchedIons",
-                "TotalIonCurrent", "Notch", " EssentialSeq", "MissedCleavage",
-                "OrganismName", "StartAndEndResiduesInProtein", "PreviousAminoAcid",
-                "NextAminoAcid", "Rank", "BetaPeptideMatchedIons", "BetaPeptideRank" };
+            // properties to include
+            string[] propertiesToWrite = {
+                "Filename",
+                "PrecursorCharge",
+                "PrecursorMass",
+                "PeptideMonoMass",
+                "MassDiffDa",
+                "MassDiffPpm",
+                "Score",
+                "DeltaScore",
+                "ProteinAccession",
+                "ProteinName",
+                "GeneName",
+                "DecoyContamTarget",
+                "QValue",
+                "QValueNotch" };
 
-            var propertiesList = properties.ToList();
-            foreach (PropertyInfo property in properties.ToList())
-            {
-                if (exclude.Any(e => e.Contains(property.Name)))
-                {
-                    propertiesList.Remove(property);
-                }
-            }
-
+            var propertiesList = properties.Where(p => propertiesToWrite.Contains(p.Name)).OrderBy(p => Array.IndexOf(propertiesToWrite, p.Name)).ToList();
+            
             var displayedProperties = propertiesList.Where(p => p.GetValue(psm) != null); // only display non-null properties
 
             foreach (PropertyInfo property in displayedProperties)
