@@ -213,6 +213,7 @@ namespace EngineLayer.CrosslinkSearch
 
             sb.Append("XL Total Score" + '\t');
             sb.Append("GlycanIDs" + '\t');
+            sb.Append("GlycanDecoy" + '\t');
             sb.Append("GlycanStructure" + '\t');
             sb.Append("GlycanMass" + '\t');
             sb.Append("GlycanComposition(H,N,A,G,F)" + '\t');
@@ -332,6 +333,7 @@ namespace EngineLayer.CrosslinkSearch
             {
                 sb.Append(XLTotalScore + "\t");
                 sb.Append(string.Join("|", Glycan.Select(p => p.GlyId.ToString()).ToArray())); sb.Append("\t");
+                sb.Append(Glycan.First().Decoy? "D": "T"); sb.Append("\t");
                 sb.Append(Glycan.First().Struc); sb.Append("\t");
                 sb.Append((double)Glycan.First().Mass/1E5); sb.Append("\t");
                 sb.Append(string.Join("|", Glycan.First().Kind.Select(p => p.ToString()).ToArray())); sb.Append("\t");

@@ -156,11 +156,19 @@
                 <GroupBox Header="Glyco Search" DockPanel.Dock="Top">
                     <Expander x:Name="GlycoSearchExpander">
                         <StackPanel Orientation="Vertical">
-                            <Label Content="N-Glycan search is only for testing."/>
-                            <!--<StackPanel Orientation="Horizontal" Margin="5">
-                                <RadioButton x:Name="RbSearchNGlyco" Content="N-Glycopeptide Search" GroupName="GlycoSearchType"></RadioButton>
-                                <RadioButton x:Name="RbSearchOGlyco" Content="O-Glycopeptide Search" GroupName="GlycoSearchType" ></RadioButton>
-                            </StackPanel>-->
+                            <Grid>
+                                <Grid.ColumnDefinitions>
+                                    <ColumnDefinition Width="1*"/>
+                                    <ColumnDefinition Width="1*"/>
+                                </Grid.ColumnDefinitions>
+                                <Grid.RowDefinitions>
+                                    <RowDefinition Height="1*"/>
+                                    <RowDefinition Height="1*"/>
+                                </Grid.RowDefinitions>
+                                <StackPanel>
+                                    <CheckBox x:Name="CkbAnalyzeOxiniumIon" VerticalAlignment="Center" Content="Only Analyze Oxinium Ions"/>
+                                </StackPanel>
+                            </Grid>
                         </StackPanel>
                     </Expander>
                 </GroupBox>

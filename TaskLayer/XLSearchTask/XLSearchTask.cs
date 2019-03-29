@@ -10,6 +10,8 @@ using System.Linq;
 using MzLibUtil;
 using EngineLayer.FdrAnalysis;
 using System;
+using System.Threading.Tasks;
+using System.Collections.Concurrent;
 
 namespace TaskLayer
 {
@@ -91,6 +93,24 @@ namespace TaskLayer
                 Status("Getting ms2 scans...", thisId);
                 Ms2ScanWithSpecificMass[] arrayOfMs2ScansSortedByMass = GetMs2Scans(myMsDataFile, origDataFile, combinedParams).OrderBy(b => b.PrecursorMass).ToArray();
 
+                if (!combinedParams.DoPrecursorDeconvolution && combinedParams.UseProvidedPrecursorInfo && XlSearchParameters.OnlyAnalyzeOxiniumIons)
+                {
+                    MassDiffAcceptor massDiffAcceptor = new SinglePpmAroundZeroSearchMode(combinedParams.ProductMassTolerance.Value);
+                    Tuple<int, double[]>[] tuples = new Tuple<int, double[]>[arrayOfMs2ScansSortedByMass.Length];
+                    Parallel.ForEach(Partitioner.Create(0, arrayOfMs2ScansSortedByMass.Length), new ParallelOptions { MaxDegreeOfParallelism = combinedParams.MaxThreadsToUsePerFile }, (range, loopState) =>
+                    {
+                        for (int scanIndex = range.Item1; scanIndex < range.Item2; scanIndex++)
+                        {
+                            double[] oxoniumIonIntensities = GlycoPeptides.ScanOxoniumIons(arrayOfMs2ScansSortedByMass[scanIndex], massDiffAcceptor);
+                            tuples[scanIndex] = new Tuple<int, double[]>(arrayOfMs2ScansSortedByMass[scanIndex].OneBasedScanNumber, oxoniumIonIntensities);
+                        }
+                    });
+                    var writtenFile= Path.Combine(OutputFolder, "oxiniumIons" + ".tsv");
+                    WriteOxoniumIons(tuples, writtenFile);
+
+                    return MyTaskResults;
+                }
+
                 CrosslinkSpectralMatch[] newPsms = new CrosslinkSpectralMatch[arrayOfMs2ScansSortedByMass.Length];
                 for (int currentPartition = 0; currentPartition < CommonParameters.TotalPartitions; currentPartition++)
                 {
@@ -102,7 +122,7 @@ namespace TaskLayer
                     List<int>[] fragmentIndex = null;
                     List<int>[] precursorIndex = null;
 
-                    GenerateIndexes(indexEngine, dbFilenameList, ref peptideIndex, ref fragmentIndex, ref precursorIndex, proteinList, GlobalVariables.AllModsKnown.ToList(), taskId);
+                    GenerateIndexes(indexEngine, dbFilenameList, ref peptideIndex, ref fragmentIndex, ref precursorIndex, proteinList, GlobalVariables.AllModsKnown.ToList(), taskId);                  
 
                     Status("Searching files...", taskId);
                     new CrosslinkSearchEngine(newPsms, arrayOfMs2ScansSortedByMass, peptideIndex, fragmentIndex, currentPartition, combinedParams, XlSearchParameters.OpenSearchType, crosslinker,

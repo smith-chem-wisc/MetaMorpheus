@@ -5,18 +5,53 @@ using Proteomics.ProteolyticDigestion;
 using System;
 using System.Collections.Generic;
 using System.Linq;
+using Chemistry;
 
 namespace EngineLayer.CrosslinkSearch
 {
     public class GlycoPeptides
     {
-        public static bool ScanOxoniumIonFilter(Ms2ScanWithSpecificMass theScan, DissociationType dissociationType)
+        public static double[] ScanOxoniumIons(Ms2ScanWithSpecificMass theScan, MassDiffAcceptor massDiffAcceptor)
         {
-            if (dissociationType != DissociationType.ETD || dissociationType != DissociationType.ECD)
+            double[] oxoniumIonsIntensities = new double[Glycan.allOxoniumIons.Count()];
+
+            for (int i = 0; i < Glycan.allOxoniumIons.Count(); i++)
             {
-                return true;
+                var ioxo = (double)Glycan.allOxoniumIons[i]/1E5;
+                //Match oxoniumIons from original scan
+                int matchedPeakIndex = theScan.TheScan.MassSpectrum.GetClosestPeakIndex(ioxo).Value;
+
+                //Another way to match oxoniumIons
+                //int diagnosticIonLabel = (int)Math.Round(ioxo.ToMz(1), 0);
+                //HashSet<Product> diagnosticIons = new HashSet<Product>();
+                //diagnosticIons.Add(new Product(ProductType.D, new NeutralTerminusFragment(FragmentationTerminus.Both, ioxo, diagnosticIonLabel, 0), 0));
+                //var matchedFragmentIons = MetaMorpheusEngine.MatchFragmentIons(theScan, diagnosticIons.ToList(), commonParameters);
+
+                if (massDiffAcceptor.Accepts(theScan.TheScan.MassSpectrum.XArray[matchedPeakIndex], (double)ioxo / 1E5) >= 0)
+                {
+                    oxoniumIonsIntensities[i] = theScan.TheScan.MassSpectrum.YArray[matchedPeakIndex];
+                }
+                else
+                {
+                    oxoniumIonsIntensities[i] = 0;
+                }
             }
-            var massDiffAcceptor = new SinglePpmAroundZeroSearchMode(10);
+
+         var largest = oxoniumIonsIntensities.Max();
+         return oxoniumIonsIntensities.Select(p => p / largest).ToArray();
+        }
+
+        public static void OxoniumIonsAnalysis(double[] vs)
+        {
+
+        }
+
+        public static int ScanOxoniumIonFilter(Ms2ScanWithSpecificMass theScan, MassDiffAcceptor massDiffAcceptor, DissociationType dissociationType)
+        {
+            if (dissociationType != DissociationType.HCD && dissociationType != DissociationType.CID && dissociationType != DissociationType.EThcD)
+            {
+                return 1;
+            }
 
             int totalNum = 0;
 
@@ -26,14 +61,10 @@ namespace EngineLayer.CrosslinkSearch
                 if (massDiffAcceptor.Accepts(theScan.TheScan.MassSpectrum.XArray[matchedPeakIndex], (double)ioxo/1E5) >= 0)
                 {
                     totalNum++;
-                    if (totalNum > 1)
-                    {
-                        return true;
-                    }
                 }
             }
 
-            return false;
+            return totalNum;
         }
 
         public static Dictionary<int, double> ScanGetTrimannosylCore(List<MatchedFragmentIon> matchedFragmentIons, Glycan glycan)

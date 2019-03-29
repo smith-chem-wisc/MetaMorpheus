@@ -155,13 +155,14 @@ namespace Test
         public static void GlyTest_OxoniumIons()
         {
             CommonParameters commonParameters = new CommonParameters();
-            string filePath = Path.Combine(TestContext.CurrentContext.TestDirectory, @"XlTestData/25170.mgf");
+            string filePath = Path.Combine(TestContext.CurrentContext.TestDirectory, @"GlycoTestData/25170.mgf");
             MyFileManager myFileManager = new MyFileManager(true);
             var msDataFile = myFileManager.LoadFile(filePath, 300, 0.01, true, true, commonParameters);
             var listOfSortedms2Scans = MetaMorpheusTask.GetMs2Scans(msDataFile, filePath, commonParameters).ToArray();
             //Tips: Using debug mode to check the number of oxoniumIons, in this case will be 7.
-            var oxoinumIonsExist = GlycoPeptides.ScanOxoniumIonFilter(listOfSortedms2Scans[0], commonParameters.DissociationType);
-            Assert.AreEqual(true, oxoinumIonsExist);
+            MassDiffAcceptor massDiffAcceptor = new SinglePpmAroundZeroSearchMode(20);
+            var oxoinumIonsExist = GlycoPeptides.ScanOxoniumIonFilter(listOfSortedms2Scans[0], massDiffAcceptor, commonParameters.DissociationType);
+            Assert.AreEqual(5, oxoinumIonsExist);
         }
 
         [Test]

@@ -10,6 +10,7 @@ namespace TaskLayer
             OpenSearchType = OpenSearchType.Crosslink;
             DecoyType = DecoyType.Reverse;
             CrosslinkerType = CrosslinkerType.DSSO;
+            OnlyAnalyzeOxiniumIons = false;
             RestrictToTopNHits = true;
             CrosslinkSearchTopNum = 300;
             CrosslinkerName = null;
@@ -32,6 +33,7 @@ namespace TaskLayer
         public OpenSearchType OpenSearchType { get; set; }
         public DecoyType DecoyType { get; set; }
         public CrosslinkerType CrosslinkerType { get; set; }
+        public bool OnlyAnalyzeOxiniumIons { get; set; }
         public int CrosslinkSearchTopNum { get; set; }
         public string CrosslinkerName { get; set; }
         public double? CrosslinkerTotalMass { get; set; }
