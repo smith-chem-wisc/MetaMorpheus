@@ -175,7 +175,6 @@ namespace MetaMorpheusGUI
                 double bins = (end - start) / binSize;
                 double numbins = bins * Math.Pow(10, normalizeNumber(bins));
                 int exp = (int)Math.Pow(10, normalizeNumber(end));
-                //double d = end * exp;
 
                 long size = Convert.ToInt64(end * exp + (-1 * start * exp)+ 1);
                 int[,] values = new int[size, 2];
@@ -224,17 +223,7 @@ namespace MetaMorpheusGUI
                     ItemsSource = axes
                 });
             }
-            //if (numbins == 0) { numbins++; end = end + binSize; }
-            //IEnumerable<HistogramItem> bars = HistogramHelpers.Collect(numbers, start, end, (int)numbins, true);
-            //foreach (var bar in bars)
-            //{
-            //    histogram.Items.Add(bar);
-            //}
-            //histogram.StrokeThickness = 0.5;
-            //histogram.LabelFontSize = 12;
-            //privateModel.Series.Add(histogram);
-        }
-        
+        }        
 
         private void linePlot(int plotType)
         {
@@ -277,20 +266,10 @@ namespace MetaMorpheusGUI
             return i;
         }
 
-        public void Update(bool updateData)
-        {
-            
-        }
-
-        public void Render(IRenderContext rc, double width, double height)
-        {
-            
-        }
-
-        public void AttachPlotView(IPlotView plotView)
-        {
-            
-        }
+        //unused interface methods
+        public void Update(bool updateData){}
+        public void Render(IRenderContext rc, double width, double height){}
+        public void AttachPlotView(IPlotView plotView){}
     }
 }
 

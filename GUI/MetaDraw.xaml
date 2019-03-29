@@ -413,6 +413,7 @@
                                         </Grid.ColumnDefinitions>
                                         <StackPanel>
                                             <Label Content="*Check to export to PDF" Foreground="Red"/>
+                                            <Label Content="*Double Click to view" Foreground="Red"/>
                                             <TreeView x:Name="plotsTreeView" ItemsSource="{Binding}" Height="400">
                                                 <TreeView.ItemContainerStyle>
                                                     <Style TargetType="{x:Type TreeViewItem}">

@@ -421,7 +421,7 @@ namespace MetaMorpheusGUI
 
         }
 
-        private void plot_MouseDoubleClick(object sender, MouseButtonEventArgs args)
+        private async void plot_MouseDoubleClick(object sender, MouseButtonEventArgs args)
         {
             TreeViewItem s = sender as TreeViewItem;
             var selected = (ModTypeForTreeView)s.Header;
@@ -429,8 +429,8 @@ namespace MetaMorpheusGUI
             {
                 MessageBox.Show("There are no PSMs to analyze.\n\nLoad the current file or choose a new file.");
                 return;
-            }
-            PlotModelStat plot = new PlotModelStat(selected.DisplayName, peptideSpectralMatches);
+            }            
+            PlotModelStat plot = await Task.Run(() => new PlotModelStat(selected.DisplayName, peptideSpectralMatches));
             plotViewStat.DataContext = plot;
         }
 
@@ -438,45 +438,5 @@ namespace MetaMorpheusGUI
         {
 
         }
-
-        //private void PDFButton_Click(object sender, RoutedEventArgs e)
-        //{
-        //    if (dataGridScanNums.SelectedCells.Count == 0)
-        //    {
-        //        MessageBox.Show("Please select at least one scan to export");
-        //    }
-
-        //        int num = dataGridScanNums.SelectedItems.Count;
-
-        //        foreach (object selectedItem in dataGridScanNums.SelectedItems)
-        //        {
-        //            PsmFromTsv psm = (PsmFromTsv)selectedItem;
-
-        //            if(tempPsm == null)
-        //            {
-        //                tempPsm = psm;
-        //            }
-
-        //            MsDataScan msDataScanToDraw = MsDataFile.GetOneBasedScan(psm.Ms2ScanNumber);
-
-        //            string myString = illegalInFileName.Replace(psm.FullSequence, "");
-
-        //            if(myString.Length > 30)
-        //            {
-        //                myString = myString.Substring(0, 30);
-        //            }
-
-        //            string filePath = Path.Combine(Path.GetDirectoryName(tsvResultsFilePath), "MetaDrawExport", psm.Ms2ScanNumber + "_" + myString + ".pdf");
-
-        //            mainViewModel.DrawPeptideSpectralMatchPdf(msDataScanToDraw, psm, filePath, num > 1);
-        //        }
-
-        //        dataGridScanNums.SelectedItem = dataGridScanNums.SelectedItem;
-
-        //        DrawPsm(tempPsm.Ms2ScanNumber, tempPsm.FullSequence);
-
-        //        MessageBox.Show(string.Format("{0} PDFs exported", num));
-        //    }
-        //}
     }
 }
