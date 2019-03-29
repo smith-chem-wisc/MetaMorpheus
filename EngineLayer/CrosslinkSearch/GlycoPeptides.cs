@@ -11,7 +11,7 @@ namespace EngineLayer.CrosslinkSearch
 {
     public class GlycoPeptides
     {
-        public static double[] ScanOxoniumIons(Ms2ScanWithSpecificMass theScan, MassDiffAcceptor massDiffAcceptor)
+        public static double[] ScanGetOxoniumIons(Ms2ScanWithSpecificMass theScan, MassDiffAcceptor massDiffAcceptor)
         {
             double[] oxoniumIonsIntensities = new double[Glycan.allOxoniumIons.Count()];
 

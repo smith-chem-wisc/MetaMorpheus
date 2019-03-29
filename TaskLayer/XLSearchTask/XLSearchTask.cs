@@ -101,7 +101,7 @@ namespace TaskLayer
                     {
                         for (int scanIndex = range.Item1; scanIndex < range.Item2; scanIndex++)
                         {
-                            double[] oxoniumIonIntensities = GlycoPeptides.ScanOxoniumIons(arrayOfMs2ScansSortedByMass[scanIndex], massDiffAcceptor);
+                            double[] oxoniumIonIntensities = GlycoPeptides.ScanGetOxoniumIons(arrayOfMs2ScansSortedByMass[scanIndex], massDiffAcceptor);
                             tuples[scanIndex] = new Tuple<int, double[]>(arrayOfMs2ScansSortedByMass[scanIndex].OneBasedScanNumber, oxoniumIonIntensities);
                         }
                     });

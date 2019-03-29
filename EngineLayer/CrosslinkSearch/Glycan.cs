@@ -327,7 +327,16 @@ namespace EngineLayer
             {
                 allGlycans.Add(aGlycan);
                 var value = random.Next(30000, 90000); //TO DO: how to choose the number
-                var aDecoyGlycan = new Glycan(aGlycan.Struc, aGlycan.Mass, aGlycan.Kind, aGlycan.Ions, true);
+
+                List<GlycanIon> glycanIons = new List<GlycanIon>();
+                foreach (var ion in aGlycan.Ions)
+                {
+                    GlycanIon glycanIon = new GlycanIon(0, ion.IonMass, ion.IonKind, ion.LossIonMass + value);
+                    glycanIons.Add(glycanIon);
+                }
+                var aDecoyGlycan = new Glycan(aGlycan.Struc, aGlycan.Mass + value, aGlycan.Kind, glycanIons, true);
+
+                allGlycans.Add(aDecoyGlycan);
             }
             return allGlycans.OrderBy(p=>p.Mass).ToArray();
         }

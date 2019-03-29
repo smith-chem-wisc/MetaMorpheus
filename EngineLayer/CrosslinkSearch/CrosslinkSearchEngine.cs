@@ -58,15 +58,16 @@ namespace EngineLayer.CrosslinkSearch
             ProductSearchMode = new SingleAbsoluteAroundZeroSearchMode(commonParameters.ProductMassTolerance.Value);
 
             if (OpenSearchType == OpenSearchType.NGlyco)
-            {
-                //groupedGlycans = GlobalVariables.NGlycans.GroupBy(p => p.Mass).ToDictionary(p => p.Key, p => p.ToList());
-                //Glycans = GlobalVariables.NGlycans.ToArray();
-                Glycans = Glycan.BuildTargetDecoyGlycans(GlobalVariables.NGlycans);
+            {              
+                var NGlycans = Glycan.LoadGlycan(GlobalVariables.NGlycanLocation);
+                //groupedGlycans = NGlycans.GroupBy(p => p.Mass).ToDictionary(p => p.Key, p => p.ToList());
+                Glycans = Glycan.BuildTargetDecoyGlycans(NGlycans);
             }
 
             if (OpenSearchType == OpenSearchType.OGlyco)
             {
-                var OGlycanBoxes = Glycan.BuildGlycanBoxes(GlobalVariables.OGlycans.ToList(), 3);
+                var OGlycans = Glycan.LoadGlycan(GlobalVariables.OGlycanLocation);
+                var OGlycanBoxes = Glycan.BuildGlycanBoxes(OGlycans.ToList(), 3);
                 GroupedOGlycanBoxes = OGlycanBoxes.GroupBy(p => p.Mass).ToDictionary(p=>p.Key, p=>p.ToList());
             }
         }
