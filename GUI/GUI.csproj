@@ -173,6 +173,7 @@
       <DependentUpon>MetaDraw.xaml</DependentUpon>
     </Compile>
     <Compile Include="MetaDraw\BaseSequenceAnnotation.cs" />
+    <Compile Include="MetaDraw\ItemsControl.cs" />
     <Compile Include="MetaDraw\PdfWriter.cs" />
     <Compile Include="MetaDraw\PlotModelStat.cs" />
     <Compile Include="Util\BooleanInverter.cs" />
