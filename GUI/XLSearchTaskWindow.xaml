@@ -249,6 +249,10 @@
                                             <Label x:Name="lblMaxPeptideLength" Content="Max Peptide Len" />
                                             <TextBox x:Name="MaxPeptideLengthTextBox" PreviewTextInput="CheckIfNumber" Width="45" />
                                         </StackPanel>
+                                        <StackPanel Orientation="Horizontal" Margin="5">
+                                            <Label x:Name="lbMaxModNum" Content="Max mods per peptide" />
+                                            <TextBox x:Name="MaxModNumTextBox" PreviewTextInput="CheckIfNumber" Width="45"/>
+                                        </StackPanel>
                                     </StackPanel>
                                 </Grid>
                             </GroupBox>

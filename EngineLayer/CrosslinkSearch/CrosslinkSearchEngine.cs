@@ -584,10 +584,10 @@ namespace EngineLayer.CrosslinkSearch
 
                             var matchedIons = MatchFragmentIons(theScan, setOfFragments.Item2, commonParameters);
 
-                            //if (!GlycoPeptides.ScanTrimannosylCoreFilter(matchedIons, Glycans[iDLow]))
-                            //{
-                            //    continue;
-                            //}
+                            if (!GlycoPeptides.ScanTrimannosylCoreFilter(matchedIons, Glycans[iDLow]))
+                            {
+                                continue;
+                            }
 
                             double score = CalculatePeptideScore(theScan.TheScan, matchedIons, 0);
 
