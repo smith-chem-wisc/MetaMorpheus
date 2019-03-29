@@ -22,7 +22,6 @@ namespace TaskLayer
         public PostSearchAnalysisParameters Parameters { get; set; }
         private List<EngineLayer.ProteinGroup> ProteinGroups { get; set; }
         private IEnumerable<IGrouping<string, PeptideSpectralMatch>> PsmsGroupedByFile { get; set; }
-        private List<PeptideSpectralMatch> FilteredPsmListForOutput { get; set; }
 
         public PostSearchAnalysisTask()
             : base(MyTask.Search)
@@ -413,7 +412,7 @@ namespace TaskLayer
         private void WritePsmResults()
         {
             Status("Writing PSM results...", Parameters.SearchTaskId);
-            FilteredPsmListForOutput = Parameters.AllPsms
+            var FilteredPsmListForOutput = Parameters.AllPsms
                 .Where(p => p.FdrInfo.QValue <= CommonParameters.QValueOutputFilter
                 && p.FdrInfo.QValueNotch <= CommonParameters.QValueOutputFilter).ToList();
 
@@ -778,8 +777,20 @@ namespace TaskLayer
             // write best (highest-scoring) PSM per peptide
             string writtenFile = Path.Combine(Parameters.OutputFolder, "AllPeptides.psmtsv");
             List<PeptideSpectralMatch> peptides = Parameters.AllPsms.GroupBy(b => b.FullSequence).Select(b => b.FirstOrDefault()).ToList();
+            
             new FdrAnalysisEngine(peptides, Parameters.NumNotches, CommonParameters, new List<string> { Parameters.SearchTaskId }, "Peptide").Run();
-            WritePsmsToTsv(FilteredPsmListForOutput.GroupBy(b => b.FullSequence).Select(b => b.FirstOrDefault()).ToList(), writtenFile, Parameters.SearchParameters.ModsToWriteSelection);
+
+            if (!Parameters.SearchParameters.WriteDecoys)
+            {
+                peptides.RemoveAll(b => b.IsDecoy);
+            }
+            if (!Parameters.SearchParameters.WriteContaminants)
+            {
+                peptides.RemoveAll(b => b.IsContaminant);
+            }
+            peptides.RemoveAll(p => p.FdrInfo.QValue > CommonParameters.QValueOutputFilter);
+
+            WritePsmsToTsv(peptides, writtenFile, Parameters.SearchParameters.ModsToWriteSelection);
             FinishedWritingFile(writtenFile, new List<string> { Parameters.SearchTaskId });
 
             Parameters.SearchTaskResults.AddNiceText("All target peptides within 1% FDR: " + peptides.Count(a => a.FdrInfo.QValue <= 0.01 && !a.IsDecoy));

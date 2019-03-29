@@ -13,7 +13,7 @@ namespace TaskLayer
 {
     public partial class XLSearchTask : MetaMorpheusTask
     {
-        public void WritePsmCrossToTsv(List<CrosslinkSpectralMatch> items, string filePath, int writeType)
+        public static void WritePsmCrossToTsv(List<CrosslinkSpectralMatch> items, string filePath, int writeType)
         {
             if (items.Count == 0)
             {
