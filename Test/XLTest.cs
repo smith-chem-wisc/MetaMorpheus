@@ -625,6 +625,7 @@ namespace Test
         [Test]
         public static void TestMixedMs2Ms2()
         {
+            string outputFile = Path.Combine(TestContext.CurrentContext.TestDirectory, @"TestMixedMs2Ms2.tsv");
             CommonParameters commonParameters = new CommonParameters(dissociationType: DissociationType.CID, childScanDissociationType: DissociationType.ETD, numberOfPeaksToKeepPerWindow: null, minimumAllowedIntensityRatioToBasePeak: null, trimMs1Peaks: false, trimMsMsPeaks: false);
 
             string spectraFile = Path.Combine(TestContext.CurrentContext.TestDirectory, @"XlTestData\ms2mixed_bsa_xlink.mzML");
@@ -663,11 +664,29 @@ namespace Test
             Assert.That(csm.ChildMatchedFragmentIons.First().Value.Count == 17);
             Assert.That(csm.BetaPeptide.ChildMatchedFragmentIons.First().Key == 3);
             Assert.That(csm.BetaPeptide.ChildMatchedFragmentIons.First().Value.Count == 12);
+
+            // write results to TSV
+            csm.SetFdrValues(1, 0, 0, 0, 0, 0, 0, 0, 0, false);
+            XLSearchTask.WritePsmCrossToTsv(new List<CrosslinkSpectralMatch> { csm }, outputFile, 2);
+
+            // read results from TSV
+            var psmFromTsv = PsmTsvReader.ReadTsv(outputFile, out var warnings).First();
+
+            Assert.That(psmFromTsv.ChildScanMatchedIons.Count == 1
+               && psmFromTsv.ChildScanMatchedIons.First().Key == 3
+               && psmFromTsv.ChildScanMatchedIons.First().Value.Count == 17);
+
+            Assert.That(psmFromTsv.BetaPeptideChildScanMatchedIons.Count == 1
+               && psmFromTsv.BetaPeptideChildScanMatchedIons.First().Key == 3
+               && psmFromTsv.BetaPeptideChildScanMatchedIons.First().Value.Count == 12);
+
+            File.Delete(outputFile);
         }
 
         [Test]
         public static void TestMs2Ms3()
         {
+            string outputFile = Path.Combine(TestContext.CurrentContext.TestDirectory, @"TestMs2Ms3.tsv");
             CommonParameters commonParameters = new CommonParameters(dissociationType: DissociationType.CID, childScanDissociationType: DissociationType.LowCID, precursorMassTolerance: new PpmTolerance(10));
 
             string spectraFile = Path.Combine(TestContext.CurrentContext.TestDirectory, @"XlTestData\10226.mzML");
@@ -710,6 +729,23 @@ namespace Test
             // test child scan (low-resolution CID, beta peptide signature ion)
             Assert.That(csm.BetaPeptide.ChildMatchedFragmentIons.First().Key == 6);
             Assert.That(csm.BetaPeptide.ChildMatchedFragmentIons.First().Value.Count == 43);
+
+            // write results to TSV
+            csm.SetFdrValues(1, 0, 0, 0, 0, 0, 0, 0, 0, false);
+            XLSearchTask.WritePsmCrossToTsv(new List<CrosslinkSpectralMatch> { csm }, outputFile, 2);
+
+            // read results from TSV
+            var psmFromTsv = PsmTsvReader.ReadTsv(outputFile, out var warnings).First();
+
+            Assert.That(psmFromTsv.ChildScanMatchedIons.Count == 1
+               && psmFromTsv.ChildScanMatchedIons.First().Key == 4
+               && psmFromTsv.ChildScanMatchedIons.First().Value.Count == 63);
+
+            Assert.That(psmFromTsv.BetaPeptideChildScanMatchedIons.Count == 1
+               && psmFromTsv.BetaPeptideChildScanMatchedIons.First().Key == 6
+               && psmFromTsv.BetaPeptideChildScanMatchedIons.First().Value.Count == 43);
+
+            File.Delete(outputFile);
         }
     }
 
