@@ -103,10 +103,7 @@
     <None Update="TestData\LEEGPPVTTVLTR_ms1.txt">
       <CopyToOutputDirectory>Always</CopyToOutputDirectory>
     </None>
-    <None Update="TestData\LowResSnip_B6_mouse_11700_117500.xml.gz">
-      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
-    </None>
-    <None Update="TestData\LowResSnip_B6_mouse_11700_117500.xml">
+    <None Update="TestData\LowResSnip_B6_mouse_11700_117500pruned.xml">
       <CopyToOutputDirectory>Always</CopyToOutputDirectory>
     </None>
     <None Update="TestData\ok.mgf">
