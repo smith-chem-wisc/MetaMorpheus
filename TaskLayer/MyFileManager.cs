@@ -74,7 +74,7 @@ namespace TaskLayer
 
         public MsDataFile LoadFile(string origDataFile, int? topNpeaks, double? minRatio, bool trimMs1Peaks, bool trimMsMsPeaks, CommonParameters commonParameters)
         {
-            FilteringParams filter = new FilteringParams(topNpeaks, minRatio, 1, null, false, trimMs1Peaks, trimMsMsPeaks);
+            FilteringParams filter = new FilteringParams(topNpeaks, minRatio, null, 1, false, trimMs1Peaks, trimMsMsPeaks);
 
             if (commonParameters.DissociationType == DissociationType.LowCID || commonParameters.ChildScanDissociationType == DissociationType.LowCID)
             {
