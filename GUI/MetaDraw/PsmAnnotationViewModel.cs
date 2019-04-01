@@ -320,15 +320,17 @@ namespace ViewModels
             {
                 if (isBetaPeptide)
                 {
-                    prefix = "β";
+                    //prefix = "β";
+                    prefix = "B-";
                 }
                 else
                 {
-                    prefix = "α";
+                    //prefix = "α";
+                    prefix = "A-";
                 }
             }
 
-            string productType = matchedIon.NeutralTheoreticalProduct.ProductType.ToString().ToLower().Replace("star", "*").Replace("degree", "°").Replace("dot", "");
+            string productType = matchedIon.NeutralTheoreticalProduct.ProductType.ToString().ToLower();//.Replace("star", "*").Replace("degree", "°").Replace("dot", "");
             string productNumber = matchedIon.NeutralTheoreticalProduct.TerminusFragment.FragmentNumber.ToString();
             string peakAnnotationText = prefix + productType + productNumber;
 

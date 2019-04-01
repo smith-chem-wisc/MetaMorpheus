@@ -502,7 +502,7 @@ namespace MetaMorpheusGUI
 
                 int alphaSite = Int32.Parse(Regex.Match(psm.FullSequence, @"\d+").Value);
                 int betaSite = Int32.Parse(Regex.Match(psm.BetaPeptideFullSequence, @"\d+").Value);
-                //BaseDraw.linkDrawing(canvas, new Point(alphaSite * spacing, 50), new Point(betaSite * spacing, 90), Colors.Black);
+                BaseDraw.DrawCrosslinker(canvas, new Point(alphaSite * spacing, 50), new Point(betaSite * spacing, 90), Colors.Black);
             }
         }
 

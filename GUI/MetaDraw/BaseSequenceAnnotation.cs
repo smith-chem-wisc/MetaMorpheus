@@ -88,6 +88,16 @@ namespace MetaMorpheusGUI
             cav.Children.Add(circle);
         }
 
+        public static void DrawCrosslinker(Canvas cav, Point alphaBotLoc, Point betaBotLoc, Color clr)
+        {
+            Polyline bot = new Polyline();
+            double distance = (betaBotLoc.Y - alphaBotLoc.Y) / 2;
+            bot.Points = new PointCollection() { alphaBotLoc, new Point(alphaBotLoc.X, alphaBotLoc.Y + distance), new Point(betaBotLoc.X, alphaBotLoc.Y + distance), betaBotLoc };
+            bot.Stroke = new SolidColorBrush(clr);
+            bot.StrokeThickness = 2;
+            cav.Children.Add(bot);
+        }
+
         /// <summary>
         /// Clear canvas board
         /// </summary>
