@@ -104,7 +104,8 @@ namespace Test
                 SearchParameters = new SearchParameters
                 {
                     SilacLabels = new List<SilacLabel> { krLabel }
-                }
+                },
+                CommonParameters = new CommonParameters(digestionParams: new DigestionParams(minPeptideLength: 2))
             };
 
             PeptideWithSetModifications lightPeptide = new PeptideWithSetModifications("SEQENEWITHAKANDANR", new Dictionary<string, Modification>());
@@ -120,7 +121,7 @@ namespace Test
 
             string outputFolder = Path.Combine(TestContext.CurrentContext.TestDirectory, @"TestSilac");
             Directory.CreateDirectory(outputFolder);
-            var theStringResult = task.RunTask(outputFolder, new List<DbForTask> { new DbForTask(xmlName, false) }, new List<string> { mzmlName }, "taskId1").ToString();
+            task.RunTask(outputFolder, new List<DbForTask> { new DbForTask(xmlName, false) }, new List<string> { mzmlName }, "taskId1");
 
             //test proteins
             string[] output = File.ReadAllLines(TestContext.CurrentContext.TestDirectory + @"/TestSilac/AllProteinGroups.tsv");
@@ -147,12 +148,29 @@ namespace Test
             Assert.IsTrue(output[2].Contains("2125.99")); //test heavy mass
             Assert.IsTrue(output[2].Contains("accession1")); //test heavy accesssion is light in output
 
+
+            ///Test for when an additional label is the only label on a peptide
+            ///Usually crashes in mzId
+            //Delete old files
+            File.Delete(mzmlName);
+            Directory.Delete(outputFolder, true);
+
+            lightPeptide = new PeptideWithSetModifications("ANDANR", new Dictionary<string, Modification>()); //has the additional, but not the original
+            massDifferences = new List<double> { (heavyArginine.MonoisotopicMass) - (lightArginine.MonoisotopicMass) };
+            myMsDataFile1 = new TestDataFile(lightPeptide, massDifferences, true);
+            mzmlName = @"silac.mzML";
+            IO.MzML.MzmlMethods.CreateAndWriteMyMzmlWithCalibratedSpectra(myMsDataFile1, mzmlName, false);
+
+            Directory.CreateDirectory(outputFolder);
+            task.RunTask(outputFolder, new List<DbForTask> { new DbForTask(xmlName, false) }, new List<string> { mzmlName }, "taskId1");
+
             //Clear the old files
             Directory.Delete(outputFolder, true);
             File.Delete(xmlName);
             File.Delete(mzmlName);
+
+
         }
-        //FIXME that one thing in the test below with the heavy/light letter
 
         [Test]
         public static void TestSilacQuantification()
