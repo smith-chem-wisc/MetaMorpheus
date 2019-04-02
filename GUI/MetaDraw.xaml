@@ -222,6 +222,13 @@
         <TabControl SelectionChanged="TabControl_SelectionChanged">
             <TabItem Header="PSM Annotation" Background="DarkGray">
                 <DockPanel>
+                    <!--Settings menu-->
+                    <Menu x:Name="menu" DockPanel.Dock="Top">
+                        <MenuItem Header="Settings">
+                            <MenuItem Header="Edit Graphical Settings" Click="graphicalSettings_Click"></MenuItem>
+                            <MenuItem Header="Edit Filter Settings" Click="filterSettings_Click"></MenuItem>
+                        </MenuItem>
+                    </Menu>
                     <Grid>
                         <Grid.ColumnDefinitions>
                             <ColumnDefinition Width="2*"/>
@@ -230,125 +237,109 @@
                             <ColumnDefinition Width="Auto"/>
                             <ColumnDefinition Width="7*"/>
                         </Grid.ColumnDefinitions>
-                        <DockPanel>
-                            <!--Settings menu-->
-                            <Menu x:Name="menu" DockPanel.Dock="Top">
-                                <MenuItem Header="Settings">
-                                    <MenuItem Header="Edit Graphical Settings" Click="graphicalSettings_Click"></MenuItem>
-                                    <MenuItem Header="Edit Filter Settings" Click="filterSettings_Click"></MenuItem>
-                                </MenuItem>
-                            </Menu>
-                            <Grid>
-                                <Grid.ColumnDefinitions>
-                                    <ColumnDefinition Width="2*"/>
-                                    <ColumnDefinition Width="Auto"/>
-                                    <ColumnDefinition Width="1*"/>
-                                    <ColumnDefinition Width="Auto"/>
-                                    <ColumnDefinition Width="7*"/>
-                                </Grid.ColumnDefinitions>
 
-                                <!--Left area is for loading files, displaying PSMs in data grid, etc-->
-                                <Grid Grid.Column="0">
+                        <!--Left area is for loading files, displaying PSMs in data grid, etc-->
+                        <Grid Grid.Column="0">
+                            <Grid.RowDefinitions>
+                                <RowDefinition Height="Auto"/>
+                                <RowDefinition Height="Auto"/>
+                                <RowDefinition Height="25"/>
+                                <RowDefinition Height="2*"/>
+                            </Grid.RowDefinitions>
+                            <Grid.ColumnDefinitions>
+                                <ColumnDefinition Width="*"></ColumnDefinition>
+                            </Grid.ColumnDefinitions>
+
+                            <!--Select spectra file-->
+                            <DockPanel Grid.Row="0" LastChildFill="True" Grid.ColumnSpan="3" Margin="0 1 0 1">
+                                <Label Content="Spectra file: " Width="120" />
+                                <Button Name="selectSpectraFileButton" Content="Select" DockPanel.Dock="Right" Click="selectSpectraFileButton_Click" Width="40" />
+                                <Label BorderThickness="1">
+                                    <TextBlock Name="spectraFileNameLabel" Text="None Selected" TextTrimming="CharacterEllipsis" />
+                                </Label>
+                            </DockPanel>
+
+                            <!--Select MetaMorpheus output file-->
+                            <DockPanel Grid.Row="1" LastChildFill="True" Grid.ColumnSpan="3" Margin="0 1 0 1">
+                                <Label Content="PSM file: " Width="120" />
+                                <Button Name="selectPsmFileButton" Content="Select" DockPanel.Dock="Right" Click="selectPsmFileButton_Click" Width="40" />
+                                <Label BorderThickness="1">
+                                    <TextBlock Name="psmFileNameLabel" Text="None Selected" TextTrimming="CharacterEllipsis" />
+                                </Label>
+                            </DockPanel>
+
+                            <Border Grid.Row="2" Grid.ColumnSpan="3" BorderBrush="Black" BorderThickness="0,0,0,1" Margin="0 0 0 0" Padding="0 0 0 0">
+                                <DockPanel Grid.Row="2" Grid.ColumnSpan="3" LastChildFill="True">
+                                    <Button Name="loadFiles" Content="Load Files" Width="100" Click="loadFilesButton_Click" />
+                                    <TextBox Width="100" TextChanged="TextBox_TextChanged" DockPanel.Dock="Right"></TextBox>
+                                    <Label HorizontalAlignment="Right" Height="28">Search</Label>
+                                </DockPanel>
+                            </Border>
+
+                            <!--List of PSMs-->
+                            <GroupBox Header="Peptide Spectral Matches" Name="gbSpectra" Grid.Row="3">
+                                <Grid>
                                     <Grid.RowDefinitions>
-                                        <RowDefinition Height="Auto"/>
-                                        <RowDefinition Height="Auto"/>
-                                        <RowDefinition Height="25"/>
-                                        <RowDefinition Height="2*"/>
+                                        <RowDefinition Height="1*"/>
+                                        <!--<RowDefinition Height="30"/>-->
                                     </Grid.RowDefinitions>
-                                    <Grid.ColumnDefinitions>
-                                        <ColumnDefinition Width="*"></ColumnDefinition>
-                                    </Grid.ColumnDefinitions>
-
-                                    <!--Select spectra file-->
-                                    <DockPanel Grid.Row="0" LastChildFill="True" Grid.ColumnSpan="3" Margin="0 1 0 1">
-                                        <Label Content="Spectra file: " Width="120" />
-                                        <Button Name="selectSpectraFileButton" Content="Select" DockPanel.Dock="Right" Click="selectSpectraFileButton_Click" Width="40" />
-                                        <Label BorderThickness="1">
-                                            <TextBlock Name="spectraFileNameLabel" Text="None Selected" TextTrimming="CharacterEllipsis" />
-                                        </Label>
-                                    </DockPanel>
-
-                                    <!--Select MetaMorpheus output file-->
-                                    <DockPanel Grid.Row="1" LastChildFill="True" Grid.ColumnSpan="3" Margin="0 1 0 1">
-                                        <Label Content="PSM file: " Width="120" />
-                                        <Button Name="selectPsmFileButton" Content="Select" DockPanel.Dock="Right" Click="selectPsmFileButton_Click" Width="40" />
-                                        <Label BorderThickness="1">
-                                            <TextBlock Name="psmFileNameLabel" Text="None Selected" TextTrimming="CharacterEllipsis" />
-                                        </Label>
-                                    </DockPanel>
-
-                                    <Border Grid.Row="2" Grid.ColumnSpan="3" BorderBrush="Black" BorderThickness="0,0,0,1" Margin="0 0 0 0" Padding="0 0 0 0">
-                                        <DockPanel Grid.Row="2" Grid.ColumnSpan="3" LastChildFill="True">
-                                            <Button Name="loadFiles" Content="Load Files" Width="100" Click="loadFilesButton_Click" />
-                                            <TextBox Width="100" TextChanged="TextBox_TextChanged" DockPanel.Dock="Right"></TextBox>
-                                            <Label HorizontalAlignment="Right" Height="28">Search</Label>
-                                        </DockPanel>
-                                    </Border>
-
-                                    <!--List of PSMs-->
-                                    <GroupBox Header="Peptide Spectral Matches" Name="gbSpectra" Grid.Row="3">
-                                        <Grid>
-                                            <Grid.RowDefinitions>
-                                                <RowDefinition Height="1*"/>
-                                                <!--<RowDefinition Height="30"/>-->
-                                            </Grid.RowDefinitions>
-                                            <DataGrid x:Name="dataGridScanNums" Grid.Row="0" AutoGenerateColumns="False" VerticalAlignment="Stretch" ItemsSource="{Binding}" 
+                                    <DataGrid x:Name="dataGridScanNums" Grid.Row="0" AutoGenerateColumns="False" VerticalAlignment="Stretch" ItemsSource="{Binding}" 
                                   IsReadOnly="True" ScrollViewer.CanContentScroll="True" Margin="0,0,0,0" 
                                   SelectedCellsChanged="dataGridScanNums_SelectedCellsChanged" CanUserDeleteRows="false" CanUserAddRows="false">
-                                                <DataGrid.Columns>
-                                                    <DataGridTextColumn Header="MS2 Scan" Binding="{Binding Ms2ScanNumber}"></DataGridTextColumn>
-                                                    <DataGridTextColumn Header="Full Sequence" Binding="{Binding FullSequence}"></DataGridTextColumn>
-                                                </DataGrid.Columns>
-                                            </DataGrid>
-                                            <!--<Button Grid.Row="1" Content="Export Selected to PDF" Click="PDFButton_Click"></Button>-->
-                                        </Grid>
-                                    </GroupBox>
+                                        <DataGrid.Columns>
+                                            <DataGridTextColumn Header="MS2 Scan" Binding="{Binding Ms2ScanNumber}"></DataGridTextColumn>
+                                            <DataGridTextColumn Header="Full Sequence" Binding="{Binding FullSequence}"></DataGridTextColumn>
+                                        </DataGrid.Columns>
+                                    </DataGrid>
+                                    <!--<Button Grid.Row="1" Content="Export Selected to PDF" Click="PDFButton_Click"></Button>-->
                                 </Grid>
+                            </GroupBox>
+                        </Grid>
 
-                                <!--Moveable splitter-->
-                                <GridSplitter Grid.Column="1" 
+                        <!--Moveable splitter-->
+                        <GridSplitter Grid.Column="1" 
                           HorizontalAlignment="Center"
                           VerticalAlignment="Stretch"
                           Background="Silver"
                           Width="3"/>
 
-                                <!--Detailed PSM properties-->
-                                <GroupBox Header="Properties" Name="gbProperties" Grid.Column="2">
-                                    <Grid>
-                                        <Grid.RowDefinitions>
-                                            <RowDefinition Height="1*"/>
-                                        </Grid.RowDefinitions>
-                                        <DataGrid x:Name="dataGridProperties" VerticalAlignment="Stretch" ItemsSource="{Binding}" 
+                        <!--Detailed PSM properties-->
+                        <GroupBox Header="Properties" Name="gbProperties" Grid.Column="2">
+                            <Grid>
+                                <Grid.RowDefinitions>
+                                    <RowDefinition Height="1*"/>
+                                </Grid.RowDefinitions>
+                                <DataGrid x:Name="dataGridProperties" VerticalAlignment="Stretch" ItemsSource="{Binding}" 
                               AutoGenerateColumns="True" IsReadOnly="True" ScrollViewer.CanContentScroll="True" Grid.Row="1" Margin="0,0,0,0" 
                               SelectedCellsChanged="dataGridProperties_SelectedCellsChanged">
-                                            <DataGrid.CellStyle>
-                                                <Style TargetType="DataGridCell">
-                                                    <Setter Property="BorderThickness" Value="0"/>
-                                                    <Setter Property="FocusVisualStyle" Value="{x:Null}"/>
-                                                </Style>
-                                            </DataGrid.CellStyle>
-                                        </DataGrid>
-                                    </Grid>
-                                </GroupBox>
+                                    <DataGrid.CellStyle>
+                                        <Style TargetType="DataGridCell">
+                                            <Setter Property="BorderThickness" Value="0"/>
+                                            <Setter Property="FocusVisualStyle" Value="{x:Null}"/>
+                                        </Style>
+                                    </DataGrid.CellStyle>
+                                </DataGrid>
+                            </Grid>
+                        </GroupBox>
 
-                                <!--Loading progress popup-->
-                                <Popup IsOpen="False" x:Name="prgsFeed" Height="80" Width="300" PlacementTarget="{Binding ElementName=MetaDrawWindow}" Placement="Center">
-                                    <Border Background="LightGray" CornerRadius="2" Height="78" Width="298" HorizontalAlignment="Center" VerticalAlignment="Center">
-                                        <StackPanel Height="78" Background="LightGray">
-                                            <Label x:Name="prgsText" FontSize="20"></Label>
-                                            <ProgressBar IsIndeterminate="True" Height="20"></ProgressBar>
-                                        </StackPanel>
-                                    </Border>
-                                </Popup>
+                        <!--Loading progress popup-->
+                        <Popup IsOpen="False" x:Name="prgsFeed" Height="80" Width="300" PlacementTarget="{Binding ElementName=MetaDrawWindow}" Placement="Center">
+                            <Border Background="LightGray" CornerRadius="2" Height="78" Width="298" HorizontalAlignment="Center" VerticalAlignment="Center">
+                                <StackPanel Height="78" Background="LightGray">
+                                    <Label x:Name="prgsText" FontSize="20"></Label>
+                                    <ProgressBar IsIndeterminate="True" Height="20"></ProgressBar>
+                                </StackPanel>
+                            </Border>
+                        </Popup>
 
-                                <!--Moveable splitter-->
-                                <GridSplitter Grid.Column="3" 
+                        <!--Moveable splitter-->
+                        <GridSplitter Grid.Column="3" 
                           HorizontalAlignment="Center"
                           VerticalAlignment="Stretch"
                           Background="Silver"
                           Width="3"/>
 
- <!--PSM annotated peaks-->
+                        <!--PSM annotated peaks-->
                         <GroupBox Grid.Column="4" Header="PSM Annotation">
                             <Grid Name="PsmAnnotationGrid">
                                 <Grid.RowDefinitions>
