@@ -145,6 +145,7 @@ namespace Test
             Assert.IsTrue(output[2].Contains("SEQENEWITHAK(+8.014)ANDANR(+6.020)\t")); //test heavy sequence was output correctly (do NOT want "PEPTIDEa")
             Assert.IsTrue(output[1].Contains("2111.96")); //test light mass
             Assert.IsTrue(output[2].Contains("2125.99")); //test heavy mass
+            Assert.IsTrue(output[2].Contains("accession1")); //test heavy accesssion is light in output
 
             //Clear the old files
             Directory.Delete(outputFolder, true);

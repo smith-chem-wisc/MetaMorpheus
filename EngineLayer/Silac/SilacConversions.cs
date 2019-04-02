@@ -273,15 +273,16 @@ namespace EngineLayer
             else
             {
                 proteinSequence = proteinSequence.Replace(silacLabel.OriginalAminoAcid, silacLabel.AminoAcidLabel); //create heavy sequence
-                proteinAccession += silacLabel.MassDifference; //add heavy accession
+                proteinAccession += "(" + silacLabel.OriginalAminoAcid + silacLabel.MassDifference; //add heavy accession
                 if (silacLabel.AdditionalLabels != null)
                 {
                     foreach (SilacLabel additionalLabel in silacLabel.AdditionalLabels)
                     {
                         proteinSequence = proteinSequence.Replace(additionalLabel.OriginalAminoAcid, additionalLabel.AminoAcidLabel); //create heavy sequence
-                        proteinAccession += LABEL_DELIMITER + additionalLabel.MassDifference; //add heavy accession
+                        proteinAccession += LABEL_DELIMITER + additionalLabel.OriginalAminoAcid + additionalLabel.MassDifference; //add heavy accession
                     }
                 }
+                proteinAccession += ")";
             }
 
             return new Protein(originalProtein, proteinSequence, proteinAccession);
@@ -501,7 +502,9 @@ namespace EngineLayer
                                     }
                                     else
                                     {
-                                        groupName = groupName.Replace(label.MassDifference, "");
+                                        string labelString = "(" + label.OriginalAminoAcid + label.MassDifference;
+                                        int labelIndex = groupName.IndexOf(labelString);
+                                        groupName = groupName.Substring(0, labelIndex);
                                         updatedGroups.Add(new FlashLFQ.ProteinGroup(groupName, group.GeneName, group.Organism));
                                     }
                                 }
