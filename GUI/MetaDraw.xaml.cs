@@ -15,6 +15,9 @@ using System.Windows;
 using System.Windows.Controls;
 using System.Windows.Data;
 using System.Windows.Media;
+using Proteomics.Fragmentation;
+using Proteomics.ProteolyticDigestion;
+using System.Text.RegularExpressions;
 using System.Windows.Input;
 using OxyPlot;
 using OxyPlot.Reporting;
@@ -584,13 +587,12 @@ namespace MetaMorpheusGUI
                 PdfExporter.Export(plot.Model, writePDF, 1000, 700);
             }
             MessageBox.Show("PDF Created!");
-
         }
+        
         private void HandleCheck(object sender, RoutedEventArgs e)
         {
             RadioButton r = sender as RadioButton;
             pdfPlot = r.Content.ToString();
-
         }
 
         private async void plot_MouseDoubleClick(object sender, MouseButtonEventArgs args)
