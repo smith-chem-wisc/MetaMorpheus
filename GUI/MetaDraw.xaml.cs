@@ -15,12 +15,12 @@ using System.Windows;
 using System.Windows.Controls;
 using System.Windows.Data;
 using System.Windows.Media;
-using Proteomics.Fragmentation;
-using Proteomics.ProteolyticDigestion;
-using System.Text.RegularExpressions;
 using System.Windows.Input;
 using OxyPlot;
 using OxyPlot.Reporting;
+using ViewModels;
+using TaskLayer;
+using System.Windows.Media.Imaging;
 
 namespace MetaMorpheusGUI
 {
@@ -441,7 +441,7 @@ namespace MetaMorpheusGUI
             {
                 Dispatcher.BeginInvoke(new Action(() =>
                 {
-                    peptideSpectralMatches.Add(psm);
+                    allPsms.Add(psm);
                 }));
             }
 
@@ -511,22 +511,6 @@ namespace MetaMorpheusGUI
             {
                 BaseDraw.circledTxtDraw(canvas, new Point((mod.Key - 1) * spacing - 17, 12), modificationAnnotationColor);
             }
-        }
-
-        private void setUpPlots()
-        {
-            PlotModelStat prelim = new PlotModelStat();
-            foreach (var plot in prelim.plotTypes())
-            {
-                var added = new ModTypeForTreeView(plot, false);
-                plotTypes.Add(added);
-            }
-            plotsTreeView.DataContext = plotTypes;
-            foreach (var ye in plotTypes)
-            {
-                ye.VerifyCheckState();
-            }
-        }
 
             if (psm.BetaPeptideBaseSequence != null)
             {
@@ -570,6 +554,21 @@ namespace MetaMorpheusGUI
             }
         }
 
+        private void setUpPlots()
+        {
+            PlotModelStat prelim = new PlotModelStat();
+            foreach (var plot in prelim.plotTypes())
+            {
+                var added = new ModTypeForTreeView(plot, false);
+                plotTypes.Add(added);
+            }
+            plotsTreeView.DataContext = plotTypes;
+            foreach (var ye in plotTypes)
+            {
+                ye.VerifyCheckState();
+            }
+        }
+
         private void dataGridProperties_SelectedCellsChanged(object sender, SelectedCellsChangedEventArgs e)
         {
             (sender as DataGrid).UnselectAll();
@@ -577,7 +576,7 @@ namespace MetaMorpheusGUI
 
         private void createPdfButton_Click(object sender, RoutedEventArgs e)
         {
-            PlotModelStat plot = new PlotModelStat(pdfPlot, peptideSpectralMatches);
+            PlotModelStat plot = new PlotModelStat(pdfPlot, allPsms);
             var fileDirectory = Directory.GetParent(tsvResultsFilePath).ToString();
             var fileName = String.Concat(pdfPlot, ".pdf");
             using (Stream writePDF = File.Create(Path.Combine(fileDirectory, fileName)))
@@ -598,20 +597,18 @@ namespace MetaMorpheusGUI
         {
             TreeViewItem s = sender as TreeViewItem;
             var selected = (ModTypeForTreeView)s.Header;
-            if (peptideSpectralMatches.Count == 0)
+            if (allPsms.Count == 0)
             {
                 MessageBox.Show("There are no PSMs to analyze.\n\nLoad the current file or choose a new file.");
                 return;
-            }            
-            PlotModelStat plot = await Task.Run(() => new PlotModelStat(selected.DisplayName, peptideSpectralMatches));
+            }
+            PlotModelStat plot = await Task.Run(() => new PlotModelStat(selected.DisplayName, allPsms));
             plotViewStat.DataContext = plot;
         }
 
         private void TabControl_SelectionChanged(object sender, SelectionChangedEventArgs e)
-        {
+        { 
 
-                MessageBox.Show(string.Format("{0} PDFs exported", numberOfScansToExport));
-            }
         }
 
         private void DrawPdfAnnotatedBaseSequence(PsmFromTsv psm, Canvas canvas)
