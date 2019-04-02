@@ -1,23 +1,23 @@
-using System.Linq;
-using System.Windows;
-using System.Windows.Controls;
-using System.Collections.ObjectModel;
-using System.IO;
-using ViewModels;
 using EngineLayer;
-using System.Collections.Generic;
 using MassSpectrometry;
-using TaskLayer;
-using System.ComponentModel;
-using System.Threading.Tasks;
-using System;
-using System.Data;
-
-using System.Windows.Data;
-using System.Windows.Media;
 using Proteomics.Fragmentation;
 using Proteomics.ProteolyticDigestion;
+using System;
+using System.Collections.Generic;
+using System.Collections.ObjectModel;
+using System.ComponentModel;
+using System.Data;
+using System.IO;
+using System.Linq;
 using System.Text.RegularExpressions;
+using System.Threading.Tasks;
+using System.Windows;
+using System.Windows.Controls;
+using System.Windows.Data;
+using System.Windows.Media;
+using System.Windows.Media.Imaging;
+using TaskLayer;
+using ViewModels;
 
 namespace MetaMorpheusGUI
 {
@@ -26,10 +26,14 @@ namespace MetaMorpheusGUI
     /// </summary>
     public partial class MetaDraw : Window
     {
+        private MetaDrawGraphicalSettings metaDrawGraphicalSettings;
+        private MetaDrawFilterSettings metaDrawFilterSettings;
+        private ItemsControlSampleViewModel itemsControlSampleViewModel;
         private PsmAnnotationViewModel mainViewModel;
         private MyFileManager spectraFileManager;
         private MsDataFile MsDataFile;
-        private readonly ObservableCollection<PsmFromTsv> peptideSpectralMatches;
+        private readonly ObservableCollection<PsmFromTsv> allPsms; // all loaded PSMs
+        private readonly ObservableCollection<PsmFromTsv> filteredListOfPsms; // this is the filtered list of PSMs to display (after q-value filter, etc.)
         ICollectionView peptideSpectralMatchesView;
         private readonly DataTable propertyView;
         private string spectraFilePath;
@@ -43,19 +47,28 @@ namespace MetaMorpheusGUI
         {
             InitializeComponent();
 
+            itemsControlSampleViewModel = new ItemsControlSampleViewModel();
+            DataContext = itemsControlSampleViewModel;
             mainViewModel = new PsmAnnotationViewModel();
             plotView.DataContext = mainViewModel;
-            peptideSpectralMatches = new ObservableCollection<PsmFromTsv>();
+            allPsms = new ObservableCollection<PsmFromTsv>();
+            filteredListOfPsms = new ObservableCollection<PsmFromTsv>();
             propertyView = new DataTable();
             propertyView.Columns.Add("Name", typeof(string));
             propertyView.Columns.Add("Value", typeof(string));
-            peptideSpectralMatchesView = CollectionViewSource.GetDefaultView(peptideSpectralMatches);
+            peptideSpectralMatchesView = CollectionViewSource.GetDefaultView(filteredListOfPsms);
             dataGridScanNums.DataContext = peptideSpectralMatchesView;
             dataGridProperties.DataContext = propertyView.DefaultView;
             Title = "MetaDraw: version " + GlobalVariables.MetaMorpheusVersion;
             spectraFileManager = new MyFileManager(true);
             SetUpDictionaries();
             modificationAnnotationColor = Brushes.Yellow;
+            metaDrawGraphicalSettings = new MetaDrawGraphicalSettings();
+            metaDrawFilterSettings = new MetaDrawFilterSettings();
+            base.Closing += this.OnClosing;
+
+            ParentChildScanView.Visibility = Visibility.Collapsed;
+            ParentScanView.Visibility = Visibility.Collapsed;
         }
 
         private void SetUpDictionaries()
@@ -116,6 +129,8 @@ namespace MetaMorpheusGUI
 
         private void LoadPsms(string filename)
         {
+            allPsms.Clear();
+
             string fileNameWithExtension = Path.GetFileName(spectraFilePath);
             string fileNameWithoutExtension = Path.GetFileNameWithoutExtension(spectraFilePath);
 
@@ -126,10 +141,7 @@ namespace MetaMorpheusGUI
                 {
                     if (psm.Filename == fileNameWithExtension || psm.Filename == fileNameWithoutExtension || psm.Filename.Contains(fileNameWithoutExtension))
                     {
-                        Dispatcher.BeginInvoke(new Action(() =>
-                        {
-                            peptideSpectralMatches.Add(psm);
-                        }));
+                        allPsms.Add(psm);
                     }
                 }
             }
@@ -139,10 +151,25 @@ namespace MetaMorpheusGUI
             }
         }
 
+        private void DisplayLoadedAndFilteredPsms()
+        {
+            filteredListOfPsms.Clear();
+
+            var filteredList = allPsms.Where(p =>
+                p.QValue < metaDrawFilterSettings.QValueFilter
+                && (p.QValueNotch < metaDrawFilterSettings.QValueFilter || p.QValueNotch == null)
+                && (p.DecoyContamTarget == "T" || (p.DecoyContamTarget == "D" && metaDrawFilterSettings.ShowDecoys) || (p.DecoyContamTarget == "C" && metaDrawFilterSettings.ShowContaminants)));
+
+            foreach (PsmFromTsv psm in filteredList)
+            {
+                filteredListOfPsms.Add(psm);
+            }
+        }
+
         private void DrawPsm(int oneBasedScanNumber, string fullSequence = null, string fileName = null)
         {
             MsDataScan msDataScanToDraw = MsDataFile.GetOneBasedScan(oneBasedScanNumber);
-            IEnumerable<PsmFromTsv> scanPsms = peptideSpectralMatches.Where(p => p.Ms2ScanNumber == oneBasedScanNumber);
+            IEnumerable<PsmFromTsv> scanPsms = filteredListOfPsms.Where(p => p.Ms2ScanNumber == oneBasedScanNumber);
 
             if (fullSequence != null)
             {
@@ -151,21 +178,96 @@ namespace MetaMorpheusGUI
 
             PsmFromTsv psmToDraw = scanPsms.FirstOrDefault();
 
-            // draw annotated spectrum
-            mainViewModel.DrawPeptideSpectralMatch(msDataScanToDraw, psmToDraw);
-            
-            // draw annotated base sequence
-            //TO DO: Annotate crosslinked peptide sequence           
-            if (psmToDraw.CrossType == null)  // if the psm is single peptide (not crosslinked).
+            // if this spectrum has child scans, draw them in the "advanced" tab
+            if ((psmToDraw.ChildScanMatchedIons != null && psmToDraw.ChildScanMatchedIons.Count > 0)
+                || (psmToDraw.BetaPeptideChildScanMatchedIons != null && psmToDraw.BetaPeptideChildScanMatchedIons.Count > 0))
             {
-                DrawAnnotatedBaseSequence(psmToDraw);
+                ParentChildScanView.Visibility = Visibility.Visible;
+                ParentScanView.Visibility = Visibility.Visible;
+
+                // draw parent scans
+                var parentPsmModel = new PsmAnnotationViewModel();
+                MsDataScan parentScan = MsDataFile.GetOneBasedScan(psmToDraw.Ms2ScanNumber);
+
+                parentPsmModel.DrawPeptideSpectralMatch(parentScan, psmToDraw);
+
+                string parentAnnotation = "Scan: " + parentScan.OneBasedScanNumber.ToString()
+                        + " Dissociation Type: " + parentScan.DissociationType.ToString()
+                        + " MsOrder: " + parentScan.MsnOrder.ToString()
+                        + " Selected Mz: " + parentScan.SelectedIonMZ.Value.ToString("0.##")
+                        + " Retention Time: " + parentScan.RetentionTime.ToString("0.##");
+
+                itemsControlSampleViewModel.AddNewRow(parentPsmModel, parentAnnotation);
+
+                // draw child scans
+                HashSet<int> scansDrawn = new HashSet<int>();
+                foreach (var childScanMatchedIons in psmToDraw.ChildScanMatchedIons.Concat(psmToDraw.BetaPeptideChildScanMatchedIons))
+                {
+                    int scanNumber = childScanMatchedIons.Key;
+
+                    if (scansDrawn.Contains(scanNumber))
+                    {
+                        continue;
+                    }
+                    scansDrawn.Add(scanNumber);
+
+                    List<MatchedFragmentIon> matchedIons = childScanMatchedIons.Value;
+
+                    var childPsmModel = new PsmAnnotationViewModel();
+                    MsDataScan childScan = MsDataFile.GetOneBasedScan(scanNumber);
+
+                    childPsmModel.DrawPeptideSpectralMatch(childScan, psmToDraw, metaDrawGraphicalSettings.ShowMzValues,
+                        metaDrawGraphicalSettings.ShowAnnotationCharges, metaDrawGraphicalSettings.AnnotatedFontSize, metaDrawGraphicalSettings.BoldText);
+
+                    string childAnnotation = "Scan: " + scanNumber.ToString()
+                        + " Dissociation Type: " + childScan.DissociationType.ToString()
+                        + " MsOrder: " + childScan.MsnOrder.ToString()
+                        + " Selected Mz: " + childScan.SelectedIonMZ.Value.ToString("0.##")
+                        + " RetentionTime: " + childScan.RetentionTime.ToString("0.##");
+
+                    itemsControlSampleViewModel.AddNewRow(childPsmModel, childAnnotation);
+                }
             }
+            else
+            {
+                ParentChildScanView.Visibility = Visibility.Collapsed;
+                ParentScanView.Visibility = Visibility.Collapsed;
+            }
+
+            // if this is a crosslink spectrum match, there are two base sequence annotations to draw
+            // this makes the canvas taller to fit both of these peptide sequences
+            if (psmToDraw.BetaPeptideBaseSequence != null)
+            {
+                int height = 150;
+
+                canvas.Height = height;
+                PsmAnnotationGrid.RowDefinitions[1].Height = new GridLength(height);
+            }
+            else
+            {
+                int height = 60;
+
+                canvas.Height = height;
+                PsmAnnotationGrid.RowDefinitions[1].Height = new GridLength(height);
+            }
+
+            // draw annotated spectrum
+            mainViewModel.DrawPeptideSpectralMatch(msDataScanToDraw, psmToDraw, metaDrawGraphicalSettings.ShowMzValues,
+                metaDrawGraphicalSettings.ShowAnnotationCharges, metaDrawGraphicalSettings.AnnotatedFontSize, metaDrawGraphicalSettings.BoldText);
+
+            // draw annotated base sequence
+            DrawAnnotatedBaseSequence(psmToDraw);
         }
 
         /// <summary>
         /// Event triggers when a different cell is selected in the PSM data grid
         /// </summary>
         private void dataGridScanNums_SelectedCellsChanged(object sender, SelectedCellsChangedEventArgs e)
+        {
+            OnSelectionChanged();
+        }
+
+        private void OnSelectionChanged()
         {
             if (dataGridScanNums.SelectedItem == null)
             {
@@ -189,6 +291,7 @@ namespace MetaMorpheusGUI
                 }
             }
             dataGridProperties.Items.Refresh();
+            itemsControlSampleViewModel.Data.Clear();
             DrawPsm(row.Ms2ScanNumber, row.FullSequence);
         }
 
@@ -228,6 +331,35 @@ namespace MetaMorpheusGUI
             }
         }
 
+        private void OnClosing(object sender, CancelEventArgs e)
+        {
+            metaDrawGraphicalSettings.Close();
+            metaDrawFilterSettings.Close();
+        }
+
+        private void graphicalSettings_Click(object sender, RoutedEventArgs e)
+        {
+            metaDrawGraphicalSettings.MZCheckBox.IsChecked = metaDrawGraphicalSettings.ShowMzValues;
+            metaDrawGraphicalSettings.ChargesCheckBox.IsChecked = metaDrawGraphicalSettings.ShowAnnotationCharges;
+            metaDrawGraphicalSettings.BoldTextCheckBox.IsChecked = metaDrawGraphicalSettings.BoldText;
+            metaDrawGraphicalSettings.TextSizeBox.Text = metaDrawGraphicalSettings.AnnotatedFontSize.ToString();
+
+            metaDrawGraphicalSettings.ShowDialog();
+
+            OnSelectionChanged();
+        }
+
+        private void filterSettings_Click(object sender, RoutedEventArgs e)
+        {
+            metaDrawFilterSettings.DecoysCheckBox.IsChecked = metaDrawFilterSettings.ShowDecoys;
+            metaDrawFilterSettings.ContaminantsCheckBox.IsChecked = metaDrawFilterSettings.ShowContaminants;
+            metaDrawFilterSettings.qValueBox.Text = metaDrawFilterSettings.QValueFilter.ToString();
+
+            var result = metaDrawFilterSettings.ShowDialog();
+
+            DisplayLoadedAndFilteredPsms();
+        }
+
         private async void loadFilesButton_Click(object sender, RoutedEventArgs e)
         {
             // check for validity
@@ -257,7 +389,8 @@ namespace MetaMorpheusGUI
 
             // load the PSMs
             this.prgsText.Content = "Loading PSMs...";
-            await Task.Run(() => LoadPsms(tsvResultsFilePath));
+            LoadPsms(tsvResultsFilePath);
+            DisplayLoadedAndFilteredPsms();
 
             // done loading - restore controls
             this.prgsFeed.IsOpen = false;
@@ -330,13 +463,54 @@ namespace MetaMorpheusGUI
             {
                 BaseDraw.circledTxtDraw(canvas, new Point((mod.Key - 1) * spacing - 17, 12), modificationAnnotationColor);
             }
+
+            if (psm.BetaPeptideBaseSequence != null)
+            {
+                for (int r = 0; r < psm.BetaPeptideBaseSequence.Length; r++)
+                {
+                    BaseDraw.txtDrawing(canvas, new Point(r * spacing + 10, 100), psm.BetaPeptideBaseSequence[r].ToString(), Brushes.Black);
+                }
+
+                foreach (var ion in psm.BetaPeptideMatchedIons)
+                {
+                    int residue = ion.NeutralTheoreticalProduct.TerminusFragment.AminoAcidPosition;
+                    string annotation = ion.NeutralTheoreticalProduct.ProductType + "" + ion.NeutralTheoreticalProduct.TerminusFragment.FragmentNumber;
+
+                    if (ion.NeutralTheoreticalProduct.NeutralLoss != 0)
+                    {
+                        annotation += "-" + ion.NeutralTheoreticalProduct.NeutralLoss;
+                    }
+
+                    if (ion.NeutralTheoreticalProduct.TerminusFragment.Terminus == FragmentationTerminus.C)
+                    {
+                        BaseDraw.topSplittingDrawing(canvas, new Point(residue * spacing + 8,
+                            productTypeToYOffset[ion.NeutralTheoreticalProduct.ProductType] + 90), productTypeToColor[ion.NeutralTheoreticalProduct.ProductType], annotation);
+                    }
+                    else if (ion.NeutralTheoreticalProduct.TerminusFragment.Terminus == FragmentationTerminus.N)
+                    {
+                        BaseDraw.botSplittingDrawing(canvas, new Point(residue * spacing + 8,
+                            productTypeToYOffset[ion.NeutralTheoreticalProduct.ProductType] + 90), productTypeToColor[ion.NeutralTheoreticalProduct.ProductType], annotation);
+                    }
+                    // don't draw diagnostic ions, precursor ions, etc
+                }
+
+                var betaPeptide = new PeptideWithSetModifications(psm.BetaPeptideFullSequence, GlobalVariables.AllModsKnownDictionary);
+                foreach (var mod in betaPeptide.AllModsOneIsNterminus)
+                {
+                    BaseDraw.circledTxtDraw(canvas, new Point((mod.Key - 1) * spacing - 17, 12 + 90), modificationAnnotationColor);
+                }
+
+                int alphaSite = Int32.Parse(Regex.Match(psm.FullSequence, @"\d+").Value);
+                int betaSite = Int32.Parse(Regex.Match(psm.BetaPeptideFullSequence, @"\d+").Value);
+                BaseDraw.DrawCrosslinker(canvas, new Point(alphaSite * spacing, 50), new Point(betaSite * spacing, 90), Colors.Black);
+            }
         }
 
         private void dataGridProperties_SelectedCellsChanged(object sender, SelectedCellsChangedEventArgs e)
         {
             (sender as DataGrid).UnselectAll();
         }
-        
+
         private void PDFButton_Click(object sender, RoutedEventArgs e)
         {
             PsmFromTsv tempPsm = null;
@@ -344,37 +518,71 @@ namespace MetaMorpheusGUI
             {
                 MessageBox.Show("Please select at least one scan to export");
             }
-
-            int num = dataGridScanNums.SelectedItems.Count;
-            
-            foreach (object selectedItem in dataGridScanNums.SelectedItems)
+            else
             {
-                PsmFromTsv psm = (PsmFromTsv)selectedItem;
+                int numberOfScansToExport = dataGridScanNums.SelectedItems.Count;
 
-                if(tempPsm == null)
+                foreach (object selectedItem in dataGridScanNums.SelectedItems)
                 {
-                    tempPsm = psm;
+                    PsmFromTsv psm = (PsmFromTsv)selectedItem;
+
+                    if (tempPsm == null)
+                    {
+                        tempPsm = psm;
+                    }
+
+                    MsDataScan msDataScanToDraw = MsDataFile.GetOneBasedScan(psm.Ms2ScanNumber);
+
+                    string myString = illegalInFileName.Replace(psm.FullSequence, "");
+
+                    if (myString.Length > 30)
+                    {
+                        myString = myString.Substring(0, 30);
+                    }
+
+                    string filePath = Path.Combine(Path.GetDirectoryName(tsvResultsFilePath), "MetaDrawExport", psm.Ms2ScanNumber + "_" + myString + ".pdf");
+
+                    DrawPdfAnnotatedBaseSequence(psm, canvas); // captures the annotation for the pdf
+                    mainViewModel.DrawPeptideSpectralMatchPdf(msDataScanToDraw, psm, filePath, numberOfScansToExport > 1);
                 }
 
-                MsDataScan msDataScanToDraw = MsDataFile.GetOneBasedScan(psm.Ms2ScanNumber);
+                dataGridScanNums.SelectedItem = dataGridScanNums.SelectedItem;
 
-                string myString = illegalInFileName.Replace(psm.FullSequence, "");
+                DrawPsm(tempPsm.Ms2ScanNumber, tempPsm.FullSequence);
 
-                if(myString.Length > 30)
-                {
-                    myString = myString.Substring(0, 30);
-                }
+                MessageBox.Show(string.Format("{0} PDFs exported", numberOfScansToExport));
+            }
+        }
 
-                string filePath = Path.Combine(Path.GetDirectoryName(tsvResultsFilePath), "MetaDrawExport", psm.Ms2ScanNumber + "_" + myString + ".pdf");
-
-                mainViewModel.DrawPeptideSpectralMatchPdf(msDataScanToDraw, psm, filePath, num > 1);
+        private void DrawPdfAnnotatedBaseSequence(PsmFromTsv psm, Canvas canvas)
+        {
+            if (psm.CrossType == null)
+            {
+                DrawAnnotatedBaseSequence(psm);
             }
 
-            dataGridScanNums.SelectedItem = dataGridScanNums.SelectedItem;
+            canvas.Measure(new Size((int)canvas.Width, 600));
+            canvas.Arrange(new Rect(new Size((int)canvas.Width, 600)));
 
-            DrawPsm(tempPsm.Ms2ScanNumber, tempPsm.FullSequence);
+            RenderTargetBitmap renderBitmap = new RenderTargetBitmap((int)(canvas.Width), 600, 96, 96, PixelFormats.Pbgra32);
 
-            MessageBox.Show(string.Format("{0} PDFs exported", num));
+            renderBitmap.Render(canvas);
+            PngBitmapEncoder encoder = new PngBitmapEncoder();
+            encoder.Frames.Add(BitmapFrame.Create(renderBitmap));
+
+            using (FileStream file = File.Create("annotation.png"))
+            {
+                encoder.Save(file);
+            }
+        }
+
+        private void BtnChangeGridColumns_Click(object sender, RoutedEventArgs e)
+        {
+            itemsControlSampleViewModel.MyColumnCount++;
+            if (itemsControlSampleViewModel.MyColumnCount > itemsControlSampleViewModel.Data.Count / 3)
+            {
+                itemsControlSampleViewModel.MyColumnCount = 1;
+            }
         }
     }
 }

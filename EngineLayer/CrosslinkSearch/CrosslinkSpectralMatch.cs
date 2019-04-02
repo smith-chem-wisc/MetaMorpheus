@@ -25,6 +25,7 @@ namespace EngineLayer.CrosslinkSearch
         public int ParentIonExistNum { get; set; }
         public List<int> ParentIonMaxIntensityRanks { get; set; }
         public PsmCrossType CrossType { get; set; }
+        public Dictionary<int, List<MatchedFragmentIon>> ChildMatchedFragmentIons { get; set; }
 
         public static List<int> GetPossibleCrosslinkerModSites(char[] crosslinkerModSites, PeptideWithSetModifications peptide)
         {
@@ -58,57 +59,58 @@ namespace EngineLayer.CrosslinkSearch
         public static string GetTabSepHeaderCross()
         {
             var sb = new StringBuilder();
-            sb.Append("File Name" + '\t');
-            sb.Append("Scan Number" + '\t');
-            sb.Append("Precursor Scan Number" + '\t');
-            sb.Append("Precursor MZ" + '\t');
-            sb.Append("Precursor Charge" + '\t');
-            sb.Append("Precursor Mass" + '\t');
-            sb.Append("Cross Type" + '\t');
-            sb.Append("Link Residues" + "\t");
+            sb.Append(PsmTsvHeader.FileName + '\t');
+            sb.Append(PsmTsvHeader.Ms2ScanNumber + '\t');
+            sb.Append(PsmTsvHeader.PrecursorScanNum + '\t');
+            sb.Append(PsmTsvHeader.PrecursorMz + '\t');
+            sb.Append(PsmTsvHeader.PrecursorCharge + '\t');
+            sb.Append(PsmTsvHeader.PrecursorMass + '\t');
+            sb.Append(PsmTsvHeader.CrossTypeLabel + '\t');
+            sb.Append(PsmTsvHeader.LinkResiduesLabel + "\t");
 
             sb.Append("Peptide" + '\t');
-            sb.Append("Protein Accession" + '\t');
-            sb.Append("Protein Link Site" + '\t');
-            sb.Append("Base Sequence" + '\t');
-            sb.Append("Full Sequence" + '\t');
-            sb.Append("Peptide Monoisotopic Mass" + '\t');
-            sb.Append("Score" + '\t');
-            sb.Append("Rank" + '\t');
+            sb.Append(PsmTsvHeader.ProteinAccession + '\t');
+            sb.Append(PsmTsvHeader.ProteinLinkSiteLabel + '\t');
+            sb.Append(PsmTsvHeader.BaseSequence + '\t');
+            sb.Append(PsmTsvHeader.FullSequence + '\t');
+            sb.Append(PsmTsvHeader.PeptideMonoMass + '\t');
+            sb.Append(PsmTsvHeader.Score + '\t');
+            sb.Append(PsmTsvHeader.RankLabel + '\t');
 
-            sb.Append("Matched Ion Series" + '\t');
-            sb.Append("Matched Ion Mass-To-Charge Ratios" + '\t');
-            sb.Append("Matched Ion Mass Diff (Da)" + '\t');
-            sb.Append("Matched Ion Mass Diff (Ppm)" + '\t');
-            sb.Append("Matched Ion Intensities" + '\t');
-            sb.Append("Matched Ion Counts" + '\t');
+            sb.Append(PsmTsvHeader.MatchedIonSeries + '\t');
+            sb.Append(PsmTsvHeader.MatchedIonMzRatios + '\t');
+            sb.Append(PsmTsvHeader.MatchedIonMassDiffDa + '\t');
+            sb.Append(PsmTsvHeader.MatchedIonMassDiffPpm + '\t');
+            sb.Append(PsmTsvHeader.MatchedIonIntensities + '\t');
+            sb.Append(PsmTsvHeader.MatchedIonCounts + '\t');
+            sb.Append(PsmTsvHeader.ChildMatchedIons + '\t');
 
             sb.Append("Beta Peptide" + '\t');
-            sb.Append("Beta Peptide Protein Accession" + '\t');
-            sb.Append("Beta Peptide Protein LinkSite" + '\t');
-            sb.Append("Beta Peptide Base Sequence" + '\t');
-            sb.Append("Beta Peptide Full Sequence" + '\t');
-            sb.Append("Beta Peptide Theoretical Mass" + '\t');
-            sb.Append("Beta Peptide Score" + '\t');
-            sb.Append("Beta Peptide Rank" + '\t');
+            sb.Append(PsmTsvHeader.BetaPeptideProteinAccessionLabel + '\t');
+            sb.Append(PsmTsvHeader.BetaPeptideProteinLinkSiteLabel + '\t');
+            sb.Append(PsmTsvHeader.BetaPeptideBaseSequenceLabel + '\t');
+            sb.Append(PsmTsvHeader.BetaPeptideFullSequenceLabel + '\t');
+            sb.Append(PsmTsvHeader.BetaPeptideTheoreticalMassLabel + '\t');
+            sb.Append(PsmTsvHeader.BetaPeptideScoreLabel + '\t');
+            sb.Append(PsmTsvHeader.BetaPeptideRankLabel + '\t');
 
-            sb.Append("Beta Peptide Matched Ion Series" + '\t');
-            sb.Append("Beta Peptide Matched Ion Mass-To-Charge Ratios" + '\t');
+            sb.Append("Beta Peptide Matched Ions" + '\t');
+            sb.Append(PsmTsvHeader.BetaPeptideMatchedIonsLabel + '\t');
             sb.Append("Beta Peptide Matched Ion Mass Diff (Da)" + '\t');
             sb.Append("Beta Peptide Matched Ion Mass Diff (Ppm)" + '\t');
             sb.Append("Beta Peptide Matched Ion Intensities" + '\t');
             sb.Append("Beta Peptide Matched Ion Counts" + '\t');
+            sb.Append(PsmTsvHeader.BetaPeptideChildMatchedIons + '\t');
 
             sb.Append("Summary" + '\t');
-            sb.Append("XL Total Score" + '\t');
-            sb.Append("Mass Diff (Da)" + '\t');
-            sb.Append("Parent Ions" + '\t');
+            sb.Append(PsmTsvHeader.XLTotalScoreLabel + '\t');
+            sb.Append(PsmTsvHeader.MassDiffDa + '\t');
+            sb.Append(PsmTsvHeader.ParentIonsLabel + '\t');
             sb.Append("ParentIonsNum" + '\t');
             sb.Append("ParentIonMaxIntensityRank" + '\t');
-            sb.Append("Decoy/Contaminant/Target" + '\t');
-            sb.Append("QValue" + '\t');
-       
-
+            sb.Append(PsmTsvHeader.DecoyContaminantTarget + '\t');
+            sb.Append(PsmTsvHeader.QValue + '\t');
+            
             return sb.ToString();
         }
 
@@ -139,6 +141,7 @@ namespace EngineLayer.CrosslinkSearch
             sb.Append("Matched Ion Mass Diff (Ppm)" + '\t');
             sb.Append("Matched Ion Intensities" + '\t');
             sb.Append("Matched Ion Counts" + '\t');
+            sb.Append("Child Scans Matched Ion Series" + '\t');
             sb.Append("Decoy/Contaminant/Target" + '\t');
             sb.Append("QValue" + '\t');
 
@@ -207,8 +210,6 @@ namespace EngineLayer.CrosslinkSearch
             sb.Append(ScanPrecursorCharge + "\t");
             sb.Append(ScanPrecursorMass + "\t");
             sb.Append(CrossType.ToString() + "\t");
-            
-
 
             if (LinkPositions != null)
             {
@@ -240,11 +241,23 @@ namespace EngineLayer.CrosslinkSearch
             sb.Append(Score + "\t");
             sb.Append(XlRank[0] + "\t");
 
-            foreach (var mid in MatchedIonDataDictionary(this))
+            foreach (var mid in MatchedIonDataDictionary(this.MatchedFragmentIons))
             {
                 sb.Append(mid.Value);
                 sb.Append("\t");
             }
+
+            StringBuilder childScanFragmentStringbuilder = new StringBuilder();
+            if (ChildMatchedFragmentIons != null)
+            {
+                foreach (var childScan in ChildMatchedFragmentIons)
+                {
+                    int oneBasedScan = childScan.Key;
+                    var matchedIonsDict = MatchedIonDataDictionary(childScan.Value);
+                    childScanFragmentStringbuilder.Append("{" + oneBasedScan + "|" + matchedIonsDict[PsmTsvHeader.MatchedIonMzRatios] + "}");
+                }
+            }
+            sb.Append(childScanFragmentStringbuilder.ToString() + "\t");
 
             if (BetaPeptide != null)
             {
@@ -257,11 +270,23 @@ namespace EngineLayer.CrosslinkSearch
                 sb.Append(BetaPeptide.Score + "\t");
                 sb.Append(XlRank[1] + "\t");
 
-                foreach (var betamid in MatchedIonDataDictionary(this.BetaPeptide))
+                foreach (var betamid in MatchedIonDataDictionary(this.BetaPeptide.MatchedFragmentIons))
                 {
                     sb.Append(betamid.Value);
                     sb.Append("\t");
                 }
+
+                StringBuilder childScanFragmentStringbuilderBeta = new StringBuilder();
+                if (BetaPeptide.ChildMatchedFragmentIons != null)
+                {
+                    foreach (var childScan in BetaPeptide.ChildMatchedFragmentIons)
+                    {
+                        int oneBasedScan = childScan.Key;
+                        var matchedIonsDict = MatchedIonDataDictionary(childScan.Value);
+                        childScanFragmentStringbuilderBeta.Append("{" + oneBasedScan + "|" + matchedIonsDict[PsmTsvHeader.MatchedIonMzRatios] + "}");
+                    }
+                }
+                sb.Append(childScanFragmentStringbuilderBeta.ToString() + "\t");
 
                 sb.Append("\t");
                 sb.Append(XLTotalScore + "\t");
@@ -275,7 +300,6 @@ namespace EngineLayer.CrosslinkSearch
                 sb.Append(alphaNumParentIons + ";" + betaNumParentIons + "\t");
                 sb.Append(alphaNumParentIons + betaNumParentIons + "\t");
                 sb.Append(((ParentIonMaxIntensityRanks != null) && (ParentIonMaxIntensityRanks.Any()) ? ParentIonMaxIntensityRanks.Min().ToString() : "-")); sb.Append("\t");
-
             }
 
             if (BetaPeptide == null)
@@ -291,15 +315,14 @@ namespace EngineLayer.CrosslinkSearch
 
             sb.Append(FdrInfo.QValue.ToString());
             sb.Append("\t");
-
-
+            
             return sb.ToString();
         }
 
-        public static Dictionary<string, string> MatchedIonDataDictionary(PeptideSpectralMatch psm)
+        public static Dictionary<string, string> MatchedIonDataDictionary(List<MatchedFragmentIon> matchedFragmentIons)
         {
             Dictionary<string, string> s = new Dictionary<string, string>();
-            PsmTsvWriter.AddMatchedIonsData(s, psm);
+            PsmTsvWriter.AddMatchedIonsData(s, matchedFragmentIons);
             return s;
         }
     }
