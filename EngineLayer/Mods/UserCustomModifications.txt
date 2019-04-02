@@ -1,8 +1,0 @@
-﻿UserCustomModifications
-ID   MyFirstModification
-TG   K
-PP   Anywhere.
-MT   Custom
-MM   12.00000
-CF   C1
-//

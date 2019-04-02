@@ -1,9 +1,8 @@
 ﻿using Proteomics;
-using Proteomics.Fragmentation;
 using Proteomics.ProteolyticDigestion;
 using System;
-using System.Collections.Concurrent;
 using System.Collections.Generic;
+using System.IO;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
@@ -15,15 +14,15 @@ namespace EngineLayer.Indexing
     {
         private const int FragmentBinsPerDalton = 1000;
         private readonly List<Protein> ProteinList;
-
         private readonly List<Modification> FixedModifications;
         private readonly List<Modification> VariableModifications;
         private readonly int CurrentPartition;
         private readonly DecoyType DecoyType;
         private readonly double MaxFragmentSize;
         public readonly bool GeneratePrecursorIndex;
+        public readonly List<FileInfo> ProteinDatabases;
 
-        public IndexingEngine(List<Protein> proteinList, List<Modification> variableModifications, List<Modification> fixedModifications, int currentPartition, DecoyType decoyType, CommonParameters commonParams, double maxFragmentSize, bool generatePrecursorIndex, List<string> nestedIds) : base(commonParams, nestedIds)
+        public IndexingEngine(List<Protein> proteinList, List<Modification> variableModifications, List<Modification> fixedModifications, int currentPartition, DecoyType decoyType, CommonParameters commonParams, double maxFragmentSize, bool generatePrecursorIndex, List<FileInfo> proteinDatabases, List<string> nestedIds) : base(commonParams, nestedIds)
         {
             ProteinList = proteinList;
             VariableModifications = variableModifications;
@@ -32,11 +31,13 @@ namespace EngineLayer.Indexing
             DecoyType = decoyType;
             MaxFragmentSize = maxFragmentSize;
             GeneratePrecursorIndex = generatePrecursorIndex;
+            this.ProteinDatabases = proteinDatabases;
         }
 
         public override string ToString()
         {
             var sb = new StringBuilder();
+            sb.AppendLine("Databases: " + string.Join(",", ProteinDatabases.OrderBy(p => p.Name).Select(p => p.Name + ":" + p.CreationTime)));
             sb.AppendLine("Partitions: " + CurrentPartition + "/" + commonParameters.TotalPartitions);
             sb.AppendLine("Precursor Index: " + GeneratePrecursorIndex);
             sb.AppendLine("Search Decoys: " + DecoyType);
@@ -68,22 +69,18 @@ namespace EngineLayer.Indexing
             // digest database
             List<PeptideWithSetModifications> globalPeptides = new List<PeptideWithSetModifications>();
 
-            Parallel.ForEach(Partitioner.Create(0, ProteinList.Count), new ParallelOptions { MaxDegreeOfParallelism = commonParameters.MaxThreadsToUsePerFile }, (range, loopState) =>
+            int maxThreadsPerFile = commonParameters.MaxThreadsToUsePerFile;
+            int[] threads = Enumerable.Range(0, maxThreadsPerFile).ToArray();
+            Parallel.ForEach(threads, (i) =>
             {
                 List<PeptideWithSetModifications> localPeptides = new List<PeptideWithSetModifications>();
 
-                for (int i = range.Item1; i < range.Item2; i++)
+                for (; i < ProteinList.Count; i += maxThreadsPerFile)
                 {
                     // Stop loop if canceled
-                    if (GlobalVariables.StopLoops)
-                    {
-                        loopState.Stop();
-                        return;
-                    }
-
+                    if (GlobalVariables.StopLoops) { return; }
 
                     localPeptides.AddRange(ProteinList[i].Digest(commonParameters.DigestionParams, FixedModifications, VariableModifications));
-
 
                     progress++;
                     var percentProgress = (int)((progress / ProteinList.Count) * 100);
@@ -102,7 +99,7 @@ namespace EngineLayer.Indexing
             });
 
             // sort peptides by mass
-            var peptidesSortedByMass = globalPeptides.AsParallel().WithDegreeOfParallelism(commonParameters.MaxThreadsToUsePerFile).OrderBy(p => p.MonoisotopicMass).ToList();
+            var peptidesSortedByMass = globalPeptides.OrderBy(p => p.MonoisotopicMass).ToList();
             globalPeptides = null;
 
             // create fragment index
@@ -124,11 +121,18 @@ namespace EngineLayer.Indexing
             {
                 var fragmentMasses = peptidesSortedByMass[peptideId].Fragment(commonParameters.DissociationType, commonParameters.DigestionParams.FragmentationTerminus).Select(m => m.NeutralMass).ToList();
 
-                foreach (var theoreticalFragmentMass in fragmentMasses)
+                foreach (double theoreticalFragmentMass in fragmentMasses)
                 {
-                    if (theoreticalFragmentMass < MaxFragmentSize && theoreticalFragmentMass > 0)
+                    double tfm = theoreticalFragmentMass;
+                    //if low res round
+                    if (commonParameters.DissociationType == MassSpectrometry.DissociationType.LowCID)
                     {
-                        int fragmentBin = (int)Math.Round(theoreticalFragmentMass * FragmentBinsPerDalton);
+                        tfm = Math.Round(theoreticalFragmentMass / 1.0005079, 0) * 1.0005079;
+                    }
+
+                    if (tfm < MaxFragmentSize && tfm > 0)
+                    {
+                        int fragmentBin = (int)Math.Round(tfm * FragmentBinsPerDalton);
 
                         if (fragmentIndex[fragmentBin] == null)
                             fragmentIndex[fragmentBin] = new List<int> { peptideId };
@@ -166,15 +170,15 @@ namespace EngineLayer.Indexing
 
                 for (int i = 0; i < peptidesSortedByMass.Count; i++)
                 {
-                    double mz = Chemistry.ClassExtensions.ToMz(peptidesSortedByMass[i].MonoisotopicMass, 1);
-                    if (!Double.IsNaN(mz))
+                    double mass = peptidesSortedByMass[i].MonoisotopicMass;
+                    if (!Double.IsNaN(mass))
                     {
-                        if (mz > MaxFragmentSize) //if the precursor is larger than the index allows, then stop adding precursors
+                        if (mass > MaxFragmentSize) //if the precursor is larger than the index allows, then stop adding precursors
                         {
                             break;
                         }
 
-                        int precursorBin = (int)Math.Round(mz * FragmentBinsPerDalton);
+                        int precursorBin = (int)Math.Round(mass * FragmentBinsPerDalton);
 
                         if (precursorIndex[precursorBin] == null)
                             precursorIndex[precursorBin] = new List<int> { i };

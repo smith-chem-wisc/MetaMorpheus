@@ -9,6 +9,7 @@ using System.Windows;
 using System.Windows.Input;
 using TaskLayer;
 using Proteomics.ProteolyticDigestion;
+using System.Globalization;
 
 namespace MetaMorpheusGUI
 {
@@ -42,7 +43,7 @@ namespace MetaMorpheusGUI
                 paramsToSaveCount++;
                 if (GlobalGuiSettings.CheckPrecursorMassTolerance(precursorMassToleranceTextBox.Text))
                 {
-                    double value = double.Parse(precursorMassToleranceTextBox.Text);
+                    double value = double.Parse(precursorMassToleranceTextBox.Text, CultureInfo.InvariantCulture);
                     if (precursorMassToleranceComboBox.SelectedIndex == 0)
                     {
                         parametersToWrite.PrecursorMassTolerance = new AbsoluteTolerance(value);
@@ -62,7 +63,7 @@ namespace MetaMorpheusGUI
                 paramsToSaveCount++;
                 if (GlobalGuiSettings.CheckProductMassTolerance(productMassToleranceTextBox.Text))
                 {
-                    double value = double.Parse(productMassToleranceTextBox.Text);
+                    double value = double.Parse(productMassToleranceTextBox.Text, CultureInfo.InvariantCulture);
                     if (productMassToleranceComboBox.SelectedIndex == 0)
                     {
                         parametersToWrite.ProductMassTolerance = new AbsoluteTolerance(value);

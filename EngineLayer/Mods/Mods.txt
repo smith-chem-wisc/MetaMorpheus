@@ -1,58 +1,481 @@
 Custom List
+################################## COMMON BIOLOGICAL MODS
+ID   Hydroxylation
+TG   K or N
+PP   Anywhere.
+CF   O1
+MT   Common Biological
+//
+ID   Carboxylation
+TG   K or D or E
+PP   Anywhere.
+MT   Common Biological
+CF   C1 O2
+//
+ID   Phosphorylation
+TG   S or T
+PP   Anywhere.
+NL   HCD:H0 or HCD:H3 O4 P1
+MT   Common Biological
+CF   H1 O3 P1
+//
+ID   Phosphorylation
+TG   Y
+PP   Anywhere.
+NL   HCD:H0 or HCD:H3 O4 P1
+MT   Common Biological
+CF   H1 O3 P1
+DI   HCD:C8 H10 N1 O4 P1
+//
+ID   Acetylation
+TG   X
+PP   N-terminal.
+MT   Common Biological
+CF   H2 C2 O1
+//
+ID   Acetylation
+TG   K
+PP   Anywhere.
+MT   Common Biological
+NL   ETD:45.0204
+DI   HCD:C7 H11 N1 O1
+CF   H2 C2 O1
+//
+ID   Formylation
+TG   K
+PP   Anywhere.
+MT   Common Biological
+DI   HCD:111.068423533
+CF   C1 O1
+//
+ID   Methylation
+TG   K or R
+PP   Anywhere.
+MT   Common Biological
+CF   H2 C
+//
+ID   Dimethylation
+TG   K
+PP   Anywhere.
+MT   Common Biological
+CF   H4 C2
+//
+ID   Dimethylation
+TG   R
+PP   Anywhere.
+NL   ETD:45.0579
+NL   ETD:31.0422
+MT   Common Biological
+CF   H4 C2
+//
+ID   Trimethylation
+TG   K
+PP   Anywhere.
+MT   Common Biological
+CF   H6 C3
+NL   ETD:45.0204
+//
+ID   Sulfonation
+TG   Y
+PP   Anywhere.
+NL   O3 S1
+MT   Common Biological
+CF   O3 S1
+//
+ID   Citrullination
+TG   R
+PP   Anywhere.
+MT   Common Biological
+DI   HCD:129.090223533
+NL   HCD:43.0058
+CF   H-1 N-1 O1
+//
+ID   Hydroxylation
+TG   P
+PP   Anywhere.
+MT   Common Biological
+CF   O1
+DI   HCD:170.060123533
+//
+ID   Nitrosylation
+TG   Y
+PP   Anywhere.
+MT   Common Biological
+CF   H-1 N1 O2
+DI   HCD:180.053523533
+//
+ID   Butyrylation
+TG   K
+PP   Anywhere.
+MT   Common Biological
+DI   HCD:153.115323533
+CF   C4 H6 O1
+//
+ID   Crotonylation
+TG   K
+PP   Anywhere.
+MT   Common Biological
+DI   HCD:151.099723533
+CF   C4 H4 O1
+//
+ID   Glutarylation
+TG   K
+PP   Anywhere.
+MT   Common Biological
+DI   HCD:181.110323533
+NL   ETD:115.0395
+CF   C5 H6 O3
+//
+ID   Hydroxybutyrylation
+TG   K
+PP   Anywhere.
+MT   Common Biological
+DI   HCD:169.110323533
+CF   C4 H7 O2
+//
+ID   Malonylation
+TG   K
+PP   Anywhere.
+MT   Common Biological
+DI   HCD:C7 H11 N1 O1
+DI   HCD:169.073923533
+NL   HCD:43.9898
+NL   ETD:87.0082
+CF   C3 H2 O3
+//
+ID   Succinylation
+TG   K
+PP   Anywhere.
+MT   Common Biological
+DI   HCD:183.089523533
+NL   ETD:101.0239
+CF   C4 H4 O3
+//
+ID   Glu to PyroGlu
+TG   Q
+PP   N-terminal.
+MT   Common Biological
+CF   H-3 N-1
+//
+ID   HexNAc
+TG   Nxs or Nxt
+PP   Anywhere.
+NL   C8H13NO5
+CF   C8H13NO5
+MT   Common Biological
+//
+ID   HexNAc
+TG   S or T
+PP   Anywhere.
+NL   C8H13NO5
+CF   C8H13NO5
+MT   Common Biological
+//
+ID   ADP-ribosylation
+TG   S
+PP   Anywhere.
+MT   Common Biological
+CF   C15 H21 N5 O13 P2
+//
+ID   Pyridoxal phosphate
+TG   K
+PP   Anywhere.
+MT   Common Biological
+CF   C8 H8 N1 O5 P1
+//
+ID   Nitrosylation
+TG   C
+PP   Anywhere.
+MT   Common Biological
+CF   H-1 N1 O1
+//
+################################## COMMON ARTIFACT MODS
 ID   Deamidation
 TG   N or Q
 PP   Anywhere.
-MT   Mod
+MT   Common Artifact
 CF   H-1 N-1 O1
 //
-ID   Proline pyrrole to pyrrolidine six member ring
-TG   P
-PP   Anywhere.
-MT   Mod
-CF   C1
-//
-ID   Amidation
-TG   X
-PP   Peptide C-terminal.
-MT   PeptideTermMod
-CF   H1 N1 O-1
-//
 ID   Ammonia loss
-TG   Q or C
+TG   C
 PP   Peptide N-terminal.
-MT   PeptideTermMod
+MT   Common Artifact
 CF   H-3 N-1
 //
 ID   Ammonia loss
 TG   N
 PP   Anywhere.
-MT   Mod
+MT   Common Artifact
 CF   H-3 N-1
 //
-ID   Propionamide
-TG   C or K
-PP   Anywhere.
-MT   Mod
-CF   H5 C3 N1 O1
+ID   Water Loss
+TG   E
+PP   Peptide N-terminal.
+MT   Common Artifact
+CF   H-2 O-1
 //
-ID   Propionamide
+ID   Carbamyl
 TG   X
 PP   Peptide N-terminal.
-MT   PeptideTermMod
+MT   Common Artifact
+CF   H1 C1 N1 O1
+//
+ID   Carbamyl
+TG   K or R or C or M
+PP   Anywhere.
+MT   Common Artifact
+CF   H1 C1 N1 O1
+//
+################################## LESS COMMON MODS
+ID   Proline pyrrole to pyrrolidine six member ring
+TG   P
+PP   Anywhere.
+MT   Less Common
+CF   C1
+//
+ID   Amidation
+TG   X
+PP   Peptide C-terminal.
+MT   Less Common
+CF   H1 N1 O-1
+//
+ID   Propionamidation
+TG   C or K
+PP   Anywhere.
+MT   Less Common
+CF   H5 C3 N1 O1
+//
+ID   Propionamidation
+TG   X
+PP   Peptide N-terminal.
+MT   Less Common
 CF   H5 C3 N1 O1
 //
 ID   Carboxymethylation
 TG   X
 PP   Peptide N-terminal.
-MT   PeptideTermMod
+MT   Less Common
 CF   H2 C2 O2
 //
 ID   Carboxymethylation
 TG   C or K or W
 PP   Anywhere.
-MT   Mod
+MT   Less Common
 CF   H2 C2 O2
 //
+ID   Dioxidation
+TG   W or P or R or K or M or F or Y or C
+PP   Anywhere.
+MT   Less Common
+CF   O2
+//
+ID   Oxidation
+TG   Y or W or F or D or E or V or H or R or C or U or I or L or Q or S or T
+PP   Anywhere.
+MT   Less Common
+CF   O1
+//
+ID   Carbamidomethyl
+TG   K or H or D or E or S or T or Y
+PP   Anywhere.
+MT   Less Common
+CF   H3 C2 N1 O1
+//
+ID   Carbamidomethyl
+TG   X
+PP   Peptide N-terminal.
+MT   Less Common
+CF   H3 C2 N1 O1
+//
+ID   Acetylation
+TG   S or T
+PP   Anywhere.
+MT   Less Common
+CF   H2 C2 O1
+//
+ID   Biotinylation
+TG   K
+PP   Anywhere.
+MT   Less Common
+CF   C10 H14 N2 O2 S1
+DI   HCD:309.151123533
+//
+ID   Propionylation
+TG   K
+PP   Anywhere.
+MT   Less Common
+DI   HCD:139.099823533
+CF   C3 H4 O1
+//
+ID   Water loss
+TG   D
+PP   Anywhere.
+MT   Less Common
+CF   H-2 O-1
+//
+ID   Oxidation to Kynurenine
+TG   W
+PP   Anywhere.
+MT   Less Common
+DI   HCD:C9 H10 N2 O3
+CF   C-1 O1
+//
+ID   Dehydroalanine
+TG   C
+PP   Anywhere.
+MT   Less Common
+CF   H-2 S-1
+//
+ID   Dehydroalanine
+TG   S
+PP   Anywhere.
+MT   Less Common
+CF   H-2 O-1
+//
+ID   Dehydrobutyrine
+TG   T
+PP   Anywhere.
+MT   Less Common
+CF   H-2 O-1
+//
+ID   Didehydro
+TG   Y
+PP   Anywhere.
+MT   Less Common
+CF   H-2
+//
+ID   Formylation
+TG   X
+PP   Peptide N-terminal.
+MT   Less Common
+CF   C1 O1
+//
+ID   Formylation
+TG   S or T
+PP   Anywhere.
+MT   Less Common
+CF   C1 O1
+//
+ID   Methylation
+TG   C or H or N or Q or I or L or D or E or S or T
+PP   Anywhere.
+MT   Less Common
+CF   H2 C
+//
+ID   Methylation
+TG   X
+PP   N-terminal.
+MT   Less Common
+CF   H2 C
+//
+ID   Methylation
+TG   X
+PP   C-terminal.
+MT   Less Common
+CF   H2 C
+//
+ID   Ethylation
+TG   K or E or D
+PP   Anywhere.
+MT   Less Common
+CF   H4 C2
+//
+ID   Ethylation
+TG   X
+PP   Peptide N-terminal.
+MT   Less Common
+CF   H4 C2
+//
+ID   Oxidation and then loss of oxidized M side chain
+TG   M
+PP   Anywhere.
+MT   Less Common
+CF   H-4 C-1 S-1 O1
+//
+ID   Dimethylation
+TG   N
+PP   Anywhere.
+MT   Less Common
+CF   H4 C2
+//
+ID   Tryptophan oxidation to hydroxykynurenin
+TG   W
+PP   Anywhere.
+MT   Less Common
+CF   C-1 O2
+//
+ID   Pyrrolidinone
+TG   P
+PP   Anywhere.
+MT   Less Common
+CF   H-2 C-1 O-1
+//
+ID   Trioxidation
+TG   C
+PP   Anywhere.
+MT   Less Common
+CF   O3
+//
+ID   Sulfonation
+TG   S or T
+PP   Anywhere.
+NL   O3 S1
+MT   Less Common
+CF   O3 S1
+//
+ID   Farnesylation
+TG   C
+PP   Anywhere.
+NL   H0 or H24 C15
+MT   Less Common
+CF   H24 C15
+//
+ID   Succinylation
+TG   X
+PP   N-terminal.
+MT   Less Common
+CF   C4 H4 O3
+//
+ID   Myristoylation
+TG   G
+MT   Less Common
+PP   N-terminal.
+NL   H0 or H26 C14 O1
+CF   H26 C14 O1
+//
+ID   Myristoylation
+TG   C or K
+PP   Anywhere.
+MT   Less Common
+NL   H0 or H26 C14 O1
+CF   H26 C14 O1
+//
+ID   Palmitoylation
+TG   K or S or T or C
+MT   Less Common
+PP   Anywhere.
+NL   H0 or H30 C16 O1
+CF   H30 C16 O1
+//
+ID   Quinone
+TG   Y or W
+MT   Less Common
+PP   Anywhere.
+CF   H-2 O2 
+//
+ID   Decarboxylation
+TG   D or E
+PP   Anywhere.
+MT   Less Common
+CF   H-2 C-1 O-1
+//
+ID   Reduction
+TG   D or S or T
+PP   Anywhere.
+MT   Less Common
+CF   O-1
+//
+################################## METALS
 ID   Sodium
 TG   D or E
 PP   Anywhere.
@@ -65,168 +488,17 @@ PP   Anywhere.
 MT   Metal
 CF   H-1 K1
 //
-ID   Dioxidation
-TG   W or P or R or K or M or F or Y or C
-PP   Anywhere.
-MT   Mod
-CF   O2
-//
-ID   Oxidation
-TG   Y or W or P or F or D or E or V or H or K or N or R or C or U or I or L or Q or S or T
-PP   Anywhere.
-MT   Mod
-CF   O1
-//
-ID   Carbamidomethyl
-TG   K or H or D or E or S or T or Y
-PP   Anywhere.
-MT   Mod
-CF   H3 C2 N1 O1
-//
-ID   Carbamidomethyl of peptide N term
-TG   X
-PP   Peptide N-terminal.
-MT   PeptideTermMod
-CF   H3 C2 N1 O1
-//
-ID   Carboxylation
-TG   K or D or E
-PP   Anywhere.
-MT   Mod
-CF   C1 O2
-//
-ID   Phospho
-TG   S or T or Y
-PP   Anywhere.
-NL   H0 or H3 O4 P1
-MT   Mod
-CF   H1 O3 P1
-//
-ID   Acetyl
-TG   X
-PP   N-terminal.
-MT   ProteinTermMod
-CF   H2 C2 O1
-//
-ID   Acetyl
-TG   S or K or T
-PP   Anywhere.
-MT   Mod
-CF   H2 C2 O1
-//
-ID   Lysine not cleaved at C-term
-TG   Xk
-PP   Peptide C-terminal.
-MT   PeptideTermMod
-CF   C6 H12 N2 O1
-//
-ID   Lysine not cleaved at N-term
-TG   kX
-PP   Peptide N-terminal.
-MT   PeptideTermMod
-CF   C6 H12 N2 O1
-//
-ID   Arginine not cleaved at N-term
-TG   rX
-PP   Peptide N-terminal.
-MT   PeptideTermMod
-CF   C6 H12 N4 O1
-//
-ID   Arginine not cleaved at C-term
-TG   Xr
-PP   Peptide C-terminal.
-MT   PeptideTermMod
-CF   C6 H12 N4 O1
-//
 ID   Calcium
 TG   D or E
 PP   Anywhere.
 MT   Metal
 CF   H-2 Ca1
 //
-ID   H-2 on pep term M
-TG   M
-PP   Peptide N-terminal.
-MT   PeptideTermMod
-CF   H-2
-//
-ID   Water loss on pep term E
-TG   E
-PP   Peptide N-terminal.
-MT   PeptideTermMod
-CF   H-2 O-1
-//
-ID   Water loss
-TG   D
-PP   Anywhere.
-MT   Mod
-CF   H-2 O-1
-//
-ID   H-2 O1 
-TG   L or I or P or W or S
-PP   Anywhere.
-MT   Mod
-CF   H-2 O1
-//
-ID   Oxidation of W to Kynurenine
-TG   W
-PP   Anywhere.
-MT   Mod
-CF   C-1 O1
-//
-ID   Dehydroalanine from Cysteine
-TG   C
-PP   Anywhere.
-MT   Mod
-CF   H-2 S-1
-//
-ID   Dehydroalanine from Serine
-TG   S
-PP   Anywhere.
-MT   Mod
-CF   H-2 O-1
-//
-ID   Dehydrobutyrine
-TG   T
-PP   Anywhere.
-MT   Mod
-CF   H-2 O-1
-//
-ID   Didehydro
-TG   Y
-PP   Anywhere.
-MT   Mod
-CF   H-2
-//
-ID   Formylation
-TG   X
-PP   Peptide N-terminal.
-MT   PeptideTermMod
-CF   C1 O1
-//
-ID   Formylation
-TG   K or S or T
-PP   Anywhere.
-MT   Mod
-CF   C1 O1
-//
 ID   Zinc
 TG   D or E
 PP   Anywhere.
 MT   Metal
 CF   H-2 Zn1
-//
-ID   Carbamyl
-TG   X
-PP   Peptide N-terminal.
-MT   PeptideTermMod
-CF   H1 C1 N1 O1
-//
-ID   Carbamyl
-TG   K or R or C or M
-PP   Anywhere.
-MT   Mod
-CF   H1 C1 N1 O1
 //
 ID   Fe[III]
 TG   D or E
@@ -240,178 +512,60 @@ PP   Anywhere.
 MT   Metal
 CF   H-2 Fe1
 //
-ID   Methyl
-TG   C or H or K or N or Q or R or I or L or D or E or S or T
+ID   Magnesium
+TG   D or E
 PP   Anywhere.
-MT   Mod
-CF   H2 C
+MT   Metal
+CF   H-2 Mg1
 //
-ID   N-Term Methyl
-TG   X
-PP   N-terminal.
-MT   ProteinTermMod
-CF   H2 C
-//
-ID   C-Term Methyl
-TG   X
-PP   C-terminal.
-MT   ProteinTermMod
-CF   H2 C
-//
-ID   Ethyl
-TG   K or E or D
+ID   Cu[I]
+TG   D or E
 PP   Anywhere.
-MT   Mod
-CF   H4 C2
+MT   Metal
+CF   H-1 Cu1
 //
-ID   Ethyl
-TG   X
-PP   Peptide N-terminal.
-MT   PeptideTermMod
-CF   H4 C2
-//
-ID   Oxidation and then loss of oxidized M side chain
-TG   M
-PP   Anywhere.
-MT   Mod
-CF   H-4 C-1 S-1 O1
-//
-ID   DiMethyl
-TG   K or R or N
-PP   Anywhere.
-MT   Mod
-CF   H4 C2
-//
-ID   Tryptophan oxidation to hydroxykynurenin
-TG   W
-PP   Anywhere.
-MT   Mod
-CF   C-1 O2
-//
-ID   Pyrrolidinone
-TG   P
-PP   Anywhere.
-MT   Mod
-CF   H-2 C-1 O-1
-//
-ID   TriMethylation
+################################## PROTEASE-SPECIFIC
+ID   GG (Ubiquitination Site)
 TG   K
 PP   Anywhere.
-MT   Mod
-CF   H6 C3
-//
-ID   Trioxidation of C
-TG   C
-PP   Anywhere.
-MT   Mod
-CF   O3
-//
-ID   Sulfonation
-TG   S or T or Y
-PP   Anywhere.
-NL   O3 S1
-MT   Mod
-CF   O3 S1
-//
-ID   GG of K (Ubiquitination Site)
-TG   Lysine
-PP   Anywhere.
-MT   TrypsinDigestedMod
+MT   Trypsin Digested
+DI   HCD:114.042923533
 CF   H6 C4 N2 O2
 //
-ID   DVIEVYQEQTGG of D (SUMO-1 Site human)
-TG   Lysine
+ID   DVIEVYQEQTGG (SUMO-1 Site human)
+TG   D
 PP   Anywhere.
-MT   AnpN_DigestedMod
+MT   AspN Digested
 CF   C57 H86 N14 O22
 //
-ID   DVFQQQTGG of D (SUMO-2/3 Site human)
-TG   Lysine
+ID   DVFQQQTGG (SUMO-2/3 Site human)
+TG   D
 PP   Anywhere.
-MT   AnpN_DigestedMod
+MT   AspN Digested
 CF   C41 H60 N12 O15
 //
-ID   EQIGG of k (sumoylation (SMT-3) Site yeast)
-TG   Lysine
+ID   EQIGG (sumoylation (SMT-3) Site yeast)
+TG   K
 PP   Anywhere.
-MT   TrypsinDigestedMod
+MT   Trypsin Digested
 CF   C20 H32 N6 O8
 //
-ID   Farnesylation
-TG   Cysteine
-PP   Anywhere.
-NL   H0 or H24 C15
-MT   Mod
-CF   H24 C15
-//
-ID   Succinylation of K
-TG   K
-PP   Anywhere.
-MT   Mod
-CF   C4 H4 O3
-//
-ID   Succinylation of N-Term
-TG   X
-PP   N-terminal.
-MT   ProteinTermMod
-CF   C4 H4 O3
-//
-ID   Myristoylation of G
-TG   Glycine
-MT   Mod
-PP   N-terminal.
-NL   H0 or H26 C14 O1
-CF   H26 C14 O1
-//
-ID   Myristoylation of K
-TG   K
-PP   Anywhere.
-MT   Mod
-NL   H0 or H26 C14 O1
-CF   H26 C14 O1
-//
-ID   Myristoylation of C
-TG   Cysteine
-PP   Anywhere.
-MT   Mod
-NL   H0 or H26 C14 O1
-CF   H26 C14 O1
-//
-ID   Palmitoylation of C
-TG   Cysteine
-PP   Anywhere.
-MT   Mod
-NL   H0 or H30 C16 O1
-CF   H30 C16 O1
-//
-ID   Palmitoylation
-TG   K or S or T
-MT   Mod
-PP   Anywhere.
-NL   H0 or H30 C16 O1
-CF   H30 C16 O1
-//
-ID   Quinone
-TG   Y or W
-MT   Mod
-PP   Anywhere.
-CF   H-2 O2 
-//
+################################## SPECULATIVE/UNCHARACTERIZED
 ID   Carbon Adduct
 TG   X
 PP   Peptide N-terminal.
-MT   PeptideTermMod
+MT   Speculative
 CF   C1
 //
-ID   Decarboxylation
-TG   D or E
-PP   Anywhere.
-MT   Mod
-CF   H-2 C-1 O-1
+ID   H-2
+TG   M
+PP   Peptide N-terminal.
+MT   Speculative
+CF   H-2
 //
-ID   Reduction
-TG   D or S or T
+ID   H-2 O1 
+TG   L or I or P or W or S
 PP   Anywhere.
-MT   Mod
-CF   O-1
+MT   Speculative
+CF   H-2 O1
 //

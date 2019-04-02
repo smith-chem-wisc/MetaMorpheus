@@ -57,6 +57,24 @@
                         </Grid.RowDefinitions>
                         <!--<RadioButton x:Name="RbSearchCrosslink" Content="Crosslink Search" GroupName="SearchType"></RadioButton>-->
                         <!--<RadioButton x:Name="RbSearchGlyco" Content="Glyco Search" GroupName="SearchType" Grid.Column="1"></RadioButton>-->
+                        <StackPanel Orientation="Horizontal" Margin="5" Grid.Row="0" Grid.Column="1">
+                            <Label x:Name="ionsToSearchLabel" Content="Dissociation Type" ToolTipService.ShowDuration="999999" ToolTipService.InitialShowDelay="500">
+                                <Label.ToolTip>
+                                    <TextBlock>
+                                                        The type of fragmentation.
+                                    </TextBlock>
+                                </Label.ToolTip>
+                            </Label>
+                            <ComboBox x:Name="DissociationTypeComboBox" HorizontalAlignment="Center" VerticalAlignment="Center" DropDownClosed="CustomFragmentationHandler"/>
+                            <Label x:Name="childScanIonsToSearchLabel" Content="Child Scan Dissocation" ToolTipService.ShowDuration="999999" ToolTipService.InitialShowDelay="500">
+                                <Label.ToolTip>
+                                    <TextBlock>
+                                                        The type of fragmentation of the child scan (second MS2, or MS3).
+                                    </TextBlock>
+                                </Label.ToolTip>
+                            </Label>
+                            <ComboBox x:Name="ChildScanDissociationTypeComboBox" AllowDrop="False" HorizontalAlignment="Center" VerticalAlignment="Center" DropDownClosed="CustomFragmentationHandler"/>
+                        </StackPanel>
                         <StackPanel Orientation="Horizontal" Grid.Row="1" Grid.Column="0" Margin="5">
                             <Label x:Name="lblXLprecusorMsTl"  Content="Precursor mass tolerance" />
                             <TextBox x:Name="XLPrecusorMsTlTextBox" PreviewTextInput="CheckIfNumber" Width="45" />
@@ -66,9 +84,6 @@
                             <CheckBox x:Name="ckbXLTopNum" VerticalAlignment="Center" Content="Top N peptides per precursor" />
                             <TextBox x:Name="txtXLTopNum" PreviewTextInput="CheckIfNumber" Width="45" Margin="2" IsEnabled="{Binding IsChecked, ElementName=ckbXLTopNum}" />
                         </StackPanel>
-                        <!--<StackPanel Orientation="Vertical" Grid.Row="2" Grid.Column="0" Margin="5">
-                            <CheckBox x:Name="ckbCharge_2_3"  VerticalAlignment="Center" Content="Search for charge 2+ 3+ fragments" />
-                        </StackPanel>-->
                     </Grid>
                 </StackPanel>
                 <GroupBox Header="Crosslink Search" DockPanel.Dock="Top">
@@ -274,16 +289,6 @@
                                                 </TextBox.ToolTip>
                                             </TextBox>
                                         </StackPanel>
-                                        <StackPanel Orientation="Horizontal" Margin="5">
-                                            <Label x:Name="ionsToSearchLabel" Content="Dissociation Type" ToolTipService.ShowDuration="999999" ToolTipService.InitialShowDelay="500">
-                                                <Label.ToolTip>
-                                                    <TextBlock>
-                                                        The type of fragmentation.
-                                                    </TextBlock>
-                                                </Label.ToolTip>
-                                            </Label>
-                                            <ComboBox x:Name="DissociationTypeComboBox" HorizontalAlignment="Center" VerticalAlignment="Center" />
-                                        </StackPanel>
                                     </StackPanel>
                                 </Grid>
                             </GroupBox>
@@ -311,7 +316,7 @@
                                 </Grid.ColumnDefinitions>
                                 <StackPanel>
                                     <Label Content="Fixed" />
-                                    <TreeView x:Name="fixedModsTreeView" ItemsSource="{Binding}" Height="400">
+                                    <TreeView x:Name="fixedModsTreeView" ItemsSource="{Binding}" DataContext="{x:Type local:ModTypeForTreeView}" Height="400">
                                         <TreeView.Resources>
                                             <HierarchicalDataTemplate DataType="{x:Type local:ModTypeForTreeView}" ItemsSource="{Binding Children}">
                                                 <StackPanel Orientation="Horizontal" Background="{Binding Background}">
@@ -322,15 +327,20 @@
                                             <DataTemplate DataType="{x:Type local:ModForTreeView}">
                                                 <StackPanel Orientation="Horizontal" Background="{Binding Background}" ToolTip="{Binding ToolTipStuff}">
                                                     <CheckBox x:Name="checkBoxHistogramAnalysis" IsChecked="{Binding Use}" />
-                                                    <TextBlock Text="{Binding DisplayName}" />
+                                                    <TextBlock Text="{Binding ModName}" />
                                                 </StackPanel>
                                             </DataTemplate>
                                         </TreeView.Resources>
+                                        <TreeView.ItemContainerStyle>
+                                            <Style TargetType="TreeViewItem">
+                                                <Setter Property="IsExpanded" Value="{Binding Expanded}"/>
+                                            </Style>
+                                        </TreeView.ItemContainerStyle>
                                     </TreeView>
                                 </StackPanel>
                                 <StackPanel Grid.Column="1">
                                     <Label Content="Variable" />
-                                    <TreeView x:Name="variableModsTreeView" ItemsSource="{Binding}" Height="400">
+                                    <TreeView x:Name="variableModsTreeView" ItemsSource="{Binding}" DataContext="{x:Type local:ModTypeForTreeView}" Height="400">
                                         <TreeView.Resources>
                                             <HierarchicalDataTemplate DataType="{x:Type local:ModTypeForTreeView}" ItemsSource="{Binding Children}">
                                                 <StackPanel Orientation="Horizontal" Background="{Binding Background}">
@@ -341,36 +351,66 @@
                                             <DataTemplate DataType="{x:Type local:ModForTreeView}">
                                                 <StackPanel Orientation="Horizontal" Background="{Binding Background}" ToolTip="{Binding ToolTipStuff}">
                                                     <CheckBox x:Name="checkBoxHistogramAnalysis" IsChecked="{Binding Use}" />
-                                                    <TextBlock Text="{Binding DisplayName}" />
+                                                    <TextBlock Text="{Binding ModName}" />
                                                 </StackPanel>
                                             </DataTemplate>
                                         </TreeView.Resources>
-                                    </TreeView>
-                                </StackPanel>
-                                <StackPanel Grid.Column="2">
-                                    <Label Content="Database Localized" />
-                                    <CheckBox x:Name="localizeAllCheckBox" Content="Localize All Modifications" IsChecked="True" />
-                                    <TreeView x:Name="localizeModsTreeView" ItemsSource="{Binding}" Height="400">
-                                        <TreeView.Style>
-                                            <Style TargetType="{x:Type TreeView}">
-                                                <Setter Property="Visibility" Value="Visible" />
-                                                <Style.Triggers>
-                                                    <DataTrigger Binding="{Binding ElementName=localizeAllCheckBox, Path=IsChecked}" Value="True">
-                                                        <Setter Property="Visibility" Value="Hidden" />
-                                                    </DataTrigger>
-                                                </Style.Triggers>
+                                        <TreeView.ItemContainerStyle>
+                                            <Style TargetType="TreeViewItem">
+                                                <Setter Property="IsExpanded" Value="{Binding Expanded}"/>
                                             </Style>
-                                        </TreeView.Style>
-                                        <TreeView.Resources>
-                                            <HierarchicalDataTemplate DataType="{x:Type local:ModTypeForLoc}">
-                                                <StackPanel Orientation="Horizontal">
-                                                    <CheckBox IsChecked="{Binding Use}" />
-                                                    <TextBlock Text="{Binding DisplayName}" />
-                                                </StackPanel>
-                                            </HierarchicalDataTemplate>
-                                        </TreeView.Resources>
+                                        </TreeView.ItemContainerStyle>
                                     </TreeView>
                                 </StackPanel>
+
+                                <TextBox x:Name="SearchFixMod" TextChanged="TextChanged_Fixed" HorizontalAlignment="Left" Margin="82,4,0,410" TextWrapping="Wrap" Width="140">
+                                    <TextBox.Style>
+                                        <Style TargetType="TextBox" xmlns:sys="clr-namespace:System;assembly=mscorlib">
+                                            <Style.Resources>
+                                                <VisualBrush x:Key="CueBannerBrush" AlignmentX="Left" AlignmentY="Center" Stretch="None">
+                                                    <VisualBrush.Visual>
+                                                        <Label Content="Search..." Foreground="Gray" />
+                                                    </VisualBrush.Visual>
+                                                </VisualBrush>
+                                            </Style.Resources>
+                                            <Style.Triggers>
+                                                <Trigger Property="Text" Value="{x:Static sys:String.Empty}">
+                                                    <Setter Property="Background" Value="{StaticResource CueBannerBrush}" />
+                                                </Trigger>
+                                                <Trigger Property="Text" Value="{x:Null}">
+                                                    <Setter Property="Background" Value="{StaticResource CueBannerBrush}" />
+                                                </Trigger>
+                                                <Trigger Property="IsKeyboardFocused" Value="True">
+                                                    <Setter Property="Background" Value="White" />
+                                                </Trigger>
+                                            </Style.Triggers>
+                                        </Style>
+                                    </TextBox.Style>
+                                </TextBox>
+                                <TextBox x:Name="SearchVarMod" TextChanged="TextChanged_Var" Grid.Column="1" HorizontalAlignment="Left" Margin="82,4,0,410" TextWrapping="Wrap" Width="140">
+                                    <TextBox.Style>
+                                        <Style TargetType="TextBox" xmlns:sys="clr-namespace:System;assembly=mscorlib">
+                                            <Style.Resources>
+                                                <VisualBrush x:Key="CueBannerBrush" AlignmentX="Left" AlignmentY="Center" Stretch="None">
+                                                    <VisualBrush.Visual>
+                                                        <Label Content="Search..." Foreground="Gray" />
+                                                    </VisualBrush.Visual>
+                                                </VisualBrush>
+                                            </Style.Resources>
+                                            <Style.Triggers>
+                                                <Trigger Property="Text" Value="{x:Static sys:String.Empty}">
+                                                    <Setter Property="Background" Value="{StaticResource CueBannerBrush}" />
+                                                </Trigger>
+                                                <Trigger Property="Text" Value="{x:Null}">
+                                                    <Setter Property="Background" Value="{StaticResource CueBannerBrush}" />
+                                                </Trigger>
+                                                <Trigger Property="IsKeyboardFocused" Value="True">
+                                                    <Setter Property="Background" Value="White" />
+                                                </Trigger>
+                                            </Style.Triggers>
+                                        </Style>
+                                    </TextBox.Style>
+                                </TextBox>
                             </Grid>
                         </StackPanel>
                     </Expander>
@@ -380,6 +420,7 @@
                         <StackPanel Orientation="Vertical">
                             <CheckBox x:Name="ckbPercolator" Content="Write .TSV for Percolator" />
                             <CheckBox x:Name="ckbPepXML" Content="Write .pep.XML" />
+                            <CheckBox x:Name="ckbXiNET" Content="Write .csv for XiNET" />
                         </StackPanel>
                     </Expander>
                 </GroupBox>

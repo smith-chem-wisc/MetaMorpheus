@@ -1,11 +1,10 @@
 ﻿using Chemistry;
 using MassSpectrometry;
-using MzLibUtil;
+using Proteomics.Fragmentation;
 using System;
 using System.Collections.Generic;
 using System.Diagnostics;
 using System.Linq;
-using Proteomics.Fragmentation;
 
 namespace EngineLayer
 {
@@ -16,7 +15,7 @@ namespace EngineLayer
             { DissociationType.HCD, Constants.ProtonMass },
             { DissociationType.ETD, 2 * Constants.ProtonMass }, //presence of zplusone (zdot) makes this two instead of one
             { DissociationType.CID, Constants.ProtonMass },
-            //TODO: refactor such that complementary ions are generated specifically for their complementary pair. 
+            //TODO: refactor such that complementary ions are generated specifically for their complementary pair.
             //TODO: create a method to auto-determine the conversion
         };
 
@@ -40,17 +39,36 @@ namespace EngineLayer
 
         public static event EventHandler<ProgressEventArgs> OutProgressHandler;
 
-        public static double CalculatePeptideScore(MsDataScan thisScan, List<MatchedFragmentIon> matchedFragmentIons, double maximumMassThatFragmentIonScoreIsDoubled)
+        public static double CalculatePeptideScore(MsDataScan thisScan, List<MatchedFragmentIon> matchedFragmentIons)
         {
             double score = 0;
 
-            foreach (var fragment in matchedFragmentIons)
+            if (thisScan.MassSpectrum.XcorrProcessed)
             {
-                double fragmentScore = 1 + (fragment.Intensity / thisScan.TotalIonCurrent);
-                score += fragmentScore;
-
-                if (fragment.NeutralTheoreticalProduct.NeutralMass <= maximumMassThatFragmentIonScoreIsDoubled)
+                foreach (var fragment in matchedFragmentIons)
                 {
+                    switch (fragment.NeutralTheoreticalProduct.ProductType)
+                    {
+                        case ProductType.aDegree:
+                        case ProductType.aStar:
+                        case ProductType.bDegree:
+                        case ProductType.bStar:
+                        case ProductType.yDegree:
+                        case ProductType.yStar:
+                            score += 0.01 * fragment.Intensity;
+                            break;
+
+                        default:
+                            score += 1 * fragment.Intensity;
+                            break;
+                    }
+                }
+            }
+            else
+            {
+                foreach (var fragment in matchedFragmentIons)
+                {
+                    double fragmentScore = 1 + (fragment.Intensity / thisScan.TotalIonCurrent);
                     score += fragmentScore;
                 }
             }
@@ -58,40 +76,18 @@ namespace EngineLayer
             return score;
         }
 
-        public static List<MatchedFragmentIon> MatchFragmentIons(MzSpectrum spectrum, List<Product> theoreticalProducts, CommonParameters commonParameters, double precursorMass)
+        public static List<MatchedFragmentIon> MatchFragmentIons(Ms2ScanWithSpecificMass scan, List<Product> theoreticalProducts, CommonParameters commonParameters)
         {
             var matchedFragmentIons = new List<MatchedFragmentIon>();
 
             // if the spectrum has no peaks
-            if (spectrum.Size == 0)
+            if (!scan.ExperimentalFragments.Any())
             {
                 return matchedFragmentIons;
             }
 
-            //search for ions in the spectrum
-            foreach (Product product in theoreticalProducts)
+            if (scan.TheScan.MassSpectrum.XcorrProcessed)
             {
-                // unknown fragment mass; this only happens rarely for sequences with unknown amino acids
-                if (double.IsNaN(product.NeutralMass))
-                {
-                    continue;
-                }
-
-                // get the closest peak in the spectrum to the theoretical peak assuming z=1
-                int matchedPeakIndex = spectrum.GetClosestPeakIndex(product.NeutralMass.ToMz(1)).Value;
-
-                double mz = spectrum.XArray[matchedPeakIndex];
-
-                // is the mass error acceptable and has it been counted already?
-                if (commonParameters.ProductMassTolerance.Within(mz, product.NeutralMass.ToMz(1)))
-                {
-                    matchedFragmentIons.Add(new MatchedFragmentIon(product, mz, spectrum.YArray[matchedPeakIndex], 1));
-                }
-            }
-            if (commonParameters.AddCompIons)//needs to be separate to account for ppm error differences
-            {
-                double protonMassShift = complementaryIonConversionDictionary[commonParameters.DissociationType].ToMass(1);
-                double sumOfCompIonsMz = (precursorMass + protonMassShift).ToMz(1); //FIXME, not valid for all fragmentation (b+y+H = precursor, but c+zdot+2H = precursor)
                 foreach (Product product in theoreticalProducts)
                 {
                     // unknown fragment mass; this only happens rarely for sequences with unknown amino acids
@@ -100,19 +96,59 @@ namespace EngineLayer
                         continue;
                     }
 
-                    // get the closest peak in the spectrum to the theoretical peak assuming z=1
-                    //generate a "comp" product
-                    double theoreticalCompMz = sumOfCompIonsMz - product.NeutralMass; //This is NOT the m/z of the product, 
-                    //but the m/z of the theoretical complementary that we are looking for in the experimental spectrum.
-                    //The complementary to this experimental match will match to the original theoretical product
-                    int matchedPeakIndex = spectrum.GetClosestPeakIndex(theoreticalCompMz).Value; //search for the comp ion
-                    double mzToCompare = spectrum.XArray[matchedPeakIndex]; //we need the original mz to know the error associated with the comp mz
+                    double theoreticalFragmentMz = Math.Round(product.NeutralMass.ToMz(1) / 1.0005079, 0) * 1.0005079;
+                    var closestMzIndex = scan.TheScan.MassSpectrum.GetClosestPeakIndex(theoreticalFragmentMz).Value;
 
-                    // is the mass error acceptable and has it been counted already?
-                    //Need to compare the "noncomplementary" peaks so that the correct mass tolerance is used for Ppm tolerances
-                    if (commonParameters.ProductMassTolerance.Within(mzToCompare, theoreticalCompMz))
+                    if (commonParameters.ProductMassTolerance.Within(scan.TheScan.MassSpectrum.XArray[closestMzIndex], theoreticalFragmentMz))
                     {
-                        matchedFragmentIons.Add(new MatchedFragmentIon(product, (sumOfCompIonsMz - spectrum.XArray[matchedPeakIndex]).ToMz(1), spectrum.YArray[matchedPeakIndex], 1)); //the sumOfCompIons - original peak must be converted to mz, because subtracting an mz from an mz creates a mass difference, not an mz (5-3 (m/z) = 2 = 4-2 (mass))
+                        matchedFragmentIons.Add(new MatchedFragmentIon(product, theoreticalFragmentMz, scan.TheScan.MassSpectrum.YArray[closestMzIndex], 1));
+                    }
+                }
+
+                return matchedFragmentIons;
+            }
+
+            // search for ions in the spectrum
+            foreach (Product product in theoreticalProducts)
+            {
+                // unknown fragment mass; this only happens rarely for sequences with unknown amino acids
+                if (double.IsNaN(product.NeutralMass))
+                {
+                    continue;
+                }
+
+                // get the closest peak in the spectrum to the theoretical peak
+                var closestExperimentalMass = scan.GetClosestExperimentalFragmentMass(product.NeutralMass);
+
+                // is the mass error acceptable?
+                if (commonParameters.ProductMassTolerance.Within(closestExperimentalMass.monoisotopicMass, product.NeutralMass) && closestExperimentalMass.charge <= scan.PrecursorCharge)
+                {
+                    matchedFragmentIons.Add(new MatchedFragmentIon(product, closestExperimentalMass.monoisotopicMass.ToMz(closestExperimentalMass.charge),
+                        closestExperimentalMass.peaks.First().intensity, closestExperimentalMass.charge));
+                }
+            }
+            if (commonParameters.AddCompIons)
+            {
+                double protonMassShift = complementaryIonConversionDictionary[commonParameters.DissociationType].ToMass(1);
+
+                foreach (Product product in theoreticalProducts)
+                {
+                    // unknown fragment mass or diagnostic ion or precursor; skip those
+                    if (double.IsNaN(product.NeutralMass) || product.ProductType == ProductType.D || product.ProductType == ProductType.M)
+                    {
+                        continue;
+                    }
+
+                    double compIonMass = scan.PrecursorMass + protonMassShift - product.NeutralMass;
+
+                    // get the closest peak in the spectrum to the theoretical peak
+                    var closestExperimentalMass = scan.GetClosestExperimentalFragmentMass(compIonMass);
+
+                    // is the mass error acceptable?
+                    if (commonParameters.ProductMassTolerance.Within(closestExperimentalMass.monoisotopicMass, compIonMass) && closestExperimentalMass.charge <= scan.PrecursorCharge)
+                    {
+                        matchedFragmentIons.Add(new MatchedFragmentIon(product, closestExperimentalMass.monoisotopicMass.ToMz(closestExperimentalMass.charge),
+                            closestExperimentalMass.totalIntensity, closestExperimentalMass.charge));
                     }
                 }
             }
