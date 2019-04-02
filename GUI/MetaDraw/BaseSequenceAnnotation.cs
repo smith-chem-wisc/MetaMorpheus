@@ -16,19 +16,11 @@ namespace MetaMorpheusGUI
         {
             double x = topLoc.X, y = topLoc.Y;
             Polyline bot = new Polyline();
-            bot.Points = new PointCollection() { new Point(x + 10, y), new Point(x, y + 10), new Point(x, y + 40) };
+            bot.Points = new PointCollection() { new Point(x + 10, y + 10), new Point(x, y + 10), new Point(x, y + 24) };
             bot.Stroke = new SolidColorBrush(clr);
-            bot.StrokeThickness = 2;
+            bot.StrokeThickness = 1;
             cav.Children.Add(bot);
             Canvas.SetZIndex(bot, 1); //on top of any other things in canvas
-            TextBlock tb = new TextBlock();
-            tb.Foreground = new SolidColorBrush(clr);
-            tb.Text = footnote;
-            tb.FontSize = 10;
-            Canvas.SetTop(tb, y - 10);
-            Canvas.SetLeft(tb, x + 10);
-            Canvas.SetZIndex(tb, 2);
-            cav.Children.Add(tb);
         }
 
         /// <summary>
@@ -40,19 +32,11 @@ namespace MetaMorpheusGUI
         {
             double x = botLoc.X, y = botLoc.Y;
             Polyline bot = new Polyline();
-            bot.Points = new PointCollection() { new Point(x - 10, y), new Point(x, y - 10), new Point(x, y - 40) };
+            bot.Points = new PointCollection() { new Point(x - 10, y - 10), new Point(x, y - 10), new Point(x, y - 24) };
             bot.Stroke = new SolidColorBrush(clr);
-            bot.StrokeThickness = 2;
+            bot.StrokeThickness = 1;
             Canvas.SetZIndex(bot, 1); //on top of any other things in canvas
             cav.Children.Add(bot);
-            TextBlock tb = new TextBlock();
-            tb.Foreground = new SolidColorBrush(clr);
-            tb.Text = footnote;
-            tb.FontSize = 10;
-            Canvas.SetTop(tb, y - 8);
-            Canvas.SetLeft(tb, x - 22);
-            Canvas.SetZIndex(tb, 2);
-            cav.Children.Add(tb);
         }
 
         /// <summary>
@@ -70,7 +54,7 @@ namespace MetaMorpheusGUI
             tb.Height = 30;
             tb.FontSize = 25;
             tb.FontWeight = FontWeights.Bold;
-            tb.FontFamily = new FontFamily("Courier New"); // monospaced font
+            tb.FontFamily = new FontFamily("Arial"); // monospaced font
 
             Canvas.SetTop(tb, loc.Y);
             Canvas.SetLeft(tb, loc.X);
@@ -102,6 +86,16 @@ namespace MetaMorpheusGUI
             Canvas.SetTop(circle, loc.Y);
             Panel.SetZIndex(circle, 1);
             cav.Children.Add(circle);
+        }
+
+        public static void DrawCrosslinker(Canvas cav, Point alphaBotLoc, Point betaBotLoc, Color clr)
+        {
+            Polyline bot = new Polyline();
+            double distance = (betaBotLoc.Y - alphaBotLoc.Y) / 2;
+            bot.Points = new PointCollection() { alphaBotLoc, new Point(alphaBotLoc.X, alphaBotLoc.Y + distance), new Point(betaBotLoc.X, alphaBotLoc.Y + distance), betaBotLoc };
+            bot.Stroke = new SolidColorBrush(clr);
+            bot.StrokeThickness = 2;
+            cav.Children.Add(bot);
         }
 
         /// <summary>
