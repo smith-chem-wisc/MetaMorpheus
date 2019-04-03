@@ -44,7 +44,7 @@ namespace EngineLayer.CrosslinkSearch
                             masses.Add(fragment.NeutralMass);
                         }
                     }
-                    
+
                     // add signature ions
                     if (crosslinker.Cleavable)
                     {
@@ -52,7 +52,7 @@ namespace EngineLayer.CrosslinkSearch
                             peptide.Length, peptide.Length), 0));
                     }
                 }
-                
+
                 yield return new Tuple<int, List<Product>>(crosslinkerPosition, theoreticalProducts);
             }
         }
