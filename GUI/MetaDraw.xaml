@@ -10,6 +10,13 @@
         Title="MetaDraw" 
         Drop="Window_Drop" AllowDrop="true" WindowStartupLocation="CenterScreen" MinHeight="400" MinWidth="800" Height="600" Width="1200">
     <DockPanel>
+        <!--Settings menu-->
+        <Menu x:Name="menu" DockPanel.Dock="Top">
+            <MenuItem Header="Settings">
+                <MenuItem Header="Edit Graphical Settings" Click="graphicalSettings_Click"></MenuItem>
+                <MenuItem Header="Edit Filter Settings" Click="filterSettings_Click"></MenuItem>
+            </MenuItem>
+        </Menu>
         <Grid>
             <Grid.ColumnDefinitions>
                 <ColumnDefinition Width="2*"/>
@@ -121,7 +128,7 @@
                           Width="3"/>
 
             <!--PSM annotated peaks-->
-            <GroupBox Grid.Column="4" Header="PSM Annotation">
+            <GroupBox Grid.Column="4" Header="PSM Annotation" Name="gbPSM">
                 <Grid Name="PsmAnnotationGrid">
                     <Grid.RowDefinitions>
                         <RowDefinition Height = "*"></RowDefinition>
@@ -131,7 +138,7 @@
                     <!--Spectrum annotation-->
                     <TabControl>
                         <TabItem Header="Parent Scan View" Name="ParentScanView">
-                            <oxy:PlotView Grid.Row="0" x:Name="plotView" Model="{Binding Model}" FontSize="16" FontStretch="Expanded"/>
+                            <oxy:PlotView Grid.Row="0" x:Name="plotView" Model="{Binding Model}" FontSize="16" FontStretch="Expanded" Margin="10 10 10 10"/>
                         </TabItem>
                         <TabItem Header="Parent/Child Scan View" Name="ParentChildScanView">
                             <ItemsControl ItemsSource="{Binding Data}">
