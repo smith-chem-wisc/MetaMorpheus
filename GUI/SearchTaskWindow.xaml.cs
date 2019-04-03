@@ -172,9 +172,12 @@ namespace MetaMorpheusGUI
                 foreach (Proteomics.SilacLabel label in labels)
                 {
                     SilacInfoForDataGrid infoToAdd = new SilacInfoForDataGrid(label);
-                    foreach(Proteomics.SilacLabel additionalLabel in label.AdditionalLabels)
+                    if (label.AdditionalLabels != null)
                     {
-                        infoToAdd.AddAdditionalLabel(new SilacInfoForDataGrid(additionalLabel));
+                        foreach (Proteomics.SilacLabel additionalLabel in label.AdditionalLabels)
+                        {
+                            infoToAdd.AddAdditionalLabel(new SilacInfoForDataGrid(additionalLabel));
+                        }
                     }
                     StaticSilacLabelsObservableCollection.Add(infoToAdd);
                 }
@@ -512,10 +515,19 @@ namespace MetaMorpheusGUI
                 else
                 {
                     List<Proteomics.SilacLabel> labelsToSave = new List<Proteomics.SilacLabel>();
-                    foreach(SilacInfoForDataGrid info in StaticSilacLabelsObservableCollection)
+                    foreach (SilacInfoForDataGrid info in StaticSilacLabelsObservableCollection)
                     {
                         Proteomics.SilacLabel labelToAdd = info.SilacLabel[0];
-                        for(int infoIndex =1; infoIndex<info.SilacLabel.Count; infoIndex++)
+
+                        //This is needed to prevent double adding of additional labels. 
+                        //A quick test is to create a silac condition with two labels, save, reopen the task, save, and reopen again. 
+                        //Without this line, the second label will be doubled (K+8)&(R+10)&(R+10)
+                        if (labelToAdd.AdditionalLabels != null)
+                        {
+                            labelToAdd.AdditionalLabels.Clear();
+                        }
+
+                        for (int infoIndex = 1; infoIndex < info.SilacLabel.Count; infoIndex++)
                         {
                             labelToAdd.AddAdditionalSilacLabel(info.SilacLabel[infoIndex]);
                         }
@@ -856,10 +868,10 @@ namespace MetaMorpheusGUI
         {
             CustomFragmentationWindow.Close();
         }
-        
+
         public int GetNumberOfSilacMods()
         {
-            return StaticSilacLabelsObservableCollection.Sum(x=>x.SilacLabel.Count);
+            return StaticSilacLabelsObservableCollection.Sum(x => x.SilacLabel.Count);
         }
     }
 
