@@ -249,15 +249,6 @@ namespace EngineLayer
         }
 
         /// <summary>
-        /// This method changes the full file path from the original (light) to the labeled
-        /// This is needed when the unlabeled peptides are not searched
-        /// </summary>
-        public void UpdateUnlabeledFilePathToHeavySilacPath(string fullFilePath)
-        {
-            FullFilePath = fullFilePath;
-        }
-
-        /// <summary>
         /// This method is used by protein parsimony to remove PeptideWithSetModifications objects that have non-parsimonious protein associations
         /// </summary>
         public void TrimProteinMatches(HashSet<Protein> parsimoniousProteins)
