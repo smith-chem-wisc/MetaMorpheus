@@ -18,9 +18,9 @@ namespace EngineLayer.NonSpecificEnzymeSearch
 
         private readonly List<int>[] PrecursorIndex;
         private readonly int MinimumPeptideLength;
-        PeptideSpectralMatch[][] GlobalCategorySpecificPsms;
-        CommonParameters ModifiedParametersNoComp;
-        List<ProductType> ProductTypesToSearch;
+        readonly PeptideSpectralMatch[][] GlobalCategorySpecificPsms;
+        readonly CommonParameters ModifiedParametersNoComp;
+        readonly List<ProductType> ProductTypesToSearch;
 
         public NonSpecificEnzymeSearchEngine(PeptideSpectralMatch[][] globalPsms, Ms2ScanWithSpecificMass[] listOfSortedms2Scans, List<PeptideWithSetModifications> peptideIndex, List<int>[] fragmentIndex, List<int>[] precursorIndex, int currentPartition, CommonParameters CommonParameters, MassDiffAcceptor massDiffAcceptor, double maximumMassThatFragmentIonScoreIsDoubled, List<string> nestedIds) : base(null, listOfSortedms2Scans, peptideIndex, fragmentIndex, currentPartition, CommonParameters, massDiffAcceptor, maximumMassThatFragmentIonScoreIsDoubled, nestedIds)
         {
@@ -39,13 +39,18 @@ namespace EngineLayer.NonSpecificEnzymeSearch
 
             byte byteScoreCutoff = (byte)commonParameters.ScoreCutoff;
 
-            Parallel.ForEach(Partitioner.Create(0, ListOfSortedMs2Scans.Length), new ParallelOptions { MaxDegreeOfParallelism = commonParameters.MaxThreadsToUsePerFile }, range =>
+            int maxThreadsPerFile = commonParameters.MaxThreadsToUsePerFile;
+            int[] threads = Enumerable.Range(0, maxThreadsPerFile).ToArray();
+            Parallel.ForEach(threads, (i) =>
             {
                 byte[] scoringTable = new byte[PeptideIndex.Count];
                 HashSet<int> idsOfPeptidesPossiblyObserved = new HashSet<int>();
 
-                for (int i = range.Item1; i < range.Item2; i++)
+                for (; i < ListOfSortedMs2Scans.Length; i += maxThreadsPerFile)
                 {
+                    // Stop loop if canceled
+                    if (GlobalVariables.StopLoops) { return; }
+
                     // empty the scoring table to score the new scan (conserves memory compared to allocating a new array)
                     Array.Clear(scoringTable, 0, scoringTable.Length);
                     idsOfPeptidesPossiblyObserved.Clear();
@@ -110,7 +115,7 @@ namespace EngineLayer.NonSpecificEnzymeSearch
                                     peptideTheorProducts = peptide.Fragment(commonParameters.DissociationType, FragmentationTerminus.Both).ToList();
                                     List<MatchedFragmentIon> matchedIons = MatchFragmentIons(scan, peptideTheorProducts, ModifiedParametersNoComp);
 
-                                    double thisScore = CalculatePeptideScore(scan.TheScan, matchedIons, MaxMassThatFragmentIonScoreIsDoubled);
+                                    double thisScore = CalculatePeptideScore(scan.TheScan, matchedIons);
                                     if (thisScore > commonParameters.ScoreCutoff)
                                     {
                                         PeptideSpectralMatch[] localPeptideSpectralMatches = GlobalCategorySpecificPsms[(int)FdrClassifier.GetCleavageSpecificityCategory(peptide.CleavageSpecificityForFdrCategory)];
@@ -120,7 +125,7 @@ namespace EngineLayer.NonSpecificEnzymeSearch
                                         }
                                         else
                                         {
-                                            localPeptideSpectralMatches[i].AddOrReplace(peptide, thisScore, notch, commonParameters.ReportAllAmbiguity, matchedIons);
+                                            localPeptideSpectralMatches[i].AddOrReplace(peptide, thisScore, notch, commonParameters.ReportAllAmbiguity, matchedIons, 0);
                                         }
                                     }
                                 }

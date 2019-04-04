@@ -188,7 +188,6 @@ namespace EngineLayer
             s[PsmTsvHeader.Score] = psm == null ? " " : psm.Score.ToString("F3", CultureInfo.InvariantCulture);
             s[PsmTsvHeader.DeltaScore] = psm == null ? " " : psm.DeltaScore.ToString("F3", CultureInfo.InvariantCulture);
             s[PsmTsvHeader.Notch] = psm == null ? " " : Resolve(psm.BestMatchingPeptides.Select(p => p.Notch)).ResolvedString;
-            s[PsmTsvHeader.DifferentPeakMatches] = psm == null ? " " : psm.NumDifferentMatchingPeptides.ToString("F5", CultureInfo.InvariantCulture);
         }
 
         internal static void AddPeptideSequenceData(Dictionary<string, string> s, PeptideSpectralMatch psm, IReadOnlyDictionary<string, int> ModsToWritePruned)
@@ -205,7 +204,7 @@ namespace EngineLayer
             s[PsmTsvHeader.ModsChemicalFormulas] = pepWithModsIsNull ? " " :
                 Resolve(pepsWithMods.Select(p => p.AllModsOneIsNterminus.Select(v => v.Value))).ResolvedString;
             s[PsmTsvHeader.ModsCombinedChemicalFormula] = pepWithModsIsNull ? " " : Resolve(pepsWithMods.Select(b => b.AllModsOneIsNterminus.Select(c => (c.Value as Modification)))).ResolvedString;
-            s[PsmTsvHeader.NumVariableMods] = pepWithModsIsNull ? " " : Resolve(pepsWithMods.Select(b => b.NumVariableMods)).Item1;
+            s[PsmTsvHeader.NumVariableMods] = pepWithModsIsNull ? " " : Resolve(pepsWithMods.Select(b => b.NumVariableMods)).ResolvedString;
             s[PsmTsvHeader.MissedCleavages] = pepWithModsIsNull ? " " : Resolve(pepsWithMods.Select(b => b.MissedCleavages.ToString(CultureInfo.InvariantCulture))).ResolvedString;
             s[PsmTsvHeader.PeptideMonoMass] = pepWithModsIsNull ? " " : Resolve(pepsWithMods.Select(b => b.MonoisotopicMass)).ResolvedString;
             s[PsmTsvHeader.MassDiffDa] = pepWithModsIsNull ? " " : Resolve(pepsWithMods.Select(b => psm.ScanPrecursorMass - b.MonoisotopicMass)).ResolvedString;
@@ -213,7 +212,7 @@ namespace EngineLayer
             s[PsmTsvHeader.ProteinAccession] = pepWithModsIsNull ? " " : Resolve(pepsWithMods.Select(b => b.Protein.Accession), psm.FullSequence).ResolvedString;
             s[PsmTsvHeader.ProteinName] = pepWithModsIsNull ? " " : Resolve(pepsWithMods.Select(b => b.Protein.FullName), psm.FullSequence).ResolvedString;
             s[PsmTsvHeader.GeneName] = pepWithModsIsNull ? " " : Resolve(pepsWithMods.Select(b => string.Join(", ", b.Protein.GeneNames.Select(d => $"{d.Item1}:{d.Item2}"))), psm.FullSequence).ResolvedString;
-            s[PsmTsvHeader.OrganismName] = pepWithModsIsNull ? " " : Resolve(pepsWithMods.Select(b => b.Protein.Organism)).Item1;
+            s[PsmTsvHeader.OrganismName] = pepWithModsIsNull ? " " : Resolve(pepsWithMods.Select(b => b.Protein.Organism)).ResolvedString;
             s[PsmTsvHeader.IntersectingSequenceVariations] = pepWithModsIsNull ? " " :
                 Resolve(pepsWithMods.Select(b => string.Join(", ", b.Protein.AppliedSequenceVariations
                     .Where(av => IntersectsWithVariation(b, av, false))
@@ -226,9 +225,9 @@ namespace EngineLayer
                 Resolve(pepsWithMods.Select(b => string.Join(", ", b.Protein.SpliceSites
                     .Where(d => Includes(b, d))
                     .Select(d => $"{d.OneBasedBeginPosition.ToString()}-{d.OneBasedEndPosition.ToString()}")))).ResolvedString;
-            s[PsmTsvHeader.Contaminant] = pepWithModsIsNull ? " " : Resolve(pepsWithMods.Select(b => b.Protein.IsContaminant ? "Y" : "N")).Item1;
-            s[PsmTsvHeader.Decoy] = pepWithModsIsNull ? " " : Resolve(pepsWithMods.Select(b => b.Protein.IsDecoy ? "Y" : "N")).Item1;
-            s[PsmTsvHeader.PeptideDesicription] = pepWithModsIsNull ? " " : Resolve(pepsWithMods.Select(b => b.PeptideDescription)).Item1;
+            s[PsmTsvHeader.Contaminant] = pepWithModsIsNull ? " " : Resolve(pepsWithMods.Select(b => b.Protein.IsContaminant ? "Y" : "N")).ResolvedString;
+            s[PsmTsvHeader.Decoy] = pepWithModsIsNull ? " " : Resolve(pepsWithMods.Select(b => b.Protein.IsDecoy ? "Y" : "N")).ResolvedString;
+            s[PsmTsvHeader.PeptideDesicription] = pepWithModsIsNull ? " " : Resolve(pepsWithMods.Select(b => b.PeptideDescription)).ResolvedString;
             s[PsmTsvHeader.StartAndEndResiduesInProtein] = pepWithModsIsNull ? " " :
                 Resolve(pepsWithMods.Select(b => ($"[{b.OneBasedStartResidueInProtein.ToString(CultureInfo.InvariantCulture)} to {b.OneBasedEndResidueInProtein.ToString(CultureInfo.InvariantCulture)}]")), psm.FullSequence).ResolvedString;
             s[PsmTsvHeader.PreviousAminoAcid] = pepWithModsIsNull ? " " : Resolve(pepsWithMods.Select(b => b.PreviousAminoAcid.ToString())).ResolvedString;
@@ -311,9 +310,9 @@ namespace EngineLayer
             return $"{applied.OriginalSequence}{applied.OneBasedBeginPosition}{variantWithAnyMods.FullSequence}";
         }
 
-        internal static void AddMatchedIonsData(Dictionary<string, string> s, PeptideSpectralMatch psm)
+        internal static void AddMatchedIonsData(Dictionary<string, string> s, List<MatchedFragmentIon> matchedIons)
         {
-            bool nullPsm = (psm == null);
+            bool nullPsm = matchedIons == null;
 
             StringBuilder seriesStringBuilder = new StringBuilder();
             StringBuilder mzStringBuilder = new StringBuilder();
@@ -324,12 +323,6 @@ namespace EngineLayer
 
             if (!nullPsm)
             {
-                var matchedIons = psm.MatchedFragmentIons;
-                if (matchedIons == null)
-                {
-                    matchedIons = psm.PeptidesToMatchingFragments.First().Value;
-                }
-
                 // using ", " instead of "," improves human readability
                 const string delimiter = ", ";
 
@@ -397,7 +390,7 @@ namespace EngineLayer
             s[PsmTsvHeader.MatchedIonIntensities] = nullPsm ? " " : fragmentIntensityStringBuilder.ToString().TrimEnd(';');
 
             // number of matched ions
-            s[PsmTsvHeader.MatchedIonCounts] = nullPsm ? " " : psm.MatchedFragmentIons.Count.ToString();
+            s[PsmTsvHeader.MatchedIonCounts] = nullPsm ? " " : matchedIons.Count.ToString();
         }
 
         internal static void AddMatchScoreData(Dictionary<string, string> s, PeptideSpectralMatch peptide)

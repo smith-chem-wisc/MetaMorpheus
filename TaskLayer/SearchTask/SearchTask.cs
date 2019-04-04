@@ -154,6 +154,7 @@ namespace TaskLayer
                         var indexEngine = new IndexingEngine(proteinListSubset, variableModifications, fixedModifications, currentPartition, SearchParameters.DecoyType, combinedParams, SearchParameters.MaxFragmentSize, false, dbFilenameList.Select(p => new FileInfo(p.FilePath)).ToList(), new List<string> { taskId });
                         List<int>[] fragmentIndex = null;
                         List<int>[] precursorIndex = null;
+
                         lock (indexLock)
                         {
                             GenerateIndexes(indexEngine, dbFilenameList, ref peptideIndex, ref fragmentIndex, ref precursorIndex, proteinList, GlobalVariables.AllModsKnown.ToList(), taskId);
@@ -164,6 +165,7 @@ namespace TaskLayer
                         new ModernSearchEngine(fileSpecificPsms, arrayOfMs2ScansSortedByMass, peptideIndex, fragmentIndex, currentPartition, combinedParams, massDiffAcceptor, SearchParameters.MaximumMassThatFragmentIonScoreIsDoubled, thisId).Run();
 
                         ReportProgress(new ProgressEventArgs(100, "Done with search " + (currentPartition + 1) + "/" + combinedParams.TotalPartitions + "!", thisId));
+                        if (GlobalVariables.StopLoops) { break; }
                     }
                 }
                 // nonspecific search
@@ -208,6 +210,7 @@ namespace TaskLayer
                             new NonSpecificEnzymeSearchEngine(fileSpecificPsmsSeparatedByFdrCategory, arrayOfMs2ScansSortedByMass, peptideIndex, fragmentIndex, precursorIndex, currentPartition, paramToUse, massDiffAcceptor, SearchParameters.MaximumMassThatFragmentIonScoreIsDoubled, thisId).Run();
 
                             ReportProgress(new ProgressEventArgs(100, "Done with search " + (currentPartition + 1) + "/" + paramToUse.TotalPartitions + "!", thisId));
+                            if (GlobalVariables.StopLoops) { break; }
                         }
                     }
                     lock (psmLock)
@@ -249,24 +252,26 @@ namespace TaskLayer
                 allPsms = NonSpecificEnzymeSearchEngine.ResolveFdrCategorySpecificPsms(allCategorySpecificPsms, numNotches, taskId, CommonParameters);
             }
 
-            PostSearchAnalysisParameters parameters = new PostSearchAnalysisParameters();
-            parameters.SearchTaskResults = MyTaskResults;
-            parameters.SearchTaskId = taskId;
-            parameters.SearchParameters = SearchParameters;
-            parameters.ProteinList = proteinList;
-            parameters.AllPsms = allPsms;
-            parameters.FixedModifications = fixedModifications;
-            parameters.VariableModifications = variableModifications;
-            parameters.ListOfDigestionParams = new HashSet<DigestionParams>(fileSpecificCommonParams.Select(p => p.DigestionParams));
-            parameters.CurrentRawFileList = currentRawFileList;
-            parameters.MyFileManager = myFileManager;
-            parameters.NumNotches = numNotches;
-            parameters.OutputFolder = OutputFolder;
-            parameters.IndividualResultsOutputFolder = Path.Combine(OutputFolder, "Individual File Results");
-            parameters.FlashLfqResults = flashLfqResults;
-            parameters.FileSettingsList = fileSettingsList;
-            parameters.NumMs2SpectraPerFile = numMs2SpectraPerFile;
-            parameters.DatabaseFilenameList = dbFilenameList;
+            PostSearchAnalysisParameters parameters = new PostSearchAnalysisParameters
+            {
+                SearchTaskResults = MyTaskResults,
+                SearchTaskId = taskId,
+                SearchParameters = SearchParameters,
+                ProteinList = proteinList,
+                AllPsms = allPsms,
+                FixedModifications = fixedModifications,
+                VariableModifications = variableModifications,
+                ListOfDigestionParams = new HashSet<DigestionParams>(fileSpecificCommonParams.Select(p => p.DigestionParams)),
+                CurrentRawFileList = currentRawFileList,
+                MyFileManager = myFileManager,
+                NumNotches = numNotches,
+                OutputFolder = OutputFolder,
+                IndividualResultsOutputFolder = Path.Combine(OutputFolder, "Individual File Results"),
+                FlashLfqResults = flashLfqResults,
+                FileSettingsList = fileSettingsList,
+                NumMs2SpectraPerFile = numMs2SpectraPerFile,
+                DatabaseFilenameList = dbFilenameList
+            };
             PostSearchAnalysisTask postProcessing = new PostSearchAnalysisTask
             {
                 Parameters = parameters,
@@ -302,7 +307,7 @@ namespace TaskLayer
                 switch (split[1])
                 {
                     case "dot":
-                        double[] massShifts = Array.ConvertAll(split[4].Split(','), Double.Parse);
+                        double[] massShifts = split[4].Split(',').Select(p => double.Parse(p, CultureInfo.InvariantCulture)).ToArray();
                         string newString = split[2].Replace("�", "");
                         double toleranceValue = double.Parse(newString, CultureInfo.InvariantCulture);
                         if (split[3].ToUpperInvariant().Equals("PPM"))
@@ -341,7 +346,7 @@ namespace TaskLayer
             {
                 throw new MetaMorpheusException("Could not parse search mode string: " + e.Message);
             }
-            
+
             return massDiffAcceptor;
         }
     }

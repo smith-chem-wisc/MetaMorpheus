@@ -14,7 +14,7 @@ namespace EngineLayer
         public const double ToleranceForScoreDifferentiation = 1e-9;
         private List<(int Notch, PeptideWithSetModifications Pwsm)> _BestMatchingPeptides;
 
-        public PeptideSpectralMatch(PeptideWithSetModifications peptide, int notch, double score, int scanIndex, IScan scan, DigestionParams digestionParams, List<MatchedFragmentIon> matchedFragmentIons)
+        public PeptideSpectralMatch(PeptideWithSetModifications peptide, int notch, double score, int scanIndex, IScan scan, DigestionParams digestionParams, List<MatchedFragmentIon> matchedFragmentIons, double xcorr = 0)
         {
             _BestMatchingPeptides = new List<(int, PeptideWithSetModifications)>();
             ScanIndex = scanIndex;
@@ -31,7 +31,10 @@ namespace EngineLayer
             DigestionParams = digestionParams;
             PeptidesToMatchingFragments = new Dictionary<PeptideWithSetModifications, List<MatchedFragmentIon>>();
 
-            AddOrReplace(peptide, score, notch, true, matchedFragmentIons);
+            Xcorr = xcorr;
+            
+
+            AddOrReplace(peptide, score, notch, true, matchedFragmentIons, xcorr);
         }
 
         public ChemicalFormula ModsChemicalFormula { get; private set; } // these fields will be null if they are ambiguous
@@ -62,6 +65,7 @@ namespace EngineLayer
         public int NumDifferentMatchingPeptides { get { return _BestMatchingPeptides.Count; } }
         public FdrInfo FdrInfo { get; private set; }
         public double Score { get; private set; }
+        public double Xcorr;
         public double DeltaScore { get; private set; }
         public double RunnerUpScore { get; set; }
         public bool IsDecoy { get; private set; }
@@ -96,7 +100,7 @@ namespace EngineLayer
             return string.Join("\t", DataDictionary(null, null).Keys);
         }
 
-        public void AddOrReplace(PeptideWithSetModifications pwsm, double newScore, int notch, bool reportAllAmbiguity, List<MatchedFragmentIon> matchedFragmentIons)
+        public void AddOrReplace(PeptideWithSetModifications pwsm, double newScore, int notch, bool reportAllAmbiguity, List<MatchedFragmentIon> matchedFragmentIons, double newXcorr)
         {
             if (newScore - Score > ToleranceForScoreDifferentiation) //if new score beat the old score, overwrite it
             {
@@ -109,6 +113,7 @@ namespace EngineLayer
                 }
 
                 Score = newScore;
+                Xcorr = newXcorr;
 
                 PeptidesToMatchingFragments.Clear();
                 PeptidesToMatchingFragments.Add(pwsm, matchedFragmentIons);
@@ -143,7 +148,7 @@ namespace EngineLayer
             Dictionary<string, string> s = new Dictionary<string, string>();
             PsmTsvWriter.AddBasicMatchData(s, psm);
             PsmTsvWriter.AddPeptideSequenceData(s, psm, ModsToWritePruned);
-            PsmTsvWriter.AddMatchedIonsData(s, psm);
+            PsmTsvWriter.AddMatchedIonsData(s, psm == null ? null : psm.MatchedFragmentIons);
             PsmTsvWriter.AddMatchScoreData(s, psm);
             return s;
         }

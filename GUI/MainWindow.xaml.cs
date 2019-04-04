@@ -96,6 +96,17 @@ namespace MetaMorpheusGUI
                 GuiWarnHandler(null, new StringEventArgs("Could not get newest version from web: " + e.Message, null));
             }
 
+            // check for ManagedThermoHelperLayer.dll and display a warning if it's not found
+            // this is one hacky way of checking if the user has C++ redistributable installed
+            string assumedManagedThermoHelperLayerDllPath = Path.Combine(Environment.CurrentDirectory, "ManagedThermoHelperLayer.dll");
+            if (!File.Exists(assumedManagedThermoHelperLayerDllPath))
+            {
+                GuiWarnHandler(null, new StringEventArgs("Warning! Cannot find Microsoft Visual C++ Redistributable; a crash may result from searching. " +
+                    "\nPlease go to: \nhttps://support.microsoft.com/en-us/help/2977003/the-latest-supported-visual-c-downloads " +
+                    "\nto download and install vc_redist.x64.exe and vc_redist.x86.exe." +
+                    "\nIf you have just installed the C++ redistributable, please uninstall and reinstall MetaMorpheus.", null));
+            }
+
             Application.Current.MainWindow.Closing += new CancelEventHandler(MainWindow_Closing);
         }
 
@@ -492,16 +503,6 @@ namespace MetaMorpheusGUI
                         else if (versionCheckerResult.Equals(MyFileManager.ThermoMsFileReaderVersionCheck.SomeDllsMissing))
                         {
                             GuiWarnHandler(null, new StringEventArgs("Warning! Found only some of the expected Thermo MSFileReader .dll files; a crash may result from searching this .raw file", null));
-                        }
-
-                        // check for ManagedThermoHelperLayer.dll and display a warning if it's not found
-                        // this is one hacky way of checking if the user has C++ redistributable installed
-                        string assumedManagedThermoHelperLayerDllPath = Path.Combine(Environment.CurrentDirectory, "ManagedThermoHelperLayer.dll");
-                        if (!File.Exists(assumedManagedThermoHelperLayerDllPath))
-                        {
-                            GuiWarnHandler(null, new StringEventArgs("Warning! Cannot find Microsoft Visual C++ Redistributable; " +
-                                "a crash may result from searching this .raw file. If you have just installed the C++ redistributable, " +
-                                "please uninstall and reinstall MetaMorpheus", null));
                         }
                     }
 
@@ -1041,6 +1042,7 @@ namespace MetaMorpheusGUI
 
                 AddXML.IsEnabled = false;
                 ClearXML.IsEnabled = false;
+                AddContaminantXML.IsEnabled = false;
                 AddRaw.IsEnabled = false;
                 ClearRaw.IsEnabled = false;
 
@@ -1112,6 +1114,7 @@ namespace MetaMorpheusGUI
 
             AddXML.IsEnabled = true;
             ClearXML.IsEnabled = true;
+            AddContaminantXML.IsEnabled = true;
             AddRaw.IsEnabled = true;
             ClearRaw.IsEnabled = true;
             BtnQuantSet.IsEnabled = true;

@@ -25,28 +25,36 @@ namespace MetaMorpheusCommandLine
             var p = new FluentCommandLineParser<ApplicationArguments>();
 
             p.Setup(arg => arg.Tasks)
-             .As('t', "tasks")
-             .SetDefault(new List<string>());
+                .As('t', "tasks")
+                .SetDefault(new List<string>())
+                .WithDescription("Single-task TOMLs.");
 
             p.Setup(arg => arg.OutputFolder)
-             .As('o', "outputFolder")
-             .SetDefault(null);
+                .As('o', "outputFolder")
+                .SetDefault(null)
+                .WithDescription("Folder into which to place results.");
 
             p.Setup(arg => arg.MetaTasks)
-             .As('m', "meta-task")
-             .SetDefault(new List<string>());
+                .As('m', "meta-task")
+                .SetDefault(new List<string>())
+                .WithDescription("Multi-task TOMLs.");
 
             p.Setup(arg => arg.Spectra)
-             .As('s', "spectra")
-             .Required();
+                .As('s', "spectra")
+                .Required()
+                .WithDescription("Spectra to analyze.");
 
             p.Setup(arg => arg.Databases)
-             .As('d', "databases")
-             .Required();
+                .As('d', "databases")
+                .Required()
+                .WithDescription("Protein sequence databases (FASTA, XML).");
+
+            p.SetupHelp("h", "help")
+                .Callback(text => Console.WriteLine(text));
 
             var result = p.Parse(args);
-
-            if (p.Object.MetaTasks.Count != 0 || p.Object.Tasks.Count != 0)
+    
+            if (p.Object.MetaTasks != null && (p.Object.MetaTasks.Count != 0 || p.Object.Tasks.Count != 0))
             {
                 if (!result.HasErrors)
                 {

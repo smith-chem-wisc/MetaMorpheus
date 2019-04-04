@@ -89,7 +89,9 @@ namespace TaskLayer
 
         public static IEnumerable<Ms2ScanWithSpecificMass> GetMs2Scans(MsDataFile myMSDataFile, string fullFilePath, CommonParameters commonParameters)
         {
-            var ms2Scans = myMSDataFile.GetAllScansList().Where(x => x.MsnOrder > 1 && x.DissociationType != DissociationType.ETD).ToArray(); //&& x.DissociationType == DissociationType.ETD
+            var msNScans = myMSDataFile.GetAllScansList().Where(x => x.MsnOrder > 1).ToArray();
+            var ms2Scans = msNScans.Where(p => p.MsnOrder == 2).ToArray();
+            var ms3Scans = msNScans.Where(p => p.MsnOrder == 3).ToArray();
             List<Ms2ScanWithSpecificMass>[] scansWithPrecursors = new List<Ms2ScanWithSpecificMass>[ms2Scans.Length];
 
             Parallel.ForEach(Partitioner.Create(0, ms2Scans.Length), new ParallelOptions { MaxDegreeOfParallelism = commonParameters.MaxThreadsToUsePerFile },
@@ -97,10 +99,7 @@ namespace TaskLayer
                 {
                     for (int i = partitionRange.Item1; i < partitionRange.Item2; i++)
                     {
-                        if (GlobalVariables.StopLoops)
-                        {
-                            break;
-                        }
+                        if (GlobalVariables.StopLoops) { break; }
 
                         MsDataScan ms2scan = ms2Scans[i];
 
@@ -164,17 +163,111 @@ namespace TaskLayer
                         }
 
                         scansWithPrecursors[i] = new List<Ms2ScanWithSpecificMass>();
-                        IsotopicEnvelope[] neutralExperimentalFragments = Ms2ScanWithSpecificMass.GetNeutralExperimentalFragments(ms2scan, commonParameters);
+                        IsotopicEnvelope[] neutralExperimentalFragments = null;
+
+                        if (commonParameters.DissociationType != DissociationType.LowCID)
+                        {
+                            neutralExperimentalFragments = Ms2ScanWithSpecificMass.GetNeutralExperimentalFragments(ms2scan, commonParameters);
+                        }
+
+                        // get child scans
+                        List<MsDataScan> ms2ChildScans = new List<MsDataScan>();
+                        List<MsDataScan> ms3ChildScans = new List<MsDataScan>();
+                        if (commonParameters.ChildScanDissociationType != DissociationType.Unknown)
+                        {
+                            ms3ChildScans = ms3Scans.Where(p => p.OneBasedPrecursorScanNumber == ms2scan.OneBasedScanNumber).ToList();
+
+                            ms2ChildScans = ms2Scans.Where(p => p.OneBasedPrecursorScanNumber == ms2scan.OneBasedPrecursorScanNumber
+                                && p.OneBasedScanNumber > ms2scan.OneBasedScanNumber
+                                && Math.Abs(p.IsolationMz.Value - ms2scan.IsolationMz.Value) < 0.01).ToList();
+                        }
 
                         foreach (var precursor in precursors)
                         {
-                            scansWithPrecursors[i].Add(new Ms2ScanWithSpecificMass(ms2scan, precursor.Item1,
-                                precursor.Item2, fullFilePath, commonParameters, neutralExperimentalFragments));
+                            var scan = new Ms2ScanWithSpecificMass(ms2scan, precursor.Item1,
+                                precursor.Item2, fullFilePath, commonParameters, neutralExperimentalFragments);
+
+                            foreach (var ms2ChildScan in ms2ChildScans)
+                            {
+                                IsotopicEnvelope[] childNeutralExperimentalFragments = null;
+
+                                if (commonParameters.ChildScanDissociationType != DissociationType.LowCID)
+                                {
+                                    childNeutralExperimentalFragments = Ms2ScanWithSpecificMass.GetNeutralExperimentalFragments(ms2ChildScan, commonParameters);
+                                }
+
+                                scan.ChildScans.Add(new Ms2ScanWithSpecificMass(ms2ChildScan, precursor.Item1,
+                                    precursor.Item2, fullFilePath, commonParameters, childNeutralExperimentalFragments));
+                            }
+
+                            foreach (var ms3ChildScan in ms3ChildScans)
+                            {
+                                int precursorCharge = 1;
+                                var precursorSpectrum = ms2scan;
+
+                                try
+                                {
+                                    ms3ChildScan.RefineSelectedMzAndIntensity(precursorSpectrum.MassSpectrum);
+                                }
+                                catch (MzLibException ex)
+                                {
+                                    Warn("Could not get precursor ion for MS3 scan #" + ms3ChildScan.OneBasedScanNumber + "; " + ex.Message);
+                                    continue;
+                                }
+
+                                if (ms3ChildScan.SelectedIonMonoisotopicGuessMz.HasValue)
+                                {
+                                    ms3ChildScan.ComputeMonoisotopicPeakIntensity(precursorSpectrum.MassSpectrum);
+                                }
+
+                                if (ms3ChildScan.SelectedIonChargeStateGuess.HasValue)
+                                {
+                                    precursorCharge = ms3ChildScan.SelectedIonChargeStateGuess.Value;
+                                }
+                                if (!ms3ChildScan.SelectedIonMonoisotopicGuessMz.HasValue)
+                                {
+                                    Warn("Could not get precursor ion m/z for MS3 scan #" + ms3ChildScan.OneBasedScanNumber);
+                                    continue;
+                                }
+
+                                IsotopicEnvelope[] childNeutralExperimentalFragments = null;
+
+                                if (commonParameters.ChildScanDissociationType != DissociationType.LowCID)
+                                {
+                                    childNeutralExperimentalFragments = Ms2ScanWithSpecificMass.GetNeutralExperimentalFragments(ms3ChildScan, commonParameters);
+                                }
+
+                                scan.ChildScans.Add(new Ms2ScanWithSpecificMass(ms3ChildScan, ms3ChildScan.SelectedIonMonoisotopicGuessMz.Value,
+                                    ms3ChildScan.SelectedIonChargeStateGuess.Value, fullFilePath, commonParameters, childNeutralExperimentalFragments));
+                            }
+
+                            scansWithPrecursors[i].Add(scan);
                         }
                     }
                 });
 
-            return scansWithPrecursors.SelectMany(p => p);
+            var childScanNumbers = new HashSet<int>(scansWithPrecursors.SelectMany(p => p.SelectMany(v => v.ChildScans.Select(x => x.OneBasedScanNumber))));
+            var parentScans = scansWithPrecursors.Where(p => !childScanNumbers.Contains(p.First().OneBasedScanNumber)).SelectMany(v => v);
+
+            // XCorr pre-processing for low-res data. this is here because the parent/child scans may have different 
+            // resolutions, so this pre-processing must take place after the parent/child scans have been determined
+            foreach (var parentScan in parentScans)
+            {
+                if (commonParameters.DissociationType == DissociationType.LowCID && !parentScan.TheScan.MassSpectrum.XcorrProcessed)
+                {
+                    parentScan.TheScan.MassSpectrum.XCorrPrePreprocessing(0, 1969, parentScan.TheScan.IsolationMz.Value);
+                }
+
+                foreach (var childScan in parentScan.ChildScans)
+                {
+                    if (commonParameters.ChildScanDissociationType == DissociationType.LowCID && !childScan.TheScan.MassSpectrum.XcorrProcessed)
+                    {
+                        childScan.TheScan.MassSpectrum.XCorrPrePreprocessing(0, 1969, childScan.TheScan.IsolationMz.Value);
+                    }
+                }
+            }
+
+            return parentScans;
         }
 
         public static CommonParameters SetAllFileSpecificCommonParams(CommonParameters commonParams, FileSpecificParameters fileSpecificParams)
@@ -208,8 +301,7 @@ namespace TaskLayer
             Tolerance precursorMassTolerance = fileSpecificParams.PrecursorMassTolerance ?? commonParams.PrecursorMassTolerance;
             Tolerance productMassTolerance = fileSpecificParams.ProductMassTolerance ?? commonParams.ProductMassTolerance;
             DissociationType dissociationType = fileSpecificParams.DissociationType ?? commonParams.DissociationType;
-
-
+            
             CommonParameters returnParams = new CommonParameters(
                 dissociationType: dissociationType,
                 precursorMassTolerance: precursorMassTolerance,
@@ -217,6 +309,7 @@ namespace TaskLayer
                 digestionParams: fileSpecificDigestionParams,
 
                 //NEED THESE OR THEY'LL BE OVERWRITTEN
+                childScanDissociationType: commonParams.ChildScanDissociationType,
                 doPrecursorDeconvolution: commonParams.DoPrecursorDeconvolution,
                 useProvidedPrecursorInfo: commonParams.UseProvidedPrecursorInfo,
                 deconvolutionIntensityRatio: commonParams.DeconvolutionIntensityRatio,
@@ -237,7 +330,9 @@ namespace TaskLayer
                 listOfModsFixed: commonParams.ListOfModsFixed,
                 qValueOutputFilter: commonParams.QValueOutputFilter,
                 taskDescriptor: commonParams.TaskDescriptor,
-                assumeOrphanPeaksAreZ1Fragments: commonParams.AssumeOrphanPeaksAreZ1Fragments);
+                assumeOrphanPeaksAreZ1Fragments: commonParams.AssumeOrphanPeaksAreZ1Fragments,
+                maxHeterozygousVariants: commonParams.MaxHeterozygousVariants,
+                minVariantDepth: commonParams.MinVariantDepth);
 
             return returnParams;
         }
@@ -341,8 +436,7 @@ namespace TaskLayer
             List<Protein> proteinList = new List<Protein>();
             foreach (var db in dbFilenameList)
             {
-                int emptyProteinEntriesForThisDb = 0;
-                var dbProteinList = LoadProteinDb(db.FilePath, searchTarget, decoyType, localizeableModificationTypes, db.IsContaminant, out Dictionary<string, Modification> unknownModifications, out emptyProteinEntriesForThisDb, commonParameters);
+                var dbProteinList = LoadProteinDb(db.FilePath, searchTarget, decoyType, localizeableModificationTypes, db.IsContaminant, out Dictionary<string, Modification> unknownModifications, out int emptyProteinEntriesForThisDb, commonParameters);
                 proteinList = proteinList.Concat(dbProteinList).ToList();
                 emptyProteinEntries += emptyProteinEntriesForThisDb;
             }
@@ -519,7 +613,9 @@ namespace TaskLayer
             var ser = new NetSerializer.Serializer(messageTypes);
 
             using (var file = File.Create(fragmentIndexFile))
+            {
                 ser.Serialize(file, fragmentIndex);
+            }
         }
 
         private static string GetExistingFolderWithIndices(IndexingEngine indexEngine, List<DbForTask> dbFilenameList)

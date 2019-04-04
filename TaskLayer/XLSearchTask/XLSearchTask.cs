@@ -91,6 +91,7 @@ namespace TaskLayer
                 MsDataFile myMsDataFile = myFileManager.LoadFile(origDataFile, combinedParams.TopNpeaks, combinedParams.MinRatio, combinedParams.TrimMs1Peaks, combinedParams.TrimMsMsPeaks, combinedParams);
 
                 Status("Getting ms2 scans...", thisId);
+
                 Ms2ScanWithSpecificMass[] arrayOfMs2ScansSortedByMass = GetMs2Scans(myMsDataFile, origDataFile, combinedParams).OrderBy(b => b.PrecursorMass).ToArray();
 
                 if (!combinedParams.DoPrecursorDeconvolution && combinedParams.UseProvidedPrecursorInfo && XlSearchParameters.OnlyAnalyzeOxiniumIons)
@@ -130,6 +131,7 @@ namespace TaskLayer
                         XlSearchParameters.XlQuench_NH2, XlSearchParameters.XlQuench_Tris, thisId).Run();
 
                     ReportProgress(new ProgressEventArgs(100, "Done with search " + (currentPartition + 1) + "/" + CommonParameters.TotalPartitions + "!", thisId));
+                    if (GlobalVariables.StopLoops) { break; }
                 }
 
                 allPsms.AddRange(newPsms.Where(p => p != null));
