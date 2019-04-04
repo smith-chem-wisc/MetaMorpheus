@@ -646,7 +646,7 @@ namespace Test
                 commonParameters, 5000, false, new List<FileInfo>(), new List<string>()).Run();
             
             var csms = new CrosslinkSpectralMatch[1];
-            new CrosslinkSearchEngine(csms, scans, indexingResults.PeptideIndex, indexingResults.FragmentIndex, 0, commonParameters, new Crosslinker().SelectCrosslinker(CrosslinkerType.DSSO), 
+            new CrosslinkSearchEngine(csms, scans, indexingResults.PeptideIndex, indexingResults.FragmentIndex, 0, commonParameters, OpenSearchType.Crosslink, new Crosslinker().SelectCrosslinker(CrosslinkerType.DSSO), 
                 false, 0, false, false, true, new List<string>()).Run();
 
             var csm = csms[0];
@@ -709,7 +709,7 @@ namespace Test
                 commonParameters, 5000, false, new List<FileInfo>(), new List<string>()).Run();
 
             var csms = new CrosslinkSpectralMatch[2];
-            new CrosslinkSearchEngine(csms, scans, indexingResults.PeptideIndex, indexingResults.FragmentIndex, 0, commonParameters, new Crosslinker().SelectCrosslinker(CrosslinkerType.DSSO),
+            new CrosslinkSearchEngine(csms, scans, indexingResults.PeptideIndex, indexingResults.FragmentIndex, 0, commonParameters, OpenSearchType.Crosslink, new Crosslinker().SelectCrosslinker(CrosslinkerType.DSSO),
                 false, 0, false, false, true, new List<string>()).Run();
 
             var csm = csms[0];

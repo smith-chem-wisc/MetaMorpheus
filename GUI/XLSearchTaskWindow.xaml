@@ -59,9 +59,7 @@
                         <RadioButton x:Name="RbSearchCrosslink" Content="Crosslink Search" GroupName="OpenSearchType"></RadioButton>
                         <RadioButton x:Name="RbSearchNGlyco" Content="N-Glyco Search" GroupName="OpenSearchType" Grid.Column="1"></RadioButton>
                         <RadioButton x:Name="RbSearchOGlyco" Content="O-Glyco Search" GroupName="OpenSearchType" Grid.Column="2"></RadioButton>
-                        <!--<RadioButton x:Name="RbSearchCrosslink" Content="Crosslink Search" GroupName="SearchType"></RadioButton>-->
-                        <!--<RadioButton x:Name="RbSearchGlyco" Content="Glyco Search" GroupName="SearchType" Grid.Column="1"></RadioButton>-->
-                        <StackPanel Orientation="Horizontal" Margin="5" Grid.Row="0" Grid.Column="1">
+                        <StackPanel Orientation="Horizontal" Margin="5" Grid.Row="1" Grid.Column="0" Grid.ColumnSpan="3">
                             <Label x:Name="ionsToSearchLabel" Content="Dissociation Type" ToolTipService.ShowDuration="999999" ToolTipService.InitialShowDelay="500">
                                 <Label.ToolTip>
                                     <TextBlock>
@@ -79,12 +77,12 @@
                             </Label>
                             <ComboBox x:Name="ChildScanDissociationTypeComboBox" AllowDrop="False" HorizontalAlignment="Center" VerticalAlignment="Center" DropDownClosed="CustomFragmentationHandler"/>
                         </StackPanel>
-                        <StackPanel Orientation="Horizontal" Grid.Row="1" Grid.Column="0" Margin="5">
+                        <StackPanel Orientation="Horizontal" Grid.Row="2" Grid.Column="0" Margin="5">
                             <Label x:Name="lblXLprecusorMsTl"  Content="Precursor mass tolerance" />
                             <TextBox x:Name="XLPrecusorMsTlTextBox" PreviewTextInput="CheckIfNumber" Width="45" />
                             <ComboBox x:Name="cbbXLprecusorMsTl" />
                         </StackPanel>
-                        <StackPanel Orientation="Horizontal" Grid.Row="1" Grid.Column="1" Margin="5">
+                        <StackPanel Orientation="Horizontal" Grid.Row="2" Grid.Column="1" Margin="5">
                             <CheckBox x:Name="ckbXLTopNum" VerticalAlignment="Center" Content="Top N peptides per precursor" />
                             <TextBox x:Name="txtXLTopNum" PreviewTextInput="CheckIfNumber" Width="45" Margin="2" IsEnabled="{Binding IsChecked, ElementName=ckbXLTopNum}" />
                         </StackPanel>

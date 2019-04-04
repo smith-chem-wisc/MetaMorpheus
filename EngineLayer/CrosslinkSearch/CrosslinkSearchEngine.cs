@@ -4,7 +4,6 @@ using Proteomics;
 using Proteomics.Fragmentation;
 using Proteomics.ProteolyticDigestion;
 using System;
-using System.Collections.Concurrent;
 using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
@@ -636,7 +635,7 @@ namespace EngineLayer.CrosslinkSearch
                     {
                         List<Product> products = theScanBestPeptide[ind].BestPeptide.Fragment(commonParameters.DissociationType, FragmentationTerminus.Both).ToList();
                         var matchedFragmentIons = MatchFragmentIons(theScan, products, commonParameters);
-                        double score = CalculatePeptideScore(theScan.TheScan, matchedFragmentIons, 0);
+                        double score = CalculatePeptideScore(theScan.TheScan, matchedFragmentIons);
 
                         var psmCrossSingle = new CrosslinkSpectralMatch(theScanBestPeptide[ind].BestPeptide, theScanBestPeptide[ind].BestNotch, score, scanIndex, theScan, commonParameters.DigestionParams, matchedFragmentIons);
                         psmCrossSingle.CrossType = PsmCrossType.Single;
@@ -679,7 +678,7 @@ namespace EngineLayer.CrosslinkSearch
                                 continue;
                             }
 
-                            double score = CalculatePeptideScore(theScan.TheScan, matchedIons, 0);
+                            double score = CalculatePeptideScore(theScan.TheScan, matchedIons);
 
                             if (score > bestLocalizedScore)
                             {
@@ -740,7 +739,7 @@ namespace EngineLayer.CrosslinkSearch
                     {
                         List<Product> products = theScanBestPeptide[ind].BestPeptide.Fragment(commonParameters.DissociationType, FragmentationTerminus.Both).ToList();
                         var matchedFragmentIons = MatchFragmentIons(theScan, products, commonParameters);
-                        double score = CalculatePeptideScore(theScan.TheScan, matchedFragmentIons, 0);
+                        double score = CalculatePeptideScore(theScan.TheScan, matchedFragmentIons);
 
                         var psmCrossSingle = new CrosslinkSpectralMatch(theScanBestPeptide[ind].BestPeptide, theScanBestPeptide[ind].BestNotch, score, scanIndex, theScan, commonParameters.DigestionParams, matchedFragmentIons);
                         psmCrossSingle.CrossType = PsmCrossType.Single;
@@ -765,7 +764,7 @@ namespace EngineLayer.CrosslinkSearch
                 {
                     List<Product> products = theScanBestPeptide[ind].BestPeptide.Fragment(commonParameters.DissociationType, FragmentationTerminus.Both).ToList();
                     var matchedFragmentIons = MatchFragmentIons(theScan, products, commonParameters);
-                    double score = CalculatePeptideScore(theScan.TheScan, matchedFragmentIons, 0);
+                    double score = CalculatePeptideScore(theScan.TheScan, matchedFragmentIons);
 
                     var psmCrossSingle = new CrosslinkSpectralMatch(theScanBestPeptide[ind].BestPeptide, theScanBestPeptide[ind].BestNotch, score, scanIndex, theScan, commonParameters.DigestionParams, matchedFragmentIons);
                     psmCrossSingle.CrossType = PsmCrossType.Single;
@@ -795,7 +794,7 @@ namespace EngineLayer.CrosslinkSearch
 
                             var fragmentsForEachGlycanLocalizedPossibility = GlycoPeptides.OGlyGetTheoreticalFragmentsUnlocalize(commonParameters.DissociationType, modPos, theScanBestPeptide[ind].BestPeptide, OGlycanBoxes[iDLow]);
                             var bestMatchedIons = MatchFragmentIons(theScan, fragmentsForEachGlycanLocalizedPossibility, commonParameters);
-                            double bestLocalizedScore = CalculatePeptideScore(theScan.TheScan, bestMatchedIons, 0);
+                            double bestLocalizedScore = CalculatePeptideScore(theScan.TheScan, bestMatchedIons);
 
                             //var fragmentsForEachGlycanLocalizedPossibility = GlycoPeptides.OGlyGetTheoreticalFragments(commonParameters.DissociationType, modPos, theScanBestPeptide[ind].BestPeptide, OGlycanBoxes[iDLow]).ToList();
                             //double bestLocalizedScore = 0;

@@ -166,6 +166,11 @@ namespace TaskLayer
 
             if (XlSearchParameters.OpenSearchType == OpenSearchType.OGlyco)
             {
+                var allPsmsSingle = allPsms.Where(p => p.glycanBoxes == null && p.Score > 2).OrderByDescending(p => p.XLTotalScore).ToList();
+                SingleFDRAnalysis(allPsmsSingle, new List<string> { taskId });
+                var writtenFileInter1 = Path.Combine(OutputFolder, "single_fdr" + ".mytsv");
+                WritePsmCrossToTsv(allPsmsSingle, writtenFileInter1, 1);
+
                 var allPsmsGly = allPsms.Where(p => p.glycanBoxes != null && p.Score > 2).OrderByDescending(p => p.XLTotalScore).ToList();
                 SingleFDRAnalysis(allPsmsGly, new List<string> { taskId });
                 var writtenFileInter2 = Path.Combine(OutputFolder, "glyco_fdr" + ".mytsv");
