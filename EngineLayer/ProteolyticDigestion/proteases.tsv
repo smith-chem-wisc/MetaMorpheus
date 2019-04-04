@@ -16,5 +16,6 @@ non-specific	|X			full	MS:1001956	unspecific cleavage
 top-down				none	MS:1001955	no cleavage		
 singleN				SingleN	MS:1001957	single cleavage		
 singleC				SingleC	MS:1001958	single cleavage		
-peptidomics				none		no cleavage
+peptidomics				none		no cleavage		
 collagenase	GPX|GPX			full				
+StcE_Trypsin	"K|,R|,SX|S,TX|S,SX|T,TX|T"			full				

@@ -125,7 +125,21 @@ namespace EngineLayer.CrosslinkSearch
             }
             return YIons;
         }
-       
+
+        public static List<Product> GetGlycanYIons(PeptideWithSetModifications peptide, GlycanBox glycanBox)
+        {
+            double possiblePeptideMass = peptide.MonoisotopicMass;
+            List<Product> YIons = new List<Product>();
+            YIons.Add(new Product(ProductType.M, new NeutralTerminusFragment(FragmentationTerminus.Both, possiblePeptideMass + (double)glycanBox.Mass / 1E5, 0, 0), (double)glycanBox.Mass / 1E5));
+            foreach (var ion in glycanBox.CommonGlycanIons)
+            {
+                Product product = new Product(ProductType.M, new NeutralTerminusFragment(FragmentationTerminus.Both, possiblePeptideMass + (double)glycanBox.Mass / 1E5, 0, 0), (double)ion.LossIonMass / 1E5);
+                YIons.Add(product);
+            }
+            return YIons;
+        }
+
+
         public static Tuple<int, double, double>[] MatchBestGlycan(Ms2ScanWithSpecificMass theScan, Glycan[] glycans, CommonParameters commonParameters)
         {
             Tuple<int, double, double>[] tuples = new Tuple<int, double, double>[glycans.Length]; //Tuple<id, Yion matched score, glycan mass> 
@@ -223,6 +237,7 @@ namespace EngineLayer.CrosslinkSearch
             return modification;
         }
 
+        //<modSites, >
         public static IEnumerable<Tuple<int[] , Tuple<int[], List<Product>>>> OGlyGetTheoreticalFragments(DissociationType dissociationType, 
             List<int> possibleModPositions, PeptideWithSetModifications peptide, GlycanBox glycanBox)
         {
@@ -244,6 +259,11 @@ namespace EngineLayer.CrosslinkSearch
                         testMods.Add(combine.ElementAt(i), modifications[modcombine.ElementAt(i)]);
                     }
 
+                    foreach (var mod in peptide.AllModsOneIsNterminus)
+                    {
+                        testMods.Add(mod.Key, mod.Value);
+                    }
+
                     var testPeptide = new PeptideWithSetModifications(peptide.Protein, peptide.DigestionParams, peptide.OneBasedStartResidueInProtein,
                     peptide.OneBasedEndResidueInProtein, peptide.CleavageSpecificityForFdrCategory, peptide.PeptideDescription, peptide.MissedCleavages, testMods, peptide.NumFixedMods);
 
@@ -254,6 +274,16 @@ namespace EngineLayer.CrosslinkSearch
             }
 
 
+        }
+
+        public static List<Product> OGlyGetTheoreticalFragmentsUnlocalize(DissociationType dissociationType,
+            List<int> possibleModPositions, PeptideWithSetModifications peptide, GlycanBox glycanBox)
+        {
+
+            List<Product> theoreticalProducts = peptide.Fragment(dissociationType, FragmentationTerminus.Both).ToList();
+            theoreticalProducts.AddRange(GetGlycanYIons(peptide, glycanBox));
+
+            return theoreticalProducts;
         }
 
     }

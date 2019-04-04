@@ -42,7 +42,7 @@ namespace Test
             PeptideWithSetModifications pep = new PeptideWithSetModifications("ELNPTPNVEVNVECR", null); 
             string[] motifs = new string[] { "Nxs", "Nxt"};
             var sites = CrosslinkSpectralMatch.GetPossibleModSites(pep, motifs);
-            Assert.That(sites.Count() == 1 && sites[0] == 3);
+            Assert.That(sites.Count() == 1 && sites[0] == 4);
         }
 
         [Test]
@@ -87,8 +87,8 @@ namespace Test
             Assert.AreEqual(coreIons.Count, 9);
             var filter = GlycoPeptides.ScanTrimannosylCoreFilter(matchedFragmentIons, glycan);
             Assert.AreEqual(filter, true);
-
-            var bestGlycans = GlycoPeptides.MatchBestGlycan(listOfSortedms2Scans[0], GlobalVariables.NGlycans.ToArray(), commonParameters).Where(p => p != null && p.Item2 >= 2).OrderByDescending(p => p.Item2).Take(100).OrderBy(p => p.Item3).ToArray(); ;
+            var NGlycans = Glycan.LoadGlycan(GlobalVariables.NGlycanLocation);
+            var bestGlycans = GlycoPeptides.MatchBestGlycan(listOfSortedms2Scans[0], NGlycans.ToArray(), commonParameters).Where(p => p != null && p.Item2 >= 2).OrderByDescending(p => p.Item2).Take(100).OrderBy(p => p.Item3).ToArray(); ;
 
             //Please keep the draw functions, they are important to debug visually.
             DrawPeptideSpectralMatch(listOfSortedms2Scans[0].TheScan, matchedFragmentIons, pep.BaseSequence);

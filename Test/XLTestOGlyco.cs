@@ -28,7 +28,8 @@ namespace Test
         [Test]
         public static void OGlycoTest_LoadGlycanBox()
         {
-            var GlycanBoxes = Glycan.BuildGlycanBoxes(GlobalVariables.OGlycans.ToList(), 3);
+            var OGlycans = Glycan.LoadGlycan(GlobalVariables.OGlycanLocation);
+            var GlycanBoxes = Glycan.BuildGlycanBoxes(OGlycans.ToList(), 3);
             Assert.AreEqual(GlycanBoxes.Count(), 454);
 
             var glycanBoxGroups = GlycanBoxes.GroupBy(p => p.Mass).ToDictionary(p => p.Key, p => p.ToList());

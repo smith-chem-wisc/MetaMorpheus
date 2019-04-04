@@ -162,6 +162,15 @@ namespace TaskLayer
                 return MyTaskResults;
             }
 
+            if (XlSearchParameters.OpenSearchType == OpenSearchType.OGlyco)
+            {
+                var allPsmsGly = allPsms.Where(p => p.glycanBoxes != null && p.Score > 2).OrderByDescending(p => p.XLTotalScore).ToList();
+                SingleFDRAnalysis(allPsmsGly, new List<string> { taskId });
+                var writtenFileInter2 = Path.Combine(OutputFolder, "glyco_fdr" + ".mytsv");
+                WritePsmCrossToTsv(allPsmsGly, writtenFileInter2, 3);
+                return MyTaskResults;
+            }
+
             var allPsmsXL = allPsms.Where(p => p.CrossType == PsmCrossType.Cross).ToList();
 
             // inter-crosslinks; different proteins are linked

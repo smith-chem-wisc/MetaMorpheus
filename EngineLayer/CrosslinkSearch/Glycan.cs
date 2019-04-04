@@ -15,6 +15,7 @@ namespace EngineLayer
 
         public static HashSet<int> oxoniumIons = new HashSet<int>()
         {13805550, 16806607, 18607663, 20408720, 36614002 };
+
         public static int[] allOxoniumIons = new int[]
         {10902895, 11503951, 12605550, 12703952, 13805550, 14406607, 16306064, 16806607, 18607663, 20408720, 27409268, 29008759, 29210324, 30809816, 36614002, 65723544, 67323035};
 
@@ -176,7 +177,7 @@ namespace EngineLayer
             return kind;
         }
 
-        private static int GetIonLossMass(byte[] Kind, byte[] ionKind)
+        public static int GetIonLossMass(byte[] Kind, byte[] ionKind)
         {
             byte[] lossKind = new byte[Kind.Length];
             for (int i = 0; i < Kind.Length; i++)
@@ -184,6 +185,38 @@ namespace EngineLayer
                 lossKind[i] = (byte)(Kind[i] - ionKind[i]);
             }
             return GetMass(lossKind);
+        }
+
+        //TO DO: how to get reasonable ionKind
+        private static List<byte[]> GetAllIonKinds(byte[] Kind)
+        {
+            List<byte[]> allIonKinds = new List<byte[]>();
+
+            
+
+            return allIonKinds;
+        }
+
+        public static List<GlycanIon> GetGlycanIons(byte[] Kind)
+        {
+            List<GlycanIon> glycanIons = new List<GlycanIon>();
+            HashSet<double> ionMasses = new HashSet<double>();
+            var allIonKinds = GetAllIonKinds(Kind);
+            foreach (var ionKind in allIonKinds)
+            {
+                var ionMass = GetMass(ionKind);
+                if (!ionMasses.Contains(ionMass))
+                {
+                    ionMasses.Add(ionMass);
+                    var lossIonMass = GetIonLossMass(Kind, ionKind);
+                    GlycanIon glycanIon = new GlycanIon(0, ionMass, ionKind, lossIonMass);
+                    glycanIons.Add(glycanIon);
+                }
+            }
+            glycanIons.Add(new GlycanIon(0, 8303819, new byte[] { 0, 0, 0, 0, 0 }, GetMass(Kind) - 8303819)); //Cross-ring mass
+            glycanIons = glycanIons.OrderBy(p => p.IonMass).ToList();
+
+            return glycanIons;
         }
 
         public static bool DistingushGlycans(Glycan glycan1, Glycan glycan2)
@@ -471,7 +504,27 @@ namespace EngineLayer
 
         public List<Glycan> glycans { get; set; } = new List<Glycan>();
 
-        public List<GlycanIon> CommonGlycanIons { get; set; }
+        public List<GlycanIon> CommonGlycanIons
+        {
+            get
+            {
+                //TO DO: A combination of glycanIons need to be considered.
+                List<GlycanIon> glycanIons = new List<GlycanIon>();
+                HashSet<double> ionMasses = new HashSet<double>();
+                foreach (var ion in glycans.SelectMany(p=>p.Ions))
+                {
+                    if (!ionMasses.Contains(ion.IonMass))
+                    {
+                        ionMasses.Add(ion.IonMass);
+                        var lossIonMass = Glycan.GetIonLossMass(Kind, ion.IonKind);
+                        GlycanIon glycanIon = new GlycanIon(0, ion.IonMass, ion.IonKind, lossIonMass);
+                        glycanIons.Add(glycanIon);
+                    }
+                }
+
+                return glycanIons;
+            }
+        }
 
         public int NumberOfGlycans { get { return glycans.Count; } }
 
@@ -499,4 +552,5 @@ namespace EngineLayer
         }
 
     }
+
 }

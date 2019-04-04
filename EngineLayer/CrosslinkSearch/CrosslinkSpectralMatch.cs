@@ -69,7 +69,7 @@ namespace EngineLayer.CrosslinkSearch
                     //FullSequence is used here to avoid duplicated modification on same sites?
                     if (ModificationLocalization.ModFits(modWithMotif, peptide.BaseSequence, r + 1, peptide.Length, r + 1))
                     {
-                        possibleModSites.Add(r + 1);
+                        possibleModSites.Add(r + 2);
                     }
                 }
             }
@@ -337,6 +337,17 @@ namespace EngineLayer.CrosslinkSearch
                 sb.Append(Glycan.First().Struc); sb.Append("\t");
                 sb.Append((double)Glycan.First().Mass/1E5); sb.Append("\t");
                 sb.Append(string.Join("|", Glycan.First().Kind.Select(p => p.ToString()).ToArray())); sb.Append("\t");
+            }
+
+            if (glycanBoxes != null)
+            {
+                sb.Append(XLTotalScore + "\t");
+                sb.Append(string.Join("|", glycanBoxes.First().glycans.Select(p => p.GlyId.ToString()).ToArray())); sb.Append("\t");
+                sb.Append( "T"); sb.Append("\t");
+                sb.Append(string.Join("|", glycanBoxes.First().glycans.Select(p => p.Struc.ToString()).ToArray())); sb.Append("\t");
+                sb.Append((double)glycanBoxes.First().Mass / 1E5); sb.Append("\t");
+                sb.Append(glycanBoxes.First().Kind.Select(p => p.ToString()).ToArray()); sb.Append("\t");
+
             }
 
             return sb.ToString();
