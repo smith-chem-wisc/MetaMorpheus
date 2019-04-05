@@ -745,12 +745,6 @@ namespace Test
         }
 
         [Test]
-        public static void GetTabSepHeaderGlycoTest()
-        {
-            CrosslinkSpectralMatch.GetTabSepHeaderGlyco();
-        }
-
-        [Test]
         public static void CrosslinkerTypeTest()
         {
             var cl = new Crosslinker();

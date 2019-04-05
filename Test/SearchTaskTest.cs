@@ -315,20 +315,6 @@ namespace Test
         /// Tests interval mass difference acceptor type to make sure values are assigned properly
         /// </summary>
         [Test]
-        public static void LowTheoreticalDiffAcceptorTest()
-        {
-            var result = new OpenLowTheoSearchMode();
-            Assert.That(result.Accepts(2.0, 2.0) == 0);
-            result.GetAllowedPrecursorMassIntervalsFromTheoreticalMass(2.0);
-            result.GetAllowedPrecursorMassIntervalsFromObservedMass(2.0);
-            result.ToString();
-            result.ToProseString();
-        }
-
-        /// <summary>
-        /// Tests interval mass difference acceptor type to make sure values are assigned properly
-        /// </summary>
-        [Test]
         public static void SingleAbsoluteAroundZeroSearchMode()
         {
             var result = new SingleAbsoluteAroundZeroSearchMode(2.0);
