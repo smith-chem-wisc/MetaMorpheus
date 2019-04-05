@@ -11,6 +11,7 @@ using System;
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
+using System.Reflection;
 using TaskLayer;
 using UsefulProteomicsDatabases;
 
@@ -276,6 +277,13 @@ namespace Test
             fdrEngine.CountPsm();
             psmGroups = allPsms.Where(psm => psm.FullSequence != null && psm.PsmCount > 0).GroupBy(p => p.FullSequence).ToList();
             Assert.That(psmGroups.First().Count() == 3); 
+        }
+
+        [Test]
+        public static void PsmtsvTest()
+        {
+            Type type = typeof(PsmFromTsv);
+            PropertyInfo[] properties = type.GetProperties();
         }
     }
 }

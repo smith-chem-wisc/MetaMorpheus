@@ -8,6 +8,7 @@ using TaskLayer;
 using Proteomics.ProteolyticDigestion;
 using Proteomics.Fragmentation;
 using System.Globalization;
+using MzLibUtil;
 
 namespace Test
 {
@@ -290,6 +291,80 @@ namespace Test
             // intermediate q-values no longer always follow this formula, so I'm not testing them here
             Assert.AreEqual((double)cumDecoys / (double)cumTargets, finalQValue, 0.0001);
             Directory.Delete(folderPath, true);
+        }
+
+        /// <summary>
+        /// Tests interval mass difference acceptor type to make sure values are assigned properly
+        /// </summary>
+        [Test]
+        public static void IntervalMassDiffAceptorTest()
+        {
+            var result = new IntervalMassDiffAcceptor("-187andUp", new List<DoubleRange> { new DoubleRange(-187, double.PositiveInfinity) });
+            Assert.That(result.Accepts(2.0, 2.0) == 0);
+            Assert.That(result.Accepts(double.PositiveInfinity, 2.0) == 0);
+            result.GetAllowedPrecursorMassIntervalsFromTheoreticalMass(2.0);
+            result.GetAllowedPrecursorMassIntervalsFromObservedMass(2.0);
+            result.ToString();
+            result.ToProseString();
+            result = new IntervalMassDiffAcceptor("-187andUp", new List<DoubleRange> { new DoubleRange(-5, 0) });
+            Assert.That(result.Accepts(2.0, 4.0) == 0);
+            Assert.That(result.Accepts(2.0, 10.0) == -1);
+        }
+
+        /// <summary>
+        /// Tests interval mass difference acceptor type to make sure values are assigned properly
+        /// </summary>
+        [Test]
+        public static void LowTheoreticalDiffAcceptorTest()
+        {
+            var result = new OpenLowTheoSearchMode();
+            Assert.That(result.Accepts(2.0, 2.0) == 0);
+            result.GetAllowedPrecursorMassIntervalsFromTheoreticalMass(2.0);
+            result.GetAllowedPrecursorMassIntervalsFromObservedMass(2.0);
+            result.ToString();
+            result.ToProseString();
+        }
+
+        /// <summary>
+        /// Tests interval mass difference acceptor type to make sure values are assigned properly
+        /// </summary>
+        [Test]
+        public static void SingleAbsoluteAroundZeroSearchMode()
+        {
+            var result = new SingleAbsoluteAroundZeroSearchMode(2.0);
+            Assert.That(result.Accepts(2.0, 2.0) == 0);
+            result.GetAllowedPrecursorMassIntervalsFromTheoreticalMass(2.0);
+            result.GetAllowedPrecursorMassIntervalsFromObservedMass(2.0);
+            result.ToString();
+            result.ToProseString();
+        }
+
+
+        [Test]
+        public static void PostSearchPrundedDBTest()
+        {
+    //        PostSearchAnalysisTask postProcessing = new PostSearchAnalysisTask();
+    //        postProcessing.Parameters = new PostSearchAnalysisParameters
+    //        {
+    //            SearchTaskResults = new MyTaskResults(new SearchTask()),
+    //            SearchTaskId = "",
+    //            SearchParameters = new SearchParameters(),
+    //            ProteinList = new List<Proteomics.Protein>(),
+    //            VariableModifications = new List<Proteomics.Modification>(),
+    //            ListOfDigestionParams = new HashSet<DigestionParams>(),
+    //            AllPsms = new List<PeptideSpectralMatch>(),
+    //            FlashLfqResults = new FlashLFQ.FlashLfqResults(),
+    //            FixedModifications = new List<Proteomics.Modification>(),
+    //            NumNotches = 0,
+    //            OutputFolder = "",
+    //            IndividualResultsOutputFolder = "",
+    //            FileSettingsList = new FileSpecificParameters(),
+    //            NumMs2SpectraPerFile = new Dictionary<string, int[]>(),
+    //            MyFileManager = new MyFileManager(true),
+    //            DatabaseFilenameList = new List<DbForTask>(),
+    //            CurrentRawFileList = new List<string>()
+    //};
+    //        postProcessing.Run();
         }
     }
 }

@@ -743,6 +743,39 @@ namespace Test
 
             File.Delete(outputFile);
         }
+
+        [Test]
+        public static void GetTabSepHeaderGlycoTest()
+        {
+            CrosslinkSpectralMatch.GetTabSepHeaderGlyco();
+        }
+
+        [Test]
+        public static void CrosslinkerTypeTest()
+        {
+            var cl = new Crosslinker();
+            cl.SelectCrosslinker(CrosslinkerType.DisulfideBond);
+            Assert.That(cl.CrosslinkerName == "DisulfideBond");
+            Assert.That(cl.Cleavable);
+            Assert.That(cl.TotalMass == -2.01565);
+            Assert.That(cl.CleaveMassShort == -33.98772);
+            Assert.That(cl.CleaveMassLong == 31.97207);
+            Assert.That(cl.CrosslinkerModSites == "C");
+            Assert.That(cl.CrosslinkerModSites2 == "C");
+
+            cl.SelectCrosslinker(CrosslinkerType.DSBU);
+            Assert.That(cl.CrosslinkerName == "DSBU");
+            Assert.That(cl.Cleavable);
+            Assert.That(cl.TotalMass == 196.0848);
+            Assert.That(cl.CleaveMassShort == 85.05276);
+            Assert.That(cl.CleaveMassLong == 111.0320);
+            Assert.That(cl.CrosslinkerModSites == "K");
+            Assert.That(cl.CrosslinkerModSites2 == "K");
+            Assert.That(cl.LoopMass == 196.0848);
+            Assert.That(cl.DeadendMassH2O == 214.0954);
+            Assert.That(cl.DeadendMassNH2 == 213.1113);
+            Assert.That(cl.DeadendMassTris == 317.1587);
+        }
     }
 
     internal class XLTestDataFile : MsDataFile
