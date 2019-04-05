@@ -14,6 +14,7 @@ namespace EngineLayer
             PrecursorCharge = precursorCharge;
             PrecursorMass = PrecursorMonoisotopicPeakMz.ToMass(precursorCharge);
             FullFilePath = fullFilePath;
+            ChildScans = new List<Ms2ScanWithSpecificMass>();
 
             TheScan = mzLibScan;
 
@@ -31,6 +32,7 @@ namespace EngineLayer
         public int PrecursorCharge { get; }
         public string FullFilePath { get; }
         public IsotopicEnvelope[] ExperimentalFragments { get; private set; }
+        public List<Ms2ScanWithSpecificMass> ChildScans { get; set; } // MS2/MS3 scans that are children of this MS2 scan
         private double[] DeconvolutedMonoisotopicMasses;
 
         public int OneBasedScanNumber => TheScan.OneBasedScanNumber;
@@ -48,9 +50,9 @@ namespace EngineLayer
             int minZ = 1;
             int maxZ = 10;
 
-            var neutralExperimentalFragmentMasses = scan.MassSpectrum.Deconvolute(scan.MassSpectrum.Range, 
+            var neutralExperimentalFragmentMasses = scan.MassSpectrum.Deconvolute(scan.MassSpectrum.Range,
                 minZ, maxZ, commonParam.DeconvolutionMassTolerance.Value, commonParam.DeconvolutionIntensityRatio).ToList();
-            
+
             if (commonParam.AssumeOrphanPeaksAreZ1Fragments)
             {
                 HashSet<double> alreadyClaimedMzs = new HashSet<double>(neutralExperimentalFragmentMasses
