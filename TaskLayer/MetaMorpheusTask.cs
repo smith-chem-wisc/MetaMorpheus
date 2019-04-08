@@ -247,7 +247,8 @@ namespace TaskLayer
                 });
 
             var childScanNumbers = new HashSet<int>(scansWithPrecursors.SelectMany(p => p.SelectMany(v => v.ChildScans.Select(x => x.OneBasedScanNumber))));
-            var parentScans = scansWithPrecursors.Where(p => !childScanNumbers.Contains(p.First().OneBasedScanNumber)).SelectMany(v => v);
+            var parentScans = scansWithPrecursors.Where(p => !childScanNumbers.Contains(p.First().OneBasedScanNumber)).SelectMany(v => v).ToList();
+            
 
             // XCorr pre-processing for low-res data. this is here because the parent/child scans may have different 
             // resolutions, so this pre-processing must take place after the parent/child scans have been determined
