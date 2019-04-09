@@ -9,6 +9,7 @@ using Proteomics.ProteolyticDigestion;
 using Proteomics.Fragmentation;
 using System.Globalization;
 using MzLibUtil;
+using System.Xml.Serialization;
 
 namespace Test
 {
@@ -107,6 +108,12 @@ namespace Test
             string outputPath = Path.Combine(TestContext.CurrentContext.TestDirectory, @"TestSemiSpecificSmall\AllPSMs.psmtsv");
             var output = File.ReadAllLines(outputPath);
             Assert.IsTrue(output.Length == 3);
+
+            var mzId = File.ReadAllLines(Path.Combine(TestContext.CurrentContext.TestDirectory, @"TestSemiSpecificSmall\Individual File Results\tinySemi.mzID"));
+            Assert.That(mzId[115].Equals("          <cvParam name=\"mzML format\" cvRef=\"PSI-MS\" accession=\"MS:1000584\" />"));
+            Assert.That(mzId[118].Equals("          <cvParam name=\"mzML unique identifier\" cvRef=\"PSI-MS\" accession=\"MS:1001530\" />"));
+            Assert.That(mzId[97].Equals("        <cvParam name=\"pep:FDR threshold\" value=\"0.01\" cvRef=\"PSI-MS\" accession=\"MS:1001448\" />"));
+
         }
 
         /// <summary>
@@ -329,28 +336,16 @@ namespace Test
         [Test]
         public static void PostSearchPrundedDBTest()
         {
-    //        PostSearchAnalysisTask postProcessing = new PostSearchAnalysisTask();
-    //        postProcessing.Parameters = new PostSearchAnalysisParameters
-    //        {
-    //            SearchTaskResults = new MyTaskResults(new SearchTask()),
-    //            SearchTaskId = "",
-    //            SearchParameters = new SearchParameters(),
-    //            ProteinList = new List<Proteomics.Protein>(),
-    //            VariableModifications = new List<Proteomics.Modification>(),
-    //            ListOfDigestionParams = new HashSet<DigestionParams>(),
-    //            AllPsms = new List<PeptideSpectralMatch>(),
-    //            FlashLfqResults = new FlashLFQ.FlashLfqResults(),
-    //            FixedModifications = new List<Proteomics.Modification>(),
-    //            NumNotches = 0,
-    //            OutputFolder = "",
-    //            IndividualResultsOutputFolder = "",
-    //            FileSettingsList = new FileSpecificParameters(),
-    //            NumMs2SpectraPerFile = new Dictionary<string, int[]>(),
-    //            MyFileManager = new MyFileManager(true),
-    //            DatabaseFilenameList = new List<DbForTask>(),
-    //            CurrentRawFileList = new List<string>()
-    //};
-    //        postProcessing.Run();
+            var searchTask = new SearchTask();
+            string myFile = Path.Combine(TestContext.CurrentContext.TestDirectory, @"TestData\PrunedDbSpectra.mzml");
+            string myDatabase = Path.Combine(TestContext.CurrentContext.TestDirectory, @"TestData\DbForPrunedDb.fasta");
+            string folderPath = Path.Combine(TestContext.CurrentContext.TestDirectory, @"TestNormalization");
+            
+            DbForTask db = new DbForTask(myDatabase, false);
+            Directory.CreateDirectory(folderPath);
+
+            searchTask.RunTask(folderPath, new List<DbForTask> { db }, new List<string> { myFile }, "normal");
+
         }
     }
 }
