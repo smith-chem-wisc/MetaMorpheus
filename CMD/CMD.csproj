@@ -8,7 +8,7 @@
 
   <ItemGroup>
     <PackageReference Include="FluentCommandLineParser" Version="1.4.3" />
-    <PackageReference Include="mzLib" Version="1.0.417" />
+    <PackageReference Include="mzLib" Version="1.0.418" />
     <PackageReference Include="Nett" Version="0.8.0" />
     <PackageReference Include="SharpLearning.Common.Interfaces" Version="0.26.9" />
     <PackageReference Include="SharpLearning.Containers" Version="0.26.9" />

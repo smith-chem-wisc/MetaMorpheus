@@ -547,7 +547,7 @@ namespace MetaMorpheusGUI
                     {
                         Directory.CreateDirectory(dir);
                     }
-                    
+
                     DrawPdfAnnotatedBaseSequence(psm, canvas, filePath); // captures the annotation for the pdf
                     mainViewModel.DrawPeptideSpectralMatchPdf(msDataScanToDraw, psm, filePath, numberOfScansToExport > 1);
                 }
@@ -577,16 +577,10 @@ namespace MetaMorpheusGUI
             encoder.Frames.Add(BitmapFrame.Create(renderBitmap));
 
             string tempPath = Path.Combine(Path.GetDirectoryName(tsvResultsFilePath), "MetaDrawExport", "annotation.png");
-            try
+
+            using (FileStream file = File.Create(tempPath))
             {
-                using (FileStream file = File.Create(tempPath))
-                {
-                    encoder.Save(file);
-                }
-            }
-            catch (UnauthorizedAccessException)
-            {
-                MessageBox.Show("EXCEPTION 1");
+                encoder.Save(file);
             }
         }
 
