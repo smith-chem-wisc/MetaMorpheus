@@ -268,7 +268,8 @@ namespace Test
 
             fdrEngine.CountPsm();
             var psmGroups = allPsms.Where(psm => psm.FullSequence != null && psm.PsmCount > 0).GroupBy(p => p.FullSequence).ToList();
-            Assert.That(psmGroups.First().Count() == 1);
+            Assert.That(psmGroups.First().Count() == 2);
+            Assert.That(psmGroups.First().First().PsmCount == 1);
 
             psm2.SetFdrValues(0, 0, 0, 0, 0, 0, 0, 0, 0, false);
             psm3.ResolveAllAmbiguities();
