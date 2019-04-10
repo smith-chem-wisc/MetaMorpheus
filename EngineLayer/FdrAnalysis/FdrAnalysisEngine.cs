@@ -110,7 +110,7 @@ namespace EngineLayer.FdrAnalysis
                 {
                     psms = psms.OrderByDescending(b => b.Score).ThenBy(b => b.PeptideMonisotopicMass.HasValue ? Math.Abs(b.ScanPrecursorMass - b.PeptideMonisotopicMass.Value) : double.MaxValue).ToList();
                 }
-                
+
                 double cumulativeTarget = 0;
                 double cumulativeDecoy = 0;
 
@@ -204,7 +204,10 @@ namespace EngineLayer.FdrAnalysis
                 }
             }
 
-            CountPsm();
+            if (AnalysisType == "PSM")
+            {
+                CountPsm();
+            }
         }
 
         private static double GetEValue(PeptideSpectralMatch psm, int globalMeanCount, double globalMeanScore, out double maximumLikelihood)
