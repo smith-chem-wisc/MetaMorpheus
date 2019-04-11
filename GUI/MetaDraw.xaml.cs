@@ -148,7 +148,7 @@ namespace MetaMorpheusGUI
                 List<string> warnings; // TODO: print warnings
                 foreach (var psm in PsmTsvReader.ReadTsv(filename, out warnings))
                 {
-                    if (psm.Filename == fileNameWithExtension || psm.Filename == fileNameWithoutExtension || psm.Filename.Contains(fileNameWithoutExtension))
+                    if (spectraFilePath == null || psm.Filename == fileNameWithExtension || psm.Filename == fileNameWithoutExtension || psm.Filename.Contains(fileNameWithoutExtension))
                     {
                         allPsms.Add(psm);
                     }
@@ -165,7 +165,7 @@ namespace MetaMorpheusGUI
             filteredListOfPsms.Clear();
 
             var filteredList = allPsms.Where(p =>
-                p.QValue < metaDrawFilterSettings.QValueFilter
+                p.QValue <= metaDrawFilterSettings.QValueFilter
                 && (p.QValueNotch < metaDrawFilterSettings.QValueFilter || p.QValueNotch == null)
                 && (p.DecoyContamTarget == "T" || (p.DecoyContamTarget == "D" && metaDrawFilterSettings.ShowDecoys) || (p.DecoyContamTarget == "C" && metaDrawFilterSettings.ShowContaminants)));
 
@@ -408,7 +408,7 @@ namespace MetaMorpheusGUI
             selectPsmFileButton.IsEnabled = true;
         }
 
-        private async void loadFilesButtonStat_Click(object sender, RoutedEventArgs e)
+        private void loadFilesButtonStat_Click(object sender, RoutedEventArgs e)
         {
             // check for validity
             if (tsvResultsFilePath == null)
@@ -423,7 +423,7 @@ namespace MetaMorpheusGUI
 
             // load the PSMs
             this.prgsTextStat.Content = "Loading PSMs...";
-            await Task.Run(() => LoadPsmsStat(tsvResultsFilePath));
+            LoadPsmsStat(tsvResultsFilePath);
 
             // done loading - restore controls
             this.prgsFeedStat.IsOpen = false;
@@ -433,15 +433,8 @@ namespace MetaMorpheusGUI
 
         private void LoadPsmsStat(string filepath)
         {
-            List<string> warnings;
-            var f = PsmTsvReader.ReadTsv(filepath, out warnings);
-            foreach (var psm in PsmTsvReader.ReadTsv(filepath, out warnings))
-            {
-                Dispatcher.BeginInvoke(new Action(() =>
-                {
-                    allPsms.Add(psm);
-                }));
-            }
+            LoadPsms(filepath);
+            DisplayLoadedAndFilteredPsms();
         }
 
         private void TextBox_TextChanged(object sender, TextChangedEventArgs e)
@@ -568,15 +561,21 @@ namespace MetaMorpheusGUI
         {
             var selectedItem = plotsListBox.SelectedItem;
 
-            if (selectedItem == null || !allPsms.Any())
+            if (selectedItem == null)
             {
                 MessageBox.Show("Select a plot type to export!");
                 return;
             }
 
+            if (!filteredListOfPsms.Any())
+            {
+                MessageBox.Show("No PSMs are loaded!");
+                return;
+            }
+
             var plotName = selectedItem as string;
 
-            PlotModelStat plot = new PlotModelStat(plotName, allPsms);
+            PlotModelStat plot = new PlotModelStat(plotName, filteredListOfPsms);
             var fileDirectory = Directory.GetParent(tsvResultsFilePath).ToString();
             var fileName = String.Concat(plotName, ".pdf");
             using (Stream writePDF = File.Create(Path.Combine(fileDirectory, fileName)))
@@ -664,15 +663,15 @@ namespace MetaMorpheusGUI
             var listview = sender as ListView;
             var plotName = listview.SelectedItem as string;
 
-            if (allPsms.Count == 0)
+            if (filteredListOfPsms.Count == 0)
             {
                 MessageBox.Show("There are no PSMs to analyze.\n\nLoad the current file or choose a new file.");
                 return;
             }
-            PlotModelStat plot = await Task.Run(() => new PlotModelStat(plotName, allPsms));
+            PlotModelStat plot = await Task.Run(() => new PlotModelStat(plotName, filteredListOfPsms));
             plotViewStat.DataContext = plot;
         }
-        
+
         private void BtnChangeGridColumns_Click(object sender, RoutedEventArgs e)
         {
             itemsControlSampleViewModel.MyColumnCount++;
