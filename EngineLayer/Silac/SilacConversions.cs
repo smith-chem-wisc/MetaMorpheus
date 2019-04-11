@@ -472,7 +472,7 @@ namespace EngineLayer
             {
                 var lfqPeaks = FlashLfqResults.Peaks;
                 List<SpectraFileInfo> peakKeys = lfqPeaks.Keys.ToList();
-                
+
                 foreach (SpectraFileInfo key in peakKeys)
                 {
                     List<FlashLFQ.ChromatographicPeak> peaks = lfqPeaks[key];
@@ -504,8 +504,11 @@ namespace EngineLayer
                                     {
                                         string labelString = "(" + label.OriginalAminoAcid + label.MassDifference;
                                         int labelIndex = groupName.IndexOf(labelString);
-                                        groupName = groupName.Substring(0, labelIndex);
-                                        updatedGroups.Add(new FlashLFQ.ProteinGroup(groupName, group.GeneName, group.Organism));
+                                        if (labelIndex != -1) //labelIndex == 1 if a) 2+ peptides are required per protein or b) somebody broke parsimony
+                                        {
+                                            groupName = groupName.Substring(0, labelIndex);
+                                            updatedGroups.Add(new FlashLFQ.ProteinGroup(groupName, group.GeneName, group.Organism));
+                                        }
                                     }
                                 }
 
@@ -591,6 +594,5 @@ namespace EngineLayer
                 }
             }
         }
-
     }
 }
