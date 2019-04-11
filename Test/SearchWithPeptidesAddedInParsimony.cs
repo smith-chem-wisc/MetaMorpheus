@@ -71,7 +71,7 @@ namespace Test
 
             string mzmlName = @"ajgdiu.mzML";
 
-            MsDataFile myMsDataFile = new TestDataFile(new List<PeptideWithSetModifications> { pepMA, pepMG, pepMA111 }, true);
+            MsDataFile myMsDataFile = new TestDataFile(new List<PeptideWithSetModifications> { pepMA, pepMG, pepMA111 });
 
             IO.MzML.MzmlMethods.CreateAndWriteMyMzmlWithCalibratedSpectra(myMsDataFile, mzmlName, false);
             string outputFolder = Path.Combine(TestContext.CurrentContext.TestDirectory, @"TestSearchWithPeptidesAddedInParsimony");
