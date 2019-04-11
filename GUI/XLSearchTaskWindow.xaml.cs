@@ -13,6 +13,7 @@ using UsefulProteomicsDatabases;
 using Proteomics.ProteolyticDigestion;
 using MassSpectrometry;
 using System.Windows.Controls;
+using System.ComponentModel;
 
 namespace MetaMorpheusGUI
 {
@@ -25,6 +26,7 @@ namespace MetaMorpheusGUI
         private readonly ObservableCollection<SearchModeForDataGrid> SearchModesForThisTask = new ObservableCollection<SearchModeForDataGrid>();
         private readonly ObservableCollection<ModTypeForTreeView> FixedModTypeForTreeViewObservableCollection = new ObservableCollection<ModTypeForTreeView>();
         private readonly ObservableCollection<ModTypeForTreeView> VariableModTypeForTreeViewObservableCollection = new ObservableCollection<ModTypeForTreeView>();
+        private CustomFragmentationWindow CustomFragmentationWindow;
 
         public XLSearchTaskWindow() : this(null)
         {
@@ -49,6 +51,7 @@ namespace MetaMorpheusGUI
             };
             this.DataContext = DataContextForSearchTaskWindow;
             SearchModifications.Timer.Tick += new EventHandler(TextChangeTimerHandler);
+            base.Closing += this.OnClosing;
         }
 
         internal XLSearchTask TheTask { get; private set; }
@@ -66,6 +69,7 @@ namespace MetaMorpheusGUI
             foreach (string dissassociationType in GlobalVariables.AllSupportedDissociationTypes.Keys)
             {
                 DissociationTypeComboBox.Items.Add(dissassociationType);
+                ChildScanDissociationTypeComboBox.Items.Add(dissassociationType);
             }
 
             cbbXLprecusorMsTl.Items.Add("Da");
@@ -120,11 +124,11 @@ namespace MetaMorpheusGUI
             ckbQuenchTris.IsChecked = task.XlSearchParameters.XlQuench_Tris;
             txtUdXLKerName.Text = task.XlSearchParameters.CrosslinkerName;
             ckbUdXLkerCleavable.IsChecked = task.XlSearchParameters.IsCleavable;
-            txtUdXLkerTotalMs.Text = task.XlSearchParameters.CrosslinkerTotalMass.HasValue ? 
+            txtUdXLkerTotalMs.Text = task.XlSearchParameters.CrosslinkerTotalMass.HasValue ?
                 task.XlSearchParameters.CrosslinkerTotalMass.Value.ToString(CultureInfo.InvariantCulture) : "";
-            txtUdXLkerShortMass.Text = task.XlSearchParameters.CrosslinkerShortMass.HasValue ? 
+            txtUdXLkerShortMass.Text = task.XlSearchParameters.CrosslinkerShortMass.HasValue ?
                 task.XlSearchParameters.CrosslinkerShortMass.Value.ToString(CultureInfo.InvariantCulture) : "";
-            txtUdXLkerLongMass.Text = task.XlSearchParameters.CrosslinkerLongMass.HasValue ? 
+            txtUdXLkerLongMass.Text = task.XlSearchParameters.CrosslinkerLongMass.HasValue ?
                 task.XlSearchParameters.CrosslinkerLongMass.Value.ToString(CultureInfo.InvariantCulture) : "";
             txtH2OQuenchMass.Text = task.XlSearchParameters.CrosslinkerDeadEndMassH2O.HasValue ?
                 task.XlSearchParameters.CrosslinkerDeadEndMassH2O.Value.ToString(CultureInfo.InvariantCulture) : "";
@@ -143,7 +147,11 @@ namespace MetaMorpheusGUI
             MinRatioTextBox.Text = task.CommonParameters.MinRatio.ToString(CultureInfo.InvariantCulture);
             DissociationTypeComboBox.SelectedItem = task.CommonParameters.DissociationType.ToString();
 
-            //ckbCharge_2_3.IsChecked = task.XlSearchParameters.XlCharge_2_3;
+            if (task.CommonParameters.ChildScanDissociationType != DissociationType.Unknown)
+            {
+                ChildScanDissociationTypeComboBox.SelectedItem = task.CommonParameters.ChildScanDissociationType.ToString();
+            }
+            
             checkBoxDecoy.IsChecked = task.XlSearchParameters.DecoyType != DecoyType.None;
             deconvolutePrecursors.IsChecked = task.CommonParameters.DoPrecursorDeconvolution;
             useProvidedPrecursor.IsChecked = task.CommonParameters.UseProvidedPrecursorInfo;
@@ -159,7 +167,7 @@ namespace MetaMorpheusGUI
             minScoreAllowed.Text = task.CommonParameters.ScoreCutoff.ToString(CultureInfo.InvariantCulture);
             numberOfDatabaseSearchesTextBox.Text = task.CommonParameters.TotalPartitions.ToString(CultureInfo.InvariantCulture);
             maxThreadsTextBox.Text = task.CommonParameters.MaxThreadsToUsePerFile.ToString(CultureInfo.InvariantCulture);
-
+            CustomFragmentationWindow = new CustomFragmentationWindow(task.CommonParameters.CustomIons);
             ckbPercolator.IsChecked = task.XlSearchParameters.WriteOutputForPercolator;
             ckbPepXML.IsChecked = task.XlSearchParameters.WritePepXml;
 
@@ -237,6 +245,14 @@ namespace MetaMorpheusGUI
             }
 
             DissociationType dissociationType = GlobalVariables.AllSupportedDissociationTypes[DissociationTypeComboBox.SelectedItem.ToString()];
+
+            DissociationType childDissociationType = DissociationType.Unknown;
+            if (ChildScanDissociationTypeComboBox.SelectedItem != null)
+            {
+                childDissociationType = GlobalVariables.AllSupportedDissociationTypes[ChildScanDissociationTypeComboBox.SelectedItem.ToString()];
+            }
+            CustomFragmentationWindow.Close();
+
             //TheTask.XlSearchParameters.SearchGlyco = RbSearchGlyco.IsChecked.Value;
             //TheTask.XlSearchParameters.SearchGlycoWithBgYgIndex = CkbSearchGlycoWithBgYgIndex.IsChecked.Value;
             TheTask.XlSearchParameters.RestrictToTopNHits = ckbXLTopNum.IsChecked.Value;
@@ -283,10 +299,10 @@ namespace MetaMorpheusGUI
             InitiatorMethionineBehavior InitiatorMethionineBehavior = ((InitiatorMethionineBehavior)initiatorMethionineBehaviorComboBox.SelectedIndex);
             DigestionParams digestionParamsToSave = new DigestionParams(
                 protease: protease.Name,
-                maxMissedCleavages: MaxMissedCleavages, 
-                minPeptideLength: MinPeptideLength, 
-                maxPeptideLength: MaxPeptideLength, 
-                maxModificationIsoforms: MaxModificationIsoforms, 
+                maxMissedCleavages: MaxMissedCleavages,
+                minPeptideLength: MinPeptideLength,
+                maxPeptideLength: MaxPeptideLength,
+                maxModificationIsoforms: MaxModificationIsoforms,
                 initiatorMethionineBehavior: InitiatorMethionineBehavior);
 
             Tolerance ProductMassTolerance;
@@ -335,8 +351,9 @@ namespace MetaMorpheusGUI
                 trimMs1Peaks: trimMs1.IsChecked.Value,
                 trimMsMsPeaks: trimMsMs.IsChecked.Value,
                 topNpeaks: int.Parse(TopNPeaksTextBox.Text),
-                minRatio: double.Parse(MinRatioTextBox.Text),
+                minRatio: double.Parse(MinRatioTextBox.Text, CultureInfo.InvariantCulture),
                 dissociationType: dissociationType,
+                childScanDissociationType: childDissociationType,
                 scoreCutoff: double.Parse(minScoreAllowed.Text, CultureInfo.InvariantCulture),
                 totalPartitions: int.Parse(numberOfDatabaseSearchesTextBox.Text, CultureInfo.InvariantCulture),
                 listOfModsVariable: listOfModsVariable,
@@ -413,6 +430,19 @@ namespace MetaMorpheusGUI
                 SearchModifications.FilterTree(SearchVarMod, variableModsTreeView, VariableModTypeForTreeViewObservableCollection);
                 SearchModifications.VariableSearch = false;
             }
+        }
+
+        private void CustomFragmentationHandler(object sender, EventArgs e)
+        {
+            if (DissociationTypeComboBox.SelectedItem.ToString().Equals(DissociationType.Custom.ToString()))
+            {
+                CustomFragmentationWindow.Show();
+            }
+        }
+
+        private void OnClosing(object sender, CancelEventArgs e)
+        {
+            CustomFragmentationWindow.Close();
         }
     }
 }

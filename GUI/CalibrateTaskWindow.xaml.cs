@@ -11,6 +11,7 @@ using System.Windows.Input;
 using TaskLayer;
 using Proteomics.ProteolyticDigestion;
 using MassSpectrometry;
+using System.ComponentModel;
 
 namespace MetaMorpheusGUI
 {
@@ -22,6 +23,7 @@ namespace MetaMorpheusGUI
         private readonly ObservableCollection<ModTypeForTreeView> FixedModTypeForTreeViewObservableCollection = new ObservableCollection<ModTypeForTreeView>();
         private readonly ObservableCollection<ModTypeForTreeView> VariableModTypeForTreeViewObservableCollection = new ObservableCollection<ModTypeForTreeView>();
         private readonly ObservableCollection<ModTypeForLoc> LocalizeModTypeForTreeViewObservableCollection = new ObservableCollection<ModTypeForLoc>();
+        private CustomFragmentationWindow CustomFragmentationWindow;
 
         public CalibrateTaskWindow() : this(null)
         {
@@ -39,6 +41,7 @@ namespace MetaMorpheusGUI
                 this.saveButton.Content = "Add the Calibration Task";
             }
             SearchModifications.Timer.Tick += new EventHandler(TextChangeTimerHandler);
+            base.Closing += this.OnClosing;
         }
 
         internal CalibrationTask TheTask { get; private set; }
@@ -60,6 +63,7 @@ namespace MetaMorpheusGUI
             productMassToleranceComboBox.SelectedIndex = task.CommonParameters.ProductMassTolerance is AbsoluteTolerance ? 0 : 1;
             precursorMassToleranceTextBox.Text = task.CommonParameters.PrecursorMassTolerance.Value.ToString(CultureInfo.InvariantCulture);
             precursorMassToleranceComboBox.SelectedIndex = task.CommonParameters.PrecursorMassTolerance is AbsoluteTolerance ? 0 : 1;
+            CustomFragmentationWindow = new CustomFragmentationWindow(task.CommonParameters.CustomIons);
 
             //writeIntermediateFilesCheckBox.IsChecked = task.CalibrationParameters.WriteIntermediateFiles;
 
@@ -173,6 +177,7 @@ namespace MetaMorpheusGUI
         private void CancelButton_Click(object sender, RoutedEventArgs e)
         {
             DialogResult = false;
+            CustomFragmentationWindow.Close();
         }
 
         private void SaveButton_Click(object sender, RoutedEventArgs e)
@@ -194,12 +199,13 @@ namespace MetaMorpheusGUI
             int MaxHeterozygousVariants = int.Parse(MaxHeterozygousVariantsTextBox.Text, NumberStyles.Any, CultureInfo.InvariantCulture);
             int MaxModificationIsoforms = int.Parse(maxModificationIsoformsTextBox.Text, CultureInfo.InvariantCulture);
             DissociationType dissociationType = GlobalVariables.AllSupportedDissociationTypes[DissociationTypeComboBox.SelectedItem.ToString()];
+            CustomFragmentationWindow.Close();
 
             DigestionParams digestionParamsToSave = new DigestionParams(
                 protease: protease.Name,
-                maxMissedCleavages: MaxMissedCleavages, 
-                minPeptideLength: MinPeptideLength, 
-                maxPeptideLength: MaxPeptideLength, 
+                maxMissedCleavages: MaxMissedCleavages,
+                minPeptideLength: MinPeptideLength,
+                maxPeptideLength: MaxPeptideLength,
                 maxModificationIsoforms: MaxModificationIsoforms);
 
             var listOfModsVariable = new List<(string, string)>();
@@ -301,6 +307,19 @@ namespace MetaMorpheusGUI
                 SearchModifications.FilterTree(SearchVarMod, variableModsTreeView, VariableModTypeForTreeViewObservableCollection);
                 SearchModifications.VariableSearch = false;
             }
+        }
+
+        private void CustomFragmentationHandler(object sender, EventArgs e)
+        {
+            if (DissociationTypeComboBox.SelectedItem.ToString().Equals(DissociationType.Custom.ToString()))
+            {
+                CustomFragmentationWindow.Show();
+            }
+        }
+
+        private void OnClosing(object sender, CancelEventArgs e)
+        {
+            CustomFragmentationWindow.Close();
         }
     }
 }

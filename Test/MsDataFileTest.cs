@@ -4,6 +4,8 @@ using System.Collections.Generic;
 using System.IO;
 using TaskLayer;
 
+
+
 namespace Test
 {
     [TestFixture]
@@ -43,6 +45,26 @@ namespace Test
             engine.Run();
             //Just don't crash! There should also be at least one psm at 1% FDR, but can't check for that.
             Directory.Delete(outputFolder, true);
+        }
+
+        [Test]
+        public static void TestCompressionDecompression()
+        {
+            string testInputFolder = Path.Combine(TestContext.CurrentContext.TestDirectory, @"CompressionTest");
+            DirectoryInfo testDirectory = new DirectoryInfo(testInputFolder);
+            MyFileManager.CompressDirectory(testDirectory);
+
+            foreach (FileInfo file in testDirectory.GetFiles())
+            {
+                Assert.AreEqual(".gz", file.Extension);
+            }
+
+            MyFileManager.DecompressDirectory(testDirectory);
+
+            foreach (FileInfo file in testDirectory.GetFiles())
+            {
+                Assert.AreNotEqual(".gz", file.Extension);
+            }
         }
     }
 }

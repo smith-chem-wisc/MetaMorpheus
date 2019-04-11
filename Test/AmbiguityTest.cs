@@ -42,10 +42,6 @@ namespace Test
             var proteinList = new List<Protein> { new Protein("MNNKNKNKQQQ", "Prot1"), new Protein("MNNNKQQQ", "Prot2") };
             var searchModes = new SinglePpmAroundZeroSearchMode(5);
 
-            bool DoPrecursorDeconvolution = true;
-            bool UseProvidedPrecursorInfo = true;
-            double DeconvolutionIntensityRatio = 4;
-            int DeconvolutionMaxAssumedChargeState = 10;
             Tolerance DeconvolutionMassTolerance = new PpmTolerance(5);
 
             var listOfSortedms2Scans = MetaMorpheusTask.GetMs2Scans(myMsDataFile, null, new CommonParameters()).OrderBy(b => b.PrecursorMass).ToArray();
@@ -54,8 +50,8 @@ namespace Test
             
             PeptideSpectralMatch[] allPsmsArray_withOutAmbiguity = new PeptideSpectralMatch[listOfSortedms2Scans.Length];
 
-            new ClassicSearchEngine(allPsmsArray_withAmbiguity, listOfSortedms2Scans, variableModifications, fixedModifications, proteinList, searchModes, CommonParameters_t, new List<string>()).Run(); //report all ambiguity TRUE
-            new ClassicSearchEngine(allPsmsArray_withOutAmbiguity, listOfSortedms2Scans, variableModifications, fixedModifications, proteinList, searchModes, CommonParameters_f, new List<string>()).Run(); //report all ambiguity FALSE
+            new ClassicSearchEngine(allPsmsArray_withAmbiguity, listOfSortedms2Scans, variableModifications, fixedModifications, null, proteinList, searchModes, CommonParameters_t, new List<string>()).Run(); //report all ambiguity TRUE
+            new ClassicSearchEngine(allPsmsArray_withOutAmbiguity, listOfSortedms2Scans, variableModifications, fixedModifications, null, proteinList, searchModes, CommonParameters_f, new List<string>()).Run(); //report all ambiguity FALSE
 
             Assert.AreEqual("QQQ", allPsmsArray_withAmbiguity[0].BaseSequence);
             Assert.AreEqual("QQQ", allPsmsArray_withOutAmbiguity[0].BaseSequence);

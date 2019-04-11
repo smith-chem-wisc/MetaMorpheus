@@ -29,10 +29,7 @@ namespace EngineLayer.Localization
             foreach (PeptideSpectralMatch psm in AllResultingIdentifications.Where(b => b.FullSequence != null))
             {
                 // Stop loop if canceled
-                if (GlobalVariables.StopLoops)
-                {
-                    break;
-                }
+                if (GlobalVariables.StopLoops) { break; }
 
                 MsDataScan scan = MyMsDataFile.GetOneBasedScan(psm.ScanNumber);
                 Ms2ScanWithSpecificMass scanWithSpecificMass = new Ms2ScanWithSpecificMass(scan, psm.ScanPrecursorMonoisotopicPeakMz, psm.ScanPrecursorCharge, psm.FullFilePath, commonParameters);
@@ -52,7 +49,7 @@ namespace EngineLayer.Localization
                     var matchedIons = MatchFragmentIons(scanWithSpecificMass, productsWithLocalizedMassDiff, commonParameters);
 
                     // score when the mass-diff is on this residue
-                    double localizedScore = CalculatePeptideScore(scan, matchedIons, 0);
+                    double localizedScore = CalculatePeptideScore(scan, matchedIons);
 
                     localizedScores.Add(localizedScore);
                 }

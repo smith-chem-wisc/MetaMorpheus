@@ -11,6 +11,7 @@ using System.Windows.Input;
 using TaskLayer;
 using Proteomics.ProteolyticDigestion;
 using MassSpectrometry;
+using System.ComponentModel;
 
 namespace MetaMorpheusGUI
 {
@@ -23,6 +24,7 @@ namespace MetaMorpheusGUI
         private readonly ObservableCollection<ModTypeForTreeView> variableModTypeForTreeViewObservableCollection = new ObservableCollection<ModTypeForTreeView>();
         private readonly ObservableCollection<ModTypeForLoc> localizeModTypeForTreeViewObservableCollection = new ObservableCollection<ModTypeForLoc>();
         private readonly ObservableCollection<ModTypeForTreeView> gptmdModTypeForTreeViewObservableCollection = new ObservableCollection<ModTypeForTreeView>();
+        private CustomFragmentationWindow CustomFragmentationWindow;
 
         public GptmdTaskWindow() : this(null)
         {
@@ -42,6 +44,7 @@ namespace MetaMorpheusGUI
             }
 
             SearchModifications.Timer.Tick += new EventHandler(TextChangeTimerHandler);
+            base.Closing += this.OnClosing;
         }
 
         internal GptmdTask TheTask { get; private set; }
@@ -76,7 +79,7 @@ namespace MetaMorpheusGUI
             addCompIonCheckBox.IsChecked = task.CommonParameters.AddCompIons;
             MinVariantDepthTextBox.Text = task.CommonParameters.MinVariantDepth.ToString(CultureInfo.InvariantCulture);
             MaxHeterozygousVariantsTextBox.Text = task.CommonParameters.MaxHeterozygousVariants.ToString(CultureInfo.InvariantCulture);
-
+            CustomFragmentationWindow = new CustomFragmentationWindow(task.CommonParameters.CustomIons);
             OutputFileNameTextBox.Text = task.CommonParameters.TaskDescriptor;
 
             foreach (var mod in task.CommonParameters.ListOfModsFixed)
@@ -227,6 +230,7 @@ namespace MetaMorpheusGUI
         private void CancelButton_Click(object sender, RoutedEventArgs e)
         {
             DialogResult = false;
+            CustomFragmentationWindow.Close();
         }
 
         private void SaveButton_Click(object sender, RoutedEventArgs e)
@@ -250,6 +254,7 @@ namespace MetaMorpheusGUI
             int MaxModificationIsoforms = int.Parse(maxModificationIsoformsTextBox.Text, CultureInfo.InvariantCulture);
             InitiatorMethionineBehavior InitiatorMethionineBehavior = (InitiatorMethionineBehavior)initiatorMethionineBehaviorComboBox.SelectedIndex;
             DissociationType dissociationType = GlobalVariables.AllSupportedDissociationTypes[DissociationTypeComboBox.SelectedItem.ToString()];
+            CustomFragmentationWindow.Close();
 
             Tolerance ProductMassTolerance;
             if (productMassToleranceComboBox.SelectedIndex == 0)
@@ -378,6 +383,19 @@ namespace MetaMorpheusGUI
                 SearchModifications.FilterTree(SearchGPTMD, gptmdModsTreeView, gptmdModTypeForTreeViewObservableCollection);
                 SearchModifications.GptmdSearch = false;
             }
+        }
+
+        private void CustomFragmentationHandler(object sender, EventArgs e)
+        {
+            if (DissociationTypeComboBox.SelectedItem.ToString().Equals(DissociationType.Custom.ToString()))
+            {
+                CustomFragmentationWindow.Show();
+            }
+        }
+
+        private void OnClosing(object sender, CancelEventArgs e)
+        {
+            CustomFragmentationWindow.Close();
         }
     }
 }

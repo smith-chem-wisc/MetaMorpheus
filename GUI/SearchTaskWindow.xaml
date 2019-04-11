@@ -414,7 +414,7 @@
                                     <StackPanel Grid.Column="1">
                                         <StackPanel Orientation="Horizontal" Margin="5">
                                             <Label x:Name="dissociationTypeLabel" Content="Dissociation Type" />
-                                            <ComboBox x:Name="dissociationTypeComboBox" ToolTipService.ShowDuration="999999" ToolTipService.InitialShowDelay="500">
+                                            <ComboBox x:Name="dissociationTypeComboBox" ToolTipService.ShowDuration="999999" ToolTipService.InitialShowDelay="500" DropDownClosed="CustomFragmentationHandler">
                                                 <ComboBox.ToolTip>
                                                     <TextBlock>
                                                         The dissociation type used for MS/MS.
@@ -748,11 +748,42 @@
                             </GroupBox>
                             <GroupBox Header="Quantification">
                                 <StackPanel>
-                                    <CheckBox x:Name="checkBoxQuantification" Content="Quantify peptides/proteins with FlashLFQ">
+                                    <RadioButton x:Name="checkBoxNoQuant" Content="No quantification" GroupName="QuantType">
+                                        <ToolTipService.ToolTip>
+                                            <ToolTip Content="Saves a little time if PSM counting is good enough" ToolTipService.ShowDuration="999999" ToolTipService.InitialShowDelay="500"/>
+                                        </ToolTipService.ToolTip>
+                                    </RadioButton>
+                                    <RadioButton x:Name="checkBoxLFQ" Content="LFQ: Quantify peptides/proteins with FlashLFQ" GroupName="QuantType">
                                         <ToolTipService.ToolTip>
                                             <ToolTip Content="Label-free quantification is performed with FlashLFQ" ToolTipService.ShowDuration="999999" ToolTipService.InitialShowDelay="500"/>
                                         </ToolTipService.ToolTip>
-                                    </CheckBox>
+                                    </RadioButton>
+                                    <RadioButton x:Name="checkBoxSILAC" Content="SILAC/SILAM: Quantify peptides/proteins with stable isotope labels (specify below)" GroupName="QuantType">
+                                        <ToolTipService.ToolTip>
+                                            <ToolTip Content="SILAC quantification is performed using peak finding and FlashLFQ" ToolTipService.ShowDuration="999999" ToolTipService.InitialShowDelay="500"/>
+                                        </ToolTipService.ToolTip>
+                                    </RadioButton>
+                                    <CheckBox x:Name="CheckBoxQuantifyUnlabeledForSilac" Content="Quantify unlabeled peptides/proteins" IsEnabled="{Binding IsChecked, ElementName=checkBoxSILAC}" Margin="20,0,0,0"/>
+                                    <Grid>
+                                        <Grid.RowDefinitions>
+                                            <RowDefinition Height="0" />
+                                            <RowDefinition Height="80" />
+                                            <RowDefinition Height="20" />
+                                            <RowDefinition Height="0" />
+                                        </Grid.RowDefinitions>
+                                        <DataGrid x:Name="dataGridSilacLabels" ItemsSource="{Binding}" CanUserSortColumns="False" CanUserResizeColumns="False" CanUserReorderColumns="False" Grid.Row="1">
+                                            <DataGrid.Resources>
+                                                <Style TargetType="DataGridCell">
+                                                    <EventSetter Event="MouseDoubleClick" Handler="Row_DoubleClick" />
+                                                </Style>
+                                            </DataGrid.Resources>
+                                        </DataGrid>
+                                        <StackPanel Orientation="Horizontal" HorizontalAlignment="Center" Grid.Row="2">
+                                            <Button x:Name="AddSilac" Content="Add Isotope Label" Click="AddSilac_Click" IsEnabled="{Binding IsChecked, ElementName=checkBoxSILAC}"/>
+                                            <Button x:Name="DeleteSilac" Content="Delete Label" Click="DeleteSilac_Click" IsEnabled="{Binding IsChecked, ElementName=checkBoxSILAC}" />
+                                            <Button x:Name="ClearSilac" Content="Clear" Click="ClearSilac_Click" IsEnabled="{Binding IsChecked, ElementName=checkBoxSILAC}"/>
+                                        </StackPanel>
+                                    </Grid>
                                     <StackPanel Orientation="Horizontal">
                                         <TextBox x:Name="peakFindingToleranceTextBox"  PreviewTextInput="CheckIfNumber" Width="30" Height="20" IsEnabled="{Binding IsChecked, ElementName=checkBoxQuantification}">
                                             <ToolTipService.ToolTip>

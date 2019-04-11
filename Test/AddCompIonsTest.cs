@@ -32,10 +32,6 @@ namespace Test
             var productMassTolerance = new AbsoluteTolerance(0.01);
             var searchModes = new OpenSearchMode();
 
-            bool DoPrecursorDeconvolution = true;
-            bool UseProvidedPrecursorInfo = true;
-            double DeconvolutionIntensityRatio = 4;
-            int DeconvolutionMaxAssumedChargeState = 10;
             Tolerance DeconvolutionMassTolerance = new PpmTolerance(5);
 
             var listOfSortedms2Scans = MetaMorpheusTask.GetMs2Scans(myMsDataFile, null, new CommonParameters()).OrderBy(b => b.PrecursorMass).ToArray();
@@ -49,7 +45,7 @@ namespace Test
                 scoreCutoff: 1,
                 addCompIons: false);
             PeptideSpectralMatch[] allPsmsArray = new PeptideSpectralMatch[listOfSortedms2Scans.Length];
-            new ClassicSearchEngine(allPsmsArray, listOfSortedms2Scans, variableModifications, fixedModifications, proteinList, searchModes, CommonParameters, new List<string>()).Run();
+            new ClassicSearchEngine(allPsmsArray, listOfSortedms2Scans, variableModifications, fixedModifications, null, proteinList, searchModes, CommonParameters, new List<string>()).Run();
 
             CommonParameters CommonParameters2 = new CommonParameters(
                 digestionParams: new DigestionParams(protease: protease.Name, maxMissedCleavages: 0, minPeptideLength: 1),
@@ -57,7 +53,7 @@ namespace Test
                 addCompIons: true);
 
             PeptideSpectralMatch[] allPsmsArray2 = new PeptideSpectralMatch[listOfSortedms2Scans.Length];
-            new ClassicSearchEngine(allPsmsArray2, listOfSortedms2Scans, variableModifications, fixedModifications, proteinList, searchModes, CommonParameters2, new List<string>()).Run();
+            new ClassicSearchEngine(allPsmsArray2, listOfSortedms2Scans, variableModifications, fixedModifications, null, proteinList, searchModes, CommonParameters2, new List<string>()).Run();
 
             double scoreT = allPsmsArray2[0].Score;
             double scoreF = allPsmsArray[0].Score;
@@ -110,15 +106,11 @@ namespace Test
             CommonParameters CommonParameters = new CommonParameters(digestionParams: new DigestionParams(protease: protease.Name, minPeptideLength: 1), scoreCutoff: 1);
             CommonParameters withCompIons = new CommonParameters(digestionParams: new DigestionParams(protease: protease.Name, minPeptideLength: 1), scoreCutoff: 1, addCompIons: true);
 
-            var indexEngine = new IndexingEngine(proteinList, variableModifications, fixedModifications,
+            var indexEngine = new IndexingEngine(proteinList, variableModifications, fixedModifications, null,
                  1, DecoyType.Reverse, CommonParameters, SearchParameters.MaxFragmentSize, false, new List<FileInfo>(), new List<string>());
 
             var indexResults = (IndexingResults)indexEngine.Run();
 
-            bool DoPrecursorDeconvolution = true;
-            bool UseProvidedPrecursorInfo = true;
-            double DeconvolutionIntensityRatio = 4;
-            int DeconvolutionMaxAssumedChargeState = 10;
             Tolerance DeconvolutionMassTolerance = new PpmTolerance(5);
 
             var listOfSortedms2Scans = MetaMorpheusTask.GetMs2Scans(myMsDataFile, null, new CommonParameters()).OrderBy(b => b.PrecursorMass).ToArray();
@@ -172,9 +164,9 @@ namespace Test
             matchedCompIons.AddRange(matchedIons);
 
             // score when the mass-diff is on this residue
-            double localizedScore = MetaMorpheusEngine.CalculatePeptideScore(scan, matchedIons, 0);
-            double scoreNormal = MetaMorpheusEngine.CalculatePeptideScore(scan, matchedIons, 0);
-            double scoreComp = MetaMorpheusEngine.CalculatePeptideScore(scan, matchedCompIons, 0);
+            double localizedScore = MetaMorpheusEngine.CalculatePeptideScore(scan, matchedIons);
+            double scoreNormal = MetaMorpheusEngine.CalculatePeptideScore(scan, matchedIons);
+            double scoreComp = MetaMorpheusEngine.CalculatePeptideScore(scan, matchedCompIons);
             Assert.IsTrue(scoreNormal * 2 == scoreComp && scoreComp > scoreNormal + 1);
         }
 

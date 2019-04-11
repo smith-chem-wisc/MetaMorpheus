@@ -1,8 +1,6 @@
 ﻿using Proteomics;
-using Proteomics.Fragmentation;
 using Proteomics.ProteolyticDigestion;
 using System;
-using System.Collections.Concurrent;
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
@@ -18,17 +16,22 @@ namespace EngineLayer.Indexing
         private readonly List<Protein> ProteinList;
         private readonly List<Modification> FixedModifications;
         private readonly List<Modification> VariableModifications;
+        private readonly List<SilacLabel> SilacLabels;
         private readonly int CurrentPartition;
         private readonly DecoyType DecoyType;
         private readonly double MaxFragmentSize;
         public readonly bool GeneratePrecursorIndex;
         public readonly List<FileInfo> ProteinDatabases;
 
-        public IndexingEngine(List<Protein> proteinList, List<Modification> variableModifications, List<Modification> fixedModifications, int currentPartition, DecoyType decoyType, CommonParameters commonParams, double maxFragmentSize, bool generatePrecursorIndex, List<FileInfo> proteinDatabases, List<string> nestedIds) : base(commonParams, nestedIds)
+        public IndexingEngine(List<Protein> proteinList, List<Modification> variableModifications, List<Modification> fixedModifications,
+            List<SilacLabel> silacLabels, int currentPartition, DecoyType decoyType, CommonParameters commonParams, double maxFragmentSize,
+            bool generatePrecursorIndex, List<FileInfo> proteinDatabases, List<string> nestedIds)
+            : base(commonParams, nestedIds)
         {
             ProteinList = proteinList;
             VariableModifications = variableModifications;
             FixedModifications = fixedModifications;
+            SilacLabels = silacLabels;
             CurrentPartition = currentPartition + 1;
             DecoyType = decoyType;
             MaxFragmentSize = maxFragmentSize;
@@ -71,22 +74,18 @@ namespace EngineLayer.Indexing
             // digest database
             List<PeptideWithSetModifications> globalPeptides = new List<PeptideWithSetModifications>();
 
-            Parallel.ForEach(Partitioner.Create(0, ProteinList.Count), new ParallelOptions { MaxDegreeOfParallelism = commonParameters.MaxThreadsToUsePerFile }, (range, loopState) =>
+            int maxThreadsPerFile = commonParameters.MaxThreadsToUsePerFile;
+            int[] threads = Enumerable.Range(0, maxThreadsPerFile).ToArray();
+            Parallel.ForEach(threads, (i) =>
             {
                 List<PeptideWithSetModifications> localPeptides = new List<PeptideWithSetModifications>();
 
-                for (int i = range.Item1; i < range.Item2; i++)
+                for (; i < ProteinList.Count; i += maxThreadsPerFile)
                 {
                     // Stop loop if canceled
-                    if (GlobalVariables.StopLoops)
-                    {
-                        loopState.Stop();
-                        return;
-                    }
+                    if (GlobalVariables.StopLoops) { return; }
 
-
-                    localPeptides.AddRange(ProteinList[i].Digest(commonParameters.DigestionParams, FixedModifications, VariableModifications));
-
+                    localPeptides.AddRange(ProteinList[i].Digest(commonParameters.DigestionParams, FixedModifications, VariableModifications, SilacLabels));
 
                     progress++;
                     var percentProgress = (int)((progress / ProteinList.Count) * 100);
@@ -127,11 +126,18 @@ namespace EngineLayer.Indexing
             {
                 var fragmentMasses = peptidesSortedByMass[peptideId].Fragment(commonParameters.DissociationType, commonParameters.DigestionParams.FragmentationTerminus).Select(m => m.NeutralMass).ToList();
 
-                foreach (var theoreticalFragmentMass in fragmentMasses)
+                foreach (double theoreticalFragmentMass in fragmentMasses)
                 {
-                    if (theoreticalFragmentMass < MaxFragmentSize && theoreticalFragmentMass > 0)
+                    double tfm = theoreticalFragmentMass;
+                    //if low res round
+                    if (commonParameters.DissociationType == MassSpectrometry.DissociationType.LowCID)
                     {
-                        int fragmentBin = (int)Math.Round(theoreticalFragmentMass * FragmentBinsPerDalton);
+                        tfm = Math.Round(theoreticalFragmentMass / 1.0005079, 0) * 1.0005079;
+                    }
+
+                    if (tfm < MaxFragmentSize && tfm > 0)
+                    {
+                        int fragmentBin = (int)Math.Round(tfm * FragmentBinsPerDalton);
 
                         if (fragmentIndex[fragmentBin] == null)
                             fragmentIndex[fragmentBin] = new List<int> { peptideId };

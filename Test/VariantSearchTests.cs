@@ -84,7 +84,7 @@ namespace Test
             ProteinDbWriter.WriteXmlDatabase(null, new List<Protein> { proteins[proteinIdx] }, xmlName);
 
             string mzmlName = $"ajgdiv{proteinIdx.ToString()}.mzML";
-            MsDataFile myMsDataFile = new TestDataFile(new List<PeptideWithSetModifications> { pep }, true);
+            MsDataFile myMsDataFile = new TestDataFile(new List<PeptideWithSetModifications> { pep });
 
             IO.MzML.MzmlMethods.CreateAndWriteMyMzmlWithCalibratedSpectra(myMsDataFile, mzmlName, false);
             string outputFolder = Path.Combine(TestContext.CurrentContext.TestDirectory, $"TestSearchWithVariants{proteinIdx.ToString()}");
@@ -114,7 +114,7 @@ namespace Test
             PeptideWithSetModifications pep = peps[peps.Count - 2];
 
             string mzmlName = $"ajgdiv{filename}{decoyType.ToString()}.mzML";
-            MsDataFile myMsDataFile = new TestDataFile(new List<PeptideWithSetModifications> { pep }, true);
+            MsDataFile myMsDataFile = new TestDataFile(new List<PeptideWithSetModifications> { pep });
 
             IO.MzML.MzmlMethods.CreateAndWriteMyMzmlWithCalibratedSpectra(myMsDataFile, mzmlName, false);
             string outputFolder = Path.Combine(TestContext.CurrentContext.TestDirectory, $"TestSearchWithVariants{filename}{decoyType.ToString()}");
@@ -137,12 +137,9 @@ namespace Test
 
             //Assert.IsTrue(psms.Any(line => line.Contains($"\t{variantPsmShort}\t" + (containsVariant ? variantPsmShort : "\t"))));
 
-            //Directory.Delete(outputFolder, true);
-            //File.Delete(mzmlName);
-            //File.Delete(xmlName);
+            Directory.Delete(outputFolder, true);
+            File.Delete(mzmlName);
             //Directory.Delete(Path.Combine(TestContext.CurrentContext.TestDirectory, @"Task Settings"), true);
-
-            //Console.WriteLine($"Analysis time for VariantSearchTests.SearchTests({proteinIdx.ToString()},{peptideIdx.ToString()},{containsVariant.ToString()},{variantPsmShort}): {stopwatch.Elapsed.Hours}h {stopwatch.Elapsed.Minutes}m {stopwatch.Elapsed.Seconds}s");
         }
     }
 }

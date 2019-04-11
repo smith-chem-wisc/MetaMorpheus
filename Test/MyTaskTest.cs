@@ -245,7 +245,7 @@ namespace Test
 
             PeptideWithSetModifications targetGood = targetDigested.First();
 
-            TestDataFile myMsDataFile = new TestDataFile(new List<PeptideWithSetModifications> { targetGood }, true);
+            TestDataFile myMsDataFile = new TestDataFile(new List<PeptideWithSetModifications> { targetGood });
 
             var ii = myMsDataFile.GetOneBasedScan(1).MassSpectrum.YArray.ToList();
 
@@ -329,7 +329,7 @@ namespace Test
                 PeptideWithSetModifications targetGood = targetDigested[0];
 
                 PeptideWithSetModifications targetWithUnknownMod = targetDigested[1];
-                MsDataFile myMsDataFile = new TestDataFile(new List<PeptideWithSetModifications> { targetGood, targetWithUnknownMod }, true);
+                MsDataFile myMsDataFile = new TestDataFile(new List<PeptideWithSetModifications> { targetGood, targetWithUnknownMod });
 
                 IO.MzML.MzmlMethods.CreateAndWriteMyMzmlWithCalibratedSpectra(myMsDataFile, mzmlName, false);
             }

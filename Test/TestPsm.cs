@@ -188,7 +188,7 @@ namespace Test
             Ms2ScanWithSpecificMass scanWithMass = new Ms2ScanWithSpecificMass(msDataScan, 4, 1, null, new CommonParameters());
 
             PeptideSpectralMatch psm = new PeptideSpectralMatch(target, 0, 1, 1, scanWithMass, digest, null);
-            psm.AddOrReplace(decoy, 1, 0, true, null);
+            psm.AddOrReplace(decoy, 1, 0, true, null, 0);
 
             Assert.AreEqual(2, psm.BestMatchingPeptides.Count());
             Assert.That(psm.BestMatchingPeptides.Any(p => p.Peptide.Protein.IsDecoy));
@@ -214,7 +214,7 @@ namespace Test
             Ms2ScanWithSpecificMass scanWithMass = new Ms2ScanWithSpecificMass(msDataScan, 4, 1, null, new CommonParameters());
 
             PeptideSpectralMatch psm = new PeptideSpectralMatch(target, 0, 1, 1, scanWithMass, digest, null);
-            psm.AddOrReplace(decoy, 1, 0, true, null);
+            psm.AddOrReplace(decoy, 1, 0, true, null, 0);
 
             Assert.AreEqual(2, psm.BestMatchingPeptides.Count());
             Assert.That(psm.BestMatchingPeptides.Any(p => p.Peptide.Protein.IsDecoy));
@@ -226,6 +226,94 @@ namespace Test
 
             new FdrAnalysisEngine(new List<PeptideSpectralMatch> { psm }, 1, new CommonParameters(), new List<string>()).Run();
             Assert.AreEqual(0.5, psm.FdrInfo.CumulativeDecoy);
+        }
+
+        [Test]
+        public static void TestPsmCount()
+        {
+            Protein p1 = new Protein("PEPTIDE", null);
+            DigestionParams digestionParams = new DigestionParams();
+            PeptideWithSetModifications pep1 = p1.Digest(digestionParams, new List<Modification>(), new List<Modification>()).ToList().First();
+
+            Protein p2 = new Protein("PEPTIDE", null);
+            PeptideWithSetModifications pep2 = p2.Digest(digestionParams, new List<Modification>(), new List<Modification>()).ToList().First();
+
+            Protein p3 = new Protein("PEPTIDE", null);
+            PeptideWithSetModifications pep3 = p3.Digest(digestionParams, new List<Modification>(), new List<Modification>()).ToList().First();
+
+            TestDataFile t = new TestDataFile(new List<PeptideWithSetModifications> { pep1, pep2, pep3 });
+
+            MsDataScan mzLibScan1 = t.GetOneBasedScan(2);
+            Ms2ScanWithSpecificMass scan1 = new Ms2ScanWithSpecificMass(mzLibScan1, 0, 1, null, new CommonParameters());
+            PeptideSpectralMatch psm1 = new PeptideSpectralMatch(pep1, 0, 0, 0, scan1, digestionParams, new List<MatchedFragmentIon>());
+
+            MsDataScan mzLibScan2 = t.GetOneBasedScan(4);
+            Ms2ScanWithSpecificMass scan2 = new Ms2ScanWithSpecificMass(mzLibScan2, 0, 1, null, new CommonParameters());
+            PeptideSpectralMatch psm2 = new PeptideSpectralMatch(pep2, 0, 0, 0, scan2, digestionParams, new List<MatchedFragmentIon>());
+
+            MsDataScan mzLibScan3 = t.GetOneBasedScan(6);
+            Ms2ScanWithSpecificMass scan3 = new Ms2ScanWithSpecificMass(mzLibScan3, 0, 1, null, new CommonParameters());
+            PeptideSpectralMatch psm3 = new PeptideSpectralMatch(pep3, 0, 0, 0, scan3, digestionParams, new List<MatchedFragmentIon>());
+
+            psm1.SetFdrValues(0, 0, 0, 0, 0, 0, 0, 0, 0, false); // valid psm
+            psm1.ResolveAllAmbiguities();
+
+            psm2.SetFdrValues(0, 0, 0.02, 0, 0, 0, 0, 0, 0, false); // psm above fdr cutoff
+            psm2.ResolveAllAmbiguities();
+
+            psm3.SetFdrValues(0, 0, 0, 0, 0, 0, 0, 0, 0, false); // ambiguous psm
+
+            var allPsms = new List<PeptideSpectralMatch> { psm1, psm2, psm3 };
+            var fdrEngine = new FdrAnalysisEngine(allPsms, 0, new CommonParameters(), new List<string>());
+
+            fdrEngine.CountPsm();
+            var psmGroups = allPsms.Where(psm => psm.FullSequence != null && psm.PsmCount > 0).GroupBy(p => p.FullSequence).ToList();
+            Assert.That(psmGroups.First().Count() == 2);
+            Assert.That(psmGroups.First().First().PsmCount == 1);
+
+            psm2.SetFdrValues(0, 0, 0, 0, 0, 0, 0, 0, 0, false);
+            psm3.ResolveAllAmbiguities();
+
+            fdrEngine.CountPsm();
+            psmGroups = allPsms.Where(psm => psm.FullSequence != null && psm.PsmCount > 0).GroupBy(p => p.FullSequence).ToList();
+            Assert.That(psmGroups.First().Count() == 3);
+        }
+
+        [Test]
+        public static void TestPsmCount2()
+        {
+            SearchTask task = new SearchTask();
+            string outputFolder = Path.Combine(TestContext.CurrentContext.TestDirectory, @"TestPsmCount2");
+            string myFile = Path.Combine(TestContext.CurrentContext.TestDirectory, @"TestData\SmallCalibratible_Yeast.mzML");
+            string myDatabase = Path.Combine(TestContext.CurrentContext.TestDirectory, @"TestData\smalldb.fasta");
+            Directory.CreateDirectory(outputFolder);
+
+            task.RunTask(outputFolder, new List<DbForTask> { new DbForTask(myDatabase, false) }, new List<string> { myFile }, "test");
+
+            var peptides = File.ReadAllLines(Path.Combine(outputFolder, @"AllPeptides.psmtsv"));
+            var header = peptides[0].Split(new char[] { '\t' }).ToArray();
+            int indexOfPsmCountInTsv = Array.IndexOf(header, PsmTsvHeader.PsmCount);
+            int indexOfQValueInTsv = Array.IndexOf(header, PsmTsvHeader.QValue);
+            Assert.That(indexOfPsmCountInTsv >= 0);
+            Assert.That(indexOfQValueInTsv >= 0);
+
+            var psmsFromTsv = PsmTsvReader.ReadTsv(Path.Combine(outputFolder, @"AllPSMs.psmtsv"), out var warnings);
+            var psmsGroupedBySequence = psmsFromTsv.GroupBy(p => p.FullSequence).ToList();
+            Assert.AreEqual(psmsGroupedBySequence.Count, peptides.Length - 1);
+
+            for (int i = 0; i < psmsGroupedBySequence.Count; i++)
+            {
+                var peptideLine = peptides[i + 1];
+                var split = peptideLine.Split(new char[] { '\t' });
+
+                int psmCount = psmsGroupedBySequence[i].Count(p => p.QValue <= 0.01);
+                int psmCountWrittenToPeptidesFile = int.Parse(split[indexOfPsmCountInTsv]);
+
+                Assert.AreEqual(psmCount, psmCountWrittenToPeptidesFile);
+            }
+
+            Directory.Delete(outputFolder, true);
+            Directory.Delete(Path.Combine(TestContext.CurrentContext.TestDirectory, @"Task Settings"), true);
         }
     }
 }
