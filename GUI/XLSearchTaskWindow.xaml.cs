@@ -13,6 +13,7 @@ using UsefulProteomicsDatabases;
 using Proteomics.ProteolyticDigestion;
 using MassSpectrometry;
 using System.Windows.Controls;
+using System.ComponentModel;
 
 namespace MetaMorpheusGUI
 {
@@ -50,6 +51,7 @@ namespace MetaMorpheusGUI
             };
             this.DataContext = DataContextForSearchTaskWindow;
             SearchModifications.Timer.Tick += new EventHandler(TextChangeTimerHandler);
+            base.Closing += this.OnClosing;
         }
 
         internal XLSearchTask TheTask { get; private set; }
@@ -71,6 +73,7 @@ namespace MetaMorpheusGUI
             foreach (string dissassociationType in GlobalVariables.AllSupportedDissociationTypes.Keys)
             {
                 DissociationTypeComboBox.Items.Add(dissassociationType);
+                ChildScanDissociationTypeComboBox.Items.Add(dissassociationType);
             }
 
             cbbXLprecusorMsTl.Items.Add("Da");
@@ -131,7 +134,11 @@ namespace MetaMorpheusGUI
             MinRatioTextBox.Text = task.CommonParameters.MinRatio.ToString(CultureInfo.InvariantCulture);
             DissociationTypeComboBox.SelectedItem = task.CommonParameters.DissociationType.ToString();
 
-
+            if (task.CommonParameters.ChildScanDissociationType != DissociationType.Unknown)
+            {
+                ChildScanDissociationTypeComboBox.SelectedItem = task.CommonParameters.ChildScanDissociationType.ToString();
+            }
+            
             checkBoxDecoy.IsChecked = task.XlSearchParameters.DecoyType != DecoyType.None;
             deconvolutePrecursors.IsChecked = task.CommonParameters.DoPrecursorDeconvolution;
             useProvidedPrecursor.IsChecked = task.CommonParameters.UseProvidedPrecursorInfo;
@@ -225,8 +232,14 @@ namespace MetaMorpheusGUI
             }
 
             DissociationType dissociationType = GlobalVariables.AllSupportedDissociationTypes[DissociationTypeComboBox.SelectedItem.ToString()];
+
+            DissociationType childDissociationType = DissociationType.Unknown;
+            if (ChildScanDissociationTypeComboBox.SelectedItem != null)
+            {
+                childDissociationType = GlobalVariables.AllSupportedDissociationTypes[ChildScanDissociationTypeComboBox.SelectedItem.ToString()];
+            }
             CustomFragmentationWindow.Close();
-            
+
             //TheTask.XlSearchParameters.SearchGlyco = RbSearchGlyco.IsChecked.Value;
             //TheTask.XlSearchParameters.SearchGlycoWithBgYgIndex = CkbSearchGlycoWithBgYgIndex.IsChecked.Value;
             TheTask.XlSearchParameters.RestrictToTopNHits = ckbXLTopNum.IsChecked.Value;
@@ -249,10 +262,10 @@ namespace MetaMorpheusGUI
             InitiatorMethionineBehavior InitiatorMethionineBehavior = ((InitiatorMethionineBehavior)initiatorMethionineBehaviorComboBox.SelectedIndex);
             DigestionParams digestionParamsToSave = new DigestionParams(
                 protease: protease.Name,
-                maxMissedCleavages: MaxMissedCleavages, 
-                minPeptideLength: MinPeptideLength, 
-                maxPeptideLength: MaxPeptideLength, 
-                maxModificationIsoforms: MaxModificationIsoforms, 
+                maxMissedCleavages: MaxMissedCleavages,
+                minPeptideLength: MinPeptideLength,
+                maxPeptideLength: MaxPeptideLength,
+                maxModificationIsoforms: MaxModificationIsoforms,
                 initiatorMethionineBehavior: InitiatorMethionineBehavior);
 
             Tolerance ProductMassTolerance;
@@ -302,6 +315,7 @@ namespace MetaMorpheusGUI
                 topNpeaks: int.Parse(TopNPeaksTextBox.Text),
                 minRatio: double.Parse(MinRatioTextBox.Text, CultureInfo.InvariantCulture),
                 dissociationType: dissociationType,
+                childScanDissociationType: childDissociationType,
                 scoreCutoff: double.Parse(minScoreAllowed.Text, CultureInfo.InvariantCulture),
                 totalPartitions: int.Parse(numberOfDatabaseSearchesTextBox.Text, CultureInfo.InvariantCulture),
                 listOfModsVariable: listOfModsVariable,
@@ -386,6 +400,11 @@ namespace MetaMorpheusGUI
             {
                 CustomFragmentationWindow.Show();
             }
+        }
+
+        private void OnClosing(object sender, CancelEventArgs e)
+        {
+            CustomFragmentationWindow.Close();
         }
     }
 }

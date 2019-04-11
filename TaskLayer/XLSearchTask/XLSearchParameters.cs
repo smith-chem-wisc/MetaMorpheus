@@ -22,7 +22,6 @@ namespace TaskLayer
         public DecoyType DecoyType { get; set; }
         public Crosslinker Crosslinker { get; set; }
         public int CrosslinkSearchTopNum { get; set; }
-
         public bool RestrictToTopNHits { get; set; }
         public bool WriteOutputForPercolator { get; set; }
         public bool WritePepXml { get; set; }
