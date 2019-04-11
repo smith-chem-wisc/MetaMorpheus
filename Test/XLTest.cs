@@ -621,20 +621,20 @@ namespace Test
                 commonParameters, 5000, false, new List<FileInfo>(), new List<string>()).Run();
             
             var csms = new CrosslinkSpectralMatch[1];
-            new CrosslinkSearchEngine(csms, scans, indexingResults.PeptideIndex, indexingResults.FragmentIndex, 0, commonParameters, new Crosslinker().SelectCrosslinker(CrosslinkerType.DSSO), 
+            new CrosslinkSearchEngine(csms, scans, indexingResults.PeptideIndex, indexingResults.FragmentIndex, 0, commonParameters, GlobalVariables.Crosslinkers.First(p => p.CrosslinkerName == "DSSO"), 
                 false, 0, false, false, true, new List<string>()).Run();
 
             var csm = csms[0];
 
             // test parent scan (CID)
-            Assert.That(csm.MatchedFragmentIons.Count == 13);
+            Assert.That(csm.MatchedFragmentIons.Count == 21);
             Assert.That(csm.ScanNumber == 2);
 
             // test child scan (ETD)
             Assert.That(csm.ChildMatchedFragmentIons.First().Key == 3);
-            Assert.That(csm.ChildMatchedFragmentIons.First().Value.Count == 17);
+            Assert.That(csm.ChildMatchedFragmentIons.First().Value.Count == 12);
             Assert.That(csm.BetaPeptide.ChildMatchedFragmentIons.First().Key == 3);
-            Assert.That(csm.BetaPeptide.ChildMatchedFragmentIons.First().Value.Count == 12);
+            Assert.That(csm.BetaPeptide.ChildMatchedFragmentIons.First().Value.Count == 17);
 
             // write results to TSV
             csm.SetFdrValues(1, 0, 0, 0, 0, 0, 0, 0, 0, false);
@@ -645,11 +645,11 @@ namespace Test
 
             Assert.That(psmFromTsv.ChildScanMatchedIons.Count == 1
                 && psmFromTsv.ChildScanMatchedIons.First().Key == 3
-                && psmFromTsv.ChildScanMatchedIons.First().Value.Count == 17);
+                && psmFromTsv.ChildScanMatchedIons.First().Value.Count == 12);
 
             Assert.That(psmFromTsv.BetaPeptideChildScanMatchedIons.Count == 1
                 && psmFromTsv.BetaPeptideChildScanMatchedIons.First().Key == 3
-                && psmFromTsv.BetaPeptideChildScanMatchedIons.First().Value.Count == 12);
+                && psmFromTsv.BetaPeptideChildScanMatchedIons.First().Value.Count == 17);
 
             File.Delete(outputFile);
         }
@@ -684,13 +684,13 @@ namespace Test
                 commonParameters, 5000, false, new List<FileInfo>(), new List<string>()).Run();
 
             var csms = new CrosslinkSpectralMatch[2];
-            new CrosslinkSearchEngine(csms, scans, indexingResults.PeptideIndex, indexingResults.FragmentIndex, 0, commonParameters, new Crosslinker().SelectCrosslinker(CrosslinkerType.DSSO),
+            new CrosslinkSearchEngine(csms, scans, indexingResults.PeptideIndex, indexingResults.FragmentIndex, 0, commonParameters, GlobalVariables.Crosslinkers.First(p => p.CrosslinkerName == "DSSO"),
                 false, 0, false, false, true, new List<string>()).Run();
 
             var csm = csms[0];
 
             // test parent scan (CID)
-            Assert.That(csm.MatchedFragmentIons.Count == 12);
+            Assert.That(csm.MatchedFragmentIons.Count == 14);
             Assert.That(csm.ScanNumber == 2);
 
             // test child scan (low-resolution CID, alpha peptide signature ion)
@@ -708,11 +708,11 @@ namespace Test
             // read results from TSV
             var psmFromTsv = PsmTsvReader.ReadTsv(outputFile, out var warnings).First();
 
-            Assert.That(psmFromTsv.ChildScanMatchedIons.Count == 1 
+            Assert.That(psmFromTsv.ChildScanMatchedIons.Count == 2 
                 && psmFromTsv.ChildScanMatchedIons.First().Key == 4 
                 && psmFromTsv.ChildScanMatchedIons.First().Value.Count == 63);
 
-            Assert.That(psmFromTsv.BetaPeptideChildScanMatchedIons.Count == 1 
+            Assert.That(psmFromTsv.BetaPeptideChildScanMatchedIons.Count == 2 
                 && psmFromTsv.BetaPeptideChildScanMatchedIons.First().Key == 6 
                 && psmFromTsv.BetaPeptideChildScanMatchedIons.First().Value.Count == 43);
 
