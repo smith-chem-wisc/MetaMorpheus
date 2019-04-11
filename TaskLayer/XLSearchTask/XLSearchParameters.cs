@@ -1,4 +1,5 @@
 using EngineLayer;
+using System.Linq;
 using UsefulProteomicsDatabases;
 
 namespace TaskLayer
@@ -8,7 +9,7 @@ namespace TaskLayer
         public XlSearchParameters()
         {
             DecoyType = DecoyType.Reverse;
-            Crosslinker = new Crosslinker();
+            Crosslinker = GlobalVariables.Crosslinkers.First();
             RestrictToTopNHits = true;
             CrosslinkSearchTopNum = 300;
             XlQuench_H2O = true;

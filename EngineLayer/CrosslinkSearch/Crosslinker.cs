@@ -1,12 +1,20 @@
-﻿using System.IO;
-using System.Collections.Generic;
+﻿using System.Collections.Generic;
+using System.IO;
 
 namespace EngineLayer
 {
     public class Crosslinker
     {
-        public Crosslinker(string crosslinkerModSites = "K", string crosslinkerModSites2 ="K", string crosslinkerName = "DSSO", bool cleavable = true, double totalMass = 158.0038,
-            double cleaveMassShort = 54.01056, double cleaveMassLong = 85.982635, double loopMass = 158.0038, double deadendMassH2O = 176.0143, double deadendMassNH2 = 175.0303, double deadendMassTris = 279.0777)
+        /// <summary>
+        /// Do not use this constructor for anything. It exists so that the .toml can be read.
+        /// </summary>
+        public Crosslinker()
+        {
+
+        }
+
+        public Crosslinker(string crosslinkerModSites, string crosslinkerModSites2, string crosslinkerName, bool cleavable, double totalMass,
+            double cleaveMassShort, double cleaveMassLong, double loopMass, double deadendMassH2O, double deadendMassNH2, double deadendMassTris)
         {
             CrosslinkerModSites = crosslinkerModSites;
             CrosslinkerModSites2 = crosslinkerModSites2;
@@ -35,9 +43,10 @@ namespace EngineLayer
 
         public static IEnumerable<Crosslinker> LoadCrosslinkers(string CrosslinkerLocation)
         {
-            using(StreamReader crosslinkers = new StreamReader(CrosslinkerLocation))
+            using (StreamReader crosslinkers = new StreamReader(CrosslinkerLocation))
             {
                 int lineCount = 0;
+
                 while (crosslinkers.Peek() != -1)
                 {
                     lineCount++;
@@ -47,23 +56,31 @@ namespace EngineLayer
                         continue;
                     }
 
-                    yield return GetCrosslinker(line);
+                    yield return ParseCrosslinkerFromString(line);
                 }
             }
         }
 
-        public static Crosslinker GetCrosslinker(string line)
+        public static Crosslinker ParseCrosslinkerFromString(string line)
         {
             var split = line.Split('\t');
-            bool cleable = true;
+            bool cleavable = true;
             if (split[3] == "F")
             {
-                cleable = false;
+                cleavable = false;
             }
 
-            Crosslinker crosslinker = new Crosslinker(crosslinkerName: split[0], crosslinkerModSites : split[1], crosslinkerModSites2: split[2], 
-                cleavable: cleable, totalMass: double.Parse(split[4]), cleaveMassShort: double.Parse(split[5]), cleaveMassLong: double.Parse(split[6]), 
-                loopMass: double.Parse(split[4]),deadendMassH2O: double.Parse(split[7]), deadendMassNH2: double.Parse(split[8]), 
+            Crosslinker crosslinker = new Crosslinker(
+                crosslinkerName: split[0],
+                crosslinkerModSites: split[1],
+                crosslinkerModSites2: split[2],
+                cleavable: cleavable,
+                totalMass: double.Parse(split[4]),
+                cleaveMassShort: double.Parse(split[5]),
+                cleaveMassLong: double.Parse(split[6]),
+                loopMass: double.Parse(split[4]),
+                deadendMassH2O: double.Parse(split[7]),
+                deadendMassNH2: double.Parse(split[8]),
                 deadendMassTris: double.Parse(split[9]));
 
             return crosslinker;
@@ -82,7 +99,9 @@ namespace EngineLayer
                     + CleaveMassLong + "\t" + DeadendMassH2O + "\t" + DeadendMassNH2 + "\t" + DeadendMassTris);
             }
             else
+            {
                 return CrosslinkerName;
+            }
         }
 
         public override bool Equals(object obj)

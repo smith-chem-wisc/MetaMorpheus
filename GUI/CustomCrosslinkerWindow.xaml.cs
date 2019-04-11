@@ -45,7 +45,7 @@ namespace MetaMorpheusGUI
             double NH2QuenchMass = double.Parse(txtNH2QuenchMass.Text == "" ? "0" : txtNH2QuenchMass.Text);
             double TrisQuenchMass = double.Parse(txtTrisQuenchMass.Text == "" ? "0" : txtTrisQuenchMass.Text);
 
-            if (GlobalVariables.Crosslinkers.Contains(new Crosslinker(crosslinkerName: name)) && customCrosslinkerText.Where(p=>p.Contains(name)).FirstOrDefault()!=null)
+            if (GlobalVariables.Crosslinkers.Any(p => p.CrosslinkerName.Contains(name)))
             {
                 MessageBox.Show("A crosslinker already exists with the name: " + name, "Error", MessageBoxButton.OK, MessageBoxImage.Hand);
                 return;
@@ -53,7 +53,9 @@ namespace MetaMorpheusGUI
 
             var newCrosslinker = new Crosslinker(crosslinkerName: name, crosslinkerModSites: aminoAcid1, crosslinkerModSites2: aminoAcid2, totalMass: mass, cleavable: isCleavable,
                     cleaveMassShort: shortMass, cleaveMassLong: longMass, loopMass: mass, deadendMassH2O: H2OQuenchMass, deadendMassNH2: NH2QuenchMass, deadendMassTris: TrisQuenchMass);
+
             customCrosslinkerText.Add(newCrosslinker.ToString(true));
+
             try
             {                                 
                 File.Delete(customCrosslinkPath);
@@ -65,7 +67,7 @@ namespace MetaMorpheusGUI
                 return;
             }
 
-            GlobalVariables.AddCrosslinker(new List<Crosslinker> { newCrosslinker });
+            GlobalVariables.AddCrosslinkers(new List<Crosslinker> { newCrosslinker });
             DialogResult = true;
         }
 

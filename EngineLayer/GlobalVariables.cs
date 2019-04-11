@@ -51,12 +51,15 @@ namespace EngineLayer
             ElementsLocation = Path.Combine(DataDir, @"Data", @"elements.dat");
             UsefulProteomicsDatabases.Loaders.LoadElements();
 
+            // load default crosslinkers
             string crosslinkerLocation = Path.Combine(DataDir, @"Data", @"Crosslinkers.tsv");
-            AddCrosslinker(Crosslinker.LoadCrosslinkers(crosslinkerLocation));
-            string custumCrosslinkerLocation = Path.Combine(DataDir, @"Data", @"CustomCrosslinkers.tsv");
-            if (File.Exists(custumCrosslinkerLocation))
+            AddCrosslinkers(Crosslinker.LoadCrosslinkers(crosslinkerLocation));
+
+            // load custom crosslinkers
+            string customCrosslinkerLocation = Path.Combine(DataDir, @"Data", @"CustomCrosslinkers.tsv");
+            if (File.Exists(customCrosslinkerLocation))
             {
-                AddCrosslinker(Crosslinker.LoadCrosslinkers(custumCrosslinkerLocation));
+                AddCrosslinkers(Crosslinker.LoadCrosslinkers(customCrosslinkerLocation));
             }
 
             ExperimentalDesignFileName = "ExperimentalDesign.tsv";
@@ -176,7 +179,7 @@ namespace EngineLayer
             }
         }
 
-        public static void AddCrosslinker(IEnumerable<Crosslinker> crosslinkers)
+        public static void AddCrosslinkers(IEnumerable<Crosslinker> crosslinkers)
         {
             foreach (var linker in crosslinkers)
             {
