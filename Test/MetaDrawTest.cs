@@ -37,7 +37,7 @@ namespace Test
         public static void TestMetaDrawReadCrossPsmFile()
         {
             XLSearchTask searchTask = new XLSearchTask();
-            searchTask.XlSearchParameters.CrosslinkerType = EngineLayer.CrosslinkSearch.CrosslinkerType.DSS;
+            searchTask.XlSearchParameters.Crosslinker = GlobalVariables.Crosslinkers.ToList()[1];
 
             string myFile = Path.Combine(TestContext.CurrentContext.TestDirectory, @"XlTestData\BSA_DSS_23747.mzML");
             string myDatabase = Path.Combine(TestContext.CurrentContext.TestDirectory, @"XlTestData\BSA.fasta");
