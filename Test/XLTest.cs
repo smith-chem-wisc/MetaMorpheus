@@ -45,8 +45,7 @@ namespace Test
 
             var pep = ye[0];
             Assert.AreEqual(pep.BaseSequence, "MNNNK");
-            Crosslinker crosslinker = new Crosslinker();
-            crosslinker.SelectCrosslinker(CrosslinkerType.DSS);
+            Crosslinker crosslinker = GlobalVariables.Crosslinkers.Where(p => p.CrosslinkerName == "DSS").First();
             Assert.AreEqual(crosslinker.CrosslinkerModSites, "K");
             Assert.AreEqual(Residue.GetResidue(crosslinker.CrosslinkerModSites).MonoisotopicMass, 128.09496301518999, 1e-9);
             var n = pep.Fragment(DissociationType.HCD, FragmentationTerminus.N);
@@ -119,7 +118,7 @@ namespace Test
             var listOfSortedms2Scans = MetaMorpheusTask.GetMs2Scans(myMsDataFile, null, new CommonParameters()).OrderBy(b => b.PrecursorMass).ToArray();
 
             //Generate crosslinker, which is DSSO here.
-            Crosslinker crosslinker = new Crosslinker().SelectCrosslinker(CrosslinkerType.DSSO);
+            Crosslinker crosslinker = GlobalVariables.Crosslinkers.Where(p => p.CrosslinkerName == "DSSO").First();
 
             CrosslinkSpectralMatch[] possiblePsms = new CrosslinkSpectralMatch[listOfSortedms2Scans.Length];
             new CrosslinkSearchEngine(possiblePsms, listOfSortedms2Scans, indexResults.PeptideIndex, indexResults.FragmentIndex, 0, commonParameters, crosslinker, xlSearchParameters.RestrictToTopNHits, xlSearchParameters.CrosslinkSearchTopNum, xlSearchParameters.XlQuench_H2O, xlSearchParameters.XlQuench_NH2, xlSearchParameters.XlQuench_Tris, new List<string> { }).Run();
@@ -160,18 +159,6 @@ namespace Test
         }
 
         [Test]
-        public static void XlTest_GenerateUserDefinedCrosslinker()
-        {
-            XlSearchParameters xlSearchParameters = new XlSearchParameters();
-            xlSearchParameters.CrosslinkerType = CrosslinkerType.UserDefined;
-            xlSearchParameters.CrosslinkerName = "CrossST-C";
-            xlSearchParameters.CrosslinkerResidues = "ST";
-            xlSearchParameters.CrosslinkerResidues2 = "C";
-            xlSearchParameters.CrosslinkerTotalMass = -18.01056;
-            var crosslinker = XLSearchTask.GenerateUserDefinedCrosslinker(xlSearchParameters);
-        }
-
-        [Test]
         public static void XlTest_DiffCrosslinkSites()
         {
             //Generate parameters
@@ -179,11 +166,8 @@ namespace Test
 
             var xlSearchParameters = new XlSearchParameters
             {
-                CrosslinkerType = CrosslinkerType.UserDefined,
-                CrosslinkerName = "CrossST-C",
-                CrosslinkerResidues = "ST",
-                CrosslinkerResidues2 = "C",
-                CrosslinkerTotalMass = -18.01056
+                Crosslinker = new Crosslinker(crosslinkerName: "CrossST-C", crosslinkerModSites: "ST", crosslinkerModSites2: "C", totalMass: -18.01056,
+                cleavable: true, deadendMassH2O: 0, deadendMassNH2: 0, deadendMassTris: 0, cleaveMassShort: 0, cleaveMassLong: 0, loopMass: 0)
             };
 
             //Create databases contain two protein.
@@ -227,7 +211,7 @@ namespace Test
             var listOfSortedms2Scans = MetaMorpheusTask.GetMs2Scans(myMsDataFile, null, new CommonParameters()).OrderBy(b => b.PrecursorMass).ToArray();
 
             //Generate crosslinker, which is UserDefined here.
-            var crosslinker = XLSearchTask.GenerateUserDefinedCrosslinker(xlSearchParameters);
+            var crosslinker = xlSearchParameters.Crosslinker;
 
             //TwoPassCrosslinkSearchEngine.Run().
             CrosslinkSpectralMatch[] possiblePsms = new CrosslinkSpectralMatch[listOfSortedms2Scans.Length];
@@ -235,15 +219,6 @@ namespace Test
 
             var newPsms = possiblePsms.Where(p => p != null).ToList();
             Assert.AreEqual(1, newPsms.Count);
-        }
-
-        /// <summary>
-        /// Verifies that crosslinker is generated properly
-        /// </summary>
-        [Test]
-        public static void CrosslinkCreateTest()
-        {
-            Assert.That((XLSearchTask.GenerateUserDefinedCrosslinker(new XlSearchParameters())).GetType().Equals(typeof(Crosslinker)));
         }
 
         [Test]
@@ -580,7 +555,7 @@ namespace Test
             var results = Path.Combine(outputFolder, @"TestPercolator\XL_Intralinks_Percolator.txt");
             var lines = File.ReadAllLines(results);
             Assert.That(lines[0].Equals("SpecId\tLabel\tScannr\tScore\tdScore\tNormRank\tCharge\tMass\tPPM\tLenShort\tLenLong\tLenSum\tPeptide\tProtein"));
-            Assert.That(lines[1].Equals("T-1-30.6190992666667\t1\t1\t20.0641008915522\t0\t7\t3\t1994.05202313843\t0.664979354397676\t7\t9\t16\t-.EKVLTSSAR2--LSQKFPK4.-\t3336842(211)\t3336842(245)"));
+            Assert.That(lines[1].Equals("T-1-30.6190992666667\t1\t1\t26.0600453443446\t0\t7\t3\t1994.05202313843\t0.664979354397676\t7\t9\t16\t-.EKVLTSSAR2--LSQKFPK4.-\t3336842(211)\t3336842(245)"));
             Directory.Delete(outputFolder, true);
         }
 
@@ -646,20 +621,20 @@ namespace Test
                 commonParameters, 5000, false, new List<FileInfo>(), new List<string>()).Run();
             
             var csms = new CrosslinkSpectralMatch[1];
-            new CrosslinkSearchEngine(csms, scans, indexingResults.PeptideIndex, indexingResults.FragmentIndex, 0, commonParameters, new Crosslinker().SelectCrosslinker(CrosslinkerType.DSSO), 
+            new CrosslinkSearchEngine(csms, scans, indexingResults.PeptideIndex, indexingResults.FragmentIndex, 0, commonParameters, GlobalVariables.Crosslinkers.First(p => p.CrosslinkerName == "DSSO"), 
                 false, 0, false, false, true, new List<string>()).Run();
 
             var csm = csms[0];
 
             // test parent scan (CID)
-            Assert.That(csm.MatchedFragmentIons.Count == 13);
+            Assert.That(csm.MatchedFragmentIons.Count == 21);
             Assert.That(csm.ScanNumber == 2);
 
             // test child scan (ETD)
             Assert.That(csm.ChildMatchedFragmentIons.First().Key == 3);
-            Assert.That(csm.ChildMatchedFragmentIons.First().Value.Count == 17);
+            Assert.That(csm.ChildMatchedFragmentIons.First().Value.Count == 12);
             Assert.That(csm.BetaPeptide.ChildMatchedFragmentIons.First().Key == 3);
-            Assert.That(csm.BetaPeptide.ChildMatchedFragmentIons.First().Value.Count == 12);
+            Assert.That(csm.BetaPeptide.ChildMatchedFragmentIons.First().Value.Count == 17);
 
             // write results to TSV
             csm.SetFdrValues(1, 0, 0, 0, 0, 0, 0, 0, 0, false);
@@ -670,11 +645,11 @@ namespace Test
 
             Assert.That(psmFromTsv.ChildScanMatchedIons.Count == 1
                 && psmFromTsv.ChildScanMatchedIons.First().Key == 3
-                && psmFromTsv.ChildScanMatchedIons.First().Value.Count == 17);
+                && psmFromTsv.ChildScanMatchedIons.First().Value.Count == 12);
 
             Assert.That(psmFromTsv.BetaPeptideChildScanMatchedIons.Count == 1
                 && psmFromTsv.BetaPeptideChildScanMatchedIons.First().Key == 3
-                && psmFromTsv.BetaPeptideChildScanMatchedIons.First().Value.Count == 12);
+                && psmFromTsv.BetaPeptideChildScanMatchedIons.First().Value.Count == 17);
 
             File.Delete(outputFile);
         }
@@ -709,13 +684,13 @@ namespace Test
                 commonParameters, 5000, false, new List<FileInfo>(), new List<string>()).Run();
 
             var csms = new CrosslinkSpectralMatch[2];
-            new CrosslinkSearchEngine(csms, scans, indexingResults.PeptideIndex, indexingResults.FragmentIndex, 0, commonParameters, new Crosslinker().SelectCrosslinker(CrosslinkerType.DSSO),
+            new CrosslinkSearchEngine(csms, scans, indexingResults.PeptideIndex, indexingResults.FragmentIndex, 0, commonParameters, GlobalVariables.Crosslinkers.First(p => p.CrosslinkerName == "DSSO"),
                 false, 0, false, false, true, new List<string>()).Run();
 
             var csm = csms[0];
 
             // test parent scan (CID)
-            Assert.That(csm.MatchedFragmentIons.Count == 12);
+            Assert.That(csm.MatchedFragmentIons.Count == 14);
             Assert.That(csm.ScanNumber == 2);
 
             // test child scan (low-resolution CID, alpha peptide signature ion)
@@ -733,11 +708,11 @@ namespace Test
             // read results from TSV
             var psmFromTsv = PsmTsvReader.ReadTsv(outputFile, out var warnings).First();
 
-            Assert.That(psmFromTsv.ChildScanMatchedIons.Count == 1 
+            Assert.That(psmFromTsv.ChildScanMatchedIons.Count == 2 
                 && psmFromTsv.ChildScanMatchedIons.First().Key == 4 
                 && psmFromTsv.ChildScanMatchedIons.First().Value.Count == 63);
 
-            Assert.That(psmFromTsv.BetaPeptideChildScanMatchedIons.Count == 1 
+            Assert.That(psmFromTsv.BetaPeptideChildScanMatchedIons.Count == 2 
                 && psmFromTsv.BetaPeptideChildScanMatchedIons.First().Key == 6 
                 && psmFromTsv.BetaPeptideChildScanMatchedIons.First().Value.Count == 43);
 

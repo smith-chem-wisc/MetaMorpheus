@@ -284,7 +284,6 @@ namespace TaskLayer
                 }
             } //END SILAC CODE
 
-
             // pass protein group info for each PSM
             var psmToProteinGroups = new Dictionary<PeptideSpectralMatch, List<FlashLFQ.ProteinGroup>>();
             if (ProteinGroups != null)
