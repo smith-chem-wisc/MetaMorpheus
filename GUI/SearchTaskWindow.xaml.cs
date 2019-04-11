@@ -28,7 +28,11 @@ namespace MetaMorpheusGUI
         private readonly ObservableCollection<ModTypeForTreeView> VariableModTypeForTreeViewObservableCollection = new ObservableCollection<ModTypeForTreeView>();
         private readonly ObservableCollection<ModTypeForLoc> LocalizeModTypeForTreeViewObservableCollection = new ObservableCollection<ModTypeForLoc>();
         private readonly ObservableCollection<ModTypeForGrid> ModSelectionGridItems = new ObservableCollection<ModTypeForGrid>();
+        private readonly ObservableCollection<SilacInfoForDataGrid> StaticSilacLabelsObservableCollection = new ObservableCollection<SilacInfoForDataGrid>();
+
         private CustomFragmentationWindow CustomFragmentationWindow;
+
+        internal SearchTask TheTask { get; private set; }
 
         public SearchTaskWindow() : this(null)
         {
@@ -54,10 +58,10 @@ namespace MetaMorpheusGUI
             };
             this.DataContext = DataContextForSearchTaskWindow;
             SearchModifications.Timer.Tick += new EventHandler(TextChangeTimerHandler);
+            dataGridSilacLabels.DataContext = StaticSilacLabelsObservableCollection;
             base.Closing += this.OnClosing;
         }
 
-        internal SearchTask TheTask { get; private set; }
 
         private void CheckIfNumber(object sender, TextCompositionEventArgs e)
         {
@@ -159,7 +163,26 @@ namespace MetaMorpheusGUI
             MaxFragmentMassTextBox.Text = task.SearchParameters.MaxFragmentSize.ToString(CultureInfo.InvariantCulture);
             checkBoxParsimony.IsChecked = task.SearchParameters.DoParsimony;
             checkBoxNoOneHitWonders.IsChecked = task.SearchParameters.NoOneHitWonders;
-            checkBoxQuantification.IsChecked = task.SearchParameters.DoQuantification;
+            checkBoxNoQuant.IsChecked = !task.SearchParameters.DoQuantification;
+            checkBoxLFQ.IsChecked = task.SearchParameters.DoQuantification;
+            if (task.SearchParameters.SilacLabels != null && task.SearchParameters.SilacLabels.Count != 0)
+            {
+                checkBoxSILAC.IsChecked = true;
+                List<Proteomics.SilacLabel> labels = task.SearchParameters.SilacLabels;
+                foreach (Proteomics.SilacLabel label in labels)
+                {
+                    SilacInfoForDataGrid infoToAdd = new SilacInfoForDataGrid(label);
+                    if (label.AdditionalLabels != null)
+                    {
+                        foreach (Proteomics.SilacLabel additionalLabel in label.AdditionalLabels)
+                        {
+                            infoToAdd.AddAdditionalLabel(new SilacInfoForDataGrid(additionalLabel));
+                        }
+                    }
+                    StaticSilacLabelsObservableCollection.Add(infoToAdd);
+                }
+            }
+            CheckBoxQuantifyUnlabeledForSilac.IsChecked = task.CommonParameters.DigestionParams.GeneratehUnlabeledProteinsForSilac;
             peakFindingToleranceTextBox.Text = task.SearchParameters.QuantifyPpmTol.ToString(CultureInfo.InvariantCulture);
             checkBoxMatchBetweenRuns.IsChecked = task.SearchParameters.MatchBetweenRuns;
             checkBoxNormalize.IsChecked = task.SearchParameters.Normalize;
@@ -391,7 +414,8 @@ namespace MetaMorpheusGUI
                 initiatorMethionineBehavior: initiatorMethionineBehavior,
                 maxModsForPeptides: maxModsForPeptideValue,
                 searchModeType: searchModeType,
-                fragmentationTerminus: fragmentationTerminus);
+                fragmentationTerminus: fragmentationTerminus,
+                generateUnlabeledProteinsForSilac: CheckBoxQuantifyUnlabeledForSilac.IsChecked.Value);
 
             Tolerance ProductMassTolerance;
             if (productMassToleranceComboBox.SelectedIndex == 0)
@@ -480,7 +504,39 @@ namespace MetaMorpheusGUI
 
             TheTask.SearchParameters.DoParsimony = checkBoxParsimony.IsChecked.Value;
             TheTask.SearchParameters.NoOneHitWonders = checkBoxNoOneHitWonders.IsChecked.Value;
-            TheTask.SearchParameters.DoQuantification = checkBoxQuantification.IsChecked.Value;
+            TheTask.SearchParameters.DoQuantification = !checkBoxNoQuant.IsChecked.Value;
+
+            //SilacLabel deconvolution
+            {
+                if (StaticSilacLabelsObservableCollection.Count == 0)
+                {
+                    TheTask.SearchParameters.SilacLabels = null;
+                }
+                else
+                {
+                    List<Proteomics.SilacLabel> labelsToSave = new List<Proteomics.SilacLabel>();
+                    foreach (SilacInfoForDataGrid info in StaticSilacLabelsObservableCollection)
+                    {
+                        Proteomics.SilacLabel labelToAdd = info.SilacLabel[0];
+
+                        //This is needed to prevent double adding of additional labels. 
+                        //A quick test is to create a silac condition with two labels, save, reopen the task, save, and reopen again. 
+                        //Without this line, the second label will be doubled (K+8)&(R+10)&(R+10)
+                        if (labelToAdd.AdditionalLabels != null)
+                        {
+                            labelToAdd.AdditionalLabels.Clear();
+                        }
+
+                        for (int infoIndex = 1; infoIndex < info.SilacLabel.Count; infoIndex++)
+                        {
+                            labelToAdd.AddAdditionalSilacLabel(info.SilacLabel[infoIndex]);
+                        }
+                        labelsToSave.Add(labelToAdd);
+                    }
+                    TheTask.SearchParameters.SilacLabels = labelsToSave;
+                }
+            }
+
             TheTask.SearchParameters.Normalize = checkBoxNormalize.IsChecked.Value;
             TheTask.SearchParameters.MatchBetweenRuns = checkBoxMatchBetweenRuns.IsChecked.Value;
             TheTask.SearchParameters.ModPeptidesAreDifferent = modPepsAreUnique.IsChecked.Value;
@@ -774,9 +830,48 @@ namespace MetaMorpheusGUI
             }
         }
 
+        private void AddSilac_Click(object sender, RoutedEventArgs e)
+        {
+            var dialog = new SilacModificationWindow();
+            if (dialog.ShowDialog() == true)
+            {
+                if (GetNumberOfSilacMods() + dialog.SilacLabel.SilacLabel.Count <= 26)
+                {
+                    StaticSilacLabelsObservableCollection.Add(dialog.SilacLabel);
+                    dataGridSilacLabels.Items.Refresh();
+                }
+                else
+                {
+                    MessageBox.Show("More than 26 total SILAC labels have been specified, which is the maximum for this implementation.\t" +
+                        "The most recent label was not added.");
+                }
+            }
+        }
+
+        private void DeleteSilac_Click(object sender, RoutedEventArgs e)
+        {
+            var selectedTask = (SilacInfoForDataGrid)dataGridSilacLabels.SelectedItem;
+            if (selectedTask != null)
+            {
+                StaticSilacLabelsObservableCollection.Remove(selectedTask);
+                dataGridSilacLabels.Items.Refresh();
+            }
+        }
+
+        private void ClearSilac_Click(object sender, RoutedEventArgs e)
+        {
+            StaticSilacLabelsObservableCollection.Clear();
+            dataGridSilacLabels.Items.Refresh();
+        }
+
         private void OnClosing(object sender, CancelEventArgs e)
         {
             CustomFragmentationWindow.Close();
+        }
+
+        public int GetNumberOfSilacMods()
+        {
+            return StaticSilacLabelsObservableCollection.Sum(x => x.SilacLabel.Count);
         }
     }
 
