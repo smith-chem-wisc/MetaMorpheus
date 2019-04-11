@@ -220,14 +220,6 @@ namespace TaskLayer
                 && !p.IsDecoy
                 && p.FullSequence != null).ToList();
             
-            //Read in RT library
-            //Find the filepath
-
-            foreach (var unambiguousPsm in unambiguousPsmsBelowOnePercentFdr)
-            {
-                //unambiguousPsm.ScanRetentionTime
-            }
-
             var psmsGroupedByFile = unambiguousPsmsBelowOnePercentFdr.GroupBy(p => p.FullFilePath);
 
             // pass protein group info for each PSM

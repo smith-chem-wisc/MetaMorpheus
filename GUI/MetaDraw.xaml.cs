@@ -67,14 +67,15 @@ namespace MetaMorpheusGUI
             spectraFileManager = new MyFileManager(true);
             SetUpDictionaries();
             modificationAnnotationColor = Brushes.Yellow;
-            plotTypes = new ObservableCollection<string>();
-            setUpPlots();
             metaDrawGraphicalSettings = new MetaDrawGraphicalSettings();
             metaDrawFilterSettings = new MetaDrawFilterSettings();
             base.Closing += this.OnClosing;
 
             ParentChildScanView.Visibility = Visibility.Collapsed;
             ParentScanView.Visibility = Visibility.Collapsed;
+
+            plotTypes = new ObservableCollection<string>();
+            SetUpPlots();
             plotsListBox.ItemsSource = plotTypes;
         }
 
@@ -550,7 +551,7 @@ namespace MetaMorpheusGUI
             }
         }
 
-        private void setUpPlots()
+        private void SetUpPlots()
         {
             foreach (var plot in PlotModelStat.PlotNames)
             {
