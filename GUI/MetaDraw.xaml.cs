@@ -1,5 +1,6 @@
 using EngineLayer;
 using MassSpectrometry;
+using OxyPlot;
 using Proteomics.Fragmentation;
 using Proteomics.ProteolyticDigestion;
 using System;
@@ -15,11 +16,9 @@ using System.Windows;
 using System.Windows.Controls;
 using System.Windows.Data;
 using System.Windows.Media;
-using System.Windows.Input;
-using OxyPlot;
-using ViewModels;
-using TaskLayer;
 using System.Windows.Media.Imaging;
+using TaskLayer;
+using ViewModels;
 
 namespace MetaMorpheusGUI
 {
@@ -44,9 +43,7 @@ namespace MetaMorpheusGUI
         private Dictionary<ProductType, Color> productTypeToColor;
         private SolidColorBrush modificationAnnotationColor;
         private Regex illegalInFileName = new Regex(@"[\\/:*?""<>|]");
-        private ObservableCollection<ModTypeForTreeView> plotTypes;
-        //private List<MetaDrawPsm> psms = new List<MetaDrawPsm>();
-        private string pdfPlot;
+        private ObservableCollection<string> plotTypes;
 
         public MetaDraw()
         {
@@ -70,7 +67,7 @@ namespace MetaMorpheusGUI
             spectraFileManager = new MyFileManager(true);
             SetUpDictionaries();
             modificationAnnotationColor = Brushes.Yellow;
-            plotTypes = new ObservableCollection<ModTypeForTreeView>();
+            plotTypes = new ObservableCollection<string>();
             setUpPlots();
             metaDrawGraphicalSettings = new MetaDrawGraphicalSettings();
             metaDrawFilterSettings = new MetaDrawFilterSettings();
@@ -78,6 +75,7 @@ namespace MetaMorpheusGUI
 
             ParentChildScanView.Visibility = Visibility.Collapsed;
             ParentScanView.Visibility = Visibility.Collapsed;
+            plotsListBox.ItemsSource = plotTypes;
         }
 
         private void SetUpDictionaries()
@@ -443,7 +441,6 @@ namespace MetaMorpheusGUI
                     allPsms.Add(psm);
                 }));
             }
-
         }
 
         private void TextBox_TextChanged(object sender, TextChangedEventArgs e)
@@ -555,16 +552,9 @@ namespace MetaMorpheusGUI
 
         private void setUpPlots()
         {
-            PlotModelStat prelim = new PlotModelStat();
-            foreach (var plot in prelim.plotTypes())
+            foreach (var plot in PlotModelStat.PlotNames)
             {
-                var added = new ModTypeForTreeView(plot, false);
-                plotTypes.Add(added);
-            }
-            plotsTreeView.DataContext = plotTypes;
-            foreach (var ye in plotTypes)
-            {
-                ye.VerifyCheckState();
+                plotTypes.Add(plot);
             }
         }
 
@@ -575,37 +565,42 @@ namespace MetaMorpheusGUI
 
         private void createPdfButton_Click(object sender, RoutedEventArgs e)
         {
-            PlotModelStat plot = new PlotModelStat(pdfPlot, allPsms);
+            var selectedItem = plotsListBox.SelectedItem;
+
+            if (selectedItem == null || !allPsms.Any())
+            {
+                MessageBox.Show("Select a plot type to export!");
+                return;
+            }
+
+            var plotName = selectedItem as string;
+
+            PlotModelStat plot = new PlotModelStat(plotName, allPsms);
             var fileDirectory = Directory.GetParent(tsvResultsFilePath).ToString();
-            var fileName = String.Concat(pdfPlot, ".pdf");
+            var fileName = String.Concat(plotName, ".pdf");
             using (Stream writePDF = File.Create(Path.Combine(fileDirectory, fileName)))
             {
                 PdfExporter.Export(plot.Model, writePDF, 1000, 700);
             }
-            MessageBox.Show("PDF Created!");
+            MessageBox.Show("PDF Created at " + Path.Combine(fileDirectory, fileName) + "!");
         }
         
-        private void HandleCheck(object sender, RoutedEventArgs e)
+        private async void PlotSelected(object sender, SelectionChangedEventArgs e)
         {
-            RadioButton r = sender as RadioButton;
-            pdfPlot = r.Content.ToString();
-        }
+            var listview = sender as ListView;
+            var plotName = listview.SelectedItem as string;
 
-        private async void plot_MouseDoubleClick(object sender, MouseButtonEventArgs args)
-        {
-            TreeViewItem s = sender as TreeViewItem;
-            var selected = (ModTypeForTreeView)s.Header;
             if (allPsms.Count == 0)
             {
                 MessageBox.Show("There are no PSMs to analyze.\n\nLoad the current file or choose a new file.");
                 return;
             }
-            PlotModelStat plot = await Task.Run(() => new PlotModelStat(selected.DisplayName, allPsms));
+            PlotModelStat plot = await Task.Run(() => new PlotModelStat(plotName, allPsms));
             plotViewStat.DataContext = plot;
         }
 
         private void TabControl_SelectionChanged(object sender, SelectionChangedEventArgs e)
-        { 
+        {
 
         }
 

@@ -1,5 +1,4 @@
 ﻿using EngineLayer;
-using MetaMorpheusGUI;
 using OxyPlot;
 using OxyPlot.Axes;
 using OxyPlot.Series;
@@ -13,28 +12,29 @@ using System.Linq;
 
 namespace MetaMorpheusGUI
 {
-    public class PlotModelStat : INotifyPropertyChanged , IPlotModel
+    public class PlotModelStat : INotifyPropertyChanged, IPlotModel
     {
-        private const double STROKE_THICKNESS_UNANNOTATED = 0.5;
-        private const double STROKE_THICKNESS_ANNOTATED = 2.0;
         private PlotModel privateModel;
-        private ObservableCollection<PsmFromTsv> allPSM;
-        public List<string> plotNames = new List<string>{ "Histogram of Precursor PPM Errors (around 0 Da mass-difference notch only)",
-                                                          "Histogram of Fragment PPM Errors",
-                                                          "Histogram of Precursor Charges",
-                                                          "Histogram of Fragment Charges",
-                                                          "Precursor PPM Error vs. RT",
-                                                          "Fragment PPM Error vs. RT",
-                                                          "Histograms of Count of Different PTMs Seen at 1% FDR"};
+        private ObservableCollection<PsmFromTsv> allPsms;
+
+        public static List<string> PlotNames = new List<string> {
+            "Histogram of Precursor PPM Errors (around 0 Da mass-difference notch only)",
+            //"Histogram of Fragment PPM Errors", //TODO: implement fragment PPM error reading in MetaDraw
+            "Histogram of Precursor Charges",
+            "Histogram of Fragment Charges",
+            "Precursor PPM Error vs. RT",
+            //"Fragment PPM Error vs. RT", //TODO: implement fragment PPM error reading in MetaDraw
+            "Histogram of PTM Spectral Counts"
+        };
 
         private static Dictionary<ProductType, OxyColor> productTypeDrawColors = new Dictionary<ProductType, OxyColor>
         {
-          { ProductType.b, OxyColors.Blue },
-          { ProductType.y, OxyColors.Purple },
-          { ProductType.c, OxyColors.Gold },
-          { ProductType.zPlusOne, OxyColors.Orange },
-          { ProductType.D, OxyColors.DodgerBlue },
-          { ProductType.M, OxyColors.Firebrick }
+            { ProductType.b, OxyColors.Blue },
+            { ProductType.y, OxyColors.Purple },
+            { ProductType.c, OxyColors.Gold },
+            { ProductType.zPlusOne, OxyColors.Orange },
+            { ProductType.D, OxyColors.DodgerBlue },
+            { ProductType.M, OxyColors.Firebrick }
         };
 
         public PlotModel Model
@@ -63,21 +63,11 @@ namespace MetaMorpheusGUI
             }
         }
 
-        public PlotModelStat()
-        {
-
-        }
-
         public PlotModelStat(string plotName, ObservableCollection<PsmFromTsv> psms)
         {
-            privateModel = new PlotModel { Title = plotName, Subtitle = "using OxyPlot" };
-            allPSM = psms;
+            privateModel = new PlotModel { Title = plotName };
+            allPsms = psms;
             createPlot(plotName);
-        }
-
-        public List<string> plotTypes()
-        {
-            return plotNames;
         }
 
         private void createPlot(string plotType)
@@ -106,7 +96,7 @@ namespace MetaMorpheusGUI
             {
                 linePlot(2);
             }
-            else if (plotType.Equals("Histograms of Count of Different PTMs Seen at 1% FDR"))
+            else if (plotType.Equals("Histogram of PTM Spectral Counts"))
             {
                 histogramPlot(5);
             }
@@ -120,32 +110,30 @@ namespace MetaMorpheusGUI
             Dictionary<string, int> dict = new Dictionary<string, int>();
 
             List<string> axes = new List<string>();
-            var s1 = new ColumnSeries { ColumnWidth = 200, IsStacked = false, FillColor=OxyColors.Blue };
-
-            //HistogramSeries histogram = new HistogramSeries();
+            var s1 = new ColumnSeries { ColumnWidth = 200, IsStacked = false, FillColor = OxyColors.Blue };
 
             switch (plotType)
             {
                 case 1:
-                    numbers = allPSM.Where(p => !p.MassDiffDa.Contains("|") && Math.Round(double.Parse(p.MassDiffDa), 0) == 0).Select(p => double.Parse(p.MassDiffPpm));
+                    numbers = allPsms.Where(p => !p.MassDiffDa.Contains("|") && Math.Round(double.Parse(p.MassDiffDa), 0) == 0).Select(p => double.Parse(p.MassDiffPpm));
                     binSize = 0.1;
                     break;
                 case 2:
-                    numbers = allPSM.SelectMany(p => p.MatchedIons.Select(v => v.MassErrorPpm));
+                    numbers = allPsms.SelectMany(p => p.MatchedIons.Select(v => v.MassErrorPpm));
                     binSize = 0.1;
                     break;
                 case 3:
-                    numbers = allPSM.Select(p => (double)(p.PrecursorCharge));
+                    numbers = allPsms.Select(p => (double)(p.PrecursorCharge));
                     var results = numbers.GroupBy(p => p).OrderBy(p => p.Key).Select(p => p);
                     dict = results.ToDictionary(p => p.Key.ToString(), v => v.Count());
                     break;
                 case 4:
-                    numbers = allPSM.SelectMany(p => p.MatchedIons.Select(v => (double)v.Charge));
+                    numbers = allPsms.SelectMany(p => p.MatchedIons.Select(v => (double)v.Charge));
                     results = numbers.GroupBy(p => p).OrderBy(p => p.Key).Select(p => p);
                     dict = results.ToDictionary(p => p.Key.ToString(), v => v.Count());
                     break;
                 case 5:
-                    var psmsWithMods = allPSM.Where(p => !p.FullSequence.Contains("|") && p.FullSequence.Contains("["));
+                    var psmsWithMods = allPsms.Where(p => !p.FullSequence.Contains("|") && p.FullSequence.Contains("["));
                     var mods = psmsWithMods.Select(p => new PeptideWithSetModifications(p.FullSequence, GlobalVariables.AllModsKnownDictionary)).Select(p => p.AllModsOneIsNterminus).SelectMany(p => p.Values);
                     var groupedMods = mods.GroupBy(p => p.IdWithMotif).ToList();
                     dict = groupedMods.ToDictionary(p => p.Key, v => v.Count());
@@ -153,7 +141,7 @@ namespace MetaMorpheusGUI
             }
             if (plotType >= 3)
             {
-                ColumnSeries column = new ColumnSeries { ColumnWidth = 200, IsStacked = false, FillColor=OxyColors.Blue };
+                ColumnSeries column = new ColumnSeries { ColumnWidth = 200, IsStacked = false, FillColor = OxyColors.Blue };
                 var counter = 0;
                 String[] category = new string[dict.Count];
                 foreach (var d in dict)
@@ -176,7 +164,7 @@ namespace MetaMorpheusGUI
                 double numbins = bins * Math.Pow(10, normalizeNumber(bins));
                 int exp = (int)Math.Pow(10, normalizeNumber(end));
 
-                long size = Convert.ToInt64(end * exp + (-1 * start * exp)+ 1);
+                long size = Convert.ToInt64(end * exp + (-1 * start * exp) + 1);
                 int[,] values = new int[size, 2];
 
                 int decimalPlaces = 0;
@@ -223,14 +211,14 @@ namespace MetaMorpheusGUI
                     ItemsSource = axes
                 });
             }
-        }        
+        }
 
         private void linePlot(int plotType)
         {
             ScatterSeries series = new ScatterSeries();
             List<Tuple<double, double>> xy = new List<Tuple<double, double>>();
-            var filteredList = allPSM.Where(p => !p.MassDiffDa.Contains("|") && Math.Round(double.Parse(p.MassDiffDa), 0) == 0).ToList();
-            var test = allPSM.SelectMany(p => p.MatchedIons.Select(v => v.MassErrorPpm));
+            var filteredList = allPsms.Where(p => !p.MassDiffDa.Contains("|") && Math.Round(double.Parse(p.MassDiffDa), 0) == 0).ToList();
+            var test = allPsms.SelectMany(p => p.MatchedIons.Select(v => v.MassErrorPpm));
             switch (plotType)
             {
                 case 1:
@@ -240,11 +228,11 @@ namespace MetaMorpheusGUI
                     }
                     break;
                 case 2:
-                    foreach (var psm in allPSM)
+                    foreach (var psm in allPsms)
                     {
                         foreach (var ion in psm.MatchedIons)
                         {
-                            xy.Add(new Tuple<double,double>((double)psm.RetentionTime, ion.MassErrorPpm));
+                            xy.Add(new Tuple<double, double>((double)psm.RetentionTime, ion.MassErrorPpm));
                         }
                     }
                     break;
@@ -262,14 +250,14 @@ namespace MetaMorpheusGUI
         private static int normalizeNumber(double number)
         {
             string s = number.ToString("00.00E0");
-            int i = Convert.ToInt32(s.Substring(s.Length - 1))/10;
+            int i = Convert.ToInt32(s.Substring(s.Length - 1)) / 10;
             return i;
         }
 
         //unused interface methods
-        public void Update(bool updateData){}
-        public void Render(IRenderContext rc, double width, double height){}
-        public void AttachPlotView(IPlotView plotView){}
+        public void Update(bool updateData) { }
+        public void Render(IRenderContext rc, double width, double height) { }
+        public void AttachPlotView(IPlotView plotView) { }
     }
 }
 
