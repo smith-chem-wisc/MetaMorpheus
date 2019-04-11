@@ -117,9 +117,13 @@ namespace EngineLayer
             if (NoOneHitWonders)
             {
                 if (TreatModPeptidesAsDifferentPeptides)
-                    proteinGroups = proteinGroups.Where(p => p.IsDecoy || new HashSet<string>(p.AllPeptides.Select(x => x.FullSequence)).Count > 1).ToList();
+                {
+                    proteinGroups = proteinGroups.Where(p => p.AllPeptides.GroupBy(x => x.FullSequence).Count() > 1).ToList();
+                }
                 else
-                    proteinGroups = proteinGroups.Where(p => p.IsDecoy || new HashSet<string>(p.AllPeptides.Select(x => x.BaseSequence)).Count > 1).ToList();
+                {
+                    proteinGroups = proteinGroups.Where(p => p.AllPeptides.GroupBy(x => x.FullSequence).Count() > 1).ToList();
+                }
             }
 
             //Do Classic protein FDR (all targets, all decoys)
