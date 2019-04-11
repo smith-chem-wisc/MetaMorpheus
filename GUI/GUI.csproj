@@ -166,6 +166,10 @@
     <Compile Include="CustomMsgBox.xaml.cs">
       <DependentUpon>CustomMsgBox.xaml</DependentUpon>
     </Compile>
+    <Compile Include="ForDisplayingInDataGrids\SilacInfoForDataGrid.cs" />
+    <Compile Include="SilacModificationWindow.xaml.cs">
+      <DependentUpon>SilacModificationWindow.xaml</DependentUpon>
+    </Compile>
     <Compile Include="MetaDraw.xaml.cs">
       <DependentUpon>MetaDraw.xaml</DependentUpon>
     </Compile>
@@ -241,6 +245,10 @@
     <Page Include="CustomMsgBox.xaml">
       <SubType>Designer</SubType>
       <Generator>MSBuild:Compile</Generator>
+    </Page>
+    <Page Include="SilacModificationWindow.xaml">
+      <Generator>MSBuild:Compile</Generator>
+      <SubType>Designer</SubType>
     </Page>
     <Page Include="FileSpecificParametersWindow.xaml">
       <SubType>Designer</SubType>
