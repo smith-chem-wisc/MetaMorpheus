@@ -564,7 +564,7 @@ namespace MetaMorpheusGUI
             (sender as DataGrid).UnselectAll();
         }
 
-        private void createPdfButton_Click(object sender, RoutedEventArgs e)
+        private void CreatePlotPdf_Click(object sender, RoutedEventArgs e)
         {
             var selectedItem = plotsListBox.SelectedItem;
 
@@ -585,27 +585,57 @@ namespace MetaMorpheusGUI
             }
             MessageBox.Show("PDF Created at " + Path.Combine(fileDirectory, fileName) + "!");
         }
-        
-        private async void PlotSelected(object sender, SelectionChangedEventArgs e)
-        {
-            var listview = sender as ListView;
-            var plotName = listview.SelectedItem as string;
 
-            if (allPsms.Count == 0)
+        private void PDFButton_Click(object sender, RoutedEventArgs e)
+        {
+            PsmFromTsv tempPsm = null;
+            if (dataGridScanNums.SelectedCells.Count == 0)
             {
-                MessageBox.Show("There are no PSMs to analyze.\n\nLoad the current file or choose a new file.");
-                return;
+                MessageBox.Show("Please select at least one scan to export");
             }
-            PlotModelStat plot = await Task.Run(() => new PlotModelStat(plotName, allPsms));
-            plotViewStat.DataContext = plot;
+            else
+            {
+                int numberOfScansToExport = dataGridScanNums.SelectedItems.Count;
+
+                foreach (object selectedItem in dataGridScanNums.SelectedItems)
+                {
+                    PsmFromTsv psm = (PsmFromTsv)selectedItem;
+
+                    if (tempPsm == null)
+                    {
+                        tempPsm = psm;
+                    }
+
+                    MsDataScan msDataScanToDraw = MsDataFile.GetOneBasedScan(psm.Ms2ScanNumber);
+
+                    string myString = illegalInFileName.Replace(psm.FullSequence, "");
+
+                    if (myString.Length > 30)
+                    {
+                        myString = myString.Substring(0, 30);
+                    }
+
+                    string filePath = Path.Combine(Path.GetDirectoryName(tsvResultsFilePath), "MetaDrawExport", psm.Ms2ScanNumber + "_" + myString + ".pdf");
+                    string dir = Path.GetDirectoryName(filePath);
+
+                    if (!Directory.Exists(dir))
+                    {
+                        Directory.CreateDirectory(dir);
+                    }
+
+                    DrawPdfAnnotatedBaseSequence(psm, canvas, filePath); // captures the annotation for the pdf
+                    mainViewModel.DrawPeptideSpectralMatchPdf(msDataScanToDraw, psm, filePath, numberOfScansToExport > 1);
+                }
+
+                dataGridScanNums.SelectedItem = dataGridScanNums.SelectedItem;
+
+                DrawPsm(tempPsm.Ms2ScanNumber, tempPsm.FullSequence);
+
+                MessageBox.Show(string.Format("{0} PDFs exported", numberOfScansToExport));
+            }
         }
 
-        private void TabControl_SelectionChanged(object sender, SelectionChangedEventArgs e)
-        {
-
-        }
-
-        private void DrawPdfAnnotatedBaseSequence(PsmFromTsv psm, Canvas canvas)
+        private void DrawPdfAnnotatedBaseSequence(PsmFromTsv psm, Canvas canvas, string path)
         {
             if (psm.CrossType == null)
             {
@@ -621,12 +651,28 @@ namespace MetaMorpheusGUI
             PngBitmapEncoder encoder = new PngBitmapEncoder();
             encoder.Frames.Add(BitmapFrame.Create(renderBitmap));
 
-            using (FileStream file = File.Create("annotation.png"))
+            string tempPath = Path.Combine(Path.GetDirectoryName(tsvResultsFilePath), "MetaDrawExport", "annotation.png");
+
+            using (FileStream file = File.Create(tempPath))
             {
                 encoder.Save(file);
             }
         }
 
+        private async void PlotSelected(object sender, SelectionChangedEventArgs e)
+        {
+            var listview = sender as ListView;
+            var plotName = listview.SelectedItem as string;
+
+            if (allPsms.Count == 0)
+            {
+                MessageBox.Show("There are no PSMs to analyze.\n\nLoad the current file or choose a new file.");
+                return;
+            }
+            PlotModelStat plot = await Task.Run(() => new PlotModelStat(plotName, allPsms));
+            plotViewStat.DataContext = plot;
+        }
+        
         private void BtnChangeGridColumns_Click(object sender, RoutedEventArgs e)
         {
             itemsControlSampleViewModel.MyColumnCount++;

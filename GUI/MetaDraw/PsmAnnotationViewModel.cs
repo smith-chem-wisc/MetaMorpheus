@@ -257,22 +257,19 @@ namespace ViewModels
             var properties = psm.GetType().GetProperties();
             var pdfModel = DrawPdf(msDataScan, properties, psm, redraw);
 
-            string dir = Path.GetDirectoryName(fileName);
-            if (!Directory.Exists(dir))
-            {
-                Directory.CreateDirectory(dir);
-            }
+            string tempPath = Path.Combine(Path.GetDirectoryName(fileName), "sequence.pdf");
+            string baseSeqTempPath = Path.Combine(Path.GetDirectoryName(fileName), "annotation.png");
 
             // exports plot to pdf
-            using (var stream = File.Create("sequence.pdf"))
+            using (var stream = File.Create(tempPath))
             {
                 PdfExporter pdf = new PdfExporter { Width = 800, Height = 500 };
                 pdf.Export(pdfModel, stream);
             }
 
             // adds base seq annotation to pdf
-            using (Stream inputPdfStream = new FileStream("sequence.pdf", FileMode.Open, FileAccess.Read, FileShare.Read))
-            using (Stream inputImageStream = new FileStream("annotation.png", FileMode.Open, FileAccess.Read, FileShare.Read))
+            using (Stream inputPdfStream = new FileStream(tempPath, FileMode.Open, FileAccess.Read, FileShare.Read))
+            using (Stream inputImageStream = new FileStream(baseSeqTempPath, FileMode.Open, FileAccess.Read, FileShare.Read))
             using (Stream outputPdfStream = new FileStream(fileName, FileMode.Create, FileAccess.Write, FileShare.None))
             {
                 var reader = new PdfReader(inputPdfStream);
@@ -287,8 +284,8 @@ namespace ViewModels
                 stamper.Close();
             }
 
-            File.Delete("sequence.pdf");
-            File.Delete("annotation.png");
+            File.Delete(tempPath);
+            File.Delete(baseSeqTempPath);
         }
 
         private void AnnotatePeak(PlotModel model, LineSeries[] allIons, MsDataScan msDataScan, MatchedFragmentIon matchedIon, double[] spectrumIntensities, PsmFromTsv psmToDraw,

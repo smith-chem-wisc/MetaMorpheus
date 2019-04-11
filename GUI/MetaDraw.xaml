@@ -10,7 +10,7 @@
         Title="MetaDraw" 
         Drop="Window_Drop" AllowDrop="true" WindowStartupLocation="CenterScreen" MinHeight="400" MinWidth="800" Height="600" Width="1200">
     <Grid>
-        <TabControl SelectionChanged="TabControl_SelectionChanged">
+        <TabControl>
             <TabItem Header="PSM Annotation" Background="DarkGray">
                 <DockPanel>
                     <!--Settings menu-->
@@ -36,6 +36,7 @@
                                 <RowDefinition Height="Auto"/>
                                 <RowDefinition Height="25"/>
                                 <RowDefinition Height="2*"/>
+                                <RowDefinition Height="25"/>
                             </Grid.RowDefinitions>
                             <Grid.ColumnDefinitions>
                                 <ColumnDefinition Width="*"></ColumnDefinition>
@@ -61,7 +62,7 @@
 
                             <Border Grid.Row="2" Grid.ColumnSpan="3" BorderBrush="Black" BorderThickness="0,0,0,1" Margin="0 0 0 0" Padding="0 0 0 0">
                                 <DockPanel Grid.Row="2" Grid.ColumnSpan="3" LastChildFill="True">
-                                    <Button Name="loadFiles" Content="Load Files" Width="100" Click="loadFilesButton_Click" />
+                                    <Button Name="loadFiles" Content="Load Files" Width="80" Click="loadFilesButton_Click" />
                                     <TextBox Width="100" TextChanged="TextBox_TextChanged" DockPanel.Dock="Right"></TextBox>
                                     <Label HorizontalAlignment="Right" Height="28">Search</Label>
                                 </DockPanel>
@@ -75,16 +76,16 @@
                                         <!--<RowDefinition Height="30"/>-->
                                     </Grid.RowDefinitions>
                                     <DataGrid x:Name="dataGridScanNums" Grid.Row="0" AutoGenerateColumns="False" VerticalAlignment="Stretch" ItemsSource="{Binding}" 
-                                  IsReadOnly="True" ScrollViewer.CanContentScroll="True" Margin="0,0,0,0" 
-                                  SelectedCellsChanged="dataGridScanNums_SelectedCellsChanged" CanUserDeleteRows="false" CanUserAddRows="false">
+                                        IsReadOnly="True" ScrollViewer.CanContentScroll="True" Margin="0,0,0,0" 
+                                        SelectedCellsChanged="dataGridScanNums_SelectedCellsChanged" CanUserDeleteRows="false" CanUserAddRows="false">
                                         <DataGrid.Columns>
                                             <DataGridTextColumn Header="MS2 Scan" Binding="{Binding Ms2ScanNumber}"></DataGridTextColumn>
                                             <DataGridTextColumn Header="Full Sequence" Binding="{Binding FullSequence}"></DataGridTextColumn>
                                         </DataGrid.Columns>
                                     </DataGrid>
-                                    <!--<Button Grid.Row="1" Content="Export Selected to PDF" Click="PDFButton_Click"></Button>-->
                                 </Grid>
                             </GroupBox>
+                            <Button Content="Export to PDF" Grid.Row="4" Width="100" Click="PDFButton_Click" />
                         </Grid>
 
                         <!--Moveable splitter-->
@@ -131,7 +132,7 @@
                           Width="3"/>
 
                         <!--PSM annotated peaks-->
-                        <GroupBox Grid.Column="4" Header="PSM Annotation">
+                        <GroupBox Grid.Column="4" Header="PSM Annotation" Name="gbPSM">
                             <Grid Name="PsmAnnotationGrid">
                                 <Grid.RowDefinitions>
                                     <RowDefinition Height = "*"></RowDefinition>
@@ -141,7 +142,7 @@
                                 <!--Spectrum annotation-->
                                 <TabControl>
                                     <TabItem Header="Parent Scan View" Name="ParentScanView">
-                                        <oxy:PlotView Grid.Row="0" x:Name="plotView" Model="{Binding Model}" FontSize="16" FontStretch="Expanded"/>
+                                        <oxy:PlotView Grid.Row="0" x:Name="plotView" Model="{Binding Model}" FontSize="16" FontStretch="Expanded" Margin="10 10 10 10"/>
                                     </TabItem>
                                     <TabItem Header="Parent/Child Scan View" Name="ParentChildScanView">
                                         <ItemsControl ItemsSource="{Binding Data}">
@@ -186,32 +187,28 @@
                     </Grid>
                 </DockPanel>
             </TabItem>
-            
+
             <!--Stats tab-->
             <TabItem Header="Stats" Background="DarkGray">
                 <DockPanel>
                     <Grid>
                         <Grid.ColumnDefinitions>
-                            <ColumnDefinition Width="15*"/>
-                            <ColumnDefinition Width="*"/>
-                            <ColumnDefinition Width="49*"/>
+                            <ColumnDefinition Width="1*"/>
+                            <ColumnDefinition Width="Auto"/>
+                            <ColumnDefinition Width="3*"/>
                         </Grid.ColumnDefinitions>
 
                         <!--Left area is for loading files, displaying plot types, etc-->
-                        <Grid Grid.Column="0" >
+                        <Grid Grid.Column="0">
                             <Grid.RowDefinitions>
                                 <RowDefinition Height="5*"/>
                                 <RowDefinition Height="25"/>
                                 <RowDefinition Height="77*"/>
                                 <RowDefinition Height="5*"/>
                             </Grid.RowDefinitions>
-                            <Grid.ColumnDefinitions>
-                                <ColumnDefinition Width="30*"></ColumnDefinition>
-                                <ColumnDefinition Width="109*"/>
-                            </Grid.ColumnDefinitions>
 
                             <!--Select MetaMorpheus output file-->
-                            <DockPanel Grid.Row="0" LastChildFill="True" Grid.ColumnSpan="2" Margin="0 1 0 1">
+                            <DockPanel Grid.Row="0" LastChildFill="True">
                                 <Label Content="PSMTSV file: " Width="120" />
                                 <Button Name="selectPsmFileButtonStat" Content="Select" DockPanel.Dock="Right" Click="selectPsmFileButton_Click" Width="45" />
                                 <Label BorderThickness="1">
@@ -219,24 +216,22 @@
                                 </Label>
                             </DockPanel>
 
-                            <Border Grid.Row="1" Grid.ColumnSpan="2" BorderBrush="Black" BorderThickness="0,0,0,1" Margin="0 0 0 0" Padding="0 0 0 0">
-                                <DockPanel Grid.Row="2" Grid.ColumnSpan="3" LastChildFill="True">
-                                    <Button Name="loadFilesStat" Content="Load File" Width="100" Click="loadFilesButtonStat_Click"/>
-                                </DockPanel>
-                            </Border>
+                            <DockPanel Grid.Row="1">
+                                <Button Name="loadFilesStat" Content="Load File" Width="100" Click="loadFilesButtonStat_Click"/>
+                            </DockPanel>
 
                             <!--List of plot options-->
-                            <GroupBox Header="Plot Type" Name="plotType" Grid.Row="2" Grid.ColumnSpan="2">
+                            <GroupBox Header="Plot Type" Name="plotType" Grid.Row="2">
                                 <ListView x:Name="plotsListBox" ItemsSource="{Binding}" SelectionChanged ="PlotSelected" MaxHeight="400"/>
                             </GroupBox>
 
-                            <DockPanel Grid.Row="3" LastChildFill="False" Grid.ColumnSpan="2" Margin="0 1 0 1">
-                                <Button Name="createPdfButton" Content="Create PDF"  DockPanel.Dock="Bottom" Click="createPdfButton_Click" Width="137"/>
+                            <DockPanel Grid.Row="3" Margin="2">
+                                <Button Content="Export to PDF" Width="100" Click="CreatePlotPdf_Click" />
                             </DockPanel>
                         </Grid>
 
                         <!--Loading progress popup-->
-                        <Popup IsOpen="False" x:Name="prgsFeedStat" Height="80" Width="300" PlacementTarget="{Binding ElementName=MetaDrawWindow}" Placement="Center" Grid.ColumnSpan="3" Margin="0,230,427,231">
+                        <Popup IsOpen="False" x:Name="prgsFeedStat" Height="80" Width="300" PlacementTarget="{Binding ElementName=MetaDrawWindow}" Placement="Center" Grid.ColumnSpan="3" Margin="168.884,230,658.275,231.6" Grid.Column="3">
                             <Border Background="LightGray" CornerRadius="2" Height="78" Width="298" HorizontalAlignment="Center" VerticalAlignment="Center">
                                 <StackPanel Height="78" Background="LightGray">
                                     <Label x:Name="prgsTextStat" FontSize="20"></Label>
