@@ -407,7 +407,7 @@ namespace Test
             var protein = ProteinDbLoader.LoadProteinXML(xmlName, true, DecoyType.Reverse, new List<Modification>(), false, new List<string>(), out Dictionary<string, Modification> ok);
             var setList1 = protein[0].Digest(testPeptides.CommonParameters.DigestionParams, new List<Modification> { }, variableModifications).ToList();
             Assert.AreEqual(4, setList1.Count);
-
+            
             //Finally Write MZML file
             MsDataFile myMsDataFile = new TestDataFile(new List<PeptideWithSetModifications> { setList1[0], setList1[1], setList1[2], setList1[3], setList1[0], setList1[1] });
             string mzmlName = @"singleProteinWithRepeatedMods.mzML";
