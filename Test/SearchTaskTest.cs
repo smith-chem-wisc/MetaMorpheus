@@ -331,21 +331,5 @@ namespace Test
             result.ToString();
             result.ToProseString();
         }
-
-
-        [Test]
-        public static void PostSearchPrundedDBTest()
-        {
-            var searchTask = new SearchTask();
-            string myFile = Path.Combine(TestContext.CurrentContext.TestDirectory, @"TestData\PrunedDbSpectra.mzml");
-            string myDatabase = Path.Combine(TestContext.CurrentContext.TestDirectory, @"TestData\DbForPrunedDb.fasta");
-            string folderPath = Path.Combine(TestContext.CurrentContext.TestDirectory, @"TestNormalization");
-            
-            DbForTask db = new DbForTask(myDatabase, false);
-            Directory.CreateDirectory(folderPath);
-
-            searchTask.RunTask(folderPath, new List<DbForTask> { db }, new List<string> { myFile }, "normal");
-
-        }
     }
 }
