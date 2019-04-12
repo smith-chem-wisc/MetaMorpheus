@@ -146,7 +146,7 @@ namespace Test
             try
             {
                 FileSpecificParameters fspFail = new FileSpecificParameters(fileSpecificTomlFail);
-            } catch(MetaMorpheusException e)
+            } catch(MetaMorpheusException)
             {
                 
             }
