@@ -1,16 +1,18 @@
-﻿namespace EngineLayer.CrosslinkSearch
-{
-    public enum CrosslinkerType
-    {
-        DSSO,
-        DSS,
-        DisulfideBond,
-        DSBU,
-        UserDefined
-    }
+﻿using System.Collections.Generic;
+using System.IO;
 
+namespace EngineLayer
+{
     public class Crosslinker
     {
+        /// <summary>
+        /// Do not use this constructor for anything. It exists so that the .toml can be read.
+        /// </summary>
+        public Crosslinker()
+        {
+
+        }
+
         public Crosslinker(string crosslinkerModSites, string crosslinkerModSites2, string crosslinkerName, bool cleavable, double totalMass,
             double cleaveMassShort, double cleaveMassLong, double loopMass, double deadendMassH2O, double deadendMassNH2, double deadendMassTris)
         {
@@ -27,10 +29,6 @@
             DeadendMassTris = deadendMassTris;
         }
 
-        public Crosslinker()
-        {
-        }
-
         public string CrosslinkerModSites { get; set; }
         public string CrosslinkerModSites2 { get; set; }
         public string CrosslinkerName { get; set; }
@@ -43,60 +41,79 @@
         public double DeadendMassNH2 { get; set; }
         public double DeadendMassTris { get; set; }
 
-        public Crosslinker SelectCrosslinker(CrosslinkerType type)
+        public static IEnumerable<Crosslinker> LoadCrosslinkers(string CrosslinkerLocation)
         {
-            if (type == CrosslinkerType.DSSO)
+            using (StreamReader crosslinkers = new StreamReader(CrosslinkerLocation))
             {
-                CrosslinkerName = "DSSO";
-                Cleavable = true;
-                TotalMass = 158.0038;
-                CleaveMassShort = 54.01056;
-                CleaveMassLong = 103.9932;
-                CrosslinkerModSites = "K";
-                CrosslinkerModSites2 = "K";
-                LoopMass = 158.0038;
-                DeadendMassH2O = 176.0143;
-                DeadendMassNH2 = 175.0303;
-                DeadendMassTris = 279.0777;
+                int lineCount = 0;
+
+                while (crosslinkers.Peek() != -1)
+                {
+                    lineCount++;
+                    string line = crosslinkers.ReadLine();
+                    if (lineCount == 1)
+                    {
+                        continue;
+                    }
+
+                    yield return ParseCrosslinkerFromString(line);
+                }
             }
-            else if (type == CrosslinkerType.DisulfideBond)
+        }
+
+        public static Crosslinker ParseCrosslinkerFromString(string line)
+        {
+            var split = line.Split('\t');
+            bool cleavable = true;
+            if (split[3] == "F")
             {
-                CrosslinkerName = "DisulfideBond";
-                Cleavable = true;
-                TotalMass = -2.01565;
-                CleaveMassShort = -33.98772;
-                CleaveMassLong = 31.97207;
-                CrosslinkerModSites = "C";
-                CrosslinkerModSites2 = "C";
-            }
-            else if (type == CrosslinkerType.DSS)
-            {
-                CrosslinkerName = "DSS";
-                Cleavable = false;
-                TotalMass = 138.06808;
-                CrosslinkerModSites = "K";
-                CrosslinkerModSites2 = "K";
-                LoopMass = 138.06808;
-                DeadendMassH2O = 156.0786;
-                DeadendMassNH2 = 155.0946;
-                DeadendMassTris = 259.142;
-            }
-            else if (type == CrosslinkerType.DSBU)
-            {
-                CrosslinkerName = "DSBU";
-                Cleavable = true;
-                TotalMass = 196.0848;
-                CleaveMassShort = 85.05276;
-                CleaveMassLong = 111.0320;
-                CrosslinkerModSites = "K";
-                CrosslinkerModSites2 = "K";
-                LoopMass = 196.0848;
-                DeadendMassH2O = 214.0954;
-                DeadendMassNH2 = 213.1113;
-                DeadendMassTris = 317.1587;
+                cleavable = false;
             }
 
-            return this;
+            Crosslinker crosslinker = new Crosslinker(
+                crosslinkerName: split[0],
+                crosslinkerModSites: split[1],
+                crosslinkerModSites2: split[2],
+                cleavable: cleavable,
+                totalMass: double.Parse(split[4]),
+                cleaveMassShort: double.Parse(split[5]),
+                cleaveMassLong: double.Parse(split[6]),
+                loopMass: double.Parse(split[4]),
+                deadendMassH2O: double.Parse(split[7]),
+                deadendMassNH2: double.Parse(split[8]),
+                deadendMassTris: double.Parse(split[9]));
+
+            return crosslinker;
+        }
+
+        public override string ToString()
+        {
+            return CrosslinkerName;
+        }
+
+        public string ToString(bool writeCrosslinker)
+        {
+            if (writeCrosslinker)
+            {
+                return (CrosslinkerName + "\t" + CrosslinkerModSites + "\t" + CrosslinkerModSites2 + "\t" + Cleavable + "\t" + TotalMass + "\t" + CleaveMassShort + "\t"
+                    + CleaveMassLong + "\t" + DeadendMassH2O + "\t" + DeadendMassNH2 + "\t" + DeadendMassTris);
+            }
+            else
+            {
+                return CrosslinkerName;
+            }
+        }
+
+        public override bool Equals(object obj)
+        {
+            var a = obj as Crosslinker;
+            return a != null
+                && (a.CrosslinkerName == null && CrosslinkerName == null || a.CrosslinkerName.Equals(CrosslinkerName));
+        }
+
+        public override int GetHashCode()
+        {
+            return (CrosslinkerName ?? "").GetHashCode();
         }
     }
 }

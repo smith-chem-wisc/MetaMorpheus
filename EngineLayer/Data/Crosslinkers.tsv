@@ -1,0 +1,5 @@
+Name	CrosslinkAminoAcid	CrosslinkerAminoAcid2	Cleavable	CrosslinkerTotalMass	CrosslinkerShortMass	CrosslinkerLongMass	QuenchMassH2O	QuenchMassNH2	QuenchMassTris
+DSSO	K	K	T	158.0038	54.01056	85.982635	176.0143	175.0303	279.0777
+DSS	K	K	F	138.06808	0	0	156.0786	155.0946	259.142
+DSUB	K	K	T	196.0848	85.05276	111.032	214.0954	213.1113	317.1587
+DisulfideBond	C	C	T	-2.01565	-33.98772	31.97207	0	0	0
