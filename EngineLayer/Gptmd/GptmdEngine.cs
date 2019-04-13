@@ -42,12 +42,10 @@ namespace EngineLayer.Gptmd
             }
 
             // if a UniProt mod already exists at this location with the same mass, don't annotate the GPTMD mod
-            if (protein.OneBasedPossibleLocalizedModifications.TryGetValue(proteinOneBasedIndex, out List<Modification> modsAtThisLocation))
+            if (protein.OneBasedPossibleLocalizedModifications.TryGetValue(proteinOneBasedIndex, out List<Modification> modsAtThisLocation)
+                && modsAtThisLocation.Any(m => m.ModificationType == "UniProt" && Math.Abs(m.MonoisotopicMass.Value - attemptToLocalize.MonoisotopicMass.Value) < 0.005))
             {
-                if (modsAtThisLocation.Any(m => m.ModificationType == "UniProt" && Math.Abs(m.MonoisotopicMass.Value - attemptToLocalize.MonoisotopicMass.Value) < 0.005))
-                {
-                    return false;
-                }
+                return false;
             }
 
             if (attemptToLocalize.LocationRestriction == "Anywhere.")

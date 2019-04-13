@@ -221,7 +221,7 @@ namespace Test
         }
 
         [Test]
-        public static void TestGptmdWhenUniProtModExistsAtSameLocation()
+        public static void TestUniProtGptmdConflict()
         {
             // this unit test checks to make sure GPTMD does not annotate mods at residues on 
             // proteins where the equivalent uniprot mod already exists
@@ -234,7 +234,7 @@ namespace Test
 
             PeptideWithSetModifications pep = protein.Digest(new DigestionParams(), new List<Modification>(), new List<Modification>()).First(p => p.AllModsOneIsNterminus.Count == 0);
 
-            // mod should not fit anywhere on the peptide
+            // mod should not fit anywhere on the protein
             for (int i = 0; i < pep.Length; i++)
             {
                 bool modFits = GptmdEngine.ModFits(mmPhospho, protein, i + 1, pep.Length, pep.OneBasedStartResidueInProtein + i);
@@ -244,7 +244,11 @@ namespace Test
 
             // the following code is just a control to make sure the phosphorylation actually does fit
             // at the given residue if the UniProt phosphorylation is not already present
-            protein = new Protein("PEPTIDESK", "test");
+            var someOtherSMod = GlobalVariables.AllModsKnown.Where(p => p.ModificationType == "Common Biological" && p.IdWithMotif.Contains("HexNAc on S")).First();
+
+            protein = new Protein("PEPTIDESK", "test",
+                oneBasedModifications: new Dictionary<int, List<Modification>>() { { 8, new List<Modification> { someOtherSMod } } });
+
             pep = protein.Digest(new DigestionParams(), new List<Modification>(), new List<Modification>()).First(p => p.AllModsOneIsNterminus.Count == 0);
 
             // mod should fit at position 8
