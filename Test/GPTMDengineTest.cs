@@ -219,5 +219,52 @@ namespace Test
 
             Assert.AreEqual(result, GptmdEngine.ModFits(attemptToLocalize, protein, peptideOneBasedIndex, peptideLength, proteinOneBasedIndex));
         }
+
+        [Test]
+        public static void TestUniProtGptmdConflict()
+        {
+            // this unit test checks to make sure GPTMD does not annotate mods at residues on 
+            // proteins where the equivalent uniprot mod already exists
+
+            Modification uniProtPhospho = GlobalVariables.AllModsKnown.First(p => p.ModificationType == "UniProt" && p.IdWithMotif.Contains("Phosphoserine"));
+            Modification mmPhospho = GlobalVariables.AllModsKnown.First(p => p.ModificationType == "Common Biological" && p.IdWithMotif.Contains("Phosphorylation on S"));
+
+            Protein protein = new Protein("PEPTIDESK", "test",
+                oneBasedModifications: new Dictionary<int, List<Modification>>() { { 8, new List<Modification> { uniProtPhospho } } });
+
+            PeptideWithSetModifications pep = protein.Digest(new DigestionParams(), new List<Modification>(), new List<Modification>()).First(p => p.AllModsOneIsNterminus.Count == 0);
+
+            // mod should not fit anywhere on the protein
+            for (int i = 0; i < pep.Length; i++)
+            {
+                bool modFits = GptmdEngine.ModFits(mmPhospho, protein, i + 1, pep.Length, pep.OneBasedStartResidueInProtein + i);
+
+                Assert.That(!modFits);
+            }
+
+            // the following code is just a control to make sure the phosphorylation actually does fit
+            // at the given residue if the UniProt phosphorylation is not already present
+            var someOtherSMod = GlobalVariables.AllModsKnown.Where(p => p.ModificationType == "Common Biological" && p.IdWithMotif.Contains("HexNAc on S")).First();
+
+            protein = new Protein("PEPTIDESK", "test",
+                oneBasedModifications: new Dictionary<int, List<Modification>>() { { 8, new List<Modification> { someOtherSMod } } });
+
+            pep = protein.Digest(new DigestionParams(), new List<Modification>(), new List<Modification>()).First(p => p.AllModsOneIsNterminus.Count == 0);
+
+            // mod should fit at position 8
+            for (int i = 0; i < pep.Length; i++)
+            {
+                bool modFits = GptmdEngine.ModFits(mmPhospho, protein, i + 1, pep.Length, pep.OneBasedStartResidueInProtein + i);
+
+                if (i + 1 == 8)
+                {
+                    Assert.That(modFits);
+                }
+                else
+                {
+                    Assert.That(!modFits);
+                }
+            }
+        }
     }
 }

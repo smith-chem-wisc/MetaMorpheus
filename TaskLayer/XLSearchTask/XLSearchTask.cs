@@ -37,12 +37,7 @@ namespace TaskLayer
             // load proteins
             List<Protein> proteinList = LoadProteins(taskId, dbFilenameList, true, XlSearchParameters.DecoyType, localizeableModificationTypes, CommonParameters);
 
-            var crosslinker = new Crosslinker();
-            crosslinker = crosslinker.SelectCrosslinker(XlSearchParameters.CrosslinkerType);
-            if (XlSearchParameters.CrosslinkerType == CrosslinkerType.UserDefined)
-            {
-                crosslinker = GenerateUserDefinedCrosslinker(XlSearchParameters);
-            }
+            var crosslinker = XlSearchParameters.Crosslinker;
 
             MyFileManager myFileManager = new MyFileManager(true);
 
@@ -99,7 +94,7 @@ namespace TaskLayer
                     List<Protein> proteinListSubset = proteinList.GetRange(currentPartition * proteinList.Count() / combinedParams.TotalPartitions, ((currentPartition + 1) * proteinList.Count() / combinedParams.TotalPartitions) - (currentPartition * proteinList.Count() / combinedParams.TotalPartitions));
 
                     Status("Getting fragment dictionary...", new List<string> { taskId });
-                    var indexEngine = new IndexingEngine(proteinListSubset, variableModifications, fixedModifications, currentPartition, UsefulProteomicsDatabases.DecoyType.Reverse, combinedParams, 30000.0, false, dbFilenameList.Select(p => new FileInfo(p.FilePath)).ToList(), new List<string> { taskId });
+                    var indexEngine = new IndexingEngine(proteinListSubset, variableModifications, fixedModifications, null, currentPartition, UsefulProteomicsDatabases.DecoyType.Reverse, combinedParams, 30000.0, false, dbFilenameList.Select(p => new FileInfo(p.FilePath)).ToList(), new List<string> { taskId });
                     List<int>[] fragmentIndex = null;
                     List<int>[] precursorIndex = null;
 
@@ -295,26 +290,6 @@ namespace TaskLayer
                     qValueThreshold = csm.FdrInfo.QValue;
                 }
             }
-        }
-        
-        //Generate user defined crosslinker
-        public static Crosslinker GenerateUserDefinedCrosslinker(XlSearchParameters xlSearchParameters)
-        {
-            var crosslinker = new Crosslinker(
-                xlSearchParameters.CrosslinkerResidues,
-                xlSearchParameters.CrosslinkerResidues2,
-                xlSearchParameters.CrosslinkerName,
-                xlSearchParameters.IsCleavable,
-                xlSearchParameters.CrosslinkerTotalMass ?? double.NaN,
-                xlSearchParameters.CrosslinkerShortMass ?? double.NaN,
-                xlSearchParameters.CrosslinkerLongMass ?? double.NaN,
-                xlSearchParameters.CrosslinkerLoopMass ?? double.NaN,
-                xlSearchParameters.CrosslinkerDeadEndMassH2O ?? double.NaN,
-                xlSearchParameters.CrosslinkerDeadEndMassNH2 ?? double.NaN,
-                xlSearchParameters.CrosslinkerDeadEndMassTris ?? double.NaN
-            );
-
-            return crosslinker;
-        }
+        }       
     }
 }

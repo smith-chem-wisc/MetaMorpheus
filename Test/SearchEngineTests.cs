@@ -45,7 +45,7 @@ namespace Test
             var listOfSortedms2Scans = MetaMorpheusTask.GetMs2Scans(myMsDataFile, null, new CommonParameters()).OrderBy(b => b.PrecursorMass).ToArray();
 
             PeptideSpectralMatch[] allPsmsArray = new PeptideSpectralMatch[listOfSortedms2Scans.Length];
-            new ClassicSearchEngine(allPsmsArray, listOfSortedms2Scans, variableModifications, fixedModifications, proteinList, searchModes, CommonParameters, new List<string>()).Run();
+            new ClassicSearchEngine(allPsmsArray, listOfSortedms2Scans, variableModifications, fixedModifications, null, proteinList, searchModes, CommonParameters, new List<string>()).Run();
 
             // Single search mode
             Assert.AreEqual(1, allPsmsArray.Length);
@@ -218,7 +218,7 @@ namespace Test
             }
 
             PeptideSpectralMatch[] allPsmsArray = new PeptideSpectralMatch[listOfSortedXcorrms2Scans.Length];
-            new ClassicSearchEngine(allPsmsArray, listOfSortedXcorrms2Scans, variableModifications, fixedModifications, proteinList, searchModes, CommonParameters, new List<string>()).Run();
+            new ClassicSearchEngine(allPsmsArray, listOfSortedXcorrms2Scans, variableModifications, fixedModifications, null, proteinList, searchModes, CommonParameters, new List<string>()).Run();
 
             Assert.IsTrue(listOfSortedXcorrms2Scans[0].TheScan.MassSpectrum.XcorrProcessed);
 
@@ -268,7 +268,7 @@ namespace Test
             var listOfSortedms2Scans = MetaMorpheusTask.GetMs2Scans(myMsDataFile, null, new CommonParameters()).OrderBy(b => b.PrecursorMass).ToArray();
 
             PeptideSpectralMatch[] allPsmsArray = new PeptideSpectralMatch[listOfSortedms2Scans.Length];
-            new ClassicSearchEngine(allPsmsArray, listOfSortedms2Scans, variableModifications, fixedModifications, proteinList, searchModes, CommonParameters, new List<string>()).Run();
+            new ClassicSearchEngine(allPsmsArray, listOfSortedms2Scans, variableModifications, fixedModifications, null, proteinList, searchModes, CommonParameters, new List<string>()).Run();
 
             // Single search mode
             Assert.AreEqual(1, allPsmsArray.Length);
@@ -304,7 +304,7 @@ namespace Test
 
             var proteinList = new List<Protein> { new Protein("MNNNKQQQ", null) };
 
-            var indexEngine = new IndexingEngine(proteinList, variableModifications, fixedModifications, 1, DecoyType.Reverse, CommonParameters, SearchParameters.MaxFragmentSize, false, new List<FileInfo>(), new List<string>());
+            var indexEngine = new IndexingEngine(proteinList, variableModifications, fixedModifications, null, 1, DecoyType.Reverse, CommonParameters, SearchParameters.MaxFragmentSize, false, new List<FileInfo>(), new List<string>());
             var indexResults = (IndexingResults)indexEngine.Run();
 
             var listOfSortedms2Scans = MetaMorpheusTask.GetMs2Scans(myMsDataFile, null, new CommonParameters()).OrderBy(b => b.PrecursorMass).ToArray();
@@ -358,7 +358,7 @@ namespace Test
 
             var proteinList = new List<Protein> { new Protein("MNNNKQQQ", null) };
 
-            var indexEngine = new IndexingEngine(proteinList, variableModifications, fixedModifications, 1, DecoyType.Reverse, CommonParameters, SearchParameters.MaxFragmentSize, false, new List<FileInfo>(), new List<string>());
+            var indexEngine = new IndexingEngine(proteinList, variableModifications, fixedModifications, null, 1, DecoyType.Reverse, CommonParameters, SearchParameters.MaxFragmentSize, false, new List<FileInfo>(), new List<string>());
             var indexResults = (IndexingResults)indexEngine.Run();
 
             var listOfSortedms2Scans = MetaMorpheusTask.GetMs2Scans(myMsDataFile, null, CommonParameters).OrderBy(b => b.PrecursorMass).ToArray();
@@ -420,7 +420,7 @@ namespace Test
 
             var proteinList = new List<Protein> { new Protein("LEEGPPVTTVLTR", null) };
 
-            var indexEngine = new IndexingEngine(proteinList, variableModifications, fixedModifications, 1, DecoyType.Reverse, CommonParameters, SearchParameters.MaxFragmentSize, false, new List<FileInfo>(), new List<string>());
+            var indexEngine = new IndexingEngine(proteinList, variableModifications, fixedModifications, null, 1, DecoyType.Reverse, CommonParameters, SearchParameters.MaxFragmentSize, false, new List<FileInfo>(), new List<string>());
             var indexResults = (IndexingResults)indexEngine.Run();
 
             var listOfSortedms2Scans = MetaMorpheusTask.GetMs2Scans(myMsDataFile, null, CommonParameters).OrderBy(b => b.PrecursorMass).ToArray();
@@ -646,7 +646,7 @@ namespace Test
 
             //var myPtmList = ProteinDbLoader.GetPtmListFromProteinXml(Path.Combine(TestContext.CurrentContext.TestDirectory, @"TestData\LowResSnip_B6_mouse_11700_117500.xmlpruned.xml"));
 
-            var indexEngine = new IndexingEngine(proteinList, variableModifications, fixedModifications, 1, DecoyType.Reverse, CommonParameters, SearchParameters.MaxFragmentSize, false, new List<FileInfo>(), new List<string>());
+            var indexEngine = new IndexingEngine(proteinList, variableModifications, fixedModifications, null, 1, DecoyType.Reverse, CommonParameters, SearchParameters.MaxFragmentSize, false, new List<FileInfo>(), new List<string>());
             var indexResults = (IndexingResults)indexEngine.Run();
 
             var listOfSortedms2Scans = MetaMorpheusTask.GetMs2Scans(myMsDataFile, null, CommonParameters).OrderBy(b => b.PrecursorMass).ToArray();
@@ -696,7 +696,7 @@ namespace Test
 
             var proteinList = new List<Protein> { new Protein("K", null) };
 
-            var indexEngine = new IndexingEngine(proteinList, new List<Modification>(), new List<Modification>(), 1, DecoyType.Reverse,
+            var indexEngine = new IndexingEngine(proteinList, new List<Modification>(), new List<Modification>(), null, 1, DecoyType.Reverse,
                 CommonParameters, SearchParameters.MaxFragmentSize, false, new List<FileInfo>(), new List<string>());
             var indexResults = (IndexingResults)indexEngine.Run();
 
@@ -731,7 +731,7 @@ namespace Test
 
             var searchModes = new SinglePpmAroundZeroSearchMode(5);
 
-            var indexEngine = new IndexingEngine(proteinList, variableModifications, fixedModifications, 1, DecoyType.Reverse, CommonParameters, SearchParameters.MaxFragmentSize, false, new List<FileInfo>(), new List<string>());
+            var indexEngine = new IndexingEngine(proteinList, variableModifications, fixedModifications, null, 1, DecoyType.Reverse, CommonParameters, SearchParameters.MaxFragmentSize, false, new List<FileInfo>(), new List<string>());
             var indexResults = (IndexingResults)indexEngine.Run();
 
             var listOfSortedms2Scans = MetaMorpheusTask.GetMs2Scans(myMsDataFile, null, new CommonParameters()).OrderBy(b => b.PrecursorMass).ToArray();
@@ -741,7 +741,7 @@ namespace Test
             PeptideSpectralMatch[] allPsmsArray = allPsmsArrays[0];
 
             //Classic
-            new ClassicSearchEngine(allPsmsArray, listOfSortedms2Scans, variableModifications, fixedModifications, proteinList, searchModes, CommonParameters, new List<string>()).Run();
+            new ClassicSearchEngine(allPsmsArray, listOfSortedms2Scans, variableModifications, fixedModifications, null, proteinList, searchModes, CommonParameters, new List<string>()).Run();
 
             //Modern
             new ModernSearchEngine(allPsmsArray, listOfSortedms2Scans, indexResults.PeptideIndex, indexResults.FragmentIndex, 0, CommonParameters, massDiffAcceptor, SearchParameters.MaximumMassThatFragmentIonScoreIsDoubled, new List<string>()).Run();
@@ -772,7 +772,7 @@ namespace Test
 
             var proteinList = new List<Protein> { new Protein("MNNNKQXQ", null) };
 
-            var indexEngine = new IndexingEngine(proteinList, variableModifications, fixedModifications, 1, DecoyType.Reverse, CommonParameters, SearchParameters.MaxFragmentSize, false, new List<FileInfo>(), new List<string>());
+            var indexEngine = new IndexingEngine(proteinList, variableModifications, fixedModifications, null, 1, DecoyType.Reverse, CommonParameters, SearchParameters.MaxFragmentSize, false, new List<FileInfo>(), new List<string>());
             var indexResults = (IndexingResults)indexEngine.Run();
 
             var listOfSortedms2Scans = MetaMorpheusTask.GetMs2Scans(myMsDataFile, null, new CommonParameters()).OrderBy(b => b.PrecursorMass).ToArray();
@@ -831,7 +831,7 @@ namespace Test
 
             var proteinList = new List<Protein> { new Protein("GGGGGMNNNKQQQGGGGG", "TestProtein") };
 
-            var indexEngine = new IndexingEngine(proteinList, variableModifications, fixedModifications, 1, DecoyType.Reverse, CommonParameters, 100000, false, new List<FileInfo>(), new List<string>());
+            var indexEngine = new IndexingEngine(proteinList, variableModifications, fixedModifications, null, 1, DecoyType.Reverse, CommonParameters, 100000, false, new List<FileInfo>(), new List<string>());
             var indexResults = (IndexingResults)indexEngine.Run();
             var peptideIndex = indexResults.PeptideIndex;
             var fragmentIndexDict = indexResults.FragmentIndex;
@@ -898,7 +898,7 @@ namespace Test
 
             var proteinList = new List<Protein> { new Protein("GGGGGCDQPKLLGIETPLPKKEGGGGG", null) };
 
-            var indexEngine = new IndexingEngine(proteinList, variableModifications, fixedModifications, 1, DecoyType.None, CommonParameters, SearchParameters.MaxFragmentSize, true, new List<FileInfo>(), new List<string>());
+            var indexEngine = new IndexingEngine(proteinList, variableModifications, fixedModifications, null, 1, DecoyType.None, CommonParameters, SearchParameters.MaxFragmentSize, true, new List<FileInfo>(), new List<string>());
 
             var indexResults = (IndexingResults)indexEngine.Run();
             var peptideIndex = indexResults.PeptideIndex;
@@ -924,7 +924,7 @@ namespace Test
             guiltyPwsm = new PeptideWithSetModifications("C[Common Fixed:Carbamidomethyl on C]DQPKLLGIETPLPKKE", new Dictionary<string, Modification> { { "Carbamidomethyl on C", mod2 } });
             fragments = guiltyPwsm.Fragment(CommonParameters.DissociationType, FragmentationTerminus.Both);
             myMsDataFile = new TestDataFile(guiltyPwsm.MonoisotopicMass, fragments.Select(x => x.NeutralMass.ToMz(1)).ToArray());
-            indexEngine = new IndexingEngine(proteinList, variableModifications, fixedModifications, 1, DecoyType.None, CommonParameters, SearchParameters.MaxFragmentSize, true, new List<FileInfo>(), new List<string>());
+            indexEngine = new IndexingEngine(proteinList, variableModifications, fixedModifications, null, 1, DecoyType.None, CommonParameters, SearchParameters.MaxFragmentSize, true, new List<FileInfo>(), new List<string>());
             indexResults = (IndexingResults)indexEngine.Run();
             precursorIndexDict = indexResults.PrecursorIndex;
             peptideIndex = indexResults.PeptideIndex;
@@ -940,7 +940,7 @@ namespace Test
             Assert.AreEqual(allPsmsArray[0].FullSequence, guiltyPwsm.FullSequence);
 
             proteinList = new List<Protein> { new Protein("GGGGGCDQPKLLGIETPLPKKEGG", null) };
-            indexEngine = new IndexingEngine(proteinList, variableModifications, fixedModifications, 1, DecoyType.None, CommonParameters, SearchParameters.MaxFragmentSize, true, new List<FileInfo>(), new List<string>());
+            indexEngine = new IndexingEngine(proteinList, variableModifications, fixedModifications, null, 1, DecoyType.None, CommonParameters, SearchParameters.MaxFragmentSize, true, new List<FileInfo>(), new List<string>());
             indexResults = (IndexingResults)indexEngine.Run();
             peptideIndex = indexResults.PeptideIndex;
             fragmentIndexDict = indexResults.FragmentIndex;
@@ -987,7 +987,7 @@ namespace Test
 
             var proteinList = new List<Protein> { new Protein("GGDQPKLLGIETPLPKKECGGGGG", null) };
 
-            var indexEngine = new IndexingEngine(proteinList, variableModifications, fixedModifications, 1, DecoyType.None, CommonParameters, SearchParameters.MaxFragmentSize, true, new List<FileInfo>(), new List<string>());
+            var indexEngine = new IndexingEngine(proteinList, variableModifications, fixedModifications, null, 1, DecoyType.None, CommonParameters, SearchParameters.MaxFragmentSize, true, new List<FileInfo>(), new List<string>());
 
             var indexResults = (IndexingResults)indexEngine.Run();
             var peptideIndex = indexResults.PeptideIndex;
@@ -1013,7 +1013,7 @@ namespace Test
             guiltyPwsm = new PeptideWithSetModifications("GGDQPKLLGIETPLPKKEC[Common Fixed:Carbamidomethyl on C]", new Dictionary<string, Modification> { { "Carbamidomethyl on C", mod2 } });
             fragments = guiltyPwsm.Fragment(CommonParameters.DissociationType, FragmentationTerminus.Both);
             myMsDataFile = new TestDataFile(guiltyPwsm.MonoisotopicMass, fragments.Select(x => x.NeutralMass.ToMz(1)).ToArray());
-            indexEngine = new IndexingEngine(proteinList, variableModifications, fixedModifications, 1, DecoyType.None, CommonParameters, SearchParameters.MaxFragmentSize, true, new List<FileInfo>(), new List<string>());
+            indexEngine = new IndexingEngine(proteinList, variableModifications, fixedModifications, null, 1, DecoyType.None, CommonParameters, SearchParameters.MaxFragmentSize, true, new List<FileInfo>(), new List<string>());
             indexResults = (IndexingResults)indexEngine.Run();
             precursorIndexDict = indexResults.PrecursorIndex;
             peptideIndex = indexResults.PeptideIndex;
@@ -1029,7 +1029,7 @@ namespace Test
             Assert.AreEqual(allPsmsArray[0].FullSequence, guiltyPwsm.FullSequence);
 
             proteinList = new List<Protein> { new Protein("GGDQPKLLGIETPLPKKECGGGGG", null) };
-            indexEngine = new IndexingEngine(proteinList, variableModifications, fixedModifications, 1, DecoyType.None, CommonParameters, SearchParameters.MaxFragmentSize, true, new List<FileInfo>(), new List<string>());
+            indexEngine = new IndexingEngine(proteinList, variableModifications, fixedModifications, null, 1, DecoyType.None, CommonParameters, SearchParameters.MaxFragmentSize, true, new List<FileInfo>(), new List<string>());
             indexResults = (IndexingResults)indexEngine.Run();
             peptideIndex = indexResults.PeptideIndex;
             fragmentIndexDict = indexResults.FragmentIndex;
@@ -1083,7 +1083,7 @@ namespace Test
 
             var proteinList = new List<Protein> { new Protein("GGGGGMNNNKQQQGGGGG", null) };
 
-            var indexEngine = new IndexingEngine(proteinList, variableModifications, fixedModifications, 1, DecoyType.Reverse, CommonParameters, SearchParameters.MaxFragmentSize, false, new List<FileInfo>(), new List<string>());
+            var indexEngine = new IndexingEngine(proteinList, variableModifications, fixedModifications, null, 1, DecoyType.Reverse, CommonParameters, SearchParameters.MaxFragmentSize, false, new List<FileInfo>(), new List<string>());
 
             var indexResults = (IndexingResults)indexEngine.Run();
             var peptideIndex = indexResults.PeptideIndex;
@@ -1214,7 +1214,7 @@ namespace Test
                 addCompIons: true);
 
             HashSet<DigestionParams> digestParams = new HashSet<DigestionParams> { CommonParameters.DigestionParams };
-            var indexEngine = new IndexingEngine(proteinList, variableModifications, fixedModifications, 1, DecoyType.Reverse, CommonParameters, 100000, true, new List<FileInfo>(), new List<string>());
+            var indexEngine = new IndexingEngine(proteinList, variableModifications, fixedModifications, null, 1, DecoyType.Reverse, CommonParameters, 100000, true, new List<FileInfo>(), new List<string>());
             var indexResults = (IndexingResults)indexEngine.Run();
             var peptideIndex = indexResults.PeptideIndex;
             var fragmentIndexDict = indexResults.FragmentIndex;
@@ -1281,7 +1281,7 @@ namespace Test
                 addCompIons: true);
 
             HashSet<DigestionParams> digestParams = new HashSet<DigestionParams> { CommonParameters.DigestionParams };
-            var indexEngine = new IndexingEngine(proteinList, variableModifications, fixedModifications, 1, DecoyType.Reverse, CommonParameters, 30000, false, new List<FileInfo>(), new List<string>());
+            var indexEngine = new IndexingEngine(proteinList, variableModifications, fixedModifications, null, 1, DecoyType.Reverse, CommonParameters, 30000, false, new List<FileInfo>(), new List<string>());
             var indexResults = (IndexingResults)indexEngine.Run();
             var peptideIndex = indexResults.PeptideIndex;
             var fragmentIndexDict = indexResults.FragmentIndex;
@@ -1361,7 +1361,7 @@ namespace Test
             var listOfSortedms2Scans = MetaMorpheusTask.GetMs2Scans(myMsDataFile, null, new CommonParameters()).OrderBy(b => b.PrecursorMass).ToArray();
 
             PeptideSpectralMatch[] allPsmsArray = new PeptideSpectralMatch[listOfSortedms2Scans.Length];
-            new ClassicSearchEngine(allPsmsArray, listOfSortedms2Scans, variableModifications, fixedModifications, proteinList, searchModes, CommonParameters, new List<string>()).Run();
+            new ClassicSearchEngine(allPsmsArray, listOfSortedms2Scans, variableModifications, fixedModifications, null, proteinList, searchModes, CommonParameters, new List<string>()).Run();
 
             //////////////////////////////
 
@@ -1378,7 +1378,7 @@ namespace Test
             var listOfSortedms2Scans2 = MetaMorpheusTask.GetMs2Scans(myMsDataFile, null, new CommonParameters()).OrderBy(b => b.PrecursorMass).ToArray();
 
             PeptideSpectralMatch[] allPsmsArray2 = new PeptideSpectralMatch[listOfSortedms2Scans.Length];
-            new ClassicSearchEngine(allPsmsArray2, listOfSortedms2Scans2, variableModifications, fixedModifications, proteinList, searchModes, CommonParameters2, new List<string>()).Run();
+            new ClassicSearchEngine(allPsmsArray2, listOfSortedms2Scans2, variableModifications, fixedModifications, null, proteinList, searchModes, CommonParameters2, new List<string>()).Run();
             // Single search mode
             Assert.AreEqual(1, allPsmsArray2.Length);
             Assert.AreEqual(allPsmsArray.Length, allPsmsArray2.Length);
@@ -1497,7 +1497,7 @@ namespace Test
 
             //Search the scan against the protein
             PeptideSpectralMatch[] allPsmsArray = new PeptideSpectralMatch[1];
-            MetaMorpheusEngineResults engineResults = new ClassicSearchEngine(allPsmsArray, scans, new List<Modification>(), new List<Modification>(), proteins, new SinglePpmAroundZeroSearchMode(20), new CommonParameters(dissociationType: DissociationType.CID), new List<string>()).Run();
+            MetaMorpheusEngineResults engineResults = new ClassicSearchEngine(allPsmsArray, scans, new List<Modification>(), new List<Modification>(), null, proteins, new SinglePpmAroundZeroSearchMode(20), new CommonParameters(dissociationType: DissociationType.CID), new List<string>()).Run();
 
             //Process the results
             List<MatchedFragmentIon> matchedFragmentIonList = allPsmsArray.SelectMany(p => p.MatchedFragmentIons).ToList();

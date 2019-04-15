@@ -27,6 +27,7 @@ namespace EngineLayer.Gptmd
             //the peptideOneBasedIndex and proteinOneBasedIndex are for the position of the modification on the sequence
 
             var motif = attemptToLocalize.Target;
+
             // First find the capital letter...
             var hehe = motif.ToString().IndexOf(motif.ToString().First(b => char.IsUpper(b)));
 
@@ -39,6 +40,14 @@ namespace EngineLayer.Gptmd
                     return false;
                 indexUp++;
             }
+
+            // if a UniProt mod already exists at this location with the same mass, don't annotate the GPTMD mod
+            if (protein.OneBasedPossibleLocalizedModifications.TryGetValue(proteinOneBasedIndex, out List<Modification> modsAtThisLocation)
+                && modsAtThisLocation.Any(m => m.ModificationType == "UniProt" && Math.Abs(m.MonoisotopicMass.Value - attemptToLocalize.MonoisotopicMass.Value) < 0.005))
+            {
+                return false;
+            }
+
             if (attemptToLocalize.LocationRestriction == "Anywhere.")
                 return true;
             if (attemptToLocalize.LocationRestriction == "N-terminal." && (proteinOneBasedIndex <= 2))

@@ -16,17 +16,22 @@ namespace EngineLayer.Indexing
         private readonly List<Protein> ProteinList;
         private readonly List<Modification> FixedModifications;
         private readonly List<Modification> VariableModifications;
+        private readonly List<SilacLabel> SilacLabels;
         private readonly int CurrentPartition;
         private readonly DecoyType DecoyType;
         private readonly double MaxFragmentSize;
         public readonly bool GeneratePrecursorIndex;
         public readonly List<FileInfo> ProteinDatabases;
 
-        public IndexingEngine(List<Protein> proteinList, List<Modification> variableModifications, List<Modification> fixedModifications, int currentPartition, DecoyType decoyType, CommonParameters commonParams, double maxFragmentSize, bool generatePrecursorIndex, List<FileInfo> proteinDatabases, List<string> nestedIds) : base(commonParams, nestedIds)
+        public IndexingEngine(List<Protein> proteinList, List<Modification> variableModifications, List<Modification> fixedModifications,
+            List<SilacLabel> silacLabels, int currentPartition, DecoyType decoyType, CommonParameters commonParams, double maxFragmentSize,
+            bool generatePrecursorIndex, List<FileInfo> proteinDatabases, List<string> nestedIds)
+            : base(commonParams, nestedIds)
         {
             ProteinList = proteinList;
             VariableModifications = variableModifications;
             FixedModifications = fixedModifications;
+            SilacLabels = silacLabels;
             CurrentPartition = currentPartition + 1;
             DecoyType = decoyType;
             MaxFragmentSize = maxFragmentSize;
@@ -80,7 +85,7 @@ namespace EngineLayer.Indexing
                     // Stop loop if canceled
                     if (GlobalVariables.StopLoops) { return; }
 
-                    localPeptides.AddRange(ProteinList[i].Digest(commonParameters.DigestionParams, FixedModifications, VariableModifications));
+                    localPeptides.AddRange(ProteinList[i].Digest(commonParameters.DigestionParams, FixedModifications, VariableModifications, SilacLabels));
 
                     progress++;
                     var percentProgress = (int)((progress / ProteinList.Count) * 100);
