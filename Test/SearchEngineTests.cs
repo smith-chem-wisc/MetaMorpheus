@@ -556,8 +556,8 @@ namespace Test
 
             var listOfSortedXcorrms2Scans = MetaMorpheusTask.GetMs2Scans(myMsDataFile, null, new CommonParameters()).OrderBy(b => b.PrecursorMass).ToArray();
             PeptideSpectralMatch[] allPsmsArray = new PeptideSpectralMatch[listOfSortedXcorrms2Scans.Length];
-            new ClassicSearchEngine(allPsmsArray, listOfSortedXcorrms2Scans, variableModifications, fixedModifications, proteinList, searchModes, CommonParameters, new List<string>()).Run();
-
+            new ClassicSearchEngine(allPsmsArray, listOfSortedXcorrms2Scans, variableModifications, fixedModifications, new List<SilacLabel>(), proteinList, searchModes, CommonParameters, new List<string>()).Run();
+            
             var nonNullPsms = allPsmsArray.Where(p => p != null).ToList();
             Assert.AreEqual(130, nonNullPsms.Count);
 
