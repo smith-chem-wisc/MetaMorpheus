@@ -244,7 +244,7 @@ namespace Test
             Protease protease = new Protease("Test", CleavageSpecificity.Full, null, null, motifs);
             ProteaseDictionary.Dictionary.Add(protease.Name, protease);
 
-            var indexEngine = new IndexingEngine(proteinList, variableModifications, fixedModifications,
+            var indexEngine = new IndexingEngine(proteinList, variableModifications, fixedModifications, new List<SilacLabel>(), 
                  1, DecoyType.Reverse, cp, SearchParameters.MaxFragmentSize, false, new List<FileInfo>(), new List<string>());
 
             var indexResults = (IndexingResults)indexEngine.Run();
