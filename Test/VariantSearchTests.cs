@@ -84,7 +84,7 @@ namespace Test
             ProteinDbWriter.WriteXmlDatabase(null, new List<Protein> { proteins[proteinIdx] }, xmlName);
 
             string mzmlName = $"ajgdiv{proteinIdx.ToString()}.mzML";
-            MsDataFile myMsDataFile = new TestDataFile(new List<PeptideWithSetModifications> { pep }, true);
+            MsDataFile myMsDataFile = new TestDataFile(new List<PeptideWithSetModifications> { pep });
 
             IO.MzML.MzmlMethods.CreateAndWriteMyMzmlWithCalibratedSpectra(myMsDataFile, mzmlName, false);
             string outputFolder = Path.Combine(TestContext.CurrentContext.TestDirectory, $"TestSearchWithVariants{proteinIdx.ToString()}");
@@ -114,7 +114,7 @@ namespace Test
             PeptideWithSetModifications pep = peps[peps.Count - 2];
 
             string mzmlName = $"ajgdiv{filename}{decoyType.ToString()}.mzML";
-            MsDataFile myMsDataFile = new TestDataFile(new List<PeptideWithSetModifications> { pep }, true);
+            MsDataFile myMsDataFile = new TestDataFile(new List<PeptideWithSetModifications> { pep });
 
             IO.MzML.MzmlMethods.CreateAndWriteMyMzmlWithCalibratedSpectra(myMsDataFile, mzmlName, false);
             string outputFolder = Path.Combine(TestContext.CurrentContext.TestDirectory, $"TestSearchWithVariants{filename}{decoyType.ToString()}");

@@ -245,7 +245,7 @@ namespace Test
 
             PeptideWithSetModifications targetGood = targetDigested.First();
 
-            TestDataFile myMsDataFile = new TestDataFile(new List<PeptideWithSetModifications> { targetGood }, true);
+            TestDataFile myMsDataFile = new TestDataFile(new List<PeptideWithSetModifications> { targetGood });
 
             var ii = myMsDataFile.GetOneBasedScan(1).MassSpectrum.YArray.ToList();
 
@@ -329,7 +329,7 @@ namespace Test
                 PeptideWithSetModifications targetGood = targetDigested[0];
 
                 PeptideWithSetModifications targetWithUnknownMod = targetDigested[1];
-                MsDataFile myMsDataFile = new TestDataFile(new List<PeptideWithSetModifications> { targetGood, targetWithUnknownMod }, true);
+                MsDataFile myMsDataFile = new TestDataFile(new List<PeptideWithSetModifications> { targetGood, targetWithUnknownMod });
 
                 IO.MzML.MzmlMethods.CreateAndWriteMyMzmlWithCalibratedSpectra(myMsDataFile, mzmlName, false);
             }
@@ -407,7 +407,7 @@ namespace Test
             var protein = ProteinDbLoader.LoadProteinXML(xmlName, true, DecoyType.Reverse, new List<Modification>(), false, new List<string>(), out Dictionary<string, Modification> ok);
             var setList1 = protein[0].Digest(testPeptides.CommonParameters.DigestionParams, new List<Modification> { }, variableModifications).ToList();
             Assert.AreEqual(4, setList1.Count);
-
+            
             //Finally Write MZML file
             MsDataFile myMsDataFile = new TestDataFile(new List<PeptideWithSetModifications> { setList1[0], setList1[1], setList1[2], setList1[3], setList1[0], setList1[1] });
             string mzmlName = @"singleProteinWithRepeatedMods.mzML";

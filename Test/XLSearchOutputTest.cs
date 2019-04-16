@@ -6,10 +6,10 @@ using TaskLayer;
 namespace Test
 {
     [TestFixture]
-    class XLSearchOutputTest
+    public static class XLSearchOutputTest
     {
         [Test]
-        public void WriteTsvTest()
+        public static void WriteTsvTest()
         {
             string outputFolder = Path.Combine(TestContext.CurrentContext.TestDirectory, @"XlOutputTest1");
             string myFile = Path.Combine(TestContext.CurrentContext.TestDirectory, @"XlTestData\BSA_DSS_23747.mzML");
