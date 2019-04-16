@@ -101,7 +101,7 @@
     <Property Id="WIXUI_MONDO" Value="INSTALLFOLDER" />
     <Property Id="WIXUI_EXITDIALOGOPTIONALCHECKBOXTEXT" Value="Launch MetaMorpheus" />
     <Property Id="WixShellExecTarget" Value="[#MetaMorpheusGUI.exe]" />
-    <Property Id="EXCELDEFAULTPROPERTY" Value="1"/>
+    <Property Id="EXCELDEFAULTPROPERTY"/>
     <Property Id="EXCELSELECT" Value="1">
       <RegistrySearch Id="CheckFileDir" Root="HKCR" Key="Excel.Backup\shell\Open\command" Type="file">
         <FileSearch Name="EXCEL.exe"/>
@@ -393,7 +393,7 @@
 
   <Fragment>
     <ComponentGroup Id="ExcelDefaults">
-      <Component Id ="ExcelDefault" Directory="ProgramFiles64Folder" Guid="*">
+      <Component Id ="ExcelDefault" Directory="ProgramFiles64Folder" Guid="{D6A1CF31-27C8-4DCB-A92F-D36D6EDB7C70}" Permanent="yes">
         <Condition> EXCELDEFAULTPROPERTY</Condition>
         <RemoveRegistryKey Action="removeOnInstall" Root="HKCU" Key="Software\Microsoft\Windows\CurrentVersion\Explorer\FileExts\.tsv"/>
         <RegistryKey Root="HKCU" Key="Software\Microsoft\Windows\CurrentVersion\Explorer\FileExts\.tsv\OpenWithList">
@@ -412,7 +412,7 @@
           <RegistryValue Name="psmtsv_auto_file" Value="0000" Type="binary"/>
         </RegistryKey>
       </Component>
-      <Component Id ="ExcelDefault2" Directory="ProgramFiles64Folder" Guid="*">
+      <Component Id ="ExcelDefault2" Directory="ProgramFiles64Folder" Guid="{A19A382C-8DD8-4A03-8DE8-66973C197A98}" Permanent="yes">
         <Condition><![CDATA[EXCELSELECT<>"1"]]> </Condition>
         <RemoveRegistryKey Action="removeOnInstall" Root="HKCU" Key="Software\Classes\tsv_auto_file\shell\open\command"/>
         <RegistryKey Root="HKCU" Key="Software\Classes\tsv_auto_file\shell\open\command">

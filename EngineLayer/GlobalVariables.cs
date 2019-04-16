@@ -12,6 +12,7 @@ namespace EngineLayer
     {
         private static List<Modification> _AllModsKnown = new List<Modification>();
         private static HashSet<string> _AllModTypesKnown = new HashSet<string>();
+        private static List<Crosslinker> _KnownCrosslinkers = new List<Crosslinker>();
 
         static GlobalVariables()
         {
@@ -49,6 +50,17 @@ namespace EngineLayer
 
             ElementsLocation = Path.Combine(DataDir, @"Data", @"elements.dat");
             UsefulProteomicsDatabases.Loaders.LoadElements();
+
+            // load default crosslinkers
+            string crosslinkerLocation = Path.Combine(DataDir, @"Data", @"Crosslinkers.tsv");
+            AddCrosslinkers(Crosslinker.LoadCrosslinkers(crosslinkerLocation));
+
+            // load custom crosslinkers
+            string customCrosslinkerLocation = Path.Combine(DataDir, @"Data", @"CustomCrosslinkers.tsv");
+            if (File.Exists(customCrosslinkerLocation))
+            {
+                AddCrosslinkers(Crosslinker.LoadCrosslinkers(customCrosslinkerLocation));
+            }
 
             ExperimentalDesignFileName = "ExperimentalDesign.tsv";
 
@@ -108,6 +120,7 @@ namespace EngineLayer
         public static Dictionary<string, DissociationType> AllSupportedDissociationTypes { get; private set; }
 
         public static string ExperimentalDesignFileName { get; }
+        public static IEnumerable<Crosslinker> Crosslinkers { get { return _KnownCrosslinkers.AsEnumerable(); } }
 
         public static void AddMods(IEnumerable<Modification> modifications, bool modsAreFromTheTopOfProteinXml)
         {
@@ -163,6 +176,14 @@ namespace EngineLayer
                     _AllModsKnown.Add(mod);
                     _AllModTypesKnown.Add(mod.ModificationType);
                 }
+            }
+        }
+
+        public static void AddCrosslinkers(IEnumerable<Crosslinker> crosslinkers)
+        {
+            foreach (var linker in crosslinkers)
+            {
+                _KnownCrosslinkers.Add(linker);
             }
         }
 

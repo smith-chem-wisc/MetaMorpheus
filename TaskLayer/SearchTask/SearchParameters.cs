@@ -1,6 +1,7 @@
 using System.Collections.Generic;
 using UsefulProteomicsDatabases;
 using EngineLayer;
+using Proteomics;
 
 namespace TaskLayer
 {
@@ -79,5 +80,6 @@ namespace TaskLayer
         public bool WritePepXml { get; set; }
         public bool WriteDecoys { get; set; }
         public bool WriteContaminants { get; set; }
+        public List<SilacLabel> SilacLabels { get; set; }
     }
 }

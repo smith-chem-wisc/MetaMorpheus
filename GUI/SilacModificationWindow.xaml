@@ -1,0 +1,151 @@
+﻿<Window x:Class="MetaMorpheusGUI.SilacModificationWindow"
+        xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+        xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+        xmlns:local="clr-namespace:MetaMorpheusGUI"
+        mc:Ignorable="d"
+        KeyDown="KeyPressed"
+        Title="Stable Isotope Label Design" Height="400" Width="600" WindowStartupLocation="CenterScreen">
+    <Grid>
+        <Grid.RowDefinitions>
+            <RowDefinition Height="5*" />
+            <RowDefinition Height="5*" />
+            <RowDefinition Height="5*" />
+            <RowDefinition Height="5*" />
+            <RowDefinition Height="2*" />
+        </Grid.RowDefinitions>
+        <StackPanel Grid.Row="1">
+            <Grid>
+                <Grid.ColumnDefinitions>
+                    <ColumnDefinition Width="1*" />
+                    <ColumnDefinition Width="1*" />
+                </Grid.ColumnDefinitions>
+                <StackPanel>
+                    <StackPanel Orientation="Horizontal" Margin="5">
+                        <Label Content="Amino Acid To Be Labeled" />
+                        <TextBox x:Name="txtBoxAminoAcidLookup" Width ="45"  ToolTipService.ShowDuration="999999" ToolTipService.InitialShowDelay="500" TextChanged="AminoAcidLookup">
+                            <TextBox.ToolTip>
+                                <TextBlock>
+                            Enter the one character symbol for your labeled amino acid.
+                            <LineBreak/>
+                            For example: "K" for lysine.
+                                </TextBlock>
+                            </TextBox.ToolTip>
+                        </TextBox>
+                    </StackPanel>
+                </StackPanel>
+                <StackPanel Grid.Column="1">
+                    <StackPanel Orientation="Horizontal" Margin="5">
+                        <Label Content="Label Formula" />
+                        <TextBox x:Name="ChemicalFormula" Width ="200"  ToolTipService.ShowDuration="999999" ToolTipService.InitialShowDelay="500" IsEnabled="False">
+                            <TextBox.ToolTip>
+                                <TextBlock>
+                                    The chemical formula of the stable isotope label.
+                                    <LineBreak/>
+                                    This is automatically updated from user input, but can also be manually typed.
+                                </TextBlock>
+                            </TextBox.ToolTip>
+                        </TextBox>
+                    </StackPanel>
+                    <StackPanel Orientation="Horizontal" Margin="5">
+                        
+                    </StackPanel>
+                    <StackPanel Orientation="Horizontal" Margin="5">
+                        <Label Content="Mass Difference" />
+                        <TextBox x:Name="MassDifference" Width ="90"  ToolTipService.ShowDuration="999999" ToolTipService.InitialShowDelay="500" IsEnabled="False">
+                            <TextBox.ToolTip>
+                                <TextBlock>
+                                    The mass difference between the labeled and unlabeled amino acid.
+                                </TextBlock>
+                            </TextBox.ToolTip>
+                        </TextBox>
+                    </StackPanel>
+                </StackPanel>
+            </Grid>
+            </StackPanel>
+        <StackPanel Grid.Row="2">
+            <Grid>
+                <Grid.ColumnDefinitions>
+                    <ColumnDefinition Width="1*" />
+                    <ColumnDefinition Width="1*" />
+                    <ColumnDefinition Width="1*" />
+                    <ColumnDefinition Width="1*" />
+                    <ColumnDefinition Width="1*" />
+                </Grid.ColumnDefinitions>
+                <StackPanel Grid.Column="0">
+                    <StackPanel Orientation="Horizontal"  HorizontalAlignment="Center">
+                    <Label Content="Carbon"/>
+                    </StackPanel>
+                    <StackPanel Orientation="Horizontal" HorizontalAlignment="Center">
+                        <Label Content="12C"/>
+                        <TextBox x:Name="C12" Width ="45" TextChanged="AminoAcidCountsModified" PreviewTextInput="CheckIfNumber" IsEnabled="False"/>
+                    </StackPanel>
+                    <StackPanel Orientation="Horizontal" HorizontalAlignment="Center">
+                        <Label Content="13C"/>
+                        <TextBox x:Name="C13" Width ="45"  TextChanged="AminoAcidCountsModified" PreviewTextInput="CheckIfNumber" IsEnabled="False"/>
+                    </StackPanel>
+                </StackPanel>
+                <StackPanel Grid.Column="1">
+                    <StackPanel Orientation="Horizontal"  HorizontalAlignment="Center">
+                        <Label Content="Nitrogen"/>
+                    </StackPanel>
+                    <StackPanel Orientation="Horizontal" HorizontalAlignment="Center">
+                        <Label Content="14N"/>
+                        <TextBox x:Name="N14" Width ="45" TextChanged="AminoAcidCountsModified" PreviewTextInput="CheckIfNumber" IsEnabled="False" />
+                    </StackPanel>
+                    <StackPanel Orientation="Horizontal" HorizontalAlignment="Center">
+                        <Label Content="15N"/>
+                        <TextBox x:Name="N15" Width ="45" TextChanged="AminoAcidCountsModified"  PreviewTextInput="CheckIfNumber" IsEnabled="False"/>
+                    </StackPanel>
+                </StackPanel>
+                <StackPanel Grid.Column="2">
+                    <StackPanel Orientation="Horizontal"  HorizontalAlignment="Center">
+                        <Label Content="Oxygen"/>
+                    </StackPanel>
+                    <StackPanel Orientation="Horizontal" HorizontalAlignment="Center">
+                        <Label Content="16O"/>
+                        <TextBox x:Name="O16" Width ="45" TextChanged="AminoAcidCountsModified" PreviewTextInput="CheckIfNumber" IsEnabled="False" />
+                    </StackPanel>
+                    <StackPanel Orientation="Horizontal" HorizontalAlignment="Center">
+                        <Label Content="18O"/>
+                        <TextBox x:Name="O18" Width ="45" TextChanged="AminoAcidCountsModified" PreviewTextInput="CheckIfNumber" IsEnabled="False" />
+                    </StackPanel>
+                </StackPanel>
+                <StackPanel Grid.Column="3">
+                    <StackPanel Orientation="Horizontal"  HorizontalAlignment="Center">
+                        <Label Content="Hydrogen"/>
+                    </StackPanel>
+                    <StackPanel Orientation="Horizontal" HorizontalAlignment="Center">
+                        <Label Content="1H"/>
+                        <TextBox x:Name="H1" Width ="45"  TextChanged="AminoAcidCountsModified" PreviewTextInput="CheckIfNumber" IsEnabled="False"/>
+                    </StackPanel>
+                    <StackPanel Orientation="Horizontal" HorizontalAlignment="Center">
+                        <Label Content="2H"/>
+                        <TextBox x:Name="H2" Width ="45" TextChanged="AminoAcidCountsModified"  PreviewTextInput="CheckIfNumber" IsEnabled="False"/>
+                    </StackPanel>
+                </StackPanel>
+                <StackPanel Grid.Column="4">
+                    <StackPanel Orientation="Horizontal"  HorizontalAlignment="Center">
+                        <Label Content="Sulfur"/>
+                    </StackPanel>
+                    <StackPanel Orientation="Horizontal" HorizontalAlignment="Center">
+                        <Label Content="32S"/>
+                        <TextBox x:Name="S32" Width ="45"  TextChanged="AminoAcidCountsModified" PreviewTextInput="CheckIfNumber" IsEnabled="False"/>
+                    </StackPanel>
+                    <StackPanel Orientation="Horizontal" HorizontalAlignment="Center">
+                        <Label Content="34S"/>
+                        <TextBox x:Name="S34" Width ="45"  TextChanged="AminoAcidCountsModified" PreviewTextInput="CheckIfNumber" IsEnabled="False"/>
+                    </StackPanel>
+                </StackPanel>
+            </Grid>
+        </StackPanel>
+        
+                <!--Save/cancel buttons-->
+        <StackPanel Orientation="Horizontal" HorizontalAlignment="Center" Grid.Row="4" Height="25" VerticalAlignment="Bottom">
+            <Button x:Name="SaveSilacLabelsButton" Content="Save Label(s)" Click="SaveSilacLabelsButton_Click"/>
+            <Button x:Name="AddAdditionalButton" Content="Add Additional Labels to This Condition" Click="AddAdditionalButton_Click"/>
+            <Button x:Name="CancelSilacButton" Content="Cancel" Click="CancelSilacButton_Click"/>
+        </StackPanel>
+    </Grid>
+</Window>
