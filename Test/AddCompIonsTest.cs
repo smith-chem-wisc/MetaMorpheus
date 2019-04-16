@@ -241,7 +241,7 @@ namespace Test
                 SearchTarget = true,
             };
             List<DigestionMotif> motifs = new List<DigestionMotif> { new DigestionMotif("K", null, 1, null) };
-            Protease protease = new Protease("singleN4", CleavageSpecificity.Full, null, null, motifs);
+            Protease protease = new Protease("Test", CleavageSpecificity.Full, null, null, motifs);
             ProteaseDictionary.Dictionary.Add(protease.Name, protease);
 
             var indexEngine = new IndexingEngine(proteinList, variableModifications, fixedModifications,
