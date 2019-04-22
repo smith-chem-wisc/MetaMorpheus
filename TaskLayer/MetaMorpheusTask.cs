@@ -16,6 +16,7 @@ using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 using UsefulProteomicsDatabases;
+using ZeroFormatter;
 
 namespace TaskLayer
 {
@@ -607,17 +608,6 @@ namespace TaskLayer
             }
         }
 
-        private static void WriteFragmentIndexNetSerializer(List<int>[] fragmentIndex, string fragmentIndexFile)
-        {
-            var messageTypes = GetSubclassesAndItself(typeof(List<int>[]));
-            var ser = new NetSerializer.Serializer(messageTypes);
-
-            using (var file = File.Create(fragmentIndexFile))
-            {
-                ser.Serialize(file, fragmentIndex);
-            }
-        }
-
         private static string GetExistingFolderWithIndices(IndexingEngine indexEngine, List<DbForTask> dbFilenameList)
         {
             foreach (var database in dbFilenameList)
@@ -705,14 +695,14 @@ namespace TaskLayer
 
                 Status("Writing fragment index...", new List<string> { taskId });
                 var fragmentIndexFile = Path.Combine(output_folderForIndices, "fragmentIndex.ind");
-                WriteFragmentIndexNetSerializer(fragmentIndex, fragmentIndexFile);
+                File.WriteAllBytes(fragmentIndexFile, ZeroFormatterSerializer.Serialize(fragmentIndex));
                 FinishedWritingFile(fragmentIndexFile, new List<string> { taskId });
 
                 if (indexEngine.GeneratePrecursorIndex)
                 {
                     Status("Writing precursor index...", new List<string> { taskId });
                     var precursorIndexFile = Path.Combine(output_folderForIndices, "precursorIndex.ind");
-                    WriteFragmentIndexNetSerializer(precursorIndex, precursorIndexFile);
+                    File.WriteAllBytes(precursorIndexFile, ZeroFormatterSerializer.Serialize(precursorIndex));
                     FinishedWritingFile(precursorIndexFile, new List<string> { taskId });
                 }
             }
@@ -748,22 +738,13 @@ namespace TaskLayer
                 }
 
                 Status("Reading fragment index...", new List<string> { taskId });
-                messageTypes = GetSubclassesAndItself(typeof(List<int>[]));
-                ser = new NetSerializer.Serializer(messageTypes);
-                using (var file = File.OpenRead(Path.Combine(pathToFolderWithIndices, "fragmentIndex.ind")))
-                {
-                    fragmentIndex = (List<int>[])ser.Deserialize(file);
-                }
+                precursorIndex = ZeroFormatterSerializer.Deserialize<List<int>[]>(File.ReadAllBytes(Path.Combine(pathToFolderWithIndices, "fragmentIndex.ind")));
+
 
                 if (indexEngine.GeneratePrecursorIndex)
                 {
                     Status("Reading precursor index...", new List<string> { taskId });
-                    messageTypes = GetSubclassesAndItself(typeof(List<int>[]));
-                    ser = new NetSerializer.Serializer(messageTypes);
-                    using (var file = File.OpenRead(Path.Combine(pathToFolderWithIndices, "precursorIndex.ind")))
-                    {
-                        precursorIndex = (List<int>[])ser.Deserialize(file);
-                    }
+                    precursorIndex = ZeroFormatterSerializer.Deserialize<List<int>[]>(File.ReadAllBytes(Path.Combine(pathToFolderWithIndices, "precursorIndex.ind")));
                 }
             }
         }
