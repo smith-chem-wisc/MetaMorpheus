@@ -19,7 +19,6 @@
     <PackageReference Include="SharpLearning.Metrics" Version="0.26.9" />
     <PackageReference Include="SharpLearning.Optimization" Version="0.26.9" />
     <PackageReference Include="SharpLearning.RandomForest" Version="0.26.9" />
-    <PackageReference Include="ZeroFormatter" Version="1.6.4" />
   </ItemGroup>
 
   <ItemGroup>

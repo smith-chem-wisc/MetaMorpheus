@@ -16,7 +16,6 @@ using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 using UsefulProteomicsDatabases;
-using ZeroFormatter;
 
 namespace TaskLayer
 {
