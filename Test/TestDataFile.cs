@@ -14,12 +14,12 @@ namespace Test
         public TestDataFile() : base(2, new SourceFile(null, null, null, null, null))
         {
             var mz1 = new double[] { 50, 60, 70, 80, 90, 402.18629720155.ToMz(2) };
-            var intensities1 = new double[] { 1, 1, 1, 1, 1, 1 };
+            var intensities1 = new double[] { 100, 100, 100, 100, 100, 100 };
             var MassSpectrum1 = new MzSpectrum(mz1, intensities1, false);
             var ScansHere = new List<MsDataScan> { new MsDataScan(MassSpectrum1, 1, 1, true, Polarity.Positive, 1, new MzLibUtil.MzRange(0, 10000), "ff", MZAnalyzerType.Unknown, 1000, 1, null, "scan=1") };
 
             var mz2 = new double[] { 50, 60, 70, 147.0764, 257.1244, 258.127, 275.1350 };
-            var intensities2 = new double[] { 1, 1, 1, 1, 1, 1, 1 };
+            var intensities2 = new double[] { 100, 100, 100, 100, 100, 100, 100 };
             var MassSpectrum2 = new MzSpectrum(mz2, intensities2, false);
             ScansHere.Add(new MsDataScan(MassSpectrum2, 2, 2, true, Polarity.Positive, 2,
                 new MzLibUtil.MzRange(0, 10000), "f", MZAnalyzerType.Unknown, 100000, 1, null, "scan=2", 402.18629720155.ToMz(2), 2, 1, 402.18629720155.ToMz(2), 2, DissociationType.HCD, 1, 402.18629720155.ToMz(2)));
