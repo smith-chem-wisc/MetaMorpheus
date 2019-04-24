@@ -646,13 +646,7 @@ namespace TaskLayer
                 }
             });
 
-            var messageTypes = GetSubclassesAndItself(typeof(List<int>[]));
-            var ser = new NetSerializer.Serializer(messageTypes);
-
-            using (var file = File.Create(peptideIndexFile))
-            {
-                ser.Serialize(file, indexToWrite);
-            }
+            WriteIndexNetSerializer(indexToWrite, peptideIndexFile);
         }
 
         private static List<PeptideWithSetModifications> ReadPeptideIndex(string peptideIndexFileName, List<Protein> proteins, DigestionParams digestionParams, int maxThreads)
@@ -660,13 +654,7 @@ namespace TaskLayer
             List<Modification> allKnownMods = GlobalVariables.AllModsKnown.ToList();
 
             //read in the integer compressed peptides
-            var messageTypes = GetSubclassesAndItself(typeof(List<int>[]));
-            var ser = new NetSerializer.Serializer(messageTypes);
-            List<int>[] indexedPeptides = null;
-            using (var file = File.OpenRead(peptideIndexFileName))
-            {
-                indexedPeptides = (List<int>[])ser.Deserialize(file);
-            }
+            List<int>[] indexedPeptides = ReadIndexNetSerializer(peptideIndexFileName);
 
             //convert to pwsms
             PeptideWithSetModifications[] peptidesWithSetModifications = new PeptideWithSetModifications[indexedPeptides.Length];
@@ -708,6 +696,29 @@ namespace TaskLayer
 
             return peptidesWithSetModifications.ToList();
         }
+
+        private static void WriteIndexNetSerializer(List<int>[] fragmentIndex, string indexFile)
+        {
+            var messageTypes = GetSubclassesAndItself(typeof(List<int>[]));
+            var ser = new NetSerializer.Serializer(messageTypes);
+
+            using (var file = File.Create(indexFile))
+            {
+                ser.Serialize(file, fragmentIndex);
+            }
+        }
+        
+        private static List<int>[] ReadIndexNetSerializer(string indexFile)
+        {
+            var messageTypes = GetSubclassesAndItself(typeof(List<int>[]));
+            var ser = new NetSerializer.Serializer(messageTypes);
+
+            using (var file = File.OpenRead(indexFile))
+            {
+                return (List<int>[])ser.Deserialize(file);
+            }
+        }
+
 
         private static string GetExistingFolderWithIndices(IndexingEngine indexEngine, List<DbForTask> dbFilenameList)
         {
@@ -796,26 +807,14 @@ namespace TaskLayer
 
                 Status("Writing fragment index...", new List<string> { taskId });
                 var fragmentIndexFile = Path.Combine(output_folderForIndices, FragmentIndexFileName);
-                var messageTypes = GetSubclassesAndItself(typeof(List<int>[]));
-                var ser = new NetSerializer.Serializer(messageTypes);
-
-                using (var file = File.Create(fragmentIndexFile))
-                {
-                    ser.Serialize(file, fragmentIndex);
-                }
+                WriteIndexNetSerializer(fragmentIndex, fragmentIndexFile);
                 FinishedWritingFile(fragmentIndexFile, new List<string> { taskId });
 
                 if (indexEngine.GeneratePrecursorIndex)
                 {
                     Status("Writing precursor index...", new List<string> { taskId });
                     var precursorIndexFile = Path.Combine(output_folderForIndices, PrecursorIndexFileName);
-                    messageTypes = GetSubclassesAndItself(typeof(List<int>[]));
-                    ser = new NetSerializer.Serializer(messageTypes);
-
-                    using (var file = File.Create(precursorIndexFile))
-                    {
-                        ser.Serialize(file, precursorIndex);
-                    }
+                    WriteIndexNetSerializer(precursorIndex, precursorIndexFile);
                     FinishedWritingFile(precursorIndexFile, new List<string> { taskId });
                 }
             }
@@ -825,22 +824,12 @@ namespace TaskLayer
                 peptideIndex = ReadPeptideIndex(Path.Combine(pathToFolderWithIndices, PeptideIndexFileName), allKnownProteins, CommonParameters.DigestionParams, CommonParameters.MaxThreadsToUsePerFile);
 
                 Status("Reading fragment index...", new List<string> { taskId });
-                var messageTypes = GetSubclassesAndItself(typeof(List<int>[]));
-                var ser = new NetSerializer.Serializer(messageTypes);
-                using (var file = File.OpenRead(Path.Combine(pathToFolderWithIndices, FragmentIndexFileName)))
-                {
-                    fragmentIndex = (List<int>[])ser.Deserialize(file);
-                }
+                fragmentIndex = ReadIndexNetSerializer(Path.Combine(pathToFolderWithIndices, FragmentIndexFileName));
 
                 if (indexEngine.GeneratePrecursorIndex)
                 {
                     Status("Reading precursor index...", new List<string> { taskId });
-                    messageTypes = GetSubclassesAndItself(typeof(List<int>[]));
-                    ser = new NetSerializer.Serializer(messageTypes);
-                    using (var file = File.OpenRead(Path.Combine(pathToFolderWithIndices, PrecursorIndexFileName)))
-                    {
-                        precursorIndex = (List<int>[])ser.Deserialize(file);
-                    }
+                    precursorIndex = ReadIndexNetSerializer(Path.Combine(pathToFolderWithIndices, PrecursorIndexFileName));
                 }
             }
         }
