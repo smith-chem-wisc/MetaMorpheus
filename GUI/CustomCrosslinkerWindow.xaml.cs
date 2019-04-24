@@ -31,13 +31,14 @@ namespace MetaMorpheusGUI
             }
             else
             {
-                customCrosslinkerText.Add("Name\tCrosslinkAminoAcid\tCrosslinkerAminoAcid2\tCleavable\tCrosslinkerTotalMass\tCrosslinkerShortMass\tCrosslinkerLongMass\tQuenchMassH2O\tQuenchMassNH2\tQuenchMassTris");
+                customCrosslinkerText.Add("Name\tCrosslinkAminoAcid\tCrosslinkerAminoAcid2\tCleavable\tDissociationType\tCrosslinkerTotalMass\tCrosslinkerShortMass\tCrosslinkerLongMass\tQuenchMassH2O\tQuenchMassNH2\tQuenchMassTris");
             }
 
             string name = txtUdXLKerName.Text;
             string aminoAcid1 = txtUdXLkerAminoAcids.Text;
             string aminoAcid2 = txtUdXLkerAminoAcids2.Text;
             bool isCleavable = ckbUdXLkerCleavable.IsChecked.Value;
+            string dissociationTypes = txtDissociationType.Text;
             double mass =  double.Parse(txtUdXLkerTotalMs.Text == "" ? "0" : txtUdXLkerTotalMs.Text);
             double shortMass = double.Parse(txtUdXLkerShortMass.Text == "" ? "0" : txtUdXLkerShortMass.Text);
             double longMass = double.Parse(txtUdXLkerLongMass.Text == "" ? "0" : txtUdXLkerLongMass.Text);
@@ -51,7 +52,7 @@ namespace MetaMorpheusGUI
                 return;
             }
 
-            var newCrosslinker = new Crosslinker(crosslinkerName: name, crosslinkerModSites: aminoAcid1, crosslinkerModSites2: aminoAcid2, totalMass: mass, cleavable: isCleavable,
+            var newCrosslinker = new Crosslinker(crosslinkerName: name, crosslinkerModSites: aminoAcid1, crosslinkerModSites2: aminoAcid2, totalMass: mass, cleavable: isCleavable, dissociationTypes: dissociationTypes,
                     cleaveMassShort: shortMass, cleaveMassLong: longMass, loopMass: mass, deadendMassH2O: H2OQuenchMass, deadendMassNH2: NH2QuenchMass, deadendMassTris: TrisQuenchMass);
 
             customCrosslinkerText.Add(newCrosslinker.ToString(true));

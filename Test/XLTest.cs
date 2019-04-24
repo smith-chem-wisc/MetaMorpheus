@@ -70,7 +70,7 @@ namespace Test
             var peps = protSTC.Digest(digestionParams, new List<Modification>(), variableModifications).ToList();
             var pepSTC = peps[0];
             Assert.AreEqual(pepSTC.BaseSequence, "GASTACK");
-            Crosslinker crosslinker2 = new Crosslinker("ST", "C", "crosslinkerSTC", false, -18.01056, 0, 0, 0, 0, 0, 0);
+            Crosslinker crosslinker2 = new Crosslinker("ST", "C", "crosslinkerSTC", false, "", -18.01056, 0, 0, 0, 0, 0, 0);
             string crosslinkerModSitesAll = new string((crosslinker2.CrosslinkerModSites + crosslinker2.CrosslinkerModSites2).ToCharArray().Distinct().ToArray());
             Assert.AreEqual(crosslinkerModSitesAll, "STC");
         }
@@ -167,7 +167,7 @@ namespace Test
             var xlSearchParameters = new XlSearchParameters
             {
                 Crosslinker = new Crosslinker(crosslinkerName: "CrossST-C", crosslinkerModSites: "ST", crosslinkerModSites2: "C", totalMass: -18.01056,
-                cleavable: true, deadendMassH2O: 0, deadendMassNH2: 0, deadendMassTris: 0, cleaveMassShort: 0, cleaveMassLong: 0, loopMass: 0)
+                cleavable: true, dissociationTypes: "HCD", deadendMassH2O: 0, deadendMassNH2: 0, deadendMassTris: 0, cleaveMassShort: 0, cleaveMassLong: 0, loopMass: 0)
             };
 
             //Create databases contain two protein.
@@ -430,7 +430,7 @@ namespace Test
             // generate the scan with the deadend mod peptide's fragments
             var scans = new Ms2ScanWithSpecificMass[1];
             ModificationMotif.TryGetMotif("T", out var motif);
-            var crosslinker = new Crosslinker("T", "T", "test", false, 100, 0, 0, 0, 0, 0, 50);
+            var crosslinker = new Crosslinker("T", "T", "test", false, "", 100, 0, 0, 0, 0, 0, 50);
             Modification deadend = new Modification("TestId", _target: motif, _locationRestriction: "Anywhere.", _monoisotopicMass: crosslinker.DeadendMassTris, _modificationType: "Test");
 
             var deadendPeptide = protein.Digest(new DigestionParams(), new List<Modification> { deadend }, new List<Modification>()).First();
@@ -466,7 +466,7 @@ namespace Test
         [Test]
         public static void TestTheoreticalFragmentsNonCleavableCrosslink()
         {
-            Crosslinker c = new Crosslinker("P", "R", "Test", false, 1000, 0, 0, 1000, 5, 5, 5);
+            Crosslinker c = new Crosslinker("P", "R", "Test", false, "", 1000, 0, 0, 1000, 5, 5, 5);
 
             Protein p1 = new Protein("PEPTIDE", "");
             var alphaPeptide = p1.Digest(new DigestionParams(), new List<Modification>(), new List<Modification>()).First();
@@ -501,7 +501,7 @@ namespace Test
         [Test]
         public static void TestTheoreticalFragmentsCleavableCrosslink()
         {
-            Crosslinker c = new Crosslinker("P", "R", "Test", true, 1000, 15, 25, 1000, 5, 5, 5);
+            Crosslinker c = new Crosslinker("P", "R", "Test", true, "HCD", 1000, 15, 25, 1000, 5, 5, 5);
 
             Protein p1 = new Protein("PEPTIDE", "");
             var alphaPeptide = p1.Digest(new DigestionParams(), new List<Modification>(), new List<Modification>()).First();
@@ -569,7 +569,7 @@ namespace Test
             // generate the scan with the deadend mod peptide's fragments
             var scans = new Ms2ScanWithSpecificMass[1];
             ModificationMotif.TryGetMotif("T", out var motif);
-            var crosslinker = new Crosslinker("T", "T", "test", false, 100, 0, 0, 0, 0, 0, 50);
+            var crosslinker = new Crosslinker("T", "T", "test", false, "", 100, 0, 0, 0, 0, 0, 50);
             Modification deadend = new Modification("TestId", _target: motif, _locationRestriction: "Anywhere.", _monoisotopicMass: crosslinker.DeadendMassTris, _modificationType: "Test");
 
             var deadendPeptide = protein.Digest(new DigestionParams(), new List<Modification> { deadend }, new List<Modification>()).First();

@@ -36,10 +36,17 @@ namespace EngineLayer.CrosslinkSearch
             {
                 if (crosslinkerModSites.Contains(peptide.BaseSequence[r]) || wildcard)
                 {
-                    possibleXlPositions.Add(r + 1);
+                    //Try to eliminate those site with mod on it. Consider the possibility that the site is at Protein N terminal.       
+                    if (!peptide.AllModsOneIsNterminus.Keys.Contains(r + 2))
+                    {
+                        possibleXlPositions.Add(r + 1);
+                    }
+                    else if (peptide.OneBasedStartResidueInProtein == 0 && r == 0 && !peptide.AllModsOneIsNterminus.Keys.Contains(1))
+                    {
+                        possibleXlPositions.Add(r + 1);
+                    }
                 }
             }
-
             return possibleXlPositions;
         }
 
