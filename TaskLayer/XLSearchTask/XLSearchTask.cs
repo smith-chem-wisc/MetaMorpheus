@@ -35,7 +35,8 @@ namespace TaskLayer
             LoadModifications(taskId, out var variableModifications, out var fixedModifications, out var localizeableModificationTypes);
 
             // load proteins
-            List<Protein> proteinList = LoadProteins(taskId, dbFilenameList, true, XlSearchParameters.DecoyType, localizeableModificationTypes, CommonParameters);
+            //sort for indexed searches. If you remove the sort, ensure that database indexes can still be read after being written.
+            List<Protein> proteinList = LoadProteins(taskId, dbFilenameList, true, XlSearchParameters.DecoyType, localizeableModificationTypes, CommonParameters).OrderBy(x => x.Accession).ToList();
 
             var crosslinker = XlSearchParameters.Crosslinker;
 
@@ -201,9 +202,9 @@ namespace TaskLayer
             MyTaskResults.AddNiceText("Target loop-linked peptides within 1% FDR: " + loopPsms.Count(p => p.FdrInfo.QValue <= 0.01 && !p.IsDecoy));
 
             // write deadends
-            var deadendPsms = allPsms.Where(p => p.CrossType == PsmCrossType.DeadEnd 
-                || p.CrossType == PsmCrossType.DeadEndH2O 
-                || p.CrossType == PsmCrossType.DeadEndNH2 
+            var deadendPsms = allPsms.Where(p => p.CrossType == PsmCrossType.DeadEnd
+                || p.CrossType == PsmCrossType.DeadEndH2O
+                || p.CrossType == PsmCrossType.DeadEndNH2
                 || p.CrossType == PsmCrossType.DeadEndTris).ToList();
             if (deadendPsms.Any())
             {
@@ -290,6 +291,6 @@ namespace TaskLayer
                     qValueThreshold = csm.FdrInfo.QValue;
                 }
             }
-        }       
+        }
     }
 }
