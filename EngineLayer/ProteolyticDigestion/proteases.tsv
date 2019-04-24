@@ -4,6 +4,7 @@ Asp-N	|D			full	MS:1001304	Asp-N	(?=[BD])
 chymotrypsin (don't cleave before proline)	"F[P]|,W[P]|,Y[P]|"			full	MS:1001306	Chymotrypsin	(?<=[FYWL])(?!P)	
 chymotrypsin (cleave before proline)	"F|,W|,Y|"			full	MS:1001306	Chymotrypsin	(?<=[FYWL])	
 CNBr	M|			full	MS:1001307	CNBr	(?<=M)	
+Elastase	"A|,V|,S|,G|,L|,I|"			full		Elastase	(?<=[AVSGLI])	
 Glu-C	E|			full				
 Glu-C (with asp)	"E|,D|"			full				
 Lys-C (don't cleave before proline)	K[P]|			full	MS:1001309	Lys-C	(?<=K)(?!P)	

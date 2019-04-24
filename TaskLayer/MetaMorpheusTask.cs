@@ -247,7 +247,7 @@ namespace TaskLayer
                 });
 
             var childScanNumbers = new HashSet<int>(scansWithPrecursors.SelectMany(p => p.SelectMany(v => v.ChildScans.Select(x => x.OneBasedScanNumber))));
-            var parentScans = scansWithPrecursors.Where(p => !childScanNumbers.Contains(p.First().OneBasedScanNumber)).SelectMany(v => v);
+            var parentScans = scansWithPrecursors.Where(p => p.Any() && !childScanNumbers.Contains(p.First().OneBasedScanNumber)).SelectMany(v => v);
 
             // XCorr pre-processing for low-res data. this is here because the parent/child scans may have different 
             // resolutions, so this pre-processing must take place after the parent/child scans have been determined
@@ -318,10 +318,12 @@ namespace TaskLayer
                 addCompIons: commonParams.AddCompIons,
                 totalPartitions: commonParams.TotalPartitions,
                 scoreCutoff: commonParams.ScoreCutoff,
-                topNpeaks: commonParams.TopNpeaks,
-                minRatio: commonParams.MinRatio,
+                numberOfPeaksToKeepPerWindow: commonParams.NumberOfPeaksToKeepPerWindow,
+                minimumAllowedIntensityRatioToBasePeak: commonParams.MinimumAllowedIntensityRatioToBasePeak,
+                windowWidthThomsons: commonParams.WindowWidthThomsons,
                 trimMs1Peaks: commonParams.TrimMs1Peaks,
                 trimMsMsPeaks: commonParams.TrimMsMsPeaks,
+                normalizePeaksAccrossAllWindows: commonParams.NormalizePeaksAccrossAllWindows,
                 useDeltaScore: commonParams.UseDeltaScore,
                 calculateEValue: commonParams.CalculateEValue,
                 deconvolutionMassTolerance: commonParams.DeconvolutionMassTolerance,

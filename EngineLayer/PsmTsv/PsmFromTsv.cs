@@ -23,6 +23,7 @@ namespace EngineLayer
         public double Score { get; }
         public string ProteinAccession { get; }
         public List<MatchedFragmentIon> MatchedIons { get; }
+        public Dictionary<int, List<MatchedFragmentIon>> ChildScanMatchedIons { get; } // this is only used in crosslink for now, but in the future will be used for other experiment types
         public double QValue { get; }
 
         public double? TotalIonCurrent { get; }
@@ -58,8 +59,10 @@ namespace EngineLayer
         public double? BetaPeptideScore { get; }
         public int? BetaPeptideRank { get; }
         public List<MatchedFragmentIon> BetaPeptideMatchedIons { get; }
+        public Dictionary<int, List<MatchedFragmentIon>> BetaPeptideChildScanMatchedIons { get; }
         public double? XLTotalScore { get; }
         public string ParentIons { get; }
+        public double? RetentionTime { get; }
 
         public PsmFromTsv(string line, char[] split, Dictionary<string, int> parsedHeader)
         {
@@ -97,6 +100,7 @@ namespace EngineLayer
             PreviousAminoAcid = (parsedHeader[PsmTsvHeader.PreviousAminoAcid] < 0) ? null : spl[parsedHeader[PsmTsvHeader.PreviousAminoAcid]].Trim();
             NextAminoAcid = (parsedHeader[PsmTsvHeader.NextAminoAcid] < 0) ? null : spl[parsedHeader[PsmTsvHeader.NextAminoAcid]].Trim();
             QValueNotch = (parsedHeader[PsmTsvHeader.QValueNotch] < 0) ? null : (double?)double.Parse(spl[parsedHeader[PsmTsvHeader.QValueNotch]].Trim(), CultureInfo.InvariantCulture);
+            RetentionTime = (parsedHeader[PsmTsvHeader.Ms2ScanRetentionTime] < 0) ? null : (double?)double.Parse(spl[parsedHeader[PsmTsvHeader.Ms2ScanRetentionTime]].Trim(), CultureInfo.InvariantCulture);
 
             //For crosslinks
             CrossType = (parsedHeader[PsmTsvHeader.CrossTypeLabel] < 0) ? null : spl[parsedHeader[PsmTsvHeader.CrossTypeLabel]].Trim();
@@ -113,6 +117,12 @@ namespace EngineLayer
             BetaPeptideMatchedIons = (parsedHeader[PsmTsvHeader.BetaPeptideMatchedIonsLabel] < 0) ? null : ReadFragmentIonsFromString(spl[parsedHeader[PsmTsvHeader.BetaPeptideMatchedIonsLabel]].Trim(), BetaPeptideBaseSequence);
             XLTotalScore = (parsedHeader[PsmTsvHeader.XLTotalScoreLabel] < 0) ? null : (double?)double.Parse(spl[parsedHeader[PsmTsvHeader.XLTotalScoreLabel]].Trim(), CultureInfo.InvariantCulture);
             ParentIons = (parsedHeader[PsmTsvHeader.ParentIonsLabel] < 0) ? null : spl[parsedHeader[PsmTsvHeader.ParentIonsLabel]].Trim();
+
+            // child scan matched ions (only for crosslinks for now, but in the future this will change)
+            ChildScanMatchedIons = (parsedHeader[PsmTsvHeader.ChildMatchedIons] < 0) ? null : ReadChildScanMatchedIons(spl[parsedHeader[PsmTsvHeader.ChildMatchedIons]].Trim(), BaseSeq);
+
+            // beta peptide child scan matched ions (for crosslinks)
+            BetaPeptideChildScanMatchedIons = (parsedHeader[PsmTsvHeader.BetaPeptideChildMatchedIons] < 0) ? null : ReadChildScanMatchedIons(spl[parsedHeader[PsmTsvHeader.BetaPeptideChildMatchedIons]].Trim(), BetaPeptideBaseSequence);
         }
 
         private static List<MatchedFragmentIon> ReadFragmentIonsFromString(string matchedMzString, string peptideBaseSequence)
@@ -164,6 +174,22 @@ namespace EngineLayer
             }
 
             return matchedIons;
+        }
+
+        private static Dictionary<int, List<MatchedFragmentIon>> ReadChildScanMatchedIons(string childScanMatchedMzString, string peptideBaseSequence)
+        {
+            var childScanMatchedIons = new Dictionary<int, List<MatchedFragmentIon>>();
+
+            foreach (var childScan in childScanMatchedMzString.Split(new char[] { '}' }).Where(p => !string.IsNullOrWhiteSpace(p)))
+            {
+                var split1 = childScan.Split(new char[] { '|' });
+                int scanNumber = int.Parse(split1[0].Trim(new char[] { '{' }));
+                string matchedIonsString = split1[1];
+                var childMatchedIons = ReadFragmentIonsFromString(matchedIonsString, peptideBaseSequence);
+                childScanMatchedIons.Add(scanNumber, childMatchedIons);
+            }
+
+            return childScanMatchedIons;
         }
     }
 }

@@ -15,9 +15,27 @@ namespace TaskLayer
 {
     public static class MzIdentMLWriter
     {
-        public static void WriteMzIdentMl(IEnumerable<PeptideSpectralMatch> psms, List<EngineLayer.ProteinGroup> groups, List<Modification> variableMods, List<Modification> fixedMods, List<Protease> proteases, double qValueFilter, Tolerance productTolerance, Tolerance parentTolerance, int missedCleavages, string outputPath)
+        public static void WriteMzIdentMl(IEnumerable<PeptideSpectralMatch> psms, List<EngineLayer.ProteinGroup> groups, List<Modification> variableMods, List<Modification> fixedMods, List<SilacLabel> silacLabels, List<Protease> proteases, double qValueFilter, Tolerance productTolerance, Tolerance parentTolerance, int missedCleavages, string outputPath)
         {
             psms = psms.Where(p => p.FdrInfo.QValue <= qValueFilter && p.FdrInfo.QValueNotch <= qValueFilter);
+            
+            //if SILAC, remove the silac labels, because the base/full sequences reported for output are not the same as the peptides in the best peptides list for the psm
+            if (silacLabels != null)
+            {
+                List<string> labelsToSearch = new List<string>();
+                foreach (SilacLabel label in silacLabels)
+                {
+                    labelsToSearch.Add(label.MassDifference);
+                    if (label.AdditionalLabels != null)
+                    {
+                        foreach (SilacLabel additionalLabel in label.AdditionalLabels)
+                        {
+                            labelsToSearch.Add(additionalLabel.MassDifference);
+                        }
+                    }
+                }
+                psms = psms.Where(p => p.BaseSequence != null && !p.FullSequence.Contains("|") && !labelsToSearch.Any(x => p.BaseSequence.Contains(x)));
+            }
 
             List<PeptideWithSetModifications> peptides = psms.SelectMany(i => i.BestMatchingPeptides.Select(v => v.Peptide)).Distinct().ToList();
             List<Protein> proteins = peptides.Select(p => p.Protein).Distinct().ToList();
