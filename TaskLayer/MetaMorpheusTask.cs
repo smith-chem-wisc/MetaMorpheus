@@ -707,7 +707,7 @@ namespace TaskLayer
                 ser.Serialize(file, fragmentIndex);
             }
         }
-        
+
         private static List<int>[] ReadIndexNetSerializer(string indexFile)
         {
             var messageTypes = GetSubclassesAndItself(typeof(List<int>[]));
@@ -718,7 +718,6 @@ namespace TaskLayer
                 return (List<int>[])ser.Deserialize(file);
             }
         }
-
 
         private static string GetExistingFolderWithIndices(IndexingEngine indexEngine, List<DbForTask> dbFilenameList)
         {
