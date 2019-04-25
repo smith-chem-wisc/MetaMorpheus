@@ -9,6 +9,9 @@
         Title="Search Task" Width="750" Height="880" WindowStartupLocation="CenterScreen">
     <Window.Resources>
         <local:BooleanInverter x:Key="InvertedBooleanConverter" />
+        
+        <!-- used in Quantifications -->
+        <BooleanToVisibilityConverter x:Key="bool2VisConverter" />
     </Window.Resources>
     <Grid>
         <Grid.RowDefinitions>
@@ -337,8 +340,13 @@
                                     <ToolTip Content="SILAC quantification is performed using peak finding and FlashLFQ" ToolTipService.ShowDuration="999999" ToolTipService.InitialShowDelay="500"/>
                                 </ToolTipService.ToolTip>
                             </RadioButton>
-                            <CheckBox x:Name="CheckBoxQuantifyUnlabeledForSilac" Content="Quantify unlabeled peptides/proteins" IsEnabled="{Binding IsChecked, ElementName=checkBoxSILAC}" Margin="20,0,0,0"/>
-                            <Grid>
+                            <CheckBox x:Name="CheckBoxQuantifyUnlabeledForSilac" 
+                                      Content="Quantify unlabeled peptides/proteins" 
+                                      IsEnabled="{Binding IsChecked, ElementName=checkBoxSILAC}"
+                                      Visibility="{Binding IsChecked, ElementName=checkBoxSILAC, Converter={StaticResource bool2VisConverter}}"
+                                      Margin="20,0,0,0"
+                                      />
+                            <Grid Visibility="{Binding IsChecked, ElementName=checkBoxSILAC, Converter={StaticResource bool2VisConverter}}">
                                 <Grid.RowDefinitions>
                                     <RowDefinition Height="0" />
                                     <RowDefinition Height="80" />
