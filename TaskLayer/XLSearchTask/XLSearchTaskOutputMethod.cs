@@ -105,11 +105,7 @@ namespace TaskLayer
             foreach (var x in CommonParameters.DigestionParams.Protease.DigestionMotifs.Select(m => m.InducingCleavage)) { proteaseC += x; }
             foreach (var x in CommonParameters.DigestionParams.Protease.DigestionMotifs.Select(m => m.PreventingCleavage)) { proteaseNC += x; }
 
-            Crosslinker crosslinker = new Crosslinker().SelectCrosslinker(XlSearchParameters.CrosslinkerType);
-            if (XlSearchParameters.CrosslinkerType == CrosslinkerType.UserDefined)
-            {
-                crosslinker = GenerateUserDefinedCrosslinker(XlSearchParameters);
-            }
+            Crosslinker crosslinker = XlSearchParameters.Crosslinker;
 
             string fileNameNoExtension = Path.GetFileNameWithoutExtension(items[0].FullFilePath);
             string filePathNoExtension = Path.ChangeExtension(items[0].FullFilePath, null);

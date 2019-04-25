@@ -20,7 +20,7 @@
         public const string BaseSequence = "Base Sequence";
         public const string FullSequence = "Full Sequence";
         public const string EssentialSequence = "Essential Sequence";
-        public const string PsmCount = "PSM Count";
+        public const string PsmCount = "PSM Count (unambiguous, <0.01 q-value)";
         public const string Mods = "Mods";
         public const string ModsChemicalFormulas = "Mods Chemical Formulas";
         public const string ModsCombinedChemicalFormula = "Mods Combined Chemical Formula";
