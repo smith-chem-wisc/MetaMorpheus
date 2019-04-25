@@ -187,36 +187,109 @@ namespace EngineLayer
             return GetMass(lossKind);
         }
 
-        //TO DO: how to get reasonable ionKind
-        private static List<byte[]> GetAllIonKinds(byte[] Kind)
+        public static List<GlycanIon> GetAllIonMassFromKind(byte[] Kind)
         {
-            List<byte[]> allIonKinds = new List<byte[]>();
+            int sum = Kind.Sum(p => p);
 
-            
+            int[] ids = Enumerable.Range(1, sum).ToArray();
 
-            return allIonKinds;
-        }
-
-        public static List<GlycanIon> GetGlycanIons(byte[] Kind)
-        {
-            List<GlycanIon> glycanIons = new List<GlycanIon>();
-            HashSet<double> ionMasses = new HashSet<double>();
-            var allIonKinds = GetAllIonKinds(Kind);
-            foreach (var ionKind in allIonKinds)
+            int[] pos = new int[5];
+            for (int i = 0; i < Kind.Length; i++)
             {
+                pos[i] = Kind.Take(i + 1).Sum(p=>p);
+            }
+
+            List<int[]> kcombs = new List<int[]>();
+
+            for (int i = 1; i < sum; i++)
+            {
+                kcombs.AddRange(GetKCombs(ids, i).Select(p=>p.ToArray()).ToList());
+            }
+
+
+            HashSet<int> core = new HashSet<int> { 83038194, 20307937, 40615875, 56821157, 73026439, 89231722, 34913728, 55221665 };
+            List<byte[]> allIonKinds = new List<byte[]>();
+            HashSet<int> ionMasses = new HashSet<int>();
+            List<GlycanIon> glycanIons = new List<GlycanIon>();
+
+            foreach (var k in kcombs)
+            {
+                byte[] ionKind = new byte[5];
+                foreach (var x in k)
+                {
+                    int i = 0;
+                    while (x > pos[i])
+                    {
+                        i++;
+                    }
+
+                    ionKind[i]++;
+                }
                 var ionMass = GetMass(ionKind);
-                if (!ionMasses.Contains(ionMass))
+                if (!ionMasses.Contains(ionMass) && !(ionMass <= 55221665 && !core.Contains(ionMass)))
                 {
                     ionMasses.Add(ionMass);
                     var lossIonMass = GetIonLossMass(Kind, ionKind);
                     GlycanIon glycanIon = new GlycanIon(0, ionMass, ionKind, lossIonMass);
                     glycanIons.Add(glycanIon);
-                }
+
+                    allIonKinds.Add(ionKind);
+                }     
             }
+
             glycanIons.Add(new GlycanIon(0, 8303819, new byte[] { 0, 0, 0, 0, 0 }, GetMass(Kind) - 8303819)); //Cross-ring mass
             glycanIons = glycanIons.OrderBy(p => p.IonMass).ToList();
 
+
             return glycanIons;
+        }
+
+        public static IEnumerable<Glycan> LoadKindGlycan(string filePath)
+        {
+            List<string> glycanKinds = new List<string>();
+            using (StreamReader lines = new StreamReader(filePath))
+            {
+                while (lines.Peek() != -1)
+                {
+                    string line = lines.ReadLine();
+                    glycanKinds.Add(line);
+                }
+            }
+
+            foreach (var aGlycanKind in glycanKinds)
+            {
+                byte[] kind = new byte[5] { 0, 0, 0, 0, 0 };
+                var x = aGlycanKind.Split('(', ')');
+                int i = 0;
+                int phosphoMass = 0;  //To think: better way to read HexNAc(2)Hex(6)Phospho(1)
+                while (i < x.Length - 1)
+                {
+                    switch (x[i])
+                    {
+                        case "Hex":
+                            kind[0] = byte.Parse(x[i + 1]);
+                            break;
+                        case "HexNAc":
+                            kind[1] = byte.Parse(x[i + 1]);
+                            break;
+                        case "NeuAc":
+                            kind[2] = byte.Parse(x[i + 1]);
+                            break;
+                        case "Fuc":
+                            kind[4] = byte.Parse(x[i + 1]);
+                            break;
+                        case "Phospho":  
+                            phosphoMass = 7996633;
+                            break;
+                        default:
+                            break;
+                    }
+                    i = i + 2;
+                }
+                var glycanIons = GetAllIonMassFromKind(kind);
+                var mass = GetMass(kind) + phosphoMass;
+                yield return new Glycan("", mass, kind, glycanIons, true);
+            }
         }
 
         public static bool DistingushGlycans(Glycan glycan1, Glycan glycan2)
@@ -247,31 +320,6 @@ namespace EngineLayer
                 CharMassDic['G'] * kind[3] +
                 CharMassDic['F'] * kind[4];
             return y;
-        }
-
-        public static SortedSet<int> GetAllChildrenMassFromKind(byte[] kind)
-        {
-            //TO DO: This is not right. 
-            SortedSet<int> vs = new SortedSet<int>();
-            for (byte g = 0; g <= kind[3]; g++)
-            {
-                for (byte a = 0; a <= kind[2]; a++)
-                {
-                    for (byte f = 0; f <= kind[4]; f++)
-                    {
-                        for (byte h  = 0; h <= kind[0]; h++)
-                        {
-                            for (byte n = 1; n <= kind[1]; n++)
-                            {
-                                byte[] akind = new byte[5] { h, n, f, a, g};
-                                int amass = GetMass(akind);
-                                vs.Add(amass);
-                            }
-                        }
-                    }
-                }
-            }
-            return vs;
         }
 
         public HashSet<int> GetDiagnosticIons()
@@ -359,7 +407,7 @@ namespace EngineLayer
             foreach (var aGlycan in glycans)
             {
                 allGlycans.Add(aGlycan);
-                var value = random.Next(30000, 90000); //TO DO: how to choose the number
+                var value = random.Next(350000, 9000000); //TO DO: how to choose the number
 
                 List<GlycanIon> glycanIons = new List<GlycanIon>();
                 foreach (var ion in aGlycan.Ions)

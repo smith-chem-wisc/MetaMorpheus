@@ -201,20 +201,13 @@ namespace Test
             Assert.AreEqual(did, 2);
             Assert.AreEqual(tid, 9);          
         }
-
-        [Test]
-        public static void GlyTest_GetAllChildrenMassFromKind()
-        {
-            byte[] kind = new byte[5] {2, 4, 0, 0, 2};
-            var test = Glycan.GetAllChildrenMassFromKind(kind);
-        }
-
-        /* //This is not exactly a test. The function is used for N-Glycan database generation. The function maybe useful in the future.
+      
+        //This is not exactly a test. The function is used for N-Glycan database generation. The function maybe useful in the future.
         [Test]
         public static void GlyTest_GenerateDataBase()
         {         
-            var glycans = GlobalVariables.NGlycans.ToArray();
-            string aietdpath = "E:\\MassData\\Glycan\\GlycanDatabase\\AIETD\\Glycans_AIETD.csv";
+            var glycans = Glycan.LoadGlycan(GlobalVariables.NGlycanLocation);
+            string aietdpath = "E:\\MassData\\Glycan\\GlycanDatabase\\AIETD\\ComboGlycanDatabase.csv";
             Dictionary<double, string> aietdGlycans = new Dictionary<double, string>();
 
             List<string> aietdGlycanKinds = new List<string>();
@@ -229,11 +222,13 @@ namespace Test
             }
 
             List<int> noExists = new List<int>(); 
+
             foreach (var aGlycanKind in aietdGlycanKinds)
             {
                 byte[] kind = new byte[5] { 0,0,0,0,0};
                 var x = aGlycanKind.Split('(', ')');
                 int i = 0;
+                int phosphoMass = 0;  //To think: better way to read HexNAc(2)Hex(6)Phospho(1)
                 while (i < x.Length-1)
                 {
                     switch (x[i])
@@ -249,25 +244,31 @@ namespace Test
                             break;
                         case "Fuc":
                             kind[4] = byte.Parse(x[i + 1]);
-                            break;                 
+                            break;
+                        case "Phospho":
+                            phosphoMass = 7996633;
+                            break;
                         default:
                             break;
                     }
                     i = i + 2;
                 }
-                var mass = Glycan.GetMass(kind);
-                var struc = glycans.Where(p=>p.Kind[3]==0).Where(p => p.Mass == mass);
-                if (struc.Count()>0)
-                {
-                    aietdGlycans.Add(mass, struc.First().Struc);
-                }
-                else
-                {
-                    noExists.Add(mass);
-                }
+                var mass = Glycan.GetMass(kind) + phosphoMass;
+
+                aietdGlycans.Add(mass, "");
+
+                //var struc = glycans.Where(p=>p.Kind[3]==0).Where(p => p.Mass == mass);
+                //if (struc.Count()>0)
+                //{
+                //    aietdGlycans.Add(mass, struc.First().Struc);
+                //}
+                //else
+                //{
+                //    noExists.Add(mass);
+                //}
             }
 
-            string aietdpathWritePath = "E:\\MassData\\Glycan\\GlycanDatabase\\AIETD\\GlycansAIETD.txt";
+            string aietdpathWritePath = "E:\\MassData\\Glycan\\GlycanDatabase\\AIETD\\GlycansAIETD.tsv";
             using (StreamWriter output = new StreamWriter(aietdpathWritePath))
             {
                 foreach (var item in aietdGlycans)
@@ -276,7 +277,15 @@ namespace Test
                 }
             }
         }
-        */
+        
+        [Test]
+        public static void GlyTest_GetAllIonMassFromKind()
+        {
+            Glycan glycan = Glycan.Struct2Glycan("(N(F)(N(H(H(N))(H(N)))))", 0);
+            var x = Glycan.GetAllIonMassFromKind(glycan.Kind);
+
+
+        }
 
         private static Dictionary<ProductType, OxyColor> productTypeDrawColors = new Dictionary<ProductType, OxyColor>
         {
