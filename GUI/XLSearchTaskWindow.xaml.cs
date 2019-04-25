@@ -122,9 +122,8 @@ namespace MetaMorpheusGUI
             RbSearchOGlyco.IsChecked = task.XlSearchParameters.OpenSearchType == OpenSearchType.OGlyco;
 
             CkbAnalyzeOxiniumIon.IsChecked = task.XlSearchParameters.OnlyAnalyzeOxiniumIons;
-            cbCrosslinker.SelectedIndex = (int)task.XlSearchParameters.CrosslinkerType;
-            //RbSearchCrosslink.IsChecked = !task.XlSearchParameters.SearchGlyco;
-            //RbSearchGlyco.IsChecked = task.XlSearchParameters.SearchGlyco;
+            cbCrosslinkers.SelectedItem = task.XlSearchParameters.Crosslinker;
+
             cbCrosslinkers.SelectedItem = task.XlSearchParameters.Crosslinker;
             ckbXLTopNum.IsChecked = task.XlSearchParameters.RestrictToTopNHits;
             txtXLTopNum.Text = task.XlSearchParameters.CrosslinkSearchTopNum.ToString(CultureInfo.InvariantCulture);

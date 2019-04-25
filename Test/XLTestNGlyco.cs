@@ -71,7 +71,7 @@ namespace Test
             CommonParameters commonParameters = new CommonParameters(deconvolutionMassTolerance: new PpmTolerance(20));
             string filePath = Path.Combine(TestContext.CurrentContext.TestDirectory, @"GlycoTestData/Glyco_3383.mgf"); //"25170.mgf"
             MyFileManager myFileManager = new MyFileManager(true);
-            var msDataFile = myFileManager.LoadFile(filePath, 300, 0.01, true, true, commonParameters);
+            var msDataFile = myFileManager.LoadFile(filePath, commonParameters);
             var listOfSortedms2Scans = MetaMorpheusTask.GetMs2Scans(msDataFile, filePath, commonParameters).ToArray();
 
             var glycanMod = GlycoPeptides.GlycanToModification(glycan);
@@ -125,7 +125,7 @@ namespace Test
             CommonParameters commonParameters = new CommonParameters(doPrecursorDeconvolution:false, trimMsMsPeaks:false, dissociationType:DissociationType.EThcD, productMassTolerance: tolerance);
             string filePath = Path.Combine(TestContext.CurrentContext.TestDirectory, @"GlycoTestData/11901_AIETD.mgf"); 
             MyFileManager myFileManager = new MyFileManager(true);
-            var msDataFile = myFileManager.LoadFile(filePath, null, null, false, false, commonParameters);
+            var msDataFile = myFileManager.LoadFile(filePath, commonParameters);
             var listOfSortedms2Scans = MetaMorpheusTask.GetMs2Scans(msDataFile, filePath, commonParameters).ToArray();
 
             var XLPrecusorSearchMode = new SinglePpmAroundZeroSearchMode(commonParameters.PrecursorMassTolerance.Value);
@@ -157,7 +157,7 @@ namespace Test
             CommonParameters commonParameters = new CommonParameters();
             string filePath = Path.Combine(TestContext.CurrentContext.TestDirectory, @"GlycoTestData/25170.mgf");
             MyFileManager myFileManager = new MyFileManager(true);
-            var msDataFile = myFileManager.LoadFile(filePath, 300, 0.01, true, true, commonParameters);
+            var msDataFile = myFileManager.LoadFile(filePath, commonParameters);
             var listOfSortedms2Scans = MetaMorpheusTask.GetMs2Scans(msDataFile, filePath, commonParameters).ToArray();
             //Tips: Using debug mode to check the number of oxoniumIons, in this case will be 7.
             MassDiffAcceptor massDiffAcceptor = new SinglePpmAroundZeroSearchMode(20);
