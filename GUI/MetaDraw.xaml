@@ -178,6 +178,17 @@
                                             </ItemsControl.ItemsPanel>
                                         </ItemsControl>
                                     </TabItem>
+                                    <TabItem Header="Glycan View" Name="GlycanView">
+                                        <Grid>
+                                            <Grid.RowDefinitions>
+                                            </Grid.RowDefinitions>
+                                            <StackPanel >
+                                                <Button x:Name="BtnGly" Content="Draw Glycan" Click="BtnGly_Click"/>
+                                                <Canvas x:Name="glyCanvas" Height="400" Width="400" HorizontalAlignment="Stretch" VerticalAlignment="Stretch">
+                                                </Canvas>
+                                            </StackPanel>
+                                        </Grid>
+                                    </TabItem>
                                 </TabControl>
 
                                 <!--Canvas for drawing base sequence annotation-->
