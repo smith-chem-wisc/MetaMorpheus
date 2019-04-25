@@ -202,6 +202,7 @@ namespace Test
             Assert.AreEqual(tid, 9);          
         }
       
+        /*
         //This is not exactly a test. The function is used for N-Glycan database generation. The function maybe useful in the future.
         [Test]
         public static void GlyTest_GenerateDataBase()
@@ -277,14 +278,14 @@ namespace Test
                 }
             }
         }
-        
+        */
+
         [Test]
         public static void GlyTest_GetAllIonMassFromKind()
         {
             Glycan glycan = Glycan.Struct2Glycan("(N(F)(N(H(H(N))(H(N)))))", 0);
             var x = Glycan.GetAllIonMassFromKind(glycan.Kind);
-
-
+            Assert.AreEqual(x.Count, 28);
         }
 
         private static Dictionary<ProductType, OxyColor> productTypeDrawColors = new Dictionary<ProductType, OxyColor>
@@ -361,5 +362,6 @@ namespace Test
                 pdf.Export(model, stream);
             }
         }
+
     }
 }
