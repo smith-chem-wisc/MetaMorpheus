@@ -75,6 +75,36 @@
                                     </StackPanel>
                                 </StackPanel>
                             </GroupBox>
+                            <GroupBox Header="Peak Trimming">
+                                <StackPanel>
+                                    <CheckBox x:Name="trimMs1" Content="Trim MS1 Peaks" IsChecked="True" ToolTipService.ShowDuration="999999" ToolTipService.InitialShowDelay="500">
+                                        <ToolTipService.ToolTip>
+                                            <ToolTip Content="Remove low-intensity MS1 peaks using the below settings" />
+                                        </ToolTipService.ToolTip>
+                                    </CheckBox>
+                                    <CheckBox x:Name="trimMsMs" Content="Trim MS2 Peaks" IsChecked="True" ToolTipService.ShowDuration="999999" ToolTipService.InitialShowDelay="500">
+                                        <ToolTipService.ToolTip>
+                                            <ToolTip Content="Remove low-intensity MS2 peaks using the below settings" />
+                                        </ToolTipService.ToolTip>
+                                    </CheckBox>
+                                    <StackPanel Orientation="Horizontal" Margin="5">
+                                        <Label Content="Top N peaks per m/z window" />
+                                        <TextBox x:Name="NumberOfPeaksToKeepPerWindowTextBox" PreviewTextInput="CheckIfNumber" Width="45" ToolTipService.ShowDuration="999999" ToolTipService.InitialShowDelay="500">
+                                            <ToolTipService.ToolTip>
+                                                <ToolTip Content="Use the N most intense peaks from the spectrum and remove all other peaks" />
+                                            </ToolTipService.ToolTip>
+                                        </TextBox>
+                                    </StackPanel>
+                                    <StackPanel Orientation="Horizontal" Margin="5">
+                                        <Label Content="Minimum intensity ratio" />
+                                        <TextBox x:Name="MinimumAllowedIntensityRatioToBasePeakTexBox" PreviewTextInput="CheckIfNumber" Width="45" ToolTipService.ShowDuration="999999" ToolTipService.InitialShowDelay="500">
+                                            <ToolTipService.ToolTip>
+                                                <ToolTip Content="Peaks must be this intense compared to the base peak" />
+                                            </ToolTipService.ToolTip>
+                                        </TextBox>
+                                    </StackPanel>
+                                </StackPanel>
+                            </GroupBox>
                         </StackPanel>
                     </Expander>
                 </GroupBox>

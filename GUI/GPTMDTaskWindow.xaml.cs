@@ -1,17 +1,17 @@
 ﻿using EngineLayer;
+using MassSpectrometry;
 using MzLibUtil;
+using Proteomics.ProteolyticDigestion;
 using System;
 using System.Collections.Generic;
 using System.Collections.ObjectModel;
+using System.ComponentModel;
 using System.Globalization;
 using System.Linq;
 using System.Windows;
 using System.Windows.Controls;
 using System.Windows.Input;
 using TaskLayer;
-using Proteomics.ProteolyticDigestion;
-using MassSpectrometry;
-using System.ComponentModel;
 
 namespace MetaMorpheusGUI
 {
@@ -82,6 +82,11 @@ namespace MetaMorpheusGUI
             MaxHeterozygousVariantsTextBox.Text = task.CommonParameters.MaxHeterozygousVariants.ToString(CultureInfo.InvariantCulture);
             CustomFragmentationWindow = new CustomFragmentationWindow(task.CommonParameters.CustomIons);
             OutputFileNameTextBox.Text = task.CommonParameters.TaskDescriptor;
+
+            trimMs1.IsChecked = task.CommonParameters.TrimMs1Peaks;
+            trimMsMs.IsChecked = task.CommonParameters.TrimMsMsPeaks;
+            NumberOfPeaksToKeepPerWindowTextBox.Text = task.CommonParameters.NumberOfPeaksToKeepPerWindow == int.MaxValue || !task.CommonParameters.NumberOfPeaksToKeepPerWindow.HasValue ? "" : task.CommonParameters.NumberOfPeaksToKeepPerWindow.Value.ToString(CultureInfo.InvariantCulture);
+            MinimumAllowedIntensityRatioToBasePeakTexBox.Text = task.CommonParameters.MinimumAllowedIntensityRatioToBasePeak == double.MaxValue || !task.CommonParameters.MinimumAllowedIntensityRatioToBasePeak.HasValue ? "" : task.CommonParameters.MinimumAllowedIntensityRatioToBasePeak.Value.ToString(CultureInfo.InvariantCulture);
 
             foreach (var mod in task.CommonParameters.ListOfModsFixed)
             {
@@ -241,8 +246,7 @@ namespace MetaMorpheusGUI
 
             if (!GlobalGuiSettings.CheckTaskSettingsValidity(PrecursorMassToleranceTextBox.Text, ProductMassToleranceTextBox.Text, MissedCleavagesTextBox.Text,
                  MaxModificationIsoformsTextBox.Text, MinPeptideLengthTextBox.Text, MaxPeptideLengthTextBox.Text, MaxThreadsTextBox.Text, MinScoreAllowed.Text,
-                fieldNotUsed, fieldNotUsed, DeconvolutionMaxAssumedChargeStateTextBox.Text, fieldNotUsed, fieldNotUsed, fieldNotUsed, fieldNotUsed, fieldNotUsed, fieldNotUsed))
-
+                fieldNotUsed, fieldNotUsed, DeconvolutionMaxAssumedChargeStateTextBox.Text, NumberOfPeaksToKeepPerWindowTextBox.Text, MinimumAllowedIntensityRatioToBasePeakTexBox.Text, null, null, fieldNotUsed, fieldNotUsed, fieldNotUsed, fieldNotUsed))
             {
                 return;
             }
@@ -290,6 +294,37 @@ namespace MetaMorpheusGUI
                 return;
             }
 
+            bool TrimMs1Peaks = trimMs1.IsChecked.Value;
+            bool TrimMsMsPeaks = trimMsMs.IsChecked.Value;
+
+            int? numPeaksToKeep = null;
+            if (!string.IsNullOrWhiteSpace(NumberOfPeaksToKeepPerWindowTextBox.Text))
+            {
+                if (int.TryParse(NumberOfPeaksToKeepPerWindowTextBox.Text, out int numberOfPeaksToKeeep))
+                {
+                    numPeaksToKeep = numberOfPeaksToKeeep;
+                }
+                else
+                {
+                    MessageBox.Show("The value that you entered for number of peaks to keep is not acceptable. Try again.");
+                    return;
+                }
+            }
+
+            double? minimumAllowedIntensityRatioToBasePeak = null;
+            if (!string.IsNullOrWhiteSpace(MinimumAllowedIntensityRatioToBasePeakTexBox.Text))
+            {
+                if (double.TryParse(MinimumAllowedIntensityRatioToBasePeakTexBox.Text, out double minimumAllowedIntensityRatio))
+                {
+                    minimumAllowedIntensityRatioToBasePeak = minimumAllowedIntensityRatio;
+                }
+                else
+                {
+                    MessageBox.Show("The value that you entered for minimum allowed intensity ratio to keep is not acceptable. Try again.");
+                    return;
+                }
+            }
+
             List<(string, string)> listOfModsFixed = new List<(string, string)>();
             foreach (var heh in fixedModTypeForTreeViewObservableCollection)
             {
@@ -312,9 +347,13 @@ namespace MetaMorpheusGUI
                     maxModsForPeptides: maxModsPerPeptide,
                     initiatorMethionineBehavior: initiatorMethionineBehavior),
                     dissociationType: dissociationType,
-                    scoreCutoff: double.Parse(MinScoreAllowed.Text, CultureInfo.InvariantCulture),
+                    scoreCutoff: double.Parse(minScoreAllowed.Text, CultureInfo.InvariantCulture),
                     precursorMassTolerance: precursorMassTolerance,
-                    productMassTolerance: productMassTolerance,
+                    productMassTolerance: productMassTolerance,                    
+                    trimMs1Peaks: TrimMs1Peaks,
+                    trimMsMsPeaks: TrimMsMsPeaks,
+                    numberOfPeaksToKeepPerWindow: numPeaksToKeep,
+                    minimumAllowedIntensityRatioToBasePeak: minimumAllowedIntensityRatioToBasePeak,
                     listOfModsFixed: listOfModsFixed,
                     listOfModsVariable: listOfModsVariable,
                     assumeOrphanPeaksAreZ1Fragments: protease.Name != "top-down",
