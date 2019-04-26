@@ -199,8 +199,8 @@ namespace TaskLayer
                     var line = r.ReadLine().Split(' ');
                     var mass1 = double.Parse(line[0], CultureInfo.InvariantCulture);
                     var mass2 = double.Parse(line[1], CultureInfo.InvariantCulture);
-                    if (modificationsThatCanBeCombined.Where(b => b.ValidModification == true).Any(b => Math.Abs((double)b.MonoisotopicMass - mass1) < tolForComboLoading) &&
-                        modificationsThatCanBeCombined.Where(b => b.ValidModification == true).Any(b => Math.Abs((double)b.MonoisotopicMass - mass2) < tolForComboLoading))
+                    if (modificationsThatCanBeCombined.Any(b => b.ValidModification == true && Math.Abs((double)b.MonoisotopicMass - mass1) < tolForComboLoading) &&
+                        modificationsThatCanBeCombined.Any(b => b.ValidModification == true && Math.Abs((double)b.MonoisotopicMass - mass2) < tolForComboLoading))
                         yield return new Tuple<double, double>(mass1, mass2);
                 }
             }
