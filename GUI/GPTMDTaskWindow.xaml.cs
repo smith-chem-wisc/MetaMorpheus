@@ -83,8 +83,8 @@ namespace MetaMorpheusGUI
             CustomFragmentationWindow = new CustomFragmentationWindow(task.CommonParameters.CustomIons);
             OutputFileNameTextBox.Text = task.CommonParameters.TaskDescriptor;
 
-            trimMs1.IsChecked = task.CommonParameters.TrimMs1Peaks;
-            trimMsMs.IsChecked = task.CommonParameters.TrimMsMsPeaks;
+            TrimMs1.IsChecked = task.CommonParameters.TrimMs1Peaks;
+            TrimMsMs.IsChecked = task.CommonParameters.TrimMsMsPeaks;
             NumberOfPeaksToKeepPerWindowTextBox.Text = task.CommonParameters.NumberOfPeaksToKeepPerWindow == int.MaxValue || !task.CommonParameters.NumberOfPeaksToKeepPerWindow.HasValue ? "" : task.CommonParameters.NumberOfPeaksToKeepPerWindow.Value.ToString(CultureInfo.InvariantCulture);
             MinimumAllowedIntensityRatioToBasePeakTexBox.Text = task.CommonParameters.MinimumAllowedIntensityRatioToBasePeak == double.MaxValue || !task.CommonParameters.MinimumAllowedIntensityRatioToBasePeak.HasValue ? "" : task.CommonParameters.MinimumAllowedIntensityRatioToBasePeak.Value.ToString(CultureInfo.InvariantCulture);
 
@@ -294,8 +294,8 @@ namespace MetaMorpheusGUI
                 return;
             }
 
-            bool TrimMs1Peaks = trimMs1.IsChecked.Value;
-            bool TrimMsMsPeaks = trimMsMs.IsChecked.Value;
+            bool TrimMs1Peaks = TrimMs1.IsChecked.Value;
+            bool TrimMsMsPeaks = TrimMsMs.IsChecked.Value;
 
             int? numPeaksToKeep = null;
             if (!string.IsNullOrWhiteSpace(NumberOfPeaksToKeepPerWindowTextBox.Text))
@@ -347,7 +347,7 @@ namespace MetaMorpheusGUI
                     maxModsForPeptides: maxModsPerPeptide,
                     initiatorMethionineBehavior: initiatorMethionineBehavior),
                     dissociationType: dissociationType,
-                    scoreCutoff: double.Parse(minScoreAllowed.Text, CultureInfo.InvariantCulture),
+                    scoreCutoff: double.Parse(MinScoreAllowed.Text, CultureInfo.InvariantCulture),
                     precursorMassTolerance: precursorMassTolerance,
                     productMassTolerance: productMassTolerance,                    
                     trimMs1Peaks: TrimMs1Peaks,
