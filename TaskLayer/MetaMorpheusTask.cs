@@ -769,10 +769,8 @@ namespace TaskLayer
             else //if we found indexes with the same params
             {
                 Status("Reading peptide index...", new List<string> { taskId });
-                peptideIndex = ReadPeptideIndexNetSerializer(Path.Combine(pathToFolderWithIndices, PeptideIndexFileName));
-
-
-
+                peptideIndex = ReadPeptideIndexNetSerializer(Path.Combine(pathToFolderWithIndices, PeptideIndexFileName), allKnownProteins);
+                               
                 Status("Reading fragment index...", new List<string> { taskId });
                 fragmentIndex = ReadFragmentIndexNetSerializer(Path.Combine(pathToFolderWithIndices, FragmentIndexFileName));
 
