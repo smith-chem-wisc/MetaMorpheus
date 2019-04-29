@@ -691,7 +691,7 @@ namespace Test
             var csm = csms[0];
 
             // test parent scan (CID)
-            Assert.That(csm.MatchedFragmentIons.Count == 14);
+            Assert.That(csm.MatchedFragmentIons.Count == 32);
             Assert.That(csm.ScanNumber == 2);
 
             // test child scan (low-resolution CID, alpha peptide signature ion)
