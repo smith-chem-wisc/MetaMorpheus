@@ -604,7 +604,7 @@ namespace TaskLayer
 
         private static void WritePeptideIndex(List<PeptideWithSetModifications> peptideIndex, string peptideIndexFileName)
         {
-            var messageTypes = GetSubclassesAndItself(typeof(List<int>[]));
+            var messageTypes = GetSubclassesAndItself(typeof(List<PeptideWithSetModifications>));
             var ser = new NetSerializer.Serializer(messageTypes);
 
             using (var file = File.Create(peptideIndexFileName))
