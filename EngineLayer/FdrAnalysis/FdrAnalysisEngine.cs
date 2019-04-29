@@ -1,4 +1,5 @@
 ﻿using MathNet.Numerics;
+using Proteomics.Fragmentation;
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -164,7 +165,9 @@ namespace EngineLayer.FdrAnalysis
                         eScore = -Math.Log(eValue, 10);
                     }
 
-                    psm.SetFdrValues(cumulativeTarget, cumulativeDecoy, qValue, cumulativeTargetPerNotch[notch], cumulativeDecoyPerNotch[notch], qValueNotch, maximumLikelihood, eValue, eScore, CalculateEValue);
+                    int longestUninteruptedSeries = psm.GetLengthLongestUniterupedFragmentSeries_collective();
+
+                    psm.SetFdrValues(cumulativeTarget, cumulativeDecoy, qValue, cumulativeTargetPerNotch[notch], cumulativeDecoyPerNotch[notch], qValueNotch, maximumLikelihood, eValue, eScore, CalculateEValue, longestUninteruptedSeries);
                 }
 
                 // set q-value thresholds such that a lower scoring PSM can't have 
@@ -202,13 +205,26 @@ namespace EngineLayer.FdrAnalysis
                         qValueNotchThreshold[notch] = psm.FdrInfo.QValueNotch;
                     }
                 }
+
+                
             }
 
             if (AnalysisType == "PSM")
             {
                 CountPsm();
             }
+
+            //TODO this one would work in a different world
+            //P_value.pvalueAnalysis(psms);
+
+            //compute psm level p-values
+            if (false)
+            {
+                PValueAnalysis.mn(AllPsms);
+            }
+            
         }
+
 
         private static double GetEValue(PeptideSpectralMatch psm, int globalMeanCount, double globalMeanScore, out double maximumLikelihood)
         {

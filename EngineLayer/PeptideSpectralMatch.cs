@@ -69,6 +69,9 @@ namespace EngineLayer
         public double RunnerUpScore { get; set; }
         public bool IsDecoy { get; private set; }
         public bool IsContaminant { get; private set; }
+
+        public string pValueInfo { get; set; }
+
         public DigestionParams DigestionParams { get; }
         public List<double> AllScores { get; internal set; }
         public Dictionary<PeptideWithSetModifications, List<MatchedFragmentIon>> PeptidesToMatchingFragments { get; private set; }
@@ -157,7 +160,7 @@ namespace EngineLayer
             DeltaScore = Score - Math.Max(RunnerUpScore, scoreCutoff);
         }
 
-        public void SetFdrValues(double cumulativeTarget, double cumulativeDecoy, double qValue, double cumulativeTargetNotch, double cumulativeDecoyNotch, double qValueNotch, double maximumLikelihood, double eValue, double eScore, bool calculateEValue)
+        public void SetFdrValues(double cumulativeTarget, double cumulativeDecoy, double qValue, double cumulativeTargetNotch, double cumulativeDecoyNotch, double qValueNotch, double maximumLikelihood, double eValue, double eScore, bool calculateEValue, int longestSeries)
         {
             FdrInfo = new FdrInfo
             {
@@ -170,7 +173,8 @@ namespace EngineLayer
                 MaximumLikelihood = maximumLikelihood,
                 EScore = eScore,
                 EValue = eValue,
-                CalculateEValue = calculateEValue
+                CalculateEValue = calculateEValue,
+                LongestSeriesLength = longestSeries
             };
         }
 
@@ -223,6 +227,188 @@ namespace EngineLayer
             // TODO: technically, different peptide options for this PSM can have different matched ions
             // we can write a Resolve method for this if we want...
             MatchedFragmentIons = PeptidesToMatchingFragments.First().Value;
+        }
+
+
+
+        public int GetLengthLongestUniterupedFragmentSeries()
+        {
+            int maxdif = 0;
+            if (BaseSequence != null)
+            {
+                var nSeriesAnnotations = MatchedFragmentIons.Where(f => f.NeutralTheoreticalProduct.TerminusFragment.Terminus == FragmentationTerminus.N).Select(f => f.NeutralTheoreticalProduct.TerminusFragment.FragmentNumber).ToList();
+                var cSeriesAnnotations = MatchedFragmentIons.Where(f => f.NeutralTheoreticalProduct.TerminusFragment.Terminus == FragmentationTerminus.C).Select(f => f.NeutralTheoreticalProduct.TerminusFragment.FragmentNumber).ToList();
+
+                nSeriesAnnotations.Sort();
+                cSeriesAnnotations.Sort();
+
+                List<int> aminoAcidPostionsThatCouldBeObserved = Enumerable.Range(0, BaseSequence.Length + 1).ToList();
+
+                List<int> nMissing = aminoAcidPostionsThatCouldBeObserved.Except(nSeriesAnnotations).ToList();
+                List<int> cMissing = aminoAcidPostionsThatCouldBeObserved.Except(cSeriesAnnotations).ToList();
+
+                
+                for (int i = 0; i < nMissing.Count - 1; i++)
+                {
+                    int diff = nMissing[i + 1] - nMissing[i] - 1;
+                    if (diff > maxdif)
+                    {
+                        maxdif = diff;
+                    }
+                }
+
+                for (int i = 0; i < cMissing.Count - 1; i++)
+                {
+                    int diff = cMissing[i + 1] - cMissing[i] - 1;
+                    if (diff > maxdif)
+                    {
+                        maxdif = diff;
+                    }
+                }
+            }
+            else
+            {
+                //TODO This gives max for any of the ambiguous peptides. might want to return them individually
+                foreach (KeyValuePair<PeptideWithSetModifications,List<MatchedFragmentIon>> item in PeptidesToMatchingFragments)
+                {
+                    if(item.Key.BaseSequence != null)
+                    {
+                        var nSeriesAnnotations = item.Value.Where(f => f.NeutralTheoreticalProduct.TerminusFragment.Terminus == FragmentationTerminus.N).Select(f => f.NeutralTheoreticalProduct.TerminusFragment.FragmentNumber).ToList();
+                        var cSeriesAnnotations = item.Value.Where(f => f.NeutralTheoreticalProduct.TerminusFragment.Terminus == FragmentationTerminus.C).Select(f => f.NeutralTheoreticalProduct.TerminusFragment.FragmentNumber).ToList();
+
+                        nSeriesAnnotations.Sort();
+                        cSeriesAnnotations.Sort();
+
+                        List<int> aminoAcidPostionsThatCouldBeObserved = Enumerable.Range(0, item.Key.BaseSequence.Length + 1).ToList();
+
+                        List<int> nMissing = aminoAcidPostionsThatCouldBeObserved.Except(nSeriesAnnotations).ToList();
+                        List<int> cMissing = aminoAcidPostionsThatCouldBeObserved.Except(cSeriesAnnotations).ToList();
+
+                        for (int i = 0; i < nMissing.Count - 1; i++)
+                        {
+                            int diff = nMissing[i + 1] - nMissing[i] - 1;
+                            if (diff > maxdif)
+                            {
+                                maxdif = diff;
+                            }
+                        }
+
+                        for (int i = 0; i < cMissing.Count - 1; i++)
+                        {
+                            int diff = cMissing[i + 1] - cMissing[i] - 1;
+                            if (diff > maxdif)
+                            {
+                                maxdif = diff;
+                            }
+                        }
+                    }
+                }
+            }
+            
+
+            return maxdif;
+        }
+
+        public int GetLengthLongestUniterupedFragmentSeries_collective()
+        {
+            int maxdif = 0;
+            if (BaseSequence != null)
+            {
+                List<int> nSeriesAnnotations = new List<int>();
+                List<int> cSeriesAnnotations = new List<int>();
+
+                try
+                {
+                    nSeriesAnnotations = MatchedFragmentIons.Where(f => f.NeutralTheoreticalProduct.TerminusFragment.Terminus == FragmentationTerminus.N).Select(f => f.NeutralTheoreticalProduct.TerminusFragment.FragmentNumber).ToList();
+                }
+                catch
+                {
+
+                }
+                try
+                {
+                    cSeriesAnnotations = MatchedFragmentIons.Where(f => f.NeutralTheoreticalProduct.TerminusFragment.Terminus == FragmentationTerminus.C).Select(f => f.NeutralTheoreticalProduct.TerminusFragment.FragmentNumber).ToList();
+                }
+                catch
+                {
+
+                }
+
+                List<int> jointSeries = nSeriesAnnotations.Concat(cSeriesAnnotations).Distinct().ToList();
+
+                if (jointSeries.Count > 0)
+                {
+                    jointSeries.Sort();
+
+                    List<int> aminoAcidPostionsThatCouldBeObserved = Enumerable.Range(0, BaseSequence.Length + 1).ToList();
+
+                    List<int> missing = aminoAcidPostionsThatCouldBeObserved.Except(jointSeries).ToList();
+
+
+                    for (int i = 0; i < missing.Count - 1; i++)
+                    {
+                        int diff = missing[i + 1] - missing[i] - 1;
+                        if (diff > maxdif)
+                        {
+                            maxdif = diff;
+                        }
+                    }
+                }
+            }
+            else
+            {
+                //TODO This gives max for any of the ambiguous peptides. might want to return them individually
+                foreach (KeyValuePair<PeptideWithSetModifications, List<MatchedFragmentIon>> item in PeptidesToMatchingFragments)
+                {
+                    if (item.Key.BaseSequence != null)
+                    {
+                        List<int> nSeriesAnnotations = new List<int>();
+                        List<int> cSeriesAnnotations = new List<int>();
+
+                        try
+                        {
+                            nSeriesAnnotations = MatchedFragmentIons.Where(f => f.NeutralTheoreticalProduct.TerminusFragment.Terminus == FragmentationTerminus.N).Select(f => f.NeutralTheoreticalProduct.TerminusFragment.FragmentNumber).ToList();
+                        }
+                        catch
+                        {
+
+                        }
+                        try
+                        {
+                            cSeriesAnnotations = MatchedFragmentIons.Where(f => f.NeutralTheoreticalProduct.TerminusFragment.Terminus == FragmentationTerminus.C).Select(f => f.NeutralTheoreticalProduct.TerminusFragment.FragmentNumber).ToList();
+                        }
+                        catch
+                        {
+
+                        }
+
+                        List<int> jointSeries = nSeriesAnnotations.Concat(cSeriesAnnotations).Distinct().ToList();
+
+                        if(jointSeries.Count > 0)
+                        {
+                            jointSeries.Sort();
+
+                            List<int> aminoAcidPostionsThatCouldBeObserved = Enumerable.Range(0, item.Key.BaseSequence.Length + 1).ToList();
+
+                            List<int> missing = aminoAcidPostionsThatCouldBeObserved.Except(jointSeries).ToList();
+
+
+                            for (int i = 0; i < missing.Count - 1; i++)
+                            {
+                                int diff = missing[i + 1] - missing[i] - 1;
+                                if (diff > maxdif)
+                                {
+                                    maxdif = diff;
+                                }
+                            }
+                        }
+                        
+                    }
+                }
+            }
+
+
+            return maxdif;
         }
 
         /// <summary>

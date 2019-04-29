@@ -53,7 +53,7 @@ namespace Test
 
             Assert.AreEqual(psm.ToString().Count(f => f == '\t'), PeptideSpectralMatch.GetTabSeparatedHeader().Count(f => f == '\t'));
 
-            psm.SetFdrValues(6, 6, 6, 6, 6, 6, 0, 0, 0, true);
+            psm.SetFdrValues(6, 6, 6, 6, 6, 6, 0, 0, 0, true,0);
 
             Assert.AreEqual(psm.ToString().Count(f => f == '\t'), PeptideSpectralMatch.GetTabSeparatedHeader().Count(f => f == '\t'));
         }
@@ -255,13 +255,13 @@ namespace Test
             Ms2ScanWithSpecificMass scan3 = new Ms2ScanWithSpecificMass(mzLibScan3, 0, 1, null, new CommonParameters());
             PeptideSpectralMatch psm3 = new PeptideSpectralMatch(pep3, 0, 0, 0, scan3, digestionParams, new List<MatchedFragmentIon>());
 
-            psm1.SetFdrValues(0, 0, 0, 0, 0, 0, 0, 0, 0, false); // valid psm
+            psm1.SetFdrValues(0, 0, 0, 0, 0, 0, 0, 0, 0, false,0); // valid psm
             psm1.ResolveAllAmbiguities();
 
-            psm2.SetFdrValues(0, 0, 0.02, 0, 0, 0, 0, 0, 0, false); // psm above fdr cutoff
+            psm2.SetFdrValues(0, 0, 0.02, 0, 0, 0, 0, 0, 0, false,0); // psm above fdr cutoff
             psm2.ResolveAllAmbiguities();
 
-            psm3.SetFdrValues(0, 0, 0, 0, 0, 0, 0, 0, 0, false); // ambiguous psm
+            psm3.SetFdrValues(0, 0, 0, 0, 0, 0, 0, 0, 0, false,0); // ambiguous psm
 
             var allPsms = new List<PeptideSpectralMatch> { psm1, psm2, psm3 };
             var fdrEngine = new FdrAnalysisEngine(allPsms, 0, new CommonParameters(), new List<string>());
@@ -271,7 +271,7 @@ namespace Test
             Assert.That(psmGroups.First().Count() == 2);
             Assert.That(psmGroups.First().First().PsmCount == 1);
 
-            psm2.SetFdrValues(0, 0, 0, 0, 0, 0, 0, 0, 0, false);
+            psm2.SetFdrValues(0, 0, 0, 0, 0, 0, 0, 0, 0, false,0);
             psm3.ResolveAllAmbiguities();
 
             fdrEngine.CountPsm();

@@ -413,6 +413,8 @@ namespace EngineLayer
             string qValueNotch = " ";
             string eValue = " ";
             string eScore = " ";
+            string lLength = " ";
+            string pValueInfo = " ";
             if (peptide != null && peptide.FdrInfo != null)
             {
                 cumulativeTarget = peptide.FdrInfo.CumulativeTarget.ToString(CultureInfo.InvariantCulture);
@@ -426,6 +428,8 @@ namespace EngineLayer
                     eValue = peptide.FdrInfo.EValue.ToString("F6", CultureInfo.InvariantCulture);
                     eScore = peptide.FdrInfo.EScore.ToString("F6", CultureInfo.InvariantCulture);
                 }
+                lLength = peptide.FdrInfo.LongestSeriesLength.ToString();
+                pValueInfo = peptide.pValueInfo;
             }
             s[PsmTsvHeader.CumulativeTarget] = cumulativeTarget;
             s[PsmTsvHeader.CumulativeDecoy] = cumulativeDecoy;
@@ -435,6 +439,8 @@ namespace EngineLayer
             s[PsmTsvHeader.QValueNotch] = qValueNotch;
             s[PsmTsvHeader.EValue] = eValue;
             s[PsmTsvHeader.EScore] = eScore;
+            s[PsmTsvHeader.LongestSeries] = lLength;
+            s["pValueStuff"] = pValueInfo;
         }
     }
 }

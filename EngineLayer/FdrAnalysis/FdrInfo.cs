@@ -12,5 +12,6 @@
         public double MaximumLikelihood { get; set; }
         public double EValue { get; set; }
         public double EScore { get; set; }
+        public int LongestSeriesLength { get; set; }
     }
 }

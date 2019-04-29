@@ -64,6 +64,7 @@
         public const string QValueNotch = "QValue Notch";
         public const string EValue = "eValue";
         public const string EScore = "eScore";
+        public const string LongestSeries = "longestSeries";
 
         // Crosslinks
         public const string CrossTypeLabel = "Cross Type";

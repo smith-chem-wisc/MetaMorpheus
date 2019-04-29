@@ -67,9 +67,6 @@
     <None Update="SlicedSearchTaskConfig.toml">
       <CopyToOutputDirectory>Always</CopyToOutputDirectory>
     </None>
-    <None Update="TestData\XCorrSearchTest_AllPSMs.psmtsv">
-      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
-    </None>
     <None Update="TestData\customBCZ.toml">
       <CopyToOutputDirectory>Always</CopyToOutputDirectory>
     </None>
@@ -128,6 +125,9 @@
       <CopyToOutputDirectory>Always</CopyToOutputDirectory>
     </None>
     <None Update="TestData\unprocessedMzAndIntensities.tsv">
+      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+    </None>
+    <None Update="TestData\XCorrSearchTest_AllPSMs.psmtsv">
       <CopyToOutputDirectory>Always</CopyToOutputDirectory>
     </None>
     <None Update="TestData\XCorrUnitTest.tsv">
