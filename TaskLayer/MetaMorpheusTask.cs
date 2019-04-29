@@ -602,7 +602,51 @@ namespace TaskLayer
             return false;
         }
 
-        private static void WriteIndexNetSerializer(List<int>[] fragmentIndex, string indexFile)
+        private static void WritePeptideIndexNetSerializer(List<PeptideWithSetModifications> peptideIndex, string peptideIndexFile)
+        {
+            var messageTypes = GetSubclassesAndItself(typeof(List<int>[]));
+            var ser = new NetSerializer.Serializer(messageTypes);
+
+            using (var file = File.Create(peptideIndexFile))
+            {
+                ser.Serialize(file, peptideIndex);
+            }
+        }
+
+        private static List<PeptideWithSetModifications> ReadPeptideIndexNetSerializer(string peptideIndexFile, List<Protein> allKnownProteins)
+        {
+            var messageTypes = GetSubclassesAndItself(typeof(List<PeptideWithSetModifications>));
+            var ser = new NetSerializer.Serializer(messageTypes);
+            List<PeptideWithSetModifications> peptideIndex;
+            using (var file = File.OpenRead(peptideIndexFile))
+            {
+                peptideIndex = (List<PeptideWithSetModifications>)ser.Deserialize(file);
+            }
+
+            // populate dictionaries of known proteins for deserialization
+            Dictionary<string, Protein> proteinDictionary = new Dictionary<string, Protein>();
+            foreach (Protein protein in allKnownProteins)
+            {
+                if (!proteinDictionary.ContainsKey(protein.Accession))
+                {
+                    proteinDictionary.Add(protein.Accession, protein);
+                }
+                else if (proteinDictionary[protein.Accession].BaseSequence != protein.BaseSequence)
+                {
+                    throw new MetaMorpheusException($"The protein database contained multiple proteins with accession {protein.Accession} ! This is not allowed for index-based searches (modern, non-specific, crosslink searches)");
+                }
+            }
+
+            // get non-serialized information for the peptides (proteins, mod info)
+            foreach (var peptide in peptideIndex)
+            {
+                peptide.SetNonSerializedPeptideInfo(GlobalVariables.AllModsKnownDictionary, proteinDictionary);
+            }
+
+            return peptideIndex;
+        }
+
+        private static void WriteFragmentIndexNetSerializer(List<int>[] fragmentIndex, string indexFile)
         {
             var messageTypes = GetSubclassesAndItself(typeof(List<int>[]));
             var ser = new NetSerializer.Serializer(messageTypes);
@@ -613,7 +657,7 @@ namespace TaskLayer
             }
         }
 
-        private static List<int>[] ReadIndexNetSerializer(string indexFile)
+        private static List<int>[] ReadFragmentIndexNetSerializer(string indexFile)
         {
             var messageTypes = GetSubclassesAndItself(typeof(List<int>[]));
             var ser = new NetSerializer.Serializer(messageTypes);
@@ -690,7 +734,7 @@ namespace TaskLayer
         public void GenerateIndexes(IndexingEngine indexEngine, List<DbForTask> dbFilenameList, ref List<PeptideWithSetModifications> peptideIndex, ref List<int>[] fragmentIndex, ref List<int>[] precursorIndex, List<Protein> allKnownProteins, string taskId)
         {
             string pathToFolderWithIndices = GetExistingFolderWithIndices(indexEngine, dbFilenameList);
-            if (pathToFolderWithIndices == null)
+            if (pathToFolderWithIndices == null) //if no indexes exist
             {
                 var output_folderForIndices = GenerateOutputFolderForIndices(dbFilenameList);
                 Status("Writing params...", new List<string> { taskId });
@@ -706,65 +750,36 @@ namespace TaskLayer
 
                 Status("Writing peptide index...", new List<string> { taskId });
                 var peptideIndexFile = Path.Combine(output_folderForIndices, PeptideIndexFileName);
-                var messageTypes = GetSubclassesAndItself(typeof(List<PeptideWithSetModifications>));
-                var ser = new NetSerializer.Serializer(messageTypes);
-                using (var file = File.Create(peptideIndexFile))
-                {
-                    ser.Serialize(file, peptideIndex);
-                }
+                WritePeptideIndexNetSerializer(peptideIndex, peptideIndexFile);
                 FinishedWritingFile(peptideIndexFile, new List<string> { taskId });
 
                 Status("Writing fragment index...", new List<string> { taskId });
                 var fragmentIndexFile = Path.Combine(output_folderForIndices, FragmentIndexFileName);
-                WriteIndexNetSerializer(fragmentIndex, fragmentIndexFile);
+                WriteFragmentIndexNetSerializer(fragmentIndex, fragmentIndexFile);
                 FinishedWritingFile(fragmentIndexFile, new List<string> { taskId });
 
-                if (indexEngine.GeneratePrecursorIndex)
+                if (indexEngine.GeneratePrecursorIndex) //If a precursor index is specified (used for speedy semi and non-specific searches)
                 {
                     Status("Writing precursor index...", new List<string> { taskId });
                     var precursorIndexFile = Path.Combine(output_folderForIndices, PrecursorIndexFileName);
-                    WriteIndexNetSerializer(precursorIndex, precursorIndexFile);
+                    WriteFragmentIndexNetSerializer(precursorIndex, precursorIndexFile);
                     FinishedWritingFile(precursorIndexFile, new List<string> { taskId });
                 }
             }
-            else
+            else //if we found indexes with the same params
             {
                 Status("Reading peptide index...", new List<string> { taskId });
-                var messageTypes = GetSubclassesAndItself(typeof(List<PeptideWithSetModifications>));
-                var ser = new NetSerializer.Serializer(messageTypes);
-                using (var file = File.OpenRead(Path.Combine(pathToFolderWithIndices, PeptideIndexFileName)))
-                {
-                    peptideIndex = (List<PeptideWithSetModifications>)ser.Deserialize(file);
-                }
+                peptideIndex = ReadPeptideIndexNetSerializer(Path.Combine(pathToFolderWithIndices, PeptideIndexFileName));
 
-                // populate dictionaries of known proteins for deserialization
-                Dictionary<string, Protein> proteinDictionary = new Dictionary<string, Protein>();
-                foreach (Protein protein in allKnownProteins)
-                {
-                    if (!proteinDictionary.ContainsKey(protein.Accession))
-                    {
-                        proteinDictionary.Add(protein.Accession, protein);
-                    }
-                    else if (proteinDictionary[protein.Accession].BaseSequence != protein.BaseSequence)
-                    {
-                        throw new MetaMorpheusException($"The protein database contained multiple proteins with accession {protein.Accession} ! This is not allowed for index-based searches (modern, non-specific, crosslink searches)");
-                    }
-                }
-
-                // get non-serialized information for the peptides (proteins, mod info)
-                foreach (var peptide in peptideIndex)
-                {
-                    peptide.SetNonSerializedPeptideInfo(GlobalVariables.AllModsKnownDictionary, proteinDictionary);
-                }
 
 
                 Status("Reading fragment index...", new List<string> { taskId });
-                fragmentIndex = ReadIndexNetSerializer(Path.Combine(pathToFolderWithIndices, FragmentIndexFileName));
+                fragmentIndex = ReadFragmentIndexNetSerializer(Path.Combine(pathToFolderWithIndices, FragmentIndexFileName));
 
                 if (indexEngine.GeneratePrecursorIndex)
                 {
                     Status("Reading precursor index...", new List<string> { taskId });
-                    precursorIndex = ReadIndexNetSerializer(Path.Combine(pathToFolderWithIndices, PrecursorIndexFileName));
+                    precursorIndex = ReadFragmentIndexNetSerializer(Path.Combine(pathToFolderWithIndices, PrecursorIndexFileName));
                 }
             }
         }
