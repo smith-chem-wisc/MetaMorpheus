@@ -12,7 +12,20 @@
         
         <!-- used in Quantifications -->
         <BooleanToVisibilityConverter x:Key="bool2VisConverter" />
-
+        
+        <!-- Style GroupBoxes -->
+        <Style TargetType="GroupBox">
+            <Setter Property="BorderThickness" Value="3 1 1 1"/>
+            <Setter Property="Padding" Value="5"/>
+            <Setter Property="BorderBrush" Value="DarkSlateGray"/>
+            <Setter Property="HeaderTemplate">
+                <Setter.Value>
+                    <DataTemplate>
+                        <TextBlock Text="{Binding}" Foreground="Black" FontWeight="Bold"/>
+                    </DataTemplate>
+                </Setter.Value>
+            </Setter>
+        </Style>
     </Window.Resources>
     <Grid>
         <Grid.RowDefinitions>
@@ -29,7 +42,7 @@
                                 <Style.Resources>
                                     <VisualBrush x:Key="CueBannerBrush" AlignmentX="Left" AlignmentY="Center" Stretch="None">
                                         <VisualBrush.Visual>
-                                            <Label Content="SearchTask" Foreground="Gray" />
+                                            <Label Content="SearchTask" Foreground="Gray" Padding="5 0 0 0"/>
                                         </VisualBrush.Visual>
                                     </VisualBrush>
                                 </Style.Resources>
@@ -42,6 +55,12 @@
                                     </Trigger>
                                     <Trigger Property="IsKeyboardFocused" Value="True">
                                         <Setter Property="Background" Value="White" />
+                                        <Setter Property="Padding" Value="5 0 0 0"/>
+                                        <Setter Property="VerticalContentAlignment" Value="Center"/>
+                                    </Trigger>
+                                    <Trigger Property="IsKeyboardFocused" Value="False">
+                                        <Setter Property="Padding" Value="5 0 0 0"/>
+                                        <Setter Property="VerticalContentAlignment" Value="Center"/>
                                     </Trigger>
                                 </Style.Triggers>
                             </Style>
@@ -56,7 +75,7 @@
                     <GroupBox Header="Search Parameters" DockPanel.Dock="Top" >
                         <StackPanel>
                             <!-- Deconvolute precursors -->
-                            <StackPanel Orientation="Horizontal" Margin="5">
+                            <StackPanel Orientation="Horizontal" Margin="5,5,5,5">
                                 <CheckBox x:Name="deconvolutePrecursors" Content="Deconvolute Precursors" IsChecked="True" ToolTipService.ShowDuration="999999" ToolTipService.InitialShowDelay="500">
                                     <CheckBox.ToolTip>
                                         <TextBlock>
@@ -67,7 +86,7 @@
                             </StackPanel>
 
                             <!-- Precursor Mass Tolerance -->
-                            <StackPanel Orientation="Horizontal" Margin="5">
+                            <StackPanel Orientation="Horizontal" Margin="0 5 5 5">
                                 <Label Content="Precursor Mass Tolerance:" Width="150" />
                                 <TextBox x:Name="precursorMassToleranceTextBox" PreviewTextInput="CheckIfNumber" HorizontalAlignment="Left" TextWrapping="Wrap" Width="45" ToolTipService.ShowDuration="999999" ToolTipService.InitialShowDelay="500">
                                     <TextBox.ToolTip>
@@ -82,7 +101,7 @@
                             </StackPanel>
 
                             <!-- Product Mass Tolerance -->
-                            <StackPanel Orientation="Horizontal" Margin="5">
+                            <StackPanel Orientation="Horizontal" Margin="0 5 5 5">
                                 <Label Content="Product Mass Tolerance:" Width="150" />
                                 <TextBox x:Name="productMassToleranceTextBox" PreviewTextInput="CheckIfNumber" HorizontalAlignment="Left" TextWrapping="Wrap" Width="45" ToolTipService.ShowDuration="999999" ToolTipService.InitialShowDelay="500">
                                     <TextBox.ToolTip>
@@ -97,7 +116,7 @@
                             </StackPanel>
 
                             <!-- Max missed cleavages -->
-                            <StackPanel Orientation="Horizontal" Margin="5">
+                            <StackPanel Orientation="Horizontal" Margin="0 5 5 5">
                                 <Label x:Name="maxMissedCleavagesLabel" Content="Max Missed Cleavages:" Width="150" />
                                 <TextBox x:Name="missedCleavagesTextBox"  PreviewTextInput="CheckIfNumber" Width="45" ToolTipService.ShowDuration="999999" ToolTipService.InitialShowDelay="500" TextChanged="NonSpecificUpdate">
                                     <TextBox.ToolTip>
@@ -111,23 +130,23 @@
                             </StackPanel>
 
                             <!-- Protease -->
-                            <StackPanel Orientation="Horizontal" Margin="5">
-                                    <Label x:Name="proteaseLabel" Content="Protease:" Width="150" />
-                                    <ComboBox x:Name="proteaseComboBox" ToolTipService.ShowDuration="999999" ToolTipService.InitialShowDelay="500" SelectionChanged="NonSpecificUpdate">
-                                        <ComboBox.ToolTip>
-                                            <TextBlock>
-                                            Protease used for digestion.
-                                            <LineBreak />
-                                            Proteases can be added/modified by the user at "Data -> Open folder with mods/data files -> ProteolyticDigestion -> proteases.tsv"
-                                            <LineBreak />
-                                            For semi-specific digestions, select "Semi-Specific Search" in "Search Mode".
-                                            </TextBlock>
-                                        </ComboBox.ToolTip>
-                                    </ComboBox>
-                                </StackPanel>
+                            <StackPanel Orientation="Horizontal" Margin="0 5 5 5">
+                                <Label x:Name="proteaseLabel" Content="Protease:" Width="150" />
+                                <ComboBox x:Name="proteaseComboBox" ToolTipService.ShowDuration="999999" ToolTipService.InitialShowDelay="500" SelectionChanged="NonSpecificUpdate">
+                                    <ComboBox.ToolTip>
+                                        <TextBlock>
+                                        Protease used for digestion.
+                                        <LineBreak />
+                                        Proteases can be added/modified by the user at "Data -> Open folder with mods/data files -> ProteolyticDigestion -> proteases.tsv"
+                                        <LineBreak />
+                                        For semi-specific digestions, select "Semi-Specific Search" in "Search Mode".
+                                        </TextBlock>
+                                    </ComboBox.ToolTip>
+                                </ComboBox>
+                            </StackPanel>
 
                             <!-- Initiator methionine behavior -->
-                            <StackPanel Orientation="Horizontal" Margin="5">
+                            <StackPanel Orientation="Horizontal" Margin="0 5 5 5">
                                 <Label x:Name="initiatorMethionineLabel" Content="Initiator Methionine:" Width="150" />
                                 <ComboBox x:Name="initiatorMethionineBehaviorComboBox" ToolTipService.ShowDuration="999999" ToolTipService.InitialShowDelay="500">
                                     <ComboBox.ToolTip>
@@ -139,7 +158,7 @@
                             </StackPanel>
 
                             <!-- Min peptide lengths -->
-                            <StackPanel Orientation="Horizontal" Margin="5">
+                            <StackPanel Orientation="Horizontal" Margin="0 5 5 5">
                                 <Label x:Name="lblMinPeptideLength" Content="Min Peptide Length:" Width="150" />
                                 <TextBox x:Name="MinPeptideLengthTextBox" PreviewTextInput="CheckIfNumber" Width="45" ToolTipService.ShowDuration="999999" ToolTipService.InitialShowDelay="500">
                                     <TextBox.ToolTip>
@@ -151,7 +170,7 @@
                             </StackPanel>
 
                             <!-- Max peptide lengths -->
-                            <StackPanel Orientation="Horizontal" Margin="5">
+                            <StackPanel Orientation="Horizontal" Margin="0 5 5 5">
                                 <Label x:Name="lblMaxPeptideLength" Content="Max Peptide Length:" Width="150" />
                                 <TextBox x:Name="MaxPeptideLengthTextBox" PreviewTextInput="CheckIfNumber" Width="45" ToolTipService.ShowDuration="999999" ToolTipService.InitialShowDelay="500" TextChanged="NonSpecificUpdate">
                                     <TextBox.ToolTip>
@@ -163,7 +182,7 @@
                             </StackPanel>
 
                             <!-- Max mods per peptide -->
-                            <StackPanel Orientation="Horizontal" Margin="5">
+                            <StackPanel Orientation="Horizontal" Margin="0 5 5 5">
                                 <Label x:Name="lbMaxModNum" Content="Max mods per peptide:" Width="150" />
                                 <TextBox x:Name="MaxModNumTextBox" PreviewTextInput="CheckIfNumber" Width="45" ToolTipService.ShowDuration="999999" ToolTipService.InitialShowDelay="500">
                                     <TextBox.ToolTip>
@@ -175,7 +194,7 @@
                             </StackPanel>
 
                             <!-- Dissociation type -->
-                            <StackPanel Orientation="Horizontal" Margin="5">
+                            <StackPanel Orientation="Horizontal" Margin="0 5 5 0">
                                 <Label x:Name="dissociationTypeLabel" Content="Dissociation Type:" Width="150" />
                                 <ComboBox x:Name="dissociationTypeComboBox" ToolTipService.ShowDuration="999999" ToolTipService.InitialShowDelay="500" DropDownClosed="CustomFragmentationHandler">
                                     <ComboBox.ToolTip>
@@ -198,7 +217,7 @@
                                     <ColumnDefinition Width="1*" />
                                     
                                 </Grid.ColumnDefinitions>
-                                <StackPanel>
+                                <StackPanel Margin="5 0 5 0">
                                     <Label Content="Fixed:" />
                                     <TreeView x:Name="fixedModsTreeView" ItemsSource="{Binding}" DataContext="{x:Type local:ModTypeForTreeView}" Height="85">
                                         <TreeView.Resources>
@@ -222,7 +241,7 @@
                                         </TreeView.ItemContainerStyle>
                                     </TreeView>
                                 </StackPanel>
-                                <StackPanel Grid.Column="1">
+                                <StackPanel Grid.Column="1" Margin="5 0 3 0">
                                     <Label Content="Variable:"  ToolTipService.ShowDuration="999999" ToolTipService.InitialShowDelay="500">
                                         <Label.ToolTip>
                                             <TextBlock>
@@ -310,7 +329,7 @@
 
                     <!-- Protein parsimony options -->
                     <GroupBox Header="Protein Parsimony" DockPanel.Dock="Top">
-                        <StackPanel>
+                        <StackPanel Margin="5">
                             <CheckBox x:Name="checkBoxParsimony" Content="Apply protein parsimony and construct protein groups">
                                 <ToolTipService.ToolTip>
                                     <ToolTip Content="Constructs protein groups according to the rule of maximum parsimony (Occam's razor)"  ToolTipService.ShowDuration="999999" ToolTipService.InitialShowDelay="500" />
@@ -331,7 +350,7 @@
 
                     <!-- Quantification options -->
                     <GroupBox Header="Quantification" DockPanel.Dock="Top">
-                        <StackPanel>
+                        <StackPanel Margin="5">
                             <RadioButton x:Name="checkBoxNoQuant" Content="No quantification" GroupName="QuantType">
                                 <ToolTipService.ToolTip>
                                     <ToolTip Content="Saves a little time if PSM counting is good enough" ToolTipService.ShowDuration="999999" ToolTipService.InitialShowDelay="500"/>
@@ -397,7 +416,7 @@
                     <!-- Output Options -->
                     <GroupBox Header="Output Options" DockPanel.Dock="Top" ScrollViewer.CanContentScroll="True">
                         <!--<Expander x:Name="OutputExpander">-->
-                        <StackPanel Orientation="Vertical">
+                        <StackPanel Orientation="Vertical" Margin="5">
                             <CheckBox x:Name="ckbMzId" Content="Write .mzID" />
                             <!--<CheckBox x:Name="ckbPepXML" Content="Write .pep.XML" />-->
                             <CheckBox x:Name="writeDecoyCheckBox" Content="Write decoys" />
@@ -421,10 +440,22 @@
                     <StackPanel>
                         <GroupBox Header="File Loading Parameters" DockPanel.Dock="Top">
                             <Expander x:Name="FileLoadExpander" Collapsed="ApmdExpander_Collapsed">
+                                <Expander.Style>
+                                    <Style TargetType="Expander">
+                                        <Style.Triggers>
+                                            <Trigger Property="IsExpanded" Value="True">
+                                                <Setter Property="Header" Value="Hide" />
+                                            </Trigger>
+                                            <Trigger Property="IsExpanded" Value="False">
+                                                <Setter Property="Header" Value="Some file loading properties..." />
+                                            </Trigger>
+                                        </Style.Triggers>
+                                    </Style>
+                                </Expander.Style>
                                 <StackPanel>
                                     <GroupBox Header="Deisotoping">
                                         <StackPanel>
-                                            <StackPanel Orientation="Horizontal" Margin="5">
+                                            <StackPanel Orientation="Horizontal" Margin="10,5,5,5">
                                                 <CheckBox x:Name="useProvidedPrecursor" Content="Use Provided Precursor" IsChecked="True" ToolTipService.ShowDuration="999999" ToolTipService.InitialShowDelay="500">
                                                     <CheckBox.ToolTip>
                                                         <TextBlock>
@@ -447,14 +478,14 @@
                                     </GroupBox>
                                     <GroupBox Header="Peak Trimming">
                                         <StackPanel>
-                                            <StackPanel Orientation="Horizontal" Margin="5">
+                                            <StackPanel Orientation="Horizontal" Margin="10,5,5,5">
                                                 <CheckBox x:Name="trimMs1" Content="Trim MS1 Peaks" IsChecked="True" ToolTipService.ShowDuration="999999" ToolTipService.InitialShowDelay="500">
                                                     <ToolTipService.ToolTip>
                                                         <ToolTip Content="Remove low-intensity MS1 peaks using the below settings" />
                                                     </ToolTipService.ToolTip>
                                                 </CheckBox>
                                             </StackPanel>
-                                            <StackPanel Orientation="Horizontal" Margin="5">
+                                            <StackPanel Orientation="Horizontal" Margin="10,5,5,5">
                                                 <CheckBox x:Name="trimMsMs" Content="Trim MS2 Peaks" IsChecked="True" ToolTipService.ShowDuration="999999" ToolTipService.InitialShowDelay="500">
                                                     <ToolTipService.ToolTip>
                                                         <ToolTip Content="Remove low-intensity MS2 peaks using the below settings" />
@@ -493,7 +524,7 @@
                                                     </ToolTipService.ToolTip>
                                                 </TextBox>
                                             </StackPanel>
-                                            <StackPanel Orientation="Horizontal" Margin="5">
+                                            <StackPanel Orientation="Horizontal" Margin="10,5,5,5">
                                                 <CheckBox x:Name="normalizePeaksInWindowCheckBox" Content="Normalize peaks in each window" IsChecked="False" ToolTipService.ShowDuration="999999" ToolTipService.InitialShowDelay="500">
                                                     <CheckBox.ToolTip>
                                                         <TextBlock>
@@ -608,22 +639,22 @@
                                         </Grid>
                                     </GroupBox>
                                     <GroupBox Header="In-Silico Digestion Parameters">
-                                        <StackPanel>
-                                            <CheckBox x:Name="checkBoxTarget" Content="Generate target proteins" Margin="1" DockPanel.Dock="Top" ToolTipService.ShowDuration="999999" ToolTipService.InitialShowDelay="500">
+                                        <StackPanel Margin="2">
+                                            <CheckBox x:Name="checkBoxTarget" Content="Generate target proteins" Margin="5 1 1 1" DockPanel.Dock="Top" ToolTipService.ShowDuration="999999" ToolTipService.InitialShowDelay="500">
                                                 <CheckBox.ToolTip>
                                                     <TextBlock>
                                                     Search the forward sequences present in the database. Uncheck this to allow for separate target/decoy searching.
                                                     </TextBlock>
                                                 </CheckBox.ToolTip>
                                             </CheckBox>
-                                            <CheckBox x:Name="checkBoxDecoy" Content="Generate decoy proteins" Margin="1" DockPanel.Dock="Top" ToolTipService.ShowDuration="999999" ToolTipService.InitialShowDelay="500">
+                                            <CheckBox x:Name="checkBoxDecoy" Content="Generate decoy proteins" Margin="5 1 1 1" DockPanel.Dock="Top" ToolTipService.ShowDuration="999999" ToolTipService.InitialShowDelay="500">
                                                 <CheckBox.ToolTip>
                                                     <TextBlock>
                                                     Search decoy sequences by transformation of the database. Uncheck this to allow for separate target/decoy searching.
                                                     </TextBlock>
                                                 </CheckBox.ToolTip>
                                             </CheckBox>
-                                            <RadioButton x:Name="radioButtonReverseDecoy" Content="Generate reversed decoys" GroupName="DecoyType" Margin="1" DockPanel.Dock="Top" IsEnabled="{Binding IsChecked, ElementName=checkBoxDecoy}" ToolTipService.ShowDuration="999999" ToolTipService.InitialShowDelay="500">
+                                            <RadioButton x:Name="radioButtonReverseDecoy" Content="Generate reversed decoys" GroupName="DecoyType" Margin="5 1 1 1" DockPanel.Dock="Top" IsEnabled="{Binding IsChecked, ElementName=checkBoxDecoy}" ToolTipService.ShowDuration="999999" ToolTipService.InitialShowDelay="500">
                                                 <RadioButton.ToolTip>
                                                     <TextBlock>
                                                     Generate decoy sequences by reversing the original sequences.
@@ -632,7 +663,7 @@
                                                     </TextBlock>
                                                 </RadioButton.ToolTip>
                                             </RadioButton>
-                                            <RadioButton x:Name="radioButtonSlideDecoy" Content="Generate slided decoys" GroupName="DecoyType" Margin="1" DockPanel.Dock="Top" IsEnabled="{Binding IsChecked, ElementName=checkBoxDecoy}" ToolTipService.ShowDuration="999999" ToolTipService.InitialShowDelay="500">
+                                            <RadioButton x:Name="radioButtonSlideDecoy" Content="Generate slided decoys" GroupName="DecoyType" Margin="5 1 1 1" DockPanel.Dock="Top" IsEnabled="{Binding IsChecked, ElementName=checkBoxDecoy}" ToolTipService.ShowDuration="999999" ToolTipService.InitialShowDelay="500">
                                                 <RadioButton.ToolTip>
                                                     <TextBlock>
                                                     Generate decoy sequences via a non-random shuffle of the original sequences.
@@ -677,7 +708,7 @@
                                     </GroupBox>
                                     <GroupBox Header="Fragment Ion Search Parameters">
                                         <StackPanel>
-                                            <StackPanel Orientation="Horizontal" Margin="5">
+                                            <StackPanel Orientation="Horizontal" Margin="10,5,5,5">
                                                 <CheckBox x:Name="addCompIonCheckBox" Content="Generate Complementary Ions" ToolTipService.ShowDuration="999999" ToolTipService.InitialShowDelay="500">
                                                     <CheckBox.ToolTip>
                                                         <TextBlock>
@@ -688,7 +719,7 @@
                                                     </CheckBox.ToolTip>
                                                 </CheckBox>
                                             </StackPanel>
-                                            <StackPanel Orientation="Horizontal" Margin="5">
+                                            <StackPanel Orientation="Horizontal" Margin="10,5,5,5">
                                                 <CheckBox x:Name="nTerminalIons" Content="N-Terminal Ions" DockPanel.Dock="Top" ToolTipService.ShowDuration="999999" ToolTipService.InitialShowDelay="500" IsChecked="True">
                                                     <CheckBox.ToolTip>
                                                         <TextBlock>
@@ -731,7 +762,7 @@
                                         </StackPanel>
                                     </GroupBox>
                                     <GroupBox Header="Mass Difference Acceptor Criterion">
-                                        <StackPanel>
+                                        <StackPanel Margin="7">
                                             <RadioButton x:Name="massDiffAcceptExact" Content="Exact" ToolTipService.ShowDuration="999999" ToolTipService.InitialShowDelay="500">
                                                 <RadioButton.ToolTip>
                                                     <TextBlock>
@@ -796,7 +827,7 @@
                                                 <ColumnDefinition Width="1*" />
                                             </Grid.ColumnDefinitions>
                                             <StackPanel Grid.Column="0">
-                                                <StackPanel Orientation="Horizontal" Margin="1">
+                                                <StackPanel Orientation="Horizontal">
                                                     <CheckBox x:Name="allAmbiguity" Content="Report PSM ambiguity" Margin="5" ToolTipService.ShowDuration="999999" ToolTipService.InitialShowDelay="500">
                                                         <CheckBox.ToolTip>
                                                             <TextBlock>
@@ -818,7 +849,7 @@
                                                 <ColumnDefinition Width="1*" />
                                             </Grid.ColumnDefinitions>
                                             <StackPanel>
-                                                <StackPanel Orientation="Horizontal" Margin="5">
+                                                <StackPanel Orientation="Horizontal">
                                                     <Label x:Name="minScoreAllowedLabel" Content="Minimum score allowed:" />
                                                     <TextBox x:Name="minScoreAllowed" PreviewTextInput="CheckIfNumber" Width="45" ToolTipService.ShowDuration="999999" ToolTipService.InitialShowDelay="500">
                                                         <TextBox.ToolTip>
@@ -830,7 +861,7 @@
                                                         </TextBox.ToolTip>
                                                     </TextBox>
                                                 </StackPanel>
-                                                <StackPanel Orientation="Horizontal" Margin="5">
+                                                <StackPanel Orientation="Horizontal">
                                                     <CheckBox x:Name="deltaScoreCheckBox" Content="Use Delta Scores For FDR"  Margin="5" ToolTipService.ShowDuration="999999" ToolTipService.InitialShowDelay="500">
                                                         <CheckBox.ToolTip>
                                                             <TextBlock>
@@ -875,8 +906,8 @@
                                 </Expander.Style>
                                 <StackPanel>
                                     <GroupBox Header="Mass Difference Histogram Analysis">
-                                        <StackPanel>
-                                            <CheckBox x:Name="checkBoxHistogramAnalysis" Content="Construct mass-difference histogram">
+                                        <StackPanel Margin="2">
+                                            <CheckBox Margin="3 0 0 0"  x:Name="checkBoxHistogramAnalysis" Content="Construct mass-difference histogram">
                                                 <ToolTipService.ToolTip>
                                                     <ToolTip Content="For wide precursor tolerances, find which mass differences are most common." ToolTipService.ShowDuration="999999" ToolTipService.InitialShowDelay="500" />
                                                 </ToolTipService.ToolTip>
@@ -888,8 +919,8 @@
                                         </StackPanel>
                                     </GroupBox>
                                     <GroupBox Header="Pruned Database Writing">
-                                        <StackPanel>
-                                            <CheckBox x:Name="writePrunedDBCheckBox" Content="Write Two Pruned Databases (Mod and Mod+Protein pruned)" ToolTipService.ShowDuration="999999" ToolTipService.InitialShowDelay="500">
+                                        <StackPanel Margin="5">
+                                            <CheckBox Margin="0 0 0 5" x:Name="writePrunedDBCheckBox" Content="Write Two Pruned Databases (Mod and Mod+Protein pruned)" ToolTipService.ShowDuration="999999" ToolTipService.InitialShowDelay="500">
                                                 <ToolTipService.ToolTip>
                                                     <TextBlock>
                                                 This is very uncommon and not recommended for the typical user.
