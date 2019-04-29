@@ -122,7 +122,7 @@ namespace EngineLayer
                 }
                 else
                 {
-                    proteinGroups = proteinGroups.Where(p => p.AllPeptides.GroupBy(x => x.FullSequence).Count() > 1).ToList();
+                    proteinGroups = proteinGroups.Where(p => p.AllPeptides.GroupBy(x => x.BaseSequence).Count() > 1).ToList();
                 }
             }
 
