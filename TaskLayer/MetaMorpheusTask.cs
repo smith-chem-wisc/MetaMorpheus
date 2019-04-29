@@ -602,101 +602,6 @@ namespace TaskLayer
             return false;
         }
 
-        private static void WritePeptideIndex(List<PeptideWithSetModifications> peptideIndex, List<Protein> proteins, string peptideIndexFile, int maxThreads)
-        {
-            List<string> allKnownMods = GlobalVariables.AllModsKnown.Select(x => x.IdWithMotif).ToList();
-            List<string> allKnownProteins = proteins.Select(x => x.Accession).ToList();
-
-            List<int>[] indexToWrite = new List<int>[peptideIndex.Count];
-            int[] threads = Enumerable.Range(0, maxThreads).ToArray();
-            int peptidesPerThread = peptideIndex.Count / maxThreads + 1; //+1 more equitably distributes the remainder so the last thread doesn't do heavier lifting
-            Parallel.ForEach(threads, (thread) =>
-            {
-                int i = thread * peptidesPerThread;
-                int endIndex = thread == maxThreads - 1 ?
-                    peptideIndex.Count :
-                    (thread + 1) * peptidesPerThread;
-
-                for (; i < endIndex; i++)
-                {
-                    PeptideWithSetModifications peptide = peptideIndex[i];
-
-                    //convert the peptide into a list of integers
-                    //Making a choice here to remove the peptide description, 
-                    //because integers are 4x faster to serialize than strings 
-                    //and there's no clean conversion for the description
-                    List<int> indexedPeptide = new List<int>
-                    {
-                        allKnownProteins.IndexOf(peptide.Protein.Accession), //0
-                        peptide.OneBasedStartResidueInProtein, //1
-                        peptide.OneBasedEndResidueInProtein, //2
-                        Convert.ToInt16(peptide.CleavageSpecificityForFdrCategory), //3
-                        peptide.MissedCleavages, //4
-                        peptide.NumFixedMods //5
-                    };
-
-                    //add on the modifications
-                    foreach (KeyValuePair<int, Modification> kvp in peptide.AllModsOneIsNterminus)
-                    {
-                        indexedPeptide.Add(kvp.Key);  //6, 8, 10, etc
-                        string idWithMotif = kvp.Value.IdWithMotif;
-                        indexedPeptide.Add(allKnownMods.IndexOf(idWithMotif)); //7, 9, 11, etc
-                    }
-                    indexToWrite[i] = indexedPeptide;
-                }
-            });
-
-            WriteIndexNetSerializer(indexToWrite, peptideIndexFile);
-        }
-
-        private static List<PeptideWithSetModifications> ReadPeptideIndex(string peptideIndexFileName, List<Protein> proteins, DigestionParams digestionParams, int maxThreads)
-        {
-            List<Modification> allKnownMods = GlobalVariables.AllModsKnown.ToList();
-
-            //read in the integer compressed peptides
-            List<int>[] indexedPeptides = ReadIndexNetSerializer(peptideIndexFileName);
-
-            //convert to pwsms
-            PeptideWithSetModifications[] peptidesWithSetModifications = new PeptideWithSetModifications[indexedPeptides.Length];
-
-            int[] threads = Enumerable.Range(0, maxThreads).ToArray();
-            int peptidesPerThread = peptidesWithSetModifications.Length / maxThreads + 1; //+1 more equitably distributes the remainder so the last thread doesn't do heavier lifting
-            Parallel.ForEach(threads, (thread) =>
-            {
-                int i = thread * peptidesPerThread;
-                int endIndex = thread == maxThreads - 1 ?
-                    peptidesWithSetModifications.Length :
-                    (thread + 1) * peptidesPerThread;
-
-                for (; i < endIndex; i++)
-                {
-                    List<int> indexedPeptide = indexedPeptides[i];
-
-                    //convert the list of integers into a peptide
-                    Protein protein = proteins[indexedPeptide[0]];
-                    Dictionary<int, Modification> modificationsForThisPeptide = new Dictionary<int, Modification>();
-                    for (int modIndex = 6; modIndex < indexedPeptide.Count - 1; modIndex += 2)
-                    {
-                        modificationsForThisPeptide.Add(indexedPeptide[modIndex], allKnownMods[indexedPeptide[modIndex + 1]]);
-                    }
-
-                    peptidesWithSetModifications[i] = new PeptideWithSetModifications(
-                        protein,
-                        digestionParams,
-                        indexedPeptide[1],
-                        indexedPeptide[2],
-                        (CleavageSpecificity)indexedPeptide[3],
-                        "",
-                        indexedPeptide[4],
-                        modificationsForThisPeptide,
-                        indexedPeptide[5]
-                        );
-                }
-            });
-
-            return peptidesWithSetModifications.ToList();
-        }
-
         private static void WriteIndexNetSerializer(List<int>[] fragmentIndex, string indexFile)
         {
             var messageTypes = GetSubclassesAndItself(typeof(List<int>[]));
@@ -801,7 +706,12 @@ namespace TaskLayer
 
                 Status("Writing peptide index...", new List<string> { taskId });
                 var peptideIndexFile = Path.Combine(output_folderForIndices, PeptideIndexFileName);
-                WritePeptideIndex(peptideIndex, allKnownProteins, peptideIndexFile, CommonParameters.MaxThreadsToUsePerFile);
+                var messageTypes = GetSubclassesAndItself(typeof(List<PeptideWithSetModifications>));
+                var ser = new NetSerializer.Serializer(messageTypes);
+                using (var file = File.Create(peptideIndexFile))
+                {
+                    ser.Serialize(file, peptideIndex);
+                }
                 FinishedWritingFile(peptideIndexFile, new List<string> { taskId });
 
                 Status("Writing fragment index...", new List<string> { taskId });
@@ -820,7 +730,33 @@ namespace TaskLayer
             else
             {
                 Status("Reading peptide index...", new List<string> { taskId });
-                peptideIndex = ReadPeptideIndex(Path.Combine(pathToFolderWithIndices, PeptideIndexFileName), allKnownProteins, CommonParameters.DigestionParams, CommonParameters.MaxThreadsToUsePerFile);
+                var messageTypes = GetSubclassesAndItself(typeof(List<PeptideWithSetModifications>));
+                var ser = new NetSerializer.Serializer(messageTypes);
+                using (var file = File.OpenRead(Path.Combine(pathToFolderWithIndices, PeptideIndexFileName)))
+                {
+                    peptideIndex = (List<PeptideWithSetModifications>)ser.Deserialize(file);
+                }
+
+                // populate dictionaries of known proteins for deserialization
+                Dictionary<string, Protein> proteinDictionary = new Dictionary<string, Protein>();
+                foreach (Protein protein in allKnownProteins)
+                {
+                    if (!proteinDictionary.ContainsKey(protein.Accession))
+                    {
+                        proteinDictionary.Add(protein.Accession, protein);
+                    }
+                    else if (proteinDictionary[protein.Accession].BaseSequence != protein.BaseSequence)
+                    {
+                        throw new MetaMorpheusException($"The protein database contained multiple proteins with accession {protein.Accession} ! This is not allowed for index-based searches (modern, non-specific, crosslink searches)");
+                    }
+                }
+
+                // get non-serialized information for the peptides (proteins, mod info)
+                foreach (var peptide in peptideIndex)
+                {
+                    peptide.SetNonSerializedPeptideInfo(GlobalVariables.AllModsKnownDictionary, proteinDictionary);
+                }
+
 
                 Status("Reading fragment index...", new List<string> { taskId });
                 fragmentIndex = ReadIndexNetSerializer(Path.Combine(pathToFolderWithIndices, FragmentIndexFileName));
