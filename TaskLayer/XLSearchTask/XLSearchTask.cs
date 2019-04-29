@@ -81,7 +81,7 @@ namespace TaskLayer
                 NewCollection(Path.GetFileName(origDataFile), thisId);
 
                 Status("Loading spectra file...", thisId);
-                MsDataFile myMsDataFile = myFileManager.LoadFile(origDataFile, combinedParams.TopNpeaks, combinedParams.MinRatio, combinedParams.TrimMs1Peaks, combinedParams.TrimMsMsPeaks, combinedParams);
+                MsDataFile myMsDataFile = myFileManager.LoadFile(origDataFile, combinedParams);
 
                 Status("Getting ms2 scans...", thisId);
 
