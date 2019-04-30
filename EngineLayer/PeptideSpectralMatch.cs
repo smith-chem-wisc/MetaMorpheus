@@ -230,130 +230,12 @@ namespace EngineLayer
         }
 
 
-
-        public int GetLengthLongestUniterupedFragmentSeries()
-        {
-            int maxdif = 0;
-            if (BaseSequence != null)
-            {
-                var nSeriesAnnotations = MatchedFragmentIons.Where(f => f.NeutralTheoreticalProduct.TerminusFragment.Terminus == FragmentationTerminus.N).Select(f => f.NeutralTheoreticalProduct.TerminusFragment.FragmentNumber).ToList();
-                var cSeriesAnnotations = MatchedFragmentIons.Where(f => f.NeutralTheoreticalProduct.TerminusFragment.Terminus == FragmentationTerminus.C).Select(f => f.NeutralTheoreticalProduct.TerminusFragment.FragmentNumber).ToList();
-
-                nSeriesAnnotations.Sort();
-                cSeriesAnnotations.Sort();
-
-                List<int> aminoAcidPostionsThatCouldBeObserved = Enumerable.Range(0, BaseSequence.Length + 1).ToList();
-
-                List<int> nMissing = aminoAcidPostionsThatCouldBeObserved.Except(nSeriesAnnotations).ToList();
-                List<int> cMissing = aminoAcidPostionsThatCouldBeObserved.Except(cSeriesAnnotations).ToList();
-
-                
-                for (int i = 0; i < nMissing.Count - 1; i++)
-                {
-                    int diff = nMissing[i + 1] - nMissing[i] - 1;
-                    if (diff > maxdif)
-                    {
-                        maxdif = diff;
-                    }
-                }
-
-                for (int i = 0; i < cMissing.Count - 1; i++)
-                {
-                    int diff = cMissing[i + 1] - cMissing[i] - 1;
-                    if (diff > maxdif)
-                    {
-                        maxdif = diff;
-                    }
-                }
-            }
-            else
-            {
-                //TODO This gives max for any of the ambiguous peptides. might want to return them individually
-                foreach (KeyValuePair<PeptideWithSetModifications,List<MatchedFragmentIon>> item in PeptidesToMatchingFragments)
-                {
-                    if(item.Key.BaseSequence != null)
-                    {
-                        var nSeriesAnnotations = item.Value.Where(f => f.NeutralTheoreticalProduct.TerminusFragment.Terminus == FragmentationTerminus.N).Select(f => f.NeutralTheoreticalProduct.TerminusFragment.FragmentNumber).ToList();
-                        var cSeriesAnnotations = item.Value.Where(f => f.NeutralTheoreticalProduct.TerminusFragment.Terminus == FragmentationTerminus.C).Select(f => f.NeutralTheoreticalProduct.TerminusFragment.FragmentNumber).ToList();
-
-                        nSeriesAnnotations.Sort();
-                        cSeriesAnnotations.Sort();
-
-                        List<int> aminoAcidPostionsThatCouldBeObserved = Enumerable.Range(0, item.Key.BaseSequence.Length + 1).ToList();
-
-                        List<int> nMissing = aminoAcidPostionsThatCouldBeObserved.Except(nSeriesAnnotations).ToList();
-                        List<int> cMissing = aminoAcidPostionsThatCouldBeObserved.Except(cSeriesAnnotations).ToList();
-
-                        for (int i = 0; i < nMissing.Count - 1; i++)
-                        {
-                            int diff = nMissing[i + 1] - nMissing[i] - 1;
-                            if (diff > maxdif)
-                            {
-                                maxdif = diff;
-                            }
-                        }
-
-                        for (int i = 0; i < cMissing.Count - 1; i++)
-                        {
-                            int diff = cMissing[i + 1] - cMissing[i] - 1;
-                            if (diff > maxdif)
-                            {
-                                maxdif = diff;
-                            }
-                        }
-                    }
-                }
-            }
-            
-
-            return maxdif;
-        }
-
         public int GetLengthLongestUniterupedFragmentSeries_collective()
         {
             int maxdif = 0;
             if (BaseSequence != null)
             {
-                List<int> nSeriesAnnotations = new List<int>();
-                List<int> cSeriesAnnotations = new List<int>();
-
-                try
-                {
-                    nSeriesAnnotations = MatchedFragmentIons.Where(f => f.NeutralTheoreticalProduct.TerminusFragment.Terminus == FragmentationTerminus.N).Select(f => f.NeutralTheoreticalProduct.TerminusFragment.FragmentNumber).ToList();
-                }
-                catch
-                {
-
-                }
-                try
-                {
-                    cSeriesAnnotations = MatchedFragmentIons.Where(f => f.NeutralTheoreticalProduct.TerminusFragment.Terminus == FragmentationTerminus.C).Select(f => f.NeutralTheoreticalProduct.TerminusFragment.FragmentNumber).ToList();
-                }
-                catch
-                {
-
-                }
-
-                List<int> jointSeries = nSeriesAnnotations.Concat(cSeriesAnnotations).Distinct().ToList();
-
-                if (jointSeries.Count > 0)
-                {
-                    jointSeries.Sort();
-
-                    List<int> aminoAcidPostionsThatCouldBeObserved = Enumerable.Range(0, BaseSequence.Length + 1).ToList();
-
-                    List<int> missing = aminoAcidPostionsThatCouldBeObserved.Except(jointSeries).ToList();
-
-
-                    for (int i = 0; i < missing.Count - 1; i++)
-                    {
-                        int diff = missing[i + 1] - missing[i] - 1;
-                        if (diff > maxdif)
-                        {
-                            maxdif = diff;
-                        }
-                    }
-                }
+                maxdif = FragmentIonSeriesLength(this.BaseSequence, this.MatchedFragmentIons);
             }
             else
             {
@@ -362,47 +244,7 @@ namespace EngineLayer
                 {
                     if (item.Key.BaseSequence != null)
                     {
-                        List<int> nSeriesAnnotations = new List<int>();
-                        List<int> cSeriesAnnotations = new List<int>();
-
-                        try
-                        {
-                            nSeriesAnnotations = MatchedFragmentIons.Where(f => f.NeutralTheoreticalProduct.TerminusFragment.Terminus == FragmentationTerminus.N).Select(f => f.NeutralTheoreticalProduct.TerminusFragment.FragmentNumber).ToList();
-                        }
-                        catch
-                        {
-
-                        }
-                        try
-                        {
-                            cSeriesAnnotations = MatchedFragmentIons.Where(f => f.NeutralTheoreticalProduct.TerminusFragment.Terminus == FragmentationTerminus.C).Select(f => f.NeutralTheoreticalProduct.TerminusFragment.FragmentNumber).ToList();
-                        }
-                        catch
-                        {
-
-                        }
-
-                        List<int> jointSeries = nSeriesAnnotations.Concat(cSeriesAnnotations).Distinct().ToList();
-
-                        if(jointSeries.Count > 0)
-                        {
-                            jointSeries.Sort();
-
-                            List<int> aminoAcidPostionsThatCouldBeObserved = Enumerable.Range(0, item.Key.BaseSequence.Length + 1).ToList();
-
-                            List<int> missing = aminoAcidPostionsThatCouldBeObserved.Except(jointSeries).ToList();
-
-
-                            for (int i = 0; i < missing.Count - 1; i++)
-                            {
-                                int diff = missing[i + 1] - missing[i] - 1;
-                                if (diff > maxdif)
-                                {
-                                    maxdif = diff;
-                                }
-                            }
-                        }
-                        
+                        maxdif = Math.Max(maxdif, FragmentIonSeriesLength(item.Key.BaseSequence, item.Value));                        
                     }
                 }
             }
@@ -410,6 +252,39 @@ namespace EngineLayer
 
             return maxdif;
         }
+
+        public int FragmentIonSeriesLength(string baseSequence, List<MatchedFragmentIon> mfi )
+        {
+            int maxdif = 0;
+            List<int> jointSeries = new List<int>();
+            jointSeries.AddRange(mfi.Where(f => f.NeutralTheoreticalProduct.TerminusFragment.Terminus == FragmentationTerminus.N).Select(f => f.NeutralTheoreticalProduct.TerminusFragment.FragmentNumber) ?? new List<int>());
+            jointSeries.AddRange(mfi.Where(f => f.NeutralTheoreticalProduct.TerminusFragment.Terminus == FragmentationTerminus.C).Select(f => f.NeutralTheoreticalProduct.TerminusFragment.FragmentNumber) ?? new List<int>());
+            jointSeries = jointSeries.Distinct().ToList();
+
+            //List<int> jointSeries = nSeriesAnnotations.Concat(cSeriesAnnotations).Distinct().ToList();
+
+            if (jointSeries.Count > 0)
+            {
+                jointSeries.Sort();
+
+                List<int> aminoAcidPostionsThatCouldBeObserved = Enumerable.Range(0, baseSequence.Length + 1).ToList();
+
+                List<int> missing = aminoAcidPostionsThatCouldBeObserved.Except(jointSeries).ToList();
+
+
+                for (int i = 0; i < missing.Count - 1; i++)
+                {
+                    int diff = missing[i + 1] - missing[i] - 1;
+                    if (diff > maxdif)
+                    {
+                        maxdif = diff;
+                    }
+                }
+            }
+
+            return maxdif;
+        }
+
 
         /// <summary>
         /// This method changes the base and full sequences to reflect heavy silac labels
