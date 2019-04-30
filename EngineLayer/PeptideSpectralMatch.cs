@@ -230,10 +230,15 @@ namespace EngineLayer
         }
 
 
+        /// <summary>
+        /// This integrates both N- and C-terminal ion series to determine the longest uninterupted stretch of matching fragment ions for the peptides
+        /// </summary>
+        /// <returns></returns>
         public int GetLengthLongestUniterupedFragmentSeries_collective()
         {
             int maxdif = 0;
-            if (BaseSequence != null)
+
+            if (this.BaseSequence != null && this.MatchedFragmentIons !=null)
             {
                 maxdif = FragmentIonSeriesLength(this.BaseSequence, this.MatchedFragmentIons);
             }
@@ -242,7 +247,7 @@ namespace EngineLayer
                 //TODO This gives max for any of the ambiguous peptides. might want to return them individually
                 foreach (KeyValuePair<PeptideWithSetModifications, List<MatchedFragmentIon>> item in PeptidesToMatchingFragments)
                 {
-                    if (item.Key.BaseSequence != null)
+                    if (item.Key.BaseSequence != null && this.MatchedFragmentIons != null)
                     {
                         maxdif = Math.Max(maxdif, FragmentIonSeriesLength(item.Key.BaseSequence, item.Value));                        
                     }
