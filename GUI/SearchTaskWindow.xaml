@@ -26,6 +26,12 @@
                 </Setter.Value>
             </Setter>
         </Style>
+
+        <!-- Style TextBoxes -->
+        <Style TargetType="TextBox">
+            <Setter Property="VerticalContentAlignment" Value="Center"/>
+            <Setter Property="Padding" Value="3 0 0 0"/>
+        </Style>
     </Window.Resources>
     <Grid>
         <Grid.RowDefinitions>
