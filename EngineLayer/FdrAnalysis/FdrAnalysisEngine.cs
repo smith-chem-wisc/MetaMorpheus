@@ -218,10 +218,8 @@ namespace EngineLayer.FdrAnalysis
             //P_value.pvalueAnalysis(psms);
 
             //compute psm level p-values
-            if (false)
-            {
-                PValueAnalysis.mn(AllPsms);
-            }
+            PValueAnalysis.ComputePValuesForAllPSMs(AllPsms, @"C:\Users\Michael Shortreed\Downloads\pValueUnitTestTrainedModel.zip");
+
             
         }
 

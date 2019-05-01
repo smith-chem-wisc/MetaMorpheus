@@ -190,5 +190,43 @@ namespace Test
             Assert.IsTrue(fdrResultsClassic.PsmsWithin1PercentFdr == 3);
             Assert.IsTrue(fdrResultsModern.PsmsWithin1PercentFdr == 3);
         }
+
+        [Test]
+        public static void TestComputePValueFromLoadedModel()
+        {
+            var variableModifications = new List<Modification>();
+            var fixedModifications = new List<Modification>();
+            var origDataFile = Path.Combine(TestContext.CurrentContext.TestDirectory, @"TestData\TaGe_SA_HeLa_04_subset_longestSeq.mzML");
+            MyFileManager myFileManager = new MyFileManager(true);
+            CommonParameters CommonParameters = new CommonParameters(
+                digestionParams: new DigestionParams(
+
+                    )
+                );
+            var myMsDataFile = myFileManager.LoadFile(origDataFile, CommonParameters);
+            var searchModes = new SinglePpmAroundZeroSearchMode(5);
+            List<Protein> proteinList = ProteinDbLoader.LoadProteinFasta(Path.Combine(TestContext.CurrentContext.TestDirectory, @"TestData\hela_snip_for_unitTest.fasta"), true, DecoyType.Reverse, false, ProteinDbLoader.UniprotAccessionRegex, ProteinDbLoader.UniprotFullNameRegex, ProteinDbLoader.UniprotFullNameRegex, ProteinDbLoader.UniprotGeneNameRegex,
+                    ProteinDbLoader.UniprotOrganismRegex, out var dbErrors, -1);
+            var listOfSortedms2Scans = MetaMorpheusTask.GetMs2Scans(myMsDataFile, null, CommonParameters).OrderBy(b => b.PrecursorMass).ToArray();
+            PeptideSpectralMatch[] allPsmsArray = new PeptideSpectralMatch[listOfSortedms2Scans.Length];
+            new ClassicSearchEngine(allPsmsArray, listOfSortedms2Scans, variableModifications, fixedModifications, null, proteinList, searchModes, CommonParameters, new List<string>()).Run();
+            FdrAnalysisResults fdrResultsClassicDelta = (FdrAnalysisResults)(new FdrAnalysisEngine(allPsmsArray.Where(p=>p != null).ToList(), 1, CommonParameters, new List<string>()).Run());
+
+
+            PValueAnalysis.ComputePValuesForAllPSMs(allPsmsArray.ToList(), @"TestData\pValueUnitTestTrainedModel.zip");
+
+            List<string> expectedOutput = File.ReadAllLines(@"TestData\pValueUnitTestResults.txt").ToList();
+
+            List<string> actualOutput = new List<string>();
+
+
+            foreach (var item in allPsmsArray.Where(p=>p != null))
+            {
+                actualOutput.Add(item.pValueInfo);
+            }
+
+            Assert.IsTrue(expectedOutput.SequenceEqual(actualOutput));
+
+        }
     }
 }

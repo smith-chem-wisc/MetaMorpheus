@@ -7,22 +7,48 @@ namespace EngineLayer.FdrAnalysis
 {
     public static class PValueAnalysis
     {
-        public static void mn(List<PeptideSpectralMatch> psms)
+        public static void ComputePValuesForAllPSMs(List<PeptideSpectralMatch> psms, string modelPath)
         {
             MLContext mlContext = new MLContext();
-            IEnumerable<PsmData> psmData = CreatePsmData(psms);
-            IDataView trainingData = mlContext.Data.LoadFromEnumerable(GetTrainingSet(psms));
-            var pipeline = mlContext.Transforms.Concatenate("Features", "Intensity", "ScanPrecursorCharge", "DeltaScore", "Notch", "PsmCount", "ModsCount", "MissedCleavagesCount", "Ambiguity", "LongestFragmentIonSeries")
-                .Append(mlContext.BinaryClassification.Trainers.FastTree(labelColumnName: "Label", featureColumnName: "Features"));
-            var trainedModel = pipeline.Fit(trainingData);
-
-            var predictionEngine = mlContext.Model.CreatePredictionEngine<PsmData, TruePositivePrediction>(trainedModel);
-
-            foreach (PeptideSpectralMatch psm in psms)
+            if(modelPath != "")
             {
-                var prediction = predictionEngine.Predict(CreateOnePsmDataFromPsm(psm));
-                psm.pValueInfo = prediction.Prediction + "|" + prediction.Probability + "|" + prediction.Score;
+                ITransformer trainedModel = mlContext.Model.Load(modelPath, out var modelInputSchema);
+
+                //var pipeline = mlContext.Transforms.Concatenate("Features", "Intensity", "ScanPrecursorCharge", "DeltaScore", "Notch", "PsmCount", "ModsCount", "MissedCleavagesCount", "Ambiguity", "LongestFragmentIonSeries").Append(mlContext.BinaryClassification.Trainers.FastTree(labelColumnName: "Label", featureColumnName: "Features"));
+
+                var predictionEngine = mlContext.Model.CreatePredictionEngine<PsmData, TruePositivePrediction>(trainedModel);
+
+                foreach (PeptideSpectralMatch psm in psms)
+                {
+                    if(psm != null)
+                    {
+                        var prediction = predictionEngine.Predict(CreateOnePsmDataFromPsm(psm));
+                        psm.pValueInfo = prediction.Prediction + "|" + prediction.Probability + "|" + prediction.Score;
+                    }
+                    
+                }
+
             }
+            else
+            {
+                IDataView trainingData = mlContext.Data.LoadFromEnumerable(GetTrainingSet(psms));
+                var pipeline = mlContext.Transforms.Concatenate("Features", "Intensity", "ScanPrecursorCharge", "DeltaScore", "Notch", "PsmCount", "ModsCount", "MissedCleavagesCount", "Ambiguity", "LongestFragmentIonSeries")
+                    .Append(mlContext.BinaryClassification.Trainers.FastTree(labelColumnName: "Label", featureColumnName: "Features"));
+                var trainedModel = pipeline.Fit(trainingData);
+                var predictionEngine = mlContext.Model.CreatePredictionEngine<PsmData, TruePositivePrediction>(trainedModel);
+
+                foreach (PeptideSpectralMatch psm in psms)
+                {
+                    if(psm != null)
+                    {
+                        var prediction = predictionEngine.Predict(CreateOnePsmDataFromPsm(psm));
+                        psm.pValueInfo = prediction.Prediction + "|" + prediction.Probability + "|" + prediction.Score;
+                    }                   
+                }
+
+                //if you want to save a model, you can use this example
+                //mlContext.Model.Save(trainedModel, trainingData.Schema, @"C:\Users\User\Downloads\TrainedModel.zip");
+            }           
         }
 
         public static IEnumerable<PsmData> GetTrainingSet(List<PeptideSpectralMatch> psms)
