@@ -10,7 +10,7 @@ namespace EngineLayer.FdrAnalysis
         public static void ComputePValuesForAllPSMs(List<PeptideSpectralMatch> psms, string modelPath)
         {
             MLContext mlContext = new MLContext();
-            if(modelPath != "")
+            if (modelPath != "")
             {
                 ITransformer trainedModel = mlContext.Model.Load(modelPath, out var modelInputSchema);
 
@@ -20,14 +20,12 @@ namespace EngineLayer.FdrAnalysis
 
                 foreach (PeptideSpectralMatch psm in psms)
                 {
-                    if(psm != null)
+                    if (psm != null)
                     {
                         var prediction = predictionEngine.Predict(CreateOnePsmDataFromPsm(psm));
                         psm.pValueInfo = prediction.Prediction + "|" + prediction.Probability + "|" + prediction.Score;
                     }
-                    
                 }
-
             }
             else
             {
@@ -39,16 +37,16 @@ namespace EngineLayer.FdrAnalysis
 
                 foreach (PeptideSpectralMatch psm in psms)
                 {
-                    if(psm != null)
+                    if (psm != null)
                     {
                         var prediction = predictionEngine.Predict(CreateOnePsmDataFromPsm(psm));
                         psm.pValueInfo = prediction.Prediction + "|" + prediction.Probability + "|" + prediction.Score;
-                    }                   
+                    }
                 }
 
                 //if you want to save a model, you can use this example
                 //mlContext.Model.Save(trainedModel, trainingData.Schema, @"C:\Users\User\Downloads\TrainedModel.zip");
-            }           
+            }
         }
 
         public static IEnumerable<PsmData> GetTrainingSet(List<PeptideSpectralMatch> psms)
