@@ -43,6 +43,9 @@
     <None Update="Data\ptmlist.txt">
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
     </None>
+    <None Update="Data\pValueUnitTestTrainedModel.zip">
+      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+    </None>
     <None Update="Data\unimod.xml">
       <CopyToOutputDirectory>Always</CopyToOutputDirectory>
     </None>

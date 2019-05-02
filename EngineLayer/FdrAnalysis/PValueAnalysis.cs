@@ -1,6 +1,7 @@
 ﻿using Microsoft.ML;
 using System;
 using System.Collections.Generic;
+using System.IO;
 using System.Linq;
 
 namespace EngineLayer.FdrAnalysis
@@ -10,8 +11,9 @@ namespace EngineLayer.FdrAnalysis
         public static void ComputePValuesForAllPSMs(List<PeptideSpectralMatch> psms, string modelPath)
         {
             MLContext mlContext = new MLContext();
-            if (modelPath != "")
+            if (modelPath != null && modelPath != "")
             {
+                modelPath = Path.Combine(GlobalVariables.DataDir, "Data", @"pValueUnitTestTrainedModel.zip");
                 ITransformer trainedModel = mlContext.Model.Load(modelPath, out var modelInputSchema);
 
                 //var pipeline = mlContext.Transforms.Concatenate("Features", "Intensity", "ScanPrecursorCharge", "DeltaScore", "Notch", "PsmCount", "ModsCount", "MissedCleavagesCount", "Ambiguity", "LongestFragmentIonSeries").Append(mlContext.BinaryClassification.Trainers.FastTree(labelColumnName: "Label", featureColumnName: "Features"));

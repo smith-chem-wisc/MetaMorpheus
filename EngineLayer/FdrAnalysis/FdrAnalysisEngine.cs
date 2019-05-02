@@ -2,6 +2,7 @@
 using Proteomics.Fragmentation;
 using System;
 using System.Collections.Generic;
+using System.IO;
 using System.Linq;
 
 namespace EngineLayer.FdrAnalysis
@@ -14,6 +15,7 @@ namespace EngineLayer.FdrAnalysis
         private readonly bool CalculateEValue;
         private readonly double ScoreCutoff;
         private readonly string AnalysisType;
+
 
         public FdrAnalysisEngine(List<PeptideSpectralMatch> psms, int massDiffAcceptorNumNotches, CommonParameters commonParameters, List<string> nestedIds, string analysisType = "PSM") : base(commonParameters, nestedIds)
         {
@@ -218,7 +220,10 @@ namespace EngineLayer.FdrAnalysis
             //P_value.pvalueAnalysis(psms);
 
             //compute psm level p-values
-            PValueAnalysis.ComputePValuesForAllPSMs(AllPsms, @"C:\Users\Michael Shortreed\Downloads\pValueUnitTestTrainedModel.zip");
+
+                PValueAnalysis.ComputePValuesForAllPSMs(AllPsms, "this is neither a model nor a path");
+            
+            
 
             
         }
