@@ -11,6 +11,8 @@ namespace EngineLayer.FdrAnalysis
         private readonly int MassDiffAcceptorNumNotches;
         private readonly bool UseDeltaScore;
         private readonly bool CalculateEValue;
+        private readonly bool CalculatePValue;
+        private readonly bool UsePValueModel;
         private readonly double ScoreCutoff;
         private readonly string AnalysisType;
 
@@ -21,6 +23,8 @@ namespace EngineLayer.FdrAnalysis
             UseDeltaScore = commonParameters.UseDeltaScore;
             ScoreCutoff = commonParameters.ScoreCutoff;
             CalculateEValue = commonParameters.CalculateEValue;
+            CalculatePValue = commonParameters.CalculatePValue;
+            UsePValueModel = commonParameters.UsePValueModel;
             AnalysisType = analysisType;
         }
 
@@ -212,7 +216,11 @@ namespace EngineLayer.FdrAnalysis
             }
 
             //TODO figure when to use a model and when to generate a new one.
-            PValueAnalysis.ComputePValuesForAllPSMs(AllPsms, "this is neither a model nor a path");
+            if (CalculatePValue)
+            {
+                PValueAnalysis.ComputePValuesForAllPSMs(AllPsms, commonParameters.UsePValueModel);
+            }
+            
         }
 
         private static double GetEValue(PeptideSpectralMatch psm, int globalMeanCount, double globalMeanScore, out double maximumLikelihood)

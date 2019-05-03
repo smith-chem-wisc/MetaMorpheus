@@ -601,6 +601,22 @@
                                                     </TextBlock>
                                                 </CheckBox.ToolTip>
                                             </CheckBox>
+                                            <CheckBox x:Name="pValueCheckBox" Content="Calculate pValues"  Margin="5" ToolTipService.ShowDuration="999999" ToolTipService.InitialShowDelay="500">
+                                                <CheckBox.ToolTip>
+                                                    <TextBlock>
+                                            This estimates the pValue for each PSM.
+                                            <LineBreak />
+                                                    </TextBlock>
+                                                </CheckBox.ToolTip>
+                                            </CheckBox>
+                                            <CheckBox x:Name="pValueModelCheckBox" Content="Use stored model to compute pValues"  Margin="5" ToolTipService.ShowDuration="999999" ToolTipService.InitialShowDelay="500">
+                                                <CheckBox.ToolTip>
+                                                    <TextBlock>
+                                            This uses an existing model to compute the pValue for each PSM.
+                                            <LineBreak />
+                                                    </TextBlock>
+                                                </CheckBox.ToolTip>
+                                            </CheckBox>
                                         </StackPanel>
                                     </StackPanel>
                                 </Grid>

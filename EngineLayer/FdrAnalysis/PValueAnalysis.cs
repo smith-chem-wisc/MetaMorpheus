@@ -8,12 +8,12 @@ namespace EngineLayer.FdrAnalysis
 {
     public static class PValueAnalysis
     {
-        public static void ComputePValuesForAllPSMs(List<PeptideSpectralMatch> psms, string modelPath)
+        public static void ComputePValuesForAllPSMs(List<PeptideSpectralMatch> psms, bool useModel)
         {
             MLContext mlContext = new MLContext();
-            if (modelPath != null && modelPath != "")
+            if (psms.Count() < 50000 || useModel)
             {
-                modelPath = Path.Combine(GlobalVariables.DataDir, "Data", @"pValueUnitTestTrainedModel.zip");
+                string modelPath = Path.Combine(GlobalVariables.DataDir, "Data", @"pValueUnitTestTrainedModel.zip");
                 ITransformer trainedModel = mlContext.Model.Load(modelPath, out var modelInputSchema);
 
                 //var pipeline = mlContext.Transforms.Concatenate("Features", "Intensity", "ScanPrecursorCharge", "DeltaScore", "Notch", "PsmCount", "ModsCount", "MissedCleavagesCount", "Ambiguity", "LongestFragmentIonSeries").Append(mlContext.BinaryClassification.Trainers.FastTree(labelColumnName: "Label", featureColumnName: "Features"));
@@ -77,38 +77,92 @@ namespace EngineLayer.FdrAnalysis
             int decoyCount = 0;
             int theIndex = 0;
 
+            Tuple<int, int> decoyTargetMaxima = PeaksInScoreHistogram(psms.Select(s => s.Score));
+
             List<PeptideSpectralMatch> trueTrainingPsmsFromTsv = new List<PeptideSpectralMatch>();
             List<PeptideSpectralMatch> falseTrainingPsmsFromTsv = new List<PeptideSpectralMatch>();
 
-            while (targetCount < numNeeded.Value || decoyCount < numNeeded.Value)
+            if(decoyTargetMaxima.Item1 < decoyTargetMaxima.Item2)
             {
-                if (psms[randomIndexList[theIndex]].Score > 7 && !psms[randomIndexList[theIndex]].IsDecoy && targetCount < numNeeded.Value)
+                while (targetCount < numNeeded.Value || decoyCount < numNeeded.Value)
                 {
-                    trueTrainingPsmsFromTsv.Add(psms[randomIndexList[theIndex]]);
-                    targetCount++;
-                }
-                else if (psms[randomIndexList[theIndex]].Score > 3 && psms[randomIndexList[theIndex]].Score < 6 && decoyCount < numNeeded.Value)
-                {
-                    falseTrainingPsmsFromTsv.Add(psms[randomIndexList[theIndex]]);
-                    decoyCount++;
-                }
-                if (theIndex < (psms.Count - 2))
-                {
-                    theIndex++;
-                }
-                else
-                {
-                    targetCount = numNeeded.Value;
-                    decoyCount = numNeeded.Value;
+                    if (psms[randomIndexList[theIndex]].Score > (decoyTargetMaxima.Item2) && !psms[randomIndexList[theIndex]].IsDecoy && targetCount < numNeeded.Value)
+                    {
+                        trueTrainingPsmsFromTsv.Add(psms[randomIndexList[theIndex]]);
+                        targetCount++;
+                    }
+                    else if (psms[randomIndexList[theIndex]].Score > (decoyTargetMaxima.Item1 - 1) && psms[randomIndexList[theIndex]].Score < (decoyTargetMaxima.Item1 + 1) && decoyCount < numNeeded.Value)
+                    {
+                        falseTrainingPsmsFromTsv.Add(psms[randomIndexList[theIndex]]);
+                        decoyCount++;
+                    }
+                    if (theIndex < (psms.Count - 2))
+                    {
+                        theIndex++;
+                    }
+                    else
+                    {
+                        targetCount = numNeeded.Value;
+                        decoyCount = numNeeded.Value;
+                    }
                 }
             }
-
+           
             trainingSetOfPsms.AddRange(CreatePsmData(trueTrainingPsmsFromTsv, true));
             trainingSetOfPsms.AddRange(CreatePsmData(falseTrainingPsmsFromTsv, false));
 
             return trainingSetOfPsms.AsEnumerable();
         }
 
+        public static Tuple<int,int> PeaksInScoreHistogram(IEnumerable<double> scores)
+        {
+            List<int> scoreHistogram = new List<int>();
+            int maxScore = (int)scores.Max();
+            for (int i = 0; i <= maxScore; i++)
+            {
+                scoreHistogram.Add(scores.Where(s => s >= i && s < (i + 1)).Count());
+            }
+
+            int lowMax = 0;
+            for (int i = 1; i < scoreHistogram.Count; i++)
+            {
+                if (scoreHistogram[i] >= scoreHistogram[i - 1])
+                {
+                    lowMax++;
+                }
+                else
+                {
+                    break;
+                }
+            }
+
+            int hiMax = maxScore;
+            for (int i = maxScore-1; i >= 0; i--)
+            {
+                if (scoreHistogram[i] >= scoreHistogram[i + 1])
+                {
+                    hiMax--;
+                }
+                else
+                {
+                    break;
+                }
+            }
+
+            if(hiMax == lowMax )
+            {
+                if((lowMax + 3) < maxScore)
+                {
+                    hiMax = lowMax + 3;
+                }
+            }
+            else
+            {
+                hiMax = Math.Max(lowMax + 3, (int)(lowMax + (hiMax - lowMax) / 10));
+            }
+
+            return new Tuple<int, int>(lowMax,hiMax);
+        }
         public static IEnumerable<PsmData> CreatePsmData(List<PeptideSpectralMatch> psms, bool? trueOrFalse = null)
         {
             List<PsmData> pd = new List<PsmData>();

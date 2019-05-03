@@ -229,7 +229,6 @@ namespace EngineLayer
             MatchedFragmentIons = PeptidesToMatchingFragments.First().Value;
         }
 
-
         /// <summary>
         /// This integrates both N- and C-terminal ion series to determine the longest uninterupted stretch of matching fragment ions for the peptides
         /// </summary>
@@ -238,7 +237,7 @@ namespace EngineLayer
         {
             int maxdif = 0;
 
-            if (this.BaseSequence != null && this.MatchedFragmentIons !=null)
+            if (this.BaseSequence != null && this.MatchedFragmentIons != null)
             {
                 maxdif = FragmentIonSeriesLength(this.BaseSequence, this.MatchedFragmentIons);
             }
@@ -249,7 +248,7 @@ namespace EngineLayer
                 {
                     if (item.Key.BaseSequence != null && this.MatchedFragmentIons != null)
                     {
-                        maxdif = Math.Max(maxdif, FragmentIonSeriesLength(item.Key.BaseSequence, item.Value));                        
+                        maxdif = Math.Max(maxdif, FragmentIonSeriesLength(item.Key.BaseSequence, item.Value));
                     }
                 }
             }
@@ -257,7 +256,7 @@ namespace EngineLayer
             return maxdif;
         }
 
-        public int FragmentIonSeriesLength(string baseSequence, List<MatchedFragmentIon> mfi )
+        public int FragmentIonSeriesLength(string baseSequence, List<MatchedFragmentIon> mfi)
         {
             int maxdif = 0;
             List<int> jointSeries = new List<int>();
@@ -275,7 +274,6 @@ namespace EngineLayer
 
                 List<int> missing = aminoAcidPostionsThatCouldBeObserved.Except(jointSeries).ToList();
 
-
                 for (int i = 0; i < missing.Count - 1; i++)
                 {
                     int diff = missing[i + 1] - missing[i] - 1;
@@ -288,7 +286,6 @@ namespace EngineLayer
 
             return maxdif;
         }
-
 
         /// <summary>
         /// This method changes the base and full sequences to reflect heavy silac labels

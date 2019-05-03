@@ -50,14 +50,13 @@ namespace Test
             Ms2ScanWithSpecificMass scan3 = new Ms2ScanWithSpecificMass(mzLibScan3, pep3.MonoisotopicMass.ToMz(1), 1, null, new CommonParameters());
             PeptideSpectralMatch psm3 = new PeptideSpectralMatch(pep3, 0, 1, 2, scan3, digestionParams, new List<MatchedFragmentIon>());
 
-            psm3.AddOrReplace(pep4, 1, 1, true, new List<MatchedFragmentIon>(),0);
+            psm3.AddOrReplace(pep4, 1, 1, true, new List<MatchedFragmentIon>(), 0);
 
             var newPsms = new List<PeptideSpectralMatch> { psm1, psm2, psm3 };
             foreach (PeptideSpectralMatch psm in newPsms)
             {
                 psm.ResolveAllAmbiguities();
             }
-
 
             CommonParameters cp = new CommonParameters(calculateEValue: true);
 
@@ -210,11 +209,11 @@ namespace Test
             var listOfSortedms2Scans = MetaMorpheusTask.GetMs2Scans(myMsDataFile, null, CommonParameters).OrderBy(b => b.PrecursorMass).ToArray();
             PeptideSpectralMatch[] allPsmsArray = new PeptideSpectralMatch[listOfSortedms2Scans.Length];
             new ClassicSearchEngine(allPsmsArray, listOfSortedms2Scans, variableModifications, fixedModifications, null, proteinList, searchModes, CommonParameters, new List<string>()).Run();
-            FdrAnalysisResults fdrResultsClassicDelta = (FdrAnalysisResults)(new FdrAnalysisEngine(allPsmsArray.Where(p=>p != null).ToList(), 1, CommonParameters, new List<string>()).Run());
+            FdrAnalysisResults fdrResultsClassicDelta = (FdrAnalysisResults)(new FdrAnalysisEngine(allPsmsArray.Where(p => p != null).ToList(), 1, CommonParameters, new List<string>()).Run());
 
             var nonNullPsms = allPsmsArray.Where(p => p != null).ToList();
 
-            var testTrainingSet = PValueAnalysis.GetTrainingSet(nonNullPsms,2).ToList();
+            var testTrainingSet = PValueAnalysis.GetTrainingSet(nonNullPsms, 2).ToList();
 
             Assert.AreEqual(4, testTrainingSet.Count());
             Assert.AreEqual(2, testTrainingSet.Where(t => t.Label == true).Count());
@@ -223,7 +222,7 @@ namespace Test
             var maxScore = nonNullPsms.Select(s => s.Score).Max();
             var maxScorePsm = nonNullPsms.Where(s => s.Score == maxScore).First();
             var maxPsmData = PValueAnalysis.CreateOnePsmDataFromPsm(maxScorePsm);
-            Assert.That(maxScorePsm.PeptidesToMatchingFragments.Count, Is.EqualTo( maxPsmData.Ambiguity));
+            Assert.That(maxScorePsm.PeptidesToMatchingFragments.Count, Is.EqualTo(maxPsmData.Ambiguity));
             Assert.That(maxScorePsm.DeltaScore, Is.EqualTo(maxPsmData.DeltaScore).Within(0.05));
             Assert.That((float)(maxScorePsm.Score - (int)maxScorePsm.Score), Is.EqualTo(maxPsmData.Intensity).Within(0.05));
             Assert.That(maxScorePsm.GetLengthLongestUniterupedFragmentSeries_collective(), Is.EqualTo(maxPsmData.LongestFragmentIonSeries));
@@ -233,21 +232,18 @@ namespace Test
             Assert.That(maxScorePsm.PsmCount, Is.EqualTo(maxPsmData.PsmCount));
             Assert.That(maxScorePsm.ScanPrecursorCharge, Is.EqualTo(maxPsmData.ScanPrecursorCharge));
 
-
-            PValueAnalysis.ComputePValuesForAllPSMs(nonNullPsms, @"TestData\pValueUnitTestTrainedModel.zip");
+            PValueAnalysis.ComputePValuesForAllPSMs(nonNullPsms, true);
 
             List<string> expectedOutput = File.ReadAllLines(@"TestData\pValueUnitTestResults.txt").ToList();
 
             List<string> actualOutput = new List<string>();
 
-
-            foreach (var item in allPsmsArray.Where(p=>p != null))
+            foreach (var item in allPsmsArray.Where(p => p != null))
             {
                 actualOutput.Add(item.pValueInfo);
             }
 
             Assert.IsTrue(expectedOutput.SequenceEqual(actualOutput));
-
         }
     }
 }
