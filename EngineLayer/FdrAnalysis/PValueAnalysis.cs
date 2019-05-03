@@ -51,11 +51,15 @@ namespace EngineLayer.FdrAnalysis
             }
         }
 
-        public static IEnumerable<PsmData> GetTrainingSet(List<PeptideSpectralMatch> psms)
+        public static IEnumerable<PsmData> GetTrainingSet(List<PeptideSpectralMatch> psms, int? numNeeded = null)
         {
             List<PsmData> trainingSetOfPsms = new List<PsmData>();
 
-            int numNeeded = (int)(psms.Count / 100);
+            if(numNeeded == null)
+            {
+                numNeeded = (int)(psms.Count / 100d);
+            }
+
             List<int> originalIndex = new List<int>();
             originalIndex.AddRange(Enumerable.Range(0, psms.Count - 1));
             List<int> randomIndexList = new List<int>();
@@ -76,14 +80,14 @@ namespace EngineLayer.FdrAnalysis
             List<PeptideSpectralMatch> trueTrainingPsmsFromTsv = new List<PeptideSpectralMatch>();
             List<PeptideSpectralMatch> falseTrainingPsmsFromTsv = new List<PeptideSpectralMatch>();
 
-            while (targetCount < numNeeded || decoyCount < numNeeded)
+            while (targetCount < numNeeded.Value || decoyCount < numNeeded.Value)
             {
-                if (psms[randomIndexList[theIndex]].Score > 7 && !psms[randomIndexList[theIndex]].IsDecoy && targetCount < numNeeded)
+                if (psms[randomIndexList[theIndex]].Score > 7 && !psms[randomIndexList[theIndex]].IsDecoy && targetCount < numNeeded.Value)
                 {
                     trueTrainingPsmsFromTsv.Add(psms[randomIndexList[theIndex]]);
                     targetCount++;
                 }
-                else if (psms[randomIndexList[theIndex]].Score > 3 && psms[randomIndexList[theIndex]].Score < 6 && decoyCount < numNeeded)
+                else if (psms[randomIndexList[theIndex]].Score > 3 && psms[randomIndexList[theIndex]].Score < 6 && decoyCount < numNeeded.Value)
                 {
                     falseTrainingPsmsFromTsv.Add(psms[randomIndexList[theIndex]]);
                     decoyCount++;
@@ -94,8 +98,8 @@ namespace EngineLayer.FdrAnalysis
                 }
                 else
                 {
-                    targetCount = numNeeded;
-                    decoyCount = numNeeded;
+                    targetCount = numNeeded.Value;
+                    decoyCount = numNeeded.Value;
                 }
             }
 

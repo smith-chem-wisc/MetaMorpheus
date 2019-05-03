@@ -1,8 +1,6 @@
 ﻿using MathNet.Numerics;
-using Proteomics.Fragmentation;
 using System;
 using System.Collections.Generic;
-using System.IO;
 using System.Linq;
 
 namespace EngineLayer.FdrAnalysis
@@ -15,7 +13,6 @@ namespace EngineLayer.FdrAnalysis
         private readonly bool CalculateEValue;
         private readonly double ScoreCutoff;
         private readonly string AnalysisType;
-
 
         public FdrAnalysisEngine(List<PeptideSpectralMatch> psms, int massDiffAcceptorNumNotches, CommonParameters commonParameters, List<string> nestedIds, string analysisType = "PSM") : base(commonParameters, nestedIds)
         {
@@ -172,7 +169,7 @@ namespace EngineLayer.FdrAnalysis
                     psm.SetFdrValues(cumulativeTarget, cumulativeDecoy, qValue, cumulativeTargetPerNotch[notch], cumulativeDecoyPerNotch[notch], qValueNotch, maximumLikelihood, eValue, eScore, CalculateEValue, longestUninteruptedSeries);
                 }
 
-                // set q-value thresholds such that a lower scoring PSM can't have 
+                // set q-value thresholds such that a lower scoring PSM can't have
                 // a higher confidence than a higher scoring PSM
                 //Populate min qValues
                 double qValueThreshold = 1.0;
@@ -207,8 +204,6 @@ namespace EngineLayer.FdrAnalysis
                         qValueNotchThreshold[notch] = psm.FdrInfo.QValueNotch;
                     }
                 }
-
-                
             }
 
             if (AnalysisType == "PSM")
@@ -216,18 +211,9 @@ namespace EngineLayer.FdrAnalysis
                 CountPsm();
             }
 
-            //TODO this one would work in a different world
-            //P_value.pvalueAnalysis(psms);
-
-            //compute psm level p-values
-
-                PValueAnalysis.ComputePValuesForAllPSMs(AllPsms, "this is neither a model nor a path");
-            
-            
-
-            
+            //TODO figure when to use a model and when to generate a new one.
+            PValueAnalysis.ComputePValuesForAllPSMs(AllPsms, "this is neither a model nor a path");
         }
-
 
         private static double GetEValue(PeptideSpectralMatch psm, int globalMeanCount, double globalMeanScore, out double maximumLikelihood)
         {

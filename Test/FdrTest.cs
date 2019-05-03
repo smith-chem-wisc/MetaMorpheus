@@ -212,8 +212,29 @@ namespace Test
             new ClassicSearchEngine(allPsmsArray, listOfSortedms2Scans, variableModifications, fixedModifications, null, proteinList, searchModes, CommonParameters, new List<string>()).Run();
             FdrAnalysisResults fdrResultsClassicDelta = (FdrAnalysisResults)(new FdrAnalysisEngine(allPsmsArray.Where(p=>p != null).ToList(), 1, CommonParameters, new List<string>()).Run());
 
+            var nonNullPsms = allPsmsArray.Where(p => p != null).ToList();
 
-            PValueAnalysis.ComputePValuesForAllPSMs(allPsmsArray.ToList(), @"TestData\pValueUnitTestTrainedModel.zip");
+            var testTrainingSet = PValueAnalysis.GetTrainingSet(nonNullPsms,2).ToList();
+
+            Assert.AreEqual(4, testTrainingSet.Count());
+            Assert.AreEqual(2, testTrainingSet.Where(t => t.Label == true).Count());
+            Assert.AreEqual(2, testTrainingSet.Where(t => t.Label == false).Count());
+
+            var maxScore = nonNullPsms.Select(s => s.Score).Max();
+            var maxScorePsm = nonNullPsms.Where(s => s.Score == maxScore).First();
+            var maxPsmData = PValueAnalysis.CreateOnePsmDataFromPsm(maxScorePsm);
+            Assert.That(maxScorePsm.PeptidesToMatchingFragments.Count, Is.EqualTo( maxPsmData.Ambiguity));
+            Assert.That(maxScorePsm.DeltaScore, Is.EqualTo(maxPsmData.DeltaScore).Within(0.05));
+            Assert.That((float)(maxScorePsm.Score - (int)maxScorePsm.Score), Is.EqualTo(maxPsmData.Intensity).Within(0.05));
+            Assert.That(maxScorePsm.GetLengthLongestUniterupedFragmentSeries_collective(), Is.EqualTo(maxPsmData.LongestFragmentIonSeries));
+            Assert.That(maxScorePsm.BestMatchingPeptides.Select(p => p.Peptide).First().MissedCleavages, Is.EqualTo(maxPsmData.MissedCleavagesCount));
+            Assert.That(maxScorePsm.BestMatchingPeptides.Select(p => p.Peptide).First().AllModsOneIsNterminus.Values.Count(), Is.EqualTo(maxPsmData.ModsCount));
+            Assert.That(maxScorePsm.Notch ?? 0, Is.EqualTo(maxPsmData.Notch));
+            Assert.That(maxScorePsm.PsmCount, Is.EqualTo(maxPsmData.PsmCount));
+            Assert.That(maxScorePsm.ScanPrecursorCharge, Is.EqualTo(maxPsmData.ScanPrecursorCharge));
+
+
+            PValueAnalysis.ComputePValuesForAllPSMs(nonNullPsms, @"TestData\pValueUnitTestTrainedModel.zip");
 
             List<string> expectedOutput = File.ReadAllLines(@"TestData\pValueUnitTestResults.txt").ToList();
 
