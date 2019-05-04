@@ -96,7 +96,7 @@ namespace TaskLayer
                 }
             }
             //if no quant, remove any silac labels that may have been added, because they screw up downstream analysis
-            if(!SearchParameters.DoQuantification) //using "if" instead of "else", because DoQuantification can change if it's an mgf
+            if (!SearchParameters.DoQuantification) //using "if" instead of "else", because DoQuantification can change if it's an mgf
             {
                 SearchParameters.SilacLabels = null;
             }
@@ -189,7 +189,7 @@ namespace TaskLayer
 
                         lock (indexLock)
                         {
-                            GenerateIndexes(indexEngine, dbFilenameList, ref peptideIndex, ref fragmentIndex, ref precursorIndex, proteinList, GlobalVariables.AllModsKnown.ToList(), taskId);
+                            GenerateIndexes(indexEngine, dbFilenameList, ref peptideIndex, ref fragmentIndex, ref precursorIndex, proteinList, taskId);
                         }
 
                         Status("Searching files...", taskId);
@@ -225,16 +225,18 @@ namespace TaskLayer
                         {
                             List<PeptideWithSetModifications> peptideIndex = null;
 
-                            List<Protein> proteinListSubset = proteinList.GetRange(currentPartition * proteinList.Count / paramToUse.TotalPartitions, ((currentPartition + 1) * proteinList.Count / paramToUse.TotalPartitions) - (currentPartition * proteinList.Count / paramToUse.TotalPartitions));
+                            List<Protein> proteinListSubset = proteinList.GetRange(currentPartition * proteinList.Count / paramToUse.TotalPartitions,
+                                ((currentPartition + 1) * proteinList.Count / paramToUse.TotalPartitions) - (currentPartition * proteinList.Count / paramToUse.TotalPartitions));
 
-                            List<int>[] fragmentIndex = new List<int>[1];
-                            List<int>[] precursorIndex = new List<int>[1];
+                            List<int>[] fragmentIndex = null;
+                            List<int>[] precursorIndex = null;
 
                             Status("Getting fragment dictionary...", new List<string> { taskId });
-                            var indexEngine = new IndexingEngine(proteinListSubset, variableModifications, fixedModifications, SearchParameters.SilacLabels, currentPartition, SearchParameters.DecoyType, paramToUse, SearchParameters.MaxFragmentSize, true, dbFilenameList.Select(p => new FileInfo(p.FilePath)).ToList(), new List<string> { taskId });
+                            var indexEngine = new IndexingEngine(proteinListSubset, variableModifications, fixedModifications, SearchParameters.SilacLabels, currentPartition,
+                                SearchParameters.DecoyType, paramToUse, SearchParameters.MaxFragmentSize, true, dbFilenameList.Select(p => new FileInfo(p.FilePath)).ToList(), new List<string> { taskId });
                             lock (indexLock)
                             {
-                                GenerateIndexes(indexEngine, dbFilenameList, ref peptideIndex, ref fragmentIndex, ref precursorIndex, proteinList, GlobalVariables.AllModsKnown.ToList(), taskId);
+                                GenerateIndexes(indexEngine, dbFilenameList, ref peptideIndex, ref fragmentIndex, ref precursorIndex, proteinList, taskId);
                             }
 
                             Status("Searching files...", taskId);
