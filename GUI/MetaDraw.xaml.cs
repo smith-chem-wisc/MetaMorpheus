@@ -145,8 +145,8 @@ namespace MetaMorpheusGUI
 
             try
             {
-                List<string> warnings; // TODO: print warnings
-                foreach (var psm in PsmTsvReader.ReadTsv(filename, out warnings))
+                // TODO: print warnings
+                foreach (var psm in PsmTsvReader.ReadTsv(filename, out List<string> warnings))
                 {
                     if (spectraFilePath == null || psm.Filename == fileNameWithExtension || psm.Filename == fileNameWithoutExtension || psm.Filename.Contains(fileNameWithoutExtension))
                     {
@@ -392,7 +392,7 @@ namespace MetaMorpheusGUI
             prgsFeed.IsOpen = true;
             prgsText.Content = "Loading spectra file...";
 
-            var slowProcess = Task<MsDataFile>.Factory.StartNew(() => spectraFileManager.LoadFile(spectraFilePath, null, null, false, false, new CommonParameters()));
+            var slowProcess = Task<MsDataFile>.Factory.StartNew(() => spectraFileManager.LoadFile(spectraFilePath, new CommonParameters(trimMsMsPeaks: false)));
             await slowProcess;
             MsDataFile = slowProcess.Result;
 

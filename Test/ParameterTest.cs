@@ -28,8 +28,8 @@ namespace Test
                 addCompIons: true,
                 totalPartitions: 69,
                 scoreCutoff: 69,
-                topNpeaks: 69,
-                minRatio: 69,
+                numberOfPeaksToKeepPerWindow: 69,
+                minimumAllowedIntensityRatioToBasePeak: 69,
                 trimMs1Peaks: true,
                 trimMsMsPeaks: false,
                 useDeltaScore: true,
@@ -64,8 +64,8 @@ namespace Test
             Assert.AreNotEqual(defaultParameters.AddCompIons, notDefaultParameters.AddCompIons);
             Assert.AreNotEqual(defaultParameters.TotalPartitions, notDefaultParameters.TotalPartitions);
             Assert.AreNotEqual(defaultParameters.ScoreCutoff, notDefaultParameters.ScoreCutoff);
-            Assert.AreNotEqual(defaultParameters.TopNpeaks, notDefaultParameters.TopNpeaks);
-            Assert.AreNotEqual(defaultParameters.MinRatio, notDefaultParameters.MinRatio);
+            Assert.AreNotEqual(defaultParameters.NumberOfPeaksToKeepPerWindow, notDefaultParameters.NumberOfPeaksToKeepPerWindow);
+            Assert.AreNotEqual(defaultParameters.MinimumAllowedIntensityRatioToBasePeak, notDefaultParameters.MinimumAllowedIntensityRatioToBasePeak);
             Assert.AreNotEqual(defaultParameters.TrimMs1Peaks, notDefaultParameters.TrimMs1Peaks);
             Assert.AreNotEqual(defaultParameters.TrimMsMsPeaks, notDefaultParameters.TrimMsMsPeaks);
             Assert.AreNotEqual(defaultParameters.UseDeltaScore, notDefaultParameters.UseDeltaScore);
@@ -91,8 +91,8 @@ namespace Test
             Assert.AreEqual(updatedParameters.AddCompIons, notDefaultParameters.AddCompIons);
             Assert.AreEqual(updatedParameters.TotalPartitions, notDefaultParameters.TotalPartitions);
             Assert.AreEqual(updatedParameters.ScoreCutoff, notDefaultParameters.ScoreCutoff);
-            Assert.AreEqual(updatedParameters.TopNpeaks, notDefaultParameters.TopNpeaks);
-            Assert.AreEqual(updatedParameters.MinRatio, notDefaultParameters.MinRatio);
+            Assert.AreEqual(updatedParameters.NumberOfPeaksToKeepPerWindow, notDefaultParameters.NumberOfPeaksToKeepPerWindow);
+            Assert.AreEqual(updatedParameters.MinimumAllowedIntensityRatioToBasePeak, notDefaultParameters.MinimumAllowedIntensityRatioToBasePeak);
             Assert.AreEqual(updatedParameters.TrimMs1Peaks, notDefaultParameters.TrimMs1Peaks);
             Assert.AreEqual(updatedParameters.TrimMsMsPeaks, notDefaultParameters.TrimMsMsPeaks);
             Assert.AreEqual(updatedParameters.UseDeltaScore, notDefaultParameters.UseDeltaScore);
@@ -135,8 +135,8 @@ namespace Test
             Assert.AreEqual(updatedParameters.AddCompIons, notDefaultParameters.AddCompIons);
             Assert.AreEqual(updatedParameters.TotalPartitions, notDefaultParameters.TotalPartitions);
             Assert.AreEqual(updatedParameters.ScoreCutoff, notDefaultParameters.ScoreCutoff);
-            Assert.AreEqual(updatedParameters.TopNpeaks, notDefaultParameters.TopNpeaks);
-            Assert.AreEqual(updatedParameters.MinRatio, notDefaultParameters.MinRatio);
+            Assert.AreEqual(updatedParameters.NumberOfPeaksToKeepPerWindow, notDefaultParameters.NumberOfPeaksToKeepPerWindow);
+            Assert.AreEqual(updatedParameters.MinimumAllowedIntensityRatioToBasePeak, notDefaultParameters.MinimumAllowedIntensityRatioToBasePeak);
             Assert.AreEqual(updatedParameters.TrimMs1Peaks, notDefaultParameters.TrimMs1Peaks);
             Assert.AreEqual(updatedParameters.TrimMsMsPeaks, notDefaultParameters.TrimMsMsPeaks);
             Assert.AreEqual(updatedParameters.UseDeltaScore, notDefaultParameters.UseDeltaScore);

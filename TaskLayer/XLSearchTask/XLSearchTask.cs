@@ -81,7 +81,7 @@ namespace TaskLayer
                 NewCollection(Path.GetFileName(origDataFile), thisId);
 
                 Status("Loading spectra file...", thisId);
-                MsDataFile myMsDataFile = myFileManager.LoadFile(origDataFile, combinedParams.TopNpeaks, combinedParams.MinRatio, combinedParams.TrimMs1Peaks, combinedParams.TrimMsMsPeaks, combinedParams);
+                MsDataFile myMsDataFile = myFileManager.LoadFile(origDataFile, combinedParams);
 
                 Status("Getting ms2 scans...", thisId);
 
@@ -98,7 +98,7 @@ namespace TaskLayer
                     List<int>[] fragmentIndex = null;
                     List<int>[] precursorIndex = null;
 
-                    GenerateIndexes(indexEngine, dbFilenameList, ref peptideIndex, ref fragmentIndex, ref precursorIndex, proteinList, GlobalVariables.AllModsKnown.ToList(), taskId);
+                    GenerateIndexes(indexEngine, dbFilenameList, ref peptideIndex, ref fragmentIndex, ref precursorIndex, proteinList, taskId);
 
                     Status("Searching files...", taskId);
                     new CrosslinkSearchEngine(newPsms, arrayOfMs2ScansSortedByMass, peptideIndex, fragmentIndex, currentPartition, combinedParams, crosslinker,
@@ -201,9 +201,9 @@ namespace TaskLayer
             MyTaskResults.AddNiceText("Target loop-linked peptides within 1% FDR: " + loopPsms.Count(p => p.FdrInfo.QValue <= 0.01 && !p.IsDecoy));
 
             // write deadends
-            var deadendPsms = allPsms.Where(p => p.CrossType == PsmCrossType.DeadEnd 
-                || p.CrossType == PsmCrossType.DeadEndH2O 
-                || p.CrossType == PsmCrossType.DeadEndNH2 
+            var deadendPsms = allPsms.Where(p => p.CrossType == PsmCrossType.DeadEnd
+                || p.CrossType == PsmCrossType.DeadEndH2O
+                || p.CrossType == PsmCrossType.DeadEndNH2
                 || p.CrossType == PsmCrossType.DeadEndTris).ToList();
             if (deadendPsms.Any())
             {
@@ -290,6 +290,6 @@ namespace TaskLayer
                     qValueThreshold = csm.FdrInfo.QValue;
                 }
             }
-        }       
+        }
     }
 }

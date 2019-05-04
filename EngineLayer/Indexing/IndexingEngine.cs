@@ -61,6 +61,7 @@ namespace EngineLayer.Indexing
             sb.AppendLine("maxModsForEachPeptide: " + commonParameters.DigestionParams.MaxModsForPeptide);
             sb.AppendLine("cleavageSpecificity: " + commonParameters.DigestionParams.SearchModeType);
             sb.AppendLine("specificProtease: " + commonParameters.DigestionParams.SpecificProtease);
+            sb.AppendLine("maximumFragmentSize" + (int)Math.Round(MaxFragmentSize));
 
             sb.Append("Localizeable mods: " + ProteinList.Select(b => b.OneBasedPossibleLocalizedModifications.Count).Sum());
             return sb.ToString();

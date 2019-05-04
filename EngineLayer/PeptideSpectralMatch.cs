@@ -77,9 +77,9 @@ namespace EngineLayer
         {
             get
             {
-                return _BestMatchingPeptides.OrderBy(p => p.Item2.FullSequence)
-                    .ThenBy(p => p.Item2.Protein.Accession)
-                    .ThenBy(p => p.Item2.OneBasedStartResidueInProtein);
+                return _BestMatchingPeptides.OrderBy(p => p.Pwsm.FullSequence)
+                    .ThenBy(p => p.Pwsm.Protein.Accession)
+                    .ThenBy(p => p.Pwsm.OneBasedStartResidueInProtein);
             }
         }
 
@@ -147,7 +147,7 @@ namespace EngineLayer
             Dictionary<string, string> s = new Dictionary<string, string>();
             PsmTsvWriter.AddBasicMatchData(s, psm);
             PsmTsvWriter.AddPeptideSequenceData(s, psm, ModsToWritePruned);
-            PsmTsvWriter.AddMatchedIonsData(s, psm == null ? null : psm.MatchedFragmentIons);
+            PsmTsvWriter.AddMatchedIonsData(s, psm?.MatchedFragmentIons);
             PsmTsvWriter.AddMatchScoreData(s, psm);
             return s;
         }
@@ -257,13 +257,13 @@ namespace EngineLayer
             {
                 if (_BestMatchingPeptides.Any(p => parsimoniousProteins.Contains(p.Pwsm.Protein) && p.Pwsm.Protein.IsDecoy))
                 {
-                    _BestMatchingPeptides.RemoveAll(p => !parsimoniousProteins.Contains(p.Item2.Protein));
+                    _BestMatchingPeptides.RemoveAll(p => !parsimoniousProteins.Contains(p.Pwsm.Protein));
                 }
                 // else do nothing
             }
             else
             {
-                _BestMatchingPeptides.RemoveAll(p => !parsimoniousProteins.Contains(p.Item2.Protein));
+                _BestMatchingPeptides.RemoveAll(p => !parsimoniousProteins.Contains(p.Pwsm.Protein));
             }
 
             ResolveAllAmbiguities();
