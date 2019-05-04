@@ -139,7 +139,6 @@ namespace EngineLayer.CrosslinkSearch
             return YIons;
         }
 
-
         public static Tuple<int, double, double>[] MatchBestGlycan(Ms2ScanWithSpecificMass theScan, Glycan[] glycans, CommonParameters commonParameters)
         {
             Tuple<int, double, double>[] tuples = new Tuple<int, double, double>[glycans.Length]; //Tuple<id, Yion matched score, glycan mass> 
@@ -204,7 +203,7 @@ namespace EngineLayer.CrosslinkSearch
 
             foreach (var position in possibleModPositions)
             {               
-                Dictionary<int, Modification> testMods = new Dictionary<int, Modification> { { position + 1, modification } };
+                Dictionary<int, Modification> testMods = new Dictionary<int, Modification> { { position, modification } };
      
                 foreach (var mod in peptide.AllModsOneIsNterminus)
                 {

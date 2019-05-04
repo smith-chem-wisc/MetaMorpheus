@@ -64,6 +64,7 @@ namespace EngineLayer
 
             NGlycanLocation = Path.Combine(DataDir, @"Data", @"NGlycan.gdb");
             NGlycanLocation_182 = Path.Combine(DataDir, @"Data", @"NGlycan182.gdb");
+            NGlycanLocation_182 = Path.Combine(DataDir, @"Data", @"GlycansAIETD.gdb");
             OGlycanLocation = Path.Combine(DataDir, @"Data", @"OGlycan.gdb");
 
             ExperimentalDesignFileName = "ExperimentalDesign.tsv";

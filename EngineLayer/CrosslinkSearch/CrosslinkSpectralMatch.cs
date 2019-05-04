@@ -30,6 +30,9 @@ namespace EngineLayer.CrosslinkSearch
         //Glyco properties
         public List<Glycan> Glycan { get; set; }
         public List<GlycanBox> glycanBoxes { get; set; }
+        public double PeptideScore { get; set; }
+        public double GlycanScore { get; set; }
+        public double DiagnosticIonScore { get; set; }
 
         public static List<int> GetPossibleCrosslinkerModSites(char[] crosslinkerModSites, PeptideWithSetModifications peptide)
         {
@@ -209,11 +212,14 @@ namespace EngineLayer.CrosslinkSearch
             sb.Append("Matched Ion Mass Diff (Ppm)" + '\t');
             sb.Append("Matched Ion Intensities" + '\t');
             sb.Append("Matched Ion Counts" + '\t');
-
+            sb.Append('\t');
             sb.Append("Decoy/Contaminant/Target" + '\t');
             sb.Append("QValue" + '\t');
 
-            sb.Append("XL Total Score" + '\t');
+            sb.Append("Total Score" + '\t');
+            sb.Append("Peptide Score" + '\t');
+            sb.Append("Glycan Score" + '\t');
+            sb.Append("DiagonosticIon Score" + '\t');
             sb.Append("GlycanIDs" + '\t');
             sb.Append("GlycanDecoy" + '\t');
             sb.Append("GlycanStructure" + '\t');
@@ -356,7 +362,10 @@ namespace EngineLayer.CrosslinkSearch
 
             if (Glycan != null)
             {
-                sb.Append(XLTotalScore + "\t");
+                sb.Append(XLTotalScore + "\t");             
+                sb.Append(PeptideScore + "\t");
+                sb.Append(GlycanScore + "\t");
+                sb.Append(DiagnosticIonScore + "\t");
                 sb.Append(string.Join("|", Glycan.Select(p => p.GlyId.ToString()).ToArray())); sb.Append("\t");
                 sb.Append(Glycan.First().Decoy? "D": "T"); sb.Append("\t");
                 sb.Append(Glycan.First().Struc); sb.Append("\t");
@@ -372,7 +381,6 @@ namespace EngineLayer.CrosslinkSearch
                 sb.Append(string.Join("|", glycanBoxes.First().glycans.Select(p => p.Struc.ToString()).ToArray())); sb.Append("\t");
                 sb.Append((double)glycanBoxes.First().Mass / 1E5); sb.Append("\t");
                 sb.Append(glycanBoxes.First().Kind.Select(p => p.ToString()).ToArray()); sb.Append("\t");
-
             }
 
             return sb.ToString();

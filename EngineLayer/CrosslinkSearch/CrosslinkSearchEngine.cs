@@ -58,8 +58,8 @@ namespace EngineLayer.CrosslinkSearch
 
             if (OpenSearchType == OpenSearchType.NGlyco)
             {
-                var NGlycans = Glycan.LoadKindGlycan(GlobalVariables.NGlycanLocation_182);
-
+                //var NGlycans = Glycan.LoadKindGlycan(GlobalVariables.NGlycanLocation_182);
+                var NGlycans = Glycan.LoadGlycan(GlobalVariables.NGlycanLocation_182);
                 //var NGlycans = Glycan.LoadGlycan(GlobalVariables.NGlycanLocation);
                 //groupedGlycans = NGlycans.GroupBy(p => p.Mass).ToDictionary(p => p.Key, p => p.ToList());
                 Glycans = Glycan.BuildTargetDecoyGlycans(NGlycans);
@@ -690,9 +690,12 @@ namespace EngineLayer.CrosslinkSearch
                             }
 
                         }
+
                         var psmCross = new CrosslinkSpectralMatch(theScanBestPeptide[ind].BestPeptide, theScanBestPeptide[ind].BestNotch, bestLocalizedScore, scanIndex, theScan, commonParameters.DigestionParams, bestMatchedIons);
                         psmCross.Glycan = new List<Glycan> { Glycans[iDLow] };
-                        //psmCross.XLTotalScore = xLTotalScore;
+                        psmCross.GlycanScore = CalculatePeptideScore(theScan.TheScan, bestMatchedIons.Where(p=>p.Annotation.Contains('M')).ToList());
+                        psmCross.DiagnosticIonScore = CalculatePeptideScore(theScan.TheScan, bestMatchedIons.Where(p => p.Annotation.Contains('D')).ToList());
+                        psmCross.PeptideScore = psmCross.XLTotalScore - psmCross.GlycanScore - psmCross.DiagnosticIonScore;
                         psmCross.XlRank = new List<int> { ind };
                         psmCross.LinkPositions = new List<int> { bestSite }; //TO DO: ambiguity modification site
                         possibleMatches.Add(psmCross);

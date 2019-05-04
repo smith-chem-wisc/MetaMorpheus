@@ -202,14 +202,14 @@ namespace Test
             Assert.AreEqual(tid, 9);          
         }
       
-        /*
+        
         //This is not exactly a test. The function is used for N-Glycan database generation. The function maybe useful in the future.
-        [Test]
+        //[Test]
         public static void GlyTest_GenerateDataBase()
         {         
             var glycans = Glycan.LoadGlycan(GlobalVariables.NGlycanLocation);
             string aietdpath = "E:\\MassData\\Glycan\\GlycanDatabase\\AIETD\\ComboGlycanDatabase.csv";
-            Dictionary<double, string> aietdGlycans = new Dictionary<double, string>();
+            List<Tuple<double, string, string>> aietdGlycans = new List<Tuple<double, string, string>>();
 
             List<string> aietdGlycanKinds = new List<string>();
             using (StreamReader lines = new StreamReader(aietdpath))
@@ -256,36 +256,42 @@ namespace Test
                 }
                 var mass = Glycan.GetMass(kind) + phosphoMass;
 
-                aietdGlycans.Add(mass, "");
+                //aietdGlycans.Add(mass, "");
 
-                //var struc = glycans.Where(p=>p.Kind[3]==0).Where(p => p.Mass == mass);
-                //if (struc.Count()>0)
-                //{
-                //    aietdGlycans.Add(mass, struc.First().Struc);
-                //}
-                //else
-                //{
-                //    noExists.Add(mass);
-                //}
+                var struc = glycans.Where(p => p.Kind[3] == 0).Where(p => p.Mass == mass);
+                if (struc.Count() > 0)
+                {
+                    aietdGlycans.Add(new Tuple<double, string, string>( mass, struc.First().Struc, Glycan.GetKindString(struc.First().Struc)));
+                }
+                else
+                {
+                    noExists.Add(mass);
+                }
             }
 
-            string aietdpathWritePath = "E:\\MassData\\Glycan\\GlycanDatabase\\AIETD\\GlycansAIETD.tsv";
+            string aietdpathWritePath = "E:\\MassData\\Glycan\\GlycanDatabase\\AIETD\\GlycansAIETD_1.tsv";
             using (StreamWriter output = new StreamWriter(aietdpathWritePath))
             {
                 foreach (var item in aietdGlycans)
                 {
-                    output.WriteLine(item.Key +"\t"+ item.Value);
+                    output.WriteLine(item.Item1 +"\t"+ item.Item2 + "\t" + item.Item3);
                 }
             }
         }
-        */
+        
 
         [Test]
         public static void GlyTest_GetAllIonMassFromKind()
         {
             Glycan glycan = Glycan.Struct2Glycan("(N(F)(N(H(H(N))(H(N)))))", 0);
             var x = Glycan.GetAllIonMassFromKind(glycan.Kind);
-            Assert.AreEqual(x.Count, 28);
+            Assert.AreEqual(x.Count, 29);
+
+
+            var NGlycans = Glycan.LoadKindGlycan(GlobalVariables.NGlycanLocation_182).ToArray();
+
+            Assert.AreEqual(NGlycans.Last().GlyId, 182);
+
         }
 
         private static Dictionary<ProductType, OxyColor> productTypeDrawColors = new Dictionary<ProductType, OxyColor>

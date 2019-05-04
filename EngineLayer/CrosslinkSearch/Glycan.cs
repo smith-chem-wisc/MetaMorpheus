@@ -187,6 +187,7 @@ namespace EngineLayer
             return GetMass(lossKind);
         }
 
+        //TO DO: bad algorithm, too slow.
         public static List<GlycanIon> GetAllIonMassFromKind(byte[] Kind)
         {
             int sum = Kind.Sum(p => p);
@@ -246,49 +247,47 @@ namespace EngineLayer
 
         public static IEnumerable<Glycan> LoadKindGlycan(string filePath)
         {
-            List<string> glycanKinds = new List<string>();
             using (StreamReader lines = new StreamReader(filePath))
             {
+                int id = 1;
                 while (lines.Peek() != -1)
                 {
                     string line = lines.ReadLine();
-                    glycanKinds.Add(line);
-                }
-            }
 
-            foreach (var aGlycanKind in glycanKinds)
-            {
-                byte[] kind = new byte[5] { 0, 0, 0, 0, 0 };
-                var x = aGlycanKind.Split('(', ')');
-                int i = 0;
-                int phosphoMass = 0;  //To think: better way to read HexNAc(2)Hex(6)Phospho(1)
-                while (i < x.Length - 1)
-                {
-                    switch (x[i])
+                    byte[] kind = new byte[5] { 0, 0, 0, 0, 0 };
+                    var x = line.Split('(', ')');
+                    int i = 0;
+                    int phosphoMass = 0;  //To think: better way to read HexNAc(2)Hex(6)Phospho(1)
+                    while (i < x.Length - 1)
                     {
-                        case "Hex":
-                            kind[0] = byte.Parse(x[i + 1]);
-                            break;
-                        case "HexNAc":
-                            kind[1] = byte.Parse(x[i + 1]);
-                            break;
-                        case "NeuAc":
-                            kind[2] = byte.Parse(x[i + 1]);
-                            break;
-                        case "Fuc":
-                            kind[4] = byte.Parse(x[i + 1]);
-                            break;
-                        case "Phospho":  
-                            phosphoMass = 7996633;
-                            break;
-                        default:
-                            break;
+                        switch (x[i])
+                        {
+                            case "Hex":
+                                kind[0] = byte.Parse(x[i + 1]);
+                                break;
+                            case "HexNAc":
+                                kind[1] = byte.Parse(x[i + 1]);
+                                break;
+                            case "NeuAc":
+                                kind[2] = byte.Parse(x[i + 1]);
+                                break;
+                            case "Fuc":
+                                kind[4] = byte.Parse(x[i + 1]);
+                                break;
+                            case "Phospho":
+                                phosphoMass = 7996633;
+                                break;
+                            default:
+                                break;
+                        }
+                        i = i + 2;
                     }
-                    i = i + 2;
+                    var glycanIons = GetAllIonMassFromKind(kind);
+                    var mass = GetMass(kind) + phosphoMass;
+                    var glycan = new Glycan("", mass, kind, glycanIons, true);
+                    glycan.GlyId = id++;
+                    yield return glycan; 
                 }
-                var glycanIons = GetAllIonMassFromKind(kind);
-                var mass = GetMass(kind) + phosphoMass;
-                yield return new Glycan("", mass, kind, glycanIons, true);
             }
         }
 
