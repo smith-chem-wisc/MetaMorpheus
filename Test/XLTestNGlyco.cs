@@ -181,11 +181,12 @@ namespace Test
         }
 
         [Test]
-        public static void GlyTest_BisectingHexNac()
+        public static void GlyTest_BisectHexNAc()
         {
+            //The node here is for check the structure of the glycan
             Node node = Glycan.Struct2Node("(N(N(H(N)(H(N)(N))(H(N(H))))))");
             Glycan glycan = Glycan.Struct2Glycan("(N(N(H(N)(H(N)(N))(H(N(H))))))", 0);
-            Assert.AreEqual(glycan.Kind.ToString(), "");
+            Assert.AreEqual(glycan.Ions.Count, 17);
         }
 
         [Test]
