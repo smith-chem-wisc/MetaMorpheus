@@ -74,30 +74,30 @@ namespace EngineLayer
                     }
                     if (theGlycanStruct[i] == ')')
                     {
-                        curr = curr.father;
+                        curr = curr.Father;
                         level--;
                     }
                     else
                     {
                         level++;
-                        if (curr.lChild == null)
+                        if (curr.LeftChild == null)
                         {
-                            curr.lChild = new Node(theGlycanStruct[i], level);
-                            curr.lChild.father = curr;
-                            curr = curr.lChild;
+                            curr.LeftChild = new Node(theGlycanStruct[i], level);
+                            curr.LeftChild.Father = curr;
+                            curr = curr.LeftChild;
                         }
-                        else if(curr.rChild == null)
+                        else if(curr.RightChild == null)
                         {
-                            curr.rChild = new Node(theGlycanStruct[i], level);
-                            curr.rChild.father = curr;
-                            curr = curr.rChild;
+                            curr.RightChild = new Node(theGlycanStruct[i], level);
+                            curr.RightChild.Father = curr;
+                            curr = curr.RightChild;
                         }
-                        else if(curr.mChild == null)
+                        else if(curr.MiddleChild == null)
                         {
-                            curr.mChild = curr.lChild;
-                            curr.lChild = new Node(theGlycanStruct[i], level);
-                            curr.lChild.father = curr;
-                            curr = curr.lChild;
+                            curr.MiddleChild = curr.LeftChild;
+                            curr.LeftChild = new Node(theGlycanStruct[i], level);
+                            curr.LeftChild.Father = curr;
+                            curr = curr.LeftChild;
                         }
                     }
 
@@ -111,7 +111,7 @@ namespace EngineLayer
             string output = "";
             if (node != null)
             {
-                output += "(" + node.value + Node2Struct(node.lChild) + Node2Struct(node.rChild) + ")";
+                output += "(" + node.Value + Node2Struct(node.MiddleChild) + Node2Struct(node.LeftChild) + Node2Struct(node.RightChild) + ")";
             }
             return output;
         }
@@ -120,46 +120,46 @@ namespace EngineLayer
         {
             List<Node> nodes = new List<Node>();
             var curr = node;
-            if (curr.lChild == null && curr.rChild == null)
+            if (curr.LeftChild == null && curr.RightChild == null)
             {
                 nodes.Add(curr);
             }
             else
             {
-                List<Node> l = GetAllChildrenCombination(curr.lChild);
-                nodes.Add(new Node(curr.value));
-                if (curr.rChild != null)
+                List<Node> l = GetAllChildrenCombination(curr.LeftChild);
+                nodes.Add(new Node(curr.Value));
+                if (curr.RightChild != null)
                 {
-                    List<Node> r = GetAllChildrenCombination(curr.rChild);
-                    if (curr.mChild != null)
+                    List<Node> r = GetAllChildrenCombination(curr.RightChild);
+                    if (curr.MiddleChild != null)
                     {
-                        List<Node> m = GetAllChildrenCombination(curr.mChild);
+                        List<Node> m = GetAllChildrenCombination(curr.MiddleChild);
 
                         foreach (var lNode in l)
                         {
-                            var c = new Node(curr.value);
-                            c.lChild = lNode;
+                            var c = new Node(curr.Value);
+                            c.LeftChild = lNode;
                             nodes.Add(c);
                         }
                         foreach (var rNode in r)
                         {
-                            var c = new Node(curr.value);
-                            c.rChild = rNode;
+                            var c = new Node(curr.Value);
+                            c.RightChild = rNode;
                             nodes.Add(c);
                         }
                         foreach (var mNode in m)
                         {
-                            var c = new Node(curr.value);
-                            c.mChild = mNode;
+                            var c = new Node(curr.Value);
+                            c.MiddleChild = mNode;
                             nodes.Add(c);
                         }
                         foreach (var lNode in l)
                         {
                             foreach (var rNode in r)
                             {
-                                var c = new Node(curr.value);
-                                c.lChild = lNode;
-                                c.rChild = rNode;
+                                var c = new Node(curr.Value);
+                                c.LeftChild = lNode;
+                                c.RightChild = rNode;
                                 nodes.Add(c);
                             }
                         }
@@ -168,9 +168,9 @@ namespace EngineLayer
                         {
                             foreach (var mNode in m)
                             {
-                                var c = new Node(curr.value);
-                                c.rChild = rNode;
-                                c.mChild = mNode;
+                                var c = new Node(curr.Value);
+                                c.RightChild = rNode;
+                                c.MiddleChild = mNode;
                                 nodes.Add(c);
                             }
                         }
@@ -179,9 +179,9 @@ namespace EngineLayer
                         {
                             foreach (var mNode in m)
                             {
-                                var c = new Node(curr.value);
-                                c.lChild = lNode;
-                                c.mChild = mNode;
+                                var c = new Node(curr.Value);
+                                c.LeftChild = lNode;
+                                c.MiddleChild = mNode;
                                 nodes.Add(c);
                             }
                         }
@@ -192,10 +192,10 @@ namespace EngineLayer
                             {
                                 foreach (var mNode in m)
                                 {
-                                    var c = new Node(curr.value);
-                                    c.lChild = lNode;
-                                    c.rChild = rNode;
-                                    c.mChild = mNode;
+                                    var c = new Node(curr.Value);
+                                    c.LeftChild = lNode;
+                                    c.RightChild = rNode;
+                                    c.MiddleChild = mNode;
                                     nodes.Add(c);
                                 }                               
                             }
@@ -205,23 +205,23 @@ namespace EngineLayer
                     {
                         foreach (var lNode in l)
                         {
-                            var c = new Node(curr.value);
-                            c.lChild = lNode;
+                            var c = new Node(curr.Value);
+                            c.LeftChild = lNode;
                             nodes.Add(c);
                         }
                         foreach (var rNode in r)
                         {
-                            var c = new Node(curr.value);
-                            c.rChild = rNode;
+                            var c = new Node(curr.Value);
+                            c.RightChild = rNode;
                             nodes.Add(c);
                         }
                         foreach (var lNode in l)
                         {
                             foreach (var rNode in r)
                             {
-                                var c = new Node(curr.value);
-                                c.lChild = lNode;
-                                c.rChild = rNode;
+                                var c = new Node(curr.Value);
+                                c.LeftChild = lNode;
+                                c.RightChild = rNode;
                                 nodes.Add(c);
                             }
                         }
@@ -231,8 +231,8 @@ namespace EngineLayer
                 {
                     foreach (var lNode in l)
                     {
-                        var c = new Node(curr.value);
-                        c.lChild = lNode;
+                        var c = new Node(curr.Value);
+                        c.LeftChild = lNode;
                         nodes.Add(c);
                     }
                 }
@@ -583,9 +583,9 @@ namespace EngineLayer
 
         private static Node GobackRootNode(Node node)
         {
-            while (node.father != null)
+            while (node.Father != null)
             {
-                node = node.father;
+                node = node.Father;
             }
             return node;
         }
