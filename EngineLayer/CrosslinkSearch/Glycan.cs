@@ -59,7 +59,7 @@ namespace EngineLayer
         public List<GlycanIon> Ions { get; set; }
         public bool Decoy { get; set; }
         
-        private static Node Struct2Node(string theGlycanStruct)
+        public static Node Struct2Node(string theGlycanStruct)
         {
             int level = 0;
             Node curr = new Node(theGlycanStruct[1], level);
@@ -86,11 +86,18 @@ namespace EngineLayer
                             curr.lChild.father = curr;
                             curr = curr.lChild;
                         }
-                        else
+                        else if(curr.rChild == null)
                         {
                             curr.rChild = new Node(theGlycanStruct[i], level);
                             curr.rChild.father = curr;
                             curr = curr.rChild;
+                        }
+                        else if(curr.mChild == null)
+                        {
+                            curr.mChild = curr.lChild;
+                            curr.lChild = new Node(theGlycanStruct[i], level);
+                            curr.lChild.father = curr;
+                            curr = curr.lChild;
                         }
                     }
 
@@ -124,28 +131,101 @@ namespace EngineLayer
                 if (curr.rChild != null)
                 {
                     List<Node> r = GetAllChildrenCombination(curr.rChild);
-                    foreach (var lNode in l)
+                    if (curr.mChild != null)
                     {
-                        var c = new Node(curr.value);
-                        c.lChild = lNode;
-                        nodes.Add(c);
-                    }
-                    foreach (var rNode in r)
-                    {
-                        var c = new Node(curr.value);
-                        c.rChild = rNode;
-                        nodes.Add(c);
-                    }
-                    foreach (var lNode in l)
-                    {
-                        foreach (var rNode in r)
+                        List<Node> m = GetAllChildrenCombination(curr.mChild);
+
+                        foreach (var lNode in l)
                         {
                             var c = new Node(curr.value);
                             c.lChild = lNode;
+                            nodes.Add(c);
+                        }
+                        foreach (var rNode in r)
+                        {
+                            var c = new Node(curr.value);
                             c.rChild = rNode;
                             nodes.Add(c);
                         }
+                        foreach (var mNode in m)
+                        {
+                            var c = new Node(curr.value);
+                            c.mChild = mNode;
+                            nodes.Add(c);
+                        }
+                        foreach (var lNode in l)
+                        {
+                            foreach (var rNode in r)
+                            {
+                                var c = new Node(curr.value);
+                                c.lChild = lNode;
+                                c.rChild = rNode;
+                                nodes.Add(c);
+                            }
+                        }
+
+                        foreach (var rNode in r)
+                        {
+                            foreach (var mNode in m)
+                            {
+                                var c = new Node(curr.value);
+                                c.rChild = rNode;
+                                c.mChild = mNode;
+                                nodes.Add(c);
+                            }
+                        }
+
+                        foreach (var lNode in l)
+                        {
+                            foreach (var mNode in m)
+                            {
+                                var c = new Node(curr.value);
+                                c.lChild = lNode;
+                                c.mChild = mNode;
+                                nodes.Add(c);
+                            }
+                        }
+
+                        foreach (var lNode in l)
+                        {
+                            foreach (var rNode in r)
+                            {
+                                foreach (var mNode in m)
+                                {
+                                    var c = new Node(curr.value);
+                                    c.lChild = lNode;
+                                    c.rChild = rNode;
+                                    c.mChild = mNode;
+                                    nodes.Add(c);
+                                }                               
+                            }
+                        }
                     }
+                    else
+                    {
+                        foreach (var lNode in l)
+                        {
+                            var c = new Node(curr.value);
+                            c.lChild = lNode;
+                            nodes.Add(c);
+                        }
+                        foreach (var rNode in r)
+                        {
+                            var c = new Node(curr.value);
+                            c.rChild = rNode;
+                            nodes.Add(c);
+                        }
+                        foreach (var lNode in l)
+                        {
+                            foreach (var rNode in r)
+                            {
+                                var c = new Node(curr.value);
+                                c.lChild = lNode;
+                                c.rChild = rNode;
+                                nodes.Add(c);
+                            }
+                        }
+                    }                 
                 }
                 else
                 {
@@ -187,7 +267,7 @@ namespace EngineLayer
             return GetMass(lossKind);
         }
 
-        //TO DO: bad algorithm, too slow.
+        //TO DO: bad algorithm, too slow. 
         public static List<GlycanIon> GetAllIonMassFromKind(byte[] Kind)
         {
             int sum = Kind.Sum(p => p);

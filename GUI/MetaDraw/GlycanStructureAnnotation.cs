@@ -36,10 +36,14 @@ namespace MetaMorpheusGUI
                 {
                     que.Enqueue(temp.LeftChild);
                 }
+                if (temp.MiddleChild != null)
+                {
+                    que.Enqueue(temp.MiddleChild);
+                }
                 if (temp.RightChild != null)
                 {
                     que.Enqueue(temp.RightChild);
-                }
+                }             
             }
 
             //Change rootNode location if 'F' at level 1.
@@ -63,10 +67,15 @@ namespace MetaMorpheusGUI
                 {
                     que.Enqueue(temp.LeftChild);
                 }
+                if (temp.MiddleChild != null)
+                {
+                    que.Enqueue(temp.MiddleChild);
+                }
                 if (temp.RightChild != null)
                 {
                     que.Enqueue(temp.RightChild);
                 }
+                
             }
 
             DrawRootLine(canvas, rootNode);
@@ -95,14 +104,26 @@ namespace MetaMorpheusGUI
                 {
                     point = new Point(glycanNode.Father.point.X, glycanNode.Father.point.Y - scale);
                 }
-                if (glycanNode == glycanNode.Father.LeftChild && glycanNode.Father.RightChild != null)
+                if (glycanNode == glycanNode.Father.LeftChild && glycanNode.Father.RightChild != null && glycanNode.Father.MiddleChild == null)
                 {
                     point = new Point(glycanNode.Father.point.X - scale/2, glycanNode.Father.point.Y - scale);
                 }
-                if (glycanNode == glycanNode.Father.RightChild)
+                if (glycanNode == glycanNode.Father.LeftChild && glycanNode.Father.RightChild != null && glycanNode.Father.MiddleChild != null)
+                {
+                    point = new Point(glycanNode.Father.point.X - scale, glycanNode.Father.point.Y - scale);
+                }
+                if (glycanNode == glycanNode.Father.RightChild && glycanNode.Father.MiddleChild == null)
                 {
                     point = new Point(glycanNode.Father.point.X + scale/2, glycanNode.Father.point.Y - scale);
-                }              
+                }
+                if (glycanNode == glycanNode.Father.RightChild && glycanNode.Father.MiddleChild != null)
+                {
+                    point = new Point(glycanNode.Father.point.X + scale, glycanNode.Father.point.Y - scale);
+                }
+                if (glycanNode == glycanNode.Father.MiddleChild)
+                {
+                    point = new Point(glycanNode.Father.point.X, glycanNode.Father.point.Y - scale);
+                }
             }
 
             return point;
@@ -147,12 +168,22 @@ namespace MetaMorpheusGUI
                     {
                         ChangeAllNodeLocation(glycanNode.Father.RightChild, changedX, 0);
                     }
+                    if (glycanNode.Father.MiddleChild != null)
+                    {
+                        ChangeAllNodeLocation(glycanNode.Father.MiddleChild, changedX, 0);
+                    }
                 }
 
 
                 if (glycanNode == glycanNode.Father.RightChild)
                 {
                     changedX = changedX / 2;
+                    ChangeFatherAndRightChildrenLocation(glycanNode.Father, changedX);
+                }
+
+
+                if (glycanNode == glycanNode.Father.MiddleChild)
+                {
                     ChangeFatherAndRightChildrenLocation(glycanNode.Father, changedX);
                 }
             }
@@ -168,6 +199,7 @@ namespace MetaMorpheusGUI
                 }              
                 ChangeAllNodeLocation(glycanNode.LeftChild, changedX, changedY);
                 ChangeAllNodeLocation(glycanNode.RightChild, changedX, changedY);
+                ChangeAllNodeLocation(glycanNode.MiddleChild, changedX, changedY);
             }
 
         }
@@ -190,13 +222,25 @@ namespace MetaMorpheusGUI
                 {
                     point = new Point(glycanNode.point.X, glycanNode.point.Y + scale);
                 }
-                if (glycanNode == glycanNode.Father.LeftChild && glycanNode.Father.RightChild != null)
+                if (glycanNode == glycanNode.Father.LeftChild && glycanNode.Father.RightChild != null && glycanNode.Father.MiddleChild ==null)
                 {
                     point = new Point(glycanNode.point.X + scale/2, glycanNode.point.Y + scale);
                 }
-                if (glycanNode == glycanNode.Father.RightChild)
+                if (glycanNode == glycanNode.Father.LeftChild && glycanNode.Father.RightChild != null && glycanNode.Father.MiddleChild != null)
+                {
+                    point = new Point(glycanNode.point.X + scale, glycanNode.point.Y + scale);
+                }
+                if (glycanNode == glycanNode.Father.RightChild && glycanNode.Father.MiddleChild == null)
                 {
                     point = new Point(glycanNode.point.X - scale/2, glycanNode.point.Y + scale);
+                }
+                if (glycanNode == glycanNode.Father.RightChild && glycanNode.Father.MiddleChild != null)
+                {
+                    point = new Point(glycanNode.point.X - scale, glycanNode.point.Y + scale);
+                }
+                if (glycanNode == glycanNode.Father.MiddleChild)
+                {
+                    point = new Point(glycanNode.point.X, glycanNode.point.Y + scale);
                 }
             }
             return point;
@@ -345,6 +389,7 @@ namespace MetaMorpheusGUI
             Value = v;
             LeftChild = null;
             RightChild = null;
+            MiddleChild = null;
             Father = null;
             level = l;
             canChange = false;
@@ -354,6 +399,7 @@ namespace MetaMorpheusGUI
         public GlycanNode Father { get; private set; }
         public GlycanNode LeftChild { get; private set; }
         public GlycanNode RightChild { get; private set; }
+        public GlycanNode MiddleChild { get; private set; }
         public int Level { get { return level.Value; } }
 
         public Point point { get; set; }
@@ -383,11 +429,18 @@ namespace MetaMorpheusGUI
                         curr.LeftChild.Father = curr;
                         curr = curr.LeftChild;
                     }
-                    else
+                    else if (curr.RightChild == null)
                     {
                         curr.RightChild = new GlycanNode(theGlycanStruct[i], level);
                         curr.RightChild.Father = curr;
                         curr = curr.RightChild;
+                    }
+                    else if (curr.MiddleChild == null)
+                    {
+                        curr.MiddleChild = curr.LeftChild;
+                        curr.LeftChild = new GlycanNode(theGlycanStruct[i], level);
+                        curr.LeftChild.Father = curr;
+                        curr = curr.LeftChild;
                     }
                 }
             }
@@ -395,5 +448,6 @@ namespace MetaMorpheusGUI
         }
 
     }
+
 }
 

@@ -181,6 +181,14 @@ namespace Test
         }
 
         [Test]
+        public static void GlyTest_BisectingHexNac()
+        {
+            Node node = Glycan.Struct2Node("(N(N(H(N)(H(N)(N))(H(N(H))))))");
+            Glycan glycan = Glycan.Struct2Glycan("(N(N(H(N)(H(N)(N))(H(N(H))))))", 0);
+            Assert.AreEqual(glycan.Kind.ToString(), "");
+        }
+
+        [Test]
         public static void GlyTest_BinarySearch()
         {
             //This is just to test how binary search works.
