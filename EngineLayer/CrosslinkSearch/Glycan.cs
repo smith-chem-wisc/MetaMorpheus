@@ -10,8 +10,8 @@ namespace EngineLayer
     {
         private static readonly int hydrogenAtomMonoisotopicMass =  Convert.ToInt32(PeriodicTable.GetElement("H").PrincipalIsotope.AtomicMass * 1E5);
 
-        //H: C6O5H10, N: C8O5NH13, A: C11O8NH17, G: C11H17NO9, F: C6O4H10
-        private static Dictionary<char, int> CharMassDic = new Dictionary<char, int>() { { 'H', 16205282 }, { 'N', 20307937 }, { 'A', 29109542 }, { 'G', 30709033 }, { 'F', 14605791 } };
+        //H: C6O5H10, N: C8O5NH13, A: C11O8NH17, G: C11H17NO9, F: C6O4H10, X: C5H10O5, K: C9H16O9, P: PO3H, S: SO3H, R: C6H10O7
+        private static Dictionary<char, int> CharMassDic = new Dictionary<char, int>() { { 'H', 16205282 }, { 'N', 20307937 }, { 'A', 29109542 }, { 'G', 30709033 }, { 'F', 14605791 }, {'X', 15005282 }, {'K', 26807943 }, {'P', 7996633 }, {'S', 8096464 }, {'R', 19404265 } };
 
         public static HashSet<int> oxoniumIons = new HashSet<int>()
         {13805550, 16806607, 18607663, 20408720, 36614002 };
@@ -251,7 +251,7 @@ namespace EngineLayer
             return y;
         }
 
-        private static byte[] GetKind(string structure)
+        public static byte[] GetKind(string structure)
         {
             byte[] kind = new byte[] { Convert.ToByte(structure.Count(p => p == 'H')), Convert.ToByte(structure.Count(p => p == 'N')), Convert.ToByte(structure.Count(p => p == 'A')) , Convert.ToByte(structure.Count(p => p == 'G')) , Convert.ToByte(structure.Count(p => p == 'F')) };
             return kind;
@@ -267,66 +267,62 @@ namespace EngineLayer
             return GetMass(lossKind);
         }
 
-        //TO DO: bad algorithm, too slow. 
-        public static List<GlycanIon> GetAllIonMassFromKind(byte[] Kind)
+        //Find glycans from structured glycan database
+        public static List<Glycan> GetAllIonMassFromKind(byte[] kind, Dictionary<string, List<Glycan>> groupedGlycans)
         {
-            int sum = Kind.Sum(p => p);
+            var kindKey = GetKindString(kind);
+            List<Glycan> glycans = new List<Glycan>();
 
-            int[] ids = Enumerable.Range(1, sum).ToArray();
+            groupedGlycans.TryGetValue(kindKey, out glycans);
 
-            int[] pos = new int[5];
-            for (int i = 0; i < Kind.Length; i++)
+            if (glycans==null)
             {
-                pos[i] = Kind.Take(i + 1).Sum(p=>p);
-            }
-
-            List<int[]> kcombs = new List<int[]>();
-
-            for (int i = 1; i < sum; i++)
-            {
-                kcombs.AddRange(GetKCombs(ids, i).Select(p=>p.ToArray()).ToList());
-            }
-
-
-            HashSet<int> core = new HashSet<int> { 83038194, 20307937, 40615875, 56821157, 73026439, 89231722, 34913728, 55221665 };
-            List<byte[]> allIonKinds = new List<byte[]>();
-            HashSet<int> ionMasses = new HashSet<int>();
-            List<GlycanIon> glycanIons = new List<GlycanIon>();
-
-            foreach (var k in kcombs)
-            {
-                byte[] ionKind = new byte[5];
-                foreach (var x in k)
+                //if not in the structured glycan database, find a smaller one.
+                bool notFound = true;
+                while (notFound)
                 {
-                    int i = 0;
-                    while (x > pos[i])
+                    var childKinds = BuildChildKindKey(kind);
+                    foreach (var child in childKinds)
                     {
-                        i++;
+                        var key = GetKindString(child);
+                        if (groupedGlycans.TryGetValue(key, out glycans))
+                        {
+                            notFound = false;
+                            break;
+                        }
                     }
 
-                    ionKind[i]++;
+                    if (notFound == true)
+                    {
+                        glycans = GetAllIonMassFromKind(childKinds[0], groupedGlycans);
+                        notFound = false;
+                    }
                 }
-                var ionMass = GetMass(ionKind);
-                if (!ionMasses.Contains(ionMass) && !(ionMass <= 55221665 && !core.Contains(ionMass)))
-                {
-                    ionMasses.Add(ionMass);
-                    var lossIonMass = GetIonLossMass(Kind, ionKind);
-                    GlycanIon glycanIon = new GlycanIon(0, ionMass, ionKind, lossIonMass);
-                    glycanIons.Add(glycanIon);
-
-                    allIonKinds.Add(ionKind);
-                }     
             }
 
-            glycanIons.Add(new GlycanIon(0, 8303819, new byte[] { 0, 0, 0, 0, 0 }, GetMass(Kind) - 8303819)); //Cross-ring mass
-            glycanIons = glycanIons.OrderBy(p => p.IonMass).ToList();
-
-
-            return glycanIons;
+            return glycans;
         }
 
-        public static IEnumerable<Glycan> LoadKindGlycan(string filePath)
+        private static List<byte[]> BuildChildKindKey(byte[] kind)
         {
+            List<byte[]> childKinds = new List<byte[]>();
+            for (int i = kind.Length -1; i >=0; i--)
+            {             
+                if (kind[i] >= 1)
+                {
+                    var childKind = new byte[kind.Length];
+                    Array.Copy(kind, childKind, kind.Length);
+                    childKind[i]--;
+                    childKinds.Add(childKind);
+                }           
+            }
+            return childKinds;
+        }
+
+        public static IEnumerable<Glycan> LoadKindGlycan(string filePath, IEnumerable<Glycan> NGlycans)
+        {
+            var groupedGlycans = NGlycans.GroupBy(p => GetKindString(p.Kind)).ToDictionary(p => p.Key, p => p.ToList());
+
             using (StreamReader lines = new StreamReader(filePath))
             {
                 int id = 1;
@@ -334,10 +330,9 @@ namespace EngineLayer
                 {
                     string line = lines.ReadLine();
 
-                    byte[] kind = new byte[5] { 0, 0, 0, 0, 0 };
+                    byte[] kind = new byte[10] { 0, 0, 0, 0, 0, 0, 0, 0, 0, 0  };
                     var x = line.Split('(', ')');
                     int i = 0;
-                    int phosphoMass = 0;  //To think: better way to read HexNAc(2)Hex(6)Phospho(1)
                     while (i < x.Length - 1)
                     {
                         switch (x[i])
@@ -348,24 +343,41 @@ namespace EngineLayer
                             case "HexNAc":
                                 kind[1] = byte.Parse(x[i + 1]);
                                 break;
-                            case "NeuAc":
+                            case "NeuAc":                            
                                 kind[2] = byte.Parse(x[i + 1]);
+                                break;
+                            case "NeuGc":
+                                kind[3] = byte.Parse(x[i + 1]);
                                 break;
                             case "Fuc":
                                 kind[4] = byte.Parse(x[i + 1]);
                                 break;
-                            case "Phospho":
-                                phosphoMass = 7996633;
+                            case "Xyl":
+                                kind[5] = byte.Parse(x[i + 1]);
+                                break;
+                            case "KND":
+                                kind[6] = byte.Parse(x[i + 1]);
+                                break;
+                            case "Phosphate":
+                                kind[7] = byte.Parse(x[i + 1]);
+                                break;
+                            case "Sulfate":
+                                kind[8] = byte.Parse(x[i + 1]);
+                                break;
+                            case "HexA":
+                                kind[9] = byte.Parse(x[i + 1]);
                                 break;
                             default:
                                 break;
                         }
                         i = i + 2;
-                    }
-                    var glycanIons = GetAllIonMassFromKind(kind);
-                    var mass = GetMass(kind) + phosphoMass;
-                    var glycan = new Glycan("", mass, kind, glycanIons, true);
-                    glycan.GlyId = id++;
+                    }                  
+                    var mass = GetMass(kind);
+                    
+                    var glycans = GetAllIonMassFromKind(kind, groupedGlycans);
+
+                    var glycan = new Glycan(glycans.First().Struc, mass, kind, glycans.First().Ions, true);
+                    glycan.GlyId = id++; 
                     yield return glycan; 
                 }
             }
@@ -397,7 +409,12 @@ namespace EngineLayer
                 CharMassDic['N'] * kind[1] +
                 CharMassDic['A'] * kind[2] +
                 CharMassDic['G'] * kind[3] +
-                CharMassDic['F'] * kind[4];
+                CharMassDic['F'] * kind[4] +
+                CharMassDic['X'] * kind[5] +
+                CharMassDic['K'] * kind[6] +
+                CharMassDic['P'] * kind[7] +
+                CharMassDic['S'] * kind[8] +
+                CharMassDic['R'] * kind[9];
             return y;
         }
 
@@ -503,16 +520,12 @@ namespace EngineLayer
 
         public static string GetKindString(byte[] Kind)
         {
-            string H = (Kind[0] > 0) ? "H" + Kind[0].ToString() : "";
-            string N = (Kind[1] > 0) ? "N" + Kind[1].ToString() : "";
-            string A = (Kind[2] > 0) ? "A" + Kind[2].ToString() : "";
-            string G = (Kind[3] > 0) ? "G" + Kind[3].ToString() : "";
-            string F = (Kind[4] > 0) ? "F" + Kind[4].ToString() : "";
+            string H =  "H" + Kind[0].ToString();
+            string N =  "N" + Kind[1].ToString();
+            string A =  "A" + Kind[2].ToString();
+            string G =  "G" + Kind[3].ToString();
+            string F =  "F" + Kind[4].ToString();
             string kindString = H + N + A + G + F;
-            if (kindString == "")
-            {
-                kindString = "@";
-            }
             return kindString;
         }
 

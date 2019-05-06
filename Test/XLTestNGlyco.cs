@@ -213,77 +213,19 @@ namespace Test
       
         
         //This is not exactly a test. The function is used for N-Glycan database generation. The function maybe useful in the future.
-        //[Test]
+        [Test]
         public static void GlyTest_GenerateDataBase()
         {         
-            var glycans = Glycan.LoadGlycan(GlobalVariables.NGlycanLocation);
-            string aietdpath = "E:\\MassData\\Glycan\\GlycanDatabase\\AIETD\\ComboGlycanDatabase.csv";
-            List<Tuple<double, string, string>> aietdGlycans = new List<Tuple<double, string, string>>();
+            var NGlycans = Glycan.LoadGlycan(GlobalVariables.NGlycanLocation);
+            string aietdpath = @"GlycoTestData/ComboGlycanDatabase.csv";
+            var glycans = Glycan.LoadKindGlycan(aietdpath, NGlycans).ToList();
 
-            List<string> aietdGlycanKinds = new List<string>();
-            using (StreamReader lines = new StreamReader(aietdpath))
-            {
-                while (lines.Peek() != -1)
-                {
-                    string line = lines.ReadLine();
-                    var kindstring = line.Split(',').First();
-                    aietdGlycanKinds.Add(kindstring);
-                }
-            }
-
-            List<int> noExists = new List<int>(); 
-
-            foreach (var aGlycanKind in aietdGlycanKinds)
-            {
-                byte[] kind = new byte[5] { 0,0,0,0,0};
-                var x = aGlycanKind.Split('(', ')');
-                int i = 0;
-                int phosphoMass = 0;  //To think: better way to read HexNAc(2)Hex(6)Phospho(1)
-                while (i < x.Length-1)
-                {
-                    switch (x[i])
-                    {
-                        case "Hex":
-                            kind[0] = byte.Parse(x[i + 1]);
-                            break;
-                        case "HexNAc":
-                            kind[1] = byte.Parse(x[i + 1]);
-                            break;
-                        case "NeuAc":
-                            kind[2] = byte.Parse(x[i + 1]);
-                            break;
-                        case "Fuc":
-                            kind[4] = byte.Parse(x[i + 1]);
-                            break;
-                        case "Phospho":
-                            phosphoMass = 7996633;
-                            break;
-                        default:
-                            break;
-                    }
-                    i = i + 2;
-                }
-                var mass = Glycan.GetMass(kind) + phosphoMass;
-
-                //aietdGlycans.Add(mass, "");
-
-                var struc = glycans.Where(p => p.Kind[3] == 0).Where(p => p.Mass == mass);
-                if (struc.Count() > 0)
-                {
-                    aietdGlycans.Add(new Tuple<double, string, string>( mass, struc.First().Struc, Glycan.GetKindString(struc.First().Struc)));
-                }
-                else
-                {
-                    noExists.Add(mass);
-                }
-            }
-
-            string aietdpathWritePath = "E:\\MassData\\Glycan\\GlycanDatabase\\AIETD\\GlycansAIETD_1.tsv";
+            string aietdpathWritePath = "E:\\MassData\\Glycan\\GlycanDatabase\\AIETD\\GlycansAIETD.tsv";
             using (StreamWriter output = new StreamWriter(aietdpathWritePath))
             {
-                foreach (var item in aietdGlycans)
+                foreach (var glycan in glycans)
                 {
-                    output.WriteLine(item.Item1 +"\t"+ item.Item2 + "\t" + item.Item3);
+                    output.WriteLine(glycan.Mass.ToString() + "\t" + glycan.Struc + "\t" + Glycan.GetKindString(glycan.Kind) + "\t" + Glycan.GetKindString(Glycan.GetKind(glycan.Struc)));
                 }
             }
         }
@@ -292,14 +234,20 @@ namespace Test
         [Test]
         public static void GlyTest_GetAllIonMassFromKind()
         {
+
+            var NGlycans = Glycan.LoadGlycan(GlobalVariables.NGlycanLocation);
+            var groupedGlycans = NGlycans.GroupBy(p => Glycan.GetKindString(p.Kind)).ToDictionary(p => p.Key, p => p.ToList());
+
+            byte[] k36101 = new byte[] { 3, 6, 1, 0, 1 };
+            var glycan36101 = Glycan.GetAllIonMassFromKind(k36101, groupedGlycans);
+
             Glycan glycan = Glycan.Struct2Glycan("(N(F)(N(H(H(N))(H(N)))))", 0);
-            var x = Glycan.GetAllIonMassFromKind(glycan.Kind);
-            Assert.AreEqual(x.Count, 29);
+            var x = Glycan.GetAllIonMassFromKind(glycan.Kind, groupedGlycans);
+            Assert.AreEqual(x.First().Ions.Count, 14);
 
-
-            var NGlycans = Glycan.LoadKindGlycan(GlobalVariables.NGlycanLocation_182).ToArray();
-
-            Assert.AreEqual(NGlycans.Last().GlyId, 182);
+            string aietdpath = @"GlycoTestData/ComboGlycanDatabase.csv";
+            var glycans = Glycan.LoadKindGlycan(aietdpath, NGlycans).ToList();
+            Assert.AreEqual(glycans.Count, 182);
 
         }
 

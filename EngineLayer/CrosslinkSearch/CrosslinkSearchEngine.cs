@@ -58,11 +58,21 @@ namespace EngineLayer.CrosslinkSearch
 
             if (OpenSearchType == OpenSearchType.NGlyco)
             {
-                //var NGlycans = Glycan.LoadKindGlycan(GlobalVariables.NGlycanLocation_182);
-                var NGlycans = Glycan.LoadGlycan(GlobalVariables.NGlycanLocation_182);
-                //var NGlycans = Glycan.LoadGlycan(GlobalVariables.NGlycanLocation);
+                var NGlycans = Glycan.LoadGlycan(GlobalVariables.NGlycanLocation);
+                //TO DO: include this parameter into Engineer
+                bool search182database = false;
+                if (search182database)
+                {
+                    var NGlycans182 = Glycan.LoadKindGlycan(GlobalVariables.NGlycanLocation_182, NGlycans);
+                    Glycans = NGlycans182.OrderBy(p => p.Mass).ToArray();
+                }
+                else
+                {
+                    Glycans = NGlycans.OrderBy(p => p.Mass).ToArray();
+                }       
+                
                 //groupedGlycans = NGlycans.GroupBy(p => p.Mass).ToDictionary(p => p.Key, p => p.ToList());
-                Glycans = Glycan.BuildTargetDecoyGlycans(NGlycans);
+                //Glycans = Glycan.BuildTargetDecoyGlycans(NGlycans);
             }
 
             if (OpenSearchType == OpenSearchType.OGlyco)
