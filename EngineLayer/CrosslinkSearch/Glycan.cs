@@ -405,7 +405,18 @@ namespace EngineLayer
 
         public static int GetMass(byte[] kind)
         {
-            int y = CharMassDic['H'] * kind[0] +
+            int mass = 0;
+            if (kind.Length < 5)
+            {
+                mass = CharMassDic['H'] * kind[0] +
+                CharMassDic['N'] * kind[1] +
+                CharMassDic['A'] * kind[2] +
+                CharMassDic['G'] * kind[3] +
+                CharMassDic['F'] * kind[4];
+            }
+            else
+            {
+                mass = CharMassDic['H'] * kind[0] +
                 CharMassDic['N'] * kind[1] +
                 CharMassDic['A'] * kind[2] +
                 CharMassDic['G'] * kind[3] +
@@ -415,7 +426,9 @@ namespace EngineLayer
                 CharMassDic['P'] * kind[7] +
                 CharMassDic['S'] * kind[8] +
                 CharMassDic['R'] * kind[9];
-            return y;
+            }
+            
+            return mass;
         }
 
         public HashSet<int> GetDiagnosticIons()
