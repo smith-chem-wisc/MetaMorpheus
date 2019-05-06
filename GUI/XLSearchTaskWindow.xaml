@@ -128,6 +128,9 @@
                                 <StackPanel>
                                     <CheckBox x:Name="CkbAnalyzeOxiniumIon" VerticalAlignment="Center" Content="Only Analyze Oxinium Ions"/>
                                 </StackPanel>
+                                <StackPanel Grid.Row="1">
+                                    <CheckBox x:Name="CkbSearchGlycan182" VerticalAlignment="Center" Content="Use database with 182 glycans"/>
+                                </StackPanel>
                             </Grid>
                         </StackPanel>
                     </Expander>

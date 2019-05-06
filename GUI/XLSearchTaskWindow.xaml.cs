@@ -122,6 +122,8 @@ namespace MetaMorpheusGUI
             RbSearchOGlyco.IsChecked = task.XlSearchParameters.OpenSearchType == OpenSearchType.OGlyco;
 
             CkbAnalyzeOxiniumIon.IsChecked = task.XlSearchParameters.OnlyAnalyzeOxiniumIons;
+            CkbSearchGlycan182.IsChecked = task.XlSearchParameters.SearchGlycan182;
+
             cbCrosslinkers.SelectedItem = task.XlSearchParameters.Crosslinker;
 
             cbCrosslinkers.SelectedItem = task.XlSearchParameters.Crosslinker;
@@ -260,6 +262,7 @@ namespace MetaMorpheusGUI
                 TheTask.XlSearchParameters.OpenSearchType = OpenSearchType.OGlyco;
             }
             TheTask.XlSearchParameters.OnlyAnalyzeOxiniumIons = CkbAnalyzeOxiniumIon.IsChecked.Value;
+            TheTask.XlSearchParameters.SearchGlycan182 = CkbSearchGlycan182.IsChecked.Value;
             TheTask.XlSearchParameters.RestrictToTopNHits = ckbXLTopNum.IsChecked.Value;
             TheTask.XlSearchParameters.CrosslinkSearchTopNum = int.Parse(txtXLTopNum.Text, CultureInfo.InvariantCulture);
             TheTask.XlSearchParameters.Crosslinker = (Crosslinker)cbCrosslinkers.SelectedItem;

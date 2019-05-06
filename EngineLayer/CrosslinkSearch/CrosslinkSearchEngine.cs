@@ -22,6 +22,7 @@ namespace EngineLayer.CrosslinkSearch
         private readonly bool QuenchH2O;
         private readonly bool QuenchNH2;
         private readonly bool QuenchTris;
+        private readonly bool SearchGlycan182;
         private MassDiffAcceptor XLPrecusorSearchMode;
         private MassDiffAcceptor ProductSearchMode;
         private Modification TrisDeadEnd;
@@ -32,7 +33,7 @@ namespace EngineLayer.CrosslinkSearch
 
         public CrosslinkSearchEngine(CrosslinkSpectralMatch[] globalCsms, Ms2ScanWithSpecificMass[] listOfSortedms2Scans, List<PeptideWithSetModifications> peptideIndex,
             List<int>[] fragmentIndex, int currentPartition, CommonParameters commonParameters, OpenSearchType openSearchType, Crosslinker crosslinker, bool CrosslinkSearchTop, int CrosslinkSearchTopNum,
-            bool quench_H2O, bool quench_NH2, bool quench_Tris, List<string> nestedIds)
+            bool quench_H2O, bool quench_NH2, bool quench_Tris, bool searchGlycan182, List<string> nestedIds)
             : base(null, listOfSortedms2Scans, peptideIndex, fragmentIndex, currentPartition, commonParameters, new OpenSearchMode(), 0, nestedIds)
         {
             this.GlobalCsms = globalCsms;
@@ -59,9 +60,8 @@ namespace EngineLayer.CrosslinkSearch
             if (OpenSearchType == OpenSearchType.NGlyco)
             {
                 var NGlycans = Glycan.LoadGlycan(GlobalVariables.NGlycanLocation);
-                //TO DO: include this parameter into Engineer
-                bool search182database = false;
-                if (search182database)
+
+                if (SearchGlycan182)
                 {
                     var NGlycans182 = Glycan.LoadKindGlycan(GlobalVariables.NGlycanLocation_182, NGlycans);
                     Glycans = NGlycans182.OrderBy(p => p.Mass).ToArray();

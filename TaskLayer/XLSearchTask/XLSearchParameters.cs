@@ -20,6 +20,7 @@ namespace TaskLayer
             WriteOutputForPercolator = false;
             WritePepXml = true;
             OnlyAnalyzeOxiniumIons = false;
+            SearchGlycan182 = false;
         }
 
         public OpenSearchType OpenSearchType { get; set; }
@@ -33,5 +34,6 @@ namespace TaskLayer
         public bool XlQuench_Tris { get; set; }
         public bool XlQuench_NH2 { get; set; }
         public bool OnlyAnalyzeOxiniumIons { get; set; }
+        public bool SearchGlycan182 { get; set; }
     }
 }
