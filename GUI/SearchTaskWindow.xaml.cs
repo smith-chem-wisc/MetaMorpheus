@@ -790,6 +790,16 @@ namespace MetaMorpheusGUI
                     //if not an entry, don't update the other box.
                 }
             }
+
+            if(!classicSearchRadioButton.IsChecked.Value)
+            {
+                //trim maxFragmentMass to reduce index size ( reduces index size on disc and makes reading/writing faster)
+                int maxLength = Convert.ToInt32(MaxPeptideLengthTextBox.Text);
+                if (maxLength > 0 && maxLength < 100) //default is 30000; 30000/300=100
+                {
+                    MaxFragmentMassTextBox.Text = (maxLength * 300).ToString(); //assume the average residue doesn't have a mass over 300 Da (largest is W @ 204, but mods exist)
+                }
+            }
         }
 
         private void NonSpecificUpdate(object sender, SelectionChangedEventArgs e)
