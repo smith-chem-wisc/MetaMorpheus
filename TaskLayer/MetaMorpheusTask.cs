@@ -282,7 +282,7 @@ namespace TaskLayer
             }
 
             // set file-specific digestion parameters
-            Protease protease = fileSpecificParams.Protease ?? commonParams.DigestionParams.SpecificProtease ?? commonParams.DigestionParams.Protease; //set to specific (if possible) for nonspecific searches to update
+            Protease protease = fileSpecificParams.Protease ?? commonParams.DigestionParams.SpecificProtease; //set to specific for nonspecific searches to update
             int minPeptideLength = fileSpecificParams.MinPeptideLength ?? commonParams.DigestionParams.MinPeptideLength;
             int maxPeptideLength = fileSpecificParams.MaxPeptideLength ?? commonParams.DigestionParams.MaxPeptideLength;
             int maxMissedCleavages = fileSpecificParams.MaxMissedCleavages ?? commonParams.DigestionParams.MaxMissedCleavages;
