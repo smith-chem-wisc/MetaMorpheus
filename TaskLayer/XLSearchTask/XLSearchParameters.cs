@@ -14,6 +14,7 @@ namespace TaskLayer
             Crosslinker = GlobalVariables.Crosslinkers.First();
             RestrictToTopNHits = true;
             CrosslinkSearchTopNum = 300;
+            MassDiffAcceptorType = MassDiffAcceptorType.OneMM;
             XlQuench_H2O = true;
             XlQuench_NH2 = false;
             XlQuench_Tris = true;
@@ -21,6 +22,7 @@ namespace TaskLayer
             WritePepXml = true;
             OnlyAnalyzeOxiniumIons = false;
             SearchGlycan182 = false;
+
         }
 
         public OpenSearchType OpenSearchType { get; set; }
@@ -28,6 +30,7 @@ namespace TaskLayer
         public Crosslinker Crosslinker { get; set; }
         public int CrosslinkSearchTopNum { get; set; }
         public bool RestrictToTopNHits { get; set; }
+        public MassDiffAcceptorType MassDiffAcceptorType { get; set; }
         public bool WriteOutputForPercolator { get; set; }
         public bool WritePepXml { get; set; }
         public bool XlQuench_H2O { get; set; }

@@ -121,7 +121,9 @@ namespace Test
             Crosslinker crosslinker = GlobalVariables.Crosslinkers.Where(p => p.CrosslinkerName == "DSSO").First();
 
             CrosslinkSpectralMatch[] possiblePsms = new CrosslinkSpectralMatch[listOfSortedms2Scans.Length];
-            new CrosslinkSearchEngine(possiblePsms, listOfSortedms2Scans, indexResults.PeptideIndex, indexResults.FragmentIndex, 0, commonParameters, xlSearchParameters.OpenSearchType, crosslinker, xlSearchParameters.RestrictToTopNHits, xlSearchParameters.CrosslinkSearchTopNum, xlSearchParameters.XlQuench_H2O, xlSearchParameters.XlQuench_NH2, xlSearchParameters.XlQuench_Tris, false, new List<string> { }).Run();
+
+            var massAcceptor = new SingleAbsoluteAroundZeroSearchMode(commonParameters.ProductMassTolerance.Value);
+            new CrosslinkSearchEngine(possiblePsms, listOfSortedms2Scans, indexResults.PeptideIndex, indexResults.FragmentIndex, 0, commonParameters, massAcceptor, xlSearchParameters.OpenSearchType, crosslinker, xlSearchParameters.RestrictToTopNHits, xlSearchParameters.CrosslinkSearchTopNum, xlSearchParameters.XlQuench_H2O, xlSearchParameters.XlQuench_NH2, xlSearchParameters.XlQuench_Tris, false, new List<string> { }).Run();
 
             var newPsms = possiblePsms.Where(p => p != null).ToList();
             foreach (var item in newPsms)
@@ -215,7 +217,8 @@ namespace Test
 
             //TwoPassCrosslinkSearchEngine.Run().
             CrosslinkSpectralMatch[] possiblePsms = new CrosslinkSpectralMatch[listOfSortedms2Scans.Length];
-            new CrosslinkSearchEngine(possiblePsms, listOfSortedms2Scans, indexResults.PeptideIndex, indexResults.FragmentIndex, 0, commonParameters, xlSearchParameters.OpenSearchType, crosslinker, xlSearchParameters.RestrictToTopNHits, xlSearchParameters.CrosslinkSearchTopNum, xlSearchParameters.XlQuench_H2O, xlSearchParameters.XlQuench_NH2, xlSearchParameters.XlQuench_Tris, false, new List<string> { }).Run();
+            var massAcceptor = new SingleAbsoluteAroundZeroSearchMode(commonParameters.ProductMassTolerance.Value);
+            new CrosslinkSearchEngine(possiblePsms, listOfSortedms2Scans, indexResults.PeptideIndex, indexResults.FragmentIndex, 0, commonParameters, massAcceptor, xlSearchParameters.OpenSearchType, crosslinker, xlSearchParameters.RestrictToTopNHits, xlSearchParameters.CrosslinkSearchTopNum, xlSearchParameters.XlQuench_H2O, xlSearchParameters.XlQuench_NH2, xlSearchParameters.XlQuench_Tris, false, new List<string> { }).Run();
 
             var newPsms = possiblePsms.Where(p => p != null).ToList();
             Assert.AreEqual(1, newPsms.Count);
@@ -448,7 +451,8 @@ namespace Test
             var indexingResults = (IndexingResults)new IndexingEngine(new List<Protein> { protein }, new List<Modification>(), new List<Modification>(), null, 0, DecoyType.None,
                 new CommonParameters(), 1000, false, new List<FileInfo>(), new List<string>()).Run();
 
-            new CrosslinkSearchEngine(csms, scans, indexingResults.PeptideIndex, indexingResults.FragmentIndex, 0, new CommonParameters(), OpenSearchType.Crosslink, crosslinker,
+            var massAcceptor = new SingleAbsoluteAroundZeroSearchMode(10);
+            new CrosslinkSearchEngine(csms, scans, indexingResults.PeptideIndex, indexingResults.FragmentIndex, 0, new CommonParameters(), massAcceptor, OpenSearchType.Crosslink, crosslinker,
                 false, 0, false, false, true, false, new List<string>()).Run();
 
             CrosslinkSpectralMatch csm = csms.First();
@@ -584,8 +588,9 @@ namespace Test
 
             var indexingResults = (IndexingResults)new IndexingEngine(new List<Protein> { protein }, new List<Modification>(), new List<Modification>(), null, 0, DecoyType.None,
                 new CommonParameters(), 1000, false, new List<FileInfo>(), new List<string>()).Run();
+            var massAcceptor = new SingleAbsoluteAroundZeroSearchMode(10);
 
-            new CrosslinkSearchEngine(csms, scans, indexingResults.PeptideIndex, indexingResults.FragmentIndex, 0, new CommonParameters(), OpenSearchType.Crosslink, crosslinker, false, 0, false, false, true, false, new List<string>()).Run();
+            new CrosslinkSearchEngine(csms, scans, indexingResults.PeptideIndex, indexingResults.FragmentIndex, 0, new CommonParameters(), massAcceptor, OpenSearchType.Crosslink, crosslinker, false, 0, false, false, true, false, new List<string>()).Run();
 
             csms[0].SetFdrValues(0, 0, 0.1, 0, 0, 0, 0, 0, 0, false);
 
@@ -622,7 +627,9 @@ namespace Test
                 commonParameters, 5000, false, new List<FileInfo>(), new List<string>()).Run();
             
             var csms = new CrosslinkSpectralMatch[1];
-            new CrosslinkSearchEngine(csms, scans, indexingResults.PeptideIndex, indexingResults.FragmentIndex, 0, commonParameters, OpenSearchType.Crosslink, GlobalVariables.Crosslinkers.First(p => p.CrosslinkerName == "DSSO"), 
+            var massAcceptor = new SingleAbsoluteAroundZeroSearchMode(commonParameters.ProductMassTolerance.Value);
+
+            new CrosslinkSearchEngine(csms, scans, indexingResults.PeptideIndex, indexingResults.FragmentIndex, 0, commonParameters, massAcceptor, OpenSearchType.Crosslink, GlobalVariables.Crosslinkers.First(p => p.CrosslinkerName == "DSSO"), 
                 false, 0, false, false, true, false, new List<string>()).Run();
 
             var csm = csms[0];
@@ -685,7 +692,8 @@ namespace Test
                 commonParameters, 5000, false, new List<FileInfo>(), new List<string>()).Run();
 
             var csms = new CrosslinkSpectralMatch[2];
-            new CrosslinkSearchEngine(csms, scans, indexingResults.PeptideIndex, indexingResults.FragmentIndex, 0, commonParameters, OpenSearchType.Crosslink, GlobalVariables.Crosslinkers.First(p => p.CrosslinkerName == "DSSO"),
+            var massAcceptor = new SingleAbsoluteAroundZeroSearchMode(commonParameters.ProductMassTolerance.Value);
+            new CrosslinkSearchEngine(csms, scans, indexingResults.PeptideIndex, indexingResults.FragmentIndex, 0, commonParameters, massAcceptor, OpenSearchType.Crosslink, GlobalVariables.Crosslinkers.First(p => p.CrosslinkerName == "DSSO"),
                 false, 0, false, false, true, false, new List<string>()).Run();
 
             var csm = csms[0];

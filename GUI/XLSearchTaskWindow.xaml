@@ -253,6 +253,18 @@
                                     </StackPanel>
                                 </Grid>
                             </GroupBox>
+                            <GroupBox Header="Mass Difference Acceptor Criterion">
+                                <StackPanel>
+                                    <RadioButton x:Name="massDiffAcceptExact" Content="Exact" />
+
+                                    <RadioButton x:Name="massDiffAccept1mm" Content="1 Missed Monoisotopic Peak" />
+
+                                    <RadioButton x:Name="massDiffAccept2mm" Content="1 or 2 Missed Monoisotopic Peaks" />
+
+                                    <RadioButton x:Name="massDiffAccept3mm" Content="1, 2, or 3 Missed Monoisotopic Peaks" />
+
+                                </StackPanel>
+                            </GroupBox>
                         </StackPanel>
                     </Expander>
                 </GroupBox>

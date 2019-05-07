@@ -23,8 +23,8 @@ namespace EngineLayer.CrosslinkSearch
         private readonly bool QuenchNH2;
         private readonly bool QuenchTris;
         private readonly bool SearchGlycan182;
-        private MassDiffAcceptor XLPrecusorSearchMode;
-        private MassDiffAcceptor ProductSearchMode;
+        private readonly MassDiffAcceptor XLPrecusorSearchMode;
+        private readonly MassDiffAcceptor ProductSearchMode;
         private Modification TrisDeadEnd;
         private Modification H2ODeadEnd;
         private Modification NH2DeadEnd;
@@ -32,7 +32,7 @@ namespace EngineLayer.CrosslinkSearch
         private readonly char[] AllCrosslinkerSites;
 
         public CrosslinkSearchEngine(CrosslinkSpectralMatch[] globalCsms, Ms2ScanWithSpecificMass[] listOfSortedms2Scans, List<PeptideWithSetModifications> peptideIndex,
-            List<int>[] fragmentIndex, int currentPartition, CommonParameters commonParameters, OpenSearchType openSearchType, Crosslinker crosslinker, bool CrosslinkSearchTop, int CrosslinkSearchTopNum,
+            List<int>[] fragmentIndex, int currentPartition, CommonParameters commonParameters, MassDiffAcceptor massDiffAcceptor, OpenSearchType openSearchType, Crosslinker crosslinker, bool CrosslinkSearchTop, int CrosslinkSearchTopNum,
             bool quench_H2O, bool quench_NH2, bool quench_Tris, bool searchGlycan182, List<string> nestedIds)
             : base(null, listOfSortedms2Scans, peptideIndex, fragmentIndex, currentPartition, commonParameters, new OpenSearchMode(), 0, nestedIds)
         {
@@ -47,15 +47,9 @@ namespace EngineLayer.CrosslinkSearch
             GenerateCrosslinkModifications(crosslinker);
             AllCrosslinkerSites = Crosslinker.CrosslinkerModSites.ToCharArray().Concat(Crosslinker.CrosslinkerModSites2.ToCharArray()).Distinct().ToArray();
 
-            if (commonParameters.PrecursorMassTolerance is PpmTolerance)
-            {
-                XLPrecusorSearchMode = new SinglePpmAroundZeroSearchMode(commonParameters.PrecursorMassTolerance.Value);
-            }
-            else
-            {
-                XLPrecusorSearchMode = new SingleAbsoluteAroundZeroSearchMode(commonParameters.PrecursorMassTolerance.Value);
-            }
-            ProductSearchMode = new SingleAbsoluteAroundZeroSearchMode(commonParameters.ProductMassTolerance.Value);
+            
+            = massDiffAcceptor;
+            ProductSearchMode = new SingleAbsoluteAroundZeroSearchMode(20); //For Oxinium ion only
 
             if (OpenSearchType == OpenSearchType.NGlyco)
             {

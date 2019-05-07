@@ -78,6 +78,7 @@ namespace TaskLayer
             {
                 var origDataFile = currentRawFileList[spectraFileIndex];
                 CommonParameters combinedParams = SetAllFileSpecificCommonParams(CommonParameters, fileSettingsList[spectraFileIndex]);
+                MassDiffAcceptor massDiffAcceptor = SearchTask.GetMassDiffAcceptor(combinedParams.PrecursorMassTolerance, XlSearchParameters.MassDiffAcceptorType, "");
 
                 var thisId = new List<string> { taskId, "Individual Spectra Files", origDataFile };
                 NewCollection(Path.GetFileName(origDataFile), thisId);
@@ -91,13 +92,13 @@ namespace TaskLayer
 
                 if (!combinedParams.DoPrecursorDeconvolution && combinedParams.UseProvidedPrecursorInfo && XlSearchParameters.OnlyAnalyzeOxiniumIons)
                 {
-                    MassDiffAcceptor massDiffAcceptor = new SinglePpmAroundZeroSearchMode(combinedParams.ProductMassTolerance.Value);
+                    MassDiffAcceptor massDiffAcceptor_oxiniumIons = new SinglePpmAroundZeroSearchMode(combinedParams.ProductMassTolerance.Value);
                     Tuple<int, double[]>[] tuples = new Tuple<int, double[]>[arrayOfMs2ScansSortedByMass.Length];
                     Parallel.ForEach(Partitioner.Create(0, arrayOfMs2ScansSortedByMass.Length), new ParallelOptions { MaxDegreeOfParallelism = combinedParams.MaxThreadsToUsePerFile }, (range, loopState) =>
                     {
                         for (int scanIndex = range.Item1; scanIndex < range.Item2; scanIndex++)
                         {
-                            double[] oxoniumIonIntensities = GlycoPeptides.ScanGetOxoniumIons(arrayOfMs2ScansSortedByMass[scanIndex], massDiffAcceptor);
+                            double[] oxoniumIonIntensities = GlycoPeptides.ScanGetOxoniumIons(arrayOfMs2ScansSortedByMass[scanIndex], massDiffAcceptor_oxiniumIons);
                             tuples[scanIndex] = new Tuple<int, double[]>(arrayOfMs2ScansSortedByMass[scanIndex].OneBasedScanNumber, oxoniumIonIntensities);
                         }
                     });
@@ -121,7 +122,7 @@ namespace TaskLayer
                     GenerateIndexes(indexEngine, dbFilenameList, ref peptideIndex, ref fragmentIndex, ref precursorIndex, proteinList, GlobalVariables.AllModsKnown.ToList(), taskId);                  
 
                     Status("Searching files...", taskId);
-                    new CrosslinkSearchEngine(newPsms, arrayOfMs2ScansSortedByMass, peptideIndex, fragmentIndex, currentPartition, combinedParams, XlSearchParameters.OpenSearchType, crosslinker,
+                    new CrosslinkSearchEngine(newPsms, arrayOfMs2ScansSortedByMass, peptideIndex, fragmentIndex, currentPartition, combinedParams, massDiffAcceptor, XlSearchParameters.OpenSearchType, crosslinker,
                         XlSearchParameters.RestrictToTopNHits, XlSearchParameters.CrosslinkSearchTopNum, XlSearchParameters.XlQuench_H2O,
                         XlSearchParameters.XlQuench_NH2, XlSearchParameters.XlQuench_Tris, XlSearchParameters.SearchGlycan182, thisId).Run();
 

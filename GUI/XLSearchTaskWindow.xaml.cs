@@ -138,6 +138,11 @@ namespace MetaMorpheusGUI
             trimMs1.IsChecked = task.CommonParameters.TrimMs1Peaks;
             trimMsMs.IsChecked = task.CommonParameters.TrimMsMsPeaks;
 
+            massDiffAcceptExact.IsChecked = task.XlSearchParameters.MassDiffAcceptorType == MassDiffAcceptorType.Exact;
+            massDiffAccept1mm.IsChecked = task.XlSearchParameters.MassDiffAcceptorType == MassDiffAcceptorType.OneMM;
+            massDiffAccept2mm.IsChecked = task.XlSearchParameters.MassDiffAcceptorType == MassDiffAcceptorType.TwoMM;
+            massDiffAccept3mm.IsChecked = task.XlSearchParameters.MassDiffAcceptorType == MassDiffAcceptorType.ThreeMM;
+
             TopNPeaksTextBox.Text = task.CommonParameters.NumberOfPeaksToKeepPerWindow == int.MaxValue || !task.CommonParameters.NumberOfPeaksToKeepPerWindow.HasValue ? "" : task.CommonParameters.NumberOfPeaksToKeepPerWindow.Value.ToString(CultureInfo.InvariantCulture);
             MinRatioTextBox.Text = task.CommonParameters.MinimumAllowedIntensityRatioToBasePeak == double.MaxValue || !task.CommonParameters.MinimumAllowedIntensityRatioToBasePeak.HasValue ? "" : task.CommonParameters.MinimumAllowedIntensityRatioToBasePeak.Value.ToString(CultureInfo.InvariantCulture);
 
@@ -261,13 +266,31 @@ namespace MetaMorpheusGUI
             {
                 TheTask.XlSearchParameters.OpenSearchType = OpenSearchType.OGlyco;
             }
+
             TheTask.XlSearchParameters.OnlyAnalyzeOxiniumIons = CkbAnalyzeOxiniumIon.IsChecked.Value;
             TheTask.XlSearchParameters.SearchGlycan182 = CkbSearchGlycan182.IsChecked.Value;
+
             TheTask.XlSearchParameters.RestrictToTopNHits = ckbXLTopNum.IsChecked.Value;
             TheTask.XlSearchParameters.CrosslinkSearchTopNum = int.Parse(txtXLTopNum.Text, CultureInfo.InvariantCulture);
+
+            if (massDiffAcceptExact.IsChecked.HasValue && massDiffAcceptExact.IsChecked.Value)
+            {
+                TheTask.XlSearchParameters.MassDiffAcceptorType = MassDiffAcceptorType.Exact;
+            }
+            if (massDiffAccept1mm.IsChecked.HasValue && massDiffAccept1mm.IsChecked.Value)
+            {
+                TheTask.XlSearchParameters.MassDiffAcceptorType = MassDiffAcceptorType.OneMM;
+            }
+            if (massDiffAccept2mm.IsChecked.HasValue && massDiffAccept2mm.IsChecked.Value)
+            {
+                TheTask.XlSearchParameters.MassDiffAcceptorType = MassDiffAcceptorType.TwoMM;
+            }
+            if (massDiffAccept3mm.IsChecked.HasValue && massDiffAccept3mm.IsChecked.Value)
+            {
+                TheTask.XlSearchParameters.MassDiffAcceptorType = MassDiffAcceptorType.ThreeMM;
+            }
+
             TheTask.XlSearchParameters.Crosslinker = (Crosslinker)cbCrosslinkers.SelectedItem;
-
-
             TheTask.XlSearchParameters.XlQuench_H2O = ckbQuenchH2O.IsChecked.Value;
             TheTask.XlSearchParameters.XlQuench_NH2 = ckbQuenchNH2.IsChecked.Value;
             TheTask.XlSearchParameters.XlQuench_Tris = ckbQuenchTris.IsChecked.Value;
