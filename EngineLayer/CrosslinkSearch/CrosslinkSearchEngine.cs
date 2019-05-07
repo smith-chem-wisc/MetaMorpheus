@@ -47,8 +47,7 @@ namespace EngineLayer.CrosslinkSearch
             GenerateCrosslinkModifications(crosslinker);
             AllCrosslinkerSites = Crosslinker.CrosslinkerModSites.ToCharArray().Concat(Crosslinker.CrosslinkerModSites2.ToCharArray()).Distinct().ToArray();
 
-            
-            = massDiffAcceptor;
+            XLPrecusorSearchMode = massDiffAcceptor;
             ProductSearchMode = new SingleAbsoluteAroundZeroSearchMode(20); //For Oxinium ion only
 
             if (OpenSearchType == OpenSearchType.NGlyco)
