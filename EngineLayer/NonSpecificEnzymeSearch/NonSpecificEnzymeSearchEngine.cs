@@ -106,8 +106,7 @@ namespace EngineLayer.NonSpecificEnzymeSearch
                             {
                                 PeptideWithSetModifications peptide = PeptideIndex[id];
                                 List<Product> peptideTheorProducts = peptide.Fragment(commonParameters.DissociationType, commonParameters.DigestionParams.FragmentationTerminus).ToList();
-                                if(scan.OneBasedScanNumber==6997)
-                                { }
+
                                 Tuple<int, PeptideWithSetModifications> notchAndUpdatedPeptide = Accepts(peptideTheorProducts, scan.PrecursorMass, peptide, commonParameters.DigestionParams.FragmentationTerminus, MassDiffAcceptor);
                                 int notch = notchAndUpdatedPeptide.Item1;
                                 if (notch >= 0)
