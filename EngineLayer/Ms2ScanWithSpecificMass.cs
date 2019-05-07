@@ -34,6 +34,7 @@ namespace EngineLayer
         public IsotopicEnvelope[] ExperimentalFragments { get; private set; }
         public List<Ms2ScanWithSpecificMass> ChildScans { get; set; } // MS2/MS3 scans that are children of this MS2 scan
         private double[] DeconvolutedMonoisotopicMasses;
+        public int OxiniumIonNum { get; set; }
 
         public int OneBasedScanNumber => TheScan.OneBasedScanNumber;
 

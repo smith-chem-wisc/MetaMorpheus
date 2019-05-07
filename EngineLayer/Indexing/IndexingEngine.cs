@@ -85,7 +85,18 @@ namespace EngineLayer.Indexing
                     // Stop loop if canceled
                     if (GlobalVariables.StopLoops) { return; }
 
-                    localPeptides.AddRange(ProteinList[i].Digest(commonParameters.DigestionParams, FixedModifications, VariableModifications, SilacLabels));
+                    //localPeptides.AddRange(ProteinList[i].Digest(commonParameters.DigestionParams, FixedModifications, VariableModifications, SilacLabels));
+                    var x = ProteinList[i].Digest(commonParameters.DigestionParams, FixedModifications, VariableModifications, SilacLabels);
+                    if (true)
+                    {
+                        foreach (var p in x)
+                        {
+                            if(CrosslinkSearch.CrosslinkSpectralMatch.GetPossibleModSites(p, new string[] { "Nxt", "Nxs" }).Count > 0)
+                            {
+                                localPeptides.Add(p);
+                            }
+                        }
+                    }
 
                     progress++;
                     var percentProgress = (int)((progress / ProteinList.Count) * 100);

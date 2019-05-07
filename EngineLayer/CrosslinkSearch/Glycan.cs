@@ -406,7 +406,7 @@ namespace EngineLayer
         public static int GetMass(byte[] kind)
         {
             int mass = 0;
-            if (kind.Length < 5)
+            if (kind.Length <= 5)
             {
                 mass = CharMassDic['H'] * kind[0] +
                 CharMassDic['N'] * kind[1] +

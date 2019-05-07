@@ -27,7 +27,7 @@ namespace EngineLayer.CrosslinkSearch
                 //diagnosticIons.Add(new Product(ProductType.D, new NeutralTerminusFragment(FragmentationTerminus.Both, ioxo, diagnosticIonLabel, 0), 0));
                 //var matchedFragmentIons = MetaMorpheusEngine.MatchFragmentIons(theScan, diagnosticIons.ToList(), commonParameters);
 
-                if (massDiffAcceptor.Accepts(theScan.TheScan.MassSpectrum.XArray[matchedPeakIndex], (double)ioxo / 1E5) >= 0)
+                if (massDiffAcceptor.Accepts(theScan.TheScan.MassSpectrum.XArray[matchedPeakIndex], ioxo) >= 0)
                 {
                     oxoniumIonsIntensities[i] = theScan.TheScan.MassSpectrum.YArray[matchedPeakIndex];
                 }

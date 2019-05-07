@@ -90,7 +90,8 @@ namespace TaskLayer
 
                 Ms2ScanWithSpecificMass[] arrayOfMs2ScansSortedByMass = GetMs2Scans(myMsDataFile, origDataFile, combinedParams).OrderBy(b => b.PrecursorMass).ToArray();
 
-                if (!combinedParams.DoPrecursorDeconvolution && combinedParams.UseProvidedPrecursorInfo && XlSearchParameters.OnlyAnalyzeOxiniumIons)
+                bool scanGlycanFilter = true;
+                if (XlSearchParameters.OnlyAnalyzeOxiniumIons)
                 {
                     MassDiffAcceptor massDiffAcceptor_oxiniumIons = new SinglePpmAroundZeroSearchMode(combinedParams.ProductMassTolerance.Value);
                     Tuple<int, double[]>[] tuples = new Tuple<int, double[]>[arrayOfMs2ScansSortedByMass.Length];
@@ -99,13 +100,18 @@ namespace TaskLayer
                         for (int scanIndex = range.Item1; scanIndex < range.Item2; scanIndex++)
                         {
                             double[] oxoniumIonIntensities = GlycoPeptides.ScanGetOxoniumIons(arrayOfMs2ScansSortedByMass[scanIndex], massDiffAcceptor_oxiniumIons);
+                            arrayOfMs2ScansSortedByMass[scanIndex].OxiniumIonNum = oxoniumIonIntensities.Where(p=>p>0).Count();
                             tuples[scanIndex] = new Tuple<int, double[]>(arrayOfMs2ScansSortedByMass[scanIndex].OneBasedScanNumber, oxoniumIonIntensities);
                         }
                     });
                     var writtenFile= Path.Combine(OutputFolder, "oxiniumIons" + ".tsv");
                     WriteOxoniumIons(tuples, writtenFile);
 
-                    return MyTaskResults;
+                    if (scanGlycanFilter)
+                    {
+                        arrayOfMs2ScansSortedByMass = arrayOfMs2ScansSortedByMass.Where(p => p.OxiniumIonNum >= 2).ToArray();
+                    }
+                    //return MyTaskResults;
                 }
 
                 CrosslinkSpectralMatch[] newPsms = new CrosslinkSpectralMatch[arrayOfMs2ScansSortedByMass.Length];

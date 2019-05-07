@@ -110,6 +110,8 @@ namespace EngineLayer.CrosslinkSearch
                     List<int> allBinsToSearch = GetBinsToSearch(scan);
                     List<BestPeptideScoreNotch> bestPeptideScoreNotchList = new List<BestPeptideScoreNotch>();
 
+                    //TO DO: limit the high bound limitation
+                   
                     // first-pass scoring
                     IndexedScoring(allBinsToSearch, scoringTable, byteScoreCutoff, idsOfPeptidesPossiblyObserved, scan.PrecursorMass, Double.NegativeInfinity, Double.PositiveInfinity, PeptideIndex, MassDiffAcceptor, 0, commonParameters.DissociationType);
 
@@ -629,14 +631,14 @@ namespace EngineLayer.CrosslinkSearch
         private CrosslinkSpectralMatch FindNGlycopeptide(Ms2ScanWithSpecificMass theScan, List<BestPeptideScoreNotch> theScanBestPeptide, int scanIndex)
         {                     
             CrosslinkSpectralMatch bestPsmCross = null;
-            int OxoniumIonNum = GlycoPeptides.ScanOxoniumIonFilter(theScan, ProductSearchMode, commonParameters.DissociationType);
-            if (OxoniumIonNum > 0)
+
+            if (theScan.OxiniumIonNum >= 2)
             {
                 List<CrosslinkSpectralMatch> possibleMatches = new List<CrosslinkSpectralMatch>();
 
                 for (int ind = 0; ind < theScanBestPeptide.Count; ind++)
                 {
-                    if (OxoniumIonNum < 3 && ind < 5 && XLPrecusorSearchMode.Accepts(theScan.PrecursorMass, theScanBestPeptide[ind].BestPeptide.MonoisotopicMass) >= 0)
+                    if (theScan.OxiniumIonNum < 3 && ind < 5 && XLPrecusorSearchMode.Accepts(theScan.PrecursorMass, theScanBestPeptide[ind].BestPeptide.MonoisotopicMass) >= 0)
                     {
                         List<Product> products = theScanBestPeptide[ind].BestPeptide.Fragment(commonParameters.DissociationType, FragmentationTerminus.Both).ToList();
                         var matchedFragmentIons = MatchFragmentIons(theScan, products, commonParameters);
@@ -730,7 +732,6 @@ namespace EngineLayer.CrosslinkSearch
                     }
                     return bestPsmCross;
                 }
-
             }
             else
             {
