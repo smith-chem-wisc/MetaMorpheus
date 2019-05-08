@@ -69,11 +69,16 @@ namespace EngineLayer.CrosslinkSearch
             foreach (var modWithMotif in modifications)
             {
                 for (int r = 0; r < peptide.Length; r++)
-                {                 
+                {
+                    if (peptide.AllModsOneIsNterminus.Keys.Contains(r+2))
+                    {
+                        continue;
+                    }
+                    
                     //FullSequence is used here to avoid duplicated modification on same sites?
                     if (ModificationLocalization.ModFits(modWithMotif, peptide.BaseSequence, r + 1, peptide.Length, r + 1))
                     {
-                        possibleModSites.Add(r + 2);
+                        possibleModSites.Add(r + 1);
                     }
                 }
             }

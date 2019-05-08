@@ -50,6 +50,7 @@ namespace EngineLayer.CrosslinkSearch
             XLPrecusorSearchMode = massDiffAcceptor;
             ProductSearchMode = new SingleAbsoluteAroundZeroSearchMode(20); //For Oxinium ion only
 
+            SearchGlycan182 = searchGlycan182;
             if (OpenSearchType == OpenSearchType.NGlyco)
             {
                 var NGlycans = Glycan.LoadGlycan(GlobalVariables.NGlycanLocation);
@@ -638,7 +639,7 @@ namespace EngineLayer.CrosslinkSearch
 
                 for (int ind = 0; ind < theScanBestPeptide.Count; ind++)
                 {
-                    if (theScan.OxiniumIonNum < 3 && ind < 5 && XLPrecusorSearchMode.Accepts(theScan.PrecursorMass, theScanBestPeptide[ind].BestPeptide.MonoisotopicMass) >= 0)
+                    if (XLPrecusorSearchMode.Accepts(theScan.PrecursorMass, theScanBestPeptide[ind].BestPeptide.MonoisotopicMass) >= 0)
                     {
                         List<Product> products = theScanBestPeptide[ind].BestPeptide.Fragment(commonParameters.DissociationType, FragmentationTerminus.Both).ToList();
                         var matchedFragmentIons = MatchFragmentIons(theScan, products, commonParameters);
@@ -647,9 +648,8 @@ namespace EngineLayer.CrosslinkSearch
                         var psmCrossSingle = new CrosslinkSpectralMatch(theScanBestPeptide[ind].BestPeptide, theScanBestPeptide[ind].BestNotch, score, scanIndex, theScan, commonParameters.DigestionParams, matchedFragmentIons);
                         psmCrossSingle.CrossType = PsmCrossType.Single;
                         psmCrossSingle.XlRank = new List<int> { ind };
-                        //Once the single peptide is identified, return the psm.
-                        psmCrossSingle.ResolveAllAmbiguities();
-                        return psmCrossSingle;
+
+                        possibleMatches.Add(psmCrossSingle);
                     }
 
                     List<int> modPos = CrosslinkSpectralMatch.GetPossibleModSites(theScanBestPeptide[ind].BestPeptide, new string[] { "Nxt", "Nxs" });

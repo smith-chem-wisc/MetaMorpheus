@@ -42,7 +42,13 @@ namespace Test
             PeptideWithSetModifications pep = new PeptideWithSetModifications("ELNPTPNVEVNVECR", null); 
             string[] motifs = new string[] { "Nxs", "Nxt"};
             var sites = CrosslinkSpectralMatch.GetPossibleModSites(pep, motifs);
-            Assert.That(sites.Count() == 1 && sites[0] == 4);
+            Assert.That(sites.Count() == 1 && sites[0] == 3);
+
+            ModificationMotif.TryGetMotif("N", out ModificationMotif motif2);
+            Modification mod2 = new Modification(_originalId: "Test of N", _modificationType: "Common Fixed", _target: motif2, _locationRestriction: "Anywhere.");
+            var testN = new PeptideWithSetModifications("CN[Common Fixed:Test of N]SSDQPKLNLSGIETP", new Dictionary<string, Modification> { { "Test of N", mod2 } });
+            var testSites = CrosslinkSpectralMatch.GetPossibleModSites(testN, motifs);
+            Assert.That(testSites.Count() == 1 && testSites[0] == 10);
         }
 
         [Test]
