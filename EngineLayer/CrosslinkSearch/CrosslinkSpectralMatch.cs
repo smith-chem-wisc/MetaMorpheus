@@ -55,20 +55,21 @@ namespace EngineLayer.CrosslinkSearch
         {
             List<int> possibleModSites = new List<int>();
 
-            List<ModificationMotif> acceptableMotifs = new List<ModificationMotif>();
+            List<Modification> modifications = new List<Modification>();
+
             foreach (var mtf in motifs)
             {
                 if (ModificationMotif.TryGetMotif(mtf, out ModificationMotif aMotif))
                 {
-                    acceptableMotifs.Add(aMotif);
+                    Modification modWithMotif = new Modification(_target: aMotif, _locationRestriction: "Anywhere.");
+                    modifications.Add(modWithMotif);
                 }
             }
 
-            foreach (var mtf in acceptableMotifs)
+            foreach (var modWithMotif in modifications)
             {
                 for (int r = 0; r < peptide.Length; r++)
-                {
-                    Modification modWithMotif = new Modification(_target: mtf, _locationRestriction: "Anywhere.");
+                {                 
                     //FullSequence is used here to avoid duplicated modification on same sites?
                     if (ModificationLocalization.ModFits(modWithMotif, peptide.BaseSequence, r + 1, peptide.Length, r + 1))
                     {

@@ -124,12 +124,16 @@
                                 <Grid.RowDefinitions>
                                     <RowDefinition Height="1*"/>
                                     <RowDefinition Height="1*"/>
+                                    <RowDefinition Height="1*"/>
                                 </Grid.RowDefinitions>
-                                <StackPanel>
-                                    <CheckBox x:Name="CkbAnalyzeOxiniumIon" VerticalAlignment="Center" Content="Only Analyze Oxinium Ions"/>
+                                <StackPanel >
+                                    <CheckBox x:Name="CkbSearchGlycan182" VerticalAlignment="Center" Content="Use database with 182 glycans"/>
                                 </StackPanel>
                                 <StackPanel Grid.Row="1">
-                                    <CheckBox x:Name="CkbSearchGlycan182" VerticalAlignment="Center" Content="Use database with 182 glycans"/>
+                                    <CheckBox x:Name="CkbAnalyzeOxiniumIon" VerticalAlignment="Center" Content="Analyze Oxinium Ions" Checked="CkbAnalyzeOxiniumIon_Checked" Unchecked="CkbAnalyzeOxiniumIon_Unchecked"/>
+                                </StackPanel>
+                                <StackPanel Grid.Row="2">
+                                    <CheckBox x:Name="CkbFilterScanOxiniumIon" VerticalAlignment="Center" Content="Filter Scans Contain Oxinium Ions" IsEnabled="False"/>
                                 </StackPanel>
                             </Grid>
                         </StackPanel>

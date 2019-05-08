@@ -120,8 +120,17 @@ namespace MetaMorpheusGUI
             RbSearchCrosslink.IsChecked = task.XlSearchParameters.OpenSearchType == OpenSearchType.Crosslink;
             RbSearchNGlyco.IsChecked = task.XlSearchParameters.OpenSearchType == OpenSearchType.NGlyco;
             RbSearchOGlyco.IsChecked = task.XlSearchParameters.OpenSearchType == OpenSearchType.OGlyco;
+            
+            CkbFilterScanOxiniumIon.IsChecked = task.XlSearchParameters.FilterScanOxiniumIons;
+            if (task.XlSearchParameters.FilterScanOxiniumIons)
+            {
+                CkbAnalyzeOxiniumIon.IsChecked = true;
+            }
+            else
+            {
+                CkbAnalyzeOxiniumIon.IsChecked = task.XlSearchParameters.AnalyzeOxiniumIons;
+            }
 
-            CkbAnalyzeOxiniumIon.IsChecked = task.XlSearchParameters.OnlyAnalyzeOxiniumIons;
             CkbSearchGlycan182.IsChecked = task.XlSearchParameters.SearchGlycan182;
 
             cbCrosslinkers.SelectedItem = task.XlSearchParameters.Crosslinker;
@@ -267,7 +276,17 @@ namespace MetaMorpheusGUI
                 TheTask.XlSearchParameters.OpenSearchType = OpenSearchType.OGlyco;
             }
 
-            TheTask.XlSearchParameters.OnlyAnalyzeOxiniumIons = CkbAnalyzeOxiniumIon.IsChecked.Value;
+            TheTask.XlSearchParameters.FilterScanOxiniumIons = CkbFilterScanOxiniumIon.IsChecked.Value;
+            if (TheTask.XlSearchParameters.FilterScanOxiniumIons)
+            {
+                TheTask.XlSearchParameters.AnalyzeOxiniumIons = true;
+            }
+            else
+            {
+                TheTask.XlSearchParameters.AnalyzeOxiniumIons = CkbAnalyzeOxiniumIon.IsChecked.Value;
+            }
+            
+            
             TheTask.XlSearchParameters.SearchGlycan182 = CkbSearchGlycan182.IsChecked.Value;
 
             TheTask.XlSearchParameters.RestrictToTopNHits = ckbXLTopNum.IsChecked.Value;
@@ -450,6 +469,17 @@ namespace MetaMorpheusGUI
         private void OnClosing(object sender, CancelEventArgs e)
         {
             CustomFragmentationWindow.Close();
+        }
+
+        private void CkbAnalyzeOxiniumIon_Unchecked(object sender, RoutedEventArgs e)
+        {
+            CkbFilterScanOxiniumIon.IsChecked = false;
+            CkbFilterScanOxiniumIon.IsEnabled = false;
+        }
+
+        private void CkbAnalyzeOxiniumIon_Checked(object sender, RoutedEventArgs e)
+        {
+            CkbFilterScanOxiniumIon.IsEnabled = true;
         }
     }
 }
