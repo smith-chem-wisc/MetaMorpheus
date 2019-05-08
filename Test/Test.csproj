@@ -55,6 +55,9 @@
     <None Update="GlycoTestData\ComboGlycanDatabase.csv">
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
     </None>
+    <None Update="GlycoTestData\yeast_glycan_25170.mgf">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </None>
     <None Update="indexEngineTestFasta.fasta">
       <CopyToOutputDirectory>Always</CopyToOutputDirectory>
     </None>

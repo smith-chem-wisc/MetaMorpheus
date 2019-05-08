@@ -32,8 +32,8 @@ namespace Test
             string kindString = Glycan.GetKindString(structure);
             byte[] kind = new byte[] {3, 4, 0, 0, 1 };
             string kindString2 = Glycan.GetKindString(kind);
-            Assert.AreEqual("H3N4F1", kindString);
-            Assert.AreEqual("H3N4F1", kindString2);
+            Assert.AreEqual("H3N4A0G0F1", kindString);
+            Assert.AreEqual("H3N4A0G0F1", kindString2);
         }
 
         [Test]
@@ -108,7 +108,7 @@ namespace Test
             task.XlSearchParameters.OpenSearchType = OpenSearchType.NGlyco;
             Directory.CreateDirectory(Path.Combine(Environment.CurrentDirectory, @"TESTGlycoData"));
             DbForTask db = new DbForTask(Path.Combine(TestContext.CurrentContext.TestDirectory, @"GlycoTestData/Q9C0Y4.fasta"), false);
-            string raw = Path.Combine(TestContext.CurrentContext.TestDirectory, @"GlycoTestData/25170.mgf");
+            string raw = Path.Combine(TestContext.CurrentContext.TestDirectory, @"GlycoTestData/yeast_glycan_25170.mgf");
             new EverythingRunnerEngine(new List<(string, MetaMorpheusTask)> { ("Task", task) }, new List<string> { raw }, new List<DbForTask> { db }, Path.Combine(Environment.CurrentDirectory, @"TESTGlycoData")).Run();
             Directory.Delete(Path.Combine(Environment.CurrentDirectory, @"TESTGlycoData"), true);
         }
@@ -161,7 +161,7 @@ namespace Test
         public static void GlyTest_OxoniumIons()
         {
             CommonParameters commonParameters = new CommonParameters();
-            string filePath = Path.Combine(TestContext.CurrentContext.TestDirectory, @"GlycoTestData/25170.mgf");
+            string filePath = Path.Combine(TestContext.CurrentContext.TestDirectory, @"GlycoTestData/yeast_glycan_25170.mgf");
             MyFileManager myFileManager = new MyFileManager(true);
             var msDataFile = myFileManager.LoadFile(filePath, commonParameters);
             var listOfSortedms2Scans = MetaMorpheusTask.GetMs2Scans(msDataFile, filePath, commonParameters).ToArray();
@@ -219,7 +219,6 @@ namespace Test
       
         
         //This is not exactly a test. The function is used for N-Glycan database generation. The function maybe useful in the future.
-        [Test]
         public static void GlyTest_GenerateDataBase()
         {         
             var NGlycans = Glycan.LoadGlycan(GlobalVariables.NGlycanLocation);

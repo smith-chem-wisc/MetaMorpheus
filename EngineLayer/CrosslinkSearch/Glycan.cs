@@ -544,16 +544,12 @@ namespace EngineLayer
 
         public static string GetKindString(string structure)
         {
-            string H = (structure.Count(p => p == 'H') > 0) ? "H" + structure.Count(p => p == 'H').ToString() : "";
-            string N = (structure.Count(p => p == 'N') > 0) ? "N" + structure.Count(p => p == 'N').ToString() : "";
-            string A = (structure.Count(p => p == 'A') > 0) ? "A" + structure.Count(p => p == 'A').ToString() : "";
-            string G = (structure.Count(p => p == 'G') > 0) ? "G" + structure.Count(p => p == 'G').ToString() : "";
-            string F = (structure.Count(p => p == 'F') > 0) ? "F" + structure.Count(p => p == 'F').ToString() : "";
+            string H =  "H" + structure.Count(p => p == 'H').ToString();
+            string N =  "N" + structure.Count(p => p == 'N').ToString();
+            string A =  "A" + structure.Count(p => p == 'A').ToString();
+            string G =  "G" + structure.Count(p => p == 'G').ToString();
+            string F =  "F" + structure.Count(p => p == 'F').ToString();
             string kindString = H + N + A + G + F;
-            if (kindString == "")
-            {
-                kindString = "@";
-            }
             return kindString;
         }
 
