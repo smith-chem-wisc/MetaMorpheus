@@ -130,10 +130,10 @@
                                     <CheckBox x:Name="CkbSearchGlycan182" VerticalAlignment="Center" Content="Use database with 182 glycans"/>
                                 </StackPanel>
                                 <StackPanel Grid.Row="1">
-                                    <CheckBox x:Name="CkbAnalyzeOxiniumIon" VerticalAlignment="Center" Content="Analyze Oxinium Ions" Checked="CkbAnalyzeOxiniumIon_Checked" Unchecked="CkbAnalyzeOxiniumIon_Unchecked"/>
+                                    <CheckBox x:Name="CkbAnalyzeOxiniumIon" VerticalAlignment="Center" Content="Analyze Oxinium Ions" />
                                 </StackPanel>
                                 <StackPanel Grid.Row="2">
-                                    <CheckBox x:Name="CkbFilterScanOxiniumIon" VerticalAlignment="Center" Content="Filter Scans Contain Oxinium Ions" IsEnabled="False"/>
+                                    <CheckBox x:Name="CkbFilterScanOxiniumIon" VerticalAlignment="Center" Content="Filter Scans Contain Oxinium Ions"/>
                                 </StackPanel>
                             </Grid>
                         </StackPanel>

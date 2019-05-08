@@ -90,7 +90,7 @@ namespace TaskLayer
 
                 Ms2ScanWithSpecificMass[] arrayOfMs2ScansSortedByMass = GetMs2Scans(myMsDataFile, origDataFile, combinedParams).OrderBy(b => b.PrecursorMass).ToArray();
 
-                if (XlSearchParameters.AnalyzeOxiniumIons)
+                if (XlSearchParameters.AnalyzeOxiniumIons || XlSearchParameters.FilterScanOxiniumIons)
                 {
                     MassDiffAcceptor massDiffAcceptor_oxiniumIons = new SinglePpmAroundZeroSearchMode(combinedParams.ProductMassTolerance.Value);
                     Tuple<int, double[]>[] tuples = new Tuple<int, double[]>[arrayOfMs2ScansSortedByMass.Length];
@@ -103,8 +103,11 @@ namespace TaskLayer
                             tuples[scanIndex] = new Tuple<int, double[]>(arrayOfMs2ScansSortedByMass[scanIndex].OneBasedScanNumber, oxoniumIonIntensities);
                         }
                     });
-                    var writtenFile= Path.Combine(OutputFolder, "oxiniumIons" + ".tsv");
-                    WriteOxoniumIons(tuples, writtenFile);
+                    if (XlSearchParameters.AnalyzeOxiniumIons)
+                    {
+                        var writtenFile = Path.Combine(OutputFolder, "oxiniumIons" + ".tsv");
+                        WriteOxoniumIons(tuples, writtenFile);
+                    }
 
                     if (XlSearchParameters.FilterScanOxiniumIons)
                     {
