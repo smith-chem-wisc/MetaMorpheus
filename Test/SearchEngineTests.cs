@@ -1518,5 +1518,56 @@ namespace Test
             CommonParameters updatedCommonParams = MetaMorpheusTask.SetAllFileSpecificCommonParams(commonParams, fileSpecificParams);
             Assert.AreEqual(updatedCommonParams.DigestionParams.SpecificProtease, commonParams.DigestionParams.SpecificProtease);
         }
+
+        [Test]
+        public static void TestTerminalModificationsForSnes()
+        {
+            PeptideWithSetModifications nTermModifiedPwsm = new PeptideWithSetModifications("[Uniprot:N-acetylalanine on A]AGIAAKLAKDREAAEGLGSHA", GlobalVariables.AllModsKnownDictionary);
+            PeptideWithSetModifications cTermModifiedPwsm = new PeptideWithSetModifications("AGIAAKLAKDREAAEGLGSHA[Uniprot:Alanine amide on A]", GlobalVariables.AllModsKnownDictionary);
+            TestDataFile msFile = new TestDataFile(new List<PeptideWithSetModifications> { nTermModifiedPwsm, cTermModifiedPwsm });
+            var listOfSortedms2Scans = MetaMorpheusTask.GetMs2Scans(msFile, null, new CommonParameters()).OrderBy(b => b.PrecursorMass).ToArray();
+            Protein proteinWithMods = new Protein("MAGIAAKLAKDREAAEGLGSHA", "testProtein",
+                oneBasedModifications: new Dictionary<int, List<Modification>>
+                {
+                    { 2,new List<Modification>{GlobalVariables.AllModsKnownDictionary["N-acetylalanine on A"] } },
+                    { 22,new List<Modification>{GlobalVariables.AllModsKnownDictionary["Alanine amide on A"] } }
+                });
+            var proteinList = new List<Protein> { proteinWithMods };
+
+            List<DigestionMotif> motifs = new List<DigestionMotif>
+            {
+                new DigestionMotif("K", null, 1, null),
+            };
+            var nProtease = new Protease("SingleN", CleavageSpecificity.None, null, null, motifs);
+            var cProtease = new Protease("SingleC", CleavageSpecificity.None, null, null, motifs);
+            ProteaseDictionary.Dictionary.Add(nProtease.Name, nProtease);
+            ProteaseDictionary.Dictionary.Add(cProtease.Name, cProtease);
+            CommonParameters nCommonParameters = new CommonParameters(
+                digestionParams: new DigestionParams(protease: nProtease.Name, fragmentationTerminus: FragmentationTerminus.N, searchModeType: CleavageSpecificity.None),
+                addCompIons: true);
+            CommonParameters cCommonParameters = new CommonParameters(
+                digestionParams: new DigestionParams(protease: cProtease.Name, fragmentationTerminus: FragmentationTerminus.C, searchModeType: CleavageSpecificity.None),
+                addCompIons: true);
+            List<Modification> empty = new List<Modification>();
+
+            List<CommonParameters> paramsToTest = new List<CommonParameters> { cCommonParameters, nCommonParameters };
+            foreach (CommonParameters commonParams in paramsToTest)
+            {
+                HashSet<DigestionParams> digestParams = new HashSet<DigestionParams> { commonParams.DigestionParams };
+                var indexEngine = new IndexingEngine(proteinList, empty, empty, null, 1, DecoyType.None, commonParams, 100000, true, new List<FileInfo>(), new List<string>());
+                var indexResults = (IndexingResults)indexEngine.Run();
+                var peptideIndex = indexResults.PeptideIndex;
+                var fragmentIndexDict = indexResults.FragmentIndex;
+                var precursorIndexDict = indexResults.PrecursorIndex;
+                PeptideSpectralMatch[][] allPsmsArrays = new PeptideSpectralMatch[1][];
+                allPsmsArrays[0] = new PeptideSpectralMatch[listOfSortedms2Scans.Length];
+                var engine = new NonSpecificEnzymeSearchEngine(allPsmsArrays, listOfSortedms2Scans, peptideIndex, fragmentIndexDict, precursorIndexDict, 1, commonParams, new SinglePpmAroundZeroSearchMode(5), 0, new List<string>());
+                var searchResults = engine.Run();
+                for (int i = 0; i < listOfSortedms2Scans.Length; i++)
+                {
+                    Assert.IsTrue(allPsmsArrays[0][i] != null);
+                }
+            }
+        }
     }
 }

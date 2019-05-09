@@ -187,9 +187,13 @@ namespace EngineLayer.Indexing
                         int precursorBin = (int)Math.Round(mass * FragmentBinsPerDalton);
 
                         if (precursorIndex[precursorBin] == null)
+                        {
                             precursorIndex[precursorBin] = new List<int> { i };
+                        }
                         else
+                        {
                             precursorIndex[precursorBin].Add(i);
+                        }
                     }
                     progress++;
                     var percentProgress = (int)((progress / peptidesSortedByMass.Count) * 100);
