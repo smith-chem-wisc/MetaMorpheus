@@ -32,7 +32,7 @@ namespace EngineLayer.Localization
                 if (GlobalVariables.StopLoops) { break; }
 
                 MsDataScan scan = MyMsDataFile.GetOneBasedScan(psm.ScanNumber);
-                Ms2ScanWithSpecificMass scanWithSpecificMass = new Ms2ScanWithSpecificMass(scan, psm.ScanPrecursorMonoisotopicPeakMz, psm.ScanPrecursorCharge, psm.FullFilePath, commonParameters);
+                Ms2ScanWithSpecificMass scanWithSpecificMass = new Ms2ScanWithSpecificMass(scan, psm.ScanPrecursorMonoisotopicPeakMz, psm.ScanPrecursorCharge, psm.FullFilePath, CommonParameters);
                 PeptideWithSetModifications peptide = psm.BestMatchingPeptides.First().Peptide;
                 double massDifference = psm.ScanPrecursorMass - peptide.MonoisotopicMass;
 
@@ -44,9 +44,9 @@ namespace EngineLayer.Localization
                     PeptideWithSetModifications peptideWithLocalizedMassDiff = peptide.Localize(r, massDifference);
 
                     // this is the list of theoretical products for this peptide with mass-difference on this residue
-                    List<Product> productsWithLocalizedMassDiff = peptideWithLocalizedMassDiff.Fragment(commonParameters.DissociationType, commonParameters.DigestionParams.FragmentationTerminus).ToList();
+                    List<Product> productsWithLocalizedMassDiff = peptideWithLocalizedMassDiff.Fragment(CommonParameters.DissociationType, CommonParameters.DigestionParams.FragmentationTerminus).ToList();
 
-                    var matchedIons = MatchFragmentIons(scanWithSpecificMass, productsWithLocalizedMassDiff, commonParameters);
+                    var matchedIons = MatchFragmentIons(scanWithSpecificMass, productsWithLocalizedMassDiff, CommonParameters);
 
                     // score when the mass-diff is on this residue
                     double localizedScore = CalculatePeptideScore(scan, matchedIons);

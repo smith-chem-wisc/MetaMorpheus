@@ -347,7 +347,7 @@ namespace EngineLayer
                     if (parsimonyProteinsWithSameNumPeptides != null)
                     {
                         Parallel.ForEach(Partitioner.Create(0, list.Count),
-                            new ParallelOptions { MaxDegreeOfParallelism = commonParameters.MaxThreadsToUsePerFile },
+                            new ParallelOptions { MaxDegreeOfParallelism = CommonParameters.MaxThreadsToUsePerFile },
                             (range, loopState) =>
                             {
                                 for (int i = range.Item1; i < range.Item2; i++)
