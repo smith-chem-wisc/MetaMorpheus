@@ -33,6 +33,7 @@ namespace EngineLayer.CrosslinkSearch
         public double PeptideScore { get; set; }
         public double GlycanScore { get; set; }
         public double DiagnosticIonScore { get; set; }
+        public double GlycanDecoyScore { get; set; }
 
         public static List<int> GetPossibleCrosslinkerModSites(char[] crosslinkerModSites, PeptideWithSetModifications peptide)
         {
@@ -78,7 +79,7 @@ namespace EngineLayer.CrosslinkSearch
                     //FullSequence is used here to avoid duplicated modification on same sites?
                     if (ModificationLocalization.ModFits(modWithMotif, peptide.BaseSequence, r + 1, peptide.Length, r + 1))
                     {
-                        possibleModSites.Add(r + 1);
+                        possibleModSites.Add(r + 2);
                     }
                 }
             }
@@ -225,6 +226,7 @@ namespace EngineLayer.CrosslinkSearch
             sb.Append("Total Score" + '\t');
             sb.Append("Peptide Score" + '\t');
             sb.Append("Glycan Score" + '\t');
+            sb.Append("DecoyGlycan Score" + '\t');
             sb.Append("DiagonosticIon Score" + '\t');
             sb.Append("GlycanIDs" + '\t');
             sb.Append("GlycanDecoy" + '\t');
@@ -371,6 +373,7 @@ namespace EngineLayer.CrosslinkSearch
                 sb.Append(XLTotalScore + "\t");             
                 sb.Append(PeptideScore + "\t");
                 sb.Append(GlycanScore + "\t");
+                sb.Append(GlycanDecoyScore + "\t");
                 sb.Append(DiagnosticIonScore + "\t");
                 sb.Append(string.Join("|", Glycan.Select(p => p.GlyId.ToString()).ToArray())); sb.Append("\t");
                 sb.Append(Glycan.First().Decoy? "D": "T"); sb.Append("\t");

@@ -100,14 +100,14 @@ namespace EngineLayer.CrosslinkSearch
             return false;
         }
 
-        public static List<Product> GetGlycanYIons(Ms2ScanWithSpecificMass theScan, Glycan glycan)
+        public static List<Product> GetGlycanYIons(double precursorMass, Glycan glycan)
         {
-            double possiblePeptideMass = theScan.PrecursorMass - (double)glycan.Mass/1E5;
+            double possiblePeptideMass = precursorMass - (double)glycan.Mass/1E5;
             List<Product> YIons = new List<Product>();
-            YIons.Add(new Product(ProductType.M, new NeutralTerminusFragment(FragmentationTerminus.Both, theScan.PrecursorMass, 0, 0), (double)glycan.Mass/1E5)); //Y0 ion. Glycan totally loss.
+            YIons.Add(new Product(ProductType.M, new NeutralTerminusFragment(FragmentationTerminus.Both, precursorMass, 0, 0), (double)glycan.Mass/1E5)); //Y0 ion. Glycan totally loss.
             foreach (var ion in glycan.Ions)
             {
-                Product product = new Product(ProductType.M, new NeutralTerminusFragment(FragmentationTerminus.Both, theScan.PrecursorMass, 0, 0), (double)ion.LossIonMass/1E5);
+                Product product = new Product(ProductType.M, new NeutralTerminusFragment(FragmentationTerminus.Both, precursorMass, 0, 0), (double)ion.LossIonMass/1E5);
                 YIons.Add(product);
             }
             return YIons;
@@ -149,7 +149,7 @@ namespace EngineLayer.CrosslinkSearch
                 {
                     continue;
                 }
-                List<Product> YIons = GetGlycanYIons(theScan, glycans[i]);
+                List<Product> YIons = GetGlycanYIons(theScan.PrecursorMass, glycans[i]);
                 List<MatchedFragmentIon> matchedFragmentIons = MetaMorpheusEngine.MatchFragmentIons(theScan, YIons, commonParameters);
                 if (ScanTrimannosylCoreFilter(matchedFragmentIons, glycans[i]))
                 {
@@ -196,7 +196,7 @@ namespace EngineLayer.CrosslinkSearch
             return score;
         }
 
-        public static IEnumerable<Tuple<int, List<Product>>> NGlyGetTheoreticalFragments(Ms2ScanWithSpecificMass theScan, DissociationType dissociationType, 
+        public static IEnumerable<Tuple<int, List<Product>>> NGlyGetTheoreticalFragments(double precursorMass, DissociationType dissociationType, 
             List<int> possibleModPositions, PeptideWithSetModifications peptide, Glycan glycan)
         {
             Modification modification = GlycanToModification(glycan);
@@ -204,17 +204,21 @@ namespace EngineLayer.CrosslinkSearch
             foreach (var position in possibleModPositions)
             {               
                 Dictionary<int, Modification> testMods = new Dictionary<int, Modification> { { position, modification } };
-     
-                foreach (var mod in peptide.AllModsOneIsNterminus)
+
+                //TO DO: Weirde bug
+                if (!peptide.AllModsOneIsNterminus.Keys.Contains(position))
                 {
-                    testMods.Add(mod.Key, mod.Value);
-                }
+                    foreach (var mod in peptide.AllModsOneIsNterminus)
+                    {
+                        testMods.Add(mod.Key, mod.Value);
+                    }
+                }           
 
                 var testPeptide = new PeptideWithSetModifications(peptide.Protein, peptide.DigestionParams, peptide.OneBasedStartResidueInProtein,
                     peptide.OneBasedEndResidueInProtein, peptide.CleavageSpecificityForFdrCategory, peptide.PeptideDescription, peptide.MissedCleavages, testMods, peptide.NumFixedMods);
 
                 List<Product> theoreticalProducts = testPeptide.Fragment(dissociationType, FragmentationTerminus.Both).Where(p=>p.ProductType!= ProductType.M).ToList();
-                theoreticalProducts.AddRange(GetGlycanYIons(theScan, glycan));
+                theoreticalProducts.AddRange(GetGlycanYIons(precursorMass, glycan));
 
                 yield return new Tuple<int, List<Product>>(position, theoreticalProducts);
             }

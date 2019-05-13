@@ -42,13 +42,20 @@ namespace Test
             PeptideWithSetModifications pep = new PeptideWithSetModifications("ELNPTPNVEVNVECR", null); 
             string[] motifs = new string[] { "Nxs", "Nxt"};
             var sites = CrosslinkSpectralMatch.GetPossibleModSites(pep, motifs);
-            Assert.That(sites.Count() == 1 && sites[0] == 3);
+            Assert.That(sites.Count() == 1 && sites[0] == 4);
 
+            ModificationMotif.TryGetMotif("C", out ModificationMotif motif1);
+            Modification mod1 = new Modification(_originalId: "Carbamidomethyl of C", _modificationType: "Common Fixed", _target: motif1, _locationRestriction: "Anywhere.", _monoisotopicMass: 57.02146372068994);
             ModificationMotif.TryGetMotif("N", out ModificationMotif motif2);
             Modification mod2 = new Modification(_originalId: "Test of N", _modificationType: "Common Fixed", _target: motif2, _locationRestriction: "Anywhere.");
-            var testN = new PeptideWithSetModifications("CN[Common Fixed:Test of N]SSDQPKLNLSGIETP", new Dictionary<string, Modification> { { "Test of N", mod2 } });
+            var testN = new PeptideWithSetModifications("C[Common Fixed:Carbamidomethyl of C]N[Common Fixed:Test of N]SSDQPKL[Common Fixed:Carbamidomethyl of C]NLSGIETP", new Dictionary<string, Modification> { { "Carbamidomethyl of C", mod1 }, { "Test of N", mod2 } });
             var testSites = CrosslinkSpectralMatch.GetPossibleModSites(testN, motifs);
-            Assert.That(testSites.Count() == 1 && testSites[0] == 10);
+            Assert.That(testSites.Count() == 1 && testSites[0] == 11);
+
+
+            var testC = new PeptideWithSetModifications("TELAAYLSC[Common Fixed:Carbamidomethyl of C]NATK", new Dictionary<string, Modification> { { "Carbamidomethyl of C", mod1 }});
+            var testCSites = CrosslinkSpectralMatch.GetPossibleModSites(testC, motifs);
+            Assert.That(testCSites.Count() == 1 && testSites[0] == 11);
         }
 
         [Test]
@@ -81,9 +88,9 @@ namespace Test
             var listOfSortedms2Scans = MetaMorpheusTask.GetMs2Scans(msDataFile, filePath, commonParameters).ToArray();
 
             var glycanMod = GlycoPeptides.GlycanToModification(glycan);
-            var fragmentIons = GlycoPeptides.NGlyGetTheoreticalFragments(listOfSortedms2Scans[0], DissociationType.HCD, sites, aPeptideWithSetModifications.Last(), glycan).ToList();
+            var fragmentIons = GlycoPeptides.NGlyGetTheoreticalFragments(listOfSortedms2Scans[0].PrecursorMass, DissociationType.HCD, sites, aPeptideWithSetModifications.Last(), glycan).ToList();
 
-            var glycanYIons = GlycoPeptides.GetGlycanYIons(listOfSortedms2Scans[0], glycan);
+            var glycanYIons = GlycoPeptides.GetGlycanYIons(listOfSortedms2Scans[0].PrecursorMass, glycan);
             var matchedGlycanYIons = MetaMorpheusEngine.MatchFragmentIons(listOfSortedms2Scans[0], glycanYIons, commonParameters);
             Assert.AreEqual(matchedGlycanYIons.Count, 16);
             //TO DO: The neutroloss is not annotated well.
@@ -139,7 +146,7 @@ namespace Test
             Assert.AreEqual(precusorMatched, 0);
 
             var glycanMod = GlycoPeptides.GlycanToModification(glycan);
-            var fragmentIons = GlycoPeptides.NGlyGetTheoreticalFragments(listOfSortedms2Scans[0], DissociationType.EThcD, sites, aPeptideWithSetModifications.Last(), glycan).ToList();
+            var fragmentIons = GlycoPeptides.NGlyGetTheoreticalFragments(listOfSortedms2Scans[0].PrecursorMass, DissociationType.EThcD, sites, aPeptideWithSetModifications.Last(), glycan).ToList();
             var matchedFragmentIons = MetaMorpheusEngine.MatchFragmentIons(listOfSortedms2Scans[0], fragmentIons.Select(p => p.Item2).ToList().First(), commonParameters);
 
             using (StreamWriter output = new StreamWriter(Path.Combine(TestContext.CurrentContext.TestDirectory, "11091_NGlyco_AIETD.tsv")))
@@ -189,10 +196,22 @@ namespace Test
         [Test]
         public static void GlyTest_BisectHexNAc()
         {
-            //The node here is for check the structure of the glycan
-            Node node = Glycan.Struct2Node("(N(N(H(N)(H(N)(N))(H(N(H))))))");
+            //The node here is for check the structure of the glycan. 
+            Node node = Glycan.Struct2Node("(N(N(H(N)(H(N)(N))(H(N(H))))))"); //This glycan has a bisect hexnac 
             Glycan glycan = Glycan.Struct2Glycan("(N(N(H(N)(H(N)(N))(H(N(H))))))", 0);
             Assert.AreEqual(glycan.Ions.Count, 17);
+        }
+
+        [Test]
+        public static void GlyTest_GlycanDecoy()
+        {
+            Glycan glycan = Glycan.Struct2Glycan("(N(N(H(N)(H(N)(N))(H(N(H))))))", 0);
+            var test = Glycan.BuildTargetDecoyGlycans(new Glycan[] { glycan});
+            Assert.AreEqual(test.Last().Decoy, true);
+            foreach (var ion in test.Last().Ions)
+            {
+                Assert.AreEqual(ion.IonMass + ion.LossIonMass, test.Last().Mass);
+            }
         }
 
         [Test]

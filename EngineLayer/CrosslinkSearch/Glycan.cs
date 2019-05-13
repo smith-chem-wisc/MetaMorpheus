@@ -482,11 +482,11 @@ namespace EngineLayer
                     ionMasses.Add(ionMass);
                     var ionKind = GetKind(Node2Struct(aNodeIon));
                     var lossIonMass = GetIonLossMass(kind, ionKind);
-                    GlycanIon glycanIon = new GlycanIon(0, ionMass, ionKind, lossIonMass);
+                    GlycanIon glycanIon = new GlycanIon(null, ionMass, ionKind, lossIonMass);
                     glycanIons.Add(glycanIon);
                 }
             }
-            glycanIons.Add(new GlycanIon(0, 8303819, new byte[] { 0, 0, 0, 0, 0 }, mass - 8303819)); //Cross-ring mass
+            glycanIons.Add(new GlycanIon(null, 8303819, new byte[] { 0, 0, 0, 0, 0 }, mass - 8303819)); //Cross-ring mass
             glycanIons = glycanIons.OrderBy(p => p.IonMass).ToList();
             //glycanIons.RemoveAt(glycanIons.Count - 1);
 
@@ -514,18 +514,16 @@ namespace EngineLayer
 
             Random random = new Random();
             foreach (var aGlycan in glycans)
-            {
-                allGlycans.Add(aGlycan);
-                var value = random.Next(350000, 9000000); //TO DO: how to choose the number
-
+            {             
                 List<GlycanIon> glycanIons = new List<GlycanIon>();
                 foreach (var ion in aGlycan.Ions)
                 {
-                    GlycanIon glycanIon = new GlycanIon(0, ion.IonMass, ion.IonKind, ion.LossIonMass + value);
+                    var value = random.Next(100000, 3000000); //Based on pGlyco [1, 30] and GlycoPAT [-50, 50].
+                    GlycanIon glycanIon = new GlycanIon(null, ion.IonMass + value, ion.IonKind, ion.LossIonMass - value);
                     glycanIons.Add(glycanIon);
                 }
-                var aDecoyGlycan = new Glycan(aGlycan.Struc, aGlycan.Mass + value, aGlycan.Kind, glycanIons, true);
-
+                var aDecoyGlycan = new Glycan(aGlycan.Struc, aGlycan.Mass, aGlycan.Kind, glycanIons, true);
+                aDecoyGlycan.GlyId = aGlycan.GlyId;
                 allGlycans.Add(aDecoyGlycan);
             }
             return allGlycans.OrderBy(p=>p.Mass).ToArray();
@@ -627,14 +625,14 @@ namespace EngineLayer
 
     public class GlycanIon
     {
-        public GlycanIon(int ionStruct, int ionMass, byte[] ionKind, int lossIonMass)
+        public GlycanIon(string ionStruct, int ionMass, byte[] ionKind, int lossIonMass)
         {
             IonStruct = ionStruct;
             IonMass = ionMass;
             IonKind = ionKind;
             LossIonMass = lossIonMass;
         }
-        public int IonStruct { get; set; }
+        public string IonStruct { get; set; }
         public int IonMass { get; set; }
         public int LossIonMass { get; set; }//Glycan.Mass - IonMass
         public byte[] IonKind { get; set; }
@@ -666,7 +664,7 @@ namespace EngineLayer
                     {
                         ionMasses.Add(ion.IonMass);
                         var lossIonMass = Glycan.GetIonLossMass(Kind, ion.IonKind);
-                        GlycanIon glycanIon = new GlycanIon(0, ion.IonMass, ion.IonKind, lossIonMass);
+                        GlycanIon glycanIon = new GlycanIon(null, ion.IonMass, ion.IonKind, lossIonMass);
                         glycanIons.Add(glycanIon);
                     }
                 }
