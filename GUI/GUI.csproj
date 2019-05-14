@@ -181,14 +181,17 @@
       <Generator>MSBuild:Compile</Generator>
       <SubType>Designer</SubType>
     </ApplicationDefinition>
+    <Compile Include="CustomAminoAcidWindow.xaml.cs">
+      <DependentUpon>CustomAminoAcidWindow.xaml</DependentUpon>
+    </Compile>
     <Compile Include="CustomCrosslinkerWindow.xaml.cs">
       <DependentUpon>CustomCrosslinkerWindow.xaml</DependentUpon>
     </Compile>
     <Compile Include="CustomFragmentationWindow.xaml.cs">
       <DependentUpon>CustomFragmentationWindow.xaml</DependentUpon>
     </Compile>
-    <Compile Include="CustomModButton.xaml.cs">
-      <DependentUpon>CustomModButton.xaml</DependentUpon>
+    <Compile Include="CustomModWindow.xaml.cs">
+      <DependentUpon>CustomModWindow.xaml</DependentUpon>
     </Compile>
     <Compile Include="CustomMsgBox.xaml.cs">
       <DependentUpon>CustomMsgBox.xaml</DependentUpon>
@@ -262,6 +265,10 @@
       <SubType>Designer</SubType>
       <Generator>MSBuild:Compile</Generator>
     </Page>
+    <Page Include="CustomAminoAcidWindow.xaml">
+      <SubType>Designer</SubType>
+      <Generator>MSBuild:Compile</Generator>
+    </Page>
     <Page Include="CustomCrosslinkerWindow.xaml">
       <SubType>Designer</SubType>
       <Generator>MSBuild:Compile</Generator>
@@ -270,7 +277,7 @@
       <SubType>Designer</SubType>
       <Generator>MSBuild:Compile</Generator>
     </Page>
-    <Page Include="CustomModButton.xaml">
+    <Page Include="CustomModWindow.xaml">
       <Generator>MSBuild:Compile</Generator>
       <SubType>Designer</SubType>
     </Page>
