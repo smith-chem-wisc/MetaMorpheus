@@ -23,9 +23,9 @@ namespace EngineLayer.NonSpecificEnzymeSearch
         readonly List<ProductType> ProductTypesToSearch;
         readonly List<Modification> VariableTerminalModifications;
 
-        public NonSpecificEnzymeSearchEngine(PeptideSpectralMatch[][] globalPsms, Ms2ScanWithSpecificMass[] listOfSortedms2Scans, 
-            List<PeptideWithSetModifications> peptideIndex, List<int>[] fragmentIndex, List<int>[] precursorIndex, int currentPartition, 
-            CommonParameters commonParameters, List<Modification> variableModifications, MassDiffAcceptor massDiffAcceptor, double maximumMassThatFragmentIonScoreIsDoubled, List<string> nestedIds) 
+        public NonSpecificEnzymeSearchEngine(PeptideSpectralMatch[][] globalPsms, Ms2ScanWithSpecificMass[] listOfSortedms2Scans,
+            List<PeptideWithSetModifications> peptideIndex, List<int>[] fragmentIndex, List<int>[] precursorIndex, int currentPartition,
+            CommonParameters commonParameters, List<Modification> variableModifications, MassDiffAcceptor massDiffAcceptor, double maximumMassThatFragmentIonScoreIsDoubled, List<string> nestedIds)
             : base(null, listOfSortedms2Scans, peptideIndex, fragmentIndex, currentPartition, commonParameters, massDiffAcceptor, maximumMassThatFragmentIonScoreIsDoubled, nestedIds)
         {
             PrecursorIndex = precursorIndex;
@@ -38,6 +38,8 @@ namespace EngineLayer.NonSpecificEnzymeSearch
 
         protected override MetaMorpheusEngineResults RunSpecific()
         {
+            bool semiSpecificSearch = CommonParameters.DigestionParams.SearchModeType == CleavageSpecificity.Semi;
+
             double progress = 0;
             int oldPercentProgress = 0;
             ReportProgress(new ProgressEventArgs(oldPercentProgress, "Performing nonspecific search... " + CurrentPartition + "/" + CommonParameters.TotalPartitions, NestedIds));
@@ -112,7 +114,7 @@ namespace EngineLayer.NonSpecificEnzymeSearch
                                 PeptideWithSetModifications peptide = PeptideIndex[id];
                                 List<Product> peptideTheorProducts = peptide.Fragment(CommonParameters.DissociationType, CommonParameters.DigestionParams.FragmentationTerminus).ToList();
 
-                                Tuple<int, PeptideWithSetModifications> notchAndUpdatedPeptide = Accepts(peptideTheorProducts, scan.PrecursorMass, peptide, CommonParameters.DigestionParams.FragmentationTerminus, MassDiffAcceptor);
+                                Tuple<int, PeptideWithSetModifications> notchAndUpdatedPeptide = Accepts(peptideTheorProducts, scan.PrecursorMass, peptide, CommonParameters.DigestionParams.FragmentationTerminus, MassDiffAcceptor, semiSpecificSearch);
                                 int notch = notchAndUpdatedPeptide.Item1;
                                 if (notch >= 0)
                                 {
@@ -151,12 +153,12 @@ namespace EngineLayer.NonSpecificEnzymeSearch
             return new MetaMorpheusEngineResults(this);
         }
 
-        private Tuple<int, PeptideWithSetModifications> Accepts(List<Product> fragments, double scanPrecursorMass, PeptideWithSetModifications peptide, FragmentationTerminus fragmentationTerminus, MassDiffAcceptor searchMode)
+        private Tuple<int, PeptideWithSetModifications> Accepts(List<Product> fragments, double scanPrecursorMass, PeptideWithSetModifications peptide, FragmentationTerminus fragmentationTerminus, MassDiffAcceptor searchMode, bool semiSpecificSearch)
         {
             int localminPeptideLength = CommonParameters.DigestionParams.MinPeptideLength;
 
             //Get terminal modifications, if any
-            Dictionary<int, List<Modification>> databaseAnnotatedMods = GetTerminalModPositions(peptide, CommonParameters.DigestionParams, VariableTerminalModifications);
+            Dictionary<int, List<Modification>> databaseAnnotatedMods = semiSpecificSearch? null : GetTerminalModPositions(peptide, CommonParameters.DigestionParams, VariableTerminalModifications);
 
             for (int i = localminPeptideLength - 1; i < fragments.Count; i++) //minus one start, because fragment 1 is at index 0
             {
@@ -166,7 +168,7 @@ namespace EngineLayer.NonSpecificEnzymeSearch
 
                 //check for terminal mods that might reach the observed mass
                 Modification terminalMod = null;
-                if (notch < 0 && databaseAnnotatedMods.TryGetValue(i + 1, out List<Modification> terminalModsAtThisIndex)) //look for i+1, because the mod might exist at the terminus
+                if (!semiSpecificSearch && notch < 0 && databaseAnnotatedMods.TryGetValue(i + 1, out List<Modification> terminalModsAtThisIndex)) //look for i+1, because the mod might exist at the terminus
                 {
                     foreach (Modification mod in terminalModsAtThisIndex)
                     {
@@ -193,7 +195,7 @@ namespace EngineLayer.NonSpecificEnzymeSearch
                                 updatedMods.Add(mod.Key, mod.Value);
                             }
                         }
-                        if(terminalMod!=null)
+                        if (terminalMod != null)
                         {
                             updatedMods.Add(endResidue, terminalMod);
                         }
@@ -214,7 +216,7 @@ namespace EngineLayer.NonSpecificEnzymeSearch
                         }
                         if (terminalMod != null)
                         {
-                            updatedMods.Add(startResidue-1, terminalMod);
+                            updatedMods.Add(startResidue - 1, terminalMod);
                         }
                         updatedPwsm = new PeptideWithSetModifications(peptide.Protein, peptide.DigestionParams, startResidue, peptide.OneBasedEndResidueInProtein, CleavageSpecificity.Unknown, "", 0, updatedMods, 0);
                     }

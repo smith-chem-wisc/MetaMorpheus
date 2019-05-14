@@ -120,8 +120,8 @@ namespace EngineLayer.Indexing
                 precursorIndex = CreateNewPrecursorIndex(peptidesSortedByMass);
             }
             bool addInteriorTerminalModsToPrecursorIndex = GeneratePrecursorIndex && CommonParameters.DigestionParams.Protease.Name.Contains("single");
-            List<Modification> terminalModifications = addInteriorTerminalModsToPrecursorIndex ? 
-                NonSpecificEnzymeSearchEngine.GetVariableTerminalMods(CommonParameters.DigestionParams.FragmentationTerminus,VariableModifications) :
+            List<Modification> terminalModifications = addInteriorTerminalModsToPrecursorIndex ?
+                NonSpecificEnzymeSearchEngine.GetVariableTerminalMods(CommonParameters.DigestionParams.FragmentationTerminus, VariableModifications) :
                 null;
 
             // create fragment index
@@ -169,9 +169,9 @@ namespace EngineLayer.Indexing
                 }
 
                 //Add terminal mods if needed (do it here rather than earlier so that we don't have to fragment twice
-                if(addInteriorTerminalModsToPrecursorIndex)
+                if (addInteriorTerminalModsToPrecursorIndex)
                 {
-                    AddInteriorTerminalModsToPrecursorIndex(precursorIndex,fragments, peptidesSortedByMass[peptideId], peptideId, terminalModifications);
+                    AddInteriorTerminalModsToPrecursorIndex(precursorIndex, fragments, peptidesSortedByMass[peptideId], peptideId, terminalModifications);
                 }
 
                 progress++;
@@ -243,8 +243,8 @@ namespace EngineLayer.Indexing
         private void AddInteriorTerminalModsToPrecursorIndex(List<int>[] precursorIndex, List<Product> fragmentMasses, PeptideWithSetModifications peptide, int peptideId, List<Modification> variableModifications)
         {
             //Get database annotated mods
-            Dictionary<int,List<Modification>> databaseAnnotatedMods = NonSpecificEnzymeSearchEngine.GetTerminalModPositions(peptide, CommonParameters.DigestionParams, variableModifications);
-            foreach (KeyValuePair<int,List<Modification>> relevantDatabaseMod in databaseAnnotatedMods)
+            Dictionary<int, List<Modification>> databaseAnnotatedMods = NonSpecificEnzymeSearchEngine.GetTerminalModPositions(peptide, CommonParameters.DigestionParams, variableModifications);
+            foreach (KeyValuePair<int, List<Modification>> relevantDatabaseMod in databaseAnnotatedMods)
             {
                 int fragmentNumber = relevantDatabaseMod.Key;
                 Product fragmentAtIndex = fragmentMasses.Where(x => x.TerminusFragment.FragmentNumber == fragmentNumber).FirstOrDefault();
