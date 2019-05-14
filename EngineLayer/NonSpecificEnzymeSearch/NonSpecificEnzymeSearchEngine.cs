@@ -21,10 +21,11 @@ namespace EngineLayer.NonSpecificEnzymeSearch
         readonly PeptideSpectralMatch[][] GlobalCategorySpecificPsms;
         readonly CommonParameters ModifiedParametersNoComp;
         readonly List<ProductType> ProductTypesToSearch;
+        readonly List<Modification> VariableTerminalModifications;
 
         public NonSpecificEnzymeSearchEngine(PeptideSpectralMatch[][] globalPsms, Ms2ScanWithSpecificMass[] listOfSortedms2Scans, 
             List<PeptideWithSetModifications> peptideIndex, List<int>[] fragmentIndex, List<int>[] precursorIndex, int currentPartition, 
-            CommonParameters commonParameters, MassDiffAcceptor massDiffAcceptor, double maximumMassThatFragmentIonScoreIsDoubled, List<string> nestedIds) 
+            CommonParameters commonParameters, List<Modification> variableModifications, MassDiffAcceptor massDiffAcceptor, double maximumMassThatFragmentIonScoreIsDoubled, List<string> nestedIds) 
             : base(null, listOfSortedms2Scans, peptideIndex, fragmentIndex, currentPartition, commonParameters, massDiffAcceptor, maximumMassThatFragmentIonScoreIsDoubled, nestedIds)
         {
             PrecursorIndex = precursorIndex;
@@ -32,6 +33,7 @@ namespace EngineLayer.NonSpecificEnzymeSearch
             GlobalCategorySpecificPsms = globalPsms;
             ModifiedParametersNoComp = commonParameters.CloneWithNewTerminus(addCompIons: false);
             ProductTypesToSearch = DissociationTypeCollection.ProductsFromDissociationType[commonParameters.DissociationType].Intersect(TerminusSpecificProductTypes.ProductIonTypesFromSpecifiedTerminus[commonParameters.DigestionParams.FragmentationTerminus]).ToList();
+            VariableTerminalModifications = GetVariableTerminalMods(commonParameters.DigestionParams.FragmentationTerminus, variableModifications);
         }
 
         protected override MetaMorpheusEngineResults RunSpecific()
@@ -154,7 +156,7 @@ namespace EngineLayer.NonSpecificEnzymeSearch
             int localminPeptideLength = CommonParameters.DigestionParams.MinPeptideLength;
 
             //Get terminal modifications, if any
-            Dictionary<int, List<Modification>> databaseAnnotatedMods = GetAnnotatedTerminalMods(peptide, CommonParameters.DigestionParams);
+            Dictionary<int, List<Modification>> databaseAnnotatedMods = GetTerminalModPositions(peptide, CommonParameters.DigestionParams, VariableTerminalModifications);
 
             for (int i = localminPeptideLength - 1; i < fragments.Count; i++) //minus one start, because fragment 1 is at index 0
             {
@@ -402,25 +404,24 @@ namespace EngineLayer.NonSpecificEnzymeSearch
             }
         }
 
-        public static Dictionary<int, List<Modification>> GetAnnotatedTerminalMods(PeptideWithSetModifications peptide, DigestionParams digestionParams)
+        public static Dictionary<int, List<Modification>> GetTerminalModPositions(PeptideWithSetModifications peptide, DigestionParams digestionParams, List<Modification> variableMods)
         {
             Dictionary<int, List<Modification>> annotatedTerminalModDictionary = new Dictionary<int, List<Modification>>();
             bool nTerminus = digestionParams.FragmentationTerminus == FragmentationTerminus.N; //is this the singleN or singleC search?
-            if(nTerminus)
-            { }
+
             //determine the start and end index ranges when considering the minimum peptide length
             int startResidue = nTerminus ?
-                peptide.OneBasedStartResidueInProtein + digestionParams.MinPeptideLength - 1 : 
+                peptide.OneBasedStartResidueInProtein + digestionParams.MinPeptideLength - 1 :
                 peptide.OneBasedStartResidueInProtein;
             int endResidue = nTerminus ?
                 peptide.OneBasedEndResidueInProtein :
                 peptide.OneBasedEndResidueInProtein - digestionParams.MinPeptideLength + 1;
+            string terminalStringToFind = nTerminus ? "C-terminal" : "N-terminal"; //if singleN, want to find c-terminal mods and vice-versa
 
             //get all the mods for this protein
             IDictionary<int, List<Modification>> annotatedModsForThisProtein = peptide.Protein.OneBasedPossibleLocalizedModifications;
             //get the possible annotated mods for this peptide
             List<int> annotatedMods = annotatedModsForThisProtein.Keys.Where(x => x > startResidue && x <= endResidue).ToList();
-            string terminalStringToFind = nTerminus ? "C-terminal" : "N-terminal"; //if singleN, want to find c-terminal mods and vice-versa
 
             foreach (int index in annotatedMods)
             {
@@ -438,6 +439,52 @@ namespace EngineLayer.NonSpecificEnzymeSearch
                     {
                         annotatedTerminalModDictionary.Add(peptide.OneBasedEndResidueInProtein - index + 1, terminalModsHere);
                     }
+                }
+            }
+
+            //add variable modifications
+            foreach (Modification mod in variableMods)
+            {
+                string modAminoAcid = mod.Target.ToString();
+                int index = peptide.BaseSequence.IndexOf(modAminoAcid);
+                while (index != -1)
+                {
+                    index++;//if index == 0, length is 1
+                    if (nTerminus)
+                    {
+                        //if singleN, then we're looking at C-terminal
+                        if (index >= digestionParams.MinPeptideLength)
+                        {
+                            if (annotatedTerminalModDictionary.ContainsKey(index))
+                            {
+                                annotatedTerminalModDictionary[index].Add(mod);
+                            }
+                            else
+                            {
+                                annotatedTerminalModDictionary.Add(index, new List<Modification> { mod });
+                            }
+                        }
+                    }
+                    else
+                    {
+                        int fragmentIndex = peptide.BaseSequence.Length - index + 1; //if index == 0, length should be the peptide length
+                        //if singleC, then we're looking at N-terminal
+                        if (fragmentIndex >= digestionParams.MinPeptideLength)
+                        {
+                            if (annotatedTerminalModDictionary.ContainsKey(fragmentIndex))
+                            {
+                                annotatedTerminalModDictionary[fragmentIndex].Add(mod);
+                            }
+                            else
+                            {
+                                annotatedTerminalModDictionary.Add(fragmentIndex, new List<Modification> { mod });
+                            }
+                        }
+                        //see if there are more motifs
+                    }
+                    //see if there are more motifs
+                    int subIndex = peptide.BaseSequence.Substring(index).IndexOf(modAminoAcid);
+                    index = subIndex == -1 ? -1 : index + subIndex;
                 }
             }
 

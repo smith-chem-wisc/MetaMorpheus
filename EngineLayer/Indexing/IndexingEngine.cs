@@ -243,7 +243,7 @@ namespace EngineLayer.Indexing
         private void AddInteriorTerminalModsToPrecursorIndex(List<int>[] precursorIndex, List<Product> fragmentMasses, PeptideWithSetModifications peptide, int peptideId, List<Modification> variableModifications)
         {
             //Get database annotated mods
-            Dictionary<int,List<Modification>> databaseAnnotatedMods = NonSpecificEnzymeSearchEngine.GetAnnotatedTerminalMods(peptide, CommonParameters.DigestionParams);
+            Dictionary<int,List<Modification>> databaseAnnotatedMods = NonSpecificEnzymeSearchEngine.GetTerminalModPositions(peptide, CommonParameters.DigestionParams, variableModifications);
             foreach (KeyValuePair<int,List<Modification>> relevantDatabaseMod in databaseAnnotatedMods)
             {
                 int fragmentNumber = relevantDatabaseMod.Key;
@@ -266,14 +266,6 @@ namespace EngineLayer.Indexing
                             precursorIndex[precursorBin].Add(peptideId);
                         }
                     }
-                }
-            }
-            //Get variable mods
-            foreach (Modification variableMod in variableModifications)
-            {
-                if (peptide.BaseSequence.Contains(variableMod.Target.ToString()))
-                {
-
                 }
             }
         }
