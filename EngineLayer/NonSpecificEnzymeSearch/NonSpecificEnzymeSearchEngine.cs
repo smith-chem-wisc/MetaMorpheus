@@ -396,14 +396,8 @@ namespace EngineLayer.NonSpecificEnzymeSearch
 
         public static List<Modification> GetVariableTerminalMods(FragmentationTerminus fragmentationTerminus, List<Modification> variableModifications)
         {
-            if (fragmentationTerminus == FragmentationTerminus.N) //The n-terminus is known, the C-terminus is obscured
-            {
-                return variableModifications.Where(x => x.LocationRestriction.Contains("C-terminal")).ToList();
-            }
-            else //if C terminal
-            {
-                return variableModifications.Where(x => x.LocationRestriction.Contains("N-terminal")).ToList();
-            }
+            string terminalStringToFind = fragmentationTerminus == FragmentationTerminus.N ? "C-terminal" : "N-terminal"; //if singleN, want to find c-terminal mods and vice-versa
+            return variableModifications.Where(x => x.LocationRestriction.Contains(terminalStringToFind)).ToList();
         }
 
         public static Dictionary<int, List<Modification>> GetTerminalModPositions(PeptideWithSetModifications peptide, DigestionParams digestionParams, List<Modification> variableMods)

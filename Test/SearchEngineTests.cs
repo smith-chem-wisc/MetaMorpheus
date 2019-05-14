@@ -1544,7 +1544,8 @@ namespace Test
                 {
                     { 2, new List<Modification>{GlobalVariables.AllModsKnownDictionary["N-acetylalanine on A"] } },
                     { 22, new List<Modification>{GlobalVariables.AllModsKnownDictionary["Alanine amide on A"] } }
-                }) };
+                })
+            };
             List<Protein> proteinWithoutMods = new List<Protein> { new Protein("MAGIAAKLAKDREAAEGLGSHA", "testProtein") };
             List<Modification> empty = new List<Modification>();
             List<Modification> terminalVariableMods = new List<Modification> { GlobalVariables.AllModsKnownDictionary["N-acetylalanine on A"], GlobalVariables.AllModsKnownDictionary["Alanine amide on A"] };
