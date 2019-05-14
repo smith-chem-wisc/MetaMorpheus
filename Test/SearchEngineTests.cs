@@ -1534,14 +1534,8 @@ namespace Test
                 });
             var proteinList = new List<Protein> { proteinWithMods };
 
-            List<DigestionMotif> motifs = new List<DigestionMotif>
-            {
-                new DigestionMotif("K", null, 1, null),
-            };
-            var nProtease = new Protease("SingleN", CleavageSpecificity.None, null, null, motifs);
-            var cProtease = new Protease("SingleC", CleavageSpecificity.None, null, null, motifs);
-            ProteaseDictionary.Dictionary.Add(nProtease.Name, nProtease);
-            ProteaseDictionary.Dictionary.Add(cProtease.Name, cProtease);
+            var nProtease = ProteaseDictionary.Dictionary["singleN"];
+            var cProtease = ProteaseDictionary.Dictionary["singleC"];
             CommonParameters nCommonParameters = new CommonParameters(
                 digestionParams: new DigestionParams(protease: nProtease.Name, fragmentationTerminus: FragmentationTerminus.N, searchModeType: CleavageSpecificity.None),
                 addCompIons: true);
@@ -1559,13 +1553,13 @@ namespace Test
                 var peptideIndex = indexResults.PeptideIndex;
                 var fragmentIndexDict = indexResults.FragmentIndex;
                 var precursorIndexDict = indexResults.PrecursorIndex;
-                PeptideSpectralMatch[][] allPsmsArrays = new PeptideSpectralMatch[1][];
-                allPsmsArrays[0] = new PeptideSpectralMatch[listOfSortedms2Scans.Length];
+                PeptideSpectralMatch[][] allPsmsArrays = new PeptideSpectralMatch[3][];
+                allPsmsArrays[2] = new PeptideSpectralMatch[listOfSortedms2Scans.Length];
                 var engine = new NonSpecificEnzymeSearchEngine(allPsmsArrays, listOfSortedms2Scans, peptideIndex, fragmentIndexDict, precursorIndexDict, 1, commonParams, new SinglePpmAroundZeroSearchMode(5), 0, new List<string>());
                 var searchResults = engine.Run();
                 for (int i = 0; i < listOfSortedms2Scans.Length; i++)
                 {
-                    Assert.IsTrue(allPsmsArrays[0][i] != null);
+                    Assert.IsTrue(allPsmsArrays[2][i] != null);
                 }
             }
         }

@@ -1,4 +1,7 @@
-﻿using Proteomics;
+﻿using Chemistry;
+using EngineLayer.NonSpecificEnzymeSearch;
+using Proteomics;
+using Proteomics.Fragmentation;
 using Proteomics.ProteolyticDigestion;
 using System;
 using System.Collections.Generic;
@@ -12,6 +15,8 @@ namespace EngineLayer.Indexing
 {
     public class IndexingEngine : MetaMorpheusEngine
     {
+        private static readonly double WaterMonoisotopicMass = PeriodicTable.GetElement("H").PrincipalIsotope.AtomicMass * 2 + PeriodicTable.GetElement("O").PrincipalIsotope.AtomicMass;
+
         private const int FragmentBinsPerDalton = 1000;
         private readonly List<Protein> ProteinList;
         private readonly List<Modification> FixedModifications;
@@ -105,8 +110,19 @@ namespace EngineLayer.Indexing
             });
 
             // sort peptides by mass
-            var peptidesSortedByMass = globalPeptides.OrderBy(p => p.MonoisotopicMass).ToList();
-            globalPeptides = null;
+            List<PeptideWithSetModifications> peptidesSortedByMass = globalPeptides.OrderBy(p => p.MonoisotopicMass).ToList();
+            globalPeptides = null; //RAM
+
+            //create precursor index (if specified)
+            List<int>[] precursorIndex = null;
+            if (GeneratePrecursorIndex)
+            {
+                precursorIndex = CreateNewPrecursorIndex(peptidesSortedByMass);
+            }
+            bool addInteriorTerminalModsToPrecursorIndex = GeneratePrecursorIndex && CommonParameters.DigestionParams.Protease.Name.Contains("single");
+            List<Modification> terminalModifications = addInteriorTerminalModsToPrecursorIndex ? 
+                NonSpecificEnzymeSearchEngine.GetVariableTerminalMods(CommonParameters.DigestionParams.FragmentationTerminus,VariableModifications) :
+                null;
 
             // create fragment index
             List<int>[] fragmentIndex;
@@ -125,7 +141,8 @@ namespace EngineLayer.Indexing
             oldPercentProgress = 0;
             for (int peptideId = 0; peptideId < peptidesSortedByMass.Count; peptideId++)
             {
-                var fragmentMasses = peptidesSortedByMass[peptideId].Fragment(CommonParameters.DissociationType, CommonParameters.DigestionParams.FragmentationTerminus).Select(m => m.NeutralMass).ToList();
+                List<Product> fragments = peptidesSortedByMass[peptideId].Fragment(CommonParameters.DissociationType, CommonParameters.DigestionParams.FragmentationTerminus).ToList();
+                List<double> fragmentMasses = fragments.Select(m => m.NeutralMass).ToList();
 
                 foreach (double theoreticalFragmentMass in fragmentMasses)
                 {
@@ -141,10 +158,20 @@ namespace EngineLayer.Indexing
                         int fragmentBin = (int)Math.Round(tfm * FragmentBinsPerDalton);
 
                         if (fragmentIndex[fragmentBin] == null)
+                        {
                             fragmentIndex[fragmentBin] = new List<int> { peptideId };
+                        }
                         else
+                        {
                             fragmentIndex[fragmentBin].Add(peptideId);
+                        }
                     }
+                }
+
+                //Add terminal mods if needed (do it here rather than earlier so that we don't have to fragment twice
+                if(addInteriorTerminalModsToPrecursorIndex)
+                {
+                    AddInteriorTerminalModsToPrecursorIndex(precursorIndex,fragments, peptidesSortedByMass[peptideId], peptideId, terminalModifications);
                 }
 
                 progress++;
@@ -157,56 +184,98 @@ namespace EngineLayer.Indexing
                 }
             }
 
+            return new IndexingResults(peptidesSortedByMass, fragmentIndex, precursorIndex, this);
+        }
+
+        private List<int>[] CreateNewPrecursorIndex(List<PeptideWithSetModifications> peptidesSortedByMass)
+        {
+            // create precursor index
             List<int>[] precursorIndex = null;
-
-            if (GeneratePrecursorIndex)
+            try
             {
-                // create precursor index
-                try
-                {
-                    precursorIndex = new List<int>[(int)Math.Ceiling(MaxFragmentSize) * FragmentBinsPerDalton + 1];
-                }
-                catch (OutOfMemoryException)
-                {
-                    throw new MetaMorpheusException("Max precursor mass too large for indexing engine; try \"Classic Search\" mode, or make the maximum fragment mass smaller");
-                }
-                progress = 0;
-                oldPercentProgress = 0;
-                ReportProgress(new ProgressEventArgs(0, "Creating precursor index...", NestedIds));
+                precursorIndex = new List<int>[(int)Math.Ceiling(MaxFragmentSize) * FragmentBinsPerDalton + 1];
+            }
+            catch (OutOfMemoryException)
+            {
+                throw new MetaMorpheusException("Max precursor mass too large for indexing engine; try \"Classic Search\" mode, or make the maximum fragment mass smaller");
+            }
+            int progress = 0;
+            int oldPercentProgress = 0;
+            int maxProgress = peptidesSortedByMass.Count;
+            ReportProgress(new ProgressEventArgs(0, "Creating precursor index...", NestedIds));
 
-                for (int i = 0; i < peptidesSortedByMass.Count; i++)
+            //Add all the precursors
+            for (int i = 0; i < peptidesSortedByMass.Count; i++)
+            {
+                double mass = peptidesSortedByMass[i].MonoisotopicMass;
+                if (!double.IsNaN(mass))
                 {
-                    double mass = peptidesSortedByMass[i].MonoisotopicMass;
-                    if (!Double.IsNaN(mass))
+                    if (mass > MaxFragmentSize) //if the precursor is larger than the index allows, then stop adding precursors
                     {
-                        if (mass > MaxFragmentSize) //if the precursor is larger than the index allows, then stop adding precursors
-                        {
-                            break;
-                        }
+                        break;
+                    }
 
-                        int precursorBin = (int)Math.Round(mass * FragmentBinsPerDalton);
+                    int precursorBin = (int)Math.Round(mass * FragmentBinsPerDalton);
+
+                    if (precursorIndex[precursorBin] == null)
+                    {
+                        precursorIndex[precursorBin] = new List<int> { i };
+                    }
+                    else
+                    {
+                        precursorIndex[precursorBin].Add(i);
+                    }
+                }
+                progress++;
+                var percentProgress = (int)((progress / maxProgress) * 100);
+
+                if (percentProgress > oldPercentProgress)
+                {
+                    oldPercentProgress = percentProgress;
+                    ReportProgress(new ProgressEventArgs(percentProgress, "Creating precursor index...", NestedIds));
+                }
+            }
+            return precursorIndex;
+        }
+
+        //add possible protein/peptide terminal modifications that aren't on the terminal amino acids
+        //The purpose is for terminal mods that are contained WITHIN the Single peptide
+        private void AddInteriorTerminalModsToPrecursorIndex(List<int>[] precursorIndex, List<Product> fragmentMasses, PeptideWithSetModifications peptide, int peptideId, List<Modification> variableModifications)
+        {
+            //Get database annotated mods
+            Dictionary<int,List<Modification>> databaseAnnotatedMods = NonSpecificEnzymeSearchEngine.GetAnnotatedTerminalMods(peptide, CommonParameters.DigestionParams);
+            foreach (KeyValuePair<int,List<Modification>> relevantDatabaseMod in databaseAnnotatedMods)
+            {
+                int fragmentNumber = relevantDatabaseMod.Key;
+                Product fragmentAtIndex = fragmentMasses.Where(x => x.TerminusFragment.FragmentNumber == fragmentNumber).FirstOrDefault();
+                double basePrecursorMass = fragmentAtIndex == null ? peptide.MonoisotopicMass : fragmentAtIndex.NeutralMass - DissociationTypeCollection.GetMassShiftFromProductType(fragmentAtIndex.ProductType) + WaterMonoisotopicMass;
+
+                foreach (Modification mod in relevantDatabaseMod.Value)
+                {
+                    double modifiedMass = basePrecursorMass + mod.MonoisotopicMass.Value;
+                    if (modifiedMass <= MaxFragmentSize) //if the precursor is larger than the index allows, then don't add it
+                    {
+                        int precursorBin = (int)Math.Round(modifiedMass * FragmentBinsPerDalton);
 
                         if (precursorIndex[precursorBin] == null)
                         {
-                            precursorIndex[precursorBin] = new List<int> { i };
+                            precursorIndex[precursorBin] = new List<int> { peptideId };
                         }
                         else
                         {
-                            precursorIndex[precursorBin].Add(i);
+                            precursorIndex[precursorBin].Add(peptideId);
                         }
-                    }
-                    progress++;
-                    var percentProgress = (int)((progress / peptidesSortedByMass.Count) * 100);
-
-                    if (percentProgress > oldPercentProgress)
-                    {
-                        oldPercentProgress = percentProgress;
-                        ReportProgress(new ProgressEventArgs(percentProgress, "Creating precursor index...", NestedIds));
                     }
                 }
             }
+            //Get variable mods
+            foreach (Modification variableMod in variableModifications)
+            {
+                if (peptide.BaseSequence.Contains(variableMod.Target.ToString()))
+                {
 
-            return new IndexingResults(peptidesSortedByMass, fragmentIndex, precursorIndex, this);
+                }
+            }
         }
     }
 }

@@ -151,14 +151,32 @@ namespace EngineLayer.NonSpecificEnzymeSearch
 
         private Tuple<int, PeptideWithSetModifications> Accepts(List<Product> fragments, double scanPrecursorMass, PeptideWithSetModifications peptide, FragmentationTerminus fragmentationTerminus, MassDiffAcceptor searchMode)
         {
-            //all masses in N and CTerminalMasses are b-ion masses, which are one water away from a full peptide
             int localminPeptideLength = CommonParameters.DigestionParams.MinPeptideLength;
+
+            //Get terminal modifications, if any
+            Dictionary<int, List<Modification>> databaseAnnotatedMods = GetAnnotatedTerminalMods(peptide, CommonParameters.DigestionParams);
 
             for (int i = localminPeptideLength - 1; i < fragments.Count; i++) //minus one start, because fragment 1 is at index 0
             {
                 Product fragment = fragments[i];
                 double theoMass = fragment.NeutralMass - DissociationTypeCollection.GetMassShiftFromProductType(fragment.ProductType) + WaterMonoisotopicMass;
                 int notch = searchMode.Accepts(scanPrecursorMass, theoMass);
+
+                //check for terminal mods that might reach the observed mass
+                Modification terminalMod = null;
+                if (notch < 0 && databaseAnnotatedMods.TryGetValue(i + 1, out List<Modification> terminalModsAtThisIndex)) //look for i+1, because the mod might exist at the terminus
+                {
+                    foreach (Modification mod in terminalModsAtThisIndex)
+                    {
+                        notch = searchMode.Accepts(scanPrecursorMass, theoMass + mod.MonoisotopicMass.Value); //overwrite the notch, since the other notch wasn't accepted
+                        if (notch >= 0)
+                        {
+                            terminalMod = mod;
+                            break;
+                        }
+                    }
+                }
+
                 if (notch >= 0)
                 {
                     PeptideWithSetModifications updatedPwsm = null;
@@ -173,9 +191,13 @@ namespace EngineLayer.NonSpecificEnzymeSearch
                                 updatedMods.Add(mod.Key, mod.Value);
                             }
                         }
+                        if(terminalMod!=null)
+                        {
+                            updatedMods.Add(endResidue, terminalMod);
+                        }
                         updatedPwsm = new PeptideWithSetModifications(peptide.Protein, peptide.DigestionParams, peptide.OneBasedStartResidueInProtein, endResidue, CleavageSpecificity.Unknown, "", 0, updatedMods, 0);
                     }
-                    else
+                    else //if C terminal ions, shave off the n-terminus
                     {
                         int startResidue = peptide.OneBasedEndResidueInProtein - fragment.TerminusFragment.FragmentNumber + 1; //plus one for one based index
                         Dictionary<int, Modification> updatedMods = new Dictionary<int, Modification>();  //updateMods
@@ -188,6 +210,10 @@ namespace EngineLayer.NonSpecificEnzymeSearch
                                 updatedMods.Add(key, mod.Value);
                             }
                         }
+                        if (terminalMod != null)
+                        {
+                            updatedMods.Add(startResidue-1, terminalMod);
+                        }
                         updatedPwsm = new PeptideWithSetModifications(peptide.Protein, peptide.DigestionParams, startResidue, peptide.OneBasedEndResidueInProtein, CleavageSpecificity.Unknown, "", 0, updatedMods, 0);
                     }
                     return new Tuple<int, PeptideWithSetModifications>(notch, updatedPwsm);
@@ -197,8 +223,8 @@ namespace EngineLayer.NonSpecificEnzymeSearch
                     break;
                 }
             }
-            //if the theoretical and experimental have the same mass
-            if (fragments.Count > localminPeptideLength)
+            //if the theoretical and experimental have the same mass or a terminal mod exists
+            if (peptide.BaseSequence.Length > localminPeptideLength)
             {
                 double totalMass = peptide.MonoisotopicMass;// + Constants.ProtonMass;
                 int notch = searchMode.Accepts(scanPrecursorMass, totalMass);
@@ -362,6 +388,60 @@ namespace EngineLayer.NonSpecificEnzymeSearch
             }
 
             return bestPsmsList.OrderBy(b => b.FdrInfo.QValue).ThenByDescending(b => b.Score).ToList();
+        }
+
+        public static List<Modification> GetVariableTerminalMods(FragmentationTerminus fragmentationTerminus, List<Modification> variableModifications)
+        {
+            if (fragmentationTerminus == FragmentationTerminus.N) //The n-terminus is known, the C-terminus is obscured
+            {
+                return variableModifications.Where(x => x.LocationRestriction.Contains("C-terminal")).ToList();
+            }
+            else //if C terminal
+            {
+                return variableModifications.Where(x => x.LocationRestriction.Contains("N-terminal")).ToList();
+            }
+        }
+
+        public static Dictionary<int, List<Modification>> GetAnnotatedTerminalMods(PeptideWithSetModifications peptide, DigestionParams digestionParams)
+        {
+            Dictionary<int, List<Modification>> annotatedTerminalModDictionary = new Dictionary<int, List<Modification>>();
+            bool nTerminus = digestionParams.FragmentationTerminus == FragmentationTerminus.N; //is this the singleN or singleC search?
+            if(nTerminus)
+            { }
+            //determine the start and end index ranges when considering the minimum peptide length
+            int startResidue = nTerminus ?
+                peptide.OneBasedStartResidueInProtein + digestionParams.MinPeptideLength - 1 : 
+                peptide.OneBasedStartResidueInProtein;
+            int endResidue = nTerminus ?
+                peptide.OneBasedEndResidueInProtein :
+                peptide.OneBasedEndResidueInProtein - digestionParams.MinPeptideLength + 1;
+
+            //get all the mods for this protein
+            IDictionary<int, List<Modification>> annotatedModsForThisProtein = peptide.Protein.OneBasedPossibleLocalizedModifications;
+            //get the possible annotated mods for this peptide
+            List<int> annotatedMods = annotatedModsForThisProtein.Keys.Where(x => x > startResidue && x <= endResidue).ToList();
+            string terminalStringToFind = nTerminus ? "C-terminal" : "N-terminal"; //if singleN, want to find c-terminal mods and vice-versa
+
+            foreach (int index in annotatedMods)
+            {
+                //see which mods are terminal (if any)
+                List<Modification> terminalModsHere = annotatedModsForThisProtein[index].Where(x => x.LocationRestriction.Contains(terminalStringToFind) && x.MonoisotopicMass.HasValue).ToList();
+
+                //if there were terminal mods, record where in the peptide they were and which mods
+                if (terminalModsHere.Count != 0)
+                {
+                    if (nTerminus)
+                    {
+                        annotatedTerminalModDictionary.Add(index - peptide.OneBasedStartResidueInProtein + 1, terminalModsHere);
+                    }
+                    else
+                    {
+                        annotatedTerminalModDictionary.Add(peptide.OneBasedEndResidueInProtein - index + 1, terminalModsHere);
+                    }
+                }
+            }
+
+            return annotatedTerminalModDictionary;
         }
     }
 }
