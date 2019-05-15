@@ -112,9 +112,6 @@
     <None Update="TestData\okk.xml">
       <CopyToOutputDirectory>Always</CopyToOutputDirectory>
     </None>
-    <None Update="TestData\pValueUnitTestResults.txt">
-      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
-    </None>
     <None Update="TestData\pValueUnitTestTrainedModel.zip">
       <CopyToOutputDirectory>Always</CopyToOutputDirectory>
     </None>

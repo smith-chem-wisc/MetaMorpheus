@@ -191,7 +191,7 @@ namespace Test
         }
 
         [Test]
-        public static void TestComputePValueFromLoadedModel()
+        public static void TestComputePValue()
         {
             var variableModifications = new List<Modification>();
             var fixedModifications = new List<Modification>();
@@ -213,15 +213,11 @@ namespace Test
 
             var nonNullPsms = allPsmsArray.Where(p => p != null).ToList();
 
-            var testTrainingSet = PValueAnalysis.GetTrainingSet(nonNullPsms, 2).ToList();
-
-            Assert.AreEqual(4, testTrainingSet.Count());
-            Assert.AreEqual(2, testTrainingSet.Where(t => t.Label == true).Count());
-            Assert.AreEqual(2, testTrainingSet.Where(t => t.Label == false).Count());
+            var accessionCounts = PValueAnalysisGeneric.GetAccessionCounts(nonNullPsms);
 
             var maxScore = nonNullPsms.Select(s => s.Score).Max();
             var maxScorePsm = nonNullPsms.Where(s => s.Score == maxScore).First();
-            var maxPsmData = PValueAnalysis.CreateOnePsmDataFromPsm(maxScorePsm);
+            var maxPsmData = PValueAnalysisGeneric.CreateOnePsmDataFromPsm(maxScorePsm, accessionCounts);
             Assert.That(maxScorePsm.PeptidesToMatchingFragments.Count, Is.EqualTo(maxPsmData.Ambiguity));
             Assert.That(maxScorePsm.DeltaScore, Is.EqualTo(maxPsmData.DeltaScore).Within(0.05));
             Assert.That((float)(maxScorePsm.Score - (int)maxScorePsm.Score), Is.EqualTo(maxPsmData.Intensity).Within(0.05));
@@ -232,18 +228,21 @@ namespace Test
             Assert.That(maxScorePsm.PsmCount, Is.EqualTo(maxPsmData.PsmCount));
             Assert.That(maxScorePsm.ScanPrecursorCharge, Is.EqualTo(maxPsmData.ScanPrecursorCharge));
 
-            PValueAnalysis.ComputePValuesForAllPSMs(nonNullPsms, true);
+            PValueAnalysisGeneric.ComputePValuesForAllPSMsGeneric(nonNullPsms);
 
-            List<string> expectedOutput = File.ReadAllLines(@"TestData\pValueUnitTestResults.txt").ToList();
-
-            List<string> actualOutput = new List<string>();
+            int trueCount = 0;
 
             foreach (var item in allPsmsArray.Where(p => p != null))
             {
-                actualOutput.Add(item.pValueInfo);
+                string b = item.pValueInfo.Split('|')[0];
+                if (b == "True")
+                {
+                    trueCount++;
+                }
             }
 
-            Assert.IsTrue(expectedOutput.SequenceEqual(actualOutput));
+            //There is some randomness here. This test might break occasionally. Could change it to a greater than or equal to value of some lower number if it happens frequently.
+            Assert.AreEqual(32,trueCount);
         }
     }
 }

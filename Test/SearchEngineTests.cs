@@ -71,17 +71,12 @@ namespace Test
             var engineToml = new EverythingRunnerEngine(new List<(string, MetaMorpheusTask)> { ("SearchTOML", searchTaskLoaded) }, new List<string> { myFile }, new List<DbForTask> { new DbForTask(myDatabase, false) }, outputFolder);
             engineToml.Run();
 
-            var expectedResults = File.ReadAllLines(Path.Combine(TestContext.CurrentContext.TestDirectory, @"TestData\XCorrSearchTest_AllPSMs.psmtsv"));
-            var resultsToml = File.ReadAllLines(Path.Combine(outputFolder, @"SearchTOML\AllPSMs.psmtsv"));
+            string psmFile = Path.Combine(outputFolder, @"SearchTOML\AllPSMs.psmtsv");
 
-            for (int i = 0; i < expectedResults.Length; i++)
-            {
-                string expecteLine = expectedResults[i];
-                string resultLine = resultsToml[i];
-                Assert.AreEqual(expecteLine, resultLine);
-            }
+            List<PsmFromTsv> parsedPsms = PsmTsvReader.ReadTsv(psmFile, out var warnings);
 
-            Assert.That(expectedResults.SequenceEqual(resultsToml));
+            Assert.AreEqual(125, parsedPsms.Count);
+            Assert.AreEqual(0, warnings.Count);
         }
 
         [Test]
@@ -557,7 +552,7 @@ namespace Test
             var listOfSortedXcorrms2Scans = MetaMorpheusTask.GetMs2Scans(myMsDataFile, null, new CommonParameters()).OrderBy(b => b.PrecursorMass).ToArray();
             PeptideSpectralMatch[] allPsmsArray = new PeptideSpectralMatch[listOfSortedXcorrms2Scans.Length];
             new ClassicSearchEngine(allPsmsArray, listOfSortedXcorrms2Scans, variableModifications, fixedModifications, new List<SilacLabel>(), proteinList, searchModes, CommonParameters, new List<string>()).Run();
-            
+
             var nonNullPsms = allPsmsArray.Where(p => p != null).ToList();
             Assert.AreEqual(130, nonNullPsms.Count);
 

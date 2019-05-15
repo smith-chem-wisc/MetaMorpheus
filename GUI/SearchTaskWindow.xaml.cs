@@ -215,7 +215,6 @@ namespace MetaMorpheusGUI
             minScoreAllowed.Text = task.CommonParameters.ScoreCutoff.ToString(CultureInfo.InvariantCulture);
             eValueCheckBox.IsChecked = task.CommonParameters.CalculateEValue;
             pValueCheckBox.IsChecked = task.CommonParameters.CalculatePValue;
-            pValueModelCheckBox.IsChecked = task.CommonParameters.UsePValueModel;
             deltaScoreCheckBox.IsChecked = task.CommonParameters.UseDeltaScore;
             trimMs1.IsChecked = task.CommonParameters.TrimMs1Peaks;
             trimMsMs.IsChecked = task.CommonParameters.TrimMsMsPeaks;

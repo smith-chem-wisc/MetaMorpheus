@@ -440,7 +440,7 @@ namespace EngineLayer
             s[PsmTsvHeader.EValue] = eValue;
             s[PsmTsvHeader.EScore] = eScore;
             s[PsmTsvHeader.LongestSeries] = lLength;
-            s["pValueStuff"] = pValueInfo;
+            s["call|p-Value|Score"] = pValueInfo;
         }
     }
 }

@@ -29,9 +29,12 @@ namespace EngineLayer.FdrAnalysis
         public float Ambiguity { get; set; }
 
         [LoadColumn(8)]
-        public float LongestFragmentIonSeries { get; set; }
+        public float AccessionAppearances { get; set; }
 
         [LoadColumn(9)]
+        public float LongestFragmentIonSeries { get; set; }
+
+        [LoadColumn(10)]
         public bool Label { get; set; }
     }
 }

@@ -12,7 +12,6 @@ namespace EngineLayer.FdrAnalysis
         private readonly bool UseDeltaScore;
         private readonly bool CalculateEValue;
         private readonly bool CalculatePValue;
-        private readonly bool UsePValueModel;
         private readonly double ScoreCutoff;
         private readonly string AnalysisType;
 
@@ -24,7 +23,6 @@ namespace EngineLayer.FdrAnalysis
             ScoreCutoff = commonParameters.ScoreCutoff;
             CalculateEValue = commonParameters.CalculateEValue;
             CalculatePValue = commonParameters.CalculatePValue;
-            UsePValueModel = commonParameters.UsePValueModel;
             AnalysisType = analysisType;
         }
 
@@ -218,7 +216,7 @@ namespace EngineLayer.FdrAnalysis
             //TODO figure when to use a model and when to generate a new one.
             if (CalculatePValue)
             {
-                PValueAnalysis.ComputePValuesForAllPSMs(AllPsms, commonParameters.UsePValueModel);
+                PValueAnalysisGeneric.ComputePValuesForAllPSMsGeneric(AllPsms);
             }
             
         }
