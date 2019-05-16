@@ -815,9 +815,7 @@ namespace Test
                 new DigestionMotif("G", null, 0, null),
                 new DigestionMotif("G", null, 1, null),
             };
-            Protease protease = new Protease("single N", CleavageSpecificity.SingleN, null, null, motifs);
-            ProteaseDictionary.Dictionary.Add(protease.Name, protease);
-            DigestionParams dp = new DigestionParams(protease: protease.Name, minPeptideLength: 1, fragmentationTerminus: FragmentationTerminus.N, searchModeType: CleavageSpecificity.None);
+            DigestionParams dp = new DigestionParams("singleN", minPeptideLength: 1, fragmentationTerminus: FragmentationTerminus.N, searchModeType: CleavageSpecificity.None);
             CommonParameters CommonParameters = new CommonParameters(
                 dissociationType: DissociationType.HCD,
                 precursorMassTolerance: new PpmTolerance(5),
@@ -856,7 +854,7 @@ namespace Test
             Assert.IsTrue(allPsmsArray[0].Score > 4);
             Assert.AreEqual(2, allPsmsArray[0].ScanNumber);
             CommonParameters = new CommonParameters(
-                 digestionParams: new DigestionParams(protease: protease.Name, minPeptideLength: 1),
+                 digestionParams: new DigestionParams("singleN", minPeptideLength: 1),
                  precursorMassTolerance: new PpmTolerance(5),
                  scoreCutoff: 1);
 
@@ -1065,9 +1063,8 @@ namespace Test
                 new DigestionMotif("G", null, 0, null),
                 new DigestionMotif("G", null, 1, null),
             };
-            Protease protease = new Protease("single C", CleavageSpecificity.SingleC, null, null, motifs);
-            ProteaseDictionary.Dictionary.Add(protease.Name, protease);
-            DigestionParams dp = new DigestionParams(protease: protease.Name, minPeptideLength: 1, fragmentationTerminus: FragmentationTerminus.C, searchModeType: CleavageSpecificity.None);
+
+            DigestionParams dp = new DigestionParams("singleC", minPeptideLength: 1, fragmentationTerminus: FragmentationTerminus.C, searchModeType: CleavageSpecificity.None);
 
             CommonParameters CommonParameters = new CommonParameters(
                 dissociationType: DissociationType.HCD,
