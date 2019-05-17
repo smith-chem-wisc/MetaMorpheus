@@ -197,11 +197,7 @@ namespace Test
             var fixedModifications = new List<Modification>();
             var origDataFile = Path.Combine(TestContext.CurrentContext.TestDirectory, @"TestData\TaGe_SA_HeLa_04_subset_longestSeq.mzML");
             MyFileManager myFileManager = new MyFileManager(true);
-            CommonParameters CommonParameters = new CommonParameters(
-                digestionParams: new DigestionParams(
-
-                    )
-                );
+            CommonParameters CommonParameters = new CommonParameters(digestionParams: new DigestionParams());
             var myMsDataFile = myFileManager.LoadFile(origDataFile, CommonParameters);
             var searchModes = new SinglePpmAroundZeroSearchMode(5);
             List<Protein> proteinList = ProteinDbLoader.LoadProteinFasta(Path.Combine(TestContext.CurrentContext.TestDirectory, @"TestData\hela_snip_for_unitTest.fasta"), true, DecoyType.Reverse, false, ProteinDbLoader.UniprotAccessionRegex, ProteinDbLoader.UniprotFullNameRegex, ProteinDbLoader.UniprotFullNameRegex, ProteinDbLoader.UniprotGeneNameRegex,
@@ -234,7 +230,7 @@ namespace Test
 
             foreach (var item in allPsmsArray.Where(p => p != null))
             {
-                string b = item.pValueInfo.Split('|')[0];
+                string b = item.PValueInfo.Split('|')[0];
                 if (b == "True")
                 {
                     trueCount++;
@@ -242,7 +238,7 @@ namespace Test
             }
 
             //There is some randomness here. This test might break occasionally. Could change it to a greater than or equal to value of some lower number if it happens frequently.
-            Assert.AreEqual(32,trueCount);
+            Assert.AreEqual(32, trueCount);
         }
     }
 }

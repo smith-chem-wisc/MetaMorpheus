@@ -70,7 +70,7 @@ namespace EngineLayer
         public bool IsDecoy { get; private set; }
         public bool IsContaminant { get; private set; }
 
-        public string pValueInfo { get; set; }
+        public string PValueInfo { get; set; }
 
         public DigestionParams DigestionParams { get; }
         public List<double> AllScores { get; internal set; }
@@ -133,6 +133,12 @@ namespace EngineLayer
             {
                 RunnerUpScore = newScore;
             }
+        }
+
+        //P-Value analysis identifies ambiguous peptides with lower probability. These are removed from the bestmatchingpeptides dictionary, which lowers ambiguity.
+        public void RemoveThisAmbiguousePeptide(int notch, PeptideWithSetModifications pwsm)
+        {
+            _BestMatchingPeptides.Remove((notch, pwsm));
         }
 
         public override string ToString()

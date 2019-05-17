@@ -196,7 +196,7 @@ namespace EngineLayer
 
             List<PeptideWithSetModifications> pepsWithMods = pepWithModsIsNull ? null : psm.BestMatchingPeptides.Select(p => p.Peptide).ToList();
 
-            s[PsmTsvHeader.BaseSequence] = pepWithModsIsNull ? " " : (psm.BaseSequence != null ? psm.BaseSequence : Resolve(pepWithModsIsNull ? null : pepsWithMods.Select(b => b.BaseSequence)).ResolvedString);
+            s[PsmTsvHeader.BaseSequence] = pepWithModsIsNull ? " " : (psm.BaseSequence ?? Resolve(pepWithModsIsNull ? null : pepsWithMods.Select(b => b.BaseSequence)).ResolvedString);
             s[PsmTsvHeader.FullSequence] = pepWithModsIsNull ? " " : (psm.FullSequence != null ? psm.FullSequence : Resolve(pepWithModsIsNull ? null : pepsWithMods.Select(b => b.FullSequence)).ResolvedString);
             s[PsmTsvHeader.EssentialSequence] = pepWithModsIsNull ? " " : (psm.EssentialSequence != null ? psm.EssentialSequence : Resolve(pepWithModsIsNull ? null : pepsWithMods.Select(b => b.EssentialSequence(ModsToWritePruned))).ResolvedString);
             s[PsmTsvHeader.PsmCount] = pepWithModsIsNull ? " " : psm.PsmCount.ToString();
@@ -413,7 +413,7 @@ namespace EngineLayer
             string qValueNotch = " ";
             string eValue = " ";
             string eScore = " ";
-            string lLength = " ";
+            string length = " ";
             string pValueInfo = " ";
             if (peptide != null && peptide.FdrInfo != null)
             {
@@ -428,8 +428,8 @@ namespace EngineLayer
                     eValue = peptide.FdrInfo.EValue.ToString("F6", CultureInfo.InvariantCulture);
                     eScore = peptide.FdrInfo.EScore.ToString("F6", CultureInfo.InvariantCulture);
                 }
-                lLength = peptide.FdrInfo.LongestSeriesLength.ToString();
-                pValueInfo = peptide.pValueInfo;
+                length = peptide.FdrInfo.LongestSeriesLength.ToString();
+                pValueInfo = peptide.PValueInfo;
             }
             s[PsmTsvHeader.CumulativeTarget] = cumulativeTarget;
             s[PsmTsvHeader.CumulativeDecoy] = cumulativeDecoy;
@@ -439,8 +439,8 @@ namespace EngineLayer
             s[PsmTsvHeader.QValueNotch] = qValueNotch;
             s[PsmTsvHeader.EValue] = eValue;
             s[PsmTsvHeader.EScore] = eScore;
-            s[PsmTsvHeader.LongestSeries] = lLength;
-            s["call|p-Value|Score"] = pValueInfo;
+            s[PsmTsvHeader.LongestSeries] = length;
+            s[PsmTsvHeader.Pvalue] = pValueInfo;
         }
     }
 }

@@ -216,7 +216,7 @@ namespace EngineLayer.FdrAnalysis
             //TODO figure when to use a model and when to generate a new one.
             if (CalculatePValue)
             {
-                PValueAnalysisGeneric.ComputePValuesForAllPSMsGeneric(AllPsms);
+                myAnalysisResults.BinarySearchTreeMetrics = PValueAnalysisGeneric.ComputePValuesForAllPSMsGeneric(AllPsms);
             }
             
         }

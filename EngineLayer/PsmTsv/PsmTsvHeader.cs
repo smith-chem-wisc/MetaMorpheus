@@ -65,6 +65,7 @@
         public const string EValue = "eValue";
         public const string EScore = "eScore";
         public const string LongestSeries = "longestSeries";
+        public const string Pvalue = "call|p-Value|Score";
 
         // Crosslinks
         public const string CrossTypeLabel = "Cross Type";
