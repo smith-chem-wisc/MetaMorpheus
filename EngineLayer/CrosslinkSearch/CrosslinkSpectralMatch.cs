@@ -197,6 +197,7 @@ namespace EngineLayer.CrosslinkSearch
             var sb = new StringBuilder();
             sb.Append("File Name" + '\t');
             sb.Append("Scan Number" + '\t');
+            sb.Append("Scan Retention Time" + '\t');
             sb.Append("Precursor Scan Number" + '\t');
             sb.Append("Precursor MZ" + '\t');
             sb.Append("Precursor Charge" + '\t');
@@ -206,6 +207,8 @@ namespace EngineLayer.CrosslinkSearch
 
             sb.Append("Peptide" + '\t');
             sb.Append("Protein Accession" + '\t');
+            sb.Append("Protein Name" + '\t');
+            sb.Append("Start and End Residues In Protein" + '\t');
             sb.Append("Protein Link Site" + '\t');
             sb.Append("Base Sequence" + '\t');
             sb.Append("Full Sequence" + '\t');
@@ -221,6 +224,7 @@ namespace EngineLayer.CrosslinkSearch
             sb.Append("Matched Ion Counts" + '\t');
             sb.Append('\t');
             sb.Append("Decoy/Contaminant/Target" + '\t');
+            sb.Append("Decoy" + '\t');
             sb.Append("QValue" + '\t');
 
             sb.Append("Total Score" + '\t');
@@ -256,13 +260,12 @@ namespace EngineLayer.CrosslinkSearch
             var sb = new StringBuilder();
             sb.Append(FullFilePath + "\t");
             sb.Append(ScanNumber + "\t");
+            sb.Append(ScanRetentionTime + "\t");
             sb.Append(PrecursorScanNumber + "\t");
             sb.Append(ScanPrecursorMonoisotopicPeakMz + "\t");
             sb.Append(ScanPrecursorCharge + "\t");
             sb.Append(ScanPrecursorMass + "\t");
-            sb.Append(CrossType.ToString() + "\t");
-            
-
+            sb.Append(CrossType.ToString() + "\t");          
 
             if (LinkPositions != null)
             {
@@ -287,10 +290,19 @@ namespace EngineLayer.CrosslinkSearch
 
             sb.Append("\t");
             sb.Append(ProteinAccession + "\t");
+            sb.Append(BestMatchingPeptides.First().Peptide.Protein.FullName + "\t");
+            sb.Append("[" + OneBasedStartResidueInProtein.Value.ToString() + " to " + OneBasedEndResidueInProtein.Value.ToString() + "]" + '\t');
             sb.Append(XlProteinPos + "\t");
             sb.Append(BaseSequence + "\t");
             sb.Append(FullSequence + position + "\t");
-            sb.Append((PeptideMonisotopicMass.HasValue ? PeptideMonisotopicMass.Value.ToString() : "---")); sb.Append("\t");
+            if (Glycan!= null)
+            {
+                sb.Append((PeptideMonisotopicMass.HasValue ? (PeptideMonisotopicMass.Value + (double)Glycan.First().Mass/1E5).ToString() : "---")); sb.Append("\t");
+            }
+            else
+            {
+                sb.Append((PeptideMonisotopicMass.HasValue ? PeptideMonisotopicMass.Value.ToString() : "---")); sb.Append("\t");
+            }
             sb.Append(Score + "\t");
             sb.Append(XlRank[0] + "\t");
 
@@ -359,10 +371,14 @@ namespace EngineLayer.CrosslinkSearch
             {
                 sb.Append((IsDecoy) ? "D" : (IsContaminant) ? "C" : "T");
                 sb.Append("\t");
+                sb.Append((IsDecoy) ? "Y" : "N");
+                sb.Append("\t");
             }
             else
             {
                 sb.Append((IsDecoy || BetaPeptide.IsDecoy) ? "D" : (IsContaminant || BetaPeptide.IsContaminant) ? "C" : "T");
+                sb.Append("\t");
+                sb.Append((IsDecoy || BetaPeptide.IsDecoy) ? "Y" : "N");
                 sb.Append("\t");
             }
 
