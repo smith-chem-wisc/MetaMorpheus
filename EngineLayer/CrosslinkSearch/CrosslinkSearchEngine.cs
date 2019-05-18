@@ -671,16 +671,18 @@ namespace EngineLayer.CrosslinkSearch
 
                     while (iDLow < Glycans.Count() && XLPrecusorSearchMode.Accepts(theScan.PrecursorMass, theScanBestPeptide[ind].BestPeptide.MonoisotopicMass + (double)Glycans[iDLow].Mass/1E5) >= 0)
                     {
-                        var fragmentsForEachGlycanLocalizedPossibility = GlycoPeptides.NGlyGetTheoreticalFragments(theScan.PrecursorMass, commonParameters.DissociationType, modPos, theScanBestPeptide[ind].BestPeptide, Glycans[iDLow]).ToList();
-
                         double bestLocalizedScore = 0;
                         int bestSite = 0;
                         List<MatchedFragmentIon> bestMatchedIons = new List<MatchedFragmentIon>();
+                        PeptideWithSetModifications peptideWithSetModifications = theScanBestPeptide[ind].BestPeptide;
                         foreach (int possibleSite in modPos)
                         {
-                            var setOfFragments = fragmentsForEachGlycanLocalizedPossibility.Where(v => v.Item1 == possibleSite).FirstOrDefault();
+                            var testPeptide = GlycoPeptides.GenerateGlycopeptide(possibleSite, theScanBestPeptide[ind].BestPeptide, Glycans[iDLow]);
 
-                            var matchedIons = MatchFragmentIons(theScan, setOfFragments.Item2, commonParameters);
+                            List<Product> theoreticalProducts = testPeptide.Fragment(commonParameters.DissociationType, FragmentationTerminus.Both).Where(p=>p.ProductType!= ProductType.M).ToList();
+                            theoreticalProducts.AddRange(GlycoPeptides.GetGlycanYIons(theScan.PrecursorMass, Glycans[iDLow]));
+
+                            var matchedIons = MatchFragmentIons(theScan, theoreticalProducts, commonParameters);
 
                             if (!GlycoPeptides.ScanTrimannosylCoreFilter(matchedIons, Glycans[iDLow]))
                             {
@@ -691,6 +693,7 @@ namespace EngineLayer.CrosslinkSearch
 
                             if (score > bestLocalizedScore)
                             {
+                                peptideWithSetModifications = testPeptide;
                                 bestLocalizedScore = score;
                                 bestSite = possibleSite;
                                 bestMatchedIons = matchedIons;
@@ -698,7 +701,7 @@ namespace EngineLayer.CrosslinkSearch
 
                         }
 
-                        var psmCross = new CrosslinkSpectralMatch(theScanBestPeptide[ind].BestPeptide, theScanBestPeptide[ind].BestNotch, bestLocalizedScore, scanIndex, theScan, commonParameters.DigestionParams, bestMatchedIons);
+                        var psmCross = new CrosslinkSpectralMatch(peptideWithSetModifications, theScanBestPeptide[ind].BestNotch, bestLocalizedScore, scanIndex, theScan, commonParameters.DigestionParams, bestMatchedIons);
                         psmCross.Glycan = new List<Glycan> { Glycans[iDLow] };
                         psmCross.GlycanScore = CalculatePeptideScore(theScan.TheScan, bestMatchedIons.Where(p=>p.Annotation.Contains('M')).ToList());
                         psmCross.DiagnosticIonScore = CalculatePeptideScore(theScan.TheScan, bestMatchedIons.Where(p => p.Annotation.Contains('D')).ToList());
@@ -719,8 +722,11 @@ namespace EngineLayer.CrosslinkSearch
                     //Generate Decoy-Glycan score
                     if (bestPsmCross.Glycan!= null)
                     {
-                        var fragmentsForEachGlycanLocalizedPossibility = GlycoPeptides.NGlyGetTheoreticalFragments(theScan.PrecursorMass, commonParameters.DissociationType, bestPsmCross.LinkPositions, bestPsmCross.BestMatchingPeptides.First().Peptide, DecoyGlycans[bestPsmCross.Glycan.First().GlyId - 1]).ToList();
-                        var glycanDecoyMatchedIons = MatchFragmentIons(theScan, fragmentsForEachGlycanLocalizedPossibility.First().Item2, commonParameters);
+                        //var testPeptide = GlycoPeptides.GenerateGlycopeptide(bestPsmCross.LinkPositions.First() + 1, theScanBestPeptide[ind].BestPeptide, DecoyGlycans[bestPsmCross.Glycan.First().GlyId - 1]);
+                        //List<Product> theoreticalProducts = testPeptide.Fragment(commonParameters.DissociationType, FragmentationTerminus.Both).Where(p => p.ProductType != ProductType.M).ToList();
+
+                        var theoreticalProducts = GlycoPeptides.GetGlycanYIons(theScan.PrecursorMass, DecoyGlycans[bestPsmCross.Glycan.First().GlyId - 1]);
+                        var glycanDecoyMatchedIons = MatchFragmentIons(theScan, theoreticalProducts, commonParameters);
                         bestPsmCross.GlycanDecoyScore = CalculatePeptideScore(theScan.TheScan, glycanDecoyMatchedIons.Where(p => p.Annotation.Contains('M')).ToList());
                     }
 

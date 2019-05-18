@@ -88,13 +88,14 @@ namespace Test
             var listOfSortedms2Scans = MetaMorpheusTask.GetMs2Scans(msDataFile, filePath, commonParameters).ToArray();
 
             var glycanMod = GlycoPeptides.GlycanToModification(glycan);
-            var fragmentIons = GlycoPeptides.NGlyGetTheoreticalFragments(listOfSortedms2Scans[0].PrecursorMass, DissociationType.HCD, sites, aPeptideWithSetModifications.Last(), glycan).ToList();
+            var glycopep = GlycoPeptides.GenerateGlycopeptide(sites[0], aPeptideWithSetModifications.Last(), glycan);
+            var fragmentIons = glycopep.Fragment(DissociationType.HCD, FragmentationTerminus.Both).ToList();
 
             var glycanYIons = GlycoPeptides.GetGlycanYIons(listOfSortedms2Scans[0].PrecursorMass, glycan);
             var matchedGlycanYIons = MetaMorpheusEngine.MatchFragmentIons(listOfSortedms2Scans[0], glycanYIons, commonParameters);
             Assert.AreEqual(matchedGlycanYIons.Count, 16);
             //TO DO: The neutroloss is not annotated well.
-            var matchedFragmentIons = MetaMorpheusEngine.MatchFragmentIons(listOfSortedms2Scans[0], fragmentIons.Select(p=>p.Item2).ToList().First(), commonParameters);
+            var matchedFragmentIons = MetaMorpheusEngine.MatchFragmentIons(listOfSortedms2Scans[0], fragmentIons, commonParameters);
 
             var coreIons = GlycoPeptides.ScanGetTrimannosylCore(matchedFragmentIons, glycan);
             Assert.AreEqual(coreIons.Count, 9);
@@ -146,17 +147,16 @@ namespace Test
             Assert.AreEqual(precusorMatched, 0);
 
             var glycanMod = GlycoPeptides.GlycanToModification(glycan);
-            var fragmentIons = GlycoPeptides.NGlyGetTheoreticalFragments(listOfSortedms2Scans[0].PrecursorMass, DissociationType.EThcD, sites, aPeptideWithSetModifications.Last(), glycan).ToList();
-            var matchedFragmentIons = MetaMorpheusEngine.MatchFragmentIons(listOfSortedms2Scans[0], fragmentIons.Select(p => p.Item2).ToList().First(), commonParameters);
+            var glycopep = GlycoPeptides.GenerateGlycopeptide(sites[0], aPeptideWithSetModifications.Last(), glycan);
+            var fragmentIons = glycopep.Fragment(DissociationType.EThcD, FragmentationTerminus.Both).ToList();
+               
+            var matchedFragmentIons = MetaMorpheusEngine.MatchFragmentIons(listOfSortedms2Scans[0], fragmentIons, commonParameters);
 
             using (StreamWriter output = new StreamWriter(Path.Combine(TestContext.CurrentContext.TestDirectory, "11091_NGlyco_AIETD.tsv")))
             {
                 foreach (var product in fragmentIons)
                 {
-                    foreach (var ion in product.Item2)
-                    {
-                        output.WriteLine(ion.Annotation + "\t" + ((double)glycan.Mass / 1E5 - ion.NeutralLoss).ToString() + "\t" + ion.NeutralMass.ToString());
-                    }
+                    output.WriteLine(product.Annotation + "\t" + ((double)glycan.Mass / 1E5 - product.NeutralLoss).ToString() + "\t" + product.NeutralMass.ToString());
                 }
             }
 
@@ -253,7 +253,31 @@ namespace Test
                 }
             }
         }
-        
+
+        //This is not exactly a test. The function is used for N-Glycan database generation. The function maybe useful in the future.
+        [Test]
+        public static void GlyTest_GenerateUniprotDataBase()
+        {
+            var NGlycans = Glycan.LoadGlycan(GlobalVariables.NGlycanLocation).GroupBy(p => Glycan.GetKindString(p.Kind)).ToDictionary(p => p.Key, p => p.ToList());
+            string pathWritePath = "E:\\MassData\\Glycan\\GlycanDatabase\\UniprotGlycanDatabase.txt";
+
+
+            using (StreamWriter output = new StreamWriter(pathWritePath))
+            {
+                foreach (var glycan in NGlycans)
+                {
+                    var mod = GlycoPeptides.GlycanToModification(glycan.Value.First());
+                    List<string> temp = new List<string>();
+                    temp.Add(mod.ToString());
+                    temp.Add(@"//");
+                    foreach (var v in temp)
+                    {
+                        output.WriteLine(v);
+                    }                  
+                }
+            }
+
+        }
 
         [Test]
         public static void GlyTest_GetAllIonMassFromKind()

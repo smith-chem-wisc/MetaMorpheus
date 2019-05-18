@@ -295,14 +295,8 @@ namespace EngineLayer.CrosslinkSearch
             sb.Append(XlProteinPos + "\t");
             sb.Append(BaseSequence + "\t");
             sb.Append(FullSequence + position + "\t");
-            if (Glycan!= null)
-            {
-                sb.Append((PeptideMonisotopicMass.HasValue ? (PeptideMonisotopicMass.Value + (double)Glycan.First().Mass/1E5).ToString() : "---")); sb.Append("\t");
-            }
-            else
-            {
-                sb.Append((PeptideMonisotopicMass.HasValue ? PeptideMonisotopicMass.Value.ToString() : "---")); sb.Append("\t");
-            }
+
+            sb.Append((PeptideMonisotopicMass.HasValue ? PeptideMonisotopicMass.Value.ToString() : "---")); sb.Append("\t");
             sb.Append(Score + "\t");
             sb.Append(XlRank[0] + "\t");
 

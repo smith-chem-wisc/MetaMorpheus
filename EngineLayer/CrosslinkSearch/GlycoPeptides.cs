@@ -196,32 +196,26 @@ namespace EngineLayer.CrosslinkSearch
             return score;
         }
 
-        public static IEnumerable<Tuple<int, List<Product>>> NGlyGetTheoreticalFragments(double precursorMass, DissociationType dissociationType, 
-            List<int> possibleModPositions, PeptideWithSetModifications peptide, Glycan glycan)
+        public static PeptideWithSetModifications GenerateGlycopeptide(int position, PeptideWithSetModifications peptide, Glycan glycan)
         {
             Modification modification = GlycanToModification(glycan);
 
-            foreach (var position in possibleModPositions)
-            {               
-                Dictionary<int, Modification> testMods = new Dictionary<int, Modification> { { position, modification } };
 
-                //TO DO: Weirde bug
-                if (!peptide.AllModsOneIsNterminus.Keys.Contains(position))
+            Dictionary<int, Modification> testMods = new Dictionary<int, Modification> { { position, modification } };
+
+            if (!peptide.AllModsOneIsNterminus.Keys.Contains(position))
+            {
+                foreach (var mod in peptide.AllModsOneIsNterminus)
                 {
-                    foreach (var mod in peptide.AllModsOneIsNterminus)
-                    {
-                        testMods.Add(mod.Key, mod.Value);
-                    }
-                }           
-
-                var testPeptide = new PeptideWithSetModifications(peptide.Protein, peptide.DigestionParams, peptide.OneBasedStartResidueInProtein,
-                    peptide.OneBasedEndResidueInProtein, peptide.CleavageSpecificityForFdrCategory, peptide.PeptideDescription, peptide.MissedCleavages, testMods, peptide.NumFixedMods);
-
-                List<Product> theoreticalProducts = testPeptide.Fragment(dissociationType, FragmentationTerminus.Both).Where(p=>p.ProductType!= ProductType.M).ToList();
-                theoreticalProducts.AddRange(GetGlycanYIons(precursorMass, glycan));
-
-                yield return new Tuple<int, List<Product>>(position, theoreticalProducts);
+                    testMods.Add(mod.Key, mod.Value);
+                }
             }
+
+            var testPeptide = new PeptideWithSetModifications(peptide.Protein, peptide.DigestionParams, peptide.OneBasedStartResidueInProtein,
+                peptide.OneBasedEndResidueInProtein, peptide.CleavageSpecificityForFdrCategory, peptide.PeptideDescription, peptide.MissedCleavages, testMods, peptide.NumFixedMods);
+            
+            return testPeptide;
+
         }
 
         public static Modification GlycanToModification(Glycan glycan)
@@ -230,13 +224,24 @@ namespace EngineLayer.CrosslinkSearch
             List<double> lossMasses = glycan.Ions.Where(p=>p.IonMass < 57000000).Select(p => (double)p.LossIonMass/1E5).OrderBy(p => p).ToList(); //570 is a cutoff for glycan ion size 2N1H, which will generate fragment ions. 
             neutralLosses.Add(DissociationType.HCD, lossMasses);
             neutralLosses.Add(DissociationType.CID, lossMasses);
+            neutralLosses.Add(DissociationType.EThcD, lossMasses);
 
             Dictionary<DissociationType, List<double>> diagnosticIons = new Dictionary<DissociationType, List<double>>();
             diagnosticIons.Add(DissociationType.HCD, glycan.GetDiagnosticIons().Select(p=>(double)p/1E5).ToList());
             diagnosticIons.Add(DissociationType.CID, glycan.GetDiagnosticIons().Select(p => (double)p / 1E5).ToList());
             diagnosticIons.Add(DissociationType.EThcD, glycan.GetDiagnosticIons().Select(p => (double)p / 1E5).ToList());
-
-            Modification modification = new Modification(_originalId:"Glycan", _monoisotopicMass: (double)glycan.Mass/1E5, _neutralLosses: neutralLosses, _diagnosticIons : diagnosticIons);
+            //string[] motifs = new string[] { "Nxt", "Nxs" };
+            ModificationMotif.TryGetMotif("N", out ModificationMotif finalMotif); //TO DO: only one motif can be write here.
+            var id = Glycan.GetKindString(glycan.Struc);
+            Modification modification = new Modification(
+                _originalId: id,
+                _modificationType: "N-Glycosylation",
+                _monoisotopicMass: (double)glycan.Mass/1E5,
+                _locationRestriction: "Anywhere.",
+                _target: finalMotif,
+                _neutralLosses: neutralLosses, 
+                _diagnosticIons : diagnosticIons
+            );
             return modification;
         }
 
