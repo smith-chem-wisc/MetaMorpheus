@@ -1442,7 +1442,7 @@ namespace MetaMorpheusGUI
 
         private void AddCustomAminoAcid_Click(object sender, RoutedEventArgs e)
         {
-            var dialog = new CustomAminoAcidButtonWindow();
+            var dialog = new CustomAminoAcidWindow();
             dialog.ShowDialog();
         }
 

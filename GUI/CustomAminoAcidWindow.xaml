@@ -12,9 +12,9 @@
             <StackPanel Orientation="Horizontal">
                 <Label Content="Single Character Abbreviation" Width="175"></Label>
                 <Label Content="*" Foreground="Red" FontWeight="Bold" />
-                <TextBox x:Name="originalIdTextBox" Width="155" Height="20">
+                <TextBox x:Name="AminoAcidTextBox" Width="155" Height="20">
                     <ToolTipService.ToolTip>
-                        <ToolTip Content="Amino acid single character (required)."/>
+                        <ToolTip Content="Single amino acid character (case-sensitive)."/>
                     </ToolTipService.ToolTip>
                     <TextBox.Style>
                         <Style TargetType="TextBox" xmlns:sys="clr-namespace:System;assembly=mscorlib">
@@ -44,7 +44,7 @@
             <StackPanel Orientation="Vertical" Background="LightGray" Width="350">
                 <StackPanel Orientation="Horizontal">
                     <Label Content="Chemical Formula" Width="190"></Label>
-                    <TextBox Name="chemicalFormulaTextBox" Width="155" Height="20">
+                    <TextBox Name="ChemicalFormulaTextBox" Width="155" Height="20">
                         <ToolTipService.ToolTip>
                             <ToolTip Content="Chemical formula (optional if monoisotopic mass is specified), example: 'H1 O3 P1'"/>
                         </ToolTipService.ToolTip>
@@ -79,7 +79,7 @@
                 <!--Monoisotopic mass-->
                 <StackPanel Orientation="Horizontal">
                     <Label Content="Monoisotopic Mass" Width="190"></Label>
-                    <TextBox Name="modMassTextBox" Width="155" Height="20">
+                    <TextBox Name="MonoisotopicMassTextBox" Width="155" Height="20">
                         <ToolTipService.ToolTip>
                             <ToolTip Content="Monoisotopic mass (optional, if chemical formula is specified), example: '79.98'"/>
                         </ToolTipService.ToolTip>
@@ -111,8 +111,8 @@
         </StackPanel>
         <!--Save and cancel buttons-->
         <StackPanel Orientation="Horizontal" Height="35" VerticalAlignment="Bottom" HorizontalAlignment="Center"  >
-            <Button Name="saveButton" Content="Save Mod" FontSize="13" Margin="5" Width="100" Click="SaveCustomMod_Click" />
-            <Button Name="cancelButton" Content="Cancel" FontSize="13" Margin="5" Width="100" Click="CancelCustomMod_Click" />
+            <Button Name="saveButton" Content="Save Amino Acid" FontSize="13" Margin="5" Width="100" Click="SaveCustomAminoAcid_Click" />
+            <Button Name="cancelButton" Content="Cancel" FontSize="13" Margin="5" Width="100" Click="CancelCustomAminoAcid_Click" />
         </StackPanel>
     </Grid>
 </Window>
