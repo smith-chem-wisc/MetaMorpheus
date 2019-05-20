@@ -217,6 +217,7 @@ namespace EngineLayer.FdrAnalysis
             if (CalculatePValue)
             {
                 myAnalysisResults.BinarySearchTreeMetrics = PValueAnalysisGeneric.ComputePValuesForAllPSMsGeneric(AllPsms);
+                Compute_PValue_Based_QValue(AllPsms);
             }
             
         }
@@ -267,6 +268,25 @@ namespace EngineLayer.FdrAnalysis
 
             double probabilityOfScore = 1 - Math.Pow(preValue, count);
             return count * probabilityOfScore;
+        }
+
+        public static void Compute_PValue_Based_QValue(List<PeptideSpectralMatch> psms)
+        {
+            double[] allPValues = psms.Select(p => Convert.ToDouble(p.PValueInfo.Split('|')[1])).ToArray();
+            int[] psmsArrayIndicies = Enumerable.Range(0, psms.Count).ToArray();
+            Array.Sort(allPValues, psmsArrayIndicies);//sort the second thing by the first
+            Array.Reverse(allPValues);
+            Array.Reverse(psmsArrayIndicies);
+
+
+            double runningSum = 0;
+            for (int i = 0; i < allPValues.Length; i++)
+            {
+                runningSum += (1-allPValues[i]);
+                double qValue = runningSum / (i + 1);
+
+                psms[psmsArrayIndicies[i]].PValueInfo = psms[psmsArrayIndicies[i]].PValueInfo + '|' + Math.Round(qValue, 6);
+            }
         }
 
         private static int GetNumPSMsAtqValueCutoff(List<PeptideSpectralMatch> psms, double qValueCutoff)
