@@ -80,6 +80,11 @@ namespace TaskLayer
                     for (int i = 0; i < SearchParameters.SilacLabels.Count; i++)
                     {
                         SilacLabel currentLabel = SearchParameters.SilacLabels[i];
+                        //make sure we're not overwriting something
+                        while(Residue.TryGetResidue(heavyLabel, out Residue residue))
+                        {
+                            heavyLabel++;
+                        }
                         SilacLabel updatedLabel = SilacConversions.AssignValidHeavyCharacter(currentLabel, heavyLabel);
                         heavyLabel++;
                         if (currentLabel.AdditionalLabels != null)
