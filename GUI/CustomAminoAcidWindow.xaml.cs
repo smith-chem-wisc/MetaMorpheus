@@ -1,6 +1,8 @@
-﻿using Proteomics.AminoAcidPolymer;
+﻿using EngineLayer;
+using Proteomics.AminoAcidPolymer;
 using System;
 using System.Collections.Generic;
+using System.IO;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
@@ -28,6 +30,7 @@ namespace MetaMorpheusGUI
 
         private void SaveCustomAminoAcid_Click(object sender, RoutedEventArgs e)
         {
+            //VALIDATE INPUT
             if (AminoAcidTextBox.Text.Length == 0)
             {
                 MessageBox.Show("Please specify the character that represents a synthetic amino acid in the database");
@@ -45,6 +48,21 @@ namespace MetaMorpheusGUI
                     "\nThis can be done in MetaMorpheus by navigating to 'Data' in the top-left corner, " +
                     "\nselecting 'Open folder with mods/data files' from the drop down menu," +
                     "\nopening the folder 'CustomAminoAcids', and opening the file 'CustomAminoAcids.txt");
+            }
+
+
+            //Read the old file
+            string aminoAcidDirectory = Path.Combine(GlobalVariables.DataDir, @"CustomAminoAcids");
+            string customAminoAcidPath = Path.Combine(aminoAcidDirectory, @"CustomAminoAcids.txt");
+            List<string> customAminoAcidsText = new List<string>();
+
+            if (!File.Exists(customAminoAcidPath))
+            {
+                customAminoAcidsText.Add("Custom Modifications");
+            }
+            else
+            {
+                customAminoAcidsText = File.ReadAllLines(customAminoAcidPath).ToList();
             }
         }
 
