@@ -1,6 +1,8 @@
 ﻿using MassSpectrometry;
+using MzLibUtil;
 using Nett;
 using Proteomics;
+using Proteomics.AminoAcidPolymer;
 using System;
 using System.Collections.Generic;
 using System.IO;
@@ -86,6 +88,44 @@ namespace EngineLayer
                     AllModsKnownDictionary.Add(mod.IdWithMotif, mod);
                 }
                 // no error thrown if multiple mods with this ID are present - just pick one
+            }
+
+            //read in all the amino acids (they already exist in mzlib, but there might be synthetic amino acids that need to be included)
+            string aminoAcidPath = Path.Combine(DataDir, "@CustomAminoAcids", @"CustomAminoAcids.txt");
+            if (File.Exists(aminoAcidPath)) //if it already exists
+            {
+                Tolerance residueTolerance = new AbsoluteTolerance(0.000001);
+                string[] aminoAcidLines = File.ReadAllLines(aminoAcidPath);
+                List<Residue> residuesToAdd = new List<Residue>();
+                for (int i = 1; i < aminoAcidLines.Length; i++)
+                {
+                    string[] line = aminoAcidLines[i].Split('\t').ToArray(); //tsv Name, one letter, three letter, monoisotopic
+                    if (line.Length >= 4) //check something is there (not a blank line)
+                    {
+                        char letter = line[1].First();
+                        double monoisotopicMass = Convert.ToDouble(line[3]);
+                        //if it already exists
+                        if (Residue.TryGetResidue(letter, out Residue residue))
+                        {
+                            if(!residueTolerance.Within(residue.MonoisotopicMass,monoisotopicMass))
+                            {
+                                residuesToAdd.Add(new Residue(line[0], letter, line[2], null, null));
+                            }
+                        }
+                    }
+                }
+            }
+            else //create it so that it can be manipulated
+            {
+                List<string> linesToWrite = new List<string> { "Name\tOne Letter Abbr.\tThree Letter Abbr.\tMonoisotopicMass" };
+                for(char letter = 'A'; letter<='Z';letter++)
+                {
+                    if(Residue.TryGetResidue(letter,out Residue residue))
+                    {
+                        linesToWrite.Add(residue.Letter.ToString() + '\t' + residue.MonoisotopicMass.ToString());
+                    }
+                }
+                File.WriteAllLines(aminoAcidPath, linesToWrite.ToArray());
             }
 
             GlobalSettings = Toml.ReadFile<GlobalSettings>(Path.Combine(DataDir, @"settings.toml"));
