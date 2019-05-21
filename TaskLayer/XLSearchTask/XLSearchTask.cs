@@ -272,7 +272,7 @@ namespace TaskLayer
                 }
 
                 double qValue = Math.Min(1, (double)cumulativeDecoy / cumulativeTarget);
-                csm.SetFdrValues(cumulativeTarget, cumulativeDecoy, qValue, 0, 0, 0, 0, 0, 0, false,0);
+                csm.SetFdrValues(cumulativeTarget, cumulativeDecoy, qValue, 0, 0, 0,0);
             }
 
             double qValueThreshold = 1.0;

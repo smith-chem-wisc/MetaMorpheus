@@ -166,7 +166,7 @@ namespace EngineLayer
             DeltaScore = Score - Math.Max(RunnerUpScore, scoreCutoff);
         }
 
-        public void SetFdrValues(double cumulativeTarget, double cumulativeDecoy, double qValue, double cumulativeTargetNotch, double cumulativeDecoyNotch, double qValueNotch, double maximumLikelihood, double eValue, double eScore, bool calculateEValue, int longestSeries)
+        public void SetFdrValues(double cumulativeTarget, double cumulativeDecoy, double qValue, double cumulativeTargetNotch, double cumulativeDecoyNotch, double qValueNotch, int longestSeries)
         {
             FdrInfo = new FdrInfo
             {
@@ -176,10 +176,6 @@ namespace EngineLayer
                 CumulativeTargetNotch = cumulativeTargetNotch,
                 CumulativeDecoyNotch = cumulativeDecoyNotch,
                 QValueNotch = qValueNotch,
-                MaximumLikelihood = maximumLikelihood,
-                EScore = eScore,
-                EValue = eValue,
-                CalculateEValue = calculateEValue,
                 LongestSeriesLength = longestSeries
             };
         }

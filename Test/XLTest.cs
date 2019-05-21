@@ -126,7 +126,7 @@ namespace Test
             var newPsms = possiblePsms.Where(p => p != null).ToList();
             foreach (var item in newPsms)
             {
-                item.SetFdrValues(0, 0, 0, 0, 0, 0, 0, 0, 0, false,0);
+                item.SetFdrValues(0, 0, 0, 0, 0, 0, 0);
             }
 
             //Test newPsms
@@ -587,7 +587,7 @@ namespace Test
 
             new CrosslinkSearchEngine(csms, scans, indexingResults.PeptideIndex, indexingResults.FragmentIndex, 0, new CommonParameters(), crosslinker, false, 0, false, false, true, new List<string>()).Run();
 
-            csms[0].SetFdrValues(0, 0, 0.1, 0, 0, 0, 0, 0, 0, false,0);
+            csms[0].SetFdrValues(0, 0, 0.1, 0, 0, 0, 0);
 
             xlst.WritePepXML_xl(csms.ToList(), new List<Protein>(), "", new List<Modification> { deadend }, new List<Modification> { deadend }, new List<string>(), TestContext.CurrentContext.TestDirectory, "test", new List<string>());
             File.Delete(Path.Combine(TestContext.CurrentContext.TestDirectory, @"test.pep.XML"));
@@ -638,7 +638,7 @@ namespace Test
             Assert.That(csm.BetaPeptide.ChildMatchedFragmentIons.First().Value.Count == 17);
 
             // write results to TSV
-            csm.SetFdrValues(1, 0, 0, 0, 0, 0, 0, 0, 0, false,0);
+            csm.SetFdrValues(1, 0, 0, 0, 0, 0, 0);
             XLSearchTask.WritePsmCrossToTsv(new List<CrosslinkSpectralMatch> { csm }, outputFile, 2);
 
             // read results from TSV
@@ -703,7 +703,7 @@ namespace Test
             Assert.That(csm.BetaPeptide.ChildMatchedFragmentIons.First().Value.Count == 43);
 
             // write results to TSV
-            csm.SetFdrValues(1, 0, 0, 0, 0, 0, 0, 0, 0, false,0);
+            csm.SetFdrValues(1, 0, 0, 0, 0, 0, 0);
             XLSearchTask.WritePsmCrossToTsv(new List<CrosslinkSpectralMatch> { csm }, outputFile, 2);
 
             // read results from TSV
