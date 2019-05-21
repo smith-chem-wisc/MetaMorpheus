@@ -20,7 +20,7 @@ namespace EngineLayer
         public CommonParameters(string taskDescriptor = null, DissociationType dissociationType = DissociationType.HCD, DissociationType childScanDissociationType = DissociationType.Unknown, bool doPrecursorDeconvolution = true,
             bool useProvidedPrecursorInfo = true, double deconvolutionIntensityRatio = 3, int deconvolutionMaxAssumedChargeState = 12, bool reportAllAmbiguity = true,
             bool addCompIons = false, int totalPartitions = 1, double scoreCutoff = 5, int? numberOfPeaksToKeepPerWindow = 200, double? minimumAllowedIntensityRatioToBasePeak = 0.01, double? windowWidthThomsons = null, int? numberOfWindows = null, bool normalizePeaksAccrossAllWindows = false, bool trimMs1Peaks = false,
-            bool trimMsMsPeaks = true, bool useDeltaScore = false, bool calculateEValue = false, bool calculatePValue = false, Tolerance productMassTolerance = null, Tolerance precursorMassTolerance = null, Tolerance deconvolutionMassTolerance = null,
+            bool trimMsMsPeaks = true, bool useDeltaScore = false, bool calculatePValue = false, Tolerance productMassTolerance = null, Tolerance precursorMassTolerance = null, Tolerance deconvolutionMassTolerance = null,
             int maxThreadsToUsePerFile = -1, DigestionParams digestionParams = null, IEnumerable<(string, string)> listOfModsVariable = null, IEnumerable<(string, string)> listOfModsFixed = null, double qValueOutputFilter = 1.0,
             bool assumeOrphanPeaksAreZ1Fragments = true, int maxHeterozygousVariants = 4, int minVariantDepth = 1)
         {
@@ -41,7 +41,6 @@ namespace EngineLayer
             TrimMs1Peaks = trimMs1Peaks;
             TrimMsMsPeaks = trimMsMsPeaks;
             UseDeltaScore = useDeltaScore;
-            CalculateEValue = calculateEValue;
             CalculatePValue = calculatePValue;
             MaxThreadsToUsePerFile = maxThreadsToUsePerFile == -1 ? Environment.ProcessorCount > 1 ? Environment.ProcessorCount - 1 : 1 : maxThreadsToUsePerFile;
 
@@ -98,7 +97,6 @@ namespace EngineLayer
         public bool TrimMs1Peaks { get; private set; }
         public bool TrimMsMsPeaks { get; private set; }
         public bool UseDeltaScore { get; private set; }
-        public bool CalculateEValue { get; private set; }
         public bool CalculatePValue { get; private set; }
         public double QValueOutputFilter { get; private set; }    
         public List<ProductType> CustomIons { get; private set; }
@@ -148,7 +146,6 @@ namespace EngineLayer
                                 TrimMs1Peaks,
                                 TrimMsMsPeaks,
                                 UseDeltaScore,
-                                CalculateEValue,
                                 CalculatePValue,
                                 ProductMassTolerance,
                                 PrecursorMassTolerance,

@@ -329,7 +329,6 @@ namespace TaskLayer
                 trimMsMsPeaks: commonParams.TrimMsMsPeaks,
                 normalizePeaksAccrossAllWindows: commonParams.NormalizePeaksAccrossAllWindows,
                 useDeltaScore: commonParams.UseDeltaScore,
-                calculateEValue: commonParams.CalculateEValue,
                 calculatePValue: commonParams.CalculatePValue,
                 deconvolutionMassTolerance: commonParams.DeconvolutionMassTolerance,
                 maxThreadsToUsePerFile: commonParams.MaxThreadsToUsePerFile,

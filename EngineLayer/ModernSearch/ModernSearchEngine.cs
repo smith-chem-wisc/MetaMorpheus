@@ -42,8 +42,6 @@ namespace EngineLayer.ModernSearch
             ReportProgress(new ProgressEventArgs(oldPercentProgress, "Performing modern search... " + CurrentPartition + "/" + CommonParameters.TotalPartitions, NestedIds));
 
             byte byteScoreCutoff = (byte)CommonParameters.ScoreCutoff;
-            if (CommonParameters.CalculateEValue)
-                byteScoreCutoff = 1;
 
             int maxThreadsPerFile = CommonParameters.MaxThreadsToUsePerFile;
             int[] threads = Enumerable.Range(0, maxThreadsPerFile).ToArray();
@@ -95,7 +93,7 @@ namespace EngineLayer.ModernSearch
                         bool meetsScoreCutoff = thisScore >= CommonParameters.ScoreCutoff;
                         bool scoreImprovement = PeptideSpectralMatches[i] == null || (thisScore - PeptideSpectralMatches[i].RunnerUpScore) > -PeptideSpectralMatch.ToleranceForScoreDifferentiation;
 
-                        if (meetsScoreCutoff && scoreImprovement || CommonParameters.CalculateEValue)
+                        if (meetsScoreCutoff && scoreImprovement)
                         {
                             if (PeptideSpectralMatches[i] == null)
                             {
@@ -104,11 +102,6 @@ namespace EngineLayer.ModernSearch
                             else
                             {
                                 PeptideSpectralMatches[i].AddOrReplace(peptide, thisScore, notch, CommonParameters.ReportAllAmbiguity, matchedIons, 0);
-                            }
-
-                            if (CommonParameters.CalculateEValue)
-                            {
-                                PeptideSpectralMatches[i].AllScores.Add(thisScore);
                             }
                         }
                     }
@@ -124,18 +117,6 @@ namespace EngineLayer.ModernSearch
                     }
                 }
             });
-
-            // remove peptides below the score cutoff that were stored to calculate expectation values
-            if (CommonParameters.CalculateEValue)
-            {
-                for (int i = 0; i < PeptideSpectralMatches.Length; i++)
-                {
-                    if (PeptideSpectralMatches[i] != null && PeptideSpectralMatches[i].Score < CommonParameters.ScoreCutoff)
-                    {
-                        PeptideSpectralMatches[i] = null;
-                    }
-                }
-            }
 
             foreach (PeptideSpectralMatch psm in PeptideSpectralMatches.Where(p => p != null))
             {

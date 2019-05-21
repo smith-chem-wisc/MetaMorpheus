@@ -86,7 +86,6 @@ namespace Test
 
             CommonParameters CommonParameters = new CommonParameters(
                 dissociationType: DissociationType.LowCID,
-                calculateEValue: true,
                 maxThreadsToUsePerFile: 1,
                 precursorMassTolerance: new PpmTolerance(5),
                 numberOfPeaksToKeepPerWindow: 200, // this is set to a value, but since the dissociation type is set to LowCID, no peak filtering should actually happen
@@ -333,7 +332,6 @@ namespace Test
 
             CommonParameters CommonParameters = new CommonParameters(
                 dissociationType: DissociationType.LowCID,
-                calculateEValue: true,
                 maxThreadsToUsePerFile: 1,
                 precursorMassTolerance: new PpmTolerance(5),
                 digestionParams: new DigestionParams(
@@ -381,7 +379,6 @@ namespace Test
         {
             CommonParameters CommonParameters = new CommonParameters(
                 dissociationType: DissociationType.LowCID,
-                calculateEValue: true,
                 maxThreadsToUsePerFile: 1,
                 precursorMassTolerance: new PpmTolerance(5),
                 numberOfPeaksToKeepPerWindow: 200,
@@ -491,7 +488,6 @@ namespace Test
 
             CommonParameters CommonParameters = new CommonParameters(
                 dissociationType: DissociationType.LowCID,
-                calculateEValue: true,
                 maxThreadsToUsePerFile: 1,
                 precursorMassTolerance: new PpmTolerance(5),
                 numberOfPeaksToKeepPerWindow: 200,
@@ -582,7 +578,6 @@ namespace Test
 
             CommonParameters CommonParameters = new CommonParameters(
                 dissociationType: DissociationType.LowCID,
-                calculateEValue: true,
                 maxThreadsToUsePerFile: 1,
                 precursorMassTolerance: new PpmTolerance(5),
                 numberOfPeaksToKeepPerWindow: 200,

@@ -1,5 +1,4 @@
-﻿using MathNet.Numerics;
-using System;
+﻿using System;
 using System.Collections.Generic;
 using System.Linq;
 
@@ -10,7 +9,6 @@ namespace EngineLayer.FdrAnalysis
         private List<PeptideSpectralMatch> AllPsms;
         private readonly int MassDiffAcceptorNumNotches;
         private readonly bool UseDeltaScore;
-        private readonly bool CalculateEValue;
         private readonly bool CalculatePValue;
         private readonly double ScoreCutoff;
         private readonly string AnalysisType;
@@ -21,7 +19,6 @@ namespace EngineLayer.FdrAnalysis
             MassDiffAcceptorNumNotches = massDiffAcceptorNumNotches;
             UseDeltaScore = commonParameters.UseDeltaScore;
             ScoreCutoff = commonParameters.ScoreCutoff;
-            CalculateEValue = commonParameters.CalculateEValue;
             CalculatePValue = commonParameters.CalculatePValue;
             AnalysisType = analysisType;
         }
@@ -49,39 +46,6 @@ namespace EngineLayer.FdrAnalysis
             foreach (var proteasePsms in psmsGroupedByProtease)
             {
                 var psms = proteasePsms.ToList();
-
-                // generate the null distribution for e-value calculations
-                double globalMeanScore = 0;
-                int globalMeanCount = 0;
-
-                if (CalculateEValue && psms.Any())
-                {
-                    List<double> combinedScores = new List<double>();
-
-                    foreach (PeptideSpectralMatch psm in psms)
-                    {
-                        psm.AllScores.Sort();
-                        combinedScores.AddRange(psm.AllScores);
-
-                        //remove top scoring peptide
-                        if (combinedScores.Any())
-                        {
-                            combinedScores.RemoveAt(combinedScores.Count - 1);
-                        }
-                    }
-
-                    if (combinedScores.Any())
-                    {
-                        globalMeanScore = combinedScores.Average();
-                        globalMeanCount = (int)((double)combinedScores.Count / psms.Count);
-                    }
-                    else
-                    {
-                        // should be a very rare case... if there are PSMs but each PSM only has one hit
-                        globalMeanScore = 0;
-                        globalMeanCount = 0;
-                    }
-                }
 
                 //Calculate delta scores for the psms (regardless of if we are using them)
                 foreach (PeptideSpectralMatch psm in psms)
@@ -210,7 +174,6 @@ namespace EngineLayer.FdrAnalysis
                 myAnalysisResults.BinarySearchTreeMetrics = PValueAnalysisGeneric.ComputePValuesForAllPSMsGeneric(AllPsms);
                 Compute_PValue_Based_QValue(AllPsms);
             }
-            
         }
 
         public static void Compute_PValue_Based_QValue(List<PeptideSpectralMatch> psms)
@@ -221,11 +184,10 @@ namespace EngineLayer.FdrAnalysis
             Array.Reverse(allPValues);
             Array.Reverse(psmsArrayIndicies);
 
-
             double runningSum = 0;
             for (int i = 0; i < allPValues.Length; i++)
             {
-                runningSum += (1-allPValues[i]);
+                runningSum += (1 - allPValues[i]);
                 double qValue = runningSum / (i + 1);
 
                 psms[psmsArrayIndicies[i]].PValueInfo = psms[psmsArrayIndicies[i]].PValueInfo + '|' + Math.Round(qValue, 6);
