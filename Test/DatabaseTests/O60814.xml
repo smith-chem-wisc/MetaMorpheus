@@ -1,0 +1,515 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<mzLibProteinDb>
+  <modification>ID   Dimethylated arginine on R
+AC   PTM-0341
+MT   UniProt
+FT   MOD_RES
+TG   R
+PP   Anywhere.
+CF   C2H4
+MM   28.0313
+DR   PSI-MOD; MOD:00783
+TR   Eukaryota; taxId:2759 (Eukaryota)
+KW   Methylation
+
+//</modification>
+  <modification>ID   N6-(2-hydroxyisobutyryl)lysine on K
+AC   PTM-0638
+MT   UniProt
+FT   MOD_RES
+TG   K
+PP   Anywhere.
+CF   C4H6O2
+MM   86.03678
+TR   Eukaryota; taxId:2759 (Eukaryota)
+KW   Hydroxylation
+
+//</modification>
+  <modification>ID   N6-(beta-hydroxybutyryl)lysine on K
+AC   PTM-0499
+MT   UniProt
+FT   MOD_RES
+TG   K
+PP   Anywhere.
+CF   C4H7O2
+MM   87.044604
+TR   Eukaryota; taxId:2759 (Eukaryota)
+KW   Hydroxylation
+
+//</modification>
+  <modification>ID   N6,N6,N6-trimethyllysine on K
+AC   PTM-0187
+MT   UniProt
+FT   MOD_RES
+TG   K
+PP   Anywhere.
+CF   C3H6
+MM   42.046950533
+DR   PSI-MOD; MOD:00083
+DR   RESID; AA0074
+TR   Bacteria; taxId:2 (Bacteria)
+TR   Eukaryota; taxId:2759 (Eukaryota)
+KW   Methylation
+
+//</modification>
+  <modification>ID   N6,N6-dimethyllysine on K
+AC   PTM-0188
+MT   UniProt
+FT   MOD_RES
+TG   K
+PP   Anywhere.
+CF   C2H4
+MM   28.0313
+DR   PSI-MOD; MOD:00084
+DR   RESID; AA0075
+TR   Bacteria; taxId:2 (Bacteria)
+TR   Eukaryota; taxId:2759 (Eukaryota)
+KW   Methylation
+
+//</modification>
+  <modification>ID   N6-acetyllysine on K
+AC   PTM-0190
+MT   UniProt
+FT   MOD_RES
+TG   K
+PP   Anywhere.
+CF   C2H2O
+MM   42.010565
+DR   PSI-MOD; MOD:00064
+DR   RESID; AA0055
+TR   Archaea; taxId:2157 (Archaea)
+TR   Bacteria; taxId:2 (Bacteria)
+TR   Eukaryota; taxId:2759 (Eukaryota)
+KW   Acetylation
+
+//</modification>
+  <modification>ID   N6-butyryllysine on K
+AC   PTM-0637
+MT   UniProt
+FT   MOD_RES
+TG   K
+PP   Anywhere.
+CF   C4H6O
+MM   70.041865
+DR   PSI-MOD; MOD:01781
+DR   RESID; AA0532
+TR   Bacteria; taxId:2 (Bacteria)
+TR   Eukaryota; taxId:2759 (Eukaryota)
+
+//</modification>
+  <modification>ID   N6-crotonyllysine on K
+AC   PTM-0475
+MT   UniProt
+FT   MOD_RES
+TG   K
+PP   Anywhere.
+CF   C4H4O
+MM   68.026215
+DR   PSI-MOD; MOD:01892
+DR   RESID; AA0567
+TR   Eukaryota; taxId:2759 (Eukaryota)
+
+//</modification>
+  <modification>ID   N6-malonyllysine on K
+AC   PTM-0467
+MT   UniProt
+FT   MOD_RES
+TG   K
+PP   Anywhere.
+CF   C3H2O3
+MM   86.000394
+DR   PSI-MOD; MOD:01893
+DR   RESID; AA0568
+TR   Archaea; taxId:2157 (Archaea)
+TR   Bacteria; taxId:2 (Bacteria)
+TR   Eukaryota; taxId:2759 (Eukaryota)
+
+//</modification>
+  <modification>ID   N6-methyllysine on K
+AC   PTM-0194
+MT   UniProt
+FT   MOD_RES
+TG   K
+PP   Anywhere.
+CF   CH2
+MM   14.01565
+DR   PSI-MOD; MOD:00085
+DR   RESID; AA0076
+TR   Archaea; taxId:2157 (Archaea)
+TR   Bacteria; taxId:2 (Bacteria)
+TR   Eukaryota; taxId:2759 (Eukaryota)
+KW   Methylation
+
+//</modification>
+  <modification>ID   N6-succinyllysine on K
+AC   PTM-0438
+MT   UniProt
+FT   MOD_RES
+TG   K
+PP   Anywhere.
+CF   C4H4O3
+MM   100.016044
+DR   PSI-MOD; MOD:01819
+DR   RESID; AA0545
+TR   Archaea; taxId:2157 (Archaea)
+TR   Bacteria; taxId:2 (Bacteria)
+TR   Eukaryota; taxId:2759 (Eukaryota)
+
+//</modification>
+  <modification>ID   N-acetylproline on P
+AC   PTM-0206
+MT   UniProt
+FT   MOD_RES
+TG   P
+PP   N-terminal.
+CF   C2H2O
+MM   42.010565
+DR   PSI-MOD; MOD:00059
+DR   RESID; AA0050
+TR   Bacteria; taxId:2 (Bacteria)
+TR   Eukaryota; taxId:33090 (Viridiplantae), taxId:40674 (Mammalia)
+KW   Acetylation
+
+//</modification>
+  <modification>ID   Omega-N-methylarginine on R
+AC   PTM-0237
+MT   UniProt
+FT   MOD_RES
+TG   R
+PP   Anywhere.
+CF   CH2
+MM   14.01565
+DR   PSI-MOD; MOD:00078
+DR   RESID; AA0069
+TR   Eukaryota; taxId:5661 (Leishmania donovani), taxId:40674 (Mammalia)
+KW   Methylation
+
+//</modification>
+  <modification>ID   Phosphoserine on S
+AC   PTM-0253
+MT   UniProt
+FT   MOD_RES
+TG   S
+PP   Anywhere.
+CF   HO3P
+MM   79.966331
+DR   PSI-MOD; MOD:00046
+DR   RESID; AA0037
+TR   Archaea; taxId:2157 (Archaea)
+TR   Bacteria; taxId:2 (Bacteria)
+TR   Eukaryota; taxId:2759 (Eukaryota)
+TR   Viruses; taxId:10239 (Viruses)
+KW   Phosphoprotein
+
+//</modification>
+  <modification>ID   Phosphothreonine on T
+AC   PTM-0254
+MT   UniProt
+FT   MOD_RES
+TG   T
+PP   Anywhere.
+CF   HO3P
+MM   79.966331
+DR   PSI-MOD; MOD:00047
+DR   RESID; AA0038
+TR   Bacteria; taxId:2 (Bacteria)
+TR   Eukaryota; taxId:2759 (Eukaryota)
+TR   Viruses; taxId:10239 (Viruses)
+KW   Phosphoprotein
+
+//</modification>
+  <entry>
+    <accession>O60814</accession>
+    <name>H2B1K_HUMAN</name>
+    <protein>
+      <recommendedName>
+        <fullName>Histone H2B type 1-K</fullName>
+      </recommendedName>
+    </protein>
+    <gene>
+      <name type="primary">HIST1H2BK</name>
+      <name type="synonym">H2BFT</name>
+      <name type="synonym">HIRIP1</name>
+    </gene>
+    <organism>
+      <name type="scientific">Homo sapiens</name>
+    </organism>
+    <feature type="chain">
+      <location>
+        <begin position="2" />
+        <end position="126" />
+      </location>
+    </feature>
+    <feature type="modified residue" description="N-acetylproline on P">
+      <location>
+        <position position="2" />
+      </location>
+    </feature>
+    <feature type="modified residue" description="N6-(2-hydroxyisobutyryl)lysine on K">
+      <location>
+        <position position="6" />
+      </location>
+    </feature>
+    <feature type="modified residue" description="N6-(beta-hydroxybutyryl)lysine on K">
+      <location>
+        <position position="6" />
+      </location>
+    </feature>
+    <feature type="modified residue" description="N6-acetyllysine on K">
+      <location>
+        <position position="6" />
+      </location>
+    </feature>
+    <feature type="modified residue" description="N6-butyryllysine on K">
+      <location>
+        <position position="6" />
+      </location>
+    </feature>
+    <feature type="modified residue" description="N6-crotonyllysine on K">
+      <location>
+        <position position="6" />
+      </location>
+    </feature>
+    <feature type="modified residue" description="N6-(beta-hydroxybutyryl)lysine on K">
+      <location>
+        <position position="12" />
+      </location>
+    </feature>
+    <feature type="modified residue" description="N6-acetyllysine on K">
+      <location>
+        <position position="12" />
+      </location>
+    </feature>
+    <feature type="modified residue" description="N6-crotonyllysine on K">
+      <location>
+        <position position="12" />
+      </location>
+    </feature>
+    <feature type="modified residue" description="N6-(2-hydroxyisobutyryl)lysine on K">
+      <location>
+        <position position="13" />
+      </location>
+    </feature>
+    <feature type="modified residue" description="N6-acetyllysine on K">
+      <location>
+        <position position="13" />
+      </location>
+    </feature>
+    <feature type="modified residue" description="N6-crotonyllysine on K">
+      <location>
+        <position position="13" />
+      </location>
+    </feature>
+    <feature type="modified residue" description="Phosphoserine on S">
+      <location>
+        <position position="15" />
+      </location>
+    </feature>
+    <feature type="modified residue" description="N6-acetyllysine on K">
+      <location>
+        <position position="16" />
+      </location>
+    </feature>
+    <feature type="modified residue" description="N6-crotonyllysine on K">
+      <location>
+        <position position="16" />
+      </location>
+    </feature>
+    <feature type="modified residue" description="N6-(beta-hydroxybutyryl)lysine on K">
+      <location>
+        <position position="17" />
+      </location>
+    </feature>
+    <feature type="modified residue" description="N6-acetyllysine on K">
+      <location>
+        <position position="17" />
+      </location>
+    </feature>
+    <feature type="modified residue" description="N6-crotonyllysine on K">
+      <location>
+        <position position="17" />
+      </location>
+    </feature>
+    <feature type="modified residue" description="N6-(2-hydroxyisobutyryl)lysine on K">
+      <location>
+        <position position="21" />
+      </location>
+    </feature>
+    <feature type="modified residue" description="N6-(beta-hydroxybutyryl)lysine on K">
+      <location>
+        <position position="21" />
+      </location>
+    </feature>
+    <feature type="modified residue" description="N6-acetyllysine on K">
+      <location>
+        <position position="21" />
+      </location>
+    </feature>
+    <feature type="modified residue" description="N6-butyryllysine on K">
+      <location>
+        <position position="21" />
+      </location>
+    </feature>
+    <feature type="modified residue" description="N6-crotonyllysine on K">
+      <location>
+        <position position="21" />
+      </location>
+    </feature>
+    <feature type="modified residue" description="N6-(2-hydroxyisobutyryl)lysine on K">
+      <location>
+        <position position="24" />
+      </location>
+    </feature>
+    <feature type="modified residue" description="N6-acetyllysine on K">
+      <location>
+        <position position="24" />
+      </location>
+    </feature>
+    <feature type="modified residue" description="N6-crotonyllysine on K">
+      <location>
+        <position position="24" />
+      </location>
+    </feature>
+    <feature type="modified residue" description="N6-(2-hydroxyisobutyryl)lysine on K">
+      <location>
+        <position position="25" />
+      </location>
+    </feature>
+    <feature type="modified residue" description="N6-(2-hydroxyisobutyryl)lysine on K">
+      <location>
+        <position position="35" />
+      </location>
+    </feature>
+    <feature type="modified residue" description="N6-(beta-hydroxybutyryl)lysine on K">
+      <location>
+        <position position="35" />
+      </location>
+    </feature>
+    <feature type="modified residue" description="N6-crotonyllysine on K">
+      <location>
+        <position position="35" />
+      </location>
+    </feature>
+    <feature type="modified residue" description="N6-succinyllysine on K">
+      <location>
+        <position position="35" />
+      </location>
+    </feature>
+    <feature type="modified residue" description="Phosphoserine on S">
+      <location>
+        <position position="37" />
+      </location>
+    </feature>
+    <feature type="modified residue" description="N6-(2-hydroxyisobutyryl)lysine on K">
+      <location>
+        <position position="44" />
+      </location>
+    </feature>
+    <feature type="modified residue" description="N6-(2-hydroxyisobutyryl)lysine on K">
+      <location>
+        <position position="47" />
+      </location>
+    </feature>
+    <feature type="modified residue" description="N6-methyllysine on K">
+      <location>
+        <position position="47" />
+      </location>
+    </feature>
+    <feature type="modified residue" description="N6,N6-dimethyllysine on K">
+      <location>
+        <position position="58" />
+      </location>
+    </feature>
+    <feature type="modified residue" description="N6-(2-hydroxyisobutyryl)lysine on K">
+      <location>
+        <position position="58" />
+      </location>
+    </feature>
+    <feature type="modified residue" description="Dimethylated arginine on R">
+      <location>
+        <position position="80" />
+      </location>
+    </feature>
+    <feature type="modified residue" description="N6,N6,N6-trimethyllysine on K">
+      <location>
+        <position position="86" />
+      </location>
+    </feature>
+    <feature type="modified residue" description="N6-(2-hydroxyisobutyryl)lysine on K">
+      <location>
+        <position position="86" />
+      </location>
+    </feature>
+    <feature type="modified residue" description="N6-(beta-hydroxybutyryl)lysine on K">
+      <location>
+        <position position="86" />
+      </location>
+    </feature>
+    <feature type="modified residue" description="N6-acetyllysine on K">
+      <location>
+        <position position="86" />
+      </location>
+    </feature>
+    <feature type="modified residue" description="Omega-N-methylarginine on R">
+      <location>
+        <position position="87" />
+      </location>
+    </feature>
+    <feature type="modified residue" description="Omega-N-methylarginine on R">
+      <location>
+        <position position="93" />
+      </location>
+    </feature>
+    <feature type="modified residue" description="N6-(2-hydroxyisobutyryl)lysine on K">
+      <location>
+        <position position="109" />
+      </location>
+    </feature>
+    <feature type="modified residue" description="N6-methyllysine on K">
+      <location>
+        <position position="109" />
+      </location>
+    </feature>
+    <feature type="modified residue" description="Phosphothreonine on T">
+      <location>
+        <position position="116" />
+      </location>
+    </feature>
+    <feature type="modified residue" description="N6-(2-hydroxyisobutyryl)lysine on K">
+      <location>
+        <position position="117" />
+      </location>
+    </feature>
+    <feature type="modified residue" description="N6-(beta-hydroxybutyryl)lysine on K">
+      <location>
+        <position position="117" />
+      </location>
+    </feature>
+    <feature type="modified residue" description="N6-malonyllysine on K">
+      <location>
+        <position position="117" />
+      </location>
+    </feature>
+    <feature type="modified residue" description="N6-succinyllysine on K">
+      <location>
+        <position position="117" />
+      </location>
+    </feature>
+    <feature type="modified residue" description="N6-(2-hydroxyisobutyryl)lysine on K">
+      <location>
+        <position position="121" />
+      </location>
+    </feature>
+    <feature type="modified residue" description="N6-(beta-hydroxybutyryl)lysine on K">
+      <location>
+        <position position="121" />
+      </location>
+    </feature>
+    <feature type="modified residue" description="N6-succinyllysine on K">
+      <location>
+        <position position="121" />
+      </location>
+    </feature>
+    <sequence length="126">MPEPAKSAPAPKKGSKKAVTKAQKKDGKKRKRSRKESYSVYVYKVLKQVHPDTGISSKAMGIMNSFVNDIFERIAGEASRLAHYNKRSTITSREIQTAVRLLLPGELAKHAVSEGTKAVTKYTSAK</sequence>
+  </entry>
+</mzLibProteinDb>
