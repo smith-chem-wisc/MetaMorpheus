@@ -417,7 +417,7 @@
       <Version>1.0.0-preview</Version>
     </PackageReference>
     <PackageReference Include="mzLib">
-      <Version>1.0.422</Version>
+      <Version>1.0.424</Version>
     </PackageReference>
     <PackageReference Include="Nett">
       <Version>0.8.0</Version>
