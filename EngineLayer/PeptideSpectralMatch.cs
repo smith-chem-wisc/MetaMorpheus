@@ -27,7 +27,6 @@ namespace EngineLayer
             ScanPrecursorCharge = scan.PrecursorCharge;
             ScanPrecursorMonoisotopicPeakMz = scan.PrecursorMonoisotopicPeakMz;
             ScanPrecursorMass = scan.PrecursorMass;
-            AllScores = new List<double>();
             DigestionParams = digestionParams;
             PeptidesToMatchingFragments = new Dictionary<PeptideWithSetModifications, List<MatchedFragmentIon>>();
             Xcorr = xcorr;
@@ -73,7 +72,6 @@ namespace EngineLayer
         public string PValueInfo { get; set; }
 
         public DigestionParams DigestionParams { get; }
-        public List<double> AllScores { get; internal set; }
         public Dictionary<PeptideWithSetModifications, List<MatchedFragmentIon>> PeptidesToMatchingFragments { get; private set; }
 
         public IEnumerable<(int Notch, PeptideWithSetModifications Peptide)> BestMatchingPeptides
@@ -388,7 +386,6 @@ namespace EngineLayer
             IsDecoy = psm.IsDecoy;
             IsContaminant = psm.IsContaminant;
             DigestionParams = psm.DigestionParams;
-            AllScores = psm.AllScores;
             PeptidesToMatchingFragments = psm.PeptidesToMatchingFragments;
         }
     }

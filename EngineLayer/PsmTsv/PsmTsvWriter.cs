@@ -233,15 +233,7 @@ namespace EngineLayer
             s[PsmTsvHeader.PreviousAminoAcid] = pepWithModsIsNull ? " " : Resolve(pepsWithMods.Select(b => b.PreviousAminoAcid.ToString())).ResolvedString;
             s[PsmTsvHeader.NextAminoAcid] = pepWithModsIsNull ? " " : Resolve(pepsWithMods.Select(b => b.NextAminoAcid.ToString())).ResolvedString;
 
-            string allScores = " ";
             string theoreticalsSearched = " ";
-            if (!pepWithModsIsNull && psm.FdrInfo != null && psm.FdrInfo.CalculateEValue)
-            {
-                allScores = string.Join(";", psm.AllScores.Select(p => p.ToString("F2", CultureInfo.InvariantCulture)));
-                theoreticalsSearched = psm.AllScores.Count.ToString();
-            }
-
-            s[PsmTsvHeader.AllScores] = allScores;
             s[PsmTsvHeader.TheoreticalsSearched] = theoreticalsSearched;
             s[PsmTsvHeader.DecoyContaminantTarget] = pepWithModsIsNull ? " " : psm.IsDecoy ? "D" : psm.IsContaminant ? "C" : "T";
         }
