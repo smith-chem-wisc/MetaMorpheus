@@ -48,7 +48,7 @@ namespace EngineLayer.Calibration
             object lockObj = new object();
             object lockObj2 = new object();
 
-            int maxThreadsPerFile = commonParameters.MaxThreadsToUsePerFile;
+            int maxThreadsPerFile = CommonParameters.MaxThreadsToUsePerFile;
             int[] threads = Enumerable.Range(0, maxThreadsPerFile).ToArray();
             Parallel.ForEach(threads, (matchIndex) =>
             {
