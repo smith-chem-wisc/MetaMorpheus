@@ -150,6 +150,13 @@ namespace Test
             Assert.AreEqual(1, res.CountOfUnlocalizedMods[mod1.IdWithMotif]); // Saw it, but not sure where!
             Assert.AreEqual(0, res.CountOfUnlocalizedFormulas.Count());
         }
+
+        [Test]
+        public static void TestCustomAminoAcidReading()
+        {
+            GlobalVariables.RefreshAminoAcidDictionary(); //write the file
+            GlobalVariables.RefreshAminoAcidDictionary(); //read the file
+        }
     }
 
     internal class ThisTestScan : IScan

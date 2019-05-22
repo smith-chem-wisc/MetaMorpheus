@@ -93,47 +93,7 @@ namespace EngineLayer
                 // no error thrown if multiple mods with this ID are present - just pick one
             }
 
-
-            //read in all the amino acids (they already exist in mzlib, but there might be synthetic amino acids that need to be included)
-            string aminoAcidPath = Path.Combine(DataDir, @"CustomAminoAcids", @"CustomAminoAcids.txt");
-            if (File.Exists(aminoAcidPath)) //if it already exists
-            {
-                string[] aminoAcidLines = File.ReadAllLines(aminoAcidPath);
-                List<Residue> residuesToAdd = new List<Residue>();
-                for (int i = 1; i < aminoAcidLines.Length; i++)
-                {
-
-                    string[] line = aminoAcidLines[i].Split('\t').ToArray(); //tsv Name, one letter, monoisotopic, chemical formula
-                    if (line.Length >= 4) //check something is there (not a blank line)
-                    {
-                        char letter = line[1][0];
-                        if(InvalidAminoAcids.Contains(letter))
-                        {
-                            throw new MetaMorpheusException("Error while reading 'CustomAminoAcids.txt'. Line " + (i + 1).ToString() + " contains an invalid amino acid. (Ex: " + string.Join(", ", InvalidAminoAcids.Select(x => x.ToString())) + ")");
-                        }
-                        try
-                        {
-                            ChemicalFormula formula = ChemicalFormula.ParseFormula(line[3]);
-  
-                            //if it doesn't already exist or it does exist but has a different mass, add the entry
-                            if (!(Residue.TryGetResidue(letter, out Residue residue)) 
-                                || !(formula.Formula.Equals(residue.ThisChemicalFormula.Formula)))
-                            {
-                                residuesToAdd.Add(new Residue(line[0], letter, line[1], formula, ModificationSites.Any));
-                            }
-                        }
-                        catch
-                        {
-                            throw new MetaMorpheusException("Error while reading 'CustomAminoAcids.txt'. Line " + (i + 1).ToString() + " was not in the correct format.");
-                        }
-                    }
-                }
-                Residue.AddNewResiduesToDictionary(residuesToAdd);
-            }
-            else //create it so that it can be manipulated
-            {
-                WriteAminoAcidsFile();
-            }
+            RefreshAminoAcidDictionary();
 
             GlobalSettings = Toml.ReadFile<GlobalSettings>(Path.Combine(DataDir, @"settings.toml"));
             AllSupportedDissociationTypes = new Dictionary<string, DissociationType> {
@@ -244,6 +204,50 @@ namespace EngineLayer
             else
             {
                 return psmString;
+            }
+        }
+
+        public static void RefreshAminoAcidDictionary()
+        {
+            //read in all the amino acids (they already exist in mzlib, but there might be synthetic amino acids that need to be included)
+            string aminoAcidPath = Path.Combine(DataDir, @"CustomAminoAcids", @"CustomAminoAcids.txt");
+            if (File.Exists(aminoAcidPath)) //if it already exists
+            {
+                string[] aminoAcidLines = File.ReadAllLines(aminoAcidPath);
+                List<Residue> residuesToAdd = new List<Residue>();
+                for (int i = 1; i < aminoAcidLines.Length; i++)
+                {
+
+                    string[] line = aminoAcidLines[i].Split('\t').ToArray(); //tsv Name, one letter, monoisotopic, chemical formula
+                    if (line.Length >= 4) //check something is there (not a blank line)
+                    {
+                        char letter = line[1][0];
+                        if (InvalidAminoAcids.Contains(letter))
+                        {
+                            throw new MetaMorpheusException("Error while reading 'CustomAminoAcids.txt'. Line " + (i + 1).ToString() + " contains an invalid amino acid. (Ex: " + string.Join(", ", InvalidAminoAcids.Select(x => x.ToString())) + ")");
+                        }
+                        try
+                        {
+                            ChemicalFormula formula = ChemicalFormula.ParseFormula(line[3]);
+
+                            //if it doesn't already exist or it does exist but has a different mass, add the entry
+                            if (!(Residue.TryGetResidue(letter, out Residue residue))
+                                || !(formula.Formula.Equals(residue.ThisChemicalFormula.Formula)))
+                            {
+                                residuesToAdd.Add(new Residue(line[0], letter, line[1], formula, ModificationSites.Any));
+                            }
+                        }
+                        catch
+                        {
+                            throw new MetaMorpheusException("Error while reading 'CustomAminoAcids.txt'. Line " + (i + 1).ToString() + " was not in the correct format.");
+                        }
+                    }
+                }
+                Residue.AddNewResiduesToDictionary(residuesToAdd);
+            }
+            else //create it so that it can be manipulated
+            {
+                WriteAminoAcidsFile();
             }
         }
 
