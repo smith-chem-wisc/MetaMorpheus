@@ -44,13 +44,15 @@ namespace MetaMorpheusGUI
             if (Residue.TryGetResidue(aminoAcidLetter, out Residue residue))
             {
                 MessageBox.Show("The amino acid '" + aminoAcidLetter + "' already exists." +
-                    "\nMass: " + residue.MonoisotopicMass +
+                    "\nMonoisotopic Mass: " + residue.MonoisotopicMass +
                     "\nChemical Formula: " + residue.ThisChemicalFormula.Formula +
-                    "\nYou may overwrite this amino acid by manually deleting/modifying the current entry. " +
+
+                    "\n\nYou may overwrite this amino acid by manually deleting/modifying the current entry. " +
                     "\nThis can be done in MetaMorpheus by navigating to 'Data' in the top-left corner, " +
                     "selecting 'Open folder with mods/data files' from the drop down menu, " +
                     "opening the folder 'CustomAminoAcids', and opening the file 'CustomAminoAcids.txt." +
                     "\nMetaMorpheus will need to be restarted for these changes to take effect." +
+                    
                     "\n\nAmino acids can be reset to their default values by deleting the file 'CustomAminoAcids.txt' and restarting MetaMorpheus.");
                 return;
             }
@@ -73,6 +75,9 @@ namespace MetaMorpheusGUI
 
             //add the mod to the residue dictionary
             Residue.AddNewResiduesToDictionary(new List<Residue> { new Residue(AminoAcidTextBox.Text, aminoAcidLetter, AminoAcidTextBox.Text, formula, ModificationSites.Any) });
+            MessageBox.Show("Success! Amino Acid '" + aminoAcidLetter + "' has been added to the dictionary." +
+                "\nMonoisotopic Mass: " + formula.MonoisotopicMass.ToString() +
+                "\nChemical Formula: " + formula.Formula);
             DialogResult = true;
         }
 

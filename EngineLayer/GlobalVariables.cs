@@ -96,22 +96,23 @@ namespace EngineLayer
             string aminoAcidPath = Path.Combine(DataDir, @"CustomAminoAcids", @"CustomAminoAcids.txt");
             if (File.Exists(aminoAcidPath)) //if it already exists
             {
-                Tolerance residueTolerance = new AbsoluteTolerance(0.0001);
                 string[] aminoAcidLines = File.ReadAllLines(aminoAcidPath);
                 List<Residue> residuesToAdd = new List<Residue>();
                 for (int i = 1; i < aminoAcidLines.Length; i++)
                 {
+
                     string[] line = aminoAcidLines[i].Split('\t').ToArray(); //tsv Name, one letter, monoisotopic, chemical formula
                     if (line.Length >= 4) //check something is there (not a blank line)
                     {
                         try
                         {
                             char letter = line[1][0];
-                            double monoisotopicMass = Convert.ToDouble(line[2]); //it has to have this
+                            ChemicalFormula formula = ChemicalFormula.ParseFormula(line[3]);
+  
                             //if it doesn't already exist or it does exist but has a different mass, add the entry
-                            if (!(Residue.TryGetResidue(letter, out Residue residue) && residueTolerance.Within(residue.MonoisotopicMass, monoisotopicMass)))
+                            if (!(Residue.TryGetResidue(letter, out Residue residue)) 
+                                || !(formula.Formula.Equals(residue.ThisChemicalFormula.Formula)))
                             {
-                                ChemicalFormula formula = ChemicalFormula.ParseFormula(line[3]);
                                 residuesToAdd.Add(new Residue(line[0], letter, line[1], formula, ModificationSites.Any));
                             }
                         }
@@ -121,6 +122,7 @@ namespace EngineLayer
                         }
                     }
                 }
+                Residue.AddNewResiduesToDictionary(residuesToAdd);
             }
             else //create it so that it can be manipulated
             {
