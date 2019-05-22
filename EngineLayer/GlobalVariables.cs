@@ -16,6 +16,8 @@ namespace EngineLayer
         private static List<Modification> _AllModsKnown = new List<Modification>();
         private static HashSet<string> _AllModTypesKnown = new HashSet<string>();
         private static List<Crosslinker> _KnownCrosslinkers = new List<Crosslinker>();
+        //Characters that aren't amino acids, but are reserved for special uses (motifs, delimiters, mods, etc)
+        private static char[] _InvalidAminoAcids = new char[] { 'X', 'B', 'J', 'Z', '|', ';', '[', ']', '{', '}' }; 
 
         static GlobalVariables()
         {
@@ -104,9 +106,13 @@ namespace EngineLayer
                     string[] line = aminoAcidLines[i].Split('\t').ToArray(); //tsv Name, one letter, monoisotopic, chemical formula
                     if (line.Length >= 4) //check something is there (not a blank line)
                     {
+                        char letter = line[1][0];
+                        if(InvalidAminoAcids.Contains(letter))
+                        {
+                            throw new MetaMorpheusException("Error while reading 'CustomAminoAcids.txt'. Line " + (i + 1).ToString() + " contains an invalid amino acid. (Ex: " + string.Join(", ", InvalidAminoAcids.Select(x => x.ToString())) + ")");
+                        }
                         try
                         {
-                            char letter = line[1][0];
                             ChemicalFormula formula = ChemicalFormula.ParseFormula(line[3]);
   
                             //if it doesn't already exist or it does exist but has a different mass, add the entry
@@ -162,6 +168,7 @@ namespace EngineLayer
 
         public static string ExperimentalDesignFileName { get; }
         public static IEnumerable<Crosslinker> Crosslinkers { get { return _KnownCrosslinkers.AsEnumerable(); } }
+        public static IEnumerable<char> InvalidAminoAcids { get { return _InvalidAminoAcids.AsEnumerable(); } }
 
         public static void AddMods(IEnumerable<Modification> modifications, bool modsAreFromTheTopOfProteinXml)
         {

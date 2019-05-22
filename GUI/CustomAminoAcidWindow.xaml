@@ -20,7 +20,7 @@
                             <Style.Resources>
                                 <VisualBrush x:Key="CueBannerBrush" AlignmentX="Left" AlignmentY="Center" Stretch="None">
                                     <VisualBrush.Visual>
-                                        <Label Content="ex: 'Z'" Foreground="Gray" />
+                                        <Label Content="ex: 'a', 'z', '!', '$'" Foreground="Gray" />
                                     </VisualBrush.Visual>
                                 </VisualBrush>
                             </Style.Resources>

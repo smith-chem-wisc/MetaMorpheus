@@ -40,6 +40,15 @@ namespace MetaMorpheusGUI
                 return;
             }
 
+            if (GlobalVariables.InvalidAminoAcids.Contains(aminoAcidLetter))
+            {
+                MessageBox.Show("The amino acid '" + aminoAcidLetter + "' cannot be assigned. " +
+                    "\nThis character is used for modification motifs or as result delimiters. " +
+                    "\nThe following amino acids are not allowed:" +
+                     string.Join(", ", GlobalVariables.InvalidAminoAcids.Select(x => x.ToString())) + ")");
+                return;
+            }
+
             //check if the specified amino acid already exists
             if (Residue.TryGetResidue(aminoAcidLetter, out Residue residue))
             {
