@@ -80,8 +80,8 @@ namespace TaskLayer
                     for (int i = 0; i < SearchParameters.SilacLabels.Count; i++)
                     {
                         SilacLabel currentLabel = SearchParameters.SilacLabels[i];
-                        //make sure we're not overwriting something
-                        while(Residue.TryGetResidue(heavyLabel, out Residue residue))
+                        //make sure we're not overwriting something. Check if the amino acid exists, and if it's not a previously added SILAC label
+                        while(Residue.TryGetResidue(heavyLabel, out Residue residue) && !residue.ThisChemicalFormula.Formula.Equals(currentLabel.LabelChemicalFormula))
                         {
                             heavyLabel++;
                         }
