@@ -1,1 +1,0 @@
-AminoAcidCharacter	MonoIsotopicMass	ChemicalFormula

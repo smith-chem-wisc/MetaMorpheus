@@ -5,13 +5,12 @@
       xmlns:d="http://schemas.microsoft.com/expression/blend/2008" 
       xmlns:local="clr-namespace:MetaMorpheusGUI"
       mc:Ignorable="d" 
-       Title="Add custom amino acid" Height="200" Width="380" ResizeMode="NoResize" WindowStartupLocation="CenterScreen">
+       Title="Add custom amino acid" Height="125" Width="380" ResizeMode="NoResize" WindowStartupLocation="CenterScreen">
     <Grid>
         <StackPanel Orientation="Vertical" VerticalAlignment="Top" HorizontalAlignment="Center" Margin="5">
             <!--Modification name-->
             <StackPanel Orientation="Horizontal">
-                <Label Content="Single Character Abbreviation" Width="175"></Label>
-                <Label Content="*" Foreground="Red" FontWeight="Bold" />
+                <Label Content="Single Character Abbreviation" Width="190"></Label>
                 <TextBox x:Name="AminoAcidTextBox" Width="155" Height="20">
                     <ToolTipService.ToolTip>
                         <ToolTip Content="Single amino acid character (case-sensitive)."/>
@@ -41,54 +40,19 @@
                 </TextBox>
             </StackPanel>
             <!--Chemical formula-->
-            <StackPanel Orientation="Vertical" Background="LightGray" Width="350">
+            <StackPanel Orientation="Vertical" Width="350">
                 <StackPanel Orientation="Horizontal">
                     <Label Content="Chemical Formula" Width="190"></Label>
                     <TextBox Name="ChemicalFormulaTextBox" Width="155" Height="20">
                         <ToolTipService.ToolTip>
-                            <ToolTip Content="Chemical formula (optional if monoisotopic mass is specified), example: 'H1 O3 P1'"/>
+                            <ToolTip Content="Chemical formula, example: 'C3H5NOS'"/>
                         </ToolTipService.ToolTip>
                         <TextBox.Style>
                             <Style TargetType="TextBox" xmlns:sys="clr-namespace:System;assembly=mscorlib">
                                 <Style.Resources>
                                     <VisualBrush x:Key="CueBannerBrush" AlignmentX="Left" AlignmentY="Center" Stretch="None">
                                         <VisualBrush.Visual>
-                                            <Label Content="ex: 'H3 P1 O4'" Foreground="Gray" />
-                                        </VisualBrush.Visual>
-                                    </VisualBrush>
-                                </Style.Resources>
-                                <Style.Triggers>
-                                    <Trigger Property="Text" Value="{x:Static sys:String.Empty}">
-                                        <Setter Property="Background" Value="{StaticResource CueBannerBrush}" />
-                                    </Trigger>
-                                    <Trigger Property="Text" Value="{x:Null}">
-                                        <Setter Property="Background" Value="{StaticResource CueBannerBrush}" />
-                                    </Trigger>
-                                    <Trigger Property="IsKeyboardFocused" Value="True">
-                                        <Setter Property="Background" Value="White" />
-                                    </Trigger>
-                                </Style.Triggers>
-                            </Style>
-                        </TextBox.Style>
-                    </TextBox>
-                </StackPanel>
-                <StackPanel Orientation="Horizontal">
-                    <Label Content="and/or" Height="20" FontSize="9" Width="175"/>
-                    <Label Content="*" Foreground="Red" FontWeight="Bold" />
-                </StackPanel>
-                <!--Monoisotopic mass-->
-                <StackPanel Orientation="Horizontal">
-                    <Label Content="Monoisotopic Mass" Width="190"></Label>
-                    <TextBox Name="MonoisotopicMassTextBox" Width="155" Height="20">
-                        <ToolTipService.ToolTip>
-                            <ToolTip Content="Monoisotopic mass (optional, if chemical formula is specified), example: '79.98'"/>
-                        </ToolTipService.ToolTip>
-                        <TextBox.Style>
-                            <Style TargetType="TextBox" xmlns:sys="clr-namespace:System;assembly=mscorlib">
-                                <Style.Resources>
-                                    <VisualBrush x:Key="CueBannerBrush" AlignmentX="Left" AlignmentY="Center" Stretch="None">
-                                        <VisualBrush.Visual>
-                                            <Label Content="ex: '79.98'" Foreground="Gray" />
+                                            <Label Content="ex: 'C3H5NOS'" Foreground="Gray" />
                                         </VisualBrush.Visual>
                                     </VisualBrush>
                                 </Style.Resources>

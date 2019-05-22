@@ -1,19 +1,11 @@
-﻿using EngineLayer;
+﻿using Chemistry;
+using EngineLayer;
 using Proteomics.AminoAcidPolymer;
 using System;
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
 using System.Windows;
-using System.Windows.Controls;
-using System.Windows.Data;
-using System.Windows.Documents;
-using System.Windows.Input;
-using System.Windows.Media;
-using System.Windows.Media.Imaging;
-using System.Windows.Navigation;
 
 namespace MetaMorpheusGUI
 {
@@ -37,32 +29,51 @@ namespace MetaMorpheusGUI
             }
             char aminoAcidLetter = AminoAcidTextBox.Text.First();
 
-            //check if it already exists
-            if(Residue.TryGetResidue(aminoAcidLetter, out Residue residue))
+            ChemicalFormula formula;
+            try
             {
-                MessageBox.Show("The amino acid " + aminoAcidLetter + " already exists." +
-                    "\nMass: " + residue.MonoisotopicMass +
-                    "\nChemical Formula: " + residue.ThisChemicalFormula +
-                    "\nYou may overwrite this amino acid by deleting the current entry. " +
-                    "\nThis can be done in MetaMorpheus by navigating to 'Data' in the top-left corner, " +
-                    "\nselecting 'Open folder with mods/data files' from the drop down menu," +
-                    "\nopening the folder 'CustomAminoAcids', and opening the file 'CustomAminoAcids.txt");
+                formula = ChemicalFormula.ParseFormula(ChemicalFormulaTextBox.Text);
+            }
+            catch
+            { 
+                MessageBox.Show("The checmical formula '"+ ChemicalFormulaTextBox.Text +"' could not be parsed. Please try again.");
+                return;
             }
 
+            //check if the specified amino acid already exists
+            if (Residue.TryGetResidue(aminoAcidLetter, out Residue residue))
+            {
+                MessageBox.Show("The amino acid '" + aminoAcidLetter + "' already exists." +
+                    "\nMass: " + residue.MonoisotopicMass +
+                    "\nChemical Formula: " + residue.ThisChemicalFormula.Formula +
+                    "\nYou may overwrite this amino acid by manually deleting/modifying the current entry. " +
+                    "\nThis can be done in MetaMorpheus by navigating to 'Data' in the top-left corner, " +
+                    "selecting 'Open folder with mods/data files' from the drop down menu, " +
+                    "opening the folder 'CustomAminoAcids', and opening the file 'CustomAminoAcids.txt." +
+                    "\nMetaMorpheus will need to be restarted for these changes to take effect." +
+                    "\n\nAmino acids can be reset to their default values by deleting the file 'CustomAminoAcids.txt' and restarting MetaMorpheus.");
+                return;
+            }
 
-            //Read the old file
+            //Alright, the entry is valid
+            //Append the entry to the CustomAminoAcids.txt file
             string aminoAcidDirectory = Path.Combine(GlobalVariables.DataDir, @"CustomAminoAcids");
             string customAminoAcidPath = Path.Combine(aminoAcidDirectory, @"CustomAminoAcids.txt");
-            List<string> customAminoAcidsText = new List<string>();
 
+            //check that the file exists and create it if it doesn't
             if (!File.Exists(customAminoAcidPath))
             {
-                customAminoAcidsText.Add("Custom Modifications");
+                GlobalVariables.WriteAminoAcidsFile();
             }
-            else
-            {
-                customAminoAcidsText = File.ReadAllLines(customAminoAcidPath).ToList();
-            }
+
+            //save it in the amino acid file
+            List<string> customAminoAcidsText = File.ReadAllLines(customAminoAcidPath).ToList();
+            customAminoAcidsText.Add(AminoAcidTextBox.Text + '\t' + aminoAcidLetter + '\t' + formula.MonoisotopicMass.ToString() + '\t' + formula.Formula); //tsv Name, one letter, monoisotopic, chemical formula
+            File.WriteAllLines(customAminoAcidPath, customAminoAcidsText);
+
+            //add the mod to the residue dictionary
+            Residue.AddNewResiduesToDictionary(new List<Residue> { new Residue(AminoAcidTextBox.Text, aminoAcidLetter, AminoAcidTextBox.Text, formula, ModificationSites.Any) });
+            DialogResult = true;
         }
 
         private void CancelCustomAminoAcid_Click(object sender, RoutedEventArgs e)
