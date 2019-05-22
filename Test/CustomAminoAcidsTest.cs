@@ -13,10 +13,9 @@ namespace Test
         [Test]
         public static void TestCustomAminoAcidReading()
         {
-            GlobalVariables.RefreshAminoAcidDictionary(); //write the file
+            string aminoAcidPath = Path.Combine(GlobalVariables.DataDir, @"CustomAminoAcids", @"CustomAminoAcids.txt");
 
             //Manually add an entry to it
-            string aminoAcidPath = Path.Combine(GlobalVariables.DataDir, @"CustomAminoAcids", @"CustomAminoAcids.txt");
             List<string> lines = new List<string>(File.ReadAllLines(aminoAcidPath));
             lines.Add("fake\tf\t60\tC5");
             File.WriteAllLines(aminoAcidPath, lines);
@@ -55,6 +54,9 @@ namespace Test
             {
                 //Yay we passed!
             }
+
+            //Delete so it doesn't crash the next time
+            File.Delete(aminoAcidPath);
         }
     }
 }
