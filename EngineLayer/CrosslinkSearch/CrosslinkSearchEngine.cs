@@ -634,149 +634,127 @@ namespace EngineLayer.CrosslinkSearch
         {                     
             CrosslinkSpectralMatch bestPsmCross = null;
 
-            if (theScan.OxiniumIonNum >= 2)
+            if (theScan.OxiniumIonNum < 2)
             {
-                List<CrosslinkSpectralMatch> possibleMatches = new List<CrosslinkSpectralMatch>();
+                return bestPsmCross;
+            }
 
-                for (int ind = 0; ind < theScanBestPeptide.Count; ind++)
+            List<CrosslinkSpectralMatch> possibleMatches = new List<CrosslinkSpectralMatch>();
+
+            for (int ind = 0; ind < theScanBestPeptide.Count; ind++)
+            {
+                //Considering coisolation, it doesn't mean it must from a glycopeptide even the scan contains oxinium ions.
+                //if (XLPrecusorSearchMode.Accepts(theScan.PrecursorMass, theScanBestPeptide[ind].BestPeptide.MonoisotopicMass) >= 0)
+                //{
+                //    List<Product> products = theScanBestPeptide[ind].BestPeptide.Fragment(commonParameters.DissociationType, FragmentationTerminus.Both).ToList();
+                //    var matchedFragmentIons = MatchFragmentIons(theScan, products, commonParameters);
+                //    double score = CalculatePeptideScore(theScan.TheScan, matchedFragmentIons);
+
+                //    var psmCrossSingle = new CrosslinkSpectralMatch(theScanBestPeptide[ind].BestPeptide, theScanBestPeptide[ind].BestNotch, score, scanIndex, theScan, commonParameters.DigestionParams, matchedFragmentIons);
+                //    psmCrossSingle.CrossType = PsmCrossType.Single;
+                //    psmCrossSingle.XlRank = new List<int> { ind };
+
+                //    possibleMatches.Add(psmCrossSingle);
+                //}
+
+                if (theScan.OxiniumIonNum < 2)
                 {
-                    //Considering coisolation, it doesn't mean it must from a glycopeptide even the scan contains oxinium ions.
-                    if (ind < 5 && XLPrecusorSearchMode.Accepts(theScan.PrecursorMass, theScanBestPeptide[ind].BestPeptide.MonoisotopicMass) >= 0)
+                    continue;
+                }
+
+                List<int> modPos = CrosslinkSpectralMatch.GetPossibleModSites(theScanBestPeptide[ind].BestPeptide, new string[] { "Nxt", "Nxs" });
+                if (modPos.Count < 1)
+                {
+                    continue;
+                }
+
+                var possibleGlycanMassLow = theScan.PrecursorMass * (1 - 1E-5) - theScanBestPeptide[ind].BestPeptide.MonoisotopicMass;
+                if (possibleGlycanMassLow < 200 || possibleGlycanMassLow > Glycans.Last().Mass)
+                {
+                    continue;
+                }
+
+
+                int iDLow = GlycoPeptides.BinarySearchGetIndex(Glycans.Select(p => (double)p.Mass / 1E5).ToArray(), possibleGlycanMassLow);
+
+                while (iDLow < Glycans.Count() && XLPrecusorSearchMode.Accepts(theScan.PrecursorMass, theScanBestPeptide[ind].BestPeptide.MonoisotopicMass + (double)Glycans[iDLow].Mass / 1E5) >= 0)
+                {
+                    double bestLocalizedScore = 0;
+                    int bestSite = 0;
+                    List<MatchedFragmentIon> bestMatchedIons = new List<MatchedFragmentIon>();
+                    PeptideWithSetModifications peptideWithSetModifications = theScanBestPeptide[ind].BestPeptide;
+                    foreach (int possibleSite in modPos)
                     {
-                        List<Product> products = theScanBestPeptide[ind].BestPeptide.Fragment(commonParameters.DissociationType, FragmentationTerminus.Both).ToList();
-                        var matchedFragmentIons = MatchFragmentIons(theScan, products, commonParameters);
-                        double score = CalculatePeptideScore(theScan.TheScan, matchedFragmentIons);
+                        var testPeptide = GlycoPeptides.GenerateGlycopeptide(possibleSite, theScanBestPeptide[ind].BestPeptide, Glycans[iDLow]);
 
-                        var psmCrossSingle = new CrosslinkSpectralMatch(theScanBestPeptide[ind].BestPeptide, theScanBestPeptide[ind].BestNotch, score, scanIndex, theScan, commonParameters.DigestionParams, matchedFragmentIons);
-                        psmCrossSingle.CrossType = PsmCrossType.Single;
-                        psmCrossSingle.XlRank = new List<int> { ind };
+                        List<Product> theoreticalProducts = testPeptide.Fragment(commonParameters.DissociationType, FragmentationTerminus.Both).Where(p => p.ProductType != ProductType.M).ToList();
+                        theoreticalProducts.AddRange(GlycoPeptides.GetGlycanYIons(theScan.PrecursorMass, Glycans[iDLow]));
 
-                        possibleMatches.Add(psmCrossSingle);
-                    }
+                        var matchedIons = MatchFragmentIons(theScan, theoreticalProducts, commonParameters);
 
-                    List<int> modPos = CrosslinkSpectralMatch.GetPossibleModSites(theScanBestPeptide[ind].BestPeptide, new string[] { "Nxt", "Nxs" });
-                    if (modPos.Count < 1)
-                    {
-                        continue;
-                    }
-
-                    var possibleGlycanMassLow = theScan.PrecursorMass * (1 - 1E-5) - theScanBestPeptide[ind].BestPeptide.MonoisotopicMass;
-                    if (possibleGlycanMassLow < 200 || possibleGlycanMassLow > Glycans.Last().Mass)
-                    {
-                        continue;
-                    }
-
-
-                    int iDLow = GlycoPeptides.BinarySearchGetIndex(Glycans.Select(p => (double)p.Mass/1E5).ToArray(), possibleGlycanMassLow);
-
-                    while (iDLow < Glycans.Count() && XLPrecusorSearchMode.Accepts(theScan.PrecursorMass, theScanBestPeptide[ind].BestPeptide.MonoisotopicMass + (double)Glycans[iDLow].Mass/1E5) >= 0)
-                    {
-                        double bestLocalizedScore = 0;
-                        int bestSite = 0;
-                        List<MatchedFragmentIon> bestMatchedIons = new List<MatchedFragmentIon>();
-                        PeptideWithSetModifications peptideWithSetModifications = theScanBestPeptide[ind].BestPeptide;
-                        foreach (int possibleSite in modPos)
+                        if (!GlycoPeptides.ScanTrimannosylCoreFilter(matchedIons, Glycans[iDLow]))
                         {
-                            var testPeptide = GlycoPeptides.GenerateGlycopeptide(possibleSite, theScanBestPeptide[ind].BestPeptide, Glycans[iDLow]);
-
-                            List<Product> theoreticalProducts = testPeptide.Fragment(commonParameters.DissociationType, FragmentationTerminus.Both).Where(p=>p.ProductType!= ProductType.M).ToList();
-                            theoreticalProducts.AddRange(GlycoPeptides.GetGlycanYIons(theScan.PrecursorMass, Glycans[iDLow]));
-
-                            var matchedIons = MatchFragmentIons(theScan, theoreticalProducts, commonParameters);
-
-                            if (!GlycoPeptides.ScanTrimannosylCoreFilter(matchedIons, Glycans[iDLow]))
-                            {
-                                continue;
-                            }
-
-                            double score = CalculatePeptideScore(theScan.TheScan, matchedIons);
-
-                            if (score > bestLocalizedScore)
-                            {
-                                peptideWithSetModifications = testPeptide;
-                                bestLocalizedScore = score;
-                                bestSite = possibleSite;
-                                bestMatchedIons = matchedIons;
-                            }
-
+                            continue;
                         }
 
-                        var psmCross = new CrosslinkSpectralMatch(peptideWithSetModifications, theScanBestPeptide[ind].BestNotch, bestLocalizedScore, scanIndex, theScan, commonParameters.DigestionParams, bestMatchedIons);
-                        psmCross.Glycan = new List<Glycan> { Glycans[iDLow] };
-                        psmCross.GlycanScore = CalculatePeptideScore(theScan.TheScan, bestMatchedIons.Where(p=>p.Annotation.Contains('M')).ToList());
-                        psmCross.DiagnosticIonScore = CalculatePeptideScore(theScan.TheScan, bestMatchedIons.Where(p => p.Annotation.Contains('D')).ToList());
-                        psmCross.PeptideScore = psmCross.XLTotalScore - psmCross.GlycanScore - psmCross.DiagnosticIonScore;
-                        psmCross.XlRank = new List<int> { ind };
-                        psmCross.LinkPositions = new List<int> { bestSite - 1 }; //TO DO: ambiguity modification site
-                        possibleMatches.Add(psmCross);
+                        double score = CalculatePeptideScore(theScan.TheScan, matchedIons);
 
-                        iDLow++;
-                    }
-                }
+                        if (score > bestLocalizedScore)
+                        {
+                            peptideWithSetModifications = testPeptide;
+                            bestLocalizedScore = score;
+                            bestSite = possibleSite;
+                            bestMatchedIons = matchedIons;
+                        }
 
-                if (possibleMatches.Count != 0)
-                {
-                    possibleMatches = possibleMatches.OrderByDescending(p => p.Score).ToList();
-                    bestPsmCross = possibleMatches.First();
-
-                    //Generate Decoy-Glycan score
-                    if (bestPsmCross.Glycan!= null)
-                    {
-                        //var testPeptide = GlycoPeptides.GenerateGlycopeptide(bestPsmCross.LinkPositions.First() + 1, theScanBestPeptide[ind].BestPeptide, DecoyGlycans[bestPsmCross.Glycan.First().GlyId - 1]);
-                        //List<Product> theoreticalProducts = testPeptide.Fragment(commonParameters.DissociationType, FragmentationTerminus.Both).Where(p => p.ProductType != ProductType.M).ToList();
-
-                        var theoreticalProducts = GlycoPeptides.GetGlycanYIons(theScan.PrecursorMass, DecoyGlycans[bestPsmCross.Glycan.First().GlyId - 1]);
-                        var glycanDecoyMatchedIons = MatchFragmentIons(theScan, theoreticalProducts, commonParameters);
-                        bestPsmCross.GlycanDecoyScore = CalculatePeptideScore(theScan.TheScan, glycanDecoyMatchedIons.Where(p => p.Annotation.Contains('M')).ToList());
                     }
 
-                    bestPsmCross.ResolveAllAmbiguities();
-                    bestPsmCross.DeltaScore = bestPsmCross.XLTotalScore;
-                    if (possibleMatches.Count > 1)
-                    {
-                        //This DeltaScore will be 0 if there are more than one glycan matched.
-                        bestPsmCross.DeltaScore = Math.Abs(possibleMatches.First().Score - possibleMatches[1].Score);
+                    var psmCross = new CrosslinkSpectralMatch(peptideWithSetModifications, theScanBestPeptide[ind].BestNotch, bestLocalizedScore, scanIndex, theScan, commonParameters.DigestionParams, bestMatchedIons);
+                    psmCross.Glycan = new List<Glycan> { Glycans[iDLow] };
+                    psmCross.GlycanScore = CalculatePeptideScore(theScan.TheScan, bestMatchedIons.Where(p => p.Annotation.Contains('M')).ToList());
+                    psmCross.DiagnosticIonScore = CalculatePeptideScore(theScan.TheScan, bestMatchedIons.Where(p => p.Annotation.Contains('D')).ToList());
+                    psmCross.PeptideScore = psmCross.XLTotalScore - psmCross.GlycanScore - psmCross.DiagnosticIonScore;
+                    psmCross.XlRank = new List<int> { ind };
+                    psmCross.LinkPositions = new List<int> { bestSite - 1 }; //TO DO: ambiguity modification site
+                    possibleMatches.Add(psmCross);
 
-                        ////TO DO: Try to find other plausible glycans
-                        //for (int iPsm = 1; iPsm < possibleMatches.Count; iPsm++)
-                        //{
-                        //    possibleMatches[iPsm].ResolveAllAmbiguities();
-                        //    if (possibleMatches[iPsm].Score == bestPsmCross.Score && possibleMatches[iPsm].Glycan != null)
-                        //    {
-                        //        bestPsmCross.Glycan.Add(possibleMatches[iPsm].Glycan.First());
-                        //    }
-                        //}
-                    }
-                    return bestPsmCross;
+                    iDLow++;
                 }
             }
-            else
+
+            //if (possibleMatches.Count != 0)
+            //{
+            //    possibleMatches = possibleMatches.OrderByDescending(p => p.Score).ToList();
+            //    bestPsmCross = possibleMatches.First();
+            //    bestPsmCross.ResolveAllAmbiguities();
+            //    bestPsmCross.DeltaScore = bestPsmCross.XLTotalScore;
+            //    if (possibleMatches.Count > 1)
+            //    {
+            //        //This DeltaScore will be 0 if there are more than one glycan matched.
+            //        bestPsmCross.DeltaScore = Math.Abs(possibleMatches.First().Score - possibleMatches[1].Score);
+
+            //        ////TO DO: Try to find other plausible glycans
+            //        //for (int iPsm = 1; iPsm < possibleMatches.Count; iPsm++)
+            //        //{
+            //        //    possibleMatches[iPsm].ResolveAllAmbiguities();
+            //        //    if (possibleMatches[iPsm].Score == bestPsmCross.Score && possibleMatches[iPsm].Glycan != null)
+            //        //    {
+            //        //        bestPsmCross.Glycan.Add(possibleMatches[iPsm].Glycan.First());
+            //        //    }
+            //        //}
+            //    }
+            //}
+
+            if (possibleMatches.Count != 0)
             {
-                //For single peptides, match at most 10 bestPeptide.
-                int top10BestPeptide = 10;
-                if (theScanBestPeptide.Count < 10)
+                possibleMatches = possibleMatches.OrderByDescending(p => p.Score).ToList();
+                foreach (var pm in possibleMatches)
                 {
-                    top10BestPeptide = theScanBestPeptide.Count;
+                    pm.ResolveAllAmbiguities();
                 }
-
-                for (int ind = 0; ind < top10BestPeptide; ind++)
-                {
-                    if (XLPrecusorSearchMode.Accepts(theScan.PrecursorMass, theScanBestPeptide[ind].BestPeptide.MonoisotopicMass) >= 0)
-                    {
-                        List<Product> products = theScanBestPeptide[ind].BestPeptide.Fragment(commonParameters.DissociationType, FragmentationTerminus.Both).ToList();
-                        var matchedFragmentIons = MatchFragmentIons(theScan, products, commonParameters);
-                        double score = CalculatePeptideScore(theScan.TheScan, matchedFragmentIons);
-
-                        var psmCrossSingle = new CrosslinkSpectralMatch(theScanBestPeptide[ind].BestPeptide, theScanBestPeptide[ind].BestNotch, score, scanIndex, theScan, commonParameters.DigestionParams, matchedFragmentIons);
-                        psmCrossSingle.CrossType = PsmCrossType.Single;
-                        psmCrossSingle.XlRank = new List<int> { ind  };
-                        psmCrossSingle.ResolveAllAmbiguities();
-                        //Once the single peptide is identified, return the psm.
-                        return psmCrossSingle;
-                    }
-                }
+                bestPsmCross = possibleMatches.First();
+                bestPsmCross.crosslinkSpectralMatches = possibleMatches.Take(20).ToList();
             }
-
             return bestPsmCross;
         }
 

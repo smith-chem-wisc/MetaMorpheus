@@ -164,6 +164,10 @@ namespace TaskLayer
                 var writtenFileInter2 = Path.Combine(OutputFolder, "glyco_fdr" + ".mytsv");
                 WritePsmCrossToTsv(allPsmsGly, writtenFileInter2, 3);
 
+                //var allPsmsGlyForFDR = allPsms.SelectMany(p => p.crosslinkSpectralMatches).ToList();
+                //var writtenFileInter3 = Path.Combine(OutputFolder, "glyco_for_fdr" + ".mytsv");
+                //WritePsmCrossToTsv(allPsmsGlyForFDR, writtenFileInter3, 3);
+
                 return MyTaskResults;
             }
 

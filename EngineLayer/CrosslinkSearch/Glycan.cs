@@ -514,7 +514,8 @@ namespace EngineLayer
 
             Random random = new Random();
             foreach (var aGlycan in glycans)
-            {             
+            {
+                allGlycans.Add(aGlycan);
                 List<GlycanIon> glycanIons = new List<GlycanIon>();
                 foreach (var ion in aGlycan.Ions)
                 {
