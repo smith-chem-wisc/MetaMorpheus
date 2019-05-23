@@ -43,16 +43,7 @@
     <None Update="CompressionTest\tinySemi.mgf">
       <CopyToOutputDirectory>Always</CopyToOutputDirectory>
     </None>
-    <None Update="DatabaseTests\HeLa_AspN_HCD_2-calib_7924.mgf">
-      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
-    </None>
-    <None Update="DatabaseTests\HeLa_AspN_HCD_2-calib_7924.mgf">
-      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
-    </None>
     <None Update="DatabaseTests\LowResSnip_B6_mouse_11700_117500.xml">
-      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
-    </None>
-    <None Update="DatabaseTests\O60814.xml">
       <CopyToOutputDirectory>Always</CopyToOutputDirectory>
     </None>
     <None Update="DatabaseTests\sliced_b6.mzML">
