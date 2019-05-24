@@ -1,4 +1,4 @@
-﻿<Window x:Class="MetaMorpheusGUI.CustomModButtonWindow"
+﻿<Window x:Class="MetaMorpheusGUI.CustomModWindow"
         xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
         xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
         xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
@@ -110,14 +110,14 @@
                     <Label Content="Chemical Formula" Width="190"></Label>
                     <TextBox Name="chemicalFormulaTextBox" Width="155" Height="20">
                         <ToolTipService.ToolTip>
-                            <ToolTip Content="Chemical formula (optional if monoisotopic mass is specified), example: 'H1 O3 P1'"/>
+                            <ToolTip Content="Chemical formula (optional if monoisotopic mass is specified), example: 'H1O3P1'"/>
                         </ToolTipService.ToolTip>
                         <TextBox.Style>
                             <Style TargetType="TextBox" xmlns:sys="clr-namespace:System;assembly=mscorlib">
                                 <Style.Resources>
                                     <VisualBrush x:Key="CueBannerBrush" AlignmentX="Left" AlignmentY="Center" Stretch="None">
                                         <VisualBrush.Visual>
-                                            <Label Content="ex: 'H3 P1 O4'" Foreground="Gray" />
+                                            <Label Content="ex: 'H3P1O4'" Foreground="Gray" />
                                         </VisualBrush.Visual>
                                     </VisualBrush>
                                 </Style.Resources>
