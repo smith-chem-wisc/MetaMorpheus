@@ -94,6 +94,9 @@ namespace Test
             var glycanYIons = GlycoPeptides.GetGlycanYIons(listOfSortedms2Scans[0].PrecursorMass, glycan);
             var matchedGlycanYIons = MetaMorpheusEngine.MatchFragmentIons(listOfSortedms2Scans[0], glycanYIons, commonParameters);
             Assert.AreEqual(matchedGlycanYIons.Count, 16);
+
+            var matchedGlycanYIons2 = MetaMorpheusEngine.MatchOriginFragmentIons(listOfSortedms2Scans[0], glycanYIons, commonParameters);
+            Assert.AreEqual(matchedGlycanYIons.Count, 17);
             //TO DO: The neutroloss is not annotated well.
             var matchedFragmentIons = MetaMorpheusEngine.MatchFragmentIons(listOfSortedms2Scans[0], fragmentIons, commonParameters);
 
@@ -105,7 +108,7 @@ namespace Test
             var bestGlycans = GlycoPeptides.MatchBestGlycan(listOfSortedms2Scans[0], NGlycans.ToArray(), commonParameters).Where(p => p != null && p.Item2 >= 2).OrderByDescending(p => p.Item2).Take(100).OrderBy(p => p.Item3).ToArray(); ;
 
             //Please keep the draw functions, they are important to debug visually.
-            DrawPeptideSpectralMatch(listOfSortedms2Scans[0].TheScan, matchedFragmentIons, pep.BaseSequence);
+            DrawPeptideSpectralMatch(listOfSortedms2Scans[0].TheScan, matchedGlycanYIons2, pep.BaseSequence);
             //DrawPeptideSpectralMatch(listOfSortedms2Scans[0].TheScan, matchedGlycanYIons, pep.BaseSequence);
         }
 

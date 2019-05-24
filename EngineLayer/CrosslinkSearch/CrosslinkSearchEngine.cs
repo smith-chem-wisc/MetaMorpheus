@@ -690,7 +690,7 @@ namespace EngineLayer.CrosslinkSearch
                         List<Product> theoreticalProducts = testPeptide.Fragment(commonParameters.DissociationType, FragmentationTerminus.Both).Where(p => p.ProductType != ProductType.M).ToList();
                         theoreticalProducts.AddRange(GlycoPeptides.GetGlycanYIons(theScan.PrecursorMass, Glycans[iDLow]));
 
-                        var matchedIons = MatchFragmentIons(theScan, theoreticalProducts, commonParameters);
+                        var matchedIons = MatchOriginFragmentIons(theScan, theoreticalProducts, commonParameters);
 
                         if (!GlycoPeptides.ScanTrimannosylCoreFilter(matchedIons, Glycans[iDLow]))
                         {

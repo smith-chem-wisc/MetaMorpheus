@@ -113,5 +113,46 @@ namespace EngineLayer
             }
             return index - 1;
         }
+
+        public double? GetClosestExperimentalFragmentMz(double theoreticalMz, out double? intensity)
+        {
+            if (TheScan.MassSpectrum.XArray.Length == 0)
+            {
+                intensity = null;
+                return null;
+            }
+            intensity = TheScan.MassSpectrum.YArray[GetClosestFragmentMz(theoreticalMz).Value];
+            return TheScan.MassSpectrum.XArray[GetClosestFragmentMz(theoreticalMz).Value];
+        }
+
+        private int? GetClosestFragmentMz(double mz)
+        {
+            if (TheScan.MassSpectrum.XArray.Length == 0)
+            {
+                return null;
+            }
+            int index = Array.BinarySearch(TheScan.MassSpectrum.XArray, mz);
+            if (index >= 0)
+            {
+                return index;
+            }
+            index = ~index;
+
+            if (index >= TheScan.MassSpectrum.XArray.Length)
+            {
+                return index - 1;
+            }
+            if (index == 0)
+            {
+                return index;
+            }
+
+            if (mz - TheScan.MassSpectrum.XArray[index - 1] > TheScan.MassSpectrum.XArray[index] - mz)
+            {
+                return index;
+            }
+            return index - 1;
+
+        }
     }
 }
