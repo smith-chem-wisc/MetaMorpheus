@@ -9,7 +9,6 @@ using NUnit.Framework;
 using Proteomics;
 using Proteomics.Fragmentation;
 using Proteomics.ProteolyticDigestion;
-using System;
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
@@ -80,7 +79,10 @@ namespace Test
             var localizeableModifications = new List<Modification>();
             Dictionary<Modification, ushort> modsDictionary = new Dictionary<Modification, ushort>();
             foreach (var mod in fixedModifications)
+            {
                 modsDictionary.Add(mod, 0);
+            }
+
             int ii = 1;
             foreach (var mod in variableModifications)
             {
@@ -204,15 +206,21 @@ namespace Test
             //test the number of the intensity values is doubled
             Assert.IsTrue(matchedIonIntensityT.Count == matchedIonIntensityF.Count * 2);
             foreach (double d in matchedDaErrorF)
+            {
                 Assert.IsTrue(d <= 0.01);
+            }
+
             foreach (double d in matchedDaErrorT)
+            {
                 Assert.IsTrue(d <= 0.01);
+            }
         }
 
         [Test]
         public static void AddCompIonsCommonParams()
         {
-            CommonParameters cp = new CommonParameters(null, DissociationType.HCD, DissociationType.Unknown, true, true, 3,12,true,true,1,5,200,0.01,false,true,false,false,null,null,null,-1,null,null,null,1,true,4,1);
+            CommonParameters cp = new CommonParameters(null, DissociationType.HCD, DissociationType.Unknown, true, true, 3, 12, true, true, 1, 
+                5, 200, 0.01, null, null, false, false, true, false, false, null, null, null, -1, null, null, null, 1, true, 4, 1);
 
             var myMsDataFile = new TestDataFile();
             var variableModifications = new List<Modification>();
@@ -220,7 +228,10 @@ namespace Test
             var localizeableModifications = new List<Modification>();
             Dictionary<Modification, ushort> modsDictionary = new Dictionary<Modification, ushort>();
             foreach (var mod in fixedModifications)
+            {
                 modsDictionary.Add(mod, 0);
+            }
+
             int ii = 1;
             foreach (var mod in variableModifications)
             {
@@ -244,7 +255,7 @@ namespace Test
             Protease protease = new Protease("Test", CleavageSpecificity.Full, null, null, motifs);
             ProteaseDictionary.Dictionary.Add(protease.Name, protease);
 
-            var indexEngine = new IndexingEngine(proteinList, variableModifications, fixedModifications, new List<SilacLabel>(), 
+            var indexEngine = new IndexingEngine(proteinList, variableModifications, fixedModifications, new List<SilacLabel>(),
                  1, DecoyType.Reverse, cp, SearchParameters.MaxFragmentSize, false, new List<FileInfo>(), new List<string>());
 
             var indexResults = (IndexingResults)indexEngine.Run();
