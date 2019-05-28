@@ -259,6 +259,13 @@
                                                         The maximum number of modifications allowed on a single iteration of a given peptide sequence. 
                                                         <LineBreak/>
                                                         This parameters influences how many mods can exist on a peptide BEFORE GPTMD.
+                                                     <LineBreak/>
+                                                     <LineBreak/>
+                                                        MAX MODS ASSINGED BY GPTMD:
+                                                     <LineBreak/>
+                                                        The current implementation does not allow more than one modification to be discovered in a single identification EXCEPT for those with mass differences annotated in "...\\MetaMorpheus\\Data\\combos.txt".
+                                                    <LineBreak/>
+                                                        In MetaMorpheus near the top left, click "Data", select "Open folder with mods/data files", and open the "Data" folder.
                                                 </TextBlock>
                                             </TextBox.ToolTip>
                                         </TextBox>
@@ -431,26 +438,9 @@
                             </Grid.ColumnDefinitions>
                             <Grid.RowDefinitions>
                                 <RowDefinition Height="25"/>
-                                <RowDefinition Height="25"/>
                                 <RowDefinition Height="1*"/>
                             </Grid.RowDefinitions>
                             <StackPanel Grid.Column="0" Grid.Row="0" Orientation="Horizontal">
-                                <Label x:Name="MaxModsPerNotchLabel" Content="Max Mods Per Notch" />
-                                <TextBox x:Name="MaxModsPerNotchTextBox" PreviewTextInput="CheckIfNumber" Width="45" ToolTipService.ShowDuration="999999" ToolTipService.InitialShowDelay="500" IsEnabled="False">
-                                    <TextBox.ToolTip>
-                                        <TextBlock>
-                                            The maximum number of modifications allowed for a single notch.
-                                            <LineBreak/>
-                                            The current implementation does not combine notches EXCEPT for those with masses annotated in "...\\MetaMorpheus\\Data\\combos.txt".
-                                            <LineBreak/>
-                                            In MetaMorpheus near the top left, click "Data", select "Open folder with mods/data files", and open the "Data" folder.
-                                            <LineBreak/>
-                                            Implementing and increasing this parameter may result in high search times and high FDRs.
-                                        </TextBlock>
-                                    </TextBox.ToolTip>
-                                </TextBox>
-                            </StackPanel>
-                            <StackPanel Grid.Column="0" Grid.Row="1" Orientation="Horizontal">
                                 <Label Content="G-PTM-D" />
                                 <TextBox x:Name="SearchGPTMD" TextChanged="TextChanged_GPTMD" HorizontalAlignment="Left" Margin="5,0,0,0" Height="22" Width="140">
                                     <TextBox.Style>
