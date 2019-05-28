@@ -1436,11 +1436,17 @@ namespace MetaMorpheusGUI
 
         private void AddCustomMod_Click(object sender, RoutedEventArgs e)
         {
-            var dialog = new CustomModButtonWindow();
+            var dialog = new CustomModWindow();
             dialog.ShowDialog();
         }
 
-        private void AddCrosslinker_Click(object sender, RoutedEventArgs e)
+        private void AddCustomAminoAcid_Click(object sender, RoutedEventArgs e)
+        {
+            var dialog = new CustomAminoAcidWindow();
+            dialog.ShowDialog();
+        }
+
+        private void AddCustomCrosslinker_Click(object sender, RoutedEventArgs e)
         {
             var dialog = new CustomCrosslinkerWindow();
             dialog.ShowDialog();

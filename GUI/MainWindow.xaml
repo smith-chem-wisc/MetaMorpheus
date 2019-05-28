@@ -16,7 +16,8 @@
             <MenuItem Header="Data">
                 <MenuItem Header="Open folder with mods/data files" Click="MenuItem_Click_6"></MenuItem>
                 <MenuItem Header="Create new modification" Click="AddCustomMod_Click"></MenuItem>
-                <MenuItem Header="Create new Crosslinker" Click="AddCrosslinker_Click"></MenuItem>
+                <MenuItem Header="Create new amino acid" Click="AddCustomAminoAcid_Click"></MenuItem>
+                <MenuItem Header="Create new crosslinker" Click="AddCustomCrosslinker_Click"></MenuItem>
                 <MenuItem Header="MetaDraw: Spectrum Annotation" Click="MetaDrawMenu_Click"></MenuItem>
             </MenuItem>
             <MenuItem Header="_Help">
