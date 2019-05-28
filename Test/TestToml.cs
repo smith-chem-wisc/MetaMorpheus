@@ -111,5 +111,46 @@ namespace Test
             Assert.AreEqual("Asp-N", c.DigestionParams.Protease.Name);
             Assert.AreEqual(2, c.DigestionParams.MaxMissedCleavages);
         }
+
+        [Test]
+        public static void FileSpecificParametersTest()
+        {
+            string[] par = { "PrecursorMassTolerance = \"±5.0000 PPM\"", "ProductMassTolerance = \"±5.0000 PPM\"", "Protease = \"Asp-N\"", "MinPeptideLength = 0", "MaxPeptideLength = 0", "MaxMissedCleavages = 0", "MaxModsForPeptide = 0", "DissociationType = \"CID\""/*, "Unrecognized = 0"*/};
+
+            var filePath = Path.Combine(TestContext.CurrentContext.TestDirectory, "testFileParams.toml");
+
+            File.WriteAllLines(filePath, par);
+
+            var fileSpecificToml = Toml.ReadFile(Path.Combine(TestContext.CurrentContext.TestDirectory, "testFileParams.toml"), MetaMorpheusTask.tomlConfig);
+
+            FileSpecificParameters fsp = new FileSpecificParameters(fileSpecificToml);
+
+            var fff = fsp.Clone();
+            Assert.That(fff.MaxMissedCleavages.Equals(fsp.MaxMissedCleavages));
+            Assert.That(fff.MaxModsForPeptide.Equals(fsp.MaxModsForPeptide));
+            Assert.That(fff.MaxPeptideLength.Equals(fsp.MaxPeptideLength));
+            Assert.That(fff.MinPeptideLength.Equals(fsp.MinPeptideLength));
+            Assert.That(fff.PrecursorMassTolerance.Equals(fsp.PrecursorMassTolerance));
+            Assert.That(fff.ProductMassTolerance.Equals(fsp.ProductMassTolerance));
+            Assert.That(fff.Protease.Equals(fsp.Protease));
+            Assert.That(fff.DissociationType.Equals(fsp.DissociationType));
+            Assert.That(!fff.Equals(fsp));
+
+            FileSpecificParameters.ValidateFileSpecificVariableNames();
+
+            string[] newPar = { "Unrecognized = 0" };
+
+            File.WriteAllLines(filePath, par);
+
+            var fileSpecificTomlFail = Toml.ReadFile(Path.Combine(TestContext.CurrentContext.TestDirectory, "testFileParams.toml"), MetaMorpheusTask.tomlConfig);
+            try
+            {
+                FileSpecificParameters fspFail = new FileSpecificParameters(fileSpecificTomlFail);
+            } catch(MetaMorpheusException)
+            {
+                
+            }
+
+        }
     }
 }
