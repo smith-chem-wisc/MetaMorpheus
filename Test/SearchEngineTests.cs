@@ -1532,14 +1532,10 @@ namespace Test
             var listOfSortedms2Scans = MetaMorpheusTask.GetMs2Scans(msFile, null, new CommonParameters()).OrderBy(b => b.PrecursorMass).ToArray();
 
             //params for singleN and singleC
-            var nProtease = ProteaseDictionary.Dictionary["singleN"];
-            var cProtease = ProteaseDictionary.Dictionary["singleC"];
-            CommonParameters nCommonParameters = new CommonParameters(
-                digestionParams: new DigestionParams(protease: nProtease.Name, fragmentationTerminus: FragmentationTerminus.N, searchModeType: CleavageSpecificity.None),
-                addCompIons: true);
-            CommonParameters cCommonParameters = new CommonParameters(
-                digestionParams: new DigestionParams(protease: cProtease.Name, fragmentationTerminus: FragmentationTerminus.C, searchModeType: CleavageSpecificity.None),
-                addCompIons: true);
+            CommonParameters nCommonParameters = new CommonParameters(digestionParams: new DigestionParams(protease: "singleN", fragmentationTerminus: FragmentationTerminus.N, searchModeType: CleavageSpecificity.None), addCompIons: true);
+            CommonParameters cCommonParameters = new CommonParameters(digestionParams: new DigestionParams(protease: "singleC", fragmentationTerminus: FragmentationTerminus.C, searchModeType: CleavageSpecificity.None), addCompIons: true);
+            CommonParameters nCleaveParams = new CommonParameters(digestionParams: new DigestionParams(protease: "singleN", initiatorMethionineBehavior: InitiatorMethionineBehavior.Cleave, fragmentationTerminus: FragmentationTerminus.N, searchModeType: CleavageSpecificity.None), addCompIons: true);
+            CommonParameters cCleaveParams = new CommonParameters(digestionParams: new DigestionParams(protease: "singleC", initiatorMethionineBehavior: InitiatorMethionineBehavior.Cleave, fragmentationTerminus: FragmentationTerminus.C, searchModeType: CleavageSpecificity.None), addCompIons: true);
 
             //params for annotated and variable mods
             List<Protein> proteinWithMods = new List<Protein> {new Protein("MAGIAAKLAKDREAAEGLGSHA", "testProtein",
@@ -1557,14 +1553,14 @@ namespace Test
             {
                 (proteinWithoutMods, terminalVariableMods),
                 (proteinWithMods, empty),
-                (proteinWithMods,terminalVariableMods)
+                (proteinWithMods, terminalVariableMods)
             };
 
             //Test all params and ensure the results are the same
             string[] psmAnswer = new string[2] { "[UniProt:N-acetylalanine on A]AGIAAKLAKDREAAEGLGSHA", "AGIAAKLAKDREAAEGLGSHA[UniProt:Alanine amide on A]" };
             foreach (var termParams in variableParamsToTest)
             {
-                List<CommonParameters> paramsToTest = new List<CommonParameters> { cCommonParameters, nCommonParameters };
+                List<CommonParameters> paramsToTest = new List<CommonParameters> { cCommonParameters, nCommonParameters, cCleaveParams, nCleaveParams };
                 foreach (CommonParameters commonParams in paramsToTest)
                 {
                     HashSet<DigestionParams> digestParams = new HashSet<DigestionParams> { commonParams.DigestionParams };

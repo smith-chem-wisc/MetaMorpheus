@@ -158,7 +158,7 @@ namespace EngineLayer.NonSpecificEnzymeSearch
             int localminPeptideLength = CommonParameters.DigestionParams.MinPeptideLength;
 
             //Get terminal modifications, if any
-            Dictionary<int, List<Modification>> databaseAnnotatedMods = semiSpecificSearch? null : GetTerminalModPositions(peptide, CommonParameters.DigestionParams, VariableTerminalModifications);
+            Dictionary<int, List<Modification>> databaseAnnotatedMods = semiSpecificSearch ? null : GetTerminalModPositions(peptide, CommonParameters.DigestionParams, VariableTerminalModifications);
 
             for (int i = localminPeptideLength - 1; i < fragments.Count; i++) //minus one start, because fragment 1 is at index 0
             {
@@ -227,6 +227,7 @@ namespace EngineLayer.NonSpecificEnzymeSearch
                     break;
                 }
             }
+
             //if the theoretical and experimental have the same mass or a terminal mod exists
             if (peptide.BaseSequence.Length > localminPeptideLength)
             {
@@ -237,6 +238,38 @@ namespace EngineLayer.NonSpecificEnzymeSearch
                     //need to update so that the cleavage specificity is recorded
                     PeptideWithSetModifications updatedPwsm = new PeptideWithSetModifications(peptide.Protein, peptide.DigestionParams, peptide.OneBasedStartResidueInProtein, peptide.OneBasedEndResidueInProtein, CleavageSpecificity.Unknown, "", 0, peptide.AllModsOneIsNterminus, peptide.NumFixedMods);
                     return new Tuple<int, PeptideWithSetModifications>(notch, updatedPwsm);
+                }
+                else //try a terminal mod (if it exists)
+                {
+                    if (!semiSpecificSearch && databaseAnnotatedMods.TryGetValue(peptide.Length, out List<Modification> terminalModsAtThisIndex))
+                    {
+                        foreach (Modification terminalMod in terminalModsAtThisIndex)
+                        {
+                            notch = searchMode.Accepts(scanPrecursorMass, totalMass + terminalMod.MonoisotopicMass.Value); //overwrite the notch, since the other notch wasn't accepted
+                            if (notch >= 0)
+                            {
+                                //need to update the mod dictionary and don't want to overwrite the peptide incase it's in other scans
+                                Dictionary<int, Modification> updatedMods = new Dictionary<int, Modification>();  //updateMods
+                                foreach (KeyValuePair<int, Modification> mod in peptide.AllModsOneIsNterminus)
+                                {
+                                    updatedMods.Add(mod.Key, mod.Value);
+                                }
+
+                                //add the terminal mod
+                                if (fragmentationTerminus == FragmentationTerminus.N)
+                                {
+                                    updatedMods[peptide.OneBasedEndResidueInProtein] = terminalMod;
+                                }
+                                else
+                                {
+                                    updatedMods[peptide.OneBasedStartResidueInProtein - 1] = terminalMod;
+                                }
+
+                                PeptideWithSetModifications updatedPwsm = new PeptideWithSetModifications(peptide.Protein, peptide.DigestionParams, peptide.OneBasedStartResidueInProtein, peptide.OneBasedEndResidueInProtein, CleavageSpecificity.Unknown, "", 0, updatedMods, peptide.NumFixedMods);
+                                return new Tuple<int, PeptideWithSetModifications>(notch, updatedPwsm);
+                            }
+                        }
+                    }
                 }
             }
             return new Tuple<int, PeptideWithSetModifications>(-1, null);
@@ -397,7 +430,9 @@ namespace EngineLayer.NonSpecificEnzymeSearch
         public static List<Modification> GetVariableTerminalMods(FragmentationTerminus fragmentationTerminus, List<Modification> variableModifications)
         {
             string terminalStringToFind = fragmentationTerminus == FragmentationTerminus.N ? "C-terminal" : "N-terminal"; //if singleN, want to find c-terminal mods and vice-versa
-            return variableModifications.Where(x => x.LocationRestriction.Contains(terminalStringToFind)).ToList();
+            return variableModifications == null ?
+                new List<Modification>() :
+                variableModifications.Where(x => x.LocationRestriction.Contains(terminalStringToFind)).ToList();
         }
 
         public static Dictionary<int, List<Modification>> GetTerminalModPositions(PeptideWithSetModifications peptide, DigestionParams digestionParams, List<Modification> variableMods)
@@ -417,7 +452,7 @@ namespace EngineLayer.NonSpecificEnzymeSearch
             //get all the mods for this protein
             IDictionary<int, List<Modification>> annotatedModsForThisProtein = peptide.Protein.OneBasedPossibleLocalizedModifications;
             //get the possible annotated mods for this peptide
-            List<int> annotatedMods = annotatedModsForThisProtein.Keys.Where(x => x > startResidue && x <= endResidue).ToList();
+            List<int> annotatedMods = annotatedModsForThisProtein.Keys.Where(x => x >= startResidue && x <= endResidue).ToList();
 
             foreach (int index in annotatedMods)
             {
