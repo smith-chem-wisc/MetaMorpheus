@@ -98,6 +98,11 @@ namespace TaskLayer
             var ms3Scans = msNScans.Where(p => p.MsnOrder == 3).ToArray();
             List<Ms2ScanWithSpecificMass>[] scansWithPrecursors = new List<Ms2ScanWithSpecificMass>[ms2Scans.Length];
 
+            if (!ms2Scans.Any())
+            {
+                return new List<Ms2ScanWithSpecificMass>();
+            }
+
             Parallel.ForEach(Partitioner.Create(0, ms2Scans.Length), new ParallelOptions { MaxDegreeOfParallelism = commonParameters.MaxThreadsToUsePerFile },
                 (partitionRange, loopState) =>
                 {
@@ -282,7 +287,7 @@ namespace TaskLayer
             }
 
             // set file-specific digestion parameters
-            Protease protease = fileSpecificParams.Protease ?? commonParams.DigestionParams.Protease;
+            Protease protease = fileSpecificParams.Protease ?? commonParams.DigestionParams.SpecificProtease; //set to specific for nonspecific searches to update
             int minPeptideLength = fileSpecificParams.MinPeptideLength ?? commonParams.DigestionParams.MinPeptideLength;
             int maxPeptideLength = fileSpecificParams.MaxPeptideLength ?? commonParams.DigestionParams.MaxPeptideLength;
             int maxMissedCleavages = fileSpecificParams.MaxMissedCleavages ?? commonParams.DigestionParams.MaxMissedCleavages;

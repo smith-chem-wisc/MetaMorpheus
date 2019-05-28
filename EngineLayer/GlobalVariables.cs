@@ -1,6 +1,9 @@
-﻿using MassSpectrometry;
+﻿using Chemistry;
+using MassSpectrometry;
+using MzLibUtil;
 using Nett;
 using Proteomics;
+using Proteomics.AminoAcidPolymer;
 using System;
 using System.Collections.Generic;
 using System.IO;
@@ -13,6 +16,8 @@ namespace EngineLayer
         private static List<Modification> _AllModsKnown = new List<Modification>();
         private static HashSet<string> _AllModTypesKnown = new HashSet<string>();
         private static List<Crosslinker> _KnownCrosslinkers = new List<Crosslinker>();
+        //Characters that aren't amino acids, but are reserved for special uses (motifs, delimiters, mods, etc)
+        private static char[] _InvalidAminoAcids = new char[] { 'X', 'B', 'J', 'Z', ':', '|', ';', '[', ']', '{', '}', '(', ')', '+', '-' };
 
         static GlobalVariables()
         {
@@ -88,6 +93,8 @@ namespace EngineLayer
                 // no error thrown if multiple mods with this ID are present - just pick one
             }
 
+            RefreshAminoAcidDictionary();
+
             GlobalSettings = Toml.ReadFile<GlobalSettings>(Path.Combine(DataDir, @"settings.toml"));
             AllSupportedDissociationTypes = new Dictionary<string, DissociationType> {
                 { DissociationType.CID.ToString(), DissociationType.CID },
@@ -121,6 +128,7 @@ namespace EngineLayer
 
         public static string ExperimentalDesignFileName { get; }
         public static IEnumerable<Crosslinker> Crosslinkers { get { return _KnownCrosslinkers.AsEnumerable(); } }
+        public static IEnumerable<char> InvalidAminoAcids { get { return _InvalidAminoAcids.AsEnumerable(); } }
 
         public static void AddMods(IEnumerable<Modification> modifications, bool modsAreFromTheTopOfProteinXml)
         {
@@ -197,6 +205,69 @@ namespace EngineLayer
             {
                 return psmString;
             }
+        }
+
+        public static void RefreshAminoAcidDictionary()
+        {
+            //read in all the amino acids (they already exist in mzlib, but there might be synthetic amino acids that need to be included)
+            string aminoAcidPath = Path.Combine(DataDir, @"CustomAminoAcids", @"CustomAminoAcids.txt");
+            if (File.Exists(aminoAcidPath)) //if it already exists
+            {
+                string[] aminoAcidLines = File.ReadAllLines(aminoAcidPath);
+                List<Residue> residuesToAdd = new List<Residue>();
+                for (int i = 1; i < aminoAcidLines.Length; i++)
+                {
+
+                    string[] line = aminoAcidLines[i].Split('\t').ToArray(); //tsv Name, one letter, monoisotopic, chemical formula
+                    if (line.Length >= 4) //check something is there (not a blank line)
+                    {
+                        char letter = line[1][0];
+                        if (InvalidAminoAcids.Contains(letter))
+                        {
+                            throw new MetaMorpheusException("Error while reading 'CustomAminoAcids.txt'. Line " + (i + 1).ToString() + " contains an invalid amino acid. (Ex: " + string.Join(", ", InvalidAminoAcids.Select(x => x.ToString())) + ")");
+                        }
+                        try
+                        {
+                            ChemicalFormula formula = ChemicalFormula.ParseFormula(line[3]);
+
+                            //if it doesn't already exist or it does exist but has a different mass, add the entry
+                            if (!(Residue.TryGetResidue(letter, out Residue residue))
+                                || !(formula.Formula.Equals(residue.ThisChemicalFormula.Formula)))
+                            {
+                                residuesToAdd.Add(new Residue(line[0], letter, line[1], formula, ModificationSites.Any));
+                            }
+                        }
+                        catch
+                        {
+                            throw new MetaMorpheusException("Error while reading 'CustomAminoAcids.txt'. Line " + (i + 1).ToString() + " was not in the correct format.");
+                        }
+                    }
+                }
+                Residue.AddNewResiduesToDictionary(residuesToAdd);
+            }
+            else //create it so that it can be manipulated
+            {
+                WriteAminoAcidsFile();
+            }
+        }
+
+        public static void WriteAminoAcidsFile()
+        {
+            string directory = Path.Combine(DataDir, @"CustomAminoAcids");
+            if(!Directory.Exists(directory))
+            {
+                Directory.CreateDirectory(directory);
+            }
+            string aminoAcidPath = Path.Combine(DataDir, @"CustomAminoAcids", @"CustomAminoAcids.txt");
+            List<string> linesToWrite = new List<string> { "Name\tOneLetterAbbr.\tMonoisotopicMass\tChemicalFormula" };
+            for (char letter = 'A'; letter <= 'Z'; letter++) //just the basic residues
+            {
+                if (Residue.TryGetResidue(letter, out Residue residue))
+                {
+                    linesToWrite.Add(residue.Name + '\t' + residue.Letter.ToString() + '\t' + residue.MonoisotopicMass.ToString() + '\t' + residue.ThisChemicalFormula.Formula);
+                }
+            }
+            File.WriteAllLines(aminoAcidPath, linesToWrite.ToArray());
         }
     }
 }
