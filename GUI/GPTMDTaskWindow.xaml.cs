@@ -231,7 +231,6 @@ namespace MetaMorpheusGUI
                 }
             }
             gptmdModsTreeView.DataContext = gptmdModTypeForTreeViewObservableCollection;
-            MaxModsPerNotchTextBox.Text = "1";
         }
 
         private void CancelButton_Click(object sender, RoutedEventArgs e)
