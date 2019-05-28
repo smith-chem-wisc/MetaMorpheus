@@ -1180,7 +1180,10 @@ namespace Test
             var localizeableModifications = new List<Modification>();
             Dictionary<Modification, ushort> modsDictionary = new Dictionary<Modification, ushort>();
             foreach (var mod in fixedModifications)
+            {
                 modsDictionary.Add(mod, 0);
+            }
+
             int ii = 1;
             foreach (var mod in variableModifications)
             {
@@ -1316,7 +1319,10 @@ namespace Test
             var localizeableModifications = new List<Modification>();
             Dictionary<Modification, ushort> modsDictionary = new Dictionary<Modification, ushort>();
             foreach (var mod in fixedModifications)
+            {
                 modsDictionary.Add(mod, 0);
+            }
+
             int ii = 1;
             foreach (var mod in variableModifications)
             {
@@ -1580,6 +1586,18 @@ namespace Test
                     }
                 }
             }
+        }
+
+        [Test]
+        public static void TestFileWithNoMs2Scans()
+        {
+            var scans = new MsDataScan[1];
+            var spectrum = new MzSpectrum(new double[1], new double[1], false);
+            scans[0] = new MsDataScan(spectrum, 1, 1, true, Polarity.Positive, 1.0, new MzRange(0, 1), "", MZAnalyzerType.Orbitrap,
+                1, null, null, "");
+            var fileWithNoMs2Scans = new MsDataFile(scans, null);
+            var ms2Scans = MetaMorpheusTask.GetMs2Scans(fileWithNoMs2Scans, null, new CommonParameters()).OrderBy(b => b.PrecursorMass).ToArray();
+            Assert.That(!ms2Scans.Any());
         }
     }
 }
