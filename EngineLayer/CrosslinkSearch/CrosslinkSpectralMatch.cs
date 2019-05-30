@@ -148,42 +148,42 @@ namespace EngineLayer.CrosslinkSearch
             return sb.ToString();
         }
 
-        public static string GetTabSepHeaderGlyco()
-        {
-            var sb = new StringBuilder();
-            sb.Append("File Name" + '\t');
-            sb.Append("Scan Number" + '\t');
-            sb.Append("Precursor Scan Number" + '\t');
-            sb.Append("Precursor MZ" + '\t');
-            sb.Append("Precursor Charge" + '\t');
-            sb.Append("Precursor Mass" + '\t');
-            sb.Append("Cross Type" + '\t');
-            sb.Append("Link Residues" + "\t");
+        //public static string GetTabSepHeaderGlyco()
+        //{
+        //    var sb = new StringBuilder();
+        //    sb.Append("File Name" + '\t');
+        //    sb.Append("Scan Number" + '\t');
+        //    sb.Append("Precursor Scan Number" + '\t');
+        //    sb.Append("Precursor MZ" + '\t');
+        //    sb.Append("Precursor Charge" + '\t');
+        //    sb.Append("Precursor Mass" + '\t');
+        //    sb.Append("Cross Type" + '\t');
+        //    sb.Append("Link Residues" + "\t");
 
-            sb.Append("Peptide" + '\t');
-            sb.Append("Protein Accession" + '\t');
-            sb.Append("Protein Link Site" + '\t');
-            sb.Append("Base Sequence" + '\t');
-            sb.Append("Full Sequence" + '\t');
-            sb.Append("Peptide Monoisotopic Mass" + '\t');
-            sb.Append("Score" + '\t');
-            sb.Append("Rank" + '\t');
+        //    sb.Append("Peptide" + '\t');
+        //    sb.Append("Protein Accession" + '\t');
+        //    sb.Append("Protein Link Site" + '\t');
+        //    sb.Append("Base Sequence" + '\t');
+        //    sb.Append("Full Sequence" + '\t');
+        //    sb.Append("Peptide Monoisotopic Mass" + '\t');
+        //    sb.Append("Score" + '\t');
+        //    sb.Append("Rank" + '\t');
 
-            sb.Append("Matched Ion Series" + '\t');
-            sb.Append("Matched Ion Mass-To-Charge Ratios" + '\t');
-            sb.Append("Matched Ion Mass Diff (Da)" + '\t');
-            sb.Append("Matched Ion Mass Diff (Ppm)" + '\t');
-            sb.Append("Matched Ion Intensities" + '\t');
-            sb.Append("Matched Ion Counts" + '\t');
+        //    sb.Append("Matched Ion Series" + '\t');
+        //    sb.Append("Matched Ion Mass-To-Charge Ratios" + '\t');
+        //    sb.Append("Matched Ion Mass Diff (Da)" + '\t');
+        //    sb.Append("Matched Ion Mass Diff (Ppm)" + '\t');
+        //    sb.Append("Matched Ion Intensities" + '\t');
+        //    sb.Append("Matched Ion Counts" + '\t');
 
-            sb.Append("Decoy/Contaminant/Target" + '\t');
-            sb.Append("QValue" + '\t');
+        //    sb.Append("Decoy/Contaminant/Target" + '\t');
+        //    sb.Append("QValue" + '\t');
 
-            sb.Append("GlyID" + '\t');
-            sb.Append("GlyMass" + '\t');
-            sb.Append("GlyStruct(H,N,A,G,F)" + '\t');
-            return sb.ToString();
-        }
+        //    sb.Append("GlyID" + '\t');
+        //    sb.Append("GlyMass" + '\t');
+        //    sb.Append("GlyStruct(H,N,A,G,F)" + '\t');
+        //    return sb.ToString();
+        //}
 
         public override string ToString()
         {
