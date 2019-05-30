@@ -30,15 +30,14 @@ namespace EngineLayer
             AllScores = new List<double>();
             DigestionParams = digestionParams;
             PeptidesToMatchingFragments = new Dictionary<PeptideWithSetModifications, List<MatchedFragmentIon>>();
-
             Xcorr = xcorr;
-            
 
             AddOrReplace(peptide, score, notch, true, matchedFragmentIons, xcorr);
         }
 
         public ChemicalFormula ModsChemicalFormula { get; private set; } // these fields will be null if they are ambiguous
         public string FullSequence { get; private set; }
+        public string EssentialSequence { get; private set; }
         public int? Notch { get; private set; }
         public string BaseSequence { get; private set; }
         public int? PeptideLength { get; private set; }
@@ -60,7 +59,7 @@ namespace EngineLayer
         public int ScanPrecursorCharge { get; }
         public double ScanPrecursorMonoisotopicPeakMz { get; }
         public double ScanPrecursorMass { get; }
-        public string FullFilePath { get; }
+        public string FullFilePath { get; private set; }
         public int ScanIndex { get; }
         public int NumDifferentMatchingPeptides { get { return _BestMatchingPeptides.Count; } }
         public FdrInfo FdrInfo { get; private set; }
@@ -78,9 +77,9 @@ namespace EngineLayer
         {
             get
             {
-                return _BestMatchingPeptides.OrderBy(p => p.Item2.FullSequence)
-                    .ThenBy(p => p.Item2.Protein.Accession)
-                    .ThenBy(p => p.Item2.OneBasedStartResidueInProtein);
+                return _BestMatchingPeptides.OrderBy(p => p.Pwsm.FullSequence)
+                    .ThenBy(p => p.Pwsm.Protein.Accession)
+                    .ThenBy(p => p.Pwsm.OneBasedStartResidueInProtein);
             }
         }
 
@@ -148,7 +147,7 @@ namespace EngineLayer
             Dictionary<string, string> s = new Dictionary<string, string>();
             PsmTsvWriter.AddBasicMatchData(s, psm);
             PsmTsvWriter.AddPeptideSequenceData(s, psm, ModsToWritePruned);
-            PsmTsvWriter.AddMatchedIonsData(s, psm == null ? null : psm.MatchedFragmentIons);
+            PsmTsvWriter.AddMatchedIonsData(s, psm?.MatchedFragmentIons);
             PsmTsvWriter.AddMatchScoreData(s, psm);
             return s;
         }
@@ -227,6 +226,29 @@ namespace EngineLayer
         }
 
         /// <summary>
+        /// This method changes the base and full sequences to reflect heavy silac labels
+        /// translates SILAC sequence into the proper peptide sequence ("PEPTIDEa" into "PEPTIDEK(+8.014)")
+        /// </summary>
+        public void ResolveHeavySilacLabel(List<SilacLabel> labels, IReadOnlyDictionary<string, int> modsToWritePruned)
+        {
+            //FullSequence
+            FullSequence = PsmTsvWriter.Resolve(_BestMatchingPeptides.Select(b => b.Pwsm.FullSequence)).ResolvedString; //string, not value
+            FullSequence = SilacConversions.GetAmbiguousLightSequence(FullSequence, labels, false);
+
+            //BaseSequence
+            BaseSequence = PsmTsvWriter.Resolve(_BestMatchingPeptides.Select(b => b.Pwsm.BaseSequence)).ResolvedString; //string, not value
+            BaseSequence = SilacConversions.GetAmbiguousLightSequence(BaseSequence, labels, true);
+
+            //EssentialSequence
+            EssentialSequence = PsmTsvWriter.Resolve(_BestMatchingPeptides.Select(b => b.Pwsm.EssentialSequence(modsToWritePruned))).ResolvedString; //string, not value
+            EssentialSequence = SilacConversions.GetAmbiguousLightSequence(EssentialSequence, labels, false);
+
+            //Accession
+            ProteinAccession = PsmTsvWriter.Resolve(_BestMatchingPeptides.Select(x => x.Pwsm).Select(b => b.Protein.Accession), FullSequence).ResolvedString; //string, not value
+            ProteinAccession = SilacConversions.GetProteinLightAccession(ProteinAccession, labels);
+        }
+
+        /// <summary>
         /// This method is used by protein parsimony to remove PeptideWithSetModifications objects that have non-parsimonious protein associations
         /// </summary>
         public void TrimProteinMatches(HashSet<Protein> parsimoniousProteins)
@@ -235,13 +257,13 @@ namespace EngineLayer
             {
                 if (_BestMatchingPeptides.Any(p => parsimoniousProteins.Contains(p.Pwsm.Protein) && p.Pwsm.Protein.IsDecoy))
                 {
-                    _BestMatchingPeptides.RemoveAll(p => !parsimoniousProteins.Contains(p.Item2.Protein));
+                    _BestMatchingPeptides.RemoveAll(p => !parsimoniousProteins.Contains(p.Pwsm.Protein));
                 }
                 // else do nothing
             }
             else
             {
-                _BestMatchingPeptides.RemoveAll(p => !parsimoniousProteins.Contains(p.Item2.Protein));
+                _BestMatchingPeptides.RemoveAll(p => !parsimoniousProteins.Contains(p.Pwsm.Protein));
             }
 
             ResolveAllAmbiguities();
@@ -254,6 +276,56 @@ namespace EngineLayer
         {
             _BestMatchingPeptides.Add(peptideWithNotch);
             ResolveAllAmbiguities();
+        }
+
+        /// <summary>
+        /// This method is used by SILAC quantification to add heavy/light psms
+        /// Don't have access to the scans at that point, so a new contructor is needed
+        /// </summary>
+        public PeptideSpectralMatch Clone(List<(int Notch, PeptideWithSetModifications Peptide)> bestMatchingPeptides = null)
+        {
+            return new PeptideSpectralMatch(this, bestMatchingPeptides);
+        }
+
+        private PeptideSpectralMatch(PeptideSpectralMatch psm, List<(int Notch, PeptideWithSetModifications Peptide)> bestMatchingPeptides)
+        {
+            _BestMatchingPeptides = bestMatchingPeptides ?? psm.BestMatchingPeptides.ToList();
+
+            ModsChemicalFormula = psm.ModsChemicalFormula;
+            FullSequence = psm.FullSequence;
+            Notch = psm.Notch;
+            BaseSequence = psm.BaseSequence;
+            PeptideLength = psm.PeptideLength;
+            OneBasedStartResidueInProtein = psm.OneBasedStartResidueInProtein;
+            OneBasedEndResidueInProtein = psm.OneBasedEndResidueInProtein;
+            PeptideMonisotopicMass = psm.PeptideMonisotopicMass;
+            ProteinLength = psm.ProteinLength;
+            ProteinAccession = psm.ProteinAccession;
+            Organism = psm.Organism;
+            MatchedFragmentIons = psm.MatchedFragmentIons;
+            PsmCount = psm.PsmCount;
+            ModsIdentified = psm.ModsIdentified;
+            LocalizedScores = psm.LocalizedScores;
+            ScanNumber = psm.ScanNumber;
+            PrecursorScanNumber = psm.PrecursorScanNumber;
+            ScanRetentionTime = psm.ScanRetentionTime;
+            ScanExperimentalPeaks = psm.ScanExperimentalPeaks;
+            TotalIonCurrent = psm.TotalIonCurrent;
+            ScanPrecursorCharge = psm.ScanPrecursorCharge;
+            ScanPrecursorMonoisotopicPeakMz = psm.ScanPrecursorMonoisotopicPeakMz;
+            ScanPrecursorMass = psm.ScanPrecursorMass;
+            FullFilePath = psm.FullFilePath;
+            ScanIndex = psm.ScanIndex;
+            FdrInfo = psm.FdrInfo;
+            Score = psm.Score;
+            Xcorr = psm.Xcorr;
+            DeltaScore = psm.DeltaScore;
+            RunnerUpScore = psm.RunnerUpScore;
+            IsDecoy = psm.IsDecoy;
+            IsContaminant = psm.IsContaminant;
+            DigestionParams = psm.DigestionParams;
+            AllScores = psm.AllScores;
+            PeptidesToMatchingFragments = psm.PeptidesToMatchingFragments;
         }
     }
 }

@@ -112,11 +112,18 @@ namespace TaskLayer
 
             Status("Constructing protein groups...", Parameters.SearchTaskId);
 
+            //if SILAC
+            List<PeptideSpectralMatch> psmsForProteinParsimony = Parameters.AllPsms;
+            if (Parameters.SearchParameters.SilacLabels != null)
+            {
+                psmsForProteinParsimony = SilacConversions.UpdatePsmsForParsimony(Parameters.SearchParameters.SilacLabels, psmsForProteinParsimony);
+            }
+
             // run parsimony
-            ProteinParsimonyResults proteinAnalysisResults = (ProteinParsimonyResults)(new ProteinParsimonyEngine(Parameters.AllPsms, Parameters.SearchParameters.ModPeptidesAreDifferent, CommonParameters, new List<string> { Parameters.SearchTaskId }).Run());
+            ProteinParsimonyResults proteinAnalysisResults = (ProteinParsimonyResults)(new ProteinParsimonyEngine(psmsForProteinParsimony, Parameters.SearchParameters.ModPeptidesAreDifferent, CommonParameters, new List<string> { Parameters.SearchTaskId }).Run());
 
             // score protein groups and calculate FDR
-            ProteinScoringAndFdrResults proteinScoringAndFdrResults = (ProteinScoringAndFdrResults)new ProteinScoringAndFdrEngine(proteinAnalysisResults.ProteinGroups, Parameters.AllPsms,
+            ProteinScoringAndFdrResults proteinScoringAndFdrResults = (ProteinScoringAndFdrResults)new ProteinScoringAndFdrEngine(proteinAnalysisResults.ProteinGroups, psmsForProteinParsimony,
                 Parameters.SearchParameters.NoOneHitWonders, Parameters.SearchParameters.ModPeptidesAreDifferent, true, CommonParameters, new List<string> { Parameters.SearchTaskId }).Run();
 
             ProteinGroups = proteinScoringAndFdrResults.SortedAndScoredProteinGroups;
@@ -140,7 +147,7 @@ namespace TaskLayer
 
                     var origDataFile = Parameters.CurrentRawFileList[spectraFileIndex];
                     Status("Running mass-difference localization analysis...", new List<string> { Parameters.SearchTaskId, "Individual Spectra Files", origDataFile });
-                    MsDataFile myMsDataFile = Parameters.MyFileManager.LoadFile(origDataFile, combinedParams.TopNpeaks, combinedParams.MinRatio, combinedParams.TrimMs1Peaks, combinedParams.TrimMsMsPeaks, combinedParams);
+                    MsDataFile myMsDataFile = Parameters.MyFileManager.LoadFile(origDataFile, combinedParams);
                     new LocalizationEngine(Parameters.AllPsms.Where(b => b.FullFilePath.Equals(origDataFile)).ToList(),
                         myMsDataFile, combinedParams, new List<string> { Parameters.SearchTaskId, "Individual Spectra Files", origDataFile }).Run();
                     Parameters.MyFileManager.DoneWithFile(origDataFile);
@@ -218,9 +225,64 @@ namespace TaskLayer
                 p.FdrInfo.QValue <= 0.01
                 && p.FdrInfo.QValueNotch <= 0.01
                 && !p.IsDecoy
-                && p.FullSequence != null).ToList();
+                && p.FullSequence != null).ToList(); //if ambiguous, there's no full sequence
 
-            var psmsGroupedByFile = unambiguousPsmsBelowOnePercentFdr.GroupBy(p => p.FullFilePath);
+            //If SILAC (Pre-Quantification) preparation
+            Dictionary<PeptideSpectralMatch, List<PeptideSpectralMatch>> silacPsmMatcher = new Dictionary<PeptideSpectralMatch, List<PeptideSpectralMatch>>(); //use for getting back info once we've separated light/heavy. It is the light psm for the key, and the list of heavy psm replicas for the value.
+            Dictionary<string, List<string>> silacProteinGroupMatcher = new Dictionary<string, List<string>>(); //use for getting back info once we've separated light/heavy. It is the light protein group for the key, and a list of heavy protein group replicas for the value.
+            if (Parameters.SearchParameters.SilacLabels != null)
+            {
+                //PEPTIDE LEVEL CHANGES
+                //go through all the psms and duplicate them until a psm copy exists for the unlabeled and labeled proteins
+                //The number of psms should roughly increase by a factor of N, where N is the number of labels.
+                //It may not increase exactly by a factor of N if the amino acid that gets labeled doesn't exist in the peptide
+                List<SilacLabel> allSilacLabels = Parameters.SearchParameters.SilacLabels;
+                List<PeptideSpectralMatch> silacPsms = new List<PeptideSpectralMatch>();
+                foreach (PeptideSpectralMatch psm in unambiguousPsmsBelowOnePercentFdr)
+                {
+                    //see which label, if any, this peptide has
+                    string peptideBaseSequence = psm.BaseSequence;
+                    SilacLabel observedLabel = SilacConversions.GetRelevantLabelFromBaseSequence(peptideBaseSequence, allSilacLabels); //returns null if no label
+
+                    //if it's not the light form, make a light form and add it
+                    PeptideSpectralMatch lightPsm = observedLabel == null ? psm : SilacConversions.GetSilacPsm(psm, observedLabel, true);
+                    silacPsms.Add(lightPsm);
+
+                    //see which labels, if any, this peptide can have
+                    peptideBaseSequence = SilacConversions.GetSilacLightBaseSequence(peptideBaseSequence, observedLabel); //update to the light sequence, if applicable
+                    List<SilacLabel> labelsToModify = allSilacLabels.Where(x => peptideBaseSequence.Contains(x.OriginalAminoAcid)).ToList(); //see which residues can be labeled
+                    //foreach of the possible labels this peptide can have, add a new psm for it
+                    List<PeptideSpectralMatch> addedSilacPsms = labelsToModify.Select(x => SilacConversions.GetSilacPsm(lightPsm, x, false)).ToList(); //if we had a heavy psm to start with, this will create an identical heavy
+                    addedSilacPsms.ForEach(x => silacPsms.Add(x)); //add to psm list
+                    silacPsmMatcher[lightPsm] = addedSilacPsms; //add to match list
+                }
+
+                //update the list for FlashLFQ
+                silacPsms.ForEach(x => x.ResolveAllAmbiguities()); //update the base/full sequences
+                unambiguousPsmsBelowOnePercentFdr = silacPsms;
+
+
+                //PROTEIN LEVEL CHANGES
+                //Need to create the heavy proteins in our parsimony list and assign the heavy peptides to these heavy proteins
+                //During the search and protein parsimony, heavy and light peptides were considered to come from the same protein (light)
+                //Now, we want to quantify the light and heavy proteins separately and we need to differentiate them.
+                if (ProteinGroups != null) //if we did parsimony
+                {
+                    List<EngineLayer.ProteinGroup> silacProteinGroups = new List<EngineLayer.ProteinGroup>();
+                    foreach (EngineLayer.ProteinGroup proteinGroup in ProteinGroups)
+                    {
+                        //add the unlabeled protein group
+                        //this method removes the heavy psms from the protein groups and adds their light replica
+                        EngineLayer.ProteinGroup unlabeledProteinGroup = SilacConversions.GetSilacProteinGroups(unambiguousPsmsBelowOnePercentFdr, proteinGroup);
+                        silacProteinGroups.Add(unlabeledProteinGroup);
+                        //add the labeled protein group(s)
+                        List<EngineLayer.ProteinGroup> addedProteinGroups = allSilacLabels.Select(x => SilacConversions.GetSilacProteinGroups(unambiguousPsmsBelowOnePercentFdr, proteinGroup, x)).ToList(); //foreach label, create a new heavy protein group
+                        addedProteinGroups.ForEach(x => silacProteinGroups.Add(x)); //add to psm list
+                        silacProteinGroupMatcher[proteinGroup.ProteinGroupName] = addedProteinGroups.Select(x => x.ProteinGroupName).ToList(); //add to match list
+                    }
+                    ProteinGroups = silacProteinGroups;
+                }
+            } //END SILAC CODE
 
             // pass protein group info for each PSM
             var psmToProteinGroups = new Dictionary<PeptideSpectralMatch, List<FlashLFQ.ProteinGroup>>();
@@ -273,6 +335,9 @@ namespace TaskLayer
                     }
                 }
             }
+
+            //group psms by file
+            var psmsGroupedByFile = unambiguousPsmsBelowOnePercentFdr.GroupBy(p => p.FullFilePath);
 
             // some PSMs may not have protein groups (if 2 peptides are required to construct a protein group, some PSMs will be left over)
             // the peptides should still be quantified but not considered for protein quantification
@@ -390,6 +455,13 @@ namespace TaskLayer
                     }
                 }
             }
+
+            if (Parameters.SearchParameters.SilacLabels != null)
+            {
+                SilacConversions.SilacConversionsPostQuantification(Parameters.SearchParameters.SilacLabels, spectraFileInfo, ProteinGroups,
+                    Parameters.ListOfDigestionParams, silacProteinGroupMatcher, Parameters.FlashLfqResults, Parameters.AllPsms,
+                    Parameters.SearchParameters.ModsToWriteSelection, FlashLfqEngine.Integrate);
+            }
         }
 
         private void HistogramAnalysis()
@@ -470,7 +542,7 @@ namespace TaskLayer
                     writtenFile = Path.Combine(Parameters.IndividualResultsOutputFolder, strippedFileName + "_PSMsFormattedForPercolator.tsv");
                     WritePsmsForPercolator(psmsForThisFile, writtenFile, CommonParameters.QValueOutputFilter);
                     FinishedWritingFile(writtenFile, new List<string> { Parameters.SearchTaskId, "Individual Spectra Files", file.First().FullFilePath });
-               }
+                }
             }
         }
 
@@ -487,6 +559,21 @@ namespace TaskLayer
                 if (Parameters.CurrentRawFileList.Count > 1 || Parameters.SearchParameters.WriteMzId || Parameters.SearchParameters.WritePepXml)
                 {
                     Directory.CreateDirectory(Parameters.IndividualResultsOutputFolder);
+
+                    //If SILAC and no light, we need to update the psms (which were found in the "light" file) and say they were found in the "heavy" file)
+                    if (!Parameters.ListOfDigestionParams.Any(x => x.GeneratehUnlabeledProteinsForSilac))
+                    {
+                        //get the light filenames
+                        List<string> fileNamesThatHadPsms = PsmsGroupedByFile.Select(v => v.Key).ToList();
+                        EngineLayer.ProteinGroup firstProteinGroup = ProteinGroups.FirstOrDefault();
+                        if (firstProteinGroup != null)
+                        {
+                            List<string> allFileNames = firstProteinGroup.FilesForQuantification.Select(x => x.FullFilePathWithExtension).ToList();
+                            string heavyFileToSet = allFileNames.Where(x => !fileNamesThatHadPsms.Contains(x)).First();
+                            List<PeptideSpectralMatch> psms = PsmsGroupedByFile.SelectMany(g => g).ToList();
+                            PsmsGroupedByFile = psms.GroupBy(x => heavyFileToSet); //set them all to the same file
+                        }
+                    }
 
                     foreach (var fullFilePath in PsmsGroupedByFile.Select(v => v.Key))
                     {
@@ -516,7 +603,7 @@ namespace TaskLayer
                             Status("Writing mzID...", new List<string> { Parameters.SearchTaskId, "Individual Spectra Files", fullFilePath });
 
                             var mzidFilePath = Path.Combine(Parameters.IndividualResultsOutputFolder, strippedFileName + ".mzID");
-                            MzIdentMLWriter.WriteMzIdentMl(psmsForThisFile, subsetProteinGroupsForThisFile, Parameters.VariableModifications, Parameters.FixedModifications,
+                            MzIdentMLWriter.WriteMzIdentMl(psmsForThisFile, subsetProteinGroupsForThisFile, Parameters.VariableModifications, Parameters.FixedModifications, Parameters.SearchParameters.SilacLabels,
                                 new List<Protease> { CommonParameters.DigestionParams.Protease }, CommonParameters.QValueOutputFilter, CommonParameters.ProductMassTolerance,
                                 CommonParameters.PrecursorMassTolerance, CommonParameters.DigestionParams.MaxMissedCleavages, mzidFilePath);
 
@@ -647,7 +734,7 @@ namespace TaskLayer
                             {
                                 int proteinIdx = GetOneBasedIndexInProtein(idxModKV.Key, psm);
                                 SequenceVariation relevantVariant = psm.Protein.AppliedSequenceVariations.FirstOrDefault(sv => VariantApplication.IsSequenceVariantModification(sv, proteinIdx));
-                                SequenceVariation unappliedVariant = 
+                                SequenceVariation unappliedVariant =
                                     relevantVariant == null ? null : // it's not a sequence variant mod
                                     psm.Protein.SequenceVariations.FirstOrDefault(sv => sv.Description != null && sv.Description.Equals(relevantVariant.Description));
                                 modsObservedOnThisProtein.Add((VariantApplication.RestoreModificationIndex(psm.Protein, proteinIdx), idxModKV.Value, unappliedVariant));
@@ -931,7 +1018,7 @@ namespace TaskLayer
             var fullSeqPath = Path.Combine(outputFolder, fileName + ".tsv");
 
             flashLFQResults.WriteResults(null, fullSeqPath, null);
-            
+
             FinishedWritingFile(fullSeqPath, nestedIds);
         }
 

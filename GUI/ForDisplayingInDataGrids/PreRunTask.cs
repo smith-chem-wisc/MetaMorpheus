@@ -14,7 +14,7 @@ namespace MetaMorpheusGUI
 
         public PreRunTask(MetaMorpheusTask theTask)
         {
-            this.metaMorpheusTask = theTask;
+            metaMorpheusTask = theTask;
         }
 
         #endregion Public Constructors

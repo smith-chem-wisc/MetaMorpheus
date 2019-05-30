@@ -259,7 +259,7 @@ namespace ViewModels
 
             string tempPath = Path.Combine(Path.GetDirectoryName(fileName), "sequence.pdf");
             string baseSeqTempPath = Path.Combine(Path.GetDirectoryName(fileName), "annotation.png");
-            
+
             // exports plot to pdf
             using (var stream = File.Create(tempPath))
             {

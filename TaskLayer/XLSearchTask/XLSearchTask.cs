@@ -37,12 +37,7 @@ namespace TaskLayer
             // load proteins
             List<Protein> proteinList = LoadProteins(taskId, dbFilenameList, true, XlSearchParameters.DecoyType, localizeableModificationTypes, CommonParameters);
 
-            var crosslinker = new Crosslinker();
-            crosslinker = crosslinker.SelectCrosslinker(XlSearchParameters.CrosslinkerType);
-            if (XlSearchParameters.CrosslinkerType == CrosslinkerType.UserDefined)
-            {
-                crosslinker = GenerateUserDefinedCrosslinker(XlSearchParameters);
-            }
+            var crosslinker = XlSearchParameters.Crosslinker;
 
             MyFileManager myFileManager = new MyFileManager(true);
 
@@ -86,7 +81,7 @@ namespace TaskLayer
                 NewCollection(Path.GetFileName(origDataFile), thisId);
 
                 Status("Loading spectra file...", thisId);
-                MsDataFile myMsDataFile = myFileManager.LoadFile(origDataFile, combinedParams.TopNpeaks, combinedParams.MinRatio, combinedParams.TrimMs1Peaks, combinedParams.TrimMsMsPeaks, combinedParams);
+                MsDataFile myMsDataFile = myFileManager.LoadFile(origDataFile, combinedParams);
 
                 Status("Getting ms2 scans...", thisId);
 
@@ -99,11 +94,11 @@ namespace TaskLayer
                     List<Protein> proteinListSubset = proteinList.GetRange(currentPartition * proteinList.Count() / combinedParams.TotalPartitions, ((currentPartition + 1) * proteinList.Count() / combinedParams.TotalPartitions) - (currentPartition * proteinList.Count() / combinedParams.TotalPartitions));
 
                     Status("Getting fragment dictionary...", new List<string> { taskId });
-                    var indexEngine = new IndexingEngine(proteinListSubset, variableModifications, fixedModifications, currentPartition, UsefulProteomicsDatabases.DecoyType.Reverse, combinedParams, 30000.0, false, dbFilenameList.Select(p => new FileInfo(p.FilePath)).ToList(), new List<string> { taskId });
+                    var indexEngine = new IndexingEngine(proteinListSubset, variableModifications, fixedModifications, null, currentPartition, UsefulProteomicsDatabases.DecoyType.Reverse, combinedParams, 30000.0, false, dbFilenameList.Select(p => new FileInfo(p.FilePath)).ToList(), new List<string> { taskId });
                     List<int>[] fragmentIndex = null;
                     List<int>[] precursorIndex = null;
 
-                    GenerateIndexes(indexEngine, dbFilenameList, ref peptideIndex, ref fragmentIndex, ref precursorIndex, proteinList, GlobalVariables.AllModsKnown.ToList(), taskId);
+                    GenerateIndexes(indexEngine, dbFilenameList, ref peptideIndex, ref fragmentIndex, ref precursorIndex, proteinList, taskId);
 
                     Status("Searching files...", taskId);
                     new CrosslinkSearchEngine(newPsms, arrayOfMs2ScansSortedByMass, peptideIndex, fragmentIndex, currentPartition, combinedParams, crosslinker,
@@ -206,9 +201,9 @@ namespace TaskLayer
             MyTaskResults.AddNiceText("Target loop-linked peptides within 1% FDR: " + loopPsms.Count(p => p.FdrInfo.QValue <= 0.01 && !p.IsDecoy));
 
             // write deadends
-            var deadendPsms = allPsms.Where(p => p.CrossType == PsmCrossType.DeadEnd 
-                || p.CrossType == PsmCrossType.DeadEndH2O 
-                || p.CrossType == PsmCrossType.DeadEndNH2 
+            var deadendPsms = allPsms.Where(p => p.CrossType == PsmCrossType.DeadEnd
+                || p.CrossType == PsmCrossType.DeadEndH2O
+                || p.CrossType == PsmCrossType.DeadEndNH2
                 || p.CrossType == PsmCrossType.DeadEndTris).ToList();
             if (deadendPsms.Any())
             {
@@ -295,26 +290,6 @@ namespace TaskLayer
                     qValueThreshold = csm.FdrInfo.QValue;
                 }
             }
-        }
-        
-        //Generate user defined crosslinker
-        public static Crosslinker GenerateUserDefinedCrosslinker(XlSearchParameters xlSearchParameters)
-        {
-            var crosslinker = new Crosslinker(
-                xlSearchParameters.CrosslinkerResidues,
-                xlSearchParameters.CrosslinkerResidues2,
-                xlSearchParameters.CrosslinkerName,
-                xlSearchParameters.IsCleavable,
-                xlSearchParameters.CrosslinkerTotalMass ?? double.NaN,
-                xlSearchParameters.CrosslinkerShortMass ?? double.NaN,
-                xlSearchParameters.CrosslinkerLongMass ?? double.NaN,
-                xlSearchParameters.CrosslinkerLoopMass ?? double.NaN,
-                xlSearchParameters.CrosslinkerDeadEndMassH2O ?? double.NaN,
-                xlSearchParameters.CrosslinkerDeadEndMassNH2 ?? double.NaN,
-                xlSearchParameters.CrosslinkerDeadEndMassTris ?? double.NaN
-            );
-
-            return crosslinker;
         }
     }
 }

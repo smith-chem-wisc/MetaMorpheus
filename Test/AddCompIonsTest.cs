@@ -9,7 +9,6 @@ using NUnit.Framework;
 using Proteomics;
 using Proteomics.Fragmentation;
 using Proteomics.ProteolyticDigestion;
-using System;
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
@@ -45,7 +44,7 @@ namespace Test
                 scoreCutoff: 1,
                 addCompIons: false);
             PeptideSpectralMatch[] allPsmsArray = new PeptideSpectralMatch[listOfSortedms2Scans.Length];
-            new ClassicSearchEngine(allPsmsArray, listOfSortedms2Scans, variableModifications, fixedModifications, proteinList, searchModes, CommonParameters, new List<string>()).Run();
+            new ClassicSearchEngine(allPsmsArray, listOfSortedms2Scans, variableModifications, fixedModifications, null, proteinList, searchModes, CommonParameters, new List<string>()).Run();
 
             CommonParameters CommonParameters2 = new CommonParameters(
                 digestionParams: new DigestionParams(protease: protease.Name, maxMissedCleavages: 0, minPeptideLength: 1),
@@ -53,7 +52,7 @@ namespace Test
                 addCompIons: true);
 
             PeptideSpectralMatch[] allPsmsArray2 = new PeptideSpectralMatch[listOfSortedms2Scans.Length];
-            new ClassicSearchEngine(allPsmsArray2, listOfSortedms2Scans, variableModifications, fixedModifications, proteinList, searchModes, CommonParameters2, new List<string>()).Run();
+            new ClassicSearchEngine(allPsmsArray2, listOfSortedms2Scans, variableModifications, fixedModifications, null, proteinList, searchModes, CommonParameters2, new List<string>()).Run();
 
             double scoreT = allPsmsArray2[0].Score;
             double scoreF = allPsmsArray[0].Score;
@@ -80,7 +79,10 @@ namespace Test
             var localizeableModifications = new List<Modification>();
             Dictionary<Modification, ushort> modsDictionary = new Dictionary<Modification, ushort>();
             foreach (var mod in fixedModifications)
+            {
                 modsDictionary.Add(mod, 0);
+            }
+
             int ii = 1;
             foreach (var mod in variableModifications)
             {
@@ -106,7 +108,7 @@ namespace Test
             CommonParameters CommonParameters = new CommonParameters(digestionParams: new DigestionParams(protease: protease.Name, minPeptideLength: 1), scoreCutoff: 1);
             CommonParameters withCompIons = new CommonParameters(digestionParams: new DigestionParams(protease: protease.Name, minPeptideLength: 1), scoreCutoff: 1, addCompIons: true);
 
-            var indexEngine = new IndexingEngine(proteinList, variableModifications, fixedModifications,
+            var indexEngine = new IndexingEngine(proteinList, variableModifications, fixedModifications, null,
                  1, DecoyType.Reverse, CommonParameters, SearchParameters.MaxFragmentSize, false, new List<FileInfo>(), new List<string>());
 
             var indexResults = (IndexingResults)indexEngine.Run();
@@ -204,9 +206,70 @@ namespace Test
             //test the number of the intensity values is doubled
             Assert.IsTrue(matchedIonIntensityT.Count == matchedIonIntensityF.Count * 2);
             foreach (double d in matchedDaErrorF)
+            {
                 Assert.IsTrue(d <= 0.01);
+            }
+
             foreach (double d in matchedDaErrorT)
+            {
                 Assert.IsTrue(d <= 0.01);
+            }
+        }
+
+        [Test]
+        public static void AddCompIonsCommonParams()
+        {
+            CommonParameters cp = new CommonParameters(null, DissociationType.HCD, DissociationType.Unknown, true, true, 3, 12, true, true, 1, 
+                5, 200, 0.01, null, null, false, false, true, false, false, null, null, null, -1, null, null, null, 1, true, 4, 1);
+
+            var myMsDataFile = new TestDataFile();
+            var variableModifications = new List<Modification>();
+            var fixedModifications = new List<Modification>();
+            var localizeableModifications = new List<Modification>();
+            Dictionary<Modification, ushort> modsDictionary = new Dictionary<Modification, ushort>();
+            foreach (var mod in fixedModifications)
+            {
+                modsDictionary.Add(mod, 0);
+            }
+
+            int ii = 1;
+            foreach (var mod in variableModifications)
+            {
+                modsDictionary.Add(mod, (ushort)ii);
+                ii++;
+            }
+            foreach (var mod in localizeableModifications)
+            {
+                modsDictionary.Add(mod, (ushort)ii);
+                ii++;
+            }
+
+            var proteinList = new List<Protein> { new Protein("MNNNKQQQ", null) };
+
+            SearchParameters SearchParameters = new SearchParameters
+            {
+                MassDiffAcceptorType = MassDiffAcceptorType.Exact,
+                SearchTarget = true,
+            };
+            List<DigestionMotif> motifs = new List<DigestionMotif> { new DigestionMotif("K", null, 1, null) };
+            Protease protease = new Protease("Test", CleavageSpecificity.Full, null, null, motifs);
+            ProteaseDictionary.Dictionary.Add(protease.Name, protease);
+
+            var indexEngine = new IndexingEngine(proteinList, variableModifications, fixedModifications, new List<SilacLabel>(),
+                 1, DecoyType.Reverse, cp, SearchParameters.MaxFragmentSize, false, new List<FileInfo>(), new List<string>());
+
+            var indexResults = (IndexingResults)indexEngine.Run();
+
+            Tolerance DeconvolutionMassTolerance = new PpmTolerance(5);
+
+            var listOfSortedms2Scans = MetaMorpheusTask.GetMs2Scans(myMsDataFile, null, new CommonParameters()).OrderBy(b => b.PrecursorMass).ToArray();
+
+            MassDiffAcceptor massDiffAcceptor = SearchTask.GetMassDiffAcceptor(cp.PrecursorMassTolerance, SearchParameters.MassDiffAcceptorType, SearchParameters.CustomMdac);
+
+            // without complementary ions
+            PeptideSpectralMatch[] allPsmsArray = new PeptideSpectralMatch[listOfSortedms2Scans.Length];
+            var mse = new ModernSearchEngine(allPsmsArray, listOfSortedms2Scans, indexResults.PeptideIndex, indexResults.FragmentIndex, 0, cp, massDiffAcceptor, SearchParameters.MaximumMassThatFragmentIonScoreIsDoubled, new List<string>()).Run();
+
         }
     }
 }

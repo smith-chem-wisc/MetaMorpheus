@@ -32,8 +32,14 @@ namespace EngineLayer.CrosslinkSearch
                 foreach (double massToLocalize in massesToLocalize)
                 {
                     Dictionary<int, Modification> testMods = new Dictionary<int, Modification> { { crosslinkerPosition + 1, new Modification(_monoisotopicMass: massToLocalize) } };
+
+                    foreach (var mod in peptide.AllModsOneIsNterminus)
+                    {
+                        testMods.Add(mod.Key, mod.Value);
+                    }
+
                     var testPeptide = new PeptideWithSetModifications(peptide.Protein, peptide.DigestionParams, peptide.OneBasedStartResidueInProtein,
-                        peptide.OneBasedEndResidueInProtein, peptide.CleavageSpecificityForFdrCategory, peptide.PeptideDescription, peptide.MissedCleavages, testMods, peptide.NumFixedMods);
+                    peptide.OneBasedEndResidueInProtein, peptide.CleavageSpecificityForFdrCategory, peptide.PeptideDescription, peptide.MissedCleavages, testMods, peptide.NumFixedMods);
 
                     // add fragmentation ions for this crosslinker position guess
                     foreach (var fragment in testPeptide.Fragment(dissociationType, FragmentationTerminus.Both))

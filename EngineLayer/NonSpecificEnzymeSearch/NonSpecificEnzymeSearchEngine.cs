@@ -21,25 +21,32 @@ namespace EngineLayer.NonSpecificEnzymeSearch
         readonly PeptideSpectralMatch[][] GlobalCategorySpecificPsms;
         readonly CommonParameters ModifiedParametersNoComp;
         readonly List<ProductType> ProductTypesToSearch;
+        readonly List<Modification> VariableTerminalModifications;
 
-        public NonSpecificEnzymeSearchEngine(PeptideSpectralMatch[][] globalPsms, Ms2ScanWithSpecificMass[] listOfSortedms2Scans, List<PeptideWithSetModifications> peptideIndex, List<int>[] fragmentIndex, List<int>[] precursorIndex, int currentPartition, CommonParameters CommonParameters, MassDiffAcceptor massDiffAcceptor, double maximumMassThatFragmentIonScoreIsDoubled, List<string> nestedIds) : base(null, listOfSortedms2Scans, peptideIndex, fragmentIndex, currentPartition, CommonParameters, massDiffAcceptor, maximumMassThatFragmentIonScoreIsDoubled, nestedIds)
+        public NonSpecificEnzymeSearchEngine(PeptideSpectralMatch[][] globalPsms, Ms2ScanWithSpecificMass[] listOfSortedms2Scans,
+            List<PeptideWithSetModifications> peptideIndex, List<int>[] fragmentIndex, List<int>[] precursorIndex, int currentPartition,
+            CommonParameters commonParameters, List<Modification> variableModifications, MassDiffAcceptor massDiffAcceptor, double maximumMassThatFragmentIonScoreIsDoubled, List<string> nestedIds)
+            : base(null, listOfSortedms2Scans, peptideIndex, fragmentIndex, currentPartition, commonParameters, massDiffAcceptor, maximumMassThatFragmentIonScoreIsDoubled, nestedIds)
         {
             PrecursorIndex = precursorIndex;
             MinimumPeptideLength = commonParameters.DigestionParams.MinPeptideLength;
             GlobalCategorySpecificPsms = globalPsms;
             ModifiedParametersNoComp = commonParameters.CloneWithNewTerminus(addCompIons: false);
             ProductTypesToSearch = DissociationTypeCollection.ProductsFromDissociationType[commonParameters.DissociationType].Intersect(TerminusSpecificProductTypes.ProductIonTypesFromSpecifiedTerminus[commonParameters.DigestionParams.FragmentationTerminus]).ToList();
+            VariableTerminalModifications = GetVariableTerminalMods(commonParameters.DigestionParams.FragmentationTerminus, variableModifications);
         }
 
         protected override MetaMorpheusEngineResults RunSpecific()
         {
+            bool semiSpecificSearch = CommonParameters.DigestionParams.SearchModeType == CleavageSpecificity.Semi;
+
             double progress = 0;
             int oldPercentProgress = 0;
-            ReportProgress(new ProgressEventArgs(oldPercentProgress, "Performing nonspecific search... " + CurrentPartition + "/" + commonParameters.TotalPartitions, nestedIds));
+            ReportProgress(new ProgressEventArgs(oldPercentProgress, "Performing nonspecific search... " + CurrentPartition + "/" + CommonParameters.TotalPartitions, NestedIds));
 
-            byte byteScoreCutoff = (byte)commonParameters.ScoreCutoff;
+            byte byteScoreCutoff = (byte)CommonParameters.ScoreCutoff;
 
-            int maxThreadsPerFile = commonParameters.MaxThreadsToUsePerFile;
+            int maxThreadsPerFile = CommonParameters.MaxThreadsToUsePerFile;
             int[] threads = Enumerable.Range(0, maxThreadsPerFile).ToArray();
             Parallel.ForEach(threads, (i) =>
             {
@@ -99,33 +106,33 @@ namespace EngineLayer.NonSpecificEnzymeSearch
                     if (idsOfPeptidesPossiblyObserved.Any())
                     {
                         int maxInitialScore = idsOfPeptidesPossiblyObserved.Max(id => scoringTable[id]) + 1;
-                        while (maxInitialScore > commonParameters.ScoreCutoff) //go through all until we hit the end
+                        while (maxInitialScore > CommonParameters.ScoreCutoff) //go through all until we hit the end
                         {
                             maxInitialScore--;
                             foreach (int id in idsOfPeptidesPossiblyObserved.Where(id => scoringTable[id] == maxInitialScore))
                             {
                                 PeptideWithSetModifications peptide = PeptideIndex[id];
-                                List<Product> peptideTheorProducts = peptide.Fragment(commonParameters.DissociationType, commonParameters.DigestionParams.FragmentationTerminus).ToList();
+                                List<Product> peptideTheorProducts = peptide.Fragment(CommonParameters.DissociationType, CommonParameters.DigestionParams.FragmentationTerminus).ToList();
 
-                                Tuple<int, PeptideWithSetModifications> notchAndUpdatedPeptide = Accepts(peptideTheorProducts, scan.PrecursorMass, peptide, commonParameters.DigestionParams.FragmentationTerminus, MassDiffAcceptor);
+                                Tuple<int, PeptideWithSetModifications> notchAndUpdatedPeptide = Accepts(peptideTheorProducts, scan.PrecursorMass, peptide, CommonParameters.DigestionParams.FragmentationTerminus, MassDiffAcceptor, semiSpecificSearch);
                                 int notch = notchAndUpdatedPeptide.Item1;
                                 if (notch >= 0)
                                 {
                                     peptide = notchAndUpdatedPeptide.Item2;
-                                    peptideTheorProducts = peptide.Fragment(commonParameters.DissociationType, FragmentationTerminus.Both).ToList();
+                                    peptideTheorProducts = peptide.Fragment(CommonParameters.DissociationType, FragmentationTerminus.Both).ToList();
                                     List<MatchedFragmentIon> matchedIons = MatchFragmentIons(scan, peptideTheorProducts, ModifiedParametersNoComp);
 
                                     double thisScore = CalculatePeptideScore(scan.TheScan, matchedIons);
-                                    if (thisScore > commonParameters.ScoreCutoff)
+                                    if (thisScore > CommonParameters.ScoreCutoff)
                                     {
                                         PeptideSpectralMatch[] localPeptideSpectralMatches = GlobalCategorySpecificPsms[(int)FdrClassifier.GetCleavageSpecificityCategory(peptide.CleavageSpecificityForFdrCategory)];
                                         if (localPeptideSpectralMatches[i] == null)
                                         {
-                                            localPeptideSpectralMatches[i] = new PeptideSpectralMatch(peptide, notch, thisScore, i, scan, commonParameters.DigestionParams, matchedIons);
+                                            localPeptideSpectralMatches[i] = new PeptideSpectralMatch(peptide, notch, thisScore, i, scan, CommonParameters.DigestionParams, matchedIons);
                                         }
                                         else
                                         {
-                                            localPeptideSpectralMatches[i].AddOrReplace(peptide, thisScore, notch, commonParameters.ReportAllAmbiguity, matchedIons, 0);
+                                            localPeptideSpectralMatches[i].AddOrReplace(peptide, thisScore, notch, CommonParameters.ReportAllAmbiguity, matchedIons, 0);
                                         }
                                     }
                                 }
@@ -139,23 +146,41 @@ namespace EngineLayer.NonSpecificEnzymeSearch
                     if (percentProgress > oldPercentProgress)
                     {
                         oldPercentProgress = percentProgress;
-                        ReportProgress(new ProgressEventArgs(percentProgress, "Performing nonspecific search... " + CurrentPartition + "/" + commonParameters.TotalPartitions, nestedIds));
+                        ReportProgress(new ProgressEventArgs(percentProgress, "Performing nonspecific search... " + CurrentPartition + "/" + CommonParameters.TotalPartitions, NestedIds));
                     }
                 }
             });
             return new MetaMorpheusEngineResults(this);
         }
 
-        private Tuple<int, PeptideWithSetModifications> Accepts(List<Product> fragments, double scanPrecursorMass, PeptideWithSetModifications peptide, FragmentationTerminus fragmentationTerminus, MassDiffAcceptor searchMode)
+        private Tuple<int, PeptideWithSetModifications> Accepts(List<Product> fragments, double scanPrecursorMass, PeptideWithSetModifications peptide, FragmentationTerminus fragmentationTerminus, MassDiffAcceptor searchMode, bool semiSpecificSearch)
         {
-            //all masses in N and CTerminalMasses are b-ion masses, which are one water away from a full peptide
-            int localminPeptideLength = commonParameters.DigestionParams.MinPeptideLength;
+            int localminPeptideLength = CommonParameters.DigestionParams.MinPeptideLength;
+
+            //Get terminal modifications, if any
+            Dictionary<int, List<Modification>> databaseAnnotatedMods = semiSpecificSearch ? null : GetTerminalModPositions(peptide, CommonParameters.DigestionParams, VariableTerminalModifications);
 
             for (int i = localminPeptideLength - 1; i < fragments.Count; i++) //minus one start, because fragment 1 is at index 0
             {
                 Product fragment = fragments[i];
                 double theoMass = fragment.NeutralMass - DissociationTypeCollection.GetMassShiftFromProductType(fragment.ProductType) + WaterMonoisotopicMass;
                 int notch = searchMode.Accepts(scanPrecursorMass, theoMass);
+
+                //check for terminal mods that might reach the observed mass
+                Modification terminalMod = null;
+                if (!semiSpecificSearch && notch < 0 && databaseAnnotatedMods.TryGetValue(i + 1, out List<Modification> terminalModsAtThisIndex)) //look for i+1, because the mod might exist at the terminus
+                {
+                    foreach (Modification mod in terminalModsAtThisIndex)
+                    {
+                        notch = searchMode.Accepts(scanPrecursorMass, theoMass + mod.MonoisotopicMass.Value); //overwrite the notch, since the other notch wasn't accepted
+                        if (notch >= 0)
+                        {
+                            terminalMod = mod;
+                            break;
+                        }
+                    }
+                }
+
                 if (notch >= 0)
                 {
                     PeptideWithSetModifications updatedPwsm = null;
@@ -170,9 +195,13 @@ namespace EngineLayer.NonSpecificEnzymeSearch
                                 updatedMods.Add(mod.Key, mod.Value);
                             }
                         }
+                        if (terminalMod != null)
+                        {
+                            updatedMods.Add(endResidue, terminalMod);
+                        }
                         updatedPwsm = new PeptideWithSetModifications(peptide.Protein, peptide.DigestionParams, peptide.OneBasedStartResidueInProtein, endResidue, CleavageSpecificity.Unknown, "", 0, updatedMods, 0);
                     }
-                    else
+                    else //if C terminal ions, shave off the n-terminus
                     {
                         int startResidue = peptide.OneBasedEndResidueInProtein - fragment.TerminusFragment.FragmentNumber + 1; //plus one for one based index
                         Dictionary<int, Modification> updatedMods = new Dictionary<int, Modification>();  //updateMods
@@ -185,6 +214,10 @@ namespace EngineLayer.NonSpecificEnzymeSearch
                                 updatedMods.Add(key, mod.Value);
                             }
                         }
+                        if (terminalMod != null)
+                        {
+                            updatedMods.Add(startResidue - 1, terminalMod);
+                        }
                         updatedPwsm = new PeptideWithSetModifications(peptide.Protein, peptide.DigestionParams, startResidue, peptide.OneBasedEndResidueInProtein, CleavageSpecificity.Unknown, "", 0, updatedMods, 0);
                     }
                     return new Tuple<int, PeptideWithSetModifications>(notch, updatedPwsm);
@@ -194,8 +227,9 @@ namespace EngineLayer.NonSpecificEnzymeSearch
                     break;
                 }
             }
-            //if the theoretical and experimental have the same mass
-            if (fragments.Count > localminPeptideLength)
+
+            //if the theoretical and experimental have the same mass or a terminal mod exists
+            if (peptide.BaseSequence.Length >= localminPeptideLength)
             {
                 double totalMass = peptide.MonoisotopicMass;// + Constants.ProtonMass;
                 int notch = searchMode.Accepts(scanPrecursorMass, totalMass);
@@ -204,6 +238,38 @@ namespace EngineLayer.NonSpecificEnzymeSearch
                     //need to update so that the cleavage specificity is recorded
                     PeptideWithSetModifications updatedPwsm = new PeptideWithSetModifications(peptide.Protein, peptide.DigestionParams, peptide.OneBasedStartResidueInProtein, peptide.OneBasedEndResidueInProtein, CleavageSpecificity.Unknown, "", 0, peptide.AllModsOneIsNterminus, peptide.NumFixedMods);
                     return new Tuple<int, PeptideWithSetModifications>(notch, updatedPwsm);
+                }
+                else //try a terminal mod (if it exists)
+                {
+                    if (!semiSpecificSearch && databaseAnnotatedMods.TryGetValue(peptide.Length, out List<Modification> terminalModsAtThisIndex))
+                    {
+                        foreach (Modification terminalMod in terminalModsAtThisIndex)
+                        {
+                            notch = searchMode.Accepts(scanPrecursorMass, totalMass + terminalMod.MonoisotopicMass.Value); //overwrite the notch, since the other notch wasn't accepted
+                            if (notch >= 0)
+                            {
+                                //need to update the mod dictionary and don't want to overwrite the peptide incase it's in other scans
+                                Dictionary<int, Modification> updatedMods = new Dictionary<int, Modification>();  //updateMods
+                                foreach (KeyValuePair<int, Modification> mod in peptide.AllModsOneIsNterminus)
+                                {
+                                    updatedMods.Add(mod.Key, mod.Value);
+                                }
+
+                                //add the terminal mod
+                                if (fragmentationTerminus == FragmentationTerminus.N)
+                                {
+                                    updatedMods[peptide.OneBasedEndResidueInProtein] = terminalMod;
+                                }
+                                else
+                                {
+                                    updatedMods[peptide.OneBasedStartResidueInProtein - 1] = terminalMod;
+                                }
+
+                                PeptideWithSetModifications updatedPwsm = new PeptideWithSetModifications(peptide.Protein, peptide.DigestionParams, peptide.OneBasedStartResidueInProtein, peptide.OneBasedEndResidueInProtein, CleavageSpecificity.Unknown, "", 0, updatedMods, peptide.NumFixedMods);
+                                return new Tuple<int, PeptideWithSetModifications>(notch, updatedPwsm);
+                            }
+                        }
+                    }
                 }
             }
             return new Tuple<int, PeptideWithSetModifications>(-1, null);
@@ -359,6 +425,101 @@ namespace EngineLayer.NonSpecificEnzymeSearch
             }
 
             return bestPsmsList.OrderBy(b => b.FdrInfo.QValue).ThenByDescending(b => b.Score).ToList();
+        }
+
+        public static List<Modification> GetVariableTerminalMods(FragmentationTerminus fragmentationTerminus, List<Modification> variableModifications)
+        {
+            string terminalStringToFind = fragmentationTerminus == FragmentationTerminus.N ? "C-terminal" : "N-terminal"; //if singleN, want to find c-terminal mods and vice-versa
+            return variableModifications == null ?
+                new List<Modification>() :
+                variableModifications.Where(x => x.LocationRestriction.Contains(terminalStringToFind)).ToList();
+        }
+
+        public static Dictionary<int, List<Modification>> GetTerminalModPositions(PeptideWithSetModifications peptide, DigestionParams digestionParams, List<Modification> variableMods)
+        {
+            Dictionary<int, List<Modification>> annotatedTerminalModDictionary = new Dictionary<int, List<Modification>>();
+            bool nTerminus = digestionParams.FragmentationTerminus == FragmentationTerminus.N; //is this the singleN or singleC search?
+
+            //determine the start and end index ranges when considering the minimum peptide length
+            int startResidue = nTerminus ?
+                peptide.OneBasedStartResidueInProtein + digestionParams.MinPeptideLength - 1 :
+                peptide.OneBasedStartResidueInProtein;
+            int endResidue = nTerminus ?
+                peptide.OneBasedEndResidueInProtein :
+                peptide.OneBasedEndResidueInProtein - digestionParams.MinPeptideLength + 1;
+            string terminalStringToFind = nTerminus ? "C-terminal" : "N-terminal"; //if singleN, want to find c-terminal mods and vice-versa
+
+            //get all the mods for this protein
+            IDictionary<int, List<Modification>> annotatedModsForThisProtein = peptide.Protein.OneBasedPossibleLocalizedModifications;
+            //get the possible annotated mods for this peptide
+            List<int> annotatedMods = annotatedModsForThisProtein.Keys.Where(x => x >= startResidue && x <= endResidue).ToList();
+
+            foreach (int index in annotatedMods)
+            {
+                //see which mods are terminal (if any)
+                List<Modification> terminalModsHere = annotatedModsForThisProtein[index].Where(x => x.LocationRestriction.Contains(terminalStringToFind) && x.MonoisotopicMass.HasValue).ToList();
+
+                //if there were terminal mods, record where in the peptide they were and which mods
+                if (terminalModsHere.Count != 0)
+                {
+                    if (nTerminus)
+                    {
+                        annotatedTerminalModDictionary.Add(index - peptide.OneBasedStartResidueInProtein + 1, terminalModsHere);
+                    }
+                    else
+                    {
+                        annotatedTerminalModDictionary.Add(peptide.OneBasedEndResidueInProtein - index + 1, terminalModsHere);
+                    }
+                }
+            }
+
+            //add variable modifications
+            foreach (Modification mod in variableMods)
+            {
+                string modAminoAcid = mod.Target.ToString();
+                int index = peptide.BaseSequence.IndexOf(modAminoAcid);
+                while (index != -1)
+                {
+                    index++;//if index == 0, length is 1
+                    if (nTerminus)
+                    {
+                        //if singleN, then we're looking at C-terminal
+                        if (index >= digestionParams.MinPeptideLength)
+                        {
+                            if (annotatedTerminalModDictionary.ContainsKey(index))
+                            {
+                                annotatedTerminalModDictionary[index].Add(mod);
+                            }
+                            else
+                            {
+                                annotatedTerminalModDictionary.Add(index, new List<Modification> { mod });
+                            }
+                        }
+                    }
+                    else
+                    {
+                        int fragmentIndex = peptide.BaseSequence.Length - index + 1; //if index == 0, length should be the peptide length
+                        //if singleC, then we're looking at N-terminal
+                        if (fragmentIndex >= digestionParams.MinPeptideLength)
+                        {
+                            if (annotatedTerminalModDictionary.ContainsKey(fragmentIndex))
+                            {
+                                annotatedTerminalModDictionary[fragmentIndex].Add(mod);
+                            }
+                            else
+                            {
+                                annotatedTerminalModDictionary.Add(fragmentIndex, new List<Modification> { mod });
+                            }
+                        }
+                        //see if there are more motifs
+                    }
+                    //see if there are more motifs
+                    int subIndex = peptide.BaseSequence.Substring(index).IndexOf(modAminoAcid);
+                    index = subIndex == -1 ? -1 : index + subIndex;
+                }
+            }
+
+            return annotatedTerminalModDictionary;
         }
     }
 }
