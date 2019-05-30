@@ -80,6 +80,13 @@ namespace TaskLayer
                     for (int i = 0; i < SearchParameters.SilacLabels.Count; i++)
                     {
                         SilacLabel currentLabel = SearchParameters.SilacLabels[i];
+                        //make sure we're not overwriting something. , , and if it's a valid residue (not a motif/delimiter)
+                        while((Residue.TryGetResidue(heavyLabel, out Residue residue) //Check if the amino acid exists. If it already exists, we don't want to overwrite it
+                            && !residue.ThisChemicalFormula.Formula.Equals(currentLabel.LabelChemicalFormula)) //if it exists but it's already the label (so we're not overwriting anything), then we're fine
+                            || GlobalVariables.InvalidAminoAcids.Contains(heavyLabel)) //If it didn't already exist, but it's invalid, we need to keep going
+                        {
+                            heavyLabel++;
+                        }
                         SilacLabel updatedLabel = SilacConversions.AssignValidHeavyCharacter(currentLabel, heavyLabel);
                         heavyLabel++;
                         if (currentLabel.AdditionalLabels != null)
@@ -241,7 +248,7 @@ namespace TaskLayer
 
                             Status("Searching files...", taskId);
 
-                            new NonSpecificEnzymeSearchEngine(fileSpecificPsmsSeparatedByFdrCategory, arrayOfMs2ScansSortedByMass, peptideIndex, fragmentIndex, precursorIndex, currentPartition, paramToUse, massDiffAcceptor, SearchParameters.MaximumMassThatFragmentIonScoreIsDoubled, thisId).Run();
+                            new NonSpecificEnzymeSearchEngine(fileSpecificPsmsSeparatedByFdrCategory, arrayOfMs2ScansSortedByMass, peptideIndex, fragmentIndex, precursorIndex, currentPartition, paramToUse, variableModifications, massDiffAcceptor, SearchParameters.MaximumMassThatFragmentIonScoreIsDoubled, thisId).Run();
 
                             ReportProgress(new ProgressEventArgs(100, "Done with search " + (currentPartition + 1) + "/" + paramToUse.TotalPartitions + "!", thisId));
                             if (GlobalVariables.StopLoops) { break; }
