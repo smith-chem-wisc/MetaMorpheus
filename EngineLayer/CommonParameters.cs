@@ -17,9 +17,9 @@ namespace EngineLayer
         {
         }
 
-        public CommonParameters(string taskDescriptor = null, DissociationType dissociationType = DissociationType.HCD, bool doPrecursorDeconvolution = true,
+        public CommonParameters(string taskDescriptor = null, DissociationType dissociationType = DissociationType.HCD, DissociationType childScanDissociationType = DissociationType.Unknown, bool doPrecursorDeconvolution = true,
             bool useProvidedPrecursorInfo = true, double deconvolutionIntensityRatio = 3, int deconvolutionMaxAssumedChargeState = 12, bool reportAllAmbiguity = true,
-            bool addCompIons = false, int totalPartitions = 1, double scoreCutoff = 5, int topNpeaks = 200, double minRatio = 0.01, bool trimMs1Peaks = false,
+            bool addCompIons = false, int totalPartitions = 1, double scoreCutoff = 5, int? numberOfPeaksToKeepPerWindow = 200, double? minimumAllowedIntensityRatioToBasePeak = 0.01, double? windowWidthThomsons = null, int? numberOfWindows = null, bool normalizePeaksAccrossAllWindows = false, bool trimMs1Peaks = false,
             bool trimMsMsPeaks = true, bool useDeltaScore = false, bool calculateEValue = false, Tolerance productMassTolerance = null, Tolerance precursorMassTolerance = null, Tolerance deconvolutionMassTolerance = null,
             int maxThreadsToUsePerFile = -1, DigestionParams digestionParams = null, IEnumerable<(string, string)> listOfModsVariable = null, IEnumerable<(string, string)> listOfModsFixed = null, double qValueOutputFilter = 1.0,
             bool assumeOrphanPeaksAreZ1Fragments = true, int maxHeterozygousVariants = 4, int minVariantDepth = 1)
@@ -33,8 +33,11 @@ namespace EngineLayer
             AddCompIons = addCompIons;
             TotalPartitions = totalPartitions;
             ScoreCutoff = scoreCutoff;
-            TopNpeaks = topNpeaks;
-            MinRatio = minRatio;
+            NumberOfPeaksToKeepPerWindow = numberOfPeaksToKeepPerWindow;
+            MinimumAllowedIntensityRatioToBasePeak = minimumAllowedIntensityRatioToBasePeak;
+            WindowWidthThomsons = windowWidthThomsons;
+            NumberOfWindows = numberOfWindows;
+            NormalizePeaksAccrossAllWindows = normalizePeaksAccrossAllWindows;
             TrimMs1Peaks = trimMs1Peaks;
             TrimMsMsPeaks = trimMsMsPeaks;
             UseDeltaScore = useDeltaScore;
@@ -48,6 +51,7 @@ namespace EngineLayer
             ListOfModsVariable = listOfModsVariable ?? new List<(string, string)> { ("Common Variable", "Oxidation on M") };
             ListOfModsFixed = listOfModsFixed ?? new List<(string, string)> { ("Common Fixed", "Carbamidomethyl on C"), ("Common Fixed", "Carbamidomethyl on U") };
             DissociationType = dissociationType;
+            ChildScanDissociationType = childScanDissociationType;
 
             CustomIons = DissociationTypeCollection.ProductsFromDissociationType[DissociationType.Custom];
             // reset custom fragmentation product types to default empty list
@@ -66,6 +70,8 @@ namespace EngineLayer
         //    the null setting will not be written to a toml
         //    and the default will override (so it's okay ONLY if the default is null)
         // 2) All setters should be private unless necessary
+        // 3) If you add a new property here, you must add it to MetaMorpheusTask.cs/SetAllFileSpecificCommonParams !!
+        //    If you forget this, and the user uses file-specific parameters, your settings will be overwritten by default values!
 
         public string TaskDescriptor { get; private set; }
         public int MaxThreadsToUsePerFile { get; private set; }
@@ -83,19 +89,23 @@ namespace EngineLayer
         public double ScoreCutoff { get; private set; }
         public DigestionParams DigestionParams { get; private set; }
         public bool ReportAllAmbiguity { get; private set; }
-        public int TopNpeaks { get; private set; }
-        public double MinRatio { get; private set; }
+        public int? NumberOfPeaksToKeepPerWindow { get; private set; }
+        public double? MinimumAllowedIntensityRatioToBasePeak { get; private set; }
+        public double? WindowWidthThomsons { get; private set; }
+        public int? NumberOfWindows { get; private set; }
+        public bool NormalizePeaksAccrossAllWindows { get; private set; }
         public bool TrimMs1Peaks { get; private set; }
         public bool TrimMsMsPeaks { get; private set; }
         public bool UseDeltaScore { get; private set; }
         public bool CalculateEValue { get; private set; }
-        public double QValueOutputFilter { get; private set; }
-        public DissociationType DissociationType { get; private set; }
+        public double QValueOutputFilter { get; private set; }    
         public List<ProductType> CustomIons { get; private set; }
         public bool AssumeOrphanPeaksAreZ1Fragments { get; private set; }
         public int MaxHeterozygousVariants { get; private set; }
         public int MinVariantDepth { get; private set; }
-
+        public DissociationType DissociationType { get; private set; }
+        public DissociationType ChildScanDissociationType { get; private set; }
+        
         public CommonParameters Clone()
         {
             CommonParameters c = new CommonParameters();
@@ -119,6 +129,7 @@ namespace EngineLayer
             return new CommonParameters(
                                 TaskDescriptor,
                                 DissociationType,
+                                ChildScanDissociationType,
                                 DoPrecursorDeconvolution,
                                 UseProvidedPrecursorInfo,
                                 DeconvolutionIntensityRatio,
@@ -127,8 +138,11 @@ namespace EngineLayer
                                 addCompIons.Value,//possibly changed
                                 TotalPartitions,
                                 ScoreCutoff,
-                                TopNpeaks,
-                                MinRatio,
+                                NumberOfPeaksToKeepPerWindow,
+                                MinimumAllowedIntensityRatioToBasePeak,
+                                WindowWidthThomsons,
+                                NumberOfWindows,
+                                NormalizePeaksAccrossAllWindows,
                                 TrimMs1Peaks,
                                 TrimMsMsPeaks,
                                 UseDeltaScore,

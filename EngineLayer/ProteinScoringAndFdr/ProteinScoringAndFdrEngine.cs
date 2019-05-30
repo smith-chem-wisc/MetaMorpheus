@@ -78,7 +78,7 @@ namespace EngineLayer
             {
                 proteinGroup.Score();
             }
-            
+
             if (MergeIndistinguishableProteinGroups)
             {
                 // merge protein groups that are indistinguishable after scoring
@@ -117,11 +117,22 @@ namespace EngineLayer
             if (NoOneHitWonders)
             {
                 if (TreatModPeptidesAsDifferentPeptides)
-                    proteinGroups = proteinGroups.Where(p => p.IsDecoy || new HashSet<string>(p.AllPeptides.Select(x => x.FullSequence)).Count > 1).ToList();
+                {
+                    proteinGroups = proteinGroups.Where(p => p.AllPeptides.GroupBy(x => x.FullSequence).Count() > 1).ToList();
+                }
                 else
-                    proteinGroups = proteinGroups.Where(p => p.IsDecoy || new HashSet<string>(p.AllPeptides.Select(x => x.BaseSequence)).Count > 1).ToList();
+                {
+                    proteinGroups = proteinGroups.Where(p => p.AllPeptides.GroupBy(x => x.BaseSequence).Count() > 1).ToList();
+                }
             }
 
+            //Do Classic protein FDR (all targets, all decoys)
+            // order protein groups by notch-QValue
+            var sortedProteinGroups = proteinGroups.OrderBy(b => b.BestPeptideQValue).ThenByDescending(p => p.BestPeptideScore).ToList();
+            AssignQValuesToProteins(sortedProteinGroups);
+
+            // Do "Picked" protein FDR
+            // adapted from "A Scalable Approach for Protein False Discovery Rate Estimation in Large Proteomic Data Sets" ~ MCP, 2015, Savitski
             // pair decoys and targets by accession
             // then use the best peptide notch-QValue as the score for the protein group
             Dictionary<string, List<ProteinGroup>> accessionToProteinGroup = new Dictionary<string, List<ProteinGroup>>();
@@ -129,12 +140,16 @@ namespace EngineLayer
             {
                 foreach (var protein in pg.Proteins)
                 {
-                    string stippedAccession = StripDecoyIdentifier(protein.Accession);
+                    string stippedAccession = StripDecoyIdentifier(protein.Accession); //remove "DECOY_" from the accession
 
                     if (accessionToProteinGroup.TryGetValue(stippedAccession, out List<ProteinGroup> groups))
+                    {
                         groups.Add(pg);
+                    }
                     else
+                    {
                         accessionToProteinGroup.Add(stippedAccession, new List<ProteinGroup> { pg });
+                    }
                 }
 
                 pg.BestPeptideScore = pg.AllPsmsBelowOnePercentFDR.Max(psm => psm.Score);
@@ -142,6 +157,8 @@ namespace EngineLayer
             }
 
             // pick the best notch-QValue for each paired accession
+            // this compares target-decoy pairs for each protein and saves the highest scoring group
+            List<ProteinGroup> rescuedProteins = new List<ProteinGroup>();
             foreach (var accession in accessionToProteinGroup)
             {
                 if (accession.Value.Count > 1)
@@ -149,30 +166,59 @@ namespace EngineLayer
                     var pgList = accession.Value.OrderBy(p => p.BestPeptideQValue).ThenByDescending(p => p.BestPeptideScore).ToList();
                     var pgToUse = pgList.First(); // pick lowest notch QValue and remove the rest
                     pgList.Remove(pgToUse);
-                    proteinGroups = proteinGroups.Except(pgList).ToList();
+                    rescuedProteins.AddRange(pgList); //save the remaining protein groups
+                    proteinGroups = proteinGroups.Except(pgList).ToList(); //remove the remaining protein groups
                 }
             }
 
-            // order protein groups by notch-QValue
-            var sortedProteinGroups = proteinGroups.OrderBy(b => b.BestPeptideQValue).ThenByDescending(p => p.BestPeptideScore).ToList();
+            sortedProteinGroups = proteinGroups.OrderBy(b => b.BestPeptideQValue).ThenByDescending(p => p.BestPeptideScore).ToList();
+            AssignQValuesToProteins(sortedProteinGroups);
 
-            // calculate protein QValues
+            //Rescue the removed TARGET proteins that have the classic protein fdr.
+            //This isn't super transparent, but the "Picked" TDS (target-decoy strategy) does a good job of removing a lot of decoys from accumulating in large datasets.
+            //It sounds biased, but the Picked TDS is actually necessary to keep the chance of a random assignment being assigned as a target or a decoy at 50:50.
+            //The targets that we're re-adding have higher q-values (for their score) from the Classic TDS than the Picked TDS (the classic is conservative).
+            //If we add the decoys, it will raise questions on if the FDR is being calculated correctly, 
+            //because lots of decoys (which are out-competed in the Picked TDS) will be written with high(ish) scores
+            //so really, we're only outputting targets for a cleanliness of output (but the decoys are still there for the classic TDS)
+            //TL;DR 99% of the protein output is from the Picked TDS, but a small fraction is from the Classic TDS.
+            sortedProteinGroups.AddRange(rescuedProteins.Where(x => !x.IsDecoy));
+
+            return sortedProteinGroups.OrderBy(b => b.QValue).ToList();
+        }
+
+        private void AssignQValuesToProteins(List<ProteinGroup> sortedProteinGroups)
+        {
+            // sum targets and decoys
             int cumulativeTarget = 0;
             int cumulativeDecoy = 0;
 
             foreach (var proteinGroup in sortedProteinGroups)
             {
                 if (proteinGroup.IsDecoy)
+                {
                     cumulativeDecoy++;
+                }
                 else
+                {
                     cumulativeTarget++;
-
+                }
                 proteinGroup.CumulativeTarget = cumulativeTarget;
                 proteinGroup.CumulativeDecoy = cumulativeDecoy;
-                proteinGroup.QValue = (double)cumulativeDecoy / cumulativeTarget;
             }
 
-            return sortedProteinGroups;
+            //calculate q-values, assuming that q-values can never decrease with decreasing score
+            double maxQValue = double.PositiveInfinity;
+            for (int i = sortedProteinGroups.Count - 1; i >= 0; i--)
+            {
+                ProteinGroup proteinGroup = sortedProteinGroups[i];
+                double currentQValue = 1d * proteinGroup.CumulativeDecoy / proteinGroup.CumulativeTarget;
+                if (currentQValue < maxQValue)
+                {
+                    maxQValue = currentQValue;
+                }
+                proteinGroup.QValue = maxQValue;
+            }
         }
     }
 }
