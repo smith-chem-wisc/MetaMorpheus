@@ -229,7 +229,7 @@ namespace EngineLayer.NonSpecificEnzymeSearch
             }
 
             //if the theoretical and experimental have the same mass or a terminal mod exists
-            if (peptide.BaseSequence.Length > localminPeptideLength)
+            if (peptide.BaseSequence.Length >= localminPeptideLength)
             {
                 double totalMass = peptide.MonoisotopicMass;// + Constants.ProtonMass;
                 int notch = searchMode.Accepts(scanPrecursorMass, totalMass);
