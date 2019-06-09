@@ -19,14 +19,14 @@ namespace EngineLayer
             //TODO: create a method to auto-determine the conversion
         };
 
-        protected readonly CommonParameters commonParameters;
+        protected readonly CommonParameters CommonParameters;
 
-        protected readonly List<string> nestedIds;
+        protected readonly List<string> NestedIds;
 
         protected MetaMorpheusEngine(CommonParameters commonParameters, List<string> nestedIds)
         {
-            this.commonParameters = commonParameters;
-            this.nestedIds = nestedIds;
+            CommonParameters = commonParameters;
+            NestedIds = nestedIds;
         }
 
         public static event EventHandler<SingleEngineEventArgs> StartingSingleEngineHander;
@@ -170,17 +170,17 @@ namespace EngineLayer
 
         public string GetId()
         {
-            return string.Join(",", nestedIds);
+            return string.Join(",", NestedIds);
         }
 
         protected void Warn(string v)
         {
-            WarnHandler?.Invoke(this, new StringEventArgs(v, nestedIds));
+            WarnHandler?.Invoke(this, new StringEventArgs(v, NestedIds));
         }
 
         protected void Status(string v)
         {
-            OutLabelStatusHandler?.Invoke(this, new StringEventArgs(v, nestedIds));
+            OutLabelStatusHandler?.Invoke(this, new StringEventArgs(v, NestedIds));
         }
 
         protected void ReportProgress(ProgressEventArgs v)

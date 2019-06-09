@@ -49,14 +49,14 @@
                         <StackPanel>
                             <GroupBox Header="Deisotoping">
                                 <StackPanel>
-                                    <CheckBox x:Name="useProvidedPrecursor" Content="Use Provided Precursor" IsChecked="True" ToolTipService.ShowDuration="999999" ToolTipService.InitialShowDelay="500">
+                                    <CheckBox x:Name="UseProvidedPrecursor" Content="Use Provided Precursor" IsChecked="True" ToolTipService.ShowDuration="999999" ToolTipService.InitialShowDelay="500">
                                         <CheckBox.ToolTip>
                                             <TextBlock>
                                                 Use the charge states and precursor masses determined by the instrument controller.
                                             </TextBlock>
                                         </CheckBox.ToolTip>
                                     </CheckBox>
-                                    <CheckBox x:Name="deconvolutePrecursors" Content="Deconvolute Precursors" IsChecked="True" ToolTipService.ShowDuration="999999" ToolTipService.InitialShowDelay="500">
+                                    <CheckBox x:Name="DeconvolutePrecursors" Content="Deconvolute Precursors" IsChecked="True" ToolTipService.ShowDuration="999999" ToolTipService.InitialShowDelay="500">
                                         <CheckBox.ToolTip>
                                             <TextBlock>
                                                 Additionally searches for coisolated peptides, allowing for multiple peptides to be identified from a single MS2.
@@ -77,12 +77,12 @@
                             </GroupBox>
                             <GroupBox Header="Peak Trimming">
                                 <StackPanel>
-                                    <CheckBox x:Name="trimMs1" Content="Trim MS1 Peaks" IsChecked="True" ToolTipService.ShowDuration="999999" ToolTipService.InitialShowDelay="500">
+                                    <CheckBox x:Name="TrimMs1" Content="Trim MS1 Peaks" IsChecked="True" ToolTipService.ShowDuration="999999" ToolTipService.InitialShowDelay="500">
                                         <ToolTipService.ToolTip>
                                             <ToolTip Content="Remove low-intensity MS1 peaks using the below settings" />
                                         </ToolTipService.ToolTip>
                                     </CheckBox>
-                                    <CheckBox x:Name="trimMsMs" Content="Trim MS2 Peaks" IsChecked="True" ToolTipService.ShowDuration="999999" ToolTipService.InitialShowDelay="500">
+                                    <CheckBox x:Name="TrimMsMs" Content="Trim MS2 Peaks" IsChecked="True" ToolTipService.ShowDuration="999999" ToolTipService.InitialShowDelay="500">
                                         <ToolTipService.ToolTip>
                                             <ToolTip Content="Remove low-intensity MS2 peaks using the below settings" />
                                         </ToolTipService.ToolTip>
@@ -119,7 +119,7 @@
                                 <StackPanel>
                                     <StackPanel Orientation="Horizontal" Margin="5">
                                         <Label x:Name="precursorMassToleranceLabel" Content="Precursor Mass Tolerance" />
-                                        <TextBox x:Name="precursorMassToleranceTextBox" PreviewTextInput="CheckIfNumber" HorizontalAlignment="Left" TextWrapping="Wrap" Width="45" ToolTipService.ShowDuration="999999" ToolTipService.InitialShowDelay="500">
+                                        <TextBox x:Name="PrecursorMassToleranceTextBox" PreviewTextInput="CheckIfNumber" HorizontalAlignment="Left" TextWrapping="Wrap" Width="45" ToolTipService.ShowDuration="999999" ToolTipService.InitialShowDelay="500">
                                             <TextBox.ToolTip>
                                                 <TextBlock>
                                             Accepted tolerance between experimental and theoretical MS1 peaks.
@@ -128,13 +128,13 @@
                                                 </TextBlock>
                                             </TextBox.ToolTip>
                                         </TextBox>
-                                        <ComboBox x:Name="precursorMassToleranceComboBox" HorizontalAlignment="Left" />
+                                        <ComboBox x:Name="PrecursorMassToleranceComboBox" HorizontalAlignment="Left" />
                                     </StackPanel>
                                 </StackPanel>
                                 <StackPanel Grid.Column="1">
                                     <StackPanel Orientation="Horizontal" Margin="5">
                                         <Label x:Name="productMassToleranceLabel" Content="Product Mass Tolerance" />
-                                        <TextBox x:Name="productMassToleranceTextBox" PreviewTextInput="CheckIfNumber" HorizontalAlignment="Left" TextWrapping="Wrap" Width="45" ToolTipService.ShowDuration="999999" ToolTipService.InitialShowDelay="500">
+                                        <TextBox x:Name="ProductMassToleranceTextBox" PreviewTextInput="CheckIfNumber" HorizontalAlignment="Left" TextWrapping="Wrap" Width="45" ToolTipService.ShowDuration="999999" ToolTipService.InitialShowDelay="500">
                                             <TextBox.ToolTip>
                                                 <TextBlock>
                                                     Accepted tolerance between experimental and theoretical MS2 peaks.
@@ -143,7 +143,7 @@
                                                 </TextBlock>
                                             </TextBox.ToolTip>
                                         </TextBox>
-                                        <ComboBox x:Name="productMassToleranceComboBox" HorizontalAlignment="Left" />
+                                        <ComboBox x:Name="ProductMassToleranceComboBox" HorizontalAlignment="Left" />
                                     </StackPanel>
                                 </StackPanel>
                             </Grid>
@@ -155,7 +155,7 @@
                                 <StackPanel>
                                     <StackPanel Orientation="Horizontal" Margin="5">
                                         <Label x:Name="maxMissedCleavageLabel" Content="Max Missed Cleavages" />
-                                        <TextBox x:Name="missedCleavagesTextBox" PreviewTextInput="CheckIfNumber" Width="45" ToolTipService.ShowDuration="999999" ToolTipService.InitialShowDelay="500">
+                                        <TextBox x:Name="MissedCleavagesTextBox" PreviewTextInput="CheckIfNumber" Width="45" ToolTipService.ShowDuration="999999" ToolTipService.InitialShowDelay="500">
                                             <TextBox.ToolTip>
                                                 <TextBlock>
                                                     Maximum number of missed proteolytic cleavages allowed.
@@ -165,7 +165,7 @@
                                     </StackPanel>
                                     <StackPanel Orientation="Horizontal" Margin="5">
                                         <Label x:Name="proteaseLabel" Content="Protease" />
-                                        <ComboBox x:Name="proteaseComboBox" ToolTipService.ShowDuration="999999" ToolTipService.InitialShowDelay="500">
+                                        <ComboBox x:Name="ProteaseComboBox" ToolTipService.ShowDuration="999999" ToolTipService.InitialShowDelay="500">
                                             <ComboBox.ToolTip>
                                                 <TextBlock>
                                                         Protease used for digestion.
@@ -217,7 +217,7 @@
                                     </StackPanel>
                                     <StackPanel Orientation="Horizontal" Margin="5">
                                         <Label x:Name="minimumScoreLabel" Content="Minimum score allowed:" />
-                                        <TextBox x:Name="minScoreAllowed" PreviewTextInput="CheckIfNumber" Width="45" ToolTipService.ShowDuration="999999" ToolTipService.InitialShowDelay="500">
+                                        <TextBox x:Name="MinScoreAllowed" PreviewTextInput="CheckIfNumber" Width="45" ToolTipService.ShowDuration="999999" ToolTipService.InitialShowDelay="500">
                                             <TextBox.ToolTip>
                                                 <TextBlock>
                                                     The minimum MetaMorpheus score allowed for a PSM to be reportable.
@@ -231,7 +231,7 @@
                                 <StackPanel Grid.Column="1">
                                     <StackPanel Orientation="Horizontal" Margin="5">
                                         <Label x:Name="initiatorMethionineLabel" Content="Initiator Methionine" />
-                                        <ComboBox x:Name="initiatorMethionineBehaviorComboBox" ToolTipService.ShowDuration="999999" ToolTipService.InitialShowDelay="500">
+                                        <ComboBox x:Name="InitiatorMethionineBehaviorComboBox" ToolTipService.ShowDuration="999999" ToolTipService.InitialShowDelay="500">
                                             <ComboBox.ToolTip>
                                                 <TextBlock>
                                                         Assumed cleavage of the initiator Methionine present at the beginning of most proteins (start codon).
@@ -241,12 +241,31 @@
                                     </StackPanel>
                                     <StackPanel Orientation="Horizontal" Margin="5">
                                         <Label x:Name="maxModificationIsoformsLabel" Content="Max Modification Isoforms" />
-                                        <TextBox x:Name="maxModificationIsoformsTextBox" PreviewTextInput="CheckIfNumber" Width="45" ToolTipService.ShowDuration="999999" ToolTipService.InitialShowDelay="500">
+                                        <TextBox x:Name="MaxModificationIsoformsTextBox" PreviewTextInput="CheckIfNumber" Width="45" ToolTipService.ShowDuration="999999" ToolTipService.InitialShowDelay="500">
                                             <TextBox.ToolTip>
                                                 <TextBlock>
                                                         The maximum number of isoforms (sequences with modifications) allowed from a given unmodified "base-sequence". 
                                                         <LineBreak/>
                                                         This prevents highly ambiguous regions from greatly expanding the search space.
+                                                </TextBlock>
+                                            </TextBox.ToolTip>
+                                        </TextBox>
+                                    </StackPanel>
+                                    <StackPanel Orientation="Horizontal" Margin="5">
+                                        <Label x:Name="MaxModsPerPeptideLabel" Content="Max Mods Per Peptide Before GPTMD" />
+                                        <TextBox x:Name="MaxModsPerPeptideTextBox" PreviewTextInput="CheckIfNumber" Width="45" ToolTipService.ShowDuration="999999" ToolTipService.InitialShowDelay="500">
+                                            <TextBox.ToolTip>
+                                                <TextBlock>
+                                                        The maximum number of modifications allowed on a single iteration of a given peptide sequence. 
+                                                        <LineBreak/>
+                                                        This parameters influences how many mods can exist on a peptide BEFORE GPTMD.
+                                                     <LineBreak/>
+                                                     <LineBreak/>
+                                                        MAX MODS ASSINGED BY GPTMD:
+                                                     <LineBreak/>
+                                                        The current implementation does not allow more than one modification to be discovered in a single identification EXCEPT for those with mass differences annotated in "...\\MetaMorpheus\\Data\\combos.txt".
+                                                    <LineBreak/>
+                                                        In MetaMorpheus near the top left, click "Data", select "Open folder with mods/data files", and open the "Data" folder.
                                                 </TextBlock>
                                             </TextBox.ToolTip>
                                         </TextBox>
@@ -263,7 +282,7 @@
                                     </StackPanel>
                                     <StackPanel Orientation="Horizontal" Margin="5">
                                         <Label Content="Max Threads" />
-                                        <TextBox x:Name="maxThreadsTextBox" PreviewTextInput="CheckIfNumber" Width="45" ToolTipService.ShowDuration="999999" ToolTipService.InitialShowDelay="500">
+                                        <TextBox x:Name="MaxThreadsTextBox" PreviewTextInput="CheckIfNumber" Width="45" ToolTipService.ShowDuration="999999" ToolTipService.InitialShowDelay="500">
                                             <TextBox.ToolTip>
                                                 <TextBlock>
                                                         By default, MetaMorpheus uses this machine's number of threads minus one to maximize search speed while letting you use your computer for other purposes.
@@ -274,7 +293,7 @@
                                         </TextBox>
                                     </StackPanel>
                                     <StackPanel Orientation="Horizontal" Margin="5">
-                                        <CheckBox x:Name="addCompIonCheckBox" Content="Generate Complementary Ions" ToolTipService.ShowDuration="999999" ToolTipService.InitialShowDelay="500">
+                                        <CheckBox x:Name="AddCompIonCheckBox" Content="Generate Complementary Ions" ToolTipService.ShowDuration="999999" ToolTipService.InitialShowDelay="500">
                                             <CheckBox.ToolTip>
                                                 <TextBlock>
                                                     Generates experimental (not theoretical) complementary ions for each MS2.
@@ -448,7 +467,7 @@
                                     </TextBox.Style>
                                 </TextBox>
                             </StackPanel>
-                            <StackPanel Grid.Column="0" Grid.Row="1">
+                            <StackPanel Grid.Column="0" Grid.Row="2">
                                 <TreeView x:Name="gptmdModsTreeView" ItemsSource="{Binding}" DataContext="{x:Type local:ModTypeForTreeView}" Height="400">
                                     <TreeView.Resources>
                                         <HierarchicalDataTemplate DataType="{x:Type local:ModTypeForTreeView}" ItemsSource="{Binding Children}">
