@@ -7,6 +7,7 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
+using MassSpectrometry;
 
 namespace EngineLayer.CrosslinkSearch
 {
@@ -28,9 +29,10 @@ namespace EngineLayer.CrosslinkSearch
         private Modification NH2DeadEnd;
         private Modification Loop;
         private readonly char[] AllCrosslinkerSites;
+        private readonly List<int>[] SecondFragmentIndex;
 
         public CrosslinkSearchEngine(CrosslinkSpectralMatch[] globalCsms, Ms2ScanWithSpecificMass[] listOfSortedms2Scans, List<PeptideWithSetModifications> peptideIndex,
-            List<int>[] fragmentIndex, int currentPartition, CommonParameters commonParameters, Crosslinker crosslinker, bool CrosslinkSearchTop, int CrosslinkSearchTopNum,
+            List<int>[] fragmentIndex, List<int>[] secondFragmentIndex, int currentPartition, CommonParameters commonParameters, Crosslinker crosslinker, bool CrosslinkSearchTop, int CrosslinkSearchTopNum,
             bool quench_H2O, bool quench_NH2, bool quench_Tris, List<string> nestedIds)
             : base(null, listOfSortedms2Scans, peptideIndex, fragmentIndex, currentPartition, commonParameters, new OpenSearchMode(), 0, nestedIds)
         {
@@ -41,6 +43,11 @@ namespace EngineLayer.CrosslinkSearch
             this.QuenchH2O = quench_H2O;
             this.QuenchNH2 = quench_NH2;
             this.QuenchTris = quench_Tris;
+            SecondFragmentIndex = secondFragmentIndex;
+            if (CommonParameters.ChildScanDissociationType!=DissociationType.Unknown && DissociationTypeGenerateSameTypeOfIons(CommonParameters.DissociationType, CommonParameters.ChildScanDissociationType))
+            {
+                SecondFragmentIndex = FragmentIndex;
+            }
             GenerateCrosslinkModifications(crosslinker);
             AllCrosslinkerSites = Crosslinker.CrosslinkerModSites.ToCharArray().Concat(Crosslinker.CrosslinkerModSites2.ToCharArray()).Distinct().ToArray();
 
@@ -68,6 +75,8 @@ namespace EngineLayer.CrosslinkSearch
             {
                 byte[] scoringTable = new byte[PeptideIndex.Count];
                 List<int> idsOfPeptidesPossiblyObserved = new List<int>();
+                byte[] secondScoringTable = new byte[PeptideIndex.Count];
+                List<int> childIdsOfPeptidesPossiblyObserved = new List<int>();
 
                 for (; scanIndex < ListOfSortedMs2Scans.Length; scanIndex += maxThreadsPerFile)
                 {
@@ -80,11 +89,38 @@ namespace EngineLayer.CrosslinkSearch
                     var scan = ListOfSortedMs2Scans[scanIndex];
 
                     // get fragment bins for this scan
-                    List<int> allBinsToSearch = GetBinsToSearch(scan);
+                    List<int> allBinsToSearch = GetBinsToSearch(scan, FragmentIndex, CommonParameters.DissociationType);
                     List<BestPeptideScoreNotch> bestPeptideScoreNotchList = new List<BestPeptideScoreNotch>();
 
                     // first-pass scoring
-                    IndexedScoring(allBinsToSearch, scoringTable, byteScoreCutoff, idsOfPeptidesPossiblyObserved, scan.PrecursorMass, Double.NegativeInfinity, Double.PositiveInfinity, PeptideIndex, MassDiffAcceptor, 0, CommonParameters.DissociationType);
+                    IndexedScoring(FragmentIndex, allBinsToSearch, scoringTable, byteScoreCutoff, idsOfPeptidesPossiblyObserved, scan.PrecursorMass, Double.NegativeInfinity, Double.PositiveInfinity, PeptideIndex, MassDiffAcceptor, 0, CommonParameters.DissociationType);
+
+                    //child scan first-pass scoring
+                    if (scan.ChildScans != null && CommonParameters.ChildScanDissociationType != DissociationType.LowCID)
+                    {
+                        Array.Clear(secondScoringTable, 0, secondScoringTable.Length);
+                        childIdsOfPeptidesPossiblyObserved.Clear();
+
+                        List<int> childBinsToSearch = new List<int>();
+     
+                        foreach (var aChildScan in scan.ChildScans)
+                        {
+
+                            var x = GetBinsToSearch(aChildScan, SecondFragmentIndex, CommonParameters.ChildScanDissociationType);
+                            childBinsToSearch.AddRange(x);
+                        }
+
+                        IndexedScoring(SecondFragmentIndex, childBinsToSearch, secondScoringTable, byteScoreCutoff, childIdsOfPeptidesPossiblyObserved, scan.PrecursorMass, Double.NegativeInfinity, Double.PositiveInfinity, PeptideIndex, MassDiffAcceptor, 0, CommonParameters.ChildScanDissociationType);
+
+                        foreach (var childId in childIdsOfPeptidesPossiblyObserved)
+                        {
+                            if (!idsOfPeptidesPossiblyObserved.Contains(childId))
+                            {
+                                idsOfPeptidesPossiblyObserved.Add(childId);
+                            }
+                            scoringTable[childId] = (byte)(scoringTable[childId] + secondScoringTable[childId]);
+                        }
+                    }
 
                     // done with indexed scoring; refine scores and create PSMs
                     if (idsOfPeptidesPossiblyObserved.Any())
@@ -583,6 +619,32 @@ namespace EngineLayer.CrosslinkSearch
             };
 
             return csm;
+        }
+
+        //TO DO: A better method can be implemented in mzLib.
+        public static bool DissociationTypeGenerateSameTypeOfIons(DissociationType d, DissociationType childD)
+        {
+            if (d == childD)
+            {
+                return true;
+            }
+            if (d == MassSpectrometry.DissociationType.CID && childD == MassSpectrometry.DissociationType.HCD)
+            {
+                return true;
+            }
+            if (d == MassSpectrometry.DissociationType.HCD && childD == MassSpectrometry.DissociationType.CID)
+            {
+                return true;
+            }
+            if (d == MassSpectrometry.DissociationType.ETD && childD == MassSpectrometry.DissociationType.ECD)
+            {
+                return true;
+            }
+            if (d == MassSpectrometry.DissociationType.ECD && childD == MassSpectrometry.DissociationType.ETD)
+            {
+                return true;
+            }
+            return false;
         }
     }
 }
