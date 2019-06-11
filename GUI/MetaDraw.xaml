@@ -188,7 +188,7 @@
                 </DockPanel>
             </TabItem>
 
-            <!--Stats tab-->
+            <!--Stats tab--><!--
             <TabItem Header="Stats" Background="DarkGray">
                 <DockPanel>
                     <Grid>
@@ -198,7 +198,7 @@
                             <ColumnDefinition Width="3*"/>
                         </Grid.ColumnDefinitions>
 
-                        <!--Left area is for loading files, displaying plot types, etc-->
+                        --><!--Left area is for loading files, displaying plot types, etc--><!--
                         <Grid Grid.Column="0">
                             <Grid.RowDefinitions>
                                 <RowDefinition Height="5*"/>
@@ -207,7 +207,7 @@
                                 <RowDefinition Height="5*"/>
                             </Grid.RowDefinitions>
 
-                            <!--Select MetaMorpheus output file-->
+                            --><!--Select MetaMorpheus output file--><!--
                             <DockPanel Grid.Row="0" LastChildFill="True">
                                 <Label Content="PSMTSV file: " Width="120" />
                                 <Button Name="selectPsmFileButtonStat" Content="Select" DockPanel.Dock="Right" Click="selectPsmFileButton_Click" Width="45" />
@@ -220,7 +220,7 @@
                                 <Button Name="loadFilesStat" Content="Load File" Width="100" Click="loadFilesButtonStat_Click"/>
                             </DockPanel>
 
-                            <!--List of plot options-->
+                            --><!--List of plot options--><!--
                             <GroupBox Header="Plot Type" Name="plotType" Grid.Row="2">
                                 <ListView x:Name="plotsListBox" ItemsSource="{Binding}" SelectionChanged ="PlotSelected" MaxHeight="400"/>
                             </GroupBox>
@@ -230,7 +230,7 @@
                             </DockPanel>
                         </Grid>
 
-                        <!--Loading progress popup-->
+                        --><!--Loading progress popup--><!--
                         <Popup IsOpen="False" x:Name="prgsFeedStat" Height="80" Width="300" PlacementTarget="{Binding ElementName=MetaDrawWindow}" Placement="Center" Grid.ColumnSpan="3" Margin="168.884,230,658.275,231.6" Grid.Column="3">
                             <Border Background="LightGray" CornerRadius="2" Height="78" Width="298" HorizontalAlignment="Center" VerticalAlignment="Center">
                                 <StackPanel Height="78" Background="LightGray">
@@ -240,20 +240,20 @@
                             </Border>
                         </Popup>
 
-                        <!--Moveable splitter-->
+                        --><!--Moveable splitter--><!--
                         <GridSplitter Grid.Column="1" 
                           HorizontalAlignment="Center"
                           VerticalAlignment="Stretch"
                           Background="Silver"
                           Width="2"/>
 
-                        <!--Plot-->
+                        --><!--Plot--><!--
                         <GroupBox Grid.Column="2" Header="Plot">
                             <oxy:PlotView Grid.Row="0" x:Name="plotViewStat" Model="{Binding Model}" FontSize="16" FontStretch="Expanded" BorderBrush="LightGray" Grid.ColumnSpan="2"/>
                         </GroupBox>
                     </Grid>
                 </DockPanel>
-            </TabItem>
+            </TabItem>-->
         </TabControl>
     </Grid>
 </Window>
