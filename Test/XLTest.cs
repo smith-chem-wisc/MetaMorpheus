@@ -633,9 +633,9 @@ namespace Test
 
             // test child scan (ETD)
             Assert.That(csm.ChildMatchedFragmentIons.First().Key == 3);
-            Assert.That(csm.ChildMatchedFragmentIons.First().Value.Count == 12);
+            Assert.That(csm.ChildMatchedFragmentIons.First().Value.Count == 22);
             Assert.That(csm.BetaPeptide.ChildMatchedFragmentIons.First().Key == 3);
-            Assert.That(csm.BetaPeptide.ChildMatchedFragmentIons.First().Value.Count == 17);
+            Assert.That(csm.BetaPeptide.ChildMatchedFragmentIons.First().Value.Count == 25);
 
             // write results to TSV
             csm.SetFdrValues(1, 0, 0, 0, 0, 0, 0, 0, 0, false);
@@ -646,11 +646,11 @@ namespace Test
 
             Assert.That(psmFromTsv.ChildScanMatchedIons.Count == 1
                 && psmFromTsv.ChildScanMatchedIons.First().Key == 3
-                && psmFromTsv.ChildScanMatchedIons.First().Value.Count == 12);
+                && psmFromTsv.ChildScanMatchedIons.First().Value.Count == 22);
 
             Assert.That(psmFromTsv.BetaPeptideChildScanMatchedIons.Count == 1
                 && psmFromTsv.BetaPeptideChildScanMatchedIons.First().Key == 3
-                && psmFromTsv.BetaPeptideChildScanMatchedIons.First().Value.Count == 17);
+                && psmFromTsv.BetaPeptideChildScanMatchedIons.First().Value.Count == 25);
 
             File.Delete(outputFile);
         }

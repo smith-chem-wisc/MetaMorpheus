@@ -59,6 +59,8 @@ namespace EngineLayer
                 }
                 return cleaveDissociationTypes;
             }
+
+            set { } // TODO: I don't know what to put here. maybe this is OK?
         }
         public double TotalMass { get; set; }
         public double CleaveMassShort { get; set; }
