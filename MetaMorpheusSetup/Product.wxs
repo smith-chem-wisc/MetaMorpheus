@@ -257,14 +257,29 @@
       <Component Id="src_System.Xml.XPath.XDocument.dll" Guid="70f63556-f331-4c08-ac9f-3515dacbf0e9">
         <File Id="src_System.Xml.XPath.XDocument.dll" Name="System.Xml.XPath.XDocument.dll" Source="$(var.GUI_TargetDir)System.Xml.XPath.XDocument.dll" />
       </Component>
-      <Component Id="src_OxyPlot.dll">
+      <Component Id="src_OxyPlot.dll" Guid="1B25D408-13DB-4A9E-A49E-B0A7FC8C05A6">
         <File Id="src_OxyPlot.dll" Name="OxyPlot.dll" Source="$(var.GUI_TargetDir)OxyPlot.dll" />
       </Component>
-      <Component Id="src_OxyPlot.Wpf.dll">
+      <Component Id="src_OxyPlot.Wpf.dll" Guid="2052508D-D83C-45D7-8C9C-9211F97A8949">
         <File Id="src_OxyPlot.Wpf.dll" Name="OxyPlot.Wpf.dll" Source="$(var.GUI_TargetDir)OxyPlot.Wpf.dll" />
       </Component>
-      <Component Id="src_itextsharp.dll">
+      <Component Id="src_itextsharp.dll" Guid="C790C1B4-E2BC-4644-8925-6F9CD73E5D75">
         <File Id="src_itextsharp.dll" Name="itextsharp.dll" Source="$(var.GUI_TargetDir)itextsharp.dll" />
+      </Component>
+      <Component Id="src_ThermoFisher.CommonCore.BackgroundSubtraction.dll" Guid="F3DA60DB-CF5F-4671-9F3C-1033780261DD">
+        <File Id="src_ThermoFisher.CommonCore.BackgroundSubtraction.dll" Name="ThermoFisher.CommonCore.BackgroundSubtraction.dll" Source="$(var.GUI_TargetDir)ThermoFisher.CommonCore.BackgroundSubtraction.dll" />
+      </Component>
+      <Component Id="src_ThermoFisher.CommonCore.Data.dll" Guid="E711A739-AE5D-4DB9-9B14-0E4A8281CD20">
+        <File Id="src_ThermoFisher.CommonCore.Data.dll" Name="ThermoFisher.CommonCore.Data.dll" Source="$(var.GUI_TargetDir)ThermoFisher.CommonCore.Data.dll" />
+      </Component>
+      <Component Id="src_ThermoFisher.CommonCore.MassPrecisionEstimator.dll" Guid="03803256-C0A9-4DE8-9923-574E4BA2DEBA">
+        <File Id="src_ThermoFisher.CommonCore.MassPrecisionEstimator.dll" Name="ThermoFisher.CommonCore.MassPrecisionEstimator.dll" Source="$(var.GUI_TargetDir)ThermoFisher.CommonCore.MassPrecisionEstimator.dll" />
+      </Component>
+      <Component Id="src_ThermoFisher.CommonCore.RawFileReader.dll" Guid="F5EDAA70-06CD-49E7-932F-016C679B07C7">
+        <File Id="src_ThermoFisher.CommonCore.RawFileReader.dll" Name="ThermoFisher.CommonCore.RawFileReader.dll" Source="$(var.GUI_TargetDir)ThermoFisher.CommonCore.RawFileReader.dll" />
+      </Component>
+      <Component Id="src_ThermoRawFileReader.dll" Guid="4BE9A662-4CD1-4E5B-8234-0734036A007E">
+        <File Id="src_ThermoRawFileReader.dll" Name="ThermoRawFileReader.dll" Source="$(var.GUI_TargetDir)ThermoRawFileReader.dll" />
       </Component>
     </ComponentGroup>
   </Fragment>

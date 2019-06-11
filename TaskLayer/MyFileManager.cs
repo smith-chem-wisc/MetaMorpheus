@@ -16,6 +16,7 @@ using System.Diagnostics;
 using System.IO;
 using System.Linq;
 using System.IO.Compression;
+using ThermoRawFileReader;
 
 namespace TaskLayer
 {
@@ -100,6 +101,8 @@ namespace TaskLayer
                 }
                 else
                 {
+                    //MyMsDataFiles[origDataFile] = ThermoRawFileReaderData.LoadAllStaticData(origDataFile, filter, maxThreads: 1);
+
 #if NETFRAMEWORK
                     MyMsDataFiles[origDataFile] = ThermoStaticData.LoadAllStaticData(origDataFile, filter);
 #else
