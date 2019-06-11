@@ -24,7 +24,7 @@ namespace Test
     {
         private static IndexingResults indexResults { get; set; }
         private static CommonParameters commonParameters { get; set; }
-        private static XlSearchParameters xlSearchParameters { get; set; }
+         private static XlSearchParameters xlSearchParameters { get; set; }
         private static List<Protein> proteinList { get; set; }
         private static List<Modification> variableModifications { get; set; }
         private static List<Modification> fixedModifications { get; set; }
@@ -589,7 +589,7 @@ namespace Test
 
             csms[0].SetFdrValues(0, 0, 0.1, 0, 0, 0, 0, 0, 0, false);
 
-            WriteFile.WritePepXML_xl(csms.ToList(), new List<Protein>(), "", new List<Modification> { deadend }, new List<Modification> { deadend }, new List<string>(), TestContext.CurrentContext.TestDirectory, "test", commonParameters, xlSearchParameters);
+            WriteFile.WritePepXML_xl(csms.ToList(), new List<Protein>(), "", new List<Modification> { deadend }, new List<Modification> { deadend }, new List<string>(), TestContext.CurrentContext.TestDirectory, "test", new CommonParameters(), new XlSearchParameters { Crosslinker = crosslinker });
             File.Delete(Path.Combine(TestContext.CurrentContext.TestDirectory, @"test.pep.XML"));
         }
 
@@ -633,9 +633,9 @@ namespace Test
 
             // test child scan (ETD)
             Assert.That(csm.ChildMatchedFragmentIons.First().Key == 3);
-            Assert.That(csm.ChildMatchedFragmentIons.First().Value.Count == 12);
+            Assert.That(csm.ChildMatchedFragmentIons.First().Value.Count == 22);
             Assert.That(csm.BetaPeptide.ChildMatchedFragmentIons.First().Key == 3);
-            Assert.That(csm.BetaPeptide.ChildMatchedFragmentIons.First().Value.Count == 17);
+            Assert.That(csm.BetaPeptide.ChildMatchedFragmentIons.First().Value.Count == 25);
 
             // write results to TSV
             csm.SetFdrValues(1, 0, 0, 0, 0, 0, 0, 0, 0, false);
@@ -646,11 +646,11 @@ namespace Test
 
             Assert.That(psmFromTsv.ChildScanMatchedIons.Count == 1
                 && psmFromTsv.ChildScanMatchedIons.First().Key == 3
-                && psmFromTsv.ChildScanMatchedIons.First().Value.Count == 12);
+                && psmFromTsv.ChildScanMatchedIons.First().Value.Count == 22);
 
             Assert.That(psmFromTsv.BetaPeptideChildScanMatchedIons.Count == 1
                 && psmFromTsv.BetaPeptideChildScanMatchedIons.First().Key == 3
-                && psmFromTsv.BetaPeptideChildScanMatchedIons.First().Value.Count == 17);
+                && psmFromTsv.BetaPeptideChildScanMatchedIons.First().Value.Count == 25);
 
             File.Delete(outputFile);
         }

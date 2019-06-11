@@ -11,7 +11,7 @@ using System.Xml.Serialization;
 
 namespace TaskLayer
 {
-    public class WriteFile
+    public static class WriteFile
     {
         public static void WritePsmCrossToTsv(List<CrosslinkSpectralMatch> items, string filePath, int writeType)
         {

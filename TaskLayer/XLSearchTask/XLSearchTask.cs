@@ -13,7 +13,7 @@ using System;
 
 namespace TaskLayer
 {
-    public partial class XLSearchTask : MetaMorpheusTask
+    public class XLSearchTask : MetaMorpheusTask
     {
         public XLSearchTask() : base(MyTask.XLSearch)
         {
@@ -121,9 +121,8 @@ namespace TaskLayer
 
             PostXLSearchAnalysisTask postXLSearchAnalysisTask = new PostXLSearchAnalysisTask();
 
-            postXLSearchAnalysisTask.Run(OutputFolder, dbFilenameList, currentRawFileList, taskId, fileSettingsList, allPsms, CommonParameters, XlSearchParameters, proteinList, variableModifications, fixedModifications, localizeableModificationTypes);
-
-            return MyTaskResults;
+            return postXLSearchAnalysisTask.Run(OutputFolder, dbFilenameList, currentRawFileList, taskId, fileSettingsList, allPsms, CommonParameters, XlSearchParameters, proteinList, variableModifications, fixedModifications, localizeableModificationTypes, MyTaskResults);
+           
         }
     }
 }

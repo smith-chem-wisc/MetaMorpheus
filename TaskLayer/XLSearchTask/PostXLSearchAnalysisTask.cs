@@ -24,10 +24,8 @@ namespace TaskLayer
             return null;
         }
 
-        public void Run(string OutputFolder, List<DbForTask> dbFilenameList, List<string> currentRawFileList, string taskId, FileSpecificParameters[] fileSettingsList, List<CrosslinkSpectralMatch> allPsms, CommonParameters commonParameters, XlSearchParameters xlSearchParameters, List<Protein> proteinList, List<Modification> variableModifications, List<Modification> fixedModifications, List<string> localizeableModificationTypes)
+        public MyTaskResults Run(string OutputFolder, List<DbForTask> dbFilenameList, List<string> currentRawFileList, string taskId, FileSpecificParameters[] fileSettingsList, List<CrosslinkSpectralMatch> allPsms, CommonParameters commonParameters, XlSearchParameters xlSearchParameters, List<Protein> proteinList, List<Modification> variableModifications, List<Modification> fixedModifications, List<string> localizeableModificationTypes, MyTaskResults MyTaskResults)
         {
-            MyTaskResults = new MyTaskResults(this);
-
             var allPsmsXL = allPsms.Where(p => p.CrossType == PsmCrossType.Cross).ToList();
 
             // inter-crosslinks; different proteins are linked
@@ -143,6 +141,7 @@ namespace TaskLayer
                 }
             }
 
+            return MyTaskResults;
         }
 
         //Calculate the FDR of single peptide FP/TP
