@@ -12,6 +12,7 @@ using System;
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
+using System.Reflection;
 using TaskLayer;
 using UsefulProteomicsDatabases;
 
@@ -343,6 +344,13 @@ namespace Test
 
             Directory.Delete(outputFolder, true);
             Directory.Delete(Path.Combine(TestContext.CurrentContext.TestDirectory, @"Task Settings"), true);
+        }
+
+        [Test]
+        public static void PsmtsvTest()
+        {
+            Type type = typeof(PsmFromTsv);
+            PropertyInfo[] properties = type.GetProperties();
         }
     }
 }

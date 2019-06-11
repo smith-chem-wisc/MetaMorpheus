@@ -356,6 +356,11 @@
         <RegistryValue Root="HKCU" Key="Software\SmithGroup\MetaMorpheus" Name="installed" Type="integer" Value="1" KeyPath="yes"/>
         <File ReadOnly="no" Id="Appsrc_Data_elements.dat" Name="elements.dat" Source="$(var.GUI_TargetDir)Data\elements.dat" />
       </Component>
+      <Component Id="Appsrc_Data_Crosslinkers.tsv" Guid="9F0C2C0A-FF6E-4714-BEF3-3E739B6573D2">
+        <Condition>OVERWRITEAPPDATA</Condition>
+        <RegistryValue Root="HKCU" Key="Software\SmithGroup\MetaMorpheus" Name="installed" Type="integer" Value="1" KeyPath="yes"/>
+        <File ReadOnly="no" Id="Appsrc_Crosslinkers.tsv" Name="Crosslinkers.tsv" Source="$(var.GUI_TargetDir)Data\Crosslinkers.tsv" />
+      </Component>
     </ComponentGroup>
   </Fragment>
 

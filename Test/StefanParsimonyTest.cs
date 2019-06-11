@@ -193,5 +193,45 @@ namespace Test
             Assert.That(results.SortedAndScoredProteinGroups.First().Proteins.Count == 1);
             Assert.That(!results.SortedAndScoredProteinGroups.First().IsDecoy);
         }
+
+        [Test]
+        public static void TopPickedFdrTest()
+        {
+            //Test that the decoy beats out the target for FDR, but that the target still gets written.
+
+            Protein fillerProtein = new Protein("FILLR", "filler");
+            Protein targetProtein = new Protein("KFDSA", "protein");
+            Protein decoyProtein = new Protein("ASDFK", "DECOY_protein", isDecoy: true);
+
+            IEnumerable<Modification> allKnownFixedModifications = new List<Modification>();
+            DigestionParams digestionParams = new DigestionParams(minPeptideLength: 5);
+            List<Modification> variableModifications = new List<Modification>();
+            PeptideWithSetModifications fillerPep = fillerProtein.Digest(digestionParams, allKnownFixedModifications, variableModifications).First();
+            PeptideWithSetModifications targetPep = targetProtein.Digest(digestionParams, allKnownFixedModifications, variableModifications).First();
+            PeptideWithSetModifications decoyPep = decoyProtein.Digest(digestionParams, allKnownFixedModifications, variableModifications).First();
+
+            // build the dictionary for input to parsimony
+            MsDataScan dfb = new MsDataScan(new MzSpectrum(new double[] { 1 }, new double[] { 1 }, false), 0, 1, true, Polarity.Positive, double.NaN, null, null, MZAnalyzerType.Orbitrap, double.NaN, null, null, "scan=1", double.NaN, null, null, double.NaN, null, DissociationType.AnyActivationType, 0, null);
+            Ms2ScanWithSpecificMass scan = new Ms2ScanWithSpecificMass(dfb, 2, 0, "File", new CommonParameters());
+
+            List<PeptideSpectralMatch> psms = new List<PeptideSpectralMatch>
+            {
+                new PeptideSpectralMatch(fillerPep,0,30,0, scan, new DigestionParams(), new List<MatchedFragmentIon>()),
+                new PeptideSpectralMatch(decoyPep,0,15.11,0, scan, new DigestionParams(), new List<MatchedFragmentIon>()),
+                new PeptideSpectralMatch(targetPep,0,15.1,0, scan, new DigestionParams(), new List<MatchedFragmentIon>())
+            };
+
+            psms.ForEach(p => p.ResolveAllAmbiguities());
+            psms.ForEach(p => p.SetFdrValues(0, 0, 0, 0, 0, 0, 0, 0, 0, false));
+
+            // apply parsimony
+            ProteinParsimonyEngine pae = new ProteinParsimonyEngine(psms, false, new CommonParameters(), new List<string>());
+            ProteinParsimonyResults proteinParsimonyResult = (ProteinParsimonyResults)pae.Run();
+            ProteinScoringAndFdrEngine proteinScoringEngine = new ProteinScoringAndFdrEngine(proteinParsimonyResult.ProteinGroups, psms, false, true, true, new CommonParameters(), new List<string>());
+            ProteinScoringAndFdrResults results = (ProteinScoringAndFdrResults)proteinScoringEngine.Run();
+
+            Assert.IsTrue(results.SortedAndScoredProteinGroups.Count == 3);
+            Assert.IsTrue(results.SortedAndScoredProteinGroups[1].QValue == 0.5);
+        }
     }
 }

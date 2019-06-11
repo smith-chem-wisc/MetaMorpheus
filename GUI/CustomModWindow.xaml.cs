@@ -14,11 +14,11 @@ namespace MetaMorpheusGUI
     /// <summary>
     /// Interaction logic for AddCustomModWindow.xaml
     /// </summary>
-    public partial class CustomModButtonWindow : Window
+    public partial class CustomModWindow : Window
     {
         public static Dictionary<string, string> locationRestrictions;
 
-        public CustomModButtonWindow()
+        public CustomModWindow()
         {
             InitializeComponent();
 
