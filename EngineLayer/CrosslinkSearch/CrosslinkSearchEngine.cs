@@ -628,19 +628,19 @@ namespace EngineLayer.CrosslinkSearch
             {
                 return true;
             }
-            if (d == MassSpectrometry.DissociationType.CID && childD == MassSpectrometry.DissociationType.HCD)
+            if (d == DissociationType.CID && childD == DissociationType.HCD)
             {
                 return true;
             }
-            if (d == MassSpectrometry.DissociationType.HCD && childD == MassSpectrometry.DissociationType.CID)
+            if (d == DissociationType.HCD && childD == DissociationType.CID)
             {
                 return true;
             }
-            if (d == MassSpectrometry.DissociationType.ETD && childD == MassSpectrometry.DissociationType.ECD)
+            if (d == DissociationType.ETD && childD == DissociationType.ECD)
             {
                 return true;
             }
-            if (d == MassSpectrometry.DissociationType.ECD && childD == MassSpectrometry.DissociationType.ETD)
+            if (d == DissociationType.ECD && childD == DissociationType.ETD)
             {
                 return true;
             }
