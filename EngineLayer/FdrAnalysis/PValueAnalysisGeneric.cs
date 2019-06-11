@@ -4,6 +4,7 @@ using Microsoft.ML.Data;
 using Proteomics.ProteolyticDigestion;
 using System;
 using System.Collections.Generic;
+using System.IO;
 using System.Linq;
 using System.Text;
 using static Microsoft.ML.DataOperationsCatalog;
@@ -15,9 +16,10 @@ namespace EngineLayer
         public static string ComputePValuesForAllPSMsGeneric(List<PeptideSpectralMatch> psms)
         {
             Dictionary<string, int> accessionAppearances = GetAccessionCounts(psms);
+            Dictionary<string, int> sequenceToPsmCount = GetSequenceToPSMCount(psms);
 
             MLContext mlContext = new MLContext();
-            IDataView dataView = mlContext.Data.LoadFromEnumerable(CreatePsmData(psms, accessionAppearances));
+            IDataView dataView = mlContext.Data.LoadFromEnumerable(CreatePsmData(psms, accessionAppearances, sequenceToPsmCount));
 
             TrainTestData trainTestSplit = mlContext.Data.TrainTestSplit(dataView, testFraction: 0.1);
             IDataView trainingData = trainTestSplit.TrainSet;
@@ -31,6 +33,11 @@ namespace EngineLayer
 
             var predictionEngine = mlContext.Model.CreatePredictionEngine<PsmData, TruePositivePrediction>(trainedModel);
 
+            string ambiguousScans = "";
+
+            List<string> someOut = new List<string>();
+            someOut.Add("Accessions|Ambiguity|DeltaScore|Intensity|Label|LongestSeries|MissedCleavages|ModsCount|Notch|PsmCount|PrecursorCharge|call|pValue|Score|QValue");
+
             foreach (PeptideSpectralMatch psm in psms)
             {
                 if (psm != null)
@@ -43,7 +50,12 @@ namespace EngineLayer
                     //Here we compute the pValue predection for each ambiguous peptide in a PSM. Ambiguous peptides with lower pValue predictions are removed from the PSM.
                     foreach (var (Notch, Peptide) in psm.BestMatchingPeptides)
                     {
-                        var pValuePrediction = predictionEngine.Predict(CreateOnePsmDataFromPsm2(psm, Notch, Peptide, accessionAppearances));
+                        PsmData pd = CreateOnePsmDataFromPsm2(psm, Notch, Peptide, accessionAppearances, sequenceToPsmCount);
+
+                        var pValuePrediction = predictionEngine.Predict(pd);
+
+                        someOut.Add(pd.AccessionAppearances.ToString() + "|" + pd.Ambiguity.ToString() + "|" + pd.DeltaScore.ToString() + "|" + pd.Intensity.ToString() + "|" + pd.Label + "|" + pd.LongestFragmentIonSeries + "|" + pd.MissedCleavagesCount + "|" + pd.ModsCount + "|" + pd.Notch + "|" + pd.PsmCount + "|" + pd.ScanPrecursorCharge + "|" + pValuePrediction.Prediction + "|" + pValuePrediction.Probability + "|" + pValuePrediction.Score);
+
                         pValuePredictions.Add(pValuePrediction.Probability);
                         pValuePredictionStrings.Add(pValuePrediction.Prediction + "|" + pValuePrediction.Probability + "|" + pValuePrediction.Score);
                     }
@@ -73,12 +85,15 @@ namespace EngineLayer
 
                     foreach (var (notch, pwsm) in bestMatchingPeptidesToRemove)
                     {
+                        ambiguousScans = ambiguousScans + psm.ScanNumber + "|";
                         psm.RemoveThisAmbiguousePeptide(notch, pwsm);
                     }
 
                     psm.PValueInfo = pValuePredictionStrings[0];
                 }
             }
+
+            File.WriteAllLines(@"C:\Users\Michael Shortreed\Downloads\psmDataVAlues.txt", someOut, System.Text.Encoding.UTF8);
 
             var predictions = trainedModel.Transform(testData);
 
@@ -96,6 +111,27 @@ namespace EngineLayer
             //if you want to save a model, you can use this example
             //mlContext.Model.Save(trainedModel, trainingData.Schema, @"C:\Users\User\Downloads\TrainedModel.zip");
         }
+
+        private static Dictionary<string, int> GetSequenceToPSMCount(List<PeptideSpectralMatch> psms)
+        {
+            Dictionary<string, int> sequenceToPsmCount = new Dictionary<string, int>();
+
+            List<string> sequences = new List<string>();
+            foreach (PeptideSpectralMatch psm in psms)
+            {
+                var ss = psm.BestMatchingPeptides.Select(b => b.Peptide.FullSequence).ToList();
+                sequences.Add(String.Join("|", ss));
+            }
+
+            var s = sequences.GroupBy(i => i);
+
+            foreach (var grp in s)
+            {
+                sequenceToPsmCount.Add(grp.Key, grp.Count());
+            }
+            return sequenceToPsmCount;
+        }
+
         /// <summary>
         /// This method goes throught the complete set of peptide spectral matches and counts the number of appearances for each accession number.
         /// This includes all of the ambiguous entries. So, if one peptide spectral match has three peptides with three accessions, all are counted.
@@ -132,7 +168,7 @@ namespace EngineLayer
         }
 
         //This method ignores ambiguity and loads only the first peptide in a series for each PSM
-        public static IEnumerable<PsmData> CreatePsmData(List<PeptideSpectralMatch> psms, Dictionary<string, int> accessionAppearances, bool? trueOrFalse = null)
+        public static IEnumerable<PsmData> CreatePsmData(List<PeptideSpectralMatch> psms, Dictionary<string, int> accessionAppearances, Dictionary<string, int> sequenceToPsmCount, bool? trueOrFalse = null)
         {
             List<PsmData> pd = new List<PsmData>();
             foreach (PeptideSpectralMatch psm in psms)
@@ -145,28 +181,34 @@ namespace EngineLayer
                 else if (psm.IsDecoy || psm.FdrInfo.QValue > 0.25)
                 {
                     label = false;
-                    pd.Add(CreateOnePsmDataFromPsm(psm, accessionAppearances, label));
+                    pd.Add(CreateOnePsmDataFromPsm(psm, accessionAppearances, sequenceToPsmCount, label));
                 }
                 else if (!psm.IsDecoy && psm.FdrInfo.QValue <= 0.01)
                 {
                     label = true;
-                    pd.Add(CreateOnePsmDataFromPsm(psm, accessionAppearances, label));
+                    pd.Add(CreateOnePsmDataFromPsm(psm, accessionAppearances, sequenceToPsmCount, label));
                 }
             }
             return pd.AsEnumerable();
         }
 
-        public static PsmData CreateOnePsmDataFromPsm2(PeptideSpectralMatch psm, int notch, PeptideWithSetModifications firstPeptide, Dictionary<string, int> accessionCounts, bool? trueOrFalse = null)
+        public static PsmData CreateOnePsmDataFromPsm2(PeptideSpectralMatch psm, int notch, PeptideWithSetModifications firstPeptide, Dictionary<string, int> accessionCounts, Dictionary<string, int> sequenceToPsmCount, bool? trueOrFalse = null)
         {
             //todo: consider adding a count for the number of times a peptides protein accession appears in the list. proteins with more psms should be favored
 
-            float ambiguity = (float)psm.PeptidesToMatchingFragments.Count;//(psm.BaseSequence.Split('|').Count());
+            float ambiguity = (float)psm.PeptidesToMatchingFragments.Keys.Count;//(psm.BaseSequence.Split('|').Count());
             float intensity = (float)(psm.Score - (int)psm.Score);
             float charge = psm.ScanPrecursorCharge;
             float deltaScore = (float)psm.DeltaScore;
 
-            float psmCount = Convert.ToInt32(psm.PsmCount);
-            float modCount = firstPeptide.AllModsOneIsNterminus.Values.Count();
+            float psmCount = sequenceToPsmCount[String.Join("|", psm.BestMatchingPeptides.Select(p => p.Peptide.FullSequence).ToList())];
+            float modCount = firstPeptide.AllModsOneIsNterminus.Keys.Count();
+
+            if(modCount > 10)
+            {
+                int dd = 4;
+                dd++;
+            }
 
             //todo: for non-specific cleavage, ignore missed cleavages
             float missedCleavages = firstPeptide.MissedCleavages;
@@ -206,7 +248,7 @@ namespace EngineLayer
             };
         }
 
-        public static PsmData CreateOnePsmDataFromPsm(PeptideSpectralMatch psm, Dictionary<string, int> accessionCounts, bool? trueOrFalse = null)
+        public static PsmData CreateOnePsmDataFromPsm(PeptideSpectralMatch psm, Dictionary<string, int> accessionCounts, Dictionary<string, int> sequenceToPsmCount, bool? trueOrFalse = null)
         {
             //todo: consider adding a count for the number of times a peptides protein accession appears in the list. proteins with more psms should be favored
 
@@ -221,9 +263,9 @@ namespace EngineLayer
                 notch = psm.Notch.Value;
             }
 
-            float psmCount = Convert.ToInt32(psm.PsmCount);
+            float psmCount = sequenceToPsmCount[String.Join("|",psm.BestMatchingPeptides.Select(p=>p.Peptide.FullSequence).ToList())];
             var firstPeptide = psm.BestMatchingPeptides.Select(p => p.Peptide).First();
-            float modCount = firstPeptide.AllModsOneIsNterminus.Values.Count();
+            float modCount = firstPeptide.AllModsOneIsNterminus.Keys.Count();
 
             //todo: for non-specific cleavage, ignore missed cleavages
             float missedCleavages = firstPeptide.MissedCleavages;

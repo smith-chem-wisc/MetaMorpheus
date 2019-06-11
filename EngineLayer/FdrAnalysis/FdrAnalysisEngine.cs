@@ -166,14 +166,15 @@ namespace EngineLayer.FdrAnalysis
             if (AnalysisType == "PSM")
             {
                 CountPsm();
+                //TODO figure when to use a model and when to generate a new one.
+                if (CalculatePValue)
+                {
+                    myAnalysisResults.BinarySearchTreeMetrics = PValueAnalysisGeneric.ComputePValuesForAllPSMsGeneric(AllPsms);
+                    Compute_PValue_Based_QValue(AllPsms);
+                }
             }
 
-            //TODO figure when to use a model and when to generate a new one.
-            if (CalculatePValue)
-            {
-                myAnalysisResults.BinarySearchTreeMetrics = PValueAnalysisGeneric.ComputePValuesForAllPSMsGeneric(AllPsms);
-                Compute_PValue_Based_QValue(AllPsms);
-            }
+            
         }
 
         public static void Compute_PValue_Based_QValue(List<PeptideSpectralMatch> psms)

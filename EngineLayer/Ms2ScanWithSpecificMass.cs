@@ -31,6 +31,7 @@ namespace EngineLayer
         public double PrecursorMass { get; }
         public int PrecursorCharge { get; }
         public string FullFilePath { get; }
+        public double PrecursorIntensity { get; set; }
         public IsotopicEnvelope[] ExperimentalFragments { get; private set; }
         public List<Ms2ScanWithSpecificMass> ChildScans { get; set; } // MS2/MS3 scans that are children of this MS2 scan
         private double[] DeconvolutedMonoisotopicMasses;

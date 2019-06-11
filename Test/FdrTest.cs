@@ -207,12 +207,30 @@ namespace Test
             FdrAnalysisResults fdrResultsClassicDelta = (FdrAnalysisResults)(new FdrAnalysisEngine(allPsmsArray.Where(p => p != null).ToList(), 1, CommonParameters, new List<string>()).Run());
 
             var nonNullPsms = allPsmsArray.Where(p => p != null).ToList();
-
+            var nonNullPsmsOriginalCopy = allPsmsArray.Where(p => p != null).ToList();
             var accessionCounts = PValueAnalysisGeneric.GetAccessionCounts(nonNullPsms);
 
-            var maxScore = nonNullPsms.Select(s => s.Score).Max();
-            var maxScorePsm = nonNullPsms.Where(s => s.Score == maxScore).First();
-            var maxPsmData = PValueAnalysisGeneric.CreateOnePsmDataFromPsm(maxScorePsm, accessionCounts);
+            var maxScore = nonNullPsms.Select(n => n.Score).Max();
+            var maxScorePsm = nonNullPsms.Where(n => n.Score == maxScore).First();
+
+
+            Dictionary<string, int> sequenceToPsmCount = new Dictionary<string, int>();
+
+            List<string> sequences = new List<string>();
+            foreach (PeptideSpectralMatch psm in nonNullPsms)
+            {
+                var ss = psm.BestMatchingPeptides.Select(b => b.Peptide.FullSequence).ToList();
+                sequences.Add(String.Join("|", ss));
+            }
+
+            var s = sequences.GroupBy(i => i);
+
+            foreach (var grp in s)
+            {
+                sequenceToPsmCount.Add(grp.Key, grp.Count());
+            }
+
+            var maxPsmData = PValueAnalysisGeneric.CreateOnePsmDataFromPsm(maxScorePsm, accessionCounts, sequenceToPsmCount);
             Assert.That(maxScorePsm.PeptidesToMatchingFragments.Count, Is.EqualTo(maxPsmData.Ambiguity));
             Assert.That(maxScorePsm.DeltaScore, Is.EqualTo(maxPsmData.DeltaScore).Within(0.05));
             Assert.That((float)(maxScorePsm.Score - (int)maxScorePsm.Score), Is.EqualTo(maxPsmData.Intensity).Within(0.05));
@@ -238,6 +256,44 @@ namespace Test
 
             //There is some randomness here. This test might break occasionally. Could change it to a greater than or equal to value of some lower number if it happens frequently.
             Assert.AreEqual(32, trueCount);
+
+
+
+            //var j = nonNullPsmsOriginalCopy[0];
+            //var newPwsm = nonNullPsmsOriginalCopy[0].PeptidesToMatchingFragments.Keys.First();
+
+            //Protein newProtein = new Protein(newPwsm.BaseSequence, "UNKNOWN");
+
+
+            //PeptideWithSetModifications aNewProtein= new PeptideWithSetModifications(newProtein, new DigestionParams(), 1, 2, CleavageSpecificity.Full, "", 3, new Dictionary<int, Modification>(), 0);
+
+
+            //var listMatchingFragmentIons = nonNullPsmsOriginalCopy[0].PeptidesToMatchingFragments[newPwsm];
+
+            //for (int i = listMatchingFragmentIons.Count(); i >= 0; i--)
+            //{
+            //    if(i % 2 == 0)
+            //    {
+            //        listMatchingFragmentIons.RemoveAt(i);
+            //    }
+            //}
+
+            //nonNullPsmsOriginalCopy[0].AddOrReplace(aNewProtein, nonNullPsmsOriginalCopy[0].Score, nonNullPsmsOriginalCopy[0].BestMatchingPeptides.First().Notch+2, true, listMatchingFragmentIons, nonNullPsmsOriginalCopy[0].Xcorr);
+
+            //var k = nonNullPsmsOriginalCopy[0];
+
+            //int sss = nonNullPsmsOriginalCopy[0].BestMatchingPeptides.Select(i => i.Notch).ToList().Count();
+
+            //Assert.AreEqual(2, sss);
+
+            //PValueAnalysisGeneric.ComputePValuesForAllPSMsGeneric(nonNullPsmsOriginalCopy);
+
+            //var l = nonNullPsmsOriginalCopy[0];
+
+            //sss = nonNullPsmsOriginalCopy[0].BestMatchingPeptides.Select(i => i.Notch).ToList().Count();
+            //Assert.AreEqual(1, sss);
+
+
         }
     }
 }
