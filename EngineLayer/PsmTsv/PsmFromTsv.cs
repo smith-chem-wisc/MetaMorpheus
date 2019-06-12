@@ -120,11 +120,19 @@ namespace EngineLayer
             ParentIons = (parsedHeader[PsmTsvHeader.ParentIonsLabel] < 0) ? null : spl[parsedHeader[PsmTsvHeader.ParentIonsLabel]].Trim();
 
             // child scan matched ions (only for crosslinks for now, but in the future this will change) 
-            ChildScanMatchedIons = (parsedHeader[PsmTsvHeader.MatchedIonMzRatios] < 0) ? null : ReadChildScanMatchedIons(spl[parsedHeader[PsmTsvHeader.MatchedIonMzRatios]].Trim(), BaseSeq);
-            ChildScanMatchedIons.Remove(Ms2ScanNumber);
+            ChildScanMatchedIons = (!spl[parsedHeader[PsmTsvHeader.MatchedIonMzRatios]].StartsWith("{")) ? null : ReadChildScanMatchedIons(spl[parsedHeader[PsmTsvHeader.MatchedIonMzRatios]].Trim(), BaseSeq);
+            if (ChildScanMatchedIons!=null && ChildScanMatchedIons.ContainsKey(Ms2ScanNumber))
+            {
+                ChildScanMatchedIons.Remove(Ms2ScanNumber);
+            }
+            
             // beta peptide child scan matched ions (for crosslinks)
-            BetaPeptideChildScanMatchedIons = (parsedHeader[PsmTsvHeader.BetaPeptideMatchedIonsLabel] < 0) ? null : ReadChildScanMatchedIons(spl[parsedHeader[PsmTsvHeader.BetaPeptideMatchedIonsLabel]].Trim(), BetaPeptideBaseSequence);
-            BetaPeptideChildScanMatchedIons.Remove(Ms2ScanNumber);
+            BetaPeptideChildScanMatchedIons = (parsedHeader[PsmTsvHeader.BetaPeptideMatchedIonsLabel] < 0) ? null :
+                ((!spl[parsedHeader[PsmTsvHeader.BetaPeptideMatchedIonsLabel]].StartsWith("{")) ? null : ReadChildScanMatchedIons(spl[parsedHeader[PsmTsvHeader.BetaPeptideMatchedIonsLabel]].Trim(), BetaPeptideBaseSequence));
+            if (BetaPeptideChildScanMatchedIons!=null && BetaPeptideChildScanMatchedIons.ContainsKey(Ms2ScanNumber))
+            {
+                BetaPeptideChildScanMatchedIons.Remove(Ms2ScanNumber);
+            }
         }
 
         private static List<MatchedFragmentIon> ReadFragmentIonsFromString(string matchedMzString, string peptideBaseSequence)
