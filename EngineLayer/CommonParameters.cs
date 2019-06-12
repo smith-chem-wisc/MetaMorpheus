@@ -116,6 +116,17 @@ namespace EngineLayer
             return c;
         }
 
+        public CommonParameters CloneWithNewDissociationType(DissociationType dissociationType)
+        {
+            CommonParameters c = new CommonParameters();
+            foreach (PropertyInfo property in typeof(CommonParameters).GetProperties())
+            {
+                property.SetValue(c, property.GetValue(this));
+            }
+            c.DissociationType = dissociationType;
+            return c;
+        }
+
         public CommonParameters CloneWithNewTerminus(FragmentationTerminus? terminus = null, bool? addCompIons = null) //for use with speedy semi-specific searches to get both termini
         {
             if (terminus == null)
