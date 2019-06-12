@@ -215,7 +215,15 @@ namespace EngineLayer
 
             float longestSeq = psm.FragmentIonSeriesLength(firstPeptide.BaseSequence, psm.PeptidesToMatchingFragments[firstPeptide]);
             string accession = firstPeptide.Protein.Accession;
-            float appearances = accessionCounts[accession];
+            float appearances;
+            if (accessionCounts.Keys.Count != 0 && accessionCounts.ContainsKey(accession))
+            {
+                appearances = (float)accessionCounts[accession];
+            }
+            else
+            {
+                appearances = 1;
+            }
             float score = (float)psm.Score;
 
             bool label;
@@ -271,7 +279,16 @@ namespace EngineLayer
             float missedCleavages = firstPeptide.MissedCleavages;
             float longestSeq = psm.FdrInfo.LongestSeriesLength;
             string accession = firstPeptide.Protein.Accession;
-            float appearances = accessionCounts[accession];
+            float appearances;
+            if(accessionCounts.Keys.Count != 0 && accessionCounts.ContainsKey(accession))
+            { 
+                appearances = (float)accessionCounts[accession];
+            }
+            else
+            {
+                appearances = 1;
+            }
+             
             float score = (float)psm.Score;
 
             bool label;

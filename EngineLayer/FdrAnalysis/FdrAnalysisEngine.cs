@@ -9,7 +9,6 @@ namespace EngineLayer.FdrAnalysis
         private List<PeptideSpectralMatch> AllPsms;
         private readonly int MassDiffAcceptorNumNotches;
         private readonly bool UseDeltaScore;
-        private readonly bool CalculatePValue;
         private readonly double ScoreCutoff;
         private readonly string AnalysisType;
 
@@ -19,7 +18,6 @@ namespace EngineLayer.FdrAnalysis
             MassDiffAcceptorNumNotches = massDiffAcceptorNumNotches;
             UseDeltaScore = commonParameters.UseDeltaScore;
             ScoreCutoff = commonParameters.ScoreCutoff;
-            CalculatePValue = commonParameters.CalculatePValue;
             AnalysisType = analysisType;
         }
 
@@ -167,14 +165,12 @@ namespace EngineLayer.FdrAnalysis
             {
                 CountPsm();
                 //TODO figure when to use a model and when to generate a new one.
-                if (CalculatePValue)
+                if (AllPsms.Count > 0)
                 {
                     myAnalysisResults.BinarySearchTreeMetrics = PValueAnalysisGeneric.ComputePValuesForAllPSMsGeneric(AllPsms);
                     Compute_PValue_Based_QValue(AllPsms);
                 }
             }
-
-            
         }
 
         public static void Compute_PValue_Based_QValue(List<PeptideSpectralMatch> psms)

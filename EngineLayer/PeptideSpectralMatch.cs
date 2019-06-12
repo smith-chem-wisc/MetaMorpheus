@@ -259,30 +259,34 @@ namespace EngineLayer
         public int FragmentIonSeriesLength(string baseSequence, List<MatchedFragmentIon> mfi)
         {
             int maxdif = 0;
-            List<int> jointSeries = new List<int>();
-            jointSeries.AddRange(mfi.Where(f => f.NeutralTheoreticalProduct.TerminusFragment.Terminus == FragmentationTerminus.N).Select(f => f.NeutralTheoreticalProduct.TerminusFragment.FragmentNumber) ?? new List<int>());
-            jointSeries.AddRange(mfi.Where(f => f.NeutralTheoreticalProduct.TerminusFragment.Terminus == FragmentationTerminus.C).Select(f => f.NeutralTheoreticalProduct.TerminusFragment.FragmentNumber) ?? new List<int>());
-            jointSeries = jointSeries.Distinct().ToList();
 
-            //List<int> jointSeries = nSeriesAnnotations.Concat(cSeriesAnnotations).Distinct().ToList();
-
-            if (jointSeries.Count > 0)
+            if (mfi != null && mfi.Count() > 0)
             {
-                jointSeries.Sort();
+                List<int> jointSeries = new List<int>();
+                jointSeries.AddRange(mfi.Where(f => f.NeutralTheoreticalProduct.TerminusFragment.Terminus == FragmentationTerminus.N).Select(f => f.NeutralTheoreticalProduct.TerminusFragment.FragmentNumber) ?? new List<int>());
+                jointSeries.AddRange(mfi.Where(f => f.NeutralTheoreticalProduct.TerminusFragment.Terminus == FragmentationTerminus.C).Select(f => f.NeutralTheoreticalProduct.TerminusFragment.FragmentNumber) ?? new List<int>());
+                jointSeries = jointSeries.Distinct().ToList();
 
-                List<int> aminoAcidPostionsThatCouldBeObserved = Enumerable.Range(0, baseSequence.Length + 1).ToList();
-
-                List<int> missing = aminoAcidPostionsThatCouldBeObserved.Except(jointSeries).ToList();
-
-                for (int i = 0; i < missing.Count - 1; i++)
+                if (jointSeries.Count > 0)
                 {
-                    int diff = missing[i + 1] - missing[i] - 1;
-                    if (diff > maxdif)
+                    jointSeries.Sort();
+
+                    List<int> aminoAcidPostionsThatCouldBeObserved = Enumerable.Range(0, baseSequence.Length + 1).ToList();
+
+                    List<int> missing = aminoAcidPostionsThatCouldBeObserved.Except(jointSeries).ToList();
+
+                    for (int i = 0; i < missing.Count - 1; i++)
                     {
-                        maxdif = diff;
+                        int diff = missing[i + 1] - missing[i] - 1;
+                        if (diff > maxdif)
+                        {
+                            maxdif = diff;
+                        }
                     }
                 }
             }
+
+            
 
             return maxdif;
         }

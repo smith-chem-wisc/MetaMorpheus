@@ -222,7 +222,7 @@ namespace Test
             };
 
             psms.ForEach(p => p.ResolveAllAmbiguities());
-            psms.ForEach(p => p.SetFdrValues(0, 0, 0, 0, 0, 0, 0, 0, 0, false));
+            psms.ForEach(p => p.SetFdrValues(0, 0, 0, 0, 0, 0, 0));
 
             // apply parsimony
             ProteinParsimonyEngine pae = new ProteinParsimonyEngine(psms, false, new CommonParameters(), new List<string>());
