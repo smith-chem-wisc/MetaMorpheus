@@ -59,6 +59,7 @@ namespace EngineLayer
                 }
                 return cleaveDissociationTypes;
             }
+            set { }
         }
         public double TotalMass { get; set; }
         public double CleaveMassShort { get; set; }
