@@ -30,7 +30,6 @@ namespace MetaMorpheusGUI
         private readonly ObservableCollection<PreRunTask> StaticTasksObservableCollection = new ObservableCollection<PreRunTask>();
         private readonly ObservableCollection<RawDataForDataGrid> SelectedRawFiles = new ObservableCollection<RawDataForDataGrid>();
         private ObservableCollection<InRunTask> DynamicTasksObservableCollection;
-        private bool WarnedAboutThermoAlready = false;
 
         public MainWindow()
         {
@@ -487,26 +486,23 @@ namespace MetaMorpheusGUI
             switch (theExtension)
             {
                 case ".raw":
-                    if (!WarnedAboutThermoAlready)
+                    if (!GlobalVariables.GlobalSettings.UserHasAgreedToThermoRawFileReaderLicence)
                     {
-                        // check for MSFileReader and display a warning if the expected DLLs are not found
-                        var versionCheckerResult = MyFileManager.ValidateThermoMsFileReaderVersion();
+                        // open the Thermo RawFileReader licence agreement
+                        var thermoLicenceWindow = new ThermoLicenceAgreementWindow();
+                        thermoLicenceWindow.LicenceText.AppendText(ThermoRawFileReader.ThermoRawFileReaderLicence.ThermoLicenceText);
+                        var dialogResult = thermoLicenceWindow.ShowDialog();
 
-                        if (versionCheckerResult.Equals(MyFileManager.ThermoMsFileReaderVersionCheck.IncorrectVersion))
+                        var newGlobalSettings = new GlobalSettings
                         {
-                            GuiWarnHandler(null, new StringEventArgs("Warning! Thermo MSFileReader is not version 3.0 SP2; a crash may result from searching this .raw file", null));
-                        }
-                        else if (versionCheckerResult.Equals(MyFileManager.ThermoMsFileReaderVersionCheck.DllsNotFound))
-                        {
-                            GuiWarnHandler(null, new StringEventArgs("Warning! Cannot find Thermo MSFileReader (v3.0 SP2 is preferred); a crash may result from searching this .raw file", null));
-                        }
-                        else if (versionCheckerResult.Equals(MyFileManager.ThermoMsFileReaderVersionCheck.SomeDllsMissing))
-                        {
-                            GuiWarnHandler(null, new StringEventArgs("Warning! Found only some of the expected Thermo MSFileReader .dll files; a crash may result from searching this .raw file", null));
-                        }
+                            UserHasAgreedToThermoRawFileReaderLicence = dialogResult.Value,
+                            WriteExcelCompatibleTSVs = GlobalVariables.GlobalSettings.WriteExcelCompatibleTSVs
+                        };
+                        
+                        Toml.WriteFile<GlobalSettings>(newGlobalSettings, Path.Combine(GlobalVariables.DataDir, @"settings.toml"));
+                        GlobalVariables.GlobalSettings = newGlobalSettings;
                     }
 
-                    WarnedAboutThermoAlready = true;
                     goto case ".mzml";
 
                 case ".mgf":

@@ -228,6 +228,9 @@
     <Compile Include="MetaDraw\ItemsControl.cs" />
     <Compile Include="MetaDraw\PdfWriter.cs" />
     <Compile Include="MetaDraw\PlotModelStat.cs" />
+    <Compile Include="ThermoLicenceAgreementWindow.xaml.cs">
+      <DependentUpon>ThermoLicenceAgreementWindow.xaml</DependentUpon>
+    </Compile>
     <Compile Include="Util\BooleanInverter.cs" />
     <Compile Include="CalibrateTaskWindow.xaml.cs">
       <DependentUpon>CalibrateTaskWindow.xaml</DependentUpon>
@@ -349,6 +352,10 @@
       <Generator>MSBuild:Compile</Generator>
     </Page>
     <Page Include="SearchTaskWindow.xaml">
+      <SubType>Designer</SubType>
+      <Generator>MSBuild:Compile</Generator>
+    </Page>
+    <Page Include="ThermoLicenceAgreementWindow.xaml">
       <SubType>Designer</SubType>
       <Generator>MSBuild:Compile</Generator>
     </Page>

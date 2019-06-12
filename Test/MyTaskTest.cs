@@ -589,7 +589,6 @@ namespace Test
         {
             var manager = new MyFileManager(true);
             Assert.That(manager.SeeIfOpen(Path.Combine(TestContext.CurrentContext.TestDirectory, @"TestData\allResults.txt")) == false);
-            MyFileManager.ValidateThermoMsFileReaderVersion();
         }
     }
 }
