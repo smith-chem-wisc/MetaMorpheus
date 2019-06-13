@@ -213,7 +213,6 @@ namespace Test
             var maxScore = nonNullPsms.Select(n => n.Score).Max();
             var maxScorePsm = nonNullPsms.Where(n => n.Score == maxScore).First();
 
-
             Dictionary<string, int> sequenceToPsmCount = new Dictionary<string, int>();
 
             List<string> sequences = new List<string>();
@@ -254,46 +253,21 @@ namespace Test
                 }
             }
 
-            //There is some randomness here. This test might break occasionally. Could change it to a greater than or equal to value of some lower number if it happens frequently.
             Assert.AreEqual(32, trueCount);
+        }
 
+        [Test]
+        public static void TestPValuesReduceAmbiguity()
+        {
+            //TODO
+            //This is hard becuase you have to have a big enough file to creat a model, enough peptides with the same exact score for the same scan, and enough differences in those ambiguous peptides that one or more get deleted after pvalue comutation.
+        }
 
-
-            //var j = nonNullPsmsOriginalCopy[0];
-            //var newPwsm = nonNullPsmsOriginalCopy[0].PeptidesToMatchingFragments.Keys.First();
-
-            //Protein newProtein = new Protein(newPwsm.BaseSequence, "UNKNOWN");
-
-
-            //PeptideWithSetModifications aNewProtein= new PeptideWithSetModifications(newProtein, new DigestionParams(), 1, 2, CleavageSpecificity.Full, "", 3, new Dictionary<int, Modification>(), 0);
-
-
-            //var listMatchingFragmentIons = nonNullPsmsOriginalCopy[0].PeptidesToMatchingFragments[newPwsm];
-
-            //for (int i = listMatchingFragmentIons.Count(); i >= 0; i--)
-            //{
-            //    if(i % 2 == 0)
-            //    {
-            //        listMatchingFragmentIons.RemoveAt(i);
-            //    }
-            //}
-
-            //nonNullPsmsOriginalCopy[0].AddOrReplace(aNewProtein, nonNullPsmsOriginalCopy[0].Score, nonNullPsmsOriginalCopy[0].BestMatchingPeptides.First().Notch+2, true, listMatchingFragmentIons, nonNullPsmsOriginalCopy[0].Xcorr);
-
-            //var k = nonNullPsmsOriginalCopy[0];
-
-            //int sss = nonNullPsmsOriginalCopy[0].BestMatchingPeptides.Select(i => i.Notch).ToList().Count();
-
-            //Assert.AreEqual(2, sss);
-
-            //PValueAnalysisGeneric.ComputePValuesForAllPSMsGeneric(nonNullPsmsOriginalCopy);
-
-            //var l = nonNullPsmsOriginalCopy[0];
-
-            //sss = nonNullPsmsOriginalCopy[0].BestMatchingPeptides.Select(i => i.Notch).ToList().Count();
-            //Assert.AreEqual(1, sss);
-
-
+        [Test]
+        public static void TestPValueWorksWithStoredTrainedModel()
+        {
+            //TODO
+            //This is hard becuase you have to have a big enough file to creat a model, enough peptides with the same exact score for the same scan, and enough differences in those ambiguous peptides that one or more get deleted after pvalue comutation.
         }
     }
 }

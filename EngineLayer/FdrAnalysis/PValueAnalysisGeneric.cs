@@ -35,6 +35,7 @@ namespace EngineLayer
 
             string ambiguousScans = "";
 
+            //For Debug
             List<string> someOut = new List<string>();
             someOut.Add("Accessions|Ambiguity|DeltaScore|Intensity|Label|LongestSeries|MissedCleavages|ModsCount|Notch|PsmCount|PrecursorCharge|call|pValue|Score|QValue");
 
@@ -93,6 +94,7 @@ namespace EngineLayer
                 }
             }
 
+            //For debug
             //File.WriteAllLines(@"C:\Users\Michael Shortreed\Downloads\psmDataVAlues.txt", someOut, System.Text.Encoding.UTF8);
 
             var predictions = trainedModel.Transform(testData);
