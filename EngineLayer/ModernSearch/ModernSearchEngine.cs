@@ -64,7 +64,7 @@ namespace EngineLayer.ModernSearch
                     Ms2ScanWithSpecificMass scan = ListOfSortedMs2Scans[i];
 
                     // get fragment bins for this scan
-                    List<int> allBinsToSearch = GetBinsToSearch(scan);
+                    List<int> allBinsToSearch = GetBinsToSearch(scan, FragmentIndex, CommonParameters.DissociationType);
 
                     // get allowed theoretical masses from the known experimental mass
                     // note that this is the OPPOSITE of the classic search (which calculates experimental masses from theoretical values)
@@ -76,7 +76,7 @@ namespace EngineLayer.ModernSearch
                     double highestMassPeptideToLookFor = notches.Max(p => p.AllowedInterval.Maximum);
 
                     // first-pass scoring
-                    IndexedScoring(allBinsToSearch, scoringTable, byteScoreCutoff, idsOfPeptidesPossiblyObserved, scan.PrecursorMass, lowestMassPeptideToLookFor, highestMassPeptideToLookFor, PeptideIndex, MassDiffAcceptor, MaxMassThatFragmentIonScoreIsDoubled, CommonParameters.DissociationType);
+                    IndexedScoring(FragmentIndex, allBinsToSearch, scoringTable, byteScoreCutoff, idsOfPeptidesPossiblyObserved, scan.PrecursorMass, lowestMassPeptideToLookFor, highestMassPeptideToLookFor, PeptideIndex, MassDiffAcceptor, MaxMassThatFragmentIonScoreIsDoubled, CommonParameters.DissociationType);
 
                     // done with indexed scoring; refine scores and create PSMs
                     foreach (int id in idsOfPeptidesPossiblyObserved)
@@ -126,12 +126,12 @@ namespace EngineLayer.ModernSearch
             return new MetaMorpheusEngineResults(this);
         }
 
-        protected List<int> GetBinsToSearch(Ms2ScanWithSpecificMass scan)
+        protected List<int> GetBinsToSearch(Ms2ScanWithSpecificMass scan, List<int>[] FragmentIndex, DissociationType dissociationType)
         {
             int obsPreviousFragmentCeilingMz = 0;
             List<int> binsToSearch = new List<int>();
 
-            if (CommonParameters.DissociationType == DissociationType.LowCID)
+            if (dissociationType == DissociationType.LowCID)
             {
                 double[] masses = scan.TheScan.MassSpectrum.XArray;
                 double[] intensities = scan.TheScan.MassSpectrum.YArray;
@@ -149,7 +149,7 @@ namespace EngineLayer.ModernSearch
                     // add complementary ions
                     if (CommonParameters.AddCompIons)
                     {
-                        if (complementaryIonConversionDictionary.TryGetValue(CommonParameters.DissociationType, out double protonMassShift)) //TODO: this is broken for EThcD because that method needs two conversions
+                        if (complementaryIonConversionDictionary.TryGetValue(dissociationType, out double protonMassShift)) //TODO: this is broken for EThcD because that method needs two conversions
                         {
                             protonMassShift = ClassExtensions.ToMass(protonMassShift, 1);
                             fragmentBin = (int)Math.Round((scan.PrecursorMass + protonMassShift - masses[i]) / 1.0005079);
@@ -210,7 +210,7 @@ namespace EngineLayer.ModernSearch
                     {
                         //okay, we're not actually adding in complementary m/z peaks, we're doing a shortcut and just straight up adding the bins assuming that they're z=1
 
-                        if (complementaryIonConversionDictionary.TryGetValue(CommonParameters.DissociationType, out double protonMassShift)) //TODO: this is broken for EThcD because that method needs two conversions
+                        if (complementaryIonConversionDictionary.TryGetValue(dissociationType, out double protonMassShift)) //TODO: this is broken for EThcD because that method needs two conversions
                         {
                             protonMassShift = ClassExtensions.ToMass(protonMassShift, 1);
                             int compFragmentFloorMass = (int)Math.Round(((scan.PrecursorMass + protonMassShift) * FragmentBinsPerDalton)) - obsFragmentCeilingMass;
@@ -271,7 +271,7 @@ namespace EngineLayer.ModernSearch
             return m;
         }
 
-        protected void IndexedScoring(List<int> binsToSearch, byte[] scoringTable, byte byteScoreCutoff, List<int> idsOfPeptidesPossiblyObserved, double scanPrecursorMass, double lowestMassPeptideToLookFor,
+        protected void IndexedScoring(List<int>[] FragmentIndex, List<int> binsToSearch, byte[] scoringTable, byte byteScoreCutoff, List<int> idsOfPeptidesPossiblyObserved, double scanPrecursorMass, double lowestMassPeptideToLookFor,
             double highestMassPeptideToLookFor, List<PeptideWithSetModifications> peptideIndex, MassDiffAcceptor massDiffAcceptor, double maxMassThatFragmentIonScoreIsDoubled, DissociationType dissociationType)
         {
             // get all theoretical fragments this experimental fragment could be

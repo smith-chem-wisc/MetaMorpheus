@@ -50,7 +50,6 @@
         public const string MatchedIonMassDiffPpm = "Matched Ion Mass Diff (Ppm)";
         public const string MatchedIonIntensities = "Matched Ion Intensities";
         public const string MatchedIonCounts = "Matched Ion Counts";
-        public const string ChildMatchedIons = "Child Scans Matched Ions";
 
         // Scoring
         public const string LocalizedScores = "Localized Scores";
@@ -79,6 +78,5 @@
         public const string BetaPeptideMatchedIonsLabel = "Beta Peptide Matched Ion Mass-To-Charge Ratios";
         public const string XLTotalScoreLabel = "XL Total Score";
         public const string ParentIonsLabel = "Parent Ions";
-        public const string BetaPeptideChildMatchedIons = "Beta Peptide Child Scans Matched Ions";
     }
 }
