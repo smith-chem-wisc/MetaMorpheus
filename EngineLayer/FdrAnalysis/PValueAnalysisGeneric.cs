@@ -29,6 +29,7 @@ namespace EngineLayer
 
             var pipeline = mlContext.Transforms.Concatenate("Features", "Intensity", "ScanPrecursorCharge", "DeltaScore", "Notch", "PsmCount", "ModsCount", "MissedCleavagesCount", "Ambiguity", "AccessionAppearances", "LongestFragmentIonSeries")
                 .Append(mlContext.BinaryClassification.Trainers.FastTree(labelColumnName: "Label", featureColumnName: "Features"));
+
             var trainedModel = pipeline.Fit(trainingData);
 
             var predictionEngine = mlContext.Model.CreatePredictionEngine<PsmData, TruePositivePrediction>(trainedModel);
@@ -95,7 +96,7 @@ namespace EngineLayer
             }
 
             //For debug
-            //File.WriteAllLines(@"C:\Users\Michael Shortreed\Downloads\psmDataVAlues.txt", someOut, System.Text.Encoding.UTF8);
+            File.WriteAllLines(@"C:\Users\Michael Shortreed\Downloads\psmDataVAlues.txt", someOut, System.Text.Encoding.UTF8);
 
             var predictions = trainedModel.Transform(testData);
 
@@ -196,21 +197,15 @@ namespace EngineLayer
 
         public static PsmData CreateOnePsmDataFromPsm2(PeptideSpectralMatch psm, int notch, PeptideWithSetModifications firstPeptide, Dictionary<string, int> accessionCounts, Dictionary<string, int> sequenceToPsmCount, bool? trueOrFalse = null)
         {
-            //todo: consider adding a count for the number of times a peptides protein accession appears in the list. proteins with more psms should be favored
+            //dont' think ambiguity is helping so not using currently
+            float ambiguity = (float)psm.PeptidesToMatchingFragments.Keys.Count;
 
-            float ambiguity = (float)psm.PeptidesToMatchingFragments.Keys.Count;//(psm.BaseSequence.Split('|').Count());
             float intensity = (float)(psm.Score - (int)psm.Score);
             float charge = psm.ScanPrecursorCharge;
             float deltaScore = (float)psm.DeltaScore;
 
             float psmCount = sequenceToPsmCount[String.Join("|", psm.BestMatchingPeptides.Select(p => p.Peptide.FullSequence).ToList())];
             float modCount = firstPeptide.AllModsOneIsNterminus.Keys.Count();
-
-            if(modCount > 10)
-            {
-                int dd = 4;
-                dd++;
-            }
 
             //todo: for non-specific cleavage, ignore missed cleavages
             float missedCleavages = firstPeptide.MissedCleavages;
