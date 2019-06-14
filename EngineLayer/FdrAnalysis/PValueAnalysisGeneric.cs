@@ -255,8 +255,6 @@ namespace EngineLayer
 
         public static PsmData CreateOnePsmDataFromPsm(PeptideSpectralMatch psm, Dictionary<string, int> accessionCounts, Dictionary<string, int> sequenceToPsmCount, bool? trueOrFalse = null)
         {
-            //todo: consider adding a count for the number of times a peptides protein accession appears in the list. proteins with more psms should be favored
-
             float ambiguity = (float)psm.PeptidesToMatchingFragments.Count;//(psm.BaseSequence.Split('|').Count());
             float intensity = (float)(psm.Score - (int)psm.Score);
             float charge = psm.ScanPrecursorCharge;

@@ -164,7 +164,6 @@ namespace EngineLayer.FdrAnalysis
             if (AnalysisType == "PSM")
             {
                 CountPsm();
-                //TODO figure when to use a model and when to generate a new one.
                 if (AllPsms.Count > 0)
                 {
                     myAnalysisResults.BinarySearchTreeMetrics = PValueAnalysisGeneric.ComputePValuesForAllPSMsGeneric(AllPsms);
