@@ -96,7 +96,7 @@ namespace EngineLayer
             }
 
             //For debug
-            File.WriteAllLines(@"C:\Users\Michael Shortreed\Downloads\psmDataVAlues.txt", someOut, System.Text.Encoding.UTF8);
+            //File.WriteAllLines(@"C:\Users\Michael Shortreed\Downloads\psmDataVAlues.txt", someOut, System.Text.Encoding.UTF8);
 
             var predictions = trainedModel.Transform(testData);
 
