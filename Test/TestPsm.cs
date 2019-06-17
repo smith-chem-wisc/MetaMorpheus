@@ -377,6 +377,10 @@ namespace Test
             Assert.AreEqual(1, psm1.BestMatchingPeptides.Count());
 
             Assert.AreEqual(11, psm1.Score);
+
+
+            Assert.AreEqual(10, psm1.RunnerUpScore);
+            Assert.AreEqual(1, psm1.DeltaScore);
         }
 
     }

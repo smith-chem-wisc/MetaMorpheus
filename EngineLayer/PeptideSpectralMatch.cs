@@ -64,7 +64,12 @@ namespace EngineLayer
         public FdrInfo FdrInfo { get; private set; }
         public double Score { get; private set; }
         public double Xcorr;
-        public double DeltaScore { get; private set; }
+        public double DeltaScore {
+            get
+            {
+                return CalculateDeltaScore(5.0);
+            }
+        }
         public double RunnerUpScore { get; set; }
         public bool IsDecoy { get; private set; }
         public bool IsContaminant { get; private set; }
@@ -127,7 +132,7 @@ namespace EngineLayer
                     PeptidesToMatchingFragments.Add(pwsm, matchedFragmentIons);
                 }
             }
-            else if (Score - RunnerUpScore > ToleranceForScoreDifferentiation)
+            else if (newScore - RunnerUpScore > ToleranceForScoreDifferentiation)
             {
                 RunnerUpScore = newScore;
             }
@@ -159,9 +164,9 @@ namespace EngineLayer
             return s;
         }
 
-        public void CalculateDeltaScore(double scoreCutoff)
+        public double CalculateDeltaScore(double scoreCutoff = 0)
         {
-            DeltaScore = Score - Math.Max(RunnerUpScore, scoreCutoff);
+            return Score - Math.Max(RunnerUpScore, scoreCutoff);
         }
 
         public void SetFdrValues(double cumulativeTarget, double cumulativeDecoy, double qValue, double cumulativeTargetNotch, double cumulativeDecoyNotch, double qValueNotch, int longestSeries)
@@ -385,7 +390,6 @@ namespace EngineLayer
             FdrInfo = psm.FdrInfo;
             Score = psm.Score;
             Xcorr = psm.Xcorr;
-            DeltaScore = psm.DeltaScore;
             RunnerUpScore = psm.RunnerUpScore;
             IsDecoy = psm.IsDecoy;
             IsContaminant = psm.IsContaminant;
