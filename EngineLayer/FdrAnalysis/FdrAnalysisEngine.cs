@@ -191,7 +191,9 @@ namespace EngineLayer.FdrAnalysis
                 runningSum += (1 - allPValues[i]);
                 double qValue = runningSum / (i + 1);
 
-                psms[psmsArrayIndicies[i]].PValueInfo = psms[psmsArrayIndicies[i]].PValueInfo + '|' + Math.Round(qValue, 6);
+                string[] pVentry = psms[psmsArrayIndicies[i]].PValueInfo.Split('|').ToArray();
+                psms[psmsArrayIndicies[i]].PValueInfo = pVentry[0] + '|' + pVentry[1] + '|' + pVentry[2] + '|' + +Math.Round(qValue, 6);
+                //psms[psmsArrayIndicies[i]].PValueInfo = psms[psmsArrayIndicies[i]].PValueInfo + '|' + Math.Round(qValue, 6);
             }
         }
 
