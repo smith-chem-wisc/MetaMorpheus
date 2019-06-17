@@ -282,7 +282,7 @@ namespace Test
         public static void TestPValuesReduceAmbiguity()
         {
             //TODO
-            //This is hard becuase you have to have a big enough file to creat a model, enough peptides with the same exact score for the same scan, and enough differences in those ambiguous peptides that one or more get deleted after pvalue comutation.
+            //This is hard becuase you have to have a big enough file to create a model, enough peptides with the same exact score for the same scan, and enough differences in those ambiguous peptides that one or more get deleted after pvalue comutation.
         }
 
         [Test]

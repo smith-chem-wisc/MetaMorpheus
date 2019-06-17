@@ -170,6 +170,11 @@ namespace EngineLayer.FdrAnalysis
                     Compute_PValue_Based_QValue(AllPsms);
                 }
             }
+
+            if(AnalysisType == "Peptide")
+            {
+                Compute_PValue_Based_QValue(AllPsms);
+            }
         }
 
         public static void Compute_PValue_Based_QValue(List<PeptideSpectralMatch> psms)

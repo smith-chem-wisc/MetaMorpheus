@@ -12,7 +12,7 @@ using Proteomics;
 
 namespace TaskLayer
 {
-    public class PostXLSearchAnalysisTask: MetaMorpheusTask
+    public class PostXLSearchAnalysisTask : MetaMorpheusTask
     {
         public PostXLSearchAnalysisTask()
     : base(MyTask.Search)
@@ -182,7 +182,7 @@ namespace TaskLayer
                 }
 
                 double qValue = Math.Min(1, (double)cumulativeDecoy / cumulativeTarget);
-                csm.SetFdrValues(cumulativeTarget, cumulativeDecoy, qValue, 0, 0, 0, 0, 0, 0, false);
+                csm.SetFdrValues(cumulativeTarget, cumulativeDecoy, qValue, 0, 0, 0, 0);
             }
 
             double qValueThreshold = 1.0;
