@@ -126,6 +126,11 @@ namespace Test
             var newPsms = possiblePsms.Where(p => p != null).ToList();
             foreach (var item in newPsms)
             {
+                item.ResolveAllAmbiguities();
+                if (item.BetaPeptide != null)
+                {
+                    item.BetaPeptide.ResolveAllAmbiguities();
+                }
                 item.SetFdrValues(0, 0, 0, 0, 0, 0, 0);
             }
 
