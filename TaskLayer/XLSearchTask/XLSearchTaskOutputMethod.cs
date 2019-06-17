@@ -11,7 +11,7 @@ using System.Xml.Serialization;
 
 namespace TaskLayer
 {
-    public partial class XLSearchTask : MetaMorpheusTask
+    public static class WriteFile
     {
         public static void WritePsmCrossToTsv(List<CrosslinkSpectralMatch> items, string filePath, int writeType)
         {
@@ -42,7 +42,7 @@ namespace TaskLayer
             }
         }
         
-        public void WriteCrosslinkToTxtForPercolator(List<CrosslinkSpectralMatch> items, string outputFolder, string fileName, Crosslinker crosslinker, List<string> nestedIds)
+        public static void WriteCrosslinkToTxtForPercolator(List<CrosslinkSpectralMatch> items, string outputFolder, string fileName, Crosslinker crosslinker)
         {
             if (items.Count == 0)
             { return; }
@@ -82,10 +82,9 @@ namespace TaskLayer
                     }
                 }
             }
-            FinishedWritingFile(writtenFile, nestedIds);
         }
         
-        public void WritePepXML_xl(List<CrosslinkSpectralMatch> items, List<Protein> proteinList, string databasePath, List<Modification> variableModifications, List<Modification> fixedModifications, List<string> localizeableModificationTypes, string outputFolder, string fileName, List<string> nestedIds)
+        public static void WritePepXML_xl(List<CrosslinkSpectralMatch> items, List<Protein> proteinList, string databasePath, List<Modification> variableModifications, List<Modification> fixedModifications, List<string> localizeableModificationTypes, string outputFolder, string fileName, CommonParameters CommonParameters, XlSearchParameters XlSearchParameters)
         {
             if (!items.Any())
             {
@@ -419,7 +418,6 @@ namespace TaskLayer
             TextWriter writer = new StreamWriter(Path.Combine(outputFolder, fileName + ".pep.XML"));
             _indexedSerializer.Serialize(writer, _pepxml);
             writer.Close();
-            FinishedWritingFile(Path.Combine(outputFolder, fileName + ".pep.XML"), nestedIds);
         }
     }
 }
