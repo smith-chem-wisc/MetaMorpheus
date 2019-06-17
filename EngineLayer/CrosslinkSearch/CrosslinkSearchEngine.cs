@@ -13,7 +13,7 @@ namespace EngineLayer.CrosslinkSearch
 {
     public class CrosslinkSearchEngine : ModernSearchEngine
     {
-        protected readonly CrosslinkSpectralMatch[] GlobalCsms;
+        protected readonly List<CrosslinkSpectralMatch>[] GlobalCsms;
 
         // crosslinker molecule
         private readonly Crosslinker Crosslinker;
@@ -31,7 +31,7 @@ namespace EngineLayer.CrosslinkSearch
         private readonly char[] AllCrosslinkerSites;
         private readonly List<int>[] SecondFragmentIndex;
 
-        public CrosslinkSearchEngine(CrosslinkSpectralMatch[] globalCsms, Ms2ScanWithSpecificMass[] listOfSortedms2Scans, List<PeptideWithSetModifications> peptideIndex,
+        public CrosslinkSearchEngine(List<CrosslinkSpectralMatch>[] globalCsms, Ms2ScanWithSpecificMass[] listOfSortedms2Scans, List<PeptideWithSetModifications> peptideIndex,
             List<int>[] fragmentIndex, List<int>[] secondFragmentIndex, int currentPartition, CommonParameters commonParameters, Crosslinker crosslinker, bool CrosslinkSearchTop, int CrosslinkSearchTopNum,
             bool quench_H2O, bool quench_NH2, bool quench_Tris, List<string> nestedIds)
             : base(null, listOfSortedms2Scans, peptideIndex, fragmentIndex, currentPartition, commonParameters, new OpenSearchMode(), 0, nestedIds)
@@ -105,7 +105,6 @@ namespace EngineLayer.CrosslinkSearch
      
                         foreach (var aChildScan in scan.ChildScans)
                         {
-
                             var x = GetBinsToSearch(aChildScan, SecondFragmentIndex, CommonParameters.ChildScanDissociationType);
                             childBinsToSearch.AddRange(x);
                         }
@@ -140,19 +139,20 @@ namespace EngineLayer.CrosslinkSearch
                         }
 
                         // combine individual peptide hits with crosslinker mass to find best crosslink PSM hit
-                        var csm = FindCrosslinkedPeptide(scan, bestPeptideScoreNotchList, scanIndex);
+                        var csms = FindCrosslinkedPeptide(scan, bestPeptideScoreNotchList, scanIndex);
 
-                        if (csm == null)
+                        if (csms == null || csms.Count == 0 || csms.Where(p => p != null).Count() == 0)
                         {
                             progress++;
                             continue;
                         }
 
-                        // this scan might already have a hit from a different database partition; check to see if the score improves
-                        if (GlobalCsms[scanIndex] == null || GlobalCsms[scanIndex].XLTotalScore < csm.XLTotalScore)
+                        if (GlobalCsms[scanIndex] == null)
                         {
-                            GlobalCsms[scanIndex] = csm;
+                            GlobalCsms[scanIndex] = new List<CrosslinkSpectralMatch>();
                         }
+
+                        GlobalCsms[scanIndex].AddRange(csms.Where(p => p != null).OrderByDescending(p => p.XLTotalScore));
                     }
 
                     // report search progress
@@ -185,7 +185,7 @@ namespace EngineLayer.CrosslinkSearch
         /// <summary>
         /// 
         /// </summary>
-        private CrosslinkSpectralMatch FindCrosslinkedPeptide(Ms2ScanWithSpecificMass theScan, List<BestPeptideScoreNotch> theScanBestPeptide, int scanIndex)
+        private List<CrosslinkSpectralMatch> FindCrosslinkedPeptide(Ms2ScanWithSpecificMass theScan, List<BestPeptideScoreNotch> theScanBestPeptide, int scanIndex)
         {
             List<CrosslinkSpectralMatch> possibleMatches = new List<CrosslinkSpectralMatch>();
 
@@ -281,30 +281,7 @@ namespace EngineLayer.CrosslinkSearch
                 }
             }
 
-            // get the best match for this spectrum
-            // bestPsmCross will be null if there are no valid hits
-            possibleMatches.RemoveAll(v => v == null);
-            possibleMatches = possibleMatches.OrderByDescending(p => p.XLTotalScore).ToList();
-            var bestPsmCross = possibleMatches.FirstOrDefault();
-
-            // resolve ambiguities
-            if (bestPsmCross != null)
-            {
-                bestPsmCross.ResolveAllAmbiguities();
-
-                if (bestPsmCross.BetaPeptide != null)
-                {
-                    bestPsmCross.BetaPeptide.ResolveAllAmbiguities();
-                }
-            }
-
-            // calculate delta score
-            if (possibleMatches.Count > 1)
-            {
-                bestPsmCross.DeltaScore = possibleMatches[0].XLTotalScore - possibleMatches[1].XLTotalScore;
-            }
-
-            return bestPsmCross;
+            return possibleMatches;
         }
 
         /// <summary>
