@@ -119,9 +119,10 @@ namespace EngineLayer.FdrAnalysis
                     double qValue = Math.Min(1, cumulativeDecoy / cumulativeTarget);
                     double qValueNotch = Math.Min(1, cumulativeDecoyPerNotch[notch] / cumulativeTargetPerNotch[notch]);
 
-                    int longestUninteruptedSeries = psm.GetLengthLongestUniterupedFragmentSeries_collective();
+                    double pep = psm.FdrInfo == null ? double.NaN : psm.FdrInfo.PEP;
+                    double pepQValue = psm.FdrInfo == null ? double.NaN : psm.FdrInfo.PEP_QValue;
 
-                    psm.SetFdrValues(cumulativeTarget, cumulativeDecoy, qValue, cumulativeTargetPerNotch[notch], cumulativeDecoyPerNotch[notch], qValueNotch, longestUninteruptedSeries);
+                    psm.SetFdrValues(cumulativeTarget, cumulativeDecoy, qValue, cumulativeTargetPerNotch[notch], cumulativeDecoyPerNotch[notch], qValueNotch, pep, pepQValue);
                 }
 
                 // set q-value thresholds such that a lower scoring PSM can't have
@@ -171,7 +172,7 @@ namespace EngineLayer.FdrAnalysis
                 }
             }
 
-            if(AnalysisType == "Peptide")
+            if (AnalysisType == "Peptide")
             {
                 Compute_PValue_Based_QValue(AllPsms);
             }
@@ -179,7 +180,7 @@ namespace EngineLayer.FdrAnalysis
 
         public static void Compute_PValue_Based_QValue(List<PeptideSpectralMatch> psms)
         {
-            double[] allPValues = psms.Select(p => Convert.ToDouble(p.PValueInfo.Split('|')[1])).ToArray();
+            double[] allPValues = psms.Select(p => p.FdrInfo.PEP).ToArray();
             int[] psmsArrayIndicies = Enumerable.Range(0, psms.Count).ToArray();
             Array.Sort(allPValues, psmsArrayIndicies);//sort the second thing by the first
             Array.Reverse(allPValues);
@@ -190,10 +191,7 @@ namespace EngineLayer.FdrAnalysis
             {
                 runningSum += (1 - allPValues[i]);
                 double qValue = runningSum / (i + 1);
-
-                string[] pVentry = psms[psmsArrayIndicies[i]].PValueInfo.Split('|').ToArray();
-                psms[psmsArrayIndicies[i]].PValueInfo = pVentry[0] + '|' + pVentry[1] + '|' + pVentry[2] + '|' + +Math.Round(qValue, 6);
-                //psms[psmsArrayIndicies[i]].PValueInfo = psms[psmsArrayIndicies[i]].PValueInfo + '|' + Math.Round(qValue, 6);
+                psms[psmsArrayIndicies[i]].FdrInfo.PEP_QValue = Math.Round(qValue, 6);
             }
         }
 

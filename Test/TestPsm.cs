@@ -55,7 +55,7 @@ namespace Test
 
             Assert.AreEqual(psm.ToString().Count(f => f == '\t'), PeptideSpectralMatch.GetTabSeparatedHeader().Count(f => f == '\t'));
 
-            psm.SetFdrValues(6, 6, 6, 6, 6, 6, 0);
+            psm.SetFdrValues(6, 6, 6, 6, 6, 0, 0, 0);
 
             Assert.AreEqual(psm.ToString().Count(f => f == '\t'), PeptideSpectralMatch.GetTabSeparatedHeader().Count(f => f == '\t'));
         }
@@ -116,20 +116,19 @@ namespace Test
             new ClassicSearchEngine(allPsmsArray, listOfSortedms2Scans, variableModifications, fixedModifications, null, proteinList, searchModes, new CommonParameters(), new List<string>()).Run();
 
             List<int> longestSeriesObserved = new List<int>();
-            List<int> longestSeriesExpected = new List<int>() { 4, 3, 8, 10, 5, 7, 9, 4, 7, 12, 7, 7, 5, 2, 2, 13, 4, 8, 12, 10, 7, 4, 9, 3, 3, 10, 3, 12, 3, 2, 2, 2, 6, 3, 3, 4, 4, 2, 10, 5, 3 };
+            List<int> longestSeriesExpected = new List<int>() { 4, 3, 3, 8, 8, 10, 10, 5, 5, 7, 9, 4, 4, 7, 12, 7, 7, 7, 7, 5, 5, 5, 2, 2, 2, 2, 2, 2, 13, 13, 13, 13, 13, 13, 4, 4, 4, 4, 4, 4, 8, 8, 12, 12, 10, 10, 10, 10, 7, 7, 7, 7, 4, 4, 4, 9, 9, 9, 3, 3, 3, 3, 10, 3, 3, 12, 3, 2, 2, 2, 2, 2, 6, 6, 6, 3, 3, 3, 3, 3, 4, 4, 4, 4, 2, 2, 2, 2, 2, 10, 10, 5, 5, 3 };
             foreach (PeptideSpectralMatch psm in allPsmsArray)
             {
                 if (psm != null)
                 {
-                    longestSeriesObserved.Add(psm.GetLengthLongestUniterupedFragmentSeries_collective());
+                    foreach (var (Notch, Peptide) in psm.BestMatchingPeptides)
+                    {
+                        longestSeriesObserved.Add(psm.GetLongestIonSeriesBidirectional(Peptide));
+                    }
                 }
             }
+
             Assert.IsTrue(longestSeriesExpected.SequenceEqual(longestSeriesObserved));
-
-            var apa = allPsmsArray.Where(p => p != null).ToList();
-
-            Assert.AreEqual(4, apa[0].FragmentIonSeriesLength(apa[0].BaseSequence, apa[0].MatchedFragmentIons));
-
         }
 
         [Test]
@@ -290,13 +289,13 @@ namespace Test
             Ms2ScanWithSpecificMass scan3 = new Ms2ScanWithSpecificMass(mzLibScan3, 0, 1, null, new CommonParameters());
             PeptideSpectralMatch psm3 = new PeptideSpectralMatch(pep3, 0, 0, 0, scan3, digestionParams, new List<MatchedFragmentIon>());
 
-            psm1.SetFdrValues(0, 0, 0, 0, 0, 0,  0); // valid psm
+            psm1.SetFdrValues(0, 0, 0, 0, 0, 0, 0, 0); // valid psm
             psm1.ResolveAllAmbiguities();
 
-            psm2.SetFdrValues(0, 0, 0.02, 0, 0, 0,  0); // psm above fdr cutoff
+            psm2.SetFdrValues(0, 0, 0.02, 0, 0, 0, 0, 0); // psm above fdr cutoff
             psm2.ResolveAllAmbiguities();
 
-            psm3.SetFdrValues(0, 0, 0, 0, 0, 0,  0); // ambiguous psm
+            psm3.SetFdrValues(0, 0, 0, 0, 0, 0, 0, 0); // ambiguous psm
 
             var allPsms = new List<PeptideSpectralMatch> { psm1, psm2, psm3 };
             var fdrEngine = new FdrAnalysisEngine(allPsms, 0, new CommonParameters(), new List<string>());
@@ -306,7 +305,7 @@ namespace Test
             Assert.That(psmGroups.First().Count() == 2);
             Assert.That(psmGroups.First().First().PsmCount == 1);
 
-            psm2.SetFdrValues(0, 0, 0, 0, 0, 0,  0);
+            psm2.SetFdrValues(0, 0, 0, 0, 0, 0, 0, 0);
             psm3.ResolveAllAmbiguities();
 
             fdrEngine.CountPsm();
@@ -358,7 +357,6 @@ namespace Test
             PropertyInfo[] properties = type.GetProperties();
         }
 
-
         [Test]
         public static void TestPsmAddOrReplace()
         {
@@ -378,10 +376,8 @@ namespace Test
 
             Assert.AreEqual(11, psm1.Score);
 
-
             Assert.AreEqual(10, psm1.RunnerUpScore);
             Assert.AreEqual(1, psm1.DeltaScore);
         }
-
     }
 }

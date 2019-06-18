@@ -8,6 +8,8 @@
         public double CumulativeDecoyNotch { get; set; }
         public double QValue { get; set; }
         public double QValueNotch { get; set; }
-        public int LongestSeriesLength { get; set; }
+
+        public double PEP { get; set; }
+        public double PEP_QValue { get; set; }
     }
 }

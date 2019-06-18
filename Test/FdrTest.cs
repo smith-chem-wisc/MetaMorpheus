@@ -233,7 +233,7 @@ namespace Test
             Assert.That(maxScorePsm.PeptidesToMatchingFragments.Count, Is.EqualTo(maxPsmData.Ambiguity));
             Assert.That(maxScorePsm.DeltaScore, Is.EqualTo(maxPsmData.DeltaScore).Within(0.05));
             Assert.That((float)(maxScorePsm.Score - (int)maxScorePsm.Score), Is.EqualTo(maxPsmData.Intensity).Within(0.05));
-            Assert.That(maxScorePsm.GetLengthLongestUniterupedFragmentSeries_collective(), Is.EqualTo(maxPsmData.LongestFragmentIonSeries));
+
             Assert.That(maxScorePsm.BestMatchingPeptides.Select(p => p.Peptide).First().MissedCleavages, Is.EqualTo(maxPsmData.MissedCleavagesCount));
             Assert.That(maxScorePsm.BestMatchingPeptides.Select(p => p.Peptide).First().AllModsOneIsNterminus.Values.Count(), Is.EqualTo(maxPsmData.ModsCount));
             Assert.That(maxScorePsm.Notch ?? 0, Is.EqualTo(maxPsmData.Notch));
@@ -246,8 +246,8 @@ namespace Test
 
             foreach (var item in allPsmsArray.Where(p => p != null))
             {
-                string b = item.PValueInfo.Split('|')[0];
-                if (b == "True")
+                var b = item.FdrInfo.PEP;
+                if (b >= 0.5)
                 {
                     trueCount++;
                 }

@@ -47,7 +47,6 @@ namespace EngineLayer
                     List<int> indiciesOfPeptidesToRemove = new List<int>();
                     List<(int notch, PeptideWithSetModifications pwsm)> bestMatchingPeptidesToRemove = new List<(int notch, PeptideWithSetModifications pwsm)>();
                     List<double> pValuePredictions = new List<double>();
-                    List<string> pValuePredictionStrings = new List<string>();
 
                     //Here we compute the pValue predection for each ambiguous peptide in a PSM. Ambiguous peptides with lower pValue predictions are removed from the PSM.
                     foreach (var (Notch, Peptide) in psm.BestMatchingPeptides)
@@ -59,7 +58,7 @@ namespace EngineLayer
                         someOut.Add(pd.AccessionAppearances.ToString() + "|" + pd.Ambiguity.ToString() + "|" + pd.DeltaScore.ToString() + "|" + pd.Intensity.ToString() + "|" + pd.Label + "|" + pd.LongestFragmentIonSeries + "|" + pd.MissedCleavagesCount + "|" + pd.ModsCount + "|" + pd.Notch + "|" + pd.PsmCount + "|" + pd.ScanPrecursorCharge + "|" + pValuePrediction.Prediction + "|" + pValuePrediction.Probability + "|" + pValuePrediction.Score);
 
                         pValuePredictions.Add(pValuePrediction.Probability);
-                        pValuePredictionStrings.Add(pValuePrediction.Prediction + "|" + pValuePrediction.Probability + "|" + pValuePrediction.Score);
+                        //A score is available using the variable pValuePrediction.Score
                     }
 
                     double highestPredictedPValue = pValuePredictions.Max();
@@ -70,7 +69,8 @@ namespace EngineLayer
                         if (Math.Abs(highestPredictedPValue - pValuePredictions[i]) > 0.000001)
                         {
                             indiciesOfPeptidesToRemove.Add(i);
-                            pValuePredictionStrings.RemoveAt(i);
+                            pValuePredictions.RemoveAt(i);
+                            //pValuePredictionStrings.RemoveAt(i);
                         }
                     }
 
@@ -91,7 +91,7 @@ namespace EngineLayer
                         psm.RemoveThisAmbiguousePeptide(notch, pwsm);
                     }
 
-                    psm.PValueInfo = pValuePredictionStrings[0];
+                    psm.FdrInfo.PEP = pValuePredictions[0]; //they should all be the same at this point so it doesn't matter which you take. First is good.
                 }
             }
 
@@ -203,14 +203,15 @@ namespace EngineLayer
             float intensity = (float)(psm.Score - (int)psm.Score);
             float charge = psm.ScanPrecursorCharge;
             float deltaScore = (float)psm.DeltaScore;
-
             float psmCount = sequenceToPsmCount[String.Join("|", psm.BestMatchingPeptides.Select(p => p.Peptide.FullSequence).ToList())];
+
             float modCount = firstPeptide.AllModsOneIsNterminus.Keys.Count();
 
             //todo: for non-specific cleavage, ignore missed cleavages
             float missedCleavages = firstPeptide.MissedCleavages;
 
-            float longestSeq = psm.FragmentIonSeriesLength(firstPeptide.BaseSequence, psm.PeptidesToMatchingFragments[firstPeptide]);
+            float longestSeq = psm.GetLongestIonSeriesBidirectional(firstPeptide);
+
             string accession = firstPeptide.Protein.Accession;
             float appearances;
             if (accessionCounts.Keys.Count != 0 && accessionCounts.ContainsKey(accession))
@@ -255,10 +256,17 @@ namespace EngineLayer
 
         public static PsmData CreateOnePsmDataFromPsm(PeptideSpectralMatch psm, Dictionary<string, int> accessionCounts, Dictionary<string, int> sequenceToPsmCount, bool? trueOrFalse = null)
         {
+            // TODO: some properties like DeltaScore will need to be recalculated if we keep top N peptides per PSM
+            // and rerank them because the top-scoring peptide can change
+
             float ambiguity = (float)psm.PeptidesToMatchingFragments.Count;//(psm.BaseSequence.Split('|').Count());
             float intensity = (float)(psm.Score - (int)psm.Score);
             float charge = psm.ScanPrecursorCharge;
             float deltaScore = (float)psm.DeltaScore;
+            float psmCount = sequenceToPsmCount[String.Join("|", psm.BestMatchingPeptides.Select(p => p.Peptide.FullSequence).ToList())];
+
+            var firstPeptide = psm.BestMatchingPeptides.Select(p => p.Peptide).First();
+            float modCount = firstPeptide.AllModsOneIsNterminus.Keys.Count();
 
             float notch = 0;
             if (psm.Notch.HasValue)
@@ -266,13 +274,13 @@ namespace EngineLayer
                 notch = psm.Notch.Value;
             }
 
-            float psmCount = sequenceToPsmCount[String.Join("|",psm.BestMatchingPeptides.Select(p=>p.Peptide.FullSequence).ToList())];
-            var firstPeptide = psm.BestMatchingPeptides.Select(p => p.Peptide).First();
-            float modCount = firstPeptide.AllModsOneIsNterminus.Keys.Count();
+            
+            
+            
 
             //todo: for non-specific cleavage, ignore missed cleavages
             float missedCleavages = firstPeptide.MissedCleavages;
-            float longestSeq = psm.FdrInfo.LongestSeriesLength;
+            float longestSeq = psm.GetLongestIonSeriesBidirectional(firstPeptide);
             string accession = firstPeptide.Protein.Accession;
             float appearances;
             if(accessionCounts.Keys.Count != 0 && accessionCounts.ContainsKey(accession))

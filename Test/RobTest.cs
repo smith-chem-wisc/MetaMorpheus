@@ -109,7 +109,7 @@ namespace Test
             foreach (var psm in psms)
             {
                 psm.ResolveAllAmbiguities();
-                psm.SetFdrValues(0, 0, 0, 0, 0, 0, 0);
+                psm.SetFdrValues(0, 0, 0, 0, 0, 0, 0, 0);
             }
 
             // run parsimony
@@ -210,15 +210,15 @@ namespace Test
             var match1 = new PeptideSpectralMatch(peptideList.ElementAt(0), 0, 10, 0, ms2scan, digestionParams, new List<MatchedFragmentIon>())
             {
             };
-            match1.SetFdrValues(0, 0, 0, 0, 0, 0, 0);
+            match1.SetFdrValues(0, 0, 0, 0, 0, 0, 0, 0);
             var match2 = new PeptideSpectralMatch(peptideList.ElementAt(1), 0, 10, 0, ms2scan, digestionParams, new List<MatchedFragmentIon>())
             {
             };
-            match2.SetFdrValues(0, 0, 0, 0, 0, 0, 0);
+            match2.SetFdrValues(0, 0, 0, 0, 0, 0, 0, 0);
             var match3 = new PeptideSpectralMatch(peptideList.ElementAt(1), 0, 10, 0, ms2scan, digestionParams, new List<MatchedFragmentIon>())
             {
             };
-            match3.SetFdrValues(0, 0, 0, 0, 0, 0, 0);
+            match3.SetFdrValues(0, 0, 0, 0, 0, 0, 0, 0);
 
             List<PeptideSpectralMatch> psms = new List<PeptideSpectralMatch>
             {

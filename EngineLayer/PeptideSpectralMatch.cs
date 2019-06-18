@@ -64,17 +64,12 @@ namespace EngineLayer
         public FdrInfo FdrInfo { get; private set; }
         public double Score { get; private set; }
         public double Xcorr;
-        public double DeltaScore {
-            get
-            {
-                return CalculateDeltaScore(5.0);
-            }
-        }
+
+        public double DeltaScore { get; private set; }
+
         public double RunnerUpScore { get; set; }
         public bool IsDecoy { get; private set; }
         public bool IsContaminant { get; private set; }
-
-        public string PValueInfo { get; set; }
 
         public DigestionParams DigestionParams { get; }
         public Dictionary<PeptideWithSetModifications, List<MatchedFragmentIon>> PeptidesToMatchingFragments { get; private set; }
@@ -164,12 +159,12 @@ namespace EngineLayer
             return s;
         }
 
-        public double CalculateDeltaScore(double scoreCutoff = 0)
+        public double CalculateDeltaScore(double scoreCutoff)
         {
             return Score - Math.Max(RunnerUpScore, scoreCutoff);
         }
 
-        public void SetFdrValues(double cumulativeTarget, double cumulativeDecoy, double qValue, double cumulativeTargetNotch, double cumulativeDecoyNotch, double qValueNotch, int longestSeries)
+        public void SetFdrValues(double cumulativeTarget, double cumulativeDecoy, double qValue, double cumulativeTargetNotch, double cumulativeDecoyNotch, double qValueNotch, double pep, double pepQValue)
         {
             FdrInfo = new FdrInfo
             {
@@ -179,7 +174,8 @@ namespace EngineLayer
                 CumulativeTargetNotch = cumulativeTargetNotch,
                 CumulativeDecoyNotch = cumulativeDecoyNotch,
                 QValueNotch = qValueNotch,
-                LongestSeriesLength = longestSeries
+                PEP = pep,
+                PEP_QValue = pepQValue
             };
         }
 
@@ -234,49 +230,22 @@ namespace EngineLayer
             MatchedFragmentIons = PeptidesToMatchingFragments.First().Value;
         }
 
-        /// <summary>
-        /// This integrates both N- and C-terminal ion series to determine the longest uninterupted stretch of matching fragment ions for the peptides
-        /// </summary>
-        /// <returns></returns>
-        public int GetLengthLongestUniterupedFragmentSeries_collective()
+        public int GetLongestIonSeriesBidirectional(PeptideWithSetModifications peptide)
         {
             int maxdif = 0;
 
-            if (this.BaseSequence != null && this.MatchedFragmentIons != null)
-            {
-                maxdif = FragmentIonSeriesLength(this.BaseSequence, this.MatchedFragmentIons);
-            }
-            else
-            {
-                //TODO This gives max for any of the ambiguous peptides. might want to return them individually
-                foreach (KeyValuePair<PeptideWithSetModifications, List<MatchedFragmentIon>> item in PeptidesToMatchingFragments)
-                {
-                    if (item.Key.BaseSequence != null && this.MatchedFragmentIons != null)
-                    {
-                        maxdif = Math.Max(maxdif, FragmentIonSeriesLength(item.Key.BaseSequence, item.Value));
-                    }
-                }
-            }
-
-            return maxdif;
-        }
-
-        public int FragmentIonSeriesLength(string baseSequence, List<MatchedFragmentIon> mfi)
-        {
-            int maxdif = 0;
-
-            if (mfi != null && mfi.Count() > 0)
+            if (PeptidesToMatchingFragments != null && PeptidesToMatchingFragments.TryGetValue(peptide, out var matchedFragments) && matchedFragments != null && matchedFragments.Any())
             {
                 List<int> jointSeries = new List<int>();
-                jointSeries.AddRange(mfi.Where(f => f.NeutralTheoreticalProduct.TerminusFragment.Terminus == FragmentationTerminus.N).Select(f => f.NeutralTheoreticalProduct.TerminusFragment.FragmentNumber) ?? new List<int>());
-                jointSeries.AddRange(mfi.Where(f => f.NeutralTheoreticalProduct.TerminusFragment.Terminus == FragmentationTerminus.C).Select(f => f.NeutralTheoreticalProduct.TerminusFragment.FragmentNumber) ?? new List<int>());
+                jointSeries.AddRange(matchedFragments.Where(f => f.NeutralTheoreticalProduct.TerminusFragment.Terminus == FragmentationTerminus.N).Select(f => f.NeutralTheoreticalProduct.TerminusFragment.FragmentNumber) ?? new List<int>());
+                jointSeries.AddRange(matchedFragments.Where(f => f.NeutralTheoreticalProduct.TerminusFragment.Terminus == FragmentationTerminus.C).Select(f => f.NeutralTheoreticalProduct.TerminusFragment.FragmentNumber) ?? new List<int>());
                 jointSeries = jointSeries.Distinct().ToList();
 
                 if (jointSeries.Count > 0)
                 {
                     jointSeries.Sort();
 
-                    List<int> aminoAcidPostionsThatCouldBeObserved = Enumerable.Range(0, baseSequence.Length + 1).ToList();
+                    List<int> aminoAcidPostionsThatCouldBeObserved = Enumerable.Range(0, peptide.BaseSequence.Length + 1).ToList();
 
                     List<int> missing = aminoAcidPostionsThatCouldBeObserved.Except(jointSeries).ToList();
 
@@ -290,8 +259,6 @@ namespace EngineLayer
                     }
                 }
             }
-
-            
 
             return maxdif;
         }
