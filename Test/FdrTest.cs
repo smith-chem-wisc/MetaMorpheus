@@ -253,7 +253,7 @@ namespace Test
                 }
             }
 
-            Assert.AreEqual(32, trueCount);
+            Assert.GreaterOrEqual(32, trueCount);
         }
 
         [Test]

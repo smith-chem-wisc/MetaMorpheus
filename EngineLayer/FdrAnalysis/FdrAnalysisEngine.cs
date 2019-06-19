@@ -45,14 +45,16 @@ namespace EngineLayer.FdrAnalysis
             {
                 var psms = proteasePsms.ToList();
 
-                //Calculate delta scores for the psms (regardless of if we are using them)
-                foreach (PeptideSpectralMatch psm in psms)
-                {
-                    if (psm != null)
-                    {
-                        psm.CalculateDeltaScore(ScoreCutoff);
-                    }
-                }
+                ////Calculate delta scores for the psms (regardless of if we are using them)
+                //foreach (PeptideSpectralMatch psm in psms)
+                //{
+                //    if (psm != null)
+                //    {
+                //        psm.CalculateDeltaScore(
+                //            //ScoreCutoff
+                //            );
+                //    }
+                //}
 
                 //determine if Score or DeltaScore performs better
                 if (UseDeltaScore)

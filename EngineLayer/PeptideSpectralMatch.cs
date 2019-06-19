@@ -65,7 +65,7 @@ namespace EngineLayer
         public double Score { get; private set; }
         public double Xcorr;
 
-        public double DeltaScore { get; private set; }
+        public double DeltaScore { get { return (Score - RunnerUpScore); } }
 
         public double RunnerUpScore { get; set; }
         public bool IsDecoy { get; private set; }
@@ -157,11 +157,6 @@ namespace EngineLayer
             PsmTsvWriter.AddMatchedIonsData(s, psm?.MatchedFragmentIons);
             PsmTsvWriter.AddMatchScoreData(s, psm);
             return s;
-        }
-
-        public double CalculateDeltaScore(double scoreCutoff)
-        {
-            return Score - Math.Max(RunnerUpScore, scoreCutoff);
         }
 
         public void SetFdrValues(double cumulativeTarget, double cumulativeDecoy, double qValue, double cumulativeTargetNotch, double cumulativeDecoyNotch, double qValueNotch, double pep, double pepQValue)
