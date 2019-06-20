@@ -5,7 +5,6 @@ using Proteomics.Fragmentation;
 using Proteomics.ProteolyticDigestion;
 using System.Collections.Generic;
 using System.Linq;
-using MassSpectrometry;
 
 namespace Test
 {
@@ -44,9 +43,9 @@ namespace Test
             };
 
             DigestionParams digestionParams = new DigestionParams();
-            var pwsm1 = new PeptideWithSetModifications(prot1, digestionParams, 1, 3, CleavageSpecificity.Unknown, "",  0,  modsFor1,  0);
-            var pwsm2 = new PeptideWithSetModifications(prot1, digestionParams, 4, 6, CleavageSpecificity.Unknown, "",  0,  modsFor2,  0);
-            var pwsm3 = new PeptideWithSetModifications(prot1, digestionParams, 1, 6, CleavageSpecificity.Unknown, "",  0,  modsFor3,  0);
+            var pwsm1 = new PeptideWithSetModifications(prot1, digestionParams, 1, 3, CleavageSpecificity.Unknown, "", 0, modsFor1, 0);
+            var pwsm2 = new PeptideWithSetModifications(prot1, digestionParams, 4, 6, CleavageSpecificity.Unknown, "", 0, modsFor2, 0);
+            var pwsm3 = new PeptideWithSetModifications(prot1, digestionParams, 1, 6, CleavageSpecificity.Unknown, "", 0, modsFor3, 0);
 
             HashSet<PeptideWithSetModifications> peptides = new HashSet<PeptideWithSetModifications>
             {
@@ -57,14 +56,13 @@ namespace Test
 
             IScan scan = new ThisTestScan();
             var psm1 = new PeptideSpectralMatch(pwsm1, 0, 1, 0, scan, digestionParams, new List<MatchedFragmentIon>());
-            psm1.SetFdrValues(0, 0, 0, 0, 0, 0, 0, 0, 0, false);
+            psm1.SetFdrValues(0, 0, 0, 0, 0, 0, 0, 0);
 
             var psm2 = new PeptideSpectralMatch(pwsm2, 0, 1, 0, scan, digestionParams, new List<MatchedFragmentIon>());
-            psm2.SetFdrValues(0, 0, 0, 0, 0, 0, 0, 0, 0, false);
+            psm2.SetFdrValues(0, 0, 0, 0, 0, 0, 0, 0);
 
             var psm3 = new PeptideSpectralMatch(pwsm3, 0, 1, 0, scan, digestionParams, new List<MatchedFragmentIon>());
-            psm3.SetFdrValues(0, 0, 0, 0, 0, 0, 0, 0, 0, false);
-
+            psm3.SetFdrValues(0, 0, 0, 0, 0, 0, 0, 0);
 
             List<PeptideSpectralMatch> newPsms = new List<PeptideSpectralMatch>
             {

@@ -24,6 +24,10 @@ namespace EngineLayer
             {
                 DeconvolutedMonoisotopicMasses = ExperimentalFragments.Select(p => p.monoisotopicMass).ToArray();
             }
+            else
+            {
+                DeconvolutedMonoisotopicMasses = new double[0];
+            }
         }
 
         public MsDataScan TheScan { get; }

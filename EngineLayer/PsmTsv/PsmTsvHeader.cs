@@ -61,8 +61,8 @@
         public const string CumulativeDecoyNotch = "Cumulative Decoy Notch";
         public const string QValue = "QValue";
         public const string QValueNotch = "QValue Notch";
-        public const string EValue = "eValue";
-        public const string EScore = "eScore";
+        public const string PEP = "PEP";
+        public const string PEP_QValue = "PEP_QValue";
 
         // Crosslinks
         public const string CrossTypeLabel = "Cross Type";

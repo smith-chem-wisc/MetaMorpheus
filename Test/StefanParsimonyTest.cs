@@ -4,7 +4,6 @@ using NUnit.Framework;
 using Proteomics;
 using Proteomics.Fragmentation;
 using Proteomics.ProteolyticDigestion;
-using System;
 using System.Collections.Generic;
 using System.Linq;
 
@@ -22,7 +21,7 @@ namespace Test
             var modDictionary = new Dictionary<int, List<Modification>>();
             ModificationMotif.TryGetMotif("M", out ModificationMotif motif1);
             var mod = new Modification(_originalId: "Oxidation of M", _modificationType: "Common Variable", _target: motif1, _locationRestriction: "Anywhere.", _monoisotopicMass: 15.99491461957);
-            
+
             // modified version of protein
             var protein1 = new Protein("PEPTIDEM", "accession1");
 
@@ -51,13 +50,13 @@ namespace Test
             Ms2ScanWithSpecificMass scan = new Ms2ScanWithSpecificMass(fakeScan, 2, 0, "File", new CommonParameters());
 
             PeptideSpectralMatch psm1 = new PeptideSpectralMatch(modifiedPeptide, 0, 10, 1, scan, new DigestionParams(), new List<MatchedFragmentIon>());
-            psm1.SetFdrValues(0, 0, 0, 0, 0, 0, 0, 0, 0, false);
+            psm1.SetFdrValues(0, 0, 0, 0, 0, 0, 0, 0);
             psm1.ResolveAllAmbiguities();
 
             PeptideSpectralMatch psm2 = new PeptideSpectralMatch(unmodifiedPeptide, 0, 10, 2, scan, new DigestionParams(), new List<MatchedFragmentIon>());
-            psm2.SetFdrValues(0, 0, 0, 0, 0, 0, 0, 0, 0, false);
+            psm2.SetFdrValues(0, 0, 0, 0, 0, 0, 0, 0);
             psm2.ResolveAllAmbiguities();
-            
+
             psmsForParsimony.Add(psm1);
             psmsForParsimony.Add(psm2);
 
@@ -89,7 +88,7 @@ namespace Test
             var modDictionary = new Dictionary<int, List<Modification>>();
             ModificationMotif.TryGetMotif("M", out ModificationMotif motif1);
             var mod = new Modification(_originalId: "Oxidation of M", _modificationType: "Common Variable", _target: motif1, _locationRestriction: "Anywhere.", _monoisotopicMass: 15.99491461957);
-            
+
             // modified version of protein
             var protein1 = new Protein("PEPTIDEM", "accession1");
 
@@ -118,13 +117,13 @@ namespace Test
             Ms2ScanWithSpecificMass scan = new Ms2ScanWithSpecificMass(fakeScan, 2, 0, "File", new CommonParameters());
 
             PeptideSpectralMatch psm1 = new PeptideSpectralMatch(modifiedPeptide, 0, 10, 1, scan, new DigestionParams(), new List<MatchedFragmentIon>());
-            psm1.SetFdrValues(0, 0, 0, 0, 0, 0, 0, 0, 0, false);
+            psm1.SetFdrValues(0, 0, 0, 0, 0, 0, 0, 0);
             psm1.ResolveAllAmbiguities();
 
             PeptideSpectralMatch psm2 = new PeptideSpectralMatch(unmodifiedPeptide, 0, 10, 2, scan, new DigestionParams(), new List<MatchedFragmentIon>());
-            psm2.SetFdrValues(0, 0, 0, 0, 0, 0, 0, 0, 0, false);
+            psm2.SetFdrValues(0, 0, 0, 0, 0, 0, 0, 0);
             psm2.ResolveAllAmbiguities();
-            
+
             psmsForParsimony.Add(psm1);
             psmsForParsimony.Add(psm2);
 
@@ -140,8 +139,8 @@ namespace Test
 
             int countOfProteinGroups = results.SortedAndScoredProteinGroups.Count;
 
-            // because modified peptides were NOT considered as unique, 
-            // then there should be one ambiguous protein group after parsimony, 
+            // because modified peptides were NOT considered as unique,
+            // then there should be one ambiguous protein group after parsimony,
             // and two protein accessions for each peptide
             Assert.AreEqual(1, countOfProteinGroups);
             Assert.AreEqual(2, results.SortedAndScoredProteinGroups.First().Proteins.Count);
@@ -171,10 +170,10 @@ namespace Test
             };
 
             // this PSM has a target and a decoy
-            psms[0].AddOrReplace(pep2, 1, 0, true, null,0);
+            psms[0].AddOrReplace(pep2, 1, 0, true, null, 0);
 
             psms.ForEach(p => p.ResolveAllAmbiguities());
-            psms.ForEach(p => p.SetFdrValues(0, 0, 0, 0, 0, 0, 0, 0, 0, false));
+            psms.ForEach(p => p.SetFdrValues(0, 0, 0, 0, 0, 0, 0, 0));
 
             // apply parsimony
             ProteinParsimonyEngine pae = new ProteinParsimonyEngine(psms, false, new CommonParameters(), new List<string>());
@@ -222,7 +221,7 @@ namespace Test
             };
 
             psms.ForEach(p => p.ResolveAllAmbiguities());
-            psms.ForEach(p => p.SetFdrValues(0, 0, 0, 0, 0, 0, 0, 0, 0, false));
+            psms.ForEach(p => p.SetFdrValues(0, 0, 0, 0, 0, 0, 0, 0));
 
             // apply parsimony
             ProteinParsimonyEngine pae = new ProteinParsimonyEngine(psms, false, new CommonParameters(), new List<string>());

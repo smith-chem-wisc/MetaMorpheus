@@ -77,7 +77,7 @@ namespace EngineLayer.ClassicSearch
 
                                 // this is thread-safe because even if the score improves from another thread writing to this PSM,
                                 // the lock combined with AddOrReplace method will ensure thread safety
-                                if (meetsScoreCutoff || CommonParameters.CalculateEValue)
+                                if (meetsScoreCutoff)
                                 {
                                     // valid hit (met the cutoff score); lock the scan to prevent other threads from accessing it
                                     lock (myLocks[scan.ScanIndex])
@@ -94,11 +94,6 @@ namespace EngineLayer.ClassicSearch
                                             {
                                                 PeptideSpectralMatches[scan.ScanIndex].AddOrReplace(peptide, thisScore, scan.Notch, CommonParameters.ReportAllAmbiguity, matchedIons, 0);
                                             }
-                                        }
-
-                                        if (CommonParameters.CalculateEValue)
-                                        {
-                                            PeptideSpectralMatches[scan.ScanIndex].AllScores.Add(thisScore);
                                         }
                                     }
                                 }
@@ -117,19 +112,6 @@ namespace EngineLayer.ClassicSearch
                     }
                 });
             }
-
-            // remove peptides below the score cutoff that were stored to calculate expectation values
-            if (CommonParameters.CalculateEValue)
-            {
-                for (int i = 0; i < PeptideSpectralMatches.Length; i++)
-                {
-                    if (PeptideSpectralMatches[i] != null && PeptideSpectralMatches[i].Score < CommonParameters.ScoreCutoff)
-                    {
-                        PeptideSpectralMatches[i] = null;
-                    }
-                }
-            }
-
             foreach (PeptideSpectralMatch psm in PeptideSpectralMatches.Where(p => p != null))
             {
                 psm.ResolveAllAmbiguities();
