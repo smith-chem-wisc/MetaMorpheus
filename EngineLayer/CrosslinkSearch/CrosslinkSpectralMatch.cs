@@ -18,9 +18,10 @@ namespace EngineLayer.CrosslinkSearch
         public CrosslinkSpectralMatch BetaPeptide { get; set; }
         public List<int> LinkPositions { get; set; }
         public double DeltaScore { get; set; }
-        public double XLTotalScore { get; set; } //alpha + beta psmCross
+        public double XLTotalScore { get; set; } //alpha + beta psmCross.
         public int? XlProteinPos { get; set; }
-        public List<int> XlRank { get; set; } //only contain 2 intger, consider change to Tuple
+        public int? XlProteinPosLoop { get; set; } // loop crosslink protein position 2.
+        public List<int> XlRank { get; set; } //only contain 2 intger, consider change to Tuple.
         public string ParentIonExist { get; set; }
         public int ParentIonExistNum { get; set; }
         public List<int> ParentIonMaxIntensityRanks { get; set; }
@@ -234,7 +235,7 @@ namespace EngineLayer.CrosslinkSearch
             List<PeptideWithSetModifications> pepsWithMods = BestMatchingPeptides.Select(p => p.Peptide).ToList();
             var proteinAccessionString = ProteinAccession != null ? ProteinAccession : PsmTsvWriter.Resolve(pepsWithMods.Select(b => b.Protein.Accession), FullSequence).ResolvedString;
             sb.Append(proteinAccessionString + "\t");           
-            sb.Append(XlProteinPos + "\t");
+            sb.Append(XlProteinPos + (XlProteinPosLoop.HasValue? "-"+ XlProteinPosLoop.Value : null) + "\t");
             sb.Append(BaseSequence + "\t");
             sb.Append(FullSequence + position + "\t");
             sb.Append((PeptideMonisotopicMass.HasValue ? PeptideMonisotopicMass.Value.ToString() : "---")); sb.Append("\t");
