@@ -12,7 +12,6 @@ namespace EngineLayer.FdrAnalysis
         private readonly bool UseDeltaScore;
         private readonly double ScoreCutoff;
         private readonly string AnalysisType;
-        // hi
 
         public FdrAnalysisEngine(List<PeptideSpectralMatch> psms, int massDiffAcceptorNumNotches, CommonParameters commonParameters, List<string> nestedIds, string analysisType = "PSM") : base(commonParameters, nestedIds)
         {
@@ -46,10 +45,6 @@ namespace EngineLayer.FdrAnalysis
             foreach (var proteasePsms in psmsGroupedByProtease)
             {
                 var psms = proteasePsms.ToList();
-
-                // generate the null distribution for e-value calculations
-                double globalMeanScore = 0;
-                int globalMeanCount = 0;
 
                 //determine if Score or DeltaScore performs better
                 if (UseDeltaScore)
