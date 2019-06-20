@@ -70,16 +70,6 @@ namespace TaskLayer
             DoCrosslinkFdrAnalysis(intraCsms);
             SingleFDRAnalysis(allPsms, commonParameters, new List<string> { taskId });
 
-            //// calculate protein crosslink residue numbers
-            //foreach (var csm in allPsmsXL)
-            //{
-            //    // alpha peptide crosslink residue in the protein
-            //    csm.XlProteinPos = csm.OneBasedStartResidueInProtein==null? (int?)null : csm.OneBasedStartResidueInProtein.Value + csm.LinkPositions[0] - 1;
-
-            //    // beta crosslink residue in protein
-            //    csm.BetaPeptide.XlProteinPos = csm.BetaPeptide.OneBasedStartResidueInProtein==null ? (int?)null : csm.BetaPeptide.OneBasedStartResidueInProtein.Value + csm.BetaPeptide.LinkPositions[0] - 1;
-            //}
-
             // write interlink CSMs
             if (interCsms.Any())
             {
