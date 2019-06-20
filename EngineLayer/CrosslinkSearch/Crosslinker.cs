@@ -21,7 +21,7 @@ namespace EngineLayer
             CrosslinkerModSites2 = crosslinkerModSites2;
             CrosslinkerName = crosslinkerName;
             Cleavable = cleavable;
-            CleaveDissociationTypesInString = dissociationTypes;
+            CleaveDissociationTypes = GetCleaveDissociationTypes(dissociationTypes);
             TotalMass = totalMass;
             CleaveMassShort = cleaveMassShort;
             CleaveMassLong = cleaveMassLong;
@@ -35,32 +35,7 @@ namespace EngineLayer
         public string CrosslinkerModSites2 { get; set; }
         public string CrosslinkerName { get; set; }
         public bool Cleavable { get; set; }
-        public string CleaveDissociationTypesInString { get; set; }
-        public List<DissociationType> CleaveDissociationTypes {
-            get
-            {
-                List<DissociationType> cleaveDissociationTypes = new List<DissociationType>();
-                foreach (var x in CleaveDissociationTypesInString.Split('|'))
-                {
-                    switch (x)
-                    {
-                        case "CID":
-                            cleaveDissociationTypes.Add(DissociationType.CID);
-                            break;
-                        case "HCD":
-                            cleaveDissociationTypes.Add(DissociationType.HCD);
-                            break;
-                        case "ETD":
-                            cleaveDissociationTypes.Add(DissociationType.ETD);
-                            break;
-                        default:
-                            break;
-                    }
-                }
-                return cleaveDissociationTypes;
-            }
-            set { }
-        }
+        public List<DissociationType> CleaveDissociationTypes { get; set; }
         public double TotalMass { get; set; }
         public double CleaveMassShort { get; set; }
         public double CleaveMassLong { get; set; }
@@ -68,6 +43,29 @@ namespace EngineLayer
         public double DeadendMassH2O { get; set; }
         public double DeadendMassNH2 { get; set; }
         public double DeadendMassTris { get; set; }
+
+        private List<DissociationType> GetCleaveDissociationTypes(string cleaveDissociationTypesInString)
+        {
+            List<DissociationType> cleaveDissociationTypes = new List<DissociationType>();
+            foreach (var x in cleaveDissociationTypesInString.Split('|'))
+            {
+                switch (x)
+                {
+                    case "CID":
+                        cleaveDissociationTypes.Add(DissociationType.CID);
+                        break;
+                    case "HCD":
+                        cleaveDissociationTypes.Add(DissociationType.HCD);
+                        break;
+                    case "ETD":
+                        cleaveDissociationTypes.Add(DissociationType.ETD);
+                        break;
+                    default:
+                        break;
+                }
+            }
+            return cleaveDissociationTypes;
+        }
 
         public static IEnumerable<Crosslinker> LoadCrosslinkers(string CrosslinkerLocation)
         {
@@ -120,11 +118,21 @@ namespace EngineLayer
             return CrosslinkerName;
         }
 
+        public static string DissociationTypes2String(List<DissociationType> dissociationTypes)
+        {
+            string x = "";
+            foreach (var d in dissociationTypes)
+            {
+                x += d.ToString() + "|";
+            }          
+            return x.Remove(x.Length - 1);
+        }
+
         public string ToString(bool writeCrosslinker)
         {
             if (writeCrosslinker)
             {               
-                return (CrosslinkerName + "\t" + CrosslinkerModSites + "\t" + CrosslinkerModSites2 + "\t" + Cleavable + "\t" + CleaveDissociationTypesInString + "\t" + TotalMass + "\t" + CleaveMassShort + "\t"
+                return (CrosslinkerName + "\t" + CrosslinkerModSites + "\t" + CrosslinkerModSites2 + "\t" + Cleavable + "\t" + DissociationTypes2String(CleaveDissociationTypes) + "\t" + TotalMass + "\t" + CleaveMassShort + "\t"
                     + CleaveMassLong + "\t" + DeadendMassH2O + "\t" + DeadendMassNH2 + "\t" + DeadendMassTris);
             }
             else
