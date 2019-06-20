@@ -403,7 +403,6 @@ namespace EngineLayer
             string cumulativeTargetNotch = " ";
             string cumulativeDecoyNotch = " ";
             string qValueNotch = " ";
-            string length = " ";
             string PEP = " ";
             string PEP_Qvalue = " ";
             if (peptide != null && peptide.FdrInfo != null)
@@ -423,7 +422,6 @@ namespace EngineLayer
             s[PsmTsvHeader.CumulativeTargetNotch] = cumulativeTargetNotch;
             s[PsmTsvHeader.CumulativeDecoyNotch] = cumulativeDecoyNotch;
             s[PsmTsvHeader.QValueNotch] = qValueNotch;
-            s[PsmTsvHeader.LongestSeries] = length;
             s[PsmTsvHeader.PEP] = PEP;
             s[PsmTsvHeader.PEP_QValue] = PEP_Qvalue;
         }

@@ -190,7 +190,7 @@ namespace Test
         }
 
         [Test]
-        public static void TestComputePValue()
+        public static void TestComputePEPValue()
         {
             var variableModifications = new List<Modification>();
             var fixedModifications = new List<Modification>();
@@ -208,7 +208,7 @@ namespace Test
 
             var nonNullPsms = allPsmsArray.Where(p => p != null).ToList();
             var nonNullPsmsOriginalCopy = allPsmsArray.Where(p => p != null).ToList();
-            var accessionCounts = PValueAnalysisGeneric.GetAccessionCounts(nonNullPsms);
+            var accessionCounts = PEP_Analysis.GetAccessionCounts(nonNullPsms);
 
             var maxScore = nonNullPsms.Select(n => n.Score).Max();
             var maxScorePsm = nonNullPsms.Where(n => n.Score == maxScore).First();
@@ -229,7 +229,7 @@ namespace Test
                 sequenceToPsmCount.Add(grp.Key, grp.Count());
             }
 
-            var maxPsmData = PValueAnalysisGeneric.CreateOnePsmDataFromPsm(maxScorePsm, accessionCounts, sequenceToPsmCount);
+            var maxPsmData = PEP_Analysis.CreateOnePsmDataFromPsm(maxScorePsm, accessionCounts, sequenceToPsmCount);
             Assert.That(maxScorePsm.PeptidesToMatchingFragments.Count, Is.EqualTo(maxPsmData.Ambiguity));
             Assert.That(maxScorePsm.DeltaScore, Is.EqualTo(maxPsmData.DeltaScore).Within(0.05));
             Assert.That((float)(maxScorePsm.Score - (int)maxScorePsm.Score), Is.EqualTo(maxPsmData.Intensity).Within(0.05));
@@ -240,7 +240,7 @@ namespace Test
             Assert.That(maxScorePsm.PsmCount, Is.EqualTo(maxPsmData.PsmCount));
             Assert.That(maxScorePsm.ScanPrecursorCharge, Is.EqualTo(maxPsmData.ScanPrecursorCharge));
 
-            PValueAnalysisGeneric.ComputePValuesForAllPSMsGeneric(nonNullPsms);
+            PEP_Analysis.ComputePEPValuesForAllPSMsGeneric(nonNullPsms);
 
             int trueCount = 0;
 
@@ -279,17 +279,17 @@ namespace Test
         }
 
         [Test]
-        public static void TestPValuesReduceAmbiguity()
+        public static void TestPEPValuesReduceAmbiguity()
         {
             //TODO
-            //This is hard becuase you have to have a big enough file to create a model, enough peptides with the same exact score for the same scan, and enough differences in those ambiguous peptides that one or more get deleted after pvalue comutation.
+            //This is hard becuase you have to have a big enough file to create a model, enough peptides with the same exact score for the same scan, and enough differences in those ambiguous peptides that one or more get deleted after pepvalue comutation.
         }
 
         [Test]
-        public static void TestPValueWorksWithStoredTrainedModel()
+        public static void TestPEPValueWorksWithStoredTrainedModel()
         {
             //TODO
-            //This is hard becuase you have to have a big enough file to creat a model, enough peptides with the same exact score for the same scan, and enough differences in those ambiguous peptides that one or more get deleted after pvalue comutation.
+            //This is hard becuase you have to have a big enough file to creat a model, enough peptides with the same exact score for the same scan, and enough differences in those ambiguous peptides that one or more get deleted after pepvalue comutation.
         }
     }
 }

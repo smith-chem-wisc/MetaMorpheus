@@ -11,9 +11,9 @@ using static Microsoft.ML.DataOperationsCatalog;
 
 namespace EngineLayer
 {
-    public static class PValueAnalysisGeneric
+    public static class PEP_Analysis
     {
-        public static string ComputePValuesForAllPSMsGeneric(List<PeptideSpectralMatch> psms)
+        public static string ComputePEPValuesForAllPSMsGeneric(List<PeptideSpectralMatch> psms)
         {
             Dictionary<string, int> accessionAppearances = GetAccessionCounts(psms);
             Dictionary<string, int> sequenceToPsmCount = GetSequenceToPSMCount(psms);
@@ -21,6 +21,26 @@ namespace EngineLayer
             MLContext mlContext = new MLContext();
             IDataView dataView = mlContext.Data.LoadFromEnumerable(CreatePsmData(psms, accessionAppearances, sequenceToPsmCount));
 
+            //
+            // Summary:
+            //     Split the dataset into the train set and test set according to the given fraction.
+            //     Respects the samplingKeyColumnName if provided.
+            //
+            // Parameters:
+            //   data:
+            //     The dataset to split.
+            //
+            //   testFraction:
+            //     The fraction of data to go into the test set.
+            //
+            //   samplingKeyColumnName:
+            //     Name of a column to use for grouping rows. If two examples share the same value
+            //     of the samplingKeyColumnName, they are guaranteed to appear in the same subset
+            //     (train or test). This can be used to ensure no label leakage from the train to
+            //     the test set. If null no row grouping will be performed.
+            //
+            //   seed:
+            //     Seed for the random number generator used to select rows for the train-test split.
             TrainTestData trainTestSplit = mlContext.Data.TrainTestSplit(dataView, testFraction: 0.1);
             IDataView trainingData = trainTestSplit.TrainSet;
             IDataView testData = trainTestSplit.TestSet;
@@ -46,30 +66,30 @@ namespace EngineLayer
                 {
                     List<int> indiciesOfPeptidesToRemove = new List<int>();
                     List<(int notch, PeptideWithSetModifications pwsm)> bestMatchingPeptidesToRemove = new List<(int notch, PeptideWithSetModifications pwsm)>();
-                    List<double> pValuePredictions = new List<double>();
+                    List<double> pepValuePredictions = new List<double>();
 
-                    //Here we compute the pValue predection for each ambiguous peptide in a PSM. Ambiguous peptides with lower pValue predictions are removed from the PSM.
+                    //Here we compute the pepvalue predection for each ambiguous peptide in a PSM. Ambiguous peptides with lower pepvalue predictions are removed from the PSM.
                     foreach (var (Notch, Peptide) in psm.BestMatchingPeptides)
                     {
                         PsmData pd = CreateOnePsmDataFromPsm2(psm, Notch, Peptide, accessionAppearances, sequenceToPsmCount);
 
-                        var pValuePrediction = predictionEngine.Predict(pd);
+                        var pepValuePrediction = predictionEngine.Predict(pd);
 
-                        someOut.Add(pd.AccessionAppearances.ToString() + "|" + pd.Ambiguity.ToString() + "|" + pd.DeltaScore.ToString() + "|" + pd.Intensity.ToString() + "|" + pd.Label + "|" + pd.LongestFragmentIonSeries + "|" + pd.MissedCleavagesCount + "|" + pd.ModsCount + "|" + pd.Notch + "|" + pd.PsmCount + "|" + pd.ScanPrecursorCharge + "|" + pValuePrediction.Prediction + "|" + pValuePrediction.Probability + "|" + pValuePrediction.Score);
+                        someOut.Add(pd.AccessionAppearances.ToString() + "|" + pd.Ambiguity.ToString() + "|" + pd.DeltaScore.ToString() + "|" + pd.Intensity.ToString() + "|" + pd.Label + "|" + pd.LongestFragmentIonSeries + "|" + pd.MissedCleavagesCount + "|" + pd.ModsCount + "|" + pd.Notch + "|" + pd.PsmCount + "|" + pd.ScanPrecursorCharge + "|" + pepValuePrediction.Prediction + "|" + pepValuePrediction.Probability + "|" + pepValuePrediction.Score);
 
-                        pValuePredictions.Add(pValuePrediction.Probability);
-                        //A score is available using the variable pValuePrediction.Score
+                        pepValuePredictions.Add(pepValuePrediction.Probability);
+                        //A score is available using the variable pepvaluePrediction.Score
                     }
 
-                    double highestPredictedPValue = pValuePredictions.Max();
-                    int numberOfPredictions = pValuePredictions.Count - 1;
+                    double highestPredictedPEPValue = pepValuePredictions.Max();
+                    int numberOfPredictions = pepValuePredictions.Count - 1;
 
                     for (int i = numberOfPredictions; i >= 0; i--)
                     {
-                        if (Math.Abs(highestPredictedPValue - pValuePredictions[i]) > 0.000001)
+                        if (Math.Abs(highestPredictedPEPValue - pepValuePredictions[i]) > 0.000001)
                         {
                             indiciesOfPeptidesToRemove.Add(i);
-                            pValuePredictions.RemoveAt(i);
+                            pepValuePredictions.RemoveAt(i);
                             //pValuePredictionStrings.RemoveAt(i);
                         }
                     }
@@ -91,7 +111,7 @@ namespace EngineLayer
                         psm.RemoveThisAmbiguousePeptide(notch, pwsm);
                     }
 
-                    psm.FdrInfo.PEP = pValuePredictions[0]; //they should all be the same at this point so it doesn't matter which you take. First is good.
+                    psm.FdrInfo.PEP = pepValuePredictions[0]; //they should all be the same at this point so it doesn't matter which you take. First is good.
                 }
             }
 
@@ -324,7 +344,14 @@ namespace EngineLayer
             };
         }
 
-        //TODO add this to results.tsv
+        /// <summary>
+        /// At the time when the ~10% of the data gets chosen for training, another 10% gets chosen for evaluation. Then after training, 
+        /// the effectiveness of the model gets evaluated on the test set. The results of that evaluation are converted to text values called 
+        /// BinarySearchTreeMetrics and this gets written to the results.tsv
+        /// </summary>
+        /// <param name="name"></param>
+        /// <param name="metrics"></param>
+        /// <returns></returns>
         public static string PrintBinaryClassificationMetrics(string name, CalibratedBinaryClassificationMetrics metrics)
         {
             StringBuilder s = new StringBuilder();
