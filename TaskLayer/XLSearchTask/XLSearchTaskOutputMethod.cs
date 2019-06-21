@@ -250,8 +250,6 @@ namespace TaskLayer
                             crosslinkerDeadEndMass = crosslinker.DeadendMassH2O;
                             break;
                     }
-                    var mod = new pepXML.Generated.modInfoDataTypeMod_aminoacid_mass { mass = crosslinkerDeadEndMass, position = items[i].LinkPositions.First().ToString() };
-                    mods.Add(mod);
                     var searchHit = new pepXML.Generated.msms_pipeline_analysisMsms_run_summarySpectrum_querySearch_resultSearch_hit
                     {
                         hit_rank = 1,
