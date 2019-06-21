@@ -133,8 +133,8 @@ namespace EngineLayer
             }
         }
 
-        //P-Value analysis identifies ambiguous peptides with lower probability. These are removed from the bestmatchingpeptides dictionary, which lowers ambiguity.
-        public void RemoveThisAmbiguousePeptide(int notch, PeptideWithSetModifications pwsm)
+        //PEP-Value analysis identifies ambiguous peptides with lower probability. These are removed from the bestmatchingpeptides dictionary, which lowers ambiguity.
+        public void RemoveThisAmbiguousPeptide(int notch, PeptideWithSetModifications pwsm)
         {
             _BestMatchingPeptides.Remove((notch, pwsm));
         }

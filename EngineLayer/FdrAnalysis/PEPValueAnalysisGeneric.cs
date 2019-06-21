@@ -58,7 +58,7 @@ namespace EngineLayer
 
             //For Debug
             List<string> someOut = new List<string>();
-            someOut.Add("Accessions|Ambiguity|DeltaScore|Intensity|Label|LongestSeries|MissedCleavages|ModsCount|Notch|PsmCount|PrecursorCharge|call|pValue|Score|QValue");
+            someOut.Add("Accessions|Ambiguity|DeltaScore|Intensity|Label|LongestSeries|MissedCleavages|ModsCount|Notch|PsmCount|PrecursorCharge|call|pepValue|Score|QValue");
 
             foreach (PeptideSpectralMatch psm in psms)
             {
@@ -108,10 +108,10 @@ namespace EngineLayer
                     foreach (var (notch, pwsm) in bestMatchingPeptidesToRemove)
                     {
                         ambiguousScans = ambiguousScans + psm.ScanNumber + "|";
-                        psm.RemoveThisAmbiguousePeptide(notch, pwsm);
+                        psm.RemoveThisAmbiguousPeptide(notch, pwsm);
                     }
 
-                    psm.FdrInfo.PEP = pepValuePredictions[0]; //they should all be the same at this point so it doesn't matter which you take. First is good.
+                    psm.FdrInfo.PEP = 1-pepValuePredictions[0]; //they should all be the same at this point so it doesn't matter which you take. First is good.
                 }
             }
 
@@ -356,18 +356,18 @@ namespace EngineLayer
         {
             StringBuilder s = new StringBuilder();
             s.AppendLine("************************************************************");
-            s.AppendLine("*       Metrics for {name} binary classification model      ");
+            s.AppendLine("*       Metrics for Determination of PEP Using Binary Classification      ");
             s.AppendLine("*-----------------------------------------------------------");
-            s.AppendLine("*       Accuracy: {metrics.Accuracy:P2}");
-            s.AppendLine("*       Area Under Curve:      {metrics.AreaUnderRocCurve:P2}");
-            s.AppendLine("*       Area under Precision recall Curve:  {metrics.AreaUnderPrecisionRecallCurve:P2}");
-            s.AppendLine("*       F1Score:  {metrics.F1Score:P2}");
-            s.AppendLine("*       LogLoss:  {metrics.LogLoss:#.##}");
-            s.AppendLine("*       LogLossReduction:  {metrics.LogLossReduction:#.##}");
-            s.AppendLine("*       PositivePrecision:  {metrics.PositivePrecision:#.##}");
-            s.AppendLine("*       PositiveRecall:  {metrics.PositiveRecall:#.##}");
-            s.AppendLine("*       NegativePrecision:  {metrics.NegativePrecision:#.##}");
-            s.AppendLine("*       NegativeRecall:  {metrics.NegativeRecall:P2}");
+            s.AppendLine("*       Accuracy:  " + metrics.Accuracy.ToString());
+            s.AppendLine("*       Area Under Curve:  " + metrics.AreaUnderRocCurve.ToString());
+            s.AppendLine("*       Area under Precision recall Curve:  " + metrics.AreaUnderPrecisionRecallCurve.ToString());
+            s.AppendLine("*       F1Score:  " + metrics.F1Score.ToString());
+            s.AppendLine("*       LogLoss:  " + metrics.LogLoss.ToString());
+            s.AppendLine("*       LogLossReduction:  " + metrics.LogLossReduction.ToString());
+            s.AppendLine("*       PositivePrecision:  " + metrics.PositivePrecision.ToString());
+            s.AppendLine("*       PositiveRecall:  " + metrics.PositiveRecall.ToString());
+            s.AppendLine("*       NegativePrecision:  " + metrics.NegativePrecision.ToString());
+            s.AppendLine("*       NegativeRecall:  " + metrics.NegativeRecall.ToString());
             s.AppendLine("************************************************************");
             return s.ToString();
         }

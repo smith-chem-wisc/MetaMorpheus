@@ -13,7 +13,7 @@ namespace EngineLayer.FdrAnalysis
         public int PsmsWithin1PercentFdr { get; set; }
         public bool DeltaScoreImprovement { get; set; }
         private string AnalysisType { get; set; }
-        public string BinarySearchTreeMetrics { get; set; }
+        public string BinarySearchTreeMetrics { get; set; } //See PEPValueAnalysisGeneric public static string PrintBinaryClassificationMetrics method for explanation
 
         public override string ToString()
         {

@@ -273,7 +273,7 @@ namespace Test
 
             Assert.AreEqual(2, psm1.BestMatchingPeptides.Count());
 
-            psm1.RemoveThisAmbiguousePeptide(1, pwsm);
+            psm1.RemoveThisAmbiguousPeptide(1, pwsm);
 
             Assert.AreEqual(1, psm1.BestMatchingPeptides.Count());
         }

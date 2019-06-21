@@ -174,13 +174,11 @@ namespace EngineLayer.FdrAnalysis
             double[] allPEPValues = psms.Select(p => p.FdrInfo.PEP).ToArray();
             int[] psmsArrayIndicies = Enumerable.Range(0, psms.Count).ToArray();
             Array.Sort(allPEPValues, psmsArrayIndicies);//sort the second thing by the first
-            Array.Reverse(allPEPValues);
-            Array.Reverse(psmsArrayIndicies);
 
             double runningSum = 0;
             for (int i = 0; i < allPEPValues.Length; i++)
             {
-                runningSum += (1 - allPEPValues[i]);
+                runningSum += allPEPValues[i];
                 double qValue = runningSum / (i + 1);
                 psms[psmsArrayIndicies[i]].FdrInfo.PEP_QValue = Math.Round(qValue, 6);
             }
