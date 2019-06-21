@@ -45,17 +45,6 @@ namespace EngineLayer.FdrAnalysis
             {
                 var psms = proteasePsms.ToList();
 
-                ////Calculate delta scores for the psms (regardless of if we are using them)
-                //foreach (PeptideSpectralMatch psm in psms)
-                //{
-                //    if (psm != null)
-                //    {
-                //        psm.CalculateDeltaScore(
-                //            //ScoreCutoff
-                //            );
-                //    }
-                //}
-
                 //determine if Score or DeltaScore performs better
                 if (UseDeltaScore)
                 {
@@ -169,29 +158,29 @@ namespace EngineLayer.FdrAnalysis
                 CountPsm();
                 if (AllPsms.Count > 0)
                 {
-                    myAnalysisResults.BinarySearchTreeMetrics = PValueAnalysisGeneric.ComputePValuesForAllPSMsGeneric(AllPsms);
-                    Compute_PValue_Based_QValue(AllPsms);
+                    myAnalysisResults.BinarySearchTreeMetrics = PEP_Analysis.ComputePEPValuesForAllPSMsGeneric(AllPsms);
+                    Compute_PEPValue_Based_QValue(AllPsms);
                 }
             }
 
             if (AnalysisType == "Peptide")
             {
-                Compute_PValue_Based_QValue(AllPsms);
+                Compute_PEPValue_Based_QValue(AllPsms);
             }
         }
 
-        public static void Compute_PValue_Based_QValue(List<PeptideSpectralMatch> psms)
+        public static void Compute_PEPValue_Based_QValue(List<PeptideSpectralMatch> psms)
         {
-            double[] allPValues = psms.Select(p => p.FdrInfo.PEP).ToArray();
+            double[] allPEPValues = psms.Select(p => p.FdrInfo.PEP).ToArray();
             int[] psmsArrayIndicies = Enumerable.Range(0, psms.Count).ToArray();
-            Array.Sort(allPValues, psmsArrayIndicies);//sort the second thing by the first
-            Array.Reverse(allPValues);
+            Array.Sort(allPEPValues, psmsArrayIndicies);//sort the second thing by the first
+            Array.Reverse(allPEPValues);
             Array.Reverse(psmsArrayIndicies);
 
             double runningSum = 0;
-            for (int i = 0; i < allPValues.Length; i++)
+            for (int i = 0; i < allPEPValues.Length; i++)
             {
-                runningSum += (1 - allPValues[i]);
+                runningSum += (1 - allPEPValues[i]);
                 double qValue = runningSum / (i + 1);
                 psms[psmsArrayIndicies[i]].FdrInfo.PEP_QValue = Math.Round(qValue, 6);
             }
