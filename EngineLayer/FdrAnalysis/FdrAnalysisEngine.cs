@@ -1,5 +1,4 @@
-﻿using MathNet.Numerics;
-using System;
+﻿using System;
 using System.Collections.Generic;
 using System.Linq;
 
@@ -116,7 +115,7 @@ namespace EngineLayer.FdrAnalysis
                     psm.SetFdrValues(cumulativeTarget, cumulativeDecoy, qValue, cumulativeTargetPerNotch[notch], cumulativeDecoyPerNotch[notch], qValueNotch, pep, pepQValue);
                 }
 
-                // set q-value thresholds such that a lower scoring PSM can't have 
+                // set q-value thresholds such that a lower scoring PSM can't have
                 // a higher confidence than a higher scoring PSM
                 //Populate min qValues
                 double qValueThreshold = 1.0;
@@ -160,7 +159,6 @@ namespace EngineLayer.FdrAnalysis
                 {
                     myAnalysisResults.BinarySearchTreeMetrics = PEPValueAnalysisGeneric.ComputePEPValuesForAllPSMsGeneric(AllPsms);
                     Compute_PEPValue_Based_QValue(AllPsms);
-
                 }
             }
             if (AnalysisType == "Peptide")
