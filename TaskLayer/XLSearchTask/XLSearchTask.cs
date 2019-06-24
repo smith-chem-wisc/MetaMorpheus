@@ -154,7 +154,7 @@ namespace TaskLayer
         }
 
         //Remove same peptide with from different protein.
-        private List<CrosslinkSpectralMatch> RemoteDuplicate(List<CrosslinkSpectralMatch> crosslinkSpectralMatches)
+        public static List<CrosslinkSpectralMatch> RemoteDuplicate(List<CrosslinkSpectralMatch> crosslinkSpectralMatches)
         {
             Dictionary<string, CrosslinkSpectralMatch> keyValuePairs = new Dictionary<string, CrosslinkSpectralMatch>();
             foreach (var csm in crosslinkSpectralMatches)

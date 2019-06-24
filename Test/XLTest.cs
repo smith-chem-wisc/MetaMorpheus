@@ -625,7 +625,18 @@ namespace Test
                 "PVSEKVTKCCTESLVNRRPCFSALTPDETYVPKAFDEKLFTFHADICTLPDTEKQIKKQTALVELLKHKP" +
                 "KATEEQLKTVMENFVAFVDKCCAADDKEACFAVEGPKLVVSTQTALA", "BSA");
 
-            var indexingResults = (IndexingResults)new IndexingEngine(new List<Protein> { bsa }, new List<Modification>(), new List<Modification>(), null, 0, DecoyType.None,
+            //Add the same seq to test protein ambiguious assignment.
+            Protein bsa2 = new Protein("MKWVTFISLLLLFSSAYSRGVFRRDTHKSEIAHRFKDLGEEHFKGLVLIAFSQYL" +
+                "QQCPFDEHVKLVNELTEFAKTCVADESHAGCEKSLHTLFGDELCKVASLRETYGDMADCCEKQEPERNECFLSHKDDS" +
+                "PDLPKLKPDPNTLCDEFKADEKKFWGKYLYEIARRHPYFYAPELLYYANKYNGVFQECCQAEDKGACLLPKIETMRE" +
+                "KVLTSSARQRLRCASIQKFGERALKAWSVARLSQKFPKAEFVEVTKLVTDLTKVHKECCHGDLLECADDR" +
+                "ADLAKYICDNQDTISSKLKECCDKPLLEKSHCIAEVEKDAIPENLPPLTADFAEDKDVCKNYQEAKDAFL" +
+                "GSFLYEYSRRHPEYAVSVLLRLAKEYEATLEECCAKDDPHACYSTVFDKLKHLVDEPQNLIKQNCDQFEK" +
+                "LGEYGFQNALIVRYTRKVPQVSTPTLVEVSRSLGKVGTRCCTKPESERMPCTEDYLSLILNRLCVLHEKT" +
+                "PVSEKVTKCCTESLVNRRPCFSALTPDETYVPKAFDEKLFTFHADICTLPDTEKQIKKQTALVELLKHKP" +
+                "KATEEQLKTVMENFVAFVDKCCAADDKEACFAVEGPKLVVSTQTALA", "BSA2");
+
+            var indexingResults = (IndexingResults)new IndexingEngine(new List<Protein> { bsa, bsa2 }, new List<Modification>(), new List<Modification>(), null, 0, DecoyType.None,
                 commonParameters, 5000, false, new List<FileInfo>(), new List<string>()).Run();
 
 
@@ -638,12 +649,18 @@ namespace Test
             new CrosslinkSearchEngine(csms, scans, indexingResults.PeptideIndex, indexingResults.FragmentIndex, secondIndexingResults.FragmentIndex, 0, commonParameters, GlobalVariables.Crosslinkers.First(p => p.CrosslinkerName == "DSSO"), 
                 false, 0, false, false, true, new List<string>()).Run();
 
-            var csm = csms.First()[0];
-            csm.ResolveAllAmbiguities();
-            if (csm.BetaPeptide!=null)
+            foreach (var c in csms.First())
             {
-                csm.BetaPeptide.ResolveAllAmbiguities();
+                c.ResolveAllAmbiguities();
+                if (c.BetaPeptide != null)
+                {
+                    c.BetaPeptide.ResolveAllAmbiguities();
+                }
             }
+
+            //This function is important for crosslink protein ambiguious assignment.
+            var csm = XLSearchTask.RemoteDuplicate(csms.First()).First();
+
             // test parent scan (CID)
             Assert.That(csm.MatchedFragmentIons.Count == 21);
             Assert.That(csm.ScanNumber == 2);
@@ -668,6 +685,9 @@ namespace Test
             Assert.That(psmFromTsv.BetaPeptideChildScanMatchedIons.Count == 1
                 && psmFromTsv.BetaPeptideChildScanMatchedIons.First().Key == 3
                 && psmFromTsv.BetaPeptideChildScanMatchedIons.First().Value.Count == 25);
+
+            Assert.That(csm.ProteinAccession == null && csm.BetaPeptide.ProteinAccession == null);
+            Assert.That(psmFromTsv.ProteinAccession == "BSA|BSA2");
 
             File.Delete(outputFile);
         }
