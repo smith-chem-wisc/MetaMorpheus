@@ -132,10 +132,13 @@ namespace Test
                     item.BetaPeptide.ResolveAllAmbiguities();
                 }
                 item.SetFdrValues(0, 0, 0, 0, 0, 0, 0, 0, 0, false);
+                item.ResolveProteinPosAmbiguitiesForXl();
             }
 
             //Test newPsms
             Assert.AreEqual(3, newPsms.Count);
+            Assert.That(newPsms[1].XlProteinPos == 4 && newPsms[1].XlProteinPosLoop ==7);
+
 
             //Test Output
             var task = new XLSearchTask();

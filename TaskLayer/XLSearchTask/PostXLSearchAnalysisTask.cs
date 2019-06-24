@@ -26,27 +26,9 @@ namespace TaskLayer
 
         public MyTaskResults Run(string OutputFolder, List<DbForTask> dbFilenameList, List<string> currentRawFileList, string taskId, FileSpecificParameters[] fileSettingsList, List<CrosslinkSpectralMatch> allPsms, CommonParameters commonParameters, XlSearchParameters xlSearchParameters, List<Protein> proteinList, List<Modification> variableModifications, List<Modification> fixedModifications, List<string> localizeableModificationTypes, MyTaskResults MyTaskResults)
         {
-            // calculate protein crosslink residue numbers
             foreach (var csm in allPsms)
             {
-                if (csm.CrossType == PsmCrossType.Cross)
-                {
-                    // alpha peptide crosslink residue in the protein
-                    csm.XlProteinPos = csm.OneBasedStartResidueInProtein == null ? (int?)null : csm.OneBasedStartResidueInProtein.Value + csm.LinkPositions[0] - 1;
-
-                    // beta crosslink residue in protein
-                    csm.BetaPeptide.XlProteinPos = csm.BetaPeptide.OneBasedStartResidueInProtein == null ? (int?)null : csm.BetaPeptide.OneBasedStartResidueInProtein.Value + csm.BetaPeptide.LinkPositions[0] - 1;
-                }
-                else if (csm.CrossType == PsmCrossType.DeadEnd || csm.CrossType == PsmCrossType.DeadEndH2O || csm.CrossType == PsmCrossType.DeadEndNH2 || csm.CrossType == PsmCrossType.DeadEndTris)
-                {
-                    csm.XlProteinPos = csm.OneBasedStartResidueInProtein == null ? (int?)null : csm.OneBasedStartResidueInProtein.Value + csm.LinkPositions[0] - 1;
-                }
-                else if (csm.CrossType == PsmCrossType.Loop)
-                {
-                    csm.XlProteinPos = csm.OneBasedStartResidueInProtein == null ? (int?)null : csm.OneBasedStartResidueInProtein.Value + csm.LinkPositions[0] - 1;
-
-                    csm.XlProteinPosLoop = csm.OneBasedStartResidueInProtein == null ? (int?)null : csm.OneBasedStartResidueInProtein.Value + csm.LinkPositions[1] - 1;
-                }
+                csm.ResolveProteinPosAmbiguitiesForXl();
             }
 
             var allPsmsXL = allPsms.Where(p => p.CrossType == PsmCrossType.Cross).ToList();
