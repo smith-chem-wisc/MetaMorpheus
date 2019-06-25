@@ -1,8 +1,8 @@
-﻿using System;
+﻿using Chemistry;
+using MassSpectrometry;
+using System;
 using System.Collections.Generic;
 using System.Linq;
-using Chemistry;
-using MassSpectrometry;
 
 namespace EngineLayer
 {
@@ -23,6 +23,10 @@ namespace EngineLayer
             if (ExperimentalFragments.Any())
             {
                 DeconvolutedMonoisotopicMasses = ExperimentalFragments.Select(p => p.monoisotopicMass).ToArray();
+            }
+            else
+            {
+                DeconvolutedMonoisotopicMasses = new double[0];
             }
         }
 

@@ -894,17 +894,6 @@
                                                             </TextBlock>
                                                         </CheckBox.ToolTip>
                                                     </CheckBox>
-                                                    <CheckBox x:Name="eValueCheckBox" Content="Calculate eValues"  Margin="5" ToolTipService.ShowDuration="999999" ToolTipService.InitialShowDelay="500">
-                                                        <CheckBox.ToolTip>
-                                                            <TextBlock>
-                                            This estimates the expectation value (eValue) for each PSM, which is the probability of a PSM obtaining its given score by random chance.
-                                            <LineBreak />
-                                            There is a significant increase in search time.
-                                            <LineBreak />
-                                            eValues are not used for FDR and are only calculated for the user's review.
-                                                            </TextBlock>
-                                                        </CheckBox.ToolTip>
-                                                    </CheckBox>
                                                 </StackPanel>
                                             </StackPanel>
                                         </Grid>
