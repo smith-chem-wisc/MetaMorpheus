@@ -32,6 +32,17 @@ namespace Test
         private static List<PeptideWithSetModifications> digestedList { get; set; }
 
         [Test]
+        public static void XlTestCrosslinker()
+        {
+            var crosslinker = new Crosslinker("K", "K", "testCrosslinker", true, "CID|HCD", 100, 25, 60, 100, 0, 0, 50);
+            var crosslinkerName = crosslinker.ToString();
+            Assert.That(crosslinkerName == "testCrosslinker");
+            var crosslinkerString = crosslinker.ToString(true);
+            Assert.That(crosslinkerString == "testCrosslinker\tK\tK\tTrue\tCID|HCD\t100\t25\t60\t0\t0\t50");
+
+        }
+
+        [Test]
         public static void XlTestXlPosCal()
         {
             var prot = new Protein("MNNNKQQQQ", null);
