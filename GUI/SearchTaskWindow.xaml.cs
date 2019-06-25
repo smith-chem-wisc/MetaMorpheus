@@ -213,7 +213,6 @@ namespace MetaMorpheusGUI
             allAmbiguity.IsChecked = task.CommonParameters.ReportAllAmbiguity;
             DeconvolutionMaxAssumedChargeStateTextBox.Text = task.CommonParameters.DeconvolutionMaxAssumedChargeState.ToString();
             minScoreAllowed.Text = task.CommonParameters.ScoreCutoff.ToString(CultureInfo.InvariantCulture);
-            eValueCheckBox.IsChecked = task.CommonParameters.CalculateEValue;
             deltaScoreCheckBox.IsChecked = task.CommonParameters.UseDeltaScore;
             trimMs1.IsChecked = task.CommonParameters.TrimMs1Peaks;
             trimMsMs.IsChecked = task.CommonParameters.TrimMsMsPeaks;
@@ -500,7 +499,6 @@ namespace MetaMorpheusGUI
                 doPrecursorDeconvolution: deconvolutePrecursors.IsChecked.Value,
                 useProvidedPrecursorInfo: useProvidedPrecursor.IsChecked.Value,
                 scoreCutoff: double.Parse(minScoreAllowed.Text, CultureInfo.InvariantCulture),
-                calculateEValue: eValueCheckBox.IsChecked.Value,
                 listOfModsFixed: listOfModsFixed,
                 listOfModsVariable: listOfModsVariable,
                 dissociationType: dissociationType,

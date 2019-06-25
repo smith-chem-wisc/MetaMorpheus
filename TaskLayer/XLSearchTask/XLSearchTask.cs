@@ -101,7 +101,7 @@ namespace TaskLayer
                     Status("Getting fragment dictionary...", new List<string> { taskId });
                     var indexEngine = new IndexingEngine(proteinListSubset, variableModifications, fixedModifications, null, currentPartition, UsefulProteomicsDatabases.DecoyType.Reverse, combinedParams, 30000.0, false, dbFilenameList.Select(p => new FileInfo(p.FilePath)).ToList(), new List<string> { taskId });
                     List<int>[] fragmentIndex = null;
-                    List<int>[] precursorIndex = null;                   
+                    List<int>[] precursorIndex = null;
                     GenerateIndexes(indexEngine, dbFilenameList, ref peptideIndex, ref fragmentIndex, ref precursorIndex, proteinList, taskId);
 
                     List<int>[] secondFragmentIndex = null;
@@ -109,9 +109,9 @@ namespace TaskLayer
                     && !CrosslinkSearchEngine.DissociationTypeGenerateSameTypeOfIons(combinedParams.DissociationType, combinedParams.ChildScanDissociationType))
                     {
                         var secondCombinedParams = CommonParameters.CloneWithNewDissociationType(combinedParams.ChildScanDissociationType);
-                        var secondIndexEngine = new IndexingEngine(proteinListSubset, variableModifications, fixedModifications, null, currentPartition, UsefulProteomicsDatabases.DecoyType.Reverse, secondCombinedParams, 30000.0, false, dbFilenameList.Select(p => new FileInfo(p.FilePath)).ToList(), new List<string> { taskId });                       
+                        var secondIndexEngine = new IndexingEngine(proteinListSubset, variableModifications, fixedModifications, null, currentPartition, UsefulProteomicsDatabases.DecoyType.Reverse, secondCombinedParams, 30000.0, false, dbFilenameList.Select(p => new FileInfo(p.FilePath)).ToList(), new List<string> { taskId });
                         GenerateSecondIndexes(indexEngine, secondIndexEngine, dbFilenameList, ref secondFragmentIndex, proteinList, taskId);
-                    }                 
+                    }
 
                     Status("Searching files...", taskId);
                     new CrosslinkSearchEngine(newPsms, arrayOfMs2ScansSortedByMass, peptideIndex, fragmentIndex, secondFragmentIndex, currentPartition, combinedParams, crosslinker,
@@ -150,7 +150,7 @@ namespace TaskLayer
             PostXLSearchAnalysisTask postXLSearchAnalysisTask = new PostXLSearchAnalysisTask();
 
             return postXLSearchAnalysisTask.Run(OutputFolder, dbFilenameList, currentRawFileList, taskId, fileSettingsList, allPsmsList, CommonParameters, XlSearchParameters, proteinList, variableModifications, fixedModifications, localizeableModificationTypes, MyTaskResults);
-           
+
         }
 
         //Remove same peptide with from different protein.

@@ -1,10 +1,10 @@
-﻿using NUnit.Framework;
+﻿using EngineLayer;
+using MassSpectrometry;
+using NUnit.Framework;
 using System;
 using System.Collections.Generic;
 using System.IO;
 using TaskLayer;
-
-
 
 namespace Test
 {
@@ -20,8 +20,8 @@ namespace Test
         [Test]
         public static void TestLoadAndRunMgf()
         {
-            //The purpose of this test is to ensure that mgfs can be run without crashing. 
-            //Whenever a new feature is added that may require things an mgf does not have, 
+            //The purpose of this test is to ensure that mgfs can be run without crashing.
+            //Whenever a new feature is added that may require things an mgf does not have,
             //there should be a check that prevents mgfs from using that feature.
             string mgfName = @"TestData\ok.mgf";
             string xmlName = @"TestData\okk.xml";
@@ -65,6 +65,20 @@ namespace Test
             {
                 Assert.AreNotEqual(".gz", file.Extension);
             }
+        }
+
+        [Test]
+        public static void TestMs2ScanWithSpecificMass()
+        {
+            Ms2ScanWithSpecificMass scanB = new Ms2ScanWithSpecificMass(
+                new MsDataScan(
+                    new MzSpectrum(new double[] { }, new double[] { }, false),
+                    2, 1, true, Polarity.Positive, double.NaN, null, null, MZAnalyzerType.Orbitrap, double.NaN, null, null, "scan=1", double.NaN, null, null, double.NaN, null, DissociationType.AnyActivationType, 1, null),
+                100, 1, null, new CommonParameters(), null);
+
+            var closestExperimentalMassB = scanB.GetClosestExperimentalFragmentMass(10);
+
+            Assert.IsNull(closestExperimentalMassB);
         }
     }
 }

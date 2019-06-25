@@ -71,17 +71,12 @@ namespace Test
             var engineToml = new EverythingRunnerEngine(new List<(string, MetaMorpheusTask)> { ("SearchTOML", searchTaskLoaded) }, new List<string> { myFile }, new List<DbForTask> { new DbForTask(myDatabase, false) }, outputFolder);
             engineToml.Run();
 
-            var expectedResults = File.ReadAllLines(Path.Combine(TestContext.CurrentContext.TestDirectory, @"TestData\XCorrSearchTest_AllPSMs.psmtsv"));
-            var resultsToml = File.ReadAllLines(Path.Combine(outputFolder, @"SearchTOML\AllPSMs.psmtsv"));
+            string psmFile = Path.Combine(outputFolder, @"SearchTOML\AllPSMs.psmtsv");
 
-            for (int i = 0; i < expectedResults.Length; i++)
-            {
-                string expecteLine = expectedResults[i];
-                string resultLine = resultsToml[i];
-                Assert.AreEqual(expecteLine, resultLine);
-            }
+            List<PsmFromTsv> parsedPsms = PsmTsvReader.ReadTsv(psmFile, out var warnings);
 
-            Assert.That(expectedResults.SequenceEqual(resultsToml));
+            Assert.AreEqual(125, parsedPsms.Count);
+            Assert.AreEqual(0, warnings.Count);
         }
 
         [Test]
@@ -91,7 +86,6 @@ namespace Test
 
             CommonParameters CommonParameters = new CommonParameters(
                 dissociationType: DissociationType.LowCID,
-                calculateEValue: true,
                 maxThreadsToUsePerFile: 1,
                 precursorMassTolerance: new PpmTolerance(5),
                 numberOfPeaksToKeepPerWindow: 200, // this is set to a value, but since the dissociation type is set to LowCID, no peak filtering should actually happen
@@ -338,7 +332,6 @@ namespace Test
 
             CommonParameters CommonParameters = new CommonParameters(
                 dissociationType: DissociationType.LowCID,
-                calculateEValue: true,
                 maxThreadsToUsePerFile: 1,
                 precursorMassTolerance: new PpmTolerance(5),
                 digestionParams: new DigestionParams(
@@ -386,7 +379,6 @@ namespace Test
         {
             CommonParameters CommonParameters = new CommonParameters(
                 dissociationType: DissociationType.LowCID,
-                calculateEValue: true,
                 maxThreadsToUsePerFile: 1,
                 precursorMassTolerance: new PpmTolerance(5),
                 numberOfPeaksToKeepPerWindow: 200,
@@ -496,7 +488,6 @@ namespace Test
 
             CommonParameters CommonParameters = new CommonParameters(
                 dissociationType: DissociationType.LowCID,
-                calculateEValue: true,
                 maxThreadsToUsePerFile: 1,
                 precursorMassTolerance: new PpmTolerance(5),
                 numberOfPeaksToKeepPerWindow: 200,
@@ -587,7 +578,6 @@ namespace Test
 
             CommonParameters CommonParameters = new CommonParameters(
                 dissociationType: DissociationType.LowCID,
-                calculateEValue: true,
                 maxThreadsToUsePerFile: 1,
                 precursorMassTolerance: new PpmTolerance(5),
                 numberOfPeaksToKeepPerWindow: 200,

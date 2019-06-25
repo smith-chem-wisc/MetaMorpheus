@@ -1,18 +1,15 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
-using System.IO;
-using EngineLayer;
+﻿using EngineLayer;
 using EngineLayer.CrosslinkSearch;
 using EngineLayer.FdrAnalysis;
 using Proteomics;
-
+using System;
+using System.Collections.Generic;
+using System.IO;
+using System.Linq;
 
 namespace TaskLayer
 {
-    public class PostXLSearchAnalysisTask: MetaMorpheusTask
+    public class PostXLSearchAnalysisTask : MetaMorpheusTask
     {
         public PostXLSearchAnalysisTask()
     : base(MyTask.Search)
@@ -177,7 +174,7 @@ namespace TaskLayer
                 }
 
                 double qValue = Math.Min(1, (double)cumulativeDecoy / cumulativeTarget);
-                csm.SetFdrValues(cumulativeTarget, cumulativeDecoy, qValue, 0, 0, 0, 0, 0, 0, false);
+                csm.SetFdrValues(cumulativeTarget, cumulativeDecoy, qValue, 0, 0, 0, 0, 0);
             }
 
             double qValueThreshold = 1.0;

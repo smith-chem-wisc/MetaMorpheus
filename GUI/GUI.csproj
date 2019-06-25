@@ -1,5 +1,8 @@
 ﻿<?xml version="1.0" encoding="utf-8"?>
 <Project ToolsVersion="14.0" DefaultTargets="Build" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+  <Import Project="..\packages\Microsoft.ML.FastTree.1.1.0\build\netstandard2.0\Microsoft.ML.FastTree.props" Condition="Exists('..\packages\Microsoft.ML.FastTree.1.1.0\build\netstandard2.0\Microsoft.ML.FastTree.props')" />
+  <Import Project="..\packages\Microsoft.ML.1.1.0\build\netstandard2.0\Microsoft.ML.props" Condition="Exists('..\packages\Microsoft.ML.1.1.0\build\netstandard2.0\Microsoft.ML.props')" />
+  <Import Project="..\packages\Microsoft.ML.CpuMath.1.1.0\build\netstandard2.0\Microsoft.ML.CpuMath.props" Condition="Exists('..\packages\Microsoft.ML.CpuMath.1.1.0\build\netstandard2.0\Microsoft.ML.CpuMath.props')" />
   <Import Project="$(MSBuildExtensionsPath)\$(MSBuildToolsVersion)\Microsoft.Common.props" Condition="Exists('$(MSBuildExtensionsPath)\$(MSBuildToolsVersion)\Microsoft.Common.props')" />
   <PropertyGroup>
     <Configuration Condition=" '$(Configuration)' == '' ">Debug</Configuration>
@@ -89,11 +92,39 @@
     <Reference Include="MassSpectrometry, Version=1.0.0.0, Culture=neutral, processorArchitecture=AMD64">
       <HintPath>..\packages\mzLib.1.0.428\lib\net471\MassSpectrometry.dll</HintPath>
     </Reference>
-    <Reference Include="MathNet.Numerics, Version=4.5.1.0, Culture=neutral, processorArchitecture=MSIL">
-      <HintPath>..\packages\MathNet.Numerics.4.5.1\lib\net461\MathNet.Numerics.dll</HintPath>
+    <Reference Include="MathNet.Numerics, Version=4.8.1.0, Culture=neutral, processorArchitecture=MSIL">
+      <HintPath>..\packages\MathNet.Numerics.4.8.1\lib\net461\MathNet.Numerics.dll</HintPath>
+      <Private>True</Private>
     </Reference>
     <Reference Include="Mgf, Version=1.0.0.0, Culture=neutral, processorArchitecture=AMD64">
       <HintPath>..\packages\mzLib.1.0.428\lib\net471\Mgf.dll</HintPath>
+    </Reference>
+    <Reference Include="Microsoft.ML.Core, Version=1.0.0.0, Culture=neutral, PublicKeyToken=cc7b13ffcd2ddd51, processorArchitecture=MSIL">
+      <HintPath>..\packages\Microsoft.ML.1.1.0\lib\netstandard2.0\Microsoft.ML.Core.dll</HintPath>
+    </Reference>
+    <Reference Include="Microsoft.ML.CpuMath, Version=1.0.0.0, Culture=neutral, PublicKeyToken=cc7b13ffcd2ddd51, processorArchitecture=MSIL">
+      <HintPath>..\packages\Microsoft.ML.CpuMath.1.1.0\lib\netstandard2.0\Microsoft.ML.CpuMath.dll</HintPath>
+    </Reference>
+    <Reference Include="Microsoft.ML.Data, Version=1.0.0.0, Culture=neutral, PublicKeyToken=cc7b13ffcd2ddd51, processorArchitecture=MSIL">
+      <HintPath>..\packages\Microsoft.ML.1.1.0\lib\netstandard2.0\Microsoft.ML.Data.dll</HintPath>
+    </Reference>
+    <Reference Include="Microsoft.ML.DataView, Version=1.0.0.0, Culture=neutral, PublicKeyToken=cc7b13ffcd2ddd51, processorArchitecture=MSIL">
+      <HintPath>..\packages\Microsoft.ML.DataView.1.1.0\lib\netstandard2.0\Microsoft.ML.DataView.dll</HintPath>
+    </Reference>
+    <Reference Include="Microsoft.ML.FastTree, Version=1.0.0.0, Culture=neutral, PublicKeyToken=cc7b13ffcd2ddd51, processorArchitecture=MSIL">
+      <HintPath>..\packages\Microsoft.ML.FastTree.1.1.0\lib\netstandard2.0\Microsoft.ML.FastTree.dll</HintPath>
+    </Reference>
+    <Reference Include="Microsoft.ML.KMeansClustering, Version=1.0.0.0, Culture=neutral, PublicKeyToken=cc7b13ffcd2ddd51, processorArchitecture=MSIL">
+      <HintPath>..\packages\Microsoft.ML.1.1.0\lib\netstandard2.0\Microsoft.ML.KMeansClustering.dll</HintPath>
+    </Reference>
+    <Reference Include="Microsoft.ML.PCA, Version=1.0.0.0, Culture=neutral, PublicKeyToken=cc7b13ffcd2ddd51, processorArchitecture=MSIL">
+      <HintPath>..\packages\Microsoft.ML.1.1.0\lib\netstandard2.0\Microsoft.ML.PCA.dll</HintPath>
+    </Reference>
+    <Reference Include="Microsoft.ML.StandardTrainers, Version=1.0.0.0, Culture=neutral, PublicKeyToken=cc7b13ffcd2ddd51, processorArchitecture=MSIL">
+      <HintPath>..\packages\Microsoft.ML.1.1.0\lib\netstandard2.0\Microsoft.ML.StandardTrainers.dll</HintPath>
+    </Reference>
+    <Reference Include="Microsoft.ML.Transforms, Version=1.0.0.0, Culture=neutral, PublicKeyToken=cc7b13ffcd2ddd51, processorArchitecture=MSIL">
+      <HintPath>..\packages\Microsoft.ML.1.1.0\lib\netstandard2.0\Microsoft.ML.Transforms.dll</HintPath>
     </Reference>
     <Reference Include="MzIdentML, Version=1.0.0.0, Culture=neutral, processorArchitecture=AMD64">
       <HintPath>..\packages\mzLib.1.0.428\lib\net471\MzIdentML.dll</HintPath>
@@ -153,11 +184,32 @@
       <HintPath>..\packages\mzLib.1.0.428\lib\net471\Spectra.dll</HintPath>
     </Reference>
     <Reference Include="System" />
+    <Reference Include="System.Buffers, Version=4.0.3.0, Culture=neutral, PublicKeyToken=cc7b13ffcd2ddd51, processorArchitecture=MSIL">
+      <HintPath>..\packages\System.Buffers.4.5.0\lib\netstandard2.0\System.Buffers.dll</HintPath>
+    </Reference>
+    <Reference Include="System.CodeDom, Version=4.0.1.0, Culture=neutral, PublicKeyToken=cc7b13ffcd2ddd51, processorArchitecture=MSIL">
+      <HintPath>..\packages\System.CodeDom.4.5.0\lib\net461\System.CodeDom.dll</HintPath>
+    </Reference>
+    <Reference Include="System.Collections.Immutable, Version=1.2.3.0, Culture=neutral, PublicKeyToken=b03f5f7f11d50a3a, processorArchitecture=MSIL">
+      <HintPath>..\packages\System.Collections.Immutable.1.5.0\lib\netstandard2.0\System.Collections.Immutable.dll</HintPath>
+    </Reference>
     <Reference Include="System.Core" />
     <Reference Include="System.Data" />
     <Reference Include="System.Drawing" />
+    <Reference Include="System.Memory, Version=4.0.1.1, Culture=neutral, PublicKeyToken=cc7b13ffcd2ddd51, processorArchitecture=MSIL">
+      <HintPath>..\packages\System.Memory.4.5.3\lib\netstandard2.0\System.Memory.dll</HintPath>
+    </Reference>
     <Reference Include="System.Numerics" />
+    <Reference Include="System.Numerics.Vectors, Version=4.1.4.0, Culture=neutral, PublicKeyToken=b03f5f7f11d50a3a, processorArchitecture=MSIL">
+      <HintPath>..\packages\System.Numerics.Vectors.4.5.0\lib\net46\System.Numerics.Vectors.dll</HintPath>
+    </Reference>
+    <Reference Include="System.Runtime.CompilerServices.Unsafe, Version=4.0.4.1, Culture=neutral, PublicKeyToken=b03f5f7f11d50a3a, processorArchitecture=MSIL">
+      <HintPath>..\packages\System.Runtime.CompilerServices.Unsafe.4.5.2\lib\netstandard2.0\System.Runtime.CompilerServices.Unsafe.dll</HintPath>
+    </Reference>
     <Reference Include="System.Runtime.Serialization" />
+    <Reference Include="System.Threading.Tasks.Dataflow, Version=4.6.3.0, Culture=neutral, PublicKeyToken=b03f5f7f11d50a3a, processorArchitecture=MSIL">
+      <HintPath>..\packages\System.Threading.Tasks.Dataflow.4.9.0\lib\netstandard2.0\System.Threading.Tasks.Dataflow.dll</HintPath>
+    </Reference>
     <Reference Include="System.ValueTuple, Version=4.0.3.0, Culture=neutral, PublicKeyToken=cc7b13ffcd2ddd51, processorArchitecture=MSIL">
       <HintPath>..\packages\System.ValueTuple.4.5.0\lib\net47\System.ValueTuple.dll</HintPath>
     </Reference>
@@ -428,7 +480,12 @@
     </PropertyGroup>
     <Error Condition="!Exists('..\packages\MathNet.Numerics.MKL.Win.2.2.0\build\MathNet.Numerics.MKL.Win.targets')" Text="$([System.String]::Format('$(ErrorText)', '..\packages\MathNet.Numerics.MKL.Win.2.2.0\build\MathNet.Numerics.MKL.Win.targets'))" />
     <Error Condition="!Exists('..\packages\mzLib.1.0.428\build\net471\mzLib.targets')" Text="$([System.String]::Format('$(ErrorText)', '..\packages\mzLib.1.0.428\build\net471\mzLib.targets'))" />
+    <Error Condition="!Exists('..\packages\Microsoft.ML.CpuMath.1.1.0\build\netstandard2.0\Microsoft.ML.CpuMath.props')" Text="$([System.String]::Format('$(ErrorText)', '..\packages\Microsoft.ML.CpuMath.1.1.0\build\netstandard2.0\Microsoft.ML.CpuMath.props'))" />
+    <Error Condition="!Exists('..\packages\Microsoft.ML.1.1.0\build\netstandard2.0\Microsoft.ML.props')" Text="$([System.String]::Format('$(ErrorText)', '..\packages\Microsoft.ML.1.1.0\build\netstandard2.0\Microsoft.ML.props'))" />
+    <Error Condition="!Exists('..\packages\Microsoft.ML.1.1.0\build\netstandard2.0\Microsoft.ML.targets')" Text="$([System.String]::Format('$(ErrorText)', '..\packages\Microsoft.ML.1.1.0\build\netstandard2.0\Microsoft.ML.targets'))" />
+    <Error Condition="!Exists('..\packages\Microsoft.ML.FastTree.1.1.0\build\netstandard2.0\Microsoft.ML.FastTree.props')" Text="$([System.String]::Format('$(ErrorText)', '..\packages\Microsoft.ML.FastTree.1.1.0\build\netstandard2.0\Microsoft.ML.FastTree.props'))" />
   </Target>
   <Import Project="..\packages\MathNet.Numerics.MKL.Win.2.2.0\build\MathNet.Numerics.MKL.Win.targets" Condition="Exists('..\packages\MathNet.Numerics.MKL.Win.2.2.0\build\MathNet.Numerics.MKL.Win.targets')" />
   <Import Project="..\packages\mzLib.1.0.428\build\net471\mzLib.targets" Condition="Exists('..\packages\mzLib.1.0.428\build\net471\mzLib.targets')" />
+  <Import Project="..\packages\Microsoft.ML.1.1.0\build\netstandard2.0\Microsoft.ML.targets" Condition="Exists('..\packages\Microsoft.ML.1.1.0\build\netstandard2.0\Microsoft.ML.targets')" />
 </Project>
