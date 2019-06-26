@@ -53,7 +53,7 @@ namespace MetaMorpheusCommandLine
                 .Callback(text => Console.WriteLine(text));
 
             var result = p.Parse(args);
-    
+
             if (p.Object.MetaTasks != null && (p.Object.MetaTasks.Count != 0 || p.Object.Tasks.Count != 0))
             {
                 if (!result.HasErrors)
@@ -68,6 +68,31 @@ namespace MetaMorpheusCommandLine
                     MetaMorpheusTask.StartingSingleTaskHander += MyTaskEngine_startingSingleTaskHander;
                     MetaMorpheusTask.FinishedSingleTaskHandler += MyTaskEngine_finishedSingleTaskHandler;
                     MetaMorpheusTask.FinishedWritingFileHandler += MyTaskEngine_finishedWritingFileHandler;
+
+                    bool containsRawFiles = p.Object.Spectra.Select(v => Path.GetExtension(v).ToLowerInvariant()).Any(v => v == ".raw");
+                    if (containsRawFiles && !GlobalVariables.GlobalSettings.UserHasAgreedToThermoRawFileReaderLicence)
+                    {
+                        // write the Thermo RawFileReader licence agreement
+                        Console.WriteLine(ThermoRawFileReader.ThermoRawFileReaderLicence.ThermoLicenceText);
+                        Console.WriteLine("\nIn order to search Thermo .raw files, you must agree to the above terms. Do you agree to the above terms? y/n\n");
+                        string res = Console.ReadLine().ToLowerInvariant();
+                        if (res == "y")
+                        {
+                            var newGlobalSettings = new GlobalSettings
+                            {
+                                UserHasAgreedToThermoRawFileReaderLicence = true,
+                                WriteExcelCompatibleTSVs = GlobalVariables.GlobalSettings.WriteExcelCompatibleTSVs
+                            };
+
+                            Toml.WriteFile<GlobalSettings>(newGlobalSettings, Path.Combine(GlobalVariables.DataDir, @"settings.toml"));
+                            GlobalVariables.GlobalSettings = newGlobalSettings;
+                        }
+                        else
+                        {
+                            Console.WriteLine("Thermo licence has been declined. Exiting MetaMorpheus. You can still search .mzML and .mgf files without agreeing to the Thermo licence.");
+                            return;
+                        }
+                    }
 
                     foreach (var db in p.Object.Databases)
                     {
@@ -166,7 +191,11 @@ namespace MetaMorpheusCommandLine
                     }
                     catch (Exception e)
                     {
-                        while (e.InnerException != null) e = e.InnerException;
+                        while (e.InnerException != null)
+                        {
+                            e = e.InnerException;
+                        }
+
                         var message = "Run failed, Exception: " + e.Message;
                         Console.WriteLine(message);
                     }
@@ -195,14 +224,20 @@ namespace MetaMorpheusCommandLine
         {
             if (b.ToUpper().Contains("contaminant".ToUpper())
                 || b.ToUpper().Contains("CRAP"))
+            {
                 return true;
+            }
+
             return false;
         }
 
         private static void MyTaskEngine_startingSingleTaskHander(object sender, SingleTaskEventArgs e)
         {
             if (InProgress)
+            {
                 MyWriter.WriteLine();
+            }
+
             InProgress = false;
             WriteMultiLineIndented("Starting task: " + e.DisplayName);
             MyWriter.Indent++;
@@ -211,7 +246,10 @@ namespace MetaMorpheusCommandLine
         private static void MyTaskEngine_finishedWritingFileHandler(object sender, SingleFileEventArgs e)
         {
             if (InProgress)
+            {
                 MyWriter.WriteLine();
+            }
+
             InProgress = false;
             WriteMultiLineIndented("Finished writing file: " + e.WrittenFile);
         }
@@ -219,7 +257,10 @@ namespace MetaMorpheusCommandLine
         private static void MyTaskEngine_finishedSingleTaskHandler(object sender, SingleTaskEventArgs e)
         {
             if (InProgress)
+            {
                 MyWriter.WriteLine();
+            }
+
             InProgress = false;
             MyWriter.Indent--;
             WriteMultiLineIndented("Finished task: " + e.DisplayName);
@@ -228,7 +269,10 @@ namespace MetaMorpheusCommandLine
         private static void MyEngine_startingSingleEngineHander(object sender, SingleEngineEventArgs e)
         {
             if (InProgress)
+            {
                 MyWriter.WriteLine();
+            }
+
             InProgress = false;
             WriteMultiLineIndented("Starting engine: " + e.MyEngine.GetType().Name + " " + e.MyEngine.GetId());
             MyWriter.Indent++;
@@ -237,7 +281,10 @@ namespace MetaMorpheusCommandLine
         private static void MyEngine_finishedSingleEngineHandler(object sender, SingleEngineFinishedEventArgs e)
         {
             if (InProgress)
+            {
                 MyWriter.WriteLine();
+            }
+
             InProgress = false;
             WriteMultiLineIndented("Engine results: " + e);
             MyWriter.Indent--;
@@ -253,7 +300,10 @@ namespace MetaMorpheusCommandLine
         private static void WarnHandler(object sender, StringEventArgs e)
         {
             if (InProgress)
+            {
                 MyWriter.WriteLine();
+            }
+
             InProgress = false;
             WriteMultiLineIndented("WARN: " + e.S);
         }
@@ -261,7 +311,10 @@ namespace MetaMorpheusCommandLine
         private static void LogHandler(object sender, StringEventArgs e)
         {
             if (InProgress)
+            {
                 MyWriter.WriteLine();
+            }
+
             InProgress = false;
             WriteMultiLineIndented("Log: " + e.S);
         }
