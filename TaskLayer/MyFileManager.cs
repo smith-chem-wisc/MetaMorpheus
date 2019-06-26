@@ -1,35 +1,20 @@
 ﻿using EngineLayer;
-using IO.MzML;
 using IO.Mgf;
-
-#if NETFRAMEWORK
-
-using IO.Thermo;
-
-#else
-#endif
-
+using IO.MzML;
 using MassSpectrometry;
 using System;
 using System.Collections.Generic;
-using System.Diagnostics;
 using System.IO;
-using System.Linq;
 using System.IO.Compression;
+using ThermoRawFileReader;
 
 namespace TaskLayer
 {
     public class MyFileManager
     {
-        public enum ThermoMsFileReaderVersionCheck { DllsNotFound, IncorrectVersion, CorrectVersion, SomeDllsMissing };
-
         private readonly bool DisposeOfFileWhenDone;
         private readonly Dictionary<string, MsDataFile> MyMsDataFiles = new Dictionary<string, MsDataFile>();
         private readonly object FileLoadingLock = new object();
-        private const string AssumedThermoMsFileReaderDllPath = @"C:\Program Files\Thermo\MSFileReader";
-        private const string DesiredFileIoVersion = "3.0";
-        private const string DesiredFregistryVersion = "3.0";
-        private const string DesiredXRawFileVersion = "3.0.29.0";
 
         public MyFileManager(bool disposeOfFileWhenDone)
         {
@@ -43,38 +28,8 @@ namespace TaskLayer
             return (MyMsDataFiles.ContainsKey(path) && MyMsDataFiles[path] != null);
         }
 
-        public static ThermoMsFileReaderVersionCheck ValidateThermoMsFileReaderVersion()
-        {
-            string fileIoAssumedPath = Path.Combine(AssumedThermoMsFileReaderDllPath, "Fileio_x64.dll");
-            string fregistryAssumedPath = Path.Combine(AssumedThermoMsFileReaderDllPath, "fregistry_x64.dll");
-            string xRawFileAssumedPath = Path.Combine(AssumedThermoMsFileReaderDllPath, "XRawfile2_x64.dll");
-
-            if (File.Exists(fileIoAssumedPath) && File.Exists(fregistryAssumedPath) && File.Exists(xRawFileAssumedPath))
-            {
-                string fileIoVersion = FileVersionInfo.GetVersionInfo(fileIoAssumedPath).FileVersion;
-                string fregistryVersion = FileVersionInfo.GetVersionInfo(fregistryAssumedPath).FileVersion;
-                string xRawFileVersion = FileVersionInfo.GetVersionInfo(xRawFileAssumedPath).FileVersion;
-
-                if (fileIoVersion.Equals(DesiredFileIoVersion) && fregistryVersion.Equals(DesiredFregistryVersion) && xRawFileVersion.Equals(DesiredXRawFileVersion))
-                {
-                    return ThermoMsFileReaderVersionCheck.CorrectVersion;
-                }
-                else
-                {
-                    return ThermoMsFileReaderVersionCheck.IncorrectVersion;
-                }
-            }
-            else if (File.Exists(fileIoAssumedPath) || File.Exists(fregistryAssumedPath) || File.Exists(xRawFileAssumedPath))
-            {
-                return ThermoMsFileReaderVersionCheck.SomeDllsMissing;
-            }
-
-            return ThermoMsFileReaderVersionCheck.DllsNotFound;
-        }
-
         public MsDataFile LoadFile(string origDataFile, CommonParameters commonParameters)
         {
-
             FilteringParams filter = new FilteringParams(commonParameters.NumberOfPeaksToKeepPerWindow, commonParameters.MinimumAllowedIntensityRatioToBasePeak, commonParameters.WindowWidthThomsons, commonParameters.NumberOfWindows, commonParameters.NormalizePeaksAccrossAllWindows, commonParameters.TrimMs1Peaks, commonParameters.TrimMsMsPeaks);
 
             if (commonParameters.DissociationType == DissociationType.LowCID || commonParameters.ChildScanDissociationType == DissociationType.LowCID)
@@ -100,11 +55,7 @@ namespace TaskLayer
                 }
                 else
                 {
-#if NETFRAMEWORK
-                    MyMsDataFiles[origDataFile] = ThermoStaticData.LoadAllStaticData(origDataFile, filter);
-#else
-                    Warn("No capability for reading " + origDataFile);
-#endif
+                    MyMsDataFiles[origDataFile] = ThermoRawFileReaderData.LoadAllStaticData(origDataFile, filter, maxThreads: 1);
                 }
 
                 return MyMsDataFiles[origDataFile];

@@ -92,22 +92,10 @@
                                     <RowDefinition Height="1*"/>
                                     <RowDefinition Height="1*"/>
                                     <RowDefinition Height="1*"/>
-                                    <RowDefinition Height="1*"/>
                                 </Grid.RowDefinitions>
 
-                                <!-- Deconvolute precursors -->
-                                <StackPanel Orientation="Horizontal" Margin="5 5 5 0" Grid.Column="1" Grid.Row="0">
-                                    <CheckBox x:Name="deconvolutePrecursors" Content="Deconvolute Precursors" IsChecked="True" ToolTipService.ShowDuration="999999" ToolTipService.InitialShowDelay="500">
-                                        <CheckBox.ToolTip>
-                                            <TextBlock>
-                                            Additionally searches for coisolated peptides, allowing for multiple peptides to be identified from a single MS2.
-                                            </TextBlock>
-                                        </CheckBox.ToolTip>
-                                    </CheckBox>
-                                </StackPanel>
-
                                 <!-- Precursor Mass Tolerance -->
-                                <StackPanel Orientation="Horizontal" Margin="5 5 5 0" Grid.Column="1" Grid.Row="1">
+                                <StackPanel Orientation="Horizontal" Margin="5 5 5 0" Grid.Column="1" Grid.Row="0">
                                     <Label Content="Precursor Mass Tolerance:" Width="150" />
                                     <TextBox x:Name="precursorMassToleranceTextBox" PreviewTextInput="CheckIfNumber" HorizontalAlignment="Left" TextWrapping="Wrap" Width="45" ToolTipService.ShowDuration="999999" ToolTipService.InitialShowDelay="500">
                                         <TextBox.ToolTip>
@@ -122,7 +110,7 @@
                                 </StackPanel>
 
                                 <!-- Product Mass Tolerance -->
-                                <StackPanel Orientation="Horizontal" Margin="5 5 5 0" Grid.Column="1" Grid.Row="2">
+                                <StackPanel Orientation="Horizontal" Margin="5 5 5 0" Grid.Column="1" Grid.Row="1">
                                     <Label Content="Product Mass Tolerance:" Width="150" />
                                     <TextBox x:Name="productMassToleranceTextBox" PreviewTextInput="CheckIfNumber" HorizontalAlignment="Left" TextWrapping="Wrap" Width="45" ToolTipService.ShowDuration="999999" ToolTipService.InitialShowDelay="500">
                                         <TextBox.ToolTip>
@@ -137,7 +125,7 @@
                                 </StackPanel>
 
                                 <!-- Dissociation type -->
-                                <StackPanel Orientation="Horizontal" Margin="5 5 5 0" Grid.Column="1" Grid.Row="3">
+                                <StackPanel Orientation="Horizontal" Margin="5 5 5 0" Grid.Column="1" Grid.Row="2">
                                     <Label x:Name="dissociationTypeLabel" Content="Dissociation Type:" Width="150" />
                                     <ComboBox x:Name="dissociationTypeComboBox" ToolTipService.ShowDuration="999999" ToolTipService.InitialShowDelay="500" DropDownClosed="CustomFragmentationHandler">
                                         <ComboBox.ToolTip>
@@ -179,7 +167,7 @@
                                 </StackPanel>
 
                                 <!-- Initiator methionine behavior -->
-                                <StackPanel Orientation="Horizontal" Margin="5 5 5 0" Grid.Column="0" Grid.Row="2">
+                                <StackPanel Orientation="Horizontal" Margin="5 5 5 0" Grid.Column="1" Grid.Row="3">
                                     <Label x:Name="initiatorMethionineLabel" Content="Initiator Methionine:" Width="150" />
                                     <ComboBox x:Name="initiatorMethionineBehaviorComboBox" ToolTipService.ShowDuration="999999" ToolTipService.InitialShowDelay="500">
                                         <ComboBox.ToolTip>
@@ -215,7 +203,7 @@
                                 </StackPanel>
 
                                 <!-- Max mods per peptide -->
-                                <StackPanel Orientation="Horizontal" Margin="5 5 5 0" Grid.Column="0" Grid.Row="5">
+                                <StackPanel Orientation="Horizontal" Margin="5 5 5 0" Grid.Column="0" Grid.Row="2">
                                     <Label x:Name="lbMaxModNum" Content="Max mods per peptide:" Width="150" />
                                     <TextBox x:Name="MaxModNumTextBox" PreviewTextInput="CheckIfNumber" Width="45" ToolTipService.ShowDuration="999999" ToolTipService.InitialShowDelay="500">
                                         <TextBox.ToolTip>
@@ -485,6 +473,18 @@
                                                     </CheckBox.ToolTip>
                                                 </CheckBox>
                                             </StackPanel>
+
+                                            <!-- Deconvolute precursors -->
+                                            <StackPanel Orientation="Horizontal" Margin="10,5,5,5">
+                                                <CheckBox x:Name="deconvolutePrecursors" Content="Deconvolute Precursors" IsChecked="True" ToolTipService.ShowDuration="999999" ToolTipService.InitialShowDelay="500">
+                                                    <CheckBox.ToolTip>
+                                                        <TextBlock>
+                                            Additionally searches for coisolated peptides, allowing for multiple peptides to be identified from a single MS2.
+                                                        </TextBlock>
+                                                    </CheckBox.ToolTip>
+                                                </CheckBox>
+                                            </StackPanel>
+
                                             <StackPanel Orientation="Horizontal" Margin="5">
                                                 <Label Content="Deconvolution Max Assumed Charge State:" />
                                                 <TextBox x:Name="DeconvolutionMaxAssumedChargeStateTextBox" PreviewTextInput="CheckIfNumber" Width="45" ToolTipService.ShowDuration="999999" ToolTipService.InitialShowDelay="500">
@@ -891,17 +891,6 @@
                                             MetaMorpheus automatically checks that delta scores improve the number of PSMs at a 1% FDR.
                                             <LineBreak />
                                             If there is no improvement, then the standard score is used.
-                                                            </TextBlock>
-                                                        </CheckBox.ToolTip>
-                                                    </CheckBox>
-                                                    <CheckBox x:Name="eValueCheckBox" Content="Calculate eValues"  Margin="5" ToolTipService.ShowDuration="999999" ToolTipService.InitialShowDelay="500">
-                                                        <CheckBox.ToolTip>
-                                                            <TextBlock>
-                                            This estimates the expectation value (eValue) for each PSM, which is the probability of a PSM obtaining its given score by random chance.
-                                            <LineBreak />
-                                            There is a significant increase in search time.
-                                            <LineBreak />
-                                            eValues are not used for FDR and are only calculated for the user's review.
                                                             </TextBlock>
                                                         </CheckBox.ToolTip>
                                                     </CheckBox>

@@ -45,21 +45,25 @@
 
                 <StackPanel Orientation="Horizontal" Grid.Column="1" Grid.Row="0">
                     <Label x:Name="lblUdXLkerAminoAcid" Content="Crosslinker Amino Acids" />
-                    <TextBox x:Name="txtUdXLkerAminoAcids" Width="60"  />
+                    <TextBox x:Name="txtUdXLkerAminoAcids" Width="60" />
                 </StackPanel>
                 <StackPanel Orientation="Horizontal" Grid.Column="1" Grid.Row="1">
                     <Label x:Name="lblUdXLkerAminoAcid2" Content="Crosslinker Amino Acids 2" />
-                    <TextBox x:Name="txtUdXLkerAminoAcids2" Width="60"  />
+                    <TextBox x:Name="txtUdXLkerAminoAcids2" Width="60" />
                 </StackPanel>
                 <StackPanel Orientation="Horizontal" Grid.Column="1" Grid.Row="2">
+                    <Label Content="DissociationType" />
+                    <TextBox x:Name="txtDissociationType" Width="60" />
+                </StackPanel>
+                <StackPanel Orientation="Horizontal" Grid.Column="1" Grid.Row="3">
                     <Label Content="H2O Quench Mass" />
                     <TextBox x:Name="txtH2OQuenchMass" PreviewTextInput="CheckIfNumber" Width="60" IsEnabled="{Binding IsChecked, ElementName=ckbQuenchH2O}"  />
                 </StackPanel>
-                <StackPanel Orientation="Horizontal" Grid.Column="1" Grid.Row="3">
+                <StackPanel Orientation="Horizontal" Grid.Column="1" Grid.Row="4">
                     <Label Content="NH2 Quench Mass" />
                     <TextBox x:Name="txtNH2QuenchMass" PreviewTextInput="CheckIfNumber" Width="60" IsEnabled="{Binding IsChecked, ElementName=ckbQuenchNH2}"  />
                 </StackPanel>
-                <StackPanel Orientation="Horizontal" Grid.Column="1" Grid.Row="4">
+                <StackPanel Orientation="Horizontal" Grid.Column="1" Grid.Row="5">
                     <Label Content="Tris Quench Mass" />
                     <TextBox x:Name="txtTrisQuenchMass" PreviewTextInput="CheckIfNumber" Width="60" IsEnabled="{Binding IsChecked, ElementName=ckbQuenchTris}"  />
                 </StackPanel>

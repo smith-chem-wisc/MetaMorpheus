@@ -57,13 +57,13 @@ namespace Test
 
             IScan scan = new ThisTestScan();
             var psm1 = new PeptideSpectralMatch(pwsm1, 0, 1, 0, scan, digestionParams, new List<MatchedFragmentIon>());
-            psm1.SetFdrValues(0, 0, 0, 0, 0, 0, 0, 0, 0, false);
+            psm1.SetFdrValues(0, 0, 0, 0, 0, 0, 0, 0);
 
             var psm2 = new PeptideSpectralMatch(pwsm2, 0, 1, 0, scan, digestionParams, new List<MatchedFragmentIon>());
-            psm2.SetFdrValues(0, 0, 0, 0, 0, 0, 0, 0, 0, false);
+            psm2.SetFdrValues(0, 0, 0, 0, 0, 0, 0, 0);
 
             var psm3 = new PeptideSpectralMatch(pwsm3, 0, 1, 0, scan, digestionParams, new List<MatchedFragmentIon>());
-            psm3.SetFdrValues(0, 0, 0, 0, 0, 0, 0, 0, 0, false);
+            psm3.SetFdrValues(0, 0, 0, 0, 0, 0, 0, 0);
 
 
             List<PeptideSpectralMatch> newPsms = new List<PeptideSpectralMatch>

@@ -42,7 +42,6 @@
         public const string StartAndEndResiduesInProtein = "Start and End Residues In Protein";
         public const string PreviousAminoAcid = "Previous Amino Acid";
         public const string NextAminoAcid = "Next Amino Acid";
-        public const string AllScores = "All Scores";
         public const string TheoreticalsSearched = "Theoreticals Searched";
         public const string DecoyContaminantTarget = "Decoy/Contaminant/Target";
         public const string MatchedIonSeries = "Matched Ion Series";
@@ -51,7 +50,6 @@
         public const string MatchedIonMassDiffPpm = "Matched Ion Mass Diff (Ppm)";
         public const string MatchedIonIntensities = "Matched Ion Intensities";
         public const string MatchedIonCounts = "Matched Ion Counts";
-        public const string ChildMatchedIons = "Child Scans Matched Ions";
 
         // Scoring
         public const string LocalizedScores = "Localized Scores";
@@ -62,8 +60,8 @@
         public const string CumulativeDecoyNotch = "Cumulative Decoy Notch";
         public const string QValue = "QValue";
         public const string QValueNotch = "QValue Notch";
-        public const string EValue = "eValue";
-        public const string EScore = "eScore";
+        public const string PEP = "PEP";
+        public const string PEP_QValue = "PEP_QValue";
 
         // Crosslinks
         public const string CrossTypeLabel = "Cross Type";
@@ -80,6 +78,5 @@
         public const string BetaPeptideMatchedIonsLabel = "Beta Peptide Matched Ion Mass-To-Charge Ratios";
         public const string XLTotalScoreLabel = "XL Total Score";
         public const string ParentIonsLabel = "Parent Ions";
-        public const string BetaPeptideChildMatchedIons = "Beta Peptide Child Scans Matched Ions";
     }
 }
