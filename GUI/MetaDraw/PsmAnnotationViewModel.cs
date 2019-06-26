@@ -293,7 +293,11 @@ namespace ViewModels
         {
             OxyColor ionColor;
 
-            if (productTypeDrawColors.ContainsKey(matchedIon.NeutralTheoreticalProduct.ProductType))
+            if(psmToDraw.VariantCrossingIons.ContainsKey(matchedIon) && psmToDraw.VariantCrossingIons[matchedIon])
+            {
+                ionColor = OxyColors.Green;
+            }
+            else if (productTypeDrawColors.ContainsKey(matchedIon.NeutralTheoreticalProduct.ProductType))
             {
                 ionColor = productTypeDrawColors[matchedIon.NeutralTheoreticalProduct.ProductType];
             }

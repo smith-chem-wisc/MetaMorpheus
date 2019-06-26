@@ -10,6 +10,8 @@ namespace EngineLayer
 {
     public class PsmFromTsv
     {
+        private static readonly Regex PositionParser = new Regex(@"(\d+)\s+to\s+(\d+)");
+        private static readonly Regex VariantParser = new Regex(@"[a-zA-Z]+(\d+)([a-zA-Z]+)");
         private static readonly Regex IonParser = new Regex(@"([a-zA-Z]+)(\d+)");
         private static readonly char[] MzSplit = { '[', ',', ']', ';' };
 
@@ -38,12 +40,15 @@ namespace EngineLayer
         public string ProteinName { get; }
         public string GeneName { get; }
         public string OrganismName { get; }
+        public string IdentifiedSequenceVariations { get; }
         public string PeptideDesicription { get; }
         public string StartAndEndResiduesInProtein { get; }
         public string PreviousAminoAcid { get; }
         public string NextAminoAcid { get; }
         public string DecoyContamTarget { get; }
         public double? QValueNotch { get; }
+
+        public Dictionary<MatchedFragmentIon, bool> VariantCrossingIons { get; }
 
         //For crosslink
 
@@ -95,12 +100,15 @@ namespace EngineLayer
             ProteinName = (parsedHeader[PsmTsvHeader.ProteinName] < 0) ? null : spl[parsedHeader[PsmTsvHeader.ProteinName]].Trim();
             GeneName = (parsedHeader[PsmTsvHeader.GeneName] < 0) ? null : spl[parsedHeader[PsmTsvHeader.GeneName]].Trim();
             OrganismName = (parsedHeader[PsmTsvHeader.OrganismName] < 0) ? null : spl[parsedHeader[PsmTsvHeader.OrganismName]].Trim();
+            IdentifiedSequenceVariations = (parsedHeader[PsmTsvHeader.IdentifiedSequenceVariations] < 0) ? null : spl[parsedHeader[PsmTsvHeader.IdentifiedSequenceVariations]].Trim();
             PeptideDesicription = (parsedHeader[PsmTsvHeader.PeptideDesicription] < 0) ? null : spl[parsedHeader[PsmTsvHeader.PeptideDesicription]].Trim();
             StartAndEndResiduesInProtein = (parsedHeader[PsmTsvHeader.StartAndEndResiduesInProtein] < 0) ? null : spl[parsedHeader[PsmTsvHeader.StartAndEndResiduesInProtein]].Trim();
             PreviousAminoAcid = (parsedHeader[PsmTsvHeader.PreviousAminoAcid] < 0) ? null : spl[parsedHeader[PsmTsvHeader.PreviousAminoAcid]].Trim();
             NextAminoAcid = (parsedHeader[PsmTsvHeader.NextAminoAcid] < 0) ? null : spl[parsedHeader[PsmTsvHeader.NextAminoAcid]].Trim();
             QValueNotch = (parsedHeader[PsmTsvHeader.QValueNotch] < 0) ? null : (double?)double.Parse(spl[parsedHeader[PsmTsvHeader.QValueNotch]].Trim(), CultureInfo.InvariantCulture);
             RetentionTime = (parsedHeader[PsmTsvHeader.Ms2ScanRetentionTime] < 0) ? null : (double?)double.Parse(spl[parsedHeader[PsmTsvHeader.Ms2ScanRetentionTime]].Trim(), CultureInfo.InvariantCulture);
+
+            VariantCrossingIons = findVariantCrossingIons();
 
             //For crosslinks
             CrossType = (parsedHeader[PsmTsvHeader.CrossTypeLabel] < 0) ? null : spl[parsedHeader[PsmTsvHeader.CrossTypeLabel]].Trim();
@@ -170,7 +178,7 @@ namespace EngineLayer
 
                 var t = new NeutralTerminusFragment(terminus, mz.ToMass(z) - DissociationTypeCollection.GetMassShiftFromProductType(productType), fragmentNumber, aminoAcidPosition);
                 Product p = new Product(productType, t, neutralLoss);
-                matchedIons.Add(new MatchedFragmentIon(p, mz, 1.0, z));
+                matchedIons.Add(new MatchedFragmentIon(p, mz, 1.0, z));                
             }
 
             return matchedIons;
@@ -190,6 +198,44 @@ namespace EngineLayer
             }
 
             return childScanMatchedIons;
+        }
+
+        private Dictionary<MatchedFragmentIon, bool> findVariantCrossingIons()
+        {
+            Dictionary<MatchedFragmentIon, bool> variantCrossingIons = new Dictionary<MatchedFragmentIon, bool>();
+
+            if (StartAndEndResiduesInProtein != null && IdentifiedSequenceVariations != null)
+            {
+                Match positionMatch = PositionParser.Match(StartAndEndResiduesInProtein);
+                Match variantMatch = VariantParser.Match(IdentifiedSequenceVariations);
+                if (positionMatch.Success && variantMatch.Success)
+                {
+                    int peptideStart = int.Parse(positionMatch.Groups[1].Value);
+                    int peptideEnd = int.Parse(positionMatch.Groups[2].Value);
+                    int variantResidueStart = int.Parse(variantMatch.Groups[1].Value);
+                    int variantResidueEnd = variantResidueStart + variantMatch.Groups[2].Value.Length - 1;
+
+                    foreach (MatchedFragmentIon ion in MatchedIons)
+                    {
+                        Match ionMatch = IonParser.Match(ion.Annotation);
+                        if (ionMatch.Success && // finds match, variant is within peptide, and ion contains variant (differs if ion is abc or xyz)
+                            (variantResidueEnd >= peptideStart && variantResidueStart <= peptideEnd) &&
+                            ((ion.NeutralTheoreticalProduct.ProductType <= ProductType.c &&
+                              peptideStart + int.Parse(ionMatch.Groups[2].Value) > variantResidueStart) ||
+                             (ion.NeutralTheoreticalProduct.ProductType > ProductType.c &&
+                              ion.NeutralTheoreticalProduct.ProductType <= ProductType.zDot &&
+                              peptideEnd - int.Parse(ionMatch.Groups[2].Value) < variantResidueEnd)))
+                        {
+                            variantCrossingIons.Add(ion, true);
+                        }
+                        else 
+                        {
+                            variantCrossingIons.Add(ion, false);
+                        }
+                    }
+                }
+            }
+            return variantCrossingIons;
         }
     }
 }
