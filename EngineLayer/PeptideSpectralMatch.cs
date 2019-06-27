@@ -14,7 +14,7 @@ namespace EngineLayer
         public const double ToleranceForScoreDifferentiation = 1e-9;
         private List<(int Notch, PeptideWithSetModifications Pwsm)> _BestMatchingPeptides;
 
-        public PeptideSpectralMatch(PeptideWithSetModifications peptide, int notch, double score, int scanIndex, IScan scan, DigestionParams digestionParams, List<MatchedFragmentIon> matchedFragmentIons, double xcorr = 0)
+        public PeptideSpectralMatch(PeptideWithSetModifications peptide, int notch, double score, int scanIndex, Ms2ScanWithSpecificMass scan, DigestionParams digestionParams, List<MatchedFragmentIon> matchedFragmentIons, double xcorr = 0)
         {
             _BestMatchingPeptides = new List<(int, PeptideWithSetModifications)>();
             ScanIndex = scanIndex;
@@ -30,6 +30,7 @@ namespace EngineLayer
             DigestionParams = digestionParams;
             PeptidesToMatchingFragments = new Dictionary<PeptideWithSetModifications, List<MatchedFragmentIon>>();
             Xcorr = xcorr;
+            NativeId = scan.NativeId;
 
             AddOrReplace(peptide, score, notch, true, matchedFragmentIons, xcorr);
         }
@@ -64,6 +65,7 @@ namespace EngineLayer
         public FdrInfo FdrInfo { get; private set; }
         public double Score { get; private set; }
         public double Xcorr;
+        public string NativeId; // this is a property of the scan. used for mzID writing
 
         public double DeltaScore { get { return (Score - RunnerUpScore); } }
 

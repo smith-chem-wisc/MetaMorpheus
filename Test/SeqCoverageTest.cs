@@ -55,7 +55,9 @@ namespace Test
                 pwsm3,
             };
 
-            IScan scan = new ThisTestScan();
+            Ms2ScanWithSpecificMass scan = new Ms2ScanWithSpecificMass(new MsDataScan(new MzSpectrum(new double[,] { }), 0, 0, true, Polarity.Positive,
+                0, new MzLibUtil.MzRange(0, 0), "", MZAnalyzerType.FTICR, 0, null, null, ""), 0, 0, "", new CommonParameters());
+
             var psm1 = new PeptideSpectralMatch(pwsm1, 0, 1, 0, scan, digestionParams, new List<MatchedFragmentIon>());
             psm1.SetFdrValues(0, 0, 0, 0, 0, 0, 0, 0);
 

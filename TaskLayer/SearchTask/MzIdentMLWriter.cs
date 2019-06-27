@@ -384,7 +384,7 @@ namespace TaskLayer
                     {
                         id = "SIR_" + scan_result_scan_item.Item1,
                         spectraData_ref = "SD_" + spectral_ids[psm.FullFilePath].ToString(),
-                        spectrumID = "scan=" + psm.ScanNumber.ToString(),
+                        spectrumID = psm.NativeId,
                         SpectrumIdentificationItem = new mzIdentML110.Generated.SpectrumIdentificationItemType[500],
                         cvParam = new mzIdentML110.Generated.CVParamType[1]
                         {
