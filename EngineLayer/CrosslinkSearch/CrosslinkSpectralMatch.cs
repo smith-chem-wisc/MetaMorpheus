@@ -42,14 +42,14 @@ namespace EngineLayer.CrosslinkSearch
 
             if (this.ProteinAccession == null)
             {
-                var xs = BestMatchingPeptides.Select(p => p.Peptide.Protein.Accession).ToList();
-                var ys = BetaPeptide.BestMatchingPeptides.Select(p => p.Peptide.Protein.Accession).ToList();
+                var alphaProteins = BestMatchingPeptides.Select(p => p.Peptide.Protein.Accession).ToList();
+                var betaProteins = BetaPeptide.BestMatchingPeptides.Select(p => p.Peptide.Protein.Accession).ToList();
 
-                foreach (var x in xs)
+                foreach (var alpha in alphaProteins)
                 {
-                    foreach (var y in ys)
+                    foreach (var beta in betaProteins)
                     {
-                        if (x == y)
+                        if (alpha == beta)
                         {
                             return true;
                         }

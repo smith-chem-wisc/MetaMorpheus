@@ -132,9 +132,9 @@ namespace TaskLayer
 
             List<List<CrosslinkSpectralMatch>> filteredAllPsms = new List<List<CrosslinkSpectralMatch>>();
 
-            foreach (var psms in allPsms)
+            foreach (var psmsPerScan in allPsms)
             {
-                foreach (var psm in psms)
+                foreach (var psm in psmsPerScan)
                 {
                     psm.ResolveAllAmbiguities();
                     if (psm.BetaPeptide != null)
@@ -142,7 +142,7 @@ namespace TaskLayer
                         psm.BetaPeptide.ResolveAllAmbiguities();
                     }
                 }
-                filteredAllPsms.Add(RemoteDuplicate(psms));
+                filteredAllPsms.Add(RemoveDuplicateFromPsmsPerScan(psmsPerScan));
             }
 
             var allPsmsList = filteredAllPsms.Select(p => p.First()).OrderByDescending(p => p.XLTotalScore).ToList();
@@ -154,7 +154,7 @@ namespace TaskLayer
         }
 
         //Remove same peptide with from different protein.
-        public static List<CrosslinkSpectralMatch> RemoteDuplicate(List<CrosslinkSpectralMatch> crosslinkSpectralMatches)
+        public static List<CrosslinkSpectralMatch> RemoveDuplicateFromPsmsPerScan(List<CrosslinkSpectralMatch> crosslinkSpectralMatches)
         {
             Dictionary<string, CrosslinkSpectralMatch> keyValuePairs = new Dictionary<string, CrosslinkSpectralMatch>();
             foreach (var csm in crosslinkSpectralMatches)
