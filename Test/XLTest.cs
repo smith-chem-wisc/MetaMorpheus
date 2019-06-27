@@ -675,8 +675,10 @@ namespace Test
             //This function is important for crosslink protein ambiguious assignment.
             var csm = XLSearchTask.RemoveDuplicateFromPsmsPerScan(csms.First()).First();
             var isIntra = csm.IsIntraCsm();
-
             Assert.That(isIntra == true);
+            csm.ResolveProteinPosAmbiguitiesForXl();
+            Assert.That(csm.XlProteinPos == 455 && csm.BetaPeptide.XlProteinPos == 211);
+
             // test parent scan (CID)
             Assert.That(csm.MatchedFragmentIons.Count == 21);
             Assert.That(csm.ScanNumber == 2);
