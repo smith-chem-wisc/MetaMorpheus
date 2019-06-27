@@ -146,10 +146,11 @@ namespace Test
                 item.ResolveProteinPosAmbiguitiesForXl();
             }
 
-            //Test newPsms
-            Assert.AreEqual(3, newPsms.Count);
-            Assert.That(newPsms[1].XlProteinPos == 4 && newPsms[1].XlProteinPosLoop ==7);
-
+            Assert.AreEqual(4, newPsms.Count);
+            Assert.That(newPsms[0].XlProteinPos == null); //single
+            Assert.That(newPsms[1].XlProteinPos == 4 && newPsms[1].XlProteinPosLoop ==7); //loop
+            Assert.That(newPsms[2].XlProteinPos == 4); //deadend
+            Assert.That(newPsms[3].XlProteinPos == 4 && newPsms[3].BetaPeptide.XlProteinPos == 2); //cross
 
             //Test Output
             var task = new XLSearchTask();
@@ -472,6 +473,8 @@ namespace Test
 
             CrosslinkSpectralMatch csm = csms.First().First();
             csm.ResolveAllAmbiguities();
+            csm.ResolveProteinPosAmbiguitiesForXl();
+            Assert.That(csm.XlProteinPos == 4);
             Assert.That(csm.CrossType == PsmCrossType.DeadEndTris);
             Assert.That(csm.MatchedFragmentIons.Count == 12);
         }
@@ -785,8 +788,8 @@ namespace Test
         //Create DSSO crosslinked fake MS data. Include single, deadend, loop, inter, intra crosslinks ms2 data for match.
         public XLTestDataFile() : base(2, new SourceFile(null, null, null, null, null))
         {
-            var mz1 = new double[] { 1994.05.ToMz(3), 846.4963.ToMz(1), 1004.495.ToMz(1), 1093.544.ToMz(1), 1043.561.ToMz(1) };
-            var intensities1 = new double[] { 1, 1, 1, 1, 1 };
+            var mz1 = new double[] { 1994.05.ToMz(3), 846.4963.ToMz(1), 1004.495.ToMz(1), 1022.511.ToMz(1), 1093.544.ToMz(1), 1500.00.ToMz(1) };
+            var intensities1 = new double[] { 1, 1, 1, 1, 1, 1 };
             var MassSpectrum1 = new MzSpectrum(mz1, intensities1, false);
             var ScansHere = new List<MsDataScan> { new MsDataScan(MassSpectrum1, 1, 1, true, Polarity.Positive, 1, new MzLibUtil.MzRange(0, 10000), "ff", MZAnalyzerType.Unknown, 1000, 1, null, "scan=1") };
 
@@ -810,6 +813,13 @@ namespace Test
             ScansHere.Add(new MsDataScan(MassSpectrum4, 4, 2, true, Polarity.Positive, 1.0,
                 new MzLibUtil.MzRange(0, 10000), "f", MZAnalyzerType.Unknown, 103, 1.0, null, "scan=4", 1004.491.ToMz(1),
                 1, 1, 1004.491.ToMz(1), 2, DissociationType.HCD, 1, 1004.491.ToMz(1)));
+
+            var mz5 = new double[] { 100, 201.1234, 244.1656, 391.2340 };
+            var intensities5 = new double[] { 100, 1, 1, 1 };
+            var MassSpectrum5 = new MzSpectrum(mz5, intensities5, false);
+            ScansHere.Add(new MsDataScan(MassSpectrum5, 5, 2, true, Polarity.Positive, 1.0,
+                new MzLibUtil.MzRange(0, 10000), "f", MZAnalyzerType.Unknown, 103, 1.0, null, "scan=5", 1022.511.ToMz(1),
+                1, 1, 1022.511.ToMz(1), 2, DissociationType.HCD, 1, 1022.511.ToMz(1)));
 
             Scans = ScansHere.ToArray();
         }
