@@ -75,9 +75,9 @@ namespace TaskLayer
                             + "\t" + (item.BetaPeptide.BaseSequence.Length + item.BaseSequence.Length).ToString(CultureInfo.InvariantCulture)
                             + "\t" + "-." + item.FullSequence + item.LinkPositions.First().ToString(CultureInfo.InvariantCulture) + "--" + item.BetaPeptide.FullSequence + item.BetaPeptide.LinkPositions.First().ToString(CultureInfo.InvariantCulture) + ".-"
                             + "\t" + item.BestMatchingPeptides.First().Peptide.Protein.Accession.ToString(CultureInfo.InvariantCulture)
-                                   + "(" + item.XlProteinPos.ToString(CultureInfo.InvariantCulture) + ")"
+                                   + "(" + (item.XlProteinPos.HasValue ? item.XlProteinPos.Value.ToString(CultureInfo.InvariantCulture):string.Empty) + ")"
                             + "\t" + item.BetaPeptide.BestMatchingPeptides.First().Peptide.Protein.Accession.ToString(CultureInfo.InvariantCulture)
-                                   + "(" + item.BetaPeptide.XlProteinPos.ToString(CultureInfo.InvariantCulture) + ")"
+                                   + "(" + (item.BetaPeptide.XlProteinPos.HasValue ? item.BetaPeptide.XlProteinPos.Value.ToString(CultureInfo.InvariantCulture) : string.Empty) + ")"
                             );
                     }
                 }
@@ -250,8 +250,6 @@ namespace TaskLayer
                             crosslinkerDeadEndMass = crosslinker.DeadendMassH2O;
                             break;
                     }
-                    var mod = new pepXML.Generated.modInfoDataTypeMod_aminoacid_mass { mass = crosslinkerDeadEndMass, position = items[i].LinkPositions.First().ToString() };
-                    mods.Add(mod);
                     var searchHit = new pepXML.Generated.msms_pipeline_analysisMsms_run_summarySpectrum_querySearch_resultSearch_hit
                     {
                         hit_rank = 1,

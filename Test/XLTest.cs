@@ -32,6 +32,17 @@ namespace Test
         private static List<PeptideWithSetModifications> digestedList { get; set; }
 
         [Test]
+        public static void XlTestCrosslinker()
+        {
+            var crosslinker = new Crosslinker("K", "K", "testCrosslinker", true, "CID|HCD", 100, 25, 60, 100, 0, 0, 50);
+            var crosslinkerName = crosslinker.ToString();
+            Assert.That(crosslinkerName == "testCrosslinker");
+            var crosslinkerString = crosslinker.ToString(true);
+            Assert.That(crosslinkerString == "testCrosslinker\tK\tK\tTrue\tCID|HCD\t100\t25\t60\t0\t0\t50");
+
+        }
+
+        [Test]
         public static void XlTestXlPosCal()
         {
             var prot = new Protein("MNNNKQQQQ", null);
@@ -132,10 +143,14 @@ namespace Test
                     item.BetaPeptide.ResolveAllAmbiguities();
                 }
                 item.SetFdrValues(0, 0, 0, 0, 0, 0, 0, 0);
+                item.ResolveProteinPosAmbiguitiesForXl();
             }
 
-            //Test newPsms
-            Assert.AreEqual(3, newPsms.Count);
+            Assert.AreEqual(4, newPsms.Count);
+            Assert.That(newPsms[0].XlProteinPos == null); //single
+            Assert.That(newPsms[1].XlProteinPos == 4 && newPsms[1].XlProteinPosLoop ==7); //loop
+            Assert.That(newPsms[2].XlProteinPos == 4); //deadend
+            Assert.That(newPsms[3].XlProteinPos == 4 && newPsms[3].BetaPeptide.XlProteinPos == 2); //cross
 
             //Test Output
             var task = new XLSearchTask();
@@ -458,6 +473,8 @@ namespace Test
 
             CrosslinkSpectralMatch csm = csms.First().First();
             csm.ResolveAllAmbiguities();
+            csm.ResolveProteinPosAmbiguitiesForXl();
+            Assert.That(csm.XlProteinPos == 4);
             Assert.That(csm.CrossType == PsmCrossType.DeadEndTris);
             Assert.That(csm.MatchedFragmentIons.Count == 12);
         }
@@ -596,7 +613,7 @@ namespace Test
             csms.First()[0].ResolveAllAmbiguities();
             csms.First()[0].SetFdrValues(0, 0, 0.1, 0, 0, 0, 0, 0);
 
-            WriteFile.WritePepXML_xl(csms.SelectMany(p => p).ToList(), new List<Protein>(), "", new List<Modification> { deadend }, new List<Modification> { deadend }, new List<string>(), TestContext.CurrentContext.TestDirectory, "test", new CommonParameters(), new XlSearchParameters { Crosslinker = crosslinker });
+            WriteFile.WritePepXML_xl(csms.SelectMany(p=>p).ToList(), new List<Protein>(), "", new List<Modification> { deadend }, new List<Modification> { deadend }, new List<string>(), TestContext.CurrentContext.TestDirectory, "test", new CommonParameters(), new XlSearchParameters { Crosslinker = crosslinker });
             File.Delete(Path.Combine(TestContext.CurrentContext.TestDirectory, @"test.pep.XML"));
         }
 
@@ -625,7 +642,18 @@ namespace Test
                 "PVSEKVTKCCTESLVNRRPCFSALTPDETYVPKAFDEKLFTFHADICTLPDTEKQIKKQTALVELLKHKP" +
                 "KATEEQLKTVMENFVAFVDKCCAADDKEACFAVEGPKLVVSTQTALA", "BSA");
 
-            var indexingResults = (IndexingResults)new IndexingEngine(new List<Protein> { bsa }, new List<Modification>(), new List<Modification>(), null, 0, DecoyType.None,
+            //Add the same seq to test protein ambiguious assignment.
+            Protein bsa2 = new Protein("MKWVTFISLLLLFSSAYSRGVFRRDTHKSEIAHRFKDLGEEHFKGLVLIAFSQYL" +
+                "QQCPFDEHVKLVNELTEFAKTCVADESHAGCEKSLHTLFGDELCKVASLRETYGDMADCCEKQEPERNECFLSHKDDS" +
+                "PDLPKLKPDPNTLCDEFKADEKKFWGKYLYEIARRHPYFYAPELLYYANKYNGVFQECCQAEDKGACLLPKIETMRE" +
+                "KVLTSSARQRLRCASIQKFGERALKAWSVARLSQKFPKAEFVEVTKLVTDLTKVHKECCHGDLLECADDR" +
+                "ADLAKYICDNQDTISSKLKECCDKPLLEKSHCIAEVEKDAIPENLPPLTADFAEDKDVCKNYQEAKDAFL" +
+                "GSFLYEYSRRHPEYAVSVLLRLAKEYEATLEECCAKDDPHACYSTVFDKLKHLVDEPQNLIKQNCDQFEK" +
+                "LGEYGFQNALIVRYTRKVPQVSTPTLVEVSRSLGKVGTRCCTKPESERMPCTEDYLSLILNRLCVLHEKT" +
+                "PVSEKVTKCCTESLVNRRPCFSALTPDETYVPKAFDEKLFTFHADICTLPDTEKQIKKQTALVELLKHKP" +
+                "KATEEQLKTVMENFVAFVDKCCAADDKEACFAVEGPKLVVSTQTALA", "BSA2");
+
+            var indexingResults = (IndexingResults)new IndexingEngine(new List<Protein> { bsa, bsa2 }, new List<Modification>(), new List<Modification>(), null, 0, DecoyType.None,
                 commonParameters, 5000, false, new List<FileInfo>(), new List<string>()).Run();
 
 
@@ -638,12 +666,22 @@ namespace Test
             new CrosslinkSearchEngine(csms, scans, indexingResults.PeptideIndex, indexingResults.FragmentIndex, secondIndexingResults.FragmentIndex, 0, commonParameters, GlobalVariables.Crosslinkers.First(p => p.CrosslinkerName == "DSSO"),
                 false, 0, false, false, true, new List<string>()).Run();
 
-            var csm = csms.First()[0];
-            csm.ResolveAllAmbiguities();
-            if (csm.BetaPeptide != null)
+            foreach (var c in csms.First())
             {
-                csm.BetaPeptide.ResolveAllAmbiguities();
+                c.ResolveAllAmbiguities();
+                if (c.BetaPeptide != null)
+                {
+                    c.BetaPeptide.ResolveAllAmbiguities();
+                }
             }
+
+            //This function is important for crosslink protein ambiguious assignment.
+            var csm = XLSearchTask.RemoveDuplicateFromPsmsPerScan(csms.First()).First();
+            var isIntra = csm.IsIntraCsm();
+            Assert.That(isIntra == true);
+            csm.ResolveProteinPosAmbiguitiesForXl();
+            Assert.That(csm.XlProteinPos == 455 && csm.BetaPeptide.XlProteinPos == 211);
+
             // test parent scan (CID)
             Assert.That(csm.MatchedFragmentIons.Count == 21);
             Assert.That(csm.ScanNumber == 2);
@@ -668,6 +706,9 @@ namespace Test
             Assert.That(psmFromTsv.BetaPeptideChildScanMatchedIons.Count == 1
                 && psmFromTsv.BetaPeptideChildScanMatchedIons.First().Key == 3
                 && psmFromTsv.BetaPeptideChildScanMatchedIons.First().Value.Count == 25);
+
+            Assert.That(csm.ProteinAccession == null && csm.BetaPeptide.ProteinAccession == null);
+            Assert.That(psmFromTsv.ProteinAccession == "BSA|BSA2");
 
             File.Delete(outputFile);
         }
@@ -747,8 +788,8 @@ namespace Test
         //Create DSSO crosslinked fake MS data. Include single, deadend, loop, inter, intra crosslinks ms2 data for match.
         public XLTestDataFile() : base(2, new SourceFile(null, null, null, null, null))
         {
-            var mz1 = new double[] { 1994.05.ToMz(3), 846.4963.ToMz(1), 1004.495.ToMz(1), 1093.544.ToMz(1), 1043.561.ToMz(1) };
-            var intensities1 = new double[] { 1, 1, 1, 1, 1 };
+            var mz1 = new double[] { 1994.05.ToMz(3), 846.4963.ToMz(1), 1004.495.ToMz(1), 1022.511.ToMz(1), 1093.544.ToMz(1), 1500.00.ToMz(1) };
+            var intensities1 = new double[] { 1, 1, 1, 1, 1, 1 };
             var MassSpectrum1 = new MzSpectrum(mz1, intensities1, false);
             var ScansHere = new List<MsDataScan> { new MsDataScan(MassSpectrum1, 1, 1, true, Polarity.Positive, 1, new MzLibUtil.MzRange(0, 10000), "ff", MZAnalyzerType.Unknown, 1000, 1, null, "scan=1") };
 
@@ -772,6 +813,13 @@ namespace Test
             ScansHere.Add(new MsDataScan(MassSpectrum4, 4, 2, true, Polarity.Positive, 1.0,
                 new MzLibUtil.MzRange(0, 10000), "f", MZAnalyzerType.Unknown, 103, 1.0, null, "scan=4", 1004.491.ToMz(1),
                 1, 1, 1004.491.ToMz(1), 2, DissociationType.HCD, 1, 1004.491.ToMz(1)));
+
+            var mz5 = new double[] { 100, 201.1234, 244.1656, 391.2340 };
+            var intensities5 = new double[] { 100, 1, 1, 1 };
+            var MassSpectrum5 = new MzSpectrum(mz5, intensities5, false);
+            ScansHere.Add(new MsDataScan(MassSpectrum5, 5, 2, true, Polarity.Positive, 1.0,
+                new MzLibUtil.MzRange(0, 10000), "f", MZAnalyzerType.Unknown, 103, 1.0, null, "scan=5", 1022.511.ToMz(1),
+                1, 1, 1022.511.ToMz(1), 2, DissociationType.HCD, 1, 1022.511.ToMz(1)));
 
             Scans = ScansHere.ToArray();
         }
