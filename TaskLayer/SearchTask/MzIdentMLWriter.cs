@@ -18,7 +18,7 @@ namespace TaskLayer
         public static void WriteMzIdentMl(IEnumerable<PeptideSpectralMatch> psms, List<EngineLayer.ProteinGroup> groups, List<Modification> variableMods, List<Modification> fixedMods, List<SilacLabel> silacLabels, List<Protease> proteases, double qValueFilter, Tolerance productTolerance, Tolerance parentTolerance, int missedCleavages, string outputPath)
         {
             psms = psms.Where(p => p.FdrInfo.QValue <= qValueFilter && p.FdrInfo.QValueNotch <= qValueFilter);
-            
+
             //if SILAC, remove the silac labels, because the base/full sequences reported for output are not the same as the peptides in the best peptides list for the psm
             if (silacLabels != null)
             {
@@ -741,16 +741,34 @@ namespace TaskLayer
                     cvRef = "PSI-MS",
                 };
             }
-            else
+
+            if (mod.DatabaseReference != null && mod.DatabaseReference.ContainsKey("RESID"))
             {
                 return new mzIdentML110.Generated.CVParamType()
                 {
-                    accession = "MS:1001460",
-                    name = "unknown modification",
-                    cvRef = "UNIMOD",
-                    value = mod.IdWithMotif,
+                    accession = "RESID:" + mod.DatabaseReference["RESID"].First(),
+                    name = mod.IdWithMotif,
+                    cvRef = "PSI-MS",
                 };
             }
+
+            if (mod.DatabaseReference != null && mod.DatabaseReference.ContainsKey("PSI-MOD"))
+            {
+                return new mzIdentML110.Generated.CVParamType()
+                {
+                    accession = "PSI-MOD:" + mod.DatabaseReference["PSI-MOD"].First(),
+                    name = mod.IdWithMotif,
+                    cvRef = "PSI-MS",
+                };
+            }
+            
+            return new mzIdentML110.Generated.CVParamType()
+            {
+                accession = "MS:1001460",
+                name = "unknown modification",
+                cvRef = "UNIMOD",
+                value = mod.IdWithMotif,
+            };
         }
     }
 }
