@@ -23,17 +23,22 @@ namespace TaskLayer
 
         public MyTaskResults Run(string OutputFolder, List<DbForTask> dbFilenameList, List<string> currentRawFileList, string taskId, FileSpecificParameters[] fileSettingsList, List<CrosslinkSpectralMatch> allPsms, CommonParameters commonParameters, XlSearchParameters xlSearchParameters, List<Protein> proteinList, List<Modification> variableModifications, List<Modification> fixedModifications, List<string> localizeableModificationTypes, MyTaskResults MyTaskResults)
         {
+            foreach (var csm in allPsms)
+            {
+                csm.ResolveProteinPosAmbiguitiesForXl();
+            }
+
             var allPsmsXL = allPsms.Where(p => p.CrossType == PsmCrossType.Cross).ToList();
 
             // inter-crosslinks; different proteins are linked
-            var interCsms = allPsmsXL.Where(p => !p.ProteinAccession.Equals(p.BetaPeptide.ProteinAccession)).ToList();
+            var interCsms = allPsmsXL.Where(p => !p.IsIntraCsm()).ToList();
             foreach (var item in interCsms)
             {
                 item.CrossType = PsmCrossType.Inter;
             }
 
             // intra-crosslinks; crosslinks within a protein
-            var intraCsms = allPsmsXL.Where(p => p.ProteinAccession.Equals(p.BetaPeptide.ProteinAccession)).ToList();
+            var intraCsms = allPsmsXL.Where(p => p.IsIntraCsm()).ToList();
             foreach (var item in intraCsms)
             {
                 item.CrossType = PsmCrossType.Intra;
@@ -43,16 +48,6 @@ namespace TaskLayer
             DoCrosslinkFdrAnalysis(interCsms);
             DoCrosslinkFdrAnalysis(intraCsms);
             SingleFDRAnalysis(allPsms, commonParameters, new List<string> { taskId });
-
-            // calculate protein crosslink residue numbers
-            foreach (var csm in allPsmsXL)
-            {
-                // alpha peptide crosslink residue in the protein
-                csm.XlProteinPos = csm.OneBasedStartResidueInProtein.Value + csm.LinkPositions[0] - 1;
-
-                // beta crosslink residue in protein
-                csm.BetaPeptide.XlProteinPos = csm.BetaPeptide.OneBasedStartResidueInProtein.Value + csm.BetaPeptide.LinkPositions[0] - 1;
-            }
 
             // write interlink CSMs
             if (interCsms.Any())

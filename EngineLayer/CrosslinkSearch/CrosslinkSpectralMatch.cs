@@ -18,14 +18,69 @@ namespace EngineLayer.CrosslinkSearch
         public CrosslinkSpectralMatch BetaPeptide { get; set; }
         public List<int> LinkPositions { get; set; }
         public double DeltaScore { get; set; }
-        public double XLTotalScore { get; set; } //alpha + beta psmCross
-        public int XlProteinPos { get; set; }
-        public List<int> XlRank { get; set; } //only contain 2 intger, consider change to Tuple
+        public double XLTotalScore { get; set; } //alpha + beta psmCross.
+        public List<int> XlRank { get; set; } //only contain 2 intger, consider change to Tuple.
         public string ParentIonExist { get; set; }
         public int ParentIonExistNum { get; set; }
         public List<int> ParentIonMaxIntensityRanks { get; set; }
         public PsmCrossType CrossType { get; set; }
         public Dictionary<int, List<MatchedFragmentIon>> ChildMatchedFragmentIons { get; set; }
+        public int? XlProteinPos { get; private set; }
+        // loop crosslink protein position 2.
+        public int? XlProteinPosLoop { get; private set; }
+
+        public bool IsIntraCsm()
+        {
+            
+            if (this.ProteinAccession != null && this.BetaPeptide.ProteinAccession != null)
+            {
+                if (this.ProteinAccession == this.BetaPeptide.ProteinAccession)
+                {
+                    return true;
+                }
+            }
+
+            if (this.ProteinAccession == null)
+            {
+                var alphaProteins = BestMatchingPeptides.Select(p => p.Peptide.Protein.Accession).ToList();
+                var betaProteins = BetaPeptide.BestMatchingPeptides.Select(p => p.Peptide.Protein.Accession).ToList();
+
+                foreach (var alpha in alphaProteins)
+                {
+                    foreach (var beta in betaProteins)
+                    {
+                        if (alpha == beta)
+                        {
+                            return true;
+                        }
+                    }
+
+                }
+            }
+            return false;
+        }
+
+        public void ResolveProteinPosAmbiguitiesForXl()
+        {
+            if (CrossType == PsmCrossType.Cross)
+            {
+                // alpha peptide crosslink residue in the protein
+                XlProteinPos = OneBasedStartResidueInProtein == null ? (int?)null : OneBasedStartResidueInProtein.Value + LinkPositions[0] - 1;
+
+                // beta crosslink residue in protein
+                BetaPeptide.XlProteinPos = BetaPeptide.OneBasedStartResidueInProtein == null ? (int?)null : BetaPeptide.OneBasedStartResidueInProtein.Value + BetaPeptide.LinkPositions[0] - 1;
+            }
+            else if (CrossType == PsmCrossType.DeadEnd || CrossType == PsmCrossType.DeadEndH2O || CrossType == PsmCrossType.DeadEndNH2 || CrossType == PsmCrossType.DeadEndTris)
+            {
+                XlProteinPos = OneBasedStartResidueInProtein == null ? (int?)null : OneBasedStartResidueInProtein.Value + LinkPositions[0] - 1;
+            }
+            else if (CrossType == PsmCrossType.Loop)
+            {
+                XlProteinPos = OneBasedStartResidueInProtein == null ? (int?)null : OneBasedStartResidueInProtein.Value + LinkPositions[0] - 1;
+
+                XlProteinPosLoop = OneBasedStartResidueInProtein == null ? (int?)null : OneBasedStartResidueInProtein.Value + LinkPositions[1] - 1;
+            }
+        }
 
         public static List<int> GetPossibleCrosslinkerModSites(char[] crosslinkerModSites, PeptideWithSetModifications peptide)
         {
@@ -201,8 +256,10 @@ namespace EngineLayer.CrosslinkSearch
             }
 
             sb.Append("\t");
-            sb.Append(ProteinAccession + "\t");
-            sb.Append(XlProteinPos + "\t");
+            List<PeptideWithSetModifications> pepsWithMods = BestMatchingPeptides.Select(p => p.Peptide).ToList();
+            var proteinAccessionString = ProteinAccession != null ? ProteinAccession : PsmTsvWriter.Resolve(pepsWithMods.Select(b => b.Protein.Accession), FullSequence).ResolvedString;
+            sb.Append(proteinAccessionString + "\t");           
+            sb.Append(XlProteinPos + (XlProteinPosLoop.HasValue? "~"+ XlProteinPosLoop.Value : null) + "\t");
             sb.Append(BaseSequence + "\t");
             sb.Append(FullSequence + position + "\t");
             sb.Append((PeptideMonisotopicMass.HasValue ? PeptideMonisotopicMass.Value.ToString() : "---")); sb.Append("\t");
@@ -248,7 +305,9 @@ namespace EngineLayer.CrosslinkSearch
             if (BetaPeptide != null)
             {
                 sb.Append("\t");
-                sb.Append(BetaPeptide.ProteinAccession + "\t");
+                List<PeptideWithSetModifications> betaPepsWithMods = BetaPeptide.BestMatchingPeptides.Select(p => p.Peptide).ToList();
+                var betaProteinAccessionString = BetaPeptide.ProteinAccession != null ? BetaPeptide.ProteinAccession : PsmTsvWriter.Resolve(betaPepsWithMods.Select(b => b.Protein.Accession), FullSequence).ResolvedString;
+                sb.Append(betaProteinAccessionString + "\t");
                 sb.Append(BetaPeptide.XlProteinPos + "\t");
                 sb.Append(BetaPeptide.BaseSequence + "\t");
                 sb.Append(BetaPeptide.FullSequence + "(" + BetaPeptide.LinkPositions[0].ToString() + ")" + "\t");
