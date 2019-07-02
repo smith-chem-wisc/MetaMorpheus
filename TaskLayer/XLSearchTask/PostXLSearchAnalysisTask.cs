@@ -1,18 +1,15 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
-using System.IO;
-using EngineLayer;
+﻿using EngineLayer;
 using EngineLayer.CrosslinkSearch;
 using EngineLayer.FdrAnalysis;
 using Proteomics;
-
+using System;
+using System.Collections.Generic;
+using System.IO;
+using System.Linq;
 
 namespace TaskLayer
 {
-    public class PostXLSearchAnalysisTask: MetaMorpheusTask
+    public class PostXLSearchAnalysisTask : MetaMorpheusTask
     {
         public PostXLSearchAnalysisTask()
     : base(MyTask.Search)
@@ -26,17 +23,22 @@ namespace TaskLayer
 
         public MyTaskResults Run(string OutputFolder, List<DbForTask> dbFilenameList, List<string> currentRawFileList, string taskId, FileSpecificParameters[] fileSettingsList, List<CrosslinkSpectralMatch> allPsms, CommonParameters commonParameters, XlSearchParameters xlSearchParameters, List<Protein> proteinList, List<Modification> variableModifications, List<Modification> fixedModifications, List<string> localizeableModificationTypes, MyTaskResults MyTaskResults)
         {
+            foreach (var csm in allPsms)
+            {
+                csm.ResolveProteinPosAmbiguitiesForXl();
+            }
+
             var allPsmsXL = allPsms.Where(p => p.CrossType == PsmCrossType.Cross).ToList();
 
             // inter-crosslinks; different proteins are linked
-            var interCsms = allPsmsXL.Where(p => !p.ProteinAccession.Equals(p.BetaPeptide.ProteinAccession)).ToList();
+            var interCsms = allPsmsXL.Where(p => !p.IsIntraCsm()).ToList();
             foreach (var item in interCsms)
             {
                 item.CrossType = PsmCrossType.Inter;
             }
 
             // intra-crosslinks; crosslinks within a protein
-            var intraCsms = allPsmsXL.Where(p => p.ProteinAccession.Equals(p.BetaPeptide.ProteinAccession)).ToList();
+            var intraCsms = allPsmsXL.Where(p => p.IsIntraCsm()).ToList();
             foreach (var item in intraCsms)
             {
                 item.CrossType = PsmCrossType.Intra;
@@ -46,16 +48,6 @@ namespace TaskLayer
             DoCrosslinkFdrAnalysis(interCsms);
             DoCrosslinkFdrAnalysis(intraCsms);
             SingleFDRAnalysis(allPsms, commonParameters, new List<string> { taskId });
-
-            // calculate protein crosslink residue numbers
-            foreach (var csm in allPsmsXL)
-            {
-                // alpha peptide crosslink residue in the protein
-                csm.XlProteinPos = csm.OneBasedStartResidueInProtein.Value + csm.LinkPositions[0] - 1;
-
-                // beta crosslink residue in protein
-                csm.BetaPeptide.XlProteinPos = csm.BetaPeptide.OneBasedStartResidueInProtein.Value + csm.BetaPeptide.LinkPositions[0] - 1;
-            }
 
             // write interlink CSMs
             if (interCsms.Any())
@@ -182,7 +174,7 @@ namespace TaskLayer
                 }
 
                 double qValue = Math.Min(1, (double)cumulativeDecoy / cumulativeTarget);
-                csm.SetFdrValues(cumulativeTarget, cumulativeDecoy, qValue, 0, 0, 0, 0, 0, 0, false);
+                csm.SetFdrValues(cumulativeTarget, cumulativeDecoy, qValue, 0, 0, 0, 0, 0);
             }
 
             double qValueThreshold = 1.0;

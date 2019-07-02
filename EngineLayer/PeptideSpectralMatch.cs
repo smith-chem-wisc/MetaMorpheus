@@ -14,7 +14,7 @@ namespace EngineLayer
         public const double ToleranceForScoreDifferentiation = 1e-9;
         private List<(int Notch, PeptideWithSetModifications Pwsm)> _BestMatchingPeptides;
 
-        public PeptideSpectralMatch(PeptideWithSetModifications peptide, int notch, double score, int scanIndex, IScan scan, DigestionParams digestionParams, List<MatchedFragmentIon> matchedFragmentIons, double xcorr = 0)
+        public PeptideSpectralMatch(PeptideWithSetModifications peptide, int notch, double score, int scanIndex, Ms2ScanWithSpecificMass scan, DigestionParams digestionParams, List<MatchedFragmentIon> matchedFragmentIons, double xcorr = 0)
         {
             _BestMatchingPeptides = new List<(int, PeptideWithSetModifications)>();
             ScanIndex = scanIndex;
@@ -27,10 +27,10 @@ namespace EngineLayer
             ScanPrecursorCharge = scan.PrecursorCharge;
             ScanPrecursorMonoisotopicPeakMz = scan.PrecursorMonoisotopicPeakMz;
             ScanPrecursorMass = scan.PrecursorMass;
-            AllScores = new List<double>();
             DigestionParams = digestionParams;
             PeptidesToMatchingFragments = new Dictionary<PeptideWithSetModifications, List<MatchedFragmentIon>>();
             Xcorr = xcorr;
+            NativeId = scan.NativeId;
 
             AddOrReplace(peptide, score, notch, true, matchedFragmentIons, xcorr);
         }
@@ -65,12 +65,15 @@ namespace EngineLayer
         public FdrInfo FdrInfo { get; private set; }
         public double Score { get; private set; }
         public double Xcorr;
-        public double DeltaScore { get; private set; }
+        public string NativeId; // this is a property of the scan. used for mzID writing
+
+        public double DeltaScore { get { return (Score - RunnerUpScore); } }
+
         public double RunnerUpScore { get; set; }
         public bool IsDecoy { get; private set; }
         public bool IsContaminant { get; private set; }
+
         public DigestionParams DigestionParams { get; }
-        public List<double> AllScores { get; internal set; }
         public Dictionary<PeptideWithSetModifications, List<MatchedFragmentIon>> PeptidesToMatchingFragments { get; private set; }
 
         public IEnumerable<(int Notch, PeptideWithSetModifications Peptide)> BestMatchingPeptides
@@ -126,10 +129,16 @@ namespace EngineLayer
                     PeptidesToMatchingFragments.Add(pwsm, matchedFragmentIons);
                 }
             }
-            else if (Score - RunnerUpScore > ToleranceForScoreDifferentiation)
+            else if (newScore - RunnerUpScore > ToleranceForScoreDifferentiation)
             {
                 RunnerUpScore = newScore;
             }
+        }
+
+        //PEP-Value analysis identifies ambiguous peptides with lower probability. These are removed from the bestmatchingpeptides dictionary, which lowers ambiguity.
+        public void RemoveThisAmbiguousPeptide(int notch, PeptideWithSetModifications pwsm)
+        {
+            _BestMatchingPeptides.Remove((notch, pwsm));
         }
 
         public override string ToString()
@@ -152,12 +161,7 @@ namespace EngineLayer
             return s;
         }
 
-        public void CalculateDeltaScore(double scoreCutoff)
-        {
-            DeltaScore = Score - Math.Max(RunnerUpScore, scoreCutoff);
-        }
-
-        public void SetFdrValues(double cumulativeTarget, double cumulativeDecoy, double qValue, double cumulativeTargetNotch, double cumulativeDecoyNotch, double qValueNotch, double maximumLikelihood, double eValue, double eScore, bool calculateEValue)
+        public void SetFdrValues(double cumulativeTarget, double cumulativeDecoy, double qValue, double cumulativeTargetNotch, double cumulativeDecoyNotch, double qValueNotch, double pep, double pepQValue)
         {
             FdrInfo = new FdrInfo
             {
@@ -167,10 +171,8 @@ namespace EngineLayer
                 CumulativeTargetNotch = cumulativeTargetNotch,
                 CumulativeDecoyNotch = cumulativeDecoyNotch,
                 QValueNotch = qValueNotch,
-                MaximumLikelihood = maximumLikelihood,
-                EScore = eScore,
-                EValue = eValue,
-                CalculateEValue = calculateEValue
+                PEP = pep,
+                PEP_QValue = pepQValue
             };
         }
 
@@ -223,6 +225,39 @@ namespace EngineLayer
             // TODO: technically, different peptide options for this PSM can have different matched ions
             // we can write a Resolve method for this if we want...
             MatchedFragmentIons = PeptidesToMatchingFragments.First().Value;
+        }
+
+        public int GetLongestIonSeriesBidirectional(PeptideWithSetModifications peptide)
+        {
+            int maxdif = 0;
+
+            if (PeptidesToMatchingFragments != null && PeptidesToMatchingFragments.TryGetValue(peptide, out var matchedFragments) && matchedFragments != null && matchedFragments.Any())
+            {
+                List<int> jointSeries = new List<int>();
+                jointSeries.AddRange(matchedFragments.Where(f => f.NeutralTheoreticalProduct.TerminusFragment.Terminus == FragmentationTerminus.N).Select(f => f.NeutralTheoreticalProduct.TerminusFragment.FragmentNumber) ?? new List<int>());
+                jointSeries.AddRange(matchedFragments.Where(f => f.NeutralTheoreticalProduct.TerminusFragment.Terminus == FragmentationTerminus.C).Select(f => f.NeutralTheoreticalProduct.TerminusFragment.FragmentNumber) ?? new List<int>());
+                jointSeries = jointSeries.Distinct().ToList();
+
+                if (jointSeries.Count > 0)
+                {
+                    jointSeries.Sort();
+
+                    List<int> aminoAcidPostionsThatCouldBeObserved = Enumerable.Range(0, peptide.BaseSequence.Length + 1).ToList();
+
+                    List<int> missing = aminoAcidPostionsThatCouldBeObserved.Except(jointSeries).ToList();
+
+                    for (int i = 0; i < missing.Count - 1; i++)
+                    {
+                        int diff = missing[i + 1] - missing[i] - 1;
+                        if (diff > maxdif)
+                        {
+                            maxdif = diff;
+                        }
+                    }
+                }
+            }
+
+            return maxdif;
         }
 
         /// <summary>
@@ -319,12 +354,10 @@ namespace EngineLayer
             FdrInfo = psm.FdrInfo;
             Score = psm.Score;
             Xcorr = psm.Xcorr;
-            DeltaScore = psm.DeltaScore;
             RunnerUpScore = psm.RunnerUpScore;
             IsDecoy = psm.IsDecoy;
             IsContaminant = psm.IsContaminant;
             DigestionParams = psm.DigestionParams;
-            AllScores = psm.AllScores;
             PeptidesToMatchingFragments = psm.PeptidesToMatchingFragments;
         }
     }

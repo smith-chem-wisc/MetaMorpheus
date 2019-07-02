@@ -8,9 +8,8 @@
         public double CumulativeDecoyNotch { get; set; }
         public double QValue { get; set; }
         public double QValueNotch { get; set; }
-        public bool CalculateEValue { get; set; }
-        public double MaximumLikelihood { get; set; }
-        public double EValue { get; set; }
-        public double EScore { get; set; }
+
+        public double PEP { get; set; }
+        public double PEP_QValue { get; set; }
     }
 }
