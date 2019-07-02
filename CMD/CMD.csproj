@@ -4,6 +4,7 @@
     <OutputType>Exe</OutputType>
     <TargetFrameworks>net471;netcoreapp2.0</TargetFrameworks>
     <ApplicationManifest>app1.manifest</ApplicationManifest>
+    <Platforms>x64</Platforms>
   </PropertyGroup>
 
   <ItemGroup>

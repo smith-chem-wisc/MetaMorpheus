@@ -17,7 +17,8 @@ namespace Test
         [Test]
         public static void TestModificationAnalysis()
         {
-            IScan scan = new ThisTestScan();
+            Ms2ScanWithSpecificMass scan = new Ms2ScanWithSpecificMass(new MsDataScan(new MzSpectrum(new double[,] { }), 0, 0, true, Polarity.Positive,
+                0, new MzLibUtil.MzRange(0, 0), "", MZAnalyzerType.FTICR, 0, null, null, ""), 0, 0, "", new CommonParameters());
 
             ModificationMotif.TryGetMotif("N", out ModificationMotif motif1);
             Modification mod1 = new Modification(_originalId: "mod1", _modificationType: "myModType", _target: motif1, _locationRestriction: "Anywhere.", _monoisotopicMass: 10);
@@ -104,7 +105,8 @@ namespace Test
         [Test]
         public static void TestModificationAnalysisWithNonLocalizedPtms()
         {
-            IScan scan = new ThisTestScan();
+            Ms2ScanWithSpecificMass scan = new Ms2ScanWithSpecificMass(new MsDataScan(new MzSpectrum(new double[,] { }), 0, 0, true, Polarity.Positive,
+                0, new MzLibUtil.MzRange(0, 0), "", MZAnalyzerType.FTICR, 0, null, null, ""), 0, 0, "", new CommonParameters());
 
             ModificationMotif.TryGetMotif("N", out ModificationMotif motif1);
             Modification mod1 = new Modification(_originalId: "mod1", _modificationType: "mt", _target: motif1, _locationRestriction: "Anywhere.", _monoisotopicMass: 10, _neutralLosses: new Dictionary<DissociationType, List<double>> { { MassSpectrometry.DissociationType.AnyActivationType, new List<double> { 10 } } });
@@ -150,26 +152,5 @@ namespace Test
             Assert.AreEqual(1, res.CountOfUnlocalizedMods[mod1.IdWithMotif]); // Saw it, but not sure where!
             Assert.AreEqual(0, res.CountOfUnlocalizedFormulas.Count());
         }
-    }
-
-    internal class ThisTestScan : IScan
-    {
-        public string FullFilePath => null;
-
-        public int OneBasedScanNumber => 0;
-
-        public int? OneBasedPrecursorScanNumber => 0;
-
-        public double RetentionTime => 0;
-
-        public int NumPeaks => 0;
-
-        public double TotalIonCurrent => 0;
-
-        public int PrecursorCharge => 0;
-
-        public double PrecursorMonoisotopicPeakMz => 0;
-
-        public double PrecursorMass => 0;
     }
 }
