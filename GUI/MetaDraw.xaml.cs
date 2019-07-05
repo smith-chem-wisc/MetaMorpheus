@@ -41,6 +41,7 @@ namespace MetaMorpheusGUI
         private string tsvResultsFilePath;
         private Dictionary<ProductType, double> productTypeToYOffset;
         private Dictionary<ProductType, Color> productTypeToColor;
+        private Color variantCrossColor;
         private SolidColorBrush modificationAnnotationColor;
         private Regex illegalInFileName = new Regex(@"[\\/:*?""<>|]");
         private ObservableCollection<string> plotTypes;
@@ -66,7 +67,8 @@ namespace MetaMorpheusGUI
             Title = "MetaDraw: version " + GlobalVariables.MetaMorpheusVersion;
             spectraFileManager = new MyFileManager(true);
             SetUpDictionaries();
-            modificationAnnotationColor = Brushes.Yellow;
+            variantCrossColor = Colors.Green;
+            modificationAnnotationColor = Brushes.Orange;
             metaDrawGraphicalSettings = new MetaDrawGraphicalSettings();
             metaDrawFilterSettings = new MetaDrawFilterSettings();
             base.Closing += this.OnClosing;
@@ -476,7 +478,7 @@ namespace MetaMorpheusGUI
             {
                 int residue = ion.NeutralTheoreticalProduct.TerminusFragment.AminoAcidPosition;
                 string annotation = ion.NeutralTheoreticalProduct.ProductType + "" + ion.NeutralTheoreticalProduct.TerminusFragment.FragmentNumber;
-                Color color = psm.VariantCrossingIons.ContainsKey(ion) && psm.VariantCrossingIons[ion] ? Colors.Green : productTypeToColor[ion.NeutralTheoreticalProduct.ProductType];
+                Color color = psm.VariantCrossingIons.Contains(ion) ? variantCrossColor : productTypeToColor[ion.NeutralTheoreticalProduct.ProductType];
 
                 if (ion.NeutralTheoreticalProduct.NeutralLoss != 0)
                 {

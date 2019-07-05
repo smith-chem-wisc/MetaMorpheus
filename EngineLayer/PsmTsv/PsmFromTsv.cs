@@ -40,7 +40,9 @@ namespace EngineLayer
         public string ProteinName { get; }
         public string GeneName { get; }
         public string OrganismName { get; }
+        public string IntersectingSequenceVariations { get; }
         public string IdentifiedSequenceVariations { get; }
+        public string SpliceSites { get; }
         public string PeptideDesicription { get; }
         public string StartAndEndResiduesInProtein { get; }
         public string PreviousAminoAcid { get; }
@@ -48,7 +50,7 @@ namespace EngineLayer
         public string DecoyContamTarget { get; }
         public double? QValueNotch { get; }
 
-        public Dictionary<MatchedFragmentIon, bool> VariantCrossingIons { get; }
+        public List<MatchedFragmentIon> VariantCrossingIons { get; }
 
         //For crosslink
 
@@ -100,7 +102,9 @@ namespace EngineLayer
             ProteinName = (parsedHeader[PsmTsvHeader.ProteinName] < 0) ? null : spl[parsedHeader[PsmTsvHeader.ProteinName]].Trim();
             GeneName = (parsedHeader[PsmTsvHeader.GeneName] < 0) ? null : spl[parsedHeader[PsmTsvHeader.GeneName]].Trim();
             OrganismName = (parsedHeader[PsmTsvHeader.OrganismName] < 0) ? null : spl[parsedHeader[PsmTsvHeader.OrganismName]].Trim();
+            IntersectingSequenceVariations = (parsedHeader[PsmTsvHeader.IntersectingSequenceVariations] < 0) ? null : spl[parsedHeader[PsmTsvHeader.IntersectingSequenceVariations]].Trim();
             IdentifiedSequenceVariations = (parsedHeader[PsmTsvHeader.IdentifiedSequenceVariations] < 0) ? null : spl[parsedHeader[PsmTsvHeader.IdentifiedSequenceVariations]].Trim();
+            SpliceSites = (parsedHeader[PsmTsvHeader.SpliceSites] < 0) ? null : spl[parsedHeader[PsmTsvHeader.SpliceSites]].Trim();
             PeptideDesicription = (parsedHeader[PsmTsvHeader.PeptideDesicription] < 0) ? null : spl[parsedHeader[PsmTsvHeader.PeptideDesicription]].Trim();
             StartAndEndResiduesInProtein = (parsedHeader[PsmTsvHeader.StartAndEndResiduesInProtein] < 0) ? null : spl[parsedHeader[PsmTsvHeader.StartAndEndResiduesInProtein]].Trim();
             PreviousAminoAcid = (parsedHeader[PsmTsvHeader.PreviousAminoAcid] < 0) ? null : spl[parsedHeader[PsmTsvHeader.PreviousAminoAcid]].Trim();
@@ -200,9 +204,12 @@ namespace EngineLayer
             return childScanMatchedIons;
         }
 
-        private Dictionary<MatchedFragmentIon, bool> findVariantCrossingIons()
+        // finds the ions that contain variant residues using the position in IdentifiedSequenceVariations. When the variation spans 
+        // multiple residues, if any part is contained in an ion, the ion is marked as variant crossing.
+        private List<MatchedFragmentIon> findVariantCrossingIons()
         {
-            Dictionary<MatchedFragmentIon, bool> variantCrossingIons = new Dictionary<MatchedFragmentIon, bool>();
+            List<MatchedFragmentIon> variantCrossingIons = new List<MatchedFragmentIon>();
+            
 
             if (StartAndEndResiduesInProtein != null && IdentifiedSequenceVariations != null)
             {
@@ -210,6 +217,10 @@ namespace EngineLayer
                 Match variantMatch = VariantParser.Match(IdentifiedSequenceVariations);
                 if (positionMatch.Success && variantMatch.Success)
                 {
+                    List<ProductType> abcProductTypes = new List<ProductType>() { ProductType.a, ProductType.aDegree, ProductType.aStar,
+                                                                    ProductType.b, ProductType.bDegree, ProductType.bStar, ProductType.c };
+                    List<ProductType> xyzProductTypes = new List<ProductType>() { ProductType.x, ProductType.y, ProductType.yDegree,
+                                                                    ProductType.yStar, ProductType.zDot, ProductType.zPlusOne};
                     int peptideStart = int.Parse(positionMatch.Groups[1].Value);
                     int peptideEnd = int.Parse(positionMatch.Groups[2].Value);
                     int variantResidueStart = int.Parse(variantMatch.Groups[1].Value);
@@ -218,19 +229,14 @@ namespace EngineLayer
                     foreach (MatchedFragmentIon ion in MatchedIons)
                     {
                         Match ionMatch = IonParser.Match(ion.Annotation);
-                        if (ionMatch.Success && // finds match, variant is within peptide, and ion contains variant (differs if ion is abc or xyz)
-                            (variantResidueEnd >= peptideStart && variantResidueStart <= peptideEnd) &&
-                            ((ion.NeutralTheoreticalProduct.ProductType <= ProductType.c &&
-                              peptideStart + int.Parse(ionMatch.Groups[2].Value) > variantResidueStart) ||
-                             (ion.NeutralTheoreticalProduct.ProductType > ProductType.c &&
-                              ion.NeutralTheoreticalProduct.ProductType <= ProductType.zDot &&
-                              peptideEnd - int.Parse(ionMatch.Groups[2].Value) < variantResidueEnd)))
+                        if (ionMatch.Success &&
+                            (variantResidueEnd >= peptideStart && variantResidueStart <= peptideEnd) &&     // variant is within peptide
+                            ((abcProductTypes.Contains(ion.NeutralTheoreticalProduct.ProductType) &&        // type a, b, or c
+                              peptideStart + int.Parse(ionMatch.Groups[2].Value) > variantResidueStart) ||  // crosses variant
+                             (xyzProductTypes.Contains(ion.NeutralTheoreticalProduct.ProductType) &&        // type x, y, or z
+                              peptideEnd - int.Parse(ionMatch.Groups[2].Value) < variantResidueEnd)))       // crosses variant
                         {
-                            variantCrossingIons.Add(ion, true);
-                        }
-                        else 
-                        {
-                            variantCrossingIons.Add(ion, false);
+                            variantCrossingIons.Add(ion);
                         }
                     }
                 }
