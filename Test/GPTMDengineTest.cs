@@ -49,7 +49,7 @@ namespace Test
 
             Tolerance fragmentTolerance = new AbsoluteTolerance(0.01);
 
-            newPsm.SetFdrValues(1, 0, 0, 1, 0, 0, 0, 0, 0, false);
+            newPsm.SetFdrValues(1, 0, 0, 1, 0, 0, 0, 0);
             allResultingIdentifications.Add(newPsm);
 
             engine = new GptmdEngine(allResultingIdentifications, gptmdModifications, combos, new Dictionary<string, Tolerance> { { "filepath", precursorMassTolerance } }, new CommonParameters(), new List<string>());
@@ -88,7 +88,7 @@ namespace Test
 
             Tolerance fragmentTolerance = new AbsoluteTolerance(0.01);
 
-            match.SetFdrValues(1, 0, 0, 1, 0, 0, 0, 0, 0, false);
+            match.SetFdrValues(1, 0, 0, 1, 0, 0, 0, 0);
             allIdentifications = new List<PeptideSpectralMatch> { match };
 
             var engine = new GptmdEngine(allIdentifications, gptmdModifications, combos, new Dictionary<string, Tolerance> { { "filepath", precursorMassTolerance } }, new CommonParameters(), new List<string>());

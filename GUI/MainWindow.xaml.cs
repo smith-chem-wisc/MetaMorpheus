@@ -30,7 +30,6 @@ namespace MetaMorpheusGUI
         private readonly ObservableCollection<PreRunTask> StaticTasksObservableCollection = new ObservableCollection<PreRunTask>();
         private readonly ObservableCollection<RawDataForDataGrid> SelectedRawFiles = new ObservableCollection<RawDataForDataGrid>();
         private ObservableCollection<InRunTask> DynamicTasksObservableCollection;
-        private bool WarnedAboutThermoAlready = false;
 
         public MainWindow()
         {
@@ -85,7 +84,9 @@ namespace MetaMorpheusGUI
             }
 
             if (GlobalVariables.MetaMorpheusVersion.Contains("Not a release version"))
+            {
                 GuiGlobalParams.AskAboutUpdating = false;
+            }
 
             try
             {
@@ -127,7 +128,7 @@ namespace MetaMorpheusGUI
             Hyperlink youtubeLink = new Hyperlink(run4);
             youtubeLink.NavigateUri = new Uri(@"https://www.youtube.com/playlist?list=PLVk5tTSZ1aWlhNPh7jxPQ8pc0ElyzSUQb");
 
-            var links = new List<Hyperlink> {wikiLink, youtubeLink};
+            var links = new List<Hyperlink> { wikiLink, youtubeLink };
 
             p.Inlines.Add(run1);
             p.Inlines.Add(wikiLink);
@@ -164,8 +165,11 @@ namespace MetaMorpheusGUI
                     JObject deserialized = JObject.Parse(json);
                     var assets = deserialized["assets"].Select(b => b["name"].ToString()).ToList();
                     if (!assets.Contains("MetaMorpheusInstaller.msi"))
+                    {
                         throw new MetaMorpheusException("A new version of MetaMorpheus was detected, but the files haven't been" +
                             " uploaded yet. Try again in a few minutes.");
+                    }
+
                     NewestKnownVersion = deserialized["tag_name"].ToString();
                 }
             }
@@ -260,9 +264,15 @@ namespace MetaMorpheusGUI
             else
             {
                 foreach (var uu in ProteinDbObservableCollection)
+                {
                     uu.Use = false;
+                }
+
                 foreach (var uu in e.NewDatabases)
+                {
                     ProteinDbObservableCollection.Add(new ProteinDbForDataGrid(uu));
+                }
+
                 dataGridProteinDatabases.Items.Refresh();
             }
         }
@@ -417,10 +427,13 @@ namespace MetaMorpheusGUI
                 Multiselect = true
             };
             if (openPicker.ShowDialog() == true)
+            {
                 foreach (var filepath in openPicker.FileNames.OrderBy(p => p))
                 {
                     AddAFile(filepath);
                 }
+            }
+
             dataGridProteinDatabases.Items.Refresh();
         }
 
@@ -434,10 +447,13 @@ namespace MetaMorpheusGUI
                 Multiselect = true
             };
             if (openFileDialog1.ShowDialog() == true)
+            {
                 foreach (var rawDataFromSelected in openFileDialog1.FileNames.OrderBy(p => p))
                 {
                     AddAFile(rawDataFromSelected);
                 }
+            }
+
             dataGridSpectraFiles.Items.Refresh();
         }
 
@@ -487,26 +503,29 @@ namespace MetaMorpheusGUI
             switch (theExtension)
             {
                 case ".raw":
-                    if (!WarnedAboutThermoAlready)
+                    if (!GlobalVariables.GlobalSettings.UserHasAgreedToThermoRawFileReaderLicence)
                     {
-                        // check for MSFileReader and display a warning if the expected DLLs are not found
-                        var versionCheckerResult = MyFileManager.ValidateThermoMsFileReaderVersion();
+                        // open the Thermo RawFileReader licence agreement
+                        var thermoLicenceWindow = new ThermoLicenceAgreementWindow();
+                        thermoLicenceWindow.LicenceText.AppendText(ThermoRawFileReader.ThermoRawFileReaderLicence.ThermoLicenceText);
+                        var dialogResult = thermoLicenceWindow.ShowDialog();
 
-                        if (versionCheckerResult.Equals(MyFileManager.ThermoMsFileReaderVersionCheck.IncorrectVersion))
+                        var newGlobalSettings = new GlobalSettings
                         {
-                            GuiWarnHandler(null, new StringEventArgs("Warning! Thermo MSFileReader is not version 3.0 SP2; a crash may result from searching this .raw file", null));
-                        }
-                        else if (versionCheckerResult.Equals(MyFileManager.ThermoMsFileReaderVersionCheck.DllsNotFound))
+                            UserHasAgreedToThermoRawFileReaderLicence = dialogResult.Value,
+                            WriteExcelCompatibleTSVs = GlobalVariables.GlobalSettings.WriteExcelCompatibleTSVs
+                        };
+
+                        Toml.WriteFile<GlobalSettings>(newGlobalSettings, Path.Combine(GlobalVariables.DataDir, @"settings.toml"));
+                        GlobalVariables.GlobalSettings = newGlobalSettings;
+
+                        // user declined agreement
+                        if (!GlobalVariables.GlobalSettings.UserHasAgreedToThermoRawFileReaderLicence)
                         {
-                            GuiWarnHandler(null, new StringEventArgs("Warning! Cannot find Thermo MSFileReader (v3.0 SP2 is preferred); a crash may result from searching this .raw file", null));
-                        }
-                        else if (versionCheckerResult.Equals(MyFileManager.ThermoMsFileReaderVersionCheck.SomeDllsMissing))
-                        {
-                            GuiWarnHandler(null, new StringEventArgs("Warning! Found only some of the expected Thermo MSFileReader .dll files; a crash may result from searching this .raw file", null));
+                            return;
                         }
                     }
 
-                    WarnedAboutThermoAlready = true;
                     goto case ".mzml";
 
                 case ".mgf":
@@ -733,7 +752,11 @@ namespace MetaMorpheusGUI
             else
             {
                 Exception e = obj.Exception;
-                while (e.InnerException != null) e = e.InnerException;
+                while (e.InnerException != null)
+                {
+                    e = e.InnerException;
+                }
+
                 var message = "Run failed, Exception: " + e.Message;
                 var messageBoxResult = System.Windows.MessageBox.Show(message + "\n\nWould you like to report this crash?", "Runtime Error", MessageBoxButton.YesNo);
                 notificationsTextBox.AppendText(message + Environment.NewLine);
@@ -746,12 +769,20 @@ namespace MetaMorpheusGUI
                     var tomls = Directory.GetFiles(outputFolder, "*.toml");
                     //will only be 1 toml per task
                     foreach (var tomlFile in tomls)
+                    {
                         tomlText += "\n" + File.ReadAllText(tomlFile);
+                    }
+
                     if (!tomls.Any())
+                    {
                         tomlText = "TOML not found";
+                    }
                 }
                 else
+                {
                     tomlText = "Directory not found";
+                }
+
                 if (messageBoxResult == MessageBoxResult.Yes)
                 {
                     string body = exception.Message + "%0D%0A" + exception.Data +
@@ -1132,6 +1163,7 @@ namespace MetaMorpheusGUI
         {
             var a = sender as TreeView;
             if (a.SelectedItem is PreRunTask preRunTask)
+            {
                 switch (preRunTask.metaMorpheusTask.TaskType)
                 {
                     case MyTask.Search:
@@ -1165,6 +1197,7 @@ namespace MetaMorpheusGUI
                         tasksTreeView.Items.Refresh();
                         return;
                 }
+            }
 
             if (a.SelectedItem is OutputFileForTreeView fileThing)
             {
@@ -1189,10 +1222,13 @@ namespace MetaMorpheusGUI
                 Multiselect = true
             };
             if (openFileDialog1.ShowDialog() == true)
+            {
                 foreach (var tomlFromSelected in openFileDialog1.FileNames.OrderBy(p => p))
                 {
                     AddAFile(tomlFromSelected);
                 }
+            }
+
             UpdateTaskGuiStuff();
         }
 
@@ -1304,14 +1340,20 @@ namespace MetaMorpheusGUI
         private bool DatabaseExists(ObservableCollection<ProteinDbForDataGrid> pDOC, ProteinDbForDataGrid uuu)
         {
             foreach (ProteinDbForDataGrid pdoc in pDOC)
+            {
                 if (pdoc.FilePath == uuu.FilePath) { return true; }
+            }
+
             return false;
         }
 
         private bool SpectraFileExists(ObservableCollection<RawDataForDataGrid> rDOC, RawDataForDataGrid zzz)
         {
             foreach (RawDataForDataGrid rdoc in rDOC)
+            {
                 if (rdoc.FileName == zzz.FileName) { return true; }
+            }
+
             return false;
         }
 
@@ -1355,7 +1397,9 @@ namespace MetaMorpheusGUI
             }
 
             if (GlobalVariables.MetaMorpheusVersion.Equals(NewestKnownVersion))
+            {
                 MessageBox.Show("You have the most updated version!");
+            }
             else
             {
                 try
