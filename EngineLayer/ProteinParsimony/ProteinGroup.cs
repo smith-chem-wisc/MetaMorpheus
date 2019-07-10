@@ -18,7 +18,7 @@ namespace EngineLayer
             AllPeptides = peptides;
             UniquePeptides = uniquePeptides;
             AllPsmsBelowOnePercentFDR = new HashSet<PeptideSpectralMatch>();
-            SequenceCoveragePercent = new List<double>();
+            SequenceCoverageFraction = new List<double>();
             SequenceCoverageDisplayList = new List<string>();
             SequenceCoverageDisplayListWithMods = new List<string>();
             ProteinGroupScore = 0;
@@ -62,7 +62,7 @@ namespace EngineLayer
 
         public HashSet<PeptideSpectralMatch> AllPsmsBelowOnePercentFDR { get; set; }
 
-        public List<double> SequenceCoveragePercent { get; private set; }
+        public List<double> SequenceCoverageFraction { get; private set; }
 
         public List<string> SequenceCoverageDisplayList { get; private set; }
 
@@ -99,7 +99,7 @@ namespace EngineLayer
             sb.Append("Shared Peptides" + '\t');
             sb.Append("Number of Peptides" + '\t');
             sb.Append("Number of Unique Peptides" + '\t');
-            sb.Append("Sequence Coverage %" + '\t');
+            sb.Append("Sequence Coverage Fraction" + '\t');
             sb.Append("Sequence Coverage" + '\t');
             sb.Append("Sequence Coverage with Mods" + '\t');
             sb.Append("Modification Info List" + "\t");
@@ -191,7 +191,7 @@ namespace EngineLayer
             sb.Append("\t");
 
             // sequence coverage percent
-            sb.Append(GlobalVariables.CheckLengthOfOutput(string.Join("|", SequenceCoveragePercent.Select(p => string.Format("{0:0}" + "%", (p * 100))))));
+            sb.Append(GlobalVariables.CheckLengthOfOutput(string.Join("|", SequenceCoverageFraction.Select(p => string.Format("{0:0.#####}",p)))));
             sb.Append("\t");
 
             // sequence coverage
@@ -323,15 +323,15 @@ namespace EngineLayer
                 }
 
                 // calculate sequence coverage percent
-                double seqCoveragePercent = (double)coveredOneBasedResidues.Count / protein.Length;
-                if (seqCoveragePercent > 1)
+                double seqCoverageFract = (double)coveredOneBasedResidues.Count / protein.Length;
+                if (seqCoverageFract > 1)
                     errorResult = true;
 
                 // add the percent coverage or NaN if there was an error
                 if (!errorResult)
-                    SequenceCoveragePercent.Add(seqCoveragePercent);
+                    SequenceCoverageFraction.Add(seqCoverageFract);
                 else
-                    SequenceCoveragePercent.Add(double.NaN);
+                    SequenceCoverageFraction.Add(double.NaN);
 
                 // convert the observed amino acids to upper case if they are unambiguously observed
                 var coverageArray = sequenceCoverageDisplay.ToCharArray();
