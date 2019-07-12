@@ -263,7 +263,7 @@ namespace EngineLayer
         /// <param name="pep"></param>
         /// <param name="appliedVariation"></param>
         /// <returns></returns>
-        private static bool IntersectsWithVariation(PeptideWithSetModifications pep, SequenceVariation appliedVariation, bool checkUnique)
+        public static bool IntersectsWithVariation(PeptideWithSetModifications pep, SequenceVariation appliedVariation, bool checkUnique)
         {
             // does it intersect?
             int intersectOneBasedStart = Math.Max(pep.OneBasedStartResidueInProtein, appliedVariation.OneBasedBeginPosition);
