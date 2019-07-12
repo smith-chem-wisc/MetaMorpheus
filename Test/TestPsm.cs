@@ -1,4 +1,5 @@
 ﻿using EngineLayer;
+using EngineLayer.ClassicSearch;
 using EngineLayer.FdrAnalysis;
 using EngineLayer.Localization;
 using MassSpectrometry;
@@ -54,7 +55,7 @@ namespace Test
 
             Assert.AreEqual(psm.ToString().Count(f => f == '\t'), PeptideSpectralMatch.GetTabSeparatedHeader().Count(f => f == '\t'));
 
-            psm.SetFdrValues(6, 6, 6, 6, 6, 6, 0, 0, 0, true);
+            psm.SetFdrValues(6, 6, 6, 6, 6, 0, 0, 0);
 
             Assert.AreEqual(psm.ToString().Count(f => f == '\t'), PeptideSpectralMatch.GetTabSeparatedHeader().Count(f => f == '\t'));
         }
@@ -69,7 +70,6 @@ namespace Test
                     qValueOutputFilter: 1
                 )
             };
-
 
             SearchTask searchTask2 = new SearchTask()
             {
@@ -96,6 +96,39 @@ namespace Test
             var lines2 = File.ReadAllLines(psmFile);
             Assert.That(lines2.Length == 7);
             Directory.Delete(outputFolder, true);
+        }
+
+        [Test]
+        public static void TestLongestFragmentIonSequence()
+        {
+            var variableModifications = new List<Modification>();
+            var fixedModifications = new List<Modification>();
+            var origDataFile = Path.Combine(TestContext.CurrentContext.TestDirectory, @"TestData\TaGe_SA_HeLa_04_subset_longestSeq.mzML");
+            MyFileManager myFileManager = new MyFileManager(true);
+            CommonParameters CommonParameters = new CommonParameters();
+            var myMsDataFile = myFileManager.LoadFile(origDataFile, CommonParameters);
+            var searchModes = new SinglePpmAroundZeroSearchMode(5);
+            List<Protein> proteinList = ProteinDbLoader.LoadProteinFasta(Path.Combine(TestContext.CurrentContext.TestDirectory, @"TestData\hela_snip_for_unitTest.fasta"), true, DecoyType.Reverse, false, ProteinDbLoader.UniprotAccessionRegex, ProteinDbLoader.UniprotFullNameRegex, ProteinDbLoader.UniprotFullNameRegex, ProteinDbLoader.UniprotGeneNameRegex,
+                    ProteinDbLoader.UniprotOrganismRegex, out var dbErrors, -1);
+            string myDatabase = Path.Combine(TestContext.CurrentContext.TestDirectory, @"TestData\DbForPrunedDb.fasta");
+            var listOfSortedms2Scans = MetaMorpheusTask.GetMs2Scans(myMsDataFile, null, new CommonParameters()).OrderBy(b => b.PrecursorMass).ToArray();
+            PeptideSpectralMatch[] allPsmsArray = new PeptideSpectralMatch[listOfSortedms2Scans.Length];
+            new ClassicSearchEngine(allPsmsArray, listOfSortedms2Scans, variableModifications, fixedModifications, null, proteinList, searchModes, new CommonParameters(), new List<string>()).Run();
+
+            List<int> longestSeriesObserved = new List<int>();
+            List<int> longestSeriesExpected = new List<int>() { 4, 3, 3, 8, 8, 10, 10, 5, 5, 7, 9, 4, 4, 7, 12, 7, 7, 7, 7, 5, 5, 5, 2, 2, 2, 2, 2, 2, 13, 13, 13, 13, 13, 13, 4, 4, 4, 4, 4, 4, 8, 8, 12, 12, 10, 10, 10, 10, 7, 7, 7, 7, 4, 4, 4, 9, 9, 9, 3, 3, 3, 3, 10, 3, 3, 12, 3, 2, 2, 2, 2, 2, 6, 6, 6, 3, 3, 3, 3, 3, 4, 4, 4, 4, 2, 2, 2, 2, 2, 10, 10, 5, 5, 3 };
+            foreach (PeptideSpectralMatch psm in allPsmsArray)
+            {
+                if (psm != null)
+                {
+                    foreach (var (Notch, Peptide) in psm.BestMatchingPeptides)
+                    {
+                        longestSeriesObserved.Add(psm.GetLongestIonSeriesBidirectional(Peptide));
+                    }
+                }
+            }
+
+            Assert.IsTrue(longestSeriesExpected.SequenceEqual(longestSeriesObserved));
         }
 
         [Test]
@@ -256,13 +289,13 @@ namespace Test
             Ms2ScanWithSpecificMass scan3 = new Ms2ScanWithSpecificMass(mzLibScan3, 0, 1, null, new CommonParameters());
             PeptideSpectralMatch psm3 = new PeptideSpectralMatch(pep3, 0, 0, 0, scan3, digestionParams, new List<MatchedFragmentIon>());
 
-            psm1.SetFdrValues(0, 0, 0, 0, 0, 0, 0, 0, 0, false); // valid psm
+            psm1.SetFdrValues(0, 0, 0, 0, 0, 0, 0, 0); // valid psm
             psm1.ResolveAllAmbiguities();
 
-            psm2.SetFdrValues(0, 0, 0.02, 0, 0, 0, 0, 0, 0, false); // psm above fdr cutoff
+            psm2.SetFdrValues(0, 0, 0.02, 0, 0, 0, 0, 0); // psm above fdr cutoff
             psm2.ResolveAllAmbiguities();
 
-            psm3.SetFdrValues(0, 0, 0, 0, 0, 0, 0, 0, 0, false); // ambiguous psm
+            psm3.SetFdrValues(0, 0, 0, 0, 0, 0, 0, 0); // ambiguous psm
 
             var allPsms = new List<PeptideSpectralMatch> { psm1, psm2, psm3 };
             var fdrEngine = new FdrAnalysisEngine(allPsms, 0, new CommonParameters(), new List<string>());
@@ -272,7 +305,7 @@ namespace Test
             Assert.That(psmGroups.First().Count() == 2);
             Assert.That(psmGroups.First().First().PsmCount == 1);
 
-            psm2.SetFdrValues(0, 0, 0, 0, 0, 0, 0, 0, 0, false);
+            psm2.SetFdrValues(0, 0, 0, 0, 0, 0, 0, 0);
             psm3.ResolveAllAmbiguities();
 
             fdrEngine.CountPsm();
@@ -322,6 +355,29 @@ namespace Test
         {
             Type type = typeof(PsmFromTsv);
             PropertyInfo[] properties = type.GetProperties();
+        }
+
+        [Test]
+        public static void TestPsmAddOrReplace()
+        {
+            Ms2ScanWithSpecificMass scanB = new Ms2ScanWithSpecificMass(
+                new MsDataScan(
+                    new MzSpectrum(new double[] { }, new double[] { }, false),
+                    2, 1, true, Polarity.Positive, double.NaN, null, null, MZAnalyzerType.Orbitrap, double.NaN, null, null, "scan=1", double.NaN, null, null, double.NaN, null, DissociationType.AnyActivationType, 1, null),
+                100, 1, null, new CommonParameters(), null);
+
+            PeptideSpectralMatch psm1 = new PeptideSpectralMatch(new PeptideWithSetModifications(new Protein("PEPTIDE", "ACCESSION", "ORGANISM"), new DigestionParams(), 1, 2, CleavageSpecificity.Full, "", 0, new Dictionary<int, Modification>(), 0), 0, 10, 1, scanB, new DigestionParams(), new List<MatchedFragmentIon>(), 0);
+
+            PeptideWithSetModifications pwsm = new PeptideWithSetModifications(new Protein("PEPTIDE", "ACCESSION", "ORGANISM"), new DigestionParams(), 1, 2, CleavageSpecificity.Full, "", 0, new Dictionary<int, Modification>(), 0);
+
+            psm1.AddOrReplace(pwsm, 11, 1, true, new List<MatchedFragmentIon>(), 0);
+
+            Assert.AreEqual(1, psm1.BestMatchingPeptides.Count());
+
+            Assert.AreEqual(11, psm1.Score);
+
+            Assert.AreEqual(10, psm1.RunnerUpScore);
+            Assert.AreEqual(1, psm1.DeltaScore);
         }
     }
 }

@@ -60,7 +60,7 @@ namespace Test
         }
 
         [Test]
-        public static void ClassicSearchXcorrWithToml()
+        public static void TestClassicSearchXcorrWithToml()
         {
             var myTomlPath = Path.Combine(TestContext.CurrentContext.TestDirectory, @"TestData\Task1-SearchTaskconfig.toml");
             var searchTaskLoaded = Toml.ReadFile<SearchTask>(myTomlPath, MetaMorpheusTask.tomlConfig);
@@ -71,17 +71,12 @@ namespace Test
             var engineToml = new EverythingRunnerEngine(new List<(string, MetaMorpheusTask)> { ("SearchTOML", searchTaskLoaded) }, new List<string> { myFile }, new List<DbForTask> { new DbForTask(myDatabase, false) }, outputFolder);
             engineToml.Run();
 
-            var expectedResults = File.ReadAllLines(Path.Combine(TestContext.CurrentContext.TestDirectory, @"TestData\XCorrSearchTest_AllPSMs.psmtsv"));
-            var resultsToml = File.ReadAllLines(Path.Combine(outputFolder, @"SearchTOML\AllPSMs.psmtsv"));
+            string psmFile = Path.Combine(outputFolder, @"SearchTOML\AllPSMs.psmtsv");
 
-            for (int i = 0; i < expectedResults.Length; i++)
-            {
-                string expecteLine = expectedResults[i];
-                string resultLine = resultsToml[i];
-                Assert.AreEqual(expecteLine, resultLine);
-            }
+            List<PsmFromTsv> parsedPsms = PsmTsvReader.ReadTsv(psmFile, out var warnings);
 
-            Assert.That(expectedResults.SequenceEqual(resultsToml));
+            Assert.AreEqual(125, parsedPsms.Count);
+            Assert.AreEqual(0, warnings.Count);
         }
 
         [Test]
@@ -91,7 +86,6 @@ namespace Test
 
             CommonParameters CommonParameters = new CommonParameters(
                 dissociationType: DissociationType.LowCID,
-                calculateEValue: true,
                 maxThreadsToUsePerFile: 1,
                 precursorMassTolerance: new PpmTolerance(5),
                 numberOfPeaksToKeepPerWindow: 200, // this is set to a value, but since the dissociation type is set to LowCID, no peak filtering should actually happen
@@ -155,7 +149,7 @@ namespace Test
         }
 
         [Test]
-        public static void ProcessXcorrInMzSpectrumSlicedB6()
+        public static void TestProcessXcorrInMzSpectrumSlicedB6()
         {
             Dictionary<string, MsDataFile> MyMsDataFiles = new Dictionary<string, MsDataFile>();
             string origDataFile = Path.Combine(TestContext.CurrentContext.TestDirectory, "DatabaseTests", "sliced_b6.mzML");
@@ -338,7 +332,6 @@ namespace Test
 
             CommonParameters CommonParameters = new CommonParameters(
                 dissociationType: DissociationType.LowCID,
-                calculateEValue: true,
                 maxThreadsToUsePerFile: 1,
                 precursorMassTolerance: new PpmTolerance(5),
                 digestionParams: new DigestionParams(
@@ -386,7 +379,6 @@ namespace Test
         {
             CommonParameters CommonParameters = new CommonParameters(
                 dissociationType: DissociationType.LowCID,
-                calculateEValue: true,
                 maxThreadsToUsePerFile: 1,
                 precursorMassTolerance: new PpmTolerance(5),
                 numberOfPeaksToKeepPerWindow: 200,
@@ -496,7 +488,6 @@ namespace Test
 
             CommonParameters CommonParameters = new CommonParameters(
                 dissociationType: DissociationType.LowCID,
-                calculateEValue: true,
                 maxThreadsToUsePerFile: 1,
                 precursorMassTolerance: new PpmTolerance(5),
                 numberOfPeaksToKeepPerWindow: 200,
@@ -587,7 +578,6 @@ namespace Test
 
             CommonParameters CommonParameters = new CommonParameters(
                 dissociationType: DissociationType.LowCID,
-                calculateEValue: true,
                 maxThreadsToUsePerFile: 1,
                 precursorMassTolerance: new PpmTolerance(5),
                 numberOfPeaksToKeepPerWindow: 200,
@@ -1039,6 +1029,32 @@ namespace Test
             allPsmsArray[0].ResolveAllAmbiguities();
             //Check that there is a modification hanging out on the peptide n-terminus
             Assert.AreEqual(allPsmsArray[0].FullSequence, guiltyPwsm.FullSequence);
+        }
+
+        [Test]
+        public static void TestSnesFifteenMer()
+        {
+            //ensures peptides at the min/max extremes aren't being excluded
+            Protein protein = new Protein("MACDEFGHIKLMNPQRSTVWY", "Test");
+            PeptideWithSetModifications pwsm = new PeptideWithSetModifications("ACDEFGHIKLMNPQR", new Dictionary<string, Modification>());
+            TestDataFile msFile = new TestDataFile(pwsm);
+            var listOfSortedms2Scans = MetaMorpheusTask.GetMs2Scans(msFile, null, new CommonParameters()).ToArray();
+            PeptideSpectralMatch[][] allPsmsArrays = new PeptideSpectralMatch[3][];
+            allPsmsArrays[0] = new PeptideSpectralMatch[listOfSortedms2Scans.Length];
+            allPsmsArrays[1] = new PeptideSpectralMatch[listOfSortedms2Scans.Length];
+            allPsmsArrays[2] = new PeptideSpectralMatch[listOfSortedms2Scans.Length];
+
+            DigestionParams dp = new DigestionParams("singleC", 14, 15, 15, 1024, InitiatorMethionineBehavior.Variable, 2, CleavageSpecificity.None, FragmentationTerminus.C);
+            CommonParameters cp = new CommonParameters(digestionParams: dp);
+            SearchParameters sp = new SearchParameters();
+            IndexingEngine indexingEngine = new IndexingEngine(new List<Protein> { protein }, null, null, null, 1, DecoyType.None, cp, 4500, true, new List<FileInfo>(), new List<string>());
+            IndexingResults indexingResults = (IndexingResults)indexingEngine.Run();
+
+
+            MassDiffAcceptor massDiffAcceptor = SearchTask.GetMassDiffAcceptor(cp.PrecursorMassTolerance, sp.MassDiffAcceptorType, sp.CustomMdac);
+            NonSpecificEnzymeSearchEngine searchEngine = new NonSpecificEnzymeSearchEngine(allPsmsArrays, listOfSortedms2Scans, indexingResults.PeptideIndex, indexingResults.FragmentIndex, indexingResults.PrecursorIndex, 1, cp, null, massDiffAcceptor, 0, new List<string>());
+            searchEngine.Run();
+            Assert.IsTrue(allPsmsArrays[2][0] != null);
         }
 
         [Test]

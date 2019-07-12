@@ -1,6 +1,5 @@
 ﻿using Chemistry;
 using MassSpectrometry;
-using MzLibUtil;
 using Nett;
 using Proteomics;
 using Proteomics.AminoAcidPolymer;
@@ -40,7 +39,9 @@ namespace EngineLayer
                 for (int i = 0; i < MetaMorpheusVersion.Length; i++)
                 {
                     if (MetaMorpheusVersion[i] == '.')
+                    {
                         foundIndexes.Add(i);
+                    }
                 }
                 MetaMorpheusVersion = MetaMorpheusVersion.Substring(0, foundIndexes.Last());
             }
@@ -48,9 +49,13 @@ namespace EngineLayer
             {
                 var pathToProgramFiles = Environment.GetFolderPath(Environment.SpecialFolder.ProgramFiles);
                 if (!String.IsNullOrWhiteSpace(pathToProgramFiles) && AppDomain.CurrentDomain.BaseDirectory.Contains(pathToProgramFiles) && !AppDomain.CurrentDomain.BaseDirectory.Contains("Jenkins"))
+                {
                     DataDir = Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData), "MetaMorpheus");
+                }
                 else
+                {
                     DataDir = AppDomain.CurrentDomain.BaseDirectory;
+                }
             }
 
             ElementsLocation = Path.Combine(DataDir, @"Data", @"elements.dat");
@@ -95,7 +100,13 @@ namespace EngineLayer
 
             RefreshAminoAcidDictionary();
 
-            GlobalSettings = Toml.ReadFile<GlobalSettings>(Path.Combine(DataDir, @"settings.toml"));
+            string settingsPath = Path.Combine(DataDir, @"settings.toml");
+            if (!File.Exists(settingsPath))
+            {
+                Toml.WriteFile<GlobalSettings>(new GlobalSettings(), settingsPath);
+            }
+
+            GlobalSettings = Toml.ReadFile<GlobalSettings>(settingsPath);
             AllSupportedDissociationTypes = new Dictionary<string, DissociationType> {
                 { DissociationType.CID.ToString(), DissociationType.CID },
                 { DissociationType.ECD.ToString(), DissociationType.ECD },
@@ -117,7 +128,7 @@ namespace EngineLayer
         public static bool StopLoops { get; set; }
         public static string ElementsLocation { get; }
         public static string MetaMorpheusVersion { get; }
-        public static IGlobalSettings GlobalSettings { get; }
+        public static IGlobalSettings GlobalSettings { get; set; }
         public static IEnumerable<Modification> UnimodDeserialized { get; }
         public static IEnumerable<Modification> UniprotDeseralized { get; }
         public static UsefulProteomicsDatabases.Generated.obo PsiModDeserialized { get; }
@@ -254,7 +265,7 @@ namespace EngineLayer
         public static void WriteAminoAcidsFile()
         {
             string directory = Path.Combine(DataDir, @"CustomAminoAcids");
-            if(!Directory.Exists(directory))
+            if (!Directory.Exists(directory))
             {
                 Directory.CreateDirectory(directory);
             }

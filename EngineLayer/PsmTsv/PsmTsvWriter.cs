@@ -196,7 +196,7 @@ namespace EngineLayer
 
             List<PeptideWithSetModifications> pepsWithMods = pepWithModsIsNull ? null : psm.BestMatchingPeptides.Select(p => p.Peptide).ToList();
 
-            s[PsmTsvHeader.BaseSequence] = pepWithModsIsNull ? " " : (psm.BaseSequence != null ? psm.BaseSequence : Resolve(pepWithModsIsNull ? null : pepsWithMods.Select(b => b.BaseSequence)).ResolvedString);
+            s[PsmTsvHeader.BaseSequence] = pepWithModsIsNull ? " " : (psm.BaseSequence ?? Resolve(pepWithModsIsNull ? null : pepsWithMods.Select(b => b.BaseSequence)).ResolvedString);
             s[PsmTsvHeader.FullSequence] = pepWithModsIsNull ? " " : (psm.FullSequence != null ? psm.FullSequence : Resolve(pepWithModsIsNull ? null : pepsWithMods.Select(b => b.FullSequence)).ResolvedString);
             s[PsmTsvHeader.EssentialSequence] = pepWithModsIsNull ? " " : (psm.EssentialSequence != null ? psm.EssentialSequence : Resolve(pepWithModsIsNull ? null : pepsWithMods.Select(b => b.EssentialSequence(ModsToWritePruned))).ResolvedString);
             s[PsmTsvHeader.PsmCount] = pepWithModsIsNull ? " " : psm.PsmCount.ToString();
@@ -233,15 +233,7 @@ namespace EngineLayer
             s[PsmTsvHeader.PreviousAminoAcid] = pepWithModsIsNull ? " " : Resolve(pepsWithMods.Select(b => b.PreviousAminoAcid.ToString())).ResolvedString;
             s[PsmTsvHeader.NextAminoAcid] = pepWithModsIsNull ? " " : Resolve(pepsWithMods.Select(b => b.NextAminoAcid.ToString())).ResolvedString;
 
-            string allScores = " ";
             string theoreticalsSearched = " ";
-            if (!pepWithModsIsNull && psm.FdrInfo != null && psm.FdrInfo.CalculateEValue)
-            {
-                allScores = string.Join(";", psm.AllScores.Select(p => p.ToString("F2", CultureInfo.InvariantCulture)));
-                theoreticalsSearched = psm.AllScores.Count.ToString();
-            }
-
-            s[PsmTsvHeader.AllScores] = allScores;
             s[PsmTsvHeader.TheoreticalsSearched] = theoreticalsSearched;
             s[PsmTsvHeader.DecoyContaminantTarget] = pepWithModsIsNull ? " " : psm.IsDecoy ? "D" : psm.IsContaminant ? "C" : "T";
         }
@@ -411,8 +403,8 @@ namespace EngineLayer
             string cumulativeTargetNotch = " ";
             string cumulativeDecoyNotch = " ";
             string qValueNotch = " ";
-            string eValue = " ";
-            string eScore = " ";
+            string PEP = " ";
+            string PEP_Qvalue = " ";
             if (peptide != null && peptide.FdrInfo != null)
             {
                 cumulativeTarget = peptide.FdrInfo.CumulativeTarget.ToString(CultureInfo.InvariantCulture);
@@ -421,11 +413,8 @@ namespace EngineLayer
                 cumulativeTargetNotch = peptide.FdrInfo.CumulativeTargetNotch.ToString(CultureInfo.InvariantCulture);
                 cumulativeDecoyNotch = peptide.FdrInfo.CumulativeDecoyNotch.ToString(CultureInfo.InvariantCulture);
                 qValueNotch = peptide.FdrInfo.QValueNotch.ToString("F6", CultureInfo.InvariantCulture);
-                if (peptide.FdrInfo.CalculateEValue)
-                {
-                    eValue = peptide.FdrInfo.EValue.ToString("F6", CultureInfo.InvariantCulture);
-                    eScore = peptide.FdrInfo.EScore.ToString("F6", CultureInfo.InvariantCulture);
-                }
+                PEP = peptide.FdrInfo.PEP.ToString();
+                PEP_Qvalue = peptide.FdrInfo.PEP_QValue.ToString();
             }
             s[PsmTsvHeader.CumulativeTarget] = cumulativeTarget;
             s[PsmTsvHeader.CumulativeDecoy] = cumulativeDecoy;
@@ -433,8 +422,8 @@ namespace EngineLayer
             s[PsmTsvHeader.CumulativeTargetNotch] = cumulativeTargetNotch;
             s[PsmTsvHeader.CumulativeDecoyNotch] = cumulativeDecoyNotch;
             s[PsmTsvHeader.QValueNotch] = qValueNotch;
-            s[PsmTsvHeader.EValue] = eValue;
-            s[PsmTsvHeader.EScore] = eScore;
+            s[PsmTsvHeader.PEP] = PEP;
+            s[PsmTsvHeader.PEP_QValue] = PEP_Qvalue;
         }
     }
 }

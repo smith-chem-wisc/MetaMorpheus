@@ -10,6 +10,7 @@ using NUnit.Framework;
 using Proteomics;
 using Proteomics.Fragmentation;
 using Proteomics.ProteolyticDigestion;
+using System;
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
@@ -50,7 +51,7 @@ namespace Test
             Ms2ScanWithSpecificMass scan3 = new Ms2ScanWithSpecificMass(mzLibScan3, pep3.MonoisotopicMass.ToMz(1), 1, null, new CommonParameters());
             PeptideSpectralMatch psm3 = new PeptideSpectralMatch(pep3, 0, 1, 2, scan3, digestionParams, new List<MatchedFragmentIon>());
 
-            psm3.AddOrReplace(pep4, 1, 1, true, new List<MatchedFragmentIon>(),0);
+            psm3.AddOrReplace(pep4, 1, 1, true, new List<MatchedFragmentIon>(), 0);
 
             var newPsms = new List<PeptideSpectralMatch> { psm1, psm2, psm3 };
             foreach (PeptideSpectralMatch psm in newPsms)
@@ -58,10 +59,7 @@ namespace Test
                 psm.ResolveAllAmbiguities();
             }
 
-
-            CommonParameters cp = new CommonParameters(calculateEValue: true);
-
-            FdrAnalysisEngine fdr = new FdrAnalysisEngine(newPsms, searchModes.NumNotches, cp, nestedIds);
+            FdrAnalysisEngine fdr = new FdrAnalysisEngine(newPsms, searchModes.NumNotches, new CommonParameters(), nestedIds);
 
             fdr.Run();
 
@@ -189,6 +187,109 @@ namespace Test
             fdrResultsModern = (FdrAnalysisResults)(new FdrAnalysisEngine(allPsmsArrayModern.ToList(), 1, CommonParameters, new List<string>()).Run());
             Assert.IsTrue(fdrResultsClassic.PsmsWithin1PercentFdr == 3);
             Assert.IsTrue(fdrResultsModern.PsmsWithin1PercentFdr == 3);
+        }
+
+        [Test]
+        public static void TestComputePEPValue()
+        {
+            var variableModifications = new List<Modification>();
+            var fixedModifications = new List<Modification>();
+            var origDataFile = Path.Combine(TestContext.CurrentContext.TestDirectory, @"TestData\TaGe_SA_HeLa_04_subset_longestSeq.mzML");
+            MyFileManager myFileManager = new MyFileManager(true);
+            CommonParameters CommonParameters = new CommonParameters(digestionParams: new DigestionParams());
+            var myMsDataFile = myFileManager.LoadFile(origDataFile, CommonParameters);
+            var searchModes = new SinglePpmAroundZeroSearchMode(5);
+            List<Protein> proteinList = ProteinDbLoader.LoadProteinFasta(Path.Combine(TestContext.CurrentContext.TestDirectory, @"TestData\hela_snip_for_unitTest.fasta"), true, DecoyType.Reverse, false, ProteinDbLoader.UniprotAccessionRegex, ProteinDbLoader.UniprotFullNameRegex, ProteinDbLoader.UniprotFullNameRegex, ProteinDbLoader.UniprotGeneNameRegex,
+                    ProteinDbLoader.UniprotOrganismRegex, out var dbErrors, -1);
+            var listOfSortedms2Scans = MetaMorpheusTask.GetMs2Scans(myMsDataFile, null, CommonParameters).OrderBy(b => b.PrecursorMass).ToArray();
+            PeptideSpectralMatch[] allPsmsArray = new PeptideSpectralMatch[listOfSortedms2Scans.Length];
+            new ClassicSearchEngine(allPsmsArray, listOfSortedms2Scans, variableModifications, fixedModifications, null, proteinList, searchModes, CommonParameters, new List<string>()).Run();
+            FdrAnalysisResults fdrResultsClassicDelta = (FdrAnalysisResults)(new FdrAnalysisEngine(allPsmsArray.Where(p => p != null).ToList(), 1, CommonParameters, new List<string>()).Run());
+
+            var nonNullPsms = allPsmsArray.Where(p => p != null).ToList();
+            var nonNullPsmsOriginalCopy = allPsmsArray.Where(p => p != null).ToList();
+            var accessionCounts = PEP_Analysis.GetAccessionCounts(nonNullPsms);
+
+            var maxScore = nonNullPsms.Select(n => n.Score).Max();
+            var maxScorePsm = nonNullPsms.Where(n => n.Score == maxScore).First();
+
+            Dictionary<string, int> sequenceToPsmCount = new Dictionary<string, int>();
+
+            List<string> sequences = new List<string>();
+            foreach (PeptideSpectralMatch psm in nonNullPsms)
+            {
+                var ss = psm.BestMatchingPeptides.Select(b => b.Peptide.FullSequence).ToList();
+                sequences.Add(String.Join("|", ss));
+            }
+
+            var s = sequences.GroupBy(i => i);
+
+            foreach (var grp in s)
+            {
+                sequenceToPsmCount.Add(grp.Key, grp.Count());
+            }
+
+            var maxPsmData = PEP_Analysis.CreateOnePsmDataFromPsm(maxScorePsm, accessionCounts, sequenceToPsmCount);
+            Assert.That(maxScorePsm.PeptidesToMatchingFragments.Count, Is.EqualTo(maxPsmData.Ambiguity));
+            Assert.That(maxScorePsm.DeltaScore, Is.EqualTo(maxPsmData.DeltaScore).Within(0.05));
+            Assert.That((float)(maxScorePsm.Score - (int)maxScorePsm.Score), Is.EqualTo(maxPsmData.Intensity).Within(0.05));
+
+            Assert.That(maxScorePsm.BestMatchingPeptides.Select(p => p.Peptide).First().MissedCleavages, Is.EqualTo(maxPsmData.MissedCleavagesCount));
+            Assert.That(maxScorePsm.BestMatchingPeptides.Select(p => p.Peptide).First().AllModsOneIsNterminus.Values.Count(), Is.EqualTo(maxPsmData.ModsCount));
+            Assert.That(maxScorePsm.Notch ?? 0, Is.EqualTo(maxPsmData.Notch));
+            Assert.That(maxScorePsm.PsmCount, Is.EqualTo(maxPsmData.PsmCount));
+            Assert.That(maxScorePsm.ScanPrecursorCharge, Is.EqualTo(maxPsmData.ScanPrecursorCharge));
+
+            PEP_Analysis.ComputePEPValuesForAllPSMsGeneric(nonNullPsms);
+
+            int trueCount = 0;
+
+            foreach (var item in allPsmsArray.Where(p => p != null))
+            {
+                var b = item.FdrInfo.PEP;
+                if (b >= 0.5)
+                {
+                    trueCount++;
+                }
+            }
+
+            Assert.GreaterOrEqual(32, trueCount);
+        }
+
+        [Test]
+        public static void TestRemoveThisAmbiguousePeptide()
+        {
+            Ms2ScanWithSpecificMass scanB = new Ms2ScanWithSpecificMass(
+                new MsDataScan(
+                    new MzSpectrum(new double[] { }, new double[] { }, false),
+                    2, 1, true, Polarity.Positive, double.NaN, null, null, MZAnalyzerType.Orbitrap, double.NaN, null, null, "scan=1", double.NaN, null, null, double.NaN, null, DissociationType.AnyActivationType, 1, null),
+                100, 1, null, new CommonParameters(), null);
+
+            PeptideSpectralMatch psm1 = new PeptideSpectralMatch(new PeptideWithSetModifications(new Protein("PEPTIDE", "ACCESSION", "ORGANISM"), new DigestionParams(), 1, 2, CleavageSpecificity.Full, "", 0, new Dictionary<int, Modification>(), 0), 0, 10, 1, scanB, new DigestionParams(), new List<MatchedFragmentIon>(), 0);
+
+            PeptideWithSetModifications pwsm = new PeptideWithSetModifications(new Protein("PEPTIDE", "ACCESSION", "ORGANISM"), new DigestionParams(), 1, 2, CleavageSpecificity.Full, "", 0, new Dictionary<int, Modification>(), 0);
+
+            psm1.AddOrReplace(pwsm, 10, 1, true, new List<MatchedFragmentIon>(), 0);
+
+            Assert.AreEqual(2, psm1.BestMatchingPeptides.Count());
+
+            psm1.RemoveThisAmbiguousPeptide(1, pwsm);
+
+            Assert.AreEqual(1, psm1.BestMatchingPeptides.Count());
+        }
+
+        [Test]
+        public static void TestPEPValuesReduceAmbiguity()
+        {
+            //TODO
+            //This is hard becuase you have to have a big enough file to create a model, enough peptides with the same exact score for the same scan, and enough differences in those ambiguous peptides that one or more get deleted after pepvalue comutation.
+        }
+
+        [Test]
+        public static void TestPEPValueWorksWithStoredTrainedModel()
+        {
+            //TODO
+            //This is hard becuase you have to have a big enough file to creat a model, enough peptides with the same exact score for the same scan, and enough differences in those ambiguous peptides that one or more get deleted after pepvalue comutation.
         }
     }
 }
