@@ -25,6 +25,15 @@ namespace Test
             GptmdTask task1 = new GptmdTask
             {
                 CommonParameters = new CommonParameters(),
+                GptmdParameters = new GptmdParameters
+                {
+                    ListOfModsGptmd = GlobalVariables.AllModsKnown.Where(b =>
+                        b.ModificationType.Equals("Common Artifact")
+                        || b.ModificationType.Equals("Common Biological")
+                        || b.ModificationType.Equals("Metal")
+                        || b.ModificationType.Equals("Less Common")
+                        ).Select(b => (b.ModificationType, b.IdWithMotif)).ToList()
+                }
             };
 
             SearchTask task2 = new SearchTask
@@ -47,9 +56,9 @@ namespace Test
             engine.Run();
             string final = Path.Combine(MySetUpClass.outputFolder, "task2", "DbForPrunedDbGPTMDproteinPruned.xml");
             List<Protein> proteins = ProteinDbLoader.LoadProteinXML(final, true, DecoyType.Reverse, new List<Modification>(), false, new List<string>(), out var ok);
-            //ensures that protein out put contins the correct number of proteins to match the folowing conditions. 
-                // all proteins in DB have baseSequence!=null (not ambiguous)
-                // all proteins that belong to a protein group are written to DB
+            //ensures that protein out put contins the correct number of proteins to match the folowing conditions.
+            // all proteins in DB have baseSequence!=null (not ambiguous)
+            // all proteins that belong to a protein group are written to DB
             Assert.AreEqual(20, proteins.Count);
             int totalNumberOfMods = proteins.Sum(p => p.OneBasedPossibleLocalizedModifications.Count + p.SequenceVariations.Sum(sv => sv.OneBasedModifications.Count));
 
@@ -136,7 +145,6 @@ namespace Test
             foundResidueIndicies = protein[1].OneBasedPossibleLocalizedModifications.Select(k => k.Key).ToList();
             expectedResidueIndices = new List<int>() { 4, 6 }; //originally modified residues are now at the end in the decoy
             Assert.That(foundResidueIndicies, Is.EquivalentTo(expectedResidueIndices));
-
 
             var thisOk = ok;//for debugging
             var commonParamsAtThisPoint = task1.CommonParameters.DigestionParams; //for debugging
@@ -236,7 +244,6 @@ namespace Test
             dictHere.Add(1, new List<Modification> { modToAdd });
             dictHere.Add(2, new List<Modification> { modToAdd2 }); //default
             dictHere.Add(3, new List<Modification> { modToAdd3 }); //Alway Appear
-
 
             var dictHere2 = new Dictionary<int, List<Modification>>
             {

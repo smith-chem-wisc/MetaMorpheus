@@ -1,8 +1,8 @@
-﻿using System;
+﻿using Chemistry;
+using MassSpectrometry;
+using System;
 using System.Collections.Generic;
 using System.Linq;
-using Chemistry;
-using MassSpectrometry;
 
 namespace EngineLayer
 {
@@ -15,6 +15,7 @@ namespace EngineLayer
             PrecursorMass = PrecursorMonoisotopicPeakMz.ToMass(precursorCharge);
             FullFilePath = fullFilePath;
             ChildScans = new List<Ms2ScanWithSpecificMass>();
+            NativeId = mzLibScan.NativeId;
 
             TheScan = mzLibScan;
 
@@ -23,6 +24,10 @@ namespace EngineLayer
             if (ExperimentalFragments.Any())
             {
                 DeconvolutedMonoisotopicMasses = ExperimentalFragments.Select(p => p.monoisotopicMass).ToArray();
+            }
+            else
+            {
+                DeconvolutedMonoisotopicMasses = new double[0];
             }
         }
 
@@ -34,6 +39,7 @@ namespace EngineLayer
         public IsotopicEnvelope[] ExperimentalFragments { get; private set; }
         public List<Ms2ScanWithSpecificMass> ChildScans { get; set; } // MS2/MS3 scans that are children of this MS2 scan
         private double[] DeconvolutedMonoisotopicMasses;
+        public string NativeId { get; }
 
         public int OneBasedScanNumber => TheScan.OneBasedScanNumber;
 
@@ -44,7 +50,7 @@ namespace EngineLayer
         public int NumPeaks => TheScan.MassSpectrum.Size;
 
         public double TotalIonCurrent => TheScan.TotalIonCurrent;
-
+        
         public static IsotopicEnvelope[] GetNeutralExperimentalFragments(MsDataScan scan, CommonParameters commonParam)
         {
             int minZ = 1;

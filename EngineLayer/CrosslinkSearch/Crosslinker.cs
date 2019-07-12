@@ -1,5 +1,6 @@
 ﻿using System.Collections.Generic;
 using System.IO;
+using MassSpectrometry;
 
 namespace EngineLayer
 {
@@ -13,13 +14,14 @@ namespace EngineLayer
 
         }
 
-        public Crosslinker(string crosslinkerModSites, string crosslinkerModSites2, string crosslinkerName, bool cleavable, double totalMass,
+        public Crosslinker(string crosslinkerModSites, string crosslinkerModSites2, string crosslinkerName, bool cleavable, string dissociationTypes, double totalMass,
             double cleaveMassShort, double cleaveMassLong, double loopMass, double deadendMassH2O, double deadendMassNH2, double deadendMassTris)
         {
             CrosslinkerModSites = crosslinkerModSites;
             CrosslinkerModSites2 = crosslinkerModSites2;
             CrosslinkerName = crosslinkerName;
             Cleavable = cleavable;
+            CleaveDissociationTypes = GetCleaveDissociationTypes(dissociationTypes);
             TotalMass = totalMass;
             CleaveMassShort = cleaveMassShort;
             CleaveMassLong = cleaveMassLong;
@@ -33,6 +35,7 @@ namespace EngineLayer
         public string CrosslinkerModSites2 { get; set; }
         public string CrosslinkerName { get; set; }
         public bool Cleavable { get; set; }
+        public List<DissociationType> CleaveDissociationTypes { get; set; }
         public double TotalMass { get; set; }
         public double CleaveMassShort { get; set; }
         public double CleaveMassLong { get; set; }
@@ -40,6 +43,29 @@ namespace EngineLayer
         public double DeadendMassH2O { get; set; }
         public double DeadendMassNH2 { get; set; }
         public double DeadendMassTris { get; set; }
+
+        private List<DissociationType> GetCleaveDissociationTypes(string cleaveDissociationTypesInString)
+        {
+            List<DissociationType> cleaveDissociationTypes = new List<DissociationType>();
+            foreach (var x in cleaveDissociationTypesInString.Split('|'))
+            {
+                switch (x)
+                {
+                    case "CID":
+                        cleaveDissociationTypes.Add(DissociationType.CID);
+                        break;
+                    case "HCD":
+                        cleaveDissociationTypes.Add(DissociationType.HCD);
+                        break;
+                    case "ETD":
+                        cleaveDissociationTypes.Add(DissociationType.ETD);
+                        break;
+                    default:
+                        break;
+                }
+            }
+            return cleaveDissociationTypes;
+        }
 
         public static IEnumerable<Crosslinker> LoadCrosslinkers(string CrosslinkerLocation)
         {
@@ -69,19 +95,20 @@ namespace EngineLayer
             {
                 cleavable = false;
             }
-
+  
             Crosslinker crosslinker = new Crosslinker(
                 crosslinkerName: split[0],
                 crosslinkerModSites: split[1],
                 crosslinkerModSites2: split[2],
                 cleavable: cleavable,
-                totalMass: double.Parse(split[4]),
-                cleaveMassShort: double.Parse(split[5]),
-                cleaveMassLong: double.Parse(split[6]),
-                loopMass: double.Parse(split[4]),
-                deadendMassH2O: double.Parse(split[7]),
-                deadendMassNH2: double.Parse(split[8]),
-                deadendMassTris: double.Parse(split[9]));
+                dissociationTypes: split[4],
+                totalMass: double.Parse(split[5]),
+                cleaveMassShort: double.Parse(split[6]),
+                cleaveMassLong: double.Parse(split[7]),
+                loopMass: double.Parse(split[5]),
+                deadendMassH2O: double.Parse(split[8]),
+                deadendMassNH2: double.Parse(split[9]),
+                deadendMassTris: double.Parse(split[10]));
 
             return crosslinker;
         }
@@ -91,11 +118,21 @@ namespace EngineLayer
             return CrosslinkerName;
         }
 
+        public static string DissociationTypes2String(List<DissociationType> dissociationTypes)
+        {
+            string x = "";
+            foreach (var d in dissociationTypes)
+            {
+                x += d.ToString() + "|";
+            }          
+            return x.Remove(x.Length - 1);
+        }
+
         public string ToString(bool writeCrosslinker)
         {
             if (writeCrosslinker)
-            {
-                return (CrosslinkerName + "\t" + CrosslinkerModSites + "\t" + CrosslinkerModSites2 + "\t" + Cleavable + "\t" + TotalMass + "\t" + CleaveMassShort + "\t"
+            {               
+                return (CrosslinkerName + "\t" + CrosslinkerModSites + "\t" + CrosslinkerModSites2 + "\t" + Cleavable + "\t" + DissociationTypes2String(CleaveDissociationTypes) + "\t" + TotalMass + "\t" + CleaveMassShort + "\t"
                     + CleaveMassLong + "\t" + DeadendMassH2O + "\t" + DeadendMassNH2 + "\t" + DeadendMassTris);
             }
             else

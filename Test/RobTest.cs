@@ -109,7 +109,7 @@ namespace Test
             foreach (var psm in psms)
             {
                 psm.ResolveAllAmbiguities();
-                psm.SetFdrValues(0, 0, 0, 0, 0, 0, 0, 0, 0, false);
+                psm.SetFdrValues(0, 0, 0, 0, 0, 0, 0, 0);
             }
 
             // run parsimony
@@ -137,7 +137,7 @@ namespace Test
             // sequence coverage test
             foreach (var proteinGroup in proteinGroups)
             {
-                foreach (var coverage in proteinGroup.SequenceCoveragePercent)
+                foreach (var coverage in proteinGroup.SequenceCoverageFraction)
                 {
                     Assert.That(coverage <= 1.0);
                 }
@@ -210,15 +210,15 @@ namespace Test
             var match1 = new PeptideSpectralMatch(peptideList.ElementAt(0), 0, 10, 0, ms2scan, digestionParams, new List<MatchedFragmentIon>())
             {
             };
-            match1.SetFdrValues(0, 0, 0, 0, 0, 0, 0, 0, 0, false);
+            match1.SetFdrValues(0, 0, 0, 0, 0, 0, 0, 0);
             var match2 = new PeptideSpectralMatch(peptideList.ElementAt(1), 0, 10, 0, ms2scan, digestionParams, new List<MatchedFragmentIon>())
             {
             };
-            match2.SetFdrValues(0, 0, 0, 0, 0, 0, 0, 0, 0, false);
+            match2.SetFdrValues(0, 0, 0, 0, 0, 0, 0, 0);
             var match3 = new PeptideSpectralMatch(peptideList.ElementAt(1), 0, 10, 0, ms2scan, digestionParams, new List<MatchedFragmentIon>())
             {
             };
-            match3.SetFdrValues(0, 0, 0, 0, 0, 0, 0, 0, 0, false);
+            match3.SetFdrValues(0, 0, 0, 0, 0, 0, 0, 0);
 
             List<PeptideSpectralMatch> psms = new List<PeptideSpectralMatch>
             {

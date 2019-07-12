@@ -89,6 +89,8 @@ namespace TaskLayer
         public const string IndexEngineParamsFileName = "indexEngine.params";
         public const string PeptideIndexFileName = "peptideIndex.ind";
         public const string FragmentIndexFileName = "fragmentIndex.ind";
+        public const string SecondIndexEngineParamsFileName = "secondIndexEngine.params";
+        public const string SecondFragmentIndexFileName = "secondFragmentIndex.ind";
         public const string PrecursorIndexFileName = "precursorIndex.ind";
 
         public static IEnumerable<Ms2ScanWithSpecificMass> GetMs2Scans(MsDataFile myMSDataFile, string fullFilePath, CommonParameters commonParameters)
@@ -258,7 +260,7 @@ namespace TaskLayer
             var childScanNumbers = new HashSet<int>(scansWithPrecursors.SelectMany(p => p.SelectMany(v => v.ChildScans.Select(x => x.OneBasedScanNumber))));
             var parentScans = scansWithPrecursors.Where(p => p.Any() && !childScanNumbers.Contains(p.First().OneBasedScanNumber)).SelectMany(v => v);
 
-            // XCorr pre-processing for low-res data. this is here because the parent/child scans may have different 
+            // XCorr pre-processing for low-res data. this is here because the parent/child scans may have different
             // resolutions, so this pre-processing must take place after the parent/child scans have been determined
             foreach (var parentScan in parentScans)
             {
@@ -334,7 +336,6 @@ namespace TaskLayer
                 trimMsMsPeaks: commonParams.TrimMsMsPeaks,
                 normalizePeaksAccrossAllWindows: commonParams.NormalizePeaksAccrossAllWindows,
                 useDeltaScore: commonParams.UseDeltaScore,
-                calculateEValue: commonParams.CalculateEValue,
                 deconvolutionMassTolerance: commonParams.DeconvolutionMassTolerance,
                 maxThreadsToUsePerFile: commonParams.MaxThreadsToUsePerFile,
                 listOfModsVariable: commonParams.ListOfModsVariable,
@@ -784,6 +785,32 @@ namespace TaskLayer
                     Status("Reading precursor index...", new List<string> { taskId });
                     precursorIndex = ReadFragmentIndex(Path.Combine(pathToFolderWithIndices, PrecursorIndexFileName));
                 }
+            }
+        }
+
+        public void GenerateSecondIndexes(IndexingEngine indexEngine, IndexingEngine secondIndexEngine, List<DbForTask> dbFilenameList, ref List<int>[] secondFragmentIndex, List<Protein> allKnownProteins, string taskId)
+        {
+            string pathToFolderWithIndices = GetExistingFolderWithIndices(indexEngine, dbFilenameList);
+            if (!File.Exists(Path.Combine(pathToFolderWithIndices, SecondFragmentIndexFileName))) //if no indexes exist
+            {
+                Status("Writing params...", new List<string> { taskId });
+                var paramsFile = Path.Combine(pathToFolderWithIndices, SecondIndexEngineParamsFileName);
+                WriteIndexEngineParams(secondIndexEngine, paramsFile);
+                FinishedWritingFile(paramsFile, new List<string> { taskId });
+
+                Status("Running Index Engine...", new List<string> { taskId });
+                var indexResults = (IndexingResults)secondIndexEngine.Run();
+                secondFragmentIndex = indexResults.FragmentIndex;
+
+                Status("Writing fragment index...", new List<string> { taskId });
+                var fragmentIndexFile = Path.Combine(pathToFolderWithIndices, SecondFragmentIndexFileName);
+                WriteFragmentIndex(secondFragmentIndex, fragmentIndexFile);
+                FinishedWritingFile(fragmentIndexFile, new List<string> { taskId });
+            }
+            else //if we found indexes with the same params
+            {
+                Status("Reading fragment index...", new List<string> { taskId });
+                secondFragmentIndex = ReadFragmentIndex(Path.Combine(pathToFolderWithIndices, SecondFragmentIndexFileName));
             }
         }
     }

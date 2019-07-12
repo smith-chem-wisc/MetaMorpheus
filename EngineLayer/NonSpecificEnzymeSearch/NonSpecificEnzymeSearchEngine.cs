@@ -64,7 +64,7 @@ namespace EngineLayer.NonSpecificEnzymeSearch
                     Ms2ScanWithSpecificMass scan = ListOfSortedMs2Scans[i];
 
                     //get bins to add points to
-                    List<int> allBinsToSearch = GetBinsToSearch(scan);
+                    List<int> allBinsToSearch = GetBinsToSearch(scan, FragmentIndex, CommonParameters.DissociationType);
 
                     //the entire indexed scoring is done here
                     for (int j = 0; j < allBinsToSearch.Count; j++)
@@ -229,7 +229,7 @@ namespace EngineLayer.NonSpecificEnzymeSearch
             }
 
             //if the theoretical and experimental have the same mass or a terminal mod exists
-            if (peptide.BaseSequence.Length > localminPeptideLength)
+            if (peptide.BaseSequence.Length >= localminPeptideLength)
             {
                 double totalMass = peptide.MonoisotopicMass;// + Constants.ProtonMass;
                 int notch = searchMode.Accepts(scanPrecursorMass, totalMass);
