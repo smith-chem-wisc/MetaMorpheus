@@ -72,8 +72,23 @@ namespace TaskLayer
                     SearchParameters.DoQuantification = false;
                 }
                 //if we're doing SILAC, add the silac labels to the residue dictionary
-                else if (SearchParameters.SilacLabels != null)
+                else if (SearchParameters.SilacLabels != null || SearchParameters.TurnoverLabels != null)
                 {
+                    //add the Turnoverlabels to the silacLabels list. They weren't there before just to prevent duplication in the tomls
+                    if (SearchParameters.TurnoverLabels != null)
+                    {
+                        //original was null, so we need to initialize it
+                        SearchParameters.SilacLabels = new List<SilacLabel>();
+                        var turnoverLabels = SearchParameters.TurnoverLabels.Value;
+                        if (turnoverLabels.StartLabel != null)
+                        {
+                            SearchParameters.SilacLabels.Add(turnoverLabels.StartLabel);
+                        }
+                        if (turnoverLabels.EndLabel != null)
+                        {
+                            SearchParameters.SilacLabels.Add(turnoverLabels.EndLabel);
+                        }
+                    }
                     //change the silac residues to lower case amino acids (currently null)
                     List<SilacLabel> updatedLabels = new List<SilacLabel>();
                     char heavyLabel = 'a';
@@ -81,7 +96,7 @@ namespace TaskLayer
                     {
                         SilacLabel currentLabel = SearchParameters.SilacLabels[i];
                         //make sure we're not overwriting something. , , and if it's a valid residue (not a motif/delimiter)
-                        while((Residue.TryGetResidue(heavyLabel, out Residue residue) //Check if the amino acid exists. If it already exists, we don't want to overwrite it
+                        while ((Residue.TryGetResidue(heavyLabel, out Residue residue) //Check if the amino acid exists. If it already exists, we don't want to overwrite it
                             && !residue.ThisChemicalFormula.Formula.Equals(currentLabel.LabelChemicalFormula)) //if it exists but it's already the label (so we're not overwriting anything), then we're fine
                             || GlobalVariables.InvalidAminoAcids.Contains(heavyLabel)) //If it didn't already exist, but it's invalid, we need to keep going
                         {
