@@ -164,23 +164,55 @@ namespace MetaMorpheusGUI
             checkBoxNoOneHitWonders.IsChecked = task.SearchParameters.NoOneHitWonders;
             checkBoxNoQuant.IsChecked = !task.SearchParameters.DoQuantification;
             checkBoxLFQ.IsChecked = task.SearchParameters.DoQuantification;
+            //If SILAC multiplex
             if (task.SearchParameters.SilacLabels != null && task.SearchParameters.SilacLabels.Count != 0)
             {
                 checkBoxSILAC.IsChecked = true;
                 List<Proteomics.SilacLabel> labels = task.SearchParameters.SilacLabels;
                 foreach (Proteomics.SilacLabel label in labels)
                 {
-                    SilacInfoForDataGrid infoToAdd = new SilacInfoForDataGrid(label);
+                    SilacInfoForDataGrid infoToAdd = new SilacInfoForDataGrid(label, SilacModificationWindow.ExperimentType.Multiplex);
                     if (label.AdditionalLabels != null)
                     {
                         foreach (Proteomics.SilacLabel additionalLabel in label.AdditionalLabels)
                         {
-                            infoToAdd.AddAdditionalLabel(new SilacInfoForDataGrid(additionalLabel));
+                            infoToAdd.AddAdditionalLabel(new SilacInfoForDataGrid(additionalLabel, SilacModificationWindow.ExperimentType.Multiplex));
                         }
                     }
                     StaticSilacLabelsObservableCollection.Add(infoToAdd);
                 }
             }
+            //else if SILAC turnover
+            else if (task.SearchParameters.TurnoverLabels != null)
+            {
+                var startLabel = task.SearchParameters.TurnoverLabels.Value.StartLabel;
+                if (startLabel != null)
+                {
+                    SilacInfoForDataGrid infoToAdd = new SilacInfoForDataGrid(startLabel, SilacModificationWindow.ExperimentType.Start);
+                    if (startLabel.AdditionalLabels != null)
+                    {
+                        foreach (Proteomics.SilacLabel additionalLabel in startLabel.AdditionalLabels)
+                        {
+                            infoToAdd.AddAdditionalLabel(new SilacInfoForDataGrid(additionalLabel, SilacModificationWindow.ExperimentType.Start));
+                        }
+                    }
+                    StaticSilacLabelsObservableCollection.Add(infoToAdd);
+                } //else it's unlabeled for the start condition
+                var endLabel = task.SearchParameters.TurnoverLabels.Value.EndLabel;
+                if (endLabel != null)
+                {
+                    SilacInfoForDataGrid infoToAdd = new SilacInfoForDataGrid(endLabel, SilacModificationWindow.ExperimentType.End);
+                    if (endLabel.AdditionalLabels != null)
+                    {
+                        foreach (Proteomics.SilacLabel additionalLabel in endLabel.AdditionalLabels)
+                        {
+                            infoToAdd.AddAdditionalLabel(new SilacInfoForDataGrid(additionalLabel, SilacModificationWindow.ExperimentType.End));
+                        }
+                    }
+                    StaticSilacLabelsObservableCollection.Add(infoToAdd);
+                } //else it's unlabeled for the start condition            
+            }
+
             CheckBoxQuantifyUnlabeledForSilac.IsChecked = task.CommonParameters.DigestionParams.GeneratehUnlabeledProteinsForSilac;
             peakFindingToleranceTextBox.Text = task.SearchParameters.QuantifyPpmTol.ToString(CultureInfo.InvariantCulture);
             checkBoxMatchBetweenRuns.IsChecked = task.SearchParameters.MatchBetweenRuns;
@@ -535,34 +567,47 @@ namespace MetaMorpheusGUI
             TheTask.SearchParameters.NoOneHitWonders = checkBoxNoOneHitWonders.IsChecked.Value;
             TheTask.SearchParameters.DoQuantification = !checkBoxNoQuant.IsChecked.Value;
 
-            //SilacLabel deconvolution
+            //SilacLabel assignments
             {
-                if (StaticSilacLabelsObservableCollection.Count == 0)
+                if (StaticSilacLabelsObservableCollection.Count != 0)
                 {
-                    TheTask.SearchParameters.SilacLabels = null;
-                }
-                else
-                {
-                    List<Proteomics.SilacLabel> labelsToSave = new List<Proteomics.SilacLabel>();
-                    foreach (SilacInfoForDataGrid info in StaticSilacLabelsObservableCollection)
+                    //Validate it really quick to determine if they're all multiplex (normal), or if it's a turnover experiment (requires one start label and one end label, either of which may be unlabeled)
+                    //if they're all multiplex
+                    if (StaticSilacLabelsObservableCollection.All(x => x.LabelType == SilacModificationWindow.ExperimentType.Multiplex))
                     {
-                        Proteomics.SilacLabel labelToAdd = info.SilacLabel[0];
-
-                        //This is needed to prevent double adding of additional labels. 
-                        //A quick test is to create a silac condition with two labels, save, reopen the task, save, and reopen again. 
-                        //Without this line, the second label will be doubled (K+8)&(R+10)&(R+10)
-                        if (labelToAdd.AdditionalLabels != null)
+                        List<Proteomics.SilacLabel> labelsToSave = new List<Proteomics.SilacLabel>();
+                        foreach (SilacInfoForDataGrid info in StaticSilacLabelsObservableCollection)
                         {
-                            labelToAdd.AdditionalLabels.Clear();
+                            labelsToSave.Add(ConvertSilacDataGridInfoToSilacLabel(info));
                         }
-
-                        for (int infoIndex = 1; infoIndex < info.SilacLabel.Count; infoIndex++)
-                        {
-                            labelToAdd.AddAdditionalSilacLabel(info.SilacLabel[infoIndex]);
-                        }
-                        labelsToSave.Add(labelToAdd);
+                        TheTask.SearchParameters.SilacLabels = labelsToSave;
                     }
-                    TheTask.SearchParameters.SilacLabels = labelsToSave;
+                    //if it's a turnover experiment, there's a start and/or end and no others
+                    else if (StaticSilacLabelsObservableCollection.Count <= 2)
+                    {
+                        SilacInfoForDataGrid startLabel = StaticSilacLabelsObservableCollection.Where(x => x.LabelType == SilacModificationWindow.ExperimentType.Start).FirstOrDefault();
+                        SilacInfoForDataGrid endLabel = StaticSilacLabelsObservableCollection.Where(x => x.LabelType == SilacModificationWindow.ExperimentType.End).FirstOrDefault();
+
+                        //check that two labels weren't set as the same thing
+                        if ((startLabel == null && StaticSilacLabelsObservableCollection.Count == 2) || (endLabel == null && StaticSilacLabelsObservableCollection.Count == 2))
+                        {
+                            string missingLabel = startLabel == null ? "Start" : "End";
+                            MessageBox.Show("A SILAC label could not be found with the '" + missingLabel + "' LabelType." +
+                                "\nThis error occurs when one of the conditions was mislabeled (i.e. one of the LabelTypes is 'Multiplex' or a duplicate). " +
+                                "\nPlease check your 'LabelTypes' and try again.");
+                            return;
+                        }
+                        else //we're good!
+                        {
+                            TheTask.SearchParameters.TurnoverLabels = (ConvertSilacDataGridInfoToSilacLabel(startLabel), ConvertSilacDataGridInfoToSilacLabel(endLabel));
+                        }
+                    }
+                    else //there are too many labels for a turnover experiment, but it's not a multiplex?
+                    {
+                        MessageBox.Show(StaticSilacLabelsObservableCollection.Count.ToString() + " SILAC labeling conditions were specified, but only two (a start and an end) were expected for a turnover experiment." +
+                            "\nIf you are not analyzing a turnover experiment, please maintain the default setting 'Multiplex' when specifying your labels.");
+                        return;
+                    }
                 }
             }
 
@@ -871,6 +916,7 @@ namespace MetaMorpheusGUI
         private void AddSilac_Click(object sender, RoutedEventArgs e)
         {
             var dialog = new SilacModificationWindow();
+            dialog.MultiplexRadioButton.IsChecked = true; //set default
             if (dialog.ShowDialog() == true)
             {
                 if (GetNumberOfSilacMods() + dialog.SilacLabel.SilacLabel.Count <= 26)
@@ -910,6 +956,31 @@ namespace MetaMorpheusGUI
         public int GetNumberOfSilacMods()
         {
             return StaticSilacLabelsObservableCollection.Sum(x => x.SilacLabel.Count);
+        }
+
+        private Proteomics.SilacLabel ConvertSilacDataGridInfoToSilacLabel(SilacInfoForDataGrid info)
+        {
+            if (info == null)
+            {
+                return null;
+            }
+            else
+            {
+                Proteomics.SilacLabel label = info.SilacLabel[0];
+                //This is needed to prevent double adding of additional labels. 
+                //A quick test is to create a silac condition with two labels, save, reopen the task, save, and reopen again. 
+                //Without this line, the second label will be doubled. Example: (K+8)&(R+10)&(R+10)
+                if (label.AdditionalLabels != null)
+                {
+                    label.AdditionalLabels.Clear();
+                }
+
+                for (int infoIndex = 1; infoIndex < info.SilacLabel.Count; infoIndex++)
+                {
+                    label.AddAdditionalSilacLabel(info.SilacLabel[infoIndex]);
+                }
+                return label;
+            }
         }
     }
 

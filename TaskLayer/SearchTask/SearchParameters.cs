@@ -81,5 +81,6 @@ namespace TaskLayer
         public bool WriteDecoys { get; set; }
         public bool WriteContaminants { get; set; }
         public List<SilacLabel> SilacLabels { get; set; }
+        public (SilacLabel StartLabel, SilacLabel EndLabel)? TurnoverLabels { get; set; } //used for SILAC turnover experiments. Can be nullable, because default is null
     }
 }
