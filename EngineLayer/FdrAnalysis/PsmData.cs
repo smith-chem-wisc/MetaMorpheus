@@ -32,7 +32,7 @@ namespace EngineLayer.FdrAnalysis
         public float LongestFragmentIonSeries { get; set; }
 
         [LoadColumn(9)]
-        public float NewEntry { get; set; }
+        public float Z { get; set; }
 
         [LoadColumn(10)]
         public bool Label { get; set; }

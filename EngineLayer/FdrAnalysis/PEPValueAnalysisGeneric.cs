@@ -167,8 +167,7 @@ namespace EngineLayer
         private static string[] GetCustomFeatures()
         {
             //non-specific and top-down searches don't used missedCleavages
-            return new string[] { "NewEntry", "Intensity", "ScanPrecursorCharge", "DeltaScore", "Notch", "PsmCount", "ModsCount", "MissedCleavagesCount", "Ambiguity", "LongestFragmentIonSeries" };
-            //return new string[] { "DeltaScore" };
+            return new string[] { "Z", "Intensity", "ScanPrecursorCharge", "DeltaScore", "Notch", "PsmCount", "ModsCount", "MissedCleavagesCount", "Ambiguity", "LongestFragmentIonSeries" };
         }
 
         private static float GetSSRCalcHydrophobicityZScore(PeptideSpectralMatch psm, PeptideWithSetModifications Peptide, Dictionary<string, Dictionary<int, double>> avg, Dictionary<string, Dictionary<int, double>> dev)
@@ -184,6 +183,11 @@ namespace EngineLayer
                     double predictedHydrophobicity = calc.ScoreSequence(Peptide);
                     z = Math.Abs(avg[psm.FullFilePath ?? filepathSubstitue][time] - predictedHydrophobicity) / dev[psm.FullFilePath ?? filepathSubstitue][time];
                 }
+            }
+
+            if (double.IsNaN(z) || double.IsInfinity(z))
+            {
+                z = 100;
             }
 
             return (float)z;
@@ -330,7 +334,6 @@ namespace EngineLayer
             float missedCleavages = selectedPeptide.MissedCleavages;
             float longestSeq = psm.GetLongestIonSeriesBidirectional(selectedPeptide);
 
-
             float z;
 
             if (selectedPeptide.BaseSequence.Equals(selectedPeptide.FullSequence))
@@ -341,7 +344,6 @@ namespace EngineLayer
             {
                 z = GetSSRCalcHydrophobicityZScore(psm, selectedPeptide, avg_M, dev_M);
             }
-            
 
             bool label;
             if (trueOrFalse != null)
@@ -368,7 +370,7 @@ namespace EngineLayer
                 MissedCleavagesCount = missedCleavages,
                 Ambiguity = ambiguity,
                 LongestFragmentIonSeries = longestSeq,
-                NewEntry = z,
+                Z = z,
                 Label = label
             };
         }
