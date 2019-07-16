@@ -4,6 +4,7 @@ using OxyPlot.Axes;
 using OxyPlot.Series;
 using Proteomics.Fragmentation;
 using Proteomics.ProteolyticDigestion;
+using Proteomics.RetentionTimePrediction;
 using System;
 using System.Collections.Generic;
 using System.Collections.ObjectModel;
@@ -24,7 +25,8 @@ namespace MetaMorpheusGUI
             "Histogram of Fragment Charges",
             "Precursor PPM Error vs. RT",
             //"Fragment PPM Error vs. RT", //TODO: implement fragment PPM error reading in MetaDraw
-            "Histogram of PTM Spectral Counts"
+            "Histogram of PTM Spectral Counts",
+            "Predicted RT vs. Observed RT"
         };
 
         private static Dictionary<ProductType, OxyColor> productTypeDrawColors = new Dictionary<ProductType, OxyColor>
@@ -99,6 +101,10 @@ namespace MetaMorpheusGUI
             else if (plotType.Equals("Histogram of PTM Spectral Counts"))
             {
                 histogramPlot(5);
+            }
+            else if (plotType.Equals("Predicted RT vs. Observed RT"))
+            {
+                linePlot(3);
             }
         }
 
@@ -216,7 +222,9 @@ namespace MetaMorpheusGUI
         private void linePlot(int plotType)
         {
             ScatterSeries series = new ScatterSeries();
+            ScatterSeries variantSeries = new ScatterSeries();  // used by plot 3 for variant contianing peptides
             List<Tuple<double, double>> xy = new List<Tuple<double, double>>();
+            List<Tuple<double, double>> variantxy = new List<Tuple<double, double>>();  // used by plot 3 for variant containing peptides
             var filteredList = allPsms.Where(p => !p.MassDiffDa.Contains("|") && Math.Round(double.Parse(p.MassDiffDa), 0) == 0).ToList();
             var test = allPsms.SelectMany(p => p.MatchedIons.Select(v => v.MassErrorPpm));
             switch (plotType)
@@ -236,6 +244,22 @@ namespace MetaMorpheusGUI
                         }
                     }
                     break;
+                case 3:
+                    SSRCalc3 sSRCalc3 = new SSRCalc3("A100", SSRCalc3.Column.A100);
+                    foreach (var psm in allPsms)
+                    {
+                        if(psm.IdentifiedSequenceVariations == null || psm.IdentifiedSequenceVariations.Equals(""))
+                        {
+                            xy.Add(new Tuple<double, double>(sSRCalc3.ScoreSequence(new PeptideWithSetModifications(psm.BaseSeq.Split('|')[0], null)), 
+                            (double)psm.RetentionTime));
+                        }
+                        else
+                        {
+                            variantxy.Add(new Tuple<double, double>(sSRCalc3.ScoreSequence(new PeptideWithSetModifications(psm.BaseSeq.Split('|')[0], null)),
+                            (double)psm.RetentionTime));
+                        }
+                    }
+                    break;
             }
             IOrderedEnumerable<Tuple<double, double>> sorted = xy.OrderBy(x => x.Item1);
             foreach (var val in sorted)
@@ -245,6 +269,19 @@ namespace MetaMorpheusGUI
             series.MarkerFill = OxyColors.Blue;
             series.MarkerSize = 0.5;
             privateModel.Series.Add(series);
+
+            // plot the variant containing peptides as green
+            if (variantxy.Count != 0)
+            {
+                IOrderedEnumerable<Tuple<double, double>> variantSorted = variantxy.OrderBy(x => x.Item1);
+                foreach (var val in variantSorted)
+                {
+                    variantSeries.Points.Add(new ScatterPoint(val.Item2, val.Item1));
+                }
+                variantSeries.MarkerFill = OxyColors.Green;
+                variantSeries.MarkerSize = 1.5;
+                privateModel.Series.Add(variantSeries);
+            }
         }
 
         private static int normalizeNumber(double number)
