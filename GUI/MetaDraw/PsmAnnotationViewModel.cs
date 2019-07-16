@@ -21,6 +21,7 @@ namespace ViewModels
         private const double STROKE_THICKNESS_UNANNOTATED = 0.5;
         private const double STROKE_THICKNESS_ANNOTATED = 2.0;
         private PlotModel privateModel;
+        private OxyColor variantCrossColor = OxyColors.Green;
 
         private static Dictionary<ProductType, OxyColor> productTypeDrawColors = new Dictionary<ProductType, OxyColor>
         {
@@ -293,7 +294,11 @@ namespace ViewModels
         {
             OxyColor ionColor;
 
-            if (productTypeDrawColors.ContainsKey(matchedIon.NeutralTheoreticalProduct.ProductType))
+            if (psmToDraw.VariantCrossingIons.Contains(matchedIon))
+            {
+                ionColor = variantCrossColor;
+            }
+            else if (productTypeDrawColors.ContainsKey(matchedIon.NeutralTheoreticalProduct.ProductType))
             {
                 ionColor = productTypeDrawColors[matchedIon.NeutralTheoreticalProduct.ProductType];
             }
