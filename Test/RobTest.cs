@@ -137,7 +137,7 @@ namespace Test
             // sequence coverage test
             foreach (var proteinGroup in proteinGroups)
             {
-                foreach (var coverage in proteinGroup.SequenceCoveragePercent)
+                foreach (var coverage in proteinGroup.SequenceCoverageFraction)
                 {
                     Assert.That(coverage <= 1.0);
                 }
