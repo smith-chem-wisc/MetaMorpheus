@@ -1,7 +1,9 @@
 ﻿using EngineLayer.FdrAnalysis;
+using MathNet.Numerics.Statistics;
 using Microsoft.ML;
 using Microsoft.ML.Data;
 using Proteomics.ProteolyticDigestion;
+using Proteomics.RetentionTimePrediction;
 using System;
 using System.Collections.Generic;
 using System.IO;
@@ -13,13 +15,18 @@ namespace EngineLayer
 {
     public static class PEP_Analysis
     {
+        private static readonly string filepathSubstitue = "SubstitueFilePath";//this is only for unit test that have psms with no filename.
+
         public static string ComputePEPValuesForAllPSMsGeneric(List<PeptideSpectralMatch> psms)
         {
-            Dictionary<string, int> accessionAppearances = GetAccessionCounts(psms);
+            Dictionary<string, Dictionary<int, double>> RetentionTimeHydrophobicityDeviation = new Dictionary<string, Dictionary<int, double>>();
+            Dictionary<string, Dictionary<int, double>> RetentionTimeHydrophobicityAverage = new Dictionary<string, Dictionary<int, double>>();
+            (RetentionTimeHydrophobicityAverage, RetentionTimeHydrophobicityDeviation) = FillHydrophobicityDictionaries(psms);
+
             Dictionary<string, int> sequenceToPsmCount = GetSequenceToPSMCount(psms);
 
             MLContext mlContext = new MLContext();
-            IDataView dataView = mlContext.Data.LoadFromEnumerable(CreatePsmData(psms, accessionAppearances, sequenceToPsmCount));
+            IDataView dataView = mlContext.Data.LoadFromEnumerable(CreatePsmData(psms, sequenceToPsmCount, RetentionTimeHydrophobicityAverage, RetentionTimeHydrophobicityDeviation));
 
             //
             // Summary:
@@ -41,13 +48,16 @@ namespace EngineLayer
             //
             //   seed:
             //     Seed for the random number generator used to select rows for the train-test split.
+
             TrainTestData trainTestSplit = mlContext.Data.TrainTestSplit(dataView, testFraction: 0.1);
             IDataView trainingData = trainTestSplit.TrainSet;
             IDataView testData = trainTestSplit.TestSet;
 
             var trainer = mlContext.BinaryClassification.Trainers.FastTree(labelColumnName: "Label", featureColumnName: "Features");
 
-            var pipeline = mlContext.Transforms.Concatenate("Features", "Intensity", "ScanPrecursorCharge", "DeltaScore", "Notch", "PsmCount", "ModsCount", "MissedCleavagesCount", "Ambiguity", "AccessionAppearances", "LongestFragmentIonSeries")
+            string[] customFeatures = GetCustomFeatures();
+
+            var pipeline = mlContext.Transforms.Concatenate("Features", customFeatures)
                 .Append(mlContext.BinaryClassification.Trainers.FastTree(labelColumnName: "Label", featureColumnName: "Features"));
 
             var trainedModel = pipeline.Fit(trainingData);
@@ -58,7 +68,7 @@ namespace EngineLayer
 
             //For Debug
             List<string> someOut = new List<string>();
-            someOut.Add("Accessions|Ambiguity|DeltaScore|Intensity|Label|LongestSeries|MissedCleavages|ModsCount|Notch|PsmCount|PrecursorCharge|call|pepValue|Score|QValue");
+            someOut.Add("Z|Ambiguity|DeltaScore|Intensity|Label|LongestSeries|MissedCleavages|ModsCount|Notch|PsmCount|PrecursorCharge|call|pepValue|Score|QValue");
 
             foreach (PeptideSpectralMatch psm in psms)
             {
@@ -71,11 +81,12 @@ namespace EngineLayer
                     //Here we compute the pepvalue predection for each ambiguous peptide in a PSM. Ambiguous peptides with lower pepvalue predictions are removed from the PSM.
                     foreach (var (Notch, Peptide) in psm.BestMatchingPeptides)
                     {
-                        PsmData pd = CreateOnePsmDataFromPsm2(psm, Notch, Peptide, accessionAppearances, sequenceToPsmCount);
+                        PsmData pd = CreateOnePsmDataEntry(psm, sequenceToPsmCount, RetentionTimeHydrophobicityAverage, RetentionTimeHydrophobicityDeviation, Peptide, Notch);
+                        double z = GetSSRCalcHydrophobicityZScore(psm, Peptide, RetentionTimeHydrophobicityAverage, RetentionTimeHydrophobicityDeviation);
 
                         var pepValuePrediction = predictionEngine.Predict(pd);
 
-                        someOut.Add(pd.AccessionAppearances.ToString() + "|" + pd.Ambiguity.ToString() + "|" + pd.DeltaScore.ToString() + "|" + pd.Intensity.ToString() + "|" + pd.Label + "|" + pd.LongestFragmentIonSeries + "|" + pd.MissedCleavagesCount + "|" + pd.ModsCount + "|" + pd.Notch + "|" + pd.PsmCount + "|" + pd.ScanPrecursorCharge + "|" + pepValuePrediction.Prediction + "|" + pepValuePrediction.Probability + "|" + pepValuePrediction.Score);
+                        someOut.Add(z.ToString() + "|" + pd.Ambiguity.ToString() + "|" + pd.DeltaScore.ToString() + "|" + pd.Intensity.ToString() + "|" + pd.Label + "|" + pd.LongestFragmentIonSeries + "|" + pd.MissedCleavagesCount + "|" + pd.ModsCount + "|" + pd.Notch + "|" + pd.PsmCount + "|" + pd.ScanPrecursorCharge + "|" + pepValuePrediction.Prediction + "|" + pepValuePrediction.Probability + "|" + pepValuePrediction.Score);
 
                         pepValuePredictions.Add(pepValuePrediction.Probability);
                         //A score is available using the variable pepvaluePrediction.Score
@@ -111,12 +122,12 @@ namespace EngineLayer
                         psm.RemoveThisAmbiguousPeptide(notch, pwsm);
                     }
 
-                    psm.FdrInfo.PEP = 1-pepValuePredictions[0]; //they should all be the same at this point so it doesn't matter which you take. First is good.
+                    psm.FdrInfo.PEP = 1 - pepValuePredictions[0]; //they should all be the same at this point so it doesn't matter which you take. First is good.
                 }
             }
 
             //For debug
-            //File.WriteAllLines(@"C:\Users\Michael Shortreed\Downloads\psmDataVAlues.txt", someOut, System.Text.Encoding.UTF8);
+            File.WriteAllLines(@"C:\Users\Michael Shortreed\Downloads\psmDataVAlues.txt", someOut, System.Text.Encoding.UTF8);
 
             var predictions = trainedModel.Transform(testData);
 
@@ -133,6 +144,98 @@ namespace EngineLayer
 
             //if you want to save a model, you can use this example
             //mlContext.Model.Save(trainedModel, trainingData.Schema, @"C:\Users\User\Downloads\TrainedModel.zip");
+        }
+
+        /// <summary>
+        /// This method can be used to select a custom subset of features for use in the Microsoft ML.NET computation of posterior error probability
+        /// Probably should have unique sets for regular, crosslinking, top-down, labelled.
+        /// </summary>
+        /// <returns></returns>
+        private static string[] GetCustomFeatures()
+        {
+            //non-specific and top-down searches don't used missedCleavages
+            return new string[] { "Intensity", "ScanPrecursorCharge", "DeltaScore", "Notch", "PsmCount", "ModsCount", "MissedCleavagesCount", "Ambiguity", "LongestFragmentIonSeries"};
+            //return new string[] { "DeltaScore" };
+        }
+
+        private static float GetSSRCalcHydrophobicityZScore(PeptideSpectralMatch psm, PeptideWithSetModifications Peptide, Dictionary<string, Dictionary<int, double>> avg, Dictionary<string, Dictionary<int, double>> dev)
+        {
+            SSRCalc3 calc = new SSRCalc3("SSRCalc 3.0 (300A)", SSRCalc3.Column.A300);
+            double z = double.NaN;
+
+                if (avg.ContainsKey(psm.FullFilePath ?? filepathSubstitue) && dev.ContainsKey(psm.FullFilePath ?? filepathSubstitue))
+                {
+                    int time = (int)Math.Round(psm.ScanRetentionTime, 0);
+                    if (avg[psm.FullFilePath ?? filepathSubstitue].ContainsKey(time))
+                    {
+                        double predictedHydrophobicity = calc.ScoreSequence(Peptide);
+
+
+                        ////TODO try a different denominator
+                        //double denominator = Math.Max(dev[psm.FullFilePath ?? filepathSubstitue][time], 0.1);
+                        //z = Math.Abs(avg[psm.FullFilePath ?? filepathSubstitue][time] - predictedHydrophobicity) / denominator;
+
+                        if (Peptide.BaseSequence.Equals(Peptide.FullSequence))
+                        {
+                            z = Math.Abs(avg[psm.FullFilePath ?? filepathSubstitue][time] - predictedHydrophobicity) / dev[psm.FullFilePath ?? filepathSubstitue][time];
+                        }
+                        else
+                        {
+                            z = 2 * Math.Abs(avg[psm.FullFilePath ?? filepathSubstitue][time] - predictedHydrophobicity) / dev[psm.FullFilePath ?? filepathSubstitue][time];
+                        }
+                            
+                    }
+                }
+            
+            return (float)z;
+        }
+
+        private static (Dictionary<string, Dictionary<int, double>>, Dictionary<string, Dictionary<int, double>>) FillHydrophobicityDictionaries(List<PeptideSpectralMatch> psms)
+        {
+            SSRCalc3 calc = new SSRCalc3("SSRCalc 3.0 (300A)", SSRCalc3.Column.A300);
+            Dictionary<string, Dictionary<int, double>> localRetentionTimeHydrophobicityDeviation = new Dictionary<string, Dictionary<int, double>>();
+            Dictionary<string, Dictionary<int, double>> localRetentionTimeHydrophobicityAverage = new Dictionary<string, Dictionary<int, double>>();
+
+            List<string> filenames = psms.Select(f => f.FullFilePath).ToList();
+
+            filenames = filenames.Distinct().ToList();
+
+            foreach (string filename in filenames)
+            {
+                Dictionary<int, List<double>> hydrobophobicites = new Dictionary<int, List<double>>();
+                Dictionary<int, double> averages = new Dictionary<int, double>();
+                Dictionary<int, double> deviations = new Dictionary<int, double>();
+
+                foreach (PeptideSpectralMatch psm in psms.Where(f => (f.FullFilePath == filename || f.FullFilePath == null) && f.FdrInfo.QValue <= 0.01))
+                {
+                    foreach ((int notch, PeptideWithSetModifications pwsm) in psm.BestMatchingPeptides)
+                    {
+                        if (pwsm.BaseSequence.Equals(pwsm.FullSequence))
+                        {
+                            double predictedHydrophobicity = calc.ScoreSequence(pwsm);
+                            int possibleKey = (int)Math.Round(psm.ScanRetentionTime, 0);
+                            if (hydrobophobicites.ContainsKey(possibleKey))
+                            {
+                                hydrobophobicites[possibleKey].Add(predictedHydrophobicity);
+                            }
+                            else
+                            {
+                                hydrobophobicites.Add(possibleKey, new List<double>() { predictedHydrophobicity });
+                            }
+                        }
+                    }
+                }
+
+                foreach (int key in hydrobophobicites.Keys)
+                {
+                    averages.Add(key, hydrobophobicites[key].Average());
+                    deviations.Add(key, hydrobophobicites[key].StandardDeviation());
+                }
+
+                localRetentionTimeHydrophobicityAverage.Add(filename ?? filepathSubstitue, averages);
+                localRetentionTimeHydrophobicityDeviation.Add(filename ?? filepathSubstitue, deviations);
+            }
+            return (localRetentionTimeHydrophobicityAverage, localRetentionTimeHydrophobicityDeviation);
         }
 
         private static Dictionary<string, int> GetSequenceToPSMCount(List<PeptideSpectralMatch> psms)
@@ -155,43 +258,8 @@ namespace EngineLayer
             return sequenceToPsmCount;
         }
 
-        /// <summary>
-        /// This method goes throught the complete set of peptide spectral matches and counts the number of appearances for each accession number.
-        /// This includes all of the ambiguous entries. So, if one peptide spectral match has three peptides with three accessions, all are counted.
-        /// </summary>
-        /// <param name="psms"></param>
-        /// <returns></returns>
-        public static Dictionary<string, int> GetAccessionCounts(List<PeptideSpectralMatch> psms)
-        {
-            Dictionary<string, int> accessionCountDictionary = new Dictionary<string, int>();
-
-            foreach (PeptideSpectralMatch psm in psms)
-            {
-                if (psm != null)
-                {
-                    foreach (var (Notch, Peptide) in psm.BestMatchingPeptides)
-                    {
-                        string accession = Peptide.Protein.Accession;
-                        if (accession != null)
-                        {
-                            if (accessionCountDictionary.Keys.Contains(accession))
-                            {
-                                accessionCountDictionary[accession]++;
-                            }
-                            else
-                            {
-                                accessionCountDictionary.Add(accession, 1);
-                            }
-                        }
-                    }
-                }
-            }
-
-            return accessionCountDictionary;
-        }
-
         //This method ignores ambiguity and loads only the first peptide in a series for each PSM
-        public static IEnumerable<PsmData> CreatePsmData(List<PeptideSpectralMatch> psms, Dictionary<string, int> accessionAppearances, Dictionary<string, int> sequenceToPsmCount, bool? trueOrFalse = null)
+        public static IEnumerable<PsmData> CreatePsmData(List<PeptideSpectralMatch> psms, Dictionary<string, int> sequenceToPsmCount, Dictionary<string, Dictionary<int, double>> avg, Dictionary<string, Dictionary<int, double>> dev, bool? trueOrFalse = null)
         {
             List<PsmData> pd = new List<PsmData>();
             foreach (PeptideSpectralMatch psm in psms)
@@ -204,115 +272,52 @@ namespace EngineLayer
                 else if (psm.IsDecoy || psm.FdrInfo.QValue > 0.25)
                 {
                     label = false;
-                    pd.Add(CreateOnePsmDataFromPsm(psm, accessionAppearances, sequenceToPsmCount, label));
+                    pd.Add(CreateOnePsmDataEntry(psm, sequenceToPsmCount, avg, dev, null, null, label));
                 }
                 else if (!psm.IsDecoy && psm.FdrInfo.QValue <= 0.01)
                 {
                     label = true;
-                    pd.Add(CreateOnePsmDataFromPsm(psm, accessionAppearances, sequenceToPsmCount, label));
+                    pd.Add(CreateOnePsmDataEntry(psm, sequenceToPsmCount, avg, dev, null, null, label));
                 }
             }
             return pd.AsEnumerable();
         }
 
-        public static PsmData CreateOnePsmDataFromPsm2(PeptideSpectralMatch psm, int notch, PeptideWithSetModifications firstPeptide, Dictionary<string, int> accessionCounts, Dictionary<string, int> sequenceToPsmCount, bool? trueOrFalse = null)
+        /// <summary>
+        ///
+        /// </summary>
+        /// <param name="psm"></param>
+        /// <param name="sequenceToPsmCount"></param>
+        /// <param name="selectedPeptide"></param>
+        /// <param name="notchToUse"></param>
+        /// <param name="trueOrFalse"></param>
+        /// <returns></returns>
+        public static PsmData CreateOnePsmDataEntry(PeptideSpectralMatch psm, Dictionary<string, int> sequenceToPsmCount, Dictionary<string, Dictionary<int, double>> avg, Dictionary<string, Dictionary<int, double>> dev, PeptideWithSetModifications selectedPeptide, int? notchToUse, bool? trueOrFalse = null)
         {
-            //dont' think ambiguity is helping so not using currently
             float ambiguity = (float)psm.PeptidesToMatchingFragments.Keys.Count;
-
             float intensity = (float)(psm.Score - (int)psm.Score);
             float charge = psm.ScanPrecursorCharge;
             float deltaScore = (float)psm.DeltaScore;
             float psmCount = sequenceToPsmCount[String.Join("|", psm.BestMatchingPeptides.Select(p => p.Peptide.FullSequence).ToList())];
-
-            float modCount = firstPeptide.AllModsOneIsNterminus.Keys.Count();
-
-            //todo: for non-specific cleavage, ignore missed cleavages
-            float missedCleavages = firstPeptide.MissedCleavages;
-
-            float longestSeq = psm.GetLongestIonSeriesBidirectional(firstPeptide);
-
-            string accession = firstPeptide.Protein.Accession;
-            float appearances;
-            if (accessionCounts.Keys.Count != 0 && accessionCounts.ContainsKey(accession))
+            int notch = 0;
+            if (notchToUse.HasValue)
             {
-                appearances = (float)accessionCounts[accession];
+                notch = notchToUse.Value;
             }
-            else
-            {
-                appearances = 1;
-            }
-            float score = (float)psm.Score;
-
-            bool label;
-            if (trueOrFalse != null)
-            {
-                label = trueOrFalse.Value;
-            }
-            else if (psm.IsDecoy)
-            {
-                label = false;
-            }
-            else
-            {
-                label = true;
-            }
-
-            return new PsmData()
-            {
-                Intensity = intensity,
-                ScanPrecursorCharge = charge,
-                DeltaScore = deltaScore,
-                Notch = notch,
-                PsmCount = psmCount,
-                ModsCount = modCount,
-                MissedCleavagesCount = missedCleavages,
-                Ambiguity = ambiguity,
-                LongestFragmentIonSeries = longestSeq,
-                AccessionAppearances = appearances,
-                Label = label
-            };
-        }
-
-        public static PsmData CreateOnePsmDataFromPsm(PeptideSpectralMatch psm, Dictionary<string, int> accessionCounts, Dictionary<string, int> sequenceToPsmCount, bool? trueOrFalse = null)
-        {
-            // TODO: some properties like DeltaScore will need to be recalculated if we keep top N peptides per PSM
-            // and rerank them because the top-scoring peptide can change
-
-            float ambiguity = (float)psm.PeptidesToMatchingFragments.Count;//(psm.BaseSequence.Split('|').Count());
-            float intensity = (float)(psm.Score - (int)psm.Score);
-            float charge = psm.ScanPrecursorCharge;
-            float deltaScore = (float)psm.DeltaScore;
-            float psmCount = sequenceToPsmCount[String.Join("|", psm.BestMatchingPeptides.Select(p => p.Peptide.FullSequence).ToList())];
-
-            var firstPeptide = psm.BestMatchingPeptides.Select(p => p.Peptide).First();
-            float modCount = firstPeptide.AllModsOneIsNterminus.Keys.Count();
-
-            float notch = 0;
-            if (psm.Notch.HasValue)
+            else if (psm.Notch.HasValue)
             {
                 notch = psm.Notch.Value;
             }
 
-            
-            
-            
-
-            //todo: for non-specific cleavage, ignore missed cleavages
-            float missedCleavages = firstPeptide.MissedCleavages;
-            float longestSeq = psm.GetLongestIonSeriesBidirectional(firstPeptide);
-            string accession = firstPeptide.Protein.Accession;
-            float appearances;
-            if(accessionCounts.Keys.Count != 0 && accessionCounts.ContainsKey(accession))
-            { 
-                appearances = (float)accessionCounts[accession];
-            }
-            else
+            if (selectedPeptide == null)
             {
-                appearances = 1;
+                selectedPeptide = psm.BestMatchingPeptides.Select(p => p.Peptide).First();
             }
-             
-            float score = (float)psm.Score;
+
+            float modCount = selectedPeptide.AllModsOneIsNterminus.Keys.Count();
+            float missedCleavages = selectedPeptide.MissedCleavages;
+            float longestSeq = psm.GetLongestIonSeriesBidirectional(selectedPeptide);
+            float z = GetSSRCalcHydrophobicityZScore(psm, selectedPeptide, avg, dev);
 
             bool label;
             if (trueOrFalse != null)
@@ -339,14 +344,14 @@ namespace EngineLayer
                 MissedCleavagesCount = missedCleavages,
                 Ambiguity = ambiguity,
                 LongestFragmentIonSeries = longestSeq,
-                AccessionAppearances = appearances,
+                NewEntry = z,
                 Label = label
             };
         }
 
         /// <summary>
-        /// At the time when the ~10% of the data gets chosen for training, another 10% gets chosen for evaluation. Then after training, 
-        /// the effectiveness of the model gets evaluated on the test set. The results of that evaluation are converted to text values called 
+        /// At the time when the ~10% of the data gets chosen for training, another 10% gets chosen for evaluation. Then after training,
+        /// the effectiveness of the model gets evaluated on the test set. The results of that evaluation are converted to text values called
         /// BinarySearchTreeMetrics and this gets written to the results.tsv
         /// </summary>
         /// <param name="name"></param>

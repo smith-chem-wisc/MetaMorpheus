@@ -173,9 +173,6 @@
     <None Update="TestData\PrunedDbSpectra.mzml">
       <CopyToOutputDirectory>Always</CopyToOutputDirectory>
     </None>
-    <None Update="TestData\VariantCrossTest.psmtsv">
-      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
-    </None>
     <None Update="testFileSpecfic.toml">
       <CopyToOutputDirectory>Always</CopyToOutputDirectory>
     </None>
