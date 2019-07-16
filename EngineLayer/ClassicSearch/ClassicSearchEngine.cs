@@ -16,12 +16,13 @@ namespace EngineLayer.ClassicSearch
         private readonly List<Modification> FixedModifications;
         private readonly List<Modification> VariableModifications;
         private readonly List<SilacLabel> SilacLabels;
+        private readonly (SilacLabel StartLabel, SilacLabel EndLabel)? TurnoverLabels;
         private readonly PeptideSpectralMatch[] PeptideSpectralMatches;
         private readonly Ms2ScanWithSpecificMass[] ArrayOfSortedMS2Scans;
         private readonly double[] MyScanPrecursorMasses;
 
         public ClassicSearchEngine(PeptideSpectralMatch[] globalPsms, Ms2ScanWithSpecificMass[] arrayOfSortedMS2Scans,
-            List<Modification> variableModifications, List<Modification> fixedModifications, List<SilacLabel> silacLabels,
+            List<Modification> variableModifications, List<Modification> fixedModifications, List<SilacLabel> silacLabels, (SilacLabel StartLabel, SilacLabel EndLabel)? turnoverLabels,
             List<Protein> proteinList, MassDiffAcceptor searchMode, CommonParameters commonParameters, List<string> nestedIds)
             : base(commonParameters, nestedIds)
         {
@@ -31,6 +32,7 @@ namespace EngineLayer.ClassicSearch
             VariableModifications = variableModifications;
             FixedModifications = fixedModifications;
             SilacLabels = silacLabels;
+            TurnoverLabels = turnoverLabels;
             Proteins = proteinList;
             SearchMode = searchMode;
         }
@@ -63,7 +65,7 @@ namespace EngineLayer.ClassicSearch
                         if (GlobalVariables.StopLoops) { return; }
 
                         // digest each protein into peptides and search for each peptide in all spectra within precursor mass tolerance
-                        foreach (PeptideWithSetModifications peptide in Proteins[i].Digest(CommonParameters.DigestionParams, FixedModifications, VariableModifications, SilacLabels))
+                        foreach (PeptideWithSetModifications peptide in Proteins[i].Digest(CommonParameters.DigestionParams, FixedModifications, VariableModifications, SilacLabels, TurnoverLabels))
                         {
                             List<Product> peptideTheorProducts = peptide.Fragment(CommonParameters.DissociationType, CommonParameters.DigestionParams.FragmentationTerminus).ToList();
 
