@@ -456,10 +456,10 @@ namespace EngineLayer
                     string modName = modIndex[i].modName.ToString();
                     string occupancy = ((double)pepModTotals[i] / (double)pepTotals[i]).ToString("F2");
                     string fractOccupancy = $"{pepModTotals[i].ToString()}/{pepTotals[i].ToString()}";
-                    string tempString = ($"#aa{aa}[{modName},info:occupancy={occupancy}({fractOccupancy})];");
+                    string tempString = ($"#aa{aa}[{modName},info:occupancy={occupancy}({fractOccupancy})]");
                     modStrings.Add((modIndex[i].index, tempString));
                 }
-                var modInfoString = string.Join("", modStrings.OrderBy(x => x.aaNum).Select(x => x.part));
+                var modInfoString = string.Join(";", modStrings.OrderBy(x => x.aaNum).Select(x => x.part));
 
                 if (!string.IsNullOrEmpty(modInfoString))
                 {
