@@ -228,16 +228,26 @@ namespace Test
                 sequenceToPsmCount.Add(grp.Key, grp.Count());
             }
 
-            //var maxPsmData = PEP_Analysis.CreateOnePsmDataEntry(maxScorePsm, sequenceToPsmCount, null, null, !maxScorePsm.IsDecoy);
-            //Assert.That(maxScorePsm.PeptidesToMatchingFragments.Count, Is.EqualTo(maxPsmData.Ambiguity));
-            //Assert.That(maxScorePsm.DeltaScore, Is.EqualTo(maxPsmData.DeltaScore).Within(0.05));
-            //Assert.That((float)(maxScorePsm.Score - (int)maxScorePsm.Score), Is.EqualTo(maxPsmData.Intensity).Within(0.05));
+            Dictionary<string, Dictionary<int, double>> a = new Dictionary<string, Dictionary<int, double>>();
+            Dictionary<string, Dictionary<int, double>> d = new Dictionary<string, Dictionary<int, double>>();
+            Dictionary<string, Dictionary<int, double>> a_m = new Dictionary<string, Dictionary<int, double>>();
+            Dictionary<string, Dictionary<int, double>> d_m = new Dictionary<string, Dictionary<int, double>>();
 
-            //Assert.That(maxScorePsm.BestMatchingPeptides.Select(p => p.Peptide).First().MissedCleavages, Is.EqualTo(maxPsmData.MissedCleavagesCount));
-            //Assert.That(maxScorePsm.BestMatchingPeptides.Select(p => p.Peptide).First().AllModsOneIsNterminus.Values.Count(), Is.EqualTo(maxPsmData.ModsCount));
-            //Assert.That(maxScorePsm.Notch ?? 0, Is.EqualTo(maxPsmData.Notch));
-            //Assert.That(maxScorePsm.PsmCount, Is.EqualTo(maxPsmData.PsmCount));
-            //Assert.That(maxScorePsm.ScanPrecursorCharge, Is.EqualTo(maxPsmData.ScanPrecursorCharge));
+            Dictionary<int, double> a_value = new Dictionary<int, double>() { { 154, 33.0 } };
+            Dictionary<int, double> d_value = new Dictionary<int, double>() { { 154, 1.0 } };
+            a.Add("SubstitueFilePath", a_value);
+            d.Add("SubstitueFilePath", d_value);
+
+            var maxPsmData = PEP_Analysis.CreateOnePsmDataEntry(maxScorePsm, sequenceToPsmCount, a, d, a_m, d_m, null, null, !maxScorePsm.IsDecoy);
+            Assert.That(maxScorePsm.PeptidesToMatchingFragments.Count, Is.EqualTo(maxPsmData.Ambiguity));
+            Assert.That(maxScorePsm.DeltaScore, Is.EqualTo(maxPsmData.DeltaScore).Within(0.05));
+            Assert.That((float)(maxScorePsm.Score - (int)maxScorePsm.Score), Is.EqualTo(maxPsmData.Intensity).Within(0.05));
+            Assert.That(maxPsmData.HydrophobicityZScore, Is.EqualTo(5.170955).Within(0.05));
+            Assert.That(maxScorePsm.BestMatchingPeptides.Select(p => p.Peptide).First().MissedCleavages, Is.EqualTo(maxPsmData.MissedCleavagesCount));
+            Assert.That(maxScorePsm.BestMatchingPeptides.Select(p => p.Peptide).First().AllModsOneIsNterminus.Values.Count(), Is.EqualTo(maxPsmData.ModsCount));
+            Assert.That(maxScorePsm.Notch ?? 0, Is.EqualTo(maxPsmData.Notch));
+            Assert.That(maxScorePsm.PsmCount, Is.EqualTo(maxPsmData.PsmCount));
+            Assert.That(maxScorePsm.ScanPrecursorCharge, Is.EqualTo(maxPsmData.ScanPrecursorCharge));
 
             PEP_Analysis.ComputePEPValuesForAllPSMsGeneric(nonNullPsms);
 

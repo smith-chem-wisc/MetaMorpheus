@@ -32,7 +32,7 @@ namespace EngineLayer.FdrAnalysis
         public float LongestFragmentIonSeries { get; set; }
 
         [LoadColumn(9)]
-        public float Z { get; set; }
+        public float HydrophobicityZScore { get; set; }
 
         [LoadColumn(10)]
         public bool Label { get; set; }

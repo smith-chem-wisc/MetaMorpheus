@@ -60,7 +60,9 @@ namespace EngineLayer
 
             var trainer = mlContext.BinaryClassification.Trainers.FastTree(labelColumnName: "Label", featureColumnName: "Features");
 
-            string[] customFeatures = GetCustomFeatures();
+            string searchType = DetermineSearchType(psms);
+
+            string[] customFeatures = GetCustomFeatures(searchType);
 
             var pipeline = mlContext.Transforms.Concatenate("Features", customFeatures)
                 .Append(mlContext.BinaryClassification.Trainers.FastTree(labelColumnName: "Label", featureColumnName: "Features"));
@@ -70,10 +72,6 @@ namespace EngineLayer
             var predictionEngine = mlContext.Model.CreatePredictionEngine<PsmData, TruePositivePrediction>(trainedModel);
 
             string ambiguousScans = "";
-
-            //For Debug
-            List<string> someOut = new List<string>();
-            someOut.Add("Z|Ambiguity|DeltaScore|Intensity|Label|LongestSeries|MissedCleavages|ModsCount|Notch|PsmCount|PrecursorCharge|call|pepValue|Score|QValue");
 
             foreach (PeptideSpectralMatch psm in psms)
             {
@@ -98,9 +96,6 @@ namespace EngineLayer
                         }
 
                         var pepValuePrediction = predictionEngine.Predict(pd);
-
-                        someOut.Add(z.ToString() + "|" + pd.Ambiguity.ToString() + "|" + pd.DeltaScore.ToString() + "|" + pd.Intensity.ToString() + "|" + pd.Label + "|" + pd.LongestFragmentIonSeries + "|" + pd.MissedCleavagesCount + "|" + pd.ModsCount + "|" + pd.Notch + "|" + pd.PsmCount + "|" + pd.ScanPrecursorCharge + "|" + pepValuePrediction.Prediction + "|" + pepValuePrediction.Probability + "|" + pepValuePrediction.Score);
-
                         pepValuePredictions.Add(pepValuePrediction.Probability);
                         //A score is available using the variable pepvaluePrediction.Score
                     }
@@ -139,9 +134,6 @@ namespace EngineLayer
                 }
             }
 
-            //For debug
-            File.WriteAllLines(@"C:\Users\Michael Shortreed\Downloads\psmDataVAlues.txt", someOut, System.Text.Encoding.UTF8);
-
             var predictions = trainedModel.Transform(testData);
 
             CalibratedBinaryClassificationMetrics metrics;
@@ -159,15 +151,35 @@ namespace EngineLayer
             //mlContext.Model.Save(trainedModel, trainingData.Schema, @"C:\Users\User\Downloads\TrainedModel.zip");
         }
 
+        private static string DetermineSearchType(List<PeptideSpectralMatch> psms)
+        {
+            if (psms[1].DigestionParams.Protease.Name == "top-down")
+            {
+                return "topDown";
+            }
+            else
+            {
+                return "standard";
+            }
+        }
+
         /// <summary>
         /// This method can be used to select a custom subset of features for use in the Microsoft ML.NET computation of posterior error probability
         /// Probably should have unique sets for regular, crosslinking, top-down, labelled.
         /// </summary>
         /// <returns></returns>
-        private static string[] GetCustomFeatures()
+        private static string[] GetCustomFeatures(string searchType)
         {
             //non-specific and top-down searches don't used missedCleavages
-            return new string[] { "Z", "Intensity", "ScanPrecursorCharge", "DeltaScore", "Notch", "PsmCount", "ModsCount", "MissedCleavagesCount", "Ambiguity", "LongestFragmentIonSeries" };
+            switch (searchType)
+            {
+                case "topDown":
+                    return new string[] { "Intensity", "ScanPrecursorCharge", "DeltaScore", "Notch", "PsmCount", "ModsCount", "MissedCleavagesCount", "Ambiguity", "LongestFragmentIonSeries" };
+
+                case "standard":
+                default:
+                    return new string[] { "HydrophobicityZScore", "Intensity", "ScanPrecursorCharge", "DeltaScore", "Notch", "PsmCount", "ModsCount", "MissedCleavagesCount", "Ambiguity", "LongestFragmentIonSeries" };
+            }
         }
 
         private static float GetSSRCalcHydrophobicityZScore(PeptideSpectralMatch psm, PeptideWithSetModifications Peptide, Dictionary<string, Dictionary<int, double>> avg, Dictionary<string, Dictionary<int, double>> dev)
@@ -370,7 +382,7 @@ namespace EngineLayer
                 MissedCleavagesCount = missedCleavages,
                 Ambiguity = ambiguity,
                 LongestFragmentIonSeries = longestSeq,
-                Z = z,
+                HydrophobicityZScore = z,
                 Label = label
             };
         }
