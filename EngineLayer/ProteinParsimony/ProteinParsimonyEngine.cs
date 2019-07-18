@@ -1,7 +1,6 @@
 ﻿using EngineLayer.ProteinParsimony;
 using Proteomics;
 using Proteomics.ProteolyticDigestion;
-using System;
 using System.Collections.Concurrent;
 using System.Collections.Generic;
 using System.Linq;
@@ -27,7 +26,7 @@ namespace EngineLayer
         public ProteinParsimonyEngine(List<PeptideSpectralMatch> allPsms, bool modPeptidesAreDifferent, CommonParameters commonParameters, List<string> nestedIds) : base(commonParameters, nestedIds)
         {
             _treatModPeptidesAsDifferentPeptides = modPeptidesAreDifferent;
-            
+
             if (!allPsms.Any())
             {
                 _fdrFilteredPsms = new List<PeptideSpectralMatch>();
@@ -107,6 +106,8 @@ namespace EngineLayer
             }
 
             // Parsimony stage 0: create peptide-protein associations if needed because the user wants a modification-agnostic parsimony
+            // this is needed for edge cases digesting a protein .xml from UniProt that has peptide sequences shared between proteins 
+            // that have unevenly-shared modifications
             if (!_treatModPeptidesAsDifferentPeptides)
             {
                 foreach (var protease in _fdrFilteredPsms.GroupBy(p => p.DigestionParams.Protease))
@@ -126,38 +127,105 @@ namespace EngineLayer
                         }
                     }
 
-                    // create new peptide-protein associations
-                    foreach (var baseSequence in sequenceWithPsms)
-                    {
-                        var peptidesWithNotchInfo = baseSequence.Value.SelectMany(p => p.BestMatchingPeptides).Distinct().ToList();
+                    var sequenceWithPsmsList = sequenceWithPsms.ToList();
 
-                        // if the base seq has >1 PeptideWithSetMods object and has >0 mods, it might need to be matched to new proteins
-                        if (peptidesWithNotchInfo.Count > 1 && peptidesWithNotchInfo.Any(p => p.Peptide.NumMods > 0))
+                    // create new peptide-protein associations as needed
+                    Parallel.ForEach(Partitioner.Create(0, sequenceWithPsmsList.Count),
+                        new ParallelOptions { MaxDegreeOfParallelism = CommonParameters.MaxThreadsToUsePerFile },
+                        (range, loopState) =>
                         {
-                            // list of proteins along with start/end residue in protein and the # missed cleavages
-                            // this is needed to create new PeptideWithSetModification objects
-                            var peptideInProteinInfo = new List<Tuple<Protein, DigestionParams, int, int, int, int>>();
-                            foreach (var peptide in peptidesWithNotchInfo)
+                            for (int i = range.Item1; i < range.Item2; i++)
                             {
-                                peptideInProteinInfo.Add(new Tuple<Protein, DigestionParams, int, int, int, int>(peptide.Peptide.Protein, peptide.Peptide.DigestionParams,
-                                    peptide.Peptide.OneBasedStartResidueInProtein, peptide.Peptide.OneBasedEndResidueInProtein, peptide.Peptide.MissedCleavages, peptide.Notch));
-                            }
+                                var baseSequence = sequenceWithPsmsList[i];
 
-                            // add the protein associations to the PSM
-                            foreach (PeptideSpectralMatch psm in baseSequence.Value)
-                            {
-                                foreach (var proteinInfo in peptideInProteinInfo)
+                                var peptidesWithNotchInfo = baseSequence.Value.SelectMany(p => p.BestMatchingPeptides).Distinct().ToList();
+
+                                // if the base seq has >1 PeptideWithSetMods object and has >0 mods, it might need to be matched to new proteins
+                                if (peptidesWithNotchInfo.Count > 1 && peptidesWithNotchInfo.Any(p => p.Peptide.NumMods > 0))
                                 {
-                                    var originalPep = psm.BestMatchingPeptides.First().Peptide;
-                                    var pep = new PeptideWithSetModifications(proteinInfo.Item1, proteinInfo.Item2, proteinInfo.Item3, proteinInfo.Item4,
-                                        originalPep.CleavageSpecificityForFdrCategory, originalPep.PeptideDescription, proteinInfo.Item5, originalPep.AllModsOneIsNterminus,
-                                        originalPep.NumFixedMods);
-                                    _fdrFilteredPeptides.Add(pep);
-                                    psm.AddProteinMatch((proteinInfo.Item6, pep));
+                                    bool needToAddPeptideToProteinAssociations = false;
+
+                                    int proteinsForThisBaseSequence = peptidesWithNotchInfo.Select(p => p.Peptide.Protein).Distinct().Count();
+
+                                    if (proteinsForThisBaseSequence == 1)
+                                    {
+                                        continue;
+                                    }
+
+                                    foreach (var psm in baseSequence.Value)
+                                    {
+                                        // psmProteinsCount is the total number of proteins that this base sequence is a digestion product of
+                                        int psmProteinsCount = psm.BestMatchingPeptides.Select(p => p.Peptide.Protein).Distinct().Count();
+
+                                        if (psmProteinsCount == proteinsForThisBaseSequence)
+                                        {
+                                            continue;
+                                        }
+
+                                        // this PSM is not matched to all the proteins that it should be matched to
+                                        // at this point we know that we need to make some new peptide-protein associations
+                                        needToAddPeptideToProteinAssociations = true;
+                                    }
+
+                                    if (!needToAddPeptideToProteinAssociations)
+                                    {
+                                        continue;
+                                    }
+
+                                    var proteinToPeptideInfo = new Dictionary<Protein,
+                                        (DigestionParams DigestParams, int OneBasedStart, int OneBasedEnd, int MissedCleavages, int Notch)>();
+
+                                    foreach (PeptideSpectralMatch psm in baseSequence.Value)
+                                    {
+                                        foreach (var peptideWithNotch in psm.BestMatchingPeptides)
+                                        {
+                                            PeptideWithSetModifications peptide = peptideWithNotch.Peptide;
+                                            Protein protein = peptide.Protein;
+
+                                            if (!proteinToPeptideInfo.ContainsKey(protein))
+                                            {
+                                                proteinToPeptideInfo.Add(protein,
+                                                    (peptideWithNotch.Peptide.DigestionParams,
+                                                    peptideWithNotch.Peptide.OneBasedStartResidueInProtein,
+                                                    peptideWithNotch.Peptide.OneBasedEndResidueInProtein,
+                                                    peptideWithNotch.Peptide.MissedCleavages,
+                                                    peptideWithNotch.Notch));
+                                            }
+                                        }
+                                    }
+
+                                    foreach (PeptideSpectralMatch psm in baseSequence.Value)
+                                    {
+                                        PeptideWithSetModifications originalPeptide = psm.BestMatchingPeptides.First().Peptide;
+                                        HashSet<Protein> psmProteins = new HashSet<Protein>(psm.BestMatchingPeptides.Select(p => p.Peptide.Protein));
+                                        foreach (var proteinWithDigestInfo in proteinToPeptideInfo)
+                                        {
+                                            if (!psmProteins.Contains(proteinWithDigestInfo.Key))
+                                            {
+                                                var pep = new PeptideWithSetModifications(
+                                                    proteinWithDigestInfo.Key,
+                                                    proteinWithDigestInfo.Value.DigestParams,
+                                                    proteinWithDigestInfo.Value.OneBasedStart,
+                                                    proteinWithDigestInfo.Value.OneBasedEnd,
+                                                    originalPeptide.CleavageSpecificityForFdrCategory,
+                                                    originalPeptide.PeptideDescription,
+                                                    proteinWithDigestInfo.Value.MissedCleavages,
+                                                    originalPeptide.AllModsOneIsNterminus,
+                                                    originalPeptide.NumFixedMods);
+
+                                                lock (_fdrFilteredPeptides)
+                                                {
+                                                    _fdrFilteredPeptides.Add(pep);
+                                                }
+
+                                                psm.AddProteinMatch((proteinWithDigestInfo.Value.Notch, pep));
+                                            }
+                                        }
+                                    }
                                 }
                             }
                         }
-                    }
+                    );
                 }
             }
 
@@ -219,7 +287,7 @@ namespace EngineLayer
             foreach (var peptide in _fdrFilteredPeptides)
             {
                 ParsimonySequence sequence = new ParsimonySequence(peptide, _treatModPeptidesAsDifferentPeptides);
-                
+
                 if (peptideSequenceToProteins.TryGetValue(sequence, out List<Protein> proteinsForThisPeptideSequence))
                 {
                     proteinsForThisPeptideSequence.Add(peptide.Protein);
@@ -262,7 +330,7 @@ namespace EngineLayer
                 // dictionary with proteins as keys and list of associated peptide sequences as the values.
                 // this data structure makes parsimony easier because the algorithm can look up a protein's peptides 
                 // to remove them from the list of available peptides. this list will shrink as the algorithm progresses
-                var algDictionary = new Dictionary<Protein, HashSet<string>>(); 
+                var algDictionary = new Dictionary<Protein, HashSet<string>>();
                 var algDictionaryProtease = new Dictionary<Protein, HashSet<ParsimonySequence>>();
                 foreach (var kvp in peptideSequenceToProteins)
                 {
