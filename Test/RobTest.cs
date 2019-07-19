@@ -137,7 +137,7 @@ namespace Test
             // sequence coverage test
             foreach (var proteinGroup in proteinGroups)
             {
-                foreach (var coverage in proteinGroup.SequenceCoveragePercent)
+                foreach (var coverage in proteinGroup.SequenceCoverageFraction)
                 {
                     Assert.That(coverage <= 1.0);
                 }
@@ -157,10 +157,13 @@ namespace Test
             List<Modification> variableModifications = new List<Modification>();
             List<Modification> fixedModifications = new List<Modification>();
 
-            ModificationMotif.TryGetMotif("S", out ModificationMotif motif);
-            variableModifications.Add(new Modification(_originalId: "resMod", _modificationType: "HaHa", _target: motif, _locationRestriction: "Anywhere.", _chemicalFormula: ChemicalFormula.ParseFormula("H")));
+            ModificationMotif.TryGetMotif("S", out ModificationMotif motifS);
+            ModificationMotif.TryGetMotif("I", out ModificationMotif motifI);
+            variableModifications.Add(new Modification(_originalId: "resMod", _modificationType: "HaHa", _target: motifS, _locationRestriction: "Anywhere.", _chemicalFormula: ChemicalFormula.ParseFormula("H")));
+            variableModifications.Add(new Modification(_originalId: "iModOne", _modificationType: "HaHa", _target: motifI, _locationRestriction: "Anywhere.", _chemicalFormula: ChemicalFormula.ParseFormula("H")));
+            variableModifications.Add(new Modification(_originalId: "iModTwo", _modificationType: "HaHa", _target: motifI, _locationRestriction: "Anywhere.", _chemicalFormula: ChemicalFormula.ParseFormula("H")));
 
-            var proteinList = new List<Protein> { new Protein("MNNNSKQQQ", "accession") };
+            var proteinList = new List<Protein> { new Protein("MNNNSKQQQI", "accession") };
             var protease = new Protease("CustomProtease", CleavageSpecificity.Full, null, null, new List<DigestionMotif> { new DigestionMotif("K", null, 1, null) });
             ProteaseDictionary.Dictionary.Add(protease.Name, protease);
 
@@ -170,36 +173,35 @@ namespace Test
             };
 
             DigestionParams digestionParams = new DigestionParams(protease: protease.Name, maxMissedCleavages: 0, minPeptideLength: 1);
+            var protDigest = proteinList.First().Digest(digestionParams, fixedModifications, variableModifications).ToList();
 
-            var modPep = proteinList.First().Digest(digestionParams, fixedModifications, variableModifications).Last();
-            HashSet<PeptideWithSetModifications> value = new HashSet<PeptideWithSetModifications> { modPep };
-            PeptideWithSetModifications compactPeptide1 = value.First();
-            Assert.AreEqual("QQQ", value.First().FullSequence);//this might be base
+            int idx = 0;
 
-            var firstProtDigest = proteinList.First().Digest(digestionParams, fixedModifications, variableModifications).ToList();
-            HashSet<PeptideWithSetModifications> value2 = new HashSet<PeptideWithSetModifications> { firstProtDigest[0] };
-            PeptideWithSetModifications compactPeptide2 = value2.First();
-            Assert.AreEqual("MNNNSK", value2.First().FullSequence);//this might be base
+            var pep1 = new HashSet<PeptideWithSetModifications> { protDigest[idx++] };
+            Assert.AreEqual("MNNNSK", pep1.Single().FullSequence);//this might be base
 
-            HashSet<PeptideWithSetModifications> value2mod = new HashSet<PeptideWithSetModifications> { firstProtDigest[1] };
-            PeptideWithSetModifications compactPeptide2mod = value2mod.Last();
-            Assert.AreEqual("MNNNS[HaHa:resMod on S]K", value2mod.Last().FullSequence);//this might be base
+            var pep1mod = new HashSet<PeptideWithSetModifications> { protDigest[idx++] };
+            Assert.AreEqual("MNNNS[HaHa:resMod on S]K", pep1mod.Single().FullSequence);//this might be base
 
-            HashSet<PeptideWithSetModifications> value3 = new HashSet<PeptideWithSetModifications> { firstProtDigest[2] };
-            PeptideWithSetModifications compactPeptide3 = value3.First();
-            Assert.AreEqual("NNNSK", value3.First().FullSequence);//this might be base
-            HashSet<PeptideWithSetModifications> value3mod = new HashSet<PeptideWithSetModifications> { firstProtDigest[3] };
+            var pep3 = new HashSet<PeptideWithSetModifications> { protDigest[idx++] };
+            Assert.AreEqual("NNNSK", pep3.Single().FullSequence);//this might be base
 
-            PeptideWithSetModifications compactPeptide3mod = value3mod.Last();
-            Assert.AreEqual("NNNS[HaHa:resMod on S]K", value3mod.Last().FullSequence);//this might be base
+            var pep3mod = new HashSet<PeptideWithSetModifications> { protDigest[idx++] };
+            Assert.AreEqual("NNNS[HaHa:resMod on S]K", pep3mod.Single().FullSequence);//this might be base
+
+            var pep4 = new HashSet<PeptideWithSetModifications> { protDigest[idx++] };
+            Assert.AreEqual("QQQI", pep4.Single().FullSequence);//this might be base
+
+            var pep4mod1 = new HashSet<PeptideWithSetModifications> { protDigest[idx++] };
+            Assert.AreEqual("QQQI[HaHa:iModOne on I]", pep4mod1.Single().FullSequence);//this might be base
+
+            var pep4mod2 = new HashSet<PeptideWithSetModifications> { protDigest[idx++] };
+            Assert.AreEqual("QQQI[HaHa:iModTwo on I]", pep4mod2.Single().FullSequence);//this might be base
 
             var peptideList = new HashSet<PeptideWithSetModifications>();
-            foreach (var protein in proteinList)
-            {
-                foreach (var peptide in protein.Digest(digestionParams, new List<Modification>(), variableModifications))
-                {
-                    peptideList.Add(peptide);
-                }
+            foreach (var peptide in proteinList.SelectMany(protein => protein.Digest(digestionParams, new List<Modification>(), variableModifications)))
+            {               
+                peptideList.Add(peptide);
             }
 
             MsDataScan jdfk = new MsDataScan(new MzSpectrum(new double[] { 1 }, new double[] { 1 }, false), 0, 1, true, Polarity.Positive, double.NaN, null, null, MZAnalyzerType.Orbitrap, double.NaN, null, null, "scan=1", double.NaN, null, null, double.NaN, null, DissociationType.AnyActivationType, 0, null);
@@ -207,24 +209,37 @@ namespace Test
             
             Tolerance fragmentTolerance = new AbsoluteTolerance(0.01);
 
-            var match1 = new PeptideSpectralMatch(peptideList.ElementAt(0), 0, 10, 0, ms2scan, digestionParams, new List<MatchedFragmentIon>())
-            {
-            };
+            var match1 = new PeptideSpectralMatch(peptideList.ElementAt(0), 0, 10, 0, ms2scan, digestionParams, new List<MatchedFragmentIon>()){};
             match1.SetFdrValues(0, 0, 0, 0, 0, 0, 0, 0);
-            var match2 = new PeptideSpectralMatch(peptideList.ElementAt(1), 0, 10, 0, ms2scan, digestionParams, new List<MatchedFragmentIon>())
-            {
-            };
+            var match2 = new PeptideSpectralMatch(peptideList.ElementAt(1), 0, 10, 0, ms2scan, digestionParams, new List<MatchedFragmentIon>()){};
             match2.SetFdrValues(0, 0, 0, 0, 0, 0, 0, 0);
-            var match3 = new PeptideSpectralMatch(peptideList.ElementAt(1), 0, 10, 0, ms2scan, digestionParams, new List<MatchedFragmentIon>())
-            {
-            };
+            var match3 = new PeptideSpectralMatch(peptideList.ElementAt(1), 0, 10, 0, ms2scan, digestionParams, new List<MatchedFragmentIon>()){};
             match3.SetFdrValues(0, 0, 0, 0, 0, 0, 0, 0);
+            var match4 = new PeptideSpectralMatch(peptideList.ElementAt(4), 0, 10, 0, ms2scan, digestionParams, new List<MatchedFragmentIon>()) { };
+            match4.SetFdrValues(0, 0, 0, 0, 0, 0, 0, 0);
+            var match5 = new PeptideSpectralMatch(peptideList.ElementAt(5), 0, 10, 0, ms2scan, digestionParams, new List<MatchedFragmentIon>()) { };
+            match5.SetFdrValues(0, 0, 0, 0, 0, 0, 0, 0);
+            var match6 = new PeptideSpectralMatch(peptideList.ElementAt(6), 0, 10, 0, ms2scan, digestionParams, new List<MatchedFragmentIon>()) { };
+            match6.SetFdrValues(0, 0, 0, 0, 0, 0, 0, 0);
+            var match44 = new PeptideSpectralMatch(peptideList.ElementAt(4), 0, 10, 0, ms2scan, digestionParams, new List<MatchedFragmentIon>()) { };
+            match44.SetFdrValues(0, 0, 0, 0, 0, 0, 0, 0);
+            var match55 = new PeptideSpectralMatch(peptideList.ElementAt(5), 0, 10, 0, ms2scan, digestionParams, new List<MatchedFragmentIon>()) { };
+            match55.SetFdrValues(0, 0, 0, 0, 0, 0, 0, 0);
+            var match66 = new PeptideSpectralMatch(peptideList.ElementAt(6), 0, 10, 0, ms2scan, digestionParams, new List<MatchedFragmentIon>()) { };
+            match66.SetFdrValues(0, 0, 0, 0, 0, 0, 0, 0);
+
 
             List<PeptideSpectralMatch> psms = new List<PeptideSpectralMatch>
             {
                 match1,
                 match2,
-                match3
+                match3,
+                match4,
+                match44,
+                match5,
+                match55,
+                match6,
+                match66
             };
 
             psms.ForEach(p => p.ResolveAllAmbiguities());
@@ -236,7 +251,7 @@ namespace Test
             ProteinScoringAndFdrEngine f = new ProteinScoringAndFdrEngine(proteinGroups, psms, false, false, true, new CommonParameters(), new List<string>());
             f.Run();
 
-            Assert.AreEqual("#aa5[resMod on S,info:occupancy=0.67(2/3)];", proteinGroups.First().ModsInfo[0]);
+            Assert.AreEqual("#aa5[resMod on S,info:occupancy=0.67(2/3)];#aa10[iModOne on I,info:occupancy=0.33(2/6)];#aa10[iModTwo on I,info:occupancy=0.33(2/6)]", proteinGroups.First().ModsInfo[0]);
         }
 
         [Test]
