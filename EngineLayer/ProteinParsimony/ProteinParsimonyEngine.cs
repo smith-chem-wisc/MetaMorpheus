@@ -364,43 +364,32 @@ namespace EngineLayer
                 int numNewSeqs = algDictionary.Max(p => p.Value.Count);
                 while (numNewSeqs != 0)
                 {
-                    // gets list of proteins with the most unaccounted-for peptide sequences
-                    var possibleBestProteinList = algDictionary.Where(p => p.Value.Count == numNewSeqs).ToList();
-
-                    Protein bestProtein = possibleBestProteinList.First().Key;
-
-                    // may need to select different protein in case of a greedy algorithm tie
-                    // the protein with the most total peptide sequences wins in this case (doesn't matter if parsimony has grabbed them or not)
-                    if (possibleBestProteinList.Count > 1)
-                    {
-                        int highestNumTotalPep = proteinToPepSeqMatch[bestProtein].Count;
-                        foreach (var kvp in possibleBestProteinList)
-                        {
-                            if (proteinToPepSeqMatch[kvp.Key].Count > highestNumTotalPep)
-                            {
-                                highestNumTotalPep = proteinToPepSeqMatch[kvp.Key].Count;
-                                bestProtein = kvp.Key;
-                            }
-                        }
-                    }
+                    // get the next best protein based on:
+                    // 1. the number of new peptide sequences and then (in case of a tie),
+                    // 2. the number of total peptides observed for the protein, regardless if they're unaccounted for or not
+                    Protein bestProtein = algDictionary
+                        .Where(p => p.Value.Count == numNewSeqs)
+                        .OrderByDescending(p => proteinToPepSeqMatch[p.Key].Count)
+                        .First().Key;
 
                     parsimoniousProteinList.Add(bestProtein);
 
                     // remove observed peptide seqs
-                    List<ParsimonySequence> temp = algDictionaryProtease[bestProtein].ToList();
-                    foreach (ParsimonySequence peptideSequence in temp)
+                    List<ParsimonySequence> observedPeptides = algDictionaryProtease[bestProtein].ToList();
+                    foreach (ParsimonySequence peptide in observedPeptides)
                     {
-                        List<Protein> proteinsWithThisPeptide = peptideSequenceToProteins[peptideSequence];
+                        List<Protein> proteinsWithThisPeptide = peptideSequenceToProteins[peptide];
 
-                        foreach (var protein in proteinsWithThisPeptide)
+                        foreach (Protein protein in proteinsWithThisPeptide)
                         {
-                            algDictionary[protein].Remove(peptideSequence.Sequence);
-                            algDictionaryProtease[protein].Remove(peptideSequence);
+                            algDictionary[protein].Remove(peptide.Sequence);
+                            algDictionaryProtease[protein].Remove(peptide);
                         }
                     }
 
                     algDictionary.Remove(bestProtein);
                     algDictionaryProtease.Remove(bestProtein);
+
                     numNewSeqs = algDictionary.Any() ? algDictionary.Max(p => p.Value.Count) : 0;
                 }
 
