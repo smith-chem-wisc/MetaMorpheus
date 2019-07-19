@@ -145,7 +145,23 @@ namespace TaskLayer
                 filteredAllPsms.Add(RemoveDuplicateFromPsmsPerScan(psmsPerScan));
             }
 
-            var allPsmsList = filteredAllPsms.Select(p => p.First()).OrderByDescending(p => p.XLTotalScore).ToList();
+            var allPsmsList = new List<CrosslinkSpectralMatch>();
+
+            foreach (var psmsPerScan in allPsms)
+            {
+                CrosslinkSpectralMatch crosslinkSpectralMatch = psmsPerScan[0];
+
+                for (int i = 1; i < psmsPerScan.Count -1; i++)
+                {
+                    if (psmsPerScan[i].Score > psmsPerScan[0].Score && psmsPerScan[i].BaseSequence.Contains(psmsPerScan[0].BaseSequence))
+                    {
+                        crosslinkSpectralMatch = psmsPerScan[i];
+                    }
+                }
+
+                allPsmsList.Add(crosslinkSpectralMatch);
+
+            }
 
             PostXLSearchAnalysisTask postXLSearchAnalysisTask = new PostXLSearchAnalysisTask();
 
