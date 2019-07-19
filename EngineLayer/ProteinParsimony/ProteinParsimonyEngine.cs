@@ -145,26 +145,25 @@ namespace EngineLayer
                                 {
                                     bool needToAddPeptideToProteinAssociations = false;
 
-                                    int proteinsForThisBaseSequence = peptidesWithNotchInfo.Select(p => p.Peptide.Protein).Distinct().Count();
+                                    // numProteinsForThisBaseSequence is the total number of proteins that this base sequence is a digestion product of
+                                    int numProteinsForThisBaseSequence = peptidesWithNotchInfo.Select(p => p.Peptide.Protein).Distinct().Count();
 
-                                    if (proteinsForThisBaseSequence == 1)
+                                    if (numProteinsForThisBaseSequence == 1)
                                     {
                                         continue;
                                     }
 
                                     foreach (var psm in baseSequence.Value)
                                     {
-                                        // psmProteinsCount is the total number of proteins that this base sequence is a digestion product of
-                                        int psmProteinsCount = psm.BestMatchingPeptides.Select(p => p.Peptide.Protein).Distinct().Count();
+                                        // numProteinsForThisPsm is the number of proteins that this PSM's peptides are associated with
+                                        int numProteinsForThisPsm = psm.BestMatchingPeptides.Select(p => p.Peptide.Protein).Distinct().Count();
 
-                                        if (psmProteinsCount == proteinsForThisBaseSequence)
+                                        if (numProteinsForThisPsm != numProteinsForThisBaseSequence)
                                         {
-                                            continue;
+                                            // this PSM is not matched to all the proteins that it should be matched to
+                                            // at this point we know that we need to make some new peptide-protein associations
+                                            needToAddPeptideToProteinAssociations = true;
                                         }
-
-                                        // this PSM is not matched to all the proteins that it should be matched to
-                                        // at this point we know that we need to make some new peptide-protein associations
-                                        needToAddPeptideToProteinAssociations = true;
                                     }
 
                                     if (!needToAddPeptideToProteinAssociations)
@@ -172,8 +171,10 @@ namespace EngineLayer
                                         continue;
                                     }
 
+                                    // this gets the digestion info for all of the peptide-protein associations that should exist
                                     var proteinToPeptideInfo = new Dictionary<Protein,
-                                        (DigestionParams DigestParams, int OneBasedStart, int OneBasedEnd, int MissedCleavages, int Notch)>();
+                                        (DigestionParams DigestParams, int OneBasedStart, int OneBasedEnd, int MissedCleavages, int Notch,
+                                        CleavageSpecificity CleavageSpecificity)>();
 
                                     foreach (PeptideSpectralMatch psm in baseSequence.Value)
                                     {
@@ -189,15 +190,18 @@ namespace EngineLayer
                                                     peptideWithNotch.Peptide.OneBasedStartResidueInProtein,
                                                     peptideWithNotch.Peptide.OneBasedEndResidueInProtein,
                                                     peptideWithNotch.Peptide.MissedCleavages,
-                                                    peptideWithNotch.Notch));
+                                                    peptideWithNotch.Notch,
+                                                    peptideWithNotch.Peptide.CleavageSpecificityForFdrCategory));
                                             }
                                         }
                                     }
 
+                                    // create any new associations that need to be made
                                     foreach (PeptideSpectralMatch psm in baseSequence.Value)
                                     {
                                         PeptideWithSetModifications originalPeptide = psm.BestMatchingPeptides.First().Peptide;
                                         HashSet<Protein> psmProteins = new HashSet<Protein>(psm.BestMatchingPeptides.Select(p => p.Peptide.Protein));
+
                                         foreach (var proteinWithDigestInfo in proteinToPeptideInfo)
                                         {
                                             if (!psmProteins.Contains(proteinWithDigestInfo.Key))
@@ -207,7 +211,7 @@ namespace EngineLayer
                                                     proteinWithDigestInfo.Value.DigestParams,
                                                     proteinWithDigestInfo.Value.OneBasedStart,
                                                     proteinWithDigestInfo.Value.OneBasedEnd,
-                                                    originalPeptide.CleavageSpecificityForFdrCategory,
+                                                    proteinWithDigestInfo.Value.CleavageSpecificity,
                                                     originalPeptide.PeptideDescription,
                                                     proteinWithDigestInfo.Value.MissedCleavages,
                                                     originalPeptide.AllModsOneIsNterminus,
