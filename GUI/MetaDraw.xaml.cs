@@ -328,6 +328,10 @@ namespace MetaMorpheusGUI
                 {
                     propertyView.Rows.Add(temp[i].Name, string.Join(", ", row.MatchedIons.Select(p => p.Annotation)));
                 }
+                else if(temp[i].Name == nameof(row.VariantCrossingIons))
+                {
+                    propertyView.Rows.Add(temp[i].Name, string.Join(", ", row.VariantCrossingIons.Select(p => p.Annotation)));
+                }
                 else
                 {
                     propertyView.Rows.Add(temp[i].Name, temp[i].GetValue(row, null));
