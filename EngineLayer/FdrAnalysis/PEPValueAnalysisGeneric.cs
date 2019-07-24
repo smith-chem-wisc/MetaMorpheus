@@ -175,7 +175,7 @@ namespace EngineLayer
             switch (searchType)
             {
                 case "topDown":
-                    return new string[] { "Intensity", "ScanPrecursorCharge", "DeltaScore", "Notch", "PsmCount", "ModsCount", "MissedCleavagesCount", "Ambiguity", "LongestFragmentIonSeries" };
+                    return new string[] { "Intensity", "ScanPrecursorCharge", "DeltaScore", "Notch", "PsmCount", "ModsCount", "Ambiguity", "LongestFragmentIonSeries" };
 
                 case "standard":
                 default:
