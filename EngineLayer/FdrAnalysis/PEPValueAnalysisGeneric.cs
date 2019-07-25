@@ -14,7 +14,7 @@ namespace EngineLayer
 {
     public static class PEP_Analysis
     {
-        private static readonly string filepathSubstitue = "SubstitueFilePath";//this is only for unit test that have psms with no filename.
+        //private static readonly string filepathSubstitue = "SubstitueFilePath";//this is only for unit test that have psms with no filename.
 
         public static string ComputePEPValuesForAllPSMsGeneric(List<PeptideSpectralMatch> psms)
         {
@@ -194,7 +194,7 @@ namespace EngineLayer
                     averagesCommaStandardDeviations.Add(key, new Tuple<double, double>(hydrobophobicites[key].Average(), hydrobophobicites[key].StandardDeviation()));
                 }
 
-                rtHydrophobicityAvgDev.Add(filename ?? filepathSubstitue, averagesCommaStandardDeviations);
+                rtHydrophobicityAvgDev.Add(filename, averagesCommaStandardDeviations);
             }
             return rtHydrophobicityAvgDev;
         }
@@ -242,13 +242,13 @@ namespace EngineLayer
             SSRCalc3 calc = new SSRCalc3("SSRCalc 3.0 (300A)", SSRCalc3.Column.A300);
             double hydrophobicityZscore = double.NaN;
 
-            if (d.ContainsKey(psm.FullFilePath ?? filepathSubstitue))
+            if (d.ContainsKey(psm.FullFilePath))
             {
                 int time = (int)Math.Round(psm.ScanRetentionTime, 0);
-                if (d[psm.FullFilePath ?? filepathSubstitue].Keys.Contains(time))
+                if (d[psm.FullFilePath].Keys.Contains(time))
                 {
                     double predictedHydrophobicity = calc.ScoreSequence(Peptide);
-                    hydrophobicityZscore = Math.Abs(d[psm.FullFilePath ?? filepathSubstitue][time].Item1 - predictedHydrophobicity) / d[psm.FullFilePath ?? filepathSubstitue][time].Item2;
+                    hydrophobicityZscore = Math.Abs(d[psm.FullFilePath][time].Item1 - predictedHydrophobicity) / d[psm.FullFilePath][time].Item2;
                 }
             }
 
