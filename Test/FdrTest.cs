@@ -228,17 +228,21 @@ namespace Test
                 sequenceToPsmCount.Add(grp.Key, grp.Count());
             }
 
-            Dictionary<string, Dictionary<int, double>> a = new Dictionary<string, Dictionary<int, double>>();
-            Dictionary<string, Dictionary<int, double>> d = new Dictionary<string, Dictionary<int, double>>();
-            Dictionary<string, Dictionary<int, double>> a_m = new Dictionary<string, Dictionary<int, double>>();
-            Dictionary<string, Dictionary<int, double>> d_m = new Dictionary<string, Dictionary<int, double>>();
+            Dictionary<string, Dictionary<int, Tuple<double, double>>> fileSpecificRetTimeHI_behavior = new Dictionary<string, Dictionary<int, Tuple<double, double>>>();
+            Dictionary<string, Dictionary<int, Tuple<double, double>>> fileSpecificRetTemHI_behaviorModifiedPeptides = new Dictionary<string, Dictionary<int, Tuple<double, double>>>();
 
-            Dictionary<int, double> a_value = new Dictionary<int, double>() { { 154, 33.0 } };
-            Dictionary<int, double> d_value = new Dictionary<int, double>() { { 154, 1.0 } };
-            a.Add("SubstitueFilePath", a_value);
-            d.Add("SubstitueFilePath", d_value);
+            //average hydrophobicity, standard deviation hydrophobicity
+            Tuple<double, double> at = new Tuple<double, double>(33.0,1.0);
 
-            var maxPsmData = PEP_Analysis.CreateOnePsmDataEntry(maxScorePsm, sequenceToPsmCount, a, d, a_m, d_m, null, "standard", null, !maxScorePsm.IsDecoy);
+            Dictionary<int, Tuple<double, double>> HI_Time_avg_dev = new Dictionary<int, Tuple<double, double>>
+            {
+                { 154, at }
+            };
+
+            fileSpecificRetTimeHI_behavior.Add("SubstitueFilePath", HI_Time_avg_dev);
+
+
+            var maxPsmData = PEP_Analysis.CreateOnePsmDataEntry(maxScorePsm, sequenceToPsmCount, fileSpecificRetTimeHI_behavior, fileSpecificRetTemHI_behaviorModifiedPeptides, null, "standard", null, !maxScorePsm.IsDecoy);
             Assert.That(maxScorePsm.PeptidesToMatchingFragments.Count, Is.EqualTo(maxPsmData.Ambiguity));
             Assert.That(maxScorePsm.DeltaScore, Is.EqualTo(maxPsmData.DeltaScore).Within(0.05));
             Assert.That((float)(maxScorePsm.Score - (int)maxScorePsm.Score), Is.EqualTo(maxPsmData.Intensity).Within(0.05));

@@ -23,24 +23,20 @@ namespace EngineLayer
             //These two dictionaries contain the average and standard deviations of hydrophobicitys measured in 1 minute increments accross each raw
             //file separately. An individully measured hydrobophicty calculated for a specific PSM sequence is compared to these values by computing
             //the z-score. That z-score is used in the the machine learning.
-            Dictionary<string, Dictionary<int, double>> RetentionTimeHydrophobicityDeviation = new Dictionary<string, Dictionary<int, double>>();
-            Dictionary<string, Dictionary<int, double>> RetentionTimeHydrophobicityAverage = new Dictionary<string, Dictionary<int, double>>();
-
             //Separate dictionaries are created for peptides with modifications becuase SSRcalc doesn't really do a good job predicting hyrophobicity
-            //for these peptides and their distributions are different.
-            Dictionary<string, Dictionary<int, double>> RetentionTimeHydrophobicityDeviation_Modified = new Dictionary<string, Dictionary<int, double>>();
-            Dictionary<string, Dictionary<int, double>> RetentionTimeHydrophobicityAverage_Modified = new Dictionary<string, Dictionary<int, double>>();
+            Dictionary<string, Dictionary<int, Tuple<double, double>>> fileSpecificTimeDependantHydrophobicityAverageAndDeviation_unmodified = new Dictionary<string, Dictionary<int, Tuple<double, double>>>();
+            Dictionary<string, Dictionary<int, Tuple<double, double>>> fileSpecificTimeDependantHydrophobicityAverageAndDeviation_modified = new Dictionary<string, Dictionary<int, Tuple<double, double>>>();
 
             if (searchType == "standard")
             {
-                (RetentionTimeHydrophobicityAverage, RetentionTimeHydrophobicityDeviation) = FillHydrophobicityDictionaries(psms, false);
-                (RetentionTimeHydrophobicityAverage_Modified, RetentionTimeHydrophobicityDeviation_Modified) = FillHydrophobicityDictionaries(psms, true);
+                fileSpecificTimeDependantHydrophobicityAverageAndDeviation_unmodified = ComputeHydrophobicityValues(psms, false);
+                fileSpecificTimeDependantHydrophobicityAverageAndDeviation_modified = ComputeHydrophobicityValues(psms, true);
             }
 
             Dictionary<string, int> sequenceToPsmCount = GetSequenceToPSMCount(psms);
 
             MLContext mlContext = new MLContext();
-            IDataView dataView = mlContext.Data.LoadFromEnumerable(CreatePsmData(psms, sequenceToPsmCount, RetentionTimeHydrophobicityAverage, RetentionTimeHydrophobicityDeviation, RetentionTimeHydrophobicityAverage_Modified, RetentionTimeHydrophobicityDeviation_Modified, searchType));
+            IDataView dataView = mlContext.Data.LoadFromEnumerable(CreatePsmData(psms, sequenceToPsmCount, fileSpecificTimeDependantHydrophobicityAverageAndDeviation_unmodified, fileSpecificTimeDependantHydrophobicityAverageAndDeviation_modified, searchType));
 
             //
             // Summary:
@@ -91,7 +87,7 @@ namespace EngineLayer
                     //Here we compute the pepvalue predection for each ambiguous peptide in a PSM. Ambiguous peptides with lower pepvalue predictions are removed from the PSM.
                     foreach (var (Notch, Peptide) in psm.BestMatchingPeptides)
                     {
-                        PsmData pd = CreateOnePsmDataEntry(psm, sequenceToPsmCount, RetentionTimeHydrophobicityAverage, RetentionTimeHydrophobicityDeviation, RetentionTimeHydrophobicityAverage_Modified, RetentionTimeHydrophobicityDeviation_Modified, Peptide, searchType, Notch);
+                        PsmData pd = CreateOnePsmDataEntry(psm, sequenceToPsmCount, fileSpecificTimeDependantHydrophobicityAverageAndDeviation_unmodified, fileSpecificTimeDependantHydrophobicityAverageAndDeviation_modified, Peptide, searchType, Notch);
                         var pepValuePrediction = predictionEngine.Predict(pd);
                         pepValuePredictions.Add(pepValuePrediction.Probability);
                         //A score is available using the variable pepvaluePrediction.Score
@@ -146,6 +142,63 @@ namespace EngineLayer
             //mlContext.Model.Save(trainedModel, trainingData.Schema, @"C:\Users\User\Downloads\TrainedModel.zip");
         }
 
+        private static Dictionary<string, Dictionary<int, Tuple<double, double>>> ComputeHydrophobicityValues(List<PeptideSpectralMatch> psms, bool modified)
+        {
+            SSRCalc3 calc = new SSRCalc3("SSRCalc 3.0 (300A)", SSRCalc3.Column.A300);
+            Dictionary<string, Dictionary<int, Tuple<double, double>>> rtHydrophobicityAvgDev = new Dictionary<string, Dictionary<int, Tuple<double, double>>>();
+
+            List<string> filenames = psms.Select(f => f.FullFilePath).ToList();
+
+            filenames = filenames.Distinct().ToList();
+
+            foreach (string filename in filenames)
+            {
+                Dictionary<int, List<double>> hydrobophobicites = new Dictionary<int, List<double>>();
+                Dictionary<int, Tuple<double, double>> averagesCommaStandardDeviations = new Dictionary<int, Tuple<double, double>>();
+
+                foreach (PeptideSpectralMatch psm in psms.Where(f => (f.FullFilePath == filename || f.FullFilePath == null) && f.FdrInfo.QValue <= 0.01))
+                {
+                    foreach ((int notch, PeptideWithSetModifications pwsm) in psm.BestMatchingPeptides)
+                    {
+                        if (pwsm.BaseSequence.Equals(pwsm.FullSequence) && !modified)
+                        {
+                            double predictedHydrophobicity = calc.ScoreSequence(pwsm);
+                            int possibleKey = (int)Math.Round(psm.ScanRetentionTime, 0);
+                            if (hydrobophobicites.ContainsKey(possibleKey))
+                            {
+                                hydrobophobicites[possibleKey].Add(predictedHydrophobicity);
+                            }
+                            else
+                            {
+                                hydrobophobicites.Add(possibleKey, new List<double>() { predictedHydrophobicity });
+                            }
+                        }
+                        else if (!pwsm.BaseSequence.Equals(pwsm.FullSequence) && modified)
+                        {
+                            double predictedHydrophobicity = calc.ScoreSequence(pwsm);
+                            int possibleKey = (int)Math.Round(psm.ScanRetentionTime, 0);
+                            if (hydrobophobicites.ContainsKey(possibleKey))
+                            {
+                                hydrobophobicites[possibleKey].Add(predictedHydrophobicity);
+                            }
+                            else
+                            {
+                                hydrobophobicites.Add(possibleKey, new List<double>() { predictedHydrophobicity });
+                            }
+                        }
+                    }
+                }
+
+                foreach (int key in hydrobophobicites.Keys)
+                {
+                    averagesCommaStandardDeviations.Add(key, new Tuple<double, double>(hydrobophobicites[key].Average(), hydrobophobicites[key].StandardDeviation()));
+                }
+
+                rtHydrophobicityAvgDev.Add(filename ?? filepathSubstitue, averagesCommaStandardDeviations);
+            }
+            return rtHydrophobicityAvgDev;
+        }
+
         /// <summary>
         /// Assuming that we want to use different sets of training features for different search types, the search type needs to be determined.
         /// In the future, we may have that specified in the GUI and this will be moot.
@@ -183,19 +236,19 @@ namespace EngineLayer
             }
         }
 
-        private static float GetSSRCalcHydrophobicityZScore(PeptideSpectralMatch psm, PeptideWithSetModifications Peptide, Dictionary<string, Dictionary<int, double>> avg, Dictionary<string, Dictionary<int, double>> dev)
+        private static float GetSSRCalcHydrophobicityZScore(PeptideSpectralMatch psm, PeptideWithSetModifications Peptide, Dictionary<string, Dictionary<int, Tuple<double, double>>> d)
         {
             //Using SSRCalc3 but probably any number of different calculators could be used instead. One could also use the CE mobility.
             SSRCalc3 calc = new SSRCalc3("SSRCalc 3.0 (300A)", SSRCalc3.Column.A300);
             double hydrophobicityZscore = double.NaN;
 
-            if (avg.ContainsKey(psm.FullFilePath ?? filepathSubstitue) && dev.ContainsKey(psm.FullFilePath ?? filepathSubstitue))
+            if (d.ContainsKey(psm.FullFilePath ?? filepathSubstitue))
             {
                 int time = (int)Math.Round(psm.ScanRetentionTime, 0);
-                if (avg[psm.FullFilePath ?? filepathSubstitue].ContainsKey(time))
+                if (d[psm.FullFilePath ?? filepathSubstitue].Keys.Contains(time))
                 {
                     double predictedHydrophobicity = calc.ScoreSequence(Peptide);
-                    hydrophobicityZscore = Math.Abs(avg[psm.FullFilePath ?? filepathSubstitue][time] - predictedHydrophobicity) / dev[psm.FullFilePath ?? filepathSubstitue][time];
+                    hydrophobicityZscore = Math.Abs(d[psm.FullFilePath ?? filepathSubstitue][time].Item1 - predictedHydrophobicity) / d[psm.FullFilePath ?? filepathSubstitue][time].Item2;
                 }
             }
 
@@ -205,67 +258,6 @@ namespace EngineLayer
             }
 
             return (float)hydrophobicityZscore;
-        }
-
-        private static (Dictionary<string, Dictionary<int, double>>, Dictionary<string, Dictionary<int, double>>) FillHydrophobicityDictionaries(List<PeptideSpectralMatch> psms, bool modified)
-        {
-            SSRCalc3 calc = new SSRCalc3("SSRCalc 3.0 (300A)", SSRCalc3.Column.A300);
-            Dictionary<string, Dictionary<int, double>> localRetentionTimeHydrophobicityDeviation = new Dictionary<string, Dictionary<int, double>>();
-            Dictionary<string, Dictionary<int, double>> localRetentionTimeHydrophobicityAverage = new Dictionary<string, Dictionary<int, double>>();
-
-            List<string> filenames = psms.Select(f => f.FullFilePath).ToList();
-
-            filenames = filenames.Distinct().ToList();
-
-            foreach (string filename in filenames)
-            {
-                Dictionary<int, List<double>> hydrobophobicites = new Dictionary<int, List<double>>();
-                Dictionary<int, double> averages = new Dictionary<int, double>();
-                Dictionary<int, double> deviations = new Dictionary<int, double>();
-
-                foreach (PeptideSpectralMatch psm in psms.Where(f => (f.FullFilePath == filename || f.FullFilePath == null) && f.FdrInfo.QValue <= 0.01))
-                {
-                    foreach ((int notch, PeptideWithSetModifications pwsm) in psm.BestMatchingPeptides)
-                    {
-                        if (pwsm.BaseSequence.Equals(pwsm.FullSequence) && !modified)
-                        {
-                            double predictedHydrophobicity = calc.ScoreSequence(pwsm);
-                            int possibleKey = (int)Math.Round(psm.ScanRetentionTime, 0);
-                            if (hydrobophobicites.ContainsKey(possibleKey))
-                            {
-                                hydrobophobicites[possibleKey].Add(predictedHydrophobicity);
-                            }
-                            else
-                            {
-                                hydrobophobicites.Add(possibleKey, new List<double>() { predictedHydrophobicity });
-                            }
-                        }
-                        else if (!pwsm.BaseSequence.Equals(pwsm.FullSequence) && modified)
-                        {
-                            double predictedHydrophobicity = calc.ScoreSequence(pwsm);
-                            int possibleKey = (int)Math.Round(psm.ScanRetentionTime, 0);
-                            if (hydrobophobicites.ContainsKey(possibleKey))
-                            {
-                                hydrobophobicites[possibleKey].Add(predictedHydrophobicity);
-                            }
-                            else
-                            {
-                                hydrobophobicites.Add(possibleKey, new List<double>() { predictedHydrophobicity });
-                            }
-                        }
-                    }
-                }
-
-                foreach (int key in hydrobophobicites.Keys)
-                {
-                    averages.Add(key, hydrobophobicites[key].Average());
-                    deviations.Add(key, hydrobophobicites[key].StandardDeviation());
-                }
-
-                localRetentionTimeHydrophobicityAverage.Add(filename ?? filepathSubstitue, averages);
-                localRetentionTimeHydrophobicityDeviation.Add(filename ?? filepathSubstitue, deviations);
-            }
-            return (localRetentionTimeHydrophobicityAverage, localRetentionTimeHydrophobicityDeviation);
         }
 
         private static Dictionary<string, int> GetSequenceToPSMCount(List<PeptideSpectralMatch> psms)
@@ -289,7 +281,7 @@ namespace EngineLayer
         }
 
         //This method ignores ambiguity and loads only the first peptide in a series for each PSM
-        public static IEnumerable<PsmData> CreatePsmData(List<PeptideSpectralMatch> psms, Dictionary<string, int> sequenceToPsmCount, Dictionary<string, Dictionary<int, double>> avg, Dictionary<string, Dictionary<int, double>> dev, Dictionary<string, Dictionary<int, double>> avg_Mod, Dictionary<string, Dictionary<int, double>> dev_Mod, string searchType, bool? trueOrFalse = null)
+        public static IEnumerable<PsmData> CreatePsmData(List<PeptideSpectralMatch> psms, Dictionary<string, int> sequenceToPsmCount, Dictionary<string, Dictionary<int, Tuple<double, double>>> timeDependantHydrophobicityAverageAndDeviation_unmodified, Dictionary<string, Dictionary<int, Tuple<double, double>>> timeDependantHydrophobicityAverageAndDeviation_modified, string searchType, bool? trueOrFalse = null)
         {
             List<PsmData> pd = new List<PsmData>();
             foreach (PeptideSpectralMatch psm in psms)
@@ -302,12 +294,12 @@ namespace EngineLayer
                 else if (psm.IsDecoy || psm.FdrInfo.QValue > 0.25)
                 {
                     label = false;
-                    pd.Add(CreateOnePsmDataEntry(psm, sequenceToPsmCount, avg, dev, avg_Mod, dev_Mod, null, searchType, null, label));
+                    pd.Add(CreateOnePsmDataEntry(psm, sequenceToPsmCount, timeDependantHydrophobicityAverageAndDeviation_unmodified, timeDependantHydrophobicityAverageAndDeviation_modified, null, searchType, null, label));
                 }
                 else if (!psm.IsDecoy && psm.FdrInfo.QValue <= 0.01)
                 {
                     label = true;
-                    pd.Add(CreateOnePsmDataEntry(psm, sequenceToPsmCount, avg, dev, avg_Mod, dev_Mod, null, searchType, null, label));
+                    pd.Add(CreateOnePsmDataEntry(psm, sequenceToPsmCount, timeDependantHydrophobicityAverageAndDeviation_unmodified, timeDependantHydrophobicityAverageAndDeviation_modified, null, searchType, null, label));
                 }
             }
             return pd.AsEnumerable();
@@ -322,7 +314,7 @@ namespace EngineLayer
         /// <param name="notchToUse"></param>
         /// <param name="trueOrFalse"></param>
         /// <returns></returns>
-        public static PsmData CreateOnePsmDataEntry(PeptideSpectralMatch psm, Dictionary<string, int> sequenceToPsmCount, Dictionary<string, Dictionary<int, double>> avg, Dictionary<string, Dictionary<int, double>> dev, Dictionary<string, Dictionary<int, double>> avg_Mod, Dictionary<string, Dictionary<int, double>> dev_Mod, PeptideWithSetModifications selectedPeptide, string searchType, int? notchToUse, bool? trueOrFalse = null)
+        public static PsmData CreateOnePsmDataEntry(PeptideSpectralMatch psm, Dictionary<string, int> sequenceToPsmCount, Dictionary<string, Dictionary<int, Tuple<double, double>>> timeDependantHydrophobicityAverageAndDeviation_unmodified, Dictionary<string, Dictionary<int, Tuple<double, double>>> timeDependantHydrophobicityAverageAndDeviation_modified, PeptideWithSetModifications selectedPeptide, string searchType, int? notchToUse, bool? trueOrFalse = null)
         {
             float ambiguity = (float)psm.PeptidesToMatchingFragments.Keys.Count;
             float intensity = (float)(psm.Score - (int)psm.Score);
@@ -352,11 +344,11 @@ namespace EngineLayer
 
             if (selectedPeptide.BaseSequence.Equals(selectedPeptide.FullSequence) && searchType == "standard")
             {
-                hydrophobicityZscore = GetSSRCalcHydrophobicityZScore(psm, selectedPeptide, avg, dev);
+                hydrophobicityZscore = GetSSRCalcHydrophobicityZScore(psm, selectedPeptide, timeDependantHydrophobicityAverageAndDeviation_unmodified);
             }
             else if (searchType == "standard")
             {
-                hydrophobicityZscore = GetSSRCalcHydrophobicityZScore(psm, selectedPeptide, avg_Mod, dev_Mod);
+                hydrophobicityZscore = GetSSRCalcHydrophobicityZScore(psm, selectedPeptide, timeDependantHydrophobicityAverageAndDeviation_modified);
             }
 
             bool label;
