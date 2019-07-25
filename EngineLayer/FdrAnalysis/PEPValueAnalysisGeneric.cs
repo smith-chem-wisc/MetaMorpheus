@@ -24,6 +24,9 @@ namespace EngineLayer
             //file separately. An individully measured hydrobophicty calculated for a specific PSM sequence is compared to these values by computing
             //the z-score. That z-score is used in the the machine learning.
             //Separate dictionaries are created for peptides with modifications becuase SSRcalc doesn't really do a good job predicting hyrophobicity
+
+            //The first string in the dictionary is the filename
+            //The value of the dictionary is another dictionary that profiles the hydrophobicity behavior. Each key is a retention time rounded to the nearest minute. The value Tuple is the average and standard deviation, respectively of all observed hydrophobicities at that time.
             Dictionary<string, Dictionary<int, Tuple<double, double>>> fileSpecificTimeDependantHydrophobicityAverageAndDeviation_unmodified = new Dictionary<string, Dictionary<int, Tuple<double, double>>>();
             Dictionary<string, Dictionary<int, Tuple<double, double>>> fileSpecificTimeDependantHydrophobicityAverageAndDeviation_modified = new Dictionary<string, Dictionary<int, Tuple<double, double>>>();
 
@@ -142,7 +145,7 @@ namespace EngineLayer
             //mlContext.Model.Save(trainedModel, trainingData.Schema, @"C:\Users\User\Downloads\TrainedModel.zip");
         }
 
-        private static Dictionary<string, Dictionary<int, Tuple<double, double>>> ComputeHydrophobicityValues(List<PeptideSpectralMatch> psms, bool modified)
+        private static Dictionary<string, Dictionary<int, Tuple<double, double>>> ComputeHydrophobicityValues(List<PeptideSpectralMatch> psms, bool computeHydrophobicitiesforModifiedPeptides)
         {
             SSRCalc3 calc = new SSRCalc3("SSRCalc 3.0 (300A)", SSRCalc3.Column.A300);
             Dictionary<string, Dictionary<int, Tuple<double, double>>> rtHydrophobicityAvgDev = new Dictionary<string, Dictionary<int, Tuple<double, double>>>();
@@ -160,7 +163,7 @@ namespace EngineLayer
                 {
                     foreach ((int notch, PeptideWithSetModifications pwsm) in psm.BestMatchingPeptides)
                     {
-                        if (pwsm.BaseSequence.Equals(pwsm.FullSequence) && !modified)
+                        if (pwsm.AllModsOneIsNterminus.Any() && !computeHydrophobicitiesforModifiedPeptides)
                         {
                             double predictedHydrophobicity = calc.ScoreSequence(pwsm);
                             int possibleKey = (int)Math.Round(psm.ScanRetentionTime, 0);
@@ -173,7 +176,7 @@ namespace EngineLayer
                                 hydrobophobicites.Add(possibleKey, new List<double>() { predictedHydrophobicity });
                             }
                         }
-                        else if (!pwsm.BaseSequence.Equals(pwsm.FullSequence) && modified)
+                        else if (!pwsm.AllModsOneIsNterminus.Any() && computeHydrophobicitiesforModifiedPeptides)
                         {
                             double predictedHydrophobicity = calc.ScoreSequence(pwsm);
                             int possibleKey = (int)Math.Round(psm.ScanRetentionTime, 0);
@@ -191,6 +194,7 @@ namespace EngineLayer
 
                 foreach (int key in hydrobophobicites.Keys)
                 {
+                    //TODO consider using inner-quartile range instead of standard deviation
                     averagesCommaStandardDeviations.Add(key, new Tuple<double, double>(hydrobophobicites[key].Average(), hydrobophobicites[key].StandardDeviation()));
                 }
 
