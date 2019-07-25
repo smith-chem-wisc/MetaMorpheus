@@ -14,8 +14,6 @@ namespace EngineLayer
 {
     public static class PEP_Analysis
     {
-        //private static readonly string filepathSubstitue = "SubstitueFilePath";//this is only for unit test that have psms with no filename.
-
         public static string ComputePEPValuesForAllPSMsGeneric(List<PeptideSpectralMatch> psms)
         {
             string searchType = DetermineSearchType(psms);
