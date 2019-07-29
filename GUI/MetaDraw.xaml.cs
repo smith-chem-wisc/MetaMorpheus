@@ -658,7 +658,7 @@ namespace MetaMorpheusGUI
 
                     string filePath = Path.Combine(Path.GetDirectoryName(tsvResultsFilePath), "MetaDrawExport", psm.Ms2ScanNumber + "_" + myString + ".pdf");
                     string dir = Path.GetDirectoryName(filePath);
-                    
+
                     if (!Directory.Exists(dir))
                     {
                         Directory.CreateDirectory(dir);

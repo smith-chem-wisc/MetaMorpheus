@@ -156,7 +156,8 @@ namespace EngineLayer.FdrAnalysis
             if (AnalysisType == "PSM")
             {
                 CountPsm();
-                if (AllPsms.Count > 0)
+                //Need some reasonable number of PSMs to train on to get a reasonable estimation of the PEP
+                if (AllPsms.Count > 100)
                 {
                     myAnalysisResults.BinarySearchTreeMetrics = PEP_Analysis.ComputePEPValuesForAllPSMsGeneric(AllPsms);
                     Compute_PEPValue_Based_QValue(AllPsms);
