@@ -140,7 +140,7 @@ namespace MetaMorpheusGUI
             }
         }
 
-        private void LoadPsms(string filename)
+        private void LoadPsms(string filename, bool loadPsmsOfAllSpectraFiles)
         {
             allPsms.Clear();
 
@@ -152,7 +152,7 @@ namespace MetaMorpheusGUI
                 // TODO: print warnings
                 foreach (var psm in PsmTsvReader.ReadTsv(filename, out List<string> warnings))
                 {
-                    if (spectraFilePath == null || psm.Filename == fileNameWithExtension || psm.Filename == fileNameWithoutExtension || psm.Filename.Contains(fileNameWithoutExtension))
+                    if (loadPsmsOfAllSpectraFiles || psm.Filename == fileNameWithExtension || psm.Filename == fileNameWithoutExtension || psm.Filename.Equals(fileNameWithoutExtension + "-calib")) // in case results are from a calibrated file
                     {
                         allPsms.Add(psm);
                     }
@@ -182,6 +182,7 @@ namespace MetaMorpheusGUI
         private void GroupPsmsBySourceFile()
         {
             psmsBySourceFile.Clear();
+            selectPsmSourceFileComboBox.Items.Clear();
 
             foreach (PsmFromTsv psm in filteredListOfPsms)
             {
@@ -436,7 +437,7 @@ namespace MetaMorpheusGUI
 
             // load the PSMs
             this.prgsText.Content = "Loading PSMs...";
-            LoadPsms(tsvResultsFilePath);
+            LoadPsms(tsvResultsFilePath, false);
             DisplayLoadedAndFilteredPsms();
 
             // done loading - restore controls
@@ -471,7 +472,8 @@ namespace MetaMorpheusGUI
 
         private void LoadPsmsStat(string filepath)
         {
-            LoadPsms(filepath);
+
+            LoadPsms(filepath, true);
             DisplayLoadedAndFilteredPsms();
             GroupPsmsBySourceFile();
         }

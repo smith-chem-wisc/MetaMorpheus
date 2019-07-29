@@ -221,6 +221,7 @@
                                 <Button Name="loadFilesStat" Content="Load File" Width="100" Click="loadFilesButtonStat_Click"/>
                             </DockPanel>
 
+                            <!--Select psms to display by source file-->
                             <DockPanel Grid.Row="2">
                                 <Label Content="Source file: " Width="70" VerticalAlignment="Center"/>
                                 <ComboBox x:Name="selectPsmSourceFileComboBox" VerticalAlignment="Center" DropDownClosed="selectPsmSourceFile_Closed"/>
