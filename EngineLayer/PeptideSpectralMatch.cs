@@ -324,12 +324,21 @@ namespace EngineLayer
 
         private PeptideSpectralMatch(PeptideSpectralMatch psm, List<(int Notch, PeptideWithSetModifications Peptide)> bestMatchingPeptides)
         {
-            _BestMatchingPeptides = bestMatchingPeptides ?? psm.BestMatchingPeptides.ToList();
+            if(bestMatchingPeptides==null)
+            {
+                _BestMatchingPeptides = psm.BestMatchingPeptides.ToList();
+                BaseSequence = psm.BaseSequence;
+                FullSequence = psm.FullSequence;
+            }
+            else
+            {
+                _BestMatchingPeptides = bestMatchingPeptides;
+                BaseSequence = PsmTsvWriter.Resolve(bestMatchingPeptides.Select(b => b.Peptide.BaseSequence)).ResolvedValue;
+                FullSequence = PsmTsvWriter.Resolve(bestMatchingPeptides.Select(b => b.Peptide.FullSequence)).ResolvedValue;                
+            }
 
             ModsChemicalFormula = psm.ModsChemicalFormula;
-            FullSequence = psm.FullSequence;
             Notch = psm.Notch;
-            BaseSequence = psm.BaseSequence;
             PeptideLength = psm.PeptideLength;
             OneBasedStartResidueInProtein = psm.OneBasedStartResidueInProtein;
             OneBasedEndResidueInProtein = psm.OneBasedEndResidueInProtein;

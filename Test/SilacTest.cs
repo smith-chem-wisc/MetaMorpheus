@@ -168,8 +168,6 @@ namespace Test
             Directory.Delete(outputFolder, true);
             File.Delete(xmlName);
             File.Delete(mzmlName);
-
-
         }
 
         [Test]
@@ -310,6 +308,61 @@ namespace Test
             string outputFolder = Path.Combine(TestContext.CurrentContext.TestDirectory, @"TestSilac");
             Directory.CreateDirectory(outputFolder);
             var theStringResult = task.RunTask(outputFolder, new List<DbForTask> { new DbForTask(xmlName, false) }, new List<string> { mzmlName }, "taskId1").ToString();
+        }
+
+        [Test]
+        public static void TurnoverTest()
+        {
+            //make heavy residue and add to search task
+            Residue heavyLysine = new Residue("a", 'a', "a", Chemistry.ChemicalFormula.ParseFormula("C{13}6H12N{15}2O"), ModificationSites.All); //+8 lysine
+            //Residue.AddNewResiduesToDictionary(new List<Residue> { heavyLysine });
+            Residue lightLysine = Residue.GetResidue('K');
+
+            SearchTask task = new SearchTask
+            {
+                SearchParameters = new SearchParameters
+                {
+                    TurnoverLabels = (null, new SilacLabel(lightLysine.Letter, heavyLysine.Letter, heavyLysine.ThisChemicalFormula.Formula, heavyLysine.MonoisotopicMass - lightLysine.MonoisotopicMass)),
+                    NoOneHitWonders = true
+                    //The NoOneHitWonders=true doesn't really seem like a SILAC test, but we're testing that there's no crash if a quantified peptide's proteinGroup isn't quantified
+                    //This happens if somebody messed with parsimony (picked TDS) or from requiring two peptides per protein (and we're only finding one). We're testing the second case here.
+                }
+            };
+
+            PeptideWithSetModifications mixedPeptide = new PeptideWithSetModifications("PEPTKIDEK", new Dictionary<string, Modification>());
+            double massShift = heavyLysine.MonoisotopicMass - lightLysine.MonoisotopicMass;
+            List<double> massDifferences = new List<double> {massShift,massShift*2  }; //LH and HH
+            MsDataFile myMsDataFile1 = new TestDataFile(mixedPeptide, massDifferences);
+            string mzmlName = @"silac.mzML";
+            IO.MzML.MzmlMethods.CreateAndWriteMyMzmlWithCalibratedSpectra(myMsDataFile1, mzmlName, false);
+
+            string xmlName = "SilacDb.xml";
+            Protein theProtein = new Protein("PEPTKIDEK", "accession1");
+            ProteinDbWriter.WriteXmlDatabase(new Dictionary<string, HashSet<Tuple<int, Modification>>>(), new List<Protein> { theProtein }, xmlName);
+
+            string outputFolder = Path.Combine(TestContext.CurrentContext.TestDirectory, @"TestSilac");
+            Directory.CreateDirectory(outputFolder);
+            var theStringResult = task.RunTask(outputFolder, new List<DbForTask> { new DbForTask(xmlName, false) }, new List<string> { mzmlName }, "taskId1").ToString();
+
+            string[] output = File.ReadAllLines(TestContext.CurrentContext.TestDirectory + @"/TestSilac/AllQuantifiedPeptides.tsv");
+            Assert.IsTrue(output[1].Contains("PEPTKIDEK\t")); //test the unlabeled is present
+            Assert.IsTrue(output[0].Contains("\tIntensity_silac_Old\tIntensity_silac_New\tDetection Type_silac_Old\tDetection Type_silac_New\t")); //test filename changes
+            Assert.IsTrue(output[1].Contains("\t656250\t875000\t")); //test intensities
+
+            output = File.ReadAllLines(TestContext.CurrentContext.TestDirectory + @"/TestSilac/AllQuantifiedPeaks.tsv");
+            Assert.AreEqual(output.Length, 4); //header, unlabeled, mixed, labeled
+            Assert.IsTrue(output[1].Contains("\tPEPTKIDEK\t")); //test the unlabeled is present
+            Assert.IsTrue(output[1].Contains("\t875000\t")); //test intensity
+            Assert.IsTrue(output[2].Contains("\tPEPTK(+8.014)IDEK\t")); //test human readable label (and lack thereof) is present
+            Assert.IsTrue(output[2].Contains("\t437500\t")); //test intensity
+            Assert.IsTrue(output[3].Contains("\tPEPTK(+8.014)IDEK(+8.014)\t")); //test the unlabeled is present
+            Assert.IsTrue(output[3].Contains("\t218750\t")); //test intensity
+            Assert.IsTrue(output[3].Contains("silac\t")); //test human readable labels are present
+
+            //delete files
+            Directory.Delete(outputFolder, true);
+            File.Delete(xmlName);
+            File.Delete(mzmlName);
         }
     }
 }

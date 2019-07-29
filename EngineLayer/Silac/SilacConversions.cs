@@ -11,6 +11,62 @@ namespace EngineLayer
     public static class SilacConversions
     {
         private static readonly string LABEL_DELIMITER = " & ";
+
+        public static string GetLabeledBaseSequence(string unlabeledBaseSequence, SilacLabel label)
+        {
+            if (label != null)
+            {
+                string labeledBaseSequence = unlabeledBaseSequence.Replace(label.OriginalAminoAcid, label.AminoAcidLabel);
+                if (label.AdditionalLabels != null)
+                {
+                    foreach (SilacLabel additionalLabel in label.AdditionalLabels)
+                    {
+                        labeledBaseSequence = labeledBaseSequence.Replace(additionalLabel.OriginalAminoAcid, additionalLabel.AminoAcidLabel);
+                    }
+                }
+                return labeledBaseSequence;
+            }
+            else
+            {
+                return unlabeledBaseSequence;
+            }
+        }
+
+        public static string ConvertToUnlabeled(List<char> labeledResidues, List<char> unlabeledResidues, string baseSequenceToConvert)
+        {
+            char[] baseSequence = baseSequenceToConvert.ToCharArray();
+            for (int i = 0; i < baseSequence.Length; i++)
+            {
+                char currentChar = baseSequence[i];
+                for(int j=0; j< labeledResidues.Count; j++)
+                {
+                    if (labeledResidues[j] == currentChar)
+                    {
+                        baseSequence[i] = labeledResidues[j];
+                        break;
+                    }
+                }
+            }
+            return string.Concat(baseSequence);
+        }
+
+        public static PeptideSpectralMatch GetLabeledPsm(PeptideSpectralMatch psm, int notch, PeptideWithSetModifications pwsm, string labeledBaseSequence)
+        {
+            PeptideWithSetModifications labeledPwsm = new PeptideWithSetModifications(
+                pwsm.Protein,
+                pwsm.DigestionParams,
+                pwsm.OneBasedStartResidueInProtein,
+                pwsm.OneBasedEndResidueInProtein,
+                pwsm.CleavageSpecificityForFdrCategory,
+                pwsm.PeptideDescription,
+                pwsm.MissedCleavages,
+                pwsm.AllModsOneIsNterminus,
+                pwsm.NumFixedMods,
+                labeledBaseSequence);
+            return psm.Clone(new List<(int Notch, PeptideWithSetModifications Peptide)> { (notch, labeledPwsm) });
+
+        }
+
         public static PeptideSpectralMatch GetSilacPsm(PeptideSpectralMatch psm, SilacLabel silacLabel, bool heavyToLight)
         {
             if (silacLabel == null)
@@ -290,10 +346,32 @@ namespace EngineLayer
 
         public static PeptideWithSetModifications CreateSilacPwsm(bool heavyToLight, SilacLabel silacLabel, PeptideWithSetModifications pwsm)
         {
-            Protein modifiedProtein = CreateSilacProtein(heavyToLight, silacLabel, pwsm.Protein);
+            string baseSequence = pwsm.BaseSequence;
+            if (heavyToLight)
+            {
+                baseSequence = baseSequence.Replace(silacLabel.AminoAcidLabel, silacLabel.OriginalAminoAcid); //create light sequence
+                if (silacLabel.AdditionalLabels != null)
+                {
+                    foreach (SilacLabel additionalLabel in silacLabel.AdditionalLabels)
+                    {
+                        baseSequence = baseSequence.Replace(additionalLabel.AminoAcidLabel, additionalLabel.OriginalAminoAcid); //create light sequence
+                    }
+                }
+            }
+            else
+            {
+                baseSequence = baseSequence.Replace(silacLabel.OriginalAminoAcid, silacLabel.AminoAcidLabel); //create heavy sequence
+                if (silacLabel.AdditionalLabels != null)
+                {
+                    foreach (SilacLabel additionalLabel in silacLabel.AdditionalLabels)
+                    {
+                        baseSequence = baseSequence.Replace(additionalLabel.OriginalAminoAcid, additionalLabel.AminoAcidLabel); //create heavy sequence
+                    }
+                }
+            }
 
             return new PeptideWithSetModifications(
-                modifiedProtein,
+                pwsm.Protein,
                 pwsm.DigestionParams,
                 pwsm.OneBasedStartResidueInProtein,
                 pwsm.OneBasedEndResidueInProtein,
@@ -301,7 +379,8 @@ namespace EngineLayer
                 pwsm.PeptideDescription,
                 pwsm.MissedCleavages,
                 pwsm.AllModsOneIsNterminus,
-                pwsm.NumFixedMods);
+                pwsm.NumFixedMods,
+                baseSequence);
         }
 
         public static SilacLabel AssignValidHeavyCharacter(SilacLabel originalLabel, char heavyLabel)
@@ -319,17 +398,24 @@ namespace EngineLayer
 
         public static SpectraFileInfo GetHeavyFileInfo(SpectraFileInfo originalFile, SilacLabel label)
         {
-            string heavyFileName = originalFile.FilenameWithoutExtension + "(" + label.OriginalAminoAcid + label.MassDifference;
-            if (label.AdditionalLabels != null)
+            if (label == null)
             {
-                foreach (SilacLabel additionaLabel in label.AdditionalLabels)
-                {
-                    heavyFileName += LABEL_DELIMITER + additionaLabel.OriginalAminoAcid + additionaLabel.MassDifference;
-                }
+                return originalFile;
             }
-            heavyFileName += ")." + originalFile.FullFilePathWithExtension.Split('.').Last(); //add extension
+            else
+            {
+                string heavyFileName = originalFile.FilenameWithoutExtension + "(" + label.OriginalAminoAcid + label.MassDifference;
+                if (label.AdditionalLabels != null)
+                {
+                    foreach (SilacLabel additionaLabel in label.AdditionalLabels)
+                    {
+                        heavyFileName += LABEL_DELIMITER + additionaLabel.OriginalAminoAcid + additionaLabel.MassDifference;
+                    }
+                }
+                heavyFileName += ")." + originalFile.FullFilePathWithExtension.Split('.').Last(); //add extension
 
-            return new SpectraFileInfo(heavyFileName, originalFile.Condition, originalFile.BiologicalReplicate, originalFile.TechnicalReplicate, originalFile.Fraction);
+                return new SpectraFileInfo(heavyFileName, originalFile.Condition, originalFile.BiologicalReplicate, originalFile.TechnicalReplicate, originalFile.Fraction);
+            }
         }
 
 
@@ -491,7 +577,7 @@ namespace EngineLayer
                             foreach (var id in peak.Identifications)
                             {
                                 SilacLabel label = GetRelevantLabelFromBaseSequence(id.BaseSequence, silacLabels);
-                                HashSet<FlashLFQ.ProteinGroup> originalGroups = id.proteinGroups;
+                                HashSet<FlashLFQ.ProteinGroup> originalGroups = id.ProteinGroups;
                                 List<FlashLFQ.ProteinGroup> updatedGroups = new List<FlashLFQ.ProteinGroup>();
                                 foreach (FlashLFQ.ProteinGroup group in originalGroups)
                                 {
@@ -513,12 +599,12 @@ namespace EngineLayer
                                 }
 
                                 Identification updatedId = new Identification(
-                                    id.fileInfo,
+                                    id.FileInfo,
                                     GetSilacLightBaseSequence(id.BaseSequence, label),
                                     GetSilacLightFullSequence(id.ModifiedSequence, label),
-                                    id.monoisotopicMass,
-                                    id.ms2RetentionTimeInMinutes,
-                                    id.precursorChargeState,
+                                    id.MonoisotopicMass,
+                                    id.Ms2RetentionTimeInMinutes,
+                                    id.PrecursorChargeState,
                                     updatedGroups,
                                     id.OptionalChemicalFormula,
                                     id.UseForProteinQuant
@@ -579,7 +665,7 @@ namespace EngineLayer
                                 updatedPeptide.SetIntensity(info, 0);
                                 updatedPeptide.SetDetectionType(info, DetectionType.NotDetected);
                             }
-                            HashSet<FlashLFQ.ProteinGroup> originalGroups = currentPeptide.proteinGroups;
+                            HashSet<FlashLFQ.ProteinGroup> originalGroups = currentPeptide.ProteinGroups;
                             HashSet<FlashLFQ.ProteinGroup> updatedGroups = new HashSet<FlashLFQ.ProteinGroup>();
                             foreach (FlashLFQ.ProteinGroup group in originalGroups)
                             {
@@ -587,7 +673,7 @@ namespace EngineLayer
                                 groupName = groupName.Replace(label.MassDifference, "");
                                 updatedGroups.Add(new FlashLFQ.ProteinGroup(groupName, group.GeneName, group.Organism));
                             }
-                            updatedPeptide.proteinGroups = updatedGroups;
+                            updatedPeptide.ProteinGroups = updatedGroups;
                             lfqPwsms[updatedPeptide.Sequence] = updatedPeptide;
                         }
                     }

@@ -601,6 +601,14 @@ namespace MetaMorpheusGUI
                         {
                             TheTask.SearchParameters.TurnoverLabels = (ConvertSilacDataGridInfoToSilacLabel(startLabel), ConvertSilacDataGridInfoToSilacLabel(endLabel));
                         }
+
+                        //check there aren't three options
+                        if (StaticSilacLabelsObservableCollection.Count == 2 && CheckBoxQuantifyUnlabeledForSilac.IsChecked.Value)
+                        {
+                            MessageBox.Show("'Quantify unlabeled peptides/proteins' was checked, but a start and end condition were already specified for the turnover experiment." +
+                                "\nUncheck this box or remove one of the conditions.");
+                            return;
+                        }
                     }
                     else //there are too many labels for a turnover experiment, but it's not a multiplex?
                     {

@@ -114,10 +114,10 @@ namespace TaskLayer
 
             //if SILAC
             List<PeptideSpectralMatch> psmsForProteinParsimony = Parameters.AllPsms;
-            if (Parameters.SearchParameters.SilacLabels != null)
-            {
-                psmsForProteinParsimony = SilacConversions.UpdatePsmsForParsimony(Parameters.SearchParameters.SilacLabels, psmsForProteinParsimony);
-            }
+            //if (Parameters.SearchParameters.SilacLabels != null)
+            //{
+            //    psmsForProteinParsimony = SilacConversions.UpdatePsmsForParsimony(Parameters.SearchParameters.SilacLabels, psmsForProteinParsimony);
+            //}
 
             // run parsimony
             ProteinParsimonyResults proteinAnalysisResults = (ProteinParsimonyResults)(new ProteinParsimonyEngine(psmsForProteinParsimony, Parameters.SearchParameters.ModPeptidesAreDifferent, CommonParameters, new List<string> { Parameters.SearchTaskId }).Run());
@@ -227,63 +227,6 @@ namespace TaskLayer
                 && !p.IsDecoy
                 && p.FullSequence != null).ToList(); //if ambiguous, there's no full sequence
 
-            //If SILAC (Pre-Quantification) preparation
-            Dictionary<PeptideSpectralMatch, List<PeptideSpectralMatch>> silacPsmMatcher = new Dictionary<PeptideSpectralMatch, List<PeptideSpectralMatch>>(); //use for getting back info once we've separated light/heavy. It is the light psm for the key, and the list of heavy psm replicas for the value.
-            Dictionary<string, List<string>> silacProteinGroupMatcher = new Dictionary<string, List<string>>(); //use for getting back info once we've separated light/heavy. It is the light protein group for the key, and a list of heavy protein group replicas for the value.
-            if (Parameters.SearchParameters.SilacLabels != null)
-            {
-                //PEPTIDE LEVEL CHANGES
-                //go through all the psms and duplicate them until a psm copy exists for the unlabeled and labeled proteins
-                //The number of psms should roughly increase by a factor of N, where N is the number of labels.
-                //It may not increase exactly by a factor of N if the amino acid that gets labeled doesn't exist in the peptide
-                List<SilacLabel> allSilacLabels = Parameters.SearchParameters.SilacLabels;
-                List<PeptideSpectralMatch> silacPsms = new List<PeptideSpectralMatch>();
-                foreach (PeptideSpectralMatch psm in unambiguousPsmsBelowOnePercentFdr)
-                {
-                    //see which label, if any, this peptide has
-                    string peptideBaseSequence = psm.BaseSequence;
-                    SilacLabel observedLabel = SilacConversions.GetRelevantLabelFromBaseSequence(peptideBaseSequence, allSilacLabels); //returns null if no label
-
-                    //if it's not the light form, make a light form and add it
-                    PeptideSpectralMatch lightPsm = observedLabel == null ? psm : SilacConversions.GetSilacPsm(psm, observedLabel, true);
-                    silacPsms.Add(lightPsm);
-
-                    //see which labels, if any, this peptide can have
-                    peptideBaseSequence = SilacConversions.GetSilacLightBaseSequence(peptideBaseSequence, observedLabel); //update to the light sequence, if applicable
-                    List<SilacLabel> labelsToModify = allSilacLabels.Where(x => peptideBaseSequence.Contains(x.OriginalAminoAcid)).ToList(); //see which residues can be labeled
-                    //foreach of the possible labels this peptide can have, add a new psm for it
-                    List<PeptideSpectralMatch> addedSilacPsms = labelsToModify.Select(x => SilacConversions.GetSilacPsm(lightPsm, x, false)).ToList(); //if we had a heavy psm to start with, this will create an identical heavy
-                    addedSilacPsms.ForEach(x => silacPsms.Add(x)); //add to psm list
-                    silacPsmMatcher[lightPsm] = addedSilacPsms; //add to match list
-                }
-
-                //update the list for FlashLFQ
-                silacPsms.ForEach(x => x.ResolveAllAmbiguities()); //update the base/full sequences
-                unambiguousPsmsBelowOnePercentFdr = silacPsms;
-
-
-                //PROTEIN LEVEL CHANGES
-                //Need to create the heavy proteins in our parsimony list and assign the heavy peptides to these heavy proteins
-                //During the search and protein parsimony, heavy and light peptides were considered to come from the same protein (light)
-                //Now, we want to quantify the light and heavy proteins separately and we need to differentiate them.
-                if (ProteinGroups != null) //if we did parsimony
-                {
-                    List<EngineLayer.ProteinGroup> silacProteinGroups = new List<EngineLayer.ProteinGroup>();
-                    foreach (EngineLayer.ProteinGroup proteinGroup in ProteinGroups)
-                    {
-                        //add the unlabeled protein group
-                        //this method removes the heavy psms from the protein groups and adds their light replica
-                        EngineLayer.ProteinGroup unlabeledProteinGroup = SilacConversions.GetSilacProteinGroups(unambiguousPsmsBelowOnePercentFdr, proteinGroup);
-                        silacProteinGroups.Add(unlabeledProteinGroup);
-                        //add the labeled protein group(s)
-                        List<EngineLayer.ProteinGroup> addedProteinGroups = allSilacLabels.Select(x => SilacConversions.GetSilacProteinGroups(unambiguousPsmsBelowOnePercentFdr, proteinGroup, x)).ToList(); //foreach label, create a new heavy protein group
-                        addedProteinGroups.ForEach(x => silacProteinGroups.Add(x)); //add to psm list
-                        silacProteinGroupMatcher[proteinGroup.ProteinGroupName] = addedProteinGroups.Select(x => x.ProteinGroupName).ToList(); //add to match list
-                    }
-                    ProteinGroups = silacProteinGroups;
-                }
-            } //END SILAC CODE
-
             // pass protein group info for each PSM
             var psmToProteinGroups = new Dictionary<PeptideSpectralMatch, List<FlashLFQ.ProteinGroup>>();
             if (ProteinGroups != null)
@@ -336,6 +279,136 @@ namespace TaskLayer
                 }
             }
 
+            //If SILAC (Pre-Quantification) preparation
+            //setup variables
+            List<SilacLabel> allSilacLabels = Parameters.SearchParameters.SilacLabels;
+            (SilacLabel startLabel, SilacLabel endLabel)? turnoverLabels = Parameters.SearchParameters.TurnoverLabels;
+            List<List<string>> psmMatcher = new List<List<string>>(); //list that keeps the duplicate psms together
+            bool quantifyUnlabeledPeptides = Parameters.ListOfDigestionParams.Any(x => x.GeneratehUnlabeledProteinsForSilac);
+            if (Parameters.SearchParameters.SilacLabels != null)
+            {
+                //go through all the psms and duplicate them until a psm copy exists for the unlabeled and labeled proteins
+                //The number of psms should roughly increase by a factor of N, where N is the number of labels.
+                //It may not increase exactly by a factor of N if the amino acid(s) that gets labeled doesn't exist in the peptide
+
+                List<PeptideSpectralMatch> silacPsms = new List<PeptideSpectralMatch>(); //populate with duplicate psms for heavy/light
+                HashSet<string> peptidesSaved = new HashSet<string>(); //hashset used to prevent adding duplicates to psmMatcher
+
+                //multiply the psms by the number of labels
+                foreach (PeptideSpectralMatch psm in unambiguousPsmsBelowOnePercentFdr)
+                {
+                    //get the original proteinGroup to give to the other psm clones
+                    List<FlashLFQ.ProteinGroup> originalProteinGroups = psmToProteinGroups[psm];
+
+                    string uniquePeptideForThisPsm = null;
+                    List<string> listToAddToPsmMatcher = null;
+                    //see which label, if any, this peptide has
+                    string peptideBaseSequence = psm.BaseSequence;
+                    SilacLabel observedLabel = SilacConversions.GetRelevantLabelFromBaseSequence(peptideBaseSequence, allSilacLabels); //returns null if no label
+
+                    //if it's not the light form, make a light form to start as a base. 
+                    PeptideSpectralMatch lightPsm = observedLabel == null ? psm : SilacConversions.GetSilacPsm(psm, observedLabel, true);
+
+                    //get easy access to values we need for new psm generation
+                    string unlabeledBaseSequence = lightPsm.BaseSequence;
+                    int notch = psm.BestMatchingPeptides.First().Notch;
+                    PeptideWithSetModifications pwsm = psm.BestMatchingPeptides.First().Peptide;
+
+                    //check if turnover or multiplex experiment
+                    if (turnoverLabels == null) //if multiplex
+                    {
+                        //If we need the light form, then add it
+                        if (quantifyUnlabeledPeptides)
+                        {
+                            silacPsms.Add(lightPsm);
+                            psmToProteinGroups[lightPsm] = originalProteinGroups; //add proteingroup info
+                            uniquePeptideForThisPsm = lightPsm.FullSequence;
+                            listToAddToPsmMatcher = new List<string> { uniquePeptideForThisPsm };
+                        }
+                        //take the unlabeled sequence and modify everything for each label
+                        foreach (SilacLabel label in allSilacLabels)
+                        {
+                            string labeledBaseSequence = SilacConversions.GetLabeledBaseSequence(unlabeledBaseSequence, label);
+
+                            //check we're not adding a duplicate (happens if none of the heavy amino acids are present in the peptide)
+                            if (!labeledBaseSequence.Equals(unlabeledBaseSequence))
+                            {
+                                PeptideSpectralMatch labeledPsm = SilacConversions.GetLabeledPsm(psm, notch, pwsm, labeledBaseSequence);
+                                psmToProteinGroups[labeledPsm] = originalProteinGroups; //add proteingroup info
+                                silacPsms.Add(labeledPsm);
+                                if (uniquePeptideForThisPsm == null)
+                                {
+                                    uniquePeptideForThisPsm = labeledPsm.FullSequence;
+                                    listToAddToPsmMatcher = new List<string> { uniquePeptideForThisPsm };
+                                }
+                                else
+                                {
+                                    listToAddToPsmMatcher.Add(labeledPsm.FullSequence);
+                                }
+                            }
+                        }
+                    }
+                    else //if turnover
+                    {
+                        SilacLabel startLabel = turnoverLabels.Value.startLabel;
+                        SilacLabel endLabel = turnoverLabels.Value.endLabel;
+
+                        //Convert everything to the startLabel
+                        string startLabeledBaseSequence = SilacConversions.GetLabeledBaseSequence(unlabeledBaseSequence, startLabel);
+
+                        //Convert everything to the endLabel
+                        string endLabeledBaseSequence = SilacConversions.GetLabeledBaseSequence(unlabeledBaseSequence, endLabel);
+
+                        //figure out which residues can be changed
+                        List<int> differentResidues = new List<int>();
+                        List<char> startUniqueResidues = new List<char>();
+                        List<char> endUniqueResidues = new List<char>();
+                        for (int i = 0; i < startLabeledBaseSequence.Length; i++)
+                        {
+                            char startChar = startLabeledBaseSequence[i];
+                            char endChar = endLabeledBaseSequence[i];
+                            if (startChar != endChar)
+                            {
+                                differentResidues.Add(i);
+                                startUniqueResidues.Add(startChar);
+                                endUniqueResidues.Add(endChar);
+                            }
+                        }
+
+                        //create missed cleavage combinations (only create HL; don't make HL and LH or FlashLFQ freaks at the ambiguity)
+                        List<string> labeledBaseSequences = new List<string> { startLabeledBaseSequence };
+                        string sequenceToModify = startLabeledBaseSequence;
+                        for (int i = 0; i < differentResidues.Count; i++)
+                        {
+                            int index = differentResidues[i];
+                            char[] charArray = sequenceToModify.ToCharArray();
+                            charArray[differentResidues[i]] = endUniqueResidues[i];
+                            sequenceToModify = string.Concat(charArray);
+                            labeledBaseSequences.Add(sequenceToModify);
+                        }
+                        //add them
+                        foreach (string sequence in labeledBaseSequences)
+                        {
+                            PeptideSpectralMatch labeledPsm = SilacConversions.GetLabeledPsm(psm, notch, pwsm, sequence);
+                            silacPsms.Add(labeledPsm);
+                            psmToProteinGroups[labeledPsm] = originalProteinGroups; //add proteingroup info
+                            if (uniquePeptideForThisPsm == null)
+                            {
+                                uniquePeptideForThisPsm = labeledPsm.FullSequence;
+                                listToAddToPsmMatcher = new List<string> { uniquePeptideForThisPsm };
+                            }
+                            else
+                            {
+                                listToAddToPsmMatcher.Add(labeledPsm.FullSequence);
+                            }
+                        }
+                    }
+                }
+                //update the list for FlashLFQ
+                silacPsms.ForEach(x => x.ResolveAllAmbiguities()); //update the monoisotopic mass
+                unambiguousPsmsBelowOnePercentFdr = silacPsms;
+            }
+
             //group psms by file
             var psmsGroupedByFile = unambiguousPsmsBelowOnePercentFdr.GroupBy(p => p.FullFilePath);
 
@@ -383,7 +456,6 @@ namespace TaskLayer
                 ppmTolerance: Parameters.SearchParameters.QuantifyPpmTol,
                 matchBetweenRuns: Parameters.SearchParameters.MatchBetweenRuns,
                 silent: true,
-                optionalPeriodicTablePath: GlobalVariables.ElementsLocation,
                 maxThreads: CommonParameters.MaxThreadsToUsePerFile);
 
             if (flashLFQIdentifications.Any())
@@ -456,11 +528,481 @@ namespace TaskLayer
                 }
             }
 
-            if (Parameters.SearchParameters.SilacLabels != null)
+            //Silac stuff for post-quantification
+            if (Parameters.SearchParameters.SilacLabels != null && Parameters.FlashLfqResults != null) //can be null if no psms were found
             {
-                SilacConversions.SilacConversionsPostQuantification(Parameters.SearchParameters.SilacLabels, spectraFileInfo, ProteinGroups,
-                    Parameters.ListOfDigestionParams, silacProteinGroupMatcher, Parameters.FlashLfqResults, Parameters.AllPsms,
-                    Parameters.SearchParameters.ModsToWriteSelection, FlashLfqEngine.Integrate);
+                //after this point, we now have quantification values for the peptides, but they all belong to the same "unlabeled" protein and are in the same file
+                //We can remove "labeled" peptides from each file and put them in a new file as "unlabeled".
+
+                //MAKE NEW RAW FILES
+                //update number of spectra files to include a new file for each label*condition
+                //TODO: delete dictionaries if unnecessary
+                //Dictionary<SpectraFileInfo, string> fileToLabelDictionary = new Dictionary<SpectraFileInfo, string>(); //figure out which file is which label, since some files will be only light and others only heavy. Key is file, value is the label string (label.MassDifference)
+                //Dictionary<SpectraFileInfo, SpectraFileInfo> labeledToUnlabeledFile = new Dictionary<SpectraFileInfo, SpectraFileInfo>(); //keep track of the heavy-to-light pairs. If multiple, looks like 3-1 and 2-1, but no 3-2 (only heavy to light, no heavy to heavy)
+                List<SpectraFileInfo> silacSpectraFileInfo = new List<SpectraFileInfo>(); //new files
+                Dictionary<SpectraFileInfo, List<SpectraFileInfo>> originalToLabeledFileInfoDictionary = new Dictionary<SpectraFileInfo, List<SpectraFileInfo>>();
+                List<SpectraFileInfo> unlabeledFiles = new List<SpectraFileInfo>();//null can't be a key in the dictionary, so this list is used for the unlabeled files.
+
+                    Parameters.FlashLfqResults.SpectraFiles.Clear(); //clear existing files so we can replace them with labeled ones
+
+                //foreach existing file
+                //if turnover
+                if (turnoverLabels != null)
+                {
+                    //TODO: remove this
+                    //SilacLabel startLabel = turnoverLabels.Value.startLabel;
+                    //SilacLabel endLabel = turnoverLabels.Value.endLabel;
+
+                    //List<SpectraFileInfo> startFiles = new List<SpectraFileInfo>();
+                    //List<SpectraFileInfo> endFiles = new List<SpectraFileInfo>();
+
+                    //foreach (SpectraFileInfo originalFile in spectraFileInfo)
+                    //{
+                    //    //startLabel
+                    //    SpectraFileInfo silacFile = SilacConversions.GetHeavyFileInfo(originalFile, startLabel);
+                    //    silacSpectraFileInfo.Add(silacFile);
+                    //    startFiles.Add(silacFile);
+                    //    //endLabel
+                    //    silacFile = SilacConversions.GetHeavyFileInfo(originalFile, endLabel);
+                    //    silacSpectraFileInfo.Add(silacFile);
+                    //    endFiles.Add(silacFile);
+                    //}
+
+                    //if (startLabel == null)
+                    //{
+                    //    unlabeledFiles = startFiles;
+                    //}
+                    //else
+                    //{
+                    //    labelToFileDictionary.Add(startLabel, startFiles);
+                    //}
+                    //if(endLabel==null)
+                    //{
+                    //    unlabeledFiles = endFiles;
+                    //}
+                    //else
+                    //{
+                    //    labelToFileDictionary.Add(endLabel, endFiles);
+                    //}                
+                }
+                else //it's multiplex
+                {
+                    //populate dictionary
+                    if(quantifyUnlabeledPeptides)
+                    {
+                        spectraFileInfo.ForEach(x => originalToLabeledFileInfoDictionary.Add(x, new List<SpectraFileInfo> { x }));
+                        //get the unlabeled
+                        unlabeledFiles = spectraFileInfo;
+                        Parameters.FlashLfqResults.SpectraFiles.AddRange(spectraFileInfo);
+                    }
+                    else
+                    {
+                        spectraFileInfo.ForEach(x => originalToLabeledFileInfoDictionary.Add(x, new List<SpectraFileInfo> ()));
+                    }
+
+                    //get the labeled
+                    foreach (SilacLabel label in allSilacLabels)
+                    {
+                        List<SpectraFileInfo> labeledFiles = new List<SpectraFileInfo>();
+                        foreach (SpectraFileInfo originalFile in spectraFileInfo)
+                        {
+                            //foreach label, add a new file with the label                      
+                            //silacSpectraFileInfo.Add(silacFile);
+                            SpectraFileInfo labeledInfo = SilacConversions.GetHeavyFileInfo(originalFile, label);
+                            labeledFiles.Add(labeledInfo);
+                            originalToLabeledFileInfoDictionary[originalFile].Add(labeledInfo);
+                        }
+                        Parameters.FlashLfqResults.SpectraFiles.AddRange(labeledFiles);
+                    }
+                }
+
+                //we have the files, now let's reassign the psms.
+                //there are a few ways to do this, but we're going to generate the "base" peptide and assign to that
+
+                //use a list of all the pairs (psmMatcher)
+                //Dictionary of protein accession to peptides
+                Dictionary<string, List<(SilacLabel label, Peptide peptide)>> unlabeledToPeptidesDictionary = new Dictionary<string, List<(SilacLabel label, Peptide peptide)>>();
+                {
+                    ////this should probably be moved earlier
+                    //List<char> labeledResidues = new List<char>();
+                    //List<char> unlabeledResidues = new List<char>();
+                    //foreach (SilacLabel label in allSilacLabels)
+                    //{
+                    //    labeledResidues.Add(label.AminoAcidLabel);
+                    //    unlabeledResidues.Add(label.OriginalAminoAcid);
+                    //    if(label.AdditionalLabels!=null)
+                    //    {
+                    //        foreach(SilacLabel additionalLabel in label.AdditionalLabels)
+                    //        {
+                    //            labeledResidues.Add(additionalLabel.AminoAcidLabel);
+                    //            unlabeledResidues.Add(additionalLabel.OriginalAminoAcid);
+                    //        }
+                    //    }
+                    //}
+                }
+                Dictionary<string, Peptide> updatedPeptideModifiedSequences = new Dictionary<string, Peptide>();
+                IEnumerable<Peptide> lfqPwsms = Parameters.FlashLfqResults.PeptideModifiedSequences.Values;
+                if (turnoverLabels == null || turnoverLabels.Value.startLabel == null || turnoverLabels.Value.endLabel == null) //if multiplex, or if at least one of the turnover labels is unlabeled
+                {
+                    foreach (Peptide peptide in lfqPwsms)
+                    {
+                        //convert to the unlabeled sequence
+                        string labeledSequence = peptide.Sequence;
+                        SilacLabel label = SilacConversions.GetRelevantLabelFromFullSequence(labeledSequence, allSilacLabels);
+                        string unlabeledSequence = SilacConversions.GetSilacLightFullSequence(labeledSequence, label, false);
+                        if (unlabeledToPeptidesDictionary.ContainsKey(unlabeledSequence))
+                        {
+                            unlabeledToPeptidesDictionary[unlabeledSequence].Add((label, peptide));
+                        }
+                        else
+                        {
+                            unlabeledToPeptidesDictionary.Add(unlabeledSequence, new List<(SilacLabel, Peptide)> { (label, peptide) });
+                        }
+                    }
+                }
+                else //if both start and end labels exist for turnover, then it can be trickier to find the start label
+                {
+                    SilacLabel startLabel = turnoverLabels.Value.startLabel;
+                    SilacLabel endLabel = turnoverLabels.Value.endLabel;
+                    foreach (Peptide peptide in lfqPwsms)
+                    {
+                        string originalSequence = peptide.Sequence;
+                        string partiallyCleanedSequence = originalSequence;
+                        SilacLabel labelToReport = null;
+                        //convert to the unlabeled sequence
+                        if (endLabel != null)
+                        {
+                            partiallyCleanedSequence = SilacConversions.GetSilacLightFullSequence(originalSequence, endLabel, false);
+                            if (!partiallyCleanedSequence.Equals(originalSequence)) //if any residue is new, then the whole peptide must be newly synthesized
+                            {
+                                labelToReport = endLabel;
+                            }
+                        }
+                        string fullyCleanedSequence = partiallyCleanedSequence;
+                        if (startLabel != null) //there might also be some old residues in the new peptide, so this is an "if" and not an "else"
+                        {
+                            fullyCleanedSequence = SilacConversions.GetSilacLightFullSequence(partiallyCleanedSequence, startLabel, false);
+                            if (!fullyCleanedSequence.Equals(partiallyCleanedSequence) && labelToReport == null)
+                            {
+                                labelToReport = startLabel;
+                            }
+                        }
+
+                        if (unlabeledToPeptidesDictionary.ContainsKey(fullyCleanedSequence))
+                        {
+                            unlabeledToPeptidesDictionary[fullyCleanedSequence].Add((labelToReport, peptide));
+                        }
+                        else
+                        {
+                            unlabeledToPeptidesDictionary.Add(fullyCleanedSequence, new List<(SilacLabel, Peptide)> { (labelToReport, peptide) });
+                        }
+                    }
+                }
+
+                List<Peptide> updatedPeptides = new List<Peptide>();
+
+                //split the heavy/light peptides into separate raw files, remove the heavy peptide
+                if (turnoverLabels != null)
+                {
+                    Dictionary<SpectraFileInfo, double[]> fileToRecycleDictionary = new Dictionary<SpectraFileInfo, double[]>();
+                    //TODO just want the original files, no reason to look at the silac ones
+                    foreach (SpectraFileInfo info in spectraFileInfo)
+                    {
+                        fileToRecycleDictionary[info] = new double[3];
+                    }
+
+                    //go through each peptide that has more than one label
+                    foreach (KeyValuePair<string, List<(SilacLabel label, Peptide peptide)>> kvp in unlabeledToPeptidesDictionary.Where(x => x.Value.Count > 2))
+                    {
+                        //the order should always be from start to end
+                        //TODO if that's not true, use the silac label
+                        //TODO if that is true, remove the silaclabel from the dictionary
+                        //TODO check that values are present for light and for double the label mass to prevent incorrectly id'd missed cleavages from swaying data?
+                        Dictionary<SpectraFileInfo, List<double>> tempFileToRecycleDictionary = new Dictionary<SpectraFileInfo, List<double>>();
+                        foreach (SpectraFileInfo info in spectraFileInfo)
+                        {
+                            tempFileToRecycleDictionary[info] = new List<double>();
+                        }
+
+                        List<Peptide> peptides = kvp.Value.Select(x => x.peptide).ToList();
+                        foreach (Peptide peptide in peptides) //assumes sorted old->new
+                        {
+                            foreach (SpectraFileInfo info in spectraFileInfo)
+                            {
+                                tempFileToRecycleDictionary[info].Add(peptide.GetIntensity(info));
+                            }
+                        }
+
+                        //aggregate into LL, HL, and HH if they contain 2+ missed cleavages
+                        foreach (SpectraFileInfo info in spectraFileInfo)
+                        {
+                            List<double> values = tempFileToRecycleDictionary[info];
+                            if (values.Count > 6)
+                            {
+                                //we can't really use data with this many missed cleavages (data isn't super accurate), so remove them
+                                values = new List<double> { 0, 0, 0 };
+                            }
+                            else if (values.Count > 3)
+                            {
+                                //TODO: make sure this works with a ton of missed cleavages (5)
+                                if (values.Count == 6)
+                                {
+                                    //LLLLL, LLLLH, LLLHH, LLHHH, LHHHH, HHHHHH have n combinations of 1, 5, 10, 10, 5, 1
+                                    double LLLL = values[0] + values[1] / 5;
+                                    double LLLH = values[1] * 4 / 5 + values[2] * 4 / 10;
+                                    double LLHH = values[2] * 6 / 10 + values[3] * 6 / 10;
+                                    double LHHH = values[3] * 4 / 10 + values[4] * 4 / 5;
+                                    double HHHH = values[4] / 5 + values[5];
+                                    values = new List<double> { LLLL, LLLH, LLHH, LHHH, HHHH };
+                                }
+                                if (values.Count == 5)
+                                {
+                                    //LLLL, LLLH, LLHH, LHHH, HHHH have n combinations of 1, 4, 6, 4, 1
+                                    double LLL = values[0] + values[1] / 4;
+                                    double LLH = values[1] * 3 / 4 + values[2] / 2; // divide by two is multiply by three divide by six
+                                    double LHH = values[2] / 2 + values[3] * 3 / 4;
+                                    double HHH = values[3] / 4 + values[4];
+                                    values = new List<double> { LLL, LLH, LHH, HHH };
+                                }
+                                if (values.Count == 4)
+                                {
+                                    //LLL, LLH, LHH, HHH have probabilities of 1, 3, 3, 1
+                                    double LL = values[0] + values[1] / 3; // divide by three for the probability difference (only one way to make LL from LLH)
+                                    double LH = values[1] * 2 / 3 + values[2] * 2 / 3; //divide by three, multiply by two (two ways to make LH from LLH or from LHH)
+                                    double HH = values[2] / 3 + values[3]; //same logic as LL
+                                    values = new List<double> { LL, LH, HH };
+                                }
+
+                                //TODO: validate this
+                                //overwrite the current peptide quantification values with the total values shown here IF there was more than one missed cleavage
+                                for (int i = 0; i < 3; i++)
+                                {
+                                    peptides[i].SetIntensity(info, values[i]);
+                                    //TODO: does the detection type stay here, or do we need to set it?
+                                }
+                            }
+                            //else if three values, then we're fine
+                            //add the values from this peptide to the file-specific-values of all peptides
+                            double[] totalValues = fileToRecycleDictionary[info];
+                            for (int i = 0; i < values.Count; i++)
+                            {
+                                totalValues[i] += values[i];
+                            }
+                        }
+                    }
+
+                    //with the summed LL, LH, and HH values for each file, we can calculate the probability that a heavy amino acid is incorporated (Ph)
+                    //the probability a light amino acid is incorporated (Pl) is simply Pl = 1 - Ph
+                    //We can simplify the math if we assume that all protein started as completely light, @t=0: LL=100%, LH = 0%, and HH = 0%
+                    //N = 1 - Qll + Qlh * Qlh / (4 * Qhh), (where N is the fraction of all protein that has turned over and Qll is the Quantity(fraction) of LL at the current timepoint
+                    //Qhh = qhh -N*qhh+Ph*Ph*N, where Q is quantity(fraction) at the timepoint and q is the quantity(fraction) at the start point (time zero).
+                    //Ph = sqrt((Qhh-qhh+N*qhh)/N), and qhh = 0, so we can simplify as
+                    //Ph = sqrt(Qhh/N)
+                    Dictionary<SpectraFileInfo, double> fileToHeavyProbabilityDictionary = new Dictionary<SpectraFileInfo, double>();
+                    foreach (SpectraFileInfo info in spectraFileInfo)
+                    {
+                        //convert the absolute values of LL, LH, and HH to relative values
+                        double[] values = fileToRecycleDictionary[info];
+                        double sum = values.Sum();
+                        for (int i = 0; i < values.Length; i++)
+                        {
+                            values[i] = values[i] / sum;
+                        }
+                        double Ph = Math.Sqrt(values[2] / (1 - values[0] + Math.Pow(values[1], 2) / (4 * values[2])));
+                        fileToHeavyProbabilityDictionary[info] = Ph;
+                    }
+
+
+                    //foreach group, the labeled peptides should be split into their labeled files
+                    //we're deleting the heavy results after we pull those results into a different file
+                    //additionally, the Ph will be used to correct both values (L is originally too high, H too low)
+                    Dictionary<SpectraFileInfo, (SpectraFileInfo startInfo, SpectraFileInfo endInfo)> oldInfoToUpdatedInfo = new Dictionary<SpectraFileInfo, (SpectraFileInfo startInfo, SpectraFileInfo endInfo)>();
+                    foreach (SpectraFileInfo info in spectraFileInfo)
+                    {
+                        string fullPathWithExtension = info.FullFilePathWithExtension;
+                        string[] pathArray = fullPathWithExtension.Split('.');
+                        string extension = pathArray.Last();
+                        string filePathWithoutExtension = fullPathWithExtension.Substring(0, fullPathWithExtension.Length - extension.Length-1); //-1 removes the '.'
+                        SpectraFileInfo lightInfo = new SpectraFileInfo(filePathWithoutExtension + "_Old." + extension, info.Condition, info.BiologicalReplicate, info.TechnicalReplicate, info.Fraction);
+                        SpectraFileInfo heavyInfo = new SpectraFileInfo(filePathWithoutExtension + "_New." + extension, info.Condition, info.BiologicalReplicate, info.TechnicalReplicate, info.Fraction);
+                        oldInfoToUpdatedInfo.Add(info, (lightInfo, heavyInfo));
+                        Parameters.FlashLfqResults.SpectraFiles.Add(lightInfo);
+                        Parameters.FlashLfqResults.SpectraFiles.Add(heavyInfo);
+                    }
+                    foreach (KeyValuePair<string, List<(SilacLabel label, Peptide peptide)>> kvp in unlabeledToPeptidesDictionary)
+                    {
+                        string unlabeledSequence = kvp.Key; //this will be the key for the new quant entry
+                        List<Peptide> peptides = kvp.Value.Select(x => x.peptide).ToList();
+                        //if no missed cleavages
+                        if (peptides.Count == 2)
+                        {
+                            Peptide lightPeptide = peptides[0];
+                            Peptide heavyPeptide = peptides[1];
+                            foreach (SpectraFileInfo info in spectraFileInfo)
+                            {
+                                double Ph = fileToHeavyProbabilityDictionary[info];
+                                double light = lightPeptide.GetIntensity(info);
+                                double heavy = heavyPeptide.GetIntensity(info);
+                                //all the heavy is new, but some of the light is also new protein
+                                //Ph helps out here. The correction factor is Pl*Qh/Ph, or (1-Ph)*Qh/Ph.
+                                //it's possible that we obtain a negative value for the start, which doesn't make sense.
+                                //This occurs when Qh>Ph. In these cases, set the light to zero and the heavy to light+heavy.
+                                double correction = (1 - Ph) * heavy / Ph;
+                                Peptide updatedPeptide = new Peptide(lightPeptide.Sequence, lightPeptide.UseForProteinQuant);
+                                var updatedInfo = oldInfoToUpdatedInfo[info];
+                                updatedPeptide.SetIntensity(updatedInfo.startInfo, light - correction); //assign the corrected light intensity
+                                updatedPeptide.SetDetectionType(updatedInfo.startInfo, lightPeptide.GetDetectionType(info));
+                                updatedPeptide.SetIntensity(updatedInfo.endInfo, heavy + correction); //assign the corrected heavy intensity to the heavy file
+                                updatedPeptide.SetDetectionType(updatedInfo.endInfo, heavyPeptide.GetDetectionType(info));
+                                updatedPeptides.Add(updatedPeptide);
+                            }
+                        }
+                        else
+                        {
+                            Peptide lightPeptide = peptides[0];
+                            Peptide mixedPeptide = peptides[1];
+                            Peptide heavyPeptide = peptides[2];
+                            foreach (SpectraFileInfo info in spectraFileInfo)
+                            {
+                                double Ph = fileToHeavyProbabilityDictionary[info];
+                                double light = lightPeptide.GetIntensity(info);
+                                double mixed = mixedPeptide.GetIntensity(info);
+                                double heavy = heavyPeptide.GetIntensity(info);
+                                //all the heavy and mixed is new, but some of the light is also new protein
+                                //Ph helps out here. The correction factor is Pl*Qh/Ph, or (1-Ph)*Qh/Ph.
+                                //it's possible that we obtain a negative value for the start, which doesn't make sense.
+                                //This occurs when Qh>Ph. In these cases, set the light to zero and the heavy to light+heavy.
+                                double correction = (1 - Ph) * heavy / Ph;
+                                Peptide updatedPeptide = new Peptide(lightPeptide.Sequence, lightPeptide.UseForProteinQuant);
+                                var updatedInfo = oldInfoToUpdatedInfo[info];
+                                updatedPeptide.SetIntensity(updatedInfo.startInfo, light - correction); //assign the corrected light intensity
+                                updatedPeptide.SetDetectionType(updatedInfo.startInfo, lightPeptide.GetDetectionType(info));
+                                updatedPeptide.SetIntensity(updatedInfo.endInfo, heavy + mixed + correction); //assign the corrected heavy intensity to the heavy file
+                                updatedPeptide.SetDetectionType(updatedInfo.endInfo, heavyPeptide.GetDetectionType(info)); //could include the mixed here if this really matters
+                                updatedPeptides.Add(updatedPeptide);
+                            }
+                        }
+                    }
+                }
+                else //multiplex
+                {
+                    //foreach original file
+                    foreach (SpectraFileInfo info in spectraFileInfo)
+                    {
+                        foreach (var kvp in unlabeledToPeptidesDictionary)
+                        {
+                            List<Peptide> peptides = kvp.Value.Select(x => x.peptide).ToList();
+                            Peptide unlabeledOriginalPeptide = peptides[0]; //first is always unlabeled (if unlabeled exists)...
+                            //TODO: ensure this still works when there's no light.
+                            Peptide updatedPeptide = new Peptide(unlabeledOriginalPeptide.Sequence, unlabeledOriginalPeptide.UseForProteinQuant);
+                            updatedPeptide.ProteinGroups = unlabeledOriginalPeptide.ProteinGroups; //needed to keep protein info.
+                            List<SpectraFileInfo> filesForThisFile = originalToLabeledFileInfoDictionary[info];
+                            for(int i=0; i<peptides.Count; i++) //the files and the peptides can use the same index, because there should be a distinct file for each label/peptide
+                            {
+                                SpectraFileInfo currentInfo = filesForThisFile[i];
+                                Peptide currentPeptide = peptides[i];
+                                updatedPeptide.SetIntensity(currentInfo, currentPeptide.GetIntensity(info));
+                                updatedPeptide.SetDetectionType(currentInfo, currentPeptide.GetDetectionType(info));
+                            }
+                            updatedPeptides.Add(updatedPeptide);
+                        }
+                    }
+                }
+                //Update peptides
+                var peptideResults = Parameters.FlashLfqResults.PeptideModifiedSequences;
+                peptideResults.Clear();
+                foreach (Peptide peptide in updatedPeptides)
+                {
+                    peptideResults.Add(peptide.Sequence, peptide);
+                }
+
+                //Do protein quant
+                Parameters.FlashLfqResults.ProteinGroups.Clear();
+                Parameters.FlashLfqResults.CalculateProteinResultsTop3();
+
+                //convert all peaks into human readable format (PEPTIDE(K+8) and not PEPTIDEa)
+                //convert all psms into human readable format
+                //We can do this for all of the FlashLFQ peptides/peaks, because they use string sequences.
+                //We are unable to do this for Parameters.AllPsms, because they store proteins and start/end residues instead
+                //for Psms, we need to convert during the writing.
+                List<PeptideSpectralMatch> allPsms = Parameters.AllPsms;
+                var modsToWritePruned = Parameters.SearchParameters.ModsToWriteSelection;
+                for (int i = 0; i < allPsms.Count; i++)
+                {
+                    allPsms[i].ResolveHeavySilacLabel(allSilacLabels, modsToWritePruned);
+                }
+
+                //update proteingroups to have all files for quantification
+                if (ProteinGroups != null)
+                {
+                    List<SpectraFileInfo> allInfo = originalToLabeledFileInfoDictionary.SelectMany(x => x.Value).ToList();
+                    foreach (EngineLayer.ProteinGroup proteinGroup in ProteinGroups)
+                    {
+                        proteinGroup.FilesForQuantification = allInfo;
+                        proteinGroup.IntensitiesByFile = new Dictionary<SpectraFileInfo, double>();
+
+                        foreach (var spectraFile in proteinGroup.FilesForQuantification)
+                        {
+                            if (Parameters.FlashLfqResults.ProteinGroups.TryGetValue(proteinGroup.ProteinGroupName, out var flashLfqProteinGroup))
+                            {
+                                proteinGroup.IntensitiesByFile.Add(spectraFile, flashLfqProteinGroup.GetIntensity(spectraFile));
+                            }
+                            else
+                            {
+                                proteinGroup.IntensitiesByFile.Add(spectraFile, 0);
+                            }
+                        }
+                    }
+                }
+
+                //Convert all lfqpeaks from heavy (a) to light (K+8.014) for output
+                if (Parameters.FlashLfqResults != null) //can be null if nothing was quantified (all peptides are ambiguous)
+                {
+                    var lfqPeaks = Parameters.FlashLfqResults.Peaks;
+                    List<SpectraFileInfo> peakKeys = lfqPeaks.Keys.ToList();
+
+                    foreach (SpectraFileInfo key in peakKeys)
+                    {
+                        List<ChromatographicPeak> peaks = lfqPeaks[key];
+                        for (int i = 0; i < peaks.Count; i++)
+                        {
+                            var peak = peaks[i];
+                            List<Identification> identifications = new List<Identification>();
+                            //check if we're removing light peaks and if it's a light peak
+                            if (peak.Identifications.Any(x => SilacConversions.GetRelevantLabelFromBaseSequence(x.BaseSequence, allSilacLabels) != null)) //if no ids have any labels, remove them
+                            {
+                                List<Identification> updatedIds = new List<Identification>();
+                                foreach (var id in peak.Identifications)
+                                {
+                                    SilacLabel label = SilacConversions.GetRelevantLabelFromBaseSequence(id.BaseSequence, allSilacLabels);
+
+                                    Identification updatedId = new Identification(
+                                        id.FileInfo,
+                                        SilacConversions.GetSilacLightBaseSequence(id.BaseSequence, label),
+                                        SilacConversions.GetSilacLightFullSequence(id.ModifiedSequence, label),
+                                        id.MonoisotopicMass,
+                                        id.Ms2RetentionTimeInMinutes,
+                                        id.PrecursorChargeState,
+                                        id.ProteinGroups.ToList(),
+                                        id.OptionalChemicalFormula,
+                                        id.UseForProteinQuant
+                                        );
+                                    updatedIds.Add(updatedId);
+                                }
+                                peak.Identifications.Clear();
+                                peak.Identifications.AddRange(updatedIds);
+                                //ChromatographicPeak updatedPeak = new ChromatographicPeak(identifications.First(), peak.IsMbrPeak, peak.SpectraFileInfo);
+                                //for (int j = 1; j < identifications.Count; j++) //add all the original identification
+                                //{
+                                //    updatedPeak.MergeFeatureWith(new FlashLFQ.ChromatographicPeak(identifications[j], peak.IsMbrPeak, peak.SpectraFileInfo), FlashLfqEngine.Integrate);
+                                //}
+                                //updatedPeak.IsotopicEnvelopes = peak.IsotopicEnvelopes; //need to set isotopicEnevelopes, since the new identifications didn't have them.
+                                //updatedPeak.CalculateIntensityForThisFeature(FlashLfqEngine.Integrate); //needed to update info
+                                //peaks[i] = updatedPeak;
+                            }
+                        }
+                    }
+                }
             }
         }
 
@@ -561,19 +1103,20 @@ namespace TaskLayer
                     Directory.CreateDirectory(Parameters.IndividualResultsOutputFolder);
 
                     //If SILAC and no light, we need to update the psms (which were found in the "light" file) and say they were found in the "heavy" file)
-                    if (!Parameters.ListOfDigestionParams.Any(x => x.GeneratehUnlabeledProteinsForSilac))
-                    {
-                        //get the light filenames
-                        List<string> fileNamesThatHadPsms = PsmsGroupedByFile.Select(v => v.Key).ToList();
-                        EngineLayer.ProteinGroup firstProteinGroup = ProteinGroups.FirstOrDefault();
-                        if (firstProteinGroup != null)
-                        {
-                            List<string> allFileNames = firstProteinGroup.FilesForQuantification.Select(x => x.FullFilePathWithExtension).ToList();
-                            string heavyFileToSet = allFileNames.Where(x => !fileNamesThatHadPsms.Contains(x)).First();
-                            List<PeptideSpectralMatch> psms = PsmsGroupedByFile.SelectMany(g => g).ToList();
-                            PsmsGroupedByFile = psms.GroupBy(x => heavyFileToSet); //set them all to the same file
-                        }
-                    }
+                    //TODO delete
+                    //if (!Parameters.ListOfDigestionParams.Any(x => x.GeneratehUnlabeledProteinsForSilac))
+                    //{
+                    //    //get the light filenames
+                    //    List<string> fileNamesThatHadPsms = PsmsGroupedByFile.Select(v => v.Key).ToList();
+                    //    EngineLayer.ProteinGroup firstProteinGroup = ProteinGroups.FirstOrDefault();
+                    //    if (firstProteinGroup != null)
+                    //    {
+                    //        List<string> allFileNames = firstProteinGroup.FilesForQuantification.Select(x => x.FullFilePathWithExtension).ToList();
+                    //        string heavyFileToSet = allFileNames.Where(x => !fileNamesThatHadPsms.Contains(x)).First();
+                    //        List<PeptideSpectralMatch> psms = PsmsGroupedByFile.SelectMany(g => g).ToList();
+                    //        PsmsGroupedByFile = psms.GroupBy(x => heavyFileToSet); //set them all to the same file
+                    //    }
+                    //}
 
                     foreach (var fullFilePath in PsmsGroupedByFile.Select(v => v.Key))
                     {
@@ -864,7 +1407,7 @@ namespace TaskLayer
             // write best (highest-scoring) PSM per peptide
             string writtenFile = Path.Combine(Parameters.OutputFolder, "AllPeptides.psmtsv");
             List<PeptideSpectralMatch> peptides = Parameters.AllPsms.GroupBy(b => b.FullSequence).Select(b => b.FirstOrDefault()).ToList();
-            
+
             new FdrAnalysisEngine(peptides, Parameters.NumNotches, CommonParameters, new List<string> { Parameters.SearchTaskId }, "Peptide").Run();
 
             if (!Parameters.SearchParameters.WriteDecoys)
@@ -1017,7 +1560,7 @@ namespace TaskLayer
         {
             var fullSeqPath = Path.Combine(outputFolder, fileName + ".tsv");
 
-            flashLFQResults.WriteResults(null, fullSeqPath, null);
+            flashLFQResults.WriteResults(null, fullSeqPath, null,null);
 
             FinishedWritingFile(fullSeqPath, nestedIds);
         }
@@ -1026,7 +1569,7 @@ namespace TaskLayer
         {
             var peaksPath = Path.Combine(outputFolder, fileName + ".tsv");
 
-            flashLFQResults.WriteResults(peaksPath, null, null);
+            flashLFQResults.WriteResults(peaksPath, null, null,null);
 
             FinishedWritingFile(peaksPath, nestedIds);
         }
