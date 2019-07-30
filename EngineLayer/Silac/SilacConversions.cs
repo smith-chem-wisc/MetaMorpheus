@@ -311,13 +311,10 @@ namespace EngineLayer
         public static Protein CreateSilacProtein(bool heavyToLight, SilacLabel silacLabel, Protein originalProtein)
         {
             string proteinSequence = originalProtein.BaseSequence;
-            string proteinAccession = originalProtein.Accession;
 
             if (heavyToLight)
             {
                 proteinSequence = proteinSequence.Replace(silacLabel.AminoAcidLabel, silacLabel.OriginalAminoAcid); //create light sequence
-                int labelStart = proteinAccession.IndexOf(silacLabel.MassDifference);
-                proteinAccession = proteinAccession.Substring(0, labelStart); //create light accession
                 if (silacLabel.AdditionalLabels != null)
                 {
                     foreach (SilacLabel additionalLabel in silacLabel.AdditionalLabels)
@@ -329,19 +326,16 @@ namespace EngineLayer
             else
             {
                 proteinSequence = proteinSequence.Replace(silacLabel.OriginalAminoAcid, silacLabel.AminoAcidLabel); //create heavy sequence
-                proteinAccession += "(" + silacLabel.OriginalAminoAcid + silacLabel.MassDifference; //add heavy accession
                 if (silacLabel.AdditionalLabels != null)
                 {
                     foreach (SilacLabel additionalLabel in silacLabel.AdditionalLabels)
                     {
                         proteinSequence = proteinSequence.Replace(additionalLabel.OriginalAminoAcid, additionalLabel.AminoAcidLabel); //create heavy sequence
-                        proteinAccession += LABEL_DELIMITER + additionalLabel.OriginalAminoAcid + additionalLabel.MassDifference; //add heavy accession
                     }
                 }
-                proteinAccession += ")";
             }
 
-            return new Protein(originalProtein, proteinSequence, proteinAccession);
+            return new Protein(originalProtein, proteinSequence);
         }
 
         public static PeptideWithSetModifications CreateSilacPwsm(bool heavyToLight, SilacLabel silacLabel, PeptideWithSetModifications pwsm)
