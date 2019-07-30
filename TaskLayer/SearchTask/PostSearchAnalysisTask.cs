@@ -229,7 +229,7 @@ namespace TaskLayer
 
             // pass protein group info for each PSM
             var psmToProteinGroups = new Dictionary<PeptideSpectralMatch, List<FlashLFQ.ProteinGroup>>();
-            if (ProteinGroups != null)
+            if (ProteinGroups != null && ProteinGroups.Count != 0) //ProteinGroups can be null if parsimony wasn't done, and it can be empty if you're doing the two peptide rule
             {
                 foreach (var proteinGroup in ProteinGroups)
                 {
@@ -956,6 +956,7 @@ namespace TaskLayer
                 }
 
                 //Convert all lfqpeaks from heavy (a) to light (K+8.014) for output
+
                 if (Parameters.FlashLfqResults != null) //can be null if nothing was quantified (all peptides are ambiguous)
                 {
                     var lfqPeaks = Parameters.FlashLfqResults.Peaks;
