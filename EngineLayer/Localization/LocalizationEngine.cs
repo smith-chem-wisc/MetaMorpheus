@@ -1,8 +1,10 @@
 ﻿using MassSpectrometry;
 using Proteomics.Fragmentation;
 using Proteomics.ProteolyticDigestion;
+using System.Collections.Concurrent;
 using System.Collections.Generic;
 using System.Linq;
+using System.Threading.Tasks;
 
 namespace EngineLayer.Localization
 {
@@ -26,36 +28,60 @@ namespace EngineLayer.Localization
         protected override MetaMorpheusEngineResults RunSpecific()
         {
             // don't try to localize mass differences for ambiguous peptides
-            foreach (PeptideSpectralMatch psm in AllResultingIdentifications.Where(b => b.FullSequence != null))
-            {
-                // Stop loop if canceled
-                if (GlobalVariables.StopLoops) { break; }
+            PeptideSpectralMatch[] unambiguousPsms = AllResultingIdentifications.Where(b => b.FullSequence != null).ToArray();
 
-                MsDataScan scan = MyMsDataFile.GetOneBasedScan(psm.ScanNumber);
-                Ms2ScanWithSpecificMass scanWithSpecificMass = new Ms2ScanWithSpecificMass(scan, psm.ScanPrecursorMonoisotopicPeakMz, psm.ScanPrecursorCharge, psm.FullFilePath, CommonParameters);
-                PeptideWithSetModifications peptide = psm.BestMatchingPeptides.First().Peptide;
-                double massDifference = psm.ScanPrecursorMass - peptide.MonoisotopicMass;
+            double psmsSearched = 0;
+            int oldPercentProgress = 0;
 
-                // this section will iterate through all residues of the peptide and try to localize the mass-diff at each residue and report a score for each residue
-                var localizedScores = new List<double>();
-                for (int r = 0; r < peptide.Length; r++)
+            ReportProgress(new ProgressEventArgs(oldPercentProgress, "Localizing mass-differences... ", NestedIds));
+
+            Parallel.ForEach(Partitioner.Create(0, unambiguousPsms.Length),
+                new ParallelOptions { MaxDegreeOfParallelism = CommonParameters.MaxThreadsToUsePerFile },
+                (range, loopState) =>
                 {
-                    // create new PeptideWithSetMods with unidentified mass difference at the given residue
-                    PeptideWithSetModifications peptideWithLocalizedMassDiff = peptide.Localize(r, massDifference);
+                    for (int i = range.Item1; i < range.Item2; i++)
+                    {
+                        PeptideSpectralMatch psm = unambiguousPsms[i];
 
-                    // this is the list of theoretical products for this peptide with mass-difference on this residue
-                    List<Product> productsWithLocalizedMassDiff = peptideWithLocalizedMassDiff.Fragment(CommonParameters.DissociationType, CommonParameters.DigestionParams.FragmentationTerminus).ToList();
+                        // Stop loop if canceled
+                        if (GlobalVariables.StopLoops) { break; }
 
-                    var matchedIons = MatchFragmentIons(scanWithSpecificMass, productsWithLocalizedMassDiff, CommonParameters);
+                        MsDataScan scan = MyMsDataFile.GetOneBasedScan(psm.ScanNumber);
+                        Ms2ScanWithSpecificMass scanWithSpecificMass = new Ms2ScanWithSpecificMass(scan, psm.ScanPrecursorMonoisotopicPeakMz, psm.ScanPrecursorCharge, psm.FullFilePath, CommonParameters);
+                        PeptideWithSetModifications peptide = psm.BestMatchingPeptides.First().Peptide;
+                        double massDifference = psm.ScanPrecursorMass - peptide.MonoisotopicMass;
 
-                    // score when the mass-diff is on this residue
-                    double localizedScore = CalculatePeptideScore(scan, matchedIons);
+                        // this section will iterate through all residues of the peptide and try to localize the mass-diff at each residue and report a score for each residue
+                        var localizedScores = new List<double>();
+                        for (int r = 0; r < peptide.Length; r++)
+                        {
+                            // create new PeptideWithSetMods with unidentified mass difference at the given residue
+                            PeptideWithSetModifications peptideWithLocalizedMassDiff = peptide.Localize(r, massDifference);
 
-                    localizedScores.Add(localizedScore);
-                }
+                            // this is the list of theoretical products for this peptide with mass-difference on this residue
+                            List<Product> productsWithLocalizedMassDiff = peptideWithLocalizedMassDiff.Fragment(CommonParameters.DissociationType, CommonParameters.DigestionParams.FragmentationTerminus).ToList();
 
-                psm.LocalizedScores = localizedScores;
-            }
+                            var matchedIons = MatchFragmentIons(scanWithSpecificMass, productsWithLocalizedMassDiff, CommonParameters);
+
+                            // score when the mass-diff is on this residue
+                            double localizedScore = CalculatePeptideScore(scan, matchedIons);
+
+                            localizedScores.Add(localizedScore);
+                        }
+
+                        psm.LocalizedScores = localizedScores;
+
+                        // report search progress (PSM mass differences localized so far out of total)
+                        psmsSearched++;
+                        var percentProgress = (int)((psmsSearched / unambiguousPsms.Length) * 100);
+
+                        if (percentProgress > oldPercentProgress)
+                        {
+                            oldPercentProgress = percentProgress;
+                            ReportProgress(new ProgressEventArgs(percentProgress, "Localizing mass-differences... ", NestedIds));
+                        }
+                    }
+                });
 
             return new LocalizationEngineResults(this);
         }

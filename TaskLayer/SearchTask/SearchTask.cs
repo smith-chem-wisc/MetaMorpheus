@@ -35,9 +35,13 @@ namespace TaskLayer
             {
                 case MassDiffAcceptorType.Exact:
                     if (precursorMassTolerance is PpmTolerance)
+                    {
                         return new SinglePpmAroundZeroSearchMode(precursorMassTolerance.Value);
+                    }
                     else
+                    {
                         return new SingleAbsoluteAroundZeroSearchMode(precursorMassTolerance.Value);
+                    }
 
                 case MassDiffAcceptorType.OneMM:
                     return new DotMassDiffAcceptor("1mm", new List<double> { 0, 1.0029 }, precursorMassTolerance);
@@ -56,6 +60,21 @@ namespace TaskLayer
 
                 case MassDiffAcceptorType.Custom:
                     return ParseSearchMode(customMdac);
+
+                case MassDiffAcceptorType.PlusOrMinusThreeMM:
+                    return new DotMassDiffAcceptor(
+                        "PlusOrMinus3Da",
+                        new List<double>
+                        {
+                            -3 * Chemistry.Constants.C13MinusC12,
+                            -2 * Chemistry.Constants.C13MinusC12,
+                            -1 * Chemistry.Constants.C13MinusC12,
+                            0,
+                            1 * Chemistry.Constants.C13MinusC12,
+                            2 * Chemistry.Constants.C13MinusC12,
+                            3 * Chemistry.Constants.C13MinusC12
+                        },
+                        precursorMassTolerance);
 
                 default:
                     throw new MetaMorpheusException("Unknown MassDiffAcceptorType");
@@ -346,6 +365,7 @@ namespace TaskLayer
                 case MassDiffAcceptorType.ThreeMM: return 4;
                 case MassDiffAcceptorType.ModOpen: return 1;
                 case MassDiffAcceptorType.Open: return 1;
+                case MassDiffAcceptorType.PlusOrMinusThreeMM: return 7;
                 case MassDiffAcceptorType.Custom: return ParseSearchMode(customMdac).NumNotches;
 
                 default: throw new MetaMorpheusException("Unknown mass difference acceptor type");
