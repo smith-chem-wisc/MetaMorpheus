@@ -1095,20 +1095,19 @@ namespace TaskLayer
                     Directory.CreateDirectory(Parameters.IndividualResultsOutputFolder);
 
                     //If SILAC and no light, we need to update the psms (which were found in the "light" file) and say they were found in the "heavy" file)
-                    //TODO delete
-                    //if (!Parameters.ListOfDigestionParams.Any(x => x.GeneratehUnlabeledProteinsForSilac))
-                    //{
-                    //    //get the light filenames
-                    //    List<string> fileNamesThatHadPsms = PsmsGroupedByFile.Select(v => v.Key).ToList();
-                    //    EngineLayer.ProteinGroup firstProteinGroup = ProteinGroups.FirstOrDefault();
-                    //    if (firstProteinGroup != null)
-                    //    {
-                    //        List<string> allFileNames = firstProteinGroup.FilesForQuantification.Select(x => x.FullFilePathWithExtension).ToList();
-                    //        string heavyFileToSet = allFileNames.Where(x => !fileNamesThatHadPsms.Contains(x)).First();
-                    //        List<PeptideSpectralMatch> psms = PsmsGroupedByFile.SelectMany(g => g).ToList();
-                    //        PsmsGroupedByFile = psms.GroupBy(x => heavyFileToSet); //set them all to the same file
-                    //    }
-                    //}
+                    if (!Parameters.ListOfDigestionParams.Any(x => x.GeneratehUnlabeledProteinsForSilac))
+                    {
+                        //get the light filenames
+                        List<string> fileNamesThatHadPsms = PsmsGroupedByFile.Select(v => v.Key).ToList();
+                        EngineLayer.ProteinGroup firstProteinGroup = ProteinGroups.FirstOrDefault();
+                        if (firstProteinGroup != null)
+                        {
+                            List<string> allFileNames = firstProteinGroup.FilesForQuantification.Select(x => x.FullFilePathWithExtension).ToList();
+                            string heavyFileToSet = allFileNames.Where(x => !fileNamesThatHadPsms.Contains(x)).First();
+                            List<PeptideSpectralMatch> psms = PsmsGroupedByFile.SelectMany(g => g).ToList();
+                            PsmsGroupedByFile = psms.GroupBy(x => heavyFileToSet); //set them all to the same file
+                        }
+                    }
 
                     foreach (var fullFilePath in PsmsGroupedByFile.Select(v => v.Key))
                     {
