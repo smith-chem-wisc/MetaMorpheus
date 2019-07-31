@@ -107,6 +107,51 @@ namespace EngineLayer
             return psm.Clone(updatedBestMatchingPeptides);
         }
 
+        public static List<PeptideSpectralMatch> UpdateProteinSequencesToLight(List<PeptideSpectralMatch> originalPsms, List<SilacLabel> labels)
+        {
+            List<PeptideSpectralMatch> psmsToReturn = new List<PeptideSpectralMatch>();
+            foreach(PeptideSpectralMatch psm in originalPsms)
+            {
+                List<(int Notch, PeptideWithSetModifications Peptide)> originalPeptides = psm.BestMatchingPeptides.ToList();
+                List<(int Notch, PeptideWithSetModifications Peptide)> updatedPeptides = new List<(int Notch, PeptideWithSetModifications Peptide)>();
+                foreach ((int Notch, PeptideWithSetModifications Peptide) notchPwsm in originalPeptides)
+                {
+                    PeptideWithSetModifications pwsm = notchPwsm.Peptide;
+                    SilacLabel label = GetRelevantLabelFromBaseSequence(pwsm.BaseSequence, labels);
+                    Protein updatedProtein = pwsm.Protein;
+                    if (label != null)
+                    {
+                        string proteinLightSequence = updatedProtein.BaseSequence;
+                        proteinLightSequence = proteinLightSequence.Replace(label.AminoAcidLabel, label.OriginalAminoAcid);
+                        if (label.AdditionalLabels != null)
+                        {
+                            foreach (SilacLabel additionalLabel in label.AdditionalLabels)
+                            {
+                                proteinLightSequence = proteinLightSequence.Replace(additionalLabel.AminoAcidLabel, additionalLabel.OriginalAminoAcid);
+                            }
+                        }
+                        updatedProtein = new Protein(pwsm.Protein, proteinLightSequence);
+                    }
+                    PeptideWithSetModifications updatedPwsm = new PeptideWithSetModifications(
+                        updatedProtein,
+                        pwsm.DigestionParams,
+                        pwsm.OneBasedStartResidueInProtein,
+                        pwsm.OneBasedEndResidueInProtein,
+                        pwsm.CleavageSpecificityForFdrCategory,
+                        pwsm.PeptideDescription,
+                        pwsm.MissedCleavages,
+                        pwsm.AllModsOneIsNterminus,
+                        pwsm.NumFixedMods,
+                        pwsm.BaseSequence);
+                    updatedPeptides.Add((notchPwsm.Notch, updatedPwsm));
+                }
+
+                psmsToReturn.Add(psm.Clone(updatedPeptides));
+            }
+
+            return psmsToReturn;
+        }
+
         //This method creates a protein group based on the provided silac label. The input "proteinGroup" is expected to be light. If the label is null, then the light protein group will be output.
         //This method searches the provided psm list for which psms belong to the new/old protein group independent of the original proteinGroup's psms
         public static ProteinGroup GetSilacProteinGroups(List<PeptideSpectralMatch> unambiguousPsmsBelowOnePercentFdr, ProteinGroup proteinGroup, SilacLabel label = null)
@@ -250,7 +295,8 @@ namespace EngineLayer
         public static List<PeptideSpectralMatch> UpdatePsmsForParsimony(List<SilacLabel> labels, List<PeptideSpectralMatch> psms)
         {
             //consider the heavy and light psms as being from the same protein
-            //currently they have different accessions and sequences (PROTEIN and PROTEIN+8.014)
+            //currently they have the same protein accession, but different sequences
+            Dictionary<string, Protein> accessionToLightProteinDictionary = new Dictionary<string, Protein>();
             List<PeptideSpectralMatch> psmsForProteinParsimony = new List<PeptideSpectralMatch>();
             foreach (PeptideSpectralMatch psm in psms)
             {
@@ -341,16 +387,20 @@ namespace EngineLayer
         public static PeptideWithSetModifications CreateSilacPwsm(bool heavyToLight, SilacLabel silacLabel, PeptideWithSetModifications pwsm)
         {
             string baseSequence = pwsm.BaseSequence;
+            Protein updatedProtein = null;
             if (heavyToLight)
             {
                 baseSequence = baseSequence.Replace(silacLabel.AminoAcidLabel, silacLabel.OriginalAminoAcid); //create light sequence
+                string proteinBaseSequence = pwsm.Protein.BaseSequence.Replace(silacLabel.AminoAcidLabel, silacLabel.OriginalAminoAcid);
                 if (silacLabel.AdditionalLabels != null)
                 {
                     foreach (SilacLabel additionalLabel in silacLabel.AdditionalLabels)
                     {
                         baseSequence = baseSequence.Replace(additionalLabel.AminoAcidLabel, additionalLabel.OriginalAminoAcid); //create light sequence
+                        proteinBaseSequence = pwsm.Protein.BaseSequence.Replace(silacLabel.AminoAcidLabel, silacLabel.OriginalAminoAcid);
                     }
                 }
+                //updatedProtein = new Protein(pwsm.Protein, proteinBaseSequence);
             }
             else
             {
@@ -365,7 +415,7 @@ namespace EngineLayer
             }
 
             return new PeptideWithSetModifications(
-                pwsm.Protein,
+                updatedProtein ?? pwsm.Protein,
                 pwsm.DigestionParams,
                 pwsm.OneBasedStartResidueInProtein,
                 pwsm.OneBasedEndResidueInProtein,
@@ -412,6 +462,15 @@ namespace EngineLayer
             }
         }
 
+        public static HashSet<FlashLFQ.ProteinGroup> CleanPastProteinQuant(HashSet<FlashLFQ.ProteinGroup> originalProteinGroups)
+        {
+            HashSet<FlashLFQ.ProteinGroup> cleanedProteinGroups = new HashSet<FlashLFQ.ProteinGroup>();
+            foreach(FlashLFQ.ProteinGroup pg in originalProteinGroups)
+            {
+                cleanedProteinGroups.Add(new FlashLFQ.ProteinGroup(pg.ProteinGroupName, pg.GeneName, pg.Organism));
+            }
+            return cleanedProteinGroups;
+        }
 
         //If SILAC (Post-Quantification), compress the light/heavy protein group pairs into the same light protein group but different files
         //Create new files for each silac label and file so that "file 1" now becomes "file 1 (light)" and "file 1 (heavy)"

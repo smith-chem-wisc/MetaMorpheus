@@ -311,11 +311,11 @@ namespace Test
         }
 
         [Test]
-        public static void TurnoverTest()
+        public static void TestSilacTurnover()
         {
             //make heavy residue and add to search task
             Residue heavyLysine = new Residue("a", 'a', "a", Chemistry.ChemicalFormula.ParseFormula("C{13}6H12N{15}2O"), ModificationSites.All); //+8 lysine
-            //Residue.AddNewResiduesToDictionary(new List<Residue> { heavyLysine });
+            Residue.AddNewResiduesToDictionary(new List<Residue> { heavyLysine });
             Residue lightLysine = Residue.GetResidue('K');
 
             SearchTask task = new SearchTask
@@ -363,6 +363,67 @@ namespace Test
             Directory.Delete(outputFolder, true);
             File.Delete(xmlName);
             File.Delete(mzmlName);
+        }
+
+        [Test]
+        public static void TestSilacMissingPeaks()
+        {
+            //make heavy residue and add to search task
+            Residue heavyLysine = new Residue("a", 'a', "a", Chemistry.ChemicalFormula.ParseFormula("C{13}6H12N{15}2O"), ModificationSites.All); //+8 lysine
+            Residue.AddNewResiduesToDictionary(new List<Residue> { heavyLysine });
+            Residue lightLysine = Residue.GetResidue('K');
+
+            SearchTask task = new SearchTask
+            {
+                SearchParameters = new SearchParameters
+                {
+                    TurnoverLabels = (null, new SilacLabel(lightLysine.Letter, heavyLysine.Letter, heavyLysine.ThisChemicalFormula.Formula, heavyLysine.MonoisotopicMass - lightLysine.MonoisotopicMass)),
+                }
+            };
+
+            PeptideWithSetModifications mixedPeptide = new PeptideWithSetModifications("PEPTKIDEa", new Dictionary<string, Modification>());
+            List<double> massDifferences = new List<double>();
+            MsDataFile myMsDataFile1 = new TestDataFile(mixedPeptide, massDifferences);
+            string mzmlName = @"silac.mzML";
+            IO.MzML.MzmlMethods.CreateAndWriteMyMzmlWithCalibratedSpectra(myMsDataFile1, mzmlName, false);
+
+            string xmlName = "SilacDb.xml";
+            Protein theProtein = new Protein("PEPTKIDEK", "accession1");
+            ProteinDbWriter.WriteXmlDatabase(new Dictionary<string, HashSet<Tuple<int, Modification>>>(), new List<Protein> { theProtein }, xmlName);
+
+            string outputFolder = Path.Combine(TestContext.CurrentContext.TestDirectory, @"TestSilac");
+            Directory.CreateDirectory(outputFolder);
+            var theStringResult = task.RunTask(outputFolder, new List<DbForTask> { new DbForTask(xmlName, false) }, new List<string> { mzmlName }, "taskId1").ToString();
+
+            string[] output = File.ReadAllLines(TestContext.CurrentContext.TestDirectory + @"/TestSilac/AllQuantifiedPeaks.tsv");
+            Assert.IsTrue(output.Length == 4);
+            Assert.IsTrue(output[3].Contains("\tPEPTK(+8.014)IDEK\t") && output[3].Contains("\t875000\t")); //Doesn't matter where the +8.014 is, just matters that it's mixed (one is light, one is heavy)
+
+            output = File.ReadAllLines(TestContext.CurrentContext.TestDirectory + @"/TestSilac/AllProteinGroups.tsv");
+            Assert.IsTrue(output[1].Contains("\t\t\t875000\t1\t")); //check that only a single (heavy/new) intensity is present
+            Assert.IsTrue(output[1].Contains("\t1\tPEPTKIDEK\tPEPTKIDEK\t")); //check that the sequence coverage isn't PEPTaIDEa
+            Assert.IsTrue(output[1].Contains("\t1\tPEPTKIDEK(+8.014)\t")); //check that the peptide id'd has the +8
+
+            output = File.ReadAllLines(TestContext.CurrentContext.TestDirectory + @"/TestSilac/AllPeptides.psmtsv");
+            Assert.IsTrue(output.Length == 2);
+            Assert.IsTrue(output[1].Contains("\tPEPTKIDEK(+8.014)\t")); //ensure the order is correct here for the id (not PEPTK(+8.014)IDEK)
+            
+            //delete files
+            Directory.Delete(outputFolder, true);
+            File.Delete(xmlName);
+            File.Delete(mzmlName);
+        }
+
+        [Test]
+        public static void TestSilacSixConditions()
+        {
+
+        }
+
+        [Test]
+        public static void TestSilacPeakComparisons()
+        {
+
         }
     }
 }

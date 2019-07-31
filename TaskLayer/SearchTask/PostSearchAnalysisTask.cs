@@ -112,12 +112,13 @@ namespace TaskLayer
 
             Status("Constructing protein groups...", Parameters.SearchTaskId);
 
-            //if SILAC
+            //if SILAC, modify the proteins to appear only light (we want a protein sequence to look like PROTEINK instead of PROTEINa)
+            if (Parameters.SearchParameters.SilacLabels != null)
+            {
+                Parameters.AllPsms = SilacConversions.UpdateProteinSequencesToLight(Parameters.AllPsms, Parameters.SearchParameters.SilacLabels);
+            }
+
             List<PeptideSpectralMatch> psmsForProteinParsimony = Parameters.AllPsms;
-            //if (Parameters.SearchParameters.SilacLabels != null)
-            //{
-            //    psmsForProteinParsimony = SilacConversions.UpdatePsmsForParsimony(Parameters.SearchParameters.SilacLabels, psmsForProteinParsimony);
-            //}
 
             // run parsimony
             ProteinParsimonyResults proteinAnalysisResults = (ProteinParsimonyResults)(new ProteinParsimonyEngine(psmsForProteinParsimony, Parameters.SearchParameters.ModPeptidesAreDifferent, CommonParameters, new List<string> { Parameters.SearchTaskId }).Run());
@@ -525,56 +526,15 @@ namespace TaskLayer
 
                     //MAKE NEW RAW FILES
                     //update number of spectra files to include a new file for each label*condition
-                    //TODO: delete dictionaries if unnecessary
-                    //Dictionary<SpectraFileInfo, string> fileToLabelDictionary = new Dictionary<SpectraFileInfo, string>(); //figure out which file is which label, since some files will be only light and others only heavy. Key is file, value is the label string (label.MassDifference)
-                    //Dictionary<SpectraFileInfo, SpectraFileInfo> labeledToUnlabeledFile = new Dictionary<SpectraFileInfo, SpectraFileInfo>(); //keep track of the heavy-to-light pairs. If multiple, looks like 3-1 and 2-1, but no 3-2 (only heavy to light, no heavy to heavy)
                     List<SpectraFileInfo> silacSpectraFileInfo = new List<SpectraFileInfo>(); //new files
                     Dictionary<SpectraFileInfo, List<SpectraFileInfo>> originalToLabeledFileInfoDictionary = new Dictionary<SpectraFileInfo, List<SpectraFileInfo>>();
-                    List<SpectraFileInfo> unlabeledFiles = new List<SpectraFileInfo>();//null can't be a key in the dictionary, so this list is used for the unlabeled files.
+                    List<SpectraFileInfo> unlabeledFiles = new List<SpectraFileInfo>(); //null can't be a key in the dictionary, so this list is used for the unlabeled files.
 
                     Parameters.FlashLfqResults.SpectraFiles.Clear(); //clear existing files so we can replace them with labeled ones
 
                     //foreach existing file
-                    //if turnover
-                    if (turnoverLabels != null)
-                    {
-                        //TODO: remove this
-                        //SilacLabel startLabel = turnoverLabels.Value.startLabel;
-                        //SilacLabel endLabel = turnoverLabels.Value.endLabel;
-
-                        //List<SpectraFileInfo> startFiles = new List<SpectraFileInfo>();
-                        //List<SpectraFileInfo> endFiles = new List<SpectraFileInfo>();
-
-                        //foreach (SpectraFileInfo originalFile in spectraFileInfo)
-                        //{
-                        //    //startLabel
-                        //    SpectraFileInfo silacFile = SilacConversions.GetHeavyFileInfo(originalFile, startLabel);
-                        //    silacSpectraFileInfo.Add(silacFile);
-                        //    startFiles.Add(silacFile);
-                        //    //endLabel
-                        //    silacFile = SilacConversions.GetHeavyFileInfo(originalFile, endLabel);
-                        //    silacSpectraFileInfo.Add(silacFile);
-                        //    endFiles.Add(silacFile);
-                        //}
-
-                        //if (startLabel == null)
-                        //{
-                        //    unlabeledFiles = startFiles;
-                        //}
-                        //else
-                        //{
-                        //    labelToFileDictionary.Add(startLabel, startFiles);
-                        //}
-                        //if(endLabel==null)
-                        //{
-                        //    unlabeledFiles = endFiles;
-                        //}
-                        //else
-                        //{
-                        //    labelToFileDictionary.Add(endLabel, endFiles);
-                        //}                
-                    }
-                    else //it's multiplex
+                    //if multiplex
+                    if (turnoverLabels == null)   
                     {
                         //populate dictionary
                         if (quantifyUnlabeledPeptides)
@@ -805,7 +765,6 @@ namespace TaskLayer
                         //foreach group, the labeled peptides should be split into their labeled files
                         //we're deleting the heavy results after we pull those results into a different file
                         //additionally, the Ph will be used to correct both values (L is originally too high, H too low)
-                        Dictionary<SpectraFileInfo, (SpectraFileInfo startInfo, SpectraFileInfo endInfo)> oldInfoToUpdatedInfo = new Dictionary<SpectraFileInfo, (SpectraFileInfo startInfo, SpectraFileInfo endInfo)>();
                         foreach (SpectraFileInfo info in spectraFileInfo)
                         {
                             string fullPathWithExtension = info.FullFilePathWithExtension;
@@ -814,7 +773,7 @@ namespace TaskLayer
                             string filePathWithoutExtension = fullPathWithExtension.Substring(0, fullPathWithExtension.Length - extension.Length - 1); //-1 removes the '.'
                             SpectraFileInfo lightInfo = new SpectraFileInfo(filePathWithoutExtension + "_Old." + extension, info.Condition, info.BiologicalReplicate, info.TechnicalReplicate, info.Fraction);
                             SpectraFileInfo heavyInfo = new SpectraFileInfo(filePathWithoutExtension + "_New." + extension, info.Condition, info.BiologicalReplicate, info.TechnicalReplicate, info.Fraction);
-                            oldInfoToUpdatedInfo.Add(info, (lightInfo, heavyInfo));
+                            originalToLabeledFileInfoDictionary[info] = new List<SpectraFileInfo> { lightInfo, heavyInfo };
                             Parameters.FlashLfqResults.SpectraFiles.Add(lightInfo);
                             Parameters.FlashLfqResults.SpectraFiles.Add(heavyInfo);
                         }
@@ -823,53 +782,46 @@ namespace TaskLayer
                             string unlabeledSequence = kvp.Key; //this will be the key for the new quant entry
                             List<Peptide> peptides = kvp.Value.Select(x => x.peptide).ToList();
                             //if no missed cleavages
-                            if (peptides.Count == 2)
+                            Peptide lightPeptide;
+                            Peptide mixedPeptide = null; //null assignment needed to build
+                            Peptide heavyPeptide;
+                            bool mixedPeptideExists = peptides.Count != 2;
+                            if (!mixedPeptideExists)
                             {
-                                Peptide lightPeptide = peptides[0];
-                                Peptide heavyPeptide = peptides[1];
-                                foreach (SpectraFileInfo info in spectraFileInfo)
-                                {
-                                    double Ph = fileToHeavyProbabilityDictionary[info];
-                                    double light = lightPeptide.GetIntensity(info);
-                                    double heavy = heavyPeptide.GetIntensity(info);
-                                    //all the heavy is new, but some of the light is also new protein
-                                    //Ph helps out here. The correction factor is Pl*Qh/Ph, or (1-Ph)*Qh/Ph.
-                                    //it's possible that we obtain a negative value for the start, which doesn't make sense.
-                                    //This occurs when Qh>Ph. In these cases, set the light to zero and the heavy to light+heavy.
-                                    double correction = (1 - Ph) * heavy / Ph;
-                                    Peptide updatedPeptide = new Peptide(lightPeptide.Sequence, lightPeptide.UseForProteinQuant);
-                                    var updatedInfo = oldInfoToUpdatedInfo[info];
-                                    updatedPeptide.SetIntensity(updatedInfo.startInfo, light - correction); //assign the corrected light intensity
-                                    updatedPeptide.SetDetectionType(updatedInfo.startInfo, lightPeptide.GetDetectionType(info));
-                                    updatedPeptide.SetIntensity(updatedInfo.endInfo, heavy + correction); //assign the corrected heavy intensity to the heavy file
-                                    updatedPeptide.SetDetectionType(updatedInfo.endInfo, heavyPeptide.GetDetectionType(info));
-                                    updatedPeptides.Add(updatedPeptide);
-                                }
+                                lightPeptide = peptides[0];
+                                heavyPeptide = peptides[1];
                             }
                             else
                             {
-                                Peptide lightPeptide = peptides[0];
-                                Peptide mixedPeptide = peptides[1];
-                                Peptide heavyPeptide = peptides[2];
-                                foreach (SpectraFileInfo info in spectraFileInfo)
-                                {
-                                    double Ph = fileToHeavyProbabilityDictionary[info];
-                                    double light = lightPeptide.GetIntensity(info);
-                                    double mixed = mixedPeptide.GetIntensity(info);
-                                    double heavy = heavyPeptide.GetIntensity(info);
-                                    //all the heavy and mixed is new, but some of the light is also new protein
-                                    //Ph helps out here. The correction factor is Pl*Qh/Ph, or (1-Ph)*Qh/Ph.
-                                    //it's possible that we obtain a negative value for the start, which doesn't make sense.
-                                    //This occurs when Qh>Ph. In these cases, set the light to zero and the heavy to light+heavy.
-                                    double correction = (1 - Ph) * heavy / Ph;
-                                    Peptide updatedPeptide = new Peptide(lightPeptide.Sequence, lightPeptide.UseForProteinQuant);
-                                    var updatedInfo = oldInfoToUpdatedInfo[info];
-                                    updatedPeptide.SetIntensity(updatedInfo.startInfo, light - correction); //assign the corrected light intensity
-                                    updatedPeptide.SetDetectionType(updatedInfo.startInfo, lightPeptide.GetDetectionType(info));
-                                    updatedPeptide.SetIntensity(updatedInfo.endInfo, heavy + mixed + correction); //assign the corrected heavy intensity to the heavy file
-                                    updatedPeptide.SetDetectionType(updatedInfo.endInfo, heavyPeptide.GetDetectionType(info)); //could include the mixed here if this really matters
-                                    updatedPeptides.Add(updatedPeptide);
-                                }
+                                lightPeptide = peptides[0];
+                                mixedPeptide = peptides[1];
+                                heavyPeptide = peptides[2];
+                            }
+
+                            foreach (SpectraFileInfo info in spectraFileInfo)
+                            {
+                                double Ph = fileToHeavyProbabilityDictionary[info];
+                                double light = lightPeptide.GetIntensity(info);
+                                double heavy = heavyPeptide.GetIntensity(info);
+                                double mixed = mixedPeptideExists ? mixedPeptide.GetIntensity(info) : 0;
+
+                                //all the heavy is new, but some of the light is also new protein
+                                //Ph helps out here. The correction factor is Pl*Qh/Ph, or (1-Ph)*Qh/Ph.
+                                //it's possible that we obtain a negative value for the start, which doesn't make sense.
+                                //This occurs when Qh>Ph. In these cases, set the light to zero and the heavy to light+heavy.
+                                double correction = (1 - Ph) * heavy / Ph;
+                                var updatedInfo = originalToLabeledFileInfoDictionary[info];
+                                SpectraFileInfo startInfo = updatedInfo[0];
+                                SpectraFileInfo endInfo = updatedInfo[1];
+
+                                Peptide updatedPeptide = new Peptide(lightPeptide.Sequence, lightPeptide.UseForProteinQuant);
+                                updatedPeptide.ProteinGroups = SilacConversions.CleanPastProteinQuant(lightPeptide.ProteinGroups); //needed to keep protein info.
+
+                                updatedPeptide.SetIntensity(startInfo, light - correction); //assign the corrected light intensity
+                                updatedPeptide.SetDetectionType(startInfo, lightPeptide.GetDetectionType(info));
+                                updatedPeptide.SetIntensity(endInfo, heavy + mixed + correction); //assign the corrected heavy intensity to the heavy file
+                                updatedPeptide.SetDetectionType(endInfo, heavyPeptide.GetDetectionType(info)); //could include the mixed here if it really matters
+                                updatedPeptides.Add(updatedPeptide);
                             }
                         }
                     }
@@ -884,7 +836,7 @@ namespace TaskLayer
                                 List<Peptide> peptides = kvp.Value.Select(x => x.peptide).ToList();
                                 Peptide representativePeptide = peptides[0];
                                 Peptide updatedPeptide = new Peptide(unlabeledSequence, representativePeptide.UseForProteinQuant);
-                                updatedPeptide.ProteinGroups = representativePeptide.ProteinGroups; //needed to keep protein info.
+                                updatedPeptide.ProteinGroups = SilacConversions.CleanPastProteinQuant(representativePeptide.ProteinGroups); //needed to keep protein info.
                                 List<SpectraFileInfo> filesForThisFile = originalToLabeledFileInfoDictionary[info];
                                 for (int i = 0; i < peptides.Count; i++) //the files and the peptides can use the same index, because there should be a distinct file for each label/peptide
                                 {
@@ -1084,6 +1036,8 @@ namespace TaskLayer
         {
             if (Parameters.SearchParameters.DoParsimony)
             {
+                //set peptide output values
+                ProteinGroups.ForEach(x => x.GetIdentifiedPeptidesOutput(Parameters.SearchParameters.SilacLabels));
                 // write protein groups to tsv
                 string writtenFile = Path.Combine(Parameters.OutputFolder, "AllProteinGroups.tsv");
                 WriteProteinGroupsToTsv(ProteinGroups, writtenFile, new List<string> { Parameters.SearchTaskId }, CommonParameters.QValueOutputFilter);
@@ -1095,10 +1049,10 @@ namespace TaskLayer
                     Directory.CreateDirectory(Parameters.IndividualResultsOutputFolder);
 
                     //If SILAC and no light, we need to update the psms (which were found in the "light" file) and say they were found in the "heavy" file)
-                    if (!Parameters.ListOfDigestionParams.Any(x => x.GeneratehUnlabeledProteinsForSilac))
-                    {
-                        //get the light filenames
-                        List<string> fileNamesThatHadPsms = PsmsGroupedByFile.Select(v => v.Key).ToList();
+                    if (Parameters.SearchParameters.SilacLabels != null)
+                        {
+                            //get the light filenames
+                            List<string> fileNamesThatHadPsms = PsmsGroupedByFile.Select(v => v.Key).ToList();
                         EngineLayer.ProteinGroup firstProteinGroup = ProteinGroups.FirstOrDefault();
                         if (firstProteinGroup != null)
                         {
