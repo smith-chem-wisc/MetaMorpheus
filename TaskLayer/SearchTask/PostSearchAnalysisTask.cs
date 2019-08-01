@@ -284,7 +284,6 @@ namespace TaskLayer
             //setup variables
             List<SilacLabel> allSilacLabels = Parameters.SearchParameters.SilacLabels;
             (SilacLabel startLabel, SilacLabel endLabel)? turnoverLabels = Parameters.SearchParameters.TurnoverLabels;
-            List<List<string>> psmMatcher = new List<List<string>>(); //list that keeps the duplicate psms together
             bool quantifyUnlabeledPeptides = Parameters.ListOfDigestionParams.Any(x => x.GeneratehUnlabeledProteinsForSilac);
             if (Parameters.SearchParameters.SilacLabels != null)
             {
@@ -293,7 +292,6 @@ namespace TaskLayer
                 //It may not increase exactly by a factor of N if the amino acid(s) that gets labeled doesn't exist in the peptide
 
                 List<PeptideSpectralMatch> silacPsms = new List<PeptideSpectralMatch>(); //populate with duplicate psms for heavy/light
-                HashSet<string> peptidesSaved = new HashSet<string>(); //hashset used to prevent adding duplicates to psmMatcher
 
                 //multiply the psms by the number of labels
                 foreach (PeptideSpectralMatch psm in unambiguousPsmsBelowOnePercentFdr)
@@ -449,49 +447,6 @@ namespace TaskLayer
                 Parameters.FlashLfqResults = FlashLfqEngine.Run();
             }
 
-            //MultiProtease MBR capability code
-            //Parameters.FlashLfqResults = null;
-
-            //foreach (var proteasePsms in proteaseSortedPsms)
-            //{
-            //    var flashLFQIdentifications = new List<Identification>();
-            //    var proteasePsmsGroupedByFile = proteasePsms.Value.GroupBy(p => p.FullFilePath);
-            //    foreach (var spectraFile in proteasePsmsGroupedByFile)
-            //    {
-            //        var rawfileinfo = spectraFileInfo.Where(p => p.FullFilePathWithExtension.Equals(spectraFile.Key)).First();
-
-            //        foreach (var psm in spectraFile)
-            //        {
-            //            flashLFQIdentifications.Add(new Identification(rawfileinfo, psm.BaseSequence, psm.FullSequence,
-            //                psm.PeptideMonisotopicMass.Value, psm.ScanRetentionTime, psm.ScanPrecursorCharge, psmToProteinGroups[psm]));
-            //        }
-            //    }
-
-            //    // run FlashLFQ
-            //    var FlashLfqEngine = new FlashLFQEngine(
-            //        allIdentifications: flashLFQIdentifications,
-            //        normalize: Parameters.SearchParameters.Normalize,
-            //        ppmTolerance: Parameters.SearchParameters.QuantifyPpmTol,
-            //        matchBetweenRuns: Parameters.SearchParameters.MatchBetweenRuns,
-            //        silent: true,
-            //        optionalPeriodicTablePath: GlobalVariables.ElementsLocation);
-
-            //    if (flashLFQIdentifications.Any())
-            //    {
-            //        //make specific to protease
-            //        var results = FlashLfqEngine.Run();
-
-            //        if (Parameters.FlashLfqResults == null)
-            //        {
-            //            Parameters.FlashLfqResults = results;
-            //        }
-            //        else
-            //        {
-            //            Parameters.FlashLfqResults.MergeResultsWith(results);
-            //        }
-            //    }
-            //}
-
             // get protein intensity back from FlashLFQ
             if (ProteinGroups != null && Parameters.FlashLfqResults != null)
             {
@@ -568,27 +523,8 @@ namespace TaskLayer
                     //we have the files, now let's reassign the psms.
                     //there are a few ways to do this, but we're going to generate the "base" peptide and assign to that
 
-                    //use a list of all the pairs (psmMatcher)
                     //Dictionary of protein accession to peptides
                     Dictionary<string, List<(SilacLabel label, Peptide peptide)>> unlabeledToPeptidesDictionary = new Dictionary<string, List<(SilacLabel label, Peptide peptide)>>();
-                    {
-                        ////this should probably be moved earlier
-                        //List<char> labeledResidues = new List<char>();
-                        //List<char> unlabeledResidues = new List<char>();
-                        //foreach (SilacLabel label in allSilacLabels)
-                        //{
-                        //    labeledResidues.Add(label.AminoAcidLabel);
-                        //    unlabeledResidues.Add(label.OriginalAminoAcid);
-                        //    if(label.AdditionalLabels!=null)
-                        //    {
-                        //        foreach(SilacLabel additionalLabel in label.AdditionalLabels)
-                        //        {
-                        //            labeledResidues.Add(additionalLabel.AminoAcidLabel);
-                        //            unlabeledResidues.Add(additionalLabel.OriginalAminoAcid);
-                        //        }
-                        //    }
-                        //}
-                    }
                     Dictionary<string, Peptide> updatedPeptideModifiedSequences = new Dictionary<string, Peptide>();
                     IEnumerable<Peptide> lfqPwsms = Parameters.FlashLfqResults.PeptideModifiedSequences.Values;
                     if (turnoverLabels == null || turnoverLabels.Value.startLabel == null || turnoverLabels.Value.endLabel == null) //if multiplex, or if at least one of the turnover labels is unlabeled
@@ -648,6 +584,65 @@ namespace TaskLayer
                         }
                     }
 
+                    //we now have a dictionary of unlabeledBaseSequence to the labeled peptides
+                    //Better SILAC results can be obtained by using the summed intensities from ms1 scans where all peaks were found, rather than the apex
+                    //foreach peptide, unlabeled peptide, get the isotopic envelope intensities for each labeled peptide in each file
+                    //save the intensities from ms1s that are shared. If no ms1s contains all the peaks, then just use the apex intensity (default)
+                    foreach (KeyValuePair<SpectraFileInfo, List<ChromatographicPeak>> kvp in Parameters.FlashLfqResults.Peaks)
+                    {
+                        //make a dictionary for easy peak lookup from peptide sequences
+                        Dictionary<string, ChromatographicPeak> sequenceToPeakDictionary = new Dictionary<string, ChromatographicPeak>();
+                        foreach(ChromatographicPeak peak in kvp.Value)
+                        {
+                            sequenceToPeakDictionary.Add(peak.Identifications.First().ModifiedSequence, peak);
+                        }
+
+                        foreach (List<(SilacLabel label, Peptide peptide)> peptideGroup in unlabeledToPeptidesDictionary.Select(x => x.Value))
+                        {
+                            List<string> sequences = peptideGroup.Select(x => x.peptide.Sequence).ToList();
+
+                            //get peaks of interest for this peptide group
+                            List<ChromatographicPeak> peaks = kvp.Value;
+                            List<ChromatographicPeak> peaksOfInterest = new List<ChromatographicPeak>();
+                            foreach(string sequence in sequences)
+                            {
+                                if(sequenceToPeakDictionary.TryGetValue(sequence, out ChromatographicPeak peakOfInterest))
+                                {
+                                    peaksOfInterest.Add(peakOfInterest);
+                                }
+                            }
+
+                            //If there are fewer than 2 peaks, we can't do any comparisons
+                            if (peaksOfInterest.Count > 1)
+                            {
+                                //get isotopic envelopes that are shared by all
+                                List<int> scanIndex = peaksOfInterest.First().IsotopicEnvelopes.Select(x => x.IndexedPeak).Select(x => x.ZeroBasedMs1ScanIndex).ToList();
+                                for (int i = 1; i < peaksOfInterest.Count; i++)
+                                {
+                                    List<int> currentScanIndexes = peaksOfInterest[i].IsotopicEnvelopes.Select(x => x.IndexedPeak).Select(x => x.ZeroBasedMs1ScanIndex).ToList();
+                                    scanIndex = scanIndex.Intersect(currentScanIndexes).ToList();
+                                    if (scanIndex.Count == 0) //if there's no overlap, then we're done!
+                                    {
+                                        break;
+                                    }
+                                }
+                                //if we aren't sticking with the default values
+                                if (scanIndex.Count != 0)
+                                {
+                                    //update peptides
+                                    foreach (Peptide peptide in peptideGroup.Select(x => x.peptide))
+                                    {
+                                        ChromatographicPeak peakForThisPeptide = peaksOfInterest.Where(x => peptide.Sequence.Equals(x.Identifications.First().ModifiedSequence)).First();
+                                        double summedIntensity = peakForThisPeptide.IsotopicEnvelopes.Where(x => scanIndex.Contains(x.IndexedPeak.ZeroBasedMs1ScanIndex)).Select(x => x.Intensity).Sum();
+                                        peptide.SetIntensity(kvp.Key, summedIntensity);
+                                    }
+                                }
+                            }
+                        }
+                    }
+
+
+                    //SPLIT THE FILES
                     List<Peptide> updatedPeptides = new List<Peptide>();
 
                     //split the heavy/light peptides into separate raw files, remove the heavy peptide

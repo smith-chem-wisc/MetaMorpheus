@@ -414,16 +414,47 @@ namespace Test
             File.Delete(mzmlName);
         }
 
-        [Test]
-        public static void TestSilacSixConditions()
-        {
-
-        }
-
+        //This test is to check that silac compares profiles between heavy/light peaks and selects intensities from ms1 scans where both were observed, if possible
         [Test]
         public static void TestSilacPeakComparisons()
         {
+            //make heavy residue and add to search task
+            Residue heavyLysine = new Residue("a", 'a', "a", Chemistry.ChemicalFormula.ParseFormula("C{13}6H12N{15}2O"), ModificationSites.All); //+8 lysine
+            Residue lightLysine = Residue.GetResidue('K');
 
+            SearchTask task = new SearchTask
+            {
+                SearchParameters = new SearchParameters
+                {
+                    SilacLabels = new List<SilacLabel> { new SilacLabel(lightLysine.Letter, heavyLysine.Letter, heavyLysine.ThisChemicalFormula.Formula, heavyLysine.MonoisotopicMass - lightLysine.MonoisotopicMass) },
+                }
+            };
+
+            PeptideWithSetModifications lightPeptide = new PeptideWithSetModifications("PEPTIDEK", new Dictionary<string, Modification>());
+
+            List<double> massDifferences = new List<double> { heavyLysine.MonoisotopicMass - lightLysine.MonoisotopicMass };
+            //ms1, ms2, 4 more ms1s
+            //intensities look like (L,H) (5,1.5), (4,2), (3, 1.5), (2,2), (0,3)
+            //we want a ratio of 2:1, L:H
+            List<double> precursorIntensities = new List<double> { 5, 1.5, 4, 2, 3, 1.5, 2, 2, 0, 3 };
+            MsDataFile myMsDataFile1 = new TestDataFile(lightPeptide, massDifferences, false, precursorIntensities);
+            string mzmlName = @"silac.mzML";
+            IO.MzML.MzmlMethods.CreateAndWriteMyMzmlWithCalibratedSpectra(myMsDataFile1, mzmlName, false);
+
+            string xmlName = "SilacDb.xml";
+            Protein theProtein = new Protein("PEPTIDEK", "accession1");
+            ProteinDbWriter.WriteXmlDatabase(new Dictionary<string, HashSet<Tuple<int, Modification>>>(), new List<Protein> { theProtein }, xmlName);
+
+            string outputFolder = Path.Combine(TestContext.CurrentContext.TestDirectory, @"TestSilac");
+            Directory.CreateDirectory(outputFolder);
+            var theStringResult = task.RunTask(outputFolder, new List<DbForTask> { new DbForTask(xmlName, false) }, new List<string> { mzmlName }, "taskId1").ToString();
+            string[] output = File.ReadAllLines(TestContext.CurrentContext.TestDirectory + @"/TestSilac/AllQuantifiedPeptides.tsv");
+            Assert.IsTrue(output[1].Contains("\t12250000\t6125000\t")); //check that it's 2:1 and not 5:3 like it would be for apex
+
+            //delete files
+            Directory.Delete(outputFolder, true);
+            File.Delete(xmlName);
+            File.Delete(mzmlName);
         }
     }
 }
