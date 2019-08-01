@@ -277,10 +277,6 @@ namespace EngineLayer
             //EssentialSequence
             EssentialSequence = PsmTsvWriter.Resolve(_BestMatchingPeptides.Select(b => b.Pwsm.EssentialSequence(modsToWritePruned))).ResolvedString; //string, not value
             EssentialSequence = SilacConversions.GetAmbiguousLightSequence(EssentialSequence, labels, false);
-
-            //Accession
-            ProteinAccession = PsmTsvWriter.Resolve(_BestMatchingPeptides.Select(x => x.Pwsm).Select(b => b.Protein.Accession), FullSequence).ResolvedString; //string, not value
-            ProteinAccession = SilacConversions.GetProteinLightAccession(ProteinAccession, labels);
         }
 
         /// <summary>
