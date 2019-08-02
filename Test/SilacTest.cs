@@ -308,6 +308,12 @@ namespace Test
             string outputFolder = Path.Combine(TestContext.CurrentContext.TestDirectory, @"TestSilac");
             Directory.CreateDirectory(outputFolder);
             var theStringResult = task.RunTask(outputFolder, new List<DbForTask> { new DbForTask(xmlName, false) }, new List<string> { mzmlName }, "taskId1").ToString();
+            //No assertions, just checking it didn't crash
+
+            //delete files
+            Directory.Delete(outputFolder, true);
+            File.Delete(xmlName);
+            File.Delete(mzmlName);
         }
 
         [Test]

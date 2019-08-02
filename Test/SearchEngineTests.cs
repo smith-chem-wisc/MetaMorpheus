@@ -1611,5 +1611,46 @@ namespace Test
             var ms2Scans = MetaMorpheusTask.GetMs2Scans(fileWithNoMs2Scans, null, new CommonParameters()).OrderBy(b => b.PrecursorMass).ToArray();
             Assert.That(!ms2Scans.Any());
         }
+
+        //This is a code coverage unit test that mostly just checks there are no crashes in specific situations
+        [Test]
+        public static void TestUndefinedProteinGroup()
+        {
+            SearchTask task = new SearchTask
+            {
+                SearchParameters = new SearchParameters
+                {
+                    NoOneHitWonders = true
+                }
+            };
+
+            PeptideWithSetModifications peptide = new PeptideWithSetModifications("PEPTIDEK", new Dictionary<string, Modification>()); //alone
+            PeptideWithSetModifications peptide2 = new PeptideWithSetModifications("ANTHERPEPK", new Dictionary<string, Modification>()); //same group as peptide3
+            PeptideWithSetModifications peptide3 = new PeptideWithSetModifications("LNGEEPEPK", new Dictionary<string, Modification>());
+
+            PeptideWithSetModifications peptide4 = new PeptideWithSetModifications("SMTHERPEPSK", new Dictionary<string, Modification>()); //same group as peptide3
+            PeptideWithSetModifications peptide5 = new PeptideWithSetModifications("THEPEPSK", new Dictionary<string, Modification>());
+            PeptideWithSetModifications peptide6 = new PeptideWithSetModifications("LNGEEPEPKSMTHERPEPSK", new Dictionary<string, Modification>());
+            PeptideWithSetModifications peptide7 = new PeptideWithSetModifications("LNGEEPEPKASWELASKTHEPEPSK", new Dictionary<string, Modification>());
+
+            MsDataFile myMsDataFile1 = new TestDataFile(new List<PeptideWithSetModifications> { peptide, peptide2, peptide3, peptide4, peptide5, peptide6, peptide7 });
+            string mzmlName = @"test.mzML";
+            IO.MzML.MzmlMethods.CreateAndWriteMyMzmlWithCalibratedSpectra(myMsDataFile1, mzmlName, false);
+
+            string xmlName = "testDb.xml";
+            Protein theProtein = new Protein("PEPTIDEK", "accession1");
+            Protein theProtein2 = new Protein("ANTHERPEPKLNGEEPEPKSMTHERPEPSK", "accession2");
+            Protein theProtein3 = new Protein("ANTHERPEPKLNGEEPEPKASWELASKTHEPEPSK", "accession3");
+            ProteinDbWriter.WriteXmlDatabase(new Dictionary<string, HashSet<Tuple<int, Modification>>>(), new List<Protein> { theProtein, theProtein2, theProtein3 }, xmlName);
+
+            string outputFolder = Path.Combine(TestContext.CurrentContext.TestDirectory, @"testFolder");
+            Directory.CreateDirectory(outputFolder);
+            var theStringResult = task.RunTask(outputFolder, new List<DbForTask> { new DbForTask(xmlName, false) }, new List<string> { mzmlName }, "taskId1").ToString();
+
+            //delete files
+            Directory.Delete(outputFolder, true);
+            File.Delete(xmlName);
+            File.Delete(mzmlName);
+        }
     }
 }

@@ -578,9 +578,9 @@ namespace TaskLayer
 
                     //If SILAC and no light, we need to update the psms (which were found in the "light" file) and say they were found in the "heavy" file)
                     if (Parameters.SearchParameters.SilacLabels != null)
-                        {
-                            //get the light filenames
-                            List<string> fileNamesThatHadPsms = PsmsGroupedByFile.Select(v => v.Key).ToList();
+                    {
+                        //get the light filenames
+                        List<string> fileNamesThatHadPsms = PsmsGroupedByFile.Select(v => v.Key).ToList();
                         EngineLayer.ProteinGroup firstProteinGroup = ProteinGroups.FirstOrDefault();
                         if (firstProteinGroup != null)
                         {
@@ -799,6 +799,7 @@ namespace TaskLayer
                             }
                         }
 
+                        //TODO add unit test here
                         // Add variant modification if in database (two cases: always or if observed)
                         foreach (SequenceVariation sv in nonVariantProtein.SequenceVariations)
                         {
@@ -1033,7 +1034,7 @@ namespace TaskLayer
         {
             var fullSeqPath = Path.Combine(outputFolder, fileName + ".tsv");
 
-            flashLFQResults.WriteResults(null, fullSeqPath, null,null);
+            flashLFQResults.WriteResults(null, fullSeqPath, null, null);
 
             FinishedWritingFile(fullSeqPath, nestedIds);
         }
@@ -1042,7 +1043,7 @@ namespace TaskLayer
         {
             var peaksPath = Path.Combine(outputFolder, fileName + ".tsv");
 
-            flashLFQResults.WriteResults(peaksPath, null, null,null);
+            flashLFQResults.WriteResults(peaksPath, null, null, null);
 
             FinishedWritingFile(peaksPath, nestedIds);
         }

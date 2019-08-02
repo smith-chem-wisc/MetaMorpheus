@@ -51,6 +51,7 @@ namespace EngineLayer
 
         public static PeptideSpectralMatch GetSilacPsm(PeptideSpectralMatch psm, SilacLabel silacLabel)
         {
+            //TODO is this ever hit? Can we remove it? Will it ever be null?
             if (silacLabel == null)
             {
                 return psm;
@@ -276,6 +277,7 @@ namespace EngineLayer
 
         public static SpectraFileInfo GetHeavyFileInfo(SpectraFileInfo originalFile, SilacLabel label)
         {
+            //TODO is this ever hit? Can we remove it? Will it ever be null?
             if (label == null)
             {
                 return originalFile;
@@ -390,6 +392,7 @@ namespace EngineLayer
                 }
                 else //if both start and end labels exist for turnover, then it can be trickier to find the start label
                 {
+                    //TODO check why this isn't being hit
                     SilacLabel startLabel = turnoverLabels.Value.startLabel;
                     SilacLabel endLabel = turnoverLabels.Value.endLabel;
                     foreach (FlashLFQ.Peptide peptide in lfqPwsms)
@@ -626,6 +629,7 @@ namespace EngineLayer
                         bool mixedPeptideExists = peptides.Count != 2;
                         if (!mixedPeptideExists)
                         {
+                            //TODO why isn't this covered?
                             lightPeptide = peptides[0];
                             heavyPeptide = peptides[1];
                         }
@@ -716,6 +720,7 @@ namespace EngineLayer
                             }
                             else
                             {
+                                //TODO why isn't this covered?
                                 proteinGroup.IntensitiesByFile.Add(spectraFile, 0);
                             }
                         }

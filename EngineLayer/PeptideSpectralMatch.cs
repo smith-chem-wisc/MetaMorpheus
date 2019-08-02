@@ -320,8 +320,9 @@ namespace EngineLayer
 
         private PeptideSpectralMatch(PeptideSpectralMatch psm, List<(int Notch, PeptideWithSetModifications Peptide)> bestMatchingPeptides)
         {
-            if(bestMatchingPeptides==null)
+            if (bestMatchingPeptides == null)
             {
+                //TODO why isn't this covered?
                 _BestMatchingPeptides = psm.BestMatchingPeptides.ToList();
                 BaseSequence = psm.BaseSequence;
                 FullSequence = psm.FullSequence;
@@ -330,7 +331,7 @@ namespace EngineLayer
             {
                 _BestMatchingPeptides = bestMatchingPeptides;
                 BaseSequence = PsmTsvWriter.Resolve(bestMatchingPeptides.Select(b => b.Peptide.BaseSequence)).ResolvedValue;
-                FullSequence = PsmTsvWriter.Resolve(bestMatchingPeptides.Select(b => b.Peptide.FullSequence)).ResolvedValue;                
+                FullSequence = PsmTsvWriter.Resolve(bestMatchingPeptides.Select(b => b.Peptide.FullSequence)).ResolvedValue;
             }
 
             ModsChemicalFormula = psm.ModsChemicalFormula;

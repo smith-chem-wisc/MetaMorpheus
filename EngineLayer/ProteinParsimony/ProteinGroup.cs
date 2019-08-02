@@ -96,6 +96,7 @@ namespace EngineLayer
             var SharedPeptides = AllPeptides.Except(UniquePeptides);
             if (labels == null)
             {
+                //TODO add unit test with displaymodsonpeptides
                 if (!DisplayModsOnPeptides)
                 {
                     UniquePeptidesOutput = GlobalVariables.CheckLengthOfOutput(string.Join("|", UniquePeptides.Select(p => p.BaseSequence).Distinct()));
