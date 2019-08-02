@@ -147,12 +147,12 @@ namespace Test
         {
             string thisTaskOutputFolder = Path.Combine(TestContext.CurrentContext.TestDirectory, @"TestVariantFileOutput");
 
-            SearchTask task = Toml.ReadFile<SearchTask>(Path.Combine(TestContext.CurrentContext.TestDirectory, @"SlicedSearchTaskConfig.toml"), MetaMorpheusTask.tomlConfig);
+            SearchTask task = Toml.ReadFile<SearchTask>(Path.Combine(TestContext.CurrentContext.TestDirectory, @"VariantSearchTaskConfig.toml"), MetaMorpheusTask.tomlConfig);
             task.SearchParameters.DecoyType = DecoyType.None;
 
             DbForTask noVariantDb = new DbForTask(Path.Combine(TestContext.CurrentContext.TestDirectory, @"TestNoVariantDb.xml"), false);
             DbForTask variantDb = new DbForTask(Path.Combine(TestContext.CurrentContext.TestDirectory, @"TestVariantDB.xml"), false);
-            string raw = Path.Combine(TestContext.CurrentContext.TestDirectory, @"sliced-raw.mzML");            
+            string raw = Path.Combine(TestContext.CurrentContext.TestDirectory, @"TestVariantPep.mzML");            
             EverythingRunnerEngine noVariants = new EverythingRunnerEngine(new List<(string, MetaMorpheusTask)> { ("NoVariantOutput", task) }, new List<string> { raw }, new List<DbForTask> { noVariantDb }, thisTaskOutputFolder);
             EverythingRunnerEngine variants = new EverythingRunnerEngine(new List<(string, MetaMorpheusTask)> { ("VariantOutput", task) }, new List<string> { raw }, new List<DbForTask> { variantDb }, thisTaskOutputFolder);
 
@@ -175,7 +175,7 @@ namespace Test
             HashSet<string> files2 = new HashSet<string>(Directory.GetFiles(Path.Combine(thisTaskOutputFolder, "VariantOutput")).Select(v => Path.GetFileName(v)));
             // variant files should be generates
             expectedFiles = new HashSet<string> {
-                "AllPeptides.psmtsv", "AllPSMs.psmtsv", "AllPSMs_FormattedForPercolator.tsv", "prose.txt", "results.txt", "VariantPeptides.psmtsv", "VariantAnalysisResultSummary.txt", "VariantPSMs.psmtsv" };
+                "AllPeptides.psmtsv", "AllPSMs.psmtsv", "AllPSMs_FormattedForPercolator.tsv", "AllProteinGroups.tsv", "AllQuantifiedPeaks.tsv", "AllQuantifiedPeptides.tsv", "prose.txt", "results.txt", "VariantPeptides.psmtsv", "VariantAnalysisResultSummary.txt", "VariantPSMs.psmtsv" };
 
             // these 2 lines are for debug purposes, so you can see which files you're missing (if any)
             missingFiles = expectedFiles.Except(files2).ToList();
@@ -183,6 +183,13 @@ namespace Test
 
             // test that output is what's expected
             Assert.That(missingFiles.Count() == 0 && extraFiles.Count() == 0);
+
+            string[] checkResults = File.ReadAllLines(Path.Combine(thisTaskOutputFolder, "VariantOutput", "VariantAnalysisResultSummary.txt"));
+
+            Assert.AreEqual("Number of potentially variant containing peptides identified at 1% FDR: 1", checkResults[4]);
+            Assert.AreEqual("Number of unqiuely identified variant peptides at 1% FDR: 1", checkResults[5]);
+            Assert.AreEqual("Number of frameshift variant peptides at 1% FDR: 1", checkResults[7]);
+            Assert.AreEqual("Number of modified variant peptides at 1% FDR: 1", checkResults[13]);
 
         }
     }
