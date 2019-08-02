@@ -11,6 +11,7 @@ using System.IO;
 using System.Linq;
 using TaskLayer;
 using UsefulProteomicsDatabases;
+using Nett;
 
 namespace Test
 {
@@ -140,6 +141,49 @@ namespace Test
             Directory.Delete(outputFolder, true);
             File.Delete(mzmlName);
             //Directory.Delete(Path.Combine(TestContext.CurrentContext.TestDirectory, @"Task Settings"), true);
+        }
+        [Test]
+        public void VariantSpecificOutputFiles()
+        {
+            string thisTaskOutputFolder = Path.Combine(TestContext.CurrentContext.TestDirectory, @"TestVariantFileOutput");
+
+            SearchTask task = Toml.ReadFile<SearchTask>(Path.Combine(TestContext.CurrentContext.TestDirectory, @"SlicedSearchTaskConfig.toml"), MetaMorpheusTask.tomlConfig);
+            task.SearchParameters.DecoyType = DecoyType.None;
+
+            DbForTask noVariantDb = new DbForTask(Path.Combine(TestContext.CurrentContext.TestDirectory, @"TestNoVariantDb.xml"), false);
+            DbForTask variantDb = new DbForTask(Path.Combine(TestContext.CurrentContext.TestDirectory, @"TestVariantDB.xml"), false);
+            string raw = Path.Combine(TestContext.CurrentContext.TestDirectory, @"sliced-raw.mzML");            
+            EverythingRunnerEngine noVariants = new EverythingRunnerEngine(new List<(string, MetaMorpheusTask)> { ("NoVariantOutput", task) }, new List<string> { raw }, new List<DbForTask> { noVariantDb }, thisTaskOutputFolder);
+            EverythingRunnerEngine variants = new EverythingRunnerEngine(new List<(string, MetaMorpheusTask)> { ("VariantOutput", task) }, new List<string> { raw }, new List<DbForTask> { variantDb }, thisTaskOutputFolder);
+
+            noVariants.Run();
+            variants.Run();
+
+            // no variant results files should be generated
+            HashSet<string> expectedFiles = new HashSet<string> {
+                "AllPeptides.psmtsv", "AllPSMs.psmtsv", "AllPSMs_FormattedForPercolator.tsv", "prose.txt", "results.txt" };
+
+            HashSet<string> files1 = new HashSet<string>(Directory.GetFiles(Path.Combine(thisTaskOutputFolder, "NoVariantOutput")).Select(v => Path.GetFileName(v)));
+
+            // these 2 lines are for debug purposes, so you can see which files you're missing (if any)
+            var missingFiles = expectedFiles.Except(files1).ToList();
+            var extraFiles = files1.Except(expectedFiles).ToList();
+
+            // test that output is what's expected
+            //Assert.That(missingFiles.Count() == 0 && extraFiles.Count() ==0);
+
+            HashSet<string> files2 = new HashSet<string>(Directory.GetFiles(Path.Combine(thisTaskOutputFolder, "VariantOutput")).Select(v => Path.GetFileName(v)));
+            // variant files should be generates
+            expectedFiles = new HashSet<string> {
+                "AllPeptides.psmtsv", "AllPSMs.psmtsv", "AllPSMs_FormattedForPercolator.tsv", "prose.txt", "results.txt", "VariantPeptides.psmtsv", "VariantAnalysisResultSummary.txt", "VariantPSMs.psmtsv" };
+
+            // these 2 lines are for debug purposes, so you can see which files you're missing (if any)
+            missingFiles = expectedFiles.Except(files2).ToList();
+            extraFiles = files2.Except(expectedFiles).ToList();
+
+            // test that output is what's expected
+            Assert.That(missingFiles.Count() == 0 && extraFiles.Count() == 0);
+
         }
     }
 }

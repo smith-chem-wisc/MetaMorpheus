@@ -913,7 +913,7 @@ namespace TaskLayer
         {
             Status("Writing variant peptide results...", Parameters.SearchTaskId);
             string variantPsmFile = Path.Combine(Parameters.OutputFolder, "VariantPSMs.psmtsv");
-            string variantPeptideFile = Path.Combine(Parameters.OutputFolder, "VaraintPeptides.psmtsv");            
+            string variantPeptideFile = Path.Combine(Parameters.OutputFolder, "VariantPeptides.psmtsv");            
             List<PeptideSpectralMatch> FDRPsms = Parameters.AllPsms
                 .Where(p => p.FdrInfo.QValue <= CommonParameters.QValueOutputFilter
                 && p.FdrInfo.QValueNotch <= CommonParameters.QValueOutputFilter && p.BaseSequence != null).ToList();
@@ -1031,20 +1031,20 @@ namespace TaskLayer
                 }
             }
 
-            string[] variantResults = new string[12];
+            string[] variantResults = new string[15];
             variantResults[0] = "Variant Result Summary";
             variantResults[2] = "--------------------------------------------------";
             variantResults[4] = "Number of potentially variant containing peptides identified at 1% FDR: " + variantPeptides.Count();
             variantResults[5] = "Number of unqiuely identified variant peptides at 1% FDR: " + confidentVariantPeps.Count();
             variantResults[6] = "Number of SAV variant peptides at 1% FDR: " + savCount;
             variantResults[7] = "Number of frameshift variant peptides at 1% FDR: " + frameshiftCount;
-            variantResults[9] = "Number of inframe insertion variant peptides at 1% FDR: " + insertionCount;
-            variantResults[10] = "Number of inframe deletion variant peptides at 1% FDR: " + deletionCount;
-            variantResults[8] = "Number of stop gain variant peptides at 1% FDR: " + stopGainCount;
-            variantResults[10] = "Number of stop loss variant peptides at 1% FDR: " + stopLossCount;
-            variantResults[11] = "Number of exon loss variant peptides at 1% FDR: " + exonLossCount;
-            variantResults[10] = "Number of modified variant peptides at 1% FDR: " + modifiedVariantPeptides.Count();
-            variantResults[11] = "Number of modified variant sites at 1% FDR: " + modifiedVariantSitePeptides.Count();
+            variantResults[8] = "Number of inframe insertion variant peptides at 1% FDR: " + insertionCount;
+            variantResults[9] = "Number of inframe deletion variant peptides at 1% FDR: " + deletionCount;
+            variantResults[10] = "Number of stop gain variant peptides at 1% FDR: " + stopGainCount;
+            variantResults[11] = "Number of stop loss variant peptides at 1% FDR: " + stopLossCount;
+            variantResults[12] = "Number of exon loss variant peptides at 1% FDR: " + exonLossCount;
+            variantResults[13] = "Number of modified variant peptides at 1% FDR: " + modifiedVariantPeptides.Count();
+            variantResults[14] = "Number of modified variant sites at 1% FDR: " + modifiedVariantSitePeptides.Count();
             
             string filePath = Path.Combine(Parameters.OutputFolder, "VariantAnalysisResultSummary.txt");
             File.WriteAllLines(filePath, variantResults);

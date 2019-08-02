@@ -140,6 +140,12 @@
     <None Update="TestData\XCorrUnitTest.tsv">
       <CopyToOutputDirectory>Always</CopyToOutputDirectory>
     </None>
+    <None Update="TestNoVariantDb.xml">
+      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+    </None>
+    <None Update="TestVariantDb.xml">
+      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+    </None>
     <None Update="TopDownTestData\slicedTDYeast.mzML">
       <CopyToOutputDirectory>Always</CopyToOutputDirectory>
     </None>
