@@ -940,8 +940,7 @@ namespace TaskLayer
 
             List<PeptideSpectralMatch> variantPeptides = possibleVariantPsms.GroupBy(b => b.FullSequence).Select(b => b.FirstOrDefault()).ToList();
             List<PeptideSpectralMatch> confidentVariantPeps = new List<PeptideSpectralMatch>();
-            WritePsmsToTsv(variantPeptides,variantPeptideFile, Parameters.SearchParameters.ModsToWriteSelection);
-            variantPeptides.RemoveAll(p => p.FdrInfo.QValue > 0.01 || p.FdrInfo.QValueNotch > 0.01 || p.IsDecoy);
+            WritePsmsToTsv(variantPeptides,variantPeptideFile, Parameters.SearchParameters.ModsToWriteSelection);            
             foreach (var entry in variantPeptides)
             {
                 var pwsm = entry.BestMatchingPeptides;
@@ -965,10 +964,9 @@ namespace TaskLayer
             int frameshiftCount = 0;
             int stopGainCount = 0;
             int stopLossCount = 0;
-            int exonLossCount = 0; ;
-            confidentVariantPeps.RemoveAll(p => p.FdrInfo.QValue > 0.01 || p.FdrInfo.QValueNotch > 0.01 || p.IsDecoy);            
-            List<PeptideSpectralMatch> modifiedVariantPeptides = confidentVariantPeps.Where(p => p.ModsIdentified.Count() > 0).ToList();
-            List<PeptideSpectralMatch> modifiedVariantSitePeptides = new List<PeptideSpectralMatch>();
+            int exonLossCount = 0;                      
+            List<PeptideSpectralMatch> modifiedVariantPeptides = confidentVariantPeps.Where(p => p.ModsIdentified.Count() > 0).ToList(); //modification can be on any AA in variant peptide
+            List<PeptideSpectralMatch> modifiedVariantSitePeptides = new List<PeptideSpectralMatch>();// modification is speciifcally on the variant residue within the peptide
             foreach (var entry in modifiedVariantPeptides)
             {
                 var variants = entry.BestMatchingPeptides.SelectMany(p => p.Peptide.Protein.AppliedSequenceVariations.Where(v => PsmTsvWriter.IntersectsWithVariation(p.Peptide, v, true) ==true).ToList()).ToList();
@@ -990,52 +988,56 @@ namespace TaskLayer
             }
             foreach (var peptide in confidentVariantPeps)
             {
-                var variantPWSM = peptide.BestMatchingPeptides.FirstOrDefault();
-                var variants = variantPWSM.Peptide.Protein.AppliedSequenceVariations;
-                var culture = CultureInfo.CurrentCulture;
-                foreach (var variant in variants)
+                if (peptide.FdrInfo.QValue <= 0.01 && peptide.FdrInfo.QValueNotch <= 0.01 && peptide.IsDecoy == false)
                 {
-                    bool intersects = PsmTsvWriter.IntersectsWithVariation(variantPWSM.Peptide, variant, true);
-                    if(intersects == true)
+                    var variantPWSM = peptide.BestMatchingPeptides.FirstOrDefault();//TODO: expand to all peptide options not just the first
+                    var variants = variantPWSM.Peptide.Protein.AppliedSequenceVariations;
+                    var culture = CultureInfo.CurrentCulture;
+                    foreach (var variant in variants)
                     {
-                        if (culture.CompareInfo.IndexOf(variant.Description.Description, "missense_variant", CompareOptions.IgnoreCase)>=0)
+                        bool intersects = PsmTsvWriter.IntersectsWithVariation(variantPWSM.Peptide, variant, true);
+                        if (intersects == true)
                         {
-                            savCount++;
-                        }
-                        if (culture.CompareInfo.IndexOf(variant.Description.Description, "frameshift_variant", CompareOptions.IgnoreCase) >= 0) 
-                        {
-                            frameshiftCount++;
-                        }
-                        if (culture.CompareInfo.IndexOf(variant.Description.Description, "stop_gained", CompareOptions.IgnoreCase) >= 0)
-                        {
-                            stopGainCount++;
-                        }
-                        if ((culture.CompareInfo.IndexOf(variant.Description.Description, "conservative_inframe_insertion", CompareOptions.IgnoreCase) >= 0) || (culture.CompareInfo.IndexOf(variant.Description.Description, "disruptive_inframe_insertion", CompareOptions.IgnoreCase) >=0))
-                        {
-                            insertionCount++;                            
-                        }
-                        if ((culture.CompareInfo.IndexOf(variant.Description.Description, "conservative_inframe_deletion", CompareOptions.IgnoreCase) >= 0) || (culture.CompareInfo.IndexOf(variant.Description.Description, "disruptive_inframe_deletion", CompareOptions.IgnoreCase) >= 0))
-                        {
-                            deletionCount++;
-                        }
-                        if (culture.CompareInfo.IndexOf(variant.Description.Description, "exon_loss_variant", CompareOptions.IgnoreCase) >= 0)
-                        {
-                            exonLossCount++;
-                        }
-                        if (culture.CompareInfo.IndexOf(variant.Description.Description, "stop_loss", CompareOptions.IgnoreCase) >= 0)
-                        {
-                            stopLossCount++;
-                        }
+                            if (culture.CompareInfo.IndexOf(variant.Description.Description, "missense_variant", CompareOptions.IgnoreCase) >= 0)
+                            {
+                                savCount++;
+                            }
+                            if (culture.CompareInfo.IndexOf(variant.Description.Description, "frameshift_variant", CompareOptions.IgnoreCase) >= 0)
+                            {
+                                frameshiftCount++;
+                            }
+                            if (culture.CompareInfo.IndexOf(variant.Description.Description, "stop_gained", CompareOptions.IgnoreCase) >= 0)
+                            {
+                                stopGainCount++;
+                            }
+                            if ((culture.CompareInfo.IndexOf(variant.Description.Description, "conservative_inframe_insertion", CompareOptions.IgnoreCase) >= 0) || (culture.CompareInfo.IndexOf(variant.Description.Description, "disruptive_inframe_insertion", CompareOptions.IgnoreCase) >= 0))
+                            {
+                                insertionCount++;
+                            }
+                            if ((culture.CompareInfo.IndexOf(variant.Description.Description, "conservative_inframe_deletion", CompareOptions.IgnoreCase) >= 0) || (culture.CompareInfo.IndexOf(variant.Description.Description, "disruptive_inframe_deletion", CompareOptions.IgnoreCase) >= 0))
+                            {
+                                deletionCount++;
+                            }
+                            if (culture.CompareInfo.IndexOf(variant.Description.Description, "exon_loss_variant", CompareOptions.IgnoreCase) >= 0)
+                            {
+                                exonLossCount++;
+                            }
+                            if (culture.CompareInfo.IndexOf(variant.Description.Description, "stop_loss", CompareOptions.IgnoreCase) >= 0)
+                            {
+                                stopLossCount++;
+                            }
 
+                        }
                     }
+                
                 }
             }
 
             string[] variantResults = new string[15];
             variantResults[0] = "Variant Result Summary";
             variantResults[2] = "--------------------------------------------------";
-            variantResults[4] = "Number of potential variant containing peptides identified at 1% FDR: " + variantPeptides.Count();
-            variantResults[5] = "Number of unqiuely identified variant peptides at 1% FDR: " + confidentVariantPeps.Count();
+            variantResults[4] = "Number of potential variant containing peptides identified at 1% FDR: " + variantPeptides.Where(p => p.IsDecoy ==false && p.FdrInfo.QValue <= 0.01 &&p.FdrInfo.QValueNotch <= 0.01).ToList().Count();
+            variantResults[5] = "Number of unqiuely identified variant peptides at 1% FDR: " + confidentVariantPeps.Where(p => p.IsDecoy == false && p.FdrInfo.QValue <= 0.01 && p.FdrInfo.QValueNotch <= 0.01).ToList().Count();
             variantResults[6] = "Number of SAV variant peptides at 1% FDR: " + savCount;
             variantResults[7] = "Number of frameshift variant peptides at 1% FDR: " + frameshiftCount;
             variantResults[8] = "Number of inframe insertion variant peptides at 1% FDR: " + insertionCount;

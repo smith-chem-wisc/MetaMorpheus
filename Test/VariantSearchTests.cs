@@ -159,7 +159,7 @@ namespace Test
             DbForTask conservativeDeletionVariantDb = new DbForTask(Path.Combine(TestContext.CurrentContext.TestDirectory, @"TestVariantDB_conservativeDeletion.xml"), false);
             DbForTask disruptiveDeletionVariantDb = new DbForTask(Path.Combine(TestContext.CurrentContext.TestDirectory, @"TestVariantDB_disruptiveDeletion.xml"), false);
             DbForTask exonLossVariantDb = new DbForTask(Path.Combine(TestContext.CurrentContext.TestDirectory, @"TestVariantDB_exonLoss.xml"), false);
-            DbForTask stopLossVariantDb = new DbForTask(Path.Combine(TestContext.CurrentContext.TestDirectory, @"TestVariantDB_stopLoss.xml"), false);
+            DbForTask stopLossVariantDb = new DbForTask(Path.Combine(TestContext.CurrentContext.TestDirectory, @"TestVariantDB_stopLoss.xml"), false);           
 
             string raw = Path.Combine(TestContext.CurrentContext.TestDirectory, @"TestVariantPep.mzML"); 
             
@@ -173,6 +173,7 @@ namespace Test
             EverythingRunnerEngine disruptiveDeletionVariants = new EverythingRunnerEngine(new List<(string, MetaMorpheusTask)> { ("VariantOutput_disruptiveDeletion", task) }, new List<string> { raw }, new List<DbForTask> { disruptiveDeletionVariantDb }, thisTaskOutputFolder);
             EverythingRunnerEngine exonLossVariants = new EverythingRunnerEngine(new List<(string, MetaMorpheusTask)> { ("VariantOutput_exonLoss", task) }, new List<string> { raw }, new List<DbForTask> { exonLossVariantDb }, thisTaskOutputFolder);
             EverythingRunnerEngine stopLossVariants = new EverythingRunnerEngine(new List<(string, MetaMorpheusTask)> { ("VariantOutput_stopLoss", task) }, new List<string> { raw }, new List<DbForTask> { stopLossVariantDb }, thisTaskOutputFolder);
+            
 
             noVariants.Run();
             frameshifVariants.Run();
@@ -184,6 +185,7 @@ namespace Test
             disruptiveDeletionVariants.Run();
             exonLossVariants.Run();
             stopLossVariants.Run();
+            
 
             // no variant results files should be generated
             HashSet<string> expectedFiles = new HashSet<string> {
@@ -335,7 +337,7 @@ namespace Test
             Assert.AreEqual("Number of exon loss variant peptides at 1% FDR: 0", checkResults[12]);
             Assert.AreEqual("Number of modified variant peptides at 1% FDR: 1", checkResults[13]);
             Assert.AreEqual("Number of modified variant sites at 1% FDR: 0", checkResults[14]);
-
+            
         }
     }
 }
