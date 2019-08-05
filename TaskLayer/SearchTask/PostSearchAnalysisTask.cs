@@ -1002,27 +1002,27 @@ namespace TaskLayer
                             {
                                 savCount++;
                             }
-                            if (culture.CompareInfo.IndexOf(variant.Description.Description, "frameshift_variant", CompareOptions.IgnoreCase) >= 0)
+                            else if (culture.CompareInfo.IndexOf(variant.Description.Description, "frameshift_variant", CompareOptions.IgnoreCase) >= 0)
                             {
                                 frameshiftCount++;
                             }
-                            if (culture.CompareInfo.IndexOf(variant.Description.Description, "stop_gained", CompareOptions.IgnoreCase) >= 0)
+                            else if (culture.CompareInfo.IndexOf(variant.Description.Description, "stop_gained", CompareOptions.IgnoreCase) >= 0)
                             {
                                 stopGainCount++;
                             }
-                            if ((culture.CompareInfo.IndexOf(variant.Description.Description, "conservative_inframe_insertion", CompareOptions.IgnoreCase) >= 0) || (culture.CompareInfo.IndexOf(variant.Description.Description, "disruptive_inframe_insertion", CompareOptions.IgnoreCase) >= 0))
+                            else if ((culture.CompareInfo.IndexOf(variant.Description.Description, "conservative_inframe_insertion", CompareOptions.IgnoreCase) >= 0) || (culture.CompareInfo.IndexOf(variant.Description.Description, "disruptive_inframe_insertion", CompareOptions.IgnoreCase) >= 0))
                             {
                                 insertionCount++;
                             }
-                            if ((culture.CompareInfo.IndexOf(variant.Description.Description, "conservative_inframe_deletion", CompareOptions.IgnoreCase) >= 0) || (culture.CompareInfo.IndexOf(variant.Description.Description, "disruptive_inframe_deletion", CompareOptions.IgnoreCase) >= 0))
+                            else if ((culture.CompareInfo.IndexOf(variant.Description.Description, "conservative_inframe_deletion", CompareOptions.IgnoreCase) >= 0) || (culture.CompareInfo.IndexOf(variant.Description.Description, "disruptive_inframe_deletion", CompareOptions.IgnoreCase) >= 0))
                             {
                                 deletionCount++;
                             }
-                            if (culture.CompareInfo.IndexOf(variant.Description.Description, "exon_loss_variant", CompareOptions.IgnoreCase) >= 0)
+                            else if (culture.CompareInfo.IndexOf(variant.Description.Description, "exon_loss_variant", CompareOptions.IgnoreCase) >= 0)
                             {
                                 exonLossCount++;
                             }
-                            if (culture.CompareInfo.IndexOf(variant.Description.Description, "stop_loss", CompareOptions.IgnoreCase) >= 0)
+                            else if (culture.CompareInfo.IndexOf(variant.Description.Description, "stop_loss", CompareOptions.IgnoreCase) >= 0)
                             {
                                 stopLossCount++;
                             }
