@@ -130,8 +130,10 @@ namespace TaskLayer
 
             ReportProgress(new ProgressEventArgs(100, "Done with all searches!", new List<string> { taskId, "Individual Spectra Files" }));
 
-            List<List<CrosslinkSpectralMatch>> filteredAllPsms = new List<List<CrosslinkSpectralMatch>>();
+            List<List<CrosslinkSpectralMatch>> allPsmsList = new List<List<CrosslinkSpectralMatch>>();
 
+            //For every Ms2Scans, each have a list of candidates psms. The allPsms from CrosslinkSearchEngine is the list (all ms2scans) of list (each ms2scan) of psm (all candidate psm). 
+            //The allPsmsList is same as allPsms after ResolveAmbiguities. 
             foreach (var psmsPerScan in allPsms)
             {
                 foreach (var psm in psmsPerScan)
@@ -142,30 +144,33 @@ namespace TaskLayer
                         psm.BetaPeptide.ResolveAllAmbiguities();
                     }
                 }
-                filteredAllPsms.Add(RemoveDuplicateFromPsmsPerScan(psmsPerScan));
+                allPsmsList.Add(RemoveDuplicateFromPsmsPerScan(psmsPerScan));
             }
 
-            var allPsmsList = new List<CrosslinkSpectralMatch>();
+            var filteredAllPsms = new List<CrosslinkSpectralMatch>();
 
-            foreach (var psmsPerScan in allPsms)
+            //For each ms2scan, try to find the best candidate psm from the psms list. Add it into filteredAllPsms
+            //This function is for current usage, this can be replaced with PEP value. 
+            foreach (var psmsPerScan in allPsmsList)
             {
                 CrosslinkSpectralMatch crosslinkSpectralMatch = psmsPerScan[0];
 
                 for (int i = 1; i < psmsPerScan.Count -1; i++)
                 {
+                    //The purpose of this is to re-select dead-end peptide wrongly identified as crosslinked peptide.
                     if (psmsPerScan[i].Score > psmsPerScan[0].Score && psmsPerScan[i].BaseSequence.Contains(psmsPerScan[0].BaseSequence))
                     {
                         crosslinkSpectralMatch = psmsPerScan[i];
                     }
                 }
 
-                allPsmsList.Add(crosslinkSpectralMatch);
+                filteredAllPsms.Add(crosslinkSpectralMatch);
 
             }
 
             PostXLSearchAnalysisTask postXLSearchAnalysisTask = new PostXLSearchAnalysisTask();
 
-            return postXLSearchAnalysisTask.Run(OutputFolder, dbFilenameList, currentRawFileList, taskId, fileSettingsList, allPsmsList, CommonParameters, XlSearchParameters, proteinList, variableModifications, fixedModifications, localizeableModificationTypes, MyTaskResults);
+            return postXLSearchAnalysisTask.Run(OutputFolder, dbFilenameList, currentRawFileList, taskId, fileSettingsList, filteredAllPsms, CommonParameters, XlSearchParameters, proteinList, variableModifications, fixedModifications, localizeableModificationTypes, MyTaskResults);
 
         }
 
