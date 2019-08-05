@@ -1022,7 +1022,7 @@ namespace TaskLayer
                         {
                             exonLossCount++;
                         }
-                        if (culture.CompareInfo.IndexOf(variant.Description.Description, "stop_lost", CompareOptions.IgnoreCase) >= 0)
+                        if (culture.CompareInfo.IndexOf(variant.Description.Description, "stop_loss", CompareOptions.IgnoreCase) >= 0)
                         {
                             stopLossCount++;
                         }
@@ -1034,7 +1034,7 @@ namespace TaskLayer
             string[] variantResults = new string[15];
             variantResults[0] = "Variant Result Summary";
             variantResults[2] = "--------------------------------------------------";
-            variantResults[4] = "Number of potentially variant containing peptides identified at 1% FDR: " + variantPeptides.Count();
+            variantResults[4] = "Number of potential variant containing peptides identified at 1% FDR: " + variantPeptides.Count();
             variantResults[5] = "Number of unqiuely identified variant peptides at 1% FDR: " + confidentVariantPeps.Count();
             variantResults[6] = "Number of SAV variant peptides at 1% FDR: " + savCount;
             variantResults[7] = "Number of frameshift variant peptides at 1% FDR: " + frameshiftCount;
