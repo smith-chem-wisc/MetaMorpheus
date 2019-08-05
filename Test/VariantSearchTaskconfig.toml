@@ -23,8 +23,8 @@ HistogramBinTolInDaltons = 0.003
 MaximumMassThatFragmentIonScoreIsDoubled = 0.0
 WriteMzId = true
 WritePepXml = false
-WriteDecoys = true
-WriteContaminants = true
+WriteDecoys = false
+WriteContaminants = false
 
 [SearchParameters.ModsToWriteSelection]
 'N-linked glycosylation' = 3
