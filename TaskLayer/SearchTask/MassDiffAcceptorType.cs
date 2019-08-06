@@ -8,6 +8,7 @@
         ThreeMM,
         ModOpen,
         Open,
-        Custom
+        Custom,
+        PlusOrMinusThreeMM
     }
 }
