@@ -44,6 +44,9 @@ namespace Test
 
             result = SearchTask.GetMassDiffAcceptor(searchTask.CommonParameters.PrecursorMassTolerance, MassDiffAcceptorType.Exact, searchTask.SearchParameters.CustomMdac);
             Assert.That(result.FileNameAddition.Equals("5ppmAroundZero"));
+
+            result = SearchTask.GetMassDiffAcceptor(searchTask.CommonParameters.PrecursorMassTolerance, MassDiffAcceptorType.PlusOrMinusThreeMM, searchTask.SearchParameters.CustomMdac);
+            Assert.That(result.FileNameAddition.Equals("PlusOrMinus3Da"));
         }
 
         /// <summary>

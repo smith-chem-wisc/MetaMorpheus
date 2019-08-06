@@ -682,7 +682,7 @@ namespace TaskLayer
                                 accession = "MS:1001093",
                                 name = "sequence coverage",
                                 cvRef = "PSI-MS",
-                                value = proteinGroup.SequenceCoveragePercent.First().ToString()
+                                value = proteinGroup.SequenceCoverageFraction.First().ToString()
                             },
                             new mzIdentML110.Generated.CVParamType
                             {

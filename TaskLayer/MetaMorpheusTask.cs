@@ -260,7 +260,7 @@ namespace TaskLayer
             var childScanNumbers = new HashSet<int>(scansWithPrecursors.SelectMany(p => p.SelectMany(v => v.ChildScans.Select(x => x.OneBasedScanNumber))));
             var parentScans = scansWithPrecursors.Where(p => p.Any() && !childScanNumbers.Contains(p.First().OneBasedScanNumber)).SelectMany(v => v);
 
-            // XCorr pre-processing for low-res data. this is here because the parent/child scans may have different 
+            // XCorr pre-processing for low-res data. this is here because the parent/child scans may have different
             // resolutions, so this pre-processing must take place after the parent/child scans have been determined
             foreach (var parentScan in parentScans)
             {
@@ -379,7 +379,7 @@ namespace TaskLayer
                         }
                         catch (MetaMorpheusException e)
                         {
-                            // file-specific toml has already been validated in the GUI when the spectra files were added, so...
+                            //file - specific toml has already been validated in the GUI when the spectra files were added, so...
                             // probably the only time you can get here is if the user modifies the file-specific parameter file in the middle of a run...
                             Warn("Problem parsing the file-specific toml " + Path.GetFileName(fileSpecificTomlPath) + "; " + e.Message + "; is the toml from an older version of MetaMorpheus?");
                         }
@@ -806,13 +806,12 @@ namespace TaskLayer
                 var fragmentIndexFile = Path.Combine(pathToFolderWithIndices, SecondFragmentIndexFileName);
                 WriteFragmentIndex(secondFragmentIndex, fragmentIndexFile);
                 FinishedWritingFile(fragmentIndexFile, new List<string> { taskId });
-
             }
             else //if we found indexes with the same params
             {
                 Status("Reading fragment index...", new List<string> { taskId });
                 secondFragmentIndex = ReadFragmentIndex(Path.Combine(pathToFolderWithIndices, SecondFragmentIndexFileName));
             }
-        }      
+        }
     }
 }
