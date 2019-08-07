@@ -284,7 +284,8 @@ namespace TaskLayer
             //If SILAC (Pre-Quantification) preparation
             //setup variables
             List<SilacLabel> allSilacLabels = Parameters.SearchParameters.SilacLabels;
-            (SilacLabel startLabel, SilacLabel endLabel)? turnoverLabels = Parameters.SearchParameters.TurnoverLabels;
+            SilacLabel startLabel = Parameters.SearchParameters.StartTurnoverLabel;
+            SilacLabel endLabel = Parameters.SearchParameters.EndTurnoverLabel;
             bool quantifyUnlabeledPeptides = Parameters.ListOfDigestionParams.Any(x => x.GeneratehUnlabeledProteinsForSilac);
             if (Parameters.SearchParameters.SilacLabels != null)
             {
@@ -298,7 +299,7 @@ namespace TaskLayer
                 foreach (PeptideSpectralMatch psm in unambiguousPsmsBelowOnePercentFdr)
                 {
                     //get the original proteinGroup to give to the other psm clones
-                    List<FlashLFQ.ProteinGroup> originalProteinGroups = psmToProteinGroups[psm];
+                    List<FlashLFQ.ProteinGroup> originalProteinGroups = psmToProteinGroups.ContainsKey(psm) ? psmToProteinGroups[psm]:new List<FlashLFQ.ProteinGroup>();
 
                     //see which label, if any, this peptide has
                     string peptideBaseSequence = psm.BaseSequence;
@@ -313,13 +314,16 @@ namespace TaskLayer
                     PeptideWithSetModifications pwsm = psm.BestMatchingPeptides.First().Peptide;
 
                     //check if turnover or multiplex experiment
-                    if (turnoverLabels == null) //if multiplex
+                    if (startLabel==null &&endLabel==null) //if multiplex
                     {
                         //If we need the light form, then add it
                         if (quantifyUnlabeledPeptides)
                         {
                             silacPsms.Add(lightPsm);
-                            psmToProteinGroups[lightPsm] = originalProteinGroups; //add proteingroup info
+                            if (originalProteinGroups != null)
+                            {
+                                psmToProteinGroups[lightPsm] = originalProteinGroups; //add proteingroup info
+                            }
                         }
                         //take the unlabeled sequence and modify everything for each label
                         foreach (SilacLabel label in allSilacLabels)
@@ -332,7 +336,10 @@ namespace TaskLayer
                                 if (!labeledBaseSequence.Equals(unlabeledBaseSequence))
                                 {
                                     PeptideSpectralMatch labeledPsm = SilacConversions.GetLabeledPsm(psm, notch, pwsm, labeledBaseSequence);
-                                    psmToProteinGroups[labeledPsm] = originalProteinGroups; //add proteingroup info
+                                    if (originalProteinGroups != null)
+                                    {
+                                        psmToProteinGroups[labeledPsm] = originalProteinGroups; //add proteingroup info
+                                    }
                                     silacPsms.Add(labeledPsm);
                                 }
                             }
@@ -344,9 +351,6 @@ namespace TaskLayer
                     }
                     else //if turnover
                     {
-                        SilacLabel startLabel = turnoverLabels.Value.startLabel;
-                        SilacLabel endLabel = turnoverLabels.Value.endLabel;
-
                         //Convert everything to the startLabel
                         string startLabeledBaseSequence = SilacConversions.GetLabeledBaseSequence(unlabeledBaseSequence, startLabel);
 
@@ -429,6 +433,7 @@ namespace TaskLayer
 
                 foreach (var psm in spectraFile)
                 {
+                    bool test = psmToProteinGroups.ContainsKey(psm);
                     flashLFQIdentifications.Add(new Identification(rawfileinfo, psm.BaseSequence, psm.FullSequence,
                         psm.PeptideMonisotopicMass.Value, psm.ScanRetentionTime, psm.ScanPrecursorCharge, psmToProteinGroups[psm]));
                 }
@@ -473,7 +478,7 @@ namespace TaskLayer
             //Silac stuff for post-quantification
             if (Parameters.SearchParameters.SilacLabels != null) //if we're doing silac
             {
-                SilacConversions.SilacConversionsPostQuantification(allSilacLabels, turnoverLabels, spectraFileInfo, ProteinGroups, Parameters.ListOfDigestionParams,
+                SilacConversions.SilacConversionsPostQuantification(allSilacLabels, startLabel, endLabel, spectraFileInfo, ProteinGroups, Parameters.ListOfDigestionParams,
                     Parameters.FlashLfqResults, Parameters.AllPsms, Parameters.SearchParameters.ModsToWriteSelection, quantifyUnlabeledPeptides);
             }
         }

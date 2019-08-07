@@ -163,7 +163,8 @@ namespace Test
             Scans = ScansHere.ToArray();
         }
 
-        public TestDataFile(PeptideWithSetModifications pwsm, List<double> labelMassDifferences, bool includeMassDifferenceInPrecursor = false, List<double> precursorIntensities = null)
+        //used for SILAC
+        public TestDataFile(PeptideWithSetModifications pwsm, List<double> labelMassDifferences, bool includeMassDifferenceInPrecursor = false, List<double> precursorIntensities = null, int numPeaksSeparatedByZeroes = 1)
             : base(2, new SourceFile(@"no nativeID format", "mzML format", null, "SHA-1", @"C:\fake.mzML", null))
         {
             List<MsDataScan> ScansHere = new List<MsDataScan>();
@@ -175,67 +176,82 @@ namespace Test
 
             labelMassDifferences.Insert(0, lightMass);
 
-            List<double> mz1 = new List<double>();
-            List<double> intensities1 = new List<double>();
-            for (int z = 3; z >= 2; z--)
+            int currentScanNumber = 1;
+            for (int chromatographicPeakNumber = 0; chromatographicPeakNumber < numPeaksSeparatedByZeroes; chromatographicPeakNumber++)
             {
-                for (int i = 0; i < labelMassDifferences.Count; i++)
+                if (chromatographicPeakNumber != 0) //separate with zeroes
                 {
-                    double mass = labelMassDifferences[i];
-
-                    for (int isotope = 0; isotope < 3; isotope++)
+                    var emptySpectrum = new MzSpectrum(new double[0], new double[0], false);
+                    for (int skip = 0; skip < 5; skip++)
                     {
-                        mz1.Add((mass + isotope * Constants.C13MinusC12).ToMz(z));
-                        if (precursorIntensities == null)
-                        {
-                            intensities1.Add(Math.Pow(0.5, i) * (Math.Pow(0.5, isotope) * 1000000)); //makes each label half the intensity of the previous
-                        }
-                        else
-                        {
-                            intensities1.Add(precursorIntensities[i] * (Math.Pow(0.5, isotope) * 1000000));
-                        }
+                        ScansHere.Add(new MsDataScan(emptySpectrum, currentScanNumber, 1, true, Polarity.Positive, currentScanNumber, new MzLibUtil.MzRange(0, 10000), "gg", MZAnalyzerType.Orbitrap, 1000, 1, null, "scan="+currentScanNumber.ToString()));
+                        currentScanNumber++;
                     }
                 }
-            }
-            var MassSpectrum1 = new MzSpectrum(mz1.ToArray(), intensities1.ToArray(), false);
-            ScansHere.Add(new MsDataScan(MassSpectrum1, 1, 1, true, Polarity.Positive, 0, new MzLibUtil.MzRange(0, 10000), "gg", MZAnalyzerType.Orbitrap, intensities1.Sum(), 1, null, "scan=1"));
-
-            //only make the light ms2, it should find the heavy ms1 from that
-            List<double> mz2 = new List<double>();
-            List<double> intensities2 = new List<double>();
-            foreach (var aok in pwsm.Fragment(DissociationType.HCD, FragmentationTerminus.Both))
-            {
-                mz2.Add(aok.NeutralMass.ToMz(1));
-                mz2.Add((aok.NeutralMass + Constants.C13MinusC12).ToMz(1));
-                intensities2.Add(1);
-                intensities2.Add(1);
-            }
-            if (includeMassDifferenceInPrecursor)
-            {
-                lightMass = labelMassDifferences[1];
-            }
-            var MassSpectrum2 = new MzSpectrum(mz2.OrderBy(b => b).ToArray(), intensities2.ToArray(), false);
-            ScansHere.Add(new MsDataScan(MassSpectrum2, 2, 2, true, Polarity.Positive, 1, new MzLibUtil.MzRange(0, 10000), "gg", MZAnalyzerType.Orbitrap, 234734, 1, null, "scan=2", lightMass.ToMz(2), 2, 1, lightMass.ToMz(2), 2, DissociationType.HCD, 1, lightMass.ToMz(2)));
-
-            //if making additional ms1s for quant
-            if (precursorIntensities != null)
-            {
-                for (int i = 1; i < precursorIntensities.Count / (labelMassDifferences.Count); i++)
+                List<double> mz1 = new List<double>();
+                List<double> intensities1 = new List<double>();
+                for (int z = 3; z >= 2; z--)
                 {
-                    intensities1 = new List<double>();
-                    for (int z = 3; z >= 2; z--)
+                    for (int i = 0; i < labelMassDifferences.Count; i++)
                     {
-                        for (int j = 0; j < labelMassDifferences.Count; j++)
+                        double mass = labelMassDifferences[i];
+
+                        for (int isotope = 0; isotope < 3; isotope++)
                         {
-                            for (int isotope = 0; isotope < 3; isotope++)
+                            mz1.Add((mass + isotope * Constants.C13MinusC12).ToMz(z));
+                            if (precursorIntensities == null)
                             {
-                                intensities1.Add(precursorIntensities[(i)* labelMassDifferences.Count + j] * (Math.Pow(0.5, isotope) * 1000000));
+                                intensities1.Add(Math.Pow(0.5, i) * (Math.Pow(0.5, isotope) * 1000000)); //makes each label half the intensity of the previous
+                            }
+                            else
+                            {
+                                intensities1.Add(precursorIntensities[i] * (Math.Pow(0.5, isotope) * 1000000));
                             }
                         }
                     }
-                    MassSpectrum1 = new MzSpectrum(mz1.ToArray(), intensities1.ToArray(), false);
-                    int scanNumber = 2 + i;
-                    ScansHere.Add(new MsDataScan(MassSpectrum1, scanNumber, 1, true, Polarity.Positive, scanNumber, new MzLibUtil.MzRange(0, 10000), "gg", MZAnalyzerType.Orbitrap, intensities1.Sum(), 1, null, "scan=" + scanNumber.ToString()));
+                }
+                var MassSpectrum1 = new MzSpectrum(mz1.ToArray(), intensities1.ToArray(), false);
+                ScansHere.Add(new MsDataScan(MassSpectrum1, currentScanNumber, 1, true, Polarity.Positive, currentScanNumber, new MzLibUtil.MzRange(0, 10000), "gg", MZAnalyzerType.Orbitrap, intensities1.Sum(), 1, null, "scan="+currentScanNumber.ToString()));
+                currentScanNumber++;
+
+                //only make the light ms2, it should find the heavy ms1 from that
+                List<double> mz2 = new List<double>();
+                List<double> intensities2 = new List<double>();
+                foreach (var aok in pwsm.Fragment(DissociationType.HCD, FragmentationTerminus.Both))
+                {
+                    mz2.Add(aok.NeutralMass.ToMz(1));
+                    mz2.Add((aok.NeutralMass + Constants.C13MinusC12).ToMz(1));
+                    intensities2.Add(1);
+                    intensities2.Add(1);
+                }
+                if (includeMassDifferenceInPrecursor)
+                {
+                    lightMass = labelMassDifferences[1];
+                }
+                var MassSpectrum2 = new MzSpectrum(mz2.OrderBy(b => b).ToArray(), intensities2.ToArray(), false);
+                ScansHere.Add(new MsDataScan(MassSpectrum2, currentScanNumber, 2, true, Polarity.Positive, currentScanNumber, new MzLibUtil.MzRange(0, 10000), "gg", MZAnalyzerType.Orbitrap, 234734, 1, null, "scan="+currentScanNumber.ToString(), lightMass.ToMz(2), 2, 1, lightMass.ToMz(2), 2, DissociationType.HCD, 1, lightMass.ToMz(2)));
+                currentScanNumber++;
+
+                //if making additional ms1s for quant
+                if (precursorIntensities != null)
+                {
+                    for (int i = 1; i < precursorIntensities.Count / (labelMassDifferences.Count); i++)
+                    {
+                        intensities1 = new List<double>();
+                        for (int z = 3; z >= 2; z--)
+                        {
+                            for (int j = 0; j < labelMassDifferences.Count; j++)
+                            {
+                                for (int isotope = 0; isotope < 3; isotope++)
+                                {
+                                    intensities1.Add(precursorIntensities[(i) * labelMassDifferences.Count + j] * (Math.Pow(0.5, isotope) * 1000000));
+                                }
+                            }
+                        }
+                        MassSpectrum1 = new MzSpectrum(mz1.ToArray(), intensities1.ToArray(), false);
+                        ScansHere.Add(new MsDataScan(MassSpectrum1, currentScanNumber, 1, true, Polarity.Positive, currentScanNumber, new MzLibUtil.MzRange(0, 10000), "gg", MZAnalyzerType.Orbitrap, intensities1.Sum(), 1, null, "scan=" + currentScanNumber.ToString()));
+                        currentScanNumber++;
+                    }
                 }
             }
             Scans = ScansHere.ToArray();

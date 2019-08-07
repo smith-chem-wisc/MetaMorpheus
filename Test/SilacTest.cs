@@ -328,7 +328,7 @@ namespace Test
             {
                 SearchParameters = new SearchParameters
                 {
-                    TurnoverLabels = (null, new SilacLabel(lightLysine.Letter, heavyLysine.Letter, heavyLysine.ThisChemicalFormula.Formula, heavyLysine.MonoisotopicMass - lightLysine.MonoisotopicMass)),
+                    EndTurnoverLabel = new SilacLabel(lightLysine.Letter, heavyLysine.Letter, heavyLysine.ThisChemicalFormula.Formula, heavyLysine.MonoisotopicMass - lightLysine.MonoisotopicMass),
                     NoOneHitWonders = true
                     //The NoOneHitWonders=true doesn't really seem like a SILAC test, but we're testing that there's no crash if a quantified peptide's proteinGroup isn't quantified
                     //This happens if somebody messed with parsimony (picked TDS) or from requiring two peptides per protein (and we're only finding one). We're testing the second case here.
@@ -348,7 +348,7 @@ namespace Test
 
             string outputFolder = Path.Combine(TestContext.CurrentContext.TestDirectory, @"TestSilac");
             Directory.CreateDirectory(outputFolder);
-            var theStringResult = task.RunTask(outputFolder, new List<DbForTask> { new DbForTask(xmlName, false) }, new List<string> { mzmlName }, "taskId1").ToString();
+            string theStringResult = task.RunTask(outputFolder, new List<DbForTask> { new DbForTask(xmlName, false) }, new List<string> { mzmlName }, "taskId1").ToString();
 
             string[] output = File.ReadAllLines(TestContext.CurrentContext.TestDirectory + @"/TestSilac/AllQuantifiedPeptides.tsv");
             Assert.IsTrue(output[1].Contains("PEPTKIDEK\t")); //test the unlabeled is present
@@ -364,6 +364,38 @@ namespace Test
             Assert.IsTrue(output[3].Contains("\tPEPTK(+8.014)IDEK(+8.014)\t")); //test the unlabeled is present
             Assert.IsTrue(output[3].Contains("\t218750\t")); //test intensity
             Assert.IsTrue(output[3].Contains("silac\t")); //test human readable labels are present
+
+            //use two turnover labels for start/end
+            Residue heavyishLysine = new Residue("b", 'b', "b", Chemistry.ChemicalFormula.ParseFormula("C6H12N{15}2O"), ModificationSites.All); //+2 lysine
+            Residue.AddNewResiduesToDictionary(new List<Residue> { heavyishLysine });
+
+            task = new SearchTask
+            {
+                SearchParameters = new SearchParameters
+                {
+                    StartTurnoverLabel = new SilacLabel(lightLysine.Letter, heavyLysine.Letter, heavyLysine.ThisChemicalFormula.Formula, heavyLysine.MonoisotopicMass - lightLysine.MonoisotopicMass),
+                    EndTurnoverLabel = new SilacLabel(lightLysine.Letter, heavyishLysine.Letter, heavyishLysine.ThisChemicalFormula.Formula, heavyishLysine.MonoisotopicMass - lightLysine.MonoisotopicMass),
+                }
+            };
+            mixedPeptide = new PeptideWithSetModifications("PEPTaIDEa", new Dictionary<string, Modification>());
+            massShift = heavyishLysine.MonoisotopicMass - heavyLysine.MonoisotopicMass;
+            massDifferences = new List<double> { massShift, massShift * 2 }; //LH and HH
+            myMsDataFile1 = new TestDataFile(mixedPeptide, massDifferences);
+            IO.MzML.MzmlMethods.CreateAndWriteMyMzmlWithCalibratedSpectra(myMsDataFile1, mzmlName, false);
+            theStringResult = task.RunTask(outputFolder, new List<DbForTask> { new DbForTask(xmlName, false) }, new List<string> { mzmlName }, "taskId1").ToString();
+            //check no crash
+
+            //try modern search (testing indexing)
+            task = new SearchTask
+            {
+                SearchParameters = new SearchParameters
+                {
+                    StartTurnoverLabel = new SilacLabel(lightLysine.Letter, heavyLysine.Letter, heavyLysine.ThisChemicalFormula.Formula, heavyLysine.MonoisotopicMass - lightLysine.MonoisotopicMass),
+                    EndTurnoverLabel = new SilacLabel(lightLysine.Letter, heavyishLysine.Letter, heavyishLysine.ThisChemicalFormula.Formula, heavyishLysine.MonoisotopicMass - lightLysine.MonoisotopicMass),
+                    SearchType = SearchType.Modern
+                }
+            };
+            theStringResult = task.RunTask(outputFolder, new List<DbForTask> { new DbForTask(xmlName, false) }, new List<string> { mzmlName }, "taskId1").ToString();
 
             //delete files
             Directory.Delete(outputFolder, true);
@@ -383,7 +415,7 @@ namespace Test
             {
                 SearchParameters = new SearchParameters
                 {
-                    TurnoverLabels = (null, new SilacLabel(lightLysine.Letter, heavyLysine.Letter, heavyLysine.ThisChemicalFormula.Formula, heavyLysine.MonoisotopicMass - lightLysine.MonoisotopicMass)),
+                    EndTurnoverLabel = new SilacLabel(lightLysine.Letter, heavyLysine.Letter, heavyLysine.ThisChemicalFormula.Formula, heavyLysine.MonoisotopicMass - lightLysine.MonoisotopicMass)
                 }
             };
 
@@ -414,6 +446,55 @@ namespace Test
             Assert.IsTrue(output.Length == 2);
             Assert.IsTrue(output[1].Contains("\tPEPTKIDEK(+8.014)\t")); //ensure the order is correct here for the id (not PEPTK(+8.014)IDEK)
             
+            //delete files
+            Directory.Delete(outputFolder, true);
+            File.Delete(xmlName);
+            File.Delete(mzmlName);
+        }
+
+        [Test]
+        public static void TestSilacTurnoverLabelSites()
+        {
+            //this tests for handling of no labels on a peptide, one label, six labels, and seven labels.
+            //also tests for decoy handling (no protein group)
+            //make heavy residue and add to search task
+            Residue heavyLysine = new Residue("a", 'a', "a", Chemistry.ChemicalFormula.ParseFormula("C{13}6H12N{15}2O"), ModificationSites.All); //+8 lysine
+            Residue.AddNewResiduesToDictionary(new List<Residue> { heavyLysine });
+            Residue lightLysine = Residue.GetResidue('K');
+
+            SearchTask task = new SearchTask
+            {
+                SearchParameters = new SearchParameters
+                {
+                    EndTurnoverLabel = new SilacLabel(lightLysine.Letter, heavyLysine.Letter, heavyLysine.ThisChemicalFormula.Formula, heavyLysine.MonoisotopicMass - lightLysine.MonoisotopicMass)
+                },
+                CommonParameters = new CommonParameters
+                (
+                    digestionParams: new DigestionParams(maxMissedCleavages: 5)
+                )
+            };
+
+            PeptideWithSetModifications zeroPeptide = new PeptideWithSetModifications("PEPTIDER", new Dictionary<string, Modification>());
+            PeptideWithSetModifications onePeptide = new PeptideWithSetModifications("PEPTIDEK", new Dictionary<string, Modification>());
+            PeptideWithSetModifications fivePeptide = new PeptideWithSetModifications("PaEKPKTaIK", new Dictionary<string, Modification>());
+            PeptideWithSetModifications sixPeptide = new PeptideWithSetModifications("PKEaPaTKIKDa", new Dictionary<string, Modification>());
+            double massShift = heavyLysine.MonoisotopicMass - lightLysine.MonoisotopicMass;
+            MsDataFile myMsDataFile1 = new TestDataFile(new List<PeptideWithSetModifications> { zeroPeptide, onePeptide, sixPeptide, fivePeptide });
+            string mzmlName = @"silac.mzML";
+            IO.MzML.MzmlMethods.CreateAndWriteMyMzmlWithCalibratedSpectra(myMsDataFile1, mzmlName, false);
+
+            string xmlName = "SilacDb.xml";
+            Protein theProtein = new Protein("PEPTIDERPEPTIDEKPKEKPKTKIKDKEK", "accession1");
+            Protein decoyProtein = new Protein("KEDITPEP", "accession2");
+            ProteinDbWriter.WriteXmlDatabase(new Dictionary<string, HashSet<Tuple<int, Modification>>>(), new List<Protein> { theProtein, decoyProtein }, xmlName);
+
+            string outputFolder = Path.Combine(TestContext.CurrentContext.TestDirectory, @"TestSilac");
+            Directory.CreateDirectory(outputFolder);
+            var theStringResult = task.RunTask(outputFolder, new List<DbForTask> { new DbForTask(xmlName, false) }, new List<string> { mzmlName }, "taskId1").ToString();
+            //Just don't crash
+            //This unit test doesn't (currently) include the array of peaks for the possible combinations of labels.
+            //Only a single peak is found, and because there's no heavy/light, it's unable to produce a ratio, so NaN values are returned.
+
             //delete files
             Directory.Delete(outputFolder, true);
             File.Delete(xmlName);
@@ -456,6 +537,15 @@ namespace Test
             var theStringResult = task.RunTask(outputFolder, new List<DbForTask> { new DbForTask(xmlName, false) }, new List<string> { mzmlName }, "taskId1").ToString();
             string[] output = File.ReadAllLines(TestContext.CurrentContext.TestDirectory + @"/TestSilac/AllQuantifiedPeptides.tsv");
             Assert.IsTrue(output[1].Contains("\t12250000\t6125000\t")); //check that it's 2:1 and not 5:3 like it would be for apex
+
+
+            //TEST for blips, where two peaks are found for a single identification
+            massDifferences = new List<double> { heavyLysine.MonoisotopicMass - lightLysine.MonoisotopicMass }; //must be reset, since the method below edits it
+            myMsDataFile1 = new TestDataFile(lightPeptide, massDifferences, false, precursorIntensities, 2);
+            IO.MzML.MzmlMethods.CreateAndWriteMyMzmlWithCalibratedSpectra(myMsDataFile1, mzmlName, false);
+            theStringResult = task.RunTask(outputFolder, new List<DbForTask> { new DbForTask(xmlName, false) }, new List<string> { mzmlName }, "taskId1").ToString();
+            output = File.ReadAllLines(TestContext.CurrentContext.TestDirectory + @"/TestSilac/AllQuantifiedPeptides.tsv");
+            Assert.IsTrue(output[1].Contains("\t24500000\t12250000\t")); //intensities will be twice as large as before, but still the same ratio
 
             //delete files
             Directory.Delete(outputFolder, true);

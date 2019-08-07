@@ -30,7 +30,7 @@ namespace EngineLayer.Indexing
         public readonly List<FileInfo> ProteinDatabases;
 
         public IndexingEngine(List<Protein> proteinList, List<Modification> variableModifications, List<Modification> fixedModifications,
-            List<SilacLabel> silacLabels, (SilacLabel StartLabel, SilacLabel EndLabel)? turnoverLabels, int currentPartition, DecoyType decoyType,
+            List<SilacLabel> silacLabels, SilacLabel startLabel, SilacLabel endLabel, int currentPartition, DecoyType decoyType,
             CommonParameters commonParams, double maxFragmentSize, bool generatePrecursorIndex, List<FileInfo> proteinDatabases, List<string> nestedIds)
             : base(commonParams, nestedIds)
         {
@@ -38,7 +38,11 @@ namespace EngineLayer.Indexing
             VariableModifications = variableModifications;
             FixedModifications = fixedModifications;
             SilacLabels = silacLabels;
-            TurnoverLabels = turnoverLabels;
+            if (startLabel != null || endLabel != null) //else it's null
+            {
+                TurnoverLabels = (startLabel, endLabel);
+            }
+
             CurrentPartition = currentPartition + 1;
             DecoyType = decoyType;
             MaxFragmentSize = maxFragmentSize;

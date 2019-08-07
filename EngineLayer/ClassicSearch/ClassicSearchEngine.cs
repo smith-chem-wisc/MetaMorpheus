@@ -22,7 +22,7 @@ namespace EngineLayer.ClassicSearch
         private readonly double[] MyScanPrecursorMasses;
 
         public ClassicSearchEngine(PeptideSpectralMatch[] globalPsms, Ms2ScanWithSpecificMass[] arrayOfSortedMS2Scans,
-            List<Modification> variableModifications, List<Modification> fixedModifications, List<SilacLabel> silacLabels, (SilacLabel StartLabel, SilacLabel EndLabel)? turnoverLabels,
+            List<Modification> variableModifications, List<Modification> fixedModifications, List<SilacLabel> silacLabels, SilacLabel startLabel, SilacLabel endLabel, 
             List<Protein> proteinList, MassDiffAcceptor searchMode, CommonParameters commonParameters, List<string> nestedIds)
             : base(commonParameters, nestedIds)
         {
@@ -32,7 +32,10 @@ namespace EngineLayer.ClassicSearch
             VariableModifications = variableModifications;
             FixedModifications = fixedModifications;
             SilacLabels = silacLabels;
-            TurnoverLabels = turnoverLabels;
+            if (startLabel != null || endLabel != null) //else it's null
+            {
+                TurnoverLabels = (startLabel, endLabel);
+            }
             Proteins = proteinList;
             SearchMode = searchMode;
         }

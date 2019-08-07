@@ -90,50 +90,42 @@ namespace TaskLayer
                 {
                     SearchParameters.DoQuantification = false;
                 }
-                //if we're doing SILAC, add the silac labels to the residue dictionary
-                else if (SearchParameters.SilacLabels != null || SearchParameters.TurnoverLabels != null)
+                //if we're doing SILAC, assign and add the silac labels to the residue dictionary
+                else if (SearchParameters.SilacLabels != null || SearchParameters.StartTurnoverLabel != null || SearchParameters.EndTurnoverLabel != null)
                 {
+                    char heavyLabel = 'a'; //char to assign
                     //add the Turnoverlabels to the silacLabels list. They weren't there before just to prevent duplication in the tomls
-                    if (SearchParameters.TurnoverLabels != null)
+                    if (SearchParameters.StartTurnoverLabel != null || SearchParameters.EndTurnoverLabel != null)
                     {
-                        //original was null, so we need to initialize it
+                        //original silacLabels object is null, so we need to initialize it
                         SearchParameters.SilacLabels = new List<SilacLabel>();
-                        var turnoverLabels = SearchParameters.TurnoverLabels.Value;
-                        if (turnoverLabels.StartLabel != null)
+                        if (SearchParameters.StartTurnoverLabel != null)
                         {
-                            SearchParameters.SilacLabels.Add(turnoverLabels.StartLabel);
+                            var updatedLabel = SilacConversions.UpdateAminoAcidLabel(SearchParameters.StartTurnoverLabel, heavyLabel);
+                            heavyLabel = updatedLabel.nextHeavyLabel;
+                            SearchParameters.StartTurnoverLabel = updatedLabel.updatedLabel;
+                            SearchParameters.SilacLabels.Add(SearchParameters.StartTurnoverLabel);
                         }
-                        if (turnoverLabels.EndLabel != null)
+                        if (SearchParameters.EndTurnoverLabel != null)
                         {
-                            SearchParameters.SilacLabels.Add(turnoverLabels.EndLabel);
+                            var updatedLabel = SilacConversions.UpdateAminoAcidLabel(SearchParameters.EndTurnoverLabel, heavyLabel);
+                            heavyLabel = updatedLabel.nextHeavyLabel;
+                            SearchParameters.EndTurnoverLabel = updatedLabel.updatedLabel;
+                            SearchParameters.SilacLabels.Add(SearchParameters.EndTurnoverLabel);
                         }
                     }
-                    //change the silac residues to lower case amino acids (currently null)
-                    List<SilacLabel> updatedLabels = new List<SilacLabel>();
-                    char heavyLabel = 'a';
-                    for (int i = 0; i < SearchParameters.SilacLabels.Count; i++)
+                    else
                     {
-                        SilacLabel currentLabel = SearchParameters.SilacLabels[i];
-                        //make sure we're not overwriting something. , , and if it's a valid residue (not a motif/delimiter)
-                        while ((Residue.TryGetResidue(heavyLabel, out Residue residue) //Check if the amino acid exists. If it already exists, we don't want to overwrite it
-                            && !residue.ThisChemicalFormula.Formula.Equals(currentLabel.LabelChemicalFormula)) //if it exists but it's already the label (so we're not overwriting anything), then we're fine
-                            || GlobalVariables.InvalidAminoAcids.Contains(heavyLabel)) //If it didn't already exist, but it's invalid, we need to keep going
+                        //change the silac residues to lower case amino acids (currently null)
+                        List<SilacLabel> updatedLabels = new List<SilacLabel>();
+                        for (int i = 0; i < SearchParameters.SilacLabels.Count; i++)
                         {
-                            heavyLabel++;
+                            var updatedLabel = SilacConversions.UpdateAminoAcidLabel(SearchParameters.SilacLabels[i], heavyLabel);
+                            heavyLabel = updatedLabel.nextHeavyLabel;
+                            updatedLabels.Add(updatedLabel.updatedLabel);
                         }
-                        SilacLabel updatedLabel = SilacConversions.AssignValidHeavyCharacter(currentLabel, heavyLabel);
-                        heavyLabel++;
-                        if (currentLabel.AdditionalLabels != null)
-                        {
-                            foreach (SilacLabel additionalLabel in currentLabel.AdditionalLabels)
-                            {
-                                updatedLabel.AddAdditionalSilacLabel(SilacConversions.AssignValidHeavyCharacter(additionalLabel, heavyLabel));
-                                heavyLabel++;
-                            }
-                        }
-                        updatedLabels.Add(updatedLabel);
+                        SearchParameters.SilacLabels = updatedLabels;
                     }
-                    SearchParameters.SilacLabels = updatedLabels;
                 }
             }
             //if no quant, remove any silac labels that may have been added, because they screw up downstream analysis
@@ -163,7 +155,8 @@ namespace TaskLayer
             ProseCreatedWhileRunning.Append("precursor mass tolerance = " + CommonParameters.PrecursorMassTolerance + "; ");
             ProseCreatedWhileRunning.Append("product mass tolerance = " + CommonParameters.ProductMassTolerance + "; ");
             ProseCreatedWhileRunning.Append("report PSM ambiguity = " + CommonParameters.ReportAllAmbiguity + ". ");
-            ProseCreatedWhileRunning.Append("The combined search database contained " + proteinList.Count(p => !p.IsDecoy) + " non-decoy protein entries including " + proteinList.Count(p => p.IsContaminant) + " contaminant sequences. ");
+            ProseCreatedWhileRunning.Append("The combined search database contained " + proteinList.Count(p => !p.IsDecoy) 
+                + " non-decoy protein entries including " + proteinList.Count(p => p.IsContaminant) + " contaminant sequences. ");
 
             // start the search task
             MyTaskResults = new MyTaskResults(this);
@@ -221,10 +214,13 @@ namespace TaskLayer
                     for (int currentPartition = 0; currentPartition < combinedParams.TotalPartitions; currentPartition++)
                     {
                         List<PeptideWithSetModifications> peptideIndex = null;
-                        List<Protein> proteinListSubset = proteinList.GetRange(currentPartition * proteinList.Count / combinedParams.TotalPartitions, ((currentPartition + 1) * proteinList.Count / combinedParams.TotalPartitions) - (currentPartition * proteinList.Count / combinedParams.TotalPartitions));
+                        List<Protein> proteinListSubset = proteinList.GetRange(currentPartition * proteinList.Count / combinedParams.TotalPartitions, 
+                            ((currentPartition + 1) * proteinList.Count / combinedParams.TotalPartitions) - (currentPartition * proteinList.Count / combinedParams.TotalPartitions));
 
                         Status("Getting fragment dictionary...", new List<string> { taskId });
-                        var indexEngine = new IndexingEngine(proteinListSubset, variableModifications, fixedModifications, SearchParameters.SilacLabels, SearchParameters.TurnoverLabels, currentPartition, SearchParameters.DecoyType, combinedParams, SearchParameters.MaxFragmentSize, false, dbFilenameList.Select(p => new FileInfo(p.FilePath)).ToList(), new List<string> { taskId });
+                        var indexEngine = new IndexingEngine(proteinListSubset, variableModifications, fixedModifications, SearchParameters.SilacLabels, 
+                            SearchParameters.StartTurnoverLabel, SearchParameters.EndTurnoverLabel, currentPartition, SearchParameters.DecoyType, combinedParams, 
+                            SearchParameters.MaxFragmentSize, false, dbFilenameList.Select(p => new FileInfo(p.FilePath)).ToList(), new List<string> { taskId });
                         List<int>[] fragmentIndex = null;
                         List<int>[] precursorIndex = null;
 
@@ -235,7 +231,8 @@ namespace TaskLayer
 
                         Status("Searching files...", taskId);
 
-                        new ModernSearchEngine(fileSpecificPsms, arrayOfMs2ScansSortedByMass, peptideIndex, fragmentIndex, currentPartition, combinedParams, massDiffAcceptor, SearchParameters.MaximumMassThatFragmentIonScoreIsDoubled, thisId).Run();
+                        new ModernSearchEngine(fileSpecificPsms, arrayOfMs2ScansSortedByMass, peptideIndex, fragmentIndex, currentPartition, 
+                            combinedParams, massDiffAcceptor, SearchParameters.MaximumMassThatFragmentIonScoreIsDoubled, thisId).Run();
 
                         ReportProgress(new ProgressEventArgs(100, "Done with search " + (currentPartition + 1) + "/" + combinedParams.TotalPartitions + "!", thisId));
                         if (GlobalVariables.StopLoops) { break; }
@@ -273,8 +270,9 @@ namespace TaskLayer
                             List<int>[] precursorIndex = null;
 
                             Status("Getting fragment dictionary...", new List<string> { taskId });
-                            var indexEngine = new IndexingEngine(proteinListSubset, variableModifications, fixedModifications, SearchParameters.SilacLabels, SearchParameters.TurnoverLabels, currentPartition,
-                                SearchParameters.DecoyType, paramToUse, SearchParameters.MaxFragmentSize, true, dbFilenameList.Select(p => new FileInfo(p.FilePath)).ToList(), new List<string> { taskId });
+                            var indexEngine = new IndexingEngine(proteinListSubset, variableModifications, fixedModifications, SearchParameters.SilacLabels, 
+                                SearchParameters.StartTurnoverLabel, SearchParameters.EndTurnoverLabel, currentPartition, SearchParameters.DecoyType, paramToUse, 
+                                SearchParameters.MaxFragmentSize, true, dbFilenameList.Select(p => new FileInfo(p.FilePath)).ToList(), new List<string> { taskId });
                             lock (indexLock)
                             {
                                 GenerateIndexes(indexEngine, dbFilenameList, ref peptideIndex, ref fragmentIndex, ref precursorIndex, proteinList, taskId);
@@ -282,7 +280,9 @@ namespace TaskLayer
 
                             Status("Searching files...", taskId);
 
-                            new NonSpecificEnzymeSearchEngine(fileSpecificPsmsSeparatedByFdrCategory, arrayOfMs2ScansSortedByMass, peptideIndex, fragmentIndex, precursorIndex, currentPartition, paramToUse, variableModifications, massDiffAcceptor, SearchParameters.MaximumMassThatFragmentIonScoreIsDoubled, thisId).Run();
+                            new NonSpecificEnzymeSearchEngine(fileSpecificPsmsSeparatedByFdrCategory, arrayOfMs2ScansSortedByMass, peptideIndex, fragmentIndex, 
+                                precursorIndex, currentPartition, paramToUse, variableModifications, massDiffAcceptor, 
+                                SearchParameters.MaximumMassThatFragmentIonScoreIsDoubled, thisId).Run();
 
                             ReportProgress(new ProgressEventArgs(100, "Done with search " + (currentPartition + 1) + "/" + paramToUse.TotalPartitions + "!", thisId));
                             if (GlobalVariables.StopLoops) { break; }
@@ -303,7 +303,8 @@ namespace TaskLayer
                 else
                 {
                     Status("Starting search...", thisId);
-                    new ClassicSearchEngine(fileSpecificPsms, arrayOfMs2ScansSortedByMass, variableModifications, fixedModifications, SearchParameters.SilacLabels, SearchParameters.TurnoverLabels, proteinList, massDiffAcceptor, combinedParams, thisId).Run();
+                    new ClassicSearchEngine(fileSpecificPsms, arrayOfMs2ScansSortedByMass, variableModifications, fixedModifications, SearchParameters.SilacLabels, 
+                        SearchParameters.StartTurnoverLabel, SearchParameters.EndTurnoverLabel, proteinList, massDiffAcceptor, combinedParams, thisId).Run();
 
                     ReportProgress(new ProgressEventArgs(100, "Done with search!", thisId));
                 }
@@ -398,7 +399,8 @@ namespace TaskLayer
                         break;
 
                     case "interval":
-                        IEnumerable<DoubleRange> doubleRanges = Array.ConvertAll(split[2].Split(';'), b => new DoubleRange(double.Parse(b.Trim(new char[] { '[', ']' }).Split(',')[0], CultureInfo.InvariantCulture), double.Parse(b.Trim(new char[] { '[', ']' }).Split(',')[1], CultureInfo.InvariantCulture)));
+                        IEnumerable<DoubleRange> doubleRanges = Array.ConvertAll(split[2].Split(';'), b => new DoubleRange(double.Parse(b.Trim(new char[] { '[', ']' }).Split(',')[0], 
+                            CultureInfo.InvariantCulture), double.Parse(b.Trim(new char[] { '[', ']' }).Split(',')[1], CultureInfo.InvariantCulture)));
                         massDiffAcceptor = new IntervalMassDiffAcceptor(split[0], doubleRanges);
                         break;
 
