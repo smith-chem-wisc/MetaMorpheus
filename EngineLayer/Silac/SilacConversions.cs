@@ -456,9 +456,16 @@ namespace EngineLayer
                                 //update peptides
                                 foreach (FlashLFQ.Peptide peptide in peptideGroup)
                                 {
-                                    ChromatographicPeak peakForThisPeptide = peaksOfInterest.Where(x => peptide.Sequence.Equals(x.Identifications.First().ModifiedSequence)).First();
-                                    double summedIntensity = peakForThisPeptide.IsotopicEnvelopes.Where(x => scanIndex.Contains(x.IndexedPeak.ZeroBasedMs1ScanIndex)).Select(x => x.Intensity).Sum();
-                                    peptide.SetIntensity(kvp.Key, summedIntensity);
+                                    ChromatographicPeak peakForThisPeptide = peaksOfInterest.Where(x => peptide.Sequence.Equals(x.Identifications.First().ModifiedSequence)).FirstOrDefault();
+                                    if (peaksForThisPeptide != null)
+                                    {
+                                        double summedIntensity = peakForThisPeptide.IsotopicEnvelopes.Where(x => scanIndex.Contains(x.IndexedPeak.ZeroBasedMs1ScanIndex)).Select(x => x.Intensity).Sum();
+                                        peptide.SetIntensity(kvp.Key, summedIntensity);
+                                    }
+                                    else //rare instance, cause unknown. Crash identified using 180524_LMuscle_30d_bio3.raw, Mus_Canonical_180122.xml, 1 missed cleavage
+                                    {
+                                        peptide.SetIntensity(kvp.Key, 0);
+                                    }
                                 }
                             }
                         }
