@@ -199,11 +199,11 @@ namespace EngineLayer
             sb.Append("\t");
 
             // list of unique peptides
-            sb.Append(UniquePeptidesOutput);
+            sb.Append(GlobalVariables.CheckLengthOfOutput(UniquePeptidesOutput));
             sb.Append("\t");
 
             // list of shared peptides
-            sb.Append(SharedPeptidesOutput);
+            sb.Append(GlobalVariables.CheckLengthOfOutput(SharedPeptidesOutput));
             sb.Append("\t");
 
             // number of peptides
@@ -229,7 +229,7 @@ namespace EngineLayer
             sb.Append("\t");
 
             // sequence coverage percent
-            sb.Append(GlobalVariables.CheckLengthOfOutput(string.Join("|", SequenceCoverageFraction.Select(p => string.Format("{0:0.#####}",p)))));
+            sb.Append(GlobalVariables.CheckLengthOfOutput(string.Join("|", SequenceCoverageFraction.Select(p => string.Format("{0:0.#####}", p)))));
             sb.Append("\t");
 
             // sequence coverage
@@ -398,7 +398,7 @@ namespace EngineLayer
                     if (mod.Value.LocationRestriction.Equals("N-terminal."))
                     {
                         sequenceCoverageDisplay = sequenceCoverageDisplay.Insert(
-                            0, 
+                            0,
                             $"[{mod.Value.IdWithMotif}]-");
                     }
                     else if (mod.Value.LocationRestriction.Equals("Anywhere."))
@@ -411,7 +411,7 @@ namespace EngineLayer
                     else if (mod.Value.LocationRestriction.Equals("C-terminal."))
                     {
                         sequenceCoverageDisplay = sequenceCoverageDisplay.Insert(
-                            sequenceCoverageDisplay.Length, 
+                            sequenceCoverageDisplay.Length,
                             $"-[{mod.Value.IdWithMotif}]");
                     }
                 }
