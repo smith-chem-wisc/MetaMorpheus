@@ -457,7 +457,7 @@ namespace EngineLayer
                                 foreach (FlashLFQ.Peptide peptide in peptideGroup)
                                 {
                                     ChromatographicPeak peakForThisPeptide = peaksOfInterest.Where(x => peptide.Sequence.Equals(x.Identifications.First().ModifiedSequence)).FirstOrDefault();
-                                    if (peaksForThisPeptide != null)
+                                    if (peakForThisPeptide != null)
                                     {
                                         double summedIntensity = peakForThisPeptide.IsotopicEnvelopes.Where(x => scanIndex.Contains(x.IndexedPeak.ZeroBasedMs1ScanIndex)).Select(x => x.Intensity).Sum();
                                         peptide.SetIntensity(kvp.Key, summedIntensity);
