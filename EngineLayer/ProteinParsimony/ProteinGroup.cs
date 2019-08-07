@@ -199,11 +199,17 @@ namespace EngineLayer
             sb.Append("\t");
 
             // list of unique peptides
-            sb.Append(GlobalVariables.CheckLengthOfOutput(UniquePeptidesOutput));
+            if (UniquePeptidesOutput != null)
+            {
+                sb.Append(GlobalVariables.CheckLengthOfOutput(UniquePeptidesOutput));
+            }
             sb.Append("\t");
 
             // list of shared peptides
-            sb.Append(GlobalVariables.CheckLengthOfOutput(SharedPeptidesOutput));
+            if (SharedPeptidesOutput != null)
+            {
+                sb.Append(GlobalVariables.CheckLengthOfOutput(SharedPeptidesOutput));
+            }
             sb.Append("\t");
 
             // number of peptides
