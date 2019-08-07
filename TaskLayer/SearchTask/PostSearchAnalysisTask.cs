@@ -70,11 +70,12 @@ namespace TaskLayer
             WriteProteinResults();
             WriteQuantificationResults();
             WritePrunedDatabase();
-            WritePeptideResults(); // modifies the FDR results for PSMs, so do this last            
-            if (Parameters.ProteinList.Any((p => p.AppliedSequenceVariations.Count()>0)))
+            if (Parameters.ProteinList.Any((p => p.AppliedSequenceVariations.Count() > 0)))
             {
                 WriteVariantResults();
-            }           
+            }
+            WritePeptideResults(); // modifies the FDR results for PSMs, so do this last            
+                  
 
             return Parameters.SearchTaskResults;
         }
@@ -965,7 +966,7 @@ namespace TaskLayer
             int stopGainCount = 0;
             int stopLossCount = 0;
             int exonLossCount = 0;                      
-            List<PeptideSpectralMatch> modifiedVariantPeptides = confidentVariantPeps.Where(p => p.ModsIdentified.Count() > 0).ToList(); //modification can be on any AA in variant peptide
+            List<PeptideSpectralMatch> modifiedVariantPeptides = confidentVariantPeps.Where(p => p.ModsIdentified.Count() > 0 && p.FdrInfo.QValue <= 0.01 && p.FdrInfo.QValueNotch <= 0.01 && p.IsDecoy == false && p.IsContaminant ==false).ToList(); //modification can be on any AA in variant peptide
             List<PeptideSpectralMatch> modifiedVariantSitePeptides = new List<PeptideSpectralMatch>();// modification is speciifcally on the variant residue within the peptide
             foreach (var entry in modifiedVariantPeptides)
             {
@@ -1036,8 +1037,8 @@ namespace TaskLayer
             string[] variantResults = new string[15];
             variantResults[0] = "Variant Result Summary";
             variantResults[2] = "--------------------------------------------------";
-            variantResults[4] = "Number of potential variant containing peptides identified at 1% FDR: " + variantPeptides.Where(p => p.IsDecoy ==false && p.FdrInfo.QValue <= 0.01 &&p.FdrInfo.QValueNotch <= 0.01).ToList().Count();
-            variantResults[5] = "Number of unqiuely identified variant peptides at 1% FDR: " + confidentVariantPeps.Where(p => p.IsDecoy == false && p.FdrInfo.QValue <= 0.01 && p.FdrInfo.QValueNotch <= 0.01).ToList().Count();
+            variantResults[4] = "Number of potential variant containing peptides identified at 1% FDR: " + variantPeptides.Where(p => p.IsDecoy ==false &&  p.IsContaminant ==false && p.FdrInfo.QValue <= 0.01 &&p.FdrInfo.QValueNotch <= 0.01).ToList().Count();
+            variantResults[5] = "Number of unqiuely identified variant peptides at 1% FDR: " + confidentVariantPeps.Where(p => p.IsDecoy == false &&  p.IsContaminant == false && p.FdrInfo.QValue <= 0.01 && p.FdrInfo.QValueNotch <= 0.01).ToList().Count();
             variantResults[6] = "Number of SAV variant peptides at 1% FDR: " + savCount;
             variantResults[7] = "Number of frameshift variant peptides at 1% FDR: " + frameshiftCount;
             variantResults[8] = "Number of inframe insertion variant peptides at 1% FDR: " + insertionCount;
