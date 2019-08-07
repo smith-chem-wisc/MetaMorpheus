@@ -299,7 +299,7 @@ namespace TaskLayer
                 foreach (PeptideSpectralMatch psm in unambiguousPsmsBelowOnePercentFdr)
                 {
                     //get the original proteinGroup to give to the other psm clones
-                    List<FlashLFQ.ProteinGroup> originalProteinGroups = psmToProteinGroups.ContainsKey(psm) ? psmToProteinGroups[psm]:new List<FlashLFQ.ProteinGroup>();
+                    List<FlashLFQ.ProteinGroup> originalProteinGroups = psmToProteinGroups.ContainsKey(psm) ? psmToProteinGroups[psm] : new List<FlashLFQ.ProteinGroup>();
 
                     //see which label, if any, this peptide has
                     string peptideBaseSequence = psm.BaseSequence;
@@ -314,7 +314,7 @@ namespace TaskLayer
                     PeptideWithSetModifications pwsm = psm.BestMatchingPeptides.First().Peptide;
 
                     //check if turnover or multiplex experiment
-                    if (startLabel==null &&endLabel==null) //if multiplex
+                    if (startLabel == null && endLabel == null) //if multiplex
                     {
                         //If we need the light form, then add it
                         if (quantifyUnlabeledPeptides)
@@ -902,7 +902,7 @@ namespace TaskLayer
             WritePsmsToTsv(peptides, writtenFile, Parameters.SearchParameters.ModsToWriteSelection);
             FinishedWritingFile(writtenFile, new List<string> { Parameters.SearchTaskId });
 
-            Parameters.SearchTaskResults.AddNiceText("All target peptides within 1% FDR: " + peptides.Count(a => a.FdrInfo.QValue <= 0.01 && !a.IsDecoy));
+            Parameters.SearchTaskResults.AddNiceText(Environment.NewLine + "All target peptides within 1% FDR: " + peptides.Count(a => a.FdrInfo.QValue <= 0.01 && !a.IsDecoy));
 
             foreach (var file in PsmsGroupedByFile)
             {
