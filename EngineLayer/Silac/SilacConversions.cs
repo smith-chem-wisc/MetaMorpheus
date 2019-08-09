@@ -590,8 +590,8 @@ namespace EngineLayer
                         string[] pathArray = fullPathWithExtension.Split('.');
                         string extension = pathArray.Last();
                         string filePathWithoutExtension = fullPathWithExtension.Substring(0, fullPathWithExtension.Length - extension.Length - 1); //-1 removes the '.'
-                        SpectraFileInfo lightInfo = new SpectraFileInfo(filePathWithoutExtension + "_Old." + extension, info.Condition, info.BiologicalReplicate, info.TechnicalReplicate, info.Fraction);
-                        SpectraFileInfo heavyInfo = new SpectraFileInfo(filePathWithoutExtension + "_New." + extension, info.Condition, info.BiologicalReplicate, info.TechnicalReplicate, info.Fraction);
+                        SpectraFileInfo lightInfo = new SpectraFileInfo(filePathWithoutExtension + "_Original." + extension, info.Condition, info.BiologicalReplicate, info.TechnicalReplicate, info.Fraction);
+                        SpectraFileInfo heavyInfo = new SpectraFileInfo(filePathWithoutExtension + "_NewlySynthesized." + extension, info.Condition, info.BiologicalReplicate, info.TechnicalReplicate, info.Fraction);
                         originalToLabeledFileInfoDictionary[info] = new List<SpectraFileInfo> { lightInfo, heavyInfo };
                         flashLfqResults.SpectraFiles.Add(lightInfo);
                         flashLfqResults.SpectraFiles.Add(heavyInfo);
