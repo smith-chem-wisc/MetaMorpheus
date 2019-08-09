@@ -433,7 +433,6 @@ namespace TaskLayer
 
                 foreach (var psm in spectraFile)
                 {
-                    bool test = psmToProteinGroups.ContainsKey(psm);
                     flashLFQIdentifications.Add(new Identification(rawfileinfo, psm.BaseSequence, psm.FullSequence,
                         psm.PeptideMonisotopicMass.Value, psm.ScanRetentionTime, psm.ScanPrecursorCharge, psmToProteinGroups[psm]));
                 }

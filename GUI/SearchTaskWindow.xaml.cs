@@ -181,7 +181,11 @@ namespace MetaMorpheusGUI
                         }
                     }
                     StaticSilacLabelsObservableCollection.Add(infoToAdd);
-                } //else it's unlabeled for the start condition
+                }
+                else //it's unlabeled for the start condition
+                {
+                    StaticSilacLabelsObservableCollection.Add(new SilacInfoForDataGrid(SilacModificationWindow.ExperimentType.Start));
+                }
                 var endLabel = task.SearchParameters.EndTurnoverLabel;
                 if (endLabel != null)
                 {
@@ -194,7 +198,11 @@ namespace MetaMorpheusGUI
                         }
                     }
                     StaticSilacLabelsObservableCollection.Add(infoToAdd);
-                } //else it's unlabeled for the start condition            
+                }
+                else //it's unlabeled for the end condition
+                {
+                    StaticSilacLabelsObservableCollection.Add(new SilacInfoForDataGrid(SilacModificationWindow.ExperimentType.End));
+                }
             }
             //else if SILAC multiplex
             else if (task.SearchParameters.SilacLabels != null && task.SearchParameters.SilacLabels.Count != 0)
@@ -212,6 +220,10 @@ namespace MetaMorpheusGUI
                         }
                     }
                     StaticSilacLabelsObservableCollection.Add(infoToAdd);
+                }
+                if (task.CommonParameters.DigestionParams.GeneratehUnlabeledProteinsForSilac)
+                {
+                    StaticSilacLabelsObservableCollection.Add(new SilacInfoForDataGrid(SilacModificationWindow.ExperimentType.Multiplex));
                 }
             }
 
@@ -575,6 +587,16 @@ namespace MetaMorpheusGUI
             {
                 if (StaticSilacLabelsObservableCollection.Count != 0)
                 {
+                    //remove the unlabeled
+                    for (int i = 0; i < StaticSilacLabelsObservableCollection.Count; i++)
+                    {
+                        if (StaticSilacLabelsObservableCollection[i].SilacLabel == null)
+                        {
+                            StaticSilacLabelsObservableCollection.RemoveAt(i);
+                            break;
+                        }
+                    }
+
                     //Validate it really quick to determine if they're all multiplex (normal), or if it's a turnover experiment (requires one start label and one end label, either of which may be unlabeled)
                     //if they're all multiplex
                     if (StaticSilacLabelsObservableCollection.All(x => x.LabelType == SilacModificationWindow.ExperimentType.Multiplex))
@@ -937,16 +959,10 @@ namespace MetaMorpheusGUI
             dialog.MultiplexRadioButton.IsChecked = true; //set default
             if (dialog.ShowDialog() == true)
             {
-                if (GetNumberOfSilacMods() + dialog.SilacLabel.SilacLabel.Count <= 26)
-                {
-                    StaticSilacLabelsObservableCollection.Add(dialog.SilacLabel);
-                    dataGridSilacLabels.Items.Refresh();
-                }
-                else
-                {
-                    MessageBox.Show("More than 26 total SILAC labels have been specified, which is the maximum for this implementation.\t" +
-                        "The most recent label was not added.");
-                }
+                StaticSilacLabelsObservableCollection.Add(dialog.SilacLabel);
+                //refresh the unlabeled option to update to the choices made by the added label (e.g. make the unlabeled the end condition if a start condition was added)
+                CheckBoxQuantifyUnlabeledForSilac_Checked(sender, e);
+                dataGridSilacLabels.Items.Refresh();
             }
         }
 
@@ -955,6 +971,10 @@ namespace MetaMorpheusGUI
             var selectedTask = (SilacInfoForDataGrid)dataGridSilacLabels.SelectedItem;
             if (selectedTask != null)
             {
+                if (selectedTask.SilacLabel == null) //if unlabeled, uncheck the box
+                {
+                    CheckBoxQuantifyUnlabeledForSilac.IsChecked = false;
+                }
                 StaticSilacLabelsObservableCollection.Remove(selectedTask);
                 dataGridSilacLabels.Items.Refresh();
             }
@@ -963,17 +983,13 @@ namespace MetaMorpheusGUI
         private void ClearSilac_Click(object sender, RoutedEventArgs e)
         {
             StaticSilacLabelsObservableCollection.Clear();
+            CheckBoxQuantifyUnlabeledForSilac.IsChecked = false; //remove the unlabeled condition
             dataGridSilacLabels.Items.Refresh();
         }
 
         private void OnClosing(object sender, CancelEventArgs e)
         {
             CustomFragmentationWindow.Close();
-        }
-
-        public int GetNumberOfSilacMods()
-        {
-            return StaticSilacLabelsObservableCollection.Sum(x => x.SilacLabel.Count);
         }
 
         private Proteomics.SilacLabel ConvertSilacDataGridInfoToSilacLabel(SilacInfoForDataGrid info)
@@ -999,6 +1015,74 @@ namespace MetaMorpheusGUI
                 }
                 return label;
             }
+        }
+
+        private void CheckBoxQuantifyUnlabeledForSilac_Checked(object sender, RoutedEventArgs e)
+        {
+            if (checkBoxSILAC.IsChecked.Value) //if we're doing SILAC (check needed to start a new task)
+            {
+                //if checked, add a proxy label for the unlabeled condition
+                if (CheckBoxQuantifyUnlabeledForSilac.IsChecked.Value)
+                {
+                    //remove the unlabeled if it previously existed
+                    for (int i = 0; i < StaticSilacLabelsObservableCollection.Count; i++)
+                    {
+                        if (StaticSilacLabelsObservableCollection[i].SilacLabel == null)
+                        {
+                            StaticSilacLabelsObservableCollection.RemoveAt(i);
+                        }
+                    }
+
+                    bool startConditionFound = false;
+                    bool endConditionFound = false;
+                    foreach (SilacInfoForDataGrid item in StaticSilacLabelsObservableCollection)
+                    {
+                        if (item.LabelType == SilacModificationWindow.ExperimentType.Start)
+                        {
+                            startConditionFound = true;
+                        }
+                        else if (item.LabelType == SilacModificationWindow.ExperimentType.End)
+                        {
+                            endConditionFound = true;
+                        }
+                        //else do nothing
+                    }
+                    if (!startConditionFound && !endConditionFound)
+                    {
+                        StaticSilacLabelsObservableCollection.Add(new SilacInfoForDataGrid(SilacModificationWindow.ExperimentType.Multiplex));
+                    }
+                    else if (startConditionFound && !endConditionFound)
+                    {
+                        StaticSilacLabelsObservableCollection.Add(new SilacInfoForDataGrid(SilacModificationWindow.ExperimentType.End));
+                    }
+                    else if (!startConditionFound && endConditionFound)
+                    {
+                        StaticSilacLabelsObservableCollection.Add(new SilacInfoForDataGrid(SilacModificationWindow.ExperimentType.Start));
+                    }
+                    else
+                    {
+                        CheckBoxQuantifyUnlabeledForSilac.IsChecked = false;
+                        MessageBox.Show("Unable to add unlabeled condition. Two turnover conditions have already been specified.");
+                    }
+                }
+                else //remove the unlabeled condition
+                {
+                    for (int i = 0; i < StaticSilacLabelsObservableCollection.Count; i++)
+                    {
+                        if (StaticSilacLabelsObservableCollection[i].SilacLabel == null)
+                        {
+                            StaticSilacLabelsObservableCollection.RemoveAt(i);
+                        }
+                    }
+                }
+                dataGridSilacLabels.Items.Refresh();
+            }
+        }
+
+        //displays the unlabeled sequence when SILAC is selected
+        private void CheckBoxSILAC_Checked(object sender, RoutedEventArgs e)
+        {
+            CheckBoxQuantifyUnlabeledForSilac_Checked(sender, e);
         }
     }
 

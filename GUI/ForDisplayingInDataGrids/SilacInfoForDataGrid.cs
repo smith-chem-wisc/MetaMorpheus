@@ -19,6 +19,12 @@ namespace MetaMorpheusGUI
             LabelType = labelType;
         }
 
+        public SilacInfoForDataGrid(SilacModificationWindow.ExperimentType labelType)
+        {
+            AminoAcidLabels = "Unlabeled";
+            LabelType = labelType;
+        }
+
         public void AddAdditionalLabel(SilacInfoForDataGrid label)
         {
             SilacLabel.AddRange(label.SilacLabel);
