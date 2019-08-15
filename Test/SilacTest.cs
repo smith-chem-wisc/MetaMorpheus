@@ -38,9 +38,8 @@ namespace Test
                 CommonParameters = new CommonParameters(digestionParams: new DigestionParams(generateUnlabeledProteinsForSilac: false)) //this is the important part of the unit test
             };
 
-            PeptideWithSetModifications heavyPeptide = new PeptideWithSetModifications("PEPTIDEc", new Dictionary<string, Modification>());
-
-            List<double> massDifferences = new List<double> { heavierArginine.MonoisotopicMass - heavyArginine.MonoisotopicMass };
+            List<PeptideWithSetModifications> heavyPeptide = new List<PeptideWithSetModifications> { new PeptideWithSetModifications("PEPTIDEc", new Dictionary<string, Modification>()) };
+            List<List<double>> massDifferences = new List<List<double>> { new List<double> { heavierArginine.MonoisotopicMass - heavyArginine.MonoisotopicMass } };
             MsDataFile myMsDataFile1 = new TestDataFile(heavyPeptide, massDifferences);
             string mzmlName = @"silac.mzML";
             IO.MzML.MzmlMethods.CreateAndWriteMyMzmlWithCalibratedSpectra(myMsDataFile1, mzmlName, false);
@@ -108,9 +107,10 @@ namespace Test
                 CommonParameters = new CommonParameters(digestionParams: new DigestionParams(minPeptideLength: 2))
             };
 
-            PeptideWithSetModifications lightPeptide = new PeptideWithSetModifications("SEQENEWITHAKANDANR", new Dictionary<string, Modification>());
 
-            List<double> massDifferences = new List<double> { (heavyLysine.MonoisotopicMass + heavyArginine.MonoisotopicMass) - (lightLysine.MonoisotopicMass + lightArginine.MonoisotopicMass) };
+            List<PeptideWithSetModifications> lightPeptide = new List<PeptideWithSetModifications> { new PeptideWithSetModifications("SEQENEWITHAKANDANR", new Dictionary<string, Modification>()) };
+            List<List<double>> massDifferences = new List<List<double>> { new List<double> { (heavyLysine.MonoisotopicMass + heavyArginine.MonoisotopicMass) - (lightLysine.MonoisotopicMass + lightArginine.MonoisotopicMass) } };
+
             MsDataFile myMsDataFile1 = new TestDataFile(lightPeptide, massDifferences);
             string mzmlName = @"silac.mzML";
             IO.MzML.MzmlMethods.CreateAndWriteMyMzmlWithCalibratedSpectra(myMsDataFile1, mzmlName, false);
@@ -155,8 +155,9 @@ namespace Test
             File.Delete(mzmlName);
             Directory.Delete(outputFolder, true);
 
-            lightPeptide = new PeptideWithSetModifications("ANDANR", new Dictionary<string, Modification>()); //has the additional, but not the original
-            massDifferences = new List<double> { (heavyArginine.MonoisotopicMass) - (lightArginine.MonoisotopicMass) };
+            lightPeptide = new List<PeptideWithSetModifications> { new PeptideWithSetModifications("ANDANR", new Dictionary<string, Modification>()) }; //has the additional, but not the original
+            massDifferences = new List<List<double>> { new List<double> { (heavyArginine.MonoisotopicMass) - (lightArginine.MonoisotopicMass) } };
+
             myMsDataFile1 = new TestDataFile(lightPeptide, massDifferences, true);
             mzmlName = @"silac.mzML";
             IO.MzML.MzmlMethods.CreateAndWriteMyMzmlWithCalibratedSpectra(myMsDataFile1, mzmlName, false);
@@ -185,9 +186,9 @@ namespace Test
                 }
             };
 
-            PeptideWithSetModifications lightPeptide = new PeptideWithSetModifications("PEPTIDEK", new Dictionary<string, Modification>());
+            List<PeptideWithSetModifications> lightPeptide = new List<PeptideWithSetModifications> { new PeptideWithSetModifications("PEPTIDEK", new Dictionary<string, Modification>()) }; //has the additional, but not the original
+            List<List<double>> massDifferences = new List<List<double>> { new List<double> { (heavyLysine.MonoisotopicMass - lightLysine.MonoisotopicMass) } };
 
-            List<double> massDifferences = new List<double> { heavyLysine.MonoisotopicMass - lightLysine.MonoisotopicMass };
             MsDataFile myMsDataFile1 = new TestDataFile(lightPeptide, massDifferences);
             string mzmlName = @"silac.mzML";
             IO.MzML.MzmlMethods.CreateAndWriteMyMzmlWithCalibratedSpectra(myMsDataFile1, mzmlName, false);
@@ -234,7 +235,7 @@ namespace Test
             File.Delete(mzmlName);
 
             //make a heavy peptide
-            massDifferences = new List<double> { heavyLysine.MonoisotopicMass - lightLysine.MonoisotopicMass };
+            massDifferences = new List<List<double>> { new List<double> { (heavyLysine.MonoisotopicMass - lightLysine.MonoisotopicMass) } }; //have to reset because it gets modified
             myMsDataFile1 = new TestDataFile(lightPeptide, massDifferences, true);
             IO.MzML.MzmlMethods.CreateAndWriteMyMzmlWithCalibratedSpectra(myMsDataFile1, mzmlName, false);
 
@@ -294,9 +295,9 @@ namespace Test
                 }
             };
 
-            PeptideWithSetModifications lightPeptide = new PeptideWithSetModifications("PEPTIDEK", new Dictionary<string, Modification>());
+            List<PeptideWithSetModifications> lightPeptide = new List<PeptideWithSetModifications> { new PeptideWithSetModifications("PEPTIDEK", new Dictionary<string, Modification>()) }; //has the additional, but not the original
+            List<List<double>> massDifferences = new List<List<double>> { new List<double> { (heavyLysine.MonoisotopicMass - lightLysine.MonoisotopicMass) } };
 
-            List<double> massDifferences = new List<double> { heavyLysine.MonoisotopicMass - lightLysine.MonoisotopicMass };
             MsDataFile myMsDataFile1 = new TestDataFile(lightPeptide, massDifferences);
             string mzmlName = @"silac.mzML";
             IO.MzML.MzmlMethods.CreateAndWriteMyMzmlWithCalibratedSpectra(myMsDataFile1, mzmlName, false);
@@ -335,15 +336,16 @@ namespace Test
                 }
             };
 
-            PeptideWithSetModifications mixedPeptide = new PeptideWithSetModifications("PEPTKIDEK", new Dictionary<string, Modification>());
+            List<PeptideWithSetModifications> mixedPeptide = new List<PeptideWithSetModifications> { new PeptideWithSetModifications("PEPTKIDEK", new Dictionary<string, Modification>()) }; //has the additional, but not the original
             double massShift = heavyLysine.MonoisotopicMass - lightLysine.MonoisotopicMass;
-            List<double> massDifferences = new List<double> {massShift,massShift*2  }; //LH and HH
+            List<List<double>> massDifferences = new List<List<double>> { new List<double> { massShift, massShift * 2 } }; //LH and HH
+
             MsDataFile myMsDataFile1 = new TestDataFile(mixedPeptide, massDifferences);
             string mzmlName = @"silac.mzML";
             IO.MzML.MzmlMethods.CreateAndWriteMyMzmlWithCalibratedSpectra(myMsDataFile1, mzmlName, false);
 
             string xmlName = "SilacDb.xml";
-            Protein theProtein = new Protein("PEPTKIDEK", "accession1");
+            Protein theProtein = new Protein("PEPEPEPEPEPTKIDEKPEPTKIDEK", "accession1");
             ProteinDbWriter.WriteXmlDatabase(new Dictionary<string, HashSet<Tuple<int, Modification>>>(), new List<Protein> { theProtein }, xmlName);
 
             string outputFolder = Path.Combine(TestContext.CurrentContext.TestDirectory, @"TestSilac");
@@ -377,13 +379,64 @@ namespace Test
                     EndTurnoverLabel = new SilacLabel(lightLysine.Letter, heavyishLysine.Letter, heavyishLysine.ThisChemicalFormula.Formula, heavyishLysine.MonoisotopicMass - lightLysine.MonoisotopicMass),
                 }
             };
-            mixedPeptide = new PeptideWithSetModifications("PEPTaIDEa", new Dictionary<string, Modification>());
+            mixedPeptide = new List<PeptideWithSetModifications> { new PeptideWithSetModifications("PEPTbIDEa", new Dictionary<string, Modification>()) }; //+2 +8
             massShift = heavyishLysine.MonoisotopicMass - heavyLysine.MonoisotopicMass;
-            massDifferences = new List<double> { massShift, massShift * 2 }; //LH and HH
+            massDifferences = new List<List<double>> { new List<double> { massShift, massShift *-1 } }; // -6, +6
+
             myMsDataFile1 = new TestDataFile(mixedPeptide, massDifferences);
             IO.MzML.MzmlMethods.CreateAndWriteMyMzmlWithCalibratedSpectra(myMsDataFile1, mzmlName, false);
             theStringResult = task.RunTask(outputFolder, new List<DbForTask> { new DbForTask(xmlName, false) }, new List<string> { mzmlName }, "taskId1").ToString();
-            //check no crash
+
+            output = File.ReadAllLines(TestContext.CurrentContext.TestDirectory + @"/TestSilac/AllQuantifiedPeptides.tsv");
+            Assert.IsTrue(output[1].Contains("PEPTKIDEK\t")); //test the unlabeled is present
+            Assert.IsTrue(output[0].Contains("\tIntensity_silac_Original\tIntensity_silac_NewlySynthesized\tDetection Type_silac_Original\tDetection Type_silac_NewlySynthesized\t")); //test filename changes
+            Assert.IsTrue(output[1].Contains("\t0\t1531250\t")); //test intensities
+
+            output = File.ReadAllLines(TestContext.CurrentContext.TestDirectory + @"/TestSilac/AllPSMs.psmtsv");
+            Assert.IsTrue(output[1].Contains("\tPEPTK(+1.994)IDEK(+8.014)\t")); //test the identified sequence is output
+
+            output = File.ReadAllLines(TestContext.CurrentContext.TestDirectory + @"/TestSilac/AllQuantifiedPeaks.tsv");
+            Assert.AreEqual(output.Length, 4); //header, unlabeled, mixed, labeled
+            Assert.IsTrue(output[1].Contains("\tPEPTK(+8.014)IDEK(+8.014)\t")); //test the original is present
+            Assert.IsTrue(output[1].Contains("\t218750\t")); //test intensity
+            Assert.IsTrue(output[2].Contains("\tPEPTK(+1.994)IDEK(+8.014)\t")); //test human readable label (and lack thereof) is present
+            Assert.IsTrue(output[2].Contains("\t875000\t")); //test intensity
+            Assert.IsTrue(output[3].Contains("\tPEPTK(+1.994)IDEK(+1.994)\t")); //test other label is present
+            Assert.IsTrue(output[3].Contains("\t437500\t")); //test intensity
+            Assert.IsTrue(output[3].Contains("silac\t")); //test human readable labels are present
+
+            //Try with conflicting probability values (have a missed cleavage and a non missed cleavage, but set the non missed cleavage past the equilibrium point)
+            //test that we don't get negative quantification values after the correction
+            //test that the probability calculation is considering the conflicting peptide in its calculation
+            List<PeptideWithSetModifications> peptides = new List<PeptideWithSetModifications>
+            {
+                new PeptideWithSetModifications("PEPTaIDEa",new Dictionary<string,Modification>()), 
+                new PeptideWithSetModifications("PEPEPEPEPEPTb",new Dictionary<string,Modification>()) 
+            };
+            massDifferences = new List<List<double>>
+            {
+                new List<double>{massShift, massShift*2 },
+                new List<double>{-1*massShift}
+            };
+            List<List<double>> intensities = new List<List<double>>
+            {
+                new List<double>{9,6,3 }, //implies the ph is 0.5 (LL/LH/HH)
+                new List<double>{7,3} //implies the ph is AT LEAST 0.7, which conflicts with 0.5 (H/L)
+            };
+            myMsDataFile1 = new TestDataFile(peptides, massDifferences, false, intensities);
+            IO.MzML.MzmlMethods.CreateAndWriteMyMzmlWithCalibratedSpectra(myMsDataFile1, mzmlName, false);
+            theStringResult = task.RunTask(outputFolder, new List<DbForTask> { new DbForTask(xmlName, false) }, new List<string> { mzmlName }, "taskId1").ToString();
+
+            //check there are no negative values in the output
+            //check that the missed cleavage peptide quant is informed by the conflicting peptide
+            //if it is informed, the ratio should be 60%. If it's not, then the ratio will be 50%
+            output = File.ReadAllLines(TestContext.CurrentContext.TestDirectory + @"/TestSilac/AllQuantifiedPeptides.tsv");
+            Assert.IsTrue(output[1].Contains("PEPEPTK\t")); //test the unlabeled is present
+            Assert.IsTrue(output[2].Contains("PEPTKIDEK\t")); //test the unlabeled is present
+            Assert.IsTrue(output[0].Contains("\tIntensity_silac_Original\tIntensity_silac_NewlySynthesized\tDetection Type_silac_Original\tDetection Type_silac_NewlySynthesized\t")); //test filename changes
+            Assert.IsTrue(output[1].Contains("\t0\t8750000\t")); //test the light intensity is not negative.
+            Assert.IsTrue(output[2].Contains("\t6125000\t9625000\t")); //test intensities, 6\t4 is means the Ph isn't informed by the contradicting peptides.
+
 
             //try modern search (testing indexing)
             task = new SearchTask
@@ -419,8 +472,8 @@ namespace Test
                 }
             };
 
-            PeptideWithSetModifications mixedPeptide = new PeptideWithSetModifications("PEPTKIDEa", new Dictionary<string, Modification>());
-            List<double> massDifferences = new List<double>();
+            List<PeptideWithSetModifications> mixedPeptide = new List<PeptideWithSetModifications> { new PeptideWithSetModifications("PEPTKIDEa", new Dictionary<string, Modification>()) }; //has the additional, but not the original
+            List<List<double>> massDifferences = new List<List<double>> { new List<double>() };
             MsDataFile myMsDataFile1 = new TestDataFile(mixedPeptide, massDifferences);
             string mzmlName = @"silac.mzML";
             IO.MzML.MzmlMethods.CreateAndWriteMyMzmlWithCalibratedSpectra(myMsDataFile1, mzmlName, false);
@@ -445,7 +498,7 @@ namespace Test
             output = File.ReadAllLines(TestContext.CurrentContext.TestDirectory + @"/TestSilac/AllPeptides.psmtsv");
             Assert.IsTrue(output.Length == 2);
             Assert.IsTrue(output[1].Contains("\tPEPTKIDEK(+8.014)\t")); //ensure the order is correct here for the id (not PEPTK(+8.014)IDEK)
-            
+
             //delete files
             Directory.Delete(outputFolder, true);
             File.Delete(xmlName);
@@ -517,13 +570,13 @@ namespace Test
                 }
             };
 
-            PeptideWithSetModifications lightPeptide = new PeptideWithSetModifications("PEPTIDEK", new Dictionary<string, Modification>());
+            List<PeptideWithSetModifications> lightPeptide = new List<PeptideWithSetModifications> { new PeptideWithSetModifications("PEPTIDEK", new Dictionary<string, Modification>()) }; //has the additional, but not the original
+            List<List<double>> massDifferences = new List<List<double>> { new List<double> { (heavyLysine.MonoisotopicMass - lightLysine.MonoisotopicMass) } };
 
-            List<double> massDifferences = new List<double> { heavyLysine.MonoisotopicMass - lightLysine.MonoisotopicMass };
             //ms1, ms2, 4 more ms1s
             //intensities look like (L,H) (5,1.5), (4,2), (3, 1.5), (2,2), (0,3)
             //we want a ratio of 2:1, L:H
-            List<double> precursorIntensities = new List<double> { 5, 1.5, 4, 2, 3, 1.5, 2, 2, 0, 3 };
+            List<List<double>> precursorIntensities = new List<List<double>> { new List<double> { 5, 1.5, 4, 2, 3, 1.5, 2, 2, 0, 3 } };
             MsDataFile myMsDataFile1 = new TestDataFile(lightPeptide, massDifferences, false, precursorIntensities);
             string mzmlName = @"silac.mzML";
             IO.MzML.MzmlMethods.CreateAndWriteMyMzmlWithCalibratedSpectra(myMsDataFile1, mzmlName, false);
@@ -540,7 +593,7 @@ namespace Test
 
 
             //TEST for blips, where two peaks are found for a single identification
-            massDifferences = new List<double> { heavyLysine.MonoisotopicMass - lightLysine.MonoisotopicMass }; //must be reset, since the method below edits it
+            massDifferences = new List<List<double>> { new List<double> { (heavyLysine.MonoisotopicMass - lightLysine.MonoisotopicMass) } }; //must be reset, since the method below edits it
             myMsDataFile1 = new TestDataFile(lightPeptide, massDifferences, false, precursorIntensities, 2);
             IO.MzML.MzmlMethods.CreateAndWriteMyMzmlWithCalibratedSpectra(myMsDataFile1, mzmlName, false);
             theStringResult = task.RunTask(outputFolder, new List<DbForTask> { new DbForTask(xmlName, false) }, new List<string> { mzmlName }, "taskId1").ToString();

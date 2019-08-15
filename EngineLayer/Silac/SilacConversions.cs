@@ -168,14 +168,22 @@ namespace EngineLayer
             return fullSequence;
         }
 
-        public static string GetAmbiguousLightSequence(string originalSequence, List<SilacLabel> labels, bool baseSequence)
+        public static string GetAmbiguousLightSequence(string originalSequence, List<SilacLabel> allLabels, bool baseSequence)
         {
             string[] multipleSequences = originalSequence.Split('|').ToArray(); //if ambiguity
             string localSequence = "";
             foreach (string sequence in multipleSequences)
             {
-                SilacLabel label = GetRelevantLabelFromBaseSequence(sequence, labels);
-                localSequence += (baseSequence ? GetSilacLightBaseSequence(sequence, label) : GetSilacLightFullSequence(sequence, label)) + "|";
+                List<SilacLabel> labels = GetRelevantLabelsFromBaseSequenceForOutput(sequence, allLabels);
+                string updatedSequence = sequence;
+                if (labels != null)
+                {
+                    foreach (SilacLabel label in labels)
+                    {
+                        updatedSequence = baseSequence ? GetSilacLightBaseSequence(updatedSequence, label) : GetSilacLightFullSequence(updatedSequence, label);
+                    }
+                }
+                localSequence += updatedSequence + "|";
             }
             if (localSequence.Length != 0)
             {
@@ -193,6 +201,13 @@ namespace EngineLayer
         {
             return labels.Where(x => baseSequence.Contains(x.AminoAcidLabel) ||
                 (x.AdditionalLabels != null && x.AdditionalLabels.Any(y => baseSequence.Contains(y.AminoAcidLabel)))).FirstOrDefault();
+        }
+
+        //This method is used specifically for turnover experiments where the start and the end conditions are labeled
+        public static List<SilacLabel> GetRelevantLabelsFromBaseSequenceForOutput(string baseSequence, List<SilacLabel> labels)
+        {
+            return labels.Where(x => baseSequence.Contains(x.AminoAcidLabel) ||
+                (x.AdditionalLabels != null && x.AdditionalLabels.Any(y => baseSequence.Contains(y.AminoAcidLabel)))).ToList();
         }
 
         public static SilacLabel GetRelevantLabelFromFullSequence(string fullSequence, List<SilacLabel> labels)
@@ -590,7 +605,7 @@ namespace EngineLayer
                         fileToRecycleDictionary[info] = new double[3]; //still use three, because we're going to weight based on the number of contradicting peptides stored at index 2
                     }
 
-                    foreach (KeyValuePair<string, List<FlashLFQ.Peptide>> kvp in peptidesWithMissedCleavages)
+                    foreach (KeyValuePair<string, List<FlashLFQ.Peptide>> kvp in peptidesWithoutMissedCleavages)
                     {
                         //the order should always be from start to end
                         Dictionary<SpectraFileInfo, List<double>> tempFileToRecycleDictionary = new Dictionary<SpectraFileInfo, List<double>>();
@@ -696,7 +711,7 @@ namespace EngineLayer
                                 SpectraFileInfo startInfo = updatedInfo[0];
                                 SpectraFileInfo endInfo = updatedInfo[1];
 
-                                FlashLFQ.Peptide updatedPeptide = new FlashLFQ.Peptide(lightPeptide.Sequence, lightPeptide.UseForProteinQuant);
+                                FlashLFQ.Peptide updatedPeptide = new FlashLFQ.Peptide(unlabeledSequence, lightPeptide.UseForProteinQuant);
                                 updatedPeptide.ProteinGroups = CleanPastProteinQuant(lightPeptide.ProteinGroups); //needed to keep protein info.
 
                                 //all the heavy is new, but some of the light is also new protein
@@ -779,7 +794,6 @@ namespace EngineLayer
                 }
 
                 //Convert all lfqpeaks from heavy (a) to light (K+8.014) for output
-
                 if (flashLfqResults != null) //can be null if nothing was quantified (all peptides are ambiguous)
                 {
                     var lfqPeaks = flashLfqResults.Peaks;
@@ -798,12 +812,22 @@ namespace EngineLayer
                                 List<Identification> updatedIds = new List<Identification>();
                                 foreach (var id in peak.Identifications)
                                 {
-                                    SilacLabel label = GetRelevantLabelFromBaseSequence(id.BaseSequence, allSilacLabels);
+                                    string baseSequence = id.BaseSequence;
+                                    string fullSequence = id.ModifiedSequence;
+                                    List<SilacLabel> labels = GetRelevantLabelsFromBaseSequenceForOutput(id.BaseSequence, allSilacLabels);
+                                    if (labels != null)
+                                    {
+                                        foreach (SilacLabel label in labels)
+                                        {
+                                            baseSequence = GetSilacLightBaseSequence(baseSequence, label);
+                                            fullSequence = GetSilacLightFullSequence(fullSequence, label);
+                                        }
+                                    }
 
                                     Identification updatedId = new Identification(
                                         id.FileInfo,
-                                        GetSilacLightBaseSequence(id.BaseSequence, label),
-                                        GetSilacLightFullSequence(id.ModifiedSequence, label),
+                                        baseSequence,
+                                        fullSequence,
                                         id.MonoisotopicMass,
                                         id.Ms2RetentionTimeInMinutes,
                                         id.PrecursorChargeState,
@@ -821,11 +845,7 @@ namespace EngineLayer
                 }
             }
 
-            //convert all peaks into human readable format (PEPTIDE(K+8) and not PEPTIDEa)
             //convert all psms into human readable format
-            //We can do this for all of the FlashLFQ peptides/peaks, because they use string sequences.
-            //We are unable to do this for Parameters.AllPsms, because they store proteins and start/end residues instead
-            //for Psms, we need to convert during the writing.
             for (int i = 0; i < allPsms.Count; i++)
             {
                 allPsms[i].ResolveHeavySilacLabel(allSilacLabels, modsToWriteSelection);

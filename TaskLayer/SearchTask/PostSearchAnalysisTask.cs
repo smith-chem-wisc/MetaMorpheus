@@ -289,6 +289,7 @@ namespace TaskLayer
             bool quantifyUnlabeledPeptides = Parameters.ListOfDigestionParams.Any(x => x.GeneratehUnlabeledProteinsForSilac);
             if (Parameters.SearchParameters.SilacLabels != null)
             {
+                bool turnoverWithMultipleLabels = startLabel != null && endLabel != null; //used to check multiple labels
                 //go through all the psms and duplicate them until a psm copy exists for the unlabeled and labeled proteins
                 //The number of psms should roughly increase by a factor of N, where N is the number of labels.
                 //It may not increase exactly by a factor of N if the amino acid(s) that gets labeled doesn't exist in the peptide
@@ -351,6 +352,14 @@ namespace TaskLayer
                     }
                     else //if turnover
                     {
+                        //if it's possible that mixtures exist, then multiple labels must be removed
+                        if(turnoverWithMultipleLabels)
+                        {
+                            observedLabel = SilacConversions.GetRelevantLabelFromBaseSequence(unlabeledBaseSequence, allSilacLabels); //returns null if no label
+                            lightPsm = observedLabel == null ? lightPsm : SilacConversions.GetSilacPsm(lightPsm, observedLabel);
+                            unlabeledBaseSequence = lightPsm.BaseSequence;
+                        }
+
                         //Convert everything to the startLabel
                         string startLabeledBaseSequence = SilacConversions.GetLabeledBaseSequence(unlabeledBaseSequence, startLabel);
 
