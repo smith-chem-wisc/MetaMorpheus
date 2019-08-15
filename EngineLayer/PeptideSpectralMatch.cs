@@ -313,26 +313,16 @@ namespace EngineLayer
         /// This method is used by SILAC quantification to add heavy/light psms
         /// Don't have access to the scans at that point, so a new contructor is needed
         /// </summary>
-        public PeptideSpectralMatch Clone(List<(int Notch, PeptideWithSetModifications Peptide)> bestMatchingPeptides = null)
+        public PeptideSpectralMatch Clone(List<(int Notch, PeptideWithSetModifications Peptide)> bestMatchingPeptides)
         {
             return new PeptideSpectralMatch(this, bestMatchingPeptides);
         }
 
         private PeptideSpectralMatch(PeptideSpectralMatch psm, List<(int Notch, PeptideWithSetModifications Peptide)> bestMatchingPeptides)
         {
-            if (bestMatchingPeptides == null)
-            {
-                //TODO why isn't this covered?
-                _BestMatchingPeptides = psm.BestMatchingPeptides.ToList();
-                BaseSequence = psm.BaseSequence;
-                FullSequence = psm.FullSequence;
-            }
-            else
-            {
-                _BestMatchingPeptides = bestMatchingPeptides;
-                BaseSequence = PsmTsvWriter.Resolve(bestMatchingPeptides.Select(b => b.Peptide.BaseSequence)).ResolvedValue;
-                FullSequence = PsmTsvWriter.Resolve(bestMatchingPeptides.Select(b => b.Peptide.FullSequence)).ResolvedValue;
-            }
+            _BestMatchingPeptides = bestMatchingPeptides;
+            BaseSequence = PsmTsvWriter.Resolve(bestMatchingPeptides.Select(b => b.Peptide.BaseSequence)).ResolvedValue;
+            FullSequence = PsmTsvWriter.Resolve(bestMatchingPeptides.Select(b => b.Peptide.FullSequence)).ResolvedValue;
 
             ModsChemicalFormula = psm.ModsChemicalFormula;
             Notch = psm.Notch;
