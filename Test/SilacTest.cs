@@ -345,7 +345,7 @@ namespace Test
             IO.MzML.MzmlMethods.CreateAndWriteMyMzmlWithCalibratedSpectra(myMsDataFile1, mzmlName, false);
 
             string xmlName = "SilacDb.xml";
-            Protein theProtein = new Protein("PEPEPEPEPEPTKIDEKPEPTKIDEK", "accession1");
+            Protein theProtein = new Protein("PEPEPEPEPEPTKIDEKPEPTKIDEKA", "accession1");
             ProteinDbWriter.WriteXmlDatabase(new Dictionary<string, HashSet<Tuple<int, Modification>>>(), new List<Protein> { theProtein }, xmlName);
 
             string outputFolder = Path.Combine(TestContext.CurrentContext.TestDirectory, @"TestSilac");
@@ -420,8 +420,8 @@ namespace Test
             };
             List<List<double>> intensities = new List<List<double>>
             {
-                new List<double>{9,6,3 }, //implies the ph is 0.5 (LL/LH/HH)
-                new List<double>{7,3} //implies the ph is AT LEAST 0.7, which conflicts with 0.5 (H/L)
+                new List<double>{9,6,3 }, //implies the probability of heavy incorporation (Ph) is 0.5 (LL/LH/HH)
+                new List<double>{7,3} //implies the Ph is AT LEAST 0.7, which conflicts with 0.5 (H/L)
             };
             myMsDataFile1 = new TestDataFile(peptides, massDifferences, false, intensities);
             IO.MzML.MzmlMethods.CreateAndWriteMyMzmlWithCalibratedSpectra(myMsDataFile1, mzmlName, false);
@@ -429,14 +429,17 @@ namespace Test
 
             //check there are no negative values in the output
             //check that the missed cleavage peptide quant is informed by the conflicting peptide
-            //if it is informed, the ratio should be 60%. If it's not, then the ratio will be 50%
+            //if it is informed, the Ph should be 60%. If it's not, then the Ph will be 50%
             output = File.ReadAllLines(TestContext.CurrentContext.TestDirectory + @"/TestSilac/AllQuantifiedPeptides.tsv");
-            Assert.IsTrue(output[1].Contains("PEPEPTK\t")); //test the unlabeled is present
+            Assert.IsTrue(output[1].Contains("PEPEPEPEPEPTK\t")); //test the unlabeled is present
             Assert.IsTrue(output[2].Contains("PEPTKIDEK\t")); //test the unlabeled is present
             Assert.IsTrue(output[0].Contains("\tIntensity_silac_Original\tIntensity_silac_NewlySynthesized\tDetection Type_silac_Original\tDetection Type_silac_NewlySynthesized\t")); //test filename changes
             Assert.IsTrue(output[1].Contains("\t0\t8750000\t")); //test the light intensity is not negative.
-            Assert.IsTrue(output[2].Contains("\t6125000\t9625000\t")); //test intensities, 6\t4 is means the Ph isn't informed by the contradicting peptides.
+            Assert.IsTrue(output[2].Contains("\t6125000\t9625000\t")); //test intensities. The observation is 9/6/3. If Ph = 0.5, the results will be 6/12. If Ph = 0.6, the results will be 7/11.
 
+            output = File.ReadAllLines(TestContext.CurrentContext.TestDirectory + @"/TestSilac/AllProteinGroups.tsv");
+            //test sequence coverage and output worked from multiple labels
+            Assert.IsTrue(output[1].Contains("\tPEPEPEPEPEPTK(+1.994)|PEPTK(+8.014)IDEK(+8.014)\t\t2\t2\t0.81481\tPEPEPEPEPEPTKidekPEPTKIDEKa\tPEPEPEPEPEPTKidekPEPTKIDEKa\t"));
 
             //try modern search (testing indexing)
             task = new SearchTask
