@@ -57,7 +57,7 @@ namespace MetaMorpheusGUI
                 SearchModeExpanderTitle = "Some search properties..."
             };
             this.DataContext = DataContextForSearchTaskWindow;
-            SearchModifications.Timer.Tick += new EventHandler(TextChangeTimerHandler);
+            SearchTimer.Timer.Tick += new EventHandler(TextChangeTimerHandler);
             dataGridSilacLabels.DataContext = StaticSilacLabelsObservableCollection;
             base.Closing += this.OnClosing;
         }
@@ -835,13 +835,13 @@ namespace MetaMorpheusGUI
 
         private void TextChanged_Fixed(object sender, TextChangedEventArgs args)
         {
-            SearchModifications.SetTimer();
+            SearchTimer.Set();
             SearchModifications.FixedSearch = true;
         }
 
         private void TextChanged_Var(object sender, TextChangedEventArgs args)
         {
-            SearchModifications.SetTimer();
+            SearchTimer.Set();
             SearchModifications.VariableSearch = true;
         }
 

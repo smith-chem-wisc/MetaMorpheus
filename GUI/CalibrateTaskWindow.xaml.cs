@@ -40,7 +40,7 @@ namespace MetaMorpheusGUI
             {
                 this.saveButton.Content = "Add the Calibration Task";
             }
-            SearchModifications.Timer.Tick += new EventHandler(TextChangeTimerHandler);
+            SearchTimer.Timer.Tick += new EventHandler(TextChangeTimerHandler);
             base.Closing += this.OnClosing;
         }
 
@@ -284,13 +284,13 @@ namespace MetaMorpheusGUI
 
         private void TextChanged_Fixed(object sender, TextChangedEventArgs args)
         {
-            SearchModifications.SetTimer();
+            SearchTimer.Set();
             SearchModifications.FixedSearch = true;
         }
 
         private void TextChanged_Var(object sender, TextChangedEventArgs args)
         {
-            SearchModifications.SetTimer();
+            SearchTimer.Set();
             SearchModifications.VariableSearch = true;
         }
 
