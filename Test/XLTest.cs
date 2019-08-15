@@ -271,6 +271,26 @@ namespace Test
             Directory.Delete(Path.Combine(TestContext.CurrentContext.TestDirectory, @"Task Settings"), true);
         }
 
+        [Test]
+        public static void AmbiguiousDeadendPeptideTest() //The scan was previously identified as crosslink, but it is actually deadend 
+        {
+            string myFileXl = Path.Combine(TestContext.CurrentContext.TestDirectory, @"XlTestData\BSA_DSSO_29061.mgf");
+            string myDatabaseXl = Path.Combine(TestContext.CurrentContext.TestDirectory, @"XlTestData\BSA.fasta");
+            string outputFolder = Path.Combine(TestContext.CurrentContext.TestDirectory, @"TestDeadendPeptide");
+
+            XLSearchTask xLSearchTask = new XLSearchTask(){};
+
+            Directory.CreateDirectory(outputFolder);
+
+            xLSearchTask.RunTask(outputFolder, new List<DbForTask> { new DbForTask(myDatabaseXl, false) }, new List<string> { myFileXl }, "test");
+            var lines = File.ReadAllLines(Path.Combine(outputFolder, @"Deadends.tsv"));
+            Assert.That(lines.Length == 2);
+            Assert.That(lines[1].Contains("Dead"));
+
+            Directory.Delete(outputFolder, true);
+            Directory.Delete(Path.Combine(TestContext.CurrentContext.TestDirectory, @"Task Settings"), true);
+        }
+
         /// <summary>
         /// Makes sure helper methods that generate indices function properly
         /// </summary>
