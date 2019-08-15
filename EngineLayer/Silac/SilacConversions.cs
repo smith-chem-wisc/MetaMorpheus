@@ -64,7 +64,7 @@ namespace EngineLayer
         public static List<PeptideSpectralMatch> UpdateProteinSequencesToLight(List<PeptideSpectralMatch> originalPsms, List<SilacLabel> labels)
         {
             List<PeptideSpectralMatch> psmsToReturn = new List<PeptideSpectralMatch>();
-            foreach(PeptideSpectralMatch psm in originalPsms)
+            foreach (PeptideSpectralMatch psm in originalPsms)
             {
                 List<(int Notch, PeptideWithSetModifications Peptide)> originalPeptides = psm.BestMatchingPeptides.ToList();
                 List<(int Notch, PeptideWithSetModifications Peptide)> updatedPeptides = new List<(int Notch, PeptideWithSetModifications Peptide)>();
@@ -272,7 +272,7 @@ namespace EngineLayer
         public static HashSet<FlashLFQ.ProteinGroup> CleanPastProteinQuant(HashSet<FlashLFQ.ProteinGroup> originalProteinGroups)
         {
             HashSet<FlashLFQ.ProteinGroup> cleanedProteinGroups = new HashSet<FlashLFQ.ProteinGroup>();
-            foreach(FlashLFQ.ProteinGroup pg in originalProteinGroups)
+            foreach (FlashLFQ.ProteinGroup pg in originalProteinGroups)
             {
                 cleanedProteinGroups.Add(new FlashLFQ.ProteinGroup(pg.ProteinGroupName, pg.GeneName, pg.Organism));
             }
@@ -356,7 +356,7 @@ namespace EngineLayer
                         }
                         else
                         {
-                            unlabeledToPeptidesDictionary.Add(unlabeledSequence, new List<FlashLFQ.Peptide> {  peptide});
+                            unlabeledToPeptidesDictionary.Add(unlabeledSequence, new List<FlashLFQ.Peptide> { peptide });
                         }
                     }
                 }
@@ -392,7 +392,7 @@ namespace EngineLayer
                         }
                         else
                         {
-                            unlabeledToPeptidesDictionary.Add(fullyCleanedSequence, new List<FlashLFQ.Peptide> {peptide });
+                            unlabeledToPeptidesDictionary.Add(fullyCleanedSequence, new List<FlashLFQ.Peptide> { peptide });
                         }
                     }
                 }
@@ -485,8 +485,9 @@ namespace EngineLayer
                         fileToRecycleDictionary[info] = new double[3];
                     }
 
-                    //go through each peptide that has more than one label
-                    foreach (KeyValuePair<string, List<FlashLFQ.Peptide>> kvp in unlabeledToPeptidesDictionary.Where(x => x.Value.Count > 2))
+                    //go through each peptide that has more than one label but fewer than 7 (just gets unusable around/before that point)
+                    List<KeyValuePair<string, List<FlashLFQ.Peptide>>> peptidesWithMissedCleavages = unlabeledToPeptidesDictionary.Where(x => x.Value.Count > 2 && x.Value.Count < 7).ToList();
+                    foreach (KeyValuePair<string, List<FlashLFQ.Peptide>> kvp in peptidesWithMissedCleavages)
                     {
                         //the order should always be from start to end
                         Dictionary<SpectraFileInfo, List<double>> tempFileToRecycleDictionary = new Dictionary<SpectraFileInfo, List<double>>();
@@ -508,12 +509,7 @@ namespace EngineLayer
                         foreach (SpectraFileInfo info in spectraFileInfo)
                         {
                             List<double> values = tempFileToRecycleDictionary[info];
-                            if (values.Count > 6)
-                            {
-                                //we can't really use data with this many missed cleavages (data isn't super accurate), so remove them
-                                values = new List<double> { 0, 0, 0 };
-                            }
-                            else if (values.Count > 3)
+                            if (values.Count > 3)
                             {
                                 if (values.Count == 6)
                                 {
@@ -576,10 +572,78 @@ namespace EngineLayer
                         {
                             values[i] = values[i] / sum;
                         }
-                        double Ph = Math.Sqrt(values[2] / (1 - values[0] + Math.Pow(values[1], 2) / (4 * values[2])));
-                        fileToHeavyProbabilityDictionary[info] = Ph;
+                        double ph = Math.Sqrt(values[2] / (1 - values[0] + Math.Pow(values[1], 2) / (4 * values[2]))); //calculate probability
+                        fileToHeavyProbabilityDictionary[info] = ph;
                     }
 
+                    //we now have the probability that a heavy amino acid will be incorporated for each file (Ph)
+                    //this probability is only informed by peptides with missed cleavages
+                    //however, it's possible that peptides not containing missed cleavages contradict the observed Ph value
+                    //if you find a Ph value of 0.6, but observe a light:heavy ratio of 0.1:0.9, that ratio should be impossible since equilibrium would occur at 0.4:0.6
+                    //find these contradicting peptides and include them as values in the calculation
+                    //the original Ph will be weighted by the number of LL/LH/HH peptides (which isn't perfect, because some of those might be 0/0/0 quant values depending on the file)
+                    List<KeyValuePair<string, List<FlashLFQ.Peptide>>> peptidesWithoutMissedCleavages = unlabeledToPeptidesDictionary.Where(x => x.Value.Count == 2).ToList();
+
+                    //reset the spectraFileCounts
+                    foreach (SpectraFileInfo info in spectraFileInfo)
+                    {
+                        fileToRecycleDictionary[info] = new double[3]; //still use three, because we're going to weight based on the number of contradicting peptides stored at index 2
+                    }
+
+                    foreach (KeyValuePair<string, List<FlashLFQ.Peptide>> kvp in peptidesWithMissedCleavages)
+                    {
+                        //the order should always be from start to end
+                        Dictionary<SpectraFileInfo, List<double>> tempFileToRecycleDictionary = new Dictionary<SpectraFileInfo, List<double>>();
+                        foreach (SpectraFileInfo info in spectraFileInfo)
+                        {
+                            tempFileToRecycleDictionary[info] = new List<double>();
+                        }
+
+                        List<FlashLFQ.Peptide> peptides = kvp.Value;
+                        foreach (FlashLFQ.Peptide peptide in peptides) //assumes sorted old->new
+                        {
+                            foreach (SpectraFileInfo info in spectraFileInfo)
+                            {
+                                tempFileToRecycleDictionary[info].Add(peptide.GetIntensity(info));
+                            }
+                        }
+
+                        //add the values from this peptide to the file-specific-values of all peptides
+                        foreach (SpectraFileInfo info in spectraFileInfo)
+                        {
+                            //get the L/H values
+                            List<double> values = tempFileToRecycleDictionary[info];
+                            //get the Ph
+                            double ph = fileToHeavyProbabilityDictionary[info];
+                            //check if they contradict the Ph
+                            double lightValue = values[0];
+                            double heavyValue = values[1];
+                            if (heavyValue / (lightValue + heavyValue) > ph) //assume total turnover and we've hit equilibrium
+                            {
+                                double[] totalValues = fileToRecycleDictionary[info];
+                                totalValues[0] += lightValue;
+                                totalValues[1] += heavyValue;
+                                totalValues[2]++; //count how many peptides contradicted
+                            }
+                        }
+                    }
+
+                    //update the Ph values based on the missed and contradicting peptides
+                    foreach (SpectraFileInfo info in spectraFileInfo)
+                    {
+                        double[] contradictingValues = fileToRecycleDictionary[info];
+                        double numContradictingValues = contradictingValues[2]; //int, but the array is double
+                        if (numContradictingValues != 0) //check that there were contradicting values
+                        {
+                            double originalPh = fileToHeavyProbabilityDictionary[info];
+                            double contradictingPh = contradictingValues[1] / (contradictingValues[0] + contradictingValues[1]);
+                            double weightedOriginal = originalPh * peptidesWithMissedCleavages.Count;
+                            double weightedContradicting = contradictingPh * numContradictingValues;
+                            //the updated Ph is guarenteed to be higher than the Ph informed only by the missed cleavage peptides
+                            double updatedPh = (weightedOriginal + weightedContradicting) / (peptidesWithMissedCleavages.Count + numContradictingValues);
+                            fileToHeavyProbabilityDictionary[info] = updatedPh;
+                        }
+                    }
 
                     //foreach group, the labeled peptides should be split into their labeled files
                     //we're deleting the heavy results after we pull those results into a different file
@@ -596,6 +660,8 @@ namespace EngineLayer
                         flashLfqResults.SpectraFiles.Add(lightInfo);
                         flashLfqResults.SpectraFiles.Add(heavyInfo);
                     }
+
+                    //update the measurements with the Ph value. This step converts the quantification intensities from light/heavy to original/newlySynthesized.
                     foreach (KeyValuePair<string, List<FlashLFQ.Peptide>> kvp in unlabeledToPeptidesDictionary)
                     {
                         string unlabeledSequence = kvp.Key; //this will be the key for the new quant entry
@@ -626,17 +692,18 @@ namespace EngineLayer
                                 double heavy = heavyPeptide.GetIntensity(info);
                                 double mixed = mixedPeptideExists ? mixedPeptide.GetIntensity(info) : 0;
 
-                                //all the heavy is new, but some of the light is also new protein
-                                //Ph helps out here. The correction factor is Pl*Qh/Ph, or (1-Ph)*Qh/Ph.
-                                //it's possible that we obtain a negative value for the start, which doesn't make sense.
-                                //This occurs when Qh>Ph. In these cases, set the light to zero and the heavy to light+heavy.
-                                double correction = (1 - Ph) * heavy / Ph;
                                 var updatedInfo = originalToLabeledFileInfoDictionary[info];
                                 SpectraFileInfo startInfo = updatedInfo[0];
                                 SpectraFileInfo endInfo = updatedInfo[1];
 
                                 FlashLFQ.Peptide updatedPeptide = new FlashLFQ.Peptide(lightPeptide.Sequence, lightPeptide.UseForProteinQuant);
                                 updatedPeptide.ProteinGroups = CleanPastProteinQuant(lightPeptide.ProteinGroups); //needed to keep protein info.
+
+                                //all the heavy is new, but some of the light is also new protein
+                                //Ph helps out here. The correction factor is Pl*Qh/Ph, or (1-Ph)*Qh/Ph.
+                                //it's possible that we obtain a negative value for the start, which doesn't make sense.
+                                //This occurs when Qh>Ph. In these cases, set the light to zero and the heavy to light+heavy.
+                                double correction = Math.Min((1 - Ph) * heavy / Ph, light);
 
                                 updatedPeptide.SetIntensity(startInfo, light - correction); //assign the corrected light intensity
                                 updatedPeptide.SetDetectionType(startInfo, lightPeptide.GetDetectionType(info));
