@@ -50,9 +50,6 @@
     <None Update="DatabaseTests\sliced_b6.mzML">
       <CopyToOutputDirectory>Always</CopyToOutputDirectory>
     </None>
-    <None Update="elements.dat">
-      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
-    </None>
     <None Update="indexEngineTestFasta.fasta">
       <CopyToOutputDirectory>Always</CopyToOutputDirectory>
     </None>
@@ -148,6 +145,9 @@
     </None>
     <None Update="XlTestData\10226.mzML">
       <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+    </None>
+    <None Update="XlTestData\BSA_DSSO_29061.mgf">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
     </None>
     <None Update="XlTestData\ms2mixed_bsa_xlink.mzML">
       <CopyToOutputDirectory>Always</CopyToOutputDirectory>
