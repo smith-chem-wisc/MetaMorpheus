@@ -46,7 +46,6 @@ namespace EngineLayer
                 pwsm.NumFixedMods,
                 labeledBaseSequence);
             return psm.Clone(new List<(int Notch, PeptideWithSetModifications Peptide)> { (notch, labeledPwsm) });
-
         }
 
         public static PeptideSpectralMatch GetSilacPsm(PeptideSpectralMatch psm, SilacLabel silacLabel)
@@ -520,7 +519,7 @@ namespace EngineLayer
                             }
                         }
 
-                        //aggregate into LL, HL, and HH if they contain 2+ missed cleavages
+                        //aggregate into LL, HL, and HH if they contain 2+ labels
                         foreach (SpectraFileInfo info in spectraFileInfo)
                         {
                             List<double> values = tempFileToRecycleDictionary[info];
