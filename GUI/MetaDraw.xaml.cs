@@ -467,35 +467,10 @@ namespace MetaMorpheusGUI
                 return;
             }
 
-            //remove parentheticals used in SILAC
-            string baseSequence = psm.BaseSeq;
-            if (baseSequence.Contains("("))
-            {
-                string updatedBaseSequence = "";
-                bool withinParentheses = false;
-                foreach (char c in baseSequence)
-                {
-                    if (c == ')') //leaving the parentheses
-                    {
-                        withinParentheses = false;
-                    }
-                    else if (c == '(') //entering the parentheses
-                    {
-                        withinParentheses = true;
-                    }
-                    else if (!withinParentheses) //if outside the parentheses, preserve this amino acid
-                    {
-                        updatedBaseSequence += c;
-                    }
-                    //else do nothing
-                }
-                baseSequence = updatedBaseSequence;
-            }
-
             // draw base sequence
-            for (int r = 0; r < baseSequence.Length; r++)
+            for (int r = 0; r < psm.BaseSeq.Length; r++)
             {
-                BaseDraw.txtDrawing(canvas, new Point(r * spacing + 10, 10), baseSequence[r].ToString(), Brushes.Black);
+                BaseDraw.txtDrawing(canvas, new Point(r * spacing + 10, 10), psm.BaseSeq[r].ToString(), Brushes.Black);
             }
 
             // draw the fragment ion annotations on the base sequence
