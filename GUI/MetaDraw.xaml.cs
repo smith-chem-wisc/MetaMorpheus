@@ -489,12 +489,13 @@ namespace MetaMorpheusGUI
                     }
                     //else do nothing
                 }
+                baseSequence = updatedBaseSequence;
             }
 
             // draw base sequence
-            for (int r = 0; r < psm.BaseSeq.Length; r++)
+            for (int r = 0; r < baseSequence.Length; r++)
             {
-                BaseDraw.txtDrawing(canvas, new Point(r * spacing + 10, 10), psm.BaseSeq[r].ToString(), Brushes.Black);
+                BaseDraw.txtDrawing(canvas, new Point(r * spacing + 10, 10), baseSequence[r].ToString(), Brushes.Black);
             }
 
             // draw the fragment ion annotations on the base sequence
