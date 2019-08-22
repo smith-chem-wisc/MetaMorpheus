@@ -310,182 +310,22 @@ namespace EngineLayer
                 //We can remove "labeled" peptides from each file and put them in a new file as "unlabeled".
 
                 //MAKE NEW RAW FILES
-                //update number of spectra files to include a new file for each label*condition
-                List<SpectraFileInfo> silacSpectraFileInfo = new List<SpectraFileInfo>(); //new files
-                Dictionary<SpectraFileInfo, List<SpectraFileInfo>> originalToLabeledFileInfoDictionary = new Dictionary<SpectraFileInfo, List<SpectraFileInfo>>();
-                List<SpectraFileInfo> unlabeledFiles = new List<SpectraFileInfo>(); //null can't be a key in the dictionary, so this list is used for the unlabeled files.
-
-                flashLfqResults.SpectraFiles.Clear(); //clear existing files so we can replace them with labeled ones
-
-                //foreach existing file
-                if (startLabel == null && endLabel == null) //if multiplex
-                {
-                    //populate dictionary
-                    if (quantifyUnlabeledPeptides)
-                    {
-                        spectraFileInfo.ForEach(x => originalToLabeledFileInfoDictionary.Add(x, new List<SpectraFileInfo> { x }));
-                        //get the unlabeled
-                        unlabeledFiles = spectraFileInfo;
-                        flashLfqResults.SpectraFiles.AddRange(spectraFileInfo);
-                    }
-                    else
-                    {
-                        spectraFileInfo.ForEach(x => originalToLabeledFileInfoDictionary.Add(x, new List<SpectraFileInfo>()));
-                    }
-
-                    //get the labeled
-                    foreach (SilacLabel label in allSilacLabels)
-                    {
-                        List<SpectraFileInfo> labeledFiles = new List<SpectraFileInfo>();
-                        foreach (SpectraFileInfo originalFile in spectraFileInfo)
-                        {
-                            //foreach label, add a new file with the label                      
-                            //silacSpectraFileInfo.Add(silacFile);
-                            SpectraFileInfo labeledInfo = GetHeavyFileInfo(originalFile, label);
-                            labeledFiles.Add(labeledInfo);
-                            originalToLabeledFileInfoDictionary[originalFile].Add(labeledInfo);
-                        }
-                        flashLfqResults.SpectraFiles.AddRange(labeledFiles);
-                    }
-                }
+                
+                //update number of spectra files to include a new file for each label/condition
+                Dictionary<SpectraFileInfo, List<SpectraFileInfo>> originalToLabeledFileInfoDictionary = CreateSilacRawFiles(flashLfqResults, allSilacLabels,startLabel, endLabel,quantifyUnlabeledPeptides,spectraFileInfo);
 
                 //we have the files, now let's reassign the psms.
                 //there are a few ways to do this, but we're going to generate the "base" peptide and assign to that
 
-                //Dictionary of protein accession to peptides
-                Dictionary<string, List<FlashLFQ.Peptide>> unlabeledToPeptidesDictionary = new Dictionary<string, List<FlashLFQ.Peptide>>();
-                Dictionary<string, FlashLFQ.Peptide> updatedPeptideModifiedSequences = new Dictionary<string, FlashLFQ.Peptide>();
-                IEnumerable<FlashLFQ.Peptide> lfqPwsms = flashLfqResults.PeptideModifiedSequences.Values;
-                if (startLabel == null || endLabel == null) //if multiplex, or if at least one of the turnover labels is unlabeled
-                {
-                    foreach (FlashLFQ.Peptide peptide in lfqPwsms)
-                    {
-                        //convert to the unlabeled sequence
-                        string labeledSequence = peptide.Sequence;
-                        SilacLabel label = GetRelevantLabelFromFullSequence(labeledSequence, allSilacLabels);
-                        string unlabeledSequence = GetSilacLightFullSequence(labeledSequence, label, false);
-                        if (unlabeledToPeptidesDictionary.ContainsKey(unlabeledSequence))
-                        {
-                            unlabeledToPeptidesDictionary[unlabeledSequence].Add(peptide);
-                        }
-                        else
-                        {
-                            unlabeledToPeptidesDictionary.Add(unlabeledSequence, new List<FlashLFQ.Peptide> { peptide });
-                        }
-                    }
-                }
-                else //if both start and end labels exist for turnover, then it can be trickier to find the start label (if you're flooded enough to go from label A to label B)...
-                {
-                    foreach (FlashLFQ.Peptide peptide in lfqPwsms)
-                    {
-                        string originalSequence = peptide.Sequence;
-                        string partiallyCleanedSequence = originalSequence;
-                        SilacLabel labelToReport = null;
-                        //convert to the unlabeled sequence
-                        if (endLabel != null)
-                        {
-                            partiallyCleanedSequence = GetSilacLightFullSequence(originalSequence, endLabel, false);
-                            if (!partiallyCleanedSequence.Equals(originalSequence)) //if any residue is new, then the whole peptide must be newly synthesized
-                            {
-                                labelToReport = endLabel;
-                            }
-                        }
-                        string fullyCleanedSequence = partiallyCleanedSequence;
-                        if (startLabel != null) //there might also be some old residues in the new peptide, so this is an "if" and not an "else"
-                        {
-                            fullyCleanedSequence = GetSilacLightFullSequence(partiallyCleanedSequence, startLabel, false);
-                            if (!fullyCleanedSequence.Equals(partiallyCleanedSequence) && labelToReport == null)
-                            {
-                                labelToReport = startLabel;
-                            }
-                        }
-
-                        if (unlabeledToPeptidesDictionary.ContainsKey(fullyCleanedSequence))
-                        {
-                            unlabeledToPeptidesDictionary[fullyCleanedSequence].Add(peptide);
-                        }
-                        else
-                        {
-                            unlabeledToPeptidesDictionary.Add(fullyCleanedSequence, new List<FlashLFQ.Peptide> { peptide });
-                        }
-                    }
-                }
+                //Get Dictionary of protein accessions to peptides
+                Dictionary<string, List<FlashLFQ.Peptide>> unlabeledToPeptidesDictionary = GetDictionaryOfProteinAccessionsToPeptides(flashLfqResults.PeptideModifiedSequences.Values, allSilacLabels, startLabel, endLabel);
 
                 //we now have a dictionary of unlabeledBaseSequence to the labeled peptides
                 //Better SILAC results can be obtained by using the summed intensities from ms1 scans where all peaks were found, rather than the apex
                 //foreach peptide, unlabeled peptide, get the isotopic envelope intensities for each labeled peptide in each file
                 //save the intensities from ms1s that are shared. If no ms1s contains all the peaks, then just use the apex intensity (default)
-                foreach (KeyValuePair<SpectraFileInfo, List<ChromatographicPeak>> kvp in flashLfqResults.Peaks)
-                {
-                    //make a dictionary for easy peak lookup from peptide sequences
-                    Dictionary<string, ChromatographicPeak> sequenceToPeakDictionary = new Dictionary<string, ChromatographicPeak>();
-                    foreach (ChromatographicPeak peak in kvp.Value)
-                    {
-                        //sometimes chromatographic peaks are separated (elute on both sides of the gradient, random blips, etc)
-                        //in these situations, we want to use both chromatographic peaks for quantification, not just a single one.
-                        string fullSequence = peak.Identifications.First().ModifiedSequence;
-                        if (sequenceToPeakDictionary.ContainsKey(fullSequence))
-                        {
-                            ChromatographicPeak previousPeak = sequenceToPeakDictionary[fullSequence];
-                            previousPeak.IsotopicEnvelopes.AddRange(peak.IsotopicEnvelopes);
-                        }
-                        else
-                        {
-                            sequenceToPeakDictionary.Add(fullSequence, peak);
-                        }
-                    }
-
-                    foreach (List<FlashLFQ.Peptide> peptideGroup in unlabeledToPeptidesDictionary.Select(x => x.Value))
-                    {
-                        List<string> sequences = peptideGroup.Select(x => x.Sequence).ToList();
-
-                        //get peaks of interest for this peptide group
-                        List<ChromatographicPeak> peaks = kvp.Value;
-                        List<ChromatographicPeak> peaksOfInterest = new List<ChromatographicPeak>();
-                        foreach (string sequence in sequences)
-                        {
-                            if (sequenceToPeakDictionary.TryGetValue(sequence, out ChromatographicPeak peakOfInterest))
-                            {
-                                peaksOfInterest.Add(peakOfInterest);
-                            }
-                        }
-
-                        //If there are fewer than 2 peaks, we can't do any comparisons
-                        if (peaksOfInterest.Count > 1)
-                        {
-                            //get isotopic envelopes that are shared by all
-                            List<int> scanIndex = peaksOfInterest.First().IsotopicEnvelopes.Select(x => x.IndexedPeak).Select(x => x.ZeroBasedMs1ScanIndex).ToList();
-                            for (int i = 1; i < peaksOfInterest.Count; i++)
-                            {
-                                List<int> currentScanIndexes = peaksOfInterest[i].IsotopicEnvelopes.Select(x => x.IndexedPeak).Select(x => x.ZeroBasedMs1ScanIndex).ToList();
-                                scanIndex = scanIndex.Intersect(currentScanIndexes).ToList();
-                                if (scanIndex.Count == 0) //if there's no overlap, then we're done!
-                                {
-                                    break;
-                                }
-                            }
-                            //if we aren't sticking with the default values
-                            if (scanIndex.Count != 0)
-                            {
-                                //update peptides
-                                foreach (FlashLFQ.Peptide peptide in peptideGroup)
-                                {
-                                    ChromatographicPeak peakForThisPeptide = peaksOfInterest.Where(x => peptide.Sequence.Equals(x.Identifications.First().ModifiedSequence)).FirstOrDefault();
-                                    if (peakForThisPeptide != null)
-                                    {
-                                        double summedIntensity = peakForThisPeptide.IsotopicEnvelopes.Where(x => scanIndex.Contains(x.IndexedPeak.ZeroBasedMs1ScanIndex)).Select(x => x.Intensity).Sum();
-                                        peptide.SetIntensity(kvp.Key, summedIntensity);
-                                    }
-                                    else //rare instance, cause unknown. Crash identified using 180524_LMuscle_30d_bio3.raw, Mus_Canonical_180122.xml, 1 missed cleavage
-                                    {
-                                        peptide.SetIntensity(kvp.Key, 0);
-                                    }
-                                }
-                            }
-                        }
-                    }
-                }
-
+                CalculateSilacIntensities(flashLfqResults.Peaks,unlabeledToPeptidesDictionary);
+            
 
                 //SPLIT THE FILES
                 List<FlashLFQ.Peptide> updatedPeptides = new List<FlashLFQ.Peptide>();
@@ -493,172 +333,9 @@ namespace EngineLayer
                 //split the heavy/light peptides into separate raw files, remove the heavy peptide
                 if (startLabel != null || endLabel != null) //if turnover
                 {
-                    Dictionary<SpectraFileInfo, double[]> fileToRecycleDictionary = new Dictionary<SpectraFileInfo, double[]>();
-                    foreach (SpectraFileInfo info in spectraFileInfo)
-                    {
-                        fileToRecycleDictionary[info] = new double[3];
-                    }
-
-                    //go through each peptide that has more than one label but fewer than 7 (just gets unusable around/before that point)
-                    List<KeyValuePair<string, List<FlashLFQ.Peptide>>> peptidesWithMissedCleavages = unlabeledToPeptidesDictionary.Where(x => x.Value.Count > 2 && x.Value.Count < 7).ToList();
-                    foreach (KeyValuePair<string, List<FlashLFQ.Peptide>> kvp in peptidesWithMissedCleavages)
-                    {
-                        //the order should always be from start to end
-                        Dictionary<SpectraFileInfo, List<double>> tempFileToRecycleDictionary = new Dictionary<SpectraFileInfo, List<double>>();
-                        foreach (SpectraFileInfo info in spectraFileInfo)
-                        {
-                            tempFileToRecycleDictionary[info] = new List<double>();
-                        }
-
-                        List<FlashLFQ.Peptide> peptides = kvp.Value;
-                        foreach (FlashLFQ.Peptide peptide in peptides) //assumes sorted old->new
-                        {
-                            foreach (SpectraFileInfo info in spectraFileInfo)
-                            {
-                                tempFileToRecycleDictionary[info].Add(peptide.GetIntensity(info));
-                            }
-                        }
-
-                        //aggregate into LL, HL, and HH if they contain 2+ labels
-                        foreach (SpectraFileInfo info in spectraFileInfo)
-                        {
-                            List<double> values = tempFileToRecycleDictionary[info];
-                            if (values.Count > 3)
-                            {
-                                if (values.Count == 6)
-                                {
-                                    //LLLLL, LLLLH, LLLHH, LLHHH, LHHHH, HHHHHH have n combinations of 1, 5, 10, 10, 5, 1
-                                    double LLLL = values[0] + values[1] / 5;
-                                    double LLLH = values[1] * 4 / 5 + values[2] * 4 / 10;
-                                    double LLHH = values[2] * 6 / 10 + values[3] * 6 / 10;
-                                    double LHHH = values[3] * 4 / 10 + values[4] * 4 / 5;
-                                    double HHHH = values[4] / 5 + values[5];
-                                    values = new List<double> { LLLL, LLLH, LLHH, LHHH, HHHH };
-                                }
-                                if (values.Count == 5)
-                                {
-                                    //LLLL, LLLH, LLHH, LHHH, HHHH have n combinations of 1, 4, 6, 4, 1
-                                    double LLL = values[0] + values[1] / 4;
-                                    double LLH = values[1] * 3 / 4 + values[2] / 2; // divide by two is multiply by three divide by six
-                                    double LHH = values[2] / 2 + values[3] * 3 / 4;
-                                    double HHH = values[3] / 4 + values[4];
-                                    values = new List<double> { LLL, LLH, LHH, HHH };
-                                }
-                                if (values.Count == 4)
-                                {
-                                    //LLL, LLH, LHH, HHH have probabilities of 1, 3, 3, 1
-                                    double LL = values[0] + values[1] / 3; // divide by three for the probability difference (only one way to make LL from LLH)
-                                    double LH = values[1] * 2 / 3 + values[2] * 2 / 3; //divide by three, multiply by two (two ways to make LH from LLH or from LHH)
-                                    double HH = values[2] / 3 + values[3]; //same logic as LL
-                                    values = new List<double> { LL, LH, HH };
-                                }
-
-                                //overwrite the first three peptide quantification values with the total values shown here IF there was more than one missed cleavage
-                                for (int i = 0; i < 3; i++)
-                                {
-                                    peptides[i].SetIntensity(info, values[i]);
-                                }
-                            }
-                            //else if three values, then we're fine
-                            //add the values from this peptide to the file-specific-values of all peptides
-                            double[] totalValues = fileToRecycleDictionary[info];
-                            for (int i = 0; i < values.Count; i++)
-                            {
-                                totalValues[i] += values[i];
-                            }
-                        }
-                    }
-
-                    //with the summed LL, LH, and HH values for each file, we can calculate the probability that a heavy amino acid is incorporated (Ph)
-                    //the probability a light amino acid is incorporated (Pl) is simply Pl = 1 - Ph
-                    //We can simplify the math if we assume that all protein started as completely light, @t=0: LL=100%, LH = 0%, and HH = 0%
-                    //N = 1 - Qll + Qlh * Qlh / (4 * Qhh), (where N is the fraction of all protein that has turned over and Qll is the Quantity(fraction) of LL at the current timepoint
-                    //Qhh = qhh -N*qhh+Ph*Ph*N, where Q is quantity(fraction) at the timepoint and q is the quantity(fraction) at the start point (time zero).
-                    //Ph = sqrt((Qhh-qhh+N*qhh)/N), and qhh = 0, so we can simplify as
-                    //Ph = sqrt(Qhh/N)
-                    Dictionary<SpectraFileInfo, double> fileToHeavyProbabilityDictionary = new Dictionary<SpectraFileInfo, double>();
-                    foreach (SpectraFileInfo info in spectraFileInfo)
-                    {
-                        //convert the absolute values of LL, LH, and HH to relative values
-                        double[] values = fileToRecycleDictionary[info];
-                        double sum = values.Sum();
-                        for (int i = 0; i < values.Length; i++)
-                        {
-                            values[i] = values[i] / sum;
-                        }
-                        double ph = Math.Sqrt(values[2] / (1 - values[0] + Math.Pow(values[1], 2) / (4 * values[2]))); //calculate probability
-                        fileToHeavyProbabilityDictionary[info] = ph;
-                    }
-
-                    //we now have the probability that a heavy amino acid will be incorporated for each file (Ph)
-                    //this probability is only informed by peptides with missed cleavages
-                    //however, it's possible that peptides not containing missed cleavages contradict the observed Ph value
-                    //if you find a Ph value of 0.6, but observe a light:heavy ratio of 0.1:0.9, that ratio should be impossible since equilibrium would occur at 0.4:0.6
-                    //find these contradicting peptides and include them as values in the calculation
-                    //the original Ph will be weighted by the number of LL/LH/HH peptides (which isn't perfect, because some of those might be 0/0/0 quant values depending on the file)
-                    List<KeyValuePair<string, List<FlashLFQ.Peptide>>> peptidesWithoutMissedCleavages = unlabeledToPeptidesDictionary.Where(x => x.Value.Count == 2).ToList();
-
-                    //reset the spectraFileCounts
-                    foreach (SpectraFileInfo info in spectraFileInfo)
-                    {
-                        fileToRecycleDictionary[info] = new double[3]; //still use three, because we're going to weight based on the number of contradicting peptides stored at index 2
-                    }
-
-                    foreach (KeyValuePair<string, List<FlashLFQ.Peptide>> kvp in peptidesWithoutMissedCleavages)
-                    {
-                        //the order should always be from start to end
-                        Dictionary<SpectraFileInfo, List<double>> tempFileToRecycleDictionary = new Dictionary<SpectraFileInfo, List<double>>();
-                        foreach (SpectraFileInfo info in spectraFileInfo)
-                        {
-                            tempFileToRecycleDictionary[info] = new List<double>();
-                        }
-
-                        List<FlashLFQ.Peptide> peptides = kvp.Value;
-                        foreach (FlashLFQ.Peptide peptide in peptides) //assumes sorted old->new
-                        {
-                            foreach (SpectraFileInfo info in spectraFileInfo)
-                            {
-                                tempFileToRecycleDictionary[info].Add(peptide.GetIntensity(info));
-                            }
-                        }
-
-                        //add the values from this peptide to the file-specific-values of all peptides
-                        foreach (SpectraFileInfo info in spectraFileInfo)
-                        {
-                            //get the L/H values
-                            List<double> values = tempFileToRecycleDictionary[info];
-                            //get the Ph
-                            double ph = fileToHeavyProbabilityDictionary[info];
-                            //check if they contradict the Ph
-                            double lightValue = values[0];
-                            double heavyValue = values[1];
-                            if (heavyValue / (lightValue + heavyValue) > ph) //assume total turnover and we've hit equilibrium
-                            {
-                                double[] totalValues = fileToRecycleDictionary[info];
-                                totalValues[0] += lightValue;
-                                totalValues[1] += heavyValue;
-                                totalValues[2]++; //count how many peptides contradicted
-                            }
-                        }
-                    }
-
-                    //update the Ph values based on the missed and contradicting peptides
-                    foreach (SpectraFileInfo info in spectraFileInfo)
-                    {
-                        double[] contradictingValues = fileToRecycleDictionary[info];
-                        double numContradictingValues = contradictingValues[2]; //int, but the array is double
-                        if (numContradictingValues != 0) //check that there were contradicting values
-                        {
-                            double originalPh = fileToHeavyProbabilityDictionary[info];
-                            double contradictingPh = contradictingValues[1] / (contradictingValues[0] + contradictingValues[1]);
-                            double weightedOriginal = originalPh * peptidesWithMissedCleavages.Count;
-                            double weightedContradicting = contradictingPh * numContradictingValues;
-                            //the updated Ph is guarenteed to be higher than the Ph informed only by the missed cleavage peptides
-                            double updatedPh = (weightedOriginal + weightedContradicting) / (peptidesWithMissedCleavages.Count + numContradictingValues);
-                            fileToHeavyProbabilityDictionary[info] = updatedPh;
-                        }
-                    }
-
+                    //get the probabilities of heavy amino acid incorporation (Ph)
+                    Dictionary<SpectraFileInfo,double> fileToHeavyProbabilityDictionary = CalculateProbabilityOfNewAminoAcidIncorporation(spectraFileInfo, unlabeledToPeptidesDictionary);
+                    
                     //foreach group, the labeled peptides should be split into their labeled files
                     //we're deleting the heavy results after we pull those results into a different file
                     //additionally, the Ph will be used to correct both values (L is originally too high, H too low)
@@ -849,6 +526,353 @@ namespace EngineLayer
             {
                 allPsms[i].ResolveHeavySilacLabel(allSilacLabels, modsToWriteSelection);
             }
+        }
+
+        private static Dictionary<SpectraFileInfo, List<SpectraFileInfo>> CreateSilacRawFiles(FlashLfqResults flashLfqResults, List<SilacLabel> allSilacLabels, SilacLabel startLabel, SilacLabel endLabel, bool quantifyUnlabeledPeptides, List<SpectraFileInfo> spectraFileInfo)
+        {
+            //update number of spectra files to include a new file for each label*condition
+            Dictionary<SpectraFileInfo, List<SpectraFileInfo>> originalToLabeledFileInfoDictionary = new Dictionary<SpectraFileInfo, List<SpectraFileInfo>>();
+
+            flashLfqResults.SpectraFiles.Clear(); //clear existing files so we can replace them with labeled ones
+
+            //foreach existing file
+            if (startLabel == null && endLabel == null) //if multiplex
+            {
+                //populate dictionary
+                if (quantifyUnlabeledPeptides)
+                {
+                    spectraFileInfo.ForEach(x => originalToLabeledFileInfoDictionary.Add(x, new List<SpectraFileInfo> { x }));
+                    flashLfqResults.SpectraFiles.AddRange(spectraFileInfo);
+                }
+                else
+                {
+                    spectraFileInfo.ForEach(x => originalToLabeledFileInfoDictionary.Add(x, new List<SpectraFileInfo>()));
+                }
+
+                //get the labeled
+                foreach (SilacLabel label in allSilacLabels)
+                {
+                    List<SpectraFileInfo> labeledFiles = new List<SpectraFileInfo>();
+                    foreach (SpectraFileInfo originalFile in spectraFileInfo)
+                    {
+                        //foreach label, add a new file with the label                      
+                        SpectraFileInfo labeledInfo = GetHeavyFileInfo(originalFile, label);
+                        labeledFiles.Add(labeledInfo);
+                        originalToLabeledFileInfoDictionary[originalFile].Add(labeledInfo);
+                    }
+                    flashLfqResults.SpectraFiles.AddRange(labeledFiles);
+                }
+            }
+            return originalToLabeledFileInfoDictionary;
+        }
+
+        private static Dictionary<string, List<FlashLFQ.Peptide>> GetDictionaryOfProteinAccessionsToPeptides(IEnumerable<FlashLFQ.Peptide> lfqPwsms, List<SilacLabel> allSilacLabels, SilacLabel startLabel, SilacLabel endLabel)
+        {
+            Dictionary<string, List<FlashLFQ.Peptide>> unlabeledToPeptidesDictionary = new Dictionary<string, List<FlashLFQ.Peptide>>();
+            if (startLabel == null || endLabel == null) //if multiplex, or if at least one of the turnover labels is unlabeled
+            {
+                foreach (FlashLFQ.Peptide peptide in lfqPwsms)
+                {
+                    //convert to the unlabeled sequence
+                    string labeledSequence = peptide.Sequence;
+                    SilacLabel label = GetRelevantLabelFromFullSequence(labeledSequence, allSilacLabels);
+                    string unlabeledSequence = GetSilacLightFullSequence(labeledSequence, label, false);
+                    if (unlabeledToPeptidesDictionary.ContainsKey(unlabeledSequence))
+                    {
+                        unlabeledToPeptidesDictionary[unlabeledSequence].Add(peptide);
+                    }
+                    else
+                    {
+                        unlabeledToPeptidesDictionary.Add(unlabeledSequence, new List<FlashLFQ.Peptide> { peptide });
+                    }
+                }
+            }
+            else //if both start and end labels exist for turnover, then it can be trickier to find the start label (if you're flooded enough to go from label A to label B)...
+            {
+                foreach (FlashLFQ.Peptide peptide in lfqPwsms)
+                {
+                    string originalSequence = peptide.Sequence;
+                    string partiallyCleanedSequence = originalSequence;
+                    SilacLabel labelToReport = null;
+                    //convert to the unlabeled sequence
+                    if (endLabel != null)
+                    {
+                        partiallyCleanedSequence = GetSilacLightFullSequence(originalSequence, endLabel, false);
+                        if (!partiallyCleanedSequence.Equals(originalSequence)) //if any residue is new, then the whole peptide must be newly synthesized
+                        {
+                            labelToReport = endLabel;
+                        }
+                    }
+                    string fullyCleanedSequence = partiallyCleanedSequence;
+                    if (startLabel != null) //there might also be some old residues in the new peptide, so this is an "if" and not an "else"
+                    {
+                        fullyCleanedSequence = GetSilacLightFullSequence(partiallyCleanedSequence, startLabel, false);
+                        if (!fullyCleanedSequence.Equals(partiallyCleanedSequence) && labelToReport == null)
+                        {
+                            labelToReport = startLabel;
+                        }
+                    }
+
+                    if (unlabeledToPeptidesDictionary.ContainsKey(fullyCleanedSequence))
+                    {
+                        unlabeledToPeptidesDictionary[fullyCleanedSequence].Add(peptide);
+                    }
+                    else
+                    {
+                        unlabeledToPeptidesDictionary.Add(fullyCleanedSequence, new List<FlashLFQ.Peptide> { peptide });
+                    }
+                }
+            }
+            return unlabeledToPeptidesDictionary;
+        }
+
+        private static void CalculateSilacIntensities(Dictionary<SpectraFileInfo, List<ChromatographicPeak>> peakDictionary, Dictionary<string, List<FlashLFQ.Peptide>> unlabeledToPeptidesDictionary)
+        {
+            foreach (KeyValuePair<SpectraFileInfo, List<ChromatographicPeak>> kvp in peakDictionary)
+            {
+                //make a dictionary for easy peak lookup from peptide sequences
+                Dictionary<string, ChromatographicPeak> sequenceToPeakDictionary = new Dictionary<string, ChromatographicPeak>();
+                foreach (ChromatographicPeak peak in kvp.Value)
+                {
+                    //sometimes chromatographic peaks are separated (elute on both sides of the gradient, random blips, etc)
+                    //in these situations, we want to use both chromatographic peaks for quantification, not just a single one.
+                    string fullSequence = peak.Identifications.First().ModifiedSequence;
+                    if (sequenceToPeakDictionary.ContainsKey(fullSequence))
+                    {
+                        ChromatographicPeak previousPeak = sequenceToPeakDictionary[fullSequence];
+                        previousPeak.IsotopicEnvelopes.AddRange(peak.IsotopicEnvelopes);
+                    }
+                    else
+                    {
+                        sequenceToPeakDictionary.Add(fullSequence, peak);
+                    }
+                }
+
+                foreach (List<FlashLFQ.Peptide> peptideGroup in unlabeledToPeptidesDictionary.Select(x => x.Value))
+                {
+                    List<string> sequences = peptideGroup.Select(x => x.Sequence).ToList();
+
+                    //get peaks of interest for this peptide group
+                    List<ChromatographicPeak> peaks = kvp.Value;
+                    List<ChromatographicPeak> peaksOfInterest = new List<ChromatographicPeak>();
+                    foreach (string sequence in sequences)
+                    {
+                        if (sequenceToPeakDictionary.TryGetValue(sequence, out ChromatographicPeak peakOfInterest))
+                        {
+                            peaksOfInterest.Add(peakOfInterest);
+                        }
+                    }
+
+                    //If there are fewer than 2 peaks, we can't do any comparisons
+                    if (peaksOfInterest.Count > 1)
+                    {
+                        //get isotopic envelopes that are shared by all
+                        List<int> scanIndex = peaksOfInterest.First().IsotopicEnvelopes.Select(x => x.IndexedPeak).Select(x => x.ZeroBasedMs1ScanIndex).ToList();
+                        for (int i = 1; i < peaksOfInterest.Count; i++)
+                        {
+                            List<int> currentScanIndexes = peaksOfInterest[i].IsotopicEnvelopes.Select(x => x.IndexedPeak).Select(x => x.ZeroBasedMs1ScanIndex).ToList();
+                            scanIndex = scanIndex.Intersect(currentScanIndexes).ToList();
+                            if (scanIndex.Count == 0) //if there's no overlap, then we're done!
+                            {
+                                break;
+                            }
+                        }
+                        //if we aren't sticking with the default values
+                        if (scanIndex.Count != 0)
+                        {
+                            //update peptides
+                            foreach (FlashLFQ.Peptide peptide in peptideGroup)
+                            {
+                                ChromatographicPeak peakForThisPeptide = peaksOfInterest.Where(x => peptide.Sequence.Equals(x.Identifications.First().ModifiedSequence)).FirstOrDefault();
+                                if (peakForThisPeptide != null)
+                                {
+                                    double summedIntensity = peakForThisPeptide.IsotopicEnvelopes.Where(x => scanIndex.Contains(x.IndexedPeak.ZeroBasedMs1ScanIndex)).Select(x => x.Intensity).Sum();
+                                    peptide.SetIntensity(kvp.Key, summedIntensity);
+                                }
+                                else //rare instance, cause unknown. Crash identified using 180524_LMuscle_30d_bio3.raw, Mus_Canonical_180122.xml, 1 missed cleavage
+                                {
+                                    peptide.SetIntensity(kvp.Key, 0);
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+        }
+
+        private static List<double> SquashMultiLabelToThreeValues(List<double> values)
+        {
+            if (values.Count == 6)
+            {
+                //LLLLL, LLLLH, LLLHH, LLHHH, LHHHH, HHHHHH have n combinations of 1, 5, 10, 10, 5, 1
+                double LLLL = values[0] + values[1] / 5;
+                double LLLH = values[1] * 4 / 5 + values[2] * 4 / 10;
+                double LLHH = values[2] * 6 / 10 + values[3] * 6 / 10;
+                double LHHH = values[3] * 4 / 10 + values[4] * 4 / 5;
+                double HHHH = values[4] / 5 + values[5];
+                values = new List<double> { LLLL, LLLH, LLHH, LHHH, HHHH };
+            }
+            if (values.Count == 5)
+            {
+                //LLLL, LLLH, LLHH, LHHH, HHHH have n combinations of 1, 4, 6, 4, 1
+                double LLL = values[0] + values[1] / 4;
+                double LLH = values[1] * 3 / 4 + values[2] / 2; // divide by two is multiply by three divide by six
+                double LHH = values[2] / 2 + values[3] * 3 / 4;
+                double HHH = values[3] / 4 + values[4];
+                values = new List<double> { LLL, LLH, LHH, HHH };
+            }
+            if (values.Count == 4)
+            {
+                //LLL, LLH, LHH, HHH have probabilities of 1, 3, 3, 1
+                double LL = values[0] + values[1] / 3; // divide by three for the probability difference (only one way to make LL from LLH)
+                double LH = values[1] * 2 / 3 + values[2] * 2 / 3; //divide by three, multiply by two (two ways to make LH from LLH or from LHH)
+                double HH = values[2] / 3 + values[3]; //same logic as LL
+                values = new List<double> { LL, LH, HH };
+            }
+            return values;
+        }
+
+        private static Dictionary<SpectraFileInfo, double> CalculateProbabilityOfNewAminoAcidIncorporation(List<SpectraFileInfo> spectraFileInfo, Dictionary<string, List<FlashLFQ.Peptide>> unlabeledToPeptidesDictionary)
+        {
+            Dictionary<SpectraFileInfo, double[]> fileToRecycleDictionary = new Dictionary<SpectraFileInfo, double[]>();
+            foreach (SpectraFileInfo info in spectraFileInfo)
+            {
+                fileToRecycleDictionary[info] = new double[3];
+            }
+
+            //go through each peptide that has more than one label but fewer than 7 (just gets unusable around/before that point)
+            List<KeyValuePair<string, List<FlashLFQ.Peptide>>> peptidesWithMultipleLabels = unlabeledToPeptidesDictionary.Where(x => x.Value.Count > 2 && x.Value.Count < 7).ToList();
+            foreach (KeyValuePair<string, List<FlashLFQ.Peptide>> kvp in peptidesWithMultipleLabels)
+            {
+                //the order should always be from start to end
+                Dictionary<SpectraFileInfo, List<double>> tempFileToRecycleDictionary = new Dictionary<SpectraFileInfo, List<double>>();
+                foreach (SpectraFileInfo info in spectraFileInfo)
+                {
+                    tempFileToRecycleDictionary[info] = new List<double>();
+                }
+
+                List<FlashLFQ.Peptide> peptides = kvp.Value;
+                foreach (FlashLFQ.Peptide peptide in peptides) //assumes sorted old->new
+                {
+                    foreach (SpectraFileInfo info in spectraFileInfo)
+                    {
+                        tempFileToRecycleDictionary[info].Add(peptide.GetIntensity(info));
+                    }
+                }
+
+                //aggregate into LL, HL, and HH if they contain 2+ labels
+                foreach (SpectraFileInfo info in spectraFileInfo)
+                {
+                    List<double> values = tempFileToRecycleDictionary[info];
+                    if (values.Count > 3) //more than two labels
+                    {
+                        values = SquashMultiLabelToThreeValues(values);
+
+                        //overwrite the first three peptide quantification values with the total values shown here IF there was more than one missed cleavage
+                        for (int i = 0; i < 3; i++)
+                        {
+                            peptides[i].SetIntensity(info, values[i]);
+                        }
+                    }
+                    //add the values from this peptide to the file-specific-values of all peptides
+                    double[] totalValues = fileToRecycleDictionary[info];
+                    for (int i = 0; i < values.Count; i++)
+                    {
+                        totalValues[i] += values[i];
+                    }
+                }
+            }
+
+            //with the summed LL, LH, and HH values for each file, we can calculate the probability that a heavy amino acid is incorporated (Ph)
+            //the probability a light amino acid is incorporated (Pl) is simply Pl = 1 - Ph
+            //We can simplify the math if we assume that all protein started as completely light, @t=0: LL=100%, LH = 0%, and HH = 0%
+            //N = 1 - Qll + Qlh * Qlh / (4 * Qhh), (where N is the fraction of all protein that has turned over and Qll is the Quantity(fraction) of LL at the current timepoint
+            //Qhh = qhh -N*qhh+Ph*Ph*N, where Q is quantity(fraction) at the timepoint and q is the quantity(fraction) at the start point (time zero).
+            //Ph = sqrt((Qhh-qhh+N*qhh)/N), and qhh = 0, so we can simplify as
+            //Ph = sqrt(Qhh/N)
+            Dictionary<SpectraFileInfo, double> fileToHeavyProbabilityDictionary = new Dictionary<SpectraFileInfo, double>();
+            foreach (SpectraFileInfo info in spectraFileInfo)
+            {
+                //convert the absolute values of LL, LH, and HH to relative values
+                double[] values = fileToRecycleDictionary[info];
+                double sum = values.Sum();
+                for (int i = 0; i < values.Length; i++)
+                {
+                    values[i] = values[i] / sum;
+                }
+                double ph = Math.Sqrt(values[2] / (1 - values[0] + Math.Pow(values[1], 2) / (4 * values[2]))); //calculate probability
+                fileToHeavyProbabilityDictionary[info] = ph;
+            }
+
+            //we now have the probability that a heavy amino acid will be incorporated for each file (Ph)
+            //this probability is only informed by peptides with missed cleavages
+            //however, it's possible that peptides not containing missed cleavages contradict the observed Ph value
+            //if you find a Ph value of 0.6, but observe a light:heavy ratio of 0.1:0.9, that ratio should be impossible since equilibrium would occur at 0.4:0.6
+            //find these contradicting peptides and include them as values in the calculation
+            //the original Ph will be weighted by the number of LL/LH/HH peptides (which isn't perfect, because some of those might be 0/0/0 quant values depending on the file)
+            List<KeyValuePair<string, List<FlashLFQ.Peptide>>> peptidesWithoutMissedCleavages = unlabeledToPeptidesDictionary.Where(x => x.Value.Count == 2).ToList();
+
+            //reset the spectraFileCounts
+            foreach (SpectraFileInfo info in spectraFileInfo)
+            {
+                fileToRecycleDictionary[info] = new double[3]; //still use three, because we're going to weight based on the number of contradicting peptides stored at index 2
+            }
+
+            foreach (KeyValuePair<string, List<FlashLFQ.Peptide>> kvp in peptidesWithoutMissedCleavages)
+            {
+                //the order should always be from start to end
+                Dictionary<SpectraFileInfo, List<double>> tempFileToRecycleDictionary = new Dictionary<SpectraFileInfo, List<double>>();
+                foreach (SpectraFileInfo info in spectraFileInfo)
+                {
+                    tempFileToRecycleDictionary[info] = new List<double>();
+                }
+
+                List<FlashLFQ.Peptide> peptides = kvp.Value;
+                foreach (FlashLFQ.Peptide peptide in peptides) //assumes sorted old->new
+                {
+                    foreach (SpectraFileInfo info in spectraFileInfo)
+                    {
+                        tempFileToRecycleDictionary[info].Add(peptide.GetIntensity(info));
+                    }
+                }
+
+                //add the values from this peptide to the file-specific-values of all peptides
+                foreach (SpectraFileInfo info in spectraFileInfo)
+                {
+                    //get the L/H values
+                    List<double> values = tempFileToRecycleDictionary[info];
+                    //get the Ph
+                    double ph = fileToHeavyProbabilityDictionary[info];
+                    //check if they contradict the Ph
+                    double lightValue = values[0];
+                    double heavyValue = values[1];
+                    if (heavyValue / (lightValue + heavyValue) > ph) //assume total turnover and we've hit equilibrium
+                    {
+                        double[] totalValues = fileToRecycleDictionary[info];
+                        totalValues[0] += lightValue;
+                        totalValues[1] += heavyValue;
+                        totalValues[2]++; //count how many peptides contradicted
+                    }
+                }
+            }
+
+            //update the Ph values based on the missed and contradicting peptides
+            foreach (SpectraFileInfo info in spectraFileInfo)
+            {
+                double[] contradictingValues = fileToRecycleDictionary[info];
+                double numContradictingValues = contradictingValues[2]; //int, but the array is double
+                if (numContradictingValues != 0) //check that there were contradicting values
+                {
+                    double originalPh = fileToHeavyProbabilityDictionary[info];
+                    double contradictingPh = contradictingValues[1] / (contradictingValues[0] + contradictingValues[1]);
+                    double weightedOriginal = originalPh * peptidesWithMultipleLabels.Count;
+                    double weightedContradicting = contradictingPh * numContradictingValues;
+                    //the updated Ph is guarenteed to be higher than the Ph informed only by the missed cleavage peptides
+                    double updatedPh = (weightedOriginal + weightedContradicting) / (peptidesWithMultipleLabels.Count + numContradictingValues);
+                    fileToHeavyProbabilityDictionary[info] = updatedPh;
+                }
+            }
+            return fileToHeavyProbabilityDictionary;
         }
 
         public static (SilacLabel updatedLabel, char nextHeavyLabel) UpdateAminoAcidLabel(SilacLabel currentLabel, char heavyLabel)
