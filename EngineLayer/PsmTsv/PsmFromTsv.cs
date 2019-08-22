@@ -148,7 +148,7 @@ namespace EngineLayer
         }
 
         //Used to remove Silac labels for proper annotation
-        private static string RemoveParentheses(string baseSequence)
+        public static string RemoveParentheses(string baseSequence)
         {
             if (baseSequence.Contains("("))
             {
