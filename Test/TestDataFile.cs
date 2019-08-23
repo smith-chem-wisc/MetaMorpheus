@@ -165,7 +165,7 @@ namespace Test
 
         //used for SILAC
         public TestDataFile(List<PeptideWithSetModifications> pwsms, List<List<double>> listLabelMassDifferences, bool includeMassDifferenceInPrecursor = false, 
-            List<List<double>> listPrecursorIntensities = null, int numPeaksSeparatedByZeroes = 1)
+            List<List<double>> listPrecursorIntensities = null, int numPeaksSeparatedByZeroes = 1, bool largePeptideSoDoubleFirstPeakIntensityAndAddAnotherPeak=false)
             : base(2, new SourceFile(@"no nativeID format", "mzML format", null, "SHA-1", @"C:\fake.mzML", null))
         {
             List<MsDataScan> ScansHere = new List<MsDataScan>();
@@ -203,12 +203,20 @@ namespace Test
                         {
                             double mass = labelMassDifferences[i];
 
-                            for (int isotope = 0; isotope < 3; isotope++)
+                            int numIsotopes = largePeptideSoDoubleFirstPeakIntensityAndAddAnotherPeak ? 4 : 3;
+                            for (int isotope = 0; isotope < numIsotopes; isotope++)
                             {
                                 mz1.Add((mass + isotope * Constants.C13MinusC12).ToMz(z));
                                 if (precursorIntensities == null)
                                 {
-                                    intensities1.Add(Math.Pow(0.5, i) * (Math.Pow(0.5, isotope) * 1000000)); //makes each label half the intensity of the previous
+                                    if (largePeptideSoDoubleFirstPeakIntensityAndAddAnotherPeak && isotope != 0)
+                                    {
+                                        intensities1.Add(Math.Pow(0.5, i) * (Math.Pow(0.5, isotope - 1) * 1000000));
+                                    }
+                                    else
+                                    {
+                                        intensities1.Add(Math.Pow(0.5, i) * (Math.Pow(0.5, isotope) * 1000000)); //makes each label half the intensity of the previous
+                                    }
                                 }
                                 else
                                 {

@@ -1047,7 +1047,7 @@ namespace TaskLayer
         {
             var fullSeqPath = Path.Combine(outputFolder, fileName + ".tsv");
 
-            flashLFQResults.WriteResults(null, fullSeqPath, null, null);
+            flashLFQResults.WriteResults(null, fullSeqPath, null, null, true);
 
             FinishedWritingFile(fullSeqPath, nestedIds);
         }
@@ -1056,7 +1056,7 @@ namespace TaskLayer
         {
             var peaksPath = Path.Combine(outputFolder, fileName + ".tsv");
 
-            flashLFQResults.WriteResults(peaksPath, null, null, null);
+            flashLFQResults.WriteResults(peaksPath, null, null, null, true);
 
             FinishedWritingFile(peaksPath, nestedIds);
         }

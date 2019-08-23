@@ -111,7 +111,7 @@ namespace Test
             List<PeptideWithSetModifications> lightPeptide = new List<PeptideWithSetModifications> { new PeptideWithSetModifications("SEQENEWITHAKANDANR", new Dictionary<string, Modification>()) };
             List<List<double>> massDifferences = new List<List<double>> { new List<double> { (heavyLysine.MonoisotopicMass + heavyArginine.MonoisotopicMass) - (lightLysine.MonoisotopicMass + lightArginine.MonoisotopicMass) } };
 
-            MsDataFile myMsDataFile1 = new TestDataFile(lightPeptide, massDifferences);
+            MsDataFile myMsDataFile1 = new TestDataFile(lightPeptide, massDifferences, largePeptideSoDoubleFirstPeakIntensityAndAddAnotherPeak: true);
             string mzmlName = @"silac.mzML";
             IO.MzML.MzmlMethods.CreateAndWriteMyMzmlWithCalibratedSpectra(myMsDataFile1, mzmlName, false);
 
@@ -127,15 +127,15 @@ namespace Test
             string[] output = File.ReadAllLines(TestContext.CurrentContext.TestDirectory + @"/TestSilac/AllProteinGroups.tsv");
             Assert.AreEqual(output.Length, 2);
             Assert.IsTrue(output[0].Contains("Intensity_silac\tIntensity_silac(K+8.014 & R+6.020)")); //test that two files were made
-            Assert.IsTrue(output[1].Contains("875000\t437500")); //test the heavy intensity is half that of the light (per the raw file)
+            Assert.IsTrue(output[1].Contains("1375000\t687500")); //test the heavy intensity is half that of the light (per the raw file)
 
             //test peptides
             output = File.ReadAllLines(TestContext.CurrentContext.TestDirectory + @"/TestSilac/AllQuantifiedPeptides.tsv");
             Assert.AreEqual(output.Length, 2);
             Assert.IsTrue(output[1].Contains("SEQENEWITHAKANDANR\taccession1\t"));//test the sequence and accession were not modified
-            Assert.IsTrue(output[1].Contains("875000")); //test intensity
+            Assert.IsTrue(output[1].Contains("1375000")); //test intensity
             Assert.IsFalse(output[1].Contains("SEQENEWITHAK(+8.014)ANDANR(+6.020)")); //test the sequence was not doubled modified
-            Assert.IsTrue(output[1].Contains("437500")); //test intensity
+            Assert.IsTrue(output[1].Contains("687500")); //test intensity
 
             //test peaks
             output = File.ReadAllLines(TestContext.CurrentContext.TestDirectory + @"/TestSilac/AllQuantifiedPeaks.tsv");
@@ -345,7 +345,7 @@ namespace Test
             IO.MzML.MzmlMethods.CreateAndWriteMyMzmlWithCalibratedSpectra(myMsDataFile1, mzmlName, false);
 
             string xmlName = "SilacDb.xml";
-            Protein theProtein = new Protein("PEPEPEPEPEPTKIDEKPEPTKIDEKA", "accession1");
+            Protein theProtein = new Protein("PEPEPEPTKIDEKPEPTKIDEKA", "accession1");
             ProteinDbWriter.WriteXmlDatabase(new Dictionary<string, HashSet<Tuple<int, Modification>>>(), new List<Protein> { theProtein }, xmlName);
 
             string outputFolder = Path.Combine(TestContext.CurrentContext.TestDirectory, @"TestSilac");
@@ -411,7 +411,7 @@ namespace Test
             List<PeptideWithSetModifications> peptides = new List<PeptideWithSetModifications>
             {
                 new PeptideWithSetModifications("PEPTaIDEa",new Dictionary<string,Modification>()), 
-                new PeptideWithSetModifications("PEPEPEPEPEPTb",new Dictionary<string,Modification>()) 
+                new PeptideWithSetModifications("PEPEPEPTb",new Dictionary<string,Modification>()) 
             };
             massDifferences = new List<List<double>>
             {
@@ -431,7 +431,7 @@ namespace Test
             //check that the missed cleavage peptide quant is informed by the conflicting peptide
             //if it is informed, the Ph should be 60%. If it's not, then the Ph will be 50%
             output = File.ReadAllLines(TestContext.CurrentContext.TestDirectory + @"/TestSilac/AllQuantifiedPeptides.tsv");
-            Assert.IsTrue(output[1].Contains("PEPEPEPEPEPTK\t")); //test the unlabeled is present
+            Assert.IsTrue(output[1].Contains("PEPEPEPTK\t")); //test the unlabeled is present
             Assert.IsTrue(output[2].Contains("PEPTKIDEK\t")); //test the unlabeled is present
             Assert.IsTrue(output[0].Contains("\tIntensity_silac_Original\tIntensity_silac_NewlySynthesized\tDetection Type_silac_Original\tDetection Type_silac_NewlySynthesized\t")); //test filename changes
             Assert.IsTrue(output[1].Contains("\t0\t8750000\t")); //test the light intensity is not negative.
@@ -439,7 +439,7 @@ namespace Test
 
             output = File.ReadAllLines(TestContext.CurrentContext.TestDirectory + @"/TestSilac/AllProteinGroups.tsv");
             //test sequence coverage and output worked from multiple labels
-            Assert.IsTrue(output[1].Contains("\tPEPEPEPEPEPTK(+1.994)|PEPTK(+8.014)IDEK(+8.014)\t\t2\t2\t0.81481\tPEPEPEPEPEPTKidekPEPTKIDEKa\tPEPEPEPEPEPTKidekPEPTKIDEKa\t"));
+            Assert.IsTrue(output[1].Contains("\tPEPEPEPTK(+1.994)|PEPTK(+8.014)IDEK(+8.014)\t\t2\t2\t0.78261\tPEPEPEPTKidekPEPTKIDEKa\tPEPEPEPTKidekPEPTKIDEKa\t"));
 
             //try modern search (testing indexing)
             task = new SearchTask

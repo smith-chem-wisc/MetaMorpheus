@@ -387,8 +387,7 @@ namespace EngineLayer
                                 SpectraFileInfo startInfo = updatedInfo[0];
                                 SpectraFileInfo endInfo = updatedInfo[1];
 
-                                FlashLFQ.Peptide updatedPeptide = new FlashLFQ.Peptide(unlabeledSequence, lightPeptide.UseForProteinQuant);
-                                updatedPeptide.ProteinGroups = CleanPastProteinQuant(lightPeptide.ProteinGroups); //needed to keep protein info.
+                                FlashLFQ.Peptide updatedPeptide = new FlashLFQ.Peptide(unlabeledSequence, unlabeledSequence, lightPeptide.UseForProteinQuant, CleanPastProteinQuant(lightPeptide.ProteinGroups)); //needed to keep protein info.
 
                                 //all the heavy is new, but some of the light is also new protein
                                 //Ph helps out here. The correction factor is Pl*Qh/Ph, or (1-Ph)*Qh/Ph.
@@ -419,8 +418,7 @@ namespace EngineLayer
                             string unlabeledSequence = kvp.Key;
                             List<FlashLFQ.Peptide> peptides = kvp.Value;
                             FlashLFQ.Peptide representativePeptide = peptides[0];
-                            FlashLFQ.Peptide updatedPeptide = new FlashLFQ.Peptide(unlabeledSequence, representativePeptide.UseForProteinQuant);
-                            updatedPeptide.ProteinGroups = CleanPastProteinQuant(representativePeptide.ProteinGroups); //needed to keep protein info.
+                            FlashLFQ.Peptide updatedPeptide = new FlashLFQ.Peptide(unlabeledSequence, unlabeledSequence, representativePeptide.UseForProteinQuant, CleanPastProteinQuant(representativePeptide.ProteinGroups)); //needed to keep protein info.
                             List<SpectraFileInfo> filesForThisFile = originalToLabeledFileInfoDictionary[info];
                             for (int i = 0; i < peptides.Count; i++) //the files and the peptides can use the same index, because there should be a distinct file for each label/peptide
                             {
@@ -442,8 +440,7 @@ namespace EngineLayer
                 }
 
                 //Do protein quant
-                flashLfqResults.ProteinGroups.Clear();
-                flashLfqResults.CalculateProteinResultsTop3();
+                flashLfqResults.CalculateProteinResultsTop3(true);
 
                 //update proteingroups to have all files for quantification
                 if (proteinGroups != null)
@@ -801,7 +798,7 @@ namespace EngineLayer
                     values[i] = values[i] / sum;
                 }
                 double ph = Math.Sqrt(values[2] / (1 - values[0] + Math.Pow(values[1], 2) / (4 * values[2]))); //calculate probability
-                if (ph == double.NaN) //happens when if heavy values are found
+                if (ph == 0) //happens when if heavy values are found
                 {
                     ph = 1; //we can't calculate a ph without heavy values. Revert to traditional code, where we assume 100% probability of heavy incorporation
                 }
