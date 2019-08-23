@@ -801,6 +801,10 @@ namespace EngineLayer
                     values[i] = values[i] / sum;
                 }
                 double ph = Math.Sqrt(values[2] / (1 - values[0] + Math.Pow(values[1], 2) / (4 * values[2]))); //calculate probability
+                if (ph == double.NaN) //happens when if heavy values are found
+                {
+                    ph = 1; //we can't calculate a ph without heavy values. Revert to traditional code, where we assume 100% probability of heavy incorporation
+                }
                 fileToHeavyProbabilityDictionary[info] = ph;
             }
 
