@@ -164,8 +164,8 @@ namespace Test
         }
 
         //used for SILAC
-        public TestDataFile(List<PeptideWithSetModifications> pwsms, List<List<double>> listLabelMassDifferences, bool includeMassDifferenceInPrecursor = false, 
-            List<List<double>> listPrecursorIntensities = null, int numPeaksSeparatedByZeroes = 1, bool largePeptideSoDoubleFirstPeakIntensityAndAddAnotherPeak=false)
+        public TestDataFile(List<PeptideWithSetModifications> pwsms, List<List<double>> listLabelMassDifferences,
+            List<List<double>> listPrecursorIntensities = null, int numPeaksSeparatedByZeroes = 1, bool largePeptideSoDoubleFirstPeakIntensityAndAddAnotherPeak = false)
             : base(2, new SourceFile(@"no nativeID format", "mzML format", null, "SHA-1", @"C:\fake.mzML", null))
         {
             List<MsDataScan> ScansHere = new List<MsDataScan>();
@@ -239,10 +239,7 @@ namespace Test
                         intensities2.Add(1);
                         intensities2.Add(1);
                     }
-                    if (includeMassDifferenceInPrecursor)
-                    {
-                        lightMass = labelMassDifferences[1];
-                    }
+
                     var MassSpectrum2 = new MzSpectrum(mz2.OrderBy(b => b).ToArray(), intensities2.ToArray(), false);
                     ScansHere.Add(new MsDataScan(MassSpectrum2, currentScanNumber, 2, true, Polarity.Positive, currentScanNumber, new MzLibUtil.MzRange(0, 10000), "gg", MZAnalyzerType.Orbitrap, 234734, 1, null, "scan=" + currentScanNumber.ToString(), lightMass.ToMz(2), 2, 1, lightMass.ToMz(2), 2, DissociationType.HCD, precursorScanNumber, lightMass.ToMz(2)));
                     currentScanNumber++;

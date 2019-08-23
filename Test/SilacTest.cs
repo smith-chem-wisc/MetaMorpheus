@@ -155,10 +155,10 @@ namespace Test
             File.Delete(mzmlName);
             Directory.Delete(outputFolder, true);
 
-            lightPeptide = new List<PeptideWithSetModifications> { new PeptideWithSetModifications("ANDANR", new Dictionary<string, Modification>()) }; //has the additional, but not the original
-            massDifferences = new List<List<double>> { new List<double> { (heavyArginine.MonoisotopicMass) - (lightArginine.MonoisotopicMass) } };
+            List<PeptideWithSetModifications> heavyPeptide = new List<PeptideWithSetModifications> { new PeptideWithSetModifications("ANDANb", new Dictionary<string, Modification>()) }; //has the additional, but not the original
+            massDifferences = new List<List<double>> { new List<double> { (lightArginine.MonoisotopicMass) - (heavyArginine.MonoisotopicMass) } };
 
-            myMsDataFile1 = new TestDataFile(lightPeptide, massDifferences, true);
+            myMsDataFile1 = new TestDataFile(heavyPeptide, massDifferences);
             mzmlName = @"silac.mzML";
             IO.MzML.MzmlMethods.CreateAndWriteMyMzmlWithCalibratedSpectra(myMsDataFile1, mzmlName, false);
 
@@ -235,8 +235,9 @@ namespace Test
             File.Delete(mzmlName);
 
             //make a heavy peptide
-            massDifferences = new List<List<double>> { new List<double> { (heavyLysine.MonoisotopicMass - lightLysine.MonoisotopicMass) } }; //have to reset because it gets modified
-            myMsDataFile1 = new TestDataFile(lightPeptide, massDifferences, true);
+            List<PeptideWithSetModifications> heavyPeptide = new List<PeptideWithSetModifications> { new PeptideWithSetModifications("PEPTIDEa", new Dictionary<string, Modification>()) }; //has the additional, but not the original
+            massDifferences = new List<List<double>> { new List<double> { (lightLysine.MonoisotopicMass - heavyLysine.MonoisotopicMass) } }; //have to reset because it gets modified
+            myMsDataFile1 = new TestDataFile(heavyPeptide, massDifferences);
             IO.MzML.MzmlMethods.CreateAndWriteMyMzmlWithCalibratedSpectra(myMsDataFile1, mzmlName, false);
 
             //make an ambiguous database
@@ -381,7 +382,7 @@ namespace Test
             };
             mixedPeptide = new List<PeptideWithSetModifications> { new PeptideWithSetModifications("PEPTbIDEa", new Dictionary<string, Modification>()) }; //+2 +8
             massShift = heavyishLysine.MonoisotopicMass - heavyLysine.MonoisotopicMass;
-            massDifferences = new List<List<double>> { new List<double> { massShift, massShift *-1 } }; // -6, +6
+            massDifferences = new List<List<double>> { new List<double> { massShift, massShift * -1 } }; // -6, +6
 
             myMsDataFile1 = new TestDataFile(mixedPeptide, massDifferences);
             IO.MzML.MzmlMethods.CreateAndWriteMyMzmlWithCalibratedSpectra(myMsDataFile1, mzmlName, false);
@@ -410,8 +411,8 @@ namespace Test
             //test that the probability calculation is considering the conflicting peptide in its calculation
             List<PeptideWithSetModifications> peptides = new List<PeptideWithSetModifications>
             {
-                new PeptideWithSetModifications("PEPTaIDEa",new Dictionary<string,Modification>()), 
-                new PeptideWithSetModifications("PEPEPEPTb",new Dictionary<string,Modification>()) 
+                new PeptideWithSetModifications("PEPTaIDEa",new Dictionary<string,Modification>()),
+                new PeptideWithSetModifications("PEPEPEPTb",new Dictionary<string,Modification>())
             };
             massDifferences = new List<List<double>>
             {
@@ -423,7 +424,7 @@ namespace Test
                 new List<double>{9,6,3 }, //implies the probability of heavy incorporation (Ph) is 0.5 (LL/LH/HH)
                 new List<double>{7,3} //implies the Ph is AT LEAST 0.7, which conflicts with 0.5 (H/L)
             };
-            myMsDataFile1 = new TestDataFile(peptides, massDifferences, false, intensities);
+            myMsDataFile1 = new TestDataFile(peptides, massDifferences, intensities);
             IO.MzML.MzmlMethods.CreateAndWriteMyMzmlWithCalibratedSpectra(myMsDataFile1, mzmlName, false);
             theStringResult = task.RunTask(outputFolder, new List<DbForTask> { new DbForTask(xmlName, false) }, new List<string> { mzmlName }, "taskId1").ToString();
 
@@ -580,7 +581,7 @@ namespace Test
             //intensities look like (L,H) (5,1.5), (4,2), (3, 1.5), (2,2), (0,3)
             //we want a ratio of 2:1, L:H
             List<List<double>> precursorIntensities = new List<List<double>> { new List<double> { 5, 1.5, 4, 2, 3, 1.5, 2, 2, 0, 3 } };
-            MsDataFile myMsDataFile1 = new TestDataFile(lightPeptide, massDifferences, false, precursorIntensities);
+            MsDataFile myMsDataFile1 = new TestDataFile(lightPeptide, massDifferences, precursorIntensities);
             string mzmlName = @"silac.mzML";
             IO.MzML.MzmlMethods.CreateAndWriteMyMzmlWithCalibratedSpectra(myMsDataFile1, mzmlName, false);
 
@@ -597,7 +598,7 @@ namespace Test
 
             //TEST for blips, where two peaks are found for a single identification
             massDifferences = new List<List<double>> { new List<double> { (heavyLysine.MonoisotopicMass - lightLysine.MonoisotopicMass) } }; //must be reset, since the method below edits it
-            myMsDataFile1 = new TestDataFile(lightPeptide, massDifferences, false, precursorIntensities, 2);
+            myMsDataFile1 = new TestDataFile(lightPeptide, massDifferences, precursorIntensities, 2);
             IO.MzML.MzmlMethods.CreateAndWriteMyMzmlWithCalibratedSpectra(myMsDataFile1, mzmlName, false);
             theStringResult = task.RunTask(outputFolder, new List<DbForTask> { new DbForTask(xmlName, false) }, new List<string> { mzmlName }, "taskId1").ToString();
             output = File.ReadAllLines(TestContext.CurrentContext.TestDirectory + @"/TestSilac/AllQuantifiedPeptides.tsv");
