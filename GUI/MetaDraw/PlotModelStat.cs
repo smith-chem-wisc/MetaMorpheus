@@ -270,7 +270,7 @@ namespace MetaMorpheusGUI
             series.MarkerSize = 0.5;
             privateModel.Series.Add(series);
 
-            // plot the variant containing peptides as green
+            // plot the variant containing peptides
             if (variantxy.Count != 0)
             {
                 IOrderedEnumerable<Tuple<double, double>> variantSorted = variantxy.OrderBy(x => x.Item1);
@@ -278,7 +278,7 @@ namespace MetaMorpheusGUI
                 {
                     variantSeries.Points.Add(new ScatterPoint(val.Item2, val.Item1));
                 }
-                variantSeries.MarkerFill = OxyColors.Green;
+                variantSeries.MarkerFill = OxyColors.DarkRed;
                 variantSeries.MarkerSize = 1.5;
                 privateModel.Series.Add(variantSeries);
             }
