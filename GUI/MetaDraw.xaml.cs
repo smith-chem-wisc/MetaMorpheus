@@ -601,6 +601,7 @@ namespace MetaMorpheusGUI
 
         private void OnClosing(object sender, CancelEventArgs e)
         {
+            SearchTimer.Timer.Tick -= searchBox_TextChangedHandler;
             metaDrawGraphicalSettings.Close();
             metaDrawFilterSettings.Close();
         }
