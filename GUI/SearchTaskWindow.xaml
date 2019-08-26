@@ -815,6 +815,13 @@
                                                     </TextBlock>
                                                 </RadioButton.ToolTip>
                                             </RadioButton>
+                                            <RadioButton x:Name="massDiffAcceptPlusOrMinusThree" Content="+- 3 Missed Monoisotopic Peaks" ToolTipService.ShowDuration="999999" ToolTipService.InitialShowDelay="500">
+                                                <RadioButton.ToolTip>
+                                                    <TextBlock>
+                                                Basic search where the observed and theoretical precursor masses are allowed to disagree by +-1, +-2, or +-3 Da in to allow for monoisotopic mass errors.
+                                                    </TextBlock>
+                                                </RadioButton.ToolTip>
+                                            </RadioButton>
                                             <RadioButton x:Name="massDiffAccept187" Content="-187 and Up" ToolTipService.ShowDuration="999999" ToolTipService.InitialShowDelay="500">
                                                 <RadioButton.ToolTip>
                                                     <TextBlock>

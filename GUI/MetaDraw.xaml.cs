@@ -41,6 +41,7 @@ namespace MetaMorpheusGUI
         private string proteinFilePath;
         private Dictionary<ProductType, double> productTypeToYOffset;
         private Dictionary<ProductType, Color> productTypeToColor;
+        private Color variantCrossColor;
         private SolidColorBrush modificationAnnotationColor;
         private Dictionary<string, Color> proteaseByColor;
         private Dictionary<string, string> proteinGroups;
@@ -73,7 +74,8 @@ namespace MetaMorpheusGUI
             Title = "MetaDraw: version " + GlobalVariables.MetaMorpheusVersion;
             spectraFileManager = new MyFileManager(true);
             SetUpDictionaries();
-            modificationAnnotationColor = Brushes.Yellow;
+            variantCrossColor = Colors.Green;
+            modificationAnnotationColor = Brushes.Orange;
             metaDrawGraphicalSettings = new MetaDrawGraphicalSettings();
             metaDrawFilterSettings = new MetaDrawFilterSettings();
             SearchTimer.Timer.Tick += new EventHandler(searchBox_TextChangedHandler);
@@ -932,6 +934,7 @@ namespace MetaMorpheusGUI
             {
                 int residue = ion.NeutralTheoreticalProduct.TerminusFragment.AminoAcidPosition;
                 string annotation = ion.NeutralTheoreticalProduct.ProductType + "" + ion.NeutralTheoreticalProduct.TerminusFragment.FragmentNumber;
+                Color color = psm.VariantCrossingIons.Contains(ion) ? variantCrossColor : productTypeToColor[ion.NeutralTheoreticalProduct.ProductType];
 
                 if (ion.NeutralTheoreticalProduct.NeutralLoss != 0)
                 {
@@ -941,12 +944,12 @@ namespace MetaMorpheusGUI
                 if (ion.NeutralTheoreticalProduct.TerminusFragment.Terminus == FragmentationTerminus.C)
                 {
                     BaseDraw.topSplittingDrawing(canvas, new Point(residue * spacing + 8,
-                        productTypeToYOffset[ion.NeutralTheoreticalProduct.ProductType]), productTypeToColor[ion.NeutralTheoreticalProduct.ProductType], annotation);
+                        productTypeToYOffset[ion.NeutralTheoreticalProduct.ProductType]), color, annotation);
                 }
                 else if (ion.NeutralTheoreticalProduct.TerminusFragment.Terminus == FragmentationTerminus.N)
                 {
                     BaseDraw.botSplittingDrawing(canvas, new Point(residue * spacing + 8,
-                        productTypeToYOffset[ion.NeutralTheoreticalProduct.ProductType]), productTypeToColor[ion.NeutralTheoreticalProduct.ProductType], annotation);
+                        productTypeToYOffset[ion.NeutralTheoreticalProduct.ProductType]), color, annotation);
                 }
                 // don't draw diagnostic ions, precursor ions, etc
             }

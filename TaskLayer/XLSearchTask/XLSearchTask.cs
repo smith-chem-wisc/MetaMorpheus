@@ -17,6 +17,7 @@ namespace TaskLayer
     {
         public XLSearchTask() : base(MyTask.XLSearch)
         {
+            //Default parameter setting which is different from SearchTask, can be overwriten
             var digestPara = new DigestionParams(
                 minPeptideLength: 5
             );
@@ -35,7 +36,7 @@ namespace TaskLayer
         protected override MyTaskResults RunSpecific(string OutputFolder, List<DbForTask> dbFilenameList, List<string> currentRawFileList, string taskId, FileSpecificParameters[] fileSettingsList)
         {
             MyTaskResults = new MyTaskResults(this);
-            List<List<CrosslinkSpectralMatch>> allPsms = new List<List<CrosslinkSpectralMatch>>();
+            List<List<CrosslinkSpectralMatch>> ListOfCsmsPerMS2Scan = new List<List<CrosslinkSpectralMatch>>();
 
             LoadModifications(taskId, out var variableModifications, out var fixedModifications, out var localizeableModificationTypes);
 
@@ -92,29 +93,35 @@ namespace TaskLayer
 
                 Ms2ScanWithSpecificMass[] arrayOfMs2ScansSortedByMass = GetMs2Scans(myMsDataFile, origDataFile, combinedParams).OrderBy(b => b.PrecursorMass).ToArray();
 
-                List<CrosslinkSpectralMatch>[] newPsms = new List<CrosslinkSpectralMatch>[arrayOfMs2ScansSortedByMass.Length];
+                List<CrosslinkSpectralMatch>[] newCsmsPerMS2ScanPerFile = new List<CrosslinkSpectralMatch>[arrayOfMs2ScansSortedByMass.Length];
                 for (int currentPartition = 0; currentPartition < CommonParameters.TotalPartitions; currentPartition++)
                 {
                     List<PeptideWithSetModifications> peptideIndex = null;
+
+                    //When partition, the proteinList will be split for each Thread.
                     List<Protein> proteinListSubset = proteinList.GetRange(currentPartition * proteinList.Count() / combinedParams.TotalPartitions, ((currentPartition + 1) * proteinList.Count() / combinedParams.TotalPartitions) - (currentPartition * proteinList.Count() / combinedParams.TotalPartitions));
 
                     Status("Getting fragment dictionary...", new List<string> { taskId });
+
+                    //Only reverse Decoy for crosslink search has been tested and are set as fixed parameter.
                     var indexEngine = new IndexingEngine(proteinListSubset, variableModifications, fixedModifications, null, currentPartition, UsefulProteomicsDatabases.DecoyType.Reverse, combinedParams, 30000.0, false, dbFilenameList.Select(p => new FileInfo(p.FilePath)).ToList(), new List<string> { taskId });
                     List<int>[] fragmentIndex = null;
                     List<int>[] precursorIndex = null;
                     GenerateIndexes(indexEngine, dbFilenameList, ref peptideIndex, ref fragmentIndex, ref precursorIndex, proteinList, taskId);
 
+                    //The second Fragment index is for 'MS1-HCD_MS1-ETD_MS2s' type of data. If LowCID is used for MS1, ion-index is not allowed to use.
                     List<int>[] secondFragmentIndex = null;
                     if (combinedParams.ChildScanDissociationType != DissociationType.LowCID
                     && !CrosslinkSearchEngine.DissociationTypeGenerateSameTypeOfIons(combinedParams.DissociationType, combinedParams.ChildScanDissociationType))
                     {
+                        //Becuase two different type of dissociation methods are used, the parameters are changed with different dissociation type.
                         var secondCombinedParams = CommonParameters.CloneWithNewDissociationType(combinedParams.ChildScanDissociationType);
                         var secondIndexEngine = new IndexingEngine(proteinListSubset, variableModifications, fixedModifications, null, currentPartition, UsefulProteomicsDatabases.DecoyType.Reverse, secondCombinedParams, 30000.0, false, dbFilenameList.Select(p => new FileInfo(p.FilePath)).ToList(), new List<string> { taskId });
                         GenerateSecondIndexes(indexEngine, secondIndexEngine, dbFilenameList, ref secondFragmentIndex, proteinList, taskId);
                     }
 
                     Status("Searching files...", taskId);
-                    new CrosslinkSearchEngine(newPsms, arrayOfMs2ScansSortedByMass, peptideIndex, fragmentIndex, secondFragmentIndex, currentPartition, combinedParams, crosslinker,
+                    new CrosslinkSearchEngine(newCsmsPerMS2ScanPerFile, arrayOfMs2ScansSortedByMass, peptideIndex, fragmentIndex, secondFragmentIndex, currentPartition, combinedParams, crosslinker,
                         XlSearchParameters.RestrictToTopNHits, XlSearchParameters.CrosslinkSearchTopNum, XlSearchParameters.XlQuench_H2O,
                         XlSearchParameters.XlQuench_NH2, XlSearchParameters.XlQuench_Tris, thisId).Run();
 
@@ -122,7 +129,7 @@ namespace TaskLayer
                     if (GlobalVariables.StopLoops) { break; }
                 }
 
-                allPsms.AddRange(newPsms.Where(p => p != null).ToList());
+                ListOfCsmsPerMS2Scan.AddRange(newCsmsPerMS2ScanPerFile.Where(p => p != null).ToList());
 
                 completedFiles++;
                 ReportProgress(new ProgressEventArgs(completedFiles / currentRawFileList.Count, "Searching...", new List<string> { taskId, "Individual Spectra Files" }));
@@ -130,32 +137,55 @@ namespace TaskLayer
 
             ReportProgress(new ProgressEventArgs(100, "Done with all searches!", new List<string> { taskId, "Individual Spectra Files" }));
 
-            List<List<CrosslinkSpectralMatch>> filteredAllPsms = new List<List<CrosslinkSpectralMatch>>();
+            List<List<CrosslinkSpectralMatch>> ListOfCsmsPerMS2ScanParsimony = new List<List<CrosslinkSpectralMatch>>();
 
-            foreach (var psmsPerScan in allPsms)
+            //For every Ms2Scans, each have a list of candidates psms. The allPsms from CrosslinkSearchEngine is the list (all ms2scans) of list (each ms2scan) of psm (all candidate psm). 
+            //The allPsmsList is same as allPsms after ResolveAmbiguities. 
+            foreach (var csmsPerScan in ListOfCsmsPerMS2Scan)
             {
-                foreach (var psm in psmsPerScan)
+                foreach (var csm in csmsPerScan)
                 {
-                    psm.ResolveAllAmbiguities();
-                    if (psm.BetaPeptide != null)
+                    csm.ResolveAllAmbiguities();
+                    if (csm.BetaPeptide != null)
                     {
-                        psm.BetaPeptide.ResolveAllAmbiguities();
+                        csm.BetaPeptide.ResolveAllAmbiguities();
                     }
                 }
-                filteredAllPsms.Add(RemoveDuplicateFromPsmsPerScan(psmsPerScan));
+                ListOfCsmsPerMS2ScanParsimony.Add(RemoveDuplicateFromCsmsPerScan(csmsPerScan));
             }
 
-            var allPsmsList = filteredAllPsms.Select(p => p.First()).OrderByDescending(p => p.XLTotalScore).ToList();
+            var filteredAllPsms = new List<CrosslinkSpectralMatch>();
+
+            //For each ms2scan, try to find the best candidate psm from the psms list. Add it into filteredAllPsms
+            //This function is for current usage, this can be replaced with PEP value. 
+            foreach (var csmsPerScan in ListOfCsmsPerMS2ScanParsimony)
+            {
+                CrosslinkSpectralMatch crosslinkSpectralMatch = csmsPerScan[0];
+
+                for (int i = 1; i < csmsPerScan.Count -1; i++)
+                {
+                    //The purpose of this is to re-select dead-end peptide wrongly identified as crosslinked peptide.
+                    if (csmsPerScan[i].Score > csmsPerScan[0].Score && csmsPerScan[i].BaseSequence.Contains(csmsPerScan[0].BaseSequence))
+                    {
+                        crosslinkSpectralMatch = csmsPerScan[i];
+                    }
+                }
+
+                filteredAllPsms.Add(crosslinkSpectralMatch);
+
+            }
 
             PostXLSearchAnalysisTask postXLSearchAnalysisTask = new PostXLSearchAnalysisTask();
 
-            return postXLSearchAnalysisTask.Run(OutputFolder, dbFilenameList, currentRawFileList, taskId, fileSettingsList, allPsmsList, CommonParameters, XlSearchParameters, proteinList, variableModifications, fixedModifications, localizeableModificationTypes, MyTaskResults);
+            return postXLSearchAnalysisTask.Run(OutputFolder, dbFilenameList, currentRawFileList, taskId, fileSettingsList, filteredAllPsms.OrderByDescending(p=>p.XLTotalScore).ToList(), CommonParameters, XlSearchParameters, proteinList, variableModifications, fixedModifications, localizeableModificationTypes, MyTaskResults);
 
         }
 
-        //Remove same peptide with from different protein.
-        public static List<CrosslinkSpectralMatch> RemoveDuplicateFromPsmsPerScan(List<CrosslinkSpectralMatch> crosslinkSpectralMatches)
+        //Remove same peptide with from different protein. We search for every possible peptides from every protein for each scan, and do parsimony later. 
+        //Same peptides from different proteins are kept for csmsPerScan and parsimony is done here.
+        public static List<CrosslinkSpectralMatch> RemoveDuplicateFromCsmsPerScan(List<CrosslinkSpectralMatch> crosslinkSpectralMatches)
         {
+            //A dictionary is used for parsimony. the key of the dictionary is 'alphs_fullseq + beta_fullseq'.
             Dictionary<string, CrosslinkSpectralMatch> keyValuePairs = new Dictionary<string, CrosslinkSpectralMatch>();
             foreach (var csm in crosslinkSpectralMatches)
             {
@@ -163,24 +193,24 @@ namespace TaskLayer
                 {
                     continue;
                 }
-                string betaFulseq = "-";
+                string betaFullseq = "-";
                 if (csm.BetaPeptide != null)
                 {
-                    betaFulseq += csm.BetaPeptide.FullSequence;
+                    betaFullseq += csm.BetaPeptide.FullSequence;
                 }
 
-                if (keyValuePairs.ContainsKey(csm.FullSequence + betaFulseq))
+                if (keyValuePairs.ContainsKey(csm.FullSequence + betaFullseq))
                 {
-                    keyValuePairs[csm.FullSequence + betaFulseq].AddProteinMatch(csm.BestMatchingPeptides.First());
+                    keyValuePairs[csm.FullSequence + betaFullseq].AddProteinMatch(csm.BestMatchingPeptides.First());
 
                     if (csm.BetaPeptide != null)
                     {
-                        keyValuePairs[csm.FullSequence + betaFulseq].BetaPeptide.AddProteinMatch(csm.BetaPeptide.BestMatchingPeptides.First());
+                        keyValuePairs[csm.FullSequence + betaFullseq].BetaPeptide.AddProteinMatch(csm.BetaPeptide.BestMatchingPeptides.First());
                     }
                 }
                 else
                 {
-                    keyValuePairs.Add(csm.FullSequence + betaFulseq, csm);
+                    keyValuePairs.Add(csm.FullSequence + betaFullseq, csm);
                 }
             }
             return keyValuePairs.Values.ToList();
