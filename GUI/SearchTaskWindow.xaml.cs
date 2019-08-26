@@ -852,6 +852,7 @@ namespace MetaMorpheusGUI
 
         private void TextChangeTimerHandler(object sender, EventArgs e)
         {
+            SearchTimer.Timer.Stop();
             if (SearchModifications.FixedSearch)
             {
                 SearchModifications.FilterTree(SearchFixMod, fixedModsTreeView, FixedModTypeForTreeViewObservableCollection);
@@ -909,6 +910,7 @@ namespace MetaMorpheusGUI
 
         private void OnClosing(object sender, CancelEventArgs e)
         {
+            SearchTimer.Timer.Tick -= TextChangeTimerHandler;
             CustomFragmentationWindow.Close();
         }
 

@@ -8,25 +8,10 @@ namespace MetaMorpheusGUI
 {
     class SearchModifications
     {
-        //public static DispatcherTimer Timer;
         public static bool FixedSearch;
         public static bool VariableSearch;
         public static bool GptmdSearch;
         
-        //public static void InitializeTimer()
-        //{
-        //    Timer = new DispatcherTimer();
-        //    Timer.Interval = TimeSpan.FromMilliseconds(300);
-        //}
-
-        //// starts timer to keep track of user keystrokes
-        //public static void SetTimer()
-        //{
-        //    // Reset the timer
-        //    Timer.Stop();
-        //    Timer.Start();
-        //}
-
         // filters and expands tree according to user mod search
         public static void FilterTree(TextBox textbox, TreeView tree, ObservableCollection<ModTypeForTreeView> collection)
         {
