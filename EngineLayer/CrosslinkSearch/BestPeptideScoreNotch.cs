@@ -1,7 +1,7 @@
 ﻿using Proteomics.Fragmentation;
 using Proteomics.ProteolyticDigestion;
 
-namespace EngineLayer.CrosslinkSearch
+namespace EngineLayer
 {
     internal class BestPeptideScoreNotch
     {
