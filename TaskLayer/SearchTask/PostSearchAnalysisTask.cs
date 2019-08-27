@@ -508,7 +508,7 @@ namespace TaskLayer
             FinishedWritingFile(writtenFile, new List<string> { Parameters.SearchTaskId });
 
             // write summary text
-            Parameters.SearchTaskResults.AddNiceText("All target PSMS within 1% FDR: " + Parameters.AllPsms.Count(a => a.FdrInfo.QValue <= 0.01 && !a.IsDecoy));
+            Parameters.SearchTaskResults.AddTargetText("All target PSMS within 1% FDR: " + Parameters.AllPsms.Count(a => a.FdrInfo.QValue <= 0.01 && !a.IsDecoy) + Environment.NewLine);
             if (Parameters.SearchParameters.DoParsimony)
             {
                 Parameters.SearchTaskResults.AddNiceText("All target protein groups within 1% FDR: " + ProteinGroups.Count(b => b.QValue <= 0.01 && !b.IsDecoy)
@@ -864,7 +864,7 @@ namespace TaskLayer
             // write best (highest-scoring) PSM per peptide
             string writtenFile = Path.Combine(Parameters.OutputFolder, "AllPeptides.psmtsv");
             List<PeptideSpectralMatch> peptides = Parameters.AllPsms.GroupBy(b => b.FullSequence).Select(b => b.FirstOrDefault()).ToList();
-            
+
             new FdrAnalysisEngine(peptides, Parameters.NumNotches, CommonParameters, new List<string> { Parameters.SearchTaskId }, "Peptide").Run();
 
             if (!Parameters.SearchParameters.WriteDecoys)
@@ -880,7 +880,7 @@ namespace TaskLayer
             WritePsmsToTsv(peptides, writtenFile, Parameters.SearchParameters.ModsToWriteSelection);
             FinishedWritingFile(writtenFile, new List<string> { Parameters.SearchTaskId });
 
-            Parameters.SearchTaskResults.AddNiceText("All target peptides within 1% FDR: " + peptides.Count(a => a.FdrInfo.QValue <= 0.01 && !a.IsDecoy));
+            Parameters.SearchTaskResults.AddTargetText("All target peptides within 1% FDR: " + peptides.Count(a => a.FdrInfo.QValue <= 0.01 && !a.IsDecoy));
 
             foreach (var file in PsmsGroupedByFile)
             {

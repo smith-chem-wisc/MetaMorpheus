@@ -15,6 +15,7 @@ namespace TaskLayer
         private readonly List<string> resultTexts;
 
         private readonly StringBuilder niceText = new StringBuilder();
+        private readonly StringBuilder targetText = new StringBuilder();
 
         internal MyTaskResults(MetaMorpheusTask s)
         {
@@ -50,6 +51,7 @@ namespace TaskLayer
             }
             sb.AppendLine();
             sb.AppendLine();
+            sb.AppendLine(targetText.ToString());
             sb.AppendLine(niceText.ToString());
             sb.AppendLine();
             sb.AppendLine();
@@ -69,6 +71,11 @@ namespace TaskLayer
         internal void AddResultText(string resultsText)
         {
             resultTexts.Add(resultsText);
+        }
+
+        internal void AddTargetText(string targetTextString)
+        {
+            targetText.Append(targetTextString);
         }
 
         internal void AddNiceText(string niceTextString)
