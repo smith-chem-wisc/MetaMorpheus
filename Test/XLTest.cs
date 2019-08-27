@@ -64,7 +64,7 @@ namespace Test
             Assert.AreEqual(n.Count(), 4);
             Assert.AreEqual(c.Count(), 4);
             Assert.AreEqual(c.First().NeutralMass, 146.10552769899999, 1e-6);
-            var x = CrosslinkSpectralMatch.GetPossibleCrosslinkerModSites(crosslinker.CrosslinkerModSites.ToCharArray(), pep).ToArray();
+            var x = CrosslinkSpectralMatch.GetPossibleCrosslinkerModSites(crosslinker.CrosslinkerModSites.ToCharArray(), pep, false).ToArray();
             Assert.AreEqual(x[0], 5);
 
             var pep2 = ye[2];
@@ -73,7 +73,7 @@ namespace Test
             var c2 = pep2.Fragment(DissociationType.HCD, FragmentationTerminus.C);
             Assert.AreEqual(n2.Count(), 8);
             Assert.AreEqual(c2.Count(), 8);
-            var x2 = CrosslinkSpectralMatch.GetPossibleCrosslinkerModSites(crosslinker.CrosslinkerModSites.ToCharArray(), pep2).ToArray();
+            var x2 = CrosslinkSpectralMatch.GetPossibleCrosslinkerModSites(crosslinker.CrosslinkerModSites.ToCharArray(), pep2, false).ToArray();
             Assert.AreEqual(x2[0], 5);
 
             //Test crosslinker with multiple types of mod
@@ -132,7 +132,7 @@ namespace Test
             Crosslinker crosslinker = GlobalVariables.Crosslinkers.Where(p => p.CrosslinkerName == "DSSO").First();
 
             List<CrosslinkSpectralMatch>[] possiblePsms = new List<CrosslinkSpectralMatch>[listOfSortedms2Scans.Length];
-            new CrosslinkSearchEngine(possiblePsms, listOfSortedms2Scans, indexResults.PeptideIndex, indexResults.FragmentIndex, null, 0, commonParameters, crosslinker, xlSearchParameters.RestrictToTopNHits, xlSearchParameters.CrosslinkSearchTopNum, xlSearchParameters.XlQuench_H2O, xlSearchParameters.XlQuench_NH2, xlSearchParameters.XlQuench_Tris, new List<string> { }).Run();
+            new CrosslinkSearchEngine(possiblePsms, listOfSortedms2Scans, indexResults.PeptideIndex, indexResults.FragmentIndex, null, 0, commonParameters, crosslinker, xlSearchParameters.RestrictToTopNHits, xlSearchParameters.CrosslinkSearchTopNum, xlSearchParameters.NoCrosslinkAtCleavageSite, xlSearchParameters.XlQuench_H2O, xlSearchParameters.XlQuench_NH2, xlSearchParameters.XlQuench_Tris, new List<string> { }).Run();
 
             var newPsms = possiblePsms.Where(p => p != null).Select(p => p.First()).ToList();
             foreach (var item in newPsms)
@@ -235,7 +235,9 @@ namespace Test
 
             //TwoPassCrosslinkSearchEngine.Run().
             List<CrosslinkSpectralMatch>[] possiblePsms = new List<CrosslinkSpectralMatch>[listOfSortedms2Scans.Length];
-            new CrosslinkSearchEngine(possiblePsms, listOfSortedms2Scans, indexResults.PeptideIndex, indexResults.FragmentIndex, null, 0, commonParameters, crosslinker, xlSearchParameters.RestrictToTopNHits, xlSearchParameters.CrosslinkSearchTopNum, xlSearchParameters.XlQuench_H2O, xlSearchParameters.XlQuench_NH2, xlSearchParameters.XlQuench_Tris, new List<string> { }).Run();
+            new CrosslinkSearchEngine(possiblePsms, listOfSortedms2Scans, indexResults.PeptideIndex, indexResults.FragmentIndex, null, 0, commonParameters, 
+                crosslinker, xlSearchParameters.RestrictToTopNHits, xlSearchParameters.CrosslinkSearchTopNum, xlSearchParameters.NoCrosslinkAtCleavageSite,
+                xlSearchParameters.XlQuench_H2O, xlSearchParameters.XlQuench_NH2, xlSearchParameters.XlQuench_Tris, new List<string> { }).Run();
 
             var newPsms = possiblePsms.Where(p => p != null).ToList();
             Assert.AreEqual(1, newPsms.Count);
@@ -338,7 +340,7 @@ namespace Test
         public static void TestGetPossibleCrosslinkerSites()
         {
             PeptideWithSetModifications peptide = new PeptideWithSetModifications("PEPTIDE", null);
-            List<int> sites = CrosslinkSpectralMatch.GetPossibleCrosslinkerModSites(new char[] { 'P' }, peptide);
+            List<int> sites = CrosslinkSpectralMatch.GetPossibleCrosslinkerModSites(new char[] { 'P' }, peptide, false);
             Assert.That(sites.SequenceEqual(new int[] { 1, 3 }));
         }
 
@@ -489,7 +491,7 @@ namespace Test
                 new CommonParameters(), 1000, false, new List<FileInfo>(), new List<string>()).Run();
 
             new CrosslinkSearchEngine(csms, scans, indexingResults.PeptideIndex, indexingResults.FragmentIndex, null, 0, new CommonParameters(), crosslinker,
-                false, 0, false, false, true, new List<string>()).Run();
+                false, 0, true, false, false, true, new List<string>()).Run();
 
             CrosslinkSpectralMatch csm = csms.First().First();
             csm.ResolveAllAmbiguities();
@@ -628,7 +630,8 @@ namespace Test
             var indexingResults = (IndexingResults)new IndexingEngine(new List<Protein> { protein }, new List<Modification>(), new List<Modification>(), null, 0, DecoyType.None,
                 new CommonParameters(), 1000, false, new List<FileInfo>(), new List<string>()).Run();
 
-            new CrosslinkSearchEngine(csms, scans, indexingResults.PeptideIndex, indexingResults.FragmentIndex, null, 0, new CommonParameters(), crosslinker, false, 0, false, false, true, new List<string>()).Run();
+            new CrosslinkSearchEngine(csms, scans, indexingResults.PeptideIndex, indexingResults.FragmentIndex, null, 0, new CommonParameters(), 
+                crosslinker, false, 0, true, false, false, true, new List<string>()).Run();
 
             csms.First()[0].ResolveAllAmbiguities();
             csms.First()[0].SetFdrValues(0, 0, 0.1, 0, 0, 0, 0, 0);
@@ -683,8 +686,8 @@ namespace Test
                 secondCombinedParams, 5000, false, new List<FileInfo>(), new List<string>()).Run();
 
             var csms = new List<CrosslinkSpectralMatch>[1];
-            new CrosslinkSearchEngine(csms, scans, indexingResults.PeptideIndex, indexingResults.FragmentIndex, secondIndexingResults.FragmentIndex, 0, commonParameters, GlobalVariables.Crosslinkers.First(p => p.CrosslinkerName == "DSSO"),
-                false, 0, false, false, true, new List<string>()).Run();
+            new CrosslinkSearchEngine(csms, scans, indexingResults.PeptideIndex, indexingResults.FragmentIndex, secondIndexingResults.FragmentIndex, 0, commonParameters, 
+                GlobalVariables.Crosslinkers.First(p => p.CrosslinkerName == "DSSO"), false, 0, true, false, false, true, new List<string>()).Run();
 
             foreach (var c in csms.First())
             {
@@ -763,8 +766,9 @@ namespace Test
                 commonParameters, 5000, false, new List<FileInfo>(), new List<string>()).Run();
 
             var csms = new List<CrosslinkSpectralMatch>[2];
-            new CrosslinkSearchEngine(csms, scans, indexingResults.PeptideIndex, indexingResults.FragmentIndex, null, 0, commonParameters, GlobalVariables.Crosslinkers.First(p => p.CrosslinkerName == "DSSO"),
-                false, 0, false, false, true, new List<string>()).Run();
+            new CrosslinkSearchEngine(csms, scans, indexingResults.PeptideIndex, indexingResults.FragmentIndex, null, 0, commonParameters, 
+                GlobalVariables.Crosslinkers.First(p => p.CrosslinkerName == "DSSO"),
+                false, 0, true, false, false, true, new List<string>()).Run();
 
             var csm = csms.First()[0];
             csm.ResolveAllAmbiguities();

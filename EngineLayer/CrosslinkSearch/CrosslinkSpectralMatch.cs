@@ -82,26 +82,40 @@ namespace EngineLayer.CrosslinkSearch
             }
         }
 
-        public static List<int> GetPossibleCrosslinkerModSites(char[] crosslinkerModSites, PeptideWithSetModifications peptide)
+        public static List<int> GetPossibleCrosslinkerModSites(char[] crosslinkerModSites, PeptideWithSetModifications peptide, bool noCrosslinkAtCleavageSite)
         {
             List<int> possibleXlPositions = new List<int>();
             bool wildcard = crosslinkerModSites.Any(p => p == 'X');
 
-            for (int r = 0; r < peptide.BaseSequence.Length; r++)
+            //Consider the possibility that the site is at Protein N terminal.  
+            if (peptide.OneBasedStartResidueInProtein == 0  )
             {
-                if (crosslinkerModSites.Contains(peptide.BaseSequence[r]) || wildcard)
+                if (!peptide.AllModsOneIsNterminus.Keys.Contains(1))
                 {
-                    //Try to eliminate those site with mod on it. Consider the possibility that the site is at Protein N terminal.       
-                    if (!peptide.AllModsOneIsNterminus.Keys.Contains(r + 2))
+                    possibleXlPositions.Add(1);
+                }
+            }
+            else
+            {
+                List<int> range = Enumerable.Range(0, peptide.BaseSequence.Length).ToList();
+                if (noCrosslinkAtCleavageSite)
+                {
+                    //The N terminal and C termial cannot be crosslinked and cleaved.
+                    range = Enumerable.Range(1, peptide.BaseSequence.Length - 1).ToList();
+                }
+                foreach (var r in range)
+                {
+                    if (crosslinkerModSites.Contains(peptide.BaseSequence[r]) || wildcard)
                     {
-                        possibleXlPositions.Add(r + 1);
-                    }
-                    else if (peptide.OneBasedStartResidueInProtein == 0 && r == 0 && !peptide.AllModsOneIsNterminus.Keys.Contains(1))
-                    {
-                        possibleXlPositions.Add(r + 1);
+                        //Try to eliminate those site with mod on it. Consider the possibility that the site is at Protein N terminal.       
+                        if (!peptide.AllModsOneIsNterminus.Keys.Contains(r + 2))
+                        {
+                            possibleXlPositions.Add(r + 1);
+                        }
                     }
                 }
             }
+
             return possibleXlPositions;
         }
 

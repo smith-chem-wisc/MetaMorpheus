@@ -108,6 +108,9 @@
                                     <CheckBox x:Name="ckbQuenchNH2"  VerticalAlignment="Center" Content="NH2" Margin="2" />
                                 </StackPanel>
                             </Grid>
+                            <StackPanel>
+                                <CheckBox x:Name="ckbNoCrosslinkAtCleavageSite"  VerticalAlignment="Center" Content="No Crosslink At Cleavage Site" Margin="2" />
+                            </StackPanel>
                         </StackPanel>
                     </Expander>
                 </GroupBox>
