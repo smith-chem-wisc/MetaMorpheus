@@ -1,0 +1,54 @@
+TaskType = "XLSearch"
+
+[XlSearchParameters]
+SearchGlyco = true
+DecoyType = "Reverse"
+CrosslinkerType = "DSSO"
+CrosslinkSearchTopNum = 30
+CrosslinkerResidues = "K"
+CrosslinkerResidues2 = "K"
+IsCleavable = false
+RestrictToTopNHits = true
+WriteOutputForPercolator = false
+WritePepXml = true
+XlQuench_H2O = true
+XlQuench_Tris = true
+XlQuench_NH2 = false
+
+[CommonParameters]
+TaskDescriptor = "XLSearchTask"
+MaxThreadsToUsePerFile = 39
+ListOfModsFixed = "Common Fixed\tCarbamidomethyl on C\t\tCommon Fixed\tCarbamidomethyl on U"
+ListOfModsVariable = "Common Variable\tOxidation on M"
+DoPrecursorDeconvolution = true
+UseProvidedPrecursorInfo = true
+DeconvolutionIntensityRatio = 3.0
+DeconvolutionMaxAssumedChargeState = 12
+DeconvolutionMassTolerance = "±4.0000 PPM"
+TotalPartitions = 1
+ProductMassTolerance = "±20.0000 PPM"
+PrecursorMassTolerance = "±10.0000 PPM"
+AddCompIons = false
+ScoreCutoff = 3.0
+ReportAllAmbiguity = true
+TopNpeaks = 500
+MinRatio = 0.01
+TrimMs1Peaks = false
+TrimMsMsPeaks = true
+UseDeltaScore = false
+CalculateEValue = false
+QValueOutputFilter = 1.0
+DissociationType = "HCD"
+AssumeOrphanPeaksAreZ1Fragments = true
+
+[CommonParameters.DigestionParams]
+MaxMissedCleavages = 2
+InitiatorMethionineBehavior = "Variable"
+MinPeptideLength = 7
+MaxPeptideLength = 2147483647
+MaxModificationIsoforms = 1024
+MaxModsForPeptide = 2
+Protease = "trypsin"
+SearchModeType = "Full"
+FragmentationTerminus = "Both"
+SpecificProtease = "trypsin"
