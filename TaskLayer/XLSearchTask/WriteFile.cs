@@ -1,5 +1,6 @@
 ﻿using EngineLayer;
 using EngineLayer.CrosslinkSearch;
+using EngineLayer.GlycoSearch;
 using Proteomics;
 using Proteomics.Fragmentation;
 using System;
@@ -416,6 +417,35 @@ namespace TaskLayer
             TextWriter writer = new StreamWriter(Path.Combine(outputFolder, fileName + ".pep.XML"));
             _indexedSerializer.Serialize(writer, _pepxml);
             writer.Close();
+        }
+
+        public static void WritePsmGlycoToTsv(List<GlycoSpectralMatch> items, string filePath, int writeType)
+        {
+            if (items.Count == 0)
+            {
+                return;
+            }
+
+            using (StreamWriter output = new StreamWriter(filePath))
+            {
+                string header = "";
+                switch (writeType)
+                {
+                    case 1:
+                        header = GlycoSpectralMatch.GetTabSepHeaderSingle();
+                        break;
+                    case 2:
+                        header = GlycoSpectralMatch.GetTabSepHeaderGlyco();
+                        break;
+                    default:
+                        break;
+                }
+                output.WriteLine(header);
+                foreach (var heh in items)
+                {
+                    output.WriteLine(heh.ToString());
+                }
+            }
         }
     }
 }
