@@ -163,7 +163,13 @@ namespace Test
             Scans = ScansHere.ToArray();
         }
 
-        //used for SILAC
+        //used for SILAC, generates multiple ms1 envelopes for the pwsms specified to simulate multiplexing
+        //The mass difference(s) of the peaks are specified in listLabelMassDifferences. This is a double list, where there should be mass difference(s) specified for each peptide in pwsms
+        //additionally, the precursor intensities can be specified (again a double list for each pwsm). This list should have the same number of lists as pwsms, and each internal list should have as many intensities as the number of mass differences+1 (for the original)
+        //If listPrecursorIntensities is null, then the default functionality is to make each envelope half the intensity of the previous
+        //numPeaksSeparatedByZeroes is used in some tests to evaluate that the silac quantification is using only ms1s where both a heavy and a light are evaluated.
+        //The last obnoxiously long parameter allows for flashLFQ to quantify larger peptides. The default envelope has 3 isotopes with intensities of 1, 0.5, 0.25.
+        //If this parameter is true, then 4 isotopes with intensities of 1, 1, 0.5, and 0.25 will be generated.
         public TestDataFile(List<PeptideWithSetModifications> pwsms, List<List<double>> listLabelMassDifferences,
             List<List<double>> listPrecursorIntensities = null, int numPeaksSeparatedByZeroes = 1, bool largePeptideSoDoubleFirstPeakIntensityAndAddAnotherPeak = false)
             : base(2, new SourceFile(@"no nativeID format", "mzML format", null, "SHA-1", @"C:\fake.mzML", null))
