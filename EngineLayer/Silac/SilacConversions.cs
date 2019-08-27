@@ -376,6 +376,8 @@ namespace EngineLayer
                                 heavyPeptide = peptides[2];
                             }
 
+                            FlashLFQ.Peptide updatedPeptide = new FlashLFQ.Peptide(unlabeledSequence, unlabeledSequence, lightPeptide.UseForProteinQuant, CleanPastProteinQuant(lightPeptide.ProteinGroups)); //needed to keep protein info.
+
                             foreach (SpectraFileInfo info in spectraFileInfo)
                             {
                                 double Ph = fileToHeavyProbabilityDictionary[info];
@@ -387,7 +389,6 @@ namespace EngineLayer
                                 SpectraFileInfo startInfo = updatedInfo[0];
                                 SpectraFileInfo endInfo = updatedInfo[1];
 
-                                FlashLFQ.Peptide updatedPeptide = new FlashLFQ.Peptide(unlabeledSequence, unlabeledSequence, lightPeptide.UseForProteinQuant, CleanPastProteinQuant(lightPeptide.ProteinGroups)); //needed to keep protein info.
 
                                 //all the heavy is new, but some of the light is also new protein
                                 //Ph helps out here. The correction factor is Pl*Qh/Ph, or (1-Ph)*Qh/Ph.
@@ -399,8 +400,9 @@ namespace EngineLayer
                                 updatedPeptide.SetDetectionType(startInfo, lightPeptide.GetDetectionType(info));
                                 updatedPeptide.SetIntensity(endInfo, heavy + mixed + correction); //assign the corrected heavy intensity to the heavy file
                                 updatedPeptide.SetDetectionType(endInfo, heavyPeptide.GetDetectionType(info)); //could include the mixed here if it really matters
-                                updatedPeptides.Add(updatedPeptide);
                             }
+                            //add the updated peptide to the list
+                            updatedPeptides.Add(updatedPeptide);
                         }
                         else
                         {
