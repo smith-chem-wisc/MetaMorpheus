@@ -615,5 +615,40 @@ namespace Test
             File.Delete(xmlName);
             File.Delete(mzmlName);
         }
+
+        [Test]
+        public static void TestSilacHelperMethods()
+        {
+            string sequence = "ASDF[SomeSebuance]GHaASDF"; //keep the 'b' in the modification to test it's not grabbed
+            //make heavy residue and add to search task
+            Residue heavyLysine = new Residue("a", 'a', "a", Chemistry.ChemicalFormula.ParseFormula("C{13}6H12N{15}2O"), ModificationSites.All); //+8 lysine
+            Residue heavyishLysine = new Residue("b", 'b', "b", Chemistry.ChemicalFormula.ParseFormula("C6H12N{15}2O"), ModificationSites.All); //+2 lysine
+            Residue lightLysine = Residue.GetResidue('K');
+
+            var silacLabels = new List<SilacLabel>
+            {
+                new SilacLabel(lightLysine.Letter, heavyLysine.Letter, heavyLysine.ThisChemicalFormula.Formula, heavyLysine.MonoisotopicMass - lightLysine.MonoisotopicMass),
+                new SilacLabel(lightLysine.Letter, heavyishLysine.Letter, heavyishLysine.ThisChemicalFormula.Formula, heavyishLysine.MonoisotopicMass - lightLysine.MonoisotopicMass)
+            };
+
+            //Test SilacConversions.GetRelevantLabelFromFullSequence
+            SilacLabel relevantLabel = SilacConversions.GetRelevantLabelFromFullSequence(sequence, silacLabels);
+            Assert.IsTrue(relevantLabel.Equals(silacLabels[0]));
+
+            //Test SilacConversions.GetAmbiguousLightSequence
+            string asdf = SilacConversions.GetAmbiguousLightSequence("", silacLabels,true);
+            Assert.IsTrue(asdf.Equals("")); //test that no "|" was added.
+
+            //Test SilacConversions.GetSilacLightBaseSequence
+            string asdff = SilacConversions.GetSilacLightBaseSequence("ASDF", null);
+            Assert.IsTrue(asdff.Equals("ASDF")); //test that there's no change if the label's not present
+
+            //Test SilacConversions.GetSilacLightFullSequence
+            string asdfff = SilacConversions.GetSilacLightFullSequence(sequence, silacLabels[0], false);
+            Assert.IsTrue(asdfff.Equals("ASDF[SomeSebuance]GHKASDF"));
+
+            //Test no crash in weird situations
+            SilacConversions.SilacConversionsPostQuantification(null, null, null, new List<FlashLFQ.SpectraFileInfo>(), null, new HashSet<DigestionParams>(), null, new List<PeptideSpectralMatch>(), new Dictionary<string, int>(), true);
+        }
     }
 }

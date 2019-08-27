@@ -242,7 +242,6 @@ namespace EngineLayer
         public static PeptideWithSetModifications CreateSilacPwsm(SilacLabel silacLabel, PeptideWithSetModifications pwsm)
         {
             string baseSequence = pwsm.BaseSequence;
-            Protein updatedProtein = null;
 
             baseSequence = baseSequence.Replace(silacLabel.AminoAcidLabel, silacLabel.OriginalAminoAcid); //create light sequence
             string proteinBaseSequence = pwsm.Protein.BaseSequence.Replace(silacLabel.AminoAcidLabel, silacLabel.OriginalAminoAcid);
@@ -256,7 +255,7 @@ namespace EngineLayer
             }
 
             return new PeptideWithSetModifications(
-                updatedProtein ?? pwsm.Protein,
+                pwsm.Protein,
                 pwsm.DigestionParams,
                 pwsm.OneBasedStartResidueInProtein,
                 pwsm.OneBasedEndResidueInProtein,
@@ -265,7 +264,7 @@ namespace EngineLayer
                 pwsm.MissedCleavages,
                 pwsm.AllModsOneIsNterminus,
                 pwsm.NumFixedMods,
-                baseSequence);
+                baseSequence); //this is the only thing changing
         }
 
         public static SpectraFileInfo GetHeavyFileInfo(SpectraFileInfo originalFile, SilacLabel label)
