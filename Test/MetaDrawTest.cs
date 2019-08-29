@@ -34,6 +34,14 @@ namespace Test
         }
 
         [Test]
+        public static void TestParenthesesRemovalForSilac()
+        {
+            string baseSequence = "ASDF(+8.01)ASDF";
+            string cleanedSequence = PsmFromTsv.RemoveParentheses(baseSequence);
+            Assert.IsTrue(cleanedSequence.Equals("ASDFASDF"));
+        }
+
+        [Test]
         public static void TestMetaDrawReadCrossPsmFile()
         {
             XLSearchTask searchTask = new XLSearchTask();
