@@ -161,9 +161,9 @@ namespace TaskLayer
                 FinishedWritingFile(outputXMLdbFullName, new List<string> { taskId });
 
                 MyTaskResults.NewDatabases.Add(new DbForTask(outputXMLdbFullName, false));
-                MyTaskResults.AddNiceText("Modifications added: " + newModsActuallyWritten.Select(b => b.Value).Sum());
-                MyTaskResults.AddNiceText("Mods types and counts:");
-                MyTaskResults.AddNiceText(string.Join(Environment.NewLine, newModsActuallyWritten.OrderByDescending(b => b.Value).Select(b => "\t" + b.Key + "\t" + b.Value)));
+                MyTaskResults.AddTaskSummaryText("Modifications added: " + newModsActuallyWritten.Select(b => b.Value).Sum());
+                MyTaskResults.AddTaskSummaryText("Mods types and counts:");
+                MyTaskResults.AddTaskSummaryText(string.Join(Environment.NewLine, newModsActuallyWritten.OrderByDescending(b => b.Value).Select(b => "\t" + b.Key + "\t" + b.Value)));
             }
             if (dbFilenameList.Any(b => b.IsContaminant))
             {
@@ -183,9 +183,9 @@ namespace TaskLayer
                 FinishedWritingFile(outputXMLdbFullNameContaminants, new List<string> { taskId });
 
                 MyTaskResults.NewDatabases.Add(new DbForTask(outputXMLdbFullNameContaminants, true));
-                MyTaskResults.AddNiceText("Contaminant modifications added: " + newModsActuallyWritten.Select(b => b.Value).Sum());
-                MyTaskResults.AddNiceText("Mods types and counts:");
-                MyTaskResults.AddNiceText(string.Join(Environment.NewLine, newModsActuallyWritten.OrderByDescending(b => b.Value).Select(b => "\t" + b.Key + "\t" + b.Value)));
+                MyTaskResults.AddTaskSummaryText("Contaminant modifications added: " + newModsActuallyWritten.Select(b => b.Value).Sum());
+                MyTaskResults.AddTaskSummaryText("Mods types and counts:");
+                MyTaskResults.AddTaskSummaryText(string.Join(Environment.NewLine, newModsActuallyWritten.OrderByDescending(b => b.Value).Select(b => "\t" + b.Key + "\t" + b.Value)));
             }
             return MyTaskResults;
         }

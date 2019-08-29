@@ -14,8 +14,8 @@ namespace TaskLayer
 
         private readonly List<string> resultTexts;
 
-        private readonly StringBuilder niceText = new StringBuilder();
-        private readonly StringBuilder targetText = new StringBuilder();
+        private readonly StringBuilder TaskSummaryText = new StringBuilder();
+        private readonly StringBuilder PsmPeptideProteinSummaryText = new StringBuilder();
 
         internal MyTaskResults(MetaMorpheusTask s)
         {
@@ -51,8 +51,8 @@ namespace TaskLayer
             }
             sb.AppendLine();
             sb.AppendLine();
-            sb.AppendLine(targetText.ToString());
-            sb.AppendLine(niceText.ToString());
+            sb.AppendLine(PsmPeptideProteinSummaryText.ToString());
+            sb.AppendLine(TaskSummaryText.ToString());
             sb.AppendLine();
             sb.AppendLine();
             sb.AppendLine("--------------------------------------------------");
@@ -73,14 +73,14 @@ namespace TaskLayer
             resultTexts.Add(resultsText);
         }
 
-        internal void AddTargetText(string targetTextString)
+        internal void AddPsmPeptideProteinSummaryText(string targetTextString)
         {
-            targetText.Append(targetTextString);
+            PsmPeptideProteinSummaryText.Append(targetTextString);
         }
 
-        internal void AddNiceText(string niceTextString)
+        internal void AddTaskSummaryText(string niceTextString)
         {
-            niceText.AppendLine(niceTextString);
+            TaskSummaryText.AppendLine(niceTextString);
         }
     }
 }
