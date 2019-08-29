@@ -587,18 +587,10 @@ namespace EngineLayer
                 foreach (FlashLFQ.Peptide peptide in lfqPwsms)
                 {
                     string originalSequence = peptide.Sequence;
-                    string partiallyCleanedSequence = originalSequence;
                     //convert to the unlabeled sequence
-                    if (endLabel != null)
-                    {
-                        partiallyCleanedSequence = GetSilacLightFullSequence(originalSequence, endLabel, false);
-                    }
-                    string fullyCleanedSequence = partiallyCleanedSequence;
-                    if (startLabel != null) //there might also be some old residues in the new peptide, so this is an "if" and not an "else"
-                    {
-                        fullyCleanedSequence = GetSilacLightFullSequence(partiallyCleanedSequence, startLabel, false);
-                    }
-
+                    string partiallyCleanedSequence = GetSilacLightFullSequence(originalSequence, endLabel, false);
+                    string fullyCleanedSequence = GetSilacLightFullSequence(partiallyCleanedSequence, startLabel, false);
+                   
                     if (unlabeledToPeptidesDictionary.ContainsKey(fullyCleanedSequence))
                     {
                         unlabeledToPeptidesDictionary[fullyCleanedSequence].Add(peptide);
@@ -639,7 +631,6 @@ namespace EngineLayer
                     List<string> sequences = peptideGroup.Select(x => x.Sequence).ToList();
 
                     //get peaks of interest for this peptide group
-                    List<ChromatographicPeak> peaks = kvp.Value;
                     List<ChromatographicPeak> peaksOfInterest = new List<ChromatographicPeak>();
                     foreach (string sequence in sequences)
                     {
