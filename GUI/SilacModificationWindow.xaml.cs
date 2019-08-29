@@ -32,6 +32,7 @@ namespace MetaMorpheusGUI
             InitializeComponent();
         }
 
+
         private void KeyPressed(object sender, KeyEventArgs e)
         {
             if (e.Key == Key.Return)
@@ -311,7 +312,8 @@ namespace MetaMorpheusGUI
             if (ValidateClick())
             {
                 SilacLabel = SilacLabelStorageForMultiLabeledConditions ?? //use if labels have been added
-                    new SilacInfoForDataGrid(new SilacLabel(AminoAcid, '\0', ChemicalFormula.Text, Convert.ToDouble(MassDifference.Text)), DetermineExperimentType());
+                    new SilacInfoForDataGrid(new SilacLabel(AminoAcid, '\0', ChemicalFormula.Text, Convert.ToDouble(MassDifference.Text)));
+
                 DialogResult = true;
             }
         }
@@ -324,14 +326,10 @@ namespace MetaMorpheusGUI
             {
                 //save current label
                 SilacLabel savedLabel = new SilacLabel(AminoAcid, '\0', ChemicalFormula.Text, Convert.ToDouble(MassDifference.Text));
-                SilacLabelStorageForMultiLabeledConditions = new SilacInfoForDataGrid(savedLabel, DetermineExperimentType());
+                SilacLabelStorageForMultiLabeledConditions = new SilacInfoForDataGrid(savedLabel);
 
                 //open a new window to allow for more mods on this condition
                 var dialog = new SilacModificationWindow();
-                //update the radiobutton fields
-                dialog.MultiplexRadioButton.IsChecked = MultiplexRadioButton.IsChecked;
-                dialog.StartConditionRadioButton.IsChecked = StartConditionRadioButton.IsChecked;
-                dialog.EndConditionRadioButton.IsChecked = EndConditionRadioButton.IsChecked;
 
                 if (dialog.ShowDialog() == true)
                 {
@@ -347,8 +345,6 @@ namespace MetaMorpheusGUI
                     else
                     {
                         SilacLabelStorageForMultiLabeledConditions.AddAdditionalLabel(dialog.SilacLabel);
-                        //update the ExperimentType to the most recent (allows the user to change their mind)
-                        SilacLabelStorageForMultiLabeledConditions.LabelType = dialog.SilacLabel.LabelType;
                         SaveSilacLabelsButton_Click(sender, e);
                     }
                 }
@@ -379,14 +375,5 @@ namespace MetaMorpheusGUI
         {
             DialogResult = false;
         }
-
-        private ExperimentType DetermineExperimentType()
-        {
-            return MultiplexRadioButton.IsChecked.Value ? ExperimentType.Multiplex :
-             StartConditionRadioButton.IsChecked.Value ? ExperimentType.Start :
-             ExperimentType.End;
-        }
-
-        public enum ExperimentType { Multiplex, Start, End }
     }
 }

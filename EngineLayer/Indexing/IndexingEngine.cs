@@ -22,7 +22,6 @@ namespace EngineLayer.Indexing
         private readonly List<Modification> FixedModifications;
         private readonly List<Modification> VariableModifications;
         private readonly List<SilacLabel> SilacLabels;
-        private readonly (SilacLabel StartLabel, SilacLabel EndLabel)? TurnoverLabels;
         private readonly int CurrentPartition;
         private readonly DecoyType DecoyType;
         private readonly double MaxFragmentSize;
@@ -30,24 +29,19 @@ namespace EngineLayer.Indexing
         public readonly List<FileInfo> ProteinDatabases;
 
         public IndexingEngine(List<Protein> proteinList, List<Modification> variableModifications, List<Modification> fixedModifications,
-            List<SilacLabel> silacLabels, SilacLabel startLabel, SilacLabel endLabel, int currentPartition, DecoyType decoyType,
-            CommonParameters commonParams, double maxFragmentSize, bool generatePrecursorIndex, List<FileInfo> proteinDatabases, List<string> nestedIds)
+            List<SilacLabel> silacLabels, int currentPartition, DecoyType decoyType, CommonParameters commonParams, double maxFragmentSize,
+            bool generatePrecursorIndex, List<FileInfo> proteinDatabases, List<string> nestedIds)
             : base(commonParams, nestedIds)
         {
             ProteinList = proteinList;
             VariableModifications = variableModifications;
             FixedModifications = fixedModifications;
             SilacLabels = silacLabels;
-            if (startLabel != null || endLabel != null) //else it's null
-            {
-                TurnoverLabels = (startLabel, endLabel);
-            }
-
             CurrentPartition = currentPartition + 1;
             DecoyType = decoyType;
             MaxFragmentSize = maxFragmentSize;
             GeneratePrecursorIndex = generatePrecursorIndex;
-            ProteinDatabases = proteinDatabases;
+            this.ProteinDatabases = proteinDatabases;
         }
 
         public override string ToString()
@@ -97,7 +91,7 @@ namespace EngineLayer.Indexing
                     // Stop loop if canceled
                     if (GlobalVariables.StopLoops) { return; }
 
-                    localPeptides.AddRange(ProteinList[i].Digest(CommonParameters.DigestionParams, FixedModifications, VariableModifications, SilacLabels, TurnoverLabels));
+                    localPeptides.AddRange(ProteinList[i].Digest(CommonParameters.DigestionParams, FixedModifications, VariableModifications, SilacLabels));
 
                     progress++;
                     var percentProgress = (int)((progress / ProteinList.Count) * 100);
