@@ -1047,11 +1047,7 @@ namespace TaskLayer
                             else if ((culture.CompareInfo.IndexOf(variant.Description.Description, "conservative_inframe_deletion", CompareOptions.IgnoreCase) >= 0) || (culture.CompareInfo.IndexOf(variant.Description.Description, "disruptive_inframe_deletion", CompareOptions.IgnoreCase) >= 0))
                             {
                                 deletionCount++;
-                            }
-                            else if (culture.CompareInfo.IndexOf(variant.Description.Description, "exon_loss_variant", CompareOptions.IgnoreCase) >= 0)
-                            {
-                                exonLossCount++;
-                            }
+                            }                            
                             else if (culture.CompareInfo.IndexOf(variant.Description.Description, "stop_loss", CompareOptions.IgnoreCase) >= 0)
                             {
                                 stopLossCount++;
@@ -1073,10 +1069,9 @@ namespace TaskLayer
             variantResults[8] = "Number of inframe insertion variant peptides at 1% FDR: " + insertionCount;
             variantResults[9] = "Number of inframe deletion variant peptides at 1% FDR: " + deletionCount;
             variantResults[10] = "Number of stop gain variant peptides at 1% FDR: " + stopGainCount;
-            variantResults[11] = "Number of stop loss variant peptides at 1% FDR: " + stopLossCount;
-            variantResults[12] = "Number of exon loss variant peptides at 1% FDR: " + exonLossCount;
-            variantResults[13] = "Number of modified variant peptides at 1% FDR: " + modifiedVariantPeptides.Count();
-            variantResults[14] = "Number of modified variant sites at 1% FDR: " + modifiedVariantSitePeptides.Count();
+            variantResults[11] = "Number of stop loss variant peptides at 1% FDR: " + stopLossCount;            
+            variantResults[12] = "Number of modified variant peptides at 1% FDR: " + modifiedVariantPeptides.Count();
+            variantResults[13] = "Number of modified variant sites at 1% FDR: " + modifiedVariantSitePeptides.Count();
             
             string filePath = Path.Combine(Parameters.OutputFolder, "VariantAnalysisResultSummary.txt");
             File.WriteAllLines(filePath, variantResults);
