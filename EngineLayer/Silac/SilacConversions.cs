@@ -244,13 +244,11 @@ namespace EngineLayer
             string baseSequence = pwsm.BaseSequence;
 
             baseSequence = baseSequence.Replace(silacLabel.AminoAcidLabel, silacLabel.OriginalAminoAcid); //create light sequence
-            string proteinBaseSequence = pwsm.Protein.BaseSequence.Replace(silacLabel.AminoAcidLabel, silacLabel.OriginalAminoAcid);
             if (silacLabel.AdditionalLabels != null)
             {
                 foreach (SilacLabel additionalLabel in silacLabel.AdditionalLabels)
                 {
                     baseSequence = baseSequence.Replace(additionalLabel.AminoAcidLabel, additionalLabel.OriginalAminoAcid); //create light sequence
-                    proteinBaseSequence = pwsm.Protein.BaseSequence.Replace(silacLabel.AminoAcidLabel, silacLabel.OriginalAminoAcid);
                 }
             }
 
@@ -479,7 +477,6 @@ namespace EngineLayer
                         for (int i = 0; i < peaks.Count; i++)
                         {
                             var peak = peaks[i];
-                            List<Identification> identifications = new List<Identification>();
                             //check if we're removing light peaks and if it's a light peak
                             if (peak.Identifications.Any(x => GetRelevantLabelFromBaseSequence(x.BaseSequence, allSilacLabels) != null)) //if no ids have any labels, remove them
                             {
@@ -590,27 +587,10 @@ namespace EngineLayer
                 foreach (FlashLFQ.Peptide peptide in lfqPwsms)
                 {
                     string originalSequence = peptide.Sequence;
-                    string partiallyCleanedSequence = originalSequence;
-                    SilacLabel labelToReport = null;
                     //convert to the unlabeled sequence
-                    if (endLabel != null)
-                    {
-                        partiallyCleanedSequence = GetSilacLightFullSequence(originalSequence, endLabel, false);
-                        if (!partiallyCleanedSequence.Equals(originalSequence)) //if any residue is new, then the whole peptide must be newly synthesized
-                        {
-                            labelToReport = endLabel;
-                        }
-                    }
-                    string fullyCleanedSequence = partiallyCleanedSequence;
-                    if (startLabel != null) //there might also be some old residues in the new peptide, so this is an "if" and not an "else"
-                    {
-                        fullyCleanedSequence = GetSilacLightFullSequence(partiallyCleanedSequence, startLabel, false);
-                        if (!fullyCleanedSequence.Equals(partiallyCleanedSequence) && labelToReport == null)
-                        {
-                            labelToReport = startLabel;
-                        }
-                    }
-
+                    string partiallyCleanedSequence = GetSilacLightFullSequence(originalSequence, endLabel, false);
+                    string fullyCleanedSequence = GetSilacLightFullSequence(partiallyCleanedSequence, startLabel, false);
+                   
                     if (unlabeledToPeptidesDictionary.ContainsKey(fullyCleanedSequence))
                     {
                         unlabeledToPeptidesDictionary[fullyCleanedSequence].Add(peptide);
@@ -651,7 +631,6 @@ namespace EngineLayer
                     List<string> sequences = peptideGroup.Select(x => x.Sequence).ToList();
 
                     //get peaks of interest for this peptide group
-                    List<ChromatographicPeak> peaks = kvp.Value;
                     List<ChromatographicPeak> peaksOfInterest = new List<ChromatographicPeak>();
                     foreach (string sequence in sequences)
                     {

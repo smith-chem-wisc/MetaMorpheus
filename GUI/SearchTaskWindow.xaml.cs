@@ -992,7 +992,7 @@ namespace MetaMorpheusGUI
             CustomFragmentationWindow.Close();
         }
 
-        private Proteomics.SilacLabel ConvertSilacDataGridInfoToSilacLabel(SilacInfoForDataGrid info)
+        private static Proteomics.SilacLabel ConvertSilacDataGridInfoToSilacLabel(SilacInfoForDataGrid info)
         {
             if (info == null)
             {

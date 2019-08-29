@@ -387,7 +387,6 @@ namespace TaskLayer
                         string sequenceToModify = startLabeledBaseSequence;
                         for (int i = 0; i < differentResidues.Count; i++)
                         {
-                            int index = differentResidues[i];
                             char[] charArray = sequenceToModify.ToCharArray();
                             charArray[differentResidues[i]] = endUniqueResidues[i];
                             sequenceToModify = string.Concat(charArray);

@@ -116,9 +116,6 @@
       <Component Id="src_TaskLayer.pdb" Guid="6ece566a-22ff-4208-bba2-ad0430eeee49">
         <File Id="src_TaskLayer.pdb" Name="TaskLayer.pdb" Source="$(var.GUI_TargetDir)TaskLayer.pdb" />
       </Component>
-      <Component Id="src_UnmanagedThermoHelperLayer.dll" Guid="18bed74c-eedb-4efa-a6e3-1592ac7022e3">
-        <File Id="src_UnmanagedThermoHelperLayer.dll" Name="UnmanagedThermoHelperLayer.dll" Source="$(var.GUI_TargetDir)UnmanagedThermoHelperLayer.dll" />
-      </Component>
       <Component Id="src_Newtonsoft.Json.dll">
         <File Id="src_Newtonsoft.Json.dll" Name="Newtonsoft.Json.dll" Source="$(var.GUI_TargetDir)Newtonsoft.Json.dll" />
       </Component>
