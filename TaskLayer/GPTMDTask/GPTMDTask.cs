@@ -2,14 +2,6 @@
 using EngineLayer.ClassicSearch;
 using EngineLayer.FdrAnalysis;
 using EngineLayer.Gptmd;
-
-#if NETFRAMEWORK
-
-using IO.Thermo;
-
-#else
-#endif
-
 using MassSpectrometry;
 using MzLibUtil;
 using Proteomics;
@@ -106,7 +98,7 @@ namespace TaskLayer
                 Ms2ScanWithSpecificMass[] arrayOfMs2ScansSortedByMass = GetMs2Scans(myMsDataFile, origDataFile, combinedParams).OrderBy(b => b.PrecursorMass).ToArray();
                 myFileManager.DoneWithFile(origDataFile);
                 PeptideSpectralMatch[] allPsmsArray = new PeptideSpectralMatch[arrayOfMs2ScansSortedByMass.Length];
-                new ClassicSearchEngine(allPsmsArray, arrayOfMs2ScansSortedByMass, variableModifications, fixedModifications, null, proteinList, searchMode, combinedParams, new List<string> { taskId, "Individual Spectra Files", origDataFile }).Run();
+                new ClassicSearchEngine(allPsmsArray, arrayOfMs2ScansSortedByMass, variableModifications, fixedModifications, null, null, null, proteinList, searchMode, combinedParams, new List<string> { taskId, "Individual Spectra Files", origDataFile }).Run();
                 allPsms.AddRange(allPsmsArray.Where(p => p != null));
                 FinishedDataFile(origDataFile, new List<string> { taskId, "Individual Spectra Files", origDataFile });
                 ReportProgress(new ProgressEventArgs(100, "Done!", new List<string> { taskId, "Individual Spectra Files", origDataFile }));

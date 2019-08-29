@@ -44,7 +44,7 @@ namespace Test
             ProteaseDictionary.Dictionary.Add(p.Name, p);
             CommonParameters CommonParameters = new CommonParameters(scoreCutoff: 1, digestionParams: new DigestionParams(protease: p.Name, minPeptideLength: 1));
 
-            var engine = new IndexingEngine(proteinList, variableModifications, fixedModifications, null, 1, DecoyType.None, CommonParameters, 30000, false, new List<FileInfo>(), new List<string>());
+            var engine = new IndexingEngine(proteinList, variableModifications, fixedModifications, null, null, null, 1, DecoyType.None, CommonParameters, 30000, false, new List<FileInfo>(), new List<string>());
 
             var results = (IndexingResults)engine.Run();
 
@@ -112,7 +112,7 @@ namespace Test
                     initiatorMethionineBehavior: InitiatorMethionineBehavior.Retain),
                 scoreCutoff: 1);
 
-            var engine = new IndexingEngine(proteinList, variableModifications, fixedModifications, null, 1, DecoyType.Reverse, CommonParameters, 30000, false, new List<FileInfo>(), new List<string>());
+            var engine = new IndexingEngine(proteinList, variableModifications, fixedModifications, null, null, null, 1, DecoyType.Reverse, CommonParameters, 30000, false, new List<FileInfo>(), new List<string>());
 
             var results = (IndexingResults)engine.Run();
 
@@ -149,7 +149,7 @@ namespace Test
 
             CommonParameters CommonParameters = new CommonParameters(dissociationType: DissociationType.LowCID, maxThreadsToUsePerFile: 1, scoreCutoff: 1, digestionParams: new DigestionParams(protease: "trypsin", minPeptideLength: 1));
 
-            var engine = new IndexingEngine(proteinList, variableModifications, fixedModifications, null, 1, DecoyType.Reverse, CommonParameters, 30000, false, new List<FileInfo>(), new List<string>());
+            var engine = new IndexingEngine(proteinList, variableModifications, fixedModifications, null, null, null, 1, DecoyType.Reverse, CommonParameters, 30000, false, new List<FileInfo>(), new List<string>());
 
             var results = (IndexingResults)engine.Run();
 
