@@ -109,7 +109,9 @@ namespace EngineLayer
 
             // calculate sequence coverage
             foreach (var proteinGroup in proteinGroups)
+            {
                 proteinGroup.CalculateSequenceCoverage();
+            }
         }
 
         private List<ProteinGroup> DoProteinFdr(List<ProteinGroup> proteinGroups)
