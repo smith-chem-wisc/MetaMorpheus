@@ -96,6 +96,11 @@ namespace MetaMorpheusGUI
 
             foreach (var hm in GlobalVariables.AllModsKnown.GroupBy(b => b.ModificationType))
             {
+                if (hm.Key.Equals("UniProt"))
+                {
+                    continue;
+                }
+
                 var theModType = new ModTypeForTreeView(hm.Key, false);
                 FixedModTypeForTreeViewObservableCollection.Add(theModType);
                 foreach (var uah in hm)
@@ -104,6 +109,11 @@ namespace MetaMorpheusGUI
             fixedModsTreeView.DataContext = FixedModTypeForTreeViewObservableCollection;
             foreach (var hm in GlobalVariables.AllModsKnown.GroupBy(b => b.ModificationType))
             {
+                if (hm.Key.Equals("UniProt"))
+                {
+                    continue;
+                }
+
                 var theModType = new ModTypeForTreeView(hm.Key, false);
                 VariableModTypeForTreeViewObservableCollection.Add(theModType);
                 foreach (var uah in hm)
