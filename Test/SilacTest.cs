@@ -356,7 +356,7 @@ namespace Test
 
             string outputFolder = Path.Combine(TestContext.CurrentContext.TestDirectory, @"TestSilac");
             Directory.CreateDirectory(outputFolder);
-            string theStringResult = task.RunTask(outputFolder, new List<DbForTask> { new DbForTask(xmlName, false) }, new List<string> { mzmlName, mzmlName2 }, "taskId1").ToString();
+            task.RunTask(outputFolder, new List<DbForTask> { new DbForTask(xmlName, false) }, new List<string> { mzmlName, mzmlName2 }, "taskId1").ToString();
 
             string[] output = File.ReadAllLines(TestContext.CurrentContext.TestDirectory + @"/TestSilac/AllQuantifiedPeptides.tsv");
             Assert.IsTrue(output[1].Contains("PEPTKIDEK\t")); //test the unlabeled is present
@@ -392,7 +392,7 @@ namespace Test
 
             myMsDataFile1 = new TestDataFile(mixedPeptide, massDifferences);
             IO.MzML.MzmlMethods.CreateAndWriteMyMzmlWithCalibratedSpectra(myMsDataFile1, mzmlName, false);
-            theStringResult = task.RunTask(outputFolder, new List<DbForTask> { new DbForTask(xmlName, false) }, new List<string> { mzmlName }, "taskId1").ToString();
+            task.RunTask(outputFolder, new List<DbForTask> { new DbForTask(xmlName, false) }, new List<string> { mzmlName }, "taskId1").ToString();
 
             output = File.ReadAllLines(TestContext.CurrentContext.TestDirectory + @"/TestSilac/AllQuantifiedPeptides.tsv");
             Assert.IsTrue(output[1].Contains("PEPTKIDEK\t")); //test the unlabeled is present
@@ -432,7 +432,7 @@ namespace Test
             };
             myMsDataFile1 = new TestDataFile(peptides, massDifferences, intensities);
             IO.MzML.MzmlMethods.CreateAndWriteMyMzmlWithCalibratedSpectra(myMsDataFile1, mzmlName, false);
-            theStringResult = task.RunTask(outputFolder, new List<DbForTask> { new DbForTask(xmlName, false) }, new List<string> { mzmlName }, "taskId1").ToString();
+            task.RunTask(outputFolder, new List<DbForTask> { new DbForTask(xmlName, false) }, new List<string> { mzmlName }, "taskId1").ToString();
 
             //check there are no negative values in the output
             //check that the missed cleavage peptide quant is informed by the conflicting peptide
@@ -458,7 +458,7 @@ namespace Test
                     SearchType = SearchType.Modern
                 }
             };
-            theStringResult = task.RunTask(outputFolder, new List<DbForTask> { new DbForTask(xmlName, false) }, new List<string> { mzmlName }, "taskId1").ToString();
+            task.RunTask(outputFolder, new List<DbForTask> { new DbForTask(xmlName, false) }, new List<string> { mzmlName }, "taskId1").ToString();
 
             //delete files
             Directory.Delete(outputFolder, true);
@@ -541,7 +541,6 @@ namespace Test
             PeptideWithSetModifications onePeptide = new PeptideWithSetModifications("PEPTIDEK", new Dictionary<string, Modification>());
             PeptideWithSetModifications fivePeptide = new PeptideWithSetModifications("PaEKPKTaIK", new Dictionary<string, Modification>());
             PeptideWithSetModifications sixPeptide = new PeptideWithSetModifications("PKEaPaTKIKDa", new Dictionary<string, Modification>());
-            double massShift = heavyLysine.MonoisotopicMass - lightLysine.MonoisotopicMass;
             MsDataFile myMsDataFile1 = new TestDataFile(new List<PeptideWithSetModifications> { zeroPeptide, onePeptide, sixPeptide, fivePeptide });
             string mzmlName = @"silac.mzML";
             IO.MzML.MzmlMethods.CreateAndWriteMyMzmlWithCalibratedSpectra(myMsDataFile1, mzmlName, false);
@@ -553,7 +552,7 @@ namespace Test
 
             string outputFolder = Path.Combine(TestContext.CurrentContext.TestDirectory, @"TestSilac");
             Directory.CreateDirectory(outputFolder);
-            var theStringResult = task.RunTask(outputFolder, new List<DbForTask> { new DbForTask(xmlName, false) }, new List<string> { mzmlName }, "taskId1").ToString();
+            task.RunTask(outputFolder, new List<DbForTask> { new DbForTask(xmlName, false) }, new List<string> { mzmlName }, "taskId1").ToString();
             //Just don't crash
             //This unit test doesn't (currently) include the array of peaks for the possible combinations of labels.
             //Only a single peak is found, and because there's no heavy/light, it's unable to produce a ratio, so NaN values are returned.
@@ -597,7 +596,7 @@ namespace Test
 
             string outputFolder = Path.Combine(TestContext.CurrentContext.TestDirectory, @"TestSilac");
             Directory.CreateDirectory(outputFolder);
-            var theStringResult = task.RunTask(outputFolder, new List<DbForTask> { new DbForTask(xmlName, false) }, new List<string> { mzmlName }, "taskId1").ToString();
+            task.RunTask(outputFolder, new List<DbForTask> { new DbForTask(xmlName, false) }, new List<string> { mzmlName }, "taskId1").ToString();
             string[] output = File.ReadAllLines(TestContext.CurrentContext.TestDirectory + @"/TestSilac/AllQuantifiedPeptides.tsv");
             Assert.IsTrue(output[1].Contains("\t12250000\t6125000\t")); //check that it's 2:1 and not 5:3 like it would be for apex
 
@@ -606,7 +605,7 @@ namespace Test
             massDifferences = new List<List<double>> { new List<double> { (heavyLysine.MonoisotopicMass - lightLysine.MonoisotopicMass) } }; //must be reset, since the method below edits it
             myMsDataFile1 = new TestDataFile(lightPeptide, massDifferences, precursorIntensities, 2);
             IO.MzML.MzmlMethods.CreateAndWriteMyMzmlWithCalibratedSpectra(myMsDataFile1, mzmlName, false);
-            theStringResult = task.RunTask(outputFolder, new List<DbForTask> { new DbForTask(xmlName, false) }, new List<string> { mzmlName }, "taskId1").ToString();
+            task.RunTask(outputFolder, new List<DbForTask> { new DbForTask(xmlName, false) }, new List<string> { mzmlName }, "taskId1").ToString();
             output = File.ReadAllLines(TestContext.CurrentContext.TestDirectory + @"/TestSilac/AllQuantifiedPeptides.tsv");
             Assert.IsTrue(output[1].Contains("\t24500000\t12250000\t")); //intensities will be twice as large as before, but still the same ratio
 
