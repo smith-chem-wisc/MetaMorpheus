@@ -307,9 +307,9 @@ namespace EngineLayer
                 //We can remove "labeled" peptides from each file and put them in a new file as "unlabeled".
 
                 //MAKE NEW RAW FILES
-                
+
                 //update number of spectra files to include a new file for each label/condition
-                Dictionary<SpectraFileInfo, List<SpectraFileInfo>> originalToLabeledFileInfoDictionary = CreateSilacRawFiles(flashLfqResults, allSilacLabels,startLabel, endLabel,quantifyUnlabeledPeptides,spectraFileInfo);
+                Dictionary<SpectraFileInfo, List<SpectraFileInfo>> originalToLabeledFileInfoDictionary = CreateSilacRawFiles(flashLfqResults, allSilacLabels, startLabel, endLabel, quantifyUnlabeledPeptides, spectraFileInfo);
 
                 //we have the files, now let's reassign the psms.
                 //there are a few ways to do this, but we're going to generate the "base" peptide and assign to that
@@ -321,8 +321,8 @@ namespace EngineLayer
                 //Better SILAC results can be obtained by using the summed intensities from ms1 scans where all peaks were found, rather than the apex
                 //foreach peptide, unlabeled peptide, get the isotopic envelope intensities for each labeled peptide in each file
                 //save the intensities from ms1s that are shared. If no ms1s contains all the peaks, then just use the apex intensity (default)
-                CalculateSilacIntensities(flashLfqResults.Peaks,unlabeledToPeptidesDictionary);
-            
+                CalculateSilacIntensities(flashLfqResults.Peaks, unlabeledToPeptidesDictionary);
+
 
                 //SPLIT THE FILES
                 List<FlashLFQ.Peptide> updatedPeptides = new List<FlashLFQ.Peptide>();
@@ -331,8 +331,8 @@ namespace EngineLayer
                 if (startLabel != null || endLabel != null) //if turnover
                 {
                     //get the probabilities of heavy amino acid incorporation (Ph)
-                    Dictionary<SpectraFileInfo,double> fileToHeavyProbabilityDictionary = CalculateProbabilityOfNewAminoAcidIncorporation(spectraFileInfo, unlabeledToPeptidesDictionary);
-                    
+                    Dictionary<SpectraFileInfo, double> fileToHeavyProbabilityDictionary = CalculateProbabilityOfNewAminoAcidIncorporation(spectraFileInfo, unlabeledToPeptidesDictionary);
+
                     //foreach group, the labeled peptides should be split into their labeled files
                     //we're deleting the heavy results after we pull those results into a different file
                     //additionally, the Ph will be used to correct both values (L is originally too high, H too low)
@@ -409,15 +409,16 @@ namespace EngineLayer
                 }
                 else //multiplex
                 {
-                    //foreach original file
-                    foreach (SpectraFileInfo info in spectraFileInfo)
+                    foreach (var kvp in unlabeledToPeptidesDictionary)
                     {
-                        foreach (var kvp in unlabeledToPeptidesDictionary)
+                        string unlabeledSequence = kvp.Key;
+                        List<FlashLFQ.Peptide> peptides = kvp.Value;
+                        FlashLFQ.Peptide representativePeptide = peptides[0];
+                        FlashLFQ.Peptide updatedPeptide = new FlashLFQ.Peptide(unlabeledSequence, unlabeledSequence, representativePeptide.UseForProteinQuant, CleanPastProteinQuant(representativePeptide.ProteinGroups)); //needed to keep protein info.
+
+                        //foreach original file
+                        foreach (SpectraFileInfo info in spectraFileInfo)
                         {
-                            string unlabeledSequence = kvp.Key;
-                            List<FlashLFQ.Peptide> peptides = kvp.Value;
-                            FlashLFQ.Peptide representativePeptide = peptides[0];
-                            FlashLFQ.Peptide updatedPeptide = new FlashLFQ.Peptide(unlabeledSequence, unlabeledSequence, representativePeptide.UseForProteinQuant, CleanPastProteinQuant(representativePeptide.ProteinGroups)); //needed to keep protein info.
                             List<SpectraFileInfo> filesForThisFile = originalToLabeledFileInfoDictionary[info];
                             for (int i = 0; i < peptides.Count; i++) //the files and the peptides can use the same index, because there should be a distinct file for each label/peptide
                             {
@@ -426,10 +427,11 @@ namespace EngineLayer
                                 updatedPeptide.SetIntensity(currentInfo, currentPeptide.GetIntensity(info));
                                 updatedPeptide.SetDetectionType(currentInfo, currentPeptide.GetDetectionType(info));
                             }
-                            updatedPeptides.Add(updatedPeptide);
                         }
+                        updatedPeptides.Add(updatedPeptide);
                     }
                 }
+
                 //Update peptides
                 var peptideResults = flashLfqResults.PeptideModifiedSequences;
                 peptideResults.Clear();
@@ -590,7 +592,7 @@ namespace EngineLayer
                     //convert to the unlabeled sequence
                     string partiallyCleanedSequence = GetSilacLightFullSequence(originalSequence, endLabel, false);
                     string fullyCleanedSequence = GetSilacLightFullSequence(partiallyCleanedSequence, startLabel, false);
-                   
+
                     if (unlabeledToPeptidesDictionary.ContainsKey(fullyCleanedSequence))
                     {
                         unlabeledToPeptidesDictionary[fullyCleanedSequence].Add(peptide);
