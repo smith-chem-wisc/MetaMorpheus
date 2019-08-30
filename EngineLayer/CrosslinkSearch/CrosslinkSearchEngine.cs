@@ -41,6 +41,7 @@ namespace EngineLayer.CrosslinkSearch
             this.Crosslinker = crosslinker;
             this.CrosslinkSearchTopN = CrosslinkSearchTop;
             this.TopN = CrosslinkSearchTopNum;
+            this.NoCleaveAtCrosslinkSite = noCleaveAtCrosslinkSite;
             this.QuenchH2O = quench_H2O;
             this.QuenchNH2 = quench_NH2;
             this.QuenchTris = quench_Tris;

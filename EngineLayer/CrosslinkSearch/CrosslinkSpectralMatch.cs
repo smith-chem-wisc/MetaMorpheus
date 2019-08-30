@@ -88,30 +88,28 @@ namespace EngineLayer.CrosslinkSearch
             bool wildcard = crosslinkerModSites.Any(p => p == 'X');
 
             //Consider the possibility that the site is at Protein N terminal.  
-            if (peptide.OneBasedStartResidueInProtein == 0  )
+            if (peptide.OneBasedStartResidueInProtein == 1)
             {
-                if (!peptide.AllModsOneIsNterminus.Keys.Contains(1))
+                if (!peptide.AllModsOneIsNterminus.Keys.Contains(1) && crosslinkerModSites.Contains(peptide.BaseSequence[0]) && !noCrosslinkAtCleavageSite)
                 {
                     possibleXlPositions.Add(1);
                 }
             }
-            else
+
+            List<int> range = Enumerable.Range(1, peptide.BaseSequence.Length - 1).ToList();
+            if (noCrosslinkAtCleavageSite)
             {
-                List<int> range = Enumerable.Range(0, peptide.BaseSequence.Length).ToList();
-                if (noCrosslinkAtCleavageSite)
+                //The N terminal and C termial cannot be crosslinked and cleaved.
+                range = Enumerable.Range(1, peptide.BaseSequence.Length - 2).ToList();
+            }
+            foreach (var r in range)
+            {
+                if (crosslinkerModSites.Contains(peptide.BaseSequence[r]) || wildcard)
                 {
-                    //The N terminal and C termial cannot be crosslinked and cleaved.
-                    range = Enumerable.Range(1, peptide.BaseSequence.Length - 1).ToList();
-                }
-                foreach (var r in range)
-                {
-                    if (crosslinkerModSites.Contains(peptide.BaseSequence[r]) || wildcard)
+                    //Try to eliminate those site with mod on it. Consider the possibility that the site is at Protein N terminal.       
+                    if (!peptide.AllModsOneIsNterminus.Keys.Contains(r + 2))
                     {
-                        //Try to eliminate those site with mod on it. Consider the possibility that the site is at Protein N terminal.       
-                        if (!peptide.AllModsOneIsNterminus.Keys.Contains(r + 2))
-                        {
-                            possibleXlPositions.Add(r + 1);
-                        }
+                        possibleXlPositions.Add(r + 1);
                     }
                 }
             }

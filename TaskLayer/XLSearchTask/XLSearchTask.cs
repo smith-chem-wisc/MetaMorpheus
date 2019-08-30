@@ -162,14 +162,15 @@ namespace TaskLayer
             {
                 CrosslinkSpectralMatch crosslinkSpectralMatch = csmsPerScan[0];
 
-                for (int i = 1; i < csmsPerScan.Count -1; i++)
-                {
-                    //The purpose of this is to re-select dead-end peptide wrongly identified as crosslinked peptide.
-                    if (csmsPerScan[i].Score > csmsPerScan[0].Score && csmsPerScan[i].BaseSequence.Contains(csmsPerScan[0].BaseSequence))
-                    {
-                        crosslinkSpectralMatch = csmsPerScan[i];
-                    }
-                }
+                //This block is kind of have same function as noCrosslinkAtCleavageSite, but not working as good as it, further improvement needed.
+                //for (int i = 1; i < csmsPerScan.Count -1; i++)
+                //{
+                //    //The purpose of this is to re-select dead-end peptide wrongly identified as crosslinked peptide.
+                //    if (csmsPerScan[i].Score > csmsPerScan[0].Score && csmsPerScan[i].BaseSequence.Contains(csmsPerScan[0].BaseSequence))
+                //    {
+                //        crosslinkSpectralMatch = csmsPerScan[i];
+                //    }
+                //}
 
                 filteredAllPsms.Add(crosslinkSpectralMatch);
 

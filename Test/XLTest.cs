@@ -64,8 +64,8 @@ namespace Test
             Assert.AreEqual(n.Count(), 4);
             Assert.AreEqual(c.Count(), 4);
             Assert.AreEqual(c.First().NeutralMass, 146.10552769899999, 1e-6);
-            var x = CrosslinkSpectralMatch.GetPossibleCrosslinkerModSites(crosslinker.CrosslinkerModSites.ToCharArray(), pep, false).ToArray();
-            Assert.AreEqual(x[0], 5);
+            var x = CrosslinkSpectralMatch.GetPossibleCrosslinkerModSites(crosslinker.CrosslinkerModSites.ToCharArray(), pep, true).ToArray();
+            Assert.AreEqual(x.Count(), 0);
 
             var pep2 = ye[2];
             Assert.AreEqual("MNNNKQQQQ", pep2.BaseSequence);
@@ -73,8 +73,29 @@ namespace Test
             var c2 = pep2.Fragment(DissociationType.HCD, FragmentationTerminus.C);
             Assert.AreEqual(n2.Count(), 8);
             Assert.AreEqual(c2.Count(), 8);
-            var x2 = CrosslinkSpectralMatch.GetPossibleCrosslinkerModSites(crosslinker.CrosslinkerModSites.ToCharArray(), pep2, false).ToArray();
+            var x2 = CrosslinkSpectralMatch.GetPossibleCrosslinkerModSites(crosslinker.CrosslinkerModSites.ToCharArray(), pep2, true).ToArray();
             Assert.AreEqual(x2[0], 5);
+
+            //TestXLPosCal on peptide with modification.
+            var prot_mod = new Protein("KNNNKQQKQQK", null);
+            ModificationMotif.TryGetMotif("K", out ModificationMotif motif1);
+            Modification mod1 = new Modification(_originalId: "Oxidation of K", _modificationType: "Common Variable", _target: motif1, _locationRestriction: "Anywhere.", _monoisotopicMass: 15.99491461957);
+            ModificationMotif.TryGetMotif("C", out ModificationMotif motif2);
+            var pep_mod = prot_mod.Digest(digestionParams, new List<Modification>(), new List<Modification>() {mod1 }).ToList();
+
+            var pep3 = pep_mod[9];
+            Assert.That(pep3.FullSequence == "KNNNK[Common Variable:Oxidation on K]");
+            var x3_f = CrosslinkSpectralMatch.GetPossibleCrosslinkerModSites(crosslinker.CrosslinkerModSites.ToCharArray(), pep3, false).ToArray();
+            var x3_t = CrosslinkSpectralMatch.GetPossibleCrosslinkerModSites(crosslinker.CrosslinkerModSites.ToCharArray(), pep3, true).ToArray();
+            Assert.That(x3_f.Count() == 1 && x3_f[0] == 1);
+            Assert.That(x3_t.Count() == 0);
+
+            var pep4 = pep_mod[30];
+            Assert.That(pep4.FullSequence == "NNNK[Common Variable:Oxidation on K]QQKQQK");
+            var x4_f = CrosslinkSpectralMatch.GetPossibleCrosslinkerModSites(crosslinker.CrosslinkerModSites.ToCharArray(), pep4, false).ToArray();
+            var x4_t = CrosslinkSpectralMatch.GetPossibleCrosslinkerModSites(crosslinker.CrosslinkerModSites.ToCharArray(), pep4, true).ToArray();
+            Assert.That(x4_f[0] == 7 && x4_f[1] == 10 && x4_f.Count() ==2);
+            Assert.That(x4_t[0] == 7 && x4_t.Count() == 1);
 
             //Test crosslinker with multiple types of mod
             var protSTC = new Protein("GASTACK", null);
@@ -103,6 +124,7 @@ namespace Test
                 scoreCutoff: 1, digestionParams: new DigestionParams(minPeptideLength: 5), precursorMassTolerance: new PpmTolerance(10));
 
             var xlSearchParameters = new XlSearchParameters();
+            xlSearchParameters.NoCrosslinkAtCleavageSite = false;
 
             //Create databases contain two protein.
             var proteinList = new List<Protein> { new Protein("EKVLTSSAR", "Fake01"), new Protein("LSQKFPK", "Fake02") };
@@ -330,18 +352,6 @@ namespace Test
             Assert.That(lines.Length == 2);
             Directory.Delete(folderPath, true);
             Directory.Delete(Path.Combine(TestContext.CurrentContext.TestDirectory, @"Task Settings"), true);
-        }
-
-        /// <summary>
-        /// Tests that a crosslinker that links at proline ("P") generates the correct indices
-        /// of potential crosslink sites in the sequence PEPTIDE. The indices should be positions 1 and 3
-        /// </summary>
-        [Test]
-        public static void TestGetPossibleCrosslinkerSites()
-        {
-            PeptideWithSetModifications peptide = new PeptideWithSetModifications("PEPTIDE", null);
-            List<int> sites = CrosslinkSpectralMatch.GetPossibleCrosslinkerModSites(new char[] { 'P' }, peptide, false);
-            Assert.That(sites.SequenceEqual(new int[] { 1, 3 }));
         }
 
         /// <summary>
