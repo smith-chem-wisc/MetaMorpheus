@@ -82,7 +82,7 @@ namespace EngineLayer
             PrecursorCharge = (int)double.Parse(spl[parsedHeader[PsmTsvHeader.PrecursorCharge]].Trim(), CultureInfo.InvariantCulture);
             PrecursorMz = double.Parse(spl[parsedHeader[PsmTsvHeader.PrecursorMz]].Trim(), CultureInfo.InvariantCulture);
             PrecursorMass = double.Parse(spl[parsedHeader[PsmTsvHeader.PrecursorMass]].Trim(), CultureInfo.InvariantCulture);
-            BaseSeq = spl[parsedHeader[PsmTsvHeader.BaseSequence]].Trim();
+            BaseSeq = RemoveParentheses(spl[parsedHeader[PsmTsvHeader.BaseSequence]].Trim());
             FullSequence = spl[parsedHeader[PsmTsvHeader.FullSequence]];
             PeptideMonoMass = spl[parsedHeader[PsmTsvHeader.PeptideMonoMass]].Trim();
             Score = double.Parse(spl[parsedHeader[PsmTsvHeader.Score]].Trim(), CultureInfo.InvariantCulture);
@@ -145,6 +145,34 @@ namespace EngineLayer
             {
                 BetaPeptideChildScanMatchedIons.Remove(Ms2ScanNumber);
             }
+        }
+
+        //Used to remove Silac labels for proper annotation
+        public static string RemoveParentheses(string baseSequence)
+        {
+            if (baseSequence.Contains("("))
+            {
+                string updatedBaseSequence = "";
+                bool withinParentheses = false;
+                foreach (char c in baseSequence)
+                {
+                    if (c == ')') //leaving the parentheses
+                    {
+                        withinParentheses = false;
+                    }
+                    else if (c == '(') //entering the parentheses
+                    {
+                        withinParentheses = true;
+                    }
+                    else if (!withinParentheses) //if outside the parentheses, preserve this amino acid
+                    {
+                        updatedBaseSequence += c;
+                    }
+                    //else do nothing
+                }
+                return updatedBaseSequence;
+            }
+            return baseSequence;
         }
 
         private static List<MatchedFragmentIon> ReadFragmentIonsFromString(string matchedMzString, string peptideBaseSequence)
