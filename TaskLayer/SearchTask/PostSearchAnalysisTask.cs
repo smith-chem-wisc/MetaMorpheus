@@ -950,8 +950,8 @@ namespace TaskLayer
             List<PeptideSpectralMatch> possibleVariantPsms = new List<PeptideSpectralMatch>();
             foreach (var peptide in FDRPsms)
             {
-                var variants = peptide.BestMatchingPeptides.SelectMany(p => p.Peptide.Protein.AppliedSequenceVariations.Select(v => PsmTsvWriter.IntersectsWithVariation(p.Peptide, v, true)).ToList()).ToList();
-                if(variants.Contains(true))
+                var variants = peptide.BestMatchingPeptides.SelectMany(p => p.Peptide.Protein.AppliedSequenceVariations.Where(v => p.Peptide.IntersectsAndIdentifiesVariation(v).identifies).ToList()).ToList();
+                if(variants.Count > 0)
                 {
                         possibleVariantPsms.Add(peptide);                                        
                 }                
@@ -999,7 +999,7 @@ namespace TaskLayer
             List<PeptideSpectralMatch> modifiedVariantSitePeptides = new List<PeptideSpectralMatch>();// modification is speciifcally on the variant residue within the peptide
             foreach (var entry in modifiedVariantPeptides)
             {
-                var variants = entry.BestMatchingPeptides.SelectMany(p => p.Peptide.Protein.AppliedSequenceVariations.Where(v => PsmTsvWriter.IntersectsWithVariation(p.Peptide, v, true) ==true).ToList()).ToList();
+                var variants = entry.BestMatchingPeptides.SelectMany(p => p.Peptide.Protein.AppliedSequenceVariations.Where(v =>p.Peptide.IntersectsAndIdentifiesVariation(v).identifies == true).ToList()).ToList();
                 var mods = entry.ModsIdentified;
                 bool modifiedVariant = false;
                 foreach (var mod in mods)
@@ -1024,9 +1024,8 @@ namespace TaskLayer
                     var variants = variantPWSM.Peptide.Protein.AppliedSequenceVariations;
                     var culture = CultureInfo.CurrentCulture;
                     foreach (var variant in variants)
-                    {
-                        bool intersects = PsmTsvWriter.IntersectsWithVariation(variantPWSM.Peptide, variant, true);
-                        if (intersects == true)
+                    {                       
+                        if (variantPWSM.Peptide.IntersectsAndIdentifiesVariation(variant).identifies == true)
                         {
                             if (culture.CompareInfo.IndexOf(variant.Description.Description, "missense_variant", CompareOptions.IgnoreCase) >= 0)
                             {

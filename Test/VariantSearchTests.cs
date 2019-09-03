@@ -28,12 +28,12 @@ namespace Test
 
         [Test]
         [TestCase(0, 0, true, "P4V")] // variant is in the detected peptide
-        [TestCase(1, 1, false, "PT4KT")] // variant intersects psm, but isn't really identified because PEK/TIDE is the same as PEP/TIDE if you only detect the second peptide
+        [TestCase(1, 1, true, "PT4KT")] // variant intersects psm, and is identified by the generate of the peptide "TiDE"
         [TestCase(2, 0, true, "P4PPP")] // intersecting sequence between variant and detected peptide is smaller than the original sequence, so clearly identied
         [TestCase(3, 0, true, "PPP4P")] // peptide is different than original sequence, but the variant site is the same AA
         [TestCase(4, 0, false, "PKPK4PK")]
         [TestCase(5, 1, true, "PTA4KT")] // counterpoint to (1), where the second peptide does distinguish
-        [TestCase(6, 0, false, "KKA4K")]
+        [TestCase(6, 0, true, "KKA4K")] // variant is identified becasue it creates cleavage site to create peptide "IDE" instead of "AIDE" (without the variant)
         [TestCase(7, 1, true, "P4V[type:mod on V]")]
         [TestCase(8, 1, true, "P4PP[type:mod on P]P")]
         [TestCase(0, 0, true, "P6V", DecoyType.Reverse)] // variant is in the detected decoy peptide MEDITVEP
@@ -94,7 +94,7 @@ namespace Test
             st.RunTask(outputFolder, new List<DbForTask> { new DbForTask(xmlName, false) }, new List<string> { mzmlName }, "");
             var psms = File.ReadAllLines(Path.Combine(outputFolder, "AllPSMs.psmtsv"));
             
-            Assert.IsTrue(psms.Any(line => line.Contains($"\t{variantPsmShort}\t" + (containsVariant ? variantPsmShort : "\t"))));
+            Assert.IsTrue(psms.Any(line => line.Contains(containsVariant ? variantPsmShort : "\t")));
 
             Directory.Delete(outputFolder, true);
             File.Delete(mzmlName);
