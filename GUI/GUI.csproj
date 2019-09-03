@@ -456,7 +456,9 @@
     </ProjectReference>
   </ItemGroup>
   <ItemGroup>
-    <Resource Include="Icons\MMnice.ico" />
+    <Resource Include="Icons\MMnice.ico">
+      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+    </Resource>
   </ItemGroup>
   <ItemGroup>
     <Resource Include="Icons\wiki_20.bmp" />
