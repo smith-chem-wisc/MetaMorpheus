@@ -164,50 +164,23 @@ namespace MetaMorpheusGUI
             }
             else
             {
-                double end = numbers.Max();
-                double start = numbers.Min();
-                double bins = (end - start) / binSize;
-                double numbins = bins * Math.Pow(10, normalizeNumber(bins));
-                int exp = (int)Math.Pow(10, normalizeNumber(end));
+                double end = roundToBin(numbers.Max(), binSize);
+                double start = roundToBin(numbers.Min(), binSize);
+                int numBins = (int)(((end - start) / binSize) + 1);
 
-                long size = Convert.ToInt64(end * exp + (-1 * start * exp) + 1);
-                int[,] values = new int[size, 2];
-
-                int decimalPlaces = 0;
-
-                if (binSize.Equals(0.1))
-                {
-                    decimalPlaces = 1;
-                }
+                int[] values = new int[numBins];
+                
+                // put each value into the nearest bin
                 foreach (var a in numbers)
                 {
-                    int sign = 0;
-                    var current = a * exp;
-
-                    if (a < 0)
-                    {
-                        current = a * -1;
-                        sign = 1;
-                    }
-                    values[(int)Math.Round(current, decimalPlaces), sign]++;
+                    values[(int)(((roundToBin(a, binSize) - start) / binSize) + 0.1)]++;    // + 0.1 ensures double is just above its int value before truncating
                 }
 
-                int zeroIndex = values.Length / 2;
-
-                //add negative value bars
-                for (int i = (values.Length / 2); i > 0; i--)
+                // create a column and axis label for each bin
+                for (int i = 0; i < values.Length; i++)
                 {
-                    s1.Items.Add(new ColumnItem(values[i - 1, 1], zeroIndex - i));
-                    axes.Add((-i).ToString());
-                }
-
-                s1.Items.Add(new ColumnItem(values[0, 0] + values[0, 1], zeroIndex));
-                axes.Add(0.ToString());
-                //add positive value bars
-                for (int i = 1; i < values.Length / 2; i++)
-                {
-                    s1.Items.Add(new ColumnItem(values[i, 0], zeroIndex + i));
-                    axes.Add(i.ToString());
+                    s1.Items.Add(new ColumnItem(values[i], i));
+                    axes.Add(roundToBin(start + (i * binSize), binSize).ToString());  // numbers need to be re-rounded so values like 0.20000000001 aren't displayed
                 }
 
                 privateModel.Series.Add(s1);
@@ -284,11 +257,14 @@ namespace MetaMorpheusGUI
             }
         }
 
-        private static int normalizeNumber(double number)
+        // rounds a number to the nearest multiple of binsize, midpoints are rounded towards zero
+        private static double roundToBin(double number, double binSize)
         {
-            string s = number.ToString("00.00E0");
-            int i = Convert.ToInt32(s.Substring(s.Length - 1)) / 10;
-            return i;
+            int sign = number < 0 ? -1 : 1;
+            double d = number * sign;
+            double remainder = d % binSize;
+            d = remainder < 0.5 * binSize ? d - remainder : d - remainder + binSize;
+            return d * sign;
         }
 
         //unused interface methods
