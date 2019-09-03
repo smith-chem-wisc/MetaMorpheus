@@ -993,8 +993,7 @@ namespace TaskLayer
             int deletionCount = 0;
             int frameshiftCount = 0;
             int stopGainCount = 0;
-            int stopLossCount = 0;
-            int exonLossCount = 0;                      
+            int stopLossCount = 0;                                 
             List<PeptideSpectralMatch> modifiedVariantPeptides = confidentVariantPeps.Where(p => p.ModsIdentified.Count() > 0 && p.FdrInfo.QValue <= 0.01 && p.FdrInfo.QValueNotch <= 0.01 && p.IsDecoy == false && p.IsContaminant ==false).ToList(); //modification can be on any AA in variant peptide
             List<PeptideSpectralMatch> modifiedVariantSitePeptides = new List<PeptideSpectralMatch>();// modification is speciifcally on the variant residue within the peptide
             foreach (var entry in modifiedVariantPeptides)
