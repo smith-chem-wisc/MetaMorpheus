@@ -95,7 +95,7 @@ namespace Test
             var x4_f = CrosslinkSpectralMatch.GetPossibleCrosslinkerModSites(crosslinker.CrosslinkerModSites.ToCharArray(), pep4, true).ToArray();
             var x4_t = CrosslinkSpectralMatch.GetPossibleCrosslinkerModSites(crosslinker.CrosslinkerModSites.ToCharArray(), pep4, false).ToArray();
             Assert.That(x4_f[0] == 7 && x4_f[1] == 10 && x4_f.Count() ==2);
-            Assert.That(x4_t[0] == 7 && x4_t.Count() == 1);
+            Assert.That(x4_t[0] == 7 && x4_t[1] == 10 && x4_t.Count() == 2);
 
             //Test crosslinker with multiple types of mod
             var protSTC = new Protein("GASTACK", null);

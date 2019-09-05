@@ -97,7 +97,7 @@ namespace EngineLayer.CrosslinkSearch
             }
 
             List<int> range = Enumerable.Range(1, peptide.BaseSequence.Length - 1).ToList();
-            if (!CrosslinkAtCleavageSite)
+            if (!CrosslinkAtCleavageSite && peptide.OneBasedEndResidueInProtein != peptide.Protein.Length)
             {
                 //The N terminal and C termial cannot be crosslinked and cleaved.
                 range = Enumerable.Range(1, peptide.BaseSequence.Length - 2).ToList();
