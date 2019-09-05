@@ -375,48 +375,9 @@ namespace MetaMorpheusGUI
 
         private void SaveButton_Click(object sender, RoutedEventArgs e)
         {
-            CleavageSpecificity searchModeType = CleavageSpecificity.Full; //classic and modern by default
-            if (semiSpecificSearchRadioButton.IsChecked.Value) //semi
-            {
-                searchModeType = CleavageSpecificity.Semi;
-            }
-            else if (nonSpecificSearchRadioButton.IsChecked.Value) //non
-            {
-                searchModeType = CleavageSpecificity.None;
-            }
-            //else it's the default of full
-
-            if (searchModeType != CleavageSpecificity.Full)
-            {
-                if (((Protease)proteaseComboBox.SelectedItem).Name.Contains("non-specific"))
-                {
-                    searchModeType = CleavageSpecificity.None; //prevents an accidental semi attempt of a non-specific protease
-
-                    if (cTerminalIons.IsChecked.Value)
-                    {
-                        Protease singleC = ProteaseDictionary.Dictionary["singleC"];
-                        proteaseComboBox.SelectedItem = singleC;
-                    }
-                    else //we're not allowing no ion types. It must have N if it doesn't have C.
-                    {
-                        Protease singleN = ProteaseDictionary.Dictionary["singleN"];
-                        proteaseComboBox.SelectedItem = singleN;
-                    }
-                }
-                if (!addCompIonCheckBox.IsChecked.Value)
-                {
-                    MessageBox.Show("Warning: Complementary ions are strongly recommended when using this algorithm.");
-                }
-                //only use N or C termini, not both
-                if (cTerminalIons.IsChecked.Value)
-                {
-                    nTerminalIons.IsChecked = false;
-                }
-                else
-                {
-                    nTerminalIons.IsChecked = true;
-                }
-            }
+            CleavageSpecificity searchModeType = GetSearchModeType(); //change search type to semi or non if selected
+            SnesUpdates(searchModeType); //decide on singleN/C, make comp ion changes
+           
 
             if (!GlobalGuiSettings.CheckTaskSettingsValidity(precursorMassToleranceTextBox.Text, productMassToleranceTextBox.Text, missedCleavagesTextBox.Text,
                 maxModificationIsoformsTextBox.Text, MinPeptideLengthTextBox.Text, MaxPeptideLengthTextBox.Text, maxThreadsTextBox.Text, minScoreAllowed.Text,
@@ -431,22 +392,15 @@ namespace MetaMorpheusGUI
             DissociationType dissociationType = GlobalVariables.AllSupportedDissociationTypes[dissociationTypeComboBox.SelectedItem.ToString()];
             CustomFragmentationWindow.Close();
 
-            FragmentationTerminus fragmentationTerminus = FragmentationTerminus.Both;
-            if (nTerminalIons.IsChecked.Value && !cTerminalIons.IsChecked.Value)
-            {
-                fragmentationTerminus = FragmentationTerminus.N;
-            }
-            else if (!nTerminalIons.IsChecked.Value && cTerminalIons.IsChecked.Value)
-            {
-                fragmentationTerminus = FragmentationTerminus.C;
-            }
-            else if (!nTerminalIons.IsChecked.Value && !cTerminalIons.IsChecked.Value) //why would you want this
-            {
-                fragmentationTerminus = FragmentationTerminus.None;
-                MessageBox.Show("Warning: No ion types were selected. MetaMorpheus will be unable to search MS/MS spectra.");
-            }
-            //else both
+            FragmentationTerminus fragmentationTerminus = GetFragmentationTerminus();
 
+            SilacUpdates(out string silacError);
+            if(silacError.Length!=0)
+            {
+                MessageBox.Show(silacError);
+                return;
+            }
+          
             int maxMissedCleavages = string.IsNullOrEmpty(missedCleavagesTextBox.Text) ? int.MaxValue : (int.Parse(missedCleavagesTextBox.Text, NumberStyles.Any, CultureInfo.InvariantCulture));
             int minPeptideLengthValue = (int.Parse(MinPeptideLengthTextBox.Text, NumberStyles.Any, CultureInfo.InvariantCulture));
             int maxPeptideLengthValue = string.IsNullOrEmpty(MaxPeptideLengthTextBox.Text) ? int.MaxValue : (int.Parse(MaxPeptideLengthTextBox.Text, NumberStyles.Any, CultureInfo.InvariantCulture));
@@ -582,71 +536,6 @@ namespace MetaMorpheusGUI
             TheTask.SearchParameters.DoParsimony = checkBoxParsimony.IsChecked.Value;
             TheTask.SearchParameters.NoOneHitWonders = checkBoxNoOneHitWonders.IsChecked.Value;
             TheTask.SearchParameters.DoQuantification = !checkBoxNoQuant.IsChecked.Value;
-
-            //SilacLabel assignments
-            {
-                if (StaticSilacLabelsObservableCollection.Count != 0)
-                {
-                    //remove the unlabeled
-                    for (int i = 0; i < StaticSilacLabelsObservableCollection.Count; i++)
-                    {
-                        if (StaticSilacLabelsObservableCollection[i].SilacLabel == null)
-                        {
-                            StaticSilacLabelsObservableCollection.RemoveAt(i);
-                            break;
-                        }
-                    }
-
-                    //Validate it really quick to determine if they're all multiplex (normal), or if it's a turnover experiment (requires one start label and one end label, either of which may be unlabeled)
-                    //if they're all multiplex
-                    if (StaticSilacLabelsObservableCollection.All(x => x.LabelType == SilacModificationWindow.ExperimentType.Multiplex))
-                    {
-                        List<Proteomics.SilacLabel> labelsToSave = new List<Proteomics.SilacLabel>();
-                        foreach (SilacInfoForDataGrid info in StaticSilacLabelsObservableCollection)
-                        {
-                            labelsToSave.Add(ConvertSilacDataGridInfoToSilacLabel(info));
-                        }
-                        TheTask.SearchParameters.SilacLabels = labelsToSave;
-                    }
-                    //if it's a turnover experiment, there's a start and/or end and no others
-                    else if (StaticSilacLabelsObservableCollection.Count <= 2)
-                    {
-                        TheTask.SearchParameters.SilacLabels = null; //clear it if it's populated from a previous run. Test is run turnover, stop it, open the file, check if it's still turnover after closing and reopening the window
-                        SilacInfoForDataGrid startLabel = StaticSilacLabelsObservableCollection.Where(x => x.LabelType == SilacModificationWindow.ExperimentType.Start).FirstOrDefault();
-                        SilacInfoForDataGrid endLabel = StaticSilacLabelsObservableCollection.Where(x => x.LabelType == SilacModificationWindow.ExperimentType.End).FirstOrDefault();
-
-                        //check that two labels weren't set as the same thing
-                        if ((startLabel == null && StaticSilacLabelsObservableCollection.Count == 2) || (endLabel == null && StaticSilacLabelsObservableCollection.Count == 2))
-                        {
-                            string missingLabel = startLabel == null ? "Start" : "End";
-                            MessageBox.Show("A SILAC label could not be found with the '" + missingLabel + "' LabelType." +
-                                "\nThis error occurs when one of the conditions was mislabeled (i.e. one of the LabelTypes is 'Multiplex' or a duplicate). " +
-                                "\nPlease check your 'LabelTypes' and try again.");
-                            return;
-                        }
-                        else //we're good!
-                        {
-                            TheTask.SearchParameters.StartTurnoverLabel = ConvertSilacDataGridInfoToSilacLabel(startLabel);
-                            TheTask.SearchParameters.EndTurnoverLabel = ConvertSilacDataGridInfoToSilacLabel(endLabel);
-                        }
-
-                        //check there aren't three options
-                        if (StaticSilacLabelsObservableCollection.Count == 2 && CheckBoxQuantifyUnlabeledForSilac.IsChecked.Value)
-                        {
-                            MessageBox.Show("'Quantify unlabeled peptides/proteins' was checked, but a start and end condition were already specified for the turnover experiment." +
-                                "\nUncheck this box or remove one of the conditions.");
-                            return;
-                        }
-                    }
-                    else //there are too many labels for a turnover experiment, but it's not a multiplex?
-                    {
-                        MessageBox.Show(StaticSilacLabelsObservableCollection.Count.ToString() + " SILAC labeling conditions were specified, but only two (a start and an end) were expected for a turnover experiment." +
-                            "\nIf you are not analyzing a turnover experiment, please maintain the default setting 'Multiplex' when specifying your labels.");
-                        return;
-                    }
-                }
-            }
-
             TheTask.SearchParameters.Normalize = checkBoxNormalize.IsChecked.Value;
             TheTask.SearchParameters.MatchBetweenRuns = checkBoxMatchBetweenRuns.IsChecked.Value;
             TheTask.SearchParameters.ModPeptidesAreDifferent = modPepsAreUnique.IsChecked.Value;
@@ -1014,6 +903,139 @@ namespace MetaMorpheusGUI
                     label.AddAdditionalSilacLabel(info.SilacLabel[infoIndex]);
                 }
                 return label;
+            }
+        }
+
+        private CleavageSpecificity GetSearchModeType()
+        {
+            if (semiSpecificSearchRadioButton.IsChecked.Value) //semi
+            {
+                return CleavageSpecificity.Semi;
+            }
+            else if (nonSpecificSearchRadioButton.IsChecked.Value) //non
+            {
+                return CleavageSpecificity.None;
+            }
+            else
+            {
+                return CleavageSpecificity.Full;
+            }
+        }
+
+        private void SnesUpdates(CleavageSpecificity searchModeType)
+        {
+            if (searchModeType != CleavageSpecificity.Full)
+            {
+                if (((Protease)proteaseComboBox.SelectedItem).Name.Contains("non-specific"))
+                {
+                    searchModeType = CleavageSpecificity.None; //prevents an accidental semi attempt of a non-specific protease
+
+                    if (cTerminalIons.IsChecked.Value)
+                    {
+                        Protease singleC = ProteaseDictionary.Dictionary["singleC"];
+                        proteaseComboBox.SelectedItem = singleC;
+                    }
+                    else //we're not allowing no ion types. It must have N if it doesn't have C.
+                    {
+                        Protease singleN = ProteaseDictionary.Dictionary["singleN"];
+                        proteaseComboBox.SelectedItem = singleN;
+                    }
+                }
+                if (!addCompIonCheckBox.IsChecked.Value)
+                {
+                    MessageBox.Show("Warning: Complementary ions are strongly recommended when using this algorithm.");
+                }
+                //only use N or C termini, not both
+                if (cTerminalIons.IsChecked.Value)
+                {
+                    nTerminalIons.IsChecked = false;
+                }
+                else
+                {
+                    nTerminalIons.IsChecked = true;
+                }
+            }
+        }
+
+        private FragmentationTerminus GetFragmentationTerminus()
+        {
+            if (nTerminalIons.IsChecked.Value && !cTerminalIons.IsChecked.Value)
+            {
+                return FragmentationTerminus.N;
+            }
+            else if (!nTerminalIons.IsChecked.Value && cTerminalIons.IsChecked.Value)
+            {
+                return FragmentationTerminus.C;
+            }
+            else if (!nTerminalIons.IsChecked.Value && !cTerminalIons.IsChecked.Value) //why would you want this
+            {
+                MessageBox.Show("Warning: No ion types were selected. MetaMorpheus will be unable to search MS/MS spectra.");
+                return FragmentationTerminus.None;
+            }
+            else
+            {
+                return FragmentationTerminus.Both;
+            }
+        }
+
+        //string out is for error messages
+        private void SilacUpdates(out string error)
+        {
+            error = "";
+            if (StaticSilacLabelsObservableCollection.Count != 0)
+            {
+                //remove the unlabeled
+                for (int i = 0; i < StaticSilacLabelsObservableCollection.Count; i++)
+                {
+                    if (StaticSilacLabelsObservableCollection[i].SilacLabel == null)
+                    {
+                        StaticSilacLabelsObservableCollection.RemoveAt(i);
+                        break;
+                    }
+                }
+
+                //Validate it really quick to determine if they're all multiplex (normal), or if it's a turnover experiment (requires one start label and one end label, either of which may be unlabeled)
+                //if they're all multiplex
+                if (StaticSilacLabelsObservableCollection.All(x => x.LabelType == SilacModificationWindow.ExperimentType.Multiplex))
+                {
+                    List<Proteomics.SilacLabel> labelsToSave = new List<Proteomics.SilacLabel>();
+                    foreach (SilacInfoForDataGrid info in StaticSilacLabelsObservableCollection)
+                    {
+                        labelsToSave.Add(ConvertSilacDataGridInfoToSilacLabel(info));
+                    }
+                    TheTask.SearchParameters.SilacLabels = labelsToSave;
+                    //Clear existing start and end labels, if any
+                    TheTask.SearchParameters.StartTurnoverLabel = null;
+                    TheTask.SearchParameters.EndTurnoverLabel = null;
+                }
+                //if it's a turnover experiment, there's a start and/or end and no others
+                else if (StaticSilacLabelsObservableCollection.Count <= 2)
+                {
+                    TheTask.SearchParameters.SilacLabels = null; //clear it if it's populated from a previous run. Test is run turnover, stop it, open the file, check if it's still turnover after closing and reopening the window
+                    SilacInfoForDataGrid startLabel = StaticSilacLabelsObservableCollection.Where(x => x.LabelType == SilacModificationWindow.ExperimentType.Start).FirstOrDefault();
+                    SilacInfoForDataGrid endLabel = StaticSilacLabelsObservableCollection.Where(x => x.LabelType == SilacModificationWindow.ExperimentType.End).FirstOrDefault();
+
+                    //check that two labels weren't set as the same thing
+                    if ((startLabel == null && StaticSilacLabelsObservableCollection.Count == 2) || (endLabel == null && StaticSilacLabelsObservableCollection.Count == 2))
+                    {
+                        string missingLabel = startLabel == null ? "Start" : "End";
+                        error = "A SILAC label could not be found with the '" + missingLabel + "' LabelType." +
+                            "\nThis error occurs when one of the conditions was mislabeled (i.e. one of the LabelTypes is 'Multiplex' or a duplicate). " +
+                            "\nPlease check your 'LabelTypes' and try again.";
+                    }
+                    else //we're good!
+                    {
+                        TheTask.SearchParameters.StartTurnoverLabel = ConvertSilacDataGridInfoToSilacLabel(startLabel);
+                        TheTask.SearchParameters.EndTurnoverLabel = ConvertSilacDataGridInfoToSilacLabel(endLabel);
+                        //set the unlabeled bool for consistency
+                        CheckBoxQuantifyUnlabeledForSilac.IsChecked = (startLabel == null || endLabel == null);
+                    }
+                }
+                else //there are too many labels for a turnover experiment, but it's not a multiplex?
+                {
+                    error = StaticSilacLabelsObservableCollection.Count.ToString() + " SILAC labeling conditions were specified, but only two (a start and an end) were expected for a turnover experiment." +
+                        "\nIf you are not analyzing a turnover experiment, please maintain the default setting 'Multiplex' when specifying your labels.";
+                }
             }
         }
 
