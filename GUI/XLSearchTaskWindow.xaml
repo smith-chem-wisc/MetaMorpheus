@@ -109,7 +109,7 @@
                                 </StackPanel>
                             </Grid>
                             <StackPanel>
-                                <CheckBox x:Name="ckbNoCrosslinkAtCleavageSite"  VerticalAlignment="Center" Content="No Crosslink At Cleavage Site" Margin="2" />
+                                <CheckBox x:Name="ckbCrosslinkAtCleavageSite"  VerticalAlignment="Center" Content="Crosslink At Cleavage Site" Margin="2" />
                             </StackPanel>
                         </StackPanel>
                     </Expander>

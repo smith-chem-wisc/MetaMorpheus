@@ -82,7 +82,7 @@ namespace EngineLayer.CrosslinkSearch
             }
         }
 
-        public static List<int> GetPossibleCrosslinkerModSites(char[] crosslinkerModSites, PeptideWithSetModifications peptide, bool noCrosslinkAtCleavageSite)
+        public static List<int> GetPossibleCrosslinkerModSites(char[] crosslinkerModSites, PeptideWithSetModifications peptide, bool CrosslinkAtCleavageSite)
         {
             List<int> possibleXlPositions = new List<int>();
             bool wildcard = crosslinkerModSites.Any(p => p == 'X');
@@ -90,14 +90,14 @@ namespace EngineLayer.CrosslinkSearch
             //Consider the possibility that the site is at Protein N terminal.  
             if (peptide.OneBasedStartResidueInProtein == 1)
             {
-                if (!peptide.AllModsOneIsNterminus.Keys.Contains(1) && crosslinkerModSites.Contains(peptide.BaseSequence[0]) && !noCrosslinkAtCleavageSite)
+                if (!peptide.AllModsOneIsNterminus.Keys.Contains(1) && crosslinkerModSites.Contains(peptide.BaseSequence[0]) && CrosslinkAtCleavageSite)
                 {
                     possibleXlPositions.Add(1);
                 }
             }
 
             List<int> range = Enumerable.Range(1, peptide.BaseSequence.Length - 1).ToList();
-            if (noCrosslinkAtCleavageSite)
+            if (!CrosslinkAtCleavageSite)
             {
                 //The N terminal and C termial cannot be crosslinked and cleaved.
                 range = Enumerable.Range(1, peptide.BaseSequence.Length - 2).ToList();
