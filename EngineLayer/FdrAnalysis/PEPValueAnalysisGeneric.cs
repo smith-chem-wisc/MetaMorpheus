@@ -14,6 +14,8 @@ namespace EngineLayer
 {
     public static class PEP_Analysis
     {
+        private static readonly double AbsoluteProbabilityThatDistinguishesPeptides = 0.05;
+
         public static string ComputePEPValuesForAllPSMsGeneric(List<PeptideSpectralMatch> psms)
         {
             string searchType = DetermineSearchType(psms);
@@ -100,7 +102,7 @@ namespace EngineLayer
 
                     for (int i = numberOfPredictions; i >= 0; i--)
                     {
-                        if (Math.Abs(highestPredictedPEPValue - pepValuePredictions[i]) > 0.000001)
+                        if (Math.Abs(highestPredictedPEPValue - pepValuePredictions[i]) > AbsoluteProbabilityThatDistinguishesPeptides)
                         {
                             indiciesOfPeptidesToRemove.Add(i);
                             pepValuePredictions.RemoveAt(i);
