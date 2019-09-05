@@ -168,7 +168,7 @@ namespace MetaMorpheusGUI
             if (task.SearchParameters.StartTurnoverLabel != null || task.SearchParameters.EndTurnoverLabel != null)
             {
                 task.SearchParameters.SilacLabels = null; //reset if between runs
-                checkBoxSILAC.IsChecked = true;
+                CheckBoxSILAC.IsChecked = true;
                 var startLabel = task.SearchParameters.StartTurnoverLabel;
                 if (startLabel != null)
                 {
@@ -907,11 +907,11 @@ namespace MetaMorpheusGUI
 
         private CleavageSpecificity GetSearchModeType()
         {
-            if (semiSpecificSearchRadioButton.IsChecked.Value) //semi
+            if (SemiSpecificSearchRadioButton.IsChecked.Value) //semi
             {
                 return CleavageSpecificity.Semi;
             }
-            else if (nonSpecificSearchRadioButton.IsChecked.Value) //non
+            else if (NonSpecificSearchRadioButton.IsChecked.Value) //non
             {
                 return CleavageSpecificity.None;
             }
@@ -925,48 +925,48 @@ namespace MetaMorpheusGUI
         {
             if (searchModeType != CleavageSpecificity.Full)
             {
-                if (((Protease)proteaseComboBox.SelectedItem).Name.Contains("non-specific"))
+                if (((Protease)ProteaseComboBox.SelectedItem).Name.Contains("non-specific"))
                 {
                     searchModeType = CleavageSpecificity.None; //prevents an accidental semi attempt of a non-specific protease
 
-                    if (cTerminalIons.IsChecked.Value)
+                    if (CTerminalIons.IsChecked.Value)
                     {
                         Protease singleC = ProteaseDictionary.Dictionary["singleC"];
-                        proteaseComboBox.SelectedItem = singleC;
+                        ProteaseComboBox.SelectedItem = singleC;
                     }
                     else //we're not allowing no ion types. It must have N if it doesn't have C.
                     {
                         Protease singleN = ProteaseDictionary.Dictionary["singleN"];
-                        proteaseComboBox.SelectedItem = singleN;
+                        ProteaseComboBox.SelectedItem = singleN;
                     }
                 }
-                if (!addCompIonCheckBox.IsChecked.Value)
+                if (!AddCompIonCheckBox.IsChecked.Value)
                 {
                     MessageBox.Show("Warning: Complementary ions are strongly recommended when using this algorithm.");
                 }
                 //only use N or C termini, not both
-                if (cTerminalIons.IsChecked.Value)
+                if (CTerminalIons.IsChecked.Value)
                 {
-                    nTerminalIons.IsChecked = false;
+                    NTerminalIons.IsChecked = false;
                 }
                 else
                 {
-                    nTerminalIons.IsChecked = true;
+                    NTerminalIons.IsChecked = true;
                 }
             }
         }
 
         private FragmentationTerminus GetFragmentationTerminus()
         {
-            if (nTerminalIons.IsChecked.Value && !cTerminalIons.IsChecked.Value)
+            if (NTerminalIons.IsChecked.Value && !CTerminalIons.IsChecked.Value)
             {
                 return FragmentationTerminus.N;
             }
-            else if (!nTerminalIons.IsChecked.Value && cTerminalIons.IsChecked.Value)
+            else if (!NTerminalIons.IsChecked.Value && CTerminalIons.IsChecked.Value)
             {
                 return FragmentationTerminus.C;
             }
-            else if (!nTerminalIons.IsChecked.Value && !cTerminalIons.IsChecked.Value) //why would you want this
+            else if (!NTerminalIons.IsChecked.Value && !CTerminalIons.IsChecked.Value) //why would you want this
             {
                 MessageBox.Show("Warning: No ion types were selected. MetaMorpheus will be unable to search MS/MS spectra.");
                 return FragmentationTerminus.None;
@@ -1040,7 +1040,7 @@ namespace MetaMorpheusGUI
 
         private void CheckBoxQuantifyUnlabeledForSilac_Checked(object sender, RoutedEventArgs e)
         {
-            if (checkBoxSILAC.IsChecked.Value) //if we're doing SILAC (check needed to start a new task)
+            if (CheckBoxSILAC.IsChecked.Value) //if we're doing SILAC (check needed to start a new task)
             {
                 //if checked, add a proxy label for the unlabeled condition
                 if (CheckBoxQuantifyUnlabeledForSilac.IsChecked.Value)
