@@ -10,6 +10,7 @@ using System.Collections.Generic;
 using System.Collections.ObjectModel;
 using System.ComponentModel;
 using System.Linq;
+using System.Globalization;
 
 namespace MetaMorpheusGUI
 {
@@ -166,21 +167,31 @@ namespace MetaMorpheusGUI
             {
                 double end = roundToBin(numbers.Max(), binSize);
                 double start = roundToBin(numbers.Min(), binSize);
-                int numBins = (int)(((end - start) / binSize) + 1);
+                int numBins = (int)(((end - start) / binSize) + 1.001); // + 0.001 ensures double is just above its int value before truncating
 
                 int[] values = new int[numBins];
                 
                 // put each value into the nearest bin
                 foreach (var a in numbers)
                 {
-                    values[(int)(((roundToBin(a, binSize) - start) / binSize) + 0.1)]++;    // + 0.1 ensures double is just above its int value before truncating
+                    values[(int)(((roundToBin(a, binSize) - start) / binSize) + 0.001)]++;    // + 0.001 ensures double is just above its int value before truncating
                 }
+
+                int minBinLabels = 28;  // the number of labeled bins will be between minBinLabels and 2 * minBinLabels
+                int skipBinLabel = numBins < minBinLabels ? 1 : numBins / minBinLabels;
 
                 // create a column and axis label for each bin
                 for (int i = 0; i < values.Length; i++)
                 {
                     s1.Items.Add(new ColumnItem(values[i], i));
-                    axes.Add(roundToBin(start + (i * binSize), binSize).ToString());  // numbers need to be re-rounded so values like 0.20000000001 aren't displayed
+                    if(i % skipBinLabel == 0)
+                    {
+                        axes.Add(roundToBin(start + (i * binSize), binSize).ToString(CultureInfo.InvariantCulture));  // numbers need to be re-rounded so values like 0.20000000001 aren't displayed
+                    }
+                    else
+                    {
+                        axes.Add("");
+                    }
                 }
 
                 privateModel.Series.Add(s1);
