@@ -56,7 +56,7 @@ namespace TaskLayer
                 WriteFile.WritePsmCrossToTsv(interCsms, file, 2);
                 FinishedWritingFile(file, new List<string> { taskId });
             }
-            MyTaskResults.AddNiceText("Target inter-crosslinks within 1% FDR: " + interCsms.Count(p => p.FdrInfo.QValue <= 0.01 && !p.IsDecoy && !p.BetaPeptide.IsDecoy));
+            MyTaskResults.AddTaskSummaryText("Target inter-crosslinks within 1% FDR: " + interCsms.Count(p => p.FdrInfo.QValue <= 0.01 && !p.IsDecoy && !p.BetaPeptide.IsDecoy));
 
             if (xlSearchParameters.WriteOutputForPercolator)
             {
@@ -72,7 +72,7 @@ namespace TaskLayer
                 WriteFile.WritePsmCrossToTsv(intraCsms, file, 2);
                 FinishedWritingFile(file, new List<string> { taskId });
             }
-            MyTaskResults.AddNiceText("Target intra-crosslinks within 1% FDR: " + intraCsms.Count(p => p.FdrInfo.QValue <= 0.01 && !p.IsDecoy && !p.BetaPeptide.IsDecoy));
+            MyTaskResults.AddTaskSummaryText("Target intra-crosslinks within 1% FDR: " + intraCsms.Count(p => p.FdrInfo.QValue <= 0.01 && !p.IsDecoy && !p.BetaPeptide.IsDecoy));
 
             if (xlSearchParameters.WriteOutputForPercolator)
             {
@@ -89,7 +89,7 @@ namespace TaskLayer
                 WriteFile.WritePsmCrossToTsv(singlePsms, writtenFileSingle, 1);
                 FinishedWritingFile(writtenFileSingle, new List<string> { taskId });
             }
-            MyTaskResults.AddNiceText("Target single peptides within 1% FDR: " + singlePsms.Count(p => p.FdrInfo.QValue <= 0.01 && !p.IsDecoy));
+            MyTaskResults.AddTaskSummaryText("Target single peptides within 1% FDR: " + singlePsms.Count(p => p.FdrInfo.QValue <= 0.01 && !p.IsDecoy));
 
             // write loops
             var loopPsms = allPsms.Where(p => p.CrossType == PsmCrossType.Loop).ToList();
@@ -99,7 +99,7 @@ namespace TaskLayer
                 WriteFile.WritePsmCrossToTsv(loopPsms, writtenFileLoop, 1);
                 FinishedWritingFile(writtenFileLoop, new List<string> { taskId });
             }
-            MyTaskResults.AddNiceText("Target loop-linked peptides within 1% FDR: " + loopPsms.Count(p => p.FdrInfo.QValue <= 0.01 && !p.IsDecoy));
+            MyTaskResults.AddTaskSummaryText("Target loop-linked peptides within 1% FDR: " + loopPsms.Count(p => p.FdrInfo.QValue <= 0.01 && !p.IsDecoy));
 
             // write deadends
             var deadendPsms = allPsms.Where(p => p.CrossType == PsmCrossType.DeadEnd
@@ -112,7 +112,7 @@ namespace TaskLayer
                 WriteFile.WritePsmCrossToTsv(deadendPsms, writtenFileDeadend, 1);
                 FinishedWritingFile(writtenFileDeadend, new List<string> { taskId });
             }
-            MyTaskResults.AddNiceText("Target deadend peptides within 1% FDR: " + deadendPsms.Count(p => p.FdrInfo.QValue <= 0.01 && !p.IsDecoy));
+            MyTaskResults.AddTaskSummaryText("Target deadend peptides within 1% FDR: " + deadendPsms.Count(p => p.FdrInfo.QValue <= 0.01 && !p.IsDecoy));
 
             // write pepXML
             if (xlSearchParameters.WritePepXml)
