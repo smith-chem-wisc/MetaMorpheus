@@ -122,6 +122,7 @@ namespace MetaMorpheusGUI
             cbCrosslinkers.SelectedItem = task.XlSearchParameters.Crosslinker;
             ckbXLTopNum.IsChecked = task.XlSearchParameters.RestrictToTopNHits;
             txtXLTopNum.Text = task.XlSearchParameters.CrosslinkSearchTopNum.ToString(CultureInfo.InvariantCulture);
+            ckbCrosslinkAtCleavageSite.IsChecked = task.XlSearchParameters.CrosslinkAtCleavageSite;
             ckbQuenchH2O.IsChecked = task.XlSearchParameters.XlQuench_H2O;
             ckbQuenchNH2.IsChecked = task.XlSearchParameters.XlQuench_NH2;
             ckbQuenchTris.IsChecked = task.XlSearchParameters.XlQuench_Tris;
@@ -246,6 +247,7 @@ namespace MetaMorpheusGUI
             //TheTask.XlSearchParameters.SearchGlycoWithBgYgIndex = CkbSearchGlycoWithBgYgIndex.IsChecked.Value;
             TheTask.XlSearchParameters.RestrictToTopNHits = ckbXLTopNum.IsChecked.Value;
             TheTask.XlSearchParameters.CrosslinkSearchTopNum = int.Parse(txtXLTopNum.Text, CultureInfo.InvariantCulture);
+            TheTask.XlSearchParameters.CrosslinkAtCleavageSite = ckbCrosslinkAtCleavageSite.IsChecked.Value;
             TheTask.XlSearchParameters.Crosslinker = (Crosslinker)cbCrosslinkers.SelectedItem;
 
 
