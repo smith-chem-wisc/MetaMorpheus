@@ -1,11 +1,4 @@
-﻿using Chemistry;
-using Proteomics.Fragmentation;
-using System;
-using System.Collections.Generic;
-using System.Globalization;
-using System.Linq;
-using System.Text.RegularExpressions;
-
+﻿
 namespace EngineLayer
 {
     public class PercolatorFeatures
