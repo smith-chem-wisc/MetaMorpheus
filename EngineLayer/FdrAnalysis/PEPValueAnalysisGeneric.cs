@@ -237,7 +237,7 @@ namespace EngineLayer
 
                 case "standard":
                 default:
-                    return new string[] { "HydrophobicityZScore", "Intensity", "ScanPrecursorCharge", "DeltaScore", "Notch", "PsmCount", "ModsCount", "MissedCleavagesCount", "Ambiguity", "LongestFragmentIonSeries" };
+                    return new string[] { "HydrophobicityZScore", "Intensity", "ScanPrecursorCharge", "DeltaScore", "Notch", "PsmCount", "ModsCount", "MissedCleavagesCount", "Ambiguity", "LongestFragmentIonSeries", "IsVariantPeptide" };
             }
         }
 
@@ -355,7 +355,7 @@ namespace EngineLayer
             {
                 hydrophobicityZscore = GetSSRCalcHydrophobicityZScore(psm, selectedPeptide, timeDependantHydrophobicityAverageAndDeviation_modified);
             }
-
+            bool isVariantPeptide = PeptideIsVariant(selectedPeptide);
             bool label;
             if (trueOrFalse != null)
             {
@@ -370,6 +370,8 @@ namespace EngineLayer
                 label = true;
             }
 
+            psm.SetPercolatorFeatures(intensity, charge, deltaScore, notch, psmCount, modCount, missedCleavages, ambiguity, longestSeq, hydrophobicityZscore, isVariantPeptide);
+
             return new PsmData()
             {
                 Intensity = intensity,
@@ -382,8 +384,26 @@ namespace EngineLayer
                 Ambiguity = ambiguity,
                 LongestFragmentIonSeries = longestSeq,
                 HydrophobicityZScore = hydrophobicityZscore,
+                IsVariantPeptide = Convert.ToSingle(isVariantPeptide),
                 Label = label
             };
+        }
+
+        private static bool PeptideIsVariant(PeptideWithSetModifications pwsm)
+        {
+            bool identifiedVariant = false;
+            if (pwsm.Protein.AppliedSequenceVariations.Count() > 0)
+            {
+                foreach (var variant in pwsm.Protein.AppliedSequenceVariations)
+                {
+                    if (pwsm.IntersectsAndIdentifiesVariation(variant).identifies)
+                    {
+                        identifiedVariant = true;
+                        break;
+                    }
+                }
+            }
+            return identifiedVariant;
         }
 
         /// <summary>

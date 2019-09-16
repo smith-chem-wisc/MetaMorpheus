@@ -63,6 +63,8 @@ namespace EngineLayer
         public int ScanIndex { get; }
         public int NumDifferentMatchingPeptides { get { return _BestMatchingPeptides.Count; } }
         public FdrInfo FdrInfo { get; private set; }
+        public PercolatorFeatures PercolatorFeatures { get; private set; }
+
         public double Score { get; private set; }
         public double Xcorr;
         public string NativeId; // this is a property of the scan. used for mzID writing
@@ -173,6 +175,24 @@ namespace EngineLayer
                 QValueNotch = qValueNotch,
                 PEP = pep,
                 PEP_QValue = pepQValue
+            };
+        }
+
+        public void SetPercolatorFeatures(float intensity, float scanPrecursorCharge, float deltaScore, float notch, float psmCount, float modsCount, float missedCleavagesCount, float ambiguity, float longestFragmentIonSeries, float hydrobphicityZscore, bool isVariantPeptide)
+        {
+            PercolatorFeatures = new PercolatorFeatures()
+            {
+                Intensity = intensity,
+                ScanPrecursorCharge = scanPrecursorCharge,
+                DeltaScore = deltaScore,
+                Notch = notch,
+                PsmCount = psmCount,
+                ModsCount = modsCount,
+                MissedCleavagesCount = missedCleavagesCount,
+                Ambiguity = ambiguity,
+                LongestFragmentIonSeries = longestFragmentIonSeries,
+                HydrophobicityZScore = hydrobphicityZscore,
+                IsVariantPeptide = isVariantPeptide
             };
         }
 
