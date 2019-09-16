@@ -232,7 +232,7 @@ namespace Test
             Dictionary<string, Dictionary<int, Tuple<double, double>>> fileSpecificRetTemHI_behaviorModifiedPeptides = new Dictionary<string, Dictionary<int, Tuple<double, double>>>();
 
             //average hydrophobicity, standard deviation hydrophobicity
-            Tuple<double, double> at = new Tuple<double, double>(33.0,1.0);
+            Tuple<double, double> at = new Tuple<double, double>(33.0, 1.0);
 
             Dictionary<int, Tuple<double, double>> HI_Time_avg_dev = new Dictionary<int, Tuple<double, double>>
             {
@@ -241,8 +241,9 @@ namespace Test
 
             fileSpecificRetTimeHI_behavior.Add(@"TestData\TaGe_SA_HeLa_04_subset_longestSeq.mzML", HI_Time_avg_dev);
 
+            string[] trainingVariables = new string[] { "HydrophobicityZScore", "Intensity", "ScanPrecursorCharge", "DeltaScore", "Notch", "PsmCount", "ModsCount", "MissedCleavagesCount", "Ambiguity", "LongestFragmentIonSeries", "IsVariantPeptide" };
 
-            var maxPsmData = PEP_Analysis.CreateOnePsmDataEntry(maxScorePsm, sequenceToPsmCount, fileSpecificRetTimeHI_behavior, fileSpecificRetTemHI_behaviorModifiedPeptides, null, "standard", null, !maxScorePsm.IsDecoy);
+            var maxPsmData = PEP_Analysis.CreateOnePsmDataEntry(maxScorePsm, sequenceToPsmCount, fileSpecificRetTimeHI_behavior, fileSpecificRetTemHI_behaviorModifiedPeptides, null, trainingVariables, null, !maxScorePsm.IsDecoy);
             Assert.That(maxScorePsm.PeptidesToMatchingFragments.Count, Is.EqualTo(maxPsmData.Ambiguity));
             Assert.That(maxScorePsm.DeltaScore, Is.EqualTo(maxPsmData.DeltaScore).Within(0.05));
             Assert.That((float)(maxScorePsm.Score - (int)maxScorePsm.Score), Is.EqualTo(maxPsmData.Intensity).Within(0.05));
@@ -265,6 +266,25 @@ namespace Test
                     trueCount++;
                 }
             }
+
+            List<PeptideSpectralMatch> moreNonNullPSMs = new List<PeptideSpectralMatch>();
+
+            for (int i = 0; i < 3; i++)
+            {
+                foreach (PeptideSpectralMatch psm in nonNullPsms)
+                {
+                    moreNonNullPSMs.Add(psm);
+                }
+            }
+
+            string expectedMetrics = "************************************************************\r\n*       Metrics for Determination of PEP Using Binary Classification      " +
+                "\r\n*-----------------------------------------------------------\r\n*       Accuracy:  1\r\n*       Area Under Curve:  1\r\n*       Area under Precision recall " +
+                "Curve:  1\r\n*       F1Score:  1\r\n*       LogLoss:  1.1593691482506E-06\r\n*       LogLossReduction:  0.999998216416681\r\n*       PositivePrecision:  1\r\n*       " +
+                "PositiveRecall:  1\r\n*       NegativePrecision:  1\r\n*       NegativeRecall:  1\r\n************************************************************\r\n";
+
+            string metrics = PEP_Analysis.ComputePEPValuesForAllPSMsGeneric(moreNonNullPSMs);
+
+            Assert.AreEqual(expectedMetrics, metrics);
 
             Assert.GreaterOrEqual(32, trueCount);
         }
