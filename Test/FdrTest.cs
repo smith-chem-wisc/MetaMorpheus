@@ -252,7 +252,7 @@ namespace Test
             Assert.That(maxScorePsm.BestMatchingPeptides.Select(p => p.Peptide).First().AllModsOneIsNterminus.Values.Count(), Is.EqualTo(maxPsmData.ModsCount));
             Assert.That(maxScorePsm.Notch ?? 0, Is.EqualTo(maxPsmData.Notch));
             Assert.That(maxScorePsm.PsmCount, Is.EqualTo(maxPsmData.PsmCount));
-            Assert.That(maxScorePsm.ScanPrecursorCharge, Is.EqualTo(maxPsmData.ScanPrecursorCharge));
+            Assert.That(maxScorePsm.ScanPrecursorCharge, Is.EqualTo(maxPsmData.PrecursorChargeDiffToMode));
 
             PEP_Analysis.ComputePEPValuesForAllPSMsGeneric(nonNullPsms);
 

@@ -1128,28 +1128,31 @@ namespace TaskLayer
         {
             using (StreamWriter output = new StreamWriter(writtenFileForPercolator))
             {
-                output.WriteLine("SpecId\tLabel\tScanNr\tAmbiguity\tDeltaScore\tHydrophobicityZscore\tIntensity\tIsVariantPeptide\tLongestFragmentIonSeries\tMissedCleavagesCount\tModsCount\tNotch\tPsmCount\tScanPrecursorCharge\tPeptide\tProteins");
-                output.WriteLine("DefaultDirection\t-\t-\t-1\t1\t-1\t1\t-1\t1\t-1\t-1\t-1\t1\t-1\t\t");
+                string searchType;
+                if (psmList.Where(p => p != null).Count() > 0 && psmList[0].DigestionParams.Protease.Name != null && psmList[0].DigestionParams.Protease.Name == "top-down")
+                {
+                    searchType = "topDown";
+                }
+                else
+                {
+                    searchType = "standard";
+                }
+                string header = "SpecId\tLabel\tScanNr\t";
+                header = header + String.Join("\t", PsmData.trainingInfos[searchType]);
+                header = header + "\tPeptide\tProteins";
+
+                output.WriteLine(header);
+                output.WriteLine("DefaultDirection\t-\t-\t" + String.Join("\t", PsmData.assumedAttributeDirection.Values));
 
                 int idNumber = 0;
                 psmList.OrderByDescending(p => p.Score);
-                foreach (PeptideSpectralMatch psm in psmList.Where(p=>p.PercolatorFeatures != null))
+                foreach (PeptideSpectralMatch psm in psmList.Where(p => p.PsmData_forPEPandPercolator != null))
                 {
                     output.Write(idNumber.ToString());
                     idNumber++;
                     output.Write('\t' + (psm.IsDecoy ? -1 : 1).ToString());
                     output.Write('\t' + psm.ScanNumber.ToString());
-                    output.Write("\t" + psm.PercolatorFeatures.Ambiguity.ToString()
-                                + "\t" + psm.PercolatorFeatures.DeltaScore.ToString()
-                                + "\t" + psm.PercolatorFeatures.HydrophobicityZScore.ToString()
-                                + "\t" + psm.PercolatorFeatures.Intensity.ToString()
-                                + "\t" + Convert.ToSingle(psm.PercolatorFeatures.IsVariantPeptide).ToString()
-                                + "\t" + psm.PercolatorFeatures.LongestFragmentIonSeries.ToString()
-                                + "\t" + psm.PercolatorFeatures.MissedCleavagesCount.ToString()
-                                + "\t" + psm.PercolatorFeatures.ModsCount.ToString()
-                                + "\t" + psm.PercolatorFeatures.Notch.ToString()
-                                + "\t" + psm.PercolatorFeatures.PsmCount.ToString()
-                                + "\t" + psm.PercolatorFeatures.ScanPrecursorCharge.ToString());
+                    output.Write(psm.PsmData_forPEPandPercolator.ToString(searchType));
 
                     // HACKY: Ignores all ambiguity
                     var pwsm = psm.BestMatchingPeptides.First().Peptide;
