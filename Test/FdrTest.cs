@@ -243,7 +243,8 @@ namespace Test
 
             string[] trainingVariables = new string[] { "HydrophobicityZScore", "Intensity", "ScanPrecursorCharge", "DeltaScore", "Notch", "PsmCount", "ModsCount", "MissedCleavagesCount", "Ambiguity", "LongestFragmentIonSeries", "IsVariantPeptide" };
 
-            var maxPsmData = PEP_Analysis.CreateOnePsmDataEntry(maxScorePsm, sequenceToPsmCount, fileSpecificRetTimeHI_behavior, fileSpecificRetTemHI_behaviorModifiedPeptides, null, trainingVariables, null, !maxScorePsm.IsDecoy);
+            int chargeStateMode = 2;
+            var maxPsmData = PEP_Analysis.CreateOnePsmDataEntry(maxScorePsm, sequenceToPsmCount, fileSpecificRetTimeHI_behavior, fileSpecificRetTemHI_behaviorModifiedPeptides, chargeStateMode, null, trainingVariables, null, !maxScorePsm.IsDecoy);
             Assert.That(maxScorePsm.PeptidesToMatchingFragments.Count, Is.EqualTo(maxPsmData.Ambiguity));
             Assert.That(maxScorePsm.DeltaScore, Is.EqualTo(maxPsmData.DeltaScore).Within(0.05));
             Assert.That((float)(maxScorePsm.Score - (int)maxScorePsm.Score), Is.EqualTo(maxPsmData.Intensity).Within(0.05));
@@ -323,6 +324,54 @@ namespace Test
         {
             //TODO
             //This is hard becuase you have to have a big enough file to creat a model, enough peptides with the same exact score for the same scan, and enough differences in those ambiguous peptides that one or more get deleted after pepvalue comutation.
+        }
+
+        [Test]
+        public static void TestPsmData()
+        {
+            string searchType = "standard";
+            string[] trainingInfoStandard = PsmData.trainingInfos[searchType];
+            string[] expectedTrainingInfoStandard = new string[] { "Intensity", "PrecursorChargeDiffToMode", "DeltaScore", "Notch", "PsmCount", "ModsCount", "MissedCleavagesCount", "Ambiguity", "LongestFragmentIonSeries", "HydrophobicityZScore", "IsVariantPeptide" };
+            Assert.AreEqual(expectedTrainingInfoStandard, trainingInfoStandard);
+
+            searchType = "topDown";
+            string[] trainingInfoTopDown = PsmData.trainingInfos[searchType];
+            string[] expectedTrainingInfoTopDown = new string[] { "Intensity", "PrecursorChargeDiffToMode", "DeltaScore", "Notch", "PsmCount", "ModsCount", "Ambiguity", "LongestFragmentIonSeries" };
+            Assert.AreEqual(expectedTrainingInfoTopDown, trainingInfoTopDown);
+
+            List<string> positiveAttributes = new List<string>() { "Intensity", "PrecursorChargeDiffToMode", "DeltaScore", "PsmCount", "LongestFragmentIonSeries" };
+            List<string> negativeAttributes = new List<string>() { "Notch", "ModsCount", "MissedCleavagesCount", "Ambiguity", "HydrophobicityZScore", "IsVariantPeptide" };
+
+            foreach (string attribute in positiveAttributes)
+            {
+                Assert.AreEqual(1, PsmData.assumedAttributeDirection[attribute]);
+            }
+            foreach (string attribute in negativeAttributes)
+            {
+                Assert.AreEqual(-1, PsmData.assumedAttributeDirection[attribute]);
+            }
+
+            PsmData pd = new PsmData()
+            {
+                Intensity = 1,
+                PrecursorChargeDiffToMode = 2,
+                DeltaScore = 3,
+                Notch = 4,
+                PsmCount = 5,
+                ModsCount = 6,
+                MissedCleavagesCount = 7,
+                Ambiguity = 8,
+                LongestFragmentIonSeries = 9,
+                HydrophobicityZScore = 10,
+                IsVariantPeptide = 0,
+                Label = false
+            };
+
+            string standardToString = "\t1\t2\t3\t4\t5\t6\t7\t8\t9\t10\t0";
+            Assert.AreEqual(standardToString, pd.ToString("standard"));
+
+            string topDownToString = "\t1\t2\t3\t4\t5\t6\t8\t9";
+            Assert.AreEqual(topDownToString, pd.ToString("topDown"));
         }
     }
 }
