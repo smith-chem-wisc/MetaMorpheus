@@ -1,6 +1,7 @@
 ﻿using Microsoft.ML.Data;
 using System;
 using System.Collections.Generic;
+using System.Collections.Immutable;
 using System.Linq;
 using System.Text;
 
@@ -8,18 +9,18 @@ namespace EngineLayer.FdrAnalysis
 {
     public class PsmData
     {
-        protected static readonly Dictionary<string, string[]> trainingInfos = new Dictionary<string, string[]>
+        public static readonly IImmutableDictionary<string, string[]> trainingInfos = new Dictionary<string, string[]>
         {
             { "standard", new [] { "Intensity", "PrecursorChargeDiffToMode", "DeltaScore", "Notch", "PsmCount", "ModsCount", "MissedCleavagesCount", "Ambiguity", "LongestFragmentIonSeries", "HydrophobicityZScore", "IsVariantPeptide" } },
             { "topDown", new [] { "Intensity", "PrecursorChargeDiffToMode", "DeltaScore", "Notch", "PsmCount", "ModsCount", "Ambiguity", "LongestFragmentIonSeries" } }
-        };
+        }.ToImmutableDictionary();
 
         /// <summary>
         /// These are used for percolator. Trainer must be told the assumed direction for each attribute as it relates to being a true positive
         /// Here, a weight of 1 indicates that the probability of being true is for higher numbers in the set.
         /// A weight of -1 indicates that the probability of being true is for the lower numbers in the set.
         /// </summary>
-        public static readonly Dictionary<string, int> assumedAttributeDirection = new Dictionary<string, int> {
+        public static readonly IImmutableDictionary<string, int> assumedAttributeDirection = new Dictionary<string, int> {
             { "Intensity", 1 },
             { "PrecursorChargeDiffToMode", 1 },
             { "DeltaScore", 1 },
@@ -30,7 +31,7 @@ namespace EngineLayer.FdrAnalysis
             { "Ambiguity", -1 },
             { "LongestFragmentIonSeries", 1 },
             { "HydrophobicityZScore", -1 },
-            { "IsVariantPeptide",-1 } };
+            { "IsVariantPeptide",-1 } }.ToImmutableDictionary();
 
         public string ToString(string searchType)
         {
