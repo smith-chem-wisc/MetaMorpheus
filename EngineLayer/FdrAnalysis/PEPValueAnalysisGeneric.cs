@@ -337,7 +337,7 @@ namespace EngineLayer
             int notch = 0;
             if (trainingVariables.Contains("Notch"))
             {
-                notch = psm.Notch.Value;
+                notch = notchToUse;
             }
 
             if (selectedPeptide == null)
