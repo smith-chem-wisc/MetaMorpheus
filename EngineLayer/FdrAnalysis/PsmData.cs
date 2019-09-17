@@ -8,10 +8,10 @@ namespace EngineLayer.FdrAnalysis
 {
     public class PsmData
     {
-        public static Dictionary<string, string[]> trainingInfos = new Dictionary<string, string[]>
+        public static readonly Dictionary<string, string[]> trainingInfos = new Dictionary<string, string[]>
         {
-            { "standard", new string[] { "Intensity", "PrecursorChargeDiffToMode", "DeltaScore", "Notch", "PsmCount", "ModsCount", "MissedCleavagesCount", "Ambiguity", "LongestFragmentIonSeries", "HydrophobicityZScore", "IsVariantPeptide" } },
-            { "topDown", new string[] { "Intensity", "PrecursorChargeDiffToMode", "DeltaScore", "Notch", "PsmCount", "ModsCount", "Ambiguity", "LongestFragmentIonSeries" } }
+            { "standard", new [] { "Intensity", "PrecursorChargeDiffToMode", "DeltaScore", "Notch", "PsmCount", "ModsCount", "MissedCleavagesCount", "Ambiguity", "LongestFragmentIonSeries", "HydrophobicityZScore", "IsVariantPeptide" } },
+            { "topDown", new [] { "Intensity", "PrecursorChargeDiffToMode", "DeltaScore", "Notch", "PsmCount", "ModsCount", "Ambiguity", "LongestFragmentIonSeries" } }
         };
 
         /// <summary>
@@ -19,7 +19,7 @@ namespace EngineLayer.FdrAnalysis
         /// Here, a weight of 1 indicates that the probability of being true is for higher numbers in the set.
         /// A weight of -1 indicates that the probability of being true is for the lower numbers in the set.
         /// </summary>
-        public static Dictionary<string, int> assumedAttributeDirection = new Dictionary<string, int>() {
+        public static readonly Dictionary<string, int> assumedAttributeDirection = new Dictionary<string, int> {
             { "Intensity", 1 },
             { "PrecursorChargeDiffToMode", 1 },
             { "DeltaScore", 1 },

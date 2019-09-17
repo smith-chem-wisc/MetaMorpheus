@@ -241,7 +241,7 @@ namespace Test
 
             fileSpecificRetTimeHI_behavior.Add(@"TestData\TaGe_SA_HeLa_04_subset_longestSeq.mzML", HI_Time_avg_dev);
 
-            string[] trainingVariables = new string[] { "HydrophobicityZScore", "Intensity", "ScanPrecursorCharge", "DeltaScore", "Notch", "PsmCount", "ModsCount", "MissedCleavagesCount", "Ambiguity", "LongestFragmentIonSeries", "IsVariantPeptide" };
+            string[] trainingVariables = new [] { "HydrophobicityZScore", "Intensity", "ScanPrecursorCharge", "DeltaScore", "Notch", "PsmCount", "ModsCount", "MissedCleavagesCount", "Ambiguity", "LongestFragmentIonSeries", "IsVariantPeptide" };
 
             int chargeStateMode = 4;
             var maxPsmData = PEP_Analysis.CreateOnePsmDataEntry(maxScorePsm, sequenceToPsmCount, fileSpecificRetTimeHI_behavior, fileSpecificRetTemHI_behaviorModifiedPeptides, chargeStateMode, null, trainingVariables, null, !maxScorePsm.IsDecoy);
@@ -331,16 +331,16 @@ namespace Test
         {
             string searchType = "standard";
             string[] trainingInfoStandard = PsmData.trainingInfos[searchType];
-            string[] expectedTrainingInfoStandard = new string[] { "Intensity", "PrecursorChargeDiffToMode", "DeltaScore", "Notch", "PsmCount", "ModsCount", "MissedCleavagesCount", "Ambiguity", "LongestFragmentIonSeries", "HydrophobicityZScore", "IsVariantPeptide" };
+            string[] expectedTrainingInfoStandard = new [] { "Intensity", "PrecursorChargeDiffToMode", "DeltaScore", "Notch", "PsmCount", "ModsCount", "MissedCleavagesCount", "Ambiguity", "LongestFragmentIonSeries", "HydrophobicityZScore", "IsVariantPeptide" };
             Assert.AreEqual(expectedTrainingInfoStandard, trainingInfoStandard);
 
             searchType = "topDown";
             string[] trainingInfoTopDown = PsmData.trainingInfos[searchType];
-            string[] expectedTrainingInfoTopDown = new string[] { "Intensity", "PrecursorChargeDiffToMode", "DeltaScore", "Notch", "PsmCount", "ModsCount", "Ambiguity", "LongestFragmentIonSeries" };
+            string[] expectedTrainingInfoTopDown = new [] { "Intensity", "PrecursorChargeDiffToMode", "DeltaScore", "Notch", "PsmCount", "ModsCount", "Ambiguity", "LongestFragmentIonSeries" };
             Assert.AreEqual(expectedTrainingInfoTopDown, trainingInfoTopDown);
 
-            List<string> positiveAttributes = new List<string>() { "Intensity", "PrecursorChargeDiffToMode", "DeltaScore", "PsmCount", "LongestFragmentIonSeries" };
-            List<string> negativeAttributes = new List<string>() { "Notch", "ModsCount", "MissedCleavagesCount", "Ambiguity", "HydrophobicityZScore", "IsVariantPeptide" };
+            List<string> positiveAttributes = new List<string> { "Intensity", "PrecursorChargeDiffToMode", "DeltaScore", "PsmCount", "LongestFragmentIonSeries" };
+            List<string> negativeAttributes = new List<string> { "Notch", "ModsCount", "MissedCleavagesCount", "Ambiguity", "HydrophobicityZScore", "IsVariantPeptide" };
 
             foreach (string attribute in positiveAttributes)
             {
@@ -351,7 +351,7 @@ namespace Test
                 Assert.AreEqual(-1, PsmData.assumedAttributeDirection[attribute]);
             }
 
-            PsmData pd = new PsmData()
+            PsmData pd = new PsmData
             {
                 Intensity = 1,
                 PrecursorChargeDiffToMode = 2,

@@ -301,6 +301,7 @@ namespace EngineLayer
             return pd.AsEnumerable();
         }
 
+
         /// <summary>
         ///
         /// </summary>
@@ -415,6 +416,11 @@ namespace EngineLayer
             return psm.PsmData_forPEPandPercolator;
         }
 
+        /// <summary>
+        /// This will go away with the next update of mzlib
+        /// </summary>
+        /// <param name="pwsm"></param>
+        /// <returns></returns>
         private static bool PeptideIsVariant(PeptideWithSetModifications pwsm)
         {
             bool identifiedVariant = false;
