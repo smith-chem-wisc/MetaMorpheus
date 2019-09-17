@@ -82,12 +82,38 @@ namespace EngineLayer.CrosslinkSearch
             }
         }
 
-        public static List<int> GetPossibleCrosslinkerModSites(char[] crosslinkerModSites, PeptideWithSetModifications peptide)
+        public static List<int> GetPossibleCrosslinkerModSites(char[] crosslinkerModSites, PeptideWithSetModifications peptide, InitiatorMethionineBehavior initiatorMethionineBehavior, bool CrosslinkAtCleavageSite)
         {
             List<int> possibleXlPositions = new List<int>();
             bool wildcard = crosslinkerModSites.Any(p => p == 'X');
 
-            for (int r = 0; r < peptide.BaseSequence.Length; r++)
+            //Consider the possibility that the site is at Protein N terminal. 
+            if (crosslinkerModSites.Contains(peptide.BaseSequence[0]))
+            {
+                if (!CrosslinkAtCleavageSite)
+                {
+                    if (peptide.OneBasedStartResidueInProtein == 1
+                || (peptide.OneBasedStartResidueInProtein == 2 && initiatorMethionineBehavior != InitiatorMethionineBehavior.Retain)
+                || peptide.Protein.ProteolysisProducts.Any(x => x.OneBasedBeginPosition == peptide.OneBasedStartResidueInProtein))
+                    {
+                        possibleXlPositions.Add(1);
+                    }
+                }
+                else
+                {
+                    possibleXlPositions.Add(1);
+                }
+            }
+
+
+            List<int> range = Enumerable.Range(1, peptide.BaseSequence.Length - 1).ToList();
+            if (!CrosslinkAtCleavageSite && peptide.OneBasedEndResidueInProtein != peptide.Protein.Length 
+                && !peptide.Protein.ProteolysisProducts.Any(x => x.OneBasedEndPosition == peptide.OneBasedEndResidueInProtein))
+            {
+                //The N terminal and C termial cannot be crosslinked and cleaved.
+                range = Enumerable.Range(1, peptide.BaseSequence.Length - 2).ToList();
+            }
+            foreach (var r in range)
             {
                 if (crosslinkerModSites.Contains(peptide.BaseSequence[r]) || wildcard)
                 {
@@ -96,12 +122,9 @@ namespace EngineLayer.CrosslinkSearch
                     {
                         possibleXlPositions.Add(r + 1);
                     }
-                    else if (peptide.OneBasedStartResidueInProtein == 0 && r == 0 && !peptide.AllModsOneIsNterminus.Keys.Contains(1))
-                    {
-                        possibleXlPositions.Add(r + 1);
-                    }
                 }
             }
+
             return possibleXlPositions;
         }
 

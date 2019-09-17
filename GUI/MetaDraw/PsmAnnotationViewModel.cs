@@ -294,7 +294,7 @@ namespace ViewModels
         {
             OxyColor ionColor;
 
-            if(psmToDraw.VariantCrossingIons.Contains(matchedIon))
+            if (psmToDraw.VariantCrossingIons.Contains(matchedIon))
             {
                 ionColor = variantCrossColor;
             }

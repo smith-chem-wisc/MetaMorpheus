@@ -5,12 +5,14 @@ TG   K or N
 PP   Anywhere.
 CF   O1
 MT   Common Biological
+DR   Unimod; 35.
 //
 ID   Carboxylation
 TG   K or D or E
 PP   Anywhere.
 MT   Common Biological
 CF   C1 O2
+DR   Unimod; 299.
 //
 ID   Phosphorylation
 TG   S or T
@@ -18,6 +20,7 @@ PP   Anywhere.
 NL   HCD:H0 or HCD:H3 O4 P1
 MT   Common Biological
 CF   H1 O3 P1
+DR   Unimod; 21.
 //
 ID   Phosphorylation
 TG   Y
@@ -26,12 +29,14 @@ NL   HCD:H0 or HCD:H3 O4 P1
 MT   Common Biological
 CF   H1 O3 P1
 DI   HCD:C8 H10 N1 O4 P1
+DR   Unimod; 21.
 //
 ID   Acetylation
 TG   X
 PP   N-terminal.
 MT   Common Biological
 CF   H2 C2 O1
+DR   Unimod; 1.
 //
 ID   Acetylation
 TG   K
@@ -40,6 +45,7 @@ MT   Common Biological
 NL   ETD:45.0204
 DI   HCD:C7 H11 N1 O1
 CF   H2 C2 O1
+DR   Unimod; 1.
 //
 ID   Formylation
 TG   K
@@ -47,18 +53,21 @@ PP   Anywhere.
 MT   Common Biological
 DI   HCD:111.068423533
 CF   C1 O1
+DR   Unimod; 122.
 //
 ID   Methylation
 TG   K or R
 PP   Anywhere.
 MT   Common Biological
 CF   H2 C
+DR   Unimod; 34.
 //
 ID   Dimethylation
 TG   K
 PP   Anywhere.
 MT   Common Biological
 CF   H4 C2
+DR   Unimod; 36.
 //
 ID   Dimethylation
 TG   R
@@ -67,6 +76,7 @@ NL   ETD:45.0579
 NL   ETD:31.0422
 MT   Common Biological
 CF   H4 C2
+DR   Unimod; 36.
 //
 ID   Trimethylation
 TG   K
@@ -74,6 +84,7 @@ PP   Anywhere.
 MT   Common Biological
 CF   H6 C3
 NL   ETD:45.0204
+DR   Unimod; 37.
 //
 ID   Sulfonation
 TG   Y
@@ -81,6 +92,7 @@ PP   Anywhere.
 NL   O3 S1
 MT   Common Biological
 CF   O3 S1
+DR   Unimod; 40.
 //
 ID   Citrullination
 TG   R
@@ -89,6 +101,7 @@ MT   Common Biological
 DI   HCD:129.090223533
 NL   HCD:43.0058
 CF   H-1 N-1 O1
+DR   Unimod; 7.
 //
 ID   Hydroxylation
 TG   P
@@ -96,6 +109,7 @@ PP   Anywhere.
 MT   Common Biological
 CF   O1
 DI   HCD:170.060123533
+DR   Unimod; 35.
 //
 ID   Nitrosylation
 TG   Y
@@ -103,6 +117,7 @@ PP   Anywhere.
 MT   Common Biological
 CF   H-1 N1 O2
 DI   HCD:180.053523533
+DR   Unimod; 354.
 //
 ID   Butyrylation
 TG   K
@@ -110,6 +125,7 @@ PP   Anywhere.
 MT   Common Biological
 DI   HCD:153.115323533
 CF   C4 H6 O1
+DR   Unimod; 1289.
 //
 ID   Crotonylation
 TG   K
@@ -117,6 +133,7 @@ PP   Anywhere.
 MT   Common Biological
 DI   HCD:151.099723533
 CF   C4 H4 O1
+DR   Unimod; 1363.
 //
 ID   Glutarylation
 TG   K
@@ -125,6 +142,7 @@ MT   Common Biological
 DI   HCD:181.110323533
 NL   ETD:115.0395
 CF   C5 H6 O3
+DR   Unimod; 1848.
 //
 ID   Hydroxybutyrylation
 TG   K
@@ -142,6 +160,7 @@ DI   HCD:169.073923533
 NL   HCD:43.9898
 NL   ETD:87.0082
 CF   C3 H2 O3
+DR   Unimod; 747.
 //
 ID   Succinylation
 TG   K
@@ -150,12 +169,14 @@ MT   Common Biological
 DI   HCD:183.089523533
 NL   ETD:101.0239
 CF   C4 H4 O3
+DR   Unimod; 64.
 //
 ID   Glu to PyroGlu
 TG   Q
 PP   N-terminal.
 MT   Common Biological
 CF   H-3 N-1
+DR   Unimod; 28.
 //
 ID   HexNAc
 TG   Nxs or Nxt
@@ -163,6 +184,7 @@ PP   Anywhere.
 NL   C8H13NO5
 CF   C8H13NO5
 MT   Common Biological
+DR   Unimod; 43.
 //
 ID   HexNAc
 TG   S or T
@@ -170,24 +192,28 @@ PP   Anywhere.
 NL   C8H13NO5
 CF   C8H13NO5
 MT   Common Biological
+DR   Unimod; 43.
 //
 ID   ADP-ribosylation
 TG   S
 PP   Anywhere.
 MT   Common Biological
 CF   C15 H21 N5 O13 P2
+DR   Unimod; 213.
 //
 ID   Pyridoxal phosphate
 TG   K
 PP   Anywhere.
 MT   Common Biological
 CF   C8 H8 N1 O5 P1
+DR   Unimod; 46.
 //
 ID   Nitrosylation
 TG   C
 PP   Anywhere.
 MT   Common Biological
 CF   H-1 N1 O1
+DR   Unimod; 275.
 //
 ################################## COMMON ARTIFACT MODS
 ID   Deamidation
@@ -195,36 +221,42 @@ TG   N or Q
 PP   Anywhere.
 MT   Common Artifact
 CF   H-1 N-1 O1
+DR   Unimod; 7.
 //
 ID   Ammonia loss
 TG   C
 PP   Peptide N-terminal.
 MT   Common Artifact
 CF   H-3 N-1
+DR   Unimod; 385.
 //
 ID   Ammonia loss
 TG   N
 PP   Anywhere.
 MT   Common Artifact
 CF   H-3 N-1
+DR   Unimod; 385.
 //
 ID   Water Loss
 TG   E
 PP   Peptide N-terminal.
 MT   Common Artifact
 CF   H-2 O-1
+DR   Unimod; 23.
 //
 ID   Carbamyl
 TG   X
 PP   Peptide N-terminal.
 MT   Common Artifact
 CF   H1 C1 N1 O1
+DR   Unimod; 5.
 //
 ID   Carbamyl
 TG   K or R or C or M
 PP   Anywhere.
 MT   Common Artifact
 CF   H1 C1 N1 O1
+DR   Unimod; 5.
 //
 ################################## LESS COMMON MODS
 ID   Proline pyrrole to pyrrolidine six member ring
@@ -238,60 +270,70 @@ TG   X
 PP   Peptide C-terminal.
 MT   Less Common
 CF   H1 N1 O-1
+DR   Unimod; 2.
 //
 ID   Propionamidation
 TG   C or K
 PP   Anywhere.
 MT   Less Common
 CF   H5 C3 N1 O1
+DR   Unimod; 24.
 //
 ID   Propionamidation
 TG   X
 PP   Peptide N-terminal.
 MT   Less Common
 CF   H5 C3 N1 O1
+DR   Unimod; 24.
 //
 ID   Carboxymethylation
 TG   X
 PP   Peptide N-terminal.
 MT   Less Common
 CF   H2 C2 O2
+DR   Unimod; 6.
 //
 ID   Carboxymethylation
 TG   C or K or W
 PP   Anywhere.
 MT   Less Common
 CF   H2 C2 O2
+DR   Unimod; 6.
 //
 ID   Dioxidation
 TG   W or P or R or K or M or F or Y or C
 PP   Anywhere.
 MT   Less Common
 CF   O2
+DR   Unimod; 425.
 //
 ID   Oxidation
 TG   Y or W or F or D or E or V or H or R or C or U or I or L or Q or S or T
 PP   Anywhere.
 MT   Less Common
 CF   O1
+DR   Unimod; 35.
 //
 ID   Carbamidomethyl
 TG   K or H or D or E or S or T or Y
 PP   Anywhere.
 MT   Less Common
 CF   H3 C2 N1 O1
+DR   Unimod; 4.
 //
 ID   Carbamidomethyl
 TG   X
 PP   Peptide N-terminal.
 MT   Less Common
 CF   H3 C2 N1 O1
+DR   Unimod; 4.
 //
 ID   Acetylation
 TG   S or T
 PP   Anywhere.
 MT   Less Common
 CF   H2 C2 O1
+DR   Unimod; 1.
 //
 ID   Biotinylation
 TG   K
@@ -299,6 +341,7 @@ PP   Anywhere.
 MT   Less Common
 CF   C10 H14 N2 O2 S1
 DI   HCD:309.151123533
+DR   Unimod; 3.
 //
 ID   Propionylation
 TG   K
@@ -306,12 +349,14 @@ PP   Anywhere.
 MT   Less Common
 DI   HCD:139.099823533
 CF   C3 H4 O1
+DR   Unimod; 58.
 //
 ID   Water loss
 TG   D
 PP   Anywhere.
 MT   Less Common
 CF   H-2 O-1
+DR   Unimod; 23.
 //
 ID   Oxidation to Kynurenine
 TG   W
@@ -319,12 +364,14 @@ PP   Anywhere.
 MT   Less Common
 DI   HCD:C9 H10 N2 O3
 CF   C-1 O1
+DR   Unimod; 351.
 //
 ID   Dehydroalanine
 TG   C
 PP   Anywhere.
 MT   Less Common
 CF   H-2 S-1
+DR   Unimod; 368.
 //
 ID   Dehydroalanine
 TG   S
@@ -343,78 +390,84 @@ TG   Y
 PP   Anywhere.
 MT   Less Common
 CF   H-2
+DR   Unimod; 401.
 //
 ID   Formylation
 TG   X
 PP   Peptide N-terminal.
 MT   Less Common
 CF   C1 O1
+DR   Unimod; 122.
 //
 ID   Formylation
 TG   S or T
 PP   Anywhere.
 MT   Less Common
 CF   C1 O1
+DR   Unimod; 122.
 //
 ID   Methylation
 TG   C or H or N or Q or I or L or D or E or S or T
 PP   Anywhere.
 MT   Less Common
 CF   H2 C
+DR   Unimod; 34.
 //
 ID   Methylation
 TG   X
 PP   N-terminal.
 MT   Less Common
 CF   H2 C
+DR   Unimod; 34.
 //
 ID   Methylation
 TG   X
 PP   C-terminal.
 MT   Less Common
 CF   H2 C
+DR   Unimod; 34.
 //
 ID   Ethylation
 TG   K or E or D
 PP   Anywhere.
 MT   Less Common
 CF   H4 C2
+DR   Unimod; 280.
 //
 ID   Ethylation
 TG   X
 PP   Peptide N-terminal.
 MT   Less Common
 CF   H4 C2
+DR   Unimod; 280.
 //
 ID   Oxidation and then loss of oxidized M side chain
 TG   M
 PP   Anywhere.
 MT   Less Common
 CF   H-4 C-1 S-1 O1
+DR   Unimod; 1914.
 //
 ID   Dimethylation
 TG   N
 PP   Anywhere.
 MT   Less Common
 CF   H4 C2
-//
-ID   Tryptophan oxidation to hydroxykynurenin
-TG   W
-PP   Anywhere.
-MT   Less Common
-CF   C-1 O2
+DR   Unimod; 36.
 //
 ID   Pyrrolidinone
 TG   P
 PP   Anywhere.
 MT   Less Common
 CF   H-2 C-1 O-1
+DR   Unimod; 360.
 //
 ID   Trioxidation
 TG   C
 PP   Anywhere.
 MT   Less Common
 CF   O3
+DR   Unimod; 345.
 //
 ID   Sulfonation
 TG   S or T
@@ -422,6 +475,7 @@ PP   Anywhere.
 NL   O3 S1
 MT   Less Common
 CF   O3 S1
+DR   Unimod; 40.
 //
 ID   Farnesylation
 TG   C
@@ -429,12 +483,14 @@ PP   Anywhere.
 NL   H0 or H24 C15
 MT   Less Common
 CF   H24 C15
+DR   Unimod; 44.
 //
 ID   Succinylation
 TG   X
 PP   N-terminal.
 MT   Less Common
 CF   C4 H4 O3
+DR   Unimod; 64.
 //
 ID   Myristoylation
 TG   G
@@ -456,24 +512,28 @@ MT   Less Common
 PP   Anywhere.
 NL   H0 or H30 C16 O1
 CF   H30 C16 O1
+DR   Unimod; 47.
 //
 ID   Quinone
 TG   Y or W
 MT   Less Common
 PP   Anywhere.
 CF   H-2 O2 
+DR   Unimod; 392.
 //
 ID   Decarboxylation
 TG   D or E
 PP   Anywhere.
 MT   Less Common
 CF   H-2 C-1 O-1
+DR   Unimod; 914.
 //
 ID   Reduction
 TG   D or S or T
 PP   Anywhere.
 MT   Less Common
 CF   O-1
+DR   Unimod; 447.
 //
 ################################## METALS
 ID   Sodium
@@ -481,48 +541,56 @@ TG   D or E
 PP   Anywhere.
 MT   Metal
 CF   H-1 Na1
+DR   Unimod; 30.
 //
 ID   Potassium
 TG   D or E
 PP   Anywhere.
 MT   Metal
 CF   H-1 K1
+DR   Unimod; 530.
 //
 ID   Calcium
 TG   D or E
 PP   Anywhere.
 MT   Metal
 CF   H-2 Ca1
+DR   Unimod; 951.
 //
 ID   Zinc
 TG   D or E
 PP   Anywhere.
 MT   Metal
 CF   H-2 Zn1
+DR   Unimod; 954.
 //
 ID   Fe[III]
 TG   D or E
 PP   Anywhere.
 MT   Metal
 CF   H-3 Fe1
+DR   Unimod; 1870.
 //
 ID   Fe[II]
 TG   D or E
 PP   Anywhere.
 MT   Metal
 CF   H-2 Fe1
+DR   Unimod; 952.
 //
 ID   Magnesium
 TG   D or E
 PP   Anywhere.
 MT   Metal
 CF   H-2 Mg1
+DR   Unimod; 956.
 //
 ID   Cu[I]
 TG   D or E
 PP   Anywhere.
 MT   Metal
 CF   H-1 Cu1
+DR   Unimod; 531.
 //
 ################################## PROTEASE-SPECIFIC
 ID   GG (Ubiquitination Site)
