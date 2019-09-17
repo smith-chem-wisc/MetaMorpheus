@@ -210,7 +210,7 @@ namespace Test
             var nonNullPsmsOriginalCopy = allPsmsArray.Where(p => p != null).ToList();
 
             var maxScore = nonNullPsms.Select(n => n.Score).Max();
-            var maxScorePsm = nonNullPsms.Where(n => n.Score == maxScore).First();
+            PeptideSpectralMatch maxScorePsm = nonNullPsms.Where(n => n.Score == maxScore).First();
 
             Dictionary<string, int> sequenceToPsmCount = new Dictionary<string, int>();
 
@@ -254,6 +254,8 @@ namespace Test
             Assert.That(maxScorePsm.Notch ?? 0, Is.EqualTo(maxPsmData.Notch));
             Assert.That(maxScorePsm.PsmCount, Is.EqualTo(maxPsmData.PsmCount));
             Assert.That(-Math.Abs(chargeStateMode - maxScorePsm.ScanPrecursorCharge), Is.EqualTo(maxPsmData.PrecursorChargeDiffToMode));
+            Assert.AreEqual((float)0, maxPsmData.IsVariantPeptide);
+
 
             PEP_Analysis.ComputePEPValuesForAllPSMsGeneric(nonNullPsms);
 
@@ -284,10 +286,38 @@ namespace Test
                 "PositiveRecall:  1\r\n*       NegativePrecision:  1\r\n*       NegativeRecall:  1\r\n************************************************************\r\n";
 
             string metrics = PEP_Analysis.ComputePEPValuesForAllPSMsGeneric(moreNonNullPSMs);
-
             Assert.AreEqual(expectedMetrics, metrics);
-
             Assert.GreaterOrEqual(32, trueCount);
+
+            //Test Variant Peptide as Input is identified as such as part of PEP calculation input much of the next several lines simply necessry to create a psm.
+
+            var anMzSpectrum = new MzSpectrum(new double[] { 1, 1 }, new double[] { 2, 2 }, true);
+            Ms2ScanWithSpecificMass scan = new Ms2ScanWithSpecificMass(new MsDataScan(anMzSpectrum,1,1,true,Polarity.Negative,2,null, "", MZAnalyzerType.Orbitrap,2,null,null, null),1,1,"path",new CommonParameters());
+            Protein variantProtein = new Protein("MPEPPPTIDE", "protein3", sequenceVariations: new List<SequenceVariation> { new SequenceVariation(4, 6, "PPP", "P", @"1\t50000000\t.\tA\tG\t.\tPASS\tANN=G||||||||||||||||\tGT:AD:DP\t1/1:30,30:30", null) });
+            PeptideWithSetModifications varPep = variantProtein.GetVariantProteins().SelectMany(p => p.Digest(CommonParameters.DigestionParams,null, null)).FirstOrDefault();
+            PeptideSpectralMatch variantPSM = new PeptideSpectralMatch(varPep, 0, maxScorePsm.Score, maxScorePsm.ScanIndex, scan, new DigestionParams(), null);
+
+
+            sequenceToPsmCount = new Dictionary<string, int>();
+            sequences = new List<string>();
+            nonNullPsms.Add(variantPSM);
+            foreach (PeptideSpectralMatch psm in nonNullPsms)
+            {
+                var ss = psm.BestMatchingPeptides.Select(b => b.Peptide.FullSequence).ToList();
+                sequences.Add(String.Join("|", ss));
+            }
+
+            s = sequences.GroupBy(i => i);
+
+            foreach (var grp in s)
+            {
+                sequenceToPsmCount.Add(grp.Key, grp.Count());
+            }
+
+            PsmData variantPsmData = PEP_Analysis.CreateOnePsmDataEntry(variantPSM, sequenceToPsmCount, fileSpecificRetTimeHI_behavior, fileSpecificRetTemHI_behaviorModifiedPeptides, chargeStateMode, null, trainingVariables, null, !maxScorePsm.IsDecoy);
+
+            Assert.AreEqual((float)1, variantPsmData.IsVariantPeptide);
+
         }
 
         [Test]
