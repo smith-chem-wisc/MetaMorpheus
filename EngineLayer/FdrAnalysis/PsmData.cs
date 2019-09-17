@@ -8,7 +8,7 @@ namespace EngineLayer.FdrAnalysis
 {
     public class PsmData
     {
-        public static readonly Dictionary<string, string[]> trainingInfos = new Dictionary<string, string[]>
+        protected static readonly Dictionary<string, string[]> trainingInfos = new Dictionary<string, string[]>
         {
             { "standard", new [] { "Intensity", "PrecursorChargeDiffToMode", "DeltaScore", "Notch", "PsmCount", "ModsCount", "MissedCleavagesCount", "Ambiguity", "LongestFragmentIonSeries", "HydrophobicityZScore", "IsVariantPeptide" } },
             { "topDown", new [] { "Intensity", "PrecursorChargeDiffToMode", "DeltaScore", "Notch", "PsmCount", "ModsCount", "Ambiguity", "LongestFragmentIonSeries" } }

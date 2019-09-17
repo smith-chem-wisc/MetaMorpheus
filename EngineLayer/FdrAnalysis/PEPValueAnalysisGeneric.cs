@@ -277,17 +277,13 @@ namespace EngineLayer
         }
 
         //This method ignores ambiguity and loads only the first peptide in a series for each PSM
-        public static IEnumerable<PsmData> CreatePsmData(List<PeptideSpectralMatch> psms, Dictionary<string, int> sequenceToPsmCount, Dictionary<string, Dictionary<int, Tuple<double, double>>> timeDependantHydrophobicityAverageAndDeviation_unmodified,  Dictionary<string, Dictionary<int, Tuple<double, double>>> timeDependantHydrophobicityAverageAndDeviation_modified, int chargeStateMode, string[] trainingVariables, bool? trueOrFalse = null)
+        public static IEnumerable<PsmData> CreatePsmData(List<PeptideSpectralMatch> psms, Dictionary<string, int> sequenceToPsmCount, Dictionary<string, Dictionary<int, Tuple<double, double>>> timeDependantHydrophobicityAverageAndDeviation_unmodified, Dictionary<string, Dictionary<int, Tuple<double, double>>> timeDependantHydrophobicityAverageAndDeviation_modified, int chargeStateMode, string[] trainingVariables)
         {
             List<PsmData> pd = new List<PsmData>();
             foreach (PeptideSpectralMatch psm in psms)
             {
                 bool label;
-                if (trueOrFalse != null)
-                {
-                    label = trueOrFalse.Value;
-                }
-                else if (psm.IsDecoy || psm.FdrInfo.QValue > 0.25)
+                if (psm.IsDecoy || psm.FdrInfo.QValue > 0.25)
                 {
                     label = false;
                     pd.Add(CreateOnePsmDataEntry(psm, sequenceToPsmCount, timeDependantHydrophobicityAverageAndDeviation_unmodified, timeDependantHydrophobicityAverageAndDeviation_modified, chargeStateMode, null, trainingVariables, null, label));
@@ -300,7 +296,6 @@ namespace EngineLayer
             }
             return pd.AsEnumerable();
         }
-
 
         /// <summary>
         ///
@@ -397,7 +392,7 @@ namespace EngineLayer
                 label = true;
             }
 
-            psm.PsmData_forPEPandPercolator = new PsmData()
+            psm.PsmData_forPEPandPercolator = new PsmData
             {
                 Intensity = intensity,
                 PrecursorChargeDiffToMode = chargeDifference,
