@@ -243,7 +243,7 @@ namespace Test
 
             string[] trainingVariables = new string[] { "HydrophobicityZScore", "Intensity", "ScanPrecursorCharge", "DeltaScore", "Notch", "PsmCount", "ModsCount", "MissedCleavagesCount", "Ambiguity", "LongestFragmentIonSeries", "IsVariantPeptide" };
 
-            int chargeStateMode = 2;
+            int chargeStateMode = 4;
             var maxPsmData = PEP_Analysis.CreateOnePsmDataEntry(maxScorePsm, sequenceToPsmCount, fileSpecificRetTimeHI_behavior, fileSpecificRetTemHI_behaviorModifiedPeptides, chargeStateMode, null, trainingVariables, null, !maxScorePsm.IsDecoy);
             Assert.That(maxScorePsm.PeptidesToMatchingFragments.Count, Is.EqualTo(maxPsmData.Ambiguity));
             Assert.That(maxScorePsm.DeltaScore, Is.EqualTo(maxPsmData.DeltaScore).Within(0.05));
@@ -253,7 +253,7 @@ namespace Test
             Assert.That(maxScorePsm.BestMatchingPeptides.Select(p => p.Peptide).First().AllModsOneIsNterminus.Values.Count(), Is.EqualTo(maxPsmData.ModsCount));
             Assert.That(maxScorePsm.Notch ?? 0, Is.EqualTo(maxPsmData.Notch));
             Assert.That(maxScorePsm.PsmCount, Is.EqualTo(maxPsmData.PsmCount));
-            Assert.That(maxScorePsm.ScanPrecursorCharge, Is.EqualTo(maxPsmData.PrecursorChargeDiffToMode));
+            Assert.That(-Math.Abs(chargeStateMode - maxScorePsm.ScanPrecursorCharge), Is.EqualTo(maxPsmData.PrecursorChargeDiffToMode));
 
             PEP_Analysis.ComputePEPValuesForAllPSMsGeneric(nonNullPsms);
 
