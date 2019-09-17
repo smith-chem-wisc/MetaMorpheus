@@ -1148,6 +1148,11 @@ namespace TaskLayer
                 psmList.OrderByDescending(p => p.Score);
                 foreach (PeptideSpectralMatch psm in psmList.Where(p => p.PsmData_forPEPandPercolator != null))
                 {
+                    if (psm.FdrInfo.QValue > qValueCutoff || psm.FdrInfo.QValueNotch > qValueCutoff)
+                    {
+                        continue;
+                    }
+
                     output.Write(idNumber.ToString());
                     idNumber++;
                     output.Write('\t' + (psm.IsDecoy ? -1 : 1).ToString());
