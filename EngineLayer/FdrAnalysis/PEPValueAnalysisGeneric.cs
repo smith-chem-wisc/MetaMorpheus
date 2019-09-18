@@ -308,7 +308,7 @@ namespace EngineLayer
         /// <returns></returns>
         public static PsmData CreateOnePsmDataEntry(PeptideSpectralMatch psm, Dictionary<string, int> sequenceToPsmCount, Dictionary<string, Dictionary<int, Tuple<double, double>>> timeDependantHydrophobicityAverageAndDeviation_unmodified, Dictionary<string, Dictionary<int, Tuple<double, double>>> timeDependantHydrophobicityAverageAndDeviation_modified, int chargeStateMode, PeptideWithSetModifications selectedPeptide, string[] trainingVariables, int notchToUse)
         {
-            float ambiguity = 0;
+            float ambiguity = 1;
             if (trainingVariables.Contains("Ambiguity"))
             {
                 ambiguity = (float)psm.PeptidesToMatchingFragments.Keys.Count;
