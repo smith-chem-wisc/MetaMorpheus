@@ -154,12 +154,14 @@ namespace MetaMorpheusGUI
                 foreach (var d in dict)
                 {
                     column.Items.Add(new ColumnItem(d.Value, counter));
-                    category[counter] = d.Key;
+                    int spaceIndex = d.Key.IndexOf(' ');
+                    category[counter] = (plotType != 5 || spaceIndex < 0) ? d.Key : d.Key.Substring(0, spaceIndex) + "\n" + d.Key.Substring(spaceIndex);  // replace the first space with a newline for the PTM plot
                     counter++;
                 }
+                double labelAngle = plotType == 5 ? -50 : 0;
                 this.privateModel.Axes.Add(new CategoryAxis
                 {
-                    ItemsSource = category
+                    ItemsSource = category, Angle = labelAngle
                 });
                 privateModel.Series.Add(column);
             }
@@ -216,7 +218,14 @@ namespace MetaMorpheusGUI
                 case 1:
                     foreach (var psm in filteredList)
                     {
-                        xy.Add(new Tuple<double, double>(double.Parse(psm.MassDiffPpm), (double)psm.RetentionTime));
+                        if(psm.IdentifiedSequenceVariations == null || psm.IdentifiedSequenceVariations.Equals(""))
+                        {
+                            xy.Add(new Tuple<double, double>(double.Parse(psm.MassDiffPpm), (double)psm.RetentionTime));
+                        }
+                        else
+                        {
+                            variantxy.Add(new Tuple<double, double>(double.Parse(psm.MassDiffPpm), (double)psm.RetentionTime));
+                        }
                     }
                     break;
                 case 2:

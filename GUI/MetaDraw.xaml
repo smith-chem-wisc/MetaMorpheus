@@ -201,11 +201,11 @@
                         <!--Left area is for loading files, displaying plot types, etc-->
                         <Grid Grid.Column="0">
                             <Grid.RowDefinitions>
-                                <RowDefinition Height="5*"/>
+                                <RowDefinition Height="29"/>
                                 <RowDefinition Height="25"/>
-                                <RowDefinition Height="30"/>
-                                <RowDefinition Height="77*"/>
-                                <RowDefinition Height="5*"/>
+                                <RowDefinition Height="50*"/>
+                                <RowDefinition Height="40*"/>
+                                <RowDefinition Height="25"/>
                             </Grid.RowDefinitions>
 
                             <!--Select MetaMorpheus output file-->
@@ -223,8 +223,14 @@
 
                             <!--Select psms to display by source file-->
                             <DockPanel Grid.Row="2">
-                                <Label Content="Source file: " Width="70" VerticalAlignment="Center"/>
-                                <ComboBox x:Name="selectPsmSourceFileComboBox" VerticalAlignment="Center" DropDownClosed="selectPsmSourceFile_Closed"/>
+                                <Label Content="Source file(s): " Width="80" VerticalAlignment="Top"/>
+                                <DockPanel VerticalAlignment="Top">
+                                    <DockPanel DockPanel.Dock="Bottom">
+                                        <Button x:Name="selectAllSourceFiles" HorizontalAlignment="Left" Content="Select all" Click="selectAllSourceFiles_Click"/>
+                                        <Button x:Name="deselectAllSourceFiles" HorizontalAlignment="Right" Content="Deselect all" Click="deselectAllSourceFiles_Click"/>
+                                    </DockPanel>
+                                    <ListBox x:Name="selectSourceFileListBox" ItemsSource="{Binding}" SelectionMode="Multiple" SelectionChanged="selectSourceFileListBox_SelectionChanged" ScrollViewer.VerticalScrollBarVisibility="Visible"/>
+                                </DockPanel>
                             </DockPanel>
 
                             <!--List of plot options-->

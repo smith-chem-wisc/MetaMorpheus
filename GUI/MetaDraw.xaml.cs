@@ -36,6 +36,7 @@ namespace MetaMorpheusGUI
         private readonly ObservableCollection<PsmFromTsv> allPsms; // all loaded PSMs
         private readonly ObservableCollection<PsmFromTsv> filteredListOfPsms; // this is the filtered list of PSMs to display (after q-value filter, etc.)
         private readonly Dictionary<string, ObservableCollection<PsmFromTsv>> psmsBySourceFile;  // filtered PSMs grouped by the "file name" field
+        private ObservableCollection<string> sourceFilesList;
         ICollectionView peptideSpectralMatchesView;
         private readonly DataTable propertyView;
         private string spectraFilePath;
@@ -60,6 +61,8 @@ namespace MetaMorpheusGUI
             allPsms = new ObservableCollection<PsmFromTsv>();
             filteredListOfPsms = new ObservableCollection<PsmFromTsv>();
             psmsBySourceFile = new Dictionary<string, ObservableCollection<PsmFromTsv>>();
+            sourceFilesList = new ObservableCollection<string>();
+            selectSourceFileListBox.DataContext = sourceFilesList;
             propertyView = new DataTable();
             propertyView.Columns.Add("Name", typeof(string));
             propertyView.Columns.Add("Value", typeof(string));
@@ -182,7 +185,7 @@ namespace MetaMorpheusGUI
         private void GroupPsmsBySourceFile()
         {
             psmsBySourceFile.Clear();
-            selectPsmSourceFileComboBox.Items.Clear();
+            sourceFilesList.Clear();
 
             foreach (PsmFromTsv psm in filteredListOfPsms)
             {
@@ -193,7 +196,7 @@ namespace MetaMorpheusGUI
                 else
                 {
                     psmsBySourceFile.Add(psm.Filename, new ObservableCollection<PsmFromTsv> { psm });
-                    selectPsmSourceFileComboBox.Items.Add(psm.Filename);
+                    sourceFilesList.Add(psm.Filename);
                 }
             }
         }
@@ -710,13 +713,21 @@ namespace MetaMorpheusGUI
                 MessageBox.Show("There are no PSMs to analyze.\n\nLoad the current file or choose a new file.");
                 return;
             }
-            if (selectPsmSourceFileComboBox.SelectedItem == null)
+            if (selectSourceFileListBox.SelectedItems.Count == 0)
             {
                 MessageBox.Show("Please select a source file.");
                 return;
             }
-            string selectedSourceFile = (string)selectPsmSourceFileComboBox.SelectedItem;
-            PlotModelStat plot = await Task.Run(() => new PlotModelStat(plotName, psmsBySourceFile[selectedSourceFile]));
+
+            ObservableCollection<PsmFromTsv> psms = new ObservableCollection<PsmFromTsv>();
+            foreach (string fileName in selectSourceFileListBox.SelectedItems)
+            {
+                foreach (PsmFromTsv psm in psmsBySourceFile[fileName])
+                {
+                    psms.Add(psm);
+                }
+            }
+            PlotModelStat plot = await Task.Run(() => new PlotModelStat(plotName, psms));
             plotViewStat.DataContext = plot;
         }
 
@@ -729,13 +740,23 @@ namespace MetaMorpheusGUI
             }
         }
 
-        private void selectPsmSourceFile_Closed(object sender, EventArgs e)
+        private void selectSourceFileListBox_SelectionChanged(object sender, EventArgs e)
         {
             // refreshes the plot using the new source file
-            if (plotsListBox.SelectedIndex > -1 && selectPsmSourceFileComboBox.SelectedItem != null)
+            if (plotsListBox.SelectedIndex > -1 && selectSourceFileListBox.SelectedItems.Count != 0)
             {
                 PlotSelected(plotsListBox, null);
             }
+        }
+
+        private void selectAllSourceFiles_Click(object sender, RoutedEventArgs e)
+        {
+            selectSourceFileListBox.SelectAll();
+        }
+
+        private void deselectAllSourceFiles_Click(object sender, RoutedEventArgs e)
+        {
+            selectSourceFileListBox.SelectedIndex = -1;
         }
     }
 }
