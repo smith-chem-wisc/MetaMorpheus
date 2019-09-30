@@ -758,5 +758,27 @@ namespace MetaMorpheusGUI
         {
             selectSourceFileListBox.SelectedIndex = -1;
         }
+
+        // scales the font size down for the x axis labels of the PTM histogram when the window gets too small
+        private void PlotViewStat_SizeChanged(object sender, SizeChangedEventArgs e)
+        {
+            if(plotsListBox.SelectedItem != null && !plotsListBox.SelectedItem.ToString().Equals("Histogram of PTM Spectral Counts"))
+            {
+                return;
+            }
+            OxyPlot.Wpf.PlotView plot = sender as OxyPlot.Wpf.PlotView;
+            if(plot != null && plot.Model != null)
+            {
+                int count = (plot.Model.Series[0] as OxyPlot.Series.ColumnSeries).Items.Count;
+                if (plot.Model.Width / count < 18)
+                {
+                    plot.Model.DefaultXAxis.FontSize = plot.Model.DefaultFontSize * (plot.Model.Width / (count * 18));
+                }
+                else
+                {
+                    plot.Model.DefaultXAxis.FontSize = plot.Model.DefaultFontSize;
+                }
+            }
+        }
     }
 }

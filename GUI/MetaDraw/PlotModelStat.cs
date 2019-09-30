@@ -155,7 +155,7 @@ namespace MetaMorpheusGUI
                 {
                     column.Items.Add(new ColumnItem(d.Value, counter));
                     int spaceIndex = d.Key.IndexOf(' ');
-                    category[counter] = (plotType != 5 || spaceIndex < 0) ? d.Key : d.Key.Substring(0, spaceIndex) + "\n" + d.Key.Substring(spaceIndex);  // replace the first space with a newline for the PTM plot
+                    category[counter] = d.Key;
                     counter++;
                 }
                 double labelAngle = plotType == 5 ? -50 : 0;

@@ -262,7 +262,7 @@
 
                         <!--Plot-->
                         <GroupBox Grid.Column="2" Header="Plot">
-                            <oxy:PlotView Grid.Row="0" x:Name="plotViewStat" Model="{Binding Model}" FontSize="16" FontStretch="Expanded" BorderBrush="LightGray" Grid.ColumnSpan="2"/>
+                            <oxy:PlotView Grid.Row="0" x:Name="plotViewStat" Model="{Binding Model}" SizeChanged="PlotViewStat_SizeChanged" FontSize="16" FontStretch="Expanded" BorderBrush="LightGray" Grid.ColumnSpan="2"/>
                         </GroupBox>
                     </Grid>
                 </DockPanel>
