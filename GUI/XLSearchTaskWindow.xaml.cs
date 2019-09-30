@@ -122,6 +122,7 @@ namespace MetaMorpheusGUI
             cbCrosslinkers.SelectedItem = task.XlSearchParameters.Crosslinker;
             ckbXLTopNum.IsChecked = task.XlSearchParameters.RestrictToTopNHits;
             txtXLTopNum.Text = task.XlSearchParameters.CrosslinkSearchTopNum.ToString(CultureInfo.InvariantCulture);
+            ckbCrosslinkAtCleavageSite.IsChecked = task.XlSearchParameters.CrosslinkAtCleavageSite;
             ckbQuenchH2O.IsChecked = task.XlSearchParameters.XlQuench_H2O;
             ckbQuenchNH2.IsChecked = task.XlSearchParameters.XlQuench_NH2;
             ckbQuenchTris.IsChecked = task.XlSearchParameters.XlQuench_Tris;
@@ -246,6 +247,7 @@ namespace MetaMorpheusGUI
             //TheTask.XlSearchParameters.SearchGlycoWithBgYgIndex = CkbSearchGlycoWithBgYgIndex.IsChecked.Value;
             TheTask.XlSearchParameters.RestrictToTopNHits = ckbXLTopNum.IsChecked.Value;
             TheTask.XlSearchParameters.CrosslinkSearchTopNum = int.Parse(txtXLTopNum.Text, CultureInfo.InvariantCulture);
+            TheTask.XlSearchParameters.CrosslinkAtCleavageSite = ckbCrosslinkAtCleavageSite.IsChecked.Value;
             TheTask.XlSearchParameters.Crosslinker = (Crosslinker)cbCrosslinkers.SelectedItem;
 
 
@@ -407,6 +409,44 @@ namespace MetaMorpheusGUI
         private void OnClosing(object sender, CancelEventArgs e)
         {
             CustomFragmentationWindow.Close();
+        }
+        
+        private void NonSpecificUpdate(object sender, SelectionChangedEventArgs e)
+        {
+            const int maxLength = 25;
+            if (((Protease)proteaseComboBox.SelectedItem).Name.Contains("non-specific"))
+            {
+                MaxPeptideLengthTextBox.Text = maxLength.ToString();
+            }
+        }
+
+        private void NonSpecificUpdate(object sender, TextChangedEventArgs e)
+        {
+            if (((Protease)proteaseComboBox.SelectedItem).Name.Contains("non-specific"))
+            {
+                try
+                {
+                    TextBox textBox = (TextBox)sender;
+                    if (textBox.Name.Equals("MaxPeptideLengthTextBox")) //if maxPeptideLength was modified
+                    {
+                        if (!missedCleavagesTextBox.Text.Equals((Convert.ToInt32(MaxPeptideLengthTextBox.Text) - 1).ToString())) //prevents infinite loops
+                        {
+                            missedCleavagesTextBox.Text = (Convert.ToInt32(MaxPeptideLengthTextBox.Text) - 1).ToString();
+                        }
+                    }
+                    else //if missedCleavagesTextBox was modified
+                    {
+                        if (!MaxPeptideLengthTextBox.Text.Equals((Convert.ToInt32(missedCleavagesTextBox.Text) + 1).ToString())) //prevents infinite loops
+                        {
+                            MaxPeptideLengthTextBox.Text = (Convert.ToInt32(missedCleavagesTextBox.Text) + 1).ToString();
+                        }
+                    }
+                }
+                catch
+                {
+                    //if not an entry, don't update the other box.
+                }
+            }
         }
     }
 }

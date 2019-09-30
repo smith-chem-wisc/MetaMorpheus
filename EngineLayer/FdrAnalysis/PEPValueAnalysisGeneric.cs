@@ -14,6 +14,8 @@ namespace EngineLayer
 {
     public static class PEP_Analysis
     {
+        private static readonly double AbsoluteProbabilityThatDistinguishesPeptides = 0.05;
+
         public static string ComputePEPValuesForAllPSMsGeneric(List<PeptideSpectralMatch> psms)
         {
             string searchType = DetermineSearchType(psms);
@@ -59,8 +61,9 @@ namespace EngineLayer
             //
             //   seed:
             //     Seed for the random number generator used to select rows for the train-test split.
+            //     The seed, '42', is not random but fixed for consistancy. According to the supercomputer Deep Thought the answer to the question of life, the universe and everything was 42 (in Douglas Adam’s Hitchhikers Guide to the Galaxy).
 
-            TrainTestData trainTestSplit = mlContext.Data.TrainTestSplit(dataView, testFraction: 0.1);
+            TrainTestData trainTestSplit = mlContext.Data.TrainTestSplit(dataView, testFraction: 0.1, null, 42);
             IDataView trainingData = trainTestSplit.TrainSet;
             IDataView testData = trainTestSplit.TestSet;
 
@@ -99,7 +102,7 @@ namespace EngineLayer
 
                     for (int i = numberOfPredictions; i >= 0; i--)
                     {
-                        if (Math.Abs(highestPredictedPEPValue - pepValuePredictions[i]) > 0.000001)
+                        if (Math.Abs(highestPredictedPEPValue - pepValuePredictions[i]) > AbsoluteProbabilityThatDistinguishesPeptides)
                         {
                             indiciesOfPeptidesToRemove.Add(i);
                             pepValuePredictions.RemoveAt(i);

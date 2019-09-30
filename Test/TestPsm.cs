@@ -113,7 +113,7 @@ namespace Test
             string myDatabase = Path.Combine(TestContext.CurrentContext.TestDirectory, @"TestData\DbForPrunedDb.fasta");
             var listOfSortedms2Scans = MetaMorpheusTask.GetMs2Scans(myMsDataFile, null, new CommonParameters()).OrderBy(b => b.PrecursorMass).ToArray();
             PeptideSpectralMatch[] allPsmsArray = new PeptideSpectralMatch[listOfSortedms2Scans.Length];
-            new ClassicSearchEngine(allPsmsArray, listOfSortedms2Scans, variableModifications, fixedModifications, null, proteinList, searchModes, new CommonParameters(), new List<string>()).Run();
+            new ClassicSearchEngine(allPsmsArray, listOfSortedms2Scans, variableModifications, fixedModifications, null, null, null, proteinList, searchModes, new CommonParameters(), new List<string>()).Run();
 
             List<int> longestSeriesObserved = new List<int>();
             List<int> longestSeriesExpected = new List<int>() { 4, 3, 3, 8, 8, 10, 10, 5, 5, 7, 9, 4, 4, 7, 12, 7, 7, 7, 7, 5, 5, 5, 2, 2, 2, 2, 2, 2, 13, 13, 13, 13, 13, 13, 4, 4, 4, 4, 4, 4, 8, 8, 12, 12, 10, 10, 10, 10, 7, 7, 7, 7, 4, 4, 4, 9, 9, 9, 3, 3, 3, 3, 10, 3, 3, 12, 3, 2, 2, 2, 2, 2, 6, 6, 6, 3, 3, 3, 3, 3, 4, 4, 4, 4, 2, 2, 2, 2, 2, 10, 10, 5, 5, 3 };
