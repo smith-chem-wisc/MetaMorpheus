@@ -946,7 +946,7 @@ namespace TaskLayer
             List<PeptideSpectralMatch> FDRPsms = Parameters.AllPsms
                 .Where(p => p.FdrInfo.QValue <= CommonParameters.QValueOutputFilter
                 && p.FdrInfo.QValueNotch <= CommonParameters.QValueOutputFilter && p.BaseSequence != null).ToList();             
-            var possibleVariantPsms = FDRPsms.Where(p => p.BestMatchingPeptides.Any(pep => pep.Peptide.IsVariantPeptide() == true)).ToList();
+            var possibleVariantPsms = FDRPsms.Where(p => p.BestMatchingPeptides.Any(pep => pep.Peptide.IsVariantPeptide())).ToList();
                         
             if (!Parameters.SearchParameters.WriteDecoys)
             {
@@ -973,15 +973,8 @@ namespace TaskLayer
             foreach (var entry in variantPeptides)
             {
                 var pwsm = entry.BestMatchingPeptides;
-                var variantPeptide = true;
-                foreach (var pep in pwsm)
-                {                    
-                    if (pep.Peptide.IsVariantPeptide() == false)
-                    {
-                        variantPeptide = false;
-                    }
-                }
-                if (variantPeptide == true)
+                var nonVariantOption = pwsm.Any(p => p.Peptide.IsVariantPeptide() == false);
+                if (nonVariantOption == false)
                 {
                     confidentVariantPeps.Add(entry);
                 }
@@ -1004,14 +997,14 @@ namespace TaskLayer
             Dictionary<Protein, HashSet<SequenceVariation>> stopGainVariants = new Dictionary<Protein, HashSet<SequenceVariation>>();
             Dictionary<Protein, HashSet<SequenceVariation>> stopLossVariants = new Dictionary<Protein, HashSet<SequenceVariation>>();            
 
-            List<PeptideSpectralMatch> modifiedVariantPeptides = confidentVariantPeps.Where(p => p.ModsIdentified != null && p.ModsIdentified.Count() > 0 && p.FdrInfo.QValue <= 0.01 && p.FdrInfo.QValueNotch <= 0.01 && p.IsDecoy == false && p.IsContaminant ==false).ToList(); //modification can be on any AA in variant peptide
+            List<PeptideSpectralMatch> modifiedVariantPeptides = confidentVariantPeps.Where(p => p.ModsIdentified != null && p.ModsIdentified.Count > 0 && p.FdrInfo.QValue <= 0.01 && p.FdrInfo.QValueNotch <= 0.01 && !p.IsDecoy && !p.IsContaminant).ToList(); //modification can be on any AA in variant peptide
             List<PeptideSpectralMatch> modifiedVariantSitePeptides = new List<PeptideSpectralMatch>();// modification is speciifcally on the variant residue within the peptide
             foreach (var entry in modifiedVariantPeptides)
             {                
                 var variantPWSM = entry.BestMatchingPeptides.FirstOrDefault().Peptide;
                 var peptideMods = variantPWSM.AllModsOneIsNterminus.Values.ToList();                
                 var variantProteinModifications = variantPWSM.Protein.OneBasedPossibleLocalizedModifications.Where(k => k.Key >= variantPWSM.OneBasedStartResidueInProtein && k.Key <= variantPWSM.OneBasedEndResidueInProtein).ToList();
-                var variants = entry.BestMatchingPeptides.SelectMany(p => p.Peptide.Protein.AppliedSequenceVariations.Where(v => p.Peptide.IntersectsAndIdentifiesVariation(v).identifies == true).ToList()).ToList();
+                var variants = entry.BestMatchingPeptides.SelectMany(p => p.Peptide.Protein.AppliedSequenceVariations.Where(v => p.Peptide.IntersectsAndIdentifiesVariation(v).identifies)).ToList();
                 bool modifiedVariant = false;
                 foreach (var mod in variantProteinModifications)
                 {                    
@@ -1030,7 +1023,7 @@ namespace TaskLayer
             }
             foreach (var peptide in confidentVariantPeps)
             {
-                if (peptide.FdrInfo.QValue <= 0.01 && peptide.FdrInfo.QValueNotch <= 0.01 && peptide.IsDecoy == false && peptide.IsContaminant == false)
+                if (peptide.FdrInfo.QValue <= 0.01 && peptide.FdrInfo.QValueNotch <= 0.01 && !peptide.IsDecoy && !peptide.IsContaminant)
                 {
                     var variantPWSM = peptide.BestMatchingPeptides.FirstOrDefault();//TODO: expand to all peptide options not just the first
                     var variants = variantPWSM.Peptide.Protein.AppliedSequenceVariations;
@@ -1179,43 +1172,43 @@ namespace TaskLayer
             int SNVmissenseSites = 0;
             foreach (var entry in SNVmissenseVariants)
             {
-                SNVmissenseSites += entry.Value.Count();
+                SNVmissenseSites += entry.Value.Count;
             }
 
             int MNVmissenseSites = 0;
             foreach (var entry in MNVmissenseVariants)
             {
-                MNVmissenseSites += entry.Value.Count();
+                MNVmissenseSites += entry.Value.Count;
             }
 
             int insertionSites = 0;
             foreach (var entry in insertionVariants)
             {
-                insertionSites += entry.Value.Count();
+                insertionSites += entry.Value.Count;
             }
 
             int deletionSites = 0;
             foreach (var entry in deletionVariants)
             {
-                deletionSites += entry.Value.Count();
+                deletionSites += entry.Value.Count;
             }
 
             int frameshiftSites = 0;
             foreach (var entry in frameshiftVariants)
             {
-                frameshiftSites += entry.Value.Count();
+                frameshiftSites += entry.Value.Count;
             }
 
             int stopGainSites = 0;
             foreach (var entry in stopGainVariants)
             {
-                stopGainSites += entry.Value.Count();
+                stopGainSites += entry.Value.Count;
             }
 
             int stopLossSites = 0;
             foreach (var entry in stopLossVariants)
             {
-                stopLossSites += entry.Value.Count();
+                stopLossSites += entry.Value.Count;
             }
 
             int totalVariantSites = SNVmissenseSites + MNVmissenseSites+ insertionSites + deletionSites + frameshiftSites + stopGainSites + stopLossSites;          
@@ -1225,8 +1218,8 @@ namespace TaskLayer
             string[] variantResults = new string[25];
             variantResults[0] = "Variant Result Summary";
             variantResults[2] = "--------------------------------------------------";
-            variantResults[4] = "Number of potential variant containing peptides identified at 1% group FDR: " + variantPeptides.Where(p => p.IsDecoy ==false &&  p.IsContaminant ==false && p.FdrInfo.QValue <= 0.01 &&p.FdrInfo.QValueNotch <= 0.01).ToList().Count();
-            variantResults[5] = "Number of unqiuely identified variant peptides at 1% group FDR: " + confidentVariantPeps.Where(p => p.IsDecoy == false &&  p.IsContaminant == false && p.FdrInfo.QValue <= 0.01 && p.FdrInfo.QValueNotch <= 0.01).ToList().Count();
+            variantResults[4] = "Number of potential variant containing peptides identified at 1% group FDR: " + variantPeptides.Where(p => !p.IsDecoy &&  !p.IsContaminant && p.FdrInfo.QValue <= 0.01 &&p.FdrInfo.QValueNotch <= 0.01).ToList().Count;
+            variantResults[5] = "Number of unqiuely identified variant peptides at 1% group FDR: " + confidentVariantPeps.Where(p => !p.IsDecoy &&  !p.IsContaminant && p.FdrInfo.QValue <= 0.01 && p.FdrInfo.QValueNotch <= 0.01).ToList().Count;
             variantResults[6] = "Number of unique variants: " + totalVariantSites;
             variantResults[7] = "Number of SNV missense variant containing peptides at 1% group FDR: " + SNVmissenseCount;
             variantResults[8] = "Number of unique SNV missense variants: " + SNVmissenseSites;
@@ -1242,8 +1235,8 @@ namespace TaskLayer
             variantResults[18] = "Number of unique stop gain variants: " + stopGainSites;
             variantResults[19] = "Number of stop loss variant containing peptides at 1% group FDR: " + stopLossCount;
             variantResults[20] = "Number of unique stop loss variants: " + stopLossSites;            
-            variantResults[21] = "Number of variant peptides at 1% group FDR with unambiguous localized modifications: " + modifiedVariantPeptides.Count();
-            variantResults[22] = "Number of variant peptides at 1% group FDR with unambiguous localized modifications at the variant sites : " + modifiedVariantSitePeptides.Count();
+            variantResults[21] = "Number of variant peptides at 1% group FDR with unambiguous localized modifications: " + modifiedVariantPeptides.Count;
+            variantResults[22] = "Number of variant peptides at 1% group FDR with unambiguous localized modifications at the variant sites : " + modifiedVariantSitePeptides.Count;
             
             string filePath = Path.Combine(Parameters.OutputFolder, "VariantAnalysisResultSummary.txt");
             File.WriteAllLines(filePath, variantResults);
