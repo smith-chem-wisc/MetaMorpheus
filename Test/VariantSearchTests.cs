@@ -151,6 +151,7 @@ namespace Test
             task.SearchParameters.DecoyType = DecoyType.None;
 
             DbForTask noVariantDb = new DbForTask(Path.Combine(TestContext.CurrentContext.TestDirectory, @"TestNoVariantDb.xml"), false);
+            DbForTask ambigVariantDb = new DbForTask(Path.Combine(TestContext.CurrentContext.TestDirectory, @"TestVariantDb_ambiguous.xml"), false);
             DbForTask frameshiftVariantDb = new DbForTask(Path.Combine(TestContext.CurrentContext.TestDirectory, @"TestVariantDB_frameshift.xml"), false);
             DbForTask missenseVariantDb = new DbForTask(Path.Combine(TestContext.CurrentContext.TestDirectory, @"TestVariantDB_missense.xml"), false);
             DbForTask SNVmissenseVariantDb = new DbForTask(Path.Combine(TestContext.CurrentContext.TestDirectory, @"TestVariantDB_SNVmissense.xml"), false);
@@ -164,6 +165,7 @@ namespace Test
             string raw = Path.Combine(TestContext.CurrentContext.TestDirectory, @"TestVariantPep.mzML"); 
             
             EverythingRunnerEngine noVariants = new EverythingRunnerEngine(new List<(string, MetaMorpheusTask)> { ("NoVariantOutput", task) }, new List<string> { raw }, new List<DbForTask> { noVariantDb }, thisTaskOutputFolder);
+            EverythingRunnerEngine ambigVariant = new EverythingRunnerEngine(new List<(string, MetaMorpheusTask)> { ("VariantOutput_ambig", task) }, new List<string> { raw }, new List<DbForTask> { ambigVariantDb }, thisTaskOutputFolder);
             EverythingRunnerEngine frameshifVariants = new EverythingRunnerEngine(new List<(string, MetaMorpheusTask)> { ("VariantOutput_frameshift", task) }, new List<string> { raw }, new List<DbForTask> { frameshiftVariantDb }, thisTaskOutputFolder);
             EverythingRunnerEngine missenseVariants = new EverythingRunnerEngine(new List<(string, MetaMorpheusTask)> { ("VariantOutput_missense", task) }, new List<string> { raw }, new List<DbForTask> { missenseVariantDb }, thisTaskOutputFolder);
             EverythingRunnerEngine SNVmissenseVariants = new EverythingRunnerEngine(new List<(string, MetaMorpheusTask)> { ("VariantOutput_SNVmissense", task) }, new List<string> { raw }, new List<DbForTask> { SNVmissenseVariantDb }, thisTaskOutputFolder);
@@ -176,6 +178,7 @@ namespace Test
             
 
             noVariants.Run();
+            ambigVariant.Run();
             frameshifVariants.Run();
             missenseVariants.Run();
             SNVmissenseVariants.Run();
@@ -232,6 +235,28 @@ namespace Test
             Assert.AreEqual("Number of stop loss variant containing peptides at 1% FDR: 0", checkResults[19]);
             Assert.AreEqual("Number of unique stop loss variants: 0", checkResults[20]);            
             Assert.AreEqual("Number of variant peptides at 1% FDR with unambiguous localized modifications: 1", checkResults[21]);
+            Assert.AreEqual("Number of variant peptides at 1% FDR with unambiguous localized modifications at the variant sites : 0", checkResults[22]);
+
+            checkResults = File.ReadAllLines(Path.Combine(thisTaskOutputFolder, "VariantOutput_ambig", "VariantAnalysisResultSummary.txt"));
+
+            Assert.AreEqual("Number of potential variant containing peptides identified at 1% FDR: 1", checkResults[4]);
+            Assert.AreEqual("Number of unqiuely identified variant peptides at 1% FDR: 0", checkResults[5]);
+            Assert.AreEqual("Number of unique variants: 0", checkResults[6]);
+            Assert.AreEqual("Number of SNV missense variant containing peptides at 1% FDR: 0", checkResults[7]);
+            Assert.AreEqual("Number of unique SNV missense variants: 0", checkResults[8]);
+            Assert.AreEqual("Number of MNV missense variant containing peptides at 1% FDR: 0", checkResults[9]);
+            Assert.AreEqual("Number of unique MNV missense variants: 0", checkResults[10]);
+            Assert.AreEqual("Number of frameshift variant containing peptides at 1% FDR: 0", checkResults[11]);
+            Assert.AreEqual("Number of unique frameshift variants: 0", checkResults[12]);
+            Assert.AreEqual("Number of inframe insertion variant containing peptides at 1% FDR: 0", checkResults[13]);
+            Assert.AreEqual("Number of unique inframe insertion variants: 0", checkResults[14]);
+            Assert.AreEqual("Number of inframe deletion variant containing peptides at 1% FDR: 0", checkResults[15]);
+            Assert.AreEqual("Number of unique inframe deletion variants: 0", checkResults[16]);
+            Assert.AreEqual("Number of stop gain variant containing peptides at 1% FDR: 0", checkResults[17]);
+            Assert.AreEqual("Number of unique stop gain variants: 0", checkResults[18]);
+            Assert.AreEqual("Number of stop loss variant containing peptides at 1% FDR: 0", checkResults[19]);
+            Assert.AreEqual("Number of unique stop loss variants: 0", checkResults[20]);
+            Assert.AreEqual("Number of variant peptides at 1% FDR with unambiguous localized modifications: 0", checkResults[21]);
             Assert.AreEqual("Number of variant peptides at 1% FDR with unambiguous localized modifications at the variant sites : 0", checkResults[22]);
 
             checkResults = File.ReadAllLines(Path.Combine(thisTaskOutputFolder, "VariantOutput_missense", "VariantAnalysisResultSummary.txt"));

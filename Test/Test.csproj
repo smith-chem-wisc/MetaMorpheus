@@ -143,6 +143,9 @@
     <None Update="TestVariantDb.xml">
       <CopyToOutputDirectory>Always</CopyToOutputDirectory>
     </None>
+    <None Update="TestVariantDb_ambiguous.xml">
+      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+    </None>
     <None Update="TestVariantDb_conservativeDeletion.xml">
       <CopyToOutputDirectory>Always</CopyToOutputDirectory>
     </None>
