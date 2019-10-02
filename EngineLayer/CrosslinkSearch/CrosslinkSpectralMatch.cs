@@ -87,12 +87,12 @@ namespace EngineLayer.CrosslinkSearch
             List<int> possibleXlPositions = new List<int>();
             bool wildcard = crosslinkerModSites.Any(p => p == 'X');
 
-            List<int> range = Enumerable.Range(0, peptide.BaseSequence.Length - 1).ToList();
+            List<int> range = Enumerable.Range(0, peptide.BaseSequence.Length).ToList();
             if (!CrosslinkAtCleavageSite && peptide.OneBasedEndResidueInProtein != peptide.Protein.Length 
                 && !peptide.Protein.ProteolysisProducts.Any(x => x.OneBasedEndPosition == peptide.OneBasedEndResidueInProtein))
             {
-                //The N terminal and C termial cannot be crosslinked and cleaved.
-                range = Enumerable.Range(0, peptide.BaseSequence.Length - 2).ToList();
+                //The C termial cannot be crosslinked and cleaved.
+                range = Enumerable.Range(0, peptide.BaseSequence.Length - 1).ToList();
             }
             foreach (var r in range)
             {
