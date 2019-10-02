@@ -164,6 +164,9 @@
     <None Update="TestVariantDb_missense.xml">
       <CopyToOutputDirectory>Always</CopyToOutputDirectory>
     </None>
+    <None Update="TestVariantDb_SNVmissense.xml">
+      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+    </None>
     <None Update="TestVariantDb_stopGained.xml">
       <CopyToOutputDirectory>Always</CopyToOutputDirectory>
     </None>
