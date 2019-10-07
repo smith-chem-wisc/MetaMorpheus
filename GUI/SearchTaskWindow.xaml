@@ -344,12 +344,12 @@
                                     <ToolTip Content="Constructs protein groups according to the rule of maximum parsimony (Occam's razor)"  ToolTipService.ShowDuration="999999" ToolTipService.InitialShowDelay="500" />
                                 </ToolTipService.ToolTip>
                             </CheckBox>
-                            <CheckBox x:Name="CheckBoxNoOneHitWonders" Content="Require at least two peptides to identify protein" IsEnabled="{Binding IsChecked, ElementName=checkBoxParsimony}">
+                            <CheckBox x:Name="CheckBoxNoOneHitWonders" Content="Require at least two peptides to identify protein" IsEnabled="{Binding IsChecked, ElementName=CheckBoxParsimony}">
                                 <ToolTipService.ToolTip>
                                     <ToolTip Content="At least 2 peptides below 1% FDR are required to construct a target/contaminant protein group" ToolTipService.ShowDuration="999999" ToolTipService.InitialShowDelay="500" />
                                 </ToolTipService.ToolTip>
                             </CheckBox>
-                            <CheckBox x:Name="ModPepsAreUnique" Content="Treat modified peptides as different peptides" IsEnabled="{Binding IsChecked, ElementName=checkBoxParsimony}">
+                            <CheckBox x:Name="ModPepsAreUnique" Content="Treat modified peptides as different peptides" IsEnabled="{Binding IsChecked, ElementName=CheckBoxParsimony}">
                                 <ToolTipService.ToolTip>
                                     <ToolTip Content="Modified forms of a peptide base sequence are treated as different for the purposes of parsimony, protein group displays, peptide counts, etc"  ToolTipService.ShowDuration="999999" ToolTipService.InitialShowDelay="500" />
                                 </ToolTipService.ToolTip>
@@ -377,12 +377,12 @@
                             </RadioButton>
                             <CheckBox x:Name="CheckBoxQuantifyUnlabeledForSilac" 
                                       Content="Quantify unlabeled peptides/proteins" 
-                                      IsEnabled="{Binding IsChecked, ElementName=checkBoxSILAC}"
-                                      Visibility="{Binding IsChecked, ElementName=checkBoxSILAC, Converter={StaticResource bool2VisConverter}}"
+                                      IsEnabled="{Binding IsChecked, ElementName=CheckBoxSILAC}"
+                                      Visibility="{Binding IsChecked, ElementName=CheckBoxSILAC, Converter={StaticResource bool2VisConverter}}"
                                       Margin="20,0,0,0" 
                                       Click="CheckBoxQuantifyUnlabeledForSilac_Checked"
                                       />
-                            <Grid Visibility="{Binding IsChecked, ElementName=checkBoxSILAC, Converter={StaticResource bool2VisConverter}}">
+                            <Grid Visibility="{Binding IsChecked, ElementName=CheckBoxSILAC, Converter={StaticResource bool2VisConverter}}">
                                 <Grid.RowDefinitions>
                                     <RowDefinition Height="0" />
                                     <RowDefinition Height="80" />
@@ -397,25 +397,25 @@
                                     </DataGrid.Resources>
                                 </DataGrid>
                                 <StackPanel Orientation="Horizontal" HorizontalAlignment="Center" Grid.Row="2">
-                                    <Button x:Name="AddSilac" Content="Add Isotope Label" Click="AddSilac_Click" IsEnabled="{Binding IsChecked, ElementName=checkBoxSILAC}"/>
-                                    <Button x:Name="DeleteSilac" Content="Delete Label" Click="DeleteSilac_Click" IsEnabled="{Binding IsChecked, ElementName=checkBoxSILAC}" />
-                                    <Button x:Name="ClearSilac" Content="Clear" Click="ClearSilac_Click" IsEnabled="{Binding IsChecked, ElementName=checkBoxSILAC}"/>
+                                    <Button x:Name="AddSilac" Content="Add Isotope Label" Click="AddSilac_Click" IsEnabled="{Binding IsChecked, ElementName=CheckBoxSILAC}"/>
+                                    <Button x:Name="DeleteSilac" Content="Delete Label" Click="DeleteSilac_Click" IsEnabled="{Binding IsChecked, ElementName=CheckBoxSILAC}" />
+                                    <Button x:Name="ClearSilac" Content="Clear" Click="ClearSilac_Click" IsEnabled="{Binding IsChecked, ElementName=CheckBoxSILAC}"/>
                                 </StackPanel>
                             </Grid>
                             <StackPanel Orientation="Horizontal">
-                                <TextBox x:Name="PeakFindingToleranceTextBox"  PreviewTextInput="CheckIfNumber" Width="30" Height="20" IsEnabled="{Binding IsChecked, ElementName=checkBoxQuantification}">
+                                <TextBox x:Name="PeakFindingToleranceTextBox"  PreviewTextInput="CheckIfNumber" Width="30" Height="20" IsEnabled="{Binding IsChecked, ElementName=CheckBoxLFQ}">
                                     <ToolTipService.ToolTip>
                                         <ToolTip Content="PPM tolerance for MS1 (LFQ) peakfinding" ToolTipService.ShowDuration="999999" ToolTipService.InitialShowDelay="500" />
                                     </ToolTipService.ToolTip>
                                 </TextBox>
-                                <Label x:Name="peakFindingLabel" Content=" ppm peakfinding tolerance" IsEnabled="{Binding IsChecked, ElementName=checkBoxQuantification}" />
+                                <Label x:Name="peakFindingLabel" Content=" ppm peakfinding tolerance" IsEnabled="{Binding IsChecked, ElementName=CheckBoxLFQ}" />
                             </StackPanel>
-                            <CheckBox x:Name="CheckBoxMatchBetweenRuns" Content="Match between runs" IsEnabled="{Binding IsChecked, ElementName=checkBoxQuantification}">
+                            <CheckBox x:Name="CheckBoxMatchBetweenRuns" Content="Match between runs" IsEnabled="{Binding IsChecked, ElementName=CheckBoxLFQ}">
                                 <ToolTipService.ToolTip>
                                     <ToolTip Content="(LFQ) Use MS2 identifications from one run to quantify those same peptides in other runs where they were not identified" ToolTipService.ShowDuration="999999" ToolTipService.InitialShowDelay="500" />
                                 </ToolTipService.ToolTip>
                             </CheckBox>
-                            <CheckBox x:Name="CheckBoxNormalize" Content="Normalize quantification results" IsEnabled="{Binding IsChecked, ElementName=checkBoxQuantification}">
+                            <CheckBox x:Name="CheckBoxNormalize" Content="Normalize quantification results" IsEnabled="{Binding IsChecked, ElementName=CheckBoxLFQ}">
                                 <ToolTipService.ToolTip>
                                     <ToolTip Content="Use the 'Experimental Design' to normalize intensity values from FlashLFQ" ToolTipService.ShowDuration="999999" ToolTipService.InitialShowDelay="500" />
                                 </ToolTipService.ToolTip>
@@ -645,7 +645,7 @@
                                                         </Grid.ColumnDefinitions>
                                                         <StackPanel Grid.Column="1" Orientation="Horizontal">
                                                             <Label x:Name="numerOfDatabaseSearchesLabel" Content="Number of Database Partitions:" />
-                                                            <TextBox x:Name="NumberOfDatabaseSearchesTextBox" PreviewTextInput="CheckIfNumber" Width="45" ToolTipService.ShowDuration="999999" ToolTipService.InitialShowDelay="500"  IsEnabled="{Binding IsChecked, ElementName=classicSearchRadioButton, Converter={StaticResource InvertedBooleanConverter}}">
+                                                            <TextBox x:Name="NumberOfDatabaseSearchesTextBox" PreviewTextInput="CheckIfNumber" Width="45" ToolTipService.ShowDuration="999999" ToolTipService.InitialShowDelay="500"  IsEnabled="{Binding IsChecked, ElementName=ClassicSearchRadioButton, Converter={StaticResource InvertedBooleanConverter}}">
                                                                 <TextBox.ToolTip>
                                                                     <TextBlock>
                                                                 Splits indexed search modes (Modern, Semi-, Non-) into separate, smaller searches to reduce RAM requirements. More partitions means less RAM.
@@ -676,7 +676,7 @@
                                                     </TextBlock>
                                                 </CheckBox.ToolTip>
                                             </CheckBox>
-                                            <RadioButton x:Name="RadioButtonReverseDecoy" Content="Generate reversed decoys" GroupName="DecoyType" Margin="5 1 1 1" DockPanel.Dock="Top" IsEnabled="{Binding IsChecked, ElementName=checkBoxDecoy}" ToolTipService.ShowDuration="999999" ToolTipService.InitialShowDelay="500">
+                                            <RadioButton x:Name="RadioButtonReverseDecoy" Content="Generate reversed decoys" GroupName="DecoyType" Margin="5 1 1 1" DockPanel.Dock="Top" IsEnabled="{Binding IsChecked, ElementName=CheckBoxDecoy}" ToolTipService.ShowDuration="999999" ToolTipService.InitialShowDelay="500">
                                                 <RadioButton.ToolTip>
                                                     <TextBlock>
                                                     Generate decoy sequences by reversing the original sequences.
@@ -685,7 +685,7 @@
                                                     </TextBlock>
                                                 </RadioButton.ToolTip>
                                             </RadioButton>
-                                            <RadioButton x:Name="RadioButtonSlideDecoy" Content="Generate slided decoys" GroupName="DecoyType" Margin="5 1 1 1" DockPanel.Dock="Top" IsEnabled="{Binding IsChecked, ElementName=checkBoxDecoy}" ToolTipService.ShowDuration="999999" ToolTipService.InitialShowDelay="500">
+                                            <RadioButton x:Name="RadioButtonSlideDecoy" Content="Generate slided decoys" GroupName="DecoyType" Margin="5 1 1 1" DockPanel.Dock="Top" IsEnabled="{Binding IsChecked, ElementName=CheckBoxDecoy}" ToolTipService.ShowDuration="999999" ToolTipService.InitialShowDelay="500">
                                                 <RadioButton.ToolTip>
                                                     <TextBlock>
                                                     Generate decoy sequences via a non-random shuffle of the original sequences.
@@ -759,7 +759,7 @@
                                             </StackPanel>
                                             <StackPanel Orientation="Horizontal" Margin="5">
                                                 <Label x:Name="maxFragmentSize" Content="Max Fragment Mass (Da):" Width="146" />
-                                                <TextBox x:Name="MaxFragmentMassTextBox" PreviewTextInput="CheckIfNumber" Width="45" IsEnabled="{Binding IsChecked, ElementName=classicSearchRadioButton, Converter={StaticResource InvertedBooleanConverter}}" ToolTipService.ShowDuration="999999" ToolTipService.InitialShowDelay="500">
+                                                <TextBox x:Name="MaxFragmentMassTextBox" PreviewTextInput="CheckIfNumber" Width="45" IsEnabled="{Binding IsChecked, ElementName=ClassicSearchRadioButton, Converter={StaticResource InvertedBooleanConverter}}" ToolTipService.ShowDuration="999999" ToolTipService.InitialShowDelay="500">
                                                     <TextBox.ToolTip>
                                                         <TextBlock>
                                                         Indexed Search Only: Limits the maximum MS2 fragment mass to avoid rare crashes.
@@ -931,8 +931,8 @@
                                                 </ToolTipService.ToolTip>
                                             </CheckBox>
                                             <StackPanel Orientation="Horizontal">
-                                                <Label Content="Histogram bin width (Da):" IsEnabled="{Binding IsChecked, ElementName=checkBoxHistogramAnalysis}" />
-                                                <TextBox x:Name="HistogramBinWidthTextBox" PreviewTextInput="CheckIfNumber" Width="45" Height="20" IsEnabled="{Binding IsChecked, ElementName=checkBoxHistogramAnalysis}" />
+                                                <Label Content="Histogram bin width (Da):" IsEnabled="{Binding IsChecked, ElementName=CheckBoxHistogramAnalysis}" />
+                                                <TextBox x:Name="HistogramBinWidthTextBox" PreviewTextInput="CheckIfNumber" Width="45" Height="20" IsEnabled="{Binding IsChecked, ElementName=CheckBoxHistogramAnalysis}" />
                                             </StackPanel>
                                         </StackPanel>
                                     </GroupBox>
@@ -953,7 +953,7 @@
                                                     </TextBlock>
                                                 </ToolTipService.ToolTip>
                                             </CheckBox>
-                                            <DataGrid x:Name="ModSelectionGrid" AutoGenerateColumns = "false" ItemsSource="{Binding UpdateSourceTrigger=LostFocus, Mode=OneWay}" Visibility="{Binding prunedVisible, UpdateSourceTrigger=LostFocus}" IsEnabled="{Binding IsChecked, ElementName=writePrunedDBCheckBox}" IsReadOnly="False" AlternatingRowBackground="LightGray" AlternationCount="2">
+                                            <DataGrid x:Name="ModSelectionGrid" AutoGenerateColumns = "false" ItemsSource="{Binding UpdateSourceTrigger=LostFocus, Mode=OneWay}" Visibility="{Binding prunedVisible, UpdateSourceTrigger=LostFocus}" IsEnabled="{Binding IsChecked, ElementName=WritePrunedDBCheckBox}" IsReadOnly="False" AlternatingRowBackground="LightGray" AlternationCount="2">
                                                 <DataGrid.Columns>
                                                     <DataGridTextColumn Header="Mod Type"  Width="1*" Binding="{Binding ModName}" />
                                                     <DataGridTemplateColumn  Header=" Do not Write"  Width ="1*" IsReadOnly="False">
