@@ -877,6 +877,10 @@ namespace MetaMorpheusGUI
 
         private void OnClosing(object sender, CancelEventArgs e)
         {
+            SearchModifications.Timer.Tick -= new EventHandler(TextChangeTimerHandler);
+            // remove event handler from timer
+            // keeping it will trigger an exception because the closed window stops existing
+
             CustomFragmentationWindow.Close();
         }
 
