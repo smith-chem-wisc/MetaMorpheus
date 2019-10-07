@@ -1004,7 +1004,7 @@ namespace TaskLayer
                 var variantPWSM = entry.BestMatchingPeptides.FirstOrDefault().Peptide;
                 var peptideMods = variantPWSM.AllModsOneIsNterminus.Values.ToList();                
                 var variantProteinModifications = variantPWSM.Protein.OneBasedPossibleLocalizedModifications.Where(k => k.Key >= variantPWSM.OneBasedStartResidueInProtein && k.Key <= variantPWSM.OneBasedEndResidueInProtein).ToList();
-                var variants = entry.BestMatchingPeptides.SelectMany(p => p.Peptide.Protein.AppliedSequenceVariations.Where(v => p.Peptide.IntersectsAndIdentifiesVariation(v).identifies)).ToList();
+                var variants = entry.BestMatchingPeptides.FirstOrDefault().Peptide.Protein.AppliedSequenceVariations.Where(v => entry.BestMatchingPeptides.FirstOrDefault().Peptide.IntersectsAndIdentifiesVariation(v).identifies).ToList();
                 bool modifiedVariant = false;
                 foreach (var mod in variantProteinModifications)
                 {                    
