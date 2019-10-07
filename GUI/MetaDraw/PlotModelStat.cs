@@ -209,8 +209,8 @@ namespace MetaMorpheusGUI
         {
             ScatterSeries series = new ScatterSeries();
             ScatterSeries variantSeries = new ScatterSeries();  // used by plot 3 for variant contianing peptides
-            List<Tuple<double, double>> xy = new List<Tuple<double, double>>();
-            List<Tuple<double, double>> variantxy = new List<Tuple<double, double>>();  // used by plot 3 for variant containing peptides
+            List<Tuple<double, double, string>> xy = new List<Tuple<double, double, string>>();
+            List<Tuple<double, double, string>> variantxy = new List<Tuple<double, double, string>>();  // used by plot 3 for variant containing peptides
             var filteredList = allPsms.Where(p => !p.MassDiffDa.Contains("|") && Math.Round(double.Parse(p.MassDiffDa), 0) == 0).ToList();
             var test = allPsms.SelectMany(p => p.MatchedIons.Select(v => v.MassErrorPpm));
             switch (plotType)
@@ -220,11 +220,11 @@ namespace MetaMorpheusGUI
                     {
                         if(psm.IdentifiedSequenceVariations == null || psm.IdentifiedSequenceVariations.Equals(""))
                         {
-                            xy.Add(new Tuple<double, double>(double.Parse(psm.MassDiffPpm), (double)psm.RetentionTime));
+                            xy.Add(new Tuple<double, double, string>(double.Parse(psm.MassDiffPpm), (double)psm.RetentionTime, psm.FullSequence));
                         }
                         else
                         {
-                            variantxy.Add(new Tuple<double, double>(double.Parse(psm.MassDiffPpm), (double)psm.RetentionTime));
+                            variantxy.Add(new Tuple<double, double, string>(double.Parse(psm.MassDiffPpm), (double)psm.RetentionTime, psm.FullSequence));
                         }
                     }
                     break;
@@ -233,7 +233,7 @@ namespace MetaMorpheusGUI
                     {
                         foreach (var ion in psm.MatchedIons)
                         {
-                            xy.Add(new Tuple<double, double>((double)psm.RetentionTime, ion.MassErrorPpm));
+                            xy.Add(new Tuple<double, double, string>((double)psm.RetentionTime, ion.MassErrorPpm, psm.FullSequence));
                         }
                     }
                     break;
@@ -243,21 +243,21 @@ namespace MetaMorpheusGUI
                     {
                         if(psm.IdentifiedSequenceVariations == null || psm.IdentifiedSequenceVariations.Equals(""))
                         {
-                            xy.Add(new Tuple<double, double>(sSRCalc3.ScoreSequence(new PeptideWithSetModifications(psm.BaseSeq.Split('|')[0], null)), 
-                            (double)psm.RetentionTime));
+                            xy.Add(new Tuple<double, double, string>(sSRCalc3.ScoreSequence(new PeptideWithSetModifications(psm.BaseSeq.Split('|')[0], null)), 
+                            (double)psm.RetentionTime, psm.FullSequence));
                         }
                         else
                         {
-                            variantxy.Add(new Tuple<double, double>(sSRCalc3.ScoreSequence(new PeptideWithSetModifications(psm.BaseSeq.Split('|')[0], null)),
-                            (double)psm.RetentionTime));
+                            variantxy.Add(new Tuple<double, double, string>(sSRCalc3.ScoreSequence(new PeptideWithSetModifications(psm.BaseSeq.Split('|')[0], null)),
+                            (double)psm.RetentionTime, psm.FullSequence));
                         }
                     }
                     break;
             }
-            IOrderedEnumerable<Tuple<double, double>> sorted = xy.OrderBy(x => x.Item1);
+            IOrderedEnumerable<Tuple<double, double, string>> sorted = xy.OrderBy(x => x.Item1);
             foreach (var val in sorted)
             {
-                series.Points.Add(new ScatterPoint(val.Item2, val.Item1));
+                series.Points.Add(new ScatterPoint(val.Item2, val.Item1, tag: val.Item3));
             }
             series.MarkerFill = OxyColors.Blue;
             series.MarkerSize = 0.5;
@@ -266,15 +266,36 @@ namespace MetaMorpheusGUI
             // plot the variant containing peptides
             if (variantxy.Count != 0)
             {
-                IOrderedEnumerable<Tuple<double, double>> variantSorted = variantxy.OrderBy(x => x.Item1);
+                IOrderedEnumerable<Tuple<double, double, string>> variantSorted = variantxy.OrderBy(x => x.Item1);
                 foreach (var val in variantSorted)
                 {
-                    variantSeries.Points.Add(new ScatterPoint(val.Item2, val.Item1));
+                    variantSeries.Points.Add(new ScatterPoint(val.Item2, val.Item1, tag: val.Item3));
                 }
                 variantSeries.MarkerFill = OxyColors.DarkRed;
                 variantSeries.MarkerSize = 1.5;
                 privateModel.Series.Add(variantSeries);
             }
+            privateModel.Subtitle = "Select a point to get its sequence";
+            privateModel.MouseDown += PrivateModel_MouseDown;
+        }
+
+        // displays the full sequence of the clicked point in the subtitle for scatterplots
+        private void PrivateModel_MouseDown(object sender, OxyMouseDownEventArgs e)
+        {
+            if (e.HitTestResult == null)
+            {
+                return;
+            }
+            ScatterPoint clickedPoint = e.HitTestResult.Item as ScatterPoint;
+            string sequence = clickedPoint.Tag.ToString();
+
+            // limits sequence to 85 chars per line
+            for (int lines = sequence.Length / 85; lines > 0; lines--)
+            {
+                sequence = sequence.Insert(lines * 85, "\n");
+            }
+            privateModel.Subtitle = "Full sequence of peptide at (" + clickedPoint.X + ", " + clickedPoint.Y + "):\n" + sequence;
+            privateModel.InvalidatePlot(false);
         }
 
         // rounds a number to the nearest multiple of binsize, midpoints are rounded towards zero

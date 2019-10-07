@@ -762,7 +762,7 @@ namespace MetaMorpheusGUI
         // scales the font size down for the x axis labels of the PTM histogram when the window gets too small
         private void PlotViewStat_SizeChanged(object sender, SizeChangedEventArgs e)
         {
-            if(plotsListBox.SelectedItem != null && !plotsListBox.SelectedItem.ToString().Equals("Histogram of PTM Spectral Counts"))
+            if(plotsListBox.SelectedItem == null || !plotsListBox.SelectedItem.ToString().Equals("Histogram of PTM Spectral Counts"))
             {
                 return;
             }
