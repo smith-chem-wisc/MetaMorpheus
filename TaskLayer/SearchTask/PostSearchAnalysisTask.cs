@@ -970,6 +970,8 @@ namespace TaskLayer
 
             WritePsmsToTsv(variantPeptides,variantPeptideFile, Parameters.SearchParameters.ModsToWriteSelection);    
             
+            // if a potential variant peptide can be explained by a canonical protein seqeunce then should not be counted as a confident variant peptide
+            //because it is most probable that the peptide originated from the canonical protien.
             foreach (var entry in variantPeptides)
             {
                 var pwsm = entry.BestMatchingPeptides;
@@ -1058,7 +1060,7 @@ namespace TaskLayer
                                     else
                                     {
                                         SNVmissenseVariants.Add(variantPWSM.Peptide.Protein, new HashSet<SequenceVariation> { variant });
-                                    }
+                                    }                                    
                                 }
                                 else
                                 {
