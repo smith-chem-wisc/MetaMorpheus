@@ -74,7 +74,7 @@ namespace TaskLayer
                 WriteVariantResults();
             }
             WritePeptideResults(); // modifies the FDR results for PSMs, so do this last            
-                  
+
 
             return Parameters.SearchTaskResults;
         }
@@ -357,7 +357,7 @@ namespace TaskLayer
                     else //if turnover
                     {
                         //if it's possible that mixtures exist, then multiple labels must be removed
-                        if(turnoverWithMultipleLabels)
+                        if (turnoverWithMultipleLabels)
                         {
                             observedLabel = SilacConversions.GetRelevantLabelFromBaseSequence(unlabeledBaseSequence, allSilacLabels); //returns null if no label
                             lightPsm = observedLabel == null ? lightPsm : SilacConversions.GetSilacPsm(lightPsm, observedLabel);
@@ -942,7 +942,7 @@ namespace TaskLayer
         {
             Status("Writing variant peptide results...", Parameters.SearchTaskId);
             string variantPsmFile = Path.Combine(Parameters.OutputFolder, "VariantPSMs.psmtsv");
-            string variantPeptideFile = Path.Combine(Parameters.OutputFolder, "VariantPeptides.psmtsv");            
+            string variantPeptideFile = Path.Combine(Parameters.OutputFolder, "VariantPeptides.psmtsv");
             List<PeptideSpectralMatch> FDRPsms = Parameters.AllPsms
                 .Where(p => p.FdrInfo.QValue <= CommonParameters.QValueOutputFilter
                 && p.FdrInfo.QValueNotch <= CommonParameters.QValueOutputFilter && p.BaseSequence != null).ToList();             
@@ -1043,7 +1043,7 @@ namespace TaskLayer
                     bool stopLossIdentifed = false;
 
                     foreach (var variant in variants)
-                    {                       
+                    {
                         if (variantPWSM.Peptide.IntersectsAndIdentifiesVariation(variant).identifies == true)
                         {
                             if (culture.CompareInfo.IndexOf(variant.Description.Description, "missense_variant", CompareOptions.IgnoreCase) >= 0)
