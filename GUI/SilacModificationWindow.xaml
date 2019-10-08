@@ -148,7 +148,7 @@
                     <ToolTip Content="Multiplex experiments consist of two or more conditions that are pooled prior to MS analysis" />
                 </ToolTipService.ToolTip>
             </RadioButton>
-            <RadioButton x:Name="StartConditionRadioButton" Content="turnover experiment BEFORE 'day 0'" GroupName="SilacType" ToolTipService.ShowDuration="999999" ToolTipService.InitialShowDelay="500">
+            <!--<RadioButton x:Name="StartConditionRadioButton" Content="turnover experiment BEFORE 'day 0'" GroupName="SilacType" ToolTipService.ShowDuration="999999" ToolTipService.InitialShowDelay="500">
                 <RadioButton.ToolTip >
                     <TextBlock>
                         Turnover experiments consist of a start time (day 0) when media or food is switched to a different isotope and sample is collected at set time points.                                 
@@ -177,7 +177,7 @@
                         Ignoring amino acid recycling results in dramatically overestimated protein half-lives.
                     </TextBlock>
                 </RadioButton.ToolTip>
-            </RadioButton>
+            </RadioButton>-->
         </StackPanel>
         <!--Save/cancel buttons-->
         <StackPanel Orientation="Horizontal" HorizontalAlignment="Center" Grid.Row="5" Height="25" VerticalAlignment="Bottom">
