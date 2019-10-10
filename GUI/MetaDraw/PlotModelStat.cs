@@ -207,6 +207,8 @@ namespace MetaMorpheusGUI
 
         private void linePlot(int plotType)
         {
+            string yAxisTitle = "";
+            string xAxisTitle = "";
             ScatterSeries series = new ScatterSeries();
             ScatterSeries variantSeries = new ScatterSeries();  // used by plot 3 for variant contianing peptides
             List<Tuple<double, double, string>> xy = new List<Tuple<double, double, string>>();
@@ -216,6 +218,8 @@ namespace MetaMorpheusGUI
             switch (plotType)
             {
                 case 1:
+                    yAxisTitle = "Mass diff (ppm)";
+                    xAxisTitle = "Retention time";
                     foreach (var psm in filteredList)
                     {
                         if(psm.IdentifiedSequenceVariations == null || psm.IdentifiedSequenceVariations.Equals(""))
@@ -229,6 +233,8 @@ namespace MetaMorpheusGUI
                     }
                     break;
                 case 2:
+                    yAxisTitle = "Retention time";
+                    xAxisTitle = "Mass error (ppm)";
                     foreach (var psm in allPsms)
                     {
                         foreach (var ion in psm.MatchedIons)
@@ -238,6 +244,8 @@ namespace MetaMorpheusGUI
                     }
                     break;
                 case 3:
+                    yAxisTitle = "Predicted retention time";
+                    xAxisTitle = "Observed retention time";
                     SSRCalc3 sSRCalc3 = new SSRCalc3("A100", SSRCalc3.Column.A100);
                     foreach (var psm in allPsms)
                     {
@@ -261,6 +269,7 @@ namespace MetaMorpheusGUI
             }
             series.MarkerFill = OxyColors.Blue;
             series.MarkerSize = 0.5;
+            series.TrackerFormatString = "{1}: {2:0.###}\n{3}: {4:0.###}\nFull sequence: {Tag}";
             privateModel.Series.Add(series);
 
             // plot the variant containing peptides
@@ -273,29 +282,11 @@ namespace MetaMorpheusGUI
                 }
                 variantSeries.MarkerFill = OxyColors.DarkRed;
                 variantSeries.MarkerSize = 1.5;
+                variantSeries.TrackerFormatString = "Sequence variant\n{1}: {2:0.###}\n{3}: {4:0.###}\nFull sequence: {Tag}";
                 privateModel.Series.Add(variantSeries);
             }
-            privateModel.Subtitle = "Select a point to get its sequence";
-            privateModel.MouseDown += PrivateModel_MouseDown;
-        }
-
-        // displays the full sequence of the clicked point in the subtitle for scatterplots
-        private void PrivateModel_MouseDown(object sender, OxyMouseDownEventArgs e)
-        {
-            if (e.HitTestResult == null)
-            {
-                return;
-            }
-            ScatterPoint clickedPoint = e.HitTestResult.Item as ScatterPoint;
-            string sequence = clickedPoint.Tag.ToString();
-
-            // limits sequence to 85 chars per line
-            for (int lines = sequence.Length / 85; lines > 0; lines--)
-            {
-                sequence = sequence.Insert(lines * 85, "\n");
-            }
-            privateModel.Subtitle = "Full sequence of peptide at (" + clickedPoint.X + ", " + clickedPoint.Y + "):\n" + sequence;
-            privateModel.InvalidatePlot(false);
+            privateModel.Axes.Add(new LinearAxis() { Title = xAxisTitle, Position = AxisPosition.Bottom });
+            privateModel.Axes.Add(new LinearAxis() { Title = yAxisTitle, Position = AxisPosition.Left });
         }
 
         // rounds a number to the nearest multiple of binsize, midpoints are rounded towards zero
