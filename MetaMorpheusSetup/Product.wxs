@@ -335,9 +335,6 @@
       <Component Id="src_System.ValueTuple.dll" Guid="8B58D026-8C4C-401D-984D-C12790971FCF">
         <File Id="src_System.ValueTuple.dll" Name="System.ValueTuple.dll" Source="$(var.GUI_TargetDir)System.ValueTuple.dll" />
       </Component>
-      <Component Id="src_UnmanagedThermoHelperLayer.dll" Guid="1F730094-2C9B-4E82-963D-6A3522E903BE">
-        <File Id="src_UnmanagedThermoHelperLayer.dll" Name="UnmanagedThermoHelperLayer.dll" Source="$(var.GUI_TargetDir)UnmanagedThermoHelperLayer.dll" />
-      </Component>
     </ComponentGroup>
   </Fragment>
 
