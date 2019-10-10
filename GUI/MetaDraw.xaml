@@ -44,7 +44,8 @@
 
                             <!--Select spectra file-->
                             <DockPanel Grid.Row="0" LastChildFill="True" Grid.ColumnSpan="3" Margin="0 1 0 1">
-                                <Label Content="Spectra file: " Width="120" />
+                                <Label Content="Spectra file: " Width="70" />
+                                <Button Name="resetSpectraFileButton" Content="Reset" DockPanel.Dock="Right" IsEnabled="False" Width="40" Click="resetFilesButton_Click"/>
                                 <Button Name="selectSpectraFileButton" Content="Select" DockPanel.Dock="Right" Click="selectSpectraFileButton_Click" Width="40" />
                                 <Label BorderThickness="1">
                                     <TextBlock Name="spectraFileNameLabel" Text="None Selected" TextTrimming="CharacterEllipsis" />
@@ -53,7 +54,8 @@
 
                             <!--Select MetaMorpheus output file-->
                             <DockPanel Grid.Row="1" LastChildFill="True" Grid.ColumnSpan="3" Margin="0 1 0 1">
-                                <Label Content="PSM file: " Width="120" />
+                                <Label Content="PSM file: " Width="70" />
+                                <Button Name="resetPsmFileButton" Content="Reset" DockPanel.Dock="Right" IsEnabled="False" Width="40" Click="resetFilesButton_Click"/>
                                 <Button Name="selectPsmFileButton" Content="Select" DockPanel.Dock="Right" Click="selectPsmFileButton_Click" Width="40" />
                                 <Label BorderThickness="1">
                                     <TextBlock Name="psmFileNameLabel" Text="None Selected" TextTrimming="CharacterEllipsis" />
@@ -210,7 +212,8 @@
 
                             <!--Select MetaMorpheus output file-->
                             <DockPanel Grid.Row="0" LastChildFill="True">
-                                <Label Content="PSMTSV file: " Width="120" />
+                                <Label Content="PSMTSV file: " Width="75" />
+                                <Button Name="resetPsmFileButtonStat" Content="Reset" DockPanel.Dock="Right" Click="resetFilesButton_Click" Width="45" IsEnabled="False"/>
                                 <Button Name="selectPsmFileButtonStat" Content="Select" DockPanel.Dock="Right" Click="selectPsmFileButton_Click" Width="45" />
                                 <Label BorderThickness="1">
                                     <TextBlock Name="psmFileNameLabelStat" Text="None Selected" TextTrimming="CharacterEllipsis"/>

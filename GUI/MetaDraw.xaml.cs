@@ -128,14 +128,28 @@ namespace MetaMorpheusGUI
                 case ".raw":
                 case ".mzml":
                 case ".mgf":
-                    spectraFilePath = filePath;
-                    spectraFileNameLabel.Text = filePath;
+                    if (spectraFilePath == null || !spectraFilePath.Equals(filePath))
+                    {
+                        resetFilesButton_Click(resetSpectraFileButton, null);
+                        spectraFilePath = filePath;
+                        spectraFileNameLabel.Text = filePath;
+                        spectraFileNameLabel.ToolTip = filePath;
+                        resetSpectraFileButton.IsEnabled = true;
+                    }
                     break;
                 case ".psmtsv":
                 case ".tsv":
-                    tsvResultsFilePath = filePath;
-                    psmFileNameLabel.Text = filePath;
-                    psmFileNameLabelStat.Text = filePath;
+                    if (tsvResultsFilePath == null || !tsvResultsFilePath.Equals(filePath))
+                    {
+                        resetFilesButton_Click(resetPsmFileButton, null);
+                        tsvResultsFilePath = filePath;
+                        psmFileNameLabel.Text = filePath;
+                        psmFileNameLabel.ToolTip = filePath;
+                        psmFileNameLabelStat.Text = filePath;
+                        psmFileNameLabelStat.ToolTip = filePath;
+                        resetPsmFileButton.IsEnabled = true;
+                        resetPsmFileButtonStat.IsEnabled = true;
+                    }
                     break;
                 default:
                     MessageBox.Show("Cannot read file type: " + theExtension);
@@ -382,6 +396,42 @@ namespace MetaMorpheusGUI
             }
         }
 
+        private void resetFilesButton_Click(object sender, RoutedEventArgs e)
+        {
+            // clear spectra file path
+            if ((sender as Button).Name.Equals(resetSpectraFileButton.Name))
+            {
+                spectraFilePath = null;
+                spectraFileNameLabel.Text = "None Selected";
+                spectraFileNameLabel.ToolTip = null;
+                resetSpectraFileButton.IsEnabled = false;
+            }
+
+            // clear psm file path, psm data, and stat plot
+            else
+            {
+                tsvResultsFilePath = null;
+                psmFileNameLabel.Text = "None Selected";
+                psmFileNameLabel.ToolTip = null;
+                psmFileNameLabelStat.Text = "None Selected";
+                psmFileNameLabelStat.ToolTip = null;
+                resetPsmFileButton.IsEnabled = false;
+                resetPsmFileButtonStat.IsEnabled = false;
+
+                allPsms.Clear();
+                filteredListOfPsms.Clear();
+                psmsBySourceFile.Clear();
+                sourceFilesList.Clear();
+                plotViewStat.DataContext = null;
+            }
+
+            // clear main plot, base sequence, and properties table
+            mainViewModel.Model = null;
+            BaseDraw.clearCanvas(canvas);
+            propertyView.Clear();
+            MsDataFile = null;
+        }
+
         private void OnClosing(object sender, CancelEventArgs e)
         {
             metaDrawGraphicalSettings.Close();
@@ -431,6 +481,8 @@ namespace MetaMorpheusGUI
             (sender as Button).IsEnabled = false;
             selectSpectraFileButton.IsEnabled = false;
             selectPsmFileButton.IsEnabled = false;
+            resetSpectraFileButton.IsEnabled = false;
+            resetPsmFileButton.IsEnabled = false;
             prgsFeed.IsOpen = true;
             prgsText.Content = "Loading spectra file...";
 
@@ -448,6 +500,8 @@ namespace MetaMorpheusGUI
             (sender as Button).IsEnabled = true;
             selectSpectraFileButton.IsEnabled = true;
             selectPsmFileButton.IsEnabled = true;
+            resetSpectraFileButton.IsEnabled = true;
+            resetPsmFileButton.IsEnabled = true;
         }
 
         private void loadFilesButtonStat_Click(object sender, RoutedEventArgs e)
@@ -461,6 +515,7 @@ namespace MetaMorpheusGUI
 
             (sender as Button).IsEnabled = false;
             selectPsmFileButtonStat.IsEnabled = false;
+            resetPsmFileButtonStat.IsEnabled = false;
             prgsFeedStat.IsOpen = true;
 
             // load the PSMs
@@ -471,6 +526,7 @@ namespace MetaMorpheusGUI
             this.prgsFeedStat.IsOpen = false;
             (sender as Button).IsEnabled = true;
             selectPsmFileButtonStat.IsEnabled = true;
+            resetPsmFileButtonStat.IsEnabled = true;
         }
 
         private void LoadPsmsStat(string filepath)
