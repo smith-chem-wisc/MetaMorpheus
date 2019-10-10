@@ -36,7 +36,7 @@ namespace MetaMorpheusGUI
         private readonly ObservableCollection<PsmFromTsv> allPsms; // all loaded PSMs
         private readonly ObservableCollection<PsmFromTsv> filteredListOfPsms; // this is the filtered list of PSMs to display (after q-value filter, etc.)
         private readonly Dictionary<string, ObservableCollection<PsmFromTsv>> psmsBySourceFile;  // filtered PSMs grouped by the "file name" field
-        private ObservableCollection<string> sourceFilesList;
+        private readonly ObservableCollection<string> sourceFilesList;
         ICollectionView peptideSpectralMatchesView;
         private readonly DataTable propertyView;
         private string spectraFilePath;

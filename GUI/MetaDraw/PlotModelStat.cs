@@ -154,7 +154,6 @@ namespace MetaMorpheusGUI
                 foreach (var d in dict)
                 {
                     column.Items.Add(new ColumnItem(d.Value, counter));
-                    int spaceIndex = d.Key.IndexOf(' ');
                     category[counter] = d.Key;
                     counter++;
                 }
@@ -269,7 +268,7 @@ namespace MetaMorpheusGUI
             }
             series.MarkerFill = OxyColors.Blue;
             series.MarkerSize = 0.5;
-            series.TrackerFormatString = "{1}: {2:0.###}\n{3}: {4:0.###}\nFull sequence: {Tag}";
+            series.TrackerFormatString = "{1}: {2:0.###}\n{3}: {4:0.###}\nFull sequence: {Tag}";    // tooltip displayed on click
             privateModel.Series.Add(series);
 
             // plot the variant containing peptides
@@ -285,8 +284,8 @@ namespace MetaMorpheusGUI
                 variantSeries.TrackerFormatString = "Sequence variant\n{1}: {2:0.###}\n{3}: {4:0.###}\nFull sequence: {Tag}";
                 privateModel.Series.Add(variantSeries);
             }
-            privateModel.Axes.Add(new LinearAxis() { Title = xAxisTitle, Position = AxisPosition.Bottom });
-            privateModel.Axes.Add(new LinearAxis() { Title = yAxisTitle, Position = AxisPosition.Left });
+            privateModel.Axes.Add(new LinearAxis { Title = xAxisTitle, Position = AxisPosition.Bottom });
+            privateModel.Axes.Add(new LinearAxis { Title = yAxisTitle, Position = AxisPosition.Left });
         }
 
         // rounds a number to the nearest multiple of binsize, midpoints are rounded towards zero
