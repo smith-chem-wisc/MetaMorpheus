@@ -277,10 +277,6 @@ namespace EngineLayer
             //EssentialSequence
             EssentialSequence = PsmTsvWriter.Resolve(_BestMatchingPeptides.Select(b => b.Pwsm.EssentialSequence(modsToWritePruned))).ResolvedString; //string, not value
             EssentialSequence = SilacConversions.GetAmbiguousLightSequence(EssentialSequence, labels, false);
-
-            //Accession
-            ProteinAccession = PsmTsvWriter.Resolve(_BestMatchingPeptides.Select(x => x.Pwsm).Select(b => b.Protein.Accession), FullSequence).ResolvedString; //string, not value
-            ProteinAccession = SilacConversions.GetProteinLightAccession(ProteinAccession, labels);
         }
 
         /// <summary>
@@ -317,19 +313,19 @@ namespace EngineLayer
         /// This method is used by SILAC quantification to add heavy/light psms
         /// Don't have access to the scans at that point, so a new contructor is needed
         /// </summary>
-        public PeptideSpectralMatch Clone(List<(int Notch, PeptideWithSetModifications Peptide)> bestMatchingPeptides = null)
+        public PeptideSpectralMatch Clone(List<(int Notch, PeptideWithSetModifications Peptide)> bestMatchingPeptides)
         {
             return new PeptideSpectralMatch(this, bestMatchingPeptides);
         }
 
         private PeptideSpectralMatch(PeptideSpectralMatch psm, List<(int Notch, PeptideWithSetModifications Peptide)> bestMatchingPeptides)
         {
-            _BestMatchingPeptides = bestMatchingPeptides ?? psm.BestMatchingPeptides.ToList();
+            _BestMatchingPeptides = bestMatchingPeptides;
+            BaseSequence = PsmTsvWriter.Resolve(bestMatchingPeptides.Select(b => b.Peptide.BaseSequence)).ResolvedValue;
+            FullSequence = PsmTsvWriter.Resolve(bestMatchingPeptides.Select(b => b.Peptide.FullSequence)).ResolvedValue;
 
             ModsChemicalFormula = psm.ModsChemicalFormula;
-            FullSequence = psm.FullSequence;
             Notch = psm.Notch;
-            BaseSequence = psm.BaseSequence;
             PeptideLength = psm.PeptideLength;
             OneBasedStartResidueInProtein = psm.OneBasedStartResidueInProtein;
             OneBasedEndResidueInProtein = psm.OneBasedEndResidueInProtein;

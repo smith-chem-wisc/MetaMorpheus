@@ -97,5 +97,13 @@ namespace Test
 
             engine.Run();
         }
+
+        [Test]
+        public static void TestRunSpecificPostSearchAnalysis()
+        {
+            //code coverage unit test for an unused abstract method in post search analysis
+            var task = new PostSearchAnalysisTask();
+            task.RunTask(TestContext.CurrentContext.TestDirectory, new List<DbForTask>(), new List<string>(), "");
+        }
     }
 }

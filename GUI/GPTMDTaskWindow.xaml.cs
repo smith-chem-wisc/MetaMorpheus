@@ -238,6 +238,44 @@ namespace MetaMorpheusGUI
             DialogResult = false;
             CustomFragmentationWindow.Close();
         }
+        
+        private void NonSpecificUpdate(object sender, SelectionChangedEventArgs e)
+        {
+            const int maxLength = 25;
+            if (((Protease)ProteaseComboBox.SelectedItem).Name.Contains("non-specific"))
+            {
+                MaxPeptideLengthTextBox.Text = maxLength.ToString();
+            }
+        }
+
+        private void NonSpecificUpdate(object sender, TextChangedEventArgs e)
+        {
+            if (((Protease)ProteaseComboBox.SelectedItem).Name.Contains("non-specific"))
+            {
+                try
+                {
+                    TextBox textBox = (TextBox)sender;
+                    if (textBox.Name.Equals("MaxPeptideLengthTextBox")) //if maxPeptideLength was modified
+                    {
+                        if (!MissedCleavagesTextBox.Text.Equals((Convert.ToInt32(MaxPeptideLengthTextBox.Text) - 1).ToString())) //prevents infinite loops
+                        {
+                            MissedCleavagesTextBox.Text = (Convert.ToInt32(MaxPeptideLengthTextBox.Text) - 1).ToString();
+                        }
+                    }
+                    else //if missedCleavagesTextBox was modified
+                    {
+                        if (!MaxPeptideLengthTextBox.Text.Equals((Convert.ToInt32(MissedCleavagesTextBox.Text) + 1).ToString())) //prevents infinite loops
+                        {
+                            MaxPeptideLengthTextBox.Text = (Convert.ToInt32(MissedCleavagesTextBox.Text) + 1).ToString();
+                        }
+                    }
+                }
+                catch
+                {
+                    //if not an entry, don't update the other box.
+                }
+            }
+        }
 
         private void SaveButton_Click(object sender, RoutedEventArgs e)
         {
@@ -437,6 +475,10 @@ namespace MetaMorpheusGUI
 
         private void OnClosing(object sender, CancelEventArgs e)
         {
+            SearchModifications.Timer.Tick -= new EventHandler(TextChangeTimerHandler);
+            // remove event handler from timer
+            // keeping it will trigger an exception because the closed window stops existing
+
             CustomFragmentationWindow.Close();
         }
     }

@@ -7,9 +7,9 @@
 
   <ItemGroup>
     <PackageReference Include="MathNet.Numerics" Version="4.8.1" />
-    <PackageReference Include="mzLib" Version="1.0.431" />
     <PackageReference Include="Microsoft.ML" Version="1.1.0" />
     <PackageReference Include="Microsoft.ML.FastTree" Version="1.1.0" />
+    <PackageReference Include="mzLib" Version="1.0.454" />
     <PackageReference Include="NetSerializer" Version="4.1.0" />
     <PackageReference Include="Nett" Version="0.8.0" />
     <PackageReference Include="SharpLearning.Common.Interfaces" Version="0.26.9" />
