@@ -125,7 +125,7 @@ namespace EngineLayer
                         ambiguousScans = ambiguousScans + psm.ScanNumber + "|";
                         psm.RemoveThisAmbiguousPeptide(notch, pwsm);
                     }
-                    psm.FdrInfo.PEP = 1 - pepValuePredictions[0]; //they should all be the same at this point so it doesn't matter which you take. First is good.
+                    psm.FdrInfo.PEP = 1 - pepValuePredictions.Max(); //they should all be the same at this point so it doesn't matter which you take. First is good.
                 }
             }
 
