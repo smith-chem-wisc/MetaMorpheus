@@ -330,8 +330,8 @@ namespace MetaMorpheusGUI
                 var dialog = new SilacModificationWindow();
                 //update the radiobutton fields
                 dialog.MultiplexRadioButton.IsChecked = MultiplexRadioButton.IsChecked;
-                dialog.StartConditionRadioButton.IsChecked = StartConditionRadioButton.IsChecked;
-                dialog.EndConditionRadioButton.IsChecked = EndConditionRadioButton.IsChecked;
+                //dialog.StartConditionRadioButton.IsChecked = StartConditionRadioButton.IsChecked;
+                //dialog.EndConditionRadioButton.IsChecked = EndConditionRadioButton.IsChecked;
 
                 if (dialog.ShowDialog() == true)
                 {
@@ -383,7 +383,7 @@ namespace MetaMorpheusGUI
         private ExperimentType DetermineExperimentType()
         {
             return MultiplexRadioButton.IsChecked.Value ? ExperimentType.Multiplex :
-             StartConditionRadioButton.IsChecked.Value ? ExperimentType.Start :
+             //StartConditionRadioButton.IsChecked.Value ? ExperimentType.Start :
              ExperimentType.End;
         }
 
