@@ -258,6 +258,9 @@
       <DependentUpon>CustomMsgBox.xaml</DependentUpon>
     </Compile>
     <Compile Include="ForDisplayingInDataGrids\SilacInfoForDataGrid.cs" />
+    <Compile Include="GlycoSearchTaskWindow.xaml.cs">
+      <DependentUpon>GlycoSearchTaskWindow.xaml</DependentUpon>
+    </Compile>
     <Compile Include="SilacModificationWindow.xaml.cs">
       <DependentUpon>SilacModificationWindow.xaml</DependentUpon>
     </Compile>
@@ -346,6 +349,10 @@
       <SubType>Designer</SubType>
     </Page>
     <Page Include="CustomMsgBox.xaml">
+      <SubType>Designer</SubType>
+      <Generator>MSBuild:Compile</Generator>
+    </Page>
+    <Page Include="GlycoSearchTaskWindow.xaml">
       <SubType>Designer</SubType>
       <Generator>MSBuild:Compile</Generator>
     </Page>

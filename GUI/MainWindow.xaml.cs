@@ -869,6 +869,16 @@ namespace MetaMorpheusGUI
             }
         }
 
+        private void BtnAddGlycoSearch_Click(object sender, RoutedEventArgs e)
+        {
+            var dialog = new GlycoSearchTaskWindow();
+            if (dialog.ShowDialog() == true)
+            {
+                AddTaskToCollection(dialog.TheTask);
+                UpdateTaskGuiStuff();
+            }
+        }
+
         // deletes the selected task
         private void DeleteSelectedTask(object sender, RoutedEventArgs e)
         {
