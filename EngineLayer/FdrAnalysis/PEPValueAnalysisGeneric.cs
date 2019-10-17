@@ -285,26 +285,29 @@ namespace EngineLayer
             return sequenceToPsmCount;
         }
 
-        //This method ignores ambiguity and loads only the first peptide in a series for each PSM
+
         public static IEnumerable<PsmData> CreatePsmData(List<PeptideSpectralMatch> psms, Dictionary<string, int> sequenceToPsmCount, Dictionary<string, Dictionary<int, Tuple<double, double>>> timeDependantHydrophobicityAverageAndDeviation_unmodified, Dictionary<string, Dictionary<int, Tuple<double, double>>> timeDependantHydrophobicityAverageAndDeviation_modified, string searchType, bool? trueOrFalse = null)
         {
             List<PsmData> pd = new List<PsmData>();
             foreach (PeptideSpectralMatch psm in psms)
             {
-                bool label;
-                if (trueOrFalse != null)
+                foreach (var (Notch, Peptide) in psm.BestMatchingPeptides)
                 {
-                    label = trueOrFalse.Value;
-                }
-                else if (psm.IsDecoy || psm.FdrInfo.QValue > 0.25)
-                {
-                    label = false;
-                    pd.Add(CreateOnePsmDataEntry(psm, sequenceToPsmCount, timeDependantHydrophobicityAverageAndDeviation_unmodified, timeDependantHydrophobicityAverageAndDeviation_modified, null, searchType, null, label));
-                }
-                else if (!psm.IsDecoy && psm.FdrInfo.QValue <= 0.01)
-                {
-                    label = true;
-                    pd.Add(CreateOnePsmDataEntry(psm, sequenceToPsmCount, timeDependantHydrophobicityAverageAndDeviation_unmodified, timeDependantHydrophobicityAverageAndDeviation_modified, null, searchType, null, label));
+                    bool label;
+                    if (trueOrFalse != null)
+                    {
+                        label = trueOrFalse.Value;
+                    }
+                    else if (Peptide.Protein.IsDecoy || psm.FdrInfo.QValue > 0.25)
+                    {
+                        label = false;
+                        pd.Add(CreateOnePsmDataEntry(psm, sequenceToPsmCount, timeDependantHydrophobicityAverageAndDeviation_unmodified, timeDependantHydrophobicityAverageAndDeviation_modified, Peptide, searchType, Notch, label));
+                    }
+                    else if (!Peptide.Protein.IsDecoy && psm.FdrInfo.QValue <= 0.01)
+                    {
+                        label = true;
+                        pd.Add(CreateOnePsmDataEntry(psm, sequenceToPsmCount, timeDependantHydrophobicityAverageAndDeviation_unmodified, timeDependantHydrophobicityAverageAndDeviation_modified, Peptide, searchType, Notch, label));
+                    }
                 }
             }
             return pd.AsEnumerable();
@@ -326,21 +329,8 @@ namespace EngineLayer
             float charge = psm.ScanPrecursorCharge;
             float deltaScore = (float)psm.DeltaScore;
             float psmCount = sequenceToPsmCount[String.Join("|", psm.BestMatchingPeptides.Select(p => p.Peptide.FullSequence).ToList())];
-            int notch = 0;
-            if (notchToUse.HasValue)
-            {
-                notch = notchToUse.Value;
-            }
-            else if (psm.Notch.HasValue)
-            {
-                notch = psm.Notch.Value;
-            }
-
-            if (selectedPeptide == null)
-            {
-                selectedPeptide = psm.BestMatchingPeptides.Select(p => p.Peptide).First();
-            }
-
+            int notch = notchToUse.Value;
+           
             float modCount = selectedPeptide.AllModsOneIsNterminus.Keys.Count();
             float missedCleavages = selectedPeptide.MissedCleavages;
             float longestSeq = psm.GetLongestIonSeriesBidirectional(selectedPeptide);
