@@ -1,8 +1,6 @@
 ﻿using Microsoft.ML.Data;
-using System;
 using System.Collections.Generic;
 using System.Collections.Immutable;
-using System.Linq;
 using System.Text;
 
 namespace EngineLayer.FdrAnalysis
@@ -38,14 +36,20 @@ namespace EngineLayer.FdrAnalysis
             StringBuilder sb = new StringBuilder();
             var variablesToOutput = PsmData.trainingInfos[searchType];
 
-            foreach (var trainingDataInfo in this.GetType().GetProperties())
+            foreach (var variable in variablesToOutput)
             {
-                string name = trainingDataInfo.Name;
-
-                if (variablesToOutput.Contains(name))
+                var property = typeof(PsmData).GetProperty(variable).GetValue(this, null);
+                if (property is bool)
                 {
+                    var boolValue = (bool)property;
                     sb.Append("\t");
-                    sb.Append(trainingDataInfo.GetValue(this).ToString());
+                    sb.Append(boolValue.ToString());
+                }
+                else if (property is float)
+                {
+                    var floatValue = (float)property;
+                    sb.Append("\t");
+                    sb.Append(floatValue.ToString());
                 }
             }
 

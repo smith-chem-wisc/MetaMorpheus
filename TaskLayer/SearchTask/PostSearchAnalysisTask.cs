@@ -13,6 +13,7 @@ using System.Collections.Generic;
 using System.Globalization;
 using System.IO;
 using System.Linq;
+using System.Text;
 using UsefulProteomicsDatabases;
 
 namespace TaskLayer
@@ -74,7 +75,7 @@ namespace TaskLayer
             {
                 WriteVariantResults();
             }
-            
+
             WritePeptideResults(); // modifies the FDR results for PSMs, so do this last
 
             return Parameters.SearchTaskResults;
@@ -995,7 +996,7 @@ namespace TaskLayer
             int frameshiftCount = 0;
             int stopGainCount = 0;
             int stopLossCount = 0;
-            
+
             List<PeptideSpectralMatch> modifiedVariantPeptides = confidentVariantPeps.Where(p => p.ModsIdentified != null && p.ModsIdentified.Count() > 0 && p.FdrInfo.QValue <= 0.01 && p.FdrInfo.QValueNotch <= 0.01 && p.IsDecoy == false && p.IsContaminant == false).ToList(); //modification can be on any AA in variant peptide
 
             List<PeptideSpectralMatch> modifiedVariantSitePeptides = new List<PeptideSpectralMatch>();// modification is speciifcally on the variant residue within the peptide
@@ -1145,7 +1146,17 @@ namespace TaskLayer
                 header = header + "\tPeptide\tProteins";
 
                 output.WriteLine(header);
-                output.WriteLine("DefaultDirection\t-\t-\t" + String.Join("\t", PsmData.assumedAttributeDirection.Values));
+
+                StringBuilder directions = new StringBuilder();
+                directions.Append("DefaultDirection\t-\t-");
+
+                foreach (var headerVariable in PsmData.trainingInfos[searchType])
+                {
+                    directions.Append("\t");
+                    directions.Append(PsmData.assumedAttributeDirection[headerVariable]);
+                }
+
+                output.WriteLine(directions.ToString());
 
                 int idNumber = 0;
                 psmList.OrderByDescending(p => p.Score);
