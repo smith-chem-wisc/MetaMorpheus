@@ -13,6 +13,7 @@ using System.Collections.Generic;
 using System.Globalization;
 using System.IO;
 using System.Linq;
+using System.Text;
 using UsefulProteomicsDatabases;
 
 namespace TaskLayer
@@ -74,8 +75,8 @@ namespace TaskLayer
             {
                 WriteVariantResults();
             }
-            WritePeptideResults(); // modifies the FDR results for PSMs, so do this last            
 
+            WritePeptideResults(); // modifies the FDR results for PSMs, so do this last
 
             return Parameters.SearchTaskResults;
         }
@@ -311,7 +312,7 @@ namespace TaskLayer
                     string peptideBaseSequence = psm.BaseSequence;
                     SilacLabel observedLabel = SilacConversions.GetRelevantLabelFromBaseSequence(peptideBaseSequence, allSilacLabels); //returns null if no label
 
-                    //if it's not the light form, make a light form to start as a base. 
+                    //if it's not the light form, make a light form to start as a base.
                     PeptideSpectralMatch lightPsm = observedLabel == null ? psm : SilacConversions.GetSilacPsm(psm, observedLabel);
 
                     //get easy access to values we need for new psm generation
@@ -534,8 +535,9 @@ namespace TaskLayer
             FinishedWritingFile(writtenFile, new List<string> { Parameters.SearchTaskId });
 
             // write PSMs for percolator
-            writtenFile = Path.Combine(Parameters.OutputFolder, "AllPSMs_FormattedForPercolator.tsv");
-            WritePsmsForPercolator(FilteredPsmListForOutput, writtenFile, CommonParameters.QValueOutputFilter);
+            // percolator native read format is .tab
+            writtenFile = Path.Combine(Parameters.OutputFolder, "AllPSMs_FormattedForPercolator.tab");
+            WritePsmsForPercolator(FilteredPsmListForOutput, writtenFile);
             FinishedWritingFile(writtenFile, new List<string> { Parameters.SearchTaskId });
 
             // write summary text
@@ -571,7 +573,7 @@ namespace TaskLayer
 
                     // write PSMs for percolator
                     writtenFile = Path.Combine(Parameters.IndividualResultsOutputFolder, strippedFileName + "_PSMsFormattedForPercolator.tsv");
-                    WritePsmsForPercolator(psmsForThisFile, writtenFile, CommonParameters.QValueOutputFilter);
+                    WritePsmsForPercolator(psmsForThisFile, writtenFile);
                     FinishedWritingFile(writtenFile, new List<string> { Parameters.SearchTaskId, "Individual Spectra Files", file.First().FullFilePath });
                 }
             }
@@ -994,7 +996,9 @@ namespace TaskLayer
             int frameshiftCount = 0;
             int stopGainCount = 0;
             int stopLossCount = 0;
-            List<PeptideSpectralMatch> modifiedVariantPeptides = confidentVariantPeps.Where(p => p.ModsIdentified.Count() > 0 && p.FdrInfo.QValue <= 0.01 && p.FdrInfo.QValueNotch <= 0.01 && p.IsDecoy == false && p.IsContaminant == false).ToList(); //modification can be on any AA in variant peptide
+
+            List<PeptideSpectralMatch> modifiedVariantPeptides = confidentVariantPeps.Where(p => p.ModsIdentified != null && p.ModsIdentified.Count() > 0 && p.FdrInfo.QValue <= 0.01 && p.FdrInfo.QValueNotch <= 0.01 && p.IsDecoy == false && p.IsContaminant == false).ToList(); //modification can be on any AA in variant peptide
+
             List<PeptideSpectralMatch> modifiedVariantSitePeptides = new List<PeptideSpectralMatch>();// modification is speciifcally on the variant residue within the peptide
             foreach (var entry in modifiedVariantPeptides)
             {
@@ -1050,10 +1054,8 @@ namespace TaskLayer
                             {
                                 stopLossCount++;
                             }
-
                         }
                     }
-
                 }
             }
 
@@ -1126,31 +1128,49 @@ namespace TaskLayer
             }
         }
 
-        private void WritePsmsForPercolator(List<PeptideSpectralMatch> psmList, string writtenFileForPercolator, double qValueCutoff)
+        private void WritePsmsForPercolator(List<PeptideSpectralMatch> psmList, string writtenFileForPercolator)
         {
             using (StreamWriter output = new StreamWriter(writtenFileForPercolator))
             {
-                output.WriteLine("SpecId\tLabel\tScanNr\tF1\tF2\tPeptide\tProteins");
-                output.WriteLine("DefaultDirection\t-\t-\t1\t1\t\t");
-                for (int i = 0; i < psmList.Count; i++)
+                string searchType;
+                if (psmList.Where(p => p != null).Count() > 0 && psmList[0].DigestionParams.Protease.Name != null && psmList[0].DigestionParams.Protease.Name == "top-down")
                 {
-                    var psm = psmList[i];
+                    searchType = "topDown";
+                }
+                else
+                {
+                    searchType = "standard";
+                }
+                string header = "SpecId\tLabel\tScanNr\t";
+                header = header + String.Join("\t", PsmData.trainingInfos[searchType]);
+                header = header + "\tPeptide\tProteins";
 
-                    if (psm.FdrInfo.QValue > qValueCutoff || psm.FdrInfo.QValueNotch > qValueCutoff)
-                    {
-                        continue;
-                    }
+                output.WriteLine(header);
 
-                    output.Write(i.ToString());
+                StringBuilder directions = new StringBuilder();
+                directions.Append("DefaultDirection\t-\t-");
+
+                foreach (var headerVariable in PsmData.trainingInfos[searchType])
+                {
+                    directions.Append("\t");
+                    directions.Append(PsmData.assumedAttributeDirection[headerVariable]);
+                }
+
+                output.WriteLine(directions.ToString());
+
+                int idNumber = 0;
+                psmList.OrderByDescending(p => p.Score);
+                foreach (PeptideSpectralMatch psm in psmList.Where(p => p.PsmData_forPEPandPercolator != null))
+                {
+
+                    output.Write(idNumber.ToString());
+                    idNumber++;
                     output.Write('\t' + (psm.IsDecoy ? -1 : 1).ToString());
                     output.Write('\t' + psm.ScanNumber.ToString());
-
-                    // Features
-                    output.Write('\t' + string.Join("\t", psm.Features));
+                    output.Write(psm.PsmData_forPEPandPercolator.ToString(searchType));
 
                     // HACKY: Ignores all ambiguity
                     var pwsm = psm.BestMatchingPeptides.First().Peptide;
-
                     output.Write('\t' + (pwsm.PreviousAminoAcid + "." + pwsm.FullSequence + "." + pwsm.NextAminoAcid).ToString());
                     output.Write('\t' + (pwsm.Protein.Accession).ToString());
                     output.WriteLine();
