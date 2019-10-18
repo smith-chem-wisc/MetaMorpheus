@@ -9,8 +9,8 @@ namespace EngineLayer.FdrAnalysis
     {
         public static readonly IImmutableDictionary<string, string[]> trainingInfos = new Dictionary<string, string[]>
         {
-            { "standard", new [] { "Intensity", "PrecursorChargeDiffToMode", "DeltaScore", "Notch", "PsmCount", "ModsCount", "MissedCleavagesCount", "Ambiguity", "LongestFragmentIonSeries", "HydrophobicityZScore", "IsVariantPeptide" } },
-            { "topDown", new [] { "Intensity", "PrecursorChargeDiffToMode", "DeltaScore", "Notch", "PsmCount", "ModsCount", "Ambiguity", "LongestFragmentIonSeries" } },
+            { "standard", new [] { "TotalMatchingFragmentCount", "Intensity", "PrecursorChargeDiffToMode", "DeltaScore", "Notch", "PsmCount", "ModsCount", "MissedCleavagesCount", "Ambiguity", "LongestFragmentIonSeries", "HydrophobicityZScore", "IsVariantPeptide" } },
+            { "topDown", new [] { "TotalMatchingFragmentCount", "Intensity", "PrecursorChargeDiffToMode", "DeltaScore", "Notch", "PsmCount", "ModsCount", "Ambiguity", "LongestFragmentIonSeries" } },
             { "crosslink", new [] { "TotalMatchingFragmentCount", "DeltaScore", "AlphaIntensity", "BetaIntensity", "LongestFragmentIonSeries_Alpha", "LongestFragmentIonSeries_Beta", "IsDeadEnd", "IsLoop", "IsInter", "IsIntra" } }
         }.ToImmutableDictionary();
 

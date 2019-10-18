@@ -127,7 +127,7 @@ namespace EngineLayer
                         psm.RemoveThisAmbiguousPeptide(notch, pwsm);
                         ambiguousPeptidesRemovedCount++;
                     }
-                    psm.FdrInfo.PEP = 1 - pepValuePredictions.Max(); 
+                    psm.FdrInfo.PEP = 1 - pepValuePredictions.Max();
                 }
             }
 
@@ -335,7 +335,7 @@ namespace EngineLayer
                     if (peptideWithSetMods.Protein.IsDecoy || psm.FdrInfo.QValue > 0.25)
                     {
                         label = false;
-                        pd.Add(CreateOnePsmDataEntry(psm, sequenceToPsmCount, timeDependantHydrophobicityAverageAndDeviation_unmodified, timeDependantHydrophobicityAverageAndDeviation_modified, chargeStateMode, peptideWithSetMods, trainingVariables,notch, label));
+                        pd.Add(CreateOnePsmDataEntry(psm, sequenceToPsmCount, timeDependantHydrophobicityAverageAndDeviation_unmodified, timeDependantHydrophobicityAverageAndDeviation_modified, chargeStateMode, peptideWithSetMods, trainingVariables, notch, label));
                     }
                     else if (!peptideWithSetMods.Protein.IsDecoy && psm.FdrInfo.QValue <= 0.01)
                     {
@@ -343,13 +343,18 @@ namespace EngineLayer
                         pd.Add(CreateOnePsmDataEntry(psm, sequenceToPsmCount, timeDependantHydrophobicityAverageAndDeviation_unmodified, timeDependantHydrophobicityAverageAndDeviation_modified, chargeStateMode, peptideWithSetMods, trainingVariables, notch, label));
                     }
                 }
-                
             }
             return pd.AsEnumerable();
         }
 
         public static PsmData CreateOnePsmDataEntry(PeptideSpectralMatch psm, Dictionary<string, int> sequenceToPsmCount, Dictionary<string, Dictionary<int, Tuple<double, double>>> timeDependantHydrophobicityAverageAndDeviation_unmodified, Dictionary<string, Dictionary<int, Tuple<double, double>>> timeDependantHydrophobicityAverageAndDeviation_modified, int chargeStateMode, PeptideWithSetModifications selectedPeptide, string[] trainingVariables, int notchToUse, bool label)
         {
+            float totalMatchingFragmentCount = 0;
+            if (trainingVariables.Contains("TotalMatchingFragmentCount"))
+            {
+                totalMatchingFragmentCount = (float)Math.Floor(psm.Score);
+            }
+
             float ambiguity = 0;
             if (trainingVariables.Contains("Ambiguity"))
             {
@@ -431,6 +436,7 @@ namespace EngineLayer
 
             psm.PsmData_forPEPandPercolator = new PsmData
             {
+                TotalMatchingFragmentCount = totalMatchingFragmentCount,
                 Intensity = intensity,
                 PrecursorChargeDiffToMode = chargeDifference,
                 DeltaScore = deltaScore,
