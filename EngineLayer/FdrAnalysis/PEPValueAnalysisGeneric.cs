@@ -6,7 +6,6 @@ using Proteomics.ProteolyticDigestion;
 using Proteomics.RetentionTimePrediction;
 using System;
 using System.Collections.Generic;
-using System.IO;
 using System.Linq;
 using System.Text;
 using static Microsoft.ML.DataOperationsCatalog;
@@ -183,7 +182,8 @@ namespace EngineLayer
                         fullSequences.Add(pwsm.FullSequence);
                         double predictedHydrophobicity = calc.ScoreSequence(pwsm);
                         int possibleKey = (int)(2 * Math.Round(psm.ScanRetentionTime / 2d, 0));
-                        if (pwsm.AllModsOneIsNterminus.Any() && !computeHydrophobicitiesforModifiedPeptides)
+                        //First block of if statement is for modified peptides.
+                        if (pwsm.AllModsOneIsNterminus.Any() && computeHydrophobicitiesforModifiedPeptides)
                         {
                             if (hydrobophobicites.ContainsKey(possibleKey))
                             {
@@ -194,7 +194,8 @@ namespace EngineLayer
                                 hydrobophobicites.Add(possibleKey, new List<double>() { predictedHydrophobicity });
                             }
                         }
-                        else if (!pwsm.AllModsOneIsNterminus.Any() && computeHydrophobicitiesforModifiedPeptides)
+                        //this second block of if statment is for unmodified peptides.
+                        else if (!pwsm.AllModsOneIsNterminus.Any() && !computeHydrophobicitiesforModifiedPeptides)
                         {
                             if (hydrobophobicites.ContainsKey(possibleKey))
                             {
@@ -226,7 +227,19 @@ namespace EngineLayer
                     }
                 }
 
-                double globalStDev = stDevs.Average();
+                double globalStDev;
+                if (stDevs.Count > 1)
+                {
+                    globalStDev = stDevs.Average();
+                }
+                else if (stDevs.Count == 1)
+                {
+                    globalStDev = stDevs.First();
+                }
+                else
+                {
+                    globalStDev = 1;
+                }
                 List<int> stDevsToReplace = new List<int>();
                 Dictionary<int, Tuple<double, double>> stuffToChange = new Dictionary<int, Tuple<double, double>>();
                 foreach (KeyValuePair<int, Tuple<double, double>> item in averagesCommaStandardDeviations)
@@ -244,13 +257,6 @@ namespace EngineLayer
                 }
 
                 rtHydrophobicityAvgDev.Add(filename, averagesCommaStandardDeviations);
-
-                TextWriter tw2 = new StreamWriter(@"C:\Users\Michael Shortreed\Downloads\avgStDev.txt");
-
-                foreach (KeyValuePair<int, Tuple<double, double>> bubba in averagesCommaStandardDeviations)
-                    tw2.WriteLine(bubba.Key.ToString() + "\t" + bubba.Value.Item1.ToString() + "\t" + bubba.Value.Item2.ToString());
-
-                tw2.Close();
             }
             return rtHydrophobicityAvgDev;
         }
@@ -280,7 +286,7 @@ namespace EngineLayer
 
             if (d.ContainsKey(psm.FullFilePath))
             {
-                int time = (int)(2*Math.Round(psm.ScanRetentionTime/2d, 0));
+                int time = (int)(2 * Math.Round(psm.ScanRetentionTime / 2d, 0));
                 if (d[psm.FullFilePath].Keys.Contains(time))
                 {
                     double predictedHydrophobicity = calc.ScoreSequence(Peptide);
@@ -340,10 +346,10 @@ namespace EngineLayer
 
         public static PsmData CreateOnePsmDataEntry(PeptideSpectralMatch psm, Dictionary<string, int> sequenceToPsmCount, Dictionary<string, Dictionary<int, Tuple<double, double>>> timeDependantHydrophobicityAverageAndDeviation_unmodified, Dictionary<string, Dictionary<int, Tuple<double, double>>> timeDependantHydrophobicityAverageAndDeviation_modified, int chargeStateMode, PeptideWithSetModifications selectedPeptide, string[] trainingVariables, int notchToUse)
         {
-            float ambiguity = 1;
+            float ambiguity = 0;
             if (trainingVariables.Contains("Ambiguity"))
             {
-                ambiguity = (float)psm.PeptidesToMatchingFragments.Keys.Count;
+                ambiguity = Math.Min((float)(psm.PeptidesToMatchingFragments.Keys.Count - 1), 10);
             }
             float intensity = 0;
             if (trainingVariables.Contains("Intensity"))
@@ -364,6 +370,9 @@ namespace EngineLayer
             if (trainingVariables.Contains("PsmCount"))
             {
                 psmCount = sequenceToPsmCount[String.Join("|", psm.BestMatchingPeptides.Select(p => p.Peptide.FullSequence).ToList())];
+                List<int> psmCountList = new List<int> { 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 15, 20, 30, 40, 50, 75, 100, 200, 300, 400, 500 };
+                int closest = psmCountList.OrderBy(item => Math.Abs(psmCount - item)).First();
+                psmCount = closest;
             }
 
             int notch = 0;
@@ -380,7 +389,7 @@ namespace EngineLayer
             float modCount = 0;
             if (trainingVariables.Contains("ModsCount"))
             {
-                modCount = selectedPeptide.AllModsOneIsNterminus.Keys.Count();
+                modCount = Math.Min((float)selectedPeptide.AllModsOneIsNterminus.Keys.Count(), 10);
             }
 
             float missedCleavages = 0;

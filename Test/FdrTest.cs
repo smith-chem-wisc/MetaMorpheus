@@ -281,8 +281,8 @@ namespace Test
 
             string expectedMetrics = "************************************************************\r\n*       Metrics for Determination of PEP Using Binary Classification      " +
                 "\r\n*-----------------------------------------------------------\r\n*       Accuracy:  1\r\n*       Area Under Curve:  1\r\n*       Area under Precision recall " +
-                "Curve:  1\r\n*       F1Score:  1\r\n*       LogLoss:  1.1593691482506E-06\r\n*       LogLossReduction:  0.999998216416681\r\n*       PositivePrecision:  1\r\n*       " +
-                "PositiveRecall:  1\r\n*       NegativePrecision:  1\r\n*       NegativeRecall:  1\r\n************************************************************\r\n";
+                "Curve:  1\r\n*       F1Score:  1\r\n*       LogLoss:  4.9699748941427E-09\r\n*       LogLossReduction:  0.999999992354149\r\n*       PositivePrecision:  1\r\n*       " +
+                "PositiveRecall:  1\r\n*       NegativePrecision:  1\r\n*       NegativeRecall:  1\r\n*       Count of Ambiguous Peptides Removed:  0\r\n************************************************************\r\n";
 
             string metrics = PEP_Analysis.ComputePEPValuesForAllPSMsGeneric(moreNonNullPSMs);
             Assert.AreEqual(expectedMetrics, metrics);
