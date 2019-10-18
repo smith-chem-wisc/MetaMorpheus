@@ -47,7 +47,10 @@ namespace TaskLayer
             // calculate FDR
             DoCrosslinkFdrAnalysis(interCsms);
             DoCrosslinkFdrAnalysis(intraCsms);
+
             SingleFDRAnalysis(allPsms, commonParameters, new List<string> { taskId });
+            ComputeThePosteriorErrorProbability(allPsms);
+
 
             // write interlink CSMs
             if (interCsms.Any())
@@ -191,6 +194,33 @@ namespace TaskLayer
                 {
                     qValueThreshold = csm.FdrInfo.QValue;
                 }
+            }
+
+
+        }
+
+        private void ComputeThePosteriorErrorProbability(List<CrosslinkSpectralMatch> csms)
+        {
+            //Need some reasonable number of PSMs to train on to get a reasonable estimation of the PEP
+            if (csms.Count > 100)
+            {
+                string bubba = PEPValueAnalysisXL.ComputePEPValuesForAllPSMsGeneric(csms);
+                Compute_PEPValue_Based_QValue(csms);
+            }
+        }
+
+        public static void Compute_PEPValue_Based_QValue(List<CrosslinkSpectralMatch> csms)
+        {
+            double[] allPEPValues = csms.Select(p => p.FdrInfo.PEP).ToArray();
+            int[] psmsArrayIndicies = Enumerable.Range(0, csms.Count).ToArray();
+            Array.Sort(allPEPValues, psmsArrayIndicies);//sort the second thing by the first
+
+            double runningSum = 0;
+            for (int i = 0; i < allPEPValues.Length; i++)
+            {
+                runningSum += allPEPValues[i];
+                double qValue = runningSum / (i + 1);
+                csms[psmsArrayIndicies[i]].FdrInfo.PEP_QValue = Math.Round(qValue, 6);
             }
         }
     }

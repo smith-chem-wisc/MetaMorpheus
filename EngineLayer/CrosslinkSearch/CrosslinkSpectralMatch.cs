@@ -28,6 +28,7 @@ namespace EngineLayer.CrosslinkSearch
         public int? XlProteinPos { get; private set; }
         // loop crosslink protein position 2.
         public int? XlProteinPosLoop { get; private set; }
+        public float[] CSM_DataForPEP { get; }
 
         public bool IsIntraCsm()
         {
@@ -141,6 +142,25 @@ namespace EngineLayer.CrosslinkSearch
             return experimental_intensities_rank;
         }
 
+        public float[] Get_CSM_DataForPEP()
+        {
+            PeptideWithSetModifications selectedAlphaPeptide = this.BestMatchingPeptides.Select(p => p.Peptide).First();
+            PeptideWithSetModifications selectedBetaPeptide = this.BetaPeptide == null ? null: this.BetaPeptide.BestMatchingPeptides.Select(p => p.Peptide).First();
+
+            float TotalMatchingFragmentCount = (float)Math.Round(this.XLTotalScore,0);
+            float DeltaScore = (float)this.DeltaScore;
+            float AlphaIntensity = (float)(this.Score -(int)this.Score);
+            float BetaIntensity = this.BetaPeptide == null ? (float)0 : (float)(this.BetaPeptide.Score - (int)this.BetaPeptide.Score); ;
+            float LongestFragmentIonSeries_Alpha = GetLongestIonSeriesBidirectional(selectedAlphaPeptide);
+            float LongestFragmentIonSeries_Beta = this.BetaPeptide == null ? (float)0 : GetLongestIonSeriesBidirectional(selectedBetaPeptide); ;
+            float IsDeadEnd = Convert.ToSingle((this.CrossType == PsmCrossType.DeadEnd) || (this.CrossType == PsmCrossType.DeadEndH2O) || (this.CrossType == PsmCrossType.DeadEndNH2) || (this.CrossType == PsmCrossType.DeadEndTris));
+            float IsLoop = Convert.ToSingle(this.CrossType == PsmCrossType.Loop);
+            float IsInter = Convert.ToSingle(this.CrossType == PsmCrossType.Inter);
+            float IsIntra = Convert.ToSingle(this.CrossType == PsmCrossType.Intra);
+
+            return new[] { TotalMatchingFragmentCount, DeltaScore, AlphaIntensity, BetaIntensity, LongestFragmentIonSeries_Alpha, LongestFragmentIonSeries_Beta, IsDeadEnd, IsLoop, IsInter, IsIntra };
+        }
+
         public static string GetTabSepHeaderCross()
         {
             var sb = new StringBuilder();
@@ -193,7 +213,9 @@ namespace EngineLayer.CrosslinkSearch
             sb.Append("ParentIonMaxIntensityRank" + '\t');
             sb.Append(PsmTsvHeader.DecoyContaminantTarget + '\t');
             sb.Append(PsmTsvHeader.QValue + '\t');
-            
+            sb.Append(PsmTsvHeader.PEP + '\t');
+            sb.Append(PsmTsvHeader.PEP_QValue+ '\t');
+
             return sb.ToString();
         }
 
@@ -224,9 +246,10 @@ namespace EngineLayer.CrosslinkSearch
             sb.Append("Matched Ion Mass Diff (Ppm)" + '\t');
             sb.Append("Matched Ion Intensities" + '\t');
             sb.Append("Matched Ion Counts" + '\t');
-            sb.Append("Child Scans Matched Ion Series" + '\t');
             sb.Append("Decoy/Contaminant/Target" + '\t');
             sb.Append("QValue" + '\t');
+            sb.Append(PsmTsvHeader.PEP + '\t');
+            sb.Append(PsmTsvHeader.PEP_QValue + '\t');
 
             return sb.ToString();
         }
@@ -399,7 +422,13 @@ namespace EngineLayer.CrosslinkSearch
 
             sb.Append(FdrInfo.QValue.ToString());
             sb.Append("\t");
-            
+
+            sb.Append(FdrInfo.PEP.ToString());
+            sb.Append("\t");
+
+            sb.Append(FdrInfo.PEP_QValue.ToString());
+            sb.Append("\t");
+
             return sb.ToString();
         }
 
