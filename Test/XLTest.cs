@@ -38,7 +38,7 @@ namespace Test
             var crosslinkerName = crosslinker.ToString();
             Assert.That(crosslinkerName == "testCrosslinker");
             var crosslinkerString = crosslinker.ToString(true);
-            Assert.That(crosslinkerString == "testCrosslinker\tK\tK\tTrue\tCID|HCD\t100\t25\t60\t0\t0\t50");
+            Assert.That(crosslinkerString == "testCrosslinker\tK\tK\tTrue\tCID|HCD|\t100\t25\t60\t0\t0\t50");
 
         }
 
