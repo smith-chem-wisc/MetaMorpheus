@@ -123,8 +123,8 @@ namespace TaskLayer
 
                     Status("Searching files...", taskId);
                     new CrosslinkSearchEngine(newCsmsPerMS2ScanPerFile, arrayOfMs2ScansSortedByMass, peptideIndex, fragmentIndex, secondFragmentIndex, currentPartition, combinedParams, crosslinker,
-                        XlSearchParameters.RestrictToTopNHits, XlSearchParameters.CrosslinkSearchTopNum, XlSearchParameters.XlQuench_H2O,
-                        XlSearchParameters.XlQuench_NH2, XlSearchParameters.XlQuench_Tris, thisId).Run();
+                        XlSearchParameters.RestrictToTopNHits, XlSearchParameters.CrosslinkSearchTopNum, XlSearchParameters.CrosslinkAtCleavageSite,
+                        XlSearchParameters.XlQuench_H2O, XlSearchParameters.XlQuench_NH2, XlSearchParameters.XlQuench_Tris, thisId).Run();
 
                     ReportProgress(new ProgressEventArgs(100, "Done with search " + (currentPartition + 1) + "/" + CommonParameters.TotalPartitions + "!", thisId));
                     if (GlobalVariables.StopLoops) { break; }
@@ -161,19 +161,7 @@ namespace TaskLayer
             //This function is for current usage, this can be replaced with PEP value. 
             foreach (var csmsPerScan in ListOfCsmsPerMS2ScanParsimony)
             {
-                CrosslinkSpectralMatch crosslinkSpectralMatch = csmsPerScan[0];
-
-                for (int i = 1; i < csmsPerScan.Count -1; i++)
-                {
-                    //The purpose of this is to re-select dead-end peptide wrongly identified as crosslinked peptide.
-                    if (csmsPerScan[i].Score > csmsPerScan[0].Score && csmsPerScan[i].BaseSequence.Contains(csmsPerScan[0].BaseSequence))
-                    {
-                        crosslinkSpectralMatch = csmsPerScan[i];
-                    }
-                }
-
-                filteredAllPsms.Add(crosslinkSpectralMatch);
-
+                filteredAllPsms.Add(csmsPerScan[0]);
             }
 
             PostXLSearchAnalysisTask postXLSearchAnalysisTask = new PostXLSearchAnalysisTask();

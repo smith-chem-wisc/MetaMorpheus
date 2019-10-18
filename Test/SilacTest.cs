@@ -193,15 +193,20 @@ namespace Test
             string mzmlName = @"silac.mzML";
             IO.MzML.MzmlMethods.CreateAndWriteMyMzmlWithCalibratedSpectra(myMsDataFile1, mzmlName, false);
 
+            //create another file to test the handling is done correctly
+            MsDataFile myMsDataFile2 = new TestDataFile(lightPeptide, massDifferences);
+            string mzmlName2 = @"silacPart2.mzML";
+            IO.MzML.MzmlMethods.CreateAndWriteMyMzmlWithCalibratedSpectra(myMsDataFile2, mzmlName2, false);
+
             string xmlName = "SilacDb.xml";
             Protein theProtein = new Protein("PEPTIDEK", "accession1");
             ProteinDbWriter.WriteXmlDatabase(new Dictionary<string, HashSet<Tuple<int, Modification>>>(), new List<Protein> { theProtein }, xmlName);
 
             string outputFolder = Path.Combine(TestContext.CurrentContext.TestDirectory, @"TestSilac");
             Directory.CreateDirectory(outputFolder);
-            var theStringResult = task.RunTask(outputFolder, new List<DbForTask> { new DbForTask(xmlName, false) }, new List<string> { mzmlName }, "taskId1").ToString();
+            var theStringResult = task.RunTask(outputFolder, new List<DbForTask> { new DbForTask(xmlName, false) }, new List<string> { mzmlName, mzmlName2 }, "taskId1").ToString();
 
-            Assert.IsTrue(theStringResult.Contains("All target PSMS within 1% FDR: 1")); //it's not a psm, it's a MBR feature
+            Assert.IsTrue(theStringResult.Contains("All target PSMS within 1% FDR: 2")); //it's not a psm, it's a MBR feature. 2 because there are two files, but not 4 because MBR != psm
 
             ///Normal Peptide
             //test proteins
@@ -220,7 +225,7 @@ namespace Test
 
             //test peaks
             output = File.ReadAllLines(TestContext.CurrentContext.TestDirectory + @"/TestSilac/AllQuantifiedPeaks.tsv");
-            Assert.AreEqual(output.Length, 3);
+            Assert.AreEqual(output.Length, 5);
             Assert.IsTrue(output[1].Contains("silac\t")); //test the filename was NOT modified (it was for proteins, but we don't want it for peptides)
             Assert.IsTrue(output[2].Contains("silac\t"));//test the filename was NOT modified (it was for proteins, but we don't want it for peptides)
             Assert.IsTrue(output[1].Contains("PEPTIDEK\t")); //test light sequence was not modified
@@ -635,7 +640,7 @@ namespace Test
             Assert.IsTrue(relevantLabel.Equals(silacLabels[0]));
 
             //Test SilacConversions.GetAmbiguousLightSequence
-            string asdf = SilacConversions.GetAmbiguousLightSequence("", silacLabels,true);
+            string asdf = SilacConversions.GetAmbiguousLightSequence("", silacLabels, true);
             Assert.IsTrue(asdf.Equals("")); //test that no "|" was added.
 
             //Test SilacConversions.GetSilacLightBaseSequence
