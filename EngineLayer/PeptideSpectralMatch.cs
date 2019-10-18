@@ -3,7 +3,6 @@ using EngineLayer.FdrAnalysis;
 using Proteomics;
 using Proteomics.Fragmentation;
 using Proteomics.ProteolyticDigestion;
-using System;
 using System.Collections.Generic;
 using System.Linq;
 
@@ -63,6 +62,8 @@ namespace EngineLayer
         public int ScanIndex { get; }
         public int NumDifferentMatchingPeptides { get { return _BestMatchingPeptides.Count; } }
         public FdrInfo FdrInfo { get; private set; }
+        public PsmData PsmData_forPEPandPercolator { get; set; }
+
         public double Score { get; private set; }
         public double Xcorr;
         public string NativeId; // this is a property of the scan. used for mzID writing
@@ -83,17 +84,6 @@ namespace EngineLayer
                 return _BestMatchingPeptides.OrderBy(p => p.Pwsm.FullSequence)
                     .ThenBy(p => p.Pwsm.Protein.Accession)
                     .ThenBy(p => p.Pwsm.OneBasedStartResidueInProtein);
-            }
-        }
-
-        /// <summary>
-        /// Used for Percolator output
-        /// </summary>
-        public double[] Features
-        {
-            get
-            {
-                return new[] { Math.Round(Score), Score - Math.Round(Score) };
             }
         }
 
