@@ -406,6 +406,10 @@ namespace MetaMorpheusGUI
 
         private void OnClosing(object sender, CancelEventArgs e)
         {
+            SearchModifications.Timer.Tick -= new EventHandler(TextChangeTimerHandler);
+            // remove event handler from timer
+            // keeping it will trigger an exception because the closed window stops existing
+
             CustomFragmentationWindow.Close();
         }
 
@@ -413,6 +417,44 @@ namespace MetaMorpheusGUI
         {
             SaveButton_Click(sender, e);
             Toml.WriteFile(TheTask, Path.Combine(GlobalVariables.DataDir, "DefaultParameters", @"XLSearchTaskDefault.toml"), MetaMorpheusTask.tomlConfig);
+        }
+        
+        private void NonSpecificUpdate(object sender, SelectionChangedEventArgs e)
+        {
+            const int maxLength = 25;
+            if (((Protease)proteaseComboBox.SelectedItem).Name.Contains("non-specific"))
+            {
+                MaxPeptideLengthTextBox.Text = maxLength.ToString();
+            }
+        }
+
+        private void NonSpecificUpdate(object sender, TextChangedEventArgs e)
+        {
+            if (((Protease)proteaseComboBox.SelectedItem).Name.Contains("non-specific"))
+            {
+                try
+                {
+                    TextBox textBox = (TextBox)sender;
+                    if (textBox.Name.Equals("MaxPeptideLengthTextBox")) //if maxPeptideLength was modified
+                    {
+                        if (!missedCleavagesTextBox.Text.Equals((Convert.ToInt32(MaxPeptideLengthTextBox.Text) - 1).ToString())) //prevents infinite loops
+                        {
+                            missedCleavagesTextBox.Text = (Convert.ToInt32(MaxPeptideLengthTextBox.Text) - 1).ToString();
+                        }
+                    }
+                    else //if missedCleavagesTextBox was modified
+                    {
+                        if (!MaxPeptideLengthTextBox.Text.Equals((Convert.ToInt32(missedCleavagesTextBox.Text) + 1).ToString())) //prevents infinite loops
+                        {
+                            MaxPeptideLengthTextBox.Text = (Convert.ToInt32(missedCleavagesTextBox.Text) + 1).ToString();
+                        }
+                    }
+                }
+                catch
+                {
+                    //if not an entry, don't update the other box.
+                }
+            }
         }
     }
 }
