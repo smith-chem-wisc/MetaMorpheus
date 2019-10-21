@@ -240,7 +240,7 @@ namespace EngineLayer
                 {
                     globalStDev = 1;
                 }
-                List<int> stDevsToReplace = new List<int>();
+
                 Dictionary<int, Tuple<double, double>> stuffToChange = new Dictionary<int, Tuple<double, double>>();
                 foreach (KeyValuePair<int, Tuple<double, double>> item in averagesCommaStandardDeviations)
                 {
