@@ -216,7 +216,6 @@ namespace EngineLayer
                 }
 
                 //some standard deviations are too small or too large because of random reasons, so we replace those small numbers of oddballs with reasonable numbers.
-
                 List<double> stDevs = averagesCommaStandardDeviations.Select(x => x.Value.Item2).ToList();
 
                 for (int i = stDevs.Count - 1; i >= 0; i--)
@@ -241,19 +240,21 @@ namespace EngineLayer
                     globalStDev = 1;
                 }
 
-                Dictionary<int, Tuple<double, double>> stuffToChange = new Dictionary<int, Tuple<double, double>>();
+                Dictionary<int, Tuple<double, double>> stDevsToChange = new Dictionary<int, Tuple<double, double>>();
                 foreach (KeyValuePair<int, Tuple<double, double>> item in averagesCommaStandardDeviations)
                 {
+                    //add stability. not allowing stdevs that are too small or too large at one position relative to the global stdev
+                    //here we are finding which stdevs are out of whack.
                     if (Double.IsNaN(item.Value.Item2) || item.Value.Item2 < 0.5 || (item.Value.Item2 / globalStDev) > 3)
                     {
                         Tuple<double, double> pair = new Tuple<double, double>(averagesCommaStandardDeviations[item.Key].Item1, globalStDev);
-                        stuffToChange.Add(item.Key, pair);
+                        stDevsToChange.Add(item.Key, pair);
                     }
                 }
-
-                foreach (int key in stuffToChange.Keys)
+                //here we are replacing the stdevs that are out of whack.
+                foreach (int key in stDevsToChange.Keys)
                 {
-                    averagesCommaStandardDeviations[key] = stuffToChange[key];
+                    averagesCommaStandardDeviations[key] = stDevsToChange[key];
                 }
 
                 rtHydrophobicityAvgDev.Add(filename, averagesCommaStandardDeviations);
