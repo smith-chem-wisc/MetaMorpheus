@@ -206,7 +206,7 @@ namespace Test
             HashSet<string> files2 = new HashSet<string>(Directory.GetFiles(Path.Combine(thisTaskOutputFolder, "VariantOutput_frameshift")).Select(v => Path.GetFileName(v)));
             // variant files should be generates
             expectedFiles = new HashSet<string> {
-                "AllPeptides.psmtsv", "AllPSMs.psmtsv", "AllPSMs_FormattedForPercolator.tsv", "AllProteinGroups.tsv", "AllQuantifiedPeaks.tsv", "AllQuantifiedPeptides.tsv", "prose.txt", "results.txt", "VariantPeptides.psmtsv", "VariantAnalysisResultSummary.txt", "VariantPSMs.psmtsv" };
+                "AllPeptides.psmtsv", "AllPSMs.psmtsv", "AllPSMs_FormattedForPercolator.tab", "AllProteinGroups.tsv", "AllQuantifiedPeaks.tsv", "AllQuantifiedPeptides.tsv", "prose.txt", "results.txt", "VariantPeptides.psmtsv", "VariantAnalysisResultSummary.txt", "VariantPSMs.psmtsv" };
 
             // these 2 lines are for debug purposes, so you can see which files you're missing (if any)
             missingFiles = expectedFiles.Except(files2).ToList();
@@ -434,6 +434,11 @@ namespace Test
             Assert.AreEqual("Number of unique stop loss variants: 1", checkResults[20]);
             Assert.AreEqual("Number of variant peptides at 1% group FDR with unambiguous localized modifications: 1", checkResults[21]);
             Assert.AreEqual("Number of variant peptides at 1% group FDR with unambiguous localized modifications at the variant sites : 0", checkResults[22]);
+
+           
+
+            Directory.Delete(thisTaskOutputFolder, true);
+
         }
     }
 }

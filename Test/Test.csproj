@@ -92,6 +92,9 @@
     <None Update="TestData\gapdh.fasta.gz">
       <CopyToOutputDirectory>Always</CopyToOutputDirectory>
     </None>
+    <None Update="TestData\HeLaFakeTopDown.fasta">
+      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+    </None>
     <None Update="TestData\hela_snip_for_unitTest.fasta">
       <CopyToOutputDirectory>Always</CopyToOutputDirectory>
     </None>

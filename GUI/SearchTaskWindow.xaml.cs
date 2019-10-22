@@ -1,6 +1,7 @@
 ﻿using EngineLayer;
 using MassSpectrometry;
 using MzLibUtil;
+using Nett;
 using Proteomics.Fragmentation;
 using Proteomics.ProteolyticDigestion;
 using System;
@@ -8,6 +9,7 @@ using System.Collections.Generic;
 using System.Collections.ObjectModel;
 using System.ComponentModel;
 using System.Globalization;
+using System.IO;
 using System.Linq;
 using System.Windows;
 using System.Windows.Controls;
@@ -33,10 +35,6 @@ namespace MetaMorpheusGUI
         private CustomFragmentationWindow CustomFragmentationWindow;
 
         internal SearchTask TheTask { get; private set; }
-
-        public SearchTaskWindow() : this(null)
-        {
-        }
 
         public SearchTaskWindow(SearchTask task)
         {
@@ -1108,6 +1106,12 @@ namespace MetaMorpheusGUI
         private void CheckBoxSILAC_Checked(object sender, RoutedEventArgs e)
         {
             CheckBoxQuantifyUnlabeledForSilac_Checked(sender, e);
+        }
+
+        private void SaveAsDefault_Click(object sender, RoutedEventArgs e)
+        {
+            SaveButton_Click(sender, e);
+            Toml.WriteFile(TheTask, Path.Combine(GlobalVariables.DataDir, "DefaultParameters", @"SearchTaskDefault.toml"), MetaMorpheusTask.tomlConfig);
         }
     }
 

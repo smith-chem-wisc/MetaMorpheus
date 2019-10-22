@@ -19,6 +19,7 @@ namespace EngineLayer
         public static string ComputePEPValuesForAllPSMsGeneric(List<PeptideSpectralMatch> psms)
         {
             string searchType = DetermineSearchType(psms);
+            string[] trainingVariables = PsmData.trainingInfos[searchType];
 
             //These two dictionaries contain the average and standard deviations of hydrophobicitys measured in 1 minute increments accross each raw
             //file separately. An individully measured hydrobophicty calculated for a specific PSM sequence is compared to these values by computing
@@ -30,16 +31,17 @@ namespace EngineLayer
             Dictionary<string, Dictionary<int, Tuple<double, double>>> fileSpecificTimeDependantHydrophobicityAverageAndDeviation_unmodified = new Dictionary<string, Dictionary<int, Tuple<double, double>>>();
             Dictionary<string, Dictionary<int, Tuple<double, double>>> fileSpecificTimeDependantHydrophobicityAverageAndDeviation_modified = new Dictionary<string, Dictionary<int, Tuple<double, double>>>();
 
-            if (searchType == "standard")
+            if (trainingVariables.Contains("HydrophobicityZScore"))
             {
                 fileSpecificTimeDependantHydrophobicityAverageAndDeviation_unmodified = ComputeHydrophobicityValues(psms, false);
                 fileSpecificTimeDependantHydrophobicityAverageAndDeviation_modified = ComputeHydrophobicityValues(psms, true);
             }
 
             Dictionary<string, int> sequenceToPsmCount = GetSequenceToPSMCount(psms);
+            int chargeStateMode = GetChargeStateMode(psms);
 
             MLContext mlContext = new MLContext();
-            IDataView dataView = mlContext.Data.LoadFromEnumerable(CreatePsmData(psms, sequenceToPsmCount, fileSpecificTimeDependantHydrophobicityAverageAndDeviation_unmodified, fileSpecificTimeDependantHydrophobicityAverageAndDeviation_modified, searchType));
+            IDataView dataView = mlContext.Data.LoadFromEnumerable(CreatePsmData(psms, sequenceToPsmCount, fileSpecificTimeDependantHydrophobicityAverageAndDeviation_unmodified, fileSpecificTimeDependantHydrophobicityAverageAndDeviation_modified, chargeStateMode, trainingVariables));
 
             //
             // Summary:
@@ -69,9 +71,7 @@ namespace EngineLayer
 
             var trainer = mlContext.BinaryClassification.Trainers.FastTree(labelColumnName: "Label", featureColumnName: "Features");
 
-            string[] customFeatures = GetCustomFeatures(searchType);
-
-            var pipeline = mlContext.Transforms.Concatenate("Features", customFeatures)
+            var pipeline = mlContext.Transforms.Concatenate("Features", trainingVariables)
                 .Append(mlContext.BinaryClassification.Trainers.FastTree(labelColumnName: "Label", featureColumnName: "Features"));
 
             var trainedModel = pipeline.Fit(trainingData);
@@ -91,7 +91,7 @@ namespace EngineLayer
                     //Here we compute the pepvalue predection for each ambiguous peptide in a PSM. Ambiguous peptides with lower pepvalue predictions are removed from the PSM.
                     foreach (var (Notch, Peptide) in psm.BestMatchingPeptides)
                     {
-                        PsmData pd = CreateOnePsmDataEntry(psm, sequenceToPsmCount, fileSpecificTimeDependantHydrophobicityAverageAndDeviation_unmodified, fileSpecificTimeDependantHydrophobicityAverageAndDeviation_modified, Peptide, searchType, Notch);
+                        PsmData pd = CreateOnePsmDataEntry(psm, sequenceToPsmCount, fileSpecificTimeDependantHydrophobicityAverageAndDeviation_unmodified, fileSpecificTimeDependantHydrophobicityAverageAndDeviation_modified, chargeStateMode, Peptide, trainingVariables, Notch);
                         var pepValuePrediction = predictionEngine.Predict(pd);
                         pepValuePredictions.Add(pepValuePrediction.Probability);
                         //A score is available using the variable pepvaluePrediction.Score
@@ -125,7 +125,7 @@ namespace EngineLayer
                         ambiguousScans = ambiguousScans + psm.ScanNumber + "|";
                         psm.RemoveThisAmbiguousPeptide(notch, pwsm);
                     }
-                    psm.FdrInfo.PEP = 1 - pepValuePredictions[0]; //they should all be the same at this point so it doesn't matter which you take. First is good.
+                    psm.FdrInfo.PEP = 1 - pepValuePredictions.Max(); 
                 }
             }
 
@@ -144,6 +144,16 @@ namespace EngineLayer
 
             //if you want to save a model, you can use this example
             //mlContext.Model.Save(trainedModel, trainingData.Schema, @"C:\Users\User\Downloads\TrainedModel.zip");
+        }
+
+        /// <summary>
+        /// Here we're getting the most common charge state for precursors that are Targets with q<=0.01.
+        /// </summary>
+        /// <param name="psms"></param>
+        /// <returns></returns>
+        private static int GetChargeStateMode(List<PeptideSpectralMatch> psms)
+        {
+            return psms.Where(p => p.IsDecoy != true && p.FdrInfo.QValue <= 0.01).Select(p => p.ScanPrecursorCharge).GroupBy(n => n).OrderByDescending(g => g.Count()).Select(g => g.Key).FirstOrDefault();
         }
 
         private static Dictionary<string, Dictionary<int, Tuple<double, double>>> ComputeHydrophobicityValues(List<PeptideSpectralMatch> psms, bool computeHydrophobicitiesforModifiedPeptides)
@@ -212,32 +222,13 @@ namespace EngineLayer
         /// <returns></returns>
         private static string DetermineSearchType(List<PeptideSpectralMatch> psms)
         {
-            if (psms[1].DigestionParams.Protease.Name == "top-down")
+            if (psms[0].DigestionParams.Protease.Name == "top-down")
             {
                 return "topDown";
             }
             else
             {
                 return "standard";
-            }
-        }
-
-        /// <summary>
-        /// This method can be used to select a custom subset of features for use in the Microsoft ML.NET computation of posterior error probability
-        /// Probably should have unique sets for regular, crosslinking, top-down, labelled.
-        /// </summary>
-        /// <returns></returns>
-        private static string[] GetCustomFeatures(string searchType)
-        {
-            //non-specific and top-down searches don't used missedCleavages
-            switch (searchType)
-            {
-                case "topDown":
-                    return new string[] { "Intensity", "ScanPrecursorCharge", "DeltaScore", "Notch", "PsmCount", "ModsCount", "Ambiguity", "LongestFragmentIonSeries" };
-
-                case "standard":
-                default:
-                    return new string[] { "HydrophobicityZScore", "Intensity", "ScanPrecursorCharge", "DeltaScore", "Notch", "PsmCount", "ModsCount", "MissedCleavagesCount", "Ambiguity", "LongestFragmentIonSeries" };
             }
         }
 
@@ -286,25 +277,21 @@ namespace EngineLayer
         }
 
         //This method ignores ambiguity and loads only the first peptide in a series for each PSM
-        public static IEnumerable<PsmData> CreatePsmData(List<PeptideSpectralMatch> psms, Dictionary<string, int> sequenceToPsmCount, Dictionary<string, Dictionary<int, Tuple<double, double>>> timeDependantHydrophobicityAverageAndDeviation_unmodified, Dictionary<string, Dictionary<int, Tuple<double, double>>> timeDependantHydrophobicityAverageAndDeviation_modified, string searchType, bool? trueOrFalse = null)
+        public static IEnumerable<PsmData> CreatePsmData(List<PeptideSpectralMatch> psms, Dictionary<string, int> sequenceToPsmCount, Dictionary<string, Dictionary<int, Tuple<double, double>>> timeDependantHydrophobicityAverageAndDeviation_unmodified, Dictionary<string, Dictionary<int, Tuple<double, double>>> timeDependantHydrophobicityAverageAndDeviation_modified, int chargeStateMode, string[] trainingVariables)
         {
             List<PsmData> pd = new List<PsmData>();
             foreach (PeptideSpectralMatch psm in psms)
             {
                 bool label;
-                if (trueOrFalse != null)
-                {
-                    label = trueOrFalse.Value;
-                }
-                else if (psm.IsDecoy || psm.FdrInfo.QValue > 0.25)
+                if (psm.IsDecoy || psm.FdrInfo.QValue > 0.25)
                 {
                     label = false;
-                    pd.Add(CreateOnePsmDataEntry(psm, sequenceToPsmCount, timeDependantHydrophobicityAverageAndDeviation_unmodified, timeDependantHydrophobicityAverageAndDeviation_modified, null, searchType, null, label));
+                    pd.Add(CreateOnePsmDataEntry(psm, sequenceToPsmCount, timeDependantHydrophobicityAverageAndDeviation_unmodified, timeDependantHydrophobicityAverageAndDeviation_modified, chargeStateMode, null, trainingVariables, label));
                 }
                 else if (!psm.IsDecoy && psm.FdrInfo.QValue <= 0.01)
                 {
                     label = true;
-                    pd.Add(CreateOnePsmDataEntry(psm, sequenceToPsmCount, timeDependantHydrophobicityAverageAndDeviation_unmodified, timeDependantHydrophobicityAverageAndDeviation_modified, null, searchType, null, label));
+                    pd.Add(CreateOnePsmDataEntry(psm, sequenceToPsmCount, timeDependantHydrophobicityAverageAndDeviation_unmodified, timeDependantHydrophobicityAverageAndDeviation_modified, chargeStateMode, null, trainingVariables, label));
                 }
             }
             return pd.AsEnumerable();
@@ -319,21 +306,38 @@ namespace EngineLayer
         /// <param name="notchToUse"></param>
         /// <param name="trueOrFalse"></param>
         /// <returns></returns>
-        public static PsmData CreateOnePsmDataEntry(PeptideSpectralMatch psm, Dictionary<string, int> sequenceToPsmCount, Dictionary<string, Dictionary<int, Tuple<double, double>>> timeDependantHydrophobicityAverageAndDeviation_unmodified, Dictionary<string, Dictionary<int, Tuple<double, double>>> timeDependantHydrophobicityAverageAndDeviation_modified, PeptideWithSetModifications selectedPeptide, string searchType, int? notchToUse, bool? trueOrFalse = null)
+        public static PsmData CreateOnePsmDataEntry(PeptideSpectralMatch psm, Dictionary<string, int> sequenceToPsmCount, Dictionary<string, Dictionary<int, Tuple<double, double>>> timeDependantHydrophobicityAverageAndDeviation_unmodified, Dictionary<string, Dictionary<int, Tuple<double, double>>> timeDependantHydrophobicityAverageAndDeviation_modified, int chargeStateMode, PeptideWithSetModifications selectedPeptide, string[] trainingVariables, int notchToUse)
         {
-            float ambiguity = (float)psm.PeptidesToMatchingFragments.Keys.Count;
-            float intensity = (float)(psm.Score - (int)psm.Score);
-            float charge = psm.ScanPrecursorCharge;
-            float deltaScore = (float)psm.DeltaScore;
-            float psmCount = sequenceToPsmCount[String.Join("|", psm.BestMatchingPeptides.Select(p => p.Peptide.FullSequence).ToList())];
-            int notch = 0;
-            if (notchToUse.HasValue)
+            float ambiguity = 1;
+            if (trainingVariables.Contains("Ambiguity"))
             {
-                notch = notchToUse.Value;
+                ambiguity = (float)psm.PeptidesToMatchingFragments.Keys.Count;
             }
-            else if (psm.Notch.HasValue)
+            float intensity = 0;
+            if (trainingVariables.Contains("Intensity"))
             {
-                notch = psm.Notch.Value;
+                intensity = (float)(psm.Score - (int)psm.Score);
+            }
+            float chargeDifference = 0;
+            if (trainingVariables.Contains("PrecursorChargeDiffToMode"))
+            {
+                chargeDifference = -Math.Abs(chargeStateMode - psm.ScanPrecursorCharge);
+            }
+            float deltaScore = 0;
+            if (trainingVariables.Contains("DeltaScore"))
+            {
+                deltaScore = (float)psm.DeltaScore;
+            }
+            float psmCount = 1;
+            if (trainingVariables.Contains("PsmCount"))
+            {
+                psmCount = sequenceToPsmCount[String.Join("|", psm.BestMatchingPeptides.Select(p => p.Peptide.FullSequence).ToList())];
+            }
+
+            int notch = 0;
+            if (trainingVariables.Contains("Notch"))
+            {
+                notch = notchToUse;
             }
 
             if (selectedPeptide == null)
@@ -341,27 +345,38 @@ namespace EngineLayer
                 selectedPeptide = psm.BestMatchingPeptides.Select(p => p.Peptide).First();
             }
 
-            float modCount = selectedPeptide.AllModsOneIsNterminus.Keys.Count();
-            float missedCleavages = selectedPeptide.MissedCleavages;
-            float longestSeq = psm.GetLongestIonSeriesBidirectional(selectedPeptide);
+            float modCount = 0;
+            if (trainingVariables.Contains("ModsCount"))
+            {
+                modCount = selectedPeptide.AllModsOneIsNterminus.Keys.Count();
+            }
+
+            float missedCleavages = 0;
+            if (trainingVariables.Contains("MissedCleavagesCount"))
+            {
+                missedCleavages = selectedPeptide.MissedCleavages;
+            }
+
+            float longestSeq = 0;
+            if (trainingVariables.Contains("LongestFragmentIonSeries"))
+            {
+                longestSeq = psm.GetLongestIonSeriesBidirectional(selectedPeptide);
+            }
 
             float hydrophobicityZscore = float.NaN;
 
-            if (selectedPeptide.BaseSequence.Equals(selectedPeptide.FullSequence) && searchType == "standard")
+            if (selectedPeptide.BaseSequence.Equals(selectedPeptide.FullSequence) && trainingVariables.Contains("HydrophobicityZScore"))
             {
                 hydrophobicityZscore = GetSSRCalcHydrophobicityZScore(psm, selectedPeptide, timeDependantHydrophobicityAverageAndDeviation_unmodified);
             }
-            else if (searchType == "standard")
+            else if (trainingVariables.Contains("HydrophobicityZScore"))
             {
                 hydrophobicityZscore = GetSSRCalcHydrophobicityZScore(psm, selectedPeptide, timeDependantHydrophobicityAverageAndDeviation_modified);
             }
-
+            bool isVariantPeptide = PeptideIsVariant(selectedPeptide);
             bool label;
-            if (trueOrFalse != null)
-            {
-                label = trueOrFalse.Value;
-            }
-            else if (psm.IsDecoy)
+
+            if (psm.IsDecoy)
             {
                 label = false;
             }
@@ -370,10 +385,10 @@ namespace EngineLayer
                 label = true;
             }
 
-            return new PsmData()
+            psm.PsmData_forPEPandPercolator = new PsmData
             {
                 Intensity = intensity,
-                ScanPrecursorCharge = charge,
+                PrecursorChargeDiffToMode = chargeDifference,
                 DeltaScore = deltaScore,
                 Notch = notch,
                 PsmCount = psmCount,
@@ -382,8 +397,130 @@ namespace EngineLayer
                 Ambiguity = ambiguity,
                 LongestFragmentIonSeries = longestSeq,
                 HydrophobicityZScore = hydrophobicityZscore,
+                IsVariantPeptide = Convert.ToSingle(isVariantPeptide),
                 Label = label
             };
+
+            return psm.PsmData_forPEPandPercolator;
+        }
+
+        /// <summary>
+        ///
+        /// </summary>
+        /// <param name="psm"></param>
+        /// <param name="sequenceToPsmCount"></param>
+        /// <param name="selectedPeptide"></param>
+        /// <param name="notchToUse"></param>
+        /// <param name="trueOrFalse"></param>
+        /// <returns></returns>
+        public static PsmData CreateOnePsmDataEntry(PeptideSpectralMatch psm, Dictionary<string, int> sequenceToPsmCount, Dictionary<string, Dictionary<int, Tuple<double, double>>> timeDependantHydrophobicityAverageAndDeviation_unmodified, Dictionary<string, Dictionary<int, Tuple<double, double>>> timeDependantHydrophobicityAverageAndDeviation_modified, int chargeStateMode, PeptideWithSetModifications selectedPeptide, string[] trainingVariables, bool trueOrFalse)
+        {
+            float ambiguity = 0;
+            if (trainingVariables.Contains("Ambiguity"))
+            {
+                ambiguity = (float)psm.PeptidesToMatchingFragments.Keys.Count;
+            }
+            float intensity = 0;
+            if (trainingVariables.Contains("Intensity"))
+            {
+                intensity = (float)(psm.Score - (int)psm.Score);
+            }
+            float chargeDifference = 0;
+            if (trainingVariables.Contains("PrecursorChargeDiffToMode"))
+            {
+                chargeDifference = -Math.Abs(chargeStateMode - psm.ScanPrecursorCharge);
+            }
+            float deltaScore = 0;
+            if (trainingVariables.Contains("DeltaScore"))
+            {
+                deltaScore = (float)psm.DeltaScore;
+            }
+            float psmCount = 1;
+            if (trainingVariables.Contains("PsmCount"))
+            {
+                psmCount = sequenceToPsmCount[String.Join("|", psm.BestMatchingPeptides.Select(p => p.Peptide.FullSequence).ToList())];
+            }
+
+            int notch = 0;
+            if (trainingVariables.Contains("Notch"))
+            {
+                 notch = psm.Notch ?? 0;
+            }
+
+            if (selectedPeptide == null)
+            {
+                selectedPeptide = psm.BestMatchingPeptides.Select(p => p.Peptide).First();
+            }
+
+            float modCount = 0;
+            if (trainingVariables.Contains("ModsCount"))
+            {
+                modCount = selectedPeptide.AllModsOneIsNterminus.Keys.Count();
+            }
+
+            float missedCleavages = 0;
+            if (trainingVariables.Contains("MissedCleavagesCount"))
+            {
+                missedCleavages = selectedPeptide.MissedCleavages;
+            }
+
+            float longestSeq = 0;
+            if (trainingVariables.Contains("LongestFragmentIonSeries"))
+            {
+                longestSeq = psm.GetLongestIonSeriesBidirectional(selectedPeptide);
+            }
+
+            float hydrophobicityZscore = float.NaN;
+
+            if (selectedPeptide.BaseSequence.Equals(selectedPeptide.FullSequence) && trainingVariables.Contains("HydrophobicityZScore"))
+            {
+                hydrophobicityZscore = GetSSRCalcHydrophobicityZScore(psm, selectedPeptide, timeDependantHydrophobicityAverageAndDeviation_unmodified);
+            }
+            else if (trainingVariables.Contains("HydrophobicityZScore"))
+            {
+                hydrophobicityZscore = GetSSRCalcHydrophobicityZScore(psm, selectedPeptide, timeDependantHydrophobicityAverageAndDeviation_modified);
+            }
+            bool isVariantPeptide = PeptideIsVariant(selectedPeptide);
+            bool label = trueOrFalse;
+            psm.PsmData_forPEPandPercolator = new PsmData
+            {
+                Intensity = intensity,
+                PrecursorChargeDiffToMode = chargeDifference,
+                DeltaScore = deltaScore,
+                Notch = notch,
+                PsmCount = psmCount,
+                ModsCount = modCount,
+                MissedCleavagesCount = missedCleavages,
+                Ambiguity = ambiguity,
+                LongestFragmentIonSeries = longestSeq,
+                HydrophobicityZScore = hydrophobicityZscore,
+                IsVariantPeptide = Convert.ToSingle(isVariantPeptide),
+                Label = label
+            };
+
+            return psm.PsmData_forPEPandPercolator;
+        }
+
+        /// <summary>
+        /// This will go away with the next update of mzlib
+        /// </summary>
+        /// <param name="pwsm"></param>
+        /// <returns></returns>
+        private static bool PeptideIsVariant(PeptideWithSetModifications pwsm)
+        {
+            bool identifiedVariant = false;
+            if (pwsm.Protein.AppliedSequenceVariations.Count() > 0)
+            {
+                foreach (var variant in pwsm.Protein.AppliedSequenceVariations)
+                {
+                    if (pwsm.IntersectsAndIdentifiesVariation(variant).identifies)
+                    {
+                        identifiedVariant = true;
+                        break;
+                    }
+                }
+            }
+            return identifiedVariant;
         }
 
         /// <summary>

@@ -262,7 +262,7 @@ namespace EngineLayer.CrosslinkSearch
 
                     PeptideWithSetModifications alphaPeptide = bestPeptide;
 
-                    for (int betaIndex = 0; betaIndex < theScanBestPeptide.Count; betaIndex++)
+                    for (int betaIndex = alphaIndex; betaIndex < theScanBestPeptide.Count; betaIndex++)
                     {
                         PeptideWithSetModifications betaPeptide = theScanBestPeptide[betaIndex].BestPeptide;
 
