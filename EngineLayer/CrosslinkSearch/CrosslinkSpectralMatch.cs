@@ -87,31 +87,12 @@ namespace EngineLayer.CrosslinkSearch
             List<int> possibleXlPositions = new List<int>();
             bool wildcard = crosslinkerModSites.Any(p => p == 'X');
 
-            //Consider the possibility that the site is at Protein N terminal. 
-            if (crosslinkerModSites.Contains(peptide.BaseSequence[0]))
-            {
-                if (!CrosslinkAtCleavageSite)
-                {
-                    if (peptide.OneBasedStartResidueInProtein == 1
-                || (peptide.OneBasedStartResidueInProtein == 2 && initiatorMethionineBehavior != InitiatorMethionineBehavior.Retain)
-                || peptide.Protein.ProteolysisProducts.Any(x => x.OneBasedBeginPosition == peptide.OneBasedStartResidueInProtein))
-                    {
-                        possibleXlPositions.Add(1);
-                    }
-                }
-                else
-                {
-                    possibleXlPositions.Add(1);
-                }
-            }
-
-
-            List<int> range = Enumerable.Range(1, peptide.BaseSequence.Length - 1).ToList();
+            List<int> range = Enumerable.Range(0, peptide.BaseSequence.Length).ToList();
             if (!CrosslinkAtCleavageSite && peptide.OneBasedEndResidueInProtein != peptide.Protein.Length 
                 && !peptide.Protein.ProteolysisProducts.Any(x => x.OneBasedEndPosition == peptide.OneBasedEndResidueInProtein))
             {
-                //The N terminal and C termial cannot be crosslinked and cleaved.
-                range = Enumerable.Range(1, peptide.BaseSequence.Length - 2).ToList();
+                //The C termial cannot be crosslinked and cleaved.
+                range = Enumerable.Range(0, peptide.BaseSequence.Length - 1).ToList();
             }
             foreach (var r in range)
             {
