@@ -42,7 +42,7 @@ namespace MetaMorpheusGUI
 
             if (task == null)
             {
-                this.saveButton.Content = "Add the XLSearch Task";
+                this.saveButton.Content = "Add GlycoSearch Task";
             }
             DataContextForSearchTaskWindow = new DataContextForSearchTaskWindow()
             {
@@ -68,10 +68,10 @@ namespace MetaMorpheusGUI
             {
                 DissociationTypeComboBox.Items.Add(dissassociationType);
                 ChildScanDissociationTypeComboBox.Items.Add(dissassociationType);
-            }
+            }          
 
-            cbbXLprecusorMsTl.Items.Add("Da");
-            cbbXLprecusorMsTl.Items.Add("ppm");
+            cbbPrecusorMsTl.Items.Add("Da");
+            cbbPrecusorMsTl.Items.Add("ppm");
 
             foreach (Protease protease in ProteaseDictionary.Dictionary.Values)
             {
@@ -110,16 +110,15 @@ namespace MetaMorpheusGUI
 
         private void UpdateFieldsFromTask(GlycoSearchTask task)
         {
-            //Crosslink search para
-            //RbSearchCrosslink.IsChecked = !task.XlSearchParameters.SearchGlyco;
-            //RbSearchGlyco.IsChecked = task.XlSearchParameters.SearchGlyco;
+            RbtNGlycoSearch.IsChecked = !task._glycoSearchParameters.IsOGlycoSearch;
+            RbtOGlycoSearch.IsChecked = task._glycoSearchParameters.IsOGlycoSearch;
 
-            ckbXLTopNum.IsChecked = task._glycoSearchParameters.RestrictToTopNHits;
-            txtXLTopNum.Text = task._glycoSearchParameters.CrosslinkSearchTopNum.ToString(CultureInfo.InvariantCulture);
+            ckbTopNum.IsChecked = task._glycoSearchParameters.RestrictToTopNHits;
+            txtTopNum.Text = task._glycoSearchParameters.CrosslinkSearchTopNum.ToString(CultureInfo.InvariantCulture);
 
 
-            cbbXLprecusorMsTl.SelectedIndex = task.CommonParameters.PrecursorMassTolerance is AbsoluteTolerance ? 0 : 1;
-            XLPrecusorMsTlTextBox.Text = task.CommonParameters.PrecursorMassTolerance.Value.ToString(CultureInfo.InvariantCulture);
+            cbbPrecusorMsTl.SelectedIndex = task.CommonParameters.PrecursorMassTolerance is AbsoluteTolerance ? 0 : 1;
+            PrecusorMsTlTextBox.Text = task.CommonParameters.PrecursorMassTolerance.Value.ToString(CultureInfo.InvariantCulture);
             trimMs1.IsChecked = task.CommonParameters.TrimMs1Peaks;
             trimMsMs.IsChecked = task.CommonParameters.TrimMsMsPeaks;
 
@@ -216,7 +215,7 @@ namespace MetaMorpheusGUI
         {
             string fieldNotUsed = "1";
 
-            if (!GlobalGuiSettings.CheckTaskSettingsValidity(XLPrecusorMsTlTextBox.Text, productMassToleranceTextBox.Text, missedCleavagesTextBox.Text,
+            if (!GlobalGuiSettings.CheckTaskSettingsValidity(PrecusorMsTlTextBox.Text, productMassToleranceTextBox.Text, missedCleavagesTextBox.Text,
                 maxModificationIsoformsTextBox.Text, MinPeptideLengthTextBox.Text, MaxPeptideLengthTextBox.Text, maxThreadsTextBox.Text, minScoreAllowed.Text,
                 fieldNotUsed, fieldNotUsed, fieldNotUsed, TopNPeaksTextBox.Text, MinRatioTextBox.Text, null, null, numberOfDatabaseSearchesTextBox.Text, fieldNotUsed, fieldNotUsed, fieldNotUsed))
             {
@@ -232,10 +231,17 @@ namespace MetaMorpheusGUI
             }
             CustomFragmentationWindow.Close();
 
-            //TheTask.XlSearchParameters.SearchGlyco = RbSearchGlyco.IsChecked.Value;
-            //TheTask.XlSearchParameters.SearchGlycoWithBgYgIndex = CkbSearchGlycoWithBgYgIndex.IsChecked.Value;
-            TheTask._glycoSearchParameters.RestrictToTopNHits = ckbXLTopNum.IsChecked.Value;
-            TheTask._glycoSearchParameters.CrosslinkSearchTopNum = int.Parse(txtXLTopNum.Text, CultureInfo.InvariantCulture);
+            if (RbtNGlycoSearch.IsChecked.Value)
+            {
+                TheTask._glycoSearchParameters.IsOGlycoSearch = false;
+            }
+            if (RbtOGlycoSearch.IsChecked.Value)
+            {
+                TheTask._glycoSearchParameters.IsOGlycoSearch = true;
+            }
+            //TheTask.SearchParameters.SearchGlycoWithBgYgIndex = CkbSearchGlycoWithBgYgIndex.IsChecked.Value;
+            TheTask._glycoSearchParameters.RestrictToTopNHits = ckbTopNum.IsChecked.Value;
+            TheTask._glycoSearchParameters.CrosslinkSearchTopNum = int.Parse(txtTopNum.Text, CultureInfo.InvariantCulture);
             TheTask._glycoSearchParameters.DecoyType = checkBoxDecoy.IsChecked.Value ? DecoyType.Reverse : DecoyType.None;
 
             Protease protease = (Protease)proteaseComboBox.SelectedItem;
@@ -263,13 +269,13 @@ namespace MetaMorpheusGUI
             }
 
             Tolerance PrecursorMassTolerance;
-            if (cbbXLprecusorMsTl.SelectedIndex == 0)
+            if (cbbPrecusorMsTl.SelectedIndex == 0)
             {
-                PrecursorMassTolerance = new AbsoluteTolerance(double.Parse(XLPrecusorMsTlTextBox.Text, CultureInfo.InvariantCulture));
+                PrecursorMassTolerance = new AbsoluteTolerance(double.Parse(PrecusorMsTlTextBox.Text, CultureInfo.InvariantCulture));
             }
             else
             {
-                PrecursorMassTolerance = new PpmTolerance(double.Parse(XLPrecusorMsTlTextBox.Text, CultureInfo.InvariantCulture));
+                PrecursorMassTolerance = new PpmTolerance(double.Parse(PrecusorMsTlTextBox.Text, CultureInfo.InvariantCulture));
             }
 
 
@@ -287,7 +293,7 @@ namespace MetaMorpheusGUI
 
             CommonParameters commonParamsToSave = new CommonParameters(
                 precursorMassTolerance: PrecursorMassTolerance,
-                taskDescriptor: OutputFileNameTextBox.Text != "" ? OutputFileNameTextBox.Text : "XLSearchTask",
+                taskDescriptor: OutputFileNameTextBox.Text != "" ? OutputFileNameTextBox.Text : "GlycoSearchTask",
                 productMassTolerance: ProductMassTolerance,
                 doPrecursorDeconvolution: deconvolutePrecursors.IsChecked.Value,
                 useProvidedPrecursorInfo: useProvidedPrecursor.IsChecked.Value,

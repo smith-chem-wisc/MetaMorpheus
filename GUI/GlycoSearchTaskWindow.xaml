@@ -25,7 +25,7 @@
                                 <Style.Resources>
                                     <VisualBrush x:Key="CueBannerBrush" AlignmentX="Left" AlignmentY="Center" Stretch="None">
                                         <VisualBrush.Visual>
-                                            <Label Content="XLSearchTask" Foreground="Gray" />
+                                            <Label Content="SearchTask" Foreground="Gray" />
                                         </VisualBrush.Visual>
                                     </VisualBrush>
                                 </Style.Resources>
@@ -75,23 +75,33 @@
                             <ComboBox x:Name="ChildScanDissociationTypeComboBox" AllowDrop="False" HorizontalAlignment="Center" VerticalAlignment="Center" DropDownClosed="CustomFragmentationHandler"/>
                         </StackPanel>
                         <StackPanel Orientation="Horizontal" Grid.Row="1" Grid.Column="0" Margin="5">
-                            <Label x:Name="lblXLprecusorMsTl"  Content="Precursor mass tolerance" />
-                            <TextBox x:Name="XLPrecusorMsTlTextBox" PreviewTextInput="CheckIfNumber" Width="45" />
-                            <ComboBox x:Name="cbbXLprecusorMsTl" />
+                            <Label x:Name="lblPrecusorMsTl"  Content="Precursor mass tolerance" />
+                            <TextBox x:Name="PrecusorMsTlTextBox" PreviewTextInput="CheckIfNumber" Width="45" />
+                            <ComboBox x:Name="cbbPrecusorMsTl" />
                         </StackPanel>
                         <StackPanel Orientation="Horizontal" Grid.Row="1" Grid.Column="1" Margin="5">
-                            <CheckBox x:Name="ckbXLTopNum" VerticalAlignment="Center" Content="Top N peptides per precursor" />
-                            <TextBox x:Name="txtXLTopNum" PreviewTextInput="CheckIfNumber" Width="45" Margin="2" IsEnabled="{Binding IsChecked, ElementName=ckbXLTopNum}" />
+                            <CheckBox x:Name="ckbTopNum" VerticalAlignment="Center" Content="Top N peptides per precursor" />
+                            <TextBox x:Name="txtTopNum" PreviewTextInput="CheckIfNumber" Width="45" Margin="2" IsEnabled="{Binding IsChecked, ElementName=ckbTopNum}" />
                         </StackPanel>
                     </Grid>
                 </StackPanel>
                 <GroupBox Header="Glyco Search" DockPanel.Dock="Top">
                     <Expander x:Name="GlycoSearchExpander">
-                        <StackPanel Orientation="Vertical">
-                            <StackPanel Orientation="Horizontal" Margin="5">
-                                <CheckBox x:Name="CkbSearchGlycoWithBgYgIndex"  VerticalAlignment="Center" Content="Search Glycopeptides with BgYg index" />
+                        <Grid>
+                            <Grid.RowDefinitions>
+                                <RowDefinition Height="1*"/>
+                                <RowDefinition Height="1*"/>
+                            </Grid.RowDefinitions>
+                            <StackPanel Orientation="Horizontal">
+                                <RadioButton x:Name="RbtNGlycoSearch" Content="NGlyco-peptide Search " GroupName="GlycoSearch"/>
+                                    <RadioButton x:Name="RbtOGlycoSearch" Content="OGlyco-peptide Search " GroupName="GlycoSearch"/>
                             </StackPanel>
-                        </StackPanel>
+                            <StackPanel Orientation="Vertical" Grid.Row="1">
+                                <StackPanel Orientation="Horizontal" Margin="5">
+                                    <CheckBox x:Name="CkbSearchGlycoWithBgYgIndex"  VerticalAlignment="Center" Content="Search Glycopeptides with BgYg index" />
+                                </StackPanel>
+                            </StackPanel>
+                        </Grid>
                     </Expander>
                 </GroupBox>
                 <GroupBox Header="Search Parameters" DockPanel.Dock="Top">
@@ -335,7 +345,7 @@
         </ScrollViewer>
         <StackPanel  Orientation="Horizontal" HorizontalAlignment="Center" Grid.Row="1"  Margin="188.333,5,261,5" Grid.Column="1">
             <Button x:Name="cancelButton" Content="Cancel" Click="CancelButton_Click" />
-            <Button x:Name="saveButton" Content="Save Search Task" Click="SaveButton_Click" FontSize="24" />
+            <Button x:Name="saveButton" Content="Save GlycoSearch Task" Click="SaveButton_Click" FontSize="24" />
         </StackPanel>
     </Grid>
 </Window>

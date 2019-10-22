@@ -117,7 +117,7 @@ namespace Test
         public static void GlyTest_RunTask()
         {
             GlycoSearchTask task = new GlycoSearchTask();
-            task._glycoSearchParameters.OpenSearchType = OpenSearchType.NGlyco;
+            task._glycoSearchParameters.IsOGlycoSearch = false;
             Directory.CreateDirectory(Path.Combine(Environment.CurrentDirectory, @"TESTGlycoData"));
             DbForTask db = new DbForTask(Path.Combine(TestContext.CurrentContext.TestDirectory, @"GlycoTestData/Q9C0Y4.fasta"), false);
             string raw = Path.Combine(TestContext.CurrentContext.TestDirectory, @"GlycoTestData/yeast_glycan_25170.mgf");

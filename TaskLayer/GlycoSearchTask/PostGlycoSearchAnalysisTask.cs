@@ -28,67 +28,43 @@ namespace TaskLayer
                 //csm.ResolveProteinPosAmbiguitiesForXl();
             }
 
-            if (glycoSearchParameters.OpenSearchType == OpenSearchType.NGlyco)
+            if (!glycoSearchParameters.IsOGlycoSearch)
             {
-                //SingleFDRAnalysis(allPsms, new List<string> { taskId });             
-                //var writtenFileInter = Path.Combine(OutputFolder, "all_fdr" + ".mytsv");
-                //WritePsmCrossToTsv(allPsms, writtenFileInter, 3);
 
-                var allPsmsSingle = allPsms.Where(p => p.Glycan == null && p.Score > 2).OrderByDescending(p => p.XLTotalScore).ToList();
+                var allPsmsSingle = allPsms.Where(p => p.Glycan == null && p.Score > 2).OrderByDescending(p => p.TotalScore).ToList();
                 SingleFDRAnalysis(allPsmsSingle, commonParameters, new List<string> { taskId });
                 var writtenFileInter1 = Path.Combine(OutputFolder, "single_fdr" + ".mytsv");
                 WriteFile.WritePsmGlycoToTsv(allPsmsSingle, writtenFileInter1, 1);
 
-                //TO DO: there may have a bug. I have to filter the following loopPsms, deadendPsms with a BestScore higher than 2, Or some of the Psms will have everything be 0!
-                var allPsmsGly = allPsms.Where(p => p.Glycan != null && p.Score > 2).OrderByDescending(p => p.XLTotalScore).ToList();
+                var allPsmsGly = allPsms.Where(p => p.Glycan != null && p.Score > 2).OrderByDescending(p => p.TotalScore).ToList();
                 SingleFDRAnalysis(allPsmsGly, commonParameters, new List<string> { taskId });
                 var writtenFileInter2 = Path.Combine(OutputFolder, "glyco_fdr" + ".mytsv");
-                WriteFile.WritePsmGlycoToTsv(allPsmsGly, writtenFileInter2, 3);
-
-                //var allPsmsGlyForFDR = allPsms.SelectMany(p => p.crosslinkSpectralMatches).ToList();
-                //var writtenFileInter3 = Path.Combine(OutputFolder, "glyco_for_fdr" + ".mytsv");
-                //WritePsmCrossToTsv(allPsmsGlyForFDR, writtenFileInter3, 3);
+                WriteFile.WritePsmGlycoToTsv(allPsmsGly, writtenFileInter2, 2);
 
                 return MyTaskResults;
             }
-
-            if (glycoSearchParameters.OpenSearchType == OpenSearchType.OGlyco)
+            else
             {
-                var allPsmsSingle = allPsms.Where(p => p.glycanBoxes == null && p.Score > 2).OrderByDescending(p => p.XLTotalScore).ToList();
+                var allPsmsSingle = allPsms.Where(p => p.glycanBoxes == null && p.Score > 2).OrderByDescending(p => p.TotalScore).ToList();
                 SingleFDRAnalysis(allPsmsSingle, commonParameters, new List<string> { taskId });
                 var writtenFileInter1 = Path.Combine(OutputFolder, "single_fdr" + ".mytsv");
                 WriteFile.WritePsmGlycoToTsv(allPsmsSingle, writtenFileInter1, 1);
 
-                var allPsmsGly = allPsms.Where(p => p.glycanBoxes != null && p.Score > 2).OrderByDescending(p => p.XLTotalScore).ToList();
+                var allPsmsGly = allPsms.Where(p => p.glycanBoxes != null && p.Score > 2).OrderByDescending(p => p.TotalScore).ToList();
                 SingleFDRAnalysis(allPsmsGly, commonParameters, new List<string> { taskId });
                 var writtenFileInter2 = Path.Combine(OutputFolder, "glyco_fdr" + ".mytsv");
-                WriteFile.WritePsmGlycoToTsv(allPsmsGly, writtenFileInter2, 3);
+                WriteFile.WritePsmGlycoToTsv(allPsmsGly, writtenFileInter2, 2);
                 return MyTaskResults;
             }
-
-
-
-
-            return MyTaskResults;
         }
 
         //Calculate the FDR of single peptide FP/TP
         private void SingleFDRAnalysis(List<GlycoSpectralMatch> items, CommonParameters commonParameters, List<string> taskIds)
         {
             // calculate single PSM FDR
-            List<PeptideSpectralMatch> psms = items.Where(p => p.CrossType == PsmCrossType.Single).Select(p => p as PeptideSpectralMatch).ToList();
+            List<PeptideSpectralMatch> psms = items.Select(p => p as PeptideSpectralMatch).ToList();
             new FdrAnalysisEngine(psms, 0, commonParameters, taskIds).Run();
 
-            // calculate loop PSM FDR
-            psms = items.Where(p => p.CrossType == PsmCrossType.Loop).Select(p => p as PeptideSpectralMatch).ToList();
-            new FdrAnalysisEngine(psms, 0, commonParameters, taskIds).Run();
-
-            // calculate deadend FDR
-            psms = items.Where(p => p.CrossType == PsmCrossType.DeadEnd ||
-                p.CrossType == PsmCrossType.DeadEndH2O ||
-                p.CrossType == PsmCrossType.DeadEndNH2 ||
-                p.CrossType == PsmCrossType.DeadEndTris).Select(p => p as PeptideSpectralMatch).ToList();
-            new FdrAnalysisEngine(psms, 0, commonParameters, taskIds).Run();
         }
 
     }

@@ -9,7 +9,7 @@ namespace TaskLayer
     {
         public GlycoSearchParameters()
         {
-            OpenSearchType = OpenSearchType.Crosslink;
+            IsOGlycoSearch = true;
             DecoyType = DecoyType.Reverse;
             Crosslinker = GlobalVariables.Crosslinkers.First();
             RestrictToTopNHits = true;
@@ -23,7 +23,7 @@ namespace TaskLayer
             SearchGlycan182 = false;
         }
 
-        public OpenSearchType OpenSearchType { get; set; }
+        public bool IsOGlycoSearch { get; set; }
         public DecoyType DecoyType { get; set; }
         public Crosslinker Crosslinker { get; set; }
         public int CrosslinkSearchTopNum { get; set; }

@@ -699,6 +699,15 @@ namespace EngineLayer
             }
         }
 
+        public string Structure
+        {
+            get
+            {
+                return Glycan.GetKindString(Kind);
+            }
+           
+        }
+
     }
 
 }
