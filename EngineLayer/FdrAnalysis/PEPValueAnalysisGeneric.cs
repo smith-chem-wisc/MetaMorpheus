@@ -209,37 +209,28 @@ namespace EngineLayer
                     }
                 }
 
+                List<double> allStDevs = new List<double>();
+
                 foreach (int key in hydrobophobicites.Keys)
                 {
                     //TODO consider using inner-quartile range instead of standard deviation
-                    averagesCommaStandardDeviations.Add(key, new Tuple<double, double>(hydrobophobicites[key].Average(), hydrobophobicites[key].StandardDeviation()));
-                }
-
-                //some standard deviations are too small or too large because of random reasons, so we replace those small numbers of oddballs with reasonable numbers.
-                List<double> stDevs = averagesCommaStandardDeviations.Select(x => x.Value.Item2).ToList();
-
-                for (int i = stDevs.Count - 1; i >= 0; i--)
-                {
-                    if (stDevs[i].Equals(double.NaN))
+                    double averageHydrophobicity = hydrobophobicites[key].Average();
+                    averagesCommaStandardDeviations.Add(key, new Tuple<double, double>(averageHydrophobicity, hydrobophobicites[key].StandardDeviation()));
+                    foreach (double hydrophobicity in hydrobophobicites[key])
                     {
-                        stDevs.RemoveAt(i);
+                        double difference = Math.Abs(hydrophobicity - averageHydrophobicity);
+                        if (!difference.Equals(double.NaN) && difference > 0)
+                        allStDevs.Add(Math.Pow(difference,2));
                     }
                 }
 
-                double globalStDev;
-                if (stDevs.Count > 1)
+                //some standard deviations are too small or too large because of random reasons, so we replace those small numbers of oddballs with reasonable numbers.
+                double globalStDev = 1;
+                if (allStDevs.Count() > 1)
                 {
-                    globalStDev = stDevs.Average();
+                    globalStDev = Math.Sqrt(allStDevs.Average());
                 }
-                else if (stDevs.Count == 1)
-                {
-                    globalStDev = stDevs.First();
-                }
-                else
-                {
-                    globalStDev = 1;
-                }
-
+                
                 Dictionary<int, Tuple<double, double>> stDevsToChange = new Dictionary<int, Tuple<double, double>>();
                 foreach (KeyValuePair<int, Tuple<double, double>> item in averagesCommaStandardDeviations)
                 {

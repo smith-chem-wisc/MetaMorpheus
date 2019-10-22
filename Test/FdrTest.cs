@@ -443,6 +443,112 @@ namespace Test
         }
 
         [Test]
+        public static void ReplaceBadStdevOne()
+        {
+            //adding a new scan that creates a psm at an isolated retention time. This will ultimately cause PEP to replace its retention time standard deviation "Z-score" with the global average.
+            var variableModifications = new List<Modification>();
+            var fixedModifications = new List<Modification>();
+            var origDataFile = Path.Combine(TestContext.CurrentContext.TestDirectory, @"TestData\TaGe_SA_HeLa_04_subset_longestSeq.mzML");
+            MyFileManager myFileManager = new MyFileManager(true);
+            CommonParameters CommonParameters = new CommonParameters(digestionParams: new DigestionParams());
+            var myMsDataFile = myFileManager.LoadFile(origDataFile, CommonParameters);
+            var searchModes = new SinglePpmAroundZeroSearchMode(5);
+            List<Protein> proteinList = ProteinDbLoader.LoadProteinFasta(Path.Combine(TestContext.CurrentContext.TestDirectory, @"TestData\hela_snip_for_unitTest.fasta"), true, DecoyType.Reverse, false, ProteinDbLoader.UniprotAccessionRegex, ProteinDbLoader.UniprotFullNameRegex, ProteinDbLoader.UniprotFullNameRegex, ProteinDbLoader.UniprotGeneNameRegex,
+                    ProteinDbLoader.UniprotOrganismRegex, out var dbErrors, -1);
+            var listOfSortedms2Scans = MetaMorpheusTask.GetMs2Scans(myMsDataFile, @"TestData\TaGe_SA_HeLa_04_subset_longestSeq.mzML", CommonParameters).OrderBy(b => b.PrecursorMass).ToArray();
+
+            
+            Ms2ScanWithSpecificMass topMs2Scan = listOfSortedms2Scans[395];
+            int newOneBasedScanNumber = 1000;
+            MzRange range = new MzRange(topMs2Scan.TheScan.MassSpectrum.XArray.Min(), topMs2Scan.TheScan.MassSpectrum.XArray.Max());
+            MzSpectrum mzs = new MzSpectrum(topMs2Scan.TheScan.MassSpectrum.XArray, topMs2Scan.TheScan.MassSpectrum.YArray, true);
+            double newRetentionTime = topMs2Scan.TheScan.RetentionTime - 25;
+            MsDataScan msd = new MsDataScan(mzs, newOneBasedScanNumber, 2, topMs2Scan.TheScan.IsCentroid, Polarity.Positive, newRetentionTime, range, "", MZAnalyzerType.Orbitrap, topMs2Scan.TheScan.TotalIonCurrent, topMs2Scan.TheScan.InjectionTime, topMs2Scan.TheScan.NoiseData, "", topMs2Scan.TheScan.SelectedIonMZ, topMs2Scan.TheScan.SelectedIonChargeStateGuess, topMs2Scan.TheScan.SelectedIonIntensity, topMs2Scan.TheScan.IsolationMz, topMs2Scan.TheScan.IsolationWidth, DissociationType.HCD, topMs2Scan.TheScan.OneBasedPrecursorScanNumber, topMs2Scan.TheScan.SelectedIonMonoisotopicGuessMz);
+            Ms2ScanWithSpecificMass mwsm = new Ms2ScanWithSpecificMass(msd, topMs2Scan.PrecursorMonoisotopicPeakMz, topMs2Scan.PrecursorCharge, topMs2Scan.FullFilePath, new CommonParameters(), topMs2Scan.ExperimentalFragments);
+
+            Ms2ScanWithSpecificMass[] extendedArray = new Ms2ScanWithSpecificMass[listOfSortedms2Scans.Length + 1];
+            for (int i = 0; i < listOfSortedms2Scans.Length; i++)
+            {
+                extendedArray[i] = listOfSortedms2Scans[i];
+            }
+            extendedArray[listOfSortedms2Scans.Length] = mwsm;
+
+            extendedArray = extendedArray.OrderBy(b => b.PrecursorMass).ToArray();
+
+            PeptideSpectralMatch[] allPsmsArray = new PeptideSpectralMatch[extendedArray.Length];
+            new ClassicSearchEngine(allPsmsArray, extendedArray, variableModifications, fixedModifications, null, null, null, proteinList, searchModes, CommonParameters, new List<string>()).Run();
+
+            List<PeptideSpectralMatch> nonNullPsms = allPsmsArray.Where(p => p != null).ToList();
+            nonNullPsms = nonNullPsms.OrderByDescending(p => p.Score).ToList();
+            List<PeptideSpectralMatch> psmBloated = new List<PeptideSpectralMatch>();
+            psmBloated.AddRange(nonNullPsms);
+            int arrayMax = nonNullPsms.Count;
+            psmBloated.AddRange(nonNullPsms.GetRange(2, arrayMax - 2));
+            psmBloated.AddRange(nonNullPsms.GetRange(2, arrayMax - 2));
+
+            FdrAnalysisResults fdrResultsClassicDelta = (FdrAnalysisResults)(new FdrAnalysisEngine(psmBloated.Where(p => p != null).ToList(), 1, CommonParameters, new List<string>()).Run());
+
+        }
+
+        [Test]
+        public static void ReplaceBadStdevTwo()
+        {
+            //here we are adding a really hydrophobic psm at the same time as a regular peptide so that there is a big difference in their computed hydrophobicities. The stdev of these hydrophobicities is out of whach the the collective and so it needs to get replaced by the global average
+
+            var variableModifications = new List<Modification>();
+            var fixedModifications = new List<Modification>();
+            var origDataFile = Path.Combine(TestContext.CurrentContext.TestDirectory, @"TestData\TaGe_SA_HeLa_04_subset_longestSeq.mzML");
+            MyFileManager myFileManager = new MyFileManager(true);
+            CommonParameters CommonParameters = new CommonParameters(digestionParams: new DigestionParams());
+            var myMsDataFile = myFileManager.LoadFile(origDataFile, CommonParameters);
+            var searchModes = new SinglePpmAroundZeroSearchMode(5);
+            List<Protein> proteinList = ProteinDbLoader.LoadProteinFasta(Path.Combine(TestContext.CurrentContext.TestDirectory, @"TestData\hela_snip_for_unitTest.fasta"), true, DecoyType.Reverse, false, ProteinDbLoader.UniprotAccessionRegex, ProteinDbLoader.UniprotFullNameRegex, ProteinDbLoader.UniprotFullNameRegex, ProteinDbLoader.UniprotGeneNameRegex,
+                    ProteinDbLoader.UniprotOrganismRegex, out var dbErrors, -1);
+            var listOfSortedms2Scans = MetaMorpheusTask.GetMs2Scans(myMsDataFile, @"TestData\TaGe_SA_HeLa_04_subset_longestSeq.mzML", CommonParameters).OrderBy(b => b.PrecursorMass).ToArray();
+
+            //adding a new scan that creates a psm at an isolated retention time. This will ultimately cause PEP to replace its retention time standard deviation "Z-score" with the global average.
+            Ms2ScanWithSpecificMass topMs2Scan = listOfSortedms2Scans[395];
+            int newOneBasedScanNumber = 1000;
+            MzRange range = new MzRange(topMs2Scan.TheScan.MassSpectrum.XArray.Min(), topMs2Scan.TheScan.MassSpectrum.XArray.Max());
+            MzSpectrum mzs = new MzSpectrum(topMs2Scan.TheScan.MassSpectrum.XArray, topMs2Scan.TheScan.MassSpectrum.YArray, true);
+            double newRetentionTime = topMs2Scan.TheScan.RetentionTime - 25;
+            MsDataScan msd = new MsDataScan(mzs, newOneBasedScanNumber, 2, topMs2Scan.TheScan.IsCentroid, Polarity.Positive, newRetentionTime, range, "", MZAnalyzerType.Orbitrap, topMs2Scan.TheScan.TotalIonCurrent, topMs2Scan.TheScan.InjectionTime, topMs2Scan.TheScan.NoiseData, "", topMs2Scan.TheScan.SelectedIonMZ, topMs2Scan.TheScan.SelectedIonChargeStateGuess, topMs2Scan.TheScan.SelectedIonIntensity, topMs2Scan.TheScan.IsolationMz, topMs2Scan.TheScan.IsolationWidth, DissociationType.HCD, topMs2Scan.TheScan.OneBasedPrecursorScanNumber, topMs2Scan.TheScan.SelectedIonMonoisotopicGuessMz);
+            Ms2ScanWithSpecificMass mwsm = new Ms2ScanWithSpecificMass(msd, topMs2Scan.PrecursorMonoisotopicPeakMz, topMs2Scan.PrecursorCharge, topMs2Scan.FullFilePath, new CommonParameters(), topMs2Scan.ExperimentalFragments);
+
+            Ms2ScanWithSpecificMass[] extendedArray = new Ms2ScanWithSpecificMass[listOfSortedms2Scans.Length + 1];
+            for (int i = 0; i < listOfSortedms2Scans.Length; i++)
+            {
+                extendedArray[i] = listOfSortedms2Scans[i];
+            }
+            extendedArray[listOfSortedms2Scans.Length] = mwsm;
+
+            extendedArray = extendedArray.OrderBy(b => b.PrecursorMass).ToArray();
+
+            PeptideSpectralMatch[] allPsmsArray = new PeptideSpectralMatch[extendedArray.Length];
+            new ClassicSearchEngine(allPsmsArray, extendedArray, variableModifications, fixedModifications, null, null, null, proteinList, searchModes, CommonParameters, new List<string>()).Run();
+
+            List<PeptideSpectralMatch> nonNullPsms = allPsmsArray.Where(p => p != null).ToList();
+            nonNullPsms = nonNullPsms.OrderByDescending(p => p.Score).ToList();
+            List<PeptideSpectralMatch> psmBloated = new List<PeptideSpectralMatch>();
+            psmBloated.AddRange(nonNullPsms);
+            int arrayMax = nonNullPsms.Count;
+            psmBloated.AddRange(nonNullPsms.GetRange(2, arrayMax - 2));
+            psmBloated.AddRange(nonNullPsms.GetRange(2, arrayMax - 2));
+
+
+            PeptideSpectralMatch pp = psmBloated.Where(p => p.ScanRetentionTime < (newRetentionTime + 1)).First();
+
+            PeptideWithSetModifications newPwsmTwo = new PeptideWithSetModifications(new Protein("WAGVLPWFPWAAVVWGFWF", "ACCESSION", "ORGANISM"), new DigestionParams(), 1, 2, CleavageSpecificity.Full, "", 0, new Dictionary<int, Modification>(), 0);
+            PeptideSpectralMatch newPsmTwo = new PeptideSpectralMatch(newPwsmTwo, pp.BestMatchingPeptides.First().Notch, pp.Score, pp.ScanIndex, mwsm, new DigestionParams(), pp.MatchedFragmentIons);
+
+            psmBloated.Add(newPsmTwo);
+
+            FdrAnalysisResults fdrResultsClassicDelta = (FdrAnalysisResults)(new FdrAnalysisEngine(psmBloated.Where(p => p != null).ToList(), 1, CommonParameters, new List<string>()).Run());
+
+        }
+
+
+        [Test]
         public static void TestRemoveThisAmbiguousePeptide()
         {
             Ms2ScanWithSpecificMass scanB = new Ms2ScanWithSpecificMass(
