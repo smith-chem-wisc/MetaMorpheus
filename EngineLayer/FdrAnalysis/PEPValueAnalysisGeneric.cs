@@ -384,11 +384,6 @@ namespace EngineLayer
                 notch = notchToUse;
             }
 
-            if (selectedPeptide == null)
-            {
-                selectedPeptide = psm.BestMatchingPeptides.Select(p => p.Peptide).First();
-            }
-
             float modCount = 0;
             if (trainingVariables.Contains("ModsCount"))
             {
