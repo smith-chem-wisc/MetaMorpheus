@@ -220,7 +220,9 @@ namespace EngineLayer
                     {
                         double difference = Math.Abs(hydrophobicity - averageHydrophobicity);
                         if (!difference.Equals(double.NaN) && difference > 0)
-                        allStDevs.Add(Math.Pow(difference,2));
+                        {
+                            allStDevs.Add(Math.Pow(difference, 2));
+                        }
                     }
                 }
 
@@ -230,7 +232,7 @@ namespace EngineLayer
                 {
                     globalStDev = Math.Sqrt(allStDevs.Average());
                 }
-                
+
                 Dictionary<int, Tuple<double, double>> stDevsToChange = new Dictionary<int, Tuple<double, double>>();
                 foreach (KeyValuePair<int, Tuple<double, double>> item in averagesCommaStandardDeviations)
                 {
