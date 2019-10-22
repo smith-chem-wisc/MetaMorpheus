@@ -288,7 +288,7 @@ namespace EngineLayer
                 }
             }
 
-            double maxHydrophobicityZscore = 10;
+            double maxHydrophobicityZscore = 10; // each "Z" is one standard deviation. so, maxHydrophobicityZscore 10 is quite large
             if (double.IsNaN(hydrophobicityZscore) || double.IsInfinity(hydrophobicityZscore) || hydrophobicityZscore > maxHydrophobicityZscore)
             {
                 hydrophobicityZscore = maxHydrophobicityZscore;
