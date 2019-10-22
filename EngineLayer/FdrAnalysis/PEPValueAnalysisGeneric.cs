@@ -159,6 +159,8 @@ namespace EngineLayer
         private static Dictionary<string, Dictionary<int, Tuple<double, double>>> ComputeHydrophobicityValues(List<PeptideSpectralMatch> psms, bool computeHydrophobicitiesforModifiedPeptides)
         {
             SSRCalc3 calc = new SSRCalc3("SSRCalc 3.0 (300A)", SSRCalc3.Column.A300);
+
+            //TODO change the tuple so the values have names
             Dictionary<string, Dictionary<int, Tuple<double, double>>> rtHydrophobicityAvgDev = new Dictionary<string, Dictionary<int, Tuple<double, double>>>();
 
             List<string> filenames = psms.Select(f => f.FullFilePath).ToList();
@@ -167,7 +169,7 @@ namespace EngineLayer
 
             foreach (string filename in filenames)
             {
-                Dictionary<int, List<double>> hydrobophobicites = new Dictionary<int, List<double>>();
+                Dictionary<int, List<double>> hydrophobicities = new Dictionary<int, List<double>>();
                 Dictionary<int, Tuple<double, double>> averagesCommaStandardDeviations = new Dictionary<int, Tuple<double, double>>();
 
                 foreach (PeptideSpectralMatch psm in psms.Where(f => (f.FullFilePath == filename || f.FullFilePath == null) && f.FdrInfo.QValue <= 0.01 && !f.IsDecoy))
@@ -187,52 +189,52 @@ namespace EngineLayer
                         //First block of if statement is for modified peptides.
                         if (pwsm.AllModsOneIsNterminus.Any() && computeHydrophobicitiesforModifiedPeptides)
                         {
-                            if (hydrobophobicites.ContainsKey(possibleKey))
+                            if (hydrophobicities.ContainsKey(possibleKey))
                             {
-                                hydrobophobicites[possibleKey].Add(predictedHydrophobicity);
+                                hydrophobicities[possibleKey].Add(predictedHydrophobicity);
                             }
                             else
                             {
-                                hydrobophobicites.Add(possibleKey, new List<double>() { predictedHydrophobicity });
+                                hydrophobicities.Add(possibleKey, new List<double>() { predictedHydrophobicity });
                             }
                         }
                         //this second block of if statment is for unmodified peptides.
                         else if (!pwsm.AllModsOneIsNterminus.Any() && !computeHydrophobicitiesforModifiedPeptides)
                         {
-                            if (hydrobophobicites.ContainsKey(possibleKey))
+                            if (hydrophobicities.ContainsKey(possibleKey))
                             {
-                                hydrobophobicites[possibleKey].Add(predictedHydrophobicity);
+                                hydrophobicities[possibleKey].Add(predictedHydrophobicity);
                             }
                             else
                             {
-                                hydrobophobicites.Add(possibleKey, new List<double>() { predictedHydrophobicity });
+                                hydrophobicities.Add(possibleKey, new List<double>() { predictedHydrophobicity });
                             }
                         }
                     }
                 }
 
-                List<double> allStDevs = new List<double>();
+                List<double> allSquaredHyrophobicityDifferences = new List<double>();
 
-                foreach (int key in hydrobophobicites.Keys)
+                foreach (int retentionTimeBin in hydrophobicities.Keys)
                 {
                     //TODO consider using inner-quartile range instead of standard deviation
-                    double averageHydrophobicity = hydrobophobicites[key].Average();
-                    averagesCommaStandardDeviations.Add(key, new Tuple<double, double>(averageHydrophobicity, hydrobophobicites[key].StandardDeviation()));
-                    foreach (double hydrophobicity in hydrobophobicites[key])
+                    double averageHydrophobicity = hydrophobicities[retentionTimeBin].Average();
+                    averagesCommaStandardDeviations.Add(retentionTimeBin, new Tuple<double, double>(averageHydrophobicity, hydrophobicities[retentionTimeBin].StandardDeviation()));
+                    foreach (double hydrophobicity in hydrophobicities[retentionTimeBin])
                     {
                         double difference = Math.Abs(hydrophobicity - averageHydrophobicity);
-                        if (!difference.Equals(double.NaN) && difference > 0)
+                        if (!double.IsNaN(difference) && difference > 0)
                         {
-                            allStDevs.Add(Math.Pow(difference, 2));
+                            allSquaredHyrophobicityDifferences.Add(Math.Pow(difference, 2));
                         }
                     }
                 }
 
                 //some standard deviations are too small or too large because of random reasons, so we replace those small numbers of oddballs with reasonable numbers.
                 double globalStDev = 1;
-                if (allStDevs.Count() > 1)
+                if (allSquaredHyrophobicityDifferences.Count() > 1)
                 {
-                    globalStDev = Math.Sqrt(allStDevs.Average());
+                    globalStDev = Math.Sqrt(allSquaredHyrophobicityDifferences.Sum()/(allSquaredHyrophobicityDifferences.Count()-1));
                 }
 
                 Dictionary<int, Tuple<double, double>> stDevsToChange = new Dictionary<int, Tuple<double, double>>();
