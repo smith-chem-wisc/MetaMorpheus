@@ -181,6 +181,8 @@ namespace EngineLayer
                         }
                         fullSequences.Add(pwsm.FullSequence);
                         double predictedHydrophobicity = calc.ScoreSequence(pwsm);
+
+                        //here i'm grouping this in 2 minute increments becuase there are cases where you get too few data points to get a good standard deviation an average. This is for stability.
                         int possibleKey = (int)(2 * Math.Round(psm.ScanRetentionTime / 2d, 0));
                         //First block of if statement is for modified peptides.
                         if (pwsm.AllModsOneIsNterminus.Any() && computeHydrophobicitiesforModifiedPeptides)
@@ -373,6 +375,8 @@ namespace EngineLayer
             if (trainingVariables.Contains("PsmCount"))
             {
                 psmCount = sequenceToPsmCount[String.Join("|", psm.BestMatchingPeptides.Select(p => p.Peptide.FullSequence).ToList())];
+
+                //grouping psm counts as follows is done for stability. you get very nice numbers at low psms to get good statistics. But you get a few peptides with high psm counts that could be either targets or decoys and the values swing between extremes. So grouping psms in bundles really adds stability.
                 List<int> psmCountList = new List<int> { 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 15, 20, 30, 40, 50, 75, 100, 200, 300, 400, 500 };
                 int closest = psmCountList.OrderBy(item => Math.Abs(psmCount - item)).First();
                 psmCount = closest;
