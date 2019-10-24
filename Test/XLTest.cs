@@ -1,6 +1,7 @@
 ﻿using Chemistry;
 using EngineLayer;
 using EngineLayer.CrosslinkSearch;
+using EngineLayer.FdrAnalysis;
 using EngineLayer.Indexing;
 using MassSpectrometry;
 using MzLibUtil;
@@ -184,6 +185,8 @@ namespace Test
                 item.SetFdrValues(0, 0, 0, 0, 0, 0, 0, 0);
                 item.ResolveProteinPosAmbiguitiesForXl();
             }
+
+            FdrAnalysisEngine fdrAnalysisEngine = new FdrAnalysisEngine(newPsms.ToList<PeptideSpectralMatch>(), 0, commonParameters, new List<string>(), "");
 
             Assert.AreEqual(4, newPsms.Count);
             Assert.That(newPsms[0].XlProteinPos == null); //single

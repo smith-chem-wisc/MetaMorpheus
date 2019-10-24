@@ -28,6 +28,8 @@ namespace TaskLayer
                 csm.ResolveProteinPosAmbiguitiesForXl();
             }
 
+            new FdrAnalysisEngine(allPsms.ToList<PeptideSpectralMatch>(), 0, commonParameters, new List<string>(), "crosslink").Run();
+
             var allPsmsXL = allPsms.Where(p => p.CrossType == PsmCrossType.Cross).ToList();
 
             // inter-crosslinks; different proteins are linked
@@ -141,18 +143,18 @@ namespace TaskLayer
         {
             // calculate single PSM FDR
             List<PeptideSpectralMatch> psms = items.Where(p => p.CrossType == PsmCrossType.Single).Select(p => p as PeptideSpectralMatch).ToList();
-            new FdrAnalysisEngine(psms, 0, commonParameters, taskIds).Run();
+            new FdrAnalysisEngine(psms, 0, commonParameters, taskIds, "skippep").Run();
 
             // calculate loop PSM FDR
             psms = items.Where(p => p.CrossType == PsmCrossType.Loop).Select(p => p as PeptideSpectralMatch).ToList();
-            new FdrAnalysisEngine(psms, 0, commonParameters, taskIds).Run();
+            new FdrAnalysisEngine(psms, 0, commonParameters, taskIds, "skippep").Run();
 
             // calculate deadend FDR
             psms = items.Where(p => p.CrossType == PsmCrossType.DeadEnd ||
                 p.CrossType == PsmCrossType.DeadEndH2O ||
                 p.CrossType == PsmCrossType.DeadEndNH2 ||
                 p.CrossType == PsmCrossType.DeadEndTris).Select(p => p as PeptideSpectralMatch).ToList();
-            new FdrAnalysisEngine(psms, 0, commonParameters, taskIds).Run();
+            new FdrAnalysisEngine(psms, 0, commonParameters, taskIds, "skippep").Run();
         }
 
         //Calculate the FDR of crosslinked peptide FP/TP
@@ -174,7 +176,10 @@ namespace TaskLayer
                 }
 
                 double qValue = Math.Min(1, (double)cumulativeDecoy / cumulativeTarget);
-                csm.SetFdrValues(cumulativeTarget, cumulativeDecoy, qValue, 0, 0, 0, 0, 0);
+
+                csm.FdrInfo.CumulativeTarget = cumulativeTarget;
+                csm.FdrInfo.CumulativeDecoy = cumulativeDecoy;
+                csm.FdrInfo.QValue = qValue;
             }
 
             double qValueThreshold = 1.0;

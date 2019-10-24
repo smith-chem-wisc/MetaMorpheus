@@ -1,11 +1,13 @@
 ﻿using Chemistry;
 using EngineLayer;
 using EngineLayer.ClassicSearch;
+using EngineLayer.CrosslinkSearch;
 using EngineLayer.FdrAnalysis;
 using EngineLayer.Indexing;
 using EngineLayer.ModernSearch;
 using MassSpectrometry;
 using MzLibUtil;
+using Nett;
 using NUnit.Framework;
 using Proteomics;
 using Proteomics.Fragmentation;
@@ -257,7 +259,7 @@ namespace Test
             Assert.That(-Math.Abs(chargeStateMode - maxScorePsm.ScanPrecursorCharge), Is.EqualTo(maxPsmData.PrecursorChargeDiffToMode));
             Assert.AreEqual((float)0, maxPsmData.IsVariantPeptide);
 
-            PEP_Analysis.ComputePEPValuesForAllPSMsGeneric(nonNullPsms);
+            PEP_Analysis.ComputePEPValuesForAllPSMsGeneric(nonNullPsms, "standard");
 
             int trueCount = 0;
 
@@ -285,7 +287,7 @@ namespace Test
                 "*       LogLoss:  2.60551851621861E-10\r\n*       LogLossReduction:  0.999999999599165\r\n*       PositivePrecision:  1\r\n*       PositiveRecall:  1\r\n*       NegativePrecision:  1\r\n" +
                 "*       NegativeRecall:  1\r\n*       Count of Ambiguous Peptides Removed:  0\r\n************************************************************\r\n";
 
-            string metrics = PEP_Analysis.ComputePEPValuesForAllPSMsGeneric(moreNonNullPSMs);
+            string metrics = PEP_Analysis.ComputePEPValuesForAllPSMsGeneric(moreNonNullPSMs, "standard");
             Assert.AreEqual(expectedMetrics, metrics);
             Assert.GreaterOrEqual(32, trueCount);
 
@@ -316,6 +318,61 @@ namespace Test
             PsmData variantPsmData = PEP_Analysis.CreateOnePsmDataEntry(variantPSM, sequenceToPsmCount, fileSpecificRetTimeHI_behavior, fileSpecificRetTemHI_behaviorModifiedPeptides, chargeStateMode, vpwsm, trainingVariables, vnotch, !maxScorePsm.IsDecoy);
 
             Assert.AreEqual((float)1, variantPsmData.IsVariantPeptide);
+        }
+
+        [Test]
+        public static void TestComputePEPValueCrosslink()
+        {
+            var variableModifications = new List<Modification>();
+            var fixedModifications = new List<Modification>();
+            //Generate parameters
+            var commonParameters = new CommonParameters(doPrecursorDeconvolution: false, dissociationType: DissociationType.EThcD,
+                scoreCutoff: 1, digestionParams: new DigestionParams(minPeptideLength: 5), precursorMassTolerance: new PpmTolerance(10));
+
+            var xlSearchParameters = new XlSearchParameters();
+            xlSearchParameters.CrosslinkAtCleavageSite = true;
+
+            List<Protein> proteinList = ProteinDbLoader.LoadProteinFasta(Path.Combine(TestContext.CurrentContext.TestDirectory, @"XlTestData/BSA.fasta"), true, DecoyType.Reverse, false, ProteinDbLoader.UniprotAccessionRegex, ProteinDbLoader.UniprotFullNameRegex, ProteinDbLoader.UniprotFullNameRegex, ProteinDbLoader.UniprotGeneNameRegex,
+                    ProteinDbLoader.UniprotOrganismRegex, out var dbErrors, -1);
+
+            var origDataFile = Path.Combine(TestContext.CurrentContext.TestDirectory, @"XlTestData/BSA_DSS_23747.mzML");
+            MyFileManager myFileManager = new MyFileManager(true);
+            var myMsDataFile = myFileManager.LoadFile(origDataFile, commonParameters);
+            var searchModes = new SinglePpmAroundZeroSearchMode(5);
+
+            var listOfSortedms2Scans = MetaMorpheusTask.GetMs2Scans(myMsDataFile, @"XlTestData/BSA_DSS_23747.mzML", commonParameters).OrderBy(b => b.PrecursorMass).ToArray();
+
+            var task = Toml.ReadFile<XLSearchTask>(Path.Combine(TestContext.CurrentContext.TestDirectory, @"XlTestData/XLSearchTaskconfig_BSA_DSS_23747.toml"), MetaMorpheusTask.tomlConfig);
+            Directory.CreateDirectory(Path.Combine(Environment.CurrentDirectory, @"TESTXlTestData"));
+
+            //Run index engine
+            var indexEngine = new IndexingEngine(proteinList, variableModifications, fixedModifications, null, null, null, 1, DecoyType.Reverse, commonParameters, 30000, false, new List<FileInfo>(), new List<string>());
+
+            var indexResults = (IndexingResults)indexEngine.Run();
+
+            var indexedFragments = indexResults.FragmentIndex.Where(p => p != null).SelectMany(v => v).ToList();
+            Assert.AreEqual(26397, indexedFragments.Count);
+            Assert.AreEqual(443, indexResults.PeptideIndex.Count);
+
+            //Generate crosslinker, which is DSSO here.
+            Crosslinker crosslinker = GlobalVariables.Crosslinkers.Where(p => p.CrosslinkerName == "DSS").First();
+
+            List<CrosslinkSpectralMatch>[] possiblePsms = new List<CrosslinkSpectralMatch>[listOfSortedms2Scans.Length];
+            new CrosslinkSearchEngine(possiblePsms, listOfSortedms2Scans, indexResults.PeptideIndex, indexResults.FragmentIndex, null, 0, commonParameters, crosslinker, xlSearchParameters.RestrictToTopNHits, xlSearchParameters.CrosslinkSearchTopNum, xlSearchParameters.CrosslinkAtCleavageSite, xlSearchParameters.XlQuench_H2O, xlSearchParameters.XlQuench_NH2, xlSearchParameters.XlQuench_Tris, new List<string> { }).Run();
+
+            var newPsms = possiblePsms.Where(p => p != null).Select(p => p.First()).ToList();
+            foreach (var item in newPsms)
+            {
+                item.ResolveAllAmbiguities();
+                if (item.BetaPeptide != null)
+                {
+                    item.BetaPeptide.ResolveAllAmbiguities();
+                }
+                item.SetFdrValues(0, 0, 0, 0, 0, 0, 0, 0);
+                item.ResolveProteinPosAmbiguitiesForXl();
+            }
+
+            FdrAnalysisResults fdrResultsCrosslink = (FdrAnalysisResults)(new FdrAnalysisEngine(newPsms.ToList<PeptideSpectralMatch>(), 0, commonParameters, new List<string>(), "crosslink").Run());
         }
 
         [Test]
@@ -457,7 +514,6 @@ namespace Test
                     ProteinDbLoader.UniprotOrganismRegex, out var dbErrors, -1);
             var listOfSortedms2Scans = MetaMorpheusTask.GetMs2Scans(myMsDataFile, @"TestData\TaGe_SA_HeLa_04_subset_longestSeq.mzML", CommonParameters).OrderBy(b => b.PrecursorMass).ToArray();
 
-            
             Ms2ScanWithSpecificMass topMs2Scan = listOfSortedms2Scans[395];
             int newOneBasedScanNumber = 1000;
             MzRange range = new MzRange(topMs2Scan.TheScan.MassSpectrum.XArray.Min(), topMs2Scan.TheScan.MassSpectrum.XArray.Max());
@@ -487,7 +543,6 @@ namespace Test
             psmBloated.AddRange(nonNullPsms.GetRange(2, arrayMax - 2));
 
             FdrAnalysisResults fdrResultsClassicDelta = (FdrAnalysisResults)(new FdrAnalysisEngine(psmBloated.Where(p => p != null).ToList(), 1, CommonParameters, new List<string>()).Run());
-
         }
 
         [Test]
@@ -535,7 +590,6 @@ namespace Test
             psmBloated.AddRange(nonNullPsms.GetRange(2, arrayMax - 2));
             psmBloated.AddRange(nonNullPsms.GetRange(2, arrayMax - 2));
 
-
             PeptideSpectralMatch pp = psmBloated.Where(p => p.ScanRetentionTime < (newRetentionTime + 1)).First();
 
             PeptideWithSetModifications newPwsmTwo = new PeptideWithSetModifications(new Protein("WAGVLPWFPWAAVVWGFWF", "ACCESSION", "ORGANISM"), new DigestionParams(), 1, 2, CleavageSpecificity.Full, "", 0, new Dictionary<int, Modification>(), 0);
@@ -544,9 +598,7 @@ namespace Test
             psmBloated.Add(newPsmTwo);
 
             FdrAnalysisResults fdrResultsClassicDelta = (FdrAnalysisResults)(new FdrAnalysisEngine(psmBloated.Where(p => p != null).ToList(), 1, CommonParameters, new List<string>()).Run());
-
         }
-
 
         [Test]
         public static void TestRemoveThisAmbiguousePeptide()

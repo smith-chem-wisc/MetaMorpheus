@@ -1,4 +1,5 @@
-﻿using EngineLayer.FdrAnalysis;
+﻿using EngineLayer.CrosslinkSearch;
+using EngineLayer.FdrAnalysis;
 using MathNet.Numerics.Statistics;
 using Microsoft.ML;
 using Microsoft.ML.Data;
@@ -16,9 +17,8 @@ namespace EngineLayer
     {
         private static readonly double AbsoluteProbabilityThatDistinguishesPeptides = 0.05;
 
-        public static string ComputePEPValuesForAllPSMsGeneric(List<PeptideSpectralMatch> psms)
+        public static string ComputePEPValuesForAllPSMsGeneric(List<PeptideSpectralMatch> psms, string searchType)
         {
-            string searchType = DetermineSearchType(psms);
             string[] trainingVariables = PsmData.trainingInfos[searchType];
 
             //These two dictionaries contain the average and standard deviations of hydrophobicitys measured in 1 minute increments accross each raw
@@ -234,7 +234,7 @@ namespace EngineLayer
                 double globalStDev = 1;
                 if (allSquaredHyrophobicityDifferences.Count() > 1)
                 {
-                    globalStDev = Math.Sqrt(allSquaredHyrophobicityDifferences.Sum()/(allSquaredHyrophobicityDifferences.Count()-1));
+                    globalStDev = Math.Sqrt(allSquaredHyrophobicityDifferences.Sum() / (allSquaredHyrophobicityDifferences.Count() - 1));
                 }
 
                 Dictionary<int, Tuple<double, double>> stDevsToChange = new Dictionary<int, Tuple<double, double>>();
@@ -257,23 +257,6 @@ namespace EngineLayer
                 rtHydrophobicityAvgDev.Add(filename, averagesCommaStandardDeviations);
             }
             return rtHydrophobicityAvgDev;
-        }
-
-        /// <summary>
-        /// Assuming that we want to use different sets of training features for different search types, the search type needs to be determined.
-        /// In the future, we may have that specified in the GUI and this will be moot.
-
-        private static string DetermineSearchType(List<PeptideSpectralMatch> psms)
-        {
-            //TODO find a way to determine if crosslink serach type
-            if (psms[0].DigestionParams.Protease.Name == "top-down")
-            {
-                return "topDown";
-            }
-            else
-            {
-                return "standard";
-            }
         }
 
         private static float GetSSRCalcHydrophobicityZScore(PeptideSpectralMatch psm, PeptideWithSetModifications Peptide, Dictionary<string, Dictionary<int, Tuple<double, double>>> d)
@@ -348,77 +331,78 @@ namespace EngineLayer
         public static PsmData CreateOnePsmDataEntry(PeptideSpectralMatch psm, Dictionary<string, int> sequenceToPsmCount, Dictionary<string, Dictionary<int, Tuple<double, double>>> timeDependantHydrophobicityAverageAndDeviation_unmodified, Dictionary<string, Dictionary<int, Tuple<double, double>>> timeDependantHydrophobicityAverageAndDeviation_modified, int chargeStateMode, PeptideWithSetModifications selectedPeptide, string[] trainingVariables, int notchToUse, bool label)
         {
             float totalMatchingFragmentCount = 0;
-            if (trainingVariables.Contains("TotalMatchingFragmentCount"))
+            float intensity = 0;
+            float chargeDifference = 0;
+            float deltaScore = 0;
+            float psmCount = 1;
+            int notch = 0;
+            float ambiguity = 0;
+            float modCount = 0;
+            float missedCleavages = 0;
+            float longestSeq = 0;
+            float hydrophobicityZscore = float.NaN;
+            bool isVariantPeptide = false;
+
+            //crosslink specific features
+            float alphaIntensity = 0;
+            float betaIntensity = 0;
+            float longestFragmentIonSeries_Alpha = 0;
+            float longestFragmentIonSeries_Beta = 0;
+            float isDeadEnd = 0;
+            float isLoop = 0;
+            float isInter = 0;
+            float isIntra = 0;
+
+            if (!(psm is CrosslinkSpectralMatch))
             {
                 totalMatchingFragmentCount = (float)Math.Floor(psm.Score);
-            }
-
-            float ambiguity = 0;
-            if (trainingVariables.Contains("Ambiguity"))
-            {
-                ambiguity = Math.Min((float)(psm.PeptidesToMatchingFragments.Keys.Count - 1), 10);
-            }
-            float intensity = 0;
-            if (trainingVariables.Contains("Intensity"))
-            {
                 intensity = (float)(psm.Score - (int)psm.Score);
-            }
-            float chargeDifference = 0;
-            if (trainingVariables.Contains("PrecursorChargeDiffToMode"))
-            {
                 chargeDifference = -Math.Abs(chargeStateMode - psm.ScanPrecursorCharge);
-            }
-            float deltaScore = 0;
-            if (trainingVariables.Contains("DeltaScore"))
-            {
                 deltaScore = (float)psm.DeltaScore;
-            }
-            float psmCount = 1;
-            if (trainingVariables.Contains("PsmCount"))
-            {
-                psmCount = sequenceToPsmCount[String.Join("|", psm.BestMatchingPeptides.Select(p => p.Peptide.FullSequence).ToList())];
+                notch = notchToUse;
+                modCount = Math.Min((float)selectedPeptide.AllModsOneIsNterminus.Keys.Count(), 10);
+                ambiguity = Math.Min((float)(psm.PeptidesToMatchingFragments.Keys.Count - 1), 10);
+                longestSeq = psm.GetLongestIonSeriesBidirectional(selectedPeptide);
 
                 //grouping psm counts as follows is done for stability. you get very nice numbers at low psms to get good statistics. But you get a few peptides with high psm counts that could be either targets or decoys and the values swing between extremes. So grouping psms in bundles really adds stability.
+                psmCount = sequenceToPsmCount[String.Join("|", psm.BestMatchingPeptides.Select(p => p.Peptide.FullSequence).ToList())];
                 List<int> psmCountList = new List<int> { 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 15, 20, 30, 40, 50, 75, 100, 200, 300, 400, 500 };
                 int closest = psmCountList.OrderBy(item => Math.Abs(psmCount - item)).First();
                 psmCount = closest;
-            }
+                isVariantPeptide = PeptideIsVariant(selectedPeptide);
 
-            int notch = 0;
-            if (trainingVariables.Contains("Notch"))
-            {
-                notch = notchToUse;
-            }
+                if (psm.DigestionParams.Protease.Name != "top-down")
+                {
+                    missedCleavages = selectedPeptide.MissedCleavages;
+                    if (selectedPeptide.BaseSequence.Equals(selectedPeptide.FullSequence))
+                    {
+                        hydrophobicityZscore = GetSSRCalcHydrophobicityZScore(psm, selectedPeptide, timeDependantHydrophobicityAverageAndDeviation_unmodified);
+                    }
+                    else
+                    {
+                        hydrophobicityZscore = GetSSRCalcHydrophobicityZScore(psm, selectedPeptide, timeDependantHydrophobicityAverageAndDeviation_modified);
+                    }
+                }
 
-            float modCount = 0;
-            if (trainingVariables.Contains("ModsCount"))
-            {
-                modCount = Math.Min((float)selectedPeptide.AllModsOneIsNterminus.Keys.Count(), 10);
             }
+            else
+            {
+                CrosslinkSpectralMatch csm = (CrosslinkSpectralMatch)psm;
+                PeptideWithSetModifications selectedAlphaPeptide = csm.BestMatchingPeptides.Select(p => p.Peptide).First();
+                PeptideWithSetModifications selectedBetaPeptide = csm.BetaPeptide?.BestMatchingPeptides.Select(p => p.Peptide).First();
 
-            float missedCleavages = 0;
-            if (trainingVariables.Contains("MissedCleavagesCount"))
-            {
-                missedCleavages = selectedPeptide.MissedCleavages;
+                totalMatchingFragmentCount = (float)Math.Round(csm.XLTotalScore, 0);
+                deltaScore = (float)csm.DeltaScore;
+                alphaIntensity = (float)(csm.Score - (int)csm.Score);
+                betaIntensity = csm.BetaPeptide == null ? (float)0 : (float)(csm.BetaPeptide.Score - (int)csm.BetaPeptide.Score); ;
+                longestFragmentIonSeries_Alpha = psm.GetLongestIonSeriesBidirectional(selectedAlphaPeptide);
+                longestFragmentIonSeries_Beta = csm.BetaPeptide == null ? (float)0 : psm.GetLongestIonSeriesBidirectional(selectedBetaPeptide); ;
+                isDeadEnd = Convert.ToSingle((csm.CrossType == PsmCrossType.DeadEnd) || (csm.CrossType == PsmCrossType.DeadEndH2O) || (csm.CrossType == PsmCrossType.DeadEndNH2) || (csm.CrossType == PsmCrossType.DeadEndTris));
+                isLoop = Convert.ToSingle(csm.CrossType == PsmCrossType.Loop);
+                isInter = Convert.ToSingle(csm.CrossType == PsmCrossType.Inter);
+                isIntra = Convert.ToSingle(csm.CrossType == PsmCrossType.Intra);
             }
-
-            float longestSeq = 0;
-            if (trainingVariables.Contains("LongestFragmentIonSeries"))
-            {
-                longestSeq = psm.GetLongestIonSeriesBidirectional(selectedPeptide);
-            }
-
-            float hydrophobicityZscore = float.NaN;
-
-            if (selectedPeptide.BaseSequence.Equals(selectedPeptide.FullSequence) && trainingVariables.Contains("HydrophobicityZScore"))
-            {
-                hydrophobicityZscore = GetSSRCalcHydrophobicityZScore(psm, selectedPeptide, timeDependantHydrophobicityAverageAndDeviation_unmodified);
-            }
-            else if (trainingVariables.Contains("HydrophobicityZScore"))
-            {
-                hydrophobicityZscore = GetSSRCalcHydrophobicityZScore(psm, selectedPeptide, timeDependantHydrophobicityAverageAndDeviation_modified);
-            }
-            bool isVariantPeptide = PeptideIsVariant(selectedPeptide);
+            
 
             if (psm.IsDecoy)
             {
@@ -443,6 +427,16 @@ namespace EngineLayer
                 LongestFragmentIonSeries = longestSeq,
                 HydrophobicityZScore = hydrophobicityZscore,
                 IsVariantPeptide = Convert.ToSingle(isVariantPeptide),
+
+                AlphaIntensity = alphaIntensity,
+                BetaIntensity = betaIntensity,
+                LongestFragmentIonSeries_Alpha = longestFragmentIonSeries_Alpha,
+                LongestFragmentIonSeries_Beta = longestFragmentIonSeries_Beta,
+                IsDeadEnd = isDeadEnd,
+                IsLoop = isLoop,
+                IsInter = isInter,
+                IsIntra = isIntra,
+
                 Label = label
             };
 

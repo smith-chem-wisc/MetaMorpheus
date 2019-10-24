@@ -166,6 +166,22 @@ namespace TaskLayer
 
             PostXLSearchAnalysisTask postXLSearchAnalysisTask = new PostXLSearchAnalysisTask();
 
+            //DEBUG ONLY
+            var of = OutputFolder;
+            var db = dbFilenameList;
+            var rfl = currentRawFileList;
+            var tid = taskId;
+            var fsl = fileSettingsList;
+            var fap = filteredAllPsms.OrderByDescending(p => p.XLTotalScore).ToList();
+            var cp = CommonParameters;
+            var xsp = XlSearchParameters;
+            var pl = proteinList;
+            var vm = variableModifications;
+            var fm = fixedModifications;
+            var lm = localizeableModificationTypes;
+            var mtr = MyTaskResults;
+            //END DEBUG CODE
+
             return postXLSearchAnalysisTask.Run(OutputFolder, dbFilenameList, currentRawFileList, taskId, fileSettingsList, filteredAllPsms.OrderByDescending(p=>p.XLTotalScore).ToList(), CommonParameters, XlSearchParameters, proteinList, variableModifications, fixedModifications, localizeableModificationTypes, MyTaskResults);
 
         }

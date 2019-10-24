@@ -174,7 +174,9 @@ namespace EngineLayer.CrosslinkSearch
             sb.Append("ParentIonMaxIntensityRank" + '\t');
             sb.Append(PsmTsvHeader.DecoyContaminantTarget + '\t');
             sb.Append(PsmTsvHeader.QValue + '\t');
-            
+            sb.Append(PsmTsvHeader.PEP + '\t');
+            sb.Append(PsmTsvHeader.PEP_QValue + '\t');
+
             return sb.ToString();
         }
 
@@ -205,9 +207,11 @@ namespace EngineLayer.CrosslinkSearch
             sb.Append("Matched Ion Mass Diff (Ppm)" + '\t');
             sb.Append("Matched Ion Intensities" + '\t');
             sb.Append("Matched Ion Counts" + '\t');
-            sb.Append("Child Scans Matched Ion Series" + '\t');
+             
             sb.Append("Decoy/Contaminant/Target" + '\t');
             sb.Append("QValue" + '\t');
+            sb.Append(PsmTsvHeader.PEP + '\t');
+            sb.Append(PsmTsvHeader.PEP_QValue + '\t');
 
             return sb.ToString();
         }
@@ -380,7 +384,11 @@ namespace EngineLayer.CrosslinkSearch
 
             sb.Append(FdrInfo.QValue.ToString());
             sb.Append("\t");
-            
+
+            sb.Append(FdrInfo.PEP.ToString()); sb.Append("\t");
+
+            sb.Append(FdrInfo.PEP_QValue.ToString()); sb.Append("\t");
+
             return sb.ToString();
         }
 

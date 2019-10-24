@@ -159,13 +159,25 @@ namespace EngineLayer.FdrAnalysis
                 //Need some reasonable number of PSMs to train on to get a reasonable estimation of the PEP
                 if (AllPsms.Count > 100)
                 {
-                    myAnalysisResults.BinarySearchTreeMetrics = PEP_Analysis.ComputePEPValuesForAllPSMsGeneric(AllPsms);
+                    string searchType = "standard";
+                    if (AllPsms[0].DigestionParams.Protease.Name == "top-down")
+                    {
+                        searchType = "topDown";
+                    }
+
+                    myAnalysisResults.BinarySearchTreeMetrics = PEP_Analysis.ComputePEPValuesForAllPSMsGeneric(AllPsms, searchType);
                     Compute_PEPValue_Based_QValue(AllPsms);
                 }
             }
 
             if (AnalysisType == "Peptide")
             {
+                Compute_PEPValue_Based_QValue(AllPsms);
+            }
+
+            if (AnalysisType == "crosslink" && AllPsms.Count > 100)
+            {
+                myAnalysisResults.BinarySearchTreeMetrics = PEP_Analysis.ComputePEPValuesForAllPSMsGeneric(AllPsms, "crosslink");
                 Compute_PEPValue_Based_QValue(AllPsms);
             }
         }
