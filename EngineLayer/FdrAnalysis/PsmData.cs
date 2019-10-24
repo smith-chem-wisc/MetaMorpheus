@@ -128,6 +128,7 @@ namespace EngineLayer.FdrAnalysis
         public float IsIntra { get; set; }
 
         [LoadColumn(20)]
+
         public bool Label { get; set; }
     }
 }
