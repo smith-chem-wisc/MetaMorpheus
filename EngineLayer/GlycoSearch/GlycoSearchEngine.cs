@@ -8,6 +8,7 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
 using EngineLayer;
+using MassSpectrometry;
 
 namespace EngineLayer.GlycoSearch
 {
@@ -24,6 +25,8 @@ namespace EngineLayer.GlycoSearch
         private readonly Tolerance PrecusorSearchMode;
         private readonly MassDiffAcceptor ProductSearchMode;
 
+        private readonly List<int>[] SecondFragmentIndex;
+
         public GlycoSearchEngine(List<GlycoSpectralMatch>[] globalCsms, Ms2ScanWithSpecificMass[] listOfSortedms2Scans, List<PeptideWithSetModifications> peptideIndex,
             List<int>[] fragmentIndex, List<int>[] secondFragmentIndex, int currentPartition, CommonParameters commonParameters, 
              bool isOGlycoSearch, bool CrosslinkSearchTop, int CrosslinkSearchTopNum, bool searchGlycan182, List<string> nestedIds)
@@ -33,6 +36,12 @@ namespace EngineLayer.GlycoSearch
             this.IsOGlycoSearch = isOGlycoSearch;
             this.CrosslinkSearchTopN = CrosslinkSearchTop;
             this.TopN = CrosslinkSearchTopNum;
+
+            SecondFragmentIndex = secondFragmentIndex;
+            if (CommonParameters.ChildScanDissociationType != DissociationType.Unknown && EngineLayer.CrosslinkSearch.CrosslinkSearchEngine.DissociationTypeGenerateSameTypeOfIons(CommonParameters.DissociationType, CommonParameters.ChildScanDissociationType))
+            {
+                SecondFragmentIndex = FragmentIndex;
+            }
 
             PrecusorSearchMode = commonParameters.PrecursorMassTolerance;
             ProductSearchMode = new SingleAbsoluteAroundZeroSearchMode(20); //For Oxinium ion only
@@ -84,6 +93,9 @@ namespace EngineLayer.GlycoSearch
                 byte[] scoringTable = new byte[PeptideIndex.Count];
                 List<int> idsOfPeptidesPossiblyObserved = new List<int>();
 
+                byte[] secondScoringTable = new byte[PeptideIndex.Count];
+                List<int> childIdsOfPeptidesPossiblyObserved = new List<int>();
+
                 for (; scanIndex < ListOfSortedMs2Scans.Length; scanIndex += maxThreadsPerFile)
                 {
                     // Stop loop if canceled
@@ -102,6 +114,32 @@ namespace EngineLayer.GlycoSearch
 
                     // first-pass scoring
                     IndexedScoring(FragmentIndex, allBinsToSearch, scoringTable, byteScoreCutoff, idsOfPeptidesPossiblyObserved, scan.PrecursorMass, Double.NegativeInfinity, Double.PositiveInfinity, PeptideIndex, MassDiffAcceptor, 0, CommonParameters.DissociationType);
+
+                    //child scan first-pass scoring
+                    if (scan.ChildScans != null && CommonParameters.ChildScanDissociationType != DissociationType.LowCID)
+                    {
+                        Array.Clear(secondScoringTable, 0, secondScoringTable.Length);
+                        childIdsOfPeptidesPossiblyObserved.Clear();
+
+                        List<int> childBinsToSearch = new List<int>();
+
+                        foreach (var aChildScan in scan.ChildScans)
+                        {
+                            var x = GetBinsToSearch(aChildScan, SecondFragmentIndex, CommonParameters.ChildScanDissociationType);
+                            childBinsToSearch.AddRange(x);
+                        }
+
+                        IndexedScoring(SecondFragmentIndex, childBinsToSearch, secondScoringTable, byteScoreCutoff, childIdsOfPeptidesPossiblyObserved, scan.PrecursorMass, Double.NegativeInfinity, Double.PositiveInfinity, PeptideIndex, MassDiffAcceptor, 0, CommonParameters.ChildScanDissociationType);
+
+                        foreach (var childId in childIdsOfPeptidesPossiblyObserved)
+                        {
+                            if (!idsOfPeptidesPossiblyObserved.Contains(childId))
+                            {
+                                idsOfPeptidesPossiblyObserved.Add(childId);
+                            }
+                            scoringTable[childId] = (byte)(scoringTable[childId] + secondScoringTable[childId]);
+                        }
+                    }
 
                     // done with indexed scoring; refine scores and create PSMs
                     if (idsOfPeptidesPossiblyObserved.Any())
