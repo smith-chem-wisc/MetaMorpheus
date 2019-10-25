@@ -51,6 +51,8 @@ namespace EngineLayer
             {
                 switch (x)
                 {
+                    case "":
+                        break;
                     case "CID":
                         cleaveDissociationTypes.Add(DissociationType.CID);
                         break;
@@ -59,6 +61,9 @@ namespace EngineLayer
                         break;
                     case "ETD":
                         cleaveDissociationTypes.Add(DissociationType.ETD);
+                        break;
+                    case "ETHCD":
+                        cleaveDissociationTypes.Add(DissociationType.EThcD);
                         break;
                     default:
                         break;
@@ -124,8 +129,8 @@ namespace EngineLayer
             foreach (var d in dissociationTypes)
             {
                 x += d.ToString() + "|";
-            }          
-            return x.Remove(x.Length - 1);
+            }
+            return x;
         }
 
         public string ToString(bool writeCrosslinker)

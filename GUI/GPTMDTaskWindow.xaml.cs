@@ -1,12 +1,14 @@
 ﻿using EngineLayer;
 using MassSpectrometry;
 using MzLibUtil;
+using Nett;
 using Proteomics.ProteolyticDigestion;
 using System;
 using System.Collections.Generic;
 using System.Collections.ObjectModel;
 using System.ComponentModel;
 using System.Globalization;
+using System.IO;
 using System.Linq;
 using System.Windows;
 using System.Windows.Controls;
@@ -25,10 +27,6 @@ namespace MetaMorpheusGUI
         private readonly ObservableCollection<ModTypeForLoc> localizeModTypeForTreeViewObservableCollection = new ObservableCollection<ModTypeForLoc>();
         private readonly ObservableCollection<ModTypeForTreeView> gptmdModTypeForTreeViewObservableCollection = new ObservableCollection<ModTypeForTreeView>();
         private CustomFragmentationWindow CustomFragmentationWindow;
-
-        public GptmdTaskWindow() : this(null)
-        {
-        }
 
         public GptmdTaskWindow(GptmdTask myGPTMDtask)
         {
@@ -480,6 +478,12 @@ namespace MetaMorpheusGUI
             // keeping it will trigger an exception because the closed window stops existing
 
             CustomFragmentationWindow.Close();
+        }
+
+        private void SaveAsDefault_Click(object sender, RoutedEventArgs e)
+        {
+            SaveButton_Click(sender, e);
+            Toml.WriteFile(TheTask, Path.Combine(GlobalVariables.DataDir, "DefaultParameters", @"GptmdTaskDefault.toml"), MetaMorpheusTask.tomlConfig);
         }
     }
 }
