@@ -212,15 +212,11 @@ namespace EngineLayer
             s[PsmTsvHeader.ProteinAccession] = pepWithModsIsNull ? " " : (psm.ProteinAccession != null ? psm.ProteinAccession : Resolve(pepsWithMods.Select(b => b.Protein.Accession), psm.FullSequence).ResolvedString);
             s[PsmTsvHeader.ProteinName] = pepWithModsIsNull ? " " : Resolve(pepsWithMods.Select(b => b.Protein.FullName), psm.FullSequence).ResolvedString;
             s[PsmTsvHeader.GeneName] = pepWithModsIsNull ? " " : Resolve(pepsWithMods.Select(b => string.Join(", ", b.Protein.GeneNames.Select(d => $"{d.Item1}:{d.Item2}"))), psm.FullSequence).ResolvedString;
-            s[PsmTsvHeader.OrganismName] = pepWithModsIsNull ? " " : Resolve(pepsWithMods.Select(b => b.Protein.Organism)).ResolvedString;
-            s[PsmTsvHeader.IntersectingSequenceVariations] = pepWithModsIsNull ? " " :
-                Resolve(pepsWithMods.Select(b => string.Join(", ", b.Protein.AppliedSequenceVariations
-                    .Where(av => IntersectsWithVariation(b, av, false))
-                    .Select(av => SequenceVariantString(b, av))))).ResolvedString;
+            s[PsmTsvHeader.OrganismName] = pepWithModsIsNull ? " " : Resolve(pepsWithMods.Select(b => b.Protein.Organism)).ResolvedString;            
             s[PsmTsvHeader.IdentifiedSequenceVariations] = pepWithModsIsNull ? " " :
                 Resolve(pepsWithMods.Select(b => string.Join(", ", b.Protein.AppliedSequenceVariations
-                    .Where(av => IntersectsWithVariation(b, av, true))
-                    .Select(av => SequenceVariantString(b, av))))).ResolvedString;
+                    .Where(av => b.IntersectsAndIdentifiesVariation(av).identifies)
+                    .Select(av => b.SequenceVariantString(av, b.IntersectsAndIdentifiesVariation(av).intersects))))).ResolvedString;
             s[PsmTsvHeader.SpliceSites] = pepWithModsIsNull ? " " :
                 Resolve(pepsWithMods.Select(b => string.Join(", ", b.Protein.SpliceSites
                     .Where(d => Includes(b, d))
@@ -247,60 +243,7 @@ namespace EngineLayer
         private static bool Includes(PeptideWithSetModifications pep, SpliceSite site)
         {
             return pep.OneBasedStartResidueInProtein <= site.OneBasedBeginPosition && pep.OneBasedEndResidueInProtein >= site.OneBasedEndPosition;
-        }
-
-        /// <summary>
-        /// Checks for an intersection between a peptide and applied variant that shows a sequence change.
-        /// </summary>
-        /// <param name="pep"></param>
-        /// <param name="appliedVariation"></param>
-        /// <returns></returns>
-        private static bool IntersectsWithVariation(PeptideWithSetModifications pep, SequenceVariation appliedVariation, bool checkUnique)
-        {
-            // does it intersect?
-            int intersectOneBasedStart = Math.Max(pep.OneBasedStartResidueInProtein, appliedVariation.OneBasedBeginPosition);
-            int intersectOneBasedEnd = Math.Min(pep.OneBasedEndResidueInProtein, appliedVariation.OneBasedEndPosition);
-            if (intersectOneBasedEnd < intersectOneBasedStart)
-            {
-                return false;
-            }
-            else if (!checkUnique)
-            {
-                return true;
-            }
-            else
-            {
-                // if the original sequence is too short or long, the intersect of the peptide and variant is unique
-                int intersectSize = intersectOneBasedEnd - intersectOneBasedStart + 1;
-                int variantZeroBasedStart = intersectOneBasedStart - appliedVariation.OneBasedBeginPosition;
-                bool origSeqIsShort = appliedVariation.OriginalSequence.Length - variantZeroBasedStart < intersectSize;
-                bool origSeqIsLong = appliedVariation.OriginalSequence.Length > intersectSize && pep.OneBasedEndResidueInProtein > intersectOneBasedEnd;
-                if (origSeqIsShort || origSeqIsLong)
-                {
-                    return true;
-                }
-
-                // is the variant sequence intersecting the peptide different than the original sequence?
-                string originalAtIntersect = appliedVariation.OriginalSequence.Substring(intersectOneBasedStart - appliedVariation.OneBasedBeginPosition, intersectSize);
-                string variantAtIntersect = appliedVariation.VariantSequence.Substring(intersectOneBasedStart - appliedVariation.OneBasedBeginPosition, intersectSize);
-                return originalAtIntersect != variantAtIntersect;
-            }
-        }
-
-        /// <summary>
-        /// Makes the string representing a detected sequence variation, including any modifications on a variant amino acid
-        /// </summary>
-        /// <param name="p"></param>
-        /// <param name="d"></param>
-        /// <returns></returns>
-        private static string SequenceVariantString(PeptideWithSetModifications p, SequenceVariation applied)
-        {
-            var modsOnVariantOneIsNTerm = p.AllModsOneIsNterminus
-                .Where(kv => kv.Key == 1 && applied.OneBasedBeginPosition == 1 || applied.OneBasedBeginPosition <= kv.Key - 2 + p.OneBasedStartResidueInProtein && kv.Key - 2 + p.OneBasedStartResidueInProtein <= applied.OneBasedEndPosition)
-                .ToDictionary(kv => kv.Key - applied.OneBasedBeginPosition + 1, kv => kv.Value);
-            PeptideWithSetModifications variantWithAnyMods = new PeptideWithSetModifications(p.Protein, p.DigestionParams, applied.OneBasedBeginPosition, applied.OneBasedEndPosition, p.CleavageSpecificityForFdrCategory, p.PeptideDescription, p.MissedCleavages, modsOnVariantOneIsNTerm, p.NumFixedMods);
-            return $"{applied.OriginalSequence}{applied.OneBasedBeginPosition}{variantWithAnyMods.FullSequence}";
-        }
+        }        
 
         internal static void AddMatchedIonsData(Dictionary<string, string> s, List<MatchedFragmentIon> matchedIons)
         {

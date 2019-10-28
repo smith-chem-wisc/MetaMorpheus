@@ -97,17 +97,6 @@ namespace MetaMorpheusGUI
                 GuiWarnHandler(null, new StringEventArgs("Could not get newest version from web: " + e.Message, null));
             }
 
-            // check for ManagedThermoHelperLayer.dll and display a warning if it's not found
-            // this is one hacky way of checking if the user has C++ redistributable installed
-            string assumedManagedThermoHelperLayerDllPath = Path.Combine(Environment.CurrentDirectory, "ManagedThermoHelperLayer.dll");
-            if (!File.Exists(assumedManagedThermoHelperLayerDllPath))
-            {
-                GuiWarnHandler(null, new StringEventArgs("Warning! Cannot find Microsoft Visual C++ Redistributable; a crash may result from searching. " +
-                    "\nPlease go to: \nhttps://support.microsoft.com/en-us/help/2977003/the-latest-supported-visual-c-downloads " +
-                    "\nto download and install vc_redist.x64.exe and vc_redist.x86.exe." +
-                    "\nIf you have just installed the C++ redistributable, please uninstall and reinstall MetaMorpheus.", null));
-            }
-
             Application.Current.MainWindow.Closing += new CancelEventHandler(MainWindow_Closing);
         }
 
@@ -842,7 +831,22 @@ namespace MetaMorpheusGUI
 
         private void AddSearchTaskButton_Click(object sender, RoutedEventArgs e)
         {
-            var dialog = new SearchTaskWindow();
+            //check if the default toml has been overwritten
+            SearchTask task = null;
+            string defaultFilePath = Path.Combine(GlobalVariables.DataDir, "DefaultParameters", @"SearchTaskDefault.toml");
+            if (File.Exists(defaultFilePath))
+            {
+                try
+                {
+                    task = Toml.ReadFile<SearchTask>(defaultFilePath, MetaMorpheusTask.tomlConfig);
+                }
+                catch (Exception)
+                {
+                    GuiWarnHandler(null, new StringEventArgs("Cannot read toml: " + defaultFilePath, null));
+                }
+            }
+
+            var dialog = new SearchTaskWindow(task);
             if (dialog.ShowDialog() == true)
             {
                 AddTaskToCollection(dialog.TheTask);
@@ -852,7 +856,22 @@ namespace MetaMorpheusGUI
 
         private void AddCalibrateTaskButton_Click(object sender, RoutedEventArgs e)
         {
-            var dialog = new CalibrateTaskWindow();
+            //check if the default toml has been overwritten
+            CalibrationTask task = null;
+            string defaultFilePath = Path.Combine(GlobalVariables.DataDir, "DefaultParameters", @"CalibrationTaskDefault.toml");
+            if (File.Exists(defaultFilePath))
+            {
+                try
+                {
+                    task = Toml.ReadFile<CalibrationTask>(defaultFilePath, MetaMorpheusTask.tomlConfig);
+                }
+                catch (Exception)
+                {
+                    GuiWarnHandler(null, new StringEventArgs("Cannot read toml: " + defaultFilePath, null));
+                }
+            }
+
+            var dialog = new CalibrateTaskWindow(task);
             if (dialog.ShowDialog() == true)
             {
                 AddTaskToCollection(dialog.TheTask);
@@ -862,7 +881,22 @@ namespace MetaMorpheusGUI
 
         private void AddGPTMDTaskButton_Click(object sender, RoutedEventArgs e)
         {
-            var dialog = new GptmdTaskWindow();
+            //check if the default toml has been overwritten
+            GptmdTask task = null;
+            string defaultFilePath = Path.Combine(GlobalVariables.DataDir, "DefaultParameters", @"GptmdTaskDefault.toml");
+            if (File.Exists(defaultFilePath))
+            {
+                try
+                {
+                    task = Toml.ReadFile<GptmdTask>(defaultFilePath, MetaMorpheusTask.tomlConfig);
+                }
+                catch (Exception)
+                {
+                    GuiWarnHandler(null, new StringEventArgs("Cannot read toml: " + defaultFilePath, null));
+                }
+            }
+
+            var dialog = new GptmdTaskWindow(task);
             if (dialog.ShowDialog() == true)
             {
                 AddTaskToCollection(dialog.TheTask);
@@ -871,8 +905,23 @@ namespace MetaMorpheusGUI
         }
 
         private void BtnAddCrosslinkSearch_Click(object sender, RoutedEventArgs e)
-        {
-            var dialog = new XLSearchTaskWindow();
+        {            
+            //check if the default toml has been overwritten
+            XLSearchTask task = null;
+            string defaultFilePath = Path.Combine(GlobalVariables.DataDir, "DefaultParameters", @"XLSearchTaskDefault.toml");
+            if (File.Exists(defaultFilePath))
+            {
+                try
+                {
+                    task = Toml.ReadFile<XLSearchTask>(defaultFilePath, MetaMorpheusTask.tomlConfig);
+                }
+                catch (Exception)
+                {
+                    GuiWarnHandler(null, new StringEventArgs("Cannot read toml: " + defaultFilePath, null));
+                }
+            }
+
+            var dialog = new XLSearchTaskWindow(task);
             if (dialog.ShowDialog() == true)
             {
                 AddTaskToCollection(dialog.TheTask);

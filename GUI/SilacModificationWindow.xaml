@@ -9,9 +9,10 @@
         Title="Stable Isotope Label Design" Height="400" Width="600" WindowStartupLocation="CenterScreen">
     <Grid>
         <Grid.RowDefinitions>
+            <RowDefinition Height="2.5*" />
             <RowDefinition Height="5*" />
             <RowDefinition Height="5*" />
-            <RowDefinition Height="5*" />
+            <RowDefinition Height="2.5*" />
             <RowDefinition Height="5*" />
             <RowDefinition Height="2*" />
         </Grid.RowDefinitions>
@@ -49,7 +50,7 @@
                         </TextBox>
                     </StackPanel>
                     <StackPanel Orientation="Horizontal" Margin="5">
-                        
+
                     </StackPanel>
                     <StackPanel Orientation="Horizontal" Margin="5">
                         <Label Content="Mass Difference" />
@@ -63,7 +64,7 @@
                     </StackPanel>
                 </StackPanel>
             </Grid>
-            </StackPanel>
+        </StackPanel>
         <StackPanel Grid.Row="2">
             <Grid>
                 <Grid.ColumnDefinitions>
@@ -75,7 +76,7 @@
                 </Grid.ColumnDefinitions>
                 <StackPanel Grid.Column="0">
                     <StackPanel Orientation="Horizontal"  HorizontalAlignment="Center">
-                    <Label Content="Carbon"/>
+                        <Label Content="Carbon"/>
                     </StackPanel>
                     <StackPanel Orientation="Horizontal" HorizontalAlignment="Center">
                         <Label Content="12C"/>
@@ -140,9 +141,46 @@
                 </StackPanel>
             </Grid>
         </StackPanel>
-        
-                <!--Save/cancel buttons-->
-        <StackPanel Orientation="Horizontal" HorizontalAlignment="Center" Grid.Row="4" Height="25" VerticalAlignment="Bottom">
+        <StackPanel Grid.Row="4" Margin="5 5 5 0">
+            <Label x:Name="LabelTypeHeader" Content="This label was used in a:"  />
+            <RadioButton x:Name="MultiplexRadioButton" Content="multiplex experiment" GroupName="SilacType" ToolTipService.ShowDuration="999999" ToolTipService.InitialShowDelay="500">
+                <ToolTipService.ToolTip>
+                    <ToolTip Content="Multiplex experiments consist of two or more conditions that are pooled prior to MS analysis" />
+                </ToolTipService.ToolTip>
+            </RadioButton>
+            <!--<RadioButton x:Name="StartConditionRadioButton" Content="turnover experiment BEFORE 'day 0'" GroupName="SilacType" ToolTipService.ShowDuration="999999" ToolTipService.InitialShowDelay="500">
+                <RadioButton.ToolTip >
+                    <TextBlock>
+                        Turnover experiments consist of a start time (day 0) when media or food is switched to a different isotope and sample is collected at set time points.                                 
+                        <LineBreak/>
+                        SILAC analysis differs for turnover experiments by searching for recycled amino acids, which are ignored in multiplex experiments.
+                        <LineBreak/>
+                        Recycled amino acids are when amino acids from a degraded protein are "recycled" and incorporated in a newly synthesized protein. 
+                        <LineBreak/>
+                        This allows a single peptide molecule to contain amino acids that were introduced both before and after day 0.
+                        <LineBreak/>
+                        Ignoring amino acid recycling results in dramatically overestimated protein half-lives.
+                    </TextBlock>
+                </RadioButton.ToolTip>
+            </RadioButton>
+            <RadioButton x:Name="EndConditionRadioButton" Content="turnover experiment AFTER 'day 0'" GroupName="SilacType" ToolTipService.ShowDuration="999999" ToolTipService.InitialShowDelay="500">
+                <RadioButton.ToolTip >
+                    <TextBlock>
+                        Turnover experiments consist of a start time (day 0) when media or food is switched to a different isotope and sample is collected at set time points.                                 
+                        <LineBreak/>
+                        SILAC analysis differs for turnover experiments by searching for recycled amino acids, which are ignored in multiplex experiments.
+                        <LineBreak/>
+                        Recycled amino acids are when amino acids from a degraded protein are "recycled" and incorporated in a newly synthesized protein. 
+                        <LineBreak/>
+                        This allows a single peptide molecule to contain amino acids that were introduced both before and after day 0.
+                        <LineBreak/>
+                        Ignoring amino acid recycling results in dramatically overestimated protein half-lives.
+                    </TextBlock>
+                </RadioButton.ToolTip>
+            </RadioButton>-->
+        </StackPanel>
+        <!--Save/cancel buttons-->
+        <StackPanel Orientation="Horizontal" HorizontalAlignment="Center" Grid.Row="5" Height="25" VerticalAlignment="Bottom">
             <Button x:Name="SaveSilacLabelsButton" Content="Save Label(s)" Click="SaveSilacLabelsButton_Click"/>
             <Button x:Name="AddAdditionalButton" Content="Add Additional Labels to This Condition" Click="AddAdditionalButton_Click"/>
             <Button x:Name="CancelSilacButton" Content="Cancel" Click="CancelSilacButton_Click"/>

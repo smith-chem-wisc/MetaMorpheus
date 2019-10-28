@@ -82,12 +82,19 @@ namespace EngineLayer.CrosslinkSearch
             }
         }
 
-        public static List<int> GetPossibleCrosslinkerModSites(char[] crosslinkerModSites, PeptideWithSetModifications peptide)
+        public static List<int> GetPossibleCrosslinkerModSites(char[] crosslinkerModSites, PeptideWithSetModifications peptide, InitiatorMethionineBehavior initiatorMethionineBehavior, bool CrosslinkAtCleavageSite)
         {
             List<int> possibleXlPositions = new List<int>();
             bool wildcard = crosslinkerModSites.Any(p => p == 'X');
 
-            for (int r = 0; r < peptide.BaseSequence.Length; r++)
+            List<int> range = Enumerable.Range(0, peptide.BaseSequence.Length).ToList();
+            if (!CrosslinkAtCleavageSite && peptide.OneBasedEndResidueInProtein != peptide.Protein.Length 
+                && !peptide.Protein.ProteolysisProducts.Any(x => x.OneBasedEndPosition == peptide.OneBasedEndResidueInProtein))
+            {
+                //The C termial cannot be crosslinked and cleaved.
+                range = Enumerable.Range(0, peptide.BaseSequence.Length - 1).ToList();
+            }
+            foreach (var r in range)
             {
                 if (crosslinkerModSites.Contains(peptide.BaseSequence[r]) || wildcard)
                 {
@@ -96,12 +103,9 @@ namespace EngineLayer.CrosslinkSearch
                     {
                         possibleXlPositions.Add(r + 1);
                     }
-                    else if (peptide.OneBasedStartResidueInProtein == 0 && r == 0 && !peptide.AllModsOneIsNterminus.Keys.Contains(1))
-                    {
-                        possibleXlPositions.Add(r + 1);
-                    }
                 }
             }
+
             return possibleXlPositions;
         }
 

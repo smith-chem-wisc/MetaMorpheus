@@ -116,13 +116,13 @@
       <Component Id="src_TaskLayer.pdb" Guid="6ece566a-22ff-4208-bba2-ad0430eeee49">
         <File Id="src_TaskLayer.pdb" Name="TaskLayer.pdb" Source="$(var.GUI_TargetDir)TaskLayer.pdb" />
       </Component>
-      <Component Id="src_UnmanagedThermoHelperLayer.dll" Guid="18bed74c-eedb-4efa-a6e3-1592ac7022e3">
-        <File Id="src_UnmanagedThermoHelperLayer.dll" Name="UnmanagedThermoHelperLayer.dll" Source="$(var.GUI_TargetDir)UnmanagedThermoHelperLayer.dll" />
+      <Component Id="src_OxyPlot.pdb" Guid="3F982909-8946-42BA-BE24-5779A1E1D4BF">
+        <File Id="src_OxyPlot.pdb" Name="OxyPlot.pdb" Source="$(var.GUI_TargetDir)OxyPlot.pdb" />
       </Component>
-      <Component Id="src_Thermo.dll">
-        <File Id="src_Thermo.dll" Name="Thermo.dll" Source="$(var.GUI_TargetDir)Thermo.dll" />
+      <Component Id="src_OxyPlot.Wpf.pdb" Guid="68D2F3AF-CD98-4CEB-BA50-59B6ABA74B4A">
+        <File Id="src_OxyPlot.Wpf.pdb" Name="OxyPlot.Wpf.pdb" Source="$(var.GUI_TargetDir)OxyPlot.Wpf.pdb" />
       </Component>
-      <Component Id="src_Newtonsoft.Json.dll">
+      <Component Id="src_Newtonsoft.Json.dll" Guid="7001FD86-E768-4C32-9747-0AB44A5A3DE9">
         <File Id="src_Newtonsoft.Json.dll" Name="Newtonsoft.Json.dll" Source="$(var.GUI_TargetDir)Newtonsoft.Json.dll" />
       </Component>
       <Component Id="src_UsefulProteomicsDatabases.dll" Guid="e7f76fbf-d21c-4e57-bed4-33f71822ee18">
@@ -145,9 +145,6 @@
       </Component>
       <Component Id="src_FlashLFQ.dll" Guid="69e33379-5301-49db-8913-4d777ed5a5f9">
         <File Id="src_FlashLFQ.dll" Name="FlashLFQ.dll" Source="$(var.GUI_TargetDir)FlashLFQ.dll" />
-      </Component>
-      <Component Id="src_ManagedThermoHelperLayer.dll" Guid="5706aec2-8e67-4094-ac81-95cd9aa9a49e">
-        <File Id="src_ManagedThermoHelperLayer.dll" Name="ManagedThermoHelperLayer.dll" Source="$(var.GUI_TargetDir)ManagedThermoHelperLayer.dll" />
       </Component>
       <Component Id="src_MassSpectrometry.dll" Guid="d6241678-3d48-4c7a-becf-9c1160fbe06b">
         <File Id="src_MassSpectrometry.dll" Name="MassSpectrometry.dll" Source="$(var.GUI_TargetDir)MassSpectrometry.dll" />
@@ -203,16 +200,13 @@
       <Component Id="src_SharpLearning.RandomForest.dll" Guid="f86fdc0c-6a23-4e4f-803b-0012aaa418e7">
         <File Id="src_SharpLearning.RandomForest.dll" Name="SharpLearning.RandomForest.dll" Source="$(var.GUI_TargetDir)SharpLearning.RandomForest.dll" />
       </Component>
-      <Component Id="src_SharpLearning.Optimization.dll">
+      <Component Id="src_SharpLearning.Optimization.dll" Guid="3C9AC945-8AE8-4A81-AC1B-1BE7E6DF6DE0">
         <File Id="src_SharpLearning.Optimization.dll" Name="SharpLearning.Optimization.dll" Source="$(var.GUI_TargetDir)SharpLearning.Optimization.dll" />
       </Component>
-      <Component Id="src_SharpLearning.GradientBoost.dll">
+      <Component Id="src_SharpLearning.GradientBoost.dll" Guid="F76D5154-5F85-4692-9A6B-B822EA1CB4DE">
         <File Id="src_SharpLearning.GradientBoost.dll" Name="SharpLearning.GradientBoost.dll" Source="$(var.GUI_TargetDir)SharpLearning.GradientBoost.dll" />
       </Component>
-      <Component Id="src_Spectra.dll" Guid="280ccb7f-a4f8-4df7-9f88-6cf6fa9bc15b">
-        <File Id="src_Spectra.dll" Name="Spectra.dll" Source="$(var.GUI_TargetDir)Spectra.dll" />
-      </Component>
-      <Component Id="src_Mgf.dll">
+      <Component Id="src_Mgf.dll" Guid="B4EB5CEA-CFCA-40C7-A915-DB3B9EF53775">
         <File Id="src_Mgf.dll" Name="Mgf.dll" Source="$(var.GUI_TargetDir)Mgf.dll" />
       </Component>
       <Component Id="src_System.Data.Common.dll" Guid="795499dd-11a0-4132-8e33-c1f64bd11c51">
@@ -274,6 +268,72 @@
       </Component>
       <Component Id="src_ThermoRawFileReader.dll" Guid="4BE9A662-4CD1-4E5B-8234-0734036A007E">
         <File Id="src_ThermoRawFileReader.dll" Name="ThermoRawFileReader.dll" Source="$(var.GUI_TargetDir)ThermoRawFileReader.dll" />
+      </Component>
+      <Component Id="src_BayesianEstimation.dll" Guid="100F4A2E-F4FE-4D25-8C5F-66A7092A2622">
+        <File Id="src_BayesianEstimation.dll" Name="BayesianEstimation.dll" Source="$(var.GUI_TargetDir)BayesianEstimation.dll" />
+      </Component>
+      <Component Id="src_CpuMathNative.dll" Guid="923A8CA0-13DD-4927-A1DB-0D25ECDA2301">
+        <File Id="src_CpuMathNative.dll" Name="CpuMathNative.dll" Source="$(var.GUI_TargetDir)CpuMathNative.dll" />
+      </Component>
+      <Component Id="src_FactorizationMachineNative.dll" Guid="E01CA4BE-EBF8-4736-9399-8B96D97F0D9F">
+        <File Id="src_FactorizationMachineNative.dll" Name="FactorizationMachineNative.dll" Source="$(var.GUI_TargetDir)FactorizationMachineNative.dll" />
+      </Component>
+      <Component Id="src_FastTreeNative.dll" Guid="9BD84084-A541-4489-A801-3677E0FF6FF9">
+        <File Id="src_FastTreeNative.dll" Name="FastTreeNative.dll" Source="$(var.GUI_TargetDir)FastTreeNative.dll" />
+      </Component>
+      <Component Id="src_LdaNative.dll" Guid="8CF2948E-6309-4EFF-B6FF-0C6E8F4C55BE">
+        <File Id="src_LdaNative.dll" Name="LdaNative.dll" Source="$(var.GUI_TargetDir)LdaNative.dll" />
+      </Component>
+      <Component Id="src_Microsoft.ML.Core.dll" Guid="A5B34A93-481B-4B6A-868C-A0DB916CB37C">
+        <File Id="src_Microsoft.ML.Core.dll" Name="Microsoft.ML.Core.dll" Source="$(var.GUI_TargetDir)Microsoft.ML.Core.dll" />
+      </Component>
+      <Component Id="src_Microsoft.ML.CpuMath.dll" Guid="5D8DCF19-98EB-4EF8-B4FF-4B039FB5CE95">
+        <File Id="src_Microsoft.ML.CpuMath.dll" Name="Microsoft.ML.CpuMath.dll" Source="$(var.GUI_TargetDir)Microsoft.ML.CpuMath.dll" />
+      </Component>
+      <Component Id="src_Microsoft.ML.Data.dll" Guid="EF66B298-ED51-4B60-8E9F-1383E9FBA452">
+        <File Id="src_Microsoft.ML.Data.dll" Name="Microsoft.ML.Data.dll" Source="$(var.GUI_TargetDir)Microsoft.ML.Data.dll" />
+      </Component>
+      <Component Id="src_Microsoft.ML.DataView.dll" Guid="E87F47EB-394F-42C3-AFA5-5AEC61E80AE5">
+        <File Id="src_Microsoft.ML.DataView.dll" Name="Microsoft.ML.DataView.dll" Source="$(var.GUI_TargetDir)Microsoft.ML.DataView.dll" />
+      </Component>
+      <Component Id="src_Microsoft.ML.FastTree.dll" Guid="5E607343-B503-4798-A2D0-D3798E3C553A">
+        <File Id="src_Microsoft.ML.FastTree.dll" Name="Microsoft.ML.FastTree.dll" Source="$(var.GUI_TargetDir)Microsoft.ML.FastTree.dll" />
+      </Component>
+      <Component Id="src_Microsoft.ML.KMeansClustering.dll" Guid="830AE3D1-78E3-4C19-90D1-E489FA89AD91">
+        <File Id="src_Microsoft.ML.KMeansClustering.dll" Name="Microsoft.ML.KMeansClustering.dll" Source="$(var.GUI_TargetDir)Microsoft.ML.KMeansClustering.dll" />
+      </Component>
+      <Component Id="src_Microsoft.ML.PCA.dll" Guid="05B84885-9772-4329-B7DC-C53D5CD2ED17">
+        <File Id="src_Microsoft.ML.PCA.dll" Name="Microsoft.ML.PCA.dll" Source="$(var.GUI_TargetDir)Microsoft.ML.PCA.dll" />
+      </Component>
+      <Component Id="src_Microsoft.ML.StandardTrainers.dll" Guid="833E5791-A057-40BC-8208-DEE757A9B873">
+        <File Id="src_Microsoft.ML.StandardTrainers.dll" Name="Microsoft.ML.StandardTrainers.dll" Source="$(var.GUI_TargetDir)Microsoft.ML.StandardTrainers.dll" />
+      </Component>
+      <Component Id="src_Microsoft.ML.Transforms.dll" Guid="9FF08BC2-8F99-4004-A4F0-3BB63014BB21">
+        <File Id="src_Microsoft.ML.Transforms.dll" Name="Microsoft.ML.Transforms.dll" Source="$(var.GUI_TargetDir)Microsoft.ML.Transforms.dll" />
+      </Component>
+      <Component Id="src_System.Buffers.dll" Guid="BA04C412-922F-42E8-8A1D-4D4A2B042DB1">
+        <File Id="src_System.Buffers.dll" Name="System.Buffers.dll" Source="$(var.GUI_TargetDir)System.Buffers.dll" />
+      </Component>
+      <Component Id="src_System.CodeDom.dll" Guid="1C46B1DB-C230-4755-9B6A-0E03E00EB045">
+        <File Id="src_System.CodeDom.dll" Name="System.CodeDom.dll" Source="$(var.GUI_TargetDir)System.CodeDom.dll" />
+      </Component>
+      <Component Id="src_System.Collections.Immutable.dll" Guid="3322225B-6304-4A25-9E59-F6A2369DFFAD">
+        <File Id="src_System.Collections.Immutable.dll" Name="System.Collections.Immutable.dll" Source="$(var.GUI_TargetDir)System.Collections.Immutable.dll" />
+      </Component>
+      <Component Id="src_System.Memory.dll" Guid="8655337B-5E80-44B0-B13A-726CC60F5A19">
+        <File Id="src_System.Memory.dll" Name="System.Memory.dll" Source="$(var.GUI_TargetDir)System.Memory.dll" />
+      </Component>
+      <Component Id="src_System.Numerics.Vectors.dll" Guid="C4E2DA41-67D4-4117-A01E-B5D85752E769">
+        <File Id="src_System.Numerics.Vectors.dll" Name="System.Numerics.Vectors.dll" Source="$(var.GUI_TargetDir)System.Numerics.Vectors.dll" />
+      </Component>
+      <Component Id="src_System.Runtime.CompilerServices.Unsafe.dll" Guid="B129F922-A5FB-4CA2-9D33-C0E24A1EB9FF">
+        <File Id="src_System.Runtime.CompilerServices.Unsafe.dll" Name="System.Runtime.CompilerServices.Unsafe.dll" Source="$(var.GUI_TargetDir)System.Runtime.CompilerServices.Unsafe.dll" />
+      </Component>
+      <Component Id="src_System.Threading.Tasks.Dataflow.dll" Guid="A34C55EB-6E9B-4BF0-9226-630FBD5732EB">
+        <File Id="src_System.Threading.Tasks.Dataflow.dll" Name="System.Threading.Tasks.Dataflow.dll" Source="$(var.GUI_TargetDir)System.Threading.Tasks.Dataflow.dll" />
+      </Component>
+      <Component Id="src_System.ValueTuple.dll" Guid="8B58D026-8C4C-401D-984D-C12790971FCF">
+        <File Id="src_System.ValueTuple.dll" Name="System.ValueTuple.dll" Source="$(var.GUI_TargetDir)System.ValueTuple.dll" />
       </Component>
     </ComponentGroup>
   </Fragment>
@@ -392,7 +452,7 @@
   <!--Builds the App Contaminants folder-->
   <Fragment>
     <ComponentGroup Id="Appsrc_Contaminants_files" Directory="MetaAppContaminantsFolder">
-      <Component Id="RemoveContaminants">
+      <Component Id="RemoveContaminants" Guid="D40C37B7-1F04-4DCC-A4AC-46D9F613570A">
         <Condition>OVERWRITEAPPDATA</Condition>
         <RemoveFolder Id="MetaAppContaminantsFolder" On="both"/>
         <RegistryValue Root="HKCU" Key="Software\SmithGroup\MetaMorpheus" Name="installed" Type="integer" Value="1" KeyPath="yes"/>
