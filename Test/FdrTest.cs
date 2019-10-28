@@ -637,7 +637,6 @@ namespace Test
             int arrayMax = nonNullPsms.Count;
             psmBloated.AddRange(nonNullPsms.GetRange(2, arrayMax - 2));
             psmBloated.AddRange(nonNullPsms.GetRange(2, arrayMax - 2));
-
             PeptideSpectralMatch pp = psmBloated.Where(p => p.ScanRetentionTime < (newRetentionTime + 1)).First();
 
             PeptideWithSetModifications newPwsmTwo = new PeptideWithSetModifications(new Protein("WAGVLPWFPWAAVVWGFWF", "ACCESSION", "ORGANISM"), new DigestionParams(), 1, 2, CleavageSpecificity.Full, "", 0, new Dictionary<int, Modification>(), 0);
@@ -647,7 +646,6 @@ namespace Test
 
             FdrAnalysisResults fdrResultsClassicDelta = (FdrAnalysisResults)(new FdrAnalysisEngine(psmBloated.Where(p => p != null).ToList(), 1, CommonParameters, new List<string>()).Run());
         }
-
         [Test]
         public static void TestRemoveThisAmbiguousePeptide()
         {
