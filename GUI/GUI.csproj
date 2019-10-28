@@ -286,7 +286,6 @@
     <Compile Include="ThermoLicenceAgreementWindow.xaml.cs">
       <DependentUpon>ThermoLicenceAgreementWindow.xaml</DependentUpon>
     </Compile>
-    <Compile Include="SearchTimer.cs" />
     <Compile Include="Util\BooleanInverter.cs" />
     <Compile Include="CalibrateTaskWindow.xaml.cs">
       <DependentUpon>CalibrateTaskWindow.xaml</DependentUpon>

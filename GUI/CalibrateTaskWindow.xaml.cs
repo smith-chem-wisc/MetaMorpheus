@@ -40,7 +40,7 @@ namespace MetaMorpheusGUI
             {
                 this.saveButton.Content = "Add the Calibration Task";
             }
-            SearchTimer.Timer.Tick += new EventHandler(TextChangeTimerHandler);
+            SearchModifications.Timer.Tick += new EventHandler(TextChangeTimerHandler);
             base.Closing += this.OnClosing;
         }
 
@@ -284,19 +284,18 @@ namespace MetaMorpheusGUI
 
         private void TextChanged_Fixed(object sender, TextChangedEventArgs args)
         {
-            SearchTimer.Set();
+            SearchModifications.SetTimer();
             SearchModifications.FixedSearch = true;
         }
 
         private void TextChanged_Var(object sender, TextChangedEventArgs args)
         {
-            SearchTimer.Set();
+            SearchModifications.SetTimer();
             SearchModifications.VariableSearch = true;
         }
 
         private void TextChangeTimerHandler(object sender, EventArgs e)
         {
-            SearchTimer.Timer.Stop();
             if (SearchModifications.FixedSearch)
             {
                 SearchModifications.FilterTree(SearchFixMod, fixedModsTreeView, FixedModTypeForTreeViewObservableCollection);
@@ -320,7 +319,10 @@ namespace MetaMorpheusGUI
 
         private void OnClosing(object sender, CancelEventArgs e)
         {
-            SearchTimer.Timer.Tick -= TextChangeTimerHandler;
+            SearchModifications.Timer.Tick -= new EventHandler(TextChangeTimerHandler);
+            // remove event handler from timer
+            // keeping it will trigger an exception because the closed window stops existing
+
             CustomFragmentationWindow.Close();
         }
     }

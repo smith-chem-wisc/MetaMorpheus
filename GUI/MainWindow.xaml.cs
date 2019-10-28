@@ -69,7 +69,7 @@ namespace MetaMorpheusGUI
             UpdateTaskGuiStuff();
             UpdateOutputFolderTextbox();
             FileSpecificParameters.ValidateFileSpecificVariableNames();
-            SearchTimer.Initialize();
+            SearchModifications.SetUpModSearchBoxes();
 
             // LOAD GUI SETTINGS
 

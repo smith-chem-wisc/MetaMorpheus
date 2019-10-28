@@ -78,7 +78,7 @@ namespace MetaMorpheusGUI
             modificationAnnotationColor = Brushes.Orange;
             metaDrawGraphicalSettings = new MetaDrawGraphicalSettings();
             metaDrawFilterSettings = new MetaDrawFilterSettings();
-            SearchTimer.Timer.Tick += new EventHandler(searchBox_TextChangedHandler);
+            SearchModifications.Timer.Tick += new EventHandler(searchBox_TextChangedHandler);
             base.Closing += this.OnClosing;
 
             ParentChildScanView.Visibility = Visibility.Collapsed;
@@ -601,7 +601,7 @@ namespace MetaMorpheusGUI
 
         private void OnClosing(object sender, CancelEventArgs e)
         {
-            SearchTimer.Timer.Tick -= searchBox_TextChangedHandler;
+            SearchModifications.Timer.Tick -= new EventHandler(searchBox_TextChangedHandler);
             metaDrawGraphicalSettings.Close();
             metaDrawFilterSettings.Close();
         }
@@ -709,7 +709,7 @@ namespace MetaMorpheusGUI
 
         private void searchBox_TextChanged(object sender, TextChangedEventArgs e)
         {
-            SearchTimer.Set();
+            SearchModifications.SetTimer();
         }
 
         // handler for searching through tree
@@ -725,7 +725,7 @@ namespace MetaMorpheusGUI
 
             searchProtein(userInput);
             proteinTreeView.DataContext = filteredTree;
-            SearchTimer.Timer.Stop();
+            SearchModifications.Timer.Stop();
         }
 
         // search through protein list based on user input
