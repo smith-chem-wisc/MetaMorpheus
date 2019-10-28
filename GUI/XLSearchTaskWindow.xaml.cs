@@ -74,6 +74,11 @@ namespace MetaMorpheusGUI
                 ChildScanDissociationTypeComboBox.Items.Add(dissassociationType);
             }
 
+            foreach (string separationType in GlobalVariables.SeparationTypes)
+            {
+                SeparationTypeComboBox.Items.Add(separationType);
+            }
+
             cbbXLprecusorMsTl.Items.Add("Da");
             cbbXLprecusorMsTl.Items.Add("ppm");
 
@@ -134,6 +139,7 @@ namespace MetaMorpheusGUI
             MinRatioTextBox.Text = task.CommonParameters.MinimumAllowedIntensityRatioToBasePeak == double.MaxValue || !task.CommonParameters.MinimumAllowedIntensityRatioToBasePeak.HasValue ? "" : task.CommonParameters.MinimumAllowedIntensityRatioToBasePeak.Value.ToString(CultureInfo.InvariantCulture);
 
             DissociationTypeComboBox.SelectedItem = task.CommonParameters.DissociationType.ToString();
+            SeparationTypeComboBox.SelectedItem = task.CommonParameters.SeparationType.ToString();
 
             if (task.CommonParameters.ChildScanDissociationType != DissociationType.Unknown)
             {
@@ -233,6 +239,7 @@ namespace MetaMorpheusGUI
             }
 
             DissociationType dissociationType = GlobalVariables.AllSupportedDissociationTypes[DissociationTypeComboBox.SelectedItem.ToString()];
+            string separationType = SeparationTypeComboBox.SelectedItem.ToString();
 
             DissociationType childDissociationType = DissociationType.Unknown;
             if (ChildScanDissociationTypeComboBox.SelectedItem != null)
@@ -262,6 +269,7 @@ namespace MetaMorpheusGUI
             int MaxPeptideLength = string.IsNullOrEmpty(MaxPeptideLengthTextBox.Text) ? int.MaxValue : (int.Parse(MaxPeptideLengthTextBox.Text, NumberStyles.Any, CultureInfo.InvariantCulture));
             int MaxModificationIsoforms = (int.Parse(maxModificationIsoformsTextBox.Text, CultureInfo.InvariantCulture));
             InitiatorMethionineBehavior InitiatorMethionineBehavior = ((InitiatorMethionineBehavior)initiatorMethionineBehaviorComboBox.SelectedIndex);
+            string SeparationType = (string)SeparationTypeComboBox.SelectedItem;
             DigestionParams digestionParamsToSave = new DigestionParams(
                 protease: protease.Name,
                 maxMissedCleavages: MaxMissedCleavages,
@@ -317,6 +325,7 @@ namespace MetaMorpheusGUI
                 numberOfPeaksToKeepPerWindow: int.Parse(TopNPeaksTextBox.Text),
                 minimumAllowedIntensityRatioToBasePeak: double.Parse(MinRatioTextBox.Text, CultureInfo.InvariantCulture),
                 dissociationType: dissociationType,
+                separationType: separationType,
                 childScanDissociationType: childDissociationType,
                 scoreCutoff: double.Parse(minScoreAllowed.Text, CultureInfo.InvariantCulture),
                 totalPartitions: int.Parse(numberOfDatabaseSearchesTextBox.Text, CultureInfo.InvariantCulture),

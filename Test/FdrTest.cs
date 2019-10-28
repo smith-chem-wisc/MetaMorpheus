@@ -259,7 +259,7 @@ namespace Test
             Assert.That(-Math.Abs(chargeStateMode - maxScorePsm.ScanPrecursorCharge), Is.EqualTo(maxPsmData.PrecursorChargeDiffToMode));
             Assert.AreEqual((float)0, maxPsmData.IsVariantPeptide);
 
-            PEP_Analysis.ComputePEPValuesForAllPSMsGeneric(nonNullPsms, "standard");
+            PEP_Analysis.ComputePEPValuesForAllPSMsGeneric(nonNullPsms, "standard", "hplc");
 
             int trueCount = 0;
 
@@ -287,7 +287,7 @@ namespace Test
                 "*       LogLoss:  2.60551851621861E-10\r\n*       LogLossReduction:  0.999999999599165\r\n*       PositivePrecision:  1\r\n*       PositiveRecall:  1\r\n*       NegativePrecision:  1\r\n" +
                 "*       NegativeRecall:  1\r\n*       Count of Ambiguous Peptides Removed:  0\r\n************************************************************\r\n";
 
-            string metrics = PEP_Analysis.ComputePEPValuesForAllPSMsGeneric(moreNonNullPSMs, "standard");
+            string metrics = PEP_Analysis.ComputePEPValuesForAllPSMsGeneric(moreNonNullPSMs, "standard", "hplc");
             Assert.AreEqual(expectedMetrics, metrics);
             Assert.GreaterOrEqual(32, trueCount);
 
@@ -372,7 +372,55 @@ namespace Test
                 item.ResolveProteinPosAmbiguitiesForXl();
             }
 
+
+            List<PeptideSpectralMatch> moreNonNullPSMs = new List<PeptideSpectralMatch>();
+            int reps = 3;
+            for (int i = 0; i < reps; i++)
+            {
+                foreach (PeptideSpectralMatch psm in newPsms)
+                {
+                    moreNonNullPSMs.Add(psm);
+                }
+            }
+
             FdrAnalysisResults fdrResultsCrosslink = (FdrAnalysisResults)(new FdrAnalysisEngine(newPsms.ToList<PeptideSpectralMatch>(), 0, commonParameters, new List<string>(), "crosslink").Run());
+
+            var maxScore = newPsms.Select(n => n.Score).Max();
+            PeptideSpectralMatch maxScorePsm = newPsms.Where(n => n.Score == maxScore).First();
+            Dictionary<string, int> sequenceToPsmCount = new Dictionary<string, int>();
+            List<string> sequences = new List<string>();
+            foreach (PeptideSpectralMatch psm in newPsms)
+            {
+                var ss = psm.BestMatchingPeptides.Select(b => b.Peptide.FullSequence).ToList();
+                sequences.Add(String.Join("|", ss));
+            }
+            var s = sequences.GroupBy(i => i);
+
+            foreach (var grp in s)
+            {
+                sequenceToPsmCount.Add(grp.Key, grp.Count());
+            }
+
+            Dictionary<string, Dictionary<int, Tuple<double, double>>> fileSpecificRetTimeHI_behavior = new Dictionary<string, Dictionary<int, Tuple<double, double>>>();
+            Dictionary<string, Dictionary<int, Tuple<double, double>>> fileSpecificRetTemHI_behaviorModifiedPeptides = new Dictionary<string, Dictionary<int, Tuple<double, double>>>();
+
+            string[] trainingVariables = PsmData.trainingInfos["crosslink"];
+
+            int chargeStateMode = 4;
+            var (notch, pwsm) = maxScorePsm.BestMatchingPeptides.First();
+            var maxPsmData = PEP_Analysis.CreateOnePsmDataEntry(maxScorePsm, sequenceToPsmCount, fileSpecificRetTimeHI_behavior, fileSpecificRetTemHI_behaviorModifiedPeptides, chargeStateMode, pwsm, trainingVariables, notch, !pwsm.Protein.IsDecoy);
+            Assert.That(maxScorePsm.PeptidesToMatchingFragments.Count - 1, Is.EqualTo(maxPsmData.Ambiguity));
+
+
+            Assert.That(maxScorePsm.DeltaScore, Is.EqualTo(maxPsmData.DeltaScore).Within(0.05));
+            Assert.That((float)(maxScorePsm.Score - (int)maxScorePsm.Score), Is.EqualTo(maxPsmData.Intensity).Within(0.05));
+            Assert.AreEqual(maxPsmData.HydrophobicityZScore, float.NaN);
+            Assert.That(maxScorePsm.BestMatchingPeptides.Select(p => p.Peptide).First().MissedCleavages, Is.EqualTo(maxPsmData.MissedCleavagesCount));
+            Assert.That(maxScorePsm.BestMatchingPeptides.Select(p => p.Peptide).First().AllModsOneIsNterminus.Values.Count(), Is.EqualTo(maxPsmData.ModsCount));
+            Assert.That(maxScorePsm.Notch ?? 0, Is.EqualTo(maxPsmData.Notch));
+            Assert.That(maxScorePsm.PsmCount, Is.EqualTo(maxPsmData.PsmCount * reps));
+            Assert.That(-Math.Abs(chargeStateMode - maxScorePsm.ScanPrecursorCharge), Is.EqualTo(maxPsmData.PrecursorChargeDiffToMode));
+            Assert.AreEqual((float)0, maxPsmData.IsVariantPeptide);
         }
 
         [Test]

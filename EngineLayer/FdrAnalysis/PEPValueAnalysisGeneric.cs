@@ -16,9 +16,11 @@ namespace EngineLayer
     public static class PEP_Analysis
     {
         private static readonly double AbsoluteProbabilityThatDistinguishesPeptides = 0.05;
+        private static string SeparationType;
 
-        public static string ComputePEPValuesForAllPSMsGeneric(List<PeptideSpectralMatch> psms, string searchType)
+        public static string ComputePEPValuesForAllPSMsGeneric(List<PeptideSpectralMatch> psms, string searchType, string separationType)
         {
+            SeparationType = separationType;
             string[] trainingVariables = PsmData.trainingInfos[searchType];
 
             //These two dictionaries contain the average and standard deviations of hydrophobicitys measured in 1 minute increments accross each raw
@@ -182,7 +184,15 @@ namespace EngineLayer
                             continue;
                         }
                         fullSequences.Add(pwsm.FullSequence);
+
                         double predictedHydrophobicity = calc.ScoreSequence(pwsm);
+
+                        //DEBUG
+                        if(SeparationType == "CZE")
+                        {
+                            predictedHydrophobicity = CZE.PredictedElectrophoreticMobility(pwsm.BaseSequence, pwsm.MonoisotopicMass);
+                        }
+                        //END DEBUG
 
                         //here i'm grouping this in 2 minute increments becuase there are cases where you get too few data points to get a good standard deviation an average. This is for stability.
                         int possibleKey = (int)(2 * Math.Round(psm.ScanRetentionTime / 2d, 0));
@@ -271,6 +281,13 @@ namespace EngineLayer
                 if (d[psm.FullFilePath].Keys.Contains(time))
                 {
                     double predictedHydrophobicity = calc.ScoreSequence(Peptide);
+
+                    if(SeparationType == "CZE")
+                    {
+                        predictedHydrophobicity = CZE.PredictedElectrophoreticMobility(Peptide.BaseSequence, Peptide.MonoisotopicMass);
+                    }
+                    
+
                     hydrophobicityZscore = Math.Abs(d[psm.FullFilePath][time].Item1 - predictedHydrophobicity) / d[psm.FullFilePath][time].Item2;
                 }
             }

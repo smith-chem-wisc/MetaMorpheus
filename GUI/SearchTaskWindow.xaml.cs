@@ -93,6 +93,14 @@ namespace MetaMorpheusGUI
             {
                 DissociationTypeComboBox.Items.Add(dissassociationType);
             }
+            
+
+            foreach (string separationType in GlobalVariables.SeparationTypes)
+            {
+                SeparationTypeComboBox.Items.Add(separationType);
+            }
+            SeparationTypeComboBox.SelectedItem = "HPLC";
+
 
             ProductMassToleranceComboBox.Items.Add("Da");
             ProductMassToleranceComboBox.Items.Add("ppm");
@@ -245,6 +253,7 @@ namespace MetaMorpheusGUI
             MaxModNumTextBox.Text = task.CommonParameters.DigestionParams.MaxModsForPeptide.ToString(CultureInfo.InvariantCulture);
             InitiatorMethionineBehaviorComboBox.SelectedIndex = (int)task.CommonParameters.DigestionParams.InitiatorMethionineBehavior;
             DissociationTypeComboBox.SelectedItem = task.CommonParameters.DissociationType.ToString();
+            SeparationTypeComboBox.SelectedItem = task.CommonParameters.SeparationType.ToString();
             NTerminalIons.IsChecked = task.CommonParameters.DigestionParams.FragmentationTerminus == FragmentationTerminus.Both || task.CommonParameters.DigestionParams.FragmentationTerminus == FragmentationTerminus.N;
             CTerminalIons.IsChecked = task.CommonParameters.DigestionParams.FragmentationTerminus == FragmentationTerminus.Both || task.CommonParameters.DigestionParams.FragmentationTerminus == FragmentationTerminus.C;
             ProductMassToleranceTextBox.Text = task.CommonParameters.ProductMassTolerance.Value.ToString(CultureInfo.InvariantCulture);

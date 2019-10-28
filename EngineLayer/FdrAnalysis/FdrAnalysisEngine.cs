@@ -11,6 +11,7 @@ namespace EngineLayer.FdrAnalysis
         private readonly bool UseDeltaScore;
         private readonly double ScoreCutoff;
         private readonly string AnalysisType;
+        private readonly string SeparationType;
 
         public FdrAnalysisEngine(List<PeptideSpectralMatch> psms, int massDiffAcceptorNumNotches, CommonParameters commonParameters, List<string> nestedIds, string analysisType = "PSM") : base(commonParameters, nestedIds)
         {
@@ -19,6 +20,7 @@ namespace EngineLayer.FdrAnalysis
             UseDeltaScore = commonParameters.UseDeltaScore;
             ScoreCutoff = commonParameters.ScoreCutoff;
             AnalysisType = analysisType;
+            SeparationType = commonParameters.SeparationType;
         }
 
         protected override MetaMorpheusEngineResults RunSpecific()
@@ -165,7 +167,7 @@ namespace EngineLayer.FdrAnalysis
                         searchType = "topDown";
                     }
 
-                    myAnalysisResults.BinarySearchTreeMetrics = PEP_Analysis.ComputePEPValuesForAllPSMsGeneric(AllPsms, searchType);
+                    myAnalysisResults.BinarySearchTreeMetrics = PEP_Analysis.ComputePEPValuesForAllPSMsGeneric(AllPsms, searchType, SeparationType);
                     Compute_PEPValue_Based_QValue(AllPsms);
                 }
             }
@@ -177,7 +179,7 @@ namespace EngineLayer.FdrAnalysis
 
             if (AnalysisType == "crosslink" && AllPsms.Count > 100)
             {
-                myAnalysisResults.BinarySearchTreeMetrics = PEP_Analysis.ComputePEPValuesForAllPSMsGeneric(AllPsms, "crosslink");
+                myAnalysisResults.BinarySearchTreeMetrics = PEP_Analysis.ComputePEPValuesForAllPSMsGeneric(AllPsms, "crosslink", SeparationType);
                 Compute_PEPValue_Based_QValue(AllPsms);
             }
         }
