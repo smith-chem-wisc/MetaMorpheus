@@ -93,7 +93,7 @@ namespace Test
 
             st.RunTask(outputFolder, new List<DbForTask> { new DbForTask(xmlName, false) }, new List<string> { mzmlName }, "");
             var psms = File.ReadAllLines(Path.Combine(outputFolder, "AllPSMs.psmtsv"));
-            
+
             Assert.IsTrue(psms.Any(line => line.Contains(containsVariant ? variantPsmShort : "\t")));
 
             Directory.Delete(outputFolder, true);
@@ -160,10 +160,10 @@ namespace Test
             DbForTask disruptiveInsertionVariantDb = new DbForTask(Path.Combine(TestContext.CurrentContext.TestDirectory, @"TestVariantDB_disruptiveInsertion.xml"), false);
             DbForTask conservativeDeletionVariantDb = new DbForTask(Path.Combine(TestContext.CurrentContext.TestDirectory, @"TestVariantDB_conservativeDeletion.xml"), false);
             DbForTask disruptiveDeletionVariantDb = new DbForTask(Path.Combine(TestContext.CurrentContext.TestDirectory, @"TestVariantDB_disruptiveDeletion.xml"), false);
-            DbForTask stopLossVariantDb = new DbForTask(Path.Combine(TestContext.CurrentContext.TestDirectory, @"TestVariantDB_stopLoss.xml"), false);           
+            DbForTask stopLossVariantDb = new DbForTask(Path.Combine(TestContext.CurrentContext.TestDirectory, @"TestVariantDB_stopLoss.xml"), false);
 
-            string raw = Path.Combine(TestContext.CurrentContext.TestDirectory, @"TestVariantPep.mzML"); 
-            
+            string raw = Path.Combine(TestContext.CurrentContext.TestDirectory, @"TestVariantPep.mzML");
+
             EverythingRunnerEngine noVariants = new EverythingRunnerEngine(new List<(string, MetaMorpheusTask)> { ("NoVariantOutput", task) }, new List<string> { raw }, new List<DbForTask> { noVariantDb }, thisTaskOutputFolder);
             EverythingRunnerEngine ambigVariant = new EverythingRunnerEngine(new List<(string, MetaMorpheusTask)> { ("VariantOutput_ambig", task) }, new List<string> { raw }, new List<DbForTask> { ambigVariantDb }, thisTaskOutputFolder);
             EverythingRunnerEngine frameshifVariants = new EverythingRunnerEngine(new List<(string, MetaMorpheusTask)> { ("VariantOutput_frameshift", task) }, new List<string> { raw }, new List<DbForTask> { frameshiftVariantDb }, thisTaskOutputFolder);
@@ -175,7 +175,7 @@ namespace Test
             EverythingRunnerEngine conservativeDeletionVariants = new EverythingRunnerEngine(new List<(string, MetaMorpheusTask)> { ("VariantOutput_conservativeDeletion", task) }, new List<string> { raw }, new List<DbForTask> { conservativeDeletionVariantDb }, thisTaskOutputFolder);
             EverythingRunnerEngine disruptiveDeletionVariants = new EverythingRunnerEngine(new List<(string, MetaMorpheusTask)> { ("VariantOutput_disruptiveDeletion", task) }, new List<string> { raw }, new List<DbForTask> { disruptiveDeletionVariantDb }, thisTaskOutputFolder);
             EverythingRunnerEngine stopLossVariants = new EverythingRunnerEngine(new List<(string, MetaMorpheusTask)> { ("VariantOutput_stopLoss", task) }, new List<string> { raw }, new List<DbForTask> { stopLossVariantDb }, thisTaskOutputFolder);
-            
+
 
             noVariants.Run();
             ambigVariant.Run();
@@ -188,7 +188,7 @@ namespace Test
             conservativeDeletionVariants.Run();
             disruptiveDeletionVariants.Run();
             stopLossVariants.Run();
-            
+
 
             // no variant results files should be generated
             HashSet<string> expectedFiles = new HashSet<string> {
@@ -233,7 +233,7 @@ namespace Test
             Assert.AreEqual("Number of stop gain variant containing peptides at 1% group FDR: 0", checkResults[17]);
             Assert.AreEqual("Number of unique stop gain variants: 0", checkResults[18]);
             Assert.AreEqual("Number of stop loss variant containing peptides at 1% group FDR: 0", checkResults[19]);
-            Assert.AreEqual("Number of unique stop loss variants: 0", checkResults[20]);            
+            Assert.AreEqual("Number of unique stop loss variants: 0", checkResults[20]);
             Assert.AreEqual("Number of variant peptides at 1% group FDR with unambiguous localized modifications: 1", checkResults[21]);
             Assert.AreEqual("Number of variant peptides at 1% group FDR with unambiguous localized modifications at the variant sites : 0", checkResults[22]);
 
@@ -415,18 +415,30 @@ namespace Test
 
             checkResults = File.ReadAllLines(Path.Combine(thisTaskOutputFolder, "VariantOutput_stopLoss", "VariantAnalysisResultSummary.txt"));
 
-            Assert.AreEqual("Number of potential variant containing peptides identified at 1% FDR: 1", checkResults[4]);
-            Assert.AreEqual("Number of unqiuely identified variant peptides at 1% FDR: 1", checkResults[5]);
-            Assert.AreEqual("Number of SAV variant peptides at 1% FDR: 0", checkResults[6]);
-            Assert.AreEqual("Number of frameshift variant peptides at 1% FDR: 0", checkResults[7]);
-            Assert.AreEqual("Number of inframe insertion variant peptides at 1% FDR: 0", checkResults[8]);
-            Assert.AreEqual("Number of inframe deletion variant peptides at 1% FDR: 0", checkResults[9]);
-            Assert.AreEqual("Number of stop gain variant peptides at 1% FDR: 0", checkResults[10]);
-            Assert.AreEqual("Number of stop loss variant peptides at 1% FDR: 1", checkResults[11]);            
-            Assert.AreEqual("Number of modified variant peptides at 1% FDR: 1", checkResults[12]);
-            Assert.AreEqual("Number of modified variant sites at 1% FDR: 0", checkResults[13]);
+            Assert.AreEqual("Number of potential variant containing peptides identified at 1% group FDR: 1", checkResults[4]);
+            Assert.AreEqual("Number of unqiuely identified variant peptides at 1% group FDR: 1", checkResults[5]);
+            Assert.AreEqual("Number of unique variants: 1", checkResults[6]);
+            Assert.AreEqual("Number of SNV missense variant containing peptides at 1% group FDR: 0", checkResults[7]);
+            Assert.AreEqual("Number of unique SNV missense variants: 0", checkResults[8]);
+            Assert.AreEqual("Number of MNV missense variant containing peptides at 1% group FDR: 0", checkResults[9]);
+            Assert.AreEqual("Number of unique MNV missense variants: 0", checkResults[10]);
+            Assert.AreEqual("Number of frameshift variant containing peptides at 1% group FDR: 0", checkResults[11]);
+            Assert.AreEqual("Number of unique frameshift variants: 0", checkResults[12]);
+            Assert.AreEqual("Number of inframe insertion variant containing peptides at 1% group FDR: 0", checkResults[13]);
+            Assert.AreEqual("Number of unique inframe insertion variants: 0", checkResults[14]);
+            Assert.AreEqual("Number of inframe deletion variant containing peptides at 1% group FDR: 0", checkResults[15]);
+            Assert.AreEqual("Number of unique inframe deletion variants: 0", checkResults[16]);
+            Assert.AreEqual("Number of stop gain variant containing peptides at 1% group FDR: 0", checkResults[17]);
+            Assert.AreEqual("Number of unique stop gain variants: 0", checkResults[18]);
+            Assert.AreEqual("Number of stop loss variant containing peptides at 1% group FDR: 1", checkResults[19]);
+            Assert.AreEqual("Number of unique stop loss variants: 1", checkResults[20]);
+            Assert.AreEqual("Number of variant peptides at 1% group FDR with unambiguous localized modifications: 1", checkResults[21]);
+            Assert.AreEqual("Number of variant peptides at 1% group FDR with unambiguous localized modifications at the variant sites : 0", checkResults[22]);
+
+
 
             Directory.Delete(thisTaskOutputFolder, true);
+
         }
     }
 }

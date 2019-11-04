@@ -90,7 +90,7 @@ namespace MetaMorpheusGUI
             }
         }
 
-        
+
         public void Releases_Navigating(object sender, System.Windows.Navigation.NavigatingCancelEventArgs e)
         {
             //cancel the current event

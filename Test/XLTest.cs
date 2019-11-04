@@ -96,9 +96,7 @@ namespace Test
             var x4_f = CrosslinkSpectralMatch.GetPossibleCrosslinkerModSites(crosslinker.CrosslinkerModSites.ToCharArray(), pep4, digestionParams.InitiatorMethionineBehavior, true).ToArray();
             var x4_t = CrosslinkSpectralMatch.GetPossibleCrosslinkerModSites(crosslinker.CrosslinkerModSites.ToCharArray(), pep4, digestionParams.InitiatorMethionineBehavior, false).ToArray();
             //Both 'K' are crosslinked becuase the last 'K' is at protein C terminal
-
             Assert.That(x4_f[0] == 7 && x4_f[1] == 10 && x4_f.Count() == 2);
-
             Assert.That(x4_t[0] == 7 && x4_t[1] == 10 && x4_t.Count() == 2);
 
             var pep5 = pep_mod.Where(p => p.FullSequence == "KQQK").First();
@@ -107,7 +105,6 @@ namespace Test
             var x5_t = CrosslinkSpectralMatch.GetPossibleCrosslinkerModSites(crosslinker.CrosslinkerModSites.ToCharArray(), pep5, digestionParams.InitiatorMethionineBehavior, false).ToArray();
             //Both 'K' are crosslinked becuase the last 'K' is at protein C terminal
             Assert.That(x5_f[0] == 1 && x5_f.Count() == 2);
-
             Assert.That(x5_t[0] == 1 && x5_t.Count() == 2);
 
             var pep6 = pep_mod.Where(p => p.FullSequence == "KNNNK").First();
@@ -218,7 +215,27 @@ namespace Test
             var task = Toml.ReadFile<XLSearchTask>(Path.Combine(TestContext.CurrentContext.TestDirectory, @"XlTestData/Rappsilber3-XLSearchTaskconfig.toml"), MetaMorpheusTask.tomlConfig);
             Directory.CreateDirectory(Path.Combine(Environment.CurrentDirectory, @"TESTXlTestData"));
             DbForTask db = new DbForTask(Path.Combine(TestContext.CurrentContext.TestDirectory, @"XlTestData/YeastPol2.fasta"), false);
-            string raw = Path.Combine(TestContext.CurrentContext.TestDirectory, @"XlTestData/Rappsilber_CLMS_PolII_3-calib_slice.mzML");
+
+            var origDataFile = Path.Combine(TestContext.CurrentContext.TestDirectory, @"XlTestData/Rappsilber_CLMS_PolII_3-calib_slice.mzML.gz");
+            string raw;
+
+            FileInfo fileToDecompress = new FileInfo(origDataFile);
+
+            using (FileStream originalFileStream = fileToDecompress.OpenRead())
+            {
+                string currentFileName = fileToDecompress.FullName;
+                raw = currentFileName.Remove(currentFileName.Length - fileToDecompress.Extension.Length);
+
+                using (FileStream decompressedFileStream = File.Create(raw))
+                {
+                    using (GZipStream decompressionStream = new GZipStream(originalFileStream, CompressionMode.Decompress))
+                    {
+                        decompressionStream.CopyTo(decompressedFileStream);
+                        Console.WriteLine($"Decompressed: {fileToDecompress.Name}");
+                    }
+                }
+            }
+
             new EverythingRunnerEngine(new List<(string, MetaMorpheusTask)> { ("Task", task) }, new List<string> { raw }, new List<DbForTask> { db }, Path.Combine(Environment.CurrentDirectory, @"TESTXlTestData")).Run();
             Directory.Delete(Path.Combine(Environment.CurrentDirectory, @"TESTXlTestData"), true);
         }
@@ -274,7 +291,7 @@ namespace Test
             CommonParameters CommonParameters = new CommonParameters(digestionParams: new DigestionParams());
             var myMsDataFile = myFileManager.LoadFile(newFileName, CommonParameters);
 
-            var listOfSortedms2Scans = MetaMorpheusTask.GetMs2Scans(myMsDataFile,newFileName, CommonParameters).OrderBy(b => b.PrecursorMass).ToArray();
+            var listOfSortedms2Scans = MetaMorpheusTask.GetMs2Scans(myMsDataFile, newFileName, CommonParameters).OrderBy(b => b.PrecursorMass).ToArray();
 
             //Generate crosslinker, which is DSS here.
             Crosslinker crosslinker = GlobalVariables.Crosslinkers.Where(p => p.CrosslinkerName == "DSS").First();
