@@ -218,7 +218,6 @@ namespace Test
             string raw = Path.Combine(TestContext.CurrentContext.TestDirectory, @"XlTestData/Rappsilber_CLMS_PolII_3-calib_slice.mzML");
             new EverythingRunnerEngine(new List<(string, MetaMorpheusTask)> { ("Task", task) }, new List<string> { raw }, new List<DbForTask> { db }, Path.Combine(Environment.CurrentDirectory, @"TESTXlTestData")).Run();
             Directory.Delete(Path.Combine(Environment.CurrentDirectory, @"TESTXlTestData"), true);
-
         }
 
         [Test]
