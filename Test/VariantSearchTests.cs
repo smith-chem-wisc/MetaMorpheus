@@ -312,7 +312,8 @@ namespace Test
             Assert.AreEqual("Number of stop loss variant peptides at 1% FDR: 1", checkResults[11]);            
             Assert.AreEqual("Number of modified variant peptides at 1% FDR: 1", checkResults[12]);
             Assert.AreEqual("Number of modified variant sites at 1% FDR: 0", checkResults[13]);
-            
+
+            Directory.Delete(thisTaskOutputFolder, true);
         }
     }
 }

@@ -23,34 +23,9 @@ namespace TaskLayer
 
         public MyTaskResults Run(string OutputFolder, List<DbForTask> dbFilenameList, List<string> currentRawFileList, string taskId, FileSpecificParameters[] fileSettingsList, List<CrosslinkSpectralMatch> allPsms, CommonParameters commonParameters, XlSearchParameters xlSearchParameters, List<Protein> proteinList, List<Modification> variableModifications, List<Modification> fixedModifications, List<string> localizeableModificationTypes, MyTaskResults MyTaskResults)
         {
-            foreach (var csm in allPsms)
-            {
-                csm.ResolveProteinPosAmbiguitiesForXl();
-            }
-
-            var allPsmsXL = allPsms.Where(p => p.CrossType == PsmCrossType.Cross).ToList();
-
-            // inter-crosslinks; different proteins are linked
-            var interCsms = allPsmsXL.Where(p => !p.IsIntraCsm()).ToList();
-            foreach (var item in interCsms)
-            {
-                item.CrossType = PsmCrossType.Inter;
-            }
-
-            // intra-crosslinks; crosslinks within a protein
-            var intraCsms = allPsmsXL.Where(p => p.IsIntraCsm()).ToList();
-            foreach (var item in intraCsms)
-            {
-                item.CrossType = PsmCrossType.Intra;
-            }
-
-            // calculate FDR
-            DoCrosslinkFdrAnalysis(interCsms);
-            DoCrosslinkFdrAnalysis(intraCsms);
-
-            SingleFDRAnalysis(allPsms, commonParameters, new List<string> { taskId });
-            ComputeThePosteriorErrorProbability(allPsms);
-
+            List<CrosslinkSpectralMatch> intraCsms = allPsms.Where(p => p.CrossType == PsmCrossType.Intra).ToList();
+            List<CrosslinkSpectralMatch> interCsms = allPsms.Where(p => p.CrossType == PsmCrossType.Inter).ToList();
+            ComputeXlinkQandPValues(allPsms, intraCsms, interCsms, commonParameters, taskId);
 
             // write interlink CSMs
             if (interCsms.Any())
@@ -139,33 +114,51 @@ namespace TaskLayer
             return MyTaskResults;
         }
 
+        public void ComputeXlinkQandPValues(List<CrosslinkSpectralMatch> allPsms, List<CrosslinkSpectralMatch> intraCsms, List<CrosslinkSpectralMatch> interCsms, CommonParameters commonParameters, string taskId)
+        {
+            // calculate FDR
+            DoCrosslinkFdrAnalysis(interCsms);
+            DoCrosslinkFdrAnalysis(intraCsms);
+            
+            List<CrosslinkSpectralMatch> crossCsms = allPsms.Where(p => p.CrossType == PsmCrossType.Inter || p.CrossType == PsmCrossType.Intra).ToList();
+            new FdrAnalysisEngine(crossCsms.ToList<PeptideSpectralMatch>(), 0, commonParameters, new List<string>() { taskId }, "crosslink").Run();
+
+            List<CrosslinkSpectralMatch> singles = allPsms.Where(p => p.CrossType != PsmCrossType.Inter).Where(p => p.CrossType != PsmCrossType.Intra).ToList();
+            SingleFDRAnalysis(singles, commonParameters, new List<string> { taskId });
+            new FdrAnalysisEngine(singles.ToList<PeptideSpectralMatch>(), 0, commonParameters, new List<string>() { taskId }, "PSM").Run();
+        }
+
         //Calculate the FDR of single peptide FP/TP
         private void SingleFDRAnalysis(List<CrosslinkSpectralMatch> items, CommonParameters commonParameters, List<string> taskIds)
         {
             // calculate single PSM FDR
             List<PeptideSpectralMatch> psms = items.Where(p => p.CrossType == PsmCrossType.Single).Select(p => p as PeptideSpectralMatch).ToList();
-            new FdrAnalysisEngine(psms, 0, commonParameters, taskIds).Run();
+            new FdrAnalysisEngine(psms, 0, commonParameters, taskIds, "skippep").Run();
 
             // calculate loop PSM FDR
             psms = items.Where(p => p.CrossType == PsmCrossType.Loop).Select(p => p as PeptideSpectralMatch).ToList();
-            new FdrAnalysisEngine(psms, 0, commonParameters, taskIds).Run();
+            new FdrAnalysisEngine(psms, 0, commonParameters, taskIds, "skippep").Run();
 
             // calculate deadend FDR
             psms = items.Where(p => p.CrossType == PsmCrossType.DeadEnd ||
                 p.CrossType == PsmCrossType.DeadEndH2O ||
                 p.CrossType == PsmCrossType.DeadEndNH2 ||
                 p.CrossType == PsmCrossType.DeadEndTris).Select(p => p as PeptideSpectralMatch).ToList();
-            new FdrAnalysisEngine(psms, 0, commonParameters, taskIds).Run();
+            new FdrAnalysisEngine(psms, 0, commonParameters, taskIds, "skippep").Run();
         }
 
         //Calculate the FDR of crosslinked peptide FP/TP
         private void DoCrosslinkFdrAnalysis(List<CrosslinkSpectralMatch> csms)
         {
+            csms.OrderBy(c => c.XLTotalScore).ToList();
+
+
             int cumulativeTarget = 0;
             int cumulativeDecoy = 0;
 
             for (int i = 0; i < csms.Count; i++)
             {
+
                 var csm = csms[i];
                 if (csm.IsDecoy || csm.BetaPeptide.IsDecoy)
                 {
@@ -176,8 +169,13 @@ namespace TaskLayer
                     cumulativeTarget++;
                 }
 
-                double qValue = Math.Min(1, (double)cumulativeDecoy / cumulativeTarget);
-                csm.SetFdrValues(cumulativeTarget, cumulativeDecoy, qValue, 0, 0, 0, 0, 0);
+                double qValue = Math.Min(1, cumulativeDecoy / (cumulativeTarget <= 0 ? 1 : cumulativeTarget));
+                double qValueNotch = 0; //maybe we should assign this some day?
+
+                double pep = csm.FdrInfo == null ? double.NaN : csm.FdrInfo.PEP;
+                double pepQValue = csm.FdrInfo == null ? double.NaN : csm.FdrInfo.PEP_QValue;
+
+                csm.SetFdrValues(cumulativeTarget, cumulativeDecoy, qValue, 0, 0, qValueNotch, pep, pepQValue);
             }
 
             double qValueThreshold = 1.0;
@@ -194,33 +192,6 @@ namespace TaskLayer
                 {
                     qValueThreshold = csm.FdrInfo.QValue;
                 }
-            }
-
-
-        }
-
-        private void ComputeThePosteriorErrorProbability(List<CrosslinkSpectralMatch> csms)
-        {
-            //Need some reasonable number of PSMs to train on to get a reasonable estimation of the PEP
-            if (csms.Count > 100)
-            {
-                string bubba = PEPValueAnalysisXL.ComputePEPValuesForAllPSMsGeneric(csms);
-                Compute_PEPValue_Based_QValue(csms);
-            }
-        }
-
-        public static void Compute_PEPValue_Based_QValue(List<CrosslinkSpectralMatch> csms)
-        {
-            double[] allPEPValues = csms.Select(p => p.FdrInfo.PEP).ToArray();
-            int[] psmsArrayIndicies = Enumerable.Range(0, csms.Count).ToArray();
-            Array.Sort(allPEPValues, psmsArrayIndicies);//sort the second thing by the first
-
-            double runningSum = 0;
-            for (int i = 0; i < allPEPValues.Length; i++)
-            {
-                runningSum += allPEPValues[i];
-                double qValue = runningSum / (i + 1);
-                csms[psmsArrayIndicies[i]].FdrInfo.PEP_QValue = Math.Round(qValue, 6);
             }
         }
     }

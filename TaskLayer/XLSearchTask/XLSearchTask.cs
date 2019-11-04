@@ -24,7 +24,7 @@ namespace TaskLayer
             CommonParameters = new CommonParameters(
                 precursorMassTolerance: new PpmTolerance(10),
                 scoreCutoff: 3,
-                trimMsMsPeaks:false,
+                trimMsMsPeaks: false,
                 digestionParams: digestPara
             );
 
@@ -151,9 +151,13 @@ namespace TaskLayer
                     {
                         csm.BetaPeptide.ResolveAllAmbiguities();
                     }
+                    csm.ResolveProteinPosAmbiguitiesForXl();
                 }
                 ListOfCsmsPerMS2ScanParsimony.Add(RemoveDuplicateFromCsmsPerScan(csmsPerScan));
             }
+
+            SortCsmsAndCalculateDeltaScores(ListOfCsmsPerMS2ScanParsimony);
+            AssignCrossType(ListOfCsmsPerMS2ScanParsimony);
 
             var filteredAllPsms = new List<CrosslinkSpectralMatch>();
 
@@ -161,13 +165,65 @@ namespace TaskLayer
             //This function is for current usage, this can be replaced with PEP value. 
             foreach (var csmsPerScan in ListOfCsmsPerMS2ScanParsimony)
             {
-                filteredAllPsms.Add(csmsPerScan[0]);
+                filteredAllPsms.Add(csmsPerScan.First());
             }
 
             PostXLSearchAnalysisTask postXLSearchAnalysisTask = new PostXLSearchAnalysisTask();
 
-            return postXLSearchAnalysisTask.Run(OutputFolder, dbFilenameList, currentRawFileList, taskId, fileSettingsList, filteredAllPsms.OrderByDescending(p=>p.XLTotalScore).ToList(), CommonParameters, XlSearchParameters, proteinList, variableModifications, fixedModifications, localizeableModificationTypes, MyTaskResults);
+            return postXLSearchAnalysisTask.Run(OutputFolder, dbFilenameList, currentRawFileList, taskId, fileSettingsList, filteredAllPsms.OrderByDescending(p => p.XLTotalScore).ToList(), CommonParameters, XlSearchParameters, proteinList, variableModifications, fixedModifications, localizeableModificationTypes, MyTaskResults);
 
+        }
+
+        public void SortCsmsAndCalculateDeltaScores(List<List<CrosslinkSpectralMatch>> ListOfCsmsPerMS2Scan)
+        {
+            //For each ms2scan, try to find the best candidate psm from the psms list. Add it into filteredAllPsms
+            //This function is for current usage, this can be replaced with PEP value. 
+            foreach (var csmsPerScan in ListOfCsmsPerMS2Scan)
+            {                
+                csmsPerScan.Sort((x, y) => y.XLTotalScore.CompareTo(x.XLTotalScore));
+
+                for (int i = 0; i < csmsPerScan.Count; i++)
+                {
+                    var currentCsm = csmsPerScan[i];
+
+                    if (i == 0 && csmsPerScan.Count == 1)
+                    {
+                        currentCsm.SecondBestXlScore = 0;
+                    }
+                    else if (i == 0)
+                    {
+                        currentCsm.SecondBestXlScore = csmsPerScan[1].XLTotalScore;
+                    }
+                    else
+                    {
+                        currentCsm.SecondBestXlScore = csmsPerScan.First().XLTotalScore;
+                    }
+                }
+            }
+
+            ListOfCsmsPerMS2Scan.OrderByDescending(c => c.First().XLTotalScore).ThenByDescending(c => c.First().FullSequence + (c.First().BetaPeptide!= null ? c.First().BetaPeptide.FullSequence : "")).ToList();
+        }
+
+
+        public void AssignCrossType(List<List<CrosslinkSpectralMatch>> ListOfCsmsPerMS2Scan)
+        {
+            foreach (var csmsPerScan in ListOfCsmsPerMS2Scan)
+            {
+                foreach (var csm in csmsPerScan)
+                {
+                    if (csm.CrossType == PsmCrossType.Cross)
+                    {
+                        if (csm.IsIntraCsm())
+                        {
+                            csm.CrossType = PsmCrossType.Intra;
+                        }
+                        else
+                        {
+                            csm.CrossType = PsmCrossType.Inter;
+                        }
+                    }
+                }
+            }
         }
 
         //Remove same peptide with from different protein. We search for every possible peptides from every protein for each scan, and do parsimony later. 

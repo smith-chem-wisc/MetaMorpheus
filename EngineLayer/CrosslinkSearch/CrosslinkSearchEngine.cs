@@ -128,8 +128,18 @@ namespace EngineLayer.CrosslinkSearch
                     {
                         if (CrosslinkSearchTopN)
                         {
-                            // take top N hits for this scan
-                            idsOfPeptidesPossiblyObserved = idsOfPeptidesPossiblyObserved.OrderByDescending(p => scoringTable[p]).Take(TopN).ToList();
+                            //// take top N hits for this scan
+                            //var scoreCutList = idsOfPeptidesPossiblyObserved.OrderByDescending(p => scoringTable[p]).ThenBy(p => PeptideIndex[p].FullSequence).ThenBy(p => PeptideIndex[p].Protein.Accession).ToList();
+                            //if (scoreCutList.Count >= TopN)
+                            //{
+                            //    var scoreCut = scoreCutList[TopN - 1];
+                            //    idsOfPeptidesPossiblyObserved = scoreCutList.Where(p => p > scoreCut).ToList();
+                            //}
+                            //else
+                            //{
+                            //    idsOfPeptidesPossiblyObserved = scoreCutList;
+                            //}
+                            idsOfPeptidesPossiblyObserved = idsOfPeptidesPossiblyObserved.OrderByDescending(p => scoringTable[p]).ThenBy(p => PeptideIndex[p].FullSequence).ThenBy(p => PeptideIndex[p].Protein.Accession).Take(TopN).ToList();
                         }
 
                         foreach (var id in idsOfPeptidesPossiblyObserved)
@@ -154,6 +164,7 @@ namespace EngineLayer.CrosslinkSearch
                             GlobalCsms[scanIndex] = new List<CrosslinkSpectralMatch>();
                         }
 
+                        //scans are sorted here so that the first one in the list is the top score. The others are ignored for now. We sort it here because this step is parallelized.
                         GlobalCsms[scanIndex].AddRange(csms.Where(p => p != null).OrderByDescending(p => p.XLTotalScore));
                     }
 
@@ -262,7 +273,7 @@ namespace EngineLayer.CrosslinkSearch
 
                     PeptideWithSetModifications alphaPeptide = bestPeptide;
 
-                    for (int betaIndex = 0; betaIndex < theScanBestPeptide.Count; betaIndex++)
+                    for (int betaIndex = alphaIndex; betaIndex < theScanBestPeptide.Count; betaIndex++)
                     {
                         PeptideWithSetModifications betaPeptide = theScanBestPeptide[betaIndex].BestPeptide;
 

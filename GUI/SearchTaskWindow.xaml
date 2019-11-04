@@ -178,6 +178,19 @@
                                     </ComboBox>
                                 </StackPanel>
 
+                                <!-- Separation type -->
+                                <StackPanel Orientation="Horizontal" Margin="5 5 5 0" Grid.Column="1" Grid.Row="4">
+                                    <Label x:Name="separationTypeLabel" Content="Separation Type:" Width="150" />
+                                    <ComboBox x:Name="SeparationTypeComboBox" ToolTipService.ShowDuration="999999" ToolTipService.InitialShowDelay="500">
+                                        <ComboBox.ToolTip>
+                                            <TextBlock>
+                                                    Select the separation type that was use prior to MS analysis. Options are HPLC and CZE.
+                                            </TextBlock>
+                                        </ComboBox.ToolTip>
+                                    </ComboBox>
+                                </StackPanel>
+
+
                                 <!-- Min peptide lengths -->
                                 <StackPanel Orientation="Horizontal" Margin="5 5 5 0" Grid.Column="0" Grid.Row="3">
                                     <Label x:Name="lblMinPeptideLength" Content="Min Peptide Length:" Width="150" />
@@ -1000,6 +1013,12 @@
         <StackPanel  Orientation="Horizontal" HorizontalAlignment="Center" Grid.Row="1" Margin="5">
             <Button x:Name="cancelButton" Content="Cancel" Click="CancelButton_Click" />
             <Button x:Name="saveButton" Content="Save Search Task" Click="SaveButton_Click" FontSize="24" />
+            <Button x:Name="setDefaultbutton" Click="SaveAsDefault_Click" Width="100" >
+                <TextBlock Text="Save As Default" TextWrapping="Wrap" TextAlignment="Center"/>
+                <ToolTipService.ToolTip>
+                    <ToolTip Content="Save these parameters as the default. MetaMorpheus can return to original defaults by deleting the folder 'DefaultParameters'" ToolTipService.ShowDuration="999999" ToolTipService.InitialShowDelay="500" />
+                </ToolTipService.ToolTip>
+            </Button>
         </StackPanel>
     </Grid>
 </Window>

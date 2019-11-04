@@ -9,9 +9,9 @@ namespace EngineLayer.FdrAnalysis
     {
         public static readonly IImmutableDictionary<string, string[]> trainingInfos = new Dictionary<string, string[]>
         {
-            { "standard", new [] { "TotalMatchingFragmentCount", "Intensity", "PrecursorChargeDiffToMode", "DeltaScore", "Notch", "PsmCount", "ModsCount", "MissedCleavagesCount", "Ambiguity", "LongestFragmentIonSeries", "HydrophobicityZScore", "IsVariantPeptide" } },
+            { "standard", new [] { "TotalMatchingFragmentCount", "Intensity", "PrecursorChargeDiffToMode", "DeltaScore", "Notch", "PsmCount", "ModsCount", "MissedCleavagesCount", "Ambiguity", "LongestFragmentIonSeries", "HydrophobicityZScore", "IsVariantPeptide", "IsDeadEnd", "IsLoop"} },
             { "topDown", new [] { "TotalMatchingFragmentCount", "Intensity", "PrecursorChargeDiffToMode", "DeltaScore", "Notch", "PsmCount", "ModsCount", "Ambiguity", "LongestFragmentIonSeries" } },
-            { "crosslink", new [] { "TotalMatchingFragmentCount", "DeltaScore", "AlphaIntensity", "BetaIntensity", "LongestFragmentIonSeries_Alpha", "LongestFragmentIonSeries_Beta", "IsDeadEnd", "IsLoop", "IsInter", "IsIntra" } }
+            { "crosslink", new [] { "TotalMatchingFragmentCount", "DeltaScore", "AlphaIntensity", "BetaIntensity", "LongestFragmentIonSeries_Alpha", "LongestFragmentIonSeries_Beta", "IsInter", "IsIntra" } }
         }.ToImmutableDictionary();
 
         /// <summary>
@@ -20,6 +20,7 @@ namespace EngineLayer.FdrAnalysis
         /// A weight of -1 indicates that the probability of being true is for the lower numbers in the set.
         /// </summary>
         public static readonly IImmutableDictionary<string, int> assumedAttributeDirection = new Dictionary<string, int> {
+            { "TotalMatchingFragmentCount", 1 },
             { "Intensity", 1 },
             { "PrecursorChargeDiffToMode", 1 },
             { "DeltaScore", 1 },
@@ -31,15 +32,15 @@ namespace EngineLayer.FdrAnalysis
             { "LongestFragmentIonSeries", 1 },
             { "HydrophobicityZScore", -1 },
             { "IsVariantPeptide",-1 },
-            { "TotalMatchingFragmentCount", 1 },
             { "AlphaIntensity", 1 },
             { "BetaIntensity", 1 },
             { "LongestFragmentIonSeries_Alpha", 1 },
             { "LongestFragmentIonSeries_Beta", 1 },
-            { "IsDeadEnd", 1 },
-            { "IsLoop", 1 },
-            { "IsInter", 1 },
-            { "IsIntra", 1 }}.ToImmutableDictionary();
+            { "IsDeadEnd", -1 },
+            { "IsLoop", -1 },
+            { "IsInter", -1 },
+            { "IsIntra", -1 }
+            }.ToImmutableDictionary();
 
         public string ToString(string searchType)
         {
@@ -127,6 +128,7 @@ namespace EngineLayer.FdrAnalysis
         public float IsIntra { get; set; }
 
         [LoadColumn(20)]
+
         public bool Label { get; set; }
     }
 }

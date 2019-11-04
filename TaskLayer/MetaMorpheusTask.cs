@@ -397,12 +397,12 @@ namespace TaskLayer
                 }
                 FinishedWritingFile(resultsFileName, new List<string> { displayName });
                 FinishedSingleTask(displayName);
-        }
+            }
             catch (Exception e)
             {
                 MetaMorpheusEngine.FinishedSingleEngineHandler -= SingleEngineHandlerInTask;
                 var resultsFileName = Path.Combine(output_folder, "results.txt");
-        e.Data.Add("folder", output_folder);
+                e.Data.Add("folder", output_folder);
                 using (StreamWriter file = new StreamWriter(resultsFileName))
                 {
                     file.WriteLine(GlobalVariables.MetaMorpheusVersion.Equals("1.0.0.0") ? "MetaMorpheus: Not a release version" : "MetaMorpheus: version " + GlobalVariables.MetaMorpheusVersion);

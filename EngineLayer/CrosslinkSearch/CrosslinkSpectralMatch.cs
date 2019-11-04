@@ -16,9 +16,10 @@ namespace EngineLayer.CrosslinkSearch
         }
 
         public CrosslinkSpectralMatch BetaPeptide { get; set; }
+
         public List<int> LinkPositions { get; set; }
-        public double DeltaScore { get; set; }
         public double XLTotalScore { get; set; } //alpha + beta psmCross.
+        public double SecondBestXlScore { get; set; } // score of the second-best CSM; this is used to calculate delta score
         public List<int> XlRank { get; set; } //only contain 2 intger, consider change to Tuple.
         public string ParentIonExist { get; set; }
         public int ParentIonExistNum { get; set; }
@@ -26,13 +27,15 @@ namespace EngineLayer.CrosslinkSearch
         public PsmCrossType CrossType { get; set; }
         public Dictionary<int, List<MatchedFragmentIon>> ChildMatchedFragmentIons { get; set; }
         public int? XlProteinPos { get; private set; }
+
         // loop crosslink protein position 2.
         public int? XlProteinPosLoop { get; private set; }
-        public float[] CSM_DataForPEP { get; }
+
+        //DEBUG don't know if this should be RunnerUpScore or SecondBestXlScore
+        public new double DeltaScore { get { return (XLTotalScore - SecondBestXlScore); } }
 
         public bool IsIntraCsm()
         {
-            
             if (this.ProteinAccession != null && this.BetaPeptide.ProteinAccession != null)
             {
                 if (this.ProteinAccession == this.BetaPeptide.ProteinAccession)
@@ -55,7 +58,6 @@ namespace EngineLayer.CrosslinkSearch
                             return true;
                         }
                     }
-
                 }
             }
             return false;
@@ -88,37 +90,18 @@ namespace EngineLayer.CrosslinkSearch
             List<int> possibleXlPositions = new List<int>();
             bool wildcard = crosslinkerModSites.Any(p => p == 'X');
 
-            //Consider the possibility that the site is at Protein N terminal. 
-            if (crosslinkerModSites.Contains(peptide.BaseSequence[0]))
-            {
-                if (!CrosslinkAtCleavageSite)
-                {
-                    if (peptide.OneBasedStartResidueInProtein == 1
-                || (peptide.OneBasedStartResidueInProtein == 2 && initiatorMethionineBehavior != InitiatorMethionineBehavior.Retain)
-                || peptide.Protein.ProteolysisProducts.Any(x => x.OneBasedBeginPosition == peptide.OneBasedStartResidueInProtein))
-                    {
-                        possibleXlPositions.Add(1);
-                    }
-                }
-                else
-                {
-                    possibleXlPositions.Add(1);
-                }
-            }
-
-
-            List<int> range = Enumerable.Range(1, peptide.BaseSequence.Length - 1).ToList();
-            if (!CrosslinkAtCleavageSite && peptide.OneBasedEndResidueInProtein != peptide.Protein.Length 
+            List<int> range = Enumerable.Range(0, peptide.BaseSequence.Length).ToList();
+            if (!CrosslinkAtCleavageSite && peptide.OneBasedEndResidueInProtein != peptide.Protein.Length
                 && !peptide.Protein.ProteolysisProducts.Any(x => x.OneBasedEndPosition == peptide.OneBasedEndResidueInProtein))
             {
-                //The N terminal and C termial cannot be crosslinked and cleaved.
-                range = Enumerable.Range(1, peptide.BaseSequence.Length - 2).ToList();
+                //The C termial cannot be crosslinked and cleaved.
+                range = Enumerable.Range(0, peptide.BaseSequence.Length - 1).ToList();
             }
             foreach (var r in range)
             {
                 if (crosslinkerModSites.Contains(peptide.BaseSequence[r]) || wildcard)
                 {
-                    //Try to eliminate those site with mod on it. Consider the possibility that the site is at Protein N terminal.       
+                    //Try to eliminate those site with mod on it. Consider the possibility that the site is at Protein N terminal.
                     if (!peptide.AllModsOneIsNterminus.Keys.Contains(r + 2))
                     {
                         possibleXlPositions.Add(r + 1);
@@ -127,6 +110,43 @@ namespace EngineLayer.CrosslinkSearch
             }
 
             return possibleXlPositions;
+        }
+
+        /// <summary>
+        /// The beta peptide is not added to the peptide dictionary of PSM. So if we want the longest ion series, we have to get it elsewhere.
+        /// </summary>
+        /// <param name="peptide"></param>
+        /// <returns></returns>
+        public int GetLongestIonSeriesBidirectionalBetaPeptide(List<MatchedFragmentIon> matchedFragmentIons, PeptideWithSetModifications peptide)
+        {
+            int maxdif = 0;
+
+
+                List<int> jointSeries = new List<int>();
+                jointSeries.AddRange(matchedFragmentIons.Where(f => f.NeutralTheoreticalProduct.TerminusFragment.Terminus == FragmentationTerminus.N).Select(f => f.NeutralTheoreticalProduct.TerminusFragment.FragmentNumber) ?? new List<int>());
+                jointSeries.AddRange(matchedFragmentIons.Where(f => f.NeutralTheoreticalProduct.TerminusFragment.Terminus == FragmentationTerminus.C).Select(f => f.NeutralTheoreticalProduct.TerminusFragment.FragmentNumber) ?? new List<int>());
+                jointSeries = jointSeries.Distinct().ToList();
+
+                if (jointSeries.Count > 0)
+                {
+                    jointSeries.Sort();
+
+                    List<int> aminoAcidPostionsThatCouldBeObserved = Enumerable.Range(0, peptide.BaseSequence.Length + 1).ToList();
+
+                    List<int> missing = aminoAcidPostionsThatCouldBeObserved.Except(jointSeries).ToList();
+
+                    for (int i = 0; i < missing.Count - 1; i++)
+                    {
+                        int diff = missing[i + 1] - missing[i] - 1;
+                        if (diff > maxdif)
+                        {
+                            maxdif = diff;
+                        }
+                    }
+                }
+            
+
+            return maxdif;
         }
 
         /// <summary>
@@ -140,25 +160,6 @@ namespace EngineLayer.CrosslinkSearch
             var experimental_intensities_rank = Enumerable.Range(1, y.Length).OrderByDescending(p => p).ToArray();
             Array.Sort(x, experimental_intensities_rank);
             return experimental_intensities_rank;
-        }
-
-        public float[] Get_CSM_DataForPEP()
-        {
-            PeptideWithSetModifications selectedAlphaPeptide = this.BestMatchingPeptides.Select(p => p.Peptide).First();
-            PeptideWithSetModifications selectedBetaPeptide = this.BetaPeptide == null ? null: this.BetaPeptide.BestMatchingPeptides.Select(p => p.Peptide).First();
-
-            float TotalMatchingFragmentCount = (float)Math.Round(this.XLTotalScore,0);
-            float DeltaScore = (float)this.DeltaScore;
-            float AlphaIntensity = (float)(this.Score -(int)this.Score);
-            float BetaIntensity = this.BetaPeptide == null ? (float)0 : (float)(this.BetaPeptide.Score - (int)this.BetaPeptide.Score); ;
-            float LongestFragmentIonSeries_Alpha = GetLongestIonSeriesBidirectional(selectedAlphaPeptide);
-            float LongestFragmentIonSeries_Beta = this.BetaPeptide == null ? (float)0 : GetLongestIonSeriesBidirectional(selectedBetaPeptide); ;
-            float IsDeadEnd = Convert.ToSingle((this.CrossType == PsmCrossType.DeadEnd) || (this.CrossType == PsmCrossType.DeadEndH2O) || (this.CrossType == PsmCrossType.DeadEndNH2) || (this.CrossType == PsmCrossType.DeadEndTris));
-            float IsLoop = Convert.ToSingle(this.CrossType == PsmCrossType.Loop);
-            float IsInter = Convert.ToSingle(this.CrossType == PsmCrossType.Inter);
-            float IsIntra = Convert.ToSingle(this.CrossType == PsmCrossType.Intra);
-
-            return new[] { TotalMatchingFragmentCount, DeltaScore, AlphaIntensity, BetaIntensity, LongestFragmentIonSeries_Alpha, LongestFragmentIonSeries_Beta, IsDeadEnd, IsLoop, IsInter, IsIntra };
         }
 
         public static string GetTabSepHeaderCross()
@@ -214,7 +215,7 @@ namespace EngineLayer.CrosslinkSearch
             sb.Append(PsmTsvHeader.DecoyContaminantTarget + '\t');
             sb.Append(PsmTsvHeader.QValue + '\t');
             sb.Append(PsmTsvHeader.PEP + '\t');
-            sb.Append(PsmTsvHeader.PEP_QValue+ '\t');
+            sb.Append(PsmTsvHeader.PEP_QValue + '\t');
 
             return sb.ToString();
         }
@@ -246,6 +247,7 @@ namespace EngineLayer.CrosslinkSearch
             sb.Append("Matched Ion Mass Diff (Ppm)" + '\t');
             sb.Append("Matched Ion Intensities" + '\t');
             sb.Append("Matched Ion Counts" + '\t');
+
             sb.Append("Decoy/Contaminant/Target" + '\t');
             sb.Append("QValue" + '\t');
             sb.Append(PsmTsvHeader.PEP + '\t');
@@ -304,8 +306,8 @@ namespace EngineLayer.CrosslinkSearch
             sb.Append("\t");
             List<PeptideWithSetModifications> pepsWithMods = BestMatchingPeptides.Select(p => p.Peptide).ToList();
             var proteinAccessionString = ProteinAccession != null ? ProteinAccession : PsmTsvWriter.Resolve(pepsWithMods.Select(b => b.Protein.Accession), FullSequence).ResolvedString;
-            sb.Append(proteinAccessionString + "\t");           
-            sb.Append(XlProteinPos + (XlProteinPosLoop.HasValue? "~"+ XlProteinPosLoop.Value : null) + "\t");
+            sb.Append(proteinAccessionString + "\t");
+            sb.Append(XlProteinPos + (XlProteinPosLoop.HasValue ? "~" + XlProteinPosLoop.Value : null) + "\t");
             sb.Append(BaseSequence + "\t");
             sb.Append(FullSequence + position + "\t");
             sb.Append((PeptideMonisotopicMass.HasValue ? PeptideMonisotopicMass.Value.ToString() : "---")); sb.Append("\t");
@@ -323,7 +325,7 @@ namespace EngineLayer.CrosslinkSearch
             else
             {
                 StringBuilder[] scanFragmentStringbuilder = new StringBuilder[6];
-                int i =0;
+                int i = 0;
                 foreach (var mid in MatchedIonDataDictionary(this.MatchedFragmentIons))
                 {
                     scanFragmentStringbuilder[i] = new StringBuilder();
@@ -339,14 +341,12 @@ namespace EngineLayer.CrosslinkSearch
                         scanFragmentStringbuilder[j].Append("{" + oneBasedScan + "@" + mid.Value + "}");
                         j++;
                     }
-
                 }
                 foreach (var s in scanFragmentStringbuilder)
                 {
                     sb.Append(s.ToString() + "\t");
-                }       
+                }
             }
-
 
             if (BetaPeptide != null)
             {
@@ -423,11 +423,9 @@ namespace EngineLayer.CrosslinkSearch
             sb.Append(FdrInfo.QValue.ToString());
             sb.Append("\t");
 
-            sb.Append(FdrInfo.PEP.ToString());
-            sb.Append("\t");
+            sb.Append(FdrInfo.PEP.ToString()); sb.Append("\t");
 
-            sb.Append(FdrInfo.PEP_QValue.ToString());
-            sb.Append("\t");
+            sb.Append(FdrInfo.PEP_QValue.ToString()); sb.Append("\t");
 
             return sb.ToString();
         }

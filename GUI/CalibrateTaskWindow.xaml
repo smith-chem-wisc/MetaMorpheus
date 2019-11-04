@@ -176,6 +176,16 @@
                                         </ComboBox>
                                     </StackPanel>
                                     <StackPanel Orientation="Horizontal" Margin="5">
+                                        <Label x:Name="separationType" Content="Separation Type" />
+                                        <ComboBox x:Name="SeparationTypeComboBox" ToolTipService.ShowDuration="999999" ToolTipService.InitialShowDelay="500">
+                                            <ComboBox.ToolTip>
+                                                <TextBlock>
+                                                        Specify is separation for prior to the mass-spec analysis was one with HPLC or with CZE.
+                                                </TextBlock>
+                                            </ComboBox.ToolTip>
+                                        </ComboBox>
+                                    </StackPanel>
+                                    <StackPanel Orientation="Horizontal" Margin="5">
                                         <Label x:Name="MaxModificationIsoformsLabel" Content="Max Modification Isoforms" />
                                         <TextBox x:Name="MaxModificationIsoformsTextBox" PreviewTextInput="CheckIfNumber" Width="45" ToolTipService.ShowDuration="999999" ToolTipService.InitialShowDelay="500">
                                             <TextBox.ToolTip>
@@ -374,8 +384,14 @@
             </DockPanel>
         </ScrollViewer>
         <StackPanel  Orientation="Horizontal" HorizontalAlignment="Center" Grid.Row="1" Margin="5">
-            <Button x:Name="cancelButton" Content="Cancel" Click="CancelButton_Click" />
+            <Button x:Name="CancelButton" Content="Cancel" Click="CancelButton_Click" />
             <Button x:Name="SaveButton" Content="Save Calibrate Task" Click="SaveButton_Click" FontSize="24" />
+            <Button x:Name="SetDefaultbutton" Click="SaveAsDefault_Click" Width="100" >
+                <TextBlock Text="Save As Default" TextWrapping="Wrap" TextAlignment="Center"/>
+                <ToolTipService.ToolTip>
+                    <ToolTip Content="Save these parameters as the default. MetaMorpheus can return to original defaults by deleting the folder 'DefaultParameters'" ToolTipService.ShowDuration="999999" ToolTipService.InitialShowDelay="500" />
+                </ToolTipService.ToolTip>
+            </Button>
         </StackPanel>
     </Grid>
 </Window>

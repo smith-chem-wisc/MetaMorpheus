@@ -194,6 +194,12 @@
     <None Update="XlTestData\ms2mixed_bsa_xlink.mzML">
       <CopyToOutputDirectory>Always</CopyToOutputDirectory>
     </None>
+    <None Update="XlTestData\Rappsilber3-XLSearchTaskconfig.toml">
+      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+    </None>
+    <None Update="XlTestData\YeastPol2.fasta">
+      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+    </None>
     <None Update="XlTestData\yeast_glycan_25170.mgf">
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
     </None>

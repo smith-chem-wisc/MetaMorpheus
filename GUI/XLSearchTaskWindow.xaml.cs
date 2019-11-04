@@ -2,12 +2,14 @@
 using EngineLayer.CrosslinkSearch;
 using MassSpectrometry;
 using MzLibUtil;
+using Nett;
 using Proteomics.ProteolyticDigestion;
 using System;
 using System.Collections.Generic;
 using System.Collections.ObjectModel;
 using System.ComponentModel;
 using System.Globalization;
+using System.IO;
 using System.Linq;
 using System.Windows;
 using System.Windows.Controls;
@@ -27,10 +29,6 @@ namespace MetaMorpheusGUI
         private readonly ObservableCollection<ModTypeForTreeView> FixedModTypeForTreeViewObservableCollection = new ObservableCollection<ModTypeForTreeView>();
         private readonly ObservableCollection<ModTypeForTreeView> VariableModTypeForTreeViewObservableCollection = new ObservableCollection<ModTypeForTreeView>();
         private CustomFragmentationWindow CustomFragmentationWindow;
-
-        public XLSearchTaskWindow() : this(null)
-        {
-        }
 
         public XLSearchTaskWindow(XLSearchTask task)
         {
@@ -74,6 +72,11 @@ namespace MetaMorpheusGUI
             {
                 DissociationTypeComboBox.Items.Add(dissassociationType);
                 ChildScanDissociationTypeComboBox.Items.Add(dissassociationType);
+            }
+
+            foreach (string separationType in GlobalVariables.SeparationTypes)
+            {
+                SeparationTypeComboBox.Items.Add(separationType);
             }
 
             cbbXLprecusorMsTl.Items.Add("Da");
@@ -136,6 +139,7 @@ namespace MetaMorpheusGUI
             MinRatioTextBox.Text = task.CommonParameters.MinimumAllowedIntensityRatioToBasePeak == double.MaxValue || !task.CommonParameters.MinimumAllowedIntensityRatioToBasePeak.HasValue ? "" : task.CommonParameters.MinimumAllowedIntensityRatioToBasePeak.Value.ToString(CultureInfo.InvariantCulture);
 
             DissociationTypeComboBox.SelectedItem = task.CommonParameters.DissociationType.ToString();
+            SeparationTypeComboBox.SelectedItem = task.CommonParameters.SeparationType.ToString();
 
             if (task.CommonParameters.ChildScanDissociationType != DissociationType.Unknown)
             {
@@ -235,6 +239,7 @@ namespace MetaMorpheusGUI
             }
 
             DissociationType dissociationType = GlobalVariables.AllSupportedDissociationTypes[DissociationTypeComboBox.SelectedItem.ToString()];
+            string separationType = SeparationTypeComboBox.SelectedItem.ToString();
 
             DissociationType childDissociationType = DissociationType.Unknown;
             if (ChildScanDissociationTypeComboBox.SelectedItem != null)
@@ -264,6 +269,7 @@ namespace MetaMorpheusGUI
             int MaxPeptideLength = string.IsNullOrEmpty(MaxPeptideLengthTextBox.Text) ? int.MaxValue : (int.Parse(MaxPeptideLengthTextBox.Text, NumberStyles.Any, CultureInfo.InvariantCulture));
             int MaxModificationIsoforms = (int.Parse(maxModificationIsoformsTextBox.Text, CultureInfo.InvariantCulture));
             InitiatorMethionineBehavior InitiatorMethionineBehavior = ((InitiatorMethionineBehavior)initiatorMethionineBehaviorComboBox.SelectedIndex);
+            string SeparationType = (string)SeparationTypeComboBox.SelectedItem;
             DigestionParams digestionParamsToSave = new DigestionParams(
                 protease: protease.Name,
                 maxMissedCleavages: MaxMissedCleavages,
@@ -319,6 +325,7 @@ namespace MetaMorpheusGUI
                 numberOfPeaksToKeepPerWindow: int.Parse(TopNPeaksTextBox.Text),
                 minimumAllowedIntensityRatioToBasePeak: double.Parse(MinRatioTextBox.Text, CultureInfo.InvariantCulture),
                 dissociationType: dissociationType,
+                separationType: separationType,
                 childScanDissociationType: childDissociationType,
                 scoreCutoff: double.Parse(minScoreAllowed.Text, CultureInfo.InvariantCulture),
                 totalPartitions: int.Parse(numberOfDatabaseSearchesTextBox.Text, CultureInfo.InvariantCulture),
@@ -413,6 +420,12 @@ namespace MetaMorpheusGUI
             // keeping it will trigger an exception because the closed window stops existing
 
             CustomFragmentationWindow.Close();
+        }
+
+        private void SaveAsDefault_Click(object sender, RoutedEventArgs e)
+        {
+            SaveButton_Click(sender, e);
+            Toml.WriteFile(TheTask, Path.Combine(GlobalVariables.DataDir, "DefaultParameters", @"XLSearchTaskDefault.toml"), MetaMorpheusTask.tomlConfig);
         }
         
         private void NonSpecificUpdate(object sender, SelectionChangedEventArgs e)
