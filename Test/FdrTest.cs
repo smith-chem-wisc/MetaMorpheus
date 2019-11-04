@@ -248,6 +248,7 @@ namespace Test
             int chargeStateMode = 4;
             var (notch, pwsm) = maxScorePsm.BestMatchingPeptides.First();
             var maxPsmData = PEP_Analysis.CreateOnePsmDataEntry("standard", maxScorePsm, sequenceToPsmCount, fileSpecificRetTimeHI_behavior, fileSpecificRetTemHI_behaviorModifiedPeptides, chargeStateMode, pwsm, trainingVariables, notch, !pwsm.Protein.IsDecoy);
+
             Assert.That(maxScorePsm.PeptidesToMatchingFragments.Count - 1, Is.EqualTo(maxPsmData.Ambiguity));
             Assert.That(maxScorePsm.DeltaScore, Is.EqualTo(maxPsmData.DeltaScore).Within(0.05));
             Assert.That((float)(maxScorePsm.Score - (int)maxScorePsm.Score), Is.EqualTo(maxPsmData.Intensity).Within(0.05));
@@ -432,6 +433,7 @@ namespace Test
             int chargeStateMode = 4;
             var (notch, pwsm) = maxScorePsm.BestMatchingPeptides.First();
             var maxPsmData = PEP_Analysis.CreateOnePsmDataEntry("topDown", maxScorePsm, sequenceToPsmCount, fileSpecificRetTimeHI_behavior, fileSpecificRetTemHI_behaviorModifiedPeptides, chargeStateMode, pwsm, trainingVariables, notch, !pwsm.Protein.IsDecoy);
+
             Assert.That(maxScorePsm.PeptidesToMatchingFragments.Count - 1, Is.EqualTo(maxPsmData.Ambiguity));
             Assert.That(maxScorePsm.DeltaScore, Is.EqualTo(maxPsmData.DeltaScore).Within(0.05));
             Assert.That((float)(maxScorePsm.Score - (int)maxScorePsm.Score), Is.EqualTo(maxPsmData.Intensity).Within(0.05));
@@ -543,6 +545,7 @@ namespace Test
 
             FdrAnalysisResults fdrResultsClassicDelta = (FdrAnalysisResults)(new FdrAnalysisEngine(psmBloated.Where(p => p != null).ToList(), 1, CommonParameters, new List<string>()).Run());
         }
+
         [Test]
         public static void TestRemoveThisAmbiguousePeptide()
         {
@@ -584,7 +587,9 @@ namespace Test
         {
             string searchType = "standard";
             string[] trainingInfoStandard = PsmData.trainingInfos[searchType];
+
             string[] expectedTrainingInfoStandard = new[] { "TotalMatchingFragmentCount", "Intensity", "PrecursorChargeDiffToMode", "DeltaScore", "Notch", "PsmCount", "ModsCount", "MissedCleavagesCount", "Ambiguity", "LongestFragmentIonSeries", "HydrophobicityZScore", "IsVariantPeptide", "IsDeadEnd", "IsLoop" };
+
             Assert.AreEqual(expectedTrainingInfoStandard, trainingInfoStandard);
 
             searchType = "topDown";
@@ -624,6 +629,7 @@ namespace Test
             };
 
             string standardToString = "\t0\t1\t2\t3\t4\t5\t6\t7\t8\t9\t10\t0\t0\t0";
+
             Assert.AreEqual(standardToString, pd.ToString("standard"));
 
             string topDownToString = "\t0\t1\t2\t3\t4\t5\t6\t8\t9";

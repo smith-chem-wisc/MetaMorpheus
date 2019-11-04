@@ -354,7 +354,6 @@ namespace EngineLayer
             int notch = 0;
             float ambiguity = 0;
             float modCount = 0;
-
             float missedCleavages = 0;
             float longestSeq = 0;
             float hydrophobicityZscore = float.NaN;

@@ -96,7 +96,9 @@ namespace Test
             var x4_f = CrosslinkSpectralMatch.GetPossibleCrosslinkerModSites(crosslinker.CrosslinkerModSites.ToCharArray(), pep4, digestionParams.InitiatorMethionineBehavior, true).ToArray();
             var x4_t = CrosslinkSpectralMatch.GetPossibleCrosslinkerModSites(crosslinker.CrosslinkerModSites.ToCharArray(), pep4, digestionParams.InitiatorMethionineBehavior, false).ToArray();
             //Both 'K' are crosslinked becuase the last 'K' is at protein C terminal
+
             Assert.That(x4_f[0] == 7 && x4_f[1] == 10 && x4_f.Count() == 2);
+
             Assert.That(x4_t[0] == 7 && x4_t[1] == 10 && x4_t.Count() == 2);
 
             var pep5 = pep_mod.Where(p => p.FullSequence == "KQQK").First();
@@ -105,6 +107,7 @@ namespace Test
             var x5_t = CrosslinkSpectralMatch.GetPossibleCrosslinkerModSites(crosslinker.CrosslinkerModSites.ToCharArray(), pep5, digestionParams.InitiatorMethionineBehavior, false).ToArray();
             //Both 'K' are crosslinked becuase the last 'K' is at protein C terminal
             Assert.That(x5_f[0] == 1 && x5_f.Count() == 2);
+
             Assert.That(x5_t[0] == 1 && x5_t.Count() == 2);
 
             var pep6 = pep_mod.Where(p => p.FullSequence == "KNNNK").First();
