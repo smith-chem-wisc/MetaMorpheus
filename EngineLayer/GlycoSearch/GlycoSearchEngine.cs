@@ -38,11 +38,6 @@ namespace EngineLayer.GlycoSearch
             this.TopN = CrosslinkSearchTopNum;
 
             SecondFragmentIndex = secondFragmentIndex;
-            if (CommonParameters.ChildScanDissociationType != DissociationType.Unknown && EngineLayer.CrosslinkSearch.CrosslinkSearchEngine.DissociationTypeGenerateSameTypeOfIons(CommonParameters.DissociationType, CommonParameters.ChildScanDissociationType))
-            {
-                SecondFragmentIndex = FragmentIndex;
-            }
-
             PrecusorSearchMode = commonParameters.PrecursorMassTolerance;
             ProductSearchMode = new SingleAbsoluteAroundZeroSearchMode(20); //For Oxinium ion only
 

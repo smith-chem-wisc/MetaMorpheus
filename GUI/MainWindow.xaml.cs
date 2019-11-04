@@ -1195,6 +1195,13 @@ namespace MetaMorpheusGUI
                         preRunTask.DisplayName = "Task" + (StaticTasksObservableCollection.IndexOf(preRunTask) + 1) + "-" + XLSearchdialog.TheTask.CommonParameters.TaskDescriptor;
                         tasksTreeView.Items.Refresh();
                         return;
+
+                    case MyTask.GlycoSearch:
+                        var GlycoSearchdialog = new GlycoSearchTaskWindow(preRunTask.metaMorpheusTask as GlycoSearchTask);
+                        GlycoSearchdialog.ShowDialog();
+                        preRunTask.DisplayName = "Task" + (StaticTasksObservableCollection.IndexOf(preRunTask) + 1) + "-" + GlycoSearchdialog.TheTask.CommonParameters.TaskDescriptor;
+                        tasksTreeView.Items.Refresh();
+                        return;
                 }
             }
 

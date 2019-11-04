@@ -16,7 +16,7 @@ namespace TaskLayer
 {
     public class GlycoSearchTask : MetaMorpheusTask
     {
-        public GlycoSearchTask() : base(MyTask.XLSearch)
+        public GlycoSearchTask() : base(MyTask.GlycoSearch)
         {
             //Default parameter setting which is different from SearchTask, can be overwriten
             var digestPara = new DigestionParams(
@@ -26,7 +26,8 @@ namespace TaskLayer
                 precursorMassTolerance: new PpmTolerance(10),
                 scoreCutoff: 3,
                 trimMsMsPeaks: false,
-                digestionParams: digestPara
+                digestionParams: digestPara,
+                addCompIons: true
             );
 
             _glycoSearchParameters = new GlycoSearchParameters();

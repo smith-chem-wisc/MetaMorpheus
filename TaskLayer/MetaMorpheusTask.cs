@@ -24,7 +24,8 @@ namespace TaskLayer
         Search,
         Gptmd,
         Calibrate,
-        XLSearch
+        XLSearch,
+        GlycoSearch
     }
 
     public abstract class MetaMorpheusTask
@@ -188,7 +189,7 @@ namespace TaskLayer
                         {
                             ms3ChildScans = ms3Scans.Where(p => p.OneBasedPrecursorScanNumber == ms2scan.OneBasedScanNumber).ToList();
 
-                            ms2ChildScans = ms2Scans.Where(p => p.OneBasedPrecursorScanNumber == ms2scan.OneBasedPrecursorScanNumber
+                            ms2ChildScans = ms2Scans.Where(p => (p.OneBasedPrecursorScanNumber == ms2scan.OneBasedPrecursorScanNumber || p.OneBasedPrecursorScanNumber== ms2scan.OneBasedScanNumber)
                                 && p.OneBasedScanNumber > ms2scan.OneBasedScanNumber
                                 && Math.Abs(p.IsolationMz.Value - ms2scan.IsolationMz.Value) < 0.01).ToList();
                         }
