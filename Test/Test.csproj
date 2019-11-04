@@ -197,6 +197,9 @@
     <None Update="XlTestData\Rappsilber3-XLSearchTaskconfig.toml">
       <CopyToOutputDirectory>Always</CopyToOutputDirectory>
     </None>
+    <None Update="XlTestData\Rappsilber_CLMS_PolII_3-calib_slice.mzML.gz">
+      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+    </None>
     <None Update="XlTestData\YeastPol2.fasta">
       <CopyToOutputDirectory>Always</CopyToOutputDirectory>
     </None>
