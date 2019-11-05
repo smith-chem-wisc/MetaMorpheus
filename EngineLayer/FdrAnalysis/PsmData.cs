@@ -9,8 +9,8 @@ namespace EngineLayer.FdrAnalysis
     {
         public static readonly IImmutableDictionary<string, string[]> trainingInfos = new Dictionary<string, string[]>
         {
-            { "standard", new [] { "Intensity", "PrecursorChargeDiffToMode", "DeltaScore", "Notch", "PsmCount", "ModsCount", "MissedCleavagesCount", "Ambiguity", "LongestFragmentIonSeries", "HydrophobicityZScore", "IsVariantPeptide" } },
-            { "topDown", new [] { "Intensity", "PrecursorChargeDiffToMode", "DeltaScore", "Notch", "PsmCount", "ModsCount", "Ambiguity", "LongestFragmentIonSeries" } }
+            { "standard", new [] { "TotalMatchingFragmentCount", "Intensity", "PrecursorChargeDiffToMode", "DeltaScore", "Notch", "PsmCount", "ModsCount", "MissedCleavagesCount", "Ambiguity", "LongestFragmentIonSeries", "HydrophobicityZScore", "IsVariantPeptide" } },
+            { "topDown", new [] { "TotalMatchingFragmentCount", "Intensity", "PrecursorChargeDiffToMode", "DeltaScore", "Notch", "PsmCount", "ModsCount", "Ambiguity", "LongestFragmentIonSeries" } }
         }.ToImmutableDictionary();
 
         /// <summary>
@@ -19,6 +19,7 @@ namespace EngineLayer.FdrAnalysis
         /// A weight of -1 indicates that the probability of being true is for the lower numbers in the set.
         /// </summary>
         public static readonly IImmutableDictionary<string, int> assumedAttributeDirection = new Dictionary<string, int> {
+            { "TotalMatchingFragmentCount", 1 },
             { "Intensity", 1 },
             { "PrecursorChargeDiffToMode", 1 },
             { "DeltaScore", 1 },
@@ -90,6 +91,9 @@ namespace EngineLayer.FdrAnalysis
         public float IsVariantPeptide { get; set; }
 
         [LoadColumn(11)]
+        public float TotalMatchingFragmentCount { get; set; }
+
+        [LoadColumn(12)]
         public bool Label { get; set; }
     }
 }
