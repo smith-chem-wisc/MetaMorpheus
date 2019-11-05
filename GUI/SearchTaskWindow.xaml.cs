@@ -395,6 +395,8 @@ namespace MetaMorpheusGUI
 
             Protease protease = (Protease)ProteaseComboBox.SelectedItem;
 
+            string separationType = SeparationTypeComboBox.SelectedItem.ToString();
+
             DissociationType dissociationType = GlobalVariables.AllSupportedDissociationTypes[DissociationTypeComboBox.SelectedItem.ToString()];
             CustomFragmentationWindow.Close();
 
@@ -513,6 +515,7 @@ namespace MetaMorpheusGUI
                 precursorMassTolerance: PrecursorMassTolerance,
                 productMassTolerance: ProductMassTolerance,
                 digestionParams: digestionParamsToSave,
+                separationType: separationType,
                 trimMs1Peaks: TrimMs1Peaks,
                 trimMsMsPeaks: TrimMsMsPeaks,
                 numberOfPeaksToKeepPerWindow: numPeaksToKeep,
