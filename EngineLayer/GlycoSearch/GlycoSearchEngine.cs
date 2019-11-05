@@ -316,7 +316,7 @@ namespace EngineLayer.GlycoSearch
         private List<GlycoSpectralMatch> FindOGlycopeptide(Ms2ScanWithSpecificMass theScan, List<BestPeptideScoreNotch> theScanBestPeptide, int scanIndex)
         {
             List<GlycoSpectralMatch> possibleMatches = new List<GlycoSpectralMatch>();
-            GlycoSpectralMatch bestPsmCross = null;
+
             for (int ind = 0; ind < theScanBestPeptide.Count; ind++)
             {
                 if (PrecusorSearchMode.Within(theScan.PrecursorMass, theScanBestPeptide[ind].BestPeptide.MonoisotopicMass))
@@ -336,7 +336,7 @@ namespace EngineLayer.GlycoSearch
                 {
                     //Using glycanBoxes
                     var possibleGlycanMassLow = theScan.PrecursorMass * (1 - 1E-5) - theScanBestPeptide[ind].BestPeptide.MonoisotopicMass;
-                    if (possibleGlycanMassLow < 200 || possibleGlycanMassLow > OGlycanBoxes.Last().Mass)
+                    if (possibleGlycanMassLow < 100 || possibleGlycanMassLow > OGlycanBoxes.Last().Mass)
                     {
                         continue;
                     }
@@ -348,30 +348,49 @@ namespace EngineLayer.GlycoSearch
                         List<int> modPos = GlycoSpectralMatch.GetPossibleModSites(theScanBestPeptide[ind].BestPeptide, new string[] { "S", "T" });
                         if (modPos.Count >= OGlycanBoxes[iDLow].NumberOfGlycans)
                         {                           
-                            var fragmentsForEachGlycanLocalizedPossibility = GlycoPeptides.OGlyGetTheoreticalFragmentsUnlocalize(CommonParameters.DissociationType, modPos, theScanBestPeptide[ind].BestPeptide, OGlycanBoxes[iDLow]);
-                            var bestMatchedIons = MatchFragmentIons(theScan, fragmentsForEachGlycanLocalizedPossibility, CommonParameters);
-                            double bestLocalizedScore = CalculatePeptideScore(theScan.TheScan, bestMatchedIons);
+                            var fragmentsForEachGlycanLocalizedPossibility = GlycoPeptides.OGlyGetTheoreticalFragments(CommonParameters.DissociationType, modPos, theScanBestPeptide[ind].BestPeptide, OGlycanBoxes[iDLow]);
 
-                            //var fragmentsForEachGlycanLocalizedPossibility = GlycoPeptides.OGlyGetTheoreticalFragments(commonParameters.DissociationType, modPos, theScanBestPeptide[ind].BestPeptide, OGlycanBoxes[iDLow]).ToList();
-                            //double bestLocalizedScore = 0;
-                            //List<MatchedFragmentIon> bestMatchedIons = new List<MatchedFragmentIon>();
-                            //foreach (var setOfFragments in fragmentsForEachGlycanLocalizedPossibility)
-                            //{
-                            //    var matchedIons = MatchFragmentIons(theScan, setOfFragments.Item2.Item2, commonParameters);
-                            //    double score = CalculatePeptideScore(theScan.TheScan, matchedIons, 0);
+                            double bestLocalizedScore = 0;
+                            var bestMatchedIons = new List<MatchedFragmentIon>();
+                            var bestChildMatchedIons = new Dictionary<int, List<MatchedFragmentIon>>();
 
-                            //    if (score > bestLocalizedScore)
-                            //    {
-                            //        bestLocalizedScore = score;
-                            //        bestMatchedIons = matchedIons;
-                            //    }
-                            //}
+                            foreach (var fragments in fragmentsForEachGlycanLocalizedPossibility)
+                            {
+                                var matchedIons = MatchFragmentIons(theScan, fragments.Item2, CommonParameters);
+                                double score = CalculatePeptideScore(theScan.TheScan, bestMatchedIons);
+
+
+                                var allMatchedChildIons = new Dictionary<int, List<MatchedFragmentIon>>();
+                                foreach (var childScan in theScan.ChildScans)
+                                {
+                                    var childFragments = GlycoPeptides.OGlyGetChildTheoreticalFragments(CommonParameters.ChildScanDissociationType, fragments.Item1, theScanBestPeptide[ind].BestPeptide, OGlycanBoxes[iDLow]);
+
+                                    var matchedChildIons = MatchFragmentIons(childScan, childFragments.Item2, CommonParameters);
+
+                                    if (matchedChildIons == null)
+                                    {
+                                        continue;
+                                    }
+
+                                    allMatchedChildIons.Add(childScan.OneBasedScanNumber, matchedChildIons);
+                                    double childScore = CalculatePeptideScore(childScan.TheScan, matchedChildIons);
+
+                                    score += childScore;
+                                }
+
+                                if (bestLocalizedScore < score)
+                                {
+                                    bestLocalizedScore = score;
+                                    bestMatchedIons = matchedIons;
+                                    bestChildMatchedIons = allMatchedChildIons;
+                                }
+                            }
 
                             var psmGlyco = new GlycoSpectralMatch(theScanBestPeptide[ind].BestPeptide, theScanBestPeptide[ind].BestNotch, bestLocalizedScore, scanIndex, theScan, CommonParameters.DigestionParams, bestMatchedIons);
                             psmGlyco.glycanBoxes = new List<GlycanBox> { OGlycanBoxes[iDLow] };
                             psmGlyco.Rank = new List<int> { ind };
+                            psmGlyco.ChildMatchedFragmentIons = bestChildMatchedIons;
                             possibleMatches.Add(psmGlyco);
-
                         }
                         iDLow++;
                     }

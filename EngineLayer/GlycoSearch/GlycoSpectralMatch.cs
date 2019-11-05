@@ -17,7 +17,6 @@ namespace EngineLayer.GlycoSearch
         }
 
         public List<int> LinkPositions { get; set; }
-        public double DeltaScore { get; set; }
         public double TotalScore { get; set; } //alpha + beta psmCross
         public int ProteinPos { get; set; }
         public List<int> Rank { get; set; } //only contain 2 intger, consider change to Tuple

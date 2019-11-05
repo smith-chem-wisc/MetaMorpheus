@@ -93,12 +93,12 @@
                                 <RowDefinition Height="1*"/>
                             </Grid.RowDefinitions>
                             <StackPanel Orientation="Horizontal">
-                                <RadioButton x:Name="RbtNGlycoSearch" Content="NGlyco-peptide Search " GroupName="GlycoSearch"/>
-                                    <RadioButton x:Name="RbtOGlycoSearch" Content="OGlyco-peptide Search " GroupName="GlycoSearch"/>
+                                <RadioButton x:Name="RbtNGlycoSearch" Visibility="Hidden" Content="NGlyco-peptide Search " GroupName="GlycoSearch"/>
+                                <RadioButton x:Name="RbtOGlycoSearch" Content="OGlyco-peptide Search " GroupName="GlycoSearch"/>
                             </StackPanel>
                             <StackPanel Orientation="Vertical" Grid.Row="1">
                                 <StackPanel Orientation="Horizontal" Margin="5">
-                                    <CheckBox x:Name="CkbSearchGlycoWithBgYgIndex"  VerticalAlignment="Center" Content="Search Glycopeptides with BgYg index" />
+                                    <!--<CheckBox x:Name="CkbSearchGlycoWithBgYgIndex"  VerticalAlignment="Center" Content="Search Glycopeptides with BgYg index" />-->
                                 </StackPanel>
                             </StackPanel>
                         </Grid>
