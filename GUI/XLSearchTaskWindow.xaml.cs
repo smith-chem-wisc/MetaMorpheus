@@ -2,12 +2,14 @@
 using EngineLayer.CrosslinkSearch;
 using MassSpectrometry;
 using MzLibUtil;
+using Nett;
 using Proteomics.ProteolyticDigestion;
 using System;
 using System.Collections.Generic;
 using System.Collections.ObjectModel;
 using System.ComponentModel;
 using System.Globalization;
+using System.IO;
 using System.Linq;
 using System.Windows;
 using System.Windows.Controls;
@@ -27,10 +29,6 @@ namespace MetaMorpheusGUI
         private readonly ObservableCollection<ModTypeForTreeView> FixedModTypeForTreeViewObservableCollection = new ObservableCollection<ModTypeForTreeView>();
         private readonly ObservableCollection<ModTypeForTreeView> VariableModTypeForTreeViewObservableCollection = new ObservableCollection<ModTypeForTreeView>();
         private CustomFragmentationWindow CustomFragmentationWindow;
-
-        public XLSearchTaskWindow() : this(null)
-        {
-        }
 
         public XLSearchTaskWindow(XLSearchTask task)
         {
@@ -408,7 +406,55 @@ namespace MetaMorpheusGUI
 
         private void OnClosing(object sender, CancelEventArgs e)
         {
+            SearchModifications.Timer.Tick -= new EventHandler(TextChangeTimerHandler);
+            // remove event handler from timer
+            // keeping it will trigger an exception because the closed window stops existing
+
             CustomFragmentationWindow.Close();
+        }
+
+        private void SaveAsDefault_Click(object sender, RoutedEventArgs e)
+        {
+            SaveButton_Click(sender, e);
+            Toml.WriteFile(TheTask, Path.Combine(GlobalVariables.DataDir, "DefaultParameters", @"XLSearchTaskDefault.toml"), MetaMorpheusTask.tomlConfig);
+        }
+        
+        private void NonSpecificUpdate(object sender, SelectionChangedEventArgs e)
+        {
+            const int maxLength = 25;
+            if (((Protease)proteaseComboBox.SelectedItem).Name.Contains("non-specific"))
+            {
+                MaxPeptideLengthTextBox.Text = maxLength.ToString();
+            }
+        }
+
+        private void NonSpecificUpdate(object sender, TextChangedEventArgs e)
+        {
+            if (((Protease)proteaseComboBox.SelectedItem).Name.Contains("non-specific"))
+            {
+                try
+                {
+                    TextBox textBox = (TextBox)sender;
+                    if (textBox.Name.Equals("MaxPeptideLengthTextBox")) //if maxPeptideLength was modified
+                    {
+                        if (!missedCleavagesTextBox.Text.Equals((Convert.ToInt32(MaxPeptideLengthTextBox.Text) - 1).ToString())) //prevents infinite loops
+                        {
+                            missedCleavagesTextBox.Text = (Convert.ToInt32(MaxPeptideLengthTextBox.Text) - 1).ToString();
+                        }
+                    }
+                    else //if missedCleavagesTextBox was modified
+                    {
+                        if (!MaxPeptideLengthTextBox.Text.Equals((Convert.ToInt32(missedCleavagesTextBox.Text) + 1).ToString())) //prevents infinite loops
+                        {
+                            MaxPeptideLengthTextBox.Text = (Convert.ToInt32(missedCleavagesTextBox.Text) + 1).ToString();
+                        }
+                    }
+                }
+                catch
+                {
+                    //if not an entry, don't update the other box.
+                }
+            }
         }
     }
 }
