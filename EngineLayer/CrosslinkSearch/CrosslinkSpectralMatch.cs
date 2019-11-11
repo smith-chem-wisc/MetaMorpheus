@@ -113,43 +113,6 @@ namespace EngineLayer.CrosslinkSearch
         }
 
         /// <summary>
-        /// The beta peptide is not added to the peptide dictionary of PSM. So if we want the longest ion series, we have to get it elsewhere.
-        /// </summary>
-        /// <param name="peptide"></param>
-        /// <returns></returns>
-        public int GetLongestIonSeriesBidirectionalBetaPeptide(List<MatchedFragmentIon> matchedFragmentIons, PeptideWithSetModifications peptide)
-        {
-            int maxdif = 0;
-
-
-                List<int> jointSeries = new List<int>();
-                jointSeries.AddRange(matchedFragmentIons.Where(f => f.NeutralTheoreticalProduct.TerminusFragment.Terminus == FragmentationTerminus.N).Select(f => f.NeutralTheoreticalProduct.TerminusFragment.FragmentNumber) ?? new List<int>());
-                jointSeries.AddRange(matchedFragmentIons.Where(f => f.NeutralTheoreticalProduct.TerminusFragment.Terminus == FragmentationTerminus.C).Select(f => f.NeutralTheoreticalProduct.TerminusFragment.FragmentNumber) ?? new List<int>());
-                jointSeries = jointSeries.Distinct().ToList();
-
-                if (jointSeries.Count > 0)
-                {
-                    jointSeries.Sort();
-
-                    List<int> aminoAcidPostionsThatCouldBeObserved = Enumerable.Range(0, peptide.BaseSequence.Length + 1).ToList();
-
-                    List<int> missing = aminoAcidPostionsThatCouldBeObserved.Except(jointSeries).ToList();
-
-                    for (int i = 0; i < missing.Count - 1; i++)
-                    {
-                        int diff = missing[i + 1] - missing[i] - 1;
-                        if (diff > maxdif)
-                        {
-                            maxdif = diff;
-                        }
-                    }
-                }
-            
-
-            return maxdif;
-        }
-
-        /// <summary>
         /// Rank experimental mass spectral peaks by intensity
         /// </summary>
         public static int[] GenerateIntensityRanks(double[] experimental_intensities)

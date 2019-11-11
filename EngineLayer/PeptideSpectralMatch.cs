@@ -217,7 +217,7 @@ namespace EngineLayer
             MatchedFragmentIons = PeptidesToMatchingFragments.First().Value;
         }
 
-        public int GetLongestIonSeriesBidirectional(PeptideWithSetModifications peptide)
+        public int GetLongestIonSeriesBidirectional(Dictionary<PeptideWithSetModifications, List<MatchedFragmentIon>> PeptidesToMatchingFragments, PeptideWithSetModifications peptide)
         {
             int maxdif = 0;
 

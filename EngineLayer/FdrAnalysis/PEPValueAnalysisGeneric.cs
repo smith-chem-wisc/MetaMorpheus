@@ -379,7 +379,7 @@ namespace EngineLayer
                 notch = notchToUse;
                 modCount = Math.Min((float)selectedPeptide.AllModsOneIsNterminus.Keys.Count(), 10);
                 ambiguity = Math.Min((float)(psm.PeptidesToMatchingFragments.Keys.Count - 1), 10);
-                longestSeq = psm.GetLongestIonSeriesBidirectional(selectedPeptide);
+                longestSeq = psm.GetLongestIonSeriesBidirectional(psm.PeptidesToMatchingFragments, selectedPeptide);
 
                 //grouping psm counts as follows is done for stability. you get very nice numbers at low psms to get good statistics. But you get a few peptides with high psm counts that could be either targets or decoys and the values swing between extremes. So grouping psms in bundles really adds stability.
                 psmCount = sequenceToPsmCount[String.Join("|", psm.BestMatchingPeptides.Select(p => p.Peptide.FullSequence).ToList())];
@@ -418,8 +418,8 @@ namespace EngineLayer
                 deltaScore = (float)csm.DeltaScore;
                 alphaIntensity = (float)(csm.Score - (int)csm.Score);
                 betaIntensity = csm.BetaPeptide == null ? (float)0 : (float)(csm.BetaPeptide.Score - (int)csm.BetaPeptide.Score); ;
-                longestFragmentIonSeries_Alpha = psm.GetLongestIonSeriesBidirectional(selectedAlphaPeptide);
-                longestFragmentIonSeries_Beta = csm.BetaPeptide == null ? (float)0 : csm.GetLongestIonSeriesBidirectionalBetaPeptide(csm.BetaPeptide.MatchedFragmentIons,selectedBetaPeptide);
+                longestFragmentIonSeries_Alpha = psm.GetLongestIonSeriesBidirectional(csm.PeptidesToMatchingFragments, selectedAlphaPeptide);
+                longestFragmentIonSeries_Beta = selectedBetaPeptide == null ? (float)0 : csm.GetLongestIonSeriesBidirectional(csm.BetaPeptide.PeptidesToMatchingFragments, selectedBetaPeptide);
                 isInter = Convert.ToSingle(csm.CrossType == PsmCrossType.Inter);
                 isIntra = Convert.ToSingle(csm.CrossType == PsmCrossType.Intra);
             }

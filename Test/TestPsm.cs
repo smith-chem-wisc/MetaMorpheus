@@ -123,7 +123,7 @@ namespace Test
                 {
                     foreach (var (Notch, Peptide) in psm.BestMatchingPeptides)
                     {
-                        longestSeriesObserved.Add(psm.GetLongestIonSeriesBidirectional(Peptide));
+                        longestSeriesObserved.Add(psm.GetLongestIonSeriesBidirectional(psm.PeptidesToMatchingFragments, Peptide));
                     }
                 }
             }

@@ -1,4 +1,5 @@
 ﻿using EngineLayer.ModernSearch;
+using MassSpectrometry;
 using MzLibUtil;
 using Proteomics;
 using Proteomics.Fragmentation;
@@ -7,7 +8,6 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
-using MassSpectrometry;
 
 namespace EngineLayer.CrosslinkSearch
 {
@@ -46,7 +46,7 @@ namespace EngineLayer.CrosslinkSearch
             this.QuenchNH2 = quench_NH2;
             this.QuenchTris = quench_Tris;
             SecondFragmentIndex = secondFragmentIndex;
-            if (CommonParameters.ChildScanDissociationType!=DissociationType.Unknown && DissociationTypeGenerateSameTypeOfIons(CommonParameters.DissociationType, CommonParameters.ChildScanDissociationType))
+            if (CommonParameters.ChildScanDissociationType != DissociationType.Unknown && DissociationTypeGenerateSameTypeOfIons(CommonParameters.DissociationType, CommonParameters.ChildScanDissociationType))
             {
                 SecondFragmentIndex = FragmentIndex;
             }
@@ -104,7 +104,7 @@ namespace EngineLayer.CrosslinkSearch
                         childIdsOfPeptidesPossiblyObserved.Clear();
 
                         List<int> childBinsToSearch = new List<int>();
-     
+
                         foreach (var aChildScan in scan.ChildScans)
                         {
                             var x = GetBinsToSearch(aChildScan, SecondFragmentIndex, CommonParameters.ChildScanDissociationType);
@@ -128,18 +128,30 @@ namespace EngineLayer.CrosslinkSearch
                     {
                         if (CrosslinkSearchTopN)
                         {
-                            //// take top N hits for this scan
-                            //var scoreCutList = idsOfPeptidesPossiblyObserved.OrderByDescending(p => scoringTable[p]).ThenBy(p => PeptideIndex[p].FullSequence).ThenBy(p => PeptideIndex[p].Protein.Accession).ToList();
-                            //if (scoreCutList.Count >= TopN)
-                            //{
-                            //    var scoreCut = scoreCutList[TopN - 1];
-                            //    idsOfPeptidesPossiblyObserved = scoreCutList.Where(p => p > scoreCut).ToList();
-                            //}
-                            //else
-                            //{
-                            //    idsOfPeptidesPossiblyObserved = scoreCutList;
-                            //}
-                            idsOfPeptidesPossiblyObserved = idsOfPeptidesPossiblyObserved.OrderByDescending(p => scoringTable[p]).ThenBy(p => PeptideIndex[p].FullSequence).ThenBy(p => PeptideIndex[p].Protein.Accession).Take(TopN).ToList();
+                            idsOfPeptidesPossiblyObserved.Sort(new Comparison<int>((x, y) =>
+                            {
+                                int result = scoringTable[y].CompareTo(scoringTable[x]);
+
+                                if (result != 0)
+                                {
+                                    return result;
+                                }
+                                else
+                                {
+                                    result = PeptideIndex[x].FullSequence.CompareTo(PeptideIndex[y].FullSequence);
+                                    if (result != 0)
+                                    {
+                                        return result;
+                                    }
+                                    else
+                                    {
+                                        result = PeptideIndex[x].Protein.Accession.CompareTo(PeptideIndex[y].Protein.Accession);
+                                        return result;
+                                    }
+                                }
+                            }));
+
+                            idsOfPeptidesPossiblyObserved = idsOfPeptidesPossiblyObserved.Take(TopN).ToList();
                         }
 
                         foreach (var id in idsOfPeptidesPossiblyObserved)
@@ -184,7 +196,7 @@ namespace EngineLayer.CrosslinkSearch
         }
 
         /// <summary>
-        /// 
+        ///
         /// </summary>
         private void GenerateCrosslinkModifications(Crosslinker crosslinker)
         {
@@ -196,7 +208,7 @@ namespace EngineLayer.CrosslinkSearch
         }
 
         /// <summary>
-        /// 
+        ///
         /// </summary>
         private List<CrosslinkSpectralMatch> FindCrosslinkedPeptide(Ms2ScanWithSpecificMass theScan, List<BestPeptideScoreNotch> theScanBestPeptide, int scanIndex)
         {
@@ -357,7 +369,7 @@ namespace EngineLayer.CrosslinkSearch
                             foreach (Ms2ScanWithSpecificMass childScan in theScan.ChildScans)
                             {
                                 var matchedChildIons = ScoreChildScan(theScan, childScan, possibleSite, alphaPeptide, betaPeptide);
-                                
+
                                 if (matchedChildIons == null)
                                 {
                                     continue;
