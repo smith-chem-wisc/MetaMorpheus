@@ -62,7 +62,7 @@ namespace EngineLayer
             ElementsLocation = Path.Combine(DataDir, @"Data", @"elements.dat");
             UsefulProteomicsDatabases.Loaders.LoadElements();
 
-            AddSeparationTypes(new List<string>() { { "HPLC" }, { "CZE" } });
+            AddSeparationTypes(new List<string> { { "HPLC" }, { "CZE" } });
 
             // load default crosslinkers
             string crosslinkerLocation = Path.Combine(DataDir, @"Data", @"Crosslinkers.tsv");

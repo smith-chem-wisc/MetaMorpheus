@@ -121,11 +121,11 @@ namespace TaskLayer
             DoCrosslinkFdrAnalysis(intraCsms);
             
             List<CrosslinkSpectralMatch> crossCsms = allPsms.Where(p => p.CrossType == PsmCrossType.Inter || p.CrossType == PsmCrossType.Intra).ToList();
-            new FdrAnalysisEngine(crossCsms.ToList<PeptideSpectralMatch>(), 0, commonParameters, new List<string>() { taskId }, "crosslink").Run();
+            new FdrAnalysisEngine(crossCsms.ToList<PeptideSpectralMatch>(), 0, commonParameters, new List<string> { taskId }, "crosslink").Run();
 
             List<CrosslinkSpectralMatch> singles = allPsms.Where(p => p.CrossType != PsmCrossType.Inter).Where(p => p.CrossType != PsmCrossType.Intra).ToList();
             SingleFDRAnalysis(singles, commonParameters, new List<string> { taskId });
-            new FdrAnalysisEngine(singles.ToList<PeptideSpectralMatch>(), 0, commonParameters, new List<string>() { taskId }, "PSM").Run();
+            new FdrAnalysisEngine(singles.ToList<PeptideSpectralMatch>(), 0, commonParameters, new List<string> { taskId }, "PSM").Run();
         }
 
         //Calculate the FDR of single peptide FP/TP

@@ -3,6 +3,7 @@ using EngineLayer.FdrAnalysis;
 using MathNet.Numerics.Statistics;
 using Microsoft.ML;
 using Microsoft.ML.Data;
+using Proteomics;
 using Proteomics.ProteolyticDigestion;
 using Proteomics.RetentionTimePrediction;
 using System;
@@ -185,19 +186,21 @@ namespace EngineLayer
                         }
                         fullSequences.Add(pwsm.FullSequence);
 
-                        double predictedHydrophobicity = calc.ScoreSequence(pwsm);
+                        double predictedHydrophobicity = 0;
 
-                        //DEBUG
                         if (SeparationType == "CZE")
                         {
                             predictedHydrophobicity = CZE.PredictedElectrophoreticMobility(pwsm.BaseSequence, pwsm.MonoisotopicMass);
                         }
-                        //END DEBUG
+                        else
+                        {
+                            predictedHydrophobicity = calc.ScoreSequence(pwsm);
+                        }
 
                         //here i'm grouping this in 2 minute increments becuase there are cases where you get too few data points to get a good standard deviation an average. This is for stability.
                         int possibleKey = (int)(2 * Math.Round(psm.ScanRetentionTime / 2d, 0));
                         //First block of if statement is for modified peptides.
-                        if (pwsm.AllModsOneIsNterminus.Any() && computeHydrophobicitiesforModifiedPeptides)
+                        if ((pwsm.AllModsOneIsNterminus.Any() && SeparationType == "HPLC") || (ContainsModificationsThatShiftMobility(pwsm.AllModsOneIsNterminus.Values.AsEnumerable()) && SeparationType == "CZE") && computeHydrophobicitiesforModifiedPeptides)
                         {
                             if (hydrophobicities.ContainsKey(possibleKey))
                             {
@@ -209,7 +212,7 @@ namespace EngineLayer
                             }
                         }
                         //this second block of if statment is for unmodified peptides.
-                        else if (!pwsm.AllModsOneIsNterminus.Any() && !computeHydrophobicitiesforModifiedPeptides)
+                        else if ((!pwsm.AllModsOneIsNterminus.Any() && SeparationType == "HPLC") || (!ContainsModificationsThatShiftMobility(pwsm.AllModsOneIsNterminus.Values.AsEnumerable()) && SeparationType == "CZE") && !computeHydrophobicitiesforModifiedPeptides)
                         {
                             if (hydrophobicities.ContainsKey(possibleKey))
                             {
@@ -280,11 +283,15 @@ namespace EngineLayer
                 int time = (int)(2 * Math.Round(psm.ScanRetentionTime / 2d, 0));
                 if (d[psm.FullFilePath].Keys.Contains(time))
                 {
-                    double predictedHydrophobicity = calc.ScoreSequence(Peptide);
+                    double predictedHydrophobicity;
 
                     if (SeparationType == "CZE")
                     {
                         predictedHydrophobicity = CZE.PredictedElectrophoreticMobility(Peptide.BaseSequence, Peptide.MonoisotopicMass);
+                    }
+                    else//assume hplc
+                    {
+                        predictedHydrophobicity = calc.ScoreSequence(Peptide);
                     }
 
                     hydrophobicityZscore = Math.Abs(d[psm.FullFilePath][time].Item1 - predictedHydrophobicity) / d[psm.FullFilePath][time].Item2;
@@ -391,14 +398,29 @@ namespace EngineLayer
                 if (psm.DigestionParams.Protease.Name != "top-down")
                 {
                     missedCleavages = selectedPeptide.MissedCleavages;
-                    if (selectedPeptide.BaseSequence.Equals(selectedPeptide.FullSequence))
+                    if(SeparationType == "HPLE")
                     {
-                        hydrophobicityZscore = GetSSRCalcHydrophobicityZScore(psm, selectedPeptide, timeDependantHydrophobicityAverageAndDeviation_unmodified);
+                        if (selectedPeptide.BaseSequence.Equals(selectedPeptide.FullSequence))
+                        {
+                            hydrophobicityZscore = GetSSRCalcHydrophobicityZScore(psm, selectedPeptide, timeDependantHydrophobicityAverageAndDeviation_unmodified);
+                        }
+                        else
+                        {
+                            hydrophobicityZscore = GetSSRCalcHydrophobicityZScore(psm, selectedPeptide, timeDependantHydrophobicityAverageAndDeviation_modified);
+                        }
                     }
-                    else
+                    else if (SeparationType == "CZE")
                     {
-                        hydrophobicityZscore = GetSSRCalcHydrophobicityZScore(psm, selectedPeptide, timeDependantHydrophobicityAverageAndDeviation_modified);
+                        if (!ContainsModificationsThatShiftMobility(selectedPeptide.AllModsOneIsNterminus.Values.AsEnumerable()))
+                        {
+                            hydrophobicityZscore = GetSSRCalcHydrophobicityZScore(psm, selectedPeptide, timeDependantHydrophobicityAverageAndDeviation_unmodified);
+                        }
+                        else
+                        {
+                            hydrophobicityZscore = GetSSRCalcHydrophobicityZScore(psm, selectedPeptide, timeDependantHydrophobicityAverageAndDeviation_modified);
+                        }
                     }
+                    
                 }
                 //this is not for actual crosslinks but for the byproducts of crosslink loop links, deadends, etc.
                 if (psm is CrosslinkSpectralMatch)
@@ -417,7 +439,7 @@ namespace EngineLayer
                 totalMatchingFragmentCount = (float)Math.Round(csm.XLTotalScore, 0);
                 deltaScore = (float)csm.DeltaScore;
                 alphaIntensity = (float)(csm.Score - (int)csm.Score);
-                betaIntensity = csm.BetaPeptide == null ? (float)0 : (float)(csm.BetaPeptide.Score - (int)csm.BetaPeptide.Score); ;
+                betaIntensity = csm.BetaPeptide == null ? (float)0 : (float)(csm.BetaPeptide.Score - (int)csm.BetaPeptide.Score);
                 longestFragmentIonSeries_Alpha = psm.GetLongestIonSeriesBidirectional(csm.PeptidesToMatchingFragments, selectedAlphaPeptide);
                 longestFragmentIonSeries_Beta = selectedBetaPeptide == null ? (float)0 : csm.GetLongestIonSeriesBidirectional(csm.BetaPeptide.PeptidesToMatchingFragments, selectedBetaPeptide);
                 isInter = Convert.ToSingle(csm.CrossType == PsmCrossType.Inter);
@@ -478,6 +500,16 @@ namespace EngineLayer
                 }
             }
             return identifiedVariant;
+        }
+
+        public static bool ContainsModificationsThatShiftMobility(IEnumerable<Modification> modifications)
+        {
+            List<string> shiftingModifications = new List<string> { "Acetylation", "Ammonia loss", "Carbamyl", "Deamidation", "Formylation",
+                "N2-acetylarginine", "N6-acetyllysine", "N-acetylalanine", "N-acetylaspartate", "N-acetylcysteine", "N-acetylglutamate", "N-acetylglycine",
+                "N-acetylisoleucine", "N-acetylmethionine", "N-acetylproline", "N-acetylserine", "N-acetylthreonine", "N-acetyltyrosine", "N-acetylvaline",
+                "Phosphorylation", "Phosphoserine", "Phosphothreonine", "Phosphotyrosine", "Sulfonation" };
+
+            return shiftingModifications.Concat(modifications.Select(m => m.OriginalId).Distinct()).GroupBy(s => s).Where(s => s.Count() > 1).Any();
         }
 
         /// <summary>
