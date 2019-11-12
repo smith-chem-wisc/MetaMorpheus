@@ -392,7 +392,7 @@ namespace MetaMorpheusGUI
             FragmentationTerminus fragmentationTerminus = GetFragmentationTerminus();
 
             SilacUpdates(out string silacError);
-            if(silacError.Length!=0)
+            if (silacError.Length != 0)
             {
                 MessageBox.Show(silacError);
                 return;
@@ -729,6 +729,25 @@ namespace MetaMorpheusGUI
             }
         }
 
+        //this one is used by the GUI
+        private void ProteaseSpecificUpdate(object sender, SelectionChangedEventArgs e)
+        {
+            const int maxLength = 25;
+            if (((Protease)ProteaseComboBox.SelectedItem).Name.Contains("non-specific"))
+            {
+                MaxPeptideLengthTextBox.Text = maxLength.ToString();
+            }
+            else if (((Protease)ProteaseComboBox.SelectedItem).Name.Contains("top-down"))
+            {
+                UseProvidedPrecursor.IsChecked = false;
+                DeconvolutionMaxAssumedChargeStateTextBox.Text = "60";
+                TrimMsMs.IsChecked = false;
+                CheckBoxNoQuant.IsChecked = true;
+                MaxPeptideLengthTextBox.Text = "";
+            }
+        }
+
+        //this is an overload for co-dependent parameters
         private void ProteaseSpecificUpdate(object sender, TextChangedEventArgs e)
         {
             if (((Protease)ProteaseComboBox.SelectedItem).Name.Contains("non-specific"))
@@ -756,14 +775,6 @@ namespace MetaMorpheusGUI
                     //if not an entry, don't update the other box.
                 }
             }
-            else if (((Protease)ProteaseComboBox.SelectedItem).Name.Contains("top-down"))
-            {
-                UseProvidedPrecursor.IsChecked = false;
-                DeconvolutionMaxAssumedChargeStateTextBox.Text = "60";
-                TrimMsMs.IsChecked = false;
-                CheckBoxNoQuant.IsChecked = true;
-                MaxPeptideLengthTextBox.Text = "";
-            }
 
             if (!ClassicSearchRadioButton.IsChecked.Value && MaxPeptideLengthTextBox.Text.Length != 0)
             {
@@ -773,23 +784,6 @@ namespace MetaMorpheusGUI
                 {
                     MaxFragmentMassTextBox.Text = (maxLength * 300).ToString(); //assume the average residue doesn't have a mass over 300 Da (largest is W @ 204, but mods exist)
                 }
-            }
-        }
-
-        private void ProteaseSpecificUpdate(object sender, SelectionChangedEventArgs e)
-        {
-            const int maxLength = 25;
-            if (((Protease)ProteaseComboBox.SelectedItem).Name.Contains("non-specific"))
-            {
-                MaxPeptideLengthTextBox.Text = maxLength.ToString();
-            }
-            else if (((Protease)ProteaseComboBox.SelectedItem).Name.Contains("top-down"))
-            {
-                UseProvidedPrecursor.IsChecked = false;
-                DeconvolutionMaxAssumedChargeStateTextBox.Text = "60";
-                TrimMsMs.IsChecked = false;
-                CheckBoxNoQuant.IsChecked = true;
-                MaxPeptideLengthTextBox.Text = "";
             }
         }
 
