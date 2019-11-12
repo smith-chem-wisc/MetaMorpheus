@@ -729,7 +729,8 @@ namespace MetaMorpheusGUI
             }
         }
 
-        private void NonSpecificUpdate(object sender, TextChangedEventArgs e)
+        //this one is used by the GUI
+        private void ProteaseSpecificUpdate(object sender, TextChangedEventArgs e)
         {
             if (((Protease)ProteaseComboBox.SelectedItem).Name.Contains("non-specific"))
             {
@@ -756,6 +757,14 @@ namespace MetaMorpheusGUI
                     //if not an entry, don't update the other box.
                 }
             }
+            else if (((Protease)ProteaseComboBox.SelectedItem).Name.Contains("top-down"))
+            {
+                UseProvidedPrecursor.IsChecked = false;
+                DeconvolutionMaxAssumedChargeStateTextBox.Text = "60";
+                TrimMsMs.IsChecked = false;
+                CheckBoxNoQuant.IsChecked = true;
+                MaxPeptideLengthTextBox.Text = "";
+            }
 
             if (!ClassicSearchRadioButton.IsChecked.Value && MaxPeptideLengthTextBox.Text.Length != 0)
             {
@@ -768,12 +777,21 @@ namespace MetaMorpheusGUI
             }
         }
 
-        private void NonSpecificUpdate(object sender, SelectionChangedEventArgs e)
+        //this one is a necessary overload
+        private void ProteaseSpecificUpdate(object sender, SelectionChangedEventArgs e)
         {
             const int maxLength = 25;
             if (((Protease)ProteaseComboBox.SelectedItem).Name.Contains("non-specific"))
             {
                 MaxPeptideLengthTextBox.Text = maxLength.ToString();
+            }
+            else if (((Protease)ProteaseComboBox.SelectedItem).Name.Contains("top-down"))
+            {
+                UseProvidedPrecursor.IsChecked = false;
+                DeconvolutionMaxAssumedChargeStateTextBox.Text = "60";
+                TrimMsMs.IsChecked = false;
+                CheckBoxNoQuant.IsChecked = true;
+                MaxPeptideLengthTextBox.Text = "";
             }
         }
 
