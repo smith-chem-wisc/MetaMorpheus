@@ -729,7 +729,6 @@ namespace MetaMorpheusGUI
             }
         }
 
-        //this one is used by the GUI
         private void ProteaseSpecificUpdate(object sender, TextChangedEventArgs e)
         {
             if (((Protease)ProteaseComboBox.SelectedItem).Name.Contains("non-specific"))
@@ -777,7 +776,6 @@ namespace MetaMorpheusGUI
             }
         }
 
-        //this one is a necessary overload
         private void ProteaseSpecificUpdate(object sender, SelectionChangedEventArgs e)
         {
             const int maxLength = 25;
