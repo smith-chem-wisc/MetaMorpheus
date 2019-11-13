@@ -237,16 +237,22 @@ namespace MetaMorpheusGUI
             CustomFragmentationWindow.Close();
         }
         
-        private void NonSpecificUpdate(object sender, SelectionChangedEventArgs e)
+        private void ProteaseSpecificUpdate(object sender, SelectionChangedEventArgs e)
         {
             const int maxLength = 25;
             if (((Protease)ProteaseComboBox.SelectedItem).Name.Contains("non-specific"))
             {
                 MaxPeptideLengthTextBox.Text = maxLength.ToString();
             }
+            else if (((Protease)ProteaseComboBox.SelectedItem).Name.Contains("top-down"))
+            {
+                UseProvidedPrecursor.IsChecked = false;
+                DeconvolutionMaxAssumedChargeStateTextBox.Text = "60";
+                TrimMsMs.IsChecked = false;
+            }
         }
 
-        private void NonSpecificUpdate(object sender, TextChangedEventArgs e)
+        private void ProteaseSpecificUpdate(object sender, TextChangedEventArgs e)
         {
             if (((Protease)ProteaseComboBox.SelectedItem).Name.Contains("non-specific"))
             {

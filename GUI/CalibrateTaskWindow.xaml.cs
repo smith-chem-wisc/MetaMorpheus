@@ -244,21 +244,45 @@ namespace MetaMorpheusGUI
 
             bool parseMaxThreadsPerFile = int.Parse(MaxThreadsTextBox.Text, CultureInfo.InvariantCulture) <= Environment.ProcessorCount && int.Parse(MaxThreadsTextBox.Text, CultureInfo.InvariantCulture) > 0;
 
-            CommonParameters commonParamsToSave = new CommonParameters(
-                taskDescriptor: OutputFileNameTextBox.Text != "" ? OutputFileNameTextBox.Text : "CalibrateTask",
-                maxThreadsToUsePerFile: parseMaxThreadsPerFile ? int.Parse(MaxThreadsTextBox.Text, CultureInfo.InvariantCulture) : new CommonParameters().MaxThreadsToUsePerFile,
-                digestionParams: digestionParamsToSave,
-                dissociationType: dissociationType,
-                scoreCutoff: double.Parse(MinScoreAllowed.Text, CultureInfo.InvariantCulture),
-                listOfModsFixed: listOfModsFixed,
-                listOfModsVariable: listOfModsVariable,
-                productMassTolerance: ProductMassTolerance,
-                precursorMassTolerance: PrecursorMassTolerance,
-                assumeOrphanPeaksAreZ1Fragments: protease.Name != "top-down",
-                minVariantDepth: MinVariantDepth,
-                maxHeterozygousVariants: MaxHeterozygousVariants);
 
-            TheTask.CommonParameters = commonParamsToSave;
+            //the below parameters are optimized for top-down but do not exist in the GUI as of Nov. 13, 2019
+            if (((Protease)ProteaseComboBox.SelectedItem).Name.Contains("top-down"))
+            {
+                CommonParameters commonParamsToSave = new CommonParameters(
+                    taskDescriptor: OutputFileNameTextBox.Text != "" ? OutputFileNameTextBox.Text : "CalibrateTask",
+                    maxThreadsToUsePerFile: parseMaxThreadsPerFile ? int.Parse(MaxThreadsTextBox.Text, CultureInfo.InvariantCulture) : new CommonParameters().MaxThreadsToUsePerFile,
+                    digestionParams: digestionParamsToSave,
+                    dissociationType: dissociationType,
+                    scoreCutoff: double.Parse(MinScoreAllowed.Text, CultureInfo.InvariantCulture),
+                    listOfModsFixed: listOfModsFixed,
+                    listOfModsVariable: listOfModsVariable,
+                    productMassTolerance: ProductMassTolerance,
+                    precursorMassTolerance: PrecursorMassTolerance,
+                    assumeOrphanPeaksAreZ1Fragments: protease.Name != "top-down",
+                    minVariantDepth: MinVariantDepth,
+                    maxHeterozygousVariants: MaxHeterozygousVariants,
+                    useProvidedPrecursorInfo: false, //Updated
+                    deconvolutionMaxAssumedChargeState: 60, //Updated
+                    trimMsMsPeaks: false); //Updated
+                TheTask.CommonParameters = commonParamsToSave;
+            }
+            else //bottom-up
+            {
+                CommonParameters commonParamsToSave = new CommonParameters(
+                    taskDescriptor: OutputFileNameTextBox.Text != "" ? OutputFileNameTextBox.Text : "CalibrateTask",
+                    maxThreadsToUsePerFile: parseMaxThreadsPerFile ? int.Parse(MaxThreadsTextBox.Text, CultureInfo.InvariantCulture) : new CommonParameters().MaxThreadsToUsePerFile,
+                    digestionParams: digestionParamsToSave,
+                    dissociationType: dissociationType,
+                    scoreCutoff: double.Parse(MinScoreAllowed.Text, CultureInfo.InvariantCulture),
+                    listOfModsFixed: listOfModsFixed,
+                    listOfModsVariable: listOfModsVariable,
+                    productMassTolerance: ProductMassTolerance,
+                    precursorMassTolerance: PrecursorMassTolerance,
+                    assumeOrphanPeaksAreZ1Fragments: protease.Name != "top-down",
+                    minVariantDepth: MinVariantDepth,
+                    maxHeterozygousVariants: MaxHeterozygousVariants);
+                TheTask.CommonParameters = commonParamsToSave;
+            }
 
             DialogResult = true;
         }
@@ -330,16 +354,23 @@ namespace MetaMorpheusGUI
             Toml.WriteFile(TheTask, Path.Combine(GlobalVariables.DataDir, "DefaultParameters", @"CalibrationTaskDefault.toml"), MetaMorpheusTask.tomlConfig);
         }
 
-        private void NonSpecificUpdate(object sender, SelectionChangedEventArgs e)
+        private void ProteaseSpecificUpdate(object sender, SelectionChangedEventArgs e)
         {
             const int maxLength = 25;
             if (((Protease)ProteaseComboBox.SelectedItem).Name.Contains("non-specific"))
             {
                 MaxPeptideLengthTextBox.Text = maxLength.ToString();
             }
+            //The below parameters cannot be specified by the user as of Nov. 13, 2019 and are set in the save function instead.
+            //else if (((Protease)ProteaseComboBox.SelectedItem).Name.Contains("top-down"))
+            //{
+            //    //UseProvidedPrecursor.IsChecked = false;
+            //    //DeconvolutionMaxAssumedChargeStateTextBox.Text = "60";
+            //    //TrimMsMs.IsChecked = false;
+            //}
         }
 
-        private void NonSpecificUpdate(object sender, TextChangedEventArgs e)
+        private void ProteaseSpecificUpdate(object sender, TextChangedEventArgs e)
         {
             if (((Protease)ProteaseComboBox.SelectedItem).Name.Contains("non-specific"))
             {

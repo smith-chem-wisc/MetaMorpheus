@@ -743,7 +743,6 @@ namespace MetaMorpheusGUI
                 DeconvolutionMaxAssumedChargeStateTextBox.Text = "60";
                 TrimMsMs.IsChecked = false;
                 CheckBoxNoQuant.IsChecked = true;
-                MaxPeptideLengthTextBox.Text = "";
             }
         }
 
