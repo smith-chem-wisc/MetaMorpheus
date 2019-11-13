@@ -164,7 +164,7 @@ namespace EngineLayer.FdrAnalysis
                     string searchType = "standard";
                     if (AllPsms[0].DigestionParams.Protease.Name == "top-down")
                     {
-                        searchType = "topDown";
+                        searchType = "top-down";
                     }
 
                     myAnalysisResults.BinarySearchTreeMetrics = PEP_Analysis.ComputePEPValuesForAllPSMsGeneric(AllPsms, searchType, SeparationType);

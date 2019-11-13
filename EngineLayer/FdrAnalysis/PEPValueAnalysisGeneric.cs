@@ -200,8 +200,13 @@ namespace EngineLayer
                         //here i'm grouping this in 2 minute increments becuase there are cases where you get too few data points to get a good standard deviation an average. This is for stability.
                         int possibleKey = (int)(2 * Math.Round(psm.ScanRetentionTime / 2d, 0));
                         //First block of if statement is for modified peptides.
-                        if ((pwsm.AllModsOneIsNterminus.Any() && SeparationType == "HPLC") || (ContainsModificationsThatShiftMobility(pwsm.AllModsOneIsNterminus.Values.AsEnumerable()) && SeparationType == "CZE") && computeHydrophobicitiesforModifiedPeptides)
-                        {
+
+
+
+                        //if ((pwsm.AllModsOneIsNterminus.Any() && SeparationType == "HPLC") || (ContainsModificationsThatShiftMobility(pwsm.AllModsOneIsNterminus.Values.AsEnumerable()) && SeparationType == "CZE") && computeHydrophobicitiesforModifiedPeptides)
+                        //Debug replace with line above
+                        if (pwsm.AllModsOneIsNterminus.Any() && computeHydrophobicitiesforModifiedPeptides)
+                            {
                             if (hydrophobicities.ContainsKey(possibleKey))
                             {
                                 hydrophobicities[possibleKey].Add(predictedHydrophobicity);
@@ -212,7 +217,9 @@ namespace EngineLayer
                             }
                         }
                         //this second block of if statment is for unmodified peptides.
-                        else if ((!pwsm.AllModsOneIsNterminus.Any() && SeparationType == "HPLC") || (!ContainsModificationsThatShiftMobility(pwsm.AllModsOneIsNterminus.Values.AsEnumerable()) && SeparationType == "CZE") && !computeHydrophobicitiesforModifiedPeptides)
+                        //else if ((!pwsm.AllModsOneIsNterminus.Any() && SeparationType == "HPLC") || (!ContainsModificationsThatShiftMobility(pwsm.AllModsOneIsNterminus.Values.AsEnumerable()) && SeparationType == "CZE") && !computeHydrophobicitiesforModifiedPeptides)
+                        //debug replace with line above
+                        else if (!pwsm.AllModsOneIsNterminus.Any() && !computeHydrophobicitiesforModifiedPeptides)
                         {
                             if (hydrophobicities.ContainsKey(possibleKey))
                             {
@@ -398,7 +405,7 @@ namespace EngineLayer
                 if (psm.DigestionParams.Protease.Name != "top-down")
                 {
                     missedCleavages = selectedPeptide.MissedCleavages;
-                    if(SeparationType == "HPLE")
+                    if (String.IsNullOrEmpty(SeparationType) || SeparationType == "HPLC")
                     {
                         if (selectedPeptide.BaseSequence.Equals(selectedPeptide.FullSequence))
                         {
@@ -420,12 +427,11 @@ namespace EngineLayer
                             hydrophobicityZscore = GetSSRCalcHydrophobicityZScore(psm, selectedPeptide, timeDependantHydrophobicityAverageAndDeviation_modified);
                         }
                     }
-                    
                 }
                 //this is not for actual crosslinks but for the byproducts of crosslink loop links, deadends, etc.
                 if (psm is CrosslinkSpectralMatch)
                 {
-                    CrosslinkSpectralMatch csm = (CrosslinkSpectralMatch)psm;                    
+                    CrosslinkSpectralMatch csm = (CrosslinkSpectralMatch)psm;
                     isDeadEnd = Convert.ToSingle((csm.CrossType == PsmCrossType.DeadEnd) || (csm.CrossType == PsmCrossType.DeadEndH2O) || (csm.CrossType == PsmCrossType.DeadEndNH2) || (csm.CrossType == PsmCrossType.DeadEndTris));
                     isLoop = Convert.ToSingle(csm.CrossType == PsmCrossType.Loop);
                 }

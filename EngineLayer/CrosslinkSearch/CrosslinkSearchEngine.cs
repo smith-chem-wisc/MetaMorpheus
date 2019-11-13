@@ -73,6 +73,7 @@ namespace EngineLayer.CrosslinkSearch
 
             int maxThreadsPerFile = CommonParameters.MaxThreadsToUsePerFile;
             int[] threads = Enumerable.Range(0, maxThreadsPerFile).ToArray();
+
             Parallel.ForEach(threads, (scanIndex) =>
             {
                 byte[] scoringTable = new byte[PeptideIndex.Count];
@@ -128,30 +129,48 @@ namespace EngineLayer.CrosslinkSearch
                     {
                         if (CrosslinkSearchTopN)
                         {
-                            idsOfPeptidesPossiblyObserved.Sort(new Comparison<int>((x, y) =>
-                            {
-                                int result = scoringTable[y].CompareTo(scoringTable[x]);
+                            List<int> bubba = new List<int>();
+                            bubba.AddRange(idsOfPeptidesPossiblyObserved);
 
-                                if (result != 0)
-                                {
-                                    return result;
-                                }
-                                else
-                                {
-                                    result = PeptideIndex[x].FullSequence.CompareTo(PeptideIndex[y].FullSequence);
-                                    if (result != 0)
-                                    {
-                                        return result;
-                                    }
-                                    else
-                                    {
-                                        result = PeptideIndex[x].Protein.Accession.CompareTo(PeptideIndex[y].Protein.Accession);
-                                        return result;
-                                    }
-                                }
+                            bubba.Sort(new Comparison<int>((x, y) =>
+                            {
+                                return scoringTable[y].CompareTo(scoringTable[x]);
                             }));
 
-                            idsOfPeptidesPossiblyObserved = idsOfPeptidesPossiblyObserved.Take(TopN).ToList();
+                            bubba = bubba.Take(TopN).ToList();
+                            if (idsOfPeptidesPossiblyObserved.Count() > TopN)
+                            {
+                                byte lastByte = scoringTable[bubba.Last()];
+                                bubba.AddRange(scoringTable.Select((b, i) => b == lastByte ? i : -1).Where(i => i != -1).Intersect(idsOfPeptidesPossiblyObserved));
+                                bubba = bubba.Distinct().ToList();
+                            }
+
+                            //idsOfPeptidesPossiblyObserved.Sort(new Comparison<int>((x, y) =>
+                            //{
+                            //    int result = scoringTable[y].CompareTo(scoringTable[x]);
+
+                            //    if (result != 0)
+                            //    {
+                            //        return result;
+                            //    }
+                            //    else
+                            //    {
+                            //        result = PeptideIndex[x].FullSequence.CompareTo(PeptideIndex[y].FullSequence);
+                            //        if (result != 0)
+                            //        {
+                            //            return result;
+                            //        }
+                            //        else
+                            //        {
+                            //            result = PeptideIndex[x].Protein.Accession.CompareTo(PeptideIndex[y].Protein.Accession);
+                            //            return result;
+                            //        }
+                            //    }
+                            //}));
+
+                            //idsOfPeptidesPossiblyObserved = idsOfPeptidesPossiblyObserved.Take(TopN).ToList();
+
+                            idsOfPeptidesPossiblyObserved = bubba.ToList();
                         }
 
                         foreach (var id in idsOfPeptidesPossiblyObserved)
