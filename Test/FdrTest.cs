@@ -628,7 +628,7 @@ namespace Test
             Assert.AreEqual(standardToString, pd.ToString("standard"));
 
             string topDownToString = "\t0\t1\t2\t3\t4\t5\t6\t8\t9";
-            Assert.AreEqual(topDownToString, pd.ToString("topDown"));
+            Assert.AreEqual(topDownToString, pd.ToString("top-down"));
         }
     }
 }

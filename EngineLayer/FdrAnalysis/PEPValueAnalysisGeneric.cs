@@ -199,14 +199,10 @@ namespace EngineLayer
 
                         //here i'm grouping this in 2 minute increments becuase there are cases where you get too few data points to get a good standard deviation an average. This is for stability.
                         int possibleKey = (int)(2 * Math.Round(psm.ScanRetentionTime / 2d, 0));
+
                         //First block of if statement is for modified peptides.
-
-
-
-                        //if ((pwsm.AllModsOneIsNterminus.Any() && SeparationType == "HPLC") || (ContainsModificationsThatShiftMobility(pwsm.AllModsOneIsNterminus.Values.AsEnumerable()) && SeparationType == "CZE") && computeHydrophobicitiesforModifiedPeptides)
-                        //Debug replace with line above
-                        if (pwsm.AllModsOneIsNterminus.Any() && computeHydrophobicitiesforModifiedPeptides)
-                            {
+                        if ((pwsm.AllModsOneIsNterminus.Any() && computeHydrophobicitiesforModifiedPeptides && SeparationType == "HPLC") || (ContainsModificationsThatShiftMobility(pwsm.AllModsOneIsNterminus.Values.AsEnumerable()) && computeHydrophobicitiesforModifiedPeptides && SeparationType == "CZE"))
+                        {
                             if (hydrophobicities.ContainsKey(possibleKey))
                             {
                                 hydrophobicities[possibleKey].Add(predictedHydrophobicity);
@@ -217,9 +213,7 @@ namespace EngineLayer
                             }
                         }
                         //this second block of if statment is for unmodified peptides.
-                        //else if ((!pwsm.AllModsOneIsNterminus.Any() && SeparationType == "HPLC") || (!ContainsModificationsThatShiftMobility(pwsm.AllModsOneIsNterminus.Values.AsEnumerable()) && SeparationType == "CZE") && !computeHydrophobicitiesforModifiedPeptides)
-                        //debug replace with line above
-                        else if (!pwsm.AllModsOneIsNterminus.Any() && !computeHydrophobicitiesforModifiedPeptides)
+                        else if ((!pwsm.AllModsOneIsNterminus.Any() && !computeHydrophobicitiesforModifiedPeptides && SeparationType == "HPLC") || (!ContainsModificationsThatShiftMobility(pwsm.AllModsOneIsNterminus.Values.AsEnumerable()) && !computeHydrophobicitiesforModifiedPeptides && SeparationType == "CZE"))
                         {
                             if (hydrophobicities.ContainsKey(possibleKey))
                             {
