@@ -18,13 +18,15 @@ namespace MetaMorpheusGUI
         }
 
         static ProteaseSpecificMsgBox MsgBox;
-        static bool UseSettings = true;
+        //the defaults are used when the window is closed via the top right corner
+        static bool UseSettings = false;
         static bool AskAgain = true;
 
         public static (bool UseSettings, bool AskAgain) Show(string title, string caption)
         {
             MsgBox = new ProteaseSpecificMsgBox(title, caption);
             MsgBox.ShowDialog();
+
             return (UseSettings, AskAgain);
         }
 

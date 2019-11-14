@@ -38,12 +38,12 @@ namespace MetaMorpheusGUI
         {
             bool useRecommendedSettings = false;
             //check with the user to update params
-            if (Params.AskAboutNonSpecificParams && !GlobalVariables.MetaMorpheusVersion.Contains("DEBUG"))
+            if (Params.AskAboutNonSpecificParams )
             {
                 var results = ProteaseSpecificMsgBox.Show("Use Non-Specific Recommendations?",
-                    "We recommend using the following parameters for non-specific searches:/n" +
-                    "/t-Check 'Non-Specific Search' (Search Task Only)/n" +
-                    "/t-Use '25' for 'Max Peptide Length'./n/n" +
+                    "We recommend using the following parameters for non-specific searches:\n" +
+                    "\t-Check 'Non-Specific Search' (Search Task Only)\n" +
+                    "\t-Use '25' for 'Max Peptide Length'.\n\n" +
                     "Would you like to use these recommended settings?");
 
                 if (results.UseSettings)
@@ -73,14 +73,14 @@ namespace MetaMorpheusGUI
         {
             bool useRecommendedSettings = false;
             //check with the user to update params
-            if (Params.AskAboutTopDownParams && !GlobalVariables.MetaMorpheusVersion.Contains("DEBUG"))
+            if (Params.AskAboutTopDownParams )
             {
                 var results = ProteaseSpecificMsgBox.Show("Use Top-Down Recommendations?",
-                    "We recommend using the following parameters for top-down searches:/n" +
-                    "/t-Uncheck 'Use Provided Precursor'/n" +
-                    "/t-Uncheck 'Trim MS2 Peaks'/n" +
-                    "/t-Check 'No Quantification' (Search Task Only, It's under construction!)/n" +
-                    "/t-Use '60' for 'Deconvolution Max Assumed Charge State'./n/n" +
+                    "We recommend using the following parameters for top-down searches:\n" +
+                    "\t-Uncheck 'Use Provided Precursor'\n" +
+                    "\t-Uncheck 'Trim MS2 Peaks'\n" +
+                    "\t-Check 'No Quantification' (Search Task Only, It's under construction!)\n" +
+                    "\t-Use '60' for 'Deconvolution Max Assumed Charge State'.\n\n" +
                     "Would you like to use these recommended settings?");
 
                 if (results.UseSettings)
@@ -110,11 +110,11 @@ namespace MetaMorpheusGUI
         {
             bool useRecommendedSettings = false;
             //check with the user to update params
-            if (Params.AskAboutArgCParams && !GlobalVariables.MetaMorpheusVersion.Contains("DEBUG"))
+            if (Params.AskAboutArgCParams )
             {
                 var results = ProteaseSpecificMsgBox.Show("Use Arg-C Recommendations?",
-                    "We recommend using the following parameters for Arg-C searches:/n" +
-                    "/t-Use 'trypsin'/n/n" +
+                    "We recommend using the following parameters for Arg-C searches:\n" +
+                    "\t-Use 'trypsin'\n\n" +
 
                     "Would you like to use these recommended settings?");
 
@@ -145,12 +145,13 @@ namespace MetaMorpheusGUI
         {
             bool useRecommendedSettings = false;
             //check with the user to update params
-            if (Params.AskAboutChymotrypsinParams && !GlobalVariables.MetaMorpheusVersion.Contains("DEBUG"))
+            if (Params.AskAboutChymotrypsinParams )
             {
                 var results = ProteaseSpecificMsgBox.Show("Use Chymotrypsin Recommendations?",
-                    "We recommend using the following parameters for chymotrypsin searches:/n" +
-                    "/t-Check 'Semi-Specific Search' (Search Task Only)/n" +
-                    "/t-Use '3' for 'Max Missed Cleavages'./n/n" +
+                    "We recommend using the following parameters for chymotrypsin searches:\n" +
+                    "\t-Check 'Semi-Specific Search' (Search Task Only)\n" +
+                    "\t-Use '50' for the 'Max Peptide Len' (Search Task Only)\n" +
+                    "\t-Use '3' for 'Max Missed Cleavages'.\n\n" +
                     "Would you like to use these recommended settings?");
 
                 if (results.UseSettings)
@@ -180,12 +181,13 @@ namespace MetaMorpheusGUI
         {
             bool useRecommendedSettings = false;
             //check with the user to update params
-            if (Params.AskAboutElastaseParams && !GlobalVariables.MetaMorpheusVersion.Contains("DEBUG"))
+            if (Params.AskAboutElastaseParams )
             {
                 var results = ProteaseSpecificMsgBox.Show("Use Elastase Recommendations?",
-                    "We recommend using the following parameters for elastase searches:/n" +
-                    "/t-Check 'Semi-Specific Search' (Search Task Only)/n" +
-                    "/t-Use '16' for 'Max Missed Cleavages'./n/n" +
+                    "We recommend using the following parameters for elastase searches:\n" +
+                    "\t-Check 'Semi-Specific Search' (Search Task Only)\n" +
+                    "\t-Use '50' for the 'Max Peptide Len' (Search Task Only)\n" +
+                    "\t-Use '16' for 'Max Missed Cleavages'.\n\n" +
                     "Would you like to use these recommended settings?");
 
                 if (results.UseSettings)
@@ -215,12 +217,12 @@ namespace MetaMorpheusGUI
         {
             bool useRecommendedSettings = false;
             //check with the user to update params
-            if (Params.AskAboutSemiTrypsinParams && !GlobalVariables.MetaMorpheusVersion.Contains("DEBUG"))
+            if (Params.AskAboutSemiTrypsinParams )
             {
                 var results = ProteaseSpecificMsgBox.Show("Use Semi-Trypsin Recommendations?",
-                    "We recommend using the following parameters for semi-trypsin searches:/n" +
-                    "/t-Check 'Semi-Specific Search'/n" +
-                    "/t-Use 'trypsin'/n/n" +
+                    "We recommend using the following parameters for semi-trypsin searches:\n" +
+                    "\t-Check 'Semi-Specific Search'\n" +
+                    "\t-Use 'trypsin'\n\n" +
                     "Would you like to use these recommended settings?");
 
                 if (results.UseSettings)
