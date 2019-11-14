@@ -146,8 +146,7 @@ namespace MetaMorpheusGUI
                 NonSpecificSearchRadioButton.IsChecked = true; //when this is changed it overrides the protease
                 if (task.CommonParameters.DigestionParams.SpecificProtease.Name.Equals("singleC") || task.CommonParameters.DigestionParams.SpecificProtease.Name.Equals("singleN"))
                 {
-                    Protease nonspecific = ProteaseDictionary.Dictionary["non-specific"];
-                    ProteaseComboBox.SelectedItem = nonspecific;
+                    ProteaseComboBox.SelectedItem = ProteaseDictionary.Dictionary["non-specific"];
                 }
                 else
                 {
@@ -717,8 +716,7 @@ namespace MetaMorpheusGUI
         {
             if (NonSpecificSearchRadioButton.IsChecked.Value)
             {
-                Protease nonspecific = ProteaseDictionary.Dictionary["non-specific"];
-                ProteaseComboBox.SelectedItem = nonspecific;
+                ProteaseComboBox.SelectedItem = ProteaseDictionary.Dictionary["non-specific"];
                 AddCompIonCheckBox.IsChecked = true;
             }
             else
@@ -732,17 +730,59 @@ namespace MetaMorpheusGUI
         //this one is used by the GUI
         private void ProteaseSpecificUpdate(object sender, SelectionChangedEventArgs e)
         {
-            const int maxLength = 25;
-            if (((Protease)ProteaseComboBox.SelectedItem).Name.Contains("non-specific"))
+            switch (((Protease)ProteaseComboBox.SelectedItem).Name)
             {
-                MaxPeptideLengthTextBox.Text = maxLength.ToString();
-            }
-            else if (((Protease)ProteaseComboBox.SelectedItem).Name.Contains("top-down"))
-            {
-                UseProvidedPrecursor.IsChecked = false;
-                DeconvolutionMaxAssumedChargeStateTextBox.Text = "60";
-                TrimMsMs.IsChecked = false;
-                CheckBoxNoQuant.IsChecked = true;
+                case "non-specific":
+                    if (UpdateGUISettings.UseNonSpecificRecommendedSettings())
+                    {
+                        MaxPeptideLengthTextBox.Text = "25";
+                    }
+                    break;
+                case "top-down":
+                    if (UpdateGUISettings.UseTopDownRecommendedSettings())
+                    {
+                        UseProvidedPrecursor.IsChecked = false;
+                        DeconvolutionMaxAssumedChargeStateTextBox.Text = "60";
+                        TrimMsMs.IsChecked = false;
+                        CheckBoxNoQuant.IsChecked = true;
+                    }
+                    break;
+                case "Arg-C":
+                    if (UpdateGUISettings.UseArgCRecommendedSettings())
+                    {
+                        ProteaseComboBox.SelectedItem = ProteaseDictionary.Dictionary["trypsin"];
+                    }
+                    break;
+                case "chymotrypsin (don't cleave before proline)":
+                case "chymotrypsin (cleave before proline)":
+                    {
+                        if (UpdateGUISettings.UseChymotrypsinRecommendedSettings())
+                        {
+                            MissedCleavagesTextBox.Text = "3";
+                            SemiSpecificSearchRadioButton.IsChecked = true;
+                        }
+                    }
+                    break;
+                case "elastase":
+                    {
+                        if (UpdateGUISettings.UseElastaseRecommendedSettings())
+                        {
+                            MissedCleavagesTextBox.Text = "16";
+                            SemiSpecificSearchRadioButton.IsChecked = true;
+                        }
+                    }
+                    break;
+                case "semi-trypsin":
+                    {
+                        if(UpdateGUISettings.UseSemiTrypsinRecommendedSettings())
+                        {
+                            ProteaseComboBox.SelectedItem = ProteaseDictionary.Dictionary["trypsin"];
+                            SemiSpecificSearchRadioButton.IsChecked = true;
+                        }
+                    }
+                    break;
+                default:
+                    break;
             }
         }
 

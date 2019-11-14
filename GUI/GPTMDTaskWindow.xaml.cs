@@ -239,16 +239,48 @@ namespace MetaMorpheusGUI
         
         private void ProteaseSpecificUpdate(object sender, SelectionChangedEventArgs e)
         {
-            const int maxLength = 25;
-            if (((Protease)ProteaseComboBox.SelectedItem).Name.Contains("non-specific"))
+            switch (((Protease)ProteaseComboBox.SelectedItem).Name)
             {
-                MaxPeptideLengthTextBox.Text = maxLength.ToString();
-            }
-            else if (((Protease)ProteaseComboBox.SelectedItem).Name.Contains("top-down"))
-            {
-                UseProvidedPrecursor.IsChecked = false;
-                DeconvolutionMaxAssumedChargeStateTextBox.Text = "60";
-                TrimMsMs.IsChecked = false;
+                case "non-specific":
+                    if (UpdateGUISettings.UseNonSpecificRecommendedSettings())
+                    {
+                        MaxPeptideLengthTextBox.Text = "25";
+                    }
+                    break;
+                case "top-down":
+                    if (UpdateGUISettings.UseTopDownRecommendedSettings())
+                    {
+                        UseProvidedPrecursor.IsChecked = false;
+                        DeconvolutionMaxAssumedChargeStateTextBox.Text = "60";
+                        TrimMsMs.IsChecked = false;
+                    }
+                    break;
+                case "Arg-C":
+                    if (UpdateGUISettings.UseArgCRecommendedSettings())
+                    {
+                        ProteaseComboBox.SelectedItem = ProteaseDictionary.Dictionary["trypsin"];
+                    }
+                    break;
+                case "chymotrypsin (don't cleave before proline)":
+                case "chymotrypsin (cleave before proline)":
+                    {
+                        if(UpdateGUISettings.UseChymotrypsinRecommendedSettings())
+                        {
+                            MissedCleavagesTextBox.Text = "3";
+                        }
+                    }
+                    break;
+                case "elastase":
+                    {
+                        if(UpdateGUISettings.UseElastaseRecommendedSettings())
+                        {
+                            MissedCleavagesTextBox.Text = "16";
+                        }
+                    }
+                    break;
+                //nothing to change for semi-trypsin
+                default:
+                    break;
             }
         }
 

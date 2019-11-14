@@ -3,11 +3,11 @@
 namespace MetaMorpheusGUI
 {
     /// <summary>
-    /// Interaction logic for CustomMsgBox.xaml
+    /// Interaction logic for ExitMsgBox.xaml
     /// </summary>
-    public partial class CustomMsgBox : Window
+    public partial class ExitMsgBox : Window
     {
-        public CustomMsgBox(string title, string caption, string btn1, string btn2, string btn3)
+        public ExitMsgBox(string title, string caption, string btn1, string btn2, string btn3)
         {
             InitializeComponent();
             this.Title = title;
@@ -21,12 +21,12 @@ namespace MetaMorpheusGUI
             Button3.Click += new RoutedEventHandler(Button3_Click);
         }
 
-        static CustomMsgBox MsgBox;
+        static ExitMsgBox MsgBox;
         static MessageBoxResult result = MessageBoxResult.No;
 
         public static MessageBoxResult Show(string title, string caption, string btn1, string btn2, string btn3)
         {
-            MsgBox = new CustomMsgBox(title, caption, btn1, btn2, btn3);
+            MsgBox = new ExitMsgBox(title, caption, btn1, btn2, btn3);
             MsgBox.ShowDialog();
             return result;
         }
