@@ -259,11 +259,11 @@ namespace MetaMorpheusGUI
                     scoreCutoff: double.Parse(MinScoreAllowed.Text, CultureInfo.InvariantCulture),
                     listOfModsFixed: listOfModsFixed,
                     listOfModsVariable: listOfModsVariable,
-                    productMassTolerance: ProductMassTolerance,
-                    precursorMassTolerance: PrecursorMassTolerance,
+                    productMassTolerance: productMassTolerance,
+                    precursorMassTolerance: precursorMassTolerance,
                     assumeOrphanPeaksAreZ1Fragments: protease.Name != "top-down",
-                    minVariantDepth: MinVariantDepth,
-                    maxHeterozygousVariants: MaxHeterozygousVariants,
+                    minVariantDepth: minVariantDepth,
+                    maxHeterozygousVariants: maxHeterozygousVariants,
                     useProvidedPrecursorInfo: false, //Updated
                     deconvolutionMaxAssumedChargeState: 60, //Updated
                     trimMsMsPeaks: false); //Updated
@@ -279,11 +279,11 @@ namespace MetaMorpheusGUI
                     scoreCutoff: double.Parse(MinScoreAllowed.Text, CultureInfo.InvariantCulture),
                     listOfModsFixed: listOfModsFixed,
                     listOfModsVariable: listOfModsVariable,
-                    productMassTolerance: ProductMassTolerance,
-                    precursorMassTolerance: PrecursorMassTolerance,
+                    productMassTolerance: productMassTolerance,
+                    precursorMassTolerance: precursorMassTolerance,
                     assumeOrphanPeaksAreZ1Fragments: protease.Name != "top-down",
-                    minVariantDepth: MinVariantDepth,
-                    maxHeterozygousVariants: MaxHeterozygousVariants);
+                    minVariantDepth: minVariantDepth,
+                    maxHeterozygousVariants: maxHeterozygousVariants);
                 TheTask.CommonParameters = commonParamsToSave;
             }
 
