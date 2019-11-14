@@ -129,48 +129,16 @@ namespace EngineLayer.CrosslinkSearch
                     {
                         if (CrosslinkSearchTopN)
                         {
-                            List<int> bubba = new List<int>();
-                            bubba.AddRange(idsOfPeptidesPossiblyObserved);
-
-                            bubba.Sort(new Comparison<int>((x, y) =>
+                            idsOfPeptidesPossiblyObserved.Sort(new Comparison<int>((x, y) =>
                             {
                                 return scoringTable[y].CompareTo(scoringTable[x]);
                             }));
 
-                            bubba = bubba.Take(TopN).ToList();
+                            //Whenever the count exceeds the TopN that we want to keep, we removed everything with a score lower than the score of the TopN-th peptide in the ids list
                             if (idsOfPeptidesPossiblyObserved.Count() > TopN)
                             {
-                                byte lastByte = scoringTable[bubba.Last()];
-                                bubba.AddRange(scoringTable.Select((b, i) => b == lastByte ? i : -1).Where(i => i != -1).Intersect(idsOfPeptidesPossiblyObserved));
-                                bubba = bubba.Distinct().ToList();
+                                idsOfPeptidesPossiblyObserved.RemoveAll(s => scoringTable[s] < scoringTable[idsOfPeptidesPossiblyObserved[TopN - 1]]);
                             }
-
-                            //idsOfPeptidesPossiblyObserved.Sort(new Comparison<int>((x, y) =>
-                            //{
-                            //    int result = scoringTable[y].CompareTo(scoringTable[x]);
-
-                            //    if (result != 0)
-                            //    {
-                            //        return result;
-                            //    }
-                            //    else
-                            //    {
-                            //        result = PeptideIndex[x].FullSequence.CompareTo(PeptideIndex[y].FullSequence);
-                            //        if (result != 0)
-                            //        {
-                            //            return result;
-                            //        }
-                            //        else
-                            //        {
-                            //            result = PeptideIndex[x].Protein.Accession.CompareTo(PeptideIndex[y].Protein.Accession);
-                            //            return result;
-                            //        }
-                            //    }
-                            //}));
-
-                            //idsOfPeptidesPossiblyObserved = idsOfPeptidesPossiblyObserved.Take(TopN).ToList();
-
-                            idsOfPeptidesPossiblyObserved = bubba.ToList();
                         }
 
                         foreach (var id in idsOfPeptidesPossiblyObserved)
