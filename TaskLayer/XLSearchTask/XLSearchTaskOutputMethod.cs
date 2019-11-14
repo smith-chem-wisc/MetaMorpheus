@@ -66,7 +66,7 @@ namespace TaskLayer
                             + "\t" + item.ScanNumber.ToString(CultureInfo.InvariantCulture)
                             + "\t" + item.XLTotalScore.ToString(CultureInfo.InvariantCulture)
                             + "\t" + item.DeltaScore.ToString(CultureInfo.InvariantCulture)
-                            + "\t" + (item.XlRank[0] + item.XlRank[1]).ToString(CultureInfo.InvariantCulture)
+                            + "\t" + (item.XlRank + item.BetaPeptide.XlRank).ToString(CultureInfo.InvariantCulture)
                             + "\t" + item.ScanPrecursorCharge.ToString(CultureInfo.InvariantCulture)
                             + "\t" + item.ScanPrecursorMass.ToString(CultureInfo.InvariantCulture)
                             + "\t" + ((item.PeptideMonisotopicMass.HasValue && item.BetaPeptide.PeptideMonisotopicMass.HasValue) ? ((item.ScanPrecursorMass - item.BetaPeptide.PeptideMonisotopicMass.Value - item.PeptideMonisotopicMass.Value - crosslinker.TotalMass) / item.ScanPrecursorMass * 1E6).ToString(CultureInfo.InvariantCulture) : "---")

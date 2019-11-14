@@ -61,6 +61,11 @@ namespace EngineLayer.CrosslinkSearch
             {
                 XLPrecusorSearchMode = new SingleAbsoluteAroundZeroSearchMode(commonParameters.PrecursorMassTolerance.Value);
             }
+
+            if (!CrosslinkSearchTopN)
+            {
+                TopN = int.MaxValue;
+            }
         }
 
         protected override MetaMorpheusEngineResults RunSpecific()
@@ -127,21 +132,37 @@ namespace EngineLayer.CrosslinkSearch
                     // done with indexed scoring; refine scores and create PSMs
                     if (idsOfPeptidesPossiblyObserved.Any())
                     {
+                        int topNForThisScan = TopN;
                         if (CrosslinkSearchTopN)
                         {
+                            //sort by score
                             idsOfPeptidesPossiblyObserved.Sort(new Comparison<int>((x, y) =>
                             {
-                                return scoringTable[y].CompareTo(scoringTable[x]);
+                                int result = scoringTable[y].CompareTo(scoringTable[x]);
+                                return (result != 0) ? result : PeptideIndex[x].FullSequence.CompareTo(PeptideIndex[y].FullSequence);
                             }));
 
                             //Whenever the count exceeds the TopN that we want to keep, we removed everything with a score lower than the score of the TopN-th peptide in the ids list
-                            if (idsOfPeptidesPossiblyObserved.Count() > TopN)
+                            if (idsOfPeptidesPossiblyObserved.Count > TopN)
                             {
-                                idsOfPeptidesPossiblyObserved.RemoveAll(s => scoringTable[s] < scoringTable[idsOfPeptidesPossiblyObserved[TopN - 1]]);
+                                byte scoreAtTopN = scoringTable[idsOfPeptidesPossiblyObserved[TopN - 1]];
+
+                                for (int j = TopN - 1; j < idsOfPeptidesPossiblyObserved.Count; j++)
+                                {
+                                    if (scoringTable[idsOfPeptidesPossiblyObserved[j]] >= scoreAtTopN)
+                                    {
+                                        topNForThisScan = j + 1;
+                                    }
+                                    else
+                                    {
+                                        break;
+                                    }
+                                }
+
                             }
                         }
 
-                        foreach (var id in idsOfPeptidesPossiblyObserved)
+                        foreach (var id in idsOfPeptidesPossiblyObserved.Take(topNForThisScan))
                         {
                             PeptideWithSetModifications peptide = PeptideIndex[id];
 
@@ -215,7 +236,7 @@ namespace EngineLayer.CrosslinkSearch
                     var psmCrossSingle = new CrosslinkSpectralMatch(bestPeptide, theScanBestPeptide[alphaIndex].BestNotch, score, scanIndex, theScan, CommonParameters.DigestionParams, matchedFragmentIons)
                     {
                         CrossType = PsmCrossType.Single,
-                        XlRank = new List<int> { alphaIndex }
+                        XlRank = alphaIndex
                     };
 
                     possibleMatches.Add(psmCrossSingle);
@@ -430,12 +451,26 @@ namespace EngineLayer.CrosslinkSearch
                     var localizedAlpha = new CrosslinkSpectralMatch(alphaPeptide.BestPeptide, alphaPeptide.BestNotch, bestAlphaLocalizedScore, 0, theScan, alphaPeptide.BestPeptide.DigestionParams, bestMatchedAlphaIons);
                     var localizedBeta = new CrosslinkSpectralMatch(betaPeptide.BestPeptide, betaPeptide.BestNotch, bestBetaLocalizedScore, 0, theScan, betaPeptide.BestPeptide.DigestionParams, bestMatchedBetaIons);
 
-                    localizedAlpha.XlRank = new List<int> { ind, inx };
-                    localizedAlpha.XLTotalScore = localizedAlpha.Score + localizedBeta.Score;
-                    localizedAlpha.BetaPeptide = localizedBeta;
+                    localizedAlpha.XlRank =  ind;
+                    localizedBeta.XlRank = inx;
 
                     localizedAlpha.ChildMatchedFragmentIons = bestMatchedChildAlphaIons;
                     localizedBeta.ChildMatchedFragmentIons = bestMatchedChildBetaIons;
+                    
+                    localizedAlpha.LinkPositions = new List<int> { bestAlphaSite };
+                    localizedBeta.LinkPositions = new List<int> { bestBetaSite };
+
+                    if (bestAlphaLocalizedScore < bestBetaLocalizedScore)
+                    {
+                        var x = localizedAlpha;
+                        localizedAlpha = localizedBeta;
+                        localizedBeta = x;
+                    }
+
+                    localizedAlpha.BetaPeptide = localizedBeta;
+
+                    localizedAlpha.XLTotalScore = localizedAlpha.Score + localizedBeta.Score;
+
 
                     if (crosslinker.Cleavable)
                     {
@@ -448,8 +483,6 @@ namespace EngineLayer.CrosslinkSearch
 
                     localizedAlpha.CrossType = PsmCrossType.Cross;
                     localizedCrosslinkedSpectralMatch = localizedAlpha;
-                    localizedCrosslinkedSpectralMatch.LinkPositions = new List<int> { bestAlphaSite };
-                    localizedCrosslinkedSpectralMatch.BetaPeptide.LinkPositions = new List<int> { bestBetaSite };
                 }
             }
 
@@ -565,7 +598,7 @@ namespace EngineLayer.CrosslinkSearch
             }
 
             csm.LinkPositions = new List<int> { bestPosition };
-            csm.XlRank = new List<int> { peptideIndex };
+            csm.XlRank =  peptideIndex;
 
             return csm;
         }
@@ -603,7 +636,7 @@ namespace EngineLayer.CrosslinkSearch
             var csm = new CrosslinkSpectralMatch(originalPeptide, notch, bestScore, scanIndex, theScan, originalPeptide.DigestionParams, bestMatchingFragments)
             {
                 CrossType = PsmCrossType.Loop,
-                XlRank = new List<int> { peptideIndex },
+                XlRank = peptideIndex,
                 LinkPositions = new List<int> { bestModPositionSites.Item1, bestModPositionSites.Item2 }
             };
 

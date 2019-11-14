@@ -20,7 +20,7 @@ namespace EngineLayer.CrosslinkSearch
         public List<int> LinkPositions { get; set; }
         public double XLTotalScore { get; set; } //alpha + beta psmCross.
         public double SecondBestXlScore { get; set; } // score of the second-best CSM; this is used to calculate delta score
-        public List<int> XlRank { get; set; } //only contain 2 intger, consider change to Tuple.
+        public int XlRank { get; set; } //only contain 2 intger, consider change to Tuple.
         public string ParentIonExist { get; set; }
         public int ParentIonExistNum { get; set; }
         public List<int> ParentIonMaxIntensityRanks { get; set; }
@@ -275,7 +275,7 @@ namespace EngineLayer.CrosslinkSearch
             sb.Append(FullSequence + position + "\t");
             sb.Append((PeptideMonisotopicMass.HasValue ? PeptideMonisotopicMass.Value.ToString() : "---")); sb.Append("\t");
             sb.Append(Score + "\t");
-            sb.Append(XlRank[0] + "\t");
+            sb.Append(XlRank + "\t");
 
             if (ChildMatchedFragmentIons == null)
             {
@@ -322,7 +322,7 @@ namespace EngineLayer.CrosslinkSearch
                 sb.Append(BetaPeptide.FullSequence + "(" + BetaPeptide.LinkPositions[0].ToString() + ")" + "\t");
                 sb.Append(BetaPeptide.PeptideMonisotopicMass.ToString() + "\t");
                 sb.Append(BetaPeptide.Score + "\t");
-                sb.Append(XlRank[1] + "\t");
+                sb.Append(BetaPeptide.XlRank + "\t");
 
                 if (BetaPeptide.ChildMatchedFragmentIons == null)
                 {

@@ -201,7 +201,7 @@ namespace TaskLayer
                 }
             }
 
-            ListOfCsmsPerMS2Scan.OrderByDescending(c => c.First().XLTotalScore).ThenByDescending(c => c.First().FullSequence + (c.First().BetaPeptide!= null ? c.First().BetaPeptide.FullSequence : "")).ToList();
+            ListOfCsmsPerMS2Scan = ListOfCsmsPerMS2Scan.OrderByDescending(c => c.First().XLTotalScore).ThenByDescending(c => c.First().FullSequence + (c.First().BetaPeptide!= null ? c.First().BetaPeptide.FullSequence : "")).ToList();
         }
 
 
