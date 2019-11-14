@@ -16,12 +16,12 @@ namespace MetaMorpheusGUI
 
         public static bool LoadGUISettings()
         {
-            bool successfulLoad = File.Exists(Path.Combine(GlobalVariables.DataDir, @"GUIsettings.toml"));
-            if (successfulLoad)
+            bool fileExists= File.Exists(Path.Combine(GlobalVariables.DataDir, @"GUIsettings.toml"));
+            try //catches toml read errors
             {
                 Params = Toml.ReadFile<GuiGlobalParams>(Path.Combine(GlobalVariables.DataDir, @"GUIsettings.toml"));
             }
-            else
+            catch
             {
                 Toml.WriteFile(Params, Path.Combine(GlobalVariables.DataDir, @"GUIsettings.toml"), MetaMorpheusTask.tomlConfig);
             }
@@ -30,7 +30,7 @@ namespace MetaMorpheusGUI
             {
                 Params.AskAboutUpdating = false;
             }
-            return successfulLoad;
+            return fileExists;
         }
 
 
