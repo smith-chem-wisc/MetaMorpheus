@@ -44,7 +44,7 @@ namespace EngineLayer.ModernSearch
                 CurrentPartition + "/" + CommonParameters.TotalPartitions, NestedIds));
 
             byte byteScoreCutoff = (byte)CommonParameters.ScoreCutoff;
-            
+
             Parallel.ForEach(Partitioner.Create(0, ListOfSortedMs2Scans.Length),
                 new ParallelOptions { MaxDegreeOfParallelism = CommonParameters.MaxThreadsToUsePerFile },
                 (range, loopState) =>
@@ -59,12 +59,8 @@ namespace EngineLayer.ModernSearch
                         // do a fast rough first-pass scoring for this scan
                         IndexScoreScan(scan, scoringTable, byteScoreCutoff, idsOfPeptidesPossiblyObserved, CommonParameters.DissociationType);
 
-                        // take top 10 indexed-scored peptides and re-score them using the more accurate but slower scoring algorithm
-                        // NOTE: this "Take 10" section means that modern search is NOT GUARANTEED to produce the same results as classic search
-                        foreach (int id in idsOfPeptidesPossiblyObserved.OrderByDescending(p => scoringTable[p]).Take(10))
-                        {
-                            FineScorePeptide(id, scan, scanIndex);
-                        }
+                        // take indexed-scored peptides and re-score them using the more accurate but slower scoring algorithm
+                        FineScorePeptides(idsOfPeptidesPossiblyObserved, scan, scanIndex, scoringTable);
 
                         //report search progress
                         progress++;
@@ -83,7 +79,7 @@ namespace EngineLayer.ModernSearch
             {
                 psm.ResolveAllAmbiguities();
             }
-
+            
             return new MetaMorpheusEngineResults(this);
         }
 
@@ -132,7 +128,7 @@ namespace EngineLayer.ModernSearch
 
                             bin = FragmentIndex[fragmentBin];
 
-                            if (FragmentIndex[fragmentBin] != null)
+                            if (bin != null)
                             {
                                 // filter bin by peptide mass
                                 var (start, end) = GetFirstAndLastIndexesInBinToIncrement(lowestMassPeptideToLookFor, highestMassPeptideToLookFor, bin, scan.PrecursorMass);
@@ -150,7 +146,6 @@ namespace EngineLayer.ModernSearch
             }
             else
             {
-
                 for (int i = 0; i < scan.ExperimentalFragments.Length; i++)
                 {
                     double mass = scan.ExperimentalFragments[i].monoisotopicMass;
@@ -323,7 +318,7 @@ namespace EngineLayer.ModernSearch
         /// This is a second-pass scoring method which is costly (in terms of computational time and RAM) but calculates the "normal" MetaMorpheus score instead
         /// of the approximation computed by the IndexScoreScan method.
         /// </summary>
-        protected void FineScorePeptide(int id, Ms2ScanWithSpecificMass scan, int scanIndex)
+        protected PeptideSpectralMatch FineScorePeptide(int id, Ms2ScanWithSpecificMass scan, int scanIndex)
         {
             PeptideWithSetModifications peptide = PeptideIndex[id];
 
@@ -346,6 +341,35 @@ namespace EngineLayer.ModernSearch
                 else
                 {
                     PeptideSpectralMatches[scanIndex].AddOrReplace(peptide, thisScore, notch, CommonParameters.ReportAllAmbiguity, matchedIons, 0);
+                }
+            }
+
+            return PeptideSpectralMatches[scanIndex];
+        }
+
+        protected void FineScorePeptides(List<int> peptideIds, Ms2ScanWithSpecificMass scan, int scanIndex, byte[] scoringTable)
+        {
+            // this method re-scores the top-scoring peptides until no peptide in the rough-scored list can out-score
+            // the best-scoring peptide. this guarantees that peptides will be scored accurately, according to metamorpheus score,
+            // while high speed is maintained. however, this means that the delta score is only an approximation. since PEP 
+            // analysis trains on delta score, the modern search output is not guaranteed to be the same as classic search 
+            // output, though it will be very close.
+            byte bestScore = 0;
+            
+            foreach (int id in peptideIds.OrderByDescending(p => scoringTable[p]))
+            {
+                if (scoringTable[id] < bestScore)
+                {
+                    FineScorePeptide(id, scan, scanIndex);
+
+                    break;
+                }
+
+                PeptideSpectralMatch psm = FineScorePeptide(id, scan, scanIndex);
+
+                if (psm != null && psm.Score > bestScore)
+                {
+                    bestScore = (byte)Math.Floor(psm.Score);
                 }
             }
         }
