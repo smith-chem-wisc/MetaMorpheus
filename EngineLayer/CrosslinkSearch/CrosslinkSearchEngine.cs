@@ -174,6 +174,16 @@ namespace EngineLayer.CrosslinkSearch
                                 bestPeptideScoreNotchList.Add(new BestPeptideScoreNotch(peptide, scoringTable[id], notch));
                             }
                         }
+                        else //I guess that we're keeping them all
+                        {
+                            foreach(int id in idsOfPeptidesPossiblyObserved.OrderByDescending(p => scoringTable[p]))
+                            {
+                                PeptideWithSetModifications peptide = PeptideIndex[id];
+
+                                int notch = MassDiffAcceptor.Accepts(scan.PrecursorMass, peptide.MonoisotopicMass);
+                                bestPeptideScoreNotchList.Add(new BestPeptideScoreNotch(peptide, scoringTable[id], notch));
+                            }
+                        }
                         
                         // combine individual peptide hits with crosslinker mass to find best crosslink PSM hit
                         var csms = FindCrosslinkedPeptide(scan, bestPeptideScoreNotchList, scanIndex);
