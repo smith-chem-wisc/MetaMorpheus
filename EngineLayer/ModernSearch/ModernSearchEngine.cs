@@ -60,7 +60,7 @@ namespace EngineLayer.ModernSearch
                         IndexScoreScan(scan, scoringTable, byteScoreCutoff, idsOfPeptidesPossiblyObserved, CommonParameters.DissociationType);
 
                         // take indexed-scored peptides and re-score them using the more accurate but slower scoring algorithm
-                        FineScorePeptides(idsOfPeptidesPossiblyObserved, scan, scanIndex, scoringTable);
+                        FineScorePeptides(idsOfPeptidesPossiblyObserved, scan, scanIndex, scoringTable, CommonParameters.DissociationType);
 
                         //report search progress
                         progress++;
@@ -79,7 +79,7 @@ namespace EngineLayer.ModernSearch
             {
                 psm.ResolveAllAmbiguities();
             }
-            
+
             return new MetaMorpheusEngineResults(this);
         }
 
@@ -347,7 +347,7 @@ namespace EngineLayer.ModernSearch
             return PeptideSpectralMatches[scanIndex];
         }
 
-        protected void FineScorePeptides(List<int> peptideIds, Ms2ScanWithSpecificMass scan, int scanIndex, byte[] scoringTable)
+        protected void FineScorePeptides(List<int> peptideIds, Ms2ScanWithSpecificMass scan, int scanIndex, byte[] scoringTable, DissociationType dissociationType)
         {
             // this method re-scores the top-scoring peptides until no peptide in the rough-scored list can out-score
             // the best-scoring peptide. this guarantees that peptides will be scored accurately, according to metamorpheus score,
@@ -358,7 +358,7 @@ namespace EngineLayer.ModernSearch
             
             foreach (int id in peptideIds.OrderByDescending(p => scoringTable[p]))
             {
-                if (scoringTable[id] < bestScore)
+                if (scoringTable[id] < bestScore && dissociationType != DissociationType.LowCID)
                 {
                     FineScorePeptide(id, scan, scanIndex);
 
