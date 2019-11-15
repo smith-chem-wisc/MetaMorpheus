@@ -135,41 +135,46 @@ namespace EngineLayer.CrosslinkSearch
                         int topNForThisScan = TopN;
                         if (CrosslinkSearchTopN)
                         {
-                            //sort by score
-                            idsOfPeptidesPossiblyObserved.Sort(new Comparison<int>((x, y) =>
-                            {
-                                int result = scoringTable[y].CompareTo(scoringTable[x]);
-                                return (result != 0) ? result : PeptideIndex[x].FullSequence.CompareTo(PeptideIndex[y].FullSequence);
-                            }));
+                            ////sort by score
+                            //idsOfPeptidesPossiblyObserved.Sort(new Comparison<int>((x, y) =>
+                            //{
+                            //    int result = scoringTable[y].CompareTo(scoringTable[x]);
+                            //    return (result != 0) ? result : PeptideIndex[x].FullSequence.CompareTo(PeptideIndex[y].FullSequence);
+                            //}));
+                            
+                            byte bestScore = 0;
+                            byte scoreAtTopN = 0;
+                            int peptideCount = 0;
 
-                            //Whenever the count exceeds the TopN that we want to keep, we removed everything with a score lower than the score of the TopN-th peptide in the ids list
-                            if (idsOfPeptidesPossiblyObserved.Count > TopN)
+                            foreach (int id in idsOfPeptidesPossiblyObserved.OrderByDescending(p => scoringTable[p]))
                             {
-                                byte scoreAtTopN = scoringTable[idsOfPeptidesPossiblyObserved[TopN - 1]];
+                                // peptideCount is the number of peptides to keep
+                                peptideCount++;
 
-                                for (int j = TopN - 1; j < idsOfPeptidesPossiblyObserved.Count; j++)
+                                // bestScore will be set ONCE to the score of the highest-scoring peptide in the list
+                                if (bestScore == 0)
                                 {
-                                    if (scoringTable[idsOfPeptidesPossiblyObserved[j]] >= scoreAtTopN)
-                                    {
-                                        topNForThisScan = j + 1;
-                                    }
-                                    else
-                                    {
-                                        break;
-                                    }
+                                    bestScore = scoringTable[id];
                                 }
 
+                                // Whenever the count exceeds the TopN that we want to keep, we removed everything with a score lower than the score of the TopN-th peptide in the ids list
+                                if (peptideCount == TopN)
+                                {
+                                    scoreAtTopN = scoringTable[id];
+                                }
+
+                                if (scoringTable[id] < scoreAtTopN)
+                                {
+                                    break;
+                                }
+
+                                PeptideWithSetModifications peptide = PeptideIndex[id];
+
+                                int notch = MassDiffAcceptor.Accepts(scan.PrecursorMass, peptide.MonoisotopicMass);
+                                bestPeptideScoreNotchList.Add(new BestPeptideScoreNotch(peptide, scoringTable[id], notch));
                             }
                         }
-
-                        foreach (var id in idsOfPeptidesPossiblyObserved.Take(topNForThisScan))
-                        {
-                            PeptideWithSetModifications peptide = PeptideIndex[id];
-
-                            int notch = MassDiffAcceptor.Accepts(scan.PrecursorMass, peptide.MonoisotopicMass);
-                            bestPeptideScoreNotchList.Add(new BestPeptideScoreNotch(peptide, scoringTable[id], notch));
-                        }
-
+                        
                         // combine individual peptide hits with crosslinker mass to find best crosslink PSM hit
                         var csms = FindCrosslinkedPeptide(scan, bestPeptideScoreNotchList, scanIndex);
 
@@ -451,12 +456,12 @@ namespace EngineLayer.CrosslinkSearch
                     var localizedAlpha = new CrosslinkSpectralMatch(alphaPeptide.BestPeptide, alphaPeptide.BestNotch, bestAlphaLocalizedScore, 0, theScan, alphaPeptide.BestPeptide.DigestionParams, bestMatchedAlphaIons);
                     var localizedBeta = new CrosslinkSpectralMatch(betaPeptide.BestPeptide, betaPeptide.BestNotch, bestBetaLocalizedScore, 0, theScan, betaPeptide.BestPeptide.DigestionParams, bestMatchedBetaIons);
 
-                    localizedAlpha.XlRank =  ind;
+                    localizedAlpha.XlRank = ind;
                     localizedBeta.XlRank = inx;
 
                     localizedAlpha.ChildMatchedFragmentIons = bestMatchedChildAlphaIons;
                     localizedBeta.ChildMatchedFragmentIons = bestMatchedChildBetaIons;
-                    
+
                     localizedAlpha.LinkPositions = new List<int> { bestAlphaSite };
                     localizedBeta.LinkPositions = new List<int> { bestBetaSite };
 
@@ -598,7 +603,7 @@ namespace EngineLayer.CrosslinkSearch
             }
 
             csm.LinkPositions = new List<int> { bestPosition };
-            csm.XlRank =  peptideIndex;
+            csm.XlRank = peptideIndex;
 
             return csm;
         }
