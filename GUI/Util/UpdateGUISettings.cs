@@ -23,6 +23,7 @@ namespace MetaMorpheusGUI
             }
             catch
             {
+                Params = new GuiGlobalParams(); //create an instance
                 Toml.WriteFile(Params, Path.Combine(GlobalVariables.DataDir, @"GUIsettings.toml"), MetaMorpheusTask.tomlConfig);
             }
 

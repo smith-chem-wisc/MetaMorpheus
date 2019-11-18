@@ -31,7 +31,7 @@ namespace MetaMorpheusGUI
         private readonly ObservableCollection<ModTypeForLoc> LocalizeModTypeForTreeViewObservableCollection = new ObservableCollection<ModTypeForLoc>();
         private readonly ObservableCollection<ModTypeForGrid> ModSelectionGridItems = new ObservableCollection<ModTypeForGrid>();
         private readonly ObservableCollection<SilacInfoForDataGrid> StaticSilacLabelsObservableCollection = new ObservableCollection<SilacInfoForDataGrid>();
-
+        private bool AutomaticallyAskAndOrUpdateParametersBasedOnProtease = true;
         private CustomFragmentationWindow CustomFragmentationWindow;
 
         internal SearchTask TheTask { get; private set; }
@@ -40,8 +40,11 @@ namespace MetaMorpheusGUI
         {
             InitializeComponent();
             TheTask = task ?? new SearchTask();
+
+            AutomaticallyAskAndOrUpdateParametersBasedOnProtease = false;
             PopulateChoices();
             UpdateFieldsFromTask(TheTask);
+            AutomaticallyAskAndOrUpdateParametersBasedOnProtease = true;
 
             if (task == null)
             {
@@ -730,59 +733,62 @@ namespace MetaMorpheusGUI
         //this one is used by the GUI
         private void ProteaseSpecificUpdate(object sender, SelectionChangedEventArgs e)
         {
-            switch (((Protease)ProteaseComboBox.SelectedItem).Name)
+            if (AutomaticallyAskAndOrUpdateParametersBasedOnProtease)
             {
-                case "non-specific":
-                    if (UpdateGUISettings.UseNonSpecificRecommendedSettings())
-                    {
-                        MaxPeptideLengthTextBox.Text = "25";
-                    }
-                    break;
-                case "top-down":
-                    if (UpdateGUISettings.UseTopDownRecommendedSettings())
-                    {
-                        UseProvidedPrecursor.IsChecked = false;
-                        DeconvolutionMaxAssumedChargeStateTextBox.Text = "60";
-                        TrimMsMs.IsChecked = false;
-                        CheckBoxNoQuant.IsChecked = true;
-                    }
-                    break;
-                case "Arg-C":
-                    if (UpdateGUISettings.UseArgCRecommendedSettings())
-                    {
-                        ProteaseComboBox.SelectedItem = ProteaseDictionary.Dictionary["trypsin"];
-                    }
-                    break;
-                case "chymotrypsin (don't cleave before proline)":
-                case "chymotrypsin (cleave before proline)":
-                    {
-                        if (UpdateGUISettings.UseChymotrypsinRecommendedSettings())
+                switch (((Protease)ProteaseComboBox.SelectedItem).Name)
+                {
+                    case "non-specific":
+                        if (UpdateGUISettings.UseNonSpecificRecommendedSettings())
                         {
-                            MissedCleavagesTextBox.Text = "3";
-                            SemiSpecificSearchRadioButton.IsChecked = true;
+                            MaxPeptideLengthTextBox.Text = "25";
                         }
-                    }
-                    break;
-                case "elastase":
-                    {
-                        if (UpdateGUISettings.UseElastaseRecommendedSettings())
+                        break;
+                    case "top-down":
+                        if (UpdateGUISettings.UseTopDownRecommendedSettings())
                         {
-                            MissedCleavagesTextBox.Text = "16";
-                            SemiSpecificSearchRadioButton.IsChecked = true;
+                            UseProvidedPrecursor.IsChecked = false;
+                            DeconvolutionMaxAssumedChargeStateTextBox.Text = "60";
+                            TrimMsMs.IsChecked = false;
+                            CheckBoxNoQuant.IsChecked = true;
                         }
-                    }
-                    break;
-                case "semi-trypsin":
-                    {
-                        if(UpdateGUISettings.UseSemiTrypsinRecommendedSettings())
+                        break;
+                    case "Arg-C":
+                        if (UpdateGUISettings.UseArgCRecommendedSettings())
                         {
                             ProteaseComboBox.SelectedItem = ProteaseDictionary.Dictionary["trypsin"];
-                            SemiSpecificSearchRadioButton.IsChecked = true;
                         }
-                    }
-                    break;
-                default:
-                    break;
+                        break;
+                    case "chymotrypsin (don't cleave before proline)":
+                    case "chymotrypsin (cleave before proline)":
+                        {
+                            if (UpdateGUISettings.UseChymotrypsinRecommendedSettings())
+                            {
+                                MissedCleavagesTextBox.Text = "3";
+                                SemiSpecificSearchRadioButton.IsChecked = true;
+                            }
+                        }
+                        break;
+                    case "elastase":
+                        {
+                            if (UpdateGUISettings.UseElastaseRecommendedSettings())
+                            {
+                                MissedCleavagesTextBox.Text = "16";
+                                SemiSpecificSearchRadioButton.IsChecked = true;
+                            }
+                        }
+                        break;
+                    case "semi-trypsin":
+                        {
+                            if (UpdateGUISettings.UseSemiTrypsinRecommendedSettings())
+                            {
+                                ProteaseComboBox.SelectedItem = ProteaseDictionary.Dictionary["trypsin"];
+                                SemiSpecificSearchRadioButton.IsChecked = true;
+                            }
+                        }
+                        break;
+                    default:
+                        break;
+                }
             }
         }
 

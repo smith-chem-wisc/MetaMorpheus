@@ -26,15 +26,18 @@ namespace MetaMorpheusGUI
         private readonly ObservableCollection<ModTypeForTreeView> variableModTypeForTreeViewObservableCollection = new ObservableCollection<ModTypeForTreeView>();
         private readonly ObservableCollection<ModTypeForLoc> localizeModTypeForTreeViewObservableCollection = new ObservableCollection<ModTypeForLoc>();
         private readonly ObservableCollection<ModTypeForTreeView> gptmdModTypeForTreeViewObservableCollection = new ObservableCollection<ModTypeForTreeView>();
+        private bool AutomaticallyAskAndOrUpdateParametersBasedOnProtease = true;
         private CustomFragmentationWindow CustomFragmentationWindow;
 
         public GptmdTaskWindow(GptmdTask myGPTMDtask)
         {
             InitializeComponent();
-            PopulateChoices();
-
             TheTask = myGPTMDtask ?? new GptmdTask();
+
+            AutomaticallyAskAndOrUpdateParametersBasedOnProtease = false;
+            PopulateChoices();
             UpdateFieldsFromTask(TheTask);
+            AutomaticallyAskAndOrUpdateParametersBasedOnProtease = true;
 
             if (myGPTMDtask == null)
             {
@@ -240,48 +243,51 @@ namespace MetaMorpheusGUI
         
         private void ProteaseSpecificUpdate(object sender, SelectionChangedEventArgs e)
         {
-            switch (((Protease)ProteaseComboBox.SelectedItem).Name)
+            if (AutomaticallyAskAndOrUpdateParametersBasedOnProtease)
             {
-                case "non-specific":
-                    if (UpdateGUISettings.UseNonSpecificRecommendedSettings())
-                    {
-                        MaxPeptideLengthTextBox.Text = "25";
-                    }
-                    break;
-                case "top-down":
-                    if (UpdateGUISettings.UseTopDownRecommendedSettings())
-                    {
-                        UseProvidedPrecursor.IsChecked = false;
-                        DeconvolutionMaxAssumedChargeStateTextBox.Text = "60";
-                        TrimMsMs.IsChecked = false;
-                    }
-                    break;
-                case "Arg-C":
-                    if (UpdateGUISettings.UseArgCRecommendedSettings())
-                    {
-                        ProteaseComboBox.SelectedItem = ProteaseDictionary.Dictionary["trypsin"];
-                    }
-                    break;
-                case "chymotrypsin (don't cleave before proline)":
-                case "chymotrypsin (cleave before proline)":
-                    {
-                        if(UpdateGUISettings.UseChymotrypsinRecommendedSettings())
+                switch (((Protease)ProteaseComboBox.SelectedItem).Name)
+                {
+                    case "non-specific":
+                        if (UpdateGUISettings.UseNonSpecificRecommendedSettings())
                         {
-                            MissedCleavagesTextBox.Text = "3";
+                            MaxPeptideLengthTextBox.Text = "25";
                         }
-                    }
-                    break;
-                case "elastase":
-                    {
-                        if(UpdateGUISettings.UseElastaseRecommendedSettings())
+                        break;
+                    case "top-down":
+                        if (UpdateGUISettings.UseTopDownRecommendedSettings())
                         {
-                            MissedCleavagesTextBox.Text = "16";
+                            UseProvidedPrecursor.IsChecked = false;
+                            DeconvolutionMaxAssumedChargeStateTextBox.Text = "60";
+                            TrimMsMs.IsChecked = false;
                         }
-                    }
-                    break;
-                //nothing to change for semi-trypsin
-                default:
-                    break;
+                        break;
+                    case "Arg-C":
+                        if (UpdateGUISettings.UseArgCRecommendedSettings())
+                        {
+                            ProteaseComboBox.SelectedItem = ProteaseDictionary.Dictionary["trypsin"];
+                        }
+                        break;
+                    case "chymotrypsin (don't cleave before proline)":
+                    case "chymotrypsin (cleave before proline)":
+                        {
+                            if (UpdateGUISettings.UseChymotrypsinRecommendedSettings())
+                            {
+                                MissedCleavagesTextBox.Text = "3";
+                            }
+                        }
+                        break;
+                    case "elastase":
+                        {
+                            if (UpdateGUISettings.UseElastaseRecommendedSettings())
+                            {
+                                MissedCleavagesTextBox.Text = "16";
+                            }
+                        }
+                        break;
+                    //nothing to change for semi-trypsin
+                    default:
+                        break;
+                }
             }
         }
 
