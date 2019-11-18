@@ -733,9 +733,12 @@ namespace MetaMorpheusGUI
         //this one is used by the GUI
         private void ProteaseSpecificUpdate(object sender, SelectionChangedEventArgs e)
         {
+            string proteaseName = ((Protease)ProteaseComboBox.SelectedItem).Name;
+            MissedCleavagesTextBox.IsEnabled = !proteaseName.Equals("top-down");
+            
             if (AutomaticallyAskAndOrUpdateParametersBasedOnProtease)
             {
-                switch (((Protease)ProteaseComboBox.SelectedItem).Name)
+                switch (proteaseName)
                 {
                     case "non-specific":
                         if (UpdateGUISettings.UseNonSpecificRecommendedSettings())
@@ -750,6 +753,7 @@ namespace MetaMorpheusGUI
                             DeconvolutionMaxAssumedChargeStateTextBox.Text = "60";
                             TrimMsMs.IsChecked = false;
                             CheckBoxNoQuant.IsChecked = true;
+                            MassDiffAccept3mm.IsChecked = true;
                         }
                         break;
                     case "Arg-C":

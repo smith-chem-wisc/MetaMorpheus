@@ -139,7 +139,7 @@
                                 <!-- Max missed cleavages -->
                                 <StackPanel Orientation="Horizontal" Margin="5 5 5 0" Grid.Column="0" Grid.Row="1">
                                     <Label x:Name="maxMissedCleavagesLabel" Content="Max Missed Cleavages:" Width="150" />
-                                    <TextBox x:Name="MissedCleavagesTextBox"  PreviewTextInput="CheckIfNumber" Width="45" ToolTipService.ShowDuration="999999" ToolTipService.InitialShowDelay="500" TextChanged="ProteaseSpecificUpdate">
+                                    <TextBox x:Name="MissedCleavagesTextBox" PreviewTextInput="CheckIfNumber" Width="45" ToolTipService.ShowDuration="999999" ToolTipService.InitialShowDelay="500" TextChanged="ProteaseSpecificUpdate">
                                         <TextBox.ToolTip>
                                             <TextBlock>
                                     Maximum number of missed proteolytic cleavages allowed.
@@ -446,7 +446,7 @@
                 <!-- END BASIC SETTINGS -->
 
                 <!-- ADVANCED SETTINGS -->
-                <Expander Header="Advanced options" DockPanel.Dock="Top" Margin="10,0,10,10">
+                <Expander Header="Advanced Options" DockPanel.Dock="Top" Margin="10,0,10,10">
                     <StackPanel>
                         <GroupBox Header="File Loading Parameters" DockPanel.Dock="Top">
                             <Expander x:Name="FileLoadExpander" Collapsed="ApmdExpander_Collapsed">

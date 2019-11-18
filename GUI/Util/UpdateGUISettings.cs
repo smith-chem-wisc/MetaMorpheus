@@ -78,10 +78,11 @@ namespace MetaMorpheusGUI
             {
                 var results = ProteaseSpecificMsgBox.Show("Use Top-Down Recommendations?",
                     "We recommend using the following parameters for top-down searches:\n" +
-                    "\t-Uncheck 'Use Provided Precursor'\n" +
-                    "\t-Uncheck 'Trim MS2 Peaks'\n" +
-                    "\t-Check 'No Quantification' (Search Task Only, It's under construction!)\n" +
-                    "\t-Use '60' for 'Deconvolution Max Assumed Charge State'.\n\n" +
+                        "\t-Uncheck 'Use Provided Precursor'\n" +
+                        "\t-Use '60' for 'Deconvolution Max Assumed Charge State'\n" +
+                        "\t-Uncheck 'Trim MS2 Peaks'\n" +
+                        "\t-Check 'No Quantification' (SearchTask Only)\n" +
+                        "\t-Check '1, 2, or 3 Missed Monoisotopic Peaks' (SearchTask Only)\n" +
                     "Would you like to use these recommended settings?");
 
                 if (results.UseSettings)

@@ -363,17 +363,25 @@ namespace MetaMorpheusGUI
 
         private void ProteaseSpecificUpdate(object sender, SelectionChangedEventArgs e)
         {
+            string proteaseName = ((Protease)ProteaseComboBox.SelectedItem).Name;
+            MissedCleavagesTextBox.IsEnabled = !proteaseName.Equals("top-down");
+
             if (AutomaticallyAskAndOrUpdateParametersBasedOnProtease)
             {
-                switch (((Protease)ProteaseComboBox.SelectedItem).Name)
+                switch (proteaseName)
                 {
                     case "non-specific":
                         if (UpdateGUISettings.UseNonSpecificRecommendedSettings())
                         {
                             MaxPeptideLengthTextBox.Text = "25";
                         }
+                        break;                    
+                    case "top-down":
+                        if(UpdateGUISettings.UseTopDownRecommendedSettings())
+                        { 
+                            //nothing to change for top-down in the gui, but we change it when saving
+                        }
                         break;
-                    //nothing to change for top-down here
                     case "Arg-C":
                         if (UpdateGUISettings.UseArgCRecommendedSettings())
                         {

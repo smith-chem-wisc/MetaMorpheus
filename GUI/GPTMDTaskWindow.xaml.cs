@@ -243,9 +243,12 @@ namespace MetaMorpheusGUI
         
         private void ProteaseSpecificUpdate(object sender, SelectionChangedEventArgs e)
         {
+            string proteaseName = ((Protease)ProteaseComboBox.SelectedItem).Name;
+            MissedCleavagesTextBox.IsEnabled = !proteaseName.Equals("top-down");
+
             if (AutomaticallyAskAndOrUpdateParametersBasedOnProtease)
             {
-                switch (((Protease)ProteaseComboBox.SelectedItem).Name)
+                switch (proteaseName)
                 {
                     case "non-specific":
                         if (UpdateGUISettings.UseNonSpecificRecommendedSettings())
