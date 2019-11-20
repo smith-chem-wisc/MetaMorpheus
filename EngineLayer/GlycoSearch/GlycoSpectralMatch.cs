@@ -220,9 +220,9 @@ namespace EngineLayer.GlycoSearch
             if (glycanBoxes != null)
             {
                 sb.Append(TotalScore + "\t");
-                sb.Append(string.Join("|", glycanBoxes.First().glycans.Select(p => p.GlyId.ToString()).ToArray())); sb.Append("\t");
+                sb.Append(string.Join("|", glycanBoxes.First().GlycanIds.Select(p => p.ToString()).ToArray())); sb.Append("\t");
                 sb.Append( "T"); sb.Append("\t");
-                sb.Append(string.Join("|", glycanBoxes.First().glycans.Select(p => p.Struc.ToString()).ToArray())); sb.Append("\t");
+                // sb.Append(string.Join("|", glycanBoxes.First().glycans.Select(p => p.Struc.ToString()).ToArray())); sb.Append("\t");
                 sb.Append((double)glycanBoxes.First().Mass / 1E5); sb.Append("\t");
                 sb.Append(glycanBoxes.First().Structure); sb.Append("\t");
             }

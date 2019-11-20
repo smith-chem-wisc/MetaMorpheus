@@ -3,9 +3,26 @@ using System.IO;
 using System.Linq;
 using Chemistry;
 using System;
+using Proteomics;
+using MassSpectrometry;
 
 namespace EngineLayer
 {
+    public class GlycanIon
+    {
+        public GlycanIon(string ionStruct, int ionMass, byte[] ionKind, int lossIonMass)
+        {
+            IonStruct = ionStruct;
+            IonMass = ionMass;
+            IonKind = ionKind;
+            LossIonMass = lossIonMass;
+        }
+        public string IonStruct { get; set; }
+        public int IonMass { get; set; }
+        public int LossIonMass { get; set; }//Glycan.Mass - IonMass
+        public byte[] IonKind { get; set; }
+    }
+
     public class Glycan
     {
         private static readonly int hydrogenAtomMonoisotopicMass =  Convert.ToInt32(PeriodicTable.GetElement("H").PrincipalIsotope.AtomicMass * 1E5);
@@ -50,7 +67,7 @@ namespace EngineLayer
             Ions = ions;
             Decoy = decoy;
         }
-        
+
         public int GlyId { get; set; }
         public int GlyType { get; set; }
         public string Struc { get; set; }
@@ -58,7 +75,45 @@ namespace EngineLayer
         public byte[] Kind { get; set; }
         public List<GlycanIon> Ions { get; set; }
         public bool Decoy { get; set; }
-        
+        public HashSet<int> DiagnosticIons
+        {
+            get
+            {
+                HashSet<int> diagnosticIons = new HashSet<int>();
+                if (Kind[0] >= 1)
+                {
+                    diagnosticIons.Add(10902895 - hydrogenAtomMonoisotopicMass);
+                    diagnosticIons.Add(11503951 - hydrogenAtomMonoisotopicMass);
+                    diagnosticIons.Add(16306064 - hydrogenAtomMonoisotopicMass);
+                }
+                if (Kind[1] >= 1)
+                {
+                    diagnosticIons.Add(12605550 - hydrogenAtomMonoisotopicMass);
+                    diagnosticIons.Add(13805550 - hydrogenAtomMonoisotopicMass);
+                    diagnosticIons.Add(14406607 - hydrogenAtomMonoisotopicMass);
+                    diagnosticIons.Add(16806607 - hydrogenAtomMonoisotopicMass);
+                    diagnosticIons.Add(18607663 - hydrogenAtomMonoisotopicMass);
+                    diagnosticIons.Add(20408720 - hydrogenAtomMonoisotopicMass);
+                }
+                if (Kind[1] >= 1 && Kind[0] >= 1)
+                {
+                    diagnosticIons.Add(36614002 - hydrogenAtomMonoisotopicMass);
+                }
+                if (Kind[2] >= 1)
+                {
+                    diagnosticIons.Add(27409268 - hydrogenAtomMonoisotopicMass);
+                    diagnosticIons.Add(29210324 - hydrogenAtomMonoisotopicMass);
+                }
+                if (Kind[3] >= 1)
+                {
+                    diagnosticIons.Add(29008759 - hydrogenAtomMonoisotopicMass);
+                    diagnosticIons.Add(30809816 - hydrogenAtomMonoisotopicMass);
+                }
+                return diagnosticIons;
+            }
+
+        }
+
         public static Node Struct2Node(string theGlycanStruct)
         {
             int level = 0;
@@ -251,6 +306,34 @@ namespace EngineLayer
             return y;
         }
 
+        public static int GetMass(byte[] kind)
+        {
+            int mass = 0;
+            if (kind.Length <= 5)
+            {
+                mass = CharMassDic['H'] * kind[0] +
+                CharMassDic['N'] * kind[1] +
+                CharMassDic['A'] * kind[2] +
+                CharMassDic['G'] * kind[3] +
+                CharMassDic['F'] * kind[4];
+            }
+            else
+            {
+                mass = CharMassDic['H'] * kind[0] +
+                CharMassDic['N'] * kind[1] +
+                CharMassDic['A'] * kind[2] +
+                CharMassDic['G'] * kind[3] +
+                CharMassDic['F'] * kind[4] +
+                CharMassDic['X'] * kind[5] +
+                CharMassDic['K'] * kind[6] +
+                CharMassDic['P'] * kind[7] +
+                CharMassDic['S'] * kind[8] +
+                CharMassDic['R'] * kind[9];
+            }
+
+            return mass;
+        }
+
         public static byte[] GetKind(string structure)
         {
             byte[] kind = new byte[] { Convert.ToByte(structure.Count(p => p == 'H')), Convert.ToByte(structure.Count(p => p == 'N')), Convert.ToByte(structure.Count(p => p == 'A')) , Convert.ToByte(structure.Count(p => p == 'G')) , Convert.ToByte(structure.Count(p => p == 'F')) };
@@ -383,89 +466,6 @@ namespace EngineLayer
             }
         }
 
-        public static bool DistingushGlycans(Glycan glycan1, Glycan glycan2)
-        {
-            if (glycan1.Mass == glycan2.Mass)
-            {
-                if (glycan1.Ions.Count() == glycan2.Ions.Count())
-                {
-
-                    for (int i = 0; i < glycan1.Ions.Count(); i++)
-                    {
-                        if (glycan1.Ions[i].IonMass != glycan2.Ions[i].IonMass)
-                        {
-                            return false;
-                        }                   
-                    }
-                    return true;
-                }
-            }
-            return false;
-        }
-
-        public static int GetMass(byte[] kind)
-        {
-            int mass = 0;
-            if (kind.Length <= 5)
-            {
-                mass = CharMassDic['H'] * kind[0] +
-                CharMassDic['N'] * kind[1] +
-                CharMassDic['A'] * kind[2] +
-                CharMassDic['G'] * kind[3] +
-                CharMassDic['F'] * kind[4];
-            }
-            else
-            {
-                mass = CharMassDic['H'] * kind[0] +
-                CharMassDic['N'] * kind[1] +
-                CharMassDic['A'] * kind[2] +
-                CharMassDic['G'] * kind[3] +
-                CharMassDic['F'] * kind[4] +
-                CharMassDic['X'] * kind[5] +
-                CharMassDic['K'] * kind[6] +
-                CharMassDic['P'] * kind[7] +
-                CharMassDic['S'] * kind[8] +
-                CharMassDic['R'] * kind[9];
-            }
-            
-            return mass;
-        }
-
-        public HashSet<int> GetDiagnosticIons()
-        {
-            HashSet<int> diagnosticIons = new HashSet<int>();
-            if (Kind[0] >= 1)
-            {
-                diagnosticIons.Add(10902895 - hydrogenAtomMonoisotopicMass);
-                diagnosticIons.Add(11503951 - hydrogenAtomMonoisotopicMass);
-                diagnosticIons.Add(16306064 - hydrogenAtomMonoisotopicMass);
-            }
-            if (Kind[1] >= 1)
-            {
-                diagnosticIons.Add(12605550 - hydrogenAtomMonoisotopicMass);
-                diagnosticIons.Add(13805550 - hydrogenAtomMonoisotopicMass);
-                diagnosticIons.Add(14406607 - hydrogenAtomMonoisotopicMass);
-                diagnosticIons.Add(16806607 - hydrogenAtomMonoisotopicMass);
-                diagnosticIons.Add(18607663 - hydrogenAtomMonoisotopicMass);
-                diagnosticIons.Add(20408720 - hydrogenAtomMonoisotopicMass);
-            }
-            if (Kind[1] >= 1 && Kind[0] >= 1)
-            {
-                diagnosticIons.Add(36614002 - hydrogenAtomMonoisotopicMass);
-            }
-            if (Kind[2] >= 1)
-            {
-                diagnosticIons.Add(27409268 - hydrogenAtomMonoisotopicMass);
-                diagnosticIons.Add(29210324 - hydrogenAtomMonoisotopicMass);
-            }
-            if (Kind[3] >= 1)
-            {
-                diagnosticIons.Add(29008759 - hydrogenAtomMonoisotopicMass);
-                diagnosticIons.Add(30809816 - hydrogenAtomMonoisotopicMass);
-            }
-            return diagnosticIons;
-        }
-
         public static Glycan Struct2Glycan(string theGlycanStruct, int id)
         {
             Node node = Struct2Node(theGlycanStruct);
@@ -552,24 +552,67 @@ namespace EngineLayer
             return kindString;
         }
 
-        public static IEnumerable<GlycanBox> BuildGlycanBoxes(IEnumerable<Glycan> glycans, int maxNum)
+        //TO THINK: This function could be in Glycan class?
+        public static Modification NGlycanToModification(Glycan glycan)
         {
+            Dictionary<DissociationType, List<double>> neutralLosses = new Dictionary<DissociationType, List<double>>();
+            List<double> lossMasses = glycan.Ions.Where(p => p.IonMass < 57000000).Select(p => (double)p.LossIonMass / 1E5).OrderBy(p => p).ToList(); //570 is a cutoff for glycan ion size 2N1H, which will generate fragment ions. 
+            neutralLosses.Add(DissociationType.HCD, lossMasses);
+            neutralLosses.Add(DissociationType.CID, lossMasses);
+            neutralLosses.Add(DissociationType.EThcD, lossMasses);
 
-            for (int i = 1; i <= maxNum; i++)
-            {
-                foreach (var idCombine in GetKCombsWithRept(Enumerable.Range(0, glycans.Count()), i))
-                {
-                    GlycanBox glycanBox = new GlycanBox();
-                    foreach (var id in idCombine)
-                    {
-                        glycanBox.glycans.Add(glycans.ElementAt(id));
-
-                    }
-                    yield return glycanBox;
-                }
-            }
-
+            Dictionary<DissociationType, List<double>> diagnosticIons = new Dictionary<DissociationType, List<double>>();
+            diagnosticIons.Add(DissociationType.HCD, glycan.DiagnosticIons.Select(p => (double)p / 1E5).ToList());
+            diagnosticIons.Add(DissociationType.CID, glycan.DiagnosticIons.Select(p => (double)p / 1E5).ToList());
+            diagnosticIons.Add(DissociationType.EThcD, glycan.DiagnosticIons.Select(p => (double)p / 1E5).ToList());
+            //string[] motifs = new string[] { "Nxt", "Nxs" };
+            ModificationMotif.TryGetMotif("N", out ModificationMotif finalMotif); //TO DO: only one motif can be write here.
+            var id = Glycan.GetKindString(glycan.Struc);
+            Modification modification = new Modification(
+                _originalId: id,
+                _modificationType: "N-Glycosylation",
+                _monoisotopicMass: (double)glycan.Mass / 1E5,
+                _locationRestriction: "Anywhere.",
+                _target: finalMotif,
+                _neutralLosses: neutralLosses,
+                _diagnosticIons: diagnosticIons
+            );
+            return modification;
         }
+
+        //TO DO: Is it reasonable to transfer Glycan to Modification the first time Glycan is read in? Which could save time.
+        //Use glycan index and modification index to reduce space.
+        //TO THINK: This function could be in Glycan class?
+        public static Modification OGlycanToModification(Glycan glycan)
+        {
+            //TO THINK: No neutralLoss for O-Glyco?
+            //Dictionary<DissociationType, List<double>> neutralLosses = new Dictionary<DissociationType, List<double>>();
+            //List<double> lossMasses = glycan.Ions.Where(p => p.IonMass < 57000000).Select(p => (double)p.LossIonMass / 1E5).OrderBy(p => p).ToList(); //570 is a cutoff for glycan ion size 2N1H, which will generate fragment ions. 
+            //neutralLosses.Add(DissociationType.HCD, lossMasses);
+            //neutralLosses.Add(DissociationType.CID, lossMasses);
+            //neutralLosses.Add(DissociationType.EThcD, lossMasses);
+
+            Dictionary<DissociationType, List<double>> diagnosticIons = new Dictionary<DissociationType, List<double>>();
+            diagnosticIons.Add(DissociationType.HCD, glycan.DiagnosticIons.Select(p => (double)p / 1E5).ToList());
+            diagnosticIons.Add(DissociationType.CID, glycan.DiagnosticIons.Select(p => (double)p / 1E5).ToList());
+            diagnosticIons.Add(DissociationType.EThcD, glycan.DiagnosticIons.Select(p => (double)p / 1E5).ToList());
+            //string[] motifs = new string[] { "t", "s" };
+            ModificationMotif.TryGetMotif("X", out ModificationMotif finalMotif); //TO DO: only one motif can be write here.
+
+            var id = Glycan.GetKindString(glycan.Struc);
+            Modification modification = new Modification(
+                _originalId: id,
+                _modificationType: "O-Glycosylation",
+                _monoisotopicMass: (double)glycan.Mass / 1E5,
+                _locationRestriction: "Anywhere.",
+                _target: finalMotif,
+                // _neutralLosses: neutralLosses,
+                _diagnosticIons: diagnosticIons
+            );
+            return modification;
+        }
+
+        #region Combination or Permutation functions not related to glycan
 
         public static IEnumerable<IEnumerable<T>> GetKCombs<T>(IEnumerable<T> list, int length) where T : IComparable
         {
@@ -595,7 +638,9 @@ namespace EngineLayer
             return GetPermutationsWithRept(list, length - 1).SelectMany(t => list, (t1, t2) => t1.Concat(new T[] { t2 }));
         }
 
-        //Functions are not used now.      
+        #endregion
+
+        #region Functions are not used now. But will be usefull for Structure interpretation.      
 
         private bool SameComponentGlycan(Glycan glycan)
         {
@@ -622,76 +667,81 @@ namespace EngineLayer
             return masses;
         }
 
-    }
-
-    public class GlycanIon
-    {
-        public GlycanIon(string ionStruct, int ionMass, byte[] ionKind, int lossIonMass)
+        public static bool DistingushGlycans(Glycan glycan1, Glycan glycan2)
         {
-            IonStruct = ionStruct;
-            IonMass = ionMass;
-            IonKind = ionKind;
-            LossIonMass = lossIonMass;
+            if (glycan1.Mass == glycan2.Mass)
+            {
+                if (glycan1.Ions.Count() == glycan2.Ions.Count())
+                {
+
+                    for (int i = 0; i < glycan1.Ions.Count(); i++)
+                    {
+                        if (glycan1.Ions[i].IonMass != glycan2.Ions[i].IonMass)
+                        {
+                            return false;
+                        }
+                    }
+                    return true;
+                }
+            }
+            return false;
         }
-        public string IonStruct { get; set; }
-        public int IonMass { get; set; }
-        public int LossIonMass { get; set; }//Glycan.Mass - IonMass
-        public byte[] IonKind { get; set; }
+
+        #endregion
+
     }
 
     public class GlycanBox
     {
-        public int Mass {
-            get
-            {
-                return Glycan.GetMass(Kind);
-            }
-        }
+        public static Glycan[] GlobalOGlycans;
 
-        public bool IsNGlycan;
+        public static Modification[] GlobalOGlycanModifications;
 
-        public List<Glycan> glycans { get; set; } = new List<Glycan>();
-
-        public List<GlycanIon> CommonGlycanIons
+        public static IEnumerable<GlycanBox> BuildOGlycanBoxes(int maxNum)
         {
-            get
-            {
-                //TO DO: A combination of glycanIons need to be considered.
-                List<GlycanIon> glycanIons = new List<GlycanIon>();
-                HashSet<double> ionMasses = new HashSet<double>();
-                foreach (var ion in glycans.SelectMany(p=>p.Ions))
-                {
-                    if (!ionMasses.Contains(ion.IonMass))
-                    {
-                        ionMasses.Add(ion.IonMass);
-                        var lossIonMass = Glycan.GetIonLossMass(Kind, ion.IonKind);
-                        GlycanIon glycanIon = new GlycanIon(null, ion.IonMass, ion.IonKind, lossIonMass);
-                        glycanIons.Add(glycanIon);
-                    }
-                }
 
-                return glycanIons;
+            for (int i = 1; i <= maxNum; i++)
+            {
+                foreach (var idCombine in Glycan.GetKCombsWithRept(Enumerable.Range(0, GlobalOGlycans.Length), i))
+                {
+                    GlycanBox glycanBox = new GlycanBox(idCombine.ToArray());
+                    
+                    yield return glycanBox;
+                }
             }
         }
 
-        public int NumberOfGlycans { get { return glycans.Count; } }
+        public static Modification[] BuildGlobalOGlycanModifications(Glycan[] globalOGlycans)
+        {
+            Modification[] globalOGlycanModifications = new Modification[globalOGlycans.Length];
+
+            for (int i = 0; i < GlobalOGlycans.Length; i++)
+            {
+                globalOGlycanModifications[i] = Glycan.OGlycanToModification(globalOGlycans[i]);
+            }
+            return globalOGlycanModifications;
+        }
+
+        public GlycanBox(int[] ids) {
+            GlycanIds = ids;
+            NumberOfGlycans = ids.Length;
+        }
+
+        public int[] GlycanIds { get; }
+
+        public int NumberOfGlycans { get; }
 
         public byte[] Kind
         {
             get
             {          
-                if (IsNGlycan)
-                {
-                    return glycans.First().Kind;
-                }
-                else
                 {
                     byte[] kind = new byte[5] { 0, 0, 0, 0, 0 };
-                    foreach (var aglycan in glycans)
+                    foreach (var id in GlycanIds)
                     {
                         for (int i = 0; i < 5; i++)
                         {
-                            kind[i] += aglycan.Kind[i];
+                            kind[i] += GlobalOGlycans[id].Kind[i];
                         }
                     }
                     return kind;
@@ -706,6 +756,14 @@ namespace EngineLayer
                 return Glycan.GetKindString(Kind);
             }
            
+        }
+
+        public int Mass
+        {
+            get
+            {
+                return Glycan.GetMass(Kind);
+            }
         }
 
     }

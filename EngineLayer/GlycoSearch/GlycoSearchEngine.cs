@@ -18,7 +18,7 @@ namespace EngineLayer.GlycoSearch
 
         private bool IsOGlycoSearch;
         // crosslinker molecule
-        private readonly bool CrosslinkSearchTopN;
+        private readonly bool GlycoSearchTopN;
         private readonly int TopN;
 
         private readonly bool SearchGlycan182;
@@ -29,13 +29,13 @@ namespace EngineLayer.GlycoSearch
 
         public GlycoSearchEngine(List<GlycoSpectralMatch>[] globalCsms, Ms2ScanWithSpecificMass[] listOfSortedms2Scans, List<PeptideWithSetModifications> peptideIndex,
             List<int>[] fragmentIndex, List<int>[] secondFragmentIndex, int currentPartition, CommonParameters commonParameters, 
-             bool isOGlycoSearch, bool CrosslinkSearchTop, int CrosslinkSearchTopNum, bool searchGlycan182, List<string> nestedIds)
+             bool isOGlycoSearch, bool glycoSearchTop, int glycoSearchTopNum, bool searchGlycan182, List<string> nestedIds)
             : base(null, listOfSortedms2Scans, peptideIndex, fragmentIndex, currentPartition, commonParameters, new OpenSearchMode(), 0, nestedIds)
         {
             this.GlobalCsms = globalCsms;
             this.IsOGlycoSearch = isOGlycoSearch;
-            this.CrosslinkSearchTopN = CrosslinkSearchTop;
-            this.TopN = CrosslinkSearchTopNum;
+            this.GlycoSearchTopN = glycoSearchTop;
+            this.TopN = glycoSearchTopNum;
 
             SecondFragmentIndex = secondFragmentIndex;
             PrecusorSearchMode = commonParameters.PrecursorMassTolerance;
@@ -56,21 +56,18 @@ namespace EngineLayer.GlycoSearch
                     Glycans = NGlycans.OrderBy(p => p.Mass).ToArray();
                 }       
                 
-                //groupedGlycans = NGlycans.GroupBy(p => p.Mass).ToDictionary(p => p.Key, p => p.ToList());
                 DecoyGlycans = Glycan.BuildTargetDecoyGlycans(NGlycans);
             }
             else
             {
-                var OGlycans = Glycan.LoadGlycan(GlobalVariables.OGlycanLocation);
-                OGlycanBoxes = Glycan.BuildGlycanBoxes(OGlycans.ToList(), 3).ToArray();
-                //GroupedOGlycanBoxes = OGlycanBoxes.GroupBy(p => p.Mass).ToDictionary(p=>p.Key, p=>p.ToList());
+                GlycanBox.GlobalOGlycans = Glycan.LoadGlycan(GlobalVariables.OGlycanLocation).ToArray();
+                GlycanBox.GlobalOGlycanModifications = GlycanBox.BuildGlobalOGlycanModifications(GlycanBox.GlobalOGlycans);
+                OGlycanBoxes = GlycanBox.BuildOGlycanBoxes(3).OrderBy(p=>p.Mass).ToArray();
             }
         }
 
-        //public Dictionary<double, List<Glycan>> groupedGlycans { get; }
         private Glycan[] Glycans {get;}
         private Glycan[] DecoyGlycans { get; }
-        //public Dictionary<int, List<GlycanBox>> GroupedOGlycanBoxes { get; }
         private GlycanBox[] OGlycanBoxes { get; }
 
         protected override MetaMorpheusEngineResults RunSpecific()
@@ -139,7 +136,7 @@ namespace EngineLayer.GlycoSearch
                     // done with indexed scoring; refine scores and create PSMs
                     if (idsOfPeptidesPossiblyObserved.Any())
                     {
-                        if (CrosslinkSearchTopN)
+                        if (GlycoSearchTopN)
                         {
                             // take top N hits for this scan
                             idsOfPeptidesPossiblyObserved = idsOfPeptidesPossiblyObserved.OrderByDescending(p => scoringTable[p]).Take(TopN).ToList();
@@ -363,7 +360,7 @@ namespace EngineLayer.GlycoSearch
                                 var allMatchedChildIons = new Dictionary<int, List<MatchedFragmentIon>>();
                                 foreach (var childScan in theScan.ChildScans)
                                 {
-                                    var childFragments = GlycoPeptides.OGlyGetChildTheoreticalFragments(CommonParameters.ChildScanDissociationType, fragments.Item1, theScanBestPeptide[ind].BestPeptide, OGlycanBoxes[iDLow]);
+                                    var childFragments = GlycoPeptides.OGlyGetTheoreticalFragments(CommonParameters.ChildScanDissociationType, fragments.Item1, theScanBestPeptide[ind].BestPeptide, OGlycanBoxes[iDLow]);
 
                                     var matchedChildIons = MatchFragmentIons(childScan, childFragments.Item2, CommonParameters);
 
