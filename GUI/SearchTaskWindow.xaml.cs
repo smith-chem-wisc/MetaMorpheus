@@ -391,11 +391,20 @@ namespace MetaMorpheusGUI
 
             FragmentationTerminus fragmentationTerminus = GetFragmentationTerminus();
 
-            SilacUpdates(out string silacError);
-            if(silacError.Length!=0)
+            if (CheckBoxSILAC.IsChecked.Value)
             {
-                MessageBox.Show(silacError);
-                return;
+                SilacUpdates(out string silacError);
+                if (silacError.Length != 0)
+                {
+                    MessageBox.Show(silacError);
+                    return;
+                }
+            }
+            else
+            {
+                TheTask.SearchParameters.SilacLabels = null;
+                TheTask.SearchParameters.StartTurnoverLabel = null;
+                TheTask.SearchParameters.EndTurnoverLabel = null;
             }
 
             int maxMissedCleavages = string.IsNullOrEmpty(MissedCleavagesTextBox.Text) ? int.MaxValue : (int.Parse(MissedCleavagesTextBox.Text, NumberStyles.Any, CultureInfo.InvariantCulture));
