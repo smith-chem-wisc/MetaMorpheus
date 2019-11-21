@@ -114,7 +114,7 @@ namespace MetaMorpheusGUI
             RbtOGlycoSearch.IsChecked = task._glycoSearchParameters.IsOGlycoSearch;
 
             ckbTopNum.IsChecked = task._glycoSearchParameters.RestrictToTopNHits;
-            txtTopNum.Text = task._glycoSearchParameters.CrosslinkSearchTopNum.ToString(CultureInfo.InvariantCulture);
+            txtTopNum.Text = task._glycoSearchParameters.GlycoSearchTopNum.ToString(CultureInfo.InvariantCulture);
 
 
             cbbPrecusorMsTl.SelectedIndex = task.CommonParameters.PrecursorMassTolerance is AbsoluteTolerance ? 0 : 1;
@@ -240,7 +240,7 @@ namespace MetaMorpheusGUI
             }
             //TheTask.SearchParameters.SearchGlycoWithBgYgIndex = CkbSearchGlycoWithBgYgIndex.IsChecked.Value;
             TheTask._glycoSearchParameters.RestrictToTopNHits = ckbTopNum.IsChecked.Value;
-            TheTask._glycoSearchParameters.CrosslinkSearchTopNum = int.Parse(txtTopNum.Text, CultureInfo.InvariantCulture);
+            TheTask._glycoSearchParameters.GlycoSearchTopNum = int.Parse(txtTopNum.Text, CultureInfo.InvariantCulture);
             TheTask._glycoSearchParameters.DecoyType = checkBoxDecoy.IsChecked.Value ? DecoyType.Reverse : DecoyType.None;
 
             Protease protease = (Protease)proteaseComboBox.SelectedItem;

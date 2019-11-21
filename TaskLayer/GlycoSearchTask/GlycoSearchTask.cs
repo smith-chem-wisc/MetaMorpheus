@@ -20,14 +20,16 @@ namespace TaskLayer
         {
             //Default parameter setting which is different from SearchTask, can be overwriten
             var digestPara = new DigestionParams(
-                minPeptideLength: 5
+                minPeptideLength: 5,
+                maxMissedCleavages: 5
+
             );
             CommonParameters = new CommonParameters(
                 precursorMassTolerance: new PpmTolerance(10),
                 scoreCutoff: 3,
                 trimMsMsPeaks: false,
-                digestionParams: digestPara,
-                addCompIons: true
+                digestionParams: digestPara            
+                
             );
 
             _glycoSearchParameters = new GlycoSearchParameters();
@@ -118,7 +120,7 @@ namespace TaskLayer
 
                     Status("Searching files...", taskId);
                     new GlycoSearchEngine(newCsmsPerMS2ScanPerFile, arrayOfMs2ScansSortedByMass, peptideIndex, fragmentIndex, secondFragmentIndex, currentPartition, combinedParams, 
-                        _glycoSearchParameters.IsOGlycoSearch, _glycoSearchParameters.RestrictToTopNHits, _glycoSearchParameters.CrosslinkSearchTopNum, _glycoSearchParameters.SearchGlycan182, thisId).Run();
+                        _glycoSearchParameters.IsOGlycoSearch, _glycoSearchParameters.RestrictToTopNHits, _glycoSearchParameters.GlycoSearchTopNum, _glycoSearchParameters.SearchGlycan182, thisId).Run();
 
                     ReportProgress(new ProgressEventArgs(100, "Done with search " + (currentPartition + 1) + "/" + CommonParameters.TotalPartitions + "!", thisId));
                     if (GlobalVariables.StopLoops) { break; }

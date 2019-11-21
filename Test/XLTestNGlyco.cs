@@ -88,7 +88,7 @@ namespace Test
             var msDataFile = myFileManager.LoadFile(filePath, commonParameters);
             var listOfSortedms2Scans = MetaMorpheusTask.GetMs2Scans(msDataFile, filePath, commonParameters).ToArray();
 
-            var glycanMod = GlycoPeptides.NGlycanToModification(glycan);
+            var glycanMod = Glycan.NGlycanToModification(glycan);
             var glycopep = GlycoPeptides.GenerateGlycopeptide(sites[0], aPeptideWithSetModifications.Last(), glycan);
             var fragmentIons = glycopep.Fragment(DissociationType.HCD, FragmentationTerminus.Both).ToList();
 
@@ -150,7 +150,7 @@ namespace Test
             var precusorMatched = XLPrecusorSearchMode.Accepts(aPeptideWithSetModifications.Last().MonoisotopicMass + (double)glycan.Mass/1E5, listOfSortedms2Scans[0].PrecursorMass);
             Assert.AreEqual(precusorMatched, 0);
 
-            var glycanMod = GlycoPeptides.NGlycanToModification(glycan);
+            var glycanMod = Glycan.NGlycanToModification(glycan);
             var glycopep = GlycoPeptides.GenerateGlycopeptide(sites[0], aPeptideWithSetModifications.Last(), glycan);
             var fragmentIons = glycopep.Fragment(DissociationType.EThcD, FragmentationTerminus.Both).ToList();
                
@@ -280,7 +280,7 @@ namespace Test
             {
                 foreach (var glycan in NGlycans)
                 {
-                    var mod = GlycoPeptides.NGlycanToModification(glycan.Value.First());
+                    var mod = Glycan.NGlycanToModification(glycan.Value.First());
                     List<string> temp = new List<string>();
                     temp.Add(mod.ToString());
                     temp.Add(@"//");

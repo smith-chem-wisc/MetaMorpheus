@@ -28,13 +28,9 @@ namespace Test
         [Test]
         public static void OGlycoTest_LoadGlycanBox()
         {
-            var OGlycans = Glycan.LoadGlycan(GlobalVariables.OGlycanLocation);
-            var GlycanBoxes = Glycan.BuildGlycanBoxes(OGlycans.ToList(), 3);
+            GlycanBox.GlobalOGlycans = Glycan.LoadGlycan(GlobalVariables.OGlycanLocation).ToArray();
+            var GlycanBoxes = GlycanBox.BuildOGlycanBoxes(3);
             Assert.AreEqual(GlycanBoxes.Count(), 454);
-
-            var glycanBoxGroups = GlycanBoxes.GroupBy(p => p.Mass).ToDictionary(p => p.Key, p => p.ToList());
-            Assert.AreEqual(glycanBoxGroups.Count(), 184);
-
         }
 
         [Test]
@@ -74,6 +70,16 @@ namespace Test
 
             Assert.AreEqual(kperm_rep.Count(), 125);
 
+        }
+
+        [Test]
+        public static void OGlycoTest_StcE()
+        {
+            Protein p1 = new Protein("MPLFKNTSVSSLYSGTKCR", "");
+            var alphaPeptide = p1.Digest(new DigestionParams(protease: "StcE-trypsin"),
+                new List<Modification>(), new List<Modification>()).ToArray();
+            Assert.That(alphaPeptide.Length == 8);
+            Assert.That(alphaPeptide.First().BaseSequence == "MPLFKNTSV");
         }
     }
 }

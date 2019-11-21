@@ -11,13 +11,10 @@ namespace TaskLayer
         {
             IsOGlycoSearch = true;
             DecoyType = DecoyType.Reverse;
-            Crosslinker = GlobalVariables.Crosslinkers.First();
             RestrictToTopNHits = true;
-            CrosslinkSearchTopNum = 300;
+            GlycoSearchTopNum = 50;
             MassDiffAcceptorType = MassDiffAcceptorType.OneMM;
 
-            WriteOutputForPercolator = false;
-            WritePepXml = true;
             AnalyzeOxiniumIons = false;
             FilterScanOxiniumIons = false;
             SearchGlycan182 = false;
@@ -25,12 +22,9 @@ namespace TaskLayer
 
         public bool IsOGlycoSearch { get; set; }
         public DecoyType DecoyType { get; set; }
-        public Crosslinker Crosslinker { get; set; }
-        public int CrosslinkSearchTopNum { get; set; }
+        public int GlycoSearchTopNum { get; set; }
         public bool RestrictToTopNHits { get; set; }
         public MassDiffAcceptorType MassDiffAcceptorType { get; set; }
-        public bool WriteOutputForPercolator { get; set; }
-        public bool WritePepXml { get; set; }
 
         public bool AnalyzeOxiniumIons { get; set; }
         public bool FilterScanOxiniumIons { get; set; }
