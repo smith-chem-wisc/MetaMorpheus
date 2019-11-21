@@ -114,6 +114,11 @@ namespace EngineLayer
             parsedHeader.Add(PsmTsvHeader.ParentIonsLabel, Array.IndexOf(spl, PsmTsvHeader.ParentIonsLabel));
             parsedHeader.Add(PsmTsvHeader.Ms2ScanRetentionTime, Array.IndexOf(spl, PsmTsvHeader.Ms2ScanRetentionTime));
 
+            parsedHeader.Add(PsmTsvHeader_Glyco.GlycanIDs, Array.IndexOf(spl, PsmTsvHeader_Glyco.GlycanIDs));
+            parsedHeader.Add(PsmTsvHeader_Glyco.GlycanMass, Array.IndexOf(spl, PsmTsvHeader_Glyco.GlycanMass));
+            parsedHeader.Add(PsmTsvHeader_Glyco.GlycanStructure, Array.IndexOf(spl, PsmTsvHeader_Glyco.GlycanStructure));
+            parsedHeader.Add(PsmTsvHeader_Glyco.GlycanComposition, Array.IndexOf(spl, PsmTsvHeader_Glyco.GlycanComposition));
+
             return parsedHeader;
         }
     }

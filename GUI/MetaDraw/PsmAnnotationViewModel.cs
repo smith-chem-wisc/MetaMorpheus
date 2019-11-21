@@ -338,7 +338,7 @@ namespace ViewModels
 
             if (matchedIon.NeutralTheoreticalProduct.NeutralLoss != 0)
             {
-                peakAnnotationText += "-" + matchedIon.NeutralTheoreticalProduct.NeutralLoss.ToString("F2") + " (" + matchedIon.Mz.ToString("F3") + ")";
+                peakAnnotationText += "-" + matchedIon.NeutralTheoreticalProduct.NeutralLoss.ToString("F2");
             }
 
             if (annotateCharge)

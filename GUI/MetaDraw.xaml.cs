@@ -212,7 +212,12 @@ namespace MetaMorpheusGUI
 
                 // draw child scans
                 HashSet<int> scansDrawn = new HashSet<int>();
-                foreach (var childScanMatchedIons in psmToDraw.ChildScanMatchedIons.Concat(psmToDraw.BetaPeptideChildScanMatchedIons))
+                var allChildScanMatchedIons = psmToDraw.ChildScanMatchedIons;
+                if (psmToDraw.BetaPeptideChildScanMatchedIons != null)
+                {
+                    allChildScanMatchedIons = allChildScanMatchedIons.Concat(psmToDraw.BetaPeptideChildScanMatchedIons).ToDictionary(p=>p.Key, q=>q.Value);
+                }
+                foreach (var childScanMatchedIons in allChildScanMatchedIons)
                 {
                     int scanNumber = childScanMatchedIons.Key;
 

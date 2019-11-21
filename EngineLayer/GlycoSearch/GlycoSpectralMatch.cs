@@ -121,12 +121,10 @@ namespace EngineLayer.GlycoSearch
             sb.Append("Precursor MZ" + '\t');
             sb.Append("Precursor Charge" + '\t');
             sb.Append("Precursor Mass" + '\t');
-            //sb.Append("Link Residues" + "\t");
 
             sb.Append("Protein Accession" + '\t');
             sb.Append("Protein Name" + '\t');
             sb.Append("Start and End Residues In Protein" + '\t');
-            //sb.Append("Protein Link Site" + '\t');
             sb.Append("Base Sequence" + '\t');
             sb.Append("Full Sequence" + '\t');
             sb.Append("Peptide Monoisotopic Mass" + '\t');
@@ -139,7 +137,6 @@ namespace EngineLayer.GlycoSearch
             sb.Append("Matched Ion Mass Diff (Ppm)" + '\t');
             sb.Append("Matched Ion Intensities" + '\t');
             sb.Append("Matched Ion Counts" + '\t');
-            sb.Append("Child Scan Matched Ion Counts" + '\t');
 
             sb.Append("Decoy/Contaminant/Target" + '\t');
             sb.Append("QValue" + '\t');
@@ -180,23 +177,40 @@ namespace EngineLayer.GlycoSearch
             sb.Append(Score + "\t");
             sb.Append(Rank[0] + "\t");
 
-            foreach (var mid in MatchedIonDataDictionary(this.MatchedFragmentIons))
+            if (ChildMatchedFragmentIons == null)
             {
-                sb.Append(mid.Value);
-                sb.Append("\t");
+                foreach (var mid in MatchedIonDataDictionary(this.MatchedFragmentIons))
+                {
+                    sb.Append(mid.Value);
+                    sb.Append("\t");
+                }
             }
-
-            StringBuilder childScanFragmentStringbuilder = new StringBuilder();
-            if (ChildMatchedFragmentIons != null)
+            else
             {
+                StringBuilder[] scanFragmentStringbuilder = new StringBuilder[6];
+                int i = 0;
+                foreach (var mid in MatchedIonDataDictionary(this.MatchedFragmentIons))
+                {
+                    scanFragmentStringbuilder[i] = new StringBuilder();
+                    scanFragmentStringbuilder[i].Append("{" + ScanNumber + "@" + mid.Value + "}");
+                    i++;
+                }
                 foreach (var childScan in ChildMatchedFragmentIons)
                 {
+                    int j = 0;
                     int oneBasedScan = childScan.Key;
-                    var matchedIonsDict = MatchedIonDataDictionary(childScan.Value);
-                    childScanFragmentStringbuilder.Append("{" + oneBasedScan + "|" + matchedIonsDict[PsmTsvHeader.MatchedIonMzRatios] + "}");
-                }               
+                    foreach (var mid in MatchedIonDataDictionary(childScan.Value))
+                    {
+                        scanFragmentStringbuilder[j].Append("{" + oneBasedScan + "@" + mid.Value + "}");
+                        j++;
+                    }
+
+                }
+                foreach (var s in scanFragmentStringbuilder)
+                {
+                    sb.Append(s.ToString() + "\t");
+                }
             }
-            sb.Append(childScanFragmentStringbuilder.ToString() + "\t");
 
             sb.Append((IsDecoy) ? "D" : (IsContaminant) ? "C" : "T");
             sb.Append("\t");
@@ -222,9 +236,15 @@ namespace EngineLayer.GlycoSearch
                 sb.Append(TotalScore + "\t");
                 sb.Append(string.Join("|", glycanBoxes.First().GlycanIds.Select(p => p.ToString()).ToArray())); sb.Append("\t");
                 sb.Append( "T"); sb.Append("\t");
-                // sb.Append(string.Join("|", glycanBoxes.First().glycans.Select(p => p.Struc.ToString()).ToArray())); sb.Append("\t");
+                var glycans = new Glycan[glycanBoxes.First().NumberOfGlycans];
+                for (int i = 0; i < glycanBoxes.First().NumberOfGlycans; i++)
+                {
+                    glycans[i] = GlycanBox.GlobalOGlycans[glycanBoxes.First().GlycanIds[i]];
+                }
+
+                sb.Append(string.Join("|", glycans.Select(p => p.Struc.ToString()).ToArray())); sb.Append("\t");
                 sb.Append((double)glycanBoxes.First().Mass / 1E5); sb.Append("\t");
-                sb.Append(glycanBoxes.First().Structure); sb.Append("\t");
+                sb.Append(string.Join("|", glycanBoxes.First().Kind.Select(p=>p.ToString()))); sb.Append("\t");
             }
 
             return sb.ToString();

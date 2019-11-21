@@ -53,7 +53,6 @@ namespace EngineLayer
         public List<MatchedFragmentIon> VariantCrossingIons { get; }
 
         //For crosslink
-
         public string CrossType { get; }
         public string LinkResidues { get; }
         public int? ProteinLinkSite { get; }
@@ -70,6 +69,12 @@ namespace EngineLayer
         public double? XLTotalScore { get; }
         public string ParentIons { get; }
         public double? RetentionTime { get; }
+
+        //For Glyco
+        public string GlycanIDs { get; set; }
+        public string GlycanStructure { get; set; }
+        public double? GlycanMass { get; set; }
+        public string GlycanComposition { get; set; }
 
         public PsmFromTsv(string line, char[] split, Dictionary<string, int> parsedHeader)
         {
@@ -145,6 +150,12 @@ namespace EngineLayer
             {
                 BetaPeptideChildScanMatchedIons.Remove(Ms2ScanNumber);
             }
+
+            //For Glyco
+            GlycanIDs = (parsedHeader[PsmTsvHeader_Glyco.GlycanIDs] < 0) ? null : spl[parsedHeader[PsmTsvHeader_Glyco.GlycanIDs]];
+            GlycanStructure = (parsedHeader[PsmTsvHeader_Glyco.GlycanStructure] < 0) ? null : spl[parsedHeader[PsmTsvHeader_Glyco.GlycanStructure]];
+            GlycanMass = (parsedHeader[PsmTsvHeader_Glyco.GlycanMass] < 0) ? null : (double?)double.Parse(spl[parsedHeader[PsmTsvHeader_Glyco.GlycanMass]]);
+            GlycanComposition = (parsedHeader[PsmTsvHeader_Glyco.GlycanComposition] < 0) ? null : spl[parsedHeader[PsmTsvHeader_Glyco.GlycanComposition]];
         }
 
         //Used to remove Silac labels for proper annotation

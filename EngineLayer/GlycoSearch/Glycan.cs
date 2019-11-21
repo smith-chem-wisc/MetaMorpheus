@@ -585,12 +585,12 @@ namespace EngineLayer
         //TO THINK: This function could be in Glycan class?
         public static Modification OGlycanToModification(Glycan glycan)
         {
-            //TO THINK: No neutralLoss for O-Glyco?
-            //Dictionary<DissociationType, List<double>> neutralLosses = new Dictionary<DissociationType, List<double>>();
-            //List<double> lossMasses = glycan.Ions.Where(p => p.IonMass < 57000000).Select(p => (double)p.LossIonMass / 1E5).OrderBy(p => p).ToList(); //570 is a cutoff for glycan ion size 2N1H, which will generate fragment ions. 
-            //neutralLosses.Add(DissociationType.HCD, lossMasses);
-            //neutralLosses.Add(DissociationType.CID, lossMasses);
-            //neutralLosses.Add(DissociationType.EThcD, lossMasses);
+            //TO THINK: what the neutralLoss for O-Glyco?
+            Dictionary<DissociationType, List<double>> neutralLosses = new Dictionary<DissociationType, List<double>>();
+            List<double> lossMasses = new List<double>() { (double)glycan.Mass/1E5 };
+            neutralLosses.Add(DissociationType.HCD, lossMasses);
+            neutralLosses.Add(DissociationType.CID, lossMasses);
+            neutralLosses.Add(DissociationType.EThcD, lossMasses);
 
             Dictionary<DissociationType, List<double>> diagnosticIons = new Dictionary<DissociationType, List<double>>();
             diagnosticIons.Add(DissociationType.HCD, glycan.DiagnosticIons.Select(p => (double)p / 1E5).ToList());
@@ -606,7 +606,7 @@ namespace EngineLayer
                 _monoisotopicMass: (double)glycan.Mass / 1E5,
                 _locationRestriction: "Anywhere.",
                 _target: finalMotif,
-                // _neutralLosses: neutralLosses,
+                _neutralLosses: neutralLosses,
                 _diagnosticIons: diagnosticIons
             );
             return modification;
