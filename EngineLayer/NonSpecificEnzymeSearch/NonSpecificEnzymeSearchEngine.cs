@@ -52,6 +52,7 @@ namespace EngineLayer.NonSpecificEnzymeSearch
             {
                 byte[] scoringTable = new byte[PeptideIndex.Count];
                 HashSet<int> idsOfPeptidesPossiblyObserved = new HashSet<int>();
+                List<Product> peptideTheorProducts = new List<Product>();
 
                 for (; i < ListOfSortedMs2Scans.Length; i += maxThreadsPerFile)
                 {
@@ -112,14 +113,14 @@ namespace EngineLayer.NonSpecificEnzymeSearch
                             foreach (int id in idsOfPeptidesPossiblyObserved.Where(id => scoringTable[id] == maxInitialScore))
                             {
                                 PeptideWithSetModifications peptide = PeptideIndex[id];
-                                List<Product> peptideTheorProducts = peptide.Fragment(CommonParameters.DissociationType, CommonParameters.DigestionParams.FragmentationTerminus).ToList();
+                                peptide.Fragment(CommonParameters.DissociationType, CommonParameters.DigestionParams.FragmentationTerminus, peptideTheorProducts);
 
                                 Tuple<int, PeptideWithSetModifications> notchAndUpdatedPeptide = Accepts(peptideTheorProducts, scan.PrecursorMass, peptide, CommonParameters.DigestionParams.FragmentationTerminus, MassDiffAcceptor, semiSpecificSearch);
                                 int notch = notchAndUpdatedPeptide.Item1;
                                 if (notch >= 0)
                                 {
                                     peptide = notchAndUpdatedPeptide.Item2;
-                                    peptideTheorProducts = peptide.Fragment(CommonParameters.DissociationType, FragmentationTerminus.Both).ToList();
+                                    peptide.Fragment(CommonParameters.DissociationType, FragmentationTerminus.Both, peptideTheorProducts);
                                     List<MatchedFragmentIon> matchedIons = MatchFragmentIons(scan, peptideTheorProducts, ModifiedParametersNoComp);
 
                                     double thisScore = CalculatePeptideScore(scan.TheScan, matchedIons);
@@ -186,7 +187,7 @@ namespace EngineLayer.NonSpecificEnzymeSearch
                     PeptideWithSetModifications updatedPwsm = null;
                     if (fragmentationTerminus == FragmentationTerminus.N)
                     {
-                        int endResidue = peptide.OneBasedStartResidueInProtein + fragment.TerminusFragment.FragmentNumber - 1; //-1 for one based index
+                        int endResidue = peptide.OneBasedStartResidueInProtein + fragment.FragmentNumber - 1; //-1 for one based index
                         Dictionary<int, Modification> updatedMods = new Dictionary<int, Modification>();
                         foreach (KeyValuePair<int, Modification> mod in peptide.AllModsOneIsNterminus)
                         {
@@ -203,7 +204,7 @@ namespace EngineLayer.NonSpecificEnzymeSearch
                     }
                     else //if C terminal ions, shave off the n-terminus
                     {
-                        int startResidue = peptide.OneBasedEndResidueInProtein - fragment.TerminusFragment.FragmentNumber + 1; //plus one for one based index
+                        int startResidue = peptide.OneBasedEndResidueInProtein - fragment.FragmentNumber + 1; //plus one for one based index
                         Dictionary<int, Modification> updatedMods = new Dictionary<int, Modification>();  //updateMods
                         int indexShift = startResidue - peptide.OneBasedStartResidueInProtein;
                         foreach (KeyValuePair<int, Modification> mod in peptide.AllModsOneIsNterminus)

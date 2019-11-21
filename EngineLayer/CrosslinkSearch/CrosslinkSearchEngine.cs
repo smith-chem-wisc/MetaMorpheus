@@ -198,7 +198,8 @@ namespace EngineLayer.CrosslinkSearch
                 //Single Peptide
                 if (XLPrecusorSearchMode.Accepts(theScan.PrecursorMass, bestPeptide.MonoisotopicMass) >= 0)
                 {
-                    List<Product> products = bestPeptide.Fragment(CommonParameters.DissociationType, FragmentationTerminus.Both).ToList();
+                    List<Product> products = new List<Product>();
+                    bestPeptide.Fragment(CommonParameters.DissociationType, FragmentationTerminus.Both, products);
                     var matchedFragmentIons = MatchFragmentIons(theScan, products, CommonParameters);
                     double score = CalculatePeptideScore(theScan.TheScan, matchedFragmentIons);
 
@@ -451,7 +452,7 @@ namespace EngineLayer.CrosslinkSearch
             bool shortMassAlphaMs3 = XLPrecusorSearchMode.Accepts(childScan.PrecursorMass, mainPeptide.BestPeptide.MonoisotopicMass + Crosslinker.CleaveMassShort) >= 0;
             bool longMassAlphaMs3 = XLPrecusorSearchMode.Accepts(childScan.PrecursorMass, mainPeptide.BestPeptide.MonoisotopicMass + Crosslinker.CleaveMassLong) >= 0;
 
-            List<Product> childProducts;
+            List<Product> childProducts = new List<Product>();
 
             if (Crosslinker.Cleavable && (shortMassAlphaMs3 || longMassAlphaMs3))
             {
@@ -473,7 +474,7 @@ namespace EngineLayer.CrosslinkSearch
                     mainPeptide.BestPeptide.CleavageSpecificityForFdrCategory, mainPeptide.BestPeptide.PeptideDescription,
                     mainPeptide.BestPeptide.MissedCleavages, mod, mainPeptide.BestPeptide.NumFixedMods);
 
-                childProducts = peptideWithMod.Fragment(CommonParameters.ChildScanDissociationType, FragmentationTerminus.Both).ToList();
+                peptideWithMod.Fragment(CommonParameters.ChildScanDissociationType, FragmentationTerminus.Both, childProducts);
             }
             else if (Math.Abs(childScan.PrecursorMass - parentScan.PrecursorMass) < 0.01 && CommonParameters.DissociationType != CommonParameters.ChildScanDissociationType)
             {
@@ -520,7 +521,8 @@ namespace EngineLayer.CrosslinkSearch
                 var localizedPeptide = new PeptideWithSetModifications(originalPeptide.Protein, originalPeptide.DigestionParams, originalPeptide.OneBasedStartResidueInProtein,
                     originalPeptide.OneBasedEndResidueInProtein, originalPeptide.CleavageSpecificityForFdrCategory, originalPeptide.PeptideDescription, originalPeptide.MissedCleavages, mods, originalPeptide.NumFixedMods);
 
-                var products = localizedPeptide.Fragment(commonParameters.DissociationType, FragmentationTerminus.Both).ToList();
+                var products = new List<Product>();
+                localizedPeptide.Fragment(commonParameters.DissociationType, FragmentationTerminus.Both, products);
                 var matchedFragmentIons = MatchFragmentIons(theScan, products, commonParameters);
 
                 double score = CalculatePeptideScore(theScan.TheScan, matchedFragmentIons);

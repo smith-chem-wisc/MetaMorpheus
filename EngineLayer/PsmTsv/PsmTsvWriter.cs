@@ -258,63 +258,63 @@ namespace EngineLayer
 
             if (!nullPsm)
             {
-                // using ", " instead of "," improves human readability
-                const string delimiter = ", ";
+                //// using ", " instead of "," improves human readability
+                //const string delimiter = ", ";
 
-                var matchedIonsGroupedByProductType = matchedIons.GroupBy(i => i.NeutralTheoreticalProduct.ProductType).OrderBy(i => i.Key).ToList();
+                //var matchedIonsGroupedByProductType = matchedIons.GroupBy(i => i.NeutralTheoreticalProduct.ProductType).OrderBy(i => i.Key).ToList();
 
-                foreach (var productType in matchedIonsGroupedByProductType)
-                {
-                    var products = productType.OrderBy(p => p.NeutralTheoreticalProduct.TerminusFragment.FragmentNumber)
-                        .ToList();
+                //foreach (var productType in matchedIonsGroupedByProductType)
+                //{
+                //    var products = productType.OrderBy(p => p.NeutralTheoreticalProduct.TerminusFragment.FragmentNumber)
+                //        .ToList();
 
-                    stringBuilders.ForEach(p => p.Append("["));
+                //    stringBuilders.ForEach(p => p.Append("["));
 
-                    for (int i = 0; i < products.Count; i++)
-                    {
-                        MatchedFragmentIon ion = products[i];
-                        string ionLabel;
+                //    for (int i = 0; i < products.Count; i++)
+                //    {
+                //        MatchedFragmentIon ion = products[i];
+                //        string ionLabel;
 
-                        double massError = ion.Mz.ToMass(ion.Charge) - ion.NeutralTheoreticalProduct.NeutralMass;
-                        double ppmMassError = massError / ion.NeutralTheoreticalProduct.NeutralMass * 1e6;
+                //        double massError = ion.Mz.ToMass(ion.Charge) - ion.NeutralTheoreticalProduct.NeutralMass;
+                //        double ppmMassError = massError / ion.NeutralTheoreticalProduct.NeutralMass * 1e6;
 
-                        if (ion.NeutralTheoreticalProduct.NeutralLoss == 0)
-                        {
-                            // no neutral loss
-                            ionLabel = ion.NeutralTheoreticalProduct.ProductType + "" + ion.NeutralTheoreticalProduct.TerminusFragment.FragmentNumber + "+" + ion.Charge;
-                        }
-                        else
-                        {
-                            // ion label with neutral loss
-                            ionLabel = "(" + ion.NeutralTheoreticalProduct.ProductType + "" + ion.NeutralTheoreticalProduct.TerminusFragment.FragmentNumber
-                                + "-" + ion.NeutralTheoreticalProduct.NeutralLoss.ToString("F2") + ")" + "+" + ion.Charge;
-                        }
+                //        if (ion.NeutralTheoreticalProduct.NeutralLoss == 0)
+                //        {
+                //            // no neutral loss
+                //            ionLabel = ion.NeutralTheoreticalProduct.ProductType + "" + ion.NeutralTheoreticalProduct.TerminusFragment.FragmentNumber + "+" + ion.Charge;
+                //        }
+                //        else
+                //        {
+                //            // ion label with neutral loss
+                //            ionLabel = "(" + ion.NeutralTheoreticalProduct.ProductType + "" + ion.NeutralTheoreticalProduct.TerminusFragment.FragmentNumber
+                //                + "-" + ion.NeutralTheoreticalProduct.NeutralLoss.ToString("F2") + ")" + "+" + ion.Charge;
+                //        }
 
-                        // append ion label
-                        seriesStringBuilder.Append(ionLabel);
+                //        // append ion label
+                //        seriesStringBuilder.Append(ionLabel);
 
-                        // append experimental m/z
-                        mzStringBuilder.Append(ionLabel + ":" + ion.Mz.ToString("F5"));
+                //        // append experimental m/z
+                //        mzStringBuilder.Append(ionLabel + ":" + ion.Mz.ToString("F5"));
 
-                        // append absolute mass error
-                        fragmentDaErrorStringBuilder.Append(ionLabel + ":" + massError.ToString("F5"));
+                //        // append absolute mass error
+                //        fragmentDaErrorStringBuilder.Append(ionLabel + ":" + massError.ToString("F5"));
 
-                        // append ppm mass error
-                        fragmentPpmErrorStringBuilder.Append(ionLabel + ":" + ppmMassError.ToString("F2"));
+                //        // append ppm mass error
+                //        fragmentPpmErrorStringBuilder.Append(ionLabel + ":" + ppmMassError.ToString("F2"));
 
-                        // append fragment ion intensity
-                        fragmentIntensityStringBuilder.Append(ionLabel + ":" + ion.Intensity.ToString("F0"));
+                //        // append fragment ion intensity
+                //        fragmentIntensityStringBuilder.Append(ionLabel + ":" + ion.Intensity.ToString("F0"));
 
-                        // append delimiter ", "
-                        if (i < products.Count - 1)
-                        {
-                            stringBuilders.ForEach(p => p.Append(delimiter));
-                        }
-                    }
+                //        // append delimiter ", "
+                //        if (i < products.Count - 1)
+                //        {
+                //            stringBuilders.ForEach(p => p.Append(delimiter));
+                //        }
+                //    }
 
-                    // append product type delimiter
-                    stringBuilders.ForEach(p => p.Append("];"));
-                }
+                //    // append product type delimiter
+                //    stringBuilders.ForEach(p => p.Append("];"));
+                //}
             }
 
             // save ion series strings to output dictionary

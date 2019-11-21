@@ -145,9 +145,10 @@ namespace EngineLayer.Indexing
             // populate fragment index
             progress = 0;
             oldPercentProgress = 0;
+            List<Product> fragments = new List<Product>();
             for (int peptideId = 0; peptideId < peptidesSortedByMass.Count; peptideId++)
             {
-                List<Product> fragments = peptidesSortedByMass[peptideId].Fragment(CommonParameters.DissociationType, CommonParameters.DigestionParams.FragmentationTerminus).ToList();
+                peptidesSortedByMass[peptideId].Fragment(CommonParameters.DissociationType, CommonParameters.DigestionParams.FragmentationTerminus, fragments);
                 List<double> fragmentMasses = fragments.Select(m => m.NeutralMass).ToList();
 
                 foreach (double theoreticalFragmentMass in fragmentMasses)
@@ -253,8 +254,8 @@ namespace EngineLayer.Indexing
             foreach (KeyValuePair<int, List<Modification>> relevantDatabaseMod in databaseAnnotatedMods)
             {
                 int fragmentNumber = relevantDatabaseMod.Key;
-                Product fragmentAtIndex = fragmentMasses.Where(x => x.TerminusFragment.FragmentNumber == fragmentNumber).FirstOrDefault();
-                double basePrecursorMass = fragmentAtIndex == null ? peptide.MonoisotopicMass : fragmentAtIndex.NeutralMass - DissociationTypeCollection.GetMassShiftFromProductType(fragmentAtIndex.ProductType) + WaterMonoisotopicMass;
+                Product fragmentAtIndex = fragmentMasses.Where(x => x.FragmentNumber == fragmentNumber).FirstOrDefault();
+                double basePrecursorMass = peptide.MonoisotopicMass;// : fragmentAtIndex.NeutralMass - DissociationTypeCollection.GetMassShiftFromProductType(fragmentAtIndex.ProductType) + WaterMonoisotopicMass;
 
                 foreach (Modification mod in relevantDatabaseMod.Value)
                 {

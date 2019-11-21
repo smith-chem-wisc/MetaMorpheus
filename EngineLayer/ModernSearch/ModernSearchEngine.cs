@@ -49,6 +49,7 @@ namespace EngineLayer.ModernSearch
             {
                 byte[] scoringTable = new byte[PeptideIndex.Count];
                 List<int> idsOfPeptidesPossiblyObserved = new List<int>();
+                List<Product> peptideTheorProducts = new List<Product>();
 
                 for (; i < ListOfSortedMs2Scans.Length; i += maxThreadsPerFile)
                 {
@@ -83,7 +84,7 @@ namespace EngineLayer.ModernSearch
                     {
                         PeptideWithSetModifications peptide = PeptideIndex[id];
 
-                        List<Product> peptideTheorProducts = peptide.Fragment(CommonParameters.DissociationType, FragmentationTerminus.Both).ToList();
+                        peptide.Fragment(CommonParameters.DissociationType, FragmentationTerminus.Both, peptideTheorProducts);
 
                         List<MatchedFragmentIon> matchedIons = MatchFragmentIons(scan, peptideTheorProducts, CommonParameters);
 
