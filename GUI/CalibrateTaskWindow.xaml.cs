@@ -378,8 +378,13 @@ namespace MetaMorpheusGUI
                         break;                    
                     case "top-down":
                         if(UpdateGUISettings.UseTopDownRecommendedSettings())
-                        { 
-                            //nothing to change for top-down in the gui, but we change it when saving
+                        {
+                            //many variables are not present in the calibrate task gui, but we modify them when saving
+                            //uncheck all variable mods
+                            foreach (var mod in VariableModTypeForTreeViewObservableCollection)
+                            {
+                                mod.Use = false;
+                            }
                         }
                         break;
                     case "Arg-C":

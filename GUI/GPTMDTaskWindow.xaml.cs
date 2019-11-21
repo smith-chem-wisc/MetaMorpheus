@@ -22,10 +22,10 @@ namespace MetaMorpheusGUI
     /// </summary>
     public partial class GptmdTaskWindow : Window
     {
-        private readonly ObservableCollection<ModTypeForTreeView> fixedModTypeForTreeViewObservableCollection = new ObservableCollection<ModTypeForTreeView>();
-        private readonly ObservableCollection<ModTypeForTreeView> variableModTypeForTreeViewObservableCollection = new ObservableCollection<ModTypeForTreeView>();
-        private readonly ObservableCollection<ModTypeForLoc> localizeModTypeForTreeViewObservableCollection = new ObservableCollection<ModTypeForLoc>();
-        private readonly ObservableCollection<ModTypeForTreeView> gptmdModTypeForTreeViewObservableCollection = new ObservableCollection<ModTypeForTreeView>();
+        private readonly ObservableCollection<ModTypeForTreeView> FixedModTypeForTreeViewObservableCollection = new ObservableCollection<ModTypeForTreeView>();
+        private readonly ObservableCollection<ModTypeForTreeView> VariableModTypeForTreeViewObservableCollection = new ObservableCollection<ModTypeForTreeView>();
+        private readonly ObservableCollection<ModTypeForLoc> LocalizeModTypeForTreeViewObservableCollection = new ObservableCollection<ModTypeForLoc>();
+        private readonly ObservableCollection<ModTypeForTreeView> GptmdModTypeForTreeViewObservableCollection = new ObservableCollection<ModTypeForTreeView>();
         private bool AutomaticallyAskAndOrUpdateParametersBasedOnProtease = true;
         private CustomFragmentationWindow CustomFragmentationWindow;
 
@@ -92,7 +92,7 @@ namespace MetaMorpheusGUI
 
             foreach (var mod in task.CommonParameters.ListOfModsFixed)
             {
-                var theModType = fixedModTypeForTreeViewObservableCollection.FirstOrDefault(b => b.DisplayName.Equals(mod.Item1));
+                var theModType = FixedModTypeForTreeViewObservableCollection.FirstOrDefault(b => b.DisplayName.Equals(mod.Item1));
                 if (theModType != null)
                 {
                     var theMod = theModType.Children.FirstOrDefault(b => b.ModName.Equals(mod.Item2));
@@ -108,13 +108,13 @@ namespace MetaMorpheusGUI
                 else
                 {
                     theModType = new ModTypeForTreeView(mod.Item1, true);
-                    fixedModTypeForTreeViewObservableCollection.Add(theModType);
+                    FixedModTypeForTreeViewObservableCollection.Add(theModType);
                     theModType.Children.Add(new ModForTreeView("UNKNOWN MODIFICATION!", true, mod.Item2, true, theModType));
                 }
             }
             foreach (var mod in task.CommonParameters.ListOfModsVariable)
             {
-                ModTypeForTreeView theModType = variableModTypeForTreeViewObservableCollection.FirstOrDefault(b => b.DisplayName.Equals(mod.Item1));
+                ModTypeForTreeView theModType = VariableModTypeForTreeViewObservableCollection.FirstOrDefault(b => b.DisplayName.Equals(mod.Item1));
                 if (theModType != null)
                 {
                     var theMod = theModType.Children.FirstOrDefault(b => b.ModName.Equals(mod.Item2));
@@ -130,19 +130,19 @@ namespace MetaMorpheusGUI
                 else
                 {
                     theModType = new ModTypeForTreeView(mod.Item1, true);
-                    variableModTypeForTreeViewObservableCollection.Add(theModType);
+                    VariableModTypeForTreeViewObservableCollection.Add(theModType);
                     theModType.Children.Add(new ModForTreeView("UNKNOWN MODIFICATION!", true, mod.Item2, true, theModType));
                 }
             }
 
-            foreach (var heh in localizeModTypeForTreeViewObservableCollection)
+            foreach (var heh in LocalizeModTypeForTreeViewObservableCollection)
             {
                 heh.Use = false;
             }
 
             foreach (var mod in task.GptmdParameters.ListOfModsGptmd)
             {
-                ModTypeForTreeView theModType = gptmdModTypeForTreeViewObservableCollection.FirstOrDefault(b => b.DisplayName.Equals(mod.Item1));
+                ModTypeForTreeView theModType = GptmdModTypeForTreeViewObservableCollection.FirstOrDefault(b => b.DisplayName.Equals(mod.Item1));
                 if (theModType != null)
                 {
                     var theMod = theModType.Children.FirstOrDefault(b => b.ModName.Equals(mod.Item2));
@@ -158,21 +158,21 @@ namespace MetaMorpheusGUI
                 else
                 {
                     theModType = new ModTypeForTreeView(mod.Item1, true);
-                    gptmdModTypeForTreeViewObservableCollection.Add(theModType);
+                    GptmdModTypeForTreeViewObservableCollection.Add(theModType);
                     theModType.Children.Add(new ModForTreeView("UNKNOWN MODIFICATION!", true, mod.Item2, true, theModType));
                 }
             }
 
-            foreach (var ye in variableModTypeForTreeViewObservableCollection)
+            foreach (var ye in VariableModTypeForTreeViewObservableCollection)
             {
                 ye.VerifyCheckState();
             }
-            foreach (var ye in fixedModTypeForTreeViewObservableCollection)
+            foreach (var ye in FixedModTypeForTreeViewObservableCollection)
             {
                 ye.VerifyCheckState();
             }
 
-            foreach (var ye in gptmdModTypeForTreeViewObservableCollection)
+            foreach (var ye in GptmdModTypeForTreeViewObservableCollection)
             {
                 ye.VerifyCheckState();
             }
@@ -205,34 +205,34 @@ namespace MetaMorpheusGUI
             foreach (var hm in GlobalVariables.AllModsKnown.GroupBy(b => b.ModificationType))
             {
                 var theModType = new ModTypeForTreeView(hm.Key, false);
-                fixedModTypeForTreeViewObservableCollection.Add(theModType);
+                FixedModTypeForTreeViewObservableCollection.Add(theModType);
                 foreach (var uah in hm)
                 {
                     theModType.Children.Add(new ModForTreeView(uah.ToString(), false, uah.IdWithMotif, false, theModType));
                 }
             }
-            fixedModsTreeView.DataContext = fixedModTypeForTreeViewObservableCollection;
+            fixedModsTreeView.DataContext = FixedModTypeForTreeViewObservableCollection;
             foreach (var hm in GlobalVariables.AllModsKnown.GroupBy(b => b.ModificationType))
             {
                 var theModType = new ModTypeForTreeView(hm.Key, false);
-                variableModTypeForTreeViewObservableCollection.Add(theModType);
+                VariableModTypeForTreeViewObservableCollection.Add(theModType);
                 foreach (var uah in hm)
                 {
                     theModType.Children.Add(new ModForTreeView(uah.ToString(), false, uah.IdWithMotif, false, theModType));
                 }
             }
-            variableModsTreeView.DataContext = variableModTypeForTreeViewObservableCollection;
+            variableModsTreeView.DataContext = VariableModTypeForTreeViewObservableCollection;
 
             foreach (var hm in GlobalVariables.AllModsKnown.GroupBy(b => b.ModificationType))
             {
                 var theModType = new ModTypeForTreeView(hm.Key, false);
-                gptmdModTypeForTreeViewObservableCollection.Add(theModType);
+                GptmdModTypeForTreeViewObservableCollection.Add(theModType);
                 foreach (var uah in hm)
                 {
                     theModType.Children.Add(new ModForTreeView(uah.ToString(), false, uah.IdWithMotif, false, theModType));
                 }
             }
-            gptmdModsTreeView.DataContext = gptmdModTypeForTreeViewObservableCollection;
+            gptmdModsTreeView.DataContext = GptmdModTypeForTreeViewObservableCollection;
         }
 
         private void CancelButton_Click(object sender, RoutedEventArgs e)
@@ -262,6 +262,30 @@ namespace MetaMorpheusGUI
                             UseProvidedPrecursor.IsChecked = false;
                             DeconvolutionMaxAssumedChargeStateTextBox.Text = "60";
                             TrimMsMs.IsChecked = false;
+                            //uncheck all variable mods
+                            foreach (var mod in VariableModTypeForTreeViewObservableCollection)
+                            {
+                                mod.Use = false;
+                            }
+
+                            //clear GPTMD mods and replace them with a subset
+                            foreach (var mod in GptmdModTypeForTreeViewObservableCollection)
+                            {
+                                mod.Use = false;
+                            }
+                            //populate the recommended mods
+                            foreach (var mod in UpdateGUISettings.TopDownModsForGPTMD)
+                            {
+                                ModTypeForTreeView theModType = GptmdModTypeForTreeViewObservableCollection.FirstOrDefault(b => b.DisplayName.Equals(mod.Item1));
+                                if (theModType != null)
+                                {
+                                    var theMod = theModType.Children.FirstOrDefault(b => b.ModName.Equals(mod.Item2));
+                                    if (theMod != null)
+                                    {
+                                        theMod.Use = true;
+                                    }
+                                }
+                            }
                         }
                         break;
                     case "Arg-C":
@@ -367,7 +391,7 @@ namespace MetaMorpheusGUI
             }
 
             List<(string, string)> listOfModsVariable = new List<(string, string)>();
-            foreach (var heh in variableModTypeForTreeViewObservableCollection)
+            foreach (var heh in VariableModTypeForTreeViewObservableCollection)
             {
                 listOfModsVariable.AddRange(heh.Children.Where(b => b.Use).Select(b => (b.Parent.DisplayName, b.ModName)));
             }
@@ -409,7 +433,7 @@ namespace MetaMorpheusGUI
             }
 
             List<(string, string)> listOfModsFixed = new List<(string, string)>();
-            foreach (var heh in fixedModTypeForTreeViewObservableCollection)
+            foreach (var heh in FixedModTypeForTreeViewObservableCollection)
             {
                 listOfModsFixed.AddRange(heh.Children.Where(b => b.Use).Select(b => (b.Parent.DisplayName, b.ModName)));
             }
@@ -445,7 +469,7 @@ namespace MetaMorpheusGUI
                     maxHeterozygousVariants: maxHeterozygousVariants);
 
             TheTask.GptmdParameters.ListOfModsGptmd = new List<(string, string)>();
-            foreach (var heh in gptmdModTypeForTreeViewObservableCollection)
+            foreach (var heh in GptmdModTypeForTreeViewObservableCollection)
             {
                 TheTask.GptmdParameters.ListOfModsGptmd.AddRange(heh.Children.Where(b => b.Use).Select(b => (b.Parent.DisplayName, b.ModName)));
             }
@@ -494,19 +518,19 @@ namespace MetaMorpheusGUI
         {
             if (SearchModifications.FixedSearch)
             {
-                SearchModifications.FilterTree(SearchFixMod, fixedModsTreeView, fixedModTypeForTreeViewObservableCollection);
+                SearchModifications.FilterTree(SearchFixMod, fixedModsTreeView, FixedModTypeForTreeViewObservableCollection);
                 SearchModifications.FixedSearch = false;
             }
 
             if (SearchModifications.VariableSearch)
             {
-                SearchModifications.FilterTree(SearchVarMod, variableModsTreeView, variableModTypeForTreeViewObservableCollection);
+                SearchModifications.FilterTree(SearchVarMod, variableModsTreeView, VariableModTypeForTreeViewObservableCollection);
                 SearchModifications.VariableSearch = false;
             }
 
             if (SearchModifications.GptmdSearch)
             {
-                SearchModifications.FilterTree(SearchGPTMD, gptmdModsTreeView, gptmdModTypeForTreeViewObservableCollection);
+                SearchModifications.FilterTree(SearchGPTMD, gptmdModsTreeView, GptmdModTypeForTreeViewObservableCollection);
                 SearchModifications.GptmdSearch = false;
             }
         }

@@ -754,6 +754,11 @@ namespace MetaMorpheusGUI
                             TrimMsMs.IsChecked = false;
                             CheckBoxNoQuant.IsChecked = true;
                             MassDiffAccept3mm.IsChecked = true;
+                            //uncheck all variable mods
+                            foreach (var mod in VariableModTypeForTreeViewObservableCollection)
+                            {
+                                mod.Use = false;
+                            }
                         }
                         break;
                     case "Arg-C":

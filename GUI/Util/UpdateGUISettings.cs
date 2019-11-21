@@ -16,7 +16,7 @@ namespace MetaMorpheusGUI
 
         public static bool LoadGUISettings()
         {
-            bool fileExists= File.Exists(Path.Combine(GlobalVariables.DataDir, @"GUIsettings.toml"));
+            bool fileExists = File.Exists(Path.Combine(GlobalVariables.DataDir, @"GUIsettings.toml"));
             try //catches toml read errors
             {
                 Params = Toml.ReadFile<GuiGlobalParams>(Path.Combine(GlobalVariables.DataDir, @"GUIsettings.toml"));
@@ -39,7 +39,7 @@ namespace MetaMorpheusGUI
         {
             bool useRecommendedSettings = false;
             //check with the user to update params
-            if (Params.AskAboutNonSpecificParams )
+            if (Params.AskAboutNonSpecificParams)
             {
                 var results = ProteaseSpecificMsgBox.Show("Use Non-Specific Recommendations?",
                     "We recommend using the following parameters for non-specific searches:\n" +
@@ -74,15 +74,17 @@ namespace MetaMorpheusGUI
         {
             bool useRecommendedSettings = false;
             //check with the user to update params
-            if (Params.AskAboutTopDownParams )
+            if (Params.AskAboutTopDownParams)
             {
                 var results = ProteaseSpecificMsgBox.Show("Use Top-Down Recommendations?",
                     "We recommend using the following parameters for top-down searches:\n" +
                         "\t-Uncheck 'Use Provided Precursor'\n" +
                         "\t-Use '60' for 'Deconvolution Max Assumed Charge State'\n" +
                         "\t-Uncheck 'Trim MS2 Peaks'\n" +
-                        "\t-Check 'No Quantification' (SearchTask Only)\n" +
-                        "\t-Check '1, 2, or 3 Missed Monoisotopic Peaks' (SearchTask Only)\n" +
+                        "\t-Uncheck all variable mods (Please use a GPTMD database instead)\n" +
+                        "\t-SEARCH TASK ONLY: Check 'No Quantification'\n" +
+                        "\t-SEARCH TASK ONLY: Check '1, 2, or 3 Missed Monoisotopic Peaks'\n" +
+                        "\t-GPTMD TASK ONLY: Search for only acetylation, phosphorylation, and oxidation of M\n\n" +
                     "Would you like to use these recommended settings?");
 
                 if (results.UseSettings)
@@ -107,12 +109,12 @@ namespace MetaMorpheusGUI
             //else do nothing
             return useRecommendedSettings;
         }
-        
+
         public static bool UseArgCRecommendedSettings()
         {
             bool useRecommendedSettings = false;
             //check with the user to update params
-            if (Params.AskAboutArgCParams )
+            if (Params.AskAboutArgCParams)
             {
                 var results = ProteaseSpecificMsgBox.Show("Use Arg-C Recommendations?",
                     "We recommend using the following parameters for Arg-C searches:\n" +
@@ -142,12 +144,12 @@ namespace MetaMorpheusGUI
             //else do nothing
             return useRecommendedSettings;
         }
-        
+
         public static bool UseChymotrypsinRecommendedSettings()
         {
             bool useRecommendedSettings = false;
             //check with the user to update params
-            if (Params.AskAboutChymotrypsinParams )
+            if (Params.AskAboutChymotrypsinParams)
             {
                 var results = ProteaseSpecificMsgBox.Show("Use Chymotrypsin Recommendations?",
                     "We recommend using the following parameters for chymotrypsin searches:\n" +
@@ -183,7 +185,7 @@ namespace MetaMorpheusGUI
         {
             bool useRecommendedSettings = false;
             //check with the user to update params
-            if (Params.AskAboutElastaseParams )
+            if (Params.AskAboutElastaseParams)
             {
                 var results = ProteaseSpecificMsgBox.Show("Use Elastase Recommendations?",
                     "We recommend using the following parameters for elastase searches:\n" +
@@ -214,12 +216,12 @@ namespace MetaMorpheusGUI
             //else do nothing
             return useRecommendedSettings;
         }
-        
+
         public static bool UseSemiTrypsinRecommendedSettings()
         {
             bool useRecommendedSettings = false;
             //check with the user to update params
-            if (Params.AskAboutSemiTrypsinParams )
+            if (Params.AskAboutSemiTrypsinParams)
             {
                 var results = ProteaseSpecificMsgBox.Show("Use Semi-Trypsin Recommendations?",
                     "We recommend using the following parameters for semi-trypsin searches:\n" +
@@ -249,5 +251,15 @@ namespace MetaMorpheusGUI
             //else do nothing
             return useRecommendedSettings;
         }
+
+        public static List<(string, string)> TopDownModsForGPTMD = new List<(string, string)>
+        {
+            ("Common Variable", "Oxidation on M"),
+            ("Common Biological", "Acetylation on K"),
+            ("Common Biological", "Acetylation on X"),          
+            ("Common Biological", "Phosphorylation on S"),
+            ("Common Biological", "Phosphorylation on T"),
+            ("Common Biological", "Phosphorylation on Y"),
+        };
     }
 }
