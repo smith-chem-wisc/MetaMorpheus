@@ -142,7 +142,7 @@ namespace EngineLayer.CrosslinkSearch
                             //    return (result != 0) ? result : PeptideIndex[x].FullSequence.CompareTo(PeptideIndex[y].FullSequence);
                             //}));
                             
-                            byte bestScore = 0;
+                            //byte bestScore = 0;
                             byte scoreAtTopN = 0;
                             int peptideCount = 0;
 
@@ -151,11 +151,11 @@ namespace EngineLayer.CrosslinkSearch
                                 // peptideCount is the number of peptides to keep
                                 peptideCount++;
 
-                                // bestScore will be set ONCE to the score of the highest-scoring peptide in the list
-                                if (bestScore == 0)
-                                {
-                                    bestScore = scoringTable[id];
-                                }
+                                //// bestScore will be set ONCE to the score of the highest-scoring peptide in the list
+                                //if (bestScore == 0)
+                                //{
+                                //    bestScore = scoringTable[id];
+                                //}
 
                                 // Whenever the count exceeds the TopN that we want to keep, we removed everything with a score lower than the score of the TopN-th peptide in the ids list
                                 if (peptideCount == TopN)
@@ -172,7 +172,7 @@ namespace EngineLayer.CrosslinkSearch
 
                                 int notch = MassDiffAcceptor.Accepts(scan.PrecursorMass, peptide.MonoisotopicMass);
                                 bestPeptideScoreNotchList.Add(new BestPeptideScoreNotch(peptide, scoringTable[id], notch));
-                            }
+                            }  
                         }
                         else //I guess that we're keeping them all
                         {
@@ -331,7 +331,7 @@ namespace EngineLayer.CrosslinkSearch
 
             return possibleMatches;
         }
-
+        
         /// <summary>
         /// Localizes the crosslink position on the alpha and beta peptides
         /// </summary>
@@ -345,6 +345,7 @@ namespace EngineLayer.CrosslinkSearch
             {
                 List<int> possibleAlphaXlSites = CrosslinkSpectralMatch.GetPossibleCrosslinkerModSites(crosslinker.CrosslinkerModSites.ToCharArray(), alphaPeptide.BestPeptide, CommonParameters.DigestionParams.InitiatorMethionineBehavior, CleaveAtCrosslinkSite);
                 List<int> possibleBetaXlSites = CrosslinkSpectralMatch.GetPossibleCrosslinkerModSites(crosslinker.CrosslinkerModSites.ToCharArray(), betaPeptide.BestPeptide, CommonParameters.DigestionParams.InitiatorMethionineBehavior, CleaveAtCrosslinkSite);
+
 
                 pairs.Add(new Tuple<List<int>, List<int>>(possibleAlphaXlSites, possibleBetaXlSites));
             }
@@ -417,17 +418,12 @@ namespace EngineLayer.CrosslinkSearch
                     var fragmentsForEachBetaLocalizedPossibility = CrosslinkedPeptide.XlGetTheoreticalFragments(CommonParameters.DissociationType,
                         Crosslinker, possibleBetaXlSites, alphaPeptide.BestPeptide.MonoisotopicMass, betaPeptide.BestPeptide).ToList();
 
-                    var alphaMz = new HashSet<double>(bestMatchedAlphaIons.Select(p => p.Mz));
-
                     foreach (int possibleSite in possibleBetaXlSites)
                     {
                         foreach (var setOfFragments in fragmentsForEachBetaLocalizedPossibility.Where(v => v.Item1 == possibleSite))
                         {
                             var matchedIons = MatchFragmentIons(theScan, setOfFragments.Item2, CommonParameters);
                             var matchedChildBetaIons = new Dictionary<int, List<MatchedFragmentIon>>();
-
-                            // remove any matched beta ions that also matched to the alpha peptide
-                            matchedIons.RemoveAll(p => alphaMz.Contains(p.Mz));
 
                             double score = CalculatePeptideScore(theScan.TheScan, matchedIons);
 
@@ -463,6 +459,31 @@ namespace EngineLayer.CrosslinkSearch
                         return null;
                     }
 
+                    //Remove any matched beta ions that also matched to the alpha peptide. The higher score one is alpha peptide.
+                    if (alphaPeptide.BestPeptide.FullSequence != betaPeptide.BestPeptide.FullSequence)
+                    {
+                        if (bestAlphaLocalizedScore < bestBetaLocalizedScore)
+                        {
+                            var betaMz = new HashSet<double>(bestMatchedBetaIons.Select(p => p.Mz));
+                            bestMatchedAlphaIons.RemoveAll(p => betaMz.Contains(p.Mz));
+                            if ((int)bestAlphaLocalizedScore > bestMatchedAlphaIons.Count())
+                            {
+                                bestAlphaLocalizedScore = CalculatePeptideScore(theScan.TheScan, bestMatchedAlphaIons);
+
+                            }
+                        }
+                        else
+                        {
+                            var alphaMz = new HashSet<double>(bestMatchedAlphaIons.Select(p => p.Mz));
+                            bestMatchedBetaIons.RemoveAll(p => alphaMz.Contains(p.Mz));
+                            if ((int)bestBetaLocalizedScore > bestMatchedBetaIons.Count())
+                            {
+                                bestBetaLocalizedScore = CalculatePeptideScore(theScan.TheScan, bestMatchedBetaIons);
+                            }
+                        }
+                    }
+
+
                     var localizedAlpha = new CrosslinkSpectralMatch(alphaPeptide.BestPeptide, alphaPeptide.BestNotch, bestAlphaLocalizedScore, 0, theScan, alphaPeptide.BestPeptide.DigestionParams, bestMatchedAlphaIons);
                     var localizedBeta = new CrosslinkSpectralMatch(betaPeptide.BestPeptide, betaPeptide.BestNotch, bestBetaLocalizedScore, 0, theScan, betaPeptide.BestPeptide.DigestionParams, bestMatchedBetaIons);
 
@@ -475,12 +496,14 @@ namespace EngineLayer.CrosslinkSearch
                     localizedAlpha.LinkPositions = new List<int> { bestAlphaSite };
                     localizedBeta.LinkPositions = new List<int> { bestBetaSite };
 
+                    //Decide which is alpha and which is beta.
                     if (bestAlphaLocalizedScore < bestBetaLocalizedScore)
                     {
                         var x = localizedAlpha;
                         localizedAlpha = localizedBeta;
                         localizedBeta = x;
-                    }
+                    }     
+
 
                     localizedAlpha.BetaPeptide = localizedBeta;
 

@@ -12,7 +12,7 @@ namespace EngineLayer.CrosslinkSearch
         public CrosslinkSpectralMatch(PeptideWithSetModifications theBestPeptide, int notch, double score, int scanIndex, Ms2ScanWithSpecificMass scan, DigestionParams digestionParams, List<MatchedFragmentIon> matchedFragmentIons)
             : base(theBestPeptide, notch, score, scanIndex, scan, digestionParams, matchedFragmentIons)
         {
-            this.XLTotalScore = score;
+            
         }
 
         public CrosslinkSpectralMatch BetaPeptide { get; set; }
@@ -383,12 +383,20 @@ namespace EngineLayer.CrosslinkSearch
                 sb.Append("\t");
             }
 
-            sb.Append(FdrInfo.QValue.ToString());
-            sb.Append("\t");
+            if (FdrInfo == null)
+            {
+                sb.Append("0\t0\t0\t");
+            }
+            else
+            {
+                sb.Append(FdrInfo.QValue.ToString());
+                sb.Append("\t");
 
-            sb.Append(FdrInfo.PEP.ToString()); sb.Append("\t");
+                sb.Append(FdrInfo.PEP.ToString()); sb.Append("\t");
 
-            sb.Append(FdrInfo.PEP_QValue.ToString()); sb.Append("\t");
+                sb.Append(FdrInfo.PEP_QValue.ToString()); sb.Append("\t");
+            }
+
 
             return sb.ToString();
         }
