@@ -590,12 +590,12 @@ namespace EngineLayer
             List<double> lossMasses = new List<double>() { (double)glycan.Mass/1E5 };
             neutralLosses.Add(DissociationType.HCD, lossMasses);
             neutralLosses.Add(DissociationType.CID, lossMasses);
-            neutralLosses.Add(DissociationType.EThcD, lossMasses);
+            //neutralLosses.Add(DissociationType.EThcD, lossMasses);
 
             Dictionary<DissociationType, List<double>> diagnosticIons = new Dictionary<DissociationType, List<double>>();
             diagnosticIons.Add(DissociationType.HCD, glycan.DiagnosticIons.Select(p => (double)p / 1E5).ToList());
             diagnosticIons.Add(DissociationType.CID, glycan.DiagnosticIons.Select(p => (double)p / 1E5).ToList());
-            diagnosticIons.Add(DissociationType.EThcD, glycan.DiagnosticIons.Select(p => (double)p / 1E5).ToList());
+            //diagnosticIons.Add(DissociationType.EThcD, glycan.DiagnosticIons.Select(p => (double)p / 1E5).ToList());
             //string[] motifs = new string[] { "t", "s" };
             ModificationMotif.TryGetMotif("X", out ModificationMotif finalMotif); //TO DO: only one motif can be write here.
 

@@ -211,19 +211,41 @@ namespace EngineLayer.GlycoSearch
 
         #region O-Glyco related functions
 
-        //TO CHECK: May not need this funciton
-        public static List<Product> OGlyGetTheoreticalFragments(DissociationType dissociationType, PeptideWithSetModifications testPeptide)
+        //TO THINK: filter reasonable fragments here. The final solution is to change mzLib.Proteomics.PeptideWithSetModifications.Fragment
+        public static List<Product> OGlyGetTheoreticalFragments(DissociationType dissociationType, PeptideWithSetModifications peptide, PeptideWithSetModifications modPeptide)
         {
-            List<Product> theoreticalProducts = new List<Product>();
-            HashSet<double> masses = new HashSet<double>();
 
-            foreach (var fragment in testPeptide.Fragment(dissociationType, FragmentationTerminus.Both))
+            List<Product> theoreticalProducts = new List<Product>();
+
+            if (dissociationType == DissociationType.HCD || dissociationType == DissociationType.CID)
+            {   
+                var diag = modPeptide.Fragment(dissociationType, FragmentationTerminus.Both).Where(p=>p.ProductType != ProductType.b && p.ProductType != ProductType.y);
+                theoreticalProducts = peptide.Fragment(dissociationType, FragmentationTerminus.Both).Concat(diag).ToList();
+            }
+            else if(dissociationType == DissociationType.ETD)
             {
-                if (!masses.Contains(fragment.NeutralMass))
+                theoreticalProducts = modPeptide.Fragment(dissociationType, FragmentationTerminus.Both).ToList();
+            }
+            else if(dissociationType == DissociationType.EThcD)
+            {
+                var diag = modPeptide.Fragment(DissociationType.HCD, FragmentationTerminus.Both).Where(p => p.ProductType != ProductType.b && p.ProductType != ProductType.y);
+                theoreticalProducts = peptide.Fragment(DissociationType.HCD, FragmentationTerminus.Both).Concat(diag).ToList();
+                HashSet<double> masses = new HashSet<double>();
+
+                foreach (var fragment in theoreticalProducts)
                 {
-                    theoreticalProducts.Add(fragment);
                     masses.Add(fragment.NeutralMass);
                 }
+
+                foreach (var fragment in modPeptide.Fragment(DissociationType.ETD, FragmentationTerminus.Both))
+                {
+                    if (!masses.Contains(fragment.NeutralMass))
+                    {
+                        theoreticalProducts.Add(fragment);
+                        masses.Add(fragment.NeutralMass);
+                    }
+                }
+
             }
 
             return theoreticalProducts;
@@ -254,7 +276,6 @@ namespace EngineLayer.GlycoSearch
             return testPeptide;
         }
 
-        //TO DO: make it more efficient
         public static List<int[]> GetPermutations(List<int> allModPos, int[] glycanBoxId)
         {
             var length = glycanBoxId.Length;
