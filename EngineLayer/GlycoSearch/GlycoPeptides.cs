@@ -211,29 +211,31 @@ namespace EngineLayer.GlycoSearch
 
         #region O-Glyco related functions
 
-        public static IEnumerable<Tuple<int[], List<Product>>> OGlyGetTheoreticalFragments(DissociationType dissociationType,
-            List<int> possibleModPositions, PeptideWithSetModifications peptide, GlycanBox glycanBox)
+        //TO CHECK: May not need this funciton
+        public static List<Product> OGlyGetTheoreticalFragments(DissociationType dissociationType, PeptideWithSetModifications testPeptide)
         {
-            var permutateModPositions = Glycan.GetPermutations(possibleModPositions, glycanBox.NumberOfGlycans);
+            List<Product> theoreticalProducts = new List<Product>();
+            HashSet<double> masses = new HashSet<double>();
 
-            foreach (var theModPositions in permutateModPositions)
+            foreach (var fragment in testPeptide.Fragment(dissociationType, FragmentationTerminus.Both))
             {
-                yield return OGlyGetTheoreticalFragments(dissociationType, theModPositions.ToArray(), peptide, glycanBox);
+                if (!masses.Contains(fragment.NeutralMass))
+                {
+                    theoreticalProducts.Add(fragment);
+                    masses.Add(fragment.NeutralMass);
+                }
             }
+
+            return theoreticalProducts;
         }
 
-        public static Tuple<int[], List<Product>> OGlyGetTheoreticalFragments(DissociationType dissociationType,
-            int[] theModPositions, PeptideWithSetModifications peptide, GlycanBox glycanBox)
+        public static PeptideWithSetModifications OGlyGetTheoreticalPeptide(int[] theModPositions, PeptideWithSetModifications peptide, GlycanBox glycanBox)
         {
-
             Modification[] modifications = new Modification[glycanBox.NumberOfGlycans];
             for (int i = 0; i < glycanBox.NumberOfGlycans; i++)
             {
                 modifications[i] = GlycanBox.GlobalOGlycanModifications[glycanBox.GlycanIds.ElementAt(i)];
             }
-
-            List<Product> theoreticalProducts = new List<Product>();
-            HashSet<double> masses = new HashSet<double>();
 
             Dictionary<int, Modification> testMods = new Dictionary<int, Modification>();
             foreach (var mod in peptide.AllModsOneIsNterminus)
@@ -249,19 +251,50 @@ namespace EngineLayer.GlycoSearch
             var testPeptide = new PeptideWithSetModifications(peptide.Protein, peptide.DigestionParams, peptide.OneBasedStartResidueInProtein,
                 peptide.OneBasedEndResidueInProtein, peptide.CleavageSpecificityForFdrCategory, peptide.PeptideDescription, peptide.MissedCleavages, testMods, peptide.NumFixedMods);
 
-            // add fragmentation ions for this crosslinker position guess
-            foreach (var fragment in testPeptide.Fragment(dissociationType, FragmentationTerminus.Both))
+            return testPeptide;
+        }
+
+        //TO DO: make it more efficient
+        public static List<int[]> GetPermutations(List<int> allModPos, int[] glycanBoxId)
+        {
+            var length = glycanBoxId.Length;
+            var indexes = Enumerable.Range(0, length).ToArray();
+            int[] orderGlycan = new int[length];
+
+            List<int[]> permutateModPositions = new List<int[]>();
+
+
+
+            var combinations = Glycan.GetKCombs(allModPos, length);
+        
+            foreach (var com in combinations)
             {
-                if (!masses.Contains(fragment.NeutralMass))
+                var permutation = Glycan.GetPermutations(com, length);
+
+                HashSet<string> keys = new HashSet<string>();
+
+                foreach (var per in permutation)
                 {
-                    theoreticalProducts.Add(fragment);
-                    masses.Add(fragment.NeutralMass);
+                    Array.Sort(indexes);
+
+                    var orderedPer = per.ToArray();
+                    Array.Sort(orderedPer, indexes);
+                                                         
+                    for (int i = 0; i < length; i++)
+                    {
+                        orderGlycan[i] = glycanBoxId[indexes[i]];
+                    }
+                    var key = string.Join(",", orderGlycan.Select(p => p.ToString()));
+                    if (!keys.Contains(key))
+                    {
+                        keys.Add(key);
+                        permutateModPositions.Add(per.ToArray());
+                    }
                 }
             }
 
-            return new Tuple<int[], List<Product>>(theModPositions, theoreticalProducts);
+            return permutateModPositions;
         }
-
         #endregion
     }
 }

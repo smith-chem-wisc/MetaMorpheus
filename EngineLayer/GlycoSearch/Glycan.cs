@@ -612,7 +612,7 @@ namespace EngineLayer
             return modification;
         }
 
-        #region Combination or Permutation functions not related to glycan
+        #region Combination or Permutation functions not related to glycan, use carefully these function don't deal duplicate elements.
 
         public static IEnumerable<IEnumerable<T>> GetKCombs<T>(IEnumerable<T> list, int length) where T : IComparable
         {

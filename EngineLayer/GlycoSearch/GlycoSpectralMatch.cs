@@ -16,15 +16,14 @@ namespace EngineLayer.GlycoSearch
             this.TotalScore = score;
         }
 
-        public List<int> LinkPositions { get; set; }
-        public double TotalScore { get; set; } //alpha + beta psmCross
-        public int ProteinPos { get; set; }
-        public List<int> Rank { get; set; } //only contain 2 intger, consider change to Tuple
+        public double TotalScore { get; set; } //peptide + glycan psmCross
+        public int Rank { get; set; } //only contain 2 intger, consider change to Tuple
 
         public Dictionary<int, List<MatchedFragmentIon>> ChildMatchedFragmentIons { get; set; }
         //Glyco properties
         public List<Glycan> Glycan { get; set; }
         public List<GlycanBox> glycanBoxes { get; set; }
+        public List<int[]> localizations { get; set; }
         public double PeptideScore { get; set; }
         public double GlycanScore { get; set; }
         public double DiagnosticIonScore { get; set; }
@@ -145,18 +144,17 @@ namespace EngineLayer.GlycoSearch
             //sb.Append("Peptide Score" + '\t');
             //sb.Append("Glycan Score" + '\t');
             //sb.Append("DiagonosticIon Score" + '\t');
-            sb.Append("GlycanIDs" + '\t');
-            sb.Append("GlycanDecoy" + '\t');
-            sb.Append("GlycanStructure" + '\t');
             sb.Append("GlycanMass" + '\t');
+            sb.Append("GlycanStructure" + '\t');
+            sb.Append("GlycanLocalization" + '\t');
+            //sb.Append("GlycanIDs" + '\t');
+            sb.Append("GlycanDecoy" + '\t');         
             sb.Append("GlycanComposition(H,N,A,G,F)" + '\t');
             return sb.ToString();
         }
 
         public override string ToString()
         {
-            //string position = "(" + LinkPositions[0].ToString() + ")";
-
             var sb = new StringBuilder();
             sb.Append(FullFilePath + "\t");
             sb.Append(ScanNumber + "\t");
@@ -175,7 +173,7 @@ namespace EngineLayer.GlycoSearch
 
             sb.Append((PeptideMonisotopicMass.HasValue ? PeptideMonisotopicMass.Value.ToString() : "---")); sb.Append("\t");
             sb.Append(Score + "\t");
-            sb.Append(Rank[0] + "\t");
+            sb.Append(Rank + "\t");
 
             if (ChildMatchedFragmentIons == null)
             {
@@ -234,16 +232,22 @@ namespace EngineLayer.GlycoSearch
             if (glycanBoxes != null)
             {
                 sb.Append(TotalScore + "\t");
-                sb.Append(string.Join("|", glycanBoxes.First().GlycanIds.Select(p => p.ToString()).ToArray())); sb.Append("\t");
-                sb.Append( "T"); sb.Append("\t");
+
+                sb.Append((double)glycanBoxes.First().Mass / 1E5); sb.Append("\t");
+                //Get glycans
                 var glycans = new Glycan[glycanBoxes.First().NumberOfGlycans];
                 for (int i = 0; i < glycanBoxes.First().NumberOfGlycans; i++)
                 {
                     glycans[i] = GlycanBox.GlobalOGlycans[glycanBoxes.First().GlycanIds[i]];
                 }
+                sb.Append(string.Join(",", glycans.Select(p => p.Struc.ToString()).ToArray())); sb.Append("\t");
 
-                sb.Append(string.Join("|", glycans.Select(p => p.Struc.ToString()).ToArray())); sb.Append("\t");
-                sb.Append((double)glycanBoxes.First().Mass / 1E5); sb.Append("\t");
+                sb.Append(string.Join("|", localizations.Select(p=> "[" + string.Join(",", p.Select(q =>  q.ToString())) + "]"))); sb.Append("\t");
+
+                //sb.Append(string.Join("|", glycanBoxes.First().GlycanIds.Select(p => p.ToString()).ToArray())); sb.Append("\t");
+
+                sb.Append( "T" + '\t');         
+     
                 sb.Append(string.Join("|", glycanBoxes.First().Kind.Select(p=>p.ToString()))); sb.Append("\t");
             }
 

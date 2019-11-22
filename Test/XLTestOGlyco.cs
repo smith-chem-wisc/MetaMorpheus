@@ -19,6 +19,7 @@ using OxyPlot;
 using OxyPlot.Axes;
 using OxyPlot.Series;
 using OxyPlot.Annotations;
+using EngineLayer.GlycoSearch;
 
 namespace Test
 {
@@ -69,7 +70,16 @@ namespace Test
             var kperm_rep = Glycan.GetPermutationsWithRept(input, 3);
 
             Assert.AreEqual(kperm_rep.Count(), 125);
+        }
 
+        [Test]
+        public static void OGlycoTest_GetKPerWithDuplicate()
+        {
+            List<int> input = new List<int> { 3, 5, 2, 7};
+            int[] ids = new int[3]{ 2, 2, 3};
+            var perWithDuplicate = GlycoPeptides.GetPermutations(input, ids);
+            var allPermutation = Glycan.GetPermutations(input, ids.Length);
+            Assert.That(perWithDuplicate.Count() == allPermutation.Count()/2);
         }
 
         [Test]
@@ -80,6 +90,28 @@ namespace Test
                 new List<Modification>(), new List<Modification>()).ToArray();
             Assert.That(alphaPeptide.Length == 8);
             Assert.That(alphaPeptide.First().BaseSequence == "MPLFKNTSV");
+        }
+
+        [Test]
+        public static void OGlycoTest_FragmentIons()
+        {
+            GlycanBox.GlobalOGlycans = Glycan.LoadGlycan(GlobalVariables.OGlycanLocation).ToArray();
+            GlycanBox.GlobalOGlycanModifications = GlycanBox.BuildGlobalOGlycanModifications(GlycanBox.GlobalOGlycans);
+            var OGlycanBoxes = GlycanBox.BuildOGlycanBoxes(3).OrderBy(p => p.Mass).ToArray();
+            var glycanBox = OGlycanBoxes[8];
+
+            Protein protein = new Protein("PTLFKNVSLYK", "");
+            var peptide = protein.Digest(new DigestionParams(), new List<Modification>(), new List<Modification>()).First();
+
+            List<int> modPos = GlycoSpectralMatch.GetPossibleModSites(peptide, new string[] { "S", "T" });
+
+            var peptideWithMod = GlycoPeptides.OGlyGetTheoreticalPeptide(modPos.ToArray(), peptide, OGlycanBoxes[8]);
+            Assert.That(peptideWithMod.FullSequence == "PT[O-Glycosylation:H0N1A1G0F0 on X]LFKNVS[O-Glycosylation:H0N1A0G0F0 on X]LYK");
+
+            var fragments_hcd = GlycoPeptides.OGlyGetTheoreticalFragments(DissociationType.HCD, peptideWithMod);
+
+            var fragments_ethcd = GlycoPeptides.OGlyGetTheoreticalFragments(DissociationType.EThcD, peptideWithMod);
+
         }
     }
 }
