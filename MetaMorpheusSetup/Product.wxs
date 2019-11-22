@@ -335,6 +335,9 @@
       <Component Id="src_System.ValueTuple.dll" Guid="8B58D026-8C4C-401D-984D-C12790971FCF">
         <File Id="src_System.ValueTuple.dll" Name="System.ValueTuple.dll" Source="$(var.GUI_TargetDir)System.ValueTuple.dll" />
       </Component>
+      <Component Id="src_MarkdownSharp.dll" Guid="5F6FD76A-5674-4E64-9727-1C97AD493FD5">
+        <File Id="src_MarkdownSharp.dll" Name="MarkdownSharp.dll" Source="$(var.GUI_TargetDir)MarkdownSharp.dll" />
+      </Component>
     </ComponentGroup>
   </Fragment>
 
