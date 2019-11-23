@@ -98,7 +98,8 @@
                             </StackPanel>
                             <StackPanel Orientation="Vertical" Grid.Row="1">
                                 <StackPanel Orientation="Horizontal" Margin="5">
-                                    <!--<CheckBox x:Name="CkbSearchGlycoWithBgYgIndex"  VerticalAlignment="Center" Content="Search Glycopeptides with BgYg index" />-->
+                                    <Label Content="Maximum OGlycan Allowed"/>
+                                    <TextBox x:Name="TbMaxOGlycanNum" PreviewTextInput="CheckIfNumber" Width="45"/>
                                 </StackPanel>
                             </StackPanel>
                         </Grid>

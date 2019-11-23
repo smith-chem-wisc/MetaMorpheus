@@ -33,12 +33,12 @@ namespace TaskLayer
 
                 var allPsmsSingle = allPsms.Where(p => p.Glycan == null && p.Score > 2).OrderByDescending(p => p.TotalScore).ToList();
                 SingleFDRAnalysis(allPsmsSingle, commonParameters, new List<string> { taskId });
-                var writtenFileInter1 = Path.Combine(OutputFolder, "single_fdr" + ".mytsv");
+                var writtenFileInter1 = Path.Combine(OutputFolder, "single_fdr" + ".tsv");
                 WriteFile.WritePsmGlycoToTsv(allPsmsSingle, writtenFileInter1, 1);
 
                 var allPsmsGly = allPsms.Where(p => p.Glycan != null && p.Score > 2).OrderByDescending(p => p.TotalScore).ToList();
                 SingleFDRAnalysis(allPsmsGly, commonParameters, new List<string> { taskId });
-                var writtenFileInter2 = Path.Combine(OutputFolder, "glyco_fdr" + ".mytsv");
+                var writtenFileInter2 = Path.Combine(OutputFolder, "glyco_fdr" + ".tsv");
                 WriteFile.WritePsmGlycoToTsv(allPsmsGly, writtenFileInter2, 2);
 
                 return MyTaskResults;
@@ -47,12 +47,12 @@ namespace TaskLayer
             {
                 var allPsmsSingle = allPsms.Where(p => p.glycanBoxes == null && p.Score > 2).OrderByDescending(p => p.TotalScore).ToList();
                 SingleFDRAnalysis(allPsmsSingle, commonParameters, new List<string> { taskId });
-                var writtenFileInter1 = Path.Combine(OutputFolder, "single_fdr" + ".mytsv");
+                var writtenFileInter1 = Path.Combine(OutputFolder, "single_fdr" + ".tsv");
                 WriteFile.WritePsmGlycoToTsv(allPsmsSingle, writtenFileInter1, 1);
 
                 var allPsmsGly = allPsms.Where(p => p.glycanBoxes != null && p.Score > 2).OrderByDescending(p => p.TotalScore).ToList();
                 SingleFDRAnalysis(allPsmsGly, commonParameters, new List<string> { taskId });
-                var writtenFileInter2 = Path.Combine(OutputFolder, "glyco_fdr" + ".mytsv");
+                var writtenFileInter2 = Path.Combine(OutputFolder, "glyco_fdr" + ".tsv");
                 WriteFile.WritePsmGlycoToTsv(allPsmsGly, writtenFileInter2, 2);
                 return MyTaskResults;
             }

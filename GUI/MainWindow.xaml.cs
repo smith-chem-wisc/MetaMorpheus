@@ -598,6 +598,11 @@ namespace MetaMorpheusGUI
                                     var ye4 = Toml.ReadFile<XLSearchTask>(draggedFilePath, MetaMorpheusTask.tomlConfig);
                                     AddTaskToCollection(ye4);
                                     break;
+
+                                case "GlycoSearch":
+                                    var ye5 = Toml.ReadFile<GlycoSearchTask>(draggedFilePath, MetaMorpheusTask.tomlConfig);
+                                    AddTaskToCollection(ye5);
+                                    break;
                             }
                         }
                         catch (Exception e)

@@ -20,6 +20,7 @@ namespace EngineLayer.GlycoSearch
         // crosslinker molecule
         private readonly bool GlycoSearchTopN;
         private readonly int TopN;
+        private readonly int _maxOGlycanNum;
 
         private readonly bool SearchGlycan182;
         private readonly Tolerance PrecusorSearchMode;
@@ -29,13 +30,14 @@ namespace EngineLayer.GlycoSearch
 
         public GlycoSearchEngine(List<GlycoSpectralMatch>[] globalCsms, Ms2ScanWithSpecificMass[] listOfSortedms2Scans, List<PeptideWithSetModifications> peptideIndex,
             List<int>[] fragmentIndex, List<int>[] secondFragmentIndex, int currentPartition, CommonParameters commonParameters, 
-             bool isOGlycoSearch, bool glycoSearchTop, int glycoSearchTopNum, bool searchGlycan182, List<string> nestedIds)
+             bool isOGlycoSearch, bool glycoSearchTop, int glycoSearchTopNum, bool searchGlycan182, int maxOGlycanNum, List<string> nestedIds)
             : base(null, listOfSortedms2Scans, peptideIndex, fragmentIndex, currentPartition, commonParameters, new OpenSearchMode(), 0, nestedIds)
         {
             this.GlobalCsms = globalCsms;
             this.IsOGlycoSearch = isOGlycoSearch;
             this.GlycoSearchTopN = glycoSearchTop;
             this.TopN = glycoSearchTopNum;
+            this._maxOGlycanNum = maxOGlycanNum;
 
             SecondFragmentIndex = secondFragmentIndex;
             PrecusorSearchMode = commonParameters.PrecursorMassTolerance;
@@ -62,7 +64,7 @@ namespace EngineLayer.GlycoSearch
             {
                 GlycanBox.GlobalOGlycans = Glycan.LoadGlycan(GlobalVariables.OGlycanLocation).ToArray();
                 GlycanBox.GlobalOGlycanModifications = GlycanBox.BuildGlobalOGlycanModifications(GlycanBox.GlobalOGlycans);
-                OGlycanBoxes = GlycanBox.BuildOGlycanBoxes(3).OrderBy(p=>p.Mass).ToArray();
+                OGlycanBoxes = GlycanBox.BuildOGlycanBoxes(_maxOGlycanNum).OrderBy(p=>p.Mass).ToArray();
             }
         }
 
