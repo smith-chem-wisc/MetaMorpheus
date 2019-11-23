@@ -196,7 +196,7 @@
                                         </TextBox>
                                     </StackPanel>
                                     <StackPanel Orientation="Horizontal" Margin="5">
-                                        <Label x:Name="LbMinVariantDepth" Content="Min read depth for variants" />
+                                        <Label x:Name="LbMinVariantDepth" Content="Min Read Depth for Variants" />
                                         <TextBox x:Name="MinVariantDepthTextBox" PreviewTextInput="CheckIfNumber" Width="45" ToolTipService.ShowDuration="999999" ToolTipService.InitialShowDelay="500">
                                             <TextBox.ToolTip>
                                                 <TextBlock>
@@ -206,7 +206,7 @@
                                         </TextBox>
                                     </StackPanel>
                                     <StackPanel Orientation="Horizontal" Margin="5">
-                                        <Label x:Name="LbMaxHeterozygousVariants" Content="Max heterozygous variants for combinitorics" />
+                                        <Label x:Name="LbMaxHeterozygousVariants" Content="Max Heterozygous variants for Combinitorics" />
                                         <TextBox x:Name="MaxHeterozygousVariantsTextBox" PreviewTextInput="CheckIfNumber" Width="45" ToolTipService.ShowDuration="999999" ToolTipService.InitialShowDelay="500">
                                             <TextBox.ToolTip>
                                                 <TextBlock>
@@ -216,7 +216,7 @@
                                         </TextBox>
                                     </StackPanel>
                                     <StackPanel Orientation="Horizontal" Margin="5">
-                                        <Label x:Name="minimumScoreLabel" Content="Minimum score allowed:" />
+                                        <Label x:Name="minimumScoreLabel" Content="Minimum Score Allowed:" />
                                         <TextBox x:Name="MinScoreAllowed" PreviewTextInput="CheckIfNumber" Width="45" ToolTipService.ShowDuration="999999" ToolTipService.InitialShowDelay="500">
                                             <TextBox.ToolTip>
                                                 <TextBlock>
@@ -498,6 +498,12 @@
         <StackPanel  Orientation="Horizontal" HorizontalAlignment="Center" Grid.Row="1" Margin="5">
             <Button x:Name="cancelButton" Content="Cancel" Click="CancelButton_Click" />
             <Button x:Name="saveButton" Content="Save GPTMD task" Click="SaveButton_Click" FontSize="24" />
+            <Button x:Name="setDefaultbutton" Click="SaveAsDefault_Click" Width="100" >
+                <TextBlock Text="Save As Default" TextWrapping="Wrap" TextAlignment="Center"/>
+                <ToolTipService.ToolTip>
+                    <ToolTip Content="Save these parameters as the default. MetaMorpheus can return to original defaults by deleting the folder 'DefaultParameters'" ToolTipService.ShowDuration="999999" ToolTipService.InitialShowDelay="500" />
+                </ToolTipService.ToolTip>
+            </Button>
         </StackPanel>
     </Grid>
 </Window>

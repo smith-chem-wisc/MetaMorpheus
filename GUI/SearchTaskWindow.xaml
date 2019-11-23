@@ -204,7 +204,7 @@
 
                                 <!-- Max mods per peptide -->
                                 <StackPanel Orientation="Horizontal" Margin="5 5 5 0" Grid.Column="0" Grid.Row="2">
-                                    <Label x:Name="lbMaxModNum" Content="Max mods per peptide:" Width="150" />
+                                    <Label x:Name="lbMaxModNum" Content="Max Mods Per Peptide:" Width="150" />
                                     <TextBox x:Name="MaxModNumTextBox" PreviewTextInput="CheckIfNumber" Width="45" ToolTipService.ShowDuration="999999" ToolTipService.InitialShowDelay="500">
                                         <TextBox.ToolTip>
                                             <TextBlock>
@@ -707,7 +707,7 @@
                                                 </TextBox>
                                             </StackPanel>
                                             <StackPanel Orientation="Horizontal" Margin="2">
-                                                <Label x:Name="LbMinVariantDepth" Content="Min read depth for variants:" Width="250" />
+                                                <Label x:Name="LbMinVariantDepth" Content="Min Read Depth for Variants:" Width="250" />
                                                 <TextBox x:Name="MinVariantDepthTextBox" PreviewTextInput="CheckIfNumber" Width="45" ToolTipService.ShowDuration="999999" ToolTipService.InitialShowDelay="500">
                                                     <TextBox.ToolTip>
                                                         <TextBlock>
@@ -717,7 +717,7 @@
                                                 </TextBox>
                                             </StackPanel>
                                             <StackPanel Orientation="Horizontal" Margin="2">
-                                                <Label x:Name="LbMaxHeterozygousVariants" Content="Max heterozygous variants for combinitorics:" Width="250" />
+                                                <Label x:Name="LbMaxHeterozygousVariants" Content="Max Heterozygous Variants for Combinitorics:" Width="250" />
                                                 <TextBox x:Name="MaxHeterozygousVariantsTextBox" PreviewTextInput="CheckIfNumber" Width="45" ToolTipService.ShowDuration="999999" ToolTipService.InitialShowDelay="500">
                                                     <TextBox.ToolTip>
                                                         <TextBlock>
@@ -1000,6 +1000,12 @@
         <StackPanel  Orientation="Horizontal" HorizontalAlignment="Center" Grid.Row="1" Margin="5">
             <Button x:Name="cancelButton" Content="Cancel" Click="CancelButton_Click" />
             <Button x:Name="saveButton" Content="Save Search Task" Click="SaveButton_Click" FontSize="24" />
+            <Button x:Name="setDefaultbutton" Click="SaveAsDefault_Click" Width="100" >
+                <TextBlock Text="Save As Default" TextWrapping="Wrap" TextAlignment="Center"/>
+                <ToolTipService.ToolTip>
+                    <ToolTip Content="Save these parameters as the default. MetaMorpheus can return to original defaults by deleting the folder 'DefaultParameters'" ToolTipService.ShowDuration="999999" ToolTipService.InitialShowDelay="500" />
+                </ToolTipService.ToolTip>
+            </Button>
         </StackPanel>
     </Grid>
 </Window>
