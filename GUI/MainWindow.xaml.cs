@@ -1489,6 +1489,11 @@ namespace MetaMorpheusGUI
             System.Diagnostics.Process.Start(GlobalVariables.DataDir);
         }
 
+        private void MenuItem_Proxl(object sender, RoutedEventArgs e)
+        {
+            System.Diagnostics.Process.Start(@"http://proxl-ms.org/");
+        }
+
         private void MenuItem_Click_3(object sender, RoutedEventArgs e)
         {
             System.Diagnostics.Process.Start(Path.Combine(GlobalVariables.DataDir, @"settings.toml"));

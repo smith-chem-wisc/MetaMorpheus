@@ -61,6 +61,11 @@
                         <Image Source="Icons\Blogger_20.bmp"/>
                     </MenuItem.Icon>
                 </MenuItem>
+                <MenuItem Header="proxl: Cross-Linking Visualization" Click="MenuItem_Proxl" >
+                    <MenuItem.Icon>
+                        <Image Source="Icons\proxl-ms.bmp"/>
+                    </MenuItem.Icon>
+                </MenuItem>
             </MenuItem>
         </Menu>
         <Grid>
