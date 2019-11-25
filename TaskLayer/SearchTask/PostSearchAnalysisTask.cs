@@ -898,7 +898,7 @@ namespace TaskLayer
 
             // write best (highest-scoring) PSM per peptide
             string writtenFile = Path.Combine(Parameters.OutputFolder, "AllPeptides.psmtsv");
-            List<PeptideSpectralMatch> peptides = Parameters.AllPsms.GroupBy(b => b.FullSequence).Select(b => b.FirstOrDefault()).ToList();
+            List<PeptideSpectralMatch> peptides = Parameters.AllPsms.GroupBy(b => b.FullSequence).Select(b => b.FirstOrDefault()).OrderByDescending(b=>b.Score).ToList();
 
             new FdrAnalysisEngine(peptides, Parameters.NumNotches, CommonParameters, new List<string> { Parameters.SearchTaskId }, "Peptide").Run();
 
@@ -922,7 +922,7 @@ namespace TaskLayer
                 // write summary text
                 var psmsForThisFile = file.ToList();
                 string strippedFileName = Path.GetFileNameWithoutExtension(file.First().FullFilePath);
-                var peptidesForFile = psmsForThisFile.GroupBy(b => b.FullSequence).Select(b => b.FirstOrDefault()).ToList();
+                var peptidesForFile = psmsForThisFile.GroupBy(b => b.FullSequence).Select(b => b.FirstOrDefault()).OrderByDescending(b=>b.Score).ToList();
                 new FdrAnalysisEngine(peptidesForFile, Parameters.NumNotches, CommonParameters, new List<string> { Parameters.SearchTaskId }, "Peptide").Run();
                 Parameters.SearchTaskResults.AddTaskSummaryText("Target peptides within 1% FDR in " + strippedFileName + ": " + peptidesForFile.Count(a => a.FdrInfo.QValue <= 0.01 && !a.IsDecoy) + Environment.NewLine);
 
@@ -948,7 +948,7 @@ namespace TaskLayer
             List<PeptideSpectralMatch> FDRPsms = Parameters.AllPsms
                 .Where(p => p.FdrInfo.QValue <= CommonParameters.QValueOutputFilter
                 && p.FdrInfo.QValueNotch <= CommonParameters.QValueOutputFilter && p.BaseSequence != null).ToList();
-            var possibleVariantPsms = FDRPsms.Where(p => p.BestMatchingPeptides.Any(pep => pep.Peptide.IsVariantPeptide())).ToList();
+            var possibleVariantPsms = FDRPsms.Where(p => p.BestMatchingPeptides.Any(pep => pep.Peptide.IsVariantPeptide())).OrderByDescending(pep=>pep.Score).ToList();
 
             if (!Parameters.SearchParameters.WriteDecoys)
             {
@@ -965,7 +965,7 @@ namespace TaskLayer
 
             WritePsmsToTsv(possibleVariantPsms, variantPsmFile, Parameters.SearchParameters.ModsToWriteSelection);
 
-            List<PeptideSpectralMatch> variantPeptides = possibleVariantPsms.GroupBy(b => b.FullSequence).Select(b => b.FirstOrDefault()).ToList();
+            List<PeptideSpectralMatch> variantPeptides = possibleVariantPsms.GroupBy(b => b.FullSequence).Select(b => b.FirstOrDefault()).OrderByDescending(b=>b.Score).ToList();
             List<PeptideSpectralMatch> confidentVariantPeps = new List<PeptideSpectralMatch>();
 
             new FdrAnalysisEngine(variantPeptides, Parameters.NumNotches, CommonParameters, new List<string> { Parameters.SearchTaskId }, "variant_Peptides").Run();

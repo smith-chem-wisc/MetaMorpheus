@@ -225,7 +225,9 @@ namespace EngineLayer
             {
                 List<int> jointSeries = new List<int>();
                 jointSeries.AddRange(matchedFragments.Where(f => f.NeutralTheoreticalProduct.TerminusFragment.Terminus == FragmentationTerminus.N).Select(f => f.NeutralTheoreticalProduct.TerminusFragment.FragmentNumber) ?? new List<int>());
-                jointSeries.AddRange(matchedFragments.Where(f => f.NeutralTheoreticalProduct.TerminusFragment.Terminus == FragmentationTerminus.C).Select(f => f.NeutralTheoreticalProduct.TerminusFragment.FragmentNumber) ?? new List<int>());
+
+                jointSeries.AddRange(matchedFragments.Where(f => f.NeutralTheoreticalProduct.TerminusFragment.Terminus == FragmentationTerminus.C).Select(f => (peptide.BaseSequence.Length + 1 - f.NeutralTheoreticalProduct.TerminusFragment.FragmentNumber)) ?? new List<int>());
+
                 jointSeries = jointSeries.Distinct().ToList();
 
                 if (jointSeries.Count > 0)

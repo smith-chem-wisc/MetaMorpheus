@@ -332,20 +332,40 @@ namespace EngineLayer
         public static IEnumerable<PsmData> CreatePsmData(string searchType, List<PeptideSpectralMatch> psms, Dictionary<string, int> sequenceToPsmCount, Dictionary<string, Dictionary<int, Tuple<double, double>>> timeDependantHydrophobicityAverageAndDeviation_unmodified, Dictionary<string, Dictionary<int, Tuple<double, double>>> timeDependantHydrophobicityAverageAndDeviation_modified, int chargeStateMode, string[] trainingVariables)
         {
             List<PsmData> pd = new List<PsmData>();
+
             foreach (PeptideSpectralMatch psm in psms)
             {
-                foreach (var (notch, peptideWithSetMods) in psm.BestMatchingPeptides)
+                if (searchType == "crosslink")
                 {
+                    CrosslinkSpectralMatch csm = (CrosslinkSpectralMatch)psm;
+
                     bool label;
-                    if (peptideWithSetMods.Protein.IsDecoy || psm.FdrInfo.QValue > 0.25)
+                    if (csm.IsDecoy || csm.BetaPeptide.IsDecoy || psm.FdrInfo.QValue > 0.25)
                     {
                         label = false;
-                        pd.Add(CreateOnePsmDataEntry(searchType, psm, sequenceToPsmCount, timeDependantHydrophobicityAverageAndDeviation_unmodified, timeDependantHydrophobicityAverageAndDeviation_modified, chargeStateMode, peptideWithSetMods, trainingVariables, notch, label));
+                        pd.Add(CreateOnePsmDataEntry(searchType, psm, sequenceToPsmCount, timeDependantHydrophobicityAverageAndDeviation_unmodified, timeDependantHydrophobicityAverageAndDeviation_modified, chargeStateMode, csm.BestMatchingPeptides.First().Peptide, trainingVariables, 0, label));
                     }
-                    else if (!peptideWithSetMods.Protein.IsDecoy && psm.FdrInfo.QValue <= 0.01)
+                    else if (!csm.IsDecoy && !csm.BetaPeptide.IsDecoy && psm.FdrInfo.QValue <= 0.01)
                     {
                         label = true;
-                        pd.Add(CreateOnePsmDataEntry(searchType, psm, sequenceToPsmCount, timeDependantHydrophobicityAverageAndDeviation_unmodified, timeDependantHydrophobicityAverageAndDeviation_modified, chargeStateMode, peptideWithSetMods, trainingVariables, notch, label));
+                        pd.Add(CreateOnePsmDataEntry(searchType, psm, sequenceToPsmCount, timeDependantHydrophobicityAverageAndDeviation_unmodified, timeDependantHydrophobicityAverageAndDeviation_modified, chargeStateMode, csm.BestMatchingPeptides.First().Peptide, trainingVariables, 0, label));
+                    }
+                }
+                else
+                {
+                    foreach (var (notch, peptideWithSetMods) in psm.BestMatchingPeptides)
+                    {
+                        bool label;
+                        if (peptideWithSetMods.Protein.IsDecoy || psm.FdrInfo.QValue > 0.25)
+                        {
+                            label = false;
+                            pd.Add(CreateOnePsmDataEntry(searchType, psm, sequenceToPsmCount, timeDependantHydrophobicityAverageAndDeviation_unmodified, timeDependantHydrophobicityAverageAndDeviation_modified, chargeStateMode, peptideWithSetMods, trainingVariables, notch, label));
+                        }
+                        else if (!peptideWithSetMods.Protein.IsDecoy && psm.FdrInfo.QValue <= 0.01)
+                        {
+                            label = true;
+                            pd.Add(CreateOnePsmDataEntry(searchType, psm, sequenceToPsmCount, timeDependantHydrophobicityAverageAndDeviation_unmodified, timeDependantHydrophobicityAverageAndDeviation_modified, chargeStateMode, peptideWithSetMods, trainingVariables, notch, label));
+                        }
                     }
                 }
             }
@@ -438,6 +458,7 @@ namespace EngineLayer
 
                 totalMatchingFragmentCount = (float)Math.Round(csm.XLTotalScore, 0);
                 deltaScore = (float)csm.DeltaScore;
+                chargeDifference = -Math.Abs(chargeStateMode - psm.ScanPrecursorCharge);
                 alphaIntensity = (float)(csm.Score - (int)csm.Score);
                 betaIntensity = csm.BetaPeptide == null ? (float)0 : (float)(csm.BetaPeptide.Score - (int)csm.BetaPeptide.Score);
                 longestFragmentIonSeries_Alpha = psm.GetLongestIonSeriesBidirectional(csm.PeptidesToMatchingFragments, selectedAlphaPeptide);
