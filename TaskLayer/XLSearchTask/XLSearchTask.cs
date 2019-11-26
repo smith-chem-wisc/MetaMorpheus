@@ -153,7 +153,10 @@ namespace TaskLayer
                     }
                     csm.ResolveProteinPosAmbiguitiesForXl();
                 }
-                var orderedCsmsPerScan = RemoveDuplicateFromCsmsPerScan(csmsPerScan).OrderByDescending(p => p.XLTotalScore).ThenBy(p => p.FullSequence + ((p.BetaPeptide == null) ? "" : p.BetaPeptide.FullSequence)).ToList();
+
+                //var orderedCsmsPerScan = RemoveDuplicateFromCsmsPerScan(csmsPerScan).OrderByDescending(p => p.XLTotalScore).ThenBy(p => p.FullSequence + ((p.BetaPeptide == null) ? "" : p.BetaPeptide.FullSequence)).ToList();
+                var orderedCsmsPerScan = RemoveDuplicateFromCsmsPerScan(csmsPerScan);
+
                 ListOfCsmsPerMS2ScanParsimony.Add(orderedCsmsPerScan);
             }
             SortCsmsAndCalculateDeltaScores(ListOfCsmsPerMS2ScanParsimony);
@@ -171,10 +174,9 @@ namespace TaskLayer
 
             return postXLSearchAnalysisTask.Run(OutputFolder, dbFilenameList, currentRawFileList, taskId, fileSettingsList, filteredAllPsms.OrderByDescending(p => p.XLTotalScore).ToList(), CommonParameters, XlSearchParameters, proteinList, variableModifications, fixedModifications, localizeableModificationTypes, MyTaskResults);
         }
+
         public void SortCsmsAndCalculateDeltaScores(List<List<CrosslinkSpectralMatch>> ListOfCsmsPerMS2Scan)
         {
-            //For each ms2scan, try to find the best candidate psm from the psms list. Add it into filteredAllPsms
-            //This function is for current usage, this can be replaced with PEP value. 
             foreach (var csmsPerScan in ListOfCsmsPerMS2Scan)
             {
                 csmsPerScan.Sort((x, y) => y.XLTotalScore.CompareTo(x.XLTotalScore));

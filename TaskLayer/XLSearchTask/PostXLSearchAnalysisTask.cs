@@ -26,24 +26,12 @@ namespace TaskLayer
 
             // inter-crosslinks; different proteins are linked
             List<CrosslinkSpectralMatch> interCsms = allPsms.Where(p => p.CrossType == PsmCrossType.Inter).OrderByDescending(p => p.XLTotalScore).ToList();
-            foreach (var item in interCsms)
-            {
-                item.CrossType = PsmCrossType.Inter;
-            }
 
             // intra-crosslinks; crosslinks within a protein
             List<CrosslinkSpectralMatch> intraCsms = allPsms.Where(p => p.CrossType == PsmCrossType.Intra).OrderByDescending(p => p.XLTotalScore).ToList();
-            foreach (var item in intraCsms)
-            {
-                item.CrossType = PsmCrossType.Intra;
-            }
-
-            // calculate FDR
-            DoCrosslinkFdrAnalysis(interCsms);
-            DoCrosslinkFdrAnalysis(intraCsms);
-            SingleFDRAnalysis(allPsms, commonParameters, new List<string> { taskId });
 
             ComputeXlinkQandPValues(allPsms, intraCsms, interCsms, commonParameters, taskId);
+
             // write interlink CSMs
             if (interCsms.Any())
             {

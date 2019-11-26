@@ -18,7 +18,6 @@ namespace EngineLayer.CrosslinkSearch
         // crosslinker molecule
         private readonly Crosslinker Crosslinker;
 
-        private readonly bool CrosslinkSearchTopN;
         private readonly int TopN;
         private readonly bool CleaveAtCrosslinkSite;
         private readonly bool QuenchH2O;
@@ -63,11 +62,6 @@ namespace EngineLayer.CrosslinkSearch
             else
             {
                 XLPrecusorSearchMode = new SingleAbsoluteAroundZeroSearchMode(commonParameters.PrecursorMassTolerance.Value);
-            }
-
-            if (!CrosslinkSearchTopN)
-            {
-                TopN = int.MaxValue;
             }
         }
 
@@ -443,12 +437,6 @@ namespace EngineLayer.CrosslinkSearch
                         }
                     }
 
-                    if (bestAlphaLocalizedScore < CommonParameters.ScoreCutoff ||
-                        bestBetaLocalizedScore < CommonParameters.ScoreCutoff)
-                    {
-                        return null;
-                    }
-
                     //Remove any matched beta ions that also matched to the alpha peptide. The higher score one is alpha peptide.
                     if (PeptideIndex[alphaIndex].FullSequence != PeptideIndex[betaIndex].FullSequence)
                     {
@@ -470,6 +458,12 @@ namespace EngineLayer.CrosslinkSearch
                                 bestBetaLocalizedScore = CalculatePeptideScore(theScan.TheScan, bestMatchedBetaIons);
                             }
                         }
+                    }
+
+                    if (bestAlphaLocalizedScore < CommonParameters.ScoreCutoff ||
+                        bestBetaLocalizedScore < CommonParameters.ScoreCutoff)
+                    {
+                        return null;
                     }
 
                     var localizedAlpha = new CrosslinkSpectralMatch(PeptideIndex[alphaIndex], 0, bestAlphaLocalizedScore, 0, theScan, PeptideIndex[alphaIndex].DigestionParams, bestMatchedAlphaIons);
