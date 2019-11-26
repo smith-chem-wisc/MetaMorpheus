@@ -86,7 +86,8 @@ namespace EngineLayer
                 return matchedFragmentIons;
             }
 
-            if (scan.TheScan.MassSpectrum.XcorrProcessed)
+            //we checked above for experimental fragments, but the experimental fragments and the xarray aren't guarenteed to be the same after XCorr processing
+            if (scan.TheScan.MassSpectrum.XcorrProcessed && scan.TheScan.MassSpectrum.XArray.Length!=0)
             {
                 foreach (Product product in theoreticalProducts)
                 {
