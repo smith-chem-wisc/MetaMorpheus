@@ -82,17 +82,18 @@ namespace EngineLayer.CrosslinkSearch
             }
         }
 
-        public static List<int> GetPossibleCrosslinkerModSites(char[] crosslinkerModSites, PeptideWithSetModifications peptide, InitiatorMethionineBehavior initiatorMethionineBehavior, bool CrosslinkAtCleavageSite)
+        public static void GetPossibleCrosslinkerModSites(char[] crosslinkerModSites, PeptideWithSetModifications peptide, InitiatorMethionineBehavior initiatorMethionineBehavior, bool CrosslinkAtCleavageSite, out List<int> possibleXlPositions)
         {
-            List<int> possibleXlPositions = new List<int>();
+            possibleXlPositions = null;
+
             bool wildcard = crosslinkerModSites.Any(p => p == 'X');
 
-            List<int> range = Enumerable.Range(0, peptide.BaseSequence.Length).ToList();
+            var range = Enumerable.Range(0, peptide.BaseSequence.Length);
             if (!CrosslinkAtCleavageSite && peptide.OneBasedEndResidueInProtein != peptide.Protein.Length 
                 && !peptide.Protein.ProteolysisProducts.Any(x => x.OneBasedEndPosition == peptide.OneBasedEndResidueInProtein))
             {
                 //The C termial cannot be crosslinked and cleaved.
-                range = Enumerable.Range(0, peptide.BaseSequence.Length - 1).ToList();
+                range = Enumerable.Range(0, peptide.BaseSequence.Length - 1);
             }
             foreach (var r in range)
             {
@@ -101,12 +102,14 @@ namespace EngineLayer.CrosslinkSearch
                     //Try to eliminate those site with mod on it. Consider the possibility that the site is at Protein N terminal.       
                     if (!peptide.AllModsOneIsNterminus.Keys.Contains(r + 2))
                     {
+                        if (possibleXlPositions == null)
+                        {
+                            possibleXlPositions = new List<int>();
+                        }
                         possibleXlPositions.Add(r + 1);
                     }
                 }
             }
-
-            return possibleXlPositions;
         }
 
         /// <summary>
