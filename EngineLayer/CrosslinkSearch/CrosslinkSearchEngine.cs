@@ -95,6 +95,7 @@ namespace EngineLayer.CrosslinkSearch
                     Array.Clear(scoringTable, 0, scoringTable.Length);
                     idsOfPeptidesPossiblyObserved.Clear();
                     csms.Clear();
+                    seenPair.Clear();
 
                     var scan = ListOfSortedMs2Scans[scanIndex];
 
@@ -183,10 +184,6 @@ namespace EngineLayer.CrosslinkSearch
 
         private void FindCrosslinkedPeptide(Ms2ScanWithSpecificMass scan, List<int> idsOfPeptidesPossiblyObserved, byte[] scoringTable, double[] massTable, byte byteScoreCutoff, int scanIndex, List<CrosslinkSpectralMatch> possibleMatches, HashSet<Tuple<int, int>> seenPair)
         {
-            //List<CrosslinkSpectralMatch> possibleMatches = new List<CrosslinkSpectralMatch>();
-
-            //HashSet<Tuple<int, int>> seenPair = new HashSet<Tuple<int, int>>();
-
             foreach (var id in idsOfPeptidesPossiblyObserved)
             {
                 if (XLPrecusorSearchMode.Accepts(scan.PrecursorMass, massTable[id]) >= 0)
@@ -207,7 +204,7 @@ namespace EngineLayer.CrosslinkSearch
                 {
                     List<int> possibleCrosslinkLocations = CrosslinkSpectralMatch.GetPossibleCrosslinkerModSites(AllCrosslinkerSites, PeptideIndex[id], CommonParameters.DigestionParams.InitiatorMethionineBehavior, CleaveAtCrosslinkSite);
 
-                    if (possibleCrosslinkLocations.Any())
+                    if (possibleCrosslinkLocations != null && possibleCrosslinkLocations.Any())
                     {
                         // tris deadend
                         possibleMatches.Add(LocalizeDeadEndSite(PeptideIndex[id], scan, CommonParameters, possibleCrosslinkLocations, TrisDeadEnd, 0, scanIndex));
@@ -217,7 +214,7 @@ namespace EngineLayer.CrosslinkSearch
                 {
                     List<int> possibleCrosslinkLocations = CrosslinkSpectralMatch.GetPossibleCrosslinkerModSites(AllCrosslinkerSites, PeptideIndex[id], CommonParameters.DigestionParams.InitiatorMethionineBehavior, CleaveAtCrosslinkSite);
 
-                    if (possibleCrosslinkLocations.Any())
+                    if (possibleCrosslinkLocations != null && possibleCrosslinkLocations.Any())
                     {
                         // H2O deadend
                         possibleMatches.Add(LocalizeDeadEndSite(PeptideIndex[id], scan, CommonParameters, possibleCrosslinkLocations, H2ODeadEnd, 0, scanIndex));
@@ -227,7 +224,7 @@ namespace EngineLayer.CrosslinkSearch
                 {
                     List<int> possibleCrosslinkLocations = CrosslinkSpectralMatch.GetPossibleCrosslinkerModSites(AllCrosslinkerSites, PeptideIndex[id], CommonParameters.DigestionParams.InitiatorMethionineBehavior, CleaveAtCrosslinkSite);
 
-                    if (possibleCrosslinkLocations.Any())
+                    if (possibleCrosslinkLocations != null && possibleCrosslinkLocations.Any())
                     {
                         // NH2 deadend
                         possibleMatches.Add(LocalizeDeadEndSite(PeptideIndex[id], scan, CommonParameters, possibleCrosslinkLocations, NH2DeadEnd, 0, scanIndex));
@@ -238,7 +235,7 @@ namespace EngineLayer.CrosslinkSearch
                     //TO THINK: Is there any cases that Loop Mass equals dead-end mass.
                     List<int> possibleCrosslinkLocations = CrosslinkSpectralMatch.GetPossibleCrosslinkerModSites(AllCrosslinkerSites, PeptideIndex[id], CommonParameters.DigestionParams.InitiatorMethionineBehavior, CleaveAtCrosslinkSite);
 
-                    if (possibleCrosslinkLocations.Count >= 2)
+                    if (possibleCrosslinkLocations != null && possibleCrosslinkLocations.Count >= 2)
                     {
                         possibleMatches.Add(LocalizeLoopSites(PeptideIndex[id], scan, CommonParameters, possibleCrosslinkLocations, Loop, 0, scanIndex));
                     }
@@ -246,7 +243,7 @@ namespace EngineLayer.CrosslinkSearch
                 else if (scan.PrecursorMass - massTable[id] >= (CommonParameters.DigestionParams.MinPeptideLength * 50))
                 {
                     List<int> possibleCrosslinkLocations = CrosslinkSpectralMatch.GetPossibleCrosslinkerModSites(AllCrosslinkerSites, PeptideIndex[id], CommonParameters.DigestionParams.InitiatorMethionineBehavior, CleaveAtCrosslinkSite);
-                    if (!possibleCrosslinkLocations.Any())
+                    if (possibleCrosslinkLocations == null || !possibleCrosslinkLocations.Any())
                     {
                         continue;
                     }
@@ -270,7 +267,7 @@ namespace EngineLayer.CrosslinkSearch
 
                                 List<int> possibleBetaCrosslinkSites = CrosslinkSpectralMatch.GetPossibleCrosslinkerModSites(AllCrosslinkerSites, PeptideIndex[betaMassLowIndex], CommonParameters.DigestionParams.InitiatorMethionineBehavior, CleaveAtCrosslinkSite);
 
-                                if (!possibleBetaCrosslinkSites.Any())
+                                if (possibleBetaCrosslinkSites ==null || !possibleBetaCrosslinkSites.Any())
                                 {
                                     continue;
                                 }
@@ -287,7 +284,6 @@ namespace EngineLayer.CrosslinkSearch
                 }
             }
 
-            //return possibleMatches;
         }
         
 
