@@ -85,6 +85,9 @@ namespace EngineLayer.CrosslinkSearch
 
                 List<CrosslinkSpectralMatch> csms = new List<CrosslinkSpectralMatch>();
                 HashSet<Tuple<int, int>> seenPair = new HashSet<Tuple<int, int>>();
+                List<int> idsOfPeptidesTopN = new List<int>();
+                byte scoreAtTopN = 0;
+                int peptideCount = 0;
 
                 for (; scanIndex < ListOfSortedMs2Scans.Length; scanIndex += maxThreadsPerFile)
                 {
@@ -96,6 +99,7 @@ namespace EngineLayer.CrosslinkSearch
                     idsOfPeptidesPossiblyObserved.Clear();
                     csms.Clear();
                     seenPair.Clear();
+                    idsOfPeptidesTopN.Clear();
 
                     var scan = ListOfSortedMs2Scans[scanIndex];
 
@@ -134,10 +138,30 @@ namespace EngineLayer.CrosslinkSearch
                     // done with indexed scoring; refine scores and create PSMs
                     if (idsOfPeptidesPossiblyObserved.Any())
                     {
+                        scoreAtTopN = 0;
+                        peptideCount = 0;
+
+                        foreach (int id in idsOfPeptidesPossiblyObserved.OrderByDescending(p => scoringTable[p]))
+                        {
+                            idsOfPeptidesTopN.Add(id);
+
+                            peptideCount++;
+                            // Whenever the count exceeds the TopN that we want to keep, we removed everything with a score lower than the score of the TopN-th peptide in the ids list
+                            if (peptideCount == TopN)
+                            {
+                                scoreAtTopN = scoringTable[id];
+                            }
+
+                            if (scoringTable[id] < scoreAtTopN)
+                            {
+                                break;
+                            }
+
+
+                        }
                         
-                        idsOfPeptidesPossiblyObserved = idsOfPeptidesPossiblyObserved.OrderByDescending(p => scoringTable[p]).Take(TopN).ToList();
-                                                 
-                        FindCrosslinkedPeptide(scan, idsOfPeptidesPossiblyObserved, scoringTable, massTable, byteScoreCutoff, scanIndex, csms, seenPair);
+                        //peptide candidates in idsOfPeptidesTopN are treated as alpha peptides. Then the mass of the beta peptides are calculated and searched from massTable.
+                        FindCrosslinkedPeptide(scan, idsOfPeptidesTopN, scoringTable, massTable, byteScoreCutoff, scanIndex, csms, seenPair);
 
 
                         if (csms == null || csms.Count == 0 || csms.Where(p => p != null).Count() == 0)
