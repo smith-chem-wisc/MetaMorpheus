@@ -443,12 +443,6 @@ namespace EngineLayer.CrosslinkSearch
                         }
                     }
 
-                    if (bestAlphaLocalizedScore < CommonParameters.ScoreCutoff ||
-                        bestBetaLocalizedScore < CommonParameters.ScoreCutoff)
-                    {
-                        return null;
-                    }
-
                     //Remove any matched beta ions that also matched to the alpha peptide. The higher score one is alpha peptide.
                     if (PeptideIndex[alphaIndex].FullSequence != PeptideIndex[betaIndex].FullSequence)
                     {
@@ -471,6 +465,12 @@ namespace EngineLayer.CrosslinkSearch
                                 bestBetaLocalizedScore = CalculatePeptideScore(theScan.TheScan, bestMatchedBetaIons);
                             }
                         }
+                    }
+
+                    if (bestAlphaLocalizedScore < CommonParameters.ScoreCutoff ||
+                        bestBetaLocalizedScore < CommonParameters.ScoreCutoff)
+                    {
+                        return null;
                     }
 
                     var localizedAlpha = new CrosslinkSpectralMatch(PeptideIndex[alphaIndex], 0, bestAlphaLocalizedScore, 0, theScan, PeptideIndex[alphaIndex].DigestionParams, bestMatchedAlphaIons);
