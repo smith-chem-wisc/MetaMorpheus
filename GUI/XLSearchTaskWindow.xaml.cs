@@ -119,11 +119,7 @@ namespace MetaMorpheusGUI
 
         private void UpdateFieldsFromTask(XLSearchTask task)
         {
-            //Crosslink search para
-            //RbSearchCrosslink.IsChecked = !task.XlSearchParameters.SearchGlyco;
-            //RbSearchGlyco.IsChecked = task.XlSearchParameters.SearchGlyco;
             cbCrosslinkers.SelectedItem = task.XlSearchParameters.Crosslinker;
-            ckbXLTopNum.IsChecked = task.XlSearchParameters.RestrictToTopNHits;
             txtXLTopNum.Text = task.XlSearchParameters.CrosslinkSearchTopNum.ToString(CultureInfo.InvariantCulture);
             ckbCrosslinkAtCleavageSite.IsChecked = task.XlSearchParameters.CrosslinkAtCleavageSite;
             ckbQuenchH2O.IsChecked = task.XlSearchParameters.XlQuench_H2O;
@@ -162,7 +158,6 @@ namespace MetaMorpheusGUI
             numberOfDatabaseSearchesTextBox.Text = task.CommonParameters.TotalPartitions.ToString(CultureInfo.InvariantCulture);
             maxThreadsTextBox.Text = task.CommonParameters.MaxThreadsToUsePerFile.ToString(CultureInfo.InvariantCulture);
             CustomFragmentationWindow = new CustomFragmentationWindow(task.CommonParameters.CustomIons);
-            ckbPercolator.IsChecked = task.XlSearchParameters.WriteOutputForPercolator;
             ckbPepXML.IsChecked = task.XlSearchParameters.WritePepXml;
 
             OutputFileNameTextBox.Text = task.CommonParameters.TaskDescriptor;
@@ -240,7 +235,6 @@ namespace MetaMorpheusGUI
 
             DissociationType dissociationType = GlobalVariables.AllSupportedDissociationTypes[DissociationTypeComboBox.SelectedItem.ToString()];
             string separationType = SeparationTypeComboBox.SelectedItem.ToString();
-
             DissociationType childDissociationType = DissociationType.Unknown;
             if (ChildScanDissociationTypeComboBox.SelectedItem != null)
             {
@@ -248,21 +242,19 @@ namespace MetaMorpheusGUI
             }
             CustomFragmentationWindow.Close();
 
-            //TheTask.XlSearchParameters.SearchGlyco = RbSearchGlyco.IsChecked.Value;
-            //TheTask.XlSearchParameters.SearchGlycoWithBgYgIndex = CkbSearchGlycoWithBgYgIndex.IsChecked.Value;
-            TheTask.XlSearchParameters.RestrictToTopNHits = ckbXLTopNum.IsChecked.Value;
             TheTask.XlSearchParameters.CrosslinkSearchTopNum = int.Parse(txtXLTopNum.Text, CultureInfo.InvariantCulture);
             TheTask.XlSearchParameters.CrosslinkAtCleavageSite = ckbCrosslinkAtCleavageSite.IsChecked.Value;
             TheTask.XlSearchParameters.Crosslinker = (Crosslinker)cbCrosslinkers.SelectedItem;
+
 
             TheTask.XlSearchParameters.XlQuench_H2O = ckbQuenchH2O.IsChecked.Value;
             TheTask.XlSearchParameters.XlQuench_NH2 = ckbQuenchNH2.IsChecked.Value;
             TheTask.XlSearchParameters.XlQuench_Tris = ckbQuenchTris.IsChecked.Value;
 
+
             TheTask.XlSearchParameters.DecoyType = checkBoxDecoy.IsChecked.Value ? DecoyType.Reverse : DecoyType.None;
 
             Protease protease = (Protease)proteaseComboBox.SelectedItem;
-
             int MaxMissedCleavages = string.IsNullOrEmpty(missedCleavagesTextBox.Text) ? int.MaxValue : (int.Parse(missedCleavagesTextBox.Text, NumberStyles.Any, CultureInfo.InvariantCulture));
             int MinPeptideLength = (int.Parse(MinPeptideLengthTextBox.Text, NumberStyles.Any, CultureInfo.InvariantCulture));
             int MaxPeptideLength = string.IsNullOrEmpty(MaxPeptideLengthTextBox.Text) ? int.MaxValue : (int.Parse(MaxPeptideLengthTextBox.Text, NumberStyles.Any, CultureInfo.InvariantCulture));
@@ -296,7 +288,6 @@ namespace MetaMorpheusGUI
                 PrecursorMassTolerance = new PpmTolerance(double.Parse(XLPrecusorMsTlTextBox.Text, CultureInfo.InvariantCulture));
             }
 
-            TheTask.XlSearchParameters.WriteOutputForPercolator = ckbPercolator.IsChecked.Value;
             TheTask.XlSearchParameters.WritePepXml = ckbPepXML.IsChecked.Value;
 
             var listOfModsVariable = new List<(string, string)>();
@@ -310,8 +301,6 @@ namespace MetaMorpheusGUI
             {
                 listOfModsFixed.AddRange(heh.Children.Where(b => b.Use).Select(b => (b.Parent.DisplayName, b.ModName)));
             }
-
-            bool parseMaxThreadsPerFile = int.Parse(maxThreadsTextBox.Text, CultureInfo.InvariantCulture) <= Environment.ProcessorCount && int.Parse(maxThreadsTextBox.Text, CultureInfo.InvariantCulture) > 0;
 
             CommonParameters commonParamsToSave = new CommonParameters(
                 precursorMassTolerance: PrecursorMassTolerance,
@@ -331,7 +320,6 @@ namespace MetaMorpheusGUI
                 totalPartitions: int.Parse(numberOfDatabaseSearchesTextBox.Text, CultureInfo.InvariantCulture),
                 listOfModsVariable: listOfModsVariable,
                 listOfModsFixed: listOfModsFixed,
-                maxThreadsToUsePerFile: parseMaxThreadsPerFile ? int.Parse(maxThreadsTextBox.Text, CultureInfo.InvariantCulture) : new CommonParameters().MaxThreadsToUsePerFile,
                 assumeOrphanPeaksAreZ1Fragments: protease.Name != "top-down");
 
             TheTask.CommonParameters = commonParamsToSave;

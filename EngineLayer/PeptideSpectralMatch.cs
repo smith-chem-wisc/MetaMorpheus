@@ -219,11 +219,11 @@ namespace EngineLayer
 
         public int GetLongestIonSeriesBidirectional(Dictionary<PeptideWithSetModifications, List<MatchedFragmentIon>> PeptidesToMatchingFragments, PeptideWithSetModifications peptide)
         {
-            int maxdif = 0;
-
+            List<int> maxDiffs = new List<int> { 1 };
             if (PeptidesToMatchingFragments != null && PeptidesToMatchingFragments.TryGetValue(peptide, out var matchedFragments) && matchedFragments != null && matchedFragments.Any())
             {
                 List<int> jointSeries = new List<int>();
+
                 jointSeries.AddRange(matchedFragments.Where(f => f.NeutralTheoreticalProduct.TerminusFragment.Terminus == FragmentationTerminus.N).Select(f => f.NeutralTheoreticalProduct.TerminusFragment.FragmentNumber) ?? new List<int>());
 
                 jointSeries.AddRange(matchedFragments.Where(f => f.NeutralTheoreticalProduct.TerminusFragment.Terminus == FragmentationTerminus.C).Select(f => (peptide.BaseSequence.Length + 1 - f.NeutralTheoreticalProduct.TerminusFragment.FragmentNumber)) ?? new List<int>());
@@ -234,22 +234,28 @@ namespace EngineLayer
                 {
                     jointSeries.Sort();
 
-                    List<int> aminoAcidPostionsThatCouldBeObserved = Enumerable.Range(0, peptide.BaseSequence.Length + 1).ToList();
+                    List<int> aminoAcidPostionsThatCouldBeObserved = Enumerable.Range(1, peptide.BaseSequence.Length).ToList();
 
                     List<int> missing = aminoAcidPostionsThatCouldBeObserved.Except(jointSeries).ToList();
 
-                    for (int i = 0; i < missing.Count - 1; i++)
+                    int localMaxDiff = 0;
+                    for (int i = 0; i < aminoAcidPostionsThatCouldBeObserved.Count; i++)
                     {
-                        int diff = missing[i + 1] - missing[i] - 1;
-                        if (diff > maxdif)
+                        if (!missing.Contains(aminoAcidPostionsThatCouldBeObserved[i]))
                         {
-                            maxdif = diff;
+                            localMaxDiff++;
+                        }
+                        else
+                        {
+                            maxDiffs.Add(localMaxDiff);
+                            localMaxDiff = 0;
                         }
                     }
+                    maxDiffs.Add(localMaxDiff);
                 }
             }
 
-            return maxdif;
+            return maxDiffs.Max();
         }
 
         /// <summary>

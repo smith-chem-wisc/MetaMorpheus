@@ -23,10 +23,27 @@ namespace TaskLayer
 
         public MyTaskResults Run(string OutputFolder, List<DbForTask> dbFilenameList, List<string> currentRawFileList, string taskId, FileSpecificParameters[] fileSettingsList, List<CrosslinkSpectralMatch> allPsms, CommonParameters commonParameters, XlSearchParameters xlSearchParameters, List<Protein> proteinList, List<Modification> variableModifications, List<Modification> fixedModifications, List<string> localizeableModificationTypes, MyTaskResults MyTaskResults)
         {
-            List<CrosslinkSpectralMatch> intraCsms = allPsms.Where(p => p.CrossType == PsmCrossType.Intra).OrderByDescending(p => p.XLTotalScore).ToList();
-            List<CrosslinkSpectralMatch> interCsms = allPsms.Where(p => p.CrossType == PsmCrossType.Inter).OrderByDescending(p => p.XLTotalScore).ToList();
-            ComputeXlinkQandPValues(allPsms, intraCsms, interCsms, commonParameters, taskId);
 
+            // inter-crosslinks; different proteins are linked
+            List<CrosslinkSpectralMatch> interCsms = allPsms.Where(p => p.CrossType == PsmCrossType.Inter).OrderByDescending(p => p.XLTotalScore).ToList();
+            foreach (var item in interCsms)
+            {
+                item.CrossType = PsmCrossType.Inter;
+            }
+
+            // intra-crosslinks; crosslinks within a protein
+            List<CrosslinkSpectralMatch> intraCsms = allPsms.Where(p => p.CrossType == PsmCrossType.Intra).OrderByDescending(p => p.XLTotalScore).ToList();
+            foreach (var item in intraCsms)
+            {
+                item.CrossType = PsmCrossType.Intra;
+            }
+
+            // calculate FDR
+            DoCrosslinkFdrAnalysis(interCsms);
+            DoCrosslinkFdrAnalysis(intraCsms);
+            SingleFDRAnalysis(allPsms, commonParameters, new List<string> { taskId });
+
+            ComputeXlinkQandPValues(allPsms, intraCsms, interCsms, commonParameters, taskId);
             // write interlink CSMs
             if (interCsms.Any())
             {
@@ -36,12 +53,6 @@ namespace TaskLayer
             }
             MyTaskResults.AddTaskSummaryText("Target inter-crosslinks within 1% FDR: " + interCsms.Count(p => p.FdrInfo.QValue <= 0.01 && !p.IsDecoy && !p.BetaPeptide.IsDecoy));
 
-            if (xlSearchParameters.WriteOutputForPercolator)
-            {
-                var interPsmsXLPercolator = interCsms.Where(p => p.Score >= 2 && p.BetaPeptide.Score >= 2).OrderBy(p => p.ScanNumber).ToList();
-                WriteFile.WriteCrosslinkToTxtForPercolator(interPsmsXLPercolator, OutputFolder, "XL_Interlinks_Percolator", xlSearchParameters.Crosslinker);
-                FinishedWritingFile(Path.Combine(OutputFolder, "XL_Interlinks_Percolator.txt"), new List<string> { taskId });
-            }
 
             // write intralink CSMs
             if (intraCsms.Any())
@@ -52,15 +63,9 @@ namespace TaskLayer
             }
             MyTaskResults.AddTaskSummaryText("Target intra-crosslinks within 1% FDR: " + intraCsms.Count(p => p.FdrInfo.QValue <= 0.01 && !p.IsDecoy && !p.BetaPeptide.IsDecoy));
 
-            if (xlSearchParameters.WriteOutputForPercolator)
-            {
-                var intraPsmsXLPercolator = intraCsms.Where(p => p.Score >= 2 && p.BetaPeptide.Score >= 2).OrderBy(p => p.ScanNumber).ToList();
-                WriteFile.WriteCrosslinkToTxtForPercolator(intraPsmsXLPercolator, OutputFolder, "XL_Intralinks_Percolator", xlSearchParameters.Crosslinker);
-                FinishedWritingFile(Path.Combine(OutputFolder, "XL_Intralinks_Percolator.txt"), new List<string> { taskId });
-            }
 
             // write single peptides
-            var singlePsms = allPsms.Where(p => p.CrossType == PsmCrossType.Single).OrderByDescending(p=>p.Score).ToList();
+            var singlePsms = allPsms.Where(p => p.CrossType == PsmCrossType.Single).OrderByDescending(p => p.Score).ToList();
             if (singlePsms.Any())
             {
                 string writtenFileSingle = Path.Combine(OutputFolder, "SinglePeptides" + ".tsv");

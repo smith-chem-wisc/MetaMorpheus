@@ -10,13 +10,11 @@ namespace TaskLayer
         {
             DecoyType = DecoyType.Reverse;
             Crosslinker = GlobalVariables.Crosslinkers.First();
-            RestrictToTopNHits = true;
-            CrosslinkSearchTopNum = 300;
+            CrosslinkSearchTopNum = 50;
             CrosslinkAtCleavageSite = false;
             XlQuench_H2O = true;
             XlQuench_NH2 = false;
             XlQuench_Tris = false;
-            WriteOutputForPercolator = false;
             WritePepXml = true;
         }
         
