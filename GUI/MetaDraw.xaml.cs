@@ -785,6 +785,7 @@ namespace MetaMorpheusGUI
             }
             PlotModelStat plot = await Task.Run(() => new PlotModelStat(plotName, psms));
             plotViewStat.DataContext = plot;
+            PlotViewStat_SizeChanged(plotViewStat, null);
         }
 
         private void BtnChangeGridColumns_Click(object sender, RoutedEventArgs e)
@@ -825,10 +826,13 @@ namespace MetaMorpheusGUI
             OxyPlot.Wpf.PlotView plot = sender as OxyPlot.Wpf.PlotView;
             if(plot != null && plot.Model != null)
             {
+                Console.WriteLine(plotViewStat.ActualWidth);
+                plot.Model.DefaultXAxis.TitleFontSize = plot.Model.DefaultFontSize; // stops the title from being scaled
                 int count = (plot.Model.Series[0] as OxyPlot.Series.ColumnSeries).Items.Count;
-                if (plot.Model.Width / count < 18)
+                int widthCountRatio = 23;   // maintains this width:number of PTM types ratio
+                if (plotViewStat.ActualWidth / count < widthCountRatio) 
                 {
-                    plot.Model.DefaultXAxis.FontSize = plot.Model.DefaultFontSize * (plot.Model.Width / (count * 18));
+                    plot.Model.DefaultXAxis.FontSize = plot.Model.DefaultFontSize * (plotViewStat.ActualWidth / (count * widthCountRatio));
                 }
                 else
                 {

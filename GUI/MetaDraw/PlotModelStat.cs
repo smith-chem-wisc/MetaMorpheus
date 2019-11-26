@@ -111,6 +111,8 @@ namespace MetaMorpheusGUI
 
         private void histogramPlot(int plotType)
         {
+            string yAxisTitle = "Count";
+            string xAxisTitle = "";
             double binSize = -1;
             SortedList<double, double> numCategory = new SortedList<double, double>();
             IEnumerable<double> numbers = new List<double>();
@@ -121,25 +123,30 @@ namespace MetaMorpheusGUI
 
             switch (plotType)
             {
-                case 1:
+                case 1: // Histogram of Precursor PPM Errors (around 0 Da mass-difference notch only)
+                    xAxisTitle = "Precursor error (ppm)";
                     numbers = allPsms.Where(p => !p.MassDiffDa.Contains("|") && Math.Round(double.Parse(p.MassDiffDa), 0) == 0).Select(p => double.Parse(p.MassDiffPpm));
                     binSize = 0.1;
                     break;
-                case 2:
+                case 2: // Histogram of Fragment PPM Errors
+                    xAxisTitle = "Fragment error (ppm)";
                     numbers = allPsms.SelectMany(p => p.MatchedIons.Select(v => v.MassErrorPpm));
                     binSize = 0.1;
                     break;
-                case 3:
+                case 3: // Histogram of Precursor Charges
+                    xAxisTitle = "Precursor charge";
                     numbers = allPsms.Select(p => (double)(p.PrecursorCharge));
                     var results = numbers.GroupBy(p => p).OrderBy(p => p.Key).Select(p => p);
                     dict = results.ToDictionary(p => p.Key.ToString(), v => v.Count());
                     break;
-                case 4:
+                case 4: // Histogram of Fragment Charges
+                    xAxisTitle = "Fragment charge";
                     numbers = allPsms.SelectMany(p => p.MatchedIons.Select(v => (double)v.Charge));
                     results = numbers.GroupBy(p => p).OrderBy(p => p.Key).Select(p => p);
                     dict = results.ToDictionary(p => p.Key.ToString(), v => v.Count());
                     break;
-                case 5:
+                case 5: // Histogram of PTM Spectral Counts
+                    xAxisTitle = "Modification";
                     var psmsWithMods = allPsms.Where(p => !p.FullSequence.Contains("|") && p.FullSequence.Contains("["));
                     var mods = psmsWithMods.Select(p => new PeptideWithSetModifications(p.FullSequence, GlobalVariables.AllModsKnownDictionary)).Select(p => p.AllModsOneIsNterminus).SelectMany(p => p.Values);
                     var groupedMods = mods.GroupBy(p => p.IdWithMotif).ToList();
@@ -160,9 +167,10 @@ namespace MetaMorpheusGUI
                 double labelAngle = plotType == 5 ? -50 : 0;
                 this.privateModel.Axes.Add(new CategoryAxis
                 {
-                    ItemsSource = category, Angle = labelAngle
+                    ItemsSource = category, Angle = labelAngle, Title = xAxisTitle
                 });
                 privateModel.Series.Add(column);
+                yAxisTitle = yAxisTitle.ToString();
             }
             else
             {
@@ -199,9 +207,12 @@ namespace MetaMorpheusGUI
                 privateModel.Axes.Add(new CategoryAxis
                 {
                     Position = AxisPosition.Bottom,
-                    ItemsSource = axes
+                    ItemsSource = axes,
+                    Title = xAxisTitle
                 });
             }
+            privateModel.DefaultFontSize = 14;
+            privateModel.Axes.Add(new LinearAxis() { Title = yAxisTitle, Position = AxisPosition.Left, AbsoluteMinimum = 0 });
         }
 
         private void linePlot(int plotType)
@@ -216,8 +227,8 @@ namespace MetaMorpheusGUI
             var test = allPsms.SelectMany(p => p.MatchedIons.Select(v => v.MassErrorPpm));
             switch (plotType)
             {
-                case 1:
-                    yAxisTitle = "Mass diff (ppm)";
+                case 1: // Precursor PPM Error vs. RT
+                    yAxisTitle = "Precursor error (ppm)";
                     xAxisTitle = "Retention time";
                     foreach (var psm in filteredList)
                     {
@@ -231,9 +242,9 @@ namespace MetaMorpheusGUI
                         }
                     }
                     break;
-                case 2:
+                case 2: // Fragment PPM Error vs. RT
                     yAxisTitle = "Retention time";
-                    xAxisTitle = "Mass error (ppm)";
+                    xAxisTitle = "Fragment error (ppm)";
                     foreach (var psm in allPsms)
                     {
                         foreach (var ion in psm.MatchedIons)
@@ -242,7 +253,7 @@ namespace MetaMorpheusGUI
                         }
                     }
                     break;
-                case 3:
+                case 3: // Predicted RT vs. Observed RT
                     yAxisTitle = "Predicted retention time";
                     xAxisTitle = "Observed retention time";
                     SSRCalc3 sSRCalc3 = new SSRCalc3("A100", SSRCalc3.Column.A100);
@@ -284,6 +295,7 @@ namespace MetaMorpheusGUI
                 variantSeries.TrackerFormatString = "Sequence variant\n{1}: {2:0.###}\n{3}: {4:0.###}\nFull sequence: {Tag}";
                 privateModel.Series.Add(variantSeries);
             }
+            privateModel.DefaultFontSize = 14;
             privateModel.Axes.Add(new LinearAxis { Title = xAxisTitle, Position = AxisPosition.Bottom });
             privateModel.Axes.Add(new LinearAxis { Title = yAxisTitle, Position = AxisPosition.Left });
         }
