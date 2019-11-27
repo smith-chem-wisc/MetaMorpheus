@@ -109,16 +109,16 @@ namespace TaskLayer
 
         public void ComputeXlinkQandPValues(List<CrosslinkSpectralMatch> allPsms, List<CrosslinkSpectralMatch> intraCsms, List<CrosslinkSpectralMatch> interCsms, CommonParameters commonParameters, string taskId)
         {
-            // calculate FDR
-            DoCrosslinkFdrAnalysis(interCsms);
-            DoCrosslinkFdrAnalysis(intraCsms);
-
             List<CrosslinkSpectralMatch> crossCsms = allPsms.Where(p => p.CrossType == PsmCrossType.Inter || p.CrossType == PsmCrossType.Intra).OrderByDescending(p => p.XLTotalScore).ToList();
             new FdrAnalysisEngine(crossCsms.ToList<PeptideSpectralMatch>(), 0, commonParameters, new List<string> { taskId }, "crosslink").Run();
 
             List<CrosslinkSpectralMatch> singles = allPsms.Where(p => p.CrossType != PsmCrossType.Inter).Where(p => p.CrossType != PsmCrossType.Intra).OrderByDescending(p => p.Score).ToList();
-            SingleFDRAnalysis(singles, commonParameters, new List<string> { taskId });
             new FdrAnalysisEngine(singles.ToList<PeptideSpectralMatch>(), 0, commonParameters, new List<string> { taskId }, "PSM").Run();
+            SingleFDRAnalysis(singles, commonParameters, new List<string> { taskId });
+
+            // calculate FDR
+            DoCrosslinkFdrAnalysis(interCsms);
+            DoCrosslinkFdrAnalysis(intraCsms);
         }
 
         //Calculate the FDR of single peptide FP/TP
@@ -158,7 +158,7 @@ namespace TaskLayer
                     cumulativeTarget++;
                 }
 
-                double qValue = Math.Min(1, cumulativeDecoy / (cumulativeTarget <= 0 ? 1 : cumulativeTarget));
+                double qValue = Math.Min(1, (double)cumulativeDecoy / (cumulativeTarget <= 0 ? 1 : cumulativeTarget));
                 double qValueNotch = 0; //maybe we should assign this some day?
 
                 double pep = csm.FdrInfo == null ? double.NaN : csm.FdrInfo.PEP;

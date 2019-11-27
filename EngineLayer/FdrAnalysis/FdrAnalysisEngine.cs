@@ -156,6 +156,11 @@ namespace EngineLayer.FdrAnalysis
                 }
             }
 
+            Compute_PEPValue(myAnalysisResults);
+        }
+
+        public void Compute_PEPValue(FdrAnalysisResults myAnalysisResults)
+        {
             if (AnalysisType == "PSM")
             {
                 CountPsm();
