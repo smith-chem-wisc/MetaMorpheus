@@ -1484,15 +1484,16 @@ namespace MetaMorpheusGUI
             System.Diagnostics.Process.Start(@"https://join.slack.com/t/smith-chem-public/shared_invite/enQtNDYzNTM5Mzg5NzY0LTRiYWQ5MzVmYmExZWIyMTcyZmNlODJjMWI0YjVhNGM2MmQ2NjE4ZDAzNmM4NWYxMDFhNTQyNDBiM2E0MWE0NGU");
         }
 
+        private void MenuItem_Proxl(object sender, RoutedEventArgs e)
+        {
+            System.Diagnostics.Process.Start(@"http://proxl-ms.org/");
+        }
+
         private void MenuItem_Click_6(object sender, RoutedEventArgs e)
         {
             System.Diagnostics.Process.Start(GlobalVariables.DataDir);
         }
 
-        private void MenuItem_Proxl(object sender, RoutedEventArgs e)
-        {
-            System.Diagnostics.Process.Start(@"http://proxl-ms.org/");
-        }
 
         private void MenuItem_Click_3(object sender, RoutedEventArgs e)
         {
