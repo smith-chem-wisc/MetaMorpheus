@@ -54,6 +54,12 @@ namespace EngineLayer.ModernSearch
 
                     for (int scanIndex = range.Item1; scanIndex < range.Item2; scanIndex++)
                     {
+                        // Stop loop if canceled
+                        if (GlobalVariables.StopLoops)
+                        {
+                            return;
+                        }
+
                         Ms2ScanWithSpecificMass scan = ListOfSortedMs2Scans[scanIndex];
 
                         // do a fast rough first-pass scoring for this scan
@@ -89,11 +95,15 @@ namespace EngineLayer.ModernSearch
         /// </summary>
         protected void IndexScoreScan(Ms2ScanWithSpecificMass scan, byte[] scoringTable, byte byteScoreCutoff, List<int> peptidesPossiblyObserved, DissociationType dissociationType)
         {
+            // get allowed theoretical masses from the known experimental mass
+            // note that this is the OPPOSITE of the classic search (which calculates experimental masses from theoretical values)	
+            // this is just PRELIMINARY precursor-mass filtering	
+            // additional checks are made later to ensure that the theoretical precursor mass is acceptable
             List<AllowedIntervalWithNotch> notches = MassDiffAcceptor.GetAllowedPrecursorMassIntervalsFromObservedMass(scan.PrecursorMass).ToList();
-
             double lowestMassPeptideToLookFor = notches.Min(p => p.AllowedInterval.Minimum);
             double highestMassPeptideToLookFor = notches.Max(p => p.AllowedInterval.Maximum);
 
+            // clear the scoring table to score the new scan (conserves memory compared to allocating a new array)
             Array.Clear(scoringTable, 0, scoringTable.Length);
             peptidesPossiblyObserved.Clear();
 
@@ -104,7 +114,7 @@ namespace EngineLayer.ModernSearch
 
                 for (int i = 0; i < masses.Length; i++)
                 {
-                    //convert to an int since we're in discreet 1.0005...
+                    //convert to an int since we're in discrete 1.0005...
                     int fragmentBin = (int)(Math.Round(masses[i].ToMass(1) / 1.0005079) * 1.0005079 * FragmentBinsPerDalton);
 
                     List<int> bin = FragmentIndex[fragmentBin];
@@ -355,7 +365,7 @@ namespace EngineLayer.ModernSearch
             // analysis trains on delta score, the modern search output is not guaranteed to be the same as classic search 
             // output, though it will be very close.
             byte bestScore = 0;
-            
+
             foreach (int id in peptideIds.OrderByDescending(p => scoringTable[p]))
             {
                 if (scoringTable[id] < bestScore && dissociationType != DissociationType.LowCID)
