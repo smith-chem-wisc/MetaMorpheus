@@ -425,7 +425,7 @@ namespace Test
             //}
             //string path = @"C:\Users\Michael Shortreed\Downloads\XLTEST.txt";
 
-            File.WriteAllLines(path, someOut, System.Text.Encoding.UTF8);
+            //File.WriteAllLines(path, someOut, System.Text.Encoding.UTF8);
 
             //END DELETE THIS DEBUG CODE
 
