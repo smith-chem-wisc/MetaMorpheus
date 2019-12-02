@@ -328,6 +328,8 @@ namespace Test
                     }
                     csm.ResolveProteinPosAmbiguitiesForXl();
                 }
+
+                //DELETE THIS DEBUG CODE
                 var orderedCsmsPerScan_test = XLSearchTask.RemoveDuplicateFromCsmsPerScan(csmsPerScan).ToList();
                 var test = orderedCsmsPerScan_test.Where(p => p.FullSequence == "ILNGLTHDEKEFTIVVANPAKTDPDIK").ToList();
                 var orderedCsmsPerScan = XLSearchTask.RemoveDuplicateFromCsmsPerScan(csmsPerScan).OrderByDescending(p => p.XLTotalScore).ThenBy(p => p.FullSequence + ((p.BetaPeptide == null) ? "" : p.BetaPeptide.FullSequence)).ToList();
@@ -337,7 +339,7 @@ namespace Test
                 {
                     int j = 5;
                 }
-
+                //END DELETE THIS DEBUG CODE
 
                 ListOfCsmsPerMS2ScanParsimony.Add(orderedCsmsPerScan);
             }
@@ -412,20 +414,21 @@ namespace Test
                 }
             }
 
-            List<string> someOut = new List<string>();
-            foreach (CrosslinkSpectralMatch csm in firstCsmsFromListsOfCsms)
-            {
-                if (csm.CrossType == PsmCrossType.Inter || csm.CrossType == PsmCrossType.Intra)
-                {
-                    someOut.Add(csm.CrossType + "\t" + csm.BestMatchingPeptides.First().Peptide.BaseSequence.ToString() + "\t" + csm.BetaPeptide.BaseSequence + "\t" + csm.XLTotalScore);
-                }
-            }
-            string path = @"C:\Users\Michael Shortreed\Downloads\XLTEST.txt";
-
-            // This text is added only once to the file.
+            //TODO DELETE THIS DEBUG CODE
+            //List<string> someOut = new List<string>();
+            //foreach (CrosslinkSpectralMatch csm in firstCsmsFromListsOfCsms)
+            //{
+            //    if (csm.CrossType == PsmCrossType.Inter || csm.CrossType == PsmCrossType.Intra)
+            //    {
+            //        someOut.Add(csm.CrossType + "\t" + csm.BestMatchingPeptides.First().Peptide.BaseSequence.ToString() + "\t" + csm.BetaPeptide.BaseSequence + "\t" + csm.XLTotalScore);
+            //    }
+            //}
+            //string path = @"C:\Users\Michael Shortreed\Downloads\XLTEST.txt";
 
             File.WriteAllLines(path, someOut, System.Text.Encoding.UTF8);
-            int lineCount = someOut.Count;
+
+            //END DELETE THIS DEBUG CODE
+
             Assert.AreEqual(604, inter);
             Assert.AreEqual(145, intra);
             Assert.AreEqual(286, single);
