@@ -3,7 +3,6 @@ using MassSpectrometry;
 using Proteomics.Fragmentation;
 using Proteomics.ProteolyticDigestion;
 using System;
-using System.Collections.Concurrent;
 using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
@@ -45,41 +44,42 @@ namespace EngineLayer.ModernSearch
 
             byte byteScoreCutoff = (byte)CommonParameters.ScoreCutoff;
 
-            Parallel.ForEach(Partitioner.Create(0, ListOfSortedMs2Scans.Length),
-                new ParallelOptions { MaxDegreeOfParallelism = CommonParameters.MaxThreadsToUsePerFile },
-                (range, loopState) =>
+            int maxThreadsPerFile = CommonParameters.MaxThreadsToUsePerFile;
+            int[] threads = Enumerable.Range(0, maxThreadsPerFile).ToArray();
+
+            Parallel.ForEach(threads, (scanIndex) =>
+            {
+                byte[] scoringTable = new byte[PeptideIndex.Count];
+                List<int> idsOfPeptidesPossiblyObserved = new List<int>(PeptideIndex.Count);
+
+                for (; scanIndex < ListOfSortedMs2Scans.Length; scanIndex += maxThreadsPerFile)
                 {
-                    byte[] scoringTable = new byte[PeptideIndex.Count];
-                    List<int> idsOfPeptidesPossiblyObserved = new List<int>(PeptideIndex.Count);
-
-                    for (int scanIndex = range.Item1; scanIndex < range.Item2; scanIndex++)
+                    // Stop loop if canceled
+                    if (GlobalVariables.StopLoops)
                     {
-                        // Stop loop if canceled
-                        if (GlobalVariables.StopLoops)
-                        {
-                            return;
-                        }
-
-                        Ms2ScanWithSpecificMass scan = ListOfSortedMs2Scans[scanIndex];
-
-                        // do a fast rough first-pass scoring for this scan
-                        IndexScoreScan(scan, scoringTable, byteScoreCutoff, idsOfPeptidesPossiblyObserved, CommonParameters.DissociationType);
-
-                        // take indexed-scored peptides and re-score them using the more accurate but slower scoring algorithm
-                        FineScorePeptides(idsOfPeptidesPossiblyObserved, scan, scanIndex, scoringTable, CommonParameters.DissociationType);
-
-                        //report search progress
-                        progress++;
-                        var percentProgress = (int)((progress / ListOfSortedMs2Scans.Length) * 100);
-
-                        if (percentProgress > oldPercentProgress)
-                        {
-                            oldPercentProgress = percentProgress;
-                            ReportProgress(new ProgressEventArgs(percentProgress, "Performing modern search... " +
-                                CurrentPartition + "/" + CommonParameters.TotalPartitions, NestedIds));
-                        }
+                        return;
                     }
-                });
+
+                    Ms2ScanWithSpecificMass scan = ListOfSortedMs2Scans[scanIndex];
+
+                    // do a fast rough first-pass scoring for this scan
+                    IndexScoreScan(scan, scoringTable, byteScoreCutoff, idsOfPeptidesPossiblyObserved, CommonParameters.DissociationType);
+
+                    // take indexed-scored peptides and re-score them using the more accurate but slower scoring algorithm
+                    FineScorePeptides(idsOfPeptidesPossiblyObserved, scan, scanIndex, scoringTable, CommonParameters.DissociationType);
+
+                    //report search progress
+                    progress++;
+                    var percentProgress = (int)((progress / ListOfSortedMs2Scans.Length) * 100);
+
+                    if (percentProgress > oldPercentProgress)
+                    {
+                        oldPercentProgress = percentProgress;
+                        ReportProgress(new ProgressEventArgs(percentProgress, "Performing modern search... " +
+                            CurrentPartition + "/" + CommonParameters.TotalPartitions, NestedIds));
+                    }
+                }
+            });
 
             foreach (PeptideSpectralMatch psm in PeptideSpectralMatches.Where(p => p != null))
             {
