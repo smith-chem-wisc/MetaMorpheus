@@ -248,7 +248,9 @@ namespace Test
 
             int chargeStateMode = 4;
             var (notch, pwsm) = maxScorePsm.BestMatchingPeptides.First();
-            var maxPsmData = PEP_Analysis.CreateOnePsmDataEntry("standard", maxScorePsm, sequenceToPsmCount, fileSpecificRetTimeHI_behavior, fileSpecificRetTemHI_behaviorModifiedPeptides, chargeStateMode, pwsm, trainingVariables, notch, !pwsm.Protein.IsDecoy);
+            Dictionary<string, float> massError = new Dictionary<string, float>();
+            massError.Add(maxScorePsm.FullFilePath, 0);
+            var maxPsmData = PEP_Analysis.CreateOnePsmDataEntry("standard", maxScorePsm, sequenceToPsmCount, fileSpecificRetTimeHI_behavior, fileSpecificRetTemHI_behaviorModifiedPeptides, massError, chargeStateMode, pwsm, trainingVariables, notch, !pwsm.Protein.IsDecoy);
             Assert.That(maxScorePsm.PeptidesToMatchingFragments.Count - 1, Is.EqualTo(maxPsmData.Ambiguity));
             Assert.That(maxScorePsm.DeltaScore, Is.EqualTo(maxPsmData.DeltaScore).Within(0.05));
             Assert.That((float)(maxScorePsm.Score - (int)maxScorePsm.Score), Is.EqualTo(maxPsmData.Intensity).Within(0.05));
@@ -316,7 +318,9 @@ namespace Test
                 sequenceToPsmCount.Add(grp.Key, grp.Count());
             }
             var (vnotch, vpwsm) = variantPSM.BestMatchingPeptides.First();
-            PsmData variantPsmData = PEP_Analysis.CreateOnePsmDataEntry("standard", variantPSM, sequenceToPsmCount, fileSpecificRetTimeHI_behavior, fileSpecificRetTemHI_behaviorModifiedPeptides, chargeStateMode, vpwsm, trainingVariables, vnotch, !maxScorePsm.IsDecoy);
+            
+            massError.Add(variantPSM.FullFilePath, 0);
+            PsmData variantPsmData = PEP_Analysis.CreateOnePsmDataEntry("standard", variantPSM, sequenceToPsmCount, fileSpecificRetTimeHI_behavior, fileSpecificRetTemHI_behaviorModifiedPeptides, massError, chargeStateMode, vpwsm, trainingVariables, vnotch, !maxScorePsm.IsDecoy);
 
             Assert.AreEqual((float)1, variantPsmData.IsVariantPeptide);
         }
@@ -432,7 +436,10 @@ namespace Test
 
             int chargeStateMode = 4;
             var (notch, pwsm) = maxScorePsm.BestMatchingPeptides.First();
-            var maxPsmData = PEP_Analysis.CreateOnePsmDataEntry("top-down", maxScorePsm, sequenceToPsmCount, fileSpecificRetTimeHI_behavior, fileSpecificRetTemHI_behaviorModifiedPeptides, chargeStateMode, pwsm, trainingVariables, notch, !pwsm.Protein.IsDecoy);
+
+            Dictionary<string, float> massError = new Dictionary<string, float>();
+            massError.Add(maxScorePsm.FullFilePath, 0);
+            var maxPsmData = PEP_Analysis.CreateOnePsmDataEntry("top-down", maxScorePsm, sequenceToPsmCount, fileSpecificRetTimeHI_behavior, fileSpecificRetTemHI_behaviorModifiedPeptides, massError, chargeStateMode, pwsm, trainingVariables, notch, !pwsm.Protein.IsDecoy);
             Assert.That(maxScorePsm.PeptidesToMatchingFragments.Count - 1, Is.EqualTo(maxPsmData.Ambiguity));
             Assert.That(maxScorePsm.DeltaScore, Is.EqualTo(maxPsmData.DeltaScore).Within(0.05));
             Assert.That((float)(maxScorePsm.Score - (int)maxScorePsm.Score), Is.EqualTo(maxPsmData.Intensity).Within(0.05));

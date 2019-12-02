@@ -1,9 +1,11 @@
-﻿using EngineLayer.CrosslinkSearch;
+﻿using Chemistry;
+using EngineLayer.CrosslinkSearch;
 using EngineLayer.FdrAnalysis;
 using MathNet.Numerics.Statistics;
 using Microsoft.ML;
 using Microsoft.ML.Data;
 using Proteomics;
+using Proteomics.Fragmentation;
 using Proteomics.ProteolyticDigestion;
 using Proteomics.RetentionTimePrediction;
 using System;
@@ -43,8 +45,10 @@ namespace EngineLayer
             Dictionary<string, int> sequenceToPsmCount = GetSequenceToPSMCount(psms);
             int chargeStateMode = GetChargeStateMode(psms);
 
+            Dictionary<string, float> fileSpecificMedianFragmentMassErrors = GetFileSpecificMedianFragmentMassError(psms);
+
             MLContext mlContext = new MLContext();
-            IDataView dataView = mlContext.Data.LoadFromEnumerable(CreatePsmData(searchType, psms, sequenceToPsmCount, fileSpecificTimeDependantHydrophobicityAverageAndDeviation_unmodified, fileSpecificTimeDependantHydrophobicityAverageAndDeviation_modified, chargeStateMode, trainingVariables));
+            IDataView dataView = mlContext.Data.LoadFromEnumerable(CreatePsmData(searchType, psms, sequenceToPsmCount, fileSpecificTimeDependantHydrophobicityAverageAndDeviation_unmodified, fileSpecificTimeDependantHydrophobicityAverageAndDeviation_modified, fileSpecificMedianFragmentMassErrors, chargeStateMode, trainingVariables));
 
             //
             // Summary:
@@ -95,7 +99,7 @@ namespace EngineLayer
                     //Here we compute the pepvalue predection for each ambiguous peptide in a PSM. Ambiguous peptides with lower pepvalue predictions are removed from the PSM.
                     foreach (var (Notch, Peptide) in psm.BestMatchingPeptides)
                     {
-                        PsmData pd = CreateOnePsmDataEntry(searchType, psm, sequenceToPsmCount, fileSpecificTimeDependantHydrophobicityAverageAndDeviation_unmodified, fileSpecificTimeDependantHydrophobicityAverageAndDeviation_modified, chargeStateMode, Peptide, trainingVariables, Notch, !Peptide.Protein.IsDecoy);
+                        PsmData pd = CreateOnePsmDataEntry(searchType, psm, sequenceToPsmCount, fileSpecificTimeDependantHydrophobicityAverageAndDeviation_unmodified, fileSpecificTimeDependantHydrophobicityAverageAndDeviation_modified, fileSpecificMedianFragmentMassErrors, chargeStateMode, Peptide, trainingVariables, Notch, !Peptide.Protein.IsDecoy);
                         var pepValuePrediction = predictionEngine.Predict(pd);
                         pepValuePredictions.Add(pepValuePrediction.Probability);
                         //A score is available using the variable pepvaluePrediction.Score
@@ -329,7 +333,7 @@ namespace EngineLayer
         }
 
         //This method ignores ambiguity and loads only the first peptide in a series for each PSM
-        public static IEnumerable<PsmData> CreatePsmData(string searchType, List<PeptideSpectralMatch> psms, Dictionary<string, int> sequenceToPsmCount, Dictionary<string, Dictionary<int, Tuple<double, double>>> timeDependantHydrophobicityAverageAndDeviation_unmodified, Dictionary<string, Dictionary<int, Tuple<double, double>>> timeDependantHydrophobicityAverageAndDeviation_modified, int chargeStateMode, string[] trainingVariables)
+        public static IEnumerable<PsmData> CreatePsmData(string searchType, List<PeptideSpectralMatch> psms, Dictionary<string, int> sequenceToPsmCount, Dictionary<string, Dictionary<int, Tuple<double, double>>> timeDependantHydrophobicityAverageAndDeviation_unmodified, Dictionary<string, Dictionary<int, Tuple<double, double>>> timeDependantHydrophobicityAverageAndDeviation_modified, Dictionary<string,float> fileSpecificMedianFragmentMassErrors, int chargeStateMode, string[] trainingVariables)
         {
             List<PsmData> pd = new List<PsmData>();
 
@@ -343,12 +347,12 @@ namespace EngineLayer
                     if (csm.IsDecoy || csm.BetaPeptide.IsDecoy || psm.FdrInfo.QValue > 0.25)
                     {
                         label = false;
-                        pd.Add(CreateOnePsmDataEntry(searchType, psm, sequenceToPsmCount, timeDependantHydrophobicityAverageAndDeviation_unmodified, timeDependantHydrophobicityAverageAndDeviation_modified, chargeStateMode, csm.BestMatchingPeptides.First().Peptide, trainingVariables, 0, label));
+                        pd.Add(CreateOnePsmDataEntry(searchType, psm, sequenceToPsmCount, timeDependantHydrophobicityAverageAndDeviation_unmodified, timeDependantHydrophobicityAverageAndDeviation_modified, fileSpecificMedianFragmentMassErrors, chargeStateMode, csm.BestMatchingPeptides.First().Peptide, trainingVariables, 0, label));
                     }
                     else if (!csm.IsDecoy && !csm.BetaPeptide.IsDecoy && psm.FdrInfo.QValue <= 0.01)
                     {
                         label = true;
-                        pd.Add(CreateOnePsmDataEntry(searchType, psm, sequenceToPsmCount, timeDependantHydrophobicityAverageAndDeviation_unmodified, timeDependantHydrophobicityAverageAndDeviation_modified, chargeStateMode, csm.BestMatchingPeptides.First().Peptide, trainingVariables, 0, label));
+                        pd.Add(CreateOnePsmDataEntry(searchType, psm, sequenceToPsmCount, timeDependantHydrophobicityAverageAndDeviation_unmodified, timeDependantHydrophobicityAverageAndDeviation_modified, fileSpecificMedianFragmentMassErrors, chargeStateMode, csm.BestMatchingPeptides.First().Peptide, trainingVariables, 0, label));
                     }
                 }
                 else
@@ -359,12 +363,12 @@ namespace EngineLayer
                         if (peptideWithSetMods.Protein.IsDecoy || psm.FdrInfo.QValue > 0.25)
                         {
                             label = false;
-                            pd.Add(CreateOnePsmDataEntry(searchType, psm, sequenceToPsmCount, timeDependantHydrophobicityAverageAndDeviation_unmodified, timeDependantHydrophobicityAverageAndDeviation_modified, chargeStateMode, peptideWithSetMods, trainingVariables, notch, label));
+                            pd.Add(CreateOnePsmDataEntry(searchType, psm, sequenceToPsmCount, timeDependantHydrophobicityAverageAndDeviation_unmodified, timeDependantHydrophobicityAverageAndDeviation_modified, fileSpecificMedianFragmentMassErrors, chargeStateMode, peptideWithSetMods, trainingVariables, notch, label));
                         }
                         else if (!peptideWithSetMods.Protein.IsDecoy && psm.FdrInfo.QValue <= 0.01)
                         {
                             label = true;
-                            pd.Add(CreateOnePsmDataEntry(searchType, psm, sequenceToPsmCount, timeDependantHydrophobicityAverageAndDeviation_unmodified, timeDependantHydrophobicityAverageAndDeviation_modified, chargeStateMode, peptideWithSetMods, trainingVariables, notch, label));
+                            pd.Add(CreateOnePsmDataEntry(searchType, psm, sequenceToPsmCount, timeDependantHydrophobicityAverageAndDeviation_unmodified, timeDependantHydrophobicityAverageAndDeviation_modified, fileSpecificMedianFragmentMassErrors, chargeStateMode, peptideWithSetMods, trainingVariables, notch, label));
                         }
                     }
                 }
@@ -372,7 +376,7 @@ namespace EngineLayer
             return pd.AsEnumerable();
         }
 
-        public static PsmData CreateOnePsmDataEntry(string searchType, PeptideSpectralMatch psm, Dictionary<string, int> sequenceToPsmCount, Dictionary<string, Dictionary<int, Tuple<double, double>>> timeDependantHydrophobicityAverageAndDeviation_unmodified, Dictionary<string, Dictionary<int, Tuple<double, double>>> timeDependantHydrophobicityAverageAndDeviation_modified, int chargeStateMode, PeptideWithSetModifications selectedPeptide, string[] trainingVariables, int notchToUse, bool label)
+        public static PsmData CreateOnePsmDataEntry(string searchType, PeptideSpectralMatch psm, Dictionary<string, int> sequenceToPsmCount, Dictionary<string, Dictionary<int, Tuple<double, double>>> timeDependantHydrophobicityAverageAndDeviation_unmodified, Dictionary<string, Dictionary<int, Tuple<double, double>>> timeDependantHydrophobicityAverageAndDeviation_modified, Dictionary<string,float> fileSpecificMedianFragmentMassErrors, int chargeStateMode, PeptideWithSetModifications selectedPeptide, string[] trainingVariables, int notchToUse, bool label)
         {
             float totalMatchingFragmentCount = 0;
             float intensity = 0;
@@ -382,6 +386,7 @@ namespace EngineLayer
             int notch = 0;
             float ambiguity = 0;
             float modCount = 0;
+            float absoluteFragmentMassError = 0;
 
             float missedCleavages = 0;
             float longestSeq = 0;
@@ -406,6 +411,11 @@ namespace EngineLayer
                 deltaScore = (float)psm.DeltaScore;
                 notch = notchToUse;
                 modCount = Math.Min((float)selectedPeptide.AllModsOneIsNterminus.Keys.Count(), 10);
+                if(psm.MatchedFragmentIons.Count > 0)
+                {
+                    absoluteFragmentMassError = (float)Math.Abs(GetAverageFragmentMassError(psm.MatchedFragmentIons) - fileSpecificMedianFragmentMassErrors[psm.FullFilePath]);
+                }
+                
                 ambiguity = Math.Min((float)(psm.PeptidesToMatchingFragments.Keys.Count - 1), 10);
                 longestSeq = psm.GetLongestIonSeriesBidirectional(psm.PeptidesToMatchingFragments, selectedPeptide);
 
@@ -457,6 +467,11 @@ namespace EngineLayer
                 PeptideWithSetModifications selectedBetaPeptide = csm.BetaPeptide?.BestMatchingPeptides.Select(p => p.Peptide).First();
 
                 totalMatchingFragmentCount = (float)Math.Round(csm.XLTotalScore, 0);
+                if(psm.MatchedFragmentIons.Count > 0)
+                {
+                    absoluteFragmentMassError = (float)Math.Abs(GetAverageFragmentMassError(psm.MatchedFragmentIons) - fileSpecificMedianFragmentMassErrors[psm.FullFilePath]);
+                }
+                
                 deltaScore = (float)csm.DeltaScore;
                 chargeDifference = -Math.Abs(chargeStateMode - psm.ScanPrecursorCharge);
                 alphaIntensity = (float)(csm.Score - (int)csm.Score);
@@ -485,6 +500,7 @@ namespace EngineLayer
                 Notch = notch,
                 PsmCount = psmCount,
                 ModsCount = modCount,
+                AbsoluteAverageFragmentMassErrorFromMedian = absoluteFragmentMassError,
                 MissedCleavagesCount = missedCleavages,
                 Ambiguity = ambiguity,
                 LongestFragmentIonSeries = longestSeq,
@@ -531,6 +547,55 @@ namespace EngineLayer
                 "Phosphorylation", "Phosphoserine", "Phosphothreonine", "Phosphotyrosine", "Sulfonation" };
 
             return shiftingModifications.Concat(modifications.Select(m => m.OriginalId).Distinct()).GroupBy(s => s).Where(s => s.Count() > 1).Any();
+        }
+
+        public static Dictionary<string,float> GetFileSpecificMedianFragmentMassError(List<PeptideSpectralMatch> psms)
+        {
+            Dictionary<string, float> fileSpecificMassErrors = new Dictionary<string, float>();
+            foreach (string fullFilePath in psms.Select(p=>p.FullFilePath).Distinct())
+            {
+                fileSpecificMassErrors.Add(fullFilePath, GetMedianAverageMassError(psms.Where(p => p.FullFilePath == fullFilePath)));
+            }
+            return fileSpecificMassErrors;
+        }
+
+        public static float GetMedianAverageMassError(IEnumerable<PeptideSpectralMatch> psms)
+        {
+            List<float> averageMassErrors = new List<float>();
+            foreach (PeptideSpectralMatch psm in psms)
+            {
+                {
+                    if(psm.MatchedFragmentIons.Count > 0)
+                    {
+                        averageMassErrors.Add(GetAverageFragmentMassError(psm.MatchedFragmentIons));
+                    }
+                    
+                }
+            }
+            return averageMassErrors.Median();
+        }
+
+        public static float GetAverageFragmentMassError(IEnumerable<MatchedFragmentIon> matchedIons)
+        {
+            var matchedIonsGroupedByProductType = matchedIons.GroupBy(i => i.NeutralTheoreticalProduct.ProductType).OrderBy(i => i.Key).ToList();
+            List<float> massErrors = new List<float>();
+            foreach (var productType in matchedIonsGroupedByProductType)
+            {
+                var products = productType.OrderBy(p => p.NeutralTheoreticalProduct.TerminusFragment.FragmentNumber)
+                    .ToList();
+
+                for (int i = 0; i < products.Count; i++)
+                {
+                    MatchedFragmentIon ion = products[i];
+
+                    float massError = (float)(ion.Mz.ToMass(ion.Charge) - ion.NeutralTheoreticalProduct.NeutralMass);
+                    float ppmMassError = (float)(massError / ion.NeutralTheoreticalProduct.NeutralMass * 1e6);
+                    massErrors.Add(ppmMassError);
+                }
+            }
+
+                return massErrors.Average();
+
         }
 
         /// <summary>

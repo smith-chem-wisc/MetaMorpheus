@@ -9,9 +9,9 @@ namespace EngineLayer.FdrAnalysis
     {
         public static readonly IImmutableDictionary<string, string[]> trainingInfos = new Dictionary<string, string[]>
         {
-            { "standard", new [] { "TotalMatchingFragmentCount", "Intensity", "PrecursorChargeDiffToMode", "DeltaScore", "Notch", "PsmCount", "ModsCount", "MissedCleavagesCount", "Ambiguity", "LongestFragmentIonSeries", "HydrophobicityZScore", "IsVariantPeptide", "IsDeadEnd", "IsLoop"} },
-            { "top-down", new [] { "TotalMatchingFragmentCount", "Intensity", "PrecursorChargeDiffToMode", "DeltaScore", "Notch", "PsmCount", "ModsCount", "Ambiguity", "LongestFragmentIonSeries" } },
-            { "crosslink", new [] { "TotalMatchingFragmentCount", "PrecursorChargeDiffToMode", "DeltaScore", "AlphaIntensity", "BetaIntensity", "LongestFragmentIonSeries_Alpha", "LongestFragmentIonSeries_Beta", "IsInter", "IsIntra" } }
+            { "standard", new [] { "TotalMatchingFragmentCount", "Intensity", "PrecursorChargeDiffToMode", "DeltaScore", "Notch", "PsmCount", "ModsCount", "AbsoluteAverageFragmentMassErrorFromMedian", "MissedCleavagesCount", "Ambiguity", "LongestFragmentIonSeries", "HydrophobicityZScore", "IsVariantPeptide", "IsDeadEnd", "IsLoop"} },
+            { "top-down", new [] { "TotalMatchingFragmentCount", "Intensity", "PrecursorChargeDiffToMode", "DeltaScore", "Notch", "PsmCount", "ModsCount", "AbsoluteAverageFragmentMassErrorFromMedian", "Ambiguity", "LongestFragmentIonSeries" } },
+            { "crosslink", new [] { "TotalMatchingFragmentCount", "AbsoluteAverageFragmentMassErrorFromMedian", "PrecursorChargeDiffToMode", "DeltaScore", "AlphaIntensity", "BetaIntensity", "LongestFragmentIonSeries_Alpha", "LongestFragmentIonSeries_Beta", "IsInter", "IsIntra" } }
         }.ToImmutableDictionary();
 
         /// <summary>
@@ -27,6 +27,7 @@ namespace EngineLayer.FdrAnalysis
             { "Notch", -1 },
             { "PsmCount", 1 },
             { "ModsCount", -1 },
+            { "AbsoluteAverageFragmentMassErrorFromMedian", -1},
             { "MissedCleavagesCount", -1 },
             { "Ambiguity", -1 },
             { "LongestFragmentIonSeries", 1 },
@@ -86,48 +87,51 @@ namespace EngineLayer.FdrAnalysis
         public float ModsCount { get; set; }
 
         [LoadColumn(6)]
-        public float MissedCleavagesCount { get; set; }
+        public float AbsoluteAverageFragmentMassErrorFromMedian { get; set; }
 
         [LoadColumn(7)]
-        public float Ambiguity { get; set; }
+        public float MissedCleavagesCount { get; set; }
 
         [LoadColumn(8)]
-        public float LongestFragmentIonSeries { get; set; }
+        public float Ambiguity { get; set; }
 
         [LoadColumn(9)]
-        public float HydrophobicityZScore { get; set; }
+        public float LongestFragmentIonSeries { get; set; }
 
         [LoadColumn(10)]
-        public float IsVariantPeptide { get; set; }
+        public float HydrophobicityZScore { get; set; }
 
         [LoadColumn(11)]
-        public float TotalMatchingFragmentCount { get; set; }
+        public float IsVariantPeptide { get; set; }
 
         [LoadColumn(12)]
-        public float AlphaIntensity { get; set; }
+        public float TotalMatchingFragmentCount { get; set; }
 
         [LoadColumn(13)]
-        public float BetaIntensity { get; set; }
+        public float AlphaIntensity { get; set; }
 
         [LoadColumn(14)]
-        public float LongestFragmentIonSeries_Alpha { get; set; }
+        public float BetaIntensity { get; set; }
 
         [LoadColumn(15)]
-        public float LongestFragmentIonSeries_Beta { get; set; }
+        public float LongestFragmentIonSeries_Alpha { get; set; }
 
         [LoadColumn(16)]
-        public float IsDeadEnd { get; set; }
+        public float LongestFragmentIonSeries_Beta { get; set; }
 
         [LoadColumn(17)]
-        public float IsLoop { get; set; }
+        public float IsDeadEnd { get; set; }
 
         [LoadColumn(18)]
-        public float IsInter { get; set; }
+        public float IsLoop { get; set; }
 
         [LoadColumn(19)]
-        public float IsIntra { get; set; }
+        public float IsInter { get; set; }
 
         [LoadColumn(20)]
+        public float IsIntra { get; set; }
+
+        [LoadColumn(21)]
 
         public bool Label { get; set; }
     }
