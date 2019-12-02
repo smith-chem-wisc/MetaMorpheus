@@ -139,7 +139,7 @@
                                 <!-- Max missed cleavages -->
                                 <StackPanel Orientation="Horizontal" Margin="5 5 5 0" Grid.Column="0" Grid.Row="1">
                                     <Label x:Name="maxMissedCleavagesLabel" Content="Max Missed Cleavages:" Width="150" />
-                                    <TextBox x:Name="MissedCleavagesTextBox"  PreviewTextInput="CheckIfNumber" Width="45" ToolTipService.ShowDuration="999999" ToolTipService.InitialShowDelay="500" TextChanged="NonSpecificUpdate">
+                                    <TextBox x:Name="MissedCleavagesTextBox" PreviewTextInput="CheckIfNumber" Width="45" ToolTipService.ShowDuration="999999" ToolTipService.InitialShowDelay="500" TextChanged="ProteaseSpecificUpdate">
                                         <TextBox.ToolTip>
                                             <TextBlock>
                                     Maximum number of missed proteolytic cleavages allowed.
@@ -153,7 +153,7 @@
                                 <!-- Protease -->
                                 <StackPanel Orientation="Horizontal" Margin="5 5 5 0" Grid.Column="0" Grid.Row="0">
                                     <Label x:Name="proteaseLabel" Content="Protease:" Width="150" />
-                                    <ComboBox x:Name="ProteaseComboBox" ToolTipService.ShowDuration="999999" ToolTipService.InitialShowDelay="500" SelectionChanged="NonSpecificUpdate">
+                                    <ComboBox x:Name="ProteaseComboBox" ToolTipService.ShowDuration="999999" ToolTipService.InitialShowDelay="500" SelectionChanged="ProteaseSpecificUpdate">
                                         <ComboBox.ToolTip>
                                             <TextBlock>
                                         Protease used for digestion.
@@ -193,7 +193,7 @@
                                 <!-- Max peptide lengths -->
                                 <StackPanel Orientation="Horizontal" Margin="5 5 5 0" Grid.Column="0" Grid.Row="4">
                                     <Label x:Name="lblMaxPeptideLength" Content="Max Peptide Length:" Width="150" />
-                                    <TextBox x:Name="MaxPeptideLengthTextBox" PreviewTextInput="CheckIfNumber" Width="45" ToolTipService.ShowDuration="999999" ToolTipService.InitialShowDelay="500" TextChanged="NonSpecificUpdate">
+                                    <TextBox x:Name="MaxPeptideLengthTextBox" PreviewTextInput="CheckIfNumber" Width="45" ToolTipService.ShowDuration="999999" ToolTipService.InitialShowDelay="500" TextChanged="ProteaseSpecificUpdate">
                                         <TextBox.ToolTip>
                                             <TextBlock>
                                                     The maximum allowed peptide length. Leave empty for no limitation.
@@ -446,7 +446,7 @@
                 <!-- END BASIC SETTINGS -->
 
                 <!-- ADVANCED SETTINGS -->
-                <Expander Header="Advanced options" DockPanel.Dock="Top" Margin="10,0,10,10">
+                <Expander Header="Advanced Options" DockPanel.Dock="Top" Margin="10,0,10,10">
                     <StackPanel>
                         <GroupBox Header="File Loading Parameters" DockPanel.Dock="Top">
                             <Expander x:Name="FileLoadExpander" Collapsed="ApmdExpander_Collapsed">
