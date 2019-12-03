@@ -142,7 +142,7 @@ namespace EngineLayer.CrosslinkSearch
 
                         foreach (int id in idsOfPeptidesPossiblyObserved.OrderByDescending(p => scoringTable[p]))
                         {
-                            idsOfPeptidesTopN.Add(id);
+                            
 
                             peptideCount++;
                             // Whenever the count exceeds the TopN that we want to keep, we removed everything with a score lower than the score of the TopN-th peptide in the ids list
@@ -155,6 +155,7 @@ namespace EngineLayer.CrosslinkSearch
                             {
                                 break;
                             }
+                            idsOfPeptidesTopN.Add(id);
                         }
 
                         FindCrosslinkedPeptide(scan, idsOfPeptidesTopN, scoringTable, massTable, byteScoreCutoff, scanIndex, csms, seenPair);
@@ -215,13 +216,15 @@ namespace EngineLayer.CrosslinkSearch
                     var matchedFragmentIons = MatchFragmentIons(scan, products, CommonParameters);
                     double score = CalculatePeptideScore(scan.TheScan, matchedFragmentIons);
 
-                    var psmCrossSingle = new CrosslinkSpectralMatch(PeptideIndex[id], 0, score, scanIndex, scan, CommonParameters.DigestionParams, matchedFragmentIons)
+                    if (score >= (double)byteScoreCutoff)
                     {
-                        CrossType = PsmCrossType.Single,
-                        //XlRank = new List<int> { alphaIndex }
-                    };
+                        var psmCrossSingle = new CrosslinkSpectralMatch(PeptideIndex[id], 0, score, scanIndex, scan, CommonParameters.DigestionParams, matchedFragmentIons)
+                        {
+                            CrossType = PsmCrossType.Single,
+                        };
 
-                    possibleMatches.Add(psmCrossSingle);
+                        possibleMatches.Add(psmCrossSingle);
+                    }
                 }
                 else if (QuenchTris && XLPrecusorSearchMode.Accepts(scan.PrecursorMass, massTable[id] + Crosslinker.DeadendMassTris) >= 0)
                 {

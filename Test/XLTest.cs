@@ -414,24 +414,9 @@ namespace Test
                 }
             }
 
-            //TODO DELETE THIS DEBUG CODE
-            //List<string> someOut = new List<string>();
-            //foreach (CrosslinkSpectralMatch csm in firstCsmsFromListsOfCsms)
-            //{
-            //    if (csm.CrossType == PsmCrossType.Inter || csm.CrossType == PsmCrossType.Intra)
-            //    {
-            //        someOut.Add(csm.CrossType + "\t" + csm.BestMatchingPeptides.First().Peptide.BaseSequence.ToString() + "\t" + csm.BetaPeptide.BaseSequence + "\t" + csm.XLTotalScore);
-            //    }
-            //}
-            //string path = @"C:\Users\Michael Shortreed\Downloads\XLTEST.txt";
-
-            //File.WriteAllLines(path, someOut, System.Text.Encoding.UTF8);
-
-            //END DELETE THIS DEBUG CODE
-
-            Assert.AreEqual(604, inter);
-            Assert.AreEqual(145, intra);
-            Assert.AreEqual(286, single);
+            Assert.AreEqual(595, inter);
+            Assert.AreEqual(143, intra);
+            Assert.AreEqual(287, single);
             Assert.AreEqual(13, loop);
             Assert.AreEqual(0, deadend);
             Assert.AreEqual(65, deadendH2O);
@@ -496,7 +481,7 @@ namespace Test
 
             Assert.AreEqual(68, inter);
             Assert.AreEqual(78, intra);
-            Assert.AreEqual(211, single);
+            Assert.AreEqual(212, single);
             Assert.AreEqual(6, loop);
             Assert.AreEqual(0, deadend);
             Assert.AreEqual(42, deadendH2O);
@@ -597,24 +582,24 @@ namespace Test
             Assert.AreEqual(loopCsmPsmData.AlphaIntensity, 0);
             Assert.AreEqual(loopCsmPsmData.Ambiguity, 0);
             Assert.AreEqual(loopCsmPsmData.BetaIntensity, 0);
-            Assert.That(loopCsmPsmData.DeltaScore, Is.EqualTo(8.284).Within(0.001));
-            Assert.That(loopCsmPsmData.HydrophobicityZScore, Is.EqualTo(0.6926).Within(0.001));
-            Assert.That(loopCsmPsmData.Intensity, Is.EqualTo(0.2842).Within(0.0001));
+            Assert.That(loopCsmPsmData.DeltaScore, Is.EqualTo(14.2994).Within(0.001));
+            Assert.That(loopCsmPsmData.HydrophobicityZScore, Is.EqualTo(0.5264).Within(0.001));
+            Assert.That(loopCsmPsmData.Intensity, Is.EqualTo(0.2994).Within(0.0001));
             Assert.AreEqual(loopCsmPsmData.IsDeadEnd, 0);
             Assert.AreEqual(loopCsmPsmData.IsInter, 0);
             Assert.AreEqual(loopCsmPsmData.IsIntra, 0);
             Assert.AreEqual(loopCsmPsmData.IsLoop, 1);
             Assert.AreEqual(loopCsmPsmData.IsVariantPeptide, 0);
             Assert.AreEqual(loopCsmPsmData.Label, true);
-            Assert.AreEqual(loopCsmPsmData.LongestFragmentIonSeries, 4);
+            Assert.AreEqual(loopCsmPsmData.LongestFragmentIonSeries, 5);
             Assert.AreEqual(loopCsmPsmData.LongestFragmentIonSeries_Alpha, 0);
             Assert.AreEqual(loopCsmPsmData.LongestFragmentIonSeries_Beta, 0);
             Assert.AreEqual(loopCsmPsmData.MissedCleavagesCount, 2);
             Assert.AreEqual(loopCsmPsmData.ModsCount, 0);
             Assert.AreEqual(loopCsmPsmData.Notch, 0);
-            Assert.AreEqual(loopCsmPsmData.PrecursorChargeDiffToMode, 0);
+            Assert.AreEqual(loopCsmPsmData.PrecursorChargeDiffToMode, -1);
             Assert.AreEqual(loopCsmPsmData.PsmCount, 8);
-            Assert.AreEqual(loopCsmPsmData.TotalMatchingFragmentCount, 8);
+            Assert.AreEqual(loopCsmPsmData.TotalMatchingFragmentCount, 14);
 
             unnasignedCrossType = 0;
             inter = 0;
@@ -669,12 +654,12 @@ namespace Test
             }
 
             Assert.AreEqual(0, unnasignedCrossType);
-            Assert.AreEqual(90, inter);
-            Assert.AreEqual(85, intra);
-            Assert.AreEqual(195, single);
-            Assert.AreEqual(4, loop);
+            Assert.AreEqual(141, inter);
+            Assert.AreEqual(80, intra);
+            Assert.AreEqual(213, single);
+            Assert.AreEqual(6, loop);
             Assert.AreEqual(0, deadend);
-            Assert.AreEqual(37, deadendH2O);
+            Assert.AreEqual(42, deadendH2O);
             Assert.AreEqual(0, deadendNH2);
             Assert.AreEqual(0, deadendTris);
         }

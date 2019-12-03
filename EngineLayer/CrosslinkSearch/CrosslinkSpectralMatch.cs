@@ -140,7 +140,7 @@ namespace EngineLayer.CrosslinkSearch
             sb.Append(PsmTsvHeader.CrossTypeLabel + '\t');
             sb.Append(PsmTsvHeader.LinkResiduesLabel + "\t");
 
-            sb.Append("Peptide" + '\t');
+            sb.Append("Peptide(Empty)" + '\t');
             sb.Append(PsmTsvHeader.ProteinAccession + '\t');
             sb.Append(PsmTsvHeader.ProteinLinkSiteLabel + '\t');
             sb.Append(PsmTsvHeader.BaseSequence + '\t');
@@ -156,7 +156,7 @@ namespace EngineLayer.CrosslinkSearch
             sb.Append(PsmTsvHeader.MatchedIonIntensities + '\t');
             sb.Append(PsmTsvHeader.MatchedIonCounts + '\t');
 
-            sb.Append("Beta Peptide" + '\t');
+            sb.Append("Beta Peptide(Empty)" + '\t');
             sb.Append(PsmTsvHeader.BetaPeptideProteinAccessionLabel + '\t');
             sb.Append(PsmTsvHeader.BetaPeptideProteinLinkSiteLabel + '\t');
             sb.Append(PsmTsvHeader.BetaPeptideBaseSequenceLabel + '\t');
@@ -269,14 +269,15 @@ namespace EngineLayer.CrosslinkSearch
                 sb.Append("\t");
             }
 
-            sb.Append("\t");
+            sb.Append("\t"); //Intentionally left empty for readability in the tsv file.
             List<PeptideWithSetModifications> pepsWithMods = BestMatchingPeptides.Select(p => p.Peptide).ToList();
             var proteinAccessionString = ProteinAccession != null ? ProteinAccession : PsmTsvWriter.Resolve(pepsWithMods.Select(b => b.Protein.Accession), FullSequence).ResolvedString;
             sb.Append(proteinAccessionString + "\t");
             sb.Append(XlProteinPos + (XlProteinPosLoop.HasValue ? "~" + XlProteinPosLoop.Value : null) + "\t");
             sb.Append(BaseSequence + "\t");
             sb.Append(FullSequence + position + "\t");
-            sb.Append((PeptideMonisotopicMass.HasValue ? PeptideMonisotopicMass.Value.ToString() : "---")); sb.Append("\t");
+            sb.Append((PeptideMonisotopicMass.HasValue ? PeptideMonisotopicMass.Value.ToString() : "---"));
+            sb.Append("\t");
             sb.Append(Score + "\t");
             //sb.Append(XlRank[0] + "\t");
 
@@ -318,7 +319,7 @@ namespace EngineLayer.CrosslinkSearch
 
             if (BetaPeptide != null)
             {
-                sb.Append("\t");
+                sb.Append("\t"); //Intentionally left empty for readability in the tsv file.
                 List<PeptideWithSetModifications> betaPepsWithMods = BetaPeptide.BestMatchingPeptides.Select(p => p.Peptide).ToList();
                 var betaProteinAccessionString = BetaPeptide.ProteinAccession != null ? BetaPeptide.ProteinAccession : PsmTsvWriter.Resolve(betaPepsWithMods.Select(b => b.Protein.Accession), FullSequence).ResolvedString;
                 sb.Append(betaProteinAccessionString + "\t");

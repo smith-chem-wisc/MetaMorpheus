@@ -24,7 +24,7 @@ namespace Test
             var resultsPath = File.ReadAllLines(Path.Combine(outputFolder, @"XL_Intralinks.tsv"));
             var sections = resultsPath[1].Split('\t');
             Assert.That(resultsPath.Length == 2);
-            Assert.That(sections.Length == 43);
+            Assert.That(sections.Length == 45);
             Directory.Delete(outputFolder, true);
         }
     }

@@ -395,7 +395,7 @@ namespace Test
 
             Tolerance DeconvolutionMassTolerance = new PpmTolerance(5);
 
-            var listOfSortedms2Scans = MetaMorpheusTask.GetMs2Scans(myMsDataFile, null, new CommonParameters()).OrderBy(b => b.PrecursorMass).ToArray();
+            var listOfSortedms2Scans = MetaMorpheusTask.GetMs2Scans(myMsDataFile, origDataFile, new CommonParameters()).OrderBy(b => b.PrecursorMass).ToArray();
 
             PeptideSpectralMatch[] allPsmsArray = new PeptideSpectralMatch[listOfSortedms2Scans.Length];
             new ClassicSearchEngine(allPsmsArray, listOfSortedms2Scans, variableModifications, fixedModifications, null, null, null, proteinList, searchMode, CommonParameters, new List<string>()).Run();
@@ -592,12 +592,12 @@ namespace Test
         {
             string searchType = "standard";
             string[] trainingInfoStandard = PsmData.trainingInfos[searchType];
-            string[] expectedTrainingInfoStandard = new[] { "TotalMatchingFragmentCount", "Intensity", "PrecursorChargeDiffToMode", "DeltaScore", "Notch", "PsmCount", "ModsCount", "MissedCleavagesCount", "Ambiguity", "LongestFragmentIonSeries", "HydrophobicityZScore", "IsVariantPeptide", "IsDeadEnd", "IsLoop" };
+            string[] expectedTrainingInfoStandard = new[] { "TotalMatchingFragmentCount", "Intensity", "PrecursorChargeDiffToMode", "DeltaScore", "Notch", "PsmCount", "ModsCount", "AbsoluteAverageFragmentMassErrorFromMedian", "MissedCleavagesCount", "Ambiguity", "LongestFragmentIonSeries", "HydrophobicityZScore", "IsVariantPeptide", "IsDeadEnd", "IsLoop" };
             Assert.AreEqual(expectedTrainingInfoStandard, trainingInfoStandard);
 
             searchType = "top-down";
             string[] trainingInfoTopDown = PsmData.trainingInfos[searchType];
-            string[] expectedTrainingInfoTopDown = new[] { "TotalMatchingFragmentCount", "Intensity", "PrecursorChargeDiffToMode", "DeltaScore", "Notch", "PsmCount", "ModsCount", "Ambiguity", "LongestFragmentIonSeries" };
+            string[] expectedTrainingInfoTopDown = new[] { "TotalMatchingFragmentCount", "Intensity", "PrecursorChargeDiffToMode", "DeltaScore", "Notch", "PsmCount", "ModsCount", "AbsoluteAverageFragmentMassErrorFromMedian", "Ambiguity", "LongestFragmentIonSeries" };
             Assert.AreEqual(expectedTrainingInfoTopDown, trainingInfoTopDown);
 
             List<string> positiveAttributes = new List<string> { "TotalMatchingFragmentCount", "Intensity", "PrecursorChargeDiffToMode", "DeltaScore", "PsmCount", "LongestFragmentIonSeries" };
@@ -621,20 +621,21 @@ namespace Test
                 Notch = 4,
                 PsmCount = 5,
                 ModsCount = 6,
-                MissedCleavagesCount = 7,
-                Ambiguity = 8,
-                LongestFragmentIonSeries = 9,
-                HydrophobicityZScore = 10,
-                IsVariantPeptide = 0,
-                IsDeadEnd = 0,
-                IsLoop = 0,
+                AbsoluteAverageFragmentMassErrorFromMedian = 7,
+                MissedCleavagesCount = 8,
+                Ambiguity = 9,
+                LongestFragmentIonSeries = 10,
+                HydrophobicityZScore = 11,
+                IsVariantPeptide = 12,
+                IsDeadEnd = 13,
+                IsLoop = 14,
                 Label = false
             };
 
-            string standardToString = "\t0\t1\t2\t3\t4\t5\t6\t7\t8\t9\t10\t0\t0\t0";
+            string standardToString = "\t0\t1\t2\t3\t4\t5\t6\t7\t8\t9\t10\t11\t12\t13\t14";
             Assert.AreEqual(standardToString, pd.ToString("standard"));
 
-            string topDownToString = "\t0\t1\t2\t3\t4\t5\t6\t8\t9";
+            string topDownToString = "\t0\t1\t2\t3\t4\t5\t6\t7\t9\t10";
             Assert.AreEqual(topDownToString, pd.ToString("top-down"));
         }
     }
