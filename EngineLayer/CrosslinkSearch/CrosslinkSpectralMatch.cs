@@ -378,6 +378,16 @@ namespace EngineLayer.CrosslinkSearch
                 sb.Append(((ParentIonMaxIntensityRanks != null) && (ParentIonMaxIntensityRanks.Any()) ? ParentIonMaxIntensityRanks.Min().ToString() : "-")); sb.Append("\t");
             }
 
+            if(ChildMatchedFragmentIons == null || ChildMatchedFragmentIons.Count == 0)
+            {
+                sb.Append("\t");
+            }
+            else
+            {
+                //TODO Fill me up!
+                sb.Append("\t");//I guess this should have something but I don't know what.
+            }
+
             if (BetaPeptide == null)
             {
                 sb.Append((IsDecoy) ? "D" : (IsContaminant) ? "C" : "T");
