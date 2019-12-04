@@ -129,6 +129,7 @@ namespace EngineLayer
         public void RemoveThisAmbiguousPeptide(int notch, PeptideWithSetModifications pwsm)
         {
             _BestMatchingPeptides.Remove((notch, pwsm));
+            PeptidesToMatchingFragments.Remove(pwsm);
         }
 
         public override string ToString()
@@ -201,7 +202,13 @@ namespace EngineLayer
                     {
                         // at least one peptide with this sequence is a target and at least one is a decoy
                         // remove the decoys with this sequence
+                        var pwsmToRemove = _BestMatchingPeptides.Where(p => p.Pwsm.FullSequence == hit.Key && p.Pwsm.Protein.IsDecoy).ToList();
                         _BestMatchingPeptides.RemoveAll(p => p.Pwsm.FullSequence == hit.Key && p.Pwsm.Protein.IsDecoy);
+                        foreach ((int, PeptideWithSetModifications) pwsm in pwsmToRemove)
+                        {
+                            PeptidesToMatchingFragments.Remove(pwsm.Item2);
+                        }
+
                         removedPeptides = true;
                     }
                 }
@@ -301,10 +308,17 @@ namespace EngineLayer
         /// <summary>
         /// This method is used by protein parsimony to add PeptideWithSetModifications objects for modification-agnostic parsimony
         /// </summary>
-        public void AddProteinMatch((int, PeptideWithSetModifications) peptideWithNotch)
+        public void AddProteinMatch((int, PeptideWithSetModifications) peptideWithNotch, List<MatchedFragmentIon> mfi)
         {
-            _BestMatchingPeptides.Add(peptideWithNotch);
-            ResolveAllAmbiguities();
+            if (!_BestMatchingPeptides.Select(p => p.Pwsm).Contains(peptideWithNotch.Item2))
+            {
+                _BestMatchingPeptides.Add(peptideWithNotch);
+                if (!PeptidesToMatchingFragments.ContainsKey(peptideWithNotch.Item2))
+                {
+                    PeptidesToMatchingFragments.Add(peptideWithNotch.Item2, mfi);
+                }
+                ResolveAllAmbiguities();
+            }
         }
 
         /// <summary>

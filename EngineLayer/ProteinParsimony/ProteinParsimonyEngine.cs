@@ -1,5 +1,6 @@
 ﻿using EngineLayer.ProteinParsimony;
 using Proteomics;
+using Proteomics.Fragmentation;
 using Proteomics.ProteolyticDigestion;
 using System.Collections.Concurrent;
 using System.Collections.Generic;
@@ -14,6 +15,7 @@ namespace EngineLayer
         /// All peptides meeting the prefiltering criteria for parsimony (e.g., peptides from non-ambiguous high-confidence PSMs)
         /// </summary>
         private readonly HashSet<PeptideWithSetModifications> _fdrFilteredPeptides;
+
         private readonly List<PeptideSpectralMatch> _fdrFilteredPsms;
         private readonly List<PeptideSpectralMatch> _allPsms;
         private const double FdrCutoffForParsimony = 0.01;
@@ -72,7 +74,7 @@ namespace EngineLayer
                 }
             }
 
-            // we're storing all PSMs (not just FDR-filtered ones) here because we will remove some protein associations 
+            // we're storing all PSMs (not just FDR-filtered ones) here because we will remove some protein associations
             // from low-confidence PSMs if they can be explained by a parsimonious protein
             _allPsms = allPsms;
         }
@@ -106,7 +108,7 @@ namespace EngineLayer
             }
 
             // Parsimony stage 0: create peptide-protein associations if needed because the user wants a modification-agnostic parsimony
-            // this is needed for edge cases digesting a protein .xml from UniProt that has peptide sequences shared between proteins 
+            // this is needed for edge cases digesting a protein .xml from UniProt that has peptide sequences shared between proteins
             // that have unevenly-shared modifications
             if (!_treatModPeptidesAsDifferentPeptides)
             {
@@ -200,6 +202,7 @@ namespace EngineLayer
                                     foreach (PeptideSpectralMatch psm in baseSequence.Value)
                                     {
                                         PeptideWithSetModifications originalPeptide = psm.BestMatchingPeptides.First().Peptide;
+                                        List<MatchedFragmentIon> mfi = psm.PeptidesToMatchingFragments[originalPeptide];
                                         HashSet<Protein> psmProteins = new HashSet<Protein>(psm.BestMatchingPeptides.Select(p => p.Peptide.Protein));
 
                                         foreach (var proteinWithDigestInfo in proteinToPeptideInfo)
@@ -222,7 +225,7 @@ namespace EngineLayer
                                                     _fdrFilteredPeptides.Add(pep);
                                                 }
 
-                                                psm.AddProteinMatch((proteinWithDigestInfo.Value.Notch, pep));
+                                                psm.AddProteinMatch((proteinWithDigestInfo.Value.Notch, pep), mfi);
                                             }
                                         }
                                     }
@@ -332,7 +335,7 @@ namespace EngineLayer
                 // Parsimony stage 3: greedy algorithm
 
                 // dictionary with proteins as keys and list of associated peptide sequences as the values.
-                // this data structure makes parsimony easier because the algorithm can look up a protein's peptides 
+                // this data structure makes parsimony easier because the algorithm can look up a protein's peptides
                 // to remove them from the list of available peptides. this list will shrink as the algorithm progresses
                 var algDictionary = new Dictionary<Protein, HashSet<string>>();
                 var algDictionaryProtease = new Dictionary<Protein, HashSet<ParsimonySequence>>();
@@ -439,7 +442,7 @@ namespace EngineLayer
             foreach (PeptideSpectralMatch psm in _allPsms)
             {
                 // if this PSM has a protein in the parsimonious list, it removes the proteins NOT in the parsimonious list
-                // otherwise, no proteins are removed (i.e., for PSMs that cannot be explained by a parsimonious protein, 
+                // otherwise, no proteins are removed (i.e., for PSMs that cannot be explained by a parsimonious protein,
                 // no protein associations are removed)
                 if (psm.BestMatchingPeptides.Any(p => parsimoniousProteinList.Contains(p.Peptide.Protein)))
                 {
@@ -455,8 +458,8 @@ namespace EngineLayer
         }
 
         /// <summary>
-        /// Builds protein groups after parsimony. Each protein group will only have 1 protein at this point. 
-        /// Indistinguishable protein groups will be merged during scoring for computational efficiency reasons 
+        /// Builds protein groups after parsimony. Each protein group will only have 1 protein at this point.
+        /// Indistinguishable protein groups will be merged during scoring for computational efficiency reasons
         /// (it's easier to tell when two protein groups are identical after they're scored)
         /// </summary>
         private List<ProteinGroup> ConstructProteinGroups(HashSet<PeptideWithSetModifications> uniquePeptides)

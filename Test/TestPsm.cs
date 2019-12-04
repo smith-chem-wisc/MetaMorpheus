@@ -214,8 +214,8 @@ namespace Test
             DigestionParams digest = new DigestionParams();
             List<Modification> mods = new List<Modification>();
 
-            PeptideWithSetModifications target = new Protein("PEPTIDE", "").Digest(digest, mods, mods).First();
-            PeptideWithSetModifications decoy = new Protein("PEPTIDE", "", isDecoy: true).Digest(digest, mods, mods).First();
+            PeptideWithSetModifications target = new Protein("PEPTIDE", "TARGET").Digest(digest, mods, mods).First();
+            PeptideWithSetModifications decoy = new Protein("PEPTIDE", "DECOY", isDecoy: true).Digest(digest, mods, mods).First();
 
             MsDataFile msDataFile = new TestDataFile(target);
             MsDataScan msDataScan = msDataFile.GetOneBasedScan(2);
