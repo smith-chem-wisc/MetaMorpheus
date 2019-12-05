@@ -410,7 +410,7 @@
                                 </TextBox>
                                 <Label x:Name="peakFindingLabel" Content=" ppm peakfinding tolerance" IsEnabled="{Binding IsChecked, ElementName=CheckBoxLFQ}" />
                             </StackPanel>
-                            <CheckBox x:Name="CheckBoxMatchBetweenRuns" Content="Match between runs" IsEnabled="{Binding IsChecked, ElementName=CheckBoxLFQ}" HorizontalAlignment="Right" Margin="0,0,0.444,0" Width="676">
+                            <CheckBox x:Name="CheckBoxMatchBetweenRuns" Content="Match between runs" IsEnabled="{Binding IsChecked, ElementName=CheckBoxLFQ}">
                                 <ToolTipService.ToolTip>
                                     <ToolTip Content="(LFQ) Use MS2 identifications from one run to quantify those same peptides in other runs where they were not identified" ToolTipService.ShowDuration="999999" ToolTipService.InitialShowDelay="500" />
                                 </ToolTipService.ToolTip>
