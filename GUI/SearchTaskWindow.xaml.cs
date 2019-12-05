@@ -290,6 +290,8 @@ namespace MetaMorpheusGUI
             CkbMzId.IsChecked = task.SearchParameters.WriteMzId;
             WriteDecoyCheckBox.IsChecked = task.SearchParameters.WriteDecoys;
             WriteContaminantCheckBox.IsChecked = task.SearchParameters.WriteContaminants;
+            WriteIndividualResultsCheckBox.IsChecked = task.SearchParameters.WriteIndividualFiles;
+            CompressIndividualResultsCheckBox.IsChecked = task.SearchParameters.CompressIndividualFiles;
 
             foreach (var mod in task.CommonParameters.ListOfModsFixed)
             {
@@ -552,6 +554,9 @@ namespace MetaMorpheusGUI
             TheTask.SearchParameters.WriteMzId = CkbMzId.IsChecked.Value;
             TheTask.SearchParameters.WriteDecoys = WriteDecoyCheckBox.IsChecked.Value;
             TheTask.SearchParameters.WriteContaminants = WriteContaminantCheckBox.IsChecked.Value;
+            TheTask.SearchParameters.WriteIndividualFiles = WriteIndividualResultsCheckBox.IsChecked.Value;
+            TheTask.SearchParameters.CompressIndividualFiles = CompressIndividualResultsCheckBox.IsChecked.Value;
+
             //TheTask.SearchParameters.OutPepXML = ckbPepXML.IsChecked.Value;
 
             if (CheckBoxDecoy.IsChecked.Value)

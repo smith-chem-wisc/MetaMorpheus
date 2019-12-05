@@ -410,7 +410,7 @@
                                 </TextBox>
                                 <Label x:Name="peakFindingLabel" Content=" ppm peakfinding tolerance" IsEnabled="{Binding IsChecked, ElementName=CheckBoxLFQ}" />
                             </StackPanel>
-                            <CheckBox x:Name="CheckBoxMatchBetweenRuns" Content="Match between runs" IsEnabled="{Binding IsChecked, ElementName=CheckBoxLFQ}">
+                            <CheckBox x:Name="CheckBoxMatchBetweenRuns" Content="Match between runs" IsEnabled="{Binding IsChecked, ElementName=CheckBoxLFQ}" HorizontalAlignment="Right" Margin="0,0,0.444,0" Width="676">
                                 <ToolTipService.ToolTip>
                                     <ToolTip Content="(LFQ) Use MS2 identifications from one run to quantify those same peptides in other runs where they were not identified" ToolTipService.ShowDuration="999999" ToolTipService.InitialShowDelay="500" />
                                 </ToolTipService.ToolTip>
@@ -431,6 +431,8 @@
                             <!--<CheckBox x:Name="ckbPepXML" Content="Write .pep.XML" />-->
                             <CheckBox x:Name="WriteDecoyCheckBox" Content="Write decoys" />
                             <CheckBox x:Name="WriteContaminantCheckBox" Content="Write contaminants" />
+                            <CheckBox x:Name="WriteIndividualResultsCheckBox" Content="Write Individual File Results" />
+                            <CheckBox x:Name="CompressIndividualResultsCheckBox" Content="Compress Individual File Results" IsEnabled="{Binding IsChecked, ElementName=WriteIndividualResultsCheckBox}"/>
                             <StackPanel Orientation="Horizontal">
                                 <CheckBox x:Name="QValueCheckBox" Content="Filter results to q-value:" IsChecked="False">
                                     <ToolTipService.ToolTip>
