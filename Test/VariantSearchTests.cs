@@ -192,7 +192,7 @@ namespace Test
 
             // no variant results files should be generated
             HashSet<string> expectedFiles = new HashSet<string> {
-                "AllPeptides.psmtsv", "AllPSMs.psmtsv", "AllPSMs_FormattedForPercolator.tsv", "prose.txt", "results.txt" };
+                "AllPeptides.psmtsv", "AllPSMs.psmtsv", "AllPSMs_FormattedForPercolator.tab", "prose.txt", "results.txt" };
 
             HashSet<string> files1 = new HashSet<string>(Directory.GetFiles(Path.Combine(thisTaskOutputFolder, "NoVariantOutput")).Select(v => Path.GetFileName(v)));
 
