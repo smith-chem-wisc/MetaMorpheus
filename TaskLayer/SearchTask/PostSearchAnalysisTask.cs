@@ -945,10 +945,10 @@ namespace TaskLayer
 
         private void CompressIndividualFileResults()
         {
-            if(Parameters.SearchParameters.WriteIndividualFiles && Parameters.SearchParameters.CompressIndividualFiles)
+            if(Parameters.SearchParameters.CompressIndividualFiles && Directory.Exists(Parameters.IndividualResultsOutputFolder))
             {
-                ZipFile.CreateFromDirectory(Parameters.IndividualResultsOutputFolder, Path.Combine(Parameters.IndividualResultsOutputFolder, ".zip"));
-                Directory.Delete(Parameters.IndividualResultsOutputFolder);
+                ZipFile.CreateFromDirectory(Parameters.IndividualResultsOutputFolder, Parameters.IndividualResultsOutputFolder + ".zip");
+                Directory.Delete(Parameters.IndividualResultsOutputFolder, true);
             }
         }
 
