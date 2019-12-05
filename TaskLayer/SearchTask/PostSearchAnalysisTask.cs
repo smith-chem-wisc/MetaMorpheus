@@ -561,23 +561,20 @@ namespace TaskLayer
                 Parameters.SearchTaskResults.AddTaskSummaryText("Target PSMs within 1% FDR in " + strippedFileName + ": " + psmsForThisFile.Count(a => a.FdrInfo.QValue <= 0.01 && !a.IsDecoy));
 
                 // writes all individual spectra file search results to subdirectory
-                if (Parameters.CurrentRawFileList.Count > 1)
+                if (Parameters.CurrentRawFileList.Count > 1 && Parameters.SearchParameters.WriteIndividualFiles)
                 {
                     // create individual files subdirectory
-                    if (Parameters.SearchParameters.WriteIndividualFiles)
-                    {
-                        Directory.CreateDirectory(Parameters.IndividualResultsOutputFolder);
+                    Directory.CreateDirectory(Parameters.IndividualResultsOutputFolder);
 
-                        // write PSMs
-                        writtenFile = Path.Combine(Parameters.IndividualResultsOutputFolder, strippedFileName + "_PSMs.psmtsv");
-                        WritePsmsToTsv(psmsForThisFile, writtenFile, Parameters.SearchParameters.ModsToWriteSelection);
-                        FinishedWritingFile(writtenFile, new List<string> { Parameters.SearchTaskId, "Individual Spectra Files", file.First().FullFilePath });
+                    // write PSMs
+                    writtenFile = Path.Combine(Parameters.IndividualResultsOutputFolder, strippedFileName + "_PSMs.psmtsv");
+                    WritePsmsToTsv(psmsForThisFile, writtenFile, Parameters.SearchParameters.ModsToWriteSelection);
+                    FinishedWritingFile(writtenFile, new List<string> { Parameters.SearchTaskId, "Individual Spectra Files", file.First().FullFilePath });
 
-                        // write PSMs for percolator
-                        writtenFile = Path.Combine(Parameters.IndividualResultsOutputFolder, strippedFileName + "_PSMsFormattedForPercolator.tsv");
-                        WritePsmsForPercolator(psmsForThisFile, writtenFile);
-                        FinishedWritingFile(writtenFile, new List<string> { Parameters.SearchTaskId, "Individual Spectra Files", file.First().FullFilePath });
-                    }
+                    // write PSMs for percolator
+                    writtenFile = Path.Combine(Parameters.IndividualResultsOutputFolder, strippedFileName + "_PSMsFormattedForPercolator.tsv");
+                    WritePsmsForPercolator(psmsForThisFile, writtenFile);
+                    FinishedWritingFile(writtenFile, new List<string> { Parameters.SearchTaskId, "Individual Spectra Files", file.First().FullFilePath });
                 }
             }
         }

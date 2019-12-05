@@ -201,7 +201,7 @@ namespace Test
             var extraFiles = files1.Except(expectedFiles).ToList();
 
             // test that output is what's expected
-            //Assert.That(missingFiles.Count() == 0 && extraFiles.Count() ==0);
+            Assert.That(missingFiles.Count() == 0 && extraFiles.Count() ==0);
 
             HashSet<string> files2 = new HashSet<string>(Directory.GetFiles(Path.Combine(thisTaskOutputFolder, "VariantOutput_frameshift")).Select(v => Path.GetFileName(v)));
             // variant files should be generates
