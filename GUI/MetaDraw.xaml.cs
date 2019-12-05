@@ -676,7 +676,8 @@ namespace MetaMorpheusGUI
 
             var plotName = selectedItem as string;
 
-            PlotModelStat plot = new PlotModelStat(plotName, filteredListOfPsms);
+            // FIXME change plot to be of only selected source files. Why can't this use the current plot?
+            PlotModelStat plot = new PlotModelStat(plotName, filteredListOfPsms, psmsBySourceFile); 
             var fileDirectory = Directory.GetParent(tsvResultsFilePath).ToString();
             var fileName = String.Concat(plotName, ".pdf");
             using (Stream writePDF = File.Create(Path.Combine(fileDirectory, fileName)))
@@ -776,14 +777,16 @@ namespace MetaMorpheusGUI
             }
 
             ObservableCollection<PsmFromTsv> psms = new ObservableCollection<PsmFromTsv>();
+            Dictionary<string, ObservableCollection<PsmFromTsv>> psmsBSF = new Dictionary<string, ObservableCollection<PsmFromTsv>>();
             foreach (string fileName in selectSourceFileListBox.SelectedItems)
             {
+                psmsBSF.Add(fileName, psmsBySourceFile[fileName]);
                 foreach (PsmFromTsv psm in psmsBySourceFile[fileName])
                 {
                     psms.Add(psm);
                 }
             }
-            PlotModelStat plot = await Task.Run(() => new PlotModelStat(plotName, psms));
+            PlotModelStat plot = await Task.Run(() => new PlotModelStat(plotName, psms, psmsBSF));
             plotViewStat.DataContext = plot;
             PlotViewStat_SizeChanged(plotViewStat, null);
         }
@@ -826,7 +829,6 @@ namespace MetaMorpheusGUI
             OxyPlot.Wpf.PlotView plot = sender as OxyPlot.Wpf.PlotView;
             if(plot != null && plot.Model != null)
             {
-                Console.WriteLine(plotViewStat.ActualWidth);
                 plot.Model.DefaultXAxis.TitleFontSize = plot.Model.DefaultFontSize; // stops the title from being scaled
                 int count = (plot.Model.Series[0] as OxyPlot.Series.ColumnSeries).Items.Count;
                 int widthCountRatio = 23;   // maintains this width:number of PTM types ratio

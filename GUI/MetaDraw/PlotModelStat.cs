@@ -18,6 +18,7 @@ namespace MetaMorpheusGUI
     {
         private PlotModel privateModel;
         private ObservableCollection<PsmFromTsv> allPsms;
+        private Dictionary<string, ObservableCollection<PsmFromTsv>> psmsBySourceFile;
 
         public static List<string> PlotNames = new List<string> {
             "Histogram of Precursor PPM Errors (around 0 Da mass-difference notch only)",
@@ -66,10 +67,11 @@ namespace MetaMorpheusGUI
             }
         }
 
-        public PlotModelStat(string plotName, ObservableCollection<PsmFromTsv> psms)
+        public PlotModelStat(string plotName, ObservableCollection<PsmFromTsv> psms, Dictionary<string, ObservableCollection<PsmFromTsv>> psmsBySourceFile)
         {
-            privateModel = new PlotModel { Title = plotName };
+            privateModel = new PlotModel { Title = plotName, DefaultFontSize = 14, LegendTitle = "source file(s)" };
             allPsms = psms;
+            this.psmsBySourceFile = psmsBySourceFile;
             createPlot(plotName);
         }
 
@@ -114,115 +116,174 @@ namespace MetaMorpheusGUI
             string yAxisTitle = "Count";
             string xAxisTitle = "";
             double binSize = -1;
+            double labelAngle = 0;
             SortedList<double, double> numCategory = new SortedList<double, double>();
-            IEnumerable<double> numbers = new List<double>();
-            Dictionary<string, int> dict = new Dictionary<string, int>();
-
-            List<string> axes = new List<string>();
-            var s1 = new ColumnSeries { ColumnWidth = 200, IsStacked = false, FillColor = OxyColors.Blue };
+            Dictionary<string, IEnumerable<double>> numbersBySourceFile = new Dictionary<string, IEnumerable<double>>();    // key is file name, value is data from that file
+            Dictionary<string, Dictionary<string, int>> dictsBySourceFile = new Dictionary<string, Dictionary<string, int>>();   // key is file name, value is dictionary of bins and their counts
 
             switch (plotType)
             {
                 case 1: // Histogram of Precursor PPM Errors (around 0 Da mass-difference notch only)
                     xAxisTitle = "Precursor error (ppm)";
-                    numbers = allPsms.Where(p => !p.MassDiffDa.Contains("|") && Math.Round(double.Parse(p.MassDiffDa), 0) == 0).Select(p => double.Parse(p.MassDiffPpm));
                     binSize = 0.1;
+                    foreach (string key in psmsBySourceFile.Keys)
+                    {
+                        numbersBySourceFile.Add(key, psmsBySourceFile[key].Where(p => !p.MassDiffDa.Contains("|") && Math.Round(double.Parse(p.MassDiffDa), 0) == 0).Select(p => double.Parse(p.MassDiffPpm)));
+                        var results = numbersBySourceFile[key].GroupBy(p => roundToBin(p, binSize)).OrderBy(p => p.Key).Select(p => p);
+                        dictsBySourceFile.Add(key, results.ToDictionary(p => p.Key.ToString(), v => v.Count()));
+                    }
                     break;
-                case 2: // Histogram of Fragment PPM Errors
+                case 2: // Histogram of Fragment PPM Errors TODO not shown as an option in gui
                     xAxisTitle = "Fragment error (ppm)";
-                    numbers = allPsms.SelectMany(p => p.MatchedIons.Select(v => v.MassErrorPpm));
                     binSize = 0.1;
+                    foreach (string key in psmsBySourceFile.Keys)
+                    {
+                        numbersBySourceFile.Add(key, psmsBySourceFile[key].SelectMany(p => p.MatchedIons.Select(v => v.MassErrorPpm)));
+                    }
                     break;
                 case 3: // Histogram of Precursor Charges
                     xAxisTitle = "Precursor charge";
-                    numbers = allPsms.Select(p => (double)(p.PrecursorCharge));
-                    var results = numbers.GroupBy(p => p).OrderBy(p => p.Key).Select(p => p);
-                    dict = results.ToDictionary(p => p.Key.ToString(), v => v.Count());
+                    binSize = 1;
+                    foreach (string key in psmsBySourceFile.Keys)
+                    {
+                        numbersBySourceFile.Add(key, psmsBySourceFile[key].Select(p => (double)(p.PrecursorCharge)));
+                        var results = numbersBySourceFile[key].GroupBy(p => p).OrderBy(p => p.Key).Select(p => p);
+                        dictsBySourceFile.Add(key, results.ToDictionary(p => p.Key.ToString(), v => v.Count()));
+                    }
                     break;
                 case 4: // Histogram of Fragment Charges
                     xAxisTitle = "Fragment charge";
-                    numbers = allPsms.SelectMany(p => p.MatchedIons.Select(v => (double)v.Charge));
-                    results = numbers.GroupBy(p => p).OrderBy(p => p.Key).Select(p => p);
-                    dict = results.ToDictionary(p => p.Key.ToString(), v => v.Count());
+                    binSize = 1;
+                    foreach (string key in psmsBySourceFile.Keys)
+                    {
+                        numbersBySourceFile.Add(key, psmsBySourceFile[key].SelectMany(p => p.MatchedIons.Select(v => (double)v.Charge)));
+                        var results = numbersBySourceFile[key].GroupBy(p => p).OrderBy(p => p.Key).Select(p => p);
+                        dictsBySourceFile.Add(key, results.ToDictionary(p => p.Key.ToString(), v => v.Count()));
+                    }
                     break;
                 case 5: // Histogram of PTM Spectral Counts
                     xAxisTitle = "Modification";
-                    var psmsWithMods = allPsms.Where(p => !p.FullSequence.Contains("|") && p.FullSequence.Contains("["));
-                    var mods = psmsWithMods.Select(p => new PeptideWithSetModifications(p.FullSequence, GlobalVariables.AllModsKnownDictionary)).Select(p => p.AllModsOneIsNterminus).SelectMany(p => p.Values);
-                    var groupedMods = mods.GroupBy(p => p.IdWithMotif).ToList();
-                    dict = groupedMods.ToDictionary(p => p.Key, v => v.Count());
+                    labelAngle = -50;
+                    foreach (string key in psmsBySourceFile.Keys)
+                    {
+                        var psmsWithMods = psmsBySourceFile[key].Where(p => !p.FullSequence.Contains("|") && p.FullSequence.Contains("["));
+                        var mods = psmsWithMods.Select(p => new PeptideWithSetModifications(p.FullSequence, GlobalVariables.AllModsKnownDictionary)).Select(p => p.AllModsOneIsNterminus).SelectMany(p => p.Values);
+                        var groupedMods = mods.GroupBy(p => p.IdWithMotif).ToList();
+                        dictsBySourceFile.Add(key, groupedMods.ToDictionary(p => p.Key, v => v.Count()));
+                    }
                     break;
             }
-            if (plotType >= 3)
+
+            String[] category;  // for labeling bottom axis
+            int[] totalCounts;  // for having the tracker show total count across all files
+            if (plotType == 5)  // category histogram
             {
-                ColumnSeries column = new ColumnSeries { ColumnWidth = 200, IsStacked = false, FillColor = OxyColors.Blue };
-                var counter = 0;
-                String[] category = new string[dict.Count];
-                foreach (var d in dict)
+                // assign all categories their index on the x axis
+                IEnumerable<string> allCategories = dictsBySourceFile.Values.Select(p => p.Keys).SelectMany(p => p);
+                Dictionary<string, int> categoryIDs = new Dictionary<string, int>();
+                int counter = 0;
+                foreach (string s in allCategories)
                 {
-                    column.Items.Add(new ColumnItem(d.Value, counter));
-                    category[counter] = d.Key;
-                    counter++;
+                    if (!categoryIDs.ContainsKey(s))
+                    {
+                        categoryIDs.Add(s, counter++);
+                    }
                 }
-                double labelAngle = plotType == 5 ? -50 : 0;
-                this.privateModel.Axes.Add(new CategoryAxis
+                category = new string[counter];
+                totalCounts = new int[counter];
+
+                // calculate category totals across all files
+                foreach (string cat in categoryIDs.Keys)
                 {
-                    ItemsSource = category, Angle = labelAngle, Title = xAxisTitle
-                });
-                privateModel.Series.Add(column);
-                yAxisTitle = yAxisTitle.ToString();
+                    foreach (Dictionary<string, int> dict in dictsBySourceFile.Values)
+                    {
+                        totalCounts[categoryIDs[cat]] += dict.ContainsKey(cat) ? dict[cat] : 0;
+                    }
+                }
+
+                // add a column series for each file
+                foreach (string key in dictsBySourceFile.Keys)
+                {
+                    ColumnSeries column = new ColumnSeries { ColumnWidth = 200, IsStacked = true, Title = key, TrackerFormatString = "Bin: {bin}\n{0}: {2}\nTotal: {total}" };
+                    foreach (var d in dictsBySourceFile[key])
+                    {
+                        int id = categoryIDs[d.Key];
+                        column.Items.Add(new HistItem(d.Value, id, d.Key, totalCounts[id]));
+                        category[categoryIDs[d.Key]] = d.Key;
+                    }
+                    privateModel.Series.Add(column);
+                }
             }
-            else
+            else    // numerical histogram
             {
-                double end = roundToBin(numbers.Max(), binSize);
-                double start = roundToBin(numbers.Min(), binSize);
-                int numBins = (int)(((end - start) / binSize) + 1.001); // + 0.001 ensures double is just above its int value before truncating
+                IEnumerable<double> allNumbers = numbersBySourceFile.Values.SelectMany(x => x);
 
-                int[] values = new int[numBins];
-                
-                // put each value into the nearest bin
-                foreach (var a in numbers)
-                {
-                    values[(int)(((roundToBin(a, binSize) - start) / binSize) + 0.001)]++;    // + 0.001 ensures double is just above its int value before truncating
-                }
-
-                int minBinLabels = 28;  // the number of labeled bins will be between minBinLabels and 2 * minBinLabels
+                int end = roundToBin(allNumbers.Max(), binSize);
+                int start = roundToBin(allNumbers.Min(), binSize);
+                int numBins = end - start + 1;
+                int minBinLabels = 22;  // the number of labeled bins will be between minBinLabels and 2 * minBinLabels
                 int skipBinLabel = numBins < minBinLabels ? 1 : numBins / minBinLabels;
 
-                // create a column and axis label for each bin
-                for (int i = 0; i < values.Length; i++)
+                // assign axis labels, skip labels based on skipBinLabel, calculate bin totals across all files
+                category = new string[numBins];
+                totalCounts = new int[numBins];
+                for (int i = start; i <= end; i++)
                 {
-                    s1.Items.Add(new ColumnItem(values[i], i));
-                    if(i % skipBinLabel == 0)
+                    if (i % skipBinLabel == 0)
                     {
-                        axes.Add(roundToBin(start + (i * binSize), binSize).ToString(CultureInfo.InvariantCulture));  // numbers need to be re-rounded so values like 0.20000000001 aren't displayed
+                        category[i - start] = (i * binSize).ToString();
                     }
-                    else
+                    foreach (Dictionary<string, int> dict in dictsBySourceFile.Values)
                     {
-                        axes.Add("");
+                        totalCounts[i - start] += dict.ContainsKey(i.ToString()) ? dict[i.ToString()] : 0;
                     }
                 }
 
-                privateModel.Series.Add(s1);
-                privateModel.Axes.Add(new CategoryAxis
+                // add a column series for each file
+                foreach (string key in dictsBySourceFile.Keys)
                 {
-                    Position = AxisPosition.Bottom,
-                    ItemsSource = axes,
-                    Title = xAxisTitle
-                });
+                    var column = new ColumnSeries { ColumnWidth = 200, IsStacked = true, Title = key, TrackerFormatString = "Bin: {bin}\n{0}: {2}\nTotal: {total}" };
+                    foreach (var d in dictsBySourceFile[key])
+                    {
+                        int bin = int.Parse(d.Key);
+                        column.Items.Add(new HistItem(d.Value, bin - start, (bin * binSize).ToString(), totalCounts[bin - start]));
+                    }
+                    privateModel.Series.Add(column);
+                }
             }
-            privateModel.DefaultFontSize = 14;
+
+            // add axes
+            privateModel.Axes.Add(new CategoryAxis
+            {
+                Position = AxisPosition.Bottom,
+                ItemsSource = category,
+                Title = xAxisTitle,
+                GapWidth = 0.3,
+                Angle = labelAngle,
+            });
             privateModel.Axes.Add(new LinearAxis() { Title = yAxisTitle, Position = AxisPosition.Left, AbsoluteMinimum = 0 });
         }
 
         private void linePlot(int plotType)
         {
+            privateModel.LegendBackground = OxyColor.FromAColor(60, OxyColors.LightGray);
             string yAxisTitle = "";
             string xAxisTitle = "";
-            ScatterSeries series = new ScatterSeries();
-            ScatterSeries variantSeries = new ScatterSeries();  // used by plot 3 for variant contianing peptides
+            ScatterSeries series = new ScatterSeries
+            {
+                MarkerFill = OxyColors.Blue,
+                MarkerSize = 0.5,
+                TrackerFormatString = "{1}: {2:0.###}\n{3}: {4:0.###}\nFull sequence: {Tag}"
+            };
+            ScatterSeries variantSeries = new ScatterSeries
+            {
+                MarkerFill = OxyColors.DarkRed,
+                MarkerSize = 1.5,
+                MarkerType = MarkerType.Circle,
+                TrackerFormatString = "{1}: {2:0.###}\n{3}: {4:0.###}\nFull sequence: {Tag}"
+            };
             List<Tuple<double, double, string>> xy = new List<Tuple<double, double, string>>();
-            List<Tuple<double, double, string>> variantxy = new List<Tuple<double, double, string>>();  // used by plot 3 for variant containing peptides
+            List<Tuple<double, double, string>> variantxy = new List<Tuple<double, double, string>>();  
             var filteredList = allPsms.Where(p => !p.MassDiffDa.Contains("|") && Math.Round(double.Parse(p.MassDiffDa), 0) == 0).ToList();
             var test = allPsms.SelectMany(p => p.MatchedIons.Select(v => v.MassErrorPpm));
             switch (plotType)
@@ -272,42 +333,57 @@ namespace MetaMorpheusGUI
                     }
                     break;
             }
-            IOrderedEnumerable<Tuple<double, double, string>> sorted = xy.OrderBy(x => x.Item1);
-            foreach (var val in sorted)
+            if (xy.Count != 0)
             {
-                series.Points.Add(new ScatterPoint(val.Item2, val.Item1, tag: val.Item3));
-            }
-            series.MarkerFill = OxyColors.Blue;
-            series.MarkerSize = 0.5;
-            series.TrackerFormatString = "{1}: {2:0.###}\n{3}: {4:0.###}\nFull sequence: {Tag}";    // tooltip displayed on click
-            privateModel.Series.Add(series);
+                // plot each peptide
+                IOrderedEnumerable<Tuple<double, double, string>> sorted = xy.OrderBy(x => x.Item1);
+                foreach (var val in sorted)
+                {
+                    series.Points.Add(new ScatterPoint(val.Item2, val.Item1, tag: val.Item3));
+                }
+                privateModel.Series.Add(series);
 
-            // plot the variant containing peptides
+                // add series displayed in legend, the real series will show up with a tiny dot for the symbol
+                privateModel.Series.Add(new ScatterSeries() { Title = "non-variant PSMs", MarkerFill = OxyColors.Blue });
+            }
+
             if (variantxy.Count != 0)
             {
+                // plot each variant peptide
                 IOrderedEnumerable<Tuple<double, double, string>> variantSorted = variantxy.OrderBy(x => x.Item1);
                 foreach (var val in variantSorted)
                 {
                     variantSeries.Points.Add(new ScatterPoint(val.Item2, val.Item1, tag: val.Item3));
                 }
-                variantSeries.MarkerFill = OxyColors.DarkRed;
-                variantSeries.MarkerSize = 1.5;
-                variantSeries.TrackerFormatString = "Sequence variant\n{1}: {2:0.###}\n{3}: {4:0.###}\nFull sequence: {Tag}";
                 privateModel.Series.Add(variantSeries);
+
+                // add series displayed in legend, the real series will show up with a tiny dot for the symbol
+                privateModel.Series.Add(new ScatterSeries() { Title = "variant PSMs", MarkerFill = OxyColors.DarkRed });
             }
-            privateModel.DefaultFontSize = 14;
             privateModel.Axes.Add(new LinearAxis { Title = xAxisTitle, Position = AxisPosition.Bottom });
             privateModel.Axes.Add(new LinearAxis { Title = yAxisTitle, Position = AxisPosition.Left });
         }
 
-        // rounds a number to the nearest multiple of binsize, midpoints are rounded towards zero
-        private static double roundToBin(double number, double binSize)
+        // returns a bin index of number relative to 0, midpoints are rounded towards zero
+        private static int roundToBin(double number, double binSize)
         {
             int sign = number < 0 ? -1 : 1;
             double d = number * sign;
             double remainder = d % binSize;
-            d = remainder < 0.5 * binSize ? d - remainder : d - remainder + binSize;
-            return d * sign;
+            int i = remainder < 0.5 * binSize ? (int)(d / binSize + 0.001) : (int)(d / binSize + 1.001);
+            return i * sign;
+        }
+
+        // used by histogram plots, gives additional properies for the tracker to display
+        private class HistItem : ColumnItem
+        {
+            public int total { get; set; }
+            public string bin { get; set; }
+            public HistItem(double value, int categoryIndex, string bin, int total) : base(value, categoryIndex)
+            {
+                this.total = total;
+                this.bin = bin;
+            }
         }
 
         //unused interface methods
