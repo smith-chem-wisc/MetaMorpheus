@@ -1307,7 +1307,7 @@ namespace TaskLayer
                 string searchType;
                 if (psmList.Where(p => p != null).Count() > 0 && psmList[0].DigestionParams.Protease.Name != null && psmList[0].DigestionParams.Protease.Name == "top-down")
                 {
-                    searchType = "topDown";
+                    searchType = "top-down";
                 }
                 else
                 {

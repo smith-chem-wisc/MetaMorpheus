@@ -9,8 +9,8 @@ namespace EngineLayer.FdrAnalysis
     {
         public static readonly IImmutableDictionary<string, string[]> trainingInfos = new Dictionary<string, string[]>
         {
-            { "standard", new [] { "TotalMatchingFragmentCount", "Intensity", "PrecursorChargeDiffToMode", "DeltaScore", "Notch", "PsmCount", "ModsCount", "AbsoluteAverageFragmentMassErrorFromMedian", "MissedCleavagesCount", "Ambiguity", "LongestFragmentIonSeries", "HydrophobicityZScore", "IsVariantPeptide", "IsDeadEnd", "IsLoop"} },
-            { "top-down", new [] { "TotalMatchingFragmentCount", "Intensity", "PrecursorChargeDiffToMode", "DeltaScore", "Notch", "PsmCount", "ModsCount", "AbsoluteAverageFragmentMassErrorFromMedian", "Ambiguity", "LongestFragmentIonSeries" } },
+            { "standard", new [] { "TotalMatchingFragmentCount", "Intensity", "PrecursorChargeDiffToMode", "DeltaScore", "Notch", "PsmCount", "ModsCount", "AbsoluteAverageFragmentMassErrorFromMedian", "MissedCleavagesCount", "Ambiguity", "LongestFragmentIonSeries", "ComplementaryIonCount", "HydrophobicityZScore", "IsVariantPeptide", "IsDeadEnd", "IsLoop"} },
+            { "top-down", new [] { "TotalMatchingFragmentCount", "Intensity", "PrecursorChargeDiffToMode", "DeltaScore", "Notch", "PsmCount", "ModsCount", "AbsoluteAverageFragmentMassErrorFromMedian", "Ambiguity", "LongestFragmentIonSeries", "ComplementaryIonCount" } },
             { "crosslink", new [] { "TotalMatchingFragmentCount", "AbsoluteAverageFragmentMassErrorFromMedian", "PrecursorChargeDiffToMode", "DeltaScore", "AlphaIntensity", "BetaIntensity", "LongestFragmentIonSeries_Alpha", "LongestFragmentIonSeries_Beta", "IsInter", "IsIntra" } }
         }.ToImmutableDictionary();
 
@@ -31,6 +31,7 @@ namespace EngineLayer.FdrAnalysis
             { "MissedCleavagesCount", -1 },
             { "Ambiguity", -1 },
             { "LongestFragmentIonSeries", 1 },
+            { "ComplementaryIonCount", 1 },
             { "HydrophobicityZScore", -1 },
             { "IsVariantPeptide",-1 },
             { "AlphaIntensity", 1 },
@@ -99,39 +100,42 @@ namespace EngineLayer.FdrAnalysis
         public float LongestFragmentIonSeries { get; set; }
 
         [LoadColumn(10)]
-        public float HydrophobicityZScore { get; set; }
+        public float ComplementaryIonCount { get; set; }
 
         [LoadColumn(11)]
-        public float IsVariantPeptide { get; set; }
+        public float HydrophobicityZScore { get; set; }
 
         [LoadColumn(12)]
-        public float TotalMatchingFragmentCount { get; set; }
+        public float IsVariantPeptide { get; set; }
 
         [LoadColumn(13)]
-        public float AlphaIntensity { get; set; }
+        public float TotalMatchingFragmentCount { get; set; }
 
         [LoadColumn(14)]
-        public float BetaIntensity { get; set; }
+        public float AlphaIntensity { get; set; }
 
         [LoadColumn(15)]
-        public float LongestFragmentIonSeries_Alpha { get; set; }
+        public float BetaIntensity { get; set; }
 
         [LoadColumn(16)]
-        public float LongestFragmentIonSeries_Beta { get; set; }
+        public float LongestFragmentIonSeries_Alpha { get; set; }
 
         [LoadColumn(17)]
-        public float IsDeadEnd { get; set; }
+        public float LongestFragmentIonSeries_Beta { get; set; }
 
         [LoadColumn(18)]
-        public float IsLoop { get; set; }
+        public float IsDeadEnd { get; set; }
 
         [LoadColumn(19)]
-        public float IsInter { get; set; }
+        public float IsLoop { get; set; }
 
         [LoadColumn(20)]
-        public float IsIntra { get; set; }
+        public float IsInter { get; set; }
 
         [LoadColumn(21)]
+        public float IsIntra { get; set; }
+
+        [LoadColumn(22)]
 
         public bool Label { get; set; }
     }

@@ -378,6 +378,7 @@ namespace EngineLayer
 
         public static PsmData CreateOnePsmDataEntry(string searchType, PeptideSpectralMatch psm, Dictionary<string, int> sequenceToPsmCount, Dictionary<string, Dictionary<int, Tuple<double, double>>> timeDependantHydrophobicityAverageAndDeviation_unmodified, Dictionary<string, Dictionary<int, Tuple<double, double>>> timeDependantHydrophobicityAverageAndDeviation_modified, Dictionary<string, float> fileSpecificMedianFragmentMassErrors, int chargeStateMode, PeptideWithSetModifications selectedPeptide, string[] trainingVariables, int notchToUse, bool label)
         {
+            float normalizationFactor = selectedPeptide.BaseSequence.Length;
             float totalMatchingFragmentCount = 0;
             float intensity = 0;
             float chargeDifference = 0;
@@ -390,6 +391,7 @@ namespace EngineLayer
 
             float missedCleavages = 0;
             float longestSeq = 0;
+            float complementaryIonCount = 0;
             float hydrophobicityZscore = float.NaN;
             bool isVariantPeptide = false;
 
@@ -405,10 +407,10 @@ namespace EngineLayer
 
             if (searchType != "crosslink")
             {
-                totalMatchingFragmentCount = (float)Math.Floor(psm.Score);
-                intensity = (float)(psm.Score - (int)psm.Score);
+                totalMatchingFragmentCount = (float)Math.Floor(psm.Score) / normalizationFactor;
+                intensity = (float)(psm.Score - (int)psm.Score) / normalizationFactor;
                 chargeDifference = -Math.Abs(chargeStateMode - psm.ScanPrecursorCharge);
-                deltaScore = (float)psm.DeltaScore;
+                deltaScore = (float)psm.DeltaScore / normalizationFactor;
                 notch = notchToUse;
                 modCount = Math.Min((float)selectedPeptide.AllModsOneIsNterminus.Keys.Count(), 10);
                 if (psm.PeptidesToMatchingFragments[selectedPeptide]?.Count() > 0)
@@ -417,7 +419,8 @@ namespace EngineLayer
                 }
 
                 ambiguity = Math.Min((float)(psm.PeptidesToMatchingFragments.Keys.Count - 1), 10);
-                longestSeq = psm.GetLongestIonSeriesBidirectional(psm.PeptidesToMatchingFragments, selectedPeptide);
+                longestSeq = psm.GetLongestIonSeriesBidirectional(psm.PeptidesToMatchingFragments, selectedPeptide) / normalizationFactor;
+                complementaryIonCount = psm.GetCountComplementaryIons(psm.PeptidesToMatchingFragments, selectedPeptide) / normalizationFactor;
 
                 //grouping psm counts as follows is done for stability. you get very nice numbers at low psms to get good statistics. But you get a few peptides with high psm counts that could be either targets or decoys and the values swing between extremes. So grouping psms in bundles really adds stability.
                 psmCount = sequenceToPsmCount[String.Join("|", psm.BestMatchingPeptides.Select(p => p.Peptide.FullSequence).ToList())];
@@ -466,7 +469,11 @@ namespace EngineLayer
                 PeptideWithSetModifications selectedAlphaPeptide = csm.BestMatchingPeptides.Select(p => p.Peptide).First();
                 PeptideWithSetModifications selectedBetaPeptide = csm.BetaPeptide?.BestMatchingPeptides.Select(p => p.Peptide).First();
 
-                totalMatchingFragmentCount = (float)Math.Round(csm.XLTotalScore, 0);
+                float alphaNormalizationFactor = selectedAlphaPeptide.BaseSequence.Length;
+                float betaNormalizationFactor = selectedBetaPeptide == null ? (float)0 : selectedBetaPeptide.BaseSequence.Length;
+                float totalNormalizationFactor = alphaNormalizationFactor + betaNormalizationFactor;
+
+                totalMatchingFragmentCount = (float)Math.Round(csm.XLTotalScore, 0) / totalNormalizationFactor;
 
                 //Compute fragment mass error
                 int alphaCount = 0;
@@ -493,23 +500,14 @@ namespace EngineLayer
                 absoluteFragmentMassError = averageError - fileSpecificMedianFragmentMassErrors[csm.FullFilePath];
                 //End compute fragment mass error
 
-                deltaScore = (float)csm.DeltaScore;
+                deltaScore = (float)csm.DeltaScore / totalNormalizationFactor;
                 chargeDifference = -Math.Abs(chargeStateMode - psm.ScanPrecursorCharge);
-                alphaIntensity = (float)(csm.Score - (int)csm.Score);
-                betaIntensity = csm.BetaPeptide == null ? (float)0 : (float)(csm.BetaPeptide.Score - (int)csm.BetaPeptide.Score);
-                longestFragmentIonSeries_Alpha = psm.GetLongestIonSeriesBidirectional(csm.PeptidesToMatchingFragments, selectedAlphaPeptide);
-                longestFragmentIonSeries_Beta = selectedBetaPeptide == null ? (float)0 : csm.GetLongestIonSeriesBidirectional(csm.BetaPeptide.PeptidesToMatchingFragments, selectedBetaPeptide);
+                alphaIntensity = (float)(csm.Score - (int)csm.Score) / alphaNormalizationFactor;
+                betaIntensity = csm.BetaPeptide == null ? (float)0 : ((float)(csm.BetaPeptide.Score - (int)csm.BetaPeptide.Score)) / betaNormalizationFactor;
+                longestFragmentIonSeries_Alpha = psm.GetLongestIonSeriesBidirectional(csm.PeptidesToMatchingFragments, selectedAlphaPeptide) / alphaNormalizationFactor;
+                longestFragmentIonSeries_Beta = selectedBetaPeptide == null ? (float)0 : csm.GetLongestIonSeriesBidirectional(csm.BetaPeptide.PeptidesToMatchingFragments, selectedBetaPeptide) / betaNormalizationFactor;
                 isInter = Convert.ToSingle(csm.CrossType == PsmCrossType.Inter);
                 isIntra = Convert.ToSingle(csm.CrossType == PsmCrossType.Intra);
-            }
-
-            if (psm.IsDecoy)
-            {
-                label = false;
-            }
-            else
-            {
-                label = true;
             }
 
             psm.PsmData_forPEPandPercolator = new PsmData
@@ -525,6 +523,7 @@ namespace EngineLayer
                 MissedCleavagesCount = missedCleavages,
                 Ambiguity = ambiguity,
                 LongestFragmentIonSeries = longestSeq,
+                ComplementaryIonCount = complementaryIonCount,
                 HydrophobicityZScore = hydrophobicityZscore,
                 IsVariantPeptide = Convert.ToSingle(isVariantPeptide),
 

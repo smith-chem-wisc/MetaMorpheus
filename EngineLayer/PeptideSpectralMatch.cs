@@ -265,6 +265,27 @@ namespace EngineLayer
             return maxDiffs.Max();
         }
 
+        public int GetCountComplementaryIons(Dictionary<PeptideWithSetModifications, List<MatchedFragmentIon>> PeptidesToMatchingFragments, PeptideWithSetModifications peptide)
+        {
+            if (PeptidesToMatchingFragments != null && PeptidesToMatchingFragments.TryGetValue(peptide, out var matchedFragments) && matchedFragments != null && matchedFragments.Any())
+            {
+                List<int> nIons = matchedFragments.Where(f => f.NeutralTheoreticalProduct.TerminusFragment.Terminus == FragmentationTerminus.N).Select(f => f.NeutralTheoreticalProduct.TerminusFragment.FragmentNumber).ToList();
+                List<int> cIons = matchedFragments.Where(f => f.NeutralTheoreticalProduct.TerminusFragment.Terminus == FragmentationTerminus.C).Select(f =>(peptide.BaseSequence.Length - f.NeutralTheoreticalProduct.TerminusFragment.FragmentNumber)).ToList();
+                if(nIons.Any() && cIons.Any())
+                {
+                    return nIons.Intersect(cIons).Count();
+                }
+                else
+                {
+                    return 0;
+                }
+            }
+            else
+            {
+                return 0;
+            }
+        }
+
         /// <summary>
         /// This method changes the base and full sequences to reflect heavy silac labels
         /// translates SILAC sequence into the proper peptide sequence ("PEPTIDEa" into "PEPTIDEK(+8.014)")
