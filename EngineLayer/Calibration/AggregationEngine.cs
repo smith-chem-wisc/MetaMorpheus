@@ -32,19 +32,26 @@ namespace EngineLayer.Calibration
 
         protected override MetaMorpheusEngineResults RunSpecific()
         {
+            //MS1: this engine matches adjacent MS1 peaks that fall within a specified tolerance
+            //If an MS1 peak does not have an adjacent match, then it is removed           
+            //average the m/zs found across scans and update each value with the average
+
+            //MS2: this engine finds multiple MS2 scans that share a precursor as determined by precursor mass (not m/z) and dot product of the ms2 scans
+            //ms2 scans are deconvoluted (i.e. the same ms2 scan is present multiple times for coisolation) prior to this process.
+            //Matches are used to create a consensus spectrum, where unshared peaks are removed. Shared peaks are averaged for intensity and m/z.
+
             int oldPercentProgress = 0; //progress keeper
 
             Status("Averaging MS1 spectra");
             MsDataScan[] allScans = OriginalFile.GetAllScansList().ToArray();
-            //we are ONLY averaging m/z and NOT intensity. Intensity averaging would convolute downstream quantification
+            //we are ONLY averaging m/z and NOT intensity. Intensity averaging could convolute downstream quantification
             MsDataScan[] ms1scans = OriginalFile.GetMS1Scans().ToArray();
             //we have a set of peaks in the ms1 scan, and we'll cycle through until:
             //-we have two consecutive ms1 scans that do not contain a peak, 
             //-we reach the end of the file
-            double[][] ms1mzs = new double[ms1scans.Length][]; //quickly have mzs on hand
-            double[][] ms1intensities = new double[ms1scans.Length][]; //quickly have intensities on hand
+            double[][] ms1mzs = new double[ms1scans.Length][]; //quickly have mzs on hand            
             List<double>[][] allMs1PeaksFound = new List<double>[ms1scans.Length][];
-            //this is a tricky index. Each ms1 scan has an index of List<double>[], 
+            //^this is a tricky index. Each ms1 scan has an index of List<double>[], 
             //where each peak of the ms1 scan has a List<double> that contains all the grouped mzs for that peak.
 
             for (int i = 0; i < ms1scans.Length; i++) //populate arrays
@@ -52,7 +59,6 @@ namespace EngineLayer.Calibration
                 MzSpectrum spectrum = ms1scans[i].MassSpectrum;
                 double[] mzArray = spectrum.XArray;
                 ms1mzs[i] = mzArray;
-                ms1intensities[i] = spectrum.YArray;
                 allMs1PeaksFound[i] = new List<double>[mzArray.Length];
             }
 
@@ -66,9 +72,9 @@ namespace EngineLayer.Calibration
                 }
 
                 double[] seedMzs = ms1mzs[seedScanIndex]; //grab current ms1scan
-                int[] numberOfStrikesForEachPeak = new int[seedMzs.Length]; //Pseudo boolean where 0 is found, 1 is not found, 2 (numberOfStrikesBeforeOut) is out.
+                int[] numberOfStrikesForEachPeak = new int[seedMzs.Length]; //keep track of the number of missed ms1 scans for each peak 
 
-                //see what peaks have been found already
+                //see what peaks have been found already and populate or mark them
                 List<double>[] seedPeaksFound = allMs1PeaksFound[seedScanIndex];
                 for (int seedPeakIndex = 0; seedPeakIndex < seedMzs.Length; seedPeakIndex++)
                 {
@@ -85,7 +91,7 @@ namespace EngineLayer.Calibration
                 //start cycling through other ms1 scans
                 for (int branchScanIndex = seedScanIndex + 1; branchScanIndex < ms1mzs.Length; branchScanIndex++)
                 {
-                    bool done = true; //this is used to determine if all of the seed peaks have disappeared from the branches
+                    bool done = true; //this is used to determine if all of the seed peaks for the current scan have been completed
                     double[] branchMzs = ms1mzs[branchScanIndex];
 
                     int seedPeakIndex = 0;
@@ -113,12 +119,12 @@ namespace EngineLayer.Calibration
                             }
 
                             double branchMz = branchMzs[branchPeakIndex];
-                            if (ProductTolerance.Within(seedMz, branchMz)) //if a match
+                            if (ProductTolerance.Within(seedMz, branchMz) && SimilarPeak(seedPeaksFound[seedPeakIndex], branchMz)) //if a match
                             {
-                                done = false;
+                                done = false; //some seeds are still going
                                 numberOfStrikesForEachPeak[seedPeakIndex] = 0; //reset
                                 seedPeaksFound[seedPeakIndex].Add(branchMz);
-                                allMs1PeaksFound[branchScanIndex][branchPeakIndex] = seedPeaksFound[seedPeakIndex]; //update index so future seeds don't have to look
+                                allMs1PeaksFound[branchScanIndex][branchPeakIndex] = seedPeaksFound[seedPeakIndex]; //update index with the reference
                                 seedMzs[seedPeakIndex] = (branchMz + seedMz) / 2; //update seed Mz so that the Mz we look for is closest to the most recent Mz (instead of the first). This helps if there's drift over time. Average prevents a single mistaken peak from throwing us off too terribly
                             }
                             else
@@ -130,7 +136,7 @@ namespace EngineLayer.Calibration
                                 else //hey, this is dead to us now. Let's do some post processing. (ie average)
                                 {
                                     //average the grouped mzs
-                                    AverageMzs(seedPeaksFound[seedPeakIndex]);
+                                    AggregateMzs(seedPeaksFound[seedPeakIndex]);
                                 }
                             }
                         }
@@ -142,14 +148,15 @@ namespace EngineLayer.Calibration
                     }
                 }
 
-                //Finish residual post-processing for peaks that made it to the end of the file
+                //Aggregate peaks that made it to the end of the file
                 for (int peakIndex = 0; peakIndex < numberOfStrikesForEachPeak.Length; peakIndex++)
                 {
                     if (numberOfStrikesForEachPeak[peakIndex] != NumberOfStrikesBeforeOut) //if we haven't finished this already
                     {
-                        AverageMzs(seedPeaksFound[peakIndex]);
+                        AggregateMzs(seedPeaksFound[peakIndex]);
                     }
                 }
+
 
                 //All grouping is done for this seed, now update the scan with the aggregated mzs
                 List<double> mzsToAdd = new List<double>();
@@ -172,7 +179,7 @@ namespace EngineLayer.Calibration
                 MzSpectrum syntheticSpectrum = new MzSpectrum(mzArray, intensityArray, false);
                 ms1scans[seedScanIndex] = CloneDataScanWithUpdatedFields(originalScan, syntheticSpectrum);
 
-                int percentProgress = (int)((seedScanIndex / ms1mzs.Length) * 100);
+                int percentProgress = (int)((1d * seedScanIndex / ms1mzs.Length) * 100);
 
                 if (percentProgress > oldPercentProgress)
                 {
@@ -181,7 +188,8 @@ namespace EngineLayer.Calibration
                 }
             }
 
-            //update the datafile
+
+            //update the datafile with the new scans
             int ms1Index = 0;
             MsDataScan currentSyntheticMS1 = ms1scans[ms1Index];
             for (int i = 0; i < allScans.Length; i++)
@@ -661,15 +669,34 @@ namespace EngineLayer.Calibration
             return Math.Round(numerator / denominator * 1000) / 1000;
         }
 
-        public void AverageMzs(List<double> referenceListOfMzs) //use for MS1 scans
+        public bool SimilarPeak(List<double> currentMzs, double putativeMz)
         {
-            //Currently NOT using intensity for weighting. Reason being that it's more computationally intensive to save those values. Also manual studies found intensity yielded poorer results
-            if (referenceListOfMzs.Count != 1) //if it's worth averaging
+            //determine if the putativeMz is the same as the previous ones.
+            if (currentMzs.Count < 3)
+            {
+                return true;
+            }
+            else
+            {
+                //Compute the Average      
+                double avg = currentMzs.Average();
+                //Perform the Sum of (value-avg)_2_2      
+                double sumOfSquares = currentMzs.Sum(d => Math.Pow(d - avg, 2));
+                //Put it all together      
+                double stdev = Math.Sqrt((sumOfSquares) / (currentMzs.Count - 1));
+                return (Math.Abs(avg - putativeMz) < stdev * 1.96);
+            }
+        }
+
+        public void AggregateMzs(List<double> referenceListOfMzs) //use for MS1 scans
+        {
+            //Currently NOT using intensity for weighting. Oddly, intensity weighting yielded poorer results than the median
+            if (referenceListOfMzs.Count != 1) //if it's worth aggregating
             {
                 referenceListOfMzs.Sort();
-                double averageMZ = referenceListOfMzs[referenceListOfMzs.Count / 2]; //get the median
+                double aggregateMz = referenceListOfMzs[referenceListOfMzs.Count / 2]; //get the median
                 referenceListOfMzs.Clear(); //need to clear to keep the reference
-                referenceListOfMzs.Add(averageMZ); //add the average as the only peak
+                referenceListOfMzs.Add(aggregateMz); //add the median as the only peak
             }
             else //this peak was only found once... isn't that a little odd? like maybe it's noise?
             {
