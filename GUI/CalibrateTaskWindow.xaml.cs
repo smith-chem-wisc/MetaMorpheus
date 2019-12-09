@@ -25,14 +25,18 @@ namespace MetaMorpheusGUI
         private readonly ObservableCollection<ModTypeForTreeView> FixedModTypeForTreeViewObservableCollection = new ObservableCollection<ModTypeForTreeView>();
         private readonly ObservableCollection<ModTypeForTreeView> VariableModTypeForTreeViewObservableCollection = new ObservableCollection<ModTypeForTreeView>();
         private readonly ObservableCollection<ModTypeForLoc> LocalizeModTypeForTreeViewObservableCollection = new ObservableCollection<ModTypeForLoc>();
+        private bool AutomaticallyAskAndOrUpdateParametersBasedOnProtease = true;
         private CustomFragmentationWindow CustomFragmentationWindow;
 
         public CalibrateTaskWindow(CalibrationTask myCalibrateTask)
         {
             InitializeComponent();
-            PopulateChoices();
             TheTask = myCalibrateTask ?? new CalibrationTask();
+
+            AutomaticallyAskAndOrUpdateParametersBasedOnProtease = false;
+            PopulateChoices();
             UpdateFieldsFromTask(TheTask);
+            AutomaticallyAskAndOrUpdateParametersBasedOnProtease = true;
 
             if (myCalibrateTask == null)
             {
@@ -46,10 +50,11 @@ namespace MetaMorpheusGUI
 
         private void UpdateFieldsFromTask(CalibrationTask task)
         {
+            ProteaseComboBox.SelectedItem = task.CommonParameters.DigestionParams.Protease; //protease needs to come first or recommended settings can overwrite the actual settings
             MissedCleavagesTextBox.Text = task.CommonParameters.DigestionParams.MaxMissedCleavages == int.MaxValue ? "" : task.CommonParameters.DigestionParams.MaxMissedCleavages.ToString(CultureInfo.InvariantCulture);
             MinPeptideLengthTextBox.Text = task.CommonParameters.DigestionParams.MinPeptideLength.ToString(CultureInfo.InvariantCulture);
             MaxPeptideLengthTextBox.Text = task.CommonParameters.DigestionParams.MaxPeptideLength == int.MaxValue ? "" : task.CommonParameters.DigestionParams.MaxPeptideLength.ToString(CultureInfo.InvariantCulture);
-            ProteaseComboBox.SelectedItem = task.CommonParameters.DigestionParams.Protease;
+
             MaxModsPerPeptideTextBox.Text = task.CommonParameters.DigestionParams.MaxModsForPeptide.ToString(CultureInfo.InvariantCulture);
             MaxModificationIsoformsTextBox.Text = task.CommonParameters.DigestionParams.MaxModificationIsoforms.ToString(CultureInfo.InvariantCulture);
             InitiatorMethionineBehaviorComboBox.SelectedIndex = (int)task.CommonParameters.DigestionParams.InitiatorMethionineBehavior;
@@ -247,21 +252,44 @@ namespace MetaMorpheusGUI
 
             bool parseMaxThreadsPerFile = int.Parse(MaxThreadsTextBox.Text, CultureInfo.InvariantCulture) <= Environment.ProcessorCount && int.Parse(MaxThreadsTextBox.Text, CultureInfo.InvariantCulture) > 0;
 
-            CommonParameters commonParamsToSave = new CommonParameters(
-                taskDescriptor: OutputFileNameTextBox.Text != "" ? OutputFileNameTextBox.Text : "CalibrateTask",
-                maxThreadsToUsePerFile: parseMaxThreadsPerFile ? int.Parse(MaxThreadsTextBox.Text, CultureInfo.InvariantCulture) : new CommonParameters().MaxThreadsToUsePerFile,
-                digestionParams: digestionParamsToSave,
-                dissociationType: dissociationType,
-                scoreCutoff: double.Parse(MinScoreAllowed.Text, CultureInfo.InvariantCulture),
-                listOfModsFixed: listOfModsFixed,
-                listOfModsVariable: listOfModsVariable,
-                productMassTolerance: productMassTolerance,
-                precursorMassTolerance: precursorMassTolerance,
-                assumeOrphanPeaksAreZ1Fragments: protease.Name != "top-down",
-                minVariantDepth: minVariantDepth,
-                maxHeterozygousVariants: maxHeterozygousVariants);
-
-            TheTask.CommonParameters = commonParamsToSave;
+            //the below parameters are optimized for top-down but do not exist in the GUI as of Nov. 13, 2019
+            if (((Protease)ProteaseComboBox.SelectedItem).Name.Contains("top-down"))
+            {
+                CommonParameters commonParamsToSave = new CommonParameters(
+                    taskDescriptor: OutputFileNameTextBox.Text != "" ? OutputFileNameTextBox.Text : "CalibrateTask",
+                    maxThreadsToUsePerFile: parseMaxThreadsPerFile ? int.Parse(MaxThreadsTextBox.Text, CultureInfo.InvariantCulture) : new CommonParameters().MaxThreadsToUsePerFile,
+                    digestionParams: digestionParamsToSave,
+                    dissociationType: dissociationType,
+                    scoreCutoff: double.Parse(MinScoreAllowed.Text, CultureInfo.InvariantCulture),
+                    listOfModsFixed: listOfModsFixed,
+                    listOfModsVariable: listOfModsVariable,
+                    productMassTolerance: productMassTolerance,
+                    precursorMassTolerance: precursorMassTolerance,
+                    assumeOrphanPeaksAreZ1Fragments: protease.Name != "top-down",
+                    minVariantDepth: minVariantDepth,
+                    maxHeterozygousVariants: maxHeterozygousVariants,
+                    useProvidedPrecursorInfo: false, //Updated
+                    deconvolutionMaxAssumedChargeState: 60, //Updated
+                    trimMsMsPeaks: false); //Updated
+                TheTask.CommonParameters = commonParamsToSave;
+            }
+            else //bottom-up
+            {
+                CommonParameters commonParamsToSave = new CommonParameters(
+                    taskDescriptor: OutputFileNameTextBox.Text != "" ? OutputFileNameTextBox.Text : "CalibrateTask",
+                    maxThreadsToUsePerFile: parseMaxThreadsPerFile ? int.Parse(MaxThreadsTextBox.Text, CultureInfo.InvariantCulture) : new CommonParameters().MaxThreadsToUsePerFile,
+                    digestionParams: digestionParamsToSave,
+                    dissociationType: dissociationType,
+                    scoreCutoff: double.Parse(MinScoreAllowed.Text, CultureInfo.InvariantCulture),
+                    listOfModsFixed: listOfModsFixed,
+                    listOfModsVariable: listOfModsVariable,
+                    productMassTolerance: productMassTolerance,
+                    precursorMassTolerance: precursorMassTolerance,
+                    assumeOrphanPeaksAreZ1Fragments: protease.Name != "top-down",
+                    minVariantDepth: minVariantDepth,
+                    maxHeterozygousVariants: maxHeterozygousVariants);
+                TheTask.CommonParameters = commonParamsToSave;
+            }
 
             DialogResult = true;
         }
@@ -333,16 +361,63 @@ namespace MetaMorpheusGUI
             Toml.WriteFile(TheTask, Path.Combine(GlobalVariables.DataDir, "DefaultParameters", @"CalibrationTaskDefault.toml"), MetaMorpheusTask.tomlConfig);
         }
 
-        private void NonSpecificUpdate(object sender, SelectionChangedEventArgs e)
+        private void ProteaseSpecificUpdate(object sender, SelectionChangedEventArgs e)
         {
-            const int maxLength = 25;
-            if (((Protease)ProteaseComboBox.SelectedItem).Name.Contains("non-specific"))
+            string proteaseName = ((Protease)ProteaseComboBox.SelectedItem).Name;
+            MissedCleavagesTextBox.IsEnabled = !proteaseName.Equals("top-down");
+
+            if (AutomaticallyAskAndOrUpdateParametersBasedOnProtease)
             {
-                MaxPeptideLengthTextBox.Text = maxLength.ToString();
+                switch (proteaseName)
+                {
+                    case "non-specific":
+                        if (UpdateGUISettings.UseNonSpecificRecommendedSettings())
+                        {
+                            MaxPeptideLengthTextBox.Text = "25";
+                        }
+                        break;                    
+                    case "top-down":
+                        if(UpdateGUISettings.UseTopDownRecommendedSettings())
+                        {
+                            //many variables are not present in the calibrate task gui, but we modify them when saving
+                            //uncheck all variable mods
+                            foreach (var mod in VariableModTypeForTreeViewObservableCollection)
+                            {
+                                mod.Use = false;
+                            }
+                        }
+                        break;
+                    case "Arg-C":
+                        if (UpdateGUISettings.UseArgCRecommendedSettings())
+                        {
+                            ProteaseComboBox.SelectedItem = ProteaseDictionary.Dictionary["trypsin"];
+                        }
+                        break;
+                    case "chymotrypsin (don't cleave before proline)":
+                    case "chymotrypsin (cleave before proline)":
+                        {
+                            if (UpdateGUISettings.UseChymotrypsinRecommendedSettings())
+                            {
+                                MissedCleavagesTextBox.Text = "3";
+                            }
+                        }
+                        break;
+                    case "elastase":
+                        {
+                            if (UpdateGUISettings.UseElastaseRecommendedSettings())
+                            {
+                                MissedCleavagesTextBox.Text = "16";
+                            }
+                        }
+                        break;
+                    //nothing to change for semi-trypsin
+                    default:
+                        break;
+                }
             }
         }
 
-        private void NonSpecificUpdate(object sender, TextChangedEventArgs e)
+        private void ProteaseSpecificUpdate(object sender, TextChangedEventArgs e)
         {
             if (((Protease)ProteaseComboBox.SelectedItem).Name.Contains("non-specific"))
             {

@@ -35,12 +35,11 @@ namespace MetaMorpheusGUI
         private void Save_Click(object sender, RoutedEventArgs e)
         {
             var parametersToWrite = new FileSpecificParameters();
-
+            bool fileSpecificParameterExists = false;
             // parse the file-specific parameters to text
-            int paramsToSaveCount = 0;
             if (fileSpecificPrecursorMassTolEnabled.IsChecked.Value)
             {
-                paramsToSaveCount++;
+                fileSpecificParameterExists = true;
                 if (GlobalGuiSettings.CheckPrecursorMassTolerance(precursorMassToleranceTextBox.Text))
                 {
                     double value = double.Parse(precursorMassToleranceTextBox.Text, CultureInfo.InvariantCulture);
@@ -60,7 +59,7 @@ namespace MetaMorpheusGUI
             }
             if (fileSpecificProductMassTolEnabled.IsChecked.Value)
             {
-                paramsToSaveCount++;
+                fileSpecificParameterExists = true;
                 if (GlobalGuiSettings.CheckProductMassTolerance(productMassToleranceTextBox.Text))
                 {
                     double value = double.Parse(productMassToleranceTextBox.Text, CultureInfo.InvariantCulture);
@@ -80,12 +79,12 @@ namespace MetaMorpheusGUI
             }
             if (fileSpecificProteaseEnabled.IsChecked.Value)
             {
-                paramsToSaveCount++;
+                fileSpecificParameterExists = true;
                 parametersToWrite.Protease = (Protease)fileSpecificProtease.SelectedItem;
             }
             if (fileSpecificMinPeptideLengthEnabled.IsChecked.Value)
             {
-                paramsToSaveCount++;
+                fileSpecificParameterExists = true;
                 if (int.TryParse(MinPeptideLengthTextBox.Text, out int i) && i > 0)
                 {
                     parametersToWrite.MinPeptideLength = i;
@@ -98,7 +97,7 @@ namespace MetaMorpheusGUI
             }
             if (fileSpecificMaxPeptideLengthEnabled.IsChecked.Value)
             {
-                paramsToSaveCount++;
+                fileSpecificParameterExists = true;
                 string lengthMaxPeptide = GlobalGuiSettings.MaxValueConversion(MaxPeptideLengthTextBox.Text);
                 if (GlobalGuiSettings.CheckPeptideLength(MinPeptideLengthTextBox.Text, lengthMaxPeptide))
                 {
@@ -111,7 +110,7 @@ namespace MetaMorpheusGUI
             }
             if (fileSpecificMissedCleavagesEnabled.IsChecked.Value)
             {
-                paramsToSaveCount++;
+                fileSpecificParameterExists = true;
                 string lengthCleavage = GlobalGuiSettings.MaxValueConversion(missedCleavagesTextBox.Text);
                 if (GlobalGuiSettings.CheckMaxMissedCleavages(lengthCleavage))
                 {
@@ -124,7 +123,7 @@ namespace MetaMorpheusGUI
             }
             if (fileSpecificMaxModNumEnabled.IsChecked.Value)
             {
-                paramsToSaveCount++;
+                fileSpecificParameterExists = true;
                 if (GlobalGuiSettings.CheckMaxModsPerPeptide(MaxModNumTextBox.Text))
                 {
                     parametersToWrite.MaxModsForPeptide = int.Parse(MaxModNumTextBox.Text);
@@ -147,11 +146,21 @@ namespace MetaMorpheusGUI
 
             // write parameters to toml files for the selected spectra files
 
-
-            var tomlPathsForSelectedFiles = SelectedSpectra.Select(p => Path.Combine(Directory.GetParent(p.FilePath).ToString(), Path.GetFileNameWithoutExtension(p.FileName)) + ".toml");
-            foreach (var tomlToWrite in tomlPathsForSelectedFiles)
+            foreach (var spectra in SelectedSpectra)
             {
-                if (paramsToSaveCount > 0)
+                string directoryForThisMsFile = Directory.GetParent(spectra.FilePath).ToString();
+                string filename = Path.GetFileNameWithoutExtension(spectra.FileName) + ".toml";
+                string tomlToWrite = Path.Combine(directoryForThisMsFile, filename);
+
+                //check if a toml file already exists
+                if (File.Exists(tomlToWrite))
+                {
+                    //store the previous file-specific tomls (if any) in a folder for reproducibility
+                    AccomodateNewFileSpecificToml(directoryForThisMsFile, filename);
+                    //check that an old toml doesn't already exist. If it does, move it to another nested folder.
+                }
+
+                if (fileSpecificParameterExists)
                 {
                     Toml.WriteFile(parametersToWrite, tomlToWrite, MetaMorpheusTask.tomlConfig);
 
@@ -168,6 +177,22 @@ namespace MetaMorpheusGUI
 
             // done
             DialogResult = true;
+        }
+
+        //recursive function that ensures no tomls are deleted when new ones are generated
+        private void AccomodateNewFileSpecificToml(string directoryForThisMsFile, string filename)
+        {
+            //make a directory to store the old files. If the directory already exists, this method does not create a new directory
+            string oldFileSpecificTomlDirectory = Path.Combine(directoryForThisMsFile, "OldFileSpecificTomls");
+            System.IO.Directory.CreateDirectory(oldFileSpecificTomlDirectory);
+            string fullFilePath = Path.Combine(oldFileSpecificTomlDirectory, filename);
+            //if an old version already exists, we need to move it
+            if(File.Exists(fullFilePath))
+            {
+                AccomodateNewFileSpecificToml(oldFileSpecificTomlDirectory, filename);
+            }
+            //move the old file into the sub-directory
+            System.IO.File.Copy(Path.Combine(directoryForThisMsFile, filename), Path.Combine(oldFileSpecificTomlDirectory, filename),true);
         }
 
         // exits dialog; nothing is written
