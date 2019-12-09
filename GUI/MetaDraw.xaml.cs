@@ -703,16 +703,30 @@ namespace MetaMorpheusGUI
                 return;
             }
 
-            var plotName = selectedItem as string;
+            if (selectSourceFileListBox.SelectedItems.Count == 0)
+            {
+                MessageBox.Show("Please select a source file.");
+                return;
+            }
 
-            // FIXME change plot to be of only selected source files. Why can't this use the current plot?
-            PlotModelStat plot = new PlotModelStat(plotName, filteredListOfPsms, psmsBySourceFile); 
+            var plotName = selectedItem as string;
             var fileDirectory = Directory.GetParent(tsvResultsFilePath).ToString();
             var fileName = String.Concat(plotName, ".pdf");
+
+            // update font sizes to exported PDF's size
+            double tmpW = plotViewStat.Width;
+            double tmpH = plotViewStat.Height;
+            plotViewStat.Width = 1000;
+            plotViewStat.Height = 700;
+            plotViewStat.UpdateLayout();
+            PlotViewStat_SizeChanged(plotViewStat, null);
+
             using (Stream writePDF = File.Create(Path.Combine(fileDirectory, fileName)))
             {
-                PdfExporter.Export(plot.Model, writePDF, 1000, 700);
+                PdfExporter.Export(plotViewStat.Model, writePDF, 1000, 700);
             }
+            plotViewStat.Width = tmpW;
+            plotViewStat.Height = tmpH;
             MessageBox.Show("PDF Created at " + Path.Combine(fileDirectory, fileName) + "!");
         }
 
@@ -805,6 +819,7 @@ namespace MetaMorpheusGUI
                 return;
             }
 
+            // get psms from selected source files
             ObservableCollection<PsmFromTsv> psms = new ObservableCollection<PsmFromTsv>();
             Dictionary<string, ObservableCollection<PsmFromTsv>> psmsBSF = new Dictionary<string, ObservableCollection<PsmFromTsv>>();
             foreach (string fileName in selectSourceFileListBox.SelectedItems)
@@ -859,11 +874,11 @@ namespace MetaMorpheusGUI
             if(plot != null && plot.Model != null)
             {
                 plot.Model.DefaultXAxis.TitleFontSize = plot.Model.DefaultFontSize; // stops the title from being scaled
-                int count = (plot.Model.Series[0] as OxyPlot.Series.ColumnSeries).Items.Count;
+                int count = (int)plot.Model.DefaultXAxis.ActualMaximum;
                 int widthCountRatio = 23;   // maintains this width:number of PTM types ratio
-                if (plotViewStat.ActualWidth / count < widthCountRatio) 
+                if (plot.ActualWidth / count < widthCountRatio) 
                 {
-                    plot.Model.DefaultXAxis.FontSize = plot.Model.DefaultFontSize * (plotViewStat.ActualWidth / (count * widthCountRatio));
+                    plot.Model.DefaultXAxis.FontSize = plot.Model.DefaultFontSize * (plot.ActualWidth / (count * widthCountRatio));
                 }
                 else
                 {
