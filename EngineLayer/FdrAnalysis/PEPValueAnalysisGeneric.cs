@@ -407,7 +407,7 @@ namespace EngineLayer
 
             if (searchType != "crosslink")
             {
-                totalMatchingFragmentCount = (float)Math.Floor(psm.Score) / normalizationFactor;
+                totalMatchingFragmentCount = (float)(psm.PeptidesToMatchingFragments[selectedPeptide].Count / normalizationFactor);
                 intensity = (float)(psm.Score - (int)psm.Score) / normalizationFactor;
                 chargeDifference = -Math.Abs(chargeStateMode - psm.ScanPrecursorCharge);
                 deltaScore = (float)psm.DeltaScore / normalizationFactor;

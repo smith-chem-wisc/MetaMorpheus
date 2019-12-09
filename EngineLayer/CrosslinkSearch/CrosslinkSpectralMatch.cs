@@ -172,12 +172,13 @@ namespace EngineLayer.CrosslinkSearch
             sb.Append("Beta Peptide Matched Ion Intensities" + '\t');
             sb.Append("Beta Peptide Matched Ion Counts" + '\t');
 
-            sb.Append("Summary" + '\t');
+            sb.Append("Summary (blank)" + '\t');
             sb.Append(PsmTsvHeader.XLTotalScoreLabel + '\t');
             sb.Append(PsmTsvHeader.MassDiffDa + '\t');
             sb.Append(PsmTsvHeader.ParentIonsLabel + '\t');
             sb.Append("ParentIonsNum" + '\t');
             sb.Append("ParentIonMaxIntensityRank" + '\t');
+            sb.Append("Child Matched Fragment Ions" + '\t');
             sb.Append(PsmTsvHeader.DecoyContaminantTarget + '\t');
             sb.Append(PsmTsvHeader.QValue + '\t');
             sb.Append(PsmTsvHeader.PEP + '\t');

@@ -524,10 +524,11 @@ namespace Test
             medianFragmentMassError.Add(intraCsm.FullFilePath, 0);
 
             var intraPsmData = PEP_Analysis.CreateOnePsmDataEntry("crosslink", intraCsm, sequenceToPsmCount, fileSpecificTimeDependantHydrophobicityAverageAndDeviation_unmodified, fileSpecificTimeDependantHydrophobicityAverageAndDeviation_modified, medianFragmentMassError, chargeStateMode, intraCsm.BestMatchingPeptides.First().Peptide, trainingVariables, intraCsm.BestMatchingPeptides.First().Notch, !intraCsm.BestMatchingPeptides.First().Peptide.Protein.IsDecoy);
-            Assert.That(intraPsmData.AlphaIntensity, Is.EqualTo(0.137).Within(0.001));
+            Assert.That(intraPsmData.AbsoluteAverageFragmentMassErrorFromMedian, Is.EqualTo(1.061).Within(0.001));
+            Assert.That(intraPsmData.AlphaIntensity, Is.EqualTo(0.0098).Within(0.001));
             Assert.AreEqual(intraPsmData.Ambiguity, 0);
-            Assert.That(intraPsmData.BetaIntensity, Is.EqualTo(0.1508).Within(0.0001));
-            Assert.That(intraPsmData.DeltaScore, Is.EqualTo(12.15).Within(0.01));
+            Assert.That(intraPsmData.BetaIntensity, Is.EqualTo(0.01256).Within(0.0001));
+            Assert.That(intraPsmData.DeltaScore, Is.EqualTo(0.467).Within(0.01));
             Assert.AreEqual(intraPsmData.HydrophobicityZScore, Double.NaN);
             Assert.AreEqual(intraPsmData.Intensity, 0);
             Assert.AreEqual(intraPsmData.IsDeadEnd, 0);
@@ -537,14 +538,14 @@ namespace Test
             Assert.AreEqual(intraPsmData.IsVariantPeptide, 0);
             Assert.AreEqual(intraPsmData.Label, true);
             Assert.AreEqual(intraPsmData.LongestFragmentIonSeries, 0);
-            Assert.AreEqual(intraPsmData.LongestFragmentIonSeries_Alpha, 12);
-            Assert.AreEqual(intraPsmData.LongestFragmentIonSeries_Beta, 9);
+            Assert.That(intraPsmData.LongestFragmentIonSeries_Alpha, Is.EqualTo(0.857).Within(0.01));
+            Assert.That(intraPsmData.LongestFragmentIonSeries_Beta, Is.EqualTo(0.75).Within(0.001));
             Assert.AreEqual(intraPsmData.MissedCleavagesCount, 0);
             Assert.AreEqual(intraPsmData.ModsCount, 0);
             Assert.AreEqual(intraPsmData.Notch, 0);
             Assert.AreEqual(intraPsmData.PrecursorChargeDiffToMode, -1);
             Assert.AreEqual(intraPsmData.PsmCount, 1);
-            Assert.AreEqual(intraPsmData.TotalMatchingFragmentCount, 29);
+            Assert.That(intraPsmData.TotalMatchingFragmentCount, Is.EqualTo(1.115).Within(0.001));
 
             CrosslinkSpectralMatch singleCsm = firstCsmsFromListsOfCsms.Where(c => c.CrossType == PsmCrossType.Single).OrderBy(c => -c.Score).First();
 
@@ -555,19 +556,21 @@ namespace Test
             fileSpecificTimeDependantHydrophobicityAverageAndDeviation_modified = PEP_Analysis.ComputeHydrophobicityValues(psms, true);
 
             var singleCsmPsmData = PEP_Analysis.CreateOnePsmDataEntry("standard", singleCsm, sequenceToPsmCount, fileSpecificTimeDependantHydrophobicityAverageAndDeviation_unmodified, fileSpecificTimeDependantHydrophobicityAverageAndDeviation_modified, medianFragmentMassError, chargeStateMode, singleCsm.BestMatchingPeptides.First().Peptide, trainingVariables, singleCsm.BestMatchingPeptides.First().Notch, !singleCsm.BestMatchingPeptides.First().Peptide.Protein.IsDecoy);
+            Assert.That(singleCsmPsmData.AbsoluteAverageFragmentMassErrorFromMedian, Is.EqualTo(0.4017).Within(0.001));
             Assert.AreEqual(singleCsmPsmData.AlphaIntensity, 0);
             Assert.AreEqual(singleCsmPsmData.Ambiguity, 0);
             Assert.AreEqual(singleCsmPsmData.BetaIntensity, 0);
-            Assert.That(singleCsmPsmData.DeltaScore, Is.EqualTo(27.308).Within(0.001));
+            Assert.That(singleCsmPsmData.ComplementaryIonCount, Is.EqualTo(0.4).Within(0.01));
+            Assert.That(singleCsmPsmData.DeltaScore, Is.EqualTo(1.0923).Within(0.001));
             Assert.That(singleCsmPsmData.HydrophobicityZScore, Is.EqualTo(0.8346).Within(0.001));
-            Assert.That(singleCsmPsmData.Intensity, Is.EqualTo(0.3083).Within(0.0001));
+            Assert.That(singleCsmPsmData.Intensity, Is.EqualTo(0.01233).Within(0.0001));
             Assert.AreEqual(singleCsmPsmData.IsDeadEnd, 0);
             Assert.AreEqual(singleCsmPsmData.IsInter, 0);
             Assert.AreEqual(singleCsmPsmData.IsIntra, 0);
             Assert.AreEqual(singleCsmPsmData.IsLoop, 0);
             Assert.AreEqual(singleCsmPsmData.IsVariantPeptide, 0);
             Assert.AreEqual(singleCsmPsmData.Label, true);
-            Assert.AreEqual(singleCsmPsmData.LongestFragmentIonSeries, 16);
+            Assert.That(singleCsmPsmData.LongestFragmentIonSeries, Is.EqualTo(0.64).Within(0.01));
             Assert.AreEqual(singleCsmPsmData.LongestFragmentIonSeries_Alpha, 0);
             Assert.AreEqual(singleCsmPsmData.LongestFragmentIonSeries_Beta, 0);
             Assert.AreEqual(singleCsmPsmData.MissedCleavagesCount, 1);
@@ -575,23 +578,25 @@ namespace Test
             Assert.AreEqual(singleCsmPsmData.Notch, 0);
             Assert.AreEqual(singleCsmPsmData.PrecursorChargeDiffToMode, -1);
             Assert.AreEqual(singleCsmPsmData.PsmCount, 4);
-            Assert.AreEqual(singleCsmPsmData.TotalMatchingFragmentCount, 27);
+            Assert.That(singleCsmPsmData.TotalMatchingFragmentCount, Is.EqualTo(1.08).Within(0.01));
 
             CrosslinkSpectralMatch loopCsm = firstCsmsFromListsOfCsms.Where(c => c.CrossType == PsmCrossType.Loop).OrderBy(c => -c.Score).First();
             var loopCsmPsmData = PEP_Analysis.CreateOnePsmDataEntry("standard", loopCsm, sequenceToPsmCount, fileSpecificTimeDependantHydrophobicityAverageAndDeviation_unmodified, fileSpecificTimeDependantHydrophobicityAverageAndDeviation_modified, medianFragmentMassError, chargeStateMode, loopCsm.BestMatchingPeptides.First().Peptide, trainingVariables, loopCsm.BestMatchingPeptides.First().Notch, !loopCsm.BestMatchingPeptides.First().Peptide.Protein.IsDecoy);
+            Assert.That(loopCsmPsmData.AbsoluteAverageFragmentMassErrorFromMedian, Is.EqualTo(0.511).Within(0.001));
             Assert.AreEqual(loopCsmPsmData.AlphaIntensity, 0);
             Assert.AreEqual(loopCsmPsmData.Ambiguity, 0);
             Assert.AreEqual(loopCsmPsmData.BetaIntensity, 0);
-            Assert.That(loopCsmPsmData.DeltaScore, Is.EqualTo(14.2994).Within(0.001));
+            Assert.That(loopCsmPsmData.ComplementaryIonCount, Is.EqualTo(0.3).Within(0.01));
+            Assert.That(loopCsmPsmData.DeltaScore, Is.EqualTo(0.715).Within(0.001));
             Assert.That(loopCsmPsmData.HydrophobicityZScore, Is.EqualTo(0.5264).Within(0.001));
-            Assert.That(loopCsmPsmData.Intensity, Is.EqualTo(0.2994).Within(0.0001));
+            Assert.That(loopCsmPsmData.Intensity, Is.EqualTo(0.015).Within(0.0001));
             Assert.AreEqual(loopCsmPsmData.IsDeadEnd, 0);
             Assert.AreEqual(loopCsmPsmData.IsInter, 0);
             Assert.AreEqual(loopCsmPsmData.IsIntra, 0);
             Assert.AreEqual(loopCsmPsmData.IsLoop, 1);
             Assert.AreEqual(loopCsmPsmData.IsVariantPeptide, 0);
             Assert.AreEqual(loopCsmPsmData.Label, true);
-            Assert.AreEqual(loopCsmPsmData.LongestFragmentIonSeries, 5);
+            Assert.That(loopCsmPsmData.LongestFragmentIonSeries, Is.EqualTo(0.25).Within(0.01));
             Assert.AreEqual(loopCsmPsmData.LongestFragmentIonSeries_Alpha, 0);
             Assert.AreEqual(loopCsmPsmData.LongestFragmentIonSeries_Beta, 0);
             Assert.AreEqual(loopCsmPsmData.MissedCleavagesCount, 2);
@@ -599,7 +604,7 @@ namespace Test
             Assert.AreEqual(loopCsmPsmData.Notch, 0);
             Assert.AreEqual(loopCsmPsmData.PrecursorChargeDiffToMode, -1);
             Assert.AreEqual(loopCsmPsmData.PsmCount, 8);
-            Assert.AreEqual(loopCsmPsmData.TotalMatchingFragmentCount, 14);
+            Assert.That(loopCsmPsmData.TotalMatchingFragmentCount, Is.EqualTo(0.7).Within(0.01));
 
             unnasignedCrossType = 0;
             inter = 0;
@@ -654,12 +659,12 @@ namespace Test
             }
 
             Assert.AreEqual(0, unnasignedCrossType);
-            Assert.AreEqual(141, inter);
-            Assert.AreEqual(80, intra);
-            Assert.AreEqual(213, single);
+            Assert.AreEqual(51, inter);
+            Assert.AreEqual(77, intra);
+            Assert.AreEqual(218, single);
             Assert.AreEqual(6, loop);
             Assert.AreEqual(0, deadend);
-            Assert.AreEqual(42, deadendH2O);
+            Assert.AreEqual(43, deadendH2O);
             Assert.AreEqual(0, deadendNH2);
             Assert.AreEqual(0, deadendTris);
         }

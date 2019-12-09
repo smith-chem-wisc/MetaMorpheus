@@ -22,9 +22,10 @@ namespace Test
             xLSearch.RunTask(outputFolder, new List<DbForTask> { new DbForTask(myDatabase, false) }, new List<string> { myFile }, "test");
 
             var resultsPath = File.ReadAllLines(Path.Combine(outputFolder, @"XL_Intralinks.tsv"));
-            var sections = resultsPath[1].Split('\t');
+            var headerSections = resultsPath[0].Split('\t');
+            var dataSections = resultsPath[1].Split('\t');
             Assert.That(resultsPath.Length == 2);
-            Assert.That(sections.Length == 45);
+            Assert.That(dataSections.Length == headerSections.Length);
             Directory.Delete(outputFolder, true);
         }
     }
