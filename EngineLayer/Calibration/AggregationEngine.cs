@@ -10,7 +10,7 @@ namespace EngineLayer.Calibration
     public class AggregationEngine : MetaMorpheusEngine
     {
         private readonly Tolerance ProductTolerance;
-        private MsDataFile OriginalFile;
+        private readonly MsDataFile OriginalFile;
         private const int NumberOfStrikesBeforeOut = 2;
 
         public MsDataFile AggregatedDataFile { get; private set; }
@@ -200,85 +200,7 @@ namespace EngineLayer.Calibration
             return new MetaMorpheusEngineResults(this);
         }
 
-
-        public double CosineScore(MzSpectrum scan1, MzSpectrum scan2, Tolerance tolerance)
-        {
-            double[] mz1 = scan1.XArray;
-            double[] intensity1 = scan1.YArray;
-            double[] mz2 = scan2.XArray;
-            double[] intensity2 = scan2.YArray;
-            return CosineScore(mz1, mz2, intensity1, intensity2, tolerance);
-        }
-
-        public double CosineScore(MsDataScan scan1, MsDataScan scan2, Tolerance tolerance)
-        {
-            double[] mz1 = scan1.MassSpectrum.XArray;
-            double[] intensity1 = scan1.MassSpectrum.YArray;
-            double[] mz2 = scan2.MassSpectrum.XArray;
-            double[] intensity2 = scan2.MassSpectrum.YArray;
-            return CosineScore(mz1, mz2, intensity1, intensity2, tolerance);
-        }
-
-        public double CosineScore(double[] mz1, double[] mz2, double[] intensity1, double[] intensity2, Tolerance tolerance)
-        {
-            //convert spectra to vectors
-            List<double> vector1 = new List<double>();
-            List<double> vector2 = new List<double>();
-            int i = 0;
-            int j = 0;
-
-            while (i != mz1.Length && j != mz2.Length)
-            {
-                double one = mz1[i];
-                double two = mz2[j];
-                if (tolerance.Within(one, two))
-                {
-                    vector1.Add(intensity1[i]);
-                    vector2.Add(intensity2[j]);
-                    i++;
-                    j++;
-                }
-                else if (one > two)
-                {
-                    vector1.Add(0);
-                    vector2.Add(intensity2[j]);
-                    j++;
-                }
-                else //two>one
-                {
-                    vector1.Add(intensity1[i]);
-                    vector2.Add(0);
-                    i++;
-                }
-            }
-            //wrap up leftover peaks
-            for (; i < mz1.Length; i++)
-            {
-                vector1.Add(intensity1[i]);
-                vector2.Add(0);
-            }
-            for (; j < mz2.Length; j++)
-            {
-                vector1.Add(0);
-                vector2.Add(intensity2[j]);
-            }
-
-            //cosine score of vectors
-            //numerator
-            double numerator = 0;
-            for (i = 0; i < vector1.Count; i++)
-            {
-                numerator += vector1[i] * vector2[i];
-            }
-
-            //denominator
-            double denominator = Math.Sqrt(vector1.Sum(x => x * x)) * Math.Sqrt(vector2.Sum(x => x * x));
-
-            //calculate cosine score
-            return Math.Round(numerator / denominator * 1000) / 1000;
-        }
-
-        public bool SimilarPeak(List<double> currentMzs, double putativeMz)
+        public static bool SimilarPeak(List<double> currentMzs, double putativeMz)
         {
             //determine if the putativeMz is the same as the previous ones.
             if (currentMzs.Count < 3)
@@ -297,7 +219,7 @@ namespace EngineLayer.Calibration
             }
         }
 
-        public void AggregateMzs(List<double> referenceListOfMzs) //use for MS1 scans
+        public static void AggregateMzs(List<double> referenceListOfMzs) //use for MS1 scans
         {
             //Currently NOT using intensity for weighting. Oddly, intensity weighting yielded poorer results than the median
             if (referenceListOfMzs.Count != 1) //if it's worth aggregating
@@ -311,15 +233,6 @@ namespace EngineLayer.Calibration
             {
                 referenceListOfMzs.Clear(); //Let's wipe it, but keep the entry to know that it's blank now.
             }
-        }
-
-        public (double mz, double intensity) AverageMzsAndIntensities(List<(double mz, double intensity)> peaks) //use for MS2 scans
-        {
-            double normalizedMzSum = peaks.Sum(x => x.mz * x.intensity); //weight by intensity
-            double intensitySum = peaks.Sum(x => x.intensity);
-            double averageMz = normalizedMzSum / intensitySum;
-            double averageIntensity = intensitySum / peaks.Count;
-            return (averageMz, averageIntensity);
         }
 
         public static MsDataScan CloneDataScanWithUpdatedFields(MsDataScan oldScan,
