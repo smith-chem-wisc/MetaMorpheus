@@ -322,7 +322,7 @@ namespace EngineLayer.Calibration
             return (averageMz, averageIntensity);
         }
 
-        public MsDataScan CloneDataScanWithUpdatedFields(MsDataScan oldScan,
+        public static MsDataScan CloneDataScanWithUpdatedFields(MsDataScan oldScan,
             MzSpectrum updatedSpectrum = null,
             int scanNumber = -1,
             int? precursorScanNumber = -1,
@@ -374,7 +374,8 @@ namespace EngineLayer.Calibration
                 oldScan.IsolationWidth,
                 oldScan.DissociationType,
                 precursorScanNumber, //changed?
-                precursorMonoisotopicMz //changed?
+                precursorMonoisotopicMz, //changed?
+                oldScan.HcdEnergy
                 );
 
             return scan;

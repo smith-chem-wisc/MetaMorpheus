@@ -161,7 +161,8 @@ namespace TaskLayer
 
                 //Use adjacent ms1 peaks to improve mass accuracy
                 AggregationEngine aggEngine = new AggregationEngine(engine.CalibratedDataFile, CommonParameters, new List<string> { taskId, "Individual Spectra Files", originalUncalibratedFilenameWithoutExtension });
-                
+                aggEngine.Run();
+
                 //update file
                 myMsDataFile = aggEngine.AggregatedDataFile;
 
