@@ -69,7 +69,7 @@ namespace MetaMorpheusGUI
 
         public PlotModelStat(string plotName, ObservableCollection<PsmFromTsv> psms, Dictionary<string, ObservableCollection<PsmFromTsv>> psmsBySourceFile)
         {
-            privateModel = new PlotModel { Title = plotName, DefaultFontSize = 14, LegendTitle = "source file(s)" };
+            privateModel = new PlotModel { Title = plotName, DefaultFontSize = 14 };
             allPsms = psms;
             this.psmsBySourceFile = psmsBySourceFile;
             createPlot(plotName);
@@ -113,6 +113,7 @@ namespace MetaMorpheusGUI
 
         private void histogramPlot(int plotType)
         {
+            privateModel.LegendTitle = "Source file(s)";
             string yAxisTitle = "Count";
             string xAxisTitle = "";
             double binSize = -1;
@@ -266,7 +267,6 @@ namespace MetaMorpheusGUI
 
         private void linePlot(int plotType)
         {
-            privateModel.LegendBackground = OxyColor.FromAColor(60, OxyColors.LightGray);
             string yAxisTitle = "";
             string xAxisTitle = "";
             ScatterSeries series = new ScatterSeries
