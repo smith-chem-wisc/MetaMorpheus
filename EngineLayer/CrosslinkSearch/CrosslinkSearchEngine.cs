@@ -13,6 +13,7 @@ namespace EngineLayer.CrosslinkSearch
 {
     public class CrosslinkSearchEngine : ModernSearchEngine
     {
+        public const double ToleranceForMassDifferentiation = 1e-9;
         protected readonly List<CrosslinkSpectralMatch>[] GlobalCsms;
 
         // crosslinker molecule
@@ -698,7 +699,7 @@ namespace EngineLayer.CrosslinkSearch
             if (iD < 0) { iD = ~iD; }
             else
             {
-                while (iD - 1 >= 0 && massArray[iD - 1] == targetMass)
+                while (iD - 1 >= 0 && massArray[iD - 1] - targetMass >= -ToleranceForMassDifferentiation)
                 {
                     iD--;
                 }

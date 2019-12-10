@@ -143,42 +143,36 @@ namespace TaskLayer
             new FdrAnalysisEngine(psms, 0, commonParameters, taskIds).Run();
         }
 
-        //Calculate the FDR of crosslinked peptide FP/TP
+        //Calculate the FDR of crosslinked peptide Q = (TD + DT - DD)/TT, Previously, use Q = (TD + DT + DD)/TT
         private void DoCrosslinkFdrAnalysis(List<CrosslinkSpectralMatch> csms)
         {
-            int cumulativeTarget = 0;
-            int cumulativeDecoy = 0;
+            double cumulativeTarget = 0;
+            double cumulativeDecoy = 0;
+            double lastQValue = 0;
 
             for (int i = 0; i < csms.Count; i++)
             {
                 var csm = csms[i];
-                if (csm.IsDecoy || csm.BetaPeptide.IsDecoy)
+                if ((csm.IsDecoy && !csm.BetaPeptide.IsDecoy) || (csm.BetaPeptide.IsDecoy && !csm.IsDecoy))
                 {
                     cumulativeDecoy++;
+                }
+                else if (csm.IsDecoy && csm.BetaPeptide.IsDecoy)
+                {
+                    cumulativeDecoy--;
                 }
                 else
                 {
                     cumulativeTarget++;
                 }
 
-                double qValue = Math.Min(1, (double)cumulativeDecoy / cumulativeTarget);
+                double qValue = Math.Min(1, cumulativeDecoy / cumulativeTarget);
+                if (qValue < lastQValue)
+                {
+                    qValue = lastQValue;
+                }
+                lastQValue = qValue;
                 csm.SetFdrValues(cumulativeTarget, cumulativeDecoy, qValue, 0, 0, 0, 0, 0);
-            }
-
-            double qValueThreshold = 1.0;
-            for (int i = csms.Count - 1; i >= 0; i--)
-            {
-                CrosslinkSpectralMatch csm = csms[i];
-
-                // threshold q-values
-                if (csm.FdrInfo.QValue > qValueThreshold)
-                {
-                    csm.FdrInfo.QValue = qValueThreshold;
-                }
-                else if (csm.FdrInfo.QValue < qValueThreshold)
-                {
-                    qValueThreshold = csm.FdrInfo.QValue;
-                }
             }
         }
     }
