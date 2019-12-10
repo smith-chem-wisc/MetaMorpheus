@@ -220,7 +220,6 @@ namespace EngineLayer.CrosslinkSearch
                         var psmCrossSingle = new CrosslinkSpectralMatch(PeptideIndex[id], 0, score, scanIndex, scan, CommonParameters.DigestionParams, matchedFragmentIons)
                         {
                             CrossType = PsmCrossType.Single,
-                            //XlRank = new List<int> { alphaIndex }
                         };
 
                         possibleMatches.Add(psmCrossSingle);
@@ -621,7 +620,6 @@ namespace EngineLayer.CrosslinkSearch
             }
 
             csm.LinkPositions = new List<int> { bestPosition };
-            //csm.XlRank = new List<int> { peptideIndex };
 
             return csm;
         }
@@ -659,7 +657,6 @@ namespace EngineLayer.CrosslinkSearch
             var csm = new CrosslinkSpectralMatch(originalPeptide, notch, bestScore, scanIndex, theScan, originalPeptide.DigestionParams, bestMatchingFragments)
             {
                 CrossType = PsmCrossType.Loop,
-                //XlRank = new List<int> { peptideIndex },
                 LinkPositions = new List<int> { bestModPositionSites.Item1, bestModPositionSites.Item2 }
             };
 

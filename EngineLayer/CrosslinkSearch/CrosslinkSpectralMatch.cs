@@ -144,7 +144,6 @@ namespace EngineLayer.CrosslinkSearch
             sb.Append(PsmTsvHeader.FullSequence + '\t');
             sb.Append(PsmTsvHeader.PeptideMonoMass + '\t');
             sb.Append(PsmTsvHeader.Score + '\t');
-            //sb.Append(PsmTsvHeader.RankLabel + '\t');
 
             sb.Append(PsmTsvHeader.MatchedIonSeries + '\t');
             sb.Append(PsmTsvHeader.MatchedIonMzRatios + '\t');
@@ -160,7 +159,6 @@ namespace EngineLayer.CrosslinkSearch
             sb.Append(PsmTsvHeader.BetaPeptideFullSequenceLabel + '\t');
             sb.Append(PsmTsvHeader.BetaPeptideTheoreticalMassLabel + '\t');
             sb.Append(PsmTsvHeader.BetaPeptideScoreLabel + '\t');
-            //sb.Append(PsmTsvHeader.BetaPeptideRankLabel + '\t');
 
             sb.Append("Beta Peptide Matched Ions" + '\t');
             sb.Append(PsmTsvHeader.BetaPeptideMatchedIonsLabel + '\t');
@@ -200,7 +198,6 @@ namespace EngineLayer.CrosslinkSearch
             sb.Append("Full Sequence" + '\t');
             sb.Append("Peptide Monoisotopic Mass" + '\t');
             sb.Append("Score" + '\t');
-            //sb.Append("Rank" + '\t');
 
             sb.Append("Matched Ion Series" + '\t');
             sb.Append("Matched Ion Mass-To-Charge Ratios" + '\t');
@@ -271,7 +268,6 @@ namespace EngineLayer.CrosslinkSearch
             sb.Append(FullSequence + position + "\t");
             sb.Append((PeptideMonisotopicMass.HasValue ? PeptideMonisotopicMass.Value.ToString() : "---")); sb.Append("\t");
             sb.Append(Score + "\t");
-            //sb.Append(XlRank[0] + "\t");
 
             if (ChildMatchedFragmentIons == null)
             {
@@ -320,7 +316,6 @@ namespace EngineLayer.CrosslinkSearch
                 sb.Append(BetaPeptide.FullSequence + "(" + BetaPeptide.LinkPositions[0].ToString() + ")" + "\t");
                 sb.Append(BetaPeptide.PeptideMonisotopicMass.ToString() + "\t");
                 sb.Append(BetaPeptide.Score + "\t");
-                //sb.Append(XlRank[1] + "\t");
 
                 if (BetaPeptide.ChildMatchedFragmentIons == null)
                 {
