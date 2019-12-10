@@ -155,7 +155,6 @@ namespace TaskLayer
                 }
 
                 var orderedCsmsPerScan = RemoveDuplicateFromCsmsPerScan(csmsPerScan).OrderByDescending(p => p.XLTotalScore).ThenBy(p => p.FullSequence + ((p.BetaPeptide == null) ? "" : p.BetaPeptide.FullSequence)).ToList();
-                //var orderedCsmsPerScan = RemoveDuplicateFromCsmsPerScan(csmsPerScan);
 
                 ListOfCsmsPerMS2ScanParsimony.Add(orderedCsmsPerScan);
             }
@@ -179,7 +178,6 @@ namespace TaskLayer
         {
             foreach (var csmsPerScan in ListOfCsmsPerMS2Scan)
             {
-                //csmsPerScan.Sort((x, y) => y.XLTotalScore.CompareTo(x.XLTotalScore));
 
                 for (int i = 0; i < csmsPerScan.Count; i++)
                 {

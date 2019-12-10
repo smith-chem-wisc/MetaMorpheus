@@ -616,7 +616,6 @@ namespace EngineLayer.CrosslinkSearch
             }
 
             csm.LinkPositions = new List<int> { bestPosition };
-            //csm.XlRank = new List<int> { peptideIndex };
 
             return csm;
         }

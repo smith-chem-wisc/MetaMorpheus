@@ -484,14 +484,14 @@ namespace EngineLayer
                 if (csm.PeptidesToMatchingFragments[selectedAlphaPeptide]?.Count > 0)
                 {
                     alphaCount = csm.PeptidesToMatchingFragments[selectedAlphaPeptide].Count;
-                    alphaError = (float)Math.Abs(GetAverageFragmentMassError(csm.PeptidesToMatchingFragments[selectedAlphaPeptide]));
+                    alphaError = Math.Abs(GetAverageFragmentMassError(csm.PeptidesToMatchingFragments[selectedAlphaPeptide]));
                 }
                 int betaCount = 0;
                 float betaError = 0;
                 if (csm.BetaPeptide.PeptidesToMatchingFragments[selectedBetaPeptide]?.Count > 0)
                 {
                     betaCount = csm.BetaPeptide.PeptidesToMatchingFragments[selectedBetaPeptide].Count;
-                    betaError = (float)Math.Abs(GetAverageFragmentMassError(csm.BetaPeptide.PeptidesToMatchingFragments[selectedBetaPeptide]));
+                    betaError = Math.Abs(GetAverageFragmentMassError(csm.BetaPeptide.PeptidesToMatchingFragments[selectedBetaPeptide]));
                 }
 
                 float averageError = 0;
