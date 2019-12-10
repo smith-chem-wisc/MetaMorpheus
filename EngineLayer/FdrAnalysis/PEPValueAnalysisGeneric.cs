@@ -85,7 +85,6 @@ namespace EngineLayer
 
             var predictionEngine = mlContext.Model.CreatePredictionEngine<PsmData, TruePositivePrediction>(trainedModel);
 
-            string ambiguousScans = "";
             int ambiguousPeptidesRemovedCount = 0;
 
             foreach (PeptideSpectralMatch psm in psms)
@@ -130,7 +129,6 @@ namespace EngineLayer
 
                     foreach (var (notch, pwsm) in bestMatchingPeptidesToRemove)
                     {
-                        ambiguousScans = ambiguousScans + psm.ScanNumber + "|";
                         psm.RemoveThisAmbiguousPeptide(notch, pwsm);
                         ambiguousPeptidesRemovedCount++;
                     }
@@ -317,10 +315,15 @@ namespace EngineLayer
             Dictionary<string, int> sequenceToPsmCount = new Dictionary<string, int>();
 
             List<string> sequences = new List<string>();
+
             foreach (PeptideSpectralMatch psm in psms)
             {
-                var ss = psm.BestMatchingPeptides.Select(b => b.Peptide.FullSequence).ToList();
-                sequences.Add(String.Join("|", ss));
+                List<string> fullSeqs = new List<string>();
+                foreach ((int, PeptideWithSetModifications) bmp in psm.BestMatchingPeptides)
+                {
+                    fullSeqs.Add(bmp.Item2.FullSequence);
+                }
+                sequences.AddRange(fullSeqs.Distinct());
             }
 
             var s = sequences.GroupBy(i => i);
@@ -423,7 +426,7 @@ namespace EngineLayer
                 complementaryIonCount = psm.GetCountComplementaryIons(psm.PeptidesToMatchingFragments, selectedPeptide) / normalizationFactor;
 
                 //grouping psm counts as follows is done for stability. you get very nice numbers at low psms to get good statistics. But you get a few peptides with high psm counts that could be either targets or decoys and the values swing between extremes. So grouping psms in bundles really adds stability.
-                psmCount = sequenceToPsmCount[String.Join("|", psm.BestMatchingPeptides.Select(p => p.Peptide.FullSequence).ToList())];
+                psmCount = sequenceToPsmCount[selectedPeptide.FullSequence];
                 List<int> psmCountList = new List<int> { 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 15, 20, 30, 40, 50, 75, 100, 200, 300, 400, 500 };
                 int closest = psmCountList.OrderBy(item => Math.Abs(psmCount - item)).First();
                 psmCount = closest;

@@ -116,7 +116,8 @@ namespace Test
             new ClassicSearchEngine(allPsmsArray, listOfSortedms2Scans, variableModifications, fixedModifications, null, null, null, proteinList, searchModes, new CommonParameters(), new List<string>()).Run();
 
             List<int> longestSeriesObserved = new List<int>();
-            List<int> longestSeriesExpected = new List<int>() { 4, 3, 3, 7, 7, 7, 7, 3, 3, 8, 12, 4, 4, 7, 13, 12, 12, 7, 7, 3, 3, 3, 2, 2, 2, 2, 2, 2, 11, 11, 11, 11, 11, 11, 4, 4, 4, 4, 4, 4, 10, 10, 13, 13, 15, 15, 15, 15, 5, 5, 5, 5, 3, 3, 3, 15, 15, 15, 3, 3, 3, 6, 16, 2, 2, 18, 3, 2, 2, 2, 2, 2, 9, 9, 9, 3, 2, 2, 2, 2, 2, 2, 3, 3, 2, 2, 2, 2, 2, 12, 12, 6, 6, 3 };
+
+            List<int> longestSeriesExpected = new List<int>() { 4, 3, 3, 7, 7, 7, 7, 3, 3, 8, 12, 4, 4, 7, 13, 12, 12, 7, 7, 3, 3, 3, 2, 2, 2, 2, 2, 2, 11, 11, 11, 11, 11, 11, 4, 4, 4, 4, 4, 4, 10, 10, 13, 13, 15, 15, 15, 15, 5, 5, 5, 5, 3, 3, 3, 15, 15, 15, 3, 3, 3, 6, 16, 2, 2, 18, 3, 2, 2, 2, 2, 2, 9, 9, 9, 3, 2, 2, 2, 2, 2, 3, 3, 2, 2, 2, 2, 2, 12, 6, 3 };
             foreach (PeptideSpectralMatch psm in allPsmsArray)
             {
                 if (psm != null)

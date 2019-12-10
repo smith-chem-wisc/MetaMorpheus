@@ -282,10 +282,9 @@ namespace Test
                 }
             }
 
-            string expectedMetrics = "************************************************************\r\n*       Metrics for Determination of PEP Using Binary Classification      \r\n*-----------------------------------------------------------\r\n*" +
-                "       Accuracy:  1\r\n*       Area Under Curve:  1\r\n*       Area under Precision recall Curve:  1\r\n*       F1Score:  1\r\n*       LogLoss:  2.30100657641977E-10\r\n*" +
-                "       LogLossReduction:  0.999999999646011\r\n*       PositivePrecision:  1\r\n*       PositiveRecall:  1\r\n*       NegativePrecision:  1\r\n*       NegativeRecall:  1\r\n*" +
-                "       Count of Ambiguous Peptides Removed:  0\r\n************************************************************\r\n";
+            string expectedMetrics = "************************************************************\r\n*       Metrics for Determination of PEP Using Binary Classification      \r\n*-----------------------------------------------------------\r\n*" + 
+                "       Accuracy:  1\r\n*       Area Under Curve:  1\r\n*       Area under Precision recall Curve:  1\r\n*       F1Score:  1\r\n*       LogLoss:  2.43635990444446E-10\r\n*       LogLossReduction:  0.999999999637605\r\n*" + 
+                "       PositivePrecision:  1\r\n*       PositiveRecall:  1\r\n*       NegativePrecision:  1\r\n*       NegativeRecall:  1\r\n*       Count of Ambiguous Peptides Removed:  0\r\n************************************************************\r\n";
 
             string metrics = PEP_Analysis.ComputePEPValuesForAllPSMsGeneric(moreNonNullPSMs, "standard", "HPLC");
             Assert.AreEqual(expectedMetrics, metrics);
@@ -297,7 +296,15 @@ namespace Test
             Ms2ScanWithSpecificMass scan = new Ms2ScanWithSpecificMass(new MsDataScan(anMzSpectrum, 1, 1, true, Polarity.Negative, 2, null, "", MZAnalyzerType.Orbitrap, 2, null, null, null), 1, 1, "path", new CommonParameters());
             Protein variantProtein = new Protein("MPEPPPTIDE", "protein3", sequenceVariations: new List<SequenceVariation> { new SequenceVariation(4, 6, "PPP", "P", @"1\t50000000\t.\tA\tG\t.\tPASS\tANN=G||||||||||||||||\tGT:AD:DP\t1/1:30,30:30", null) });
             PeptideWithSetModifications varPep = variantProtein.GetVariantProteins().SelectMany(p => p.Digest(CommonParameters.DigestionParams, null, null)).FirstOrDefault();
-            PeptideSpectralMatch variantPSM = new PeptideSpectralMatch(varPep, 0, maxScorePsm.Score, maxScorePsm.ScanIndex, scan, new DigestionParams(), null);
+
+
+            var t = new NeutralTerminusFragment(FragmentationTerminus.N, 1, 1, 1);
+            Product prod = new Product(ProductType.b, t, 0);
+            List<MatchedFragmentIon> mfi = new List<MatchedFragmentIon> { new MatchedFragmentIon(prod, 1, 1.0, 1) };
+
+
+            PeptideSpectralMatch variantPSM = new PeptideSpectralMatch(varPep, 0, maxScorePsm.Score, maxScorePsm.ScanIndex, scan, new DigestionParams(), mfi);
+            
 
             sequenceToPsmCount = new Dictionary<string, int>();
             sequences = new List<string>();
@@ -320,57 +327,6 @@ namespace Test
             PsmData variantPsmData = PEP_Analysis.CreateOnePsmDataEntry("standard", variantPSM, sequenceToPsmCount, fileSpecificRetTimeHI_behavior, fileSpecificRetTemHI_behaviorModifiedPeptides, massError, chargeStateMode, vpwsm, trainingVariables, vnotch, !maxScorePsm.IsDecoy);
 
             Assert.AreEqual((float)1, variantPsmData.IsVariantPeptide);
-        }
-
-        [Test]
-        public static void RemoveAmbiguousPeptides()
-        {
-            var variableModifications = new List<Modification>();
-            var fixedModifications = new List<Modification>();
-            var origDataFile = Path.Combine(TestContext.CurrentContext.TestDirectory, @"TestData\TaGe_SA_HeLa_04_subset_longestSeq.mzML");
-            MyFileManager myFileManager = new MyFileManager(true);
-            CommonParameters CommonParameters = new CommonParameters(digestionParams: new DigestionParams());
-            var myMsDataFile = myFileManager.LoadFile(origDataFile, CommonParameters);
-            var searchModes = new SinglePpmAroundZeroSearchMode(5);
-            List<Protein> proteinList = ProteinDbLoader.LoadProteinFasta(Path.Combine(TestContext.CurrentContext.TestDirectory, @"TestData\hela_snip_for_unitTest.fasta"), true, DecoyType.Reverse, false, ProteinDbLoader.UniprotAccessionRegex, ProteinDbLoader.UniprotFullNameRegex, ProteinDbLoader.UniprotFullNameRegex, ProteinDbLoader.UniprotGeneNameRegex,
-                    ProteinDbLoader.UniprotOrganismRegex, out var dbErrors, -1);
-            var listOfSortedms2Scans = MetaMorpheusTask.GetMs2Scans(myMsDataFile, @"TestData\TaGe_SA_HeLa_04_subset_longestSeq.mzML", CommonParameters).OrderBy(b => b.PrecursorMass).ToArray();
-            PeptideSpectralMatch[] allPsmsArray = new PeptideSpectralMatch[listOfSortedms2Scans.Length];
-            new ClassicSearchEngine(allPsmsArray, listOfSortedms2Scans, variableModifications, fixedModifications, null, null, null, proteinList, searchModes, CommonParameters, new List<string>()).Run();
-
-            var nonNullPsms = allPsmsArray.Where(p => p != null).ToList();
-            nonNullPsms.OrderByDescending(p => p.Score);
-            var maxScore = nonNullPsms.Select(n => n.Score).Max();
-            PeptideSpectralMatch maxScorePsm = nonNullPsms.Where(n => n.Score == maxScore).First();
-
-            Protein newProteinToRemove = new Protein("RREMVE", "BUBBA", isDecoy: false);
-            PeptideWithSetModifications pwsmToRemove = new PeptideWithSetModifications(newProteinToRemove, new DigestionParams(), 1, 6, CleavageSpecificity.Full, "peptideDescription", 2, new Dictionary<int, Modification>(), 1, "RREMVE");
-
-            List<MatchedFragmentIon> mfi = nonNullPsms[40].MatchedFragmentIons;
-
-            maxScorePsm.AddOrReplace(pwsmToRemove, maxScore, 0, true, mfi, maxScore);
-            maxScorePsm.ResolveAllAmbiguities();
-
-            List<PeptideSpectralMatch> psmBloated = new List<PeptideSpectralMatch>();
-            psmBloated.AddRange(nonNullPsms);
-            psmBloated.AddRange(nonNullPsms.GetRange(0, nonNullPsms.Count - 2));
-            foreach (PeptideSpectralMatch psm in nonNullPsms.GetRange(0, nonNullPsms.Count - 2))
-            {
-                Protein newDecoyProtein = new Protein(psm.BestMatchingPeptides.First().Peptide.BaseSequence + "K", "DECOY_" + psm.BestMatchingPeptides.First().Peptide.Protein.Accession, isDecoy: true);
-                PeptideWithSetModifications pwsmDecoy = new PeptideWithSetModifications(newDecoyProtein, new DigestionParams(), 1, psm.BestMatchingPeptides.First().Peptide.BaseSequence.Length + 1, CleavageSpecificity.Full, "peptideDescription", 2, new Dictionary<int, Modification>(), 1, psm.BestMatchingPeptides.First().Peptide.BaseSequence + "K");
-                PeptideSpectralMatch decoyPsm = new PeptideSpectralMatch(pwsmDecoy, 1, psm.Score, psm.ScanIndex, listOfSortedms2Scans[psm.ScanIndex], new DigestionParams(), psm.MatchedFragmentIons);
-                decoyPsm.ResolveAllAmbiguities();
-                psmBloated.Add(decoyPsm);
-            }
-
-            PeptideSpectralMatch oldBloatedMaxScorePsm = psmBloated.Where(n => n.Score == maxScore).First();
-            int countOfBestPeptidesBloatedMax = oldBloatedMaxScorePsm.BestMatchingPeptides.Count();
-
-            FdrAnalysisResults fdrResultsClassicDelta = (FdrAnalysisResults)(new FdrAnalysisEngine(psmBloated.Where(p => p != null).ToList(), 1, CommonParameters, new List<string>()).Run());
-
-            PeptideSpectralMatch newMaxScorePsm = psmBloated.Where(n => n.Score == maxScore).First();
-
-            Assert.AreEqual(countOfBestPeptidesBloatedMax - 1, newMaxScorePsm.BestMatchingPeptides.Count());
         }
 
         [Test]
