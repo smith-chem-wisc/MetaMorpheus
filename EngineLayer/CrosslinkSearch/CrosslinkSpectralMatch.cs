@@ -34,7 +34,9 @@ namespace EngineLayer.CrosslinkSearch
             
             if (this.ProteinAccession != null && this.BetaPeptide.ProteinAccession != null)
             {
-                if (this.ProteinAccession == this.BetaPeptide.ProteinAccession)
+                if (this.ProteinAccession == this.BetaPeptide.ProteinAccession || 
+                    this.ProteinAccession == "DECOY_"+ this.BetaPeptide.ProteinAccession || 
+                    this.BetaPeptide.ProteinAccession == "DECOY" + this.ProteinAccession)
                 {
                     return true;
                 }
@@ -49,7 +51,7 @@ namespace EngineLayer.CrosslinkSearch
                 {
                     foreach (var beta in betaProteins)
                     {
-                        if (alpha == beta)
+                        if (alpha == beta || alpha == "DECOY_" + beta || beta == "DECOY_" + alpha)
                         {
                             return true;
                         }
@@ -57,6 +59,7 @@ namespace EngineLayer.CrosslinkSearch
 
                 }
             }
+
             return false;
         }
 
