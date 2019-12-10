@@ -146,7 +146,7 @@ namespace EngineLayer.GlycoSearch
             //sb.Append("DiagonosticIon Score" + '\t');
             sb.Append("GlycanMass" + '\t');
             sb.Append("GlycanStructure" + '\t');
-            sb.Append("GlycanLocalization" + '\t');
+            //sb.Append("GlycanLocalization" + '\t');
             //sb.Append("GlycanIDs" + '\t');
             sb.Append("GlycanDecoy" + '\t');         
             sb.Append("GlycanComposition(H,N,A,G,F)" + '\t');
@@ -242,7 +242,7 @@ namespace EngineLayer.GlycoSearch
                 }
                 sb.Append(string.Join(",", glycans.Select(p => p.Struc.ToString()).ToArray())); sb.Append("\t");
 
-                sb.Append(string.Join("|", localizations.Select(p=> "[" + string.Join(",", p.Select(q =>  q.ToString())) + "]"))); sb.Append("\t");
+                //sb.Append(string.Join("|", localizations.Select(p=> "[" + string.Join(",", p.Select(q =>  q.ToString())) + "]"))); sb.Append("\t");
 
                 //sb.Append(string.Join("|", glycanBoxes.First().GlycanIds.Select(p => p.ToString()).ToArray())); sb.Append("\t");
 
