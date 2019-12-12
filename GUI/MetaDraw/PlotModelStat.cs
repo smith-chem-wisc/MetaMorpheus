@@ -17,8 +17,8 @@ namespace MetaMorpheusGUI
     public class PlotModelStat : INotifyPropertyChanged, IPlotModel
     {
         private PlotModel privateModel;
-        private ObservableCollection<PsmFromTsv> allPsms;
-        private Dictionary<string, ObservableCollection<PsmFromTsv>> psmsBySourceFile;
+        private readonly ObservableCollection<PsmFromTsv> allPsms;
+        private readonly Dictionary<string, ObservableCollection<PsmFromTsv>> psmsBySourceFile;
 
         public static List<string> PlotNames = new List<string> {
             "Histogram of Precursor PPM Errors (around 0 Da mass-difference notch only)",
@@ -39,6 +39,14 @@ namespace MetaMorpheusGUI
             { ProductType.zPlusOne, OxyColors.Orange },
             { ProductType.D, OxyColors.DodgerBlue },
             { ProductType.M, OxyColors.Firebrick }
+        };
+
+        private static List<OxyColor> columnColors = new List<OxyColor>
+        {
+            OxyColors.Teal, OxyColors.CadetBlue, OxyColors.LightSeaGreen, OxyColors.DarkTurquoise, OxyColors.LightSkyBlue,
+            OxyColors.LightBlue, OxyColors.Aquamarine, OxyColors.PaleGreen, OxyColors.MediumAquamarine, OxyColors.DarkSeaGreen,
+            OxyColors.MediumSeaGreen, OxyColors.SeaGreen, OxyColors.DarkSlateGray, OxyColors.Gray, OxyColors.Gainsboro
+
         };
 
         public PlotModel Model
@@ -73,6 +81,7 @@ namespace MetaMorpheusGUI
             allPsms = psms;
             this.psmsBySourceFile = psmsBySourceFile;
             createPlot(plotName);
+            privateModel.DefaultColors = columnColors;
         }
 
         private void createPlot(string plotType)
@@ -232,11 +241,11 @@ namespace MetaMorpheusGUI
                 {
                     if (i % skipBinLabel == 0)
                     {
-                        category[i - start] = (i * binSize).ToString();
+                        category[i - start] = (i * binSize).ToString(CultureInfo.InvariantCulture);
                     }
                     foreach (Dictionary<string, int> dict in dictsBySourceFile.Values)
                     {
-                        totalCounts[i - start] += dict.ContainsKey(i.ToString()) ? dict[i.ToString()] : 0;
+                        totalCounts[i - start] += dict.ContainsKey(i.ToString(CultureInfo.InvariantCulture)) ? dict[i.ToString(CultureInfo.InvariantCulture)] : 0;
                     }
                 }
 
@@ -247,7 +256,7 @@ namespace MetaMorpheusGUI
                     foreach (var d in dictsBySourceFile[key])
                     {
                         int bin = int.Parse(d.Key);
-                        column.Items.Add(new HistItem(d.Value, bin - start, (bin * binSize).ToString(), totalCounts[bin - start]));
+                        column.Items.Add(new HistItem(d.Value, bin - start, (bin * binSize).ToString(CultureInfo.InvariantCulture), totalCounts[bin - start]));
                     }
                     privateModel.Series.Add(column);
                 }
@@ -262,7 +271,7 @@ namespace MetaMorpheusGUI
                 GapWidth = 0.3,
                 Angle = labelAngle,
             });
-            privateModel.Axes.Add(new LinearAxis() { Title = yAxisTitle, Position = AxisPosition.Left, AbsoluteMinimum = 0 });
+            privateModel.Axes.Add(new LinearAxis { Title = yAxisTitle, Position = AxisPosition.Left, AbsoluteMinimum = 0 });
         }
 
         private void linePlot(int plotType)
@@ -344,7 +353,7 @@ namespace MetaMorpheusGUI
                 privateModel.Series.Add(series);
 
                 // add series displayed in legend, the real series will show up with a tiny dot for the symbol
-                privateModel.Series.Add(new ScatterSeries() { Title = "non-variant PSMs", MarkerFill = OxyColors.Blue });
+                privateModel.Series.Add(new ScatterSeries { Title = "non-variant PSMs", MarkerFill = OxyColors.Blue });
             }
 
             if (variantxy.Count != 0)
@@ -358,7 +367,7 @@ namespace MetaMorpheusGUI
                 privateModel.Series.Add(variantSeries);
 
                 // add series displayed in legend, the real series will show up with a tiny dot for the symbol
-                privateModel.Series.Add(new ScatterSeries() { Title = "variant PSMs", MarkerFill = OxyColors.DarkRed });
+                privateModel.Series.Add(new ScatterSeries { Title = "variant PSMs", MarkerFill = OxyColors.DarkRed });
             }
             privateModel.Axes.Add(new LinearAxis { Title = xAxisTitle, Position = AxisPosition.Bottom });
             privateModel.Axes.Add(new LinearAxis { Title = yAxisTitle, Position = AxisPosition.Left });
