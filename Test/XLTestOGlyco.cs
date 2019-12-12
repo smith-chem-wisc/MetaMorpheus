@@ -73,6 +73,19 @@ namespace Test
         }
 
         [Test]
+        public static void OGlycoTest_AllCombinationsOf()
+        {
+            List<List<int>> inputs = new List<List<int>>();
+            inputs.Add(new List<int> { 1, 2, 3, 4 });
+            inputs.Add(new List<int> { 5, 6 });
+            inputs.Add(new List<int> { 7, 8 });
+            inputs.Add(new List<int> { 9 });
+            inputs.Add(new List<int> { 1, 2});
+
+            var test = ModBox.AllCombinationsOf(inputs.ToArray());
+        }
+
+        [Test]
         public static void OGlycoTest_GetKPerWithDuplicate()
         {
             List<int> input = new List<int> { 3, 5, 2, 7};

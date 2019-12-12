@@ -688,7 +688,6 @@ namespace EngineLayer
         }
 
         #endregion
-
     }
 
     public class GlycanBox

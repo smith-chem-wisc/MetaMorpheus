@@ -284,8 +284,6 @@ namespace EngineLayer.GlycoSearch
 
             List<int[]> permutateModPositions = new List<int[]>();
 
-
-
             var combinations = Glycan.GetKCombs(allModPos, length);
         
             foreach (var com in combinations)
