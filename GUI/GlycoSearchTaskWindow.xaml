@@ -80,7 +80,7 @@
                             <ComboBox x:Name="cbbPrecusorMsTl" />
                         </StackPanel>
                         <StackPanel Orientation="Horizontal" Grid.Row="1" Grid.Column="1" Margin="5">
-                            <CheckBox x:Name="ckbTopNum" VerticalAlignment="Center" Content="Top N peptides per precursor" />
+                            <Label Content="Keep top N candidates" />
                             <TextBox x:Name="txtTopNum" PreviewTextInput="CheckIfNumber" Width="45" Margin="2" IsEnabled="{Binding IsChecked, ElementName=ckbTopNum}" />
                         </StackPanel>
                     </Grid>

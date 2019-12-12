@@ -73,19 +73,6 @@ namespace Test
         }
 
         [Test]
-        public static void OGlycoTest_AllCombinationsOf()
-        {
-            List<List<int>> inputs = new List<List<int>>();
-            inputs.Add(new List<int> { 1, 2, 3, 4 });
-            inputs.Add(new List<int> { 5, 6 });
-            inputs.Add(new List<int> { 7, 8 });
-            inputs.Add(new List<int> { 9 });
-            inputs.Add(new List<int> { 1, 2});
-
-            var test = ModBox.AllCombinationsOf(inputs.ToArray());
-        }
-
-        [Test]
         public static void OGlycoTest_GetKPerWithDuplicate()
         {
             List<int> input = new List<int> { 3, 5, 2, 7};
@@ -126,5 +113,39 @@ namespace Test
             var fragments_ethcd = GlycoPeptides.OGlyGetTheoreticalFragments(DissociationType.EThcD, peptide, peptideWithMod);
 
         }
+
+        [Test]
+        public static void OGlycoTest_AllCombinationsOf()
+        {
+            List<List<int>> inputs = new List<List<int>>();
+            inputs.Add(new List<int> { 1, 2, 3, 4 });
+            inputs.Add(new List<int> { 5, 6 });
+            inputs.Add(new List<int> { 7, 8 });
+            inputs.Add(new List<int> { 9 });
+            inputs.Add(new List<int> { 1, 2 });
+
+            var test = ModBox.AllCombinationsOf(inputs.ToArray());
+            Assert.That(test.Count == 32);
+        }
+
+        [Test]
+        public static void OGlycoTest_GetPossibleModSites()
+        {
+            ModBox.SelectedModifications = new Modification[5];
+            ModBox.SelectedModifications[0] = GlobalVariables.AllModsKnownDictionary["Oxidation on M"];
+            ModBox.SelectedModifications[1] = GlobalVariables.AllModsKnownDictionary["Hydroxylation on P"];
+            ModBox.SelectedModifications[2] = GlobalVariables.AllModsKnownDictionary["Hydroxylation on K"];
+            ModBox.SelectedModifications[3] = GlobalVariables.AllModsKnownDictionary["Glucosylgalactosyl on K"];
+            ModBox.SelectedModifications[4] = GlobalVariables.AllModsKnownDictionary["Galactosyl on K"];
+
+            var ModBoxes = ModBox.BuildModBoxes(5).OrderBy(p => p.Mass).ToArray();
+            Assert.That(ModBoxes.Length == 251);
+
+            PeptideWithSetModifications pep = new PeptideWithSetModifications("MGFQGPAGEP[Common Biological:Hydroxylation on P]GPEP[Common Biological:Hydroxylation on P]GQTGPAGAR", GlobalVariables.AllModsKnownDictionary);
+
+            var test = ModBox.GetPossibleModSites(pep, ModBoxes[12]);
+            Assert.That(test.Count == 3);
+        }
+
     }
 }

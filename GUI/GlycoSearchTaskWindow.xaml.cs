@@ -114,7 +114,6 @@ namespace MetaMorpheusGUI
             RbtOGlycoSearch.IsChecked = task._glycoSearchParameters.IsOGlycoSearch;
             TbMaxOGlycanNum.Text = task._glycoSearchParameters.MaximumOGlycanAllowed.ToString(CultureInfo.InvariantCulture);
 
-            ckbTopNum.IsChecked = task._glycoSearchParameters.RestrictToTopNHits;
             txtTopNum.Text = task._glycoSearchParameters.GlycoSearchTopNum.ToString(CultureInfo.InvariantCulture);
 
 
@@ -241,7 +240,6 @@ namespace MetaMorpheusGUI
             }
 
             TheTask._glycoSearchParameters.MaximumOGlycanAllowed = int.Parse(TbMaxOGlycanNum.Text, CultureInfo.InvariantCulture);
-            TheTask._glycoSearchParameters.RestrictToTopNHits = ckbTopNum.IsChecked.Value;
             TheTask._glycoSearchParameters.GlycoSearchTopNum = int.Parse(txtTopNum.Text, CultureInfo.InvariantCulture);
             TheTask._glycoSearchParameters.DecoyType = checkBoxDecoy.IsChecked.Value ? DecoyType.Reverse : DecoyType.None;
 

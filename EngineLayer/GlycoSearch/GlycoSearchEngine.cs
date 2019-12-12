@@ -101,6 +101,10 @@ namespace EngineLayer.GlycoSearch
                 byte[] secondScoringTable = new byte[PeptideIndex.Count];
                 List<int> childIdsOfPeptidesPossiblyObserved = new List<int>();
 
+                List<int> idsOfPeptidesTopN = new List<int>();
+                byte scoreAtTopN = 0;
+                int peptideCount = 0;
+
                 //////TO DO: Finish the generation of fragmentIndex. May need 2 fragmentIndex. 
                 //List<int>[] glycoFragmentIndex;
                 //List<int>[] glycoSecondFragmentIndex;
@@ -117,7 +121,7 @@ namespace EngineLayer.GlycoSearch
                 //}
 
                 //Tuple<IsGlyco, GlycanBoxId, GlycanBox Mod sites, ind, UnModPeptide, GlycoPeptides>
-                
+
 
                 for (; scanIndex < ListOfSortedMs2Scans.Length; scanIndex += maxThreadsPerFile)
                 {
@@ -166,23 +170,33 @@ namespace EngineLayer.GlycoSearch
                     // done with indexed scoring; refine scores and create PSMs
                     if (idsOfPeptidesPossiblyObserved.Any())
                     {
-                        if (GlycoSearchTopN)
+                        scoreAtTopN = 0;
+                        peptideCount = 0;
+                        foreach (int id in idsOfPeptidesPossiblyObserved.OrderByDescending(p => scoringTable[p]))
                         {
-                            // take top N hits for this scan
-                            idsOfPeptidesPossiblyObserved = idsOfPeptidesPossiblyObserved.OrderByDescending(p => scoringTable[p]).Take(TopN).ToList();
+                            peptideCount++;
+                            if (peptideCount == TopN)
+                            {
+                                scoreAtTopN = scoringTable[id];
+                            }
+                            if (scoringTable[id] < scoreAtTopN)
+                            {
+                                break;
+                            }
+                            idsOfPeptidesTopN.Add(id);
                         }
 
                         List<GlycoSpectralMatch> gsms;
                         if (IsOGlycoSearch == false)
                         {
-                            gsms = FindNGlycopeptide(scan, idsOfPeptidesPossiblyObserved, scanIndex);
+                            gsms = FindNGlycopeptide(scan, idsOfPeptidesTopN, scanIndex);
                         }
                         else
                         {
-                            //gsms = FindOGlycopeptide(scan, idsOfPeptidesPossiblyObserved, scanIndex);
-                            //gsms = FindOGlycopeptide2(scan, idsOfPeptidesPossiblyObserved, scanIndex, (int)byteScoreCutoff);
-                            //gsms = FindOGlycopeptide3(scan, idsOfPeptidesPossiblyObserved, scanIndex, byteScoreCutoff, glycoFragmentIndex, glycoSecondFragmentIndex, MaxFragmentSize);
-                            gsms = FindModPep(scan, idsOfPeptidesPossiblyObserved, scanIndex, (int)byteScoreCutoff);
+                            //gsms = FindOGlycopeptide(scan, idsOfPeptidesTopN, scanIndex);
+                            //gsms = FindOGlycopeptide2(scan, idsOfPeptidesTopN, scanIndex, (int)byteScoreCutoff);
+                            //gsms = FindOGlycopeptide3(scan, idsOfPeptidesTopN, scanIndex, byteScoreCutoff, glycoFragmentIndex, glycoSecondFragmentIndex, MaxFragmentSize);
+                            gsms = FindModPep(scan, idsOfPeptidesTopN, scanIndex, (int)byteScoreCutoff);
                         }
 
 

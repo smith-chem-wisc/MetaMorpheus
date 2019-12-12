@@ -37,7 +37,8 @@ namespace EngineLayer.GlycoSearch
             {
                 List<int> possibleModSites = new List<int>();
 
-                Modification modWithMotif = new Modification(_target: mn.Key, _locationRestriction: "Anywhere.");
+                ModificationMotif.TryGetMotif(mn.Key, out ModificationMotif motif);
+                Modification modWithMotif = new Modification(_target: motif, _locationRestriction: "Anywhere.");
 
                 for (int r = 0; r < peptide.Length; r++)
                 {
@@ -202,21 +203,21 @@ namespace EngineLayer.GlycoSearch
             }
         }
 
-        public Dictionary<ModificationMotif, List<int>> MotifNeeded
+        public Dictionary<string, List<int>> MotifNeeded
         {
             get
             {
-                Dictionary<ModificationMotif, List<int>> aa = new Dictionary<ModificationMotif, List<int>>();
+                Dictionary<string, List<int>> aa = new Dictionary<string, List<int>>();
                 foreach (var id in ModIds)
                 {
                     var mod = SelectedModifications[id];
-                    if (aa.ContainsKey(mod.Target))
+                    if (aa.ContainsKey(mod.Target.ToString()))
                     {
-                        aa[mod.Target].Add(id);
+                        aa[mod.Target.ToString()].Add(id);
                     }
                     else
                     {
-                        aa.Add(mod.Target, new List<int>(id));
+                        aa.Add(mod.Target.ToString(), new List<int> { id });
                     }
                 }
                 return aa;
