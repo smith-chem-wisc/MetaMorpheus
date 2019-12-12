@@ -191,7 +191,7 @@
             </TabItem>
 
             <!--Stats tab-->
-            <TabItem Header="Stats" Background="DarkGray">
+            <TabItem Header="Data Visualization" Background="DarkGray">
                 <DockPanel>
                     <Grid>
                         <Grid.ColumnDefinitions>
@@ -204,7 +204,7 @@
                         <Grid Grid.Column="0">
                             <Grid.RowDefinitions>
                                 <RowDefinition Height="29"/>
-                                <RowDefinition Height="25"/>
+                                <RowDefinition Height="29"/>
                                 <RowDefinition Height="50*"/>
                                 <RowDefinition Height="40*"/>
                                 <RowDefinition Height="25"/>
@@ -220,8 +220,8 @@
                                 </Label>
                             </DockPanel>
 
-                            <DockPanel Grid.Row="1">
-                                <Button Name="loadFilesStat" Content="Load File" Width="100" Click="loadFilesButtonStat_Click"/>
+                            <DockPanel Grid.Row="1" Margin="2">
+                                <Button Name="loadFilesStat" Content="Import Files From PSMTSV" Width="160" Click="loadFilesButtonStat_Click"/>
                             </DockPanel>
 
                             <!--Select psms to display by source file-->
