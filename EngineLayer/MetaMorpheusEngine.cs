@@ -80,14 +80,14 @@ namespace EngineLayer
         {
             var matchedFragmentIons = new List<MatchedFragmentIon>();
 
-            // if the spectrum has no peaks
-            if (!scan.ExperimentalFragments.Any())
-            {
-                return matchedFragmentIons;
-            }
-
             if (scan.TheScan.MassSpectrum.XcorrProcessed)
             {
+                // if the spectrum has no peaks
+                if (scan.TheScan.MassSpectrum.XArray.Length == 0)
+                {
+                    return matchedFragmentIons;
+                }
+
                 foreach (Product product in theoreticalProducts)
                 {
                     // unknown fragment mass; this only happens rarely for sequences with unknown amino acids
@@ -105,6 +105,12 @@ namespace EngineLayer
                     }
                 }
 
+                return matchedFragmentIons;
+            }
+
+            // if the spectrum has no peaks
+            if (!scan.ExperimentalFragments.Any())
+            {
                 return matchedFragmentIons;
             }
 
