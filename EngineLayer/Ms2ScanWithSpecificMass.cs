@@ -81,7 +81,7 @@ namespace EngineLayer
             return neutralExperimentalFragmentMasses.OrderBy(p => p.monoisotopicMass).ToArray();
         }
 
-        public IsotopicEnvelope GetClosestExperimentalFragmentMass(double theoreticalNeutralMass)
+        public IsotopicEnvelope GetClosestExperimentalIsotopicEnvelope(double theoreticalNeutralMass)
         {
             if (DeconvolutedMonoisotopicMasses.Length == 0)
             {
@@ -103,15 +103,11 @@ namespace EngineLayer
             {
                 return index - 1;
             }
-            if (index == 0)
+            if (index == 0 || mass - DeconvolutedMonoisotopicMasses[index - 1] > DeconvolutedMonoisotopicMasses[index] - mass)
             {
                 return index;
             }
 
-            if (mass - DeconvolutedMonoisotopicMasses[index - 1] > DeconvolutedMonoisotopicMasses[index] - mass)
-            {
-                return index;
-            }
             return index - 1;
         }
     }
