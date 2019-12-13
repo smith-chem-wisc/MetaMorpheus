@@ -271,7 +271,10 @@ namespace TaskLayer
                 });
 
             var childScanNumbers = new HashSet<int>(scansWithPrecursors.SelectMany(p => p.SelectMany(v => v.ChildScans.Select(x => x.OneBasedScanNumber))));
-            var parentScans = scansWithPrecursors.Where(p => p.Any() && !childScanNumbers.Contains(p.First().OneBasedScanNumber)).SelectMany(v => v).ToArray();
+            var parentScans = scansWithPrecursors.Where(p => p.Any() && !childScanNumbers.Contains(p.First().OneBasedScanNumber))
+                .SelectMany(v => v)
+                .OrderBy(p => p.OneBasedScanNumber)
+                .ToArray();
 
             // XCorr pre-processing for low-res data. this is here because the parent/child scans may have different
             // resolutions, so this pre-processing must take place after the parent/child scans have been determined
@@ -286,14 +289,26 @@ namespace TaskLayer
 
                         if (commonParameters.DissociationType == DissociationType.LowCID && !parentScan.TheScan.MassSpectrum.XcorrProcessed)
                         {
-                            parentScan.TheScan.MassSpectrum.XCorrPrePreprocessing(0, 1969, parentScan.TheScan.IsolationMz.Value);
+                            lock (parentScan.TheScan)
+                            {
+                                if (!parentScan.TheScan.MassSpectrum.XcorrProcessed)
+                                {
+                                    parentScan.TheScan.MassSpectrum.XCorrPrePreprocessing(0, 1969, parentScan.TheScan.IsolationMz.Value);
+                                }
+                            }
                         }
 
                         foreach (var childScan in parentScan.ChildScans)
                         {
                             if (commonParameters.ChildScanDissociationType == DissociationType.LowCID && !childScan.TheScan.MassSpectrum.XcorrProcessed)
                             {
-                                childScan.TheScan.MassSpectrum.XCorrPrePreprocessing(0, 1969, childScan.TheScan.IsolationMz.Value);
+                                lock (childScan.TheScan)
+                                {
+                                    if (!childScan.TheScan.MassSpectrum.XcorrProcessed)
+                                    {
+                                        childScan.TheScan.MassSpectrum.XCorrPrePreprocessing(0, 1969, childScan.TheScan.IsolationMz.Value);
+                                    }
+                                }
                             }
                         }
                     }
