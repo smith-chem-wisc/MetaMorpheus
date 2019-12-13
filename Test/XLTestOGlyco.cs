@@ -138,13 +138,16 @@ namespace Test
             ModBox.SelectedModifications[3] = GlobalVariables.AllModsKnownDictionary["Glucosylgalactosyl on K"];
             ModBox.SelectedModifications[4] = GlobalVariables.AllModsKnownDictionary["Galactosyl on K"];
 
-            var ModBoxes = ModBox.BuildModBoxes(5).OrderBy(p => p.Mass).ToArray();
-            Assert.That(ModBoxes.Length == 251);
+            var ModBoxes = ModBox.BuildModBoxes(10).Where(p => !p.MotifNeeded.ContainsKey("K") || (p.MotifNeeded.ContainsKey("K") && p.MotifNeeded["K"].Count <= 3)).OrderBy(p => p.Mass).ToArray(); 
+            Assert.That(ModBoxes.Length == 860);
+ 
 
             PeptideWithSetModifications pep = new PeptideWithSetModifications("MGFQGPAGEP[Common Biological:Hydroxylation on P]GPEP[Common Biological:Hydroxylation on P]GQTGPAGAR", GlobalVariables.AllModsKnownDictionary);
 
             var test = ModBox.GetPossibleModSites(pep, ModBoxes[12]);
             Assert.That(test.Count == 3);
+
+            
         }
 
     }
