@@ -66,10 +66,9 @@ namespace EngineLayer
             }
             else
             {
-                foreach (var fragment in matchedFragmentIons)
+                for (int i = 0; i < matchedFragmentIons.Count; i++)
                 {
-                    double fragmentScore = 1 + (fragment.Intensity / thisScan.TotalIonCurrent);
-                    score += fragmentScore;
+                    score += 1 + matchedFragmentIons[i].Intensity / thisScan.TotalIonCurrent;
                 }
             }
 
