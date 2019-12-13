@@ -278,41 +278,44 @@ namespace TaskLayer
 
             // XCorr pre-processing for low-res data. this is here because the parent/child scans may have different
             // resolutions, so this pre-processing must take place after the parent/child scans have been determined
-            Parallel.ForEach(Partitioner.Create(0, parentScans.Length), new ParallelOptions { MaxDegreeOfParallelism = commonParameters.MaxThreadsToUsePerFile },
-                (partitionRange, loopState) =>
-                {
-                    for (int i = partitionRange.Item1; i < partitionRange.Item2; i++)
+            if (commonParameters.DissociationType == DissociationType.LowCID || commonParameters.ChildScanDissociationType == DissociationType.LowCID)
+            {
+                Parallel.ForEach(Partitioner.Create(0, parentScans.Length), new ParallelOptions { MaxDegreeOfParallelism = commonParameters.MaxThreadsToUsePerFile },
+                    (partitionRange, loopState) =>
                     {
-                        if (GlobalVariables.StopLoops) { break; }
-
-                        var parentScan = parentScans[i];
-
-                        if (commonParameters.DissociationType == DissociationType.LowCID && !parentScan.TheScan.MassSpectrum.XcorrProcessed)
+                        for (int i = partitionRange.Item1; i < partitionRange.Item2; i++)
                         {
-                            lock (parentScan.TheScan)
+                            if (GlobalVariables.StopLoops) { break; }
+
+                            var parentScan = parentScans[i];
+
+                            if (commonParameters.DissociationType == DissociationType.LowCID && !parentScan.TheScan.MassSpectrum.XcorrProcessed)
                             {
-                                if (!parentScan.TheScan.MassSpectrum.XcorrProcessed)
+                                lock (parentScan.TheScan)
                                 {
-                                    parentScan.TheScan.MassSpectrum.XCorrPrePreprocessing(0, 1969, parentScan.TheScan.IsolationMz.Value);
+                                    if (!parentScan.TheScan.MassSpectrum.XcorrProcessed)
+                                    {
+                                        parentScan.TheScan.MassSpectrum.XCorrPrePreprocessing(0, 1969, parentScan.TheScan.IsolationMz.Value);
+                                    }
                                 }
                             }
-                        }
 
-                        foreach (var childScan in parentScan.ChildScans)
-                        {
-                            if (commonParameters.ChildScanDissociationType == DissociationType.LowCID && !childScan.TheScan.MassSpectrum.XcorrProcessed)
+                            foreach (var childScan in parentScan.ChildScans)
                             {
-                                lock (childScan.TheScan)
+                                if (commonParameters.ChildScanDissociationType == DissociationType.LowCID && !childScan.TheScan.MassSpectrum.XcorrProcessed)
                                 {
-                                    if (!childScan.TheScan.MassSpectrum.XcorrProcessed)
+                                    lock (childScan.TheScan)
                                     {
-                                        childScan.TheScan.MassSpectrum.XCorrPrePreprocessing(0, 1969, childScan.TheScan.IsolationMz.Value);
+                                        if (!childScan.TheScan.MassSpectrum.XcorrProcessed)
+                                        {
+                                            childScan.TheScan.MassSpectrum.XCorrPrePreprocessing(0, 1969, childScan.TheScan.IsolationMz.Value);
+                                        }
                                     }
                                 }
                             }
                         }
-                    }
-                });
+                    });
+            }
 
             return parentScans;
         }
