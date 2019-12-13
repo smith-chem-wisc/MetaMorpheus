@@ -87,15 +87,11 @@ namespace EngineLayer
             {
                 return null;
             }
-            return ExperimentalFragments[GetClosestFragmentMass(theoreticalNeutralMass).Value];
+            return ExperimentalFragments[GetClosestFragmentMass(theoreticalNeutralMass)];
         }
 
-        private int? GetClosestFragmentMass(double mass)
+        private int GetClosestFragmentMass(double mass)
         {
-            if (DeconvolutedMonoisotopicMasses.Length == 0)
-            {
-                return null;
-            }
             int index = Array.BinarySearch(DeconvolutedMonoisotopicMasses, mass);
             if (index >= 0)
             {
@@ -103,7 +99,7 @@ namespace EngineLayer
             }
             index = ~index;
 
-            if (index >= DeconvolutedMonoisotopicMasses.Length)
+            if (index == DeconvolutedMonoisotopicMasses.Length)
             {
                 return index - 1;
             }
