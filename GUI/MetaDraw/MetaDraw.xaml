@@ -10,8 +10,8 @@
         Title="MetaDraw" 
         Drop="Window_Drop" AllowDrop="true" WindowStartupLocation="CenterScreen" MinHeight="400" MinWidth="800" Height="600" Width="1200">
     <Grid>
-        <TabControl>
-            <TabItem Header="PSM Annotation" Background="DarkGray">
+        <TabControl Name="MetaDrawViewTabControl">
+            <TabItem Name="PSMAnnotationTabControl" Header="PSM Annotation" Background="DarkGray">
                 <DockPanel>
                     <!--Settings menu-->
                     <Menu x:Name="menu" DockPanel.Dock="Top">
@@ -22,11 +22,11 @@
                     </Menu>
                     <Grid>
                         <Grid.ColumnDefinitions>
-                            <ColumnDefinition Width="2*"/>
+                            <ColumnDefinition Width="230"/>
                             <ColumnDefinition Width="Auto"/>
-                            <ColumnDefinition Width="1*"/>
+                            <ColumnDefinition Width="*"/>
                             <ColumnDefinition Width="Auto"/>
-                            <ColumnDefinition Width="7*"/>
+                            <ColumnDefinition Width="200"/>
                         </Grid.ColumnDefinitions>
 
                         <!--Left area is for loading files, displaying PSMs in data grid, etc-->
@@ -69,7 +69,7 @@
                             </Border>
 
                             <!--List of PSMs-->
-                            <GroupBox Header="Peptide Spectral Matches" Name="gbSpectra" Grid.Row="3">
+                            <GroupBox Header="Spectral Matches" Name="gbSpectra" Grid.Row="3">
                                 <Grid>
                                     <Grid.RowDefinitions>
                                         <RowDefinition Height="1*"/>
@@ -79,13 +79,13 @@
                                         IsReadOnly="True" ScrollViewer.CanContentScroll="True" Margin="0,0,0,0" 
                                         SelectedCellsChanged="dataGridScanNums_SelectedCellsChanged" CanUserDeleteRows="false" CanUserAddRows="false">
                                         <DataGrid.Columns>
-                                            <DataGridTextColumn Header="MS2 Scan" Binding="{Binding Ms2ScanNumber}"></DataGridTextColumn>
-                                            <DataGridTextColumn Header="Full Sequence" Binding="{Binding FullSequence}"></DataGridTextColumn>
+                                            <DataGridTextColumn Header="MS2 Scan" Binding="{Binding Ms2ScanNumber}" Width="70"/>
+                                            <DataGridTextColumn Header="Full Sequence" Binding="{Binding FullSequence}" Width="100" />
                                         </DataGrid.Columns>
                                     </DataGrid>
                                 </Grid>
                             </GroupBox>
-                            <Button Content="Export to PDF" Grid.Row="4" Width="100" Click="PDFButton_Click" />
+                            <Button Content="Export to PDF" Grid.Row="4" Width="100" Click="ExportPdfAnnotationButton_Click" />
                         </Grid>
 
                         <!--Moveable splitter-->
@@ -96,22 +96,18 @@
                           Width="3"/>
 
                         <!--Detailed PSM properties-->
-                        <GroupBox Header="Properties" Name="gbProperties" Grid.Column="2">
-                            <Grid>
-                                <Grid.RowDefinitions>
-                                    <RowDefinition Height="1*"/>
-                                </Grid.RowDefinitions>
-                                <DataGrid x:Name="dataGridProperties" VerticalAlignment="Stretch" ItemsSource="{Binding}" 
-                              AutoGenerateColumns="True" IsReadOnly="True" ScrollViewer.CanContentScroll="True" Grid.Row="1" Margin="0,0,0,0" 
-                              SelectedCellsChanged="dataGridProperties_SelectedCellsChanged">
-                                    <DataGrid.CellStyle>
-                                        <Style TargetType="DataGridCell">
-                                            <Setter Property="BorderThickness" Value="0"/>
-                                            <Setter Property="FocusVisualStyle" Value="{x:Null}"/>
-                                        </Style>
-                                    </DataGrid.CellStyle>
-                                </DataGrid>
-                            </Grid>
+                        <GroupBox Header="PSM Properties" Name="gbProperties" Grid.Column="4">
+                            <DataGrid x:Name="dataGridProperties" VerticalAlignment="Stretch" ItemsSource="{Binding}" 
+                                    AutoGenerateColumns="True" IsReadOnly="True" ScrollViewer.CanContentScroll="True" Grid.Row="1" Margin="0,0,0,0" 
+                                    SelectedCellsChanged="dataGridProperties_SelectedCellsChanged">
+
+                                <DataGrid.CellStyle>
+                                    <Style TargetType="DataGridCell">
+                                        <Setter Property="BorderThickness" Value="0"/>
+                                        <Setter Property="FocusVisualStyle" Value="{x:Null}"/>
+                                    </Style>
+                                </DataGrid.CellStyle>
+                            </DataGrid>
                         </GroupBox>
 
                         <!--Loading progress popup-->
@@ -132,23 +128,27 @@
                           Width="3"/>
 
                         <!--PSM annotated peaks-->
-                        <GroupBox Grid.Column="4" Header="PSM Annotation" Name="gbPSM">
+                        <Grid Grid.Column="2" Name="gbPSM">
                             <Grid Name="PsmAnnotationGrid">
                                 <Grid.RowDefinitions>
+                                    <RowDefinition Height = "Auto"></RowDefinition>
+                                    <RowDefinition Height = "Auto"></RowDefinition>
                                     <RowDefinition Height = "*"></RowDefinition>
-                                    <RowDefinition Height = "60"></RowDefinition>
                                 </Grid.RowDefinitions>
 
                                 <!--Spectrum annotation-->
-                                <TabControl>
-                                    <TabItem Header="Parent Scan View" Name="ParentScanView">
-                                        <oxy:PlotView Grid.Row="0" x:Name="plotView" Model="{Binding Model}" FontSize="16" FontStretch="Expanded" Margin="10 10 10 10"/>
+                                <TabControl BorderThickness="0" Grid.Row="2">
+                                    <!--Parent scan view, for "normal" PSMs and for parent scans-->
+                                    <TabItem Header="Parent Scan View" Name="ParentScanView" BorderThickness="0">
+                                        <oxy:PlotView x:Name="plotView" Model="{Binding Model}" FontSize="16" FontStretch="Expanded" Margin="0"/>
                                     </TabItem>
-                                    <TabItem Header="Parent/Child Scan View" Name="ParentChildScanView">
+
+                                    <!--Child scan view-->
+                                    <TabItem Header="Parent/Child Scan View" Name="ParentChildScanView" BorderThickness="0">
                                         <ItemsControl ItemsSource="{Binding Data}">
                                             <ItemsControl.ItemTemplate>
                                                 <DataTemplate>
-                                                    <Border  BorderBrush="Black" Background="LightBlue" >
+                                                    <Border BorderBrush="Black" Background="LightBlue" >
                                                         <!-- This is the Inner Grid for each element -->
                                                         <Grid>
                                                             <Grid.RowDefinitions>
@@ -180,15 +180,28 @@
                                     </TabItem>
                                 </TabControl>
 
+                                <!--Moveable splitter-->
+                                <!--<GridSplitter Grid.Row="1" 
+                                  HorizontalAlignment="Stretch"
+                                  VerticalAlignment="Center"
+                                  Background="White"
+                                  Height="3"/>-->
+
                                 <!--Canvas for drawing base sequence annotation-->
-                                <Canvas Margin="0 5 0 0" x:Name="canvas" Grid.Row="1" Height="60" Width="600" HorizontalAlignment="Stretch" VerticalAlignment="Stretch" />
+                                <ScrollViewer Name="BaseSequenceAnnotationScrollViewer" Grid.Row="0" MaxHeight="120" 
+                                              VerticalScrollBarVisibility="Auto">
+                                    <Grid Name="baseSequenceAnnotationCanvasGrid" ScrollViewer.CanContentScroll="True">
+                                        <Canvas x:Name="baseSequenceAnnotationCanvas"/>
+                                    </Grid>
+                                </ScrollViewer>
                             </Grid>
-                        </GroupBox>
+                        </Grid>
                     </Grid>
                 </DockPanel>
             </TabItem>
 
-            <!--Stats tab--><!--
+            <!--Stats tab-->
+            <!--
             <TabItem Header="Stats" Background="DarkGray">
                 <DockPanel>
                     <Grid>
@@ -198,7 +211,9 @@
                             <ColumnDefinition Width="3*"/>
                         </Grid.ColumnDefinitions>
 
-                        --><!--Left area is for loading files, displaying plot types, etc--><!--
+                        -->
+            <!--Left area is for loading files, displaying plot types, etc-->
+            <!--
                         <Grid Grid.Column="0">
                             <Grid.RowDefinitions>
                                 <RowDefinition Height="5*"/>
@@ -207,7 +222,9 @@
                                 <RowDefinition Height="5*"/>
                             </Grid.RowDefinitions>
 
-                            --><!--Select MetaMorpheus output file--><!--
+                            -->
+            <!--Select MetaMorpheus output file-->
+            <!--
                             <DockPanel Grid.Row="0" LastChildFill="True">
                                 <Label Content="PSMTSV file: " Width="120" />
                                 <Button Name="selectPsmFileButtonStat" Content="Select" DockPanel.Dock="Right" Click="selectPsmFileButton_Click" Width="45" />
@@ -220,7 +237,9 @@
                                 <Button Name="loadFilesStat" Content="Load File" Width="100" Click="loadFilesButtonStat_Click"/>
                             </DockPanel>
 
-                            --><!--List of plot options--><!--
+                            -->
+            <!--List of plot options-->
+            <!--
                             <GroupBox Header="Plot Type" Name="plotType" Grid.Row="2">
                                 <ListView x:Name="plotsListBox" ItemsSource="{Binding}" SelectionChanged ="PlotSelected" MaxHeight="400"/>
                             </GroupBox>
@@ -230,7 +249,9 @@
                             </DockPanel>
                         </Grid>
 
-                        --><!--Loading progress popup--><!--
+                        -->
+            <!--Loading progress popup-->
+            <!--
                         <Popup IsOpen="False" x:Name="prgsFeedStat" Height="80" Width="300" PlacementTarget="{Binding ElementName=MetaDrawWindow}" Placement="Center" Grid.ColumnSpan="3" Margin="168.884,230,658.275,231.6" Grid.Column="3">
                             <Border Background="LightGray" CornerRadius="2" Height="78" Width="298" HorizontalAlignment="Center" VerticalAlignment="Center">
                                 <StackPanel Height="78" Background="LightGray">
@@ -240,14 +261,18 @@
                             </Border>
                         </Popup>
 
-                        --><!--Moveable splitter--><!--
+                        -->
+            <!--Moveable splitter-->
+            <!--
                         <GridSplitter Grid.Column="1" 
                           HorizontalAlignment="Center"
                           VerticalAlignment="Stretch"
                           Background="Silver"
                           Width="2"/>
 
-                        --><!--Plot--><!--
+                        -->
+            <!--Plot-->
+            <!--
                         <GroupBox Grid.Column="2" Header="Plot">
                             <oxy:PlotView Grid.Row="0" x:Name="plotViewStat" Model="{Binding Model}" FontSize="16" FontStretch="Expanded" BorderBrush="LightGray" Grid.ColumnSpan="2"/>
                         </GroupBox>

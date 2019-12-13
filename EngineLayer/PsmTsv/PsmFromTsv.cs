@@ -34,7 +34,7 @@ namespace EngineLayer
         public string BaseSeq { get; }
         public string EssentialSeq { get; }
         public string MissedCleavage { get; }
-        public string PeptideMonoMass { get; }
+        public string MonoisotopicMass { get; }
         public string MassDiffDa { get; }
         public string MassDiffPpm { get; }
         public string ProteinName { get; }
@@ -84,7 +84,7 @@ namespace EngineLayer
             PrecursorMass = double.Parse(spl[parsedHeader[PsmTsvHeader.PrecursorMass]].Trim(), CultureInfo.InvariantCulture);
             BaseSeq = RemoveParentheses(spl[parsedHeader[PsmTsvHeader.BaseSequence]].Trim());
             FullSequence = spl[parsedHeader[PsmTsvHeader.FullSequence]];
-            PeptideMonoMass = spl[parsedHeader[PsmTsvHeader.PeptideMonoMass]].Trim();
+            MonoisotopicMass = spl[parsedHeader[PsmTsvHeader.PeptideMonoMass]].Trim();
             Score = double.Parse(spl[parsedHeader[PsmTsvHeader.Score]].Trim(), CultureInfo.InvariantCulture);
             DecoyContamTarget = spl[parsedHeader[PsmTsvHeader.DecoyContaminantTarget]].Trim();
             QValue = double.Parse(spl[parsedHeader[PsmTsvHeader.QValue]].Trim(), CultureInfo.InvariantCulture);
@@ -177,6 +177,8 @@ namespace EngineLayer
 
         private static List<MatchedFragmentIon> ReadFragmentIonsFromString(string matchedMzString, string peptideBaseSequence)
         {
+            peptideBaseSequence = peptideBaseSequence.Split(new char[] { '|' }).First();
+
             var peaks = matchedMzString.Split(MzSplit, StringSplitOptions.RemoveEmptyEntries).Select(v => v.Trim())
                 .ToList();
             peaks.RemoveAll(p => p.Contains("\""));
@@ -215,7 +217,7 @@ namespace EngineLayer
                 int aminoAcidPosition = fragmentNumber;
                 if (terminus == FragmentationTerminus.C)
                 {
-                    aminoAcidPosition = peptideBaseSequence.Length - fragmentNumber;
+                    aminoAcidPosition = peptideBaseSequence.Length - fragmentNumber + 1;
                 }
 
                 var t = new NeutralTerminusFragment(terminus, mz.ToMass(z) - DissociationTypeCollection.GetMassShiftFromProductType(productType), fragmentNumber, aminoAcidPosition);
