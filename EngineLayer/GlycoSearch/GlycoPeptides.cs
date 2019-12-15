@@ -314,6 +314,38 @@ namespace EngineLayer.GlycoSearch
 
             return permutateModPositions;
         }
+
+        public static int[] GetFragmentHash(List<Product> products, Tuple<int, int[]> keyValuePair, GlycanBox[] OGlycanBoxes, int FragmentBinsPerDalton)
+        {
+            double[] newFragments = products.Select(p => p.NeutralMass).ToArray();
+            var len = products.Count / 3;
+            if (keyValuePair.Item2!=null)
+            {
+                for (int i = 0; i < keyValuePair.Item2.Length; i++)
+                {
+                    var j = keyValuePair.Item2[i];
+                    while (j <= len + 1)
+                    {
+                        newFragments[j - 2] += (double)GlycanBox.GlobalOGlycans[OGlycanBoxes[keyValuePair.Item1].GlycanIds[i]].Mass / 1E5;
+                        j++;
+                    }
+                    j = keyValuePair.Item2[i];
+                    while (j >= 3)
+                    {
+                        newFragments[len * 3 - j + 2] += (double)GlycanBox.GlobalOGlycans[OGlycanBoxes[keyValuePair.Item1].GlycanIds[i]].Mass / 1E5;
+                        j--;
+                    }
+                }
+            }
+
+
+            int[] fragmentHash = new int[products.Count];
+            for (int i = 0; i < products.Count; i++)
+            {
+                fragmentHash[i] = (int)Math.Round(newFragments[i] * FragmentBinsPerDalton);
+            }
+            return fragmentHash;
+        }
         #endregion
     }
 }
