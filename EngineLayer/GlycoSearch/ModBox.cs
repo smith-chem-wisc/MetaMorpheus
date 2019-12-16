@@ -6,6 +6,7 @@ using System;
 using Proteomics;
 using MassSpectrometry;
 using Proteomics.ProteolyticDigestion;
+using Proteomics.Fragmentation;
 
 namespace EngineLayer.GlycoSearch
 {
@@ -178,6 +179,36 @@ namespace EngineLayer.GlycoSearch
                 peptide.OneBasedEndResidueInProtein, peptide.CleavageSpecificityForFdrCategory, peptide.PeptideDescription, peptide.MissedCleavages, testMods, peptide.NumFixedMods);
 
             return testPeptide;
+        }
+
+        public static int[] GetFragmentHash(List<Product> products, Tuple<int, int>[] keyValuePair, int FragmentBinsPerDalton)
+        {
+            double[] newFragments = products.Select(p => p.NeutralMass).ToArray();
+            var len = products.Count / 2;
+
+            for (int i = 0; i < keyValuePair.Length; i++)
+            {
+                var j = keyValuePair[i].Item1;
+                var modj = keyValuePair[i].Item2;
+                while (j <= len + 1)
+                {
+                    newFragments[j - 2] += (double)ModBox.SelectedModifications[modj].MonoisotopicMass;
+                    j++;
+                }
+                j = keyValuePair[i].Item1;
+                while (j >= 3)
+                {
+                    newFragments[len * 2 - j + 2] += (double)ModBox.SelectedModifications[modj].MonoisotopicMass;
+                    j--;
+                }
+            }
+
+            int[] fragmentHash = new int[products.Count];
+            for (int i = 0; i < products.Count; i++)
+            {
+                fragmentHash[i] = (int)Math.Round(newFragments[i] * FragmentBinsPerDalton);
+            }
+            return fragmentHash;
         }
 
         public ModBox(int[] ids)

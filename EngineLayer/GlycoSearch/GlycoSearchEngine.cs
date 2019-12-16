@@ -585,7 +585,7 @@ namespace EngineLayer.GlycoSearch
             return psmGlyco;
         }
 
-        private List<GlycoSpectralMatch> FindModPep(Ms2ScanWithSpecificMass theScan, List<int> idsOfPeptidesPossiblyObserved, int scanIndex, int scoreCutOff)
+        private List<GlycoSpectralMatch> FindModPepHash(Ms2ScanWithSpecificMass theScan, List<int> idsOfPeptidesPossiblyObserved, int scanIndex, List<int> allBinsToSearch, int scoreCutOff)
         {
             List<GlycoSpectralMatch> possibleMatches = new List<GlycoSpectralMatch>();
 
@@ -612,56 +612,43 @@ namespace EngineLayer.GlycoSearch
                     if (possibleGlycanMassLow < ModBoxes.First().Mass || possibleGlycanMassLow > ModBoxes.Last().Mass)
                     {
                         continue;
-                    }
+                    }              
 
-                    Dictionary<ModBox, List<Tuple<int, int>[]>> glycanBox_localization = new Dictionary<ModBox, List<Tuple<int, int>[]>>();
+                    List<Product> products = theScanBestPeptide.Fragment(CommonParameters.ChildScanDissociationType, FragmentationTerminus.Both).ToList();
+                    HashSet<int> allPeaksForLocalization = new HashSet<int>(allBinsToSearch);
+
                     double bestLocalizedScore = 0;
-
+                    List<Tuple<int, Tuple<int, int>[]>> localizationCandidates = new List<Tuple<int, Tuple<int, int>[]>>();
+                    
                     int iDLow = GlycoPeptides.BinarySearchGetIndex(ModBoxes.Select(p => p.Mass).ToArray(), possibleGlycanMassLow);
 
                     while (iDLow < ModBoxes.Count() && PrecusorSearchMode.Within(theScan.PrecursorMass, theScanBestPeptide.MonoisotopicMass + ModBoxes[iDLow].Mass))
-                    {
+                    {                    
                         var permutateModPositions = ModBox.GetPossibleModSites(theScanBestPeptide, ModBoxes[iDLow]);
 
-                        foreach (var theModPositions in permutateModPositions)
+                        for (int i = 0; i < permutateModPositions.Count; i++)
                         {
-                            var peptideWithMod = ModBox.GetTheoreticalPeptide(theModPositions.ToArray(), theScanBestPeptide, ModBoxes[iDLow]);
+                            var fragmentHash = ModBox.GetFragmentHash(products, permutateModPositions[i], FragmentBinsPerDalton);
 
-                            var fragmentsForEachGlycoPeptide = peptideWithMod.Fragment(CommonParameters.DissociationType, FragmentationTerminus.Both).ToList();
-
-                            var matchedIons = MatchFragmentIons(theScan, fragmentsForEachGlycoPeptide, CommonParameters);
-
-                            double score = CalculatePeptideScore(theScan.TheScan, matchedIons);
-
-                            if (score >= scoreCutOff && bestLocalizedScore < score)
+                            int currentLocalizationScore = allPeaksForLocalization.Intersect(fragmentHash).Count();
+                            if (currentLocalizationScore > bestLocalizedScore)
                             {
-                                glycanBox_localization.Clear();
-
-                                bestLocalizedScore = score;
-                                glycanBox_localization.Add(ModBoxes[iDLow], new List<Tuple<int, int>[]> { theModPositions });
-
+                                localizationCandidates.Clear();
+                                localizationCandidates.Add(new Tuple<int, Tuple<int, int>[]>(iDLow, permutateModPositions[i]));
                             }
-                            else if (score >= scoreCutOff && bestLocalizedScore == score)
+                            else if (bestLocalizedScore > 0 && currentLocalizationScore == bestLocalizedScore)
                             {
-                                if (glycanBox_localization.ContainsKey(ModBoxes[iDLow]))
-                                {
-                                    glycanBox_localization[ModBoxes[iDLow]].Add(theModPositions);
-                                }
-                                else
-                                {
-                                    glycanBox_localization.Add(ModBoxes[iDLow], new List<Tuple<int, int>[]> { theModPositions });
-                                }
+                                localizationCandidates.Add(new Tuple<int, Tuple<int, int>[]>(iDLow, permutateModPositions[i]));
                             }
-
                         }
 
                         iDLow++;
                     }
 
                     //In theory, the peptide_localization shouldn't be null, but it is possible that the real score is smaller than indexed score.
-                    if (glycanBox_localization.Count > 0)
+                    if (localizationCandidates.Count > 0)
                     {
-                        var psmGlyco = CreateGsm(theScan, scanIndex, ind, theScanBestPeptide, glycanBox_localization, CommonParameters);
+                        var psmGlyco = CreateGsm(theScan, scanIndex, ind, theScanBestPeptide, localizationCandidates, CommonParameters);
 
                         possibleMatches.Add(psmGlyco);
                     }
@@ -676,9 +663,9 @@ namespace EngineLayer.GlycoSearch
             return possibleMatches;
         }
 
-        private GlycoSpectralMatch CreateGsm(Ms2ScanWithSpecificMass theScan, int scanIndex, int rank, PeptideWithSetModifications peptide, Dictionary<ModBox, List<Tuple<int, int>[]>> glycanBox_localization, CommonParameters commonParameters)
+        private GlycoSpectralMatch CreateGsm(Ms2ScanWithSpecificMass theScan, int scanIndex, int rank, PeptideWithSetModifications peptide, List<Tuple<int, Tuple<int, int>[]>> localizationCandidates, CommonParameters commonParameters)
         {
-            var peptideWithMod = ModBox.GetTheoreticalPeptide(glycanBox_localization.First().Value.First(), peptide, glycanBox_localization.First().Key);
+            var peptideWithMod = ModBox.GetTheoreticalPeptide(localizationCandidates.First().Item2, peptide, ModBoxes[localizationCandidates.First().Item1]);
 
             var fragmentsForEachGlycoPeptide = peptideWithMod.Fragment(CommonParameters.DissociationType, FragmentationTerminus.Both).ToList();
 

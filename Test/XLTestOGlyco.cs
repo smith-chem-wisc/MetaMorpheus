@@ -161,6 +161,7 @@ namespace Test
         [Test]
         public static void OGlycoTest_GetPossibleModSites()
         {
+            //Test ModBox.BuildModBoxes
             ModBox.SelectedModifications = new Modification[5];
             ModBox.SelectedModifications[0] = GlobalVariables.AllModsKnownDictionary["Oxidation on M"];
             ModBox.SelectedModifications[1] = GlobalVariables.AllModsKnownDictionary["Hydroxylation on P"];
@@ -170,14 +171,22 @@ namespace Test
 
             var ModBoxes = ModBox.BuildModBoxes(10).Where(p => !p.MotifNeeded.ContainsKey("K") || (p.MotifNeeded.ContainsKey("K") && p.MotifNeeded["K"].Count <= 3)).OrderBy(p => p.Mass).ToArray(); 
             Assert.That(ModBoxes.Length == 860);
- 
 
+            //Test ModBox.GetPossibleModSites
             PeptideWithSetModifications pep = new PeptideWithSetModifications("MGFQGPAGEP[Common Biological:Hydroxylation on P]GPEP[Common Biological:Hydroxylation on P]GQTGPAGAR", GlobalVariables.AllModsKnownDictionary);
 
             var test = ModBox.GetPossibleModSites(pep, ModBoxes[12]);
             Assert.That(test.Count == 3);
 
-            
+            //Test  ModBox.GetFragmentHash
+            PeptideWithSetModifications pep_original = new PeptideWithSetModifications("MGFQGPAGEPGPEPGQTGPAGAR", GlobalVariables.AllModsKnownDictionary);
+            var frags = pep_original.Fragment(DissociationType.HCD, FragmentationTerminus.Both);
+            var frags_mod = pep.Fragment(DissociationType.HCD, FragmentationTerminus.Both);
+
+            Tuple<int, int>[] tuples = new Tuple<int, int>[2];
+            tuples[0] = new Tuple<int, int>(11, 1);
+            tuples[1] = new Tuple<int, int>(15, 1);
+            var fraghash = ModBox.GetFragmentHash(frags.ToList(), tuples, 1000);
         }
 
     }
