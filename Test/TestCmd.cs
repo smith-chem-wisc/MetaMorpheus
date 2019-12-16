@@ -12,20 +12,20 @@ namespace Test
         [Ignore("Ignored on AppVeyor")]
         public static void TestCommandLineMicroVignette()
         {
-            Stopwatch s = new Stopwatch();
-            s.Start();
+            //Stopwatch s = new Stopwatch();
+            //s.Start();
 
-            string path = Path.Combine(TestContext.CurrentContext.TestDirectory, @"CommandLineMicroVignette");
+            //string path = Path.Combine(TestContext.CurrentContext.TestDirectory, @"CommandLineMicroVignette");
 
-            // run the micro vignette via command-line
-            MetaMorpheusCommandLine.Program.Main(new string[] {
-                "-v",
-                "-o" + path } );
+            //// run the micro vignette via command-line
+            //MetaMorpheusCommandLine.Program.Main(new string[] {
+            //    "-v",
+            //    "-o" + path } );
 
-            s.Stop();
-            Console.WriteLine("Command-line microvignette took: " + s.ToString());
+            //s.Stop();
+            //Console.WriteLine("Command-line microvignette took: " + s.ToString());
 
-            Directory.Delete(path, true);
+            //Directory.Delete(path, true);
         }
     }
 }
