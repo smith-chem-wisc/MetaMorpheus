@@ -390,6 +390,7 @@ namespace TaskLayer
 
         public MyTaskResults RunTask(string output_folder, List<DbForTask> currentProteinDbFilenameList, List<string> currentRawDataFilepathList, string displayName)
         {
+            DetermineAnalyteType(CommonParameters);
             StartingSingleTask(displayName);
 
             var tomlFileName = Path.Combine(Directory.GetParent(output_folder).ToString(), "Task Settings", displayName + "config.toml");
@@ -850,6 +851,26 @@ namespace TaskLayer
             {
                 Status("Reading fragment index...", new List<string> { taskId });
                 secondFragmentIndex = ReadFragmentIndex(Path.Combine(pathToFolderWithIndices, SecondFragmentIndexFileName));
+            }
+        }
+
+        public static void DetermineAnalyteType(CommonParameters commonParameters)
+        {
+            // changes the name of the analytes from "peptide" to "proteoform" if the protease is set to top-down
+            
+            // TODO: note that this will not function well if the user is using file-specific settings, but it's assumed
+            // that bottom-up and top-down data is not being searched in the same task
+
+            if (commonParameters != null 
+                && commonParameters.DigestionParams != null 
+                && commonParameters.DigestionParams.Protease != null 
+                && commonParameters.DigestionParams.Protease.Name == "top-down")
+            {
+                GlobalVariables.AnalyteType = "Proteoform";
+            }
+            else
+            {
+                GlobalVariables.AnalyteType = "Peptide";
             }
         }
     }
