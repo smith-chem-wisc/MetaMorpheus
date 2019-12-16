@@ -27,21 +27,18 @@ namespace MetaMorpheusCommandLine
         [Option('o', HelpText = "Output folder")]
         public string OutputFolder { get; set; }
 
-        [Option('g', HelpText = "Generate default task tomls (must also specify the -o parameter)")]
+        [Option('g', HelpText = "Generate default task tomls")]
         public bool GenerateDefaultTomls { get; set; }
 
         [Option('v', HelpText = "Runs a small test search using a database and yeast data file included with this MetaMorpheus installation")]
         public bool RunMicroVignette { get; set; }
-
-        public CommandLineSettings()
+        
+        public void ValidateCommandLineSettings()
         {
             Spectra = _spectra == null ? new List<string>() : _spectra.ToList();
             Tasks = _tasks == null ? new List<string>() : _tasks.ToList();
             Databases = _databases == null ? new List<string>() : _databases.ToList();
-        }
-        
-        public void ValidateCommandLineSettings()
-        {
+
             if ((GenerateDefaultTomls || RunMicroVignette) && OutputFolder == null)
             {
                 throw new MetaMorpheusException("An output path must be specified with the -o parameter.");
@@ -52,28 +49,28 @@ namespace MetaMorpheusCommandLine
                 return;
             }
 
-            if (OutputFolder == null && Spectra.Count() < 1 && Tasks.Count() < 1 && Databases.Count() < 1 && Spectra.Count() < 1)
+            if (OutputFolder == null && Spectra.Count < 1 && Tasks.Count < 1 && Databases.Count < 1 && Spectra.Count < 1)
             {
                 throw new MetaMorpheusException("Use the --help parameter to view all parameters (e.g., \"CMD.exe --help\")");
             }
 
-            if (OutputFolder == null && Spectra.Count() > 0)
+            if (OutputFolder == null && Spectra.Count > 0)
             {
                 var pathOfFirstSpectraFile = Path.GetDirectoryName(Spectra.First());
                 OutputFolder = Path.Combine(pathOfFirstSpectraFile, @"$DATETIME");
             }
 
-            if (Tasks.Count() < 1)
+            if (Tasks.Count < 1)
             {
                 throw new MetaMorpheusException("At least one task must be specified.");
             }
 
-            if (Databases.Count() < 1)
+            if (Databases.Count < 1)
             {
                 throw new MetaMorpheusException("At least one protein database must be specified.");
             }
 
-            if (Spectra.Count() < 1)
+            if (Spectra.Count < 1)
             {
                 throw new MetaMorpheusException("At least one spectra file must be specified.");
             }
