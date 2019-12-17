@@ -59,8 +59,13 @@ namespace Test
             Crosslinker crosslinker = GlobalVariables.Crosslinkers.Where(p => p.CrosslinkerName == "DSS").First();
             Assert.AreEqual(crosslinker.CrosslinkerModSites, "K");
             Assert.AreEqual(Residue.GetResidue(crosslinker.CrosslinkerModSites).MonoisotopicMass, 128.09496301518999, 1e-9);
-            var n = pep.Fragment(DissociationType.HCD, FragmentationTerminus.N);
-            var c = pep.Fragment(DissociationType.HCD, FragmentationTerminus.C);
+
+            var n = new List<Product>();
+            pep.Fragment(DissociationType.HCD, FragmentationTerminus.N, n);
+
+            var c = new List<Product>();
+            pep.Fragment(DissociationType.HCD, FragmentationTerminus.C, c);
+
             Assert.AreEqual(n.Count(), 4);
             Assert.AreEqual(c.Count(), 4);
             Assert.AreEqual(c.First().NeutralMass, 146.10552769899999, 1e-6);
@@ -69,8 +74,10 @@ namespace Test
 
             var pep2 = ye[2];
             Assert.AreEqual("MNNNKQQQQ", pep2.BaseSequence);
-            var n2 = pep2.Fragment(DissociationType.HCD, FragmentationTerminus.N);
-            var c2 = pep2.Fragment(DissociationType.HCD, FragmentationTerminus.C);
+            var n2 = new List<Product>();
+            pep2.Fragment(DissociationType.HCD, FragmentationTerminus.N, n2);
+            var c2 = new List<Product>();
+            pep2.Fragment(DissociationType.HCD, FragmentationTerminus.C, c2);
             Assert.AreEqual(n2.Count(), 8);
             Assert.AreEqual(c2.Count(), 8);
             var x2 = CrosslinkSpectralMatch.GetPossibleCrosslinkerModSites(crosslinker.CrosslinkerModSites.ToCharArray(), pep2, digestionParams.InitiatorMethionineBehavior, false).ToArray();
@@ -504,7 +511,9 @@ namespace Test
 
             var deadendPeptide = protein.Digest(new DigestionParams(), new List<Modification> { deadend }, new List<Modification>()).First();
 
-            double[] mz = deadendPeptide.Fragment(DissociationType.HCD, FragmentationTerminus.Both).Select(p => p.NeutralMass.ToMz(1)).OrderBy(v => v).ToArray();
+            var frags = new List<Product>();
+            deadendPeptide.Fragment(DissociationType.HCD, FragmentationTerminus.Both, frags);
+            double[] mz = frags.Select(p => p.NeutralMass.ToMz(1)).OrderBy(v => v).ToArray();
             double[] intensities = new[] { 1.0, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1 };
 
             MzSpectrum spectrum = new MzSpectrum(mz, intensities, false);
@@ -646,7 +655,9 @@ namespace Test
 
             var deadendPeptide = protein.Digest(new DigestionParams(), new List<Modification> { deadend }, new List<Modification>()).First();
 
-            double[] mz = deadendPeptide.Fragment(DissociationType.HCD, FragmentationTerminus.Both).Select(p => p.NeutralMass.ToMz(1)).OrderBy(v => v).ToArray();
+            var frags = new List<Product>();
+            deadendPeptide.Fragment(DissociationType.HCD, FragmentationTerminus.Both, frags);
+            double[] mz = frags.Select(p => p.NeutralMass.ToMz(1)).OrderBy(v => v).ToArray();
             double[] intensities = new[] { 1.0, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1 };
 
             MzSpectrum spectrum = new MzSpectrum(mz, intensities, false);
