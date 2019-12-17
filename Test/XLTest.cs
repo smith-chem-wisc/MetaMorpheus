@@ -74,7 +74,7 @@ namespace Test
             ModificationMotif.TryGetMotif("K", out ModificationMotif motif1);
             Modification mod1 = new Modification(_originalId: "Oxidation of K", _modificationType: "Common Variable", _target: motif1, _locationRestriction: "Anywhere.", _monoisotopicMass: 15.99491461957);
             ModificationMotif.TryGetMotif("C", out ModificationMotif motif2);
-            var pep_mod = prot_mod.Digest(digestionParams, new List<Modification>(), new List<Modification>() { mod1 }).ToList();
+            var pep_mod = prot_mod.Digest(digestionParams, new List<Modification>(), new List<Modification> { mod1 }).ToList();
 
             var pep3 = pep_mod.Where(p => p.FullSequence == "KNNNK[Common Variable:Oxidation on K]").First();
             Assert.That(pep3.FullSequence == "KNNNK[Common Variable:Oxidation on K]");
@@ -277,7 +277,6 @@ namespace Test
                     using (GZipStream decompressionStream = new GZipStream(originalFileStream, CompressionMode.Decompress))
                     {
                         decompressionStream.CopyTo(decompressedFileStream);
-                        Console.WriteLine($"Decompressed: {fileToDecompress.Name}");
                     }
                 }
             }
@@ -315,17 +314,7 @@ namespace Test
                     csm.ResolveProteinPosAmbiguitiesForXl();
                 }
 
-                //DELETE THIS DEBUG CODE
-                var orderedCsmsPerScan_test = XLSearchTask.RemoveDuplicateFromCsmsPerScan(csmsPerScan).ToList();
-                var test = orderedCsmsPerScan_test.Where(p => p.FullSequence == "ILNGLTHDEKEFTIVVANPAKTDPDIK").ToList();
                 var orderedCsmsPerScan = XLSearchTask.RemoveDuplicateFromCsmsPerScan(csmsPerScan).OrderByDescending(p => p.XLTotalScore).ThenBy(p => p.FullSequence + ((p.BetaPeptide == null) ? "" : p.BetaPeptide.FullSequence)).ToList();
-                var test2 = orderedCsmsPerScan.Where(p => p.FullSequence == "ILNGLTHDEKEFTIVVANPAKTDPDIK").ToList();
-
-                if (test2.Count > 0)
-                {
-                    int j = 5;
-                }
-                //END DELETE THIS DEBUG CODE
 
                 ListOfCsmsPerMS2ScanParsimony.Add(orderedCsmsPerScan);
             }
@@ -1287,7 +1276,7 @@ namespace Test
                 Scans = ScansHere.ToArray();
             }
 
-            public string FilePath
+            public static string FilePath
             {
                 get
                 {
@@ -1295,7 +1284,7 @@ namespace Test
                 }
             }
 
-            public string Name
+            public static string Name
             {
                 get
                 {
