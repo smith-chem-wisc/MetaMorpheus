@@ -22,12 +22,14 @@ namespace EngineLayer.NonSpecificEnzymeSearch
         readonly CommonParameters ModifiedParametersNoComp;
         readonly List<ProductType> ProductTypesToSearch;
         readonly List<Modification> VariableTerminalModifications;
+        readonly List<int>[] CoisolationIndex;
 
-        public NonSpecificEnzymeSearchEngine(PeptideSpectralMatch[][] globalPsms, Ms2ScanWithSpecificMass[] listOfSortedms2Scans,
+        public NonSpecificEnzymeSearchEngine(PeptideSpectralMatch[][] globalPsms, Ms2ScanWithSpecificMass[] listOfSortedms2Scans, List<int>[] coisolationIndex,
             List<PeptideWithSetModifications> peptideIndex, List<int>[] fragmentIndex, List<int>[] precursorIndex, int currentPartition,
             CommonParameters commonParameters, List<Modification> variableModifications, MassDiffAcceptor massDiffAcceptor, double maximumMassThatFragmentIonScoreIsDoubled, List<string> nestedIds)
             : base(null, listOfSortedms2Scans, peptideIndex, fragmentIndex, currentPartition, commonParameters, massDiffAcceptor, maximumMassThatFragmentIonScoreIsDoubled, nestedIds)
         {
+            CoisolationIndex = coisolationIndex;
             PrecursorIndex = precursorIndex;
             MinimumPeptideLength = commonParameters.DigestionParams.MinPeptideLength;
             GlobalCategorySpecificPsms = globalPsms;
