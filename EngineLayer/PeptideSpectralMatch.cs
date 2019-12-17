@@ -129,7 +129,6 @@ namespace EngineLayer
         public void RemoveThisAmbiguousPeptide(int notch, PeptideWithSetModifications pwsm)
         {
             _BestMatchingPeptides.Remove((notch, pwsm));
-            PeptidesToMatchingFragments.Remove(pwsm);
             this.ResolveAllAmbiguities();
         }
 

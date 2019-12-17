@@ -65,8 +65,7 @@ namespace Test
             Assert.AreEqual(n.Count(), 4);
             Assert.AreEqual(c.Count(), 4);
             Assert.AreEqual(c.First().NeutralMass, 146.10552769899999, 1e-6);
-            List<int> x;
-            CrosslinkSpectralMatch.GetPossibleCrosslinkerModSites(crosslinker.CrosslinkerModSites.ToCharArray(), pep, digestionParams.InitiatorMethionineBehavior, false, out x);
+            CrosslinkSpectralMatch.GetPossibleCrosslinkerModSites(crosslinker.CrosslinkerModSites.ToCharArray(), pep, digestionParams.InitiatorMethionineBehavior, false, out List<int> x);
             Assert.That(x == null);
 
             var pep2 = ye[2];
@@ -75,8 +74,7 @@ namespace Test
             var c2 = pep2.Fragment(DissociationType.HCD, FragmentationTerminus.C);
             Assert.AreEqual(n2.Count(), 8);
             Assert.AreEqual(c2.Count(), 8);
-            List<int> x2;
-            CrosslinkSpectralMatch.GetPossibleCrosslinkerModSites(crosslinker.CrosslinkerModSites.ToCharArray(), pep2, digestionParams.InitiatorMethionineBehavior, false, out x2);
+            CrosslinkSpectralMatch.GetPossibleCrosslinkerModSites(crosslinker.CrosslinkerModSites.ToCharArray(), pep2, digestionParams.InitiatorMethionineBehavior, false, out List<int> x2);
             Assert.AreEqual(x2[0], 5);
 
             //TestXLPosCal on peptide with modification.
@@ -88,39 +86,31 @@ namespace Test
 
             var pep3 = pep_mod.Where(p => p.FullSequence == "KNNNK[Common Variable:Oxidation on K]").First();
             Assert.That(pep3.FullSequence == "KNNNK[Common Variable:Oxidation on K]");
-            List<int> x3_f;
-            List<int> x3_t;
-            CrosslinkSpectralMatch.GetPossibleCrosslinkerModSites(crosslinker.CrosslinkerModSites.ToCharArray(), pep3, digestionParams.InitiatorMethionineBehavior, true, out x3_f);
-            CrosslinkSpectralMatch.GetPossibleCrosslinkerModSites(crosslinker.CrosslinkerModSites.ToCharArray(), pep3, digestionParams.InitiatorMethionineBehavior, false, out x3_t);
+            CrosslinkSpectralMatch.GetPossibleCrosslinkerModSites(crosslinker.CrosslinkerModSites.ToCharArray(), pep3, digestionParams.InitiatorMethionineBehavior, true, out List<int> x3_f);
+            CrosslinkSpectralMatch.GetPossibleCrosslinkerModSites(crosslinker.CrosslinkerModSites.ToCharArray(), pep3, digestionParams.InitiatorMethionineBehavior, false, out List<int> x3_t);
             Assert.That(x3_f.Count() == 1 && x3_f[0] == 1);
             Assert.That(x3_t.Count() == 1);
 
             var pep4 = pep_mod.Where(p => p.FullSequence == "NNNK[Common Variable:Oxidation on K]QRKQQK").First();
             Assert.That(pep4.FullSequence == "NNNK[Common Variable:Oxidation on K]QRKQQK");
-            List<int> x4_f;
-            List<int> x4_t;
-            CrosslinkSpectralMatch.GetPossibleCrosslinkerModSites(crosslinker.CrosslinkerModSites.ToCharArray(), pep4, digestionParams.InitiatorMethionineBehavior, true, out x4_f);
-            CrosslinkSpectralMatch.GetPossibleCrosslinkerModSites(crosslinker.CrosslinkerModSites.ToCharArray(), pep4, digestionParams.InitiatorMethionineBehavior, false, out x4_t);
+            CrosslinkSpectralMatch.GetPossibleCrosslinkerModSites(crosslinker.CrosslinkerModSites.ToCharArray(), pep4, digestionParams.InitiatorMethionineBehavior, true, out List<int> x4_f);
+            CrosslinkSpectralMatch.GetPossibleCrosslinkerModSites(crosslinker.CrosslinkerModSites.ToCharArray(), pep4, digestionParams.InitiatorMethionineBehavior, false, out List<int> x4_t);
             //Both 'K' are crosslinked becuase the last 'K' is at protein C terminal
             Assert.That(x4_f[0] == 7 && x4_f[1] == 10 && x4_f.Count() == 2);
             Assert.That(x4_t[0] == 7 && x4_t[1] == 10 && x4_t.Count() == 2);
 
             var pep5 = pep_mod.Where(p => p.FullSequence == "KQQK").First();
             Assert.That(pep5.FullSequence == "KQQK");
-            List<int> x5_f;
-            List<int> x5_t;
-            CrosslinkSpectralMatch.GetPossibleCrosslinkerModSites(crosslinker.CrosslinkerModSites.ToCharArray(), pep5, digestionParams.InitiatorMethionineBehavior, true, out x5_f);
-            CrosslinkSpectralMatch.GetPossibleCrosslinkerModSites(crosslinker.CrosslinkerModSites.ToCharArray(), pep5, digestionParams.InitiatorMethionineBehavior, false, out x5_t);
+            CrosslinkSpectralMatch.GetPossibleCrosslinkerModSites(crosslinker.CrosslinkerModSites.ToCharArray(), pep5, digestionParams.InitiatorMethionineBehavior, true, out List<int> x5_f);
+            CrosslinkSpectralMatch.GetPossibleCrosslinkerModSites(crosslinker.CrosslinkerModSites.ToCharArray(), pep5, digestionParams.InitiatorMethionineBehavior, false, out List<int> x5_t);
             //Both 'K' are crosslinked becuase the last 'K' is at protein C terminal
             Assert.That(x5_f[0] == 1 && x5_f.Count() == 2);
             Assert.That(x5_t[0] == 1 && x5_t.Count() == 2);
 
             var pep6 = pep_mod.Where(p => p.FullSequence == "KNNNK").First();
             Assert.That(pep6.FullSequence == "KNNNK");
-            List<int> x6_f;
-            List<int> x6_t;
-            CrosslinkSpectralMatch.GetPossibleCrosslinkerModSites(crosslinker.CrosslinkerModSites.ToCharArray(), pep6, digestionParams.InitiatorMethionineBehavior, true, out x6_f);
-            CrosslinkSpectralMatch.GetPossibleCrosslinkerModSites(crosslinker.CrosslinkerModSites.ToCharArray(), pep6, digestionParams.InitiatorMethionineBehavior, false, out x6_t);
+            CrosslinkSpectralMatch.GetPossibleCrosslinkerModSites(crosslinker.CrosslinkerModSites.ToCharArray(), pep6, digestionParams.InitiatorMethionineBehavior, true, out List<int> x6_f);
+            CrosslinkSpectralMatch.GetPossibleCrosslinkerModSites(crosslinker.CrosslinkerModSites.ToCharArray(), pep6, digestionParams.InitiatorMethionineBehavior, false, out List<int> x6_t);
             //Both 'K' are crosslinked becuase the last 'K' is at protein C terminal
             Assert.That(x6_f[0] == 1 && x6_f.Count() == 2);
             Assert.That(x6_t[0] == 1 && x6_t.Count() == 1);
@@ -151,8 +141,10 @@ namespace Test
             var commonParameters = new CommonParameters(doPrecursorDeconvolution: false, dissociationType: DissociationType.EThcD,
                 scoreCutoff: 1, digestionParams: new DigestionParams(minPeptideLength: 5), precursorMassTolerance: new PpmTolerance(10));
 
-            var xlSearchParameters = new XlSearchParameters();
-            xlSearchParameters.CrosslinkAtCleavageSite = true;
+            var xlSearchParameters = new XlSearchParameters
+            {
+                CrosslinkAtCleavageSite = true
+            };
 
             //Create databases contain two protein.
             var proteinList = new List<Protein> { new Protein("EKVLTSSAR", "Fake01"), new Protein("LSQKFPK", "Fake02") };
@@ -256,8 +248,10 @@ namespace Test
             var commonParameters = new CommonParameters(doPrecursorDeconvolution: false, dissociationType: DissociationType.HCD,
                 scoreCutoff: 1, digestionParams: new DigestionParams(minPeptideLength: 5), precursorMassTolerance: new PpmTolerance(10));
 
-            var xlSearchParameters = new XlSearchParameters();
-            xlSearchParameters.CrosslinkAtCleavageSite = true;
+            var xlSearchParameters = new XlSearchParameters
+            {
+                CrosslinkAtCleavageSite = true
+            };
 
             //Create databases contain two protein.
             List<Protein> proteinList = ProteinDbLoader.LoadProteinFasta(Path.Combine(TestContext.CurrentContext.TestDirectory, @"XlTestData/YeastPol2.fasta"), true, DecoyType.Reverse, false, ProteinDbLoader.UniprotAccessionRegex, ProteinDbLoader.UniprotFullNameRegex, ProteinDbLoader.UniprotFullNameRegex, ProteinDbLoader.UniprotGeneNameRegex,
@@ -520,8 +514,10 @@ namespace Test
             //test PsmData for intra crosslink
             CrosslinkSpectralMatch intraCsm = firstCsmsFromListsOfCsms.Where(c => c.CrossType == PsmCrossType.Intra).First();
 
-            Dictionary<string, float> medianFragmentMassError = new Dictionary<string, float>();
-            medianFragmentMassError.Add(intraCsm.FullFilePath, 0);
+            Dictionary<string, float> medianFragmentMassError = new Dictionary<string, float>
+            {
+                { intraCsm.FullFilePath, 0 }
+            };
 
             var intraPsmData = PEP_Analysis.CreateOnePsmDataEntry("crosslink", intraCsm, sequenceToPsmCount, fileSpecificTimeDependantHydrophobicityAverageAndDeviation_unmodified, fileSpecificTimeDependantHydrophobicityAverageAndDeviation_modified, medianFragmentMassError, chargeStateMode, intraCsm.BestMatchingPeptides.First().Peptide, trainingVariables, intraCsm.BestMatchingPeptides.First().Notch, !intraCsm.BestMatchingPeptides.First().Peptide.Protein.IsDecoy);
             Assert.That(intraPsmData.AbsoluteAverageFragmentMassErrorFromMedian, Is.EqualTo(1.061).Within(0.001));
@@ -790,8 +786,10 @@ namespace Test
         [Test]
         public static void XLSearchWithGeneratedIndices()
         {
-            XLSearchTask xlSearchTask = new XLSearchTask();
-            xlSearchTask.CommonParameters = new CommonParameters();
+            XLSearchTask xlSearchTask = new XLSearchTask
+            {
+                CommonParameters = new CommonParameters()
+            };
             string myFile = Path.Combine(TestContext.CurrentContext.TestDirectory, @"XlTestData\BSA_DSSO_ETchD6010.mgf");
             string myDatabase = Path.Combine(TestContext.CurrentContext.TestDirectory, @"XlTestData\BSA.fasta");
             string folderPath = Path.Combine(TestContext.CurrentContext.TestDirectory, @"TestXLSearch");
