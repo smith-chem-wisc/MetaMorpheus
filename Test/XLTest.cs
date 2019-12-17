@@ -824,7 +824,7 @@ namespace Test
 
             // test child scan (low-resolution CID, beta peptide signature ion)
             Assert.That(csm.BetaPeptide.ChildMatchedFragmentIons.First().Key == 6);
-            Assert.That(csm.BetaPeptide.ChildMatchedFragmentIons.First().Value.Count == 43);
+            Assert.That(csm.BetaPeptide.ChildMatchedFragmentIons.First().Value.Count == 54);
 
             // write results to TSV
             csm.SetFdrValues(1, 0, 0, 0, 0, 0, 0, 0);
@@ -839,7 +839,7 @@ namespace Test
 
             Assert.That(psmFromTsv.BetaPeptideChildScanMatchedIons.Count == 2
                 && psmFromTsv.BetaPeptideChildScanMatchedIons.First().Key == 6
-                && psmFromTsv.BetaPeptideChildScanMatchedIons.First().Value.Count == 43);
+                && psmFromTsv.BetaPeptideChildScanMatchedIons.First().Value.Count == 54);
 
             File.Delete(outputFile);
         }
