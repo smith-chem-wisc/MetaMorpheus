@@ -189,6 +189,7 @@ namespace EngineLayer.CrosslinkSearch
         /// </summary>
         private List<CrosslinkSpectralMatch> FindCrosslinkedPeptide(Ms2ScanWithSpecificMass theScan, List<BestPeptideScoreNotch> theScanBestPeptide, int scanIndex)
         {
+            List<Product> products = new List<Product>();
             List<CrosslinkSpectralMatch> possibleMatches = new List<CrosslinkSpectralMatch>();
 
             for (int alphaIndex = 0; alphaIndex < theScanBestPeptide.Count; alphaIndex++)
@@ -198,7 +199,6 @@ namespace EngineLayer.CrosslinkSearch
                 //Single Peptide
                 if (XLPrecusorSearchMode.Accepts(theScan.PrecursorMass, bestPeptide.MonoisotopicMass) >= 0)
                 {
-                    List<Product> products = new List<Product>();
                     bestPeptide.Fragment(CommonParameters.DissociationType, FragmentationTerminus.Both, products);
                     var matchedFragmentIons = MatchFragmentIons(theScan, products, CommonParameters);
                     double score = CalculatePeptideScore(theScan.TheScan, matchedFragmentIons);
@@ -502,6 +502,7 @@ namespace EngineLayer.CrosslinkSearch
             List<MatchedFragmentIon> bestMatchingFragments = new List<MatchedFragmentIon>();
             PeptideWithSetModifications bestLocalizedPeptide = null;
             int bestPosition = 0;
+            var products = new List<Product>();
 
             foreach (int location in possiblePositions)
             {
@@ -520,8 +521,7 @@ namespace EngineLayer.CrosslinkSearch
 
                 var localizedPeptide = new PeptideWithSetModifications(originalPeptide.Protein, originalPeptide.DigestionParams, originalPeptide.OneBasedStartResidueInProtein,
                     originalPeptide.OneBasedEndResidueInProtein, originalPeptide.CleavageSpecificityForFdrCategory, originalPeptide.PeptideDescription, originalPeptide.MissedCleavages, mods, originalPeptide.NumFixedMods);
-
-                var products = new List<Product>();
+                
                 localizedPeptide.Fragment(commonParameters.DissociationType, FragmentationTerminus.Both, products);
                 var matchedFragmentIons = MatchFragmentIons(theScan, products, commonParameters);
 
