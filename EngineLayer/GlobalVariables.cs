@@ -16,8 +16,12 @@ namespace EngineLayer
         private static HashSet<string> _AllModTypesKnown = new HashSet<string>();
         private static List<Crosslinker> _KnownCrosslinkers = new List<Crosslinker>();
         private static List<string> _SeparationTypes = new List<string>();
+
         //Characters that aren't amino acids, but are reserved for special uses (motifs, delimiters, mods, etc)
         private static char[] _InvalidAminoAcids = new char[] { 'X', 'B', 'J', 'Z', ':', '|', ';', '[', ']', '{', '}', '(', ')', '+', '-' };
+
+        // this affects output labels, etc. and can be changed to "Proteoform" for top-down searches
+        public static string AnalyteType = "Peptide"; 
 
         static GlobalVariables()
         {

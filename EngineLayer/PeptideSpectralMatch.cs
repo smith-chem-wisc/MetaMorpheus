@@ -130,6 +130,7 @@ namespace EngineLayer
         {
             _BestMatchingPeptides.Remove((notch, pwsm));
             PeptidesToMatchingFragments.Remove(pwsm);
+            this.ResolveAllAmbiguities();
         }
 
         public override string ToString()
