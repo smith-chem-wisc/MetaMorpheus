@@ -852,5 +852,16 @@ namespace MetaMorpheusGUI
         {
 
         }
+        
+        private void BaseSequenceAnnotation_SizeChanged(object sender, SizeChangedEventArgs e)
+        {
+            // resize base sequence annotation in x and y dimensions as the gridsplitters are moved
+
+            // y dimension (scroll viewer height)
+            BaseSequenceAnnotationScrollViewer.Height = BaseSequenceAnnotationStackPanel.ActualHeight;
+
+            // x dimension (wraps the amino acid letters)
+
+        }
     }
 }

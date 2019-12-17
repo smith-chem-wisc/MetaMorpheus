@@ -181,19 +181,20 @@
                                 </TabControl>
 
                                 <!--Moveable splitter-->
-                                <!--<GridSplitter Grid.Row="1" 
+                                <GridSplitter Grid.Row="1" 
                                   HorizontalAlignment="Stretch"
                                   VerticalAlignment="Center"
                                   Background="White"
-                                  Height="3"/>-->
+                                  Height="3"/>
 
                                 <!--Canvas for drawing base sequence annotation-->
-                                <ScrollViewer Name="BaseSequenceAnnotationScrollViewer" Grid.Row="0" MaxHeight="120" 
-                                              VerticalScrollBarVisibility="Auto">
-                                    <Grid Name="baseSequenceAnnotationCanvasGrid" ScrollViewer.CanContentScroll="True">
-                                        <Canvas x:Name="baseSequenceAnnotationCanvas"/>
-                                    </Grid>
-                                </ScrollViewer>
+                                <Grid Name="BaseSequenceAnnotationStackPanel" Grid.Row="0" SizeChanged="BaseSequenceAnnotation_SizeChanged">
+                                    <ScrollViewer Name="BaseSequenceAnnotationScrollViewer" VerticalScrollBarVisibility="Auto">
+                                        <Grid Name="baseSequenceAnnotationCanvasGrid" ScrollViewer.CanContentScroll="True">
+                                            <Canvas x:Name="baseSequenceAnnotationCanvas"/>
+                                        </Grid>
+                                    </ScrollViewer>
+                                </Grid>
                             </Grid>
                         </Grid>
                     </Grid>

@@ -62,7 +62,7 @@ namespace MetaMorpheusGUI
             text.Foreground = clr;
             text.Text = txt;
             //tb.Height = 30;
-            text.Width = 20;
+            text.Width = 22;
             text.FontSize = 25;
             text.FontWeight = FontWeights.Medium;
             text.FontFamily = new FontFamily("Arial");
