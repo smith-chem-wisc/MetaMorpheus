@@ -24,14 +24,6 @@ namespace Test
     [TestFixture]
     public static class XLTest
     {
-        private static IndexingResults indexResults { get; set; }
-        private static CommonParameters commonParameters { get; set; }
-        private static XlSearchParameters xlSearchParameters { get; set; }
-        private static List<Protein> proteinList { get; set; }
-        private static List<Modification> variableModifications { get; set; }
-        private static List<Modification> fixedModifications { get; set; }
-        private static Crosslinker crosslinker { get; set; }
-        private static List<PeptideWithSetModifications> digestedList { get; set; }
 
         [Test]
         public static void XlTestCrosslinker()
