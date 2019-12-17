@@ -11,14 +11,18 @@ namespace MetaMorpheusCommandLine
 {
     public class CommandLineSettings
     {
+        public List<string> Spectra { get; private set; }
+        public List<string> Tasks { get; private set; }
+        public List<string> Databases { get; private set; }
+
         [Option('t', HelpText = "Single-task TOMLs (.toml file format)")]
-        public IEnumerable<string> Tasks { get; set; }
+        public IEnumerable<string> _tasks { get; set; }
 
         [Option('d', HelpText = "Protein sequence databases (.fasta, .xml, .fasta.gz, .xml.gz file formats)")]
-        public IEnumerable<string> Databases { get; set; }
+        public IEnumerable<string> _databases { get; set; }
 
         [Option('s', HelpText = "Spectra to analyze (.raw, .mzML, .mgf file formats)")]
-        public IEnumerable<string> Spectra { get; set; }
+        public IEnumerable<string> _spectra { get; set; }
 
         [Option('o', HelpText = "Output folder")]
         public string OutputFolder { get; set; }
@@ -26,19 +30,29 @@ namespace MetaMorpheusCommandLine
         [Option('g', HelpText = "Generate default task tomls (must also specify the -o parameter)")]
         public bool GenerateDefaultTomls { get; set; }
 
+        [Option('v', HelpText = "Runs a small test search using a database and yeast data file included with this MetaMorpheus installation")]
+        public bool RunMicroVignette { get; set; }
+
+        public CommandLineSettings()
+        {
+            Spectra = _spectra == null ? new List<string>() : _spectra.ToList();
+            Tasks = _tasks == null ? new List<string>() : _tasks.ToList();
+            Databases = _databases == null ? new List<string>() : _databases.ToList();
+        }
+        
         public void ValidateCommandLineSettings()
         {
-            if (GenerateDefaultTomls && OutputFolder == null)
+            if ((GenerateDefaultTomls || RunMicroVignette) && OutputFolder == null)
             {
-                throw new MetaMorpheusException("An output path must be specified to generate the default tomls.");
+                throw new MetaMorpheusException("An output path must be specified with the -o parameter.");
             }
 
-            if (GenerateDefaultTomls)
+            if (GenerateDefaultTomls || RunMicroVignette)
             {
                 return;
             }
 
-            if (OutputFolder == null && Spectra.Count() > 0 && Tasks.Count() < 1 && Databases.Count() < 1 && Spectra.Count() < 1)
+            if (OutputFolder == null && Spectra.Count() < 1 && Tasks.Count() < 1 && Databases.Count() < 1 && Spectra.Count() < 1)
             {
                 throw new MetaMorpheusException("Use the --help parameter to view all parameters (e.g., \"CMD.exe --help\")");
             }

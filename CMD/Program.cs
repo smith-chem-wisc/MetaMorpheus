@@ -12,13 +12,13 @@ using TaskLayer;
 
 namespace MetaMorpheusCommandLine
 {
-    internal static class Program
+    public static class Program
     {
         private static bool InProgress;
 
         private static System.CodeDom.Compiler.IndentedTextWriter MyWriter = new System.CodeDom.Compiler.IndentedTextWriter(Console.Out, "\t");
 
-        private static void Main(string[] args)
+        public static void Main(string[] args)
         {
             Console.WriteLine("Welcome to MetaMorpheus");
             Console.WriteLine(GlobalVariables.MetaMorpheusVersion);
@@ -40,6 +40,16 @@ namespace MetaMorpheusCommandLine
                 return HelpText.DefaultParsingErrorsHandler(result, h);
             }, e => e);
 
+            helpText.MaximumDisplayWidth = 300;
+
+            helpText.AddPostOptionsLine("Example usage (Windows): ");
+            helpText.AddPostOptionsLine("CMD.exe -d C:\\ExampleDatabase.fasta -s C:\\ExampleSpectra.mzML -t C:\\ExampleTask.toml");
+            helpText.AddPostOptionsLine(Environment.NewLine);
+
+            helpText.AddPostOptionsLine("Example usage (Linux): ");
+            helpText.AddPostOptionsLine("dotnet CMD.dll -d home/mydata/ExampleDatabase.fasta -s home/mydata/ExampleSpectra.mzML -t home/mydata/ExampleTask.toml");
+            helpText.AddPostOptionsLine(Environment.NewLine);
+
             Console.WriteLine(helpText);
         }
 
@@ -60,6 +70,25 @@ namespace MetaMorpheusCommandLine
                 Console.WriteLine("Generating default tomls at location: " + settings.OutputFolder);
                 CommandLineSettings.GenerateDefaultTaskTomls(settings.OutputFolder);
                 return;
+            }
+
+            // set up microvignette
+            if (settings.RunMicroVignette)
+            {
+                // set up the spectra file
+                settings.Spectra.Clear();
+                settings.Spectra.Add(Path.Combine(GlobalVariables.DataDir, @"Data", "SmallCalibratible_Yeast.mzML"));
+
+                // set up the database
+                settings.Databases.Clear();
+                settings.Databases.Add(Path.Combine(GlobalVariables.DataDir, @"Data", "SmallYeast.fasta"));
+
+                // set up the tasks (calibration, GPTMD, search)
+                settings.Tasks.Clear();
+                CommandLineSettings.GenerateDefaultTaskTomls(settings.OutputFolder);
+                settings.Tasks.Add(Path.Combine(settings.OutputFolder, "CalibrationTask.toml"));
+                settings.Tasks.Add(Path.Combine(settings.OutputFolder, "GptmdTask.toml"));
+                settings.Tasks.Add(Path.Combine(settings.OutputFolder, "SearchTask.toml"));
             }
 
             MetaMorpheusEngine.WarnHandler += WarnHandler;
@@ -153,7 +182,7 @@ namespace MetaMorpheusCommandLine
 
             List<string> startingRawFilenameList = settings.Spectra.Select(b => Path.GetFullPath(b)).ToList();
             List<DbForTask> startingXmlDbFilenameList = settings.Databases.Select(b => new DbForTask(Path.GetFullPath(b), IsContaminant(b))).ToList();
-            
+
             EverythingRunnerEngine a = new EverythingRunnerEngine(taskList, startingRawFilenameList, startingXmlDbFilenameList, settings.OutputFolder);
 
             try
