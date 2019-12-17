@@ -66,10 +66,9 @@ namespace EngineLayer
             }
             else
             {
-                foreach (var fragment in matchedFragmentIons)
+                for (int i = 0; i < matchedFragmentIons.Count; i++)
                 {
-                    double fragmentScore = 1 + (fragment.Intensity / thisScan.TotalIonCurrent);
-                    score += fragmentScore;
+                    score += 1 + matchedFragmentIons[i].Intensity / thisScan.TotalIonCurrent;
                 }
             }
 
@@ -118,7 +117,7 @@ namespace EngineLayer
                 }
 
                 // get the closest peak in the spectrum to the theoretical peak
-                var closestExperimentalMass = scan.GetClosestExperimentalFragmentMass(product.NeutralMass);
+                var closestExperimentalMass = scan.GetClosestExperimentalIsotopicEnvelope(product.NeutralMass);
 
                 // is the mass error acceptable?
                 if (commonParameters.ProductMassTolerance.Within(closestExperimentalMass.monoisotopicMass, product.NeutralMass) && closestExperimentalMass.charge <= scan.PrecursorCharge)
@@ -142,7 +141,7 @@ namespace EngineLayer
                     double compIonMass = scan.PrecursorMass + protonMassShift - product.NeutralMass;
 
                     // get the closest peak in the spectrum to the theoretical peak
-                    var closestExperimentalMass = scan.GetClosestExperimentalFragmentMass(compIonMass);
+                    IsotopicEnvelope closestExperimentalMass = scan.GetClosestExperimentalIsotopicEnvelope(compIonMass);
 
                     // is the mass error acceptable?
                     if (commonParameters.ProductMassTolerance.Within(closestExperimentalMass.monoisotopicMass, compIonMass) && closestExperimentalMass.charge <= scan.PrecursorCharge)
