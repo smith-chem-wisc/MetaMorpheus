@@ -68,11 +68,11 @@ namespace Test
 
             var newPsms = new List<PeptideSpectralMatch>
             {
-                new PeptideSpectralMatch(pwsm1, 0, 10, 0, scan, CommonParameters.DigestionParams, new List<MatchedFragmentIon>()),
-                new PeptideSpectralMatch(pwsm1, 0, 10, 0, scan, CommonParameters.DigestionParams, new List<MatchedFragmentIon>()),
-                new PeptideSpectralMatch(pwsm2, 0, 10, 0, scan, CommonParameters.DigestionParams, new List<MatchedFragmentIon>()),
-                new PeptideSpectralMatch(pwsm3, 0, 10, 0, scan, CommonParameters.DigestionParams, new List<MatchedFragmentIon>()),
-                new PeptideSpectralMatch(pwsm4, 0, 10, 0, scan, CommonParameters.DigestionParams, new List<MatchedFragmentIon>()),
+                new PeptideSpectralMatch(pwsm1, 0, 10, 0, scan, CommonParameters, new List<MatchedFragmentIon>()),
+                new PeptideSpectralMatch(pwsm1, 0, 10, 0, scan, CommonParameters, new List<MatchedFragmentIon>()),
+                new PeptideSpectralMatch(pwsm2, 0, 10, 0, scan, CommonParameters, new List<MatchedFragmentIon>()),
+                new PeptideSpectralMatch(pwsm3, 0, 10, 0, scan, CommonParameters, new List<MatchedFragmentIon>()),
+                new PeptideSpectralMatch(pwsm4, 0, 10, 0, scan, CommonParameters, new List<MatchedFragmentIon>()),
             };
 
             foreach (var psm in newPsms)
@@ -132,7 +132,7 @@ namespace Test
 
             CommonParameters CommonParameters = new CommonParameters(digestionParams: new DigestionParams(maxMissedCleavages: 0, minPeptideLength: 1), scoreCutoff: 1);
 
-            PeptideSpectralMatch myPsm = new PeptideSpectralMatch(pwsm1, 0, 10, 0, scan, new DigestionParams(), new List<MatchedFragmentIon>());
+            PeptideSpectralMatch myPsm = new PeptideSpectralMatch(pwsm1, 0, 10, 0, scan, new CommonParameters(), new List<MatchedFragmentIon>());
             myPsm.AddOrReplace(pwsm2, 10, 0, true, new List<MatchedFragmentIon>(),0);
             
             myPsm.ResolveAllAmbiguities();

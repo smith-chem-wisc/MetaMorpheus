@@ -24,7 +24,7 @@ namespace Test
         [Test]
         public static void TestPsmHeader()
         {
-            DigestionParams digestionParams = new DigestionParams();
+            CommonParameters commonParameters = new CommonParameters();
             PeptideWithSetModifications pepWithSetMods = new Protein(
                 "MQQQQQQQ",
                 "accession1",
@@ -34,14 +34,14 @@ namespace Test
                 name: "name",
                 fullName: "fullName",
                 sequenceVariations: new List<SequenceVariation> { new SequenceVariation(2, "P", "Q", "changed this sequence") })
-                    .Digest(digestionParams, new List<Modification>(), new List<Modification>()).First();
+                    .Digest(commonParameters.DigestionParams, new List<Modification>(), new List<Modification>()).First();
             MsDataFile myMsDataFile = new TestDataFile(pepWithSetMods, "quadratic");
             MsDataScan scann = myMsDataFile.GetOneBasedScan(2);
             Ms2ScanWithSpecificMass scan = new Ms2ScanWithSpecificMass(scann, 4, 1, null, new CommonParameters());
 
             var theoreticalIons = pepWithSetMods.Fragment(DissociationType.HCD, FragmentationTerminus.Both).ToList();
             var matchedIons = MetaMorpheusEngine.MatchFragmentIons(scan, theoreticalIons, new CommonParameters());
-            PeptideSpectralMatch psm = new PeptideSpectralMatch(pepWithSetMods, 1, 2, 3, scan, digestionParams, matchedIons);
+            PeptideSpectralMatch psm = new PeptideSpectralMatch(pepWithSetMods, 1, 2, 3, scan, commonParameters, matchedIons);
             psm.ResolveAllAmbiguities();
 
             var t = psm.ToString();
@@ -212,17 +212,17 @@ namespace Test
         [Test]
         public static void TestPsmMatchingToTargetAndDecoyWithSameSequence()
         {
-            DigestionParams digest = new DigestionParams();
             List<Modification> mods = new List<Modification>();
+            CommonParameters commonParameters = new CommonParameters();
 
-            PeptideWithSetModifications target = new Protein("PEPTIDE", "TARGET").Digest(digest, mods, mods).First();
-            PeptideWithSetModifications decoy = new Protein("PEPTIDE", "DECOY", isDecoy: true).Digest(digest, mods, mods).First();
+            PeptideWithSetModifications target = new Protein("PEPTIDE", "TARGET").Digest(commonParameters.DigestionParams, mods, mods).First();
+            PeptideWithSetModifications decoy = new Protein("PEPTIDE", "DECOY", isDecoy: true).Digest(commonParameters.DigestionParams, mods, mods).First();
 
             MsDataFile msDataFile = new TestDataFile(target);
             MsDataScan msDataScan = msDataFile.GetOneBasedScan(2);
-            Ms2ScanWithSpecificMass scanWithMass = new Ms2ScanWithSpecificMass(msDataScan, 4, 1, null, new CommonParameters());
+            Ms2ScanWithSpecificMass scanWithMass = new Ms2ScanWithSpecificMass(msDataScan, 4, 1, null, commonParameters);
 
-            PeptideSpectralMatch psm = new PeptideSpectralMatch(target, 0, 1, 1, scanWithMass, digest, null);
+            PeptideSpectralMatch psm = new PeptideSpectralMatch(target, 0, 1, 1, scanWithMass, commonParameters, null);
             psm.AddOrReplace(decoy, 1, 0, true, null, 0);
 
             Assert.AreEqual(2, psm.BestMatchingPeptides.Count());
@@ -238,17 +238,17 @@ namespace Test
         [Test]
         public static void TestPsmMatchingToTargetAndDecoyWithDifferentSequences()
         {
-            DigestionParams digest = new DigestionParams();
+            CommonParameters commonParameters = new CommonParameters();
             List<Modification> mods = new List<Modification>();
 
-            PeptideWithSetModifications target = new Protein("PEPTIDE", "").Digest(digest, mods, mods).First();
-            PeptideWithSetModifications decoy = new Protein("PEPTIDEL", "", isDecoy: true).Digest(digest, mods, mods).First();
+            PeptideWithSetModifications target = new Protein("PEPTIDE", "").Digest(commonParameters.DigestionParams, mods, mods).First();
+            PeptideWithSetModifications decoy = new Protein("PEPTIDEL", "", isDecoy: true).Digest(commonParameters.DigestionParams, mods, mods).First();
 
             MsDataFile msDataFile = new TestDataFile(target);
             MsDataScan msDataScan = msDataFile.GetOneBasedScan(2);
-            Ms2ScanWithSpecificMass scanWithMass = new Ms2ScanWithSpecificMass(msDataScan, 4, 1, null, new CommonParameters());
+            Ms2ScanWithSpecificMass scanWithMass = new Ms2ScanWithSpecificMass(msDataScan, 4, 1, null, commonParameters);
 
-            PeptideSpectralMatch psm = new PeptideSpectralMatch(target, 0, 1, 1, scanWithMass, digest, null);
+            PeptideSpectralMatch psm = new PeptideSpectralMatch(target, 0, 1, 1, scanWithMass, commonParameters, null);
             psm.AddOrReplace(decoy, 1, 0, true, null, 0);
 
             Assert.AreEqual(2, psm.BestMatchingPeptides.Count());
@@ -267,28 +267,28 @@ namespace Test
         public static void TestPsmCount()
         {
             Protein p1 = new Protein("PEPTIDE", null);
-            DigestionParams digestionParams = new DigestionParams();
-            PeptideWithSetModifications pep1 = p1.Digest(digestionParams, new List<Modification>(), new List<Modification>()).ToList().First();
+            CommonParameters commonParameters = new CommonParameters();
+            PeptideWithSetModifications pep1 = p1.Digest(commonParameters.DigestionParams, new List<Modification>(), new List<Modification>()).ToList().First();
 
             Protein p2 = new Protein("PEPTIDE", null);
-            PeptideWithSetModifications pep2 = p2.Digest(digestionParams, new List<Modification>(), new List<Modification>()).ToList().First();
+            PeptideWithSetModifications pep2 = p2.Digest(commonParameters.DigestionParams, new List<Modification>(), new List<Modification>()).ToList().First();
 
             Protein p3 = new Protein("PEPTIDE", null);
-            PeptideWithSetModifications pep3 = p3.Digest(digestionParams, new List<Modification>(), new List<Modification>()).ToList().First();
+            PeptideWithSetModifications pep3 = p3.Digest(commonParameters.DigestionParams, new List<Modification>(), new List<Modification>()).ToList().First();
 
             TestDataFile t = new TestDataFile(new List<PeptideWithSetModifications> { pep1, pep2, pep3 });
 
             MsDataScan mzLibScan1 = t.GetOneBasedScan(2);
             Ms2ScanWithSpecificMass scan1 = new Ms2ScanWithSpecificMass(mzLibScan1, 0, 1, null, new CommonParameters());
-            PeptideSpectralMatch psm1 = new PeptideSpectralMatch(pep1, 0, 0, 0, scan1, digestionParams, new List<MatchedFragmentIon>());
+            PeptideSpectralMatch psm1 = new PeptideSpectralMatch(pep1, 0, 0, 0, scan1, commonParameters, new List<MatchedFragmentIon>());
 
             MsDataScan mzLibScan2 = t.GetOneBasedScan(4);
             Ms2ScanWithSpecificMass scan2 = new Ms2ScanWithSpecificMass(mzLibScan2, 0, 1, null, new CommonParameters());
-            PeptideSpectralMatch psm2 = new PeptideSpectralMatch(pep2, 0, 0, 0, scan2, digestionParams, new List<MatchedFragmentIon>());
+            PeptideSpectralMatch psm2 = new PeptideSpectralMatch(pep2, 0, 0, 0, scan2, commonParameters, new List<MatchedFragmentIon>());
 
             MsDataScan mzLibScan3 = t.GetOneBasedScan(6);
             Ms2ScanWithSpecificMass scan3 = new Ms2ScanWithSpecificMass(mzLibScan3, 0, 1, null, new CommonParameters());
-            PeptideSpectralMatch psm3 = new PeptideSpectralMatch(pep3, 0, 0, 0, scan3, digestionParams, new List<MatchedFragmentIon>());
+            PeptideSpectralMatch psm3 = new PeptideSpectralMatch(pep3, 0, 0, 0, scan3, commonParameters, new List<MatchedFragmentIon>());
 
             psm1.SetFdrValues(0, 0, 0, 0, 0, 0, 0, 0); // valid psm
             psm1.ResolveAllAmbiguities();
@@ -367,7 +367,7 @@ namespace Test
                     2, 1, true, Polarity.Positive, double.NaN, null, null, MZAnalyzerType.Orbitrap, double.NaN, null, null, "scan=1", double.NaN, null, null, double.NaN, null, DissociationType.AnyActivationType, 1, null),
                 100, 1, null, new CommonParameters(), null);
 
-            PeptideSpectralMatch psm1 = new PeptideSpectralMatch(new PeptideWithSetModifications(new Protein("PEPTIDE", "ACCESSION", "ORGANISM"), new DigestionParams(), 1, 2, CleavageSpecificity.Full, "", 0, new Dictionary<int, Modification>(), 0), 0, 10, 1, scanB, new DigestionParams(), new List<MatchedFragmentIon>(), 0);
+            PeptideSpectralMatch psm1 = new PeptideSpectralMatch(new PeptideWithSetModifications(new Protein("PEPTIDE", "ACCESSION", "ORGANISM"), new DigestionParams(), 1, 2, CleavageSpecificity.Full, "", 0, new Dictionary<int, Modification>(), 0), 0, 10, 1, scanB, new CommonParameters(), new List<MatchedFragmentIon>(), 0);
 
             PeptideWithSetModifications pwsm = new PeptideWithSetModifications(new Protein("PEPTIDE", "ACCESSION", "ORGANISM"), new DigestionParams(), 1, 2, CleavageSpecificity.Full, "", 0, new Dictionary<int, Modification>(), 0);
 

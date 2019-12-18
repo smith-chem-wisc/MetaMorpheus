@@ -23,11 +23,11 @@ namespace Test
         {
             
             Protein parentProteinForMatch = new Protein("MEK", null);
-            DigestionParams digestionParams = new DigestionParams(minPeptideLength: 1);
+            CommonParameters commonParameters = new CommonParameters(digestionParams: new DigestionParams(minPeptideLength: 1));
             ModificationMotif.TryGetMotif("E", out ModificationMotif motif);
             List<Modification> variableModifications = new List<Modification> { new Modification(_originalId: "21", _target: motif, _locationRestriction: "Anywhere.", _monoisotopicMass: 21.981943) };
 
-            List<PeptideWithSetModifications> allPeptidesWithSetModifications = parentProteinForMatch.Digest(digestionParams, new List<Modification>(), variableModifications).ToList();
+            List<PeptideWithSetModifications> allPeptidesWithSetModifications = parentProteinForMatch.Digest(commonParameters.DigestionParams, new List<Modification>(), variableModifications).ToList();
             Assert.AreEqual(4, allPeptidesWithSetModifications.Count());
             PeptideWithSetModifications ps = allPeptidesWithSetModifications.First();
 
@@ -39,7 +39,7 @@ namespace Test
 
             var theoreticalProducts = ps.Fragment(DissociationType.HCD, FragmentationTerminus.Both).ToList();
             var matchedIons = MetaMorpheusEngine.MatchFragmentIons(scan, theoreticalProducts, new CommonParameters());
-            PeptideSpectralMatch newPsm = new PeptideSpectralMatch(ps, 0, 0, 2, scan, digestionParams, matchedIons);
+            PeptideSpectralMatch newPsm = new PeptideSpectralMatch(ps, 0, 0, 2, scan, commonParameters, matchedIons);
 
             LocalizationEngine f = new LocalizationEngine(new List<PeptideSpectralMatch> { newPsm }, myMsDataFile, new CommonParameters(), new List<string>());
 

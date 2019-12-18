@@ -48,7 +48,7 @@ namespace EngineLayer.CrosslinkSearch
             this.massTable = peptideIndex.Select(p => p.MonoisotopicMass).ToArray();
 
             SecondFragmentIndex = secondFragmentIndex;
-            if (CommonParameters.ChildScanDissociationType != DissociationType.Unknown && DissociationTypeGenerateSameTypeOfIons(CommonParameters.DissociationType, CommonParameters.ChildScanDissociationType))
+            if (commonParameters.ChildScanDissociationType != DissociationType.Unknown && DissociationTypeGenerateSameTypeOfIons(commonParameters.DissociationType, commonParameters.ChildScanDissociationType))
             {
                 SecondFragmentIndex = FragmentIndex;
             }
@@ -218,7 +218,7 @@ namespace EngineLayer.CrosslinkSearch
 
                     if (score >= (double)byteScoreCutoff)
                     {
-                        var psmCrossSingle = new CrosslinkSpectralMatch(PeptideIndex[id], 0, score, scanIndex, scan, CommonParameters.DigestionParams, matchedFragmentIons)
+                        var psmCrossSingle = new CrosslinkSpectralMatch(PeptideIndex[id], 0, score, scanIndex, scan, CommonParameters, matchedFragmentIons)
                         {
                             CrossType = PsmCrossType.Single,
                         };
@@ -469,8 +469,8 @@ namespace EngineLayer.CrosslinkSearch
                         return null;
                     }
 
-                    var localizedAlpha = new CrosslinkSpectralMatch(PeptideIndex[alphaIndex], 0, bestAlphaLocalizedScore, 0, theScan, PeptideIndex[alphaIndex].DigestionParams, bestMatchedAlphaIons);
-                    var localizedBeta = new CrosslinkSpectralMatch(PeptideIndex[betaIndex], 0, bestBetaLocalizedScore, 0, theScan, PeptideIndex[betaIndex].DigestionParams, bestMatchedBetaIons);
+                    var localizedAlpha = new CrosslinkSpectralMatch(PeptideIndex[alphaIndex], 0, bestAlphaLocalizedScore, 0, theScan, CommonParameters, bestMatchedAlphaIons);
+                    var localizedBeta = new CrosslinkSpectralMatch(PeptideIndex[betaIndex], 0, bestBetaLocalizedScore, 0, theScan, CommonParameters, bestMatchedBetaIons);
 
                     localizedAlpha.ChildMatchedFragmentIons = bestMatchedChildAlphaIons;
                     localizedBeta.ChildMatchedFragmentIons = bestMatchedChildBetaIons;
@@ -600,7 +600,7 @@ namespace EngineLayer.CrosslinkSearch
                 return null;
             }
 
-            var csm = new CrosslinkSpectralMatch(bestLocalizedPeptide, notch, bestScore, scanIndex, theScan, originalPeptide.DigestionParams, bestMatchingFragments);
+            var csm = new CrosslinkSpectralMatch(bestLocalizedPeptide, notch, bestScore, scanIndex, theScan, commonParameters, bestMatchingFragments);
 
             if (deadEndMod == TrisDeadEnd)
             {
@@ -650,7 +650,7 @@ namespace EngineLayer.CrosslinkSearch
                 return null;
             }
 
-            var csm = new CrosslinkSpectralMatch(originalPeptide, notch, bestScore, scanIndex, theScan, originalPeptide.DigestionParams, bestMatchingFragments)
+            var csm = new CrosslinkSpectralMatch(originalPeptide, notch, bestScore, scanIndex, theScan, commonParameters, bestMatchingFragments)
             {
                 CrossType = PsmCrossType.Loop,
                 //XlRank = new List<int> { peptideIndex },

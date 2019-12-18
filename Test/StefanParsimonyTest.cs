@@ -50,11 +50,11 @@ namespace Test
 
             Ms2ScanWithSpecificMass scan = new Ms2ScanWithSpecificMass(fakeScan, 2, 0, "File", new CommonParameters());
 
-            PeptideSpectralMatch psm1 = new PeptideSpectralMatch(modifiedPeptide, 0, 10, 1, scan, new DigestionParams(), new List<MatchedFragmentIon>());
+            PeptideSpectralMatch psm1 = new PeptideSpectralMatch(modifiedPeptide, 0, 10, 1, scan, new CommonParameters(), new List<MatchedFragmentIon>());
             psm1.SetFdrValues(0, 0, 0, 0, 0, 0, 0, 0);
             psm1.ResolveAllAmbiguities();
 
-            PeptideSpectralMatch psm2 = new PeptideSpectralMatch(unmodifiedPeptide, 0, 10, 2, scan, new DigestionParams(), new List<MatchedFragmentIon>());
+            PeptideSpectralMatch psm2 = new PeptideSpectralMatch(unmodifiedPeptide, 0, 10, 2, scan, new CommonParameters(), new List<MatchedFragmentIon>());
             psm2.SetFdrValues(0, 0, 0, 0, 0, 0, 0, 0);
             psm2.ResolveAllAmbiguities();
             
@@ -117,11 +117,11 @@ namespace Test
 
             Ms2ScanWithSpecificMass scan = new Ms2ScanWithSpecificMass(fakeScan, 2, 0, "File", new CommonParameters());
 
-            PeptideSpectralMatch psm1 = new PeptideSpectralMatch(modifiedPeptide, 0, 10, 1, scan, new DigestionParams(), new List<MatchedFragmentIon>());
+            PeptideSpectralMatch psm1 = new PeptideSpectralMatch(modifiedPeptide, 0, 10, 1, scan, new CommonParameters(), new List<MatchedFragmentIon>());
             psm1.SetFdrValues(0, 0, 0, 0, 0, 0, 0, 0);
             psm1.ResolveAllAmbiguities();
 
-            PeptideSpectralMatch psm2 = new PeptideSpectralMatch(unmodifiedPeptide, 0, 10, 2, scan, new DigestionParams(), new List<MatchedFragmentIon>());
+            PeptideSpectralMatch psm2 = new PeptideSpectralMatch(unmodifiedPeptide, 0, 10, 2, scan, new CommonParameters(), new List<MatchedFragmentIon>());
             psm2.SetFdrValues(0, 0, 0, 0, 0, 0, 0, 0);
             psm2.ResolveAllAmbiguities();
             
@@ -167,7 +167,7 @@ namespace Test
 
             List<PeptideSpectralMatch> psms = new List<PeptideSpectralMatch>
             {
-                new PeptideSpectralMatch(pep1,0,1,0, scan, new DigestionParams(), new List<MatchedFragmentIon>()),
+                new PeptideSpectralMatch(pep1,0,1,0, scan, new CommonParameters(), new List<MatchedFragmentIon>()),
             };
 
             // this PSM has a target and a decoy
@@ -216,9 +216,9 @@ namespace Test
 
             List<PeptideSpectralMatch> psms = new List<PeptideSpectralMatch>
             {
-                new PeptideSpectralMatch(fillerPep,0,30,0, scan, new DigestionParams(), new List<MatchedFragmentIon>()),
-                new PeptideSpectralMatch(decoyPep,0,15.11,0, scan, new DigestionParams(), new List<MatchedFragmentIon>()),
-                new PeptideSpectralMatch(targetPep,0,15.1,0, scan, new DigestionParams(), new List<MatchedFragmentIon>())
+                new PeptideSpectralMatch(fillerPep,0,30,0, scan, new CommonParameters(), new List<MatchedFragmentIon>()),
+                new PeptideSpectralMatch(decoyPep,0,15.11,0, scan, new CommonParameters(), new List<MatchedFragmentIon>()),
+                new PeptideSpectralMatch(targetPep,0,15.1,0, scan, new CommonParameters(), new List<MatchedFragmentIon>())
             };
 
             psms.ForEach(p => p.ResolveAllAmbiguities());

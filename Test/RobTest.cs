@@ -60,13 +60,13 @@ namespace Test
 
             var protease = new Protease("test", CleavageSpecificity.Full, null, null, digestionMotifs);
             ProteaseDictionary.Dictionary.Add(protease.Name, protease);
-            DigestionParams digestionParams = new DigestionParams(protease: protease.Name, minPeptideLength: 1);
+            CommonParameters commonParameters = new CommonParameters(digestionParams: new DigestionParams(protease: protease.Name, minPeptideLength: 1));
 
             // digest the proteins
             var peptides = new HashSet<PeptideWithSetModifications>();
             foreach (Protein protein in proteins)
             {
-                foreach (PeptideWithSetModifications peptide in protein.Digest(digestionParams, new List<Modification>(), new List<Modification>()))
+                foreach (PeptideWithSetModifications peptide in protein.Digest(commonParameters.DigestionParams, new List<Modification>(), new List<Modification>()))
                 {
                     switch (peptide.BaseSequence)
                     {
@@ -100,7 +100,7 @@ namespace Test
                 }
                 else
                 {
-                    temp.Add(peptide.BaseSequence, new PeptideSpectralMatch(peptide, 0, 1, 0, scan, digestionParams, new List<MatchedFragmentIon>()));
+                    temp.Add(peptide.BaseSequence, new PeptideSpectralMatch(peptide, 0, 1, 0, scan, commonParameters, new List<MatchedFragmentIon>()));
                 }
             }
 
@@ -172,8 +172,8 @@ namespace Test
                 {variableModifications.Last(), 1 }
             };
 
-            DigestionParams digestionParams = new DigestionParams(protease: protease.Name, maxMissedCleavages: 0, minPeptideLength: 1);
-            var protDigest = proteinList.First().Digest(digestionParams, fixedModifications, variableModifications).ToList();
+            CommonParameters commonParameters = new CommonParameters(digestionParams: new DigestionParams(protease: protease.Name, maxMissedCleavages: 0, minPeptideLength: 1));
+            var protDigest = proteinList.First().Digest(commonParameters.DigestionParams, fixedModifications, variableModifications).ToList();
 
             int idx = 0;
 
@@ -199,7 +199,7 @@ namespace Test
             Assert.AreEqual("QQQI[HaHa:iModTwo on I]", pep4mod2.Single().FullSequence);//this might be base
 
             var peptideList = new HashSet<PeptideWithSetModifications>();
-            foreach (var peptide in proteinList.SelectMany(protein => protein.Digest(digestionParams, new List<Modification>(), variableModifications)))
+            foreach (var peptide in proteinList.SelectMany(protein => protein.Digest(commonParameters.DigestionParams, new List<Modification>(), variableModifications)))
             {               
                 peptideList.Add(peptide);
             }
@@ -209,23 +209,23 @@ namespace Test
             
             Tolerance fragmentTolerance = new AbsoluteTolerance(0.01);
 
-            var match1 = new PeptideSpectralMatch(peptideList.ElementAt(0), 0, 10, 0, ms2scan, digestionParams, new List<MatchedFragmentIon>()){};
+            var match1 = new PeptideSpectralMatch(peptideList.ElementAt(0), 0, 10, 0, ms2scan, commonParameters, new List<MatchedFragmentIon>()){};
             match1.SetFdrValues(0, 0, 0, 0, 0, 0, 0, 0);
-            var match2 = new PeptideSpectralMatch(peptideList.ElementAt(1), 0, 10, 0, ms2scan, digestionParams, new List<MatchedFragmentIon>()){};
+            var match2 = new PeptideSpectralMatch(peptideList.ElementAt(1), 0, 10, 0, ms2scan, commonParameters, new List<MatchedFragmentIon>()){};
             match2.SetFdrValues(0, 0, 0, 0, 0, 0, 0, 0);
-            var match3 = new PeptideSpectralMatch(peptideList.ElementAt(1), 0, 10, 0, ms2scan, digestionParams, new List<MatchedFragmentIon>()){};
+            var match3 = new PeptideSpectralMatch(peptideList.ElementAt(1), 0, 10, 0, ms2scan, commonParameters, new List<MatchedFragmentIon>()){};
             match3.SetFdrValues(0, 0, 0, 0, 0, 0, 0, 0);
-            var match4 = new PeptideSpectralMatch(peptideList.ElementAt(4), 0, 10, 0, ms2scan, digestionParams, new List<MatchedFragmentIon>()) { };
+            var match4 = new PeptideSpectralMatch(peptideList.ElementAt(4), 0, 10, 0, ms2scan, commonParameters, new List<MatchedFragmentIon>()) { };
             match4.SetFdrValues(0, 0, 0, 0, 0, 0, 0, 0);
-            var match5 = new PeptideSpectralMatch(peptideList.ElementAt(5), 0, 10, 0, ms2scan, digestionParams, new List<MatchedFragmentIon>()) { };
+            var match5 = new PeptideSpectralMatch(peptideList.ElementAt(5), 0, 10, 0, ms2scan, commonParameters, new List<MatchedFragmentIon>()) { };
             match5.SetFdrValues(0, 0, 0, 0, 0, 0, 0, 0);
-            var match6 = new PeptideSpectralMatch(peptideList.ElementAt(6), 0, 10, 0, ms2scan, digestionParams, new List<MatchedFragmentIon>()) { };
+            var match6 = new PeptideSpectralMatch(peptideList.ElementAt(6), 0, 10, 0, ms2scan, commonParameters, new List<MatchedFragmentIon>()) { };
             match6.SetFdrValues(0, 0, 0, 0, 0, 0, 0, 0);
-            var match44 = new PeptideSpectralMatch(peptideList.ElementAt(4), 0, 10, 0, ms2scan, digestionParams, new List<MatchedFragmentIon>()) { };
+            var match44 = new PeptideSpectralMatch(peptideList.ElementAt(4), 0, 10, 0, ms2scan, commonParameters, new List<MatchedFragmentIon>()) { };
             match44.SetFdrValues(0, 0, 0, 0, 0, 0, 0, 0);
-            var match55 = new PeptideSpectralMatch(peptideList.ElementAt(5), 0, 10, 0, ms2scan, digestionParams, new List<MatchedFragmentIon>()) { };
+            var match55 = new PeptideSpectralMatch(peptideList.ElementAt(5), 0, 10, 0, ms2scan, commonParameters, new List<MatchedFragmentIon>()) { };
             match55.SetFdrValues(0, 0, 0, 0, 0, 0, 0, 0);
-            var match66 = new PeptideSpectralMatch(peptideList.ElementAt(6), 0, 10, 0, ms2scan, digestionParams, new List<MatchedFragmentIon>()) { };
+            var match66 = new PeptideSpectralMatch(peptideList.ElementAt(6), 0, 10, 0, ms2scan, commonParameters, new List<MatchedFragmentIon>()) { };
             match66.SetFdrValues(0, 0, 0, 0, 0, 0, 0, 0);
 
 
