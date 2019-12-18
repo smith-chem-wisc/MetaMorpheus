@@ -13,7 +13,7 @@ namespace EngineLayer.CrosslinkSearch
 {
     public class CrosslinkSearchEngine : ModernSearchEngine
     {
-        public const double ToleranceForMassDifferentiation = 1e-9;
+        public static readonly double ToleranceForMassDifferentiation = 1e-9;
         protected readonly List<CrosslinkSpectralMatch>[] GlobalCsms;
 
         // crosslinker molecule
