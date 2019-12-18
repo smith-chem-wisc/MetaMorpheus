@@ -58,6 +58,12 @@ namespace TaskLayer
             }
             MyTaskResults.AddTaskSummaryText("Target inter-crosslinks within 1% FDR: " + interCsms.Count(p => p.FdrInfo.QValue <= 0.01 && !p.IsDecoy && !p.BetaPeptide.IsDecoy));
 
+            if (xlSearchParameters.WriteOutputForPercolator)
+            {
+                var interPsmsXLPercolator = interCsms.Where(p => p.Score >= 2 && p.BetaPeptide.Score >= 2).OrderBy(p => p.ScanNumber).ToList();
+                WriteFile.WriteCrosslinkToTxtForPercolator(interPsmsXLPercolator, OutputFolder, "XL_Interlinks_Percolator", xlSearchParameters.Crosslinker);
+                FinishedWritingFile(Path.Combine(OutputFolder, "XL_Interlinks_Percolator.txt"), new List<string> { taskId });
+            }
 
             // write intralink CSMs
             if (intraCsms.Any())
@@ -68,6 +74,12 @@ namespace TaskLayer
             }
             MyTaskResults.AddTaskSummaryText("Target intra-crosslinks within 1% FDR: " + intraCsms.Count(p => p.FdrInfo.QValue <= 0.01 && !p.IsDecoy && !p.BetaPeptide.IsDecoy));
 
+            if (xlSearchParameters.WriteOutputForPercolator)
+            {
+                var intraPsmsXLPercolator = intraCsms.Where(p => p.Score >= 2 && p.BetaPeptide.Score >= 2).OrderBy(p => p.ScanNumber).ToList();
+                WriteFile.WriteCrosslinkToTxtForPercolator(intraPsmsXLPercolator, OutputFolder, "XL_Intralinks_Percolator", xlSearchParameters.Crosslinker);
+                FinishedWritingFile(Path.Combine(OutputFolder, "XL_Intralinks_Percolator.txt"), new List<string> { taskId });
+            }
 
             // write single peptides
             var singlePsms = allPsms.Where(p => p.CrossType == PsmCrossType.Single).ToList();

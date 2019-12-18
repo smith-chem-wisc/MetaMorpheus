@@ -364,6 +364,7 @@
                     <Expander x:Name="OutputExpander">
                         <StackPanel Orientation="Vertical">
                             <CheckBox x:Name="ckbPepXML" Content="Write .pep.XML" />
+                            <CheckBox x:Name="ckbPercolator" Content="Write .TSV for Percolator" />
                         </StackPanel>
                     </Expander>
                 </GroupBox>
