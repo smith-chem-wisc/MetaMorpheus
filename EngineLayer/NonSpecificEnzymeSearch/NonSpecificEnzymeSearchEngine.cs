@@ -38,7 +38,7 @@ namespace EngineLayer.NonSpecificEnzymeSearch
             ModifiedParametersNoComp = commonParameters.CloneWithNewTerminus(addCompIons: false);
             ProductTypesToSearch = DissociationTypeCollection.ProductsFromDissociationType[commonParameters.DissociationType].Intersect(TerminusSpecificProductTypes.ProductIonTypesFromSpecifiedTerminus[commonParameters.DigestionParams.FragmentationTerminus]).ToList();
             VariableTerminalModifications = GetVariableTerminalMods(commonParameters.DigestionParams.FragmentationTerminus, variableModifications);
-            ByteScoreCutoff = (byte)(commonParameters.ScoreCutoff + 7);
+            ByteScoreCutoff = (byte)(commonParameters.ScoreCutoff);
         }
 
         protected override MetaMorpheusEngineResults RunSpecific()
@@ -115,7 +115,7 @@ namespace EngineLayer.NonSpecificEnzymeSearch
                         if (idsOfPeptidesPossiblyObserved.Any())
                         {
                             int maxInitialScore = idsOfPeptidesPossiblyObserved.Max(id => scoringTable[id]) + 1;
-                            while (maxInitialScore > CommonParameters.ScoreCutoff) //go through all until we hit the end
+                            while (maxInitialScore > ByteScoreCutoff) //go through all until we hit the end
                             {
                                 maxInitialScore--;
                                 foreach (int id in idsOfPeptidesPossiblyObserved.Where(id => scoringTable[id] == maxInitialScore))
@@ -130,7 +130,7 @@ namespace EngineLayer.NonSpecificEnzymeSearch
                                         peptideTheorProducts = peptide.Fragment(CommonParameters.DissociationType, FragmentationTerminus.Both).ToList();
                                         List<MatchedFragmentIon> matchedIons = MatchFragmentIons(scan, peptideTheorProducts, ModifiedParametersNoComp);
                                         double thisScore = CalculatePeptideScore(scan.TheScan, matchedIons);
-                                        if (thisScore > CommonParameters.ScoreCutoff)
+                                        if (thisScore > ByteScoreCutoff)
                                         {
                                             PeptideSpectralMatch[] localPeptideSpectralMatches = GlobalCategorySpecificPsms[(int)FdrClassifier.GetCleavageSpecificityCategory(peptide.CleavageSpecificityForFdrCategory)];
                                             if (localPeptideSpectralMatches[ms2ArrayIndex] == null)
