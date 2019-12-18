@@ -24,6 +24,7 @@ namespace EngineLayer.NonSpecificEnzymeSearch
         readonly List<ProductType> ProductTypesToSearch;
         readonly List<Modification> VariableTerminalModifications;
         readonly List<int>[] CoisolationIndex;
+        private readonly byte ByteScoreCutoff;
 
         public NonSpecificEnzymeSearchEngine(PeptideSpectralMatch[][] globalPsms, Ms2ScanWithSpecificMass[] listOfSortedms2Scans, List<int>[] coisolationIndex,
             List<PeptideWithSetModifications> peptideIndex, List<int>[] fragmentIndex, List<int>[] precursorIndex, int currentPartition,
@@ -37,6 +38,7 @@ namespace EngineLayer.NonSpecificEnzymeSearch
             ModifiedParametersNoComp = commonParameters.CloneWithNewTerminus(addCompIons: false);
             ProductTypesToSearch = DissociationTypeCollection.ProductsFromDissociationType[commonParameters.DissociationType].Intersect(TerminusSpecificProductTypes.ProductIonTypesFromSpecifiedTerminus[commonParameters.DigestionParams.FragmentationTerminus]).ToList();
             VariableTerminalModifications = GetVariableTerminalMods(commonParameters.DigestionParams.FragmentationTerminus, variableModifications);
+            ByteScoreCutoff = (byte)(commonParameters.ScoreCutoff + 7);
         }
 
         protected override MetaMorpheusEngineResults RunSpecific()
@@ -52,7 +54,6 @@ namespace EngineLayer.NonSpecificEnzymeSearch
             {
                 throw new NotImplementedException();
             }
-            byte byteScoreCutoff = (byte)CommonParameters.ScoreCutoff;
 
             int maxThreadsPerFile = CommonParameters.MaxThreadsToUsePerFile;
             int[] threads = Enumerable.Range(0, maxThreadsPerFile).ToArray();
@@ -113,7 +114,7 @@ namespace EngineLayer.NonSpecificEnzymeSearch
                         // done with initial scoring and precursor matching; refine scores and create PSMs
                         if (idsOfPeptidesPossiblyObserved.Any())
                         {
-                            byte bestScore = byteScoreCutoff;
+                            byte bestScore = ByteScoreCutoff;
 
                             foreach (int id in idsOfPeptidesPossiblyObserved.OrderByDescending(p => scoringTable[p]))
                             {
@@ -157,7 +158,7 @@ namespace EngineLayer.NonSpecificEnzymeSearch
 
                     // report search progress
                     progress++;
-                    int percentProgress = (int)((progress / ListOfSortedMs2Scans.Length) * 100);
+                    int percentProgress = (int)((progress / CoisolationIndex.Length) * 100);
 
                     if (percentProgress > oldPercentProgress)
                     {
