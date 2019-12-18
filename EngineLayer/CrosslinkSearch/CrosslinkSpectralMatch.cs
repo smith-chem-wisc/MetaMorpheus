@@ -85,9 +85,9 @@ namespace EngineLayer.CrosslinkSearch
             }
         }
 
-        public static void GetPossibleCrosslinkerModSites(char[] crosslinkerModSites, PeptideWithSetModifications peptide, InitiatorMethionineBehavior initiatorMethionineBehavior, bool CrosslinkAtCleavageSite, out List<int> possibleXlPositions)
+        public static List<int> GetPossibleCrosslinkerModSites(char[] crosslinkerModSites, PeptideWithSetModifications peptide, InitiatorMethionineBehavior initiatorMethionineBehavior, bool CrosslinkAtCleavageSite)
         {
-            possibleXlPositions = null;
+            List<int> possibleXlPositions = null;
 
             bool wildcard = crosslinkerModSites.Any(p => p == 'X');
 
@@ -113,6 +113,7 @@ namespace EngineLayer.CrosslinkSearch
                     }
                 }
             }
+            return possibleXlPositions;
         }
 
         /// <summary>
