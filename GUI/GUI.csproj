@@ -258,8 +258,11 @@
     <Compile Include="CustomModWindow.xaml.cs">
       <DependentUpon>CustomModWindow.xaml</DependentUpon>
     </Compile>
-    <Compile Include="CustomMsgBox.xaml.cs">
-      <DependentUpon>CustomMsgBox.xaml</DependentUpon>
+    <Compile Include="ProteaseSpecificParamsMsgBox.xaml.cs">
+      <DependentUpon>ProteaseSpecificParamsMsgBox.xaml</DependentUpon>
+    </Compile>
+    <Compile Include="ExitMsgBox.xaml.cs">
+      <DependentUpon>ExitMsgBox.xaml</DependentUpon>
     </Compile>
     <Compile Include="ForDisplayingInDataGrids\SilacInfoForDataGrid.cs" />
     <Compile Include="SilacModificationWindow.xaml.cs">
@@ -326,6 +329,7 @@
     <Compile Include="ForDisplayingInDataGrids\ProteinDbForDataGrid.cs" />
     <Compile Include="Util\SearchModifications.cs" />
     <Compile Include="Util\TheTemplateSelector.cs" />
+    <Compile Include="Util\UpdateGUISettings.cs" />
     <Compile Include="XLSearchTaskWindow.xaml.cs">
       <DependentUpon>XLSearchTaskWindow.xaml</DependentUpon>
     </Compile>
@@ -349,7 +353,11 @@
       <Generator>MSBuild:Compile</Generator>
       <SubType>Designer</SubType>
     </Page>
-    <Page Include="CustomMsgBox.xaml">
+    <Page Include="ProteaseSpecificParamsMsgBox.xaml">
+      <Generator>MSBuild:Compile</Generator>
+      <SubType>Designer</SubType>
+    </Page>
+    <Page Include="ExitMsgBox.xaml">
       <SubType>Designer</SubType>
       <Generator>MSBuild:Compile</Generator>
     </Page>
@@ -484,8 +492,13 @@
       <CopyToOutputDirectory>Always</CopyToOutputDirectory>
     </Resource>
   </ItemGroup>
+  <ItemGroup>
+    <Resource Include="Icons\proxl-ms.bmp">
+      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+    </Resource>
+  </ItemGroup>
   <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />
-  <!-- To modify your build process, add your task inside one of the targets below and uncomment it. 
+  <!-- To modify your build process, add your task inside one of the targets below and uncomment it.
        Other similar extension points exist, see Microsoft.Common.targets.
   <Target Name="BeforeBuild">
   </Target>

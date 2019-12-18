@@ -394,6 +394,10 @@ namespace MetaMorpheusGUI
             prgsFeed.IsOpen = true;
             prgsText.Content = "Loading spectra file...";
 
+            // Add EventHandlers for popup click-in/click-out behaviour
+            Deactivated += new EventHandler(prgsFeed_Deactivator);
+            Activated += new EventHandler(prgsFeed_Reactivator);
+
             var slowProcess = Task<MsDataFile>.Factory.StartNew(() => spectraFileManager.LoadFile(spectraFilePath, new CommonParameters(trimMsMsPeaks: false)));
             await slowProcess;
             MsDataFile = slowProcess.Result;
@@ -405,10 +409,35 @@ namespace MetaMorpheusGUI
 
             // done loading - restore controls
             this.prgsFeed.IsOpen = false;
+
+            // Remove added EventHandlers
+            Deactivated -= new EventHandler(prgsFeed_Deactivator);
+            Activated -= new EventHandler(prgsFeed_Reactivator);
+
             (sender as Button).IsEnabled = true;
             selectSpectraFileButton.IsEnabled = true;
             selectPsmFileButton.IsEnabled = true;
         }
+
+        /// <summary>
+        /// Deactivates the popup if one clicks out of the main window
+        /// </summary>
+        /// <param name="sender">unused</param>
+        /// <param name="e">unused</param>
+        private void prgsFeed_Deactivator(object sender, EventArgs e)
+        {
+            prgsFeed.IsOpen = false;
+        }
+
+        /// <summary>
+        /// Reacctivates the popup if one clicks into the main window
+        /// </summary>
+        /// <param name="sender">unused</param>
+        /// <param name="e">unused</param>
+        private void prgsFeed_Reactivator(object sender, EventArgs e)
+        {
+            prgsFeed.IsOpen = true;
+        }   
 
         //private void loadFilesButtonStat_Click(object sender, RoutedEventArgs e)
         //{

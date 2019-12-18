@@ -72,20 +72,9 @@ namespace MetaMorpheusGUI
             SearchModifications.SetUpModSearchBoxes();
 
             // LOAD GUI SETTINGS
-
-            if (File.Exists(Path.Combine(GlobalVariables.DataDir, @"GUIsettings.toml")))
+            if(!UpdateGUISettings.LoadGUISettings())
             {
-                GuiGlobalParams = Toml.ReadFile<GuiGlobalParams>(Path.Combine(GlobalVariables.DataDir, @"GUIsettings.toml"));
-            }
-            else
-            {
-                Toml.WriteFile(GuiGlobalParams, Path.Combine(GlobalVariables.DataDir, @"GUIsettings.toml"), MetaMorpheusTask.tomlConfig);
                 notificationsTextBox.Document = YoutubeWikiNotification();
-            }
-
-            if (GlobalVariables.MetaMorpheusVersion.Contains("Not a release version"))
-            {
-                GuiGlobalParams.AskAboutUpdating = false;
             }
 
             try
@@ -139,8 +128,6 @@ namespace MetaMorpheusGUI
 
         public static string NewestKnownVersion { get; private set; }
 
-        internal GuiGlobalParams GuiGlobalParams = new GuiGlobalParams();
-
         private static void GetVersionNumbersFromWeb()
         {
             // Attempt to get current MetaMorpheus version
@@ -166,7 +153,7 @@ namespace MetaMorpheusGUI
 
         private void MyWindow_Loaded(object sender, RoutedEventArgs e)
         {
-            if (NewestKnownVersion != null && !GlobalVariables.MetaMorpheusVersion.Equals(NewestKnownVersion) && GuiGlobalParams.AskAboutUpdating)
+            if (NewestKnownVersion != null && !GlobalVariables.MetaMorpheusVersion.Equals(NewestKnownVersion) && UpdateGUISettings.Params.AskAboutUpdating)
             {
                 try
                 {
@@ -1484,10 +1471,16 @@ namespace MetaMorpheusGUI
             System.Diagnostics.Process.Start(@"https://join.slack.com/t/smith-chem-public/shared_invite/enQtNDYzNTM5Mzg5NzY0LTRiYWQ5MzVmYmExZWIyMTcyZmNlODJjMWI0YjVhNGM2MmQ2NjE4ZDAzNmM4NWYxMDFhNTQyNDBiM2E0MWE0NGU");
         }
 
+        private void MenuItem_Proxl(object sender, RoutedEventArgs e)
+        {
+            System.Diagnostics.Process.Start(@"http://proxl-ms.org/");
+        }
+
         private void MenuItem_Click_6(object sender, RoutedEventArgs e)
         {
             System.Diagnostics.Process.Start(GlobalVariables.DataDir);
         }
+
 
         private void MenuItem_Click_3(object sender, RoutedEventArgs e)
         {
@@ -1548,10 +1541,10 @@ namespace MetaMorpheusGUI
         // handle window closing
         private void MainWindow_Closing(object sender, CancelEventArgs e)
         {
-            if (!GuiGlobalParams.DisableCloseWindow && !GlobalVariables.MetaMorpheusVersion.Contains("DEBUG"))
+            if (UpdateGUISettings.Params.AskBeforeExitingMetaMorpheus && !GlobalVariables.MetaMorpheusVersion.Contains("DEBUG"))
             {
                 e.Cancel = true;
-                var exit = CustomMsgBox.Show("Exit MetaMorpheus", "Are you sure you want to exit MetaMorpheus?", "Yes", "No", "Yes and don't ask me again");
+                var exit = ExitMsgBox.Show("Exit MetaMorpheus", "Are you sure you want to exit MetaMorpheus?", "Yes", "No", "Yes and don't ask me again");
 
                 if (exit == MessageBoxResult.Yes)
                 {
@@ -1559,8 +1552,8 @@ namespace MetaMorpheusGUI
                 }
                 else if (exit == MessageBoxResult.OK)
                 {
-                    GuiGlobalParams.DisableCloseWindow = true;
-                    Toml.WriteFile(GuiGlobalParams, Path.Combine(GlobalVariables.DataDir, @"GUIsettings.toml"), MetaMorpheusTask.tomlConfig);
+                    UpdateGUISettings.Params.AskBeforeExitingMetaMorpheus = true;
+                    Toml.WriteFile(UpdateGUISettings.Params, Path.Combine(GlobalVariables.DataDir, @"GUIsettings.toml"), MetaMorpheusTask.tomlConfig);
                     e.Cancel = false;
                 }
             }
