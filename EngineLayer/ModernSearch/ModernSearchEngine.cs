@@ -107,7 +107,6 @@ namespace EngineLayer.ModernSearch
             Array.Clear(scoringTable, 0, scoringTable.Length);
             peptidesPossiblyObserved.Clear();
 
-            int obsPreviousFragmentCeilingMz = 0;
             if (dissociationType == DissociationType.LowCID)
             {
                 double[] masses = scan.TheScan.MassSpectrum.XArray;
@@ -162,11 +161,10 @@ namespace EngineLayer.ModernSearch
                     double mass = scan.ExperimentalFragments[i].monoisotopicMass;
 
                     // get theoretical fragment bins within mass tolerance
-                    int obsFragmentFloorMass = Math.Max(obsPreviousFragmentCeilingMz,
+                    int obsFragmentFloorMass = Math.Max(0,
                         (int)Math.Floor((CommonParameters.ProductMassTolerance.GetMinimumValue(mass)) * FragmentBinsPerDalton));
                     int obsFragmentCeilingMass = Math.Min(FragmentIndex.Length - 1,
                         (int)Math.Ceiling((CommonParameters.ProductMassTolerance.GetMaximumValue(mass)) * FragmentBinsPerDalton));
-                    obsPreviousFragmentCeilingMz = obsFragmentCeilingMass + 1;
 
                     for (int b = obsFragmentFloorMass; b <= obsFragmentCeilingMass; b++)
                     {
@@ -334,7 +332,7 @@ namespace EngineLayer.ModernSearch
         {
             PeptideWithSetModifications peptide = PeptideIndex[id];
 
-            List<Product> peptideTheorProducts = peptide.Fragment(CommonParameters.DissociationType, CommonParameters.DigestionParams.FragmentationTerminus).ToList();
+            List<Product> peptideTheorProducts = peptide.Fragment(CommonParameters.DissociationType, FragmentationTerminus.Both).ToList();
 
             List<MatchedFragmentIon> matchedIons = MatchFragmentIons(scan, peptideTheorProducts, CommonParameters);
 
@@ -379,7 +377,7 @@ namespace EngineLayer.ModernSearch
 
                 PeptideSpectralMatch psm = FineScorePeptide(id, scan, scanIndex);
 
-                if (psm != null && psm.Score > bestScore + 1)
+                if (psm != null && psm.Score > bestScore)
                 {
                     bestScore = (byte)Math.Floor(psm.Score);
                 }
