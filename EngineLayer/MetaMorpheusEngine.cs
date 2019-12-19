@@ -79,13 +79,6 @@ namespace EngineLayer
         {
             var matchedFragmentIons = new List<MatchedFragmentIon>();
 
-            // if the spectrum has no peaks
-            if (!scan.ExperimentalFragments.Any())
-            {
-                return matchedFragmentIons;
-            }
-
-            //we checked above for experimental fragments, but the experimental fragments and the xarray aren't guarenteed to be the same after XCorr processing
             if (scan.TheScan.MassSpectrum.XcorrProcessed && scan.TheScan.MassSpectrum.XArray.Length!=0)
             {
                 // if the spectrum has no peaks
