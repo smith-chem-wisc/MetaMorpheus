@@ -150,7 +150,7 @@ namespace EngineLayer.NonSpecificEnzymeSearch
 
                     // report search progress
                     progress++;
-                    int percentProgress = (int)((progress / ListOfSortedMs2Scans.Length) * 100);
+                    int percentProgress = (int)((progress / CoisolationIndex.Length) * 100);
 
                     if (percentProgress > oldPercentProgress)
                     {
