@@ -34,10 +34,10 @@ namespace Test
             Assert.That(resultsPath_Deadend.Length >1);
 
             var resultsPath_loop = File.ReadAllLines(Path.Combine(outputFolder, @"Looplinks.tsv"));
-            Assert.That(resultsPath_Deadend.Length >1);
+            Assert.That(resultsPath_loop.Length >1);
 
             var resultsPath_single = File.ReadAllLines(Path.Combine(outputFolder, @"SinglePeptides.tsv"));
-            Assert.That(resultsPath_Deadend.Length >1);
+            Assert.That(resultsPath_single.Length >1);
 
             Directory.Delete(outputFolder, true);
         }
