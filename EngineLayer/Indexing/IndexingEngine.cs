@@ -206,9 +206,9 @@ namespace EngineLayer.Indexing
             {
                 throw new MetaMorpheusException("Max precursor mass too large for indexing engine; try \"Classic Search\" mode, or make the maximum fragment mass smaller");
             }
-            int progress = 0;
+
+            double progress = 0;
             int oldPercentProgress = 0;
-            int maxProgress = peptidesSortedByMass.Count;
             ReportProgress(new ProgressEventArgs(0, "Creating precursor index...", NestedIds));
 
             //Add all the precursors
@@ -234,7 +234,7 @@ namespace EngineLayer.Indexing
                     }
                 }
                 progress++;
-                var percentProgress = (progress / maxProgress) * 100;
+                var percentProgress = (int)((progress / peptidesSortedByMass.Count) * 100);
 
                 if (percentProgress > oldPercentProgress)
                 {
