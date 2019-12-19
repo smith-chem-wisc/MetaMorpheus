@@ -69,11 +69,11 @@ namespace EngineLayer.NonSpecificEnzymeSearch
                     Array.Clear(scoringTable, 0, scoringTable.Length);
                     idsOfPeptidesPossiblyObserved.Clear();
                     List<int> coisolatedIndexes = CoisolationIndex[i];
-                    Ms2ScanWithSpecificMass scan = ListOfSortedMs2Scans[coisolatedIndexes[(coisolatedIndexes.Count-1)/2]]; //get first scan; all scans should be identical
+                    Ms2ScanWithSpecificMass scan = ListOfSortedMs2Scans[coisolatedIndexes[(coisolatedIndexes.Count - 1) / 2]]; //get first scan; all scans should be identical
 
                     //do first pass scoring
                     SnesIndexedScoring(scan, FragmentIndex, scoringTable, PeptideIndex, DissociationType);
-                    
+
                     for (int j = 0; j < coisolatedIndexes.Count; j++)
                     {
                         int ms2ArrayIndex = coisolatedIndexes[j];
@@ -112,30 +112,8 @@ namespace EngineLayer.NonSpecificEnzymeSearch
                         // done with initial scoring and precursor matching; refine scores and create PSMs
                         if (idsOfPeptidesPossiblyObserved.Any())
                         {
-                            //byte bestScore = 0;
-
-                            //foreach (int id in idsOfPeptidesPossiblyObserved.OrderByDescending(p => scoringTable[p]))
-                            //{
-                            //    PeptideSpectralMatch psm = FineScorePeptide(id, scan, ms2ArrayIndex);
-
-                            //    if (scoringTable[id] < bestScore - 2 && DissociationType != DissociationType.LowCID)
-                            //    {
-                            //        break;
-                            //    }
-                                
-                            //    if (psm != null && psm.Score > bestScore)
-                            //    {
-                            //        bestScore = (byte)Math.Floor(psm.Score);
-                            //    }
-                            //}
-
-
-
-
-
-
                             int maxInitialScore = idsOfPeptidesPossiblyObserved.Max(id => scoringTable[id]) + 1;
-                            while (maxInitialScore > CommonParameters.ScoreCutoff) //go through all until we hit the end
+                            while (maxInitialScore + 2 > CommonParameters.ScoreCutoff) //go through all until we hit the end. +2 is arbitrary to negate initial scoring's removal of peaks below 350 Da
                             {
                                 maxInitialScore--;
                                 foreach (int id in idsOfPeptidesPossiblyObserved.Where(id => scoringTable[id] == maxInitialScore))
@@ -240,36 +218,38 @@ namespace EngineLayer.NonSpecificEnzymeSearch
                     // get theoretical fragment bins within mass tolerance
                     int obsFragmentFloorMass = (int)Math.Floor((productTolerance.GetMinimumValue(experimentalFragmentMass)) * FragmentBinsPerDalton);
                     int obsFragmentCeilingMass = (int)Math.Ceiling((productTolerance.GetMaximumValue(experimentalFragmentMass)) * FragmentBinsPerDalton);
-
-                    // prevents double-counting peaks close in m/z and lower-bound out of range exceptions
-                    if (obsFragmentFloorMass < obsPreviousFragmentCeilingMz)
+                    if (obsFragmentCeilingMass > 350000)
                     {
-                        obsFragmentFloorMass = obsPreviousFragmentCeilingMz;
-                    }
-                    obsPreviousFragmentCeilingMz = obsFragmentCeilingMass + 1;
-
-                    // prevent upper-bound index out of bounds errors;
-                    // lower-bound is handled by the previous "if (obsFragmentFloorMass < obsPreviousFragmentCeilingMz)" statement
-                    if (obsFragmentCeilingMass >= FragmentIndex.Length)
-                    {
-                        obsFragmentCeilingMass = FragmentIndex.Length - 1;
-                        if (obsFragmentFloorMass >= FragmentIndex.Length)
+                        // prevents double-counting peaks close in m/z and lower-bound out of range exceptions
+                        if (obsFragmentFloorMass < obsPreviousFragmentCeilingMz)
                         {
-                            obsFragmentFloorMass = FragmentIndex.Length - 1;
+                            obsFragmentFloorMass = obsPreviousFragmentCeilingMz;
                         }
-                    }
+                        obsPreviousFragmentCeilingMz = obsFragmentCeilingMass + 1;
 
-                    // search mass bins within a tolerance
-                    for (int fragmentBin = obsFragmentFloorMass; fragmentBin <= obsFragmentCeilingMass; fragmentBin++)
-                    {
-                        List<int> bin = FragmentIndex[fragmentBin];
-
-                        //score
-                        if (bin != null)
+                        // prevent upper-bound index out of bounds errors;
+                        // lower-bound is handled by the previous "if (obsFragmentFloorMass < obsPreviousFragmentCeilingMz)" statement
+                        if (obsFragmentCeilingMass >= FragmentIndex.Length)
                         {
-                            for (int pep = 0; pep < bin.Count; pep++)
+                            obsFragmentCeilingMass = FragmentIndex.Length - 1;
+                            if (obsFragmentFloorMass >= FragmentIndex.Length)
                             {
-                                scoringTable[bin[pep]]++;
+                                obsFragmentFloorMass = FragmentIndex.Length - 1;
+                            }
+                        }
+
+                        // search mass bins within a tolerance
+                        for (int fragmentBin = obsFragmentFloorMass; fragmentBin <= obsFragmentCeilingMass; fragmentBin++)
+                        {
+                            List<int> bin = FragmentIndex[fragmentBin];
+
+                            //score
+                            if (bin != null)
+                            {
+                                for (int pep = 0; pep < bin.Count; pep++)
+                                {
+                                    scoringTable[bin[pep]]++;
+                                }
                             }
                         }
                     }
@@ -282,31 +262,33 @@ namespace EngineLayer.NonSpecificEnzymeSearch
                         double protonMassShift = Chemistry.ClassExtensions.ToMass(complementaryIonConversionDictionary[dissociationType], 1);
                         int compFragmentFloorMass = (int)Math.Round(((scan.PrecursorMass + protonMassShift) * FragmentBinsPerDalton)) - obsFragmentCeilingMass;
                         int compFragmentCeilingMass = (int)Math.Round(((scan.PrecursorMass + protonMassShift) * FragmentBinsPerDalton)) - obsFragmentFloorMass;
-
-                        // prevent index out of bounds errors
-                        if (compFragmentCeilingMass >= FragmentIndex.Length)
+                        if (compFragmentCeilingMass > 350000)
                         {
-                            compFragmentCeilingMass = FragmentIndex.Length - 1;
-                            if (compFragmentFloorMass >= FragmentIndex.Length)
+                            // prevent index out of bounds errors
+                            if (compFragmentCeilingMass >= FragmentIndex.Length)
                             {
-                                compFragmentFloorMass = FragmentIndex.Length - 1;
-                            }
-                        }
-                        if (compFragmentFloorMass < 0)
-                        {
-                            compFragmentFloorMass = 0;
-                        }
-
-                        for (int fragmentBin = compFragmentFloorMass; fragmentBin <= compFragmentCeilingMass; fragmentBin++)
-                        {
-                            List<int> bin = FragmentIndex[fragmentBin];
-
-                            //score
-                            if (bin != null)
-                            {
-                                for (int pep = 0; pep < bin.Count; pep++)
+                                compFragmentCeilingMass = FragmentIndex.Length - 1;
+                                if (compFragmentFloorMass >= FragmentIndex.Length)
                                 {
-                                    scoringTable[bin[pep]]++;
+                                    compFragmentFloorMass = FragmentIndex.Length - 1;
+                                }
+                            }
+                            if (compFragmentFloorMass < 0)
+                            {
+                                compFragmentFloorMass = 0;
+                            }
+
+                            for (int fragmentBin = compFragmentFloorMass; fragmentBin <= compFragmentCeilingMass; fragmentBin++)
+                            {
+                                List<int> bin = FragmentIndex[fragmentBin];
+
+                                //score
+                                if (bin != null)
+                                {
+                                    for (int pep = 0; pep < bin.Count; pep++)
+                                    {
+                                        scoringTable[bin[pep]]++;
+                                    }
                                 }
                             }
                         }
