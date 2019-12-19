@@ -17,7 +17,10 @@ namespace TaskLayer
     {
         public XLSearchTask() : base(MyTask.XLSearch)
         {
-            //Default parameter setting which is different from SearchTask, can be overwriten
+            //Default parameter setting which is different from SearchTask, can be overwriten here. 
+            //maxMissedCleavage is set to 3 for crosslink generally induce long peptides. 
+            //maxPeptideLength is set to 60 in case generate peptides that are too long. 
+            //numberOfPeaksToKeepPerWindow is set to a large number to keep all peak with intensity > 0.01.
             var digestPara = new DigestionParams(
                 minPeptideLength: 5,
                 maxPeptideLength: 60,
@@ -26,7 +29,7 @@ namespace TaskLayer
             CommonParameters = new CommonParameters(
                 precursorMassTolerance: new PpmTolerance(10),
                 scoreCutoff: 2,
-                trimMsMsPeaks:false,
+                numberOfPeaksToKeepPerWindow:1000,
                 digestionParams: digestPara
             );
 

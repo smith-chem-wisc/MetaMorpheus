@@ -31,7 +31,7 @@ namespace EngineLayer.CrosslinkSearch
 
         public bool IsIntraCsm()
         {
-            
+            //The pair "ProteinA and Decoy_ProteinA" is count for intra-crosslink. 
             if (this.ProteinAccession != null && this.BetaPeptide.ProteinAccession != null)
             {
                 if (this.ProteinAccession == this.BetaPeptide.ProteinAccession || 

@@ -255,7 +255,7 @@ namespace EngineLayer.CrosslinkSearch
                     //TO THINK: Is there any cases that Loop Mass equals dead-end mass.
                     if (possibleCrosslinkLocations != null && possibleCrosslinkLocations.Count >= 2)
                     {
-                        possibleMatches.Add(LocalizeLoopSites(PeptideIndex[id], scan, CommonParameters, possibleCrosslinkLocations, Loop, 0, scanIndex));
+                        possibleMatches.Add(LocalizeLoopSites(PeptideIndex[id], scan, CommonParameters, possibleCrosslinkLocations, 0, scanIndex));
                     }
                 }
                 else if (scan.PrecursorMass - massTable[id] >= (CommonParameters.DigestionParams.MinPeptideLength * 50))
@@ -556,18 +556,9 @@ namespace EngineLayer.CrosslinkSearch
             foreach (int location in possiblePositions)
             {
                 Dictionary<int, Modification> mods = originalPeptide.AllModsOneIsNterminus.ToDictionary(p => p.Key, p => p.Value);
-                if (mods.ContainsKey(location + 1))
-                {
-                    var alreadyAnnotatedMod = mods[location + 1];
-                    double combinedMass = mods[location + 1].MonoisotopicMass.Value + deadEndMod.MonoisotopicMass.Value;
-                    Modification combinedMod = new Modification(_originalId: alreadyAnnotatedMod.OriginalId + "+" + deadEndMod.OriginalId, _modificationType: "Crosslink", _target: alreadyAnnotatedMod.Target, _locationRestriction: "Anywhere.", _monoisotopicMass: combinedMass);
-                    mods[location + 1] = combinedMod;
-                }
-                else
-                {
-                    mods.Add(location + 1, deadEndMod);
-                }
 
+                mods.Add(location + 1, deadEndMod);
+ 
                 var localizedPeptide = new PeptideWithSetModifications(originalPeptide.Protein, originalPeptide.DigestionParams, originalPeptide.OneBasedStartResidueInProtein,
                     originalPeptide.OneBasedEndResidueInProtein, originalPeptide.CleavageSpecificityForFdrCategory, originalPeptide.PeptideDescription, originalPeptide.MissedCleavages, mods, originalPeptide.NumFixedMods);
 
@@ -614,7 +605,7 @@ namespace EngineLayer.CrosslinkSearch
         /// Localizes the loop to a begin and end residue
         /// </summary>
         private CrosslinkSpectralMatch LocalizeLoopSites(PeptideWithSetModifications originalPeptide, Ms2ScanWithSpecificMass theScan, CommonParameters commonParameters,
-            List<int> possiblePositions, Modification loopMod, int notch, int scanIndex)
+            List<int> possiblePositions, int notch, int scanIndex)
         {
             var possibleFragmentSets = CrosslinkedPeptide.XlLoopGetTheoreticalFragments(commonParameters.DissociationType, Loop, possiblePositions, originalPeptide);
             double bestScore = 0;
