@@ -769,7 +769,7 @@ namespace Test
             string outputFile = Path.Combine(TestContext.CurrentContext.TestDirectory, @"TestMs2Ms3.tsv");
             CommonParameters commonParameters = new CommonParameters(dissociationType: DissociationType.CID, childScanDissociationType: DissociationType.LowCID, precursorMassTolerance: new PpmTolerance(10));
 
-            string spectraFile = Path.Combine(TestContext.CurrentContext.TestDirectory, @"XlTestData\10226.mzML");
+            string spectraFile = Path.Combine(TestContext.CurrentContext.TestDirectory, @"XlTestData\ms2ms3mixed_10226.mzML");
             var file = new MyFileManager(true).LoadFile(spectraFile, commonParameters);
 
             var scans = MetaMorpheusTask.GetMs2Scans(file, spectraFile, commonParameters).ToArray();

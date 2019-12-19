@@ -36,7 +36,7 @@ namespace EngineLayer.CrosslinkSearch
             {
                 if (this.ProteinAccession == this.BetaPeptide.ProteinAccession || 
                     this.ProteinAccession == "DECOY_"+ this.BetaPeptide.ProteinAccession || 
-                    this.BetaPeptide.ProteinAccession == "DECOY" + this.ProteinAccession)
+                    this.BetaPeptide.ProteinAccession == "DECOY_" + this.ProteinAccession)
                 {
                     return true;
                 }

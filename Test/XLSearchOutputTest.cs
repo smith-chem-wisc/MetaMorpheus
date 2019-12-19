@@ -12,24 +12,32 @@ namespace Test
         [Test]
         public static void WriteTsvTest()
         {
-            string outputFolder = Path.Combine(TestContext.CurrentContext.TestDirectory, @"XlOutputTest1");
-            string myFile = Path.Combine(TestContext.CurrentContext.TestDirectory, @"XlTestData\BSA_DSS_23747.mzML");
-            string myDatabase = Path.Combine(TestContext.CurrentContext.TestDirectory, @"XlTestData\BSA.fasta");
+            string outputFolder = Path.Combine(TestContext.CurrentContext.TestDirectory, @"XlOutputTestFile");
+            string myFile = Path.Combine(TestContext.CurrentContext.TestDirectory, @"XlTestData\2017-11-21_XL_DSSO_Ribosome_RT60min_21042-21976.mzML");
+            string myDatabase = Path.Combine(TestContext.CurrentContext.TestDirectory, @"XlTestData\RibosomeGO.fasta");
 
             Directory.CreateDirectory(outputFolder);
 
             XLSearchTask xLSearch = new XLSearchTask();
             xLSearch.XlSearchParameters.CrosslinkAtCleavageSite = true;
-            xLSearch.XlSearchParameters.Crosslinker = new Crosslinker("K", "K", "DSS", false, "HCD", 138.06808, 0, 0, 138.06808, 156.0786, 155.0946, 259.142);
             xLSearch.RunTask(outputFolder, new List<DbForTask> { new DbForTask(myDatabase, false) }, new List<string> { myFile }, "test");
 
             var resultsPath = File.ReadAllLines(Path.Combine(outputFolder, @"XL_Intralinks.tsv"));
             var sections = resultsPath[1].Split('\t');
-            Assert.That(resultsPath.Length == 3);
+            Assert.That(resultsPath.Length > 1);
             Assert.That(sections.Length == 43);
 
+            var resultsPath_Inter = File.ReadAllLines(Path.Combine(outputFolder, @"XL_Interlinks.tsv"));
+            Assert.That(resultsPath_Inter.Length > 1);
+
             var resultsPath_Deadend = File.ReadAllLines(Path.Combine(outputFolder, @"Deadends.tsv"));
-            Assert.That(resultsPath_Deadend.Length == 2);
+            Assert.That(resultsPath_Deadend.Length >1);
+
+            var resultsPath_loop = File.ReadAllLines(Path.Combine(outputFolder, @"Looplinks.tsv"));
+            Assert.That(resultsPath_Deadend.Length >1);
+
+            var resultsPath_single = File.ReadAllLines(Path.Combine(outputFolder, @"SinglePeptides.tsv"));
+            Assert.That(resultsPath_Deadend.Length >1);
 
             Directory.Delete(outputFolder, true);
         }
