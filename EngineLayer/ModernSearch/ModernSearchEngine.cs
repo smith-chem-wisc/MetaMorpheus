@@ -472,7 +472,7 @@ namespace EngineLayer.ModernSearch
 
                 for (int i = 0; i < masses.Length; i++)
                 {
-                    //convert to an int since we're in discreet 1.0005...
+                    //convert to an int since we're in discrete 1.0005...
                     int fragmentBin = (int)(Math.Round(masses[i].ToMass(1) / 1.0005079) * 1.0005079 * FragmentBinsPerDalton);
 
                     if (FragmentIndex[fragmentBin] != null)
