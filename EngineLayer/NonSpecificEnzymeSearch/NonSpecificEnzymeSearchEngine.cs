@@ -113,7 +113,7 @@ namespace EngineLayer.NonSpecificEnzymeSearch
                         if (idsOfPeptidesPossiblyObserved.Any())
                         {
                             int maxInitialScore = idsOfPeptidesPossiblyObserved.Max(id => scoringTable[id]) + 1;
-                            while (maxInitialScore + 2 > CommonParameters.ScoreCutoff) //go through all until we hit the end. +2 is arbitrary to negate initial scoring's removal of peaks below 350 Da
+                            while (maxInitialScore + 4 > CommonParameters.ScoreCutoff) //go through all until we hit the end. +4 is arbitrary to negate initial scoring's removal of peaks below 350 Da
                             {
                                 maxInitialScore--;
                                 foreach (int id in idsOfPeptidesPossiblyObserved.Where(id => scoringTable[id] == maxInitialScore))
