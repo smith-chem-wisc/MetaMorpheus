@@ -74,7 +74,7 @@ namespace EngineLayer.CrosslinkSearch
             Dictionary<Tuple<int, int>, List<Product>> AllTheoreticalFragmentsLists = new Dictionary<Tuple<int, int>, List<Product>>();
             var originalFragments = new List<Product>();
             peptide.Fragment(dissociationType, FragmentationTerminus.Both, originalFragments);
-            var l = new List<Product>();
+            var loopProducts = new List<Product>();
 
             foreach (int position1 in modPos)
             {
@@ -112,8 +112,8 @@ namespace EngineLayer.CrosslinkSearch
                         peptide.OneBasedStartResidueInProtein, peptide.OneBasedEndResidueInProtein, peptide.CleavageSpecificityForFdrCategory,
                         peptide.PeptideDescription, peptide.MissedCleavages, modDict, peptide.NumFixedMods);
                     
-                    peptideWithLoop.Fragment(dissociationType, FragmentationTerminus.Both, l);
-                    loopFragments.AddRange(l.Where(p => p.Terminus == FragmentationTerminus.N && p.AminoAcidPosition >= position2));
+                    peptideWithLoop.Fragment(dissociationType, FragmentationTerminus.Both, loopProducts);
+                    loopFragments.AddRange(loopProducts.Where(p => p.Terminus == FragmentationTerminus.N && p.AminoAcidPosition >= position2));
 
                     // add C-terminal fragments containing the loop
                     modDict.Clear();
@@ -136,9 +136,9 @@ namespace EngineLayer.CrosslinkSearch
                         peptide.OneBasedStartResidueInProtein, peptide.OneBasedEndResidueInProtein, peptide.CleavageSpecificityForFdrCategory,
                         peptide.PeptideDescription, peptide.MissedCleavages, modDict, peptide.NumFixedMods);
 
-                    peptideWithLoop.Fragment(dissociationType, FragmentationTerminus.Both, l);
+                    peptideWithLoop.Fragment(dissociationType, FragmentationTerminus.Both, loopProducts);
                     loopFragments.AddRange(
-                        l.Where(p => p.Terminus == FragmentationTerminus.C && p.AminoAcidPosition <= position1));
+                        loopProducts.Where(p => p.Terminus == FragmentationTerminus.C && p.AminoAcidPosition <= position1));
 
                     AllTheoreticalFragmentsLists.Add(loopPositions, loopFragments);
                 }
