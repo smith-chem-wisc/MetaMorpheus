@@ -79,16 +79,17 @@ namespace EngineLayer
         {
             var matchedFragmentIons = new List<MatchedFragmentIon>();
 
-            // if the spectrum has no peaks
-            if (!scan.ExperimentalFragments.Any())
-            {
-                return matchedFragmentIons;
-            }
-
             if (scan.TheScan.MassSpectrum.XcorrProcessed)
             {
-                foreach (Product product in theoreticalProducts)
+                // if the spectrum has no peaks
+                if (scan.TheScan.MassSpectrum.XArray.Length == 0)
                 {
+                    return matchedFragmentIons;
+                }
+
+                for (int i = 0; i < theoreticalProducts.Count; i++)
+                {
+                    var product = theoreticalProducts[i];
                     // unknown fragment mass; this only happens rarely for sequences with unknown amino acids
                     if (double.IsNaN(product.NeutralMass))
                     {
@@ -100,16 +101,24 @@ namespace EngineLayer
 
                     if (commonParameters.ProductMassTolerance.Within(scan.TheScan.MassSpectrum.XArray[closestMzIndex], theoreticalFragmentMz))
                     {
-                        matchedFragmentIons.Add(new MatchedFragmentIon(product, theoreticalFragmentMz, scan.TheScan.MassSpectrum.YArray[closestMzIndex], 1));
+                        matchedFragmentIons.Add(new MatchedFragmentIon(ref product, theoreticalFragmentMz, scan.TheScan.MassSpectrum.YArray[closestMzIndex], 1));
                     }
                 }
 
                 return matchedFragmentIons;
             }
 
-            // search for ions in the spectrum
-            foreach (Product product in theoreticalProducts)
+            // if the spectrum has no peaks
+            if (!scan.ExperimentalFragments.Any())
             {
+                return matchedFragmentIons;
+            }
+
+            // search for ions in the spectrum
+            //foreach (Product product in theoreticalProducts)
+            for(int i = 0; i < theoreticalProducts.Count; i++)
+            {
+                var product = theoreticalProducts[i];
                 // unknown fragment mass; this only happens rarely for sequences with unknown amino acids
                 if (double.IsNaN(product.NeutralMass))
                 {
@@ -122,7 +131,7 @@ namespace EngineLayer
                 // is the mass error acceptable?
                 if (commonParameters.ProductMassTolerance.Within(closestExperimentalMass.monoisotopicMass, product.NeutralMass) && closestExperimentalMass.charge <= scan.PrecursorCharge)
                 {
-                    matchedFragmentIons.Add(new MatchedFragmentIon(product, closestExperimentalMass.monoisotopicMass.ToMz(closestExperimentalMass.charge),
+                    matchedFragmentIons.Add(new MatchedFragmentIon(ref product, closestExperimentalMass.monoisotopicMass.ToMz(closestExperimentalMass.charge),
                         closestExperimentalMass.peaks.First().intensity, closestExperimentalMass.charge));
                 }
             }
@@ -130,8 +139,9 @@ namespace EngineLayer
             {
                 double protonMassShift = complementaryIonConversionDictionary[commonParameters.DissociationType].ToMass(1);
 
-                foreach (Product product in theoreticalProducts)
+                for (int i = 0; i < theoreticalProducts.Count; i++)
                 {
+                    var product = theoreticalProducts[i];
                     // unknown fragment mass or diagnostic ion or precursor; skip those
                     if (double.IsNaN(product.NeutralMass) || product.ProductType == ProductType.D || product.ProductType == ProductType.M)
                     {
@@ -146,7 +156,7 @@ namespace EngineLayer
                     // is the mass error acceptable?
                     if (commonParameters.ProductMassTolerance.Within(closestExperimentalMass.monoisotopicMass, compIonMass) && closestExperimentalMass.charge <= scan.PrecursorCharge)
                     {
-                        matchedFragmentIons.Add(new MatchedFragmentIon(product, closestExperimentalMass.monoisotopicMass.ToMz(closestExperimentalMass.charge),
+                        matchedFragmentIons.Add(new MatchedFragmentIon(ref product, closestExperimentalMass.monoisotopicMass.ToMz(closestExperimentalMass.charge),
                             closestExperimentalMass.totalIntensity, closestExperimentalMass.charge));
                     }
                 }

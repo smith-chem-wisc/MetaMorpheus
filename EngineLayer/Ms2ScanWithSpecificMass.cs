@@ -19,9 +19,12 @@ namespace EngineLayer
 
             TheScan = mzLibScan;
 
-            ExperimentalFragments = neutralExperimentalFragments ?? GetNeutralExperimentalFragments(mzLibScan, commonParam);
+            if (commonParam.DissociationType != DissociationType.LowCID)
+            {
+                ExperimentalFragments = neutralExperimentalFragments ?? GetNeutralExperimentalFragments(mzLibScan, commonParam);
+            }
 
-            if (ExperimentalFragments.Any())
+            if (ExperimentalFragments != null && ExperimentalFragments.Any())
             {
                 DeconvolutedMonoisotopicMasses = ExperimentalFragments.Select(p => p.monoisotopicMass).ToArray();
             }
@@ -50,7 +53,7 @@ namespace EngineLayer
         public int NumPeaks => TheScan.MassSpectrum.Size;
 
         public double TotalIonCurrent => TheScan.TotalIonCurrent;
-        
+
         public static IsotopicEnvelope[] GetNeutralExperimentalFragments(MsDataScan scan, CommonParameters commonParam)
         {
             int minZ = 1;
