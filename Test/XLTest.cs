@@ -811,16 +811,16 @@ namespace Test
                 csm.BetaPeptide.ResolveAllAmbiguities();
             }
             // test parent scan (CID)
-            Assert.AreEqual(csm.MatchedFragmentIons.Count, 32);
+            Assert.AreEqual(csm.MatchedFragmentIons.Count, 37);
             Assert.That(csm.ScanNumber == 2);
 
             // test child scan (low-resolution CID, alpha peptide signature ion)
-            Assert.That(csm.ChildMatchedFragmentIons.First().Key == 4);
-            Assert.That(csm.ChildMatchedFragmentIons.First().Value.Count == 63);
+            Assert.That(csm.ChildMatchedFragmentIons.First().Key == 6);
+            Assert.That(csm.ChildMatchedFragmentIons.First().Value.Count == 54);
 
             // test child scan (low-resolution CID, beta peptide signature ion)
-            Assert.That(csm.BetaPeptide.ChildMatchedFragmentIons.First().Key == 6);
-            Assert.That(csm.BetaPeptide.ChildMatchedFragmentIons.First().Value.Count == 54);
+            Assert.That(csm.BetaPeptide.ChildMatchedFragmentIons.First().Key == 4);
+            Assert.That(csm.BetaPeptide.ChildMatchedFragmentIons.First().Value.Count == 63);
 
             // write results to TSV
             csm.SetFdrValues(1, 0, 0, 0, 0, 0, 0, 0);
@@ -830,12 +830,12 @@ namespace Test
             var psmFromTsv = PsmTsvReader.ReadTsv(outputFile, out var warnings).First();
 
             Assert.That(psmFromTsv.ChildScanMatchedIons.Count == 2
-                && psmFromTsv.ChildScanMatchedIons.First().Key == 4
-                && psmFromTsv.ChildScanMatchedIons.First().Value.Count == 63);
+                && psmFromTsv.ChildScanMatchedIons.First().Key == 6
+                && psmFromTsv.ChildScanMatchedIons.First().Value.Count == 54);
 
             Assert.That(psmFromTsv.BetaPeptideChildScanMatchedIons.Count == 2
-                && psmFromTsv.BetaPeptideChildScanMatchedIons.First().Key == 6
-                && psmFromTsv.BetaPeptideChildScanMatchedIons.First().Value.Count == 54);
+                && psmFromTsv.BetaPeptideChildScanMatchedIons.First().Key == 4
+                && psmFromTsv.BetaPeptideChildScanMatchedIons.First().Value.Count == 63);
 
             File.Delete(outputFile);
         }
