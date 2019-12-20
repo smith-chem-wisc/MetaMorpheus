@@ -659,7 +659,7 @@ namespace TaskLayer
             }
         }
 
-        private static List<PeptideWithSetModifications> ReadPeptideIndex(string peptideIndexFileName, List<Protein> allKnownProteins)
+        private static List<PeptideWithSetModifications> ReadPeptideIndex(string peptideIndexFileName, List<Protein> allKnownProteins, DigestionParams digestionParams)
         {
             var messageTypes = GetSubclassesAndItself(typeof(List<PeptideWithSetModifications>));
             var ser = new NetSerializer.Serializer(messageTypes);
@@ -686,7 +686,7 @@ namespace TaskLayer
             // get non-serialized information for the peptides (proteins, mod info)
             foreach (var peptide in peptideIndex)
             {
-                peptide.SetNonSerializedPeptideInfo(GlobalVariables.AllModsKnownDictionary, proteinDictionary);
+                peptide.SetNonSerializedPeptideInfo(GlobalVariables.AllModsKnownDictionary, proteinDictionary, digestionParams);
             }
 
             return peptideIndex;
@@ -816,7 +816,7 @@ namespace TaskLayer
             else //if we found indexes with the same params
             {
                 Status("Reading peptide index...", new List<string> { taskId });
-                peptideIndex = ReadPeptideIndex(Path.Combine(pathToFolderWithIndices, PeptideIndexFileName), allKnownProteins);
+                peptideIndex = ReadPeptideIndex(Path.Combine(pathToFolderWithIndices, PeptideIndexFileName), allKnownProteins, CommonParameters.DigestionParams);
 
                 Status("Reading fragment index...", new List<string> { taskId });
                 fragmentIndex = ReadFragmentIndex(Path.Combine(pathToFolderWithIndices, FragmentIndexFileName));

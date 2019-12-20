@@ -57,9 +57,9 @@ namespace EngineLayer.Indexing
             sb.AppendLine("Partitions: " + CurrentPartition + "/" + CommonParameters.TotalPartitions);
             sb.AppendLine("Precursor Index: " + GeneratePrecursorIndex);
             sb.AppendLine("Search Decoys: " + DecoyType);
-            sb.AppendLine("Number of proteins: " + ProteinList.Count);
-            sb.AppendLine("Number of fixed mods: " + FixedModifications.Count);
-            sb.AppendLine("Number of variable mods: " + VariableModifications.Count);
+            sb.AppendLine("Number of Proteins: " + ProteinList.Count);
+            sb.AppendLine("Number of Fixed Mods: " + FixedModifications.Count);
+            sb.AppendLine("Number of Variable Mods: " + VariableModifications.Count);
             sb.AppendLine("Dissociation Type: " + CommonParameters.DissociationType);
 
             sb.AppendLine("protease: " + CommonParameters.DigestionParams.Protease);
