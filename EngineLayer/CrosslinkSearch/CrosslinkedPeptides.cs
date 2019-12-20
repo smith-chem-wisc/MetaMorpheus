@@ -24,13 +24,12 @@ namespace EngineLayer.CrosslinkSearch
                 massesToLocalize.Add(crosslinker.TotalMass + otherPeptideMass);
             }
 
-            List<Product> theoreticalProducts = new List<Product>();
             var fragments = new List<Product>();
             HashSet<double> masses = new HashSet<double>();
 
             foreach (int crosslinkerPosition in possibleCrosslinkerPositions)
             {
-                theoreticalProducts.Clear();
+                List<Product> theoreticalProducts = new List<Product>(); //need a new one each time to pass as a reference, don't clear
                 masses.Clear();
 
                 foreach (double massToLocalize in massesToLocalize)
