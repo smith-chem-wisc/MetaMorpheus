@@ -89,25 +89,24 @@ namespace TaskLayer
 
                 Status("Getting ms2 scans...", thisId);
 
-                Ms2ScanWithSpecificMass[] arrayOfMs2ScansSortedByMass = GetMs2Scans(myMsDataFile, origDataFile, combinedParams).ToArray();
-                //List<GlycoSpectralMatch>[] newCsmsPerMS2ScanPerFile = new List<GlycoSpectralMatch>[arrayOfMs2ScansSortedByMass.Length];
+                Ms2ScanWithSpecificMass[] arrayOfMs2ScansSortedByMass = GetMs2Scans(myMsDataFile, origDataFile, combinedParams).OrderBy(b => b.PrecursorMass).ToArray();
+                List<GlycoSpectralMatch>[] newCsmsPerMS2ScanPerFile = new List<GlycoSpectralMatch>[arrayOfMs2ScansSortedByMass.Length];
 
-                var ms2ScanGroup = arrayOfMs2ScansSortedByMass.GroupBy(p => p.OneBasedScanNumber);
-                Ms2ScanWithSpecificMass[] arrayOfMs2Scans = new Ms2ScanWithSpecificMass[ms2ScanGroup.Count()];
-                List<double>[] precursors = new List<double>[ms2ScanGroup.Count()];
-                int scanIndex = 0;
-                foreach (var g in ms2ScanGroup)
-                {
-                    arrayOfMs2Scans[scanIndex] = g.First();
-                    precursors[scanIndex] = new List<double>();
-                    foreach (var scan in g)
-                    {
-                        precursors[scanIndex].Add(scan.PrecursorMass);
-                    }
-                    scanIndex++;
-                }
-
-                List<List<GlycoSpectralMatch>>[] gsmsPerMS2ScanPerFile = new List<List<GlycoSpectralMatch>>[ms2ScanGroup.Count()];
+                //var ms2ScanGroup = arrayOfMs2ScansSortedByMass.GroupBy(p => p.OneBasedScanNumber);
+                //Ms2ScanWithSpecificMass[] arrayOfMs2Scans = new Ms2ScanWithSpecificMass[ms2ScanGroup.Count()];
+                //List<double>[] precursors = new List<double>[ms2ScanGroup.Count()];
+                //int scanIndex = 0;
+                //foreach (var g in ms2ScanGroup)
+                //{
+                //    arrayOfMs2Scans[scanIndex] = g.First();
+                //    precursors[scanIndex] = new List<double>();
+                //    foreach (var scan in g)
+                //    {
+                //        precursors[scanIndex].Add(scan.PrecursorMass);
+                //    }
+                //    scanIndex++;
+                //}
+                //List<List<GlycoSpectralMatch>>[] gsmsPerMS2ScanPerFile = new List<List<GlycoSpectralMatch>>[ms2ScanGroup.Count()];
 
                 for (int currentPartition = 0; currentPartition < CommonParameters.TotalPartitions; currentPartition++)
                 {
@@ -136,18 +135,19 @@ namespace TaskLayer
                     }
 
                     Status("Searching files...", taskId);
-                    //new GlycoSearchEngine(newCsmsPerMS2ScanPerFile, arrayOfMs2ScansSortedByMass, peptideIndex, fragmentIndex, secondFragmentIndex, currentPartition, combinedParams, 
-                    //    _glycoSearchParameters.IsOGlycoSearch, _glycoSearchParameters.RestrictToTopNHits, _glycoSearchParameters.GlycoSearchTopNum, _glycoSearchParameters.SearchGlycan182, _glycoSearchParameters.MaximumOGlycanAllowed, thisId).Run();
+                    new GlycoSearchEngine(newCsmsPerMS2ScanPerFile, arrayOfMs2ScansSortedByMass, peptideIndex, fragmentIndex, secondFragmentIndex, currentPartition, combinedParams,
+                        _glycoSearchParameters.IsOGlycoSearch, _glycoSearchParameters.RestrictToTopNHits, _glycoSearchParameters.GlycoSearchTopNum, _glycoSearchParameters.SearchGlycan182, _glycoSearchParameters.MaximumOGlycanAllowed, thisId).Run();
 
-                    new GlycoLocalizationSearchEngine(gsmsPerMS2ScanPerFile, arrayOfMs2Scans, peptideIndex, fragmentIndex, secondFragmentIndex, currentPartition, combinedParams,
-                        _glycoSearchParameters.IsOGlycoSearch, _glycoSearchParameters.RestrictToTopNHits, _glycoSearchParameters.GlycoSearchTopNum, _glycoSearchParameters.SearchGlycan182, _glycoSearchParameters.MaximumOGlycanAllowed, precursors, thisId).Run();
+                    //new GlycoLocalizationSearchEngine(gsmsPerMS2ScanPerFile, arrayOfMs2Scans, peptideIndex, fragmentIndex, secondFragmentIndex, currentPartition, combinedParams,
+                    //    _glycoSearchParameters.IsOGlycoSearch, _glycoSearchParameters.RestrictToTopNHits, _glycoSearchParameters.GlycoSearchTopNum, _glycoSearchParameters.SearchGlycan182, _glycoSearchParameters.MaximumOGlycanAllowed, precursors, thisId).Run();
 
 
                     ReportProgress(new ProgressEventArgs(100, "Done with search " + (currentPartition + 1) + "/" + CommonParameters.TotalPartitions + "!", thisId));
                     if (GlobalVariables.StopLoops) { break; }
                 }
 
-                ListOfGsmsPerMS2Scan.AddRange(gsmsPerMS2ScanPerFile.Where(p => p != null).SelectMany(p=>p));
+                ListOfGsmsPerMS2Scan.AddRange(newCsmsPerMS2ScanPerFile.Where(p => p != null).ToList());
+                //ListOfGsmsPerMS2Scan.AddRange(gsmsPerMS2ScanPerFile.Where(p => p != null).SelectMany(p=>p));
 
                 completedFiles++;
                 ReportProgress(new ProgressEventArgs(completedFiles / currentRawFileList.Count, "Searching...", new List<string> { taskId, "Individual Spectra Files" }));
