@@ -346,6 +346,22 @@ namespace EngineLayer.GlycoSearch
             }
             return fragmentHash;
         }
+
+        public static int[] GetFragmentHash(List<Product> products, List<int> modPoses, int modInd, GlycanBox OGlycanBox, int FragmentBinsPerDalton)
+        {
+            double[] newFragments = products.Select(p => p.NeutralMass).ToArray();
+            
+
+
+
+            int[] fragmentHash = new int[products.Count];
+            for (int i = 0; i < products.Count; i++)
+            {
+                fragmentHash[i] = (int)Math.Round(newFragments[i] * FragmentBinsPerDalton);
+            }
+            return fragmentHash;
+        }
+
         #endregion
     }
 }

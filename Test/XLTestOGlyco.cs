@@ -189,5 +189,77 @@ namespace Test
             var fraghash = ModBox.GetFragmentHash(frags.ToList(), tuples, 1000);
         }
 
+        [Test]
+        public static void OGlycoTest_Localization()
+        {
+            GlycanBox.GlobalOGlycans = Glycan.LoadGlycan(GlobalVariables.OGlycanLocation).ToArray();
+            GlycanBox.GlobalOGlycanModifications = GlycanBox.BuildGlobalOGlycanModifications(GlycanBox.GlobalOGlycans);
+            var OGlycanBoxes = GlycanBox.BuildOGlycanBoxes(3).OrderBy(p => p.Mass).ToArray();
+            var glycanBox = OGlycanBoxes[19];
+
+            Protein protein = new Protein("TTGSLEPSSGASGPQVSSVK", "P16150");
+            var peptide = protein.Digest(new DigestionParams(), new List<Modification>(), new List<Modification>()).First();
+            List<Product> products = peptide.Fragment(DissociationType.ETD, FragmentationTerminus.Both).ToList();
+
+
+            int[] modPos = GlycoSpectralMatch.GetPossibleModSites(peptide, new string[] { "S", "T" }).OrderBy(p=>p).ToArray();
+
+            var boxes = GlycanBox.BuildOGlycanBoxes(3, glycanBox.GlycanIds).ToArray();
+
+            LocalizationGraph localizationGraph = new LocalizationGraph(modPos.Length, boxes.Length);
+
+            for (int i = 0; i < modPos.Length; i++)
+            {
+                int maxLength = i + 1;
+                int minlength = glycanBox.GlycanIds.Length - (modPos.Length - 1 - i);
+
+                for (int j = 0; j < boxes.Length; j++)
+                {
+                    if (boxes[j].NumberOfGlycans<= maxLength && boxes[j].NumberOfGlycans >= minlength)
+                    {
+                        AdjNode adjNode = new AdjNode(i, j, modPos[i], boxes[j]);
+                        if (i == 0)
+                        {
+                            //Get cost
+                            adjNode.maxCost = 0;
+
+                        }
+                        else
+                        {
+                            double maxCost = 0;
+                            for (int prej = 0; prej <= j; prej++)
+                            {
+                                if (boxes[j].NumberOfGlycans <= boxes[prej].NumberOfGlycans + 1 &&
+                                    (boxes[prej].GlycanIds.Length == 0 || boxes[j].GlycanIds.Any(boxes[prej].GlycanIds.Contains)) &&
+                                    localizationGraph.array[i - 1][prej]!=null)
+                                {                       
+                                    var cost = localizationGraph.array[i-1][prej].maxCost;
+                                    if (cost > maxCost)
+                                    {
+                                        adjNode.Sources.Clear();
+                                        adjNode.Costs.Clear();
+
+                                        adjNode.Sources.Add(prej);
+                                        adjNode.Costs.Add(cost);
+                                        maxCost = cost;
+                                    }
+                                    else if(cost == maxCost)
+                                    {
+                                        adjNode.Sources.Add(prej);
+                                        adjNode.Costs.Add(cost);
+                                    }
+
+                                }
+                            }
+                            adjNode.maxCost = adjNode.Costs.Max();
+                        }
+
+                        localizationGraph.array[i][j] = adjNode;
+                    }
+                }
+
+            }
+
+        }
     }
 }
