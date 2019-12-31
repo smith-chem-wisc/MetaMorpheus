@@ -347,15 +347,28 @@ namespace EngineLayer.GlycoSearch
             return fragmentHash;
         }
 
-        public static int[] GetFragmentHash(List<Product> products, List<int> modPoses, int modInd, GlycanBox OGlycanBox, int FragmentBinsPerDalton)
+        public static int[] GetFragmentHash(List<Product> products, int peptideLength, int[] modPoses, int modInd, GlycanBox OGlycanBox, GlycanBox localOGlycanBox, int FragmentBinsPerDalton)
         {
-            double[] newFragments = products.Select(p => p.NeutralMass).ToArray();
-            
+            List<double> newFragments = new List<double>();
+            var local_c_fragments = products.Where(p => p.ProductType == ProductType.c && p.TerminusFragment.AminoAcidPosition >= modPoses[modInd]-1 && p.TerminusFragment.AminoAcidPosition < modPoses[modInd+1]-1).ToList();
+
+            foreach (var c in local_c_fragments)
+            {
+                var newMass = c.NeutralMass + (double)localOGlycanBox.Mass / 1E5;
+                newFragments.Add(newMass);
+            }
+
+            var local_z_fragments = products.Where(p => p.ProductType == ProductType.zDot && p.TerminusFragment.AminoAcidPosition >= modPoses[modInd]  && p.TerminusFragment.AminoAcidPosition < modPoses[modInd + 1] ).ToList();
+
+            foreach (var z in local_z_fragments)
+            {
+                var newMass = z.NeutralMass + (double)(OGlycanBox.Mass - localOGlycanBox.Mass) / 1E5;
+                newFragments.Add(newMass);
+            }
 
 
-
-            int[] fragmentHash = new int[products.Count];
-            for (int i = 0; i < products.Count; i++)
+            int[] fragmentHash = new int[newFragments.Count];
+            for (int i = 0; i < newFragments.Count; i++)
             {
                 fragmentHash[i] = (int)Math.Round(newFragments[i] * FragmentBinsPerDalton);
             }

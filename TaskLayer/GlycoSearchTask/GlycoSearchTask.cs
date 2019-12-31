@@ -117,7 +117,7 @@ namespace TaskLayer
 
                     Status("Getting fragment dictionary...", new List<string> { taskId });
 
-                    //Only reverse Decoy for crosslink search has been tested and are set as fixed parameter.
+                    //Only reverse Decoy for glyco search has been tested and are set as fixed parameter.
                     var indexEngine = new IndexingEngine(proteinListSubset, variableModifications, fixedModifications, null, null, null, currentPartition, UsefulProteomicsDatabases.DecoyType.Reverse, combinedParams, 30000.0, false, dbFilenameList.Select(p => new FileInfo(p.FilePath)).ToList(), new List<string> { taskId });
                     List<int>[] fragmentIndex = null;
                     List<int>[] precursorIndex = null;

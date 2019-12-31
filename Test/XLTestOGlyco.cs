@@ -201,10 +201,51 @@ namespace Test
             var peptide = protein.Digest(new DigestionParams(), new List<Modification>(), new List<Modification>()).First();
             List<Product> products = peptide.Fragment(DissociationType.ETD, FragmentationTerminus.Both).ToList();
 
-
             int[] modPos = GlycoSpectralMatch.GetPossibleModSites(peptide, new string[] { "S", "T" }).OrderBy(p=>p).ToArray();
-
             var boxes = GlycanBox.BuildOGlycanBoxes(3, glycanBox.GlycanIds).ToArray();
+
+            var testProducts = GlycoPeptides.GetFragmentHash(products, peptide.Length, modPos, 0, glycanBox, boxes[1], 1000);
+            var testProducts1 = GlycoPeptides.GetFragmentHash(products, peptide.Length, modPos, 1, glycanBox, boxes[1], 1000);
+            Assert.That(testProducts.Count() == 2);
+            Assert.That(testProducts1.Count() == 4);
+
+
+            CommonParameters commonParameters = new CommonParameters(dissociationType: DissociationType.EThcD, trimMsMsPeaks:false);
+
+            string spectraFile = Path.Combine(TestContext.CurrentContext.TestDirectory, @"GlycoTestData\2019_09_16_StcEmix_35trig_EThcD25_rep1_4565.mgf");
+            var file = new MyFileManager(true).LoadFile(spectraFile, commonParameters);
+
+            //Get hashset int
+            var scans = MetaMorpheusTask.GetMs2Scans(file, spectraFile, commonParameters).ToArray();
+
+            int obsPreviousFragmentCeilingMz = 0;
+            List<int> binsToSearch = new List<int>();
+
+            foreach (var envelope in scans.First().ExperimentalFragments)
+            {
+                // assume charge state 1 to calculate mass tolerance
+                double experimentalFragmentMass = envelope.monoisotopicMass;
+
+                // get theoretical fragment bins within mass tolerance
+                int obsFragmentFloorMass = (int)Math.Floor((commonParameters.ProductMassTolerance.GetMinimumValue(experimentalFragmentMass)) * 1000);
+                int obsFragmentCeilingMass = (int)Math.Ceiling((commonParameters.ProductMassTolerance.GetMaximumValue(experimentalFragmentMass)) * 1000);
+
+                // prevents double-counting peaks close in m/z and lower-bound out of range exceptions
+                if (obsFragmentFloorMass < obsPreviousFragmentCeilingMz)
+                {
+                    obsFragmentFloorMass = obsPreviousFragmentCeilingMz;
+                }
+                obsPreviousFragmentCeilingMz = obsFragmentCeilingMass + 1;
+
+                // search mass bins within a tolerance
+                for (int fragmentBin = obsFragmentFloorMass; fragmentBin <= obsFragmentCeilingMass; fragmentBin++)
+                {
+                    binsToSearch.Add(fragmentBin);
+                }
+            }
+
+            HashSet<int> allPeaks = new HashSet<int>(binsToSearch);
+
 
             LocalizationGraph localizationGraph = new LocalizationGraph(modPos.Length, boxes.Length);
 
@@ -218,10 +259,11 @@ namespace Test
                     if (boxes[j].NumberOfGlycans<= maxLength && boxes[j].NumberOfGlycans >= minlength)
                     {
                         AdjNode adjNode = new AdjNode(i, j, modPos[i], boxes[j]);
+                        var cost = LocalizationGraph.CalculateCost(allPeaks, products, peptide.Length, modPos, i, glycanBox, boxes[j], 1000);
                         if (i == 0)
                         {
-                            //Get cost
-                            adjNode.maxCost = 0;
+                            //Get cost                             
+                            adjNode.maxCost = cost;
 
                         }
                         else
@@ -233,7 +275,7 @@ namespace Test
                                     (boxes[prej].GlycanIds.Length == 0 || boxes[j].GlycanIds.Any(boxes[prej].GlycanIds.Contains)) &&
                                     localizationGraph.array[i - 1][prej]!=null)
                                 {                       
-                                    var cost = localizationGraph.array[i-1][prej].maxCost;
+                                    cost = cost + localizationGraph.array[i-1][prej].maxCost;
                                     if (cost > maxCost)
                                     {
                                         adjNode.Sources.Clear();

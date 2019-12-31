@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.Text;
 using System.Linq;
 using EngineLayer.ModernSearch;
+using Proteomics.Fragmentation;
 
 namespace EngineLayer.GlycoSearch
 {
@@ -17,12 +18,18 @@ namespace EngineLayer.GlycoSearch
                 array[i] = new AdjNode[glycanCount];
             }
         }
-        public static void CalculateCost(HashSet<int> allPeaksForLocalization, GlycanBox glycanBox, List<int> modPos, int FragmentBinsPerDalton)
+        public static double CalculateCost(HashSet<int> allPeaksForLocalization, List<Product> products, int peptideLength, int[] modPos, int modInd, GlycanBox OGlycanBox, GlycanBox box, int FragmentBinsPerDalton)
         {
-            //var fragmentHash = GlycoPeptides.GetFragmentHash(products, glycanBoxId_localization[i], glycanBox, FragmentBinsPerDalton);
+            if (modInd == modPos.Length - 1)
+            {
+                return 0;
+            }
 
-            //int currentLocalizationScore = allPeaksForLocalization.Intersect(fragmentHash).Count();
+            var fragmentHash = GlycoPeptides.GetFragmentHash(products, peptideLength, modPos, modInd, OGlycanBox, box, FragmentBinsPerDalton);
 
+            int currentLocalizationScore = allPeaksForLocalization.Intersect(fragmentHash).Count();
+
+            return (double)currentLocalizationScore;
         }
     }
 
