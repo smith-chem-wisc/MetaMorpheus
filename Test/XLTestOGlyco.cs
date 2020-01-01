@@ -192,35 +192,35 @@ namespace Test
         [Test]
         public static void OGlycoTest_Localization()
         {
+            //Get glycanBox
             GlycanBox.GlobalOGlycans = Glycan.LoadGlycan(GlobalVariables.OGlycanLocation).ToArray();
             GlycanBox.GlobalOGlycanModifications = GlycanBox.BuildGlobalOGlycanModifications(GlycanBox.GlobalOGlycans);
             var OGlycanBoxes = GlycanBox.BuildOGlycanBoxes(3).OrderBy(p => p.Mass).ToArray();
             var glycanBox = OGlycanBoxes[19];
 
+            //Get unmodified peptide, products, allPossible modPos and all boxes.
             Protein protein = new Protein("TTGSLEPSSGASGPQVSSVK", "P16150");
             var peptide = protein.Digest(new DigestionParams(), new List<Modification>(), new List<Modification>()).First();
             List<Product> products = peptide.Fragment(DissociationType.ETD, FragmentationTerminus.Both).ToList();
 
             int[] modPos = GlycoSpectralMatch.GetPossibleModSites(peptide, new string[] { "S", "T" }).OrderBy(p=>p).ToArray();
             var boxes = GlycanBox.BuildOGlycanBoxes(3, glycanBox.GlycanIds).ToArray();
+            Assert.That(boxes.Count() == 5);
 
+            //Test GetFragmentHash, which is used for localiation.
             var testProducts = GlycoPeptides.GetFragmentHash(products, peptide.Length, modPos, 0, glycanBox, boxes[1], 1000);
             var testProducts1 = GlycoPeptides.GetFragmentHash(products, peptide.Length, modPos, 1, glycanBox, boxes[1], 1000);
             Assert.That(testProducts.Count() == 2);
             Assert.That(testProducts1.Count() == 4);
 
-
+            //Get hashset int
             CommonParameters commonParameters = new CommonParameters(dissociationType: DissociationType.EThcD, trimMsMsPeaks:false);
-
             string spectraFile = Path.Combine(TestContext.CurrentContext.TestDirectory, @"GlycoTestData\2019_09_16_StcEmix_35trig_EThcD25_rep1_4565.mgf");
             var file = new MyFileManager(true).LoadFile(spectraFile, commonParameters);
-
-            //Get hashset int
             var scans = MetaMorpheusTask.GetMs2Scans(file, spectraFile, commonParameters).ToArray();
 
             int obsPreviousFragmentCeilingMz = 0;
             List<int> binsToSearch = new List<int>();
-
             foreach (var envelope in scans.First().ExperimentalFragments)
             {
                 // assume charge state 1 to calculate mass tolerance
@@ -243,64 +243,18 @@ namespace Test
                     binsToSearch.Add(fragmentBin);
                 }
             }
-
             HashSet<int> allPeaks = new HashSet<int>(binsToSearch);
 
+            //Known peptideWithMod match.
+            var peptideWithMod = GlycoPeptides.OGlyGetTheoreticalPeptide(new int[3] { 10, 2, 3}, peptide, glycanBox);
+            Assert.That(peptideWithMod.FullSequence == "T[O-Glycosylation:H1N1A0G0F0 on X]T[O-Glycosylation:H1N1A0G0F0 on X]GSLEPSS[O-Glycosylation:H0N1A0G0F0 on X]GASGPQVSSVK");
+            List<Product> knownProducts = peptideWithMod.Fragment(DissociationType.EThcD, FragmentationTerminus.Both).ToList();
+            var matchedKnownFragmentIons = MetaMorpheusEngine.MatchFragmentIons(scans.First(), knownProducts, commonParameters);
 
+            //Graph Localization
             LocalizationGraph localizationGraph = new LocalizationGraph(modPos.Length, boxes.Length);
 
-            for (int i = 0; i < modPos.Length; i++)
-            {
-                int maxLength = i + 1;
-                int minlength = glycanBox.GlycanIds.Length - (modPos.Length - 1 - i);
-
-                for (int j = 0; j < boxes.Length; j++)
-                {
-                    if (boxes[j].NumberOfGlycans<= maxLength && boxes[j].NumberOfGlycans >= minlength)
-                    {
-                        AdjNode adjNode = new AdjNode(i, j, modPos[i], boxes[j]);
-                        var cost = LocalizationGraph.CalculateCost(allPeaks, products, peptide.Length, modPos, i, glycanBox, boxes[j], 1000);
-                        if (i == 0)
-                        {
-                            //Get cost                             
-                            adjNode.maxCost = cost;
-
-                        }
-                        else
-                        {
-                            double maxCost = 0;
-                            for (int prej = 0; prej <= j; prej++)
-                            {
-                                if (boxes[j].NumberOfGlycans <= boxes[prej].NumberOfGlycans + 1 &&
-                                    (boxes[prej].GlycanIds.Length == 0 || boxes[j].GlycanIds.Any(boxes[prej].GlycanIds.Contains)) &&
-                                    localizationGraph.array[i - 1][prej]!=null)
-                                {                       
-                                    cost = cost + localizationGraph.array[i-1][prej].maxCost;
-                                    if (cost > maxCost)
-                                    {
-                                        adjNode.Sources.Clear();
-                                        adjNode.Costs.Clear();
-
-                                        adjNode.Sources.Add(prej);
-                                        adjNode.Costs.Add(cost);
-                                        maxCost = cost;
-                                    }
-                                    else if(cost == maxCost)
-                                    {
-                                        adjNode.Sources.Add(prej);
-                                        adjNode.Costs.Add(cost);
-                                    }
-
-                                }
-                            }
-                            adjNode.maxCost = adjNode.Costs.Max();
-                        }
-
-                        localizationGraph.array[i][j] = adjNode;
-                    }
-                }
-
-            }
+            localizationGraph.Localization(modPos, glycanBox, boxes, allPeaks, products, peptide.Length);
 
         }
     }
