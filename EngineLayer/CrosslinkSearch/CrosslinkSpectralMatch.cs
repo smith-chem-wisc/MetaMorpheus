@@ -24,8 +24,8 @@ namespace EngineLayer.CrosslinkSearch
 
         //currently unused but will be used again soon for cleavable crosslinker
         //public string ParentIonExist { get; set; }
+        //public int ParentIonExistNum { get; set; }
 
-        public int ParentIonExistNum { get; set; }
         public List<int> ParentIonMaxIntensityRanks { get; set; }
         public PsmCrossType CrossType { get; set; }
         public Dictionary<int, List<MatchedFragmentIon>> ChildMatchedFragmentIons { get; set; }
