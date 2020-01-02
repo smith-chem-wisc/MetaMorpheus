@@ -191,6 +191,16 @@
     <None Update="VariantSearchTaskconfig.toml">
       <CopyToOutputDirectory>Always</CopyToOutputDirectory>
     </None>
+        <None Update="XlTestData\2017-11-21_XL_DSSO_Ribosome_RT60min_28800-28898.mzML">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </None>
+
+    <None Update="XlTestData\ms2ms3mixed_10226.mzML">
+      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+    </None>
+    <None Update="XlTestData\RibosomeGO.fasta">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </None>
     <None Update="XlTestData\10226.mzML">
       <CopyToOutputDirectory>Always</CopyToOutputDirectory>
     </None>

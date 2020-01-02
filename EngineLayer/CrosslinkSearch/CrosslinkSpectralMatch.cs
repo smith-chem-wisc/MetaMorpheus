@@ -36,9 +36,12 @@ namespace EngineLayer.CrosslinkSearch
 
         public bool IsIntraCsm()
         {
+            //The pair "ProteinA and Decoy_ProteinA" is count for intra-crosslink. 
             if (this.ProteinAccession != null && this.BetaPeptide.ProteinAccession != null)
             {
-                if (this.ProteinAccession == this.BetaPeptide.ProteinAccession)
+                if (this.ProteinAccession == this.BetaPeptide.ProteinAccession || 
+                    this.ProteinAccession == "DECOY_"+ this.BetaPeptide.ProteinAccession || 
+                    this.BetaPeptide.ProteinAccession == "DECOY_" + this.ProteinAccession)
                 {
                     return true;
                 }
@@ -53,13 +56,14 @@ namespace EngineLayer.CrosslinkSearch
                 {
                     foreach (var beta in betaProteins)
                     {
-                        if (alpha == beta)
+                        if (alpha == beta || alpha == "DECOY_" + beta || beta == "DECOY_" + alpha)
                         {
                             return true;
                         }
                     }
                 }
             }
+
             return false;
         }
 
@@ -85,14 +89,14 @@ namespace EngineLayer.CrosslinkSearch
             }
         }
 
-        public static void GetPossibleCrosslinkerModSites(char[] crosslinkerModSites, PeptideWithSetModifications peptide, InitiatorMethionineBehavior initiatorMethionineBehavior, bool CrosslinkAtCleavageSite, out List<int> possibleXlPositions)
+        public static List<int> GetPossibleCrosslinkerModSites(char[] crosslinkerModSites, PeptideWithSetModifications peptide, InitiatorMethionineBehavior initiatorMethionineBehavior, bool CrosslinkAtCleavageSite)
         {
-            possibleXlPositions = null;
+            List<int> possibleXlPositions = null;
 
             bool wildcard = crosslinkerModSites.Any(p => p == 'X');
 
             var range = Enumerable.Range(0, peptide.BaseSequence.Length);
-            if (!CrosslinkAtCleavageSite && peptide.OneBasedEndResidueInProtein != peptide.Protein.Length
+            if (!CrosslinkAtCleavageSite && peptide.OneBasedEndResidueInProtein != peptide.Protein.Length 
                 && !peptide.Protein.ProteolysisProducts.Any(x => x.OneBasedEndPosition == peptide.OneBasedEndResidueInProtein))
             {
                 //The C termial cannot be crosslinked and cleaved.
@@ -113,6 +117,7 @@ namespace EngineLayer.CrosslinkSearch
                     }
                 }
             }
+            return possibleXlPositions;
         }
 
         /// <summary>
@@ -211,7 +216,6 @@ namespace EngineLayer.CrosslinkSearch
             sb.Append("Matched Ion Mass Diff (Ppm)" + '\t');
             sb.Append("Matched Ion Intensities" + '\t');
             sb.Append("Matched Ion Counts" + '\t');
-            sb.Append("Child Scans Matched Ion Series" + '\t');
             sb.Append("Decoy/Contaminant/Target" + '\t');
             sb.Append("QValue" + '\t');
             sb.Append(PsmTsvHeader.PEP + '\t');
