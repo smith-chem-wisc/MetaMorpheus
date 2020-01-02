@@ -261,6 +261,8 @@ namespace Test
             Assert.That(-Math.Abs(chargeStateMode - maxScorePsm.ScanPrecursorCharge), Is.EqualTo(maxPsmData.PrecursorChargeDiffToMode));
             Assert.AreEqual((float)0, maxPsmData.IsVariantPeptide);
 
+            List<PeptideSpectralMatch> psmCopyForCZETest = nonNullPsms.ToList();
+
             PEP_Analysis.ComputePEPValuesForAllPSMsGeneric(nonNullPsms, "standard", "HPLC");
 
             int trueCount = 0;
@@ -329,6 +331,41 @@ namespace Test
             PsmData variantPsmData = PEP_Analysis.CreateOnePsmDataEntry("standard", variantPSM, sequenceToPsmCount, fileSpecificRetTimeHI_behavior, fileSpecificRetTemHI_behaviorModifiedPeptides, massError, chargeStateMode, vpwsm, trainingVariables, vnotch, !maxScorePsm.IsDecoy);
 
             Assert.AreEqual((float)1, variantPsmData.IsVariantPeptide);
+
+
+            //TEST CZE
+            PEP_Analysis.ComputePEPValuesForAllPSMsGeneric(psmCopyForCZETest, "standard", "CZE");
+            trueCount = 0;
+
+            foreach (var item in psmCopyForCZETest.Where(p => p != null))
+            {
+                var b = item.FdrInfo.PEP;
+                if (b >= 0.5)
+                {
+                    trueCount++;
+                }
+            }
+
+            List<PeptideSpectralMatch> moreNonNullPSMsCZE = new List<PeptideSpectralMatch>();
+
+            for (int i = 0; i < 3; i++)
+            {
+                foreach (PeptideSpectralMatch psm in psmCopyForCZETest)
+                {
+                    moreNonNullPSMsCZE.Add(psm);
+                }
+            }
+
+            expectedMetrics = "************************************************************\r\n*       Metrics for Determination of PEP Using Binary Classification      " + 
+                "\r\n*-----------------------------------------------------------\r\n*       Accuracy:  1\r\n*       Area Under Curve:  1\r\n*       " + 
+                "Area under Precision recall Curve:  1\r\n*       F1Score:  1\r\n*       LogLoss:  3.31878396749165E-10\r\n*       LogLossReduction:  0.99999999950635\r\n*       " + 
+                "PositivePrecision:  1\r\n*       PositiveRecall:  1\r\n*       NegativePrecision:  1\r\n*       NegativeRecall:  1\r\n*       Count of Ambiguous Peptides Removed:  " + 
+                "0\r\n************************************************************\r\n";
+
+            metrics = PEP_Analysis.ComputePEPValuesForAllPSMsGeneric(moreNonNullPSMsCZE, "standard", "CZE");
+            Assert.AreEqual(expectedMetrics, metrics);
+            Assert.GreaterOrEqual(32, trueCount);
+
         }
 
         [Test]
