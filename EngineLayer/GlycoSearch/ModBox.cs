@@ -27,6 +27,38 @@ namespace EngineLayer.GlycoSearch
             }
         }
 
+        public static int[] GetAllPossibleModSites(PeptideWithSetModifications peptide, ModBox modBox)
+        {
+            List<int> possibleModSites = new List<int>();
+
+            foreach (var mn in modBox.MotifNeeded)
+            {
+               
+                ModificationMotif.TryGetMotif(mn.Key, out ModificationMotif motif);
+                Modification modWithMotif = new Modification(_target: motif, _locationRestriction: "Anywhere.");
+
+                for (int r = 0; r < peptide.Length; r++)
+                {
+                    if (peptide.AllModsOneIsNterminus.Keys.Contains(r + 2))
+                    {
+                        continue;
+                    }
+
+                    if (ModificationLocalization.ModFits(modWithMotif, peptide.BaseSequence, r + 1, peptide.Length, r + 1))
+                    {
+                        possibleModSites.Add(r + 2);
+                    }
+                }
+
+                if (possibleModSites.Count < mn.Value.Count)
+                {
+                    return null;
+                }
+            }
+            return possibleModSites.OrderBy(p=>p).ToArray();
+        }
+
+        //Tuple<int modpos, int modId>[] is one possible way the peptide is modified
         public static List<Tuple<int, int>[]> GetPossibleModSites(PeptideWithSetModifications peptide, ModBox modBox)
         {
             List<Tuple<int, int>[]> allPossibleMods = new List<Tuple<int, int>[]>();
@@ -92,6 +124,7 @@ namespace EngineLayer.GlycoSearch
             return allPossibleMods;
         }
 
+        //Tuple<int modpos, int modId>
         public static List<Tuple<int, int>[]> GetPermutations(List<int> allModPos, int[] modBoxId)
         {
             var length = modBoxId.Length;
@@ -137,6 +170,7 @@ namespace EngineLayer.GlycoSearch
             return permutateModPositions;
         }
 
+        //Combination of List<List<int>>. See: https://stackoverflow.com/questions/545703/combination-of-listlistint
         public static List<List<T>> AllCombinationsOf<T>(params List<T>[] sets)
         {
             // need array bounds checking etc for production
@@ -181,6 +215,31 @@ namespace EngineLayer.GlycoSearch
             return testPeptide;
         }
 
+        public static PeptideWithSetModifications GetTheoreticalPeptide(int[] theModPositions, PeptideWithSetModifications peptide, ModBox modBox)
+        {
+            Modification[] modifications = new Modification[modBox.NumberOfMods];
+            for (int i = 0; i < modBox.NumberOfMods; i++)
+            {
+                modifications[i] = ModBox.SelectedModifications[modBox.ModIds.ElementAt(i)];
+            }
+
+            Dictionary<int, Modification> testMods = new Dictionary<int, Modification>();
+            foreach (var mod in peptide.AllModsOneIsNterminus)
+            {
+                testMods.Add(mod.Key, mod.Value);
+            }
+
+            for (int i = 0; i < theModPositions.Count(); i++)
+            {
+                testMods.Add(theModPositions.ElementAt(i), modifications[i]);
+            }
+
+            var testPeptide = new PeptideWithSetModifications(peptide.Protein, peptide.DigestionParams, peptide.OneBasedStartResidueInProtein,
+                peptide.OneBasedEndResidueInProtein, peptide.CleavageSpecificityForFdrCategory, peptide.PeptideDescription, peptide.MissedCleavages, testMods, peptide.NumFixedMods);
+
+            return testPeptide;
+        }
+
         public static int[] GetFragmentHash(List<Product> products, Tuple<int, int>[] keyValuePair, int FragmentBinsPerDalton)
         {
             double[] newFragments = products.Select(p => p.NeutralMass).ToArray();
@@ -211,6 +270,61 @@ namespace EngineLayer.GlycoSearch
             return fragmentHash;
         }
 
+        public static int[] GetLocalFragmentHash(List<Product> products, int peptideLength, int[] modPoses, int modInd, ModBox TotalBox, ModBox localBox, int FragmentBinsPerDalton)
+        {
+            List<double> newFragments = new List<double>();
+            var local_c_fragments = products.Where(p => p.ProductType == ProductType.b && p.TerminusFragment.AminoAcidPosition >= modPoses[modInd] - 1 && p.TerminusFragment.AminoAcidPosition < modPoses[modInd + 1] - 1).ToList();
+
+            foreach (var c in local_c_fragments)
+            {
+                var newMass = c.NeutralMass + (double)localBox.Mass / 1E5;
+                newFragments.Add(newMass);
+            }
+
+            var local_z_fragments = products.Where(p => p.ProductType == ProductType.y && p.TerminusFragment.AminoAcidPosition >= modPoses[modInd] && p.TerminusFragment.AminoAcidPosition < modPoses[modInd + 1]).ToList();
+
+            foreach (var z in local_z_fragments)
+            {
+                var newMass = z.NeutralMass + (double)(TotalBox.Mass - localBox.Mass) / 1E5;
+                newFragments.Add(newMass);
+            }
+
+
+            int[] fragmentHash = new int[newFragments.Count];
+            for (int i = 0; i < newFragments.Count; i++)
+            {
+                fragmentHash[i] = (int)Math.Round(newFragments[i] * FragmentBinsPerDalton);
+            }
+            return fragmentHash;
+        }
+
+        public static IEnumerable<ModBox> BuildChildModBoxes(int maxNum, int[] modIds)
+        {
+            yield return new ModBox(new int[0]);
+            HashSet<string> seen = new HashSet<string>();
+            for (int i = 1; i <= maxNum; i++)
+            {
+                foreach (var idCombine in Glycan.GetKCombs(Enumerable.Range(0, maxNum), i))
+                {
+                    List<int> ids = new List<int>();
+                    foreach (var id in idCombine)
+                    {
+                        ids.Add(modIds[id]);
+                    }
+
+                    if (!seen.Contains(string.Join(",", ids.Select(p => p.ToString()))))
+                    {
+                        seen.Add(string.Join(",", ids.Select(p => p.ToString())));
+
+                        ModBox modBox = new ModBox(ids.ToArray());
+
+                        yield return modBox;
+                    }
+
+                }
+            }
+        }
+
         public ModBox(int[] ids)
         {
             ModIds = ids;
@@ -234,6 +348,7 @@ namespace EngineLayer.GlycoSearch
             }
         }
 
+        //key: motif, value: all ids for this motif
         public Dictionary<string, List<int>> MotifNeeded
         {
             get

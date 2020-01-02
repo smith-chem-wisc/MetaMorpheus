@@ -710,7 +710,7 @@ namespace EngineLayer
             }
         }
 
-        public static IEnumerable<GlycanBox> BuildOGlycanBoxes(int maxNum, int[] glycanIds)
+        public static IEnumerable<GlycanBox> BuildChildOGlycanBoxes(int maxNum, int[] glycanIds)
         {
             yield return new GlycanBox(new int[0]);
             HashSet<string> seen = new HashSet<string>();
