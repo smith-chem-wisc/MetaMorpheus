@@ -380,5 +380,43 @@ namespace Test
             Assert.AreEqual(10, psm1.RunnerUpScore);
             Assert.AreEqual(1, psm1.DeltaScore);
         }
+
+        [Test]
+        public static void TestComplementaryIons()
+        {
+            Ms2ScanWithSpecificMass scanB = new Ms2ScanWithSpecificMass(
+                new MsDataScan(
+                    new MzSpectrum(new double[] { }, new double[] { }, false),
+                    2, 1, true, Polarity.Positive, double.NaN, null, null, MZAnalyzerType.Orbitrap, double.NaN, null, null, "scan=1", double.NaN, null, null, double.NaN, null, DissociationType.AnyActivationType, 1, null),
+                100, 1, null, new CommonParameters(), null);
+
+            PeptideSpectralMatch psm1 = new PeptideSpectralMatch(new PeptideWithSetModifications(new Protein("PEPTIDE", "ACCESSION", "ORGANISM"), new DigestionParams(), 1, 2, CleavageSpecificity.Full, "", 0, new Dictionary<int, Modification>(), 0), 0, 10, 1, scanB, new CommonParameters(), new List<MatchedFragmentIon>(), 0);
+
+            PeptideWithSetModifications pwsm = new PeptideWithSetModifications(new Protein("PEPTIDE", "ACCESSION", "ORGANISM"), new DigestionParams(), 1, 2, CleavageSpecificity.Full, "", 0, new Dictionary<int, Modification>(), 0);
+
+            int count = psm1.GetCountComplementaryIons(psm1.PeptidesToMatchingFragments,pwsm);
+
+            //No Matched Fragment Ions Returns 0
+            Assert.AreEqual(0, count);
+
+            count = psm1.GetCountComplementaryIons(null, pwsm);
+            //PeptidesToMatchingFragments Null Returns 0
+            Assert.AreEqual(0, count);
+        
+            var productIons = pwsm.Fragment(DissociationType.HCD, FragmentationTerminus.Both).ToList();
+            List<MatchedFragmentIon> mfiList = new List<MatchedFragmentIon>();
+            foreach (Product prod in productIons)
+            {
+                mfiList.Add(new MatchedFragmentIon(prod, 1, 1, 1));
+            }
+
+            Dictionary<PeptideWithSetModifications, List<MatchedFragmentIon>> PTMF = new Dictionary<PeptideWithSetModifications, List<MatchedFragmentIon>>();
+            PTMF.Add(pwsm, mfiList);
+
+            count = psm1.GetCountComplementaryIons(PTMF, pwsm);
+            //PeptidesToMatchingFragments Contains one N and one C ion so intersection Returns 1
+            Assert.AreEqual(1, count);
+
+        }
     }
 }
