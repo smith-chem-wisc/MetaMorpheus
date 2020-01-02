@@ -21,7 +21,10 @@ namespace EngineLayer.CrosslinkSearch
         public double XLTotalScore { get; set; } //alpha + beta psmCross.
         public double SecondBestXlScore { get; set; } // score of the second-best CSM; this is used to calculate delta score
         public int XlRank { get; set; } //only contain 2 intger, consider change to Tuple.
-        public string ParentIonExist { get; set; }
+
+        //currently unused but will be used again soon for cleavable crosslinker
+        //public string ParentIonExist { get; set; }
+
         public int ParentIonExistNum { get; set; }
         public List<int> ParentIonMaxIntensityRanks { get; set; }
         public PsmCrossType CrossType { get; set; }
