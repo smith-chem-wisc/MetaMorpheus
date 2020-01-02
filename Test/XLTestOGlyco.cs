@@ -260,6 +260,14 @@ namespace Test
         }
 
         [Test]
+        public static void OGlycoTest_GetLeft()
+        {
+            int[] array1 = new int[6] { 0, 0, 0, 1, 1, 2 };
+            int[] array2 = new int[3] { 0, 0, 1 };
+            var left = LocalizationGraph.GetLeft(array1, array2);
+            Assert.That(left.Count() == 3);
+        }
+        [Test]
         public static void OGlycoTest_LocalizationMod()
         {
             //Get modBox
@@ -287,6 +295,12 @@ namespace Test
             var testProducts1 = ModBox.GetLocalFragmentHash(products, peptide.Length, modPos, 2, modBox, boxes[1], 1000);
             Assert.That(testProducts.Count() == 6);
             Assert.That(testProducts1.Count() == 12);
+
+            //Test BoxSatisfyModPos
+            var pos1 = LocalizationGraph.BoxSatisfyModPos(modBox, boxes[5], 30, peptide);
+            Assert.That(pos1);
+            var pos2 = LocalizationGraph.BoxSatisfyModPos(modBox, boxes[5], 31, peptide);
+            Assert.That(!pos2);
 
             //Get hashset int
             CommonParameters commonParameters = new CommonParameters(dissociationType: DissociationType.HCD, trimMsMsPeaks: false);
@@ -325,12 +339,13 @@ namespace Test
             Assert.That(peptideWithMod.FullSequence == "GSDGSVGPVGPAGPIGSAGPP[Common Biological:Hydroxylation on P]GFP[Common Biological:Hydroxylation on P]GAP[Common Biological:Hydroxylation on P]GPK[Common Biological:Hydroxylation on K]GEIGAVGNAGPAGPAGPR");
             List<Product> knownProducts = peptideWithMod.Fragment(DissociationType.HCD, FragmentationTerminus.Both).ToList();
             var matchedKnownFragmentIons = MetaMorpheusEngine.MatchFragmentIons(scans.First(), knownProducts, commonParameters);
+            Assert.That(matchedKnownFragmentIons.Count == 42);
 
             //Graph Localization
             LocalizationGraph localizationGraph = new LocalizationGraph(modPos.Length, boxes.Length);
+            localizationGraph.LocalizationMod(modPos, modBox, boxes, allPeaks, products, peptide);
 
-            localizationGraph.LocalizationMod(modPos, modBox, boxes, allPeaks, products, peptide.Length);
-
+            localizationGraph.GetFirstLocalizedPeptide(modPos, boxes);
         }
     }
 }

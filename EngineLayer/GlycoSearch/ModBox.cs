@@ -277,7 +277,7 @@ namespace EngineLayer.GlycoSearch
 
             foreach (var c in local_c_fragments)
             {
-                var newMass = c.NeutralMass + (double)localBox.Mass / 1E5;
+                var newMass = c.NeutralMass + localBox.Mass;
                 newFragments.Add(newMass);
             }
 
@@ -285,7 +285,7 @@ namespace EngineLayer.GlycoSearch
 
             foreach (var z in local_z_fragments)
             {
-                var newMass = z.NeutralMass + (double)(TotalBox.Mass - localBox.Mass) / 1E5;
+                var newMass = z.NeutralMass + (TotalBox.Mass - localBox.Mass);
                 newFragments.Add(newMass);
             }
 
