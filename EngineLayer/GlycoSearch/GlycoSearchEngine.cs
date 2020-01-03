@@ -652,12 +652,14 @@ namespace EngineLayer.GlycoSearch
                         double currentLocalizationScore = localizationGraph.array.Last().Last().maxCost;
                         if (currentLocalizationScore > bestLocalizedScore)
                         {
+                            var local = localizationGraph.GetFirstLocalizedPeptide(modPos, boxes);
                             localizationCandidates.Clear();
-                            //localizationCandidates.Add(new Tuple<int, Tuple<int, int>[]>(iDLow, permutateModPositions[i]));
+                            localizationCandidates.Add(new Tuple<int, Tuple<int, int>[]>(iDLow, local));
                         }
                         else if (bestLocalizedScore > 0 && currentLocalizationScore == bestLocalizedScore)
                         {
-                            //localizationCandidates.Add(new Tuple<int, Tuple<int, int>[]>(iDLow, permutateModPositions[i]));
+                            var local = localizationGraph.GetFirstLocalizedPeptide(modPos, boxes);
+                            localizationCandidates.Add(new Tuple<int, Tuple<int, int>[]>(iDLow, local));
                         }
 
                         iDLow++;

@@ -267,7 +267,7 @@ namespace EngineLayer.GlycoSearch
 
             List<Tuple<int, int>> tuples = new List<Tuple<int, int>>();
             //Add first.
-            if (boxes[indexes[0]].ModIds!=null)
+            if (boxes[indexes[0]].ModIds.Count()!=0)
             {
                 tuples.Add(new Tuple<int, int>(modPos[0], boxes[indexes[0]].ModIds.First()));
             }
@@ -276,7 +276,7 @@ namespace EngineLayer.GlycoSearch
             {
                 if (indexes[i] != indexes[i-1])
                 {
-                    var left = GetLeft(array[i][indexes[i]].ModBox.ModIds, array[i][indexes[i-1]].ModBox.ModIds).First();
+                    var left = GetLeft(array[i][indexes[i]].ModBox.ModIds, array[i-1][indexes[i-1]].ModBox.ModIds).First();
 
                     tuples.Add(new Tuple<int, int>( modPos[i], left));
                 }

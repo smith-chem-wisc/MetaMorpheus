@@ -345,7 +345,7 @@ namespace Test
             LocalizationGraph localizationGraph = new LocalizationGraph(modPos.Length, boxes.Length);
             localizationGraph.LocalizationMod(modPos, modBox, boxes, allPeaks, products, peptide);
 
-            localizationGraph.GetFirstLocalizedPeptide(modPos, boxes);
+            var local = localizationGraph.GetFirstLocalizedPeptide(modPos, boxes);
         }
     }
 }
