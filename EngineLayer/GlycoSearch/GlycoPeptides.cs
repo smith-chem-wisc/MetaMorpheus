@@ -276,6 +276,31 @@ namespace EngineLayer.GlycoSearch
             return testPeptide;
         }
 
+        public static PeptideWithSetModifications OGlyGetTheoreticalPeptide(Tuple<int, int>[] theModPositions, PeptideWithSetModifications peptide)
+        {
+            Modification[] modifications = new Modification[theModPositions.Length];
+            for (int i = 0; i < theModPositions.Length; i++)
+            {
+                modifications[i] = GlycanBox.GlobalOGlycanModifications[theModPositions[i].Item2];
+            }
+
+            Dictionary<int, Modification> testMods = new Dictionary<int, Modification>();
+            foreach (var mod in peptide.AllModsOneIsNterminus)
+            {
+                testMods.Add(mod.Key, mod.Value);
+            }
+
+            for (int i = 0; i < theModPositions.Length; i++)
+            {
+                testMods.Add(theModPositions[i].Item1, modifications[i]);
+            }
+
+            var testPeptide = new PeptideWithSetModifications(peptide.Protein, peptide.DigestionParams, peptide.OneBasedStartResidueInProtein,
+                peptide.OneBasedEndResidueInProtein, peptide.CleavageSpecificityForFdrCategory, peptide.PeptideDescription, peptide.MissedCleavages, testMods, peptide.NumFixedMods);
+
+            return testPeptide;
+        }
+
         public static List<int[]> GetPermutations(List<int> allModPos, int[] glycanBoxId)
         {
             var length = glycanBoxId.Length;
