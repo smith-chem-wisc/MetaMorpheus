@@ -62,9 +62,9 @@ namespace EngineLayer.GlycoSearch
             }
             else
             {
-                //GlycanBox.GlobalOGlycans = Glycan.LoadGlycan(GlobalVariables.OGlycanLocation).ToArray();
-                //GlycanBox.GlobalOGlycanModifications = GlycanBox.BuildGlobalOGlycanModifications(GlycanBox.GlobalOGlycans);
-                //OGlycanBoxes = GlycanBox.BuildOGlycanBoxes(_maxOGlycanNum).OrderBy(p => p.Mass).ToArray();
+                GlycanBox.GlobalOGlycans = Glycan.LoadGlycan(GlobalVariables.OGlycanLocation).ToArray();
+                GlycanBox.GlobalOGlycanModifications = GlycanBox.BuildGlobalOGlycanModifications(GlycanBox.GlobalOGlycans);
+                OGlycanBoxes = GlycanBox.BuildOGlycanBoxes(_maxOGlycanNum).OrderBy(p => p.Mass).ToArray();
 
                 ModBox.SelectedModifications = new Modification[4];      
                 ModBox.SelectedModifications[0] = GlobalVariables.AllModsKnownDictionary["Hydroxylation on P"];
@@ -72,7 +72,6 @@ namespace EngineLayer.GlycoSearch
                 ModBox.SelectedModifications[2] = GlobalVariables.AllModsKnownDictionary["Glucosylgalactosyl on K"];
                 ModBox.SelectedModifications[3] = GlobalVariables.AllModsKnownDictionary["Galactosyl on K"];
                 //ModBox.SelectedModifications[n] = GlobalVariables.AllModsKnownDictionary["Oxidation on M"];
-
                 ModBoxes = ModBox.BuildModBoxes(_maxOGlycanNum).Where(p => !p.MotifNeeded.ContainsKey("K") || (p.MotifNeeded.ContainsKey("K") && p.MotifNeeded["K"].Count <= 3)).OrderBy(p => p.Mass).ToArray();
             }
         }
@@ -369,9 +368,9 @@ namespace EngineLayer.GlycoSearch
                     while(iDLow < OGlycanBoxes.Count() && (PrecusorSearchMode.Within(theScan.PrecursorMass, theScanBestPeptide.MonoisotopicMass + (double)OGlycanBoxes[iDLow].Mass/1E5)))
                     {
                         List<int> modPos = GlycoSpectralMatch.GetPossibleModSites(theScanBestPeptide, new string[] { "S", "T" });
-                        if (modPos.Count >= OGlycanBoxes[iDLow].NumberOfGlycans)
+                        if (modPos.Count >= OGlycanBoxes[iDLow].NumberOfMods)
                         {
-                            var permutateModPositions = GlycoPeptides.GetPermutations(modPos, OGlycanBoxes[iDLow].GlycanIds);
+                            var permutateModPositions = GlycoPeptides.GetPermutations(modPos, OGlycanBoxes[iDLow].ModIds);
 
                             double bestLocalizedScore = 0;
                             PeptideWithSetModifications[] bestPeptideWithMod = new PeptideWithSetModifications[1];
@@ -488,9 +487,9 @@ namespace EngineLayer.GlycoSearch
                     while (iDLow < OGlycanBoxes.Count() && (PrecusorSearchMode.Within(theScan.PrecursorMass, theScanBestPeptide.MonoisotopicMass + (double)OGlycanBoxes[iDLow].Mass / 1E5)))
                     {
                         List<int> modPos = GlycoSpectralMatch.GetPossibleModSites(theScanBestPeptide, new string[] { "S", "T" });
-                        if (modPos.Count >= OGlycanBoxes[iDLow].NumberOfGlycans)
+                        if (modPos.Count >= OGlycanBoxes[iDLow].NumberOfMods)
                         {
-                            var permutateModPositions = GlycoPeptides.GetPermutations(modPos, OGlycanBoxes[iDLow].GlycanIds);
+                            var permutateModPositions = GlycoPeptides.GetPermutations(modPos, OGlycanBoxes[iDLow].ModIds);
 
                             foreach (var theModPositions in permutateModPositions)
                             {

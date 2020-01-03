@@ -8,7 +8,7 @@ using MassSpectrometry;
 using Proteomics.ProteolyticDigestion;
 using Proteomics.Fragmentation;
 
-namespace EngineLayer.GlycoSearch
+namespace EngineLayer
 {
     public class ModBox
     {
@@ -59,7 +59,6 @@ namespace EngineLayer.GlycoSearch
             }
             return allPossibleModSites.OrderBy(p=>p).ToArray();
         }
-
 
         public static PeptideWithSetModifications GetTheoreticalPeptide(Tuple<int, int>[] theModPositions, PeptideWithSetModifications peptide, ModBox modBox)
         {

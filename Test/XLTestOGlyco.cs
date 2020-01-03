@@ -160,8 +160,8 @@ namespace Test
             List<Product> products = peptide.Fragment(DissociationType.ETD, FragmentationTerminus.Both).ToList();
 
             int[] modPos = GlycoSpectralMatch.GetPossibleModSites(peptide, new string[] { "S", "T" }).OrderBy(p=>p).ToArray();
-            var boxes = GlycanBox.BuildChildOGlycanBoxes(3, glycanBox.GlycanIds).ToArray();
-            Assert.That(boxes.Count() == 5);
+            var boxes = GlycanBox.BuildChildOGlycanBoxes(3, glycanBox.ModIds).ToArray();
+            Assert.That(boxes.Count() == 6);
 
             //Test GetLocalFragmentHash, which is used for localiation.
             var testProducts = GlycoPeptides.GetLocalFragmentHash(products, peptide.Length, modPos, 0, glycanBox, boxes[1], 1000);
@@ -212,6 +212,10 @@ namespace Test
 
             localizationGraph.Localization(modPos, glycanBox, boxes, allPeaks, products, peptide.Length);
 
+            var allPaths = LocalizationGraph.GetAllPaths(localizationGraph.array, boxes);
+
+            var local = LocalizationGraph.GetLocalizedPeptide(localizationGraph.array, modPos, boxes, allPaths.First());
+
         }
 
         [Test]
@@ -250,6 +254,7 @@ namespace Test
             var left = LocalizationGraph.GetLeft(array1, array2);
             Assert.That(left.Count() == 3);
         }
+
         [Test]
         public static void OGlycoTest_LocalizationMod()
         {

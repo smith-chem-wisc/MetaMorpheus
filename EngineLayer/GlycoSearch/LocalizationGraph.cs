@@ -21,14 +21,16 @@ namespace EngineLayer.GlycoSearch
 
         public void Localization(int[] modPos, GlycanBox glycanBox, GlycanBox[] boxes, HashSet<int> allPeaks, List<Product> products, int peptideLength)
         {
+            var boxSatisfyBox = BoxSatisfyBox(boxes);
+
             for (int i = 0; i < modPos.Length; i++)
             {
                 int maxLength = i + 1;
-                int minlength = glycanBox.GlycanIds.Length - (modPos.Length - 1 - i);
+                int minlength = glycanBox.ModIds.Length - (modPos.Length - 1 - i);
 
                 for (int j = 0; j < boxes.Length; j++)
                 {
-                    if (boxes[j].NumberOfGlycans <= maxLength && boxes[j].NumberOfGlycans >= minlength)
+                    if (boxes[j].NumberOfMods <= maxLength && boxes[j].NumberOfMods >= minlength)
                     {
                         AdjNode adjNode = new AdjNode(i, j, modPos[i], boxes[j]);
                         var cost = LocalizationGraph.CalculateCost(allPeaks, products, peptideLength, modPos, i, glycanBox, boxes[j], 1000);
@@ -44,9 +46,7 @@ namespace EngineLayer.GlycoSearch
                             for (int prej = 0; prej <= j; prej++)
                             {
                                 //TO DO: The condition here could be wrong, please change to function BoxSatisfyBox.
-                                if (boxes[j].NumberOfGlycans <= boxes[prej].NumberOfGlycans + 1 &&
-                                    (boxes[prej].GlycanIds.Length == 0 || !boxes[prej].GlycanIds.Except(boxes[j].GlycanIds).Any()) &&
-                                    array[i - 1][prej] != null)
+                                if (boxSatisfyBox[j][prej] && array[i - 1][prej] != null)
                                 {
                                     var tempCost = cost + array[i - 1][prej].maxCost;
                                     if (tempCost > maxCost)
@@ -352,14 +352,6 @@ namespace EngineLayer.GlycoSearch
 
     public class AdjNode
     {
-        public AdjNode(int i, int j, int modPos, GlycanBox box)
-        {
-            PosX = i;
-            PosY = j;
-            ModPos = modPos;
-            glycanBox = box;
-        }
-
         public AdjNode(int i, int j, int modPos, ModBox box)
         {
             PosX = i;
@@ -372,7 +364,6 @@ namespace EngineLayer.GlycoSearch
         public int PosY { get; }
 
         public int ModPos { get; }
-        public GlycanBox glycanBox { get; }
         public ModBox ModBox { get;  }
 
         //sources are represented by index.

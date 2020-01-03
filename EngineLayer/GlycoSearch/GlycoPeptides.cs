@@ -253,10 +253,10 @@ namespace EngineLayer.GlycoSearch
 
         public static PeptideWithSetModifications OGlyGetTheoreticalPeptide(int[] theModPositions, PeptideWithSetModifications peptide, GlycanBox glycanBox)
         {
-            Modification[] modifications = new Modification[glycanBox.NumberOfGlycans];
-            for (int i = 0; i < glycanBox.NumberOfGlycans; i++)
+            Modification[] modifications = new Modification[glycanBox.NumberOfMods];
+            for (int i = 0; i < glycanBox.NumberOfMods; i++)
             {
-                modifications[i] = GlycanBox.GlobalOGlycanModifications[glycanBox.GlycanIds.ElementAt(i)];
+                modifications[i] = GlycanBox.GlobalOGlycanModifications[glycanBox.ModIds.ElementAt(i)];
             }
 
             Dictionary<int, Modification> testMods = new Dictionary<int, Modification>();
@@ -326,13 +326,13 @@ namespace EngineLayer.GlycoSearch
                     var j = keyValuePair.Item2[i];
                     while (j <= len + 1)
                     {
-                        newFragments[j - 2] += (double)GlycanBox.GlobalOGlycans[OGlycanBoxes[keyValuePair.Item1].GlycanIds[i]].Mass / 1E5;
+                        newFragments[j - 2] += (double)GlycanBox.GlobalOGlycans[OGlycanBoxes[keyValuePair.Item1].ModIds[i]].Mass / 1E5;
                         j++;
                     }
                     j = keyValuePair.Item2[i];
                     while (j >= 3)
                     {
-                        newFragments[len * 3 - j + 2] += (double)GlycanBox.GlobalOGlycans[OGlycanBoxes[keyValuePair.Item1].GlycanIds[i]].Mass / 1E5;
+                        newFragments[len * 3 - j + 2] += (double)GlycanBox.GlobalOGlycans[OGlycanBoxes[keyValuePair.Item1].ModIds[i]].Mass / 1E5;
                         j--;
                     }
                 }

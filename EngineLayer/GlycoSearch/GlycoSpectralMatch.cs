@@ -235,10 +235,10 @@ namespace EngineLayer.GlycoSearch
 
                 sb.Append((double)glycanBoxes.First().Mass / 1E5); sb.Append("\t");
                 //Get glycans
-                var glycans = new Glycan[glycanBoxes.First().NumberOfGlycans];
-                for (int i = 0; i < glycanBoxes.First().NumberOfGlycans; i++)
+                var glycans = new Glycan[glycanBoxes.First().NumberOfMods];
+                for (int i = 0; i < glycanBoxes.First().NumberOfMods; i++)
                 {
-                    glycans[i] = GlycanBox.GlobalOGlycans[glycanBoxes.First().GlycanIds[i]];
+                    glycans[i] = GlycanBox.GlobalOGlycans[glycanBoxes.First().ModIds[i]];
                 }
                 sb.Append(string.Join(",", glycans.Select(p => p.Struc.ToString()).ToArray())); sb.Append("\t");
 
