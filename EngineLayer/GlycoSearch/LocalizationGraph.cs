@@ -1,12 +1,9 @@
 ﻿using System;
 using System.Collections.Generic;
-using System.Text;
 using System.Linq;
-using EngineLayer.ModernSearch;
 using Proteomics.Fragmentation;
 using Proteomics.ProteolyticDigestion;
 using Proteomics;
-using System.Linq;
 
 namespace EngineLayer.GlycoSearch
 {
@@ -46,6 +43,7 @@ namespace EngineLayer.GlycoSearch
                             double maxCost = 0;
                             for (int prej = 0; prej <= j; prej++)
                             {
+                                //TO DO: The condition here could be wrong, please change to function BoxSatisfyBox.
                                 if (boxes[j].NumberOfGlycans <= boxes[prej].NumberOfGlycans + 1 &&
                                     (boxes[prej].GlycanIds.Length == 0 || !boxes[prej].GlycanIds.Except(boxes[j].GlycanIds).Any()) &&
                                     array[i - 1][prej] != null)
@@ -95,8 +93,11 @@ namespace EngineLayer.GlycoSearch
             return (double)currentLocalizationScore;
         }
 
+        //The modification problem is turned into a Directed Acyclic Graph. The Graph was build with matrix, and dynamic programming is used.
         public void LocalizationMod(int[] modPos, ModBox totalBox, ModBox[] boxes, HashSet<int> allPeaks, List<Product> products, PeptideWithSetModifications peptide)
         {
+            var boxSatisfyBox = BoxSatisfyBox(boxes);
+
             for (int i = 0; i < modPos.Length; i++)
             {
 
@@ -117,9 +118,7 @@ namespace EngineLayer.GlycoSearch
                             double maxCost = 0;
                             for (int prej = 0; prej <= j; prej++)
                             {
-                                if (boxes[j].NumberOfMods <= boxes[prej].NumberOfMods + 1 &&
-                                    (boxes[prej].NumberOfMods == 0 || !boxes[prej].ModIds.Except(boxes[j].ModIds).Any()) &&
-                                    array[i - 1][prej] != null)
+                                if (boxSatisfyBox[j][prej] && array[i - 1][prej] != null)
                                 {
                                     var tempCost = cost + array[i - 1][prej].maxCost;
                                     if (tempCost > maxCost)
@@ -150,6 +149,44 @@ namespace EngineLayer.GlycoSearch
                 }
 
             }
+        }
+
+        private static bool TryGetLeft(int[] array1, int[] array2)
+        {
+            //Get compliment box
+            var gx = array1.GroupBy(p => p).ToDictionary(p => p.Key, p => p.ToList());
+            foreach (var iy in array2)
+            {
+                if (!gx.ContainsKey(iy))
+                {
+                    return false;
+                }
+                else if (gx[iy].Count == 0)
+                {
+                    return false;
+                }
+                gx[iy].RemoveAt(gx[iy].Count - 1);
+            }
+            return true;
+        }
+
+        public static Dictionary<int, bool[]> BoxSatisfyBox(ModBox[] boxes)
+        {
+            Dictionary<int, bool[]> boxIdBoxes = new Dictionary<int, bool[]>();
+            for (int i = 0; i < boxes.Length; i++)
+            {
+                bool[] idBoxes = new bool[boxes.Length];
+                for (int j = 0; j <= i; j++)
+                {
+                    if (boxes[i].NumberOfMods <= boxes[j].NumberOfMods + 1 && (boxes[j].NumberOfMods ==0 || TryGetLeft(boxes[i].ModIds, boxes[j].ModIds)))
+                    {
+                        idBoxes[j] = true;
+                    }
+                }
+                boxIdBoxes.Add(i, idBoxes);
+            }
+
+            return boxIdBoxes;
         }
 
         public static double CalculateCostMod(HashSet<int> allPeaksForLocalization, List<Product> products, int peptideLength, int[] modPos, int modInd, ModBox totalBox, ModBox localBox, int FragmentBinsPerDalton)
@@ -248,20 +285,9 @@ namespace EngineLayer.GlycoSearch
             return left;
         }
 
-        public Tuple<int, int>[] GetFirstLocalizedPeptide(int[] modPos, ModBox[] boxes)
+        public static Tuple<int, int>[] GetLocalizedPeptide(AdjNode[][] array, int[] modPos, ModBox[] boxes, int[] indexes)
         {           
             int length = modPos.Length - 1;
-
-            int[] indexes = new int[length];
-
-            int source = boxes.Length - 1;
-
-            while (length > 0)
-            {
-                source = array[length][source].Sources.Last();
-                indexes[length - 1] = source;
-                length--;
-            }
 
             List<Tuple<int, int>> tuples = new List<Tuple<int, int>>();
             //Add first.
@@ -281,6 +307,46 @@ namespace EngineLayer.GlycoSearch
             }
 
             return tuples.ToArray();
+        }
+
+        //Get path of Directed Acyclic Graph by recursion. 
+        public static List<int[]> GetAllPaths(AdjNode[][] array, ModBox[] boxes)
+        {
+            var boxSatisfyBox = BoxSatisfyBox(boxes);
+
+            List<int[]> allPaths = new List<int[]>();
+
+            int xlength = array.Length;
+            int ylength = array.First().Length;
+
+            int[] temp = new int[xlength];
+
+            temp[xlength - 1] = ylength -1;
+            
+            PathHelper(allPaths, array, xlength -1, ylength -1, temp, boxSatisfyBox);
+
+            return allPaths;
+        }
+
+        private static void PathHelper(List<int[]> allPaths, AdjNode[][] array, int xind, int yind, int[] temp, Dictionary<int, bool[]> boxSatisfyBox)
+        {
+            if (xind == 0)
+            {
+                allPaths.Add((int[])temp.Clone());
+                return;
+            }
+
+            foreach (var pre in array[xind][yind].Sources)
+            {
+                if (boxSatisfyBox[yind][pre])
+                {
+                    xind--;
+                    yind = pre;
+                    temp[xind] = yind;
+                    PathHelper(allPaths, array, xind, yind, temp, boxSatisfyBox);
+
+                }
+            }
         }
     }
 

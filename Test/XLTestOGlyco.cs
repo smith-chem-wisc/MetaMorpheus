@@ -145,20 +145,6 @@ namespace Test
         }
 
         [Test]
-        public static void OGlycoTest_AllCombinationsOf()
-        {
-            List<List<int>> inputs = new List<List<int>>();
-            inputs.Add(new List<int> { 1, 2, 3, 4 });
-            inputs.Add(new List<int> { 5, 6 });
-            inputs.Add(new List<int> { 7, 8 });
-            inputs.Add(new List<int> { 9 });
-            inputs.Add(new List<int> { 1, 2 });
-
-            var test = ModBox.AllCombinationsOf(inputs.ToArray());
-            Assert.That(test.Count == 32);
-        }
-
-        [Test]
         public static void OGlycoTest_Localization()
         {
             //Get glycanBox
@@ -245,9 +231,6 @@ namespace Test
             //Test ModBox.GetPossibleModSites
             PeptideWithSetModifications pep = new PeptideWithSetModifications("MGFQGPAGEP[Common Biological:Hydroxylation on P]GPEP[Common Biological:Hydroxylation on P]GQTGPAGAR", GlobalVariables.AllModsKnownDictionary);
 
-            var test = ModBox.GetPossibleModSites(pep, ModBoxes[12]);
-            Assert.That(test.Count == 3);
-
             //Test  ModBox.GetFragmentHash
             PeptideWithSetModifications pep_original = new PeptideWithSetModifications("MGFQGPAGEPGPEPGQTGPAGAR", GlobalVariables.AllModsKnownDictionary);
             var frags = pep_original.Fragment(DissociationType.HCD, FragmentationTerminus.Both);
@@ -256,7 +239,7 @@ namespace Test
             Tuple<int, int>[] tuples = new Tuple<int, int>[2];
             tuples[0] = new Tuple<int, int>(11, 1);
             tuples[1] = new Tuple<int, int>(15, 1);
-            var fraghash = ModBox.GetFragmentHash(frags.ToList(), tuples, 1000);
+
         }
 
         [Test]
@@ -281,7 +264,6 @@ namespace Test
             var modBox = ModBoxes[10];
 
             //Get unmodified peptide, products, allPossible modPos and all boxes.
-
             Protein protein = new Protein("GSDGSVGPVGPAGPIGSAGPPGFPGAPGPKGEIGAVGNAGPAGPAGPR", "P08123");
             var peptide = protein.Digest(new DigestionParams(), new List<Modification>(), new List<Modification>()).ElementAt(2);
             //PeptideWithSetModifications peptide = new PeptideWithSetModifications("GSDGSVGPVGPAGPIGSAGPPGFPGAPGPKGEIGAVGNAGPAGPAGPR", GlobalVariables.AllModsKnownDictionary);
@@ -289,6 +271,8 @@ namespace Test
             int[] modPos = ModBox.GetAllPossibleModSites(peptide, modBox);
             var boxes = ModBox.BuildChildModBoxes(modBox.NumberOfMods, modBox.ModIds).ToArray();
             Assert.That(boxes.Count() == 8);
+            //Test boxSatisfyBox
+            var boxSatisfyBox = LocalizationGraph.BoxSatisfyBox(boxes);
 
             //Test GetAllPossibleModSites
             var testModPos = ModBox.GetAllPossibleModSites(peptide, ModBoxes[11]);
@@ -349,7 +333,9 @@ namespace Test
             LocalizationGraph localizationGraph = new LocalizationGraph(modPos.Length, boxes.Length);
             localizationGraph.LocalizationMod(modPos, modBox, boxes, allPeaks, products, peptide);
 
-            var local = localizationGraph.GetFirstLocalizedPeptide(modPos, boxes);
+            var allPaths = LocalizationGraph.GetAllPaths(localizationGraph.array, boxes);
+
+            var local = LocalizationGraph.GetLocalizedPeptide(localizationGraph.array, modPos, boxes, allPaths.First());
         }
     }
 }

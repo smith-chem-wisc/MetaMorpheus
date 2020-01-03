@@ -618,30 +618,14 @@ namespace EngineLayer.GlycoSearch
                     HashSet<int> allPeaksForLocalization = new HashSet<int>(allBinsToSearch);
 
                     double bestLocalizedScore = 1;
-                    List<Tuple<int, Tuple<int, int>[]>> localizationCandidates = new List<Tuple<int, Tuple<int, int>[]>>();
-                    
+
+                    List<LocalizationGraph> localizationGraphs = new List<LocalizationGraph>();
+                    List<int> ids = new List<int>();
+
                     int iDLow = GlycoPeptides.BinarySearchGetIndex(ModBoxes.Select(p => p.Mass).ToArray(), possibleGlycanMassLow);
 
                     while (iDLow < ModBoxes.Count() && PrecusorSearchMode.Within(theScan.PrecursorMass, theScanBestPeptide.MonoisotopicMass + ModBoxes[iDLow].Mass))
                     {
-                        //var permutateModPositions = ModBox.GetPossibleModSites(theScanBestPeptide, ModBoxes[iDLow]);
-
-                        //for (int i = 0; i < permutateModPositions.Count; i++)
-                        //{
-                        //    var fragmentHash = ModBox.GetFragmentHash(products, permutateModPositions[i], FragmentBinsPerDalton);
-
-                        //    int currentLocalizationScore = allPeaksForLocalization.Intersect(fragmentHash).Count();
-                        //    if (currentLocalizationScore > bestLocalizedScore)
-                        //    {
-                        //        localizationCandidates.Clear();
-                        //        localizationCandidates.Add(new Tuple<int, Tuple<int, int>[]>(iDLow, permutateModPositions[i]));
-                        //    }
-                        //    else if (bestLocalizedScore > 0 && currentLocalizationScore == bestLocalizedScore)
-                        //    {
-                        //        localizationCandidates.Add(new Tuple<int, Tuple<int, int>[]>(iDLow, permutateModPositions[i]));
-                        //    }
-                        //}
-
                         int[] modPos = ModBox.GetAllPossibleModSites(theScanBestPeptide, ModBoxes[iDLow]);
 
                         if (modPos==null)
@@ -658,22 +642,33 @@ namespace EngineLayer.GlycoSearch
                         double currentLocalizationScore = localizationGraph.array.Last().Last().maxCost;
                         if (currentLocalizationScore > bestLocalizedScore)
                         {
-                            var local = localizationGraph.GetFirstLocalizedPeptide(modPos, boxes);
-                            localizationCandidates.Clear();
-                            localizationCandidates.Add(new Tuple<int, Tuple<int, int>[]>(iDLow, local));
+                            ids.Clear();
+                            localizationGraphs.Clear();
+                            ids.Add(iDLow);
+                            localizationGraphs.Add(localizationGraph);
                         }
                         else if (bestLocalizedScore > 0 && currentLocalizationScore == bestLocalizedScore)
                         {
-                            var local = localizationGraph.GetFirstLocalizedPeptide(modPos, boxes);
-                            localizationCandidates.Add(new Tuple<int, Tuple<int, int>[]>(iDLow, local));
+                            ids.Add(iDLow);
+                            localizationGraphs.Add(localizationGraph);        
                         }
 
                         iDLow++;
                     }
 
                     //In theory, the peptide_localization shouldn't be null, but it is possible that the real score is smaller than indexed score.
-                    if (localizationCandidates.Count > 0)
+                    if (localizationGraphs.Count > 0)
                     {
+                        List<Tuple<int, Tuple<int, int>[]>> localizationCandidates = new List<Tuple<int, Tuple<int, int>[]>>();
+                        for (int i = 0; i < localizationGraphs.Count; i++)
+                        {
+                            int[] modPos = ModBox.GetAllPossibleModSites(theScanBestPeptide, ModBoxes[ids[i]]);
+                            var boxes = ModBox.BuildChildModBoxes(ModBoxes[ids[i]].NumberOfMods, ModBoxes[ids[i]].ModIds).ToArray();
+                            var allPaths = LocalizationGraph.GetAllPaths(localizationGraphs[i].array, boxes);
+                            var local = LocalizationGraph.GetLocalizedPeptide(localizationGraphs[i].array, modPos, boxes, allPaths.First());
+                            localizationCandidates.Add(new Tuple<int, Tuple<int, int>[]>(iDLow, local));
+                        }
+
                         var psmGlyco = CreateGsm(theScan, scanIndex, ind, theScanBestPeptide, localizationCandidates, CommonParameters);
 
                         possibleMatches.Add(psmGlyco);
