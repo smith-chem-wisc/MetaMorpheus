@@ -29,11 +29,11 @@ namespace EngineLayer.GlycoSearch
 
         public static int[] GetAllPossibleModSites(PeptideWithSetModifications peptide, ModBox modBox)
         {
-            List<int> possibleModSites = new List<int>();
+            List<int> allPossibleModSites = new List<int>();
 
             foreach (var mn in modBox.MotifNeeded)
             {
-               
+                List<int> possibleModSites = new List<int>();
                 ModificationMotif.TryGetMotif(mn.Key, out ModificationMotif motif);
                 Modification modWithMotif = new Modification(_target: motif, _locationRestriction: "Anywhere.");
 
@@ -54,8 +54,10 @@ namespace EngineLayer.GlycoSearch
                 {
                     return null;
                 }
+
+                allPossibleModSites.AddRange(possibleModSites);
             }
-            return possibleModSites.OrderBy(p=>p).ToArray();
+            return allPossibleModSites.OrderBy(p=>p).ToArray();
         }
 
         //Tuple<int modpos, int modId>[] is one possible way the peptide is modified

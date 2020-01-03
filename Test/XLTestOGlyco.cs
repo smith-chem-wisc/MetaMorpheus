@@ -290,6 +290,10 @@ namespace Test
             var boxes = ModBox.BuildChildModBoxes(modBox.NumberOfMods, modBox.ModIds).ToArray();
             Assert.That(boxes.Count() == 8);
 
+            //Test GetAllPossibleModSites
+            var testModPos = ModBox.GetAllPossibleModSites(peptide, ModBoxes[11]);
+            Assert.That(testModPos == null);
+
             //Test GetLocalFragmentHash, which is used for localiation.
             var testProducts = ModBox.GetLocalFragmentHash(products, peptide.Length, modPos, 0, modBox, boxes[1], 1000);
             var testProducts1 = ModBox.GetLocalFragmentHash(products, peptide.Length, modPos, 2, modBox, boxes[1], 1000);

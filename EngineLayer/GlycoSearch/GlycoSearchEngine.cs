@@ -617,7 +617,7 @@ namespace EngineLayer.GlycoSearch
                     List<Product> products = theScanBestPeptide.Fragment(CommonParameters.DissociationType, FragmentationTerminus.Both).ToList();
                     HashSet<int> allPeaksForLocalization = new HashSet<int>(allBinsToSearch);
 
-                    double bestLocalizedScore = 0;
+                    double bestLocalizedScore = 1;
                     List<Tuple<int, Tuple<int, int>[]>> localizationCandidates = new List<Tuple<int, Tuple<int, int>[]>>();
                     
                     int iDLow = GlycoPeptides.BinarySearchGetIndex(ModBoxes.Select(p => p.Mass).ToArray(), possibleGlycanMassLow);
@@ -643,6 +643,12 @@ namespace EngineLayer.GlycoSearch
                         //}
 
                         int[] modPos = ModBox.GetAllPossibleModSites(theScanBestPeptide, ModBoxes[iDLow]);
+
+                        if (modPos==null)
+                        {
+                            iDLow++;
+                            continue;
+                        }
 
                         var boxes = ModBox.BuildChildModBoxes(ModBoxes[iDLow].NumberOfMods, ModBoxes[iDLow].ModIds).ToArray();
 

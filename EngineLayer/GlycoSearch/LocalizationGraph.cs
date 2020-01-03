@@ -249,9 +249,7 @@ namespace EngineLayer.GlycoSearch
         }
 
         public Tuple<int, int>[] GetFirstLocalizedPeptide(int[] modPos, ModBox[] boxes)
-        {
-            
-
+        {           
             int length = modPos.Length - 1;
 
             int[] indexes = new int[length];
@@ -260,7 +258,7 @@ namespace EngineLayer.GlycoSearch
 
             while (length > 0)
             {
-                source = array[length][source].Sources.First();
+                source = array[length][source].Sources.Last();
                 indexes[length - 1] = source;
                 length--;
             }
