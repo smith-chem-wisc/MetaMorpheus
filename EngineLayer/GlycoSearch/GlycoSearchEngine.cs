@@ -669,10 +669,10 @@ namespace EngineLayer.GlycoSearch
                         List<Tuple<int, Tuple<int, int>[]>> localizationCandidates = new List<Tuple<int, Tuple<int, int>[]>>();
                         for (int i = 0; i < localizationGraphs.Count; i++)
                         {
-                            var boxes = GlycanBox.BuildChildOGlycanBoxes(OGlycanBoxes[iDLow].NumberOfMods, OGlycanBoxes[iDLow].ModIds).ToArray();
+                            var boxes = GlycanBox.BuildChildOGlycanBoxes(OGlycanBoxes[ids[i]].NumberOfMods, OGlycanBoxes[ids[i]].ModIds).ToArray();
                             var allPaths = LocalizationGraph.GetAllPaths(localizationGraphs[i].array, boxes);
                             var local = LocalizationGraph.GetLocalizedPeptide(localizationGraphs[i].array, modPos, boxes, allPaths.First());
-                            localizationCandidates.Add(new Tuple<int, Tuple<int, int>[]>(iDLow, local));
+                            localizationCandidates.Add(new Tuple<int, Tuple<int, int>[]>(ids[i], local));
                         }
 
                         var psmGlyco = CreateGsm(theScan, scanIndex, ind, theScanBestPeptide, localizationCandidates, CommonParameters);
