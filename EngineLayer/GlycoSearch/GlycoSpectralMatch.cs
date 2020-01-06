@@ -93,6 +93,7 @@ namespace EngineLayer.GlycoSearch
             sb.Append("Start and End Residues In Protein" + '\t');
             sb.Append("Base Sequence" + '\t');
             sb.Append("Full Sequence" + '\t');
+            sb.Append("Number of Mods" + '\t');
             sb.Append("Peptide Monoisotopic Mass" + '\t');
             sb.Append("Score" + '\t');
             sb.Append("Rank" + '\t');
@@ -126,6 +127,7 @@ namespace EngineLayer.GlycoSearch
             sb.Append("Start and End Residues In Protein" + '\t');
             sb.Append("Base Sequence" + '\t');
             sb.Append("Full Sequence" + '\t');
+            sb.Append("Number of Mods" + '\t');
             sb.Append("Peptide Monoisotopic Mass" + '\t');
             sb.Append("Score" + '\t');
             sb.Append("Rank" + '\t');
@@ -170,6 +172,7 @@ namespace EngineLayer.GlycoSearch
 
             sb.Append(BaseSequence + "\t");
             sb.Append(FullSequence + "\t");
+            sb.Append(BestMatchingPeptides.First().Peptide.AllModsOneIsNterminus.Count + "\t");
 
             sb.Append((PeptideMonisotopicMass.HasValue ? PeptideMonisotopicMass.Value.ToString() : "---")); sb.Append("\t");
             sb.Append(Score + "\t");
