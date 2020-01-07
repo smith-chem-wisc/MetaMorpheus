@@ -41,7 +41,7 @@ namespace TaskLayer
                 }
             }
         }
-        
+
         public static void WriteCrosslinkToTxtForPercolator(List<CrosslinkSpectralMatch> items, string outputFolder, string fileName, Crosslinker crosslinker)
         {
             if (items.Count == 0)
@@ -49,7 +49,7 @@ namespace TaskLayer
             var writtenFile = Path.Combine(outputFolder, fileName + ".txt");
             using (StreamWriter output = new StreamWriter(writtenFile))
             {
-                output.WriteLine("SpecId\tLabel\tScannr\tScore\tdScore\tNormRank\tCharge\tMass\tPPM\tLenShort\tLenLong\tLenSum" +
+                output.WriteLine("SpecId\tLabel\tScannr\tScore\tdScore\tCharge\tMass\tPPM\tLenShort\tLenLong\tLenSum" +
                     "\tPeptide\tProtein");
                 foreach (var item in items)
                 {
@@ -66,7 +66,6 @@ namespace TaskLayer
                             + "\t" + item.ScanNumber.ToString(CultureInfo.InvariantCulture)
                             + "\t" + item.XLTotalScore.ToString(CultureInfo.InvariantCulture)
                             + "\t" + item.DeltaScore.ToString(CultureInfo.InvariantCulture)
-                            + "\t" + (item.XlRank[0] + item.XlRank[1]).ToString(CultureInfo.InvariantCulture)
                             + "\t" + item.ScanPrecursorCharge.ToString(CultureInfo.InvariantCulture)
                             + "\t" + item.ScanPrecursorMass.ToString(CultureInfo.InvariantCulture)
                             + "\t" + ((item.PeptideMonisotopicMass.HasValue && item.BetaPeptide.PeptideMonisotopicMass.HasValue) ? ((item.ScanPrecursorMass - item.BetaPeptide.PeptideMonisotopicMass.Value - item.PeptideMonisotopicMass.Value - crosslinker.TotalMass) / item.ScanPrecursorMass * 1E6).ToString(CultureInfo.InvariantCulture) : "---")
@@ -75,7 +74,7 @@ namespace TaskLayer
                             + "\t" + (item.BetaPeptide.BaseSequence.Length + item.BaseSequence.Length).ToString(CultureInfo.InvariantCulture)
                             + "\t" + "-." + item.FullSequence + item.LinkPositions.First().ToString(CultureInfo.InvariantCulture) + "--" + item.BetaPeptide.FullSequence + item.BetaPeptide.LinkPositions.First().ToString(CultureInfo.InvariantCulture) + ".-"
                             + "\t" + item.BestMatchingPeptides.First().Peptide.Protein.Accession.ToString(CultureInfo.InvariantCulture)
-                                   + "(" + (item.XlProteinPos.HasValue ? item.XlProteinPos.Value.ToString(CultureInfo.InvariantCulture):string.Empty) + ")"
+                                   + "(" + (item.XlProteinPos.HasValue ? item.XlProteinPos.Value.ToString(CultureInfo.InvariantCulture) : string.Empty) + ")"
                             + "\t" + item.BetaPeptide.BestMatchingPeptides.First().Peptide.Protein.Accession.ToString(CultureInfo.InvariantCulture)
                                    + "(" + (item.BetaPeptide.XlProteinPos.HasValue ? item.BetaPeptide.XlProteinPos.Value.ToString(CultureInfo.InvariantCulture) : string.Empty) + ")"
                             );
@@ -83,7 +82,7 @@ namespace TaskLayer
                 }
             }
         }
-        
+
         public static void WritePepXML_xl(List<CrosslinkSpectralMatch> items, List<Protein> proteinList, string databasePath, List<Modification> variableModifications, List<Modification> fixedModifications, List<string> localizeableModificationTypes, string outputFolder, string fileName, CommonParameters CommonParameters, XlSearchParameters XlSearchParameters)
         {
             if (!items.Any())
