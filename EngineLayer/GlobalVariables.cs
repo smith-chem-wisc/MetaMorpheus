@@ -208,10 +208,7 @@ namespace EngineLayer
 
         public static void AddSeparationTypes(List<string> separationTypes)
         {
-            foreach (string separationType in separationTypes)
-            {
-                _SeparationTypes.Add(separationType);
-            }
+            _SeparationTypes.AddRange(separationTypes);
         }
 
         public static void AddCrosslinkers(IEnumerable<Crosslinker> crosslinkers)

@@ -82,6 +82,11 @@ namespace MetaMorpheusGUI
                 fileSpecificParameterExists = true;
                 parametersToWrite.Protease = (Protease)fileSpecificProtease.SelectedItem;
             }
+            if (fileSpecificSeparationTypesEnabled.IsChecked.Value)
+            {
+                fileSpecificParameterExists = true;
+                parametersToWrite.SeparationType = (string)fileSpecificSeparationType.SelectedItem;
+            }
             if (fileSpecificMinPeptideLengthEnabled.IsChecked.Value)
             {
                 fileSpecificParameterExists = true;
@@ -212,6 +217,7 @@ namespace MetaMorpheusGUI
             int tempMaxModsForPeptide = defaultParams.DigestionParams.MaxModsForPeptide;
             var tempPrecursorMassTolerance = defaultParams.PrecursorMassTolerance;
             var tempProductMassTolerance = defaultParams.ProductMassTolerance;
+            string tempSeparationType = defaultParams.SeparationType;
 
             // do any of the selected files already have file-specific parameters specified?
             var spectraFiles = SelectedSpectra.Select(p => p.FilePath);
@@ -238,6 +244,11 @@ namespace MetaMorpheusGUI
                     {
                         tempProtease = (fileSpecificParams.Protease);
                         fileSpecificProteaseEnabled.IsChecked = true;
+                    }
+                    if (fileSpecificParams.SeparationType != null)
+                    {
+                        tempSeparationType = (fileSpecificParams.SeparationType);
+                        fileSpecificSeparationTypesEnabled.IsChecked = true;
                     }
                     if (fileSpecificParams.MinPeptideLength != null)
                     {
@@ -276,6 +287,9 @@ namespace MetaMorpheusGUI
             }
 
             fileSpecificProtease.SelectedItem = digestParams.Protease;
+
+            fileSpecificSeparationType.Items.Add("HPLC");
+            fileSpecificSeparationType.Items.Add("CZE");
 
             productMassToleranceComboBox.Items.Add("Da");
             productMassToleranceComboBox.Items.Add("ppm");

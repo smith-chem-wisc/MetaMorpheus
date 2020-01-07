@@ -30,7 +30,11 @@ namespace Test
             Tolerance precursorMassTolerance = new PpmTolerance(10);
 
             allResultingIdentifications = new List<PeptideSpectralMatch>();
-            var engine = new GptmdEngine(allResultingIdentifications, gptmdModifications, combos, new Dictionary<string, Tolerance> { { "filepath", precursorMassTolerance } }, new CommonParameters(), new List<string>());
+
+            var fsp = new List<(string fileName, CommonParameters fileSpecificParameters)>();
+            fsp.Add(("", new CommonParameters()));
+
+            var engine = new GptmdEngine(allResultingIdentifications, gptmdModifications, combos, new Dictionary<string, Tolerance> { { "filepath", precursorMassTolerance } }, new CommonParameters(), fsp, new List<string>());
             var res = (GptmdResults)engine.Run();
             Assert.AreEqual(0, res.Mods.Count);
 
@@ -52,7 +56,7 @@ namespace Test
             newPsm.SetFdrValues(1, 0, 0, 1, 0, 0, 0, 0);
             allResultingIdentifications.Add(newPsm);
 
-            engine = new GptmdEngine(allResultingIdentifications, gptmdModifications, combos, new Dictionary<string, Tolerance> { { "filepath", precursorMassTolerance } }, new CommonParameters(), new List<string>());
+            engine = new GptmdEngine(allResultingIdentifications, gptmdModifications, combos, new Dictionary<string, Tolerance> { { "filepath", precursorMassTolerance } }, new CommonParameters(), null, new List<string>());
             res = (GptmdResults)engine.Run();
             Assert.AreEqual(1, res.Mods.Count);
             Assert.AreEqual(numModifiedResidues, res.Mods["accession"].Count);
@@ -91,7 +95,7 @@ namespace Test
             match.SetFdrValues(1, 0, 0, 1, 0, 0, 0, 0);
             allIdentifications = new List<PeptideSpectralMatch> { match };
 
-            var engine = new GptmdEngine(allIdentifications, gptmdModifications, combos, new Dictionary<string, Tolerance> { { "filepath", precursorMassTolerance } }, new CommonParameters(), new List<string>());
+            var engine = new GptmdEngine(allIdentifications, gptmdModifications, combos, new Dictionary<string, Tolerance> { { "filepath", precursorMassTolerance } }, new CommonParameters(), null, new List<string>());
             var res = (GptmdResults)engine.Run();
             Assert.AreEqual(numModHashes, res.Mods.Count);
             Assert.AreEqual(numModifiedResidues, res.Mods["accession"].Count);

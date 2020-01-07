@@ -25,8 +25,8 @@ namespace EngineLayer.NonSpecificEnzymeSearch
 
         public NonSpecificEnzymeSearchEngine(PeptideSpectralMatch[][] globalPsms, Ms2ScanWithSpecificMass[] listOfSortedms2Scans,
             List<PeptideWithSetModifications> peptideIndex, List<int>[] fragmentIndex, List<int>[] precursorIndex, int currentPartition,
-            CommonParameters commonParameters, List<Modification> variableModifications, MassDiffAcceptor massDiffAcceptor, double maximumMassThatFragmentIonScoreIsDoubled, List<string> nestedIds)
-            : base(null, listOfSortedms2Scans, peptideIndex, fragmentIndex, currentPartition, commonParameters, massDiffAcceptor, maximumMassThatFragmentIonScoreIsDoubled, nestedIds)
+            CommonParameters commonParameters, List<(string fileName, CommonParameters fileSpecificParameters)> fileSpecificParameters, List<Modification> variableModifications, MassDiffAcceptor massDiffAcceptor, double maximumMassThatFragmentIonScoreIsDoubled, List<string> nestedIds)
+            : base(null, listOfSortedms2Scans, peptideIndex, fragmentIndex, currentPartition, commonParameters, fileSpecificParameters, massDiffAcceptor, maximumMassThatFragmentIonScoreIsDoubled, nestedIds)
         {
             PrecursorIndex = precursorIndex;
             MinimumPeptideLength = commonParameters.DigestionParams.MinPeptideLength;
@@ -291,7 +291,7 @@ namespace EngineLayer.NonSpecificEnzymeSearch
                        .ThenBy(b => b.PeptideMonisotopicMass.HasValue ? Math.Abs(b.ScanPrecursorMass - b.PeptideMonisotopicMass.Value) : double.MaxValue)
                        .GroupBy(b => (b.FullFilePath, b.ScanNumber, b.PeptideMonisotopicMass)).Select(b => b.First()).ToList();
 
-                    new FdrAnalysisEngine(cleanedPsmsArray, numNotches, commonParameters, new List<string> { taskId }).Run();
+                    new FdrAnalysisEngine(cleanedPsmsArray, numNotches, commonParameters, null, new List<string> { taskId }).Run();
 
                     for (int i = 0; i < psmsArray.Count; i++)
                     {
@@ -420,7 +420,7 @@ namespace EngineLayer.NonSpecificEnzymeSearch
                        .ThenBy(b => b.PeptideMonisotopicMass.HasValue ? Math.Abs(b.ScanPrecursorMass - b.PeptideMonisotopicMass.Value) : double.MaxValue)
                        .ToList();
 
-                    new FdrAnalysisEngine(cleanedPsmsArray, numNotches, commonParameters, new List<string> { taskId }).Run();
+                    new FdrAnalysisEngine(cleanedPsmsArray, numNotches, commonParameters, null, new List<string> { taskId }).Run();
                 }
             }
 

@@ -84,6 +84,7 @@ namespace TaskLayer
         public MyTask TaskType { get; set; }
 
         public CommonParameters CommonParameters { get; set; }
+        public List<(string FileName, CommonParameters Parameters)> FileSpecificParameters { get; set; }
 
         public const string IndexFolderName = "DatabaseIndex";
         public const string IndexEngineParamsFileName = "indexEngine.params";
@@ -397,6 +398,8 @@ namespace TaskLayer
             Toml.WriteFile(this, tomlFileName, tomlConfig);
             FinishedWritingFile(tomlFileName, new List<string> { displayName });
 
+            FileSpecificParameters = new List<(string FileName, CommonParameters Parameters)>();
+
             MetaMorpheusEngine.FinishedSingleEngineHandler += SingleEngineHandlerInTask;
             try
             {
@@ -416,6 +419,7 @@ namespace TaskLayer
                         try
                         {
                             fileSettingsList[i] = new FileSpecificParameters(fileSpecificSettings);
+                            FileSpecificParameters.Add((currentRawDataFilepathList[i], SetAllFileSpecificCommonParams(CommonParameters, fileSettingsList[i])));
                         }
                         catch (MetaMorpheusException e)
                         {
@@ -423,6 +427,10 @@ namespace TaskLayer
                             // probably the only time you can get here is if the user modifies the file-specific parameter file in the middle of a run...
                             Warn("Problem parsing the file-specific toml " + Path.GetFileName(fileSpecificTomlPath) + "; " + e.Message + "; is the toml from an older version of MetaMorpheus?");
                         }
+                    }
+                    else // just used common parameters for file specific.
+                    {
+                        FileSpecificParameters.Add((currentRawDataFilepathList[i], CommonParameters));
                     }
                 }
 
@@ -857,13 +865,13 @@ namespace TaskLayer
         public static void DetermineAnalyteType(CommonParameters commonParameters)
         {
             // changes the name of the analytes from "peptide" to "proteoform" if the protease is set to top-down
-            
+
             // TODO: note that this will not function well if the user is using file-specific settings, but it's assumed
             // that bottom-up and top-down data is not being searched in the same task
 
-            if (commonParameters != null 
-                && commonParameters.DigestionParams != null 
-                && commonParameters.DigestionParams.Protease != null 
+            if (commonParameters != null
+                && commonParameters.DigestionParams != null
+                && commonParameters.DigestionParams.Protease != null
                 && commonParameters.DigestionParams.Protease.Name == "top-down")
             {
                 GlobalVariables.AnalyteType = "Proteoform";

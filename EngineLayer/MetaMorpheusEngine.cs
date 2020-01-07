@@ -20,12 +20,14 @@ namespace EngineLayer
         };
 
         protected readonly CommonParameters CommonParameters;
+        protected readonly List<(string FileName, CommonParameters Parameters)> FileSpecificParameters;
 
         protected readonly List<string> NestedIds;
 
-        protected MetaMorpheusEngine(CommonParameters commonParameters, List<string> nestedIds)
+        protected MetaMorpheusEngine(CommonParameters commonParameters, List<(string FileName, CommonParameters Parameters)> fileSpecificParameters, List<string> nestedIds)
         {
             CommonParameters = commonParameters;
+            FileSpecificParameters = fileSpecificParameters;
             NestedIds = nestedIds;
         }
 

@@ -51,7 +51,7 @@ namespace Test
             Assert.AreEqual(psm.ToString().Count(f => f == '\t'), PeptideSpectralMatch.GetTabSeparatedHeader().Count(f => f == '\t'));
 
             Tolerance fragmentTolerance = new PpmTolerance(10);
-            new LocalizationEngine(new List<PeptideSpectralMatch> { psm }, myMsDataFile, new CommonParameters(productMassTolerance: fragmentTolerance), new List<string>()).Run();
+            new LocalizationEngine(new List<PeptideSpectralMatch> { psm }, myMsDataFile, new CommonParameters(productMassTolerance: fragmentTolerance), null, new List<string>()).Run();
 
             Assert.AreEqual(psm.ToString().Count(f => f == '\t'), PeptideSpectralMatch.GetTabSeparatedHeader().Count(f => f == '\t'));
 
@@ -113,7 +113,7 @@ namespace Test
             string myDatabase = Path.Combine(TestContext.CurrentContext.TestDirectory, @"TestData\DbForPrunedDb.fasta");
             var listOfSortedms2Scans = MetaMorpheusTask.GetMs2Scans(myMsDataFile, null, new CommonParameters()).OrderBy(b => b.PrecursorMass).ToArray();
             PeptideSpectralMatch[] allPsmsArray = new PeptideSpectralMatch[listOfSortedms2Scans.Length];
-            new ClassicSearchEngine(allPsmsArray, listOfSortedms2Scans, variableModifications, fixedModifications, null, null, null, proteinList, searchModes, new CommonParameters(), new List<string>()).Run();
+            new ClassicSearchEngine(allPsmsArray, listOfSortedms2Scans, variableModifications, fixedModifications, null, null, null, proteinList, searchModes, new CommonParameters(), null, new List<string>()).Run();
 
             List<int> longestSeriesObserved = new List<int>();
 
@@ -259,7 +259,7 @@ namespace Test
             Assert.AreEqual(2, psm.BestMatchingPeptides.Count());
             Assert.That(psm.IsDecoy);
 
-            new FdrAnalysisEngine(new List<PeptideSpectralMatch> { psm }, 1, new CommonParameters(), new List<string>()).Run();
+            new FdrAnalysisEngine(new List<PeptideSpectralMatch> { psm }, 1, new CommonParameters(), null, new List<string>()).Run();
             Assert.AreEqual(0.5, psm.FdrInfo.CumulativeDecoy);
         }
 
@@ -299,7 +299,7 @@ namespace Test
             psm3.SetFdrValues(0, 0, 0, 0, 0, 0, 0, 0); // ambiguous psm
 
             var allPsms = new List<PeptideSpectralMatch> { psm1, psm2, psm3 };
-            var fdrEngine = new FdrAnalysisEngine(allPsms, 0, new CommonParameters(), new List<string>());
+            var fdrEngine = new FdrAnalysisEngine(allPsms, 0, new CommonParameters(), null, new List<string>());
 
             fdrEngine.CountPsm();
             var psmGroups = allPsms.Where(psm => psm.FullSequence != null && psm.PsmCount > 0).GroupBy(p => p.FullSequence).ToList();

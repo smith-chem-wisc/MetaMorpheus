@@ -31,6 +31,8 @@ namespace Test
                     maxModificationIsoforms: 1042),
                 scoreCutoff: 1,
                 productMassTolerance: new PpmTolerance(10));
+            var fsp = new List<(string fileName, CommonParameters fileSpecificParameters)>();
+            fsp.Add(("", CommonParameters));
 
             List<Modification> localizeableModifications = new List<Modification>();
             List<Modification> variableModifications = new List<Modification>();
@@ -93,7 +95,7 @@ namespace Test
                 Assert.AreEqual(1, l.FinalBins.Count);
             };
 
-            FdrAnalysisEngine engine = new FdrAnalysisEngine(newPsms, searchMode.NumNotches, CommonParameters, new List<string> { "ff" });
+            FdrAnalysisEngine engine = new FdrAnalysisEngine(newPsms, searchMode.NumNotches, CommonParameters, fsp, new List<string> { "ff" });
 
             engine.Run();
         }

@@ -66,6 +66,9 @@ namespace Test
                     maxModificationIsoforms: int.MaxValue),
                 scoreCutoff: 1);
 
+            var fsp = new List<(string fileName, CommonParameters fileSpecificParameters)>();
+            fsp.Add(("", CommonParameters));
+
             var newPsms = new List<PeptideSpectralMatch>
             {
                 new PeptideSpectralMatch(pwsm1, 0, 10, 0, scan, CommonParameters, new List<MatchedFragmentIon>()),
@@ -83,9 +86,9 @@ namespace Test
             MassDiffAcceptor searchMode = new SinglePpmAroundZeroSearchMode(5);
             List<Protein> proteinList = new List<Protein> { protein1 };
 
-            FdrAnalysisEngine fdrAnalysisEngine = new FdrAnalysisEngine(newPsms, searchMode.NumNotches, CommonParameters, new List<string>());
+            FdrAnalysisEngine fdrAnalysisEngine = new FdrAnalysisEngine(newPsms, searchMode.NumNotches, CommonParameters, fsp, new List<string>());
             fdrAnalysisEngine.Run();
-            ModificationAnalysisEngine modificationAnalysisEngine = new ModificationAnalysisEngine(newPsms, new CommonParameters(), new List<string>());
+            ModificationAnalysisEngine modificationAnalysisEngine = new ModificationAnalysisEngine(newPsms, new CommonParameters(), fsp, new List<string>());
             var res = (ModificationAnalysisResults)modificationAnalysisEngine.Run();
 
             Assert.AreEqual(2, res.CountOfEachModSeenOnProteins.Count());
@@ -131,6 +134,8 @@ namespace Test
             PeptideWithSetModifications pwsm2 = new PeptideWithSetModifications(protein1, new DigestionParams(), 2, 9, CleavageSpecificity.Unknown, null, 0, allModsOneIsNterminus3, 0);
 
             CommonParameters CommonParameters = new CommonParameters(digestionParams: new DigestionParams(maxMissedCleavages: 0, minPeptideLength: 1), scoreCutoff: 1);
+            var fsp = new List<(string fileName, CommonParameters fileSpecificParameters)>();
+            fsp.Add(("", CommonParameters));
 
             PeptideSpectralMatch myPsm = new PeptideSpectralMatch(pwsm1, 0, 10, 0, scan, new CommonParameters(), new List<MatchedFragmentIon>());
             myPsm.AddOrReplace(pwsm2, 10, 0, true, new List<MatchedFragmentIon>(),0);
@@ -140,9 +145,9 @@ namespace Test
             MassDiffAcceptor searchMode = new SinglePpmAroundZeroSearchMode(5);
             List<Protein> proteinList = new List<Protein> { protein1 };
 
-            FdrAnalysisEngine fdrAnalysisEngine = new FdrAnalysisEngine(new List<PeptideSpectralMatch> { myPsm }, searchMode.NumNotches, CommonParameters, new List<string>());
+            FdrAnalysisEngine fdrAnalysisEngine = new FdrAnalysisEngine(new List<PeptideSpectralMatch> { myPsm }, searchMode.NumNotches, CommonParameters, fsp, new List<string>());
             fdrAnalysisEngine.Run();
-            ModificationAnalysisEngine modificationAnalysisEngine = new ModificationAnalysisEngine(new List<PeptideSpectralMatch> { myPsm }, new CommonParameters(), new List<string>());
+            ModificationAnalysisEngine modificationAnalysisEngine = new ModificationAnalysisEngine(new List<PeptideSpectralMatch> { myPsm }, new CommonParameters(), fsp, new List<string>());
             var res = (ModificationAnalysisResults)modificationAnalysisEngine.Run();
 
             Assert.AreEqual(1, res.CountOfEachModSeenOnProteins.Count());

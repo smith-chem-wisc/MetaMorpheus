@@ -24,6 +24,8 @@ namespace Test
             
             Protein parentProteinForMatch = new Protein("MEK", null);
             CommonParameters commonParameters = new CommonParameters(digestionParams: new DigestionParams(minPeptideLength: 1));
+            var fsp = new List<(string fileName, CommonParameters fileSpecificParameters)>();
+            fsp.Add(("", commonParameters));
             ModificationMotif.TryGetMotif("E", out ModificationMotif motif);
             List<Modification> variableModifications = new List<Modification> { new Modification(_originalId: "21", _target: motif, _locationRestriction: "Anywhere.", _monoisotopicMass: 21.981943) };
 
@@ -41,7 +43,7 @@ namespace Test
             var matchedIons = MetaMorpheusEngine.MatchFragmentIons(scan, theoreticalProducts, new CommonParameters());
             PeptideSpectralMatch newPsm = new PeptideSpectralMatch(ps, 0, 0, 2, scan, commonParameters, matchedIons);
 
-            LocalizationEngine f = new LocalizationEngine(new List<PeptideSpectralMatch> { newPsm }, myMsDataFile, new CommonParameters(), new List<string>());
+            LocalizationEngine f = new LocalizationEngine(new List<PeptideSpectralMatch> { newPsm }, myMsDataFile, new CommonParameters(), fsp, new List<string>());
 
             var singleEngine= new SingleEngineEventArgs(f);
             Assert.That(singleEngine.MyEngine.Equals(f));
