@@ -671,7 +671,7 @@ namespace Test
         public static void TestMixedMs2Ms2()
         {
             string outputFile = Path.Combine(TestContext.CurrentContext.TestDirectory, @"TestMixedMs2Ms2.tsv");
-            CommonParameters commonParameters = new CommonParameters(dissociationType: DissociationType.CID, childScanDissociationType: DissociationType.ETD,
+            CommonParameters commonParameters = new CommonParameters(dissociationType: DissociationType.CID, ms2childScanDissociationType: DissociationType.ETD,
                 trimMsMsPeaks: false);
 
             string spectraFile = Path.Combine(TestContext.CurrentContext.TestDirectory, @"XlTestData\ms2mixed_bsa_xlink.mzML");
@@ -707,7 +707,7 @@ namespace Test
                 null, null, null, 0, DecoyType.None, commonParameters, 5000, false, new List<FileInfo>(), new List<string>()).Run();
 
 
-            var secondCombinedParams = new CommonParameters(dissociationType: DissociationType.ETD, childScanDissociationType: DissociationType.ETD,
+            var secondCombinedParams = new CommonParameters(dissociationType: DissociationType.ETD, ms2childScanDissociationType: DissociationType.ETD,
                 trimMsMsPeaks: false);
             var secondIndexingResults = (IndexingResults)new IndexingEngine(new List<Protein> { bsa }, new List<Modification>(), new List<Modification>(), 
                 null, null, null, 0, DecoyType.None, secondCombinedParams, 5000, false, new List<FileInfo>(), new List<string>()).Run();
@@ -767,7 +767,7 @@ namespace Test
         public static void TestMs2Ms3()
         {
             string outputFile = Path.Combine(TestContext.CurrentContext.TestDirectory, @"TestMs2Ms3.tsv");
-            CommonParameters commonParameters = new CommonParameters(dissociationType: DissociationType.CID, childScanDissociationType: DissociationType.LowCID, precursorMassTolerance: new PpmTolerance(10));
+            CommonParameters commonParameters = new CommonParameters(dissociationType: DissociationType.CID, ms3childScanDissociationType: DissociationType.LowCID, precursorMassTolerance: new PpmTolerance(10));
 
             string spectraFile = Path.Combine(TestContext.CurrentContext.TestDirectory, @"XlTestData\ms2ms3mixed_10226.mzML");
             var file = new MyFileManager(true).LoadFile(spectraFile, commonParameters);

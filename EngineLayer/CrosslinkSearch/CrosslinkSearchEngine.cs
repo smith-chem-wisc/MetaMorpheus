@@ -49,7 +49,7 @@ namespace EngineLayer.CrosslinkSearch
             this.massTable = peptideIndex.Select(p => p.MonoisotopicMass).ToArray();
 
             SecondFragmentIndex = secondFragmentIndex;
-            if (CommonParameters.ChildScanDissociationType!=DissociationType.Unknown && DissociationTypeGenerateSameTypeOfIons(CommonParameters.DissociationType, CommonParameters.ChildScanDissociationType))
+            if (CommonParameters.MS2ChildScanDissociationType!=DissociationType.Unknown && DissociationTypeGenerateSameTypeOfIons(CommonParameters.DissociationType, CommonParameters.MS2ChildScanDissociationType))
             {
                 SecondFragmentIndex = FragmentIndex;
             }
@@ -110,7 +110,7 @@ namespace EngineLayer.CrosslinkSearch
                     IndexedScoring(FragmentIndex, allBinsToSearch, scoringTable, byteScoreCutoff, idsOfPeptidesPossiblyObserved, scan.PrecursorMass, Double.NegativeInfinity, Double.PositiveInfinity, PeptideIndex, MassDiffAcceptor, 0, CommonParameters.DissociationType);
 
                     //child scan first-pass scoring
-                    if (scan.ChildScans != null && CommonParameters.ChildScanDissociationType != DissociationType.LowCID)
+                    if (scan.ChildScans != null && CommonParameters.MS2ChildScanDissociationType != DissociationType.LowCID)
                     {
                         Array.Clear(secondScoringTable, 0, secondScoringTable.Length);
                         childIdsOfPeptidesPossiblyObserved.Clear();
@@ -119,11 +119,11 @@ namespace EngineLayer.CrosslinkSearch
      
                         foreach (var aChildScan in scan.ChildScans)
                         {
-                            var x = GetBinsToSearch(aChildScan, SecondFragmentIndex, CommonParameters.ChildScanDissociationType);
+                            var x = GetBinsToSearch(aChildScan, SecondFragmentIndex, CommonParameters.MS2ChildScanDissociationType);
                             childBinsToSearch.AddRange(x);
                         }
 
-                        IndexedScoring(SecondFragmentIndex, childBinsToSearch, secondScoringTable, byteScoreCutoff, childIdsOfPeptidesPossiblyObserved, scan.PrecursorMass, Double.NegativeInfinity, Double.PositiveInfinity, PeptideIndex, MassDiffAcceptor, 0, CommonParameters.ChildScanDissociationType);
+                        IndexedScoring(SecondFragmentIndex, childBinsToSearch, secondScoringTable, byteScoreCutoff, childIdsOfPeptidesPossiblyObserved, scan.PrecursorMass, Double.NegativeInfinity, Double.PositiveInfinity, PeptideIndex, MassDiffAcceptor, 0, CommonParameters.MS2ChildScanDissociationType);
 
                         foreach (var childId in childIdsOfPeptidesPossiblyObserved)
                         {
@@ -370,7 +370,9 @@ namespace EngineLayer.CrosslinkSearch
                                 {
                                     matchedChildAlphaIons = new Dictionary<int, List<MatchedFragmentIon>>();
                                 }
+
                                 matchedChildAlphaIons.Add(childScan.OneBasedScanNumber, matchedChildIons);
+
                                 //double childScore = CalculatePeptideScore(childScan.TheScan, matchedChildIons);
 
                                 //score += childScore;
@@ -524,12 +526,12 @@ namespace EngineLayer.CrosslinkSearch
                     mainPeptide.CleavageSpecificityForFdrCategory, mainPeptide.PeptideDescription,
                     mainPeptide.MissedCleavages, mod, mainPeptide.NumFixedMods);
 
-                childProducts = peptideWithMod.Fragment(CommonParameters.ChildScanDissociationType, FragmentationTerminus.Both).ToList();
+                childProducts = peptideWithMod.Fragment(CommonParameters.MS2ChildScanDissociationType, FragmentationTerminus.Both).ToList();
             }
-            else if (Math.Abs(childScan.PrecursorMass - parentScan.PrecursorMass) < 0.01 && CommonParameters.DissociationType != CommonParameters.ChildScanDissociationType)
+            else if (Math.Abs(childScan.PrecursorMass - parentScan.PrecursorMass) < 0.01 && CommonParameters.DissociationType != CommonParameters.MS2ChildScanDissociationType)
             {
                 // same species got fragmented twice, the second time with a different dissociation type
-                childProducts = CrosslinkedPeptide.XlGetTheoreticalFragments(CommonParameters.ChildScanDissociationType,
+                childProducts = CrosslinkedPeptide.XlGetTheoreticalFragments(CommonParameters.MS2ChildScanDissociationType,
                     Crosslinker, new List<int> { possibleSite }, otherPeptide.MonoisotopicMass, mainPeptide).First().Item2;
             }
             else

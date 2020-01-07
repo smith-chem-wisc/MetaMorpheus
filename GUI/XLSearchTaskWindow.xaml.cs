@@ -71,8 +71,12 @@ namespace MetaMorpheusGUI
             foreach (string dissassociationType in GlobalVariables.AllSupportedDissociationTypes.Keys)
             {
                 DissociationTypeComboBox.Items.Add(dissassociationType);
-                ChildScanDissociationTypeComboBox.Items.Add(dissassociationType);
+                MS2ChildScanDissociationTypeComboBox.Items.Add(dissassociationType);
+                MS3ChildScanDissociationTypeComboBox.Items.Add(dissassociationType);
             }
+            //GlobalVariables.AllSupportedDissociationTypes didn't contain DissociationType.Unknown, which is useful.
+            MS2ChildScanDissociationTypeComboBox.Items.Add(DissociationType.Unknown.ToString());
+            MS3ChildScanDissociationTypeComboBox.Items.Add(DissociationType.Unknown.ToString());
 
             cbbXLprecusorMsTl.Items.Add("Da");
             cbbXLprecusorMsTl.Items.Add("ppm");
@@ -130,12 +134,9 @@ namespace MetaMorpheusGUI
             MinRatioTextBox.Text = task.CommonParameters.MinimumAllowedIntensityRatioToBasePeak == double.MaxValue || !task.CommonParameters.MinimumAllowedIntensityRatioToBasePeak.HasValue ? "" : task.CommonParameters.MinimumAllowedIntensityRatioToBasePeak.Value.ToString(CultureInfo.InvariantCulture);
 
             DissociationTypeComboBox.SelectedItem = task.CommonParameters.DissociationType.ToString();
+            MS2ChildScanDissociationTypeComboBox.SelectedItem = task.CommonParameters.MS2ChildScanDissociationType.ToString();
+            MS3ChildScanDissociationTypeComboBox.SelectedItem = task.CommonParameters.MS3ChildScanDissociationType.ToString();
 
-            if (task.CommonParameters.ChildScanDissociationType != DissociationType.Unknown)
-            {
-                ChildScanDissociationTypeComboBox.SelectedItem = task.CommonParameters.ChildScanDissociationType.ToString();
-            }
-            
             checkBoxDecoy.IsChecked = task.XlSearchParameters.DecoyType != DecoyType.None;
             deconvolutePrecursors.IsChecked = task.CommonParameters.DoPrecursorDeconvolution;
             useProvidedPrecursor.IsChecked = task.CommonParameters.UseProvidedPrecursorInfo;
@@ -147,7 +148,6 @@ namespace MetaMorpheusGUI
             initiatorMethionineBehaviorComboBox.SelectedIndex = (int)task.CommonParameters.DigestionParams.InitiatorMethionineBehavior;
             productMassToleranceTextBox.Text = task.CommonParameters.ProductMassTolerance.Value.ToString(CultureInfo.InvariantCulture);
             productMassToleranceComboBox.SelectedIndex = task.CommonParameters.ProductMassTolerance is AbsoluteTolerance ? 0 : 1;
-            DissociationTypeComboBox.SelectedItem = task.CommonParameters.DissociationType.ToString();
             minScoreAllowed.Text = task.CommonParameters.ScoreCutoff.ToString(CultureInfo.InvariantCulture);
             numberOfDatabaseSearchesTextBox.Text = task.CommonParameters.TotalPartitions.ToString(CultureInfo.InvariantCulture);
             maxThreadsTextBox.Text = task.CommonParameters.MaxThreadsToUsePerFile.ToString(CultureInfo.InvariantCulture);
@@ -228,12 +228,9 @@ namespace MetaMorpheusGUI
             }
 
             DissociationType dissociationType = GlobalVariables.AllSupportedDissociationTypes[DissociationTypeComboBox.SelectedItem.ToString()];
+            DissociationType ms2childDissociationType = GlobalVariables.AllSupportedDissociationTypes[MS2ChildScanDissociationTypeComboBox.SelectedItem.ToString()];
+            DissociationType ms3childDissociationType = GlobalVariables.AllSupportedDissociationTypes[MS3ChildScanDissociationTypeComboBox.SelectedItem.ToString()];
 
-            DissociationType childDissociationType = DissociationType.Unknown;
-            if (ChildScanDissociationTypeComboBox.SelectedItem != null)
-            {
-                childDissociationType = GlobalVariables.AllSupportedDissociationTypes[ChildScanDissociationTypeComboBox.SelectedItem.ToString()];
-            }
             CustomFragmentationWindow.Close();
 
             TheTask.XlSearchParameters.CrosslinkSearchTopNum = int.Parse(txtXLTopNum.Text, CultureInfo.InvariantCulture);
@@ -309,7 +306,8 @@ namespace MetaMorpheusGUI
                 numberOfPeaksToKeepPerWindow: int.Parse(TopNPeaksTextBox.Text),
                 minimumAllowedIntensityRatioToBasePeak: double.Parse(MinRatioTextBox.Text, CultureInfo.InvariantCulture),
                 dissociationType: dissociationType,
-                childScanDissociationType: childDissociationType,
+                ms2childScanDissociationType: ms2childDissociationType,
+                ms3childScanDissociationType: ms3childDissociationType,
                 scoreCutoff: double.Parse(minScoreAllowed.Text, CultureInfo.InvariantCulture),
                 totalPartitions: int.Parse(numberOfDatabaseSearchesTextBox.Text, CultureInfo.InvariantCulture),
                 listOfModsVariable: listOfModsVariable,

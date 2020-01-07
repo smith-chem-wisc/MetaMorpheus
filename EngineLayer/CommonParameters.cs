@@ -17,7 +17,7 @@ namespace EngineLayer
         {
         }
 
-        public CommonParameters(string taskDescriptor = null, DissociationType dissociationType = DissociationType.HCD, DissociationType childScanDissociationType = DissociationType.Unknown, bool doPrecursorDeconvolution = true,
+        public CommonParameters(string taskDescriptor = null, DissociationType dissociationType = DissociationType.HCD, DissociationType ms2childScanDissociationType = DissociationType.Unknown, DissociationType ms3childScanDissociationType = DissociationType.Unknown, bool doPrecursorDeconvolution = true,
             bool useProvidedPrecursorInfo = true, double deconvolutionIntensityRatio = 3, int deconvolutionMaxAssumedChargeState = 12, bool reportAllAmbiguity = true,
             bool addCompIons = false, int totalPartitions = 1, double scoreCutoff = 5, int? numberOfPeaksToKeepPerWindow = 200, double? minimumAllowedIntensityRatioToBasePeak = 0.01, double? windowWidthThomsons = null, int? numberOfWindows = null, bool normalizePeaksAccrossAllWindows = false, bool trimMs1Peaks = false,
             bool trimMsMsPeaks = true, bool useDeltaScore = false, Tolerance productMassTolerance = null, Tolerance precursorMassTolerance = null, Tolerance deconvolutionMassTolerance = null,
@@ -50,7 +50,8 @@ namespace EngineLayer
             ListOfModsVariable = listOfModsVariable ?? new List<(string, string)> { ("Common Variable", "Oxidation on M") };
             ListOfModsFixed = listOfModsFixed ?? new List<(string, string)> { ("Common Fixed", "Carbamidomethyl on C"), ("Common Fixed", "Carbamidomethyl on U") };
             DissociationType = dissociationType;
-            ChildScanDissociationType = childScanDissociationType;
+            MS2ChildScanDissociationType = ms2childScanDissociationType;
+            MS3ChildScanDissociationType = ms3childScanDissociationType;
 
             CustomIons = DissociationTypeCollection.ProductsFromDissociationType[DissociationType.Custom];
             // reset custom fragmentation product types to default empty list
@@ -102,7 +103,8 @@ namespace EngineLayer
         public int MaxHeterozygousVariants { get; private set; }
         public int MinVariantDepth { get; private set; }
         public DissociationType DissociationType { get; private set; }
-        public DissociationType ChildScanDissociationType { get; private set; }
+        public DissociationType MS2ChildScanDissociationType { get; private set; }
+        public DissociationType MS3ChildScanDissociationType { get; private set; }
         
         public CommonParameters Clone()
         {
@@ -138,7 +140,8 @@ namespace EngineLayer
             return new CommonParameters(
                                 TaskDescriptor,
                                 DissociationType,
-                                ChildScanDissociationType,
+                                MS2ChildScanDissociationType,
+                                MS3ChildScanDissociationType,
                                 DoPrecursorDeconvolution,
                                 UseProvidedPrecursorInfo,
                                 DeconvolutionIntensityRatio,
