@@ -230,19 +230,14 @@ namespace TaskLayer
                                     double precursorMz = 0;
                                     var precursorSpectrum = ms2scan;
 
-                                    //try
+                                    //In current situation, do we need to perform the following function.
                                     //{
                                     //    ms3ChildScan.RefineSelectedMzAndIntensity(precursorSpectrum.MassSpectrum);
+                                    //    ms3ChildScan.ComputeMonoisotopicPeakIntensity(precursorSpectrum.MassSpectrum);
                                     //}
-                                    //catch (MzLibException ex)
-                                    //{
-                                    //    Warn("Could not get precursor ion for MS3 scan #" + ms3ChildScan.OneBasedScanNumber + "; " + ex.Message);
-                                    //    continue;
-                                    //}
-
+    
                                     if (ms3ChildScan.SelectedIonMonoisotopicGuessMz.HasValue)
-                                    {
-                                        //ms3ChildScan.ComputeMonoisotopicPeakIntensity(precursorSpectrum.MassSpectrum);
+                                    {                                       
                                         precursorMz = ms3ChildScan.SelectedIonMonoisotopicGuessMz.Value;
                                     }
                                     else if (ms3ChildScan.SelectedIonMZ.HasValue)
@@ -254,11 +249,6 @@ namespace TaskLayer
                                     {
                                         precursorCharge = ms3ChildScan.SelectedIonChargeStateGuess.Value;
                                     }
-                                    //if (!ms3ChildScan.SelectedIonMonoisotopicGuessMz.HasValue)
-                                    //{
-                                    //    Warn("Could not get precursor ion m/z for MS3 scan #" + ms3ChildScan.OneBasedScanNumber);
-                                    //    continue;
-                                    //}
 
                                     IsotopicEnvelope[] childNeutralExperimentalFragments = null;
 

@@ -24,6 +24,7 @@ namespace EngineLayer.CrosslinkSearch
         public int ParentIonExistNum { get; set; }
         public List<int> ParentIonMaxIntensityRanks { get; set; }
         public PsmCrossType CrossType { get; set; }
+        public double MS3ChildScore { get; set; }
         public Dictionary<int, List<MatchedFragmentIon>> ChildMatchedFragmentIons { get; set; }
         public int? XlProteinPos { get; private set; }
         // loop crosslink protein position 2.
