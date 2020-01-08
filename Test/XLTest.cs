@@ -26,6 +26,17 @@ namespace Test
     public static class XLTest
     {
         [Test]
+        public static void TestDissociationTypeGenerateSameTypeOfIons()
+        {
+            Assert.IsTrue(CrosslinkSearchEngine.DissociationTypeGenerateSameTypeOfIons(DissociationType.CID, DissociationType.CID));
+            Assert.IsTrue(CrosslinkSearchEngine.DissociationTypeGenerateSameTypeOfIons(DissociationType.CID,DissociationType.HCD));
+            Assert.IsTrue(CrosslinkSearchEngine.DissociationTypeGenerateSameTypeOfIons(DissociationType.HCD, DissociationType.CID));
+            Assert.IsTrue(CrosslinkSearchEngine.DissociationTypeGenerateSameTypeOfIons(DissociationType.ETD, DissociationType.ECD));
+            Assert.IsTrue(CrosslinkSearchEngine.DissociationTypeGenerateSameTypeOfIons(DissociationType.ECD, DissociationType.ETD));
+            Assert.IsFalse(CrosslinkSearchEngine.DissociationTypeGenerateSameTypeOfIons(DissociationType.CID, DissociationType.ETD));
+        }
+
+        [Test]
         public static void XlTestCrosslinker()
         {
             var crosslinker = new Crosslinker("K", "K", "testCrosslinker", true, "CID|HCD", 100, 25, 60, 100, 0, 0, 50);

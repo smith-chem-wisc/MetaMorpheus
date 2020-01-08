@@ -23,6 +23,28 @@ namespace Test
     public static class FdrTest
     {
         [Test]
+        public static void TestSeeModsThatShiftMobility()
+        {
+            Modification ac = new Modification(_originalId: "Acetylation");
+            Modification am = new Modification(_originalId: "Ammonia loss");
+            List<Modification> real = new List<Modification> { ac, am };
+
+            Assert.IsTrue(PEP_Analysis.ContainsModificationsThatShiftMobility(real));
+            Assert.AreEqual(2, PEP_Analysis.CountModificationsThatShiftMobility(real));
+
+            Modification fac = new Modification(_originalId: "fake Acetylation");
+            Modification fam = new Modification(_originalId: "fake Ammonia loss");
+            List<Modification> fake = new List<Modification> { fac, fam };
+
+            Assert.IsFalse(PEP_Analysis.ContainsModificationsThatShiftMobility(fake));
+            Assert.AreEqual(0, PEP_Analysis.CountModificationsThatShiftMobility(fake));
+
+            Assert.IsTrue(PEP_Analysis.ContainsModificationsThatShiftMobility(real.Concat(fake)));
+            Assert.AreEqual(2, PEP_Analysis.CountModificationsThatShiftMobility(real.Concat(fake)));
+
+        }
+
+        [Test]
         public static void FdrTestMethod()
         {
             MassDiffAcceptor searchModes = new DotMassDiffAcceptor(null, new List<double> { 0, 1.0029 }, new PpmTolerance(5));
