@@ -217,10 +217,15 @@ namespace EngineLayer
                 {
                     aminoAcidPosition = peptideBaseSequence.Length - fragmentNumber;
                 }
+                
+                Product p = new Product(productType, 
+                    terminus, 
+                    mz.ToMass(z) - DissociationTypeCollection.GetMassShiftFromProductType(productType), 
+                    fragmentNumber, 
+                    aminoAcidPosition, 
+                    neutralLoss);
 
-                var t = new NeutralTerminusFragment(terminus, mz.ToMass(z) - DissociationTypeCollection.GetMassShiftFromProductType(productType), fragmentNumber, aminoAcidPosition);
-                Product p = new Product(productType, t, neutralLoss);
-                matchedIons.Add(new MatchedFragmentIon(p, mz, 1.0, z));
+                matchedIons.Add(new MatchedFragmentIon(ref p, mz, 1.0, z));
             }
 
             return matchedIons;

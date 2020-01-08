@@ -333,7 +333,7 @@ namespace ViewModels
             }
 
             string productType = matchedIon.NeutralTheoreticalProduct.ProductType.ToString().ToLower();//.Replace("star", "*").Replace("degree", "°").Replace("dot", "");
-            string productNumber = matchedIon.NeutralTheoreticalProduct.TerminusFragment.FragmentNumber.ToString();
+            string productNumber = matchedIon.NeutralTheoreticalProduct.FragmentNumber.ToString();
             string peakAnnotationText = prefix + productType + productNumber;
 
             if (matchedIon.NeutralTheoreticalProduct.NeutralLoss != 0)

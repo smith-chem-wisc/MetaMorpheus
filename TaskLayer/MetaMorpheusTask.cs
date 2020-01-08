@@ -796,6 +796,7 @@ namespace TaskLayer
                 precursorIndex = indexResults.PrecursorIndex;
 
                 Status("Writing peptide index...", new List<string> { taskId });
+                //ShrinkPeptideIndex(peptideIndex);
                 var peptideIndexFile = Path.Combine(output_folderForIndices, PeptideIndexFileName);
                 WritePeptideIndex(peptideIndex, peptideIndexFile);
                 FinishedWritingFile(peptideIndexFile, new List<string> { taskId });
@@ -828,6 +829,20 @@ namespace TaskLayer
                 }
             }
         }
+
+        /// <summary>
+        /// Reduce size of peptide objects by removing superfluous fields for faster reading and writing
+        /// </summary>
+        /// <param name="peptideIndex"></param>
+        //public void ShrinkPeptideIndex(List<PeptideWithSetModifications> peptideIndex)
+        //{
+        //    //for(int i=0; i<peptideIndex.Count; i++)
+        //    foreach(PeptideWithSetModifications peptide in peptideIndex)
+        //    {
+        //        peptide.DigestionParams = null;
+        //        peptide.
+        //    }
+        //}
 
         public void GenerateSecondIndexes(IndexingEngine indexEngine, IndexingEngine secondIndexEngine, List<DbForTask> dbFilenameList, ref List<int>[] secondFragmentIndex, List<Protein> allKnownProteins, string taskId)
         {
