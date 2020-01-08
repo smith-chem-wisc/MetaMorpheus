@@ -302,7 +302,7 @@ namespace EngineLayer
                         }
                         else
                         {
-                            mobilities.Add(possibleKey, new List<double>() { predictedMobility });
+                            mobilities.Add(possibleKey, new List<double> { predictedMobility });
                         }
                     }
                 }
@@ -362,7 +362,7 @@ namespace EngineLayer
             return mobility;
         }
 
-        private static float GetSSRCalcHydrophobicityZScore(PeptideSpectralMatch psm, PeptideWithSetModifications Peptide, string separationType, Dictionary<string, Dictionary<int, Tuple<double, double>>> d)
+        private static float GetSSRCalcHydrophobicityZScore(PeptideSpectralMatch psm, PeptideWithSetModifications Peptide, Dictionary<string, Dictionary<int, Tuple<double, double>>> d)
         {
             //Using SSRCalc3 but probably any number of different calculators could be used instead. One could also use the CE mobility.
             SSRCalc3 calc = new SSRCalc3("SSRCalc 3.0 (300A)", SSRCalc3.Column.A300);
@@ -543,11 +543,11 @@ namespace EngineLayer
                     {
                         if (selectedPeptide.BaseSequence.Equals(selectedPeptide.FullSequence))
                         {
-                            hydrophobicityZscore = GetSSRCalcHydrophobicityZScore(psm, selectedPeptide, "HPLC", timeDependantHydrophobicityAverageAndDeviation_unmodified);
+                            hydrophobicityZscore = GetSSRCalcHydrophobicityZScore(psm, selectedPeptide, timeDependantHydrophobicityAverageAndDeviation_unmodified);
                         }
                         else
                         {
-                            hydrophobicityZscore = GetSSRCalcHydrophobicityZScore(psm, selectedPeptide, "HPLC", timeDependantHydrophobicityAverageAndDeviation_modified);
+                            hydrophobicityZscore = GetSSRCalcHydrophobicityZScore(psm, selectedPeptide, timeDependantHydrophobicityAverageAndDeviation_modified);
                         }
                     }
                     else

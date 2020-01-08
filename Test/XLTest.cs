@@ -241,7 +241,6 @@ namespace Test
                     using (GZipStream decompressionStream = new GZipStream(originalFileStream, CompressionMode.Decompress))
                     {
                         decompressionStream.CopyTo(decompressedFileStream);
-                        Console.WriteLine($"Decompressed: {fileToDecompress.Name}");
                     }
                 }
             }

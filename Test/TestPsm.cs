@@ -118,28 +118,15 @@ namespace Test
 
             List<int> longestSeriesObserved = new List<int>();
 
-            List<int> longestSeriesExpected = new List<int>() { 4, 3, 3, 7, 7, 7, 7, 3, 3, 8, 12, 4, 4, 7, 13, 12, 12, 7, 7, 3, 3, 3, 2, 2, 2, 2, 2, 2, 11, 11, 11, 11, 11, 11, 4, 4, 4, 4, 4, 4, 10, 10, 13, 13, 15, 15, 15, 15, 5, 5, 5, 5, 3, 3, 3, 15, 15, 15, 3, 3, 3, 6, 16, 2, 2, 18, 3, 2, 2, 2, 2, 2, 9, 9, 9, 3, 2, 2, 2, 2, 2, 3, 3, 2, 2, 2, 2, 2, 12, 6, 3 };
+            List<int> longestSeriesExpected = new List<int> { 4, 3, 3, 7, 7, 7, 7, 3, 3, 8, 12, 4, 4, 7, 13, 12, 12, 7, 7, 3, 3, 3, 2, 2, 2, 2, 2, 2, 11, 11, 11, 11, 11, 11, 4, 4, 4, 4, 4, 4, 10, 10, 13, 13, 15, 15, 15, 15, 5, 5, 5, 5, 3, 3, 3, 15, 15, 15, 3, 3, 3, 6, 16, 2, 2, 18, 3, 2, 2, 2, 2, 2, 9, 9, 9, 3, 2, 2, 2, 2, 2, 3, 3, 2, 2, 2, 2, 2, 12, 6, 3 };
 
-            int obs = 0;
             foreach (PeptideSpectralMatch psm in allPsmsArray)
             {
                 if (psm != null)
                 {
                     foreach (var (Notch, Peptide) in psm.BestMatchingPeptides)
                     {
-                        List<Product> products = new List<Product>();
-                        Peptide.Fragment(DissociationType.HCD, FragmentationTerminus.Both, products);
-
-                        var scan = listOfSortedms2Scans.First(p => p.OneBasedScanNumber == psm.ScanNumber);
-
-                        var matched = MetaMorpheusEngine.MatchFragmentIons(scan, products, CommonParameters).Select(p => p.NeutralTheoreticalProduct.AminoAcidPosition).Distinct().ToList();
-                        matched.Sort();
-
                         longestSeriesObserved.Add(psm.GetLongestIonSeriesBidirectional(psm.PeptidesToMatchingFragments, Peptide));
-
-                        int supposedToMatch = longestSeriesExpected[obs];
-                        int actuallyMatched = longestSeriesObserved.Last();
-                        obs++;
                     }
                 }
             }
