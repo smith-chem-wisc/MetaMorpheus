@@ -20,6 +20,9 @@ namespace EngineLayer
     public static class PEP_Analysis
     {
         private static readonly double AbsoluteProbabilityThatDistinguishesPeptides = 0.05;
+        private static Dictionary<string, Dictionary<int, Tuple<double, double>>> fileSpecificTimeDependantHydrophobicityAverageAndDeviation_unmodified = new Dictionary<string, Dictionary<int, Tuple<double, double>>>();
+        private static Dictionary<string, Dictionary<int, Tuple<double, double>>> fileSpecificTimeDependantHydrophobicityAverageAndDeviation_modified = new Dictionary<string, Dictionary<int, Tuple<double, double>>>();
+        private static Dictionary<string, Dictionary<int, Tuple<double, double>>> fileSpecificTimeDependantHydrophobicityAverageAndDeviation_CZE = new Dictionary<string, Dictionary<int, Tuple<double, double>>>();
 
         public static string ComputePEPValuesForAllPSMsGeneric(List<PeptideSpectralMatch> psms, string searchType, List<(string fileName, CommonParameters fileSpecificParameters)> fileSpecificParameters)
         {
@@ -32,13 +35,12 @@ namespace EngineLayer
 
             //The first string in the dictionary is the filename
             //The value of the dictionary is another dictionary that profiles the hydrophobicity behavior. Each key is a retention time rounded to the nearest minute. The value Tuple is the average and standard deviation, respectively, of the predicted hydrophobicities of the observed peptides eluting at that rounded retention time.
-            Dictionary<string, Dictionary<int, Tuple<double, double>>> fileSpecificTimeDependantHydrophobicityAverageAndDeviation_unmodified = new Dictionary<string, Dictionary<int, Tuple<double, double>>>();
-            Dictionary<string, Dictionary<int, Tuple<double, double>>> fileSpecificTimeDependantHydrophobicityAverageAndDeviation_modified = new Dictionary<string, Dictionary<int, Tuple<double, double>>>();
 
             if (trainingVariables.Contains("HydrophobicityZScore"))
             {
                 fileSpecificTimeDependantHydrophobicityAverageAndDeviation_unmodified = ComputeHydrophobicityValues(psms, fileSpecificParameters, false);
                 fileSpecificTimeDependantHydrophobicityAverageAndDeviation_modified = ComputeHydrophobicityValues(psms, fileSpecificParameters, true);
+                fileSpecificTimeDependantHydrophobicityAverageAndDeviation_CZE = ComputeMobilityValues(psms, fileSpecificParameters);
             }
 
             Dictionary<string, int> sequenceToPsmCount = GetSequenceToPSMCount(psms);
@@ -167,7 +169,7 @@ namespace EngineLayer
             //TODO change the tuple so the values have names
             Dictionary<string, Dictionary<int, Tuple<double, double>>> rtHydrophobicityAvgDev = new Dictionary<string, Dictionary<int, Tuple<double, double>>>();
 
-            List<string> filenames = psms.Select(f => Path.GetFileName(f.FullFilePath)).ToList();
+            List<string> filenames = fileSpecificParameters.Where(s => s.fileSpecificParameters.SeparationType == "HPLC").Select(s => Path.GetFileName(s.fileName)).ToList();
 
             filenames = filenames.Distinct().ToList();
 
@@ -175,9 +177,7 @@ namespace EngineLayer
             {
                 Dictionary<int, List<double>> hydrophobicities = new Dictionary<int, List<double>>();
                 Dictionary<int, Tuple<double, double>> averagesCommaStandardDeviations = new Dictionary<int, Tuple<double, double>>();
-                
-                bool fileIsCzeSeparationType = fileSpecificParameters.Any(p => Path.GetFileName(p.fileName) == filename && p.fileSpecificParameters.SeparationType == "CZE");
-                
+
                 foreach (PeptideSpectralMatch psm in psms.Where(f => (f.FullFilePath == null || Path.GetFileName(f.FullFilePath) == filename) && f.FdrInfo.QValue <= 0.01 && !f.IsDecoy))
                 {
                     List<string> fullSequences = new List<string>();
@@ -189,22 +189,13 @@ namespace EngineLayer
                         }
                         fullSequences.Add(pwsm.FullSequence);
 
-                        double predictedHydrophobicity = 0;
-
-                        if (fileIsCzeSeparationType)
-                        {
-                            predictedHydrophobicity = CZE.PredictedElectrophoreticMobility(pwsm.BaseSequence, pwsm.MonoisotopicMass);
-                        }
-                        else // is HPLC and not CZE-separated
-                        {
-                            predictedHydrophobicity = calc.ScoreSequence(pwsm);
-                        }
+                        double predictedHydrophobicity = calc.ScoreSequence(pwsm);
 
                         //here i'm grouping this in 2 minute increments becuase there are cases where you get too few data points to get a good standard deviation an average. This is for stability.
                         int possibleKey = (int)(2 * Math.Round(psm.ScanRetentionTime / 2d, 0));
 
                         //First block of if statement is for modified peptides.
-                        if ((pwsm.AllModsOneIsNterminus.Any() && computeHydrophobicitiesforModifiedPeptides && !fileIsCzeSeparationType) || (ContainsModificationsThatShiftMobility(pwsm.AllModsOneIsNterminus.Values.AsEnumerable()) && computeHydrophobicitiesforModifiedPeptides && fileIsCzeSeparationType))
+                        if (pwsm.AllModsOneIsNterminus.Any() && computeHydrophobicitiesforModifiedPeptides)
                         {
                             if (hydrophobicities.ContainsKey(possibleKey))
                             {
@@ -216,7 +207,7 @@ namespace EngineLayer
                             }
                         }
                         //this second block of if statment is for unmodified peptides.
-                        else if ((!pwsm.AllModsOneIsNterminus.Any() && !computeHydrophobicitiesforModifiedPeptides && !fileIsCzeSeparationType) || (!ContainsModificationsThatShiftMobility(pwsm.AllModsOneIsNterminus.Values.AsEnumerable()) && !computeHydrophobicitiesforModifiedPeptides && fileIsCzeSeparationType))
+                        else if (!pwsm.AllModsOneIsNterminus.Any() && !computeHydrophobicitiesforModifiedPeptides)
                         {
                             if (hydrophobicities.ContainsKey(possibleKey))
                             {
@@ -276,6 +267,101 @@ namespace EngineLayer
             return rtHydrophobicityAvgDev;
         }
 
+        private static Dictionary<string, Dictionary<int, Tuple<double, double>>> ComputeMobilityValues(List<PeptideSpectralMatch> psms, List<(string fileName, CommonParameters fileSpecificParameters)> fileSpecificParameters)
+        {
+            Dictionary<string, Dictionary<int, Tuple<double, double>>> rtMobilityAvgDev = new Dictionary<string, Dictionary<int, Tuple<double, double>>>();
+
+            List<string> filenames = fileSpecificParameters.Where(s => s.fileSpecificParameters.SeparationType == "CZE").Select(s => Path.GetFileName(s.fileName)).ToList();
+
+            filenames = filenames.Distinct().ToList();
+
+            foreach (string filename in filenames)
+            {
+                Dictionary<int, List<double>> mobilities = new Dictionary<int, List<double>>();
+                Dictionary<int, Tuple<double, double>> averagesCommaStandardDeviations = new Dictionary<int, Tuple<double, double>>();
+
+                foreach (PeptideSpectralMatch psm in psms.Where(f => (f.FullFilePath == null || Path.GetFileName(f.FullFilePath) == filename) && f.FdrInfo.QValue <= 0.01 && !f.IsDecoy))
+                {
+                    List<string> fullSequences = new List<string>();
+                    foreach ((int notch, PeptideWithSetModifications pwsm) in psm.BestMatchingPeptides)
+                    {
+                        if (fullSequences.Contains(pwsm.FullSequence))
+                        {
+                            continue;
+                        }
+                        fullSequences.Add(pwsm.FullSequence);
+
+                        double predictedMobility = 100.0 * GetCifuentesMobility(pwsm);
+
+                        //here i'm grouping this in 2 minute increments becuase there are cases where you get too few data points to get a good standard deviation an average. This is for stability.
+                        int possibleKey = (int)(2 * Math.Round(psm.ScanRetentionTime / 2d, 0));
+
+                        if (mobilities.ContainsKey(possibleKey))
+                        {
+                            mobilities[possibleKey].Add(predictedMobility);
+                        }
+                        else
+                        {
+                            mobilities.Add(possibleKey, new List<double>() { predictedMobility });
+                        }
+                    }
+                }
+
+                List<double> allSquaredMobilityDifferences = new List<double>();
+
+                foreach (int retentionTimeBin in mobilities.Keys)
+                {
+                    //TODO consider using inner-quartile range instead of standard deviation
+                    double averageMobility = mobilities[retentionTimeBin].Average();
+                    averagesCommaStandardDeviations.Add(retentionTimeBin, new Tuple<double, double>(averageMobility, mobilities[retentionTimeBin].StandardDeviation()));
+                    foreach (double hydrophobicity in mobilities[retentionTimeBin])
+                    {
+                        double difference = Math.Abs(hydrophobicity - averageMobility);
+                        if (!double.IsNaN(difference) && difference > 0)
+                        {
+                            allSquaredMobilityDifferences.Add(Math.Pow(difference, 2));
+                        }
+                    }
+                }
+
+                //some standard deviations are too small or too large because of random reasons, so we replace those small numbers of oddballs with reasonable numbers.
+                double globalStDev = 1;
+                if (allSquaredMobilityDifferences.Count() > 1)
+                {
+                    globalStDev = Math.Sqrt(allSquaredMobilityDifferences.Sum() / (allSquaredMobilityDifferences.Count() - 1));
+                }
+
+                Dictionary<int, Tuple<double, double>> stDevsToChange = new Dictionary<int, Tuple<double, double>>();
+                foreach (KeyValuePair<int, Tuple<double, double>> item in averagesCommaStandardDeviations)
+                {
+                    //add stability. not allowing stdevs that are too small or too large at one position relative to the global stdev
+                    //here we are finding which stdevs are out of whack.
+                    if (Double.IsNaN(item.Value.Item2) || item.Value.Item2 < 0.05 || (item.Value.Item2 / globalStDev) > 3)
+                    {
+                        Tuple<double, double> pair = new Tuple<double, double>(averagesCommaStandardDeviations[item.Key].Item1, globalStDev);
+                        stDevsToChange.Add(item.Key, pair);
+                    }
+                }
+                //here we are replacing the stdevs that are out of whack.
+                foreach (int key in stDevsToChange.Keys)
+                {
+                    averagesCommaStandardDeviations[key] = stDevsToChange[key];
+                }
+
+                rtMobilityAvgDev.Add(filename, averagesCommaStandardDeviations);
+            }
+            return rtMobilityAvgDev;
+        }
+
+        private static double GetCifuentesMobility(PeptideWithSetModifications pwsm)
+        {
+            int charge = 1 + pwsm.BaseSequence.Count(f => f == 'K') + pwsm.BaseSequence.Count(f => f == 'R') + pwsm.BaseSequence.Count(f => f == 'H') - CountModificationsThatShiftMobility(pwsm.AllModsOneIsNterminus.Values.AsEnumerable());// the 1 + is for N-terminal
+
+            double mobility = (Math.Log(1 + 0.35 * (double)charge)) / Math.Pow(pwsm.MonoisotopicMass, 0.411);
+
+            return mobility;
+        }
+
         private static float GetSSRCalcHydrophobicityZScore(PeptideSpectralMatch psm, PeptideWithSetModifications Peptide, string separationType, Dictionary<string, Dictionary<int, Tuple<double, double>>> d)
         {
             //Using SSRCalc3 but probably any number of different calculators could be used instead. One could also use the CE mobility.
@@ -287,16 +373,7 @@ namespace EngineLayer
                 int time = (int)(2 * Math.Round(psm.ScanRetentionTime / 2d, 0));
                 if (d[Path.GetFileName(psm.FullFilePath)].Keys.Contains(time))
                 {
-                    double predictedHydrophobicity;
-
-                    if (separationType == "CZE")
-                    {
-                        predictedHydrophobicity = CZE.PredictedElectrophoreticMobility(Peptide.BaseSequence, Peptide.MonoisotopicMass);
-                    }
-                    else//assume hplc
-                    {
-                        predictedHydrophobicity = calc.ScoreSequence(Peptide);
-                    }
+                    double predictedHydrophobicity = calc.ScoreSequence(Peptide);
 
                     hydrophobicityZscore = Math.Abs(d[Path.GetFileName(psm.FullFilePath)][time].Item1 - predictedHydrophobicity) / d[Path.GetFileName(psm.FullFilePath)][time].Item2;
                 }
@@ -309,6 +386,30 @@ namespace EngineLayer
             }
 
             return (float)hydrophobicityZscore;
+        }
+
+        private static float GetMobilityZScore(PeptideSpectralMatch psm, PeptideWithSetModifications selectedPeptide)
+        {
+            double mobilityZScore = double.NaN;
+
+            if (fileSpecificTimeDependantHydrophobicityAverageAndDeviation_CZE.ContainsKey(Path.GetFileName(psm.FullFilePath)))
+            {
+                int time = (int)(2 * Math.Round(psm.ScanRetentionTime / 2d, 0));
+                if (fileSpecificTimeDependantHydrophobicityAverageAndDeviation_CZE[Path.GetFileName(psm.FullFilePath)].Keys.Contains(time))
+                {
+                    double predictedMobility = 100.0 * GetCifuentesMobility(selectedPeptide);
+
+                    mobilityZScore = Math.Abs(fileSpecificTimeDependantHydrophobicityAverageAndDeviation_CZE[Path.GetFileName(psm.FullFilePath)][time].Item1 - predictedMobility) / fileSpecificTimeDependantHydrophobicityAverageAndDeviation_CZE[Path.GetFileName(psm.FullFilePath)][time].Item2;
+                }
+            }
+
+            double maxMobilityZscore = 10; // each "Z" is one standard deviation. so, maxHydrophobicityZscore 10 is quite large
+            if (double.IsNaN(mobilityZScore) || double.IsInfinity(mobilityZScore) || mobilityZScore > maxMobilityZscore)
+            {
+                mobilityZScore = maxMobilityZscore;
+            }
+
+            return (float)mobilityZScore;
         }
 
         private static Dictionary<string, int> GetSequenceToPSMCount(List<PeptideSpectralMatch> psms)
@@ -451,14 +552,7 @@ namespace EngineLayer
                     }
                     else
                     {
-                        if (!ContainsModificationsThatShiftMobility(selectedPeptide.AllModsOneIsNterminus.Values.AsEnumerable()))
-                        {
-                            hydrophobicityZscore = GetSSRCalcHydrophobicityZScore(psm, selectedPeptide, "CZE", timeDependantHydrophobicityAverageAndDeviation_unmodified);
-                        }
-                        else
-                        {
-                            hydrophobicityZscore = GetSSRCalcHydrophobicityZScore(psm, selectedPeptide, "CZE", timeDependantHydrophobicityAverageAndDeviation_modified);
-                        }
+                        hydrophobicityZscore = GetMobilityZScore(psm, selectedPeptide);
                     }
                 }
                 //this is not for actual crosslinks but for the byproducts of crosslink loop links, deadends, etc.
@@ -573,6 +667,16 @@ namespace EngineLayer
                 "Phosphorylation", "Phosphoserine", "Phosphothreonine", "Phosphotyrosine", "Sulfonation" };
 
             return shiftingModifications.Concat(modifications.Select(m => m.OriginalId).Distinct()).GroupBy(s => s).Where(s => s.Count() > 1).Any();
+        }
+
+        public static int CountModificationsThatShiftMobility(IEnumerable<Modification> modifications)
+        {
+            List<string> shiftingModifications = new List<string> { "Acetylation", "Ammonia loss", "Carbamyl", "Deamidation", "Formylation",
+                "N2-acetylarginine", "N6-acetyllysine", "N-acetylalanine", "N-acetylaspartate", "N-acetylcysteine", "N-acetylglutamate", "N-acetylglycine",
+                "N-acetylisoleucine", "N-acetylmethionine", "N-acetylproline", "N-acetylserine", "N-acetylthreonine", "N-acetyltyrosine", "N-acetylvaline",
+                "Phosphorylation", "Phosphoserine", "Phosphothreonine", "Phosphotyrosine", "Sulfonation" };
+
+            return modifications.Select(n => n.OriginalId).Intersect(shiftingModifications).Count();
         }
 
         public static Dictionary<string, float> GetFileSpecificMedianFragmentMassError(List<PeptideSpectralMatch> psms)

@@ -651,10 +651,10 @@ namespace Test
             Assert.AreEqual(0, unnasignedCrossType);
             Assert.AreEqual(52, inter);
             Assert.AreEqual(77, intra);
-            Assert.AreEqual(217, single);
+            Assert.AreEqual(216, single);
             Assert.AreEqual(6, loop);
             Assert.AreEqual(0, deadend);
-            Assert.AreEqual(43, deadendH2O);
+            Assert.AreEqual(44, deadendH2O);
             Assert.AreEqual(0, deadendNH2);
             Assert.AreEqual(0, deadendTris);
         }
