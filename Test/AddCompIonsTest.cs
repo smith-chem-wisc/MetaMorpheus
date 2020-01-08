@@ -219,7 +219,7 @@ namespace Test
         [Test]
         public static void AddCompIonsCommonParams()
         {
-            CommonParameters cp = new CommonParameters(null, DissociationType.HCD, DissociationType.Unknown, true, true, 3, 12, true, true, 1, 
+            CommonParameters cp = new CommonParameters(null, DissociationType.HCD, DissociationType.Unknown, DissociationType.Unknown, true, true, 3, 12, true, true, 1, 
                 5, 200, 0.01, null, null, false, false, true, false, null, null, null, -1, null, null, null, 1, true, 4, 1);
 
             var myMsDataFile = new TestDataFile();
