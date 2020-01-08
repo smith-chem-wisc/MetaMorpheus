@@ -3,7 +3,6 @@ using EngineLayer.FdrAnalysis;
 using Proteomics;
 using Proteomics.Fragmentation;
 using Proteomics.ProteolyticDigestion;
-using System;
 using System.Collections.Generic;
 using System.Linq;
 
@@ -63,6 +62,8 @@ namespace EngineLayer
         public int ScanIndex { get; }
         public int NumDifferentMatchingPeptides { get { return _BestMatchingPeptides.Count; } }
         public FdrInfo FdrInfo { get; private set; }
+        public PsmData PsmData_forPEPandPercolator { get; set; }
+
         public double Score { get; private set; }
         public double Xcorr;
         public string NativeId; // this is a property of the scan. used for mzID writing
@@ -83,17 +84,6 @@ namespace EngineLayer
                 return _BestMatchingPeptides.OrderBy(p => p.Pwsm.FullSequence)
                     .ThenBy(p => p.Pwsm.Protein.Accession)
                     .ThenBy(p => p.Pwsm.OneBasedStartResidueInProtein);
-            }
-        }
-
-        /// <summary>
-        /// Used for Percolator output
-        /// </summary>
-        public double[] Features
-        {
-            get
-            {
-                return new[] { Math.Round(Score), Score - Math.Round(Score) };
             }
         }
 
@@ -139,6 +129,7 @@ namespace EngineLayer
         public void RemoveThisAmbiguousPeptide(int notch, PeptideWithSetModifications pwsm)
         {
             _BestMatchingPeptides.Remove((notch, pwsm));
+            this.ResolveAllAmbiguities();
         }
 
         public override string ToString()
@@ -234,8 +225,8 @@ namespace EngineLayer
             if (PeptidesToMatchingFragments != null && PeptidesToMatchingFragments.TryGetValue(peptide, out var matchedFragments) && matchedFragments != null && matchedFragments.Any())
             {
                 List<int> jointSeries = new List<int>();
-                jointSeries.AddRange(matchedFragments.Where(f => f.NeutralTheoreticalProduct.TerminusFragment.Terminus == FragmentationTerminus.N).Select(f => f.NeutralTheoreticalProduct.TerminusFragment.FragmentNumber) ?? new List<int>());
-                jointSeries.AddRange(matchedFragments.Where(f => f.NeutralTheoreticalProduct.TerminusFragment.Terminus == FragmentationTerminus.C).Select(f => f.NeutralTheoreticalProduct.TerminusFragment.FragmentNumber) ?? new List<int>());
+                jointSeries.AddRange(matchedFragments.Where(f => f.NeutralTheoreticalProduct.Terminus == FragmentationTerminus.N).Select(f => f.NeutralTheoreticalProduct.FragmentNumber) ?? new List<int>());
+                jointSeries.AddRange(matchedFragments.Where(f => f.NeutralTheoreticalProduct.Terminus == FragmentationTerminus.C).Select(f => f.NeutralTheoreticalProduct.FragmentNumber) ?? new List<int>());
                 jointSeries = jointSeries.Distinct().ToList();
 
                 if (jointSeries.Count > 0)

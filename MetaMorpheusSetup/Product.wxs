@@ -110,8 +110,17 @@
       <Component Id="MetaMorpheusGUI.exe" Guid="63370d96-1880-40ab-8525-685ccf64326f">
         <File Id="MetaMorpheusGUI.exe" Name="MetaMorpheusGUI.exe" Source="$(var.GUI_TargetDir)MetaMorpheusGUI.exe" />
       </Component>
+      <Component Id="app.manifest" Guid="d894958a-07c1-4078-9e0e-081a6cc29030">
+        <File Id="app.manifest" Name="app.manifest" Source="$(var.GUI_TargetDir)app.manifest" />
+      </Component>
       <Component Id="src_TaskLayer.pdb" Guid="6ece566a-22ff-4208-bba2-ad0430eeee49">
         <File Id="src_TaskLayer.pdb" Name="TaskLayer.pdb" Source="$(var.GUI_TargetDir)TaskLayer.pdb" />
+      </Component>
+      <Component Id="src_OxyPlot.pdb" Guid="3F982909-8946-42BA-BE24-5779A1E1D4BF">
+        <File Id="src_OxyPlot.pdb" Name="OxyPlot.pdb" Source="$(var.GUI_TargetDir)OxyPlot.pdb" />
+      </Component>
+      <Component Id="src_OxyPlot.Wpf.pdb" Guid="68D2F3AF-CD98-4CEB-BA50-59B6ABA74B4A">
+        <File Id="src_OxyPlot.Wpf.pdb" Name="OxyPlot.Wpf.pdb" Source="$(var.GUI_TargetDir)OxyPlot.Wpf.pdb" />
       </Component>
       <Component Id="src_Newtonsoft.Json.dll" Guid="7001FD86-E768-4C32-9747-0AB44A5A3DE9">
         <File Id="src_Newtonsoft.Json.dll" Name="Newtonsoft.Json.dll" Source="$(var.GUI_TargetDir)Newtonsoft.Json.dll" />
@@ -121,6 +130,9 @@
       </Component>
       <Component Id="src_TaskLayer.dll" Guid="7d468a75-d294-432e-bd59-8fcf1e254486">
         <File Id="src_TaskLayer.dll" Name="TaskLayer.dll" Source="$(var.GUI_TargetDir)TaskLayer.dll" />
+      </Component>
+      <Component Id="src_MetaMorpheusGUI.exe.config" Guid="929da846-1537-40ba-b615-2335b32cadb1">
+        <File Id="src_MetaMorpheusGUI.exe.config" Name="MetaMorpheusGUI.exe.config" Source="$(var.GUI_TargetDir)MetaMorpheusGUI.exe.config" />
       </Component>
       <Component Id="src_Chemistry.dll" Guid="bd4869a2-82a3-4d52-97b7-888881ae1827">
         <File Id="src_Chemistry.dll" Name="Chemistry.dll" Source="$(var.GUI_TargetDir)Chemistry.dll" />
@@ -158,6 +170,9 @@
       <Component Id="src_Nett.dll" Guid="656c78ef-0234-4e45-957c-a6dd6fff044f">
         <File Id="src_Nett.dll" Name="Nett.dll" Source="$(var.GUI_TargetDir)Nett.dll" />
       </Component>
+      <Component Id="src_Nett.pdb" Guid="68030b29-c0fe-4287-9b7b-aa07f0cc153a">
+        <File Id="src_Nett.pdb" Name="Nett.pdb" Source="$(var.GUI_TargetDir)Nett.pdb" />
+      </Component>
       <Component Id="src_pepXML.dll" Guid="9a086709-4b5d-4711-aec0-9a8a9ba7b886">
         <File Id="src_pepXML.dll" Name="pepXML.dll" Source="$(var.GUI_TargetDir)pepXML.dll" />
       </Component>
@@ -170,11 +185,17 @@
       <Component Id="src_SharpLearning.Containers.dll" Guid="6bdbf050-26d7-4e11-b378-d71055ecba80">
         <File Id="src_SharpLearning.Containers.dll" Name="SharpLearning.Containers.dll" Source="$(var.GUI_TargetDir)SharpLearning.Containers.dll" />
       </Component>
+      <Component Id="src_SharpLearning.CrossValidation.dll" Guid="da2245c7-362d-4a90-9408-a671e210896a">
+        <File Id="src_SharpLearning.CrossValidation.dll" Name="SharpLearning.CrossValidation.dll" Source="$(var.GUI_TargetDir)SharpLearning.CrossValidation.dll" />
+      </Component>
       <Component Id="src_SharpLearning.DecisionTrees.dll" Guid="b3c202a8-795d-4198-b927-0fcd02d8ae05">
         <File Id="src_SharpLearning.DecisionTrees.dll" Name="SharpLearning.DecisionTrees.dll" Source="$(var.GUI_TargetDir)SharpLearning.DecisionTrees.dll" />
       </Component>
       <Component Id="src_SharpLearning.InputOutput.dll" Guid="357e6a45-5852-474d-aceb-e05942958ae6">
         <File Id="src_SharpLearning.InputOutput.dll" Name="SharpLearning.InputOutput.dll" Source="$(var.GUI_TargetDir)SharpLearning.InputOutput.dll" />
+      </Component>
+      <Component Id="src_SharpLearning.Metrics.dll" Guid="9ec3dd96-8228-49db-98e7-4288845b63a4">
+        <File Id="src_SharpLearning.Metrics.dll" Name="SharpLearning.Metrics.dll" Source="$(var.GUI_TargetDir)SharpLearning.Metrics.dll" />
       </Component>
       <Component Id="src_SharpLearning.RandomForest.dll" Guid="f86fdc0c-6a23-4e4f-803b-0012aaa418e7">
         <File Id="src_SharpLearning.RandomForest.dll" Name="SharpLearning.RandomForest.dll" Source="$(var.GUI_TargetDir)SharpLearning.RandomForest.dll" />
@@ -182,8 +203,47 @@
       <Component Id="src_SharpLearning.Optimization.dll" Guid="3C9AC945-8AE8-4A81-AC1B-1BE7E6DF6DE0">
         <File Id="src_SharpLearning.Optimization.dll" Name="SharpLearning.Optimization.dll" Source="$(var.GUI_TargetDir)SharpLearning.Optimization.dll" />
       </Component>
+      <Component Id="src_SharpLearning.GradientBoost.dll" Guid="F76D5154-5F85-4692-9A6B-B822EA1CB4DE">
+        <File Id="src_SharpLearning.GradientBoost.dll" Name="SharpLearning.GradientBoost.dll" Source="$(var.GUI_TargetDir)SharpLearning.GradientBoost.dll" />
+      </Component>
       <Component Id="src_Mgf.dll" Guid="B4EB5CEA-CFCA-40C7-A915-DB3B9EF53775">
         <File Id="src_Mgf.dll" Name="Mgf.dll" Source="$(var.GUI_TargetDir)Mgf.dll" />
+      </Component>
+      <Component Id="src_System.Data.Common.dll" Guid="795499dd-11a0-4132-8e33-c1f64bd11c51">
+        <File Id="src_System.Data.Common.dll" Name="System.Data.Common.dll" Source="$(var.GUI_TargetDir)System.Data.Common.dll" />
+      </Component>
+      <Component Id="src_System.Diagnostics.StackTrace.dll" Guid="727eb4a0-a11d-4948-b8d0-403b96de69c4">
+        <File Id="src_System.Diagnostics.StackTrace.dll" Name="System.Diagnostics.StackTrace.dll" Source="$(var.GUI_TargetDir)System.Diagnostics.StackTrace.dll" />
+      </Component>
+      <Component Id="src_System.Diagnostics.Tracing.dll" Guid="7e43f9df-4a1c-4f02-99f7-d7f5aa8c63f1">
+        <File Id="src_System.Diagnostics.Tracing.dll" Name="System.Diagnostics.Tracing.dll" Source="$(var.GUI_TargetDir)System.Diagnostics.Tracing.dll" />
+      </Component>
+      <Component Id="src_System.Globalization.Extensions.dll" Guid="12b04d22-78d4-4cf3-b2a5-92d2ca9eb504">
+        <File Id="src_System.Globalization.Extensions.dll" Name="System.Globalization.Extensions.dll" Source="$(var.GUI_TargetDir)System.Globalization.Extensions.dll" />
+      </Component>
+      <Component Id="src_System.IO.Compression.dll" Guid="5d786beb-ae3e-4a9e-9496-189ddb307903">
+        <File Id="src_System.IO.Compression.dll" Name="System.IO.Compression.dll" Source="$(var.GUI_TargetDir)System.IO.Compression.dll" />
+      </Component>
+      <Component Id="src_System.Net.Http.dll" Guid="480e547f-a7d7-4f57-a9a3-4ddb448faddf">
+        <File Id="src_System.Net.Http.dll" Name="System.Net.Http.dll" Source="$(var.GUI_TargetDir)System.Net.Http.dll" />
+      </Component>
+      <Component Id="src_System.Net.Sockets.dll" Guid="340d9c4a-dc96-4ddf-8813-d071f92581cb">
+        <File Id="src_System.Net.Sockets.dll" Name="System.Net.Sockets.dll" Source="$(var.GUI_TargetDir)System.Net.Sockets.dll" />
+      </Component>
+      <Component Id="src_System.Runtime.Serialization.Primitives.dll" Guid="561a0d2f-182d-42f4-9e0c-81e4f81650c6">
+        <File Id="src_System.Runtime.Serialization.Primitives.dll" Name="System.Runtime.Serialization.Primitives.dll" Source="$(var.GUI_TargetDir)System.Runtime.Serialization.Primitives.dll" />
+      </Component>
+      <Component Id="src_System.Security.Cryptography.Algorithms.dll" Guid="af07a661-d962-48e2-8ca4-96f40f167ee7">
+        <File Id="src_System.Security.Cryptography.Algorithms.dll" Name="System.Security.Cryptography.Algorithms.dll" Source="$(var.GUI_TargetDir)System.Security.Cryptography.Algorithms.dll" />
+      </Component>
+      <Component Id="src_System.Security.SecureString.dll" Guid="58b65b98-6752-4030-badc-ff30f2d160e3">
+        <File Id="src_System.Security.SecureString.dll" Name="System.Security.SecureString.dll" Source="$(var.GUI_TargetDir)System.Security.SecureString.dll" />
+      </Component>
+      <Component Id="src_System.Threading.Overlapped.dll" Guid="252a5ba3-10e0-41ac-8fb3-af9a955ea71a">
+        <File Id="src_System.Threading.Overlapped.dll" Name="System.Threading.Overlapped.dll" Source="$(var.GUI_TargetDir)System.Threading.Overlapped.dll" />
+      </Component>
+      <Component Id="src_System.Xml.XPath.XDocument.dll" Guid="70f63556-f331-4c08-ac9f-3515dacbf0e9">
+        <File Id="src_System.Xml.XPath.XDocument.dll" Name="System.Xml.XPath.XDocument.dll" Source="$(var.GUI_TargetDir)System.Xml.XPath.XDocument.dll" />
       </Component>
       <Component Id="src_OxyPlot.dll" Guid="1B25D408-13DB-4A9E-A49E-B0A7FC8C05A6">
         <File Id="src_OxyPlot.dll" Name="OxyPlot.dll" Source="$(var.GUI_TargetDir)OxyPlot.dll" />
@@ -212,6 +272,18 @@
       <Component Id="src_BayesianEstimation.dll" Guid="100F4A2E-F4FE-4D25-8C5F-66A7092A2622">
         <File Id="src_BayesianEstimation.dll" Name="BayesianEstimation.dll" Source="$(var.GUI_TargetDir)BayesianEstimation.dll" />
       </Component>
+      <Component Id="src_CpuMathNative.dll" Guid="923A8CA0-13DD-4927-A1DB-0D25ECDA2301">
+        <File Id="src_CpuMathNative.dll" Name="CpuMathNative.dll" Source="$(var.GUI_TargetDir)CpuMathNative.dll" />
+      </Component>
+      <Component Id="src_FactorizationMachineNative.dll" Guid="E01CA4BE-EBF8-4736-9399-8B96D97F0D9F">
+        <File Id="src_FactorizationMachineNative.dll" Name="FactorizationMachineNative.dll" Source="$(var.GUI_TargetDir)FactorizationMachineNative.dll" />
+      </Component>
+      <Component Id="src_FastTreeNative.dll" Guid="9BD84084-A541-4489-A801-3677E0FF6FF9">
+        <File Id="src_FastTreeNative.dll" Name="FastTreeNative.dll" Source="$(var.GUI_TargetDir)FastTreeNative.dll" />
+      </Component>
+      <Component Id="src_LdaNative.dll" Guid="8CF2948E-6309-4EFF-B6FF-0C6E8F4C55BE">
+        <File Id="src_LdaNative.dll" Name="LdaNative.dll" Source="$(var.GUI_TargetDir)LdaNative.dll" />
+      </Component>
       <Component Id="src_Microsoft.ML.Core.dll" Guid="A5B34A93-481B-4B6A-868C-A0DB916CB37C">
         <File Id="src_Microsoft.ML.Core.dll" Name="Microsoft.ML.Core.dll" Source="$(var.GUI_TargetDir)Microsoft.ML.Core.dll" />
       </Component>
@@ -238,6 +310,33 @@
       </Component>
       <Component Id="src_Microsoft.ML.Transforms.dll" Guid="9FF08BC2-8F99-4004-A4F0-3BB63014BB21">
         <File Id="src_Microsoft.ML.Transforms.dll" Name="Microsoft.ML.Transforms.dll" Source="$(var.GUI_TargetDir)Microsoft.ML.Transforms.dll" />
+      </Component>
+      <Component Id="src_System.Buffers.dll" Guid="BA04C412-922F-42E8-8A1D-4D4A2B042DB1">
+        <File Id="src_System.Buffers.dll" Name="System.Buffers.dll" Source="$(var.GUI_TargetDir)System.Buffers.dll" />
+      </Component>
+      <Component Id="src_System.CodeDom.dll" Guid="1C46B1DB-C230-4755-9B6A-0E03E00EB045">
+        <File Id="src_System.CodeDom.dll" Name="System.CodeDom.dll" Source="$(var.GUI_TargetDir)System.CodeDom.dll" />
+      </Component>
+      <Component Id="src_System.Collections.Immutable.dll" Guid="3322225B-6304-4A25-9E59-F6A2369DFFAD">
+        <File Id="src_System.Collections.Immutable.dll" Name="System.Collections.Immutable.dll" Source="$(var.GUI_TargetDir)System.Collections.Immutable.dll" />
+      </Component>
+      <Component Id="src_System.Memory.dll" Guid="8655337B-5E80-44B0-B13A-726CC60F5A19">
+        <File Id="src_System.Memory.dll" Name="System.Memory.dll" Source="$(var.GUI_TargetDir)System.Memory.dll" />
+      </Component>
+      <Component Id="src_System.Numerics.Vectors.dll" Guid="C4E2DA41-67D4-4117-A01E-B5D85752E769">
+        <File Id="src_System.Numerics.Vectors.dll" Name="System.Numerics.Vectors.dll" Source="$(var.GUI_TargetDir)System.Numerics.Vectors.dll" />
+      </Component>
+      <Component Id="src_System.Runtime.CompilerServices.Unsafe.dll" Guid="B129F922-A5FB-4CA2-9D33-C0E24A1EB9FF">
+        <File Id="src_System.Runtime.CompilerServices.Unsafe.dll" Name="System.Runtime.CompilerServices.Unsafe.dll" Source="$(var.GUI_TargetDir)System.Runtime.CompilerServices.Unsafe.dll" />
+      </Component>
+      <Component Id="src_System.Threading.Tasks.Dataflow.dll" Guid="A34C55EB-6E9B-4BF0-9226-630FBD5732EB">
+        <File Id="src_System.Threading.Tasks.Dataflow.dll" Name="System.Threading.Tasks.Dataflow.dll" Source="$(var.GUI_TargetDir)System.Threading.Tasks.Dataflow.dll" />
+      </Component>
+      <Component Id="src_System.ValueTuple.dll" Guid="8B58D026-8C4C-401D-984D-C12790971FCF">
+        <File Id="src_System.ValueTuple.dll" Name="System.ValueTuple.dll" Source="$(var.GUI_TargetDir)System.ValueTuple.dll" />
+      </Component>
+      <Component Id="src_MarkdownSharp.dll" Guid="5F6FD76A-5674-4E64-9727-1C97AD493FD5">
+        <File Id="src_MarkdownSharp.dll" Name="MarkdownSharp.dll" Source="$(var.GUI_TargetDir)MarkdownSharp.dll" />
       </Component>
       <Component Id="src_Easy.Common.dll" Guid="0C0FD8E3-FC7D-40BB-B9A0-722FDAFBFADC">
         <File Id="src_Easy.Common.dll" Name="Easy.Common.dll" Source="$(var.GUI_TargetDir)Easy.Common.dll" />
