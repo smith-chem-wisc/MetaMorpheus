@@ -329,10 +329,9 @@ namespace Test
             Protein variantProtein = new Protein("MPEPPPTIDE", "protein3", sequenceVariations: new List<SequenceVariation> { new SequenceVariation(4, 6, "PPP", "P", @"1\t50000000\t.\tA\tG\t.\tPASS\tANN=G||||||||||||||||\tGT:AD:DP\t1/1:30,30:30", null) });
             PeptideWithSetModifications varPep = variantProtein.GetVariantProteins().SelectMany(p => p.Digest(CommonParameters.DigestionParams, null, null)).FirstOrDefault();
 
-
-            var t = new NeutralTerminusFragment(FragmentationTerminus.N, 1, 1, 1);
-            Product prod = new Product(ProductType.b, t, 0);
-            List<MatchedFragmentIon> mfi = new List<MatchedFragmentIon> { new MatchedFragmentIon(prod, 1, 1.0, 1) };
+            
+            Product prod = new Product(ProductType.b, FragmentationTerminus.N, 1, 1, 1, 0);
+            List<MatchedFragmentIon> mfi = new List<MatchedFragmentIon> { new MatchedFragmentIon(ref prod, 1, 1.0, 1) };
 
 
             PeptideSpectralMatch variantPSM = new PeptideSpectralMatch(varPep, 0, maxScorePsm.Score, maxScorePsm.ScanIndex, scan, new CommonParameters(), mfi);

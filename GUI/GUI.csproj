@@ -519,4 +519,3 @@
   <Import Project="..\packages\MathNet.Numerics.MKL.Win.2.2.0\build\MathNet.Numerics.MKL.Win.targets" Condition="Exists('..\packages\MathNet.Numerics.MKL.Win.2.2.0\build\MathNet.Numerics.MKL.Win.targets')" />
   <Import Project="..\packages\mzLib.1.0.463\build\net471\mzLib.targets" Condition="Exists('..\packages\mzLib.1.0.463\build\net471\mzLib.targets')" />
 </Project>
-

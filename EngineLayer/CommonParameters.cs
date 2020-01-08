@@ -97,7 +97,7 @@ namespace EngineLayer
         public bool TrimMs1Peaks { get; private set; }
         public bool TrimMsMsPeaks { get; private set; }
         public bool UseDeltaScore { get; private set; }
-        public double QValueOutputFilter { get; private set; }    
+        public double QValueOutputFilter { get; private set; }
         public List<ProductType> CustomIons { get; private set; }
         public bool AssumeOrphanPeaksAreZ1Fragments { get; private set; }
         public int MaxHeterozygousVariants { get; private set; }
@@ -139,7 +139,7 @@ namespace EngineLayer
             }
             return new CommonParameters(
                                 TaskDescriptor,
-                                DissociationType,                                
+                                DissociationType,
                                 ChildScanDissociationType,
                                 SeparationType,
                                 DoPrecursorDeconvolution,

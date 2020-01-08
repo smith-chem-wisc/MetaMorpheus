@@ -230,13 +230,7 @@ namespace EngineLayer
             List<int> maxDiffs = new List<int> { 1 };
             if (PeptidesToMatchingFragments != null && PeptidesToMatchingFragments.TryGetValue(peptide, out var matchedFragments) && matchedFragments != null && matchedFragments.Any())
             {
-                List<int> jointSeries = new List<int>();
-
-                jointSeries.AddRange(matchedFragments.Where(f => f.NeutralTheoreticalProduct.TerminusFragment.Terminus == FragmentationTerminus.N).Select(f => f.NeutralTheoreticalProduct.TerminusFragment.FragmentNumber) ?? new List<int>());
-
-                jointSeries.AddRange(matchedFragments.Where(f => f.NeutralTheoreticalProduct.TerminusFragment.Terminus == FragmentationTerminus.C).Select(f => (peptide.BaseSequence.Length + 1 - f.NeutralTheoreticalProduct.TerminusFragment.FragmentNumber)) ?? new List<int>());
-
-                jointSeries = jointSeries.Distinct().ToList();
+                var jointSeries = matchedFragments.Select(p => p.NeutralTheoreticalProduct.AminoAcidPosition).Distinct().ToList();
 
                 if (jointSeries.Count > 0)
                 {
@@ -270,9 +264,9 @@ namespace EngineLayer
         {
             if (PeptidesToMatchingFragments != null && PeptidesToMatchingFragments.TryGetValue(peptide, out var matchedFragments) && matchedFragments != null && matchedFragments.Any())
             {
-                List<int> nIons = matchedFragments.Where(f => f.NeutralTheoreticalProduct.TerminusFragment.Terminus == FragmentationTerminus.N).Select(f => f.NeutralTheoreticalProduct.TerminusFragment.FragmentNumber).ToList();
-                List<int> cIons = matchedFragments.Where(f => f.NeutralTheoreticalProduct.TerminusFragment.Terminus == FragmentationTerminus.C).Select(f =>(peptide.BaseSequence.Length - f.NeutralTheoreticalProduct.TerminusFragment.FragmentNumber)).ToList();
-                if(nIons.Any() && cIons.Any())
+                List<int> nIons = matchedFragments.Where(f => f.NeutralTheoreticalProduct.Terminus == FragmentationTerminus.N).Select(f => f.NeutralTheoreticalProduct.FragmentNumber).ToList();
+                List<int> cIons = matchedFragments.Where(f => f.NeutralTheoreticalProduct.Terminus == FragmentationTerminus.C).Select(f => (peptide.BaseSequence.Length - f.NeutralTheoreticalProduct.FragmentNumber)).ToList();
+                if (nIons.Any() && cIons.Any())
                 {
                     return nIons.Intersect(cIons).Count();
                 }

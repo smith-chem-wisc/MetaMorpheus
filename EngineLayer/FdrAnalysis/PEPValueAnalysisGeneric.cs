@@ -713,7 +713,7 @@ namespace EngineLayer
             List<float> massErrors = new List<float>();
             foreach (var productType in matchedIonsGroupedByProductType)
             {
-                var products = productType.OrderBy(p => p.NeutralTheoreticalProduct.TerminusFragment.FragmentNumber)
+                var products = productType.OrderBy(p => p.NeutralTheoreticalProduct.FragmentNumber)
                     .ToList();
 
                 for (int i = 0; i < products.Count; i++)

@@ -136,7 +136,7 @@ namespace EngineLayer.NonSpecificEnzymeSearch
                                             PeptideSpectralMatch[] localPeptideSpectralMatches = GlobalCategorySpecificPsms[(int)FdrClassifier.GetCleavageSpecificityCategory(peptide.CleavageSpecificityForFdrCategory)];
                                             if (localPeptideSpectralMatches[ms2ArrayIndex] == null)
                                             {
-                                                localPeptideSpectralMatches[ms2ArrayIndex] = new PeptideSpectralMatch(peptide, notch, thisScore, ms2ArrayIndex, scan, CommonParameters.DigestionParams, matchedIons);
+                                                localPeptideSpectralMatches[ms2ArrayIndex] = new PeptideSpectralMatch(peptide, notch, thisScore, ms2ArrayIndex, scan, CommonParameters, matchedIons);
                                             }
                                             else
                                             {
