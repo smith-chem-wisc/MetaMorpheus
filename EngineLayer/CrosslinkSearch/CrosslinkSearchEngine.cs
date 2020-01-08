@@ -25,6 +25,7 @@ namespace EngineLayer.CrosslinkSearch
         private readonly bool QuenchNH2;
         private readonly bool QuenchTris;
         private MassDiffAcceptor XLPrecusorSearchMode;
+        private MassDiffAcceptor XLProductSearchMode;
         private Modification TrisDeadEnd;
         private Modification H2ODeadEnd;
         private Modification NH2DeadEnd;
@@ -63,6 +64,15 @@ namespace EngineLayer.CrosslinkSearch
             else
             {
                 XLPrecusorSearchMode = new SingleAbsoluteAroundZeroSearchMode(commonParameters.PrecursorMassTolerance.Value);
+            }
+
+            if (commonParameters.ProductMassTolerance is PpmTolerance)
+            {
+                XLProductSearchMode = new SinglePpmAroundZeroSearchMode(commonParameters.ProductMassTolerance.Value);
+            }
+            else
+            {
+                XLProductSearchMode = new SingleAbsoluteAroundZeroSearchMode(commonParameters.ProductMassTolerance.Value);
             }
         }
 
@@ -205,6 +215,19 @@ namespace EngineLayer.CrosslinkSearch
 
         private void FindCrosslinkedPeptide(Ms2ScanWithSpecificMass scan, List<int> idsOfPeptidesPossiblyObserved, byte[] scoringTable, double[] massTable, byte byteScoreCutoff, int scanIndex, List<CrosslinkSpectralMatch> possibleMatches, HashSet<Tuple<int, int>> seenPair)
         {
+            int rank = 1;
+
+            double[] xs = null;
+            double[] ys = null;
+            int[] intensityRanks = null;
+            if (Crosslinker.Cleavable)
+            {
+                xs = scan.ExperimentalFragments.Select(p => p.monoisotopicMass).ToArray();
+                ys = scan.ExperimentalFragments.Select(p => p.peaks.Sum(q => q.intensity)).ToArray();
+                intensityRanks = CrosslinkSpectralMatch.GenerateIntensityRanks(ys);
+            }
+
+
             foreach (var id in idsOfPeptidesPossiblyObserved)
             {
                 List<int> possibleCrosslinkLocations = CrosslinkSpectralMatch.GetPossibleCrosslinkerModSites(AllCrosslinkerSites, PeptideIndex[id], CommonParameters.DigestionParams.InitiatorMethionineBehavior, CleaveAtCrosslinkSite);
@@ -288,7 +311,12 @@ namespace EngineLayer.CrosslinkSearch
                                     continue;
                                 }
 
-                                CrosslinkSpectralMatch csm = LocalizeCrosslinkSites(scan, id, betaMassLowIndex, Crosslinker);
+                                CrosslinkSpectralMatch csm = LocalizeCrosslinkSites(scan, id, betaMassLowIndex, Crosslinker, xs, ys, intensityRanks);
+
+                                if (csm!=null)
+                                {
+                                    csm.XlRank = rank;
+                                }
 
                                 possibleMatches.Add(csm);
 
@@ -298,6 +326,8 @@ namespace EngineLayer.CrosslinkSearch
                         betaMassLowIndex++;
                     }
                 }
+
+                rank++;
             }
 
         }
@@ -306,7 +336,7 @@ namespace EngineLayer.CrosslinkSearch
         /// <summary>
         /// Localizes the crosslink position on the alpha and beta peptides
         /// </summary>
-        private CrosslinkSpectralMatch LocalizeCrosslinkSites(Ms2ScanWithSpecificMass theScan, int alphaIndex, int betaIndex, Crosslinker crosslinker)
+        private CrosslinkSpectralMatch LocalizeCrosslinkSites(Ms2ScanWithSpecificMass theScan, int alphaIndex, int betaIndex, Crosslinker crosslinker, double[] xs, double[] ys, int[] intensityRanks)
         {
             CrosslinkSpectralMatch localizedCrosslinkedSpectralMatch = null;
 
@@ -491,6 +521,39 @@ namespace EngineLayer.CrosslinkSearch
                     localizedAlpha.LinkPositions = new List<int> { bestAlphaSite };
                     localizedBeta.LinkPositions = new List<int> { bestBetaSite };
 
+                    if (crosslinker.Cleavable)
+                    {
+                        //cleavable crosslink parent ion information: intensity ranks
+
+                        var alphaM = bestMatchedAlphaIons.Where(p => p.NeutralTheoreticalProduct.ProductType == ProductType.M);
+
+                        localizedAlpha.ParentIonMaxIntensityRanks = new List<int>();
+
+                        foreach (var am in alphaM)
+                        {
+                            var ind = BinarySearchGetIndex(xs, am.NeutralTheoreticalProduct.NeutralMass);
+                            if (ind == xs.Length)
+                            {
+                                ind--;
+                            }
+                            localizedAlpha.ParentIonMaxIntensityRanks.Add(intensityRanks[ind]);
+                        }
+          
+                        var betaM = bestMatchedBetaIons.Where(p => p.NeutralTheoreticalProduct.ProductType == ProductType.M);
+
+                        localizedBeta.ParentIonMaxIntensityRanks = new List<int>();
+
+                        foreach (var bm in betaM)
+                        {
+                            var ind = BinarySearchGetIndex(xs, bm.NeutralTheoreticalProduct.NeutralMass);
+                            if (ind == xs.Length)
+                            {
+                                ind--;
+                            }
+                            localizedBeta.ParentIonMaxIntensityRanks.Add(intensityRanks[ind]);
+                        }
+                    }
+
                     localizedAlpha.MS3ChildScore = bestMS3AlphaScore;
                     localizedBeta.MS3ChildScore = bestMS3BetaScore;
 
@@ -506,16 +569,8 @@ namespace EngineLayer.CrosslinkSearch
 
                     localizedAlpha.XLTotalScore = localizedAlpha.Score + localizedBeta.Score;        
 
-                    if (crosslinker.Cleavable)
-                    {
-                        //TODO: re-enable intensity ranks
-                        //psmCrossAlpha.ParentIonMaxIntensityRanks = psmCrossAlpha.MatchedFragmentIons.Where(p => p.NeutralTheoreticalProduct.ProductType == ProductType.M).Select(p => p.IntensityRank).ToList();
-                        //localizedAlpha.ParentIonMaxIntensityRanks = new List<int>();
-
-                        //localizedAlpha.ParentIonExistNum = psmCrossAlpha.ParentIonMaxIntensityRanks.Count;
-                    }
-
                     localizedAlpha.CrossType = PsmCrossType.Cross;
+
                     localizedCrosslinkedSpectralMatch = localizedAlpha;
                 }
             }
