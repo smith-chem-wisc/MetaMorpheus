@@ -108,16 +108,18 @@ namespace TaskLayer
             Parallel.ForEach(Partitioner.Create(0, ms2Scans.Length), new ParallelOptions { MaxDegreeOfParallelism = commonParameters.MaxThreadsToUsePerFile },
                 (partitionRange, loopState) =>
                 {
+                    List<(double, int)> precursors = new List<(double, int)>();
+
                     for (int i = partitionRange.Item1; i < partitionRange.Item2; i++)
                     {
                         if (GlobalVariables.StopLoops) { break; }
 
+                        precursors.Clear();
                         MsDataScan ms2scan = ms2Scans[i];
 
-                        List<(double, int)> precursors = new List<(double, int)>();
                         if (ms2scan.OneBasedPrecursorScanNumber.HasValue)
                         {
-                            var precursorSpectrum = myMSDataFile.GetOneBasedScan(ms2scan.OneBasedPrecursorScanNumber.Value);
+                            MsDataScan precursorSpectrum = myMSDataFile.GetOneBasedScan(ms2scan.OneBasedPrecursorScanNumber.Value);
 
                             try
                             {
@@ -136,13 +138,13 @@ namespace TaskLayer
 
                             if (commonParameters.DoPrecursorDeconvolution)
                             {
-                                foreach (var envelope in ms2scan.GetIsolatedMassesAndCharges(
+                                foreach (IsotopicEnvelope envelope in ms2scan.GetIsolatedMassesAndCharges(
                                     precursorSpectrum.MassSpectrum, 1,
                                     commonParameters.DeconvolutionMaxAssumedChargeState,
                                     commonParameters.DeconvolutionMassTolerance.Value,
                                     commonParameters.DeconvolutionIntensityRatio))
                                 {
-                                    var monoPeakMz = envelope.monoisotopicMass.ToMz(envelope.charge);
+                                    double monoPeakMz = envelope.monoisotopicMass.ToMz(envelope.charge);
                                     precursors.Add((monoPeakMz, envelope.charge));
                                 }
                             }
@@ -150,10 +152,12 @@ namespace TaskLayer
 
                         if (commonParameters.UseProvidedPrecursorInfo && ms2scan.SelectedIonChargeStateGuess.HasValue)
                         {
-                            var precursorCharge = ms2scan.SelectedIonChargeStateGuess.Value;
+                            int precursorCharge = ms2scan.SelectedIonChargeStateGuess.Value;
+
                             if (ms2scan.SelectedIonMonoisotopicGuessMz.HasValue)
                             {
                                 double precursorMZ = ms2scan.SelectedIonMonoisotopicGuessMz.Value;
+
                                 if (!precursors.Any(b =>
                                     commonParameters.DeconvolutionMassTolerance.Within(
                                         precursorMZ.ToMass(precursorCharge), b.Item1.ToMass(b.Item2))))
@@ -182,8 +186,8 @@ namespace TaskLayer
                         }
 
                         // get child scans
-                        List<MsDataScan> ms2ChildScans = new List<MsDataScan>();
-                        List<MsDataScan> ms3ChildScans = new List<MsDataScan>();
+                        List<MsDataScan> ms2ChildScans = null;
+                        List<MsDataScan> ms3ChildScans = null;
                         if (commonParameters.ChildScanDissociationType != DissociationType.Unknown)
                         {
                             ms3ChildScans = ms3Scans.Where(p => p.OneBasedPrecursorScanNumber == ms2scan.OneBasedScanNumber).ToList();
@@ -195,61 +199,70 @@ namespace TaskLayer
 
                         foreach (var precursor in precursors)
                         {
+                            // assign precursor for this MS2 scan
                             var scan = new Ms2ScanWithSpecificMass(ms2scan, precursor.Item1,
                                 precursor.Item2, fullFilePath, commonParameters, neutralExperimentalFragments);
 
-                            foreach (var ms2ChildScan in ms2ChildScans)
+                            // assign precursors for MS2 child scans
+                            if (ms2ChildScans != null)
                             {
-                                IsotopicEnvelope[] childNeutralExperimentalFragments = null;
-
-                                if (commonParameters.ChildScanDissociationType != DissociationType.LowCID)
+                                foreach (var ms2ChildScan in ms2ChildScans)
                                 {
-                                    childNeutralExperimentalFragments = Ms2ScanWithSpecificMass.GetNeutralExperimentalFragments(ms2ChildScan, commonParameters);
-                                }
+                                    IsotopicEnvelope[] childNeutralExperimentalFragments = null;
 
-                                scan.ChildScans.Add(new Ms2ScanWithSpecificMass(ms2ChildScan, precursor.Item1,
-                                    precursor.Item2, fullFilePath, commonParameters, childNeutralExperimentalFragments));
+                                    if (commonParameters.ChildScanDissociationType != DissociationType.LowCID)
+                                    {
+                                        childNeutralExperimentalFragments = Ms2ScanWithSpecificMass.GetNeutralExperimentalFragments(ms2ChildScan, commonParameters);
+                                    }
+
+                                    scan.ChildScans.Add(new Ms2ScanWithSpecificMass(ms2ChildScan, precursor.Item1,
+                                        precursor.Item2, fullFilePath, commonParameters, childNeutralExperimentalFragments));
+                                }
                             }
 
-                            foreach (var ms3ChildScan in ms3ChildScans)
+                            // assign precursors for MS3 child scans
+                            if (ms3ChildScans != null)
                             {
-                                int precursorCharge = 1;
-                                var precursorSpectrum = ms2scan;
-
-                                try
+                                foreach (var ms3ChildScan in ms3ChildScans)
                                 {
-                                    ms3ChildScan.RefineSelectedMzAndIntensity(precursorSpectrum.MassSpectrum);
-                                }
-                                catch (MzLibException ex)
-                                {
-                                    Warn("Could not get precursor ion for MS3 scan #" + ms3ChildScan.OneBasedScanNumber + "; " + ex.Message);
-                                    continue;
-                                }
+                                    int precursorCharge = 1;
+                                    var precursorSpectrum = ms2scan;
 
-                                if (ms3ChildScan.SelectedIonMonoisotopicGuessMz.HasValue)
-                                {
-                                    ms3ChildScan.ComputeMonoisotopicPeakIntensity(precursorSpectrum.MassSpectrum);
-                                }
+                                    try
+                                    {
+                                        ms3ChildScan.RefineSelectedMzAndIntensity(precursorSpectrum.MassSpectrum);
+                                    }
+                                    catch (MzLibException ex)
+                                    {
+                                        Warn("Could not get precursor ion for MS3 scan #" + ms3ChildScan.OneBasedScanNumber + "; " + ex.Message);
+                                        continue;
+                                    }
 
-                                if (ms3ChildScan.SelectedIonChargeStateGuess.HasValue)
-                                {
-                                    precursorCharge = ms3ChildScan.SelectedIonChargeStateGuess.Value;
-                                }
-                                if (!ms3ChildScan.SelectedIonMonoisotopicGuessMz.HasValue)
-                                {
-                                    Warn("Could not get precursor ion m/z for MS3 scan #" + ms3ChildScan.OneBasedScanNumber);
-                                    continue;
-                                }
+                                    if (ms3ChildScan.SelectedIonMonoisotopicGuessMz.HasValue)
+                                    {
+                                        ms3ChildScan.ComputeMonoisotopicPeakIntensity(precursorSpectrum.MassSpectrum);
+                                    }
 
-                                IsotopicEnvelope[] childNeutralExperimentalFragments = null;
+                                    if (ms3ChildScan.SelectedIonChargeStateGuess.HasValue)
+                                    {
+                                        precursorCharge = ms3ChildScan.SelectedIonChargeStateGuess.Value;
+                                    }
+                                    if (!ms3ChildScan.SelectedIonMonoisotopicGuessMz.HasValue)
+                                    {
+                                        Warn("Could not get precursor ion m/z for MS3 scan #" + ms3ChildScan.OneBasedScanNumber);
+                                        continue;
+                                    }
 
-                                if (commonParameters.ChildScanDissociationType != DissociationType.LowCID)
-                                {
-                                    childNeutralExperimentalFragments = Ms2ScanWithSpecificMass.GetNeutralExperimentalFragments(ms3ChildScan, commonParameters);
+                                    IsotopicEnvelope[] childNeutralExperimentalFragments = null;
+
+                                    if (commonParameters.ChildScanDissociationType != DissociationType.LowCID)
+                                    {
+                                        childNeutralExperimentalFragments = Ms2ScanWithSpecificMass.GetNeutralExperimentalFragments(ms3ChildScan, commonParameters);
+                                    }
+
+                                    scan.ChildScans.Add(new Ms2ScanWithSpecificMass(ms3ChildScan, ms3ChildScan.SelectedIonMonoisotopicGuessMz.Value,
+                                        ms3ChildScan.SelectedIonChargeStateGuess.Value, fullFilePath, commonParameters, childNeutralExperimentalFragments));
                                 }
-
-                                scan.ChildScans.Add(new Ms2ScanWithSpecificMass(ms3ChildScan, ms3ChildScan.SelectedIonMonoisotopicGuessMz.Value,
-                                    ms3ChildScan.SelectedIonChargeStateGuess.Value, fullFilePath, commonParameters, childNeutralExperimentalFragments));
                             }
 
                             scansWithPrecursors[i].Add(scan);
@@ -258,24 +271,50 @@ namespace TaskLayer
                 });
 
             var childScanNumbers = new HashSet<int>(scansWithPrecursors.SelectMany(p => p.SelectMany(v => v.ChildScans.Select(x => x.OneBasedScanNumber))));
-            var parentScans = scansWithPrecursors.Where(p => p.Any() && !childScanNumbers.Contains(p.First().OneBasedScanNumber)).SelectMany(v => v);
+            var parentScans = scansWithPrecursors.Where(p => p.Any() && !childScanNumbers.Contains(p.First().OneBasedScanNumber))
+                .SelectMany(v => v)
+                .OrderBy(p => p.OneBasedScanNumber)
+                .ToArray();
 
             // XCorr pre-processing for low-res data. this is here because the parent/child scans may have different
             // resolutions, so this pre-processing must take place after the parent/child scans have been determined
-            foreach (var parentScan in parentScans)
+            if (commonParameters.DissociationType == DissociationType.LowCID || commonParameters.ChildScanDissociationType == DissociationType.LowCID)
             {
-                if (commonParameters.DissociationType == DissociationType.LowCID && !parentScan.TheScan.MassSpectrum.XcorrProcessed)
-                {
-                    parentScan.TheScan.MassSpectrum.XCorrPrePreprocessing(0, 1969, parentScan.TheScan.IsolationMz.Value);
-                }
-
-                foreach (var childScan in parentScan.ChildScans)
-                {
-                    if (commonParameters.ChildScanDissociationType == DissociationType.LowCID && !childScan.TheScan.MassSpectrum.XcorrProcessed)
+                Parallel.ForEach(Partitioner.Create(0, parentScans.Length), new ParallelOptions { MaxDegreeOfParallelism = commonParameters.MaxThreadsToUsePerFile },
+                    (partitionRange, loopState) =>
                     {
-                        childScan.TheScan.MassSpectrum.XCorrPrePreprocessing(0, 1969, childScan.TheScan.IsolationMz.Value);
-                    }
-                }
+                        for (int i = partitionRange.Item1; i < partitionRange.Item2; i++)
+                        {
+                            if (GlobalVariables.StopLoops) { break; }
+
+                            var parentScan = parentScans[i];
+
+                            if (commonParameters.DissociationType == DissociationType.LowCID && !parentScan.TheScan.MassSpectrum.XcorrProcessed)
+                            {
+                                lock (parentScan.TheScan)
+                                {
+                                    if (!parentScan.TheScan.MassSpectrum.XcorrProcessed)
+                                    {
+                                        parentScan.TheScan.MassSpectrum.XCorrPrePreprocessing(0, 1969, parentScan.TheScan.IsolationMz.Value);
+                                    }
+                                }
+                            }
+
+                            foreach (var childScan in parentScan.ChildScans)
+                            {
+                                if (commonParameters.ChildScanDissociationType == DissociationType.LowCID && !childScan.TheScan.MassSpectrum.XcorrProcessed)
+                                {
+                                    lock (childScan.TheScan)
+                                    {
+                                        if (!childScan.TheScan.MassSpectrum.XcorrProcessed)
+                                        {
+                                            childScan.TheScan.MassSpectrum.XCorrPrePreprocessing(0, 1969, childScan.TheScan.IsolationMz.Value);
+                                        }
+                                    }
+                                }
+                            }
+                        }
+                    });
             }
 
             return parentScans;
@@ -351,6 +390,7 @@ namespace TaskLayer
 
         public MyTaskResults RunTask(string output_folder, List<DbForTask> currentProteinDbFilenameList, List<string> currentRawDataFilepathList, string displayName)
         {
+            DetermineAnalyteType(CommonParameters);
             StartingSingleTask(displayName);
 
             var tomlFileName = Path.Combine(Directory.GetParent(output_folder).ToString(), "Task Settings", displayName + "config.toml");
@@ -755,6 +795,7 @@ namespace TaskLayer
                 precursorIndex = indexResults.PrecursorIndex;
 
                 Status("Writing peptide index...", new List<string> { taskId });
+                //ShrinkPeptideIndex(peptideIndex);
                 var peptideIndexFile = Path.Combine(output_folderForIndices, PeptideIndexFileName);
                 WritePeptideIndex(peptideIndex, peptideIndexFile);
                 FinishedWritingFile(peptideIndexFile, new List<string> { taskId });
@@ -788,6 +829,20 @@ namespace TaskLayer
             }
         }
 
+        /// <summary>
+        /// Reduce size of peptide objects by removing superfluous fields for faster reading and writing
+        /// </summary>
+        /// <param name="peptideIndex"></param>
+        //public void ShrinkPeptideIndex(List<PeptideWithSetModifications> peptideIndex)
+        //{
+        //    //for(int i=0; i<peptideIndex.Count; i++)
+        //    foreach(PeptideWithSetModifications peptide in peptideIndex)
+        //    {
+        //        peptide.DigestionParams = null;
+        //        peptide.
+        //    }
+        //}
+
         public void GenerateSecondIndexes(IndexingEngine indexEngine, IndexingEngine secondIndexEngine, List<DbForTask> dbFilenameList, ref List<int>[] secondFragmentIndex, List<Protein> allKnownProteins, string taskId)
         {
             string pathToFolderWithIndices = GetExistingFolderWithIndices(indexEngine, dbFilenameList);
@@ -811,6 +866,26 @@ namespace TaskLayer
             {
                 Status("Reading fragment index...", new List<string> { taskId });
                 secondFragmentIndex = ReadFragmentIndex(Path.Combine(pathToFolderWithIndices, SecondFragmentIndexFileName));
+            }
+        }
+
+        public static void DetermineAnalyteType(CommonParameters commonParameters)
+        {
+            // changes the name of the analytes from "peptide" to "proteoform" if the protease is set to top-down
+            
+            // TODO: note that this will not function well if the user is using file-specific settings, but it's assumed
+            // that bottom-up and top-down data is not being searched in the same task
+
+            if (commonParameters != null 
+                && commonParameters.DigestionParams != null 
+                && commonParameters.DigestionParams.Protease != null 
+                && commonParameters.DigestionParams.Protease.Name == "top-down")
+            {
+                GlobalVariables.AnalyteType = "Proteoform";
+            }
+            else
+            {
+                GlobalVariables.AnalyteType = "Peptide";
             }
         }
     }

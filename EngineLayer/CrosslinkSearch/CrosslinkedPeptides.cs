@@ -24,10 +24,13 @@ namespace EngineLayer.CrosslinkSearch
                 massesToLocalize.Add(crosslinker.TotalMass + otherPeptideMass);
             }
 
+            var fragments = new List<Product>();
+            HashSet<double> masses = new HashSet<double>();
+
             foreach (int crosslinkerPosition in possibleCrosslinkerPositions)
             {
-                List<Product> theoreticalProducts = new List<Product>();
-                HashSet<double> masses = new HashSet<double>();
+                List<Product> theoreticalProducts = new List<Product>(); //need a new one each time to pass as a reference, don't clear
+                masses.Clear();
 
                 foreach (double massToLocalize in massesToLocalize)
                 {
@@ -40,9 +43,11 @@ namespace EngineLayer.CrosslinkSearch
 
                     var testPeptide = new PeptideWithSetModifications(peptide.Protein, peptide.DigestionParams, peptide.OneBasedStartResidueInProtein,
                     peptide.OneBasedEndResidueInProtein, peptide.CleavageSpecificityForFdrCategory, peptide.PeptideDescription, peptide.MissedCleavages, testMods, peptide.NumFixedMods);
+                    
+                    testPeptide.Fragment(dissociationType, FragmentationTerminus.Both, fragments);
 
                     // add fragmentation ions for this crosslinker position guess
-                    foreach (var fragment in testPeptide.Fragment(dissociationType, FragmentationTerminus.Both))
+                    foreach (var fragment in fragments)
                     {
                         if (!masses.Contains(fragment.NeutralMass))
                         {
@@ -54,8 +59,8 @@ namespace EngineLayer.CrosslinkSearch
                     // add signature ions
                     if (crosslinker.Cleavable)
                     {
-                        theoreticalProducts.Add(new Product(ProductType.M, new NeutralTerminusFragment(FragmentationTerminus.None, peptide.MonoisotopicMass + massToLocalize,
-                            peptide.Length, peptide.Length), 0));
+                        theoreticalProducts.Add(new Product(ProductType.M, FragmentationTerminus.None, peptide.MonoisotopicMass + massToLocalize,
+                            peptide.Length, peptide.Length, 0));
                     }
                 }
 
@@ -67,7 +72,9 @@ namespace EngineLayer.CrosslinkSearch
             List<int> modPos, PeptideWithSetModifications peptide)
         {
             Dictionary<Tuple<int, int>, List<Product>> AllTheoreticalFragmentsLists = new Dictionary<Tuple<int, int>, List<Product>>();
-            var originalFragments = peptide.Fragment(dissociationType, FragmentationTerminus.Both).ToList();
+            var originalFragments = new List<Product>();
+            peptide.Fragment(dissociationType, FragmentationTerminus.Both, originalFragments);
+            var loopProducts = new List<Product>();
 
             foreach (int position1 in modPos)
             {
@@ -81,8 +88,8 @@ namespace EngineLayer.CrosslinkSearch
                     // add N and C terminal fragments that do not contain the loop
                     Tuple<int, int> loopPositions = new Tuple<int, int>(position1, position2);
                     List<Product> loopFragments = originalFragments
-                        .Where(p => p.TerminusFragment.Terminus == FragmentationTerminus.N && p.TerminusFragment.AminoAcidPosition < position1
-                        || p.TerminusFragment.Terminus == FragmentationTerminus.C && p.TerminusFragment.AminoAcidPosition > position2).ToList();
+                        .Where(p => p.Terminus == FragmentationTerminus.N && p.AminoAcidPosition < position1
+                        || p.Terminus == FragmentationTerminus.C && p.AminoAcidPosition > position2).ToList();
 
                     // add N-terminal fragments containing the loop
                     Dictionary<int, Modification> modDict = new Dictionary<int, Modification>();
@@ -104,8 +111,9 @@ namespace EngineLayer.CrosslinkSearch
                     PeptideWithSetModifications peptideWithLoop = new PeptideWithSetModifications(peptide.Protein, peptide.DigestionParams,
                         peptide.OneBasedStartResidueInProtein, peptide.OneBasedEndResidueInProtein, peptide.CleavageSpecificityForFdrCategory,
                         peptide.PeptideDescription, peptide.MissedCleavages, modDict, peptide.NumFixedMods);
-                    loopFragments.AddRange(peptideWithLoop.Fragment(dissociationType, FragmentationTerminus.Both)
-                        .Where(p => p.TerminusFragment.Terminus == FragmentationTerminus.N && p.TerminusFragment.AminoAcidPosition >= position2));
+                    
+                    peptideWithLoop.Fragment(dissociationType, FragmentationTerminus.Both, loopProducts);
+                    loopFragments.AddRange(loopProducts.Where(p => p.Terminus == FragmentationTerminus.N && p.AminoAcidPosition >= position2));
 
                     // add C-terminal fragments containing the loop
                     modDict.Clear();
@@ -127,8 +135,10 @@ namespace EngineLayer.CrosslinkSearch
                     peptideWithLoop = new PeptideWithSetModifications(peptide.Protein, peptide.DigestionParams,
                         peptide.OneBasedStartResidueInProtein, peptide.OneBasedEndResidueInProtein, peptide.CleavageSpecificityForFdrCategory,
                         peptide.PeptideDescription, peptide.MissedCleavages, modDict, peptide.NumFixedMods);
-                    loopFragments.AddRange(peptideWithLoop.Fragment(dissociationType, FragmentationTerminus.Both)
-                        .Where(p => p.TerminusFragment.Terminus == FragmentationTerminus.C && p.TerminusFragment.AminoAcidPosition <= position1));
+
+                    peptideWithLoop.Fragment(dissociationType, FragmentationTerminus.Both, loopProducts);
+                    loopFragments.AddRange(
+                        loopProducts.Where(p => p.Terminus == FragmentationTerminus.C && p.AminoAcidPosition <= position1));
 
                     AllTheoreticalFragmentsLists.Add(loopPositions, loopFragments);
                 }

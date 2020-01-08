@@ -129,6 +129,7 @@ namespace EngineLayer
         public void RemoveThisAmbiguousPeptide(int notch, PeptideWithSetModifications pwsm)
         {
             _BestMatchingPeptides.Remove((notch, pwsm));
+            this.ResolveAllAmbiguities();
         }
 
         public override string ToString()
@@ -224,8 +225,8 @@ namespace EngineLayer
             if (PeptidesToMatchingFragments != null && PeptidesToMatchingFragments.TryGetValue(peptide, out var matchedFragments) && matchedFragments != null && matchedFragments.Any())
             {
                 List<int> jointSeries = new List<int>();
-                jointSeries.AddRange(matchedFragments.Where(f => f.NeutralTheoreticalProduct.TerminusFragment.Terminus == FragmentationTerminus.N).Select(f => f.NeutralTheoreticalProduct.TerminusFragment.FragmentNumber) ?? new List<int>());
-                jointSeries.AddRange(matchedFragments.Where(f => f.NeutralTheoreticalProduct.TerminusFragment.Terminus == FragmentationTerminus.C).Select(f => f.NeutralTheoreticalProduct.TerminusFragment.FragmentNumber) ?? new List<int>());
+                jointSeries.AddRange(matchedFragments.Where(f => f.NeutralTheoreticalProduct.Terminus == FragmentationTerminus.N).Select(f => f.NeutralTheoreticalProduct.FragmentNumber) ?? new List<int>());
+                jointSeries.AddRange(matchedFragments.Where(f => f.NeutralTheoreticalProduct.Terminus == FragmentationTerminus.C).Select(f => f.NeutralTheoreticalProduct.FragmentNumber) ?? new List<int>());
                 jointSeries = jointSeries.Distinct().ToList();
 
                 if (jointSeries.Count > 0)
