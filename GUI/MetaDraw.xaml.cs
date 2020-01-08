@@ -394,10 +394,6 @@ namespace MetaMorpheusGUI
             prgsFeed.IsOpen = true;
             prgsText.Content = "Loading spectra file...";
 
-            // Add EventHandlers for popup click-in/click-out behaviour
-            Deactivated += new EventHandler(prgsFeed_Deactivator);
-            Activated += new EventHandler(prgsFeed_Reactivator);
-
             var slowProcess = Task<MsDataFile>.Factory.StartNew(() => spectraFileManager.LoadFile(spectraFilePath, new CommonParameters(trimMsMsPeaks: false)));
             await slowProcess;
             MsDataFile = slowProcess.Result;
@@ -409,35 +405,10 @@ namespace MetaMorpheusGUI
 
             // done loading - restore controls
             this.prgsFeed.IsOpen = false;
-
-            // Remove added EventHandlers
-            Deactivated -= new EventHandler(prgsFeed_Deactivator);
-            Activated -= new EventHandler(prgsFeed_Reactivator);
-
             (sender as Button).IsEnabled = true;
             selectSpectraFileButton.IsEnabled = true;
             selectPsmFileButton.IsEnabled = true;
         }
-
-        /// <summary>
-        /// Deactivates the popup if one clicks out of the main window
-        /// </summary>
-        /// <param name="sender">unused</param>
-        /// <param name="e">unused</param>
-        private void prgsFeed_Deactivator(object sender, EventArgs e)
-        {
-            prgsFeed.IsOpen = false;
-        }
-
-        /// <summary>
-        /// Reacctivates the popup if one clicks into the main window
-        /// </summary>
-        /// <param name="sender">unused</param>
-        /// <param name="e">unused</param>
-        private void prgsFeed_Reactivator(object sender, EventArgs e)
-        {
-            prgsFeed.IsOpen = true;
-        }   
 
         //private void loadFilesButtonStat_Click(object sender, RoutedEventArgs e)
         //{
@@ -505,8 +476,8 @@ namespace MetaMorpheusGUI
             // draw the fragment ion annotations on the base sequence
             foreach (var ion in psm.MatchedIons)
             {
-                int residue = ion.NeutralTheoreticalProduct.AminoAcidPosition;
-                string annotation = ion.NeutralTheoreticalProduct.ProductType + "" + ion.NeutralTheoreticalProduct.FragmentNumber;
+                int residue = ion.NeutralTheoreticalProduct.TerminusFragment.AminoAcidPosition;
+                string annotation = ion.NeutralTheoreticalProduct.ProductType + "" + ion.NeutralTheoreticalProduct.TerminusFragment.FragmentNumber;
                 Color color = psm.VariantCrossingIons.Contains(ion) ? variantCrossColor : productTypeToColor[ion.NeutralTheoreticalProduct.ProductType];
 
                 if (ion.NeutralTheoreticalProduct.NeutralLoss != 0)
@@ -514,12 +485,12 @@ namespace MetaMorpheusGUI
                     annotation += "-" + ion.NeutralTheoreticalProduct.NeutralLoss;
                 }
 
-                if (ion.NeutralTheoreticalProduct.Terminus == FragmentationTerminus.C)
+                if (ion.NeutralTheoreticalProduct.TerminusFragment.Terminus == FragmentationTerminus.C)
                 {
                     BaseDraw.topSplittingDrawing(canvas, new Point(residue * spacing + 8,
                         productTypeToYOffset[ion.NeutralTheoreticalProduct.ProductType]), color, annotation);
                 }
-                else if (ion.NeutralTheoreticalProduct.Terminus == FragmentationTerminus.N)
+                else if (ion.NeutralTheoreticalProduct.TerminusFragment.Terminus == FragmentationTerminus.N)
                 {
                     BaseDraw.botSplittingDrawing(canvas, new Point(residue * spacing + 8,
                         productTypeToYOffset[ion.NeutralTheoreticalProduct.ProductType]), color, annotation);
@@ -543,20 +514,20 @@ namespace MetaMorpheusGUI
 
                 foreach (var ion in psm.BetaPeptideMatchedIons)
                 {
-                    int residue = ion.NeutralTheoreticalProduct.AminoAcidPosition;
-                    string annotation = ion.NeutralTheoreticalProduct.ProductType + "" + ion.NeutralTheoreticalProduct.FragmentNumber;
+                    int residue = ion.NeutralTheoreticalProduct.TerminusFragment.AminoAcidPosition;
+                    string annotation = ion.NeutralTheoreticalProduct.ProductType + "" + ion.NeutralTheoreticalProduct.TerminusFragment.FragmentNumber;
 
                     if (ion.NeutralTheoreticalProduct.NeutralLoss != 0)
                     {
                         annotation += "-" + ion.NeutralTheoreticalProduct.NeutralLoss;
                     }
 
-                    if (ion.NeutralTheoreticalProduct.Terminus == FragmentationTerminus.C)
+                    if (ion.NeutralTheoreticalProduct.TerminusFragment.Terminus == FragmentationTerminus.C)
                     {
                         BaseDraw.topSplittingDrawing(canvas, new Point(residue * spacing + 8,
                             productTypeToYOffset[ion.NeutralTheoreticalProduct.ProductType] + 90), productTypeToColor[ion.NeutralTheoreticalProduct.ProductType], annotation);
                     }
-                    else if (ion.NeutralTheoreticalProduct.Terminus == FragmentationTerminus.N)
+                    else if (ion.NeutralTheoreticalProduct.TerminusFragment.Terminus == FragmentationTerminus.N)
                     {
                         BaseDraw.botSplittingDrawing(canvas, new Point(residue * spacing + 8,
                             productTypeToYOffset[ion.NeutralTheoreticalProduct.ProductType] + 90), productTypeToColor[ion.NeutralTheoreticalProduct.ProductType], annotation);

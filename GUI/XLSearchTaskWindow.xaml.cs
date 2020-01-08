@@ -2,14 +2,12 @@
 using EngineLayer.CrosslinkSearch;
 using MassSpectrometry;
 using MzLibUtil;
-using Nett;
 using Proteomics.ProteolyticDigestion;
 using System;
 using System.Collections.Generic;
 using System.Collections.ObjectModel;
 using System.ComponentModel;
 using System.Globalization;
-using System.IO;
 using System.Linq;
 using System.Windows;
 using System.Windows.Controls;
@@ -29,6 +27,10 @@ namespace MetaMorpheusGUI
         private readonly ObservableCollection<ModTypeForTreeView> FixedModTypeForTreeViewObservableCollection = new ObservableCollection<ModTypeForTreeView>();
         private readonly ObservableCollection<ModTypeForTreeView> VariableModTypeForTreeViewObservableCollection = new ObservableCollection<ModTypeForTreeView>();
         private CustomFragmentationWindow CustomFragmentationWindow;
+
+        public XLSearchTaskWindow() : this(null)
+        {
+        }
 
         public XLSearchTaskWindow(XLSearchTask task)
         {
@@ -114,7 +116,11 @@ namespace MetaMorpheusGUI
 
         private void UpdateFieldsFromTask(XLSearchTask task)
         {
+            //Crosslink search para
+            //RbSearchCrosslink.IsChecked = !task.XlSearchParameters.SearchGlyco;
+            //RbSearchGlyco.IsChecked = task.XlSearchParameters.SearchGlyco;
             cbCrosslinkers.SelectedItem = task.XlSearchParameters.Crosslinker;
+            ckbXLTopNum.IsChecked = task.XlSearchParameters.RestrictToTopNHits;
             txtXLTopNum.Text = task.XlSearchParameters.CrosslinkSearchTopNum.ToString(CultureInfo.InvariantCulture);
             ckbCrosslinkAtCleavageSite.IsChecked = task.XlSearchParameters.CrosslinkAtCleavageSite;
             ckbQuenchH2O.IsChecked = task.XlSearchParameters.XlQuench_H2O;
@@ -152,8 +158,9 @@ namespace MetaMorpheusGUI
             numberOfDatabaseSearchesTextBox.Text = task.CommonParameters.TotalPartitions.ToString(CultureInfo.InvariantCulture);
             maxThreadsTextBox.Text = task.CommonParameters.MaxThreadsToUsePerFile.ToString(CultureInfo.InvariantCulture);
             CustomFragmentationWindow = new CustomFragmentationWindow(task.CommonParameters.CustomIons);
-            ckbPepXML.IsChecked = task.XlSearchParameters.WritePepXml;
             ckbPercolator.IsChecked = task.XlSearchParameters.WriteOutputForPercolator;
+            ckbPepXML.IsChecked = task.XlSearchParameters.WritePepXml;
+
             OutputFileNameTextBox.Text = task.CommonParameters.TaskDescriptor;
 
             foreach (var mod in task.CommonParameters.ListOfModsFixed)
@@ -236,6 +243,9 @@ namespace MetaMorpheusGUI
             }
             CustomFragmentationWindow.Close();
 
+            //TheTask.XlSearchParameters.SearchGlyco = RbSearchGlyco.IsChecked.Value;
+            //TheTask.XlSearchParameters.SearchGlycoWithBgYgIndex = CkbSearchGlycoWithBgYgIndex.IsChecked.Value;
+            TheTask.XlSearchParameters.RestrictToTopNHits = ckbXLTopNum.IsChecked.Value;
             TheTask.XlSearchParameters.CrosslinkSearchTopNum = int.Parse(txtXLTopNum.Text, CultureInfo.InvariantCulture);
             TheTask.XlSearchParameters.CrosslinkAtCleavageSite = ckbCrosslinkAtCleavageSite.IsChecked.Value;
             TheTask.XlSearchParameters.Crosslinker = (Crosslinker)cbCrosslinkers.SelectedItem;
@@ -403,12 +413,6 @@ namespace MetaMorpheusGUI
             // keeping it will trigger an exception because the closed window stops existing
 
             CustomFragmentationWindow.Close();
-        }
-
-        private void SaveAsDefault_Click(object sender, RoutedEventArgs e)
-        {
-            SaveButton_Click(sender, e);
-            Toml.WriteFile(TheTask, Path.Combine(GlobalVariables.DataDir, "DefaultParameters", @"XLSearchTaskDefault.toml"), MetaMorpheusTask.tomlConfig);
         }
         
         private void NonSpecificUpdate(object sender, SelectionChangedEventArgs e)

@@ -1,67 +1,14 @@
 ﻿using Microsoft.ML.Data;
-using System.Collections.Generic;
-using System.Collections.Immutable;
-using System.Text;
 
 namespace EngineLayer.FdrAnalysis
 {
     public class PsmData
     {
-        public static readonly IImmutableDictionary<string, string[]> trainingInfos = new Dictionary<string, string[]>
-        {
-            { "standard", new [] { "TotalMatchingFragmentCount", "Intensity", "PrecursorChargeDiffToMode", "DeltaScore", "Notch", "PsmCount", "ModsCount", "MissedCleavagesCount", "Ambiguity", "LongestFragmentIonSeries", "HydrophobicityZScore", "IsVariantPeptide" } },
-            { "topDown", new [] { "TotalMatchingFragmentCount", "Intensity", "PrecursorChargeDiffToMode", "DeltaScore", "Notch", "PsmCount", "ModsCount", "Ambiguity", "LongestFragmentIonSeries" } }
-        }.ToImmutableDictionary();
-
-        /// <summary>
-        /// These are used for percolator. Trainer must be told the assumed direction for each attribute as it relates to being a true positive
-        /// Here, a weight of 1 indicates that the probability of being true is for higher numbers in the set.
-        /// A weight of -1 indicates that the probability of being true is for the lower numbers in the set.
-        /// </summary>
-        public static readonly IImmutableDictionary<string, int> assumedAttributeDirection = new Dictionary<string, int> {
-            { "TotalMatchingFragmentCount", 1 },
-            { "Intensity", 1 },
-            { "PrecursorChargeDiffToMode", 1 },
-            { "DeltaScore", 1 },
-            { "Notch", -1 },
-            { "PsmCount", 1 },
-            { "ModsCount", -1 },
-            { "MissedCleavagesCount", -1 },
-            { "Ambiguity", -1 },
-            { "LongestFragmentIonSeries", 1 },
-            { "HydrophobicityZScore", -1 },
-            { "IsVariantPeptide",-1 } }.ToImmutableDictionary();
-
-        public string ToString(string searchType)
-        {
-            StringBuilder sb = new StringBuilder();
-            var variablesToOutput = PsmData.trainingInfos[searchType];
-
-            foreach (var variable in variablesToOutput)
-            {
-                var property = typeof(PsmData).GetProperty(variable).GetValue(this, null);
-                if (property is bool)
-                {
-                    var boolValue = (bool)property;
-                    sb.Append("\t");
-                    sb.Append(boolValue.ToString());
-                }
-                else if (property is float)
-                {
-                    var floatValue = (float)property;
-                    sb.Append("\t");
-                    sb.Append(floatValue.ToString());
-                }
-            }
-
-            return sb.ToString();
-        }
-
         [LoadColumn(0)]
         public float Intensity { get; set; }
 
         [LoadColumn(1)]
-        public float PrecursorChargeDiffToMode { get; set; }
+        public float ScanPrecursorCharge { get; set; }
 
         [LoadColumn(2)]
         public float DeltaScore { get; set; }
@@ -88,12 +35,6 @@ namespace EngineLayer.FdrAnalysis
         public float HydrophobicityZScore { get; set; }
 
         [LoadColumn(10)]
-        public float IsVariantPeptide { get; set; }
-
-        [LoadColumn(11)]
-        public float TotalMatchingFragmentCount { get; set; }
-
-        [LoadColumn(12)]
         public bool Label { get; set; }
     }
 }

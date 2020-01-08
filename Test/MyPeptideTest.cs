@@ -30,9 +30,7 @@ namespace Test
             DigestionParams digestionParams = new DigestionParams(minPeptideLength: 1);
             var ye = prot.Digest(digestionParams, new List<Modification>(), new List<Modification>()).First();
 
-            var frags = new List<Product>();
-            ye.Fragment(DissociationType.HCD, FragmentationTerminus.Both, frags);
-            var massArray = frags.Select(p => p.NeutralMass).ToArray();
+            var massArray = ye.Fragment(DissociationType.HCD, FragmentationTerminus.Both).Select(p => p.NeutralMass).ToArray();
             Array.Sort(massArray);
             double[] intensities = new double[] { 1, 1, 1, 1 };
             double[] mz = new double[] { massArray[0].ToMz(1), massArray[2].ToMz(1), massArray[4].ToMz(1), 10000 };
@@ -63,9 +61,7 @@ namespace Test
             DigestionParams digestionParams = new DigestionParams(minPeptideLength: 1);
             PeptideWithSetModifications thePep = prot.Digest(digestionParams, new List<Modification>(), new List<Modification>()).First();
 
-            var frags = new List<Product>();
-            thePep.Fragment(DissociationType.HCD, FragmentationTerminus.Both, frags);
-            var massArray = frags.Select(p => p.NeutralMass).ToArray();
+            var massArray = thePep.Fragment(DissociationType.HCD, FragmentationTerminus.Both).Select(p => p.NeutralMass).ToArray();
             Array.Sort(massArray);
             double[] intensities = new double[] { 1, 1, 1 };
             double[] mz = new double[] { 1, 2, massArray[4].ToMz(1) };
@@ -98,9 +94,7 @@ namespace Test
             DigestionParams digestionParams = new DigestionParams(minPeptideLength: 1);
             var thePep = prot.Digest(digestionParams, new List<Modification>(), new List<Modification>()).First();
 
-            var frags = new List<Product>();
-            thePep.Fragment(DissociationType.HCD, FragmentationTerminus.Both, frags);
-            var massArray = frags.Select(p => p.NeutralMass).ToArray();
+            var massArray = thePep.Fragment(DissociationType.HCD, FragmentationTerminus.Both).Select(p => p.NeutralMass).ToArray();
             Array.Sort(massArray);
             double[] intensities = new double[] { 1, 1, 1, 1 };
             double[] mz = new double[] { 1, 2, massArray[4].ToMz(1), massArray[4].ToMz(1) + 1e-9 };
@@ -133,9 +127,7 @@ namespace Test
             DigestionParams digestionParams = new DigestionParams(minPeptideLength: 1);
             var thePep = prot.Digest(digestionParams, new List<Modification>(), new List<Modification>()).First();
 
-            var frags = new List<Product>();
-            thePep.Fragment(DissociationType.HCD, FragmentationTerminus.Both, frags);
-            var massArray = frags.Select(p => p.NeutralMass).ToArray();
+            var massArray = thePep.Fragment(DissociationType.HCD, FragmentationTerminus.Both).Select(p => p.NeutralMass).ToArray();
             Array.Sort(massArray);
             double[] intensities = new double[] { 1, 1, 1, 1 };
             double[] mz = new double[] { 1, 2, massArray[4].ToMz(1), massArray[4].ToMz(1) + 1e-9 };
@@ -163,9 +155,7 @@ namespace Test
             DigestionParams digestionParams = new DigestionParams(minPeptideLength: 1);
             var thePep = prot.Digest(digestionParams, new List<Modification>(), new List<Modification>()).First();
 
-            var frags = new List<Product>();
-            thePep.Fragment(DissociationType.HCD, FragmentationTerminus.Both, frags);
-            var massArray = frags.Select(p => p.NeutralMass).ToArray();
+            var massArray = thePep.Fragment(DissociationType.HCD, FragmentationTerminus.Both).Select(p => p.NeutralMass).ToArray();
             Array.Sort(massArray);
             double[] intensities = new double[] { 1, 1, 1, 1 };
             double[] mz = new double[] { 1, 2, 3, 4 };

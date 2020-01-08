@@ -153,7 +153,8 @@ namespace Test
             List<Product> productsWithLocalizedMassDiff = new List<Product>();
             foreach (double d in sorted_theoretical_product_masses_for_this_peptide)
             {
-                productsWithLocalizedMassDiff.Add(new Product(ProductType.b, FragmentationTerminus.Both, d, 1, 1, 0));
+                NeutralTerminusFragment frag = new NeutralTerminusFragment(FragmentationTerminus.Both, d, 1, 1);
+                productsWithLocalizedMassDiff.Add(new Product(ProductType.b, frag, 0));
             }
             CommonParameters commonParametersNoComp = new CommonParameters { ProductMassTolerance = new AbsoluteTolerance(0.01) };
             CommonParameters commonParametersWithComp = new CommonParameters(productMassTolerance: new AbsoluteTolerance(0.01), addCompIons: true);

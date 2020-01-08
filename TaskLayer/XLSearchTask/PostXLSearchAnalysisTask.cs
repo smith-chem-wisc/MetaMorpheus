@@ -176,6 +176,22 @@ namespace TaskLayer
                 double qValue = Math.Min(1, (double)cumulativeDecoy / cumulativeTarget);
                 csm.SetFdrValues(cumulativeTarget, cumulativeDecoy, qValue, 0, 0, 0, 0, 0);
             }
+
+            double qValueThreshold = 1.0;
+            for (int i = csms.Count - 1; i >= 0; i--)
+            {
+                CrosslinkSpectralMatch csm = csms[i];
+
+                // threshold q-values
+                if (csm.FdrInfo.QValue > qValueThreshold)
+                {
+                    csm.FdrInfo.QValue = qValueThreshold;
+                }
+                else if (csm.FdrInfo.QValue < qValueThreshold)
+                {
+                    qValueThreshold = csm.FdrInfo.QValue;
+                }
+            }
         }
     }
 }

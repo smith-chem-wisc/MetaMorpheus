@@ -17,19 +17,14 @@ namespace TaskLayer
     {
         public XLSearchTask() : base(MyTask.XLSearch)
         {
-            //Default parameter setting which is different from SearchTask, can be overwriten here. 
-            //maxMissedCleavage is set to 3 for crosslink generally induce long peptides. 
-            //maxPeptideLength is set to 60 in case generate peptides that are too long. 
-            //numberOfPeaksToKeepPerWindow is set to a large number to keep all peak with intensity > 0.01.
+            //Default parameter setting which is different from SearchTask, can be overwriten
             var digestPara = new DigestionParams(
-                minPeptideLength: 5,
-                maxPeptideLength: 60,
-                maxMissedCleavages: 3
+                minPeptideLength: 5
             );
             CommonParameters = new CommonParameters(
                 precursorMassTolerance: new PpmTolerance(10),
-                scoreCutoff: 2,
-                numberOfPeaksToKeepPerWindow:1000,
+                scoreCutoff: 3,
+                trimMsMsPeaks:false,
                 digestionParams: digestPara
             );
 
@@ -127,9 +122,9 @@ namespace TaskLayer
                     }
 
                     Status("Searching files...", taskId);
-                    new CrosslinkSearchEngine(newCsmsPerMS2ScanPerFile, arrayOfMs2ScansSortedByMass, peptideIndex, fragmentIndex, secondFragmentIndex, currentPartition, 
-                        combinedParams, crosslinker, XlSearchParameters.CrosslinkSearchTopNum, XlSearchParameters.CrosslinkAtCleavageSite, XlSearchParameters.XlQuench_H2O, 
-                        XlSearchParameters.XlQuench_NH2, XlSearchParameters.XlQuench_Tris, thisId).Run();
+                    new CrosslinkSearchEngine(newCsmsPerMS2ScanPerFile, arrayOfMs2ScansSortedByMass, peptideIndex, fragmentIndex, secondFragmentIndex, currentPartition, combinedParams, crosslinker,
+                        XlSearchParameters.RestrictToTopNHits, XlSearchParameters.CrosslinkSearchTopNum, XlSearchParameters.CrosslinkAtCleavageSite,
+                        XlSearchParameters.XlQuench_H2O, XlSearchParameters.XlQuench_NH2, XlSearchParameters.XlQuench_Tris, thisId).Run();
 
                     ReportProgress(new ProgressEventArgs(100, "Done with search " + (currentPartition + 1) + "/" + CommonParameters.TotalPartitions + "!", thisId));
                     if (GlobalVariables.StopLoops) { break; }
@@ -157,8 +152,7 @@ namespace TaskLayer
                         csm.BetaPeptide.ResolveAllAmbiguities();
                     }
                 }
-                var orderedCsmsPerScan = RemoveDuplicateFromCsmsPerScan(csmsPerScan).OrderByDescending(p => p.XLTotalScore).ThenBy(p => p.FullSequence + ((p.BetaPeptide == null) ? "" : p.BetaPeptide.FullSequence)).ToList();
-                ListOfCsmsPerMS2ScanParsimony.Add(orderedCsmsPerScan);
+                ListOfCsmsPerMS2ScanParsimony.Add(RemoveDuplicateFromCsmsPerScan(csmsPerScan));
             }
 
             var filteredAllPsms = new List<CrosslinkSpectralMatch>();

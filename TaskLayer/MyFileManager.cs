@@ -55,7 +55,7 @@ namespace TaskLayer
                 }
                 else
                 {
-                    MyMsDataFiles[origDataFile] = ThermoRawFileReaderData.LoadAllStaticData(origDataFile, filter, commonParameters.MaxThreadsToUsePerFile);
+                    MyMsDataFiles[origDataFile] = ThermoRawFileReaderData.LoadAllStaticData(origDataFile, filter, maxThreads: 1);
                 }
 
                 return MyMsDataFiles[origDataFile];

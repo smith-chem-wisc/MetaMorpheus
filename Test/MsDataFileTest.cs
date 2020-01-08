@@ -76,7 +76,7 @@ namespace Test
                     2, 1, true, Polarity.Positive, double.NaN, null, null, MZAnalyzerType.Orbitrap, double.NaN, null, null, "scan=1", double.NaN, null, null, double.NaN, null, DissociationType.AnyActivationType, 1, null),
                 100, 1, null, new CommonParameters(), null);
 
-            var closestExperimentalMassB = scanB.GetClosestExperimentalIsotopicEnvelope(10);
+            var closestExperimentalMassB = scanB.GetClosestExperimentalFragmentMass(10);
 
             Assert.IsNull(closestExperimentalMassB);
         }

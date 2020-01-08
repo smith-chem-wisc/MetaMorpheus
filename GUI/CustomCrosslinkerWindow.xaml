@@ -42,10 +42,7 @@
                     <Label x:Name="lblUdXLkerLongMass" Content="Crosslinker Long Mass" />
                     <TextBox x:Name="txtUdXLkerLongMass" PreviewTextInput="CheckIfNumber" Width="60" IsEnabled="{Binding IsChecked, ElementName=ckbUdXLkerCleavable}" />
                 </StackPanel>
-                <StackPanel Orientation="Horizontal" Grid.Column="0" Grid.Row="5">
-                    <Label Content="DissociationType" />
-                    <TextBox x:Name="txtDissociationType" Width="60" IsEnabled="{Binding IsChecked, ElementName=ckbUdXLkerCleavable}"/>
-                </StackPanel>
+
                 <StackPanel Orientation="Horizontal" Grid.Column="1" Grid.Row="0">
                     <Label x:Name="lblUdXLkerAminoAcid" Content="Crosslinker Amino Acids" />
                     <TextBox x:Name="txtUdXLkerAminoAcids" Width="60" />
@@ -54,7 +51,10 @@
                     <Label x:Name="lblUdXLkerAminoAcid2" Content="Crosslinker Amino Acids 2" />
                     <TextBox x:Name="txtUdXLkerAminoAcids2" Width="60" />
                 </StackPanel>
-                
+                <StackPanel Orientation="Horizontal" Grid.Column="1" Grid.Row="2">
+                    <Label Content="DissociationType" />
+                    <TextBox x:Name="txtDissociationType" Width="60" />
+                </StackPanel>
                 <StackPanel Orientation="Horizontal" Grid.Column="1" Grid.Row="3">
                     <Label Content="H2O Quench Mass" />
                     <TextBox x:Name="txtH2OQuenchMass" PreviewTextInput="CheckIfNumber" Width="60" IsEnabled="{Binding IsChecked, ElementName=ckbQuenchH2O}"  />

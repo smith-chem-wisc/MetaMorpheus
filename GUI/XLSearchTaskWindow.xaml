@@ -81,7 +81,7 @@
                             <ComboBox x:Name="cbbXLprecusorMsTl" />
                         </StackPanel>
                         <StackPanel Orientation="Horizontal" Grid.Row="1" Grid.Column="1" Margin="5">
-                            <Label Content="Keep top N candidates" />
+                            <CheckBox x:Name="ckbXLTopNum" VerticalAlignment="Center" Content="Top N peptides per precursor" />
                             <TextBox x:Name="txtXLTopNum" PreviewTextInput="CheckIfNumber" Width="45" Margin="2" IsEnabled="{Binding IsChecked, ElementName=ckbXLTopNum}" />
                         </StackPanel>
                     </Grid>
@@ -363,22 +363,17 @@
                 <GroupBox Header="Output Options" DockPanel.Dock="Top">
                     <Expander x:Name="OutputExpander">
                         <StackPanel Orientation="Vertical">
-                            <CheckBox x:Name="ckbPepXML" Content="Write .pep.XML" />
                             <CheckBox x:Name="ckbPercolator" Content="Write .TSV for Percolator" />
+                            <CheckBox x:Name="ckbPepXML" Content="Write .pep.XML" />
+                            <CheckBox x:Name="ckbXiNET" Content="Write .csv for XiNET" />
                         </StackPanel>
                     </Expander>
                 </GroupBox>
             </DockPanel>
         </ScrollViewer>
-        <StackPanel  Orientation="Horizontal" HorizontalAlignment="Center" Grid.Row="1" Grid.Column="1">
+        <StackPanel  Orientation="Horizontal" HorizontalAlignment="Center" Grid.Row="1"  Margin="188.333,5,261,5" Grid.Column="1">
             <Button x:Name="cancelButton" Content="Cancel" Click="CancelButton_Click" />
             <Button x:Name="saveButton" Content="Save Search Task" Click="SaveButton_Click" FontSize="24" />
-            <Button x:Name="setDefaultbutton" Click="SaveAsDefault_Click" Width="100" >
-                <TextBlock Text="Save As Default" TextWrapping="Wrap" TextAlignment="Center"/>
-                <ToolTipService.ToolTip>
-                    <ToolTip Content="Save these parameters as the default. MetaMorpheus can return to original defaults by deleting the folder 'DefaultParameters'" ToolTipService.ShowDuration="999999" ToolTipService.InitialShowDelay="500" />
-                </ToolTipService.ToolTip>
-            </Button>
         </StackPanel>
     </Grid>
 </Window>

@@ -456,7 +456,7 @@ namespace Test
 
             // test single file output
             HashSet<string> expectedFiles = new HashSet<string> {
-                "AllPeptides.psmtsv", "AllProteinGroups.tsv", "AllPSMs.psmtsv", "AllPSMs_FormattedForPercolator.tab", "AllQuantifiedPeaks.tsv",
+                "AllPeptides.psmtsv", "AllProteinGroups.tsv", "AllPSMs.psmtsv", "AllPSMs_FormattedForPercolator.tsv", "AllQuantifiedPeaks.tsv",
                 "AllQuantifiedPeptides.tsv", "prose.txt", "results.txt" };
 
             HashSet<string> files = new HashSet<string>(Directory.GetFiles(Path.Combine(thisTaskOutputFolder, "SingleMassSpectraFileOutput")).Select(v => Path.GetFileName(v)));

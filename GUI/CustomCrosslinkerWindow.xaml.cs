@@ -16,13 +16,6 @@ namespace MetaMorpheusGUI
         public CustomCrosslinkerWindow()
         {
             InitializeComponent();
-            CommonChoice();
-        }
-
-        private void CommonChoice()
-        {
-            txtUdXLkerAminoAcids.Text = "K";
-            txtUdXLkerAminoAcids2.Text = "K";
         }
 
         private void SaveButton_Click(object sender, RoutedEventArgs e)
@@ -45,13 +38,13 @@ namespace MetaMorpheusGUI
             string aminoAcid1 = txtUdXLkerAminoAcids.Text;
             string aminoAcid2 = txtUdXLkerAminoAcids2.Text;
             bool isCleavable = ckbUdXLkerCleavable.IsChecked.Value;
-            string dissociationTypes = txtDissociationType.Text.ToUpper();
+            string dissociationTypes = txtDissociationType.Text;
             double mass =  double.Parse(txtUdXLkerTotalMs.Text == "" ? "0" : txtUdXLkerTotalMs.Text);
             double shortMass = double.Parse(txtUdXLkerShortMass.Text == "" ? "0" : txtUdXLkerShortMass.Text);
             double longMass = double.Parse(txtUdXLkerLongMass.Text == "" ? "0" : txtUdXLkerLongMass.Text);
-            double H2OQuenchMass = txtH2OQuenchMass.Text == "" ? (mass + 18.01052) : double.Parse(txtH2OQuenchMass.Text);
-            double NH2QuenchMass = txtNH2QuenchMass.Text == "" ? (mass + 17.02652) : double.Parse(txtNH2QuenchMass.Text);
-            double TrisQuenchMass = txtTrisQuenchMass.Text == "" ? (mass + 121.07392): double.Parse(txtTrisQuenchMass.Text);
+            double H2OQuenchMass = double.Parse(txtH2OQuenchMass.Text == "" ? "0" : txtH2OQuenchMass.Text);
+            double NH2QuenchMass = double.Parse(txtNH2QuenchMass.Text == "" ? "0" : txtNH2QuenchMass.Text);
+            double TrisQuenchMass = double.Parse(txtTrisQuenchMass.Text == "" ? "0" : txtTrisQuenchMass.Text);
 
             if (GlobalVariables.Crosslinkers.Any(p => p.CrosslinkerName.Contains(name)))
             {

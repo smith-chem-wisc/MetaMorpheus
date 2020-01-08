@@ -56,9 +56,8 @@ namespace Test
             foreach (PeptideWithSetModifications peptide in digestedList)
             {
                 Assert.Contains(peptide, results.PeptideIndex);
-                
-                var fragments = new List<Product>();
-                peptide.Fragment(CommonParameters.DissociationType, FragmentationTerminus.Both, fragments);
+
+                var fragments = peptide.Fragment(CommonParameters.DissociationType, FragmentationTerminus.Both).ToList();
 
                 int positionInPeptideIndex = results.PeptideIndex.IndexOf(peptide);
 
@@ -168,8 +167,7 @@ namespace Test
             {
                 Assert.Contains(peptide, results.PeptideIndex);
 
-                var fragments = new List<Product>();
-                peptide.Fragment(CommonParameters.DissociationType, FragmentationTerminus.Both, fragments);
+                var fragments = peptide.Fragment(CommonParameters.DissociationType, FragmentationTerminus.Both).ToList();
 
                 int positionInPeptideIndex = results.PeptideIndex.IndexOf(peptide);
 

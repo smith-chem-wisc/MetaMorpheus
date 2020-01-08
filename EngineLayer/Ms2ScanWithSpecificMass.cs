@@ -19,12 +19,9 @@ namespace EngineLayer
 
             TheScan = mzLibScan;
 
-            if (commonParam.DissociationType != DissociationType.LowCID)
-            {
-                ExperimentalFragments = neutralExperimentalFragments ?? GetNeutralExperimentalFragments(mzLibScan, commonParam);
-            }
+            ExperimentalFragments = neutralExperimentalFragments ?? GetNeutralExperimentalFragments(mzLibScan, commonParam);
 
-            if (ExperimentalFragments != null && ExperimentalFragments.Any())
+            if (ExperimentalFragments.Any())
             {
                 DeconvolutedMonoisotopicMasses = ExperimentalFragments.Select(p => p.monoisotopicMass).ToArray();
             }
@@ -53,7 +50,7 @@ namespace EngineLayer
         public int NumPeaks => TheScan.MassSpectrum.Size;
 
         public double TotalIonCurrent => TheScan.TotalIonCurrent;
-
+        
         public static IsotopicEnvelope[] GetNeutralExperimentalFragments(MsDataScan scan, CommonParameters commonParam)
         {
             int minZ = 1;
@@ -84,17 +81,21 @@ namespace EngineLayer
             return neutralExperimentalFragmentMasses.OrderBy(p => p.monoisotopicMass).ToArray();
         }
 
-        public IsotopicEnvelope GetClosestExperimentalIsotopicEnvelope(double theoreticalNeutralMass)
+        public IsotopicEnvelope GetClosestExperimentalFragmentMass(double theoreticalNeutralMass)
         {
             if (DeconvolutedMonoisotopicMasses.Length == 0)
             {
                 return null;
             }
-            return ExperimentalFragments[GetClosestFragmentMass(theoreticalNeutralMass)];
+            return ExperimentalFragments[GetClosestFragmentMass(theoreticalNeutralMass).Value];
         }
 
-        private int GetClosestFragmentMass(double mass)
+        private int? GetClosestFragmentMass(double mass)
         {
+            if (DeconvolutedMonoisotopicMasses.Length == 0)
+            {
+                return null;
+            }
             int index = Array.BinarySearch(DeconvolutedMonoisotopicMasses, mass);
             if (index >= 0)
             {
@@ -102,15 +103,19 @@ namespace EngineLayer
             }
             index = ~index;
 
-            if (index == DeconvolutedMonoisotopicMasses.Length)
+            if (index >= DeconvolutedMonoisotopicMasses.Length)
             {
                 return index - 1;
             }
-            if (index == 0 || mass - DeconvolutedMonoisotopicMasses[index - 1] > DeconvolutedMonoisotopicMasses[index] - mass)
+            if (index == 0)
             {
                 return index;
             }
 
+            if (mass - DeconvolutedMonoisotopicMasses[index - 1] > DeconvolutedMonoisotopicMasses[index] - mass)
+            {
+                return index;
+            }
             return index - 1;
         }
     }

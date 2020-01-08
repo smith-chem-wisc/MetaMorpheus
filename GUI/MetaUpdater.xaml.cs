@@ -77,27 +77,13 @@ namespace MetaMorpheusGUI
                             (checkVersion.Item1 == currV.Item1 && checkVersion.Item2 < currV.Item2) ||
                             (checkVersion.Item1 == currV.Item1 && checkVersion.Item2 == currV.Item2 && checkVersion.Item3 <= currV.Item3))
                             break;
-                        string body = new MarkdownSharp.Markdown().Transform(obj.SelectToken("body").ToString());
-                        allVersionsText.AppendLine("<font face=\"Arial\" size=2>");
-                        allVersionsText.AppendLine("<h3>" + obj.SelectToken("tag_name").ToString() + "</h3>");
-                        allVersionsText.AppendLine(body);
+                        allVersionsText.AppendLine(obj.SelectToken("tag_name").ToString());
+                        allVersionsText.AppendLine(obj.SelectToken("body").ToString());
                         allVersionsText.AppendLine();
-                        allVersionsText.AppendLine("</font>");
                     }
-                    releases.NavigateToString(allVersionsText.ToString());
-                    releases.Navigating += Releases_Navigating;
+                    releases.Text = allVersionsText.ToString();
                 }
             }
-        }
-
-        
-        public void Releases_Navigating(object sender, System.Windows.Navigation.NavigatingCancelEventArgs e)
-        {
-            //cancel the current event
-            e.Cancel = true;
-
-            //this opens the URL in the user's default browser
-            Process.Start(e.Uri.ToString());
         }
 
         private void PortableClicked(object semder, RoutedEventArgs e)

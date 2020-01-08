@@ -43,8 +43,7 @@ namespace Test
             Protein P = new Protein(peptide, "", "", null, null, null, null, null, false, false, null, null, null, null);
             CommonParameters CommonParameters = new CommonParameters(digestionParams: new DigestionParams(minPeptideLength: 1));
             var p = P.Digest(CommonParameters.DigestionParams, tmt10Mods, new List<Modification>()).First();
-            var f = new List<Product>();
-            p.Fragment(DissociationType.HCD, FragmentationTerminus.Both, f);
+            var f = p.Fragment(DissociationType.HCD, FragmentationTerminus.Both);
 
             List<double> productMasses = f.Select(m => m.NeutralMass.ToMz(1)).ToList();
             productMasses.Distinct();
@@ -65,8 +64,7 @@ namespace Test
             Protein P = new Protein(peptide, "", "", null, null, null, null, null, false, false, null, null, null, null);
             CommonParameters CommonParameters = new CommonParameters(digestionParams: new DigestionParams(minPeptideLength: 1));
             var p = P.Digest(CommonParameters.DigestionParams, itraq4plex, new List<Modification>()).First();
-            var f = new List<Product>();
-            p.Fragment(DissociationType.HCD, FragmentationTerminus.Both, f);
+            var f = p.Fragment(DissociationType.HCD, FragmentationTerminus.Both);
 
             List<double> productMasses = f.Select(m => m.NeutralMass.ToMz(1)).ToList();
             productMasses.Distinct();
@@ -87,8 +85,7 @@ namespace Test
             Protein P = new Protein(peptide, "", "", null, null, null, null, null, false, false, null, null, null, null);
             CommonParameters CommonParameters = new CommonParameters(digestionParams: new DigestionParams(minPeptideLength: 1));
             var p = P.Digest(CommonParameters.DigestionParams, itraq4plex, new List<Modification>()).First();
-            var f = new List<Product>();
-            p.Fragment(DissociationType.HCD, FragmentationTerminus.Both, f);
+            var f = p.Fragment(DissociationType.HCD, FragmentationTerminus.Both);
 
             List<double> productMasses = f.Select(m => m.NeutralMass.ToMz(1)).ToList();
             productMasses.Distinct();
@@ -109,8 +106,7 @@ namespace Test
             Protein P = new Protein(peptide, "", "", null, null, null, null, null, false, false, null, null, null, null);
             CommonParameters CommonParameters = new CommonParameters(digestionParams: new DigestionParams(minPeptideLength: 1));
             var p = P.Digest(CommonParameters.DigestionParams, itraq8plex, new List<Modification>()).First();
-            var f = new List<Product>();
-            p.Fragment(DissociationType.HCD, FragmentationTerminus.Both, f);
+            var f = p.Fragment(DissociationType.HCD, FragmentationTerminus.Both);
 
             List<double> productMasses = f.Select(m => m.NeutralMass.ToMz(1)).ToList();
             productMasses.Distinct();

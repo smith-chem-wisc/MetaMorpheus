@@ -1,39 +1,19 @@
-﻿<Project Sdk="Microsoft.NET.Sdk">
+<Project Sdk="Microsoft.NET.Sdk">
 
   <PropertyGroup>
     <OutputType>Exe</OutputType>
-    <TargetFrameworks>net471;netcoreapp2.0</TargetFrameworks>
-    <ApplicationManifest>app1.manifest</ApplicationManifest>
+    <TargetFramework>netcoreapp3.0</TargetFramework>
   </PropertyGroup>
 
   <ItemGroup>
-    <PackageReference Include="CommandLineParser" Version="2.6.0" />
-    <PackageReference Include="Microsoft.ML" Version="1.1.0" />
-    <PackageReference Include="Microsoft.ML.FastTree" Version="1.1.0" />
-    <PackageReference Include="mzLib" Version="1.0.463" />
-    <PackageReference Include="Nett" Version="0.8.0" />
-    <PackageReference Include="SharpLearning.Common.Interfaces" Version="0.26.9" />
-    <PackageReference Include="SharpLearning.Containers" Version="0.26.9" />
-    <PackageReference Include="SharpLearning.CrossValidation" Version="0.26.9" />
-    <PackageReference Include="SharpLearning.DecisionTrees" Version="0.26.9" />
-    <PackageReference Include="SharpLearning.GradientBoost" Version="0.26.9" />
-    <PackageReference Include="SharpLearning.InputOutput" Version="0.26.9" />
-    <PackageReference Include="SharpLearning.Metrics" Version="0.26.9" />
-    <PackageReference Include="SharpLearning.Optimization" Version="0.26.9" />
-    <PackageReference Include="SharpLearning.RandomForest" Version="0.26.9" />
+    <PackageReference Include="FluentCommandLineParser" Version="1.4.3" />
+    <PackageReference Include="mzLib" Version="1.0.466" />
+    <PackageReference Include="Nett" Version="0.13.0" />
   </ItemGroup>
 
   <ItemGroup>
     <ProjectReference Include="..\EngineLayer\EngineLayer.csproj" />
     <ProjectReference Include="..\TaskLayer\TaskLayer.csproj" />
   </ItemGroup>
-
-  <Target Name="PostBuild" AfterTargets="PostBuildEvent">
-    <Exec Command="xcopy /y /d $(SolutionDir)packages\Microsoft.ML.FastTree.1.1.0\runtimes\win-x64\native\*.dll $(ProjectDir)$(OutDir)" />
-  </Target>
-  
-  <PropertyGroup Condition="'$(TargetFramework)'=='net471'">
-    <PlatformTarget>x64</PlatformTarget>
-  </PropertyGroup>
 
 </Project>
