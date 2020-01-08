@@ -12,6 +12,11 @@ namespace EngineLayer
 {
     public static class GlobalVariables
     {
+        // for now, these are only used for error-checking in the command-line version.
+        // compressed versions of the protein databases (e.g., .xml.gz) are also supported
+        public static List<string> AcceptedDatabaseFormats = new List<string> { ".fasta", ".fa", ".xml" };
+        public static List<string> AcceptedSpectraFormats = new List<string> { ".raw", ".mzml", ".mgf" };
+
         private static List<Modification> _AllModsKnown = new List<Modification>();
         private static HashSet<string> _AllModTypesKnown = new HashSet<string>();
         private static List<Crosslinker> _KnownCrosslinkers = new List<Crosslinker>();
