@@ -1,4 +1,4 @@
-﻿using Chemistry;
+using Chemistry;
 using EngineLayer;
 using EngineLayer.CrosslinkSearch;
 using EngineLayer.FdrAnalysis;
@@ -63,8 +63,10 @@ namespace Test
             Crosslinker crosslinker = GlobalVariables.Crosslinkers.Where(p => p.CrosslinkerName == "DSS").First();
             Assert.AreEqual(crosslinker.CrosslinkerModSites, "K");
             Assert.AreEqual(Residue.GetResidue(crosslinker.CrosslinkerModSites).MonoisotopicMass, 128.09496301518999, 1e-9);
-            var n = pep.Fragment(DissociationType.HCD, FragmentationTerminus.N);
-            var c = pep.Fragment(DissociationType.HCD, FragmentationTerminus.C);
+            List<Product> n = new List<Product>();
+            pep.Fragment(DissociationType.HCD, FragmentationTerminus.N, n);
+            List<Product> c = new List<Product>();
+            pep.Fragment(DissociationType.HCD, FragmentationTerminus.C, c);
             Assert.AreEqual(n.Count(), 4);
             Assert.AreEqual(c.Count(), 4);
             Assert.AreEqual(c.First().NeutralMass, 146.10552769899999, 1e-6);
@@ -73,8 +75,10 @@ namespace Test
 
             var pep2 = ye[2];
             Assert.AreEqual("MNNNKQQQQ", pep2.BaseSequence);
-            var n2 = pep2.Fragment(DissociationType.HCD, FragmentationTerminus.N);
-            var c2 = pep2.Fragment(DissociationType.HCD, FragmentationTerminus.C);
+            List<Product> n2 = new List<Product>();
+            pep2.Fragment(DissociationType.HCD, FragmentationTerminus.N, n2);
+            List<Product> c2 = new List<Product>();
+            pep2.Fragment(DissociationType.HCD, FragmentationTerminus.C, c2);
             Assert.AreEqual(n2.Count(), 8);
             Assert.AreEqual(c2.Count(), 8);
             var x2 = CrosslinkSpectralMatch.GetPossibleCrosslinkerModSites(crosslinker.CrosslinkerModSites.ToCharArray(), pep2, digestionParams.InitiatorMethionineBehavior, false);
@@ -959,7 +963,9 @@ namespace Test
 
             var deadendPeptide = protein.Digest(new DigestionParams(), new List<Modification> { deadend }, new List<Modification>()).First();
 
-            double[] mz = deadendPeptide.Fragment(DissociationType.HCD, FragmentationTerminus.Both).Select(p => p.NeutralMass.ToMz(1)).OrderBy(v => v).ToArray();
+            List<Product> products = new List<Product>();
+            deadendPeptide.Fragment(DissociationType.HCD, FragmentationTerminus.Both, products);
+            double[] mz = products.Select(p => p.NeutralMass.ToMz(1)).OrderBy(v => v).ToArray();
             double[] intensities = new[] { 1.0, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1 };
 
             MzSpectrum spectrum = new MzSpectrum(mz, intensities, false);
@@ -1073,7 +1079,9 @@ namespace Test
 
             var deadendPeptide = protein.Digest(new DigestionParams(), new List<Modification> { deadend }, new List<Modification>()).First();
 
-            double[] mz = deadendPeptide.Fragment(DissociationType.HCD, FragmentationTerminus.Both).Select(p => p.NeutralMass.ToMz(1)).OrderBy(v => v).ToArray();
+            List<Product> products = new List<Product>();
+            deadendPeptide.Fragment(DissociationType.HCD, FragmentationTerminus.Both, products);
+            double[] mz = products.Select(p => p.NeutralMass.ToMz(1)).OrderBy(v => v).ToArray();
             double[] intensities = new[] { 1.0, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1 };
 
             MzSpectrum spectrum = new MzSpectrum(mz, intensities, false);
@@ -1242,12 +1250,12 @@ namespace Test
                 csm.BetaPeptide.ResolveAllAmbiguities();
             }
             // test parent scan (CID)
-            Assert.That(csm.MatchedFragmentIons.Count == 37);
+            Assert.AreEqual(csm.MatchedFragmentIons.Count, 37);
             Assert.That(csm.ScanNumber == 2);
 
             // test child scan (low-resolution CID, alpha peptide signature ion)
             Assert.That(csm.ChildMatchedFragmentIons.First().Key == 6);
-            Assert.That(csm.ChildMatchedFragmentIons.First().Value.Count == 43);
+            Assert.That(csm.ChildMatchedFragmentIons.First().Value.Count == 54);
 
             // test child scan (low-resolution CID, beta peptide signature ion)
             Assert.That(csm.BetaPeptide.ChildMatchedFragmentIons.First().Key == 4);
@@ -1262,7 +1270,7 @@ namespace Test
 
             Assert.That(psmFromTsv.ChildScanMatchedIons.Count == 2
                 && psmFromTsv.ChildScanMatchedIons.First().Key == 6
-                && psmFromTsv.ChildScanMatchedIons.First().Value.Count == 43);
+                && psmFromTsv.ChildScanMatchedIons.First().Value.Count == 54);
 
             Assert.That(psmFromTsv.BetaPeptideChildScanMatchedIons.Count == 2
                 && psmFromTsv.BetaPeptideChildScanMatchedIons.First().Key == 4

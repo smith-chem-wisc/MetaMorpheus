@@ -39,6 +39,8 @@ namespace EngineLayer.Localization
                 new ParallelOptions { MaxDegreeOfParallelism = CommonParameters.MaxThreadsToUsePerFile },
                 (range, loopState) =>
                 {
+                    List<Product> productsWithLocalizedMassDiff = new List<Product>();
+
                     for (int i = range.Item1; i < range.Item2; i++)
                     {
                         PeptideSpectralMatch psm = unambiguousPsms[i];
@@ -59,7 +61,7 @@ namespace EngineLayer.Localization
                             PeptideWithSetModifications peptideWithLocalizedMassDiff = peptide.Localize(r, massDifference);
 
                             // this is the list of theoretical products for this peptide with mass-difference on this residue
-                            List<Product> productsWithLocalizedMassDiff = peptideWithLocalizedMassDiff.Fragment(CommonParameters.DissociationType, CommonParameters.DigestionParams.FragmentationTerminus).ToList();
+                            peptideWithLocalizedMassDiff.Fragment(CommonParameters.DissociationType, CommonParameters.DigestionParams.FragmentationTerminus, productsWithLocalizedMassDiff);
 
                             var matchedIons = MatchFragmentIons(scanWithSpecificMass, productsWithLocalizedMassDiff, CommonParameters);
 

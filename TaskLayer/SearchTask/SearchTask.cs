@@ -155,7 +155,7 @@ namespace TaskLayer
             ProseCreatedWhileRunning.Append("precursor mass tolerance = " + CommonParameters.PrecursorMassTolerance + "; ");
             ProseCreatedWhileRunning.Append("product mass tolerance = " + CommonParameters.ProductMassTolerance + "; ");
             ProseCreatedWhileRunning.Append("report PSM ambiguity = " + CommonParameters.ReportAllAmbiguity + ". ");
-            ProseCreatedWhileRunning.Append("The combined search database contained " + proteinList.Count(p => !p.IsDecoy) 
+            ProseCreatedWhileRunning.Append("The combined search database contained " + proteinList.Count(p => !p.IsDecoy)
                 + " non-decoy protein entries including " + proteinList.Count(p => p.IsContaminant) + " contaminant sequences. ");
 
             // start the search task
@@ -214,7 +214,7 @@ namespace TaskLayer
                     for (int currentPartition = 0; currentPartition < combinedParams.TotalPartitions; currentPartition++)
                     {
                         List<PeptideWithSetModifications> peptideIndex = null;
-                        List<Protein> proteinListSubset = proteinList.GetRange(currentPartition * proteinList.Count / combinedParams.TotalPartitions, 
+                        List<Protein> proteinListSubset = proteinList.GetRange(currentPartition * proteinList.Count / combinedParams.TotalPartitions,
                             ((currentPartition + 1) * proteinList.Count / combinedParams.TotalPartitions) - (currentPartition * proteinList.Count / combinedParams.TotalPartitions));
 
                         Status("Getting fragment dictionary...", new List<string> { taskId });
@@ -247,6 +247,7 @@ namespace TaskLayer
                         fileSpecificPsmsSeparatedByFdrCategory[i] = new PeptideSpectralMatch[arrayOfMs2ScansSortedByMass.Length];
                     }
 
+                    //create params for N, C, or both if semi
                     List<CommonParameters> paramsToUse = new List<CommonParameters> { combinedParams };
                     if (combinedParams.DigestionParams.SearchModeType == CleavageSpecificity.Semi) //if semi, we need to do both N and C to hit everything
                     {
@@ -257,8 +258,32 @@ namespace TaskLayer
                             paramsToUse.Add(combinedParams.CloneWithNewTerminus(terminus));
                         }
                     }
+
+                    //Compress array of deconvoluted ms2 scans to avoid searching the same ms2 multiple times while still identifying coisolated peptides
+                    List<int>[] coisolationIndex = new List<int>[] { new List<int>() };
+                    if (arrayOfMs2ScansSortedByMass.Length != 0)
+                    {
+                        int maxScanNumber = arrayOfMs2ScansSortedByMass.Max(x => x.OneBasedScanNumber);
+                        coisolationIndex = new List<int>[maxScanNumber + 1];
+                        for (int i = 0; i < arrayOfMs2ScansSortedByMass.Length; i++)
+                        {
+                            int scanNumber = arrayOfMs2ScansSortedByMass[i].OneBasedScanNumber;
+                            if (coisolationIndex[scanNumber] == null)
+                            {
+                                coisolationIndex[scanNumber] = new List<int> { i };
+                            }
+                            else
+                            {
+                                coisolationIndex[scanNumber].Add(i);
+                            }
+                        }
+                        coisolationIndex = coisolationIndex.Where(x => x != null).ToArray();
+                    }
+
+                    //foreach terminus we're going to look at
                     foreach (CommonParameters paramToUse in paramsToUse)
                     {
+                        //foreach database partition
                         for (int currentPartition = 0; currentPartition < paramToUse.TotalPartitions; currentPartition++)
                         {
                             List<PeptideWithSetModifications> peptideIndex = null;
@@ -400,7 +425,7 @@ namespace TaskLayer
                         break;
 
                     case "interval":
-                        IEnumerable<DoubleRange> doubleRanges = Array.ConvertAll(split[2].Split(';'), b => new DoubleRange(double.Parse(b.Trim(new char[] { '[', ']' }).Split(',')[0], 
+                        IEnumerable<DoubleRange> doubleRanges = Array.ConvertAll(split[2].Split(';'), b => new DoubleRange(double.Parse(b.Trim(new char[] { '[', ']' }).Split(',')[0],
                             CultureInfo.InvariantCulture), double.Parse(b.Trim(new char[] { '[', ']' }).Split(',')[1], CultureInfo.InvariantCulture)));
                         massDiffAcceptor = new IntervalMassDiffAcceptor(split[0], doubleRanges);
                         break;
