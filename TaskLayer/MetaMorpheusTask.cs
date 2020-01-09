@@ -83,7 +83,7 @@ namespace TaskLayer
 
         public MyTask TaskType { get; set; }
 
-        public CommonParameters CommonParameters { get; protected set; }
+        public CommonParameters CommonParameters { get; set; }
 
         public const string IndexFolderName = "DatabaseIndex";
         public const string IndexEngineParamsFileName = "indexEngine.params";
