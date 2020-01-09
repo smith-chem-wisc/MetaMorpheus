@@ -17,7 +17,7 @@ namespace EngineLayer.CrosslinkSearch
 
         public CrosslinkSpectralMatch BetaPeptide { get; set; }
         public List<int> LinkPositions { get; set; }
-        public double DeltaScore { get; set; }
+        public new double DeltaScore { get; set; }
         public double XLTotalScore { get; set; } //alpha + beta psmCross.
         public List<int> XlRank { get; set; } //only contain 2 intger, consider change to Tuple.
         public string ParentIonExist { get; set; }

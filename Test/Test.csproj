@@ -5,7 +5,15 @@
 
     <IsPackable>false</IsPackable>
 
-    <Configurations>Debug;Release;TestAndReleaseLinux;TestAndRelease</Configurations>
+    <Configurations>Debug;Release</Configurations>
+  </PropertyGroup>
+
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|AnyCPU'">
+    <PlatformTarget>x64</PlatformTarget>
+  </PropertyGroup>
+
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|AnyCPU'">
+    <PlatformTarget>x64</PlatformTarget>
   </PropertyGroup>
 
   <ItemGroup>
@@ -90,6 +98,9 @@
     <None Update="TestData\gapdh.fasta.gz">
       <CopyToOutputDirectory>Always</CopyToOutputDirectory>
     </None>
+    <None Update="TestData\HeLaFakeTopDown.fasta">
+      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+    </None>
     <None Update="TestData\hela_snip_for_unitTest.fasta">
       <CopyToOutputDirectory>Always</CopyToOutputDirectory>
     </None>
@@ -153,6 +164,9 @@
     <None Update="TestVariantDb.xml">
       <CopyToOutputDirectory>Always</CopyToOutputDirectory>
     </None>
+    <None Update="TestVariantDb_ambiguous.xml">
+      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+    </None>
     <None Update="TestVariantDb_conservativeDeletion.xml">
       <CopyToOutputDirectory>Always</CopyToOutputDirectory>
     </None>
@@ -174,6 +188,9 @@
     <None Update="TestVariantDb_missense.xml">
       <CopyToOutputDirectory>Always</CopyToOutputDirectory>
     </None>
+    <None Update="TestVariantDb_SNVmissense.xml">
+      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+    </None>
     <None Update="TestVariantDb_stopGained.xml">
       <CopyToOutputDirectory>Always</CopyToOutputDirectory>
     </None>
@@ -189,6 +206,9 @@
     <None Update="VariantSearchTaskconfig.toml">
       <CopyToOutputDirectory>Always</CopyToOutputDirectory>
     </None>
+    <None Update="XlTestData\2017-11-21_XL_DSSO_Ribosome_RT60min_28800-28898.mzML">
+      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+    </None>
     <None Update="XlTestData\BSA.fasta">
       <CopyToOutputDirectory>Always</CopyToOutputDirectory>
     </None>
@@ -202,6 +222,12 @@
       <CopyToOutputDirectory>Always</CopyToOutputDirectory>
     </None>
     <None Update="XlTestData\ms2mixed_bsa_xlink.mzML">
+      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+    </None>
+    <None Update="XlTestData\ms2ms3mixed_10226.mzML">
+      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+    </None>
+    <None Update="XlTestData\RibosomeGO.fasta">
       <CopyToOutputDirectory>Always</CopyToOutputDirectory>
     </None>
     <None Update="XlTestData\XLSearchTaskconfig_BSA_DSS_23747.toml">

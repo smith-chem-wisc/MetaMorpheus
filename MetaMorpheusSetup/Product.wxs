@@ -42,7 +42,7 @@
       <Directory Id="DesktopFolder" Name="Desktop">
         <Component Id="DesktopShortcut" Guid="ef1fd292-b162-4990-80cb-cd2a0c839d4b">
           <Condition>INSTALLDESKTOPSHORTCUT</Condition>
-          <RegistryKey Root="HKCU" Key="Software\SmithGroup\MetaMorpheus" Action="createAndRemoveOnUninstall">
+          <RegistryKey Root="HKCU" Key="Software\SmithGroup\MetaMorpheus">
             <RegistryValue Name="MetaMorpheusDeskTop" Value="1" Type="integer" KeyPath="yes"/>
           </RegistryKey>
           <Shortcut Id="AppDeskTopSC" Name="MetaMorpheus" Description="Shortcut to App" Target="[#MetaMorpheusGUI.exe]" WorkingDirectory="MetaMorpheusInstallFolder" />

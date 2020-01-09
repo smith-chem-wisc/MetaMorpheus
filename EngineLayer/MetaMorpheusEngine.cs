@@ -19,7 +19,7 @@ namespace EngineLayer
             //TODO: create a method to auto-determine the conversion
         };
 
-        protected readonly CommonParameters CommonParameters;
+        public readonly CommonParameters CommonParameters;
 
         protected readonly List<string> NestedIds;
 

@@ -91,7 +91,6 @@ namespace MetaMorpheusGUI
 
         private FlowDocument YoutubeWikiNotification()
         {
-
             FlowDocument doc = notificationsTextBox.Document;
             Paragraph p = new Paragraph();
             Run run1 = new Run("Visit our ");
