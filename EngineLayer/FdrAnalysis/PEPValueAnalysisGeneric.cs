@@ -105,35 +105,9 @@ namespace EngineLayer
                         //A score is available using the variable pepvaluePrediction.Score
                     }
 
-                    double highestPredictedPEPValue = pepValuePredictions.Max();
-                    int numberOfPredictions = pepValuePredictions.Count - 1;
-
-                    for (int i = numberOfPredictions; i >= 0; i--)
-                    {
-                        if (Math.Abs(highestPredictedPEPValue - pepValuePredictions[i]) > AbsoluteProbabilityThatDistinguishesPeptides)
-                        {
-                            indiciesOfPeptidesToRemove.Add(i);
-                            pepValuePredictions.RemoveAt(i);
-                        }
-                    }
-
-                    int index = 0;
-
-                    foreach (var (Notch, Peptide) in psm.BestMatchingPeptides)
-                    {
-                        if (indiciesOfPeptidesToRemove.Contains(index))
-                        {
-                            bestMatchingPeptidesToRemove.Add((Notch, Peptide));
-                        }
-                        index++;
-                    }
-
-                    foreach (var (notch, pwsm) in bestMatchingPeptidesToRemove)
-                    {
-                        psm.RemoveThisAmbiguousPeptide(notch, pwsm);
-                        ambiguousPeptidesRemovedCount++;
-                    }
-                    psm.FdrInfo.PEP = 1 - pepValuePredictions.Max();
+                    GetIndiciesOfPeptidesToRemove(indiciesOfPeptidesToRemove, pepValuePredictions);
+                    GetBestMatchingPeptidesToRemove(psm, indiciesOfPeptidesToRemove, bestMatchingPeptidesToRemove);
+                    RemoveThePeptides(bestMatchingPeptidesToRemove, psm, pepValuePredictions, ref ambiguousPeptidesRemovedCount);
                 }
             }
 
@@ -152,6 +126,55 @@ namespace EngineLayer
 
             //if you want to save a model, you can use this example
             //mlContext.Model.Save(trainedModel, trainingData.Schema, @"C:\Users\User\Downloads\TrainedModel.zip");
+        }
+
+        /// <summary>
+        /// Given a set of PEP values, this method will find the indicies of BestMatchingPeptides that are not within the required tolerance
+        /// This method will also remove the low scoring predictions from the set.
+        /// </summary>
+        public static void GetIndiciesOfPeptidesToRemove(List<int> indiciesOfPeptidesToRemove, List<double> pepValuePredictions)
+        {
+            double highestPredictedPEPValue = pepValuePredictions.Max();
+            int numberOfPredictions = pepValuePredictions.Count - 1;
+
+            for (int i = numberOfPredictions; i >= 0; i--)
+            {
+                if (Math.Abs(highestPredictedPEPValue - pepValuePredictions[i]) > AbsoluteProbabilityThatDistinguishesPeptides)
+                {
+                    indiciesOfPeptidesToRemove.Add(i);
+                    pepValuePredictions.RemoveAt(i);
+                }
+            }
+        }
+
+        /// <summary>
+        /// Given a set of indicies, this method will figure out which BestMatchingPeptides to remove
+        /// </summary>
+        public static void GetBestMatchingPeptidesToRemove(PeptideSpectralMatch psm, List<int> indiciesOfPeptidesToRemove, List<(int notch, PeptideWithSetModifications pwsm)> bestMatchingPeptidesToRemove)
+        {
+            int index = 0;
+
+            foreach (var (Notch, Peptide) in psm.BestMatchingPeptides)
+            {
+                if (indiciesOfPeptidesToRemove.Contains(index))
+                {
+                    bestMatchingPeptidesToRemove.Add((Notch, Peptide));
+                }
+                index++;
+            }
+        }
+
+        /// <summary>
+        /// Given a List of BestMatchingPeptides to remove, this method will remove them from the psm
+        /// </summary>
+        public static void RemoveThePeptides(List<(int notch, PeptideWithSetModifications pwsm)> bestMatchingPeptidesToRemove, PeptideSpectralMatch psm, List<double> pepValuePredictions, ref int ambiguousPeptidesRemovedCount)
+        {
+            foreach (var (notch, pwsm) in bestMatchingPeptidesToRemove)
+            {
+                psm.RemoveThisAmbiguousPeptide(notch, pwsm);
+                ambiguousPeptidesRemovedCount++;
+            }
+            psm.FdrInfo.PEP = 1 - pepValuePredictions.Max();
         }
 
         /// <summary>
@@ -332,25 +355,41 @@ namespace EngineLayer
                 }
 
                 Dictionary<int, Tuple<double, double>> stDevsToChange = new Dictionary<int, Tuple<double, double>>();
-                foreach (KeyValuePair<int, Tuple<double, double>> item in averagesCommaStandardDeviations)
-                {
-                    //add stability. not allowing stdevs that are too small or too large at one position relative to the global stdev
-                    //here we are finding which stdevs are out of whack.
-                    if (Double.IsNaN(item.Value.Item2) || item.Value.Item2 < 0.05 || (item.Value.Item2 / globalStDev) > 3)
-                    {
-                        Tuple<double, double> pair = new Tuple<double, double>(averagesCommaStandardDeviations[item.Key].Item1, globalStDev);
-                        stDevsToChange.Add(item.Key, pair);
-                    }
-                }
-                //here we are replacing the stdevs that are out of whack.
-                foreach (int key in stDevsToChange.Keys)
-                {
-                    averagesCommaStandardDeviations[key] = stDevsToChange[key];
-                }
+
+                GetStDevsToChange(stDevsToChange, averagesCommaStandardDeviations, globalStDev);
+                UpdateOutOfRangeStDevsWithGlobalAverage(stDevsToChange, averagesCommaStandardDeviations);
 
                 rtMobilityAvgDev.Add(filename, averagesCommaStandardDeviations);
             }
             return rtMobilityAvgDev;
+        }
+
+        /// <summary>
+        /// This gathers a set of standard deviations that are outside the range of acceptable.
+        /// </summary>
+        public static void GetStDevsToChange(Dictionary<int, Tuple<double, double>> stDevsToChange, Dictionary<int, Tuple<double, double>> averagesCommaStandardDeviations, double globalStDev)
+        {
+            foreach (KeyValuePair<int, Tuple<double, double>> item in averagesCommaStandardDeviations)
+            {
+                //add stability. not allowing stdevs that are too small or too large at one position relative to the global stdev
+                //here we are finding which stdevs are out of whack.
+                if (Double.IsNaN(item.Value.Item2) || item.Value.Item2 < 0.05 || (item.Value.Item2 / globalStDev) > 3)
+                {
+                    Tuple<double, double> pair = new Tuple<double, double>(averagesCommaStandardDeviations[item.Key].Item1, globalStDev);
+                    stDevsToChange.Add(item.Key, pair);
+                }
+            }
+        }
+
+        /// <summary>
+        /// here we are replacing the stdevs that are out of whack.
+        /// </summary>
+        public static void UpdateOutOfRangeStDevsWithGlobalAverage(Dictionary<int, Tuple<double, double>> stDevsToChange, Dictionary<int, Tuple<double, double>> averagesCommaStandardDeviations)
+        {
+            foreach (int key in stDevsToChange.Keys)
+            {
+                averagesCommaStandardDeviations[key] = stDevsToChange[key];
+            }
         }
 
         private static double GetCifuentesMobility(PeptideWithSetModifications pwsm)

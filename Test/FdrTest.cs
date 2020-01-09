@@ -41,7 +41,6 @@ namespace Test
 
             Assert.IsTrue(PEP_Analysis.ContainsModificationsThatShiftMobility(real.Concat(fake)));
             Assert.AreEqual(2, PEP_Analysis.CountModificationsThatShiftMobility(real.Concat(fake)));
-
         }
 
         [Test]
@@ -314,8 +313,8 @@ namespace Test
                 }
             }
 
-            string expectedMetrics = "************************************************************\r\n*       Metrics for Determination of PEP Using Binary Classification      \r\n*-----------------------------------------------------------\r\n*       " + 
-                "Accuracy:  1\r\n*       Area Under Curve:  1\r\n*       Area under Precision recall Curve:  1\r\n*       F1Score:  1\r\n*       LogLoss:  5.51765851520229E-10\r\n*       LogLossReduction:  0.99999999917928\r\n*       " + 
+            string expectedMetrics = "************************************************************\r\n*       Metrics for Determination of PEP Using Binary Classification      \r\n*-----------------------------------------------------------\r\n*       " +
+                "Accuracy:  1\r\n*       Area Under Curve:  1\r\n*       Area under Precision recall Curve:  1\r\n*       F1Score:  1\r\n*       LogLoss:  5.51765851520229E-10\r\n*       LogLossReduction:  0.99999999917928\r\n*       " +
                 "PositivePrecision:  1\r\n*       PositiveRecall:  1\r\n*       NegativePrecision:  1\r\n*       NegativeRecall:  1\r\n*       Count of Ambiguous Peptides Removed:  0\r\n************************************************************\r\n";
 
             string metrics = PEP_Analysis.ComputePEPValuesForAllPSMsGeneric(moreNonNullPSMs, "standard", fsp);
@@ -329,13 +328,10 @@ namespace Test
             Protein variantProtein = new Protein("MPEPPPTIDE", "protein3", sequenceVariations: new List<SequenceVariation> { new SequenceVariation(4, 6, "PPP", "P", @"1\t50000000\t.\tA\tG\t.\tPASS\tANN=G||||||||||||||||\tGT:AD:DP\t1/1:30,30:30", null) });
             PeptideWithSetModifications varPep = variantProtein.GetVariantProteins().SelectMany(p => p.Digest(CommonParameters.DigestionParams, null, null)).FirstOrDefault();
 
-            
             Product prod = new Product(ProductType.b, FragmentationTerminus.N, 1, 1, 1, 0);
             List<MatchedFragmentIon> mfi = new List<MatchedFragmentIon> { new MatchedFragmentIon(ref prod, 1, 1.0, 1) };
 
-
             PeptideSpectralMatch variantPSM = new PeptideSpectralMatch(varPep, 0, maxScorePsm.Score, maxScorePsm.ScanIndex, scan, new CommonParameters(), mfi);
-            
 
             sequenceToPsmCount = new Dictionary<string, int>();
             sequences = new List<string>();
@@ -359,14 +355,12 @@ namespace Test
 
             Assert.AreEqual((float)1, variantPsmData.IsVariantPeptide);
 
-
             //TEST CZE
 
             fsp = new List<(string fileName, CommonParameters fileSpecificParameters)>();
             var cp = new CommonParameters(separationType: "CZE");
 
             fsp.Add((origDataFile, cp));
-
 
             PEP_Analysis.ComputePEPValuesForAllPSMsGeneric(psmCopyForCZETest, "standard", fsp);
             trueCount = 0;
@@ -390,16 +384,15 @@ namespace Test
                 }
             }
 
-            expectedMetrics = "************************************************************\r\n*       Metrics for Determination of PEP Using Binary Classification      " + 
-                "\r\n*-----------------------------------------------------------\r\n*       Accuracy:  1\r\n*       Area Under Curve:  1\r\n*       " + 
-                "Area under Precision recall Curve:  1\r\n*       F1Score:  1\r\n*       LogLoss:  3.31878396749165E-10\r\n*       LogLossReduction:  0.99999999950635\r\n*       " + 
-                "PositivePrecision:  1\r\n*       PositiveRecall:  1\r\n*       NegativePrecision:  1\r\n*       NegativeRecall:  1\r\n*       Count of Ambiguous Peptides Removed:  " + 
+            expectedMetrics = "************************************************************\r\n*       Metrics for Determination of PEP Using Binary Classification      " +
+                "\r\n*-----------------------------------------------------------\r\n*       Accuracy:  1\r\n*       Area Under Curve:  1\r\n*       " +
+                "Area under Precision recall Curve:  1\r\n*       F1Score:  1\r\n*       LogLoss:  3.31878396749165E-10\r\n*       LogLossReduction:  0.99999999950635\r\n*       " +
+                "PositivePrecision:  1\r\n*       PositiveRecall:  1\r\n*       NegativePrecision:  1\r\n*       NegativeRecall:  1\r\n*       Count of Ambiguous Peptides Removed:  " +
                 "0\r\n************************************************************\r\n";
 
             metrics = PEP_Analysis.ComputePEPValuesForAllPSMsGeneric(moreNonNullPSMsCZE, "standard", fsp);
             Assert.AreEqual(expectedMetrics, metrics);
             Assert.GreaterOrEqual(32, trueCount);
-
         }
 
         [Test]
@@ -420,7 +413,6 @@ namespace Test
 
             var fsp = new List<(string fileName, CommonParameters fileSpecificParameters)>();
             fsp.Add(("TaGe_SA_HeLa_04_subset_longestSeq.mzML", CommonParameters));
-
 
             MyFileManager myFileManager = new MyFileManager(true);
             var myMsDataFile = myFileManager.LoadFile(origDataFile, CommonParameters);
@@ -486,6 +478,68 @@ namespace Test
             Assert.That(maxScorePsm.PsmCount, Is.EqualTo(maxPsmData.PsmCount * reps));
             Assert.That(-Math.Abs(chargeStateMode - maxScorePsm.ScanPrecursorCharge), Is.EqualTo(maxPsmData.PrecursorChargeDiffToMode));
             Assert.AreEqual((float)0, maxPsmData.IsVariantPeptide);
+        }
+
+        [Test]
+        public static void TestPEP_peptideRemoval()
+        {
+            int ambiguousPeptidesRemovedCount = 0;
+
+            Ms2ScanWithSpecificMass scan = new Ms2ScanWithSpecificMass(
+                new MsDataScan(
+                    new MzSpectrum(new double[] { }, new double[] { }, false),
+                    2, 1, true, Polarity.Positive, double.NaN, null, null, MZAnalyzerType.Orbitrap, double.NaN, null, null, "scan=1", double.NaN, null, null, double.NaN, null, DissociationType.AnyActivationType, 1, null),
+                100, 1, null, new CommonParameters(), null);
+
+            PeptideWithSetModifications pwsm = new PeptideWithSetModifications(new Protein("PEPTIDE", "ACCESSION", "ORGANISM"), new DigestionParams(), 1, 2, CleavageSpecificity.Full, "", 0, new Dictionary<int, Modification>(), 0);
+
+            PeptideSpectralMatch psm = new PeptideSpectralMatch(pwsm, 0, 1, 1, scan, new CommonParameters(), new List<MatchedFragmentIon>());
+            psm.AddOrReplace(pwsm, 1, 1, true, new List<MatchedFragmentIon>(), 0);
+            psm.AddOrReplace(pwsm, 1, 2, true, new List<MatchedFragmentIon>(), 0);
+            psm.SetFdrValues(1, 0, 0, 1, 0, 0, 1, 0);
+
+            List<int> indiciesOfPeptidesToRemove = new List<int>();
+            List<(int notch, PeptideWithSetModifications pwsm)> bestMatchingPeptidesToRemove = new List<(int notch, PeptideWithSetModifications pwsm)>();
+            List<double> pepValuePredictions = new List<double> { 1.0d, 0.99d, 0.9d };
+
+            PEP_Analysis.GetIndiciesOfPeptidesToRemove(indiciesOfPeptidesToRemove, pepValuePredictions);
+            Assert.AreEqual(1, indiciesOfPeptidesToRemove.Count);
+            Assert.AreEqual(2, indiciesOfPeptidesToRemove.FirstOrDefault());
+            Assert.AreEqual(2, pepValuePredictions.Count);
+
+            PEP_Analysis.GetBestMatchingPeptidesToRemove(psm, indiciesOfPeptidesToRemove, bestMatchingPeptidesToRemove);
+            Assert.AreEqual(2, bestMatchingPeptidesToRemove.FirstOrDefault().notch);
+            Assert.AreEqual(pwsm, bestMatchingPeptidesToRemove.FirstOrDefault().pwsm);
+
+            PEP_Analysis.RemoveThePeptides(bestMatchingPeptidesToRemove, psm, pepValuePredictions, ref ambiguousPeptidesRemovedCount);
+            Assert.AreEqual(1, ambiguousPeptidesRemovedCount);
+            Assert.AreEqual(2, psm.BestMatchingPeptides.Select(b=>b.Notch).ToList().Count);
+        }
+
+        [Test]
+        public static void TestPEP_standardDeviationsToChange()
+        {
+            double globalStDev = 1;
+            Dictionary<int, Tuple<double, double>> stDevsToChange = new Dictionary<int, Tuple<double, double>>();
+            Dictionary<int, Tuple<double, double>> averagesCommaStandardDeviations = new Dictionary<int, Tuple<double, double>>();
+
+            averagesCommaStandardDeviations.Add(0, new Tuple<double, double> (1.0d, Double.NaN));//will get removed because NaN
+            averagesCommaStandardDeviations.Add(1, new Tuple<double, double>(1.0d, 0.01d));//will get removed becuase 0.01 is too small
+            averagesCommaStandardDeviations.Add(2, new Tuple<double, double>(1.0d, 1.1d));//will NOT get removed becuase its perfectly fine
+            averagesCommaStandardDeviations.Add(3, new Tuple<double, double>(1.0d, 10.0d));//will  get removed becuase its too big
+
+            PEP_Analysis.GetStDevsToChange(stDevsToChange, averagesCommaStandardDeviations, globalStDev);
+            Assert.That(stDevsToChange.ContainsKey(0));
+            Assert.That(stDevsToChange.ContainsKey(1));
+            Assert.That(stDevsToChange.ContainsKey(3));
+            Assert.AreEqual(3,stDevsToChange.Keys.Count);
+
+            PEP_Analysis.UpdateOutOfRangeStDevsWithGlobalAverage(stDevsToChange, averagesCommaStandardDeviations);
+
+            Assert.AreEqual(1.0d, averagesCommaStandardDeviations[0].Item2);
+            Assert.AreEqual(1.0d, averagesCommaStandardDeviations[1].Item2);
+            Assert.That(1.1d, Is.EqualTo(averagesCommaStandardDeviations[2].Item2).Within(0.01));
+            Assert.AreEqual(1.0d, averagesCommaStandardDeviations[3].Item2);
         }
 
         [Test]
