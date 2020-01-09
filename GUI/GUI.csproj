@@ -13,6 +13,9 @@
     <RootNamespace>MetaMorpheusGUI</RootNamespace>
     <AssemblyName>MetaMorpheusGUI</AssemblyName>
     <Configurations>Debug;Release;TestAndReleaseLinux;TestAndRelease</Configurations>
+    <DebugType>full</DebugType>
+    <DebugSymbols>true</DebugSymbols>
+    <ApplicationIcon>Icons\MMnice.ico</ApplicationIcon>
   </PropertyGroup>
 
   <ItemGroup>
@@ -48,6 +51,39 @@
   <ItemGroup>
     <ProjectReference Include="..\EngineLayer\EngineLayer.csproj" />
     <ProjectReference Include="..\TaskLayer\TaskLayer.csproj" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <None Update="Icons\Blogger_20.bmp">
+      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+    </None>
+    <None Update="Icons\git_20.bmp">
+      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+    </None>
+    <None Update="Icons\mail_20.bmp">
+      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+    </None>
+    <None Update="Icons\MMnice.ico">
+      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+    </None>
+    <None Update="Icons\proxl-ms.bmp">
+      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+    </None>
+    <None Update="Icons\Slack_Mark_Web.bmp">
+      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+    </None>
+    <None Update="Icons\Twitter_Logo_Blue.bmp">
+      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+    </None>
+    <None Update="Icons\update_20.bmp">
+      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+    </None>
+    <None Update="Icons\wiki_20.bmp">
+      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+    </None>
+    <None Update="Icons\youtube_20.bmp">
+      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+    </None>
   </ItemGroup>
 
 </Project>

@@ -189,9 +189,6 @@
     <None Update="VariantSearchTaskconfig.toml">
       <CopyToOutputDirectory>Always</CopyToOutputDirectory>
     </None>
-    <None Update="XlTestData\10226.mzML">
-      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
-    </None>
     <None Update="XlTestData\BSA.fasta">
       <CopyToOutputDirectory>Always</CopyToOutputDirectory>
     </None>
