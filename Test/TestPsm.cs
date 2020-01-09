@@ -422,5 +422,32 @@ namespace Test
             //PeptidesToMatchingFragments Contains one N and one C ion so intersection Returns 1
             Assert.AreEqual(1, count);
         }
+
+        [Test]
+        public static void Test_PSM_GetLongestIonSeries_NullChecks()
+        {
+            Ms2ScanWithSpecificMass scanB = new Ms2ScanWithSpecificMass(
+                new MsDataScan(
+                    new MzSpectrum(new double[] { }, new double[] { }, false),
+                    2, 1, true, Polarity.Positive, double.NaN, null, null, MZAnalyzerType.Orbitrap, double.NaN, null, null, "scan=1", double.NaN, null, null, double.NaN, null, DissociationType.AnyActivationType, 1, null),
+                100, 1, null, new CommonParameters(), null);
+
+            PeptideSpectralMatch psm1 = new PeptideSpectralMatch(new PeptideWithSetModifications(new Protein("PEPTIDE", "ACCESSION", "ORGANISM"), new DigestionParams(), 1, 2, CleavageSpecificity.Full, "", 0, new Dictionary<int, Modification>(), 0), 0, 10, 1, scanB, new CommonParameters(), new List<MatchedFragmentIon>(), 0);
+
+            int longestSeries = 0;
+
+            PeptideWithSetModifications pwsm = new PeptideWithSetModifications(new Protein("PEPTIDE", "ACCESSION", "ORGANISM"), new DigestionParams(), 1, 2, CleavageSpecificity.Full, "", 0, new Dictionary<int, Modification>(), 0);
+
+            //PeptidesToMatchingFragments == null returns 1
+            longestSeries = psm1.GetLongestIonSeriesBidirectional(null, pwsm);
+            Assert.AreEqual(1, longestSeries);
+
+            //matchedFragments == null returns 1
+            Dictionary<PeptideWithSetModifications, List<MatchedFragmentIon>> PeptidesToMatchingFragments = new Dictionary<PeptideWithSetModifications, List<MatchedFragmentIon>>();
+            PeptidesToMatchingFragments.Add(pwsm, null);
+
+            longestSeries = psm1.GetLongestIonSeriesBidirectional(PeptidesToMatchingFragments, pwsm);
+            Assert.AreEqual(1, longestSeries);
+        }
     }
 }
