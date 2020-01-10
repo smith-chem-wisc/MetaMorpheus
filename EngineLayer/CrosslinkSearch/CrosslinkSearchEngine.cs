@@ -24,8 +24,8 @@ namespace EngineLayer.CrosslinkSearch
         private readonly bool QuenchH2O;
         private readonly bool QuenchNH2;
         private readonly bool QuenchTris;
-        private MassDiffAcceptor XLPrecusorSearchMode;
-        private MassDiffAcceptor XLProductSearchMode;
+        private readonly MassDiffAcceptor XLPrecusorSearchMode;
+        private readonly MassDiffAcceptor XLProductSearchMode;
         private Modification TrisDeadEnd;
         private Modification H2ODeadEnd;
         private Modification NH2DeadEnd;
@@ -311,7 +311,7 @@ namespace EngineLayer.CrosslinkSearch
                                     continue;
                                 }
 
-                                CrosslinkSpectralMatch csm = LocalizeCrosslinkSites(scan, id, betaMassLowIndex, Crosslinker, xs, ys, intensityRanks);
+                                CrosslinkSpectralMatch csm = LocalizeCrosslinkSites(scan, id, betaMassLowIndex, Crosslinker, xs, intensityRanks);
 
                                 if (csm!=null)
                                 {
@@ -336,7 +336,7 @@ namespace EngineLayer.CrosslinkSearch
         /// <summary>
         /// Localizes the crosslink position on the alpha and beta peptides
         /// </summary>
-        private CrosslinkSpectralMatch LocalizeCrosslinkSites(Ms2ScanWithSpecificMass theScan, int alphaIndex, int betaIndex, Crosslinker crosslinker, double[] xs, double[] ys, int[] intensityRanks)
+        private CrosslinkSpectralMatch LocalizeCrosslinkSites(Ms2ScanWithSpecificMass theScan, int alphaIndex, int betaIndex, Crosslinker crosslinker, double[] xs, int[] intensityRanks)
         {
             CrosslinkSpectralMatch localizedCrosslinkedSpectralMatch = null;
 
@@ -580,12 +580,12 @@ namespace EngineLayer.CrosslinkSearch
 
         private List<MatchedFragmentIon> ScoreChildScan(Ms2ScanWithSpecificMass parentScan, Ms2ScanWithSpecificMass childScan, int possibleSite, PeptideWithSetModifications mainPeptide, PeptideWithSetModifications otherPeptide)
         {
-            bool shortMassAlphaMs3 = XLPrecusorSearchMode.Accepts(childScan.PrecursorMass, mainPeptide.MonoisotopicMass + Crosslinker.CleaveMassShort) >= 0;
-            bool longMassAlphaMs3 = XLPrecusorSearchMode.Accepts(childScan.PrecursorMass, mainPeptide.MonoisotopicMass + Crosslinker.CleaveMassLong) >= 0;
+            bool shortMassAlphaMs3 = XLProductSearchMode.Accepts(childScan.PrecursorMass, mainPeptide.MonoisotopicMass + Crosslinker.CleaveMassShort) >= 0;
+            bool longMassAlphaMs3 = XLProductSearchMode.Accepts(childScan.PrecursorMass, mainPeptide.MonoisotopicMass + Crosslinker.CleaveMassLong) >= 0;
 
             List<Product> childProducts = new List<Product>();
 
-            if (Crosslinker.Cleavable && (shortMassAlphaMs3 || longMassAlphaMs3))
+            if (Crosslinker.Cleavable && childScan.TheScan.MsnOrder == 3 && (shortMassAlphaMs3 || longMassAlphaMs3))
             {
                 double massToLocalize = shortMassAlphaMs3 ? Crosslinker.CleaveMassShort : Crosslinker.CleaveMassLong;
                 if (mainPeptide.AllModsOneIsNterminus.TryGetValue(possibleSite + 1, out var existingMod))
@@ -604,17 +604,10 @@ namespace EngineLayer.CrosslinkSearch
                     mainPeptide.OneBasedStartResidueInProtein, mainPeptide.OneBasedEndResidueInProtein,
                     mainPeptide.CleavageSpecificityForFdrCategory, mainPeptide.PeptideDescription,
                     mainPeptide.MissedCleavages, mod, mainPeptide.NumFixedMods);
-
-                if (childScan.TheScan.MsnOrder == 2)
-                {
-                    peptideWithMod.Fragment(CommonParameters.MS2ChildScanDissociationType, FragmentationTerminus.Both, childProducts);
-                }
-                else
-                {
-                    peptideWithMod.Fragment(CommonParameters.MS3ChildScanDissociationType, FragmentationTerminus.Both, childProducts);
-                }
+          
+                    peptideWithMod.Fragment(CommonParameters.MS3ChildScanDissociationType, FragmentationTerminus.Both, childProducts);              
             }
-            else if (Math.Abs(childScan.PrecursorMass - parentScan.PrecursorMass) < 0.01)
+            else if (Crosslinker.Cleavable && Math.Abs(childScan.PrecursorMass - parentScan.PrecursorMass) < 0.01)
             {
                 if (childScan.TheScan.MsnOrder == 2)
                 {
