@@ -660,6 +660,16 @@ namespace EngineLayer.CrosslinkSearch
 
         public static int BinarySearchGetIndex(double[] massArray, double targetMass)
         {
+
+            // BinarySearch Returns:
+            //     The index of the specified value in the specified array, if value is found; otherwise,
+            //     a negative number. If value is not found and value is less than one or more elements
+            //     in array, the negative number returned is the bitwise complement of the index
+            //     of the first element that is larger than value. If value is not found and value
+            //     is greater than all elements in array, the negative number returned is the bitwise
+            //     complement of (the index of the last element plus 1). If this method is called
+            //     with a non-sorted array, the return value can be incorrect and a negative number
+            //     could be returned, even if value is present in array.
             var iD = Array.BinarySearch(massArray, targetMass);
             if (iD < 0) { iD = ~iD; }
             else

@@ -1278,6 +1278,23 @@ namespace Test
             File.Delete(outputFile);
         }
 
+        [Test]
+        [TestCase(1.0d, 1)]//below smallest number and outside tolerance returns index 1 because value 5 is closest
+        [TestCase(30.0d, 10)]//above highest number and outside tolerance returns index 10, which is not an acceptable index.
+        [TestCase(4.9999999995d, 1)]//below smallest number and within tolerance returns index 1 because value 5 is closest. the fact that this is within tolerance is meaningless
+        [TestCase(5.0000000005, 3)]//above smallest number and within tolerance returns 3 because its the closest number greater.
+        [TestCase(7, 3)]//between numbers outside tolerance returns 3 because its the closest number greater.
+        [TestCase(10.000000000, 4)]//between numbers exactly at tolerance but matches a number returns 4 
+        [TestCase(9.9999999999, 4)]//between numbers exactly at tolerance but matches a number returns 4 because 10 is the closest above.
+        [TestCase(10.00000000005, 5)]//exactly between numbers and within tolerance of both returns 5 because its the larger.
+        [TestCase(11, 6)]//when two numbers in the array are the same and the lookup matches them both you should get the index of the lowest
+        public static void Test_BinarySearchGetIndex(double targetMass, int arrayIndex)
+        {
+            double ToleranceForMassDifferentiation = CrosslinkSearchEngine.ToleranceForMassDifferentiation; //currently set at 1e-9
+            double[] massArray = new double[] {Double.NaN, 5, Double.NaN, 9.999999999, 10.000000000, 10.000000001, 11, 11, Double.NaN, Double.NaN };
+            Assert.AreEqual(arrayIndex,CrosslinkSearchEngine.BinarySearchGetIndex(massArray, targetMass));
+        }
+
         internal class XLTestDataFile : MsDataFile
         {
             //Create DSSO crosslinked fake MS data. Include single, deadend, loop, inter, intra crosslinks ms2 data for match.
