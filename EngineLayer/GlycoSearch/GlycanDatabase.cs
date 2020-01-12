@@ -9,8 +9,34 @@ namespace EngineLayer
 
     public class GlycanDatabase
     {
-        #region Load KindGlycan. Compatible with Byonic.
+        //Load Glycan. Generally, glycan-ions should be generated for N-Glycopepitdes which produce Y-ions; MS method couldn't produce o-glycan-ions.
+        public static IEnumerable<Glycan> LoadGlycan(string filePath, bool toGenerateIons = true)
+        {
+            bool isKind = true;
+            using (StreamReader lines = new StreamReader(filePath))
+            {
+                while(lines.Peek() != -1)
+                {
+                    string line = lines.ReadLine();
+                    if (!line.Contains("HexNAc"))
+                    {
+                        isKind = false;
+                    }
+                    break;
+                }
+            }
 
+            if (isKind)
+            {
+                return LoadKindGlycan(filePath, toGenerateIons);
+            }
+            else
+            {
+                return LoadStructureGlycan(filePath);
+            }
+        }
+
+        //Load KindGlycan. Compatible with Byonic.
         public static IEnumerable<Glycan> LoadKindGlycan(string filePath, bool toGenerateIons)
         {
             using (StreamReader lines = new StreamReader(filePath))
@@ -50,11 +76,8 @@ namespace EngineLayer
             }
         }
 
-        #endregion
-
-        #region Load structured Glycan database
-
-        public static IEnumerable<Glycan> LoadGlycan(string filePath)
+        //Load structured Glycan database
+        public static IEnumerable<Glycan> LoadStructureGlycan(string filePath)
         {
             using (StreamReader glycans = new StreamReader(filePath))
             {
@@ -66,8 +89,6 @@ namespace EngineLayer
                 }
             }
         }
-
-        #endregion
 
         #region LoadKindGlycan based on Structured Glycan
 

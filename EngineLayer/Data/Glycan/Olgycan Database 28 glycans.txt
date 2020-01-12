@@ -1,4 +1,3 @@
-Glycan	Glycan Composition	Mass
 HexNAc(1)	N1H0F0S0	203.0794
 HexNAc(1)Hex(1)	N1H1F0S0	365.1322
 HexNAc(2)	N2H0F0S0	406.1588

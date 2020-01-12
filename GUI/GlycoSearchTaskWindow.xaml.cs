@@ -14,6 +14,7 @@ using System.Windows.Controls;
 using System.Windows.Input;
 using TaskLayer;
 using UsefulProteomicsDatabases;
+using System.IO;
 
 
 namespace MetaMorpheusGUI
@@ -73,7 +74,7 @@ namespace MetaMorpheusGUI
             cbbPrecusorMsTl.Items.Add("Da");
             cbbPrecusorMsTl.Items.Add("ppm");
 
-            CmbGlycanDatabase.DataContext = GlobalVariables.GlycanLocations;
+            CmbGlycanDatabase.ItemsSource = GlobalVariables.GlycanLocations.Select(p=> Path.GetFileName(p));
 
             foreach (Protease protease in ProteaseDictionary.Dictionary.Values)
             {
@@ -117,7 +118,7 @@ namespace MetaMorpheusGUI
             TbMaxOGlycanNum.Text = task._glycoSearchParameters.MaximumOGlycanAllowed.ToString(CultureInfo.InvariantCulture);
 
             txtTopNum.Text = task._glycoSearchParameters.GlycoSearchTopNum.ToString(CultureInfo.InvariantCulture);
-            CmbGlycanDatabase.SelectedValue = task._glycoSearchParameters.GlycanDatabasefile;
+            CmbGlycanDatabase.SelectedIndex = task._glycoSearchParameters.GlycanDatabasefileIndex;
 
             cbbPrecusorMsTl.SelectedIndex = task.CommonParameters.PrecursorMassTolerance is AbsoluteTolerance ? 0 : 1;
             PrecusorMsTlTextBox.Text = task.CommonParameters.PrecursorMassTolerance.Value.ToString(CultureInfo.InvariantCulture);
@@ -241,7 +242,7 @@ namespace MetaMorpheusGUI
                 TheTask._glycoSearchParameters.IsOGlycoSearch = true;
             }
 
-            TheTask._glycoSearchParameters.GlycanDatabasefile = (string)CmbGlycanDatabase.SelectedValue;
+            TheTask._glycoSearchParameters.GlycanDatabasefileIndex = CmbGlycanDatabase.SelectedIndex;
             TheTask._glycoSearchParameters.MaximumOGlycanAllowed = int.Parse(TbMaxOGlycanNum.Text, CultureInfo.InvariantCulture);
             TheTask._glycoSearchParameters.GlycoSearchTopNum = int.Parse(txtTopNum.Text, CultureInfo.InvariantCulture);
             TheTask._glycoSearchParameters.DecoyType = checkBoxDecoy.IsChecked.Value ? DecoyType.Reverse : DecoyType.None;

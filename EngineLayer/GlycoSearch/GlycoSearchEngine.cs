@@ -19,6 +19,7 @@ namespace EngineLayer.GlycoSearch
         private bool IsOGlycoSearch;
         private readonly int TopN;
         private readonly int _maxOGlycanNum;
+        private readonly int _glycanDatabaseIndex;
 
         private readonly Tolerance PrecusorSearchMode;
         private readonly MassDiffAcceptor ProductSearchMode;
@@ -26,14 +27,15 @@ namespace EngineLayer.GlycoSearch
         private readonly List<int>[] SecondFragmentIndex;
 
         public GlycoSearchEngine(List<GlycoSpectralMatch>[] globalCsms, Ms2ScanWithSpecificMass[] listOfSortedms2Scans, List<PeptideWithSetModifications> peptideIndex,
-            List<int>[] fragmentIndex, List<int>[] secondFragmentIndex, int currentPartition, CommonParameters commonParameters, 
-             bool isOGlycoSearch, int glycoSearchTopNum, int maxOGlycanNum, List<string> nestedIds)
+            List<int>[] fragmentIndex, List<int>[] secondFragmentIndex, int currentPartition, CommonParameters commonParameters,
+             int glycanDatabaseIndex, bool isOGlycoSearch, int glycoSearchTopNum, int maxOGlycanNum, List<string> nestedIds)
             : base(null, listOfSortedms2Scans, peptideIndex, fragmentIndex, currentPartition, commonParameters, new OpenSearchMode(), 0, nestedIds)
         {
             this.GlobalCsms = globalCsms;
             this.IsOGlycoSearch = isOGlycoSearch;
             this.TopN = glycoSearchTopNum;
             this._maxOGlycanNum = maxOGlycanNum;
+            this._glycanDatabaseIndex = glycanDatabaseIndex;
 
             SecondFragmentIndex = secondFragmentIndex;
             PrecusorSearchMode = commonParameters.PrecursorMassTolerance;
@@ -42,32 +44,28 @@ namespace EngineLayer.GlycoSearch
 
             if (!isOGlycoSearch)
             {
-                var NGlycans = GlycanDatabase.LoadGlycan(GlobalVariables.GlycanLocations.Where(p => p == "NGlycan.gdb").First());
-
-
-                Glycans = NGlycans.OrderBy(p => p.Mass).ToArray();
-                     
-                
+                Glycans = GlycanDatabase.LoadGlycan(GlobalVariables.GlycanLocations.ElementAt(_glycanDatabaseIndex), !isOGlycoSearch).OrderBy(p=>p.Mass).ToArray();          
+                //TO THINK: Glycan Decoy database.
                 //DecoyGlycans = Glycan.BuildTargetDecoyGlycans(NGlycans);
             }
             else
             {
-                GlycanBox.GlobalOGlycans = GlycanDatabase.LoadGlycan(GlobalVariables.GlycanLocations.Where(p => p == "OGlycan.gdb").First()).ToArray();
+                GlycanBox.GlobalOGlycans = GlycanDatabase.LoadGlycan(GlobalVariables.GlycanLocations.ElementAt(_glycanDatabaseIndex), !isOGlycoSearch).ToArray();
                 GlycanBox.GlobalOGlycanModifications = GlycanBox.BuildGlobalOGlycanModifications(GlycanBox.GlobalOGlycans);
                 OGlycanBoxes = GlycanBox.BuildOGlycanBoxes(_maxOGlycanNum).OrderBy(p => p.Mass).ToArray();
 
+                //This is for Hydroxyproline 
                 ModBox.SelectedModifications = new Modification[4];      
                 ModBox.SelectedModifications[0] = GlobalVariables.AllModsKnownDictionary["Hydroxylation on P"];
                 ModBox.SelectedModifications[1] = GlobalVariables.AllModsKnownDictionary["Hydroxylation on K"];
                 ModBox.SelectedModifications[2] = GlobalVariables.AllModsKnownDictionary["Glucosylgalactosyl on K"];
                 ModBox.SelectedModifications[3] = GlobalVariables.AllModsKnownDictionary["Galactosyl on K"];
-                //ModBox.SelectedModifications[n] = GlobalVariables.AllModsKnownDictionary["Oxidation on M"];
                 ModBoxes = ModBox.BuildModBoxes(_maxOGlycanNum).Where(p => !p.MotifNeeded.ContainsKey("K") || (p.MotifNeeded.ContainsKey("K") && p.MotifNeeded["K"].Count <= 3)).OrderBy(p => p.Mass).ToArray();
             }
         }
 
         private Glycan[] Glycans {get;}
-        private Glycan[] DecoyGlycans { get; }
+        //private Glycan[] DecoyGlycans { get; }
         private GlycanBox[] OGlycanBoxes { get; }
         private ModBox[] ModBoxes { get;  }
 
