@@ -13,11 +13,11 @@ namespace EngineLayer.GlycoSearch
     {
         public static double[] ScanGetOxoniumIons(Ms2ScanWithSpecificMass theScan, MassDiffAcceptor massDiffAcceptor)
         {
-            double[] oxoniumIonsIntensities = new double[Glycan.allOxoniumIons.Count()];
+            double[] oxoniumIonsIntensities = new double[Glycan.AllOxoniumIons.Count()];
 
-            for (int i = 0; i < Glycan.allOxoniumIons.Count(); i++)
+            for (int i = 0; i < Glycan.AllOxoniumIons.Count(); i++)
             {
-                var ioxo = (double)Glycan.allOxoniumIons[i]/1E5;
+                var ioxo = (double)Glycan.AllOxoniumIons[i]/1E5;
                 //Match oxoniumIons from original scan
                 int matchedPeakIndex = theScan.TheScan.MassSpectrum.GetClosestPeakIndex(ioxo).Value;
 
@@ -55,7 +55,7 @@ namespace EngineLayer.GlycoSearch
 
             int totalNum = 0;
 
-            foreach (var ioxo in Glycan.oxoniumIons)
+            foreach (var ioxo in Glycan.CommonOxoniumIons)
             {
                 int matchedPeakIndex = theScan.TheScan.MassSpectrum.GetClosestPeakIndex((double)ioxo/1E5).Value;
                 if (massDiffAcceptor.Accepts(theScan.TheScan.MassSpectrum.XArray[matchedPeakIndex], (double)ioxo/1E5) >= 0)

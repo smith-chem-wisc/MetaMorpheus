@@ -30,11 +30,9 @@ namespace Test
         public static void GlyTest_GetKindString()
         {
             string structure = "(N(F)(N(H(H(N))(H(N)))))";
-            string kindString = Glycan.GetKindString(structure);
             byte[] kind = new byte[] {3, 4, 0, 0, 1 };
-            string kindString2 = Glycan.GetKindString(kind);
-            Assert.AreEqual("H3N4A0G0F1", kindString);
-            Assert.AreEqual("H3N4A0G0F1", kindString2);
+            string kindString = Glycan.GetKindString(kind);
+            Assert.AreEqual("H3N4F1", kindString);
         }
 
         [Test]
@@ -311,7 +309,7 @@ namespace Test
             var glycans = Glycan.LoadKindGlycan(aietdpath, NGlycans).ToList();
             Assert.AreEqual(glycans.Count, 182);
 
-        }
+        }     
 
         private static Dictionary<ProductType, OxyColor> productTypeDrawColors = new Dictionary<ProductType, OxyColor>
         {

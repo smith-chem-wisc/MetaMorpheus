@@ -58,7 +58,7 @@ namespace EngineLayer.GlycoSearch
                     Glycans = NGlycans.OrderBy(p => p.Mass).ToArray();
                 }       
                 
-                DecoyGlycans = Glycan.BuildTargetDecoyGlycans(NGlycans);
+                //DecoyGlycans = Glycan.BuildTargetDecoyGlycans(NGlycans);
             }
             else
             {
