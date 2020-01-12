@@ -29,7 +29,7 @@ namespace Test
         [Test]
         public static void OGlycoTest_LoadGlycanBox()
         {
-            GlycanBox.GlobalOGlycans = Glycan.LoadGlycan(GlobalVariables.OGlycanLocation).ToArray();
+            GlycanBox.GlobalOGlycans = GlycanDatabase.LoadGlycan(GlobalVariables.GlycanLocations.Where(p => p == "OGlycan.gdb").First()).ToArray();
             var GlycanBoxes = GlycanBox.BuildOGlycanBoxes(3);
             Assert.AreEqual(GlycanBoxes.Count(), 454);
         }
@@ -95,7 +95,7 @@ namespace Test
         [Test]
         public static void OGlycoTest_FragmentIons()
         {
-            GlycanBox.GlobalOGlycans = Glycan.LoadGlycan(GlobalVariables.OGlycanLocation).ToArray();
+            GlycanBox.GlobalOGlycans = GlycanDatabase.LoadGlycan(GlobalVariables.GlycanLocations.Where(p => p == "OGlycan.gdb").First()).ToArray();
             GlycanBox.GlobalOGlycanModifications = GlycanBox.BuildGlobalOGlycanModifications(GlycanBox.GlobalOGlycans);
             var OGlycanBoxes = GlycanBox.BuildOGlycanBoxes(3).OrderBy(p => p.Mass).ToArray();
             var glycanBox = OGlycanBoxes[8];
@@ -116,7 +116,7 @@ namespace Test
         [Test]
         public static void OGlycoTest_FragmentIonsHash()
         {
-            GlycanBox.GlobalOGlycans = Glycan.LoadGlycan(GlobalVariables.OGlycanLocation).ToArray();
+            GlycanBox.GlobalOGlycans = GlycanDatabase.LoadGlycan(GlobalVariables.GlycanLocations.Where(p => p == "OGlycan.gdb").First()).ToArray();
             GlycanBox.GlobalOGlycanModifications = GlycanBox.BuildGlobalOGlycanModifications(GlycanBox.GlobalOGlycans);
             var OGlycanBoxes = GlycanBox.BuildOGlycanBoxes(3).OrderBy(p => p.Mass).ToArray();
             var glycanBox = OGlycanBoxes[8];
@@ -148,7 +148,7 @@ namespace Test
         public static void OGlycoTest_Localization()
         {
             //Get glycanBox
-            GlycanBox.GlobalOGlycans = Glycan.LoadGlycan(GlobalVariables.OGlycanLocation).ToArray();
+            GlycanBox.GlobalOGlycans = GlycanDatabase.LoadGlycan(GlobalVariables.GlycanLocations.Where(p => p == "OGlycan.gdb").First()).ToArray();
             GlycanBox.GlobalOGlycanModifications = GlycanBox.BuildGlobalOGlycanModifications(GlycanBox.GlobalOGlycans);
             var OGlycanBoxes = GlycanBox.BuildOGlycanBoxes(3).OrderBy(p => p.Mass).ToArray();
             var glycanBox = OGlycanBoxes[19];

@@ -71,9 +71,12 @@ namespace EngineLayer
             {
                 AddCrosslinkers(Crosslinker.LoadCrosslinkers(customCrosslinkerLocation));
             }
-            NGlycanLocation = Path.Combine(DataDir, @"Data", @"NGlycan.gdb");
-            NGlycanLocation_182 = Path.Combine(DataDir, @"Data", @"NGlycan182.gdb");
-            OGlycanLocation = Path.Combine(DataDir, @"Data", @"OGlycan.gdb");
+
+            GlycanLocations = new List<string>();
+            foreach (var glycanFile in Directory.GetFiles(Path.Combine(DataDir, @"Data", @"Glycan")))
+            {
+                GlycanLocations.Add(glycanFile);
+            }
 
             ExperimentalDesignFileName = "ExperimentalDesign.tsv";
 
@@ -103,11 +106,11 @@ namespace EngineLayer
 
             //Add O-Glycan mod into AllModsKnownDictionary, currently this is for MetaDraw. 
             //The reason why not include O-Glycan into modification database is for users to apply their own database. 
-            foreach (var og in Glycan.LoadGlycan(GlobalVariables.OGlycanLocation))
-            {
-                var ogmod = Glycan.OGlycanToModification(og);
-                AllModsKnownDictionary.Add(ogmod.IdWithMotif, ogmod);
-            }
+            //foreach (var og in GlycanDatabase.LoadGlycan(GlobalVariables.OGlycanLocation))
+            //{
+            //    var ogmod = Glycan.OGlycanToModification(og);
+            //    AllModsKnownDictionary.Add(ogmod.IdWithMotif, ogmod);
+            //}
 
             RefreshAminoAcidDictionary();
 
@@ -151,9 +154,8 @@ namespace EngineLayer
         public static string ExperimentalDesignFileName { get; }
         public static IEnumerable<Crosslinker> Crosslinkers { get { return _KnownCrosslinkers.AsEnumerable(); } }
         public static IEnumerable<char> InvalidAminoAcids { get { return _InvalidAminoAcids.AsEnumerable(); } }
-        public static string NGlycanLocation { get; }
-        public static string NGlycanLocation_182 { get; }
-        public static string OGlycanLocation { get; }
+        public static List<string> GlycanLocations { get; }
+ 
 
         public static void AddMods(IEnumerable<Modification> modifications, bool modsAreFromTheTopOfProteinXml)
         {

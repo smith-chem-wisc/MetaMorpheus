@@ -40,7 +40,7 @@ namespace EngineLayer
             Mass = GetMass(kind);
         }
 
-        public int GlyId { get; private set; }
+        public int GlyId { get; set; }
         public int GlyType { get; private set; }
         public string Struc { get; private set; }
         public int Mass { get; private set; }
@@ -96,7 +96,7 @@ namespace EngineLayer
         //H: C6O5H10 Hexose, N: C8O5NH13 HexNAc, A: C11O8NH17 Neu5Ac, G: C11H17NO9 Neu5Gc, F: C6O4H10 Fucose, 
         //P: PO3H Phosphate, S: SO3H Sulfo, Y: Na Sodium
         //X: C5H10O5 Xylose, Kdn: C9H16O9 Ketodeoxynonulosonic acid, U: C6H10O7 glucuronic acid or HexA
-        private static Dictionary<char, int> CharMassDic = new Dictionary<char, int>() {
+        public static Dictionary<char, int> CharMassDic = new Dictionary<char, int>() {
             { 'H', 16205282 },
             { 'N', 20307937 },
             { 'A', 29109542 },
@@ -111,7 +111,7 @@ namespace EngineLayer
         };
 
         //Compitable with Byonic
-        private static Dictionary<string, Tuple<char, int>> NameCharDic = new Dictionary<string, Tuple<char, int>>
+        public static Dictionary<string, Tuple<char, int>> NameCharDic = new Dictionary<string, Tuple<char, int>>
         {
             {"Hex", new Tuple<char, int>('H', 0) },
             {"HexNAc", new Tuple<char, int>('N', 1) },
@@ -158,74 +158,23 @@ namespace EngineLayer
 
         #endregion
 
-        #region Load KindGlycan. Compatible with Byonic.
-
-        public static IEnumerable<Glycan> LoadKindGlycan(string filePath, bool toGenerateIons)
-        {
-            using (StreamReader lines = new StreamReader(filePath))
-            {
-                int id = 1;
-                while (lines.Peek() != -1)
-                {
-                    string line = lines.ReadLine().Split('\t').First();
-
-                    byte[] kind = new byte[11] { 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 };
-                    var x = line.Split('(', ')');
-                    int i = 0;
-                    while (i < x.Length - 1)
-                    {
-                        kind[NameCharDic[x[i]].Item2] = byte.Parse(x[i + 1]);     
-                        i = i + 2;
-                    }
-                    var mass = GetMass(kind);
-
-                    if (toGenerateIons)
-                    {
-
-                    }
-                    else
-                    {
-                        var glycan = new Glycan(kind);
-                        glycan.GlyId = id++;
-                        yield return glycan;
-                    }
-                                
-                }
-            }
-        }
-
-        #endregion
-
-        #region Load structured Glycan database
-
-        public static IEnumerable<Glycan> LoadGlycan(string filePath)
-        {
-            using (StreamReader glycans = new StreamReader(filePath))
-            {
-                int id = 1;
-                while (glycans.Peek() != -1)
-                {
-                    string line = glycans.ReadLine();
-                    yield return Struct2Glycan(line, id++);
-                }
-            }
-        }
+        #region Glycan Structure manipulation
 
         public static Glycan Struct2Glycan(string theGlycanStruct, int id)
         {
             Node node = Struct2Node(theGlycanStruct);
             List<Node> nodeIons = GetAllChildrenCombination(node);
-            int mass = GetMass(theGlycanStruct);
-            byte[] kind = GetKind(theGlycanStruct);
+            int mass = Glycan.GetMass(theGlycanStruct);
+            byte[] kind = Glycan.GetKind(theGlycanStruct);
             List<GlycanIon> glycanIons = new List<GlycanIon>();
             HashSet<double> ionMasses = new HashSet<double>();
             foreach (var aNodeIon in nodeIons)
             {
-                var ionMass = GetMass(Node2Struct(aNodeIon));
+                var ionMass = Glycan.GetMass(Node2Struct(aNodeIon));
                 if (!ionMasses.Contains(ionMass) && ionMass != mass)
                 {
                     ionMasses.Add(ionMass);
-                    var ionKind = GetKind(Node2Struct(aNodeIon));
+                    var ionKind = Glycan.GetKind(Node2Struct(aNodeIon));
                     var lossIonMass = GetIonLossMass(kind, ionKind);
                     GlycanIon glycanIon = new GlycanIon(null, ionMass, ionKind, lossIonMass);
                     glycanIons.Add(glycanIon);
@@ -429,94 +378,7 @@ namespace EngineLayer
             {
                 lossKind[i] = (byte)(Kind[i] - ionKind[i]);
             }
-            return GetMass(lossKind);
-        }
-
-        #endregion
-
-        #region LoadKindGlycan based on Structured Glycan
-
-        public static IEnumerable<Glycan> LoadKindGlycan(string filePath, IEnumerable<Glycan> NGlycans)
-        {
-            var groupedGlycans = NGlycans.GroupBy(p => GetKindString(p.Kind)).ToDictionary(p => p.Key, p => p.ToList());
-
-            using (StreamReader lines = new StreamReader(filePath))
-            {
-                int id = 1;
-                while (lines.Peek() != -1)
-                {
-                    string line = lines.ReadLine().Split('\t').First();
-
-                    byte[] kind = new byte[11] { 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 };
-                    var x = line.Split('(', ')');
-                    int i = 0;
-                    while (i < x.Length - 1)
-                    {
-                        kind[NameCharDic[x[i]].Item2] = byte.Parse(x[i + 1]);
-                        i = i + 2;
-                    }
-
-                    var mass = GetMass(kind);
-
-                    var glycans = GetAllIonMassFromKind(kind, groupedGlycans);
-
-                    var glycan = new Glycan(glycans.First().Struc, mass, kind, glycans.First().Ions, true);
-                    glycan.GlyId = id++;
-                    yield return glycan;
-                }
-            }
-        }
-
-        //Find glycans from structured glycan database
-        public static List<Glycan> GetAllIonMassFromKind(byte[] kind, Dictionary<string, List<Glycan>> groupedGlycans)
-        {
-            var kindKey = GetKindString(kind);
-            List<Glycan> glycans = new List<Glycan>();
-
-            groupedGlycans.TryGetValue(kindKey, out glycans);
-
-            if (glycans == null)
-            {
-                //if not in the structured glycan database, find a smaller one.
-                bool notFound = true;
-                while (notFound)
-                {
-                    var childKinds = BuildChildKindKey(kind);
-                    foreach (var child in childKinds)
-                    {
-                        var key = GetKindString(child);
-                        if (groupedGlycans.TryGetValue(key, out glycans))
-                        {
-                            notFound = false;
-                            break;
-                        }
-                    }
-
-                    if (notFound == true)
-                    {
-                        glycans = GetAllIonMassFromKind(childKinds[0], groupedGlycans);
-                        notFound = false;
-                    }
-                }
-            }
-
-            return glycans;
-        }
-
-        private static List<byte[]> BuildChildKindKey(byte[] kind)
-        {
-            List<byte[]> childKinds = new List<byte[]>();
-            for (int i = kind.Length - 1; i >= 0; i--)
-            {
-                if (kind[i] >= 1)
-                {
-                    var childKind = new byte[kind.Length];
-                    Array.Copy(kind, childKind, kind.Length);
-                    childKind[i]--;
-                    childKinds.Add(childKind);
-                }
-            }
-            return childKinds;
+            return Glycan.GetMass(lossKind);
         }
 
         #endregion
@@ -734,4 +596,5 @@ namespace EngineLayer
         #endregion
 
     }    
+
 }

@@ -17,12 +17,9 @@ namespace EngineLayer.GlycoSearch
         protected readonly List<GlycoSpectralMatch>[] GlobalCsms;
 
         private bool IsOGlycoSearch;
-        // crosslinker molecule
-        private readonly bool GlycoSearchTopN;
         private readonly int TopN;
         private readonly int _maxOGlycanNum;
 
-        private readonly bool SearchGlycan182;
         private readonly Tolerance PrecusorSearchMode;
         private readonly MassDiffAcceptor ProductSearchMode;
 
@@ -30,12 +27,11 @@ namespace EngineLayer.GlycoSearch
 
         public GlycoSearchEngine(List<GlycoSpectralMatch>[] globalCsms, Ms2ScanWithSpecificMass[] listOfSortedms2Scans, List<PeptideWithSetModifications> peptideIndex,
             List<int>[] fragmentIndex, List<int>[] secondFragmentIndex, int currentPartition, CommonParameters commonParameters, 
-             bool isOGlycoSearch, bool glycoSearchTop, int glycoSearchTopNum, bool searchGlycan182, int maxOGlycanNum, List<string> nestedIds)
+             bool isOGlycoSearch, int glycoSearchTopNum, int maxOGlycanNum, List<string> nestedIds)
             : base(null, listOfSortedms2Scans, peptideIndex, fragmentIndex, currentPartition, commonParameters, new OpenSearchMode(), 0, nestedIds)
         {
             this.GlobalCsms = globalCsms;
             this.IsOGlycoSearch = isOGlycoSearch;
-            this.GlycoSearchTopN = glycoSearchTop;
             this.TopN = glycoSearchTopNum;
             this._maxOGlycanNum = maxOGlycanNum;
 
@@ -43,26 +39,20 @@ namespace EngineLayer.GlycoSearch
             PrecusorSearchMode = commonParameters.PrecursorMassTolerance;
             ProductSearchMode = new SingleAbsoluteAroundZeroSearchMode(20); //For Oxinium ion only
 
-            SearchGlycan182 = searchGlycan182;
+
             if (!isOGlycoSearch)
             {
-                var NGlycans = Glycan.LoadGlycan(GlobalVariables.NGlycanLocation);
+                var NGlycans = GlycanDatabase.LoadGlycan(GlobalVariables.GlycanLocations.Where(p => p == "NGlycan.gdb").First());
 
-                if (SearchGlycan182)
-                {
-                    var NGlycans182 = Glycan.LoadKindGlycan(GlobalVariables.NGlycanLocation_182, NGlycans);
-                    Glycans = NGlycans182.OrderBy(p => p.Mass).ToArray();
-                }
-                else
-                {
-                    Glycans = NGlycans.OrderBy(p => p.Mass).ToArray();
-                }       
+
+                Glycans = NGlycans.OrderBy(p => p.Mass).ToArray();
+                     
                 
                 //DecoyGlycans = Glycan.BuildTargetDecoyGlycans(NGlycans);
             }
             else
             {
-                GlycanBox.GlobalOGlycans = Glycan.LoadGlycan(GlobalVariables.OGlycanLocation).ToArray();
+                GlycanBox.GlobalOGlycans = GlycanDatabase.LoadGlycan(GlobalVariables.GlycanLocations.Where(p => p == "OGlycan.gdb").First()).ToArray();
                 GlycanBox.GlobalOGlycanModifications = GlycanBox.BuildGlobalOGlycanModifications(GlycanBox.GlobalOGlycans);
                 OGlycanBoxes = GlycanBox.BuildOGlycanBoxes(_maxOGlycanNum).OrderBy(p => p.Mass).ToArray();
 

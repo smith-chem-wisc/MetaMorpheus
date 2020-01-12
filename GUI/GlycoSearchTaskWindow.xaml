@@ -91,16 +91,19 @@
                             <Grid.RowDefinitions>
                                 <RowDefinition Height="1*"/>
                                 <RowDefinition Height="1*"/>
+                                <RowDefinition Height="1*"/>
                             </Grid.RowDefinitions>
                             <StackPanel Orientation="Horizontal">
                                 <RadioButton x:Name="RbtNGlycoSearch" Visibility="Hidden" Content="NGlyco-peptide Search " GroupName="GlycoSearch"/>
                                 <RadioButton x:Name="RbtOGlycoSearch" Content="OGlyco-peptide Search " GroupName="GlycoSearch"/>
                             </StackPanel>
-                            <StackPanel Orientation="Vertical" Grid.Row="1">
-                                <StackPanel Orientation="Horizontal" Margin="5">
-                                    <Label Content="Maximum OGlycan Allowed"/>
-                                    <TextBox x:Name="TbMaxOGlycanNum" PreviewTextInput="CheckIfNumber" Width="45"/>
-                                </StackPanel>
+                            <StackPanel Orientation="Horizontal" Grid.Row="1">
+                                <Label Content="Glycan Database"/>
+                                <ComboBox x:Name="CmbGlycanDatabase"/>
+                            </StackPanel>
+                            <StackPanel Orientation="Horizontal" Grid.Row="2">
+                                <Label Content="Maximum OGlycan Allowed"/>
+                                <TextBox x:Name="TbMaxOGlycanNum" PreviewTextInput="CheckIfNumber" Width="45"/>
                             </StackPanel>
                         </Grid>
                     </Expander>

@@ -136,7 +136,7 @@ namespace TaskLayer
 
                     Status("Searching files...", taskId);
                     new GlycoSearchEngine(newCsmsPerMS2ScanPerFile, arrayOfMs2ScansSortedByMass, peptideIndex, fragmentIndex, secondFragmentIndex, currentPartition, combinedParams,
-                        _glycoSearchParameters.IsOGlycoSearch, _glycoSearchParameters.RestrictToTopNHits, _glycoSearchParameters.GlycoSearchTopNum, _glycoSearchParameters.SearchGlycan182, _glycoSearchParameters.MaximumOGlycanAllowed, thisId).Run();
+                        _glycoSearchParameters.IsOGlycoSearch, _glycoSearchParameters.GlycoSearchTopNum, _glycoSearchParameters.MaximumOGlycanAllowed, thisId).Run();
 
                     //new GlycoLocalizationSearchEngine(gsmsPerMS2ScanPerFile, arrayOfMs2Scans, peptideIndex, fragmentIndex, secondFragmentIndex, currentPartition, combinedParams,
                     //    _glycoSearchParameters.IsOGlycoSearch, _glycoSearchParameters.RestrictToTopNHits, _glycoSearchParameters.GlycoSearchTopNum, _glycoSearchParameters.SearchGlycan182, _glycoSearchParameters.MaximumOGlycanAllowed, precursors, thisId).Run();
