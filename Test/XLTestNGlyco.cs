@@ -24,12 +24,19 @@ using OxyPlot.Annotations;
 namespace Test
 {
     [TestFixture]
-    public static class XLTestNGlyco
+    public class XLTestNGlyco
     {
+        private static IEnumerable<Glycan> NGlycans { get; set; }
+
+        [OneTimeSetUp]
+        public static void Setup()
+        {
+            NGlycans = GlycanDatabase.LoadStructureGlycan(GlobalVariables.GlycanLocations.Where(p => p.Contains("NGlycan.gdb")).First());
+        }
+
         [Test]
         public static void GlyTest_GetKindString()
         {
-            string structure = "(N(F)(N(H(H(N))(H(N)))))";
             byte[] kind = new byte[] {3, 4, 0, 0, 1 };
             string kindString = Glycan.GetKindString(kind);
             Assert.AreEqual("H3N4F1", kindString);
@@ -95,12 +102,12 @@ namespace Test
             Assert.AreEqual(matchedGlycanYIons.Count, 16);
 
             var matchedGlycanYIons2 = MetaMorpheusEngine.MatchOriginFragmentIons(listOfSortedms2Scans[0], glycanYIons, commonParameters);
-            Assert.AreEqual(matchedGlycanYIons.Count, 17);
+            Assert.AreEqual(matchedGlycanYIons2.Count, 17);
             //TO DO: The neutroloss is not annotated well.
             var matchedFragmentIons = MetaMorpheusEngine.MatchFragmentIons(listOfSortedms2Scans[0], fragmentIons, commonParameters);
 
             var coreIons = GlycoPeptides.ScanGetTrimannosylCore(matchedFragmentIons, glycan);
-            Assert.AreEqual(coreIons.Count, 9);
+            Assert.AreEqual(coreIons.Count, 6);
             var filter = GlycoPeptides.ScanTrimannosylCoreFilter(matchedFragmentIons, glycan);
             Assert.AreEqual(filter, true);
             var NGlycans = GlycanDatabase.LoadGlycan(GlobalVariables.GlycanLocations[3]);
@@ -177,7 +184,7 @@ namespace Test
             //Tips: Using debug mode to check the number of oxoniumIons, in this case will be 7.
             MassDiffAcceptor massDiffAcceptor = new SinglePpmAroundZeroSearchMode(20);
             var oxoinumIonsExist = GlycoPeptides.ScanOxoniumIonFilter(listOfSortedms2Scans[0], massDiffAcceptor, commonParameters.DissociationType);
-            Assert.AreEqual(5, oxoinumIonsExist);
+            Assert.AreEqual(oxoinumIonsExist.Where(p=>p>0).Count(), 9);
         }
 
         [Test]
@@ -252,7 +259,7 @@ namespace Test
         //This is not exactly a test. The function is used for N-Glycan database generation. The function maybe useful in the future.
         public static void GlyTest_GenerateDataBase()
         {         
-            var NGlycans = GlycanDatabase.LoadGlycan(GlobalVariables.GlycanLocations.Where(p => p == "NGLycan.gdb").First());
+            
             string aietdpath = @"GlycoTestData/ComboGlycanDatabase.csv";
             var glycans = GlycanDatabase.LoadKindGlycan(aietdpath, NGlycans).ToList();
 
@@ -270,13 +277,13 @@ namespace Test
         [Test]
         public static void GlyTest_GenerateUniprotDataBase()
         {
-            var NGlycans = GlycanDatabase.LoadGlycan(GlobalVariables.GlycanLocations.Where(p=>p =="NGLycan.gdb").First()).GroupBy(p => Glycan.GetKindString(p.Kind)).ToDictionary(p => p.Key, p => p.ToList());
+            var groupedGlycans = NGlycans.GroupBy(p => Glycan.GetKindString(p.Kind)).ToDictionary(p => p.Key, p => p.ToList());
             string pathWritePath = "E:\\MassData\\Glycan\\GlycanDatabase\\UniprotGlycanDatabase.txt";
 
 
             using (StreamWriter output = new StreamWriter(pathWritePath))
             {
-                foreach (var glycan in NGlycans)
+                foreach (var glycan in groupedGlycans)
                 {
                     var mod = Glycan.NGlycanToModification(glycan.Value.First());
                     List<string> temp = new List<string>();
@@ -294,8 +301,6 @@ namespace Test
         [Test]
         public static void GlyTest_GetAllIonMassFromKind()
         {
-
-            var NGlycans = GlycanDatabase.LoadGlycan(GlobalVariables.GlycanLocations.Where(p => p == "NGLycan.gdb").First());
             var groupedGlycans = NGlycans.GroupBy(p => Glycan.GetKindString(p.Kind)).ToDictionary(p => p.Key, p => p.ToList());
 
             byte[] k36101 = new byte[] { 3, 6, 1, 0, 1 };

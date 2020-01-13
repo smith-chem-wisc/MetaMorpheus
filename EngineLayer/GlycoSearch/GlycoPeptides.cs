@@ -33,36 +33,6 @@ namespace EngineLayer.GlycoSearch
             return oxoniumIonsintensities;
         }
 
-        //The oxoniumIonIntensities is related with Glycan.AllOxoniumIons. 
-        //Rules are coded in the function.    
-        public static bool OxoniumIonsAnalysis(double[] oxoniumIonsintensities, GlycanBox glycanBox)
-        {
-            //If a glycopeptide spectrum does not have 292.1027 or 274.0921, then remove all glycans that have sialic acids from the search.
-            if (oxoniumIonsintensities[10]==0 && oxoniumIonsintensities[12]==0 )
-            {
-                if(glycanBox.Kind[2]==0 && glycanBox.Kind[3] == 0)
-                {
-                    return false;   
-                }
-            }
-
-            //If a spectrum has 366.1395, remove glycans that do not have HexNAc(1)Hex(1) or more
-            if (oxoniumIonsintensities[14] > 0)
-            {
-                if (glycanBox.Kind[0] < 1 && glycanBox.Kind[1] < 1)
-                {
-                    return false;   
-                }
-            }
-
-            //Other rules:
-            //A spectrum needs to have 204.0867 to be considered as a glycopeptide.              
-            //Ratio of 138.055 to 144.0655 can seperate O/N glycan.
-
-            return true;
-        }
-
-
         #region N-Glyco related functions
 
         public static Dictionary<int, double> ScanGetTrimannosylCore(List<MatchedFragmentIon> matchedFragmentIons, Glycan glycan)
@@ -397,5 +367,35 @@ namespace EngineLayer.GlycoSearch
         }
 
         #endregion
+
+        //The oxoniumIonIntensities is related with Glycan.AllOxoniumIons. 
+        //Rules are coded in the function.    
+        public static bool OxoniumIonsAnalysis(double[] oxoniumIonsintensities, GlycanBox glycanBox)
+        {
+            //If a glycopeptide spectrum does not have 292.1027 or 274.0921, then remove all glycans that have sialic acids from the search.
+            if (oxoniumIonsintensities[10] == 0 && oxoniumIonsintensities[12] == 0)
+            {
+                if (glycanBox.Kind[2] == 0 && glycanBox.Kind[3] == 0)
+                {
+                    return false;
+                }
+            }
+
+            //If a spectrum has 366.1395, remove glycans that do not have HexNAc(1)Hex(1) or more. Here use the total glycan of glycanBox to calculate. 
+            if (oxoniumIonsintensities[14] > 0)
+            {
+                if (glycanBox.Kind[0] < 1 && glycanBox.Kind[1] < 1)
+                {
+                    return false;
+                }
+            }
+
+            //Other rules:
+            //A spectrum needs to have 204.0867 to be considered as a glycopeptide.              
+            //Ratio of 138.055 to 144.0655 can seperate O/N glycan.
+
+            return true;
+        }
+
     }
 }

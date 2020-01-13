@@ -341,15 +341,26 @@ namespace EngineLayer.GlycoSearch
 
                     possibleMatches.Add(psmCrossSingle);
                 }
-                //TO DO: add if the scan contains diagnostic ions, the rule to check diagnostic ions
                 else if ((theScan.PrecursorMass - theScanBestPeptide.MonoisotopicMass >= 100))
                 {
-                    //Using glycanBoxes
+                    //Filter by glycanBoxes mass difference.
                     var possibleGlycanMassLow = theScan.PrecursorMass * (1 - 1E-5) - theScanBestPeptide.MonoisotopicMass;
-                    if (possibleGlycanMassLow < 100 || possibleGlycanMassLow > OGlycanBoxes.Last().Mass)
+
+                    if (possibleGlycanMassLow < OGlycanBoxes.First().Mass || possibleGlycanMassLow > OGlycanBoxes.Last().Mass)
                     {
                         continue;
                     }
+
+                    //Filter by OxoniumIon
+                    var oxoniumIonIntensities = GlycoPeptides.ScanOxoniumIonFilter(theScan, ProductSearchMode, CommonParameters.DissociationType);
+
+                    //The oxoniumIonIntensities is related with Glycan.AllOxoniumIons (the [9] is 204). A spectrum needs to have 204.0867 to be considered as a glycopeptide for now.
+                    if (oxoniumIonIntensities[9] > 0)
+                    {
+                        continue;
+                    }
+
+                    int[] modPos = GlycoSpectralMatch.GetPossibleModSites(theScanBestPeptide, new string[] { "S", "T" }).ToArray();
 
                     List<Tuple<int, int[]>> glycanBoxId_localization = new List<Tuple<int, int[]>>();
 
@@ -357,10 +368,10 @@ namespace EngineLayer.GlycoSearch
 
                     while (iDLow < OGlycanBoxes.Count() && (PrecusorSearchMode.Within(theScan.PrecursorMass, theScanBestPeptide.MonoisotopicMass + (double)OGlycanBoxes[iDLow].Mass / 1E5)))
                     {
-                        List<int> modPos = GlycoSpectralMatch.GetPossibleModSites(theScanBestPeptide, new string[] { "S", "T" });
-                        if (modPos.Count >= OGlycanBoxes[iDLow].NumberOfMods)
+                        
+                        if (modPos.Length >= OGlycanBoxes[iDLow].NumberOfMods && GlycoPeptides.OxoniumIonsAnalysis(oxoniumIonIntensities, OGlycanBoxes[iDLow]))
                         {
-                            var permutateModPositions = GlycoPeptides.GetPermutations(modPos, OGlycanBoxes[iDLow].ModIds);
+                            var permutateModPositions = GlycoPeptides.GetPermutations(modPos.ToList(), OGlycanBoxes[iDLow].ModIds);
 
                             foreach (var theModPositions in permutateModPositions)
                             {
@@ -546,7 +557,7 @@ namespace EngineLayer.GlycoSearch
                             localizationCandidates.Add(new Tuple<int, Tuple<int, int>[]>(ids[i], local));
                         }
 
-                        var psmGlyco = CreateGsm(theScan, scanIndex, ind, theScanBestPeptide, localizationCandidates, CommonParameters);
+                        var psmGlyco = CreateGsm(theScan, scanIndex, ind, theScanBestPeptide, localizationCandidates, CommonParameters, oxoniumIonIntensities);
 
                         possibleMatches.Add(psmGlyco);
                     }
@@ -561,7 +572,7 @@ namespace EngineLayer.GlycoSearch
             return possibleMatches;
         }
 
-        private GlycoSpectralMatch CreateGsm(Ms2ScanWithSpecificMass theScan, int scanIndex, int rank, PeptideWithSetModifications peptide, List<Tuple<int, Tuple<int, int>[]>> glycanBox_localization, CommonParameters commonParameters)
+        private GlycoSpectralMatch CreateGsm(Ms2ScanWithSpecificMass theScan, int scanIndex, int rank, PeptideWithSetModifications peptide, List<Tuple<int, Tuple<int, int>[]>> glycanBox_localization, CommonParameters commonParameters, double[] oxoniumIonIntensities)
         {
             var peptideWithMod = GlycoPeptides.OGlyGetTheoreticalPeptide(glycanBox_localization.First().Item2, peptide);
 
@@ -598,6 +609,14 @@ namespace EngineLayer.GlycoSearch
             psmGlyco.ChildMatchedFragmentIons = allMatchedChildIons;
             psmGlyco.glycanBoxes = new List<GlycanBox> { OGlycanBoxes[glycanBox_localization.First().Item1] };
             //psmGlyco.localizations = glycanBox_localization.Values.ToList();
+            if (oxoniumIonIntensities[5] == 0)
+            {
+                psmGlyco.R138vs144 = double.PositiveInfinity;
+            }
+            else
+            {
+                psmGlyco.R138vs144 = oxoniumIonIntensities[4] / oxoniumIonIntensities[5];
+            }     
 
             return psmGlyco;
         }
@@ -624,9 +643,9 @@ namespace EngineLayer.GlycoSearch
                 }
                 else if (theScan.PrecursorMass - theScanBestPeptide.MonoisotopicMass >= 10)
                 {
-                    //Using glycanBoxes
-                    var possibleGlycanMassLow = theScan.PrecursorMass * (1 - 1E-5) - theScanBestPeptide.MonoisotopicMass;
-                    if (possibleGlycanMassLow < ModBoxes.First().Mass || possibleGlycanMassLow > ModBoxes.Last().Mass)
+                    //filter by glycanBoxes masses
+                    var possibleModMassLow = theScan.PrecursorMass * (1 - 1E-5) - theScanBestPeptide.MonoisotopicMass;
+                    if (possibleModMassLow < ModBoxes.First().Mass || possibleModMassLow > ModBoxes.Last().Mass)
                     {
                         continue;
                     }              
@@ -639,7 +658,7 @@ namespace EngineLayer.GlycoSearch
                     List<LocalizationGraph> localizationGraphs = new List<LocalizationGraph>();
                     List<int> ids = new List<int>();
 
-                    int iDLow = GlycoPeptides.BinarySearchGetIndex(ModBoxes.Select(p => p.Mass).ToArray(), possibleGlycanMassLow);
+                    int iDLow = GlycoPeptides.BinarySearchGetIndex(ModBoxes.Select(p => p.Mass).ToArray(), possibleModMassLow);
 
                     while (iDLow < ModBoxes.Count() && PrecusorSearchMode.Within(theScan.PrecursorMass, theScanBestPeptide.MonoisotopicMass + ModBoxes[iDLow].Mass))
                     {

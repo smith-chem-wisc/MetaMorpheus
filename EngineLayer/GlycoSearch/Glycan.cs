@@ -95,7 +95,7 @@ namespace EngineLayer
         //Glycan mass dictionary
         //H: C6O5H10 Hexose, N: C8O5NH13 HexNAc, A: C11O8NH17 Neu5Ac, G: C11H17NO9 Neu5Gc, F: C6O4H10 Fucose, 
         //P: PO3H Phosphate, S: SO3H Sulfo, Y: Na Sodium
-        //X: C5H10O5 Xylose, Kdn: C9H16O9 Ketodeoxynonulosonic acid, U: C6H10O7 glucuronic acid or HexA
+        //X: C5H10O5 Xylose
         public static Dictionary<char, int> CharMassDic = new Dictionary<char, int>() {
             { 'H', 16205282 },
             { 'N', 20307937 },
@@ -105,9 +105,7 @@ namespace EngineLayer
             { 'P', 7996633 },
             { 'S', 7995681 },
             { 'Y', 2298977 },
-            { 'X', 15005282 },
-            { 'K', 26807943 },     
-            { 'U', 19404265 }
+            //{ 'X', 15005282 }
         };
 
         //Compitable with Byonic
@@ -118,12 +116,10 @@ namespace EngineLayer
             {"NeuAc", new Tuple<char, int>('A', 2) },
             {"NeuGc", new Tuple<char, int>('G', 3) },
             {"Fuc",  new Tuple<char, int>('F', 4)},
-            {"Phosphate", new Tuple<char, int>('P', 5)},
+            {"Phospho", new Tuple<char, int>('P', 5)},
             {"Sulfo", new Tuple<char, int>('S', 6) },
             {"Na", new Tuple<char, int>('Y', 7) },
-            {"Xylose", new Tuple<char, int>('X', 8) },
-            {"Knd", new Tuple<char, int>('K', 9) },
-            {"HexA", new Tuple<char, int>('U', 10) }
+            //{"Xylose", new Tuple<char, int>('X', 8) }
         };
 
         public static HashSet<int> CommonOxoniumIons = new HashSet<int>()
@@ -411,9 +407,9 @@ namespace EngineLayer
 
         public static byte[] GetKind(string structure)
         {
-            byte[] kind = new byte[11] { 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 };
+            byte[] kind = new byte[8] { 0, 0, 0, 0, 0, 0, 0, 0};
 
-            for (int i = 0; i < 11; i++)
+            for (int i = 0; i < 8; i++)
             {
 
                 kind[i] = Convert.ToByte(structure.Count(p => p == CharMassDic.ElementAt(i).Key));

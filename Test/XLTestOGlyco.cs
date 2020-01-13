@@ -24,14 +24,22 @@ using EngineLayer.GlycoSearch;
 namespace Test
 {
     [TestFixture]
-    public static class XLTestOGlyco
+    public class XLTestOGlyco
     {
+        private static GlycanBox[] OGlycanBoxes { get; set; }
+
+        [OneTimeSetUp]
+        public static void Setup()
+        {
+            GlycanBox.GlobalOGlycans = GlycanDatabase.LoadGlycan(GlobalVariables.GlycanLocations.Where(p => p.Contains("OGlycan.gdb")).First()).ToArray();
+            GlycanBox.GlobalOGlycanModifications = GlycanBox.BuildGlobalOGlycanModifications(GlycanBox.GlobalOGlycans);
+            OGlycanBoxes = GlycanBox.BuildOGlycanBoxes(3).OrderBy(p => p.Mass).ToArray();
+        }
+
         [Test]
         public static void OGlycoTest_LoadGlycanBox()
         {
-            GlycanBox.GlobalOGlycans = GlycanDatabase.LoadGlycan(GlobalVariables.GlycanLocations.Where(p => p == "OGlycan.gdb").First()).ToArray();
-            var GlycanBoxes = GlycanBox.BuildOGlycanBoxes(3);
-            Assert.AreEqual(GlycanBoxes.Count(), 454);
+            Assert.AreEqual(OGlycanBoxes.Count(), 454);
         }
 
         [Test]
@@ -111,21 +119,18 @@ namespace Test
             var productSearchMode = new SinglePpmAroundZeroSearchMode(20);
             var oxoniumIonIntensities = GlycoPeptides.ScanOxoniumIonFilter(scan, productSearchMode, DissociationType.EThcD);
 
-            //Get glycanBox
-            GlycanBox.GlobalOGlycans = GlycanDatabase.LoadGlycan(GlobalVariables.GlycanLocations.Where(p => p.Contains("OGlycan.gdb")).First()).ToArray();
-            var OGlycanBoxes = GlycanBox.BuildOGlycanBoxes(3).OrderBy(p => p.Mass).ToArray();
+            //Get glycanBox          
             var glycanBox = OGlycanBoxes[19];
 
-            GlycoPeptides.OxoniumIonsAnalysis(oxoniumIonIntensities, glycanBox);
-
+            var satifyOxonium = GlycoPeptides.OxoniumIonsAnalysis(oxoniumIonIntensities, glycanBox);
+            Assert.That(satifyOxonium);
+        
         }
 
         [Test]
         public static void OGlycoTest_FragmentIons()
         {
-            GlycanBox.GlobalOGlycans = GlycanDatabase.LoadGlycan(GlobalVariables.GlycanLocations.Where(p => p == "OGlycan.gdb").First()).ToArray();
-            GlycanBox.GlobalOGlycanModifications = GlycanBox.BuildGlobalOGlycanModifications(GlycanBox.GlobalOGlycans);
-            var OGlycanBoxes = GlycanBox.BuildOGlycanBoxes(3).OrderBy(p => p.Mass).ToArray();
+            //Get glycanBox
             var glycanBox = OGlycanBoxes[8];
 
             Protein protein = new Protein("PTLFKNVSLYK", "");
@@ -134,7 +139,7 @@ namespace Test
             List<int> modPos = GlycoSpectralMatch.GetPossibleModSites(peptide, new string[] { "S", "T" });
 
             var peptideWithMod = GlycoPeptides.OGlyGetTheoreticalPeptide(modPos.ToArray(), peptide, OGlycanBoxes[8]);
-            Assert.That(peptideWithMod.FullSequence == "PT[O-Glycosylation:H0N1A1G0F0 on X]LFKNVS[O-Glycosylation:H0N1A0G0F0 on X]LYK");
+            Assert.That(peptideWithMod.FullSequence == "PT[O-Glycosylation:N1A1 on X]LFKNVS[O-Glycosylation:N1 on X]LYK");
 
             var fragments_hcd = GlycoPeptides.OGlyGetTheoreticalFragments(DissociationType.HCD, peptide, peptideWithMod);
 
@@ -144,9 +149,7 @@ namespace Test
         [Test]
         public static void OGlycoTest_FragmentIonsHash()
         {
-            GlycanBox.GlobalOGlycans = GlycanDatabase.LoadGlycan(GlobalVariables.GlycanLocations.Where(p => p == "OGlycan.gdb").First()).ToArray();
-            GlycanBox.GlobalOGlycanModifications = GlycanBox.BuildGlobalOGlycanModifications(GlycanBox.GlobalOGlycans);
-            var OGlycanBoxes = GlycanBox.BuildOGlycanBoxes(3).OrderBy(p => p.Mass).ToArray();
+            //Get glycanBox
             var glycanBox = OGlycanBoxes[8];
 
             Protein protein = new Protein("PTLFKNVSLYK", "");
@@ -155,7 +158,7 @@ namespace Test
             List<int> modPos = GlycoSpectralMatch.GetPossibleModSites(peptide, new string[] { "S", "T" });
 
             var peptideWithMod = GlycoPeptides.OGlyGetTheoreticalPeptide(modPos.ToArray(), peptide, OGlycanBoxes[8]);
-            Assert.That(peptideWithMod.FullSequence == "PT[O-Glycosylation:H0N1A1G0F0 on X]LFKNVS[O-Glycosylation:H0N1A0G0F0 on X]LYK");
+            Assert.That(peptideWithMod.FullSequence == "PT[O-Glycosylation:N1A1 on X]LFKNVS[O-Glycosylation:N1 on X]LYK");
 
             var fragments_hcd = peptide.Fragment(DissociationType.HCD, FragmentationTerminus.Both);
             var fragmentsMod_hcd = peptideWithMod.Fragment(DissociationType.HCD, FragmentationTerminus.Both);
@@ -176,9 +179,6 @@ namespace Test
         public static void OGlycoTest_Localization()
         {
             //Get glycanBox
-            GlycanBox.GlobalOGlycans = GlycanDatabase.LoadGlycan(GlobalVariables.GlycanLocations.Where(p => p == "OGlycan.gdb").First()).ToArray();
-            GlycanBox.GlobalOGlycanModifications = GlycanBox.BuildGlobalOGlycanModifications(GlycanBox.GlobalOGlycans);
-            var OGlycanBoxes = GlycanBox.BuildOGlycanBoxes(3).OrderBy(p => p.Mass).ToArray();
             var glycanBox = OGlycanBoxes[19];
 
             //Get unmodified peptide, products, allPossible modPos and all boxes.
@@ -231,7 +231,7 @@ namespace Test
 
             //Known peptideWithMod match.
             var peptideWithMod = GlycoPeptides.OGlyGetTheoreticalPeptide(new int[3] { 10, 2, 3}, peptide, glycanBox);
-            Assert.That(peptideWithMod.FullSequence == "T[O-Glycosylation:H1N1A0G0F0 on X]T[O-Glycosylation:H1N1A0G0F0 on X]GSLEPSS[O-Glycosylation:H0N1A0G0F0 on X]GASGPQVSSVK");
+            Assert.That(peptideWithMod.FullSequence == "T[O-Glycosylation:H1N1 on X]T[O-Glycosylation:H1N1 on X]GSLEPSS[O-Glycosylation:N1 on X]GASGPQVSSVK");
             List<Product> knownProducts = peptideWithMod.Fragment(DissociationType.EThcD, FragmentationTerminus.Both).ToList();
             var matchedKnownFragmentIons = MetaMorpheusEngine.MatchFragmentIons(scans.First(), knownProducts, commonParameters);
 

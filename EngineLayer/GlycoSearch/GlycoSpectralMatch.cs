@@ -27,6 +27,7 @@ namespace EngineLayer.GlycoSearch
         public double PeptideScore { get; set; }
         public double GlycanScore { get; set; }
         public double DiagnosticIonScore { get; set; }
+        public double R138vs144 { get; set; }
 
         //Motif should be writen with required form
         public static List<int> GetPossibleModSites(PeptideWithSetModifications peptide, string[] motifs)

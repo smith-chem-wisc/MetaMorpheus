@@ -51,7 +51,8 @@ namespace EngineLayer
                         continue;
                     }
 
-                    byte[] kind = new byte[11] { 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 };
+                    byte[] kind = new byte[
+                        ] { 0, 0, 0, 0, 0, 0, 0, 0 };
                     var x = line.Split('(', ')');
                     int i = 0;
                     while (i < x.Length - 1)
@@ -76,7 +77,7 @@ namespace EngineLayer
             }
         }
 
-        //Load structured Glycan database
+        //Load structured Glycan database.
         public static IEnumerable<Glycan> LoadStructureGlycan(string filePath)
         {
             using (StreamReader glycans = new StreamReader(filePath))
@@ -103,7 +104,7 @@ namespace EngineLayer
                 {
                     string line = lines.ReadLine().Split('\t').First();
 
-                    byte[] kind = new byte[11] { 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 };
+                    byte[] kind = new byte[8] { 0, 0, 0, 0, 0, 0, 0, 0 };
                     var x = line.Split('(', ')');
                     int i = 0;
                     while (i < x.Length - 1)
