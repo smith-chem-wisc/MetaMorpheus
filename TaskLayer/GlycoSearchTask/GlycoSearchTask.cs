@@ -21,13 +21,14 @@ namespace TaskLayer
             //Default parameter setting which is different from SearchTask, can be overwriten
             var digestPara = new DigestionParams(
                 minPeptideLength: 5,
-                maxPeptideLength: 40
+                maxPeptideLength: 60
 
             );
             CommonParameters = new CommonParameters(
                 precursorMassTolerance: new PpmTolerance(10),
                 scoreCutoff: 3,
-                trimMsMsPeaks: false,
+                numberOfPeaksToKeepPerWindow: 1000,
+                minimumAllowedIntensityRatioToBasePeak: 0.01,
                 digestionParams: digestPara            
                 
             );
@@ -92,22 +93,6 @@ namespace TaskLayer
                 Ms2ScanWithSpecificMass[] arrayOfMs2ScansSortedByMass = GetMs2Scans(myMsDataFile, origDataFile, combinedParams).OrderBy(b => b.PrecursorMass).ToArray();
                 List<GlycoSpectralMatch>[] newCsmsPerMS2ScanPerFile = new List<GlycoSpectralMatch>[arrayOfMs2ScansSortedByMass.Length];
 
-                //var ms2ScanGroup = arrayOfMs2ScansSortedByMass.GroupBy(p => p.OneBasedScanNumber);
-                //Ms2ScanWithSpecificMass[] arrayOfMs2Scans = new Ms2ScanWithSpecificMass[ms2ScanGroup.Count()];
-                //List<double>[] precursors = new List<double>[ms2ScanGroup.Count()];
-                //int scanIndex = 0;
-                //foreach (var g in ms2ScanGroup)
-                //{
-                //    arrayOfMs2Scans[scanIndex] = g.First();
-                //    precursors[scanIndex] = new List<double>();
-                //    foreach (var scan in g)
-                //    {
-                //        precursors[scanIndex].Add(scan.PrecursorMass);
-                //    }
-                //    scanIndex++;
-                //}
-                //List<List<GlycoSpectralMatch>>[] gsmsPerMS2ScanPerFile = new List<List<GlycoSpectralMatch>>[ms2ScanGroup.Count()];
-
                 for (int currentPartition = 0; currentPartition < CommonParameters.TotalPartitions; currentPartition++)
                 {
                     List<PeptideWithSetModifications> peptideIndex = null;
@@ -138,24 +123,17 @@ namespace TaskLayer
                     new GlycoSearchEngine(newCsmsPerMS2ScanPerFile, arrayOfMs2ScansSortedByMass, peptideIndex, fragmentIndex, secondFragmentIndex, currentPartition, combinedParams,
                         _glycoSearchParameters.GlycanDatabasefileIndex, _glycoSearchParameters.IsOGlycoSearch, _glycoSearchParameters.GlycoSearchTopNum, _glycoSearchParameters.MaximumOGlycanAllowed, thisId).Run();
 
-                    //new GlycoLocalizationSearchEngine(gsmsPerMS2ScanPerFile, arrayOfMs2Scans, peptideIndex, fragmentIndex, secondFragmentIndex, currentPartition, combinedParams,
-                    //    _glycoSearchParameters.IsOGlycoSearch, _glycoSearchParameters.RestrictToTopNHits, _glycoSearchParameters.GlycoSearchTopNum, _glycoSearchParameters.SearchGlycan182, _glycoSearchParameters.MaximumOGlycanAllowed, precursors, thisId).Run();
-
-
                     ReportProgress(new ProgressEventArgs(100, "Done with search " + (currentPartition + 1) + "/" + CommonParameters.TotalPartitions + "!", thisId));
                     if (GlobalVariables.StopLoops) { break; }
                 }
 
                 ListOfGsmsPerMS2Scan.AddRange(newCsmsPerMS2ScanPerFile.Where(p => p != null).ToList());
-                //ListOfGsmsPerMS2Scan.AddRange(gsmsPerMS2ScanPerFile.Where(p => p != null).SelectMany(p=>p));
 
                 completedFiles++;
                 ReportProgress(new ProgressEventArgs(completedFiles / currentRawFileList.Count, "Searching...", new List<string> { taskId, "Individual Spectra Files" }));
             }
 
             ReportProgress(new ProgressEventArgs(100, "Done with all searches!", new List<string> { taskId, "Individual Spectra Files" }));
-
-            //List<List<GlycoSpectralMatch>> ListOfGsmsPerMS2ScanParsimony = new List<List<GlycoSpectralMatch>>();
 
             //For every Ms2Scans, each have a list of candidates psms. The allPsms from CrosslinkSearchEngine is the list (all ms2scans) of list (each ms2scan) of psm (all candidate psm). 
             //The allPsmsList is same as allPsms after ResolveAmbiguities. 

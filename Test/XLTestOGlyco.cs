@@ -93,6 +93,34 @@ namespace Test
         }
 
         [Test]
+        public static void OxoniumIonAnalysis()
+        {
+            Assert.That(Glycan.AllOxoniumIons[4] == 13805550);
+            Assert.That(Glycan.AllOxoniumIons[5] == 14406607);
+            Assert.That(Glycan.AllOxoniumIons[9] == 20408720);
+            Assert.That(Glycan.AllOxoniumIons[10] == 27409268);
+            Assert.That(Glycan.AllOxoniumIons[12] == 29210324);
+            Assert.That(Glycan.AllOxoniumIons[14] == 36614002);
+
+            //Get Scan
+            CommonParameters commonParameters = new CommonParameters(dissociationType: DissociationType.EThcD, trimMsMsPeaks: false);
+            string spectraFile = Path.Combine(TestContext.CurrentContext.TestDirectory, @"GlycoTestData\2019_09_16_StcEmix_35trig_EThcD25_rep1_4565.mgf");
+            var file = new MyFileManager(true).LoadFile(spectraFile, commonParameters);
+            var scan = MetaMorpheusTask.GetMs2Scans(file, spectraFile, commonParameters).First();
+
+            var productSearchMode = new SinglePpmAroundZeroSearchMode(20);
+            var oxoniumIonIntensities = GlycoPeptides.ScanOxoniumIonFilter(scan, productSearchMode, DissociationType.EThcD);
+
+            //Get glycanBox
+            GlycanBox.GlobalOGlycans = GlycanDatabase.LoadGlycan(GlobalVariables.GlycanLocations.Where(p => p.Contains("OGlycan.gdb")).First()).ToArray();
+            var OGlycanBoxes = GlycanBox.BuildOGlycanBoxes(3).OrderBy(p => p.Mass).ToArray();
+            var glycanBox = OGlycanBoxes[19];
+
+            GlycoPeptides.OxoniumIonsAnalysis(oxoniumIonIntensities, glycanBox);
+
+        }
+
+        [Test]
         public static void OGlycoTest_FragmentIons()
         {
             GlycanBox.GlobalOGlycans = GlycanDatabase.LoadGlycan(GlobalVariables.GlycanLocations.Where(p => p == "OGlycan.gdb").First()).ToArray();

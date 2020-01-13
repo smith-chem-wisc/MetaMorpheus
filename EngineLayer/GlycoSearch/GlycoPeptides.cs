@@ -11,61 +11,57 @@ namespace EngineLayer.GlycoSearch
 {
     public class GlycoPeptides
     {
-        public static double[] ScanGetOxoniumIons(Ms2ScanWithSpecificMass theScan, MassDiffAcceptor massDiffAcceptor)
+        public static double[] ScanOxoniumIonFilter(Ms2ScanWithSpecificMass theScan, MassDiffAcceptor massDiffAcceptor, DissociationType dissociationType)
         {
-            double[] oxoniumIonsIntensities = new double[Glycan.AllOxoniumIons.Count()];
+            double[] oxoniumIonsintensities = new double[Glycan.AllOxoniumIons.Length];
 
-            for (int i = 0; i < Glycan.AllOxoniumIons.Count(); i++)
-            {
-                var ioxo = (double)Glycan.AllOxoniumIons[i]/1E5;
-                //Match oxoniumIons from original scan
-                int matchedPeakIndex = theScan.TheScan.MassSpectrum.GetClosestPeakIndex(ioxo).Value;
-
-                //Another way to match oxoniumIons
-                //int diagnosticIonLabel = (int)Math.Round(ioxo.ToMz(1), 0);
-                //HashSet<Product> diagnosticIons = new HashSet<Product>();
-                //diagnosticIons.Add(new Product(ProductType.D, new NeutralTerminusFragment(FragmentationTerminus.Both, ioxo, diagnosticIonLabel, 0), 0));
-                //var matchedFragmentIons = MetaMorpheusEngine.MatchFragmentIons(theScan, diagnosticIons.ToList(), commonParameters);
-
-                if (massDiffAcceptor.Accepts(theScan.TheScan.MassSpectrum.XArray[matchedPeakIndex], ioxo) >= 0)
-                {
-                    oxoniumIonsIntensities[i] = theScan.TheScan.MassSpectrum.YArray[matchedPeakIndex];
-                }
-                else
-                {
-                    oxoniumIonsIntensities[i] = 0;
-                }
-            }
-
-         var largest = oxoniumIonsIntensities.Max();
-         return oxoniumIonsIntensities.Select(p => p / largest).ToArray();
-        }
-
-        public static void OxoniumIonsAnalysis(double[] vs)
-        {
-
-        }
-
-        public static int ScanOxoniumIonFilter(Ms2ScanWithSpecificMass theScan, MassDiffAcceptor massDiffAcceptor, DissociationType dissociationType)
-        {
             if (dissociationType != DissociationType.HCD && dissociationType != DissociationType.CID && dissociationType != DissociationType.EThcD)
             {
-                return 1;
+                return oxoniumIonsintensities;
             }
 
-            int totalNum = 0;
-
-            foreach (var ioxo in Glycan.CommonOxoniumIons)
+            for (int i = 0; i < Glycan.AllOxoniumIons.Length; i++)
             {
-                int matchedPeakIndex = theScan.TheScan.MassSpectrum.GetClosestPeakIndex((double)ioxo/1E5).Value;
-                if (massDiffAcceptor.Accepts(theScan.TheScan.MassSpectrum.XArray[matchedPeakIndex], (double)ioxo/1E5) >= 0)
+                double? matchedIntensity;
+                var matchedMass = theScan.GetClosestExperimentalFragmentMz((double)Glycan.AllOxoniumIons[i] / 1E5, out matchedIntensity);
+                if (matchedMass.HasValue && massDiffAcceptor.Accepts(matchedMass.Value, (double)Glycan.AllOxoniumIons[i] / 1E5) >= 0)
                 {
-                    totalNum++;
+                    oxoniumIonsintensities[i] = matchedIntensity.Value;
                 }
             }
 
-            return totalNum;
+            return oxoniumIonsintensities;
         }
+
+        //The oxoniumIonIntensities is related with Glycan.AllOxoniumIons. 
+        //Rules are coded in the function.    
+        public static bool OxoniumIonsAnalysis(double[] oxoniumIonsintensities, GlycanBox glycanBox)
+        {
+            //If a glycopeptide spectrum does not have 292.1027 or 274.0921, then remove all glycans that have sialic acids from the search.
+            if (oxoniumIonsintensities[10]==0 && oxoniumIonsintensities[12]==0 )
+            {
+                if(glycanBox.Kind[2]==0 && glycanBox.Kind[3] == 0)
+                {
+                    return false;   
+                }
+            }
+
+            //If a spectrum has 366.1395, remove glycans that do not have HexNAc(1)Hex(1) or more
+            if (oxoniumIonsintensities[14] > 0)
+            {
+                if (glycanBox.Kind[0] < 1 && glycanBox.Kind[1] < 1)
+                {
+                    return false;   
+                }
+            }
+
+            //Other rules:
+            //A spectrum needs to have 204.0867 to be considered as a glycopeptide.              
+            //Ratio of 138.055 to 144.0655 can seperate O/N glycan.
+
+            return true;
+        }
+
 
         #region N-Glyco related functions
 
