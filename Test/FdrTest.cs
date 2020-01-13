@@ -513,7 +513,7 @@ namespace Test
 
             PEP_Analysis.RemoveThePeptides(bestMatchingPeptidesToRemove, psm, pepValuePredictions, ref ambiguousPeptidesRemovedCount);
             Assert.AreEqual(1, ambiguousPeptidesRemovedCount);
-            Assert.AreEqual(2, psm.BestMatchingPeptides.Select(b=>b.Notch).ToList().Count);
+            Assert.AreEqual(2, psm.BestMatchingPeptides.Select(b => b.Notch).ToList().Count);
         }
 
         [Test]
@@ -523,7 +523,7 @@ namespace Test
             Dictionary<int, Tuple<double, double>> stDevsToChange = new Dictionary<int, Tuple<double, double>>();
             Dictionary<int, Tuple<double, double>> averagesCommaStandardDeviations = new Dictionary<int, Tuple<double, double>>();
 
-            averagesCommaStandardDeviations.Add(0, new Tuple<double, double> (1.0d, Double.NaN));//will get removed because NaN
+            averagesCommaStandardDeviations.Add(0, new Tuple<double, double>(1.0d, Double.NaN));//will get removed because NaN
             averagesCommaStandardDeviations.Add(1, new Tuple<double, double>(1.0d, 0.01d));//will get removed becuase 0.01 is too small
             averagesCommaStandardDeviations.Add(2, new Tuple<double, double>(1.0d, 1.1d));//will NOT get removed becuase its perfectly fine
             averagesCommaStandardDeviations.Add(3, new Tuple<double, double>(1.0d, 10.0d));//will  get removed becuase its too big
@@ -532,7 +532,7 @@ namespace Test
             Assert.That(stDevsToChange.ContainsKey(0));
             Assert.That(stDevsToChange.ContainsKey(1));
             Assert.That(stDevsToChange.ContainsKey(3));
-            Assert.AreEqual(3,stDevsToChange.Keys.Count);
+            Assert.AreEqual(3, stDevsToChange.Keys.Count);
 
             PEP_Analysis.UpdateOutOfRangeStDevsWithGlobalAverage(stDevsToChange, averagesCommaStandardDeviations);
 
