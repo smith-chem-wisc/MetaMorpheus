@@ -184,7 +184,6 @@ namespace EngineLayer.CrosslinkSearch
             sb.Append(PsmTsvHeader.ParentIonsLabel + '\t');
             sb.Append("ParentIonsNum" + '\t');
             sb.Append("ParentIonMaxIntensityRank" + '\t');
-            sb.Append("Child Matched Fragment Ions" + '\t');
             sb.Append(PsmTsvHeader.DecoyContaminantTarget + '\t');
             sb.Append(PsmTsvHeader.QValue + '\t');
             sb.Append(PsmTsvHeader.PEP + '\t');
@@ -379,16 +378,6 @@ namespace EngineLayer.CrosslinkSearch
                 sb.Append(alphaNumParentIons + ";" + betaNumParentIons + "\t");
                 sb.Append(alphaNumParentIons + betaNumParentIons + "\t");
                 sb.Append(((ParentIonMaxIntensityRanks != null) && (ParentIonMaxIntensityRanks.Any()) ? ParentIonMaxIntensityRanks.Min().ToString() : "-")); sb.Append("\t");
-            }
-
-            if(ChildMatchedFragmentIons == null || ChildMatchedFragmentIons.Count == 0)
-            {
-                sb.Append("\t");
-            }
-            else
-            {
-                //TODO Fill me up!
-                sb.Append("\t");//I guess this should have something but I don't know what.
             }
 
             if (BetaPeptide == null)
