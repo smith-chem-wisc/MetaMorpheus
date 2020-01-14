@@ -384,11 +384,10 @@ namespace Test
                 }
             }
 
-            expectedMetrics = "************************************************************\r\n*       Metrics for Determination of PEP Using Binary Classification      " +
-                "\r\n*-----------------------------------------------------------\r\n*       Accuracy:  1\r\n*       Area Under Curve:  1\r\n*       " +
-                "Area under Precision recall Curve:  1\r\n*       F1Score:  1\r\n*       LogLoss:  3.31878396749165E-10\r\n*       LogLossReduction:  0.99999999950635\r\n*       " +
-                "PositivePrecision:  1\r\n*       PositiveRecall:  1\r\n*       NegativePrecision:  1\r\n*       NegativeRecall:  1\r\n*       Count of Ambiguous Peptides Removed:  " +
-                "0\r\n************************************************************\r\n";
+            expectedMetrics = "************************************************************\r\n*       Metrics for Determination of PEP Using Binary Classification      " + 
+                "\r\n*-----------------------------------------------------------\r\n*       Accuracy:  1\r\n*       Area Under Curve:  1\r\n*       Area under Precision recall Curve:  " + 
+                "1\r\n*       F1Score:  1\r\n*       LogLoss:  3.3187839674916505E-10\r\n*       LogLossReduction:  0.9999999995063499\r\n*       PositivePrecision:  1\r\n*       " + 
+                "PositiveRecall:  1\r\n*       NegativePrecision:  1\r\n*       NegativeRecall:  1\r\n*       Count of Ambiguous Peptides Removed:  0\r\n************************************************************\r\n";
 
             metrics = PEP_Analysis.ComputePEPValuesForAllPSMsGeneric(moreNonNullPSMsCZE, "standard", fsp);
             Assert.AreEqual(expectedMetrics, metrics);

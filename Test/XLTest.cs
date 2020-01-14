@@ -214,7 +214,7 @@ namespace Test
             WriteFile.WriteCrosslinkToTxtForPercolator(newPsms.Where(q => q.CrossType == PsmCrossType.Cross).ToList(), TestContext.CurrentContext.TestDirectory, "perc", new Crosslinker());
             var percOut = File.ReadAllLines(Path.Combine(TestContext.CurrentContext.TestDirectory, @"perc.txt"), Encoding.UTF8);
             string header = "SpecId\tLabel\tScannr\tScore\tdScore\tCharge\tMass\tPPM\tLenShort\tLenLong\tLenSum\tPeptide\tProtein";
-            string dataRow = "T-2-1\t1\t2\t9.08035714285714\t9.08035714285714\t3\t1994.05\t79237.2823474838\t7\t9\t16\t-.EKVLTSSAR2--LSQKFPK4.-\tFake01(2)\tFake02(4)";
+            string dataRow = "T-2-1\t1\t2\t9.080357142857142\t9.080357142857142\t3\t1994.05\t79237.2823474838\t7\t9\t16\t-.EKVLTSSAR2--LSQKFPK4.-\tFake01(2)\tFake02(4)";
             Assert.AreEqual(header, percOut[0]);
             Assert.AreEqual(dataRow, percOut[1]);
         }
@@ -1087,7 +1087,7 @@ namespace Test
             var results = Path.Combine(outputFolder, @"TestPercolator\XL_Intralinks_Percolator.txt");
             var lines = File.ReadAllLines(results);
             Assert.That(lines[0].Equals("SpecId\tLabel\tScannr\tScore\tdScore\tCharge\tMass\tPPM\tLenShort\tLenLong\tLenSum\tPeptide\tProtein"));
-            Assert.That(lines[1].Equals("T-1-30.61909926666667\t1\t1\t26.06004534434461\t0\t3\t1994.0520231384269\t0.6649793543976755\t7\t9\t16\t-.EKVLTSSAR2--LSQKFPK4.-\t3336842(211)\t3336842(245)"));
+            Assert.That(lines[1].Equals("T-1-30.61909926666667\t1\t1\t26.06004534434461\t11.026813997502483\t3\t1994.0520231384269\t0.6649793543976755\t7\t9\t16\t-.EKVLTSSAR2--LSQKFPK4.-\t3336842(211)\t3336842(245)"));
             Directory.Delete(outputFolder, true);
         }
 
