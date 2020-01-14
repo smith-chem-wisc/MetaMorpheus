@@ -5,6 +5,7 @@ using Proteomics;
 using Proteomics.AminoAcidPolymer;
 using System;
 using System.Collections.Generic;
+using System.Diagnostics;
 using System.IO;
 using System.Linq;
 
@@ -288,6 +289,17 @@ namespace EngineLayer
                 }
             }
             File.WriteAllLines(aminoAcidPath, linesToWrite.ToArray());
+        }
+
+        // Does the same thing as Process.Start() except it works on .NET Core
+        public static void StartProcess(string path)
+        {
+            var p = new Process();
+            p.StartInfo = new ProcessStartInfo(path)
+            {
+                UseShellExecute = true
+            };
+            p.Start();
         }
     }
 }
