@@ -177,10 +177,19 @@ namespace EngineLayer.GlycoSearch
 
         #region O-Glyco related functions
 
+        public static bool DissociationTypeContainETD(DissociationType dissociationType)
+        {
+            if (dissociationType == DissociationType.ETD || dissociationType == DissociationType.EThcD)
+            {
+                return true;
+            }
+
+            return false;
+        }
+
         //TO THINK: filter reasonable fragments here. The final solution is to change mzLib.Proteomics.PeptideWithSetModifications.Fragment
         public static List<Product> OGlyGetTheoreticalFragments(DissociationType dissociationType, PeptideWithSetModifications peptide, PeptideWithSetModifications modPeptide)
         {
-
             List<Product> theoreticalProducts = new List<Product>();
 
             if (dissociationType == DissociationType.HCD || dissociationType == DissociationType.CID)
@@ -203,7 +212,7 @@ namespace EngineLayer.GlycoSearch
                     masses.Add(fragment.NeutralMass);
                 }
 
-                foreach (var fragment in modPeptide.Fragment(DissociationType.ETD, FragmentationTerminus.Both))
+                foreach (var fragment in modPeptide.Fragment(DissociationType.ETD, FragmentationTerminus.Both).Where(p=>p.ProductType!=ProductType.y))
                 {
                     if (!masses.Contains(fragment.NeutralMass))
                     {
@@ -306,6 +315,7 @@ namespace EngineLayer.GlycoSearch
             return permutateModPositions;
         }
 
+        //The purpose of the funtion is to generate hash fragment ions without generate the PeptideWithMod. keyValuePair key:GlycanBoxId, Value:mod sites
         public static int[] GetFragmentHash(List<Product> products, Tuple<int, int[]> keyValuePair, GlycanBox[] OGlycanBoxes, int FragmentBinsPerDalton)
         {
             double[] newFragments = products.Select(p => p.NeutralMass).ToArray();
@@ -323,6 +333,7 @@ namespace EngineLayer.GlycoSearch
                     j = keyValuePair.Item2[i];
                     while (j >= 3)
                     {
+                        newFragments[len * 2 - j + 2] += (double)GlycanBox.GlobalOGlycans[OGlycanBoxes[keyValuePair.Item1].ModIds[i]].Mass / 1E5;
                         newFragments[len * 3 - j + 2] += (double)GlycanBox.GlobalOGlycans[OGlycanBoxes[keyValuePair.Item1].ModIds[i]].Mass / 1E5;
                         j--;
                     }
@@ -338,6 +349,8 @@ namespace EngineLayer.GlycoSearch
             return fragmentHash;
         }
 
+        //Find FragmentHsh for current box at modInd. 
+        //TO DO: How about y-ions from ETD?
         public static int[] GetLocalFragmentHash(List<Product> products, int peptideLength, int[] modPoses, int modInd, GlycanBox OGlycanBox, GlycanBox localOGlycanBox, int FragmentBinsPerDalton)
         {
             List<double> newFragments = new List<double>();
@@ -366,8 +379,6 @@ namespace EngineLayer.GlycoSearch
             return fragmentHash;
         }
 
-        #endregion
-
         //The oxoniumIonIntensities is related with Glycan.AllOxoniumIons. 
         //Rules are coded in the function.    
         public static bool OxoniumIonsAnalysis(double[] oxoniumIonsintensities, GlycanBox glycanBox)
@@ -375,7 +386,7 @@ namespace EngineLayer.GlycoSearch
             //If a glycopeptide spectrum does not have 292.1027 or 274.0921, then remove all glycans that have sialic acids from the search.
             if (oxoniumIonsintensities[10] == 0 && oxoniumIonsintensities[12] == 0)
             {
-                if (glycanBox.Kind[2] == 0 && glycanBox.Kind[3] == 0)
+                if (glycanBox.Kind[2] != 0 || glycanBox.Kind[3] != 0)
                 {
                     return false;
                 }
@@ -396,6 +407,9 @@ namespace EngineLayer.GlycoSearch
 
             return true;
         }
+
+        #endregion
+
 
     }
 }

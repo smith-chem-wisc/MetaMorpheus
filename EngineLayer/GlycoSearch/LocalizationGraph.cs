@@ -19,7 +19,7 @@ namespace EngineLayer.GlycoSearch
             }
         }
 
-        public void Localization(int[] modPos, GlycanBox glycanBox, GlycanBox[] boxes, HashSet<int> allPeaks, List<Product> products, int peptideLength)
+        public void LocalizeOGlycan(int[] modPos, GlycanBox glycanBox, GlycanBox[] boxes, HashSet<int> allPeaks, List<Product> products, int peptideLength)
         {
             var boxSatisfyBox = BoxSatisfyBox(boxes);
 
@@ -94,7 +94,7 @@ namespace EngineLayer.GlycoSearch
         }
 
         //The modification problem is turned into a Directed Acyclic Graph. The Graph was build with matrix, and dynamic programming is used.
-        public void LocalizationMod(int[] modPos, ModBox totalBox, ModBox[] boxes, HashSet<int> allPeaks, List<Product> products, PeptideWithSetModifications peptide)
+        public void LocalizeMod(int[] modPos, ModBox totalBox, ModBox[] boxes, HashSet<int> allPeaks, List<Product> products, PeptideWithSetModifications peptide)
         {
             var boxSatisfyBox = BoxSatisfyBox(boxes);
 

@@ -26,7 +26,9 @@ namespace TaskLayer
             );
             CommonParameters = new CommonParameters(
                 precursorMassTolerance: new PpmTolerance(10),
+                childScanDissociationType: DissociationType.EThcD,
                 scoreCutoff: 3,
+                trimMsMsPeaks: false, 
                 numberOfPeaksToKeepPerWindow: 1000,
                 minimumAllowedIntensityRatioToBasePeak: 0.01,
                 digestionParams: digestPara            

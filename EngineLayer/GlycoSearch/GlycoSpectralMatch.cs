@@ -255,6 +255,12 @@ namespace EngineLayer.GlycoSearch
                 sb.Append(string.Join("|", glycanBoxes.First().Kind.Select(p=>p.ToString()))); sb.Append("\t");
             }
 
+            if (ChildMatchedFragmentIons!=null)
+            {
+                var count = GetMatchedETDyions(ChildMatchedFragmentIons.First().Value);
+                sb.Append(count.ToString());
+            }
+
             return sb.ToString();
         }
 
@@ -264,5 +270,32 @@ namespace EngineLayer.GlycoSearch
             PsmTsvWriter.AddMatchedIonsData(s, matchedFragmentIons);
             return s;
         }
+
+        public static int GetMatchedETDyions(List<MatchedFragmentIon> matchedFragmentIons)
+        {
+            int firstDionIndex = 0; 
+
+            for (int i = 0; i < matchedFragmentIons.Count; i++)
+            {
+                if (matchedFragmentIons.ElementAt(i).Annotation.Contains("D")) 
+                {
+                    firstDionIndex = i;
+                    break;
+                }
+            }
+
+            int total = 0;
+
+            for (int i = firstDionIndex; i < matchedFragmentIons.Count; i++)
+            {
+                if (matchedFragmentIons.ElementAt(i).Annotation.Contains("y"))
+                {
+                    total++;
+                }
+            }
+
+            return total;
+        }
+
     }
 }

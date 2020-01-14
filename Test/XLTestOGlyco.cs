@@ -157,22 +157,34 @@ namespace Test
 
             List<int> modPos = GlycoSpectralMatch.GetPossibleModSites(peptide, new string[] { "S", "T" });
 
-            var peptideWithMod = GlycoPeptides.OGlyGetTheoreticalPeptide(modPos.ToArray(), peptide, OGlycanBoxes[8]);
+            var peptideWithMod = GlycoPeptides.OGlyGetTheoreticalPeptide(modPos.ToArray(), peptide, glycanBox);
             Assert.That(peptideWithMod.FullSequence == "PT[O-Glycosylation:N1A1 on X]LFKNVS[O-Glycosylation:N1 on X]LYK");
 
+            //The following code prove that the default Fragment method doesn't work for O-glycopeptide due to neutral losses.
             var fragments_hcd = peptide.Fragment(DissociationType.HCD, FragmentationTerminus.Both);
-            var fragmentsMod_hcd = peptideWithMod.Fragment(DissociationType.HCD, FragmentationTerminus.Both);
+            var fragmentsMod_hcd = peptideWithMod.Fragment(DissociationType.HCD, FragmentationTerminus.Both); 
+            Assert.That(fragments_hcd.Count() == 20);
+            Assert.That(fragmentsMod_hcd.Count() == 50); //The Fragments also contain neutral loss ions. 
 
             var frag_ments_etd = peptide.Fragment(DissociationType.ETD, FragmentationTerminus.Both).ToList();
-            var fragmentsMod_etd = peptideWithMod.Fragment(DissociationType.ETD, FragmentationTerminus.Both);
+            var fragmentsMod_etd = peptideWithMod.Fragment(DissociationType.ETD, FragmentationTerminus.Both).ToList();
 
+            //Tuple<int, int[]> keyValuePair represents: <glycanBoxId, glycanModPositions> 
             Tuple<int, int[]> keyValuePairs = new Tuple<int, int[]>(8, modPos.ToArray());
+
+            var fragments_etd_origin = GlycoPeptides.GetFragmentHash(frag_ments_etd, new Tuple<int, int[]>(0, null), OGlycanBoxes, 1000);
 
             var fragmentsHash_etd = GlycoPeptides.GetFragmentHash(frag_ments_etd, keyValuePairs, OGlycanBoxes, 1000);
 
-            var frag_ments_etd_origin = GlycoPeptides.GetFragmentHash(frag_ments_etd, new Tuple<int, int[]>(0, null), OGlycanBoxes, 1000);
+            var fragmentsMod_etd_origin = GlycoPeptides.GetFragmentHash(fragmentsMod_etd, new Tuple<int, int[]>(0, null), OGlycanBoxes, 1000);
 
-            var overlap = frag_ments_etd_origin.Intersect(fragmentsHash_etd).Count();
+            var overlap = fragmentsHash_etd.Intersect(fragments_etd_origin).Count();
+
+            Assert.That(overlap == 7);
+
+            var overlap2 = fragmentsHash_etd.Intersect(fragmentsMod_etd_origin).Count();
+
+            Assert.That(overlap2 == 30);
         }
 
         [Test]
@@ -232,13 +244,16 @@ namespace Test
             //Known peptideWithMod match.
             var peptideWithMod = GlycoPeptides.OGlyGetTheoreticalPeptide(new int[3] { 10, 2, 3}, peptide, glycanBox);
             Assert.That(peptideWithMod.FullSequence == "T[O-Glycosylation:H1N1 on X]T[O-Glycosylation:H1N1 on X]GSLEPSS[O-Glycosylation:N1 on X]GASGPQVSSVK");
-            List<Product> knownProducts = peptideWithMod.Fragment(DissociationType.EThcD, FragmentationTerminus.Both).ToList();
+            //List<Product> knownProducts = peptideWithMod.Fragment(DissociationType.EThcD, FragmentationTerminus.Both).ToList();
+            List<Product> knownProducts = GlycoPeptides.OGlyGetTheoreticalFragments(DissociationType.EThcD, peptide, peptideWithMod);
             var matchedKnownFragmentIons = MetaMorpheusEngine.MatchFragmentIons(scans.First(), knownProducts, commonParameters);
+
+            var count = GlycoSpectralMatch.GetMatchedETDyions(matchedKnownFragmentIons);
 
             //Graph Localization
             LocalizationGraph localizationGraph = new LocalizationGraph(modPos.Length, boxes.Length);
 
-            localizationGraph.Localization(modPos, glycanBox, boxes, allPeaks, products, peptide.Length);
+            localizationGraph.LocalizeOGlycan(modPos, glycanBox, boxes, allPeaks, products, peptide.Length);
 
             var allPaths = LocalizationGraph.GetAllPaths(localizationGraph.array, boxes);
 
@@ -364,7 +379,7 @@ namespace Test
 
             //Graph Localization
             LocalizationGraph localizationGraph = new LocalizationGraph(modPos.Length, boxes.Length);
-            localizationGraph.LocalizationMod(modPos, modBox, boxes, allPeaks, products, peptide);
+            localizationGraph.LocalizeMod(modPos, modBox, boxes, allPeaks, products, peptide);
 
             var allPaths = LocalizationGraph.GetAllPaths(localizationGraph.array, boxes);
 

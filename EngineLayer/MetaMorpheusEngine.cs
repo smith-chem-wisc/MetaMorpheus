@@ -156,6 +156,7 @@ namespace EngineLayer
             return matchedFragmentIons;
         }
 
+        //NGlycopeptide usually contain high charge Y ions. The purpose of this function is to try match all Y ion with different charges.
         public static List<MatchedFragmentIon> MatchOriginFragmentIons(Ms2ScanWithSpecificMass scan, List<Product> theoreticalProducts, CommonParameters commonParameters)
         {
             var matchedFragmentIons = new List<MatchedFragmentIon>();
