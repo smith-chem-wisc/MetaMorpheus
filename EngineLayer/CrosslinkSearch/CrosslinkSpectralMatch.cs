@@ -18,6 +18,7 @@ namespace EngineLayer.CrosslinkSearch
         public CrosslinkSpectralMatch BetaPeptide { get; set; }
 
         public List<int> LinkPositions { get; set; }
+
         public double XLTotalScore { get; set; } //alpha + beta psmCross.
         public double SecondBestXlScore { get; set; } // score of the second-best CSM; this is used to calculate delta score
         public int XlRank { get; set; } //only contain 2 intger, consider change to Tuple.

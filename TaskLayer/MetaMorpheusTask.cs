@@ -694,13 +694,23 @@ namespace TaskLayer
                 }
             }
 
+            // get digestion info from file
+            var storedDigestParams = GetDigestionParamsFromFile(Path.Combine(Path.GetDirectoryName(peptideIndexFileName), "DigestionParameters.toml"));
+
             // get non-serialized information for the peptides (proteins, mod info)
             foreach (var peptide in peptideIndex)
             {
-                peptide.SetNonSerializedPeptideInfo(GlobalVariables.AllModsKnownDictionary, proteinDictionary);
+                peptide.SetNonSerializedPeptideInfo(GlobalVariables.AllModsKnownDictionary, proteinDictionary, storedDigestParams);
             }
 
             return peptideIndex;
+        }
+
+        private static DigestionParams GetDigestionParamsFromFile(string path)
+        {
+            var digestionParams = Toml.ReadFile<DigestionParams>(path, MetaMorpheusTask.tomlConfig);
+
+            return digestionParams;
         }
 
         private static void WriteFragmentIndex(List<int>[] fragmentIndex, string fragmentIndexFileName)
@@ -774,6 +784,8 @@ namespace TaskLayer
             {
                 output.Write(indexEngine);
             }
+
+            Toml.WriteFile(indexEngine.CommonParameters.DigestionParams, Path.Combine(Path.GetDirectoryName(fileName), "DigestionParameters.toml"), tomlConfig);
         }
 
         private static string GenerateOutputFolderForIndices(List<DbForTask> dbFilenameList)
@@ -790,8 +802,39 @@ namespace TaskLayer
 
         public void GenerateIndexes(IndexingEngine indexEngine, List<DbForTask> dbFilenameList, ref List<PeptideWithSetModifications> peptideIndex, ref List<int>[] fragmentIndex, ref List<int>[] precursorIndex, List<Protein> allKnownProteins, string taskId)
         {
+            bool successfullyReadIndices = false;
             string pathToFolderWithIndices = GetExistingFolderWithIndices(indexEngine, dbFilenameList);
-            if (pathToFolderWithIndices == null) //if no indexes exist
+
+            if (pathToFolderWithIndices != null) //if indexes exist
+            {
+                try
+                {
+                    Status("Reading peptide index...", new List<string> { taskId });
+                    peptideIndex = ReadPeptideIndex(Path.Combine(pathToFolderWithIndices, PeptideIndexFileName), allKnownProteins);
+
+                    Status("Reading fragment index...", new List<string> { taskId });
+                    fragmentIndex = ReadFragmentIndex(Path.Combine(pathToFolderWithIndices, FragmentIndexFileName));
+
+                    if (indexEngine.GeneratePrecursorIndex)
+                    {
+                        Status("Reading precursor index...", new List<string> { taskId });
+                        precursorIndex = ReadFragmentIndex(Path.Combine(pathToFolderWithIndices, PrecursorIndexFileName));
+                    }
+
+                    successfullyReadIndices = true;
+                }
+                catch
+                {
+                    // could put something here... this basically is just to prevent a crash if the index was unable to be read.
+
+                    // if the old index couldn't be read, a new one will be generated.
+
+                    // an old index may not be able to be read because of information required by new versions of MetaMorpheus
+                    // that wasn't written by old versions.
+                }
+            }
+
+            if (!successfullyReadIndices) //if we didn't find indexes with the same params
             {
                 var output_folderForIndices = GenerateOutputFolderForIndices(dbFilenameList);
                 Status("Writing params...", new List<string> { taskId });
@@ -824,35 +867,7 @@ namespace TaskLayer
                     FinishedWritingFile(precursorIndexFile, new List<string> { taskId });
                 }
             }
-            else //if we found indexes with the same params
-            {
-                Status("Reading peptide index...", new List<string> { taskId });
-                peptideIndex = ReadPeptideIndex(Path.Combine(pathToFolderWithIndices, PeptideIndexFileName), allKnownProteins);
-
-                Status("Reading fragment index...", new List<string> { taskId });
-                fragmentIndex = ReadFragmentIndex(Path.Combine(pathToFolderWithIndices, FragmentIndexFileName));
-
-                if (indexEngine.GeneratePrecursorIndex)
-                {
-                    Status("Reading precursor index...", new List<string> { taskId });
-                    precursorIndex = ReadFragmentIndex(Path.Combine(pathToFolderWithIndices, PrecursorIndexFileName));
-                }
-            }
         }
-
-        /// <summary>
-        /// Reduce size of peptide objects by removing superfluous fields for faster reading and writing
-        /// </summary>
-        /// <param name="peptideIndex"></param>
-        //public void ShrinkPeptideIndex(List<PeptideWithSetModifications> peptideIndex)
-        //{
-        //    //for(int i=0; i<peptideIndex.Count; i++)
-        //    foreach(PeptideWithSetModifications peptide in peptideIndex)
-        //    {
-        //        peptide.DigestionParams = null;
-        //        peptide.
-        //    }
-        //}
 
         public void GenerateSecondIndexes(IndexingEngine indexEngine, IndexingEngine secondIndexEngine, List<DbForTask> dbFilenameList, ref List<int>[] secondFragmentIndex, List<Protein> allKnownProteins, string taskId)
         {

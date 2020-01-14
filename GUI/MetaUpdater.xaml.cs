@@ -97,7 +97,7 @@ namespace MetaMorpheusGUI
             e.Cancel = true;
 
             //this opens the URL in the user's default browser
-            Process.Start(e.Uri.ToString());
+            GlobalVariables.StartProcess(e.Uri.ToString());
         }
 
         private void PortableClicked(object semder, RoutedEventArgs e)

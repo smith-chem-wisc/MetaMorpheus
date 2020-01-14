@@ -10,11 +10,6 @@
     </BootstrapperApplicationRef>
     <util:FileSearch Path="[WindowsFolder]System32\ucrtbase.dll" Variable="VCDISTINSTALLED"/>
     <Chain>
-      <ExePackage
-      SourceFile="vc_redist.x64.exe"
-      DetectCondition="VCDISTINSTALLED"
-      InstallCommand="/q /ACTION=Install"
-      RepairCommand="/q ACTION=Repair /hideconsole" />
       <MsiPackage DisplayInternalUI='yes' SourceFile="$(var.MetaMorpheusSetup.TargetPath)" />
     </Chain>
   </Bundle>
