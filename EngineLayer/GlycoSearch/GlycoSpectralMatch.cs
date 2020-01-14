@@ -17,13 +17,14 @@ namespace EngineLayer.GlycoSearch
         }
 
         public double TotalScore { get; set; } //peptide + glycan psmCross
-        public int Rank { get; set; } //only contain 2 intger, consider change to Tuple
-
+        public int Rank { get; set; } 
         public Dictionary<int, List<MatchedFragmentIon>> ChildMatchedFragmentIons { get; set; }
         //Glyco properties
-        public List<Glycan> Glycan { get; set; }
-        public List<GlycanBox> glycanBoxes { get; set; }
-        public List<int[]> localizations { get; set; }
+        public List<Glycan> NGlycan { get; set; }
+        public List<int> NGlycanLocalizations { get; set; }
+
+        public List<Tuple<int, Tuple<int, int>[]>> OGlycanBoxLocalization;
+
         public double PeptideScore { get; set; }
         public double GlycanScore { get; set; }
         public double DiagnosticIonScore { get; set; }
@@ -148,6 +149,7 @@ namespace EngineLayer.GlycoSearch
             //sb.Append("Glycan Score" + '\t');
             //sb.Append("DiagonosticIon Score" + '\t');
             sb.Append("GlycanMass" + '\t');
+            sb.Append("R138/144");
             sb.Append("GlycanStructure" + '\t');
             //sb.Append("GlycanLocalization" + '\t');
             //sb.Append("GlycanIDs" + '\t');
@@ -220,29 +222,34 @@ namespace EngineLayer.GlycoSearch
 
             sb.Append(FdrInfo.QValue.ToString() + "\t");
 
-            if (Glycan != null)
+            if (NGlycan != null)
             {
                 sb.Append(TotalScore + "\t");             
                 sb.Append(PeptideScore + "\t");
                 sb.Append(GlycanScore + "\t");
                 sb.Append(DiagnosticIonScore + "\t");
-                sb.Append(string.Join("|", Glycan.Select(p => p.GlyId.ToString()).ToArray())); sb.Append("\t");
-                sb.Append(Glycan.First().Decoy? "D": "T"); sb.Append("\t");
-                sb.Append(Glycan.First().Struc); sb.Append("\t");
-                sb.Append((double)Glycan.First().Mass/1E5); sb.Append("\t");
-                sb.Append(string.Join(" ", Glycan.First().Kind.Select(p => p.ToString()).ToArray())); sb.Append("\t");
+                sb.Append(string.Join("|", NGlycan.Select(p => p.GlyId.ToString()).ToArray())); sb.Append("\t");
+                sb.Append(NGlycan.First().Decoy? "D": "T"); sb.Append("\t");
+                sb.Append(NGlycan.First().Struc); sb.Append("\t");
+                sb.Append((double)NGlycan.First().Mass/1E5); sb.Append("\t");
+                sb.Append(string.Join(" ", NGlycan.First().Kind.Select(p => p.ToString()).ToArray())); sb.Append("\t");
             }
 
-            if (glycanBoxes != null)
+            if (OGlycanBoxLocalization != null)
             {
                 sb.Append(TotalScore + "\t");
 
-                sb.Append((double)glycanBoxes.First().Mass / 1E5); sb.Append("\t");
+                var glycanBox = GlycanBox.OGlycanBoxes[OGlycanBoxLocalization.First().Item1];
+
+                sb.Append((double)glycanBox.Mass / 1E5); sb.Append("\t");
+
+                sb.Append(R138vs144.ToString()); sb.Append("\t");
+
                 //Get glycans
-                var glycans = new Glycan[glycanBoxes.First().NumberOfMods];
-                for (int i = 0; i < glycanBoxes.First().NumberOfMods; i++)
+                var glycans = new Glycan[glycanBox.NumberOfMods];
+                for (int i = 0; i < glycanBox.NumberOfMods; i++)
                 {
-                    glycans[i] = GlycanBox.GlobalOGlycans[glycanBoxes.First().ModIds[i]];
+                    glycans[i] = GlycanBox.GlobalOGlycans[glycanBox.ModIds[i]];
                 }
                 sb.Append(string.Join(",", glycans.Select(p => p.Struc.ToString()).ToArray())); sb.Append("\t");
 
@@ -252,13 +259,7 @@ namespace EngineLayer.GlycoSearch
 
                 sb.Append( "T" + '\t');         
      
-                sb.Append(string.Join("|", glycanBoxes.First().Kind.Select(p=>p.ToString()))); sb.Append("\t");
-            }
-
-            if (ChildMatchedFragmentIons!=null)
-            {
-                var count = GetMatchedETDyions(ChildMatchedFragmentIons.First().Value);
-                sb.Append(count.ToString());
+                sb.Append(string.Join("|", glycanBox.Kind.Select(p=>p.ToString()))); sb.Append("\t");
             }
 
             return sb.ToString();
@@ -270,32 +271,5 @@ namespace EngineLayer.GlycoSearch
             PsmTsvWriter.AddMatchedIonsData(s, matchedFragmentIons);
             return s;
         }
-
-        public static int GetMatchedETDyions(List<MatchedFragmentIon> matchedFragmentIons)
-        {
-            int firstDionIndex = 0; 
-
-            for (int i = 0; i < matchedFragmentIons.Count; i++)
-            {
-                if (matchedFragmentIons.ElementAt(i).Annotation.Contains("D")) 
-                {
-                    firstDionIndex = i;
-                    break;
-                }
-            }
-
-            int total = 0;
-
-            for (int i = firstDionIndex; i < matchedFragmentIons.Count; i++)
-            {
-                if (matchedFragmentIons.ElementAt(i).Annotation.Contains("y"))
-                {
-                    total++;
-                }
-            }
-
-            return total;
-        }
-
     }
 }

@@ -14,6 +14,8 @@ namespace EngineLayer
     {
         public static Modification[] SelectedModifications;
 
+        public static ModBox[] ModBoxes;
+
         public static IEnumerable<ModBox> BuildModBoxes(int maxNum)
         {
             for (int i = 1; i <= maxNum; i++)

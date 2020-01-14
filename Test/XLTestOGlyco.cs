@@ -248,8 +248,6 @@ namespace Test
             List<Product> knownProducts = GlycoPeptides.OGlyGetTheoreticalFragments(DissociationType.EThcD, peptide, peptideWithMod);
             var matchedKnownFragmentIons = MetaMorpheusEngine.MatchFragmentIons(scans.First(), knownProducts, commonParameters);
 
-            var count = GlycoSpectralMatch.GetMatchedETDyions(matchedKnownFragmentIons);
-
             //Graph Localization
             LocalizationGraph localizationGraph = new LocalizationGraph(modPos.Length, boxes.Length);
 

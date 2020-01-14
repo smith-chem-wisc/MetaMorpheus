@@ -14,6 +14,8 @@ namespace EngineLayer
 
         public static Modification[] GlobalOGlycanModifications;
 
+        public static GlycanBox[] OGlycanBoxes;
+
         public static IEnumerable<GlycanBox> BuildOGlycanBoxes(int maxNum)
         {
 
