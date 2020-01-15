@@ -563,8 +563,8 @@ namespace EngineLayer
                 }
 
                 ambiguity = Math.Min((float)(psm.PeptidesToMatchingFragments.Keys.Count - 1), 10);
-                longestSeq = psm.GetLongestIonSeriesBidirectional(psm.PeptidesToMatchingFragments, selectedPeptide) / normalizationFactor;
-                complementaryIonCount = psm.GetCountComplementaryIons(psm.PeptidesToMatchingFragments, selectedPeptide) / normalizationFactor;
+                longestSeq = PeptideSpectralMatch.GetLongestIonSeriesBidirectional(psm.PeptidesToMatchingFragments, selectedPeptide) / normalizationFactor;
+                complementaryIonCount = PeptideSpectralMatch.GetCountComplementaryIons(psm.PeptidesToMatchingFragments, selectedPeptide) / normalizationFactor;
 
                 //grouping psm counts as follows is done for stability. you get very nice numbers at low psms to get good statistics. But you get a few peptides with high psm counts that could be either targets or decoys and the values swing between extremes. So grouping psms in bundles really adds stability.
                 psmCount = sequenceToPsmCount[selectedPeptide.FullSequence];
@@ -643,8 +643,8 @@ namespace EngineLayer
                 chargeDifference = -Math.Abs(chargeStateMode - psm.ScanPrecursorCharge);
                 alphaIntensity = (float)(csm.Score - (int)csm.Score) / alphaNormalizationFactor;
                 betaIntensity = csm.BetaPeptide == null ? (float)0 : ((float)(csm.BetaPeptide.Score - (int)csm.BetaPeptide.Score)) / betaNormalizationFactor;
-                longestFragmentIonSeries_Alpha = psm.GetLongestIonSeriesBidirectional(csm.PeptidesToMatchingFragments, selectedAlphaPeptide) / alphaNormalizationFactor;
-                longestFragmentIonSeries_Beta = selectedBetaPeptide == null ? (float)0 : csm.GetLongestIonSeriesBidirectional(csm.BetaPeptide.PeptidesToMatchingFragments, selectedBetaPeptide) / betaNormalizationFactor;
+                longestFragmentIonSeries_Alpha = PeptideSpectralMatch.GetLongestIonSeriesBidirectional(csm.PeptidesToMatchingFragments, selectedAlphaPeptide) / alphaNormalizationFactor;
+                longestFragmentIonSeries_Beta = selectedBetaPeptide == null ? (float)0 : PeptideSpectralMatch.GetLongestIonSeriesBidirectional(csm.BetaPeptide.PeptidesToMatchingFragments, selectedBetaPeptide) / betaNormalizationFactor;
                 isInter = Convert.ToSingle(csm.CrossType == PsmCrossType.Inter);
                 isIntra = Convert.ToSingle(csm.CrossType == PsmCrossType.Intra);
             }

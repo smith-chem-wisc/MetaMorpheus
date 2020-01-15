@@ -178,7 +178,7 @@ namespace TaskLayer
             return postXLSearchAnalysisTask.Run(OutputFolder, dbFilenameList, currentRawFileList, taskId, fileSettingsList, filteredAllPsms.OrderByDescending(p => p.XLTotalScore).ToList(), CommonParameters, XlSearchParameters, proteinList, variableModifications, fixedModifications, localizeableModificationTypes, MyTaskResults);
         }
 
-        public void SortCsmsAndCalculateDeltaScores(List<List<CrosslinkSpectralMatch>> ListOfCsmsPerMS2Scan)
+        public static void SortCsmsAndCalculateDeltaScores(List<List<CrosslinkSpectralMatch>> ListOfCsmsPerMS2Scan)
         {
             foreach (var csmsPerScan in ListOfCsmsPerMS2Scan)
             {
@@ -205,8 +205,7 @@ namespace TaskLayer
             ListOfCsmsPerMS2Scan = ListOfCsmsPerMS2Scan.OrderByDescending(c => c.First().XLTotalScore).ThenByDescending(c => c.First().FullSequence + (c.First().BetaPeptide != null ? c.First().BetaPeptide.FullSequence : "")).ToList();
         }
 
-
-        public void AssignCrossType(List<List<CrosslinkSpectralMatch>> ListOfCsmsPerMS2Scan)
+        public static void AssignCrossType(List<List<CrosslinkSpectralMatch>> ListOfCsmsPerMS2Scan)
         {
             foreach (var csmsPerScan in ListOfCsmsPerMS2Scan)
             {

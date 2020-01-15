@@ -345,11 +345,11 @@ namespace Test
 
             nonNullCsmsStillLists = ListOfCsmsPerMS2ScanParsimony;
 
-            t.AssignCrossType(nonNullCsmsStillLists);
+            XLSearchTask.AssignCrossType(nonNullCsmsStillLists);
 
             #endregion Parsimony and assign crosslink
 
-            t.SortCsmsAndCalculateDeltaScores(nonNullCsmsStillLists);
+            XLSearchTask.SortCsmsAndCalculateDeltaScores(nonNullCsmsStillLists);
             foreach (List<CrosslinkSpectralMatch> xlinkCsmList in nonNullCsmsStillLists)
             {
                 if (xlinkCsmList != null && xlinkCsmList.Any() && xlinkCsmList.Count > 1)

@@ -225,7 +225,7 @@ namespace EngineLayer
             MatchedFragmentIons = PeptidesToMatchingFragments.First().Value;
         }
 
-        public int GetLongestIonSeriesBidirectional(Dictionary<PeptideWithSetModifications, List<MatchedFragmentIon>> PeptidesToMatchingFragments, PeptideWithSetModifications peptide)
+        public static int GetLongestIonSeriesBidirectional(Dictionary<PeptideWithSetModifications, List<MatchedFragmentIon>> PeptidesToMatchingFragments, PeptideWithSetModifications peptide)
         {
             List<int> maxDiffs = new List<int> { 1 };
             if (PeptidesToMatchingFragments != null && PeptidesToMatchingFragments.TryGetValue(peptide, out var matchedFragments) && matchedFragments != null && matchedFragments.Any())
@@ -260,7 +260,7 @@ namespace EngineLayer
             return maxDiffs.Max();
         }
 
-        public int GetCountComplementaryIons(Dictionary<PeptideWithSetModifications, List<MatchedFragmentIon>> PeptidesToMatchingFragments, PeptideWithSetModifications peptide)
+        public static int GetCountComplementaryIons(Dictionary<PeptideWithSetModifications, List<MatchedFragmentIon>> PeptidesToMatchingFragments, PeptideWithSetModifications peptide)
         {
             if (PeptidesToMatchingFragments != null && PeptidesToMatchingFragments.TryGetValue(peptide, out var matchedFragments) && matchedFragments != null && matchedFragments.Any())
             {
