@@ -290,6 +290,7 @@ namespace MetaMorpheusGUI
 
             fileSpecificSeparationType.Items.Add("HPLC");
             fileSpecificSeparationType.Items.Add("CZE");
+            fileSpecificSeparationType.SelectedIndex = fileSpecificSeparationType.Items.IndexOf(tempSeparationType);
 
             productMassToleranceComboBox.Items.Add("Da");
             productMassToleranceComboBox.Items.Add("ppm");
