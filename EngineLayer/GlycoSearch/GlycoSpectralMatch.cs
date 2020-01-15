@@ -149,12 +149,12 @@ namespace EngineLayer.GlycoSearch
             //sb.Append("Glycan Score" + '\t');
             //sb.Append("DiagonosticIon Score" + '\t');
             sb.Append("GlycanMass" + '\t');
-            sb.Append("R138/144");
-            sb.Append("GlycanStructure" + '\t');
-            //sb.Append("GlycanLocalization" + '\t');
-            //sb.Append("GlycanIDs" + '\t');
-            sb.Append("GlycanDecoy" + '\t');         
-            sb.Append("GlycanComposition(H,N,A,G,F)" + '\t');
+            sb.Append("R138/144" + '\t');
+            sb.Append("Plausible GlycanStructure" + '\t');
+            //sb.Append("GlycanDecoy" + '\t');         
+            sb.Append("Plausible GlycanComposition(H,N,A,G,F)" + '\t');
+            sb.Append("GlycanLocalization" + '\t');
+            sb.Append("GlycanLocalizationLevel" + '\t');
             return sb.ToString();
         }
 
@@ -253,13 +253,14 @@ namespace EngineLayer.GlycoSearch
                 }
                 sb.Append(string.Join(",", glycans.Select(p => p.Struc.ToString()).ToArray())); sb.Append("\t");
 
-                //sb.Append(string.Join("|", localizations.Select(p=> "[" + string.Join(",", p.Select(q =>  q.ToString())) + "]"))); sb.Append("\t");
-
-                //sb.Append(string.Join("|", glycanBoxes.First().GlycanIds.Select(p => p.ToString()).ToArray())); sb.Append("\t");
-
-                sb.Append( "T" + '\t');         
+                //sb.Append( "T" + '\t');         
      
                 sb.Append(string.Join("|", glycanBox.Kind.Select(p=>p.ToString()))); sb.Append("\t");
+
+                string localizationLevel;
+                sb.Append(localizationInfo(OGlycanBoxLocalization, out localizationLevel)); sb.Append("\t");
+
+                sb.Append(localizationLevel); sb.Append("\t");
             }
 
             return sb.ToString();
@@ -270,6 +271,62 @@ namespace EngineLayer.GlycoSearch
             Dictionary<string, string> s = new Dictionary<string, string>();
             PsmTsvWriter.AddMatchedIonsData(s, matchedFragmentIons);
             return s;
+        }
+
+        public static string localizationInfo(List<Tuple<int, Tuple<int, int>[]>> OGlycanBoxLocalization, out string localizationLevel)
+        {
+            HashSet<int> seenGlycanBoxIds = new HashSet<int>(OGlycanBoxLocalization.Select(p=>p.Item1));
+
+            Dictionary<string, int> seenModSite = new Dictionary<string, int>();
+            foreach (var ogl in OGlycanBoxLocalization)
+            {
+                foreach (var og in ogl.Item2)
+                {
+                    var k = og.Item1.ToString() + "-" + og.Item2.ToString();
+                    if (seenModSite.ContainsKey(k))
+                    {
+                        seenModSite[k] += 1;
+                    }
+                    else
+                    {
+                        seenModSite.Add(k, 1);
+                    }
+                }
+            }
+
+            localizationLevel = "Level4";
+            if (OGlycanBoxLocalization.Count == 1)
+            {
+                localizationLevel = "Level1";
+            }
+            else if (OGlycanBoxLocalization.Count > 1 && seenGlycanBoxIds.Count == 1)
+            {
+                if (seenModSite.Values.Where(p=>p == OGlycanBoxLocalization.Count).Count() > 0)
+                {
+                    localizationLevel = "Level2";
+                }
+                else
+                {
+                    localizationLevel = "Level3b";
+                }              
+            }
+            else if (OGlycanBoxLocalization.Count > 1 && seenGlycanBoxIds.Count > 1)
+            {
+                if (seenModSite.Values.Where(p => p == OGlycanBoxLocalization.Count).Count() > 0)
+                {
+                    localizationLevel = "Level3a";
+                }
+            }
+
+            string local = "";
+            foreach (var ogl in OGlycanBoxLocalization)
+            {
+                local += "{@" + ogl.Item1.ToString() + "[";
+                var g = string.Join(",", ogl.Item2.Select(p => p.Item1.ToString() + "-" + p.Item2.ToString()));
+                local += g + "]}";
+            }
+
+            return local;
         }
     }
 }
