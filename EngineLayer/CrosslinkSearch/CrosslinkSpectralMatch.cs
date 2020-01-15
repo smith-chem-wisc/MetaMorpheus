@@ -34,8 +34,6 @@ namespace EngineLayer.CrosslinkSearch
 
         // loop crosslink protein position 2.
         public int? XlProteinPosLoop { get; private set; }
-
-        //DEBUG don't know if this should be RunnerUpScore or SecondBestXlScore
         public new double DeltaScore { get { return (XLTotalScore - SecondBestXlScore); } }
 
         public bool IsIntraCsm()
