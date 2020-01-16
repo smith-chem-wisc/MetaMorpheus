@@ -157,7 +157,7 @@ namespace TaskLayer
                     csm.ResolveProteinPosAmbiguitiesForXl();
                 }
 
-                var orderedCsmsPerScan = RemoveDuplicateFromCsmsPerScan(csmsPerScan).OrderByDescending(p => p.XLTotalScore).ThenBy(p => p.FullSequence + ((p.BetaPeptide == null) ? "" : p.BetaPeptide.FullSequence)).ToList();
+                var orderedCsmsPerScan = RemoveDuplicateFromCsmsPerScan(csmsPerScan).ToList();
 
                 ListOfCsmsPerMS2ScanParsimony.Add(orderedCsmsPerScan);
             }
