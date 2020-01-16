@@ -19,33 +19,37 @@ namespace EngineLayer.GlycoSearch
             }
         }
 
-        public void LocalizeOGlycan(int[] modPos, GlycanBox glycanBox, GlycanBox[] boxes, HashSet<int> allPeaks, List<Product> products, int peptideLength)
+        //The modification problem is turned into a Directed Acyclic Graph. The Graph was build with matrix, and dynamic programming is used.
+        //The function goes through the AdjNode[][] array from left to right, assign weight to each AdjNode, keep track of the heaviest previous AdjNode.
+        public void LocalizeOGlycan(int[] modPos, GlycanBox glycanBox, GlycanBox[] childBoxes, HashSet<int> allPeaks, List<Product> products, int peptideLength)
         {
-            var boxSatisfyBox = BoxSatisfyBox(boxes);
+            var boxSatisfyBox = BoxSatisfyBox(childBoxes);
 
             for (int i = 0; i < modPos.Length; i++)
             {
+                //maxLength: the most mods we can have up to current mod pos; minlengtt: the least mods we can have up to current mod pos.
                 int maxLength = i + 1;
                 int minlength = glycanBox.ModIds.Length - (modPos.Length - 1 - i);
 
-                for (int j = 0; j < boxes.Length; j++)
+                for (int j = 0; j < childBoxes.Length; j++)
                 {
-                    if (boxes[j].NumberOfMods <= maxLength && boxes[j].NumberOfMods >= minlength)
+                    if (childBoxes[j].NumberOfMods <= maxLength && childBoxes[j].NumberOfMods >= minlength)
                     {
-                        AdjNode adjNode = new AdjNode(i, j, modPos[i], boxes[j]);
-                        var cost = LocalizationGraph.CalculateCost(allPeaks, products, peptideLength, modPos, i, glycanBox, boxes[j], 1000);
+                        AdjNode adjNode = new AdjNode(i, j, modPos[i], childBoxes[j]);
+                        var cost = LocalizationGraph.CalculateCost(allPeaks, products, peptideLength, modPos, i, glycanBox, childBoxes[j], 1000);
+
+                        //The first line of the graph didnot have Sources.
                         if (i == 0)
                         {
                             //Get cost                             
                             adjNode.maxCost = cost;
-
                         }
                         else
                         {
                             double maxCost = 0;
                             for (int prej = 0; prej <= j; prej++)
                             {
-                                //TO DO: The condition here could be wrong, please change to function BoxSatisfyBox.
+                                //Check if a previous AdjNode exist and the current AdjNode could link to previous AdjNode. 
                                 if (boxSatisfyBox[j][prej] && array[i - 1][prej] != null)
                                 {
                                     var tempCost = cost + array[i - 1][prej].maxCost;
@@ -92,6 +96,9 @@ namespace EngineLayer.GlycoSearch
 
             return (double)currentLocalizationScore;
         }
+
+        #region LocalizeMod not limited to OGlycan.
+        //Tt is possible to Merge this function to LocalizdOGlycan; but there is possible no need to do that.
 
         //The modification problem is turned into a Directed Acyclic Graph. The Graph was build with matrix, and dynamic programming is used.
         public void LocalizeMod(int[] modPos, ModBox totalBox, ModBox[] boxes, HashSet<int> allPeaks, List<Product> products, PeptideWithSetModifications peptide)
@@ -151,44 +158,6 @@ namespace EngineLayer.GlycoSearch
             }
         }
 
-        private static bool TryGetLeft(int[] array1, int[] array2)
-        {
-            //Get compliment box
-            var gx = array1.GroupBy(p => p).ToDictionary(p => p.Key, p => p.ToList());
-            foreach (var iy in array2)
-            {
-                if (!gx.ContainsKey(iy))
-                {
-                    return false;
-                }
-                else if (gx[iy].Count == 0)
-                {
-                    return false;
-                }
-                gx[iy].RemoveAt(gx[iy].Count - 1);
-            }
-            return true;
-        }
-
-        public static Dictionary<int, bool[]> BoxSatisfyBox(ModBox[] boxes)
-        {
-            Dictionary<int, bool[]> boxIdBoxes = new Dictionary<int, bool[]>();
-            for (int i = 0; i < boxes.Length; i++)
-            {
-                bool[] idBoxes = new bool[boxes.Length];
-                for (int j = 0; j <= i; j++)
-                {
-                    if (boxes[i].NumberOfMods <= boxes[j].NumberOfMods + 1 && (boxes[j].NumberOfMods ==0 || TryGetLeft(boxes[i].ModIds, boxes[j].ModIds)))
-                    {
-                        idBoxes[j] = true;
-                    }
-                }
-                boxIdBoxes.Add(i, idBoxes);
-            }
-
-            return boxIdBoxes;
-        }
-
         public static double CalculateCostMod(HashSet<int> allPeaksForLocalization, List<Product> products, int peptideLength, int[] modPos, int modInd, ModBox totalBox, ModBox localBox, int FragmentBinsPerDalton)
         {
             if (modInd == modPos.Length - 1)
@@ -197,24 +166,25 @@ namespace EngineLayer.GlycoSearch
             }
 
             var localFragmentHash = ModBox.GetLocalFragmentHash(products, peptideLength, modPos, modInd, totalBox, localBox, FragmentBinsPerDalton);
- 
+
             int currentLocalizationScore = allPeaksForLocalization.Intersect(localFragmentHash).Count();
 
             return (double)currentLocalizationScore;
         }
 
-        //For current ModPos at Ind, is the child boxsatify the condition.
-        public static bool BoxSatisfyModPos(ModBox totalBox, ModBox box, int Ind, PeptideWithSetModifications peptide)
+        //For current ModPos at Ind, is the childbox satify the condition.
+        //The function is for ModBox contains Mod that have different motif. 
+        public static bool BoxSatisfyModPos(ModBox totalBox, ModBox childBox, int Ind, PeptideWithSetModifications peptide)
         {
             //Satisfy left
-            foreach (var mn in box.MotifNeeded)
+            foreach (var mn in childBox.MotifNeeded)
             {
                 List<int> possibleModSites = new List<int>();
 
                 ModificationMotif.TryGetMotif(mn.Key, out ModificationMotif motif);
                 Modification modWithMotif = new Modification(_target: motif, _locationRestriction: "Anywhere.");
 
-                for (int r = 0; r < Ind-1; r++)
+                for (int r = 0; r < Ind - 1; r++)
                 {
                     if (peptide.AllModsOneIsNterminus.Keys.Contains(r + 2))
                     {
@@ -235,7 +205,7 @@ namespace EngineLayer.GlycoSearch
 
             //Get compliment box
             var gx = totalBox.ModIds.GroupBy(p => p).ToDictionary(p => p.Key, p => p.ToList());
-            foreach (var iy in box.ModIds)
+            foreach (var iy in childBox.ModIds)
             {
                 gx[iy].RemoveAt(gx[iy].Count - 1);
             }
@@ -251,7 +221,7 @@ namespace EngineLayer.GlycoSearch
                 ModificationMotif.TryGetMotif(mn.Key, out ModificationMotif motif);
                 Modification modWithMotif = new Modification(_target: motif, _locationRestriction: "Anywhere.");
 
-                for (int r = Ind-1; r < peptide.Length; r++)
+                for (int r = Ind - 1; r < peptide.Length; r++)
                 {
                     if (peptide.AllModsOneIsNterminus.Keys.Contains(r + 2))
                     {
@@ -273,43 +243,51 @@ namespace EngineLayer.GlycoSearch
             return true;
         }
 
-        public static int[] GetLeft(int[] array1, int[] array2)
+
+        #endregion
+
+        //Check if array1 contains array2 with repeats numbers.
+        private static bool TryGetLeft(int[] array1, int[] array2)
         {
             //Get compliment box
             var gx = array1.GroupBy(p => p).ToDictionary(p => p.Key, p => p.ToList());
             foreach (var iy in array2)
             {
+                if (!gx.ContainsKey(iy))
+                {
+                    return false;
+                }
+                else if (gx[iy].Count == 0)
+                {
+                    return false;
+                }
                 gx[iy].RemoveAt(gx[iy].Count - 1);
             }
-            var left = gx.SelectMany(p => p.Value).ToArray();
-            return left;
+            return true;
         }
 
-        public static Tuple<int, int>[] GetLocalizedPeptide(AdjNode[][] array, int[] modPos, ModBox[] boxes, int[] indexes)
-        {           
-            int length = modPos.Length - 1;
-
-            List<Tuple<int, int>> tuples = new List<Tuple<int, int>>();
-            //Add first.
-            if (boxes[indexes[0]].ModIds.Count()!=0)
+        //The function defines how a childBox could be linked from all childBoxes.
+        public static Dictionary<int, bool[]> BoxSatisfyBox(ModBox[] childBoxes)
+        {
+            Dictionary<int, bool[]> boxIdBoxes = new Dictionary<int, bool[]>();
+            for (int i = 0; i < childBoxes.Length; i++)
             {
-                tuples.Add(new Tuple<int, int>(modPos[0], boxes[indexes[0]].ModIds.First()));
-            }
-
-            for (int i = 1; i < indexes.Length; i++)
-            {
-                if (indexes[i] != indexes[i-1])
+                bool[] idBoxes = new bool[childBoxes.Length];
+                for (int j = 0; j <= i; j++)
                 {
-                    var left = GetLeft(array[i][indexes[i]].ModBox.ModIds, array[i-1][indexes[i-1]].ModBox.ModIds).First();
-
-                    tuples.Add(new Tuple<int, int>( modPos[i], left));
+                    if (childBoxes[i].NumberOfMods <= childBoxes[j].NumberOfMods + 1 && (childBoxes[j].NumberOfMods ==0 || TryGetLeft(childBoxes[i].ModIds, childBoxes[j].ModIds)))
+                    {
+                        idBoxes[j] = true;
+                    }
                 }
+                boxIdBoxes.Add(i, idBoxes);
             }
 
-            return tuples.ToArray();
+            return boxIdBoxes;
         }
 
         //Get path of Directed Acyclic Graph by recursion. 
+        //Start from the last AdjNode[row-1 ][col-1], go back to it Sources, which contains the previous AdjNode with the highest cost.
         public static List<int[]> GetAllPaths(AdjNode[][] array, ModBox[] boxes)
         {
             List<int[]> allPaths = new List<int[]>();
@@ -343,6 +321,48 @@ namespace EngineLayer.GlycoSearch
 
                 xind++;
             }
+        }
+
+        //The original path we get is just an array of AdjNode positions. This function here is to transfer the path into localized path. 
+        //The output note: Tuple<(mod site)int, (glycanId)int>[glycanBox.Count] 
+        //Basicly,  any change from left to right of the path indicates a modification. For example, the path = [1, 1, 2, 2] which means there is a modification at path[0] and path[3]
+        public static Tuple<int, int>[] GetLocalizedPath(AdjNode[][] array, int[] modPos, ModBox[] childBoxes, int[] path)
+        {
+            int length = modPos.Length - 1;
+
+            List<Tuple<int, int>> tuples = new List<Tuple<int, int>>();
+            //Add first mod. If the childBoxes[path[0]].ModIds.Count == 0, means this is an empty childBox. 
+            //Otherwise childBoxes[path[0]].ModIds.Count == 1 and childBoxes[path[0]].ModIds only contains one ModId.
+            if (childBoxes[path[0]].ModIds.Count() != 0)
+            {                
+                tuples.Add(new Tuple<int, int>(modPos[0], childBoxes[path[0]].ModIds.First()));
+            }
+
+            for (int i = 1; i < path.Length; i++)
+            {
+                //If there is a change of the path, get the difference between the two Adjnodes of the array.
+                if (path[i] != path[i - 1])
+                {
+                    var left = GetLeft(array[i][path[i]].ModBox.ModIds, array[i - 1][path[i - 1]].ModBox.ModIds).First();
+
+                    tuples.Add(new Tuple<int, int>(modPos[i], left));
+                }
+            }
+
+            return tuples.ToArray();
+        }
+
+        //Get the difference between array 1 and array 2 with repeat numbers.
+        public static int[] GetLeft(int[] array1, int[] array2)
+        {
+            //Get compliment box
+            var gx = array1.GroupBy(p => p).ToDictionary(p => p.Key, p => p.ToList());
+            foreach (var iy in array2)
+            {
+                gx[iy].RemoveAt(gx[iy].Count - 1);
+            }
+            var left = gx.SelectMany(p => p.Value).ToArray();
+            return left;
         }
     }
 

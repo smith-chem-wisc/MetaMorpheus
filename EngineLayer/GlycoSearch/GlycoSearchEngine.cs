@@ -556,7 +556,7 @@ namespace EngineLayer.GlycoSearch
 
                             foreach (var path in allPaths)
                             {
-                                var local = LocalizationGraph.GetLocalizedPeptide(localizationGraphs[i].array, modPos, boxes, path);
+                                var local = LocalizationGraph.GetLocalizedPath(localizationGraphs[i].array, modPos, boxes, path);
                                 localizationCandidates.Add(new Tuple<int, Tuple<int, int>[]>(ids[i], local));
                             }
                         }
@@ -708,7 +708,7 @@ namespace EngineLayer.GlycoSearch
                             int[] modPos = ModBox.GetAllPossibleModSites(theScanBestPeptide, ModBox.ModBoxes[ids[i]]);
                             var boxes = ModBox.BuildChildModBoxes(ModBox.ModBoxes[ids[i]].NumberOfMods, ModBox.ModBoxes[ids[i]].ModIds).ToArray();
                             var allPaths = LocalizationGraph.GetAllPaths(localizationGraphs[i].array, boxes);
-                            var local = LocalizationGraph.GetLocalizedPeptide(localizationGraphs[i].array, modPos, boxes, allPaths.First());
+                            var local = LocalizationGraph.GetLocalizedPath(localizationGraphs[i].array, modPos, boxes, allPaths.First());
                             localizationCandidates.Add(new Tuple<int, Tuple<int, int>[]>(iDLow, local));
                         }
 

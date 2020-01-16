@@ -255,8 +255,13 @@ namespace Test
 
             var allPaths = LocalizationGraph.GetAllPaths(localizationGraph.array, boxes);
 
-            var local = LocalizationGraph.GetLocalizedPeptide(localizationGraph.array, modPos, boxes, allPaths.First());
+            var knowPath = new int[8] {2, 4, 4, 4, 5, 5, 5, 5 };
+            Assert.That(Enumerable.SequenceEqual(knowPath, allPaths[0]));
 
+            var local = LocalizationGraph.GetLocalizedPath(localizationGraph.array, modPos, boxes, allPaths.First());
+
+            var knowLocal = new Tuple<int, int>[3] { new Tuple<int, int>(2, 1), new Tuple<int, int>(3, 1), new Tuple<int, int>(10, 0) };
+            Assert.That(Enumerable.SequenceEqual(local, knowLocal));
         }
 
         [Test]
@@ -293,7 +298,9 @@ namespace Test
             int[] array1 = new int[6] { 0, 0, 0, 1, 1, 2 };
             int[] array2 = new int[3] { 0, 0, 1 };
             var left = LocalizationGraph.GetLeft(array1, array2);
-            Assert.That(left.Count() == 3);
+
+            var knowLeft = new int[3] { 0, 1, 2 };
+            Assert.That(Enumerable.SequenceEqual(left, knowLeft));
         }
 
         [Test]
@@ -381,7 +388,13 @@ namespace Test
 
             var allPaths = LocalizationGraph.GetAllPaths(localizationGraph.array, boxes);
 
-            var local = LocalizationGraph.GetLocalizedPeptide(localizationGraph.array, modPos, boxes, allPaths.First());
+            var knowPath = new int[12] { 0, 0, 0, 0, 1, 3, 5, 5, 7, 7, 7, 7 };
+            Assert.That(Enumerable.SequenceEqual(knowPath, allPaths[0]));
+
+            var local = LocalizationGraph.GetLocalizedPath(localizationGraph.array, modPos, boxes, allPaths.First());
+
+            var knowLocal = new Tuple<int, int>[4] {new Tuple<int, int>(22, 0), new Tuple<int, int>(25, 0) , new Tuple<int, int>(28, 0) , new Tuple<int, int>(31, 1) };
+            Assert.That(Enumerable.SequenceEqual(local, knowLocal));
         }
 
         [Test]
