@@ -383,5 +383,37 @@ namespace Test
 
             var local = LocalizationGraph.GetLocalizedPeptide(localizationGraph.array, modPos, boxes, allPaths.First());
         }
+
+        [Test]
+        public static void OGlcoTest_GetAllPaths()
+        {
+            int[] modPos = new int[3] { 2, 4, 6 };
+            var glycanBox = OGlycanBoxes[19];
+            var boxes = GlycanBox.BuildChildOGlycanBoxes(3, glycanBox.ModIds).ToArray();
+            LocalizationGraph localizationGraph = new LocalizationGraph(modPos.Length, boxes.Length);
+
+            for (int i = 0; i < modPos.Length; i++)
+            {
+                for (int j = 0; j < boxes.Length; j++)
+                {
+                    localizationGraph.array[i][j] = new AdjNode(i, j, modPos[i], boxes[j]);
+                    localizationGraph.array[i][j].Sources = new List<int> { j };
+                    localizationGraph.array[i][j].Costs = new List<double> { 1 };
+                    localizationGraph.array[i][j].maxCost = 1;
+                }
+            }
+            localizationGraph.array[2][5].Sources = new List<int> {  4, 5 };
+            localizationGraph.array[2][5].Costs = new List<double> { 1, 1 };
+
+            localizationGraph.array[1][4].Sources = new List<int> { 2, 4 };
+            localizationGraph.array[1][4].Costs = new List<double> { 1, 1 };
+
+            var allPaths = LocalizationGraph.GetAllPaths(localizationGraph.array, boxes);
+
+            Assert.That(allPaths.Count == 3);
+            Assert.That(allPaths[0] == new int[3] { 2, 4, 5});
+            Assert.That(allPaths[1] == new int[3] { 4, 4, 5 });
+            Assert.That(allPaths[2] == new int[3] { 5, 5, 5 });
+        }
     }
 }

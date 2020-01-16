@@ -312,8 +312,6 @@ namespace EngineLayer.GlycoSearch
         //Get path of Directed Acyclic Graph by recursion. 
         public static List<int[]> GetAllPaths(AdjNode[][] array, ModBox[] boxes)
         {
-            var boxSatisfyBox = BoxSatisfyBox(boxes);
-
             List<int[]> allPaths = new List<int[]>();
 
             int xlength = array.Length;
@@ -323,12 +321,12 @@ namespace EngineLayer.GlycoSearch
 
             temp[xlength - 1] = ylength -1;
             
-            PathHelper(allPaths, array, xlength -1, ylength -1, temp, boxSatisfyBox);
+            PathHelper(allPaths, array, xlength -1, ylength -1, temp);
 
             return allPaths;
         }
 
-        private static void PathHelper(List<int[]> allPaths, AdjNode[][] array, int xind, int yind, int[] temp, Dictionary<int, bool[]> boxSatisfyBox)
+        private static void PathHelper(List<int[]> allPaths, AdjNode[][] array, int xind, int yind, int[] temp)
         {
             if (xind == 0)
             {
@@ -338,14 +336,12 @@ namespace EngineLayer.GlycoSearch
 
             foreach (var pre in array[xind][yind].Sources)
             {
-                if (boxSatisfyBox[yind][pre])
-                {
-                    xind--;
-                    yind = pre;
-                    temp[xind] = yind;
-                    PathHelper(allPaths, array, xind, yind, temp, boxSatisfyBox);
+                xind--;
+                yind = pre;
+                temp[xind] = yind;
+                PathHelper(allPaths, array, xind, yind, temp);
 
-                }
+                xind++;
             }
         }
     }
