@@ -24,7 +24,6 @@ namespace Test
             NeutralLosses.Add(DissociationType.HCD, new List<double> { 0 });
 
             Modification modFormula_C1 = new Modification(_originalId: "modC", _accession: "", _modificationType: "mt", _featureType: "", _target: motif1, _locationRestriction: "Anywhere.", _chemicalFormula: new ChemicalFormula(ChemicalFormula.ParseFormula("C1")), null, null, null, null, _neutralLosses: NeutralLosses, null, null);
-            Modification modFormula_C2 = new Modification(_originalId: "modC2", _accession: "", _modificationType: "mt", _featureType: "", _target: motif1, _locationRestriction: "Anywhere.", _chemicalFormula: new ChemicalFormula(ChemicalFormula.ParseFormula("C1")), null, null, null, null, _neutralLosses: NeutralLosses, null, null);
             Modification modFormula_H1 = new Modification(_originalId: "modH", _accession: "", _modificationType: "mt", _featureType: "", _target: motif1, _locationRestriction: "Anywhere.", _chemicalFormula: new ChemicalFormula(ChemicalFormula.ParseFormula("H1")), null, null, null, null, _neutralLosses: NeutralLosses, null, null);
 
             IDictionary<int, List<Modification>> oneBasedModifications = new Dictionary<int, List<Modification>>
@@ -57,8 +56,6 @@ namespace Test
             Product p = new Product(ProductType.b, FragmentationTerminus.N, 1, 1, 1, 5);
             mfi.Add(new MatchedFragmentIon(ref p, 1, 1, 1));
             PeptideSpectralMatch myPsm = new PeptideSpectralMatch(pwsm1, 0, 10, 0, scan, new CommonParameters(), mfi);
-            double myPsmMass = myPsm.ScanPrecursorMass.ToMz(1);
-
 
             myPsm.AddOrReplace(pwsm2, 10, 0, true, mfi, 10);
 

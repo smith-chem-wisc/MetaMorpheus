@@ -12,7 +12,8 @@ namespace EngineLayer.CrosslinkSearch
         public CrosslinkSpectralMatch(PeptideWithSetModifications theBestPeptide, int notch, double score, int scanIndex, Ms2ScanWithSpecificMass scan, CommonParameters commonParameters, List<MatchedFragmentIon> matchedFragmentIons)
             : base(theBestPeptide, notch, score, scanIndex, scan, commonParameters, matchedFragmentIons)
         {
-            
+            //The XLTotalScore is set here because some CSMs are not crosslinks and we need this score to be non-zero.
+            XLTotalScore = score;
         }
 
         public CrosslinkSpectralMatch BetaPeptide { get; set; }
@@ -147,7 +148,7 @@ namespace EngineLayer.CrosslinkSearch
             sb.Append(PsmTsvHeader.CrossTypeLabel + '\t');
             sb.Append(PsmTsvHeader.LinkResiduesLabel + "\t");
 
-            sb.Append("Peptide(Empty)" + '\t');
+            sb.Append("Peptide Info -->" + '\t');
             sb.Append(PsmTsvHeader.ProteinAccession + '\t');
             sb.Append(PsmTsvHeader.ProteinLinkSiteLabel + '\t');
             sb.Append(PsmTsvHeader.BaseSequence + '\t');
@@ -162,7 +163,7 @@ namespace EngineLayer.CrosslinkSearch
             sb.Append(PsmTsvHeader.MatchedIonIntensities + '\t');
             sb.Append(PsmTsvHeader.MatchedIonCounts + '\t');
 
-            sb.Append("Beta Peptide(Empty)" + '\t');
+            sb.Append("Beta Peptide Info -->" + '\t');
             sb.Append(PsmTsvHeader.BetaPeptideProteinAccessionLabel + '\t');
             sb.Append(PsmTsvHeader.BetaPeptideProteinLinkSiteLabel + '\t');
             sb.Append(PsmTsvHeader.BetaPeptideBaseSequenceLabel + '\t');
@@ -177,7 +178,7 @@ namespace EngineLayer.CrosslinkSearch
             sb.Append("Beta Peptide Matched Ion Intensities" + '\t');
             sb.Append("Beta Peptide Matched Ion Counts" + '\t');
 
-            sb.Append("Summary (blank)" + '\t');
+            sb.Append("Summary Info -->" + '\t');
             sb.Append(PsmTsvHeader.XLTotalScoreLabel + '\t');
             sb.Append(PsmTsvHeader.MassDiffDa + '\t');
             sb.Append(PsmTsvHeader.ParentIonsLabel + '\t');

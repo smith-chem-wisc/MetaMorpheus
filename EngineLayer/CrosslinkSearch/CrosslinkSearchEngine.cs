@@ -73,8 +73,8 @@ namespace EngineLayer.CrosslinkSearch
             ReportProgress(new ProgressEventArgs(oldPercentProgress, "Performing crosslink search... " + CurrentPartition + "/" + CommonParameters.TotalPartitions, NestedIds));
 
             byte byteScoreCutoff = (byte)CommonParameters.ScoreCutoff;
-
             int maxThreadsPerFile = CommonParameters.MaxThreadsToUsePerFile;
+
             int[] threads = Enumerable.Range(0, maxThreadsPerFile).ToArray();
             Parallel.ForEach(threads, (scanIndex) =>
             {
@@ -171,7 +171,7 @@ namespace EngineLayer.CrosslinkSearch
                             GlobalCsms[scanIndex] = new List<CrosslinkSpectralMatch>();
                         }
                         //scans are sorted here so that the first one in the list is the top score. The others are ignored for now. We sort it here because this step is parallelized.
-                        GlobalCsms[scanIndex].AddRange(csms.Where(p => p != null).OrderByDescending(p => p.XLTotalScore));
+                        GlobalCsms[scanIndex].AddRange(csms.Where(p => p != null));
                     }
 
                     // report search progress
@@ -469,6 +469,7 @@ namespace EngineLayer.CrosslinkSearch
 
                     localizedAlpha.BetaPeptide = localizedBeta;
 
+                    //I think this is the only place where XLTotalScore is set
                     localizedAlpha.XLTotalScore = localizedAlpha.Score + localizedBeta.Score;
 
                     if (crosslinker.Cleavable)

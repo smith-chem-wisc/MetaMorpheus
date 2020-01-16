@@ -15,9 +15,9 @@ namespace TaskLayer
     {
         public XLSearchTask() : base(MyTask.XLSearch)
         {
-            //Default parameter setting which is different from SearchTask, can be overwriten here. 
-            //maxMissedCleavage is set to 3 for crosslink generally induce long peptides. 
-            //maxPeptideLength is set to 60 in case generate peptides that are too long. 
+            //Default parameter setting which is different from SearchTask, can be overwriten here.
+            //maxMissedCleavage is set to 3 for crosslink generally induce long peptides.
+            //maxPeptideLength is set to 60 in case generate peptides that are too long.
             //numberOfPeaksToKeepPerWindow is set to a large number to keep all peak with intensity > 0.01.
             var digestPara = new DigestionParams(
                 minPeptideLength: 5,
@@ -27,7 +27,7 @@ namespace TaskLayer
             CommonParameters = new CommonParameters(
                 precursorMassTolerance: new PpmTolerance(10),
                 scoreCutoff: 2,
-                numberOfPeaksToKeepPerWindow:1000,
+                numberOfPeaksToKeepPerWindow: 1000,
                 digestionParams: digestPara
             );
 
@@ -125,8 +125,8 @@ namespace TaskLayer
                     }
 
                     Status("Searching files...", taskId);
-                    new CrosslinkSearchEngine(newCsmsPerMS2ScanPerFile, arrayOfMs2ScansSortedByMass, peptideIndex, fragmentIndex, secondFragmentIndex, currentPartition, 
-                        combinedParams, this.FileSpecificParameters, crosslinker, XlSearchParameters.CrosslinkSearchTopNum, XlSearchParameters.CrosslinkAtCleavageSite, XlSearchParameters.XlQuench_H2O, 
+                    new CrosslinkSearchEngine(newCsmsPerMS2ScanPerFile, arrayOfMs2ScansSortedByMass, peptideIndex, fragmentIndex, secondFragmentIndex, currentPartition,
+                        combinedParams, this.FileSpecificParameters, crosslinker, XlSearchParameters.CrosslinkSearchTopNum, XlSearchParameters.CrosslinkAtCleavageSite, XlSearchParameters.XlQuench_H2O,
                         XlSearchParameters.XlQuench_NH2, XlSearchParameters.XlQuench_Tris, thisId).Run();
 
                     ReportProgress(new ProgressEventArgs(100, "Done with search " + (currentPartition + 1) + "/" + CommonParameters.TotalPartitions + "!", thisId));
@@ -161,7 +161,7 @@ namespace TaskLayer
 
                 ListOfCsmsPerMS2ScanParsimony.Add(orderedCsmsPerScan);
             }
-            SortCsmsAndCalculateDeltaScores(ListOfCsmsPerMS2ScanParsimony);
+            ListOfCsmsPerMS2ScanParsimony = SortListsOfCsms(ListOfCsmsPerMS2ScanParsimony, CommonParameters);
             AssignCrossType(ListOfCsmsPerMS2ScanParsimony);
             var filteredAllPsms = new List<CrosslinkSpectralMatch>();
 
@@ -178,31 +178,36 @@ namespace TaskLayer
             return postXLSearchAnalysisTask.Run(OutputFolder, dbFilenameList, currentRawFileList, taskId, fileSettingsList, filteredAllPsms.OrderByDescending(p => p.XLTotalScore).ToList(), CommonParameters, XlSearchParameters, proteinList, variableModifications, fixedModifications, localizeableModificationTypes, MyTaskResults);
         }
 
-        public static void SortCsmsAndCalculateDeltaScores(List<List<CrosslinkSpectralMatch>> ListOfCsmsPerMS2Scan)
+        //needs unit test some day
+        public static List<List<CrosslinkSpectralMatch>> SortListsOfCsms(List<List<CrosslinkSpectralMatch>> ListOfCsmsPerMS2Scan, CommonParameters commonParameters)
         {
+            List<List<CrosslinkSpectralMatch>> newLists = new List<List<CrosslinkSpectralMatch>>();
             foreach (var csmsPerScan in ListOfCsmsPerMS2Scan)
             {
-
-                for (int i = 0; i < csmsPerScan.Count; i++)
-                {
-                    var currentCsm = csmsPerScan[i];
-
-                    if (i == 0 && csmsPerScan.Count == 1)
-                    {
-                        currentCsm.SecondBestXlScore = 0;
-                    }
-                    else if (i == 0)
-                    {
-                        currentCsm.SecondBestXlScore = csmsPerScan[1].XLTotalScore;
-                    }
-                    else
-                    {
-                        currentCsm.SecondBestXlScore = csmsPerScan.First().XLTotalScore;
-                    }
-                }
+                newLists.Add(SortOneListCsmsSetSecondBestScore(csmsPerScan, commonParameters));
             }
 
-            ListOfCsmsPerMS2Scan = ListOfCsmsPerMS2Scan.OrderByDescending(c => c.First().XLTotalScore).ThenByDescending(c => c.First().FullSequence + (c.First().BetaPeptide != null ? c.First().BetaPeptide.FullSequence : "")).ToList();
+            return newLists.OrderByDescending(c => c.First().XLTotalScore).ThenByDescending(c => c.First().FullSequence + (c.First().BetaPeptide != null ? c.First().BetaPeptide.FullSequence : "")).ToList();
+        }
+
+        public static List<CrosslinkSpectralMatch> SortOneListCsmsSetSecondBestScore(List<CrosslinkSpectralMatch> csmsPerScan, CommonParameters commonParameters)
+        {
+            List<double> xlTotalScores = csmsPerScan.Select(s => s.XLTotalScore).OrderByDescending(s => s).ToList();
+            xlTotalScores.RemoveAt(0);
+
+            //This possibly needs to be doubled for xlinks. But, since each list can be a mix of xlinks and nonxlinks we just leave as is for now.
+            double secondBestSore = commonParameters.ScoreCutoff;
+            if (xlTotalScores.Count() > 0)
+            {
+                secondBestSore = xlTotalScores[0];
+            }
+            foreach (CrosslinkSpectralMatch csm in csmsPerScan)
+            {
+                csm.SecondBestXlScore = secondBestSore;
+            }
+            csmsPerScan = csmsPerScan.OrderByDescending(c => c.XLTotalScore).ThenBy(c => c.FullSequence + (c.BetaPeptide != null ? c.BetaPeptide.FullSequence : "")).ToList();
+
+            return csmsPerScan;
         }
 
         public static void AssignCrossType(List<List<CrosslinkSpectralMatch>> ListOfCsmsPerMS2Scan)

@@ -29,7 +29,7 @@ namespace Test
         public static void TestDissociationTypeGenerateSameTypeOfIons()
         {
             Assert.IsTrue(CrosslinkSearchEngine.DissociationTypeGenerateSameTypeOfIons(DissociationType.CID, DissociationType.CID));
-            Assert.IsTrue(CrosslinkSearchEngine.DissociationTypeGenerateSameTypeOfIons(DissociationType.CID,DissociationType.HCD));
+            Assert.IsTrue(CrosslinkSearchEngine.DissociationTypeGenerateSameTypeOfIons(DissociationType.CID, DissociationType.HCD));
             Assert.IsTrue(CrosslinkSearchEngine.DissociationTypeGenerateSameTypeOfIons(DissociationType.HCD, DissociationType.CID));
             Assert.IsTrue(CrosslinkSearchEngine.DissociationTypeGenerateSameTypeOfIons(DissociationType.ETD, DissociationType.ECD));
             Assert.IsTrue(CrosslinkSearchEngine.DissociationTypeGenerateSameTypeOfIons(DissociationType.ECD, DissociationType.ETD));
@@ -250,6 +250,103 @@ namespace Test
         }
 
         [Test]
+        public static void TestCsmSort()
+        {
+            Protein protForward = new Protein(sequence: "VPEPTIDELPEPTIDEAPEPTIDE", accession: "", isDecoy: false);
+
+            Ms2ScanWithSpecificMass scan = new Ms2ScanWithSpecificMass(
+                new MsDataScan(
+                    new MzSpectrum(new double[] { }, new double[] { }, false),
+                    2, 1, true, Polarity.Positive, double.NaN, null, null, MZAnalyzerType.Orbitrap, double.NaN, null, null, "scan=1", double.NaN, null, null, double.NaN, null, DissociationType.AnyActivationType, 1, null),
+                100, 1, null, new CommonParameters(), null);
+            Dictionary<int, Modification> mod = new Dictionary<int, Modification>();
+
+            PeptideWithSetModifications pwsmV = new PeptideWithSetModifications(protForward, new DigestionParams(), 1, 8, CleavageSpecificity.Full, "VPEPTIDE", 0, mod, 0, null);
+            //PeptideWithSetModifications pwsmL = new PeptideWithSetModifications(protForward, new DigestionParams(), 9, 16, CleavageSpecificity.Full, "LPEPTIDE", 0, mod, 0, null);
+            PeptideWithSetModifications pwsmA = new PeptideWithSetModifications(protForward, new DigestionParams(), 17, 24, CleavageSpecificity.Full, "APEPTIDE", 0, mod, 0, null);
+
+            PeptideWithSetModifications pwsmVbetaA = new PeptideWithSetModifications(protForward, new DigestionParams(), 17, 20, CleavageSpecificity.Full, "APEP", 0, mod, 0, null);
+            PeptideWithSetModifications pwsmLbetaV = new PeptideWithSetModifications(protForward, new DigestionParams(), 1, 4, CleavageSpecificity.Full, "VPEP", 0, mod, 0, null);
+            PeptideWithSetModifications pwsmAbetaL = new PeptideWithSetModifications(protForward, new DigestionParams(), 9, 12, CleavageSpecificity.Full, "LPEP", 0, mod, 0, null);
+
+            CrosslinkSpectralMatch csmOne = new CrosslinkSpectralMatch(pwsmV, 0, 3, 1, scan, new CommonParameters(), new List<MatchedFragmentIon>());
+            CrosslinkSpectralMatch csmThree = new CrosslinkSpectralMatch(pwsmV, 0, 3, 1, scan, new CommonParameters(), new List<MatchedFragmentIon>());
+            CrosslinkSpectralMatch csmTwo = new CrosslinkSpectralMatch(pwsmA, 0, 2, 1, scan, new CommonParameters(), new List<MatchedFragmentIon>());
+
+            CrosslinkSpectralMatch csmOneBetaA = new CrosslinkSpectralMatch(pwsmVbetaA, 0, 30, 1, scan, new CommonParameters(), new List<MatchedFragmentIon>());
+            CrosslinkSpectralMatch csmThreeBetaV = new CrosslinkSpectralMatch(pwsmLbetaV, 0, 30, 1, scan, new CommonParameters(), new List<MatchedFragmentIon>());
+            CrosslinkSpectralMatch csmTwoBetaL = new CrosslinkSpectralMatch(pwsmAbetaL, 0, 20, 1, scan, new CommonParameters(), new List<MatchedFragmentIon>());
+
+            csmOne.BetaPeptide = csmOneBetaA;
+            csmTwo.BetaPeptide = csmTwoBetaL;
+            csmThree.BetaPeptide = csmThreeBetaV;
+
+            csmOne.XLTotalScore = 33;
+            csmTwo.XLTotalScore = 22;
+            csmThree.XLTotalScore = 33;
+
+            csmOne.ResolveAllAmbiguities();
+            csmTwo.ResolveAllAmbiguities();
+            csmThree.ResolveAllAmbiguities();
+
+            csmOne.BetaPeptide.ResolveAllAmbiguities();
+            csmTwo.BetaPeptide.ResolveAllAmbiguities();
+            csmThree.BetaPeptide.ResolveAllAmbiguities();
+
+            List<CrosslinkSpectralMatch> forward = new List<CrosslinkSpectralMatch> { csmOne, csmThree, csmTwo };
+
+            Protein protReverse = new Protein(sequence: "AEDITPEPVEDITPEPLEDITPEP", accession: "", isDecoy: false);
+
+            PeptideWithSetModifications mswpA = new PeptideWithSetModifications(protReverse, new DigestionParams(), 1, 8, CleavageSpecificity.Full, "AEDITPEP", 0, mod, 0, null);
+            PeptideWithSetModifications mswpV = new PeptideWithSetModifications(protReverse, new DigestionParams(), 9, 16, CleavageSpecificity.Full, "VEDITPEP", 0, mod, 0, null);
+            PeptideWithSetModifications mswpL = new PeptideWithSetModifications(protReverse, new DigestionParams(), 17, 24, CleavageSpecificity.Full, "LEDITPEP", 0, mod, 0, null);
+
+            PeptideWithSetModifications mswpAbetaL = new PeptideWithSetModifications(protReverse, new DigestionParams(), 17, 20, CleavageSpecificity.Full, "LEDI", 0, mod, 0, null);
+            PeptideWithSetModifications mswpVbetaA = new PeptideWithSetModifications(protReverse, new DigestionParams(), 1, 4, CleavageSpecificity.Full, "AEDI", 0, mod, 0, null);
+            PeptideWithSetModifications mswpLbetaV = new PeptideWithSetModifications(protReverse, new DigestionParams(), 9, 12, CleavageSpecificity.Full, "VEDI", 0, mod, 0, null);
+
+            CrosslinkSpectralMatch twoCsm = new CrosslinkSpectralMatch(mswpA, 0, 2, 1, scan, new CommonParameters(), new List<MatchedFragmentIon>());
+            CrosslinkSpectralMatch oneCsm = new CrosslinkSpectralMatch(mswpV, 0, 1, 1, scan, new CommonParameters(), new List<MatchedFragmentIon>());
+            CrosslinkSpectralMatch threeCsm = new CrosslinkSpectralMatch(mswpL, 0, 1, 3, scan, new CommonParameters(), new List<MatchedFragmentIon>());
+
+            CrosslinkSpectralMatch twoCsmBetaL = new CrosslinkSpectralMatch(mswpAbetaL, 0, 20, 1, scan, new CommonParameters(), new List<MatchedFragmentIon>());
+            CrosslinkSpectralMatch oneCsmBetaA = new CrosslinkSpectralMatch(mswpVbetaA, 0, 10, 1, scan, new CommonParameters(), new List<MatchedFragmentIon>());
+            CrosslinkSpectralMatch threeCsmBetaV = new CrosslinkSpectralMatch(mswpLbetaV, 0, 40, 1, scan, new CommonParameters(), new List<MatchedFragmentIon>());
+
+            twoCsm.BetaPeptide = twoCsmBetaL;
+            oneCsm.BetaPeptide = oneCsmBetaA;
+            threeCsm.BetaPeptide = threeCsmBetaV;
+
+            twoCsm.XLTotalScore = 22;
+            oneCsm.XLTotalScore = 11;
+            threeCsm.XLTotalScore = 43;
+
+            twoCsm.ResolveAllAmbiguities();
+            oneCsm.ResolveAllAmbiguities();
+            threeCsm.ResolveAllAmbiguities();
+
+            twoCsm.BetaPeptide.ResolveAllAmbiguities();
+            oneCsm.BetaPeptide.ResolveAllAmbiguities();
+            threeCsm.BetaPeptide.ResolveAllAmbiguities();
+
+            List<CrosslinkSpectralMatch> reverse = new List<CrosslinkSpectralMatch> { twoCsm, oneCsm, threeCsm };
+
+            CommonParameters commonParameters = new CommonParameters(scoreCutoff: 2);
+            List<CrosslinkSpectralMatch> sortedForward = XLSearchTask.SortOneListCsmsSetSecondBestScore(forward, commonParameters);
+
+            Assert.That(sortedForward.Select(s => s.XLTotalScore).ToList(), Is.EquivalentTo(new List<double> { 33d, 33d, 22d }));
+            Assert.That(sortedForward.Select(s => s.DeltaScore).ToList(), Is.EquivalentTo(new List<double> { 0d, 0d, -11d }));
+            Assert.That(sortedForward.Select(aSeq => aSeq.BaseSequence).ToList(), Is.EquivalentTo(new List<string> { "VPEPTIDE", "VPEPTIDE", "APEPTIDE" }));
+            Assert.That(sortedForward.Select(bSeq => bSeq.BetaPeptide.BaseSequence).ToList(), Is.EquivalentTo(new List<string> { "APEP", "VPEP", "LPEP" }));
+
+            List<List<CrosslinkSpectralMatch>> csmListList = new List<List<CrosslinkSpectralMatch>> { forward, reverse };
+            csmListList = XLSearchTask.SortListsOfCsms(csmListList, commonParameters);
+            Assert.That(csmListList.Select(c => c.First().XLTotalScore).ToList(), Is.EquivalentTo(new List<double> { 43d, 33d }));
+            Assert.That(csmListList.Select(c => c.First().BaseSequence).ToList(), Is.EquivalentTo(new List<string> { "LEDITPEP", "VPEPTIDE" }));
+            Assert.That(csmListList.Select(c => c.First().BetaPeptide.BaseSequence).ToList(), Is.EquivalentTo(new List<string> { "VEDI", "APEP" }));
+        }
+
+        [Test]
         public static void XlTest_MoreComprehensive()
         {
             //Generate parameters
@@ -280,8 +377,6 @@ namespace Test
 
             var origDataFile = Path.Combine(TestContext.CurrentContext.TestDirectory, @"XlTestData/Rappsilber_CLMS_PolII_3-calib_slice.mzML.gz");
 
-
-
             string newFileName;
 
             FileInfo fileToDecompress = new FileInfo(origDataFile);
@@ -303,7 +398,6 @@ namespace Test
             MyFileManager myFileManager = new MyFileManager(true);
             CommonParameters CommonParameters = new CommonParameters(digestionParams: new DigestionParams());
 
-
             var fsp = new List<(string fileName, CommonParameters fileSpecificParameters)>();
             fsp.Add((Path.GetFileName(newFileName), CommonParameters));
 
@@ -322,8 +416,6 @@ namespace Test
             var nonNullCsmsStillLists = possiblePsms.Where(p => p != null).ToList();
 
             #region Parsimony and assign crosslink
-
-            XLSearchTask t = new XLSearchTask();
 
             List<List<CrosslinkSpectralMatch>> ListOfCsmsPerMS2ScanParsimony = new List<List<CrosslinkSpectralMatch>>();
             foreach (var csmsPerScan in nonNullCsmsStillLists)
@@ -349,8 +441,8 @@ namespace Test
 
             #endregion Parsimony and assign crosslink
 
-            XLSearchTask.SortCsmsAndCalculateDeltaScores(nonNullCsmsStillLists);
-            foreach (List<CrosslinkSpectralMatch> xlinkCsmList in nonNullCsmsStillLists)
+            nonNullCsmsStillLists = XLSearchTask.SortListsOfCsms(nonNullCsmsStillLists, commonParameters);
+            foreach (List<CrosslinkSpectralMatch> xlinkCsmList in nonNullCsmsStillLists.Where(x => x.First().XLTotalScore > 0))
             {
                 if (xlinkCsmList != null && xlinkCsmList.Any() && xlinkCsmList.Count > 1)
                 {
@@ -413,18 +505,17 @@ namespace Test
                 }
             }
 
-            Assert.AreEqual(521, inter);
-            Assert.AreEqual(217, intra);
-            Assert.AreEqual(287, single);
-            Assert.AreEqual(13, loop);
+            Assert.AreEqual(510, inter);
+            Assert.AreEqual(210, intra);
+            Assert.AreEqual(302, single);
+            Assert.AreEqual(15, loop);
             Assert.AreEqual(0, deadend);
-            Assert.AreEqual(65, deadendH2O);
+            Assert.AreEqual(66, deadendH2O);
             Assert.AreEqual(0, deadendNH2);
             Assert.AreEqual(0, deadendTris);
             Assert.AreEqual(0, unnasignedCrossType);
 
             var fdrResultsXLink = new FdrAnalysisEngine(firstCsmsFromListsOfCsms.Where(c => c.CrossType == PsmCrossType.Inter || c.CrossType == PsmCrossType.Intra).ToList<PeptideSpectralMatch>(), 1, CommonParameters, fsp, new List<string>(), "crosslink").Run();
-
 
             fdrResultsXLink = new FdrAnalysisEngine(firstCsmsFromListsOfCsms.Where(c => c.CrossType != PsmCrossType.Inter && c.CrossType != PsmCrossType.Intra).ToList<PeptideSpectralMatch>(), 1, CommonParameters, fsp, new List<string>(), "standard").Run();
 
@@ -480,12 +571,12 @@ namespace Test
                 }
             }
 
-            Assert.AreEqual(63, inter);
-            Assert.AreEqual(83, intra);
-            Assert.AreEqual(212, single);
-            Assert.AreEqual(6, loop);
+            Assert.AreEqual(61, inter);
+            Assert.AreEqual(79, intra);
+            Assert.AreEqual(230, single);
+            Assert.AreEqual(8, loop);
             Assert.AreEqual(0, deadend);
-            Assert.AreEqual(42, deadendH2O);
+            Assert.AreEqual(43, deadendH2O);
             Assert.AreEqual(0, deadendNH2);
             Assert.AreEqual(0, deadendTris);
             Assert.AreEqual(0, unnasignedCrossType);
@@ -560,55 +651,55 @@ namespace Test
             fileSpecificTimeDependantHydrophobicityAverageAndDeviation_modified = PEP_Analysis.ComputeHydrophobicityValues(psms, fsp, true);
 
             var singleCsmPsmData = PEP_Analysis.CreateOnePsmDataEntry("standard", fsp, singleCsm, sequenceToPsmCount, fileSpecificTimeDependantHydrophobicityAverageAndDeviation_unmodified, fileSpecificTimeDependantHydrophobicityAverageAndDeviation_modified, medianFragmentMassError, chargeStateMode, singleCsm.BestMatchingPeptides.First().Peptide, trainingVariables, singleCsm.BestMatchingPeptides.First().Notch, !singleCsm.BestMatchingPeptides.First().Peptide.Protein.IsDecoy);
-            Assert.That(singleCsmPsmData.AbsoluteAverageFragmentMassErrorFromMedian, Is.EqualTo(0.4017).Within(0.001));
+            Assert.That(singleCsmPsmData.AbsoluteAverageFragmentMassErrorFromMedian, Is.EqualTo(0.7865).Within(0.001));
             Assert.AreEqual(singleCsmPsmData.AlphaIntensity, 0);
             Assert.AreEqual(singleCsmPsmData.Ambiguity, 0);
             Assert.AreEqual(singleCsmPsmData.BetaIntensity, 0);
-            Assert.That(singleCsmPsmData.ComplementaryIonCount, Is.EqualTo(0.4).Within(0.01));
-            Assert.That(singleCsmPsmData.DeltaScore, Is.EqualTo(1.05233).Within(0.001));
-            Assert.That(singleCsmPsmData.HydrophobicityZScore, Is.EqualTo(0.8346).Within(0.001));
-            Assert.That(singleCsmPsmData.Intensity, Is.EqualTo(0.01233).Within(0.0001));
+            Assert.That(singleCsmPsmData.ComplementaryIonCount, Is.EqualTo(0.2162).Within(0.01));
+            Assert.That(singleCsmPsmData.DeltaScore, Is.EqualTo(0.8154).Within(0.001));
+            Assert.That(singleCsmPsmData.HydrophobicityZScore, Is.EqualTo(0.4697).Within(0.001));
+            Assert.That(singleCsmPsmData.Intensity, Is.EqualTo(0.0046).Within(0.0001));
             Assert.AreEqual(singleCsmPsmData.IsDeadEnd, 0);
             Assert.AreEqual(singleCsmPsmData.IsInter, 0);
             Assert.AreEqual(singleCsmPsmData.IsIntra, 0);
             Assert.AreEqual(singleCsmPsmData.IsLoop, 0);
             Assert.AreEqual(singleCsmPsmData.IsVariantPeptide, 0);
             Assert.AreEqual(singleCsmPsmData.Label, true);
-            Assert.That(singleCsmPsmData.LongestFragmentIonSeries, Is.EqualTo(0.64).Within(0.01));
+            Assert.That(singleCsmPsmData.LongestFragmentIonSeries, Is.EqualTo(0.3784).Within(0.01));
             Assert.AreEqual(singleCsmPsmData.LongestFragmentIonSeries_Alpha, 0);
             Assert.AreEqual(singleCsmPsmData.LongestFragmentIonSeries_Beta, 0);
-            Assert.AreEqual(singleCsmPsmData.MissedCleavagesCount, 1);
+            Assert.AreEqual(singleCsmPsmData.MissedCleavagesCount, 0);
             Assert.AreEqual(singleCsmPsmData.ModsCount, 1);
             Assert.AreEqual(singleCsmPsmData.Notch, 0);
             Assert.AreEqual(singleCsmPsmData.PrecursorChargeDiffToMode, -1);
             Assert.AreEqual(singleCsmPsmData.PsmCount, 4);
-            Assert.That(singleCsmPsmData.TotalMatchingFragmentCount, Is.EqualTo(1.08).Within(0.01));
+            Assert.That(singleCsmPsmData.TotalMatchingFragmentCount, Is.EqualTo(0.8378).Within(0.01));
 
             CrosslinkSpectralMatch loopCsm = firstCsmsFromListsOfCsms.Where(c => c.CrossType == PsmCrossType.Loop).OrderBy(c => -c.Score).First();
             var loopCsmPsmData = PEP_Analysis.CreateOnePsmDataEntry("standard", fsp, loopCsm, sequenceToPsmCount, fileSpecificTimeDependantHydrophobicityAverageAndDeviation_unmodified, fileSpecificTimeDependantHydrophobicityAverageAndDeviation_modified, medianFragmentMassError, chargeStateMode, loopCsm.BestMatchingPeptides.First().Peptide, trainingVariables, loopCsm.BestMatchingPeptides.First().Notch, !loopCsm.BestMatchingPeptides.First().Peptide.Protein.IsDecoy);
-            Assert.That(loopCsmPsmData.AbsoluteAverageFragmentMassErrorFromMedian, Is.EqualTo(0.511).Within(0.001));
+            Assert.That(loopCsmPsmData.AbsoluteAverageFragmentMassErrorFromMedian, Is.EqualTo(0.3661).Within(0.001));
             Assert.AreEqual(loopCsmPsmData.AlphaIntensity, 0);
             Assert.AreEqual(loopCsmPsmData.Ambiguity, 0);
             Assert.AreEqual(loopCsmPsmData.BetaIntensity, 0);
-            Assert.That(loopCsmPsmData.ComplementaryIonCount, Is.EqualTo(0.3).Within(0.01));
-            Assert.That(loopCsmPsmData.DeltaScore, Is.EqualTo(0.66497).Within(0.001));
-            Assert.That(loopCsmPsmData.HydrophobicityZScore, Is.EqualTo(0.5264).Within(0.001));
-            Assert.That(loopCsmPsmData.Intensity, Is.EqualTo(0.015).Within(0.0001));
+            Assert.That(loopCsmPsmData.ComplementaryIonCount, Is.EqualTo(0.2592).Within(0.01));
+            Assert.That(loopCsmPsmData.DeltaScore, Is.EqualTo(0.7854).Within(0.001));
+            Assert.That(loopCsmPsmData.HydrophobicityZScore, Is.EqualTo(0.1136).Within(0.001));
+            Assert.That(loopCsmPsmData.Intensity, Is.EqualTo(0.015).Within(0.0076));
             Assert.AreEqual(loopCsmPsmData.IsDeadEnd, 0);
             Assert.AreEqual(loopCsmPsmData.IsInter, 0);
             Assert.AreEqual(loopCsmPsmData.IsIntra, 0);
             Assert.AreEqual(loopCsmPsmData.IsLoop, 1);
             Assert.AreEqual(loopCsmPsmData.IsVariantPeptide, 0);
             Assert.AreEqual(loopCsmPsmData.Label, true);
-            Assert.That(loopCsmPsmData.LongestFragmentIonSeries, Is.EqualTo(0.25).Within(0.01));
+            Assert.That(loopCsmPsmData.LongestFragmentIonSeries, Is.EqualTo(0.3704).Within(0.01));
             Assert.AreEqual(loopCsmPsmData.LongestFragmentIonSeries_Alpha, 0);
             Assert.AreEqual(loopCsmPsmData.LongestFragmentIonSeries_Beta, 0);
             Assert.AreEqual(loopCsmPsmData.MissedCleavagesCount, 2);
-            Assert.AreEqual(loopCsmPsmData.ModsCount, 0);
+            Assert.AreEqual(loopCsmPsmData.ModsCount, 2);
             Assert.AreEqual(loopCsmPsmData.Notch, 0);
             Assert.AreEqual(loopCsmPsmData.PrecursorChargeDiffToMode, -1);
-            Assert.AreEqual(loopCsmPsmData.PsmCount, 8);
-            Assert.That(loopCsmPsmData.TotalMatchingFragmentCount, Is.EqualTo(0.7).Within(0.01));
+            Assert.AreEqual(loopCsmPsmData.PsmCount, 3);
+            Assert.That(loopCsmPsmData.TotalMatchingFragmentCount, Is.EqualTo(0.8148).Within(0.01));
 
             unnasignedCrossType = 0;
             inter = 0;
@@ -663,12 +754,12 @@ namespace Test
             }
 
             Assert.AreEqual(0, unnasignedCrossType);
-            Assert.AreEqual(52, inter);
-            Assert.AreEqual(77, intra);
-            Assert.AreEqual(216, single);
-            Assert.AreEqual(6, loop);
+            Assert.AreEqual(51, inter);
+            Assert.AreEqual(76, intra);
+            Assert.AreEqual(234, single);
+            Assert.AreEqual(9, loop);
             Assert.AreEqual(0, deadend);
-            Assert.AreEqual(44, deadendH2O);
+            Assert.AreEqual(43, deadendH2O);
             Assert.AreEqual(0, deadendNH2);
             Assert.AreEqual(0, deadendTris);
         }
@@ -1088,11 +1179,11 @@ namespace Test
             var lines = File.ReadAllLines(results);
             Assert.That(lines[0].Equals("SpecId\tLabel\tScannr\tScore\tdScore\tCharge\tMass\tPPM\tLenShort\tLenLong\tLenSum\tPeptide\tProtein"));
             Assert.That(lines[1].Equals("T-1-30.61909926666667\t1\t1\t26.06004534434461\t11.026813997502483\t3\t1994.0520231384269\t0.6649793543976755\t7\t9\t16\t-.EKVLTSSAR2--LSQKFPK4.-\t3336842(211)\t3336842(245)"));
+
             Directory.Delete(outputFolder, true);
         }
 
         [Test]
-
         public static void TestWriteNonSingleCross()
         {
             XLSearchTask xlst = new XLSearchTask();
@@ -1141,7 +1232,7 @@ namespace Test
 
             var fsp = new List<(string, CommonParameters)>();
             fsp.Add((spectraFile, commonParameters));
-            
+
             var file = new MyFileManager(true).LoadFile(spectraFile, commonParameters);
 
             var scans = MetaMorpheusTask.GetMs2Scans(file, spectraFile, commonParameters).ToArray();
@@ -1178,7 +1269,6 @@ namespace Test
 
             var fsp2 = new List<(string, CommonParameters)>();
             fsp2.Add((spectraFile, secondCombinedParams));
-
 
             var secondIndexingResults = (IndexingResults)new IndexingEngine(new List<Protein> { bsa }, new List<Modification>(), new List<Modification>(),
                 null, null, null, 0, DecoyType.None, secondCombinedParams, fsp2, 5000, false, new List<FileInfo>(), new List<string>()).Run();
@@ -1313,15 +1403,14 @@ namespace Test
         [TestCase(4.9999999995d, 1)]//below smallest number and within tolerance returns index 1 because value 5 is closest. the fact that this is within tolerance is meaningless
         [TestCase(5.0000000005, 3)]//above smallest number and within tolerance returns 3 because its the closest number greater.
         [TestCase(7, 3)]//between numbers outside tolerance returns 3 because its the closest number greater.
-        [TestCase(10.000000000, 4)]//between numbers exactly at tolerance but matches a number returns 4 
+        [TestCase(10.000000000, 4)]//between numbers exactly at tolerance but matches a number returns 4
         [TestCase(9.9999999999, 4)]//between numbers exactly at tolerance but matches a number returns 4 because 10 is the closest above.
         [TestCase(10.00000000005, 5)]//exactly between numbers and within tolerance of both returns 5 because its the larger.
         [TestCase(11, 6)]//when two numbers in the array are the same and the lookup matches them both you should get the index of the lowest
         public static void Test_BinarySearchGetIndex(double targetMass, int arrayIndex)
         {
-            double ToleranceForMassDifferentiation = CrosslinkSearchEngine.ToleranceForMassDifferentiation; //currently set at 1e-9
-            double[] massArray = new double[] {Double.NaN, 5, Double.NaN, 9.999999999, 10.000000000, 10.000000001, 11, 11, Double.NaN, Double.NaN };
-            Assert.AreEqual(arrayIndex,CrosslinkSearchEngine.BinarySearchGetIndex(massArray, targetMass));
+            double[] massArray = new double[] { Double.NaN, 5, Double.NaN, 9.999999999, 10.000000000, 10.000000001, 11, 11, Double.NaN, Double.NaN };
+            Assert.AreEqual(arrayIndex, CrosslinkSearchEngine.BinarySearchGetIndex(massArray, targetMass));
         }
 
         internal class XLTestDataFile : MsDataFile
