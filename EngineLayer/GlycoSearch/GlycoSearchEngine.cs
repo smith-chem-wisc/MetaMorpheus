@@ -553,8 +553,12 @@ namespace EngineLayer.GlycoSearch
                         {
                             var boxes = GlycanBox.BuildChildOGlycanBoxes(GlycanBox.OGlycanBoxes[ids[i]].NumberOfMods, GlycanBox.OGlycanBoxes[ids[i]].ModIds).ToArray();
                             var allPaths = LocalizationGraph.GetAllPaths(localizationGraphs[i].array, boxes);
-                            var local = LocalizationGraph.GetLocalizedPeptide(localizationGraphs[i].array, modPos, boxes, allPaths.First());
-                            localizationCandidates.Add(new Tuple<int, Tuple<int, int>[]>(ids[i], local));
+
+                            foreach (var path in allPaths)
+                            {
+                                var local = LocalizationGraph.GetLocalizedPeptide(localizationGraphs[i].array, modPos, boxes, path);
+                                localizationCandidates.Add(new Tuple<int, Tuple<int, int>[]>(ids[i], local));
+                            }
                         }
 
                         var psmGlyco = CreateGsm(theScan, scanIndex, ind, theScanBestPeptide, localizationCandidates, CommonParameters, oxoniumIonIntensities);

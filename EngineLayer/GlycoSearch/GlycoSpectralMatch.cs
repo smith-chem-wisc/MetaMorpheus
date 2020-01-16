@@ -149,10 +149,10 @@ namespace EngineLayer.GlycoSearch
             //sb.Append("Glycan Score" + '\t');
             //sb.Append("DiagonosticIon Score" + '\t');
             sb.Append("GlycanMass" + '\t');
+            //sb.Append("GlycanDecoy" + '\t');   
+            sb.Append("Plausible GlycanComposition" + '\t');
             sb.Append("R138/144" + '\t');
-            sb.Append("Plausible GlycanStructure" + '\t');
-            //sb.Append("GlycanDecoy" + '\t');         
-            sb.Append("Plausible GlycanComposition(H,N,A,G,F)" + '\t');
+            sb.Append("Plausible GlycanStructure" + '\t');                       
             sb.Append("GlycanLocalization" + '\t');
             sb.Append("GlycanLocalizationLevel" + '\t');
             return sb.ToString();
@@ -243,6 +243,10 @@ namespace EngineLayer.GlycoSearch
 
                 sb.Append((double)glycanBox.Mass / 1E5); sb.Append("\t");
 
+                //sb.Append( "T" + '\t');  
+
+                sb.Append(Glycan.GetKindString(glycanBox.Kind)); sb.Append("\t");
+
                 sb.Append(R138vs144.ToString()); sb.Append("\t");
 
                 //Get glycans
@@ -252,11 +256,7 @@ namespace EngineLayer.GlycoSearch
                     glycans[i] = GlycanBox.GlobalOGlycans[glycanBox.ModIds[i]];
                 }
                 sb.Append(string.Join(",", glycans.Select(p => p.Struc.ToString()).ToArray())); sb.Append("\t");
-
-                //sb.Append( "T" + '\t');         
-     
-                sb.Append(string.Join("|", glycanBox.Kind.Select(p=>p.ToString()))); sb.Append("\t");
-
+                                 
                 string localizationLevel;
                 sb.Append(localizationInfo(OGlycanBoxLocalization, out localizationLevel)); sb.Append("\t");
 
