@@ -12,7 +12,7 @@ namespace EngineLayer.Calibration
         private readonly DataPointAquisitionResults Datapoints;
         public MsDataFile CalibratedDataFile { get; private set; }
 
-        public CalibrationEngine(MsDataFile myMSDataFile, DataPointAquisitionResults datapoints, CommonParameters commonParameters, List<string> nestedIds) : base(commonParameters, nestedIds)
+        public CalibrationEngine(MsDataFile myMSDataFile, DataPointAquisitionResults datapoints, CommonParameters commonParameters, List<(string FileName, CommonParameters Parameters)> fileSpecificParameters, List<string> nestedIds) : base(commonParameters, fileSpecificParameters, nestedIds)
         {
             MyMsDataFile = myMSDataFile;
             Datapoints = datapoints;

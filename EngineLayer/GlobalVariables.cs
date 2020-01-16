@@ -21,7 +21,8 @@ namespace EngineLayer
         private static List<Modification> _AllModsKnown = new List<Modification>();
         private static HashSet<string> _AllModTypesKnown = new HashSet<string>();
         private static List<Crosslinker> _KnownCrosslinkers = new List<Crosslinker>();
-        
+        private static List<string> _SeparationTypes = new List<string>();
+
         //Characters that aren't amino acids, but are reserved for special uses (motifs, delimiters, mods, etc)
         private static char[] _InvalidAminoAcids = new char[] { 'X', 'B', 'J', 'Z', ':', '|', ';', '[', ']', '{', '}', '(', ')', '+', '-' };
 
@@ -70,6 +71,8 @@ namespace EngineLayer
 
             ElementsLocation = Path.Combine(DataDir, @"Data", @"elements.dat");
             UsefulProteomicsDatabases.Loaders.LoadElements();
+
+            AddSeparationTypes(new List<string> { { "HPLC" }, { "CZE" } });
 
             // load default crosslinkers
             string crosslinkerLocation = Path.Combine(DataDir, @"Data", @"Crosslinkers.tsv");
@@ -146,6 +149,7 @@ namespace EngineLayer
         public static IEnumerable<string> AllModTypesKnown { get { return _AllModTypesKnown.AsEnumerable(); } }
         public static Dictionary<string, Modification> AllModsKnownDictionary { get; private set; }
         public static Dictionary<string, DissociationType> AllSupportedDissociationTypes { get; private set; }
+        public static List<string> SeparationTypes { get { return _SeparationTypes; } }
 
         public static string ExperimentalDesignFileName { get; }
         public static IEnumerable<Crosslinker> Crosslinkers { get { return _KnownCrosslinkers.AsEnumerable(); } }
@@ -206,6 +210,11 @@ namespace EngineLayer
                     _AllModTypesKnown.Add(mod.ModificationType);
                 }
             }
+        }
+
+        public static void AddSeparationTypes(List<string> separationTypes)
+        {
+            _SeparationTypes.AddRange(separationTypes);
         }
 
         public static void AddCrosslinkers(IEnumerable<Crosslinker> crosslinkers)

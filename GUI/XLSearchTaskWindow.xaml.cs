@@ -1,5 +1,4 @@
 ﻿using EngineLayer;
-using EngineLayer.CrosslinkSearch;
 using MassSpectrometry;
 using MzLibUtil;
 using Nett;
@@ -67,12 +66,18 @@ namespace MetaMorpheusGUI
             }
             Crosslinker DSSO = GlobalVariables.Crosslinkers.First();
             cbCrosslinkers.SelectedItem = DSSO;
-            
+
             foreach (string dissassociationType in GlobalVariables.AllSupportedDissociationTypes.Keys)
             {
                 DissociationTypeComboBox.Items.Add(dissassociationType);
                 ChildScanDissociationTypeComboBox.Items.Add(dissassociationType);
             }
+
+            foreach (string separationType in GlobalVariables.SeparationTypes)
+            {
+                SeparationTypeComboBox.Items.Add(separationType);
+            }
+            SeparationTypeComboBox.SelectedItem = "HPLC";
 
             cbbXLprecusorMsTl.Items.Add("Da");
             cbbXLprecusorMsTl.Items.Add("ppm");
@@ -130,12 +135,13 @@ namespace MetaMorpheusGUI
             MinRatioTextBox.Text = task.CommonParameters.MinimumAllowedIntensityRatioToBasePeak == double.MaxValue || !task.CommonParameters.MinimumAllowedIntensityRatioToBasePeak.HasValue ? "" : task.CommonParameters.MinimumAllowedIntensityRatioToBasePeak.Value.ToString(CultureInfo.InvariantCulture);
 
             DissociationTypeComboBox.SelectedItem = task.CommonParameters.DissociationType.ToString();
+            SeparationTypeComboBox.SelectedItem = task.CommonParameters.SeparationType.ToString();
 
             if (task.CommonParameters.ChildScanDissociationType != DissociationType.Unknown)
             {
                 ChildScanDissociationTypeComboBox.SelectedItem = task.CommonParameters.ChildScanDissociationType.ToString();
             }
-            
+
             checkBoxDecoy.IsChecked = task.XlSearchParameters.DecoyType != DecoyType.None;
             deconvolutePrecursors.IsChecked = task.CommonParameters.DoPrecursorDeconvolution;
             useProvidedPrecursor.IsChecked = task.CommonParameters.UseProvidedPrecursorInfo;
@@ -153,7 +159,7 @@ namespace MetaMorpheusGUI
             maxThreadsTextBox.Text = task.CommonParameters.MaxThreadsToUsePerFile.ToString(CultureInfo.InvariantCulture);
             CustomFragmentationWindow = new CustomFragmentationWindow(task.CommonParameters.CustomIons);
             ckbPepXML.IsChecked = task.XlSearchParameters.WritePepXml;
-            ckbPercolator.IsChecked = task.XlSearchParameters.WriteOutputForPercolator;
+            //ckbPercolator.IsChecked = task.XlSearchParameters.WriteOutputForPercolator;
             OutputFileNameTextBox.Text = task.CommonParameters.TaskDescriptor;
 
             foreach (var mod in task.CommonParameters.ListOfModsFixed)
@@ -228,7 +234,7 @@ namespace MetaMorpheusGUI
             }
 
             DissociationType dissociationType = GlobalVariables.AllSupportedDissociationTypes[DissociationTypeComboBox.SelectedItem.ToString()];
-
+            string separationType = SeparationTypeComboBox.SelectedItem.ToString();
             DissociationType childDissociationType = DissociationType.Unknown;
             if (ChildScanDissociationTypeComboBox.SelectedItem != null)
             {
@@ -282,7 +288,6 @@ namespace MetaMorpheusGUI
                 PrecursorMassTolerance = new PpmTolerance(double.Parse(XLPrecusorMsTlTextBox.Text, CultureInfo.InvariantCulture));
             }
 
-            TheTask.XlSearchParameters.WriteOutputForPercolator = ckbPercolator.IsChecked.Value;
             TheTask.XlSearchParameters.WritePepXml = ckbPepXML.IsChecked.Value;
 
             var listOfModsVariable = new List<(string, string)>();
@@ -309,6 +314,7 @@ namespace MetaMorpheusGUI
                 numberOfPeaksToKeepPerWindow: int.Parse(TopNPeaksTextBox.Text),
                 minimumAllowedIntensityRatioToBasePeak: double.Parse(MinRatioTextBox.Text, CultureInfo.InvariantCulture),
                 dissociationType: dissociationType,
+                separationType: separationType,
                 childScanDissociationType: childDissociationType,
                 scoreCutoff: double.Parse(minScoreAllowed.Text, CultureInfo.InvariantCulture),
                 totalPartitions: int.Parse(numberOfDatabaseSearchesTextBox.Text, CultureInfo.InvariantCulture),
@@ -410,7 +416,7 @@ namespace MetaMorpheusGUI
             SaveButton_Click(sender, e);
             Toml.WriteFile(TheTask, Path.Combine(GlobalVariables.DataDir, "DefaultParameters", @"XLSearchTaskDefault.toml"), MetaMorpheusTask.tomlConfig);
         }
-        
+
         private void NonSpecificUpdate(object sender, SelectionChangedEventArgs e)
         {
             const int maxLength = 25;

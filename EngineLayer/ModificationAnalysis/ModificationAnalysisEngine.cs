@@ -8,7 +8,7 @@ namespace EngineLayer.ModificationAnalysis
     {
         private readonly List<PeptideSpectralMatch> NewPsms;
 
-        public ModificationAnalysisEngine(List<PeptideSpectralMatch> newPsms, CommonParameters commonParameters, List<string> nestedIds) : base(commonParameters, nestedIds)
+        public ModificationAnalysisEngine(List<PeptideSpectralMatch> newPsms, CommonParameters commonParameters, List<(string fileName, CommonParameters fileSpecificParameters)> fileSpecificParameters, List<string> nestedIds) : base(commonParameters, fileSpecificParameters, nestedIds)
         {
             NewPsms = newPsms;
         }
