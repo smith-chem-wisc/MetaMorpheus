@@ -5,6 +5,7 @@ using Proteomics;
 using Proteomics.AminoAcidPolymer;
 using System;
 using System.Collections.Generic;
+using System.Diagnostics;
 using System.IO;
 using System.Linq;
 
@@ -12,6 +13,11 @@ namespace EngineLayer
 {
     public static class GlobalVariables
     {
+        // for now, these are only used for error-checking in the command-line version.
+        // compressed versions of the protein databases (e.g., .xml.gz) are also supported
+        public static List<string> AcceptedDatabaseFormats = new List<string> { ".fasta", ".fa", ".xml" };
+        public static List<string> AcceptedSpectraFormats = new List<string> { ".raw", ".mzml", ".mgf" };
+
         private static List<Modification> _AllModsKnown = new List<Modification>();
         private static HashSet<string> _AllModTypesKnown = new HashSet<string>();
         private static List<Crosslinker> _KnownCrosslinkers = new List<Crosslinker>();
@@ -283,6 +289,17 @@ namespace EngineLayer
                 }
             }
             File.WriteAllLines(aminoAcidPath, linesToWrite.ToArray());
+        }
+
+        // Does the same thing as Process.Start() except it works on .NET Core
+        public static void StartProcess(string path)
+        {
+            var p = new Process();
+            p.StartInfo = new ProcessStartInfo(path)
+            {
+                UseShellExecute = true
+            };
+            p.Start();
         }
     }
 }
