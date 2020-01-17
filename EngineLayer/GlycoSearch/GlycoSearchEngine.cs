@@ -344,7 +344,7 @@ namespace EngineLayer.GlycoSearch
                     //Filter by glycanBoxes mass difference.
                     var possibleGlycanMassLow = theScan.PrecursorMass * (1 - 1E-5) - theScanBestPeptide.MonoisotopicMass;
 
-                    if (possibleGlycanMassLow < (double)GlycanBox.OGlycanBoxes.First().Mass / 1E5 || possibleGlycanMassLow > (double)GlycanBox.OGlycanBoxes.Last().Mass / 1E5)
+                    if (possibleGlycanMassLow < GlycanBox.OGlycanBoxes.First().Mass || possibleGlycanMassLow > GlycanBox.OGlycanBoxes.Last().Mass)
                     {
                         continue;
                     }
@@ -362,9 +362,9 @@ namespace EngineLayer.GlycoSearch
 
                     List<Tuple<int, int[]>> glycanBoxId_localization = new List<Tuple<int, int[]>>();
 
-                    int iDLow = GlycoPeptides.BinarySearchGetIndex(GlycanBox.OGlycanBoxes.Select(p => (double)p.Mass / 1E5).ToArray(), possibleGlycanMassLow);
+                    int iDLow = GlycoPeptides.BinarySearchGetIndex(GlycanBox.OGlycanBoxes.Select(p => p.Mass).ToArray(), possibleGlycanMassLow);
 
-                    while (iDLow < GlycanBox.OGlycanBoxes.Count() && (PrecusorSearchMode.Within(theScan.PrecursorMass, theScanBestPeptide.MonoisotopicMass + (double)GlycanBox.OGlycanBoxes[iDLow].Mass / 1E5)))
+                    while (iDLow < GlycanBox.OGlycanBoxes.Count() && (PrecusorSearchMode.Within(theScan.PrecursorMass, theScanBestPeptide.MonoisotopicMass + GlycanBox.OGlycanBoxes[iDLow].Mass)))
                     {
                         
                         if (modPos.Length >= GlycanBox.OGlycanBoxes[iDLow].NumberOfMods && GlycoPeptides.OxoniumIonsAnalysis(oxoniumIonIntensities, GlycanBox.OGlycanBoxes[iDLow]))
@@ -455,7 +455,7 @@ namespace EngineLayer.GlycoSearch
                     //Filter by glycanBoxes mass difference.
                     var possibleGlycanMassLow = theScan.PrecursorMass * (1 - 1E-5) - theScanBestPeptide.MonoisotopicMass;
 
-                    if (possibleGlycanMassLow < (double)GlycanBox.OGlycanBoxes.First().Mass/1E5 || possibleGlycanMassLow > (double)GlycanBox.OGlycanBoxes.Last().Mass/1E5)
+                    if (possibleGlycanMassLow < GlycanBox.OGlycanBoxes.First().Mass || possibleGlycanMassLow > GlycanBox.OGlycanBoxes.Last().Mass)
                     {
                         continue;
                     }
@@ -469,7 +469,7 @@ namespace EngineLayer.GlycoSearch
                         continue;
                     }
 
-                    int iDLow = GlycoPeptides.BinarySearchGetIndex(GlycanBox.OGlycanBoxes.Select(p => (double)p.Mass / 1E5).ToArray(), possibleGlycanMassLow);
+                    int iDLow = GlycoPeptides.BinarySearchGetIndex(GlycanBox.OGlycanBoxes.Select(p => p.Mass).ToArray(), possibleGlycanMassLow);
 
                     int[] modPos = GlycoSpectralMatch.GetPossibleModSites(theScanBestPeptide, new string[] { "S", "T" }).ToArray();
 
@@ -479,7 +479,7 @@ namespace EngineLayer.GlycoSearch
                     //No localization can be done with MS2-HCD spectrum
                     if (theScan.ChildScans==null && !GlycoPeptides.DissociationTypeContainETD(CommonParameters.DissociationType))
                     {
-                        while(iDLow < GlycanBox.OGlycanBoxes.Count() && (PrecusorSearchMode.Within(theScan.PrecursorMass, theScanBestPeptide.MonoisotopicMass + (double)GlycanBox.OGlycanBoxes[iDLow].Mass / 1E5)))
+                        while(iDLow < GlycanBox.OGlycanBoxes.Count() && (PrecusorSearchMode.Within(theScan.PrecursorMass, theScanBestPeptide.MonoisotopicMass + GlycanBox.OGlycanBoxes[iDLow].Mass)))
                         {
                             if (modPos.Length >= GlycanBox.OGlycanBoxes[iDLow].NumberOfMods && GlycoPeptides.OxoniumIonsAnalysis(oxoniumIonIntensities, GlycanBox.OGlycanBoxes[iDLow]))
                             {
@@ -518,7 +518,7 @@ namespace EngineLayer.GlycoSearch
                     List<LocalizationGraph> localizationGraphs = new List<LocalizationGraph>();
                     List<int> ids = new List<int>();
 
-                    while (iDLow < GlycanBox.OGlycanBoxes.Count() && (PrecusorSearchMode.Within(theScan.PrecursorMass, theScanBestPeptide.MonoisotopicMass + (double)GlycanBox.OGlycanBoxes[iDLow].Mass / 1E5)))
+                    while (iDLow < GlycanBox.OGlycanBoxes.Count() && (PrecusorSearchMode.Within(theScan.PrecursorMass, theScanBestPeptide.MonoisotopicMass + GlycanBox.OGlycanBoxes[iDLow].Mass)))
                     {
                         if (modPos.Length >= GlycanBox.OGlycanBoxes[iDLow].NumberOfMods && GlycoPeptides.OxoniumIonsAnalysis(oxoniumIonIntensities, GlycanBox.OGlycanBoxes[iDLow]))
                         {

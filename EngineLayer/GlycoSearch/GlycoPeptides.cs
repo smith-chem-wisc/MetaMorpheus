@@ -327,14 +327,14 @@ namespace EngineLayer.GlycoSearch
                     var j = keyValuePair.Item2[i];
                     while (j <= len + 1)
                     {
-                        newFragments[j - 2] += (double)GlycanBox.GlobalOGlycans[OGlycanBoxes[keyValuePair.Item1].ModIds[i]].Mass / 1E5;
+                        newFragments[j - 2] += GlycanBox.GlobalOGlycans[OGlycanBoxes[keyValuePair.Item1].ModIds[i]].Mass;
                         j++;
                     }
                     j = keyValuePair.Item2[i];
                     while (j >= 3)
                     {
-                        newFragments[len * 2 - j + 2] += (double)GlycanBox.GlobalOGlycans[OGlycanBoxes[keyValuePair.Item1].ModIds[i]].Mass / 1E5;
-                        newFragments[len * 3 - j + 2] += (double)GlycanBox.GlobalOGlycans[OGlycanBoxes[keyValuePair.Item1].ModIds[i]].Mass / 1E5;
+                        newFragments[len * 2 - j + 2] += GlycanBox.GlobalOGlycans[OGlycanBoxes[keyValuePair.Item1].ModIds[i]].Mass;
+                        newFragments[len * 3 - j + 2] += GlycanBox.GlobalOGlycans[OGlycanBoxes[keyValuePair.Item1].ModIds[i]].Mass;
                         j--;
                     }
                 }
@@ -358,7 +358,7 @@ namespace EngineLayer.GlycoSearch
 
             foreach (var c in local_c_fragments)
             {
-                var newMass = c.NeutralMass + (double)localOGlycanBox.Mass / 1E5;
+                var newMass = c.NeutralMass + localOGlycanBox.Mass;
                 newFragments.Add(newMass);
             }
 
@@ -366,7 +366,7 @@ namespace EngineLayer.GlycoSearch
 
             foreach (var z in local_z_fragments)
             {
-                var newMass = z.NeutralMass + (double)(OGlycanBox.Mass - localOGlycanBox.Mass) / 1E5;
+                var newMass = z.NeutralMass + (OGlycanBox.Mass - localOGlycanBox.Mass);
                 newFragments.Add(newMass);
             }
 

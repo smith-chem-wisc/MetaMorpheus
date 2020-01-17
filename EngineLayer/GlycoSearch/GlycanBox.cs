@@ -109,11 +109,11 @@ namespace EngineLayer
 
         }
 
-        public new int Mass
+        public new double Mass
         {
             get
             {
-                return Glycan.GetMass(Kind);
+                return (double)Glycan.GetMass(Kind)/1E5;
             }
         }
 

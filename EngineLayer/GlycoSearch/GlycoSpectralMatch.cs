@@ -241,7 +241,7 @@ namespace EngineLayer.GlycoSearch
 
                 var glycanBox = GlycanBox.OGlycanBoxes[OGlycanBoxLocalization.First().Item1];
 
-                sb.Append((double)glycanBox.Mass / 1E5); sb.Append("\t");
+                sb.Append(glycanBox.Mass); sb.Append("\t");
 
                 //sb.Append( "T" + '\t');  
 
