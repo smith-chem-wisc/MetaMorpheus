@@ -143,6 +143,8 @@ namespace EngineLayer.GlycoSearch
 
             sb.Append("Decoy/Contaminant/Target" + '\t');
             sb.Append("QValue" + '\t');
+            sb.Append("PEP" + '\t');
+            sb.Append("PEP_QValue" + '\t');
 
             sb.Append("Total Score" + '\t');
             //sb.Append("Peptide Score" + '\t');
@@ -221,7 +223,8 @@ namespace EngineLayer.GlycoSearch
 
 
             sb.Append(FdrInfo.QValue.ToString() + "\t");
-
+            sb.Append("0" + "\t");
+            sb.Append("0" + "\t");
             if (NGlycan != null)
             {
                 sb.Append(TotalScore + "\t");             
