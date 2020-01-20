@@ -45,6 +45,13 @@ namespace EngineLayer
         public string Struc { get; private set; }
         public int Mass { get; private set; }
         public byte[] Kind { get; private set; }
+        public string Composition
+        {
+            get
+            {
+                return Glycan.GetKindString(Kind);
+            }
+        }
         public List<GlycanIon> Ions { get; private set; }
         public bool Decoy { get; private set; }
 

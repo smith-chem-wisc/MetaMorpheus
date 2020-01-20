@@ -29,6 +29,8 @@ namespace EngineLayer.GlycoSearch
         public double GlycanScore { get; set; }
         public double DiagnosticIonScore { get; set; }
         public double R138vs144 { get; set; }
+        public List<Tuple<int, int>> LocalizedGlycan { get; set; }
+        public string LocalizationLevel { get; set; }
 
         //Motif should be writen with required form
         public static List<int> GetPossibleModSites(PeptideWithSetModifications peptide, string[] motifs)
@@ -259,11 +261,10 @@ namespace EngineLayer.GlycoSearch
                     glycans[i] = GlycanBox.GlobalOGlycans[glycanBox.ModIds[i]];
                 }
                 sb.Append(string.Join(",", glycans.Select(p => p.Struc.ToString()).ToArray())); sb.Append("\t");
-                                 
-                string localizationLevel;
-                sb.Append(localizationInfo(OGlycanBoxLocalization, out localizationLevel)); sb.Append("\t");
 
-                sb.Append(localizationLevel); sb.Append("\t");
+                sb.Append(string.Join(",", LocalizedGlycan.Select(p=>p.Item1.ToString() + "-" + p.Item2.ToString()))); sb.Append("\t");
+
+                sb.Append(LocalizationLevel); sb.Append("\t");
             }
 
             return sb.ToString();
@@ -276,16 +277,19 @@ namespace EngineLayer.GlycoSearch
             return s;
         }
 
-        public static string localizationInfo(List<Tuple<int, Tuple<int, int>[]>> OGlycanBoxLocalization, out string localizationLevel)
+        public static List<Tuple<int, int>> ToLocalizeGlyco(List<Tuple<int, Tuple<int, int>[]>> OGlycanBoxLocalization, out string localizationLevel)
         {
-            HashSet<int> allGlycanIds = new HashSet<int>(OGlycanBoxLocalization.Select(p=>p.Item2).SelectMany(p => p.Select(q => q.Item2)));
+            List<Tuple<int, int>> localizedGlycan = new List<Tuple<int, int>>();
+
+            HashSet<int> allGlycanIds = new HashSet<int>(OGlycanBoxLocalization.Select(p => p.Item2).SelectMany(p => p.Select(q => q.Item2)));
 
             Dictionary<int, int> seenGlycanIds = new Dictionary<int, int>();
 
-            HashSet<int> seenGlycanBoxIds = new HashSet<int>(OGlycanBoxLocalization.Select(p=>p.Item1));
+            HashSet<int> seenGlycanBoxIds = new HashSet<int>(OGlycanBoxLocalization.Select(p => p.Item1));
 
             //Dictionary<string, int>: mod-id, count
             Dictionary<string, int> seenModSite = new Dictionary<string, int>();
+
             foreach (var ogl in OGlycanBoxLocalization)
             {
                 foreach (var og in ogl.Item2)
@@ -302,7 +306,7 @@ namespace EngineLayer.GlycoSearch
 
                     if (seenGlycanIds.ContainsKey(og.Item2))
                     {
-                        seenGlycanIds[og.Item2] += 1;                   
+                        seenGlycanIds[og.Item2] += 1;
                     }
                     else
                     {
@@ -318,14 +322,14 @@ namespace EngineLayer.GlycoSearch
             }
             else if (OGlycanBoxLocalization.Count > 1 && seenGlycanBoxIds.Count == 1)
             {
-                if (seenModSite.Values.Where(p=>p == OGlycanBoxLocalization.Count).Count() > 0)
+                if (seenModSite.Values.Where(p => p == OGlycanBoxLocalization.Count).Count() > 0)
                 {
                     localizationLevel = "Level2";
                 }
                 else
                 {
                     localizationLevel = "Level3a";
-                }              
+                }
             }
             else if (OGlycanBoxLocalization.Count > 1 && seenGlycanBoxIds.Count > 1)
             {
@@ -334,7 +338,7 @@ namespace EngineLayer.GlycoSearch
                     localizationLevel = "Level3b";
                 }
 
-                if (seenGlycanIds.Values.Where(p=>p== OGlycanBoxLocalization.Count).Count() >0)
+                if (seenGlycanIds.Values.Where(p => p == OGlycanBoxLocalization.Count).Count() > 0)
                 {
                     localizationLevel = "Level4";
                 }
@@ -342,30 +346,15 @@ namespace EngineLayer.GlycoSearch
             }
 
 
-            string local = "";
-            //Some GSP have a lot paths, in which case only output first 10 paths and the total number of the paths.
-            int maxOutputPath = 10;
-            if (OGlycanBoxLocalization.Count <= maxOutputPath)
+            foreach (var seenMod in seenModSite)
             {
-                maxOutputPath = OGlycanBoxLocalization.Count;
+                if (seenMod.Value == OGlycanBoxLocalization.Count)
+                {
+                    localizedGlycan.Add(new Tuple<int, int>(int.Parse(seenMod.Key.Split('-')[0]), int.Parse(seenMod.Key.Split('-')[1])));
+                }
             }
 
-            int i = 0;
-            while (i<maxOutputPath)
-            {
-                var ogl = OGlycanBoxLocalization[i];
-                local += "{@" + ogl.Item1.ToString() + "[";
-                var g = string.Join(",", ogl.Item2.Select(p => p.Item1.ToString() + "-" + p.Item2.ToString()));
-                local += g + "]}";
-                i++;
-            }
-
-            if (OGlycanBoxLocalization.Count > maxOutputPath)
-            {
-                local += "... In Total:" + OGlycanBoxLocalization.Count.ToString() + " Paths";
-            }
-
-            return local;
+            return localizedGlycan;
         }
     }
 }

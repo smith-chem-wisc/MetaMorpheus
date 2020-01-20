@@ -54,6 +54,10 @@ namespace TaskLayer
                 SingleFDRAnalysis(allPsmsGly, commonParameters, new List<string> { taskId });
                 var writtenFileInter2 = Path.Combine(OutputFolder, "glyco_fdr" + ".tsv");
                 WriteFile.WritePsmGlycoToTsv(allPsmsGly, writtenFileInter2, 2);
+
+                var ProteinLevelLocalization = ProteinLevelGlycoParsimony(allPsmsGly);
+                var writtenFileInter3 = Path.Combine(OutputFolder, "protein_glyco_localization" + ".tsv");
+                WriteFile.WriteProteinLevelGlycoLocalization(ProteinLevelLocalization, writtenFileInter3);
                 return MyTaskResults;
             }
         }
@@ -65,6 +69,39 @@ namespace TaskLayer
             List<PeptideSpectralMatch> psms = items.Select(p => p as PeptideSpectralMatch).ToList();
             new FdrAnalysisEngine(psms, 0, commonParameters, taskIds).Run();
 
+        }
+
+        private Dictionary<string, double> ProteinLevelGlycoParsimony(List<GlycoSpectralMatch> allPsmsGly)
+        {
+            //<id, smallest fdr>. id: ProteinAccession, ProtienPos, GlycanId.
+            Dictionary<string, double> localizedGlycan = new Dictionary<string, double>();
+
+            foreach (var gsm in allPsmsGly)
+            {
+                if (gsm.LocalizedGlycan.Count > 0)
+                {
+                    foreach (var local in gsm.LocalizedGlycan)
+                    {
+                        int proteinPos = local.Item1 + gsm.OneBasedStartResidueInProtein.Value;
+
+                        string proPosId = gsm.ProteinAccession + "-" +  proteinPos.ToString() + "-" + local.Item2;
+
+                        if (!localizedGlycan.ContainsKey(proPosId))
+                        {
+                            localizedGlycan.Add(proPosId, gsm.FdrInfo.QValue);
+                        }
+                        else
+                        {
+                            if (localizedGlycan[proPosId] > gsm.FdrInfo.QValue)
+                            {
+                                localizedGlycan[proPosId] = gsm.FdrInfo.QValue;
+                            }
+                        }
+                    }
+                }    
+            }
+
+            return localizedGlycan;
         }
 
     }

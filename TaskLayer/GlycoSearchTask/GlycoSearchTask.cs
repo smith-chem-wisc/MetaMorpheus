@@ -155,6 +155,13 @@ namespace TaskLayer
             {
                 GlycoSpectralMatch glycoSpectralMatch = gsmsPerScan[0];
 
+                if (glycoSpectralMatch.OGlycanBoxLocalization!=null)
+                {
+                    string localLevel;
+                    glycoSpectralMatch.LocalizedGlycan = GlycoSpectralMatch.ToLocalizeGlyco(glycoSpectralMatch.OGlycanBoxLocalization, out localLevel);
+                    glycoSpectralMatch.LocalizationLevel = localLevel;
+                }
+
                 filteredAllPsms.Add(glycoSpectralMatch);
             }
 
