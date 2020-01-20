@@ -51,8 +51,8 @@ namespace EngineLayer
                         continue;
                     }
 
-                    byte[] kind = new byte[
-                        ] { 0, 0, 0, 0, 0, 0, 0, 0 };
+                    //byte[] kind = new byte[] { 0, 0, 0, 0, 0, 0, 0, 0 };
+                    byte[] kind = new byte[] { 0, 0, 0, 0, 0 };
                     var x = line.Split('(', ')');
                     int i = 0;
                     while (i < x.Length - 1)

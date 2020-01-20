@@ -86,10 +86,10 @@ namespace EngineLayer
             get
             {
                 {
-                    byte[] kind = new byte[8] { 0, 0, 0, 0, 0, 0, 0, 0 };
+                    byte[] kind = new byte[5] { 0, 0, 0, 0, 0};
                     foreach (var id in ModIds)
                     {
-                        for (int i = 0; i < 8; i++)
+                        for (int i = 0; i < 5; i++)
                         {
                             kind[i] += GlobalOGlycans[id].Kind[i];
                         }

@@ -109,9 +109,9 @@ namespace EngineLayer
             { 'A', 29109542 },
             { 'G', 30709033 },
             { 'F', 14605791 },
-            { 'P', 7996633 },
-            { 'S', 7995681 },
-            { 'Y', 2298977 },
+            //{ 'P', 7996633 },
+            //{ 'S', 7995681 },
+            //{ 'Y', 2298977 },
             //{ 'X', 15005282 }
         };
 
@@ -414,9 +414,9 @@ namespace EngineLayer
 
         public static byte[] GetKind(string structure)
         {
-            byte[] kind = new byte[8] { 0, 0, 0, 0, 0, 0, 0, 0};
-
-            for (int i = 0; i < 8; i++)
+            //byte[] kind = new byte[8] { 0, 0, 0, 0, 0, 0, 0, 0};
+            byte[] kind = new byte[5] { 0, 0, 0, 0, 0 };
+            for (int i = 0; i < 5; i++)
             {
 
                 kind[i] = Convert.ToByte(structure.Count(p => p == CharMassDic.ElementAt(i).Key));
