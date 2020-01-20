@@ -28,12 +28,23 @@ namespace Test
     {
         private static GlycanBox[] OGlycanBoxes { get; set; }
 
+        private static SelectedModBox[] ModBoxes { get; set; }
+
         [OneTimeSetUp]
         public static void Setup()
         {
             GlycanBox.GlobalOGlycans = GlycanDatabase.LoadGlycan(GlobalVariables.GlycanLocations.Where(p => p.Contains("OGlycan.gdb")).First()).ToArray();
             GlycanBox.GlobalOGlycanModifications = GlycanBox.BuildGlobalOGlycanModifications(GlycanBox.GlobalOGlycans);
             OGlycanBoxes = GlycanBox.BuildOGlycanBoxes(3).OrderBy(p => p.Mass).ToArray();
+
+            SelectedModBox.SelectedModifications = new Modification[5];
+            SelectedModBox.SelectedModifications[0] = GlobalVariables.AllModsKnownDictionary["Hydroxylation on P"];
+            SelectedModBox.SelectedModifications[1] = GlobalVariables.AllModsKnownDictionary["Hydroxylation on K"];
+            SelectedModBox.SelectedModifications[2] = GlobalVariables.AllModsKnownDictionary["Glucosylgalactosyl on K"];
+            SelectedModBox.SelectedModifications[3] = GlobalVariables.AllModsKnownDictionary["Galactosyl on K"];
+            SelectedModBox.SelectedModifications[4] = GlobalVariables.AllModsKnownDictionary["Oxidation on M"];
+
+            ModBoxes = SelectedModBox.BuildModBoxes(10).Where(p => !p.MotifNeeded.ContainsKey("K") || (p.MotifNeeded.ContainsKey("K") && p.MotifNeeded["K"].Count <= 3)).OrderBy(p => p.Mass).ToArray();
         }
 
         [Test]
@@ -200,12 +211,12 @@ namespace Test
             List<Product> products = peptide.Fragment(DissociationType.ETD, FragmentationTerminus.Both).ToList();
 
             int[] modPos = GlycoSpectralMatch.GetPossibleModSites(peptide, new string[] { "S", "T" }).OrderBy(p=>p).ToArray();
-            var boxes = GlycanBox.BuildChildOGlycanBoxes(3, glycanBox.ModIds).ToArray();
+            var boxes = ModBox.BuildChildModBoxes(3, glycanBox.ModIds).ToArray();
             Assert.That(boxes.Count() == 6);
 
             //Test GetLocalFragmentHash, which is used for localiation.
-            var testProducts = GlycoPeptides.GetLocalFragmentHash(products, peptide.Length, modPos, 0, glycanBox, boxes[1], 1000);
-            var testProducts1 = GlycoPeptides.GetLocalFragmentHash(products, peptide.Length, modPos, 1, glycanBox, boxes[1], 1000);
+            var testProducts = GlycoPeptides.GetLocalFragmentHash(products, peptide.Length, modPos, 0, glycanBox, new GlycanBox(boxes[1].ModIds), 1000);
+            var testProducts1 = GlycoPeptides.GetLocalFragmentHash(products, peptide.Length, modPos, 1, glycanBox, new GlycanBox(boxes[1].ModIds), 1000);
             Assert.That(testProducts.Count() == 2);
             Assert.That(testProducts1.Count() == 4);
 
@@ -249,16 +260,16 @@ namespace Test
             var matchedKnownFragmentIons = MetaMorpheusEngine.MatchFragmentIons(scans.First(), knownProducts, commonParameters);
 
             //Graph Localization
-            LocalizationGraph localizationGraph = new LocalizationGraph(modPos.Length, boxes.Length);
+            LocalizationGraph localizationGraph = new LocalizationGraph(modPos, glycanBox);
 
-            localizationGraph.LocalizeOGlycan(modPos, glycanBox, boxes, allPeaks, products, peptide.Length);
+            LocalizationGraph.LocalizeOGlycan(localizationGraph.array, modPos, glycanBox, localizationGraph.ChildModBoxes, allPeaks, products, peptide.Length);
 
-            var allPaths = LocalizationGraph.GetAllPaths(localizationGraph.array, boxes);
+            var allPaths = LocalizationGraph.GetAllPaths(localizationGraph.array, localizationGraph.ChildModBoxes);
 
             var knowPath = new int[8] {2, 4, 4, 4, 5, 5, 5, 5 };
             Assert.That(Enumerable.SequenceEqual(knowPath, allPaths[0]));
 
-            var local = LocalizationGraph.GetLocalizedPath(localizationGraph.array, modPos, boxes, allPaths.First());
+            var local = LocalizationGraph.GetLocalizedPath(localizationGraph.array, modPos, localizationGraph.ChildModBoxes, allPaths.First());
 
             var knowLocal = new Tuple<int, int>[3] { new Tuple<int, int>(2, 1), new Tuple<int, int>(3, 1), new Tuple<int, int>(10, 0) };
             Assert.That(Enumerable.SequenceEqual(local, knowLocal));
@@ -268,14 +279,7 @@ namespace Test
         public static void OGlycoTest_GetPossibleModSites()
         {
             //Test ModBox.BuildModBoxes
-            ModBox.SelectedModifications = new Modification[5];
-            ModBox.SelectedModifications[0] = GlobalVariables.AllModsKnownDictionary["Oxidation on M"];
-            ModBox.SelectedModifications[1] = GlobalVariables.AllModsKnownDictionary["Hydroxylation on P"];
-            ModBox.SelectedModifications[2] = GlobalVariables.AllModsKnownDictionary["Hydroxylation on K"];
-            ModBox.SelectedModifications[3] = GlobalVariables.AllModsKnownDictionary["Glucosylgalactosyl on K"];
-            ModBox.SelectedModifications[4] = GlobalVariables.AllModsKnownDictionary["Galactosyl on K"];
 
-            var ModBoxes = ModBox.BuildModBoxes(10).Where(p => !p.MotifNeeded.ContainsKey("K") || (p.MotifNeeded.ContainsKey("K") && p.MotifNeeded["K"].Count <= 3)).OrderBy(p => p.Mass).ToArray();
             Assert.That(ModBoxes.Length == 860);
 
             //Test ModBox.GetPossibleModSites
@@ -306,14 +310,6 @@ namespace Test
         [Test]
         public static void OGlycoTest_LocalizationMod()
         {
-            //Get modBox
-            ModBox.SelectedModifications = new Modification[4];
-            ModBox.SelectedModifications[0] = GlobalVariables.AllModsKnownDictionary["Hydroxylation on P"];
-            ModBox.SelectedModifications[1] = GlobalVariables.AllModsKnownDictionary["Hydroxylation on K"];
-            ModBox.SelectedModifications[2] = GlobalVariables.AllModsKnownDictionary["Glucosylgalactosyl on K"];
-            ModBox.SelectedModifications[3] = GlobalVariables.AllModsKnownDictionary["Galactosyl on K"];
-
-            var ModBoxes = ModBox.BuildModBoxes(10).Where(p => !p.MotifNeeded.ContainsKey("K") || (p.MotifNeeded.ContainsKey("K") && p.MotifNeeded["K"].Count <= 3)).OrderBy(p => p.Mass).ToArray();
             var modBox = ModBoxes[10];
 
             //Get unmodified peptide, products, allPossible modPos and all boxes.
@@ -321,19 +317,19 @@ namespace Test
             var peptide = protein.Digest(new DigestionParams(), new List<Modification>(), new List<Modification>()).ElementAt(2);
             //PeptideWithSetModifications peptide = new PeptideWithSetModifications("GSDGSVGPVGPAGPIGSAGPPGFPGAPGPKGEIGAVGNAGPAGPAGPR", GlobalVariables.AllModsKnownDictionary);
             var products = peptide.Fragment(DissociationType.HCD, FragmentationTerminus.Both).ToList();
-            int[] modPos = ModBox.GetAllPossibleModSites(peptide, modBox);
-            var boxes = ModBox.BuildChildModBoxes(modBox.NumberOfMods, modBox.ModIds).ToArray();
+            int[] modPos = SelectedModBox.GetAllPossibleModSites(peptide, modBox);
+            var boxes = SelectedModBox.BuildChildModBoxes(modBox.NumberOfMods, modBox.ModIds).ToArray();
             Assert.That(boxes.Count() == 8);
             //Test boxSatisfyBox
             var boxSatisfyBox = LocalizationGraph.BoxSatisfyBox(boxes);
 
             //Test GetAllPossibleModSites
-            var testModPos = ModBox.GetAllPossibleModSites(peptide, ModBoxes[11]);
+            var testModPos = SelectedModBox.GetAllPossibleModSites(peptide, ModBoxes[11]);
             Assert.That(testModPos == null);
 
             //Test GetLocalFragmentHash, which is used for localiation.
-            var testProducts = ModBox.GetLocalFragmentHash(products, peptide.Length, modPos, 0, modBox, boxes[1], 1000);
-            var testProducts1 = ModBox.GetLocalFragmentHash(products, peptide.Length, modPos, 2, modBox, boxes[1], 1000);
+            var testProducts = SelectedModBox.GetLocalFragmentHash(products, peptide.Length, modPos, 0, modBox, boxes[1], 1000);
+            var testProducts1 = SelectedModBox.GetLocalFragmentHash(products, peptide.Length, modPos, 2, modBox, boxes[1], 1000);
             Assert.That(testProducts.Count() == 6);
             Assert.That(testProducts1.Count() == 12);
 
@@ -376,14 +372,14 @@ namespace Test
             HashSet<int> allPeaks = new HashSet<int>(binsToSearch);
 
             //Known peptideWithMod match.
-            var peptideWithMod = ModBox.GetTheoreticalPeptide(new int[4] {22, 25, 28, 31}, peptide, modBox);
+            var peptideWithMod = SelectedModBox.GetTheoreticalPeptide(new int[4] {22, 25, 28, 31}, peptide, modBox);
             Assert.That(peptideWithMod.FullSequence == "GSDGSVGPVGPAGPIGSAGPP[Common Biological:Hydroxylation on P]GFP[Common Biological:Hydroxylation on P]GAP[Common Biological:Hydroxylation on P]GPK[Common Biological:Hydroxylation on K]GEIGAVGNAGPAGPAGPR");
             List<Product> knownProducts = peptideWithMod.Fragment(DissociationType.HCD, FragmentationTerminus.Both).ToList();
             var matchedKnownFragmentIons = MetaMorpheusEngine.MatchFragmentIons(scans.First(), knownProducts, commonParameters);
             Assert.That(matchedKnownFragmentIons.Count == 42);
 
             //Graph Localization
-            LocalizationGraph localizationGraph = new LocalizationGraph(modPos.Length, boxes.Length);
+            LocalizationGraph localizationGraph = new LocalizationGraph(modPos, modBox);
             localizationGraph.LocalizeMod(modPos, modBox, boxes, allPeaks, products, peptide);
 
             var allPaths = LocalizationGraph.GetAllPaths(localizationGraph.array, boxes);
@@ -402,8 +398,8 @@ namespace Test
         {
             int[] modPos = new int[3] { 2, 4, 6 };
             var glycanBox = OGlycanBoxes[19];
-            var boxes = GlycanBox.BuildChildOGlycanBoxes(3, glycanBox.ModIds).ToArray();
-            LocalizationGraph localizationGraph = new LocalizationGraph(modPos.Length, boxes.Length);
+            var boxes = ModBox.BuildChildModBoxes(3, glycanBox.ModIds).ToArray();
+            LocalizationGraph localizationGraph = new LocalizationGraph(modPos, glycanBox);
 
             for (int i = 0; i < modPos.Length; i++)
             {

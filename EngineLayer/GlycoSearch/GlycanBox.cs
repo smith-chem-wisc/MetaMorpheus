@@ -30,33 +30,6 @@ namespace EngineLayer
             }
         }
 
-        public static IEnumerable<GlycanBox> BuildChildOGlycanBoxes(int maxNum, int[] glycanIds)
-        {
-            yield return new GlycanBox(new int[0]);
-            HashSet<string> seen = new HashSet<string>();
-            for (int i = 1; i <= maxNum; i++)
-            {
-                foreach (var idCombine in Glycan.GetKCombs(Enumerable.Range(0, maxNum), i))
-                {
-                    List<int> ids = new List<int>();
-                    foreach (var id in idCombine)
-                    {
-                        ids.Add(glycanIds[id]);
-                    }
-
-                    if (!seen.Contains(string.Join(",", ids.Select(p => p.ToString()))))
-                    {
-                        seen.Add(string.Join(",", ids.Select(p => p.ToString())));
-
-                        GlycanBox glycanBox = new GlycanBox(ids.ToArray());
-
-                        yield return glycanBox;
-                    }
-
-                }
-            }
-        }
-
         public static Modification[] BuildGlobalOGlycanModifications(Glycan[] globalOGlycans)
         {
             Modification[] globalOGlycanModifications = new Modification[globalOGlycans.Length];
@@ -72,7 +45,6 @@ namespace EngineLayer
         {
 
         }
-
 
         public string GlycanIdString
         {
@@ -109,7 +81,7 @@ namespace EngineLayer
 
         }
 
-        public new double Mass
+        public override double Mass
         {
             get
             {

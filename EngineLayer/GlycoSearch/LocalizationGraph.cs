@@ -9,19 +9,27 @@ namespace EngineLayer.GlycoSearch
 {
     public class LocalizationGraph
     {
-        public AdjNode[][] array;
-        public LocalizationGraph(int posCount, int glycanCount)
+        public AdjNode[][] array { get; set; }
+        public int[] ModPos { get; }
+        public ModBox ModBox { get; }
+        public ModBox[] ChildModBoxes { get; }
+
+        public LocalizationGraph(int[] modPos, ModBox modBox)
         {
-            array = new AdjNode[posCount][];
-            for (int i = 0; i < posCount; i++)
+            ModPos = modPos;
+            ModBox = modBox;
+            ChildModBoxes = ModBox.BuildChildModBoxes(modBox.NumberOfMods, modBox.ModIds).ToArray();
+
+            array = new AdjNode[modPos.Length][];
+            for (int i = 0; i < modPos.Length; i++)
             {
-                array[i] = new AdjNode[glycanCount];
+                array[i] = new AdjNode[ChildModBoxes.Length];
             }
         }
 
         //The modification problem is turned into a Directed Acyclic Graph. The Graph was build with matrix, and dynamic programming is used.
         //The function goes through the AdjNode[][] array from left to right, assign weight to each AdjNode, keep track of the heaviest previous AdjNode.
-        public void LocalizeOGlycan(int[] modPos, GlycanBox glycanBox, GlycanBox[] childBoxes, HashSet<int> allPeaks, List<Product> products, int peptideLength)
+        public static void LocalizeOGlycan(AdjNode[][] array, int[] modPos, ModBox glycanBox, ModBox[] childBoxes, HashSet<int> allPeaks, List<Product> products, int peptideLength)
         {
             var boxSatisfyBox = BoxSatisfyBox(childBoxes);
 
@@ -83,14 +91,14 @@ namespace EngineLayer.GlycoSearch
             }
         }
 
-        public static double CalculateCost(HashSet<int> allPeaksForLocalization, List<Product> products, int peptideLength, int[] modPos, int modInd, GlycanBox OGlycanBox, GlycanBox box, int FragmentBinsPerDalton)
+        public static double CalculateCost(HashSet<int> allPeaksForLocalization, List<Product> products, int peptideLength, int[] modPos, int modInd, ModBox OGlycanBox, ModBox box, int FragmentBinsPerDalton)
         {
             if (modInd == modPos.Length - 1)
             {
                 return 0;
             }
 
-            var fragmentHash = GlycoPeptides.GetLocalFragmentHash(products, peptideLength, modPos, modInd, OGlycanBox, box, FragmentBinsPerDalton);
+            var fragmentHash = GlycoPeptides.GetLocalFragmentHash(products, peptideLength, modPos, modInd, new GlycanBox(OGlycanBox.ModIds), new GlycanBox(box.ModIds), FragmentBinsPerDalton);
 
             int currentLocalizationScore = allPeaksForLocalization.Intersect(fragmentHash).Count();
 
@@ -101,7 +109,7 @@ namespace EngineLayer.GlycoSearch
         //Tt is possible to Merge this function to LocalizdOGlycan; but there is possible no need to do that.
 
         //The modification problem is turned into a Directed Acyclic Graph. The Graph was build with matrix, and dynamic programming is used.
-        public void LocalizeMod(int[] modPos, ModBox totalBox, ModBox[] boxes, HashSet<int> allPeaks, List<Product> products, PeptideWithSetModifications peptide)
+        public void LocalizeMod(int[] modPos, SelectedModBox totalBox, SelectedModBox[] boxes, HashSet<int> allPeaks, List<Product> products, PeptideWithSetModifications peptide)
         {
             var boxSatisfyBox = BoxSatisfyBox(boxes);
 
@@ -165,7 +173,7 @@ namespace EngineLayer.GlycoSearch
                 return 0;
             }
 
-            var localFragmentHash = ModBox.GetLocalFragmentHash(products, peptideLength, modPos, modInd, totalBox, localBox, FragmentBinsPerDalton);
+            var localFragmentHash = SelectedModBox.GetLocalFragmentHash(products, peptideLength, modPos, modInd, totalBox, localBox, FragmentBinsPerDalton);
 
             int currentLocalizationScore = allPeaksForLocalization.Intersect(localFragmentHash).Count();
 
@@ -174,7 +182,7 @@ namespace EngineLayer.GlycoSearch
 
         //For current ModPos at Ind, is the childbox satify the condition.
         //The function is for ModBox contains Mod that have different motif. 
-        public static bool BoxSatisfyModPos(ModBox totalBox, ModBox childBox, int Ind, PeptideWithSetModifications peptide)
+        public static bool BoxSatisfyModPos(SelectedModBox totalBox, SelectedModBox childBox, int Ind, PeptideWithSetModifications peptide)
         {
             //Satisfy left
             foreach (var mn in childBox.MotifNeeded)
@@ -211,7 +219,7 @@ namespace EngineLayer.GlycoSearch
             }
             var left = gx.SelectMany(p => p.Value).ToArray();
 
-            var complimentBox = new ModBox(left.ToArray());
+            var complimentBox = new SelectedModBox(left.ToArray());
 
             //Satify right
             foreach (var mn in complimentBox.MotifNeeded)

@@ -55,12 +55,12 @@ namespace EngineLayer.GlycoSearch
                 GlycanBox.OGlycanBoxes = GlycanBox.BuildOGlycanBoxes(_maxOGlycanNum).OrderBy(p => p.Mass).ToArray();
 
                 //This is for Hydroxyproline 
-                ModBox.SelectedModifications = new Modification[4];      
-                ModBox.SelectedModifications[0] = GlobalVariables.AllModsKnownDictionary["Hydroxylation on P"];
-                ModBox.SelectedModifications[1] = GlobalVariables.AllModsKnownDictionary["Hydroxylation on K"];
-                ModBox.SelectedModifications[2] = GlobalVariables.AllModsKnownDictionary["Glucosylgalactosyl on K"];
-                ModBox.SelectedModifications[3] = GlobalVariables.AllModsKnownDictionary["Galactosyl on K"];
-                ModBox.ModBoxes = ModBox.BuildModBoxes(_maxOGlycanNum).Where(p => !p.MotifNeeded.ContainsKey("K") || (p.MotifNeeded.ContainsKey("K") && p.MotifNeeded["K"].Count <= 3)).OrderBy(p => p.Mass).ToArray();
+                SelectedModBox.SelectedModifications = new Modification[4];
+                SelectedModBox.SelectedModifications[0] = GlobalVariables.AllModsKnownDictionary["Hydroxylation on P"];
+                SelectedModBox.SelectedModifications[1] = GlobalVariables.AllModsKnownDictionary["Hydroxylation on K"];
+                SelectedModBox.SelectedModifications[2] = GlobalVariables.AllModsKnownDictionary["Glucosylgalactosyl on K"];
+                SelectedModBox.SelectedModifications[3] = GlobalVariables.AllModsKnownDictionary["Galactosyl on K"];
+                SelectedModBox.ModBoxes = SelectedModBox.BuildModBoxes(_maxOGlycanNum).Where(p => !p.MotifNeeded.ContainsKey("K") || (p.MotifNeeded.ContainsKey("K") && p.MotifNeeded["K"].Count <= 3)).OrderBy(p => p.Mass).ToArray();
             }
         }
 
@@ -526,10 +526,10 @@ namespace EngineLayer.GlycoSearch
                     {
                         if (modPos.Length >= GlycanBox.OGlycanBoxes[iDLow].NumberOfMods && GlycoPeptides.OxoniumIonsAnalysis(oxoniumIonIntensities, GlycanBox.OGlycanBoxes[iDLow]))
                         {
-                            var boxes = GlycanBox.BuildChildOGlycanBoxes(GlycanBox.OGlycanBoxes[iDLow].NumberOfMods, GlycanBox.OGlycanBoxes[iDLow].ModIds).ToArray();
+                            //var boxes = GlycanBox.BuildChildOGlycanBoxes(GlycanBox.OGlycanBoxes[iDLow].NumberOfMods, GlycanBox.OGlycanBoxes[iDLow].ModIds).ToArray();
 
-                            LocalizationGraph localizationGraph = new LocalizationGraph(modPos.Length, boxes.Length);
-                            localizationGraph.LocalizeOGlycan(modPos, GlycanBox.OGlycanBoxes[iDLow], boxes, allPeaksForLocalization, products, theScanBestPeptide.Length);
+                            LocalizationGraph localizationGraph = new LocalizationGraph(modPos, GlycanBox.OGlycanBoxes[iDLow]);
+                            LocalizationGraph.LocalizeOGlycan(localizationGraph.array, modPos, GlycanBox.OGlycanBoxes[iDLow], localizationGraph.ChildModBoxes, allPeaksForLocalization, products, theScanBestPeptide.Length);
 
                             double currentLocalizationScore = localizationGraph.array.Last().Last().maxCost;
                             if (currentLocalizationScore > bestLocalizedScore)
@@ -555,12 +555,12 @@ namespace EngineLayer.GlycoSearch
                         List<Tuple<int, Tuple<int, int>[]>> localizationCandidates = new List<Tuple<int, Tuple<int, int>[]>>();
                         for (int i = 0; i < localizationGraphs.Count; i++)
                         {
-                            var boxes = GlycanBox.BuildChildOGlycanBoxes(GlycanBox.OGlycanBoxes[ids[i]].NumberOfMods, GlycanBox.OGlycanBoxes[ids[i]].ModIds).ToArray();
-                            var allPaths = LocalizationGraph.GetAllPaths(localizationGraphs[i].array, boxes);
+                            //var boxes = GlycanBox.BuildChildOGlycanBoxes(GlycanBox.OGlycanBoxes[ids[i]].NumberOfMods, GlycanBox.OGlycanBoxes[ids[i]].ModIds).ToArray();
+                            var allPaths = LocalizationGraph.GetAllPaths(localizationGraphs[i].array, localizationGraphs[i].ChildModBoxes);
 
                             foreach (var path in allPaths)
                             {
-                                var local = LocalizationGraph.GetLocalizedPath(localizationGraphs[i].array, modPos, boxes, path);
+                                var local = LocalizationGraph.GetLocalizedPath(localizationGraphs[i].array, modPos, localizationGraphs[i].ChildModBoxes, path);
                                 localizationCandidates.Add(new Tuple<int, Tuple<int, int>[]>(ids[i], local));
                             }
                         }
@@ -655,7 +655,7 @@ namespace EngineLayer.GlycoSearch
                 {
                     //filter by glycanBoxes masses
                     var possibleModMassLow = theScan.PrecursorMass * (1 - 1E-5) - theScanBestPeptide.MonoisotopicMass;
-                    if (possibleModMassLow < ModBox.ModBoxes.First().Mass || possibleModMassLow > ModBox.ModBoxes.Last().Mass)
+                    if (possibleModMassLow < SelectedModBox.ModBoxes.First().Mass || possibleModMassLow > SelectedModBox.ModBoxes.Last().Mass)
                     {
                         continue;
                     }              
@@ -668,11 +668,11 @@ namespace EngineLayer.GlycoSearch
                     List<LocalizationGraph> localizationGraphs = new List<LocalizationGraph>();
                     List<int> ids = new List<int>();
 
-                    int iDLow = GlycoPeptides.BinarySearchGetIndex(ModBox.ModBoxes.Select(p => p.Mass).ToArray(), possibleModMassLow);
+                    int iDLow = GlycoPeptides.BinarySearchGetIndex(SelectedModBox.ModBoxes.Select(p => p.Mass).ToArray(), possibleModMassLow);
 
-                    while (iDLow < ModBox.ModBoxes.Count() && PrecusorSearchMode.Within(theScan.PrecursorMass, theScanBestPeptide.MonoisotopicMass + ModBox.ModBoxes[iDLow].Mass))
+                    while (iDLow < SelectedModBox.ModBoxes.Count() && PrecusorSearchMode.Within(theScan.PrecursorMass, theScanBestPeptide.MonoisotopicMass + SelectedModBox.ModBoxes[iDLow].Mass))
                     {
-                        int[] modPos = ModBox.GetAllPossibleModSites(theScanBestPeptide, ModBox.ModBoxes[iDLow]);
+                        int[] modPos = SelectedModBox.GetAllPossibleModSites(theScanBestPeptide, SelectedModBox.ModBoxes[iDLow]);
 
                         if (modPos==null)
                         {
@@ -680,10 +680,10 @@ namespace EngineLayer.GlycoSearch
                             continue;
                         }
 
-                        var boxes = ModBox.BuildChildModBoxes(ModBox.ModBoxes[iDLow].NumberOfMods, ModBox.ModBoxes[iDLow].ModIds).ToArray();
+                        var boxes = SelectedModBox.BuildChildModBoxes(SelectedModBox.ModBoxes[iDLow].NumberOfMods, SelectedModBox.ModBoxes[iDLow].ModIds).ToArray();
 
-                        LocalizationGraph localizationGraph = new LocalizationGraph(modPos.Length, boxes.Length);
-                        localizationGraph.LocalizeMod(modPos, ModBox.ModBoxes[iDLow], boxes, allPeaksForLocalization, products, theScanBestPeptide);
+                        LocalizationGraph localizationGraph = new LocalizationGraph(modPos, SelectedModBox.ModBoxes[iDLow]);
+                        localizationGraph.LocalizeMod(modPos, SelectedModBox.ModBoxes[iDLow], boxes, allPeaksForLocalization, products, theScanBestPeptide);
 
                         double currentLocalizationScore = localizationGraph.array.Last().Last().maxCost;
                         if (currentLocalizationScore > bestLocalizedScore)
@@ -708,8 +708,8 @@ namespace EngineLayer.GlycoSearch
                         List<Tuple<int, Tuple<int, int>[]>> localizationCandidates = new List<Tuple<int, Tuple<int, int>[]>>();
                         for (int i = 0; i < localizationGraphs.Count; i++)
                         {
-                            int[] modPos = ModBox.GetAllPossibleModSites(theScanBestPeptide, ModBox.ModBoxes[ids[i]]);
-                            var boxes = ModBox.BuildChildModBoxes(ModBox.ModBoxes[ids[i]].NumberOfMods, ModBox.ModBoxes[ids[i]].ModIds).ToArray();
+                            int[] modPos = SelectedModBox.GetAllPossibleModSites(theScanBestPeptide, SelectedModBox.ModBoxes[ids[i]]);
+                            var boxes = ModBox.BuildChildModBoxes(SelectedModBox.ModBoxes[ids[i]].NumberOfMods, SelectedModBox.ModBoxes[ids[i]].ModIds).ToArray();
                             var allPaths = LocalizationGraph.GetAllPaths(localizationGraphs[i].array, boxes);
                             var local = LocalizationGraph.GetLocalizedPath(localizationGraphs[i].array, modPos, boxes, allPaths.First());
                             localizationCandidates.Add(new Tuple<int, Tuple<int, int>[]>(iDLow, local));
@@ -732,7 +732,7 @@ namespace EngineLayer.GlycoSearch
 
         private GlycoSpectralMatch CreateGsmMod(Ms2ScanWithSpecificMass theScan, int scanIndex, int rank, PeptideWithSetModifications peptide, List<Tuple<int, Tuple<int, int>[]>> localizationCandidates, CommonParameters commonParameters)
         {
-            var peptideWithMod = ModBox.GetTheoreticalPeptide(localizationCandidates.First().Item2, peptide, ModBox.ModBoxes[localizationCandidates.First().Item1]);
+            var peptideWithMod = SelectedModBox.GetTheoreticalPeptide(localizationCandidates.First().Item2, peptide, SelectedModBox.ModBoxes[localizationCandidates.First().Item1]);
 
             var fragmentsForEachGlycoPeptide = peptideWithMod.Fragment(CommonParameters.DissociationType, FragmentationTerminus.Both).ToList();
 
