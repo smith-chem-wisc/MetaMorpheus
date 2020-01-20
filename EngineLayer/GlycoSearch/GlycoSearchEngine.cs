@@ -418,7 +418,7 @@ namespace EngineLayer.GlycoSearch
 
                         if (localizationCandidates.Count > 0)
                         {
-                            var psmGlyco = CreateGsm(theScan, scanIndex, ind, theScanBestPeptide, localizationCandidates, CommonParameters, oxoniumIonIntensities);
+                            var psmGlyco = CreateGsm(theScan, scanIndex, ind, theScanBestPeptide, localizationCandidates.First().Item2, CommonParameters, oxoniumIonIntensities, null, localizationCandidates);
 
                             possibleMatches.Add(psmGlyco);
                         }
@@ -526,9 +526,8 @@ namespace EngineLayer.GlycoSearch
                     {
                         if (modPos.Length >= GlycanBox.OGlycanBoxes[iDLow].NumberOfMods && GlycoPeptides.OxoniumIonsAnalysis(oxoniumIonIntensities, GlycanBox.OGlycanBoxes[iDLow]))
                         {
-                            //var boxes = GlycanBox.BuildChildOGlycanBoxes(GlycanBox.OGlycanBoxes[iDLow].NumberOfMods, GlycanBox.OGlycanBoxes[iDLow].ModIds).ToArray();
-
-                            LocalizationGraph localizationGraph = new LocalizationGraph(modPos, GlycanBox.OGlycanBoxes[iDLow]);
+                            var boxes = GlycanBox.BuildChildOGlycanBoxes(GlycanBox.OGlycanBoxes[iDLow].NumberOfMods, GlycanBox.OGlycanBoxes[iDLow].ModIds).ToArray();
+                            LocalizationGraph localizationGraph = new LocalizationGraph(modPos, GlycanBox.OGlycanBoxes[iDLow], boxes, iDLow);
                             LocalizationGraph.LocalizeOGlycan(localizationGraph.array, modPos, GlycanBox.OGlycanBoxes[iDLow], localizationGraph.ChildModBoxes, allPeaksForLocalization, products, theScanBestPeptide.Length);
 
                             double currentLocalizationScore = localizationGraph.array.Last().Last().maxCost;
@@ -552,20 +551,23 @@ namespace EngineLayer.GlycoSearch
                     //In theory, the peptide_localization shouldn't be null, but it is possible that the real score is smaller than indexed score.
                     if (localizationGraphs.Count > 0)
                     {
-                        List<Tuple<int, Tuple<int, int>[]>> localizationCandidates = new List<Tuple<int, Tuple<int, int>[]>>();
-                        for (int i = 0; i < localizationGraphs.Count; i++)
-                        {
-                            //var boxes = GlycanBox.BuildChildOGlycanBoxes(GlycanBox.OGlycanBoxes[ids[i]].NumberOfMods, GlycanBox.OGlycanBoxes[ids[i]].ModIds).ToArray();
-                            var allPaths = LocalizationGraph.GetAllPaths(localizationGraphs[i].array, localizationGraphs[i].ChildModBoxes);
+                        //List<Tuple<int, Tuple<int, int>[]>> localizationCandidates = new List<Tuple<int, Tuple<int, int>[]>>();
 
-                            foreach (var path in allPaths)
-                            {
-                                var local = LocalizationGraph.GetLocalizedPath(localizationGraphs[i].array, modPos, localizationGraphs[i].ChildModBoxes, path);
-                                localizationCandidates.Add(new Tuple<int, Tuple<int, int>[]>(ids[i], local));
-                            }
-                        }
+                        //for (int i = 0; i < localizationGraphs.Count; i++)
+                        //{
+                        //    var allPaths = LocalizationGraph.GetAllPaths(localizationGraphs[i].array, localizationGraphs[i].ChildModBoxes);
 
-                        var psmGlyco = CreateGsm(theScan, scanIndex, ind, theScanBestPeptide, localizationCandidates, CommonParameters, oxoniumIonIntensities);
+                        //    foreach (var path in allPaths)
+                        //    {
+                        //        var local = LocalizationGraph.GetLocalizedPath(localizationGraphs[i].array, modPos, localizationGraphs[i].ChildModBoxes, path);
+                        //        localizationCandidates.Add(new Tuple<int, Tuple<int, int>[]>(ids[i], local));
+                        //    }
+                        //}
+
+                        var firstPath = LocalizationGraph.GetFirstPath(localizationGraphs[0].array, localizationGraphs[0].ChildModBoxes);
+                        var localizationCandidate = LocalizationGraph.GetLocalizedPath(localizationGraphs[0].array, modPos, localizationGraphs[0].ChildModBoxes, firstPath);
+
+                        var psmGlyco = CreateGsm(theScan, scanIndex, ind, theScanBestPeptide, localizationCandidate, CommonParameters, oxoniumIonIntensities, localizationGraphs);
 
                         possibleMatches.Add(psmGlyco);
                     }
@@ -581,9 +583,9 @@ namespace EngineLayer.GlycoSearch
         }
 
         //List<Tuple<int, Tuple<int, int>[]>> <glycanBoxId, <mod site, glycan id>>
-        private GlycoSpectralMatch CreateGsm(Ms2ScanWithSpecificMass theScan, int scanIndex, int rank, PeptideWithSetModifications peptide, List<Tuple<int, Tuple<int, int>[]>> glycanBox_localization, CommonParameters commonParameters, double[] oxoniumIonIntensities)
+        private GlycoSpectralMatch CreateGsm(Ms2ScanWithSpecificMass theScan, int scanIndex, int rank, PeptideWithSetModifications peptide, Tuple<int, int>[] localization, CommonParameters commonParameters, double[] oxoniumIonIntensities, List<LocalizationGraph> localizationGraphs = null, List<Tuple<int, Tuple<int, int>[]>> glycanBox_localizations = null)
         {
-            var peptideWithMod = GlycoPeptides.OGlyGetTheoreticalPeptide(glycanBox_localization.First().Item2, peptide);
+            var peptideWithMod = GlycoPeptides.OGlyGetTheoreticalPeptide(localization, peptide);
 
             var fragmentsForEachGlycoPeptide = GlycoPeptides.OGlyGetTheoreticalFragments(CommonParameters.DissociationType, peptide, peptideWithMod);
 
@@ -617,7 +619,9 @@ namespace EngineLayer.GlycoSearch
 
             psmGlyco.ChildMatchedFragmentIons = allMatchedChildIons;
 
-            psmGlyco.OGlycanBoxLocalization = glycanBox_localization;
+            psmGlyco.LocalizationGraphs = localizationGraphs;
+
+            psmGlyco.OGlycanBoxLocalization = glycanBox_localizations;
 
             if (oxoniumIonIntensities[5] == 0)
             {
@@ -682,7 +686,7 @@ namespace EngineLayer.GlycoSearch
 
                         var boxes = SelectedModBox.BuildChildModBoxes(SelectedModBox.ModBoxes[iDLow].NumberOfMods, SelectedModBox.ModBoxes[iDLow].ModIds).ToArray();
 
-                        LocalizationGraph localizationGraph = new LocalizationGraph(modPos, SelectedModBox.ModBoxes[iDLow]);
+                        LocalizationGraph localizationGraph = new LocalizationGraph(modPos, SelectedModBox.ModBoxes[iDLow], boxes);
                         localizationGraph.LocalizeMod(modPos, SelectedModBox.ModBoxes[iDLow], boxes, allPeaksForLocalization, products, theScanBestPeptide);
 
                         double currentLocalizationScore = localizationGraph.array.Last().Last().maxCost;
@@ -709,7 +713,7 @@ namespace EngineLayer.GlycoSearch
                         for (int i = 0; i < localizationGraphs.Count; i++)
                         {
                             int[] modPos = SelectedModBox.GetAllPossibleModSites(theScanBestPeptide, SelectedModBox.ModBoxes[ids[i]]);
-                            var boxes = ModBox.BuildChildModBoxes(SelectedModBox.ModBoxes[ids[i]].NumberOfMods, SelectedModBox.ModBoxes[ids[i]].ModIds).ToArray();
+                            var boxes = SelectedModBox.BuildChildModBoxes(SelectedModBox.ModBoxes[ids[i]].NumberOfMods, SelectedModBox.ModBoxes[ids[i]].ModIds).ToArray();
                             var allPaths = LocalizationGraph.GetAllPaths(localizationGraphs[i].array, boxes);
                             var local = LocalizationGraph.GetLocalizedPath(localizationGraphs[i].array, modPos, boxes, allPaths.First());
                             localizationCandidates.Add(new Tuple<int, Tuple<int, int>[]>(iDLow, local));

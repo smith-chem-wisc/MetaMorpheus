@@ -23,6 +23,8 @@ namespace EngineLayer.GlycoSearch
         public List<Glycan> NGlycan { get; set; }
         public List<int> NGlycanLocalizations { get; set; }
 
+
+        public List<LocalizationGraph> LocalizationGraphs;
         public List<Tuple<int, Tuple<int, int>[]>> OGlycanBoxLocalization;
 
         public double PeptideScore { get; set; }

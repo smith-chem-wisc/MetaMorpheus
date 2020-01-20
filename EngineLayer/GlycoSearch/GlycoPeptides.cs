@@ -351,7 +351,7 @@ namespace EngineLayer.GlycoSearch
 
         //Find FragmentHsh for current box at modInd. 
         //TO DO: How about y-ions from ETD?
-        public static int[] GetLocalFragmentHash(List<Product> products, int peptideLength, int[] modPoses, int modInd, GlycanBox OGlycanBox, GlycanBox localOGlycanBox, int FragmentBinsPerDalton)
+        public static int[] GetLocalFragmentHash(List<Product> products, int peptideLength, int[] modPoses, int modInd, ModBox OGlycanBox, ModBox localOGlycanBox, int FragmentBinsPerDalton)
         {
             List<double> newFragments = new List<double>();
             var local_c_fragments = products.Where(p => p.ProductType == ProductType.c && p.TerminusFragment.AminoAcidPosition >= modPoses[modInd]-1 && p.TerminusFragment.AminoAcidPosition < modPoses[modInd+1]-1).ToList();

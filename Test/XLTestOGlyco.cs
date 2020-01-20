@@ -211,7 +211,7 @@ namespace Test
             List<Product> products = peptide.Fragment(DissociationType.ETD, FragmentationTerminus.Both).ToList();
 
             int[] modPos = GlycoSpectralMatch.GetPossibleModSites(peptide, new string[] { "S", "T" }).OrderBy(p=>p).ToArray();
-            var boxes = ModBox.BuildChildModBoxes(3, glycanBox.ModIds).ToArray();
+            var boxes = GlycanBox.BuildChildOGlycanBoxes(3, glycanBox.ModIds).ToArray();
             Assert.That(boxes.Count() == 6);
 
             //Test GetLocalFragmentHash, which is used for localiation.
@@ -260,7 +260,7 @@ namespace Test
             var matchedKnownFragmentIons = MetaMorpheusEngine.MatchFragmentIons(scans.First(), knownProducts, commonParameters);
 
             //Graph Localization
-            LocalizationGraph localizationGraph = new LocalizationGraph(modPos, glycanBox);
+            LocalizationGraph localizationGraph = new LocalizationGraph(modPos, glycanBox, boxes);
 
             LocalizationGraph.LocalizeOGlycan(localizationGraph.array, modPos, glycanBox, localizationGraph.ChildModBoxes, allPeaks, products, peptide.Length);
 
@@ -379,7 +379,7 @@ namespace Test
             Assert.That(matchedKnownFragmentIons.Count == 42);
 
             //Graph Localization
-            LocalizationGraph localizationGraph = new LocalizationGraph(modPos, modBox);
+            LocalizationGraph localizationGraph = new LocalizationGraph(modPos, modBox, boxes);
             localizationGraph.LocalizeMod(modPos, modBox, boxes, allPeaks, products, peptide);
 
             var allPaths = LocalizationGraph.GetAllPaths(localizationGraph.array, boxes);
@@ -398,8 +398,8 @@ namespace Test
         {
             int[] modPos = new int[3] { 2, 4, 6 };
             var glycanBox = OGlycanBoxes[19];
-            var boxes = ModBox.BuildChildModBoxes(3, glycanBox.ModIds).ToArray();
-            LocalizationGraph localizationGraph = new LocalizationGraph(modPos, glycanBox);
+            var boxes = GlycanBox.BuildChildOGlycanBoxes(3, glycanBox.ModIds).ToArray();
+            LocalizationGraph localizationGraph = new LocalizationGraph(modPos, glycanBox, boxes);
 
             for (int i = 0; i < modPos.Length; i++)
             {

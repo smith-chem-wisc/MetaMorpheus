@@ -11,14 +11,18 @@ namespace EngineLayer.GlycoSearch
     {
         public AdjNode[][] array { get; set; }
         public int[] ModPos { get; }
-        public ModBox ModBox { get; }
-        public ModBox[] ChildModBoxes { get; }
 
-        public LocalizationGraph(int[] modPos, ModBox modBox)
+        public int ModBoxId { get; }
+        public ModBox ModBox { get; }
+        public ModBox[] ChildModBoxes { get; set; }
+
+        public LocalizationGraph(int[] modPos, ModBox modBox, ModBox[] childModBoxes, int id = -1)
         {
             ModPos = modPos;
             ModBox = modBox;
-            ChildModBoxes = ModBox.BuildChildModBoxes(modBox.NumberOfMods, modBox.ModIds).ToArray();
+            ModBoxId = id;
+            ChildModBoxes = childModBoxes;
+            //ChildModBoxes = ModBox.BuildChildModBoxes(modBox.NumberOfMods, modBox.ModIds).ToArray();
 
             array = new AdjNode[modPos.Length][];
             for (int i = 0; i < modPos.Length; i++)
@@ -98,7 +102,7 @@ namespace EngineLayer.GlycoSearch
                 return 0;
             }
 
-            var fragmentHash = GlycoPeptides.GetLocalFragmentHash(products, peptideLength, modPos, modInd, new GlycanBox(OGlycanBox.ModIds), new GlycanBox(box.ModIds), FragmentBinsPerDalton);
+            var fragmentHash = GlycoPeptides.GetLocalFragmentHash(products, peptideLength, modPos, modInd, OGlycanBox, box, FragmentBinsPerDalton);
 
             int currentLocalizationScore = allPeaksForLocalization.Intersect(fragmentHash).Count();
 

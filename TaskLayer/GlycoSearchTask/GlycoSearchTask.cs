@@ -155,6 +155,26 @@ namespace TaskLayer
             {
                 GlycoSpectralMatch glycoSpectralMatch = gsmsPerScan[0];
 
+                if (glycoSpectralMatch.LocalizationGraphs!=null)
+                {
+
+                    List<Tuple<int, Tuple<int, int>[]>> localizationCandidates = new List<Tuple<int, Tuple<int, int>[]>>();
+
+                    for (int i = 0; i < glycoSpectralMatch.LocalizationGraphs.Count; i++)
+                    {
+                        var allPaths = LocalizationGraph.GetAllPaths(glycoSpectralMatch.LocalizationGraphs[i].array, glycoSpectralMatch.LocalizationGraphs[i].ChildModBoxes);
+
+                        foreach (var path in allPaths)
+                        {
+                            var local = LocalizationGraph.GetLocalizedPath(glycoSpectralMatch.LocalizationGraphs[i].array, glycoSpectralMatch.LocalizationGraphs[i].ModPos, glycoSpectralMatch.LocalizationGraphs[i].ChildModBoxes, path);
+                            localizationCandidates.Add(new Tuple<int, Tuple<int, int>[]>(glycoSpectralMatch.LocalizationGraphs[i].ModBoxId, local));
+                        }
+                    }
+
+                    glycoSpectralMatch.OGlycanBoxLocalization = localizationCandidates;
+
+                }
+
                 if (glycoSpectralMatch.OGlycanBoxLocalization!=null)
                 {
                     string localLevel;
