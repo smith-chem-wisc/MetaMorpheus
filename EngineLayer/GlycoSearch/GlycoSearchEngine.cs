@@ -450,7 +450,6 @@ namespace EngineLayer.GlycoSearch
 
                     var psmCrossSingle = new GlycoSpectralMatch(theScanBestPeptide, 0, score, scanIndex, theScan, CommonParameters.DigestionParams, matchedFragmentIons);
                     psmCrossSingle.Rank = ind;
-                    psmCrossSingle.ResolveAllAmbiguities();
 
                     possibleMatches.Add(psmCrossSingle);
                 }
@@ -477,8 +476,6 @@ namespace EngineLayer.GlycoSearch
 
                     int[] modPos = GlycoSpectralMatch.GetPossibleModSites(theScanBestPeptide, new string[] { "S", "T" }).ToArray();
 
-                    var test = GlycoPeptides.OxoniumIonsAnalysis(oxoniumIonIntensities, GlycanBox.OGlycanBoxes[iDLow]);
-
                     //Localization for O-glycopeptides only works on ETD related dissociationtype
                     //No localization can be done with MS2-HCD spectrum
                     if (theScan.ChildScans==null && !GlycoPeptides.DissociationTypeContainETD(CommonParameters.DissociationType))
@@ -493,15 +490,13 @@ namespace EngineLayer.GlycoSearch
 
                                 var psmCrossSingle = new GlycoSpectralMatch(theScanBestPeptide, 0, hcdScore, scanIndex, theScan, CommonParameters.DigestionParams, hcdMatchedFragmentIons);
                                 psmCrossSingle.Rank = ind;
-                                psmCrossSingle.ResolveAllAmbiguities();
 
                                 possibleMatches.Add(psmCrossSingle);
                                 break;
                             }
-                            else
-                            {
-                                iDLow++;
-                            }
+
+                            iDLow++;
+                            
                         }
 
                         continue;
@@ -551,18 +546,6 @@ namespace EngineLayer.GlycoSearch
                     //In theory, the peptide_localization shouldn't be null, but it is possible that the real score is smaller than indexed score.
                     if (localizationGraphs.Count > 0)
                     {
-                        //List<Tuple<int, Tuple<int, int>[]>> localizationCandidates = new List<Tuple<int, Tuple<int, int>[]>>();
-
-                        //for (int i = 0; i < localizationGraphs.Count; i++)
-                        //{
-                        //    var allPaths = LocalizationGraph.GetAllPaths(localizationGraphs[i].array, localizationGraphs[i].ChildModBoxes);
-
-                        //    foreach (var path in allPaths)
-                        //    {
-                        //        var local = LocalizationGraph.GetLocalizedPath(localizationGraphs[i].array, modPos, localizationGraphs[i].ChildModBoxes, path);
-                        //        localizationCandidates.Add(new Tuple<int, Tuple<int, int>[]>(ids[i], local));
-                        //    }
-                        //}
 
                         var firstPath = LocalizationGraph.GetFirstPath(localizationGraphs[0].array, localizationGraphs[0].ChildModBoxes);
                         var localizationCandidate = LocalizationGraph.GetLocalizedPath(localizationGraphs[0].array, modPos, localizationGraphs[0].ChildModBoxes, firstPath);
