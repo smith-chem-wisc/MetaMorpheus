@@ -158,7 +158,7 @@ namespace TaskLayer
                 if (glycoSpectralMatch.OGlycanBoxLocalization!=null)
                 {
                     string localLevel;
-                    glycoSpectralMatch.LocalizedGlycan = GlycoSpectralMatch.ToLocalizeGlyco(glycoSpectralMatch.OGlycanBoxLocalization, out localLevel);
+                    glycoSpectralMatch.LocalizedGlycan = GlycoSpectralMatch.GetLocalizedGlycan(glycoSpectralMatch.OGlycanBoxLocalization, out localLevel);
                     glycoSpectralMatch.LocalizationLevel = localLevel;
                 }
 

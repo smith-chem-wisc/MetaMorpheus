@@ -323,6 +323,36 @@ namespace EngineLayer.GlycoSearch
             }
         }
 
+        //Get one path of Directed Acyclic Graph by recursion.
+        public static int[] GetFirstPath(AdjNode[][] array, ModBox[] boxes)
+        {
+
+            int xlength = array.Length;
+            int ylength = array.First().Length;
+
+            int[] temp = new int[xlength];
+
+            temp[xlength - 1] = ylength - 1;
+
+            FirstPathHelper(array, xlength - 1, ylength - 1, temp);
+
+            return temp;
+        }
+
+        private static void FirstPathHelper(AdjNode[][] array, int xind, int yind, int[] temp)
+        {
+            if (xind == 0)
+            {
+                return;
+            }
+
+            var pre = array[xind][yind].Sources.First();
+            xind--;
+            yind = pre;
+            temp[xind] = yind;
+            FirstPathHelper(array, xind, yind, temp);
+        }
+
         //The original path we get is just an array of AdjNode positions. This function here is to transfer the path into localized path. 
         //The output note: Tuple<(mod site)int, (glycanId)int>[glycanBox.Count] 
         //Basicly,  any change from left to right of the path indicates a modification. For example, the path = [1, 1, 2, 2] which means there is a modification at path[0] and path[3]

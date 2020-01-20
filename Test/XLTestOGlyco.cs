@@ -424,9 +424,12 @@ namespace Test
             var allPaths = LocalizationGraph.GetAllPaths(localizationGraph.array, boxes);
 
             Assert.That(allPaths.Count == 3);
-            Assert.That(allPaths[0] == new int[3] { 2, 4, 5});
-            Assert.That(allPaths[1] == new int[3] { 4, 4, 5 });
-            Assert.That(allPaths[2] == new int[3] { 5, 5, 5 });
+            Assert.That(Enumerable.SequenceEqual(allPaths[0], new int[3] { 2, 4, 5 }));
+            Assert.That(Enumerable.SequenceEqual(allPaths[1], new int[3] { 4, 4, 5 }));
+            Assert.That(Enumerable.SequenceEqual(allPaths[2], new int[3] { 5, 5, 5 }));
+
+            var firstPath = LocalizationGraph.GetFirstPath(localizationGraph.array, boxes);  
+            Assert.That(Enumerable.SequenceEqual(firstPath, new int[3] { 2, 4, 5 }));
         }
     }
 }

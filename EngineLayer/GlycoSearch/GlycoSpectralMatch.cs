@@ -277,7 +277,7 @@ namespace EngineLayer.GlycoSearch
             return s;
         }
 
-        public static List<Tuple<int, int>> ToLocalizeGlyco(List<Tuple<int, Tuple<int, int>[]>> OGlycanBoxLocalization, out string localizationLevel)
+        public static List<Tuple<int, int>> GetLocalizedGlycan(List<Tuple<int, Tuple<int, int>[]>> OGlycanBoxLocalization, out string localizationLevel)
         {
             List<Tuple<int, int>> localizedGlycan = new List<Tuple<int, int>>();
 

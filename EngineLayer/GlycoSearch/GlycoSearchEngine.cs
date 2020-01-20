@@ -143,6 +143,10 @@ namespace EngineLayer.GlycoSearch
                         peptideCount = 0;
                         foreach (int id in idsOfPeptidesPossiblyObserved.OrderByDescending(p => scoringTable[p]))
                         {
+                            if (scoringTable[id] < (int)byteScoreCutoff)
+                            {
+                                continue;
+                            }
                             peptideCount++;
                             if (peptideCount == TopN)
                             {
@@ -603,7 +607,7 @@ namespace EngineLayer.GlycoSearch
                 allMatchedChildIons.Add(childScan.OneBasedScanNumber, matchedChildIons);
                 double childScore = CalculatePeptideScore(childScan.TheScan, matchedChildIons);
 
-                //TO DO:may think a different way to use childScore
+                //TO THINK:may think a different way to use childScore
                 score += childScore;
             }
 
@@ -613,7 +617,6 @@ namespace EngineLayer.GlycoSearch
 
             psmGlyco.ChildMatchedFragmentIons = allMatchedChildIons;
 
-            //TO DO: glycanBoxes and localization output
             psmGlyco.OGlycanBoxLocalization = glycanBox_localization;
 
             if (oxoniumIonIntensities[5] == 0)
