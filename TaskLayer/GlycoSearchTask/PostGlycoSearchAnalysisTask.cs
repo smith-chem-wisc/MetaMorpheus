@@ -86,7 +86,7 @@ namespace TaskLayer
 
                         var dtc = (gsm.IsDecoy) ? "D" : (gsm.IsContaminant) ? "C" : "T";
 
-                        string proPosId = gsm.ProteinAccession + "-" + dtc + "-" + proteinPos.ToString() + "-" + local.Item2;
+                        string proPosId = gsm.ProteinAccession + "-" + dtc + "-" + proteinPos.ToString() + "-" + local.Item2 + "-" + local.Item3;
 
                         if (!localizedGlycan.ContainsKey(proPosId))
                         {

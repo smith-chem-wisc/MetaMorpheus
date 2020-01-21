@@ -456,7 +456,7 @@ namespace TaskLayer
             var writtenFile = Path.Combine(outputPath);
             using (StreamWriter output = new StreamWriter(writtenFile))
             {
-                output.WriteLine("Protein Accession\tTargetDecoyComtaminant\tModification Site\tLocalized Glycans\tLowest Qvalue");
+                output.WriteLine("Protein Accession\tTargetDecoyComtaminant\tModification Site\tLocalized Glycans\tLocalized\tLowest Qvalue");
                 foreach (var item in items.OrderBy(p=>p.Key))
                 {
                     var x = item.Key.Split('-');
@@ -465,6 +465,7 @@ namespace TaskLayer
                         x[1] + "\t" +
                         x[2] + "\t" +
                         GlycanBox.GlobalOGlycans[int.Parse(x[3])].Composition + "\t" +
+                        x[4] + "\t" +
                         item.Value.ToString()
                         );
                 }

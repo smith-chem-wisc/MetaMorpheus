@@ -31,7 +31,7 @@ namespace EngineLayer.GlycoSearch
         public double GlycanScore { get; set; }
         public double DiagnosticIonScore { get; set; }
         public double R138vs144 { get; set; }
-        public List<Tuple<int, int>> LocalizedGlycan { get; set; }
+        public List<Tuple<int, int, bool>> LocalizedGlycan { get; set; }
         public string LocalizationLevel { get; set; }
 
         //Motif should be writen with required form
@@ -264,7 +264,7 @@ namespace EngineLayer.GlycoSearch
                 }
                 sb.Append(string.Join(",", glycans.Select(p => p.Struc.ToString()).ToArray())); sb.Append("\t");
 
-                sb.Append(string.Join(",", LocalizedGlycan.Select(p=>p.Item1.ToString() + "-" + p.Item2.ToString()))); sb.Append("\t");
+                sb.Append(string.Join(",", LocalizedGlycan.Where(p=>p.Item3).Select(p=>p.Item1.ToString() + "-" + p.Item2.ToString()))); sb.Append("\t");
 
                 sb.Append(LocalizationLevel); sb.Append("\t");
             }
@@ -279,9 +279,10 @@ namespace EngineLayer.GlycoSearch
             return s;
         }
 
-        public static List<Tuple<int, int>> GetLocalizedGlycan(List<Tuple<int, Tuple<int, int>[]>> OGlycanBoxLocalization, out string localizationLevel)
+        //<int, int, string> <ModBoxId, ModPosition, is localized>
+        public static List<Tuple<int, int, bool>> GetLocalizedGlycan(List<Tuple<int, Tuple<int, int>[]>> OGlycanBoxLocalization, out string localizationLevel)
         {
-            List<Tuple<int, int>> localizedGlycan = new List<Tuple<int, int>>();
+            List<Tuple<int, int, bool>> localizedGlycan = new List<Tuple<int, int, bool>>();
 
             HashSet<int> allGlycanIds = new HashSet<int>(OGlycanBoxLocalization.Select(p => p.Item2).SelectMany(p => p.Select(q => q.Item2)));
 
@@ -352,7 +353,11 @@ namespace EngineLayer.GlycoSearch
             {
                 if (seenMod.Value == OGlycanBoxLocalization.Count)
                 {
-                    localizedGlycan.Add(new Tuple<int, int>(int.Parse(seenMod.Key.Split('-')[0]), int.Parse(seenMod.Key.Split('-')[1])));
+                    localizedGlycan.Add(new Tuple<int, int, bool>(int.Parse(seenMod.Key.Split('-')[0]), int.Parse(seenMod.Key.Split('-')[1]), true));
+                }
+                else
+                {
+                    localizedGlycan.Add(new Tuple<int, int, bool>(int.Parse(seenMod.Key.Split('-')[0]), int.Parse(seenMod.Key.Split('-')[1]), false));
                 }
             }
 
