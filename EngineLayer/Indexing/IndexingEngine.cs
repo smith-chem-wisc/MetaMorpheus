@@ -31,8 +31,8 @@ namespace EngineLayer.Indexing
 
         public IndexingEngine(List<Protein> proteinList, List<Modification> variableModifications, List<Modification> fixedModifications,
             List<SilacLabel> silacLabels, SilacLabel startLabel, SilacLabel endLabel, int currentPartition, DecoyType decoyType,
-            CommonParameters commonParams, double maxFragmentSize, bool generatePrecursorIndex, List<FileInfo> proteinDatabases, List<string> nestedIds)
-            : base(commonParams, nestedIds)
+            CommonParameters commonParams, List<(string fileName, CommonParameters fileSpecificParameters)> fileSpecificParameters, double maxFragmentSize, bool generatePrecursorIndex, List<FileInfo> proteinDatabases, List<string> nestedIds)
+            : base(commonParams, fileSpecificParameters, nestedIds)
         {
             ProteinList = proteinList;
             VariableModifications = variableModifications;

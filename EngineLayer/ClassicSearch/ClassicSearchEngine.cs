@@ -23,8 +23,8 @@ namespace EngineLayer.ClassicSearch
 
         public ClassicSearchEngine(PeptideSpectralMatch[] globalPsms, Ms2ScanWithSpecificMass[] arrayOfSortedMS2Scans,
             List<Modification> variableModifications, List<Modification> fixedModifications, List<SilacLabel> silacLabels, SilacLabel startLabel, SilacLabel endLabel, 
-            List<Protein> proteinList, MassDiffAcceptor searchMode, CommonParameters commonParameters, List<string> nestedIds)
-            : base(commonParameters, nestedIds)
+            List<Protein> proteinList, MassDiffAcceptor searchMode, CommonParameters commonParameters, List<(string FileName, CommonParameters Parameters)> fileSpecificParameters, List<string> nestedIds)
+            : base(commonParameters, fileSpecificParameters, nestedIds)
         {
             PeptideSpectralMatches = globalPsms;
             ArrayOfSortedMS2Scans = arrayOfSortedMS2Scans;
@@ -95,7 +95,7 @@ namespace EngineLayer.ClassicSearch
                                         {
                                             if (PeptideSpectralMatches[scan.ScanIndex] == null)
                                             {
-                                                PeptideSpectralMatches[scan.ScanIndex] = new PeptideSpectralMatch(peptide, scan.Notch, thisScore, scan.ScanIndex, scan.TheScan, CommonParameters.DigestionParams, matchedIons, 0);
+                                                PeptideSpectralMatches[scan.ScanIndex] = new PeptideSpectralMatch(peptide, scan.Notch, thisScore, scan.ScanIndex, scan.TheScan, CommonParameters, matchedIons, 0);
                                             }
                                             else
                                             {

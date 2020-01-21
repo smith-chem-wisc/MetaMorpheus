@@ -20,7 +20,7 @@ namespace Test
         {
             Environment.CurrentDirectory = TestContext.CurrentContext.TestDirectory;
             Loaders.LoadElements();
-
+            
             MetaMorpheusEngine.WarnHandler += WarnStatusHandler;
             MetaMorpheusTask.WarnHandler += WarnStatusHandler;
 

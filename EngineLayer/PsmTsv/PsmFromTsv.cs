@@ -28,6 +28,10 @@ namespace EngineLayer
         public Dictionary<int, List<MatchedFragmentIon>> ChildScanMatchedIons { get; } // this is only used in crosslink for now, but in the future will be used for other experiment types
         public double QValue { get; }
 
+        public double PEP { get; }
+
+        public double PEP_QValue { get; }
+
         public double? TotalIonCurrent { get; }
         public double? DeltaScore { get; }
         public string Notch { get; }
@@ -111,6 +115,8 @@ namespace EngineLayer
             NextAminoAcid = (parsedHeader[PsmTsvHeader.NextAminoAcid] < 0) ? null : spl[parsedHeader[PsmTsvHeader.NextAminoAcid]].Trim();
             QValueNotch = (parsedHeader[PsmTsvHeader.QValueNotch] < 0) ? null : (double?)double.Parse(spl[parsedHeader[PsmTsvHeader.QValueNotch]].Trim(), CultureInfo.InvariantCulture);
             RetentionTime = (parsedHeader[PsmTsvHeader.Ms2ScanRetentionTime] < 0) ? null : (double?)double.Parse(spl[parsedHeader[PsmTsvHeader.Ms2ScanRetentionTime]].Trim(), CultureInfo.InvariantCulture);
+            PEP = double.Parse(spl[parsedHeader[PsmTsvHeader.PEP]].Trim(), CultureInfo.InvariantCulture);
+            PEP_QValue = double.Parse(spl[parsedHeader[PsmTsvHeader.PEP_QValue]].Trim(), CultureInfo.InvariantCulture);
 
             VariantCrossingIons = findVariantCrossingIons();
 

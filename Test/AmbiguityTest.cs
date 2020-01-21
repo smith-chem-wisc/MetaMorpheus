@@ -27,6 +27,8 @@ namespace Test
                     minPeptideLength: 1),
                 scoreCutoff: 1,
                 reportAllAmbiguity: true);
+            var fsp_t = new List<(string fileName, CommonParameters fileSpecificParameters)>();
+            fsp_t.Add(("", CommonParameters_t));
 
             CommonParameters CommonParameters_f = new CommonParameters(
                 dissociationType: MassSpectrometry.DissociationType.HCD,
@@ -35,6 +37,8 @@ namespace Test
                     minPeptideLength: 1),
                 scoreCutoff: 1,
                 reportAllAmbiguity: false);
+            var fsp_f = new List<(string fileName, CommonParameters fileSpecificParameters)>();
+            fsp_f.Add(("", CommonParameters_t));
 
             var myMsDataFile = new TestDataFile();
             var variableModifications = new List<Modification>();
@@ -50,8 +54,8 @@ namespace Test
             
             PeptideSpectralMatch[] allPsmsArray_withOutAmbiguity = new PeptideSpectralMatch[listOfSortedms2Scans.Length];
 
-            new ClassicSearchEngine(allPsmsArray_withAmbiguity, listOfSortedms2Scans, variableModifications, fixedModifications, null, null, null, proteinList, searchModes, CommonParameters_t, new List<string>()).Run(); //report all ambiguity TRUE
-            new ClassicSearchEngine(allPsmsArray_withOutAmbiguity, listOfSortedms2Scans, variableModifications, fixedModifications, null, null, null, proteinList, searchModes, CommonParameters_f, new List<string>()).Run(); //report all ambiguity FALSE
+            new ClassicSearchEngine(allPsmsArray_withAmbiguity, listOfSortedms2Scans, variableModifications, fixedModifications, null, null, null, proteinList, searchModes, CommonParameters_t, fsp_t, new List<string>()).Run(); //report all ambiguity TRUE
+            new ClassicSearchEngine(allPsmsArray_withOutAmbiguity, listOfSortedms2Scans, variableModifications, fixedModifications, null, null, null, proteinList, searchModes, CommonParameters_f, fsp_f, new List<string>()).Run(); //report all ambiguity FALSE
 
             Assert.AreEqual("QQQ", allPsmsArray_withAmbiguity[0].BaseSequence);
             Assert.AreEqual("QQQ", allPsmsArray_withOutAmbiguity[0].BaseSequence);

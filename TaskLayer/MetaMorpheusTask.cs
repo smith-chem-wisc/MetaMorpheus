@@ -84,6 +84,7 @@ namespace TaskLayer
         public MyTask TaskType { get; set; }
 
         public CommonParameters CommonParameters { get; set; }
+        public List<(string FileName, CommonParameters Parameters)> FileSpecificParameters { get; set; }
 
         public const string IndexFolderName = "DatabaseIndex";
         public const string IndexEngineParamsFileName = "indexEngine.params";
@@ -351,12 +352,14 @@ namespace TaskLayer
             Tolerance precursorMassTolerance = fileSpecificParams.PrecursorMassTolerance ?? commonParams.PrecursorMassTolerance;
             Tolerance productMassTolerance = fileSpecificParams.ProductMassTolerance ?? commonParams.ProductMassTolerance;
             DissociationType dissociationType = fileSpecificParams.DissociationType ?? commonParams.DissociationType;
+            string separationType = fileSpecificParams.SeparationType ?? commonParams.SeparationType;
 
             CommonParameters returnParams = new CommonParameters(
                 dissociationType: dissociationType,
                 precursorMassTolerance: precursorMassTolerance,
                 productMassTolerance: productMassTolerance,
                 digestionParams: fileSpecificDigestionParams,
+                separationType: separationType,
 
                 //NEED THESE OR THEY'LL BE OVERWRITTEN
                 childScanDissociationType: commonParams.ChildScanDissociationType,
@@ -397,6 +400,8 @@ namespace TaskLayer
             Toml.WriteFile(this, tomlFileName, tomlConfig);
             FinishedWritingFile(tomlFileName, new List<string> { displayName });
 
+            FileSpecificParameters = new List<(string FileName, CommonParameters Parameters)>();
+
             MetaMorpheusEngine.FinishedSingleEngineHandler += SingleEngineHandlerInTask;
             try
             {
@@ -412,10 +417,12 @@ namespace TaskLayer
                     string fileSpecificTomlPath = Path.Combine(directory, Path.GetFileNameWithoutExtension(rawFilePath)) + ".toml";
                     if (File.Exists(fileSpecificTomlPath))
                     {
-                        TomlTable fileSpecificSettings = Toml.ReadFile(fileSpecificTomlPath, tomlConfig);
+                        
                         try
                         {
+                            TomlTable fileSpecificSettings = Toml.ReadFile(fileSpecificTomlPath, tomlConfig);
                             fileSettingsList[i] = new FileSpecificParameters(fileSpecificSettings);
+                            FileSpecificParameters.Add((currentRawDataFilepathList[i], SetAllFileSpecificCommonParams(CommonParameters, fileSettingsList[i])));
                         }
                         catch (MetaMorpheusException e)
                         {
@@ -423,6 +430,10 @@ namespace TaskLayer
                             // probably the only time you can get here is if the user modifies the file-specific parameter file in the middle of a run...
                             Warn("Problem parsing the file-specific toml " + Path.GetFileName(fileSpecificTomlPath) + "; " + e.Message + "; is the toml from an older version of MetaMorpheus?");
                         }
+                    }
+                    else // just used common parameters for file specific.
+                    {
+                        FileSpecificParameters.Add((currentRawDataFilepathList[i], CommonParameters));
                     }
                 }
 
@@ -437,12 +448,12 @@ namespace TaskLayer
                 }
                 FinishedWritingFile(resultsFileName, new List<string> { displayName });
                 FinishedSingleTask(displayName);
-            }
+        }
             catch (Exception e)
             {
                 MetaMorpheusEngine.FinishedSingleEngineHandler -= SingleEngineHandlerInTask;
                 var resultsFileName = Path.Combine(output_folder, "results.txt");
-                e.Data.Add("folder", output_folder);
+        e.Data.Add("folder", output_folder);
                 using (StreamWriter file = new StreamWriter(resultsFileName))
                 {
                     file.WriteLine(GlobalVariables.MetaMorpheusVersion.Equals("1.0.0.0") ? "MetaMorpheus: Not a release version" : "MetaMorpheus: version " + GlobalVariables.MetaMorpheusVersion);

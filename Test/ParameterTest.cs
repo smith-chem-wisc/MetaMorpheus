@@ -1,11 +1,13 @@
 ﻿using EngineLayer;
 using MassSpectrometry;
 using MzLibUtil;
+using Nett;
 using NUnit.Framework;
 using Proteomics.Fragmentation;
 using Proteomics.ProteolyticDigestion;
 using System;
 using System.Collections.Generic;
+using System.IO;
 using TaskLayer;
 
 namespace Test
@@ -13,6 +15,23 @@ namespace Test
     [TestFixture]
     public static class ParameterTest
     {
+        [Test]
+        public static void TestFileSpecificParametersClone()
+        {
+            var fileSpecificToml = Toml.ReadFile(Path.Combine(TestContext.CurrentContext.TestDirectory, "testFileSpecfic.toml"), MetaMorpheusTask.tomlConfig);
+            FileSpecificParameters fsp = new FileSpecificParameters(fileSpecificToml);
+            FileSpecificParameters fspClone = fsp.Clone();
+            Assert.AreEqual(fsp.DissociationType, fspClone.DissociationType);
+            Assert.AreEqual(fsp.MaxMissedCleavages, fspClone.MaxMissedCleavages);
+            Assert.AreEqual(fsp.MaxModsForPeptide, fspClone.MaxModsForPeptide);
+            Assert.AreEqual(fsp.MaxPeptideLength, fspClone.MaxPeptideLength);
+            Assert.AreEqual(fsp.MinPeptideLength, fspClone.MinPeptideLength);
+            Assert.AreEqual(fsp.PrecursorMassTolerance, fspClone.PrecursorMassTolerance);
+            Assert.AreEqual(fsp.ProductMassTolerance, fspClone.ProductMassTolerance);
+            Assert.AreEqual(fsp.Protease, fspClone.Protease);
+            Assert.AreEqual(fsp.SeparationType, fspClone.SeparationType);
+        }
+
         [Test]
         //This test exists because file specific parameters code has a tendency to overwrite common parameters and make life horrible 
         public static void TestFileSpecifcParameterOverwrite()

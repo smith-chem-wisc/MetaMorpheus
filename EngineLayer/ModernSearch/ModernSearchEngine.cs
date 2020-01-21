@@ -22,8 +22,8 @@ namespace EngineLayer.ModernSearch
         protected readonly double MaxMassThatFragmentIonScoreIsDoubled;
 
         public ModernSearchEngine(PeptideSpectralMatch[] globalPsms, Ms2ScanWithSpecificMass[] listOfSortedms2Scans, List<PeptideWithSetModifications> peptideIndex,
-            List<int>[] fragmentIndex, int currentPartition, CommonParameters commonParameters, MassDiffAcceptor massDiffAcceptor, double maximumMassThatFragmentIonScoreIsDoubled,
-            List<string> nestedIds) : base(commonParameters, nestedIds)
+            List<int>[] fragmentIndex, int currentPartition, CommonParameters commonParameters, List<(string fileName, CommonParameters fileSpecificParameters)> fileSpecificParameters, MassDiffAcceptor massDiffAcceptor, double maximumMassThatFragmentIonScoreIsDoubled,
+            List<string> nestedIds) : base(commonParameters, fileSpecificParameters, nestedIds)
         {
             PeptideSpectralMatches = globalPsms;
             ListOfSortedMs2Scans = listOfSortedms2Scans;
@@ -347,7 +347,7 @@ namespace EngineLayer.ModernSearch
             {
                 if (PeptideSpectralMatches[scanIndex] == null)
                 {
-                    PeptideSpectralMatches[scanIndex] = new PeptideSpectralMatch(peptide, notch, thisScore, scanIndex, scan, CommonParameters.DigestionParams, matchedIons);
+                    PeptideSpectralMatches[scanIndex] = new PeptideSpectralMatch(peptide, notch, thisScore, scanIndex, scan, CommonParameters, matchedIons);
                 }
                 else
                 {

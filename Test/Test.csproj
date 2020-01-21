@@ -82,6 +82,9 @@
     <None Update="TestData\DoubleProtease.tsv">
       <CopyToOutputDirectory>Always</CopyToOutputDirectory>
     </None>
+    <None Update="TestData\empty.fa">
+      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+    </None>
     <None Update="TestData\frameshift.xml">
       <CopyToOutputDirectory>Always</CopyToOutputDirectory>
     </None>
@@ -118,13 +121,25 @@
     <None Update="TestData\okk.xml">
       <CopyToOutputDirectory>Always</CopyToOutputDirectory>
     </None>
+    <None Update="TestData\oneEmptyEntry.fa">
+      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+    </None>
     <None Update="TestData\PrunedDbSpectra.mzml">
       <CopyToOutputDirectory>Always</CopyToOutputDirectory>
     </None>
     <None Update="TestData\semiTest.fasta">
       <CopyToOutputDirectory>Always</CopyToOutputDirectory>
     </None>
+    <None Update="TestData\sliced_b6_Copy.mzML">
+      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+    </None>
+    <None Update="TestData\sliced_b6_Copy.toml">
+      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+    </None>
     <None Update="TestData\sliced_b6.mzML">
+      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+    </None>
+    <None Update="TestData\sliced_b6.toml">
       <CopyToOutputDirectory>Always</CopyToOutputDirectory>
     </None>
     <None Update="TestData\SmallCalibratible_Yeast.mzML">
@@ -152,6 +167,12 @@
       <CopyToOutputDirectory>Always</CopyToOutputDirectory>
     </None>
     <None Update="TestData\XCorrUnitTest.tsv">
+      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+    </None>
+    <None Update="testFileParams_bad.toml">
+      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+    </None>
+    <None Update="testFileParams.toml">
       <CopyToOutputDirectory>Always</CopyToOutputDirectory>
     </None>
     <None Update="testFileSpecfic.toml">
@@ -205,13 +226,38 @@
     <None Update="VariantSearchTaskconfig.toml">
       <CopyToOutputDirectory>Always</CopyToOutputDirectory>
     </None>
-    <None Update="XlTestData\2017-11-21_XL_DSSO_Ribosome_RT60min_28800-28898.mzML">
+        <None Update="XlTestData\2017-11-21_XL_DSSO_Ribosome_RT60min_28800-28898.mzML">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </None>
+
+    <None Update="XlTestData\ms2ms3mixed_10226.mzML">
       <CopyToOutputDirectory>Always</CopyToOutputDirectory>
     </None>
-    <None Update="XlTestData\BSA.fasta">
+    <None Update="XlTestData\RibosomeGO.fasta">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </None>
+    <None Update="XlTestData\10226.mzML">
       <CopyToOutputDirectory>Always</CopyToOutputDirectory>
     </None>
     <None Update="XlTestData\BSA_DSSO_29061.mgf">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </None>
+    <None Update="XlTestData\ms2mixed_bsa_xlink.mzML">
+      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+    </None>
+    <None Update="XlTestData\Rappsilber3-XLSearchTaskconfig.toml">
+      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+    </None>
+    <None Update="XlTestData\Rappsilber_CLMS_PolII_3-calib_slice.mzML.gz">
+      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+    </None>
+    <None Update="XlTestData\YeastPol2.fasta">
+      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+    </None>
+    <None Update="XlTestData\yeast_glycan_25170.mgf">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </None>
+    <None Update="XlTestData\BSA.fasta">
       <CopyToOutputDirectory>Always</CopyToOutputDirectory>
     </None>
     <None Update="XlTestData\BSA_DSSO_ETchD6010.mgf">
