@@ -132,7 +132,7 @@
                                         </TextBox>
                                     </StackPanel>
                                     <StackPanel Orientation="Horizontal" Margin="5">
-                                        <Label x:Name="LbMinVariantDepth" Content="Min Read Depth for Variants" />
+                                        <Label x:Name="LbMinVariantDepth" Content="Min read depth for variants" />
                                         <TextBox x:Name="MinVariantDepthTextBox" PreviewTextInput="CheckIfNumber" Width="45" ToolTipService.ShowDuration="999999" ToolTipService.InitialShowDelay="500">
                                             <TextBox.ToolTip>
                                                 <TextBlock>
@@ -142,7 +142,7 @@
                                         </TextBox>
                                     </StackPanel>
                                     <StackPanel Orientation="Horizontal" Margin="5">
-                                        <Label x:Name="LbMaxHeterozygousVariants" Content="Max Heterozygous Variants for Combinitorics" />
+                                        <Label x:Name="LbMaxHeterozygousVariants" Content="Max heterozygous variants for combinitorics" />
                                         <TextBox x:Name="MaxHeterozygousVariantsTextBox" PreviewTextInput="CheckIfNumber" Width="45" ToolTipService.ShowDuration="999999" ToolTipService.InitialShowDelay="500">
                                             <TextBox.ToolTip>
                                                 <TextBlock>
@@ -152,7 +152,7 @@
                                         </TextBox>
                                     </StackPanel>
                                     <StackPanel Orientation="Horizontal" Margin="5">
-                                        <Label x:Name="MinimumScoreLabel" Content="Minimum Score Allowed:" />
+                                        <Label x:Name="MinimumScoreLabel" Content="Minimum score allowed:" />
                                         <TextBox x:Name="MinScoreAllowed" PreviewTextInput="CheckIfNumber" Width="45" ToolTipService.ShowDuration="999999" ToolTipService.InitialShowDelay="500">
                                             <TextBox.ToolTip>
                                                 <TextBlock>
@@ -171,6 +171,16 @@
                                             <ComboBox.ToolTip>
                                                 <TextBlock>
                                                         Assumed cleavage of the initiator Methionine present at the beginning of most proteins (start codon).
+                                                </TextBlock>
+                                            </ComboBox.ToolTip>
+                                        </ComboBox>
+                                    </StackPanel>
+                                    <StackPanel Orientation="Horizontal" Margin="5">
+                                        <Label x:Name="separationType" Content="Separation Type" />
+                                        <ComboBox x:Name="SeparationTypeComboBox" ToolTipService.ShowDuration="999999" ToolTipService.InitialShowDelay="500">
+                                            <ComboBox.ToolTip>
+                                                <TextBlock>
+                                                        Specify is separation for prior to the mass-spec analysis was one with HPLC or with CZE.
                                                 </TextBlock>
                                             </ComboBox.ToolTip>
                                         </ComboBox>

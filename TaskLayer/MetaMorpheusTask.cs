@@ -84,6 +84,7 @@ namespace TaskLayer
         public MyTask TaskType { get; set; }
 
         public CommonParameters CommonParameters { get; set; }
+        public List<(string FileName, CommonParameters Parameters)> FileSpecificParameters { get; set; }
 
         public const string IndexFolderName = "DatabaseIndex";
         public const string IndexEngineParamsFileName = "indexEngine.params";
@@ -351,12 +352,14 @@ namespace TaskLayer
             Tolerance precursorMassTolerance = fileSpecificParams.PrecursorMassTolerance ?? commonParams.PrecursorMassTolerance;
             Tolerance productMassTolerance = fileSpecificParams.ProductMassTolerance ?? commonParams.ProductMassTolerance;
             DissociationType dissociationType = fileSpecificParams.DissociationType ?? commonParams.DissociationType;
+            string separationType = fileSpecificParams.SeparationType ?? commonParams.SeparationType;
 
             CommonParameters returnParams = new CommonParameters(
                 dissociationType: dissociationType,
                 precursorMassTolerance: precursorMassTolerance,
                 productMassTolerance: productMassTolerance,
                 digestionParams: fileSpecificDigestionParams,
+                separationType: separationType,
 
                 //NEED THESE OR THEY'LL BE OVERWRITTEN
                 childScanDissociationType: commonParams.ChildScanDissociationType,
@@ -397,6 +400,8 @@ namespace TaskLayer
             Toml.WriteFile(this, tomlFileName, tomlConfig);
             FinishedWritingFile(tomlFileName, new List<string> { displayName });
 
+            FileSpecificParameters = new List<(string FileName, CommonParameters Parameters)>();
+
             MetaMorpheusEngine.FinishedSingleEngineHandler += SingleEngineHandlerInTask;
             try
             {
@@ -412,10 +417,12 @@ namespace TaskLayer
                     string fileSpecificTomlPath = Path.Combine(directory, Path.GetFileNameWithoutExtension(rawFilePath)) + ".toml";
                     if (File.Exists(fileSpecificTomlPath))
                     {
-                        TomlTable fileSpecificSettings = Toml.ReadFile(fileSpecificTomlPath, tomlConfig);
+                        
                         try
                         {
+                            TomlTable fileSpecificSettings = Toml.ReadFile(fileSpecificTomlPath, tomlConfig);
                             fileSettingsList[i] = new FileSpecificParameters(fileSpecificSettings);
+                            FileSpecificParameters.Add((currentRawDataFilepathList[i], SetAllFileSpecificCommonParams(CommonParameters, fileSettingsList[i])));
                         }
                         catch (MetaMorpheusException e)
                         {
@@ -423,6 +430,10 @@ namespace TaskLayer
                             // probably the only time you can get here is if the user modifies the file-specific parameter file in the middle of a run...
                             Warn("Problem parsing the file-specific toml " + Path.GetFileName(fileSpecificTomlPath) + "; " + e.Message + "; is the toml from an older version of MetaMorpheus?");
                         }
+                    }
+                    else // just used common parameters for file specific.
+                    {
+                        FileSpecificParameters.Add((currentRawDataFilepathList[i], CommonParameters));
                     }
                 }
 
@@ -437,12 +448,12 @@ namespace TaskLayer
                 }
                 FinishedWritingFile(resultsFileName, new List<string> { displayName });
                 FinishedSingleTask(displayName);
-            }
+        }
             catch (Exception e)
             {
                 MetaMorpheusEngine.FinishedSingleEngineHandler -= SingleEngineHandlerInTask;
                 var resultsFileName = Path.Combine(output_folder, "results.txt");
-                e.Data.Add("folder", output_folder);
+        e.Data.Add("folder", output_folder);
                 using (StreamWriter file = new StreamWriter(resultsFileName))
                 {
                     file.WriteLine(GlobalVariables.MetaMorpheusVersion.Equals("1.0.0.0") ? "MetaMorpheus: Not a release version" : "MetaMorpheus: version " + GlobalVariables.MetaMorpheusVersion);
@@ -683,13 +694,23 @@ namespace TaskLayer
                 }
             }
 
+            // get digestion info from file
+            var storedDigestParams = GetDigestionParamsFromFile(Path.Combine(Path.GetDirectoryName(peptideIndexFileName), "DigestionParameters.toml"));
+
             // get non-serialized information for the peptides (proteins, mod info)
             foreach (var peptide in peptideIndex)
             {
-                peptide.SetNonSerializedPeptideInfo(GlobalVariables.AllModsKnownDictionary, proteinDictionary);
+                peptide.SetNonSerializedPeptideInfo(GlobalVariables.AllModsKnownDictionary, proteinDictionary, storedDigestParams);
             }
 
             return peptideIndex;
+        }
+
+        private static DigestionParams GetDigestionParamsFromFile(string path)
+        {
+            var digestionParams = Toml.ReadFile<DigestionParams>(path, MetaMorpheusTask.tomlConfig);
+
+            return digestionParams;
         }
 
         private static void WriteFragmentIndex(List<int>[] fragmentIndex, string fragmentIndexFileName)
@@ -763,6 +784,8 @@ namespace TaskLayer
             {
                 output.Write(indexEngine);
             }
+
+            Toml.WriteFile(indexEngine.CommonParameters.DigestionParams, Path.Combine(Path.GetDirectoryName(fileName), "DigestionParameters.toml"), tomlConfig);
         }
 
         private static string GenerateOutputFolderForIndices(List<DbForTask> dbFilenameList)
@@ -779,8 +802,39 @@ namespace TaskLayer
 
         public void GenerateIndexes(IndexingEngine indexEngine, List<DbForTask> dbFilenameList, ref List<PeptideWithSetModifications> peptideIndex, ref List<int>[] fragmentIndex, ref List<int>[] precursorIndex, List<Protein> allKnownProteins, string taskId)
         {
+            bool successfullyReadIndices = false;
             string pathToFolderWithIndices = GetExistingFolderWithIndices(indexEngine, dbFilenameList);
-            if (pathToFolderWithIndices == null) //if no indexes exist
+
+            if (pathToFolderWithIndices != null) //if indexes exist
+            {
+                try
+                {
+                    Status("Reading peptide index...", new List<string> { taskId });
+                    peptideIndex = ReadPeptideIndex(Path.Combine(pathToFolderWithIndices, PeptideIndexFileName), allKnownProteins);
+
+                    Status("Reading fragment index...", new List<string> { taskId });
+                    fragmentIndex = ReadFragmentIndex(Path.Combine(pathToFolderWithIndices, FragmentIndexFileName));
+
+                    if (indexEngine.GeneratePrecursorIndex)
+                    {
+                        Status("Reading precursor index...", new List<string> { taskId });
+                        precursorIndex = ReadFragmentIndex(Path.Combine(pathToFolderWithIndices, PrecursorIndexFileName));
+                    }
+
+                    successfullyReadIndices = true;
+                }
+                catch
+                {
+                    // could put something here... this basically is just to prevent a crash if the index was unable to be read.
+
+                    // if the old index couldn't be read, a new one will be generated.
+
+                    // an old index may not be able to be read because of information required by new versions of MetaMorpheus
+                    // that wasn't written by old versions.
+                }
+            }
+
+            if (!successfullyReadIndices) //if we didn't find indexes with the same params
             {
                 var output_folderForIndices = GenerateOutputFolderForIndices(dbFilenameList);
                 Status("Writing params...", new List<string> { taskId });
@@ -795,6 +849,7 @@ namespace TaskLayer
                 precursorIndex = indexResults.PrecursorIndex;
 
                 Status("Writing peptide index...", new List<string> { taskId });
+                //ShrinkPeptideIndex(peptideIndex);
                 var peptideIndexFile = Path.Combine(output_folderForIndices, PeptideIndexFileName);
                 WritePeptideIndex(peptideIndex, peptideIndexFile);
                 FinishedWritingFile(peptideIndexFile, new List<string> { taskId });
@@ -810,20 +865,6 @@ namespace TaskLayer
                     var precursorIndexFile = Path.Combine(output_folderForIndices, PrecursorIndexFileName);
                     WriteFragmentIndex(precursorIndex, precursorIndexFile);
                     FinishedWritingFile(precursorIndexFile, new List<string> { taskId });
-                }
-            }
-            else //if we found indexes with the same params
-            {
-                Status("Reading peptide index...", new List<string> { taskId });
-                peptideIndex = ReadPeptideIndex(Path.Combine(pathToFolderWithIndices, PeptideIndexFileName), allKnownProteins);
-
-                Status("Reading fragment index...", new List<string> { taskId });
-                fragmentIndex = ReadFragmentIndex(Path.Combine(pathToFolderWithIndices, FragmentIndexFileName));
-
-                if (indexEngine.GeneratePrecursorIndex)
-                {
-                    Status("Reading precursor index...", new List<string> { taskId });
-                    precursorIndex = ReadFragmentIndex(Path.Combine(pathToFolderWithIndices, PrecursorIndexFileName));
                 }
             }
         }
@@ -857,13 +898,13 @@ namespace TaskLayer
         public static void DetermineAnalyteType(CommonParameters commonParameters)
         {
             // changes the name of the analytes from "peptide" to "proteoform" if the protease is set to top-down
-            
+
             // TODO: note that this will not function well if the user is using file-specific settings, but it's assumed
             // that bottom-up and top-down data is not being searched in the same task
 
-            if (commonParameters != null 
-                && commonParameters.DigestionParams != null 
-                && commonParameters.DigestionParams.Protease != null 
+            if (commonParameters != null
+                && commonParameters.DigestionParams != null
+                && commonParameters.DigestionParams.Protease != null
                 && commonParameters.DigestionParams.Protease.Name == "top-down")
             {
                 GlobalVariables.AnalyteType = "Proteoform";

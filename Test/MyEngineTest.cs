@@ -21,7 +21,7 @@ namespace Test
         private class TestEngine : MetaMorpheusEngine
         {
 
-            public TestEngine(int level) : base(new CommonParameters(), new List<string>())
+            public TestEngine(int level) : base(new CommonParameters(), null, new List<string>())
             {
             }
 

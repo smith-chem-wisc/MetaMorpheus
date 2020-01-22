@@ -6,7 +6,7 @@
         xmlns:local="clr-namespace:MetaMorpheusGUI"
         mc:Ignorable="d"
         KeyDown="KeyPressed"
-        Title="File-Specific Parameters" Height="350" Width="500" WindowStartupLocation="CenterScreen">
+        Title="File-Specific Parameters" Height="400" Width="500" WindowStartupLocation="CenterScreen">
     <StackPanel>
         <Label Content="Enabled?">
             <ToolTipService.ToolTip>
@@ -84,6 +84,16 @@
             </CheckBox>
             <Label x:Name="lbMaxModNum" Margin="20,0,0,0" Width="130" Content="Max mods per peptide" IsEnabled="{Binding IsChecked, ElementName=fileSpecificMaxModNumEnabled}" />
             <TextBox x:Name="MaxModNumTextBox" PreviewTextInput="CheckIfNumber" Width="45" IsEnabled="{Binding IsChecked, ElementName=fileSpecificMaxModNumEnabled}" />
+        </StackPanel>
+        <!-- File-specific Separation Type -->
+        <StackPanel Orientation="Horizontal" Margin="10,0,0,8">
+            <CheckBox x:Name="fileSpecificSeparationTypesEnabled" Margin="10,0,0,0" VerticalAlignment="Center" IsChecked="False">
+                <ToolTipService.ToolTip>
+                    <ToolTip Content="Override task default separation type for the separation type specified here - HPLC or CZE " />
+                </ToolTipService.ToolTip>
+            </CheckBox>
+            <Label x:Name="fileSpecificSeparationTypeLabel" Margin="20,0,0,0"  Content="Separation Type" IsEnabled="{Binding IsChecked, ElementName=fileSpecificSeparationTypesEnabled}" />
+            <ComboBox x:Name="fileSpecificSeparationType" IsEnabled="{Binding IsChecked, ElementName=fileSpecificSeparationTypesEnabled}"/>
         </StackPanel>
         <!-- File-specific Ion Types -->
         <!--<StackPanel Grid.Column="1" Margin="10,0,0,8">

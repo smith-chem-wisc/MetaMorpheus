@@ -74,7 +74,7 @@ namespace MetaMorpheusGUI
             var ye = sender as DataGridCell;
             if (ye.Content is TextBlock hm && !string.IsNullOrEmpty(hm.Text))
             {
-                System.Diagnostics.Process.Start(hm.Text);
+                GlobalVariables.StartProcess(hm.Text);
             }
         }
 
@@ -96,6 +96,14 @@ namespace MetaMorpheusGUI
             {
                 DissociationTypeComboBox.Items.Add(dissassociationType);
             }
+            
+
+            foreach (string separationType in GlobalVariables.SeparationTypes)
+            {
+                SeparationTypeComboBox.Items.Add(separationType);
+            }
+            SeparationTypeComboBox.SelectedItem = "HPLC";
+
 
             ProductMassToleranceComboBox.Items.Add("Da");
             ProductMassToleranceComboBox.Items.Add("ppm");
@@ -247,6 +255,7 @@ namespace MetaMorpheusGUI
             MaxModNumTextBox.Text = task.CommonParameters.DigestionParams.MaxModsForPeptide.ToString(CultureInfo.InvariantCulture);
             InitiatorMethionineBehaviorComboBox.SelectedIndex = (int)task.CommonParameters.DigestionParams.InitiatorMethionineBehavior;
             DissociationTypeComboBox.SelectedItem = task.CommonParameters.DissociationType.ToString();
+            SeparationTypeComboBox.SelectedItem = task.CommonParameters.SeparationType.ToString();
             NTerminalIons.IsChecked = task.CommonParameters.DigestionParams.FragmentationTerminus == FragmentationTerminus.Both || task.CommonParameters.DigestionParams.FragmentationTerminus == FragmentationTerminus.N;
             CTerminalIons.IsChecked = task.CommonParameters.DigestionParams.FragmentationTerminus == FragmentationTerminus.Both || task.CommonParameters.DigestionParams.FragmentationTerminus == FragmentationTerminus.C;
             ProductMassToleranceTextBox.Text = task.CommonParameters.ProductMassTolerance.Value.ToString(CultureInfo.InvariantCulture);
@@ -388,6 +397,8 @@ namespace MetaMorpheusGUI
 
             Protease protease = (Protease)ProteaseComboBox.SelectedItem;
 
+            string separationType = SeparationTypeComboBox.SelectedItem.ToString();
+
             DissociationType dissociationType = GlobalVariables.AllSupportedDissociationTypes[DissociationTypeComboBox.SelectedItem.ToString()];
             CustomFragmentationWindow.Close();
 
@@ -515,6 +526,7 @@ namespace MetaMorpheusGUI
                 precursorMassTolerance: PrecursorMassTolerance,
                 productMassTolerance: ProductMassTolerance,
                 digestionParams: digestionParamsToSave,
+                separationType: separationType,
                 trimMs1Peaks: TrimMs1Peaks,
                 trimMsMsPeaks: TrimMsMsPeaks,
                 numberOfPeaksToKeepPerWindow: numPeaksToKeep,

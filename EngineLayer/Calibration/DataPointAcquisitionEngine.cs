@@ -25,7 +25,8 @@ namespace EngineLayer.Calibration
             Tolerance mzToleranceForMs1Search,
             int minMS1isotopicPeaksNeededForConfirmedIdentification,
             CommonParameters commonParameters,
-            List<string> nestedIds) : base(commonParameters, nestedIds)
+            List<(string FileName, CommonParameters Parameters)> fileSpecificParameters,
+            List<string> nestedIds) : base(commonParameters, fileSpecificParameters, nestedIds)
         {
             GoodIdentifications = goodIdentifications;
             MyMsDataFile = myMsDataFile;
