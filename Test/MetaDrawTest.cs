@@ -76,9 +76,6 @@ namespace Test
             Assert.AreEqual("", psms[0].IdentifiedSequenceVariations);
             Assert.AreEqual("A147T", psms[1].IdentifiedSequenceVariations);
 
-            Assert.AreEqual("", psms[0].IntersectingSequenceVariations);
-            Assert.AreEqual("A147T", psms[1].IntersectingSequenceVariations);
-
             Assert.AreEqual("541-541", psms[0].SpliceSites);
             Assert.AreEqual("", psms[1].SpliceSites);
 

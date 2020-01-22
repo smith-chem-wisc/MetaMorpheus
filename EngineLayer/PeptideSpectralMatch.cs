@@ -13,7 +13,7 @@ namespace EngineLayer
         public const double ToleranceForScoreDifferentiation = 1e-9;
         private List<(int Notch, PeptideWithSetModifications Pwsm)> _BestMatchingPeptides;
 
-        public PeptideSpectralMatch(PeptideWithSetModifications peptide, int notch, double score, int scanIndex, Ms2ScanWithSpecificMass scan, DigestionParams digestionParams, List<MatchedFragmentIon> matchedFragmentIons, double xcorr = 0)
+        public PeptideSpectralMatch(PeptideWithSetModifications peptide, int notch, double score, int scanIndex, Ms2ScanWithSpecificMass scan, CommonParameters commonParameters, List<MatchedFragmentIon> matchedFragmentIons, double xcorr = 0)
         {
             _BestMatchingPeptides = new List<(int, PeptideWithSetModifications)>();
             ScanIndex = scanIndex;
@@ -26,10 +26,11 @@ namespace EngineLayer
             ScanPrecursorCharge = scan.PrecursorCharge;
             ScanPrecursorMonoisotopicPeakMz = scan.PrecursorMonoisotopicPeakMz;
             ScanPrecursorMass = scan.PrecursorMass;
-            DigestionParams = digestionParams;
+            DigestionParams = commonParameters.DigestionParams;
             PeptidesToMatchingFragments = new Dictionary<PeptideWithSetModifications, List<MatchedFragmentIon>>();
             Xcorr = xcorr;
             NativeId = scan.NativeId;
+            RunnerUpScore = commonParameters.ScoreCutoff;
 
             AddOrReplace(peptide, score, notch, true, matchedFragmentIons, xcorr);
         }
@@ -129,6 +130,7 @@ namespace EngineLayer
         public void RemoveThisAmbiguousPeptide(int notch, PeptideWithSetModifications pwsm)
         {
             _BestMatchingPeptides.Remove((notch, pwsm));
+            this.ResolveAllAmbiguities();
         }
 
         public override string ToString()
@@ -201,7 +203,13 @@ namespace EngineLayer
                     {
                         // at least one peptide with this sequence is a target and at least one is a decoy
                         // remove the decoys with this sequence
+                        var pwsmToRemove = _BestMatchingPeptides.Where(p => p.Pwsm.FullSequence == hit.Key && p.Pwsm.Protein.IsDecoy).ToList();
                         _BestMatchingPeptides.RemoveAll(p => p.Pwsm.FullSequence == hit.Key && p.Pwsm.Protein.IsDecoy);
+                        foreach ((int, PeptideWithSetModifications) pwsm in pwsmToRemove)
+                        {
+                            PeptidesToMatchingFragments.Remove(pwsm.Item2);
+                        }
+
                         removedPeptides = true;
                     }
                 }
@@ -217,37 +225,60 @@ namespace EngineLayer
             MatchedFragmentIons = PeptidesToMatchingFragments.First().Value;
         }
 
-        public int GetLongestIonSeriesBidirectional(PeptideWithSetModifications peptide)
+        public static int GetLongestIonSeriesBidirectional(Dictionary<PeptideWithSetModifications, List<MatchedFragmentIon>> PeptidesToMatchingFragments, PeptideWithSetModifications peptide)
         {
-            int maxdif = 0;
-
+            List<int> maxDiffs = new List<int> { 1 };
             if (PeptidesToMatchingFragments != null && PeptidesToMatchingFragments.TryGetValue(peptide, out var matchedFragments) && matchedFragments != null && matchedFragments.Any())
             {
-                List<int> jointSeries = new List<int>();
-                jointSeries.AddRange(matchedFragments.Where(f => f.NeutralTheoreticalProduct.TerminusFragment.Terminus == FragmentationTerminus.N).Select(f => f.NeutralTheoreticalProduct.TerminusFragment.FragmentNumber) ?? new List<int>());
-                jointSeries.AddRange(matchedFragments.Where(f => f.NeutralTheoreticalProduct.TerminusFragment.Terminus == FragmentationTerminus.C).Select(f => f.NeutralTheoreticalProduct.TerminusFragment.FragmentNumber) ?? new List<int>());
-                jointSeries = jointSeries.Distinct().ToList();
+                var jointSeries = matchedFragments.Select(p => p.NeutralTheoreticalProduct.AminoAcidPosition).Distinct().ToList();
 
                 if (jointSeries.Count > 0)
                 {
                     jointSeries.Sort();
 
-                    List<int> aminoAcidPostionsThatCouldBeObserved = Enumerable.Range(0, peptide.BaseSequence.Length + 1).ToList();
+                    List<int> aminoAcidPostionsThatCouldBeObserved = Enumerable.Range(1, peptide.BaseSequence.Length).ToList();
 
                     List<int> missing = aminoAcidPostionsThatCouldBeObserved.Except(jointSeries).ToList();
 
-                    for (int i = 0; i < missing.Count - 1; i++)
+                    int localMaxDiff = 0;
+                    for (int i = 0; i < aminoAcidPostionsThatCouldBeObserved.Count; i++)
                     {
-                        int diff = missing[i + 1] - missing[i] - 1;
-                        if (diff > maxdif)
+                        if (!missing.Contains(aminoAcidPostionsThatCouldBeObserved[i]))
                         {
-                            maxdif = diff;
+                            localMaxDiff++;
+                        }
+                        else
+                        {
+                            maxDiffs.Add(localMaxDiff);
+                            localMaxDiff = 0;
                         }
                     }
+                    maxDiffs.Add(localMaxDiff);
                 }
             }
 
-            return maxdif;
+            return maxDiffs.Max();
+        }
+
+        public static int GetCountComplementaryIons(Dictionary<PeptideWithSetModifications, List<MatchedFragmentIon>> PeptidesToMatchingFragments, PeptideWithSetModifications peptide)
+        {
+            if (PeptidesToMatchingFragments != null && PeptidesToMatchingFragments.TryGetValue(peptide, out var matchedFragments) && matchedFragments != null && matchedFragments.Any())
+            {
+                List<int> nIons = matchedFragments.Where(f => f.NeutralTheoreticalProduct.Terminus == FragmentationTerminus.N).Select(f => f.NeutralTheoreticalProduct.FragmentNumber).ToList();
+                List<int> cIons = matchedFragments.Where(f => f.NeutralTheoreticalProduct.Terminus == FragmentationTerminus.C).Select(f => (peptide.BaseSequence.Length - f.NeutralTheoreticalProduct.FragmentNumber)).ToList();
+                if (nIons.Any() && cIons.Any())
+                {
+                    return nIons.Intersect(cIons).Count();
+                }
+                else
+                {
+                    return 0;
+                }
+            }
+            else
+            {
+                return 0;
+            }
         }
 
         /// <summary>
@@ -293,10 +324,17 @@ namespace EngineLayer
         /// <summary>
         /// This method is used by protein parsimony to add PeptideWithSetModifications objects for modification-agnostic parsimony
         /// </summary>
-        public void AddProteinMatch((int, PeptideWithSetModifications) peptideWithNotch)
+        public void AddProteinMatch((int, PeptideWithSetModifications) peptideWithNotch, List<MatchedFragmentIon> mfi)
         {
-            _BestMatchingPeptides.Add(peptideWithNotch);
-            ResolveAllAmbiguities();
+            if (!_BestMatchingPeptides.Select(p => p.Pwsm).Contains(peptideWithNotch.Item2))
+            {
+                _BestMatchingPeptides.Add(peptideWithNotch);
+                if (!PeptidesToMatchingFragments.ContainsKey(peptideWithNotch.Item2))
+                {
+                    PeptidesToMatchingFragments.Add(peptideWithNotch.Item2, mfi);
+                }
+                ResolveAllAmbiguities();
+            }
         }
 
         /// <summary>
