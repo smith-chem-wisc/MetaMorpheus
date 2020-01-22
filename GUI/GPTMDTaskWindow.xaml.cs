@@ -55,7 +55,7 @@ namespace MetaMorpheusGUI
             var ye = sender as DataGridCell;
             if (ye.Content is TextBlock hm && !string.IsNullOrEmpty(hm.Text))
             {
-                System.Diagnostics.Process.Start(hm.Text);
+                GlobalVariables.StartProcess(hm.Text);
             }
         }
 

@@ -505,8 +505,8 @@ namespace MetaMorpheusGUI
             // draw the fragment ion annotations on the base sequence
             foreach (var ion in psm.MatchedIons)
             {
-                int residue = ion.NeutralTheoreticalProduct.TerminusFragment.AminoAcidPosition;
-                string annotation = ion.NeutralTheoreticalProduct.ProductType + "" + ion.NeutralTheoreticalProduct.TerminusFragment.FragmentNumber;
+                int residue = ion.NeutralTheoreticalProduct.AminoAcidPosition;
+                string annotation = ion.NeutralTheoreticalProduct.ProductType + "" + ion.NeutralTheoreticalProduct.FragmentNumber;
                 Color color = psm.VariantCrossingIons.Contains(ion) ? variantCrossColor : productTypeToColor[ion.NeutralTheoreticalProduct.ProductType];
 
                 if (ion.NeutralTheoreticalProduct.NeutralLoss != 0)
@@ -514,12 +514,12 @@ namespace MetaMorpheusGUI
                     annotation += "-" + ion.NeutralTheoreticalProduct.NeutralLoss;
                 }
 
-                if (ion.NeutralTheoreticalProduct.TerminusFragment.Terminus == FragmentationTerminus.C)
+                if (ion.NeutralTheoreticalProduct.Terminus == FragmentationTerminus.C)
                 {
                     BaseDraw.topSplittingDrawing(canvas, new Point(residue * spacing + 8,
                         productTypeToYOffset[ion.NeutralTheoreticalProduct.ProductType]), color, annotation);
                 }
-                else if (ion.NeutralTheoreticalProduct.TerminusFragment.Terminus == FragmentationTerminus.N)
+                else if (ion.NeutralTheoreticalProduct.Terminus == FragmentationTerminus.N)
                 {
                     BaseDraw.botSplittingDrawing(canvas, new Point(residue * spacing + 8,
                         productTypeToYOffset[ion.NeutralTheoreticalProduct.ProductType]), color, annotation);
@@ -543,20 +543,20 @@ namespace MetaMorpheusGUI
 
                 foreach (var ion in psm.BetaPeptideMatchedIons)
                 {
-                    int residue = ion.NeutralTheoreticalProduct.TerminusFragment.AminoAcidPosition;
-                    string annotation = ion.NeutralTheoreticalProduct.ProductType + "" + ion.NeutralTheoreticalProduct.TerminusFragment.FragmentNumber;
+                    int residue = ion.NeutralTheoreticalProduct.AminoAcidPosition;
+                    string annotation = ion.NeutralTheoreticalProduct.ProductType + "" + ion.NeutralTheoreticalProduct.FragmentNumber;
 
                     if (ion.NeutralTheoreticalProduct.NeutralLoss != 0)
                     {
                         annotation += "-" + ion.NeutralTheoreticalProduct.NeutralLoss;
                     }
 
-                    if (ion.NeutralTheoreticalProduct.TerminusFragment.Terminus == FragmentationTerminus.C)
+                    if (ion.NeutralTheoreticalProduct.Terminus == FragmentationTerminus.C)
                     {
                         BaseDraw.topSplittingDrawing(canvas, new Point(residue * spacing + 8,
                             productTypeToYOffset[ion.NeutralTheoreticalProduct.ProductType] + 90), productTypeToColor[ion.NeutralTheoreticalProduct.ProductType], annotation);
                     }
-                    else if (ion.NeutralTheoreticalProduct.TerminusFragment.Terminus == FragmentationTerminus.N)
+                    else if (ion.NeutralTheoreticalProduct.Terminus == FragmentationTerminus.N)
                     {
                         BaseDraw.botSplittingDrawing(canvas, new Point(residue * spacing + 8,
                             productTypeToYOffset[ion.NeutralTheoreticalProduct.ProductType] + 90), productTypeToColor[ion.NeutralTheoreticalProduct.ProductType], annotation);

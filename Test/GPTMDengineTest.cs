@@ -30,29 +30,33 @@ namespace Test
             Tolerance precursorMassTolerance = new PpmTolerance(10);
 
             allResultingIdentifications = new List<PeptideSpectralMatch>();
-            var engine = new GptmdEngine(allResultingIdentifications, gptmdModifications, combos, new Dictionary<string, Tolerance> { { "filepath", precursorMassTolerance } }, new CommonParameters(), new List<string>());
+
+            var fsp = new List<(string fileName, CommonParameters fileSpecificParameters)>();
+            fsp.Add(("", new CommonParameters()));
+
+            var engine = new GptmdEngine(allResultingIdentifications, gptmdModifications, combos, new Dictionary<string, Tolerance> { { "filepath", precursorMassTolerance } }, new CommonParameters(), fsp, new List<string>());
             var res = (GptmdResults)engine.Run();
             Assert.AreEqual(0, res.Mods.Count);
 
             var parentProtein = new Protein(proteinSequence, accession, sequenceVariations: new List<SequenceVariation> { new SequenceVariation(1, "N", "A", sequenceVariantDescription) });
             var variantProteins = parentProtein.GetVariantProteins();
+            CommonParameters commonParameters = new CommonParameters(digestionParams: new DigestionParams(minPeptideLength: 5));
 
-            DigestionParams digestionParams = new DigestionParams(minPeptideLength: 5);
             List<Modification> variableModifications = new List<Modification>();
-            var modPep = variantProteins.SelectMany(p => p.Digest(digestionParams, new List<Modification>(), variableModifications)).First();
+            var modPep = variantProteins.SelectMany(p => p.Digest(commonParameters.DigestionParams, new List<Modification>(), variableModifications)).First();
 
             //PsmParent newPsm = new TestParentSpectrumMatch(588.22520189093 + 21.981943);
             Ms2ScanWithSpecificMass scan = new Ms2ScanWithSpecificMass(new MsDataScan(new MzSpectrum(new double[] { 1 }, new double[] { 1 }, false), 0, 1, true, Polarity.Positive, double.NaN, null, null, MZAnalyzerType.Orbitrap, double.NaN, null, null, "scan=1", double.NaN, null, null, double.NaN, null, DissociationType.AnyActivationType, 0, null), (new Proteomics.AminoAcidPolymer.Peptide(modPep.BaseSequence).MonoisotopicMass + 21.981943).ToMz(1), 1, "filepath", new CommonParameters());
 
             var peptidesWithSetModifications = new List<PeptideWithSetModifications> { modPep };
-            PeptideSpectralMatch newPsm = new PeptideSpectralMatch(peptidesWithSetModifications.First(), 0, 0, 0, scan, digestionParams, new List<MatchedFragmentIon>());
+            PeptideSpectralMatch newPsm = new PeptideSpectralMatch(peptidesWithSetModifications.First(), 0, 0, 0, scan, commonParameters, new List<MatchedFragmentIon>());
 
             Tolerance fragmentTolerance = new AbsoluteTolerance(0.01);
 
             newPsm.SetFdrValues(1, 0, 0, 1, 0, 0, 0, 0);
             allResultingIdentifications.Add(newPsm);
 
-            engine = new GptmdEngine(allResultingIdentifications, gptmdModifications, combos, new Dictionary<string, Tolerance> { { "filepath", precursorMassTolerance } }, new CommonParameters(), new List<string>());
+            engine = new GptmdEngine(allResultingIdentifications, gptmdModifications, combos, new Dictionary<string, Tolerance> { { "filepath", precursorMassTolerance } }, new CommonParameters(), null, new List<string>());
             res = (GptmdResults)engine.Run();
             Assert.AreEqual(1, res.Mods.Count);
             Assert.AreEqual(numModifiedResidues, res.Mods["accession"].Count);
@@ -75,23 +79,22 @@ namespace Test
             var parentProtein = new Protein(proteinSequence, accession, sequenceVariations: new List<SequenceVariation> { new SequenceVariation(1, "N", variantAA, sequenceVariantDescription) });
             var variantProteins = parentProtein.GetVariantProteins();
 
-            DigestionParams digestionParams = new DigestionParams(minPeptideLength: 5);
+            CommonParameters commonParameters = new CommonParameters(digestionParams: new DigestionParams(minPeptideLength: 5));
             List<Modification> variableModifications = new List<Modification>();
-            var modPep = variantProteins.SelectMany(p => p.Digest(digestionParams, new List<Modification>(), variableModifications)).First();
+            var modPep = variantProteins.SelectMany(p => p.Digest(commonParameters.DigestionParams, new List<Modification>(), variableModifications)).First();
 
             MsDataScan dfd = new MsDataScan(new MzSpectrum(new double[] { 1 }, new double[] { 1 }, false), 0, 1, true, Polarity.Positive, double.NaN, null, null, MZAnalyzerType.Orbitrap, double.NaN, null, null, "scan=1", double.NaN, null, null, double.NaN, null, DissociationType.AnyActivationType, 0, null);
             Ms2ScanWithSpecificMass scan = new Ms2ScanWithSpecificMass(dfd, (new Proteomics.AminoAcidPolymer.Peptide(modPep.BaseSequence).MonoisotopicMass + 21.981943 + 15.994915).ToMz(1), 1, "filepath", new CommonParameters());
 
             var peptidesWithSetModifications = new List<PeptideWithSetModifications> { modPep };
-            PeptideSpectralMatch match = new PeptideSpectralMatch(peptidesWithSetModifications.First(), 0, 0, 0, scan, digestionParams, new List<MatchedFragmentIon>());
-            PeptideSpectralMatch newPsm = new PeptideSpectralMatch(peptidesWithSetModifications.First(), 0, 0, 0, scan, digestionParams, new List<MatchedFragmentIon>());
+            PeptideSpectralMatch match = new PeptideSpectralMatch(peptidesWithSetModifications.First(), 0, 0, 0, scan, commonParameters, new List<MatchedFragmentIon>());
 
             Tolerance fragmentTolerance = new AbsoluteTolerance(0.01);
 
             match.SetFdrValues(1, 0, 0, 1, 0, 0, 0, 0);
             allIdentifications = new List<PeptideSpectralMatch> { match };
 
-            var engine = new GptmdEngine(allIdentifications, gptmdModifications, combos, new Dictionary<string, Tolerance> { { "filepath", precursorMassTolerance } }, new CommonParameters(), new List<string>());
+            var engine = new GptmdEngine(allIdentifications, gptmdModifications, combos, new Dictionary<string, Tolerance> { { "filepath", precursorMassTolerance } }, new CommonParameters(), null, new List<string>());
             var res = (GptmdResults)engine.Run();
             Assert.AreEqual(numModHashes, res.Mods.Count);
             Assert.AreEqual(numModifiedResidues, res.Mods["accession"].Count);
