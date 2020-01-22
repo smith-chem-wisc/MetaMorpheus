@@ -476,8 +476,8 @@ namespace Test
             Assert.That(files.SetEquals(expectedFiles));
 
             expectedFiles = new HashSet<string> {
-                "PrunedDbSpectra.mzID", "PrunedDbSpectra_PSMs.psmtsv", "PrunedDbSpectra_PSMsFormattedForPercolator.tsv", "PrunedDbSpectra_Peptides.psmtsv", "PrunedDbSpectra_ProteinGroups.tsv", "PrunedDbSpectra_QuantifiedPeaks.tsv",
-                "sliced-raw.mzID", "sliced-raw_PSMs.psmtsv", "sliced-raw_PSMsFormattedForPercolator.tsv", "sliced-raw_Peptides.psmtsv", "sliced-raw_ProteinGroups.tsv", "sliced-raw_QuantifiedPeaks.tsv" };
+                "PrunedDbSpectra.mzID", "PrunedDbSpectra_PSMs.psmtsv", "PrunedDbSpectra_PSMsFormattedForPercolator.tab", "PrunedDbSpectra_Peptides.psmtsv", "PrunedDbSpectra_ProteinGroups.tsv", "PrunedDbSpectra_QuantifiedPeaks.tsv",
+                "sliced-raw.mzID", "sliced-raw_PSMs.psmtsv", "sliced-raw_PSMsFormattedForPercolator.tab", "sliced-raw_Peptides.psmtsv", "sliced-raw_ProteinGroups.tsv", "sliced-raw_QuantifiedPeaks.tsv" };
 
             string individualFilePath = Path.Combine(thisTaskOutputFolder, "MultipleMassSpectraFileOutput", "Individual File Results");
             Assert.That(Directory.Exists(individualFilePath));

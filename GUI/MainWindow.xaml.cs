@@ -91,7 +91,6 @@ namespace MetaMorpheusGUI
 
         private FlowDocument YoutubeWikiNotification()
         {
-
             FlowDocument doc = notificationsTextBox.Document;
             Paragraph p = new Paragraph();
             Run run1 = new Run("Visit our ");
@@ -118,7 +117,7 @@ namespace MetaMorpheusGUI
             {
                 link.RequestNavigate += (sender, e) =>
                 {
-                    System.Diagnostics.Process.Start(e.Uri.ToString());
+                    GlobalVariables.StartProcess(e.Uri.ToString());
                 };
             }
 
@@ -623,7 +622,7 @@ namespace MetaMorpheusGUI
             {
                 try
                 {
-                    System.Diagnostics.Process.Start(hm.Text);
+                    GlobalVariables.StartProcess(hm.Text);
                 }
                 catch (Exception)
                 {
@@ -773,7 +772,7 @@ namespace MetaMorpheusGUI
                     body = body.Replace("\n", "%0D%0A");
                     body = body.Replace("\r", "%0D%0A");
                     string mailto = string.Format("mailto:{0}?Subject=MetaMorpheus. Issue:&Body={1}", "mm_support@chem.wisc.edu", body);
-                    System.Diagnostics.Process.Start(mailto);
+                    GlobalVariables.StartProcess(mailto);
                     Console.WriteLine(body);
                 }
                 ResetTasksButton.IsEnabled = true;
@@ -1239,7 +1238,7 @@ namespace MetaMorpheusGUI
             {
                 if (File.Exists(fileThing.FullPath))
                 {
-                    System.Diagnostics.Process.Start(fileThing.FullPath);
+                    GlobalVariables.StartProcess(fileThing.FullPath);
                 }
                 else
                 {
@@ -1354,17 +1353,17 @@ namespace MetaMorpheusGUI
 
         private void MenuItem_Click(object sender, RoutedEventArgs e)
         {
-            System.Diagnostics.Process.Start(@"https://github.com/smith-chem-wisc/MetaMorpheus/wiki");
+            GlobalVariables.StartProcess(@"https://github.com/smith-chem-wisc/MetaMorpheus/wiki");
         }
 
         private void MenuItem_YouTube(object sender, RoutedEventArgs e)
         {
-            System.Diagnostics.Process.Start(@"https://www.youtube.com/playlist?list=PLVk5tTSZ1aWlhNPh7jxPQ8pc0ElyzSUQb");
+            GlobalVariables.StartProcess(@"https://www.youtube.com/playlist?list=PLVk5tTSZ1aWlhNPh7jxPQ8pc0ElyzSUQb");
         }
 
         private void MenuItem_ProteomicsNewsBlog(object sender, RoutedEventArgs e)
         {
-            System.Diagnostics.Process.Start(@"https://proteomicsnews.blogspot.com/");
+            GlobalVariables.StartProcess(@"https://proteomicsnews.blogspot.com/");
         }
 
         private void MenuItem_Click_1(object sender, RoutedEventArgs e)
@@ -1453,44 +1452,44 @@ namespace MetaMorpheusGUI
         private void MenuItem_Click_4(object sender, RoutedEventArgs e)
         {
             string mailto = string.Format("mailto:{0}?Subject=MetaMorpheus. Issue:", "mm_support@chem.wisc.edu");
-            System.Diagnostics.Process.Start(mailto);
+            GlobalVariables.StartProcess(mailto);
         }
 
         private void MenuItem_Click_5(object sender, RoutedEventArgs e)
         {
-            System.Diagnostics.Process.Start(@"https://github.com/smith-chem-wisc/MetaMorpheus/issues/new");
+            GlobalVariables.StartProcess(@"https://github.com/smith-chem-wisc/MetaMorpheus/issues/new");
         }
 
         private void MenuItem_Twitter(object sender, RoutedEventArgs e)
         {
-            System.Diagnostics.Process.Start(@"https://twitter.com/Smith_Chem_Wisc");
+            GlobalVariables.StartProcess(@"https://twitter.com/Smith_Chem_Wisc");
         }
 
         private void MenuItem_Slack(object sender, RoutedEventArgs e)
         {
-            System.Diagnostics.Process.Start(@"https://join.slack.com/t/smith-chem-public/shared_invite/enQtNDYzNTM5Mzg5NzY0LTRiYWQ5MzVmYmExZWIyMTcyZmNlODJjMWI0YjVhNGM2MmQ2NjE4ZDAzNmM4NWYxMDFhNTQyNDBiM2E0MWE0NGU");
+            GlobalVariables.StartProcess(@"https://join.slack.com/t/smith-chem-public/shared_invite/enQtNDYzNTM5Mzg5NzY0LTRiYWQ5MzVmYmExZWIyMTcyZmNlODJjMWI0YjVhNGM2MmQ2NjE4ZDAzNmM4NWYxMDFhNTQyNDBiM2E0MWE0NGU");
         }
 
         private void MenuItem_Proxl(object sender, RoutedEventArgs e)
         {
-            System.Diagnostics.Process.Start(@"http://proxl-ms.org/");
+            GlobalVariables.StartProcess(@"http://proxl-ms.org/");
         }
 
         private void MenuItem_Click_6(object sender, RoutedEventArgs e)
         {
-            System.Diagnostics.Process.Start(GlobalVariables.DataDir);
+            GlobalVariables.StartProcess(GlobalVariables.DataDir);
         }
 
 
         private void MenuItem_Click_3(object sender, RoutedEventArgs e)
         {
-            System.Diagnostics.Process.Start(Path.Combine(GlobalVariables.DataDir, @"settings.toml"));
+            GlobalVariables.StartProcess(Path.Combine(GlobalVariables.DataDir, @"settings.toml"));
             Application.Current.Shutdown();
         }
 
         private void MenuItem_Click_7(object sender, RoutedEventArgs e)
         {
-            System.Diagnostics.Process.Start(Path.Combine(GlobalVariables.DataDir, @"GUIsettings.toml"));
+            GlobalVariables.StartProcess(Path.Combine(GlobalVariables.DataDir, @"GUIsettings.toml"));
             Application.Current.Shutdown();
         }
 

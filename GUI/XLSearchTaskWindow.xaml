@@ -81,7 +81,7 @@
                             <ComboBox x:Name="cbbXLprecusorMsTl" />
                         </StackPanel>
                         <StackPanel Orientation="Horizontal" Grid.Row="1" Grid.Column="1" Margin="5">
-                            <CheckBox x:Name="ckbXLTopNum" VerticalAlignment="Center" Content="Top N peptides per precursor" />
+                            <Label Content="Keep top N candidates" />
                             <TextBox x:Name="txtXLTopNum" PreviewTextInput="CheckIfNumber" Width="45" Margin="2" IsEnabled="{Binding IsChecked, ElementName=ckbXLTopNum}" />
                         </StackPanel>
                     </Grid>
@@ -189,6 +189,10 @@
                                         <StackPanel Orientation="Horizontal" Margin="5">
                                             <Label x:Name="label1_Copy" Content="Initiator Methionine" />
                                             <ComboBox x:Name="initiatorMethionineBehaviorComboBox" />
+                                        </StackPanel>
+                                        <StackPanel Orientation="Horizontal" Margin="5">
+                                            <Label x:Name="label6_Copy" Content="Separation Type" />
+                                            <ComboBox x:Name="SeparationTypeComboBox" />
                                         </StackPanel>
                                         <StackPanel Orientation="Horizontal" Margin="5">
                                             <Label x:Name="label55_Copy" Content="Max Modification Isoforms" />
@@ -363,9 +367,7 @@
                 <GroupBox Header="Output Options" DockPanel.Dock="Top">
                     <Expander x:Name="OutputExpander">
                         <StackPanel Orientation="Vertical">
-                            <CheckBox x:Name="ckbPercolator" Content="Write .TSV for Percolator" />
                             <CheckBox x:Name="ckbPepXML" Content="Write .pep.XML" />
-                            <CheckBox x:Name="ckbXiNET" Content="Write .csv for XiNET" />
                         </StackPanel>
                     </Expander>
                 </GroupBox>
