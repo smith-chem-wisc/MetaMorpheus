@@ -141,7 +141,7 @@ namespace EngineLayer
         public static bool StopLoops { get; set; }
         public static string ElementsLocation { get; }
         public static string MetaMorpheusVersion { get; }
-        public static IGlobalSettings GlobalSettings { get; set; }
+        public static GlobalSettings GlobalSettings { get; set; }
         public static IEnumerable<Modification> UnimodDeserialized { get; }
         public static IEnumerable<Modification> UniprotDeseralized { get; }
         public static UsefulProteomicsDatabases.Generated.obo PsiModDeserialized { get; }
