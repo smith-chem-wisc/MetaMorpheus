@@ -86,10 +86,10 @@ namespace EngineLayer
             get
             {
                 {
-                    byte[] kind = new byte[5] { 0, 0, 0, 0, 0};
+                    byte[] kind = new byte[] { 0, 0, 0, 0, 0, 0, 0, 0, 0};
                     foreach (var id in ModIds)
                     {
-                        for (int i = 0; i < 5; i++)
+                        for (int i = 0; i < kind.Length; i++)
                         {
                             kind[i] += GlobalOGlycans[id].Kind[i];
                         }
@@ -97,15 +97,6 @@ namespace EngineLayer
                     return kind;
                 }
             }
-        }
-
-        public string Structure
-        {
-            get
-            {
-                return Glycan.GetKindString(Kind);
-            }
-
         }
 
         public override double Mass

@@ -51,8 +51,7 @@ namespace EngineLayer
                         continue;
                     }
 
-                    //byte[] kind = new byte[] { 0, 0, 0, 0, 0, 0, 0, 0 };
-                    byte[] kind = new byte[] { 0, 0, 0, 0, 0 };
+                    byte[] kind = new byte[] { 0, 0, 0, 0, 0, 0, 0, 0, 0 };
                     var x = line.Split('(', ')');
                     int i = 0;
                     while (i < x.Length - 1)
@@ -104,7 +103,7 @@ namespace EngineLayer
                 {
                     string line = lines.ReadLine().Split('\t').First();
 
-                    byte[] kind = new byte[8] { 0, 0, 0, 0, 0, 0, 0, 0 };
+                    byte[] kind = new byte[] { 0, 0, 0, 0, 0, 0, 0, 0, 0 };
                     var x = line.Split('(', ')');
                     int i = 0;
                     while (i < x.Length - 1)

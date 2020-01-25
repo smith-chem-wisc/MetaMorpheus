@@ -109,13 +109,13 @@ namespace EngineLayer
             { 'A', 29109542 },
             { 'G', 30709033 },
             { 'F', 14605791 },
-            //{ 'P', 7996633 },
-            //{ 'S', 7995681 },
-            //{ 'Y', 2298977 },
-            //{ 'X', 15005282 }
+            { 'P', 7996633 },
+            { 'S', 7995681 },
+            { 'Y', 2298977 },
+            { 'X', 15005282 }
         };
 
-        //Compitable with Byonic
+        //Compitable with Byonic, for loading glycan by Kind.
         public static Dictionary<string, Tuple<char, int>> NameCharDic = new Dictionary<string, Tuple<char, int>>
         {
             {"Hex", new Tuple<char, int>('H', 0) },
@@ -126,7 +126,7 @@ namespace EngineLayer
             {"Phospho", new Tuple<char, int>('P', 5)},
             {"Sulfo", new Tuple<char, int>('S', 6) },
             {"Na", new Tuple<char, int>('Y', 7) },
-            //{"Xylose", new Tuple<char, int>('X', 8) }
+            {"Xylose", new Tuple<char, int>('X', 8) }
         };
 
         public static HashSet<int> CommonOxoniumIons = new HashSet<int>()
@@ -388,54 +388,65 @@ namespace EngineLayer
 
         #region Transfer information
 
-        public static int GetMass(string structure)
+        private static int GetMass(string structure)
         {
-
-            int y = 0;
-
-            foreach (var c in CharMassDic)
-            {
-                y += c.Value * structure.Count(p => p == c.Key);
-            }
+            int y = CharMassDic['H'] * structure.Count(p => p == 'H') +
+                CharMassDic['N'] * structure.Count(p => p == 'N') +
+                CharMassDic['A'] * structure.Count(p => p == 'A') +
+                CharMassDic['G'] * structure.Count(p => p == 'G') +
+                CharMassDic['F'] * structure.Count(p => p == 'F') +
+                CharMassDic['P'] * structure.Count(p => p == 'P') +
+                CharMassDic['S'] * structure.Count(p => p == 'S') +
+                CharMassDic['Y'] * structure.Count(p => p == 'Y') +
+                CharMassDic['X'] * structure.Count(p => p == 'X')
+                ;
             return y;
         }
 
         public static int GetMass(byte[] kind)
         {
-            int mass = 0;
-
-            for (int i = 0; i < kind.Length; i++)
-            {
-                mass += CharMassDic.ElementAt(i).Value * kind[i];
-            }
+            int mass = CharMassDic['H'] * kind[0] +
+            CharMassDic['N'] * kind[1] +
+            CharMassDic['A'] * kind[2] +
+            CharMassDic['G'] * kind[3] +
+            CharMassDic['F'] * kind[4] +
+            CharMassDic['P'] * kind[5] +
+            CharMassDic['S'] * kind[6] +
+            CharMassDic['Y'] * kind[7] +
+            CharMassDic['X'] * kind[8]
+            ;
 
             return mass;
         }
 
         public static byte[] GetKind(string structure)
         {
-            //byte[] kind = new byte[8] { 0, 0, 0, 0, 0, 0, 0, 0};
-            byte[] kind = new byte[5] { 0, 0, 0, 0, 0 };
-            for (int i = 0; i < 5; i++)
-            {
-
-                kind[i] = Convert.ToByte(structure.Count(p => p == CharMassDic.ElementAt(i).Key));
-            }
-
+            byte[] kind = new byte[] 
+            { Convert.ToByte(structure.Count(p => p == 'H')),
+                Convert.ToByte(structure.Count(p => p == 'N')),
+                Convert.ToByte(structure.Count(p => p == 'A')),
+                Convert.ToByte(structure.Count(p => p == 'G')),
+                Convert.ToByte(structure.Count(p => p == 'F')),
+                Convert.ToByte(structure.Count(p => p == 'P')),
+                Convert.ToByte(structure.Count(p => p == 'S')),
+                Convert.ToByte(structure.Count(p => p == 'Y')),
+                Convert.ToByte(structure.Count(p => p == 'X')),
+            };
             return kind;
         }
 
         public static string GetKindString(byte[] Kind)
         {
-            string kindString = "";
-
-            for (int i = 0; i < Kind.Length; i++)
-            {
-                if (Kind[i] != 0)
-                {
-                    kindString += CharMassDic.ElementAt(i).Key + Kind[i].ToString();
-                }
-            }
+            string H = Kind[0]==0 ? "" : "H" + Kind[0].ToString();
+            string N = Kind[1] == 0 ? "" : "N" + Kind[1].ToString();
+            string A = Kind[2] == 0 ? "" : "A" + Kind[2].ToString();
+            string G = Kind[3] == 0 ? "" : "G" + Kind[3].ToString();
+            string F = Kind[4] == 0 ? "" : "F" + Kind[4].ToString();
+            string P = Kind[5] == 0 ? "" : "P" + Kind[5].ToString();
+            string S = Kind[6] == 0 ? "" : "S" + Kind[6].ToString();
+            string Y = Kind[7] == 0 ? "" : "Y" + Kind[7].ToString();
+            string X = Kind[8] == 0 ? "" : "X" + Kind[8].ToString();
+            string kindString = H + N + A + G + F + P + S + Y + X;
             return kindString;
         }
 
