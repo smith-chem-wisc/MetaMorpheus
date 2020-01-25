@@ -191,11 +191,12 @@ namespace Test
 
             var overlap = fragmentsHash_etd.Intersect(fragments_etd_origin).Count();
 
-            Assert.That(overlap == 7);
+            Assert.That(overlap == 14);
 
             var overlap2 = fragmentsHash_etd.Intersect(fragmentsMod_etd_origin).Count();
 
-            Assert.That(overlap2 == 30);
+            //ETD didn't change Y ions.
+            Assert.That(overlap2 == 23);
         }
 
         [Test]
@@ -310,7 +311,8 @@ namespace Test
         [Test]
         public static void OGlycoTest_LocalizationMod()
         {
-            var modBox = ModBoxes[10];
+            var modBox = ModBoxes[20];
+            Assert.That(Enumerable.SequenceEqual(modBox.ModIds, new int[] { 0, 0, 0, 1 }));
 
             //Get unmodified peptide, products, allPossible modPos and all boxes.
             Protein protein = new Protein("GSDGSVGPVGPAGPIGSAGPPGFPGAPGPKGEIGAVGNAGPAGPAGPR", "P08123");
@@ -335,8 +337,8 @@ namespace Test
 
             //Test BoxSatisfyModPos
             var pos1 = LocalizationGraph.BoxSatisfyModPos(modBox, boxes[5], 30, peptide);
-            Assert.That(pos1);
             var pos2 = LocalizationGraph.BoxSatisfyModPos(modBox, boxes[5], 31, peptide);
+            Assert.That(pos1);
             Assert.That(!pos2);
 
             //Get hashset int

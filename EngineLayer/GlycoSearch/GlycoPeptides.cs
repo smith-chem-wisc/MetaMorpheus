@@ -327,14 +327,14 @@ namespace EngineLayer.GlycoSearch
                     var j = keyValuePair.Item2[i];
                     while (j <= len + 1)
                     {
-                        newFragments[j - 2] += GlycanBox.GlobalOGlycans[OGlycanBoxes[keyValuePair.Item1].ModIds[i]].Mass;
+                        newFragments[j - 2] += (double)GlycanBox.GlobalOGlycans[OGlycanBoxes[keyValuePair.Item1].ModIds[i]].Mass/1E5;
                         j++;
                     }
                     j = keyValuePair.Item2[i];
                     while (j >= 3)
                     {
-                        newFragments[len * 2 - j + 2] += GlycanBox.GlobalOGlycans[OGlycanBoxes[keyValuePair.Item1].ModIds[i]].Mass;
-                        newFragments[len * 3 - j + 2] += GlycanBox.GlobalOGlycans[OGlycanBoxes[keyValuePair.Item1].ModIds[i]].Mass;
+                        //newFragments[len * 2 - j + 2] += GlycanBox.GlobalOGlycans[OGlycanBoxes[keyValuePair.Item1].ModIds[i]].Mass;
+                        newFragments[len * 3 - j + 2] += (double)GlycanBox.GlobalOGlycans[OGlycanBoxes[keyValuePair.Item1].ModIds[i]].Mass/1E5;
                         j--;
                     }
                 }
