@@ -159,6 +159,7 @@ namespace EngineLayer.GlycoSearch
             sb.Append("Plausible GlycanComposition" + '\t');
             sb.Append("R138/144" + '\t');
             sb.Append("Plausible GlycanStructure" + '\t');                       
+            sb.Append("Localized Glycans" + '\t');
             sb.Append("GlycanLocalization" + '\t');
             sb.Append("GlycanLocalizationLevel" + '\t');
             return sb.ToString();
@@ -267,6 +268,8 @@ namespace EngineLayer.GlycoSearch
 
                 sb.Append("[" + string.Join(",", LocalizedGlycan.Where(p=>p.Item3).Select(p=>p.Item1.ToString() + "-" + p.Item2.ToString())) + "]"); sb.Append("\t");
 
+                sb.Append(AllLocalizationInfo(OGlycanBoxLocalization)); sb.Append("\t");
+
                 sb.Append(LocalizationLevel); sb.Append("\t");
             }
 
@@ -363,6 +366,34 @@ namespace EngineLayer.GlycoSearch
             }
 
             return localizedGlycan;
+        }
+
+        public static string AllLocalizationInfo(List<Tuple<int, Tuple<int, int>[]>> OGlycanBoxLocalization)
+        {
+            string local = "";
+            //Some GSP have a lot paths, in which case only output first 10 paths and the total number of the paths.
+            int maxOutputPath = 10;
+            if (OGlycanBoxLocalization.Count <= maxOutputPath)
+            {
+                maxOutputPath = OGlycanBoxLocalization.Count;
+            }
+
+            int i = 0;
+            while (i < maxOutputPath)
+            {
+                var ogl = OGlycanBoxLocalization[i];
+                local += "{@" + ogl.Item1.ToString() + "[";
+                var g = string.Join(",", ogl.Item2.Select(p => p.Item1.ToString() + "-" + p.Item2.ToString()));
+                local += g + "]}";
+                i++;
+            }
+
+            if (OGlycanBoxLocalization.Count > maxOutputPath)
+            {
+                local += "... In Total:" + OGlycanBoxLocalization.Count.ToString() + " Paths";
+            }
+
+            return local;
         }
     }
 }
