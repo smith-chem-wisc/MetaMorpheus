@@ -55,7 +55,7 @@ namespace Test
                 "_Peptides.psmtsv",
                 "_ProteinGroups.tsv",
                 "_PSMs.psmtsv",
-                "_PSMsFormattedForPercolator.tsv",
+                "_PSMsFormattedForPercolator.tab",
                 "_QuantifiedPeaks.tsv"
             };
             HashSet<string> writtenFiles = new HashSet<string>(Directory.GetFiles(Path.Combine(outputFolder, "allowFiles", "Individual File Results")).Select(v => Path.GetFileName(v).Substring(7)));
