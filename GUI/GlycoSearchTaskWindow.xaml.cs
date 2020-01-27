@@ -135,7 +135,9 @@ namespace MetaMorpheusGUI
                 ChildScanDissociationTypeComboBox.SelectedItem = task.CommonParameters.ChildScanDissociationType.ToString();
             }
 
-            checkBoxDecoy.IsChecked = task._glycoSearchParameters.DecoyType != DecoyType.None;
+            CheckBoxDecoy.IsChecked = task._glycoSearchParameters.DecoyType != DecoyType.None;
+            RadioButtonReverseDecoy.IsChecked = task._glycoSearchParameters.DecoyType == DecoyType.Reverse;
+            RadioButtonSlideDecoy.IsChecked = task._glycoSearchParameters.DecoyType == DecoyType.Slide;
             deconvolutePrecursors.IsChecked = task.CommonParameters.DoPrecursorDeconvolution;
             useProvidedPrecursor.IsChecked = task.CommonParameters.UseProvidedPrecursorInfo;
             missedCleavagesTextBox.Text = task.CommonParameters.DigestionParams.MaxMissedCleavages.ToString(CultureInfo.InvariantCulture);
@@ -245,7 +247,22 @@ namespace MetaMorpheusGUI
             TheTask._glycoSearchParameters.GlycanDatabasefileIndex = CmbGlycanDatabase.SelectedIndex;
             TheTask._glycoSearchParameters.MaximumOGlycanAllowed = int.Parse(TbMaxOGlycanNum.Text, CultureInfo.InvariantCulture);
             TheTask._glycoSearchParameters.GlycoSearchTopNum = int.Parse(txtTopNum.Text, CultureInfo.InvariantCulture);
-            TheTask._glycoSearchParameters.DecoyType = checkBoxDecoy.IsChecked.Value ? DecoyType.Reverse : DecoyType.None;
+
+            if (CheckBoxDecoy.IsChecked.Value)
+            {
+                if (RadioButtonReverseDecoy.IsChecked.Value)
+                {
+                    TheTask._glycoSearchParameters.DecoyType = DecoyType.Reverse;
+                }
+                else //if (radioButtonSlideDecoy.IsChecked.Value)
+                {
+                    TheTask._glycoSearchParameters.DecoyType = DecoyType.Slide;
+                }
+            }
+            else
+            {
+                TheTask._glycoSearchParameters.DecoyType = DecoyType.None;
+            }
 
             Protease protease = (Protease)proteaseComboBox.SelectedItem;
             int MaxMissedCleavages = string.IsNullOrEmpty(missedCleavagesTextBox.Text) ? int.MaxValue : (int.Parse(missedCleavagesTextBox.Text, NumberStyles.Any, CultureInfo.InvariantCulture));

@@ -156,7 +156,25 @@
                                         <ColumnDefinition Width="1*" />
                                     </Grid.ColumnDefinitions>
                                     <StackPanel>
-                                        <CheckBox x:Name="checkBoxDecoy" Content="Generate decoy proteins" Margin="5" DockPanel.Dock="Top" />
+                                        <CheckBox x:Name="CheckBoxDecoy" Content="Generate decoy proteins" Margin="5" DockPanel.Dock="Top" />
+                                        <RadioButton x:Name="RadioButtonReverseDecoy" Content="Generate reversed decoys" GroupName="DecoyType" Margin="5 1 1 1" DockPanel.Dock="Top" IsEnabled="{Binding IsChecked, ElementName=CheckBoxDecoy}" ToolTipService.ShowDuration="999999" ToolTipService.InitialShowDelay="500">
+                                            <RadioButton.ToolTip>
+                                                <TextBlock>
+                                                    Generate decoy sequences by reversing the original sequences.
+                                                   <LineBreak />
+                                                    Methionine is fixed at the N-terminus and the protein is reversed before in silico digestion.
+                                                </TextBlock>
+                                            </RadioButton.ToolTip>
+                                        </RadioButton>
+                                        <RadioButton x:Name="RadioButtonSlideDecoy" Content="Generate slided decoys" GroupName="DecoyType" Margin="5 1 1 1" DockPanel.Dock="Top" IsEnabled="{Binding IsChecked, ElementName=CheckBoxDecoy}" ToolTipService.ShowDuration="999999" ToolTipService.InitialShowDelay="500">
+                                            <RadioButton.ToolTip>
+                                                <TextBlock>
+                                                    Generate decoy sequences via a non-random shuffle of the original sequences.
+                                                   <LineBreak />
+                                                    Methionine is fixed at the N-terminus.
+                                                </TextBlock>
+                                            </RadioButton.ToolTip>
+                                        </RadioButton>
                                         <StackPanel Orientation="Horizontal" Margin="5">
                                             <Label x:Name="label1" Content="Max Missed Cleavages" />
                                             <TextBox x:Name="missedCleavagesTextBox" PreviewTextInput="CheckIfNumber"  Width="45" TextChanged="NonSpecificUpdate"/>
