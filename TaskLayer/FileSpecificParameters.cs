@@ -30,6 +30,8 @@ namespace TaskLayer
                         MaxMissedCleavages = keyValuePair.Value.Get<int>(); break;
                     case nameof(MaxModsForPeptide):
                         MaxModsForPeptide = keyValuePair.Value.Get<int>(); break;
+                    case nameof(SeparationType):
+                        SeparationType = keyValuePair.Value.Get<string>(); break;
 
 
                     case nameof(DissociationType):
@@ -55,6 +57,7 @@ namespace TaskLayer
         public int? MaxMissedCleavages { get; set; }
         public int? MaxModsForPeptide { get; set; }
         public DissociationType? DissociationType { get; set; }
+        public string SeparationType { get; set; }
 
         // This method is to make sure developers keep consistent naming between CommonParameters and FileSpecificParameters.
         // It's supposed to immediately crash MetaMorpheus if you rename a Common Parameter and don't rename it here.

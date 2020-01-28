@@ -6,7 +6,7 @@ using System.Linq;
 
 namespace EngineLayer
 {
-    public class Ms2ScanWithSpecificMass : IScan
+    public class Ms2ScanWithSpecificMass
     {
         public Ms2ScanWithSpecificMass(MsDataScan mzLibScan, double precursorMonoisotopicPeakMz, int precursorCharge, string fullFilePath, CommonParameters commonParam, IsotopicEnvelope[] neutralExperimentalFragments = null)
         {
@@ -19,9 +19,12 @@ namespace EngineLayer
 
             TheScan = mzLibScan;
 
-            ExperimentalFragments = neutralExperimentalFragments ?? GetNeutralExperimentalFragments(mzLibScan, commonParam);
+            if (commonParam.DissociationType != DissociationType.LowCID)
+            {
+                ExperimentalFragments = neutralExperimentalFragments ?? GetNeutralExperimentalFragments(mzLibScan, commonParam);
+            }
 
-            if (ExperimentalFragments.Any())
+            if (ExperimentalFragments != null && ExperimentalFragments.Any())
             {
                 DeconvolutedMonoisotopicMasses = ExperimentalFragments.Select(p => p.monoisotopicMass).ToArray();
             }
@@ -51,7 +54,7 @@ namespace EngineLayer
         public int NumPeaks => TheScan.MassSpectrum.Size;
 
         public double TotalIonCurrent => TheScan.TotalIonCurrent;
-        
+
         public static IsotopicEnvelope[] GetNeutralExperimentalFragments(MsDataScan scan, CommonParameters commonParam)
         {
             int minZ = 1;
@@ -82,21 +85,17 @@ namespace EngineLayer
             return neutralExperimentalFragmentMasses.OrderBy(p => p.monoisotopicMass).ToArray();
         }
 
-        public IsotopicEnvelope GetClosestExperimentalFragmentMass(double theoreticalNeutralMass)
+        public IsotopicEnvelope GetClosestExperimentalIsotopicEnvelope(double theoreticalNeutralMass)
         {
             if (DeconvolutedMonoisotopicMasses.Length == 0)
             {
                 return null;
             }
-            return ExperimentalFragments[GetClosestFragmentMass(theoreticalNeutralMass).Value];
+            return ExperimentalFragments[GetClosestFragmentMass(theoreticalNeutralMass)];
         }
 
-        private int? GetClosestFragmentMass(double mass)
+        private int GetClosestFragmentMass(double mass)
         {
-            if (DeconvolutedMonoisotopicMasses.Length == 0)
-            {
-                return null;
-            }
             int index = Array.BinarySearch(DeconvolutedMonoisotopicMasses, mass);
             if (index >= 0)
             {
@@ -104,19 +103,15 @@ namespace EngineLayer
             }
             index = ~index;
 
-            if (index >= DeconvolutedMonoisotopicMasses.Length)
+            if (index == DeconvolutedMonoisotopicMasses.Length)
             {
                 return index - 1;
             }
-            if (index == 0)
+            if (index == 0 || mass - DeconvolutedMonoisotopicMasses[index - 1] > DeconvolutedMonoisotopicMasses[index] - mass)
             {
                 return index;
             }
 
-            if (mass - DeconvolutedMonoisotopicMasses[index - 1] > DeconvolutedMonoisotopicMasses[index] - mass)
-            {
-                return index;
-            }
             return index - 1;
         }
 

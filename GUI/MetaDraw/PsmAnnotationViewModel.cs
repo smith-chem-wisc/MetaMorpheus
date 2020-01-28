@@ -122,6 +122,23 @@ namespace ViewModels
 
             LineSeries[] allIons = new LineSeries[spectrumMzs.Length];
 
+            // draw the remaining unmatched peaks
+            for (int i = 0; i < spectrumMzs.Length; i++)
+            {
+                // peak has already been drawn (it is a matched peak)
+                if (allIons[i] != null)
+                {
+                    continue;
+                }
+
+                allIons[i] = new LineSeries();
+                allIons[i].Color = OxyColors.DimGray;
+                allIons[i].StrokeThickness = STROKE_THICKNESS_UNANNOTATED;
+                allIons[i].Points.Add(new DataPoint(spectrumMzs[i], 0));
+                allIons[i].Points.Add(new DataPoint(spectrumMzs[i], spectrumIntensities[i]));
+                model.Series.Add(allIons[i]);
+            }
+
             // draw the matched peaks; if the PSM is null, we're just drawing the peaks in the scan without annotation, so skip this part
             if (psmToDraw != null)
             {
@@ -173,23 +190,6 @@ namespace ViewModels
                             annotateMz, annotateBold, annotateFontSize, true);
                     }
                 }
-            }
-
-            // draw the remaining unmatched peaks
-            for (int i = 0; i < spectrumMzs.Length; i++)
-            {
-                // peak has already been drawn (it is a matched peak)
-                if (allIons[i] != null)
-                {
-                    continue;
-                }
-
-                allIons[i] = new LineSeries();
-                allIons[i].Color = OxyColors.DimGray;
-                allIons[i].StrokeThickness = STROKE_THICKNESS_UNANNOTATED;
-                allIons[i].Points.Add(new DataPoint(spectrumMzs[i], 0));
-                allIons[i].Points.Add(new DataPoint(spectrumMzs[i], spectrumIntensities[i]));
-                model.Series.Add(allIons[i]);
             }
 
             // Axes are created automatically if they are not defined      
@@ -333,7 +333,7 @@ namespace ViewModels
             }
 
             string productType = matchedIon.NeutralTheoreticalProduct.ProductType.ToString().ToLower();//.Replace("star", "*").Replace("degree", "°").Replace("dot", "");
-            string productNumber = matchedIon.NeutralTheoreticalProduct.TerminusFragment.FragmentNumber.ToString();
+            string productNumber = matchedIon.NeutralTheoreticalProduct.FragmentNumber.ToString();
             string peakAnnotationText = prefix + productType + productNumber;
 
             if (matchedIon.NeutralTheoreticalProduct.NeutralLoss != 0)

@@ -43,8 +43,10 @@ namespace Test
             Protease p = new Protease("Custom Protease2", CleavageSpecificity.Full, null, null, motifs);
             ProteaseDictionary.Dictionary.Add(p.Name, p);
             CommonParameters CommonParameters = new CommonParameters(scoreCutoff: 1, digestionParams: new DigestionParams(protease: p.Name, minPeptideLength: 1));
+            var fsp = new List<(string fileName, CommonParameters fileSpecificParameters)>();
+            fsp.Add(("", CommonParameters));
 
-            var engine = new IndexingEngine(proteinList, variableModifications, fixedModifications, null, null, null, 1, DecoyType.None, CommonParameters, 30000, false, new List<FileInfo>(), new List<string>());
+            var engine = new IndexingEngine(proteinList, variableModifications, fixedModifications, null, null, null, 1, DecoyType.None, CommonParameters, fsp, 30000, false, new List<FileInfo>(), new List<string>());
 
             var results = (IndexingResults)engine.Run();
 
@@ -56,8 +58,9 @@ namespace Test
             foreach (PeptideWithSetModifications peptide in digestedList)
             {
                 Assert.Contains(peptide, results.PeptideIndex);
-
-                var fragments = peptide.Fragment(CommonParameters.DissociationType, FragmentationTerminus.Both).ToList();
+                
+                var fragments = new List<Product>();
+                peptide.Fragment(CommonParameters.DissociationType, FragmentationTerminus.Both, fragments);
 
                 int positionInPeptideIndex = results.PeptideIndex.IndexOf(peptide);
 
@@ -111,8 +114,9 @@ namespace Test
                     minPeptideLength: 1,
                     initiatorMethionineBehavior: InitiatorMethionineBehavior.Retain),
                 scoreCutoff: 1);
-
-            var engine = new IndexingEngine(proteinList, variableModifications, fixedModifications, null, null, null, 1, DecoyType.Reverse, CommonParameters, 30000, false, new List<FileInfo>(), new List<string>());
+            var fsp = new List<(string fileName, CommonParameters fileSpecificParameters)>();
+            fsp.Add(("", CommonParameters));
+            var engine = new IndexingEngine(proteinList, variableModifications, fixedModifications, null, null, null, 1, DecoyType.Reverse, CommonParameters, fsp, 30000, false, new List<FileInfo>(), new List<string>());
 
             var results = (IndexingResults)engine.Run();
 
@@ -148,8 +152,9 @@ namespace Test
             }
 
             CommonParameters CommonParameters = new CommonParameters(dissociationType: DissociationType.LowCID, maxThreadsToUsePerFile: 1, scoreCutoff: 1, digestionParams: new DigestionParams(protease: "trypsin", minPeptideLength: 1));
-
-            var engine = new IndexingEngine(proteinList, variableModifications, fixedModifications, null, null, null, 1, DecoyType.Reverse, CommonParameters, 30000, false, new List<FileInfo>(), new List<string>());
+            var fsp = new List<(string fileName, CommonParameters fileSpecificParameters)>();
+            fsp.Add(("", CommonParameters));
+            var engine = new IndexingEngine(proteinList, variableModifications, fixedModifications, null, null, null, 1, DecoyType.Reverse, CommonParameters, fsp, 30000, false, new List<FileInfo>(), new List<string>());
 
             var results = (IndexingResults)engine.Run();
 
@@ -167,7 +172,8 @@ namespace Test
             {
                 Assert.Contains(peptide, results.PeptideIndex);
 
-                var fragments = peptide.Fragment(CommonParameters.DissociationType, FragmentationTerminus.Both).ToList();
+                var fragments = new List<Product>();
+                peptide.Fragment(CommonParameters.DissociationType, FragmentationTerminus.Both, fragments);
 
                 int positionInPeptideIndex = results.PeptideIndex.IndexOf(peptide);
 

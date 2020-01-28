@@ -1,4 +1,5 @@
-﻿using System;
+﻿using EngineLayer.CrosslinkSearch;
+using System;
 using System.Collections.Generic;
 using System.Linq;
 
@@ -12,7 +13,8 @@ namespace EngineLayer.FdrAnalysis
         private readonly double ScoreCutoff;
         private readonly string AnalysisType;
 
-        public FdrAnalysisEngine(List<PeptideSpectralMatch> psms, int massDiffAcceptorNumNotches, CommonParameters commonParameters, List<string> nestedIds, string analysisType = "PSM") : base(commonParameters, nestedIds)
+        public FdrAnalysisEngine(List<PeptideSpectralMatch> psms, int massDiffAcceptorNumNotches, CommonParameters commonParameters,
+            List<(string fileName, CommonParameters fileSpecificParameters)> fileSpecificParameters, List<string> nestedIds, string analysisType = "PSM") : base(commonParameters, fileSpecificParameters, nestedIds)
         {
             AllPsms = psms;
             MassDiffAcceptorNumNotches = massDiffAcceptorNumNotches;
@@ -37,7 +39,7 @@ namespace EngineLayer.FdrAnalysis
         {
             // Stop if canceled
             if (GlobalVariables.StopLoops) { return; }
-
+            
             // calculate FDR on a per-protease basis (targets and decoys for a specific protease)
             var psmsGroupedByProtease = AllPsms.GroupBy(p => p.DigestionParams.Protease);
 
@@ -153,19 +155,36 @@ namespace EngineLayer.FdrAnalysis
                 }
             }
 
+            Compute_PEPValue(myAnalysisResults);
+        }
+
+        public void Compute_PEPValue(FdrAnalysisResults myAnalysisResults)
+        {
             if (AnalysisType == "PSM")
             {
                 CountPsm();
                 //Need some reasonable number of PSMs to train on to get a reasonable estimation of the PEP
                 if (AllPsms.Count > 100)
                 {
-                    myAnalysisResults.BinarySearchTreeMetrics = PEP_Analysis.ComputePEPValuesForAllPSMsGeneric(AllPsms);
+                    string searchType = "standard";
+                    if (AllPsms[0].DigestionParams.Protease.Name == "top-down")
+                    {
+                        searchType = "top-down";
+                    }
+
+                    myAnalysisResults.BinarySearchTreeMetrics = PEP_Analysis.ComputePEPValuesForAllPSMsGeneric(AllPsms, searchType, this.FileSpecificParameters);
                     Compute_PEPValue_Based_QValue(AllPsms);
                 }
             }
 
             if (AnalysisType == "Peptide")
             {
+                Compute_PEPValue_Based_QValue(AllPsms);
+            }
+
+            if (AnalysisType == "crosslink" && AllPsms.Count > 100)
+            {
+                myAnalysisResults.BinarySearchTreeMetrics = PEP_Analysis.ComputePEPValuesForAllPSMsGeneric(AllPsms, "crosslink", this.FileSpecificParameters);
                 Compute_PEPValue_Based_QValue(AllPsms);
             }
         }

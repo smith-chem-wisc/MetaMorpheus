@@ -1,6 +1,7 @@
 ﻿using EngineLayer;
 using MassSpectrometry;
 using MzLibUtil;
+using Nett;
 using Proteomics.Fragmentation;
 using Proteomics.ProteolyticDigestion;
 using System;
@@ -8,6 +9,7 @@ using System.Collections.Generic;
 using System.Collections.ObjectModel;
 using System.ComponentModel;
 using System.Globalization;
+using System.IO;
 using System.Linq;
 using System.Windows;
 using System.Windows.Controls;
@@ -29,21 +31,20 @@ namespace MetaMorpheusGUI
         private readonly ObservableCollection<ModTypeForLoc> LocalizeModTypeForTreeViewObservableCollection = new ObservableCollection<ModTypeForLoc>();
         private readonly ObservableCollection<ModTypeForGrid> ModSelectionGridItems = new ObservableCollection<ModTypeForGrid>();
         private readonly ObservableCollection<SilacInfoForDataGrid> StaticSilacLabelsObservableCollection = new ObservableCollection<SilacInfoForDataGrid>();
-
+        private bool AutomaticallyAskAndOrUpdateParametersBasedOnProtease = true;
         private CustomFragmentationWindow CustomFragmentationWindow;
 
         internal SearchTask TheTask { get; private set; }
-
-        public SearchTaskWindow() : this(null)
-        {
-        }
 
         public SearchTaskWindow(SearchTask task)
         {
             InitializeComponent();
             TheTask = task ?? new SearchTask();
+
+            AutomaticallyAskAndOrUpdateParametersBasedOnProtease = false;
             PopulateChoices();
             UpdateFieldsFromTask(TheTask);
+            AutomaticallyAskAndOrUpdateParametersBasedOnProtease = true;
 
             if (task == null)
             {
@@ -73,7 +74,7 @@ namespace MetaMorpheusGUI
             var ye = sender as DataGridCell;
             if (ye.Content is TextBlock hm && !string.IsNullOrEmpty(hm.Text))
             {
-                System.Diagnostics.Process.Start(hm.Text);
+                GlobalVariables.StartProcess(hm.Text);
             }
         }
 
@@ -95,6 +96,14 @@ namespace MetaMorpheusGUI
             {
                 DissociationTypeComboBox.Items.Add(dissassociationType);
             }
+            
+
+            foreach (string separationType in GlobalVariables.SeparationTypes)
+            {
+                SeparationTypeComboBox.Items.Add(separationType);
+            }
+            SeparationTypeComboBox.SelectedItem = "HPLC";
+
 
             ProductMassToleranceComboBox.Items.Add("Da");
             ProductMassToleranceComboBox.Items.Add("ppm");
@@ -148,8 +157,7 @@ namespace MetaMorpheusGUI
                 NonSpecificSearchRadioButton.IsChecked = true; //when this is changed it overrides the protease
                 if (task.CommonParameters.DigestionParams.SpecificProtease.Name.Equals("singleC") || task.CommonParameters.DigestionParams.SpecificProtease.Name.Equals("singleN"))
                 {
-                    Protease nonspecific = ProteaseDictionary.Dictionary["non-specific"];
-                    ProteaseComboBox.SelectedItem = nonspecific;
+                    ProteaseComboBox.SelectedItem = ProteaseDictionary.Dictionary["non-specific"];
                 }
                 else
                 {
@@ -247,6 +255,7 @@ namespace MetaMorpheusGUI
             MaxModNumTextBox.Text = task.CommonParameters.DigestionParams.MaxModsForPeptide.ToString(CultureInfo.InvariantCulture);
             InitiatorMethionineBehaviorComboBox.SelectedIndex = (int)task.CommonParameters.DigestionParams.InitiatorMethionineBehavior;
             DissociationTypeComboBox.SelectedItem = task.CommonParameters.DissociationType.ToString();
+            SeparationTypeComboBox.SelectedItem = task.CommonParameters.SeparationType.ToString();
             NTerminalIons.IsChecked = task.CommonParameters.DigestionParams.FragmentationTerminus == FragmentationTerminus.Both || task.CommonParameters.DigestionParams.FragmentationTerminus == FragmentationTerminus.N;
             CTerminalIons.IsChecked = task.CommonParameters.DigestionParams.FragmentationTerminus == FragmentationTerminus.Both || task.CommonParameters.DigestionParams.FragmentationTerminus == FragmentationTerminus.C;
             ProductMassToleranceTextBox.Text = task.CommonParameters.ProductMassTolerance.Value.ToString(CultureInfo.InvariantCulture);
@@ -388,16 +397,27 @@ namespace MetaMorpheusGUI
 
             Protease protease = (Protease)ProteaseComboBox.SelectedItem;
 
+            string separationType = SeparationTypeComboBox.SelectedItem.ToString();
+
             DissociationType dissociationType = GlobalVariables.AllSupportedDissociationTypes[DissociationTypeComboBox.SelectedItem.ToString()];
             CustomFragmentationWindow.Close();
 
             FragmentationTerminus fragmentationTerminus = GetFragmentationTerminus();
 
-            SilacUpdates(out string silacError);
-            if(silacError.Length!=0)
+            if (CheckBoxSILAC.IsChecked.Value)
             {
-                MessageBox.Show(silacError);
-                return;
+                SilacUpdates(out string silacError);
+                if (silacError.Length != 0)
+                {
+                    MessageBox.Show(silacError);
+                    return;
+                }
+            }
+            else
+            {
+                TheTask.SearchParameters.SilacLabels = null;
+                TheTask.SearchParameters.StartTurnoverLabel = null;
+                TheTask.SearchParameters.EndTurnoverLabel = null;
             }
 
             int maxMissedCleavages = string.IsNullOrEmpty(MissedCleavagesTextBox.Text) ? int.MaxValue : (int.Parse(MissedCleavagesTextBox.Text, NumberStyles.Any, CultureInfo.InvariantCulture));
@@ -506,6 +526,7 @@ namespace MetaMorpheusGUI
                 precursorMassTolerance: PrecursorMassTolerance,
                 productMassTolerance: ProductMassTolerance,
                 digestionParams: digestionParamsToSave,
+                separationType: separationType,
                 trimMs1Peaks: TrimMs1Peaks,
                 trimMsMsPeaks: TrimMsMsPeaks,
                 numberOfPeaksToKeepPerWindow: numPeaksToKeep,
@@ -719,8 +740,7 @@ namespace MetaMorpheusGUI
         {
             if (NonSpecificSearchRadioButton.IsChecked.Value)
             {
-                Protease nonspecific = ProteaseDictionary.Dictionary["non-specific"];
-                ProteaseComboBox.SelectedItem = nonspecific;
+                ProteaseComboBox.SelectedItem = ProteaseDictionary.Dictionary["non-specific"];
                 AddCompIonCheckBox.IsChecked = true;
             }
             else
@@ -731,7 +751,79 @@ namespace MetaMorpheusGUI
             }
         }
 
-        private void NonSpecificUpdate(object sender, TextChangedEventArgs e)
+        //this one is used by the GUI
+        private void ProteaseSpecificUpdate(object sender, SelectionChangedEventArgs e)
+        {
+            string proteaseName = ((Protease)ProteaseComboBox.SelectedItem).Name;
+            MissedCleavagesTextBox.IsEnabled = !proteaseName.Equals("top-down");
+            
+            if (AutomaticallyAskAndOrUpdateParametersBasedOnProtease)
+            {
+                switch (proteaseName)
+                {
+                    case "non-specific":
+                        if (UpdateGUISettings.UseNonSpecificRecommendedSettings())
+                        {
+                            MaxPeptideLengthTextBox.Text = "25";
+                        }
+                        break;
+                    case "top-down":
+                        if (UpdateGUISettings.UseTopDownRecommendedSettings())
+                        {
+                            UseProvidedPrecursor.IsChecked = false;
+                            DeconvolutionMaxAssumedChargeStateTextBox.Text = "60";
+                            TrimMsMs.IsChecked = false;
+                            CheckBoxNoQuant.IsChecked = true;
+                            MassDiffAccept3mm.IsChecked = true;
+                            //uncheck all variable mods
+                            foreach (var mod in VariableModTypeForTreeViewObservableCollection)
+                            {
+                                mod.Use = false;
+                            }
+                        }
+                        break;
+                    case "Arg-C":
+                        if (UpdateGUISettings.UseArgCRecommendedSettings())
+                        {
+                            ProteaseComboBox.SelectedItem = ProteaseDictionary.Dictionary["trypsin"];
+                        }
+                        break;
+                    case "chymotrypsin (don't cleave before proline)":
+                    case "chymotrypsin (cleave before proline)":
+                        {
+                            if (UpdateGUISettings.UseChymotrypsinRecommendedSettings())
+                            {
+                                MissedCleavagesTextBox.Text = "3";
+                                SemiSpecificSearchRadioButton.IsChecked = true;
+                            }
+                        }
+                        break;
+                    case "elastase":
+                        {
+                            if (UpdateGUISettings.UseElastaseRecommendedSettings())
+                            {
+                                MissedCleavagesTextBox.Text = "16";
+                                SemiSpecificSearchRadioButton.IsChecked = true;
+                            }
+                        }
+                        break;
+                    case "semi-trypsin":
+                        {
+                            if (UpdateGUISettings.UseSemiTrypsinRecommendedSettings())
+                            {
+                                ProteaseComboBox.SelectedItem = ProteaseDictionary.Dictionary["trypsin"];
+                                SemiSpecificSearchRadioButton.IsChecked = true;
+                            }
+                        }
+                        break;
+                    default:
+                        break;
+                }
+            }
+        }
+
+        //this is an overload for co-dependent parameters
+        private void ProteaseSpecificUpdate(object sender, TextChangedEventArgs e)
         {
             if (((Protease)ProteaseComboBox.SelectedItem).Name.Contains("non-specific"))
             {
@@ -767,15 +859,6 @@ namespace MetaMorpheusGUI
                 {
                     MaxFragmentMassTextBox.Text = (maxLength * 300).ToString(); //assume the average residue doesn't have a mass over 300 Da (largest is W @ 204, but mods exist)
                 }
-            }
-        }
-
-        private void NonSpecificUpdate(object sender, SelectionChangedEventArgs e)
-        {
-            const int maxLength = 25;
-            if (((Protease)ProteaseComboBox.SelectedItem).Name.Contains("non-specific"))
-            {
-                MaxPeptideLengthTextBox.Text = maxLength.ToString();
             }
         }
 
@@ -1108,6 +1191,12 @@ namespace MetaMorpheusGUI
         private void CheckBoxSILAC_Checked(object sender, RoutedEventArgs e)
         {
             CheckBoxQuantifyUnlabeledForSilac_Checked(sender, e);
+        }
+
+        private void SaveAsDefault_Click(object sender, RoutedEventArgs e)
+        {
+            SaveButton_Click(sender, e);
+            Toml.WriteFile(TheTask, Path.Combine(GlobalVariables.DataDir, "DefaultParameters", @"SearchTaskDefault.toml"), MetaMorpheusTask.tomlConfig);
         }
     }
 

@@ -12,7 +12,7 @@ namespace EngineLayer
         private readonly bool MergeIndistinguishableProteinGroups;
         private readonly List<ProteinGroup> ProteinGroups;
 
-        public ProteinScoringAndFdrEngine(List<ProteinGroup> proteinGroups, List<PeptideSpectralMatch> newPsms, bool noOneHitWonders, bool treatModPeptidesAsDifferentPeptides, bool mergeIndistinguishableProteinGroups, CommonParameters commonParameters, List<string> nestedIds) : base(commonParameters, nestedIds)
+        public ProteinScoringAndFdrEngine(List<ProteinGroup> proteinGroups, List<PeptideSpectralMatch> newPsms, bool noOneHitWonders, bool treatModPeptidesAsDifferentPeptides, bool mergeIndistinguishableProteinGroups, CommonParameters commonParameters, List<(string fileName, CommonParameters fileSpecificParameters)> fileSpecificParameters, List<string> nestedIds) : base(commonParameters, fileSpecificParameters, nestedIds)
         {
             NewPsms = newPsms;
             ProteinGroups = proteinGroups;

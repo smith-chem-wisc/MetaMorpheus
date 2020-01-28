@@ -150,7 +150,10 @@ namespace Test
 
                 List<double> mz2 = new List<double>();
                 List<double> intensities2 = new List<double>();
-                foreach (var aok in pepWithSetMods.Fragment(DissociationType.HCD, FragmentationTerminus.Both))
+
+                var frags = new List<Product>();
+                pepWithSetMods.Fragment(DissociationType.HCD, FragmentationTerminus.Both, frags);
+                foreach (var aok in frags)
                 {
                     mz2.Add(aok.NeutralMass.ToMz(1));
                     mz2.Add((aok.NeutralMass + Constants.C13MinusC12).ToMz(1));
@@ -238,7 +241,9 @@ namespace Test
                     //only make the light ms2, it should find the heavy ms1 from that
                     List<double> mz2 = new List<double>();
                     List<double> intensities2 = new List<double>();
-                    foreach (var aok in pwsm.Fragment(DissociationType.HCD, FragmentationTerminus.Both))
+                    var frags = new List<Product>();
+                    pwsm.Fragment(DissociationType.HCD, FragmentationTerminus.Both, frags);
+                    foreach (var aok in frags)
                     {
                         mz2.Add(aok.NeutralMass.ToMz(1));
                         mz2.Add((aok.NeutralMass + Constants.C13MinusC12).ToMz(1));
@@ -287,7 +292,10 @@ namespace Test
 
             List<double> mz2 = new List<double>();
             List<double> intensities2 = new List<double>();
-            foreach (var aok in pepWithSetMods.Fragment(DissociationType.HCD, FragmentationTerminus.Both))
+            var frags = new List<Product>();
+            pepWithSetMods.Fragment(DissociationType.HCD, FragmentationTerminus.Both, frags);
+
+            foreach (var aok in frags)
             {
                 mz2.Add(aok.NeutralMass.ToMz(1));
                 mz2.Add((aok.NeutralMass + Constants.C13MinusC12).ToMz(1));
@@ -311,7 +319,10 @@ namespace Test
 
                 List<double> mz2 = new List<double>();
                 List<double> intensities2 = new List<double>();
-                foreach (var aok in pepWithSetMods.Fragment(DissociationType.HCD, FragmentationTerminus.Both))
+                var frags = new List<Product>();
+                pepWithSetMods.Fragment(DissociationType.HCD, FragmentationTerminus.Both, frags);
+
+                foreach (var aok in frags)
                 {
                     var t1 = aok.NeutralMass.ToMz(1);
                     var c = 0.0000001;
@@ -342,7 +353,10 @@ namespace Test
 
             List<double> mz2 = new List<double>();
             List<double> intensities2 = new List<double>();
-            foreach (var aok in pepWithSetMods.Fragment(DissociationType.HCD, FragmentationTerminus.Both))
+            var frags = new List<Product>();
+            pepWithSetMods.Fragment(DissociationType.HCD, FragmentationTerminus.Both, frags);
+
+            foreach (var aok in frags)
             {
                 mz2.Add(aok.NeutralMass.ToMz(1));
                 mz2.Add((aok.NeutralMass + 1.003).ToMz(1));

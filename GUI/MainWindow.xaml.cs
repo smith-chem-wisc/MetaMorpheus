@@ -72,20 +72,9 @@ namespace MetaMorpheusGUI
             SearchModifications.SetUpModSearchBoxes();
 
             // LOAD GUI SETTINGS
-
-            if (File.Exists(Path.Combine(GlobalVariables.DataDir, @"GUIsettings.toml")))
+            if(!UpdateGUISettings.LoadGUISettings())
             {
-                GuiGlobalParams = Toml.ReadFile<GuiGlobalParams>(Path.Combine(GlobalVariables.DataDir, @"GUIsettings.toml"));
-            }
-            else
-            {
-                Toml.WriteFile(GuiGlobalParams, Path.Combine(GlobalVariables.DataDir, @"GUIsettings.toml"), MetaMorpheusTask.tomlConfig);
                 notificationsTextBox.Document = YoutubeWikiNotification();
-            }
-
-            if (GlobalVariables.MetaMorpheusVersion.Contains("Not a release version"))
-            {
-                GuiGlobalParams.AskAboutUpdating = false;
             }
 
             try
@@ -102,7 +91,6 @@ namespace MetaMorpheusGUI
 
         private FlowDocument YoutubeWikiNotification()
         {
-
             FlowDocument doc = notificationsTextBox.Document;
             Paragraph p = new Paragraph();
             Run run1 = new Run("Visit our ");
@@ -129,7 +117,7 @@ namespace MetaMorpheusGUI
             {
                 link.RequestNavigate += (sender, e) =>
                 {
-                    System.Diagnostics.Process.Start(e.Uri.ToString());
+                    GlobalVariables.StartProcess(e.Uri.ToString());
                 };
             }
 
@@ -138,8 +126,6 @@ namespace MetaMorpheusGUI
         }
 
         public static string NewestKnownVersion { get; private set; }
-
-        internal GuiGlobalParams GuiGlobalParams = new GuiGlobalParams();
 
         private static void GetVersionNumbersFromWeb()
         {
@@ -166,7 +152,7 @@ namespace MetaMorpheusGUI
 
         private void MyWindow_Loaded(object sender, RoutedEventArgs e)
         {
-            if (NewestKnownVersion != null && !GlobalVariables.MetaMorpheusVersion.Equals(NewestKnownVersion) && GuiGlobalParams.AskAboutUpdating)
+            if (NewestKnownVersion != null && !GlobalVariables.MetaMorpheusVersion.Equals(NewestKnownVersion) && UpdateGUISettings.Params.AskAboutUpdating)
             {
                 try
                 {
@@ -641,7 +627,7 @@ namespace MetaMorpheusGUI
             {
                 try
                 {
-                    System.Diagnostics.Process.Start(hm.Text);
+                    GlobalVariables.StartProcess(hm.Text);
                 }
                 catch (Exception)
                 {
@@ -791,7 +777,7 @@ namespace MetaMorpheusGUI
                     body = body.Replace("\n", "%0D%0A");
                     body = body.Replace("\r", "%0D%0A");
                     string mailto = string.Format("mailto:{0}?Subject=MetaMorpheus. Issue:&Body={1}", "mm_support@chem.wisc.edu", body);
-                    System.Diagnostics.Process.Start(mailto);
+                    GlobalVariables.StartProcess(mailto);
                     Console.WriteLine(body);
                 }
                 ResetTasksButton.IsEnabled = true;
@@ -836,7 +822,22 @@ namespace MetaMorpheusGUI
 
         private void AddSearchTaskButton_Click(object sender, RoutedEventArgs e)
         {
-            var dialog = new SearchTaskWindow();
+            //check if the default toml has been overwritten
+            SearchTask task = null;
+            string defaultFilePath = Path.Combine(GlobalVariables.DataDir, "DefaultParameters", @"SearchTaskDefault.toml");
+            if (File.Exists(defaultFilePath))
+            {
+                try
+                {
+                    task = Toml.ReadFile<SearchTask>(defaultFilePath, MetaMorpheusTask.tomlConfig);
+                }
+                catch (Exception)
+                {
+                    GuiWarnHandler(null, new StringEventArgs("Cannot read toml: " + defaultFilePath, null));
+                }
+            }
+
+            var dialog = new SearchTaskWindow(task);
             if (dialog.ShowDialog() == true)
             {
                 AddTaskToCollection(dialog.TheTask);
@@ -846,7 +847,22 @@ namespace MetaMorpheusGUI
 
         private void AddCalibrateTaskButton_Click(object sender, RoutedEventArgs e)
         {
-            var dialog = new CalibrateTaskWindow();
+            //check if the default toml has been overwritten
+            CalibrationTask task = null;
+            string defaultFilePath = Path.Combine(GlobalVariables.DataDir, "DefaultParameters", @"CalibrationTaskDefault.toml");
+            if (File.Exists(defaultFilePath))
+            {
+                try
+                {
+                    task = Toml.ReadFile<CalibrationTask>(defaultFilePath, MetaMorpheusTask.tomlConfig);
+                }
+                catch (Exception)
+                {
+                    GuiWarnHandler(null, new StringEventArgs("Cannot read toml: " + defaultFilePath, null));
+                }
+            }
+
+            var dialog = new CalibrateTaskWindow(task);
             if (dialog.ShowDialog() == true)
             {
                 AddTaskToCollection(dialog.TheTask);
@@ -856,7 +872,22 @@ namespace MetaMorpheusGUI
 
         private void AddGPTMDTaskButton_Click(object sender, RoutedEventArgs e)
         {
-            var dialog = new GptmdTaskWindow();
+            //check if the default toml has been overwritten
+            GptmdTask task = null;
+            string defaultFilePath = Path.Combine(GlobalVariables.DataDir, "DefaultParameters", @"GptmdTaskDefault.toml");
+            if (File.Exists(defaultFilePath))
+            {
+                try
+                {
+                    task = Toml.ReadFile<GptmdTask>(defaultFilePath, MetaMorpheusTask.tomlConfig);
+                }
+                catch (Exception)
+                {
+                    GuiWarnHandler(null, new StringEventArgs("Cannot read toml: " + defaultFilePath, null));
+                }
+            }
+
+            var dialog = new GptmdTaskWindow(task);
             if (dialog.ShowDialog() == true)
             {
                 AddTaskToCollection(dialog.TheTask);
@@ -865,8 +896,23 @@ namespace MetaMorpheusGUI
         }
 
         private void BtnAddCrosslinkSearch_Click(object sender, RoutedEventArgs e)
-        {
-            var dialog = new XLSearchTaskWindow();
+        {            
+            //check if the default toml has been overwritten
+            XLSearchTask task = null;
+            string defaultFilePath = Path.Combine(GlobalVariables.DataDir, "DefaultParameters", @"XLSearchTaskDefault.toml");
+            if (File.Exists(defaultFilePath))
+            {
+                try
+                {
+                    task = Toml.ReadFile<XLSearchTask>(defaultFilePath, MetaMorpheusTask.tomlConfig);
+                }
+                catch (Exception)
+                {
+                    GuiWarnHandler(null, new StringEventArgs("Cannot read toml: " + defaultFilePath, null));
+                }
+            }
+
+            var dialog = new XLSearchTaskWindow(task);
             if (dialog.ShowDialog() == true)
             {
                 AddTaskToCollection(dialog.TheTask);
@@ -1216,7 +1262,7 @@ namespace MetaMorpheusGUI
             {
                 if (File.Exists(fileThing.FullPath))
                 {
-                    System.Diagnostics.Process.Start(fileThing.FullPath);
+                    GlobalVariables.StartProcess(fileThing.FullPath);
                 }
                 else
                 {
@@ -1331,17 +1377,17 @@ namespace MetaMorpheusGUI
 
         private void MenuItem_Click(object sender, RoutedEventArgs e)
         {
-            System.Diagnostics.Process.Start(@"https://github.com/smith-chem-wisc/MetaMorpheus/wiki");
+            GlobalVariables.StartProcess(@"https://github.com/smith-chem-wisc/MetaMorpheus/wiki");
         }
 
         private void MenuItem_YouTube(object sender, RoutedEventArgs e)
         {
-            System.Diagnostics.Process.Start(@"https://www.youtube.com/playlist?list=PLVk5tTSZ1aWlhNPh7jxPQ8pc0ElyzSUQb");
+            GlobalVariables.StartProcess(@"https://www.youtube.com/playlist?list=PLVk5tTSZ1aWlhNPh7jxPQ8pc0ElyzSUQb");
         }
 
         private void MenuItem_ProteomicsNewsBlog(object sender, RoutedEventArgs e)
         {
-            System.Diagnostics.Process.Start(@"https://proteomicsnews.blogspot.com/");
+            GlobalVariables.StartProcess(@"https://proteomicsnews.blogspot.com/");
         }
 
         private void MenuItem_Click_1(object sender, RoutedEventArgs e)
@@ -1430,38 +1476,44 @@ namespace MetaMorpheusGUI
         private void MenuItem_Click_4(object sender, RoutedEventArgs e)
         {
             string mailto = string.Format("mailto:{0}?Subject=MetaMorpheus. Issue:", "mm_support@chem.wisc.edu");
-            System.Diagnostics.Process.Start(mailto);
+            GlobalVariables.StartProcess(mailto);
         }
 
         private void MenuItem_Click_5(object sender, RoutedEventArgs e)
         {
-            System.Diagnostics.Process.Start(@"https://github.com/smith-chem-wisc/MetaMorpheus/issues/new");
+            GlobalVariables.StartProcess(@"https://github.com/smith-chem-wisc/MetaMorpheus/issues/new");
         }
 
         private void MenuItem_Twitter(object sender, RoutedEventArgs e)
         {
-            System.Diagnostics.Process.Start(@"https://twitter.com/Smith_Chem_Wisc");
+            GlobalVariables.StartProcess(@"https://twitter.com/Smith_Chem_Wisc");
         }
 
         private void MenuItem_Slack(object sender, RoutedEventArgs e)
         {
-            System.Diagnostics.Process.Start(@"https://join.slack.com/t/smith-chem-public/shared_invite/enQtNDYzNTM5Mzg5NzY0LTRiYWQ5MzVmYmExZWIyMTcyZmNlODJjMWI0YjVhNGM2MmQ2NjE4ZDAzNmM4NWYxMDFhNTQyNDBiM2E0MWE0NGU");
+            GlobalVariables.StartProcess(@"https://join.slack.com/t/smith-chem-public/shared_invite/enQtNDYzNTM5Mzg5NzY0LTRiYWQ5MzVmYmExZWIyMTcyZmNlODJjMWI0YjVhNGM2MmQ2NjE4ZDAzNmM4NWYxMDFhNTQyNDBiM2E0MWE0NGU");
+        }
+
+        private void MenuItem_Proxl(object sender, RoutedEventArgs e)
+        {
+            GlobalVariables.StartProcess(@"http://proxl-ms.org/");
         }
 
         private void MenuItem_Click_6(object sender, RoutedEventArgs e)
         {
-            System.Diagnostics.Process.Start(GlobalVariables.DataDir);
+            GlobalVariables.StartProcess(GlobalVariables.DataDir);
         }
+
 
         private void MenuItem_Click_3(object sender, RoutedEventArgs e)
         {
-            System.Diagnostics.Process.Start(Path.Combine(GlobalVariables.DataDir, @"settings.toml"));
+            GlobalVariables.StartProcess(Path.Combine(GlobalVariables.DataDir, @"settings.toml"));
             Application.Current.Shutdown();
         }
 
         private void MenuItem_Click_7(object sender, RoutedEventArgs e)
         {
-            System.Diagnostics.Process.Start(Path.Combine(GlobalVariables.DataDir, @"GUIsettings.toml"));
+            GlobalVariables.StartProcess(Path.Combine(GlobalVariables.DataDir, @"GUIsettings.toml"));
             Application.Current.Shutdown();
         }
 
@@ -1512,10 +1564,10 @@ namespace MetaMorpheusGUI
         // handle window closing
         private void MainWindow_Closing(object sender, CancelEventArgs e)
         {
-            if (!GuiGlobalParams.DisableCloseWindow && !GlobalVariables.MetaMorpheusVersion.Contains("DEBUG"))
+            if (UpdateGUISettings.Params.AskBeforeExitingMetaMorpheus && !GlobalVariables.MetaMorpheusVersion.Contains("DEBUG"))
             {
                 e.Cancel = true;
-                var exit = CustomMsgBox.Show("Exit MetaMorpheus", "Are you sure you want to exit MetaMorpheus?", "Yes", "No", "Yes and don't ask me again");
+                var exit = ExitMsgBox.Show("Exit MetaMorpheus", "Are you sure you want to exit MetaMorpheus?", "Yes", "No", "Yes and don't ask me again");
 
                 if (exit == MessageBoxResult.Yes)
                 {
@@ -1523,8 +1575,8 @@ namespace MetaMorpheusGUI
                 }
                 else if (exit == MessageBoxResult.OK)
                 {
-                    GuiGlobalParams.DisableCloseWindow = true;
-                    Toml.WriteFile(GuiGlobalParams, Path.Combine(GlobalVariables.DataDir, @"GUIsettings.toml"), MetaMorpheusTask.tomlConfig);
+                    UpdateGUISettings.Params.AskBeforeExitingMetaMorpheus = true;
+                    Toml.WriteFile(UpdateGUISettings.Params, Path.Combine(GlobalVariables.DataDir, @"GUIsettings.toml"), MetaMorpheusTask.tomlConfig);
                     e.Cancel = false;
                 }
             }
