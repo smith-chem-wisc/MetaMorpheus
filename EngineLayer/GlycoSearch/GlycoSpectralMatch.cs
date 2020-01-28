@@ -10,8 +10,8 @@ namespace EngineLayer.GlycoSearch
 {
     public class GlycoSpectralMatch : PeptideSpectralMatch
     {
-        public GlycoSpectralMatch(PeptideWithSetModifications theBestPeptide, int notch, double score, int scanIndex, Ms2ScanWithSpecificMass scan, DigestionParams digestionParams, List<MatchedFragmentIon> matchedFragmentIons)
-            : base(theBestPeptide, notch, score, scanIndex, scan, digestionParams, matchedFragmentIons)
+        public GlycoSpectralMatch(PeptideWithSetModifications theBestPeptide, int notch, double score, int scanIndex, Ms2ScanWithSpecificMass scan, CommonParameters commonParameters, List<MatchedFragmentIon> matchedFragmentIons)
+            : base(theBestPeptide, notch, score, scanIndex, scan, commonParameters, matchedFragmentIons)
         {
             this.TotalScore = score;
         }

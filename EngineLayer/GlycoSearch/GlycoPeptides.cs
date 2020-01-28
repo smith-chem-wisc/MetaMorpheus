@@ -72,10 +72,10 @@ namespace EngineLayer.GlycoSearch
         {
             double possiblePeptideMass = precursorMass - (double)glycan.Mass/1E5;
             List<Product> YIons = new List<Product>();
-            YIons.Add(new Product(ProductType.M, new NeutralTerminusFragment(FragmentationTerminus.Both, precursorMass, 0, 0), (double)glycan.Mass/1E5)); //Y0 ion. Glycan totally loss.
+            YIons.Add(new Product(ProductType.M, FragmentationTerminus.Both, precursorMass, 0, 0, (double)glycan.Mass/1E5)); //Y0 ion. Glycan totally loss.
             foreach (var ion in glycan.Ions)
             {
-                Product product = new Product(ProductType.M, new NeutralTerminusFragment(FragmentationTerminus.Both, precursorMass, 0, 0), (double)ion.LossIonMass/1E5);
+                Product product = new Product(ProductType.M, FragmentationTerminus.Both, precursorMass, 0, 0, (double)ion.LossIonMass/1E5);
                 YIons.Add(product);
             }
             return YIons;
@@ -85,10 +85,10 @@ namespace EngineLayer.GlycoSearch
         {
             double possiblePeptideMass = peptide.MonoisotopicMass;
             List<Product> YIons = new List<Product>();
-            YIons.Add(new Product(ProductType.M, new NeutralTerminusFragment(FragmentationTerminus.Both, possiblePeptideMass + (double)glycan.Mass/1E5, 0, 0), (double)glycan.Mass/1E5));
+            YIons.Add(new Product(ProductType.M, FragmentationTerminus.Both, possiblePeptideMass + (double)glycan.Mass/1E5, 0, 0, (double)glycan.Mass/1E5));
             foreach (var ion in glycan.Ions)
             {
-                Product product = new Product(ProductType.M, new NeutralTerminusFragment(FragmentationTerminus.Both, possiblePeptideMass + (double)glycan.Mass/1E5, 0, 0), (double)ion.LossIonMass/1E5);
+                Product product = new Product(ProductType.M, FragmentationTerminus.Both, possiblePeptideMass + (double)glycan.Mass/1E5, 0, 0, (double)ion.LossIonMass/1E5);
                 YIons.Add(product);
             }
             return YIons;
@@ -193,18 +193,23 @@ namespace EngineLayer.GlycoSearch
             List<Product> theoreticalProducts = new List<Product>();
 
             if (dissociationType == DissociationType.HCD || dissociationType == DissociationType.CID)
-            {   
-                var diag = modPeptide.Fragment(dissociationType, FragmentationTerminus.Both).Where(p=>p.ProductType != ProductType.b && p.ProductType != ProductType.y);
-                theoreticalProducts = peptide.Fragment(dissociationType, FragmentationTerminus.Both).Concat(diag).ToList();
+            {
+                List<Product> diag = new List<Product>();
+                modPeptide.Fragment(dissociationType, FragmentationTerminus.Both, diag);
+                peptide.Fragment(dissociationType, FragmentationTerminus.Both, theoreticalProducts);
+                theoreticalProducts = theoreticalProducts.Concat(diag.Where(p => p.ProductType != ProductType.b && p.ProductType != ProductType.y)).ToList();
+
             }
             else if(dissociationType == DissociationType.ETD)
             {
-                theoreticalProducts = modPeptide.Fragment(dissociationType, FragmentationTerminus.Both).ToList();
+                modPeptide.Fragment(dissociationType, FragmentationTerminus.Both, theoreticalProducts);
             }
             else if(dissociationType == DissociationType.EThcD)
             {
-                var diag = modPeptide.Fragment(DissociationType.HCD, FragmentationTerminus.Both).Where(p => p.ProductType != ProductType.b && p.ProductType != ProductType.y);
-                theoreticalProducts = peptide.Fragment(DissociationType.HCD, FragmentationTerminus.Both).Concat(diag).ToList();
+                List<Product> diag = new List<Product>();
+                modPeptide.Fragment(DissociationType.HCD, FragmentationTerminus.Both, diag);
+                peptide.Fragment(DissociationType.HCD, FragmentationTerminus.Both, theoreticalProducts);
+                theoreticalProducts = theoreticalProducts.Concat(diag.Where(p => p.ProductType != ProductType.b && p.ProductType != ProductType.y)).ToList();
                 HashSet<double> masses = new HashSet<double>();
 
                 foreach (var fragment in theoreticalProducts)
@@ -212,7 +217,9 @@ namespace EngineLayer.GlycoSearch
                     masses.Add(fragment.NeutralMass);
                 }
 
-                foreach (var fragment in modPeptide.Fragment(DissociationType.ETD, FragmentationTerminus.Both).Where(p=>p.ProductType!=ProductType.y))
+                List<Product> etdProducts = new List<Product>();
+                modPeptide.Fragment(DissociationType.ETD, FragmentationTerminus.Both, etdProducts);
+                foreach (var fragment in etdProducts.Where(p=>p.ProductType!=ProductType.y))
                 {
                     if (!masses.Contains(fragment.NeutralMass))
                     {
@@ -354,7 +361,7 @@ namespace EngineLayer.GlycoSearch
         public static int[] GetLocalFragmentHash(List<Product> products, int peptideLength, int[] modPoses, int modInd, ModBox OGlycanBox, ModBox localOGlycanBox, int FragmentBinsPerDalton)
         {
             List<double> newFragments = new List<double>();
-            var local_c_fragments = products.Where(p => p.ProductType == ProductType.c && p.TerminusFragment.AminoAcidPosition >= modPoses[modInd]-1 && p.TerminusFragment.AminoAcidPosition < modPoses[modInd+1]-1).ToList();
+            var local_c_fragments = products.Where(p => p.ProductType == ProductType.c && p.AminoAcidPosition >= modPoses[modInd]-1 && p.AminoAcidPosition < modPoses[modInd+1]-1).ToList();
 
             foreach (var c in local_c_fragments)
             {
@@ -362,7 +369,7 @@ namespace EngineLayer.GlycoSearch
                 newFragments.Add(newMass);
             }
 
-            var local_z_fragments = products.Where(p => p.ProductType == ProductType.zDot && p.TerminusFragment.AminoAcidPosition >= modPoses[modInd]  && p.TerminusFragment.AminoAcidPosition < modPoses[modInd + 1] ).ToList();
+            var local_z_fragments = products.Where(p => p.ProductType == ProductType.zDot && p.AminoAcidPosition >= modPoses[modInd]  && p.AminoAcidPosition < modPoses[modInd + 1] ).ToList();
 
             foreach (var z in local_z_fragments)
             {

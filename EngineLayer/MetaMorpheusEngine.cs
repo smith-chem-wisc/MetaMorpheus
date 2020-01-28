@@ -179,8 +179,10 @@ namespace EngineLayer
             }
 
             // search for ions in the spectrum
-            foreach (Product product in theoreticalProducts)
+
+            for (int id = 0; id < theoreticalProducts.Count; id++)
             {
+                var product = theoreticalProducts[id];
                 // unknown fragment mass; this only happens rarely for sequences with unknown amino acids
                 if (double.IsNaN(product.NeutralMass))
                 {
@@ -196,7 +198,7 @@ namespace EngineLayer
 
                         if (closestExperimentalMz.HasValue && commonParameters.ProductMassTolerance.Within(closestExperimentalMz.Value, product.NeutralMass.ToMz(i)))
                         {
-                            matchedFragmentIons.Add(new MatchedFragmentIon(product, closestExperimentalMz.Value, intensity.Value, i));
+                            matchedFragmentIons.Add(new MatchedFragmentIon(ref product, closestExperimentalMz.Value, intensity.Value, i));
                         }
                     }
                 }
@@ -204,12 +206,12 @@ namespace EngineLayer
                 else
                 {
                     // get the closest peak in the spectrum to the theoretical peak
-                    var closestExperimentalMass = scan.GetClosestExperimentalFragmentMass(product.NeutralMass);
+                    var closestExperimentalMass = scan.GetClosestExperimentalIsotopicEnvelope(product.NeutralMass);
 
                     // is the mass error acceptable?
                     if (commonParameters.ProductMassTolerance.Within(closestExperimentalMass.monoisotopicMass, product.NeutralMass) && closestExperimentalMass.charge <= scan.PrecursorCharge)
                     {
-                        matchedFragmentIons.Add(new MatchedFragmentIon(product, closestExperimentalMass.monoisotopicMass.ToMz(closestExperimentalMass.charge),
+                        matchedFragmentIons.Add(new MatchedFragmentIon(ref product, closestExperimentalMass.monoisotopicMass.ToMz(closestExperimentalMass.charge),
                             closestExperimentalMass.peaks.First().intensity, closestExperimentalMass.charge));
                     }
                 }

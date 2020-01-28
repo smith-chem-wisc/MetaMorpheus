@@ -109,7 +109,7 @@ namespace EngineLayer
         public static int[] GetLocalFragmentHash(List<Product> products, int peptideLength, int[] modPoses, int modInd, ModBox TotalBox, ModBox localBox, int FragmentBinsPerDalton)
         {
             List<double> newFragments = new List<double>();
-            var local_c_fragments = products.Where(p => p.ProductType == ProductType.b && p.TerminusFragment.AminoAcidPosition >= modPoses[modInd] - 1 && p.TerminusFragment.AminoAcidPosition < modPoses[modInd + 1] - 1).ToList();
+            var local_c_fragments = products.Where(p => p.ProductType == ProductType.b && p.AminoAcidPosition >= modPoses[modInd] - 1 && p.AminoAcidPosition < modPoses[modInd + 1] - 1).ToList();
 
             foreach (var c in local_c_fragments)
             {
@@ -117,7 +117,7 @@ namespace EngineLayer
                 newFragments.Add(newMass);
             }
 
-            var local_z_fragments = products.Where(p => p.ProductType == ProductType.y && p.TerminusFragment.AminoAcidPosition >= modPoses[modInd] && p.TerminusFragment.AminoAcidPosition < modPoses[modInd + 1]).ToList();
+            var local_z_fragments = products.Where(p => p.ProductType == ProductType.y && p.AminoAcidPosition >= modPoses[modInd] && p.AminoAcidPosition < modPoses[modInd + 1]).ToList();
 
             foreach (var z in local_z_fragments)
             {

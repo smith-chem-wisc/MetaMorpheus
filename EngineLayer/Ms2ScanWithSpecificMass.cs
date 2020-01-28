@@ -94,7 +94,7 @@ namespace EngineLayer
             return ExperimentalFragments[GetClosestFragmentMass(theoreticalNeutralMass)];
         }
 
-        private int GetClosestFragmentMass(double mass)
+        public int GetClosestFragmentMass(double mass)
         {
             int index = Array.BinarySearch(DeconvolutedMonoisotopicMasses, mass);
             if (index >= 0)

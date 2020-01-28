@@ -27,9 +27,9 @@ namespace EngineLayer.GlycoSearch
         private readonly List<int>[] SecondFragmentIndex;
 
         public GlycoSearchEngine(List<GlycoSpectralMatch>[] globalCsms, Ms2ScanWithSpecificMass[] listOfSortedms2Scans, List<PeptideWithSetModifications> peptideIndex,
-            List<int>[] fragmentIndex, List<int>[] secondFragmentIndex, int currentPartition, CommonParameters commonParameters,
+            List<int>[] fragmentIndex, List<int>[] secondFragmentIndex, int currentPartition, CommonParameters commonParameters, List<(string fileName, CommonParameters fileSpecificParameters)> fileSpecificParameters,
              int glycanDatabaseIndex, bool isOGlycoSearch, int glycoSearchTopNum, int maxOGlycanNum, List<string> nestedIds)
-            : base(null, listOfSortedms2Scans, peptideIndex, fragmentIndex, currentPartition, commonParameters, new OpenSearchMode(), 0, nestedIds)
+            : base(null, listOfSortedms2Scans, peptideIndex, fragmentIndex, currentPartition, commonParameters, fileSpecificParameters, new OpenSearchMode(), 0, nestedIds)
         {
             this.GlobalCsms = globalCsms;
             this.IsOGlycoSearch = isOGlycoSearch;
@@ -259,7 +259,9 @@ namespace EngineLayer.GlycoSearch
                     {
                         var testPeptide = GlycoPeptides.GenerateGlycopeptide(possibleSite, theScanBestPeptide, Glycans[iDLow]);
 
-                        List<Product> theoreticalProducts = testPeptide.Fragment(CommonParameters.DissociationType, FragmentationTerminus.Both).Where(p => p.ProductType != ProductType.M).ToList();
+                        List<Product> theoreticalProducts = new List<Product>();
+                        testPeptide.Fragment(CommonParameters.DissociationType, FragmentationTerminus.Both, theoreticalProducts);
+                        theoreticalProducts = theoreticalProducts.Where(p => p.ProductType != ProductType.M).ToList();
                         theoreticalProducts.AddRange(GlycoPeptides.GetGlycanYIons(theScan.PrecursorMass, Glycans[iDLow]));
 
                         var matchedIons = MatchOriginFragmentIons(theScan, theoreticalProducts, CommonParameters);
@@ -281,7 +283,7 @@ namespace EngineLayer.GlycoSearch
 
                     }
 
-                    var psmCross = new GlycoSpectralMatch(peptideWithSetModifications, 0, bestLocalizedScore, scanIndex, theScan, CommonParameters.DigestionParams, bestMatchedIons);
+                    var psmCross = new GlycoSpectralMatch(peptideWithSetModifications, 0, bestLocalizedScore, scanIndex, theScan, CommonParameters, bestMatchedIons);
                     psmCross.NGlycan = new List<Glycan> { Glycans[iDLow] };
                     psmCross.GlycanScore = CalculatePeptideScore(theScan.TheScan, bestMatchedIons.Where(p => p.Annotation.Contains('M')).ToList());
                     psmCross.DiagnosticIonScore = CalculatePeptideScore(theScan.TheScan, bestMatchedIons.Where(p => p.Annotation.Contains('D')).ToList());
@@ -334,11 +336,12 @@ namespace EngineLayer.GlycoSearch
 
                 if (PrecusorSearchMode.Within(theScan.PrecursorMass, theScanBestPeptide.MonoisotopicMass))
                 {
-                    List<Product> products = theScanBestPeptide.Fragment(CommonParameters.DissociationType, FragmentationTerminus.Both).ToList();
+                    List<Product> products = new List<Product>();
+                    theScanBestPeptide.Fragment(CommonParameters.DissociationType, FragmentationTerminus.Both, products);
                     var matchedFragmentIons = MatchFragmentIons(theScan, products, CommonParameters);
                     double score = CalculatePeptideScore(theScan.TheScan, matchedFragmentIons);
 
-                    var psmCrossSingle = new GlycoSpectralMatch(theScanBestPeptide, 0, score, scanIndex, theScan, CommonParameters.DigestionParams, matchedFragmentIons);
+                    var psmCrossSingle = new GlycoSpectralMatch(theScanBestPeptide, 0, score, scanIndex, theScan, CommonParameters, matchedFragmentIons);
                     psmCrossSingle.Rank = ind;
                     psmCrossSingle.ResolveAllAmbiguities();
 
@@ -390,7 +393,8 @@ namespace EngineLayer.GlycoSearch
                     {
                         HashSet<int> allPeaksForLocalization = new HashSet<int>(childBinsToSearch);
 
-                        List<Product> products = theScanBestPeptide.Fragment(DissociationType.ETD, FragmentationTerminus.Both).ToList();
+                        List<Product> products = new List<Product>();
+                        theScanBestPeptide.Fragment(DissociationType.ETD, FragmentationTerminus.Both, products);
 
                         List<Tuple<int, Tuple<int, int>[]>> localizationCandidates = new List<Tuple<int, Tuple<int, int>[]>>();
                         int BestLocalizaionScore = 0;
@@ -445,11 +449,12 @@ namespace EngineLayer.GlycoSearch
 
                 if (PrecusorSearchMode.Within(theScan.PrecursorMass, theScanBestPeptide.MonoisotopicMass))
                 {
-                    List<Product> products = theScanBestPeptide.Fragment(CommonParameters.DissociationType, FragmentationTerminus.Both).ToList();
+                    List<Product> products = new List<Product>(); 
+                    theScanBestPeptide.Fragment(CommonParameters.DissociationType, FragmentationTerminus.Both, products);
                     var matchedFragmentIons = MatchFragmentIons(theScan, products, CommonParameters);
                     double score = CalculatePeptideScore(theScan.TheScan, matchedFragmentIons);
 
-                    var psmCrossSingle = new GlycoSpectralMatch(theScanBestPeptide, 0, score, scanIndex, theScan, CommonParameters.DigestionParams, matchedFragmentIons);
+                    var psmCrossSingle = new GlycoSpectralMatch(theScanBestPeptide, 0, score, scanIndex, theScan, CommonParameters, matchedFragmentIons);
                     psmCrossSingle.Rank = ind;
 
                     possibleMatches.Add(psmCrossSingle);
@@ -485,11 +490,12 @@ namespace EngineLayer.GlycoSearch
                         {
                             if (modPos.Length >= GlycanBox.OGlycanBoxes[iDLow].NumberOfMods && GlycoPeptides.OxoniumIonsAnalysis(oxoniumIonIntensities, GlycanBox.OGlycanBoxes[iDLow]))
                             {
-                                List<Product> hcdProducts = theScanBestPeptide.Fragment(CommonParameters.DissociationType, FragmentationTerminus.Both).ToList();
+                                List<Product> hcdProducts = new List<Product>();
+                                theScanBestPeptide.Fragment(CommonParameters.DissociationType, FragmentationTerminus.Both, hcdProducts);
                                 var hcdMatchedFragmentIons = MatchFragmentIons(theScan, hcdProducts, CommonParameters);
                                 double hcdScore = CalculatePeptideScore(theScan.TheScan, hcdMatchedFragmentIons);
 
-                                var psmCrossSingle = new GlycoSpectralMatch(theScanBestPeptide, 0, hcdScore, scanIndex, theScan, CommonParameters.DigestionParams, hcdMatchedFragmentIons);
+                                var psmCrossSingle = new GlycoSpectralMatch(theScanBestPeptide, 0, hcdScore, scanIndex, theScan, CommonParameters, hcdMatchedFragmentIons);
                                 psmCrossSingle.Rank = ind;
 
                                 possibleMatches.Add(psmCrossSingle);
@@ -511,7 +517,8 @@ namespace EngineLayer.GlycoSearch
                         allPeaksForLocalization.Concat(allBinsToSearch);
                     }
 
-                    List<Product> products = theScanBestPeptide.Fragment(DissociationType.ETD, FragmentationTerminus.Both).ToList();                    
+                    List<Product> products = new List<Product>();
+                    theScanBestPeptide.Fragment(DissociationType.ETD, FragmentationTerminus.Both, products);                    
 
                     double bestLocalizedScore = 1;
 
@@ -597,7 +604,7 @@ namespace EngineLayer.GlycoSearch
                 score += childScore;
             }
 
-            var psmGlyco = new GlycoSpectralMatch(peptideWithMod, 0, score, scanIndex, theScan, CommonParameters.DigestionParams, matchedIons);
+            var psmGlyco = new GlycoSpectralMatch(peptideWithMod, 0, score, scanIndex, theScan, CommonParameters, matchedIons);
 
             psmGlyco.Rank = rank;
 
@@ -629,11 +636,12 @@ namespace EngineLayer.GlycoSearch
 
                 if (PrecusorSearchMode.Within(theScan.PrecursorMass, theScanBestPeptide.MonoisotopicMass))
                 {
-                    List<Product> products = theScanBestPeptide.Fragment(CommonParameters.DissociationType, FragmentationTerminus.Both).ToList();
+                    List<Product> products = new List<Product>();
+                    theScanBestPeptide.Fragment(CommonParameters.DissociationType, FragmentationTerminus.Both, products);
                     var matchedFragmentIons = MatchFragmentIons(theScan, products, CommonParameters);
                     double score = CalculatePeptideScore(theScan.TheScan, matchedFragmentIons);
 
-                    var psmCrossSingle = new GlycoSpectralMatch(theScanBestPeptide, 0, score, scanIndex, theScan, CommonParameters.DigestionParams, matchedFragmentIons);
+                    var psmCrossSingle = new GlycoSpectralMatch(theScanBestPeptide, 0, score, scanIndex, theScan, CommonParameters, matchedFragmentIons);
                     psmCrossSingle.Rank = ind;
                     psmCrossSingle.ResolveAllAmbiguities();
 
@@ -646,9 +654,10 @@ namespace EngineLayer.GlycoSearch
                     if (possibleModMassLow < SelectedModBox.ModBoxes.First().Mass || possibleModMassLow > SelectedModBox.ModBoxes.Last().Mass)
                     {
                         continue;
-                    }              
+                    }
 
-                    List<Product> products = theScanBestPeptide.Fragment(CommonParameters.DissociationType, FragmentationTerminus.Both).ToList();
+                    List<Product> products = new List<Product>();
+                    theScanBestPeptide.Fragment(CommonParameters.DissociationType, FragmentationTerminus.Both, products);
                     HashSet<int> allPeaksForLocalization = new HashSet<int>(allBinsToSearch);
 
                     double bestLocalizedScore = 1;
@@ -722,13 +731,14 @@ namespace EngineLayer.GlycoSearch
         {
             var peptideWithMod = SelectedModBox.GetTheoreticalPeptide(localizationCandidates.First().Item2, peptide, SelectedModBox.ModBoxes[localizationCandidates.First().Item1]);
 
-            var fragmentsForEachGlycoPeptide = peptideWithMod.Fragment(CommonParameters.DissociationType, FragmentationTerminus.Both).ToList();
+            List<Product> fragmentsForEachGlycoPeptide = new List<Product>();
+            peptideWithMod.Fragment(CommonParameters.DissociationType, FragmentationTerminus.Both, fragmentsForEachGlycoPeptide);
 
             var matchedIons = MatchFragmentIons(theScan, fragmentsForEachGlycoPeptide, CommonParameters);
 
             double score = CalculatePeptideScore(theScan.TheScan, matchedIons);
 
-            var psmGlyco = new GlycoSpectralMatch(peptideWithMod, 0, score, scanIndex, theScan, CommonParameters.DigestionParams, matchedIons);
+            var psmGlyco = new GlycoSpectralMatch(peptideWithMod, 0, score, scanIndex, theScan, CommonParameters, matchedIons);
 
             psmGlyco.Rank = rank;
             //TO DO

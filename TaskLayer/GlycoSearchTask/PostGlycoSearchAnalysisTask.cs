@@ -67,7 +67,7 @@ namespace TaskLayer
         {
             // calculate single PSM FDR
             List<PeptideSpectralMatch> psms = items.Select(p => p as PeptideSpectralMatch).ToList();
-            new FdrAnalysisEngine(psms, 0, commonParameters, taskIds).Run();
+            new FdrAnalysisEngine(psms, 0, commonParameters, this.FileSpecificParameters, taskIds).Run();
 
         }
 
