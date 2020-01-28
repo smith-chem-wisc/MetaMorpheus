@@ -110,9 +110,6 @@ namespace Test
             var NGlycans = GlycanDatabase.LoadGlycan(GlobalVariables.GlycanLocations[3]);
             var bestGlycans = GlycoPeptides.MatchBestGlycan(listOfSortedms2Scans[0], NGlycans.ToArray(), commonParameters).Where(p => p != null && p.Item2 >= 2).OrderByDescending(p => p.Item2).Take(100).OrderBy(p => p.Item3).ToArray(); ;
 
-            //Please keep the draw functions, they are important to debug visually.
-            //DrawPeptideSpectralMatch(listOfSortedms2Scans[0].TheScan, matchedGlycanYIons2, pep.BaseSequence);
-            //DrawPeptideSpectralMatch(listOfSortedms2Scans[0].TheScan, matchedGlycanYIons, pep.BaseSequence);
         }
 
         [Test]
@@ -166,8 +163,6 @@ namespace Test
                     output.WriteLine(product.Annotation + "\t" + ((double)glycan.Mass / 1E5 - product.NeutralLoss).ToString() + "\t" + product.NeutralMass.ToString());
                 }
             }
-
-            //DrawPeptideSpectralMatch(listOfSortedms2Scans[0].TheScan, matchedFragmentIons, pep.BaseSequence);
 
         }
 
@@ -313,81 +308,5 @@ namespace Test
             Assert.AreEqual(glycans.Count, 182);
 
         }     
-
-        //private static Dictionary<ProductType, OxyColor> productTypeDrawColors = new Dictionary<ProductType, OxyColor>
-        //{
-        //  { ProductType.b, OxyColors.Blue },
-        //  { ProductType.y, OxyColors.Purple },
-        //  { ProductType.c, OxyColors.Gold },
-        //  { ProductType.zDot, OxyColors.Orange },
-        //  { ProductType.D, OxyColors.DodgerBlue },
-        //  { ProductType.M, OxyColors.Firebrick }
-        //};
-
-        //public static void DrawPeptideSpectralMatch(MsDataScan msDataScan, List<MatchedFragmentIon> matchedFragmentIons, String sequence)
-        //{
-        //    // x is m/z, y is intensity
-        //    var spectrumMzs = msDataScan.MassSpectrum.XArray;
-        //    var spectrumIntensities = msDataScan.MassSpectrum.YArray;
-
-        //    string subTitle = "---";//sequence;
-
-        //    PlotModel model = new PlotModel { Title = "Spectrum Annotation of Scan #" + msDataScan.OneBasedScanNumber, DefaultFontSize = 15, Subtitle = subTitle };
-        //    model.Axes.Add(new LinearAxis { Position = AxisPosition.Bottom, Title = "m/z", Minimum = 0, Maximum = spectrumMzs.Max() * 1.2, AbsoluteMinimum = 0, AbsoluteMaximum = spectrumMzs.Max() * 5 });
-        //    model.Axes.Add(new LinearAxis { Position = AxisPosition.Left, Title = "Intensity", Minimum = 0, Maximum = spectrumIntensities.Max() * 1.2, AbsoluteMinimum = 0, AbsoluteMaximum = spectrumIntensities.Max() * 1.3 });
-        //    model.Axes[1].Zoom(0, spectrumIntensities.Max() * 1.1);
-
-        //    LineSeries[] allIons = new LineSeries[spectrumMzs.Length];
-
-        //    for (int i = 0; i < spectrumMzs.Length; i++)
-        //    {
-        //        allIons[i] = new LineSeries();
-        //        allIons[i].Color = OxyColors.DimGray;
-        //        allIons[i].StrokeThickness = 0.5;
-        //        allIons[i].Points.Add(new DataPoint(spectrumMzs[i], 0));
-        //        allIons[i].Points.Add(new DataPoint(spectrumMzs[i], spectrumIntensities[i]));
-        //        model.Series.Add(allIons[i]);
-        //    }
-
-        //    foreach (var peak in matchedFragmentIons)
-        //    {
-        //        OxyColor ionColor = productTypeDrawColors[peak.NeutralTheoreticalProduct.ProductType];
-
-        //        int i = msDataScan.MassSpectrum.GetClosestPeakIndex(peak.Mz).Value;
-
-        //        // peak line
-        //        allIons[i] = new LineSeries();
-        //        allIons[i].Color = ionColor;
-        //        allIons[i].StrokeThickness = 1;
-        //        allIons[i].Points.Add(new DataPoint(peak.Mz, 0));
-        //        allIons[i].Points.Add(new DataPoint(peak.Mz, peak.Intensity));
-
-        //        // peak annotation
-        //        var peakAnnotation = new TextAnnotation();
-        //        peakAnnotation.TextRotation = -60;
-        //        peakAnnotation.Font = "Arial";
-        //        peakAnnotation.FontSize = 4;
-        //        peakAnnotation.FontWeight = 1.0;
-        //        peakAnnotation.TextColor = ionColor;
-        //        peakAnnotation.StrokeThickness = 0;
-        //        //string gly = peak.TheoreticalFragmentIon.ProductType == ProductType.None ? "-Hex" : "";
-        //        peakAnnotation.Text = peak.Annotation;
-        //        peakAnnotation.TextPosition = new DataPoint(allIons[i].Points[1].X, allIons[i].Points[1].Y + peakAnnotation.Text.Length * 1.5 / 4);
-        //        peakAnnotation.TextHorizontalAlignment = HorizontalAlignment.Left;
-        //        model.Annotations.Add(peakAnnotation);
-
-        //        model.Series.Add(allIons[i]);
-        //    }
-
-        //    // Axes are created automatically if they are not defined
-
-        //    // Set the Model property, the INotifyPropertyChanged event will make the WPF Plot control update its content
-        //    using (var stream = File.Create(Path.Combine(TestContext.CurrentContext.TestDirectory, "annotation.pdf")))
-        //    {
-        //        PdfExporter pdf = new PdfExporter { Width = 500, Height = 210 };
-        //        pdf.Export(model, stream);
-        //    }
-        //}
-
     }
 }
