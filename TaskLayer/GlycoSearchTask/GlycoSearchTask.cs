@@ -187,6 +187,7 @@ namespace TaskLayer
 
             PostGlycoSearchAnalysisTask postGlycoSearchAnalysisTask = new PostGlycoSearchAnalysisTask();
 
+            postGlycoSearchAnalysisTask.FileSpecificParameters = this.FileSpecificParameters;
             return postGlycoSearchAnalysisTask.Run(OutputFolder, dbFilenameList, currentRawFileList, taskId, fileSettingsList, filteredAllPsms.OrderByDescending(p => p.TotalScore).ToList(), CommonParameters, _glycoSearchParameters, proteinList, variableModifications, fixedModifications, localizeableModificationTypes, MyTaskResults);
 
         }

@@ -195,7 +195,7 @@ namespace Test
 
             var overlap2 = fragmentsHash_etd.Intersect(fragmentsMod_etd_origin).Count();
 
-            //ETD didn't change Y ions.
+            //ETD didn't change y ions.
             Assert.That(overlap2 == 23);
         }
 

@@ -72,10 +72,10 @@ namespace EngineLayer.GlycoSearch
         {
             double possiblePeptideMass = precursorMass - (double)glycan.Mass/1E5;
             List<Product> YIons = new List<Product>();
-            YIons.Add(new Product(ProductType.M, FragmentationTerminus.Both, precursorMass, 0, 0, (double)glycan.Mass/1E5)); //Y0 ion. Glycan totally loss.
+            YIons.Add(new Product(ProductType.M, FragmentationTerminus.Both, precursorMass - (double)glycan.Mass / 1E5, 0, 0, (double)glycan.Mass/1E5)); //Y0 ion. Glycan totally loss.
             foreach (var ion in glycan.Ions)
             {
-                Product product = new Product(ProductType.M, FragmentationTerminus.Both, precursorMass, 0, 0, (double)ion.LossIonMass/1E5);
+                Product product = new Product(ProductType.M, FragmentationTerminus.Both, precursorMass - (double)ion.LossIonMass / 1E5, 0, 0, (double)ion.LossIonMass/1E5);
                 YIons.Add(product);
             }
             return YIons;
@@ -325,7 +325,7 @@ namespace EngineLayer.GlycoSearch
         //The purpose of the funtion is to generate hash fragment ions without generate the PeptideWithMod. keyValuePair key:GlycanBoxId, Value:mod sites
         public static int[] GetFragmentHash(List<Product> products, Tuple<int, int[]> keyValuePair, GlycanBox[] OGlycanBoxes, int FragmentBinsPerDalton)
         {
-            double[] newFragments = products.Select(p => p.NeutralMass).ToArray();
+            double[] newFragments = products.OrderBy(p=>p.ProductType).ThenBy(p=>p.FragmentNumber).Select(p => p.NeutralMass).ToArray();
             var len = products.Count / 3;
             if (keyValuePair.Item2!=null)
             {
@@ -340,6 +340,7 @@ namespace EngineLayer.GlycoSearch
                     j = keyValuePair.Item2[i];
                     while (j >= 3)
                     {
+                        //y ions didn't change in EThcD for O-glyco
                         //newFragments[len * 2 - j + 2] += GlycanBox.GlobalOGlycans[OGlycanBoxes[keyValuePair.Item1].ModIds[i]].Mass;
                         newFragments[len * 3 - j + 2] += (double)GlycanBox.GlobalOGlycans[OGlycanBoxes[keyValuePair.Item1].ModIds[i]].Mass/1E5;
                         j--;
@@ -357,7 +358,7 @@ namespace EngineLayer.GlycoSearch
         }
 
         //Find FragmentHsh for current box at modInd. 
-        //TO DO: How about y-ions from ETD?
+        //y-ion didn't change for O-Glycopeptide.
         public static int[] GetLocalFragmentHash(List<Product> products, int peptideLength, int[] modPoses, int modInd, ModBox OGlycanBox, ModBox localOGlycanBox, int FragmentBinsPerDalton)
         {
             List<double> newFragments = new List<double>();

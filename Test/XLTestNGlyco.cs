@@ -33,7 +33,7 @@ namespace Test
         [Test]
         public static void GlyTest_GetKindString()
         {
-            byte[] kind = new byte[] {3, 4, 0, 0, 1 };
+            byte[] kind = new byte[] {3, 4, 0, 0, 1, 0, 0, 0, 0 };
             string kindString = Glycan.GetKindString(kind);
             Assert.AreEqual("H3N4F1", kindString);
         }
@@ -267,7 +267,6 @@ namespace Test
         }
 
         //This is not exactly a test. The function is used for N-Glycan database generation. The function maybe useful in the future.
-        [Test]
         public static void GlyTest_GenerateUniprotDataBase()
         {
             var groupedGlycans = NGlycans.GroupBy(p => Glycan.GetKindString(p.Kind)).ToDictionary(p => p.Key, p => p.ToList());
@@ -296,7 +295,7 @@ namespace Test
         {
             var groupedGlycans = NGlycans.GroupBy(p => Glycan.GetKindString(p.Kind)).ToDictionary(p => p.Key, p => p.ToList());
 
-            byte[] k36101 = new byte[] { 3, 6, 1, 0, 1 };
+            byte[] k36101 = new byte[] { 3, 6, 1, 0, 1, 0, 0, 0, 0 };
             var glycan36101 = GlycanDatabase.GetAllIonMassFromKind(k36101, groupedGlycans);
 
             Glycan glycan = Glycan.Struct2Glycan("(N(F)(N(H(H(N))(H(N)))))", 0);

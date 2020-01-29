@@ -183,7 +183,7 @@ namespace EngineLayer
                     glycanIons.Add(glycanIon);
                 }
             }
-            glycanIons.Add(new GlycanIon(null, 8303819, new byte[] { 0, 0, 0, 0, 0 }, mass - 8303819)); //Cross-ring mass
+            glycanIons.Add(new GlycanIon(null, 8303819, new byte[] { 0, 0, 0, 0, 0, 0, 0, 0, 0 }, mass - 8303819)); //Cross-ring mass
             glycanIons = glycanIons.OrderBy(p => p.IonMass).ToList();
             //glycanIons.RemoveAt(glycanIons.Count - 1);
 
