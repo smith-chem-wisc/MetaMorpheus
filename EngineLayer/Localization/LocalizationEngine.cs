@@ -19,7 +19,7 @@ namespace EngineLayer.Localization
         private readonly IEnumerable<PeptideSpectralMatch> AllResultingIdentifications;
         private readonly MsDataFile MyMsDataFile;
 
-        public LocalizationEngine(IEnumerable<PeptideSpectralMatch> allResultingIdentifications, MsDataFile myMsDataFile, CommonParameters commonParameters, List<string> nestedIds) : base(commonParameters, nestedIds)
+        public LocalizationEngine(IEnumerable<PeptideSpectralMatch> allResultingIdentifications, MsDataFile myMsDataFile, CommonParameters commonParameters, List<(string fileName, CommonParameters fileSpecificParameters)> fileSpecificParameters, List<string> nestedIds) : base(commonParameters, fileSpecificParameters, nestedIds)
         {
             AllResultingIdentifications = allResultingIdentifications;
             MyMsDataFile = myMsDataFile;

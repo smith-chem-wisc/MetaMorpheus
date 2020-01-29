@@ -90,14 +90,14 @@ namespace MetaMorpheusGUI
             }
         }
 
-        
+
         public void Releases_Navigating(object sender, System.Windows.Navigation.NavigatingCancelEventArgs e)
         {
             //cancel the current event
             e.Cancel = true;
 
             //this opens the URL in the user's default browser
-            Process.Start(e.Uri.ToString());
+            GlobalVariables.StartProcess(e.Uri.ToString());
         }
 
         private void PortableClicked(object semder, RoutedEventArgs e)

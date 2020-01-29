@@ -182,6 +182,10 @@
                                             <ComboBox x:Name="initiatorMethionineBehaviorComboBox" />
                                         </StackPanel>
                                         <StackPanel Orientation="Horizontal" Margin="5">
+                                            <Label x:Name="label6_Copy" Content="Separation Type" />
+                                            <ComboBox x:Name="SeparationTypeComboBox" />
+                                        </StackPanel>
+                                        <StackPanel Orientation="Horizontal" Margin="5">
                                             <Label x:Name="label55_Copy" Content="Max Modification Isoforms" />
                                             <TextBox x:Name="maxModificationIsoformsTextBox" PreviewTextInput="CheckIfNumber" Width="45" />
                                         </StackPanel>
@@ -361,7 +365,6 @@
                     <Expander x:Name="OutputExpander">
                         <StackPanel Orientation="Vertical">
                             <CheckBox x:Name="ckbPepXML" Content="Write .pep.XML" />
-                            <CheckBox x:Name="ckbPercolator" Content="Write .TSV for Percolator" />
                         </StackPanel>
                     </Expander>
                 </GroupBox>

@@ -1,0 +1,9 @@
+PrecursorMassTolerance = "±5.0000 PPM"
+ProductMassTolerance = "±5.0000 PPM"
+Protease = "Asp-N"
+MinPeptideLength = 0
+MaxPeptideLength = 0
+MaxMissedCleavages = 0
+MaxModsForPeptide = 0
+SeparationType = "HPLC"
+DissociationType = "CID"

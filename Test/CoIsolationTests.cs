@@ -24,6 +24,8 @@ namespace Test
             Protease protease = new Protease("CustProtease", CleavageSpecificity.Full, null, null, motifs);
             ProteaseDictionary.Dictionary.Add(protease.Name, protease);
             CommonParameters CommonParameters = new CommonParameters(scoreCutoff: 1, deconvolutionIntensityRatio: 50, digestionParams: new DigestionParams(protease.Name, minPeptideLength: 1));
+            var fsp = new List<(string fileName, CommonParameters fileSpecificParameters)>();
+            fsp.Add(("", CommonParameters));
 
             var variableModifications = new List<Modification>();
             var fixedModifications = new List<Modification>();
@@ -59,7 +61,7 @@ namespace Test
             var listOfSortedms2Scans = MetaMorpheusTask.GetMs2Scans(myMsDataFile, null, new CommonParameters(deconvolutionIntensityRatio: 50)).OrderBy(b => b.PrecursorMass).ToArray();
             
             PeptideSpectralMatch[] allPsmsArray = new PeptideSpectralMatch[listOfSortedms2Scans.Length]; ;
-            new ClassicSearchEngine(allPsmsArray, listOfSortedms2Scans, variableModifications, fixedModifications, null, null, null, proteinList, searchModes, CommonParameters, new List<string>()).Run();
+            new ClassicSearchEngine(allPsmsArray, listOfSortedms2Scans, variableModifications, fixedModifications, null, null, null, proteinList, searchModes, CommonParameters, fsp, new List<string>()).Run();
 
             // Two matches for this single scan! Corresponding to two co-isolated masses
             Assert.AreEqual(2, allPsmsArray.Length);

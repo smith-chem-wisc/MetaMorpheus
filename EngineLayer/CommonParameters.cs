@@ -50,6 +50,7 @@ namespace EngineLayer
             ListOfModsVariable = listOfModsVariable ?? new List<(string, string)> { ("Common Variable", "Oxidation on M") };
             ListOfModsFixed = listOfModsFixed ?? new List<(string, string)> { ("Common Fixed", "Carbamidomethyl on C"), ("Common Fixed", "Carbamidomethyl on U") };
             DissociationType = dissociationType;
+            SeparationType = separationType;
             MS2ChildScanDissociationType = ms2childScanDissociationType;
             MS3ChildScanDissociationType = ms3childScanDissociationType;
 
@@ -97,12 +98,14 @@ namespace EngineLayer
         public bool TrimMs1Peaks { get; private set; }
         public bool TrimMsMsPeaks { get; private set; }
         public bool UseDeltaScore { get; private set; }
-        public double QValueOutputFilter { get; private set; }    
+        public double QValueOutputFilter { get; private set; }
         public List<ProductType> CustomIons { get; private set; }
         public bool AssumeOrphanPeaksAreZ1Fragments { get; private set; }
         public int MaxHeterozygousVariants { get; private set; }
         public int MinVariantDepth { get; private set; }
         public DissociationType DissociationType { get; private set; }
+        public string SeparationType { get; private set; }
+
         public DissociationType MS2ChildScanDissociationType { get; private set; }
         public DissociationType MS3ChildScanDissociationType { get; private set; }
         
@@ -140,6 +143,8 @@ namespace EngineLayer
             return new CommonParameters(
                                 TaskDescriptor,
                                 DissociationType,
+                     
+                                SeparationType,
                                 MS2ChildScanDissociationType,
                                 MS3ChildScanDissociationType,
                                 DoPrecursorDeconvolution,
