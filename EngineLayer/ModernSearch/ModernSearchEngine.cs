@@ -22,8 +22,8 @@ namespace EngineLayer.ModernSearch
         protected readonly double MaxMassThatFragmentIonScoreIsDoubled;
 
         public ModernSearchEngine(PeptideSpectralMatch[] globalPsms, Ms2ScanWithSpecificMass[] listOfSortedms2Scans, List<PeptideWithSetModifications> peptideIndex,
-            List<int>[] fragmentIndex, int currentPartition, CommonParameters commonParameters, MassDiffAcceptor massDiffAcceptor, double maximumMassThatFragmentIonScoreIsDoubled,
-            List<string> nestedIds) : base(commonParameters, nestedIds)
+            List<int>[] fragmentIndex, int currentPartition, CommonParameters commonParameters, List<(string fileName, CommonParameters fileSpecificParameters)> fileSpecificParameters, MassDiffAcceptor massDiffAcceptor, double maximumMassThatFragmentIonScoreIsDoubled,
+            List<string> nestedIds) : base(commonParameters, fileSpecificParameters, nestedIds)
         {
             PeptideSpectralMatches = globalPsms;
             ListOfSortedMs2Scans = listOfSortedms2Scans;
@@ -51,6 +51,7 @@ namespace EngineLayer.ModernSearch
             {
                 byte[] scoringTable = new byte[PeptideIndex.Count];
                 List<int> idsOfPeptidesPossiblyObserved = new List<int>(PeptideIndex.Count);
+                List<Product> peptideTheorProducts = new List<Product>();
 
                 for (; scanIndex < ListOfSortedMs2Scans.Length; scanIndex += maxThreadsPerFile)
                 {
@@ -66,7 +67,7 @@ namespace EngineLayer.ModernSearch
                     IndexScoreScan(scan, scoringTable, byteScoreCutoff, idsOfPeptidesPossiblyObserved, CommonParameters.DissociationType);
 
                     // take indexed-scored peptides and re-score them using the more accurate but slower scoring algorithm
-                    FineScorePeptides(idsOfPeptidesPossiblyObserved, scan, scanIndex, scoringTable, CommonParameters.DissociationType);
+                    FineScorePeptides(idsOfPeptidesPossiblyObserved, scan, scanIndex, scoringTable, CommonParameters.DissociationType, peptideTheorProducts);
 
                     //report search progress
                     progress++;
@@ -328,11 +329,11 @@ namespace EngineLayer.ModernSearch
         /// This is a second-pass scoring method which is costly (in terms of computational time and RAM) but calculates the "normal" MetaMorpheus score instead
         /// of the approximation computed by the IndexScoreScan method.
         /// </summary>
-        protected PeptideSpectralMatch FineScorePeptide(int id, Ms2ScanWithSpecificMass scan, int scanIndex)
+        protected PeptideSpectralMatch FineScorePeptide(int id, Ms2ScanWithSpecificMass scan, int scanIndex, List<Product> peptideTheorProducts)
         {
             PeptideWithSetModifications peptide = PeptideIndex[id];
 
-            List<Product> peptideTheorProducts = peptide.Fragment(CommonParameters.DissociationType, FragmentationTerminus.Both).ToList();
+            peptide.Fragment(CommonParameters.DissociationType, FragmentationTerminus.Both, peptideTheorProducts);
 
             List<MatchedFragmentIon> matchedIons = MatchFragmentIons(scan, peptideTheorProducts, CommonParameters);
 
@@ -346,7 +347,7 @@ namespace EngineLayer.ModernSearch
             {
                 if (PeptideSpectralMatches[scanIndex] == null)
                 {
-                    PeptideSpectralMatches[scanIndex] = new PeptideSpectralMatch(peptide, notch, thisScore, scanIndex, scan, CommonParameters.DigestionParams, matchedIons);
+                    PeptideSpectralMatches[scanIndex] = new PeptideSpectralMatch(peptide, notch, thisScore, scanIndex, scan, CommonParameters, matchedIons);
                 }
                 else
                 {
@@ -357,7 +358,8 @@ namespace EngineLayer.ModernSearch
             return PeptideSpectralMatches[scanIndex];
         }
 
-        protected void FineScorePeptides(List<int> peptideIds, Ms2ScanWithSpecificMass scan, int scanIndex, byte[] scoringTable, DissociationType dissociationType)
+        protected void FineScorePeptides(List<int> peptideIds, Ms2ScanWithSpecificMass scan, int scanIndex, byte[] scoringTable, 
+            DissociationType dissociationType, List<Product> peptideTheorProducts)
         {
             // this method re-scores the top-scoring peptides until no peptide in the rough-scored list can out-score
             // the best-scoring peptide. this guarantees that peptides will be scored accurately, according to metamorpheus score,
@@ -370,12 +372,12 @@ namespace EngineLayer.ModernSearch
             {
                 if (scoringTable[id] < bestScore && dissociationType != DissociationType.LowCID)
                 {
-                    FineScorePeptide(id, scan, scanIndex);
+                    FineScorePeptide(id, scan, scanIndex, peptideTheorProducts);
 
                     break;
                 }
 
-                PeptideSpectralMatch psm = FineScorePeptide(id, scan, scanIndex);
+                PeptideSpectralMatch psm = FineScorePeptide(id, scan, scanIndex, peptideTheorProducts);
 
                 if (psm != null && psm.Score > bestScore)
                 {
@@ -470,7 +472,7 @@ namespace EngineLayer.ModernSearch
 
                 for (int i = 0; i < masses.Length; i++)
                 {
-                    //convert to an int since we're in discreet 1.0005...
+                    //convert to an int since we're in discrete 1.0005...
                     int fragmentBin = (int)(Math.Round(masses[i].ToMass(1) / 1.0005079) * 1.0005079 * FragmentBinsPerDalton);
 
                     if (FragmentIndex[fragmentBin] != null)

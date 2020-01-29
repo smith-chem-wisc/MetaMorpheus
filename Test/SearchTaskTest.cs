@@ -355,7 +355,7 @@ namespace Test
                 null, MZAnalyzerType.Orbitrap, double.NaN, null, null, "scan=1", double.NaN, null, null, double.NaN, null, DissociationType.AnyActivationType, 0, null);
             Ms2ScanWithSpecificMass scan = new Ms2ScanWithSpecificMass(dfb, 2, 0, "File", new CommonParameters());
 
-            var psm = new PeptideSpectralMatch(peptide, 0, 1, 0, scan, new DigestionParams(), new List<MatchedFragmentIon>());
+            var psm = new PeptideSpectralMatch(peptide, 0, 1, 0, scan, new CommonParameters(), new List<MatchedFragmentIon>());
             psm.ResolveAllAmbiguities();
             psm.SetFdrValues(0, 0, 0, 0, 0, 0, 0, 0);
 
@@ -397,7 +397,7 @@ namespace Test
                 null, MZAnalyzerType.Orbitrap, double.NaN, null, null, "scan=1", double.NaN, null, null, double.NaN, null, DissociationType.AnyActivationType, 0, null);
             Ms2ScanWithSpecificMass scan = new Ms2ScanWithSpecificMass(dfb, 2, 0, "File", new CommonParameters());
 
-            var psm = new PeptideSpectralMatch(peptide, 0, 1, 0, scan, new DigestionParams(), new List<MatchedFragmentIon>());
+            var psm = new PeptideSpectralMatch(peptide, 0, 1, 0, scan, new CommonParameters(), new List<MatchedFragmentIon>());
             psm.ResolveAllAmbiguities();
             psm.SetFdrValues(0, 0, 0, 0, 0, 0, 0, 0);
 

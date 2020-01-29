@@ -31,6 +31,8 @@ namespace Test
                     maxModificationIsoforms: 1042),
                 scoreCutoff: 1,
                 productMassTolerance: new PpmTolerance(10));
+            var fsp = new List<(string fileName, CommonParameters fileSpecificParameters)>();
+            fsp.Add(("", CommonParameters));
 
             List<Modification> localizeableModifications = new List<Modification>();
             List<Modification> variableModifications = new List<Modification>();
@@ -73,9 +75,9 @@ namespace Test
             Ms2ScanWithSpecificMass scanB = new Ms2ScanWithSpecificMass(new MsDataScan(new MzSpectrum(new double[] { 1 }, new double[] { 1 }, false), 3, 1, true, Polarity.Positive, double.NaN, null, null, MZAnalyzerType.Orbitrap, double.NaN, null, null, "scan=2", double.NaN, null, null, double.NaN, null, DissociationType.AnyActivationType, 1, null), 2 + 132.040, 1, null, new CommonParameters());
             Ms2ScanWithSpecificMass scanC = new Ms2ScanWithSpecificMass(new MsDataScan(new MzSpectrum(new double[] { 1 }, new double[] { 1 }, false), 4, 1, true, Polarity.Positive, double.NaN, null, null, MZAnalyzerType.Orbitrap, double.NaN, null, null, "scan=3", double.NaN, null, null, double.NaN, null, DissociationType.AnyActivationType, 1, null), 3, 1, null, new CommonParameters());
 
-            PeptideSpectralMatch matchA = new PeptideSpectralMatch(compactPeptide1, 0, 0, 0, scanA, CommonParameters.DigestionParams, new List<MatchedFragmentIon>());
-            PeptideSpectralMatch matchB = new PeptideSpectralMatch(compactPeptide2, 0, 0, 0, scanB, CommonParameters.DigestionParams, new List<MatchedFragmentIon>());
-            PeptideSpectralMatch matchC = new PeptideSpectralMatch(compactPeptide3, 0, 0, 0, scanC, CommonParameters.DigestionParams, new List<MatchedFragmentIon>());
+            PeptideSpectralMatch matchA = new PeptideSpectralMatch(compactPeptide1, 0, 0, 0, scanA, CommonParameters, new List<MatchedFragmentIon>());
+            PeptideSpectralMatch matchB = new PeptideSpectralMatch(compactPeptide2, 0, 0, 0, scanB, CommonParameters, new List<MatchedFragmentIon>());
+            PeptideSpectralMatch matchC = new PeptideSpectralMatch(compactPeptide3, 0, 0, 0, scanC, CommonParameters, new List<MatchedFragmentIon>());
 
             var newPsms = new List<PeptideSpectralMatch> { matchA, matchB, matchC };
 
@@ -93,7 +95,7 @@ namespace Test
                 Assert.AreEqual(1, l.FinalBins.Count);
             };
 
-            FdrAnalysisEngine engine = new FdrAnalysisEngine(newPsms, searchMode.NumNotches, CommonParameters, new List<string> { "ff" });
+            FdrAnalysisEngine engine = new FdrAnalysisEngine(newPsms, searchMode.NumNotches, CommonParameters, fsp, new List<string> { "ff" });
 
             engine.Run();
         }

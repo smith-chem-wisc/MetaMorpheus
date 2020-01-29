@@ -5,6 +5,7 @@ using Proteomics;
 using Proteomics.AminoAcidPolymer;
 using System;
 using System.Collections.Generic;
+using System.Diagnostics;
 using System.IO;
 using System.Linq;
 
@@ -12,10 +13,16 @@ namespace EngineLayer
 {
     public static class GlobalVariables
     {
+        // for now, these are only used for error-checking in the command-line version.
+        // compressed versions of the protein databases (e.g., .xml.gz) are also supported
+        public static List<string> AcceptedDatabaseFormats = new List<string> { ".fasta", ".fa", ".xml" };
+        public static List<string> AcceptedSpectraFormats = new List<string> { ".raw", ".mzml", ".mgf" };
+
         private static List<Modification> _AllModsKnown = new List<Modification>();
         private static HashSet<string> _AllModTypesKnown = new HashSet<string>();
         private static List<Crosslinker> _KnownCrosslinkers = new List<Crosslinker>();
-        
+        private static List<string> _SeparationTypes = new List<string>();
+
         //Characters that aren't amino acids, but are reserved for special uses (motifs, delimiters, mods, etc)
         private static char[] _InvalidAminoAcids = new char[] { 'X', 'B', 'J', 'Z', ':', '|', ';', '[', ']', '{', '}', '(', ')', '+', '-' };
 
@@ -64,6 +71,8 @@ namespace EngineLayer
 
             ElementsLocation = Path.Combine(DataDir, @"Data", @"elements.dat");
             UsefulProteomicsDatabases.Loaders.LoadElements();
+
+            AddSeparationTypes(new List<string> { { "HPLC" }, { "CZE" } });
 
             // load default crosslinkers
             string crosslinkerLocation = Path.Combine(DataDir, @"Data", @"Crosslinkers.tsv");
@@ -132,7 +141,7 @@ namespace EngineLayer
         public static bool StopLoops { get; set; }
         public static string ElementsLocation { get; }
         public static string MetaMorpheusVersion { get; }
-        public static IGlobalSettings GlobalSettings { get; set; }
+        public static GlobalSettings GlobalSettings { get; set; }
         public static IEnumerable<Modification> UnimodDeserialized { get; }
         public static IEnumerable<Modification> UniprotDeseralized { get; }
         public static UsefulProteomicsDatabases.Generated.obo PsiModDeserialized { get; }
@@ -140,6 +149,7 @@ namespace EngineLayer
         public static IEnumerable<string> AllModTypesKnown { get { return _AllModTypesKnown.AsEnumerable(); } }
         public static Dictionary<string, Modification> AllModsKnownDictionary { get; private set; }
         public static Dictionary<string, DissociationType> AllSupportedDissociationTypes { get; private set; }
+        public static List<string> SeparationTypes { get { return _SeparationTypes; } }
 
         public static string ExperimentalDesignFileName { get; }
         public static IEnumerable<Crosslinker> Crosslinkers { get { return _KnownCrosslinkers.AsEnumerable(); } }
@@ -200,6 +210,11 @@ namespace EngineLayer
                     _AllModTypesKnown.Add(mod.ModificationType);
                 }
             }
+        }
+
+        public static void AddSeparationTypes(List<string> separationTypes)
+        {
+            _SeparationTypes.AddRange(separationTypes);
         }
 
         public static void AddCrosslinkers(IEnumerable<Crosslinker> crosslinkers)
@@ -283,6 +298,17 @@ namespace EngineLayer
                 }
             }
             File.WriteAllLines(aminoAcidPath, linesToWrite.ToArray());
+        }
+
+        // Does the same thing as Process.Start() except it works on .NET Core
+        public static void StartProcess(string path)
+        {
+            var p = new Process();
+            p.StartInfo = new ProcessStartInfo(path)
+            {
+                UseShellExecute = true
+            };
+            p.Start();
         }
     }
 }

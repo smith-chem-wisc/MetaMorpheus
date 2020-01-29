@@ -23,8 +23,8 @@ namespace EngineLayer.ClassicSearch
 
         public ClassicSearchEngine(PeptideSpectralMatch[] globalPsms, Ms2ScanWithSpecificMass[] arrayOfSortedMS2Scans,
             List<Modification> variableModifications, List<Modification> fixedModifications, List<SilacLabel> silacLabels, SilacLabel startLabel, SilacLabel endLabel, 
-            List<Protein> proteinList, MassDiffAcceptor searchMode, CommonParameters commonParameters, List<string> nestedIds)
-            : base(commonParameters, nestedIds)
+            List<Protein> proteinList, MassDiffAcceptor searchMode, CommonParameters commonParameters, List<(string FileName, CommonParameters Parameters)> fileSpecificParameters, List<string> nestedIds)
+            : base(commonParameters, fileSpecificParameters, nestedIds)
         {
             PeptideSpectralMatches = globalPsms;
             ArrayOfSortedMS2Scans = arrayOfSortedMS2Scans;
@@ -62,6 +62,8 @@ namespace EngineLayer.ClassicSearch
                 int[] threads = Enumerable.Range(0, maxThreadsPerFile).ToArray();
                 Parallel.ForEach(threads, (i) =>
                 {
+                    var peptideTheorProducts = new List<Product>();
+
                     for (; i < Proteins.Count; i += maxThreadsPerFile)
                     {
                         // Stop loop if canceled
@@ -70,7 +72,7 @@ namespace EngineLayer.ClassicSearch
                         // digest each protein into peptides and search for each peptide in all spectra within precursor mass tolerance
                         foreach (PeptideWithSetModifications peptide in Proteins[i].Digest(CommonParameters.DigestionParams, FixedModifications, VariableModifications, SilacLabels, TurnoverLabels))
                         {
-                            List<Product> peptideTheorProducts = peptide.Fragment(CommonParameters.DissociationType, CommonParameters.DigestionParams.FragmentationTerminus).ToList();
+                            peptide.Fragment(CommonParameters.DissociationType, CommonParameters.DigestionParams.FragmentationTerminus, peptideTheorProducts);
 
                             foreach (ScanWithIndexAndNotchInfo scan in GetAcceptableScans(peptide.MonoisotopicMass, SearchMode))
                             {
@@ -93,7 +95,7 @@ namespace EngineLayer.ClassicSearch
                                         {
                                             if (PeptideSpectralMatches[scan.ScanIndex] == null)
                                             {
-                                                PeptideSpectralMatches[scan.ScanIndex] = new PeptideSpectralMatch(peptide, scan.Notch, thisScore, scan.ScanIndex, scan.TheScan, CommonParameters.DigestionParams, matchedIons, 0);
+                                                PeptideSpectralMatches[scan.ScanIndex] = new PeptideSpectralMatch(peptide, scan.Notch, thisScore, scan.ScanIndex, scan.TheScan, CommonParameters, matchedIons, 0);
                                             }
                                             else
                                             {
