@@ -236,9 +236,16 @@ namespace MetaMorpheusGUI
 
             DissociationType dissociationType = GlobalVariables.AllSupportedDissociationTypes[DissociationTypeComboBox.SelectedItem.ToString()];
             string separationType = SeparationTypeComboBox.SelectedItem.ToString();
-
-            DissociationType ms2childDissociationType = GlobalVariables.AllSupportedDissociationTypes[MS2ChildScanDissociationTypeComboBox.SelectedItem.ToString()];
-            DissociationType ms3childDissociationType = GlobalVariables.AllSupportedDissociationTypes[MS3ChildScanDissociationTypeComboBox.SelectedItem.ToString()];
+            DissociationType ms2childDissociationType = DissociationType.Unknown;
+            if (MS2ChildScanDissociationTypeComboBox.SelectedItem.ToString() != "Unknown")
+            {
+                ms2childDissociationType = GlobalVariables.AllSupportedDissociationTypes[MS2ChildScanDissociationTypeComboBox.SelectedItem.ToString()];
+            }
+            DissociationType ms3childDissociationType = DissociationType.Unknown;
+            if (MS3ChildScanDissociationTypeComboBox.SelectedItem.ToString() != "Unknown")
+            {
+                ms3childDissociationType = GlobalVariables.AllSupportedDissociationTypes[MS3ChildScanDissociationTypeComboBox.SelectedItem.ToString()];
+            }
 
             CustomFragmentationWindow.Close();
 
