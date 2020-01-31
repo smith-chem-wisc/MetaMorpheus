@@ -9,7 +9,6 @@ using Proteomics.Fragmentation;
 using Proteomics.ProteolyticDigestion;
 using Proteomics.RetentionTimePrediction;
 using System;
-using System.Collections.Concurrent;
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
@@ -90,28 +89,45 @@ namespace EngineLayer
 
             int ambiguousPeptidesRemovedCount = 0;
 
-            foreach (PeptideSpectralMatch psm in psms)
+            object processingDataLock = new object();
+            int maxThreads = fileSpecificParameters.FirstOrDefault().fileSpecificParameters.MaxThreadsToUsePerFile;
+            int[] threads = Enumerable.Range(0, maxThreads).ToArray();
+            Parallel.ForEach(threads, (i) =>
             {
-                if (psm != null)
+                for (; i < psms.Count; i += maxThreads)
                 {
-                    List<int> indiciesOfPeptidesToRemove = new List<int>();
-                    List<(int notch, PeptideWithSetModifications pwsm)> bestMatchingPeptidesToRemove = new List<(int notch, PeptideWithSetModifications pwsm)>();
-                    List<double> pepValuePredictions = new List<double>();
+                    PeptideSpectralMatch psm = psms[i];
 
-                    //Here we compute the pepvalue predection for each ambiguous peptide in a PSM. Ambiguous peptides with lower pepvalue predictions are removed from the PSM.
-                    foreach (var (Notch, Peptide) in psm.BestMatchingPeptides)
+                    // Stop loop if canceled
+                    if (GlobalVariables.StopLoops) { return; }
+
+                    if (psm != null)
                     {
-                        PsmData pd = CreateOnePsmDataEntry(searchType, fileSpecificParameters, psm, sequenceToPsmCount, fileSpecificTimeDependantHydrophobicityAverageAndDeviation_unmodified, fileSpecificTimeDependantHydrophobicityAverageAndDeviation_modified, fileSpecificMedianFragmentMassErrors, chargeStateMode, Peptide, trainingVariables, Notch, !Peptide.Protein.IsDecoy);
-                        var pepValuePrediction = predictionEngine.Predict(pd);
-                        pepValuePredictions.Add(pepValuePrediction.Probability);
-                        //A score is available using the variable pepvaluePrediction.Score
-                    }
+                        List<int> indiciesOfPeptidesToRemove = new List<int>();
+                        List<(int notch, PeptideWithSetModifications pwsm)> bestMatchingPeptidesToRemove = new List<(int notch, PeptideWithSetModifications pwsm)>();
+                        List<double> pepValuePredictions = new List<double>();
 
-                    GetIndiciesOfPeptidesToRemove(indiciesOfPeptidesToRemove, pepValuePredictions);
-                    GetBestMatchingPeptidesToRemove(psm, indiciesOfPeptidesToRemove, bestMatchingPeptidesToRemove);
-                    RemoveThePeptides(bestMatchingPeptidesToRemove, psm, pepValuePredictions, ref ambiguousPeptidesRemovedCount);
+                        //Here we compute the pepvalue predection for each ambiguous peptide in a PSM. Ambiguous peptides with lower pepvalue predictions are removed from the PSM.
+                        foreach (var (Notch, Peptide) in psm.BestMatchingPeptides)
+                        {
+                            PsmData pd = CreateOnePsmDataEntry(searchType, fileSpecificParameters, psm, sequenceToPsmCount, fileSpecificTimeDependantHydrophobicityAverageAndDeviation_unmodified, fileSpecificTimeDependantHydrophobicityAverageAndDeviation_modified, fileSpecificMedianFragmentMassErrors, chargeStateMode, Peptide, trainingVariables, Notch, !Peptide.Protein.IsDecoy);
+                            var pepValuePrediction = predictionEngine.Predict(pd);
+                            pepValuePredictions.Add(pepValuePrediction.Probability);
+                            //A score is available using the variable pepvaluePrediction.Score
+                        }
+
+                        GetIndiciesOfPeptidesToRemove(indiciesOfPeptidesToRemove, pepValuePredictions);
+                        GetBestMatchingPeptidesToRemove(psm, indiciesOfPeptidesToRemove, bestMatchingPeptidesToRemove);
+
+                        lock (processingDataLock)
+                        {
+                            int peptidesRemoved = 0;
+                            RemoveThePeptides(bestMatchingPeptidesToRemove, psm, pepValuePredictions, ref peptidesRemoved);
+                            ambiguousPeptidesRemovedCount += peptidesRemoved;
+                        }
+                    }
                 }
-            }
+            });
 
             var predictions = trainedModel.Transform(testData);
 
@@ -532,7 +548,6 @@ namespace EngineLayer
                             localPsmDataList.Add(newPsmData);
                         }
                     }
-                    
                 }
                 lock (psmDataListLock)
                 {
