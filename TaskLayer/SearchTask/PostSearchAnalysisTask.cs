@@ -843,7 +843,7 @@ namespace TaskLayer
                             }
                         }
 
-                        if (proteinToConfidentBaseSequences.ContainsKey(nonVariantProtein.NonVariantProtein))
+                     //   if (proteinToConfidentBaseSequences.ContainsKey(nonVariantProtein.NonVariantProtein))
                         {
                             // adds confidently localized and identified mods
                             nonVariantProtein.OneBasedPossibleLocalizedModifications.Clear();
