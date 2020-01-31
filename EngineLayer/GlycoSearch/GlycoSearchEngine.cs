@@ -168,8 +168,8 @@ namespace EngineLayer.GlycoSearch
                         else
                         {
                             //gsms = FindOGlycopeptideHash(scan, idsOfPeptidesTopN, scanIndex, allBinsToSearch, childBinsToSearch, (int)byteScoreCutoff);
-                            //gsms = FindOGlycopeptideHashLocal(scan, idsOfPeptidesTopN, scanIndex, allBinsToSearch, childBinsToSearch, (int)byteScoreCutoff);                            
-                            gsms = FindModPepHash(scan, idsOfPeptidesTopN, scanIndex, allBinsToSearch, (int)byteScoreCutoff);
+                            gsms = FindOGlycopeptideHashLocal(scan, idsOfPeptidesTopN, scanIndex, allBinsToSearch, childBinsToSearch, (int)byteScoreCutoff);                            
+                            //gsms = FindModPepHash(scan, idsOfPeptidesTopN, scanIndex, allBinsToSearch, (int)byteScoreCutoff);
                         }
 
 
@@ -484,7 +484,7 @@ namespace EngineLayer.GlycoSearch
 
                     //Localization for O-glycopeptides only works on ETD related dissociationtype
                     //No localization can be done with MS2-HCD spectrum
-                    if (theScan.ChildScans==null && !GlycoPeptides.DissociationTypeContainETD(CommonParameters.DissociationType))
+                    if ((theScan.ChildScans==null || !GlycoPeptides.DissociationTypeContainETD(CommonParameters.ChildScanDissociationType)) && !GlycoPeptides.DissociationTypeContainETD(CommonParameters.DissociationType))
                     {
                         while(iDLow < GlycanBox.OGlycanBoxes.Count() && (PrecusorSearchMode.Within(theScan.PrecursorMass, theScanBestPeptide.MonoisotopicMass + GlycanBox.OGlycanBoxes[iDLow].Mass)))
                         {
@@ -509,7 +509,13 @@ namespace EngineLayer.GlycoSearch
                         continue;
                     }
 
-                    HashSet<int> allPeaksForLocalization = new HashSet<int>(childBinsToSearch);
+                    HashSet<int> allPeaksForLocalization = new HashSet<int>();
+
+
+                    if (GlycoPeptides.DissociationTypeContainETD(CommonParameters.ChildScanDissociationType))
+                    {
+                        allPeaksForLocalization.Concat(childBinsToSearch);
+                    }
 
                     //The workflow is designed for MS2:HCD-MS2:EThcD type of data, but could also work with MS2:EThcD type of data.
                     if (GlycoPeptides.DissociationTypeContainETD(CommonParameters.DissociationType))

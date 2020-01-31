@@ -13,7 +13,7 @@ namespace TaskLayer
             IsOGlycoSearch = true;
             DecoyType = DecoyType.Reverse;
             GlycoSearchTopNum = 50;
-            MaximumOGlycanAllowed = 3;
+            MaximumOGlycanAllowed = 4;
         }
 
         public int GlycanDatabasefileIndex { get; set; }
