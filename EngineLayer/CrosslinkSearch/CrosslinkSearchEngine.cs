@@ -407,7 +407,9 @@ namespace EngineLayer.CrosslinkSearch
 
                                 if (childScan.TheScan.MsnOrder == 2 && CommonParameters.MS2ChildScanDissociationType!= DissociationType.LowCID)
                                 {
-                                    score += childScore;
+                                    //Note that for  MS2(HCD)-(MS2)ETD type of data, add the childScore to score will bias the  alpha score more than beta score. 
+                                    //We add 1/10 of childScore here, but better scoring is needed.
+                                    score += childScore/10;
                                 }
                                 else
                                 {
@@ -460,7 +462,9 @@ namespace EngineLayer.CrosslinkSearch
 
                                 if (childScan.TheScan.MsnOrder == 2 && CommonParameters.MS2ChildScanDissociationType != DissociationType.LowCID)
                                 {
-                                    score += childScore;
+                                    //Note that for  MS2(HCD)-(MS2)ETD type of data, add the childScore to score will bias the  alpha score more than beta score. 
+                                    //We add 1/10 of childScore here, but better scoring is needed.
+                                    score += childScore/10;
                                 }
                                 else
                                 {
