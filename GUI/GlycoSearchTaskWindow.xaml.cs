@@ -116,6 +116,7 @@ namespace MetaMorpheusGUI
             RbtNGlycoSearch.IsChecked = !task._glycoSearchParameters.IsOGlycoSearch;
             RbtOGlycoSearch.IsChecked = task._glycoSearchParameters.IsOGlycoSearch;
             TbMaxOGlycanNum.Text = task._glycoSearchParameters.MaximumOGlycanAllowed.ToString(CultureInfo.InvariantCulture);
+            CkbOxiniumIonFilt.IsChecked = task._glycoSearchParameters.OxiniumIonFilt;
 
             txtTopNum.Text = task._glycoSearchParameters.GlycoSearchTopNum.ToString(CultureInfo.InvariantCulture);
             CmbGlycanDatabase.SelectedIndex = task._glycoSearchParameters.GlycanDatabasefileIndex;
@@ -235,18 +236,20 @@ namespace MetaMorpheusGUI
             }
             CustomFragmentationWindow.Close();
 
+            //TO DO: The GUI logic here is not clear. 
             if (RbtNGlycoSearch.IsChecked.Value)
             {
                 TheTask._glycoSearchParameters.IsOGlycoSearch = false;
             }
-            if (RbtOGlycoSearch.IsChecked.Value)
+            if (RbtOGlycoSearch.IsChecked.HasValue)
             {
-                TheTask._glycoSearchParameters.IsOGlycoSearch = true;
+                TheTask._glycoSearchParameters.IsOGlycoSearch = RbtOGlycoSearch.IsChecked.Value;
             }
 
             TheTask._glycoSearchParameters.GlycanDatabasefileIndex = CmbGlycanDatabase.SelectedIndex;
-            TheTask._glycoSearchParameters.MaximumOGlycanAllowed = int.Parse(TbMaxOGlycanNum.Text, CultureInfo.InvariantCulture);
             TheTask._glycoSearchParameters.GlycoSearchTopNum = int.Parse(txtTopNum.Text, CultureInfo.InvariantCulture);
+            TheTask._glycoSearchParameters.MaximumOGlycanAllowed = int.Parse(TbMaxOGlycanNum.Text, CultureInfo.InvariantCulture);
+            TheTask._glycoSearchParameters.OxiniumIonFilt = CkbOxiniumIonFilt.IsChecked.Value;
 
             if (CheckBoxDecoy.IsChecked.Value)
             {

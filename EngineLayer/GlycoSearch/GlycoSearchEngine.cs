@@ -19,6 +19,7 @@ namespace EngineLayer.GlycoSearch
         private bool IsOGlycoSearch;
         private readonly int TopN;
         private readonly int _maxOGlycanNum;
+        private bool OxiniumIonFilt;
         private readonly int _glycanDatabaseIndex;
 
         private readonly Tolerance PrecusorSearchMode;
@@ -28,13 +29,14 @@ namespace EngineLayer.GlycoSearch
 
         public GlycoSearchEngine(List<GlycoSpectralMatch>[] globalCsms, Ms2ScanWithSpecificMass[] listOfSortedms2Scans, List<PeptideWithSetModifications> peptideIndex,
             List<int>[] fragmentIndex, List<int>[] secondFragmentIndex, int currentPartition, CommonParameters commonParameters, List<(string fileName, CommonParameters fileSpecificParameters)> fileSpecificParameters,
-             int glycanDatabaseIndex, bool isOGlycoSearch, int glycoSearchTopNum, int maxOGlycanNum, List<string> nestedIds)
+             int glycanDatabaseIndex, bool isOGlycoSearch, int glycoSearchTopNum, int maxOGlycanNum, bool oxiniumIonFilt, List<string> nestedIds)
             : base(null, listOfSortedms2Scans, peptideIndex, fragmentIndex, currentPartition, commonParameters, fileSpecificParameters, new OpenSearchMode(), 0, nestedIds)
         {
             this.GlobalCsms = globalCsms;
             this.IsOGlycoSearch = isOGlycoSearch;
             this.TopN = glycoSearchTopNum;
             this._maxOGlycanNum = maxOGlycanNum;
+            this.OxiniumIonFilt = oxiniumIonFilt;
             this._glycanDatabaseIndex = glycanDatabaseIndex;
 
             SecondFragmentIndex = secondFragmentIndex;
@@ -473,10 +475,11 @@ namespace EngineLayer.GlycoSearch
                     var oxoniumIonIntensities = GlycoPeptides.ScanOxoniumIonFilter(theScan, ProductSearchMode, CommonParameters.DissociationType);
 
                     //The oxoniumIonIntensities is related with Glycan.AllOxoniumIons (the [9] is 204). A spectrum needs to have 204.0867 to be considered as a glycopeptide for now.
-                    if (oxoniumIonIntensities[9] == 0)
+                    if (OxiniumIonFilt && oxoniumIonIntensities[9] == 0)
                     {
                         continue;
                     }
+
 
                     int iDLow = GlycoPeptides.BinarySearchGetIndex(GlycanBox.OGlycanBoxes.Select(p => p.Mass).ToArray(), possibleGlycanMassLow);
 

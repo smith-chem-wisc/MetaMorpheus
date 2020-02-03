@@ -104,6 +104,7 @@
                             <StackPanel Orientation="Horizontal" Grid.Row="2">
                                 <Label Content="Maximum OGlycan Allowed"/>
                                 <TextBox x:Name="TbMaxOGlycanNum" PreviewTextInput="CheckIfNumber" Width="45"/>
+                                <CheckBox x:Name="CkbOxiniumIonFilt" Content="OxiniumIonFilt"/>
                             </StackPanel>
                         </Grid>
                     </Expander>
