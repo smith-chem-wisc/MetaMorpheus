@@ -25,7 +25,7 @@ namespace EngineLayer
         private static Dictionary<string, Dictionary<int, Tuple<double, double>>> fileSpecificTimeDependantHydrophobicityAverageAndDeviation_modified = new Dictionary<string, Dictionary<int, Tuple<double, double>>>();
         private static Dictionary<string, Dictionary<int, Tuple<double, double>>> fileSpecificTimeDependantHydrophobicityAverageAndDeviation_CZE = new Dictionary<string, Dictionary<int, Tuple<double, double>>>();
 
-        public static string ComputePEPValuesForAllPSMsGeneric(List<PeptideSpectralMatch> psms, string searchType, List<(string fileName, CommonParameters fileSpecificParameters)> fileSpecificParameters)
+        public static string ComputePEPValuesForAllPSMsGeneric(List<PeptideSpectralMatch> psms, string searchType, List<(string fileName, CommonParameters fileSpecificParameters)> fileSpecificParameters, string outputFolder)
         {
             string[] trainingVariables = PsmData.trainingInfos[searchType];
 
@@ -84,20 +84,40 @@ namespace EngineLayer
             var pipeline = mlContext.Transforms.Concatenate("Features", trainingVariables)
                 .Append(mlContext.BinaryClassification.Trainers.FastTree(labelColumnName: "Label", featureColumnName: "Features"));
             var trainedModel = pipeline.Fit(trainingData); //this is NOT thread safe
-            mlContext.Model.Save(trainedModel, trainingData.Schema, @"C:\Users\Michael Shortreed\Downloads\TrainedModel.zip");
+            var predictionEngine = mlContext.Model.CreatePredictionEngine<PsmData, TruePositivePrediction>(trainedModel);//this is NOT thread safe
 
             int maxThreads = fileSpecificParameters.FirstOrDefault().fileSpecificParameters.MaxThreadsToUsePerFile;
             int[] threads = Enumerable.Range(0, maxThreads).ToArray();
             object lockObject = new object();
 
+            if (outputFolder != null)
+            {
+                mlContext.Model.Save(trainedModel, trainingData.Schema, Path.Combine(outputFolder, "model.zip"));
+            }
+            else
+            {
+                maxThreads = 1;
+            }
+
             int ambiguousPeptidesRemovedCount = 0;
 
             Parallel.ForEach(threads, (i) =>
             {
-                //We load the saved model into each threed because the prediction engine is not threadsafe
-                DataViewSchema savedModelSchema;
-                ITransformer savedTrainedModel = mlContext.Model.Load(@"C:\Users\Michael Shortreed\Downloads\TrainedModel.zip", out savedModelSchema);
-                var predictionEngine = mlContext.Model.CreatePredictionEngine<PsmData, TruePositivePrediction>(savedTrainedModel);//this is NOT thread safe
+                ITransformer threadSpecificTrainedModel;
+
+                if (outputFolder != null)
+                {
+                    threadSpecificTrainedModel = mlContext.Model.Load(Path.Combine(outputFolder, "model.zip"), out DataViewSchema savedModelSchema);
+                }
+                else
+                {
+                    // single-threaded, prediction model was not saved to hard disk
+                    threadSpecificTrainedModel = trainedModel;
+                }
+
+                // one prediction engine per thread, because the prediction engine is not thread-safe
+                var threadPredictionEngine = mlContext.Model.CreatePredictionEngine<PsmData, TruePositivePrediction>(threadSpecificTrainedModel);
+
                 int ambigousPeptidesRemovedinThread = 0;
                 for (; i < psms.Count; i += maxThreads)
                 {
@@ -113,7 +133,7 @@ namespace EngineLayer
                         foreach (var (Notch, Peptide) in psm.BestMatchingPeptides)
                         {
                             PsmData pd = CreateOnePsmDataEntry(searchType, fileSpecificParameters, psm, sequenceToPsmCount, fileSpecificTimeDependantHydrophobicityAverageAndDeviation_unmodified, fileSpecificTimeDependantHydrophobicityAverageAndDeviation_modified, fileSpecificMedianFragmentMassErrors, chargeStateMode, Peptide, trainingVariables, Notch, !Peptide.Protein.IsDecoy);
-                            var pepValuePrediction = predictionEngine.Predict(pd);
+                            var pepValuePrediction = threadPredictionEngine.Predict(pd);
                             pepValuePredictions.Add(pepValuePrediction.Probability);
                             //A score is available using the variable pepvaluePrediction.Score
                         }
