@@ -29,6 +29,9 @@ namespace EngineLayer
         {
             string[] trainingVariables = PsmData.trainingInfos[searchType];
 
+            //ensure that the order is always stable.
+            psms.OrderByDescending(p => p.Score).ThenBy(p => p.FdrInfo.QValue).ThenBy(p => p.FullSequence).ThenBy(p => p.ProteinAccession).ToList();
+
             //These two dictionaries contain the average and standard deviations of hydrophobicitys measured in 1 minute increments accross each raw
             //file separately. An individully measured hydrobophicty calculated for a specific PSM sequence is compared to these values by computing
             //the z-score. That z-score is used in the the machine learning.
@@ -83,51 +86,39 @@ namespace EngineLayer
             var pipeline = mlContext.Transforms.Concatenate("Features", trainingVariables)
                 .Append(mlContext.BinaryClassification.Trainers.FastTree(labelColumnName: "Label", featureColumnName: "Features"));
 
-            var trainedModel = pipeline.Fit(trainingData);
+            var trainedModel = pipeline.Fit(trainingData); //this is NOT thread safe
 
-            var predictionEngine = mlContext.Model.CreatePredictionEngine<PsmData, TruePositivePrediction>(trainedModel);
+            var predictionEngine = mlContext.Model.CreatePredictionEngine<PsmData, TruePositivePrediction>(trainedModel);//this is NOT thread safe
 
             int ambiguousPeptidesRemovedCount = 0;
 
-            object processingDataLock = new object();
-            int maxThreads = fileSpecificParameters.FirstOrDefault().fileSpecificParameters.MaxThreadsToUsePerFile;
-            int[] threads = Enumerable.Range(0, maxThreads).ToArray();
-            Parallel.ForEach(threads, (i) =>
+            for (int i = 0; i < psms.Count; i++)
             {
-                for (; i < psms.Count; i += maxThreads)
+                PeptideSpectralMatch psm = psms[i];
+
+                if (psm != null)
                 {
-                    PeptideSpectralMatch psm = psms[i];
+                    List<int> indiciesOfPeptidesToRemove = new List<int>();
+                    List<(int notch, PeptideWithSetModifications pwsm)> bestMatchingPeptidesToRemove = new List<(int notch, PeptideWithSetModifications pwsm)>();
+                    List<double> pepValuePredictions = new List<double>();
 
-                    // Stop loop if canceled
-                    if (GlobalVariables.StopLoops) { return; }
-
-                    if (psm != null)
+                    //Here we compute the pepvalue predection for each ambiguous peptide in a PSM. Ambiguous peptides with lower pepvalue predictions are removed from the PSM.
+                    foreach (var (Notch, Peptide) in psm.BestMatchingPeptides)
                     {
-                        List<int> indiciesOfPeptidesToRemove = new List<int>();
-                        List<(int notch, PeptideWithSetModifications pwsm)> bestMatchingPeptidesToRemove = new List<(int notch, PeptideWithSetModifications pwsm)>();
-                        List<double> pepValuePredictions = new List<double>();
-
-                        //Here we compute the pepvalue predection for each ambiguous peptide in a PSM. Ambiguous peptides with lower pepvalue predictions are removed from the PSM.
-                        foreach (var (Notch, Peptide) in psm.BestMatchingPeptides)
-                        {
-                            PsmData pd = CreateOnePsmDataEntry(searchType, fileSpecificParameters, psm, sequenceToPsmCount, fileSpecificTimeDependantHydrophobicityAverageAndDeviation_unmodified, fileSpecificTimeDependantHydrophobicityAverageAndDeviation_modified, fileSpecificMedianFragmentMassErrors, chargeStateMode, Peptide, trainingVariables, Notch, !Peptide.Protein.IsDecoy);
-                            var pepValuePrediction = predictionEngine.Predict(pd);
-                            pepValuePredictions.Add(pepValuePrediction.Probability);
-                            //A score is available using the variable pepvaluePrediction.Score
-                        }
-
-                        GetIndiciesOfPeptidesToRemove(indiciesOfPeptidesToRemove, pepValuePredictions);
-                        GetBestMatchingPeptidesToRemove(psm, indiciesOfPeptidesToRemove, bestMatchingPeptidesToRemove);
-
-                        lock (processingDataLock)
-                        {
-                            int peptidesRemoved = 0;
-                            RemoveThePeptides(bestMatchingPeptidesToRemove, psm, pepValuePredictions, ref peptidesRemoved);
-                            ambiguousPeptidesRemovedCount += peptidesRemoved;
-                        }
+                        PsmData pd = CreateOnePsmDataEntry(searchType, fileSpecificParameters, psm, sequenceToPsmCount, fileSpecificTimeDependantHydrophobicityAverageAndDeviation_unmodified, fileSpecificTimeDependantHydrophobicityAverageAndDeviation_modified, fileSpecificMedianFragmentMassErrors, chargeStateMode, Peptide, trainingVariables, Notch, !Peptide.Protein.IsDecoy);
+                        var pepValuePrediction = predictionEngine.Predict(pd);
+                        pepValuePredictions.Add(pepValuePrediction.Probability);
+                        //A score is available using the variable pepvaluePrediction.Score
                     }
+
+                    GetIndiciesOfPeptidesToRemove(indiciesOfPeptidesToRemove, pepValuePredictions);
+                    GetBestMatchingPeptidesToRemove(psm, indiciesOfPeptidesToRemove, bestMatchingPeptidesToRemove);
+
+                    int peptidesRemoved = 0;
+                    RemoveThePeptides(bestMatchingPeptidesToRemove, psm, pepValuePredictions, ref peptidesRemoved);
+                    ambiguousPeptidesRemovedCount += peptidesRemoved;
                 }
-            });
+            }
 
             var predictions = trainedModel.Transform(testData);
 
@@ -494,17 +485,18 @@ namespace EngineLayer
             return sequenceToPsmCount;
         }
 
-        //This method ignores ambiguity and loads only the first peptide in a series for each PSM
         public static IEnumerable<PsmData> CreatePsmData(string searchType, List<(string fileName, CommonParameters fileSpecificParameters)> fileSpecificParameters, List<PeptideSpectralMatch> psms, Dictionary<string, int> sequenceToPsmCount, Dictionary<string, Dictionary<int, Tuple<double, double>>> timeDependantHydrophobicityAverageAndDeviation_unmodified, Dictionary<string, Dictionary<int, Tuple<double, double>>> timeDependantHydrophobicityAverageAndDeviation_modified, Dictionary<string, float> fileSpecificMedianFragmentMassErrors, int chargeStateMode, string[] trainingVariables)
         {
             object psmDataListLock = new object();
             List<PsmData> psmDataList = new List<PsmData>();
-
-            int maxThreads = fileSpecificParameters.FirstOrDefault().fileSpecificParameters.MaxThreadsToUsePerFile;
+            List<double> psmOrder = new List<double>();
+            int maxThreads = 1;// fileSpecificParameters.FirstOrDefault().fileSpecificParameters.MaxThreadsToUsePerFile;
             int[] threads = Enumerable.Range(0, maxThreads).ToArray();
+
             Parallel.ForEach(threads, (i) =>
             {
                 List<PsmData> localPsmDataList = new List<PsmData>();
+                List<double> localPsmOrder = new List<double>();
                 for (; i < psms.Count; i += maxThreads)
                 {
                     PeptideSpectralMatch psm = psms[i];
@@ -529,12 +521,15 @@ namespace EngineLayer
                             newPsmData = CreateOnePsmDataEntry(searchType, fileSpecificParameters, psm, sequenceToPsmCount, timeDependantHydrophobicityAverageAndDeviation_unmodified, timeDependantHydrophobicityAverageAndDeviation_modified, fileSpecificMedianFragmentMassErrors, chargeStateMode, csm.BestMatchingPeptides.First().Peptide, trainingVariables, 0, label);
                         }
                         localPsmDataList.Add(newPsmData);
+                        localPsmOrder.Add(i);
                     }
                     else
                     {
+                        double bmp = 0;
                         foreach (var (notch, peptideWithSetMods) in psm.BestMatchingPeptides)
                         {
                             bool label;
+                            double bmpc = psm.BestMatchingPeptides.Count();
                             if (peptideWithSetMods.Protein.IsDecoy || psm.FdrInfo.QValue > 0.25)
                             {
                                 label = false;
@@ -546,16 +541,23 @@ namespace EngineLayer
                                 newPsmData = CreateOnePsmDataEntry(searchType, fileSpecificParameters, psm, sequenceToPsmCount, timeDependantHydrophobicityAverageAndDeviation_unmodified, timeDependantHydrophobicityAverageAndDeviation_modified, fileSpecificMedianFragmentMassErrors, chargeStateMode, peptideWithSetMods, trainingVariables, notch, label);
                             }
                             localPsmDataList.Add(newPsmData);
+                            localPsmOrder.Add(i + (bmp / bmpc / 2.0));
+                            bmp += 1.0;
                         }
                     }
                 }
                 lock (psmDataListLock)
                 {
                     psmDataList.AddRange(localPsmDataList);
+                    psmOrder.AddRange(localPsmOrder);
                 }
             });
+            PsmData[] pda = psmDataList.ToArray();
+            double[] order = psmOrder.ToArray();
 
-            return psmDataList.OrderByDescending(p => p.TotalMatchingFragmentCount).ThenByDescending(p => p.Intensity).AsEnumerable();
+            Array.Sort(order, pda);//this sorts both arrays thru sorting the array in position one. The order array, keeps track of the positon in the original psms list and returns the PsmData array in that same order.
+
+            return pda.AsEnumerable();
         }
 
         public static PsmData CreateOnePsmDataEntry(string searchType, List<(string fileName, CommonParameters fileSpecificParameters)> fileSpecificParameters, PeptideSpectralMatch psm, Dictionary<string, int> sequenceToPsmCount, Dictionary<string, Dictionary<int, Tuple<double, double>>> timeDependantHydrophobicityAverageAndDeviation_unmodified, Dictionary<string, Dictionary<int, Tuple<double, double>>> timeDependantHydrophobicityAverageAndDeviation_modified, Dictionary<string, float> fileSpecificMedianFragmentMassErrors, int chargeStateMode, PeptideWithSetModifications selectedPeptide, string[] trainingVariables, int notchToUse, bool label)

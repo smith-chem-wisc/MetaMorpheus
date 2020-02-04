@@ -754,12 +754,12 @@ namespace Test
             }
 
             Assert.AreEqual(0, unnasignedCrossType);
-            Assert.AreEqual(51, inter);
+            Assert.AreEqual(52, inter);
             Assert.AreEqual(76, intra);
             Assert.AreEqual(234, single);
-            Assert.AreEqual(10, loop);
+            Assert.AreEqual(8, loop);
             Assert.AreEqual(0, deadend);
-            Assert.AreEqual(44, deadendH2O);
+            Assert.AreEqual(43, deadendH2O);
             Assert.AreEqual(0, deadendNH2);
             Assert.AreEqual(0, deadendTris);
         }

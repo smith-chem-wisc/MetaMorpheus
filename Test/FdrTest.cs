@@ -313,9 +313,9 @@ namespace Test
                 }
             }
 
-            string expectedMetrics = "************************************************************\r\n*       Metrics for Determination of PEP Using Binary Classification      \r\n*-----------------------------------------------------------\r\n*" + 
-                "       Accuracy:  1\r\n*       Area Under Curve:  1\r\n*       Area under Precision recall Curve:  1\r\n*       F1Score:  1\r\n*       LogLoss:  6.794631909435286E-10\r\n*       LogLossReduction:  0.9999999992600825\r\n*       " + 
-                "PositivePrecision:  1\r\n*       PositiveRecall:  1\r\n*       NegativePrecision:  1\r\n*       NegativeRecall:  1\r\n*       Count of Ambiguous Peptides Removed:  0\r\n************************************************************\r\n";
+            string expectedMetrics = "************************************************************\r\n*       Metrics for Determination of PEP Using Binary Classification      \r\n*-----------------------------------------------------------\r\n*       Accuracy:  1\r\n*" + 
+                "       Area Under Curve:  1\r\n*       Area under Precision recall Curve:  1\r\n*       F1Score:  1\r\n*       LogLoss:  9.499076694158393E-10\r\n*       LogLossReduction:  0.999999998800407\r\n*       PositivePrecision:  1\r\n*       PositiveRecall:  1\r\n*" + 
+                "       NegativePrecision:  1\r\n*       NegativeRecall:  1\r\n*       Count of Ambiguous Peptides Removed:  0\r\n************************************************************\r\n";
 
             string metrics = PEP_Analysis.ComputePEPValuesForAllPSMsGeneric(moreNonNullPSMs, "standard", fsp);
             Assert.AreEqual(expectedMetrics, metrics);
@@ -384,9 +384,9 @@ namespace Test
                 }
             }
 
-            expectedMetrics = "************************************************************\r\n*       Metrics for Determination of PEP Using Binary Classification      \r\n*-----------------------------------------------------------\r\n*       " + 
-                "Accuracy:  1\r\n*       Area Under Curve:  1\r\n*       Area under Precision recall Curve:  1\r\n*       F1Score:  1\r\n*       LogLoss:  4.602013152839535E-10\r\n*       LogLossReduction:  0.9999999994988529\r\n*       " + 
-                "PositivePrecision:  1\r\n*       PositiveRecall:  1\r\n*       NegativePrecision:  1\r\n*       NegativeRecall:  1\r\n*       Count of Ambiguous Peptides Removed:  0\r\n************************************************************\r\n";
+            expectedMetrics = "************************************************************\r\n*       Metrics for Determination of PEP Using Binary Classification      \r\n*-----------------------------------------------------------\r\n*       Accuracy:  1\r\n*" + 
+                "       Area Under Curve:  1\r\n*       Area under Precision recall Curve:  1\r\n*       F1Score:  1\r\n*       LogLoss:  1.4147464421190388E-09\r\n*       LogLossReduction:  0.9999999982133845\r\n*       PositivePrecision:  1\r\n*       PositiveRecall:  1\r\n*" + 
+                "       NegativePrecision:  1\r\n*       NegativeRecall:  1\r\n*       Count of Ambiguous Peptides Removed:  0\r\n************************************************************\r\n";
 
             metrics = PEP_Analysis.ComputePEPValuesForAllPSMsGeneric(moreNonNullPSMsCZE, "standard", fsp);
             Assert.AreEqual(expectedMetrics, metrics);
@@ -512,6 +512,213 @@ namespace Test
             PEP_Analysis.RemoveThePeptides(bestMatchingPeptidesToRemove, psm, pepValuePredictions, ref ambiguousPeptidesRemovedCount);
             Assert.AreEqual(1, ambiguousPeptidesRemovedCount);
             Assert.AreEqual(2, psm.BestMatchingPeptides.Select(b => b.Notch).ToList().Count);
+        }
+
+        [Test]
+        public static void TestGetIndiciesOfPeptidesToRemove()
+        {
+            Ms2ScanWithSpecificMass scan = new Ms2ScanWithSpecificMass(
+                new MsDataScan(
+                    new MzSpectrum(new double[] { }, new double[] { }, false),
+                    2, 1, true, Polarity.Positive, double.NaN, null, null, MZAnalyzerType.Orbitrap, double.NaN, null, null, "scan=1", double.NaN, null, null, double.NaN, null, DissociationType.AnyActivationType, 1, null),
+                    100, 1, null, new CommonParameters(), null);
+
+            PeptideWithSetModifications pwsm = new PeptideWithSetModifications(new Protein("PEPTIDE", "ACCESSION", "ORGANISM"), new DigestionParams(), 1, 2, CleavageSpecificity.Full, "", 0, new Dictionary<int, Modification>(), 0);
+
+            int peptidesRemoved = 0;
+
+            //last highest exceeds cutoff
+            List<int> indiciesOfPeptidesToRemove = new List<int>();
+            List<int> expectedIndiciesOfPeptidesToRemove = new List<int> { 0 };
+            List<double> pepValuePredictions = new List<double> { 0.5, 0.99};
+
+            PeptideSpectralMatch psm = new PeptideSpectralMatch(pwsm, 0, 1, 1, scan, new CommonParameters(), new List<MatchedFragmentIon>());
+            for (int i = 1; i < pepValuePredictions.Count; i++)
+            {
+                psm.AddOrReplace(pwsm, 1, i, true, new List<MatchedFragmentIon>(), 1);
+            }
+
+            PEP_Analysis.GetIndiciesOfPeptidesToRemove(indiciesOfPeptidesToRemove, pepValuePredictions);
+            CollectionAssert.AreEquivalent(expectedIndiciesOfPeptidesToRemove, indiciesOfPeptidesToRemove);
+
+            List<(int notch, PeptideWithSetModifications pwsm)> bestMatchingPeptidesToRemove = new List<(int notch, PeptideWithSetModifications pwsm)>();
+            PEP_Analysis.GetBestMatchingPeptidesToRemove(psm, indiciesOfPeptidesToRemove, bestMatchingPeptidesToRemove);
+            CollectionAssert.AreEquivalent(expectedIndiciesOfPeptidesToRemove, bestMatchingPeptidesToRemove.Select(b => b.notch).ToList());
+
+            psm.SetFdrValues(1, 0, 0, 1, 0, 0, 10, 10);
+            PEP_Analysis.RemoveThePeptides(bestMatchingPeptidesToRemove, psm, pepValuePredictions, ref peptidesRemoved);
+            Assert.AreEqual(1, peptidesRemoved);
+            Assert.AreEqual(pepValuePredictions.Count, psm.BestMatchingPeptides.Count());
+            Assert.That(1-0.99, Is.EqualTo(psm.FdrInfo.PEP).Within(0.01));
+
+            //first highest exceeds cutoff
+            indiciesOfPeptidesToRemove = new List<int>();
+            expectedIndiciesOfPeptidesToRemove = new List<int> { 1 };
+            pepValuePredictions = new List<double> { 0.98, 0.5 };
+
+            psm = new PeptideSpectralMatch(pwsm, 0, 1, 1, scan, new CommonParameters(), new List<MatchedFragmentIon>());
+            for (int i = 1; i < pepValuePredictions.Count; i++)
+            {
+                psm.AddOrReplace(pwsm, 1, i, true, new List<MatchedFragmentIon>(), 1);
+            }
+
+            PEP_Analysis.GetIndiciesOfPeptidesToRemove(indiciesOfPeptidesToRemove, pepValuePredictions);
+            CollectionAssert.AreEquivalent(expectedIndiciesOfPeptidesToRemove, indiciesOfPeptidesToRemove);
+
+            bestMatchingPeptidesToRemove = new List<(int notch, PeptideWithSetModifications pwsm)>();
+            PEP_Analysis.GetBestMatchingPeptidesToRemove(psm, indiciesOfPeptidesToRemove, bestMatchingPeptidesToRemove);
+            CollectionAssert.AreEquivalent(expectedIndiciesOfPeptidesToRemove, bestMatchingPeptidesToRemove.Select(b => b.notch).ToList());
+
+            psm.SetFdrValues(1, 0, 0, 1, 0, 0, 10, 10);
+            PEP_Analysis.RemoveThePeptides(bestMatchingPeptidesToRemove, psm, pepValuePredictions, ref peptidesRemoved);
+            Assert.AreEqual(2, peptidesRemoved);
+            Assert.AreEqual(pepValuePredictions.Count, psm.BestMatchingPeptides.Count());
+            Assert.That(1 - 0.98, Is.EqualTo(psm.FdrInfo.PEP).Within(0.01));
+
+            //last highest does NOT exceeds cutoff
+            indiciesOfPeptidesToRemove = new List<int>();
+            expectedIndiciesOfPeptidesToRemove = new List<int>();
+            pepValuePredictions = new List<double> { 0.96, 0.97 };
+
+            psm = new PeptideSpectralMatch(pwsm, 0, 1, 1, scan, new CommonParameters(), new List<MatchedFragmentIon>());
+            for (int i = 1; i < pepValuePredictions.Count; i++)
+            {
+                psm.AddOrReplace(pwsm, 1, i, true, new List<MatchedFragmentIon>(), 1);
+            }
+
+            PEP_Analysis.GetIndiciesOfPeptidesToRemove(indiciesOfPeptidesToRemove, pepValuePredictions);
+            CollectionAssert.AreEquivalent(expectedIndiciesOfPeptidesToRemove, indiciesOfPeptidesToRemove);
+
+            bestMatchingPeptidesToRemove = new List<(int notch, PeptideWithSetModifications pwsm)>();
+            PEP_Analysis.GetBestMatchingPeptidesToRemove(psm, indiciesOfPeptidesToRemove, bestMatchingPeptidesToRemove);
+            CollectionAssert.AreEquivalent(expectedIndiciesOfPeptidesToRemove, bestMatchingPeptidesToRemove.Select(b => b.notch).ToList());
+
+            psm.SetFdrValues(1, 0, 0, 1, 0, 0, 10, 10);
+            PEP_Analysis.RemoveThePeptides(bestMatchingPeptidesToRemove, psm, pepValuePredictions, ref peptidesRemoved);
+            Assert.AreEqual(2, peptidesRemoved);
+            Assert.AreEqual(pepValuePredictions.Count, psm.BestMatchingPeptides.Count());
+            Assert.That(1 - 0.97, Is.EqualTo(psm.FdrInfo.PEP).Within(0.01));
+
+            //first highest does NOT exceeds cutoff
+            indiciesOfPeptidesToRemove = new List<int>();
+            expectedIndiciesOfPeptidesToRemove = new List<int>();
+            pepValuePredictions = new List<double> { 0.99, 0.96 };
+
+            psm = new PeptideSpectralMatch(pwsm, 0, 1, 1, scan, new CommonParameters(), new List<MatchedFragmentIon>());
+            for (int i = 1; i < pepValuePredictions.Count; i++)
+            {
+                psm.AddOrReplace(pwsm, 1, i, true, new List<MatchedFragmentIon>(), 1);
+            }
+
+            PEP_Analysis.GetIndiciesOfPeptidesToRemove(indiciesOfPeptidesToRemove, pepValuePredictions);
+            CollectionAssert.AreEquivalent(expectedIndiciesOfPeptidesToRemove, indiciesOfPeptidesToRemove);
+
+            bestMatchingPeptidesToRemove = new List<(int notch, PeptideWithSetModifications pwsm)>();
+            PEP_Analysis.GetBestMatchingPeptidesToRemove(psm, indiciesOfPeptidesToRemove, bestMatchingPeptidesToRemove);
+            CollectionAssert.AreEquivalent(expectedIndiciesOfPeptidesToRemove, bestMatchingPeptidesToRemove.Select(b => b.notch).ToList());
+
+            psm.SetFdrValues(1, 0, 0, 1, 0, 0, 10, 10);
+            PEP_Analysis.RemoveThePeptides(bestMatchingPeptidesToRemove, psm, pepValuePredictions, ref peptidesRemoved);
+            Assert.AreEqual(2, peptidesRemoved);
+            Assert.AreEqual(pepValuePredictions.Count, psm.BestMatchingPeptides.Count());
+            Assert.That(1 - 0.99, Is.EqualTo(psm.FdrInfo.PEP).Within(0.01));
+
+            //middle exceeds cutoff
+            indiciesOfPeptidesToRemove = new List<int>();
+            expectedIndiciesOfPeptidesToRemove = new List<int> { 1 };
+            pepValuePredictions = new List<double> { 0.98, 0.5, 0.98 };
+
+            psm = new PeptideSpectralMatch(pwsm, 0, 1, 1, scan, new CommonParameters(), new List<MatchedFragmentIon>());
+            for (int i = 1; i < pepValuePredictions.Count; i++)
+            {
+                psm.AddOrReplace(pwsm, 1, i, true, new List<MatchedFragmentIon>(), 1);
+            }
+
+            PEP_Analysis.GetIndiciesOfPeptidesToRemove(indiciesOfPeptidesToRemove, pepValuePredictions);
+            CollectionAssert.AreEquivalent(expectedIndiciesOfPeptidesToRemove, indiciesOfPeptidesToRemove);
+
+            bestMatchingPeptidesToRemove = new List<(int notch, PeptideWithSetModifications pwsm)>();
+            PEP_Analysis.GetBestMatchingPeptidesToRemove(psm, indiciesOfPeptidesToRemove, bestMatchingPeptidesToRemove);
+            CollectionAssert.AreEquivalent(expectedIndiciesOfPeptidesToRemove, bestMatchingPeptidesToRemove.Select(b => b.notch).ToList());
+
+            psm.SetFdrValues(1, 0, 0, 1, 0, 0, 10, 10);
+            PEP_Analysis.RemoveThePeptides(bestMatchingPeptidesToRemove, psm, pepValuePredictions, ref peptidesRemoved);
+            Assert.AreEqual(3, peptidesRemoved);
+            Assert.AreEqual(pepValuePredictions.Count, psm.BestMatchingPeptides.Count());
+            Assert.That(1 - 0.98, Is.EqualTo(psm.FdrInfo.PEP).Within(0.01));
+
+            //middle does NOT exceeds cutoff
+            indiciesOfPeptidesToRemove = new List<int>();
+            expectedIndiciesOfPeptidesToRemove = new List<int>();
+            pepValuePredictions = new List<double> { 0.97, 0.96, 0.99 };
+
+            psm = new PeptideSpectralMatch(pwsm, 0, 1, 1, scan, new CommonParameters(), new List<MatchedFragmentIon>());
+            for (int i = 1; i < pepValuePredictions.Count; i++)
+            {
+                psm.AddOrReplace(pwsm, 1, i, true, new List<MatchedFragmentIon>(), 1);
+            }
+
+            PEP_Analysis.GetIndiciesOfPeptidesToRemove(indiciesOfPeptidesToRemove, pepValuePredictions);
+            CollectionAssert.AreEquivalent(expectedIndiciesOfPeptidesToRemove, indiciesOfPeptidesToRemove);
+
+            bestMatchingPeptidesToRemove = new List<(int notch, PeptideWithSetModifications pwsm)>();
+            PEP_Analysis.GetBestMatchingPeptidesToRemove(psm, indiciesOfPeptidesToRemove, bestMatchingPeptidesToRemove);
+            CollectionAssert.AreEquivalent(expectedIndiciesOfPeptidesToRemove, bestMatchingPeptidesToRemove.Select(b => b.notch).ToList());
+
+            psm.SetFdrValues(1, 0, 0, 1, 0, 0, 10, 10);
+            PEP_Analysis.RemoveThePeptides(bestMatchingPeptidesToRemove, psm, pepValuePredictions, ref peptidesRemoved);
+            Assert.AreEqual(3, peptidesRemoved);
+            Assert.AreEqual(pepValuePredictions.Count, psm.BestMatchingPeptides.Count());
+            Assert.That(1 - 0.99, Is.EqualTo(psm.FdrInfo.PEP).Within(0.01));
+
+            //first and last exceeds cutoff
+            indiciesOfPeptidesToRemove = new List<int>();
+            expectedIndiciesOfPeptidesToRemove = new List<int> { 0, 2 };
+            pepValuePredictions = new List<double> { 0.5, 0.83, 0.5 };
+
+            psm = new PeptideSpectralMatch(pwsm, 0, 1, 1, scan, new CommonParameters(), new List<MatchedFragmentIon>());
+            for (int i = 1; i < pepValuePredictions.Count; i++)
+            {
+                psm.AddOrReplace(pwsm, 1, i, true, new List<MatchedFragmentIon>(), 1);
+            }
+
+            PEP_Analysis.GetIndiciesOfPeptidesToRemove(indiciesOfPeptidesToRemove, pepValuePredictions);
+            CollectionAssert.AreEquivalent(expectedIndiciesOfPeptidesToRemove, indiciesOfPeptidesToRemove);
+
+            bestMatchingPeptidesToRemove = new List<(int notch, PeptideWithSetModifications pwsm)>();
+            PEP_Analysis.GetBestMatchingPeptidesToRemove(psm, indiciesOfPeptidesToRemove, bestMatchingPeptidesToRemove);
+            CollectionAssert.AreEquivalent(expectedIndiciesOfPeptidesToRemove, bestMatchingPeptidesToRemove.Select(b => b.notch).ToList());
+
+            psm.SetFdrValues(1, 0, 0, 1, 0, 0, 10, 10);
+            PEP_Analysis.RemoveThePeptides(bestMatchingPeptidesToRemove, psm, pepValuePredictions, ref peptidesRemoved);
+            Assert.AreEqual(5, peptidesRemoved);
+            Assert.AreEqual(pepValuePredictions.Count, psm.BestMatchingPeptides.Count());
+            Assert.That(1 - 0.83, Is.EqualTo(psm.FdrInfo.PEP).Within(0.01));
+
+            //first and third exceeds cutoff
+            indiciesOfPeptidesToRemove = new List<int>();
+            expectedIndiciesOfPeptidesToRemove = new List<int> { 0, 2 };
+            pepValuePredictions = new List<double> { 0.5, 0.83, 0.5, 0.80 };
+
+            psm = new PeptideSpectralMatch(pwsm, 0, 1, 1, scan, new CommonParameters(), new List<MatchedFragmentIon>());
+            for (int i = 1; i < pepValuePredictions.Count; i++)
+            {
+                psm.AddOrReplace(pwsm, 1, i, true, new List<MatchedFragmentIon>(), 1);
+            }
+
+            PEP_Analysis.GetIndiciesOfPeptidesToRemove(indiciesOfPeptidesToRemove, pepValuePredictions);
+            CollectionAssert.AreEquivalent(expectedIndiciesOfPeptidesToRemove, indiciesOfPeptidesToRemove);
+
+            bestMatchingPeptidesToRemove = new List<(int notch, PeptideWithSetModifications pwsm)>();
+            PEP_Analysis.GetBestMatchingPeptidesToRemove(psm, indiciesOfPeptidesToRemove, bestMatchingPeptidesToRemove);
+            CollectionAssert.AreEquivalent(expectedIndiciesOfPeptidesToRemove, bestMatchingPeptidesToRemove.Select(b => b.notch).ToList());
+
+            psm.SetFdrValues(1, 0, 0, 1, 0, 0, 10, 10);
+            PEP_Analysis.RemoveThePeptides(bestMatchingPeptidesToRemove, psm, pepValuePredictions, ref peptidesRemoved);
+            Assert.AreEqual(7, peptidesRemoved);
+            Assert.AreEqual(pepValuePredictions.Count, psm.BestMatchingPeptides.Count());
+            Assert.That(1 - 0.83, Is.EqualTo(psm.FdrInfo.PEP).Within(0.01));
+
         }
 
         [Test]
