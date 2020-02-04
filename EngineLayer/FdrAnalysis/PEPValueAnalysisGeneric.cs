@@ -80,45 +80,57 @@ namespace EngineLayer
             TrainTestData trainTestSplit = mlContext.Data.TrainTestSplit(dataView, testFraction: 0.1, null, 42);
             IDataView trainingData = trainTestSplit.TrainSet;
             IDataView testData = trainTestSplit.TestSet;
-
             var trainer = mlContext.BinaryClassification.Trainers.FastTree(labelColumnName: "Label", featureColumnName: "Features");
-
             var pipeline = mlContext.Transforms.Concatenate("Features", trainingVariables)
                 .Append(mlContext.BinaryClassification.Trainers.FastTree(labelColumnName: "Label", featureColumnName: "Features"));
-
             var trainedModel = pipeline.Fit(trainingData); //this is NOT thread safe
+            mlContext.Model.Save(trainedModel, trainingData.Schema, @"C:\Users\Michael Shortreed\Downloads\TrainedModel.zip");
 
-            var predictionEngine = mlContext.Model.CreatePredictionEngine<PsmData, TruePositivePrediction>(trainedModel);//this is NOT thread safe
+            int maxThreads = fileSpecificParameters.FirstOrDefault().fileSpecificParameters.MaxThreadsToUsePerFile;
+            int[] threads = Enumerable.Range(0, maxThreads).ToArray();
+            object lockObject = new object();
 
             int ambiguousPeptidesRemovedCount = 0;
 
-            for (int i = 0; i < psms.Count; i++)
+            Parallel.ForEach(threads, (i) =>
             {
-                PeptideSpectralMatch psm = psms[i];
-
-                if (psm != null)
+                //We load the saved model into each threed because the prediction engine is not threadsafe
+                DataViewSchema savedModelSchema;
+                ITransformer savedTrainedModel = mlContext.Model.Load(@"C:\Users\Michael Shortreed\Downloads\TrainedModel.zip", out savedModelSchema);
+                var predictionEngine = mlContext.Model.CreatePredictionEngine<PsmData, TruePositivePrediction>(savedTrainedModel);//this is NOT thread safe
+                int ambigousPeptidesRemovedinThread = 0;
+                for (; i < psms.Count; i += maxThreads)
                 {
-                    List<int> indiciesOfPeptidesToRemove = new List<int>();
-                    List<(int notch, PeptideWithSetModifications pwsm)> bestMatchingPeptidesToRemove = new List<(int notch, PeptideWithSetModifications pwsm)>();
-                    List<double> pepValuePredictions = new List<double>();
+                    PeptideSpectralMatch psm = psms[i];
 
-                    //Here we compute the pepvalue predection for each ambiguous peptide in a PSM. Ambiguous peptides with lower pepvalue predictions are removed from the PSM.
-                    foreach (var (Notch, Peptide) in psm.BestMatchingPeptides)
+                    if (psm != null)
                     {
-                        PsmData pd = CreateOnePsmDataEntry(searchType, fileSpecificParameters, psm, sequenceToPsmCount, fileSpecificTimeDependantHydrophobicityAverageAndDeviation_unmodified, fileSpecificTimeDependantHydrophobicityAverageAndDeviation_modified, fileSpecificMedianFragmentMassErrors, chargeStateMode, Peptide, trainingVariables, Notch, !Peptide.Protein.IsDecoy);
-                        var pepValuePrediction = predictionEngine.Predict(pd);
-                        pepValuePredictions.Add(pepValuePrediction.Probability);
-                        //A score is available using the variable pepvaluePrediction.Score
+                        List<int> indiciesOfPeptidesToRemove = new List<int>();
+                        List<(int notch, PeptideWithSetModifications pwsm)> bestMatchingPeptidesToRemove = new List<(int notch, PeptideWithSetModifications pwsm)>();
+                        List<double> pepValuePredictions = new List<double>();
+
+                        //Here we compute the pepvalue predection for each ambiguous peptide in a PSM. Ambiguous peptides with lower pepvalue predictions are removed from the PSM.
+                        foreach (var (Notch, Peptide) in psm.BestMatchingPeptides)
+                        {
+                            PsmData pd = CreateOnePsmDataEntry(searchType, fileSpecificParameters, psm, sequenceToPsmCount, fileSpecificTimeDependantHydrophobicityAverageAndDeviation_unmodified, fileSpecificTimeDependantHydrophobicityAverageAndDeviation_modified, fileSpecificMedianFragmentMassErrors, chargeStateMode, Peptide, trainingVariables, Notch, !Peptide.Protein.IsDecoy);
+                            var pepValuePrediction = predictionEngine.Predict(pd);
+                            pepValuePredictions.Add(pepValuePrediction.Probability);
+                            //A score is available using the variable pepvaluePrediction.Score
+                        }
+
+                        GetIndiciesOfPeptidesToRemove(indiciesOfPeptidesToRemove, pepValuePredictions);
+                        GetBestMatchingPeptidesToRemove(psm, indiciesOfPeptidesToRemove, bestMatchingPeptidesToRemove);
+
+                        int peptidesRemoved = 0;
+                        RemoveThePeptides(bestMatchingPeptidesToRemove, psm, pepValuePredictions, ref peptidesRemoved);
+                        ambigousPeptidesRemovedinThread += peptidesRemoved;
                     }
-
-                    GetIndiciesOfPeptidesToRemove(indiciesOfPeptidesToRemove, pepValuePredictions);
-                    GetBestMatchingPeptidesToRemove(psm, indiciesOfPeptidesToRemove, bestMatchingPeptidesToRemove);
-
-                    int peptidesRemoved = 0;
-                    RemoveThePeptides(bestMatchingPeptidesToRemove, psm, pepValuePredictions, ref peptidesRemoved);
-                    ambiguousPeptidesRemovedCount += peptidesRemoved;
                 }
-            }
+                lock (lockObject)
+                {
+                    ambiguousPeptidesRemovedCount += ambigousPeptidesRemovedinThread;
+                }
+            });
 
             var predictions = trainedModel.Transform(testData);
 
@@ -490,7 +502,7 @@ namespace EngineLayer
             object psmDataListLock = new object();
             List<PsmData> psmDataList = new List<PsmData>();
             List<double> psmOrder = new List<double>();
-            int maxThreads = 1;// fileSpecificParameters.FirstOrDefault().fileSpecificParameters.MaxThreadsToUsePerFile;
+            int maxThreads = fileSpecificParameters.FirstOrDefault().fileSpecificParameters.MaxThreadsToUsePerFile;
             int[] threads = Enumerable.Range(0, maxThreads).ToArray();
 
             Parallel.ForEach(threads, (i) =>
