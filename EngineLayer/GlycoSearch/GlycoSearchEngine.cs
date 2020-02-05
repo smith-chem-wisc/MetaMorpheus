@@ -363,7 +363,7 @@ namespace EngineLayer.GlycoSearch
                     var oxoniumIonIntensities = GlycoPeptides.ScanOxoniumIonFilter(theScan, ProductSearchMode, CommonParameters.DissociationType);
 
                     //The oxoniumIonIntensities is related with Glycan.AllOxoniumIons (the [9] is 204). A spectrum needs to have 204.0867 to be considered as a glycopeptide for now.
-                    if (oxoniumIonIntensities[9] > 0)
+                    if (OxiniumIonFilt && oxoniumIonIntensities[9] == 0)
                     {
                         continue;
                     }
@@ -409,7 +409,7 @@ namespace EngineLayer.GlycoSearch
                             Tuple<int, int>[] tuples = new Tuple<int, int>[glycanBoxId_localization[i].Item2.Length];
                             for (int j = 0; j < glycanBoxId_localization[i].Item2.Length; j++)
                             {
-                                tuples[i] = new Tuple<int, int>(glycanBoxId_localization[i].Item2[j], GlycanBox.OGlycanBoxes[glycanBoxId_localization[i].Item1].ModIds[j]);
+                                tuples[j] = new Tuple<int, int>(glycanBoxId_localization[i].Item2[j], GlycanBox.OGlycanBoxes[glycanBoxId_localization[i].Item1].ModIds[j]);
                             }
 
                             if (currentLocalizationScore > BestLocalizaionScore)
@@ -517,13 +517,13 @@ namespace EngineLayer.GlycoSearch
 
                     if (GlycoPeptides.DissociationTypeContainETD(CommonParameters.ChildScanDissociationType))
                     {
-                        allPeaksForLocalization.Concat(childBinsToSearch);
+                        allPeaksForLocalization.UnionWith(childBinsToSearch);
                     }
 
                     //The workflow is designed for MS2:HCD-MS2:EThcD type of data, but could also work with MS2:EThcD type of data.
                     if (GlycoPeptides.DissociationTypeContainETD(CommonParameters.DissociationType))
                     {
-                        allPeaksForLocalization.Concat(allBinsToSearch);
+                        allPeaksForLocalization.UnionWith(allBinsToSearch);
                     }
 
                     List<Product> products = new List<Product>();

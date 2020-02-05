@@ -264,7 +264,11 @@ namespace EngineLayer.GlycoSearch
                     glycans[i] = GlycanBox.GlobalOGlycans[glycanBox.ModIds[i]];
                 }
 
-                sb.Append(string.Join(",", glycans.Select(p => p.Struc.ToString()).ToArray())); sb.Append("\t");
+                if (glycans.First().Struc!=null)
+                {
+                    sb.Append(string.Join(",", glycans.Select(p => p.Struc.ToString()).ToArray())); 
+                }
+                sb.Append("\t");
 
                 sb.Append("[" + string.Join(",", LocalizedGlycan.Where(p=>p.Item3).Select(p=>p.Item1.ToString() + "-" + p.Item2.ToString())) + "]"); sb.Append("\t");
 
