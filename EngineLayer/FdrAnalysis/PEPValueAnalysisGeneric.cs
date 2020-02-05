@@ -9,6 +9,7 @@ using Proteomics.Fragmentation;
 using Proteomics.ProteolyticDigestion;
 using Proteomics.RetentionTimePrediction;
 using System;
+using System.Collections.Concurrent;
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
@@ -84,7 +85,6 @@ namespace EngineLayer
             var pipeline = mlContext.Transforms.Concatenate("Features", trainingVariables)
                 .Append(mlContext.BinaryClassification.Trainers.FastTree(labelColumnName: "Label", featureColumnName: "Features"));
             var trainedModel = pipeline.Fit(trainingData); //this is NOT thread safe
-            var predictionEngine = mlContext.Model.CreatePredictionEngine<PsmData, TruePositivePrediction>(trainedModel);//this is NOT thread safe
 
             int maxThreads = fileSpecificParameters.FirstOrDefault().fileSpecificParameters.MaxThreadsToUsePerFile;
             int[] threads = Enumerable.Range(0, maxThreads).ToArray();
@@ -101,37 +101,49 @@ namespace EngineLayer
 
             int ambiguousPeptidesRemovedCount = 0;
 
-            Parallel.ForEach(threads, (i) =>
-            {
-                ITransformer threadSpecificTrainedModel;
-
-                if (outputFolder != null)
+            Parallel.ForEach(Partitioner.Create(0, psms.Count),
+                new ParallelOptions { MaxDegreeOfParallelism = maxThreads },
+                (range, loopState) =>
                 {
-                    threadSpecificTrainedModel = mlContext.Model.Load(Path.Combine(outputFolder, "model.zip"), out DataViewSchema savedModelSchema);
-                }
-                else
-                {
-                    // single-threaded, prediction model was not saved to hard disk
-                    threadSpecificTrainedModel = trainedModel;
-                }
+                    ITransformer threadSpecificTrainedModel;
 
-                // one prediction engine per thread, because the prediction engine is not thread-safe
-                var threadPredictionEngine = mlContext.Model.CreatePredictionEngine<PsmData, TruePositivePrediction>(threadSpecificTrainedModel);
-
-                int ambigousPeptidesRemovedinThread = 0;
-                for (; i < psms.Count; i += maxThreads)
-                {
-                    PeptideSpectralMatch psm = psms[i];
-
-                    if (psm != null)
+                    if (outputFolder != null)
                     {
+                        threadSpecificTrainedModel = mlContext.Model.Load(Path.Combine(outputFolder, "model.zip"), out DataViewSchema savedModelSchema);
+                    }
+                    else
+                    {
+                        // single-threaded, prediction model was not saved to hard disk
+                        threadSpecificTrainedModel = trainedModel;
+                    }
+
+                    // one prediction engine per thread, because the prediction engine is not thread-safe
+                    var threadPredictionEngine = mlContext.Model.CreatePredictionEngine<PsmData, TruePositivePrediction>(threadSpecificTrainedModel);
+
+                    int ambigousPeptidesRemovedinThread = 0;
+
+                    for (int i = range.Item1; i < range.Item2; i++)
+                    {
+                        PeptideSpectralMatch psm = psms[i];
+
+                        if (psm == null)
+                        {
+                            continue;
+                        }
+
                         List<int> indiciesOfPeptidesToRemove = new List<int>();
                         List<(int notch, PeptideWithSetModifications pwsm)> bestMatchingPeptidesToRemove = new List<(int notch, PeptideWithSetModifications pwsm)>();
                         List<double> pepValuePredictions = new List<double>();
 
                         //Here we compute the pepvalue predection for each ambiguous peptide in a PSM. Ambiguous peptides with lower pepvalue predictions are removed from the PSM.
+
+                        List<int> notches = new List<int>();
+                        List<PeptideWithSetModifications> pwsmList = new List<PeptideWithSetModifications>();
+
                         foreach (var (Notch, Peptide) in psm.BestMatchingPeptides)
                         {
+                            notches.Add(Notch);
+                            pwsmList.Add(Peptide);
                             PsmData pd = CreateOnePsmDataEntry(searchType, fileSpecificParameters, psm, sequenceToPsmCount, fileSpecificTimeDependantHydrophobicityAverageAndDeviation_unmodified, fileSpecificTimeDependantHydrophobicityAverageAndDeviation_modified, fileSpecificMedianFragmentMassErrors, chargeStateMode, Peptide, trainingVariables, Notch, !Peptide.Protein.IsDecoy);
                             var pepValuePrediction = threadPredictionEngine.Predict(pd);
                             pepValuePredictions.Add(pepValuePrediction.Probability);
@@ -139,18 +151,15 @@ namespace EngineLayer
                         }
 
                         GetIndiciesOfPeptidesToRemove(indiciesOfPeptidesToRemove, pepValuePredictions);
-                        GetBestMatchingPeptidesToRemove(psm, indiciesOfPeptidesToRemove, bestMatchingPeptidesToRemove);
-
                         int peptidesRemoved = 0;
-                        RemoveThePeptides(bestMatchingPeptidesToRemove, psm, pepValuePredictions, ref peptidesRemoved);
+                        RemoveBestMatchingPeptidesWithLowPEP(psm, indiciesOfPeptidesToRemove, notches, pwsmList, pepValuePredictions, ref peptidesRemoved);
                         ambigousPeptidesRemovedinThread += peptidesRemoved;
                     }
-                }
-                lock (lockObject)
-                {
-                    ambiguousPeptidesRemovedCount += ambigousPeptidesRemovedinThread;
-                }
-            });
+                    lock (lockObject)
+                    {
+                        ambiguousPeptidesRemovedCount += ambigousPeptidesRemovedinThread;
+                    }
+                });
 
             var predictions = trainedModel.Transform(testData);
 
@@ -169,6 +178,16 @@ namespace EngineLayer
             //mlContext.Model.Save(trainedModel, trainingData.Schema, @"C:\Users\User\Downloads\TrainedModel.zip");
         }
 
+        public static void RemoveBestMatchingPeptidesWithLowPEP(PeptideSpectralMatch psm, List<int> indiciesOfPeptidesToRemove, List<int> notches, List<PeptideWithSetModifications> pwsmList, List<double> pepValuePredictions, ref int ambiguousPeptidesRemovedCount)
+        {
+            foreach (int i in indiciesOfPeptidesToRemove)
+            {
+                psm.RemoveThisAmbiguousPeptide(notches[i], pwsmList[i]);
+                ambiguousPeptidesRemovedCount++;
+            }
+            psm.FdrInfo.PEP = 1 - pepValuePredictions.Max();
+        }
+
         /// <summary>
         /// Given a set of PEP values, this method will find the indicies of BestMatchingPeptides that are not within the required tolerance
         /// This method will also remove the low scoring predictions from the set.
@@ -176,46 +195,18 @@ namespace EngineLayer
         public static void GetIndiciesOfPeptidesToRemove(List<int> indiciesOfPeptidesToRemove, List<double> pepValuePredictions)
         {
             double highestPredictedPEPValue = pepValuePredictions.Max();
-            int numberOfPredictions = pepValuePredictions.Count - 1;
-
-            for (int i = numberOfPredictions; i >= 0; i--)
+            for (int i = 0; i < pepValuePredictions.Count; i++)
             {
-                if (Math.Abs(highestPredictedPEPValue - pepValuePredictions[i]) > AbsoluteProbabilityThatDistinguishesPeptides)
+                if ((highestPredictedPEPValue - pepValuePredictions[i]) > AbsoluteProbabilityThatDistinguishesPeptides)
                 {
                     indiciesOfPeptidesToRemove.Add(i);
-                    pepValuePredictions.RemoveAt(i);
                 }
             }
-        }
 
-        /// <summary>
-        /// Given a set of indicies, this method will figure out which BestMatchingPeptides to remove
-        /// </summary>
-        public static void GetBestMatchingPeptidesToRemove(PeptideSpectralMatch psm, List<int> indiciesOfPeptidesToRemove, List<(int notch, PeptideWithSetModifications pwsm)> bestMatchingPeptidesToRemove)
-        {
-            int index = 0;
-
-            foreach (var (Notch, Peptide) in psm.BestMatchingPeptides)
+            foreach (int i in indiciesOfPeptidesToRemove.OrderByDescending(p => p))
             {
-                if (indiciesOfPeptidesToRemove.Contains(index))
-                {
-                    bestMatchingPeptidesToRemove.Add((Notch, Peptide));
-                }
-                index++;
+                pepValuePredictions.RemoveAt(i);
             }
-        }
-
-        /// <summary>
-        /// Given a List of BestMatchingPeptides to remove, this method will remove them from the psm
-        /// </summary>
-        public static void RemoveThePeptides(List<(int notch, PeptideWithSetModifications pwsm)> bestMatchingPeptidesToRemove, PeptideSpectralMatch psm, List<double> pepValuePredictions, ref int ambiguousPeptidesRemovedCount)
-        {
-            foreach (var (notch, pwsm) in bestMatchingPeptidesToRemove)
-            {
-                psm.RemoveThisAmbiguousPeptide(notch, pwsm);
-                ambiguousPeptidesRemovedCount++;
-            }
-            psm.FdrInfo.PEP = 1 - pepValuePredictions.Max();
         }
 
         /// <summary>
@@ -525,65 +516,67 @@ namespace EngineLayer
             int maxThreads = fileSpecificParameters.FirstOrDefault().fileSpecificParameters.MaxThreadsToUsePerFile;
             int[] threads = Enumerable.Range(0, maxThreads).ToArray();
 
-            Parallel.ForEach(threads, (i) =>
-            {
-                List<PsmData> localPsmDataList = new List<PsmData>();
-                List<double> localPsmOrder = new List<double>();
-                for (; i < psms.Count; i += maxThreads)
+            Parallel.ForEach(Partitioner.Create(0, psms.Count),
+                new ParallelOptions { MaxDegreeOfParallelism = maxThreads },
+                (range, loopState) =>
                 {
-                    PeptideSpectralMatch psm = psms[i];
-
-                    // Stop loop if canceled
-                    if (GlobalVariables.StopLoops) { return; }
-
-                    PsmData newPsmData = new PsmData();
-                    if (searchType == "crosslink")
+                    List<PsmData> localPsmDataList = new List<PsmData>();
+                    List<double> localPsmOrder = new List<double>();
+                    for (int i = range.Item1; i < range.Item2; i++)
                     {
-                        CrosslinkSpectralMatch csm = (CrosslinkSpectralMatch)psms[i];
+                        PeptideSpectralMatch psm = psms[i];
 
-                        bool label;
-                        if (csm.IsDecoy || csm.BetaPeptide.IsDecoy || psm.FdrInfo.QValue > 0.25)
+                        // Stop loop if canceled
+                        if (GlobalVariables.StopLoops) { return; }
+
+                        PsmData newPsmData = new PsmData();
+                        if (searchType == "crosslink")
                         {
-                            label = false;
-                            newPsmData = CreateOnePsmDataEntry(searchType, fileSpecificParameters, psm, sequenceToPsmCount, timeDependantHydrophobicityAverageAndDeviation_unmodified, timeDependantHydrophobicityAverageAndDeviation_modified, fileSpecificMedianFragmentMassErrors, chargeStateMode, csm.BestMatchingPeptides.First().Peptide, trainingVariables, 0, label);
-                        }
-                        else if (!csm.IsDecoy && !csm.BetaPeptide.IsDecoy && psm.FdrInfo.QValue <= 0.01)
-                        {
-                            label = true;
-                            newPsmData = CreateOnePsmDataEntry(searchType, fileSpecificParameters, psm, sequenceToPsmCount, timeDependantHydrophobicityAverageAndDeviation_unmodified, timeDependantHydrophobicityAverageAndDeviation_modified, fileSpecificMedianFragmentMassErrors, chargeStateMode, csm.BestMatchingPeptides.First().Peptide, trainingVariables, 0, label);
-                        }
-                        localPsmDataList.Add(newPsmData);
-                        localPsmOrder.Add(i);
-                    }
-                    else
-                    {
-                        double bmp = 0;
-                        foreach (var (notch, peptideWithSetMods) in psm.BestMatchingPeptides)
-                        {
+                            CrosslinkSpectralMatch csm = (CrosslinkSpectralMatch)psms[i];
+
                             bool label;
-                            double bmpc = psm.BestMatchingPeptides.Count();
-                            if (peptideWithSetMods.Protein.IsDecoy || psm.FdrInfo.QValue > 0.25)
+                            if (csm.IsDecoy || csm.BetaPeptide.IsDecoy || psm.FdrInfo.QValue > 0.25)
                             {
                                 label = false;
-                                newPsmData = CreateOnePsmDataEntry(searchType, fileSpecificParameters, psm, sequenceToPsmCount, timeDependantHydrophobicityAverageAndDeviation_unmodified, timeDependantHydrophobicityAverageAndDeviation_modified, fileSpecificMedianFragmentMassErrors, chargeStateMode, peptideWithSetMods, trainingVariables, notch, label);
+                                newPsmData = CreateOnePsmDataEntry(searchType, fileSpecificParameters, psm, sequenceToPsmCount, timeDependantHydrophobicityAverageAndDeviation_unmodified, timeDependantHydrophobicityAverageAndDeviation_modified, fileSpecificMedianFragmentMassErrors, chargeStateMode, csm.BestMatchingPeptides.First().Peptide, trainingVariables, 0, label);
                             }
-                            else if (!peptideWithSetMods.Protein.IsDecoy && psm.FdrInfo.QValue <= 0.01)
+                            else if (!csm.IsDecoy && !csm.BetaPeptide.IsDecoy && psm.FdrInfo.QValue <= 0.01)
                             {
                                 label = true;
-                                newPsmData = CreateOnePsmDataEntry(searchType, fileSpecificParameters, psm, sequenceToPsmCount, timeDependantHydrophobicityAverageAndDeviation_unmodified, timeDependantHydrophobicityAverageAndDeviation_modified, fileSpecificMedianFragmentMassErrors, chargeStateMode, peptideWithSetMods, trainingVariables, notch, label);
+                                newPsmData = CreateOnePsmDataEntry(searchType, fileSpecificParameters, psm, sequenceToPsmCount, timeDependantHydrophobicityAverageAndDeviation_unmodified, timeDependantHydrophobicityAverageAndDeviation_modified, fileSpecificMedianFragmentMassErrors, chargeStateMode, csm.BestMatchingPeptides.First().Peptide, trainingVariables, 0, label);
                             }
                             localPsmDataList.Add(newPsmData);
-                            localPsmOrder.Add(i + (bmp / bmpc / 2.0));
-                            bmp += 1.0;
+                            localPsmOrder.Add(i);
+                        }
+                        else
+                        {
+                            double bmp = 0;
+                            foreach (var (notch, peptideWithSetMods) in psm.BestMatchingPeptides)
+                            {
+                                bool label;
+                                double bmpc = psm.BestMatchingPeptides.Count();
+                                if (peptideWithSetMods.Protein.IsDecoy || psm.FdrInfo.QValue > 0.25)
+                                {
+                                    label = false;
+                                    newPsmData = CreateOnePsmDataEntry(searchType, fileSpecificParameters, psm, sequenceToPsmCount, timeDependantHydrophobicityAverageAndDeviation_unmodified, timeDependantHydrophobicityAverageAndDeviation_modified, fileSpecificMedianFragmentMassErrors, chargeStateMode, peptideWithSetMods, trainingVariables, notch, label);
+                                }
+                                else if (!peptideWithSetMods.Protein.IsDecoy && psm.FdrInfo.QValue <= 0.01)
+                                {
+                                    label = true;
+                                    newPsmData = CreateOnePsmDataEntry(searchType, fileSpecificParameters, psm, sequenceToPsmCount, timeDependantHydrophobicityAverageAndDeviation_unmodified, timeDependantHydrophobicityAverageAndDeviation_modified, fileSpecificMedianFragmentMassErrors, chargeStateMode, peptideWithSetMods, trainingVariables, notch, label);
+                                }
+                                localPsmDataList.Add(newPsmData);
+                                localPsmOrder.Add(i + (bmp / bmpc / 2.0));
+                                bmp += 1.0;
+                            }
                         }
                     }
-                }
-                lock (psmDataListLock)
-                {
-                    psmDataList.AddRange(localPsmDataList);
-                    psmOrder.AddRange(localPsmOrder);
-                }
-            });
+                    lock (psmDataListLock)
+                    {
+                        psmDataList.AddRange(localPsmDataList);
+                        psmOrder.AddRange(localPsmOrder);
+                    }
+                });
             PsmData[] pda = psmDataList.ToArray();
             double[] order = psmOrder.ToArray();
 
