@@ -90,6 +90,9 @@ namespace EngineLayer
             int[] threads = Enumerable.Range(0, maxThreads).ToArray();
             object lockObject = new object();
 
+
+            //Parallel operation of the following code requires the method to be stored and then read, once for each thread
+            //if not output directory is specified, the model cannot be stored, and we must force single-threaded operation
             if (outputFolder != null)
             {
                 mlContext.Model.Save(trainedModel, trainingData.Schema, Path.Combine(outputFolder, "model.zip"));
