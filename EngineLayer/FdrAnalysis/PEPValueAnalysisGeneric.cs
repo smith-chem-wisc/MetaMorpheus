@@ -106,6 +106,9 @@ namespace EngineLayer
                 new ParallelOptions { MaxDegreeOfParallelism = maxThreads },
                 (range, loopState) =>
                 {
+                    // Stop loop if canceled
+                    if (GlobalVariables.StopLoops) { return; }
+
                     ITransformer threadSpecificTrainedModel;
 
                     if (outputFolder != null)
