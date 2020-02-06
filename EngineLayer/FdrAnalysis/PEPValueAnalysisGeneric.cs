@@ -31,7 +31,7 @@ namespace EngineLayer
             string[] trainingVariables = PsmData.trainingInfos[searchType];
 
             //ensure that the order is always stable.
-            psms.OrderByDescending(p => p.Score).ThenBy(p => p.FdrInfo.QValue).ThenBy(p => p.FullSequence).ThenBy(p => p.ProteinAccession).ToList();
+            psms = psms.OrderByDescending(p => p.Score).ThenBy(p => p.FdrInfo.QValue).ThenBy(p => p.FullSequence).ThenBy(p => p.ProteinAccession).ToList();
 
             //These two dictionaries contain the average and standard deviations of hydrophobicitys measured in 1 minute increments accross each raw
             //file separately. An individully measured hydrobophicty calculated for a specific PSM sequence is compared to these values by computing
@@ -78,7 +78,9 @@ namespace EngineLayer
             //     Seed for the random number generator used to select rows for the train-test split.
             //     The seed, '42', is not random but fixed for consistancy. According to the supercomputer Deep Thought the answer to the question of life, the universe and everything was 42 (in Douglas Adam’s Hitchhikers Guide to the Galaxy).
 
-            TrainTestData trainTestSplit = mlContext.Data.TrainTestSplit(dataView, testFraction: 0.1, null, 42);
+            int randomSeed = 42;
+
+            TrainTestData trainTestSplit = mlContext.Data.TrainTestSplit(dataView, testFraction: 0.1, null, randomSeed);
             IDataView trainingData = trainTestSplit.TrainSet;
             IDataView testData = trainTestSplit.TestSet;
             var trainer = mlContext.BinaryClassification.Trainers.FastTree(labelColumnName: "Label", featureColumnName: "Features");
@@ -130,33 +132,33 @@ namespace EngineLayer
                     {
                         PeptideSpectralMatch psm = psms[i];
 
-                        if (psm == null)
+                        if (psm != null)
                         {
-                            continue;
+
+
+                            List<int> indiciesOfPeptidesToRemove = new List<int>();
+                            List<double> pepValuePredictions = new List<double>();
+
+                            //Here we compute the pepvalue predection for each ambiguous peptide in a PSM. Ambiguous peptides with lower pepvalue predictions are removed from the PSM.
+
+                            List<int> allBmpNotches = new List<int>();
+                            List<PeptideWithSetModifications> allBmpPeptides = new List<PeptideWithSetModifications>();
+
+                            foreach (var (Notch, Peptide) in psm.BestMatchingPeptides)
+                            {
+                                allBmpNotches.Add(Notch);
+                                allBmpPeptides.Add(Peptide);
+                                PsmData pd = CreateOnePsmDataEntry(searchType, fileSpecificParameters, psm, sequenceToPsmCount, fileSpecificTimeDependantHydrophobicityAverageAndDeviation_unmodified, fileSpecificTimeDependantHydrophobicityAverageAndDeviation_modified, fileSpecificMedianFragmentMassErrors, chargeStateMode, Peptide, trainingVariables, Notch, !Peptide.Protein.IsDecoy);
+                                var pepValuePrediction = threadPredictionEngine.Predict(pd);
+                                pepValuePredictions.Add(pepValuePrediction.Probability);
+                                //A score is available using the variable pepvaluePrediction.Score
+                            }
+
+                            GetIndiciesOfPeptidesToRemove(indiciesOfPeptidesToRemove, pepValuePredictions);
+                            int peptidesRemoved = 0;
+                            RemoveBestMatchingPeptidesWithLowPEP(psm, indiciesOfPeptidesToRemove, allBmpNotches, allBmpPeptides, pepValuePredictions, ref peptidesRemoved);
+                            ambigousPeptidesRemovedinThread += peptidesRemoved;
                         }
-
-                        List<int> indiciesOfPeptidesToRemove = new List<int>();
-                        List<double> pepValuePredictions = new List<double>();
-
-                        //Here we compute the pepvalue predection for each ambiguous peptide in a PSM. Ambiguous peptides with lower pepvalue predictions are removed from the PSM.
-
-                        List<int> allBmpNotches = new List<int>();
-                        List<PeptideWithSetModifications> allBmpPeptides = new List<PeptideWithSetModifications>();
-
-                        foreach (var (Notch, Peptide) in psm.BestMatchingPeptides)
-                        {
-                            allBmpNotches.Add(Notch);
-                            allBmpPeptides.Add(Peptide);
-                            PsmData pd = CreateOnePsmDataEntry(searchType, fileSpecificParameters, psm, sequenceToPsmCount, fileSpecificTimeDependantHydrophobicityAverageAndDeviation_unmodified, fileSpecificTimeDependantHydrophobicityAverageAndDeviation_modified, fileSpecificMedianFragmentMassErrors, chargeStateMode, Peptide, trainingVariables, Notch, !Peptide.Protein.IsDecoy);
-                            var pepValuePrediction = threadPredictionEngine.Predict(pd);
-                            pepValuePredictions.Add(pepValuePrediction.Probability);
-                            //A score is available using the variable pepvaluePrediction.Score
-                        }
-
-                        GetIndiciesOfPeptidesToRemove(indiciesOfPeptidesToRemove, pepValuePredictions);
-                        int peptidesRemoved = 0;
-                        RemoveBestMatchingPeptidesWithLowPEP(psm, indiciesOfPeptidesToRemove, allBmpNotches, allBmpPeptides, pepValuePredictions, ref peptidesRemoved);
-                        ambigousPeptidesRemovedinThread += peptidesRemoved;
                     }
                     lock (lockObject)
                     {
