@@ -756,6 +756,9 @@ namespace TaskLayer
                     }
                 }
 
+                Dictionary<Protein, Dictionary<int, List<Modification>>> proteinsOriginalModifications = new Dictionary<Protein, Dictionary<int, List<Modification>>>();
+                Dictionary<SequenceVariation, Dictionary<int, List<Modification>>> originalSequenceVariantModifications = new Dictionary<SequenceVariation, Dictionary<int, List<Modification>>>();
+
                 // mods included in pruned database will only be confidently localized mods (peptide's FullSequence != null)
                 foreach (var nonVariantProtein in Parameters.ProteinList.Select(p => p.NonVariantProtein).Distinct())
                 {
@@ -842,24 +845,62 @@ namespace TaskLayer
                                 }
                             }
                         }
-
-                        if (proteinToConfidentBaseSequences.ContainsKey(nonVariantProtein.NonVariantProtein))
+                        
+                        var oldMods = nonVariantProtein.OneBasedPossibleLocalizedModifications.ToDictionary(p => p.Key, v => v.Value);
+                        if (proteinsOriginalModifications.ContainsKey(nonVariantProtein.NonVariantProtein))
                         {
-                            // adds confidently localized and identified mods
-                            nonVariantProtein.OneBasedPossibleLocalizedModifications.Clear();
-                            foreach (var kvp in modsToWrite.Where(kv => kv.Key.Item1 == null))
+                            foreach (var entry in oldMods)
                             {
-                                nonVariantProtein.OneBasedPossibleLocalizedModifications.Add(kvp.Key.Item2, kvp.Value);
-                            }
-                            foreach (var sv in nonVariantProtein.SequenceVariations)
-                            {
-                                sv.OneBasedModifications.Clear();
-                                foreach (var kvp in modsToWrite.Where(kv => kv.Key.Item1 != null && kv.Key.Item1.Equals(sv)))
-                                {
-                                    sv.OneBasedModifications.Add(kvp.Key.Item2, kvp.Value);
-                                }
-                            }
+                                 if (proteinsOriginalModifications[nonVariantProtein.NonVariantProtein].ContainsKey(entry.Key))
+                                 {
+                                    proteinsOriginalModifications[nonVariantProtein.NonVariantProtein][entry.Key].AddRange(entry.Value);
+                                 }
+                                 else
+                                 {
+                                    proteinsOriginalModifications[nonVariantProtein.NonVariantProtein].Add(entry.Key, entry.Value);
+                                 }                                    
+                            }                                
                         }
+                        else
+                        {
+                            proteinsOriginalModifications.Add(nonVariantProtein.NonVariantProtein, oldMods);
+                        }
+
+                        // adds confidently localized and identified mods
+                        nonVariantProtein.OneBasedPossibleLocalizedModifications.Clear();
+                        foreach (var kvp in modsToWrite.Where(kv => kv.Key.Item1 == null))
+                        {
+                            nonVariantProtein.OneBasedPossibleLocalizedModifications.Add(kvp.Key.Item2, kvp.Value);                                
+                        }
+                        foreach (var sv in nonVariantProtein.SequenceVariations)
+                        {
+                             var oldVariantModifications = sv.OneBasedModifications.ToDictionary(p => p.Key, v => v.Value);
+                             if (originalSequenceVariantModifications.ContainsKey(sv))
+                             {
+                                  foreach (var entry in oldVariantModifications)
+                                  {
+                                      if (originalSequenceVariantModifications[sv].ContainsKey(entry.Key))
+                                      {
+                                          originalSequenceVariantModifications[sv][entry.Key].AddRange(entry.Value);
+                                      }
+                                      else
+                                      {
+                                          originalSequenceVariantModifications[sv].Add(entry.Key, entry.Value);
+                                      }
+                                  }
+                             }
+                             else
+                             {
+                                  originalSequenceVariantModifications.Add(sv, oldVariantModifications);
+                             }
+
+                             sv.OneBasedModifications.Clear();
+                             foreach (var kvp in modsToWrite.Where(kv => kv.Key.Item1 != null && kv.Key.Item1.Equals(sv)))
+                             {
+                                 sv.OneBasedModifications.Add(kvp.Key.Item2, kvp.Value);
+                             }
+                        }
+
                     }
                 }
 
@@ -890,6 +931,23 @@ namespace TaskLayer
                     ProteinDbWriter.WriteXmlDatabase(new Dictionary<string, HashSet<Tuple<int, Modification>>>(), proteinToConfidentBaseSequences.Keys.Where(b => !b.IsDecoy && b.IsContaminant).ToList(), outputXMLdbFullNameContaminants);
                     FinishedWritingFile(outputXMLdbFullNameContaminants, new List<string> { Parameters.SearchTaskId });
                 }
+
+                foreach (var nonVariantProtein in Parameters.ProteinList.Select(p => p.NonVariantProtein).Distinct())
+                {
+                    nonVariantProtein.OneBasedPossibleLocalizedModifications.Clear();
+                    foreach (var originalMod in proteinsOriginalModifications[nonVariantProtein.NonVariantProtein])
+                    {
+                        nonVariantProtein.OneBasedPossibleLocalizedModifications.Add(originalMod.Key, originalMod.Value);
+                    }
+                    foreach (var sv in nonVariantProtein.SequenceVariations)
+                    {
+                        sv.OneBasedModifications.Clear();
+                        foreach (var originalVariantMods in originalSequenceVariantModifications[sv])
+                        {
+                            sv.OneBasedModifications.Add(originalVariantMods.Key, originalVariantMods.Value);
+                        }
+                    }                    
+                }
             }
         }
 
@@ -916,7 +974,7 @@ namespace TaskLayer
 
             WritePsmsToTsv(peptides, writtenFile, Parameters.SearchParameters.ModsToWriteSelection);
             FinishedWritingFile(writtenFile, new List<string> { Parameters.SearchTaskId });
-            
+
             Parameters.SearchTaskResults.AddPsmPeptideProteinSummaryText("All target " + GlobalVariables.AnalyteType.ToLower() + "s within 1% FDR: " + peptides.Count(a => a.FdrInfo.QValue <= 0.01 && !a.IsDecoy));
 
             foreach (var file in PsmsGroupedByFile)
@@ -924,7 +982,7 @@ namespace TaskLayer
                 // write summary text
                 var psmsForThisFile = file.ToList();
                 string strippedFileName = Path.GetFileNameWithoutExtension(file.First().FullFilePath);
-                var peptidesForFile = psmsForThisFile.GroupBy(b => b.FullSequence).Select(b => b.FirstOrDefault()).OrderByDescending(b=>b.Score).ToList();
+                var peptidesForFile = psmsForThisFile.GroupBy(b => b.FullSequence).Select(b => b.FirstOrDefault()).OrderByDescending(b => b.Score).ToList();
                 new FdrAnalysisEngine(peptidesForFile, Parameters.NumNotches, CommonParameters, this.FileSpecificParameters, new List<string> { Parameters.SearchTaskId }, "Peptide").Run();
                 Parameters.SearchTaskResults.AddTaskSummaryText("Target " + GlobalVariables.AnalyteType.ToLower() + "s within 1% FDR in " + strippedFileName + ": " + peptidesForFile.Count(a => a.FdrInfo.QValue <= 0.01 && !a.IsDecoy) + Environment.NewLine);
 
@@ -953,7 +1011,7 @@ namespace TaskLayer
             List<PeptideSpectralMatch> FDRPsms = Parameters.AllPsms
                 .Where(p => p.FdrInfo.QValue <= CommonParameters.QValueOutputFilter
                 && p.FdrInfo.QValueNotch <= CommonParameters.QValueOutputFilter && p.BaseSequence != null).ToList();
-            var possibleVariantPsms = FDRPsms.Where(p => p.BestMatchingPeptides.Any(pep => pep.Peptide.IsVariantPeptide())).OrderByDescending(pep=>pep.Score).ToList();
+            var possibleVariantPsms = FDRPsms.Where(p => p.BestMatchingPeptides.Any(pep => pep.Peptide.IsVariantPeptide())).OrderByDescending(pep => pep.Score).ToList();
 
             if (!Parameters.SearchParameters.WriteDecoys)
             {
@@ -970,7 +1028,7 @@ namespace TaskLayer
 
             WritePsmsToTsv(possibleVariantPsms, variantPsmFile, Parameters.SearchParameters.ModsToWriteSelection);
 
-            List<PeptideSpectralMatch> variantPeptides = possibleVariantPsms.GroupBy(b => b.FullSequence).Select(b => b.FirstOrDefault()).OrderByDescending(b=>b.Score).ToList();
+            List<PeptideSpectralMatch> variantPeptides = possibleVariantPsms.GroupBy(b => b.FullSequence).Select(b => b.FirstOrDefault()).OrderByDescending(b => b.Score).ToList();
             List<PeptideSpectralMatch> confidentVariantPeps = new List<PeptideSpectralMatch>();
 
             new FdrAnalysisEngine(variantPeptides, Parameters.NumNotches, CommonParameters, this.FileSpecificParameters, new List<string> { Parameters.SearchTaskId }, "variant_Peptides").Run();
