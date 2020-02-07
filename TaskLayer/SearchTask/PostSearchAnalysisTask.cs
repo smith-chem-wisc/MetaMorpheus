@@ -934,19 +934,23 @@ namespace TaskLayer
 
                 foreach (var nonVariantProtein in Parameters.ProteinList.Select(p => p.NonVariantProtein).Distinct())
                 {
-                    nonVariantProtein.OneBasedPossibleLocalizedModifications.Clear();
-                    foreach (var originalMod in proteinsOriginalModifications[nonVariantProtein.NonVariantProtein])
+                    if (!nonVariantProtein.IsDecoy)
                     {
-                        nonVariantProtein.OneBasedPossibleLocalizedModifications.Add(originalMod.Key, originalMod.Value);
-                    }
-                    foreach (var sv in nonVariantProtein.SequenceVariations)
-                    {
-                        sv.OneBasedModifications.Clear();
-                        foreach (var originalVariantMods in originalSequenceVariantModifications[sv])
+                        nonVariantProtein.OneBasedPossibleLocalizedModifications.Clear();
+                        foreach (var originalMod in proteinsOriginalModifications[nonVariantProtein.NonVariantProtein])
                         {
-                            sv.OneBasedModifications.Add(originalVariantMods.Key, originalVariantMods.Value);
+                            nonVariantProtein.OneBasedPossibleLocalizedModifications.Add(originalMod.Key, originalMod.Value);
                         }
-                    }                    
+                        foreach (var sv in nonVariantProtein.SequenceVariations)
+                        {
+                            sv.OneBasedModifications.Clear();
+                            foreach (var originalVariantMods in originalSequenceVariantModifications[sv])
+                            {
+                                sv.OneBasedModifications.Add(originalVariantMods.Key, originalVariantMods.Value);
+                            }
+                        }
+                    }
+                                     
                 }
             }
         }
