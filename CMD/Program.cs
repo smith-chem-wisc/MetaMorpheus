@@ -72,8 +72,11 @@ namespace MetaMorpheusCommandLine
                 return;
             }
 
-            GlobalVariables.UserSpecifiedDataDir = settings.CustomDataDirectory;
-            GlobalVariables.SetUpGlobalVariables();
+            if (settings.CustomDataDirectory != null)
+            {
+                GlobalVariables.UserSpecifiedDataDir = settings.CustomDataDirectory;
+                GlobalVariables.SetUpGlobalVariables();
+            }
 
             // set up microvignette
             if (settings.RunMicroVignette)
