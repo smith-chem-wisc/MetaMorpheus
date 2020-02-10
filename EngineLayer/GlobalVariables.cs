@@ -117,13 +117,19 @@ namespace EngineLayer
                 // no error thrown if multiple mods with this ID are present - just pick one
             }
 
-            //Add O-Glycan mod into AllModsKnownDictionary, currently this is for MetaDraw. 
-            //The reason why not include O-Glycan into modification database is for users to apply their own database. 
-            //foreach (var og in GlycanDatabase.LoadGlycan(GlobalVariables.OGlycanLocation))
-            //{
-            //    var ogmod = Glycan.OGlycanToModification(og);
-            //    AllModsKnownDictionary.Add(ogmod.IdWithMotif, ogmod);
-            //}
+            //Add O-Glycan mod into AllModsKnownDictionary, currently this is for MetaDraw.
+            //The reason why not include O - Glycan into modification database is for users to apply their own database.          
+            foreach (var og in GlycanDatabase.LoadGlycan(GlycanLocations[2]))
+            {
+                var ogmod = Glycan.OGlycanToModification(og);
+                AllModsKnownDictionary.Add(ogmod.IdWithMotif, ogmod);
+            }
+
+            foreach (var og in GlycanDatabase.LoadGlycan(GlycanLocations[5]))
+            {
+                var ogmod = Glycan.OGlycanToModification(og);
+                AllModsKnownDictionary.Add(ogmod.IdWithMotif, ogmod);
+            }
 
             RefreshAminoAcidDictionary();
 
@@ -161,7 +167,7 @@ namespace EngineLayer
         public static UsefulProteomicsDatabases.Generated.obo PsiModDeserialized { get; }
         public static IEnumerable<Modification> AllModsKnown { get { return _AllModsKnown.AsEnumerable(); } }
         public static IEnumerable<string> AllModTypesKnown { get { return _AllModTypesKnown.AsEnumerable(); } }
-        public static Dictionary<string, Modification> AllModsKnownDictionary { get; private set; }
+        public static Dictionary<string, Modification> AllModsKnownDictionary { get; set; }
         public static Dictionary<string, DissociationType> AllSupportedDissociationTypes { get; private set; }
         public static List<string> SeparationTypes { get { return _SeparationTypes; } }
 
