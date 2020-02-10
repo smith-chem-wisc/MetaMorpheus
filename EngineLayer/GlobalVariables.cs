@@ -27,9 +27,14 @@ namespace EngineLayer
         private static char[] _InvalidAminoAcids = new char[] { 'X', 'B', 'J', 'Z', ':', '|', ';', '[', ']', '{', '}', '(', ')', '+', '-' };
 
         // this affects output labels, etc. and can be changed to "Proteoform" for top-down searches
-        public static string AnalyteType = "Peptide"; 
+        public static string AnalyteType = "Peptide";
 
         static GlobalVariables()
+        {
+            SetUpGlobalVariables();
+        }
+
+        public static void SetUpGlobalVariables()
         {
             MetaMorpheusVersion = typeof(GlobalVariables).Assembly.GetName().Version.ToString();
 
@@ -57,25 +62,34 @@ namespace EngineLayer
                 MetaMorpheusVersion = MetaMorpheusVersion.Substring(0, foundIndexes.Last());
             }
 
+            var pathToProgramFiles = Environment.GetFolderPath(Environment.SpecialFolder.ProgramFiles);
+            if (!String.IsNullOrWhiteSpace(pathToProgramFiles) && AppDomain.CurrentDomain.BaseDirectory.Contains(pathToProgramFiles) && !AppDomain.CurrentDomain.BaseDirectory.Contains("Jenkins"))
             {
-                var pathToProgramFiles = Environment.GetFolderPath(Environment.SpecialFolder.ProgramFiles);
-                if (!String.IsNullOrWhiteSpace(pathToProgramFiles) && AppDomain.CurrentDomain.BaseDirectory.Contains(pathToProgramFiles) && !AppDomain.CurrentDomain.BaseDirectory.Contains("Jenkins"))
+                DataDir = Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData), "MetaMorpheus");
+            }
+            else
+            {
+                DataDir = AppDomain.CurrentDomain.BaseDirectory;
+
+                if (UserSpecifiedDataDir != null)
                 {
-                    DataDir = Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData), "MetaMorpheus");
-                }
-                else
-                {
-                    DataDir = AppDomain.CurrentDomain.BaseDirectory;
+                    if (!Directory.Exists(UserSpecifiedDataDir))
+                    {
+                        CopyFilesRecursively(new DirectoryInfo(DataDir), new DirectoryInfo(UserSpecifiedDataDir));
+                    }
+
+                    DataDir = UserSpecifiedDataDir;
                 }
             }
 
-            ElementsLocation = Path.Combine(DataDir, @"Data", @"elements.dat");
             UsefulProteomicsDatabases.Loaders.LoadElements();
 
+            _SeparationTypes = new List<string>();
             AddSeparationTypes(new List<string> { { "HPLC" }, { "CZE" } });
 
             // load default crosslinkers
             string crosslinkerLocation = Path.Combine(DataDir, @"Data", @"Crosslinkers.tsv");
+            _KnownCrosslinkers = new List<Crosslinker>();
             AddCrosslinkers(Crosslinker.LoadCrosslinkers(crosslinkerLocation));
 
             // load custom crosslinkers
@@ -92,6 +106,8 @@ namespace EngineLayer
             var formalChargesDictionary = UsefulProteomicsDatabases.Loaders.GetFormalChargesDictionary(PsiModDeserialized);
             UniprotDeseralized = UsefulProteomicsDatabases.Loaders.LoadUniprot(Path.Combine(DataDir, @"Data", @"ptmlist.txt"), formalChargesDictionary).ToList();
 
+            _AllModsKnown = new List<Modification>();
+            _AllModTypesKnown = new HashSet<string>();
             foreach (var modFile in Directory.GetFiles(Path.Combine(DataDir, @"Mods")))
             {
                 AddMods(UsefulProteomicsDatabases.PtmListLoader.ReadModsFromFile(modFile, out var errorMods), false);
@@ -114,12 +130,16 @@ namespace EngineLayer
             RefreshAminoAcidDictionary();
 
             string settingsPath = Path.Combine(DataDir, @"settings.toml");
-            if (!File.Exists(settingsPath))
+            if (!File.Exists(settingsPath) && !new DirectoryInfo(DataDir).Attributes.HasFlag(FileAttributes.ReadOnly))
             {
                 Toml.WriteFile<GlobalSettings>(new GlobalSettings(), settingsPath);
             }
 
-            GlobalSettings = Toml.ReadFile<GlobalSettings>(settingsPath);
+            if (File.Exists(settingsPath))
+            {
+                GlobalSettings = Toml.ReadFile<GlobalSettings>(settingsPath);
+            }
+
             AllSupportedDissociationTypes = new Dictionary<string, DissociationType> {
                 { DissociationType.CID.ToString(), DissociationType.CID },
                 { DissociationType.ECD.ToString(), DissociationType.ECD },
@@ -136,22 +156,22 @@ namespace EngineLayer
         public static List<string> ErrorsReadingMods = new List<string>();
 
         // File locations
-        public static string DataDir { get; }
+        public static string DataDir { get; private set; }
+        public static string UserSpecifiedDataDir { get; set; }
 
         public static bool StopLoops { get; set; }
-        public static string ElementsLocation { get; }
-        public static string MetaMorpheusVersion { get; }
+        public static string MetaMorpheusVersion { get; private set; }
         public static GlobalSettings GlobalSettings { get; set; }
-        public static IEnumerable<Modification> UnimodDeserialized { get; }
-        public static IEnumerable<Modification> UniprotDeseralized { get; }
-        public static UsefulProteomicsDatabases.Generated.obo PsiModDeserialized { get; }
+        public static IEnumerable<Modification> UnimodDeserialized { get; private set; }
+        public static IEnumerable<Modification> UniprotDeseralized { get; private set; }
+        public static UsefulProteomicsDatabases.Generated.obo PsiModDeserialized { get; private set; }
         public static IEnumerable<Modification> AllModsKnown { get { return _AllModsKnown.AsEnumerable(); } }
         public static IEnumerable<string> AllModTypesKnown { get { return _AllModTypesKnown.AsEnumerable(); } }
         public static Dictionary<string, Modification> AllModsKnownDictionary { get; private set; }
         public static Dictionary<string, DissociationType> AllSupportedDissociationTypes { get; private set; }
         public static List<string> SeparationTypes { get { return _SeparationTypes; } }
 
-        public static string ExperimentalDesignFileName { get; }
+        public static string ExperimentalDesignFileName { get; private set; }
         public static IEnumerable<Crosslinker> Crosslinkers { get { return _KnownCrosslinkers.AsEnumerable(); } }
         public static IEnumerable<char> InvalidAminoAcids { get { return _InvalidAminoAcids.AsEnumerable(); } }
 
@@ -277,7 +297,10 @@ namespace EngineLayer
             }
             else //create it so that it can be manipulated
             {
-                WriteAminoAcidsFile();
+                if (!new DirectoryInfo(DataDir).Attributes.HasFlag(FileAttributes.ReadOnly))
+                {
+                    WriteAminoAcidsFile();
+                }
             }
         }
 
@@ -309,6 +332,19 @@ namespace EngineLayer
                 UseShellExecute = true
             };
             p.Start();
+        }
+
+        public static void CopyFilesRecursively(DirectoryInfo source, DirectoryInfo target)
+        {
+            //https://stackoverflow.com/questions/58744/copy-the-entire-contents-of-a-directory-in-c-sharp
+            foreach (DirectoryInfo dir in source.GetDirectories())
+            {
+                CopyFilesRecursively(dir, target.CreateSubdirectory(dir.Name));
+            }
+            foreach (FileInfo file in source.GetFiles())
+            {
+                file.CopyTo(Path.Combine(target.FullName, file.Name));
+            }
         }
     }
 }

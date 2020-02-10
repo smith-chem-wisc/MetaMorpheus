@@ -32,6 +32,9 @@ namespace MetaMorpheusCommandLine
 
         [Option('v', HelpText = "Runs a small test search using a database and yeast data file included with this MetaMorpheus installation")]
         public bool RunMicroVignette { get; set; }
+
+        [Option('m', HelpText = "Optionally specify a path for MetaMorpheus to store program settings files")]
+        public string CustomDataDirectory { get; set; }
         
         public void ValidateCommandLineSettings()
         {

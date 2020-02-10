@@ -20,6 +20,8 @@ namespace MetaMorpheusCommandLine
 
         public static void Main(string[] args)
         {
+            var temp = GlobalVariables.DataDir;
+
             Console.WriteLine("Welcome to MetaMorpheus");
             Console.WriteLine(GlobalVariables.MetaMorpheusVersion);
 
@@ -71,6 +73,11 @@ namespace MetaMorpheusCommandLine
                 CommandLineSettings.GenerateDefaultTaskTomls(settings.OutputFolder);
                 return;
             }
+
+            GlobalVariables.UserSpecifiedDataDir = settings.CustomDataDirectory;
+            GlobalVariables.SetUpGlobalVariables();
+
+            var temp = GlobalVariables.DataDir;
 
             // set up microvignette
             if (settings.RunMicroVignette)
