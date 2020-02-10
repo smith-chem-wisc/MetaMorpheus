@@ -231,12 +231,14 @@ namespace TaskLayer
                                     double precursorMz = 0;
                                     var precursorSpectrum = ms2scan;
 
-                                    //In current situation, do we need to perform the following function.
+                                    //In current situation, do we need to perform the following function. 
+                                    //In some weird data, the MS3 scan has mis-leading precursor mass. 
+                                    //MS3 scan is low res in most of the situation, and the matched ions are not scored in a good way.
                                     //{
                                     //    ms3ChildScan.RefineSelectedMzAndIntensity(precursorSpectrum.MassSpectrum);
                                     //    ms3ChildScan.ComputeMonoisotopicPeakIntensity(precursorSpectrum.MassSpectrum);
                                     //}
-    
+
                                     if (ms3ChildScan.SelectedIonMonoisotopicGuessMz.HasValue)
                                     {                                       
                                         precursorMz = ms3ChildScan.SelectedIonMonoisotopicGuessMz.Value;

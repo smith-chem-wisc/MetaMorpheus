@@ -200,8 +200,9 @@ namespace EngineLayer.CrosslinkSearch
         }
 
         /// <summary>
-        /// 
+        /// Deadend and loop crosslink are changed to a type of modification and searched as a modified peptide.
         /// </summary>
+        /// <param name="crosslinker"></param>
         private void GenerateCrosslinkModifications(Crosslinker crosslinker)
         {
             ModificationMotif.TryGetMotif("X", out var motif);
@@ -214,16 +215,16 @@ namespace EngineLayer.CrosslinkSearch
 
         private void FindCrosslinkedPeptide(Ms2ScanWithSpecificMass scan, List<int> idsOfPeptidesPossiblyObserved, byte[] scoringTable, double[] massTable, byte byteScoreCutoff, int scanIndex, List<CrosslinkSpectralMatch> possibleMatches, HashSet<Tuple<int, int>> seenPair)
         {
+            //The code here is to generate intensity ranks of signature ions for cleavable crosslink.
             int rank = 1;
-
-            double[] xs = null;
-            double[] ys = null;
+            double[] experimentFragmentMasses = null;
+            double[] experimentFragmentIntensities = null;
             int[] intensityRanks = null;
             if (Crosslinker.Cleavable)
             {
-                xs = scan.ExperimentalFragments.Select(p => p.monoisotopicMass).ToArray();
-                ys = scan.ExperimentalFragments.Select(p => p.peaks.Sum(q => q.intensity)).ToArray();
-                intensityRanks = CrosslinkSpectralMatch.GenerateIntensityRanks(ys);
+                experimentFragmentMasses = scan.ExperimentalFragments.Select(p => p.monoisotopicMass).ToArray();
+                experimentFragmentIntensities = scan.ExperimentalFragments.Select(p => p.peaks.Sum(q => q.intensity)).ToArray();
+                intensityRanks = CrosslinkSpectralMatch.GenerateIntensityRanks(experimentFragmentIntensities);
             }
 
             List<Product> products = new List<Product>();
@@ -237,7 +238,7 @@ namespace EngineLayer.CrosslinkSearch
                     var matchedFragmentIons = MatchFragmentIons(scan, products, CommonParameters);
                     double score = CalculatePeptideScore(scan.TheScan, matchedFragmentIons);
 
-                    if (score > (double)byteScoreCutoff)
+                    if (score > byteScoreCutoff)
                     {
                         var psmCrossSingle = new CrosslinkSpectralMatch(PeptideIndex[id], 0, score, scanIndex, scan, CommonParameters, matchedFragmentIons)
                         {
@@ -310,7 +311,7 @@ namespace EngineLayer.CrosslinkSearch
                                     continue;
                                 }
 
-                                CrosslinkSpectralMatch csm = LocalizeCrosslinkSites(scan, id, betaMassLowIndex, Crosslinker, xs, intensityRanks);
+                                CrosslinkSpectralMatch csm = LocalizeCrosslinkSites(scan, id, betaMassLowIndex, Crosslinker, experimentFragmentMasses, intensityRanks);
 
                                 if (csm!=null)
                                 {
@@ -333,10 +334,11 @@ namespace EngineLayer.CrosslinkSearch
         /// <summary>
         /// Localizes the crosslink position on the alpha and beta peptides
         /// </summary>
-        private CrosslinkSpectralMatch LocalizeCrosslinkSites(Ms2ScanWithSpecificMass theScan, int alphaIndex, int betaIndex, Crosslinker crosslinker, double[] xs, int[] intensityRanks)
+        private CrosslinkSpectralMatch LocalizeCrosslinkSites(Ms2ScanWithSpecificMass theScan, int alphaIndex, int betaIndex, Crosslinker crosslinker, double[] experimentFragmentMasses, int[] intensityRanks)
         {
             CrosslinkSpectralMatch localizedCrosslinkedSpectralMatch = null;
 
+            //The crosslink can crosslink same or different amino acid. Pairs are potential crosslink sites for alpha or beta. 
             List<Tuple<List<int>, List<int>>> pairs = new List<Tuple<List<int>, List<int>>>();
 
             if (crosslinker.CrosslinkerModSites.Equals(crosslinker.CrosslinkerModSites2))
@@ -531,8 +533,8 @@ namespace EngineLayer.CrosslinkSearch
 
                         foreach (var am in alphaM)
                         {
-                            var ind = BinarySearchGetIndex(xs, am.NeutralTheoreticalProduct.NeutralMass);
-                            if (ind == xs.Length)
+                            var ind = BinarySearchGetIndex(experimentFragmentMasses, am.NeutralTheoreticalProduct.NeutralMass);
+                            if (ind == experimentFragmentMasses.Length)
                             {
                                 ind--;
                             }
@@ -545,8 +547,8 @@ namespace EngineLayer.CrosslinkSearch
 
                         foreach (var bm in betaM)
                         {
-                            var ind = BinarySearchGetIndex(xs, bm.NeutralTheoreticalProduct.NeutralMass);
-                            if (ind == xs.Length)
+                            var ind = BinarySearchGetIndex(experimentFragmentMasses, bm.NeutralTheoreticalProduct.NeutralMass);
+                            if (ind == experimentFragmentMasses.Length)
                             {
                                 ind--;
                             }
@@ -568,7 +570,6 @@ namespace EngineLayer.CrosslinkSearch
                     localizedAlpha.BetaPeptide = localizedBeta;
 
                     //I think this is the only place where XLTotalScore is set
-                    localizedAlpha.XLTotalScore = localizedAlpha.Score + localizedBeta.Score;
                     localizedAlpha.XLTotalScore = localizedAlpha.Score + localizedBeta.Score;        
 
                     localizedAlpha.CrossType = PsmCrossType.Cross;
@@ -587,6 +588,8 @@ namespace EngineLayer.CrosslinkSearch
 
             List<Product> childProducts = new List<Product>();
 
+            //There are two situations now. 1) The childScan is MS3 scan and the crosslinker is cleavable. So the precursor mass of the MS3 scan must be same as signature ions.
+            //2) The childScan is MS2 or MS3, but the precursor of the ChildScan is same. It is weird that the MS3 has same precursor mass as its parent scan, but it happens in some data.
             if (Crosslinker.Cleavable && childScan.TheScan.MsnOrder == 3 && (shortMassAlphaMs3 || longMassAlphaMs3))
             {
                 double massToLocalize = shortMassAlphaMs3 ? Crosslinker.CleaveMassShort : Crosslinker.CleaveMassLong;
@@ -609,7 +612,7 @@ namespace EngineLayer.CrosslinkSearch
           
                     peptideWithMod.Fragment(CommonParameters.MS3ChildScanDissociationType, FragmentationTerminus.Both, childProducts);              
             }
-            else if (Crosslinker.Cleavable && Math.Abs(childScan.PrecursorMass - parentScan.PrecursorMass) < 0.01)
+            else if (Math.Abs(childScan.PrecursorMass - parentScan.PrecursorMass) < 0.001)
             {
                 if (childScan.TheScan.MsnOrder == 2)
                 {
@@ -618,6 +621,8 @@ namespace EngineLayer.CrosslinkSearch
                 }
                 else
                 {
+                    //It tried to corver the situation that the MS3 scan have the same precursor mass as the parent MS2.  
+                    //This is so rare that I only see it in one data. May need unit test in the future.
                     childProducts = CrosslinkedPeptide.XlGetTheoreticalFragments(CommonParameters.MS3ChildScanDissociationType,
                         Crosslinker, new List<int> { possibleSite }, otherPeptide.MonoisotopicMass, mainPeptide).First().Item2;
                 }

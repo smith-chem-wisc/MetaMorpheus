@@ -67,15 +67,15 @@ namespace MetaMorpheusGUI
             Crosslinker DSSO = GlobalVariables.Crosslinkers.First();
             cbCrosslinkers.SelectedItem = DSSO;
 
+            MS2ChildScanDissociationTypeComboBox.Items.Add("Null");
+            MS3ChildScanDissociationTypeComboBox.Items.Add("Null");
+
             foreach (string dissassociationType in GlobalVariables.AllSupportedDissociationTypes.Keys)
             {
                 DissociationTypeComboBox.Items.Add(dissassociationType);
                 MS2ChildScanDissociationTypeComboBox.Items.Add(dissassociationType);
                 MS3ChildScanDissociationTypeComboBox.Items.Add(dissassociationType);
             }
-            //GlobalVariables.AllSupportedDissociationTypes didn't contain DissociationType.Unknown, which is useful.
-            MS2ChildScanDissociationTypeComboBox.Items.Add(DissociationType.Unknown.ToString());
-            MS3ChildScanDissociationTypeComboBox.Items.Add(DissociationType.Unknown.ToString());
 
             foreach (string separationType in GlobalVariables.SeparationTypes)
             {
@@ -141,8 +141,16 @@ namespace MetaMorpheusGUI
             DissociationTypeComboBox.SelectedItem = task.CommonParameters.DissociationType.ToString();
             SeparationTypeComboBox.SelectedItem = task.CommonParameters.SeparationType.ToString();
 
-            MS2ChildScanDissociationTypeComboBox.SelectedItem = task.CommonParameters.MS2ChildScanDissociationType.ToString();
-            MS3ChildScanDissociationTypeComboBox.SelectedItem = task.CommonParameters.MS3ChildScanDissociationType.ToString();
+            MS2ChildScanDissociationTypeComboBox.SelectedItem = "Null";
+            if (task.CommonParameters.MS2ChildScanDissociationType != DissociationType.Unknown)
+            {
+                MS2ChildScanDissociationTypeComboBox.SelectedItem = task.CommonParameters.MS2ChildScanDissociationType.ToString();
+            }
+            MS3ChildScanDissociationTypeComboBox.SelectedItem = "Null";
+            if (task.CommonParameters.MS3ChildScanDissociationType != DissociationType.Unknown)
+            {
+                MS3ChildScanDissociationTypeComboBox.SelectedItem = task.CommonParameters.MS3ChildScanDissociationType.ToString();
+            }
 
             checkBoxDecoy.IsChecked = task.XlSearchParameters.DecoyType != DecoyType.None;
             deconvolutePrecursors.IsChecked = task.CommonParameters.DoPrecursorDeconvolution;
@@ -237,12 +245,12 @@ namespace MetaMorpheusGUI
             DissociationType dissociationType = GlobalVariables.AllSupportedDissociationTypes[DissociationTypeComboBox.SelectedItem.ToString()];
             string separationType = SeparationTypeComboBox.SelectedItem.ToString();
             DissociationType ms2childDissociationType = DissociationType.Unknown;
-            if (MS2ChildScanDissociationTypeComboBox.SelectedItem.ToString() != "Unknown")
+            if (MS2ChildScanDissociationTypeComboBox.SelectedItem.ToString() != "Null")
             {
                 ms2childDissociationType = GlobalVariables.AllSupportedDissociationTypes[MS2ChildScanDissociationTypeComboBox.SelectedItem.ToString()];
             }
             DissociationType ms3childDissociationType = DissociationType.Unknown;
-            if (MS3ChildScanDissociationTypeComboBox.SelectedItem.ToString() != "Unknown")
+            if (MS3ChildScanDissociationTypeComboBox.SelectedItem.ToString() != "Null")
             {
                 ms3childDissociationType = GlobalVariables.AllSupportedDissociationTypes[MS3ChildScanDissociationTypeComboBox.SelectedItem.ToString()];
             }
@@ -252,7 +260,6 @@ namespace MetaMorpheusGUI
             TheTask.XlSearchParameters.CrosslinkSearchTopNum = int.Parse(txtXLTopNum.Text, CultureInfo.InvariantCulture);
             TheTask.XlSearchParameters.CrosslinkAtCleavageSite = ckbCrosslinkAtCleavageSite.IsChecked.Value;
             TheTask.XlSearchParameters.Crosslinker = (Crosslinker)cbCrosslinkers.SelectedItem;
-
 
             TheTask.XlSearchParameters.XlQuench_H2O = ckbQuenchH2O.IsChecked.Value;
             TheTask.XlSearchParameters.XlQuench_NH2 = ckbQuenchNH2.IsChecked.Value;
