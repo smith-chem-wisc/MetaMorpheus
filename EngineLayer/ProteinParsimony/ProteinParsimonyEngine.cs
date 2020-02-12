@@ -19,6 +19,7 @@ namespace EngineLayer
         private readonly List<PeptideSpectralMatch> _fdrFilteredPsms;
         private readonly List<PeptideSpectralMatch> _allPsms;
         private const double FdrCutoffForParsimony = 0.01;
+        private const double PeptidePValueCutoffForParsimony = 0.0;
 
         /// <summary>
         /// User-selectable option that treats differently-modified forms of a peptide as different peptides for the purposes of parsimony
@@ -38,11 +39,13 @@ namespace EngineLayer
             // KEEP decoys and contaminants for use in parsimony!
             if (modPeptidesAreDifferent)
             {
-                _fdrFilteredPsms = allPsms.Where(p => p.FullSequence != null && p.FdrInfo.QValue <= FdrCutoffForParsimony && p.FdrInfo.QValueNotch <= FdrCutoffForParsimony).ToList();
+                //_fdrFilteredPsms = allPsms.Where(p => p.FullSequence != null && p.FdrInfo.QValue <= FdrCutoffForParsimony && p.FdrInfo.QValueNotch <= FdrCutoffForParsimony).ToList();
+                _fdrFilteredPsms = allPsms.Where(p => p.FullSequence != null && p.FdrInfo.PEP >= PeptidePValueCutoffForParsimony).ToList();
             }
             else
             {
-                _fdrFilteredPsms = allPsms.Where(p => p.BaseSequence != null && p.FdrInfo.QValue <= FdrCutoffForParsimony && p.FdrInfo.QValueNotch <= FdrCutoffForParsimony).ToList();
+                //_fdrFilteredPsms = allPsms.Where(p => p.BaseSequence != null && p.FdrInfo.QValue <= FdrCutoffForParsimony && p.FdrInfo.QValueNotch <= FdrCutoffForParsimony).ToList();
+                _fdrFilteredPsms = allPsms.Where(p => p.BaseSequence != null && p.FdrInfo.PEP >= PeptidePValueCutoffForParsimony).ToList();
             }
 
             // if PSM is a decoy, add only decoy sequences; same for contaminants

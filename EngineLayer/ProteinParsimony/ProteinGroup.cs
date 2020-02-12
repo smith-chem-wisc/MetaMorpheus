@@ -18,6 +18,7 @@ namespace EngineLayer
             AllPeptides = peptides;
             UniquePeptides = uniquePeptides;
             AllPsmsBelowOnePercentFDR = new HashSet<PeptideSpectralMatch>();
+            AllPsms = new HashSet<PeptideSpectralMatch>();
             SequenceCoverageFraction = new List<double>();
             SequenceCoverageDisplayList = new List<string>();
             SequenceCoverageDisplayListWithMods = new List<string>();
@@ -62,6 +63,8 @@ namespace EngineLayer
         public HashSet<PeptideWithSetModifications> UniquePeptides { get; set; }
 
         public HashSet<PeptideSpectralMatch> AllPsmsBelowOnePercentFDR { get; set; }
+
+        public HashSet<PeptideSpectralMatch> AllPsms { get; set; }
 
         public List<double> SequenceCoverageFraction { get; private set; }
 
