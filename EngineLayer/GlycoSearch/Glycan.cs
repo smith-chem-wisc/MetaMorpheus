@@ -198,42 +198,37 @@ namespace EngineLayer
             Node curr = new Node(theGlycanStruct[1], level);
             for (int i = 2; i < theGlycanStruct.Length - 1; i++)
             {
-
-                if (theGlycanStruct[i] != null)
+                if (theGlycanStruct[i] == '(')
                 {
-                    if (theGlycanStruct[i] == '(')
+                    continue;
+                }
+                if (theGlycanStruct[i] == ')')
+                {
+                    curr = curr.Father;
+                    level--;
+                }
+                else
+                {
+                    level++;
+                    if (curr.LeftChild == null)
                     {
-                        continue;
+                        curr.LeftChild = new Node(theGlycanStruct[i], level);
+                        curr.LeftChild.Father = curr;
+                        curr = curr.LeftChild;
                     }
-                    if (theGlycanStruct[i] == ')')
+                    else if (curr.RightChild == null)
                     {
-                        curr = curr.Father;
-                        level--;
+                        curr.RightChild = new Node(theGlycanStruct[i], level);
+                        curr.RightChild.Father = curr;
+                        curr = curr.RightChild;
                     }
-                    else
+                    else if (curr.MiddleChild == null)
                     {
-                        level++;
-                        if (curr.LeftChild == null)
-                        {
-                            curr.LeftChild = new Node(theGlycanStruct[i], level);
-                            curr.LeftChild.Father = curr;
-                            curr = curr.LeftChild;
-                        }
-                        else if (curr.RightChild == null)
-                        {
-                            curr.RightChild = new Node(theGlycanStruct[i], level);
-                            curr.RightChild.Father = curr;
-                            curr = curr.RightChild;
-                        }
-                        else if (curr.MiddleChild == null)
-                        {
-                            curr.MiddleChild = curr.LeftChild;
-                            curr.LeftChild = new Node(theGlycanStruct[i], level);
-                            curr.LeftChild.Father = curr;
-                            curr = curr.LeftChild;
-                        }
+                        curr.MiddleChild = curr.LeftChild;
+                        curr.LeftChild = new Node(theGlycanStruct[i], level);
+                        curr.LeftChild.Father = curr;
+                        curr = curr.LeftChild;
                     }
-
                 }
             }
             return curr;

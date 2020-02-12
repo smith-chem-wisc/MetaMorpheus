@@ -46,7 +46,7 @@ namespace EngineLayer.GlycoSearch
 
             if (!isOGlycoSearch)
             {
-                Glycans = GlycanDatabase.LoadGlycan(GlobalVariables.GlycanLocations.ElementAt(_glycanDatabaseIndex), !isOGlycoSearch).OrderBy(p=>p.Mass).ToArray();          
+                Glycans = GlycanDatabase.LoadGlycan(GlobalVariables.GlycanLocations.ElementAt(_glycanDatabaseIndex), !isOGlycoSearch).OrderBy(p => p.Mass).ToArray();
                 //TO THINK: Glycan Decoy database.
                 //DecoyGlycans = Glycan.BuildTargetDecoyGlycans(NGlycans);
             }
@@ -67,7 +67,7 @@ namespace EngineLayer.GlycoSearch
             }
         }
 
-        private Glycan[] Glycans {get;}
+        private Glycan[] Glycans { get; }
         //private Glycan[] DecoyGlycans { get; }
 
         protected override MetaMorpheusEngineResults RunSpecific()
@@ -170,7 +170,7 @@ namespace EngineLayer.GlycoSearch
                         else
                         {
                             //gsms = FindOGlycopeptideHash(scan, idsOfPeptidesTopN, scanIndex, allBinsToSearch, childBinsToSearch, (int)byteScoreCutoff);
-                            gsms = FindOGlycopeptideHashLocal(scan, idsOfPeptidesTopN, scanIndex, allBinsToSearch, childBinsToSearch, (int)byteScoreCutoff);                            
+                            gsms = FindOGlycopeptideHashLocal(scan, idsOfPeptidesTopN, scanIndex, allBinsToSearch, childBinsToSearch, (int)byteScoreCutoff);
                             //gsms = FindModPepHash(scan, idsOfPeptidesTopN, scanIndex, allBinsToSearch, (int)byteScoreCutoff);
                         }
 
@@ -376,7 +376,7 @@ namespace EngineLayer.GlycoSearch
 
                     while (iDLow < GlycanBox.OGlycanBoxes.Count() && (PrecusorSearchMode.Within(theScan.PrecursorMass, theScanBestPeptide.MonoisotopicMass + GlycanBox.OGlycanBoxes[iDLow].Mass)))
                     {
-                        
+
                         if (modPos.Length >= GlycanBox.OGlycanBoxes[iDLow].NumberOfMods && GlycoPeptides.OxoniumIonsAnalysis(oxoniumIonIntensities, GlycanBox.OGlycanBoxes[iDLow]))
                         {
                             var permutateModPositions = GlycoPeptides.GetPermutations(modPos.ToList(), GlycanBox.OGlycanBoxes[iDLow].ModIds);
@@ -415,7 +415,7 @@ namespace EngineLayer.GlycoSearch
                             if (currentLocalizationScore > BestLocalizaionScore)
                             {
                                 localizationCandidates.Clear();
-                                localizationCandidates.Add(new Tuple<int, Tuple<int, int>[]>( glycanBoxId_localization[i].Item1, tuples));
+                                localizationCandidates.Add(new Tuple<int, Tuple<int, int>[]>(glycanBoxId_localization[i].Item1, tuples));
                             }
                             else if (BestLocalizaionScore > 0 && currentLocalizationScore == BestLocalizaionScore)
                             {
@@ -461,12 +461,14 @@ namespace EngineLayer.GlycoSearch
 
                     possibleMatches.Add(psmCrossSingle);
                 }
-                else if (theScan.PrecursorMass - theScanBestPeptide.MonoisotopicMass >= 100)
+                else if (theScan.PrecursorMass - theScanBestPeptide.MonoisotopicMass >= 100) //Filter out unknow non-glycan modifications.
                 {
                     //Filter by glycanBoxes mass difference.
-                    var possibleGlycanMassLow = theScan.PrecursorMass * (1 - 1E-5) - theScanBestPeptide.MonoisotopicMass;
+                    var possibleGlycanMassLow = PrecusorSearchMode.GetMinimumValue(theScan.PrecursorMass) - theScanBestPeptide.MonoisotopicMass;
 
-                    if (possibleGlycanMassLow < GlycanBox.OGlycanBoxes.First().Mass || possibleGlycanMassLow > GlycanBox.OGlycanBoxes.Last().Mass)
+                    var possibleGlycanMassHigh = PrecusorSearchMode.GetMaximumValue(theScan.PrecursorMass) - theScanBestPeptide.MonoisotopicMass;
+
+                    if (possibleGlycanMassHigh < GlycanBox.OGlycanBoxes.First().Mass || possibleGlycanMassLow > GlycanBox.OGlycanBoxes.Last().Mass)
                     {
                         continue;
                     }
@@ -529,10 +531,9 @@ namespace EngineLayer.GlycoSearch
                     List<Product> products = new List<Product>();
                     theScanBestPeptide.Fragment(DissociationType.ETD, FragmentationTerminus.Both, products);                    
 
-                    double bestLocalizedScore = 1;
+                    double bestLocalizedScore = 0;
 
                     List<LocalizationGraph> localizationGraphs = new List<LocalizationGraph>();
-                    List<int> ids = new List<int>();
 
                     while (iDLow < GlycanBox.OGlycanBoxes.Count() && (PrecusorSearchMode.Within(theScan.PrecursorMass, theScanBestPeptide.MonoisotopicMass + GlycanBox.OGlycanBoxes[iDLow].Mass)))
                     {
@@ -540,19 +541,17 @@ namespace EngineLayer.GlycoSearch
                         {
                             var boxes = GlycanBox.BuildChildOGlycanBoxes(GlycanBox.OGlycanBoxes[iDLow].NumberOfMods, GlycanBox.OGlycanBoxes[iDLow].ModIds).ToArray();
                             LocalizationGraph localizationGraph = new LocalizationGraph(modPos, GlycanBox.OGlycanBoxes[iDLow], boxes, iDLow);
-                            LocalizationGraph.LocalizeOGlycan(localizationGraph.array, modPos, GlycanBox.OGlycanBoxes[iDLow], localizationGraph.ChildModBoxes, allPeaksForLocalization, products, theScanBestPeptide.Length);
+                            LocalizationGraph.LocalizeOGlycan(localizationGraph, allPeaksForLocalization, products);
 
-                            double currentLocalizationScore = localizationGraph.array.Last().Last().maxCost;
+                            double currentLocalizationScore = localizationGraph.TotalScore;
                             if (currentLocalizationScore > bestLocalizedScore)
                             {
-                                ids.Clear();
+           
                                 localizationGraphs.Clear();
-                                ids.Add(iDLow);
                                 localizationGraphs.Add(localizationGraph);
                             }
                             else if (bestLocalizedScore > 0 && currentLocalizationScore == bestLocalizedScore)
                             {
-                                ids.Add(iDLow);
                                 localizationGraphs.Add(localizationGraph);
                             }
                         }
@@ -563,7 +562,6 @@ namespace EngineLayer.GlycoSearch
                     //In theory, the peptide_localization shouldn't be null, but it is possible that the real score is smaller than indexed score.
                     if (localizationGraphs.Count > 0)
                     {
-
                         var firstPath = LocalizationGraph.GetFirstPath(localizationGraphs[0].array, localizationGraphs[0].ChildModBoxes);
                         var localizationCandidate = LocalizationGraph.GetLocalizedPath(localizationGraphs[0].array, modPos, localizationGraphs[0].ChildModBoxes, firstPath);
 

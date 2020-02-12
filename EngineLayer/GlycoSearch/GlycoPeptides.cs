@@ -357,9 +357,9 @@ namespace EngineLayer.GlycoSearch
             return fragmentHash;
         }
 
-        //Find FragmentHsh for current box at modInd. 
+        //Find FragmentHash for current box at modInd. 
         //y-ion didn't change for O-Glycopeptide.
-        public static int[] GetLocalFragmentHash(List<Product> products, int peptideLength, int[] modPoses, int modInd, ModBox OGlycanBox, ModBox localOGlycanBox, int FragmentBinsPerDalton)
+        public static int[] GetLocalFragmentHash(List<Product> products, int[] modPoses, int modInd, ModBox OGlycanBox, ModBox localOGlycanBox, int FragmentBinsPerDalton)
         {
             List<double> newFragments = new List<double>();
             var local_c_fragments = products.Where(p => p.ProductType == ProductType.c && p.AminoAcidPosition >= modPoses[modInd]-1 && p.AminoAcidPosition < modPoses[modInd+1]-1).ToList();
@@ -386,6 +386,42 @@ namespace EngineLayer.GlycoSearch
             }
             return fragmentHash;
         }
+
+        //Find FragmentHash for the fragments that doesn't contain localization Information.
+        public static int[] GetUnlocalFragmentHash(List<Product> products, int[] modPoses, ModBox OGlycanBox, int FragmentBinsPerDalton)
+        {
+            List<double> newFragments = new List<double>();
+            var c_fragments = products.Where(p => p.ProductType == ProductType.c && p.AminoAcidPosition < modPoses.First()-1).Select(p=>p.NeutralMass);
+            newFragments.AddRange(c_fragments);
+
+            var c_fragments_shift = products.Where(p => p.ProductType == ProductType.c && p.AminoAcidPosition >= modPoses.Last()-1).Select(p => p.NeutralMass); ;
+
+            foreach (var c in c_fragments_shift)
+            {
+                var newMass = c + OGlycanBox.Mass;
+                newFragments.Add(newMass);
+            }
+
+            var z_fragments = products.Where(p => p.ProductType == ProductType.zDot && p.AminoAcidPosition > modPoses.Last() -1).Select(p => p.NeutralMass);
+            newFragments.AddRange(z_fragments);
+
+            var z_fragments_shift = products.Where(p => p.ProductType == ProductType.zDot && p.AminoAcidPosition < modPoses.First() -1).Select(p => p.NeutralMass);
+
+            foreach (var z in z_fragments_shift)
+            {
+                var newMass = z + OGlycanBox.Mass;
+                newFragments.Add(newMass);
+            }
+
+
+            int[] fragmentHash = new int[newFragments.Count];
+            for (int i = 0; i < newFragments.Count; i++)
+            {
+                fragmentHash[i] = (int)Math.Round(newFragments[i] * FragmentBinsPerDalton);
+            }
+            return fragmentHash;
+        }
+
 
         //The oxoniumIonIntensities is related with Glycan.AllOxoniumIons. 
         //Rules are coded in the function.    

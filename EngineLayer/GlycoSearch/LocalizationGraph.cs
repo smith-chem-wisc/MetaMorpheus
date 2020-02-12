@@ -16,6 +16,9 @@ namespace EngineLayer.GlycoSearch
         public ModBox ModBox { get; }
         public ModBox[] ChildModBoxes { get; set; }
 
+        //Total Score = AdjNode[Bottom,right].maxCost + NoLocalScore 
+        public double TotalScore { get; set; }
+
         public LocalizationGraph(int[] modPos, ModBox modBox, ModBox[] childModBoxes, int id = -1)
         {
             ModPos = modPos;
@@ -33,22 +36,22 @@ namespace EngineLayer.GlycoSearch
 
         //The modification problem is turned into a Directed Acyclic Graph. The Graph was build with matrix, and dynamic programming is used.
         //The function goes through the AdjNode[][] array from left to right, assign weight to each AdjNode, keep track of the heaviest previous AdjNode.
-        public static void LocalizeOGlycan(AdjNode[][] array, int[] modPos, ModBox glycanBox, ModBox[] childBoxes, HashSet<int> allPeaks, List<Product> products, int peptideLength)
+        public static void LocalizeOGlycan(LocalizationGraph localizationGraph, HashSet<int> allPeaks, List<Product> products)
         {
-            var boxSatisfyBox = BoxSatisfyBox(childBoxes);
+            var boxSatisfyBox = BoxSatisfyBox(localizationGraph.ChildModBoxes);
 
-            for (int i = 0; i < modPos.Length; i++)
+            for (int i = 0; i < localizationGraph.ModPos.Length; i++)
             {
                 //maxLength: the most mods we can have up to current mod pos; minlengtt: the least mods we can have up to current mod pos.
                 int maxLength = i + 1;
-                int minlength = glycanBox.ModIds.Length - (modPos.Length - 1 - i);
+                int minlength = localizationGraph.ModBox.ModIds.Length - (localizationGraph.ModPos.Length - 1 - i);
 
-                for (int j = 0; j < childBoxes.Length; j++)
+                for (int j = 0; j < localizationGraph.ChildModBoxes.Length; j++)
                 {
-                    if (childBoxes[j].NumberOfMods <= maxLength && childBoxes[j].NumberOfMods >= minlength)
+                    if (localizationGraph.ChildModBoxes[j].NumberOfMods <= maxLength && localizationGraph.ChildModBoxes[j].NumberOfMods >= minlength)
                     {
-                        AdjNode adjNode = new AdjNode(i, j, modPos[i], childBoxes[j]);
-                        var cost = LocalizationGraph.CalculateCost(allPeaks, products, peptideLength, modPos, i, glycanBox, childBoxes[j], 1000);
+                        AdjNode adjNode = new AdjNode(i, j, localizationGraph.ModPos[i], localizationGraph.ChildModBoxes[j]);
+                        var cost = CalculateCost(allPeaks, products, localizationGraph.ModPos, i, localizationGraph.ModBox, localizationGraph.ChildModBoxes[j], 1000);
 
                         //The first line of the graph didnot have Sources.
                         if (i == 0)
@@ -62,9 +65,9 @@ namespace EngineLayer.GlycoSearch
                             for (int prej = 0; prej <= j; prej++)
                             {
                                 //Check if a previous AdjNode exist and the current AdjNode could link to previous AdjNode. 
-                                if (boxSatisfyBox[j][prej] && array[i - 1][prej] != null)
+                                if (boxSatisfyBox[j][prej] && localizationGraph.array[i - 1][prej] != null)
                                 {
-                                    var tempCost = cost + array[i - 1][prej].maxCost;
+                                    var tempCost = cost + localizationGraph.array[i - 1][prej].maxCost;
                                     if (tempCost > maxCost)
                                     {
                                         adjNode.Sources.Clear();
@@ -88,21 +91,25 @@ namespace EngineLayer.GlycoSearch
                             }
                         }
 
-                        array[i][j] = adjNode;
+                        localizationGraph.array[i][j] = adjNode;
                     }
                 }
 
             }
+
+            var unlocalFragmentHash = GlycoPeptides.GetUnlocalFragmentHash(products, localizationGraph.ModPos, localizationGraph.ModBox, 1000);
+            int noLocalScore = allPeaks.Intersect(unlocalFragmentHash).Count();
+            localizationGraph.TotalScore = localizationGraph.array[localizationGraph.ModPos.Length - 1][localizationGraph.ChildModBoxes.Length - 1].maxCost + noLocalScore;
         }
 
-        public static double CalculateCost(HashSet<int> allPeaksForLocalization, List<Product> products, int peptideLength, int[] modPos, int modInd, ModBox OGlycanBox, ModBox box, int FragmentBinsPerDalton)
+        public static double CalculateCost(HashSet<int> allPeaksForLocalization, List<Product> products, int[] modPos, int modInd, ModBox OGlycanBox, ModBox box, int FragmentBinsPerDalton)
         {
             if (modInd == modPos.Length - 1)
             {
                 return 0;
             }
 
-            var fragmentHash = GlycoPeptides.GetLocalFragmentHash(products, peptideLength, modPos, modInd, OGlycanBox, box, FragmentBinsPerDalton);
+            var fragmentHash = GlycoPeptides.GetLocalFragmentHash(products, modPos, modInd, OGlycanBox, box, FragmentBinsPerDalton);
 
             int currentLocalizationScore = allPeaksForLocalization.Intersect(fragmentHash).Count();
 

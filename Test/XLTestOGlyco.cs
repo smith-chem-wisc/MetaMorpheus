@@ -200,6 +200,34 @@ namespace Test
         }
 
         [Test]
+        public static void OGlycoTest_FragmentHash()
+        {
+            //Get glycanBox
+            var glycanBox = OGlycanBoxes[19];
+
+            //Get unmodified peptide, products, allPossible modPos and all boxes.
+            Protein protein = new Protein("LEPSSGASGPQVSSVK", "P16150");
+            var peptide = protein.Digest(new DigestionParams(), new List<Modification>(), new List<Modification>()).First();
+            List<Product> products = new List<Product>();
+            peptide.Fragment(DissociationType.ETD, FragmentationTerminus.Both, products);
+
+            int[] modPos = GlycoSpectralMatch.GetPossibleModSites(peptide, new string[] { "S", "T" }).OrderBy(p => p).ToArray();
+            var boxes = GlycanBox.BuildChildOGlycanBoxes(3, glycanBox.ModIds).ToArray();
+            Assert.That(boxes.Count() == 6);
+
+            //Test GetLocalFragmentHash, which is used for localiation.
+            var testProducts = GlycoPeptides.GetLocalFragmentHash(products, modPos, 0, glycanBox, new GlycanBox(boxes[1].ModIds), 1000);
+            var testProducts1 = GlycoPeptides.GetLocalFragmentHash(products, modPos, 1, glycanBox, new GlycanBox(boxes[1].ModIds), 1000);
+            Assert.That(testProducts.Count() == 2);
+            Assert.That(testProducts1.Count() == 6);
+
+            var testUnlocalProducts = GlycoPeptides.GetUnlocalFragmentHash(products, modPos, glycanBox, 1000);
+            //Proline for ETD will be skipped
+            Assert.That(testProducts1.Count() == 10);
+
+        }
+
+        [Test]
         public static void OGlycoTest_Localization()
         {
             //Get glycanBox
@@ -217,8 +245,8 @@ namespace Test
             Assert.That(boxes.Count() == 6);
 
             //Test GetLocalFragmentHash, which is used for localiation.
-            var testProducts = GlycoPeptides.GetLocalFragmentHash(products, peptide.Length, modPos, 0, glycanBox, new GlycanBox(boxes[1].ModIds), 1000);
-            var testProducts1 = GlycoPeptides.GetLocalFragmentHash(products, peptide.Length, modPos, 1, glycanBox, new GlycanBox(boxes[1].ModIds), 1000);
+            var testProducts = GlycoPeptides.GetLocalFragmentHash(products, modPos, 0, glycanBox, new GlycanBox(boxes[1].ModIds), 1000);
+            var testProducts1 = GlycoPeptides.GetLocalFragmentHash(products, modPos, 1, glycanBox, new GlycanBox(boxes[1].ModIds), 1000);
             Assert.That(testProducts.Count() == 2);
             Assert.That(testProducts1.Count() == 4);
 
@@ -264,7 +292,7 @@ namespace Test
             //Graph Localization
             LocalizationGraph localizationGraph = new LocalizationGraph(modPos, glycanBox, boxes);
 
-            LocalizationGraph.LocalizeOGlycan(localizationGraph.array, modPos, glycanBox, localizationGraph.ChildModBoxes, allPeaks, products, peptide.Length);
+            LocalizationGraph.LocalizeOGlycan(localizationGraph, allPeaks, products);
 
             var allPaths = LocalizationGraph.GetAllPaths(localizationGraph.array, localizationGraph.ChildModBoxes);
 
@@ -275,6 +303,98 @@ namespace Test
 
             var knowLocal = new Tuple<int, int>[3] { new Tuple<int, int>(2, 1), new Tuple<int, int>(3, 1), new Tuple<int, int>(10, 0) };
             Assert.That(Enumerable.SequenceEqual(local, knowLocal));
+        }
+
+        [Test]
+        public static void OGlycoTest_Localization2()
+        {
+            //There may have a bug that MM cannot identify Peptide modified with (HexNAc), This is to test and find the bug.
+            //Get glycanBox
+            var glycanBox = OGlycanBoxes[0];
+
+            //Get unmodified peptide, products, allPossible modPos and all boxes.
+            Protein protein = new Protein("AATVGSLAGQPLQER", "P16150");
+            var peptide = protein.Digest(new DigestionParams(), new List<Modification>(), new List<Modification>()).First();
+            List<Product> products = new List<Product>();
+            peptide.Fragment(DissociationType.ETD, FragmentationTerminus.Both, products);
+
+            int[] modPos = GlycoSpectralMatch.GetPossibleModSites(peptide, new string[] { "S", "T" }).OrderBy(p => p).ToArray();
+            var boxes = GlycanBox.BuildChildOGlycanBoxes(glycanBox.NumberOfMods, glycanBox.ModIds).ToArray();
+
+            //Load scan.
+            CommonParameters commonParameters = new CommonParameters(dissociationType: DissociationType.ETD, trimMsMsPeaks: false);
+            string spectraFile = Path.Combine(TestContext.CurrentContext.TestDirectory, @"GlycoTestData\181217_Fusion_(LC2)_NewObj_Serum_deSA_Jacalin_HRM_4h_ETD_HCD_DDA_mz(400_1200)_21707.mgf");
+            var file = new MyFileManager(true).LoadFile(spectraFile, commonParameters);
+            var scans = MetaMorpheusTask.GetMs2Scans(file, spectraFile, commonParameters).ToArray();
+
+            //Known peptideWithMod match.
+            var peptideWithMod = GlycoPeptides.OGlyGetTheoreticalPeptide(new int[1] {4}, peptide, glycanBox);
+            Assert.That(peptideWithMod.FullSequence == "AAT[O-Glycosylation:N1 on X]VGSLAGQPLQER");
+            //List<Product> knownProducts = peptideWithMod.Fragment(DissociationType.EThcD, FragmentationTerminus.Both).ToList();
+            List<Product> knownProducts = GlycoPeptides.OGlyGetTheoreticalFragments(DissociationType.ETD, peptide, peptideWithMod);
+            var matchedKnownFragmentIons = MetaMorpheusEngine.MatchFragmentIons(scans.First(), knownProducts, commonParameters);
+
+            //Get hashset int
+            int obsPreviousFragmentCeilingMz = 0;
+            List<int> binsToSearch = new List<int>();
+            foreach (var envelope in scans.First().ExperimentalFragments)
+            {
+                // assume charge state 1 to calculate mass tolerance
+                double experimentalFragmentMass = envelope.monoisotopicMass;
+
+                // get theoretical fragment bins within mass tolerance
+                int obsFragmentFloorMass = (int)Math.Floor((commonParameters.ProductMassTolerance.GetMinimumValue(experimentalFragmentMass)) * 1000);
+                int obsFragmentCeilingMass = (int)Math.Ceiling((commonParameters.ProductMassTolerance.GetMaximumValue(experimentalFragmentMass)) * 1000);
+
+                // prevents double-counting peaks close in m/z and lower-bound out of range exceptions
+                if (obsFragmentFloorMass < obsPreviousFragmentCeilingMz)
+                {
+                    obsFragmentFloorMass = obsPreviousFragmentCeilingMz;
+                }
+                obsPreviousFragmentCeilingMz = obsFragmentCeilingMass + 1;
+
+                // search mass bins within a tolerance
+                for (int fragmentBin = obsFragmentFloorMass; fragmentBin <= obsFragmentCeilingMass; fragmentBin++)
+                {
+                    binsToSearch.Add(fragmentBin);
+                }
+            }
+            HashSet<int> allPeaks = new HashSet<int>(binsToSearch);
+
+
+            //Graph Localization
+            LocalizationGraph localizationGraph = new LocalizationGraph(modPos, glycanBox, boxes);
+
+            LocalizationGraph.LocalizeOGlycan(localizationGraph, allPeaks, products);
+
+            var allPaths = LocalizationGraph.GetAllPaths(localizationGraph.array, localizationGraph.ChildModBoxes);
+
+            var knowPath = new int[2] { 1, 1 };
+            Assert.That(Enumerable.SequenceEqual(knowPath, allPaths[0]));
+
+            var local = LocalizationGraph.GetLocalizedPath(localizationGraph.array, modPos, localizationGraph.ChildModBoxes, allPaths.First());
+
+            var knowLocal = new Tuple<int, int>[1] { new Tuple<int, int>(4, 0)};
+            Assert.That(Enumerable.SequenceEqual(local, knowLocal));
+        }
+
+        [Test]
+        public static void OGlycoTest_Run()
+        {
+            GlycoSearchTask task = new GlycoSearchTask()
+            {
+                CommonParameters = new CommonParameters
+                (
+                    dissociationType: DissociationType.ETD
+                )
+            };
+            task._glycoSearchParameters.OxiniumIonFilt = false;
+
+            Directory.CreateDirectory(Path.Combine(Environment.CurrentDirectory, @"TESTGlycoData"));
+            DbForTask db = new DbForTask(Path.Combine(TestContext.CurrentContext.TestDirectory, @"GlycoTestData/P02649.fasta"), false);
+            string spectraFile = Path.Combine(TestContext.CurrentContext.TestDirectory, @"GlycoTestData\181217_Fusion_(LC2)_NewObj_Serum_deSA_Jacalin_HRM_4h_ETD_HCD_DDA_mz(400_1200)_21707.mgf");
+            new EverythingRunnerEngine(new List<(string, MetaMorpheusTask)> { ("Task", task) }, new List<string> { spectraFile }, new List<DbForTask> { db }, Path.Combine(Environment.CurrentDirectory, @"TESTGlycoData")).Run();
+            Directory.Delete(Path.Combine(Environment.CurrentDirectory, @"TESTGlycoData"), true);
         }
 
         [Test]
