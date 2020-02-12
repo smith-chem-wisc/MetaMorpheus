@@ -1,10 +1,6 @@
 ﻿using Proteomics.ProteolyticDigestion;
-using System;
-using System.Collections.Concurrent;
 using System.Collections.Generic;
-using System.IO;
 using System.Linq;
-using System.Threading.Tasks;
 
 namespace EngineLayer
 {
@@ -48,8 +44,6 @@ namespace EngineLayer
             var peptideToPsmMatching = new Dictionary<PeptideWithSetModifications, HashSet<PeptideSpectralMatch>>();
             foreach (var psm in psmList)
             {
-                //if (psm.FdrInfo.PEP_QValue <= 0.01)
-                //{
                 if ((TreatModPeptidesAsDifferentPeptides && psm.FullSequence != null) || (!TreatModPeptidesAsDifferentPeptides && psm.BaseSequence != null))
                 {
                     foreach (var pepWithSetMods in psm.BestMatchingPeptides.Select(p => p.Peptide))
@@ -60,7 +54,6 @@ namespace EngineLayer
                             psmsForThisPeptide.Add(psm);
                     }
                 }
-                //}
             }
 
             foreach (var proteinGroup in proteinGroups)
@@ -230,7 +223,7 @@ namespace EngineLayer
 
                 if (proteinGroup.UniquePeptides.Count() > 0)
                 {
-                    proteinGroup.PValue = GetProteinGroupPValue(proteinGroup);                                        
+                    proteinGroup.PValue = GetProteinGroupPValue(proteinGroup);
                 }
                 else // no unique peptides
                 {
@@ -238,6 +231,7 @@ namespace EngineLayer
                 }
             }
         }
+
         /// <summary>
         /// This adapted from Anal. Chem. 2003, 75, 4646-4658
         /// Equation 3. Protein P value is 1 - the product of peptide pep values.
