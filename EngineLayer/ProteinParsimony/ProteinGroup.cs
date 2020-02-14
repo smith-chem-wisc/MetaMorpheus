@@ -25,6 +25,7 @@ namespace EngineLayer
             BestPeptideScore = 0;
             QValue = 0;
             PValue = 0;
+            Probability = 0;
             IsDecoy = false;
             IsContaminant = false;
             ModsInfo = new List<string>();
@@ -73,8 +74,10 @@ namespace EngineLayer
 
         public double PValue { get; set; }
 
+        public double Probability { get; set; }
+
         public double BestPeptideQValue { get; set; }
-        
+
         public double BestPeptideScore { get; set; }
 
         public int CumulativeTarget { get; set; }
@@ -157,7 +160,8 @@ namespace EngineLayer
             sb.Append("Protein QValue" + '\t');
             sb.Append("Best Peptide Score" + '\t');
             sb.Append("Best Peptide Notch QValue" + '\t');
-            sb.Append("Protein P Value");
+            sb.Append("Protein P Value" + '\t');
+            sb.Append("Protein Predicted P Value");
             return sb.ToString();
         }
 
@@ -310,8 +314,12 @@ namespace EngineLayer
             sb.Append(BestPeptideQValue);
             sb.Append("\t");
 
-            // best peptide q value
+            // protein p value
             sb.Append(PValue);
+            sb.Append("\t");
+
+            // predicted protein p value
+            sb.Append(Probability);
             sb.Append("\t");
 
             return sb.ToString();
