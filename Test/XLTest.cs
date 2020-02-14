@@ -351,7 +351,7 @@ namespace Test
         {
             //Generate parameters
             var commonParameters = new CommonParameters(doPrecursorDeconvolution: false, dissociationType: DissociationType.HCD,
-                scoreCutoff: 1, digestionParams: new DigestionParams(minPeptideLength: 5), precursorMassTolerance: new PpmTolerance(10));
+                scoreCutoff: 1, digestionParams: new DigestionParams(minPeptideLength: 5), precursorMassTolerance: new PpmTolerance(10), maxThreadsToUsePerFile: 1);
 
             var xlSearchParameters = new XlSearchParameters
             {
@@ -396,7 +396,7 @@ namespace Test
             }
 
             MyFileManager myFileManager = new MyFileManager(true);
-            CommonParameters CommonParameters = new CommonParameters(digestionParams: new DigestionParams());
+            CommonParameters CommonParameters = new CommonParameters(digestionParams: new DigestionParams(), maxThreadsToUsePerFile: 1);
 
             var fsp = new List<(string fileName, CommonParameters fileSpecificParameters)>();
             fsp.Add((Path.GetFileName(newFileName), CommonParameters));
@@ -582,7 +582,7 @@ namespace Test
             Assert.AreEqual(0, unnasignedCrossType);
 
             var task = new PostXLSearchAnalysisTask();
-            task.FileSpecificParameters = new List<(string FileName, CommonParameters Parameters)>();
+            task.FileSpecificParameters = new List<(string FileName, CommonParameters commonParameters)> { ("filename", new CommonParameters(maxThreadsToUsePerFile: 1))};
             task.ComputeXlinkQandPValues(firstCsmsFromListsOfCsms, firstCsmsFromListsOfCsms.Where(c => c.CrossType == PsmCrossType.Intra).ToList(), firstCsmsFromListsOfCsms.Where(c => c.CrossType == PsmCrossType.Inter).ToList(), commonParameters, "");
 
             //check that alpha peptides have greater score than beta peptides
@@ -757,9 +757,9 @@ namespace Test
             Assert.AreEqual(51, inter);
             Assert.AreEqual(76, intra);
             Assert.AreEqual(234, single);
-            Assert.AreEqual(9, loop);
+            Assert.AreEqual(10, loop);
             Assert.AreEqual(0, deadend);
-            Assert.AreEqual(43, deadendH2O);
+            Assert.AreEqual(44, deadendH2O);
             Assert.AreEqual(0, deadendNH2);
             Assert.AreEqual(0, deadendTris);
         }

@@ -6,7 +6,7 @@ using System.Linq;
 
 namespace EngineLayer
 {
-    public class Ms2ScanWithSpecificMass : IScan
+    public class Ms2ScanWithSpecificMass
     {
         public Ms2ScanWithSpecificMass(MsDataScan mzLibScan, double precursorMonoisotopicPeakMz, int precursorCharge, string fullFilePath, CommonParameters commonParam, IsotopicEnvelope[] neutralExperimentalFragments = null)
         {
