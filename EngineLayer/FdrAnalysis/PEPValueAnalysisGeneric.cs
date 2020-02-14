@@ -9,10 +9,12 @@ using Proteomics.Fragmentation;
 using Proteomics.ProteolyticDigestion;
 using Proteomics.RetentionTimePrediction;
 using System;
+using System.Collections.Concurrent;
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
 using System.Text;
+using System.Threading.Tasks;
 using static Microsoft.ML.DataOperationsCatalog;
 
 namespace EngineLayer
@@ -479,45 +481,66 @@ namespace EngineLayer
         //This method ignores ambiguity and loads only the first peptide in a series for each PSM
         public static IEnumerable<PsmData> CreatePsmData(string searchType, List<(string fileName, CommonParameters fileSpecificParameters)> fileSpecificParameters, List<PeptideSpectralMatch> psms, Dictionary<string, int> sequenceToPsmCount, Dictionary<string, Dictionary<int, Tuple<double, double>>> timeDependantHydrophobicityAverageAndDeviation_unmodified, Dictionary<string, Dictionary<int, Tuple<double, double>>> timeDependantHydrophobicityAverageAndDeviation_modified, Dictionary<string, float> fileSpecificMedianFragmentMassErrors, int chargeStateMode, string[] trainingVariables)
         {
-            List<PsmData> pd = new List<PsmData>();
+            object psmDataListLock = new object();
+            List<PsmData> psmDataList = new List<PsmData>();
 
-            foreach (PeptideSpectralMatch psm in psms)
+            int maxThreads = fileSpecificParameters.FirstOrDefault().fileSpecificParameters.MaxThreadsToUsePerFile;
+            int[] threads = Enumerable.Range(0, maxThreads).ToArray();
+            Parallel.ForEach(threads, (i) =>
             {
-                if (searchType == "crosslink")
+                List<PsmData> localPsmDataList = new List<PsmData>();
+                for (; i < psms.Count; i += maxThreads)
                 {
-                    CrosslinkSpectralMatch csm = (CrosslinkSpectralMatch)psm;
+                    PeptideSpectralMatch psm = psms[i];
 
-                    bool label;
-                    if (csm.IsDecoy || csm.BetaPeptide.IsDecoy || psm.FdrInfo.QValue > 0.25)
+                    // Stop loop if canceled
+                    if (GlobalVariables.StopLoops) { return; }
+
+                    PsmData newPsmData = new PsmData();
+                    if (searchType == "crosslink")
                     {
-                        label = false;
-                        pd.Add(CreateOnePsmDataEntry(searchType, fileSpecificParameters, psm, sequenceToPsmCount, timeDependantHydrophobicityAverageAndDeviation_unmodified, timeDependantHydrophobicityAverageAndDeviation_modified, fileSpecificMedianFragmentMassErrors, chargeStateMode, csm.BestMatchingPeptides.First().Peptide, trainingVariables, 0, label));
-                    }
-                    else if (!csm.IsDecoy && !csm.BetaPeptide.IsDecoy && psm.FdrInfo.QValue <= 0.01)
-                    {
-                        label = true;
-                        pd.Add(CreateOnePsmDataEntry(searchType, fileSpecificParameters, psm, sequenceToPsmCount, timeDependantHydrophobicityAverageAndDeviation_unmodified, timeDependantHydrophobicityAverageAndDeviation_modified, fileSpecificMedianFragmentMassErrors, chargeStateMode, csm.BestMatchingPeptides.First().Peptide, trainingVariables, 0, label));
-                    }
-                }
-                else
-                {
-                    foreach (var (notch, peptideWithSetMods) in psm.BestMatchingPeptides)
-                    {
+                        CrosslinkSpectralMatch csm = (CrosslinkSpectralMatch)psms[i];
+
                         bool label;
-                        if (peptideWithSetMods.Protein.IsDecoy || psm.FdrInfo.QValue > 0.25)
+                        if (csm.IsDecoy || csm.BetaPeptide.IsDecoy || psm.FdrInfo.QValue > 0.25)
                         {
                             label = false;
-                            pd.Add(CreateOnePsmDataEntry(searchType, fileSpecificParameters, psm, sequenceToPsmCount, timeDependantHydrophobicityAverageAndDeviation_unmodified, timeDependantHydrophobicityAverageAndDeviation_modified, fileSpecificMedianFragmentMassErrors, chargeStateMode, peptideWithSetMods, trainingVariables, notch, label));
+                            newPsmData = CreateOnePsmDataEntry(searchType, fileSpecificParameters, psm, sequenceToPsmCount, timeDependantHydrophobicityAverageAndDeviation_unmodified, timeDependantHydrophobicityAverageAndDeviation_modified, fileSpecificMedianFragmentMassErrors, chargeStateMode, csm.BestMatchingPeptides.First().Peptide, trainingVariables, 0, label);
                         }
-                        else if (!peptideWithSetMods.Protein.IsDecoy && psm.FdrInfo.QValue <= 0.01)
+                        else if (!csm.IsDecoy && !csm.BetaPeptide.IsDecoy && psm.FdrInfo.QValue <= 0.01)
                         {
                             label = true;
-                            pd.Add(CreateOnePsmDataEntry(searchType, fileSpecificParameters, psm, sequenceToPsmCount, timeDependantHydrophobicityAverageAndDeviation_unmodified, timeDependantHydrophobicityAverageAndDeviation_modified, fileSpecificMedianFragmentMassErrors, chargeStateMode, peptideWithSetMods, trainingVariables, notch, label));
+                            newPsmData = CreateOnePsmDataEntry(searchType, fileSpecificParameters, psm, sequenceToPsmCount, timeDependantHydrophobicityAverageAndDeviation_unmodified, timeDependantHydrophobicityAverageAndDeviation_modified, fileSpecificMedianFragmentMassErrors, chargeStateMode, csm.BestMatchingPeptides.First().Peptide, trainingVariables, 0, label);
+                        }
+                        localPsmDataList.Add(newPsmData);
+                    }
+                    else
+                    {
+                        foreach (var (notch, peptideWithSetMods) in psm.BestMatchingPeptides)
+                        {
+                            bool label;
+                            if (peptideWithSetMods.Protein.IsDecoy || psm.FdrInfo.QValue > 0.25)
+                            {
+                                label = false;
+                                newPsmData = CreateOnePsmDataEntry(searchType, fileSpecificParameters, psm, sequenceToPsmCount, timeDependantHydrophobicityAverageAndDeviation_unmodified, timeDependantHydrophobicityAverageAndDeviation_modified, fileSpecificMedianFragmentMassErrors, chargeStateMode, peptideWithSetMods, trainingVariables, notch, label);
+                            }
+                            else if (!peptideWithSetMods.Protein.IsDecoy && psm.FdrInfo.QValue <= 0.01)
+                            {
+                                label = true;
+                                newPsmData = CreateOnePsmDataEntry(searchType, fileSpecificParameters, psm, sequenceToPsmCount, timeDependantHydrophobicityAverageAndDeviation_unmodified, timeDependantHydrophobicityAverageAndDeviation_modified, fileSpecificMedianFragmentMassErrors, chargeStateMode, peptideWithSetMods, trainingVariables, notch, label);
+                            }
+                            localPsmDataList.Add(newPsmData);
                         }
                     }
+                    
                 }
-            }
-            return pd.AsEnumerable();
+                lock (psmDataListLock)
+                {
+                    psmDataList.AddRange(localPsmDataList);
+                }
+            });
+
+            return psmDataList.OrderByDescending(p => p.TotalMatchingFragmentCount).ThenByDescending(p => p.Intensity).AsEnumerable();
         }
 
         public static PsmData CreateOnePsmDataEntry(string searchType, List<(string fileName, CommonParameters fileSpecificParameters)> fileSpecificParameters, PeptideSpectralMatch psm, Dictionary<string, int> sequenceToPsmCount, Dictionary<string, Dictionary<int, Tuple<double, double>>> timeDependantHydrophobicityAverageAndDeviation_unmodified, Dictionary<string, Dictionary<int, Tuple<double, double>>> timeDependantHydrophobicityAverageAndDeviation_modified, Dictionary<string, float> fileSpecificMedianFragmentMassErrors, int chargeStateMode, PeptideWithSetModifications selectedPeptide, string[] trainingVariables, int notchToUse, bool label)
