@@ -56,8 +56,8 @@ namespace TaskLayer
                 WriteFile.WritePsmGlycoToTsv(allPsmsGly, writtenFileInter2, 2);
 
                 var ProteinLevelLocalization = ProteinLevelGlycoParsimony(allPsmsGly);
-                var writtenFileInter3 = Path.Combine(OutputFolder, "protein_glyco_localization" + ".tsv");
-                WriteFile.WriteProteinLevelGlycoLocalization(ProteinLevelLocalization, writtenFileInter3);
+                WriteFile.WriteSeenProteinGlycoLocalization(ProteinLevelLocalization, Path.Combine(OutputFolder, "seen_glyco_localization" + ".tsv"));
+                WriteFile.WriteProteinGlycoLocalization(ProteinLevelLocalization, Path.Combine(OutputFolder, "protein_glyco_localization" + ".tsv"));
                 return MyTaskResults;
             }
         }
@@ -73,7 +73,7 @@ namespace TaskLayer
 
         private Dictionary<string, double> ProteinLevelGlycoParsimony(List<GlycoSpectralMatch> allPsmsGly)
         {
-            //<id, smallest fdr>. id: ProteinAccession, ProtienPos, GlycanId.
+            //<id, smallest fdr>. id: ProteinAccession, ProtienPos, GlycanId, isLocalized.
             Dictionary<string, double> localizedGlycan = new Dictionary<string, double>();
 
             foreach (var gsm in allPsmsGly)

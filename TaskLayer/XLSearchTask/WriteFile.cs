@@ -447,8 +447,8 @@ namespace TaskLayer
             }
         }
 
-        //The function is to summarize glycosylation on each site of a protein. 
-        public static void WriteProteinLevelGlycoLocalization(Dictionary<string, double> items, string outputPath)
+        //The function is to summarize localized glycan by protein site.
+        public static void WriteSeenProteinGlycoLocalization(Dictionary<string, double> items, string outputPath)
         {
             if (items.Count == 0)
             { return; }
@@ -466,6 +466,49 @@ namespace TaskLayer
                         GlycanBox.GlobalOGlycans[int.Parse(x[3])].Composition + "\t" +
                         x[4] + "\t" +
                         item.Value.ToString()
+                        );
+                }
+            }
+        }
+
+        //The function is to summarize localized glycosylation of each protein site. 
+        public static void WriteProteinGlycoLocalization(Dictionary<string, double> items, string outputPath)
+        {
+            if (items.Count == 0)
+            { return; }
+
+            Dictionary<string, HashSet<string>> localizedglycans = new Dictionary<string, HashSet<string>>();
+            foreach (var item in items)
+            {
+                if (item.Key.Contains("DECOY") || item.Key.Contains("FALSE") || item.Value > 0.05)
+                {
+                    continue;
+                }
+                var x = item.Key.Split('-');
+                var key = x[0] + "-" + x[2];
+                if ( localizedglycans.ContainsKey(key))
+                {
+                    localizedglycans[key].Add(x[3]);
+                }
+                else
+                {
+                    localizedglycans[key] = new HashSet<string>();
+                    localizedglycans[key].Add(x[3]);
+                }
+
+            }
+
+            var writtenFile = Path.Combine(outputPath);
+            using (StreamWriter output = new StreamWriter(writtenFile))
+            {
+                output.WriteLine("Protein Accession\tModification Site\tLocalized Glycan Number\tLocalized Glycans");
+                foreach (var local in localizedglycans.OrderBy(p => p.Key))
+                {
+                    var x = local.Key.Split('-');
+                    output.WriteLine(
+                        x[0] + "\t" +
+                        x[1] + "\t" +
+                        String.Join(",", local.Value.Select(p=> GlycanBox.GlobalOGlycans[int.Parse(p)].Composition))
                         );
                 }
             }

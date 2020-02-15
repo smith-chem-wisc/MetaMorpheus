@@ -27,11 +27,13 @@ namespace EngineLayer.GlycoSearch
         public List<LocalizationGraph> LocalizationGraphs;
         public List<Tuple<int, Tuple<int, int>[]>> OGlycanBoxLocalization;
 
+        public int TotalGlycoSites { get; set; }
+
         public double PeptideScore { get; set; }
         public double GlycanScore { get; set; }
         public double DiagnosticIonScore { get; set; }
         public double R138vs144 { get; set; }
-        public List<Tuple<int, int, bool>> LocalizedGlycan { get; set; }
+        public List<Tuple<int, int, bool>> LocalizedGlycan { get; set; } //<mod site, glycanID, isLocalized> All seen glycans identified.
         public string LocalizationLevel { get; set; }
 
         //Motif should be writen with required form
@@ -110,9 +112,10 @@ namespace EngineLayer.GlycoSearch
             sb.Append("Matched Ion Mass Diff (Ppm)" + '\t');
             sb.Append("Matched Ion Intensities" + '\t');
             sb.Append("Matched Ion Counts" + '\t');
-            sb.Append("Child Scans Matched Ion Series" + '\t');
             sb.Append("Decoy/Contaminant/Target" + '\t');
             sb.Append("QValue" + '\t');
+            sb.Append("PEP" + '\t');
+            sb.Append("PEP_QValue" + '\t');
 
             return sb.ToString();
         }
@@ -154,6 +157,8 @@ namespace EngineLayer.GlycoSearch
             //sb.Append("Peptide Score" + '\t');
             //sb.Append("Glycan Score" + '\t');
             //sb.Append("DiagonosticIon Score" + '\t');
+            sb.Append("Plausible Number Of Glycans" + '\t');
+            sb.Append("Total Glycosylation sites" + '\t');
             sb.Append("GlycanMass" + '\t');
             //sb.Append("GlycanDecoy" + '\t');   
             sb.Append("Plausible GlycanComposition" + '\t');
@@ -248,6 +253,10 @@ namespace EngineLayer.GlycoSearch
                 sb.Append(TotalScore + "\t");
 
                 var glycanBox = GlycanBox.OGlycanBoxes[OGlycanBoxLocalization.First().Item1];
+
+                sb.Append(glycanBox.NumberOfMods + "\t");
+
+                sb.Append(LocalizationGraphs.First().ModPos.Length + "\t");
 
                 sb.Append(glycanBox.Mass); sb.Append("\t");
 
@@ -353,8 +362,8 @@ namespace EngineLayer.GlycoSearch
                 {
                     localizationLevel = "Level4";
                 }
-
             }
+
 
 
             foreach (var seenMod in seenModSite)
