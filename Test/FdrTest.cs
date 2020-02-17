@@ -317,7 +317,7 @@ namespace Test
                 }
             }
           
-            string metrics = PEP_Analysis.ComputePEPValuesForAllPSMsGeneric(moreNonNullPSMs, "standard", fsp);
+            string metrics = PEP_Analysis.ComputePEPValuesForAllPSMsGeneric(moreNonNullPSMs, "standard", fsp, Path.Combine(TestContext.CurrentContext.TestDirectory, @"TestData\"));
             Assert.GreaterOrEqual(32, trueCount);
 
             //Test Variant Peptide as Input is identified as such as part of PEP calculation input much of the next several lines simply necessry to create a psm.
@@ -382,7 +382,7 @@ namespace Test
                     moreNonNullPSMsCZE.Add(psm);
                 }
             }
-            metrics = PEP_Analysis.ComputePEPValuesForAllPSMsGeneric(moreNonNullPSMsCZE, "standard", fsp);
+            metrics = PEP_Analysis.ComputePEPValuesForAllPSMsGeneric(moreNonNullPSMsCZE, "standard", fsp, Path.Combine(TestContext.CurrentContext.TestDirectory, @"TestData\"));
             Assert.GreaterOrEqual(32, trueCount);
         }
 
