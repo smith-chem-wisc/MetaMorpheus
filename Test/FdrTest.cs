@@ -276,6 +276,7 @@ namespace Test
             {
                 { Path.GetFileName(maxScorePsm.FullFilePath), 0 }
             };
+
             var maxPsmData = PEP_Analysis.CreateOnePsmDataEntry("standard", fsp, maxScorePsm, sequenceToPsmCount, fileSpecificRetTimeHI_behavior, fileSpecificRetTemHI_behaviorModifiedPeptides, massError, chargeStateMode, pwsm, trainingVariables, notch, !pwsm.Protein.IsDecoy);
             Assert.That(maxScorePsm.PeptidesToMatchingFragments.Count - 1, Is.EqualTo(maxPsmData.Ambiguity));
             Assert.That(maxScorePsm.DeltaScore / maxScorePsm.PeptideLength, Is.EqualTo(maxPsmData.DeltaScore).Within(0.05));
@@ -313,8 +314,8 @@ namespace Test
                 }
             }
 
-            string expectedMetrics = "************************************************************\r\n*       Metrics for Determination of PEP Using Binary Classification      \r\n*-----------------------------------------------------------\r\n*       " + 
-                "Accuracy:  1\r\n*       Area Under Curve:  1\r\n*       Area under Precision recall Curve:  1\r\n*       F1Score:  1\r\n*       LogLoss:  7.880423044416313E-09\r\n*       LogLossReduction:  0.9999999917801967\r\n*       PositivePrecision:  1\r\n*" + 
+            string expectedMetrics = "************************************************************\r\n*       Metrics for Determination of PEP Using Binary Classification      \r\n*-----------------------------------------------------------\r\n*       " +
+                "Accuracy:  1\r\n*       Area Under Curve:  1\r\n*       Area under Precision recall Curve:  1\r\n*       F1Score:  1\r\n*       LogLoss:  7.880423044416313E-09\r\n*       LogLossReduction:  0.9999999917801967\r\n*       PositivePrecision:  1\r\n*" +
                 "       PositiveRecall:  1\r\n*       NegativePrecision:  1\r\n*       NegativeRecall:  1\r\n*       Count of Ambiguous Peptides Removed:  0\r\n************************************************************\r\n";
 
             string metrics = PEP_Analysis.ComputePEPValuesForAllPSMsGeneric(moreNonNullPSMs, "standard", fsp, Path.Combine(TestContext.CurrentContext.TestDirectory, @"TestData\"));
@@ -384,8 +385,8 @@ namespace Test
                 }
             }
 
-            expectedMetrics = "************************************************************\r\n*       Metrics for Determination of PEP Using Binary Classification      \r\n*-----------------------------------------------------------\r\n*       " + 
-                "Accuracy:  1\r\n*       Area Under Curve:  1\r\n*       Area under Precision recall Curve:  1\r\n*       F1Score:  1\r\n*       LogLoss:  5.259443603245184E-10\r\n*       LogLossReduction:  0.9999999994514052\r\n*       PositivePrecision:  1\r\n*" + 
+            expectedMetrics = "************************************************************\r\n*       Metrics for Determination of PEP Using Binary Classification      \r\n*-----------------------------------------------------------\r\n*       " +
+                "Accuracy:  1\r\n*       Area Under Curve:  1\r\n*       Area under Precision recall Curve:  1\r\n*       F1Score:  1\r\n*       LogLoss:  5.259443603245184E-10\r\n*       LogLossReduction:  0.9999999994514052\r\n*       PositivePrecision:  1\r\n*" +
                 "       PositiveRecall:  1\r\n*       NegativePrecision:  1\r\n*       NegativeRecall:  1\r\n*       Count of Ambiguous Peptides Removed:  0\r\n************************************************************\r\n";
 
             metrics = PEP_Analysis.ComputePEPValuesForAllPSMsGeneric(moreNonNullPSMsCZE, "standard", fsp, Path.Combine(TestContext.CurrentContext.TestDirectory, @"TestData\"));
@@ -513,11 +514,10 @@ namespace Test
                 peptides.Add(bmp.Peptide);
             }
 
-            PEP_Analysis.RemoveBestMatchingPeptidesWithLowPEP(psm,indiciesOfPeptidesToRemove, notches, peptides, pepValuePredictions, ref ambiguousPeptidesRemovedCount);
+            PEP_Analysis.RemoveBestMatchingPeptidesWithLowPEP(psm, indiciesOfPeptidesToRemove, notches, peptides, pepValuePredictions, ref ambiguousPeptidesRemovedCount);
             Assert.AreEqual(1, ambiguousPeptidesRemovedCount);
             Assert.AreEqual(2, psm.BestMatchingPeptides.Select(b => b.Notch).ToList().Count);
         }
-
 
         [Test]
         public static void TestPEP_standardDeviationsToChange()
