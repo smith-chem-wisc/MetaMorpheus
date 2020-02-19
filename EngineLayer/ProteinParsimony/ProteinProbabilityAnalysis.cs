@@ -1,10 +1,8 @@
 ﻿using EngineLayer.FdrAnalysis;
 using Microsoft.ML;
-using Microsoft.ML.Data;
 using System;
 using System.Collections.Generic;
 using System.Linq;
-using System.Text;
 using static Microsoft.ML.DataOperationsCatalog;
 
 namespace EngineLayer
@@ -12,8 +10,9 @@ namespace EngineLayer
     public class ProteinProbabilityAnalysis
     {
         private const double PeptidePValueCutoff = 0.0;
+        private const double ProteinPValueCutoff = 0.7;
 
-        public static string ComputeProteinProbabilities(List<ProteinGroup> proteinGroups, bool modPeptidesAreDifferent)
+        public static void ComputeProteinProbabilities(List<ProteinGroup> proteinGroups, bool modPeptidesAreDifferent)
         {
             // create ML context
             MLContext mlContext = new MLContext();
@@ -42,43 +41,10 @@ namespace EngineLayer
             // predict protein probability for each protein entry
             foreach (ProteinGroup pg in proteinGroups)
             {
-                ProteinData pd = CreateProteinDataEntry(pg, modPeptidesAreDifferent, false); // fixme
+                ProteinData pd = CreateProteinDataEntry(pg, modPeptidesAreDifferent);
                 var proteinPrediction = predictionEngine.Predict(pd);
                 pg.Probability = proteinPrediction.Probability;
             }
-
-            var predictions = trainedModel.Transform(testData);
-
-            CalibratedBinaryClassificationMetrics metrics;
-            try
-            {
-                metrics = mlContext.BinaryClassification.Evaluate(data: predictions, labelColumnName: "Label", scoreColumnName: "Score");
-                return PrintBinaryClassificationMetrics(trainer.ToString(), metrics);
-            }
-            catch
-            {
-                return "";
-            }
-        }
-
-        public static string PrintBinaryClassificationMetrics(string name, CalibratedBinaryClassificationMetrics metrics)
-        {
-            StringBuilder s = new StringBuilder();
-            s.AppendLine("************************************************************");
-            s.AppendLine("*       Metrics for Determination of PEP Using Binary Classification      ");
-            s.AppendLine("*-----------------------------------------------------------");
-            s.AppendLine("*       Accuracy:  " + metrics.Accuracy.ToString());
-            s.AppendLine("*       Area Under Curve:  " + metrics.AreaUnderRocCurve.ToString());
-            s.AppendLine("*       Area under Precision recall Curve:  " + metrics.AreaUnderPrecisionRecallCurve.ToString());
-            s.AppendLine("*       F1Score:  " + metrics.F1Score.ToString());
-            s.AppendLine("*       LogLoss:  " + metrics.LogLoss.ToString());
-            s.AppendLine("*       LogLossReduction:  " + metrics.LogLossReduction.ToString());
-            s.AppendLine("*       PositivePrecision:  " + metrics.PositivePrecision.ToString());
-            s.AppendLine("*       PositiveRecall:  " + metrics.PositiveRecall.ToString());
-            s.AppendLine("*       NegativePrecision:  " + metrics.NegativePrecision.ToString());
-            s.AppendLine("*       NegativeRecall:  " + metrics.NegativeRecall.ToString());
-            s.AppendLine("************************************************************");
-            return s.ToString();
         }
 
         // build the protein data set that we will feed into the model
@@ -89,37 +55,25 @@ namespace EngineLayer
             // due to parsimony, each protein group has 1 protein
             foreach (ProteinGroup pg in proteinGroups)
             {
-                bool label;
-                if (pg.IsDecoy || pg.QValue > 0.05)
-                {
-                    label = false;
-                    ProteinData newProteinData = CreateProteinDataEntry(pg, treatModPeptidesDifferent, label);
-                    proteinDataList.Add(newProteinData);
-                }
-                else if (!pg.IsDecoy && pg.QValue <= 0.01)
-                {
-                    label = true;
-                    ProteinData newProteinData = CreateProteinDataEntry(pg, treatModPeptidesDifferent, label);
-                    proteinDataList.Add(newProteinData);
-                }
+                ProteinData newProteinData = CreateProteinDataEntry(pg, treatModPeptidesDifferent);
+                proteinDataList.Add(newProteinData);
             }
 
             return proteinDataList.AsEnumerable();
         }
 
         // each entry contains information about the protein and its features
-        public static ProteinData CreateProteinDataEntry(ProteinGroup pg, bool treatModPeptidesDifferent, bool label)
+        public static ProteinData CreateProteinDataEntry(ProteinGroup pg, bool treatModPeptidesDifferent)
         {
             double averagePEP = 0.0;
+            //bool containUniquePeptides = false;
             double percentageUnique = 0;
             int totalPeptideCount = 0;
-            double sequenceCoverageFraction = 0.0;
-            int numProteinAccessions = 0;
+            bool label = false;
 
             percentageUnique = (double)pg.UniquePeptides.Count / pg.AllPeptides.Count;
+            //containUniquePeptides = pg.UniquePeptides.Count > 0 ? true : containUniquePeptides;
             totalPeptideCount = pg.AllPeptides.Count;
-            sequenceCoverageFraction = pg.SequenceCoverageFraction.First();
-            numProteinAccessions = pg.Proteins.Count;
 
             List<PeptideSpectralMatch> peptides;
             if (treatModPeptidesDifferent)
@@ -134,7 +88,7 @@ namespace EngineLayer
             double sumPEP = 0.0;
             foreach (PeptideSpectralMatch peptide in peptides)
             {
-                if (peptide.FdrInfo.PEP <= PeptidePValueCutoff) // p value shouldnt be less than 0
+                if (peptide.FdrInfo.PEP <= PeptidePValueCutoff)
                 {
                     continue;
                 }
@@ -144,13 +98,16 @@ namespace EngineLayer
 
             averagePEP = sumPEP / peptides.Count;
 
+            // fixme: best way to label training data
+            // to get started, compare protein p value with an arbitrary cutoff at 0.7
+            label = pg.PValue > ProteinPValueCutoff ? true : label;
+
             return new ProteinData
             {
                 AveragePEP = (float)averagePEP,
+                //ContainsUniquePeptides = Convert.ToSingle(containUniquePeptides),
                 PercentageOfUniquePeptides = (float)percentageUnique,
                 TotalPeptideCount = totalPeptideCount,
-                PercentageSequenceCoverage = (float)sequenceCoverageFraction,
-                NumProteinAccessions = numProteinAccessions,
                 Label = label
             };
         }
@@ -160,14 +117,11 @@ namespace EngineLayer
     public class ProteinData
     {
         // todo: identify features to train the model on
-        //public static readonly string[] featuresForTraining = new string[] { "AveragePEP", "PercentageOfUniquePeptides", "TotalPeptideCount", "PercentageSequenceCoverage", "NumProteinAccessions" };
         public static readonly string[] featuresForTraining = new string[] { "AveragePEP", "PercentageOfUniquePeptides", "TotalPeptideCount" };
 
         public float AveragePEP { get; set; }
         public float PercentageOfUniquePeptides { get; set; }
         public float TotalPeptideCount { get; set; }
-        public float PercentageSequenceCoverage { get; set; }
-        public float NumProteinAccessions { get; set; }
         public bool Label { get; set; }
     }
 }
