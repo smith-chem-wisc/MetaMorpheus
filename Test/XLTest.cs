@@ -1225,7 +1225,7 @@ namespace Test
         public static void TestMixedMs2Ms2()
         {
             string outputFile = Path.Combine(TestContext.CurrentContext.TestDirectory, @"TestMixedMs2Ms2.tsv");
-            CommonParameters commonParameters = new CommonParameters(dissociationType: DissociationType.CID, childScanDissociationType: DissociationType.ETD,
+            CommonParameters commonParameters = new CommonParameters(dissociationType: DissociationType.CID, ms2childScanDissociationType: DissociationType.ETD,
                 trimMsMsPeaks: false);
 
             string spectraFile = Path.Combine(TestContext.CurrentContext.TestDirectory, @"XlTestData\ms2mixed_bsa_xlink.mzML");
@@ -1264,7 +1264,7 @@ namespace Test
             var indexingResults = (IndexingResults)new IndexingEngine(new List<Protein> { bsa, bsa2 }, new List<Modification>(), new List<Modification>(),
                 null, null, null, 0, DecoyType.None, commonParameters, fsp, 5000, false, new List<FileInfo>(), new List<string>()).Run();
 
-            var secondCombinedParams = new CommonParameters(dissociationType: DissociationType.ETD, childScanDissociationType: DissociationType.ETD,
+            var secondCombinedParams = new CommonParameters(dissociationType: DissociationType.ETD, ms2childScanDissociationType: DissociationType.ETD,
                 trimMsMsPeaks: false);
 
             var fsp2 = new List<(string, CommonParameters)>();
@@ -1329,7 +1329,7 @@ namespace Test
         public static void TestMs2Ms3()
         {
             string outputFile = Path.Combine(TestContext.CurrentContext.TestDirectory, @"TestMs2Ms3.tsv");
-            CommonParameters commonParameters = new CommonParameters(dissociationType: DissociationType.CID, childScanDissociationType: DissociationType.LowCID, precursorMassTolerance: new PpmTolerance(10));
+            CommonParameters commonParameters = new CommonParameters(dissociationType: DissociationType.CID, ms3childScanDissociationType: DissociationType.LowCID, precursorMassTolerance: new PpmTolerance(10));
 
             string spectraFile = Path.Combine(TestContext.CurrentContext.TestDirectory, @"XlTestData\10226.mzML");
             var file = new MyFileManager(true).LoadFile(spectraFile, commonParameters);
