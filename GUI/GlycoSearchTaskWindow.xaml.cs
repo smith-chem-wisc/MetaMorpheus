@@ -119,7 +119,7 @@ namespace MetaMorpheusGUI
             CkbOxiniumIonFilt.IsChecked = task._glycoSearchParameters.OxiniumIonFilt;
 
             txtTopNum.Text = task._glycoSearchParameters.GlycoSearchTopNum.ToString(CultureInfo.InvariantCulture);
-            CmbGlycanDatabase.SelectedIndex = task._glycoSearchParameters.GlycanDatabasefileIndex;
+            CmbGlycanDatabase.SelectedItem = task._glycoSearchParameters.GlycanDatabasefile;
 
             cbbPrecusorMsTl.SelectedIndex = task.CommonParameters.PrecursorMassTolerance is AbsoluteTolerance ? 0 : 1;
             PrecusorMsTlTextBox.Text = task.CommonParameters.PrecursorMassTolerance.Value.ToString(CultureInfo.InvariantCulture);
@@ -246,7 +246,7 @@ namespace MetaMorpheusGUI
                 TheTask._glycoSearchParameters.IsOGlycoSearch = RbtOGlycoSearch.IsChecked.Value;
             }
 
-            TheTask._glycoSearchParameters.GlycanDatabasefileIndex = CmbGlycanDatabase.SelectedIndex;
+            TheTask._glycoSearchParameters.GlycanDatabasefile = CmbGlycanDatabase.SelectedItem.ToString();
             TheTask._glycoSearchParameters.GlycoSearchTopNum = int.Parse(txtTopNum.Text, CultureInfo.InvariantCulture);
             TheTask._glycoSearchParameters.MaximumOGlycanAllowed = int.Parse(TbMaxOGlycanNum.Text, CultureInfo.InvariantCulture);
             TheTask._glycoSearchParameters.OxiniumIonFilt = CkbOxiniumIonFilt.IsChecked.Value;

@@ -20,7 +20,7 @@ namespace EngineLayer.GlycoSearch
         private readonly int TopN;
         private readonly int _maxOGlycanNum;
         private bool OxiniumIonFilt;
-        private readonly int _glycanDatabaseIndex;
+        private readonly string _glycanDatabase;
 
         private readonly Tolerance PrecusorSearchMode;
         private readonly MassDiffAcceptor ProductSearchMode;
@@ -29,7 +29,7 @@ namespace EngineLayer.GlycoSearch
 
         public GlycoSearchEngine(List<GlycoSpectralMatch>[] globalCsms, Ms2ScanWithSpecificMass[] listOfSortedms2Scans, List<PeptideWithSetModifications> peptideIndex,
             List<int>[] fragmentIndex, List<int>[] secondFragmentIndex, int currentPartition, CommonParameters commonParameters, List<(string fileName, CommonParameters fileSpecificParameters)> fileSpecificParameters,
-             int glycanDatabaseIndex, bool isOGlycoSearch, int glycoSearchTopNum, int maxOGlycanNum, bool oxiniumIonFilt, List<string> nestedIds)
+             string glycanDatabase, bool isOGlycoSearch, int glycoSearchTopNum, int maxOGlycanNum, bool oxiniumIonFilt, List<string> nestedIds)
             : base(null, listOfSortedms2Scans, peptideIndex, fragmentIndex, currentPartition, commonParameters, fileSpecificParameters, new OpenSearchMode(), 0, nestedIds)
         {
             this.GlobalCsms = globalCsms;
@@ -37,7 +37,7 @@ namespace EngineLayer.GlycoSearch
             this.TopN = glycoSearchTopNum;
             this._maxOGlycanNum = maxOGlycanNum;
             this.OxiniumIonFilt = oxiniumIonFilt;
-            this._glycanDatabaseIndex = glycanDatabaseIndex;
+            this._glycanDatabase = glycanDatabase;
 
             SecondFragmentIndex = secondFragmentIndex;
             PrecusorSearchMode = commonParameters.PrecursorMassTolerance;
@@ -46,14 +46,14 @@ namespace EngineLayer.GlycoSearch
 
             if (!isOGlycoSearch)
             {
-                Glycans = GlycanDatabase.LoadGlycan(GlobalVariables.GlycanLocations.ElementAt(_glycanDatabaseIndex), !isOGlycoSearch).OrderBy(p => p.Mass).ToArray();
+                Glycans = GlycanDatabase.LoadGlycan(GlobalVariables.GlycanLocations.Where(p=> System.IO.Path.GetFileName(p)==_glycanDatabase).First(), !isOGlycoSearch).OrderBy(p => p.Mass).ToArray();
                 //TO THINK: Glycan Decoy database.
                 //DecoyGlycans = Glycan.BuildTargetDecoyGlycans(NGlycans);
 
             }
             else
             {
-                GlycanBox.GlobalOGlycans = GlycanDatabase.LoadGlycan(GlobalVariables.GlycanLocations.ElementAt(_glycanDatabaseIndex), !isOGlycoSearch).ToArray();
+                GlycanBox.GlobalOGlycans = GlycanDatabase.LoadGlycan(GlobalVariables.GlycanLocations.Where(p => System.IO.Path.GetFileName(p) == _glycanDatabase).First(), !isOGlycoSearch).ToArray();
                 GlycanBox.GlobalOGlycanModifications = GlycanBox.BuildGlobalOGlycanModifications(GlycanBox.GlobalOGlycans);
                 GlycanBox.OGlycanBoxes = GlycanBox.BuildOGlycanBoxes(_maxOGlycanNum).OrderBy(p => p.Mass).ToArray();
 

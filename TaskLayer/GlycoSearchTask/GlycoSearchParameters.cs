@@ -9,7 +9,7 @@ namespace TaskLayer
     {
         public GlycoSearchParameters()
         {        
-            GlycanDatabasefileIndex = 1;
+            GlycanDatabasefile = "OGlycan.gdb";
             IsOGlycoSearch = true;
             OxiniumIonFilt = true;
             DecoyType = DecoyType.Reverse;
@@ -17,7 +17,7 @@ namespace TaskLayer
             MaximumOGlycanAllowed = 4;
         }
 
-        public int GlycanDatabasefileIndex { get; set; }
+        public string GlycanDatabasefile { get; set; }
         public bool IsOGlycoSearch { get; set; }
         public bool OxiniumIonFilt { get; set; }
         public DecoyType DecoyType { get; set; }
