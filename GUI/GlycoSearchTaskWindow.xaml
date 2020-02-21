@@ -85,6 +85,8 @@
                                     </Label.ToolTip>
                                 </Label>
                                 <ComboBox x:Name="DissociationTypeComboBox" HorizontalAlignment="Center" VerticalAlignment="Center" DropDownClosed="CustomFragmentationHandler"/>
+                            </StackPanel>
+                            <StackPanel Orientation="Horizontal" Grid.Row="2" Grid.Column="1" Margin="5">
                                 <Label x:Name="childScanIonsToSearchLabel" Content="Child Scan Dissocation" ToolTipService.ShowDuration="999999" ToolTipService.InitialShowDelay="500">
                                     <Label.ToolTip>
                                         <TextBlock>
@@ -94,7 +96,6 @@
                                 </Label>
                                 <ComboBox x:Name="ChildScanDissociationTypeComboBox" AllowDrop="False" HorizontalAlignment="Center" VerticalAlignment="Center" DropDownClosed="CustomFragmentationHandler"/>
                             </StackPanel>
-                     
                             <StackPanel Orientation="Horizontal" Grid.Row="3">
                                 <Label Content="Maximum OGlycan Allowed"/>
                                 <TextBox x:Name="TbMaxOGlycanNum" PreviewTextInput="CheckIfNumber" Width="45"/>

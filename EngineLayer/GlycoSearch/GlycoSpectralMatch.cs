@@ -156,8 +156,7 @@ namespace EngineLayer.GlycoSearch
             sb.Append("PEP" + '\t');
             sb.Append("PEP_QValue" + '\t');
 
-            sb.Append("Total Score" + '\t');
-            sb.Append("Peptide Score" + '\t');
+            sb.Append("Score" + '\t');
             //sb.Append("Glycan Score" + '\t');
             sb.Append("DiagonosticIon Score" + '\t');
             sb.Append("Plausible Number Of Glycans" + '\t');
@@ -255,8 +254,6 @@ namespace EngineLayer.GlycoSearch
             if (OGlycanBoxLocalization != null)
             {
                 sb.Append(Score + "\t");
-
-                sb.Append(PeptideScore + "\t");
 
                 sb.Append(DiagnosticIonScore + "\t");
 
