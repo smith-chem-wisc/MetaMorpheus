@@ -301,8 +301,21 @@ namespace Test
 
             var local = LocalizationGraph.GetLocalizedPath(localizationGraph.array, modPos, localizationGraph.ChildModBoxes, allPaths.First());
 
-            var knowLocal = new Tuple<int, int>[3] { new Tuple<int, int>(2, 1), new Tuple<int, int>(3, 1), new Tuple<int, int>(10, 0) };
+            var knowLocal = new Tuple<int, int, double>[3] { new Tuple<int, int, double>(2, 1, 0), new Tuple<int, int, double>(3, 1, 0), new Tuple<int, int, double>(10, 0, 0) };
             Assert.That(Enumerable.SequenceEqual(local, knowLocal));
+
+
+            var p = scans.First().TheScan.MassSpectrum.Size * commonParameters.ProductMassTolerance.GetRange(1000).Width / scans.First().TheScan.MassSpectrum.Range.Width;
+
+            var n = knownProducts.Where(p=>p.ProductType == ProductType.c || p.ProductType == ProductType.zDot).Count();
+            //Get all paths, calculate PScore and calculate position probability. 
+            var allPathWithWeights = LocalizationGraph.GetAllPaths_CalP(localizationGraph, p, n);
+
+            Assert.That(allPathWithWeights.Count == 168);
+
+            var y = LocalizationGraph.CalSiteSpecificLocalizationProbability(allPathWithWeights, localizationGraph.ModPos);
+            Assert.That(y.Count == 8);
+
         }
 
         [Test]
@@ -374,7 +387,7 @@ namespace Test
 
             var local = LocalizationGraph.GetLocalizedPath(localizationGraph.array, modPos, localizationGraph.ChildModBoxes, allPaths.First());
 
-            var knowLocal = new Tuple<int, int>[1] { new Tuple<int, int>(4, 0)};
+            var knowLocal = new Tuple<int, int, double>[1] { new Tuple<int, int, double>(4, 0, 0)};
             Assert.That(Enumerable.SequenceEqual(local, knowLocal));
         }
 
@@ -516,7 +529,7 @@ namespace Test
 
             var local = LocalizationGraph.GetLocalizedPath(localizationGraph.array, modPos, boxes, allPaths.First());
 
-            var knowLocal = new Tuple<int, int>[4] {new Tuple<int, int>(22, 0), new Tuple<int, int>(25, 0) , new Tuple<int, int>(28, 0) , new Tuple<int, int>(31, 1) };
+            var knowLocal = new Tuple<int, int, double>[4] {new Tuple<int, int, double>(22, 0, 0), new Tuple<int, int, double>(25, 0, 0) , new Tuple<int, int, double>(28, 0, 0) , new Tuple<int, int, double>(31, 1, 0) };
             Assert.That(Enumerable.SequenceEqual(local, knowLocal));
         }
 
@@ -533,16 +546,13 @@ namespace Test
                 for (int j = 0; j < boxes.Length; j++)
                 {
                     localizationGraph.array[i][j] = new AdjNode(i, j, modPos[i], boxes[j]);
-                    localizationGraph.array[i][j].Sources = new List<int> { j };
-                    localizationGraph.array[i][j].Costs = new List<double> { 1 };
+                    localizationGraph.array[i][j].CummulativeSources = new List<int> { j }; 
                     localizationGraph.array[i][j].maxCost = 1;
                 }
             }
-            localizationGraph.array[2][5].Sources = new List<int> {  4, 5 };
-            localizationGraph.array[2][5].Costs = new List<double> { 1, 1 };
+            localizationGraph.array[2][5].CummulativeSources = new List<int> {  4, 5 };
 
-            localizationGraph.array[1][4].Sources = new List<int> { 2, 4 };
-            localizationGraph.array[1][4].Costs = new List<double> { 1, 1 };
+            localizationGraph.array[1][4].CummulativeSources = new List<int> { 2, 4 };
 
             var allPaths = LocalizationGraph.GetAllPaths(localizationGraph.array, boxes);
 

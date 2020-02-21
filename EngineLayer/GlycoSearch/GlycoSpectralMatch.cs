@@ -17,7 +17,7 @@ namespace EngineLayer.GlycoSearch
         }
 
         public double TotalScore { get; set; } //peptide + glycan psmCross
-        public int Rank { get; set; } 
+        public int Rank { get; set; }
         public Dictionary<int, List<MatchedFragmentIon>> ChildMatchedFragmentIons { get; set; }
         //Glyco properties
         public List<Glycan> NGlycan { get; set; }
@@ -25,13 +25,17 @@ namespace EngineLayer.GlycoSearch
 
 
         public List<LocalizationGraph> LocalizationGraphs;
-        public List<Tuple<int, Tuple<int, int>[]>> OGlycanBoxLocalization;
+        public List<Tuple<int, Tuple<int, int, double>[]>> OGlycanBoxLocalization;
 
-        public int TotalGlycoSites { get; set; }
+        public double ScanInfo_p { get; set; }
 
+        public int Thero_n { get; set; }
+
+        public Dictionary<int, List<Tuple<int, double>>> SiteSpeciLocalProb { get; set; }
+        public double PScore { get; set; } //-10*log(P)
         public double PeptideScore { get; set; }
-        public double GlycanScore { get; set; }
-        public double DiagnosticIonScore { get; set; }
+        public double GlycanScore { get; set; } //Important for N-glycan for signature ions.
+        public double DiagnosticIonScore { get; set; } //Since every glycopeptide generate DiagnosticIon, it is important to seperate the score. 
         public double R138vs144 { get; set; }
         public List<Tuple<int, int, bool>> LocalizedGlycan { get; set; } //<mod site, glycanID, isLocalized> All seen glycans identified.
         public string LocalizationLevel { get; set; }
@@ -154,9 +158,9 @@ namespace EngineLayer.GlycoSearch
             sb.Append("PEP_QValue" + '\t');
 
             sb.Append("Total Score" + '\t');
-            //sb.Append("Peptide Score" + '\t');
+            sb.Append("Peptide Score" + '\t');
             //sb.Append("Glycan Score" + '\t');
-            //sb.Append("DiagonosticIon Score" + '\t');
+            sb.Append("DiagonosticIon Score" + '\t');
             sb.Append("Plausible Number Of Glycans" + '\t');
             sb.Append("Total Glycosylation sites" + '\t');
             sb.Append("GlycanMass" + '\t');
@@ -167,6 +171,7 @@ namespace EngineLayer.GlycoSearch
             sb.Append("Localized Glycans" + '\t');
             sb.Append("GlycanLocalization" + '\t');
             sb.Append("GlycanLocalizationLevel" + '\t');
+            sb.Append("SiteSpecificLocalizationProbability" + '\t');
             return sb.ToString();
         }
 
@@ -252,6 +257,10 @@ namespace EngineLayer.GlycoSearch
             {
                 sb.Append(TotalScore + "\t");
 
+                sb.Append(PeptideScore + "\t");
+
+                sb.Append(DiagnosticIonScore + "\t");
+
                 var glycanBox = GlycanBox.OGlycanBoxes[OGlycanBoxLocalization.First().Item1];
 
                 sb.Append(glycanBox.NumberOfMods + "\t");
@@ -284,6 +293,8 @@ namespace EngineLayer.GlycoSearch
                 sb.Append(AllLocalizationInfo(OGlycanBoxLocalization)); sb.Append("\t");
 
                 sb.Append(LocalizationLevel); sb.Append("\t");
+
+                sb.Append(SiteSpeciLocalInfo(SiteSpeciLocalProb));
             }
 
             return sb.ToString();
@@ -297,7 +308,7 @@ namespace EngineLayer.GlycoSearch
         }
 
         //<int, int, string> <ModBoxId, ModPosition, is localized>
-        public static List<Tuple<int, int, bool>> GetLocalizedGlycan(List<Tuple<int, Tuple<int, int>[]>> OGlycanBoxLocalization, out string localizationLevel)
+        public static List<Tuple<int, int, bool>> GetLocalizedGlycan(List<Tuple<int, Tuple<int, int, double>[]>> OGlycanBoxLocalization, out string localizationLevel)
         {
             List<Tuple<int, int, bool>> localizedGlycan = new List<Tuple<int, int, bool>>();
 
@@ -381,9 +392,14 @@ namespace EngineLayer.GlycoSearch
             return localizedGlycan;
         }
 
-        public static string AllLocalizationInfo(List<Tuple<int, Tuple<int, int>[]>> OGlycanBoxLocalization)
+        public static string AllLocalizationInfo(List<Tuple<int, Tuple<int, int, double>[]>> OGlycanBoxLocalization)
         {
             string local = "";
+
+            if (OGlycanBoxLocalization == null || OGlycanBoxLocalization.Count == 0)
+            {
+                return local;
+            }
             //Some GSP have a lot paths, in which case only output first 10 paths and the total number of the paths.
             int maxOutputPath = 10;
             if (OGlycanBoxLocalization.Count <= maxOutputPath)
@@ -404,6 +420,28 @@ namespace EngineLayer.GlycoSearch
             if (OGlycanBoxLocalization.Count > maxOutputPath)
             {
                 local += "... In Total:" + OGlycanBoxLocalization.Count.ToString() + " Paths";
+            }
+
+            return local;
+        }
+
+        public static string SiteSpeciLocalInfo(Dictionary<int, List<Tuple<int, double>>> siteSpeciLocalProb)
+        {
+            string local = "";
+
+            if (siteSpeciLocalProb == null)
+            {
+                return local;
+            }
+
+            foreach (var sitep in siteSpeciLocalProb)
+            {
+                local += "{@" + sitep.Key;
+                foreach (var s in sitep.Value)
+                {
+                    local += "[" + s.Item1 + "," + s.Item2.ToString("0.000") + "]";
+                }
+                local += "}";
             }
 
             return local;

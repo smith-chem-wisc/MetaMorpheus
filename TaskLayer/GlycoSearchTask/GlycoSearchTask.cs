@@ -50,8 +50,6 @@ namespace TaskLayer
             // load proteins
             List<Protein> proteinList = LoadProteins(taskId, dbFilenameList, true, _glycoSearchParameters.DecoyType, localizeableModificationTypes, CommonParameters);
 
-
-
             MyFileManager myFileManager = new MyFileManager(true);
 
             var fileSpecificCommonParams = fileSettingsList.Select(b => SetAllFileSpecificCommonParams(CommonParameters, b));
@@ -149,8 +147,7 @@ namespace TaskLayer
 
             var filteredAllPsms = new List<GlycoSpectralMatch>();
 
-            //For each ms2scan, try to find the best candidate psm from the psms list. Add it into filteredAllPsms
-            //This function is for current usage, this can be replaced with PEP value. 
+            //For each ms2scan, try to find the best candidate psm from the psms list. Do the localizaiton analysis. Add it into filteredAllPsms.
             foreach (var gsmsPerScan in ListOfGsmsPerMS2Scan)
             {
                 GlycoSpectralMatch glycoSpectralMatch = gsmsPerScan[0];
@@ -158,7 +155,7 @@ namespace TaskLayer
                 if (glycoSpectralMatch.LocalizationGraphs!=null)
                 {
 
-                    List<Tuple<int, Tuple<int, int>[]>> localizationCandidates = new List<Tuple<int, Tuple<int, int>[]>>();
+                    List<Tuple<int, Tuple<int, int, double>[]>> localizationCandidates = new List<Tuple<int, Tuple<int, int, double>[]>>();
 
                     for (int i = 0; i < glycoSpectralMatch.LocalizationGraphs.Count; i++)
                     {
@@ -167,7 +164,7 @@ namespace TaskLayer
                         foreach (var path in allPaths)
                         {
                             var local = LocalizationGraph.GetLocalizedPath(glycoSpectralMatch.LocalizationGraphs[i].array, glycoSpectralMatch.LocalizationGraphs[i].ModPos, glycoSpectralMatch.LocalizationGraphs[i].ChildModBoxes, path);
-                            localizationCandidates.Add(new Tuple<int, Tuple<int, int>[]>(glycoSpectralMatch.LocalizationGraphs[i].ModBoxId, local));
+                            localizationCandidates.Add(new Tuple<int, Tuple<int, int, double>[]>(glycoSpectralMatch.LocalizationGraphs[i].ModBoxId, local));
                         }
                     }
 
@@ -180,10 +177,22 @@ namespace TaskLayer
                     string localLevel;
                     glycoSpectralMatch.LocalizedGlycan = GlycoSpectralMatch.GetLocalizedGlycan(glycoSpectralMatch.OGlycanBoxLocalization, out localLevel);
                     glycoSpectralMatch.LocalizationLevel = localLevel;
+
+                    //Localization PValue.
+                    if (localLevel == "Level1" || localLevel == "Level2")
+                    {
+                        List<Tuple<int, int, double>[]> allPaths = new List<Tuple<int, int, double>[]>();
+                        foreach (var graph in glycoSpectralMatch.LocalizationGraphs)
+                        {
+                             allPaths.AddRange(LocalizationGraph.GetAllPaths_CalP(graph, glycoSpectralMatch.ScanInfo_p, glycoSpectralMatch.Thero_n));
+                        }
+                        glycoSpectralMatch.SiteSpeciLocalProb = LocalizationGraph.CalSiteSpecificLocalizationProbability(allPaths, glycoSpectralMatch.LocalizationGraphs.First().ModPos);
+                    }
                 }
 
                 filteredAllPsms.Add(glycoSpectralMatch);
             }
+
 
             PostGlycoSearchAnalysisTask postGlycoSearchAnalysisTask = new PostGlycoSearchAnalysisTask();
 

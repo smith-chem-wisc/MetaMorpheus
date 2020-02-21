@@ -22,11 +22,11 @@ namespace TaskLayer
 
         public MyTaskResults Run(string OutputFolder, List<DbForTask> dbFilenameList, List<string> currentRawFileList, string taskId, FileSpecificParameters[] fileSettingsList, List<GlycoSpectralMatch> allPsms, CommonParameters commonParameters, GlycoSearchParameters glycoSearchParameters, List<Protein> proteinList, List<Modification> variableModifications, List<Modification> fixedModifications, List<string> localizeableModificationTypes, MyTaskResults MyTaskResults)
         {
-            foreach (var csm in allPsms)
-            {
-                //TO DO: change this for glycopeptide
-                //csm.ResolveProteinPosAmbiguitiesForXl();
-            }
+            //foreach (var csm in allPsms)
+            //{
+            //    //TO DO: change this for glycopeptide
+            //    //csm.ResolveProteinPosAmbiguitiesForXl();
+            //}
 
             if (!glycoSearchParameters.IsOGlycoSearch)
             {

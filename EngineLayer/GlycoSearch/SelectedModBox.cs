@@ -62,7 +62,7 @@ namespace EngineLayer
             return allPossibleModSites.OrderBy(p => p).ToArray();
         }
 
-        public static PeptideWithSetModifications GetTheoreticalPeptide(Tuple<int, int>[] theModPositions, PeptideWithSetModifications peptide, SelectedModBox modBox)
+        public static PeptideWithSetModifications GetTheoreticalPeptide(Tuple<int, int, double>[] theModPositions, PeptideWithSetModifications peptide, SelectedModBox modBox)
         {
             Dictionary<int, Modification> testMods = new Dictionary<int, Modification>();
             foreach (var mod in peptide.AllModsOneIsNterminus)

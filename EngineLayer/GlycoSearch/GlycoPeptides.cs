@@ -258,7 +258,7 @@ namespace EngineLayer.GlycoSearch
             return testPeptide;
         }
 
-        public static PeptideWithSetModifications OGlyGetTheoreticalPeptide(Tuple<int, int>[] theModPositions, PeptideWithSetModifications peptide)
+        public static PeptideWithSetModifications OGlyGetTheoreticalPeptide(Tuple<int, int, double>[] theModPositions, PeptideWithSetModifications peptide)
         {
             Modification[] modifications = new Modification[theModPositions.Length];
             for (int i = 0; i < theModPositions.Length; i++)

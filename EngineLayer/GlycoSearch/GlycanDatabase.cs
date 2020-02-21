@@ -46,7 +46,7 @@ namespace EngineLayer
                 {
                     string line = lines.ReadLine().Split('\t').First();
 
-                    if (!line.Contains("HexNAc"))
+                    if (!(line.Contains("HexNAc") || line.Contains("Hex")))
                     {
                         continue;
                     }

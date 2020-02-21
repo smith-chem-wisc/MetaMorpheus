@@ -16,7 +16,7 @@ namespace EngineLayer.GlycoSearch
         public ModBox ModBox { get; }
         public ModBox[] ChildModBoxes { get; set; }
 
-        //Total Score = AdjNode[Bottom,right].maxCost + NoLocalScore 
+        public double NoLocalCost{get; set;} //used for localization probability calculation.
         public double TotalScore { get; set; }
 
         public LocalizationGraph(int[] modPos, ModBox modBox, ModBox[] childModBoxes, int id = -1)
@@ -53,6 +53,7 @@ namespace EngineLayer.GlycoSearch
                         AdjNode adjNode = new AdjNode(i, j, localizationGraph.ModPos[i], localizationGraph.ChildModBoxes[j]);
                         var cost = CalculateCost(allPeaks, products, localizationGraph.ModPos, i, localizationGraph.ModBox, localizationGraph.ChildModBoxes[j], 1000);
 
+                        adjNode.CurrentCost = cost;
                         //The first line of the graph didnot have Sources.
                         if (i == 0)
                         {
@@ -67,27 +68,27 @@ namespace EngineLayer.GlycoSearch
                                 //Check if a previous AdjNode exist and the current AdjNode could link to previous AdjNode. 
                                 if (boxSatisfyBox[j][prej] && localizationGraph.array[i - 1][prej] != null)
                                 {
+                                    adjNode.AllSources.Add(prej);
+
                                     var tempCost = cost + localizationGraph.array[i - 1][prej].maxCost;
                                     if (tempCost > maxCost)
                                     {
-                                        adjNode.Sources.Clear();
-                                        adjNode.Costs.Clear();
-
-                                        adjNode.Sources.Add(prej);
-                                        adjNode.Costs.Add(tempCost);
+                                        adjNode.CummulativeSources.Clear();
+                
+                                        adjNode.CummulativeSources.Add(prej);
+             
                                         maxCost = tempCost;
                                     }
                                     else if (tempCost == maxCost)
                                     {
-                                        adjNode.Sources.Add(prej);
-                                        adjNode.Costs.Add(tempCost);
+                                        adjNode.CummulativeSources.Add(prej);              
                                     }
 
                                 }
                             }
                             //if (adjNode.Costs.Any())
                             {
-                                adjNode.maxCost = adjNode.Costs.Max();
+                                adjNode.maxCost = maxCost;
                             }
                         }
 
@@ -99,6 +100,7 @@ namespace EngineLayer.GlycoSearch
 
             var unlocalFragmentHash = GlycoPeptides.GetUnlocalFragmentHash(products, localizationGraph.ModPos, localizationGraph.ModBox, 1000);
             int noLocalScore = allPeaks.Intersect(unlocalFragmentHash).Count();
+            localizationGraph.NoLocalCost = noLocalScore;
             localizationGraph.TotalScore = localizationGraph.array[localizationGraph.ModPos.Length - 1][localizationGraph.ChildModBoxes.Length - 1].maxCost + noLocalScore;
         }
 
@@ -149,24 +151,23 @@ namespace EngineLayer.GlycoSearch
                                     var tempCost = cost + array[i - 1][prej].maxCost;
                                     if (tempCost > maxCost)
                                     {
-                                        adjNode.Sources.Clear();
-                                        adjNode.Costs.Clear();
+                                        adjNode.CummulativeSources.Clear();
+                    
 
-                                        adjNode.Sources.Add(prej);
-                                        adjNode.Costs.Add(tempCost);
+                                        adjNode.CummulativeSources.Add(prej);
+                        
                                         maxCost = tempCost;
                                     }
                                     else if (tempCost == maxCost)
                                     {
-                                        adjNode.Sources.Add(prej);
-                                        adjNode.Costs.Add(tempCost);
+                                        adjNode.CummulativeSources.Add(prej);
+                              
                                     }
-
                                 }
                             }
                             //if (adjNode.Costs.Any())
                             {
-                                adjNode.maxCost = adjNode.Costs.Max();
+                                adjNode.maxCost = maxCost;
                             }
                         }
 
@@ -331,7 +332,7 @@ namespace EngineLayer.GlycoSearch
                 return;
             }
 
-            foreach (var pre in array[xind][yind].Sources)
+            foreach (var pre in array[xind][yind].CummulativeSources)
             {
                 xind--;
                 yind = pre;
@@ -365,7 +366,7 @@ namespace EngineLayer.GlycoSearch
                 return;
             }
 
-            var pre = array[xind][yind].Sources.First();
+            var pre = array[xind][yind].CummulativeSources.First();
             xind--;
             yind = pre;
             temp[xind] = yind;
@@ -374,17 +375,17 @@ namespace EngineLayer.GlycoSearch
 
         //The original path we get is just an array of AdjNode positions. This function here is to transfer the path into localized path. 
         //The output note: Tuple<(mod site)int, (glycanId)int>[glycanBox.Count] 
-        //Basicly,  any change from left to right of the path indicates a modification. For example, the path = [1, 1, 2, 2] which means there is a modification at path[0] and path[3]
-        public static Tuple<int, int>[] GetLocalizedPath(AdjNode[][] array, int[] modPos, ModBox[] childBoxes, int[] path)
+        //Basicly, any change from left to right of the path indicates a modification. For example, the path = [1, 1, 2, 2] which means there is a modification at path[0] and path[3]
+        public static Tuple<int, int, double>[] GetLocalizedPath(AdjNode[][] array, int[] modPos, ModBox[] childBoxes, int[] path, double cost = 0)
         {
             int length = modPos.Length - 1;
 
-            List<Tuple<int, int>> tuples = new List<Tuple<int, int>>();
+            List<Tuple<int, int, double>> tuples = new List<Tuple<int, int, double>>();
             //Add first mod. If the childBoxes[path[0]].ModIds.Count == 0, means this is an empty childBox. 
             //Otherwise childBoxes[path[0]].ModIds.Count == 1 and childBoxes[path[0]].ModIds only contains one ModId.
             if (childBoxes[path[0]].ModIds.Count() != 0)
             {                
-                tuples.Add(new Tuple<int, int>(modPos[0], childBoxes[path[0]].ModIds.First()));
+                tuples.Add(new Tuple<int, int, double>(modPos[0], childBoxes[path[0]].ModIds.First(), cost));
             }
 
             for (int i = 1; i < path.Length; i++)
@@ -394,7 +395,7 @@ namespace EngineLayer.GlycoSearch
                 {
                     var left = GetLeft(array[i][path[i]].ModBox.ModIds, array[i - 1][path[i - 1]].ModBox.ModIds).First();
 
-                    tuples.Add(new Tuple<int, int>(modPos[i], left));
+                    tuples.Add(new Tuple<int, int, double>(modPos[i], left, cost));
                 }
             }
 
@@ -413,6 +414,78 @@ namespace EngineLayer.GlycoSearch
             var left = gx.SelectMany(p => p.Value).ToArray();
             return left;
         }
+
+        //To understand this funciton, ref to "phosphoRS" papar. 
+        public static List<Tuple<int, int, double>[]> GetAllPaths_CalP(LocalizationGraph localizationGraph, double p, int n)
+        {
+            List<Tuple<int, int, double>[]> allPaths = new List<Tuple<int, int, double>[]>();
+
+            int xlength = localizationGraph.array.Length;
+            int ylength = localizationGraph.array.First().Length;
+
+            int[] temp = new int[xlength];
+            double[] temp_cost = new double[xlength];
+
+            temp[xlength - 1] = ylength - 1;
+
+            PathHelper_CalP(allPaths, localizationGraph, xlength - 1, ylength - 1, temp, temp_cost, p, n);
+
+            return allPaths;
+        }
+
+        private static void PathHelper_CalP(List<Tuple<int, int, double>[]> allPaths, LocalizationGraph localizationGraph, int xind, int yind, int[] temp, double[] temp_costs, double p, int n)
+        {
+            if (xind == 0)
+            {
+                var k = temp_costs.Sum() + localizationGraph.NoLocalCost;
+             
+                var cp = 1/(1-MathNet.Numerics.Distributions.Binomial.CDF(p, n, k) + MathNet.Numerics.Distributions.Binomial.PMF(p, n, (int)k));               
+    
+                var x = GetLocalizedPath(localizationGraph.array, localizationGraph.ModPos, localizationGraph.ChildModBoxes, temp, cp);
+                allPaths.Add(x);
+                return;
+            }
+
+            foreach (var pre in localizationGraph.array[xind][yind].AllSources)
+            {
+                xind--;
+                yind = pre;
+                temp[xind] = yind;
+                temp_costs[xind] = localizationGraph.array[xind][yind].CurrentCost;
+                PathHelper_CalP(allPaths, localizationGraph, xind, yind, temp, temp_costs, p, n);
+
+                xind++;
+            }
+        }
+
+        public static Dictionary<int, List<Tuple<int, double>>> CalSiteSpecificLocalizationProbability(List<Tuple<int, int, double>[]> allPaths, int[] modPos)
+        {
+            Dictionary<int, List<Tuple<int, double>>> probabilityMatrix = new Dictionary<int, List<Tuple<int, double>>>();
+
+            var allSites = allPaths.SelectMany(p => p);
+
+            var sum = allPaths.Sum(p=>p.First().Item3);
+
+            for (int i = 0; i < modPos.Length; i++)
+            { 
+                var gs = allSites.Where(p => p.Item1 == modPos[i]).GroupBy(p=>p.Item2);
+
+                List<Tuple<int, double>> value = new List<Tuple<int, double>>();
+
+                foreach (var g in gs)
+                {
+                    var prob = g.Sum(p=>p.Item3)/sum;
+
+                    value.Add(new Tuple<int, double>(g.Key, prob));
+                    
+                }
+
+                probabilityMatrix.Add(modPos[i], value);
+            }
+
+            return probabilityMatrix;
+        }
+
     }
 
     public class AdjNode
@@ -431,13 +504,14 @@ namespace EngineLayer.GlycoSearch
         public int ModPos { get; }
         public ModBox ModBox { get;  }
 
-        //sources are represented by index.
-        public List<int> Sources = new List<int>();
-
-        public List<double> Costs = new List<double>();
+        //sources are represented by index. Only track ones with highest cummulative cost
+        public List<int> CummulativeSources = new List<int>();
 
         public double maxCost { get; set; }
 
+        public double CurrentCost { get; set; }
+
+        public List<int> AllSources { get; set; } = new List<int>();
     }
 
 }
