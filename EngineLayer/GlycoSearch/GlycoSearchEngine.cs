@@ -188,7 +188,7 @@ namespace EngineLayer.GlycoSearch
                             GlobalCsms[scanIndex] = new List<GlycoSpectralMatch>();
                         }
 
-                        GlobalCsms[scanIndex].AddRange(gsms.Where(p => p != null).OrderByDescending(p => p.TotalScore));
+                        GlobalCsms[scanIndex].AddRange(gsms.Where(p => p != null).OrderByDescending(p => p.Score));
                     }
 
                     // report search progress
@@ -291,7 +291,7 @@ namespace EngineLayer.GlycoSearch
                     psmCross.NGlycan = new List<Glycan> { Glycans[iDLow] };
                     psmCross.GlycanScore = CalculatePeptideScore(theScan.TheScan, bestMatchedIons.Where(p => p.Annotation.Contains('M')).ToList());
                     psmCross.DiagnosticIonScore = CalculatePeptideScore(theScan.TheScan, bestMatchedIons.Where(p => p.Annotation.Contains('D')).ToList());
-                    psmCross.PeptideScore = psmCross.TotalScore - psmCross.GlycanScore - psmCross.DiagnosticIonScore;
+                    psmCross.PeptideScore = psmCross.Score - psmCross.GlycanScore - psmCross.DiagnosticIonScore;
                     psmCross.Rank = ind;
                     psmCross.NGlycanLocalizations = new List<int> { bestSite - 1 }; //TO DO: ambiguity modification site
                     possibleMatches.Add(psmCross);

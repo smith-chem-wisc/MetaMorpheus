@@ -13,10 +13,9 @@ namespace EngineLayer.GlycoSearch
         public GlycoSpectralMatch(PeptideWithSetModifications theBestPeptide, int notch, double score, int scanIndex, Ms2ScanWithSpecificMass scan, CommonParameters commonParameters, List<MatchedFragmentIon> matchedFragmentIons)
             : base(theBestPeptide, notch, score, scanIndex, scan, commonParameters, matchedFragmentIons)
         {
-            this.TotalScore = score;
+
         }
 
-        public double TotalScore { get; set; } //peptide + glycan psmCross
         public int Rank { get; set; }
         public Dictionary<int, List<MatchedFragmentIon>> ChildMatchedFragmentIons { get; set; }
         //Glyco properties
@@ -242,7 +241,7 @@ namespace EngineLayer.GlycoSearch
             sb.Append("0" + "\t");
             if (NGlycan != null)
             {
-                sb.Append(TotalScore + "\t");             
+                sb.Append(Score + "\t");             
                 sb.Append(PeptideScore + "\t");
                 sb.Append(GlycanScore + "\t");
                 sb.Append(DiagnosticIonScore + "\t");
@@ -255,7 +254,7 @@ namespace EngineLayer.GlycoSearch
 
             if (OGlycanBoxLocalization != null)
             {
-                sb.Append(TotalScore + "\t");
+                sb.Append(Score + "\t");
 
                 sb.Append(PeptideScore + "\t");
 
