@@ -165,10 +165,11 @@ namespace EngineLayer.GlycoSearch
             //sb.Append("GlycanDecoy" + '\t');   
             sb.Append("Plausible GlycanComposition" + '\t');
             sb.Append("R138/144" + '\t');
-            sb.Append("Plausible GlycanStructure" + '\t');                       
-            sb.Append("Localized Glycans" + '\t');
-            sb.Append("GlycanLocalization" + '\t');
+            sb.Append("Plausible GlycanStructure" + '\t');
             sb.Append("GlycanLocalizationLevel" + '\t');
+            sb.Append("Localized Glycans" + '\t');
+            sb.Append("Site Specific Localization Probability" + '\t');
+            sb.Append("GlycanLocalization" + '\t');          
             sb.Append("SiteSpecificLocalizationProbability" + '\t');
             return sb.ToString();
         }
@@ -284,11 +285,14 @@ namespace EngineLayer.GlycoSearch
                 }
                 sb.Append("\t");
 
-                sb.Append("[" + string.Join(",", LocalizedGlycan.Where(p=>p.Item3).Select(p=>p.Item1.ToString() + "-" + p.Item2.ToString())) + "]"); sb.Append("\t");
+                sb.Append(LocalizationLevel); sb.Append("\t");
+
+                string localizedGlycan = LocalizedGlycan.Where(p=>p.Item3).Count() > 0 ? "[" + string.Join(",", LocalizedGlycan.Where(p => p.Item3).Select(p => p.Item1.ToString() + "-" + p.Item2.ToString())) + "]" : "";
+                sb.Append(localizedGlycan); sb.Append("\t");
+                          
+                sb.Append(LocalizedSiteSpeciLocalInfo(SiteSpeciLocalProb, LocalizedGlycan)); sb.Append("\t");
 
                 sb.Append(AllLocalizationInfo(OGlycanBoxLocalization)); sb.Append("\t");
-
-                sb.Append(LocalizationLevel); sb.Append("\t");
 
                 sb.Append(SiteSpeciLocalInfo(SiteSpeciLocalProb));
             }
@@ -303,18 +307,14 @@ namespace EngineLayer.GlycoSearch
             return s;
         }
 
-        //<int, int, string> <ModBoxId, ModPosition, is localized>
+        //Output: <int, int, string> <ModBoxId, ModPosition, is localized>; Input: List<Tuple<int, Tuple<int, int, double>[]>> <ModBoxId, <modPostion, ModId, weight>>
         public static List<Tuple<int, int, bool>> GetLocalizedGlycan(List<Tuple<int, Tuple<int, int, double>[]>> OGlycanBoxLocalization, out string localizationLevel)
         {
             List<Tuple<int, int, bool>> localizedGlycan = new List<Tuple<int, int, bool>>();
 
-            HashSet<int> allGlycanIds = new HashSet<int>(OGlycanBoxLocalization.Select(p => p.Item2).SelectMany(p => p.Select(q => q.Item2)));
-
-            Dictionary<int, int> seenGlycanIds = new Dictionary<int, int>();
-
             HashSet<int> seenGlycanBoxIds = new HashSet<int>(OGlycanBoxLocalization.Select(p => p.Item1));
 
-            //Dictionary<string, int>: mod-id, count
+            //Dictionary<string, int>: modsite-id, count
             Dictionary<string, int> seenModSite = new Dictionary<string, int>();
 
             foreach (var ogl in OGlycanBoxLocalization)
@@ -330,24 +330,15 @@ namespace EngineLayer.GlycoSearch
                     {
                         seenModSite.Add(k, 1);
                     }
-
-                    if (seenGlycanIds.ContainsKey(og.Item2))
-                    {
-                        seenGlycanIds[og.Item2] += 1;
-                    }
-                    else
-                    {
-                        seenGlycanIds.Add(og.Item2, 1);
-                    }
                 }
             }
 
-            localizationLevel = "Level5";
+            localizationLevel = "Level4";
             if (OGlycanBoxLocalization.Count == 1)
             {
                 localizationLevel = "Level1";
             }
-            else if (OGlycanBoxLocalization.Count > 1 && seenGlycanBoxIds.Count == 1)
+            else if (OGlycanBoxLocalization.Count > 1)
             {
                 if (seenModSite.Values.Where(p => p == OGlycanBoxLocalization.Count).Count() > 0)
                 {
@@ -355,23 +346,9 @@ namespace EngineLayer.GlycoSearch
                 }
                 else
                 {
-                    localizationLevel = "Level3a";
+                    localizationLevel = "Level3";
                 }
             }
-            else if (OGlycanBoxLocalization.Count > 1 && seenGlycanBoxIds.Count > 1)
-            {
-                if (seenModSite.Values.Where(p => p == OGlycanBoxLocalization.Count).Count() > 0)
-                {
-                    localizationLevel = "Level3b";
-                }
-
-                if (seenGlycanIds.Values.Where(p => p == OGlycanBoxLocalization.Count).Count() > 0)
-                {
-                    localizationLevel = "Level4";
-                }
-            }
-
-
 
             foreach (var seenMod in seenModSite)
             {
@@ -420,7 +397,25 @@ namespace EngineLayer.GlycoSearch
 
             return local;
         }
+        public static string LocalizedSiteSpeciLocalInfo(Dictionary<int, List<Tuple<int, double>>> siteSpeciLocalProb, List<Tuple<int, int, bool>> localizedGlycan)
+        {
+            string local = "";
 
+            if (siteSpeciLocalProb == null)
+            {
+                return local;
+            }
+
+            foreach (var loc in localizedGlycan.Where(p => p.Item3))
+            {
+                var x = siteSpeciLocalProb[loc.Item1].Where(p => p.Item1 == loc.Item2).First().Item2;
+       
+                local += "[" + loc.Item1 + "," + GlycanBox.GlobalOGlycans[loc.Item2].Composition + "," + x.ToString("0.000") + "]";    
+
+            }
+
+            return local;
+        }
         public static string SiteSpeciLocalInfo(Dictionary<int, List<Tuple<int, double>>> siteSpeciLocalProb)
         {
             string local = "";
