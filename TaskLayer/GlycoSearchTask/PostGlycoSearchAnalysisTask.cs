@@ -71,33 +71,44 @@ namespace TaskLayer
 
         }
 
-        private Dictionary<string, double> ProteinLevelGlycoParsimony(List<GlycoSpectralMatch> allPsmsGly)
+        private Dictionary<string, Tuple<bool, double, double>> ProteinLevelGlycoParsimony(List<GlycoSpectralMatch> allPsmsGly)
         {
-            //<id, smallest fdr>. id: ProteinAccession, ProtienPos, GlycanId, isLocalized.
-            Dictionary<string, double> localizedGlycan = new Dictionary<string, double>();
+            //<id, <islocalized, minQValue, maxProb>>. id: ProteinAccession, ProtienPos, GlycanId. islocalized, minQValue, maxProb
+            Dictionary<string, Tuple<bool, double, double>> localizedGlycan = new Dictionary<string, Tuple<bool, double, double>>();
 
             foreach (var gsm in allPsmsGly)
             {
+                if (gsm.IsContaminant || gsm.IsDecoy)
+                {
+                    continue;
+                }
+
                 if (gsm.LocalizedGlycan.Count > 0)
                 {
                     foreach (var local in gsm.LocalizedGlycan)
                     {
                         int proteinPos = local.Item1 + gsm.OneBasedStartResidueInProtein.Value;
 
-                        var dtc = (gsm.IsDecoy) ? "D" : (gsm.IsContaminant) ? "C" : "T";
+                        string proPosId = gsm.ProteinAccession + "-" + proteinPos.ToString() + "-" + local.Item2;
 
-                        string proPosId = gsm.ProteinAccession + "-" + dtc + "-" + proteinPos.ToString() + "-" + local.Item2 + "-" + local.Item3;
+                        double prob = -1;
+                        if (gsm.SiteSpeciLocalProb!=null && gsm.SiteSpeciLocalProb.ContainsKey(local.Item1))
+                        {
+                            prob = gsm.SiteSpeciLocalProb[local.Item1].Where(p => p.Item1 == local.Item2).FirstOrDefault().Item2;
+                        }
+
 
                         if (!localizedGlycan.ContainsKey(proPosId))
                         {
-                            localizedGlycan.Add(proPosId, gsm.FdrInfo.QValue);
+                            localizedGlycan.Add(proPosId, new Tuple<bool, double, double>(local.Item3, gsm.FdrInfo.QValue, prob));            
                         }
                         else
                         {
-                            if (localizedGlycan[proPosId] > gsm.FdrInfo.QValue)
-                            {
-                                localizedGlycan[proPosId] = gsm.FdrInfo.QValue;
-                            }
+                            bool islocalized = (local.Item3 || localizedGlycan[proPosId].Item1);
+                            double minQValue = localizedGlycan[proPosId].Item2 > gsm.FdrInfo.QValue ? gsm.FdrInfo.QValue : localizedGlycan[proPosId].Item2;
+                            double maxProb = localizedGlycan[proPosId].Item3 > prob ? localizedGlycan[proPosId].Item3 : prob;
+
+                            localizedGlycan[proPosId] = new Tuple<bool, double, double>(islocalized, minQValue, maxProb);                       
                         }
                     }
                 }    

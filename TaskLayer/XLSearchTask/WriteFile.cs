@@ -448,52 +448,48 @@ namespace TaskLayer
         }
 
         //The function is to summarize localized glycan by protein site.
-        public static void WriteSeenProteinGlycoLocalization(Dictionary<string, double> items, string outputPath)
+        public static void WriteSeenProteinGlycoLocalization(Dictionary<string, Tuple<bool, double, double>> items, string outputPath)
         {
             if (items.Count == 0)
             { return; }
             var writtenFile = Path.Combine(outputPath);
             using (StreamWriter output = new StreamWriter(writtenFile))
             {
-                output.WriteLine("Protein Accession\tTargetDecoyComtaminant\tModification Site\tLocalized Glycans\tLocalized\tLowest Qvalue");
+                output.WriteLine("Protein Accessio\tModification Site\tLocalized Glycans\tLocalized\tLowest Qvalue\tMax Site Specific Probability");
                 foreach (var item in items.OrderBy(p=>p.Key))
                 {
                     var x = item.Key.Split('-');
                     output.WriteLine(
                         x[0] + "\t" +
                         x[1] + "\t" +
-                        x[2] + "\t" +
-                        GlycanBox.GlobalOGlycans[int.Parse(x[3])].Composition + "\t" +
-                        x[4] + "\t" +
-                        item.Value.ToString()
+                        GlycanBox.GlobalOGlycans[int.Parse(x[2])].Composition + "\t" +
+                        item.Value.Item1 + "\t" +
+                        item.Value.Item2.ToString("0.000") + "\t" +
+                        item.Value.Item3.ToString("0.000")
                         );
                 }
             }
         }
 
         //The function is to summarize localized glycosylation of each protein site. 
-        public static void WriteProteinGlycoLocalization(Dictionary<string, double> items, string outputPath)
+        public static void WriteProteinGlycoLocalization(Dictionary<string, Tuple<bool, double, double>> items, string outputPath)
         {
             if (items.Count == 0)
             { return; }
 
             Dictionary<string, HashSet<string>> localizedglycans = new Dictionary<string, HashSet<string>>();
-            foreach (var item in items)
+            foreach (var item in items.Where(p=>p.Value.Item1 && p.Value.Item2 <= 0.01))
             {
-                if (item.Key.Contains("DECOY") || item.Key.Contains("FALSE") || item.Value > 0.05)
-                {
-                    continue;
-                }
                 var x = item.Key.Split('-');
-                var key = x[0] + "-" + x[2];
+                var key = x[0] + "-" + x[1];
                 if ( localizedglycans.ContainsKey(key))
                 {
-                    localizedglycans[key].Add(x[3]);
+                    localizedglycans[key].Add(x[2]);
                 }
                 else
                 {
                     localizedglycans[key] = new HashSet<string>();
-                    localizedglycans[key].Add(x[3]);
+                    localizedglycans[key].Add(x[2]);
                 }
 
             }
