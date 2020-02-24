@@ -65,6 +65,7 @@ namespace MetaMorpheusGUI
 
         private void PopulateChoices()
         {
+            ChildScanDissociationTypeComboBox.Items.Add("Null");
             foreach (string dissassociationType in GlobalVariables.AllSupportedDissociationTypes.Keys)
             {
                 DissociationTypeComboBox.Items.Add(dissassociationType);
@@ -131,6 +132,7 @@ namespace MetaMorpheusGUI
 
             DissociationTypeComboBox.SelectedItem = task.CommonParameters.DissociationType.ToString();
 
+            ChildScanDissociationTypeComboBox.SelectedItem = "Null";
             if (task.CommonParameters.MS2ChildScanDissociationType != DissociationType.Unknown)
             {
                 ChildScanDissociationTypeComboBox.SelectedItem = task.CommonParameters.MS2ChildScanDissociationType.ToString();
@@ -230,7 +232,7 @@ namespace MetaMorpheusGUI
             DissociationType dissociationType = GlobalVariables.AllSupportedDissociationTypes[DissociationTypeComboBox.SelectedItem.ToString()];
 
             DissociationType childDissociationType = DissociationType.Unknown;
-            if (ChildScanDissociationTypeComboBox.SelectedItem != null)
+            if (ChildScanDissociationTypeComboBox.SelectedItem.ToString() != "Null")
             {
                 childDissociationType = GlobalVariables.AllSupportedDissociationTypes[ChildScanDissociationTypeComboBox.SelectedItem.ToString()];
             }
