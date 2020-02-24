@@ -1305,7 +1305,7 @@ namespace TaskLayer
             }
         }
 
-        private void WritePsmsForPercolator(List<PeptideSpectralMatch> psmList, string writtenFileForPercolator)
+        public static void WritePsmsForPercolator(List<PeptideSpectralMatch> psmList, string writtenFileForPercolator)
         {
             using (StreamWriter output = new StreamWriter(writtenFileForPercolator))
             {
@@ -1350,6 +1350,14 @@ namespace TaskLayer
                     var pwsm = psm.BestMatchingPeptides.First().Peptide;
                     output.Write('\t' + (pwsm.PreviousAminoAcid + "." + pwsm.FullSequence + "." + pwsm.NextAminoAcid).ToString());
                     output.Write('\t' + (pwsm.Protein.Accession).ToString());
+
+                    var betaPwsm = (EngineLayer.CrosslinkSearch.CrosslinkSpectralMatch)psm;
+                    if (betaPwsm.BetaPeptide!=null)
+                    {
+                        var x = betaPwsm.BestMatchingPeptides.First().Peptide;
+                        output.Write('\t' + (x.PreviousAminoAcid + "." + x.FullSequence + "." + x.NextAminoAcid).ToString());
+                        output.Write('\t' + (x.Protein.Accession).ToString());
+                    }
                     output.WriteLine();
                 }
             }
