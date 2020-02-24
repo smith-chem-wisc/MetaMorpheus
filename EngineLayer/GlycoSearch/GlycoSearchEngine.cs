@@ -116,7 +116,7 @@ namespace EngineLayer.GlycoSearch
                     IndexedScoring(FragmentIndex, allBinsToSearch, scoringTable, byteScoreCutoff, idsOfPeptidesPossiblyObserved, scan.PrecursorMass, Double.NegativeInfinity, Double.PositiveInfinity, PeptideIndex, MassDiffAcceptor, 0, CommonParameters.DissociationType);
 
                     //child scan first-pass scoring
-                    if (scan.ChildScans != null && CommonParameters.ChildScanDissociationType != DissociationType.LowCID)
+                    if (scan.ChildScans != null && CommonParameters.MS2ChildScanDissociationType != DissociationType.LowCID)
                     {
                         Array.Clear(secondScoringTable, 0, secondScoringTable.Length);
                         childIdsOfPeptidesPossiblyObserved.Clear();
@@ -125,11 +125,11 @@ namespace EngineLayer.GlycoSearch
 
                         foreach (var aChildScan in scan.ChildScans)
                         {
-                            var x = GetBinsToSearch(aChildScan, SecondFragmentIndex, CommonParameters.ChildScanDissociationType);
+                            var x = GetBinsToSearch(aChildScan, SecondFragmentIndex, CommonParameters.MS2ChildScanDissociationType);
                             childBinsToSearch.AddRange(x);
                         }
 
-                        IndexedScoring(SecondFragmentIndex, childBinsToSearch, secondScoringTable, byteScoreCutoff, childIdsOfPeptidesPossiblyObserved, scan.PrecursorMass, Double.NegativeInfinity, Double.PositiveInfinity, PeptideIndex, MassDiffAcceptor, 0, CommonParameters.ChildScanDissociationType);
+                        IndexedScoring(SecondFragmentIndex, childBinsToSearch, secondScoringTable, byteScoreCutoff, childIdsOfPeptidesPossiblyObserved, scan.PrecursorMass, Double.NegativeInfinity, Double.PositiveInfinity, PeptideIndex, MassDiffAcceptor, 0, CommonParameters.MS2ChildScanDissociationType);
 
                         foreach (var childId in childIdsOfPeptidesPossiblyObserved)
                         {
@@ -491,7 +491,7 @@ namespace EngineLayer.GlycoSearch
 
                     //Localization for O-glycopeptides only works on ETD related dissociationtype
                     //No localization can be done with MS2-HCD spectrum
-                    if ((theScan.ChildScans==null || !GlycoPeptides.DissociationTypeContainETD(CommonParameters.ChildScanDissociationType)) && !GlycoPeptides.DissociationTypeContainETD(CommonParameters.DissociationType))
+                    if ((theScan.ChildScans==null || !GlycoPeptides.DissociationTypeContainETD(CommonParameters.MS2ChildScanDissociationType)) && !GlycoPeptides.DissociationTypeContainETD(CommonParameters.DissociationType))
                     {
                         while(iDLow < GlycanBox.OGlycanBoxes.Count() && (PrecusorSearchMode.Within(theScan.PrecursorMass, theScanBestPeptide.MonoisotopicMass + GlycanBox.OGlycanBoxes[iDLow].Mass)))
                         {
@@ -519,7 +519,7 @@ namespace EngineLayer.GlycoSearch
                     HashSet<int> allPeaksForLocalization = new HashSet<int>();
 
 
-                    if (GlycoPeptides.DissociationTypeContainETD(CommonParameters.ChildScanDissociationType))
+                    if (GlycoPeptides.DissociationTypeContainETD(CommonParameters.MS2ChildScanDissociationType))
                     {
                         allPeaksForLocalization.UnionWith(childBinsToSearch);
                     }
@@ -605,7 +605,7 @@ namespace EngineLayer.GlycoSearch
 
             foreach (var childScan in theScan.ChildScans)
             {
-                var childFragments = GlycoPeptides.OGlyGetTheoreticalFragments(CommonParameters.ChildScanDissociationType, peptide, peptideWithMod);
+                var childFragments = GlycoPeptides.OGlyGetTheoreticalFragments(CommonParameters.MS2ChildScanDissociationType, peptide, peptideWithMod);
 
                 var matchedChildIons = MatchFragmentIons(childScan, childFragments, CommonParameters);
 

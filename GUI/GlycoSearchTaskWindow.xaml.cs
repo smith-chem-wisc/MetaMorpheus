@@ -131,9 +131,9 @@ namespace MetaMorpheusGUI
 
             DissociationTypeComboBox.SelectedItem = task.CommonParameters.DissociationType.ToString();
 
-            if (task.CommonParameters.ChildScanDissociationType != DissociationType.Unknown)
+            if (task.CommonParameters.MS2ChildScanDissociationType != DissociationType.Unknown)
             {
-                ChildScanDissociationTypeComboBox.SelectedItem = task.CommonParameters.ChildScanDissociationType.ToString();
+                ChildScanDissociationTypeComboBox.SelectedItem = task.CommonParameters.MS2ChildScanDissociationType.ToString();
             }
 
             CheckBoxDecoy.IsChecked = task._glycoSearchParameters.DecoyType != DecoyType.None;
@@ -326,7 +326,7 @@ namespace MetaMorpheusGUI
                 numberOfPeaksToKeepPerWindow: int.Parse(TopNPeaksTextBox.Text),
                 minimumAllowedIntensityRatioToBasePeak: double.Parse(MinRatioTextBox.Text, CultureInfo.InvariantCulture),
                 dissociationType: dissociationType,
-                childScanDissociationType: childDissociationType,
+                ms2childScanDissociationType: childDissociationType,
                 scoreCutoff: double.Parse(minScoreAllowed.Text, CultureInfo.InvariantCulture),
                 totalPartitions: int.Parse(numberOfDatabaseSearchesTextBox.Text, CultureInfo.InvariantCulture),
                 maxThreadsToUsePerFile: int.Parse(maxThreadsTextBox.Text, CultureInfo.InvariantCulture),
