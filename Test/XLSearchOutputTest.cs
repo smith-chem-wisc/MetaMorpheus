@@ -25,7 +25,7 @@ namespace Test
             var resultsPath = File.ReadAllLines(Path.Combine(outputFolder, @"XL_Intralinks.tsv"));
             var sections = resultsPath[1].Split('\t');
             Assert.That(resultsPath.Length > 1);
-            Assert.That(sections.Length == 45);
+            Assert.That(sections.Length == 47);
 
             var resultsPath_Inter = File.ReadAllLines(Path.Combine(outputFolder, @"XL_Interlinks.tsv"));
             Assert.That(resultsPath_Inter.Length > 1);

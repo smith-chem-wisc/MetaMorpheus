@@ -177,7 +177,6 @@ namespace EngineLayer
         {
             IsDecoy = _BestMatchingPeptides.Any(p => p.Pwsm.Protein.IsDecoy);
             IsContaminant = _BestMatchingPeptides.Any(p => p.Pwsm.Protein.IsContaminant);
-
             FullSequence = PsmTsvWriter.Resolve(_BestMatchingPeptides.Select(b => b.Pwsm.FullSequence)).ResolvedValue;
             BaseSequence = PsmTsvWriter.Resolve(_BestMatchingPeptides.Select(b => b.Pwsm.BaseSequence)).ResolvedValue;
             PeptideLength = PsmTsvWriter.Resolve(_BestMatchingPeptides.Select(b => b.Pwsm.Length)).ResolvedValue;

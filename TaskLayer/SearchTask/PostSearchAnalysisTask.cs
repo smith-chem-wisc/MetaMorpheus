@@ -96,7 +96,7 @@ namespace TaskLayer
             // this could cause weird PSM FDR issues
 
             Status("Estimating PSM FDR...", Parameters.SearchTaskId);
-            new FdrAnalysisEngine(Parameters.AllPsms, Parameters.NumNotches, CommonParameters, this.FileSpecificParameters, new List<string> { Parameters.SearchTaskId }).Run();
+            new FdrAnalysisEngine(Parameters.AllPsms, Parameters.NumNotches, CommonParameters, this.FileSpecificParameters, new List<string> { Parameters.SearchTaskId }, outputFolder: Parameters.OutputFolder).Run();
 
             // sort by q-value because of group FDR stuff
             // e.g. multiprotease FDR, non/semi-specific protease, etc
