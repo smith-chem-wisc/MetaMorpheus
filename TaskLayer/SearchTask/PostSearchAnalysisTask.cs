@@ -1351,10 +1351,10 @@ namespace TaskLayer
                     output.Write('\t' + (pwsm.PreviousAminoAcid + "." + pwsm.FullSequence + "." + pwsm.NextAminoAcid).ToString());
                     output.Write('\t' + (pwsm.Protein.Accession).ToString());
 
-                    var betaPwsm = (EngineLayer.CrosslinkSearch.CrosslinkSpectralMatch)psm;
-                    if (betaPwsm.BetaPeptide!=null)
+                    var csm = (EngineLayer.CrosslinkSearch.CrosslinkSpectralMatch)psm;
+                    if (csm.BetaPeptide!=null)
                     {
-                        var x = betaPwsm.BestMatchingPeptides.First().Peptide;
+                        var x = csm.BetaPeptide.BestMatchingPeptides.First().Peptide;
                         output.Write('\t' + (x.PreviousAminoAcid + "." + x.FullSequence + "." + x.NextAminoAcid).ToString());
                         output.Write('\t' + (x.Protein.Accession).ToString());
                     }
