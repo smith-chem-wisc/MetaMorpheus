@@ -117,15 +117,19 @@ namespace EngineLayer
                 // no error thrown if multiple mods with this ID are present - just pick one
             }
 
-            //Add O-Glycan mod into AllModsKnownDictionary, currently this is for MetaDraw.
-            //The reason why not include O - Glycan into modification database is for users to apply their own database.      
+            //Add Glycan mod into AllModsKnownDictionary, currently this is for MetaDraw.
+            //The reason why not include Glycan into modification database is for users to apply their own database.      
             foreach (var path in GlycanLocations)
             {
                 var og = GlycanDatabase.LoadGlycan(path);
                 foreach (var g in og)
                 {
                     var ogmod = Glycan.OGlycanToModification(g);
-                    AllModsKnownDictionary.Add(ogmod.IdWithMotif, ogmod);
+                    if (!AllModsKnownDictionary.ContainsKey(ogmod.IdWithMotif))
+                    {
+                        AllModsKnownDictionary.Add(ogmod.IdWithMotif, ogmod);
+                    }
+
                 }
             }
 

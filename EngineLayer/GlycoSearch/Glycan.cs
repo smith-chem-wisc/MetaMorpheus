@@ -52,7 +52,7 @@ namespace EngineLayer
                 return Glycan.GetKindString(Kind);
             }
         }
-        public List<GlycanIon> Ions { get; private set; }
+        public List<GlycanIon> Ions { get; set; }
         public bool Decoy { get; private set; }
 
         public HashSet<int> DiagnosticIons

@@ -51,29 +51,32 @@ namespace EngineLayer
                         continue;
                     }
 
-                    byte[] kind = new byte[] { 0, 0, 0, 0, 0, 0, 0, 0, 0 };
-                    var x = line.Split('(', ')');
-                    int i = 0;
-                    while (i < x.Length - 1)
-                    {
-                        kind[Glycan.NameCharDic[x[i]].Item2] = byte.Parse(x[i + 1]);
-                        i = i + 2;
-                    }
+                    var kind = String2Kind(line);
                     var mass = Glycan.GetMass(kind);
 
+                    var glycan = new Glycan(kind);
+                    glycan.GlyId = id++;
                     if (toGenerateIons)
                     {
-
+                        glycan.Ions = NGlycanCompositionFragments(kind);
                     }
-                    else
-                    {
-                        var glycan = new Glycan(kind);
-                        glycan.GlyId = id++;
-                        yield return glycan;
-                    }
-
+                    yield return glycan;
                 }
             }
+        }
+
+        public static byte[] String2Kind(string line)
+        {
+            byte[] kind = new byte[] { 0, 0, 0, 0, 0, 0, 0, 0, 0 };
+            var x = line.Split('(', ')');
+            int i = 0;
+            while (i < x.Length - 1)
+            {
+                kind[Glycan.NameCharDic[x[i]].Item2] = byte.Parse(x[i + 1]);
+                i = i + 2;
+            }
+
+            return kind;
         }
 
         //Load structured Glycan database.
@@ -90,91 +93,267 @@ namespace EngineLayer
             }
         }
 
-        #region LoadKindGlycan based on Structured Glycan
-
-        public static IEnumerable<Glycan> LoadKindGlycan(string filePath, IEnumerable<Glycan> NGlycans)
+        //This function build fragments based on the general core of NGlyco fragments. 
+        //From https://github.com/mobiusklein/glycopeptidepy/structure/fragmentation_strategy/glycan.py#L408
+        //The fragment generation is not as good as structure based method. So it is better to use a structure based N-Glycan database.
+        public static List<GlycanIon> NGlycanCompositionFragments(byte[] kind)
         {
-            var groupedGlycans = NGlycans.GroupBy(p => Glycan.GetKindString(p.Kind)).ToDictionary(p => p.Key, p => p.ToList());
+            int glycan_mass = Glycan.GetMass(kind);
 
-            using (StreamReader lines = new StreamReader(filePath))
+            int core_count = 1;
+            int iteration_count = 0;
+            bool extended = true;
+            bool extended_fucosylation = false;
+
+            int fuc_count = kind[4];
+            int xyl_count = kind[8];
+            int hexnac_inaggregate = kind[0];
+            int hexose_inaggregate = kind[1];
+
+            List<GlycanIon> glycanIons = new List<GlycanIon>();
+
+            int base_hexnac = Math.Min(hexnac_inaggregate + 1, 3);
+            for (int hexnac_count = 0; hexnac_count < base_hexnac; hexnac_count++)
             {
-                int id = 1;
-                while (lines.Peek() != -1)
+                if (hexnac_count == 0)
                 {
-                    string line = lines.ReadLine().Split('\t').First();
-
-                    byte[] kind = new byte[] { 0, 0, 0, 0, 0, 0, 0, 0, 0 };
-                    var x = line.Split('(', ')');
-                    int i = 0;
-                    while (i < x.Length - 1)
-                    {
-                        kind[Glycan.NameCharDic[x[i]].Item2] = byte.Parse(x[i + 1]);
-                        i = i + 2;
-                    }
-
-                    var mass = Glycan.GetMass(kind);
-
-                    var glycans = GetAllIonMassFromKind(kind, groupedGlycans);
-
-                    var glycan = new Glycan(glycans.First().Struc, mass, kind, glycans.First().Ions, true);
-                    glycan.GlyId = id++;
-                    yield return glycan;
+                    GlycanIon glycanIon = new GlycanIon(null, 8303819, new byte[] { 0, (byte)hexnac_count, 0, 0, 0, 0, 0, 0, 0 }, glycan_mass - 8303819);
+                    glycanIons.Add(glycanIon);
                 }
-            }
-        }
-
-        //Find glycans from structured glycan database
-        public static List<Glycan> GetAllIonMassFromKind(byte[] kind, Dictionary<string, List<Glycan>> groupedGlycans)
-        {
-            var kindKey = Glycan.GetKindString(kind);
-            List<Glycan> glycans = new List<Glycan>();
-
-            groupedGlycans.TryGetValue(kindKey, out glycans);
-
-            if (glycans == null)
-            {
-                //if not in the structured glycan database, find a smaller one.
-                bool notFound = true;
-                while (notFound)
+                else if (hexnac_count == 1)
                 {
-                    var childKinds = BuildChildKindKey(kind);
-                    foreach (var child in childKinds)
+                    GlycanIon glycanIon = GenerateGlycanIon(0, (byte)hexnac_count, 0, 0, glycan_mass);
+
+                    glycanIons.Add(glycanIon);
+
+                    if (iteration_count < fuc_count)
                     {
-                        var key = Glycan.GetKindString(child);
-                        if (groupedGlycans.TryGetValue(key, out glycans))
+                        GlycanIon fuc_glycanIon = ExtendGlycanIon(glycanIon, 0, 0, 1, 0, glycan_mass);
+
+                        glycanIons.Add(fuc_glycanIon);
+                    }
+                }
+                else if (hexnac_count == 2)
+                {
+                    GlycanIon glycanIon = GenerateGlycanIon(0, (byte)hexnac_count, 0, 0, glycan_mass);
+                    glycanIons.Add(glycanIon);
+
+                    if (!extended_fucosylation)
+                    {
+                        if (iteration_count < fuc_count)
                         {
-                            notFound = false;
-                            break;
+                            GlycanIon fuc_glycanIon = ExtendGlycanIon(glycanIon, 0, 0, 1, 0, glycan_mass);
+                            glycanIons.Add(fuc_glycanIon);
+
+                            if (iteration_count < xyl_count)
+                            {
+                                GlycanIon xyl_fuc_glycanIon = ExtendGlycanIon(fuc_glycanIon, 0, 0, 0, 1, glycan_mass);
+                                glycanIons.Add(xyl_fuc_glycanIon);
+                            }
+                        }
+                    }
+                    else if (fuc_count > 0)
+                    {
+                        GlycanIon fuc_glycanIon = ExtendGlycanIon(glycanIon, 0, 0, 1, 0, glycan_mass);
+                        glycanIons.Add(fuc_glycanIon);
+
+                        for (int add_fuc_count = 2; add_fuc_count <= fuc_count; add_fuc_count++)
+                        {
+                            GlycanIon add_fuc_glycanIon = ExtendGlycanIon(glycanIon, 0, 0, (byte)add_fuc_count, 0, glycan_mass);
+                            glycanIons.Add(add_fuc_glycanIon);
+                        }
+
+                        if (iteration_count < xyl_count)
+                        {
+                            GlycanIon xyl_fuc_glycanIon = ExtendGlycanIon(fuc_glycanIon, 0, 0, 0, 1, glycan_mass);
+                            glycanIons.Add(xyl_fuc_glycanIon);
                         }
                     }
 
-                    if (notFound == true)
+                    if (iteration_count < xyl_count)
                     {
-                        glycans = GetAllIonMassFromKind(childKinds[0], groupedGlycans);
-                        notFound = false;
+                        GlycanIon xyl_glycanIon = ExtendGlycanIon(glycanIon, 0, 0, 0, 1, glycan_mass);
+                        glycanIons.Add(xyl_glycanIon);
                     }
+
+
+                    int min_hexose_inaggregate = Math.Min(hexose_inaggregate + 1, 4);
+                    for (int hexose_count = 1; hexose_count <= min_hexose_inaggregate; hexose_count++)
+                    {
+                        GlycanIon hexose_glycanIon = GenerateGlycanIon((byte)hexose_count, (byte)hexnac_count, 0, 0, glycan_mass);
+                        glycanIons.Add(hexose_glycanIon);
+
+                        if (!extended_fucosylation)
+                        {
+                            GlycanIon fuc_glycanIon = ExtendGlycanIon(hexose_glycanIon, 0, 0, 1, 0, glycan_mass);
+                            glycanIons.Add(fuc_glycanIon);
+
+                            if (iteration_count < xyl_count)
+                            {
+                                GlycanIon xyl_fuc_glycanIon = ExtendGlycanIon(fuc_glycanIon, 0, 0, 0, 1, glycan_mass);
+                                glycanIons.Add(xyl_fuc_glycanIon);
+                            }
+                        }
+                        else if (fuc_count > 0)
+                        {
+                            GlycanIon fuc_glycanIon = ExtendGlycanIon(hexose_glycanIon, 0, 0, 1, 0, glycan_mass);
+                            glycanIons.Add(fuc_glycanIon);
+
+                            for (int add_fuc_count = 2; add_fuc_count <= fuc_count; add_fuc_count++)
+                            {
+                                GlycanIon add_fuc_glycanIon = ExtendGlycanIon(hexose_glycanIon, 0, 0, (byte)add_fuc_count, 0, glycan_mass);
+                                glycanIons.Add(add_fuc_glycanIon);
+                            }
+
+                            if (iteration_count < xyl_count)
+                            {
+                                GlycanIon xyl_fuc_glycanIon = ExtendGlycanIon(fuc_glycanIon, 0, 0, 0, 1, glycan_mass);
+                                glycanIons.Add(xyl_fuc_glycanIon);
+                            }
+                        }
+
+                        if (iteration_count < xyl_count)
+                        {
+                            GlycanIon xyl_glycanIon = ExtendGlycanIon(hexose_glycanIon, 0, 0, 0, 1, glycan_mass);
+                            glycanIons.Add(xyl_glycanIon);
+                        }
+
+                        if (hexose_count == 3 && hexnac_count >= 2 * core_count && extended)
+                        {
+                            for (int extra_hexnac_count = 0; extra_hexnac_count < hexnac_inaggregate - hexnac_count + 1; extra_hexnac_count++)
+                            {
+                                if (extra_hexnac_count + hexnac_count > hexnac_inaggregate)
+                                {
+                                    continue;
+                                }
+
+                                if (extra_hexnac_count > 0)
+                                {
+                                    GlycanIon new_glycanIon = GenerateGlycanIon((byte)hexose_count, (byte)(hexnac_count + extra_hexnac_count), 0, 0, glycan_mass);
+
+                                    glycanIons.Add(new_glycanIon);
+
+                                    if (!extended_fucosylation)
+                                    {
+                                        GlycanIon fuc_glycanIon = ExtendGlycanIon(new_glycanIon, 0, 0, 1, 0, glycan_mass);
+                                        glycanIons.Add(fuc_glycanIon);
+
+                                        if (iteration_count < xyl_count)
+                                        {
+                                            GlycanIon xyl_fuc_glycanIon = ExtendGlycanIon(fuc_glycanIon, 0, 0, 0, 1, glycan_mass);
+                                            glycanIons.Add(xyl_fuc_glycanIon);
+                                        }
+                                    }
+                                    else if (fuc_count > 0)
+                                    {
+                                        GlycanIon fuc_glycanIon = ExtendGlycanIon(new_glycanIon, 0, 0, 1, 0, glycan_mass);
+                                        glycanIons.Add(fuc_glycanIon);
+
+                                        for (int add_fuc_count = 2; add_fuc_count <= fuc_count; add_fuc_count++)
+                                        {
+                                            GlycanIon add_fuc_glycanIon = ExtendGlycanIon(new_glycanIon, 0, 0, (byte)add_fuc_count, 0, glycan_mass);
+                                            glycanIons.Add(add_fuc_glycanIon);
+                                        }
+
+                                        if (iteration_count < xyl_count)
+                                        {
+                                            GlycanIon xyl_fuc_glycanIon = ExtendGlycanIon(fuc_glycanIon, 0, 0, 0, 1, glycan_mass);
+                                            glycanIons.Add(xyl_fuc_glycanIon);
+                                        }
+                                    }
+
+                                    if (iteration_count < xyl_count)
+                                    {
+                                        GlycanIon xyl_glycanIon = ExtendGlycanIon(new_glycanIon, 0, 0, 0, 1, glycan_mass);
+                                        glycanIons.Add(xyl_glycanIon);
+                                    }
+
+                                }
+
+                                for (int extra_hexose_count = 1; extra_hexose_count < hexose_inaggregate - hexose_count + 1; extra_hexose_count++)
+                                {
+                                    if (extra_hexose_count + hexose_count > hexose_inaggregate)
+                                    {
+                                        continue;
+                                    }
+
+                                    GlycanIon new_glycanIon = GenerateGlycanIon((byte)(hexose_count + extra_hexose_count), (byte)(hexnac_count + extra_hexnac_count), 0, 0, glycan_mass);
+
+                                    glycanIons.Add(new_glycanIon);
+
+                                    if (!extended_fucosylation)
+                                    {
+                                        GlycanIon fuc_glycanIon = ExtendGlycanIon(new_glycanIon, 0, 0, 1, 0, glycan_mass);
+                                        glycanIons.Add(fuc_glycanIon);
+
+                                        if (iteration_count < xyl_count)
+                                        {
+                                            GlycanIon xyl_fuc_glycanIon = ExtendGlycanIon(fuc_glycanIon, 0, 0, 0, 1, glycan_mass);
+                                            glycanIons.Add(xyl_fuc_glycanIon);
+                                        }
+                                    }
+                                    else if (fuc_count > 0)
+                                    {
+                                        GlycanIon fuc_glycanIon = ExtendGlycanIon(new_glycanIon, 0, 0, 1, 0, glycan_mass);
+                                        glycanIons.Add(fuc_glycanIon);
+
+                                        for (int add_fuc_count = 2; add_fuc_count <= fuc_count; add_fuc_count++)
+                                        {
+                                            GlycanIon add_fuc_glycanIon = ExtendGlycanIon(new_glycanIon, 0, 0, (byte)add_fuc_count, 0, glycan_mass);
+                                            glycanIons.Add(add_fuc_glycanIon);
+                                        }
+
+                                        if (iteration_count < xyl_count)
+                                        {
+                                            GlycanIon xyl_fuc_glycanIon = ExtendGlycanIon(fuc_glycanIon, 0, 0, 0, 1, glycan_mass);
+                                            glycanIons.Add(xyl_fuc_glycanIon);
+                                        }
+                                    }
+
+                                    if (iteration_count < xyl_count)
+                                    {
+                                        GlycanIon xyl_glycanIon = ExtendGlycanIon(new_glycanIon, 0, 0, 0, 1, glycan_mass);
+                                        glycanIons.Add(xyl_glycanIon);
+                                    }
+
+                                }
+                            }
+                        }
+                    }
+
                 }
+
+
             }
 
-            return glycans;
+            return glycanIons;
         }
 
-        private static List<byte[]> BuildChildKindKey(byte[] kind)
+        private static GlycanIon GenerateGlycanIon(byte hexose_count, byte hexnac_count, byte fuc_count, byte xyl_count, int glycan_mass)
         {
-            List<byte[]> childKinds = new List<byte[]>();
-            for (int i = kind.Length - 1; i >= 0; i--)
-            {
-                if (kind[i] >= 1)
-                {
-                    var childKind = new byte[kind.Length];
-                    Array.Copy(kind, childKind, kind.Length);
-                    childKind[i]--;
-                    childKinds.Add(childKind);
-                }
-            }
-            return childKinds;
+            byte[] ionKind = new byte[9] { hexose_count, hexnac_count, 0, 0, fuc_count, 0, 0, 0, xyl_count };
+
+            int ionMass = Glycan.GetMass(ionKind);
+
+            GlycanIon glycanIon = new GlycanIon(null, ionMass, ionKind, glycan_mass - ionMass);
+
+            return glycanIon;
         }
 
-        #endregion
+        private static GlycanIon ExtendGlycanIon(GlycanIon glycanIon, byte hexose_count, byte hexnac_count, byte fuc_count, byte xyl_count, int glycan_mass)
+        {
+            byte[] ionKind = glycanIon.IonKind;
+            ionKind[0] += hexose_count;
+            ionKind[1] += hexnac_count;
+            ionKind[4] += fuc_count;
+            ionKind[8] += xyl_count;
+
+            int ionMass = Glycan.GetMass(ionKind);
+
+            GlycanIon extend_glycanIon = new GlycanIon(null, ionMass, ionKind, glycan_mass - ionMass);
+
+            return extend_glycanIon;
+        }
+
     }
 }

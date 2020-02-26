@@ -22,14 +22,6 @@ namespace Test
     [TestFixture]
     public class XLTestNGlyco
     {
-        private static IEnumerable<Glycan> NGlycans { get; set; }
-
-        [OneTimeSetUp]
-        public static void Setup()
-        {
-            NGlycans = GlycanDatabase.LoadStructureGlycan(GlobalVariables.GlycanLocations.Where(p => p.Contains("NGlycan.gdb")).First());
-        }
-
         [Test]
         public static void GlyTest_GetKindString()
         {
@@ -200,6 +192,8 @@ namespace Test
         {
             //The node here is for check the structure of the glycan. 
             Node node = Glycan.Struct2Node("(N(N(H(N)(H(N)(N))(H(N(H))))))"); //This glycan has a bisect hexnac 
+            Assert.That(node.LeftChild.LeftChild.MiddleChild!=null);
+
             Glycan glycan = Glycan.Struct2Glycan("(N(N(H(N)(H(N)(N))(H(N(H))))))", 0);
             Assert.AreEqual(glycan.Ions.Count, 17);
         }
@@ -246,66 +240,26 @@ namespace Test
             Assert.AreEqual(zid, 10); //Index out range
             Assert.AreEqual(did, 2);
             Assert.AreEqual(tid, 9);          
-        }
-      
-        
-        //This is not exactly a test. The function is used for N-Glycan database generation. The function maybe useful in the future.
-        public static void GlyTest_GenerateDataBase()
-        {         
-            
-            string aietdpath = @"GlycoTestData/ComboGlycanDatabase.csv";
-            var glycans = GlycanDatabase.LoadKindGlycan(aietdpath, NGlycans).ToList();
-
-            string aietdpathWritePath = "E:\\MassData\\Glycan\\GlycanDatabase\\AIETD\\GlycansAIETD.tsv";
-            using (StreamWriter output = new StreamWriter(aietdpathWritePath))
-            {
-                foreach (var glycan in glycans)
-                {
-                    output.WriteLine(glycan.Mass.ToString() + "\t" + glycan.Struc + "\t" + Glycan.GetKindString(glycan.Kind) + "\t" + Glycan.GetKindString(Glycan.GetKind(glycan.Struc)));
-                }
-            }
-        }
-
-        //This is not exactly a test. The function is used for N-Glycan database generation. The function maybe useful in the future.
-        public static void GlyTest_GenerateUniprotDataBase()
-        {
-            var groupedGlycans = NGlycans.GroupBy(p => Glycan.GetKindString(p.Kind)).ToDictionary(p => p.Key, p => p.ToList());
-            string pathWritePath = "E:\\MassData\\Glycan\\GlycanDatabase\\UniprotGlycanDatabase.txt";
-
-
-            using (StreamWriter output = new StreamWriter(pathWritePath))
-            {
-                foreach (var glycan in groupedGlycans)
-                {
-                    var mod = Glycan.NGlycanToModification(glycan.Value.First());
-                    List<string> temp = new List<string>();
-                    temp.Add(mod.ToString());
-                    temp.Add(@"//");
-                    foreach (var v in temp)
-                    {
-                        output.WriteLine(v);
-                    }                  
-                }
-            }
-
-        }
+        }         
 
         [Test]
-        public static void GlyTest_GetAllIonMassFromKind()
+        public static void GlyTest_NGlycanCompositionFragments()
         {
-            var groupedGlycans = NGlycans.GroupBy(p => Glycan.GetKindString(p.Kind)).ToDictionary(p => p.Key, p => p.ToList());
+            var kind = GlycanDatabase.String2Kind("HexNAc(3)Hex(4)Fuc(2)NeuAc(1)");
 
-            byte[] k36101 = new byte[] { 3, 6, 1, 0, 1, 0, 0, 0, 0 };
-            var glycan36101 = GlycanDatabase.GetAllIonMassFromKind(k36101, groupedGlycans);
+            var ions = GlycanDatabase.NGlycanCompositionFragments(kind);
 
-            Glycan glycan = Glycan.Struct2Glycan("(N(F)(N(H(H(N))(H(N)))))", 0);
-            var x = GlycanDatabase.GetAllIonMassFromKind(glycan.Kind, groupedGlycans);
-            Assert.AreEqual(x.First().Ions.Count, 14);
+            Glycan glycan = Glycan.Struct2Glycan("(N(F)(N(H(H)(H(N(F)(H(A)))))))", 0);
 
-            string aietdpath = @"GlycoTestData/ComboGlycanDatabase.csv";
-            var glycans = GlycanDatabase.LoadKindGlycan(aietdpath, NGlycans).ToList();
-            Assert.AreEqual(glycans.Count, 182);
+            var ionMass = ions.Select(p => p.IonMass).ToList();
 
-        }     
+            var glycanIonmass = glycan.Ions.Select(p => p.IonMass).ToList();
+
+            var overlap = glycanIonmass.Intersect(ionMass).Count();
+
+            Assert.That(overlap == 13);
+     
+        }
+
     }
 }

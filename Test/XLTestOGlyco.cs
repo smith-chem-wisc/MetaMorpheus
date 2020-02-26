@@ -223,7 +223,7 @@ namespace Test
 
             var testUnlocalProducts = GlycoPeptides.GetUnlocalFragmentHash(products, modPos, glycanBox, 1000);
             //Proline for ETD will be skipped
-            Assert.That(testProducts1.Count() == 10);
+            Assert.That(testUnlocalProducts.Count() == 9);
 
         }
 
