@@ -65,7 +65,7 @@
                             </Grid.ColumnDefinitions>
                             <StackPanel Orientation="Horizontal">
                                 <RadioButton x:Name="RbtOGlycoSearch" Content="OGlyco-peptide Search " GroupName="GlycoSearch" VerticalAlignment="Center"/>
-                                <RadioButton x:Name="RbtNGlycoSearch" Visibility="Hidden" Content="NGlyco-peptide Search " GroupName="GlycoSearch" VerticalAlignment="Center"/>
+                                <RadioButton x:Name="RbtNGlycoSearch" Visibility="Visible"  Content="NGlyco-peptide Search " GroupName="GlycoSearch" VerticalAlignment="Center"/>
                             </StackPanel>
                             <StackPanel Orientation="Horizontal" Grid.Row="0" Grid.Column="1">
                                 <Label Content="Glycan Database"/>
