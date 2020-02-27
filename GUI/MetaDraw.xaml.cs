@@ -661,6 +661,42 @@ namespace MetaMorpheusGUI
 
                     DrawPdfAnnotatedBaseSequence(psm, canvas, filePath); // captures the annotation for the pdf
                     mainViewModel.DrawPeptideSpectralMatchPdf(msDataScanToDraw, psm, filePath, numberOfScansToExport > 1);
+
+                    // if this spectrum has child scans, draw them in the "advanced" tab
+                    if ((psm.ChildScanMatchedIons != null && psm.ChildScanMatchedIons.Count > 0)
+                        || (psm.BetaPeptideChildScanMatchedIons != null && psm.BetaPeptideChildScanMatchedIons.Count > 0))
+                    {
+                        // draw child scans
+                        HashSet<int> scansDrawn = new HashSet<int>();
+                        var allChildScanMatchedIons = psm.ChildScanMatchedIons;
+                        if (psm.BetaPeptideChildScanMatchedIons != null)
+                        {
+                            allChildScanMatchedIons = allChildScanMatchedIons.Concat(psm.BetaPeptideChildScanMatchedIons).ToDictionary(p => p.Key, q => q.Value);
+                        }
+                        foreach (var childScanMatchedIons in allChildScanMatchedIons)
+                        {
+                            int scanNumber = childScanMatchedIons.Key;
+
+                            if (scansDrawn.Contains(scanNumber))
+                            {
+                                continue;
+                            }
+                            scansDrawn.Add(scanNumber);
+
+                            List<MatchedFragmentIon> matchedIons = childScanMatchedIons.Value;
+
+                            var childPsmModel = new PsmAnnotationViewModel();
+                            MsDataScan childScan = MsDataFile.GetOneBasedScan(scanNumber);
+
+                            childPsmModel.DrawPeptideSpectralMatch(childScan, psm, metaDrawGraphicalSettings.ShowMzValues,
+                                metaDrawGraphicalSettings.ShowAnnotationCharges, metaDrawGraphicalSettings.AnnotatedFontSize, metaDrawGraphicalSettings.BoldText);
+
+                            string childfilePath = Path.Combine(Path.GetDirectoryName(tsvResultsFilePath), "MetaDrawExport", childScan.OneBasedScanNumber + "_" + myString + ".pdf");
+                            
+                            DrawPdfAnnotatedBaseSequence(psm, canvas, childfilePath); // captures the annotation for the pdf
+                            childPsmModel.DrawPeptideSpectralMatchPdf(childScan, psm, childfilePath, false);
+                        }
+                    }
                 }
 
                 dataGridScanNums.SelectedItem = dataGridScanNums.SelectedItem;
