@@ -135,64 +135,65 @@ namespace TaskLayer
 
             ReportProgress(new ProgressEventArgs(100, "Done with all searches!", new List<string> { taskId, "Individual Spectra Files" }));
 
-            //For every Ms2Scans, each have a list of candidates psms. The allPsms from CrosslinkSearchEngine is the list (all ms2scans) of list (each ms2scan) of psm (all candidate psm). 
-            //The allPsmsList is same as allPsms after ResolveAmbiguities. 
-            foreach (var gsmsPerScan in ListOfGsmsPerMS2Scan)
+            //For every Ms2Scans, each have a list of candidates psms. The allPsms from GlycoSearchEngine is the list (all ms2scans) of list (each ms2scan) of psm (all candidate psm). 
+            //Currently, only keep the first scan for consideration. 
+            List<GlycoSpectralMatch> GsmPerScans = ListOfGsmsPerMS2Scan.Select(p => p.First()).ToList();
+
+            foreach (var gsm in GsmPerScans)
             {
-                foreach (var gsm in gsmsPerScan)
-                {
-                    gsm.ResolveAllAmbiguities();
-                }
+                gsm.ResolveAllAmbiguities();
             }
 
             var filteredAllPsms = new List<GlycoSpectralMatch>();
 
             //For each ms2scan, try to find the best candidate psm from the psms list. Do the localizaiton analysis. Add it into filteredAllPsms.
-            foreach (var gsmsPerScan in ListOfGsmsPerMS2Scan)
+            foreach (var gsmsPerScan in GsmPerScans.GroupBy(p => p.ScanNumber))
             {
-                GlycoSpectralMatch glycoSpectralMatch = gsmsPerScan[0];
+                var glycos = RemoveSimilarSequenceDuplicates(gsmsPerScan.OrderByDescending(p=>p.Score).ToList());
 
-                if (glycoSpectralMatch.LocalizationGraphs!=null)
+                foreach (var glycoSpectralMatch in glycos)
                 {
-
-                    List<Tuple<int, Tuple<int, int, double>[]>> localizationCandidates = new List<Tuple<int, Tuple<int, int, double>[]>>();
-
-                    for (int i = 0; i < glycoSpectralMatch.LocalizationGraphs.Count; i++)
+                    if (glycoSpectralMatch.LocalizationGraphs != null)
                     {
-                        var allPaths = LocalizationGraph.GetAllPaths(glycoSpectralMatch.LocalizationGraphs[i].array, glycoSpectralMatch.LocalizationGraphs[i].ChildModBoxes);
 
-                        foreach (var path in allPaths)
+                        List<Tuple<int, Tuple<int, int, double>[]>> localizationCandidates = new List<Tuple<int, Tuple<int, int, double>[]>>();
+
+                        for (int i = 0; i < glycoSpectralMatch.LocalizationGraphs.Count; i++)
                         {
-                            var local = LocalizationGraph.GetLocalizedPath(glycoSpectralMatch.LocalizationGraphs[i].array, glycoSpectralMatch.LocalizationGraphs[i].ModPos, glycoSpectralMatch.LocalizationGraphs[i].ChildModBoxes, path);
-                            localizationCandidates.Add(new Tuple<int, Tuple<int, int, double>[]>(glycoSpectralMatch.LocalizationGraphs[i].ModBoxId, local));
+                            var allPaths = LocalizationGraph.GetAllPaths(glycoSpectralMatch.LocalizationGraphs[i].array, glycoSpectralMatch.LocalizationGraphs[i].ChildModBoxes);
+
+                            foreach (var path in allPaths)
+                            {
+                                var local = LocalizationGraph.GetLocalizedPath(glycoSpectralMatch.LocalizationGraphs[i].array, glycoSpectralMatch.LocalizationGraphs[i].ModPos, glycoSpectralMatch.LocalizationGraphs[i].ChildModBoxes, path);
+                                localizationCandidates.Add(new Tuple<int, Tuple<int, int, double>[]>(glycoSpectralMatch.LocalizationGraphs[i].ModBoxId, local));
+                            }
+                        }
+
+                        glycoSpectralMatch.OGlycanBoxLocalization = localizationCandidates;
+
+                    }
+
+                    if (glycoSpectralMatch.OGlycanBoxLocalization != null)
+                    {
+                        string localLevel;
+                        glycoSpectralMatch.LocalizedGlycan = GlycoSpectralMatch.GetLocalizedGlycan(glycoSpectralMatch.OGlycanBoxLocalization, out localLevel);
+                        glycoSpectralMatch.LocalizationLevel = localLevel;
+
+                        //Localization PValue.
+                        if (localLevel == "Level1" || localLevel == "Level2")
+                        {
+                            List<Tuple<int, int, double>[]> allPaths = new List<Tuple<int, int, double>[]>();
+                            foreach (var graph in glycoSpectralMatch.LocalizationGraphs)
+                            {
+                                allPaths.AddRange(LocalizationGraph.GetAllPaths_CalP(graph, glycoSpectralMatch.ScanInfo_p, glycoSpectralMatch.Thero_n));
+                            }
+                            glycoSpectralMatch.SiteSpeciLocalProb = LocalizationGraph.CalSiteSpecificLocalizationProbability(allPaths, glycoSpectralMatch.LocalizationGraphs.First().ModPos);
                         }
                     }
 
-                    glycoSpectralMatch.OGlycanBoxLocalization = localizationCandidates;
-
+                    filteredAllPsms.Add(glycoSpectralMatch);
                 }
-
-                if (glycoSpectralMatch.OGlycanBoxLocalization!=null)
-                {
-                    string localLevel;
-                    glycoSpectralMatch.LocalizedGlycan = GlycoSpectralMatch.GetLocalizedGlycan(glycoSpectralMatch.OGlycanBoxLocalization, out localLevel);
-                    glycoSpectralMatch.LocalizationLevel = localLevel;
-
-                    //Localization PValue.
-                    if (localLevel == "Level1" || localLevel == "Level2")
-                    {
-                        List<Tuple<int, int, double>[]> allPaths = new List<Tuple<int, int, double>[]>();
-                        foreach (var graph in glycoSpectralMatch.LocalizationGraphs)
-                        {
-                             allPaths.AddRange(LocalizationGraph.GetAllPaths_CalP(graph, glycoSpectralMatch.ScanInfo_p, glycoSpectralMatch.Thero_n));
-                        }
-                        glycoSpectralMatch.SiteSpeciLocalProb = LocalizationGraph.CalSiteSpecificLocalizationProbability(allPaths, glycoSpectralMatch.LocalizationGraphs.First().ModPos);
-                    }
-                }
-
-                filteredAllPsms.Add(glycoSpectralMatch);
             }
-
 
             PostGlycoSearchAnalysisTask postGlycoSearchAnalysisTask = new PostGlycoSearchAnalysisTask();
 
@@ -201,6 +202,24 @@ namespace TaskLayer
 
         }
 
+        //The coisolation works for general search doesn't work for glyco search workflow. Similar peptide with different glycan are identified because of poor precursor mass. 
+        //glycoSpectralMatches must be OrderDecendingByScore.
+        private List<GlycoSpectralMatch> RemoveSimilarSequenceDuplicates(List<GlycoSpectralMatch> glycoSpectralMatches)
+        {
+            List<GlycoSpectralMatch> glycos = new List<GlycoSpectralMatch>();
+            glycos.Add(glycoSpectralMatches.First());
+            foreach (var g in glycoSpectralMatches)
+            {
+                if (glycoSpectralMatches.First().BaseSequence.Contains(g.BaseSequence) || g.BaseSequence.Contains(glycoSpectralMatches.First().BaseSequence))
+                {
+                    continue;
+                }
+
+                glycos.Add(g);
+            }
+            return glycos;
+        }
+            
 
     }
 }

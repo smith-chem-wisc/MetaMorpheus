@@ -701,6 +701,7 @@ namespace MetaMorpheusGUI
 
                 dataGridScanNums.SelectedItem = dataGridScanNums.SelectedItem;
 
+                itemsControlSampleViewModel.Data.Clear();
                 DrawPsm(tempPsm.Ms2ScanNumber, tempPsm.FullSequence);
 
                 MessageBox.Show(string.Format("{0} PDFs exported", numberOfScansToExport));
