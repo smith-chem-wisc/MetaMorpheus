@@ -1305,7 +1305,7 @@ namespace TaskLayer
             }
         }
 
-        public static void WritePsmsForPercolator(List<PeptideSpectralMatch> psmList, string writtenFileForPercolator, bool ForCrossslink = false)
+        public static void WritePsmsForPercolator(List<PeptideSpectralMatch> psmList, string writtenFileForPercolator, string predefinedSearchType = "standard")
         {
             using (StreamWriter output = new StreamWriter(writtenFileForPercolator))
             {
@@ -1318,6 +1318,12 @@ namespace TaskLayer
                 {
                     searchType = "standard";
                 }
+
+                if (predefinedSearchType!= "standard")
+                {
+                    searchType = predefinedSearchType;
+                }
+
                 string header = "SpecId\tLabel\tScanNr\t";
                 header = header + String.Join("\t", PsmData.trainingInfos[searchType]);
                 header = header + "\tPeptide\tProteins";
@@ -1351,7 +1357,7 @@ namespace TaskLayer
                     output.Write('\t' + (pwsm.PreviousAminoAcid + "." + pwsm.FullSequence + "." + pwsm.NextAminoAcid).ToString());
                     output.Write('\t' + (pwsm.Protein.Accession).ToString());
 
-                    if (ForCrossslink)
+                    if (searchType == "crosslink")
                     {
                         var csm = (EngineLayer.CrosslinkSearch.CrosslinkSpectralMatch)psm;
                         if (csm.BetaPeptide != null)
