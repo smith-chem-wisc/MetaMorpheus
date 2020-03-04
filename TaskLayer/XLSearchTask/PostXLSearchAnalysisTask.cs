@@ -31,8 +31,8 @@ namespace TaskLayer
 
             ComputeXlinkQandPValues(allPsms, intraCsms, interCsms, commonParameters, taskId);
 
-            List<PeptideSpectralMatch> crosses = interCsms.Concat(intraCsms).ToList<PeptideSpectralMatch>();
-            PostSearchAnalysisTask.WritePsmsForPercolator(crosses, Path.Combine(OutputFolder, "Crosslinks_Percolator.tsv"), "crosslink");
+            PostSearchAnalysisTask.WritePsmsForPercolator(interCsms.ToList<PeptideSpectralMatch>(), Path.Combine(OutputFolder, "Inter_crosslinks_Percolator.tsv"), "crosslink");
+            PostSearchAnalysisTask.WritePsmsForPercolator(intraCsms.ToList<PeptideSpectralMatch>(), Path.Combine(OutputFolder, "Intra_crosslinks_Percolator.tsv"), "crosslink");
 
             // write interlink CSMs
             if (interCsms.Any())
