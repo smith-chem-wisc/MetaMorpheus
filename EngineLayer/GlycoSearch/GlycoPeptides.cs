@@ -390,6 +390,12 @@ namespace EngineLayer.GlycoSearch
         //Find FragmentHash for the fragments that doesn't contain localization Information.
         public static int[] GetUnlocalFragmentHash(List<Product> products, int[] modPoses, ModBox OGlycanBox, int FragmentBinsPerDalton)
         {
+            var mass = OGlycanBox.Mass;
+            if (!OGlycanBox.TargetDecoy)
+            {
+                mass = OGlycanBox.DecoyMass;
+            }
+
             List<double> newFragments = new List<double>();
             var c_fragments = products.Where(p => p.ProductType == ProductType.c && p.AminoAcidPosition < modPoses.First()-1).Select(p=>p.NeutralMass);
             newFragments.AddRange(c_fragments);
@@ -398,7 +404,7 @@ namespace EngineLayer.GlycoSearch
 
             foreach (var c in c_fragments_shift)
             {
-                var newMass = c + OGlycanBox.Mass;
+                var newMass = c + mass;
                 newFragments.Add(newMass);
             }
 
@@ -409,7 +415,7 @@ namespace EngineLayer.GlycoSearch
 
             foreach (var z in z_fragments_shift)
             {
-                var newMass = z + OGlycanBox.Mass;
+                var newMass = z + mass;
                 newFragments.Add(newMass);
             }
 

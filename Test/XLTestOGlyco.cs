@@ -256,31 +256,7 @@ namespace Test
             var file = new MyFileManager(true).LoadFile(spectraFile, commonParameters);
             var scans = MetaMorpheusTask.GetMs2Scans(file, spectraFile, commonParameters).ToArray();
 
-            int obsPreviousFragmentCeilingMz = 0;
-            List<int> binsToSearch = new List<int>();
-            foreach (var envelope in scans.First().ExperimentalFragments)
-            {
-                // assume charge state 1 to calculate mass tolerance
-                double experimentalFragmentMass = envelope.monoisotopicMass;
-
-                // get theoretical fragment bins within mass tolerance
-                int obsFragmentFloorMass = (int)Math.Floor((commonParameters.ProductMassTolerance.GetMinimumValue(experimentalFragmentMass)) * 1000);
-                int obsFragmentCeilingMass = (int)Math.Ceiling((commonParameters.ProductMassTolerance.GetMaximumValue(experimentalFragmentMass)) * 1000);
-
-                // prevents double-counting peaks close in m/z and lower-bound out of range exceptions
-                if (obsFragmentFloorMass < obsPreviousFragmentCeilingMz)
-                {
-                    obsFragmentFloorMass = obsPreviousFragmentCeilingMz;
-                }
-                obsPreviousFragmentCeilingMz = obsFragmentCeilingMass + 1;
-
-                // search mass bins within a tolerance
-                for (int fragmentBin = obsFragmentFloorMass; fragmentBin <= obsFragmentCeilingMass; fragmentBin++)
-                {
-                    binsToSearch.Add(fragmentBin);
-                }
-            }
-            HashSet<int> allPeaks = new HashSet<int>(binsToSearch);
+            HashSet<int> allPeaks = new HashSet<int>(GlycoSearchEngine.GenerateHashPeaks(scans.First(), commonParameters));
 
             //Known peptideWithMod match.
             var peptideWithMod = GlycoPeptides.OGlyGetTheoreticalPeptide(new int[3] { 10, 2, 3}, peptide, glycanBox);
@@ -393,6 +369,18 @@ namespace Test
 
         [Test]
         public static void OGlycoTest_Run()
+        {
+            var task = Toml.ReadFile<GlycoSearchTask>(Path.Combine(TestContext.CurrentContext.TestDirectory, @"GlycoTestData/GlycoSearchTaskconfig.toml"), MetaMorpheusTask.tomlConfig);
+
+            Directory.CreateDirectory(Path.Combine(Environment.CurrentDirectory, @"TESTGlycoData"));
+            DbForTask db = new DbForTask(Path.Combine(TestContext.CurrentContext.TestDirectory, @"GlycoTestData/P16150.fasta"), false);
+            string spectraFile = Path.Combine(TestContext.CurrentContext.TestDirectory, @"GlycoTestData\2019_09_16_StcEmix_35trig_EThcD25_rep1_9906.mgf");
+            new EverythingRunnerEngine(new List<(string, MetaMorpheusTask)> { ("Task", task) }, new List<string> { spectraFile }, new List<DbForTask> { db }, Path.Combine(Environment.CurrentDirectory, @"TESTGlycoData")).Run();
+            Directory.Delete(Path.Combine(Environment.CurrentDirectory, @"TESTGlycoData"), true);
+        }
+
+        [Test]
+        public static void OGlycoTest_Run2()
         {
             GlycoSearchTask task = new GlycoSearchTask()
             {
@@ -563,6 +551,25 @@ namespace Test
 
             var firstPath = LocalizationGraph.GetFirstPath(localizationGraph.array, boxes);  
             Assert.That(Enumerable.SequenceEqual(firstPath, new int[3] { 2, 4, 5 }));
+        }
+
+        [Test]
+        public static void OGlycoTest_GlycanDecoyDatabase()
+        {
+           var MyOGlycanBoxes = GlycanBox.BuildOGlycanBoxes(4, true).OrderBy(p => p.Mass).ToArray();
+
+            var filterPath = "E:\\MassData\\Glycan\\GlycanDatabase\\GlycanDatabaseTargetDecoy.tsv";
+
+            using (StreamWriter output = new StreamWriter(filterPath))
+            {
+                int id = 0;
+                foreach (var o in MyOGlycanBoxes)
+                {
+                    var childs = string.Join("\t", o.ChildGlycanBoxes.Select(p => p.Mass.ToString()));
+                    output.WriteLine(id + "\t" + o.Mass + "\t" + o.GlycanIdString + "\t" + o.TargetDecoy + "\t" + childs);
+                    id++;
+                }
+            }
         }
     }
 }

@@ -157,12 +157,12 @@ namespace EngineLayer.GlycoSearch
             sb.Append("PEP_QValue" + '\t');
 
             sb.Append("Score" + '\t');
-            //sb.Append("Glycan Score" + '\t');
+            sb.Append("Localization Score" + '\t');
             sb.Append("DiagonosticIon Score" + '\t');
             sb.Append("Plausible Number Of Glycans" + '\t');
             sb.Append("Total Glycosylation sites" + '\t');
             sb.Append("GlycanMass" + '\t');
-            //sb.Append("GlycanDecoy" + '\t');   
+            sb.Append("GlycanTargetDecoy" + '\t');   
             sb.Append("Plausible GlycanComposition" + '\t');
             sb.Append("R138/144" + '\t');
             sb.Append("Plausible GlycanStructure" + '\t');
@@ -256,7 +256,9 @@ namespace EngineLayer.GlycoSearch
             {
                 sb.Append(Score + "\t");
 
-                sb.Append(DiagnosticIonScore + "\t");
+                sb.Append(LocalizationGraphs.First().TotalScore + "\t");
+
+                sb.Append(DiagnosticIonScore + "\t");              
 
                 var glycanBox = GlycanBox.OGlycanBoxes[OGlycanBoxLocalization.First().Item1];
 
@@ -266,7 +268,9 @@ namespace EngineLayer.GlycoSearch
 
                 sb.Append(glycanBox.Mass); sb.Append("\t");
 
-                //sb.Append( "T" + '\t');  
+                var gtd = !LocalizationGraphs.Any(p => !p.ModBox.TargetDecoy);
+
+                sb.Append(gtd + "\t");
 
                 sb.Append(Glycan.GetKindString(glycanBox.Kind)); sb.Append("\t");
 

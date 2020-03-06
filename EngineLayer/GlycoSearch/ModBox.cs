@@ -16,13 +16,18 @@ namespace EngineLayer
         {
             ModIds = ids;
             NumberOfMods = ids.Length;
+            TargetDecoy = true;
         }
 
         public int[] ModIds { get;  }
 
         public int NumberOfMods { get; }
 
-        public virtual double Mass { get; set; }
+        public double Mass { get; set; }
+
+        public double DecoyMass { get; set; }
+
+        public bool TargetDecoy { get; set; }
 
     }
 }

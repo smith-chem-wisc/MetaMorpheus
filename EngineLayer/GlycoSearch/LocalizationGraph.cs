@@ -120,7 +120,6 @@ namespace EngineLayer.GlycoSearch
 
         #region LocalizeMod not limited to OGlycan.
         //Tt is possible to Merge this function to LocalizdOGlycan; but there is possible no need to do that.
-
         //The modification problem is turned into a Directed Acyclic Graph. The Graph was build with matrix, and dynamic programming is used.
         public void LocalizeMod(int[] modPos, SelectedModBox totalBox, SelectedModBox[] boxes, HashSet<int> allPeaks, List<Product> products, PeptideWithSetModifications peptide)
         {

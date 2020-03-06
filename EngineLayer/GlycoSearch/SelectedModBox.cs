@@ -163,20 +163,12 @@ namespace EngineLayer
 
         public SelectedModBox(int[] ids):base(ids)
         {
-
-        }
-
-        public override double Mass
-        {
-            get
+            double mass = 0;
+            foreach (var id in ModIds)
             {
-                double mass = 0;
-                foreach (var id in ModIds)
-                {
-                    mass += SelectedModifications[id].MonoisotopicMass.Value;
-                }
-                return mass;
+                mass += SelectedModifications[id].MonoisotopicMass.Value;
             }
+            Mass = mass;
         }
 
         //key: motif, value: all ids for this motif

@@ -55,7 +55,7 @@ namespace EngineLayer.GlycoSearch
             {
                 GlycanBox.GlobalOGlycans = GlycanDatabase.LoadGlycan(GlobalVariables.GlycanLocations.Where(p => System.IO.Path.GetFileName(p) == _glycanDatabase).First(), !isOGlycoSearch).ToArray();
                 GlycanBox.GlobalOGlycanModifications = GlycanBox.BuildGlobalOGlycanModifications(GlycanBox.GlobalOGlycans);
-                GlycanBox.OGlycanBoxes = GlycanBox.BuildOGlycanBoxes(_maxOGlycanNum).OrderBy(p => p.Mass).ToArray();
+                GlycanBox.OGlycanBoxes = GlycanBox.BuildOGlycanBoxes(_maxOGlycanNum, true).OrderBy(p => p.Mass).ToArray();
 
                 //This is for Hydroxyproline 
                 SelectedModBox.SelectedModifications = new Modification[5];
@@ -171,8 +171,23 @@ namespace EngineLayer.GlycoSearch
                         }
                         else
                         {
+                            HashSet<int> allPeaksForLocalization = new HashSet<int>();
+
+                            if (GlycoPeptides.DissociationTypeContainETD(CommonParameters.MS2ChildScanDissociationType))
+                            {
+                                foreach (var child in scan.ChildScans)
+                                {
+                                    allPeaksForLocalization.UnionWith(GenerateHashPeaks(child, CommonParameters));
+                                }
+                            }
+
+                            //The workflow is designed for MS2:HCD-MS2:EThcD type of data, but could also work with MS2:EThcD type of data.
+                            if (GlycoPeptides.DissociationTypeContainETD(CommonParameters.DissociationType))
+                            {
+                                allPeaksForLocalization.UnionWith(GenerateHashPeaks(scan, CommonParameters));
+                            }
                             //gsms = FindOGlycopeptideHash(scan, idsOfPeptidesTopN, scanIndex, allBinsToSearch, childBinsToSearch, (int)byteScoreCutoff);
-                            gsms = FindOGlycopeptideHashLocal(scan, idsOfPeptidesTopN, scanIndex, allBinsToSearch, childBinsToSearch, (int)byteScoreCutoff);
+                            gsms = FindOGlycopeptideHashLocal(scan, idsOfPeptidesTopN, scanIndex, allPeaksForLocalization, (int)byteScoreCutoff);
                             //gsms = FindModPepHash(scan, idsOfPeptidesTopN, scanIndex, allBinsToSearch, (int)byteScoreCutoff);
                         }
 
@@ -423,7 +438,7 @@ namespace EngineLayer.GlycoSearch
             return possibleMatches;
         }
 
-        private List<GlycoSpectralMatch> FindOGlycopeptideHashLocal(Ms2ScanWithSpecificMass theScan, List<int> idsOfPeptidesPossiblyObserved, int scanIndex, List<int> allBinsToSearch, List<int> childBinsToSearch, int scoreCutOff)
+        private List<GlycoSpectralMatch> FindOGlycopeptideHashLocal(Ms2ScanWithSpecificMass theScan, List<int> idsOfPeptidesPossiblyObserved, int scanIndex, HashSet<int> allPeaksForLocalization, int scoreCutOff)
         {
             List<GlycoSpectralMatch> possibleMatches = new List<GlycoSpectralMatch>();
 
@@ -467,7 +482,7 @@ namespace EngineLayer.GlycoSearch
 
                     int iDLow = GlycoPeptides.BinarySearchGetIndex(GlycanBox.OGlycanBoxes.Select(p => p.Mass).ToArray(), possibleGlycanMassLow);
 
-                    int[] modPos = GlycoSpectralMatch.GetPossibleModSites(theScanBestPeptide, new string[] { "S", "T" }).ToArray();
+                    int[] modPos = GlycoSpectralMatch.GetPossibleModSites(theScanBestPeptide, new string[] { "S", "T" }).OrderBy(p=>p).ToArray();
 
                     //Localization for O-glycopeptides only works on ETD related dissociationtype
                     //No localization can be done with MS2-HCD spectrum
@@ -496,20 +511,6 @@ namespace EngineLayer.GlycoSearch
                         continue;
                     }
 
-                    HashSet<int> allPeaksForLocalization = new HashSet<int>();
-
-
-                    if (GlycoPeptides.DissociationTypeContainETD(CommonParameters.MS2ChildScanDissociationType))
-                    {
-                        allPeaksForLocalization.UnionWith(childBinsToSearch);
-                    }
-
-                    //The workflow is designed for MS2:HCD-MS2:EThcD type of data, but could also work with MS2:EThcD type of data.
-                    if (GlycoPeptides.DissociationTypeContainETD(CommonParameters.DissociationType))
-                    {
-                        allPeaksForLocalization.UnionWith(allBinsToSearch);
-                    }
-
                     List<Product> products = new List<Product>();
                     theScanBestPeptide.Fragment(DissociationType.ETD, FragmentationTerminus.Both, products);                    
 
@@ -521,14 +522,14 @@ namespace EngineLayer.GlycoSearch
                     {
                         if (modPos.Length >= GlycanBox.OGlycanBoxes[iDLow].NumberOfMods && GlycoPeptides.OxoniumIonsAnalysis(oxoniumIonIntensities, GlycanBox.OGlycanBoxes[iDLow]))
                         {
-                            var boxes = GlycanBox.BuildChildOGlycanBoxes(GlycanBox.OGlycanBoxes[iDLow].NumberOfMods, GlycanBox.OGlycanBoxes[iDLow].ModIds).ToArray();
-                            LocalizationGraph localizationGraph = new LocalizationGraph(modPos, GlycanBox.OGlycanBoxes[iDLow], boxes, iDLow);
+                            //var boxes = GlycanBox.BuildChildOGlycanBoxes(GlycanBox.OGlycanBoxes[iDLow].NumberOfMods, GlycanBox.OGlycanBoxes[iDLow].ModIds).ToArray();
+                            LocalizationGraph localizationGraph = new LocalizationGraph(modPos, GlycanBox.OGlycanBoxes[iDLow], GlycanBox.OGlycanBoxes[iDLow].ChildGlycanBoxes, iDLow);
                             LocalizationGraph.LocalizeOGlycan(localizationGraph, allPeaksForLocalization, products);
 
                             double currentLocalizationScore = localizationGraph.TotalScore;
                             if (currentLocalizationScore > bestLocalizedScore)
                             {
-           
+                                bestLocalizedScore = currentLocalizationScore;
                                 localizationGraphs.Clear();
                                 localizationGraphs.Add(localizationGraph);
                             }
@@ -638,6 +639,36 @@ namespace EngineLayer.GlycoSearch
             }     
 
             return psmGlyco;
+        }
+
+        public static List<int> GenerateHashPeaks(Ms2ScanWithSpecificMass theScan, CommonParameters commonParameters)
+        {
+            int obsPreviousFragmentCeilingMz = 0;
+            List<int> binsToSearch = new List<int>();
+            foreach (var envelope in theScan.ExperimentalFragments)
+            {
+                // assume charge state 1 to calculate mass tolerance
+                double experimentalFragmentMass = envelope.monoisotopicMass;
+
+                // get theoretical fragment bins within mass tolerance
+                int obsFragmentFloorMass = (int)Math.Floor((commonParameters.ProductMassTolerance.GetMinimumValue(experimentalFragmentMass)) * 1000);
+                int obsFragmentCeilingMass = (int)Math.Ceiling((commonParameters.ProductMassTolerance.GetMaximumValue(experimentalFragmentMass)) * 1000);
+
+                // prevents double-counting peaks close in m/z and lower-bound out of range exceptions
+                if (obsFragmentFloorMass < obsPreviousFragmentCeilingMz)
+                {
+                    obsFragmentFloorMass = obsPreviousFragmentCeilingMz;
+                }
+                obsPreviousFragmentCeilingMz = obsFragmentCeilingMass + 1;
+
+                // search mass bins within a tolerance
+                for (int fragmentBin = obsFragmentFloorMass; fragmentBin <= obsFragmentCeilingMass; fragmentBin++)
+                {
+                    binsToSearch.Add(fragmentBin);
+                }
+            }
+
+            return binsToSearch;
         }
 
         private List<GlycoSpectralMatch> FindModPepHash(Ms2ScanWithSpecificMass theScan, List<int> idsOfPeptidesPossiblyObserved, int scanIndex, List<int> allBinsToSearch, int scoreCutOff)
