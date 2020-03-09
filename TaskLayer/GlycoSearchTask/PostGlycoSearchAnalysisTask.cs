@@ -22,12 +22,6 @@ namespace TaskLayer
 
         public MyTaskResults Run(string OutputFolder, List<DbForTask> dbFilenameList, List<string> currentRawFileList, string taskId, FileSpecificParameters[] fileSettingsList, List<GlycoSpectralMatch> allPsms, CommonParameters commonParameters, GlycoSearchParameters glycoSearchParameters, List<Protein> proteinList, List<Modification> variableModifications, List<Modification> fixedModifications, List<string> localizeableModificationTypes, MyTaskResults MyTaskResults)
         {
-            //foreach (var csm in allPsms)
-            //{
-            //    //TO DO: change this for glycopeptide
-            //    //csm.ResolveProteinPosAmbiguitiesForXl();
-            //}
-
             if (!glycoSearchParameters.IsOGlycoSearch)
             {
 
@@ -52,7 +46,7 @@ namespace TaskLayer
 
                 var allPsmsGly = allPsms.Where(p => p.OGlycanBoxLocalization != null && p.Score > 2).OrderByDescending(p => p.Score).ToList();
                 SingleFDRAnalysis(allPsmsGly, commonParameters, new List<string> { taskId });
-                //GlycanFdrAnalysis(allPsmsGly);
+
                 var writtenFileInter2 = Path.Combine(OutputFolder, "glyco_fdr" + ".tsv");
                 WriteFile.WritePsmGlycoToTsv(allPsmsGly, writtenFileInter2, 2);
 
@@ -71,29 +65,6 @@ namespace TaskLayer
             new FdrAnalysisEngine(psms, 0, commonParameters, this.FileSpecificParameters, taskIds).Run();
 
         }
-
-        private void GlycanFdrAnalysis(List<GlycoSpectralMatch> gsms)
-        {
-            int cumulativeTarget = 0;
-            int cumulativeDecoy = 0;
-
-            foreach (var gsm in gsms.OrderByDescending(p=>p.NormalizedLocalizationScore))
-            {
-                if (gsm.GlycanTargetDecoy)
-                {
-                    cumulativeTarget++;
-                }
-                else
-                {
-                    cumulativeDecoy++;
-                }
-
-                double qValue = Math.Min(1, (double)cumulativeDecoy / (cumulativeTarget <= 0 ? 1 : cumulativeTarget));
-
-                gsm.GlycanQValue = qValue;
-            }
-        }
-
 
         private Dictionary<string, Tuple<bool, double, double>> ProteinLevelGlycoParsimony(List<GlycoSpectralMatch> allPsmsGly)
         {

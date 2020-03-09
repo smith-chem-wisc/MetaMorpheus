@@ -112,11 +112,11 @@ namespace EngineLayer
                 //var childShift = random.Next(-3000000, 3000000); //Based on pGlyco [1, 30] and GlycoPAT [-50, 50].
                 int shiftInd = random.Next(SugarShift.Length);
                 Mass = (double)(Glycan.GetMass(Kind) + SugarShift[shiftInd]) / 1E5;
-            }
 
-            //Random random_decoyMass = new Random();
-            //var decoyMassShift = random_decoyMass.Next(SugarShift.Length);
-            //DecoyMass = (double)(Glycan.GetMass(Kind) + SugarShift[decoyMassShift]) / 1E5;
+                //Random random_decoyMass = new Random();
+                //var decoyMassShift = random_decoyMass.Next(SugarShift.Length);
+                //DecoyMass = (double)(Glycan.GetMass(Kind) + SugarShift[decoyMassShift]) / 1E5;
+            }
         }
 
         public GlycanBox[] ChildGlycanBoxes { get; set; }

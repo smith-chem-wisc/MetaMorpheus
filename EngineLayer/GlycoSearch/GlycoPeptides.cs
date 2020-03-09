@@ -391,10 +391,11 @@ namespace EngineLayer.GlycoSearch
         public static int[] GetUnlocalFragmentHash(List<Product> products, int[] modPoses, ModBox OGlycanBox, int FragmentBinsPerDalton)
         {
             var mass = OGlycanBox.Mass;
-            if (!OGlycanBox.TargetDecoy)
-            {
-                mass = OGlycanBox.DecoyMass;
-            }
+            //The following is for localization FDR. 
+            //if (!OGlycanBox.TargetDecoy)
+            //{
+            //    mass = OGlycanBox.DecoyMass;
+            //}
 
             List<double> newFragments = new List<double>();
             var c_fragments = products.Where(p => p.ProductType == ProductType.c && p.AminoAcidPosition < modPoses.First()-1).Select(p=>p.NeutralMass);

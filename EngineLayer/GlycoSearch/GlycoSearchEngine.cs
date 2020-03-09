@@ -55,16 +55,16 @@ namespace EngineLayer.GlycoSearch
             {
                 GlycanBox.GlobalOGlycans = GlycanDatabase.LoadGlycan(GlobalVariables.GlycanLocations.Where(p => System.IO.Path.GetFileName(p) == _glycanDatabase).First(), !isOGlycoSearch).ToArray();
                 GlycanBox.GlobalOGlycanModifications = GlycanBox.BuildGlobalOGlycanModifications(GlycanBox.GlobalOGlycans);
-                GlycanBox.OGlycanBoxes = GlycanBox.BuildOGlycanBoxes(_maxOGlycanNum, true).OrderBy(p => p.Mass).ToArray();
+                GlycanBox.OGlycanBoxes = GlycanBox.BuildOGlycanBoxes(_maxOGlycanNum, false).OrderBy(p => p.Mass).ToArray();
 
                 //This is for Hydroxyproline 
-                SelectedModBox.SelectedModifications = new Modification[5];
-                SelectedModBox.SelectedModifications[0] = GlobalVariables.AllModsKnownDictionary["Hydroxylation on P"];
-                SelectedModBox.SelectedModifications[1] = GlobalVariables.AllModsKnownDictionary["Hydroxylation on K"];
-                SelectedModBox.SelectedModifications[2] = GlobalVariables.AllModsKnownDictionary["Glucosylgalactosyl on K"];
-                SelectedModBox.SelectedModifications[3] = GlobalVariables.AllModsKnownDictionary["Galactosyl on K"];
-                SelectedModBox.SelectedModifications[4] = GlobalVariables.AllModsKnownDictionary["Oxidation on M"];
-                SelectedModBox.ModBoxes = SelectedModBox.BuildModBoxes(_maxOGlycanNum).Where(p => !p.MotifNeeded.ContainsKey("K") || (p.MotifNeeded.ContainsKey("K") && p.MotifNeeded["K"].Count <= 3)).OrderBy(p => p.Mass).ToArray();
+                //SelectedModBox.SelectedModifications = new Modification[5];
+                //SelectedModBox.SelectedModifications[0] = GlobalVariables.AllModsKnownDictionary["Hydroxylation on P"];
+                //SelectedModBox.SelectedModifications[1] = GlobalVariables.AllModsKnownDictionary["Hydroxylation on K"];
+                //SelectedModBox.SelectedModifications[2] = GlobalVariables.AllModsKnownDictionary["Glucosylgalactosyl on K"];
+                //SelectedModBox.SelectedModifications[3] = GlobalVariables.AllModsKnownDictionary["Galactosyl on K"];
+                //SelectedModBox.SelectedModifications[4] = GlobalVariables.AllModsKnownDictionary["Oxidation on M"];
+                //SelectedModBox.ModBoxes = SelectedModBox.BuildModBoxes(_maxOGlycanNum).Where(p => !p.MotifNeeded.ContainsKey("K") || (p.MotifNeeded.ContainsKey("K") && p.MotifNeeded["K"].Count <= 3)).OrderBy(p => p.Mass).ToArray();
 
             }
         }
