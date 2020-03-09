@@ -19,17 +19,13 @@ namespace EngineLayer.CrosslinkSearch
         public CrosslinkSpectralMatch BetaPeptide { get; set; }
 
         public List<int> LinkPositions { get; set; }
-
-        public double XLTotalScore { get; set; } //alpha + beta psmCross.
+        public double XLTotalScore { get; set; }    //alpha + beta psmCross.
         public double SecondBestXlScore { get; set; } // score of the second-best CSM; this is used to calculate delta score
-        public int XlRank { get; set; } //only contain 2 intger, consider change to Tuple.
-
-        //currently unused but will be used again soon for cleavable crosslinker
-        //public string ParentIonExist { get; set; }
-        //public int ParentIonExistNum { get; set; }
-
+        public int XlRank { get; set; }   //Rank after indexing score. Could be used for PEP
+        public int ParentIonExistNum { get; set; }
         public List<int> ParentIonMaxIntensityRanks { get; set; }
         public PsmCrossType CrossType { get; set; }
+        public double MS3ChildScore { get; set; }
         public Dictionary<int, List<MatchedFragmentIon>> ChildMatchedFragmentIons { get; set; }
         public int? XlProteinPos { get; private set; }
 
@@ -181,9 +177,11 @@ namespace EngineLayer.CrosslinkSearch
             sb.Append("Summary Info -->" + '\t');
             sb.Append(PsmTsvHeader.XLTotalScoreLabel + '\t');
             sb.Append(PsmTsvHeader.MassDiffDa + '\t');
+            sb.Append("AlphaIndexingRank" + '\t');
             sb.Append(PsmTsvHeader.ParentIonsLabel + '\t');
             sb.Append("ParentIonsNum" + '\t');
-            sb.Append("ParentIonMaxIntensityRank" + '\t');
+            sb.Append("AlphaParentIonMaxIntensityRank" + '\t');
+            sb.Append("BetaParentIonMaxIntensityRank" + '\t');
             sb.Append(PsmTsvHeader.DecoyContaminantTarget + '\t');
             sb.Append(PsmTsvHeader.QValue + '\t');
             sb.Append(PsmTsvHeader.PEP + '\t');
@@ -372,12 +370,15 @@ namespace EngineLayer.CrosslinkSearch
                 // mass of crosslinker
                 sb.Append(((PeptideMonisotopicMass.HasValue) ? (ScanPrecursorMass - BetaPeptide.PeptideMonisotopicMass - PeptideMonisotopicMass.Value).ToString() : "---")); sb.Append("\t");
 
+                sb.Append(XlRank.ToString() + "\t");
+
                 int alphaNumParentIons = MatchedFragmentIons.Count(p => p.NeutralTheoreticalProduct.ProductType == ProductType.M);
                 int betaNumParentIons = BetaPeptide.MatchedFragmentIons.Count(p => p.NeutralTheoreticalProduct.ProductType == ProductType.M);
 
                 sb.Append(alphaNumParentIons + ";" + betaNumParentIons + "\t");
                 sb.Append(alphaNumParentIons + betaNumParentIons + "\t");
                 sb.Append(((ParentIonMaxIntensityRanks != null) && (ParentIonMaxIntensityRanks.Any()) ? ParentIonMaxIntensityRanks.Min().ToString() : "-")); sb.Append("\t");
+                sb.Append(((BetaPeptide.ParentIonMaxIntensityRanks != null) && (BetaPeptide.ParentIonMaxIntensityRanks.Any()) ? BetaPeptide.ParentIonMaxIntensityRanks.Min().ToString() : "-")); sb.Append("\t");
             }
 
             if (BetaPeptide == null)
