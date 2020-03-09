@@ -35,9 +35,20 @@ namespace EngineLayer.GlycoSearch
         public double PeptideScore { get; set; }
         public double GlycanScore { get; set; } //Important for N-glycan for signature ions.
         public double DiagnosticIonScore { get; set; } //Since every glycopeptide generate DiagnosticIon, it is important to seperate the score. 
+
         public double R138vs144 { get; set; }
         public List<Tuple<int, int, bool>> LocalizedGlycan { get; set; } //<mod site, glycanID, isLocalized> All seen glycans identified.
         public string LocalizationLevel { get; set; }
+
+        //public bool GlycanLocalizationTargetDecoy
+        //{
+        //    get
+        //    {
+        //        return !LocalizationGraphs.Any(p => !p.ModBox.TargetDecoy);
+        //    }
+        //}
+
+        //public double GlycanLocalizationQValue { get; set; }
 
         //Motif should be writen with required form
         public static List<int> GetPossibleModSites(PeptideWithSetModifications peptide, string[] motifs)
@@ -162,7 +173,8 @@ namespace EngineLayer.GlycoSearch
             sb.Append("Plausible Number Of Glycans" + '\t');
             sb.Append("Total Glycosylation sites" + '\t');
             sb.Append("GlycanMass" + '\t');
-            sb.Append("GlycanTargetDecoy" + '\t');   
+            //sb.Append("GlycanLocalizationTargetDecoy" + '\t');
+            //sb.Append("Glycan QValue" + '\t');
             sb.Append("Plausible GlycanComposition" + '\t');
             sb.Append("R138/144" + '\t');
             sb.Append("Plausible GlycanStructure" + '\t');
@@ -266,11 +278,13 @@ namespace EngineLayer.GlycoSearch
 
                 sb.Append(LocalizationGraphs.First().ModPos.Length + "\t");
 
-                sb.Append(glycanBox.Mass); sb.Append("\t");
+                sb.Append(glycanBox.Mass + "\t");
 
-                var gtd = !LocalizationGraphs.Any(p => !p.ModBox.TargetDecoy);
+                //var gtd = LocalizationGraphs.Any(p => p.ModBox.TargetDecoy);
 
-                sb.Append(gtd + "\t");
+                //sb.Append(gtd + "\t");
+
+                //sb.Append(GlycanLocalizationQValue + "\t");
 
                 sb.Append(Glycan.GetKindString(glycanBox.Kind)); sb.Append("\t");
 
