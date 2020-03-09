@@ -104,6 +104,8 @@ namespace EngineLayer
 
             int ambiguousPeptidesRemovedCount = 0;
 
+            List<string> myout = new List<string>();
+
             Parallel.ForEach(Partitioner.Create(0, psms.Count),
                 new ParallelOptions { MaxDegreeOfParallelism = maxThreads },
                 (range, loopState) =>
@@ -127,6 +129,8 @@ namespace EngineLayer
                     var threadPredictionEngine = mlContext.Model.CreatePredictionEngine<PsmData, TruePositivePrediction>(threadSpecificTrainedModel);
 
                     int ambigousPeptidesRemovedinThread = 0;
+
+
 
                     for (int i = range.Item1; i < range.Item2; i++)
                     {
@@ -152,6 +156,8 @@ namespace EngineLayer
                                 var pepValuePrediction = threadPredictionEngine.Predict(pd);
                                 pepValuePredictions.Add(pepValuePrediction.Probability);
                                 //A score is available using the variable pepvaluePrediction.Score
+                                myout.Add(psm.FullFilePath.ToString() + "\t" + psm.ScanRetentionTime.ToString() + "\t" + pepValuePrediction.Probability.ToString() + "\t" + psm.FdrInfo.QValue.ToString() + "\t" + GetCifuentesMobility(Peptide).ToString());
+
                             }
 
                             GetIndiciesOfPeptidesToRemove(indiciesOfPeptidesToRemove, pepValuePredictions);
@@ -160,6 +166,9 @@ namespace EngineLayer
                             ambigousPeptidesRemovedinThread += peptidesRemoved;
                         }
                     }
+
+
+
                     lock (lockObject)
                     {
                         ambiguousPeptidesRemovedCount += ambigousPeptidesRemovedinThread;
@@ -167,6 +176,8 @@ namespace EngineLayer
                 });
 
             var predictions = trainedModel.Transform(testData);
+
+            File.WriteAllLines(@"F:\03-04-20_jurkat_fract10_LCvsCE\out.txt", myout);
 
             CalibratedBinaryClassificationMetrics metrics;
             try
