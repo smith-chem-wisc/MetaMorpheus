@@ -261,7 +261,9 @@ namespace Test
             Assert.AreEqual(2, psm.BestMatchingPeptides.Count());
             Assert.That(psm.IsDecoy);
 
-            new FdrAnalysisEngine(new List<PeptideSpectralMatch> { psm }, 1, new CommonParameters(), null, new List<string>()).Run();
+            List<(string fileName, CommonParameters fileSpecificParameters)> fsp = new List<(string fileName, CommonParameters fileSpecificParameters)> { ("filename", commonParameters) };
+
+            new FdrAnalysisEngine(new List<PeptideSpectralMatch> { psm }, 1, new CommonParameters(), fsp, new List<string>()).Run();
             Assert.AreEqual(0.5, psm.FdrInfo.CumulativeDecoy);
         }
 
@@ -301,7 +303,10 @@ namespace Test
             psm3.SetFdrValues(0, 0, 0, 0, 0, 0, 0, 0); // ambiguous psm
 
             var allPsms = new List<PeptideSpectralMatch> { psm1, psm2, psm3 };
-            var fdrEngine = new FdrAnalysisEngine(allPsms, 0, new CommonParameters(), null, new List<string>());
+
+            List<(string fileName, CommonParameters fileSpecificParameters)> fsp = new List<(string fileName, CommonParameters fileSpecificParameters)> { ("filename", new CommonParameters()) };
+
+            var fdrEngine = new FdrAnalysisEngine(allPsms, 0, new CommonParameters(), fsp, new List<string>());
 
             fdrEngine.CountPsm();
             var psmGroups = allPsms.Where(psm => psm.FullSequence != null && psm.PsmCount > 0).GroupBy(p => p.FullSequence).ToList();

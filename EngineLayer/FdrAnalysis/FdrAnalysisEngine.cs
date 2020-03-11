@@ -23,6 +23,7 @@ namespace EngineLayer.FdrAnalysis
             ScoreCutoff = commonParameters.ScoreCutoff;
             AnalysisType = analysisType;
             this.OutputFolder = outputFolder;
+            if (fileSpecificParameters == null) throw new ArgumentNullException("file specific parameters cannot be null");
         }
 
         protected override MetaMorpheusEngineResults RunSpecific()
