@@ -97,7 +97,7 @@ namespace TaskLayer
             // this could cause weird PSM FDR issues
 
             Status("Estimating PSM FDR...", Parameters.SearchTaskId);
-            new FdrAnalysisEngine(Parameters.AllPsms, Parameters.NumNotches, CommonParameters, this.FileSpecificParameters, new List<string> { Parameters.SearchTaskId }).Run();
+            new FdrAnalysisEngine(Parameters.AllPsms, Parameters.NumNotches, CommonParameters, this.FileSpecificParameters, new List<string> { Parameters.SearchTaskId }, outputFolder: Parameters.OutputFolder).Run();
 
             // sort by q-value because of group FDR stuff
             // e.g. multiprotease FDR, non/semi-specific protease, etc
@@ -919,7 +919,7 @@ namespace TaskLayer
 
             WritePsmsToTsv(peptides, writtenFile, Parameters.SearchParameters.ModsToWriteSelection);
             FinishedWritingFile(writtenFile, new List<string> { Parameters.SearchTaskId });
-            
+
             Parameters.SearchTaskResults.AddPsmPeptideProteinSummaryText("All target " + GlobalVariables.AnalyteType.ToLower() + "s within 1% FDR: " + peptides.Count(a => a.FdrInfo.QValue <= 0.01 && !a.IsDecoy));
 
             foreach (var file in PsmsGroupedByFile)
@@ -927,7 +927,7 @@ namespace TaskLayer
                 // write summary text
                 var psmsForThisFile = file.ToList();
                 string strippedFileName = Path.GetFileNameWithoutExtension(file.First().FullFilePath);
-                var peptidesForFile = psmsForThisFile.GroupBy(b => b.FullSequence).Select(b => b.FirstOrDefault()).OrderByDescending(b=>b.Score).ToList();
+                var peptidesForFile = psmsForThisFile.GroupBy(b => b.FullSequence).Select(b => b.FirstOrDefault()).OrderByDescending(b => b.Score).ToList();
                 new FdrAnalysisEngine(peptidesForFile, Parameters.NumNotches, CommonParameters, this.FileSpecificParameters, new List<string> { Parameters.SearchTaskId }, "Peptide").Run();
                 Parameters.SearchTaskResults.AddTaskSummaryText("Target " + GlobalVariables.AnalyteType.ToLower() + "s within 1% FDR in " + strippedFileName + ": " + peptidesForFile.Count(a => a.FdrInfo.QValue <= 0.01 && !a.IsDecoy) + Environment.NewLine);
 
@@ -965,7 +965,7 @@ namespace TaskLayer
             List<PeptideSpectralMatch> FDRPsms = Parameters.AllPsms
                 .Where(p => p.FdrInfo.QValue <= CommonParameters.QValueOutputFilter
                 && p.FdrInfo.QValueNotch <= CommonParameters.QValueOutputFilter && p.BaseSequence != null).ToList();
-            var possibleVariantPsms = FDRPsms.Where(p => p.BestMatchingPeptides.Any(pep => pep.Peptide.IsVariantPeptide())).OrderByDescending(pep=>pep.Score).ToList();
+            var possibleVariantPsms = FDRPsms.Where(p => p.BestMatchingPeptides.Any(pep => pep.Peptide.IsVariantPeptide())).OrderByDescending(pep => pep.Score).ToList();
 
             if (!Parameters.SearchParameters.WriteDecoys)
             {
@@ -982,7 +982,7 @@ namespace TaskLayer
 
             WritePsmsToTsv(possibleVariantPsms, variantPsmFile, Parameters.SearchParameters.ModsToWriteSelection);
 
-            List<PeptideSpectralMatch> variantPeptides = possibleVariantPsms.GroupBy(b => b.FullSequence).Select(b => b.FirstOrDefault()).OrderByDescending(b=>b.Score).ToList();
+            List<PeptideSpectralMatch> variantPeptides = possibleVariantPsms.GroupBy(b => b.FullSequence).Select(b => b.FirstOrDefault()).OrderByDescending(b => b.Score).ToList();
             List<PeptideSpectralMatch> confidentVariantPeps = new List<PeptideSpectralMatch>();
 
             new FdrAnalysisEngine(variantPeptides, Parameters.NumNotches, CommonParameters, this.FileSpecificParameters, new List<string> { Parameters.SearchTaskId }, "variant_Peptides").Run();
@@ -1052,7 +1052,7 @@ namespace TaskLayer
                     var variantPWSM = peptide.BestMatchingPeptides.FirstOrDefault();//TODO: expand to all peptide options not just the first
                     var variants = variantPWSM.Peptide.Protein.AppliedSequenceVariations;
                     var culture = CultureInfo.CurrentCulture;
-                    // these bools allow for us to accurrately count the number of peptides that have at least one variants of a given type. 
+                    // these bools allow for us to accurrately count the number of peptides that have at least one variants of a given type.
                     // they will prevent double counting if a variant type is found more than once in a given peptide (most typically missense, but all will be covered)
                     bool SNVmissenseIdentified = false;
                     bool MNVmissenseIdentified = false;
@@ -1100,9 +1100,7 @@ namespace TaskLayer
                                         MNVmissenseVariants.Add(variantPWSM.Peptide.Protein, new HashSet<SequenceVariation> { variant });
                                     }
                                 }
-
                             }
-
                             else if (culture.CompareInfo.IndexOf(variant.Description.Description, "frameshift_variant", CompareOptions.IgnoreCase) >= 0)
                             {
                                 if (frameshiftIdentified == false)
@@ -1118,7 +1116,6 @@ namespace TaskLayer
                                 {
                                     frameshiftVariants.Add(variantPWSM.Peptide.Protein, new HashSet<SequenceVariation> { variant });
                                 }
-
                             }
                             else if (culture.CompareInfo.IndexOf(variant.Description.Description, "stop_gained", CompareOptions.IgnoreCase) >= 0)
                             {
@@ -1135,7 +1132,6 @@ namespace TaskLayer
                                 {
                                     stopGainVariants.Add(variantPWSM.Peptide.Protein, new HashSet<SequenceVariation> { variant });
                                 }
-
                             }
                             else if ((culture.CompareInfo.IndexOf(variant.Description.Description, "conservative_inframe_insertion", CompareOptions.IgnoreCase) >= 0) || (culture.CompareInfo.IndexOf(variant.Description.Description, "disruptive_inframe_insertion", CompareOptions.IgnoreCase) >= 0))
                             {
@@ -1171,7 +1167,6 @@ namespace TaskLayer
                             }
                             else if (culture.CompareInfo.IndexOf(variant.Description.Description, "stop_loss", CompareOptions.IgnoreCase) >= 0)
                             {
-
                                 if (stopLossIdentifed == false)
                                 {
                                     stopLossCount++;
@@ -1185,10 +1180,7 @@ namespace TaskLayer
                                 {
                                     stopLossVariants.Add(variantPWSM.Peptide.Protein, new HashSet<SequenceVariation> { variant });
                                 }
-
                             }
-
-
                         }
                     }
                 }
@@ -1236,8 +1228,6 @@ namespace TaskLayer
             }
 
             int totalVariantSites = SNVmissenseSites + MNVmissenseSites + insertionSites + deletionSites + frameshiftSites + stopGainSites + stopLossSites;
-
-
 
             string[] variantResults = new string[25];
             variantResults[0] = "Variant Result Summary";
@@ -1330,6 +1320,7 @@ namespace TaskLayer
                 {
                     searchType = "standard";
                 }
+
                 string header = "SpecId\tLabel\tScanNr\t";
                 header = header + String.Join("\t", PsmData.trainingInfos[searchType]);
                 header = header + "\tPeptide\tProteins";
@@ -1351,7 +1342,6 @@ namespace TaskLayer
                 psmList.OrderByDescending(p => p.Score);
                 foreach (PeptideSpectralMatch psm in psmList.Where(p => p.PsmData_forPEPandPercolator != null))
                 {
-
                     output.Write(idNumber.ToString());
                     idNumber++;
                     output.Write('\t' + (psm.IsDecoy ? -1 : 1).ToString());
