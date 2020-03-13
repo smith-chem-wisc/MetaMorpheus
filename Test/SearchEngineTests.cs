@@ -60,6 +60,16 @@ namespace Test
             Assert.AreEqual("QQQ", allPsmsArray[0].BaseSequence);
         }
 
+        //tests a weird crash from ms2 scans that had experimental peaks but they were all removed from the xarray by XCorr processing
+        [Test]
+        public static void TestXCorrWithNoPeaks()
+        {
+            MsDataScan datascan = new MsDataScan(new MzSpectrum(new double[,] { }), 0, 0, true, Polarity.Positive, 0, new MzLibUtil.MzRange(0, 2000), "", MZAnalyzerType.FTICR, 1, null, null, "");
+            Ms2ScanWithSpecificMass scan = new Ms2ScanWithSpecificMass(datascan, 0, 0, "", new CommonParameters(), new IsotopicEnvelope[] { new IsotopicEnvelope(new List<(double mz, double intensity)> { (1, 1) }, 32, 2, 23, 1, 1) });
+            scan.TheScan.MassSpectrum.XCorrPrePreprocessing(0, 1, 32);
+            MetaMorpheusEngine.MatchFragmentIons(scan, new List<Product> { (new Product(ProductType.y, FragmentationTerminus.C, 0, 1, 1, 0)) }, new CommonParameters(dissociationType: DissociationType.LowCID));
+        }
+
         [Test]
         public static void TestClassicSearchXcorrWithToml()
         {
@@ -465,7 +475,10 @@ namespace Test
 
             var nonNullPsms = allPsmsArray.Where(p => p != null).ToList();
 
-            EngineLayer.FdrAnalysis.FdrAnalysisResults fdrResultsModernDelta = (EngineLayer.FdrAnalysis.FdrAnalysisResults)(new EngineLayer.FdrAnalysis.FdrAnalysisEngine(nonNullPsms, 1, CommonParameters, null, new List<string>()).Run());
+
+            List<(string fileName, CommonParameters fileSpecificParameters)> fsp = new List<(string fileName, CommonParameters fileSpecificParameters)> { ("filename", CommonParameters) };
+
+            EngineLayer.FdrAnalysis.FdrAnalysisResults fdrResultsModernDelta = (EngineLayer.FdrAnalysis.FdrAnalysisResults)(new EngineLayer.FdrAnalysis.FdrAnalysisEngine(nonNullPsms, 1, CommonParameters, fsp, new List<string>()).Run());
 
             // Single search mode
             Assert.AreEqual(25, allPsmsArray.Length);
