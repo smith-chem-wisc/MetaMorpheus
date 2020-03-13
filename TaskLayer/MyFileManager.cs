@@ -32,7 +32,7 @@ namespace TaskLayer
         {
             FilteringParams filter = new FilteringParams(commonParameters.NumberOfPeaksToKeepPerWindow, commonParameters.MinimumAllowedIntensityRatioToBasePeak, commonParameters.WindowWidthThomsons, commonParameters.NumberOfWindows, commonParameters.NormalizePeaksAccrossAllWindows, commonParameters.TrimMs1Peaks, commonParameters.TrimMsMsPeaks);
 
-            if (commonParameters.DissociationType == DissociationType.LowCID || commonParameters.ChildScanDissociationType == DissociationType.LowCID)
+            if (commonParameters.DissociationType == DissociationType.LowCID || commonParameters.MS2ChildScanDissociationType == DissociationType.LowCID || commonParameters.MS3ChildScanDissociationType == DissociationType.LowCID)
             {
                 filter = null;
             }

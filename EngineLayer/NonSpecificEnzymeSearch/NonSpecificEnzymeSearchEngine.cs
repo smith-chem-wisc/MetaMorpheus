@@ -420,7 +420,7 @@ namespace EngineLayer.NonSpecificEnzymeSearch
             return new Tuple<int, PeptideWithSetModifications>(-1, null);
         }
 
-        public static List<PeptideSpectralMatch> ResolveFdrCategorySpecificPsms(List<PeptideSpectralMatch>[] AllPsms, int numNotches, string taskId, CommonParameters commonParameters)
+        public static List<PeptideSpectralMatch> ResolveFdrCategorySpecificPsms(List<PeptideSpectralMatch>[] AllPsms, int numNotches, string taskId, CommonParameters commonParameters, List<(string fileName, CommonParameters fileSpecificParameters)> fileSpecificParameters)
         {
             //update all psms with peptide info
             AllPsms.ToList()
@@ -436,7 +436,7 @@ namespace EngineLayer.NonSpecificEnzymeSearch
                        .ThenBy(b => b.PeptideMonisotopicMass.HasValue ? Math.Abs(b.ScanPrecursorMass - b.PeptideMonisotopicMass.Value) : double.MaxValue)
                        .GroupBy(b => (b.FullFilePath, b.ScanNumber, b.PeptideMonisotopicMass)).Select(b => b.First()).ToList();
 
-                    new FdrAnalysisEngine(cleanedPsmsArray, numNotches, commonParameters, null, new List<string> { taskId }).Run();
+                    new FdrAnalysisEngine(cleanedPsmsArray, numNotches, commonParameters, fileSpecificParameters, new List<string> { taskId }).Run();
 
                     for (int i = 0; i < psmsArray.Count; i++)
                     {
@@ -565,7 +565,7 @@ namespace EngineLayer.NonSpecificEnzymeSearch
                        .ThenBy(b => b.PeptideMonisotopicMass.HasValue ? Math.Abs(b.ScanPrecursorMass - b.PeptideMonisotopicMass.Value) : double.MaxValue)
                        .ToList();
 
-                    new FdrAnalysisEngine(cleanedPsmsArray, numNotches, commonParameters, null, new List<string> { taskId }).Run();
+                    new FdrAnalysisEngine(cleanedPsmsArray, numNotches, commonParameters, fileSpecificParameters, new List<string> { taskId }).Run();
                 }
             }
 
