@@ -268,7 +268,7 @@ namespace Test
             //Graph Localization
             LocalizationGraph localizationGraph = new LocalizationGraph(modPos, glycanBox, boxes);
 
-            LocalizationGraph.LocalizeOGlycan(localizationGraph, allPeaks, products);
+            LocalizationGraph.LocalizeOGlycan(localizationGraph, scans.First(), commonParameters.ProductMassTolerance, allPeaks, products);
 
             var allPaths = LocalizationGraph.GetAllPaths(localizationGraph.array, localizationGraph.ChildModBoxes);
 
@@ -354,7 +354,7 @@ namespace Test
             //Graph Localization
             LocalizationGraph localizationGraph = new LocalizationGraph(modPos, glycanBox, boxes);
 
-            LocalizationGraph.LocalizeOGlycan(localizationGraph, allPeaks, products);
+            LocalizationGraph.LocalizeOGlycan(localizationGraph, scans.First(), commonParameters.ProductMassTolerance, allPeaks, products);
 
             var allPaths = LocalizationGraph.GetAllPaths(localizationGraph.array, localizationGraph.ChildModBoxes);
 

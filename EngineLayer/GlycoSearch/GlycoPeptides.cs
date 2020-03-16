@@ -387,6 +387,28 @@ namespace EngineLayer.GlycoSearch
             return fragmentHash;
         }
 
+        public static List<double> GetLocalFragment(List<Product> products, int[] modPoses, int modInd, ModBox OGlycanBox, ModBox localOGlycanBox, int FragmentBinsPerDalton)
+        {
+            List<double> newFragments = new List<double>();
+            var local_c_fragments = products.Where(p => p.ProductType == ProductType.c && p.AminoAcidPosition >= modPoses[modInd] - 1 && p.AminoAcidPosition < modPoses[modInd + 1] - 1).ToList();
+
+            foreach (var c in local_c_fragments)
+            {
+                var newMass = c.NeutralMass + localOGlycanBox.Mass;
+                newFragments.Add(newMass);
+            }
+
+            var local_z_fragments = products.Where(p => p.ProductType == ProductType.zDot && p.AminoAcidPosition >= modPoses[modInd] && p.AminoAcidPosition < modPoses[modInd + 1]).ToList();
+
+            foreach (var z in local_z_fragments)
+            {
+                var newMass = z.NeutralMass + (OGlycanBox.Mass - localOGlycanBox.Mass);
+                newFragments.Add(newMass);
+            }
+
+            return newFragments;
+        }
+
         //Find FragmentHash for the fragments that doesn't contain localization Information.
         public static int[] GetUnlocalFragmentHash(List<Product> products, int[] modPoses, ModBox OGlycanBox, int FragmentBinsPerDalton)
         {
@@ -427,6 +449,41 @@ namespace EngineLayer.GlycoSearch
                 fragmentHash[i] = (int)Math.Round(newFragments[i] * FragmentBinsPerDalton);
             }
             return fragmentHash;
+        }
+
+        public static List<double> GetUnlocalFragment(List<Product> products, int[] modPoses, ModBox OGlycanBox, int FragmentBinsPerDalton)
+        {
+            var mass = OGlycanBox.Mass;
+            //The following is for localization FDR. 
+            //if (!OGlycanBox.TargetDecoy)
+            //{
+            //    mass = OGlycanBox.DecoyMass;
+            //}
+
+            List<double> newFragments = new List<double>();
+            var c_fragments = products.Where(p => p.ProductType == ProductType.c && p.AminoAcidPosition < modPoses.First() - 1).Select(p => p.NeutralMass);
+            newFragments.AddRange(c_fragments);
+
+            var c_fragments_shift = products.Where(p => p.ProductType == ProductType.c && p.AminoAcidPosition >= modPoses.Last() - 1).Select(p => p.NeutralMass); ;
+
+            foreach (var c in c_fragments_shift)
+            {
+                var newMass = c + mass;
+                newFragments.Add(newMass);
+            }
+
+            var z_fragments = products.Where(p => p.ProductType == ProductType.zDot && p.AminoAcidPosition > modPoses.Last() - 1).Select(p => p.NeutralMass);
+            newFragments.AddRange(z_fragments);
+
+            var z_fragments_shift = products.Where(p => p.ProductType == ProductType.zDot && p.AminoAcidPosition < modPoses.First() - 1).Select(p => p.NeutralMass);
+
+            foreach (var z in z_fragments_shift)
+            {
+                var newMass = z + mass;
+                newFragments.Add(newMass);
+            }
+
+            return newFragments;
         }
 
 

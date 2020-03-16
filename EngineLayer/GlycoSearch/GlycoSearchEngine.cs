@@ -116,7 +116,7 @@ namespace EngineLayer.GlycoSearch
                     IndexedScoring(FragmentIndex, allBinsToSearch, scoringTable, byteScoreCutoff, idsOfPeptidesPossiblyObserved, scan.PrecursorMass, Double.NegativeInfinity, Double.PositiveInfinity, PeptideIndex, MassDiffAcceptor, 0, CommonParameters.DissociationType);
 
                     //child scan first-pass scoring
-                    if (scan.ChildScans != null && CommonParameters.MS2ChildScanDissociationType != DissociationType.LowCID)
+                    if (scan.ChildScans != null && scan.ChildScans.Count > 0 && CommonParameters.MS2ChildScanDissociationType != DissociationType.LowCID)
                     {
                         Array.Clear(secondScoringTable, 0, secondScoringTable.Length);
                         childIdsOfPeptidesPossiblyObserved.Clear();
@@ -486,7 +486,7 @@ namespace EngineLayer.GlycoSearch
 
                     //Localization for O-glycopeptides only works on ETD related dissociationtype
                     //No localization can be done with MS2-HCD spectrum
-                    if ((theScan.ChildScans==null || !GlycoPeptides.DissociationTypeContainETD(CommonParameters.MS2ChildScanDissociationType)) && !GlycoPeptides.DissociationTypeContainETD(CommonParameters.DissociationType))
+                    if ((theScan.ChildScans.Count == 0 || !GlycoPeptides.DissociationTypeContainETD(CommonParameters.MS2ChildScanDissociationType)) && !GlycoPeptides.DissociationTypeContainETD(CommonParameters.DissociationType))
                     {
                         while(iDLow < GlycanBox.OGlycanBoxes.Count() && (PrecusorSearchMode.Within(theScan.PrecursorMass, theScanBestPeptide.MonoisotopicMass + GlycanBox.OGlycanBoxes[iDLow].Mass)))
                         {
@@ -524,7 +524,7 @@ namespace EngineLayer.GlycoSearch
                         {
                             //var boxes = GlycanBox.BuildChildOGlycanBoxes(GlycanBox.OGlycanBoxes[iDLow].NumberOfMods, GlycanBox.OGlycanBoxes[iDLow].ModIds).ToArray();
                             LocalizationGraph localizationGraph = new LocalizationGraph(modPos, GlycanBox.OGlycanBoxes[iDLow], GlycanBox.OGlycanBoxes[iDLow].ChildGlycanBoxes, iDLow);
-                            LocalizationGraph.LocalizeOGlycan(localizationGraph, allPeaksForLocalization, products);
+                            LocalizationGraph.LocalizeOGlycan(localizationGraph, theScan.ChildScans.First(), CommonParameters.ProductMassTolerance, allPeaksForLocalization, products);
 
                             double currentLocalizationScore = localizationGraph.TotalScore;
                             if (currentLocalizationScore > bestLocalizedScore)
