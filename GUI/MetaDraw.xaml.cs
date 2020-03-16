@@ -169,7 +169,7 @@ namespace MetaMorpheusGUI
                 // TODO: print warnings
                 foreach (var psm in PsmTsvReader.ReadTsv(filename, out List<string> warnings))
                 {
-                    if (loadPsmsOfAllSpectraFiles || psm.Filename == spectraFilePath || psm.Filename == fileNameWithExtension || psm.Filename == fileNameWithoutExtension || psm.Filename.Equals(fileNameWithoutExtension + "-calib")) // in case results are from a calibrated file
+                    if (loadPsmsOfAllSpectraFiles || Path.GetFileName(psm.Filename) == fileNameWithExtension || psm.Filename == fileNameWithExtension || psm.Filename == fileNameWithoutExtension || psm.Filename.Equals(fileNameWithoutExtension + "-calib")) // in case results are from a calibrated file
                     {
                         allPsms.Add(psm);
                     }
