@@ -12,7 +12,9 @@ namespace MetaMorpheusGUI
         public bool ShowContaminants { get; private set; }
         public double QValueFilter { get; private set; }
 
-        public MetaDrawFilterSettings(bool showDecoys = false, bool showContaminants = true, double qValueFilter = 0.01)
+        public int? GlycanLocalizationLevelFilter { get; set; }
+
+        public MetaDrawFilterSettings(bool showDecoys = false, bool showContaminants = true, double qValueFilter = 0.01, int? glycanLocalizationLevelFilter = null)
         {
             InitializeComponent();
             base.Closing += this.OnClosing;
@@ -20,6 +22,7 @@ namespace MetaMorpheusGUI
             QValueFilter = qValueFilter;
             ShowContaminants = showContaminants;
             ShowDecoys = showDecoys;
+            GlycanLocalizationLevelFilter = glycanLocalizationLevelFilter;
         }
 
         private void Cancel_Click(object sender, RoutedEventArgs e)
@@ -31,7 +34,7 @@ namespace MetaMorpheusGUI
         {
             ShowDecoys = DecoysCheckBox.IsChecked.Value;
             ShowContaminants = ContaminantsCheckBox.IsChecked.Value;
-
+            
             if (!string.IsNullOrWhiteSpace(qValueBox.Text))
             {
                 if (double.TryParse(qValueBox.Text, out double qValueFilter))
@@ -43,6 +46,23 @@ namespace MetaMorpheusGUI
                     MessageBox.Show("Could not parse q-value filter");
                     return;
                 }
+            }
+
+            if (!string.IsNullOrWhiteSpace(glycanLocalizationLelveBox.Text))
+            {
+                if (int.TryParse(glycanLocalizationLelveBox.Text, out int glycanLocalizationLevelFilter))
+                {
+                    GlycanLocalizationLevelFilter = glycanLocalizationLevelFilter;
+                }
+                else
+                {
+                    MessageBox.Show("Could not parse Glycan Localization Level filter");
+                    return;
+                }
+            }
+            else
+            {
+                GlycanLocalizationLevelFilter = null;
             }
 
             this.Visibility = Visibility.Hidden;

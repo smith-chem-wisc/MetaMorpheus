@@ -94,8 +94,8 @@ namespace MetaMorpheusGUI
             productTypeToYOffset = ((ProductType[])Enum.GetValues(typeof(ProductType))).ToDictionary(p => p, p => 0.0);
             productTypeToYOffset[ProductType.b] = 50;
             productTypeToYOffset[ProductType.y] = 0;
-            productTypeToYOffset[ProductType.c] = 50;
-            productTypeToYOffset[ProductType.zDot] = 0;
+            productTypeToYOffset[ProductType.c] = 53.6;
+            productTypeToYOffset[ProductType.zDot] = -3.6;
         }
 
         private void Window_Drop(object sender, DragEventArgs e)
@@ -169,7 +169,12 @@ namespace MetaMorpheusGUI
             var filteredList = allPsms.Where(p =>
                 p.QValue <= metaDrawFilterSettings.QValueFilter
                 && (p.QValueNotch < metaDrawFilterSettings.QValueFilter || p.QValueNotch == null)
-                && (p.DecoyContamTarget == "T" || (p.DecoyContamTarget == "D" && metaDrawFilterSettings.ShowDecoys) || (p.DecoyContamTarget == "C" && metaDrawFilterSettings.ShowContaminants)));
+                && (p.DecoyContamTarget == "T" || (p.DecoyContamTarget == "D" && metaDrawFilterSettings.ShowDecoys) || (p.DecoyContamTarget == "C" && metaDrawFilterSettings.ShowContaminants))
+                && ((metaDrawFilterSettings.GlycanLocalizationLevelFilter == 0 || metaDrawFilterSettings.GlycanLocalizationLevelFilter == null)
+                    || (p.GlycanLocalizationLevel == "Level1" && metaDrawFilterSettings.GlycanLocalizationLevelFilter == 1)
+                    || (p.GlycanLocalizationLevel == "Level2" && metaDrawFilterSettings.GlycanLocalizationLevelFilter == 2)
+                    || (p.GlycanLocalizationLevel == "Level3" && metaDrawFilterSettings.GlycanLocalizationLevelFilter == 3))
+                );
 
             foreach (PsmFromTsv psm in filteredList)
             {
@@ -208,7 +213,10 @@ namespace MetaMorpheusGUI
                         + " Selected Mz: " + parentScan.SelectedIonMZ.Value.ToString("0.##")
                         + " Retention Time: " + parentScan.RetentionTime.ToString("0.##");
 
-                itemsControlSampleViewModel.AddNewRow(parentPsmModel, parentAnnotation);
+                //Canvas aCanvas = new Canvas();
+                //DrawAnnotatedBaseSequence(aCanvas, psmToDraw, true);
+
+                itemsControlSampleViewModel.AddNewRow(parentPsmModel, parentAnnotation, null);
 
                 // draw child scans
                 HashSet<int> scansDrawn = new HashSet<int>();
@@ -241,8 +249,12 @@ namespace MetaMorpheusGUI
                         + " Selected Mz: " + childScan.SelectedIonMZ.Value.ToString("0.##")
                         + " RetentionTime: " + childScan.RetentionTime.ToString("0.##");
 
-                    itemsControlSampleViewModel.AddNewRow(childPsmModel, childAnnotation);
+                    Canvas aCanvas = new Canvas() { Height = 60  };
+                    DrawAnnotatedBaseSequence(aCanvas, psmToDraw, true);
+          
+                    itemsControlSampleViewModel.AddNewRow(childPsmModel, childAnnotation, aCanvas);
                 }
+               
             }
             else
             {
@@ -272,7 +284,7 @@ namespace MetaMorpheusGUI
                 metaDrawGraphicalSettings.ShowAnnotationCharges, metaDrawGraphicalSettings.AnnotatedFontSize, metaDrawGraphicalSettings.BoldText);
 
             // draw annotated base sequence
-            DrawAnnotatedBaseSequence(psmToDraw);
+            DrawAnnotatedBaseSequence(canvas, psmToDraw);
         }
 
         /// <summary>
@@ -370,7 +382,7 @@ namespace MetaMorpheusGUI
             metaDrawFilterSettings.DecoysCheckBox.IsChecked = metaDrawFilterSettings.ShowDecoys;
             metaDrawFilterSettings.ContaminantsCheckBox.IsChecked = metaDrawFilterSettings.ShowContaminants;
             metaDrawFilterSettings.qValueBox.Text = metaDrawFilterSettings.QValueFilter.ToString();
-
+            metaDrawFilterSettings.glycanLocalizationLelveBox.Text = metaDrawFilterSettings.GlycanLocalizationLevelFilter.ToString();
             var result = metaDrawFilterSettings.ShowDialog();
 
             DisplayLoadedAndFilteredPsms();
@@ -490,7 +502,7 @@ namespace MetaMorpheusGUI
             }
         }
 
-        private void DrawAnnotatedBaseSequence(PsmFromTsv psm)
+        private void DrawAnnotatedBaseSequence(Canvas canvas, PsmFromTsv psm, bool ToAnnotateChildScan = false)
         {
             double spacing = 22;
             BaseDraw.clearCanvas(canvas);
@@ -507,8 +519,18 @@ namespace MetaMorpheusGUI
                 BaseDraw.txtDrawing(canvas, new Point(r * spacing + 10, 10), psm.BaseSeq[r].ToString(), Brushes.Black);
             }
 
+            var matchIons = psm.MatchedIons;
+
+            if (ToAnnotateChildScan)
+            {
+                matchIons = new List<MatchedFragmentIon>();
+                foreach (var x in psm.ChildScanMatchedIons)
+                {
+                    matchIons.AddRange(x.Value);
+                }
+            }
             // draw the fragment ion annotations on the base sequence
-            foreach (var ion in psm.MatchedIons)
+            foreach (var ion in matchIons)
             {
                 int residue = ion.NeutralTheoreticalProduct.AminoAcidPosition;
                 string annotation = ion.NeutralTheoreticalProduct.ProductType + "" + ion.NeutralTheoreticalProduct.FragmentNumber;
@@ -534,10 +556,35 @@ namespace MetaMorpheusGUI
 
             // draw modifications
             var peptide = new PeptideWithSetModifications(psm.FullSequence, GlobalVariables.AllModsKnownDictionary);
-            foreach (var mod in peptide.AllModsOneIsNterminus)
+            if (psm.GlycanLocalizationLevel!=null)
             {
-                BaseDraw.circledTxtDraw(canvas, new Point((mod.Key - 1) * spacing - 17, 12), modificationAnnotationColor);
+                var localGlycans = PsmFromTsv.ReadLocalizedGlycan(psm.LocalizedGlycan);
+
+                foreach (var mod in peptide.AllModsOneIsNterminus)
+                {
+                    if (mod.Value.ModificationType == "O-Glycosylation")
+                    {
+                        if (localGlycans.Where(p=>p.Item1 == mod.Key).Count() > 0)
+                        {
+                            BaseDraw.circledTxtDraw(canvas, new Point((mod.Key - 1) * spacing - 17, 12), modificationAnnotationColor);
+                        }
+                        else
+                        {
+                            BaseDraw.circledTxtDraw(canvas, new Point((mod.Key - 1) * spacing - 17, 12), Brushes.Gray);
+                        }
+                    }
+
+                   
+                }
             }
+            else
+            {
+                foreach (var mod in peptide.AllModsOneIsNterminus)
+                {
+                    BaseDraw.circledTxtDraw(canvas, new Point((mod.Key - 1) * spacing - 17, 12), modificationAnnotationColor);
+                }
+            }
+
 
             if (psm.BetaPeptideBaseSequence != null)
             {
@@ -712,7 +759,7 @@ namespace MetaMorpheusGUI
         {
             if (psm.CrossType == null)
             {
-                DrawAnnotatedBaseSequence(psm);
+                DrawAnnotatedBaseSequence(canvas, psm);
             }
 
             canvas.Measure(new Size((int)canvas.Width, 600));
