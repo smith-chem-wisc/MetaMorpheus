@@ -496,6 +496,13 @@ namespace EngineLayer.GlycoSearch
                         continue;
                     }
 
+                    var localizationScan = theScan;
+
+                    if (theScan.ChildScans.Count > 0 && GlycoPeptides.DissociationTypeContainETD(CommonParameters.MS2ChildScanDissociationType))
+                    {
+                        localizationScan = theScan.ChildScans.First();
+                    }
+
                     List<Product> products = new List<Product>();
                     theScanBestPeptide.Fragment(DissociationType.ETD, FragmentationTerminus.Both, products);                    
 
@@ -509,7 +516,7 @@ namespace EngineLayer.GlycoSearch
                         {
                             //var boxes = GlycanBox.BuildChildOGlycanBoxes(GlycanBox.OGlycanBoxes[iDLow].NumberOfMods, GlycanBox.OGlycanBoxes[iDLow].ModIds).ToArray();
                             LocalizationGraph localizationGraph = new LocalizationGraph(modPos, GlycanBox.OGlycanBoxes[iDLow], GlycanBox.OGlycanBoxes[iDLow].ChildGlycanBoxes, iDLow);
-                            LocalizationGraph.LocalizeOGlycan(localizationGraph, theScan.ChildScans.First(), CommonParameters.ProductMassTolerance, products);
+                            LocalizationGraph.LocalizeOGlycan(localizationGraph, localizationScan, CommonParameters.ProductMassTolerance, products);
 
                             double currentLocalizationScore = localizationGraph.TotalScore;
                             if (currentLocalizationScore > bestLocalizedScore)
