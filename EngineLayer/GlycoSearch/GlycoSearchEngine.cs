@@ -171,23 +171,8 @@ namespace EngineLayer.GlycoSearch
                         }
                         else
                         {
-                            HashSet<int> allPeaksForLocalization = new HashSet<int>();
-
-                            if (GlycoPeptides.DissociationTypeContainETD(CommonParameters.MS2ChildScanDissociationType))
-                            {
-                                foreach (var child in scan.ChildScans)
-                                {
-                                    allPeaksForLocalization.UnionWith(GenerateHashPeaks(child, CommonParameters));
-                                }
-                            }
-
-                            //The workflow is designed for MS2:HCD-MS2:EThcD type of data, but could also work with MS2:EThcD type of data.
-                            if (GlycoPeptides.DissociationTypeContainETD(CommonParameters.DissociationType))
-                            {
-                                allPeaksForLocalization.UnionWith(GenerateHashPeaks(scan, CommonParameters));
-                            }
                             //gsms = FindOGlycopeptideHash(scan, idsOfPeptidesTopN, scanIndex, allBinsToSearch, childBinsToSearch, (int)byteScoreCutoff);
-                            gsms = FindOGlycopeptideHashLocal(scan, idsOfPeptidesTopN, scanIndex, allPeaksForLocalization, (int)byteScoreCutoff);
+                            gsms = FindOGlycopeptideHashLocal(scan, idsOfPeptidesTopN, scanIndex, (int)byteScoreCutoff);
                             //gsms = FindModPepHash(scan, idsOfPeptidesTopN, scanIndex, allBinsToSearch, (int)byteScoreCutoff);
                         }
 
@@ -438,7 +423,7 @@ namespace EngineLayer.GlycoSearch
             return possibleMatches;
         }
 
-        private List<GlycoSpectralMatch> FindOGlycopeptideHashLocal(Ms2ScanWithSpecificMass theScan, List<int> idsOfPeptidesPossiblyObserved, int scanIndex, HashSet<int> allPeaksForLocalization, int scoreCutOff)
+        private List<GlycoSpectralMatch> FindOGlycopeptideHashLocal(Ms2ScanWithSpecificMass theScan, List<int> idsOfPeptidesPossiblyObserved, int scanIndex, int scoreCutOff)
         {
             List<GlycoSpectralMatch> possibleMatches = new List<GlycoSpectralMatch>();
 
@@ -524,7 +509,7 @@ namespace EngineLayer.GlycoSearch
                         {
                             //var boxes = GlycanBox.BuildChildOGlycanBoxes(GlycanBox.OGlycanBoxes[iDLow].NumberOfMods, GlycanBox.OGlycanBoxes[iDLow].ModIds).ToArray();
                             LocalizationGraph localizationGraph = new LocalizationGraph(modPos, GlycanBox.OGlycanBoxes[iDLow], GlycanBox.OGlycanBoxes[iDLow].ChildGlycanBoxes, iDLow);
-                            LocalizationGraph.LocalizeOGlycan(localizationGraph, theScan.ChildScans.First(), CommonParameters.ProductMassTolerance, allPeaksForLocalization, products);
+                            LocalizationGraph.LocalizeOGlycan(localizationGraph, theScan.ChildScans.First(), CommonParameters.ProductMassTolerance, products);
 
                             double currentLocalizationScore = localizationGraph.TotalScore;
                             if (currentLocalizationScore > bestLocalizedScore)
@@ -639,36 +624,6 @@ namespace EngineLayer.GlycoSearch
             }     
 
             return psmGlyco;
-        }
-
-        public static List<int> GenerateHashPeaks(Ms2ScanWithSpecificMass theScan, CommonParameters commonParameters)
-        {
-            int obsPreviousFragmentCeilingMz = 0;
-            List<int> binsToSearch = new List<int>();
-            foreach (var envelope in theScan.ExperimentalFragments)
-            {
-                // assume charge state 1 to calculate mass tolerance
-                double experimentalFragmentMass = envelope.monoisotopicMass;
-
-                // get theoretical fragment bins within mass tolerance
-                int obsFragmentFloorMass = (int)Math.Floor((commonParameters.ProductMassTolerance.GetMinimumValue(experimentalFragmentMass)) * 1000);
-                int obsFragmentCeilingMass = (int)Math.Ceiling((commonParameters.ProductMassTolerance.GetMaximumValue(experimentalFragmentMass)) * 1000);
-
-                // prevents double-counting peaks close in m/z and lower-bound out of range exceptions
-                if (obsFragmentFloorMass < obsPreviousFragmentCeilingMz)
-                {
-                    obsFragmentFloorMass = obsPreviousFragmentCeilingMz;
-                }
-                obsPreviousFragmentCeilingMz = obsFragmentCeilingMass + 1;
-
-                // search mass bins within a tolerance
-                for (int fragmentBin = obsFragmentFloorMass; fragmentBin <= obsFragmentCeilingMass; fragmentBin++)
-                {
-                    binsToSearch.Add(fragmentBin);
-                }
-            }
-
-            return binsToSearch;
         }
 
         private List<GlycoSpectralMatch> FindModPepHash(Ms2ScanWithSpecificMass theScan, List<int> idsOfPeptidesPossiblyObserved, int scanIndex, List<int> allBinsToSearch, int scoreCutOff)

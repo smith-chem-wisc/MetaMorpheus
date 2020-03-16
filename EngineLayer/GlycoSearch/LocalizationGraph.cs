@@ -37,7 +37,7 @@ namespace EngineLayer.GlycoSearch
 
         //The modification problem is turned into a Directed Acyclic Graph. The Graph was build with matrix, and dynamic programming is used.
         //The function goes through the AdjNode[][] array from left to right, assign weight to each AdjNode, keep track of the heaviest previous AdjNode.
-        public static void LocalizeOGlycan(LocalizationGraph localizationGraph, Ms2ScanWithSpecificMass theScan, Tolerance productTolerance, HashSet<int> allPeaks, List<Product> products)
+        public static void LocalizeOGlycan(LocalizationGraph localizationGraph, Ms2ScanWithSpecificMass theScan, Tolerance productTolerance, List<Product> products)
         {
             var boxSatisfyBox = BoxSatisfyBox(localizationGraph.ChildModBoxes);
 
@@ -52,13 +52,11 @@ namespace EngineLayer.GlycoSearch
                     if (localizationGraph.ChildModBoxes[j].NumberOfMods <= maxLength && localizationGraph.ChildModBoxes[j].NumberOfMods >= minlength)
                     {
                         AdjNode adjNode = new AdjNode(i, j, localizationGraph.ModPos[i], localizationGraph.ChildModBoxes[j]);
-                        //var cost = CalculateCost(allPeaks, products, localizationGraph.ModPos, i, localizationGraph.ModBox, localizationGraph.ChildModBoxes[j], 1000);
-                        //var cost_test = CalculateCost(allPeaks, products, localizationGraph.ModPos, i, localizationGraph.ModBox, localizationGraph.ChildModBoxes[j], 1000);
 
                         double cost = 0;
                         if (i != localizationGraph.ModPos.Length - 1)
                         {              
-                            var fragments = GlycoPeptides.GetLocalFragment(products, localizationGraph.ModPos, i, localizationGraph.ModBox, localizationGraph.ChildModBoxes[j], 1000);
+                            var fragments = GlycoPeptides.GetLocalFragment(products, localizationGraph.ModPos, i, localizationGraph.ModBox, localizationGraph.ChildModBoxes[j]);
                             cost = CalculateCost(theScan, productTolerance, fragments);
                         }
 
@@ -107,27 +105,10 @@ namespace EngineLayer.GlycoSearch
 
             }
 
-            //var unlocalFragmentHash = GlycoPeptides.GetUnlocalFragmentHash(products, localizationGraph.ModPos, localizationGraph.ModBox, 1000);
-            //int noLocalScore = allPeaks.Intersect(unlocalFragmentHash).Count();
-            var unlocalFragments = GlycoPeptides.GetUnlocalFragment(products, localizationGraph.ModPos, localizationGraph.ModBox, 1000);
+            var unlocalFragments = GlycoPeptides.GetUnlocalFragment(products, localizationGraph.ModPos, localizationGraph.ModBox);
             var noLocalScore = CalculateCost(theScan, productTolerance, unlocalFragments);
             localizationGraph.NoLocalCost = noLocalScore;
             localizationGraph.TotalScore = localizationGraph.array[localizationGraph.ModPos.Length - 1][localizationGraph.ChildModBoxes.Length - 1].maxCost + noLocalScore;
-        }
-
-        public static double CalculateCost(HashSet<int> allPeaksForLocalization, List<Product> products, int[] modPos, int modInd, ModBox OGlycanBox, ModBox box, int FragmentBinsPerDalton)
-        {
-            if (modInd == modPos.Length - 1)
-            {
-                return 0;
-            }
-
-            var fragmentHash = GlycoPeptides.GetLocalFragmentHash(products, modPos, modInd, OGlycanBox, box, FragmentBinsPerDalton);
-
-            int currentLocalizationScore = allPeaksForLocalization.Intersect(fragmentHash).Count();
-
-            return (double)currentLocalizationScore;
-
         }
 
         public static double CalculateCost(Ms2ScanWithSpecificMass theScan, Tolerance productTolerance, List<double> fragments)

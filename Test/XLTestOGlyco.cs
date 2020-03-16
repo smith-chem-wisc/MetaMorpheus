@@ -200,34 +200,6 @@ namespace Test
         }
 
         [Test]
-        public static void OGlycoTest_FragmentHash()
-        {
-            //Get glycanBox
-            var glycanBox = OGlycanBoxes[19];
-
-            //Get unmodified peptide, products, allPossible modPos and all boxes.
-            Protein protein = new Protein("LEPSSGASGPQVSSVK", "P16150");
-            var peptide = protein.Digest(new DigestionParams(), new List<Modification>(), new List<Modification>()).First();
-            List<Product> products = new List<Product>();
-            peptide.Fragment(DissociationType.ETD, FragmentationTerminus.Both, products);
-
-            int[] modPos = GlycoSpectralMatch.GetPossibleModSites(peptide, new string[] { "S", "T" }).OrderBy(p => p).ToArray();
-            var boxes = GlycanBox.BuildChildOGlycanBoxes(3, glycanBox.ModIds).ToArray();
-            Assert.That(boxes.Count() == 6);
-
-            //Test GetLocalFragmentHash, which is used for localiation.
-            var testProducts = GlycoPeptides.GetLocalFragmentHash(products, modPos, 0, glycanBox, new GlycanBox(boxes[1].ModIds), 1000);
-            var testProducts1 = GlycoPeptides.GetLocalFragmentHash(products, modPos, 1, glycanBox, new GlycanBox(boxes[1].ModIds), 1000);
-            Assert.That(testProducts.Count() == 2);
-            Assert.That(testProducts1.Count() == 6);
-
-            var testUnlocalProducts = GlycoPeptides.GetUnlocalFragmentHash(products, modPos, glycanBox, 1000);
-            //Proline for ETD will be skipped
-            Assert.That(testUnlocalProducts.Count() == 9);
-
-        }
-
-        [Test]
         public static void OGlycoTest_Localization()
         {
             //Get glycanBox
@@ -244,19 +216,11 @@ namespace Test
             var boxes = GlycanBox.BuildChildOGlycanBoxes(3, glycanBox.ModIds).ToArray();
             Assert.That(boxes.Count() == 6);
 
-            //Test GetLocalFragmentHash, which is used for localiation.
-            var testProducts = GlycoPeptides.GetLocalFragmentHash(products, modPos, 0, glycanBox, new GlycanBox(boxes[1].ModIds), 1000);
-            var testProducts1 = GlycoPeptides.GetLocalFragmentHash(products, modPos, 1, glycanBox, new GlycanBox(boxes[1].ModIds), 1000);
-            Assert.That(testProducts.Count() == 2);
-            Assert.That(testProducts1.Count() == 4);
-
             //Get hashset int
             CommonParameters commonParameters = new CommonParameters(dissociationType: DissociationType.EThcD, trimMsMsPeaks:false);
             string spectraFile = Path.Combine(TestContext.CurrentContext.TestDirectory, @"GlycoTestData\2019_09_16_StcEmix_35trig_EThcD25_rep1_4565.mgf");
             var file = new MyFileManager(true).LoadFile(spectraFile, commonParameters);
             var scans = MetaMorpheusTask.GetMs2Scans(file, spectraFile, commonParameters).ToArray();
-
-            HashSet<int> allPeaks = new HashSet<int>(GlycoSearchEngine.GenerateHashPeaks(scans.First(), commonParameters));
 
             //Known peptideWithMod match.
             var peptideWithMod = GlycoPeptides.OGlyGetTheoreticalPeptide(new int[3] { 10, 2, 3}, peptide, glycanBox);
@@ -268,7 +232,7 @@ namespace Test
             //Graph Localization
             LocalizationGraph localizationGraph = new LocalizationGraph(modPos, glycanBox, boxes);
 
-            LocalizationGraph.LocalizeOGlycan(localizationGraph, scans.First(), commonParameters.ProductMassTolerance, allPeaks, products);
+            LocalizationGraph.LocalizeOGlycan(localizationGraph, scans.First(), commonParameters.ProductMassTolerance, products);
 
             var allPaths = LocalizationGraph.GetAllPaths(localizationGraph.array, localizationGraph.ChildModBoxes);
 
@@ -354,7 +318,7 @@ namespace Test
             //Graph Localization
             LocalizationGraph localizationGraph = new LocalizationGraph(modPos, glycanBox, boxes);
 
-            LocalizationGraph.LocalizeOGlycan(localizationGraph, scans.First(), commonParameters.ProductMassTolerance, allPeaks, products);
+            LocalizationGraph.LocalizeOGlycan(localizationGraph, scans.First(), commonParameters.ProductMassTolerance, products);
 
             var allPaths = LocalizationGraph.GetAllPaths(localizationGraph.array, localizationGraph.ChildModBoxes);
 
