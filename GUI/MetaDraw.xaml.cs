@@ -35,6 +35,8 @@ namespace MetaMorpheusGUI
         private MsDataFile MsDataFile;
         private readonly ObservableCollection<PsmFromTsv> allPsms; // all loaded PSMs
         private readonly ObservableCollection<PsmFromTsv> filteredListOfPsms; // this is the filtered list of PSMs to display (after q-value filter, etc.)
+        private readonly Dictionary<string, ObservableCollection<PsmFromTsv>> psmsBySourceFile;  // filtered PSMs grouped by the "file name" field
+        private readonly ObservableCollection<string> sourceFilesList;
         ICollectionView peptideSpectralMatchesView;
         private readonly DataTable propertyView;
         private string spectraFilePath;
@@ -58,6 +60,9 @@ namespace MetaMorpheusGUI
             plotView.DataContext = mainViewModel;
             allPsms = new ObservableCollection<PsmFromTsv>();
             filteredListOfPsms = new ObservableCollection<PsmFromTsv>();
+            psmsBySourceFile = new Dictionary<string, ObservableCollection<PsmFromTsv>>();
+            sourceFilesList = new ObservableCollection<string>();
+            selectSourceFileListBox.DataContext = sourceFilesList;
             propertyView = new DataTable();
             propertyView.Columns.Add("Name", typeof(string));
             propertyView.Columns.Add("Value", typeof(string));
@@ -78,7 +83,7 @@ namespace MetaMorpheusGUI
 
             plotTypes = new ObservableCollection<string>();
             SetUpPlots();
-            //plotsListBox.ItemsSource = plotTypes;
+            plotsListBox.ItemsSource = plotTypes;
         }
 
         private void SetUpDictionaries()
@@ -123,14 +128,28 @@ namespace MetaMorpheusGUI
                 case ".raw":
                 case ".mzml":
                 case ".mgf":
-                    spectraFilePath = filePath;
-                    spectraFileNameLabel.Text = filePath;
+                    if (spectraFilePath == null || !spectraFilePath.Equals(filePath))
+                    {
+                        resetFilesButton_Click(resetSpectraFileButton, null);
+                        spectraFilePath = filePath;
+                        spectraFileNameLabel.Text = filePath;
+                        spectraFileNameLabel.ToolTip = filePath;
+                        resetSpectraFileButton.IsEnabled = true;
+                    }
                     break;
                 case ".psmtsv":
                 case ".tsv":
-                    tsvResultsFilePath = filePath;
-                    psmFileNameLabel.Text = filePath;
-                    //psmFileNameLabelStat.Text = filePath;
+                    if (tsvResultsFilePath == null || !tsvResultsFilePath.Equals(filePath))
+                    {
+                        resetFilesButton_Click(resetPsmFileButton, null);
+                        tsvResultsFilePath = filePath;
+                        psmFileNameLabel.Text = filePath;
+                        psmFileNameLabel.ToolTip = filePath;
+                        psmFileNameLabelStat.Text = filePath;
+                        psmFileNameLabelStat.ToolTip = filePath;
+                        resetPsmFileButton.IsEnabled = true;
+                        resetPsmFileButtonStat.IsEnabled = true;
+                    }
                     break;
                 default:
                     MessageBox.Show("Cannot read file type: " + theExtension);
@@ -138,7 +157,7 @@ namespace MetaMorpheusGUI
             }
         }
 
-        private void LoadPsms(string filename)
+        private void LoadPsms(string filename, bool loadPsmsOfAllSpectraFiles)
         {
             allPsms.Clear();
 
@@ -150,7 +169,7 @@ namespace MetaMorpheusGUI
                 // TODO: print warnings
                 foreach (var psm in PsmTsvReader.ReadTsv(filename, out List<string> warnings))
                 {
-                    if (spectraFilePath == null || psm.Filename == fileNameWithExtension || psm.Filename == fileNameWithoutExtension || psm.Filename.Contains(fileNameWithoutExtension))
+                    if (loadPsmsOfAllSpectraFiles || psm.Filename == fileNameWithExtension || psm.Filename == fileNameWithoutExtension || psm.Filename.Equals(fileNameWithoutExtension + "-calib")) // in case results are from a calibrated file
                     {
                         allPsms.Add(psm);
                     }
@@ -179,6 +198,25 @@ namespace MetaMorpheusGUI
             foreach (PsmFromTsv psm in filteredList)
             {
                 filteredListOfPsms.Add(psm);
+            }
+        }
+
+        private void GroupPsmsBySourceFile()
+        {
+            psmsBySourceFile.Clear();
+            sourceFilesList.Clear();
+
+            foreach (PsmFromTsv psm in filteredListOfPsms)
+            {
+                if (psmsBySourceFile.Keys.Contains(psm.Filename))
+                {
+                    psmsBySourceFile[psm.Filename].Add(psm);
+                }
+                else
+                {
+                    psmsBySourceFile.Add(psm.Filename, new ObservableCollection<PsmFromTsv> { psm });
+                    sourceFilesList.Add(psm.Filename);
+                }
             }
         }
 
@@ -302,6 +340,18 @@ namespace MetaMorpheusGUI
                 return;
             }
 
+            if (spectraFilePath == null)
+            {
+                MessageBox.Show("Please add a spectra file.");
+                return;
+            }
+
+            if (MsDataFile == null)
+            {
+                MessageBox.Show("Please load spectra file.");
+                return;
+            }
+
             // draw the selected PSM
             propertyView.Clear();
             PsmFromTsv row = (PsmFromTsv)dataGridScanNums.SelectedItem;
@@ -312,6 +362,10 @@ namespace MetaMorpheusGUI
                 if (temp[i].Name == nameof(row.MatchedIons))
                 {
                     propertyView.Rows.Add(temp[i].Name, string.Join(", ", row.MatchedIons.Select(p => p.Annotation)));
+                }
+                else if(temp[i].Name == nameof(row.VariantCrossingIons))
+                {
+                    propertyView.Rows.Add(temp[i].Name, string.Join(", ", row.VariantCrossingIons.Select(p => p.Annotation)));
                 }
                 else
                 {
@@ -357,6 +411,42 @@ namespace MetaMorpheusGUI
                     LoadFile(filePath);
                 }
             }
+        }
+
+        private void resetFilesButton_Click(object sender, RoutedEventArgs e)
+        {
+            // clear spectra file path
+            if ((sender as Button).Name.Equals(resetSpectraFileButton.Name))
+            {
+                spectraFilePath = null;
+                spectraFileNameLabel.Text = "None Selected";
+                spectraFileNameLabel.ToolTip = null;
+                resetSpectraFileButton.IsEnabled = false;
+            }
+
+            // clear psm file path, psm data, and stat plot
+            else
+            {
+                tsvResultsFilePath = null;
+                psmFileNameLabel.Text = "None Selected";
+                psmFileNameLabel.ToolTip = null;
+                psmFileNameLabelStat.Text = "None Selected";
+                psmFileNameLabelStat.ToolTip = null;
+                resetPsmFileButton.IsEnabled = false;
+                resetPsmFileButtonStat.IsEnabled = false;
+
+                allPsms.Clear();
+                filteredListOfPsms.Clear();
+                psmsBySourceFile.Clear();
+                sourceFilesList.Clear();
+                plotViewStat.DataContext = null;
+            }
+
+            // clear main plot, base sequence, and properties table
+            mainViewModel.Model = null;
+            BaseDraw.clearCanvas(canvas);
+            propertyView.Clear();
+            MsDataFile = null;
         }
 
         private void OnClosing(object sender, CancelEventArgs e)
@@ -408,6 +498,8 @@ namespace MetaMorpheusGUI
             (sender as Button).IsEnabled = false;
             selectSpectraFileButton.IsEnabled = false;
             selectPsmFileButton.IsEnabled = false;
+            resetSpectraFileButton.IsEnabled = false;
+            resetPsmFileButton.IsEnabled = false;
             prgsFeed.IsOpen = true;
             prgsText.Content = "Loading spectra file...";
 
@@ -421,7 +513,7 @@ namespace MetaMorpheusGUI
 
             // load the PSMs
             this.prgsText.Content = "Loading PSMs...";
-            LoadPsms(tsvResultsFilePath);
+            LoadPsms(tsvResultsFilePath, false);
             DisplayLoadedAndFilteredPsms();
 
             // done loading - restore controls
@@ -434,6 +526,8 @@ namespace MetaMorpheusGUI
             (sender as Button).IsEnabled = true;
             selectSpectraFileButton.IsEnabled = true;
             selectPsmFileButton.IsEnabled = true;
+            resetSpectraFileButton.IsEnabled = true;
+            resetPsmFileButton.IsEnabled = true;
         }
 
         /// <summary>
@@ -455,34 +549,38 @@ namespace MetaMorpheusGUI
         {
             prgsFeed.IsOpen = true;
         }   
+        
+        private void loadFilesButtonStat_Click(object sender, RoutedEventArgs e)
+        {
+            // check for validity
+            if (tsvResultsFilePath == null)
+            {
+                MessageBox.Show("Please add a search result file.");
+                return;
+            }
 
-        //private void loadFilesButtonStat_Click(object sender, RoutedEventArgs e)
-        //{
-        //    // check for validity
-        //    if (tsvResultsFilePath == null)
-        //    {
-        //        MessageBox.Show("Please add a search result file.");
-        //        return;
-        //    }
+            (sender as Button).IsEnabled = false;
+            selectPsmFileButtonStat.IsEnabled = false;
+            resetPsmFileButtonStat.IsEnabled = false;
+            prgsFeedStat.IsOpen = true;
 
-        //    (sender as Button).IsEnabled = false;
-        //    selectPsmFileButtonStat.IsEnabled = false;
-        //    prgsFeedStat.IsOpen = true;
+            // load the PSMs
+            this.prgsTextStat.Content = "Loading PSMs...";
+            LoadPsmsStat(tsvResultsFilePath);
 
-        //    // load the PSMs
-        //    this.prgsTextStat.Content = "Loading PSMs...";
-        //    LoadPsmsStat(tsvResultsFilePath);
-
-        //    // done loading - restore controls
-        //    this.prgsFeedStat.IsOpen = false;
-        //    (sender as Button).IsEnabled = true;
-        //    selectPsmFileButtonStat.IsEnabled = true;
-        //}
+            // done loading - restore controls
+            this.prgsFeedStat.IsOpen = false;
+            (sender as Button).IsEnabled = true;
+            selectPsmFileButtonStat.IsEnabled = true;
+            resetPsmFileButtonStat.IsEnabled = true;
+        }
 
         private void LoadPsmsStat(string filepath)
         {
-            LoadPsms(filepath);
+
+            LoadPsms(filepath, true);
             DisplayLoadedAndFilteredPsms();
+            GroupPsmsBySourceFile();
         }
 
         private void TextBox_TextChanged(object sender, TextChangedEventArgs e)
@@ -641,33 +739,48 @@ namespace MetaMorpheusGUI
             (sender as DataGrid).UnselectAll();
         }
 
-        //private void CreatePlotPdf_Click(object sender, RoutedEventArgs e)
-        //{
-        //    var selectedItem = plotsListBox.SelectedItem;
+        private void CreatePlotPdf_Click(object sender, RoutedEventArgs e)
+        {
+            var selectedItem = plotsListBox.SelectedItem;
 
-        //    if (selectedItem == null)
-        //    {
-        //        MessageBox.Show("Select a plot type to export!");
-        //        return;
-        //    }
+            if (selectedItem == null)
+            {
+                MessageBox.Show("Select a plot type to export!");
+                return;
+            }
 
-        //    if (!filteredListOfPsms.Any())
-        //    {
-        //        MessageBox.Show("No PSMs are loaded!");
-        //        return;
-        //    }
+            if (!filteredListOfPsms.Any())
+            {
+                MessageBox.Show("No PSMs are loaded!");
+                return;
+            }
 
-        //    var plotName = selectedItem as string;
+            if (selectSourceFileListBox.SelectedItems.Count == 0)
+            {
+                MessageBox.Show("Please select a source file.");
+                return;
+            }
 
-        //    PlotModelStat plot = new PlotModelStat(plotName, filteredListOfPsms);
-        //    var fileDirectory = Directory.GetParent(tsvResultsFilePath).ToString();
-        //    var fileName = String.Concat(plotName, ".pdf");
-        //    using (Stream writePDF = File.Create(Path.Combine(fileDirectory, fileName)))
-        //    {
-        //        PdfExporter.Export(plot.Model, writePDF, 1000, 700);
-        //    }
-        //    MessageBox.Show("PDF Created at " + Path.Combine(fileDirectory, fileName) + "!");
-        //}
+            var plotName = selectedItem as string;
+            var fileDirectory = Directory.GetParent(tsvResultsFilePath).ToString();
+            var fileName = String.Concat(plotName, ".pdf");
+
+            // update font sizes to exported PDF's size
+            double tmpW = plotViewStat.Width;
+            double tmpH = plotViewStat.Height;
+            plotViewStat.Width = 1000;
+            plotViewStat.Height = 700;
+            plotViewStat.UpdateLayout();
+            PlotViewStat_SizeChanged(plotViewStat, null);
+
+            using (Stream writePDF = File.Create(Path.Combine(fileDirectory, fileName)))
+            {
+                PdfExporter.Export(plotViewStat.Model, writePDF, 1000, 700);
+            }
+            plotViewStat.Width = tmpW;
+            plotViewStat.Height = tmpH;
+            MessageBox.Show("PDF Created at " + Path.Combine(fileDirectory, fileName) + "!");
+        }
 
         private void PDFButton_Click(object sender, RoutedEventArgs e)
         {
@@ -779,19 +892,37 @@ namespace MetaMorpheusGUI
             }
         }
 
-        //private async void PlotSelected(object sender, SelectionChangedEventArgs e)
-        //{
-        //    var listview = sender as ListView;
-        //    var plotName = listview.SelectedItem as string;
+        private async void PlotSelected(object sender, SelectionChangedEventArgs e)
+        {
+            var listview = sender as ListView;
+            var plotName = listview.SelectedItem as string;
 
-        //    if (filteredListOfPsms.Count == 0)
-        //    {
-        //        MessageBox.Show("There are no PSMs to analyze.\n\nLoad the current file or choose a new file.");
-        //        return;
-        //    }
-        //    PlotModelStat plot = await Task.Run(() => new PlotModelStat(plotName, filteredListOfPsms));
-        //    plotViewStat.DataContext = plot;
-        //}
+            if (filteredListOfPsms.Count == 0)
+            {
+                MessageBox.Show("There are no PSMs to analyze.\n\nLoad the current file or choose a new file.");
+                return;
+            }
+            if (selectSourceFileListBox.SelectedItems.Count == 0)
+            {
+                MessageBox.Show("Please select a source file.");
+                return;
+            }
+
+            // get psms from selected source files
+            ObservableCollection<PsmFromTsv> psms = new ObservableCollection<PsmFromTsv>();
+            Dictionary<string, ObservableCollection<PsmFromTsv>> psmsBSF = new Dictionary<string, ObservableCollection<PsmFromTsv>>();
+            foreach (string fileName in selectSourceFileListBox.SelectedItems)
+            {
+                psmsBSF.Add(fileName, psmsBySourceFile[fileName]);
+                foreach (PsmFromTsv psm in psmsBySourceFile[fileName])
+                {
+                    psms.Add(psm);
+                }
+            }
+            PlotModelStat plot = await Task.Run(() => new PlotModelStat(plotName, psms, psmsBSF));
+            plotViewStat.DataContext = plot;
+            PlotViewStat_SizeChanged(plotViewStat, null);
+        }
 
         private void BtnChangeGridColumns_Click(object sender, RoutedEventArgs e)
         {
@@ -799,6 +930,49 @@ namespace MetaMorpheusGUI
             if (itemsControlSampleViewModel.MyColumnCount > itemsControlSampleViewModel.Data.Count / 3)
             {
                 itemsControlSampleViewModel.MyColumnCount = 1;
+            }
+        }
+
+        private void selectSourceFileListBox_SelectionChanged(object sender, EventArgs e)
+        {
+            // refreshes the plot using the new source file
+            if (plotsListBox.SelectedIndex > -1 && selectSourceFileListBox.SelectedItems.Count != 0)
+            {
+                PlotSelected(plotsListBox, null);
+            }
+        }
+
+        private void selectAllSourceFiles_Click(object sender, RoutedEventArgs e)
+        {
+            selectSourceFileListBox.SelectAll();
+        }
+
+        private void deselectAllSourceFiles_Click(object sender, RoutedEventArgs e)
+        {
+            selectSourceFileListBox.SelectedIndex = -1;
+        }
+
+        // scales the font size down for the x axis labels of the PTM histogram when the window gets too small
+        private void PlotViewStat_SizeChanged(object sender, SizeChangedEventArgs e)
+        {
+            if(plotsListBox.SelectedItem == null || !plotsListBox.SelectedItem.ToString().Equals("Histogram of PTM Spectral Counts"))
+            {
+                return;
+            }
+            OxyPlot.Wpf.PlotView plot = sender as OxyPlot.Wpf.PlotView;
+            if(plot != null && plot.Model != null)
+            {
+                plot.Model.DefaultXAxis.TitleFontSize = plot.Model.DefaultFontSize; // stops the title from being scaled
+                int count = (int)plot.Model.DefaultXAxis.ActualMaximum;
+                int widthCountRatio = 23;   // maintains this width:number of PTM types ratio
+                if (plot.ActualWidth / count < widthCountRatio) 
+                {
+                    plot.Model.DefaultXAxis.FontSize = plot.Model.DefaultFontSize * (plot.ActualWidth / (count * widthCountRatio));
+                }
+                else
+                {
+                    plot.Model.DefaultXAxis.FontSize = plot.Model.DefaultFontSize;
+                }
             }
         }
     }

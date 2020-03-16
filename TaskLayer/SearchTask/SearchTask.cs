@@ -350,7 +350,7 @@ namespace TaskLayer
             //resolve category specific fdrs (for speedy semi and nonspecific
             if (SearchParameters.SearchType == SearchType.NonSpecific)
             {
-                allPsms = NonSpecificEnzymeSearchEngine.ResolveFdrCategorySpecificPsms(allCategorySpecificPsms, numNotches, taskId, CommonParameters);
+                allPsms = NonSpecificEnzymeSearchEngine.ResolveFdrCategorySpecificPsms(allCategorySpecificPsms, numNotches, taskId, CommonParameters, FileSpecificParameters);
             }
 
             PostSearchAnalysisParameters parameters = new PostSearchAnalysisParameters

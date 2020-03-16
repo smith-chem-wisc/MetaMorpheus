@@ -201,7 +201,7 @@ namespace Test
             var extraFiles = files1.Except(expectedFiles).ToList();
 
             // test that output is what's expected
-            //Assert.That(missingFiles.Count() == 0 && extraFiles.Count() ==0);
+            Assert.That(missingFiles.Count() == 0 && extraFiles.Count() == 0);
 
             HashSet<string> files2 = new HashSet<string>(Directory.GetFiles(Path.Combine(thisTaskOutputFolder, "VariantOutput_frameshift")).Select(v => Path.GetFileName(v)));
             // variant files should be generates
@@ -435,10 +435,7 @@ namespace Test
             Assert.AreEqual("Number of variant peptides at 1% group FDR with unambiguous localized modifications: 1", checkResults[21]);
             Assert.AreEqual("Number of variant peptides at 1% group FDR with unambiguous localized modifications at the variant sites : 0", checkResults[22]);
 
-
-
             Directory.Delete(thisTaskOutputFolder, true);
-
         }
     }
 }
