@@ -405,6 +405,7 @@ namespace Test
             PostSearchAnalysisTask testPostTask = new PostSearchAnalysisTask();
             testPostTask.Parameters = testPostTaskParameters;
             testPostTask.CommonParameters = commonParam;
+            testPostTask.FileSpecificParameters = new List<(string FileName, CommonParameters Parameters)> { ("newMzMl.mzml", commonParam) };
             testPostTask.Run();
 
             var proteinsLoaded = ProteinDbLoader.LoadProteinXML(path, true, DecoyType.None, GlobalVariables.AllModsKnown, false, new List<string>(), out var unknownMods);
