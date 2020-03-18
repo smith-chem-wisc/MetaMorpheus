@@ -324,7 +324,7 @@ namespace MetaMorpheusGUI
                     }
                     break;
                 case 3: // Predicted RT vs. Observed RT
-                    yAxisTitle = "Predicted retention time";
+                    yAxisTitle = "Predicted Hydrophobicity";
                     xAxisTitle = "Observed retention time";
                     SSRCalc3 sSRCalc3 = new SSRCalc3("A100", SSRCalc3.Column.A100);
                     foreach (var psm in allPsms)
