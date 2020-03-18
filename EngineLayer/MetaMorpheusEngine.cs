@@ -81,7 +81,7 @@ namespace EngineLayer
         {
             var matchedFragmentIons = new List<MatchedFragmentIon>();
 
-            if (scan.TheScan.MassSpectrum.XcorrProcessed)
+            if (scan.TheScan.MassSpectrum.XcorrProcessed && scan.TheScan.MassSpectrum.XArray.Length!=0)
             {
                 // if the spectrum has no peaks
                 if (scan.TheScan.MassSpectrum.XArray.Length == 0)

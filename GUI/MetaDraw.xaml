@@ -44,7 +44,8 @@
 
                             <!--Select spectra file-->
                             <DockPanel Grid.Row="0" LastChildFill="True" Grid.ColumnSpan="3" Margin="0 1 0 1">
-                                <Label Content="Spectra file: " Width="120" />
+                                <Label Content="Spectra file: " Width="70" />
+                                <Button Name="resetSpectraFileButton" Content="Reset" DockPanel.Dock="Right" IsEnabled="False" Width="40" Click="resetFilesButton_Click"/>
                                 <Button Name="selectSpectraFileButton" Content="Select" DockPanel.Dock="Right" Click="selectSpectraFileButton_Click" Width="40" />
                                 <Label BorderThickness="1">
                                     <TextBlock Name="spectraFileNameLabel" Text="None Selected" TextTrimming="CharacterEllipsis" />
@@ -53,7 +54,8 @@
 
                             <!--Select MetaMorpheus output file-->
                             <DockPanel Grid.Row="1" LastChildFill="True" Grid.ColumnSpan="3" Margin="0 1 0 1">
-                                <Label Content="PSM file: " Width="120" />
+                                <Label Content="PSM file: " Width="70" />
+                                <Button Name="resetPsmFileButton" Content="Reset" DockPanel.Dock="Right" IsEnabled="False" Width="40" Click="resetFilesButton_Click"/>
                                 <Button Name="selectPsmFileButton" Content="Select" DockPanel.Dock="Right" Click="selectPsmFileButton_Click" Width="40" />
                                 <Label BorderThickness="1">
                                     <TextBlock Name="psmFileNameLabel" Text="None Selected" TextTrimming="CharacterEllipsis" />
@@ -188,8 +190,8 @@
                 </DockPanel>
             </TabItem>
 
-            <!--Stats tab--><!--
-            <TabItem Header="Stats" Background="DarkGray">
+            <!--Stats tab-->
+            <TabItem Header="Data Visualization" Background="DarkGray">
                 <DockPanel>
                     <Grid>
                         <Grid.ColumnDefinitions>
@@ -198,39 +200,53 @@
                             <ColumnDefinition Width="3*"/>
                         </Grid.ColumnDefinitions>
 
-                        --><!--Left area is for loading files, displaying plot types, etc--><!--
+                        <!--Left area is for loading files, displaying plot types, etc-->
                         <Grid Grid.Column="0">
                             <Grid.RowDefinitions>
-                                <RowDefinition Height="5*"/>
+                                <RowDefinition Height="29"/>
+                                <RowDefinition Height="29"/>
+                                <RowDefinition Height="50*"/>
+                                <RowDefinition Height="40*"/>
                                 <RowDefinition Height="25"/>
-                                <RowDefinition Height="77*"/>
-                                <RowDefinition Height="5*"/>
                             </Grid.RowDefinitions>
 
-                            --><!--Select MetaMorpheus output file--><!--
+                            <!--Select MetaMorpheus output file-->
                             <DockPanel Grid.Row="0" LastChildFill="True">
-                                <Label Content="PSMTSV file: " Width="120" />
+                                <Label Content="PSMTSV file: " Width="75" />
+                                <Button Name="resetPsmFileButtonStat" Content="Reset" DockPanel.Dock="Right" Click="resetFilesButton_Click" Width="45" IsEnabled="False"/>
                                 <Button Name="selectPsmFileButtonStat" Content="Select" DockPanel.Dock="Right" Click="selectPsmFileButton_Click" Width="45" />
                                 <Label BorderThickness="1">
                                     <TextBlock Name="psmFileNameLabelStat" Text="None Selected" TextTrimming="CharacterEllipsis"/>
                                 </Label>
                             </DockPanel>
 
-                            <DockPanel Grid.Row="1">
-                                <Button Name="loadFilesStat" Content="Load File" Width="100" Click="loadFilesButtonStat_Click"/>
+                            <DockPanel Grid.Row="1" Margin="2">
+                                <Button Name="loadFilesStat" Content="Import Files From PSMTSV" Width="160" Click="loadFilesButtonStat_Click"/>
                             </DockPanel>
 
-                            --><!--List of plot options--><!--
-                            <GroupBox Header="Plot Type" Name="plotType" Grid.Row="2">
+                            <!--Select psms to display by source file-->
+                            <DockPanel Grid.Row="2">
+                                <Label Content="Source file(s): " Width="80" VerticalAlignment="Top"/>
+                                <DockPanel VerticalAlignment="Top">
+                                    <DockPanel DockPanel.Dock="Bottom">
+                                        <Button x:Name="selectAllSourceFiles" HorizontalAlignment="Left" Content="Select all" Click="selectAllSourceFiles_Click"/>
+                                        <Button x:Name="deselectAllSourceFiles" HorizontalAlignment="Right" Content="Deselect all" Click="deselectAllSourceFiles_Click"/>
+                                    </DockPanel>
+                                    <ListBox x:Name="selectSourceFileListBox" ItemsSource="{Binding}" SelectionMode="Multiple" SelectionChanged="selectSourceFileListBox_SelectionChanged" ScrollViewer.VerticalScrollBarVisibility="Visible"/>
+                                </DockPanel>
+                            </DockPanel>
+
+                            <!--List of plot options-->
+                            <GroupBox Header="Plot Type" Name="plotType" Grid.Row="3">
                                 <ListView x:Name="plotsListBox" ItemsSource="{Binding}" SelectionChanged ="PlotSelected" MaxHeight="400"/>
                             </GroupBox>
 
-                            <DockPanel Grid.Row="3" Margin="2">
+                            <DockPanel Grid.Row="4" Margin="2">
                                 <Button Content="Export to PDF" Width="100" Click="CreatePlotPdf_Click" />
                             </DockPanel>
                         </Grid>
 
-                        --><!--Loading progress popup--><!--
+                        <!--Loading progress popup-->
                         <Popup IsOpen="False" x:Name="prgsFeedStat" Height="80" Width="300" PlacementTarget="{Binding ElementName=MetaDrawWindow}" Placement="Center" Grid.ColumnSpan="3" Margin="168.884,230,658.275,231.6" Grid.Column="3">
                             <Border Background="LightGray" CornerRadius="2" Height="78" Width="298" HorizontalAlignment="Center" VerticalAlignment="Center">
                                 <StackPanel Height="78" Background="LightGray">
@@ -240,20 +256,20 @@
                             </Border>
                         </Popup>
 
-                        --><!--Moveable splitter--><!--
+                        <!--Moveable splitter-->
                         <GridSplitter Grid.Column="1" 
                           HorizontalAlignment="Center"
                           VerticalAlignment="Stretch"
                           Background="Silver"
                           Width="2"/>
 
-                        --><!--Plot--><!--
+                        <!--Plot-->
                         <GroupBox Grid.Column="2" Header="Plot">
-                            <oxy:PlotView Grid.Row="0" x:Name="plotViewStat" Model="{Binding Model}" FontSize="16" FontStretch="Expanded" BorderBrush="LightGray" Grid.ColumnSpan="2"/>
+                            <oxy:PlotView Grid.Row="0" x:Name="plotViewStat" Model="{Binding Model}" SizeChanged="PlotViewStat_SizeChanged" FontSize="16" FontStretch="Expanded" BorderBrush="LightGray" Grid.ColumnSpan="2"/>
                         </GroupBox>
                     </Grid>
                 </DockPanel>
-            </TabItem>-->
+            </TabItem>
         </TabControl>
     </Grid>
 </Window>
