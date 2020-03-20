@@ -128,6 +128,7 @@ namespace EngineLayer
                 return string.Join(",", ModIds.Select(p => p.ToString()));
             }
         }
+
         public byte[] Kind{ get; private set; }
 
     }

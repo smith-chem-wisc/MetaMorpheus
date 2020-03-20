@@ -1,14 +1,4 @@
-﻿using System.Collections.Generic;
-using System.IO;
-using System.Linq;
-using Chemistry;
-using System;
-using Proteomics;
-using MassSpectrometry;
-using Proteomics.ProteolyticDigestion;
-using Proteomics.Fragmentation;
-
-namespace EngineLayer
+﻿namespace EngineLayer
 {
     public class ModBox
     {

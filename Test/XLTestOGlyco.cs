@@ -24,7 +24,6 @@ namespace Test
     {
         private static GlycanBox[] OGlycanBoxes { get; set; }
 
-        private static SelectedModBox[] ModBoxes { get; set; }
 
         [OneTimeSetUp]
         public static void Setup()
@@ -33,14 +32,6 @@ namespace Test
             GlycanBox.GlobalOGlycanModifications = GlycanBox.BuildGlobalOGlycanModifications(GlycanBox.GlobalOGlycans);
             OGlycanBoxes = GlycanBox.BuildOGlycanBoxes(3).OrderBy(p => p.Mass).ToArray();
 
-            SelectedModBox.SelectedModifications = new Modification[5];
-            SelectedModBox.SelectedModifications[0] = GlobalVariables.AllModsKnownDictionary["Hydroxylation on P"];
-            SelectedModBox.SelectedModifications[1] = GlobalVariables.AllModsKnownDictionary["Hydroxylation on K"];
-            SelectedModBox.SelectedModifications[2] = GlobalVariables.AllModsKnownDictionary["Glucosylgalactosyl on K"];
-            SelectedModBox.SelectedModifications[3] = GlobalVariables.AllModsKnownDictionary["Galactosyl on K"];
-            SelectedModBox.SelectedModifications[4] = GlobalVariables.AllModsKnownDictionary["Oxidation on M"];
-
-            ModBoxes = SelectedModBox.BuildModBoxes(10).Where(p => !p.MotifNeeded.ContainsKey("K") || (p.MotifNeeded.ContainsKey("K") && p.MotifNeeded["K"].Count <= 3)).OrderBy(p => p.Mass).ToArray();
         }
 
         [Test]
@@ -363,29 +354,6 @@ namespace Test
         }
 
         [Test]
-        public static void OGlycoTest_GetPossibleModSites()
-        {
-            //Test ModBox.BuildModBoxes
-
-            Assert.That(ModBoxes.Length == 860);
-
-            //Test ModBox.GetPossibleModSites
-            PeptideWithSetModifications pep = new PeptideWithSetModifications("MGFQGPAGEP[Common Biological:Hydroxylation on P]GPEP[Common Biological:Hydroxylation on P]GQTGPAGAR", GlobalVariables.AllModsKnownDictionary);
-
-            //Test  ModBox.GetFragmentHash
-            PeptideWithSetModifications pep_original = new PeptideWithSetModifications("MGFQGPAGEPGPEPGQTGPAGAR", GlobalVariables.AllModsKnownDictionary);
-            var frags = new List<Product>();
-            pep_original.Fragment(DissociationType.HCD, FragmentationTerminus.Both, frags);
-            var frags_mod = new List<Product>();
-            pep.Fragment(DissociationType.HCD, FragmentationTerminus.Both, frags_mod);
-
-            Tuple<int, int>[] tuples = new Tuple<int, int>[2];
-            tuples[0] = new Tuple<int, int>(11, 1);
-            tuples[1] = new Tuple<int, int>(15, 1);
-
-        }
-
-        [Test]
         public static void OGlycoTest_GetLeft()
         {
             int[] array1 = new int[6] { 0, 0, 0, 1, 1, 2 };
@@ -394,95 +362,6 @@ namespace Test
 
             var knowLeft = new int[3] { 0, 1, 2 };
             Assert.That(Enumerable.SequenceEqual(left, knowLeft));
-        }
-
-        [Test]
-        public static void OGlycoTest_LocalizationMod()
-        {
-            var modBox = ModBoxes[20];
-            Assert.That(Enumerable.SequenceEqual(modBox.ModIds, new int[] { 0, 0, 0, 1 }));
-
-            //Get unmodified peptide, products, allPossible modPos and all boxes.
-            Protein protein = new Protein("GSDGSVGPVGPAGPIGSAGPPGFPGAPGPKGEIGAVGNAGPAGPAGPR", "P08123");
-            var peptide = protein.Digest(new DigestionParams(), new List<Modification>(), new List<Modification>()).ElementAt(2);
-            //PeptideWithSetModifications peptide = new PeptideWithSetModifications("GSDGSVGPVGPAGPIGSAGPPGFPGAPGPKGEIGAVGNAGPAGPAGPR", GlobalVariables.AllModsKnownDictionary);
-            var products = new List<Product>();
-            peptide.Fragment(DissociationType.HCD, FragmentationTerminus.Both, products);
-            int[] modPos = SelectedModBox.GetAllPossibleModSites(peptide, modBox);
-            var boxes = SelectedModBox.BuildChildModBoxes(modBox.NumberOfMods, modBox.ModIds).ToArray();
-            Assert.That(boxes.Count() == 8);
-            //Test boxSatisfyBox
-            var boxSatisfyBox = LocalizationGraph.BoxSatisfyBox(boxes);
-
-            //Test GetAllPossibleModSites
-            var testModPos = SelectedModBox.GetAllPossibleModSites(peptide, ModBoxes[11]);
-            Assert.That(testModPos == null);
-
-            //Test GetLocalFragmentHash, which is used for localiation.
-            var testProducts = SelectedModBox.GetLocalFragmentHash(products, peptide.Length, modPos, 0, modBox, boxes[1], 1000);
-            var testProducts1 = SelectedModBox.GetLocalFragmentHash(products, peptide.Length, modPos, 2, modBox, boxes[1], 1000);
-            Assert.That(testProducts.Count() == 6);
-            Assert.That(testProducts1.Count() == 12);
-
-            //Test BoxSatisfyModPos
-            var pos1 = LocalizationGraph.BoxSatisfyModPos(modBox, boxes[5], 30, peptide);
-            var pos2 = LocalizationGraph.BoxSatisfyModPos(modBox, boxes[5], 31, peptide);
-            Assert.That(pos1);
-            Assert.That(!pos2);
-
-            //Get hashset int
-            CommonParameters commonParameters = new CommonParameters(dissociationType: DissociationType.HCD, trimMsMsPeaks: false);
-            string spectraFile = Path.Combine(TestContext.CurrentContext.TestDirectory, @"GlycoTestData\id_08-24-19_AC-P_patient146_0p12mg_0p9uL-calib_20086.mgf");
-            var file = new MyFileManager(true).LoadFile(spectraFile, commonParameters);
-            var scans = MetaMorpheusTask.GetMs2Scans(file, spectraFile, commonParameters).ToArray();
-
-            int obsPreviousFragmentCeilingMz = 0;
-            List<int> binsToSearch = new List<int>();
-            foreach (var envelope in scans.First().ExperimentalFragments)
-            {
-                // assume charge state 1 to calculate mass tolerance
-                double experimentalFragmentMass = envelope.monoisotopicMass;
-
-                // get theoretical fragment bins within mass tolerance
-                int obsFragmentFloorMass = (int)Math.Floor((commonParameters.ProductMassTolerance.GetMinimumValue(experimentalFragmentMass)) * 1000);
-                int obsFragmentCeilingMass = (int)Math.Ceiling((commonParameters.ProductMassTolerance.GetMaximumValue(experimentalFragmentMass)) * 1000);
-
-                // prevents double-counting peaks close in m/z and lower-bound out of range exceptions
-                if (obsFragmentFloorMass < obsPreviousFragmentCeilingMz)
-                {
-                    obsFragmentFloorMass = obsPreviousFragmentCeilingMz;
-                }
-                obsPreviousFragmentCeilingMz = obsFragmentCeilingMass + 1;
-
-                // search mass bins within a tolerance
-                for (int fragmentBin = obsFragmentFloorMass; fragmentBin <= obsFragmentCeilingMass; fragmentBin++)
-                {
-                    binsToSearch.Add(fragmentBin);
-                }
-            }
-            HashSet<int> allPeaks = new HashSet<int>(binsToSearch);
-
-            //Known peptideWithMod match.
-            var peptideWithMod = SelectedModBox.GetTheoreticalPeptide(new int[4] {22, 25, 28, 31}, peptide, modBox);
-            Assert.That(peptideWithMod.FullSequence == "GSDGSVGPVGPAGPIGSAGPP[Common Biological:Hydroxylation on P]GFP[Common Biological:Hydroxylation on P]GAP[Common Biological:Hydroxylation on P]GPK[Common Biological:Hydroxylation on K]GEIGAVGNAGPAGPAGPR");
-            List<Product> knownProducts = new List<Product>();
-            peptideWithMod.Fragment(DissociationType.HCD, FragmentationTerminus.Both, knownProducts);
-            var matchedKnownFragmentIons = MetaMorpheusEngine.MatchFragmentIons(scans.First(), knownProducts, commonParameters);
-            Assert.That(matchedKnownFragmentIons.Count == 42);
-
-            //Graph Localization
-            LocalizationGraph localizationGraph = new LocalizationGraph(modPos, modBox, boxes);
-            localizationGraph.LocalizeMod(modPos, modBox, boxes, allPeaks, products, peptide);
-
-            var allPaths = LocalizationGraph.GetAllPaths(localizationGraph.array, boxes);
-
-            var knowPath = new int[12] { 0, 0, 0, 0, 1, 3, 5, 5, 7, 7, 7, 7 };
-            Assert.That(Enumerable.SequenceEqual(knowPath, allPaths[0]));
-
-            var local = LocalizationGraph.GetLocalizedPath(localizationGraph.array, modPos, boxes, allPaths.First());
-
-            var knowLocal = new Tuple<int, int, double>[4] {new Tuple<int, int, double>(22, 0, 0), new Tuple<int, int, double>(25, 0, 0) , new Tuple<int, int, double>(28, 0, 0) , new Tuple<int, int, double>(31, 1, 0) };
-            Assert.That(Enumerable.SequenceEqual(local, knowLocal));
         }
 
         [Test]

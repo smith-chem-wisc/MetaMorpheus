@@ -31,7 +31,6 @@ namespace EngineLayer.GlycoSearch
         public int Thero_n { get; set; }
 
         public Dictionary<int, List<Tuple<int, double>>> SiteSpeciLocalProb { get; set; }
-        public double PScore { get; set; } //-10*log(P)
         public double PeptideScore { get; set; }
         public double GlycanScore { get; set; } //Important for N-glycan for signature ions.
         public double DiagnosticIonScore { get; set; } //Since every glycopeptide generate DiagnosticIon, it is important to seperate the score. 
@@ -84,19 +83,6 @@ namespace EngineLayer.GlycoSearch
             }
 
             return possibleModSites;
-        }
-
-        /// <summary>
-        /// Rank experimental mass spectral peaks by intensity
-        /// </summary>
-        public static int[] GenerateIntensityRanks(double[] experimental_intensities)
-        {
-            var y = experimental_intensities.ToArray();
-            var x = Enumerable.Range(1, y.Length).OrderBy(p => p).ToArray();
-            Array.Sort(y, x);
-            var experimental_intensities_rank = Enumerable.Range(1, y.Length).OrderByDescending(p => p).ToArray();
-            Array.Sort(x, experimental_intensities_rank);
-            return experimental_intensities_rank;
         }
 
         public static string GetTabSepHeaderSingle()

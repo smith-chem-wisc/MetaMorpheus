@@ -41,7 +41,6 @@ namespace EngineLayer
         }
 
         public int GlyId { get; set; }
-        public int GlyType { get; private set; }
         public string Struc { get; private set; }
         public int Mass { get; private set; }
         public byte[] Kind { get; private set; }
@@ -534,31 +533,6 @@ namespace EngineLayer
         #endregion
 
         #region Functions are not used now, could be useful in the future.      
-
-        private bool SameComponentGlycan(Glycan glycan)
-        {
-            return this.Kind == glycan.Kind;
-        }
-
-        private static Node GobackRootNode(Node node)
-        {
-            while (node.Father != null)
-            {
-                node = node.Father;
-            }
-            return node;
-        }
-
-        private static SortedSet<int> GetAllChildrenMass(Node node)
-        {
-            SortedSet<int> masses = new SortedSet<int>();
-            var allC = GetAllChildrenCombination(node);
-            foreach (var aC in allC)
-            {
-                masses.Add(GetMass(Node2Struct(aC)));
-            }
-            return masses;
-        }
 
         public static bool DistingushGlycans(Glycan glycan1, Glycan glycan2)
         {
