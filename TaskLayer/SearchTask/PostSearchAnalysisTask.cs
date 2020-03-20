@@ -1327,8 +1327,14 @@ namespace TaskLayer
                 }
 
                 string header = "SpecId\tLabel\tScanNr\t";
-                header = header + String.Join("\t", PsmData.trainingInfos[searchType]);
-                header = header + "\tPeptide\tProteins";
+                header += String.Join("\t", PsmData.trainingInfos[searchType]);
+                header += "\tPeptide\tProteins";
+
+                if (searchType == "crosslink")
+                {
+                    header += "\tBeta Peptide\tBeta Proteins";
+                }
+
 
                 output.WriteLine(header);
 
