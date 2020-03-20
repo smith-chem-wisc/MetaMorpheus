@@ -241,7 +241,7 @@ namespace MetaMorpheusGUI
                 {
                     if (i % skipBinLabel == 0)
                     {
-                        category[i - start] = (i * binSize).ToString(CultureInfo.InvariantCulture);
+                        category[i - start] = Math.Round((i * binSize), 2).ToString(CultureInfo.InvariantCulture);
                     }
                     foreach (Dictionary<string, int> dict in dictsBySourceFile.Values)
                     {
