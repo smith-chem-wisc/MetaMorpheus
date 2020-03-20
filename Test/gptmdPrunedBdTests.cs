@@ -517,6 +517,8 @@ namespace Test
 
             // assert that mods on proteins are the same before/after task is run            
             Assert.AreEqual(protein1Variants.First().Accession, proteinsLoaded.First().Accession);
+            Assert.AreEqual(protein1Variants.First().OneBasedPossibleLocalizedModifications.Count(), proteinsLoaded.First().OneBasedPossibleLocalizedModifications.Count());
+            Assert.AreEqual(protein2.OneBasedPossibleLocalizedModifications.Count(), proteinsLoaded.ElementAt(1).OneBasedPossibleLocalizedModifications.Count());
            
             // assert that protein pruned DB has correct proteins mods
             var proteinPruned = ProteinDbLoader.LoadProteinXML(Path.Combine(TestContext.CurrentContext.TestDirectory, @"PrunedDbTest/fakeDbproteinPruned.xml"), true, DecoyType.None, GlobalVariables.AllModsKnown, false, new List<string>(), out var unknownMods1);
