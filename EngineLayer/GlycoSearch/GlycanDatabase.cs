@@ -7,10 +7,15 @@ using System.Linq;
 namespace EngineLayer
 {
 
-    public class GlycanDatabase
+    public static class GlycanDatabase
     {
+
+        public static IEnumerable<Glycan> LoadGlycan(string filePath)
+        {
+            return LoadGlycan(filePath, true);
+        }
         //Load Glycan. Generally, glycan-ions should be generated for N-Glycopepitdes which produce Y-ions; MS method couldn't produce o-glycan-ions.
-        public static IEnumerable<Glycan> LoadGlycan(string filePath, bool toGenerateIons = true)
+        public static IEnumerable<Glycan> LoadGlycan(string filePath, bool toGenerateIons)
         {
             bool isKind = true;
             using (StreamReader lines = new StreamReader(filePath))
@@ -52,7 +57,6 @@ namespace EngineLayer
                     }
 
                     var kind = String2Kind(line);
-                    var mass = Glycan.GetMass(kind);
 
                     var glycan = new Glycan(kind);
                     glycan.GlyId = id++;
@@ -68,7 +72,7 @@ namespace EngineLayer
         public static byte[] String2Kind(string line)
         {
             byte[] kind = new byte[] { 0, 0, 0, 0, 0, 0, 0, 0, 0 };
-            var x = line.Split('(', ')');
+            var x = line.Split(new char[] { '(', ')' });
             int i = 0;
             while (i < x.Length - 1)
             {
@@ -331,7 +335,7 @@ namespace EngineLayer
 
         private static GlycanIon GenerateGlycanIon(byte hexose_count, byte hexnac_count, byte fuc_count, byte xyl_count, int glycan_mass)
         {
-            byte[] ionKind = new byte[9] { hexose_count, hexnac_count, 0, 0, fuc_count, 0, 0, 0, xyl_count };
+            byte[] ionKind = new byte[] { hexose_count, hexnac_count, 0, 0, fuc_count, 0, 0, 0, xyl_count };
 
             int ionMass = Glycan.GetMass(ionKind);
 

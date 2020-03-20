@@ -251,9 +251,6 @@ namespace MetaMorpheusGUI
                         + " Selected Mz: " + parentScan.SelectedIonMZ.Value.ToString("0.##")
                         + " Retention Time: " + parentScan.RetentionTime.ToString("0.##");
 
-                //Canvas aCanvas = new Canvas();
-                //DrawAnnotatedBaseSequence(aCanvas, psmToDraw, true);
-
                 itemsControlSampleViewModel.AddNewRow(parentPsmModel, parentAnnotation, null);
 
                 // draw child scans
@@ -287,7 +284,7 @@ namespace MetaMorpheusGUI
                         + " Selected Mz: " + childScan.SelectedIonMZ.Value.ToString("0.##")
                         + " RetentionTime: " + childScan.RetentionTime.ToString("0.##");
 
-                    Canvas aCanvas = new Canvas() { Height = 60  };
+                    Canvas aCanvas = new Canvas { Height = 60  };
                     DrawAnnotatedBaseSequence(aCanvas, psmToDraw, true);
           
                     itemsControlSampleViewModel.AddNewRow(childPsmModel, childAnnotation, aCanvas);

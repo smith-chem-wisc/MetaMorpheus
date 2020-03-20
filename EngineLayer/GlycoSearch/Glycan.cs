@@ -102,7 +102,7 @@ namespace EngineLayer
         //H: C6O5H10 Hexose, N: C8O5NH13 HexNAc, A: C11O8NH17 Neu5Ac, G: C11H17NO9 Neu5Gc, F: C6O4H10 Fucose, 
         //P: PO3H Phosphate, S: SO3H Sulfo, Y: Na Sodium
         //X: C5H10O5 Xylose
-        public static Dictionary<char, int> CharMassDic = new Dictionary<char, int>() {
+        private readonly static Dictionary<char, int> CharMassDic = new Dictionary<char, int> {
             { 'H', 16205282 },
             { 'N', 20307937 },
             { 'A', 29109542 },
@@ -115,7 +115,7 @@ namespace EngineLayer
         };
 
         //Compitable with Byonic, for loading glycan by Kind.
-        public static Dictionary<string, Tuple<char, int>> NameCharDic = new Dictionary<string, Tuple<char, int>>
+        public readonly static Dictionary<string, Tuple<char, int>> NameCharDic = new Dictionary<string, Tuple<char, int>>
         {
             {"Hex", new Tuple<char, int>('H', 0) },
             {"HexNAc", new Tuple<char, int>('N', 1) },
@@ -128,16 +128,15 @@ namespace EngineLayer
             {"Xylose", new Tuple<char, int>('X', 8) }
         };
 
-        public static HashSet<int> CommonOxoniumIons = new HashSet<int>()
+        public readonly static HashSet<int> CommonOxoniumIons = new HashSet<int>
         {13805550, 16806607, 18607663, 20408720, 36614002 };
 
-        public static int[] AllOxoniumIons = new int[]
+        public readonly static int[] AllOxoniumIons = new int[]
         {10902895, 11503951, 12605550, 12703952, 13805550, 14406607, 16306064, 16806607, 18607663, 20408720, 27409268, 29008759, 29210324, 30809816, 36614002, 65723544, 67323035};
 
         //TrimannosylCore is only useful for N-Glyco peptides.
-        public static Dictionary<int, double> TrimannosylCores = new Dictionary<int, double>()
+        public readonly static Dictionary<int, double> TrimannosylCores = new Dictionary<int, double>
         {
-            //HashSet {83038194, 20307937, 40615875, 56821157, 73026439, 89231722, 34913728, 55221665};
             { 0, 0},
             { 83, 83.038194},
             { 203, 203.079373},
@@ -184,7 +183,6 @@ namespace EngineLayer
             }
             glycanIons.Add(new GlycanIon(null, 8303819, new byte[] { 0, 0, 0, 0, 0, 0, 0, 0, 0 }, mass - 8303819)); //Cross-ring mass
             glycanIons = glycanIons.OrderBy(p => p.IonMass).ToList();
-            //glycanIons.RemoveAt(glycanIons.Count - 1);
 
             Glycan glycan = new Glycan(theGlycanStruct, mass, kind, glycanIons, false);
             glycan.GlyId = id;
@@ -415,7 +413,7 @@ namespace EngineLayer
 
         public static byte[] GetKind(string structure)
         {
-            byte[] kind = new byte[] 
+            var kind = new byte[] 
             { Convert.ToByte(structure.Count(p => p == 'H')),
                 Convert.ToByte(structure.Count(p => p == 'N')),
                 Convert.ToByte(structure.Count(p => p == 'A')),
@@ -520,7 +518,10 @@ namespace EngineLayer
 
         public static IEnumerable<IEnumerable<T>> GetPermutations<T>(IEnumerable<T> list, int length)
         {
-            if (length == 1) return list.Select(t => new T[] { t });
+            if (length == 1)
+            {
+                return list.Select(t => new T[] { t });
+            }
             return GetPermutations(list, length - 1).SelectMany(t => list.Where(o => !t.Contains(o)), (t1, t2) => t1.Concat(new T[] { t2 }));
         }
 

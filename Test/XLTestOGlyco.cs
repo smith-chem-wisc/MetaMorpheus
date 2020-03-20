@@ -221,7 +221,7 @@ namespace Test
             var matchedKnownFragmentIons = MetaMorpheusEngine.MatchFragmentIons(scans.First(), knownProducts, commonParameters);
 
             //Graph Localization
-            LocalizationGraph localizationGraph = new LocalizationGraph(modPos, glycanBox, boxes);
+            LocalizationGraph localizationGraph = new LocalizationGraph(modPos, glycanBox, boxes, -1);
 
             LocalizationGraph.LocalizeOGlycan(localizationGraph, scans.First(), commonParameters.ProductMassTolerance, products);
 
@@ -307,7 +307,7 @@ namespace Test
 
 
             //Graph Localization
-            LocalizationGraph localizationGraph = new LocalizationGraph(modPos, glycanBox, boxes);
+            LocalizationGraph localizationGraph = new LocalizationGraph(modPos, glycanBox, boxes, -1);
 
             LocalizationGraph.LocalizeOGlycan(localizationGraph, scans.First(), commonParameters.ProductMassTolerance, products);
 
@@ -370,7 +370,7 @@ namespace Test
             int[] modPos = new int[3] { 2, 4, 6 };
             var glycanBox = OGlycanBoxes[19];
             var boxes = GlycanBox.BuildChildOGlycanBoxes(3, glycanBox.ModIds).ToArray();
-            LocalizationGraph localizationGraph = new LocalizationGraph(modPos, glycanBox, boxes);
+            LocalizationGraph localizationGraph = new LocalizationGraph(modPos, glycanBox, boxes, -1);
 
             for (int i = 0; i < modPos.Length; i++)
             {

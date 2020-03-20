@@ -53,11 +53,8 @@ namespace TaskLayer
             MyFileManager myFileManager = new MyFileManager(true);
 
             var fileSpecificCommonParams = fileSettingsList.Select(b => SetAllFileSpecificCommonParams(CommonParameters, b));
-            HashSet<DigestionParams> ListOfDigestionParams = new HashSet<DigestionParams>(fileSpecificCommonParams.Select(p => p.DigestionParams));
 
             int completedFiles = 0;
-            object indexLock = new object();
-            object psmLock = new object();
 
             Status("Searching files...", taskId);
 
@@ -204,7 +201,7 @@ namespace TaskLayer
 
         //The coisolation works for general search doesn't work for glyco search workflow. Similar peptide with different glycan are identified because of poor precursor mass. 
         //glycoSpectralMatches must be OrderDecendingByScore.
-        private List<GlycoSpectralMatch> RemoveSimilarSequenceDuplicates(List<GlycoSpectralMatch> glycoSpectralMatches)
+        private static List<GlycoSpectralMatch> RemoveSimilarSequenceDuplicates(List<GlycoSpectralMatch> glycoSpectralMatches)
         {
             List<GlycoSpectralMatch> glycos = new List<GlycoSpectralMatch>();
             glycos.Add(glycoSpectralMatches.First());

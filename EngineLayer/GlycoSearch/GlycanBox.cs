@@ -10,14 +10,15 @@ namespace EngineLayer
 {
     public class GlycanBox:ModBox
     {
-        public static Glycan[] GlobalOGlycans;
+        public static Glycan[] GlobalOGlycans { get; set; }
 
-        public static Modification[] GlobalOGlycanModifications;
+        public static Modification[] GlobalOGlycanModifications { get; set; }
 
-        public static GlycanBox[] OGlycanBoxes;
+        public static GlycanBox[] OGlycanBoxes { get; set; }
 
+        //TO DO: Decoy O-glycan can be created, but the results need to be reasoned.
         //public static int[] SugarShift = new int[]{ -16205282, -20307937, -29109542, -14605791, -30709033, -15005282, -36513219, -40615874, 16205282, 20307937, 29109542, 14605791, 30709033, 15005282, 36513219, 40615874 };
-        public static int[] SugarShift = new int[] 
+        private readonly static int[] SugarShift = new int[] 
         {
             7103710, 10300920, 11502690, 12904260, 14706840, 5702150, 13705890, 12809500, 11308410, 13104050,
             11404290, 9705280, 12805860, 15610110, 8703200, 10104770, 9906840, 18607930, 16306330,
@@ -25,7 +26,12 @@ namespace EngineLayer
             -11404290, -9705280, -12805860, -15610110, -8703200, -10104770, -9906840, -18607930, -16306330,
 
         };
-        public static IEnumerable<GlycanBox> BuildOGlycanBoxes(int maxNum, bool buildDecoy = false)
+
+        public static IEnumerable<GlycanBox> BuildOGlycanBoxes(int maxNum)
+        {
+            return BuildOGlycanBoxes(maxNum, false);
+        }
+        public static IEnumerable<GlycanBox> BuildOGlycanBoxes(int maxNum, bool buildDecoy)
         {
 
             for (int i = 1; i <= maxNum; i++)
@@ -40,13 +46,10 @@ namespace EngineLayer
 
                     if (buildDecoy)
                     {
-                        //for (int j = 0; j < 5; j++)
-                        {
-                            GlycanBox glycanBox_decoy = new GlycanBox(idCombine.ToArray());
-                            glycanBox_decoy.TargetDecoy = false;
-                            glycanBox_decoy.ChildGlycanBoxes = BuildChildOGlycanBoxes(glycanBox_decoy.NumberOfMods, glycanBox_decoy.ModIds, glycanBox_decoy.TargetDecoy).ToArray();
-                            yield return glycanBox_decoy;
-                        }
+                        GlycanBox glycanBox_decoy = new GlycanBox(idCombine.ToArray());
+                        glycanBox_decoy.TargetDecoy = false;
+                        glycanBox_decoy.ChildGlycanBoxes = BuildChildOGlycanBoxes(glycanBox_decoy.NumberOfMods, glycanBox_decoy.ModIds, glycanBox_decoy.TargetDecoy).ToArray();
+                        yield return glycanBox_decoy;
                     }
                 }
             }
@@ -109,13 +112,8 @@ namespace EngineLayer
             else
             {
                 Random random = new Random();
-                //var childShift = random.Next(-3000000, 3000000); //Based on pGlyco [1, 30] and GlycoPAT [-50, 50].
                 int shiftInd = random.Next(SugarShift.Length);
                 Mass = (double)(Glycan.GetMass(Kind) + SugarShift[shiftInd]) / 1E5;
-
-                //Random random_decoyMass = new Random();
-                //var decoyMassShift = random_decoyMass.Next(SugarShift.Length);
-                //DecoyMass = (double)(Glycan.GetMass(Kind) + SugarShift[decoyMassShift]) / 1E5;
             }
         }
 

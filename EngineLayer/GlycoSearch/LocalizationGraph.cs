@@ -20,7 +20,7 @@ namespace EngineLayer.GlycoSearch
         public double NoLocalCost{get; set;} //used for localization probability calculation.
         public double TotalScore { get; set; }
 
-        public LocalizationGraph(int[] modPos, ModBox modBox, ModBox[] childModBoxes, int id = -1)
+        public LocalizationGraph(int[] modPos, ModBox modBox, ModBox[] childModBoxes, int id)
         {
             ModPos = modPos;
             ModBox = modBox;
@@ -240,8 +240,6 @@ namespace EngineLayer.GlycoSearch
         //Basicly, any change from left to right of the path indicates a modification. For example, the path = [1, 1, 2, 2] which means there is a modification at path[0] and path[3]
         public static Tuple<int, int, double>[] GetLocalizedPath(AdjNode[][] array, int[] modPos, ModBox[] childBoxes, int[] path, double cost = 0)
         {
-            int length = modPos.Length - 1;
-
             List<Tuple<int, int, double>> tuples = new List<Tuple<int, int, double>>();
             //Add first mod. If the childBoxes[path[0]].ModIds.Count == 0, means this is an empty childBox. 
             //Otherwise childBoxes[path[0]].ModIds.Count == 1 and childBoxes[path[0]].ModIds only contains one ModId.

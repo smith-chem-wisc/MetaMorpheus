@@ -36,7 +36,7 @@ namespace MetaMorpheusGUI
 
         public void AddNewRow(PsmAnnotationViewModel psmAnnotationViewModel, string annotation, Canvas canvas)
         {
-            Data.Add(new ItemsControlSampleData() { PsmAnnotationViewModel = psmAnnotationViewModel, SpectrumLabel = annotation, TheCanvas = canvas });
+            Data.Add(new ItemsControlSampleData { PsmAnnotationViewModel = psmAnnotationViewModel, SpectrumLabel = annotation, TheCanvas = canvas });
         }
     }
 

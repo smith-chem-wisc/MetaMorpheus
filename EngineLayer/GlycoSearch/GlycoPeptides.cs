@@ -9,7 +9,7 @@ using Chemistry;
 
 namespace EngineLayer.GlycoSearch
 {
-    public class GlycoPeptides
+    public static class GlycoPeptides
     {
         public static double[] ScanOxoniumIonFilter(Ms2ScanWithSpecificMass theScan, MassDiffAcceptor massDiffAcceptor, DissociationType dissociationType)
         {
@@ -70,7 +70,6 @@ namespace EngineLayer.GlycoSearch
 
         public static List<Product> GetGlycanYIons(double precursorMass, Glycan glycan)
         {
-            double possiblePeptideMass = precursorMass - (double)glycan.Mass/1E5;
             List<Product> YIons = new List<Product>();
             YIons.Add(new Product(ProductType.M, FragmentationTerminus.Both, precursorMass - (double)glycan.Mass / 1E5, 0, 0, (double)glycan.Mass/1E5)); //Y0 ion. Glycan totally loss.
             foreach (var ion in glycan.Ions)
@@ -122,7 +121,7 @@ namespace EngineLayer.GlycoSearch
             if (iD < 0) { iD = ~iD; }
             else
             {
-                while (iD - 1 >= 0 && massArray[iD-1] == targetMass)
+                while (iD - 1 >= 0 && massArray[iD-1] >= targetMass - 0.00000001)
                 {
                     iD--;
                 }
@@ -341,7 +340,6 @@ namespace EngineLayer.GlycoSearch
                     while (j >= 3)
                     {
                         //y ions didn't change in EThcD for O-glyco
-                        //newFragments[len * 2 - j + 2] += GlycanBox.GlobalOGlycans[OGlycanBoxes[keyValuePair.Item1].ModIds[i]].Mass;
                         newFragments[len * 3 - j + 2] += (double)GlycanBox.GlobalOGlycans[OGlycanBoxes[keyValuePair.Item1].ModIds[i]].Mass/1E5;
                         j--;
                     }
@@ -395,7 +393,7 @@ namespace EngineLayer.GlycoSearch
             var c_fragments = products.Where(p => p.ProductType == ProductType.c && p.AminoAcidPosition < modPoses.First() - 1).Select(p => p.NeutralMass);
             newFragments.AddRange(c_fragments);
 
-            var c_fragments_shift = products.Where(p => p.ProductType == ProductType.c && p.AminoAcidPosition >= modPoses.Last() - 1).Select(p => p.NeutralMass); ;
+            var c_fragments_shift = products.Where(p => p.ProductType == ProductType.c && p.AminoAcidPosition >= modPoses.Last() - 1).Select(p => p.NeutralMass);
 
             foreach (var c in c_fragments_shift)
             {
@@ -423,7 +421,7 @@ namespace EngineLayer.GlycoSearch
         public static bool OxoniumIonsAnalysis(double[] oxoniumIonsintensities, GlycanBox glycanBox)
         {
             //If a glycopeptide spectrum does not have 292.1027 or 274.0921, then remove all glycans that have sialic acids from the search.
-            if (oxoniumIonsintensities[10] == 0 && oxoniumIonsintensities[12] == 0)
+            if (oxoniumIonsintensities[10] <= 0 && oxoniumIonsintensities[12] <= 0)
             {
                 if (glycanBox.Kind[2] != 0 || glycanBox.Kind[3] != 0)
                 {
@@ -448,7 +446,5 @@ namespace EngineLayer.GlycoSearch
         }
 
         #endregion
-
-
     }
 }

@@ -19,7 +19,7 @@ namespace EngineLayer.GlycoSearch
         private bool IsOGlycoSearch;
         private readonly int TopN;
         private readonly int _maxOGlycanNum;
-        private bool OxiniumIonFilt;
+        private readonly bool OxiniumIonFilt;
         private readonly string _glycanDatabase;
 
         private readonly Tolerance PrecusorSearchMode;
@@ -161,9 +161,7 @@ namespace EngineLayer.GlycoSearch
                         }
                         else
                         {
-                            //gsms = FindOGlycopeptideHash(scan, idsOfPeptidesTopN, scanIndex, allBinsToSearch, childBinsToSearch, (int)byteScoreCutoff);
                             gsms = FindOGlycopeptideHashLocal(scan, idsOfPeptidesTopN, scanIndex, (int)byteScoreCutoff);
-                            //gsms = FindModPepHash(scan, idsOfPeptidesTopN, scanIndex, allBinsToSearch, (int)byteScoreCutoff);
                         }
 
 
@@ -389,8 +387,7 @@ namespace EngineLayer.GlycoSearch
                     while (iDLow < GlycanBox.OGlycanBoxes.Count() && (PrecusorSearchMode.Within(theScan.PrecursorMass, theScanBestPeptide.MonoisotopicMass + GlycanBox.OGlycanBoxes[iDLow].Mass)))
                     {
                         if (modPos.Length >= GlycanBox.OGlycanBoxes[iDLow].NumberOfMods && GlycoPeptides.OxoniumIonsAnalysis(oxoniumIonIntensities, GlycanBox.OGlycanBoxes[iDLow]))
-                        {
-                            //var boxes = GlycanBox.BuildChildOGlycanBoxes(GlycanBox.OGlycanBoxes[iDLow].NumberOfMods, GlycanBox.OGlycanBoxes[iDLow].ModIds).ToArray();
+                        {                            
                             LocalizationGraph localizationGraph = new LocalizationGraph(modPos, GlycanBox.OGlycanBoxes[iDLow], GlycanBox.OGlycanBoxes[iDLow].ChildGlycanBoxes, iDLow);
                             LocalizationGraph.LocalizeOGlycan(localizationGraph, localizationScan, CommonParameters.ProductMassTolerance, products);
 
@@ -401,7 +398,7 @@ namespace EngineLayer.GlycoSearch
                                 localizationGraphs.Clear();
                                 localizationGraphs.Add(localizationGraph);
                             }
-                            else if (bestLocalizedScore > 0 && currentLocalizationScore == bestLocalizedScore)
+                            else if (bestLocalizedScore > 0 && (currentLocalizationScore <= bestLocalizedScore + 0.00000001 && currentLocalizationScore >= bestLocalizedScore - 0.00000001))
                             {
                                 localizationGraphs.Add(localizationGraph);
                             }
@@ -497,9 +494,9 @@ namespace EngineLayer.GlycoSearch
 
             psmGlyco.OGlycanBoxLocalization = glycanBox_localizations;
 
-            if (oxoniumIonIntensities[5] == 0)
+            if (oxoniumIonIntensities[5] <= 0.00000001)
             {
-                psmGlyco.R138vs144 = double.PositiveInfinity;
+                psmGlyco.R138vs144 = 100000000;
             }
             else
             {

@@ -66,7 +66,7 @@ namespace TaskLayer
 
         }
 
-        private Dictionary<string, Tuple<bool, double, double>> ProteinLevelGlycoParsimony(List<GlycoSpectralMatch> allPsmsGly)
+        private static Dictionary<string, Tuple<bool, double, double>> ProteinLevelGlycoParsimony(List<GlycoSpectralMatch> allPsmsGly)
         {
             //<id, <islocalized, minQValue, maxProb>>. id: ProteinAccession, ProtienPos, GlycanId. islocalized, minQValue, maxProb
             Dictionary<string, Tuple<bool, double, double>> localizedGlycan = new Dictionary<string, Tuple<bool, double, double>>();
