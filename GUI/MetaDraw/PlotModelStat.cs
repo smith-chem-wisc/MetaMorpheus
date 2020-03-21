@@ -228,8 +228,8 @@ namespace MetaMorpheusGUI
             {
                 IEnumerable<double> allNumbers = numbersBySourceFile.Values.SelectMany(x => x);
 
-                int end = roundToBin(allNumbers.Max(), binSize);
-                int start = roundToBin(allNumbers.Min(), binSize);
+                int end = dictsBySourceFile.Values.Max(p => p.Max(v => int.Parse(v.Key)));
+                int start = dictsBySourceFile.Values.Min(p => p.Min(v => int.Parse(v.Key)));
                 int numBins = end - start + 1;
                 int minBinLabels = 22;  // the number of labeled bins will be between minBinLabels and 2 * minBinLabels
                 int skipBinLabel = numBins < minBinLabels ? 1 : numBins / minBinLabels;
