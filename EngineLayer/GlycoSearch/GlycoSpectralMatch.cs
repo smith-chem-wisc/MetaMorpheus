@@ -24,7 +24,7 @@ namespace EngineLayer.GlycoSearch
 
 
         public List<LocalizationGraph> LocalizationGraphs { get; set; }
-        public List<Tuple<int, Tuple<int, int, double>[]>> OGlycanBoxLocalization { get; set; }
+        public List<Route> OGlycanBoxLocalization { get; set; }
 
         public double ScanInfo_p { get; set; }
 
@@ -246,7 +246,7 @@ namespace EngineLayer.GlycoSearch
 
                 sb.Append(DiagnosticIonScore + "\t");              
 
-                var glycanBox = GlycanBox.OGlycanBoxes[OGlycanBoxLocalization.First().Item1];
+                var glycanBox = GlycanBox.OGlycanBoxes[OGlycanBoxLocalization.First().ModBoxId];
 
                 sb.Append(glycanBox.NumberOfMods + "\t");
 
@@ -294,18 +294,18 @@ namespace EngineLayer.GlycoSearch
         }
 
         //Output: <int, int, string> <ModBoxId, ModPosition, is localized>; Input: List<Tuple<int, Tuple<int, int, double>[]>> <ModBoxId, <modPostion, ModId, weight>>
-        public static List<Tuple<int, int, bool>> GetLocalizedGlycan(List<Tuple<int, Tuple<int, int, double>[]>> OGlycanBoxLocalization, out string localizationLevel)
+        public static List<Tuple<int, int, bool>> GetLocalizedGlycan(List<Route> OGlycanBoxLocalization, out string localizationLevel)
         {
             List<Tuple<int, int, bool>> localizedGlycan = new List<Tuple<int, int, bool>>();
 
-            HashSet<int> seenGlycanBoxIds = new HashSet<int>(OGlycanBoxLocalization.Select(p => p.Item1));
+            HashSet<int> seenGlycanBoxIds = new HashSet<int>(OGlycanBoxLocalization.Select(p=>p.ModBoxId));
 
             //Dictionary<string, int>: modsite-id, count
             Dictionary<string, int> seenModSite = new Dictionary<string, int>();
 
             foreach (var ogl in OGlycanBoxLocalization)
             {
-                foreach (var og in ogl.Item2)
+                foreach (var og in ogl.Mods)
                 {
                     var k = og.Item1.ToString() + "-" + og.Item2.ToString();
                     if (seenModSite.ContainsKey(k))
@@ -351,7 +351,7 @@ namespace EngineLayer.GlycoSearch
             return localizedGlycan;
         }
 
-        public static string AllLocalizationInfo(List<Tuple<int, Tuple<int, int, double>[]>> OGlycanBoxLocalization)
+        public static string AllLocalizationInfo(List<Route> OGlycanBoxLocalization)
         {
             string local = "";
 
@@ -370,8 +370,8 @@ namespace EngineLayer.GlycoSearch
             while (i < maxOutputPath)
             {
                 var ogl = OGlycanBoxLocalization[i];
-                local += "{@" + ogl.Item1.ToString() + "[";
-                var g = string.Join(",", ogl.Item2.Select(p => p.Item1.ToString() + "-" + p.Item2.ToString()));
+                local += "{@" + ogl.ModBoxId.ToString() + "[";
+                var g = string.Join(",", ogl.Mods.Select(p => p.Item1.ToString() + "-" + p.Item2.ToString()));
                 local += g + "]}";
                 i++;
             }

@@ -255,9 +255,8 @@ namespace Test
 
             var local = LocalizationGraph.GetLocalizedPath(localizationGraph.array, modPos, localizationGraph.ChildModBoxes, allPaths.First());
 
-            var knowLocal = new Tuple<int, int, double>[3] { new Tuple<int, int, double>(2, 1, 0), new Tuple<int, int, double>(3, 1, 0), new Tuple<int, int, double>(10, 0, 0) };
-            Assert.That(Enumerable.SequenceEqual(local, knowLocal));
-
+            Assert.That(Enumerable.SequenceEqual(local.Mods.Select(p=>p.Item1), new List<int>{ 2, 3, 10}));
+            Assert.That(Enumerable.SequenceEqual(local.Mods.Select(p => p.Item2), new List<int> { 1, 1, 0 }));
 
             var p = scans.First().TheScan.MassSpectrum.Size * commonParameters.ProductMassTolerance.GetRange(1000).Width / scans.First().TheScan.MassSpectrum.Range.Width;
 
@@ -341,8 +340,8 @@ namespace Test
 
             var local = LocalizationGraph.GetLocalizedPath(localizationGraph.array, modPos, localizationGraph.ChildModBoxes, allPaths.First());
 
-            var knowLocal = new Tuple<int, int, double>[1] { new Tuple<int, int, double>(4, 0, 0)};
-            Assert.That(Enumerable.SequenceEqual(local, knowLocal));
+            Assert.That(Enumerable.SequenceEqual(local.Mods.Select(p=>p.Item1), new List<int> { 4}));
+            Assert.That(Enumerable.SequenceEqual(local.Mods.Select(p => p.Item2), new List<int> { 0 }));
         }
 
         [Test]

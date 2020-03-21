@@ -153,7 +153,7 @@ namespace TaskLayer
                     if (glycoSpectralMatch.LocalizationGraphs != null)
                     {
 
-                        List<Tuple<int, Tuple<int, int, double>[]>> localizationCandidates = new List<Tuple<int, Tuple<int, int, double>[]>>();
+                        List<Route> localizationCandidates = new List<Route>();
 
                         for (int i = 0; i < glycoSpectralMatch.LocalizationGraphs.Count; i++)
                         {
@@ -162,7 +162,8 @@ namespace TaskLayer
                             foreach (var path in allPaths)
                             {
                                 var local = LocalizationGraph.GetLocalizedPath(glycoSpectralMatch.LocalizationGraphs[i].array, glycoSpectralMatch.LocalizationGraphs[i].ModPos, glycoSpectralMatch.LocalizationGraphs[i].ChildModBoxes, path);
-                                localizationCandidates.Add(new Tuple<int, Tuple<int, int, double>[]>(glycoSpectralMatch.LocalizationGraphs[i].ModBoxId, local));
+                                local.ModBoxId = glycoSpectralMatch.LocalizationGraphs[i].ModBoxId;
+                                localizationCandidates.Add(local);
                             }
                         }
 
@@ -179,12 +180,13 @@ namespace TaskLayer
                         //Localization PValue.
                         if (localLevel == "Level1" || localLevel == "Level2")
                         {
-                            List<Tuple<int, int, double>[]> allPaths = new List<Tuple<int, int, double>[]>();
+                            List<Route> allPaths = new List<Route>();
                             foreach (var graph in glycoSpectralMatch.LocalizationGraphs)
                             {
                                 allPaths.AddRange(LocalizationGraph.GetAllPaths_CalP(graph, glycoSpectralMatch.ScanInfo_p, glycoSpectralMatch.Thero_n));
                             }
                             glycoSpectralMatch.SiteSpeciLocalProb = LocalizationGraph.CalSiteSpecificLocalizationProbability(allPaths, glycoSpectralMatch.LocalizationGraphs.First().ModPos);
+                            WriteSiteSpecificLocalizationProbabilityMatrix(glycoSpectralMatch, allPaths, glycoSpectralMatch.LocalizationGraphs.First().ModPos, OutputFolder);
                         }
                     }
 
@@ -216,7 +218,62 @@ namespace TaskLayer
             }
             return glycos;
         }
-            
+
+        public static void WriteSiteSpecificLocalizationProbabilityMatrix(GlycoSpectralMatch glycoSpectralMatch, List<Route> allPaths, int[] modPos, string OutputFolder)
+        {
+
+            PeptideWithSetModifications peptide = GetBasePeptide(glycoSpectralMatch.BestMatchingPeptides.First().Peptide);
+
+            string outputfile = Path.Combine(OutputFolder, "Scan" + glycoSpectralMatch.ScanNumber + "_" + glycoSpectralMatch.PeptideMonisotopicMass + "_SiteProb.tsv");
+
+            using (StreamWriter writer = new StreamWriter(outputfile))
+            {
+                foreach (var path in allPaths)
+                {
+                    var thePos = path.Mods.Select(p => p.Item1).ToArray();
+                    GlycanBox glycanBox = new GlycanBox(path.Mods.Select(p=>p.Item2).ToArray());
+                    var peptideWithMod = GlycoPeptides.OGlyGetTheoreticalPeptide(thePos, peptide, glycanBox);
+
+                    string matrix = "";
+                    foreach (var pos in modPos)
+                    {
+                        if (thePos.Contains(pos))
+                        {
+                            matrix += pos + "_"  + path.Mods.Where(p=>p.Item1 == pos).First().Item2 + "\t";
+                        }
+                        else
+                        {
+                            matrix += "\t";
+                        }
+                    }
+
+                    writer.WriteLine(peptideWithMod.FullSequence + "\t" +
+                        peptideWithMod.MonoisotopicMass + "\t" +
+                        matrix +
+                        path.Score + "\t" +
+                        path.ReversePScore
+                        );
+                }
+            }
+        }
+
+        public static PeptideWithSetModifications GetBasePeptide(PeptideWithSetModifications peptide)
+        {
+            Dictionary<int, Modification> testMods = new Dictionary<int, Modification>();
+            foreach (var mod in peptide.AllModsOneIsNterminus)
+            {
+                if (mod.Value.ModificationType != "O-Glycosylation")
+                {
+                    testMods.Add(mod.Key, mod.Value);
+                }
+
+            }
+
+            var testPeptide = new PeptideWithSetModifications(peptide.Protein, peptide.DigestionParams, peptide.OneBasedStartResidueInProtein,
+                peptide.OneBasedEndResidueInProtein, peptide.CleavageSpecificityForFdrCategory, peptide.PeptideDescription, peptide.MissedCleavages, testMods, peptide.NumFixedMods);
+
+            return testPeptide;
+        }
 
     }
 }

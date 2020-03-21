@@ -235,17 +235,17 @@ namespace EngineLayer.GlycoSearch
             FirstPathHelper(array, xind, yind, temp);
         }
 
-        //The original path we get is just an array of AdjNode positions. This function here is to transfer the path into localized path. 
-        //The output note: Tuple<(mod site)int, (glycanId)int>[glycanBox.Count] 
-        //Basicly, any change from left to right of the path indicates a modification. For example, the path = [1, 1, 2, 2] which means there is a modification at path[0] and path[3]
-        public static Tuple<int, int, double>[] GetLocalizedPath(AdjNode[][] array, int[] modPos, ModBox[] childBoxes, int[] path, double cost = 0)
+        //The original path we get is just an array of AdjNode positions. This function here is to transfer the path into localized route. 
+        //Basicly, any change from left to right of the path indicates a modification. For example, the path = [1, 1, 2, 2] which means there is a modification at [0] and [2]
+        public static Route GetLocalizedPath(AdjNode[][] array, int[] modPos, ModBox[] childBoxes, int[] path)
         {
             List<Tuple<int, int, double>> tuples = new List<Tuple<int, int, double>>();
+            Route route = new Route();
             //Add first mod. If the childBoxes[path[0]].ModIds.Count == 0, means this is an empty childBox. 
             //Otherwise childBoxes[path[0]].ModIds.Count == 1 and childBoxes[path[0]].ModIds only contains one ModId.
             if (childBoxes[path[0]].ModIds.Count() != 0)
             {                
-                tuples.Add(new Tuple<int, int, double>(modPos[0], childBoxes[path[0]].ModIds.First(), cost));
+                route.AddPos(modPos[0], childBoxes[path[0]].ModIds.First());
             }
 
             for (int i = 1; i < path.Length; i++)
@@ -255,11 +255,11 @@ namespace EngineLayer.GlycoSearch
                 {
                     var left = GetLeft(array[i][path[i]].ModBox.ModIds, array[i - 1][path[i - 1]].ModBox.ModIds).First();
 
-                    tuples.Add(new Tuple<int, int, double>(modPos[i], left, cost));
+                    route.AddPos(modPos[i], left);
                 }
             }
 
-            return tuples.ToArray();
+            return route;
         }
 
         //Get the difference between array 1 and array 2 with repeat numbers.
@@ -275,34 +275,40 @@ namespace EngineLayer.GlycoSearch
             return left;
         }
 
-        //To understand this funciton, ref to "phosphoRS" papar. 
-        public static List<Tuple<int, int, double>[]> GetAllPaths_CalP(LocalizationGraph localizationGraph, double p, int n)
+        //To understand this funciton, ref to "phosphoRS" papar.         
+        //The function is similar to GetAllPaths. But when get all paths, calculate the 1/P value. 
+        //return List<Tuple<int, int, double>[]> : <mod site, glycanId, localization score>[glycanBox.Count]
+        public static List<Route> GetAllPaths_CalP(LocalizationGraph localizationGraph, double p, int n)
         {
-            List<Tuple<int, int, double>[]> allPaths = new List<Tuple<int, int, double>[]>();
+            List<Route> allPaths = new List<Route>();
 
             int xlength = localizationGraph.array.Length;
             int ylength = localizationGraph.array.First().Length;
 
+            //temp is a path. check function GetLocalizedPath.
             int[] temp = new int[xlength];
             double[] temp_cost = new double[xlength];
 
+            //A path in graph localization is always the end of the matrix.
             temp[xlength - 1] = ylength - 1;
 
             PathHelper_CalP(allPaths, localizationGraph, xlength - 1, ylength - 1, temp, temp_cost, p, n);
 
             return allPaths;
         }
-
-        private static void PathHelper_CalP(List<Tuple<int, int, double>[]> allPaths, LocalizationGraph localizationGraph, int xind, int yind, int[] temp, double[] temp_costs, double p, int n)
+        private static void PathHelper_CalP(List<Route> allPaths, LocalizationGraph localizationGraph, int xind, int yind, int[] temp, double[] temp_costs, double p, int n)
         {
             if (xind == 0)
             {
                 var k = temp_costs.Sum() + localizationGraph.NoLocalCost;
-             
+
+                //To understand the math, ref to "phosphoRS" papar.      
                 var cp = 1/(1-MathNet.Numerics.Distributions.Binomial.CDF(p, n, k) + MathNet.Numerics.Distributions.Binomial.PMF(p, n, (int)k));               
     
-                var x = GetLocalizedPath(localizationGraph.array, localizationGraph.ModPos, localizationGraph.ChildModBoxes, temp, cp);
-                allPaths.Add(x);
+                var route = GetLocalizedPath(localizationGraph.array, localizationGraph.ModPos, localizationGraph.ChildModBoxes, temp);
+                route.Score = k;
+                route.ReversePScore = cp;
+                allPaths.Add(route);
                 return;
             }
 
@@ -318,26 +324,41 @@ namespace EngineLayer.GlycoSearch
             }
         }
 
-        public static Dictionary<int, List<Tuple<int, double>>> CalSiteSpecificLocalizationProbability(List<Tuple<int, int, double>[]> allPaths, int[] modPos)
+        public static Dictionary<int, List<Tuple<int, double>>> CalSiteSpecificLocalizationProbability(List<Route> routes, int[] modPos)
         {
             Dictionary<int, List<Tuple<int, double>>> probabilityMatrix = new Dictionary<int, List<Tuple<int, double>>>();
 
-            var allSites = allPaths.SelectMany(p => p);
-
-            var sum = allPaths.Sum(p=>p.First().Item3);
+            Tuple<int, int, double>[][] matrix = new Tuple<int, int, double>[modPos.Length][];
 
             for (int i = 0; i < modPos.Length; i++)
-            { 
-                var gs = allSites.Where(p => p.Item1 == modPos[i]).GroupBy(p=>p.Item2);
+            {
+                matrix[i] = new Tuple<int, int, double>[routes.Count];
+                for (int j = 0; j < routes.Count; j++)
+                {
+                    foreach (var m in routes[j].Mods)
+                    {
+                        if (m.Item1 == modPos[i])
+                        {
+                            matrix[i][j] = new Tuple<int, int, double>(m.Item1, m.Item2, routes[j].ReversePScore);
+                        }
+                    }
+                }
+            }
+
+            var sum = routes.Sum(p => p.ReversePScore);
+
+            for (int i = 0; i < modPos.Length; i++)
+            {
+                var gs = matrix[i].Where(p => p!=null).GroupBy(p => p.Item2);
 
                 List<Tuple<int, double>> value = new List<Tuple<int, double>>();
 
                 foreach (var g in gs)
                 {
-                    var prob = g.Sum(p=>p.Item3)/sum;
+                    var prob = g.Sum(p => p.Item3) / sum;
 
                     value.Add(new Tuple<int, double>(g.Key, prob));
-                    
+
                 }
 
                 probabilityMatrix.Add(modPos[i], value);

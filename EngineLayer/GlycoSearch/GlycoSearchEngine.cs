@@ -429,7 +429,7 @@ namespace EngineLayer.GlycoSearch
         }
 
         //List<Tuple<int, Tuple<int, int>[]>> <glycanBoxId, <mod site, glycan id>>
-        private GlycoSpectralMatch CreateGsm(Ms2ScanWithSpecificMass theScan, int scanIndex, int rank, PeptideWithSetModifications peptide, Tuple<int, int, double>[] localization, CommonParameters commonParameters, double[] oxoniumIonIntensities, List<LocalizationGraph> localizationGraphs = null, List<Tuple<int, Tuple<int, int, double>[]>> glycanBox_localizations = null)
+        private GlycoSpectralMatch CreateGsm(Ms2ScanWithSpecificMass theScan, int scanIndex, int rank, PeptideWithSetModifications peptide, Route localization, CommonParameters commonParameters, double[] oxoniumIonIntensities, List<LocalizationGraph> localizationGraphs)
         {
             var peptideWithMod = GlycoPeptides.OGlyGetTheoreticalPeptide(localization, peptide);
 
@@ -491,8 +491,6 @@ namespace EngineLayer.GlycoSearch
             psmGlyco.ChildMatchedFragmentIons = allMatchedChildIons;
 
             psmGlyco.LocalizationGraphs = localizationGraphs;
-
-            psmGlyco.OGlycanBoxLocalization = glycanBox_localizations;
 
             if (oxoniumIonIntensities[5] <= 0.00000001)
             {

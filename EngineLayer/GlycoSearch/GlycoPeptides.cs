@@ -257,12 +257,12 @@ namespace EngineLayer.GlycoSearch
             return testPeptide;
         }
 
-        public static PeptideWithSetModifications OGlyGetTheoreticalPeptide(Tuple<int, int, double>[] theModPositions, PeptideWithSetModifications peptide)
+        public static PeptideWithSetModifications OGlyGetTheoreticalPeptide(Route theModPositions, PeptideWithSetModifications peptide)
         {
-            Modification[] modifications = new Modification[theModPositions.Length];
-            for (int i = 0; i < theModPositions.Length; i++)
+            Modification[] modifications = new Modification[theModPositions.Mods.Count];
+            for (int i = 0; i < theModPositions.Mods.Count; i++)
             {
-                modifications[i] = GlycanBox.GlobalOGlycanModifications[theModPositions[i].Item2];
+                modifications[i] = GlycanBox.GlobalOGlycanModifications[theModPositions.Mods[i].Item2];
             }
 
             Dictionary<int, Modification> testMods = new Dictionary<int, Modification>();
@@ -271,9 +271,9 @@ namespace EngineLayer.GlycoSearch
                 testMods.Add(mod.Key, mod.Value);
             }
 
-            for (int i = 0; i < theModPositions.Length; i++)
+            for (int i = 0; i < theModPositions.Mods.Count; i++)
             {
-                testMods.Add(theModPositions[i].Item1, modifications[i]);
+                testMods.Add(theModPositions.Mods[i].Item1, modifications[i]);
             }
 
             var testPeptide = new PeptideWithSetModifications(peptide.Protein, peptide.DigestionParams, peptide.OneBasedStartResidueInProtein,
