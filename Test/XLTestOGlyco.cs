@@ -128,6 +128,8 @@ namespace Test
         [Test]
         public static void OGlycoTest_FragmentIons()
         {
+            //This test is to test ETD on proline. As proline didn't have proline related product ions.
+
             //Get glycanBox
             var glycanBox = OGlycanBoxes[8];
 
@@ -142,6 +144,27 @@ namespace Test
             var fragments_hcd = GlycoPeptides.OGlyGetTheoreticalFragments(DissociationType.HCD, peptide, peptideWithMod);
 
             var fragments_ethcd = GlycoPeptides.OGlyGetTheoreticalFragments(DissociationType.EThcD, peptide, peptideWithMod);
+        }
+
+        [Test]
+        public static void OGlycoTest_FragmentIons2()
+        {
+            //Get glycanBox
+            var glycanBox = OGlycanBoxes[24];
+
+            Protein protein = new Protein("TVYLGASK", "");
+            var peptide = protein.Digest(new DigestionParams(), new List<Modification>(), new List<Modification>()).First();
+
+            List<int> modPos = new List<int> { 2, 8 };
+
+            var peptideWithMod = GlycoPeptides.OGlyGetTheoreticalPeptide(modPos.ToArray(), peptide, OGlycanBoxes[24]);
+            Assert.That(peptideWithMod.FullSequence == "T[O-Glycosylation:H1N1 on X]VYLGAS[O-Glycosylation:H1N1A1 on X]K");
+
+            var fragments_etd = GlycoPeptides.OGlyGetTheoreticalFragments(DissociationType.ETD, peptide, peptideWithMod);
+
+            Assert.That(fragments_etd.Count == 22);
+            Assert.That(fragments_etd.Last().Annotation == "zDot8");
+            Assert.That(fragments_etd.Last().NeutralMass > 1824);
         }
 
         [Test]
@@ -344,7 +367,7 @@ namespace Test
                     dissociationType: DissociationType.ETD
                 )
             };
-            task._glycoSearchParameters.OxiniumIonFilt = false;
+            task._glycoSearchParameters.OxoniumIonFilt = false;
 
             Directory.CreateDirectory(Path.Combine(Environment.CurrentDirectory, @"TESTGlycoData"));
             DbForTask db = new DbForTask(Path.Combine(TestContext.CurrentContext.TestDirectory, @"GlycoTestData/P02649.fasta"), false);

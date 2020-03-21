@@ -19,7 +19,7 @@ namespace EngineLayer.GlycoSearch
         private bool IsOGlycoSearch;
         private readonly int TopN;
         private readonly int _maxOGlycanNum;
-        private readonly bool OxiniumIonFilt;
+        private readonly bool OxoniumIonFilt;
         private readonly string _glycanDatabase;
 
         private readonly Tolerance PrecusorSearchMode;
@@ -29,19 +29,19 @@ namespace EngineLayer.GlycoSearch
 
         public GlycoSearchEngine(List<GlycoSpectralMatch>[] globalCsms, Ms2ScanWithSpecificMass[] listOfSortedms2Scans, List<PeptideWithSetModifications> peptideIndex,
             List<int>[] fragmentIndex, List<int>[] secondFragmentIndex, int currentPartition, CommonParameters commonParameters, List<(string fileName, CommonParameters fileSpecificParameters)> fileSpecificParameters,
-             string glycanDatabase, bool isOGlycoSearch, int glycoSearchTopNum, int maxOGlycanNum, bool oxiniumIonFilt, List<string> nestedIds)
+             string glycanDatabase, bool isOGlycoSearch, int glycoSearchTopNum, int maxOGlycanNum, bool oxoniumIonFilt, List<string> nestedIds)
             : base(null, listOfSortedms2Scans, peptideIndex, fragmentIndex, currentPartition, commonParameters, fileSpecificParameters, new OpenSearchMode(), 0, nestedIds)
         {
             this.GlobalCsms = globalCsms;
             this.IsOGlycoSearch = isOGlycoSearch;
             this.TopN = glycoSearchTopNum;
             this._maxOGlycanNum = maxOGlycanNum;
-            this.OxiniumIonFilt = oxiniumIonFilt;
+            this.OxoniumIonFilt = oxoniumIonFilt;
             this._glycanDatabase = glycanDatabase;
 
             SecondFragmentIndex = secondFragmentIndex;
             PrecusorSearchMode = commonParameters.PrecursorMassTolerance;
-            ProductSearchMode = new SinglePpmAroundZeroSearchMode(20); //For Oxinium ion only
+            ProductSearchMode = new SinglePpmAroundZeroSearchMode(20); //For Oxonium ion only
 
 
             if (!isOGlycoSearch)
@@ -202,7 +202,7 @@ namespace EngineLayer.GlycoSearch
             {
                 var theScanBestPeptide = PeptideIndex[idsOfPeptidesPossiblyObserved[ind]];
 
-                //Considering coisolation, it doesn't mean it must from a glycopeptide even the scan contains oxinium ions.
+                //Considering coisolation, it doesn't mean it must from a glycopeptide even the scan contains oxonium ions.
                 if (PrecusorSearchMode.Within(theScan.PrecursorMass, theScanBestPeptide.MonoisotopicMass))
                 {
                     List<Product> products = new List<Product>();
@@ -230,7 +230,7 @@ namespace EngineLayer.GlycoSearch
                     var oxoniumIonIntensities = GlycoPeptides.ScanOxoniumIonFilter(theScan, ProductSearchMode, CommonParameters.DissociationType);
 
                     //The oxoniumIonIntensities is related with Glycan.AllOxoniumIons (the [9] is 204). A spectrum needs to have 204.0867 to be considered as a glycopeptide for now.
-                    if (OxiniumIonFilt && oxoniumIonIntensities[9] == 0)
+                    if (OxoniumIonFilt && oxoniumIonIntensities[9] == 0)
                     {
                         continue;
                     }
@@ -333,7 +333,7 @@ namespace EngineLayer.GlycoSearch
                     var oxoniumIonIntensities = GlycoPeptides.ScanOxoniumIonFilter(theScan, ProductSearchMode, CommonParameters.DissociationType);
 
                     //The oxoniumIonIntensities is related with Glycan.AllOxoniumIons (the [9] is 204). A spectrum needs to have 204.0867 to be considered as a glycopeptide for now.
-                    if (OxiniumIonFilt && oxoniumIonIntensities[9] == 0)
+                    if (OxoniumIonFilt && oxoniumIonIntensities[9] == 0)
                     {
                         continue;
                     }

@@ -136,9 +136,9 @@ namespace MetaMorpheusGUI
                         spectraFileNameLabel.ToolTip = filePath;
                         resetSpectraFileButton.IsEnabled = true;
                     }
-                    break;
-                case ".psmtsv":
+                    break;               
                 case ".tsv":
+                case ".psmtsv":
                     if (tsvResultsFilePath == null || !tsvResultsFilePath.Equals(filePath))
                     {
                         resetFilesButton_Click(resetPsmFileButton, null);
