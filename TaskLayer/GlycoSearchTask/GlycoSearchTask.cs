@@ -141,25 +141,6 @@ namespace TaskLayer
                 gsm.ResolveAllAmbiguities();
             }
 
-            //Debug Code. Write out peptides for all paths.
-            {
-                List<GlycoSpectralMatch> gsms = new List<GlycoSpectralMatch>();
-
-                foreach (var GsmsPerMS2Scan in ListOfGsmsPerMS2Scan)
-                {
-                    foreach (var gsm in GsmsPerMS2Scan.OrderByDescending(p=>p.Score).Take(20))
-                    {
-                        gsm.ResolveAllAmbiguities();
-                        gsms.Add(gsm);
-                    }
-                }
-
-                var allPsmsGly = gsms.Where(p => p.LocalizationGraphs != null && p.Score > 2).ToList();
-        
-                var writtenFileInter2 = Path.Combine(OutputFolder, "gsms_test" + ".tsv");
-                WriteFile.WritePsmGlycoToTsv(allPsmsGly, writtenFileInter2, 2);
-            }
-
             var filteredAllPsms = new List<GlycoSpectralMatch>();
 
             //For each ms2scan, try to find the best candidate psm from the psms list. Do the localizaiton analysis. Add it into filteredAllPsms.
@@ -205,7 +186,6 @@ namespace TaskLayer
                                 allRoutes.AddRange(LocalizationGraph.GetAllPaths_CalP(graph, glycoSpectralMatch.ScanInfo_p, glycoSpectralMatch.Thero_n));
                             }
                             glycoSpectralMatch.SiteSpeciLocalProb = LocalizationGraph.CalSiteSpecificLocalizationProbability(allRoutes, glycoSpectralMatch.LocalizationGraphs.First().ModPos);
-                            WriteSiteSpecificLocalizationProbabilityMatrix(glycoSpectralMatch, allRoutes, glycoSpectralMatch.LocalizationGraphs.First().ModPos, OutputFolder);
                         }
                     }
 
@@ -236,62 +216,6 @@ namespace TaskLayer
                 glycos.Add(g);
             }
             return glycos;
-        }
-
-        public static void WriteSiteSpecificLocalizationProbabilityMatrix(GlycoSpectralMatch glycoSpectralMatch, List<Route> allPaths, int[] modPos, string OutputFolder)
-        {
-            PeptideWithSetModifications peptide = GetBasePeptide(glycoSpectralMatch.BestMatchingPeptides.First().Peptide);
-
-            string outputfile = Path.Combine(OutputFolder, "Scan" + glycoSpectralMatch.ScanNumber + "_" + glycoSpectralMatch.PeptideMonisotopicMass + "_SiteProb.tsv");
-
-            using (StreamWriter writer = new StreamWriter(outputfile))
-            {
-                foreach (var path in allPaths)
-                {
-                    var thePos = path.Mods.Select(p => p.Item1).ToArray();
-                    GlycanBox glycanBox = new GlycanBox(path.Mods.Select(p=>p.Item2).ToArray());
-                    var peptideWithMod = GlycoPeptides.OGlyGetTheoreticalPeptide(thePos, peptide, glycanBox);
-
-                    string matrix = "";
-                    foreach (var pos in modPos)
-                    {
-                        if (thePos.Contains(pos))
-                        {
-                            matrix += pos + "_"  + path.Mods.Where(p=>p.Item1 == pos).First().Item2 + "\t";
-                        }
-                        else
-                        {
-                            matrix += "\t";
-                        }
-                    }
-
-                    writer.WriteLine(peptideWithMod.FullSequence + "\t" +
-                        peptideWithMod.MonoisotopicMass + "\t" +
-                        matrix +
-                        path.Score + "\t" +
-                        path.ReversePScore
-                        );
-                }
-            }
-
-        }
-
-        public static PeptideWithSetModifications GetBasePeptide(PeptideWithSetModifications peptide)
-        {
-            Dictionary<int, Modification> testMods = new Dictionary<int, Modification>();
-            foreach (var mod in peptide.AllModsOneIsNterminus)
-            {
-                if (mod.Value.ModificationType != "O-Glycosylation")
-                {
-                    testMods.Add(mod.Key, mod.Value);
-                }
-
-            }
-
-            var testPeptide = new PeptideWithSetModifications(peptide.Protein, peptide.DigestionParams, peptide.OneBasedStartResidueInProtein,
-                peptide.OneBasedEndResidueInProtein, peptide.CleavageSpecificityForFdrCategory, peptide.PeptideDescription, peptide.MissedCleavages, testMods, peptide.NumFixedMods);
-
-            return testPeptide;
         }
 
     }
