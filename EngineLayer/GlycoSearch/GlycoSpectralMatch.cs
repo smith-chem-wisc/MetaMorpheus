@@ -143,7 +143,6 @@ namespace EngineLayer.GlycoSearch
             sb.Append("PEP" + '\t');
             sb.Append("PEP_QValue" + '\t');
 
-            sb.Append("Score" + '\t');
             sb.Append("Localization Score" + '\t');
             sb.Append("DiagonosticIon Score" + '\t');
             sb.Append("Plausible Number Of Glycans" + '\t');
@@ -155,8 +154,9 @@ namespace EngineLayer.GlycoSearch
             sb.Append("GlycanLocalizationLevel" + '\t');
             sb.Append("Localized Glycans" + '\t');
             sb.Append("Site Specific Localization Probability" + '\t');
-            sb.Append("GlycanLocalization" + '\t');          
+            sb.Append("GlycanLocalization" + '\t');
             sb.Append("SiteSpecificLocalizationProbability" + '\t');
+
             return sb.ToString();
         }
 
@@ -222,7 +222,7 @@ namespace EngineLayer.GlycoSearch
             sb.Append("\t");
 
 
-            sb.Append(FdrInfo.QValue.ToString() + "\t");
+            sb.Append(FdrInfo!=null? FdrInfo.QValue.ToString() : "-1" + "\t");
             sb.Append("0" + "\t");
             sb.Append("0" + "\t");
             if (NGlycan != null)
@@ -240,8 +240,6 @@ namespace EngineLayer.GlycoSearch
 
             if (OGlycanBoxLocalization != null)
             {
-                sb.Append(Score + "\t");
-
                 sb.Append(LocalizationGraphs.First().TotalScore + "\t");
 
                 sb.Append(DiagnosticIonScore + "\t");              

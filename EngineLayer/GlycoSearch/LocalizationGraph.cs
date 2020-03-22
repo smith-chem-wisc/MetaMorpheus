@@ -168,7 +168,7 @@ namespace EngineLayer.GlycoSearch
             return boxIdBoxes;
         }
 
-        //Get path of Directed Acyclic Graph by recursion. 
+        //Get all path with hightest score of Directed Acyclic Graph by recursion. 
         //Start from the last AdjNode[row-1 ][col-1], go back to it Sources, which contains the previous AdjNode with the highest cost.
         public static List<int[]> GetAllPaths(AdjNode[][] array, ModBox[] boxes)
         {

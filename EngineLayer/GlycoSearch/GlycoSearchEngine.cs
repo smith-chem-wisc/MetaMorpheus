@@ -408,14 +408,33 @@ namespace EngineLayer.GlycoSearch
                     }
 
                     //In theory, the peptide_localization shouldn't be null, but it is possible that the real score is smaller than indexed score.
-                    if (localizationGraphs.Count > 0)
+                    //if (localizationGraphs.Count > 0)
+                    //{
+                    //    var firstPath = LocalizationGraph.GetFirstPath(localizationGraphs[0].array, localizationGraphs[0].ChildModBoxes);
+                    //    var localizationCandidate = LocalizationGraph.GetLocalizedPath(localizationGraphs[0].array, modPos, localizationGraphs[0].ChildModBoxes, firstPath);
+
+                    //    var psmGlyco = CreateGsm(theScan, scanIndex, ind, theScanBestPeptide, localizationCandidate, CommonParameters, oxoniumIonIntensities, localizationGraphs);
+
+                    //    possibleMatches.Add(psmGlyco);
+                    //}
+
+                    //Debug code. The block could generate peptides for all Paths.
                     {
-                        var firstPath = LocalizationGraph.GetFirstPath(localizationGraphs[0].array, localizationGraphs[0].ChildModBoxes);
-                        var localizationCandidate = LocalizationGraph.GetLocalizedPath(localizationGraphs[0].array, modPos, localizationGraphs[0].ChildModBoxes, firstPath);
+                        if (localizationGraphs.Count > 0)
+                        {
+                            foreach (var graph in localizationGraphs)
+                            {
+                                var allRoutes = LocalizationGraph.GetAllPaths_CalP(graph, 1, 1);
 
-                        var psmGlyco = CreateGsm(theScan, scanIndex, ind, theScanBestPeptide, localizationCandidate, CommonParameters, oxoniumIonIntensities, localizationGraphs);
+                                foreach (var route in allRoutes.OrderByDescending(p=>p.Score).Take(20))
+                                {
+                                    var psmGlyco = CreateGsm(theScan, scanIndex, ind, theScanBestPeptide, route, CommonParameters, oxoniumIonIntensities, localizationGraphs);
 
-                        possibleMatches.Add(psmGlyco);
+                                    possibleMatches.Add(psmGlyco);
+                                }
+                            }
+
+                        }
                     }
                 }
 

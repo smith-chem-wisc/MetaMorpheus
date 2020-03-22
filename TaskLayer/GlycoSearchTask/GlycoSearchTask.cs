@@ -141,6 +141,25 @@ namespace TaskLayer
                 gsm.ResolveAllAmbiguities();
             }
 
+            //Debug Code. Write out peptides for all paths.
+            {
+                List<GlycoSpectralMatch> gsms = new List<GlycoSpectralMatch>();
+
+                foreach (var GsmsPerMS2Scan in ListOfGsmsPerMS2Scan)
+                {
+                    foreach (var gsm in GsmsPerMS2Scan.OrderByDescending(p=>p.Score).Take(20))
+                    {
+                        gsm.ResolveAllAmbiguities();
+                        gsms.Add(gsm);
+                    }
+                }
+
+                var allPsmsGly = gsms.Where(p => p.LocalizationGraphs != null && p.Score > 2).ToList();
+        
+                var writtenFileInter2 = Path.Combine(OutputFolder, "gsms_test" + ".tsv");
+                WriteFile.WritePsmGlycoToTsv(allPsmsGly, writtenFileInter2, 2);
+            }
+
             var filteredAllPsms = new List<GlycoSpectralMatch>();
 
             //For each ms2scan, try to find the best candidate psm from the psms list. Do the localizaiton analysis. Add it into filteredAllPsms.
@@ -157,11 +176,11 @@ namespace TaskLayer
 
                         for (int i = 0; i < glycoSpectralMatch.LocalizationGraphs.Count; i++)
                         {
-                            var allPaths = LocalizationGraph.GetAllPaths(glycoSpectralMatch.LocalizationGraphs[i].array, glycoSpectralMatch.LocalizationGraphs[i].ChildModBoxes);
+                            var allRouteWithMaxScore = LocalizationGraph.GetAllPaths(glycoSpectralMatch.LocalizationGraphs[i].array, glycoSpectralMatch.LocalizationGraphs[i].ChildModBoxes);
 
-                            foreach (var path in allPaths)
+                            foreach (var route in allRouteWithMaxScore)
                             {
-                                var local = LocalizationGraph.GetLocalizedPath(glycoSpectralMatch.LocalizationGraphs[i].array, glycoSpectralMatch.LocalizationGraphs[i].ModPos, glycoSpectralMatch.LocalizationGraphs[i].ChildModBoxes, path);
+                                var local = LocalizationGraph.GetLocalizedPath(glycoSpectralMatch.LocalizationGraphs[i].array, glycoSpectralMatch.LocalizationGraphs[i].ModPos, glycoSpectralMatch.LocalizationGraphs[i].ChildModBoxes, route);
                                 local.ModBoxId = glycoSpectralMatch.LocalizationGraphs[i].ModBoxId;
                                 localizationCandidates.Add(local);
                             }
@@ -180,13 +199,13 @@ namespace TaskLayer
                         //Localization PValue.
                         if (localLevel == "Level1" || localLevel == "Level2")
                         {
-                            List<Route> allPaths = new List<Route>();
+                            List<Route> allRoutes = new List<Route>();
                             foreach (var graph in glycoSpectralMatch.LocalizationGraphs)
                             {
-                                allPaths.AddRange(LocalizationGraph.GetAllPaths_CalP(graph, glycoSpectralMatch.ScanInfo_p, glycoSpectralMatch.Thero_n));
+                                allRoutes.AddRange(LocalizationGraph.GetAllPaths_CalP(graph, glycoSpectralMatch.ScanInfo_p, glycoSpectralMatch.Thero_n));
                             }
-                            glycoSpectralMatch.SiteSpeciLocalProb = LocalizationGraph.CalSiteSpecificLocalizationProbability(allPaths, glycoSpectralMatch.LocalizationGraphs.First().ModPos);
-                            WriteSiteSpecificLocalizationProbabilityMatrix(glycoSpectralMatch, allPaths, glycoSpectralMatch.LocalizationGraphs.First().ModPos, OutputFolder);
+                            glycoSpectralMatch.SiteSpeciLocalProb = LocalizationGraph.CalSiteSpecificLocalizationProbability(allRoutes, glycoSpectralMatch.LocalizationGraphs.First().ModPos);
+                            WriteSiteSpecificLocalizationProbabilityMatrix(glycoSpectralMatch, allRoutes, glycoSpectralMatch.LocalizationGraphs.First().ModPos, OutputFolder);
                         }
                     }
 
@@ -221,7 +240,6 @@ namespace TaskLayer
 
         public static void WriteSiteSpecificLocalizationProbabilityMatrix(GlycoSpectralMatch glycoSpectralMatch, List<Route> allPaths, int[] modPos, string OutputFolder)
         {
-
             PeptideWithSetModifications peptide = GetBasePeptide(glycoSpectralMatch.BestMatchingPeptides.First().Peptide);
 
             string outputfile = Path.Combine(OutputFolder, "Scan" + glycoSpectralMatch.ScanNumber + "_" + glycoSpectralMatch.PeptideMonisotopicMass + "_SiteProb.tsv");
@@ -255,6 +273,7 @@ namespace TaskLayer
                         );
                 }
             }
+
         }
 
         public static PeptideWithSetModifications GetBasePeptide(PeptideWithSetModifications peptide)
