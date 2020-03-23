@@ -6,6 +6,8 @@ namespace EngineLayer.GlycoSearch
 {
     public class AdjNode
     {
+        //AdjNode -> Adjactent node is used to build graph matrix for localizaiton. Each node in graph matrix contain Sources, max cost, current cost, etc.
+        //For more about localization graph matrix, please check LocalizaitonGraph.cs. 
         public AdjNode(int i, int j, int modPos, ModBox box)
         {
             PosX = i;

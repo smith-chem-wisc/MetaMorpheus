@@ -157,7 +157,7 @@ namespace TaskLayer
 
                         for (int i = 0; i < glycoSpectralMatch.LocalizationGraphs.Count; i++)
                         {
-                            var allRouteWithMaxScore = LocalizationGraph.GetAllPaths(glycoSpectralMatch.LocalizationGraphs[i].array, glycoSpectralMatch.LocalizationGraphs[i].ChildModBoxes);
+                            var allRouteWithMaxScore = LocalizationGraph.GetAllHighestScorePaths(glycoSpectralMatch.LocalizationGraphs[i].array, glycoSpectralMatch.LocalizationGraphs[i].ChildModBoxes);
 
                             foreach (var route in allRouteWithMaxScore)
                             {

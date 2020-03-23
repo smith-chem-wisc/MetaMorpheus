@@ -17,8 +17,8 @@ namespace EngineLayer.GlycoSearch
         public ModBox ModBox { get; }
         public ModBox[] ChildModBoxes { get; set; }
 
-        public double NoLocalCost{get; set;} //used for localization probability calculation.
-        public double TotalScore { get; set; }
+        public double NoLocalCost{get; set;} //Note that we have node for each glycosite, the matched ions before the first node and after the last node is scored here.
+        public double TotalScore { get; set; } //Total score is the score of matched ions that are used for localization. For O-glycan, it is the score of all matched c/zDot ions. 
 
         public LocalizationGraph(int[] modPos, ModBox modBox, ModBox[] childModBoxes, int id)
         {
@@ -26,8 +26,8 @@ namespace EngineLayer.GlycoSearch
             ModBox = modBox;
             ModBoxId = id;
             ChildModBoxes = childModBoxes;
-            //ChildModBoxes = ModBox.BuildChildModBoxes(modBox.NumberOfMods, modBox.ModIds).ToArray();
 
+            //array is localization graph matrix. array is composed of 2d array of node. From left to right, node is build under a glycosite. From up to down, node is build for each child box.
             array = new AdjNode[modPos.Length][];
             for (int i = 0; i < modPos.Length; i++)
             {
@@ -111,6 +111,7 @@ namespace EngineLayer.GlycoSearch
             localizationGraph.TotalScore = localizationGraph.array[localizationGraph.ModPos.Length - 1][localizationGraph.ChildModBoxes.Length - 1].maxCost + noLocalScore;
         }
 
+        //Based on our implementation of Graph localization. We need to calculate cost between two nearby nodes (glycosites) 
         public static double CalculateCost(Ms2ScanWithSpecificMass theScan, Tolerance productTolerance, List<double> fragments)
         {
             double score = 0;
@@ -148,6 +149,8 @@ namespace EngineLayer.GlycoSearch
             return true;
         }
 
+        //The Directed Acyclic Graph is build from left to right. In the process, we need to know which node can linked to nodes from its left. 
+        //Since node contains Childbox. We name this function as BoxSatisfyBox.
         //The function defines how a childBox could be linked from all childBoxes.
         public static Dictionary<int, bool[]> BoxSatisfyBox(ModBox[] childBoxes)
         {
@@ -170,7 +173,7 @@ namespace EngineLayer.GlycoSearch
 
         //Get all path with hightest score of Directed Acyclic Graph by recursion. 
         //Start from the last AdjNode[row-1 ][col-1], go back to it Sources, which contains the previous AdjNode with the highest cost.
-        public static List<int[]> GetAllPaths(AdjNode[][] array, ModBox[] boxes)
+        public static List<int[]> GetAllHighestScorePaths(AdjNode[][] array, ModBox[] boxes)
         {
             List<int[]> allPaths = new List<int[]>();
 
@@ -180,13 +183,13 @@ namespace EngineLayer.GlycoSearch
             int[] temp = new int[xlength];
 
             temp[xlength - 1] = ylength -1;
-            
-            PathHelper(allPaths, array, xlength -1, ylength -1, temp);
+
+            GetAllHighestScorePathHelper(allPaths, array, xlength -1, ylength -1, temp);
 
             return allPaths;
         }
 
-        private static void PathHelper(List<int[]> allPaths, AdjNode[][] array, int xind, int yind, int[] temp)
+        private static void GetAllHighestScorePathHelper(List<int[]> allPaths, AdjNode[][] array, int xind, int yind, int[] temp)
         {
             if (xind == 0)
             {
@@ -199,7 +202,7 @@ namespace EngineLayer.GlycoSearch
                 xind--;
                 yind = pre;
                 temp[xind] = yind;
-                PathHelper(allPaths, array, xind, yind, temp);
+                GetAllHighestScorePathHelper(allPaths, array, xind, yind, temp);
 
                 xind++;
             }
@@ -235,8 +238,9 @@ namespace EngineLayer.GlycoSearch
             FirstPathHelper(array, xind, yind, temp);
         }
 
-        //The original path we get is just an array of AdjNode positions. This function here is to transfer the path into localized route. 
-        //Basicly, any change from left to right of the path indicates a modification. For example, the path = [1, 1, 2, 2] which means there is a modification at [0] and [2]
+        //The original path we get is just an array of AdjNode positions. For example, path = [1, 1, 2, 2] means the best nodes are at array[0][1], array[1][1], array[2][2], array[3][2]
+        //This function here is to transfer the path into localized Route. Route contains each glycosite with glycanId.
+        //Basicly, any change from left to right of the path indicates a modification. For example, the path = [1, 1, 2, 2] which means there is a modification at ModPos[0] and ModPos[2]
         public static Route GetLocalizedPath(AdjNode[][] array, int[] modPos, ModBox[] childBoxes, int[] path)
         {
             List<Tuple<int, int, double>> tuples = new List<Tuple<int, int, double>>();
@@ -275,9 +279,9 @@ namespace EngineLayer.GlycoSearch
             return left;
         }
 
-        //To understand this funciton, ref to "phosphoRS" papar.         
-        //The function is similar to GetAllPaths. But when get all paths, calculate the 1/P value. 
-        //return List<Tuple<int, int, double>[]> : <mod site, glycanId, localization score>[glycanBox.Count]
+        //To understand this funciton, ref to "phosphoRS" papar. It is complicated unless you understand how 'phosphoRS' works.  
+        //In order to calculate localization probability for each glycosite, one need to get all possible modifications combinations; which is all Routes from a Graph.
+        //The function is to get all routes and calculate the 1/P value for each route which is used to calculate localization probability later. 
         public static List<Route> GetAllPaths_CalP(LocalizationGraph localizationGraph, double p, int n)
         {
             List<Route> allPaths = new List<Route>();

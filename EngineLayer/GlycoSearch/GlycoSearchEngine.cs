@@ -210,9 +210,9 @@ namespace EngineLayer.GlycoSearch
                     var matchedFragmentIons = MatchFragmentIons(theScan, products, CommonParameters);
                     double score = CalculatePeptideScore(theScan.TheScan, matchedFragmentIons);
 
-                    var psmCrossSingle = new GlycoSpectralMatch(theScanBestPeptide, 0, score, scanIndex, theScan, CommonParameters, matchedFragmentIons);
-                    psmCrossSingle.Rank = ind;
-                    possibleMatches.Add(psmCrossSingle);
+                    var psmSingle = new GlycoSpectralMatch(theScanBestPeptide, 0, score, scanIndex, theScan, CommonParameters, matchedFragmentIons);
+                    psmSingle.Rank = ind;
+                    possibleMatches.Add(psmSingle);
                 }
                 else
                 {

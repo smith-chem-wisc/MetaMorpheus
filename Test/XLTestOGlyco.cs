@@ -248,7 +248,7 @@ namespace Test
 
             LocalizationGraph.LocalizeOGlycan(localizationGraph, scans.First(), commonParameters.ProductMassTolerance, products);
 
-            var allPaths = LocalizationGraph.GetAllPaths(localizationGraph.array, localizationGraph.ChildModBoxes);
+            var allPaths = LocalizationGraph.GetAllHighestScorePaths(localizationGraph.array, localizationGraph.ChildModBoxes);
 
             var knowPath = new int[8] {2, 4, 4, 4, 5, 5, 5, 5 };
             Assert.That(Enumerable.SequenceEqual(knowPath, allPaths[0]));
@@ -333,7 +333,7 @@ namespace Test
 
             LocalizationGraph.LocalizeOGlycan(localizationGraph, scans.First(), commonParameters.ProductMassTolerance, products);
 
-            var allPaths = LocalizationGraph.GetAllPaths(localizationGraph.array, localizationGraph.ChildModBoxes);
+            var allPaths = LocalizationGraph.GetAllHighestScorePaths(localizationGraph.array, localizationGraph.ChildModBoxes);
 
             var knowPath = new int[2] { 1, 1 };
             Assert.That(Enumerable.SequenceEqual(knowPath, allPaths[0]));
@@ -407,7 +407,7 @@ namespace Test
 
             localizationGraph.array[1][4].CummulativeSources = new List<int> { 2, 4 };
 
-            var allPaths = LocalizationGraph.GetAllPaths(localizationGraph.array, boxes);
+            var allPaths = LocalizationGraph.GetAllHighestScorePaths(localizationGraph.array, boxes);
 
             Assert.That(allPaths.Count == 3);
             Assert.That(Enumerable.SequenceEqual(allPaths[0], new int[3] { 2, 4, 5 }));
