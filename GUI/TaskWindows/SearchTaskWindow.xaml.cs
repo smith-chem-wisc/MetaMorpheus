@@ -572,6 +572,19 @@ namespace MetaMorpheusGUI
             TheTask.SearchParameters.WriteIndividualFiles = WriteIndividualResultsCheckBox.IsChecked.Value;
             TheTask.SearchParameters.CompressIndividualFiles = CompressIndividualResultsCheckBox.IsChecked.Value;
 
+            if (RemoveContaminantRadioBox.IsChecked.Value)
+            {
+                TheTask.SearchParameters.TCAmbiguity = TargetContaminantAmbiguity.RemoveContaminant;
+            }
+            else if (RemoveTargetRadioBox.IsChecked.Value)
+            {
+                TheTask.SearchParameters.TCAmbiguity = TargetContaminantAmbiguity.RemoveTarget;
+            }
+            else //RenameTCProteinsRadioBox.IsChecked.Value
+            {
+                TheTask.SearchParameters.TCAmbiguity = TargetContaminantAmbiguity.RenameProtein;
+            }
+
             //TheTask.SearchParameters.OutPepXML = ckbPepXML.IsChecked.Value;
 
             if (CheckBoxDecoy.IsChecked.Value)
