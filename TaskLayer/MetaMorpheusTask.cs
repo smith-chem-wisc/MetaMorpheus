@@ -191,12 +191,12 @@ namespace TaskLayer
                         // get child scans
                         List<MsDataScan> ms2ChildScans = null;
                         List<MsDataScan> ms3ChildScans = null;
-                        if (commonParameters.MS2ChildScanDissociationType!= DissociationType.Unknown || commonParameters.MS3ChildScanDissociationType!= DissociationType.Unknown)
+                        if (commonParameters.MS2ChildScanDissociationType != DissociationType.Unknown || commonParameters.MS3ChildScanDissociationType != DissociationType.Unknown)
                         {
                             ms3ChildScans = ms3Scans.Where(p => p.OneBasedPrecursorScanNumber == ms2scan.OneBasedScanNumber).ToList();
 
                             ms2ChildScans = ms2Scans.Where(p => p.OneBasedPrecursorScanNumber == ms2scan.OneBasedScanNumber ||
-                            (p.OneBasedPrecursorScanNumber == ms2scan.OneBasedPrecursorScanNumber 
+                            (p.OneBasedPrecursorScanNumber == ms2scan.OneBasedPrecursorScanNumber
                                 && p.OneBasedScanNumber > ms2scan.OneBasedScanNumber
                                 && Math.Abs(p.IsolationMz.Value - ms2scan.IsolationMz.Value) < 0.01)).ToList();
                         }
@@ -214,7 +214,7 @@ namespace TaskLayer
                                 {
                                     IsotopicEnvelope[] childNeutralExperimentalFragments = null;
 
-                                    if (commonParameters.MS2ChildScanDissociationType!= DissociationType.LowCID)
+                                    if (commonParameters.MS2ChildScanDissociationType != DissociationType.LowCID)
                                     {
                                         childNeutralExperimentalFragments = Ms2ScanWithSpecificMass.GetNeutralExperimentalFragments(ms2ChildScan, commonParameters);
                                     }
@@ -242,7 +242,7 @@ namespace TaskLayer
                                     //}
 
                                     if (ms3ChildScan.SelectedIonMonoisotopicGuessMz.HasValue)
-                                    {                                       
+                                    {
                                         precursorMz = ms3ChildScan.SelectedIonMonoisotopicGuessMz.Value;
                                     }
                                     else if (ms3ChildScan.SelectedIonMZ.HasValue)
@@ -263,7 +263,7 @@ namespace TaskLayer
                                     }
                                     var theChildScan = new Ms2ScanWithSpecificMass(ms3ChildScan, precursorMz,
                                         precursorCharge, fullFilePath, commonParameters, childNeutralExperimentalFragments);
-       
+
                                     scan.ChildScans.Add(theChildScan);
                                 }
                             }
@@ -304,9 +304,9 @@ namespace TaskLayer
                             }
 
                             foreach (var childScan in parentScan.ChildScans)
-                            {                               
+                            {
                                 if (((childScan.TheScan.MsnOrder == 2 && commonParameters.MS2ChildScanDissociationType == DissociationType.LowCID) ||
-                                (childScan.TheScan.MsnOrder == 3 && commonParameters.MS3ChildScanDissociationType == DissociationType.LowCID)) 
+                                (childScan.TheScan.MsnOrder == 3 && commonParameters.MS3ChildScanDissociationType == DissociationType.LowCID))
                                 && !childScan.TheScan.MassSpectrum.XcorrProcessed)
                                 {
                                     lock (childScan.TheScan)

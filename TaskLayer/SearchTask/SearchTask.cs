@@ -220,8 +220,8 @@ namespace TaskLayer
 
                         Status("Getting fragment dictionary...", new List<string> { taskId });
                         var indexEngine = new IndexingEngine(proteinListSubset, variableModifications, fixedModifications, SearchParameters.SilacLabels,
-                            SearchParameters.StartTurnoverLabel, SearchParameters.EndTurnoverLabel, currentPartition, SearchParameters.DecoyType, combinedParams, this.FileSpecificParameters,
-                            SearchParameters.MaxFragmentSize, false, dbFilenameList.Select(p => new FileInfo(p.FilePath)).ToList(), new List<string> { taskId });
+                            SearchParameters.StartTurnoverLabel, SearchParameters.EndTurnoverLabel, currentPartition, SearchParameters.DecoyType, combinedParams, FileSpecificParameters,
+                            SearchParameters.MaxFragmentSize, false, dbFilenameList.Select(p => new FileInfo(p.FilePath)).ToList(), SearchParameters.TCAmbiguity, new List<string> { taskId });
                         List<int>[] fragmentIndex = null;
                         List<int>[] precursorIndex = null;
 
@@ -297,8 +297,8 @@ namespace TaskLayer
 
                             Status("Getting fragment dictionary...", new List<string> { taskId });
                             var indexEngine = new IndexingEngine(proteinListSubset, variableModifications, fixedModifications, SearchParameters.SilacLabels,
-                                SearchParameters.StartTurnoverLabel, SearchParameters.EndTurnoverLabel, currentPartition, SearchParameters.DecoyType, paramToUse, this.FileSpecificParameters,
-                                SearchParameters.MaxFragmentSize, true, dbFilenameList.Select(p => new FileInfo(p.FilePath)).ToList(), new List<string> { taskId });
+                                SearchParameters.StartTurnoverLabel, SearchParameters.EndTurnoverLabel, currentPartition, SearchParameters.DecoyType, paramToUse, FileSpecificParameters,
+                                SearchParameters.MaxFragmentSize, true, dbFilenameList.Select(p => new FileInfo(p.FilePath)).ToList(), SearchParameters.TCAmbiguity, new List<string> { taskId });
                             lock (indexLock)
                             {
                                 GenerateIndexes(indexEngine, dbFilenameList, ref peptideIndex, ref fragmentIndex, ref precursorIndex, proteinList, taskId);
@@ -466,51 +466,54 @@ namespace TaskLayer
         {
             if (proteins.Count != 0) //if we have proteins
             {
-                List<Protein> sortedProteins = proteins.OrderBy(x => x.Accession).ToList(); //order by accession for easy comparisons
-                string previousAccession = sortedProteins[0].Accession; //get first accession
-                for (int i = 1; i < sortedProteins.Count; i++)
+                proteins.Sort((x, y) => x.Accession.CompareTo(y.Accession));
+                string previousAccession = proteins[0].Accession; //get first accession
+                for (int i = 1; i < proteins.Count; i++)
                 {
-                    string currentAccession = sortedProteins[i].Accession; //get current accession
+                    string currentAccession = proteins[i].Accession; //get current accession
                     if (currentAccession.Equals(previousAccession)) //if this accession was found in the previous protein (i.e. it's a duplicate)
                     {
                         if (tcAmbiguity == TargetContaminantAmbiguity.RenameProtein) //if we're keeping things
                         {
                             int numToAdd = 1;
                             //find all proteins sharing this accession
-                            while (sortedProteins.Count > i - 2 + numToAdd && sortedProteins[i - 2 + numToAdd].Accession.Equals(previousAccession))
+                            while (proteins.Count > i - 2 + numToAdd && proteins[i - 2 + numToAdd].Accession.Equals(previousAccession))
                             {
                                 //accession is private and there's no clone method, so we need to make a whole new protein... TODO: put this in mzlib
-                                Protein currentProtein = sortedProteins[i - 2 + numToAdd];
-                                sortedProteins[i - 2 + numToAdd] = new Protein(currentProtein.BaseSequence, currentAccession + "_" + numToAdd.ToString(), currentProtein.Organism,
+                                Protein currentProtein = proteins[i - 2 + numToAdd];
+                                proteins[i - 2 + numToAdd] = new Protein(currentProtein.BaseSequence, currentAccession + "_" + numToAdd.ToString(), currentProtein.Organism,
                                     currentProtein.GeneNames.ToList(), currentProtein.OneBasedPossibleLocalizedModifications, currentProtein.ProteolysisProducts.ToList(), currentProtein.Name, currentProtein.FullName,
                                     currentProtein.IsDecoy, currentProtein.IsContaminant, currentProtein.DatabaseReferences.ToList(), currentProtein.SequenceVariations.ToList(), currentProtein.AppliedSequenceVariations,
                                     currentProtein.SampleNameForVariants, currentProtein.DisulfideBonds.ToList(), currentProtein.SpliceSites.ToList(), currentProtein.DatabaseFilePath);
+                                numToAdd++;
                             }
                         }
                         else //something's getting removed 
                         {
                             //find the contaminant
-                            bool firstProteinIsContaminant = sortedProteins[i - 1].IsContaminant;
-                            bool currentProteinIsContaminant = sortedProteins[i].IsContaminant;
+                            bool firstProteinIsContaminant = proteins[i - 1].IsContaminant;
+                            bool currentProteinIsContaminant = proteins[i].IsContaminant;
 
                             // if they're the same (or if there's more than 2), we have issues
                             if (firstProteinIsContaminant != currentProteinIsContaminant &&
-                                (sortedProteins.Count == i + 1 || sortedProteins[i + 1].Accession.Equals(currentAccession)))
+                                (proteins.Count == i + 1 || proteins[i + 1].Accession.Equals(currentAccession)))
                             {
                                 if (tcAmbiguity == TargetContaminantAmbiguity.RemoveContaminant)
                                 {
-                                    sortedProteins.RemoveAt(firstProteinIsContaminant ? i - 1 : i);
+                                    proteins.RemoveAt(firstProteinIsContaminant ? i - 1 : i);
                                 }
                                 else //RemoveTarget
                                 {
-                                    sortedProteins.RemoveAt(firstProteinIsContaminant ? i : i - 1);
+                                    proteins.RemoveAt(firstProteinIsContaminant ? i : i - 1);
                                 }
-                                i--; //reset to account for the removed
                             }
-                            else
+                            else //occurs for decoys that overlap in target and contaminant databases. Occurs if db is messed up.
                             {
-                                throw new MetaMorpheusException("The protein '" + currentAccession + "' has multiple entries. Protein accessions must be unique.");
+                                Warn("The protein '" + currentAccession + "' has multiple entries. Protein accessions must be unique. A protein sequence was removed.");
+                                proteins.RemoveAt(i);
                             }
+
+                            i--; //reset to account for the removed
                         }
                     }
                     else //update the accession to search for
