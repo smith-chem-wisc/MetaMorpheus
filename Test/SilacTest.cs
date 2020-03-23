@@ -367,7 +367,7 @@ namespace Test
             Assert.IsTrue(output[1].Contains("PEPTKIDEK\t")); //test the unlabeled is present
             Assert.IsTrue(output[0].Contains("\tIntensity_silac_Original\tIntensity_silac_NewlySynthesized\tIntensity_silacPart2_Original\tIntensity_silacPart2_NewlySynthesized\t" +
                 "Detection Type_silac_Original\tDetection Type_silac_NewlySynthesized\tDetection Type_silacPart2_Original\tDetection Type_silacPart2_NewlySynthesized\t")); //test filename changes
-            Assert.IsTrue(output[1].Contains("\t656250\t875000\t")); //test intensities
+            Assert.IsTrue(output[1].Contains("\t1093750\t437500\t")); //test intensities
 
             output = File.ReadAllLines(TestContext.CurrentContext.TestDirectory + @"/TestSilac/AllQuantifiedPeaks.tsv");
             Assert.AreEqual(output.Length, 7); //header, (unlabeled, mixed, labeled)*2 files
@@ -402,7 +402,7 @@ namespace Test
             output = File.ReadAllLines(TestContext.CurrentContext.TestDirectory + @"/TestSilac/AllQuantifiedPeptides.tsv");
             Assert.IsTrue(output[1].Contains("PEPTKIDEK\t")); //test the unlabeled is present
             Assert.IsTrue(output[0].Contains("\tIntensity_silac_Original\tIntensity_silac_NewlySynthesized\tDetection Type_silac_Original\tDetection Type_silac_NewlySynthesized\t")); //test filename changes
-            Assert.IsTrue(output[1].Contains("\t0\t1531250\t")); //test intensities
+            Assert.IsTrue(output[1].Contains("\t656250\t875000\t")); //test intensities
 
             output = File.ReadAllLines(TestContext.CurrentContext.TestDirectory + @"/TestSilac/AllPSMs.psmtsv");
             Assert.IsTrue(output[1].Contains("\tPEPTK(+1.994)IDEK(+8.014)\t")); //test the identified sequence is output
@@ -439,15 +439,12 @@ namespace Test
             IO.MzML.MzmlMethods.CreateAndWriteMyMzmlWithCalibratedSpectra(myMsDataFile1, mzmlName, false);
             task.RunTask(outputFolder, new List<DbForTask> { new DbForTask(xmlName, false) }, new List<string> { mzmlName }, "taskId1").ToString();
 
-            //check there are no negative values in the output
-            //check that the missed cleavage peptide quant is informed by the conflicting peptide
-            //if it is informed, the Ph should be 60%. If it's not, then the Ph will be 50%
             output = File.ReadAllLines(TestContext.CurrentContext.TestDirectory + @"/TestSilac/AllQuantifiedPeptides.tsv");
             Assert.IsTrue(output[1].Contains("PEPEPEPTK\t")); //test the unlabeled is present
             Assert.IsTrue(output[2].Contains("PEPTKIDEK\t")); //test the unlabeled is present
             Assert.IsTrue(output[0].Contains("\tIntensity_silac_Original\tIntensity_silac_NewlySynthesized\tDetection Type_silac_Original\tDetection Type_silac_NewlySynthesized\t")); //test filename changes
-            Assert.IsTrue(output[1].Contains("\t0\t8750000\t")); //test the light intensity is not negative.
-            Assert.IsTrue(output[2].Contains("\t6125000\t9625000\t")); //test intensities. The observation is 9/6/3. If Ph = 0.5, the results will be 6/12. If Ph = 0.6, the results will be 7/11.
+            Assert.IsTrue(output[1].Contains("\t2625000\t6125000\t")); //test the light intensity is not negative.
+            Assert.IsTrue(output[2].Contains("\t10500000\t5250000\t")); //test intensities. The observation is 9/6/3.
 
             output = File.ReadAllLines(TestContext.CurrentContext.TestDirectory + @"/TestSilac/AllProteinGroups.tsv");
             //test sequence coverage and output worked from multiple labels
@@ -506,7 +503,7 @@ namespace Test
             Assert.IsTrue(output[3].Contains("\tPEPTK(+8.014)IDEK\t") && output[3].Contains("\t875000\t")); //Doesn't matter where the +8.014 is, just matters that it's mixed (one is light, one is heavy)
 
             output = File.ReadAllLines(TestContext.CurrentContext.TestDirectory + @"/TestSilac/AllProteinGroups.tsv");
-            Assert.IsTrue(output[1].Contains("\t\t\t875000\t1\t")); //check that only a single (heavy/new) intensity is present
+            Assert.IsTrue(output[1].Contains("\t\t\t\t1\t")); //check that no intensity is present when only a single missed cleavage value exists
             Assert.IsTrue(output[1].Contains("\t1\tPEPTKIDEK\tPEPTKIDEK\t")); //check that the sequence coverage isn't PEPTaIDEa
             Assert.IsTrue(output[1].Contains("\t1\tPEPTKIDEK(+8.014)\t")); //check that the peptide id'd has the +8
 

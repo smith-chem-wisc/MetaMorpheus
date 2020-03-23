@@ -194,7 +194,10 @@ namespace Test
                 item.SetFdrValues(0, 0, 0, 0, 0, 0, 0, 0);
                 item.ResolveProteinPosAmbiguitiesForXl();
             }
-            FdrAnalysisEngine fdrAnalysisEngine = new FdrAnalysisEngine(newPsms.ToList<PeptideSpectralMatch>(), 0, commonParameters, null, new List<string>(), "");
+
+            List<(string fileName, CommonParameters fileSpecificParameters)> fsp = new List<(string fileName, CommonParameters fileSpecificParameters)> { ("filename", commonParameters) };
+
+            FdrAnalysisEngine fdrAnalysisEngine = new FdrAnalysisEngine(newPsms.ToList<PeptideSpectralMatch>(), 0, commonParameters, fsp, new List<string>(), "");
 
             Assert.AreEqual(4, newPsms.Count);
             Assert.That(newPsms[0].XlProteinPos == null); //single
@@ -754,9 +757,9 @@ namespace Test
             }
 
             Assert.AreEqual(0, unnasignedCrossType);
-            Assert.AreEqual(51, inter);
-            Assert.AreEqual(75, intra);
-            Assert.AreEqual(235, single);
+            Assert.AreEqual(50, inter);
+            Assert.AreEqual(76, intra);
+            Assert.AreEqual(236, single);
             Assert.AreEqual(8, loop);
             Assert.AreEqual(0, deadend);
             Assert.AreEqual(46, deadendH2O);
@@ -1225,7 +1228,7 @@ namespace Test
         public static void TestMixedMs2Ms2()
         {
             string outputFile = Path.Combine(TestContext.CurrentContext.TestDirectory, @"TestMixedMs2Ms2.tsv");
-            CommonParameters commonParameters = new CommonParameters(dissociationType: DissociationType.CID, childScanDissociationType: DissociationType.ETD,
+            CommonParameters commonParameters = new CommonParameters(dissociationType: DissociationType.CID, ms2childScanDissociationType: DissociationType.ETD,
                 trimMsMsPeaks: false);
 
             string spectraFile = Path.Combine(TestContext.CurrentContext.TestDirectory, @"XlTestData\ms2mixed_bsa_xlink.mzML");
@@ -1264,7 +1267,7 @@ namespace Test
             var indexingResults = (IndexingResults)new IndexingEngine(new List<Protein> { bsa, bsa2 }, new List<Modification>(), new List<Modification>(),
                 null, null, null, 0, DecoyType.None, commonParameters, fsp, 5000, false, new List<FileInfo>(), new List<string>()).Run();
 
-            var secondCombinedParams = new CommonParameters(dissociationType: DissociationType.ETD, childScanDissociationType: DissociationType.ETD,
+            var secondCombinedParams = new CommonParameters(dissociationType: DissociationType.ETD, ms2childScanDissociationType: DissociationType.ETD,
                 trimMsMsPeaks: false);
 
             var fsp2 = new List<(string, CommonParameters)>();
@@ -1329,7 +1332,7 @@ namespace Test
         public static void TestMs2Ms3()
         {
             string outputFile = Path.Combine(TestContext.CurrentContext.TestDirectory, @"TestMs2Ms3.tsv");
-            CommonParameters commonParameters = new CommonParameters(dissociationType: DissociationType.CID, childScanDissociationType: DissociationType.LowCID, precursorMassTolerance: new PpmTolerance(10));
+            CommonParameters commonParameters = new CommonParameters(dissociationType: DissociationType.CID, ms3childScanDissociationType: DissociationType.LowCID, precursorMassTolerance: new PpmTolerance(10));
 
             string spectraFile = Path.Combine(TestContext.CurrentContext.TestDirectory, @"XlTestData\10226.mzML");
             var file = new MyFileManager(true).LoadFile(spectraFile, commonParameters);

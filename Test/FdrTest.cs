@@ -81,7 +81,9 @@ namespace Test
                 psm.ResolveAllAmbiguities();
             }
 
-            FdrAnalysisEngine fdr = new FdrAnalysisEngine(newPsms, searchModes.NumNotches, new CommonParameters(), null, nestedIds);
+            List<(string fileName, CommonParameters fileSpecificParameters)> fsp = new List<(string fileName, CommonParameters fileSpecificParameters)> { ("filename", new CommonParameters()) };
+
+            FdrAnalysisEngine fdr = new FdrAnalysisEngine(newPsms, searchModes.NumNotches, new CommonParameters(), fsp, nestedIds);
 
             fdr.Run();
 
@@ -99,6 +101,47 @@ namespace Test
             Assert.AreEqual(2, newPsms[1].FdrInfo.CumulativeTarget);
             Assert.AreEqual(0, newPsms[2].FdrInfo.CumulativeDecoy);
             Assert.AreEqual(3, newPsms[2].FdrInfo.CumulativeTarget);
+        }
+
+        [Test]
+        public static void FdrAnalysisEngineFileSpecificParametersNotNull()
+        {
+            MassDiffAcceptor searchModes = new DotMassDiffAcceptor(null, new List<double> { 0, 1.0029 }, new PpmTolerance(5));
+            List<string> nestedIds = new List<string>();
+
+            Protein p = new Protein("MNKNNKNNNKNNNNK", null);
+            CommonParameters commonParameters = new CommonParameters();
+
+            var digested = p.Digest(commonParameters.DigestionParams, new List<Modification>(), new List<Modification>()).ToList();
+
+            PeptideWithSetModifications pep1 = digested[0];
+            PeptideWithSetModifications pep2 = digested[1];
+            PeptideWithSetModifications pep3 = digested[2];
+            PeptideWithSetModifications pep4 = digested[3];
+
+            TestDataFile t = new TestDataFile(new List<PeptideWithSetModifications> { pep1, pep2, pep3 });
+
+            MsDataScan mzLibScan1 = t.GetOneBasedScan(2);
+            Ms2ScanWithSpecificMass scan1 = new Ms2ScanWithSpecificMass(mzLibScan1, pep1.MonoisotopicMass.ToMz(1), 1, null, new CommonParameters());
+            PeptideSpectralMatch psm1 = new PeptideSpectralMatch(pep1, 0, 3, 0, scan1, commonParameters, new List<MatchedFragmentIon>());
+
+            MsDataScan mzLibScan2 = t.GetOneBasedScan(4);
+            Ms2ScanWithSpecificMass scan2 = new Ms2ScanWithSpecificMass(mzLibScan2, pep2.MonoisotopicMass.ToMz(1), 1, null, new CommonParameters());
+            PeptideSpectralMatch psm2 = new PeptideSpectralMatch(pep2, 1, 2, 1, scan2, commonParameters, new List<MatchedFragmentIon>());
+
+            MsDataScan mzLibScan3 = t.GetOneBasedScan(6);
+            Ms2ScanWithSpecificMass scan3 = new Ms2ScanWithSpecificMass(mzLibScan3, pep3.MonoisotopicMass.ToMz(1), 1, null, new CommonParameters());
+            PeptideSpectralMatch psm3 = new PeptideSpectralMatch(pep3, 0, 1, 2, scan3, commonParameters, new List<MatchedFragmentIon>());
+
+            psm3.AddOrReplace(pep4, 1, 1, true, new List<MatchedFragmentIon>(), 0);
+
+            var newPsms = new List<PeptideSpectralMatch> { psm1, psm2, psm3 };
+            foreach (PeptideSpectralMatch psm in newPsms)
+            {
+                psm.ResolveAllAmbiguities();
+            }
+
+            Assert.Throws<ArgumentNullException>(() => new FdrAnalysisEngine(newPsms, searchModes.NumNotches, new CommonParameters(), null, nestedIds));
         }
 
         [Test]
@@ -276,6 +319,7 @@ namespace Test
             {
                 { Path.GetFileName(maxScorePsm.FullFilePath), 0 }
             };
+
             var maxPsmData = PEP_Analysis.CreateOnePsmDataEntry("standard", fsp, maxScorePsm, sequenceToPsmCount, fileSpecificRetTimeHI_behavior, fileSpecificRetTemHI_behaviorModifiedPeptides, massError, chargeStateMode, pwsm, trainingVariables, notch, !pwsm.Protein.IsDecoy);
             Assert.That(maxScorePsm.PeptidesToMatchingFragments.Count - 1, Is.EqualTo(maxPsmData.Ambiguity));
             double normalizationFactor = (double)pwsm.BaseSequence.Length;
@@ -293,7 +337,7 @@ namespace Test
 
             List<PeptideSpectralMatch> psmCopyForCZETest = nonNullPsms.ToList();
 
-            PEP_Analysis.ComputePEPValuesForAllPSMsGeneric(nonNullPsms, "standard", fsp);
+            PEP_Analysis.ComputePEPValuesForAllPSMsGeneric(nonNullPsms, "standard", fsp, Path.Combine(TestContext.CurrentContext.TestDirectory, @"TestData\"));
 
             int trueCount = 0;
 
@@ -315,7 +359,8 @@ namespace Test
                     moreNonNullPSMs.Add(psm);
                 }
             }
-            string metrics = PEP_Analysis.ComputePEPValuesForAllPSMsGeneric(moreNonNullPSMs, "standard", fsp);
+          
+            string metrics = PEP_Analysis.ComputePEPValuesForAllPSMsGeneric(moreNonNullPSMs, "standard", fsp, Path.Combine(TestContext.CurrentContext.TestDirectory, @"TestData\"));
             Assert.GreaterOrEqual(32, trueCount);
 
             //Test Variant Peptide as Input is identified as such as part of PEP calculation input much of the next several lines simply necessry to create a psm.
@@ -359,7 +404,7 @@ namespace Test
 
             fsp.Add((origDataFile, cp));
 
-            PEP_Analysis.ComputePEPValuesForAllPSMsGeneric(psmCopyForCZETest, "standard", fsp);
+            PEP_Analysis.ComputePEPValuesForAllPSMsGeneric(psmCopyForCZETest, "standard", fsp, Path.Combine(TestContext.CurrentContext.TestDirectory, @"TestData\"));
             trueCount = 0;
 
             foreach (var item in psmCopyForCZETest.Where(p => p != null))
@@ -380,8 +425,7 @@ namespace Test
                     moreNonNullPSMsCZE.Add(psm);
                 }
             }
-
-            metrics = PEP_Analysis.ComputePEPValuesForAllPSMsGeneric(moreNonNullPSMsCZE, "standard", fsp);
+            metrics = PEP_Analysis.ComputePEPValuesForAllPSMsGeneric(moreNonNullPSMsCZE, "standard", fsp, Path.Combine(TestContext.CurrentContext.TestDirectory, @"TestData\"));
             Assert.GreaterOrEqual(32, trueCount);
         }
 
@@ -427,7 +471,7 @@ namespace Test
                 }
             }
 
-            FdrAnalysisResults fdrResultsClassicDelta = (FdrAnalysisResults)(new FdrAnalysisEngine(moreNonNullPSMs.Where(p => p != null).ToList(), 1, CommonParameters, fsp, new List<string>()).Run());
+            FdrAnalysisResults fdrResultsClassicDelta = (FdrAnalysisResults)(new FdrAnalysisEngine(moreNonNullPSMs.Where(p => p != null).ToList(), 1, CommonParameters, fsp, new List<string>(), analysisType: "PSM", outputFolder: Path.Combine(TestContext.CurrentContext.TestDirectory, @"TestData\")).Run());
 
             var maxScore = nonNullPsms.Select(n => n.Score).Max();
             PeptideSpectralMatch maxScorePsm = nonNullPsms.Where(n => n.Score == maxScore).First();
@@ -436,7 +480,7 @@ namespace Test
             foreach (PeptideSpectralMatch psm in nonNullPsms)
             {
                 var ss = psm.BestMatchingPeptides.Select(b => b.Peptide.FullSequence).ToList();
-                sequences.Add(String.Join("|", ss));
+                sequences.Add(String.Join(" | ", ss));
             }
             var s = sequences.GroupBy(i => i);
 
@@ -459,10 +503,10 @@ namespace Test
             };
             var maxPsmData = PEP_Analysis.CreateOnePsmDataEntry("top-down", fsp, maxScorePsm, sequenceToPsmCount, fileSpecificRetTimeHI_behavior, fileSpecificRetTemHI_behaviorModifiedPeptides, massError, chargeStateMode, pwsm, trainingVariables, notch, !pwsm.Protein.IsDecoy);
             Assert.That(maxScorePsm.PeptidesToMatchingFragments.Count - 1, Is.EqualTo(maxPsmData.Ambiguity));
-            double normalizationFactor = (double)pwsm.BaseSequence.Length;
+            double normalizationFactor = (double)pwsm.BaseSequence.Length / 10.0;
             float maxPsmDeltaScore = (float)Math.Round(maxScorePsm.DeltaScore / normalizationFactor * 10.0, 0);
             Assert.That(maxPsmDeltaScore, Is.EqualTo(maxPsmData.DeltaScore).Within(0.05));
-            float maxPsmIntensity = Math.Min(50, (float)Math.Round((maxScorePsm.Score - (int)maxScorePsm.Score) / normalizationFactor * 100.0, 0));
+            float maxPsmIntensity = (float)Math.Min(50, Math.Round((maxScorePsm.Score - (int)maxScorePsm.Score) / normalizationFactor * 100.0, 0));
             Assert.That(maxPsmIntensity, Is.EqualTo(maxPsmData.Intensity).Within(0.05));
             Assert.AreEqual(maxPsmData.HydrophobicityZScore, float.NaN);
             Assert.That(maxScorePsm.BestMatchingPeptides.Select(p => p.Peptide).First().MissedCleavages, Is.EqualTo(maxPsmData.MissedCleavagesCount));
@@ -500,11 +544,15 @@ namespace Test
             Assert.AreEqual(2, indiciesOfPeptidesToRemove.FirstOrDefault());
             Assert.AreEqual(2, pepValuePredictions.Count);
 
-            PEP_Analysis.GetBestMatchingPeptidesToRemove(psm, indiciesOfPeptidesToRemove, bestMatchingPeptidesToRemove);
-            Assert.AreEqual(2, bestMatchingPeptidesToRemove.FirstOrDefault().notch);
-            Assert.AreEqual(pwsm, bestMatchingPeptidesToRemove.FirstOrDefault().pwsm);
+            List<int> notches = new List<int>();
+            List<PeptideWithSetModifications> peptides = new List<PeptideWithSetModifications>();
+            foreach (var bmp in psm.BestMatchingPeptides)
+            {
+                notches.Add(bmp.Notch);
+                peptides.Add(bmp.Peptide);
+            }
 
-            PEP_Analysis.RemoveThePeptides(bestMatchingPeptidesToRemove, psm, pepValuePredictions, ref ambiguousPeptidesRemovedCount);
+            PEP_Analysis.RemoveBestMatchingPeptidesWithLowPEP(psm, indiciesOfPeptidesToRemove, notches, peptides, pepValuePredictions, ref ambiguousPeptidesRemovedCount);
             Assert.AreEqual(1, ambiguousPeptidesRemovedCount);
             Assert.AreEqual(2, psm.BestMatchingPeptides.Select(b => b.Notch).ToList().Count);
         }
@@ -582,7 +630,7 @@ namespace Test
             psmBloated.AddRange(nonNullPsms.GetRange(2, arrayMax - 2));
             psmBloated.AddRange(nonNullPsms.GetRange(2, arrayMax - 2));
 
-            FdrAnalysisResults fdrResultsClassicDelta = (FdrAnalysisResults)(new FdrAnalysisEngine(psmBloated.Where(p => p != null).ToList(), 1, CommonParameters, fsp, new List<string>()).Run());
+            FdrAnalysisResults fdrResultsClassicDelta = (FdrAnalysisResults)(new FdrAnalysisEngine(psmBloated.Where(p => p != null).ToList(), 1, CommonParameters, fsp, new List<string>(), outputFolder: Path.Combine(TestContext.CurrentContext.TestDirectory, @"TestData\")).Run());
         }
 
         [Test]
@@ -639,7 +687,7 @@ namespace Test
 
             psmBloated.Add(newPsmTwo);
 
-            FdrAnalysisResults fdrResultsClassicDelta = (FdrAnalysisResults)(new FdrAnalysisEngine(psmBloated.Where(p => p != null).ToList(), 1, CommonParameters, fsp, new List<string>()).Run());
+            FdrAnalysisResults fdrResultsClassicDelta = (FdrAnalysisResults)(new FdrAnalysisEngine(psmBloated.Where(p => p != null).ToList(), 1, CommonParameters, fsp, new List<string>(), outputFolder: Path.Combine(TestContext.CurrentContext.TestDirectory, @"TestData\")).Run());
         }
 
         [Test]
