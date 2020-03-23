@@ -251,18 +251,6 @@
       <Component Id="src_Microsoft.ML.Transforms.dll" Guid="9FF08BC2-8F99-4004-A4F0-3BB63014BB21">
         <File Id="src_Microsoft.ML.Transforms.dll" Name="Microsoft.ML.Transforms.dll" Source="$(var.GUI_TargetDir)Microsoft.ML.Transforms.dll" />
       </Component>
-      <Component Id="src_System.CodeDom.dll" Guid="1C46B1DB-C230-4755-9B6A-0E03E00EB045">
-        <File Id="src_System.CodeDom.dll" Name="System.CodeDom.dll" Source="$(var.GUI_TargetDir)System.CodeDom.dll" />
-      </Component>
-      <Component Id="src_System.Collections.Immutable.dll" Guid="3322225B-6304-4A25-9E59-F6A2369DFFAD">
-        <File Id="src_System.Collections.Immutable.dll" Name="System.Collections.Immutable.dll" Source="$(var.GUI_TargetDir)System.Collections.Immutable.dll" />
-      </Component>
-      <Component Id="src_System.Runtime.CompilerServices.Unsafe.dll" Guid="B129F922-A5FB-4CA2-9D33-C0E24A1EB9FF">
-        <File Id="src_System.Runtime.CompilerServices.Unsafe.dll" Name="System.Runtime.CompilerServices.Unsafe.dll" Source="$(var.GUI_TargetDir)System.Runtime.CompilerServices.Unsafe.dll" />
-      </Component>
-      <Component Id="src_System.Threading.Tasks.Dataflow.dll" Guid="A34C55EB-6E9B-4BF0-9226-630FBD5732EB">
-        <File Id="src_System.Threading.Tasks.Dataflow.dll" Name="System.Threading.Tasks.Dataflow.dll" Source="$(var.GUI_TargetDir)System.Threading.Tasks.Dataflow.dll" />
-      </Component>
       <Component Id="src_MarkdownSharp.dll" Guid="5F6FD76A-5674-4E64-9727-1C97AD493FD5">
         <File Id="src_MarkdownSharp.dll" Name="MarkdownSharp.dll" Source="$(var.GUI_TargetDir)MarkdownSharp.dll" />
       </Component>
