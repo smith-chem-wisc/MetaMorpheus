@@ -41,16 +41,16 @@ namespace TaskLayer
             {
                 var allPsmsSingle = allPsms.Where(p => p.OGlycanBoxLocalization == null && p.Score > 2).OrderByDescending(p => p.Score).ToList();
                 SingleFDRAnalysis(allPsmsSingle, commonParameters, new List<string> { taskId });
-                var writtenFileInter1 = Path.Combine(OutputFolder, "single_fdr" + ".tsv");
+                var writtenFileInter1 = Path.Combine(OutputFolder, "single_psm" + ".tsv");
                 WriteFile.WritePsmGlycoToTsv(allPsmsSingle, writtenFileInter1, 1);
 
                 var allPsmsGly = allPsms.Where(p => p.OGlycanBoxLocalization != null && p.Score > 2).OrderByDescending(p => p.Score).ToList();
                 SingleFDRAnalysis(allPsmsGly, commonParameters, new List<string> { taskId });
 
-                var writtenFileInter2 = Path.Combine(OutputFolder, "glyco_fdr" + ".tsv");
+                var writtenFileInter2 = Path.Combine(OutputFolder, "glyco_psm" + ".tsv");
                 WriteFile.WritePsmGlycoToTsv(allPsmsGly, writtenFileInter2, 2);
 
-                var ProteinLevelLocalization = ProteinLevelGlycoParsimony(allPsmsGly);
+                var ProteinLevelLocalization = GlycoProteinParsimony.ProteinLevelGlycoParsimony(allPsmsGly);
                 WriteFile.WriteSeenProteinGlycoLocalization(ProteinLevelLocalization, Path.Combine(OutputFolder, "seen_glyco_localization" + ".tsv"));
                 WriteFile.WriteProteinGlycoLocalization(ProteinLevelLocalization, Path.Combine(OutputFolder, "protein_glyco_localization" + ".tsv"));
                 return MyTaskResults;
@@ -64,52 +64,6 @@ namespace TaskLayer
             List<PeptideSpectralMatch> psms = items.Select(p => p as PeptideSpectralMatch).ToList();
             new FdrAnalysisEngine(psms, 0, commonParameters, this.FileSpecificParameters, taskIds).Run();
 
-        }
-
-        private static Dictionary<string, Tuple<bool, double, double>> ProteinLevelGlycoParsimony(List<GlycoSpectralMatch> allPsmsGly)
-        {
-            //<id, <islocalized, minQValue, maxProb>>. id: ProteinAccession, ProtienPos, GlycanId. islocalized, minQValue, maxProb
-            Dictionary<string, Tuple<bool, double, double>> localizedGlycan = new Dictionary<string, Tuple<bool, double, double>>();
-
-            foreach (var gsm in allPsmsGly)
-            {
-                if (gsm.IsContaminant || gsm.IsDecoy)
-                {
-                    continue;
-                }
-
-                if (gsm.LocalizedGlycan.Count > 0)
-                {
-                    foreach (var local in gsm.LocalizedGlycan)
-                    {
-                        int proteinPos = local.Item1 + gsm.OneBasedStartResidueInProtein.Value;
-
-                        string proPosId = gsm.ProteinAccession + "-" + proteinPos.ToString() + "-" + local.Item2;
-
-                        double prob = -1;
-                        if (gsm.SiteSpeciLocalProb!=null && gsm.SiteSpeciLocalProb.ContainsKey(local.Item1))
-                        {
-                            prob = gsm.SiteSpeciLocalProb[local.Item1].Where(p => p.Item1 == local.Item2).FirstOrDefault().Item2;
-                        }
-
-
-                        if (!localizedGlycan.ContainsKey(proPosId))
-                        {
-                            localizedGlycan.Add(proPosId, new Tuple<bool, double, double>(local.Item3, gsm.FdrInfo.QValue, prob));            
-                        }
-                        else
-                        {
-                            bool islocalized = (local.Item3 || localizedGlycan[proPosId].Item1);
-                            double minQValue = localizedGlycan[proPosId].Item2 > gsm.FdrInfo.QValue ? gsm.FdrInfo.QValue : localizedGlycan[proPosId].Item2;
-                            double maxProb = localizedGlycan[proPosId].Item3 > prob ? localizedGlycan[proPosId].Item3 : prob;
-
-                            localizedGlycan[proPosId] = new Tuple<bool, double, double>(islocalized, minQValue, maxProb);                       
-                        }
-                    }
-                }    
-            }
-
-            return localizedGlycan;
         }
 
     }

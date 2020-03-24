@@ -173,12 +173,12 @@ namespace TaskLayer
 
                     if (glycoSpectralMatch.OGlycanBoxLocalization != null)
                     {
-                        string localLevel;
+                        LocalizationLevel localLevel;
                         glycoSpectralMatch.LocalizedGlycan = GlycoSpectralMatch.GetLocalizedGlycan(glycoSpectralMatch.OGlycanBoxLocalization, out localLevel);
                         glycoSpectralMatch.LocalizationLevel = localLevel;
 
                         //Localization PValue.
-                        if (localLevel == "Level1" || localLevel == "Level2")
+                        if (localLevel == LocalizationLevel.Level1 || localLevel == LocalizationLevel.Level2)
                         {
                             List<Route> allRoutes = new List<Route>();
                             foreach (var graph in glycoSpectralMatch.LocalizationGraphs)

@@ -448,37 +448,38 @@ namespace TaskLayer
         }
 
         //The function is to summarize localized glycan by protein site.
-        public static void WriteSeenProteinGlycoLocalization(Dictionary<string, Tuple<bool, double, double>> items, string outputPath)
+        public static void WriteSeenProteinGlycoLocalization(Dictionary<string, GlycoProteinParsimony> glycoProteinParsimony, string outputPath)
         {
-            if (items.Count == 0)
+            if (glycoProteinParsimony.Count == 0)
             { return; }
             var writtenFile = Path.Combine(outputPath);
             using (StreamWriter output = new StreamWriter(writtenFile))
             {
-                output.WriteLine("Protein Accessio\tModification Site\tLocalized Glycans\tLocalized\tLowest Qvalue\tMax Site Specific Probability");
-                foreach (var item in items.OrderBy(p=>p.Key))
+                output.WriteLine("Protein Accessio\tModification Site\tLocalized Glycans\tLocalized\tLowest Qvalue\tBest Localization Level\tMax Site Specific Probability");
+                foreach (var item in glycoProteinParsimony.OrderBy(p=>p.Key))
                 {
                     var x = item.Key.Split('-');
                     output.WriteLine(
                         x[0] + "\t" +
                         x[1] + "\t" +
                         GlycanBox.GlobalOGlycans[int.Parse(x[2])].Composition + "\t" +
-                        item.Value.Item1 + "\t" +
-                        item.Value.Item2.ToString("0.000") + "\t" +
-                        item.Value.Item3.ToString("0.000")
+                        item.Value.IsLocalized + "\t" +
+                        item.Value.MinQValue.ToString("0.000") + "\t" +
+                        item.Value.BestLocalizeLevel + "\t" +
+                        item.Value.MaxProbability.ToString("0.000")
                         );
                 }
             }
         }
 
         //The function is to summarize localized glycosylation of each protein site. 
-        public static void WriteProteinGlycoLocalization(Dictionary<string, Tuple<bool, double, double>> items, string outputPath)
+        public static void WriteProteinGlycoLocalization(Dictionary<string, GlycoProteinParsimony> glycoProteinParsimony, string outputPath)
         {
-            if (items.Count == 0)
+            if (glycoProteinParsimony.Count == 0)
             { return; }
 
             Dictionary<string, HashSet<string>> localizedglycans = new Dictionary<string, HashSet<string>>();
-            foreach (var item in items.Where(p=>p.Value.Item1 && p.Value.Item2 <= 0.01))
+            foreach (var item in glycoProteinParsimony.Where(p=>p.Value.IsLocalized && p.Value.MinQValue <= 0.01))
             {
                 var x = item.Key.Split('-');
                 var key = x[0] + "-" + x[1];

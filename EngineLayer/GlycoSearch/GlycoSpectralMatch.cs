@@ -8,6 +8,14 @@ using Proteomics;
 
 namespace EngineLayer.GlycoSearch
 {
+    public enum LocalizationLevel
+    {
+        Level1,
+        Level1b,
+        Level2,
+        Level3
+    }
+
     public class GlycoSpectralMatch : PeptideSpectralMatch
     {
         public GlycoSpectralMatch(PeptideWithSetModifications theBestPeptide, int notch, double score, int scanIndex, Ms2ScanWithSpecificMass scan, CommonParameters commonParameters, List<MatchedFragmentIon> matchedFragmentIons)
@@ -37,7 +45,7 @@ namespace EngineLayer.GlycoSearch
 
         public double R138vs144 { get; set; }
         public List<Tuple<int, int, bool>> LocalizedGlycan { get; set; } //<mod site, glycanID, isLocalized> All seen glycans identified.
-        public string LocalizationLevel { get; set; }
+        public LocalizationLevel LocalizationLevel { get; set; }
 
         //Motif should be writen with required form
         public static List<int> GetPossibleModSites(PeptideWithSetModifications peptide, string[] motifs)
@@ -292,7 +300,7 @@ namespace EngineLayer.GlycoSearch
         }
 
         //Output: <int, int, string> <ModBoxId, ModPosition, is localized>; Input: List<Tuple<int, Tuple<int, int, double>[]>> <ModBoxId, <modPostion, ModId, weight>>
-        public static List<Tuple<int, int, bool>> GetLocalizedGlycan(List<Route> OGlycanBoxLocalization, out string localizationLevel)
+        public static List<Tuple<int, int, bool>> GetLocalizedGlycan(List<Route> OGlycanBoxLocalization, out LocalizationLevel localizationLevel)
         {
             List<Tuple<int, int, bool>> localizedGlycan = new List<Tuple<int, int, bool>>();
 
@@ -317,20 +325,20 @@ namespace EngineLayer.GlycoSearch
                 }
             }
 
-            localizationLevel = "Level4";
+            localizationLevel = LocalizationLevel.Level3;
             if (OGlycanBoxLocalization.Count == 1)
             {
-                localizationLevel = "Level1";
+                localizationLevel = LocalizationLevel.Level1;
             }
             else if (OGlycanBoxLocalization.Count > 1)
             {
                 if (seenModSite.Values.Where(p => p == OGlycanBoxLocalization.Count).Count() > 0)
                 {
-                    localizationLevel = "Level2";
+                    localizationLevel = LocalizationLevel.Level2;
                 }
                 else
                 {
-                    localizationLevel = "Level3";
+                    localizationLevel = LocalizationLevel.Level3;
                 }
             }
 
