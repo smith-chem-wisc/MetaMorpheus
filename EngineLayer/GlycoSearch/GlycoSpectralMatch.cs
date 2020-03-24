@@ -160,10 +160,10 @@ namespace EngineLayer.GlycoSearch
             sb.Append("R138/144" + '\t');
             sb.Append("Plausible GlycanStructure" + '\t');
             sb.Append("GlycanLocalizationLevel" + '\t');
-            sb.Append("Localized Glycans" + '\t');
-            sb.Append("Site Specific Localization Probability" + '\t');
-            sb.Append("GlycanLocalization" + '\t');
-            sb.Append("SiteSpecificLocalizationProbability" + '\t');
+            sb.Append("Localized Glycans with Peptide Site Specific Probability" + '\t');
+            sb.Append("Localized Glycans with Protein Site Specific Probability" + '\t');
+            sb.Append("All potential glycan localizations" + '\t');
+            sb.Append("AllSiteSpecificLocalizationProbability" + '\t');
 
             return sb.ToString();
         }
@@ -226,13 +226,15 @@ namespace EngineLayer.GlycoSearch
                 }
             }
 
-            sb.Append((IsDecoy) ? "D" : (IsContaminant) ? "C" : "T");
-            sb.Append("\t");
+            sb.Append((IsDecoy) ? "D" : (IsContaminant) ? "C" : "T"); sb.Append("\t");
 
 
-            sb.Append(FdrInfo!=null? FdrInfo.QValue.ToString() : "-1" + "\t");
+            sb.Append(FdrInfo!=null? FdrInfo.QValue.ToString() : "-1" );  sb.Append("\t");
+
             sb.Append("0" + "\t");
+
             sb.Append("0" + "\t");
+
             if (NGlycan != null)
             {
                 sb.Append(Score + "\t");             
@@ -279,10 +281,13 @@ namespace EngineLayer.GlycoSearch
 
                 sb.Append(LocalizationLevel); sb.Append("\t");
 
-                string localizedGlycan = LocalizedGlycan.Where(p=>p.Item3).Count() > 0 ? "[" + string.Join(",", LocalizedGlycan.Where(p => p.Item3).Select(p => p.Item1.ToString() + "-" + p.Item2.ToString())) + "]" : "";
-                sb.Append(localizedGlycan); sb.Append("\t");
-                          
-                sb.Append(LocalizedSiteSpeciLocalInfo(SiteSpeciLocalProb, LocalizedGlycan)); sb.Append("\t");
+                //string localizedGlycan = LocalizedGlycan.Where(p=>p.Item3).Count() > 0 ? "[" + string.Join(",", LocalizedGlycan.Where(p => p.Item3).Select(p => p.Item1.ToString() + "-" + p.Item2.ToString())) + "]" : "";
+                //sb.Append(localizedGlycan); sb.Append("\t");
+                string local_peptide = "";
+                string local_protein = "";
+                LocalizedSiteSpeciLocalInfo(SiteSpeciLocalProb, LocalizedGlycan, OneBasedStartResidueInProtein.Value, ref local_peptide, ref local_protein);
+                sb.Append(local_peptide); sb.Append("\t");
+                sb.Append(local_protein); sb.Append("\t");
 
                 sb.Append(AllLocalizationInfo(OGlycanBoxLocalization)); sb.Append("\t");
 
@@ -389,24 +394,23 @@ namespace EngineLayer.GlycoSearch
 
             return local;
         }
-        public static string LocalizedSiteSpeciLocalInfo(Dictionary<int, List<Tuple<int, double>>> siteSpeciLocalProb, List<Tuple<int, int, bool>> localizedGlycan)
+        public static void LocalizedSiteSpeciLocalInfo(Dictionary<int, List<Tuple<int, double>>> siteSpeciLocalProb, List<Tuple<int, int, bool>> localizedGlycan, int? OneBasedStartResidueInProtein, ref string local, ref string local_protein)
         {
-            string local = "";
-
             if (siteSpeciLocalProb == null)
             {
-                return local;
+                return;
             }
 
             foreach (var loc in localizedGlycan.Where(p => p.Item3))
             {
                 var x = siteSpeciLocalProb[loc.Item1].Where(p => p.Item1 == loc.Item2).First().Item2;
        
-                local += "[" + loc.Item1 + "," + GlycanBox.GlobalOGlycans[loc.Item2].Composition + "," + x.ToString("0.000") + "]";    
+                local += "[" + loc.Item1 + "," + GlycanBox.GlobalOGlycans[loc.Item2].Composition + "," + x.ToString("0.000") + "]";
 
+                var protein_site = OneBasedStartResidueInProtein.HasValue ? OneBasedStartResidueInProtein.Value + loc.Item1 : -1;
+                local_protein += "[" + protein_site + "," + GlycanBox.GlobalOGlycans[loc.Item2].Composition + "," + x.ToString("0.000") + "]";
             }
 
-            return local;
         }
         public static string SiteSpeciLocalInfo(Dictionary<int, List<Tuple<int, double>>> siteSpeciLocalProb)
         {
