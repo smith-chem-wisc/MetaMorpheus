@@ -157,6 +157,7 @@ namespace EngineLayer.GlycoSearch
             sb.Append("Total Glycosylation sites" + '\t');
             sb.Append("GlycanMass" + '\t');
             sb.Append("Plausible GlycanComposition" + '\t');
+            sb.Append("N-Glycan motif Check" + '\t');
             sb.Append("R138/144" + '\t');
             sb.Append("Plausible GlycanStructure" + '\t');
             sb.Append("GlycanLocalizationLevel" + '\t');
@@ -263,6 +264,10 @@ namespace EngineLayer.GlycoSearch
                 sb.Append(glycanBox.Mass + "\t");
 
                 sb.Append(Glycan.GetKindString(glycanBox.Kind)); sb.Append("\t");
+
+                var nsite = GetPossibleModSites(BestMatchingPeptides.First().Peptide, new string[] { "Nxt", "Nxs" });
+
+                sb.Append(nsite.Count > 0); sb.Append("\t");
 
                 sb.Append(R138vs144.ToString()); sb.Append("\t");
 
