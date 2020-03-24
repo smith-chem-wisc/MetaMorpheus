@@ -26,7 +26,7 @@
       <ComponentGroupRef Id="ExecutablesAndLibrariesComponentGroup" />
       <!--ComponentRef creates a reference to a Component element in another Fragment-->
       <ComponentRef Id="MetaMorpheusProgramMenuFolderComponent"/>
-      
+
       <!--App Data Section-->
       <ComponentGroupRef Id="Appsrc_Mods_files"/>
       <ComponentGroupRef Id="Appsrc_Data_files"/>
@@ -48,7 +48,7 @@
           <Shortcut Id="AppDeskTopSC" Name="MetaMorpheus" Description="Shortcut to App" Target="[#MetaMorpheusGUI.exe]" WorkingDirectory="MetaMorpheusInstallFolder" />
         </Component>
       </Directory>
-      
+
       <Directory Id="ProgramFiles64Folder">
         <Directory Id="MetaMorpheusInstallFolder" Name="MetaMorpheus">
           <Directory Id="DataFolder" Name="Data" />
@@ -110,8 +110,8 @@
       <Component Id="MetaMorpheusGUI.exe" Guid="63370d96-1880-40ab-8525-685ccf64326f">
         <File Id="MetaMorpheusGUI.exe" Name="MetaMorpheusGUI.exe" Source="$(var.GUI_TargetDir)MetaMorpheusGUI.exe" />
       </Component>
-      <Component Id="app.manifest" Guid="d894958a-07c1-4078-9e0e-081a6cc29030">	
-        <File Id="app.manifest" Name="app.manifest" Source="$(var.GUI_TargetDir)app.manifest" />	
+      <Component Id="app.manifest" Guid="d894958a-07c1-4078-9e0e-081a6cc29030">
+        <File Id="app.manifest" Name="app.manifest" Source="$(var.GUI_TargetDir)app.manifest" />
       </Component>
       <Component Id="src_TaskLayer.pdb" Guid="6ece566a-22ff-4208-bba2-ad0430eeee49">
         <File Id="src_TaskLayer.pdb" Name="TaskLayer.pdb" Source="$(var.GUI_TargetDir)TaskLayer.pdb" />
@@ -250,6 +250,15 @@
       </Component>
       <Component Id="src_Microsoft.ML.Transforms.dll" Guid="9FF08BC2-8F99-4004-A4F0-3BB63014BB21">
         <File Id="src_Microsoft.ML.Transforms.dll" Name="Microsoft.ML.Transforms.dll" Source="$(var.GUI_TargetDir)Microsoft.ML.Transforms.dll" />
+      </Component>
+      <Component Id="src_CpuMathNative.dll" Guid="436C233C-5BCD-4386-90C7-F2AC489B09CF">
+        <File Id="src_CpuMathNative.dll" Name="CpuMathNative.dll" Source="$(var.GUI_TargetDir)runtimes\win-x64\native\CpuMathNative.dll" />
+      </Component>
+      <Component Id="src_FastTreeNative.dll" Guid="EF4AB27C-25D6-4B30-B259-9671EC40042A">
+        <File Id="src_FastTreeNative.dll" Name="FastTreeNative.dll" Source="$(var.GUI_TargetDir)runtimes\win-x64\native\FastTreeNative.dll" />
+      </Component>
+      <Component Id="src_LdaNative.dll" Guid="2FDBD232-12A0-43D6-A54D-06FFC627CE23">
+        <File Id="src_LdaNative.dll" Name="LdaNative.dll" Source="$(var.GUI_TargetDir)runtimes\win-x64\native\LdaNative.dll" />
       </Component>
       <Component Id="src_MarkdownSharp.dll" Guid="5F6FD76A-5674-4E64-9727-1C97AD493FD5">
         <File Id="src_MarkdownSharp.dll" Name="MarkdownSharp.dll" Source="$(var.GUI_TargetDir)MarkdownSharp.dll" />
