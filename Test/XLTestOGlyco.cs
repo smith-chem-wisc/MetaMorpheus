@@ -222,7 +222,6 @@ namespace Test
             //Get unmodified peptide, products, allPossible modPos and all boxes.
             Protein protein = new Protein("TTGSLEPSSGASGPQVSSVK", "P16150");
             var peptide = protein.Digest(new DigestionParams(), new List<Modification>(), new List<Modification>()).First();
-            //var peptide = new PeptideWithSetModifications("TTGSLEPSSGASGPQVSSVK", GlobalVariables.AllModsKnownDictionary);
             List<Product> products = new List<Product>();
             peptide.Fragment(DissociationType.ETD, FragmentationTerminus.Both, products);
 
@@ -230,7 +229,11 @@ namespace Test
             var boxes = GlycanBox.BuildChildOGlycanBoxes(3, glycanBox.ModIds).ToArray();
             Assert.That(boxes.Count() == 6);
 
-            //Get hashset int
+            //Get Unlocal Fragment
+            var unlocalCost = GlycoPeptides.GetUnlocalFragment(products, modPos, glycanBox);
+            Assert.That(unlocalCost.Count == 4); //Basicly, the unlocal are c/z ions that don't localize glycosylation. 
+
+            //Get scan
             CommonParameters commonParameters = new CommonParameters(dissociationType: DissociationType.EThcD, trimMsMsPeaks:false);
             string spectraFile = Path.Combine(TestContext.CurrentContext.TestDirectory, @"GlycoTestData\2019_09_16_StcEmix_35trig_EThcD25_rep1_4565.mgf");
             var file = new MyFileManager(true).LoadFile(spectraFile, commonParameters);
@@ -239,35 +242,32 @@ namespace Test
             //Known peptideWithMod match.
             var peptideWithMod = GlycoPeptides.OGlyGetTheoreticalPeptide(new int[3] { 10, 2, 3}, peptide, glycanBox);
             Assert.That(peptideWithMod.FullSequence == "T[O-Glycosylation:H1N1 on X]T[O-Glycosylation:H1N1 on X]GSLEPSS[O-Glycosylation:N1 on X]GASGPQVSSVK");
-            //List<Product> knownProducts = peptideWithMod.Fragment(DissociationType.EThcD, FragmentationTerminus.Both).ToList();
             List<Product> knownProducts = GlycoPeptides.OGlyGetTheoreticalFragments(DissociationType.EThcD, peptide, peptideWithMod);
             var matchedKnownFragmentIons = MetaMorpheusEngine.MatchFragmentIons(scans.First(), knownProducts, commonParameters);
 
             //Graph Localization
             LocalizationGraph localizationGraph = new LocalizationGraph(modPos, glycanBox, boxes, -1);
-
             LocalizationGraph.LocalizeOGlycan(localizationGraph, scans.First(), commonParameters.ProductMassTolerance, products);
-
             var allPaths = LocalizationGraph.GetAllHighestScorePaths(localizationGraph.array, localizationGraph.ChildModBoxes);
-
             var knowPath = new int[8] {2, 4, 4, 4, 5, 5, 5, 5 };
             Assert.That(Enumerable.SequenceEqual(knowPath, allPaths[0]));
 
+            //Get localized Route
             var local = LocalizationGraph.GetLocalizedPath(localizationGraph.array, modPos, localizationGraph.ChildModBoxes, allPaths.First());
-
             Assert.That(Enumerable.SequenceEqual(local.Mods.Select(p=>p.Item1), new List<int>{ 2, 3, 10}));
             Assert.That(Enumerable.SequenceEqual(local.Mods.Select(p => p.Item2), new List<int> { 1, 1, 0 }));
 
-            var p = scans.First().TheScan.MassSpectrum.Size * commonParameters.ProductMassTolerance.GetRange(1000).Width / scans.First().TheScan.MassSpectrum.Range.Width;
 
-            var n = knownProducts.Where(p=>p.ProductType == ProductType.c || p.ProductType == ProductType.zDot).Count();
             //Get all paths, calculate PScore and calculate position probability. 
+            var p = scans.First().TheScan.MassSpectrum.Size * commonParameters.ProductMassTolerance.GetRange(1000).Width / scans.First().TheScan.MassSpectrum.Range.Width;
+            var n = knownProducts.Where(p=>p.ProductType == ProductType.c || p.ProductType == ProductType.zDot).Count();
             var allPathWithWeights = LocalizationGraph.GetAllPaths_CalP(localizationGraph, p, n);
-
             Assert.That(allPathWithWeights.Count == 168);
 
+            //Calculate Site Specific Localization Probability
             var y = LocalizationGraph.CalSiteSpecificLocalizationProbability(allPathWithWeights, localizationGraph.ModPos);
             Assert.That(y.Count == 8);
+            Assert.That(y.First().Value[1].Item2 > 0.99);
 
         }
 

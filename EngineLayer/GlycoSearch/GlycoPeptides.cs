@@ -379,15 +379,10 @@ namespace EngineLayer.GlycoSearch
             return newFragments;
         }
 
-        //Find FragmentMass for the fragments that doesn't contain localization Information.
+        //Find FragmentMass for the fragments that doesn't contain localization Information. For example, "A|TAABBS|B", c1 and c7, z1 and z7, z8 ion don't contain localization information.
         public static List<double> GetUnlocalFragment(List<Product> products, int[] modPoses, ModBox OGlycanBox)
         {
             var mass = OGlycanBox.Mass;
-            //The following is for localization FDR. 
-            //if (!OGlycanBox.TargetDecoy)
-            //{
-            //    mass = OGlycanBox.DecoyMass;
-            //}
 
             List<double> newFragments = new List<double>();
             var c_fragments = products.Where(p => p.ProductType == ProductType.c && p.AminoAcidPosition < modPoses.First() - 1).Select(p => p.NeutralMass);
