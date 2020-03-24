@@ -38,7 +38,7 @@ namespace EngineLayer.GlycoSearch
 
         public int Thero_n { get; set; }
 
-        public Dictionary<int, List<Tuple<int, double>>> SiteSpeciLocalProb { get; set; }
+        public Dictionary<int, List<Tuple<int, double>>> SiteSpeciLocalProb { get; set; } // Data <modPos, List<glycanId, site probability>>
         public double PeptideScore { get; set; }
         public double GlycanScore { get; set; } //Important for N-glycan for signature ions.
         public double DiagnosticIonScore { get; set; } //Since every glycopeptide generate DiagnosticIon, it is important to seperate the score. 
@@ -279,7 +279,7 @@ namespace EngineLayer.GlycoSearch
                 }
                 sb.Append("\t");
 
-                sb.Append(LocalizationLevel); sb.Append("\t");
+                sb.Append(CorrectLocalizationLevel(SiteSpeciLocalProb, LocalizedGlycan, LocalizationLevel)); sb.Append("\t");
 
                 //string localizedGlycan = LocalizedGlycan.Where(p=>p.Item3).Count() > 0 ? "[" + string.Join(",", LocalizedGlycan.Where(p => p.Item3).Select(p => p.Item1.ToString() + "-" + p.Item2.ToString())) + "]" : "";
                 //sb.Append(localizedGlycan); sb.Append("\t");
@@ -393,6 +393,26 @@ namespace EngineLayer.GlycoSearch
             }
 
             return local;
+        }
+
+        //Correct Localization Level based on site specific probability. If LocalizationLevel = 1, and there are site probability lower than 0.75, Correct the level to 1b.
+        public static LocalizationLevel CorrectLocalizationLevel(Dictionary<int, List<Tuple<int, double>>> siteSpeciLocalProb, List<Tuple<int, int, bool>> localizedGlycan, LocalizationLevel localizationLevel)
+        {
+            if (siteSpeciLocalProb == null || localizationLevel!=LocalizationLevel.Level1)
+            {
+                return localizationLevel;
+            }
+
+            foreach (var g in localizedGlycan)
+            {
+                if (siteSpeciLocalProb[g.Item1].Where(p=>p.Item1 == g.Item2).First().Item2 < 0.75)
+                {
+                    return LocalizationLevel.Level1b;
+                }
+            }
+
+            return localizationLevel;
+
         }
         public static void LocalizedSiteSpeciLocalInfo(Dictionary<int, List<Tuple<int, double>>> siteSpeciLocalProb, List<Tuple<int, int, bool>> localizedGlycan, int? OneBasedStartResidueInProtein, ref string local, ref string local_protein)
         {

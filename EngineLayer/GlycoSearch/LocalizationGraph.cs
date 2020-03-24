@@ -328,6 +328,7 @@ namespace EngineLayer.GlycoSearch
             }
         }
 
+        //Dictionary<int, List<Tuple<int, double>>> is <modPos, List<glycanId, site probability>>
         public static Dictionary<int, List<Tuple<int, double>>> CalSiteSpecificLocalizationProbability(List<Route> routes, int[] modPos)
         {
             Dictionary<int, List<Tuple<int, double>>> probabilityMatrix = new Dictionary<int, List<Tuple<int, double>>>();
