@@ -24,9 +24,10 @@
     <Feature Id="ProductFeature" Level="1">
       <!-- ComponentGroupRef creates a reference to a ComponentGroup in another Fragment-->
       <ComponentGroupRef Id="ExecutablesAndLibrariesComponentGroup" />
+      <ComponentGroupRef Id="ExecutablesAndLibrariesComponentGroup2" />
       <!--ComponentRef creates a reference to a Component element in another Fragment-->
       <ComponentRef Id="MetaMorpheusProgramMenuFolderComponent"/>
-      
+
       <!--App Data Section-->
       <ComponentGroupRef Id="Appsrc_Mods_files"/>
       <ComponentGroupRef Id="Appsrc_Data_files"/>
@@ -48,12 +49,15 @@
           <Shortcut Id="AppDeskTopSC" Name="MetaMorpheus" Description="Shortcut to App" Target="[#MetaMorpheusGUI.exe]" WorkingDirectory="MetaMorpheusInstallFolder" />
         </Component>
       </Directory>
-      
+
       <Directory Id="ProgramFiles64Folder">
         <Directory Id="MetaMorpheusInstallFolder" Name="MetaMorpheus">
-          <Directory Id="DataFolder" Name="Data" />
-          <Directory Id="ModsFolder" Name="Mods" />
-          <Directory Id="ProteolyticDigestionFolder" Name="ProteolyticDigestion" />
+          <Directory Id="NativeMathDllFolder-runtimes" Name="runtimes">
+            <Directory Id="NativeMathDllFolder-win-x64" Name="win-x64">
+              <Directory Id="NativeMathDllFolder-native" Name="native">
+              </Directory>
+            </Directory>
+          </Directory>
         </Directory>
       </Directory>
       <Directory Id="ProgramMenuFolder">
@@ -110,8 +114,8 @@
       <Component Id="MetaMorpheusGUI.exe" Guid="63370d96-1880-40ab-8525-685ccf64326f">
         <File Id="MetaMorpheusGUI.exe" Name="MetaMorpheusGUI.exe" Source="$(var.GUI_TargetDir)MetaMorpheusGUI.exe" />
       </Component>
-      <Component Id="app.manifest" Guid="d894958a-07c1-4078-9e0e-081a6cc29030">	
-        <File Id="app.manifest" Name="app.manifest" Source="$(var.GUI_TargetDir)app.manifest" />	
+      <Component Id="app.manifest" Guid="d894958a-07c1-4078-9e0e-081a6cc29030">
+        <File Id="app.manifest" Name="app.manifest" Source="$(var.GUI_TargetDir)app.manifest" />
       </Component>
       <Component Id="src_TaskLayer.pdb" Guid="6ece566a-22ff-4208-bba2-ad0430eeee49">
         <File Id="src_TaskLayer.pdb" Name="TaskLayer.pdb" Source="$(var.GUI_TargetDir)TaskLayer.pdb" />
@@ -274,6 +278,17 @@
       </Component>
       <Component Id="src_MetaMorpheusGUI.runtimeconfig.json" Guid="74373586-8FF6-4E06-9108-7648B8590005">
         <File Id="src_MetaMorpheusGUI.runtimeconfig.json" Name="MetaMorpheusGUI.runtimeconfig.json" Source="$(var.GUI_TargetDir)MetaMorpheusGUI.runtimeconfig.json" />
+      </Component>
+    </ComponentGroup>
+    <ComponentGroup Id="ExecutablesAndLibrariesComponentGroup2" Directory="NativeMathDllFolder-native">
+      <Component Id="src_CpuMathNative.dll" Guid="436C233C-5BCD-4386-90C7-F2AC489B09CF">
+        <File Id="src_CpuMathNative.dll" Name="CpuMathNative.dll" Source="$(var.GUI_TargetDir)runtimes\win-x64\native\CpuMathNative.dll" />
+      </Component>
+      <Component Id="src_FastTreeNative.dll" Guid="EF4AB27C-25D6-4B30-B259-9671EC40042A">
+        <File Id="src_FastTreeNative.dll" Name="FastTreeNative.dll" Source="$(var.GUI_TargetDir)runtimes\win-x64\native\FastTreeNative.dll" />
+      </Component>
+      <Component Id="src_LdaNative.dll" Guid="2FDBD232-12A0-43D6-A54D-06FFC627CE23">
+        <File Id="src_LdaNative.dll" Name="LdaNative.dll" Source="$(var.GUI_TargetDir)runtimes\win-x64\native\LdaNative.dll" />
       </Component>
     </ComponentGroup>
   </Fragment>
