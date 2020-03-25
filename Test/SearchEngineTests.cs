@@ -577,7 +577,7 @@ namespace Test
             new ClassicSearchEngine(allPsmsArray, listOfSortedXcorrms2Scans, variableModifications, fixedModifications, null, null, null, proteinList, searchModes, CommonParameters, fsp, new List<string>()).Run();
 
             var nonNullPsms = allPsmsArray.Where(p => p != null).ToList();
-            Assert.AreEqual(111, nonNullPsms.Count);
+            Assert.AreEqual(131, nonNullPsms.Count); //if you run the test separately, it will be 111 because mods won't have been read in a previous test...
 
             EngineLayer.FdrAnalysis.FdrAnalysisResults fdrResultsModernDelta = (EngineLayer.FdrAnalysis.FdrAnalysisResults)(new EngineLayer.FdrAnalysis.FdrAnalysisEngine(nonNullPsms, 1, CommonParameters, fsp, new List<string>()).Run());
 
@@ -595,6 +595,7 @@ namespace Test
 
             Assert.AreEqual(expectedScans, foundScans);
             Assert.AreEqual(37, goodPsm.Count());
+            Directory.Delete(outputFolder,true);
         }
 
         [Test]
