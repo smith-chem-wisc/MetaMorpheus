@@ -387,7 +387,7 @@ namespace EngineLayer.GlycoSearch
             {
                 var ogl = OGlycanBoxLocalization[i];
                 local += "{@" + ogl.ModBoxId.ToString() + "[";
-                var g = string.Join(",", ogl.Mods.Select(p => p.Item1.ToString() + "-" + p.Item2.ToString()));
+                var g = string.Join(",", ogl.Mods.Select(p => (p.Item1 - 1).ToString() + "-" + p.Item2.ToString()));
                 local += g + "]}";
                 i++;
             }
@@ -429,10 +429,10 @@ namespace EngineLayer.GlycoSearch
             foreach (var loc in localizedGlycan.Where(p => p.Item3))
             {
                 var x = siteSpeciLocalProb[loc.Item1].Where(p => p.Item1 == loc.Item2).First().Item2;
-       
-                local += "[" + loc.Item1 + "," + GlycanBox.GlobalOGlycans[loc.Item2].Composition + "," + x.ToString("0.000") + "]";
+                var peptide_site = loc.Item1 - 1;
+                local += "[" + peptide_site + "," + GlycanBox.GlobalOGlycans[loc.Item2].Composition + "," + x.ToString("0.000") + "]";
 
-                var protein_site = OneBasedStartResidueInProtein.HasValue ? OneBasedStartResidueInProtein.Value + loc.Item1 : -1;
+                var protein_site = OneBasedStartResidueInProtein.HasValue ? OneBasedStartResidueInProtein.Value + loc.Item1 - 2 : -1;
                 local_protein += "[" + protein_site + "," + GlycanBox.GlobalOGlycans[loc.Item2].Composition + "," + x.ToString("0.000") + "]";
             }
 
@@ -448,7 +448,8 @@ namespace EngineLayer.GlycoSearch
 
             foreach (var sitep in siteSpeciLocalProb)
             {
-                local += "{@" + sitep.Key;
+                var site_1 = sitep.Key - 1;
+                local += "{@" + site_1;
                 foreach (var s in sitep.Value)
                 {
                     local += "[" + s.Item1 + "," + s.Item2.ToString("0.000") + "]";
