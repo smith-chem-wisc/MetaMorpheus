@@ -174,10 +174,10 @@ namespace EngineLayer.Calibration
                         }
 
                         var closestPeakIndex = fullMS1spectrum.GetClosestPeakIndex(theMZ);
-                        var closestPeakMZ = fullMS1spectrum.XArray[closestPeakIndex.Value];
+                        var closestPeakMZ = fullMS1spectrum.XArray[closestPeakIndex];
 
                         highestKnownChargeForThisPeptide = Math.Max(highestKnownChargeForThisPeptide, chargeToLookAt);
-                        trainingPointsToAverage.Add(new LabeledDataPoint(closestPeakMZ, -1, double.NaN, double.NaN, Math.Log(fullMS1spectrum.YArray[closestPeakIndex.Value]), theMZ, null));
+                        trainingPointsToAverage.Add(new LabeledDataPoint(closestPeakMZ, -1, double.NaN, double.NaN, Math.Log(fullMS1spectrum.YArray[closestPeakIndex]), theMZ, null));
                     }
                     // If started adding and suddnely stopped, go to next one, no need to look at higher charges
                     if (trainingPointsToAverage.Count == 0 && startingToAddCharges)
