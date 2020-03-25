@@ -86,7 +86,7 @@ namespace Test
 
             List<PsmFromTsv> parsedPsms = PsmTsvReader.ReadTsv(psmFile, out var warnings);
 
-            Assert.AreEqual(125, parsedPsms.Count);
+            Assert.AreEqual(127, parsedPsms.Count);
             Assert.AreEqual(0, warnings.Count);
         }
 
@@ -139,7 +139,7 @@ namespace Test
             Ms2ScanWithSpecificMass[] arrayOfMs2ScansSortedByMass = MetaMorpheusTask.GetMs2Scans(myMsDataFile, origDataFile, CommonParameters).OrderBy(b => b.PrecursorMass).ToArray();
 
             // this scan should be xcorr processed
-            Assert.That(479, Is.EqualTo(arrayOfMs2ScansSortedByMass.Length));
+            Assert.That(447, Is.EqualTo(arrayOfMs2ScansSortedByMass.Length));
             Assert.That(myScan1.MassSpectrum.XcorrProcessed == true);
             Assert.That(myScan1.MassSpectrum.XArray.Length == 459);
 
@@ -481,7 +481,7 @@ namespace Test
             EngineLayer.FdrAnalysis.FdrAnalysisResults fdrResultsModernDelta = (EngineLayer.FdrAnalysis.FdrAnalysisResults)(new EngineLayer.FdrAnalysis.FdrAnalysisEngine(nonNullPsms, 1, CommonParameters, fsp, new List<string>()).Run());
 
             // Single search mode
-            Assert.AreEqual(25, allPsmsArray.Length);
+            Assert.AreEqual(12, allPsmsArray.Length);
 
             var goodPsm = nonNullPsms.Where(p => p.FdrInfo.QValue <= 0.01).ToList();
 
@@ -526,7 +526,7 @@ namespace Test
 
             Ms2ScanWithSpecificMass[] arrayOfMs2ScansSortedByMass = MetaMorpheusTask.GetMs2Scans(myMsDataFile, origDataFile, CommonParameters).OrderBy(b => b.PrecursorMass).ToArray();
 
-            Assert.AreEqual(479, arrayOfMs2ScansSortedByMass.Count());
+            Assert.AreEqual(447, arrayOfMs2ScansSortedByMass.Count());
 
             int numSpectra = myMsDataFile.GetAllScansList().Count(p => p.MsnOrder == 2);
 
@@ -567,7 +567,7 @@ namespace Test
 
             var listOfSortedXcorrms2Scans = MetaMorpheusTask.GetMs2Scans(myMsDataFile, origDataFile, new CommonParameters()).OrderBy(b => b.PrecursorMass).ToArray();
 
-            Assert.AreEqual(479, listOfSortedXcorrms2Scans.Count());
+            Assert.AreEqual(447, listOfSortedXcorrms2Scans.Count());
 
             PeptideSpectralMatch[] allPsmsArray = new PeptideSpectralMatch[listOfSortedXcorrms2Scans.Length];
 
@@ -577,24 +577,24 @@ namespace Test
             new ClassicSearchEngine(allPsmsArray, listOfSortedXcorrms2Scans, variableModifications, fixedModifications, null, null, null, proteinList, searchModes, CommonParameters, fsp, new List<string>()).Run();
 
             var nonNullPsms = allPsmsArray.Where(p => p != null).ToList();
-            Assert.AreEqual(130, nonNullPsms.Count);
+            Assert.AreEqual(111, nonNullPsms.Count);
 
             EngineLayer.FdrAnalysis.FdrAnalysisResults fdrResultsModernDelta = (EngineLayer.FdrAnalysis.FdrAnalysisResults)(new EngineLayer.FdrAnalysis.FdrAnalysisEngine(nonNullPsms, 1, CommonParameters, fsp, new List<string>()).Run());
 
             // Single search mode
-            Assert.AreEqual(479, allPsmsArray.Length);
+            Assert.AreEqual(447, allPsmsArray.Length);
 
             var goodPsm = nonNullPsms.Where(p => p.FdrInfo.QValue <= 0.01).ToList();
             var goodScore = nonNullPsms.Where(p => p.FdrInfo.QValue <= 0.01).Select(s => s.Score).ToList();
             goodScore.Sort();
 
-            List<int> expectedScans = new List<int>() { 8, 47, 48, 49, 51, 53, 54, 74, 81, 82, 86, 90, 149, 151, 152, 153, 154, 157, 159, 160, 187, 189, 191, 193, 200, 206, 210, 211, 216, 217, 226, 230, 235, 238, 256 };
+            List<int> expectedScans = new List<int>() { 51, 53, 54, 56, 74, 81, 82, 86, 90, 98, 116, 120, 125, 127, 149, 151, 152, 153, 154, 157, 159, 160, 187, 189, 191, 193, 197, 200, 206, 210, 211, 216, 226, 230, 235, 238, 256 };
             List<int> foundScans = new List<int>();
             foundScans.AddRange(goodPsm.Select(s => s.ScanNumber).ToList());
             foundScans.Sort();
 
             Assert.AreEqual(expectedScans, foundScans);
-            Assert.AreEqual(35, goodPsm.Count());
+            Assert.AreEqual(37, goodPsm.Count());
         }
 
         [Test]
@@ -682,19 +682,19 @@ namespace Test
             EngineLayer.FdrAnalysis.FdrAnalysisResults fdrResultsModernDelta = (EngineLayer.FdrAnalysis.FdrAnalysisResults)(new EngineLayer.FdrAnalysis.FdrAnalysisEngine(nonNullPsms, 1, CommonParameters, fsp, new List<string>()).Run());
 
             // Single search mode
-            Assert.AreEqual(479, allPsmsArray.Length);
+            Assert.AreEqual(447, allPsmsArray.Length);
 
             var goodPsm = nonNullPsms.Where(p => p.FdrInfo.QValue <= 0.01).ToList();
             var goodScore = nonNullPsms.Where(p => p.FdrInfo.QValue <= 0.01).Select(s => s.Score).ToList();
             goodScore.Sort();
 
-            List<int> expectedScans = new List<int>() { 8, 47, 48, 49, 51, 53, 54, 74, 81, 82, 86, 90, 149, 151, 152, 153, 154, 157, 159, 160, 187, 189, 191, 193, 200, 206, 210, 211, 216, 217, 226, 230, 235, 238, 256 };
+            List<int> expectedScans = new List<int>() { 51, 53, 54, 56, 74, 81, 82, 86, 90, 98, 116, 120, 125, 127, 149, 151, 152, 153, 154, 157, 159, 160, 187, 189, 191, 193, 197, 200, 206, 210, 211, 216, 226, 230, 235, 238, 256 };
             List<int> foundScans = new List<int>();
             foundScans.AddRange(goodPsm.Select(s => s.ScanNumber).ToList());
             foundScans.Sort();
 
             Assert.AreEqual(expectedScans, foundScans);
-            Assert.AreEqual(35, goodPsm.Count());
+            Assert.AreEqual(37, goodPsm.Count());
         }
 
         [Test]
