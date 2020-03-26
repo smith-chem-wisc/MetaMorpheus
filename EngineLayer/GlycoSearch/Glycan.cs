@@ -161,6 +161,8 @@ namespace EngineLayer
 
         #region Glycan Structure manipulation
 
+        //There are two ways to represent a glycan in string, one only combination, the other structure.
+        //The method generate a glycan by read in a glycan structure string from database.
         public static Glycan Struct2Glycan(string theGlycanStruct, int id)
         {
             Node node = Struct2Node(theGlycanStruct);
@@ -189,6 +191,7 @@ namespace EngineLayer
             return glycan;
         }
 
+        //Glycan are represented in tree structures composed of Node. The function here is to transfer a string into connected Node.
         public static Node Struct2Node(string theGlycanStruct)
         {
             int level = 0;
@@ -231,6 +234,8 @@ namespace EngineLayer
             return curr;
         }
 
+        //The function is to generate all possible fragmentation/neutral loss of a glycan, which is a subset of glycan. 
+        //Node is tree structured glycan. subset of glycans are also represented by Node.
         private static List<Node> GetAllChildrenCombination(Node node)
         {
             List<Node> nodes = new List<Node>();
@@ -356,6 +361,7 @@ namespace EngineLayer
             return nodes;
         }
 
+        //Node structure to string structure.
         private static string Node2Struct(Node node)
         {
             string output = "";
@@ -366,6 +372,7 @@ namespace EngineLayer
             return output;
         }
 
+        //kind are compositions of glycan. The function here is to generate mass difference of two glycan.
         public static int GetIonLossMass(byte[] Kind, byte[] ionKind)
         {
             byte[] lossKind = new byte[Kind.Length];
@@ -535,7 +542,7 @@ namespace EngineLayer
 
         #region Functions are not used now, could be useful in the future.      
 
-        public static bool DistingushGlycans(Glycan glycan1, Glycan glycan2)
+        public static bool Equals(Glycan glycan1, Glycan glycan2)
         {
             if (glycan1.Mass == glycan2.Mass)
             {

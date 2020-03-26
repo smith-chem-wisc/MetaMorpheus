@@ -202,6 +202,9 @@ namespace EngineLayer.GlycoSearch
             else if(dissociationType == DissociationType.ETD)
             {
                 modPeptide.Fragment(dissociationType, FragmentationTerminus.Both, theoreticalProducts);
+                //TO DO: currently, there is a bug in mzLib that the zDot ion (M - NH3) is not correctly calculated with a modification. Also I am not sure should we really keep it. 
+                //But the final change should be in mzLib, here is just for temp usage.
+                theoreticalProducts.RemoveAt(theoreticalProducts.Count() - 1);
             }
             else if(dissociationType == DissociationType.EThcD)
             {
@@ -227,6 +230,9 @@ namespace EngineLayer.GlycoSearch
                     }
                 }
 
+                //TO DO: currently, there is a bug in mzLib that the zDot ion (M - NH3) is not correctly calculated with a modification. Also I am not sure should we really keep it.
+                //But the final change should be in mzLib, here is just for temp usage.
+                theoreticalProducts.RemoveAt(theoreticalProducts.Count() - 1);
             }
 
             return theoreticalProducts;

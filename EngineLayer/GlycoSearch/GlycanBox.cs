@@ -28,6 +28,7 @@ namespace EngineLayer
 
         };
 
+        //After O-glycans are read in from database, we build combinations of glycans into GlycanBox. The maxNum is maximum glycans allowed on one peptides.
         public static IEnumerable<GlycanBox> BuildOGlycanBoxes(int maxNum)
         {
             return BuildOGlycanBoxes(maxNum, false);
@@ -56,6 +57,8 @@ namespace EngineLayer
             }
         }
 
+        //After O-glycans are read in from database, we transfer the glycans into 'Modification' class type for MetaMorpheus to manipulate sequences.
+        //In the future we may able to combine the two type together. 
         public static Modification[] BuildGlobalOGlycanModifications(Glycan[] globalOGlycans)
         {
             Modification[] globalOGlycanModifications = new Modification[globalOGlycans.Length];
@@ -67,6 +70,8 @@ namespace EngineLayer
             return globalOGlycanModifications;
         }
 
+        //The function here is to build GlycanBoxes used for LocalizationGraph. 
+        //In LocalizationGraph matrix, for each AdjNode, it represent a ChildOGlycanBox here at certain glycosite.
         public static IEnumerable<GlycanBox> BuildChildOGlycanBoxes(int maxNum, int[] glycanIds, bool targetDecoy = true)
         {
             yield return new GlycanBox(new int[0], targetDecoy);
