@@ -162,7 +162,9 @@ namespace Test
 
             var fragments_etd = GlycoPeptides.OGlyGetTheoreticalFragments(DissociationType.ETD, peptide, peptideWithMod);
 
-            Assert.That(fragments_etd.Count == 22);
+            Assert.That(fragments_etd.Count == 21);
+            //Currently the zDot8 is removed, we will consider add it back when mzLib is fixed.
+            //Assert.That(fragments_etd.Count == 22);
             //Assert.That(fragments_etd.Last().Annotation == "zDot8");
             //Assert.That(fragments_etd.Last().NeutralMass > 1824);
         }
