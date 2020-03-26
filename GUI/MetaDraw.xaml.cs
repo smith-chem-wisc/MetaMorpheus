@@ -189,10 +189,7 @@ namespace MetaMorpheusGUI
                 p.QValue <= metaDrawFilterSettings.QValueFilter
                 && (p.QValueNotch < metaDrawFilterSettings.QValueFilter || p.QValueNotch == null)
                 && (p.DecoyContamTarget == "T" || (p.DecoyContamTarget == "D" && metaDrawFilterSettings.ShowDecoys) || (p.DecoyContamTarget == "C" && metaDrawFilterSettings.ShowContaminants))
-                && ((metaDrawFilterSettings.GlycanLocalizationLevelFilter == 0 || metaDrawFilterSettings.GlycanLocalizationLevelFilter == null)
-                    || (p.GlycanLocalizationLevel == "Level1" && metaDrawFilterSettings.GlycanLocalizationLevelFilter == 1)
-                    || (p.GlycanLocalizationLevel == "Level2" && metaDrawFilterSettings.GlycanLocalizationLevelFilter == 2)
-                    || (p.GlycanLocalizationLevel == "Level3" && metaDrawFilterSettings.GlycanLocalizationLevelFilter == 3))
+                && (p.GlycanLocalizationLevel == null || p.GlycanLocalizationLevel >= metaDrawFilterSettings.LocalizationLevelStart && p.GlycanLocalizationLevel <= metaDrawFilterSettings.LocalizationLevelEnd)
                 );
 
             foreach (PsmFromTsv psm in filteredList)
@@ -469,7 +466,8 @@ namespace MetaMorpheusGUI
             metaDrawFilterSettings.DecoysCheckBox.IsChecked = metaDrawFilterSettings.ShowDecoys;
             metaDrawFilterSettings.ContaminantsCheckBox.IsChecked = metaDrawFilterSettings.ShowContaminants;
             metaDrawFilterSettings.qValueBox.Text = metaDrawFilterSettings.QValueFilter.ToString();
-            metaDrawFilterSettings.glycanLocalizationLelveBox.Text = metaDrawFilterSettings.GlycanLocalizationLevelFilter.ToString();
+            metaDrawFilterSettings.CmbGlycanLocalizationLevelStart.SelectedIndex = (int)metaDrawFilterSettings.LocalizationLevelStart;
+            metaDrawFilterSettings.CmbGlycanLocalizationLevelEnd.SelectedIndex = (int)metaDrawFilterSettings.LocalizationLevelEnd;
             var result = metaDrawFilterSettings.ShowDialog();
 
             DisplayLoadedAndFilteredPsms();
@@ -659,7 +657,7 @@ namespace MetaMorpheusGUI
                 {
                     if (mod.Value.ModificationType == "O-Glycosylation")
                     {
-                        if (localGlycans.Where(p=>p.Item1 == mod.Key).Count() > 0)
+                        if (localGlycans.Where(p=>p.Item1 + 1 == mod.Key).Count() > 0)
                         {
                             BaseDraw.circledTxtDraw(canvas, new Point((mod.Key - 1) * spacing - 17, 12), modificationAnnotationColor);
                         }

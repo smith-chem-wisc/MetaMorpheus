@@ -1,5 +1,6 @@
 ﻿using System.ComponentModel;
 using System.Windows;
+using EngineLayer.GlycoSearch;
 
 namespace MetaMorpheusGUI
 {
@@ -12,17 +13,28 @@ namespace MetaMorpheusGUI
         public bool ShowContaminants { get; private set; }
         public double QValueFilter { get; private set; }
 
-        public int? GlycanLocalizationLevelFilter { get; set; }
+        public LocalizationLevel LocalizationLevelStart { get; set; }
+        public LocalizationLevel LocalizationLevelEnd { get; set; }
 
-        public MetaDrawFilterSettings(bool showDecoys = false, bool showContaminants = true, double qValueFilter = 0.01, int? glycanLocalizationLevelFilter = null)
+        public MetaDrawFilterSettings(bool showDecoys = false, bool showContaminants = true, double qValueFilter = 0.01, LocalizationLevel localizationLevelStart = LocalizationLevel.Level1, LocalizationLevel localizationLevelEnd = LocalizationLevel.Level3)
         {
             InitializeComponent();
             base.Closing += this.OnClosing;
 
+            foreach (string level in System.Enum.GetNames(typeof(LocalizationLevel)))
+            {
+                CmbGlycanLocalizationLevelStart.Items.Add(level);
+                CmbGlycanLocalizationLevelEnd.Items.Add(level);
+            }
+
             QValueFilter = qValueFilter;
             ShowContaminants = showContaminants;
             ShowDecoys = showDecoys;
-            GlycanLocalizationLevelFilter = glycanLocalizationLevelFilter;
+            LocalizationLevelStart = localizationLevelStart;
+            LocalizationLevelEnd = localizationLevelEnd;
+
+            CmbGlycanLocalizationLevelStart.SelectedItem = localizationLevelStart.ToString();
+            CmbGlycanLocalizationLevelEnd.SelectedItem = localizationLevelEnd.ToString();
         }
 
         private void Cancel_Click(object sender, RoutedEventArgs e)
@@ -47,24 +59,8 @@ namespace MetaMorpheusGUI
                     return;
                 }
             }
-
-            if (!string.IsNullOrWhiteSpace(glycanLocalizationLelveBox.Text))
-            {
-                if (int.TryParse(glycanLocalizationLelveBox.Text, out int glycanLocalizationLevelFilter))
-                {
-                    GlycanLocalizationLevelFilter = glycanLocalizationLevelFilter;
-                }
-                else
-                {
-                    MessageBox.Show("Could not parse Glycan Localization Level filter");
-                    return;
-                }
-            }
-            else
-            {
-                GlycanLocalizationLevelFilter = null;
-            }
-
+            LocalizationLevelStart = (LocalizationLevel)System.Enum.Parse(typeof(LocalizationLevel), CmbGlycanLocalizationLevelStart.SelectedItem.ToString());
+            LocalizationLevelEnd = (LocalizationLevel)System.Enum.Parse(typeof(LocalizationLevel), CmbGlycanLocalizationLevelEnd.SelectedItem.ToString());
             this.Visibility = Visibility.Hidden;
         }
 
@@ -76,5 +72,6 @@ namespace MetaMorpheusGUI
                 e.Cancel = true;
             }
         }
+
     }
 }

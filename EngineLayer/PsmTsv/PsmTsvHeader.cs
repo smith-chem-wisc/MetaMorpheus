@@ -106,6 +106,6 @@
         public const string GlycanComposition = "Plausible GlycanComposition";
         public const string GlycanStructure = "Plausible GlycanStructure";
         public const string GlycanLocalizationLevel = "GlycanLocalizationLevel";
-        public const string LocalizedGlycan = "Site Specific Localization Probability";
+        public const string LocalizedGlycan = "Localized Glycans with Peptide Site Specific Probability";
     }
 }

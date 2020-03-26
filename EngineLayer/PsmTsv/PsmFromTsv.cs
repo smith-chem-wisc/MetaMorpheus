@@ -5,6 +5,7 @@ using System.Collections.Generic;
 using System.Globalization;
 using System.Linq;
 using System.Text.RegularExpressions;
+using EngineLayer.GlycoSearch;
 
 namespace EngineLayer
 {
@@ -78,7 +79,7 @@ namespace EngineLayer
         public string GlycanStructure { get; set; }
         public double? GlycanMass { get; set; }
         public string GlycanComposition { get; set; }
-        public string GlycanLocalizationLevel { get; set; }
+        public LocalizationLevel? GlycanLocalizationLevel { get; set; }
         public string LocalizedGlycan { get; set; }
 
         public PsmFromTsv(string line, char[] split, Dictionary<string, int> parsedHeader)
@@ -162,7 +163,11 @@ namespace EngineLayer
             GlycanMass = (parsedHeader[PsmTsvHeader_Glyco.GlycanMass] < 0) ? null : (double?)double.Parse(spl[parsedHeader[PsmTsvHeader_Glyco.GlycanMass]]);
             GlycanComposition = (parsedHeader[PsmTsvHeader_Glyco.GlycanComposition] < 0) ? null : spl[parsedHeader[PsmTsvHeader_Glyco.GlycanComposition]];
             GlycanStructure = (parsedHeader[PsmTsvHeader_Glyco.GlycanStructure] < 0) ? null : spl[parsedHeader[PsmTsvHeader_Glyco.GlycanStructure]];
-            GlycanLocalizationLevel = (parsedHeader[PsmTsvHeader_Glyco.GlycanLocalizationLevel] < 0) ? null : spl[parsedHeader[PsmTsvHeader_Glyco.GlycanLocalizationLevel]];
+            var localizationLevel = (parsedHeader[PsmTsvHeader_Glyco.GlycanLocalizationLevel] < 0) ? null : spl[parsedHeader[PsmTsvHeader_Glyco.GlycanLocalizationLevel]];
+            if (localizationLevel!=null)
+            {
+                GlycanLocalizationLevel = (LocalizationLevel)Enum.Parse(typeof(LocalizationLevel), localizationLevel);
+            }
             LocalizedGlycan = (parsedHeader[PsmTsvHeader_Glyco.LocalizedGlycan] < 0) ? null : spl[parsedHeader[PsmTsvHeader_Glyco.LocalizedGlycan]];
         }
 
@@ -309,6 +314,10 @@ namespace EngineLayer
         public static List<Tuple<int, string, double>> ReadLocalizedGlycan(string localizedGlycan)
         {
             List<Tuple<int, string, double>> tuples = new List<Tuple<int, string, double>>();
+            if (localizedGlycan == null)
+            {
+                return tuples;
+            }
             var lgs = localizedGlycan.Split(new string[] { "[", "]" }, StringSplitOptions.RemoveEmptyEntries);
             foreach (var lg in lgs)
             {
