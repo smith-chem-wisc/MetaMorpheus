@@ -93,10 +93,9 @@ namespace EngineLayer.GlycoSearch
 
                                 }
                             }
-                            //if (adjNode.Costs.Any())
-                            {
-                                adjNode.maxCost = maxCost;
-                            }
+
+                             adjNode.maxCost = maxCost;
+
                         }
 
                         localizationGraph.array[i][j] = adjNode;
@@ -243,7 +242,6 @@ namespace EngineLayer.GlycoSearch
         //Basicly, any change from left to right of the path indicates a modification. For example, the path = [1, 1, 2, 2] which means there is a modification at ModPos[0] and ModPos[2]
         public static Route GetLocalizedPath(AdjNode[][] array, int[] modPos, ModBox[] childBoxes, int[] path)
         {
-            List<Tuple<int, int, double>> tuples = new List<Tuple<int, int, double>>();
             Route route = new Route();
             //Add first mod. If the childBoxes[path[0]].ModIds.Count == 0, means this is an empty childBox. 
             //Otherwise childBoxes[path[0]].ModIds.Count == 1 and childBoxes[path[0]].ModIds only contains one ModId.

@@ -77,6 +77,7 @@ namespace TaskLayer
 
                             localizedGlycan[proPosId].IsLocalized = islocalized;
                             localizedGlycan[proPosId].MinQValue = minQValue;
+                            localizedGlycan[proPosId].BestLocalizeLevel = localLevel;
                             localizedGlycan[proPosId].MaxProbability = maxProb;
                         }
                     }

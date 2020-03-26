@@ -121,11 +121,11 @@ namespace EngineLayer
                 intensity = null;
                 return null;
             }
-            intensity = TheScan.MassSpectrum.YArray[GetClosestFragmentMz(theoreticalMz).Value];
-            return TheScan.MassSpectrum.XArray[GetClosestFragmentMz(theoreticalMz).Value];
+            intensity = TheScan.MassSpectrum.YArray[GetClosestFragmentMzIndex(theoreticalMz).Value];
+            return TheScan.MassSpectrum.XArray[GetClosestFragmentMzIndex(theoreticalMz).Value];
         }
 
-        private int? GetClosestFragmentMz(double mz)
+        private int? GetClosestFragmentMzIndex(double mz)
         {
             if (TheScan.MassSpectrum.XArray.Length == 0)
             {

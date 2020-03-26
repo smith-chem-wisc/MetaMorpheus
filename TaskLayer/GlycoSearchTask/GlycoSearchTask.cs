@@ -52,8 +52,6 @@ namespace TaskLayer
 
             MyFileManager myFileManager = new MyFileManager(true);
 
-            var fileSpecificCommonParams = fileSettingsList.Select(b => SetAllFileSpecificCommonParams(CommonParameters, b));
-
             int completedFiles = 0;
 
             Status("Searching files...", taskId);

@@ -137,24 +137,17 @@ namespace EngineLayer
         //TrimannosylCore is only useful for N-Glyco peptides.
         public readonly static Dictionary<int, double> TrimannosylCores = new Dictionary<int, double>
         {
-            { 0, 0},
-            { 83, 83.038194},
-            { 203, 203.079373},
-            { 406, 406.158745},
-            { 568, 568.211568},
-            { 730, 730.264392},
-            { 892, 892.317215},
-            { 349, 349.137281},
-            { 552, 552.216654}
-            //{ "Y0", 0},
-            //{ "Y*", 83.038194},
-            //{ "Y1", 203.079373},
-            //{ "Y2", 406.158745},
-            //{ "Y3", 568.211568},
-            //{ "Y4", 730.264392},
-            //{ "Y5", 892.317215},
-            //{ "Y2F", 349.137281},
-            //{ "Y3F", 552.216654}
+            //Each of the mass represent as a N-Glycan core. 
+            { 0, 0}, //Y0
+            { 83, 83.038194}, //Y*
+            { 203, 203.079373}, //Y1
+            { 406, 406.158745}, //Y2
+            { 568, 568.211568}, //Y3
+            { 730, 730.264392}, //Y4
+            { 892, 892.317215}, //Y5
+            { 349, 349.137281}, //Y2F
+            { 552, 552.216654}  //Y3F
+
         };
 
         #endregion
@@ -465,7 +458,6 @@ namespace EngineLayer
             diagnosticIons.Add(DissociationType.HCD, glycan.DiagnosticIons.Select(p => (double)p / 1E5).ToList());
             diagnosticIons.Add(DissociationType.CID, glycan.DiagnosticIons.Select(p => (double)p / 1E5).ToList());
             diagnosticIons.Add(DissociationType.EThcD, glycan.DiagnosticIons.Select(p => (double)p / 1E5).ToList());
-            //string[] motifs = new string[] { "Nxt", "Nxs" };
             ModificationMotif.TryGetMotif("N", out ModificationMotif finalMotif); //TO DO: only one motif can be write here.
             var id = Glycan.GetKindString(glycan.Kind);
             Modification modification = new Modification(
@@ -487,13 +479,12 @@ namespace EngineLayer
             List<double> lossMasses = new List<double>() { (double)glycan.Mass/1E5 };
             neutralLosses.Add(DissociationType.HCD, lossMasses);
             neutralLosses.Add(DissociationType.CID, lossMasses);
-            //neutralLosses.Add(DissociationType.EThcD, lossMasses);
+            neutralLosses.Add(DissociationType.EThcD, lossMasses);
 
             Dictionary<DissociationType, List<double>> diagnosticIons = new Dictionary<DissociationType, List<double>>();
             diagnosticIons.Add(DissociationType.HCD, glycan.DiagnosticIons.Select(p => (double)p / 1E5).ToList());
             diagnosticIons.Add(DissociationType.CID, glycan.DiagnosticIons.Select(p => (double)p / 1E5).ToList());
-            //diagnosticIons.Add(DissociationType.EThcD, glycan.DiagnosticIons.Select(p => (double)p / 1E5).ToList());
-            //string[] motifs = new string[] { "t", "s" };
+            diagnosticIons.Add(DissociationType.EThcD, glycan.DiagnosticIons.Select(p => (double)p / 1E5).ToList());
             ModificationMotif.TryGetMotif("X", out ModificationMotif finalMotif); //TO DO: only one motif can be write here.
 
             var id = Glycan.GetKindString(glycan.Kind);

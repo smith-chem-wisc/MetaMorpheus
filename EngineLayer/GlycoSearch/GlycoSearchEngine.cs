@@ -243,7 +243,7 @@ namespace EngineLayer.GlycoSearch
 
                     int iDLow = GlycoPeptides.BinarySearchGetIndex(Glycans.Select(p => (double)p.Mass / 1E5).ToArray(), possibleGlycanMassLow);      
 
-                    while (iDLow < Glycans.Count() && PrecusorSearchMode.Within(theScan.PrecursorMass, theScanBestPeptide.MonoisotopicMass + (double)Glycans[iDLow].Mass / 1E5))
+                    while (iDLow < Glycans.Length && PrecusorSearchMode.Within(theScan.PrecursorMass, theScanBestPeptide.MonoisotopicMass + (double)Glycans[iDLow].Mass / 1E5))
                     {
                         double bestLocalizedScore = 0;
                         int bestSite = 0;
@@ -312,10 +312,14 @@ namespace EngineLayer.GlycoSearch
                     var matchedFragmentIons = MatchFragmentIons(theScan, products, CommonParameters);
                     double score = CalculatePeptideScore(theScan.TheScan, matchedFragmentIons);
 
-                    var psmCrossSingle = new GlycoSpectralMatch(theScanBestPeptide, 0, score, scanIndex, theScan, CommonParameters, matchedFragmentIons);
-                    psmCrossSingle.Rank = ind;
+                    if (score > scoreCutOff)
+                    {
+                        var psmCrossSingle = new GlycoSpectralMatch(theScanBestPeptide, 0, score, scanIndex, theScan, CommonParameters, matchedFragmentIons);
+                        psmCrossSingle.Rank = ind;
 
-                    possibleMatches.Add(psmCrossSingle);
+                        possibleMatches.Add(psmCrossSingle);
+                    }
+
                 }
                 else if (theScan.PrecursorMass - theScanBestPeptide.MonoisotopicMass >= 100) //Filter out unknow non-glycan modifications.
                 {
@@ -413,9 +417,12 @@ namespace EngineLayer.GlycoSearch
                         var firstPath = LocalizationGraph.GetFirstPath(localizationGraphs[0].array, localizationGraphs[0].ChildModBoxes);
                         var localizationCandidate = LocalizationGraph.GetLocalizedPath(localizationGraphs[0].array, modPos, localizationGraphs[0].ChildModBoxes, firstPath);
 
-                        var psmGlyco = CreateGsm(theScan, scanIndex, ind, theScanBestPeptide, localizationCandidate, CommonParameters, oxoniumIonIntensities, localizationGraphs);
+                        var psmGlyco = CreateGsm(theScan, scanIndex, ind, theScanBestPeptide, localizationCandidate, oxoniumIonIntensities, localizationGraphs);
 
-                        possibleMatches.Add(psmGlyco);
+                        if (psmGlyco.Score > scoreCutOff)
+                        {
+                            possibleMatches.Add(psmGlyco);
+                        }              
                     }
                 }
 
@@ -429,7 +436,7 @@ namespace EngineLayer.GlycoSearch
         }
 
         //List<Tuple<int, Tuple<int, int>[]>> <glycanBoxId, <mod site, glycan id>>
-        private GlycoSpectralMatch CreateGsm(Ms2ScanWithSpecificMass theScan, int scanIndex, int rank, PeptideWithSetModifications peptide, Route localization, CommonParameters commonParameters, double[] oxoniumIonIntensities, List<LocalizationGraph> localizationGraphs)
+        private GlycoSpectralMatch CreateGsm(Ms2ScanWithSpecificMass theScan, int scanIndex, int rank, PeptideWithSetModifications peptide, Route localization, double[] oxoniumIonIntensities, List<LocalizationGraph> localizationGraphs)
         {
             var peptideWithMod = GlycoPeptides.OGlyGetTheoreticalPeptide(localization, peptide);
 

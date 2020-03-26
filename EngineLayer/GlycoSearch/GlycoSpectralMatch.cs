@@ -43,7 +43,7 @@ namespace EngineLayer.GlycoSearch
         public double GlycanScore { get; set; } //Important for N-glycan for signature ions.
         public double DiagnosticIonScore { get; set; } //Since every glycopeptide generate DiagnosticIon, it is important to seperate the score. 
 
-        public double R138vs144 { get; set; }
+        public double R138vs144 { get; set; } // The intensity ratio of this 138 and 144 could be a signature for O-glycan or N-glycan.
         public List<Tuple<int, int, bool>> LocalizedGlycan { get; set; } //<mod site, glycanID, isLocalized> All seen glycans identified.
         public LocalizationLevel LocalizationLevel { get; set; }
 
@@ -309,12 +309,10 @@ namespace EngineLayer.GlycoSearch
             return s;
         }
 
-        //Output: <int, int, string> <ModBoxId, ModPosition, is localized>; Input: List<Tuple<int, Tuple<int, int, double>[]>> <ModBoxId, <modPostion, ModId, weight>>
+        //Output: <int, int, string> <ModBoxId, ModPosition, is localized>; Input: List<Route>
         public static List<Tuple<int, int, bool>> GetLocalizedGlycan(List<Route> OGlycanBoxLocalization, out LocalizationLevel localizationLevel)
         {
             List<Tuple<int, int, bool>> localizedGlycan = new List<Tuple<int, int, bool>>();
-
-            HashSet<int> seenGlycanBoxIds = new HashSet<int>(OGlycanBoxLocalization.Select(p=>p.ModBoxId));
 
             //Dictionary<string, int>: modsite-id, count
             Dictionary<string, int> seenModSite = new Dictionary<string, int>();

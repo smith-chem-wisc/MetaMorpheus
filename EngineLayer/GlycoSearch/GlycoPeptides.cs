@@ -22,12 +22,13 @@ namespace EngineLayer.GlycoSearch
 
             for (int i = 0; i < Glycan.AllOxoniumIons.Length; i++)
             {
-                double? matchedIntensity;
-                var matchedMass = theScan.GetClosestExperimentalFragmentMz((double)Glycan.AllOxoniumIons[i] / 1E5, out matchedIntensity);
-                if (matchedMass.HasValue && massDiffAcceptor.Accepts(matchedMass.Value, (double)Glycan.AllOxoniumIons[i] / 1E5) >= 0)
+                var oxoMass = ((double)Glycan.AllOxoniumIons[i] / 1E5).ToMass(1);
+                var envelope = theScan.GetClosestExperimentalIsotopicEnvelope(oxoMass);
+                if (massDiffAcceptor.Accepts(envelope.monoisotopicMass, oxoMass) >= 0)
                 {
-                    oxoniumIonsintensities[i] = matchedIntensity.Value;
+                    oxoniumIonsintensities[i] = envelope.totalIntensity;
                 }
+
             }
 
             return oxoniumIonsintensities;
