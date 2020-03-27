@@ -240,7 +240,8 @@ namespace MetaMorpheusGUI
                 var parentPsmModel = new PsmAnnotationViewModel();
                 MsDataScan parentScan = MsDataFile.GetOneBasedScan(psmToDraw.Ms2ScanNumber);
 
-                parentPsmModel.DrawPeptideSpectralMatch(parentScan, psmToDraw);
+                parentPsmModel.DrawPeptideSpectralMatch(parentScan, psmToDraw, metaDrawGraphicalSettings.ShowMzValues,
+                        metaDrawGraphicalSettings.ShowAnnotationCharges, metaDrawGraphicalSettings.AnnotatedFontSize, metaDrawGraphicalSettings.BoldText);
 
                 string parentAnnotation = "Scan: " + parentScan.OneBasedScanNumber.ToString()
                         + " Dissociation Type: " + parentScan.DissociationType.ToString()
