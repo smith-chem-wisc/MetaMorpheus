@@ -508,12 +508,12 @@ namespace Test
                 }
             }
 
-            Assert.AreEqual(510, inter);
-            Assert.AreEqual(210, intra);
-            Assert.AreEqual(302, single);
-            Assert.AreEqual(15, loop);
+            Assert.AreEqual(616, inter);
+            Assert.AreEqual(247, intra);
+            Assert.AreEqual(331, single);
+            Assert.AreEqual(20, loop);
             Assert.AreEqual(0, deadend);
-            Assert.AreEqual(66, deadendH2O);
+            Assert.AreEqual(83, deadendH2O);
             Assert.AreEqual(0, deadendNH2);
             Assert.AreEqual(0, deadendTris);
             Assert.AreEqual(0, unnasignedCrossType);
@@ -574,12 +574,12 @@ namespace Test
                 }
             }
 
-            Assert.AreEqual(61, inter);
+            Assert.AreEqual(62, inter);
             Assert.AreEqual(79, intra);
-            Assert.AreEqual(230, single);
+            Assert.AreEqual(229, single);
             Assert.AreEqual(8, loop);
             Assert.AreEqual(0, deadend);
-            Assert.AreEqual(43, deadendH2O);
+            Assert.AreEqual(42, deadendH2O);
             Assert.AreEqual(0, deadendNH2);
             Assert.AreEqual(0, deadendTris);
             Assert.AreEqual(0, unnasignedCrossType);
@@ -757,9 +757,9 @@ namespace Test
             }
 
             Assert.AreEqual(0, unnasignedCrossType);
-            Assert.AreEqual(50, inter);
+            Assert.AreEqual(49, inter);
             Assert.AreEqual(76, intra);
-            Assert.AreEqual(236, single);
+            Assert.AreEqual(234, single);
             Assert.AreEqual(8, loop);
             Assert.AreEqual(0, deadend);
             Assert.AreEqual(46, deadendH2O);
