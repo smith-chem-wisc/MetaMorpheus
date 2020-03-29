@@ -39,12 +39,12 @@ namespace TaskLayer
             }
             else
             {
-                var allPsmsSingle = allPsms.Where(p => p.OGlycanBoxLocalization == null && p.Score > 2).OrderByDescending(p => p.Score).ToList();
+                var allPsmsSingle = allPsms.Where(p => p.Routes == null && p.Score > 2).OrderByDescending(p => p.Score).ToList();
                 SingleFDRAnalysis(allPsmsSingle, commonParameters, new List<string> { taskId });
                 var writtenFileInter1 = Path.Combine(OutputFolder, "single_psm" + ".tsv");
                 WriteFile.WritePsmGlycoToTsv(allPsmsSingle, writtenFileInter1, 1);
 
-                var allPsmsGly = allPsms.Where(p => p.OGlycanBoxLocalization != null && p.Score > 2).OrderByDescending(p => p.Score).ToList();
+                var allPsmsGly = allPsms.Where(p => p.Routes != null && p.Score > 2).OrderByDescending(p => p.Score).ToList();
                 SingleFDRAnalysis(allPsmsGly, commonParameters, new List<string> { taskId });
 
                 var writtenFileInter2 = Path.Combine(OutputFolder, "glyco_psm" + ".tsv");

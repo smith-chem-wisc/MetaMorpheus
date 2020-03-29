@@ -32,7 +32,7 @@ namespace EngineLayer.GlycoSearch
 
 
         public List<LocalizationGraph> LocalizationGraphs { get; set; }
-        public List<Route> OGlycanBoxLocalization { get; set; }
+        public List<Route> Routes { get; set; }
 
         public double ScanInfo_p { get; set; }
 
@@ -98,6 +98,7 @@ namespace EngineLayer.GlycoSearch
             sb.Append("Protein Name" + '\t');
             sb.Append("Start and End Residues In Protein" + '\t');
             sb.Append("Base Sequence" + '\t');
+            sb.Append("FlankingResidues" + '\t');
             sb.Append("Full Sequence" + '\t');
             sb.Append("Number of Mods" + '\t');
             sb.Append("Peptide Monoisotopic Mass" + '\t');
@@ -133,6 +134,7 @@ namespace EngineLayer.GlycoSearch
             sb.Append("Protein Name" + '\t');
             sb.Append("Start and End Residues In Protein" + '\t');
             sb.Append("Base Sequence" + '\t');
+            sb.Append("FlankingResidues" + '\t');
             sb.Append("Full Sequence" + '\t');
             sb.Append("Number of Mods" + '\t');
             sb.Append("Peptide Monoisotopic Mass" + '\t');
@@ -185,6 +187,7 @@ namespace EngineLayer.GlycoSearch
             sb.Append("[" + OneBasedStartResidueInProtein.Value.ToString() + " to " + OneBasedEndResidueInProtein.Value.ToString() + "]" + '\t');
 
             sb.Append(BaseSequence + "\t");
+            sb.Append(BestMatchingPeptides.First().Peptide.PreviousAminoAcid + "," + BestMatchingPeptides.First().Peptide.NextAminoAcid + "\t");
             sb.Append(FullSequence + "\t");
             sb.Append(BestMatchingPeptides.First().Peptide.AllModsOneIsNterminus.Count + "\t");
 
@@ -249,13 +252,13 @@ namespace EngineLayer.GlycoSearch
                 sb.Append(string.Join(" ", NGlycan.First().Kind.Select(p => p.ToString()).ToArray())); sb.Append("\t");
             }
 
-            if (OGlycanBoxLocalization != null)
+            if (Routes != null)
             {
                 sb.Append(LocalizationGraphs.First().TotalScore + "\t");
 
                 sb.Append(DiagnosticIonScore + "\t");              
 
-                var glycanBox = GlycanBox.OGlycanBoxes[OGlycanBoxLocalization.First().ModBoxId];
+                var glycanBox = GlycanBox.OGlycanBoxes[Routes.First().ModBoxId];
 
                 sb.Append(glycanBox.NumberOfMods + "\t");
 
@@ -284,7 +287,7 @@ namespace EngineLayer.GlycoSearch
                 }
                 sb.Append("\t");
 
-                sb.Append(CorrectLocalizationLevel(SiteSpeciLocalProb, LocalizedGlycan, LocalizationLevel)); sb.Append("\t");
+                sb.Append(CorrectLocalizationLevel(SiteSpeciLocalProb, LocalizationGraphs.First(), Routes.First(), LocalizedGlycan,  LocalizationLevel)) ; sb.Append("\t");
 
                 //string localizedGlycan = LocalizedGlycan.Where(p=>p.Item3).Count() > 0 ? "[" + string.Join(",", LocalizedGlycan.Where(p => p.Item3).Select(p => p.Item1.ToString() + "-" + p.Item2.ToString())) + "]" : "";
                 //sb.Append(localizedGlycan); sb.Append("\t");
@@ -294,7 +297,7 @@ namespace EngineLayer.GlycoSearch
                 sb.Append(local_peptide); sb.Append("\t");
                 sb.Append(local_protein); sb.Append("\t");
 
-                sb.Append(AllLocalizationInfo(OGlycanBoxLocalization)); sb.Append("\t");
+                sb.Append(AllLocalizationInfo(Routes)); sb.Append("\t");
 
                 sb.Append(SiteSpeciLocalInfo(SiteSpeciLocalProb));
             }
@@ -399,20 +402,33 @@ namespace EngineLayer.GlycoSearch
         }
 
         //Correct Localization Level based on site specific probability. If LocalizationLevel = 1, and there are site probability lower than 0.75, Correct the level to 1b.
-        public static LocalizationLevel CorrectLocalizationLevel(Dictionary<int, List<Tuple<int, double>>> siteSpeciLocalProb, List<Tuple<int, int, bool>> localizedGlycan, LocalizationLevel localizationLevel)
+        public static LocalizationLevel CorrectLocalizationLevel(Dictionary<int, List<Tuple<int, double>>> siteSpeciLocalProb, LocalizationGraph localizationGraph, Route route, List<Tuple<int, int, bool>> localizedGlycan, LocalizationLevel localizationLevel)
         {
             if (siteSpeciLocalProb == null || localizationLevel!=LocalizationLevel.Level1)
             {
                 return localizationLevel;
             }
 
-            foreach (var g in localizedGlycan)
+            if (localizationGraph.ModPos.Length == 1 && localizationGraph.TotalScore == 0)
             {
-                if (siteSpeciLocalProb[g.Item1].Where(p=>p.Item1 == g.Item2).First().Item2 < 0.75)
+                return LocalizationLevel.Level1b;
+            }
+
+
+            for (int i = 0; i < localizedGlycan.Count; i++)
+            {
+                var g = localizedGlycan[i];
+                if (siteSpeciLocalProb[g.Item1].Where(p => p.Item1 == g.Item2).First().Item2 < 0.75)
+                {
+                    return LocalizationLevel.Level1b;
+                }
+
+                if (!route.Mods[i].Item3)
                 {
                     return LocalizationLevel.Level1b;
                 }
             }
+
 
             return localizationLevel;
 

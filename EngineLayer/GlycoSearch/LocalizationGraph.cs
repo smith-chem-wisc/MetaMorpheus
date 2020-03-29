@@ -240,14 +240,26 @@ namespace EngineLayer.GlycoSearch
         //The original path we get is just an array of AdjNode positions. For example, path = [1, 1, 2, 2] means the best nodes are at array[0][1], array[1][1], array[2][2], array[3][2]
         //This function here is to transfer the path into localized Route. Route contains each glycosite with glycanId.
         //Basicly, any change from left to right of the path indicates a modification. For example, the path = [1, 1, 2, 2] which means there is a modification at ModPos[0] and ModPos[2]
-        public static Route GetLocalizedPath(AdjNode[][] array, int[] modPos, ModBox[] childBoxes, int[] path)
+        public static Route GetLocalizedPath(LocalizationGraph localizationGraph, int[] path)
         {
             Route route = new Route();
+
+            if (path.Length == 1)
+            {
+                bool onlyOneLocalized = false;
+                if (localizationGraph.TotalScore > 0)
+                {
+                    onlyOneLocalized = true;
+                }
+                route.AddPos(localizationGraph.ModPos[0], localizationGraph.ChildModBoxes[path[0]].ModIds.First(), onlyOneLocalized);
+                return route;
+            }
+
             //Add first mod. If the childBoxes[path[0]].ModIds.Count == 0, means this is an empty childBox. 
             //Otherwise childBoxes[path[0]].ModIds.Count == 1 and childBoxes[path[0]].ModIds only contains one ModId.
-            if (childBoxes[path[0]].ModIds.Count() != 0)
+            if (localizationGraph.ChildModBoxes[path[0]].ModIds.Count() != 0)
             {                
-                route.AddPos(modPos[0], childBoxes[path[0]].ModIds.First());
+                route.AddPos(localizationGraph.ModPos[0], localizationGraph.ChildModBoxes[path[0]].ModIds.First(), localizationGraph.array[0][path[0]].CurrentCost > 0);
             }
 
             for (int i = 1; i < path.Length; i++)
@@ -255,9 +267,10 @@ namespace EngineLayer.GlycoSearch
                 //If there is a change of the path, get the difference between the two Adjnodes of the array.
                 if (path[i] != path[i - 1])
                 {
-                    var left = GetLeft(array[i][path[i]].ModBox.ModIds, array[i - 1][path[i - 1]].ModBox.ModIds).First();
+                    var left = GetLeft(localizationGraph.array[i][path[i]].ModBox.ModIds, localizationGraph.array[i - 1][path[i - 1]].ModBox.ModIds).First();
 
-                    route.AddPos(modPos[i], left);
+                    var localPeakExist = localizationGraph.array[i - 1][path[i - 1]].CurrentCost > 0 && (localizationGraph.array[i][path[i]].CurrentCost > 0 || i == path.Length -1);
+                    route.AddPos(localizationGraph.ModPos[i], left, localPeakExist);
                 }
             }
 
@@ -307,7 +320,7 @@ namespace EngineLayer.GlycoSearch
                 //To understand the math, ref to "phosphoRS" papar.      
                 var cp = 1/(1-MathNet.Numerics.Distributions.Binomial.CDF(p, n, k) + MathNet.Numerics.Distributions.Binomial.PMF(p, n, (int)k));               
     
-                var route = GetLocalizedPath(localizationGraph.array, localizationGraph.ModPos, localizationGraph.ChildModBoxes, temp);
+                var route = GetLocalizedPath(localizationGraph, temp);
                 route.Score = k;
                 route.ReversePScore = cp;
                 allPaths.Add(route);

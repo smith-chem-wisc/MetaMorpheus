@@ -255,7 +255,7 @@ namespace Test
             Assert.That(Enumerable.SequenceEqual(knowPath, allPaths[0]));
 
             //Get localized Route
-            var local = LocalizationGraph.GetLocalizedPath(localizationGraph.array, modPos, localizationGraph.ChildModBoxes, allPaths.First());
+            var local = LocalizationGraph.GetLocalizedPath(localizationGraph, allPaths.First());
             Assert.That(Enumerable.SequenceEqual(local.Mods.Select(p=>p.Item1), new List<int>{ 2, 3, 10}));
             Assert.That(Enumerable.SequenceEqual(local.Mods.Select(p => p.Item2), new List<int> { 1, 1, 0 }));
 
@@ -340,7 +340,7 @@ namespace Test
             var knowPath = new int[2] { 1, 1 };
             Assert.That(Enumerable.SequenceEqual(knowPath, allPaths[0]));
 
-            var local = LocalizationGraph.GetLocalizedPath(localizationGraph.array, modPos, localizationGraph.ChildModBoxes, allPaths.First());
+            var local = LocalizationGraph.GetLocalizedPath(localizationGraph, allPaths.First());
 
             Assert.That(Enumerable.SequenceEqual(local.Mods.Select(p=>p.Item1), new List<int> { 4}));
             Assert.That(Enumerable.SequenceEqual(local.Mods.Select(p => p.Item2), new List<int> { 0 }));
@@ -389,7 +389,7 @@ namespace Test
         }
 
         [Test]
-        public static void OGlcoTest_GetAllPaths()
+        public static void OGlycoTest_GetAllPaths()
         {
             int[] modPos = new int[3] { 2, 4, 6 };
             var glycanBox = OGlycanBoxes[19];
@@ -418,6 +418,31 @@ namespace Test
 
             var firstPath = LocalizationGraph.GetFirstPath(localizationGraph.array, boxes);  
             Assert.That(Enumerable.SequenceEqual(firstPath, new int[3] { 2, 4, 5 }));
+        }
+
+        [Test]
+        public static void OGlycoTest_GetLocalizedPath()
+        {
+            int[] modPos = new int[1] { 4 };
+            var glycanBox = OGlycanBoxes[1];
+            var boxes = GlycanBox.BuildChildOGlycanBoxes(1, glycanBox.ModIds).ToArray();
+            LocalizationGraph localizationGraph = new LocalizationGraph(modPos, glycanBox, boxes, -1);
+
+            for (int i = 0; i < modPos.Length; i++)
+            {
+                for (int j = 0; j < boxes.Length; j++)
+                {
+                    localizationGraph.array[i][j] = new AdjNode(i, j, modPos[i], boxes[j]);
+                    localizationGraph.array[i][j].CummulativeSources = new List<int> { j };
+                }
+            }
+            localizationGraph.TotalScore = 1;
+
+           var allPaths = LocalizationGraph.GetAllHighestScorePaths(localizationGraph.array, boxes);
+
+            var route = LocalizationGraph.GetLocalizedPath(localizationGraph, allPaths.First());
+
+            Assert.That(route.Mods.First().Item3);
         }
 
     }

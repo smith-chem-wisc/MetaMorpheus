@@ -455,13 +455,14 @@ namespace TaskLayer
             var writtenFile = Path.Combine(outputPath);
             using (StreamWriter output = new StreamWriter(writtenFile))
             {
-                output.WriteLine("Protein Accessio\tModification Site\tLocalized Glycans\tLocalized\tLowest Qvalue\tBest Localization Level\tMax Site Specific Probability");
+                output.WriteLine("Protein Accessio\tModification Site\tAminoAcid\tLocalized Glycans\tLocalized\tLowest Qvalue\tBest Localization Level\tMax Site Specific Probability");
                 foreach (var item in glycoProteinParsimony.OrderBy(p=>p.Key))
                 {
                     var x = item.Key.Split('-');
                     output.WriteLine(
                         x[0] + "\t" +
                         x[1] + "\t" +
+                        item.Value.AminoAcid + "\t" +
                         GlycanBox.GlobalOGlycans[int.Parse(x[2])].Composition + "\t" +
                         item.Value.IsLocalized + "\t" +
                         item.Value.MinQValue.ToString("0.000") + "\t" +
@@ -505,6 +506,7 @@ namespace TaskLayer
                     output.WriteLine(
                         x[0] + "\t" +
                         x[1] + "\t" +
+                        local.Value.Count() + "\t" +
                         String.Join(",", local.Value.Select(p=> GlycanBox.GlobalOGlycans[int.Parse(p)].Composition))
                         );
                 }

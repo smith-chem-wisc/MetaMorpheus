@@ -416,7 +416,7 @@ namespace EngineLayer.GlycoSearch
                     if (localizationGraphs.Count > 0)
                     {
                         var firstPath = LocalizationGraph.GetFirstPath(localizationGraphs[0].array, localizationGraphs[0].ChildModBoxes);
-                        var localizationCandidate = LocalizationGraph.GetLocalizedPath(localizationGraphs[0].array, modPos, localizationGraphs[0].ChildModBoxes, firstPath);
+                        var localizationCandidate = LocalizationGraph.GetLocalizedPath(localizationGraphs[0], firstPath);
 
                         var psmGlyco = CreateGsm(theScan, scanIndex, ind, theScanBestPeptide, localizationCandidate, oxoniumIonIntensities, localizationGraphs);
 

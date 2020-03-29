@@ -155,24 +155,24 @@ namespace TaskLayer
 
                         for (int i = 0; i < glycoSpectralMatch.LocalizationGraphs.Count; i++)
                         {
-                            var allRouteWithMaxScore = LocalizationGraph.GetAllHighestScorePaths(glycoSpectralMatch.LocalizationGraphs[i].array, glycoSpectralMatch.LocalizationGraphs[i].ChildModBoxes);
+                            var allPathWithMaxScore = LocalizationGraph.GetAllHighestScorePaths(glycoSpectralMatch.LocalizationGraphs[i].array, glycoSpectralMatch.LocalizationGraphs[i].ChildModBoxes);
 
-                            foreach (var route in allRouteWithMaxScore)
+                            foreach (var path in allPathWithMaxScore)
                             {
-                                var local = LocalizationGraph.GetLocalizedPath(glycoSpectralMatch.LocalizationGraphs[i].array, glycoSpectralMatch.LocalizationGraphs[i].ModPos, glycoSpectralMatch.LocalizationGraphs[i].ChildModBoxes, route);
+                                var local = LocalizationGraph.GetLocalizedPath(glycoSpectralMatch.LocalizationGraphs[i], path);
                                 local.ModBoxId = glycoSpectralMatch.LocalizationGraphs[i].ModBoxId;
                                 localizationCandidates.Add(local);
                             }
                         }
 
-                        glycoSpectralMatch.OGlycanBoxLocalization = localizationCandidates;
+                        glycoSpectralMatch.Routes = localizationCandidates;
 
                     }
 
-                    if (glycoSpectralMatch.OGlycanBoxLocalization != null)
+                    if (glycoSpectralMatch.Routes != null)
                     {
                         LocalizationLevel localLevel;
-                        glycoSpectralMatch.LocalizedGlycan = GlycoSpectralMatch.GetLocalizedGlycan(glycoSpectralMatch.OGlycanBoxLocalization, out localLevel);
+                        glycoSpectralMatch.LocalizedGlycan = GlycoSpectralMatch.GetLocalizedGlycan(glycoSpectralMatch.Routes, out localLevel);
                         glycoSpectralMatch.LocalizationLevel = localLevel;
 
                         //Localization PValue.

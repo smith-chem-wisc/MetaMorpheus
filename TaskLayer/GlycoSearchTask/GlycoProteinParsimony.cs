@@ -10,11 +10,13 @@ namespace TaskLayer
     {
         //id: ProteinAccession, ProtienPos, GlycanId.islocalized, minQValue, maxProb
 
-        public GlycoProteinParsimony(string proteinAccess, int proteinPos, bool isLocalized, double minQValue, LocalizationLevel bestLocalizeLevel, double maxProb)
+        public GlycoProteinParsimony(string proteinAccess, int proteinPos, char aminoAcid, bool isLocalized, double minQValue, LocalizationLevel bestLocalizeLevel, double maxProb)
         {
             ProteinAccession = proteinAccess;
 
             ProteinPos = proteinPos;
+
+            AminoAcid = aminoAcid;
 
             IsLocalized = isLocalized;
 
@@ -27,6 +29,8 @@ namespace TaskLayer
         public string ProteinAccession { get; }
 
         public int ProteinPos { get; }
+
+        public char AminoAcid { get; }
 
         public bool IsLocalized { get; set; }
 
@@ -65,7 +69,7 @@ namespace TaskLayer
 
                         if (!localizedGlycan.ContainsKey(proPosId))
                         {
-                            GlycoProteinParsimony gpp = new GlycoProteinParsimony(gsm.ProteinAccession, proteinPos, local.Item3, gsm.FdrInfo.QValue, gsm.LocalizationLevel, prob);
+                            GlycoProteinParsimony gpp = new GlycoProteinParsimony(gsm.ProteinAccession, proteinPos, gsm.BaseSequence[local.Item1-2], local.Item3, gsm.FdrInfo.QValue, gsm.LocalizationLevel, prob);
                             localizedGlycan.Add(proPosId, gpp);
                         }
                         else
