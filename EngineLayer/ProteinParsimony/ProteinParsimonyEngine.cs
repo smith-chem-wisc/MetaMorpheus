@@ -35,7 +35,7 @@ namespace EngineLayer
             }
 
             // parsimony will only use non-ambiguous, high-confidence PSMs
-            // KEEP contaminants for use in parsimony! REMOVE decoys
+            // KEEP contaminants for use in parsimony!
             if (modPeptidesAreDifferent)
             {
                 _fdrFilteredPsms = allPsms.Where(p => p.FullSequence != null && p.FdrInfo.QValue <= FdrCutoffForParsimony && p.FdrInfo.QValueNotch <= FdrCutoffForParsimony).ToList();
@@ -45,11 +45,11 @@ namespace EngineLayer
                 _fdrFilteredPsms = allPsms.Where(p => p.BaseSequence != null && p.FdrInfo.QValue <= FdrCutoffForParsimony && p.FdrInfo.QValueNotch <= FdrCutoffForParsimony).ToList();
             }
 
-            // peptides to use in parsimony = peptides observed in high-confidence PSMs
+            // peptides to use in parsimony = peptides observed in high-confidence PSMs (including decoys)
             _fdrFilteredPeptides = new HashSet<PeptideWithSetModifications>();
             foreach (var psm in _fdrFilteredPsms)
             {
-                foreach (var peptide in psm.BestMatchingPeptides.Select(p => p.Peptide).Where(p => !p.Protein.IsDecoy))
+                foreach (var peptide in psm.BestMatchingPeptides.Select(p => p.Peptide))
                 {
                     _fdrFilteredPeptides.Add(peptide);
                 }
