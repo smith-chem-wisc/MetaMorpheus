@@ -302,7 +302,7 @@ namespace TaskLayer
             for (int i = 1; i < lines.Length; i++)
             {
                 var split = lines[i].Split('\t');
-                string oldFileName = Path.GetFileNameWithoutExtension(split[0]);
+                string oldFileName = Path.GetFileName(split[0]);
                 string newFileName = oldFileName + CalibSuffix;
                 string newline;
 
