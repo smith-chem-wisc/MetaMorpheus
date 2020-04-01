@@ -228,8 +228,8 @@ namespace MetaMorpheusGUI
             {
                 IEnumerable<double> allNumbers = numbersBySourceFile.Values.SelectMany(x => x);
 
-                int end = roundToBin(allNumbers.Max(), binSize);
-                int start = roundToBin(allNumbers.Min(), binSize);
+                int end = dictsBySourceFile.Values.Max(p => p.Max(v => int.Parse(v.Key)));
+                int start = dictsBySourceFile.Values.Min(p => p.Min(v => int.Parse(v.Key)));
                 int numBins = end - start + 1;
                 int minBinLabels = 22;  // the number of labeled bins will be between minBinLabels and 2 * minBinLabels
                 int skipBinLabel = numBins < minBinLabels ? 1 : numBins / minBinLabels;
@@ -241,7 +241,7 @@ namespace MetaMorpheusGUI
                 {
                     if (i % skipBinLabel == 0)
                     {
-                        category[i - start] = (i * binSize).ToString(CultureInfo.InvariantCulture);
+                        category[i - start] = Math.Round((i * binSize), 2).ToString(CultureInfo.InvariantCulture);
                     }
                     foreach (Dictionary<string, int> dict in dictsBySourceFile.Values)
                     {
@@ -324,7 +324,7 @@ namespace MetaMorpheusGUI
                     }
                     break;
                 case 3: // Predicted RT vs. Observed RT
-                    yAxisTitle = "Predicted retention time";
+                    yAxisTitle = "Predicted Hydrophobicity";
                     xAxisTitle = "Observed retention time";
                     SSRCalc3 sSRCalc3 = new SSRCalc3("A100", SSRCalc3.Column.A100);
                     foreach (var psm in allPsms)

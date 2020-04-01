@@ -22,8 +22,12 @@ Check out the [wiki page](https://github.com/smith-chem-wisc/MetaMorpheus/wiki) 
 ## System Requirements
 
 * Environment:
-  * For .NET Core versions: .NET Core 2.0.0 runtime
-  * For .NET Framework versions: .NET Framework 4.7.1
+  * 64-bit operating system
+  * .NET Core 3.1:
+     * Windows: https://dotnet.microsoft.com/download/dotnet-core/thank-you/runtime-3.1.3-windows-x64-installer
+     * Mac: https://dotnet.microsoft.com/download/dotnet-core/thank-you/runtime-3.1.3-macos-x64-installer
+     * Linux: https://docs.microsoft.com/dotnet/core/install/linux-package-managers
+* Note that the installer (MetaMorpheusInstaller.msi) only works on Windows. The command-line version of MetaMorpheus supports any operating system that supports .NET Core (Windows, MacOS, Linux)
 * 8 GB RAM recommended
 
 ## Spectra Requirements
