@@ -1591,37 +1591,6 @@ namespace Test
             }
         }
 
-
-        public class SanitizeTestClass : SearchTask
-        {
-            [Test]
-            public static void TestDatabaseSanitizationPrioritizesXml()
-            {
-                //if a fasta and a xml database are both used and called targets, prioritize the xml
-                Protein fastaProtein = new Protein("APEPTIDE", "Test");
-                ModificationMotif.TryGetMotif("A", out ModificationMotif motif);
-                Modification mod = new Modification(_originalId: "acetylation", _modificationType: "testModType", _target: motif, _chemicalFormula: ChemicalFormula.ParseFormula("C2H2O1"), _locationRestriction: "Anywhere.");
-                Protein xmlProtein = new Protein("APEPTIDE", "Test", oneBasedModifications: new Dictionary<int, List<Modification>> { { 1, new List<Modification> { mod } } });
-                List<Protein> proteins = new List<Protein> { fastaProtein, xmlProtein };
-                SanitizeProteinDatabase(proteins, TargetContaminantAmbiguity.RemoveTarget);
-                Assert.IsTrue(proteins.Count == 1);
-                Assert.IsTrue(proteins.First().OneBasedPossibleLocalizedModifications.Count!=0);
-
-                //reverse order and try again
-                proteins = new List<Protein> { xmlProtein, fastaProtein };
-                SanitizeProteinDatabase(proteins, TargetContaminantAmbiguity.RemoveTarget);
-                Assert.IsTrue(proteins.Count == 1);
-                Assert.IsTrue(proteins.First().OneBasedPossibleLocalizedModifications.Count != 0);
-
-                //same with no mods
-                xmlProtein = new Protein("APEPTIDE", "Test", proteolysisProducts: new List<ProteolysisProduct> { new ProteolysisProduct(1, 3, "zrWuzHere") });
-                proteins = new List<Protein> { xmlProtein, fastaProtein };
-                SanitizeProteinDatabase(proteins, TargetContaminantAmbiguity.RemoveTarget);
-                Assert.IsTrue(proteins.Count == 1);
-                Assert.IsTrue(proteins.First().ProteolysisProducts.Count() != 0);
-            }
-        }
-
         [Test]
         public static void TestClassicSearchOneNterminalModifiedPeptideOneScan()
         {

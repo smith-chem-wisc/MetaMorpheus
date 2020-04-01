@@ -919,5 +919,81 @@ namespace TaskLayer
                 GlobalVariables.AnalyteType = "Peptide";
             }
         }
+
+        /// <summary>
+        /// Handle ambiguity when two theoretical proteins in the 
+        /// search space have the same accession number.
+        /// The accession must be unique for indexed searches
+        /// </summary>
+        /// <param name="proteins"></param>
+        /// <param name="tcAmbiguity"></param>
+        protected static void SanitizeProteinDatabase(List<Protein> proteins, TargetContaminantAmbiguity tcAmbiguity)
+        {
+            if (proteins.Count != 0) //if we have proteins
+            {
+                proteins.Sort((x, y) => x.Accession.CompareTo(y.Accession)); //sort by accession then number of mods (descending) to prioritize xml over fasta
+                proteins.Sort(delegate (Protein p1, Protein p2)
+                {
+                    var byCode = p1.Accession.CompareTo(p2.Accession);
+                    byCode = byCode == 0 ? p2.OneBasedPossibleLocalizedModifications.Count.CompareTo(p1.OneBasedPossibleLocalizedModifications.Count) : byCode;
+                    return byCode == 0 ? p2.ProteolysisProducts.Count().CompareTo(p1.ProteolysisProducts.Count()) : byCode;
+                });
+                string previousAccession = proteins[0].Accession; //get first accession
+                for (int i = 1; i < proteins.Count; i++)
+                {
+                    string currentAccession = proteins[i].Accession; //get current accession
+                    if (currentAccession.Equals(previousAccession)) //if this accession was found in the previous protein (i.e. it's a duplicate)
+                    {
+                        if (tcAmbiguity == TargetContaminantAmbiguity.RenameProtein) //if we're keeping things
+                        {
+                            int numToAdd = 1;
+                            //find all proteins sharing this accession
+                            while (proteins.Count > i - 2 + numToAdd && proteins[i - 2 + numToAdd].Accession.Equals(previousAccession))
+                            {
+                                //accession is private and there's no clone method, so we need to make a whole new protein... TODO: put this in mzlib
+                                Protein currentProtein = proteins[i - 2 + numToAdd];
+                                //use PROTEIN_D1 instead of PROTEIN_1 so it doesn't look like an isoform (D for Duplicate)
+                                proteins[i - 2 + numToAdd] = new Protein(currentProtein.BaseSequence, currentAccession + "_D" + numToAdd.ToString(), currentProtein.Organism,
+                                    currentProtein.GeneNames.ToList(), currentProtein.OneBasedPossibleLocalizedModifications, currentProtein.ProteolysisProducts.ToList(), currentProtein.Name, currentProtein.FullName,
+                                    currentProtein.IsDecoy, currentProtein.IsContaminant, currentProtein.DatabaseReferences.ToList(), currentProtein.SequenceVariations.ToList(), currentProtein.AppliedSequenceVariations,
+                                    currentProtein.SampleNameForVariants, currentProtein.DisulfideBonds.ToList(), currentProtein.SpliceSites.ToList(), currentProtein.DatabaseFilePath);
+                                numToAdd++;
+                            }
+                        }
+                        else //something's getting removed 
+                        {
+                            //find the contaminant
+                            bool firstProteinIsContaminant = proteins[i - 1].IsContaminant;
+                            bool currentProteinIsContaminant = proteins[i].IsContaminant;
+
+                            // if they're the same (or if there's more than 2), we have issues
+                            if (firstProteinIsContaminant != currentProteinIsContaminant &&
+                                (proteins.Count == i + 1 || proteins[i + 1].Accession.Equals(currentAccession)))
+                            {
+                                if (tcAmbiguity == TargetContaminantAmbiguity.RemoveContaminant)
+                                {
+                                    proteins.RemoveAt(firstProteinIsContaminant ? i - 1 : i);
+                                }
+                                else //RemoveTarget
+                                {
+                                    proteins.RemoveAt(firstProteinIsContaminant ? i : i - 1);
+                                }
+                            }
+                            else //occurs for decoys that overlap in target and contaminant databases. Occurs if db is messed up.
+                            {
+                                Warn("The protein '" + currentAccession + "' has multiple entries. Protein accessions must be unique. A protein sequence was removed.");
+                                proteins.RemoveAt(i);
+                            }
+
+                            i--; //reset to account for the removed
+                        }
+                    }
+                    else //update the accession to search for
+                    {
+                        previousAccession = currentAccession;
+                    }
+                }
+            }
+        }
     }
 }
