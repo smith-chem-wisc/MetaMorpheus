@@ -72,7 +72,7 @@ namespace MetaMorpheusGUI
             SearchModifications.SetUpModSearchBoxes();
 
             // LOAD GUI SETTINGS
-            if(!UpdateGUISettings.LoadGUISettings())
+            if (!UpdateGUISettings.LoadGUISettings())
             {
                 notificationsTextBox.Document = YoutubeWikiNotification();
             }
@@ -632,9 +632,6 @@ namespace MetaMorpheusGUI
 
         private void RunAllTasks_Click(object sender, RoutedEventArgs e)
         {
-            GlobalVariables.StopLoops = false;
-            CancelButton.IsEnabled = true;
-
             // check for valid tasks/spectra files/protein databases
             if (!StaticTasksObservableCollection.Any())
             {
@@ -651,16 +648,6 @@ namespace MetaMorpheusGUI
                 GuiWarnHandler(null, new StringEventArgs("You need to add at least one protein database!", null));
                 return;
             }
-
-            DynamicTasksObservableCollection = new ObservableCollection<InRunTask>();
-
-            for (int i = 0; i < StaticTasksObservableCollection.Count; i++)
-            {
-                DynamicTasksObservableCollection.Add(new InRunTask("Task" + (i + 1) + "-" + StaticTasksObservableCollection[i].metaMorpheusTask.CommonParameters.TaskDescriptor, StaticTasksObservableCollection[i].metaMorpheusTask));
-            }
-            tasksTreeView.DataContext = DynamicTasksObservableCollection;
-
-            notificationsTextBox.Document.Blocks.Clear();
 
             // output folder
             if (string.IsNullOrEmpty(OutputFolderTextBox.Text))
@@ -705,13 +692,39 @@ namespace MetaMorpheusGUI
                     return;
                 }
             }
-            BtnQuantSet.IsEnabled = false;
+
+            int longestSpectraFileNameLength = SpectraFilesObservableCollection.Max(p => p.FileName.Length);
+            if (outputFolder.Length > 200)
+            {
+                MessageBoxResult result = MessageBox.Show("Warning: The output folder is long (over 180 characters). " +
+                    "Windows has a maximum path length of 260 characters, and some of MetaMorpheus's output may exceed this length. " +
+                    "Proceeding may result in a crash. Continue with the search?", "Warning", MessageBoxButton.YesNo);
+
+                if (result == MessageBoxResult.No)
+                {
+                    return;
+                }
+            }
+
+            DynamicTasksObservableCollection = new ObservableCollection<InRunTask>();
+
+            for (int i = 0; i < StaticTasksObservableCollection.Count; i++)
+            {
+                DynamicTasksObservableCollection.Add(new InRunTask("Task" + (i + 1) + "-" + StaticTasksObservableCollection[i].metaMorpheusTask.CommonParameters.TaskDescriptor, StaticTasksObservableCollection[i].metaMorpheusTask));
+            }
+            tasksTreeView.DataContext = DynamicTasksObservableCollection;
+
+            notificationsTextBox.Document.Blocks.Clear();
 
             // everything is OK to run
             EverythingRunnerEngine a = new EverythingRunnerEngine(DynamicTasksObservableCollection.Select(b => (b.DisplayName, b.Task)).ToList(),
                 SpectraFilesObservableCollection.Where(b => b.Use).Select(b => b.FilePath).ToList(),
                 ProteinDbObservableCollection.Where(b => b.Use).Select(b => new DbForTask(b.FilePath, b.Contaminant)).ToList(),
                 outputFolder);
+
+            GlobalVariables.StopLoops = false;
+            CancelButton.IsEnabled = true;
+            BtnQuantSet.IsEnabled = false;
 
             var t = new Task(a.Run);
             t.ContinueWith(EverythingRunnerExceptionHandler, TaskContinuationOptions.OnlyOnFaulted);
@@ -891,7 +904,7 @@ namespace MetaMorpheusGUI
         }
 
         private void BtnAddCrosslinkSearch_Click(object sender, RoutedEventArgs e)
-        {            
+        {
             //check if the default toml has been overwritten
             XLSearchTask task = null;
             string defaultFilePath = Path.Combine(GlobalVariables.DataDir, "DefaultParameters", @"XLSearchTaskDefault.toml");

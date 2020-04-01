@@ -20,6 +20,8 @@ namespace TaskLayer
                 return;
             }
 
+            MetaMorpheusTask.CheckFilePathLength(filePath);
+
             using (StreamWriter output = new StreamWriter(filePath))
             {
                 string header = "";
@@ -47,6 +49,9 @@ namespace TaskLayer
             if (items.Count == 0)
             { return; }
             var writtenFile = Path.Combine(outputFolder, fileName + ".txt");
+
+            MetaMorpheusTask.CheckFilePathLength(writtenFile);
+
             using (StreamWriter output = new StreamWriter(writtenFile))
             {
                 output.WriteLine("SpecId\tLabel\tScannr\tScore\tdScore\tCharge\tMass\tPPM\tLenShort\tLenLong\tLenSum" +
@@ -412,7 +417,11 @@ namespace TaskLayer
                 };
             }
 
-            TextWriter writer = new StreamWriter(Path.Combine(outputFolder, fileName + ".pep.XML"));
+            string filePath = Path.Combine(outputFolder, fileName + ".pep.XML");
+
+            MetaMorpheusTask.CheckFilePathLength(filePath);
+
+            TextWriter writer = new StreamWriter(filePath);
             _indexedSerializer.Serialize(writer, _pepxml);
             writer.Close();
         }
