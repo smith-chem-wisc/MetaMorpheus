@@ -52,9 +52,9 @@
 
       <Directory Id="ProgramFiles64Folder">
         <Directory Id="MetaMorpheusInstallFolder" Name="MetaMorpheus">
-          <Directory Id="NativeMathDllFolder-runtimes" Name="runtimes">
-            <Directory Id="NativeMathDllFolder-win-x64" Name="win-x64">
-              <Directory Id="NativeMathDllFolder-native" Name="native">
+          <Directory Id="NativeMathDllFolder_runtimes" Name="runtimes">
+            <Directory Id="NativeMathDllFolder_win_x64" Name="win-x64">
+              <Directory Id="NativeMathDllFolder_native" Name="native">
               </Directory>
             </Directory>
           </Directory>
@@ -280,7 +280,7 @@
         <File Id="src_MetaMorpheusGUI.runtimeconfig.json" Name="MetaMorpheusGUI.runtimeconfig.json" Source="$(var.GUI_TargetDir)MetaMorpheusGUI.runtimeconfig.json" />
       </Component>
     </ComponentGroup>
-    <ComponentGroup Id="ExecutablesAndLibrariesComponentGroup2" Directory="NativeMathDllFolder-native">
+    <ComponentGroup Id="ExecutablesAndLibrariesComponentGroup2" Directory="NativeMathDllFolder_native">
       <Component Id="src_CpuMathNative.dll" Guid="436C233C-5BCD-4386-90C7-F2AC489B09CF">
         <File Id="src_CpuMathNative.dll" Name="CpuMathNative.dll" Source="$(var.GUI_TargetDir)runtimes\win-x64\native\CpuMathNative.dll" />
       </Component>
