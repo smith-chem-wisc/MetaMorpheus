@@ -1371,8 +1371,6 @@ namespace TaskLayer
 
         private void WritePsmsForPercolator(List<PeptideSpectralMatch> psmList, string writtenFileForPercolator)
         {
-            CheckFilePathLength(writtenFileForPercolator);
-
             using (StreamWriter output = new StreamWriter(writtenFileForPercolator))
             {
                 string searchType;
@@ -1423,8 +1421,6 @@ namespace TaskLayer
 
         private void WriteProteinGroupsToTsv(List<EngineLayer.ProteinGroup> proteinGroups, string filePath, List<string> nestedIds, double qValueCutoff)
         {
-            CheckFilePathLength(filePath);
-
             if (proteinGroups != null && proteinGroups.Any())
             {
                 using (StreamWriter output = new StreamWriter(filePath))

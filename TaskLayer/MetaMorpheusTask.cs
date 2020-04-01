@@ -565,8 +565,6 @@ namespace TaskLayer
 
         protected static void WritePsmsToTsv(IEnumerable<PeptideSpectralMatch> psms, string filePath, IReadOnlyDictionary<string, int> modstoWritePruned)
         {
-            CheckFilePathLength(filePath);
-
             using (StreamWriter output = new StreamWriter(filePath))
             {
                 output.WriteLine(PeptideSpectralMatch.GetTabSeparatedHeader());
@@ -919,14 +917,6 @@ namespace TaskLayer
             else
             {
                 GlobalVariables.AnalyteType = "Peptide";
-            }
-        }
-
-        public static void CheckFilePathLength(string filePath)
-        {
-            if (filePath.Length > 260)
-            {
-                throw new MetaMorpheusException("The file " + filePath + " is too long to write");
             }
         }
     }

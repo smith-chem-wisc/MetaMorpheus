@@ -20,8 +20,6 @@ namespace TaskLayer
                 return;
             }
 
-            MetaMorpheusTask.CheckFilePathLength(filePath);
-
             using (StreamWriter output = new StreamWriter(filePath))
             {
                 string header = "";
@@ -49,8 +47,6 @@ namespace TaskLayer
             if (items.Count == 0)
             { return; }
             var writtenFile = Path.Combine(outputFolder, fileName + ".txt");
-
-            MetaMorpheusTask.CheckFilePathLength(writtenFile);
 
             using (StreamWriter output = new StreamWriter(writtenFile))
             {
@@ -418,8 +414,6 @@ namespace TaskLayer
             }
 
             string filePath = Path.Combine(outputFolder, fileName + ".pep.XML");
-
-            MetaMorpheusTask.CheckFilePathLength(filePath);
 
             TextWriter writer = new StreamWriter(filePath);
             _indexedSerializer.Serialize(writer, _pepxml);
