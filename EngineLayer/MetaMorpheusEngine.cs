@@ -111,7 +111,7 @@ namespace EngineLayer
             }
 
             // if the spectrum has no peaks
-            if (!scan.ExperimentalFragments.Any())
+            if (scan.ExperimentalFragments != null && !scan.ExperimentalFragments.Any())
             {
                 return matchedFragmentIons;
             }
@@ -131,7 +131,7 @@ namespace EngineLayer
                 var closestExperimentalMass = scan.GetClosestExperimentalIsotopicEnvelope(product.NeutralMass);
 
                 // is the mass error acceptable?
-                if (commonParameters.ProductMassTolerance.Within(closestExperimentalMass.MonoisotopicMass, product.NeutralMass) && closestExperimentalMass.Charge <= scan.PrecursorCharge) //TODO apply this filter before picking the envelope
+                if (closestExperimentalMass != null && commonParameters.ProductMassTolerance.Within(closestExperimentalMass.monoisotopicMass, product.NeutralMass) && closestExperimentalMass.charge <= scan.PrecursorCharge)//TODO apply this filter before picking the envelope
                 {
                     matchedFragmentIons.Add(new MatchedFragmentIon(ref product, closestExperimentalMass.MonoisotopicMass.ToMz(closestExperimentalMass.Charge),
                         closestExperimentalMass.Peaks.First().intensity, closestExperimentalMass.Charge));
