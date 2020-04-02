@@ -302,6 +302,9 @@ namespace TaskLayer
             for (int i = 1; i < lines.Length; i++)
             {
                 var split = lines[i].Split('\t');
+
+                // GetFileName is used instead of GetFileNameWithoutExtension because 
+                // the Experimental Design file does not include extensions in the file names
                 string oldFileName = Path.GetFileName(split[0]);
                 string newFileName = oldFileName + CalibSuffix;
                 string newline;
