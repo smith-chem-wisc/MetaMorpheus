@@ -53,6 +53,7 @@ namespace TaskLayer
             WriteContaminants = true;
             WriteIndividualFiles = true;
             LocalFdrCategories = new List<FdrCategory> { FdrCategory.FullySpecific };
+            TCAmbiguity = TargetContaminantAmbiguity.RemoveContaminant;
         }
 
         public bool DisposeOfFileWhenDone { get; set; }
@@ -86,5 +87,6 @@ namespace TaskLayer
         public List<SilacLabel> SilacLabels { get; set; }
         public SilacLabel StartTurnoverLabel { get; set; } //used for SILAC turnover experiments
         public SilacLabel EndTurnoverLabel { get; set; } //used for SILAC turnover experiments
+        public TargetContaminantAmbiguity TCAmbiguity { get; set; }
     }
 }
