@@ -183,16 +183,16 @@ namespace Test
                 List<Protein> proteins = new List<Protein> { targetProtein, contaminantProtein, tDecoyProtein, cDecoyProtein }; //two decoys, one for target, one for contaminant
                 SanitizeProteinDatabase(proteins, TargetContaminantAmbiguity.RemoveContaminant);
                 Assert.IsTrue(proteins.Count == 2);
-                Assert.IsTrue(!proteins[1].IsContaminant); //forward is target
+                Assert.IsTrue(!proteins[0].IsContaminant); //forward is target
                 Assert.IsTrue(proteins[0].OneBasedPossibleLocalizedModifications.Count == 1);
                 Assert.IsTrue(proteins[1].OneBasedPossibleLocalizedModifications.Count == 1);
 
                 proteins = new List<Protein> { targetProtein, contaminantProtein, tDecoyProtein, cDecoyProtein }; //two decoys, one for target, one for contaminant
                 SanitizeProteinDatabase(proteins, TargetContaminantAmbiguity.RemoveTarget);
                 Assert.IsTrue(proteins.Count == 2);
-                Assert.IsTrue(proteins[1].IsContaminant); //forward is contaminant
-                Assert.IsTrue(proteins[0].OneBasedPossibleLocalizedModifications.Count == 1); //would be cool if this was 0 and we could keep the correct decoy, but kind of an edge case
-                Assert.IsTrue(proteins[1].OneBasedPossibleLocalizedModifications.Count == 0); //contaminant doesn't have mods
+                Assert.IsTrue(proteins[0].IsContaminant); //forward is contaminant
+                Assert.IsTrue(proteins[0].OneBasedPossibleLocalizedModifications.Count == 0); //contaminant doesn't have mods                
+                Assert.IsTrue(proteins[1].OneBasedPossibleLocalizedModifications.Count == 1); //would be cool if this was 0 and we could keep the correct decoy, but kind of an edge case
             }
         }
     }
