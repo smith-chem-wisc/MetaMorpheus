@@ -35,7 +35,7 @@ namespace EngineLayer
             }
 
             // parsimony will only use non-ambiguous, high-confidence PSMs
-            // KEEP decoys and contaminants for use in parsimony!
+            // KEEP contaminants for use in parsimony!
             if (modPeptidesAreDifferent)
             {
                 _fdrFilteredPsms = allPsms.Where(p => p.FullSequence != null && p.FdrInfo.QValue <= FdrCutoffForParsimony && p.FdrInfo.QValueNotch <= FdrCutoffForParsimony).ToList();
@@ -45,32 +45,13 @@ namespace EngineLayer
                 _fdrFilteredPsms = allPsms.Where(p => p.BaseSequence != null && p.FdrInfo.QValue <= FdrCutoffForParsimony && p.FdrInfo.QValueNotch <= FdrCutoffForParsimony).ToList();
             }
 
-            // if PSM is a decoy, add only decoy sequences; same for contaminants
-            // peptides to use in parsimony = peptides observed in high-confidence PSMs
+            // peptides to use in parsimony = peptides observed in high-confidence PSMs (including decoys)
             _fdrFilteredPeptides = new HashSet<PeptideWithSetModifications>();
-
             foreach (var psm in _fdrFilteredPsms)
             {
-                if (psm.IsDecoy)
+                foreach (var peptide in psm.BestMatchingPeptides.Select(p => p.Peptide))
                 {
-                    foreach (var peptide in psm.BestMatchingPeptides.Select(p => p.Peptide).Where(p => p.Protein.IsDecoy))
-                    {
-                        _fdrFilteredPeptides.Add(peptide);
-                    }
-                }
-                else if (psm.IsContaminant)
-                {
-                    foreach (var peptide in psm.BestMatchingPeptides.Select(p => p.Peptide).Where(p => p.Protein.IsContaminant))
-                    {
-                        _fdrFilteredPeptides.Add(peptide);
-                    }
-                }
-                else // PSM is target
-                {
-                    foreach (var peptide in psm.BestMatchingPeptides.Select(p => p.Peptide).Where(p => !p.Protein.IsDecoy && !p.Protein.IsContaminant))
-                    {
-                        _fdrFilteredPeptides.Add(peptide);
-                    }
+                    _fdrFilteredPeptides.Add(peptide);
                 }
             }
 
