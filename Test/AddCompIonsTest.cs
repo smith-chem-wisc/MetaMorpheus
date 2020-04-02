@@ -118,7 +118,7 @@ namespace Test
             fspComp.Add(("", CommonParameters));
 
             var indexEngine = new IndexingEngine(proteinList, variableModifications, fixedModifications, null, null, null,
-                 1, DecoyType.Reverse, CommonParameters, fsp, SearchParameters.MaxFragmentSize, false, new List<FileInfo>(), new List<string>());
+                 1, DecoyType.Reverse, CommonParameters, fsp, SearchParameters.MaxFragmentSize, false, new List<FileInfo>(), TargetContaminantAmbiguity.RemoveContaminant, new List<string>());
 
             var indexResults = (IndexingResults)indexEngine.Run();
 
@@ -227,7 +227,7 @@ namespace Test
         [Test]
         public static void AddCompIonsCommonParams()
         {
-            CommonParameters cp = new CommonParameters(null, DissociationType.HCD, DissociationType.Unknown, DissociationType.Unknown, null, true, true, 3, 12, true, true, 1, 
+            CommonParameters cp = new CommonParameters(null, DissociationType.HCD, DissociationType.Unknown, DissociationType.Unknown, null, true, true, 3, 12, true, true, 1,
                 5, 200, 0.01, null, null, false, false, true, false, null, null, null, -1, null, null, null, 1, true, 4, 1);
 
             var myMsDataFile = new TestDataFile();
@@ -267,7 +267,7 @@ namespace Test
             fsp.Add(("", cp));
 
             var indexEngine = new IndexingEngine(proteinList, variableModifications, fixedModifications, new List<SilacLabel>(), null, null,
-                 1, DecoyType.Reverse, cp, fsp, SearchParameters.MaxFragmentSize, false, new List<FileInfo>(), new List<string>());
+                 1, DecoyType.Reverse, cp, fsp, SearchParameters.MaxFragmentSize, false, new List<FileInfo>(), TargetContaminantAmbiguity.RemoveContaminant, new List<string>());
 
             var indexResults = (IndexingResults)indexEngine.Run();
 
@@ -280,7 +280,6 @@ namespace Test
             // without complementary ions
             PeptideSpectralMatch[] allPsmsArray = new PeptideSpectralMatch[listOfSortedms2Scans.Length];
             var mse = new ModernSearchEngine(allPsmsArray, listOfSortedms2Scans, indexResults.PeptideIndex, indexResults.FragmentIndex, 0, cp, fsp, massDiffAcceptor, SearchParameters.MaximumMassThatFragmentIonScoreIsDoubled, new List<string>()).Run();
-
         }
     }
 }
