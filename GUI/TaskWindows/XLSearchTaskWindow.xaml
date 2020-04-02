@@ -47,7 +47,6 @@
                     <Grid>
                         <Grid.ColumnDefinitions>
                             <ColumnDefinition Width="1*" />
-                            <ColumnDefinition Width="1*" />
                         </Grid.ColumnDefinitions>
                         <Grid.RowDefinitions>
                             <RowDefinition Height="1*" />
@@ -55,35 +54,6 @@
                             <RowDefinition Height="1*" />
                             <RowDefinition Height="1*" />
                         </Grid.RowDefinitions>
-                        <!--<RadioButton x:Name="RbSearchCrosslink" Content="Crosslink Search" GroupName="SearchType"></RadioButton>-->
-                        <!--<RadioButton x:Name="RbSearchGlyco" Content="Glyco Search" GroupName="SearchType" Grid.Column="1"></RadioButton>-->
-                        <StackPanel Orientation="Horizontal" Margin="5" Grid.Row="0" Grid.Column="1">
-                            <Label x:Name="ionsToSearchLabel" Content="Dissociation Type" ToolTipService.ShowDuration="999999" ToolTipService.InitialShowDelay="500">
-                                <Label.ToolTip>
-                                    <TextBlock>
-                                                        The type of fragmentation.
-                                    </TextBlock>
-                                </Label.ToolTip>
-                            </Label>
-                            <ComboBox x:Name="DissociationTypeComboBox" HorizontalAlignment="Center" VerticalAlignment="Center" DropDownClosed="CustomFragmentationHandler"/>
-                            <Label x:Name="childScanIonsToSearchLabel" Content="Child Scan Dissocation" ToolTipService.ShowDuration="999999" ToolTipService.InitialShowDelay="500">
-                                <Label.ToolTip>
-                                    <TextBlock>
-                                                        The type of fragmentation of the child scan (second MS2, or MS3).
-                                    </TextBlock>
-                                </Label.ToolTip>
-                            </Label>
-                            <ComboBox x:Name="ChildScanDissociationTypeComboBox" AllowDrop="False" HorizontalAlignment="Center" VerticalAlignment="Center" DropDownClosed="CustomFragmentationHandler"/>
-                        </StackPanel>
-                        <StackPanel Orientation="Horizontal" Grid.Row="1" Grid.Column="0" Margin="5">
-                            <Label x:Name="lblXLprecusorMsTl"  Content="Precursor mass tolerance" />
-                            <TextBox x:Name="XLPrecusorMsTlTextBox" PreviewTextInput="CheckIfNumber" Width="45" />
-                            <ComboBox x:Name="cbbXLprecusorMsTl" />
-                        </StackPanel>
-                        <StackPanel Orientation="Horizontal" Grid.Row="1" Grid.Column="1" Margin="5">
-                            <Label Content="Keep top N candidates" />
-                            <TextBox x:Name="txtXLTopNum" PreviewTextInput="CheckIfNumber" Width="45" Margin="2" IsEnabled="{Binding IsChecked, ElementName=ckbXLTopNum}" />
-                        </StackPanel>
                     </Grid>
                 </StackPanel>
                 <GroupBox Header="Crosslink Search" DockPanel.Dock="Top">
@@ -108,21 +78,42 @@
                                     <CheckBox x:Name="ckbQuenchNH2"  VerticalAlignment="Center" Content="NH2" Margin="2" />
                                 </StackPanel>
                             </Grid>
+                            <StackPanel Orientation="Horizontal" Grid.Row="1" Grid.Column="1" Margin="5">
+                                <Label Content="Keep top N candidates" />
+                                <TextBox x:Name="txtXLTopNum" PreviewTextInput="CheckIfNumber" Width="45" Margin="2" IsEnabled="{Binding IsChecked, ElementName=ckbXLTopNum}" />
+                            </StackPanel>
+                            <StackPanel Orientation="Horizontal" Margin="5" Grid.Row="0" Grid.Column="1">
+                                <Label x:Name="ionsToSearchLabel" Content="MS2 Dissociation Type" ToolTipService.ShowDuration="999999" ToolTipService.InitialShowDelay="500">
+                                    <Label.ToolTip>
+                                        <TextBlock>
+                                                        The type of fragmentation.
+                                        </TextBlock>
+                                    </Label.ToolTip>
+                                </Label>
+                                <ComboBox x:Name="DissociationTypeComboBox" HorizontalAlignment="Center" VerticalAlignment="Center" DropDownClosed="CustomFragmentationHandler"/>
+                                <Label x:Name="ms2childScanIonsToSearchLabel" Content="MS2 Child Scan Dissocation" ToolTipService.ShowDuration="999999" ToolTipService.InitialShowDelay="500">
+                                    <Label.ToolTip>
+                                        <TextBlock>
+                                                        The type of fragmentation of the child scan (second MS2, or MS3).
+                                        </TextBlock>
+                                    </Label.ToolTip>
+                                </Label>
+                                <ComboBox x:Name="MS2ChildScanDissociationTypeComboBox" AllowDrop="False" HorizontalAlignment="Center" VerticalAlignment="Center" DropDownClosed="CustomFragmentationHandler"/>
+                                <Label x:Name="ms3childScanIonsToSearchLabel" Content="MS3 Child Scan Dissocation" ToolTipService.ShowDuration="999999" ToolTipService.InitialShowDelay="500">
+                                    <Label.ToolTip>
+                                        <TextBlock>
+                                                        The type of fragmentation of the child scan (second MS2, or MS3).
+                                        </TextBlock>
+                                    </Label.ToolTip>
+                                </Label>
+                                <ComboBox x:Name="MS3ChildScanDissociationTypeComboBox" AllowDrop="False" HorizontalAlignment="Center" VerticalAlignment="Center" DropDownClosed="CustomFragmentationHandler"/>
+                            </StackPanel>
                             <StackPanel>
                                 <CheckBox x:Name="ckbCrosslinkAtCleavageSite"  VerticalAlignment="Center" Content="Crosslink At Cleavage Site" Margin="2" />
                             </StackPanel>
                         </StackPanel>
                     </Expander>
                 </GroupBox>
-                <!--<GroupBox Header="Glyco Search" DockPanel.Dock="Top">
-                    <Expander x:Name="GlycoSearchExpander">
-                        <StackPanel Orientation="Vertical">
-                            <StackPanel Orientation="Horizontal" Margin="5">
-                                <CheckBox x:Name="CkbSearchGlycoWithBgYgIndex"  VerticalAlignment="Center" Content="Search Glycopeptides with BgYg index" />
-                            </StackPanel>
-                        </StackPanel>
-                    </Expander>
-                </GroupBox>-->
                 <GroupBox Header="Search Parameters" DockPanel.Dock="Top">
                     <Expander x:Name="SearchModeExpander">
                         <Expander.Style>
@@ -215,17 +206,23 @@
                                         <ColumnDefinition Width="1*" />
                                     </Grid.ColumnDefinitions>
                                     <StackPanel>
+                                        <StackPanel Orientation="Horizontal" Grid.Row="1" Grid.Column="0" Margin="5">
+                                            <Label x:Name="lblXLprecusorMsTl"  Content="Precursor mass tolerance" />
+                                            <TextBox x:Name="XLPrecusorMsTlTextBox" PreviewTextInput="CheckIfNumber" Width="45" />
+                                            <ComboBox x:Name="cbbXLprecusorMsTl" />
+                                        </StackPanel>
                                         <StackPanel Orientation="Horizontal" Margin="5">
                                             <Label x:Name="label2_Copy" Content="Product Mass Tolerance" />
                                             <TextBox x:Name="productMassToleranceTextBox" PreviewTextInput="CheckIfNumber" HorizontalAlignment="Left"  TextWrapping="Wrap" Width="45" />
                                             <ComboBox x:Name="productMassToleranceComboBox" HorizontalAlignment="Left" />
                                         </StackPanel>
+                
+                                    </StackPanel>
+                                    <StackPanel Grid.Column="2">
                                         <StackPanel Orientation="Horizontal" Margin="5">
                                             <Label x:Name="ffdf" Content="Minimum score allowed:" />
                                             <TextBox x:Name="minScoreAllowed" PreviewTextInput="CheckIfNumber" Width="45" />
                                         </StackPanel>
-                                    </StackPanel>
-                                    <StackPanel Grid.Column="2">
                                         <StackPanel Orientation="Horizontal" Margin="5">
                                             <Label Content="Max Threads" />
                                             <TextBox x:Name="maxThreadsTextBox" PreviewTextInput="CheckIfNumber" Width="45" ToolTipService.ShowDuration="999999" ToolTipService.InitialShowDelay="500">

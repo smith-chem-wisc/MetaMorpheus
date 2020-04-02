@@ -444,6 +444,8 @@
                             <!--<CheckBox x:Name="ckbPepXML" Content="Write .pep.XML" />-->
                             <CheckBox x:Name="WriteDecoyCheckBox" Content="Write decoys" />
                             <CheckBox x:Name="WriteContaminantCheckBox" Content="Write contaminants" />
+                            <CheckBox x:Name="WriteIndividualResultsCheckBox" Content="Write Individual File Results" />
+                            <CheckBox x:Name="CompressIndividualResultsCheckBox" Content="Compress Individual File Results" IsEnabled="{Binding IsChecked, ElementName=WriteIndividualResultsCheckBox}"/>
                             <StackPanel Orientation="Horizontal">
                                 <CheckBox x:Name="QValueCheckBox" Content="Filter results to q-value:" IsChecked="False">
                                     <ToolTipService.ToolTip>
@@ -864,11 +866,18 @@
                                     </GroupBox>
                                     <GroupBox Header="Ambiguity Parameters">
                                         <Grid>
-                                            <Grid.ColumnDefinitions>
-                                                <ColumnDefinition Width="1*" />
-                                                <ColumnDefinition Width="1*" />
-                                            </Grid.ColumnDefinitions>
-                                            <StackPanel Grid.Column="0">
+                                            <StackPanel>
+                                                <Label x:Name="ContaminantTargetLabel" Content="Handle overlap between target and contaminant databases:"/>
+                                                <Grid Margin="0 0 0 20">
+                                                    <Grid.ColumnDefinitions>
+                                                        <ColumnDefinition Width="1*" />
+                                                        <ColumnDefinition Width="1*" />
+                                                        <ColumnDefinition Width="1*" />
+                                                    </Grid.ColumnDefinitions>
+                                                    <RadioButton x:Name="RemoveContaminantRadioBox" Grid.Column="0" HorizontalAlignment="Center" GroupName="ContaminantTargetOVerlap" Content="Remove Contaminant" ToolTip="Proteins present as both targets and contaminants are only considered targets only"/>
+                                                    <RadioButton x:Name="RemoveTargetRadioBox" Grid.Column="1"  HorizontalAlignment="Center" GroupName="ContaminantTargetOVerlap" Content="Remove Target" ToolTip="Proteins present as both targets and contaminants are only considered contaminants only"/>
+                                                    <RadioButton x:Name="RenameTCProteinsRadioBox" Grid.Column="2"  HorizontalAlignment="Center" GroupName="ContaminantTargetOVerlap" Content="Keep Both" ToolTip="Proteins present as both targets and contaminants are renamed from '*' to '*_n'"/>
+                                                </Grid>
                                                 <StackPanel Orientation="Horizontal">
                                                     <CheckBox x:Name="AllAmbiguity" Content="Report PSM ambiguity" Margin="5" ToolTipService.ShowDuration="999999" ToolTipService.InitialShowDelay="500">
                                                         <CheckBox.ToolTip>

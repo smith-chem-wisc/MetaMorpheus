@@ -28,10 +28,12 @@ namespace EngineLayer.Indexing
         private readonly double MaxFragmentSize;
         public readonly bool GeneratePrecursorIndex;
         public readonly List<FileInfo> ProteinDatabases;
+        public readonly TargetContaminantAmbiguity TcAmbiguity;
 
         public IndexingEngine(List<Protein> proteinList, List<Modification> variableModifications, List<Modification> fixedModifications,
             List<SilacLabel> silacLabels, SilacLabel startLabel, SilacLabel endLabel, int currentPartition, DecoyType decoyType,
-            CommonParameters commonParams, List<(string fileName, CommonParameters fileSpecificParameters)> fileSpecificParameters, double maxFragmentSize, bool generatePrecursorIndex, List<FileInfo> proteinDatabases, List<string> nestedIds)
+            CommonParameters commonParams, List<(string fileName, CommonParameters fileSpecificParameters)> fileSpecificParameters, 
+            double maxFragmentSize, bool generatePrecursorIndex, List<FileInfo> proteinDatabases, TargetContaminantAmbiguity tcAmbiguity, List<string> nestedIds)
             : base(commonParams, fileSpecificParameters, nestedIds)
         {
             ProteinList = proteinList;
@@ -48,6 +50,7 @@ namespace EngineLayer.Indexing
             MaxFragmentSize = maxFragmentSize;
             GeneratePrecursorIndex = generatePrecursorIndex;
             ProteinDatabases = proteinDatabases;
+            TcAmbiguity = tcAmbiguity;
         }
 
         public override string ToString()
@@ -61,6 +64,7 @@ namespace EngineLayer.Indexing
             sb.AppendLine("Number of fixed mods: " + FixedModifications.Count);
             sb.AppendLine("Number of variable mods: " + VariableModifications.Count);
             sb.AppendLine("Dissociation Type: " + CommonParameters.DissociationType);
+            sb.AppendLine("Contaminant Handling: " + TcAmbiguity);
 
             sb.AppendLine("protease: " + CommonParameters.DigestionParams.Protease);
             sb.AppendLine("initiatorMethionineBehavior: " + CommonParameters.DigestionParams.InitiatorMethionineBehavior);

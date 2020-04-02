@@ -231,7 +231,7 @@ namespace EngineLayer
 
             string theoreticalsSearched = " ";
             s[PsmTsvHeader.TheoreticalsSearched] = theoreticalsSearched;
-            s[PsmTsvHeader.DecoyContaminantTarget] = pepWithModsIsNull ? " " : psm.IsDecoy ? "D" : psm.IsContaminant ? "C" : "T";
+            s[PsmTsvHeader.DecoyContaminantTarget] = pepWithModsIsNull ? " " : Resolve(pepsWithMods.Select(b => b.Protein.IsDecoy ? "D" : b.Protein.IsContaminant ? "C" : "T")).ResolvedString;
         }
 
         /// <summary>

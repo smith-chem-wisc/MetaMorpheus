@@ -46,7 +46,8 @@ namespace Test
             var fsp = new List<(string fileName, CommonParameters fileSpecificParameters)>();
             fsp.Add(("", CommonParameters));
 
-            var engine = new IndexingEngine(proteinList, variableModifications, fixedModifications, null, null, null, 1, DecoyType.None, CommonParameters, fsp, 30000, false, new List<FileInfo>(), new List<string>());
+            var engine = new IndexingEngine(proteinList, variableModifications, fixedModifications, null, null, null, 1, DecoyType.None, CommonParameters,
+                fsp, 30000, false, new List<FileInfo>(), TargetContaminantAmbiguity.RemoveContaminant, new List<string>());
 
             var results = (IndexingResults)engine.Run();
 
@@ -58,7 +59,7 @@ namespace Test
             foreach (PeptideWithSetModifications peptide in digestedList)
             {
                 Assert.Contains(peptide, results.PeptideIndex);
-                
+
                 var fragments = new List<Product>();
                 peptide.Fragment(CommonParameters.DissociationType, FragmentationTerminus.Both, fragments);
 
@@ -116,7 +117,8 @@ namespace Test
                 scoreCutoff: 1);
             var fsp = new List<(string fileName, CommonParameters fileSpecificParameters)>();
             fsp.Add(("", CommonParameters));
-            var engine = new IndexingEngine(proteinList, variableModifications, fixedModifications, null, null, null, 1, DecoyType.Reverse, CommonParameters, fsp, 30000, false, new List<FileInfo>(), new List<string>());
+            var engine = new IndexingEngine(proteinList, variableModifications, fixedModifications, null, null, null, 1, DecoyType.Reverse, CommonParameters,
+                fsp, 30000, false, new List<FileInfo>(), TargetContaminantAmbiguity.RemoveContaminant, new List<string>());
 
             var results = (IndexingResults)engine.Run();
 
@@ -154,7 +156,8 @@ namespace Test
             CommonParameters CommonParameters = new CommonParameters(dissociationType: DissociationType.LowCID, maxThreadsToUsePerFile: 1, scoreCutoff: 1, digestionParams: new DigestionParams(protease: "trypsin", minPeptideLength: 1));
             var fsp = new List<(string fileName, CommonParameters fileSpecificParameters)>();
             fsp.Add(("", CommonParameters));
-            var engine = new IndexingEngine(proteinList, variableModifications, fixedModifications, null, null, null, 1, DecoyType.Reverse, CommonParameters, fsp, 30000, false, new List<FileInfo>(), new List<string>());
+            var engine = new IndexingEngine(proteinList, variableModifications, fixedModifications, null, null, null, 1, DecoyType.Reverse, CommonParameters,
+                fsp, 30000, false, new List<FileInfo>(), TargetContaminantAmbiguity.RemoveContaminant, new List<string>());
 
             var results = (IndexingResults)engine.Run();
 

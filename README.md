@@ -1,8 +1,9 @@
- # <img src="https://user-images.githubusercontent.com/16841846/40388929-841db5da-5dd6-11e8-8c21-6c71eed30011.png"> MetaMorpheus: Free, Open-Source PTM Discovery <a href="https://twitter.com/intent/tweet?text=Discover PTMs in bottom-up data with MetaMorpheus https://tinyurl.com/y9an55ah"> <img src="https://user-images.githubusercontent.com/16841846/40389057-efdbfd40-5dd6-11e8-9d9e-68da0e793288.png" alt="Tweet"></a>
+ # <img src="https://user-images.githubusercontent.com/16883585/75211541-da01c680-5749-11ea-9f6c-096dc2ec4dbc.png"> MetaMorpheus: Free, Open-Source PTM Discovery <a href="https://twitter.com/intent/tweet?text=Discover PTMs in bottom-up data with MetaMorpheus https://tinyurl.com/y9an55ah"> <img src="https://user-images.githubusercontent.com/16841846/40389057-efdbfd40-5dd6-11e8-9d9e-68da0e793288.png" alt="Tweet"></a>
 
+[![Release](https://img.shields.io/github/release/smith-chem-wisc/metamorpheus.svg?color=purple&style=for-the-badge)](https://github.com/smith-chem-wisc/MetaMorpheus/releases/latest)
 [![Build status](https://ci.appveyor.com/api/projects/status/0jt31252xny5aoxt/branch/master?svg=true)](https://ci.appveyor.com/project/smith-chem-wisc/metamorpheus/branch/master)
 [![codecov](https://codecov.io/gh/smith-chem-wisc/MetaMorpheus/branch/master/graph/badge.svg)](https://codecov.io/gh/smith-chem-wisc/MetaMorpheus)
-[![Github All Releases](https://img.shields.io/github/downloads/smith-chem-wisc/MetaMorpheus/total.svg)](https://github.com/smith-chem-wisc/MetaMorpheus)
+[![Github All Releases](https://img.shields.io/github/downloads/smith-chem-wisc/MetaMorpheus/total.svg)](https://github.com/smith-chem-wisc/MetaMorpheus/releases)
 
 Download the current version [here](https://github.com/smith-chem-wisc/MetaMorpheus/releases/latest). For first-time Windows users, choose "MetaMorpheusInstaller.msi" and install MetaMorpheus. Check out our <img src ="https://user-images.githubusercontent.com/16841846/40379523-eb130166-5dbb-11e8-8a03-559599cdd560.png">[getting started video](https://www.youtube.com/watch?v=rNgCDzi7STs&list=PLVk5tTSZ1aWlhNPh7jxPQ8pc0ElyzSUQb) on YouTube 
 
@@ -21,8 +22,12 @@ Check out the [wiki page](https://github.com/smith-chem-wisc/MetaMorpheus/wiki) 
 ## System Requirements
 
 * Environment:
-  * For .NET Core versions: .NET Core 2.0.0 runtime
-  * For .NET Framework versions: .NET Framework 4.7.1
+  * 64-bit operating system
+  * .NET Core 3.1:
+     * Windows: https://dotnet.microsoft.com/download/dotnet-core/thank-you/runtime-3.1.3-windows-x64-installer
+     * Mac: https://dotnet.microsoft.com/download/dotnet-core/thank-you/runtime-3.1.3-macos-x64-installer
+     * Linux: https://docs.microsoft.com/dotnet/core/install/linux-package-managers
+* Note that the installer (MetaMorpheusInstaller.msi) only works on Windows. The command-line version of MetaMorpheus supports any operating system that supports .NET Core (Windows, MacOS, Linux)
 * 8 GB RAM recommended
 
 ## Spectra Requirements
