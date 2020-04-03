@@ -24,6 +24,7 @@ namespace EngineLayer
             ProteinGroupScore = 0;
             BestPeptideScore = 0;
             QValue = 0;
+            PValue = 0;
             IsDecoy = false;
             IsContaminant = false;
             ModsInfo = new List<string>();
@@ -43,6 +44,7 @@ namespace EngineLayer
                 }
             }
         }
+
 
         public bool IsDecoy { get; }
 
@@ -69,6 +71,7 @@ namespace EngineLayer
         public List<string> SequenceCoverageDisplayListWithMods { get; private set; }
 
         public double QValue { get; set; }
+        public double PValue { get; set; }
 
         public double BestPeptideQValue { get; set; }
 
@@ -153,7 +156,8 @@ namespace EngineLayer
             sb.Append("Protein Cumulative Decoy" + '\t');
             sb.Append("Protein QValue" + '\t');
             sb.Append("Best Peptide Score" + '\t');
-            sb.Append("Best Peptide Notch QValue");
+            sb.Append("Best Peptide Notch QValue" + '\t');
+            sb.Append("Protein PValue");
             return sb.ToString();
         }
 
@@ -305,6 +309,10 @@ namespace EngineLayer
             // best peptide q value
             sb.Append(BestPeptideQValue);
             sb.Append("\t");
+
+            // protein P value
+            sb.Append(PValue);
+            //sb.Append("\t"); //i don't think this last tab is needed.
 
             return sb.ToString();
         }
@@ -523,13 +531,13 @@ namespace EngineLayer
 
         public ProteinGroup ConstructSubsetProteinGroup(string fullFilePath)
         {
-            var allPsmsForThisFile = new HashSet<PeptideSpectralMatch>(AllPsmsBelowOnePercentFDR.Where(p => p.FullFilePath.Equals(fullFilePath)));
-            var allPeptidesForThisFile = new HashSet<PeptideWithSetModifications>(allPsmsForThisFile.SelectMany(p => p.BestMatchingPeptides.Select(v => v.Peptide)));
-            var allUniquePeptidesForThisFile = new HashSet<PeptideWithSetModifications>(UniquePeptides.Intersect(allPeptidesForThisFile));
+            var allPsmsBelowOnePercentForThisFile = new HashSet<PeptideSpectralMatch>(AllPsmsBelowOnePercentFDR.Where(p => p.FullFilePath.Equals(fullFilePath)));
+            var allPeptidesBelowOnePercentForThisFile = new HashSet<PeptideWithSetModifications>(allPsmsBelowOnePercentForThisFile.SelectMany(p => p.BestMatchingPeptides.Select(v => v.Peptide)));
+            var allUniquePeptidesForThisFile = new HashSet<PeptideWithSetModifications>(UniquePeptides.Intersect(allPeptidesBelowOnePercentForThisFile));
 
-            ProteinGroup subsetPg = new ProteinGroup(Proteins, allPeptidesForThisFile, allUniquePeptidesForThisFile)
+            ProteinGroup subsetPg = new ProteinGroup(Proteins, allPeptidesBelowOnePercentForThisFile, allUniquePeptidesForThisFile)
             {
-                AllPsmsBelowOnePercentFDR = allPsmsForThisFile,
+                AllPsmsBelowOnePercentFDR = allPsmsBelowOnePercentForThisFile,
                 DisplayModsOnPeptides = DisplayModsOnPeptides
             };
 

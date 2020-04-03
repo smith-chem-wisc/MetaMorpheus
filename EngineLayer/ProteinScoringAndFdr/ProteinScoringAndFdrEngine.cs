@@ -42,8 +42,10 @@ namespace EngineLayer
             var peptideToPsmMatching = new Dictionary<PeptideWithSetModifications, HashSet<PeptideSpectralMatch>>();
             foreach (var psm in psmList)
             {
-                if (psm.FdrInfo.QValueNotch <= 0.01 && psm.FdrInfo.QValue <= 0.01)
+                if (psm.FdrInfo.PEP <= 0.3)
                 {
+
+
                     if ((TreatModPeptidesAsDifferentPeptides && psm.FullSequence != null) || (!TreatModPeptidesAsDifferentPeptides && psm.BaseSequence != null))
                     {
                         foreach (var pepWithSetMods in psm.BestMatchingPeptides.Select(p => p.Peptide))
@@ -131,7 +133,7 @@ namespace EngineLayer
             //Do Classic protein FDR (all targets, all decoys)
             // order protein groups by notch-QValue
             var sortedProteinGroups = proteinGroups.OrderBy(b => b.BestPeptideQValue).ThenByDescending(p => p.BestPeptideScore).ToList();
-            AssignQValuesToProteins(sortedProteinGroups);
+            AssignPandQValuesToProteins(sortedProteinGroups);
 
             // Do "Picked" protein FDR
             // adapted from "A Scalable Approach for Protein False Discovery Rate Estimation in Large Proteomic Data Sets" ~ MCP, 2015, Savitski
@@ -174,13 +176,13 @@ namespace EngineLayer
             }
 
             sortedProteinGroups = proteinGroups.OrderBy(b => b.BestPeptideQValue).ThenByDescending(p => p.BestPeptideScore).ToList();
-            AssignQValuesToProteins(sortedProteinGroups);
+            AssignPandQValuesToProteins(sortedProteinGroups);
 
             //Rescue the removed TARGET proteins that have the classic protein fdr.
             //This isn't super transparent, but the "Picked" TDS (target-decoy strategy) does a good job of removing a lot of decoys from accumulating in large datasets.
             //It sounds biased, but the Picked TDS is actually necessary to keep the chance of a random assignment being assigned as a target or a decoy at 50:50.
             //The targets that we're re-adding have higher q-values (for their score) from the Classic TDS than the Picked TDS (the classic is conservative).
-            //If we add the decoys, it will raise questions on if the FDR is being calculated correctly, 
+            //If we add the decoys, it will raise questions on if the FDR is being calculated correctly,
             //because lots of decoys (which are out-competed in the Picked TDS) will be written with high(ish) scores
             //so really, we're only outputting targets for a cleanliness of output (but the decoys are still there for the classic TDS)
             //TL;DR 99% of the protein output is from the Picked TDS, but a small fraction is from the Classic TDS.
@@ -189,7 +191,7 @@ namespace EngineLayer
             return sortedProteinGroups.OrderBy(b => b.QValue).ToList();
         }
 
-        private void AssignQValuesToProteins(List<ProteinGroup> sortedProteinGroups)
+        private void AssignPandQValuesToProteins(List<ProteinGroup> sortedProteinGroups)
         {
             // sum targets and decoys
             int cumulativeTarget = 0;
@@ -220,7 +222,51 @@ namespace EngineLayer
                     maxQValue = currentQValue;
                 }
                 proteinGroup.QValue = maxQValue;
+
+                proteinGroup.PValue = GetProteinGroupPValue(proteinGroup);
             }
+        }
+
+        /// <summary>
+        /// This adapted from Anal. Chem. 2003, 75, 4646-4658
+        /// Equation 3. Protein P value is 1 - the product of peptide pep values.
+        /// P is 1 for true and 0 for false
+        /// Interestingly, this procedure uses peptides with different charge state precursors as separate observations.
+        /// </summary>
+        private double GetProteinGroupPValue(ProteinGroup proteinGroup)
+        {
+            List<double> pips = new List<double>();
+            List<int> chargeStates = proteinGroup.AllPsmsBelowOnePercentFDR.Select(p => p.ScanPrecursorCharge).Distinct().ToList();
+            foreach (int chargeState in chargeStates)
+            {
+                Dictionary<PeptideWithSetModifications, double> pwsmPip = new Dictionary<PeptideWithSetModifications, double>();
+                foreach (PeptideSpectralMatch psm in proteinGroup.AllPsmsBelowOnePercentFDR.Where(p=>p.ScanPrecursorCharge == chargeState))
+                {
+                    if (pwsmPip.Keys.Contains(psm.BestMatchingPeptides.First().Peptide))
+                    {
+                        if(pwsmPip[psm.BestMatchingPeptides.First().Peptide] > psm.FdrInfo.PEP)
+                        {
+                            pwsmPip[psm.BestMatchingPeptides.First().Peptide] = psm.FdrInfo.PEP;
+                        }
+                    }
+                    else
+                    {
+                        pwsmPip.Add(psm.BestMatchingPeptides.First().Peptide, psm.FdrInfo.PEP);
+                    }
+                }
+                foreach (double pep in pwsmPip.Values)
+                {
+                    pips.Add(pep);
+                }
+                
+            }
+
+            double pvalue = 1;
+            foreach (double pip in pips)
+            {
+                pvalue *= pip;
+            }
+            return pvalue;
         }
     }
 }
