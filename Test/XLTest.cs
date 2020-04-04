@@ -510,12 +510,12 @@ namespace Test
                 }
             }
 
-            Assert.AreEqual(510, inter);
-            Assert.AreEqual(210, intra);
-            Assert.AreEqual(302, single);
+            Assert.AreEqual(203, inter);
+            Assert.AreEqual(126, intra);
+            Assert.AreEqual(291, single);
             Assert.AreEqual(15, loop);
             Assert.AreEqual(0, deadend);
-            Assert.AreEqual(66, deadendH2O);
+            Assert.AreEqual(60, deadendH2O);
             Assert.AreEqual(0, deadendNH2);
             Assert.AreEqual(0, deadendTris);
             Assert.AreEqual(0, unnasignedCrossType);
@@ -576,12 +576,12 @@ namespace Test
                 }
             }
 
-            Assert.AreEqual(61, inter);
-            Assert.AreEqual(79, intra);
-            Assert.AreEqual(230, single);
+            Assert.AreEqual(50, inter);
+            Assert.AreEqual(74, intra);
+            Assert.AreEqual(229, single);
             Assert.AreEqual(8, loop);
             Assert.AreEqual(0, deadend);
-            Assert.AreEqual(43, deadendH2O);
+            Assert.AreEqual(46, deadendH2O);
             Assert.AreEqual(0, deadendNH2);
             Assert.AreEqual(0, deadendTris);
             Assert.AreEqual(0, unnasignedCrossType);
@@ -682,7 +682,7 @@ namespace Test
 
             CrosslinkSpectralMatch loopCsm = firstCsmsFromListsOfCsms.Where(c => c.CrossType == PsmCrossType.Loop).OrderBy(c => -c.Score).First();
             var loopCsmPsmData = PEP_Analysis.CreateOnePsmDataEntry("standard", fsp, loopCsm, sequenceToPsmCount, fileSpecificTimeDependantHydrophobicityAverageAndDeviation_unmodified, fileSpecificTimeDependantHydrophobicityAverageAndDeviation_modified, medianFragmentMassError, chargeStateMode, loopCsm.BestMatchingPeptides.First().Peptide, trainingVariables, loopCsm.BestMatchingPeptides.First().Notch, !loopCsm.BestMatchingPeptides.First().Peptide.Protein.IsDecoy);
-            Assert.That(loopCsmPsmData.AbsoluteAverageFragmentMassErrorFromMedian, Is.EqualTo(4).Within(0.1));
+            Assert.That(loopCsmPsmData.AbsoluteAverageFragmentMassErrorFromMedian, Is.EqualTo(6).Within(0.1));
             Assert.AreEqual(loopCsmPsmData.AlphaIntensity, 0);
             Assert.AreEqual(loopCsmPsmData.Ambiguity, 0);
             Assert.AreEqual(loopCsmPsmData.BetaIntensity, 0);
@@ -696,7 +696,7 @@ namespace Test
             Assert.AreEqual(loopCsmPsmData.IsLoop, 1);
             Assert.AreEqual(loopCsmPsmData.IsVariantPeptide, 0);
             Assert.AreEqual(loopCsmPsmData.Label, true);
-            Assert.That(loopCsmPsmData.LongestFragmentIonSeries, Is.EqualTo(4).Within(0.1));
+            Assert.That(loopCsmPsmData.LongestFragmentIonSeries, Is.EqualTo(3).Within(0.1));
             Assert.AreEqual(loopCsmPsmData.LongestFragmentIonSeries_Alpha, 0);
             Assert.AreEqual(loopCsmPsmData.LongestFragmentIonSeries_Beta, 0);
             Assert.AreEqual(loopCsmPsmData.MissedCleavagesCount, 2);
@@ -759,12 +759,12 @@ namespace Test
             }
 
             Assert.AreEqual(0, unnasignedCrossType);
-            Assert.AreEqual(50, inter);
-            Assert.AreEqual(76, intra);
-            Assert.AreEqual(236, single);
+            Assert.AreEqual(43, inter);
+            Assert.AreEqual(73, intra);
+            Assert.AreEqual(237, single);
             Assert.AreEqual(8, loop);
             Assert.AreEqual(0, deadend);
-            Assert.AreEqual(46, deadendH2O);
+            Assert.AreEqual(47, deadendH2O);
             Assert.AreEqual(0, deadendNH2);
             Assert.AreEqual(0, deadendTris);
         }
@@ -1306,7 +1306,7 @@ namespace Test
 
             // test child scan (ETD)
             Assert.That(csm.ChildMatchedFragmentIons.First().Key == 3);
-            Assert.That(csm.ChildMatchedFragmentIons.First().Value.Count == 22);
+            Assert.That(csm.ChildMatchedFragmentIons.First().Value.Count == 21);
             Assert.That(csm.BetaPeptide.ChildMatchedFragmentIons.First().Key == 3);
             Assert.That(csm.BetaPeptide.ChildMatchedFragmentIons.First().Value.Count == 25);
 
@@ -1319,7 +1319,7 @@ namespace Test
 
             Assert.That(psmFromTsv.ChildScanMatchedIons.Count == 1
                 && psmFromTsv.ChildScanMatchedIons.First().Key == 3
-                && psmFromTsv.ChildScanMatchedIons.First().Value.Count == 22);
+                && psmFromTsv.ChildScanMatchedIons.First().Value.Count == 21);
 
             Assert.That(psmFromTsv.BetaPeptideChildScanMatchedIons.Count == 1
                 && psmFromTsv.BetaPeptideChildScanMatchedIons.First().Key == 3
@@ -1346,7 +1346,7 @@ namespace Test
             var scans = MetaMorpheusTask.GetMs2Scans(file, spectraFile, commonParameters).ToArray();
 
             Assert.That(scans.First().ChildScans.Count == 4);
-            Assert.That(scans.Length == 2);
+            Assert.That(scans.Length == 3);
 
             Protein bsa = new Protein("MKWVTFISLLLLFSSAYSRGVFRRDTHKSEIAHRFKDLGEEHFKGLVLIAFSQYL" +
                 "QQCPFDEHVKLVNELTEFAKTCVADESHAGCEKSLHTLFGDELCKVASLRETYGDMADCCEKQEPERNECFLSHKDDS" +
@@ -1374,7 +1374,7 @@ namespace Test
                 csm.BetaPeptide.ResolveAllAmbiguities();
             }
             // test parent scan (CID)
-            Assert.AreEqual(csm.MatchedFragmentIons.Count, 37);
+            Assert.AreEqual(csm.MatchedFragmentIons.Count, 36);
             Assert.That(csm.ScanNumber == 2);
 
             // test child scan (low-resolution CID, alpha peptide signature ion)

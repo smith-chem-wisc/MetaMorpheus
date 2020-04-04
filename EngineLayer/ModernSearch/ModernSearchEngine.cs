@@ -159,7 +159,7 @@ namespace EngineLayer.ModernSearch
             {
                 for (int i = 0; i < scan.ExperimentalFragments.Length; i++)
                 {
-                    double mass = scan.ExperimentalFragments[i].monoisotopicMass;
+                    double mass = scan.ExperimentalFragments[i].MonoisotopicMass;
 
                     // get theoretical fragment bins within mass tolerance
                     int obsFragmentFloorMass = Math.Max(0,
@@ -505,7 +505,7 @@ namespace EngineLayer.ModernSearch
                 foreach (var envelope in scan.ExperimentalFragments)
                 {
                     // assume charge state 1 to calculate mass tolerance
-                    double experimentalFragmentMass = envelope.monoisotopicMass;
+                    double experimentalFragmentMass = envelope.MonoisotopicMass;
 
                     // get theoretical fragment bins within mass tolerance
                     int obsFragmentFloorMass = (int)Math.Floor((CommonParameters.ProductMassTolerance.GetMinimumValue(experimentalFragmentMass)) * FragmentBinsPerDalton);

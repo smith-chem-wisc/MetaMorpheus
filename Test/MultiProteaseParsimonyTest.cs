@@ -765,7 +765,7 @@ namespace Test
 
             var psms = Path.Combine(thisTaskOutputFolder, "AllPSMs.psmtsv");
 
-            Assert.AreEqual(12, File.ReadLines(psms).Count());
+            Assert.AreEqual(11, File.ReadLines(psms).Count());
             var protGroups = Path.Combine(thisTaskOutputFolder, "AllProteinGroups.tsv");
 
             Assert.AreEqual(7, File.ReadLines(protGroups).Count());
