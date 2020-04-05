@@ -98,8 +98,7 @@ namespace EngineLayer.GlycoSearch
 
                     // get fragment bins for this scan
                     List<int> allBinsToSearch = GetBinsToSearch(scan, FragmentIndex, CommonParameters.DissociationType);
-                    //List<int> childBinsToSearch = null;
-
+                  
                     //Limit the high bound limitation, here assume it is possible to has max 3 Da shift. This allows for correcting precursor in the future.
                     var high_bound_limitation = scan.PrecursorMass + 1;
 
@@ -107,6 +106,7 @@ namespace EngineLayer.GlycoSearch
                     IndexedScoring(FragmentIndex, allBinsToSearch, scoringTable, byteScoreCutoff, idsOfPeptidesPossiblyObserved, scan.PrecursorMass, Double.NegativeInfinity, high_bound_limitation, PeptideIndex, MassDiffAcceptor, 0, CommonParameters.DissociationType);
 
                     //child scan first-pass scoring
+                    //List<int> childBinsToSearch = null;
                     //if (scan.ChildScans != null && scan.ChildScans.Count > 0 && CommonParameters.MS2ChildScanDissociationType != DissociationType.LowCID)
                     //{
                     //    Array.Clear(secondScoringTable, 0, secondScoringTable.Length);
@@ -175,9 +175,14 @@ namespace EngineLayer.GlycoSearch
                         if (GlobalCsms[scanIndex] == null)
                         {
                             GlobalCsms[scanIndex] = new List<GlycoSpectralMatch>();
+                            GlobalCsms[scanIndex].AddRange(gsms.Where(p => p != null).OrderByDescending(p => p.Score).Take(10));
                         }
-
-                        GlobalCsms[scanIndex].AddRange(gsms.Where(p => p != null));
+                        else
+                        {
+                            gsms.AddRange(GlobalCsms[scanIndex]);
+                            GlobalCsms[scanIndex].Clear();
+                            GlobalCsms[scanIndex].AddRange(gsms.Where(p => p != null).OrderByDescending(p => p.Score).Take(10));
+                        }
                     }
 
                     // report search progress
