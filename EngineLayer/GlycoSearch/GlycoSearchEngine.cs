@@ -98,39 +98,39 @@ namespace EngineLayer.GlycoSearch
 
                     // get fragment bins for this scan
                     List<int> allBinsToSearch = GetBinsToSearch(scan, FragmentIndex, CommonParameters.DissociationType);
-                    List<int> childBinsToSearch = null;
+                    //List<int> childBinsToSearch = null;
 
                     //Limit the high bound limitation, here assume it is possible to has max 3 Da shift. This allows for correcting precursor in the future.
-                    var high_bound_limitation = scan.PrecursorMass + 4;
+                    var high_bound_limitation = scan.PrecursorMass + 1;
 
                     // first-pass scoring
                     IndexedScoring(FragmentIndex, allBinsToSearch, scoringTable, byteScoreCutoff, idsOfPeptidesPossiblyObserved, scan.PrecursorMass, Double.NegativeInfinity, high_bound_limitation, PeptideIndex, MassDiffAcceptor, 0, CommonParameters.DissociationType);
 
                     //child scan first-pass scoring
-                    if (scan.ChildScans != null && scan.ChildScans.Count > 0 && CommonParameters.MS2ChildScanDissociationType != DissociationType.LowCID)
-                    {
-                        Array.Clear(secondScoringTable, 0, secondScoringTable.Length);
-                        childIdsOfPeptidesPossiblyObserved.Clear();
+                    //if (scan.ChildScans != null && scan.ChildScans.Count > 0 && CommonParameters.MS2ChildScanDissociationType != DissociationType.LowCID)
+                    //{
+                    //    Array.Clear(secondScoringTable, 0, secondScoringTable.Length);
+                    //    childIdsOfPeptidesPossiblyObserved.Clear();
 
-                        childBinsToSearch = new List<int>();
+                    //    childBinsToSearch = new List<int>();
 
-                        foreach (var aChildScan in scan.ChildScans)
-                        {
-                            var x = GetBinsToSearch(aChildScan, SecondFragmentIndex, CommonParameters.MS2ChildScanDissociationType);
-                            childBinsToSearch.AddRange(x);
-                        }
+                    //    foreach (var aChildScan in scan.ChildScans)
+                    //    {
+                    //        var x = GetBinsToSearch(aChildScan, SecondFragmentIndex, CommonParameters.MS2ChildScanDissociationType);
+                    //        childBinsToSearch.AddRange(x);
+                    //    }
 
-                        IndexedScoring(SecondFragmentIndex, childBinsToSearch, secondScoringTable, byteScoreCutoff, childIdsOfPeptidesPossiblyObserved, scan.PrecursorMass, Double.NegativeInfinity, high_bound_limitation, PeptideIndex, MassDiffAcceptor, 0, CommonParameters.MS2ChildScanDissociationType);
+                    //    IndexedScoring(SecondFragmentIndex, childBinsToSearch, secondScoringTable, byteScoreCutoff, childIdsOfPeptidesPossiblyObserved, scan.PrecursorMass, Double.NegativeInfinity, high_bound_limitation, PeptideIndex, MassDiffAcceptor, 0, CommonParameters.MS2ChildScanDissociationType);
 
-                        foreach (var childId in childIdsOfPeptidesPossiblyObserved)
-                        {
-                            if (!idsOfPeptidesPossiblyObserved.Contains(childId))
-                            {
-                                idsOfPeptidesPossiblyObserved.Add(childId);
-                            }
-                            scoringTable[childId] = (byte)(scoringTable[childId] + secondScoringTable[childId]);
-                        }
-                    }
+                    //    foreach (var childId in childIdsOfPeptidesPossiblyObserved)
+                    //    {
+                    //        if (!idsOfPeptidesPossiblyObserved.Contains(childId))
+                    //        {
+                    //            idsOfPeptidesPossiblyObserved.Add(childId);
+                    //        }
+                    //        scoringTable[childId] = (byte)(scoringTable[childId] + secondScoringTable[childId]);
+                    //    }
+                    //}
 
                     // done with indexed scoring; refine scores and create PSMs
                     if (idsOfPeptidesPossiblyObserved.Any())
@@ -177,7 +177,7 @@ namespace EngineLayer.GlycoSearch
                             GlobalCsms[scanIndex] = new List<GlycoSpectralMatch>();
                         }
 
-                        GlobalCsms[scanIndex].AddRange(gsms.Where(p => p != null).OrderByDescending(p => p.Score));
+                        GlobalCsms[scanIndex].AddRange(gsms.Where(p => p != null));
                     }
 
                     // report search progress

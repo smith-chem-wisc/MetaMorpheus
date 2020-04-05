@@ -95,6 +95,7 @@ namespace EngineLayer.GlycoSearch
             sb.Append("Precursor Mass" + '\t');
 
             sb.Append("Protein Accession" + '\t');
+            sb.Append("Organism" + '\t');
             sb.Append("Protein Name" + '\t');
             sb.Append("Start and End Residues In Protein" + '\t');
             sb.Append("Base Sequence" + '\t');
@@ -131,6 +132,7 @@ namespace EngineLayer.GlycoSearch
             sb.Append("Precursor Mass" + '\t');
 
             sb.Append("Protein Accession" + '\t');
+            sb.Append("Organism" + '\t');
             sb.Append("Protein Name" + '\t');
             sb.Append("Start and End Residues In Protein" + '\t');
             sb.Append("Base Sequence" + '\t');
@@ -183,6 +185,7 @@ namespace EngineLayer.GlycoSearch
             sb.Append(ScanPrecursorMass + "\t"); 
 
             sb.Append(ProteinAccession + "\t");
+            sb.Append(Organism + "\t");
             sb.Append(BestMatchingPeptides.First().Peptide.Protein.FullName + "\t");
             sb.Append("[" + OneBasedStartResidueInProtein.Value.ToString() + " to " + OneBasedEndResidueInProtein.Value.ToString() + "]" + '\t');
 

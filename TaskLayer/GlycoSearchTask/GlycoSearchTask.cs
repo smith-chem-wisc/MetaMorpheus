@@ -55,22 +55,22 @@ namespace TaskLayer
             int completedFiles = 0;
 
             Status("Searching files...", taskId);
-
-            ProseCreatedWhileRunning.Append("protease = " + CommonParameters.DigestionParams.Protease + "; ");
-            ProseCreatedWhileRunning.Append("maximum missed cleavages = " + CommonParameters.DigestionParams.MaxMissedCleavages + "; ");
-            ProseCreatedWhileRunning.Append("minimum peptide length = " + CommonParameters.DigestionParams.MinPeptideLength + "; ");
+            ProseCreatedWhileRunning.Append("\n");
+            ProseCreatedWhileRunning.Append("protease = " + CommonParameters.DigestionParams.Protease + "; \n");
+            ProseCreatedWhileRunning.Append("maximum missed cleavages = " + CommonParameters.DigestionParams.MaxMissedCleavages + "; \n");
+            ProseCreatedWhileRunning.Append("minimum peptide length = " + CommonParameters.DigestionParams.MinPeptideLength + "; \n");
             ProseCreatedWhileRunning.Append(CommonParameters.DigestionParams.MaxPeptideLength == int.MaxValue ?
                 "maximum peptide length = unspecified; " :
-                "maximum peptide length = " + CommonParameters.DigestionParams.MaxPeptideLength + "; ");
-            ProseCreatedWhileRunning.Append("initiator methionine behavior = " + CommonParameters.DigestionParams.InitiatorMethionineBehavior + "; ");
-            ProseCreatedWhileRunning.Append("max modification isoforms = " + CommonParameters.DigestionParams.MaxModificationIsoforms + "; ");
-
-            ProseCreatedWhileRunning.Append("fixed modifications = " + string.Join(", ", fixedModifications.Select(m => m.IdWithMotif) + "; "));
-            ProseCreatedWhileRunning.Append("variable modifications = " + string.Join(", ", variableModifications.Select(m => m.IdWithMotif)) + "; ");
-
-            ProseCreatedWhileRunning.Append("parent mass tolerance(s) = " + CommonParameters.PrecursorMassTolerance + "; ");
-            ProseCreatedWhileRunning.Append("product mass tolerance = " + CommonParameters.ProductMassTolerance + "; ");
-            ProseCreatedWhileRunning.Append("The combined search database contained " + proteinList.Count + " total entries including " + proteinList.Where(p => p.IsContaminant).Count() + " contaminant sequences. ");
+                "maximum peptide length = " + CommonParameters.DigestionParams.MaxPeptideLength + "; \n");
+            ProseCreatedWhileRunning.Append("initiator methionine behavior = " + CommonParameters.DigestionParams.InitiatorMethionineBehavior + "; \n");
+            ProseCreatedWhileRunning.Append("max modification isoforms = " + CommonParameters.DigestionParams.MaxModificationIsoforms + "; \n");
+            ProseCreatedWhileRunning.Append("fixed modifications = " + string.Join(", ", fixedModifications.Select(m => m.IdWithMotif)) + "; \n");
+            ProseCreatedWhileRunning.Append("variable modifications = " + string.Join(", ", variableModifications.Select(m => m.IdWithMotif)) + "; \n");
+            ProseCreatedWhileRunning.Append("parent mass tolerance(s) = " + CommonParameters.PrecursorMassTolerance + "; \n");
+            ProseCreatedWhileRunning.Append("product mass tolerance = " + CommonParameters.ProductMassTolerance + "; \n");
+            ProseCreatedWhileRunning.Append("The combined search database contained " + proteinList.Count + " total entries including " + proteinList.Where(p => p.IsContaminant).Count() + " contaminant sequences. \n");
+            ProseCreatedWhileRunning.Append("The glycan database: " + _glycoSearchParameters.GlycanDatabasefile + "\n");
+            ProseCreatedWhileRunning.Append("\n");
 
             for (int spectraFileIndex = 0; spectraFileIndex < currentRawFileList.Count; spectraFileIndex++)
             {
@@ -105,14 +105,14 @@ namespace TaskLayer
 
                     //The second Fragment index is for 'MS1-HCD_MS1-ETD_MS2s' type of data. If LowCID is used for MS1, ion-index is not allowed to use.
                     List<int>[] secondFragmentIndex = null;
-                    if (combinedParams.MS2ChildScanDissociationType != DissociationType.LowCID
-                    && !CrosslinkSearchEngine.DissociationTypeGenerateSameTypeOfIons(combinedParams.DissociationType, combinedParams.MS2ChildScanDissociationType))
-                    {
-                        //Becuase two different type of dissociation methods are used, the parameters are changed with different dissociation type.
-                        var secondCombinedParams = CommonParameters.CloneWithNewDissociationType(combinedParams.MS2ChildScanDissociationType);
-                        var secondIndexEngine = new IndexingEngine(proteinListSubset, variableModifications, fixedModifications, null, null, null, currentPartition, _glycoSearchParameters.DecoyType, secondCombinedParams, this.FileSpecificParameters, 30000.0, false, dbFilenameList.Select(p => new FileInfo(p.FilePath)).ToList(), new List<string> { taskId });
-                        GenerateSecondIndexes(indexEngine, secondIndexEngine, dbFilenameList, ref secondFragmentIndex, proteinList, taskId);
-                    }
+                    //if (combinedParams.MS2ChildScanDissociationType != DissociationType.LowCID
+                    //&& !CrosslinkSearchEngine.DissociationTypeGenerateSameTypeOfIons(combinedParams.DissociationType, combinedParams.MS2ChildScanDissociationType))
+                    //{
+                    //    //Becuase two different type of dissociation methods are used, the parameters are changed with different dissociation type.
+                    //    var secondCombinedParams = CommonParameters.CloneWithNewDissociationType(combinedParams.MS2ChildScanDissociationType);
+                    //    var secondIndexEngine = new IndexingEngine(proteinListSubset, variableModifications, fixedModifications, null, null, null, currentPartition, _glycoSearchParameters.DecoyType, secondCombinedParams, this.FileSpecificParameters, 30000.0, false, dbFilenameList.Select(p => new FileInfo(p.FilePath)).ToList(), new List<string> { taskId });
+                    //    GenerateSecondIndexes(indexEngine, secondIndexEngine, dbFilenameList, ref secondFragmentIndex, proteinList, taskId);
+                    //}
 
                     Status("Searching files...", taskId);
                     new GlycoSearchEngine(newCsmsPerMS2ScanPerFile, arrayOfMs2ScansSortedByMass, peptideIndex, fragmentIndex, secondFragmentIndex, currentPartition, combinedParams, this.FileSpecificParameters,
@@ -122,7 +122,15 @@ namespace TaskLayer
                     if (GlobalVariables.StopLoops) { break; }
                 }
 
-                ListOfGsmsPerMS2Scan.AddRange(newCsmsPerMS2ScanPerFile.Where(p => p != null).ToList());
+                //ListOfGsmsPerMS2Scan.AddRange(newCsmsPerMS2ScanPerFile.Where(p => p != null).ToList());
+
+                foreach (var psmsPerFile in newCsmsPerMS2ScanPerFile)
+                {
+                    if (psmsPerFile != null)
+                    {
+                        ListOfGsmsPerMS2Scan.Add(psmsPerFile.OrderByDescending(p => p.Score).ToList());
+                    }
+                }
 
                 completedFiles++;
                 ReportProgress(new ProgressEventArgs(completedFiles / currentRawFileList.Count, "Searching...", new List<string> { taskId, "Individual Spectra Files" }));
