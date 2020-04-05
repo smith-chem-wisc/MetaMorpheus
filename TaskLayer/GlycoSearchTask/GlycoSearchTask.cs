@@ -122,15 +122,15 @@ namespace TaskLayer
                     if (GlobalVariables.StopLoops) { break; }
                 }
 
-                //ListOfGsmsPerMS2Scan.AddRange(newCsmsPerMS2ScanPerFile.Where(p => p != null).ToList());
+                ListOfGsmsPerMS2Scan.AddRange(newCsmsPerMS2ScanPerFile.Where(p => p != null).ToList());
 
-                foreach (var psmsPerFile in newCsmsPerMS2ScanPerFile)
-                {
-                    if (psmsPerFile != null)
-                    {
-                        ListOfGsmsPerMS2Scan.Add(psmsPerFile.OrderByDescending(p => p.Score).ToList());
-                    }
-                }
+                //foreach (var psmsPerFile in newCsmsPerMS2ScanPerFile)
+                //{
+                //    if (psmsPerFile != null)
+                //    {
+                //        ListOfGsmsPerMS2Scan.Add(psmsPerFile.OrderByDescending(p => p.Score).ToList());
+                //    }
+                //}
 
                 completedFiles++;
                 ReportProgress(new ProgressEventArgs(completedFiles / currentRawFileList.Count, "Searching...", new List<string> { taskId, "Individual Spectra Files" }));
