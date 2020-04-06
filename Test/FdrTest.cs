@@ -427,6 +427,19 @@ namespace Test
             }
             metrics = PEP_Analysis.ComputePEPValuesForAllPSMsGeneric(moreNonNullPSMsCZE, "standard", fsp, Path.Combine(TestContext.CurrentContext.TestDirectory, @"TestData\"));
             Assert.GreaterOrEqual(32, trueCount);
+
+            // Test Protein P-Value computed from peptide PEP
+            ProteinParsimonyEngine ppe = new ProteinParsimonyEngine(moreNonNullPSMs, false, CommonParameters, null, null);
+            var proteinAnalysisResults = (ProteinParsimonyResults)ppe.Run();
+
+            List<int> j = new List<int>();
+            foreach (ProteinGroup item in proteinAnalysisResults.ProteinGroups)
+            {
+                j.Add(item.AllPsmsBelowOnePercentFDR.Count());
+            }
+
+            Assert.AreEqual(1, 0);
+
         }
 
         [Test]

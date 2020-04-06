@@ -1,4 +1,5 @@
 ﻿using Proteomics.ProteolyticDigestion;
+using System;
 using System.Collections.Generic;
 using System.Linq;
 
@@ -42,10 +43,8 @@ namespace EngineLayer
             var peptideToPsmMatching = new Dictionary<PeptideWithSetModifications, HashSet<PeptideSpectralMatch>>();
             foreach (var psm in psmList)
             {
-                if (psm.FdrInfo.PEP <= 0.3)
+                if (psm.FdrInfo.QValueNotch <= 0.01 && psm.FdrInfo.QValue <= 0.01)
                 {
-
-
                     if ((TreatModPeptidesAsDifferentPeptides && psm.FullSequence != null) || (!TreatModPeptidesAsDifferentPeptides && psm.BaseSequence != null))
                     {
                         foreach (var pepWithSetMods in psm.BestMatchingPeptides.Select(p => p.Peptide))
@@ -233,40 +232,24 @@ namespace EngineLayer
         /// P is 1 for true and 0 for false
         /// Interestingly, this procedure uses peptides with different charge state precursors as separate observations.
         /// </summary>
-        private double GetProteinGroupPValue(ProteinGroup proteinGroup)
+        public double GetProteinGroupPValue(ProteinGroup proteinGroup)
         {
-            List<double> pips = new List<double>();
-            List<int> chargeStates = proteinGroup.AllPsmsBelowOnePercentFDR.Select(p => p.ScanPrecursorCharge).Distinct().ToList();
-            foreach (int chargeState in chargeStates)
+            List<double> peptidePEPvaluesToMultiply = new List<double>();
+            var psmsGroupedByChargeState = proteinGroup.AllPsmsBelowOnePercentFDR.GroupBy(p => p.ScanPrecursorCharge).ToList();
+            foreach (var chargeStateGroup in psmsGroupedByChargeState)
             {
-                Dictionary<PeptideWithSetModifications, double> pwsmPip = new Dictionary<PeptideWithSetModifications, double>();
-                foreach (PeptideSpectralMatch psm in proteinGroup.AllPsmsBelowOnePercentFDR.Where(p=>p.ScanPrecursorCharge == chargeState))
+                var psmsGroupedBestPeptide = chargeStateGroup.GroupBy(p => p.BestMatchingPeptides).ToList();
+                foreach (var bestPeptideGroup in psmsGroupedBestPeptide)
                 {
-                    if (pwsmPip.Keys.Contains(psm.BestMatchingPeptides.First().Peptide))
-                    {
-                        if(pwsmPip[psm.BestMatchingPeptides.First().Peptide] > psm.FdrInfo.PEP)
-                        {
-                            pwsmPip[psm.BestMatchingPeptides.First().Peptide] = psm.FdrInfo.PEP;
-                        }
-                    }
-                    else
-                    {
-                        pwsmPip.Add(psm.BestMatchingPeptides.First().Peptide, psm.FdrInfo.PEP);
-                    }
+                    peptidePEPvaluesToMultiply.Add(bestPeptideGroup.Select(p=>p.FdrInfo.PEP).Min());
                 }
-                foreach (double pep in pwsmPip.Values)
-                {
-                    pips.Add(pep);
-                }
-                
             }
-
             double pvalue = 1;
-            foreach (double pip in pips)
+            foreach (double pip in peptidePEPvaluesToMultiply)
             {
                 pvalue *= pip;
             }
-            return pvalue;
+            return Math.Max(1e-10, pvalue);
         }
     }
 }
