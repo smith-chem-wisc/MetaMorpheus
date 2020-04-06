@@ -225,8 +225,8 @@ namespace EngineLayer.CrosslinkSearch
             int[] intensityRanks = null;
             if (Crosslinker.Cleavable)
             {
-                experimentFragmentMasses = scan.ExperimentalFragments.Select(p => p.monoisotopicMass).ToArray();
-                experimentFragmentIntensities = scan.ExperimentalFragments.Select(p => p.peaks.Sum(q => q.intensity)).ToArray();
+                experimentFragmentMasses = scan.ExperimentalFragments.Select(p => p.MonoisotopicMass).ToArray();
+                experimentFragmentIntensities = scan.ExperimentalFragments.Select(p => p.Peaks.Sum(q => q.intensity)).ToArray();
                 intensityRanks = CrosslinkSpectralMatch.GenerateIntensityRanks(experimentFragmentIntensities);
             }
 

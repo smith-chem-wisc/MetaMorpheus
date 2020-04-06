@@ -107,7 +107,9 @@ namespace TaskLayer
                     Status("Getting fragment dictionary...", new List<string> { taskId });
 
                     //Only reverse Decoy for crosslink search has been tested and are set as fixed parameter.
-                    var indexEngine = new IndexingEngine(proteinListSubset, variableModifications, fixedModifications, null, null, null, currentPartition, UsefulProteomicsDatabases.DecoyType.Reverse, combinedParams, this.FileSpecificParameters, 30000.0, false, dbFilenameList.Select(p => new FileInfo(p.FilePath)).ToList(), new List<string> { taskId });
+                    var indexEngine = new IndexingEngine(proteinListSubset, variableModifications, fixedModifications, null, null, null, currentPartition,
+                        UsefulProteomicsDatabases.DecoyType.Reverse, combinedParams, this.FileSpecificParameters, 30000.0, false,
+                        dbFilenameList.Select(p => new FileInfo(p.FilePath)).ToList(), TargetContaminantAmbiguity.RemoveContaminant, new List<string> { taskId });
 
                     List<int>[] fragmentIndex = null;
                     List<int>[] precursorIndex = null;
@@ -120,7 +122,9 @@ namespace TaskLayer
                     {
                         //Becuase two different type of dissociation methods are used, the parameters are changed with different dissociation type.
                         var secondCombinedParams = CommonParameters.CloneWithNewDissociationType(combinedParams.MS2ChildScanDissociationType);
-                        var secondIndexEngine = new IndexingEngine(proteinListSubset, variableModifications, fixedModifications, null, null, null, currentPartition, UsefulProteomicsDatabases.DecoyType.Reverse, secondCombinedParams, this.FileSpecificParameters, 30000.0, false, dbFilenameList.Select(p => new FileInfo(p.FilePath)).ToList(), new List<string> { taskId });
+                        var secondIndexEngine = new IndexingEngine(proteinListSubset, variableModifications, fixedModifications, null, null, null, currentPartition,
+                            UsefulProteomicsDatabases.DecoyType.Reverse, secondCombinedParams, this.FileSpecificParameters, 30000.0, false,
+                            dbFilenameList.Select(p => new FileInfo(p.FilePath)).ToList(), TargetContaminantAmbiguity.RemoveContaminant, new List<string> { taskId });
                         GenerateSecondIndexes(indexEngine, secondIndexEngine, dbFilenameList, ref secondFragmentIndex, proteinList, taskId);
                     }
 

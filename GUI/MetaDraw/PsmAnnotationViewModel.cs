@@ -319,7 +319,7 @@ namespace ViewModels
                 ionColor = OxyColors.Turquoise;
             }
 
-            int i = msDataScan.MassSpectrum.GetClosestPeakIndex(matchedIon.NeutralTheoreticalProduct.NeutralMass.ToMz(matchedIon.Charge)).Value;
+            int i = msDataScan.MassSpectrum.GetClosestPeakIndex(matchedIon.NeutralTheoreticalProduct.NeutralMass.ToMz(matchedIon.Charge));
 
             // peak line
             allIons[i] = new LineSeries();

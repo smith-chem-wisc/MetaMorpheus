@@ -266,6 +266,9 @@ namespace MetaMorpheusGUI
             NumberOfDatabaseSearchesTextBox.Text = task.CommonParameters.TotalPartitions.ToString(CultureInfo.InvariantCulture);
             DeconvolutePrecursors.IsChecked = task.CommonParameters.DoPrecursorDeconvolution;
             UseProvidedPrecursor.IsChecked = task.CommonParameters.UseProvidedPrecursorInfo;
+            RemoveContaminantRadioBox.IsChecked = task.SearchParameters.TCAmbiguity == TargetContaminantAmbiguity.RemoveContaminant;
+            RemoveTargetRadioBox.IsChecked = task.SearchParameters.TCAmbiguity == TargetContaminantAmbiguity.RemoveTarget;
+            RenameTCProteinsRadioBox.IsChecked = task.SearchParameters.TCAmbiguity == TargetContaminantAmbiguity.RenameProtein;
             AllAmbiguity.IsChecked = task.CommonParameters.ReportAllAmbiguity;
             DeconvolutionMaxAssumedChargeStateTextBox.Text = task.CommonParameters.DeconvolutionMaxAssumedChargeState.ToString();
             MinScoreAllowed.Text = task.CommonParameters.ScoreCutoff.ToString(CultureInfo.InvariantCulture);
@@ -568,6 +571,19 @@ namespace MetaMorpheusGUI
             TheTask.SearchParameters.WriteContaminants = WriteContaminantCheckBox.IsChecked.Value;
             TheTask.SearchParameters.WriteIndividualFiles = WriteIndividualResultsCheckBox.IsChecked.Value;
             TheTask.SearchParameters.CompressIndividualFiles = CompressIndividualResultsCheckBox.IsChecked.Value;
+
+            if (RemoveContaminantRadioBox.IsChecked.Value)
+            {
+                TheTask.SearchParameters.TCAmbiguity = TargetContaminantAmbiguity.RemoveContaminant;
+            }
+            else if (RemoveTargetRadioBox.IsChecked.Value)
+            {
+                TheTask.SearchParameters.TCAmbiguity = TargetContaminantAmbiguity.RemoveTarget;
+            }
+            else //RenameTCProteinsRadioBox.IsChecked.Value
+            {
+                TheTask.SearchParameters.TCAmbiguity = TargetContaminantAmbiguity.RenameProtein;
+            }
 
             //TheTask.SearchParameters.OutPepXML = ckbPepXML.IsChecked.Value;
 
