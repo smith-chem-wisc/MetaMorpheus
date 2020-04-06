@@ -84,6 +84,34 @@ namespace EngineLayer.GlycoSearch
             return possibleModSites;
         }
 
+        public static bool MotifExist(string baseSeq, string[] motifs)
+        {
+            List<Modification> modifications = new List<Modification>();
+
+            foreach (var mtf in motifs)
+            {
+                if (ModificationMotif.TryGetMotif(mtf, out ModificationMotif aMotif))
+                {
+                    Modification modWithMotif = new Modification(_target: aMotif, _locationRestriction: "Anywhere.");
+                    modifications.Add(modWithMotif);
+                }
+            }
+
+            foreach (var modWithMotif in modifications)
+            {
+                for (int r = 0; r < baseSeq.Length; r++)
+                {
+                    //Modification is not considered.                  
+                    if (ModificationLocalization.ModFits(modWithMotif, baseSeq, r + 1, baseSeq.Length, r + 1))
+                    {
+                        return true;
+                    }
+                }
+            }
+
+            return false;
+        }
+
         public static string GetTabSepHeaderSingle()
         {
             var sb = new StringBuilder();
@@ -272,9 +300,9 @@ namespace EngineLayer.GlycoSearch
 
                 sb.Append(Glycan.GetKindString(glycanBox.Kind)); sb.Append("\t");
 
-                var nsite = GetPossibleModSites(BestMatchingPeptides.First().Peptide, new string[] { "Nxt", "Nxs" });
+                var NSiteExist = MotifExist(BaseSequence, new string[] { "Nxt", "Nxs" });
 
-                sb.Append(nsite.Count > 0); sb.Append("\t");
+                sb.Append(NSiteExist); sb.Append("\t");
 
                 sb.Append(R138vs144.ToString()); sb.Append("\t");
 

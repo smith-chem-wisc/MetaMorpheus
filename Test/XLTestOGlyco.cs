@@ -99,6 +99,14 @@ namespace Test
         }
 
         [Test]
+        public static void GlycoTest_MotifExist()
+        {
+            string baseSeq = "AFGQFFSPGEVIYNKTDRAG";
+            var exist = GlycoSpectralMatch.MotifExist(baseSeq, new string[] { "Nxt", "Nxs" });
+            Assert.That(exist);
+        }
+
+        [Test]
         public static void OxoniumIonAnalysis()
         {
             Assert.That(Glycan.AllOxoniumIons[4] == 13805550);
