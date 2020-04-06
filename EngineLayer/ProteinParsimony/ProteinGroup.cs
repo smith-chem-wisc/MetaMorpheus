@@ -531,13 +531,13 @@ namespace EngineLayer
 
         public ProteinGroup ConstructSubsetProteinGroup(string fullFilePath)
         {
-            var allPsmsBelowOnePercentForThisFile = new HashSet<PeptideSpectralMatch>(AllPsmsBelowOnePercentFDR.Where(p => p.FullFilePath.Equals(fullFilePath)));
-            var allPeptidesBelowOnePercentForThisFile = new HashSet<PeptideWithSetModifications>(allPsmsBelowOnePercentForThisFile.SelectMany(p => p.BestMatchingPeptides.Select(v => v.Peptide)));
-            var allUniquePeptidesForThisFile = new HashSet<PeptideWithSetModifications>(UniquePeptides.Intersect(allPeptidesBelowOnePercentForThisFile));
+            var allPsmsForThisFile = new HashSet<PeptideSpectralMatch>(AllPsmsBelowOnePercentFDR.Where(p => p.FullFilePath.Equals(fullFilePath)));
+            var allPeptidesForThisFile = new HashSet<PeptideWithSetModifications>(allPsmsForThisFile.SelectMany(p => p.BestMatchingPeptides.Select(v => v.Peptide)));
+            var allUniquePeptidesForThisFile = new HashSet<PeptideWithSetModifications>(UniquePeptides.Intersect(allPeptidesForThisFile));
 
-            ProteinGroup subsetPg = new ProteinGroup(Proteins, allPeptidesBelowOnePercentForThisFile, allUniquePeptidesForThisFile)
+            ProteinGroup subsetPg = new ProteinGroup(Proteins, allPeptidesForThisFile, allUniquePeptidesForThisFile)
             {
-                AllPsmsBelowOnePercentFDR = allPsmsBelowOnePercentForThisFile,
+                AllPsmsBelowOnePercentFDR = allPsmsForThisFile,
                 DisplayModsOnPeptides = DisplayModsOnPeptides
             };
 
