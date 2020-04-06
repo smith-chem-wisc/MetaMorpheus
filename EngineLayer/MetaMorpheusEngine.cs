@@ -167,59 +167,6 @@ namespace EngineLayer
             return matchedFragmentIons;
         }
 
-        //NGlycopeptide usually contain high charge Y ions. The purpose of this function is to try match all Y ion with different charges.
-        public static List<MatchedFragmentIon> MatchOriginFragmentIons(Ms2ScanWithSpecificMass scan, List<Product> theoreticalProducts, CommonParameters commonParameters)
-        {
-            var matchedFragmentIons = new List<MatchedFragmentIon>();
-
-            // if the spectrum has no peaks
-            if (!scan.ExperimentalFragments.Any())
-            {
-                return matchedFragmentIons;
-            }
-
-            // search for ions in the spectrum
-
-            for (int id = 0; id < theoreticalProducts.Count; id++)
-            {
-                var product = theoreticalProducts[id];
-                // unknown fragment mass; this only happens rarely for sequences with unknown amino acids
-                if (double.IsNaN(product.NeutralMass))
-                {
-                    continue;
-                }
-
-                if (product.ProductType == ProductType.M)
-                {
-                    for (int i = 1; i <= scan.PrecursorCharge; i++)
-                    {
-
-                        var closestExperimentalMz = scan.GetClosestExperimentalFragmentMz(product.NeutralMass.ToMz(i), out double? intensity);
-
-                        if (closestExperimentalMz.HasValue && commonParameters.ProductMassTolerance.Within(closestExperimentalMz.Value, product.NeutralMass.ToMz(i)))
-                        {
-                            matchedFragmentIons.Add(new MatchedFragmentIon(ref product, closestExperimentalMz.Value, intensity.Value, i));
-                        }
-                    }
-                }
-
-                else
-                {
-                    // get the closest peak in the spectrum to the theoretical peak
-                    var closestExperimentalMass = scan.GetClosestExperimentalIsotopicEnvelope(product.NeutralMass);
-
-                    // is the mass error acceptable?
-                    if (commonParameters.ProductMassTolerance.Within(closestExperimentalMass.MonoisotopicMass, product.NeutralMass) && closestExperimentalMass.Charge <= scan.PrecursorCharge)
-                    {
-                        matchedFragmentIons.Add(new MatchedFragmentIon(ref product, closestExperimentalMass.MonoisotopicMass.ToMz(closestExperimentalMass.Charge),
-                            closestExperimentalMass.Peaks.First().intensity, closestExperimentalMass.Charge));
-                    }
-                }
-            }
-
-            return matchedFragmentIons;
-        }
-
         public MetaMorpheusEngineResults Run()
         {
             StartingSingleEngine();

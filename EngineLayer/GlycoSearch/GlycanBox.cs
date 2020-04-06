@@ -8,7 +8,9 @@ using MassSpectrometry;
 
 namespace EngineLayer
 {
-    //GlycanBox -- a list of all glycans that could be on a peptide. The GlycanBoxMass is the total mass of all glycans on the peptide
+    //One peptide can have several o-glycans. The combined glycans are grouped as a glycan box. Used for localization. 
+    //GlycanBox -- A defined combination of glycans will be considered to modify on one peptide. 
+    //The GlycanBoxMass is the total mass of all glycans on the peptide
     public class GlycanBox:ModBox
     {
         public static Glycan[] GlobalOGlycans { get; set; }

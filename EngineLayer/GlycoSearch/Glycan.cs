@@ -43,6 +43,8 @@ namespace EngineLayer
         public int GlyId { get; set; }
         public string Struc { get; private set; }
         public int Mass { get; private set; }
+
+        //Glycans are composed of several different types of mono saccharides. In Kind, each number correspond to one type of mono saccharide in the same order as Glycan.CharMassDic. 
         public byte[] Kind { get; private set; }
         public string Composition
         {

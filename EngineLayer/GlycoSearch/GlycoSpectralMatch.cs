@@ -8,6 +8,7 @@ using Proteomics;
 
 namespace EngineLayer.GlycoSearch
 {
+    //Localization of multiple glycans on one peptides can be divide into the following groups based on the quanlity of the localization. Similar to Proteomform Level.
     public enum LocalizationLevel
     {
         Level1,
@@ -27,25 +28,25 @@ namespace EngineLayer.GlycoSearch
         public int Rank { get; set; }
         public Dictionary<int, List<MatchedFragmentIon>> ChildMatchedFragmentIons { get; set; }
         //Glyco properties
-        public List<Glycan> NGlycan { get; set; }
+        public List<Glycan> NGlycan { get; set; }  //Identified NGlycan
         public List<int> NGlycanLocalizations { get; set; }
 
 
-        public List<LocalizationGraph> LocalizationGraphs { get; set; }
-        public List<Route> Routes { get; set; }
+        public List<LocalizationGraph> LocalizationGraphs { get; set; }  //Graph-based Localization information.
+        public List<Route> Routes { get; set; } //Localized modification sites and modfication ID.
 
-        public double ScanInfo_p { get; set; }
+        public double ScanInfo_p { get; set; }  //Scan P value, Used for Localization probability calculation. Ref PhosphoRS paper.
 
-        public int Thero_n { get; set; }
+        public int Thero_n { get; set; } //Scan n value. Used for Localization probability calculation. Ref PhosphoRS paper.
 
         public Dictionary<int, List<Tuple<int, double>>> SiteSpeciLocalProb { get; set; } // Data <modPos, List<glycanId, site probability>>
-        public double PeptideScore { get; set; }
-        public double GlycanScore { get; set; } //Important for N-glycan for signature ions.
+        public double PeptideScore { get; set; } //Scores from only mathced peptide fragments.
+        public double GlycanScore { get; set; } //Scores from only matched Y ions. Important for N-glycan for signature ions.
         public double DiagnosticIonScore { get; set; } //Since every glycopeptide generate DiagnosticIon, it is important to seperate the score. 
 
         public double R138vs144 { get; set; } // The intensity ratio of this 138 and 144 could be a signature for O-glycan or N-glycan.
         public List<Tuple<int, int, bool>> LocalizedGlycan { get; set; } //<mod site, glycanID, isLocalized> All seen glycans identified.
-        public LocalizationLevel LocalizationLevel { get; set; }
+        public LocalizationLevel LocalizationLevel { get; set; }  
 
         //Motif should be writen with required form
         public static List<int> GetPossibleModSites(PeptideWithSetModifications peptide, string[] motifs)
