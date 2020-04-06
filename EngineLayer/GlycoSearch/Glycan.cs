@@ -100,8 +100,9 @@ namespace EngineLayer
 
         //Glycan mass dictionary
         //H: C6O5H10 Hexose, N: C8O5NH13 HexNAc, A: C11O8NH17 Neu5Ac, G: C11H17NO9 Neu5Gc, F: C6O4H10 Fucose, 
-        //P: PO3H Phosphate, S: SO3H Sulfo, Y: Na Sodium
+        //P: PO3H Phosphate, S: SO3H Sulfo, Y: Na Sodium, C:Acetyl for Neu5Ac
         //X: C5H10O5 Xylose
+        //If add more monosacchrades here, please change GetMass, GetKind, GetKindString, GlycanBox constructor, search byte[].
         private readonly static Dictionary<char, int> CharMassDic = new Dictionary<char, int> {
             { 'H', 16205282 },
             { 'N', 20307937 },
@@ -111,7 +112,8 @@ namespace EngineLayer
             { 'P', 7996633 },
             { 'S', 7995681 },
             { 'Y', 2298977 },
-            { 'X', 15005282 }
+            { 'C',  4201056 },
+            { 'X', 15005282 },
         };
 
         //Compitable with Byonic, for loading glycan by Kind.
@@ -125,7 +127,8 @@ namespace EngineLayer
             {"Phospho", new Tuple<char, int>('P', 5)},
             {"Sulfo", new Tuple<char, int>('S', 6) },
             {"Na", new Tuple<char, int>('Y', 7) },
-            {"Xylose", new Tuple<char, int>('X', 8) }
+            {"Ac", new Tuple<char, int>('C', 8) },
+            {"Xylose", new Tuple<char, int>('X', 9) }
         };
 
         public readonly static HashSet<int> CommonOxoniumIons = new HashSet<int>
@@ -390,6 +393,7 @@ namespace EngineLayer
                 CharMassDic['P'] * structure.Count(p => p == 'P') +
                 CharMassDic['S'] * structure.Count(p => p == 'S') +
                 CharMassDic['Y'] * structure.Count(p => p == 'Y') +
+                CharMassDic['C'] * structure.Count(p => p == 'C') +
                 CharMassDic['X'] * structure.Count(p => p == 'X')
                 ;
             return y;
@@ -405,7 +409,8 @@ namespace EngineLayer
             CharMassDic['P'] * kind[5] +
             CharMassDic['S'] * kind[6] +
             CharMassDic['Y'] * kind[7] +
-            CharMassDic['X'] * kind[8]
+            CharMassDic['C'] * kind[8] +
+            CharMassDic['X'] * kind[9]
             ;
 
             return mass;
@@ -422,6 +427,7 @@ namespace EngineLayer
                 Convert.ToByte(structure.Count(p => p == 'P')),
                 Convert.ToByte(structure.Count(p => p == 'S')),
                 Convert.ToByte(structure.Count(p => p == 'Y')),
+                Convert.ToByte(structure.Count(p => p == 'C')),
                 Convert.ToByte(structure.Count(p => p == 'X')),
             };
             return kind;
@@ -437,8 +443,9 @@ namespace EngineLayer
             string P = Kind[5] == 0 ? "" : "P" + Kind[5].ToString();
             string S = Kind[6] == 0 ? "" : "S" + Kind[6].ToString();
             string Y = Kind[7] == 0 ? "" : "Y" + Kind[7].ToString();
-            string X = Kind[8] == 0 ? "" : "X" + Kind[8].ToString();
-            string kindString = H + N + A + G + F + P + S + Y + X;
+            string C = Kind[8] == 0 ? "" : "C" + Kind[8].ToString();
+            string X = Kind[9] == 0 ? "" : "X" + Kind[9].ToString();
+            string kindString = H + N + A + G + F + P + S + Y + C + X;
             return kindString;
         }
 
