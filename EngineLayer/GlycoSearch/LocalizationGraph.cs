@@ -120,9 +120,9 @@ namespace EngineLayer.GlycoSearch
                 var closestExperimentalMass = theScan.GetClosestExperimentalIsotopicEnvelope(f);
 
                 // is the mass error acceptable?
-                if (productTolerance.Within(closestExperimentalMass.monoisotopicMass, f) && closestExperimentalMass.charge <= theScan.PrecursorCharge)
+                if (productTolerance.Within(closestExperimentalMass.MonoisotopicMass, f) && closestExperimentalMass.Charge <= theScan.PrecursorCharge)
                 {
-                    score += 1 + closestExperimentalMass.peaks.Sum(p => p.intensity) / theScan.TotalIonCurrent;
+                    score += 1 + closestExperimentalMass.Peaks.Sum(p => p.intensity) / theScan.TotalIonCurrent;
                 }
             }
             return score;

@@ -24,9 +24,9 @@ namespace EngineLayer.GlycoSearch
             {
                 var oxoMass = ((double)Glycan.AllOxoniumIons[i] / 1E5).ToMass(1);
                 var envelope = theScan.GetClosestExperimentalIsotopicEnvelope(oxoMass);
-                if (massDiffAcceptor.Accepts(envelope.monoisotopicMass, oxoMass) >= 0)
+                if (massDiffAcceptor.Accepts(envelope.MonoisotopicMass, oxoMass) >= 0)
                 {
-                    oxoniumIonsintensities[i] = envelope.totalIntensity;
+                    oxoniumIonsintensities[i] = envelope.TotalIntensity;
                 }
 
             }

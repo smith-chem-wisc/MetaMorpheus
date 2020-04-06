@@ -88,7 +88,7 @@ namespace Test
 
             var glycanYIons = GlycoPeptides.GetGlycanYIons(listOfSortedms2Scans[0].PrecursorMass, glycan);
             var matchedGlycanYIons = MetaMorpheusEngine.MatchFragmentIons(listOfSortedms2Scans[0], glycanYIons, commonParameters);
-            Assert.AreEqual(matchedGlycanYIons.Count, 16);
+            Assert.AreEqual(matchedGlycanYIons.Count, 14);
 
             var matchedGlycanYIons2 = MetaMorpheusEngine.MatchOriginFragmentIons(listOfSortedms2Scans[0], glycanYIons, commonParameters);
             Assert.AreEqual(matchedGlycanYIons2.Count, 17);

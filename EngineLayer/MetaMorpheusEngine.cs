@@ -209,10 +209,10 @@ namespace EngineLayer
                     var closestExperimentalMass = scan.GetClosestExperimentalIsotopicEnvelope(product.NeutralMass);
 
                     // is the mass error acceptable?
-                    if (commonParameters.ProductMassTolerance.Within(closestExperimentalMass.monoisotopicMass, product.NeutralMass) && closestExperimentalMass.charge <= scan.PrecursorCharge)
+                    if (commonParameters.ProductMassTolerance.Within(closestExperimentalMass.MonoisotopicMass, product.NeutralMass) && closestExperimentalMass.Charge <= scan.PrecursorCharge)
                     {
-                        matchedFragmentIons.Add(new MatchedFragmentIon(ref product, closestExperimentalMass.monoisotopicMass.ToMz(closestExperimentalMass.charge),
-                            closestExperimentalMass.peaks.First().intensity, closestExperimentalMass.charge));
+                        matchedFragmentIons.Add(new MatchedFragmentIon(ref product, closestExperimentalMass.MonoisotopicMass.ToMz(closestExperimentalMass.Charge),
+                            closestExperimentalMass.Peaks.First().intensity, closestExperimentalMass.Charge));
                     }
                 }
             }
