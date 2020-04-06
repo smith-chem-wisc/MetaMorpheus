@@ -28,10 +28,9 @@ namespace Test
         [OneTimeSetUp]
         public static void Setup()
         {
-            GlycanBox.GlobalOGlycans = GlycanDatabase.LoadGlycan(GlobalVariables.GlycanLocations.Where(p => p.Contains("OGlycan.gdb")).First()).ToArray();
+            GlycanBox.GlobalOGlycans = GlycanDatabase.LoadGlycan(GlobalVariables.GlycanLocations.Where(p => p.Contains("OGlycan.gdb")).First(), true, true).ToArray();
             GlycanBox.GlobalOGlycanModifications = GlycanBox.BuildGlobalOGlycanModifications(GlycanBox.GlobalOGlycans);
             OGlycanBoxes = GlycanBox.BuildOGlycanBoxes(3).OrderBy(p => p.Mass).ToArray();
-
         }
 
         [Test]
@@ -76,6 +75,23 @@ namespace Test
             var kperm_rep = Glycan.GetPermutationsWithRept(input, 3);
 
             Assert.AreEqual(kperm_rep.Count(), 125);
+        }
+
+        [Test]
+        public static void OGlycoTest_OGlycanChildIons()
+        {
+            var glycan = GlycanBox.GlobalOGlycans[5];
+
+            Assert.That(glycan.Ions.Count == 5);
+
+            var kind = glycan.Kind;
+
+            var glycanIons = GlycanDatabase.OGlycanCompositionCombinationChildIons(kind);
+
+            Assert.That(glycanIons.Count() == 6);
+
+            var coreIons = GlycanDatabase.OGlycanCompositionFragments(kind);
+            Assert.That(coreIons.Count() == 6);
         }
 
         [Test]

@@ -203,9 +203,6 @@ namespace EngineLayer.GlycoSearch
             else if(dissociationType == DissociationType.ETD)
             {
                 modPeptide.Fragment(dissociationType, FragmentationTerminus.Both, theoreticalProducts);
-                //TO DO: currently, there is a bug in mzLib that the zDot ion (M - NH3) is not correctly calculated with a modification. Also I am not sure should we really keep it. 
-                //But the final change should be in mzLib, here is just for temp usage.
-                theoreticalProducts.RemoveAt(theoreticalProducts.Count() - 1);
             }
             else if(dissociationType == DissociationType.EThcD)
             {
@@ -231,9 +228,6 @@ namespace EngineLayer.GlycoSearch
                     }
                 }
 
-                //TO DO: currently, there is a bug in mzLib that the zDot ion (M - NH3) is not correctly calculated with a modification. Also I am not sure should we really keep it.
-                //But the final change should be in mzLib, here is just for temp usage.
-                theoreticalProducts.RemoveAt(theoreticalProducts.Count() - 1);
             }
 
             return theoreticalProducts;
@@ -289,6 +283,7 @@ namespace EngineLayer.GlycoSearch
             return testPeptide;
         }
 
+        //The function here is to calculate permutation localization which could be used to compare with Graph-Localization.
         public static List<int[]> GetPermutations(List<int> allModPos, int[] glycanBoxId)
         {
             var length = glycanBoxId.Length;

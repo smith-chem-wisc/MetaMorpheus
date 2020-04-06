@@ -47,14 +47,14 @@ namespace EngineLayer.GlycoSearch
 
             if (!isOGlycoSearch)
             {
-                Glycans = GlycanDatabase.LoadGlycan(GlobalVariables.GlycanLocations.Where(p=> System.IO.Path.GetFileName(p)==_glycanDatabase).First(), !isOGlycoSearch).OrderBy(p => p.Mass).ToArray();
+                Glycans = GlycanDatabase.LoadGlycan(GlobalVariables.GlycanLocations.Where(p=> System.IO.Path.GetFileName(p)==_glycanDatabase).First(), true, !isOGlycoSearch).OrderBy(p => p.Mass).ToArray();
                 //TO THINK: Glycan Decoy database.
                 //DecoyGlycans = Glycan.BuildTargetDecoyGlycans(NGlycans);
 
             }
             else
             {
-                GlycanBox.GlobalOGlycans = GlycanDatabase.LoadGlycan(GlobalVariables.GlycanLocations.Where(p => System.IO.Path.GetFileName(p) == _glycanDatabase).First(), !isOGlycoSearch).ToArray();
+                GlycanBox.GlobalOGlycans = GlycanDatabase.LoadGlycan(GlobalVariables.GlycanLocations.Where(p => System.IO.Path.GetFileName(p) == _glycanDatabase).First(), true, isOGlycoSearch).ToArray();
                 GlycanBox.GlobalOGlycanModifications = GlycanBox.BuildGlobalOGlycanModifications(GlycanBox.GlobalOGlycans);
                 GlycanBox.OGlycanBoxes = GlycanBox.BuildOGlycanBoxes(_maxOGlycanNum, false).OrderBy(p => p.Mass).ToArray();
             }

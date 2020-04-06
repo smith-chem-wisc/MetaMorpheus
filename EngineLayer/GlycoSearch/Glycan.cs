@@ -161,7 +161,7 @@ namespace EngineLayer
 
         //There are two ways to represent a glycan in string, one only combination, the other structure.
         //The method generate a glycan by read in a glycan structure string from database.
-        public static Glycan Struct2Glycan(string theGlycanStruct, int id)
+        public static Glycan Struct2Glycan(string theGlycanStruct, int id, bool isOglycan = false)
         {
             Node node = Struct2Node(theGlycanStruct);
             List<Node> nodeIons = GetAllChildrenCombination(node);
@@ -181,10 +181,13 @@ namespace EngineLayer
                     glycanIons.Add(glycanIon);
                 }
             }
-            glycanIons.Add(new GlycanIon(null, 8303819, new byte[] { 0, 0, 0, 0, 0, 0, 0, 0, 0 }, mass - 8303819)); //Cross-ring mass
-            glycanIons = glycanIons.OrderBy(p => p.IonMass).ToList();
+            if (!isOglycan)
+            {
+                glycanIons.Add(new GlycanIon(null, 8303819, new byte[] { 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 }, mass - 8303819)); //Cross-ring mass
+            }
+            glycanIons.Add(new GlycanIon(null, mass, kind, 0));
 
-            Glycan glycan = new Glycan(theGlycanStruct, mass, kind, glycanIons, false);
+            Glycan glycan = new Glycan(theGlycanStruct, mass, kind, glycanIons.OrderBy(p => p.IonMass).ToList(), false);
             glycan.GlyId = id;
             return glycan;
         }
@@ -458,10 +461,13 @@ namespace EngineLayer
         public static Modification NGlycanToModification(Glycan glycan)
         {
             Dictionary<DissociationType, List<double>> neutralLosses = new Dictionary<DissociationType, List<double>>();
-            List<double> lossMasses = glycan.Ions.Where(p => p.IonMass < 57000000).Select(p => (double)p.LossIonMass / 1E5).OrderBy(p => p).ToList(); //570 is a cutoff for glycan ion size 2N1H, which will generate fragment ions. 
-            neutralLosses.Add(DissociationType.HCD, lossMasses);
-            neutralLosses.Add(DissociationType.CID, lossMasses);
-            neutralLosses.Add(DissociationType.EThcD, lossMasses);
+            if (glycan.Ions!=null)
+            {
+                List<double> lossMasses = glycan.Ions.Where(p => p.IonMass < 57000000).Select(p => (double)p.LossIonMass / 1E5).OrderBy(p => p).ToList(); //570 is a cutoff for glycan ion size 2N1H, which will generate fragment ions. 
+                neutralLosses.Add(DissociationType.HCD, lossMasses);
+                neutralLosses.Add(DissociationType.CID, lossMasses);
+                neutralLosses.Add(DissociationType.EThcD, lossMasses);
+            }
 
             Dictionary<DissociationType, List<double>> diagnosticIons = new Dictionary<DissociationType, List<double>>();
             diagnosticIons.Add(DissociationType.HCD, glycan.DiagnosticIons.Select(p => (double)p / 1E5).ToList());
@@ -485,10 +491,14 @@ namespace EngineLayer
         {
             //TO THINK: what the neutralLoss for O-Glyco?
             Dictionary<DissociationType, List<double>> neutralLosses = new Dictionary<DissociationType, List<double>>();
-            List<double> lossMasses = new List<double>() { (double)glycan.Mass/1E5 };
-            neutralLosses.Add(DissociationType.HCD, lossMasses);
-            neutralLosses.Add(DissociationType.CID, lossMasses);
-            neutralLosses.Add(DissociationType.EThcD, lossMasses);
+
+            if (glycan.Ions!=null)
+            {
+                List<double> lossMasses = glycan.Ions.Select(p => (double)p.LossIonMass / 1E5).OrderBy(p => p).ToList();
+                neutralLosses.Add(DissociationType.HCD, lossMasses);
+                neutralLosses.Add(DissociationType.CID, lossMasses);
+                neutralLosses.Add(DissociationType.EThcD, lossMasses);
+            }
 
             Dictionary<DissociationType, List<double>> diagnosticIons = new Dictionary<DissociationType, List<double>>();
             diagnosticIons.Add(DissociationType.HCD, glycan.DiagnosticIons.Select(p => (double)p / 1E5).ToList());

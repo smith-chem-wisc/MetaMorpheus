@@ -121,7 +121,7 @@ namespace EngineLayer
             //The reason why not include Glycan into modification database is for users to apply their own database.      
             foreach (var path in GlycanLocations)
             {
-                var og = GlycanDatabase.LoadGlycan(path);
+                var og = GlycanDatabase.LoadGlycan(path, false, false);
                 foreach (var g in og)
                 {
                     var ogmod = Glycan.OGlycanToModification(g);

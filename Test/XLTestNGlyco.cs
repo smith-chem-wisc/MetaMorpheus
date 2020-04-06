@@ -97,7 +97,7 @@ namespace Test
             Assert.AreEqual(coreIons.Count, 6);
             var filter = GlycoPeptides.ScanTrimannosylCoreFilter(matchedFragmentIons, glycan);
             Assert.AreEqual(filter, true);
-            var NGlycans = GlycanDatabase.LoadGlycan(GlobalVariables.GlycanLocations[3]);
+            var NGlycans = GlycanDatabase.LoadGlycan(GlobalVariables.GlycanLocations[3], true, false);
             var bestGlycans = GlycoPeptides.MatchBestGlycan(listOfSortedms2Scans[0], NGlycans.ToArray(), commonParameters).Where(p => p != null && p.Item2 >= 2).OrderByDescending(p => p.Item2).Take(100).OrderBy(p => p.Item3).ToArray(); ;
 
         }
