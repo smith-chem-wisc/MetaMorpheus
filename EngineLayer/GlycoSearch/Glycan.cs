@@ -185,7 +185,7 @@ namespace EngineLayer
             {
                 glycanIons.Add(new GlycanIon(null, 8303819, new byte[] { 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 }, mass - 8303819)); //Cross-ring mass
             }
-            glycanIons.Add(new GlycanIon(null, mass, kind, 0));
+            glycanIons.Add(new GlycanIon(null, 0, kind, mass));
 
             Glycan glycan = new Glycan(theGlycanStruct, mass, kind, glycanIons.OrderBy(p => p.IonMass).ToList(), false);
             glycan.GlyId = id;
