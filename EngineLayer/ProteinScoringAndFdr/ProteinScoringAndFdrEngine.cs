@@ -132,7 +132,7 @@ namespace EngineLayer
             //Do Classic protein FDR (all targets, all decoys)
             // order protein groups by notch-QValue
             var sortedProteinGroups = proteinGroups.OrderBy(b => b.BestPeptideQValue).ThenByDescending(p => p.BestPeptideScore).ToList();
-            AssignQValueToProteins(sortedProteinGroups);
+            AssignQValuesToProteins(sortedProteinGroups);
 
             // Do "Picked" protein FDR
             // adapted from "A Scalable Approach for Protein False Discovery Rate Estimation in Large Proteomic Data Sets" ~ MCP, 2015, Savitski
@@ -175,7 +175,7 @@ namespace EngineLayer
             }
 
             sortedProteinGroups = proteinGroups.OrderBy(b => b.BestPeptideQValue).ThenByDescending(p => p.BestPeptideScore).ToList();
-            AssignQValueToProteins(sortedProteinGroups);
+            AssignQValuesToProteins(sortedProteinGroups);
 
             //Rescue the removed TARGET proteins that have the classic protein fdr.
             //This isn't super transparent, but the "Picked" TDS (target-decoy strategy) does a good job of removing a lot of decoys from accumulating in large datasets.
@@ -190,10 +190,8 @@ namespace EngineLayer
             return sortedProteinGroups.OrderBy(b => b.QValue).ToList();
         }
 
-        private void AssignQValueToProteins(List<ProteinGroup> sortedProteinGroups)
+        private void AssignQValuesToProteins(List<ProteinGroup> sortedProteinGroups)
         {
-            int onePercentFDRpsmCount = sortedProteinGroups.Select(p => p.AllPsmsBelowOnePercentFDR).Count();
-
             // sum targets and decoys
             int cumulativeTarget = 0;
             int cumulativeDecoy = 0;
