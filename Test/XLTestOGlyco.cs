@@ -218,7 +218,7 @@ namespace Test
             var fragmentsMod_hcd = new List<Product>();
                 peptideWithMod.Fragment(DissociationType.HCD, FragmentationTerminus.Both, fragmentsMod_hcd); 
             Assert.That(fragments_hcd.Count() == 20);
-            Assert.That(fragmentsMod_hcd.Count() == 50); //The Fragments also contain neutral loss ions. 
+            Assert.That(fragmentsMod_hcd.Count() == 61); //The Fragments also contain neutral loss ions. 
 
             var frag_ments_etd = new List<Product>();
                 peptide.Fragment(DissociationType.ETD, FragmentationTerminus.Both, frag_ments_etd);

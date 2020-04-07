@@ -192,7 +192,7 @@ namespace Test
             Assert.That(node.LeftChild.LeftChild.MiddleChild!=null);
 
             Glycan glycan = Glycan.Struct2Glycan("(N(N(H(N)(H(N)(N))(H(N(H))))))", 0);
-            Assert.AreEqual(glycan.Ions.Count, 17);
+            Assert.AreEqual(glycan.Ions.Count, 18);
         }
 
         [Test]
