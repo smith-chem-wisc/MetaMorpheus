@@ -131,6 +131,7 @@ namespace EngineLayer
             //Do Classic protein FDR (all targets, all decoys)
             // order protein groups by notch-QValue
             var sortedProteinGroups = proteinGroups.OrderBy(b => b.BestPeptideQValue).ThenByDescending(p => p.BestPeptideScore).ToList();
+            
             AssignQValuesToProteins(sortedProteinGroups);
 
             // Do "Picked" protein FDR

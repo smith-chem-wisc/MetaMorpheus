@@ -38,11 +38,25 @@ namespace EngineLayer
             // KEEP decoys and contaminants for use in parsimony!
             if (modPeptidesAreDifferent)
             {
-                _fdrFilteredPsms = allPsms.Where(p => p.FullSequence != null && p.FdrInfo.QValue <= FdrCutoffForParsimony && p.FdrInfo.QValueNotch <= FdrCutoffForParsimony).ToList();
+                if(allPsms.Count > 100)
+                {
+                    _fdrFilteredPsms = allPsms.Where(p => p.FullSequence != null && p.FdrInfo.PEP_QValue <= FdrCutoffForParsimony).ToList();
+                }
+                else
+                {
+                    _fdrFilteredPsms = allPsms.Where(p => p.FullSequence != null && p.FdrInfo.QValue <= FdrCutoffForParsimony && p.FdrInfo.QValueNotch <= FdrCutoffForParsimony).ToList();
+                }
             }
             else
             {
-                _fdrFilteredPsms = allPsms.Where(p => p.BaseSequence != null && p.FdrInfo.QValue <= FdrCutoffForParsimony && p.FdrInfo.QValueNotch <= FdrCutoffForParsimony).ToList();
+                if(allPsms.Count > 100)
+                {
+                    _fdrFilteredPsms = allPsms.Where(p => p.BaseSequence != null && p.FdrInfo.PEP_QValue <= FdrCutoffForParsimony).ToList();
+                }
+                else
+                {
+                    _fdrFilteredPsms = allPsms.Where(p => p.BaseSequence != null && ((p.FdrInfo.QValue <= FdrCutoffForParsimony && p.FdrInfo.QValueNotch <= FdrCutoffForParsimony) || (!double.IsNaN(p.FdrInfo.PEP_QValue) && p.FdrInfo.PEP_QValue <= FdrCutoffForParsimony))).ToList();
+                }                
             }
 
             // if PSM is a decoy, add only decoy sequences; same for contaminants
