@@ -287,8 +287,8 @@ namespace EngineLayer.GlycoSearch
 
                         var psmCross = new GlycoSpectralMatch(peptideWithSetModifications, 0, bestLocalizedScore, scanIndex, theScan, CommonParameters, bestMatchedIons);
                         psmCross.NGlycan = new List<Glycan> { Glycans[iDLow] };
-                        psmCross.GlycanScore = CalculatePeptideScore(theScan.TheScan, bestMatchedIons.Where(p => p.Annotation.Contains('M')).ToList());
-                        psmCross.DiagnosticIonScore = CalculatePeptideScore(theScan.TheScan, bestMatchedIons.Where(p => p.Annotation.First() == 'D').ToList());
+                        psmCross.GlycanScore = CalculatePeptideScore(theScan.TheScan, bestMatchedIons.Where(p => p.NeutralTheoreticalProduct.ProductType == ProductType.M).ToList());
+                        psmCross.DiagnosticIonScore = CalculatePeptideScore(theScan.TheScan, bestMatchedIons.Where(p => p.NeutralTheoreticalProduct.ProductType == ProductType.D).ToList());
                         psmCross.PeptideScore = psmCross.Score - psmCross.GlycanScore - psmCross.DiagnosticIonScore;
                         psmCross.Rank = ind;
                         psmCross.NGlycanLocalizations = new List<int> { bestSite - 1 }; //TO DO: ambiguity modification site
@@ -454,7 +454,9 @@ namespace EngineLayer.GlycoSearch
 
             double score = CalculatePeptideScore(theScan.TheScan, matchedIons);
 
-            var DiagnosticIonScore = CalculatePeptideScore(theScan.TheScan, matchedIons.Where(p => p.Annotation.First() =='D').ToList());
+            var DiagnosticIonScore = CalculatePeptideScore(theScan.TheScan, matchedIons.Where(p => p.NeutralTheoreticalProduct.ProductType == ProductType.D).ToList());
+
+            var GlycanScore = CalculatePeptideScore(theScan.TheScan, matchedIons.Where(p => p.NeutralTheoreticalProduct.ProductType == ProductType.M).ToList());
 
             var PeptideScore = score - DiagnosticIonScore;
 
@@ -480,9 +482,11 @@ namespace EngineLayer.GlycoSearch
                 allMatchedChildIons.Add(childScan.OneBasedScanNumber, matchedChildIons);
                 double childScore = CalculatePeptideScore(childScan.TheScan, matchedChildIons);
 
-                double childDiagnosticIonScore = CalculatePeptideScore(childScan.TheScan, matchedChildIons.Where(p => p.Annotation.First() == 'D').ToList());
+                double childDiagnosticIonScore = CalculatePeptideScore(childScan.TheScan, matchedChildIons.Where(p => p.NeutralTheoreticalProduct.ProductType == ProductType.D).ToList());
+                double childGlycanScore = CalculatePeptideScore(childScan.TheScan, matchedChildIons.Where(p => p.NeutralTheoreticalProduct.ProductType == ProductType.M).ToList());
 
                 DiagnosticIonScore += childDiagnosticIonScore;
+                GlycanScore += childGlycanScore;
 
                 PeptideScore += childScore - childDiagnosticIonScore;
                 //TO THINK:may think a different way to use childScore
@@ -502,6 +506,8 @@ namespace EngineLayer.GlycoSearch
             psmGlyco.Rank = rank;
 
             psmGlyco.DiagnosticIonScore = DiagnosticIonScore;
+
+            psmGlyco.GlycanScore = GlycanScore;
 
             psmGlyco.ChildMatchedFragmentIons = allMatchedChildIons;
 

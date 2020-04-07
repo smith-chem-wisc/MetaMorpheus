@@ -41,7 +41,7 @@ namespace EngineLayer.GlycoSearch
 
         public Dictionary<int, List<Tuple<int, double>>> SiteSpeciLocalProb { get; set; } // Data <modPos, List<glycanId, site probability>>
         public double PeptideScore { get; set; } //Scores from only mathced peptide fragments.
-        public double GlycanScore { get; set; } //Scores from only matched Y ions. Important for N-glycan for signature ions.
+        public double GlycanScore { get; set; } //Scores from only matched Y ions. 
         public double DiagnosticIonScore { get; set; } //Since every glycopeptide generate DiagnosticIon, it is important to seperate the score. 
 
         public double R138vs144 { get; set; } // The intensity ratio of this 138 and 144 could be a signature for O-glycan or N-glycan.
@@ -185,6 +185,7 @@ namespace EngineLayer.GlycoSearch
             sb.Append("PEP_QValue" + '\t');
 
             sb.Append("Localization Score" + '\t');
+            sb.Append("Yion Score" + '\t');
             sb.Append("DiagonosticIon Score" + '\t');
             sb.Append("Plausible Number Of Glycans" + '\t');
             sb.Append("Total Glycosylation sites" + '\t');
@@ -287,6 +288,8 @@ namespace EngineLayer.GlycoSearch
             if (Routes != null)
             {
                 sb.Append(LocalizationGraphs.First().TotalScore + "\t");
+
+                sb.Append(GlycanScore + "\t");
 
                 sb.Append(DiagnosticIonScore + "\t");              
 
