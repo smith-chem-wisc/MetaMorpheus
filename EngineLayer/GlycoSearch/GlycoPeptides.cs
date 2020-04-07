@@ -190,44 +190,41 @@ namespace EngineLayer.GlycoSearch
         //TO THINK: filter reasonable fragments here. The final solution is to change mzLib.Proteomics.PeptideWithSetModifications.Fragment
         public static List<Product> OGlyGetTheoreticalFragments(DissociationType dissociationType, PeptideWithSetModifications peptide, PeptideWithSetModifications modPeptide)
         {
-            List<Product> theoreticalProducts = new List<Product>();
+            List<Product> theoreticalProducts = new List<Product>();        
+            HashSet<double> masses = new HashSet<double>();
 
+            List<Product> products = new List<Product>();
             if (dissociationType == DissociationType.HCD || dissociationType == DissociationType.CID)
             {
                 List<Product> diag = new List<Product>();
                 modPeptide.Fragment(dissociationType, FragmentationTerminus.Both, diag);
-                peptide.Fragment(dissociationType, FragmentationTerminus.Both, theoreticalProducts);
-                theoreticalProducts = theoreticalProducts.Concat(diag.Where(p => p.ProductType != ProductType.b && p.ProductType != ProductType.y)).ToList();
-
+                peptide.Fragment(dissociationType, FragmentationTerminus.Both, products);
+                products = products.Concat(diag.Where(p => p.ProductType != ProductType.b && p.ProductType != ProductType.y)).ToList();
             }
             else if(dissociationType == DissociationType.ETD)
             {
-                modPeptide.Fragment(dissociationType, FragmentationTerminus.Both, theoreticalProducts);
+                modPeptide.Fragment(dissociationType, FragmentationTerminus.Both, products);
             }
             else if(dissociationType == DissociationType.EThcD)
             {
                 List<Product> diag = new List<Product>();
                 modPeptide.Fragment(DissociationType.HCD, FragmentationTerminus.Both, diag);
-                peptide.Fragment(DissociationType.HCD, FragmentationTerminus.Both, theoreticalProducts);
-                theoreticalProducts = theoreticalProducts.Concat(diag.Where(p => p.ProductType != ProductType.b && p.ProductType != ProductType.y)).ToList();
-                HashSet<double> masses = new HashSet<double>();
+                peptide.Fragment(DissociationType.HCD, FragmentationTerminus.Both, products);
+                products = products.Concat(diag.Where(p => p.ProductType != ProductType.b && p.ProductType != ProductType.y)).ToList();
 
-                foreach (var fragment in theoreticalProducts)
-                {
-                    masses.Add(fragment.NeutralMass);
-                }
 
                 List<Product> etdProducts = new List<Product>();
                 modPeptide.Fragment(DissociationType.ETD, FragmentationTerminus.Both, etdProducts);
-                foreach (var fragment in etdProducts.Where(p=>p.ProductType!=ProductType.y))
-                {
-                    if (!masses.Contains(fragment.NeutralMass))
-                    {
-                        theoreticalProducts.Add(fragment);
-                        masses.Add(fragment.NeutralMass);
-                    }
-                }
+                products = products.Concat(etdProducts.Where(p => p.ProductType != ProductType.y)).ToList();
+            }
 
+            foreach (var fragment in products)
+            {
+                if (!masses.Contains(fragment.NeutralMass))
+                {
+                    masses.Add(fragment.NeutralMass);
+                    theoreticalProducts.Add(fragment);
+                }           
             }
 
             return theoreticalProducts;
