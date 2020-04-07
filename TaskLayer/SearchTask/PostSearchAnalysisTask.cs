@@ -154,10 +154,11 @@ namespace TaskLayer
         /// </summary>
         public void ComputeProteinGroupPValue(List<EngineLayer.ProteinGroup> proteinGroups, List<PeptideSpectralMatch> allPsms)
         {
-            List<double> peptidePEPvaluesToMultiply = new List<double>();
-
             foreach (EngineLayer.ProteinGroup pg in proteinGroups)
             {
+                //Each charge state for each unambiguous full sequence counts for an observation of the protein. We take the product of the lowest PEP value for each observation
+                //to obtain the protein P value. Minimum protein P value is capped at 1e-10 to prevent absurd values.
+                List<double> peptidePEPvaluesToMultiply = new List<double>();
                 List<PeptideSpectralMatch> pgPms = allPsms.Where(p => p.ProteinAccession == pg.ProteinGroupName && p.FullSequence != null && !p.FullSequence.Contains('|')).ToList();
                 var psmsGroupedByChargeState = pgPms.GroupBy(p => p.ScanPrecursorCharge).ToList();
                 foreach (var chargeStateGroup in psmsGroupedByChargeState)
@@ -175,7 +176,6 @@ namespace TaskLayer
                 }
 
                 pg.PValue = Math.Max(1e-10, pvalue);
-
             }
         }
 
@@ -642,7 +642,7 @@ namespace TaskLayer
                 // write all individual file results to subdirectory
                 // local protein fdr, global parsimony, global psm fdr
 
-                if ((Parameters.CurrentRawFileList.Count > 1 && Parameters.SearchParameters.WriteIndividualFiles ) 
+                if ((Parameters.CurrentRawFileList.Count > 1 && Parameters.SearchParameters.WriteIndividualFiles)
                     || Parameters.SearchParameters.WriteMzId || Parameters.SearchParameters.WritePepXml)
                 {
                     Directory.CreateDirectory(Parameters.IndividualResultsOutputFolder);
@@ -883,21 +883,21 @@ namespace TaskLayer
                                 }
                             }
                         }
-                        
+
                         var oldMods = nonVariantProtein.OneBasedPossibleLocalizedModifications.ToDictionary(p => p.Key, v => v.Value);
                         if (proteinsOriginalModifications.ContainsKey(nonVariantProtein.NonVariantProtein))
                         {
                             foreach (var entry in oldMods)
                             {
-                                 if (proteinsOriginalModifications[nonVariantProtein.NonVariantProtein].ContainsKey(entry.Key))
-                                 {
+                                if (proteinsOriginalModifications[nonVariantProtein.NonVariantProtein].ContainsKey(entry.Key))
+                                {
                                     proteinsOriginalModifications[nonVariantProtein.NonVariantProtein][entry.Key].AddRange(entry.Value);
-                                 }
-                                 else
-                                 {
+                                }
+                                else
+                                {
                                     proteinsOriginalModifications[nonVariantProtein.NonVariantProtein].Add(entry.Key, entry.Value);
-                                 }                                    
-                            }                                
+                                }
+                            }
                         }
                         else
                         {
@@ -908,37 +908,36 @@ namespace TaskLayer
                         nonVariantProtein.OneBasedPossibleLocalizedModifications.Clear();
                         foreach (var kvp in modsToWrite.Where(kv => kv.Key.Item1 == null))
                         {
-                            nonVariantProtein.OneBasedPossibleLocalizedModifications.Add(kvp.Key.Item2, kvp.Value);                                
+                            nonVariantProtein.OneBasedPossibleLocalizedModifications.Add(kvp.Key.Item2, kvp.Value);
                         }
                         foreach (var sv in nonVariantProtein.SequenceVariations)
                         {
-                             var oldVariantModifications = sv.OneBasedModifications.ToDictionary(p => p.Key, v => v.Value);
-                             if (originalSequenceVariantModifications.ContainsKey(sv))
-                             {
-                                  foreach (var entry in oldVariantModifications)
-                                  {
-                                      if (originalSequenceVariantModifications[sv].ContainsKey(entry.Key))
-                                      {
-                                          originalSequenceVariantModifications[sv][entry.Key].AddRange(entry.Value);
-                                      }
-                                      else
-                                      {
-                                          originalSequenceVariantModifications[sv].Add(entry.Key, entry.Value);
-                                      }
-                                  }
-                             }
-                             else
-                             {
-                                  originalSequenceVariantModifications.Add(sv, oldVariantModifications);
-                             }
+                            var oldVariantModifications = sv.OneBasedModifications.ToDictionary(p => p.Key, v => v.Value);
+                            if (originalSequenceVariantModifications.ContainsKey(sv))
+                            {
+                                foreach (var entry in oldVariantModifications)
+                                {
+                                    if (originalSequenceVariantModifications[sv].ContainsKey(entry.Key))
+                                    {
+                                        originalSequenceVariantModifications[sv][entry.Key].AddRange(entry.Value);
+                                    }
+                                    else
+                                    {
+                                        originalSequenceVariantModifications[sv].Add(entry.Key, entry.Value);
+                                    }
+                                }
+                            }
+                            else
+                            {
+                                originalSequenceVariantModifications.Add(sv, oldVariantModifications);
+                            }
 
-                             sv.OneBasedModifications.Clear();
-                             foreach (var kvp in modsToWrite.Where(kv => kv.Key.Item1 != null && kv.Key.Item1.Equals(sv)))
-                             {
-                                 sv.OneBasedModifications.Add(kvp.Key.Item2, kvp.Value);
-                             }
+                            sv.OneBasedModifications.Clear();
+                            foreach (var kvp in modsToWrite.Where(kv => kv.Key.Item1 != null && kv.Key.Item1.Equals(sv)))
+                            {
+                                sv.OneBasedModifications.Add(kvp.Key.Item2, kvp.Value);
+                            }
                         }
-
                     }
                 }
 
@@ -988,7 +987,6 @@ namespace TaskLayer
                             }
                         }
                     }
-                                     
                 }
             }
         }
@@ -1045,7 +1043,7 @@ namespace TaskLayer
 
         private void CompressIndividualFileResults()
         {
-            if(Parameters.SearchParameters.CompressIndividualFiles && Directory.Exists(Parameters.IndividualResultsOutputFolder))
+            if (Parameters.SearchParameters.CompressIndividualFiles && Directory.Exists(Parameters.IndividualResultsOutputFolder))
             {
                 ZipFile.CreateFromDirectory(Parameters.IndividualResultsOutputFolder, Parameters.IndividualResultsOutputFolder + ".zip");
                 Directory.Delete(Parameters.IndividualResultsOutputFolder, true);

@@ -45,7 +45,6 @@ namespace EngineLayer
             }
         }
 
-
         public bool IsDecoy { get; }
 
         public bool IsContaminant { get; }
