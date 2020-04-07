@@ -132,7 +132,7 @@ namespace EngineLayer
             //Do Classic protein FDR (all targets, all decoys)
             // order protein groups by notch-QValue
             var sortedProteinGroups = proteinGroups.OrderBy(b => b.BestPeptideQValue).ThenByDescending(p => p.BestPeptideScore).ToList();
-            AssignPandQValuesToProteins(sortedProteinGroups);
+            AssignQValueToProteins(sortedProteinGroups);
 
             // Do "Picked" protein FDR
             // adapted from "A Scalable Approach for Protein False Discovery Rate Estimation in Large Proteomic Data Sets" ~ MCP, 2015, Savitski
@@ -175,7 +175,7 @@ namespace EngineLayer
             }
 
             sortedProteinGroups = proteinGroups.OrderBy(b => b.BestPeptideQValue).ThenByDescending(p => p.BestPeptideScore).ToList();
-            AssignPandQValuesToProteins(sortedProteinGroups);
+            AssignQValueToProteins(sortedProteinGroups);
 
             //Rescue the removed TARGET proteins that have the classic protein fdr.
             //This isn't super transparent, but the "Picked" TDS (target-decoy strategy) does a good job of removing a lot of decoys from accumulating in large datasets.
@@ -190,8 +190,10 @@ namespace EngineLayer
             return sortedProteinGroups.OrderBy(b => b.QValue).ToList();
         }
 
-        private void AssignPandQValuesToProteins(List<ProteinGroup> sortedProteinGroups)
+        private void AssignQValueToProteins(List<ProteinGroup> sortedProteinGroups)
         {
+            int onePercentFDRpsmCount = sortedProteinGroups.Select(p => p.AllPsmsBelowOnePercentFDR).Count();
+
             // sum targets and decoys
             int cumulativeTarget = 0;
             int cumulativeDecoy = 0;
@@ -220,36 +222,8 @@ namespace EngineLayer
                 {
                     maxQValue = currentQValue;
                 }
-                proteinGroup.QValue = maxQValue;
-
-                proteinGroup.PValue = GetProteinGroupPValue(proteinGroup);
+                proteinGroup.QValue = maxQValue;              
             }
-        }
-
-        /// <summary>
-        /// This adapted from Anal. Chem. 2003, 75, 4646-4658
-        /// Equation 3. Protein P value is 1 - the product of peptide pep values.
-        /// P is 1 for true and 0 for false
-        /// Interestingly, this procedure uses peptides with different charge state precursors as separate observations.
-        /// </summary>
-        public double GetProteinGroupPValue(ProteinGroup proteinGroup)
-        {
-            List<double> peptidePEPvaluesToMultiply = new List<double>();
-            var psmsGroupedByChargeState = proteinGroup.AllPsmsBelowOnePercentFDR.GroupBy(p => p.ScanPrecursorCharge).ToList();
-            foreach (var chargeStateGroup in psmsGroupedByChargeState)
-            {
-                var psmsGroupedBestPeptide = chargeStateGroup.GroupBy(p => p.BestMatchingPeptides).ToList();
-                foreach (var bestPeptideGroup in psmsGroupedBestPeptide)
-                {
-                    peptidePEPvaluesToMultiply.Add(bestPeptideGroup.Select(p=>p.FdrInfo.PEP).Min());
-                }
-            }
-            double pvalue = 1;
-            foreach (double pip in peptidePEPvaluesToMultiply)
-            {
-                pvalue *= pip;
-            }
-            return Math.Max(1e-10, pvalue);
         }
     }
 }

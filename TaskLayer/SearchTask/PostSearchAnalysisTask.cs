@@ -141,7 +141,42 @@ namespace TaskLayer
                 psm.ResolveAllAmbiguities();
             }
 
+            ComputeProteinGroupPValue(proteinAnalysisResults.ProteinGroups, Parameters.AllPsms);
+
             Status("Done constructing protein groups!", Parameters.SearchTaskId);
+        }
+
+        /// <summary>
+        /// This adapted from Anal. Chem. 2003, 75, 4646-4658
+        /// Equation 3. Protein P value is 1 - the product of peptide pep values.
+        /// P is 1 for true and 0 for false
+        /// Interestingly, this procedure uses peptides with different charge state precursors as separate observations.
+        /// </summary>
+        public void ComputeProteinGroupPValue(List<EngineLayer.ProteinGroup> proteinGroups, List<PeptideSpectralMatch> allPsms)
+        {
+            List<double> peptidePEPvaluesToMultiply = new List<double>();
+
+            foreach (EngineLayer.ProteinGroup pg in proteinGroups)
+            {
+                List<PeptideSpectralMatch> pgPms = allPsms.Where(p => p.ProteinAccession == pg.ProteinGroupName && p.FullSequence != null && !p.FullSequence.Contains('|')).ToList();
+                var psmsGroupedByChargeState = pgPms.GroupBy(p => p.ScanPrecursorCharge).ToList();
+                foreach (var chargeStateGroup in psmsGroupedByChargeState)
+                {
+                    var psmsGroupedFullSequence = chargeStateGroup.GroupBy(p => p.FullSequence).ToList();
+                    foreach (var fullSequenceGroup in psmsGroupedFullSequence)
+                    {
+                        peptidePEPvaluesToMultiply.Add(fullSequenceGroup.Select(p => p.FdrInfo.PEP).Min());
+                    }
+                }
+                double pvalue = 1;
+                foreach (double pip in peptidePEPvaluesToMultiply)
+                {
+                    pvalue *= pip;
+                }
+
+                pg.PValue = Math.Max(1e-10, pvalue);
+
+            }
         }
 
         private void DoMassDifferenceLocalizationAnalysis()
