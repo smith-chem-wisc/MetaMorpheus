@@ -26,7 +26,7 @@ namespace EngineLayer
 
             if (ExperimentalFragments != null && ExperimentalFragments.Any())
             {
-                DeconvolutedMonoisotopicMasses = ExperimentalFragments.Select(p => p.monoisotopicMass).ToArray();
+                DeconvolutedMonoisotopicMasses = ExperimentalFragments.Select(p => p.MonoisotopicMass).ToArray();
             }
             else
             {
@@ -65,7 +65,7 @@ namespace EngineLayer
             if (commonParam.AssumeOrphanPeaksAreZ1Fragments)
             {
                 HashSet<double> alreadyClaimedMzs = new HashSet<double>(neutralExperimentalFragmentMasses
-                    .SelectMany(p => p.peaks.Select(v => ClassExtensions.RoundedDouble(v.mz).Value)));
+                    .SelectMany(p => p.Peaks.Select(v => ClassExtensions.RoundedDouble(v.mz).Value)));
 
                 for (int i = 0; i < scan.MassSpectrum.XArray.Length; i++)
                 {
@@ -81,7 +81,7 @@ namespace EngineLayer
                 }
             }
 
-            return neutralExperimentalFragmentMasses.OrderBy(p => p.monoisotopicMass).ToArray();
+            return neutralExperimentalFragmentMasses.OrderBy(p => p.MonoisotopicMass).ToArray();
         }
 
         public IsotopicEnvelope GetClosestExperimentalIsotopicEnvelope(double theoreticalNeutralMass)

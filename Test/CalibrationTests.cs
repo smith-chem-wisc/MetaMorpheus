@@ -9,34 +9,49 @@ namespace Test
     internal class CalibrationTests
     {
         [Test]
-        public static void ExperimentalDesignCalibrationTest()
+        [TestCase("filename1.mzML")]
+        [TestCase("filename1.1.mzML")]
+        public static void ExperimentalDesignCalibrationTest(string originalFileName)
         {
             CalibrationTask calibrationTask = new CalibrationTask();
             string outputFolder = Path.Combine(TestContext.CurrentContext.TestDirectory, @"TestCalibration");
-            string myFile = Path.Combine(TestContext.CurrentContext.TestDirectory, @"TestData\SmallCalibratible_Yeast.mzML");
+            string myFile = Path.Combine(TestContext.CurrentContext.TestDirectory, @"TestData\" + originalFileName);
+
+            File.Copy(Path.Combine(TestContext.CurrentContext.TestDirectory, @"TestData\SmallCalibratible_Yeast.mzML"), myFile, true);
+
             string myDatabase = Path.Combine(TestContext.CurrentContext.TestDirectory, @"TestData\smalldb.fasta");
-            string filePath = Path.Combine(TestContext.CurrentContext.TestDirectory, @"TestData\ExperimentalDesign.tsv");
+            string experimentalDesignFilePath = Path.Combine(TestContext.CurrentContext.TestDirectory, @"TestData\ExperimentalDesign.tsv");
+
             Directory.CreateDirectory(outputFolder);
-            using (StreamWriter output = new StreamWriter(filePath))
+
+            using (StreamWriter output = new StreamWriter(experimentalDesignFilePath))
             {
                 output.WriteLine("FileName\tCondition\tBiorep\tFraction\tTechrep");
-                output.WriteLine("SmallCalibratible_Yeast" + "\t" + "condition" + "\t" + "1" + "\t" + "1" + "\t" + "1");
+                output.WriteLine(Path.GetFileNameWithoutExtension(myFile) + "\t" + "condition" + "\t" + "1" + "\t" + "1" + "\t" + "1");
             }
 
             calibrationTask.RunTask(outputFolder, new List<DbForTask> { new DbForTask(myDatabase, false) }, new List<string> { myFile }, "test");
+
             var expDesignPath = Path.Combine(outputFolder, @"ExperimentalDesign.tsv");
             var expDesign = File.ReadAllLines(expDesignPath);
-            Assert.That(expDesign[1].Contains("SmallCalibratible_Yeast-calib"));
-            Assert.That(File.Exists(Path.Combine(outputFolder, @"SmallCalibratible_Yeast-calib.mzML")));
-            Assert.That(File.Exists(Path.Combine(outputFolder, @"SmallCalibratible_Yeast-calib.toml")));
-            var lines = File.ReadAllLines(Path.Combine(outputFolder, @"SmallCalibratible_Yeast-calib.toml"));
+            string expectedCalibratedFileName = Path.GetFileNameWithoutExtension(myFile) + "-calib.mzML";
+            string expectedTomlName = Path.GetFileNameWithoutExtension(myFile) + "-calib.toml";
+
+            Assert.That(expDesign[1].Contains(Path.GetFileNameWithoutExtension(expectedCalibratedFileName)));
+            Assert.That(File.Exists(Path.Combine(outputFolder, myFile)));
+            Assert.That(File.Exists(Path.Combine(outputFolder, expectedTomlName)));
+
+            var lines = File.ReadAllLines(Path.Combine(outputFolder, expectedTomlName));
             var tolerance = Regex.Match(lines[0], @"\d+\.\d*").Value;
             var tolerance1 = Regex.Match(lines[1], @"\d+\.\d*").Value;
+
             Assert.That(double.TryParse(tolerance, out double tol) == true);
             Assert.That(double.TryParse(tolerance1, out double tol1) == true);
             Assert.That(lines[0].Contains("PrecursorMassTolerance"));
             Assert.That(lines[1].Contains("ProductMassTolerance"));
-            File.Delete(filePath);
+
+            File.Delete(experimentalDesignFilePath);
+            File.Delete(myFile);
             Directory.Delete(outputFolder, true);
             Directory.Delete(Path.Combine(TestContext.CurrentContext.TestDirectory, @"Task Settings"), true);
         }
