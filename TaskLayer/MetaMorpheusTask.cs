@@ -435,6 +435,10 @@ namespace TaskLayer
                             // probably the only time you can get here is if the user modifies the file-specific parameter file in the middle of a run...
                             Warn("Problem parsing the file-specific toml " + Path.GetFileName(fileSpecificTomlPath) + "; " + e.Message + "; is the toml from an older version of MetaMorpheus?");
                         }
+                        catch (KeyNotFoundException e)
+                        {
+                            Warn("Problem parsing the file-specific toml " + Path.GetFileName(fileSpecificTomlPath) + "; " + e.Message + "; please check the proteases.tsv file.");
+                        }
                     }
                     else // just used common parameters for file specific.
                     {
