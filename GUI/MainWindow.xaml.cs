@@ -1330,7 +1330,7 @@ namespace MetaMorpheusGUI
                     }
                     catch (KeyNotFoundException e)
                     {
-                        GuiWarnHandler(null, new StringEventArgs("Problem parsing the file-specific toml " + Path.GetFileName(tomlLocation) + "; " + e.Message + "; please check the proteases.tsv file.", null));
+                        GuiWarnHandler(null, new StringEventArgs("Problem parsing the file-specific toml " + Path.GetFileName(tomlLocation) + "; " + e.Message + "; please update the proteases.tsv file and restart MetaMorpheus to use this file-specific toml.", null));
                     }
                 }
             }
@@ -1424,7 +1424,7 @@ namespace MetaMorpheusGUI
             }
             catch (KeyNotFoundException ex)
             {
-                GuiWarnHandler(null, new StringEventArgs("Problem parsing the file-specific toml; " + ex.Message + "; please check the proteases.tsv file.", null));
+                GuiWarnHandler(null, new StringEventArgs("Problem parsing the file-specific toml; " + ex.Message + "; please update the proteases.tsv file and restart MetaMorpheus to use this file-specific toml.", null));
             }
         }
 

@@ -437,7 +437,7 @@ namespace TaskLayer
                         }
                         catch (KeyNotFoundException e)
                         {
-                            Warn("Problem parsing the file-specific toml " + Path.GetFileName(fileSpecificTomlPath) + "; " + e.Message + "; please check the proteases.tsv file.");
+                            Warn("Problem parsing the file-specific toml " + Path.GetFileName(fileSpecificTomlPath) + "; " + e.Message + "; please update the proteases.tsv file and restart MetaMorpheus to use this file-specific toml.");
                         }
                     }
                     else // just used common parameters for file specific.
