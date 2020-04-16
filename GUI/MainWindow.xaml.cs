@@ -1293,10 +1293,6 @@ namespace MetaMorpheusGUI
                             {
                                 GuiWarnHandler(null, new StringEventArgs("Problem parsing the file-specific toml " + Path.GetFileName(fullPathofTomls[j]) + "; " + e.Message + "; is the toml from an older version of MetaMorpheus?", null));
                             }
-                            catch (KeyNotFoundException e)
-                            {
-                                GuiWarnHandler(null, new StringEventArgs("Problem parsing the file-specific toml " + Path.GetFileName(fullPathofTomls[j]) + "; " + e.Message + "; please check the proteases.tsv file.", null));
-                            }
                         }
                         else
                         {
