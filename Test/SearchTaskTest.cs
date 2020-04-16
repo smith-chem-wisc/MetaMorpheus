@@ -160,7 +160,7 @@ namespace Test
 
                 string outputPath = Path.Combine(TestContext.CurrentContext.TestDirectory, @"TestSemiSpecific\TestSemiSpecific\AllPSMs.psmtsv");
                 var output = File.ReadAllLines(outputPath);
-                Assert.That(output.Length == 12); //if N is only producing 11 lines, then the c is not being searched with it. //Possibly 13 lines if decon changes because of missed mono
+                Assert.That(output.Length == 13); //if N is only producing 11 lines, then the c is not being searched with it. //If only 12 lines, maybe missed mono issue
             }
             Directory.Delete(outputFolder, true);
         }

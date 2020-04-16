@@ -214,7 +214,7 @@ namespace EngineLayer.NonSpecificEnzymeSearch
                 for (int envelopeIndex = 0; envelopeIndex < experimentalFragments.Length; envelopeIndex++)
                 {
                     // assume charge state 1 to calculate mass tolerance
-                    double experimentalFragmentMass = experimentalFragments[envelopeIndex].MonoisotopicMass;
+                    double experimentalFragmentMass = experimentalFragments[envelopeIndex].monoisotopicMass;
 
                     // get theoretical fragment bins within mass tolerance
                     int obsFragmentFloorMass = (int)Math.Floor((productTolerance.GetMinimumValue(experimentalFragmentMass)) * FragmentBinsPerDalton);
