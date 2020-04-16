@@ -158,23 +158,44 @@ namespace TaskLayer
             {
                 //Each charge state for each unambiguous full sequence counts for an observation of the protein. We take the product of the lowest PEP value for each observation
                 //to obtain the protein P value. Minimum protein P value is capped at 1e-10 to prevent absurd values.
-                List<double> peptidePEPvaluesToMultiply = new List<double>();
-                List<PeptideSpectralMatch> pgPms = allPsms.Where(p => p.ProteinAccession == pg.ProteinGroupName && p.FullSequence != null && !p.FullSequence.Contains('|')).ToList();
-                var psmsGroupedByChargeState = pgPms.GroupBy(p => p.ScanPrecursorCharge).ToList();
-                foreach (var chargeStateGroup in psmsGroupedByChargeState)
+
+                Dictionary<string, List<int>> proteinGroupBaseSeqChargeStates = new Dictionary<string, List<int>>();
+                foreach (var onePsm in pg.AllPsmsBelowOnePercentFDR)
                 {
-                    var psmsGroupedFullSequence = chargeStateGroup.GroupBy(p => p.FullSequence).ToList();
-                    foreach (var fullSequenceGroup in psmsGroupedFullSequence)
+                    if (onePsm.BaseSequence != null && !onePsm.BaseSequence.Contains('|'))
                     {
-                        peptidePEPvaluesToMultiply.Add(fullSequenceGroup.Select(p => p.FdrInfo.PEP).Min());
+                        if (proteinGroupBaseSeqChargeStates.ContainsKey(onePsm.BaseSequence))
+                        {
+                            if (!proteinGroupBaseSeqChargeStates[onePsm.BaseSequence].Contains(onePsm.ScanPrecursorCharge))
+                            {
+                                proteinGroupBaseSeqChargeStates[onePsm.BaseSequence].Add(onePsm.ScanPrecursorCharge);
+                            }
+                        }
+                        else
+                        {
+                            proteinGroupBaseSeqChargeStates.Add(onePsm.BaseSequence, new List<int> { onePsm.ScanPrecursorCharge });
+                        }
                     }
                 }
-                double pvalue = 1;
-                foreach (double pip in peptidePEPvaluesToMultiply)
+
+                List<double> pepValuesToMultiply = new List<double>();
+
+                foreach (KeyValuePair<string, List<int>> chargeStateBaseSequenceCombos in proteinGroupBaseSeqChargeStates)
                 {
-                    pvalue *= pip;
+                    foreach (int z in chargeStateBaseSequenceCombos.Value)
+                    {
+                        pepValuesToMultiply.Add(pg.AllPsmsBelowOnePercentFDR.Where(p => p.BaseSequence == chargeStateBaseSequenceCombos.Key && p.ScanPrecursorCharge == z).Select(p => p.FdrInfo.PEP).Min());
+                    }
                 }
 
+                double pvalue = 1;
+                if (pepValuesToMultiply.Any())
+                {
+                    foreach (double pip in pepValuesToMultiply)
+                    {
+                        pvalue *= pip;
+                    }
+                }
                 pg.PValue = Math.Max(1e-10, pvalue);
             }
         }

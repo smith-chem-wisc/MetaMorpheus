@@ -18,7 +18,7 @@ namespace EngineLayer
 
         private readonly List<PeptideSpectralMatch> _fdrFilteredPsms;
         private readonly List<PeptideSpectralMatch> _allPsms;
-        private const double FdrCutoffForParsimony = 0.01;
+        private const double FdrCutoffForParsimony = 0.20;
 
         /// <summary>
         /// User-selectable option that treats differently-modified forms of a peptide as different peptides for the purposes of parsimony
@@ -40,7 +40,7 @@ namespace EngineLayer
             {
                 if(allPsms.Count > 100)
                 {
-                    _fdrFilteredPsms = allPsms.Where(p => p.FullSequence != null && p.FdrInfo.PEP_QValue <= FdrCutoffForParsimony).ToList();
+                    _fdrFilteredPsms = allPsms.Where(p => p.FullSequence != null && p.FdrInfo.PEP <= FdrCutoffForParsimony).ToList();
                 }
                 else
                 {
@@ -51,11 +51,11 @@ namespace EngineLayer
             {
                 if(allPsms.Count > 100)
                 {
-                    _fdrFilteredPsms = allPsms.Where(p => p.BaseSequence != null && p.FdrInfo.PEP_QValue <= FdrCutoffForParsimony).ToList();
+                    _fdrFilteredPsms = allPsms.Where(p => p.FullSequence != null && p.FdrInfo.PEP <= FdrCutoffForParsimony).ToList();
                 }
                 else
                 {
-                    _fdrFilteredPsms = allPsms.Where(p => p.BaseSequence != null && ((p.FdrInfo.QValue <= FdrCutoffForParsimony && p.FdrInfo.QValueNotch <= FdrCutoffForParsimony) || (!double.IsNaN(p.FdrInfo.PEP_QValue) && p.FdrInfo.PEP_QValue <= FdrCutoffForParsimony))).ToList();
+                    _fdrFilteredPsms = allPsms.Where(p => p.BaseSequence != null && p.FdrInfo.QValue <= FdrCutoffForParsimony && p.FdrInfo.QValueNotch <= FdrCutoffForParsimony).ToList();
                 }                
             }
 
