@@ -27,7 +27,7 @@ namespace Test
 
             List<PsmFromTsv> parsedPsms = PsmTsvReader.ReadTsv(psmFile, out var warnings);
 
-            Assert.AreEqual(11, parsedPsms.Count);
+            Assert.AreEqual(10, parsedPsms.Count);
             Assert.AreEqual(0, warnings.Count);
 
             Directory.Delete(folderPath, true);

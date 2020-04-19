@@ -89,7 +89,7 @@ namespace Test
 
             string psmFile = Path.Combine(outputFolder, @"QValueTest\AllPSMs.psmtsv");
             var lines = File.ReadAllLines(psmFile);
-            Assert.That(lines.Length == 12);
+            Assert.That(lines.Length == 11);
 
             var engine2 = new EverythingRunnerEngine(new List<(string, MetaMorpheusTask)> { ("QValueTest", searchTask2) }, new List<string> { myFile }, new List<DbForTask> { new DbForTask(myDatabase, false) }, outputFolder);
             engine2.Run();
@@ -118,7 +118,7 @@ namespace Test
 
             List<int> longestSeriesObserved = new List<int>();
 
-            List<int> longestSeriesExpected = new List<int> { 4, 3, 3, 7, 7, 7, 7, 3, 3, 8, 12, 4, 4, 7, 13, 12, 12, 7, 7, 3, 3, 3, 2, 2, 2, 2, 2, 2, 11, 11, 11, 11, 11, 11, 4, 4, 4, 4, 4, 4, 10, 10, 13, 13, 15, 15, 15, 15, 5, 5, 5, 5, 3, 3, 3, 15, 15, 15, 3, 3, 3, 6, 16, 2, 2, 18, 3, 2, 2, 2, 2, 2, 9, 9, 9, 3, 2, 2, 2, 2, 2, 3, 3, 2, 2, 2, 2, 2, 12, 6, 3 };
+            List<int> longestSeriesExpected = new List<int> { 4, 3, 3, 7, 7, 7, 7, 3, 3, 12, 8, 4, 4, 13, 7, 7, 7, 12, 12, 3, 3, 3, 2, 2, 2, 2, 2, 2, 11, 11, 11, 11, 11, 11, 4, 4, 4, 4, 4, 4, 10, 10, 13, 13, 5, 5, 5, 5, 15, 15, 15, 15, 3, 3, 3, 15, 15, 15, 3, 3, 3, 16, 6, 2, 2, 18, 3, 2, 2, 2, 2, 2, 9, 9, 9, 3, 2, 2, 2, 2, 2, 3, 3, 12, 6, 3, };
 
             foreach (PeptideSpectralMatch psm in allPsmsArray)
             {
@@ -151,7 +151,7 @@ namespace Test
 
             string psmFileDecoy = Path.Combine(outputFolder, @"DecoyTest\AllPSMs.psmtsv");
             var linesDecoy = File.ReadAllLines(psmFileDecoy);
-            Assert.That(linesDecoy.Length == 9);
+            Assert.That(linesDecoy.Length == 8);
 
             //Filter contaminants
             SearchTask searchTaskContaminant = new SearchTask();
@@ -163,7 +163,7 @@ namespace Test
 
             string psmFileContaminant = Path.Combine(outputFolder, @"ContaminantTest\AllPSMs.psmtsv");
             var linesContaminant = File.ReadAllLines(psmFileContaminant);
-            Assert.That(linesContaminant.Length == 12);
+            Assert.That(linesContaminant.Length == 11);
 
             string proteinFileContaminant = Path.Combine(outputFolder, @"ContaminantTest\AllProteinGroups.tsv");
             var linesContaminantProtein = File.ReadAllLines(proteinFileContaminant);
@@ -190,7 +190,7 @@ namespace Test
 
             string psmFileDecoyContaminant = Path.Combine(outputFolder, @"DecoyContaminantTest\AllPSMs.psmtsv");
             var linesDecoyContaminant = File.ReadAllLines(psmFileContaminant);
-            Assert.That(linesContaminant.Length == 12);
+            Assert.That(linesContaminant.Length == 11);
 
             var engineDecoyContaminant2 = new EverythingRunnerEngine(new List<(string, MetaMorpheusTask)> { ("DecoyContaminantTest", searchTaskDecoyContaminant2) }, new List<string> { myFile }, new List<DbForTask> { new DbForTask(myDatabase, true) }, outputFolder);
             engineContaminant2.Run();
@@ -207,7 +207,7 @@ namespace Test
 
             string psmFile = Path.Combine(outputFolder, @"NoFilterTest\AllPSMs.psmtsv");
             var lines = File.ReadAllLines(psmFile);
-            Assert.That(lines.Length == 12);
+            Assert.That(lines.Length == 11);
             Directory.Delete(outputFolder, true);
         }
 
