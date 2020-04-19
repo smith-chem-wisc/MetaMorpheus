@@ -194,6 +194,10 @@
                                             <TextBox x:Name="maxModificationIsoformsTextBox" PreviewTextInput="CheckIfNumber" Width="45" />
                                         </StackPanel>
                                         <StackPanel Orientation="Horizontal" Margin="5">
+                                            <Label x:Name="Lb_MaxMods" Content="Max Modification Per Peptide" />
+                                            <TextBox x:Name="TxtBoxMaxModPerPep" PreviewTextInput="CheckIfNumber" Width="45" />
+                                        </StackPanel>
+                                        <StackPanel Orientation="Horizontal" Margin="5">
                                             <Label x:Name="lblMinPeptideLength" Content="Min Peptide Len" />
                                             <TextBox x:Name="MinPeptideLengthTextBox" PreviewTextInput="CheckIfNumber" Width="45" />
                                             <Label x:Name="lblMaxPeptideLength" Content="Max Peptide Len" />
