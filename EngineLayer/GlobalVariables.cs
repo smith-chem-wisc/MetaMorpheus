@@ -85,10 +85,15 @@ namespace EngineLayer
                 AddCrosslinkers(Crosslinker.LoadCrosslinkers(customCrosslinkerLocation));
             }
 
-            GlycanLocations = new List<string>();
-            foreach (var glycanFile in Directory.GetFiles(Path.Combine(DataDir, @"Data", @"Glycan")))
+            OGlycanLocations = new List<string>();
+            foreach (var glycanFile in Directory.GetFiles(Path.Combine(DataDir, @"Data", @"OGlycan")))
             {
-                GlycanLocations.Add(glycanFile);
+                OGlycanLocations.Add(glycanFile);
+            }
+            NGlycanLocations = new List<string>();
+            foreach (var glycanFile in Directory.GetFiles(Path.Combine(DataDir, @"Data", @"NGlycan")))
+            {
+                NGlycanLocations.Add(glycanFile);
             }
 
             ExperimentalDesignFileName = "ExperimentalDesign.tsv";
@@ -119,7 +124,20 @@ namespace EngineLayer
 
             //Add Glycan mod into AllModsKnownDictionary, currently this is for MetaDraw.
             //The reason why not include Glycan into modification database is for users to apply their own database.      
-            foreach (var path in GlycanLocations)
+            foreach (var path in OGlycanLocations)
+            {
+                var og = GlycanDatabase.LoadGlycan(path, false, false);
+                foreach (var g in og)
+                {
+                    var ogmod = Glycan.OGlycanToModification(g);
+                    if (!AllModsKnownDictionary.ContainsKey(ogmod.IdWithMotif))
+                    {
+                        AllModsKnownDictionary.Add(ogmod.IdWithMotif, ogmod);
+                    }
+
+                }
+            }
+            foreach (var path in NGlycanLocations)
             {
                 var og = GlycanDatabase.LoadGlycan(path, false, false);
                 foreach (var g in og)
@@ -176,8 +194,8 @@ namespace EngineLayer
         public static string ExperimentalDesignFileName { get; }
         public static IEnumerable<Crosslinker> Crosslinkers { get { return _KnownCrosslinkers.AsEnumerable(); } }
         public static IEnumerable<char> InvalidAminoAcids { get { return _InvalidAminoAcids.AsEnumerable(); } }
-        public static List<string> GlycanLocations { get; }
- 
+        public static List<string> OGlycanLocations { get; }
+        public static List<string> NGlycanLocations { get; }
 
         public static void AddMods(IEnumerable<Modification> modifications, bool modsAreFromTheTopOfProteinXml)
         {

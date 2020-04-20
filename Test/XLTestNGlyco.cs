@@ -97,7 +97,7 @@ namespace Test
             Assert.AreEqual(coreIons.Count, 6);
             var filter = GlycoPeptides.ScanTrimannosylCoreFilter(matchedFragmentIons, glycan);
             Assert.AreEqual(filter, true);
-            var NGlycans = GlycanDatabase.LoadGlycan(GlobalVariables.GlycanLocations[3], true, false);
+            var NGlycans = GlycanDatabase.LoadGlycan(GlobalVariables.NGlycanLocations[0], true, false);
             var bestGlycans = GlycoPeptides.MatchBestGlycan(listOfSortedms2Scans[0], NGlycans.ToArray(), commonParameters).Where(p => p != null && p.Item2 >= 2).OrderByDescending(p => p.Item2).Take(100).OrderBy(p => p.Item3).ToArray(); ;
 
         }
@@ -106,7 +106,7 @@ namespace Test
         public static void GlyTest_RunTask()
         {
             GlycoSearchTask task = new GlycoSearchTask();
-            task._glycoSearchParameters.IsOGlycoSearch = false;
+            task._glycoSearchParameters.GlycoSearchType = GlycoSearchType.NGlycanSearch;
             Directory.CreateDirectory(Path.Combine(Environment.CurrentDirectory, @"TESTGlycoData"));
             DbForTask db = new DbForTask(Path.Combine(TestContext.CurrentContext.TestDirectory, @"GlycoTestData/Q9C0Y4.fasta"), false);
             string raw = Path.Combine(TestContext.CurrentContext.TestDirectory, @"GlycoTestData/yeast_glycan_25170.mgf");

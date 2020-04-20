@@ -75,7 +75,8 @@ namespace MetaMorpheusGUI
             cbbPrecusorMsTl.Items.Add("Da");
             cbbPrecusorMsTl.Items.Add("ppm");
 
-            CmbGlycanDatabase.ItemsSource = GlobalVariables.GlycanLocations.Select(p=> Path.GetFileName(p));
+            CmbOGlycanDatabase.ItemsSource = GlobalVariables.OGlycanLocations.Select(p=> Path.GetFileName(p));
+            CmbNGlycanDatabase.ItemsSource = GlobalVariables.NGlycanLocations.Select(p => Path.GetFileName(p));
 
             foreach (Protease protease in ProteaseDictionary.Dictionary.Values)
             {
@@ -116,13 +117,15 @@ namespace MetaMorpheusGUI
 
         private void UpdateFieldsFromTask(GlycoSearchTask task)
         {
-            RbtNGlycoSearch.IsChecked = !task._glycoSearchParameters.IsOGlycoSearch;
-            RbtOGlycoSearch.IsChecked = task._glycoSearchParameters.IsOGlycoSearch;
+            RbtOGlycoSearch.IsChecked = task._glycoSearchParameters.GlycoSearchType == EngineLayer.GlycoSearch.GlycoSearchType.OGlycanSearch;
+            RbtNGlycoSearch.IsChecked = task._glycoSearchParameters.GlycoSearchType == EngineLayer.GlycoSearch.GlycoSearchType.NGlycanSearch;
+            Rbt_N_O_GlycoSearch.IsChecked = task._glycoSearchParameters.GlycoSearchType == EngineLayer.GlycoSearch.GlycoSearchType.N_O_GlycanSearch;
             TbMaxOGlycanNum.Text = task._glycoSearchParameters.MaximumOGlycanAllowed.ToString(CultureInfo.InvariantCulture);
             CkbOxoniumIonFilt.IsChecked = task._glycoSearchParameters.OxoniumIonFilt;
 
             txtTopNum.Text = task._glycoSearchParameters.GlycoSearchTopNum.ToString(CultureInfo.InvariantCulture);
-            CmbGlycanDatabase.SelectedItem = task._glycoSearchParameters.GlycanDatabasefile;
+            CmbOGlycanDatabase.SelectedItem = task._glycoSearchParameters.OGlycanDatabasefile;
+            CmbNGlycanDatabase.SelectedItem = task._glycoSearchParameters.NGlycanDatabasefile;
 
             cbbPrecusorMsTl.SelectedIndex = task.CommonParameters.PrecursorMassTolerance is AbsoluteTolerance ? 0 : 1;
             PrecusorMsTlTextBox.Text = task.CommonParameters.PrecursorMassTolerance.Value.ToString(CultureInfo.InvariantCulture);
@@ -241,17 +244,23 @@ namespace MetaMorpheusGUI
             }
             CustomFragmentationWindow.Close();
 
-            //TO DO: The GUI logic here is not clear. 
-            if (RbtNGlycoSearch.IsChecked.Value)
-            {
-                TheTask._glycoSearchParameters.IsOGlycoSearch = false;
-            }
+
             if (RbtOGlycoSearch.IsChecked.HasValue)
             {
-                TheTask._glycoSearchParameters.IsOGlycoSearch = RbtOGlycoSearch.IsChecked.Value;
+                TheTask._glycoSearchParameters.GlycoSearchType = EngineLayer.GlycoSearch.GlycoSearchType.OGlycanSearch;
+            }
+            else if (RbtNGlycoSearch.IsChecked.Value)
+            {
+                TheTask._glycoSearchParameters.GlycoSearchType = EngineLayer.GlycoSearch.GlycoSearchType.NGlycanSearch;
+            }
+            else if (Rbt_N_O_GlycoSearch.IsChecked.Value)
+            {
+                TheTask._glycoSearchParameters.GlycoSearchType = EngineLayer.GlycoSearch.GlycoSearchType.N_O_GlycanSearch;
             }
 
-            TheTask._glycoSearchParameters.GlycanDatabasefile = CmbGlycanDatabase.SelectedItem.ToString();
+
+            TheTask._glycoSearchParameters.OGlycanDatabasefile = CmbOGlycanDatabase.SelectedItem.ToString();
+            TheTask._glycoSearchParameters.NGlycanDatabasefile = CmbNGlycanDatabase.SelectedItem.ToString();
             TheTask._glycoSearchParameters.GlycoSearchTopNum = int.Parse(txtTopNum.Text, CultureInfo.InvariantCulture);
             TheTask._glycoSearchParameters.MaximumOGlycanAllowed = int.Parse(TbMaxOGlycanNum.Text, CultureInfo.InvariantCulture);
             TheTask._glycoSearchParameters.OxoniumIonFilt = CkbOxoniumIonFilt.IsChecked.Value;
