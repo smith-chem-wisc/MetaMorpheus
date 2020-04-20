@@ -245,7 +245,7 @@ namespace MetaMorpheusGUI
             CustomFragmentationWindow.Close();
 
 
-            if (RbtOGlycoSearch.IsChecked.HasValue)
+            if (RbtOGlycoSearch.IsChecked.Value)
             {
                 TheTask._glycoSearchParameters.GlycoSearchType = EngineLayer.GlycoSearch.GlycoSearchType.OGlycanSearch;
             }

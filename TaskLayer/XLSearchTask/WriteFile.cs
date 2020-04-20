@@ -434,7 +434,10 @@ namespace TaskLayer
                         header = GlycoSpectralMatch.GetTabSepHeaderSingle();
                         break;
                     case 2:
-                        header = GlycoSpectralMatch.GetTabSepHeaderGlyco();
+                        header = GlycoSpectralMatch.GetTabSepHeaderOGlyco();
+                        break;
+                    case 3:
+                        header = GlycoSpectralMatch.GetTabSepHeaderNGlyco();
                         break;
                     default:
                         break;

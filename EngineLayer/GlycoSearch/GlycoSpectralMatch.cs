@@ -149,7 +149,7 @@ namespace EngineLayer.GlycoSearch
             return sb.ToString();
         }
 
-        public static string GetTabSepHeaderGlyco()
+        public static string GetTabSepHeaderOGlyco()
         {
             var sb = new StringBuilder();
             sb.Append("File Name" + '\t');
@@ -199,6 +199,58 @@ namespace EngineLayer.GlycoSearch
             sb.Append("Localized Glycans with Protein Site Specific Probability" + '\t');
             sb.Append("All potential glycan localizations" + '\t');
             sb.Append("AllSiteSpecificLocalizationProbability" + '\t');
+
+            return sb.ToString();
+        }
+
+        public static string GetTabSepHeaderNGlyco()
+        {
+            var sb = new StringBuilder();
+            sb.Append("File Name" + '\t');
+            sb.Append("Scan Number" + '\t');
+            sb.Append("Scan Retention Time" + '\t');
+            sb.Append("Precursor Scan Number" + '\t');
+            sb.Append("Precursor MZ" + '\t');
+            sb.Append("Precursor Charge" + '\t');
+            sb.Append("Precursor Mass" + '\t');
+
+            sb.Append("Protein Accession" + '\t');
+            sb.Append("Organism" + '\t');
+            sb.Append("Protein Name" + '\t');
+            sb.Append("Start and End Residues In Protein" + '\t');
+            sb.Append("Base Sequence" + '\t');
+            sb.Append("FlankingResidues" + '\t');
+            sb.Append("Full Sequence" + '\t');
+            sb.Append("Number of Mods" + '\t');
+            sb.Append("Peptide Monoisotopic Mass" + '\t');
+            sb.Append("Score" + '\t');
+            sb.Append("Rank" + '\t');
+
+            sb.Append("Matched Ion Series" + '\t');
+            sb.Append("Matched Ion Mass-To-Charge Ratios" + '\t');
+            sb.Append("Matched Ion Mass Diff (Da)" + '\t');
+            sb.Append("Matched Ion Mass Diff (Ppm)" + '\t');
+            sb.Append("Matched Ion Intensities" + '\t');
+            sb.Append("Matched Ion Counts" + '\t');
+
+            sb.Append("Decoy/Contaminant/Target" + '\t');
+            sb.Append("QValue" + '\t');
+            sb.Append("PEP" + '\t');
+            sb.Append("PEP_QValue" + '\t');
+
+            sb.Append("Localization Score" + '\t');
+            sb.Append("Yion Score" + '\t');
+            sb.Append("DiagonosticIon Score" + '\t');
+            sb.Append("Plausible Number Of Glycans" + '\t');
+            sb.Append("Total Glycosylation sites" + '\t');
+            sb.Append("GlycanMass" + '\t');
+            sb.Append("Plausible GlycanComposition" + '\t');
+            sb.Append("N-Glycan motif Check" + '\t');
+            sb.Append("R138/144" + '\t');
+            sb.Append("Plausible GlycanStructure" + '\t');
+            sb.Append("GlycanLocalizationLevel" + '\t');
+            sb.Append("Localized Glycans with Peptide Site Specific Probability" + '\t');
+            sb.Append("Localized Glycans with Protein Site Specific Probability" + '\t');
 
             return sb.ToString();
         }
