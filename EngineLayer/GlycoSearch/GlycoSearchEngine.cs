@@ -322,42 +322,30 @@ namespace EngineLayer.GlycoSearch
 
             int[] modPos = GlycoSpectralMatch.GetPossibleModSites(theScanBestPeptide, new string[] { "S", "T" }).OrderBy(p => p).ToArray();
 
-            //Localization for O-glycopeptides only works on ETD related dissociationtype
-            //No localization can be done with MS2-HCD spectrum
-            if ((theScan.ChildScans.Count == 0 || !GlycoPeptides.DissociationTypeContainETD(CommonParameters.MS2ChildScanDissociationType)) && !GlycoPeptides.DissociationTypeContainETD(CommonParameters.DissociationType))
-            {
-                while (iDLow < GlycanBox.OGlycanBoxes.Count() && (PrecusorSearchMode.Within(theScan.PrecursorMass, theScanBestPeptide.MonoisotopicMass + GlycanBox.OGlycanBoxes[iDLow].Mass)))
-                {
-                    if (modPos.Length >= GlycanBox.OGlycanBoxes[iDLow].NumberOfMods && GlycoPeptides.OxoniumIonsAnalysis(oxoniumIonIntensities, GlycanBox.OGlycanBoxes[iDLow]))
-                    {
-                        List<Product> hcdProducts = new List<Product>();
-                        theScanBestPeptide.Fragment(CommonParameters.DissociationType, FragmentationTerminus.Both, hcdProducts);
-                        var hcdMatchedFragmentIons = MatchFragmentIons(theScan, hcdProducts, CommonParameters);
-                        double hcdScore = CalculatePeptideScore(theScan.TheScan, hcdMatchedFragmentIons);
-
-                        var psmCrossSingle = new GlycoSpectralMatch(theScanBestPeptide, 0, hcdScore, scanIndex, theScan, CommonParameters, hcdMatchedFragmentIons);
-                        psmCrossSingle.Rank = ind;
-
-                        possibleMatches.Add(psmCrossSingle);
-                        break;
-                    }
-
-                    iDLow++;
-
-                }
-
-                return;
-            }
-
             var localizationScan = theScan;
+            List<Product> products = new List<Product>();
 
+            //For HCD-pd-ETD or CD-pd-EThcD type of data
             if (theScan.ChildScans.Count > 0 && GlycoPeptides.DissociationTypeContainETD(CommonParameters.MS2ChildScanDissociationType))
             {
                 localizationScan = theScan.ChildScans.First();
+                theScanBestPeptide.Fragment(DissociationType.ETD, FragmentationTerminus.Both, products);
             }
 
-            List<Product> products = new List<Product>();
-            theScanBestPeptide.Fragment(DissociationType.ETD, FragmentationTerminus.Both, products);
+            //For ETD type of data
+            if (theScan.ChildScans.Count == 0 && GlycoPeptides.DissociationTypeContainETD(CommonParameters.DissociationType))
+            {
+                theScanBestPeptide.Fragment(DissociationType.ETD, FragmentationTerminus.Both, products);
+            }
+
+            //Localization for O-glycopeptides only works on ETD related dissociationtype
+            //No localization can be done with MS2-HCD spectrum
+            //TO THINK: there is a special situation. The HCD only scan from  HCD-pd-EThcD data can be a glycopeptide, but there is no ETD, so there is no localization. What to do with this?
+            bool is_HCD_only_data = !GlycoPeptides.DissociationTypeContainETD(CommonParameters.DissociationType) && !GlycoPeptides.DissociationTypeContainETD(CommonParameters.MS2ChildScanDissociationType);
+            if (is_HCD_only_data)
+            {
+                theScanBestPeptide.Fragment(DissociationType.HCD, FragmentationTerminus.Both, products);
+            }
 
             double bestLocalizedScore = 0;
 
@@ -377,7 +365,7 @@ namespace EngineLayer.GlycoSearch
                         localizationGraphs.Clear();
                         localizationGraphs.Add(localizationGraph);
                     }
-                    else if (bestLocalizedScore > 0 && (currentLocalizationScore <= bestLocalizedScore + 0.00000001 && currentLocalizationScore >= bestLocalizedScore - 0.00000001))
+                    else if ((is_HCD_only_data || bestLocalizedScore > 0) && (currentLocalizationScore <= bestLocalizedScore + 0.00000001 && currentLocalizationScore >= bestLocalizedScore - 0.00000001))
                     {
                         localizationGraphs.Add(localizationGraph);
                     }
