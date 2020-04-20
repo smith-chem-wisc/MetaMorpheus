@@ -241,11 +241,8 @@ namespace EngineLayer.GlycoSearch
             sb.Append("Localization Score" + '\t');
             sb.Append("Yion Score" + '\t');
             sb.Append("DiagonosticIon Score" + '\t');
-            sb.Append("Plausible Number Of Glycans" + '\t');
-            sb.Append("Total Glycosylation sites" + '\t');
             sb.Append("GlycanMass" + '\t');
             sb.Append("Plausible GlycanComposition" + '\t');
-            sb.Append("N-Glycan motif Check" + '\t');
             sb.Append("R138/144" + '\t');
             sb.Append("Plausible GlycanStructure" + '\t');
             sb.Append("GlycanLocalizationLevel" + '\t');
@@ -325,16 +322,17 @@ namespace EngineLayer.GlycoSearch
             sb.Append("0" + "\t");
 
             if (NGlycan != null)
-            {
-                sb.Append(Score + "\t");             
+            {            
                 sb.Append(PeptideScore + "\t");
                 sb.Append(GlycanScore + "\t");
                 sb.Append(DiagnosticIonScore + "\t");
-                sb.Append(string.Join("|", NGlycan.Select(p => p.GlyId.ToString()).ToArray())); sb.Append("\t");
-                sb.Append(NGlycan.First().Decoy? "D": "T"); sb.Append("\t");
-                sb.Append(NGlycan.First().Struc); sb.Append("\t");
-                sb.Append((double)NGlycan.First().Mass/1E5); sb.Append("\t");
-                sb.Append(string.Join(" ", NGlycan.First().Kind.Select(p => p.ToString()).ToArray())); sb.Append("\t");
+                sb.Append((double)NGlycan.First().Mass / 1E5); sb.Append("\t");
+                sb.Append(Glycan.GetKindString(NGlycan.First().Kind)); sb.Append("\t");
+                sb.Append(R138vs144.ToString()); sb.Append("\t");
+                if (NGlycan.First().Struc!=null)
+                {
+                    sb.Append(NGlycan.First().Struc); sb.Append("\t");
+                }
             }
 
             if (Routes != null)
