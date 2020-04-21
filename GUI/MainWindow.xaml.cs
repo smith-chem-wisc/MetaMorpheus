@@ -1557,18 +1557,22 @@ namespace MetaMorpheusGUI
         {
             if (UpdateGUISettings.Params.AskBeforeExitingMetaMorpheus && !GlobalVariables.MetaMorpheusVersion.Contains("DEBUG"))
             {
-                e.Cancel = true;
+                //e.cancel is if the event should be canceled (where the event is closing MetaMorpheus). Example: if(e.cancel){keep MetaMorpheus open}
                 var exit = ExitMsgBox.Show("Exit MetaMorpheus", "Are you sure you want to exit MetaMorpheus?", "Yes", "No", "Yes and don't ask me again");
 
                 if (exit == MessageBoxResult.Yes)
                 {
                     e.Cancel = false;
                 }
-                else if (exit == MessageBoxResult.OK)
+                else if (exit == MessageBoxResult.OK) //don't ask me again
                 {
-                    UpdateGUISettings.Params.AskBeforeExitingMetaMorpheus = true;
+                    UpdateGUISettings.Params.AskBeforeExitingMetaMorpheus = false;
                     Toml.WriteFile(UpdateGUISettings.Params, Path.Combine(GlobalVariables.DataDir, @"GUIsettings.toml"), MetaMorpheusTask.tomlConfig);
                     e.Cancel = false;
+                }
+                else //assume the event should be canceled and MetaMorpheus should stay open
+                {
+                    e.Cancel = true; 
                 }
             }
         }
