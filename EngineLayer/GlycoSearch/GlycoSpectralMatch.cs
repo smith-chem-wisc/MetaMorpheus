@@ -261,13 +261,24 @@ namespace EngineLayer.GlycoSearch
             sb.Append(PrecursorScanNumber + "\t");
             sb.Append(ScanPrecursorMonoisotopicPeakMz + "\t");
             sb.Append(ScanPrecursorCharge + "\t");
-            sb.Append(ScanPrecursorMass + "\t"); 
+            sb.Append(ScanPrecursorMass + "\t");
 
-            sb.Append(ProteinAccession + "\t");
+            var proteinAccessionString = ProteinAccession ?? PsmTsvWriter.Resolve(BestMatchingPeptides.Select(p => p.Peptide.Protein.Accession), FullSequence).ResolvedString;
+            sb.Append(proteinAccessionString + "\t");
             sb.Append(Organism + "\t");
-            sb.Append(BestMatchingPeptides.First().Peptide.Protein.FullName + "\t");
-            sb.Append("[" + OneBasedStartResidueInProtein.Value.ToString() + " to " + OneBasedEndResidueInProtein.Value.ToString() + "]" + '\t');
+            sb.Append(PsmTsvWriter.Resolve(BestMatchingPeptides.Select(b => b.Peptide.Protein.FullName), FullSequence).ResolvedString + "\t");
+            int _FirstOneBasedStartResidueInProtein = OneBasedStartResidueInProtein.HasValue ? OneBasedStartResidueInProtein.Value : BestMatchingPeptides.First().Peptide.OneBasedStartResidueInProtein;
+            int _FirstOneBasedEndResidueInProtein = OneBasedEndResidueInProtein.HasValue ? OneBasedEndResidueInProtein.Value : BestMatchingPeptides.First().Peptide.OneBasedEndResidueInProtein; ;
 
+            if (OneBasedStartResidueInProtein.HasValue)
+            {
+                sb.Append("[" + OneBasedStartResidueInProtein.Value.ToString() + " to " +  OneBasedEndResidueInProtein.Value.ToString() + "]" + '\t');
+            }
+            else
+            {
+                sb.Append("\t");
+            }
+            
             sb.Append(BaseSequence + "\t");
             sb.Append(BestMatchingPeptides.First().Peptide.PreviousAminoAcid + "," + BestMatchingPeptides.First().Peptide.NextAminoAcid + "\t");
             sb.Append(FullSequence + "\t");
@@ -378,7 +389,7 @@ namespace EngineLayer.GlycoSearch
                 //sb.Append(localizedGlycan); sb.Append("\t");
                 string local_peptide = "";
                 string local_protein = "";
-                LocalizedSiteSpeciLocalInfo(SiteSpeciLocalProb, LocalizedGlycan, OneBasedStartResidueInProtein.Value, ref local_peptide, ref local_protein);
+                LocalizedSiteSpeciLocalInfo(SiteSpeciLocalProb, LocalizedGlycan, OneBasedStartResidueInProtein, ref local_peptide, ref local_protein);
                 sb.Append(local_peptide); sb.Append("\t");
                 sb.Append(local_protein); sb.Append("\t");
 

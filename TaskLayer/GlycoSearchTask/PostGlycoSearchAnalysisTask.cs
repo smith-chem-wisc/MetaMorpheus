@@ -49,7 +49,7 @@ namespace TaskLayer
                 var writtenFileInter2 = Path.Combine(OutputFolder, "oglyco_psm" + ".tsv");
                 WriteFile.WritePsmGlycoToTsv(allPsmsGly, writtenFileInter2, 2);
 
-                var ProteinLevelLocalization = GlycoProteinParsimony.ProteinLevelGlycoParsimony(allPsmsGly);
+                var ProteinLevelLocalization = GlycoProteinParsimony.ProteinLevelGlycoParsimony(allPsmsGly.Where(p=>p.ProteinAccession!=null && p.OneBasedStartResidueInProtein.HasValue).ToList());
                 WriteFile.WriteSeenProteinGlycoLocalization(ProteinLevelLocalization, Path.Combine(OutputFolder, "seen_oglyco_localization" + ".tsv"));
                 WriteFile.WriteProteinGlycoLocalization(ProteinLevelLocalization, Path.Combine(OutputFolder, "protein_oglyco_localization" + ".tsv"));
                 return MyTaskResults;

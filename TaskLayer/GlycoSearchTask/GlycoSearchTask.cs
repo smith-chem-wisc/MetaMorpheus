@@ -137,14 +137,6 @@ namespace TaskLayer
 
                 ListOfGsmsPerMS2Scan.AddRange(newCsmsPerMS2ScanPerFile.Where(p => p != null).ToList());
 
-                //foreach (var psmsPerFile in newCsmsPerMS2ScanPerFile)
-                //{
-                //    if (psmsPerFile != null)
-                //    {
-                //        ListOfGsmsPerMS2Scan.Add(psmsPerFile.OrderByDescending(p => p.Score).ToList());
-                //    }
-                //}
-
                 completedFiles++;
                 ReportProgress(new ProgressEventArgs(completedFiles / currentRawFileList.Count, "Searching...", new List<string> { taskId, "Individual Spectra Files" }));
             }
@@ -154,11 +146,6 @@ namespace TaskLayer
             //For every Ms2Scans, each have a list of candidates psms. The allPsms from GlycoSearchEngine is the list (all ms2scans) of list (each ms2scan) of psm (all candidate psm). 
             //Currently, only keep the first scan for consideration. 
             List<GlycoSpectralMatch> GsmPerScans = ListOfGsmsPerMS2Scan.Select(p => p.First()).ToList();
-
-            foreach (var gsm in GsmPerScans)
-            {
-                gsm.ResolveAllAmbiguities();
-            }
 
             var filteredAllPsms = new List<GlycoSpectralMatch>();
 

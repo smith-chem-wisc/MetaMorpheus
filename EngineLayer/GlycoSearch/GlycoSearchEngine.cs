@@ -14,6 +14,7 @@ namespace EngineLayer.GlycoSearch
 {
     public class GlycoSearchEngine : ModernSearchEngine
     {
+        public static readonly double ToleranceForMassDifferentiation = 1e-9;
         private readonly int OxoniumIon204Index = 9; //Check Glycan.AllOxoniumIons
         protected readonly List<GlycoSpectralMatch>[] GlobalCsms;
 
@@ -193,14 +194,15 @@ namespace EngineLayer.GlycoSearch
                         if (GlobalCsms[scanIndex] == null)
                         {
                             GlobalCsms[scanIndex] = new List<GlycoSpectralMatch>();
-                            GlobalCsms[scanIndex].AddRange(gsms.Where(p => p != null).OrderByDescending(p => p.Score).Take(10));
                         }
                         else
                         {
                             gsms.AddRange(GlobalCsms[scanIndex]);
-                            GlobalCsms[scanIndex].Clear();
-                            GlobalCsms[scanIndex].AddRange(gsms.Where(p => p != null).OrderByDescending(p => p.Score).Take(10));
+                            GlobalCsms[scanIndex].Clear();                       
                         }
+
+                        Add2GlobalGsms(ref gsms, scanIndex);
+
                     }
 
                     // report search progress
@@ -216,6 +218,58 @@ namespace EngineLayer.GlycoSearch
             });
 
             return new MetaMorpheusEngineResults(this);
+        }
+
+        private void Add2GlobalGsms(ref List<GlycoSpectralMatch> gsms, int scanIndex)
+        {
+            //keep top 10 candidates.
+            double preScore = 0;
+            int gsmsCount = 1;
+            string preString = "";
+
+            foreach (var gsm in gsms.Where(p => p != null).OrderByDescending(p => p.Score).ThenBy(c => c.FullSequence))
+            {
+                if (gsmsCount <= 10)
+                {
+                    gsm.ResolveAllAmbiguities();
+
+                    if (gsmsCount == 1)
+                    {
+                        preScore = gsm.Score;
+                        preString = gsm.FullSequence;
+
+                        GlobalCsms[scanIndex].Add(gsm);
+                        gsmsCount++;
+                    }
+                    else
+                    {
+                        if (gsm.Score - preScore < ToleranceForMassDifferentiation &&
+                        gsm.Score - preScore > -ToleranceForMassDifferentiation)
+                        {
+                            string currentString = gsm.FullSequence;
+
+                            if (preString == currentString)
+                            {
+                                foreach (var bestMatchPeptide in gsm.BestMatchingPeptides)
+                                {
+                                    GlobalCsms[scanIndex].Last().AddProteinMatch(bestMatchPeptide, gsm.PeptidesToMatchingFragments[bestMatchPeptide.Peptide]);
+
+                                }
+                            }
+                            else
+                            {
+                                preString = currentString;
+                                GlobalCsms[scanIndex].Add(gsm);
+                                gsmsCount++;
+                            }
+                        }
+                    }
+                }
+                else
+                {
+                    break;
+                }
+            }
         }
 
         //For FindOGlycan
