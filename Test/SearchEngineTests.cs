@@ -60,6 +60,58 @@ namespace Test
             Assert.AreEqual("QQQ", allPsmsArray[0].BaseSequence);
         }
 
+        [Test]
+        public static void TestSearchEngineResultsPsmFromTsv()
+        {
+            var myTomlPath = Path.Combine(TestContext.CurrentContext.TestDirectory, @"TestData\Task1-SearchTaskconfig.toml");
+            var searchTaskLoaded = Toml.ReadFile<SearchTask>(myTomlPath, MetaMorpheusTask.tomlConfig);
+            string outputFolder = Path.Combine(TestContext.CurrentContext.TestDirectory, @"TestData\TestConsistency");
+            string myFile = Path.Combine(TestContext.CurrentContext.TestDirectory, @"TestData\sliced_b6.mzML");
+            string myDatabase = Path.Combine(TestContext.CurrentContext.TestDirectory, @"TestData\LowResSnip_B6_mouse_11700_117500pruned.xml");
+
+            var engineToml = new EverythingRunnerEngine(new List<(string, MetaMorpheusTask)> { ("SearchTOML", searchTaskLoaded) }, new List<string> { myFile }, new List<DbForTask> { new DbForTask(myDatabase, false) }, outputFolder);
+            engineToml.Run();
+
+            string psmFile = Path.Combine(outputFolder, @"SearchTOML\AllPSMs.psmtsv");
+
+            List<PsmFromTsv> parsedPsms = PsmTsvReader.ReadTsv(psmFile, out var warnings);
+            PsmFromTsv psm = parsedPsms.First();
+            Assert.AreEqual("EIADGLCLEVEGK", psm.BaseSeq);
+            Assert.AreEqual("T", psm.DecoyContamTarget);
+            Assert.AreEqual(502.117, psm.DeltaScore);
+            Assert.AreEqual("EIADGLCLEVEGK", psm.EssentialSeq);
+            Assert.AreEqual("sliced_b6", psm.Filename);
+            Assert.AreEqual("EIADGLC[Common Fixed:Carbamidomethyl on C]LEVEGK", psm.FullSequence);
+            Assert.AreEqual("primary:Tpt1, synonym:Trt", psm.GeneName);
+            Assert.AreEqual("", psm.IdentifiedSequenceVariations);
+            Assert.AreEqual("0.00652", psm.MassDiffDa);
+            Assert.AreEqual("4.55", psm.MassDiffPpm);
+            Assert.AreEqual(50, psm.MatchedIons.Count);
+            Assert.AreEqual("0", psm.MissedCleavage);
+            Assert.AreEqual(189, psm.Ms2ScanNumber);
+            Assert.AreEqual("M", psm.NextAminoAcid);
+            Assert.AreEqual("0", psm.Notch);
+            Assert.AreEqual("Mus musculus", psm.OrganismName);
+            Assert.That(5.9604644775390625E-08, Is.EqualTo(psm.PEP).Within(1E-08));
+            Assert.AreEqual(0, psm.PEP_QValue);
+            Assert.AreEqual("full", psm.PeptideDesicription);
+            Assert.AreEqual("1431.69155", psm.PeptideMonoMass);
+            Assert.AreEqual(2, psm.PrecursorCharge);
+            Assert.AreEqual(1431.69806, psm.PrecursorMass);
+            Assert.AreEqual(716.85631, psm.PrecursorMz);
+            Assert.AreEqual(185, psm.PrecursorScanNum);
+            Assert.AreEqual("R", psm.PreviousAminoAcid);
+            Assert.AreEqual("P63028", psm.ProteinAccession);
+            Assert.AreEqual("Translationally-controlled tumor protein", psm.ProteinName);
+            Assert.AreEqual(0, psm.QValue);
+            Assert.AreEqual(0, psm.QValueNotch);
+            Assert.AreEqual(77.09543, psm.RetentionTime);
+            Assert.AreEqual(507.117, psm.Score);
+            Assert.AreEqual("[22 to 34]", psm.StartAndEndResiduesInProtein);
+            Assert.AreEqual(2529786.92095, psm.TotalIonCurrent);
+            Assert.AreEqual(0, psm.VariantCrossingIons.Count);
+        }
+
         //tests a weird crash from ms2 scans that had experimental peaks but they were all removed from the xarray by XCorr processing
         [Test]
         public static void TestXCorrWithNoPeaks()
