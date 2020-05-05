@@ -455,10 +455,10 @@ namespace Test
             singleMassSpectraFile.Run();
             multipleMassSpectraFiles.Run();
 
-            // test single file output
+            // test single file output. With only 1 file, all results including mzid get written to the parent directory.
             HashSet<string> expectedFiles = new HashSet<string> {
                 "AllPeptides.psmtsv", "AllProteinGroups.tsv", "AllPSMs.psmtsv", "AllPSMs_FormattedForPercolator.tab", "AllQuantifiedPeaks.tsv",
-                "AllQuantifiedPeptides.tsv", "prose.txt", "results.txt" };
+                "AllQuantifiedPeptides.tsv", "prose.txt", "results.txt", "sliced-raw.mzID" };
 
             HashSet<string> files = new HashSet<string>(Directory.GetFiles(Path.Combine(thisTaskOutputFolder, "SingleMassSpectraFileOutput")).Select(v => Path.GetFileName(v)));
 
@@ -469,7 +469,10 @@ namespace Test
             // test that output is what's expected
             Assert.That(files.SetEquals(expectedFiles));
 
-            // test multi file output
+            // test multi file output. With multiple files, .mzid results are inside a folder.
+            expectedFiles = new HashSet<string> {
+                "AllPeptides.psmtsv", "AllProteinGroups.tsv", "AllPSMs.psmtsv", "AllPSMs_FormattedForPercolator.tab", "AllQuantifiedPeaks.tsv",
+                "AllQuantifiedPeptides.tsv", "prose.txt", "results.txt"};
             files = new HashSet<string>(Directory.GetFiles(Path.Combine(thisTaskOutputFolder, "MultipleMassSpectraFileOutput")).Select(v => Path.GetFileName(v)));
             missingFiles = expectedFiles.Except(files);
             extraFiles = files.Except(expectedFiles);
@@ -546,7 +549,7 @@ namespace Test
             var engine = new EverythingRunnerEngine(taskList, new List<string> { mzmlName }, new List<DbForTask> { new DbForTask(fastaName, false) }, outputFolder);
             engine.Run();
 
-            string outputPepXmlPath = Path.Combine(outputFolder, @"TestPepXmlOutput\Individual File Results\PrunedDbSpectra.pep.XML");
+            string outputPepXmlPath = Path.Combine(outputFolder, @"TestPepXmlOutput\PrunedDbSpectra.pep.XML");
             Assert.That(File.Exists(outputPepXmlPath));
             Directory.Delete(outputFolder, true);
         }

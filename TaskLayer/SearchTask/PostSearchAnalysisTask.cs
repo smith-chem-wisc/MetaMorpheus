@@ -655,8 +655,11 @@ namespace TaskLayer
                     if (Parameters.SearchParameters.WritePepXml)
                     {
                         Status("Writing pepXML...", new List<string> { Parameters.SearchTaskId, "Individual Spectra Files", fullFilePath });
-
-                        var pepXMLFilePath = Path.Combine(Parameters.IndividualResultsOutputFolder, strippedFileName + ".pep.XML");
+                        string pepXMLFilePath = Path.Combine(Parameters.OutputFolder, strippedFileName + ".pep.XML");
+                        if(Parameters.CurrentRawFileList.Count > 1)
+                        {
+                            pepXMLFilePath = Path.Combine(Parameters.IndividualResultsOutputFolder, strippedFileName + ".pep.XML");
+                        }                        
                         PepXMLWriter.WritePepXml(psmsForThisFile, Parameters.DatabaseFilenameList, Parameters.VariableModifications, Parameters.FixedModifications,
                             CommonParameters, pepXMLFilePath, CommonParameters.QValueOutputFilter);
 
