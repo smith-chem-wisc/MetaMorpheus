@@ -87,8 +87,10 @@ namespace Test
         {
             SearchTask searchTask = new SearchTask()
             {
+
                 SearchParameters = new SearchParameters
                 {
+                    WriteMzId = true,
                     SearchType = SearchType.NonSpecific,
                     LocalFdrCategories = new List<FdrCategory>
                         {
@@ -105,6 +107,7 @@ namespace Test
             DbForTask db = new DbForTask(myDatabase, false);
 
             List<(string, MetaMorpheusTask)> taskList = new List<(string, MetaMorpheusTask)> { ("TestSemiSpecificSmall", searchTask) };
+
 
             var engine = new EverythingRunnerEngine(taskList, new List<string> { myFile }, new List<DbForTask> { new DbForTask(myDatabase, false) }, Environment.CurrentDirectory);
             engine.Run();

@@ -607,7 +607,7 @@ namespace TaskLayer
                 // write all individual file results to subdirectory
                 // local protein fdr, global parsimony, global psm fdr
 
-                if ((Parameters.CurrentRawFileList.Count > 1 && Parameters.SearchParameters.WriteIndividualFiles ) 
+                if (Parameters.SearchParameters.WriteIndividualFiles
                     || Parameters.SearchParameters.WriteMzId || Parameters.SearchParameters.WritePepXml)
                 {
                     Directory.CreateDirectory(Parameters.IndividualResultsOutputFolder);
@@ -629,7 +629,7 @@ namespace TaskLayer
                     Parameters.SearchTaskResults.AddTaskSummaryText("Target protein groups within 1 % FDR in " + strippedFileName + ": " + subsetProteinGroupsForThisFile.Count(b => b.QValue <= 0.01 && !b.IsDecoy));
 
                     // write individual spectra file protein groups results to tsv
-                    if (Parameters.CurrentRawFileList.Count > 1 && Parameters.SearchParameters.WriteIndividualFiles)
+                    if (Parameters.SearchParameters.WriteIndividualFiles)
                     {
                         writtenFile = Path.Combine(Parameters.IndividualResultsOutputFolder, strippedFileName + "_ProteinGroups.tsv");
                         WriteProteinGroupsToTsv(subsetProteinGroupsForThisFile, writtenFile, new List<string> { Parameters.SearchTaskId, "Individual Spectra Files", fullFilePath }, CommonParameters.QValueOutputFilter);

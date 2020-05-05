@@ -443,6 +443,7 @@ namespace Test
 
             SearchTask task = Toml.ReadFile<SearchTask>(Path.Combine(TestContext.CurrentContext.TestDirectory, @"SlicedSearchTaskConfig.toml"), MetaMorpheusTask.tomlConfig);
             task.SearchParameters.DecoyType = DecoyType.None;
+            task.SearchParameters.WriteMzId = true;
 
             DbForTask db = new DbForTask(Path.Combine(TestContext.CurrentContext.TestDirectory, @"sliced-db.fasta"), false);
             DbForTask db2 = new DbForTask(Path.Combine(TestContext.CurrentContext.TestDirectory, "TestData", @"DbForPrunedDb.fasta"), false);
