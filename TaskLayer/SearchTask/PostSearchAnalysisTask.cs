@@ -607,8 +607,8 @@ namespace TaskLayer
                 // write all individual file results to subdirectory
                 // local protein fdr, global parsimony, global psm fdr
 
-                if (Parameters.SearchParameters.WriteIndividualFiles
-                    || Parameters.SearchParameters.WriteMzId || Parameters.SearchParameters.WritePepXml)
+                if (Parameters.CurrentRawFileList.Count > 1 && (Parameters.SearchParameters.WriteIndividualFiles
+                    || Parameters.SearchParameters.WriteMzId || Parameters.SearchParameters.WritePepXml))
                 {
                     Directory.CreateDirectory(Parameters.IndividualResultsOutputFolder);
                 }
@@ -629,7 +629,7 @@ namespace TaskLayer
                     Parameters.SearchTaskResults.AddTaskSummaryText("Target protein groups within 1 % FDR in " + strippedFileName + ": " + subsetProteinGroupsForThisFile.Count(b => b.QValue <= 0.01 && !b.IsDecoy));
 
                     // write individual spectra file protein groups results to tsv
-                    if (Parameters.SearchParameters.WriteIndividualFiles)
+                    if (Parameters.SearchParameters.WriteIndividualFiles && Parameters.CurrentRawFileList.Count > 1)
                     {
                         writtenFile = Path.Combine(Parameters.IndividualResultsOutputFolder, strippedFileName + "_ProteinGroups.tsv");
                         WriteProteinGroupsToTsv(subsetProteinGroupsForThisFile, writtenFile, new List<string> { Parameters.SearchTaskId, "Individual Spectra Files", fullFilePath }, CommonParameters.QValueOutputFilter);
@@ -639,8 +639,11 @@ namespace TaskLayer
                     if (Parameters.SearchParameters.WriteMzId)
                     {
                         Status("Writing mzID...", new List<string> { Parameters.SearchTaskId, "Individual Spectra Files", fullFilePath });
-
-                        var mzidFilePath = Path.Combine(Parameters.IndividualResultsOutputFolder, strippedFileName + ".mzID");
+                        string mzidFilePath = Path.Combine(Parameters.OutputFolder, strippedFileName + ".mzID");
+                        if(Parameters.CurrentRawFileList.Count > 1)
+                        {
+                            mzidFilePath = Path.Combine(Parameters.IndividualResultsOutputFolder, strippedFileName + ".mzID");
+                        }                        
                         MzIdentMLWriter.WriteMzIdentMl(psmsForThisFile, subsetProteinGroupsForThisFile, Parameters.VariableModifications, Parameters.FixedModifications, Parameters.SearchParameters.SilacLabels,
                             new List<Protease> { CommonParameters.DigestionParams.Protease }, CommonParameters.QValueOutputFilter, CommonParameters.ProductMassTolerance,
                             CommonParameters.PrecursorMassTolerance, CommonParameters.DigestionParams.MaxMissedCleavages, mzidFilePath);
