@@ -5,6 +5,7 @@ using System.Collections.Generic;
 using System.Globalization;
 using System.Linq;
 using System.Text.RegularExpressions;
+using EngineLayer.GlycoSearch;
 
 namespace EngineLayer
 {
@@ -57,7 +58,6 @@ namespace EngineLayer
         public List<MatchedFragmentIon> VariantCrossingIons { get; }
 
         //For crosslink
-
         public string CrossType { get; }
         public string LinkResidues { get; }
         public int? ProteinLinkSite { get; }
@@ -74,6 +74,13 @@ namespace EngineLayer
         public double? XLTotalScore { get; }
         public string ParentIons { get; }
         public double? RetentionTime { get; }
+
+        //For Glyco
+        public string GlycanStructure { get; set; }
+        public double? GlycanMass { get; set; }
+        public string GlycanComposition { get; set; }
+        public LocalizationLevel? GlycanLocalizationLevel { get; set; }
+        public string LocalizedGlycan { get; set; }
 
         public PsmFromTsv(string line, char[] split, Dictionary<string, int> parsedHeader)
         {
@@ -151,6 +158,17 @@ namespace EngineLayer
             {
                 BetaPeptideChildScanMatchedIons.Remove(Ms2ScanNumber);
             }
+
+            //For Glyco            
+            GlycanMass = (parsedHeader[PsmTsvHeader_Glyco.GlycanMass] < 0) ? null : (double?)double.Parse(spl[parsedHeader[PsmTsvHeader_Glyco.GlycanMass]]);
+            GlycanComposition = (parsedHeader[PsmTsvHeader_Glyco.GlycanComposition] < 0) ? null : spl[parsedHeader[PsmTsvHeader_Glyco.GlycanComposition]];
+            GlycanStructure = (parsedHeader[PsmTsvHeader_Glyco.GlycanStructure] < 0) ? null : spl[parsedHeader[PsmTsvHeader_Glyco.GlycanStructure]];
+            var localizationLevel = (parsedHeader[PsmTsvHeader_Glyco.GlycanLocalizationLevel] < 0) ? null : spl[parsedHeader[PsmTsvHeader_Glyco.GlycanLocalizationLevel]];
+            if (localizationLevel!=null)
+            {
+                GlycanLocalizationLevel = (LocalizationLevel)Enum.Parse(typeof(LocalizationLevel), localizationLevel);
+            }
+            LocalizedGlycan = (parsedHeader[PsmTsvHeader_Glyco.LocalizedGlycan] < 0) ? null : spl[parsedHeader[PsmTsvHeader_Glyco.LocalizedGlycan]];
         }
 
         //Used to remove Silac labels for proper annotation
@@ -291,6 +309,25 @@ namespace EngineLayer
                 }
             }
             return variantCrossingIons;
+        }
+
+        public static List<Tuple<int, string, double>> ReadLocalizedGlycan(string localizedGlycan)
+        {
+            List<Tuple<int, string, double>> tuples = new List<Tuple<int, string, double>>();
+            if (localizedGlycan == null)
+            {
+                return tuples;
+            }
+            var lgs = localizedGlycan.Split(new string[] { "[", "]" }, StringSplitOptions.RemoveEmptyEntries);
+            foreach (var lg in lgs)
+            {
+                var g = lg.Split(',', StringSplitOptions.RemoveEmptyEntries);
+
+                Tuple<int, string, double> tuple = new Tuple<int, string, double>(int.Parse(g[0]), g[1], double.Parse(g[2]));
+                tuples.Add(tuple);
+            }
+
+            return tuples;
         }
     }
 }
