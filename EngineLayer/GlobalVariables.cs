@@ -85,6 +85,17 @@ namespace EngineLayer
                 AddCrosslinkers(Crosslinker.LoadCrosslinkers(customCrosslinkerLocation));
             }
 
+            OGlycanLocations = new List<string>();
+            foreach (var glycanFile in Directory.GetFiles(Path.Combine(DataDir, @"Data", @"OGlycan")))
+            {
+                OGlycanLocations.Add(glycanFile);
+            }
+            NGlycanLocations = new List<string>();
+            foreach (var glycanFile in Directory.GetFiles(Path.Combine(DataDir, @"Data", @"NGlycan")))
+            {
+                NGlycanLocations.Add(glycanFile);
+            }
+
             ExperimentalDesignFileName = "ExperimentalDesign.tsv";
 
             UnimodDeserialized = UsefulProteomicsDatabases.Loaders.LoadUnimod(Path.Combine(DataDir, @"Data", @"unimod.xml")).ToList();
@@ -109,6 +120,35 @@ namespace EngineLayer
                     AllModsKnownDictionary.Add(mod.IdWithMotif, mod);
                 }
                 // no error thrown if multiple mods with this ID are present - just pick one
+            }
+
+            //Add Glycan mod into AllModsKnownDictionary, currently this is for MetaDraw.
+            //The reason why not include Glycan into modification database is for users to apply their own database.      
+            foreach (var path in OGlycanLocations)
+            {
+                var og = GlycanDatabase.LoadGlycan(path, false, false);
+                foreach (var g in og)
+                {
+                    var ogmod = Glycan.OGlycanToModification(g);
+                    if (!AllModsKnownDictionary.ContainsKey(ogmod.IdWithMotif))
+                    {
+                        AllModsKnownDictionary.Add(ogmod.IdWithMotif, ogmod);
+                    }
+
+                }
+            }
+            foreach (var path in NGlycanLocations)
+            {
+                var og = GlycanDatabase.LoadGlycan(path, false, false);
+                foreach (var g in og)
+                {
+                    var ogmod = Glycan.OGlycanToModification(g);
+                    if (!AllModsKnownDictionary.ContainsKey(ogmod.IdWithMotif))
+                    {
+                        AllModsKnownDictionary.Add(ogmod.IdWithMotif, ogmod);
+                    }
+
+                }
             }
 
             RefreshAminoAcidDictionary();
@@ -147,13 +187,15 @@ namespace EngineLayer
         public static UsefulProteomicsDatabases.Generated.obo PsiModDeserialized { get; }
         public static IEnumerable<Modification> AllModsKnown { get { return _AllModsKnown.AsEnumerable(); } }
         public static IEnumerable<string> AllModTypesKnown { get { return _AllModTypesKnown.AsEnumerable(); } }
-        public static Dictionary<string, Modification> AllModsKnownDictionary { get; private set; }
+        public static Dictionary<string, Modification> AllModsKnownDictionary { get; set; }
         public static Dictionary<string, DissociationType> AllSupportedDissociationTypes { get; private set; }
         public static List<string> SeparationTypes { get { return _SeparationTypes; } }
 
         public static string ExperimentalDesignFileName { get; }
         public static IEnumerable<Crosslinker> Crosslinkers { get { return _KnownCrosslinkers.AsEnumerable(); } }
         public static IEnumerable<char> InvalidAminoAcids { get { return _InvalidAminoAcids.AsEnumerable(); } }
+        public static List<string> OGlycanLocations { get; }
+        public static List<string> NGlycanLocations { get; }
 
         public static void AddMods(IEnumerable<Modification> modifications, bool modsAreFromTheTopOfProteinXml)
         {

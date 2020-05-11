@@ -15,7 +15,11 @@
                 <Label Content="Filter to q-value:" Margin="5"/>
                 <TextBox Name ="qValueBox" Width="60" Height="24" />
             </StackPanel>
-
+            <StackPanel Orientation="Horizontal">
+                <Label Content="Glycan Localization Level:" Margin="5"/>
+                <ComboBox Name="CmbGlycanLocalizationLevelStart"  Height="24" />
+                <ComboBox Name="CmbGlycanLocalizationLevelEnd"  Height="24" />
+            </StackPanel>
             <StackPanel Orientation="Horizontal" HorizontalAlignment="Center">
                 <Button x:Name="Save" Width="100" Content="Save" Click="Save_Click" FontSize="15" Margin="0,5" />
                 <Button x:Name="Cancel" Width="100" Content="Cancel" Click="Cancel_Click" FontSize="15" Margin="0,5" />
