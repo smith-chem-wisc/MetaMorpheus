@@ -648,6 +648,7 @@ namespace TaskLayer
                         FinishedWritingFile(mzidFilePath, new List<string> { Parameters.SearchTaskId, "Individual Spectra Files", fullFilePath });
                     }
 
+
                     // write pepXML
                     if (Parameters.SearchParameters.WritePepXml)
                     {
