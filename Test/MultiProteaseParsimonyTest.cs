@@ -765,7 +765,7 @@ namespace Test
 
             var psms = Path.Combine(thisTaskOutputFolder, "AllPSMs.psmtsv");
 
-            Assert.AreEqual(12, File.ReadLines(psms).Count());
+            Assert.AreEqual(11, File.ReadLines(psms).Count());
             var protGroups = Path.Combine(thisTaskOutputFolder, "AllProteinGroups.tsv");
 
             Assert.AreEqual(7, File.ReadLines(protGroups).Count());
@@ -1030,7 +1030,9 @@ namespace Test
 
             psms.ForEach(p => p.ResolveAllAmbiguities());
 
-            new FdrAnalysisEngine(psms, 0, new CommonParameters(), null, new List<string>()).Run();
+            List<(string fileName, CommonParameters fileSpecificParameters)> fsp = new List<(string fileName, CommonParameters fileSpecificParameters)> { ("filename", new CommonParameters()) };
+
+            new FdrAnalysisEngine(psms, 0, new CommonParameters(), fsp, new List<string>()).Run();
             psms = psms.OrderByDescending(p => p.Score).ToList();
 
             Assert.AreEqual(0.00, Math.Round(psms[0].FdrInfo.QValue, 2));

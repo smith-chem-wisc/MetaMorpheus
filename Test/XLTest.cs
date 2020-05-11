@@ -165,7 +165,8 @@ namespace Test
             var localizeableModifications = new List<Modification>();
 
             //Run index engine
-            var indexEngine = new IndexingEngine(proteinList, variableModifications, fixedModifications, null, null, null, 1, DecoyType.Reverse, commonParameters, null, 30000, false, new List<FileInfo>(), new List<string>());
+            var indexEngine = new IndexingEngine(proteinList, variableModifications, fixedModifications, null, null, null, 1, DecoyType.Reverse,
+                commonParameters, null, 30000, false, new List<FileInfo>(), TargetContaminantAmbiguity.RemoveContaminant, new List<string>());
 
             var indexResults = (IndexingResults)indexEngine.Run();
 
@@ -194,7 +195,10 @@ namespace Test
                 item.SetFdrValues(0, 0, 0, 0, 0, 0, 0, 0);
                 item.ResolveProteinPosAmbiguitiesForXl();
             }
-            FdrAnalysisEngine fdrAnalysisEngine = new FdrAnalysisEngine(newPsms.ToList<PeptideSpectralMatch>(), 0, commonParameters, null, new List<string>(), "");
+
+            List<(string fileName, CommonParameters fileSpecificParameters)> fsp = new List<(string fileName, CommonParameters fileSpecificParameters)> { ("filename", commonParameters) };
+
+            FdrAnalysisEngine fdrAnalysisEngine = new FdrAnalysisEngine(newPsms.ToList<PeptideSpectralMatch>(), 0, commonParameters, fsp, new List<string>(), "");
 
             Assert.AreEqual(4, newPsms.Count);
             Assert.That(newPsms[0].XlProteinPos == null); //single
@@ -371,7 +375,8 @@ namespace Test
             var localizeableModifications = new List<Modification>();
 
             //Run index engine
-            var indexEngine = new IndexingEngine(proteinList, variableModifications, fixedModifications, null, null, null, 1, DecoyType.Reverse, commonParameters, null, 30000, false, new List<FileInfo>(), new List<string>());
+            var indexEngine = new IndexingEngine(proteinList, variableModifications, fixedModifications, null, null, null, 1, DecoyType.Reverse,
+                commonParameters, null, 30000, false, new List<FileInfo>(), TargetContaminantAmbiguity.RemoveContaminant, new List<string>());
 
             var indexResults = (IndexingResults)indexEngine.Run();
 
@@ -505,12 +510,12 @@ namespace Test
                 }
             }
 
-            Assert.AreEqual(510, inter);
-            Assert.AreEqual(210, intra);
-            Assert.AreEqual(302, single);
+            Assert.AreEqual(203, inter);
+            Assert.AreEqual(126, intra);
+            Assert.AreEqual(291, single);
             Assert.AreEqual(15, loop);
             Assert.AreEqual(0, deadend);
-            Assert.AreEqual(66, deadendH2O);
+            Assert.AreEqual(60, deadendH2O);
             Assert.AreEqual(0, deadendNH2);
             Assert.AreEqual(0, deadendTris);
             Assert.AreEqual(0, unnasignedCrossType);
@@ -571,18 +576,18 @@ namespace Test
                 }
             }
 
-            Assert.AreEqual(61, inter);
-            Assert.AreEqual(79, intra);
-            Assert.AreEqual(230, single);
+            Assert.AreEqual(50, inter);
+            Assert.AreEqual(74, intra);
+            Assert.AreEqual(229, single);
             Assert.AreEqual(8, loop);
             Assert.AreEqual(0, deadend);
-            Assert.AreEqual(43, deadendH2O);
+            Assert.AreEqual(46, deadendH2O);
             Assert.AreEqual(0, deadendNH2);
             Assert.AreEqual(0, deadendTris);
             Assert.AreEqual(0, unnasignedCrossType);
 
             var task = new PostXLSearchAnalysisTask();
-            task.FileSpecificParameters = new List<(string FileName, CommonParameters commonParameters)> { ("filename", new CommonParameters(maxThreadsToUsePerFile: 1))};
+            task.FileSpecificParameters = new List<(string FileName, CommonParameters commonParameters)> { ("filename", new CommonParameters(maxThreadsToUsePerFile: 1)) };
             task.ComputeXlinkQandPValues(firstCsmsFromListsOfCsms, firstCsmsFromListsOfCsms.Where(c => c.CrossType == PsmCrossType.Intra).ToList(), firstCsmsFromListsOfCsms.Where(c => c.CrossType == PsmCrossType.Inter).ToList(), commonParameters, "");
 
             //check that alpha peptides have greater score than beta peptides
@@ -619,11 +624,11 @@ namespace Test
             };
 
             var intraPsmData = PEP_Analysis.CreateOnePsmDataEntry("crosslink", fsp, intraCsm, sequenceToPsmCount, fileSpecificTimeDependantHydrophobicityAverageAndDeviation_unmodified, fileSpecificTimeDependantHydrophobicityAverageAndDeviation_modified, medianFragmentMassError, chargeStateMode, intraCsm.BestMatchingPeptides.First().Peptide, trainingVariables, intraCsm.BestMatchingPeptides.First().Notch, !intraCsm.BestMatchingPeptides.First().Peptide.Protein.IsDecoy);
-            Assert.That(intraPsmData.AbsoluteAverageFragmentMassErrorFromMedian, Is.EqualTo(1.061).Within(0.001));
-            Assert.That(intraPsmData.AlphaIntensity, Is.EqualTo(0.0098).Within(0.001));
+            Assert.That(intraPsmData.AbsoluteAverageFragmentMassErrorFromMedian, Is.EqualTo(1.0).Within(0.1));
+            Assert.That(intraPsmData.AlphaIntensity, Is.EqualTo(1).Within(0.1));
             Assert.AreEqual(intraPsmData.Ambiguity, 0);
-            Assert.That(intraPsmData.BetaIntensity, Is.EqualTo(0.01256).Within(0.0001));
-            Assert.That(intraPsmData.DeltaScore, Is.EqualTo(0.467).Within(0.01));
+            Assert.That(intraPsmData.BetaIntensity, Is.EqualTo(1).Within(0.1));
+            Assert.That(intraPsmData.DeltaScore, Is.EqualTo(5).Within(0.1));
             Assert.AreEqual(intraPsmData.HydrophobicityZScore, Double.NaN);
             Assert.AreEqual(intraPsmData.Intensity, 0);
             Assert.AreEqual(intraPsmData.IsDeadEnd, 0);
@@ -633,14 +638,14 @@ namespace Test
             Assert.AreEqual(intraPsmData.IsVariantPeptide, 0);
             Assert.AreEqual(intraPsmData.Label, true);
             Assert.AreEqual(intraPsmData.LongestFragmentIonSeries, 0);
-            Assert.That(intraPsmData.LongestFragmentIonSeries_Alpha, Is.EqualTo(0.857).Within(0.01));
-            Assert.That(intraPsmData.LongestFragmentIonSeries_Beta, Is.EqualTo(0.75).Within(0.001));
+            Assert.That(intraPsmData.LongestFragmentIonSeries_Alpha, Is.EqualTo(9).Within(0.1));
+            Assert.That(intraPsmData.LongestFragmentIonSeries_Beta, Is.EqualTo(8).Within(0.1));
             Assert.AreEqual(intraPsmData.MissedCleavagesCount, 0);
             Assert.AreEqual(intraPsmData.ModsCount, 0);
             Assert.AreEqual(intraPsmData.Notch, 0);
             Assert.AreEqual(intraPsmData.PrecursorChargeDiffToMode, -1);
             Assert.AreEqual(intraPsmData.PsmCount, 1);
-            Assert.That(intraPsmData.TotalMatchingFragmentCount, Is.EqualTo(1.115).Within(0.001));
+            Assert.That(intraPsmData.TotalMatchingFragmentCount, Is.EqualTo(11).Within(0.1));
 
             CrosslinkSpectralMatch singleCsm = firstCsmsFromListsOfCsms.Where(c => c.CrossType == PsmCrossType.Single).OrderBy(c => -c.Score).First();
 
@@ -651,21 +656,21 @@ namespace Test
             fileSpecificTimeDependantHydrophobicityAverageAndDeviation_modified = PEP_Analysis.ComputeHydrophobicityValues(psms, fsp, true);
 
             var singleCsmPsmData = PEP_Analysis.CreateOnePsmDataEntry("standard", fsp, singleCsm, sequenceToPsmCount, fileSpecificTimeDependantHydrophobicityAverageAndDeviation_unmodified, fileSpecificTimeDependantHydrophobicityAverageAndDeviation_modified, medianFragmentMassError, chargeStateMode, singleCsm.BestMatchingPeptides.First().Peptide, trainingVariables, singleCsm.BestMatchingPeptides.First().Notch, !singleCsm.BestMatchingPeptides.First().Peptide.Protein.IsDecoy);
-            Assert.That(singleCsmPsmData.AbsoluteAverageFragmentMassErrorFromMedian, Is.EqualTo(0.7865).Within(0.001));
+            Assert.That(singleCsmPsmData.AbsoluteAverageFragmentMassErrorFromMedian, Is.EqualTo(8).Within(0.1));
             Assert.AreEqual(singleCsmPsmData.AlphaIntensity, 0);
             Assert.AreEqual(singleCsmPsmData.Ambiguity, 0);
             Assert.AreEqual(singleCsmPsmData.BetaIntensity, 0);
-            Assert.That(singleCsmPsmData.ComplementaryIonCount, Is.EqualTo(0.2162).Within(0.01));
-            Assert.That(singleCsmPsmData.DeltaScore, Is.EqualTo(0.8154).Within(0.001));
-            Assert.That(singleCsmPsmData.HydrophobicityZScore, Is.EqualTo(0.4697).Within(0.001));
-            Assert.That(singleCsmPsmData.Intensity, Is.EqualTo(0.0046).Within(0.0001));
+            Assert.That(singleCsmPsmData.ComplementaryIonCount, Is.EqualTo(2).Within(0.1));
+            Assert.That(singleCsmPsmData.DeltaScore, Is.EqualTo(8).Within(0.1));
+            Assert.That(singleCsmPsmData.HydrophobicityZScore, Is.EqualTo(5).Within(0.1));
+            Assert.That(singleCsmPsmData.Intensity, Is.EqualTo(0).Within(0.1));
             Assert.AreEqual(singleCsmPsmData.IsDeadEnd, 0);
             Assert.AreEqual(singleCsmPsmData.IsInter, 0);
             Assert.AreEqual(singleCsmPsmData.IsIntra, 0);
             Assert.AreEqual(singleCsmPsmData.IsLoop, 0);
             Assert.AreEqual(singleCsmPsmData.IsVariantPeptide, 0);
             Assert.AreEqual(singleCsmPsmData.Label, true);
-            Assert.That(singleCsmPsmData.LongestFragmentIonSeries, Is.EqualTo(0.3784).Within(0.01));
+            Assert.That(singleCsmPsmData.LongestFragmentIonSeries, Is.EqualTo(4).Within(0.1));
             Assert.AreEqual(singleCsmPsmData.LongestFragmentIonSeries_Alpha, 0);
             Assert.AreEqual(singleCsmPsmData.LongestFragmentIonSeries_Beta, 0);
             Assert.AreEqual(singleCsmPsmData.MissedCleavagesCount, 0);
@@ -673,25 +678,25 @@ namespace Test
             Assert.AreEqual(singleCsmPsmData.Notch, 0);
             Assert.AreEqual(singleCsmPsmData.PrecursorChargeDiffToMode, -1);
             Assert.AreEqual(singleCsmPsmData.PsmCount, 4);
-            Assert.That(singleCsmPsmData.TotalMatchingFragmentCount, Is.EqualTo(0.8378).Within(0.01));
+            Assert.That(singleCsmPsmData.TotalMatchingFragmentCount, Is.EqualTo(8).Within(0.1));
 
             CrosslinkSpectralMatch loopCsm = firstCsmsFromListsOfCsms.Where(c => c.CrossType == PsmCrossType.Loop).OrderBy(c => -c.Score).First();
             var loopCsmPsmData = PEP_Analysis.CreateOnePsmDataEntry("standard", fsp, loopCsm, sequenceToPsmCount, fileSpecificTimeDependantHydrophobicityAverageAndDeviation_unmodified, fileSpecificTimeDependantHydrophobicityAverageAndDeviation_modified, medianFragmentMassError, chargeStateMode, loopCsm.BestMatchingPeptides.First().Peptide, trainingVariables, loopCsm.BestMatchingPeptides.First().Notch, !loopCsm.BestMatchingPeptides.First().Peptide.Protein.IsDecoy);
-            Assert.That(loopCsmPsmData.AbsoluteAverageFragmentMassErrorFromMedian, Is.EqualTo(0.3661).Within(0.001));
+            Assert.That(loopCsmPsmData.AbsoluteAverageFragmentMassErrorFromMedian, Is.EqualTo(6).Within(0.1));
             Assert.AreEqual(loopCsmPsmData.AlphaIntensity, 0);
             Assert.AreEqual(loopCsmPsmData.Ambiguity, 0);
             Assert.AreEqual(loopCsmPsmData.BetaIntensity, 0);
-            Assert.That(loopCsmPsmData.ComplementaryIonCount, Is.EqualTo(0.2592).Within(0.01));
-            Assert.That(loopCsmPsmData.DeltaScore, Is.EqualTo(0.7854).Within(0.001));
-            Assert.That(loopCsmPsmData.HydrophobicityZScore, Is.EqualTo(0.1136).Within(0.001));
-            Assert.That(loopCsmPsmData.Intensity, Is.EqualTo(0.015).Within(0.0076));
+            Assert.That(loopCsmPsmData.ComplementaryIonCount, Is.EqualTo(3).Within(0.1));
+            Assert.That(loopCsmPsmData.DeltaScore, Is.EqualTo(8).Within(0.1));
+            Assert.That(loopCsmPsmData.HydrophobicityZScore, Is.EqualTo(1).Within(0.1));
+            Assert.That(loopCsmPsmData.Intensity, Is.EqualTo(1).Within(0.1));
             Assert.AreEqual(loopCsmPsmData.IsDeadEnd, 0);
             Assert.AreEqual(loopCsmPsmData.IsInter, 0);
             Assert.AreEqual(loopCsmPsmData.IsIntra, 0);
             Assert.AreEqual(loopCsmPsmData.IsLoop, 1);
             Assert.AreEqual(loopCsmPsmData.IsVariantPeptide, 0);
             Assert.AreEqual(loopCsmPsmData.Label, true);
-            Assert.That(loopCsmPsmData.LongestFragmentIonSeries, Is.EqualTo(0.3704).Within(0.01));
+            Assert.That(loopCsmPsmData.LongestFragmentIonSeries, Is.EqualTo(3).Within(0.1));
             Assert.AreEqual(loopCsmPsmData.LongestFragmentIonSeries_Alpha, 0);
             Assert.AreEqual(loopCsmPsmData.LongestFragmentIonSeries_Beta, 0);
             Assert.AreEqual(loopCsmPsmData.MissedCleavagesCount, 2);
@@ -699,7 +704,7 @@ namespace Test
             Assert.AreEqual(loopCsmPsmData.Notch, 0);
             Assert.AreEqual(loopCsmPsmData.PrecursorChargeDiffToMode, -1);
             Assert.AreEqual(loopCsmPsmData.PsmCount, 3);
-            Assert.That(loopCsmPsmData.TotalMatchingFragmentCount, Is.EqualTo(0.8148).Within(0.01));
+            Assert.That(loopCsmPsmData.TotalMatchingFragmentCount, Is.EqualTo(8).Within(0.1));
 
             unnasignedCrossType = 0;
             inter = 0;
@@ -754,12 +759,12 @@ namespace Test
             }
 
             Assert.AreEqual(0, unnasignedCrossType);
-            Assert.AreEqual(51, inter);
-            Assert.AreEqual(76, intra);
-            Assert.AreEqual(234, single);
-            Assert.AreEqual(10, loop);
+            Assert.AreEqual(43, inter);
+            Assert.AreEqual(73, intra);
+            Assert.AreEqual(237, single);
+            Assert.AreEqual(8, loop);
             Assert.AreEqual(0, deadend);
-            Assert.AreEqual(44, deadendH2O);
+            Assert.AreEqual(47, deadendH2O);
             Assert.AreEqual(0, deadendNH2);
             Assert.AreEqual(0, deadendTris);
         }
@@ -808,7 +813,8 @@ namespace Test
             }
 
             //Run index engine
-            var indexEngine = new IndexingEngine(proteinList, variableModifications, fixedModifications, null, null, null, 1, DecoyType.Reverse, commonParameters, null, 30000, false, new List<FileInfo>(), new List<string>());
+            var indexEngine = new IndexingEngine(proteinList, variableModifications, fixedModifications, null, null, null, 1, DecoyType.Reverse,
+                commonParameters, null, 30000, false, new List<FileInfo>(), TargetContaminantAmbiguity.RemoveContaminant, new List<string>());
 
             var indexResults = (IndexingResults)indexEngine.Run();
 
@@ -1066,7 +1072,7 @@ namespace Test
             // search the data with the peptide WITHOUT the deadend mod annotated in the search database.
             // the search engine should be able to correctly identify the deadend mod on T
             var indexingResults = (IndexingResults)new IndexingEngine(new List<Protein> { protein }, new List<Modification>(), new List<Modification>(), null, null, null,
-                0, DecoyType.None, new CommonParameters(), null, 1000, false, new List<FileInfo>(), new List<string>()).Run();
+                0, DecoyType.None, new CommonParameters(), null, 1000, false, new List<FileInfo>(), TargetContaminantAmbiguity.RemoveContaminant, new List<string>()).Run();
 
             new CrosslinkSearchEngine(csms, scans, indexingResults.PeptideIndex, indexingResults.FragmentIndex, null, 0, new CommonParameters(), null, crosslinker,
                 50, true, false, false, true, new List<string>()).Run();
@@ -1209,7 +1215,7 @@ namespace Test
             scans[0] = new Ms2ScanWithSpecificMass(sc, deadendPeptide.MonoisotopicMass.ToMz(2), 2, "", new CommonParameters());
 
             var indexingResults = (IndexingResults)new IndexingEngine(new List<Protein> { protein }, new List<Modification>(), new List<Modification>(), null, null, null, 0, DecoyType.None,
-                new CommonParameters(), null, 1000, false, new List<FileInfo>(), new List<string>()).Run();
+                new CommonParameters(), null, 1000, false, new List<FileInfo>(), TargetContaminantAmbiguity.RemoveContaminant, new List<string>()).Run();
 
             new CrosslinkSearchEngine(csms, scans, indexingResults.PeptideIndex, indexingResults.FragmentIndex, null, 0, new CommonParameters(), null,
                 crosslinker, 50, true, false, false, true, new List<string>()).Run();
@@ -1225,7 +1231,7 @@ namespace Test
         public static void TestMixedMs2Ms2()
         {
             string outputFile = Path.Combine(TestContext.CurrentContext.TestDirectory, @"TestMixedMs2Ms2.tsv");
-            CommonParameters commonParameters = new CommonParameters(dissociationType: DissociationType.CID, childScanDissociationType: DissociationType.ETD,
+            CommonParameters commonParameters = new CommonParameters(dissociationType: DissociationType.CID, ms2childScanDissociationType: DissociationType.ETD,
                 trimMsMsPeaks: false);
 
             string spectraFile = Path.Combine(TestContext.CurrentContext.TestDirectory, @"XlTestData\ms2mixed_bsa_xlink.mzML");
@@ -1262,16 +1268,16 @@ namespace Test
                 "KATEEQLKTVMENFVAFVDKCCAADDKEACFAVEGPKLVVSTQTALA", "BSA2");
 
             var indexingResults = (IndexingResults)new IndexingEngine(new List<Protein> { bsa, bsa2 }, new List<Modification>(), new List<Modification>(),
-                null, null, null, 0, DecoyType.None, commonParameters, fsp, 5000, false, new List<FileInfo>(), new List<string>()).Run();
+                null, null, null, 0, DecoyType.None, commonParameters, fsp, 5000, false, new List<FileInfo>(), TargetContaminantAmbiguity.RemoveContaminant, new List<string>()).Run();
 
-            var secondCombinedParams = new CommonParameters(dissociationType: DissociationType.ETD, childScanDissociationType: DissociationType.ETD,
+            var secondCombinedParams = new CommonParameters(dissociationType: DissociationType.ETD, ms2childScanDissociationType: DissociationType.ETD,
                 trimMsMsPeaks: false);
 
             var fsp2 = new List<(string, CommonParameters)>();
             fsp2.Add((spectraFile, secondCombinedParams));
 
             var secondIndexingResults = (IndexingResults)new IndexingEngine(new List<Protein> { bsa }, new List<Modification>(), new List<Modification>(),
-                null, null, null, 0, DecoyType.None, secondCombinedParams, fsp2, 5000, false, new List<FileInfo>(), new List<string>()).Run();
+                null, null, null, 0, DecoyType.None, secondCombinedParams, fsp2, 5000, false, new List<FileInfo>(), TargetContaminantAmbiguity.RemoveContaminant, new List<string>()).Run();
 
             var csms = new List<CrosslinkSpectralMatch>[1];
             new CrosslinkSearchEngine(csms, scans, indexingResults.PeptideIndex, indexingResults.FragmentIndex, secondIndexingResults.FragmentIndex, 0, commonParameters, fsp,
@@ -1300,7 +1306,7 @@ namespace Test
 
             // test child scan (ETD)
             Assert.That(csm.ChildMatchedFragmentIons.First().Key == 3);
-            Assert.That(csm.ChildMatchedFragmentIons.First().Value.Count == 22);
+            Assert.That(csm.ChildMatchedFragmentIons.First().Value.Count == 21);
             Assert.That(csm.BetaPeptide.ChildMatchedFragmentIons.First().Key == 3);
             Assert.That(csm.BetaPeptide.ChildMatchedFragmentIons.First().Value.Count == 25);
 
@@ -1313,7 +1319,7 @@ namespace Test
 
             Assert.That(psmFromTsv.ChildScanMatchedIons.Count == 1
                 && psmFromTsv.ChildScanMatchedIons.First().Key == 3
-                && psmFromTsv.ChildScanMatchedIons.First().Value.Count == 22);
+                && psmFromTsv.ChildScanMatchedIons.First().Value.Count == 21);
 
             Assert.That(psmFromTsv.BetaPeptideChildScanMatchedIons.Count == 1
                 && psmFromTsv.BetaPeptideChildScanMatchedIons.First().Key == 3
@@ -1329,7 +1335,7 @@ namespace Test
         public static void TestMs2Ms3()
         {
             string outputFile = Path.Combine(TestContext.CurrentContext.TestDirectory, @"TestMs2Ms3.tsv");
-            CommonParameters commonParameters = new CommonParameters(dissociationType: DissociationType.CID, childScanDissociationType: DissociationType.LowCID, precursorMassTolerance: new PpmTolerance(10));
+            CommonParameters commonParameters = new CommonParameters(dissociationType: DissociationType.CID, ms3childScanDissociationType: DissociationType.LowCID, precursorMassTolerance: new PpmTolerance(10));
 
             string spectraFile = Path.Combine(TestContext.CurrentContext.TestDirectory, @"XlTestData\10226.mzML");
             var file = new MyFileManager(true).LoadFile(spectraFile, commonParameters);
@@ -1340,7 +1346,7 @@ namespace Test
             var scans = MetaMorpheusTask.GetMs2Scans(file, spectraFile, commonParameters).ToArray();
 
             Assert.That(scans.First().ChildScans.Count == 4);
-            Assert.That(scans.Length == 2);
+            Assert.That(scans.Length == 3);
 
             Protein bsa = new Protein("MKWVTFISLLLLFSSAYSRGVFRRDTHKSEIAHRFKDLGEEHFKGLVLIAFSQYL" +
                 "QQCPFDEHVKLVNELTEFAKTCVADESHAGCEKSLHTLFGDELCKVASLRETYGDMADCCEKQEPERNECFLSHKDDS" +
@@ -1355,7 +1361,7 @@ namespace Test
             var fixedMods = GlobalVariables.AllModsKnown.Where(p => p.IdWithMotif == "Carbamidomethyl on C").ToList();
 
             var indexingResults = (IndexingResults)new IndexingEngine(new List<Protein> { bsa }, new List<Modification>(), fixedMods,
-               null, null, null, 0, DecoyType.None, commonParameters, fsp, 5000, false, new List<FileInfo>(), new List<string>()).Run();
+               null, null, null, 0, DecoyType.None, commonParameters, fsp, 5000, false, new List<FileInfo>(), TargetContaminantAmbiguity.RemoveContaminant, new List<string>()).Run();
 
             var csms = new List<CrosslinkSpectralMatch>[2];
             new CrosslinkSearchEngine(csms, scans, indexingResults.PeptideIndex, indexingResults.FragmentIndex, null, 0, commonParameters, fsp,
@@ -1368,7 +1374,7 @@ namespace Test
                 csm.BetaPeptide.ResolveAllAmbiguities();
             }
             // test parent scan (CID)
-            Assert.AreEqual(csm.MatchedFragmentIons.Count, 37);
+            Assert.AreEqual(csm.MatchedFragmentIons.Count, 36);
             Assert.That(csm.ScanNumber == 2);
 
             // test child scan (low-resolution CID, alpha peptide signature ion)

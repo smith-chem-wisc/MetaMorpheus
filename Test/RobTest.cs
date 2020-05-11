@@ -128,11 +128,10 @@ namespace Test
             Assert.Contains("AB--------", parsimonyProteinSequences);
             Assert.Contains("--C-------", parsimonyProteinSequences);
             Assert.Contains("-B-D---HHH--", parsimonyProteinSequences);
-            Assert.Contains("----E----**", parsimonyProteinSequences);
             Assert.Contains("-B------I-", parsimonyProteinSequences);
             Assert.Contains("----EFG---", parsimonyProteinSequences);
             Assert.Contains("----EFG--J", parsimonyProteinSequences);
-            Assert.AreEqual(8, parsimonyProteinSequences.Count);
+            Assert.AreEqual(6, parsimonyProteinSequences.Count);
 
             // sequence coverage test
             foreach (var proteinGroup in proteinGroups)
@@ -144,7 +143,7 @@ namespace Test
             }
 
             // test protein groups
-            Assert.AreEqual(3, proteinGroups.Count);
+            Assert.AreEqual(4, proteinGroups.Count);
             Assert.AreEqual(1, proteinGroups.First().Proteins.Count);
             Assert.AreEqual("AB--------", proteinGroups.First().Proteins.First().BaseSequence);
             Assert.AreEqual(2, proteinGroups.First().AllPsmsBelowOnePercentFDR.Count);

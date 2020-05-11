@@ -266,6 +266,9 @@ namespace MetaMorpheusGUI
             NumberOfDatabaseSearchesTextBox.Text = task.CommonParameters.TotalPartitions.ToString(CultureInfo.InvariantCulture);
             DeconvolutePrecursors.IsChecked = task.CommonParameters.DoPrecursorDeconvolution;
             UseProvidedPrecursor.IsChecked = task.CommonParameters.UseProvidedPrecursorInfo;
+            RemoveContaminantRadioBox.IsChecked = task.SearchParameters.TCAmbiguity == TargetContaminantAmbiguity.RemoveContaminant;
+            RemoveTargetRadioBox.IsChecked = task.SearchParameters.TCAmbiguity == TargetContaminantAmbiguity.RemoveTarget;
+            RenameTCProteinsRadioBox.IsChecked = task.SearchParameters.TCAmbiguity == TargetContaminantAmbiguity.RenameProtein;
             AllAmbiguity.IsChecked = task.CommonParameters.ReportAllAmbiguity;
             DeconvolutionMaxAssumedChargeStateTextBox.Text = task.CommonParameters.DeconvolutionMaxAssumedChargeState.ToString();
             MinScoreAllowed.Text = task.CommonParameters.ScoreCutoff.ToString(CultureInfo.InvariantCulture);
@@ -299,6 +302,8 @@ namespace MetaMorpheusGUI
             CkbMzId.IsChecked = task.SearchParameters.WriteMzId;
             WriteDecoyCheckBox.IsChecked = task.SearchParameters.WriteDecoys;
             WriteContaminantCheckBox.IsChecked = task.SearchParameters.WriteContaminants;
+            WriteIndividualResultsCheckBox.IsChecked = task.SearchParameters.WriteIndividualFiles;
+            CompressIndividualResultsCheckBox.IsChecked = task.SearchParameters.CompressIndividualFiles;
 
             foreach (var mod in task.CommonParameters.ListOfModsFixed)
             {
@@ -564,6 +569,22 @@ namespace MetaMorpheusGUI
             TheTask.SearchParameters.WriteMzId = CkbMzId.IsChecked.Value;
             TheTask.SearchParameters.WriteDecoys = WriteDecoyCheckBox.IsChecked.Value;
             TheTask.SearchParameters.WriteContaminants = WriteContaminantCheckBox.IsChecked.Value;
+            TheTask.SearchParameters.WriteIndividualFiles = WriteIndividualResultsCheckBox.IsChecked.Value;
+            TheTask.SearchParameters.CompressIndividualFiles = CompressIndividualResultsCheckBox.IsChecked.Value;
+
+            if (RemoveContaminantRadioBox.IsChecked.Value)
+            {
+                TheTask.SearchParameters.TCAmbiguity = TargetContaminantAmbiguity.RemoveContaminant;
+            }
+            else if (RemoveTargetRadioBox.IsChecked.Value)
+            {
+                TheTask.SearchParameters.TCAmbiguity = TargetContaminantAmbiguity.RemoveTarget;
+            }
+            else //RenameTCProteinsRadioBox.IsChecked.Value
+            {
+                TheTask.SearchParameters.TCAmbiguity = TargetContaminantAmbiguity.RenameProtein;
+            }
+
             //TheTask.SearchParameters.OutPepXML = ckbPepXML.IsChecked.Value;
 
             if (CheckBoxDecoy.IsChecked.Value)
