@@ -42,7 +42,7 @@ namespace EngineLayer
         public IsotopicEnvelope[] ExperimentalFragments { get; private set; }
         public List<Ms2ScanWithSpecificMass> ChildScans { get; set; } // MS2/MS3 scans that are children of this MS2 scan
         private double[] DeconvolutedMonoisotopicMasses;
-        public string NativeId { get; }
+        public string NativeId { get; } 
 
         public int OneBasedScanNumber => TheScan.OneBasedScanNumber;
 
@@ -93,7 +93,7 @@ namespace EngineLayer
             return ExperimentalFragments[GetClosestFragmentMass(theoreticalNeutralMass)];
         }
 
-        private int GetClosestFragmentMass(double mass)
+        public int GetClosestFragmentMass(double mass)
         {
             int index = Array.BinarySearch(DeconvolutedMonoisotopicMasses, mass);
             if (index >= 0)
@@ -112,6 +112,47 @@ namespace EngineLayer
             }
 
             return index - 1;
+        }
+
+        public double? GetClosestExperimentalFragmentMz(double theoreticalMz, out double? intensity)
+        {
+            if (TheScan.MassSpectrum.XArray.Length == 0)
+            {
+                intensity = null;
+                return null;
+            }
+            intensity = TheScan.MassSpectrum.YArray[GetClosestFragmentMzIndex(theoreticalMz).Value];
+            return TheScan.MassSpectrum.XArray[GetClosestFragmentMzIndex(theoreticalMz).Value];
+        }
+
+        private int? GetClosestFragmentMzIndex(double mz)
+        {
+            if (TheScan.MassSpectrum.XArray.Length == 0)
+            {
+                return null;
+            }
+            int index = Array.BinarySearch(TheScan.MassSpectrum.XArray, mz);
+            if (index >= 0)
+            {
+                return index;
+            }
+            index = ~index;
+
+            if (index >= TheScan.MassSpectrum.XArray.Length)
+            {
+                return index - 1;
+            }
+            if (index == 0)
+            {
+                return index;
+            }
+
+            if (mz - TheScan.MassSpectrum.XArray[index - 1] > TheScan.MassSpectrum.XArray[index] - mz)
+            {
+                return index;
+            }
+            return index - 1;
+
         }
     }
 }

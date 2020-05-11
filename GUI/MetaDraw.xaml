@@ -150,17 +150,21 @@
                                         <ItemsControl ItemsSource="{Binding Data}">
                                             <ItemsControl.ItemTemplate>
                                                 <DataTemplate>
-                                                    <Border  BorderBrush="Black" Background="LightBlue" >
-                                                        <!-- This is the Inner Grid for each element -->
-                                                        <Grid>
-                                                            <Grid.RowDefinitions>
-                                                                <RowDefinition Height="30"/>
-                                                                <RowDefinition Height="*"/>
-                                                            </Grid.RowDefinitions>
+                                                    
+                                                    <!-- This is the Inner Grid for each element -->
+                                                    <Grid>
+                                                        <Grid.RowDefinitions>
+                                                            <RowDefinition Height="30"/>
+                                                            <RowDefinition Height="*"/>
+                                                            <RowDefinition Height="auto"/>
+                                                        </Grid.RowDefinitions>
+                                                        <Border  BorderBrush="Black" Background="LightBlue" >
                                                             <Label Content="{Binding SpectrumLabel}" />
-                                                            <oxy:PlotView Model="{Binding PsmAnnotationViewModel.Model}" FontSize="16" FontStretch="Expanded" Grid.Row="1" MinHeight="200"/>
+                                                        </Border>
+                                                        <oxy:PlotView Model="{Binding PsmAnnotationViewModel.Model}" FontSize="16" FontStretch="Expanded" Grid.Row="1" MinHeight="200"/>
+                                                        <ContentPresenter  Content="{Binding TheCanvas}" Grid.Row="2" HorizontalAlignment="Stretch" VerticalAlignment="Stretch"/>
                                                         </Grid>
-                                                    </Border>
+                                                    
                                                 </DataTemplate>
                                             </ItemsControl.ItemTemplate>
 
@@ -178,6 +182,7 @@
                                                     <UniformGrid HorizontalAlignment="Stretch" Columns="{Binding Path=MyColumnCount}"/>
                                                 </ItemsPanelTemplate>
                                             </ItemsControl.ItemsPanel>
+                                            
                                         </ItemsControl>
                                     </TabItem>
                                 </TabControl>
