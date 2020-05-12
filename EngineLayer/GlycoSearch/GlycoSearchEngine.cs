@@ -283,15 +283,15 @@ namespace EngineLayer.GlycoSearch
 
             double score = CalculatePeptideScore(theScan.TheScan, matchedIons);
 
-            var DiagnosticIonScore = CalculatePeptideScore(theScan.TheScan, matchedIons.Where(p => p.NeutralTheoreticalProduct.ProductType == ProductType.D).ToList());
+            var DiagnosticIonScore = CalculatePeptideScore(theScan.TheScan, matchedIons.Where(v => v.NeutralTheoreticalProduct.ProductType == ProductType.D).ToList());
 
-            var GlycanScore = CalculatePeptideScore(theScan.TheScan, matchedIons.Where(p => p.NeutralTheoreticalProduct.ProductType == ProductType.M).ToList());
+            var GlycanScore = CalculatePeptideScore(theScan.TheScan, matchedIons.Where(v => v.NeutralTheoreticalProduct.ProductType == ProductType.M).ToList());
 
             var PeptideScore = score - DiagnosticIonScore;
 
             var p = theScan.TheScan.MassSpectrum.Size * CommonParameters.ProductMassTolerance.GetRange(1000).Width / theScan.TheScan.MassSpectrum.Range.Width;
 
-            int n = fragmentsForEachGlycoPeptide.Where(p => p.ProductType == ProductType.c || p.ProductType == ProductType.zDot).Count();
+            int n = fragmentsForEachGlycoPeptide.Where(v => v.ProductType == ProductType.c || v.ProductType == ProductType.zDot).Count();
 
             var allMatchedChildIons = new Dictionary<int, List<MatchedFragmentIon>>();
 
@@ -301,7 +301,7 @@ namespace EngineLayer.GlycoSearch
 
                 var matchedChildIons = MatchFragmentIons(childScan, childFragments, CommonParameters);
 
-                n += childFragments.Where(p => p.ProductType == ProductType.c || p.ProductType == ProductType.zDot).Count();
+                n += childFragments.Where(v => v.ProductType == ProductType.c || v.ProductType == ProductType.zDot).Count();
 
                 if (matchedChildIons == null)
                 {
@@ -311,8 +311,8 @@ namespace EngineLayer.GlycoSearch
                 allMatchedChildIons.Add(childScan.OneBasedScanNumber, matchedChildIons);
                 double childScore = CalculatePeptideScore(childScan.TheScan, matchedChildIons);
 
-                double childDiagnosticIonScore = CalculatePeptideScore(childScan.TheScan, matchedChildIons.Where(p => p.NeutralTheoreticalProduct.ProductType == ProductType.D).ToList());
-                double childGlycanScore = CalculatePeptideScore(childScan.TheScan, matchedChildIons.Where(p => p.NeutralTheoreticalProduct.ProductType == ProductType.M).ToList());
+                double childDiagnosticIonScore = CalculatePeptideScore(childScan.TheScan, matchedChildIons.Where(v => v.NeutralTheoreticalProduct.ProductType == ProductType.D).ToList());
+                double childGlycanScore = CalculatePeptideScore(childScan.TheScan, matchedChildIons.Where(v => v.NeutralTheoreticalProduct.ProductType == ProductType.M).ToList());
 
                 DiagnosticIonScore += childDiagnosticIonScore;
                 GlycanScore += childGlycanScore;

@@ -256,7 +256,7 @@ namespace Test
             List<Product> products = new List<Product>();
             peptide.Fragment(DissociationType.ETD, FragmentationTerminus.Both, products);
 
-            int[] modPos = GlycoSpectralMatch.GetPossibleModSites(peptide, new string[] { "S", "T" }).OrderBy(p=>p).ToArray();
+            int[] modPos = GlycoSpectralMatch.GetPossibleModSites(peptide, new string[] { "S", "T" }).OrderBy(v=>v).ToArray();
             var boxes = GlycanBox.BuildChildOGlycanBoxes(3, glycanBox.ModIds).ToArray();
             Assert.That(boxes.Count() == 6);
 
@@ -285,13 +285,13 @@ namespace Test
 
             //Get localized Route
             var local = LocalizationGraph.GetLocalizedPath(localizationGraph, allPaths.First());
-            Assert.That(Enumerable.SequenceEqual(local.Mods.Select(p=>p.Item1), new List<int>{ 2, 3, 10}));
-            Assert.That(Enumerable.SequenceEqual(local.Mods.Select(p => p.Item2), new List<int> { 1, 1, 0 }));
+            Assert.That(Enumerable.SequenceEqual(local.Mods.Select(v=>v.Item1), new List<int>{ 2, 3, 10}));
+            Assert.That(Enumerable.SequenceEqual(local.Mods.Select(v => v.Item2), new List<int> { 1, 1, 0 }));
 
 
             //Get all paths, calculate PScore and calculate position probability. 
             var p = scans.First().TheScan.MassSpectrum.Size * commonParameters.ProductMassTolerance.GetRange(1000).Width / scans.First().TheScan.MassSpectrum.Range.Width;
-            var n = knownProducts.Where(p=>p.ProductType == ProductType.c || p.ProductType == ProductType.zDot).Count();
+            var n = knownProducts.Where(v=>v.ProductType == ProductType.c || v.ProductType == ProductType.zDot).Count();
             var allPathWithWeights = LocalizationGraph.GetAllPaths_CalP(localizationGraph, p, n);
             Assert.That(allPathWithWeights.Count == 168);
 
