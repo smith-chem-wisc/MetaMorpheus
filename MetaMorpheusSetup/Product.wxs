@@ -245,9 +245,6 @@
       <Component Id="src_Microsoft.ML.DataView.dll" Guid="E87F47EB-394F-42C3-AFA5-5AEC61E80AE5">
         <File Id="src_Microsoft.ML.DataView.dll" Name="Microsoft.ML.DataView.dll" Source="$(var.GUI_TargetDir)Microsoft.ML.DataView.dll" />
       </Component>
-      <Component Id="src_Microsoft.ML.FastTree.dll" Guid="5E607343-B503-4798-A2D0-D3798E3C553A">
-        <File Id="src_Microsoft.ML.FastTree.dll" Name="Microsoft.ML.FastTree.dll" Source="$(var.GUI_TargetDir)Microsoft.ML.FastTree.dll" />
-      </Component>
       <Component Id="src_Microsoft.ML.KMeansClustering.dll" Guid="830AE3D1-78E3-4C19-90D1-E489FA89AD91">
         <File Id="src_Microsoft.ML.KMeansClustering.dll" Name="Microsoft.ML.KMeansClustering.dll" Source="$(var.GUI_TargetDir)Microsoft.ML.KMeansClustering.dll" />
       </Component>
