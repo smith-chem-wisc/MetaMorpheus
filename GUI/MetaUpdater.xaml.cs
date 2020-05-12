@@ -42,18 +42,27 @@ namespace MetaMorpheusGUI
             {
                 var uri = new Uri(@"https://github.com/smith-chem-wisc/MetaMorpheus/releases/download/" + MainWindow.NewestKnownVersion + @"/MetaMorpheusInstaller.msi");
 
+                Exception exception = null;
                 try
                 {
                     var tempDownloadLocation = System.IO.Path.Combine(System.IO.Path.GetTempPath(), "MetaMorpheusInstaller.msi");
+
+                    // download the installer
                     client.DownloadFile(uri, tempDownloadLocation);
-                    Process p = new Process();
-                    p.StartInfo.FileName = tempDownloadLocation;
-                    Application.Current.Shutdown();
-                    p.Start();
+
+                    // start the installer
+                    GlobalVariables.StartProcess(tempDownloadLocation);
                 }
                 catch (Exception ex)
                 {
+                    exception = ex;
                     MessageBox.Show(ex.Message);
+                }
+
+                if (exception == null)
+                {
+                    // close metamorpheus if the installer was started successfully
+                    Application.Current.Shutdown();
                 }
             }
         }

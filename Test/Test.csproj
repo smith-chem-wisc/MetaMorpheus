@@ -52,6 +52,42 @@
     <None Update="DatabaseTests\sliced_b6.mzML">
       <CopyToOutputDirectory>Always</CopyToOutputDirectory>
     </None>
+    <None Update="GlycoTestData\11901_AIETD.mgf">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </None>
+    <None Update="GlycoTestData\181217_Fusion_%28LC2%29_NewObj_Serum_deSA_Jacalin_HRM_4h_ETD_HCD_DDA_mz%28400_1200%29_21707.mgf">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </None>
+    <None Update="GlycoTestData\2019_09_16_StcEmix_35trig_EThcD25_rep1_4565.mgf">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </None>
+    <None Update="GlycoTestData\2019_09_16_StcEmix_35trig_EThcD25_rep1_9906.mgf">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </None>
+    <None Update="GlycoTestData\ComboGlycanDatabase.csv">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </None>
+    <None Update="GlycoTestData\GlycoSearchTaskconfig.toml">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </None>
+    <None Update="GlycoTestData\Glyco_3383.mgf">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </None>
+    <None Update="GlycoTestData\id_08-24-19_AC-P_patient146_0p12mg_0p9uL-calib_20086.mgf">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </None>
+    <None Update="GlycoTestData\P02649.fasta">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </None>
+    <None Update="GlycoTestData\P16150.fasta">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </None>
+    <None Update="GlycoTestData\Q9C0Y4.fasta">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </None>
+    <None Update="GlycoTestData\yeast_glycan_25170.mgf">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </None>
     <None Update="indexEngineTestFasta.fasta">
       <CopyToOutputDirectory>Always</CopyToOutputDirectory>
     </None>

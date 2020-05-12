@@ -187,6 +187,7 @@
                             <Button x:Name="addGPTMDTaskButton" Content="Discover PTMs" Click="AddGPTMDTaskButton_Click" />
                             <Button x:Name="addSearchTaskButton" Content="Search" Click="AddSearchTaskButton_Click" />
                             <Button x:Name="btnAddCrosslinkSearch" Content="XL Search" Click="BtnAddCrosslinkSearch_Click" />
+                            <Button x:Name="btnAddGlycoSearch" Content="Glyco Search" Click="BtnAddGlycoSearch_Click"   />
                         </StackPanel>
                         <TreeView x:Name="tasksTreeView" Grid.Row="2" ItemsSource="{Binding}" MouseDoubleClick="TasksTreeView_MouseDoubleClick">
                             <TreeView.Resources>
