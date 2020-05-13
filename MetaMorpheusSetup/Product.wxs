@@ -2,7 +2,8 @@
 <Wix xmlns="http://schemas.microsoft.com/wix/2006/wi">
   <!--Shorthand way of getting the install directory-->
   <?define GUI_TargetDir=$(var.GUI.TargetDir)?>
-
+  <?define CMD_TargetDir=$(var.CMD.TargetDir)?>
+  
   <!--Product compiles into an msi file. Only one can be present.-->
   <!--Version needs to be replaced automatically-->
   <Product Id="*" Name="MetaMorpheus" Language="1033" Version="!(bind.FileVersion.MetaMorpheusGUI.exe)" Manufacturer="Smith Group" UpgradeCode="438ad6ff-f027-423a-ab0b-c73384c0e2e5">
@@ -287,28 +288,28 @@
 
       <!--Command-Line Components-->
       <Component Id="src_CMD.deps.json" Guid="92190CCF-0138-4F0B-9356-02C914D5A439">
-        <File Id="src_CMD.deps.json" Name="CMD.deps.json" Source="$(var.GUI_TargetDir)CMD.deps.json" />
+        <File Id="src_CMD.deps.json" Name="CMD.deps.json" Source="$(var.CMD_TargetDir)CMD.deps.json" />
       </Component>
       <Component Id="src_CMD.dll" Guid="310D5E4E-7EF9-4B1B-96FD-FFE49481BB5E">
-        <File Id="src_CMD.dll" Name="CMD.dll" Source="$(var.GUI_TargetDir)CMD.dll" />
+        <File Id="src_CMD.dll" Name="CMD.dll" Source="$(var.CMD_TargetDir)CMD.dll" />
       </Component>
       <Component Id="src_CMD.dll.config" Guid="036C0999-0D44-4F6C-9F80-52E85DAC2698">
-        <File Id="src_CMD.dll.config" Name="CMD.dll.config" Source="$(var.GUI_TargetDir)CMD.dll.config" />
+        <File Id="src_CMD.dll.config" Name="CMD.dll.config" Source="$(var.CMD_TargetDir)CMD.dll.config" />
       </Component>
       <Component Id="src_CMD.exe" Guid="42BD2CE2-0EB3-40DE-BCD5-D723CE081C22">
-        <File Id="src_CMD.exe" Name="CMD.exe" Source="$(var.GUI_TargetDir)CMD.exe" />
+        <File Id="src_CMD.exe" Name="CMD.exe" Source="$(var.CMD_TargetDir)CMD.exe" />
       </Component>
       <Component Id="src_CMD.pdb" Guid="67AF7BA5-0D22-47B7-A67B-C54D5B6668C7">
-        <File Id="src_CMD.pdb" Name="CMD.pdb" Source="$(var.GUI_TargetDir)CMD.pdb" />
+        <File Id="src_CMD.pdb" Name="CMD.pdb" Source="$(var.CMD_TargetDir)CMD.pdb" />
       </Component>
       <Component Id="src_CMD.runtimeconfig.dev.json" Guid="DF119DAD-FFA0-4F2E-8302-759001E4F755">
-        <File Id="src_CMD.runtimeconfig.dev.json" Name="CMD.runtimeconfig.dev.json" Source="$(var.GUI_TargetDir)CMD.runtimeconfig.dev.json" />
+        <File Id="src_CMD.runtimeconfig.dev.json" Name="CMD.runtimeconfig.dev.json" Source="$(var.CMD_TargetDir)CMD.runtimeconfig.dev.json" />
       </Component>
       <Component Id="src_CMD.runtimeconfig.json" Guid="EB901649-9102-4F1C-946E-C844383BECAE">
-        <File Id="src_CMD.runtimeconfig.json" Name="CMD.runtimeconfig.json" Source="$(var.GUI_TargetDir)CMD.runtimeconfig.json" />
+        <File Id="src_CMD.runtimeconfig.json" Name="CMD.runtimeconfig.json" Source="$(var.CMD_TargetDir)CMD.runtimeconfig.json" />
       </Component>
       <Component Id="src_CommandLine.dll" Guid="7B810D27-CAC0-41A8-90A2-D1594A678BC9">
-        <File Id="src_CommandLine.dll" Name="CommandLine.dll" Source="$(var.GUI_TargetDir)CommandLine.dll" />
+        <File Id="src_CommandLine.dll" Name="CommandLine.dll" Source="$(var.CMD_TargetDir)CommandLine.dll" />
       </Component>
     </ComponentGroup>
     <ComponentGroup Id="ExecutablesAndLibrariesComponentGroup2" Directory="NativeMathDllFolder_native">
