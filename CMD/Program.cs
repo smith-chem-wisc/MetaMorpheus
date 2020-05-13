@@ -311,14 +311,14 @@ namespace MetaMorpheusCommandLine
         {
             if (InProgress)
             {
-                if (CommandLineSettings.Verbosity == CommandLineSettings.VerbosityType.normal)
+                if (CommandLineSettings.Verbosity == CommandLineSettings.VerbosityType.normal || CommandLineSettings.Verbosity == CommandLineSettings.VerbosityType.minimal)
                 {
                     MyWriter.WriteLine();
                 }
             }
 
             InProgress = false;
-            if (CommandLineSettings.Verbosity == CommandLineSettings.VerbosityType.normal)
+            if (CommandLineSettings.Verbosity == CommandLineSettings.VerbosityType.normal || CommandLineSettings.Verbosity == CommandLineSettings.VerbosityType.minimal)
             {
                 MyWriter.Indent--;
                 WriteMultiLineIndented("Finished task: " + e.DisplayName);
