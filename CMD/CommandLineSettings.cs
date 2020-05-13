@@ -30,11 +30,11 @@ namespace MetaMorpheusCommandLine
         [Option('g', HelpText = "Generate default task tomls")]
         public bool GenerateDefaultTomls { get; set; }
 
-        [Option("test", HelpText = "Runs a small test search using a database and yeast data file included with this MetaMorpheus installation")]
-        public bool RunMicroVignette { get; set; }
-
         [Option('v', Default = VerbosityType.normal, HelpText = "Determines how much text is written. Options are no output ('none'), minimal output and errors  ('minimal'), or normal ('normal')")]
         public VerbosityType Verbosity { get; set; }
+
+        [Option("test", HelpText = "Runs a small test search using a database and yeast data file included with this MetaMorpheus installation")]
+        public bool RunMicroVignette { get; set; }
 
         public enum VerbosityType { none, minimal, normal };
 
