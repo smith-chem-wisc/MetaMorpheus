@@ -32,7 +32,10 @@ namespace MetaMorpheusCommandLine
 
         [Option('v', HelpText = "Runs a small test search using a database and yeast data file included with this MetaMorpheus installation")]
         public bool RunMicroVignette { get; set; }
-        
+
+        [Option("verbosity", Default = "normal", HelpText = "Determines how much text is output during the run. Options are no output ('quiet'), errors only ('errors'), or normal ('normal')")]
+        public string Verbosity { get; set; }
+
         public void ValidateCommandLineSettings()
         {
             Spectra = _spectra == null ? new List<string>() : _spectra.ToList();
@@ -115,6 +118,12 @@ namespace MetaMorpheusCommandLine
                 {
                     throw new MetaMorpheusException("Unrecognized spectra file format: " + ext);
                 }
+            }
+
+            if (Verbosity != "quiet" && Verbosity != "errors" && Verbosity != "normal")
+            {
+                Console.WriteLine("The verbosity specified was not understood. Defaulting to normal verbosity");
+                Verbosity = "normal";
             }
         }
 
