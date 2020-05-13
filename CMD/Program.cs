@@ -72,7 +72,7 @@ namespace MetaMorpheusCommandLine
 
         private static int Run(CommandLineSettings settings)
         {
-            if (settings.Verbosity == "normal")
+            if (settings.Verbosity == CommandLineSettings.VerbosityType.minimal || settings.Verbosity == CommandLineSettings.VerbosityType.normal)
             {
                 Console.WriteLine("Welcome to MetaMorpheus");
                 Console.WriteLine(GlobalVariables.MetaMorpheusVersion);
@@ -87,7 +87,7 @@ namespace MetaMorpheusCommandLine
             }
             catch (Exception e)
             {
-                if (settings.Verbosity == "errors" || settings.Verbosity == "normal")
+                if (settings.Verbosity == CommandLineSettings.VerbosityType.minimal || settings.Verbosity == CommandLineSettings.VerbosityType.normal)
                 {
                     Console.WriteLine("MetaMorpheus encountered the following error:" + Environment.NewLine + e.Message);
                 }
@@ -98,7 +98,7 @@ namespace MetaMorpheusCommandLine
 
             if (settings.GenerateDefaultTomls)
             {
-                if (settings.Verbosity == "normal")
+                if (settings.Verbosity == CommandLineSettings.VerbosityType.minimal || settings.Verbosity == CommandLineSettings.VerbosityType.normal)
                 {
                     Console.WriteLine("Generating default tomls at location: " + settings.OutputFolder);
                 }
@@ -172,7 +172,7 @@ namespace MetaMorpheusCommandLine
                     // print any error messages reading the mods to the console
                     foreach (var error in GlobalVariables.ErrorsReadingMods)
                     {
-                        if (settings.Verbosity == "errors" || settings.Verbosity == "normal")
+                        if (settings.Verbosity == CommandLineSettings.VerbosityType.minimal || settings.Verbosity == CommandLineSettings.VerbosityType.normal)
                         {
                             Console.WriteLine(error);
                         }
@@ -214,7 +214,7 @@ namespace MetaMorpheusCommandLine
                         break;
 
                     default:
-                        if (settings.Verbosity == "errors" || settings.Verbosity == "normal")
+                        if (settings.Verbosity == CommandLineSettings.VerbosityType.minimal || settings.Verbosity == CommandLineSettings.VerbosityType.normal)
                         {
                             Console.WriteLine(toml.Get<string>("TaskType") + " is not a known task type! Skipping.");
                         }
@@ -240,7 +240,7 @@ namespace MetaMorpheusCommandLine
 
                 var message = "Run failed, Exception: " + e.Message;
 
-                if (settings.Verbosity == "errors" || settings.Verbosity == "normal")
+                if (settings.Verbosity == CommandLineSettings.VerbosityType.minimal || settings.Verbosity == CommandLineSettings.VerbosityType.normal)
                 {
                     Console.WriteLine(message);
                 }
@@ -274,7 +274,7 @@ namespace MetaMorpheusCommandLine
         {
             if (InProgress)
             {
-                if (CommandLineSettings.Verbosity == "normal")
+                if (CommandLineSettings.Verbosity == CommandLineSettings.VerbosityType.normal)
                 {
                     MyWriter.WriteLine();
                 }
@@ -282,7 +282,7 @@ namespace MetaMorpheusCommandLine
 
             InProgress = false;
 
-            if (CommandLineSettings.Verbosity == "normal")
+            if (CommandLineSettings.Verbosity == CommandLineSettings.VerbosityType.normal)
             {
                 WriteMultiLineIndented("Starting task: " + e.DisplayName);
                 MyWriter.Indent++;
@@ -293,7 +293,7 @@ namespace MetaMorpheusCommandLine
         {
             if (InProgress)
             {
-                if (CommandLineSettings.Verbosity == "normal")
+                if (CommandLineSettings.Verbosity == CommandLineSettings.VerbosityType.normal)
                 {
                     MyWriter.WriteLine();
                 }
@@ -301,7 +301,7 @@ namespace MetaMorpheusCommandLine
 
             InProgress = false;
 
-            if (CommandLineSettings.Verbosity == "normal")
+            if (CommandLineSettings.Verbosity == CommandLineSettings.VerbosityType.normal)
             {
                 WriteMultiLineIndented("Finished writing file: " + e.WrittenFile);
             }
@@ -311,14 +311,14 @@ namespace MetaMorpheusCommandLine
         {
             if (InProgress)
             {
-                if (CommandLineSettings.Verbosity == "normal")
+                if (CommandLineSettings.Verbosity == CommandLineSettings.VerbosityType.normal)
                 {
                     MyWriter.WriteLine();
                 }
             }
 
             InProgress = false;
-            if (CommandLineSettings.Verbosity == "normal")
+            if (CommandLineSettings.Verbosity == CommandLineSettings.VerbosityType.normal)
             {
                 MyWriter.Indent--;
                 WriteMultiLineIndented("Finished task: " + e.DisplayName);
@@ -329,7 +329,7 @@ namespace MetaMorpheusCommandLine
         {
             if (InProgress)
             {
-                if (CommandLineSettings.Verbosity == "normal")
+                if (CommandLineSettings.Verbosity == CommandLineSettings.VerbosityType.normal)
                 {
                     MyWriter.WriteLine();
                 }
@@ -337,7 +337,7 @@ namespace MetaMorpheusCommandLine
 
             InProgress = false;
 
-            if (CommandLineSettings.Verbosity == "normal")
+            if (CommandLineSettings.Verbosity == CommandLineSettings.VerbosityType.normal)
             {
                 WriteMultiLineIndented("Starting engine: " + e.MyEngine.GetType().Name + " " + e.MyEngine.GetId());
                 MyWriter.Indent++;
@@ -348,7 +348,7 @@ namespace MetaMorpheusCommandLine
         {
             if (InProgress)
             {
-                if (CommandLineSettings.Verbosity == "normal")
+                if (CommandLineSettings.Verbosity == CommandLineSettings.VerbosityType.normal)
                 {
                     MyWriter.WriteLine();
                 }
@@ -356,7 +356,7 @@ namespace MetaMorpheusCommandLine
 
             InProgress = false;
 
-            if (CommandLineSettings.Verbosity == "normal")
+            if (CommandLineSettings.Verbosity == CommandLineSettings.VerbosityType.normal)
             {
                 WriteMultiLineIndented("Engine results: " + e);
                 MyWriter.Indent--;
@@ -366,7 +366,7 @@ namespace MetaMorpheusCommandLine
 
         private static void MyEngine_outProgressHandler(object sender, ProgressEventArgs e)
         {
-            if (CommandLineSettings.Verbosity == "normal")
+            if (CommandLineSettings.Verbosity == CommandLineSettings.VerbosityType.normal)
             {
                 MyWriter.Write(e.NewProgress + " ");
             }
@@ -377,7 +377,7 @@ namespace MetaMorpheusCommandLine
         {
             if (InProgress)
             {
-                if (CommandLineSettings.Verbosity == "errors" || CommandLineSettings.Verbosity == "normal")
+                if (CommandLineSettings.Verbosity == CommandLineSettings.VerbosityType.minimal || CommandLineSettings.Verbosity == CommandLineSettings.VerbosityType.normal)
                 {
                     MyWriter.WriteLine();
                 }
@@ -385,7 +385,7 @@ namespace MetaMorpheusCommandLine
 
             InProgress = false;
 
-            if (CommandLineSettings.Verbosity == "errors" || CommandLineSettings.Verbosity == "normal")
+            if (CommandLineSettings.Verbosity == CommandLineSettings.VerbosityType.minimal || CommandLineSettings.Verbosity == CommandLineSettings.VerbosityType.normal)
             {
                 WriteMultiLineIndented("WARN: " + e.S);
             }
@@ -395,7 +395,7 @@ namespace MetaMorpheusCommandLine
         {
             if (InProgress)
             {
-                if (CommandLineSettings.Verbosity == "normal")
+                if (CommandLineSettings.Verbosity == CommandLineSettings.VerbosityType.normal)
                 {
                     MyWriter.WriteLine();
                 }
@@ -403,7 +403,7 @@ namespace MetaMorpheusCommandLine
 
             InProgress = false;
 
-            if (CommandLineSettings.Verbosity == "normal")
+            if (CommandLineSettings.Verbosity == CommandLineSettings.VerbosityType.normal)
             {
                 WriteMultiLineIndented("Log: " + e.S);
             }
