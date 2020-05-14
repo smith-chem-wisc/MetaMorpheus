@@ -92,7 +92,7 @@ namespace Test
             Assert.AreEqual("M", psm.NextAminoAcid);
             Assert.AreEqual("0", psm.Notch);
             Assert.AreEqual("Mus musculus", psm.OrganismName);
-            Assert.That(5.9604644775390625E-08, Is.EqualTo(psm.PEP).Within(1E-08));
+            Assert.That(0, Is.EqualTo(psm.PEP).Within(1E-04));
             Assert.AreEqual(0, psm.PEP_QValue);
             Assert.AreEqual("full", psm.PeptideDesicription);
             Assert.AreEqual("1431.69155", psm.PeptideMonoMass);
