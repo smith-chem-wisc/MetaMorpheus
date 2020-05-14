@@ -65,9 +65,9 @@ UniProt .XML or .fasta format; may be used in compressed (.gz) format. If you wo
 4. Select "New Search Task" tab. Specify the Post-Search Parameters (e.g. protein parsimony, quantification). Then "Add the Search Task".
 5. Select "Run all tasks!". This search automatically looks for PTMs uncovered in the G-PTM-D step.
 
-## Test Installation (Windows Command Line)
+## Test Installation (Windows Command Line Executable)
 
-1. Download the latest [release](https://github.com/smith-chem-wisc/MetaMorpheus/releases). Extract "MetaMorpheusDotNetFrameworkAppveyor.zip" using, for example, [7-Zip](http://www.7-zip.org/).
+1. Download the latest [release](https://github.com/smith-chem-wisc/MetaMorpheus/releases). Extract "MetaMorpheus_CommandLine.zip" using, for example, [7-Zip](http://www.7-zip.org/).
 2. Download the example spectra and database files at [https://uwmadison.box.com/v/MetaMorpheusPublic](https://uwmadison.box.com/s/2u42qp0b8jllywqzeungmjj04gplw5in) to the folder with the CMD.exe executable.
 3. Run the command:
 
@@ -77,9 +77,9 @@ CMD.exe -t Task1SearchExample.toml Task2CalibrationExample.toml Task3SearchExamp
 4. As the third task completes, open the results.txt files for the first and third tasks (before and after calibration). Observe the increase in the number of confident PSMs identified due to calibration.
 5. As the fifth task completes, open the results.txt files for the third and fifth tasks. Observe the increase in the number of confident PSMs identified due to an addition of new plausible PTMs.
 
-## Test Installation (.NET Core)
+## Test Installation (via .NET Core .dll - Linux, OSX, Windows)
 
-1. Download the latest [release](https://github.com/smith-chem-wisc/MetaMorpheus/releases). Extract files from "MetaMorpheusDotNetCoreAppveyor.zip".
+1. Download the latest [release](https://github.com/smith-chem-wisc/MetaMorpheus/releases). Extract files from "MetaMorpheus_CommandLine.zip".
 2. Download the files at [https://uwmadison.box.com/v/MetaMorpheusPublic](https://uwmadison.box.com/s/2u42qp0b8jllywqzeungmjj04gplw5in) to the folder with the CMD.dll file.
 3. Run the command:
 
