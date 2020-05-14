@@ -25,7 +25,7 @@ namespace TaskLayer
             KeepAllUniprotMods = true;
             MassDiffAcceptorType = MassDiffAcceptorType.OneMM;
             MaxFragmentSize = 30000.0;
-            WriteMzId = false;
+            WriteMzId = true;
             WritePepXml = false;
 
             ModsToWriteSelection = new Dictionary<string, int>
