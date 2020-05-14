@@ -27,5 +27,15 @@ namespace Test
 
             //Directory.Delete(path, true);
         }
+
+        [Test]
+        public static void TestExitCode()
+        {
+            // execute main method w/ no args
+            int exitCode = MetaMorpheusCommandLine.Program.Main(new string[] { });
+
+            // an error should be returned (i.e., non-zero exit code)
+            Assert.That(exitCode > 0);
+        }
     }
 }
