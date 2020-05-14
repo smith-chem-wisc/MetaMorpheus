@@ -648,6 +648,7 @@ namespace TaskLayer
                         FinishedWritingFile(mzidFilePath, new List<string> { Parameters.SearchTaskId, "Individual Spectra Files", fullFilePath });
                     }
 
+
                     // write pepXML
                     if (Parameters.SearchParameters.WritePepXml)
                     {
@@ -1404,17 +1405,20 @@ namespace TaskLayer
                 psmList.OrderByDescending(p => p.Score);
                 foreach (PeptideSpectralMatch psm in psmList.Where(p => p.PsmData_forPEPandPercolator != null))
                 {
-                    output.Write(idNumber.ToString());
-                    idNumber++;
-                    output.Write('\t' + (psm.IsDecoy ? -1 : 1).ToString());
-                    output.Write('\t' + psm.ScanNumber.ToString());
-                    output.Write(psm.PsmData_forPEPandPercolator.ToString(searchType));
+                    foreach (var peptide in psm.BestMatchingPeptides)
+                    {
+                        output.Write(idNumber.ToString());
 
-                    // HACKY: Ignores all ambiguity
-                    var pwsm = psm.BestMatchingPeptides.First().Peptide;
-                    output.Write('\t' + (pwsm.PreviousAminoAcid + "." + pwsm.FullSequence + "." + pwsm.NextAminoAcid).ToString());
-                    output.Write('\t' + (pwsm.Protein.Accession).ToString());
-                    output.WriteLine();
+                        output.Write('\t' + (peptide.Peptide.Protein.IsDecoy ? -1 : 1).ToString());
+                        output.Write('\t' + psm.ScanNumber.ToString());
+                        output.Write(psm.PsmData_forPEPandPercolator.ToString(searchType));
+
+                        output.Write('\t' + (peptide.Peptide.PreviousAminoAcid + "." + peptide.Peptide.FullSequence + "." + peptide.Peptide.NextAminoAcid).ToString());
+                        output.Write('\t' + (peptide.Peptide.Protein.Accession).ToString());
+                        output.WriteLine();
+                    }
+                    idNumber++;
+
                 }
             }
         }
