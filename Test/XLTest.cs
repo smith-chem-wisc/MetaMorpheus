@@ -759,7 +759,7 @@ namespace Test
             }
 
             Assert.AreEqual(0, unnasignedCrossType);
-            Assert.AreEqual(42, inter);
+            Assert.AreEqual(41, inter);
             Assert.AreEqual(74, intra);
             Assert.AreEqual(233, single);
             Assert.AreEqual(8, loop);
