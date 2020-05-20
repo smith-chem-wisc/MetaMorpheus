@@ -16,6 +16,7 @@ using System.Windows;
 using System.Windows.Controls;
 using System.Windows.Documents;
 using System.Windows.Input;
+using System.Windows.Media;
 using TaskLayer;
 
 namespace MetaMorpheusGUI
@@ -40,6 +41,9 @@ namespace MetaMorpheusGUI
             dataGridProteinDatabases.DataContext = ProteinDbObservableCollection;
             dataGridSpectraFiles.DataContext = SpectraFilesObservableCollection;
             tasksTreeView.DataContext = StaticTasksObservableCollection;
+            proteinDbSummaryDataGrid.DataContext = ProteinDbObservableCollection;
+            spectraFileSummaryDataGrid.DataContext = SpectraFilesObservableCollection;
+            taskSummaryDataGrid.DataContext = StaticTasksObservableCollection;
 
             EverythingRunnerEngine.NewDbsHandler += AddNewDB;
             EverythingRunnerEngine.NewSpectrasHandler += AddNewSpectra;
@@ -72,7 +76,7 @@ namespace MetaMorpheusGUI
             SearchModifications.SetUpModSearchBoxes();
 
             // LOAD GUI SETTINGS
-            if(!UpdateGUISettings.LoadGUISettings())
+            if (!UpdateGUISettings.LoadGUISettings())
             {
                 notificationsTextBox.Document = YoutubeWikiNotification();
             }
@@ -168,8 +172,8 @@ namespace MetaMorpheusGUI
             this.KeyDown += new KeyEventHandler(Window_KeyDown);
 
             // hide the "InProgress" column
-            dataGridProteinDatabases.Columns.Where(p => p.Header.Equals(nameof(ProteinDbForDataGrid.InProgress))).First().Visibility = Visibility.Hidden;
-            dataGridSpectraFiles.Columns.Where(p => p.Header.Equals(nameof(RawDataForDataGrid.InProgress))).First().Visibility = Visibility.Hidden;
+            //dataGridProteinDatabases.Columns.Where(p => p.Header.Equals(nameof(ProteinDbForDataGrid.InProgress))).First().Visibility = Visibility.Hidden;
+            //dataGridSpectraFiles.Columns.Where(p => p.Header.Equals(nameof(RawDataForDataGrid.InProgress))).First().Visibility = Visibility.Hidden;
 
             PrintErrorsReadingMods();
         }
@@ -638,7 +642,7 @@ namespace MetaMorpheusGUI
         private void RunAllTasks_Click(object sender, RoutedEventArgs e)
         {
             GlobalVariables.StopLoops = false;
-            CancelButton.IsEnabled = true;
+            //CancelButton.IsEnabled = true;
 
             // check for valid tasks/spectra files/protein databases
             if (!StaticTasksObservableCollection.Any())
@@ -710,7 +714,7 @@ namespace MetaMorpheusGUI
                     return;
                 }
             }
-            BtnQuantSet.IsEnabled = false;
+            //BtnQuantSet.IsEnabled = false;
 
             // everything is OK to run
             EverythingRunnerEngine a = new EverythingRunnerEngine(DynamicTasksObservableCollection.Select(b => (b.DisplayName, b.Task)).ToList(),
@@ -780,7 +784,7 @@ namespace MetaMorpheusGUI
                     GlobalVariables.StartProcess(mailto);
                     Console.WriteLine(body);
                 }
-                ResetTasksButton.IsEnabled = true;
+                //ResetTasksButton.IsEnabled = true;
             }
         }
 
@@ -795,15 +799,15 @@ namespace MetaMorpheusGUI
             if (StaticTasksObservableCollection.Count == 0)
             {
                 RunTasksButton.IsEnabled = false;
-                DeleteSelectedTaskButton.IsEnabled = false;
-                ClearTasksButton.IsEnabled = false;
-                ResetTasksButton.IsEnabled = false;
+                //DeleteSelectedTaskButton.IsEnabled = false;
+                //ClearTasksButton.IsEnabled = false;
+                //ResetTasksButton.IsEnabled = false;
             }
             else
             {
                 RunTasksButton.IsEnabled = true;
-                DeleteSelectedTaskButton.IsEnabled = true;
-                ClearTasksButton.IsEnabled = true;
+                //DeleteSelectedTaskButton.IsEnabled = true;
+                //ClearTasksButton.IsEnabled = true;
 
                 // this exists so that when a task is deleted, the remaining tasks are renamed to keep the task numbers correct
                 for (int i = 0; i < StaticTasksObservableCollection.Count; i++)
@@ -817,7 +821,7 @@ namespace MetaMorpheusGUI
 
         private void UpdateSpectraFileGuiStuff()
         {
-            ChangeFileParameters.IsEnabled = SelectedRawFiles.Count > 0 && LoadTaskButton.IsEnabled;
+            //ChangeFileParameters.IsEnabled = SelectedRawFiles.Count > 0 && LoadTaskButton.IsEnabled;
         }
 
         private void AddSearchTaskButton_Click(object sender, RoutedEventArgs e)
@@ -896,7 +900,7 @@ namespace MetaMorpheusGUI
         }
 
         private void BtnAddCrosslinkSearch_Click(object sender, RoutedEventArgs e)
-        {            
+        {
             //check if the default toml has been overwritten
             XLSearchTask task = null;
             string defaultFilePath = Path.Combine(GlobalVariables.DataDir, "DefaultParameters", @"XLSearchTaskDefault.toml");
@@ -1111,22 +1115,22 @@ namespace MetaMorpheusGUI
             {
                 dataGridSpectraFiles.Items.Refresh();
 
-                ClearTasksButton.IsEnabled = false;
-                DeleteSelectedTaskButton.IsEnabled = false;
+                //ClearTasksButton.IsEnabled = false;
+                //DeleteSelectedTaskButton.IsEnabled = false;
                 RunTasksButton.IsEnabled = false;
                 LoadTaskButton.IsEnabled = false;
 
-                addCalibrateTaskButton.IsEnabled = false;
-                addGPTMDTaskButton.IsEnabled = false;
-                addSearchTaskButton.IsEnabled = false;
-                btnAddCrosslinkSearch.IsEnabled = false;
-                btnAddGlycoSearch.IsEnabled = false;
+                //addCalibrateTaskButton.IsEnabled = false;
+                //addGPTMDTaskButton.IsEnabled = false;
+                //addSearchTaskButton.IsEnabled = false;
+                //btnAddCrosslinkSearch.IsEnabled = false;
+                //btnAddGlycoSearch.IsEnabled = false;
 
-                AddXML.IsEnabled = false;
-                ClearXML.IsEnabled = false;
-                AddContaminantXML.IsEnabled = false;
-                AddRaw.IsEnabled = false;
-                ClearRaw.IsEnabled = false;
+                AddDatabaseButton.IsEnabled = false;
+                //ClearXML.IsEnabled = false;
+                //AddContaminantXML.IsEnabled = false;
+                AddSpectraButton.IsEnabled = false;
+                //ClearRaw.IsEnabled = false;
 
                 OutputFolderTextBox.IsEnabled = false;
 
@@ -1143,7 +1147,7 @@ namespace MetaMorpheusGUI
             }
             else
             {
-                ResetTasksButton.IsEnabled = true;
+                //ResetTasksButton.IsEnabled = true;
 
                 dataGridSpectraFiles.Items.Refresh();
             }
@@ -1180,27 +1184,27 @@ namespace MetaMorpheusGUI
 
         private void ResetTasksButton_Click(object sender, RoutedEventArgs e)
         {
-            tasksGroupBox.IsEnabled = true;
-            ClearTasksButton.IsEnabled = true;
-            DeleteSelectedTaskButton.IsEnabled = true;
+            //tasksGroupBox.IsEnabled = true;
+            //ClearTasksButton.IsEnabled = true;
+            //DeleteSelectedTaskButton.IsEnabled = true;
             RunTasksButton.IsEnabled = true;
-            addCalibrateTaskButton.IsEnabled = true;
-            addGPTMDTaskButton.IsEnabled = true;
-            addSearchTaskButton.IsEnabled = true;
-            btnAddCrosslinkSearch.IsEnabled = true;
-            btnAddGlycoSearch.IsEnabled = true;
-            ResetTasksButton.IsEnabled = false;
+            //addCalibrateTaskButton.IsEnabled = true;
+            //addGPTMDTaskButton.IsEnabled = true;
+            //addSearchTaskButton.IsEnabled = true;
+            //btnAddCrosslinkSearch.IsEnabled = true;
+            //btnAddGlycoSearch.IsEnabled = true;
+            //ResetTasksButton.IsEnabled = false;
             OutputFolderTextBox.IsEnabled = true;
 
             dataGridSpectraFiles.IsReadOnly = false;
             dataGridProteinDatabases.IsReadOnly = false;
 
-            AddXML.IsEnabled = true;
-            ClearXML.IsEnabled = true;
-            AddContaminantXML.IsEnabled = true;
-            AddRaw.IsEnabled = true;
-            ClearRaw.IsEnabled = true;
-            BtnQuantSet.IsEnabled = true;
+            AddDatabaseButton.IsEnabled = true;
+            //ClearXML.IsEnabled = true;
+            //AddContaminantXML.IsEnabled = true;
+            AddSpectraButton.IsEnabled = true;
+            //ClearRaw.IsEnabled = true;
+            //BtnQuantSet.IsEnabled = true;
 
             LoadTaskButton.IsEnabled = true;
 
@@ -1422,7 +1426,7 @@ namespace MetaMorpheusGUI
             if (MessageBox.Show("Are you sure you want to cancel " + grammar + "?", "Cancel Tasks", MessageBoxButton.OKCancel) == MessageBoxResult.OK)
             {
                 GlobalVariables.StopLoops = true;
-                CancelButton.IsEnabled = false;
+                //CancelButton.IsEnabled = false;
                 notificationsTextBox.AppendText("Canceling...\n");
             }
         }
@@ -1581,9 +1585,56 @@ namespace MetaMorpheusGUI
                 }
                 else //assume the event should be canceled and MetaMorpheus should stay open
                 {
-                    e.Cancel = true; 
+                    e.Cancel = true;
                 }
             }
+        }
+
+        /// <summary>
+        /// Deletes a file (ID or spectra file) from the data grid.
+        /// </summary>
+        private void DeleteFileFromGrid_Click(object sender, RoutedEventArgs e)
+        {
+            RawDataForDataGrid spectraFile = (sender as Button).DataContext as RawDataForDataGrid;
+            if (spectraFile != null)
+            {
+                SpectraFilesObservableCollection.Remove(spectraFile);
+
+                return;
+            }
+
+            ProteinDbForDataGrid idFile = (sender as Button).DataContext as ProteinDbForDataGrid;
+            if (idFile != null)
+            {
+                ProteinDbObservableCollection.Remove(idFile);
+
+                return;
+            }
+        }
+
+        private void TabControl_SelectionChanged(object sender, SelectionChangedEventArgs e)
+        {
+            // this "if" statement that checks the type of the sender is here because this event can somehow 
+            // be mistakenly triggered by other events (see FlashLFQ's GUI)
+            var senderType = e.OriginalSource.GetType().Name;
+
+            if (senderType == "TabControl")
+            {
+                var selectedItem = (TabItem)MainWindowTabControl.SelectedItem;
+                var selectedItemHeader = selectedItem.Header.ToString();
+
+                if (selectedItemHeader == "Visualize")
+                {
+                    MetaDrawMenu_Click(sender, e);
+                }
+            }
+        }
+
+        private void AddTaskButton(object sender, RoutedEventArgs e)
+        {
+            ContextMenu contextMenu = this.FindResource("AddTaskMenu") as ContextMenu;
+            contextMenu.PlacementTarget = sender as Button;
+            contextMenu.IsOpen = true;
         }
     }
 }
