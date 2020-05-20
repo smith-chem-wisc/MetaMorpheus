@@ -540,7 +540,7 @@ namespace EngineLayer
                             CrosslinkSpectralMatch csm = (CrosslinkSpectralMatch)psms[i];
 
                             bool label;
-                            if (csm.IsDecoy || csm.BetaPeptide.IsDecoy || psm.FdrInfo.QValue > 0.25)
+                            if (csm.IsDecoy || csm.BetaPeptide.IsDecoy)
                             {
                                 label = false;
                                 newPsmData = CreateOnePsmDataEntry(searchType, fileSpecificParameters, psm, sequenceToPsmCount, timeDependantHydrophobicityAverageAndDeviation_unmodified, timeDependantHydrophobicityAverageAndDeviation_modified, fileSpecificMedianFragmentMassErrors, chargeStateMode, csm.BestMatchingPeptides.First().Peptide, trainingVariables, 0, label);
@@ -560,7 +560,7 @@ namespace EngineLayer
                             {
                                 bool label;
                                 double bmpc = psm.BestMatchingPeptides.Count();
-                                if (peptideWithSetMods.Protein.IsDecoy || psm.FdrInfo.QValue > 0.25)
+                                if (peptideWithSetMods.Protein.IsDecoy)
                                 {
                                     label = false;
                                     newPsmData = CreateOnePsmDataEntry(searchType, fileSpecificParameters, psm, sequenceToPsmCount, timeDependantHydrophobicityAverageAndDeviation_unmodified, timeDependantHydrophobicityAverageAndDeviation_modified, fileSpecificMedianFragmentMassErrors, chargeStateMode, peptideWithSetMods, trainingVariables, notch, label);
