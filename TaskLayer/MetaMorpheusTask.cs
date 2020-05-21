@@ -148,8 +148,8 @@ namespace TaskLayer
                                     commonParameters.DeconvolutionMassTolerance.Value,
                                     commonParameters.DeconvolutionIntensityRatio))
                                 {
-                                    double monoPeakMz = envelope.MonoisotopicMass.ToMz(envelope.Charge);
-                                    precursors.Add((monoPeakMz, envelope.Charge));
+                                    double monoPeakMz = envelope.monoisotopicMass.ToMz(envelope.charge);
+                                    precursors.Add((monoPeakMz, envelope.charge));
                                 }
                             }
                         }
