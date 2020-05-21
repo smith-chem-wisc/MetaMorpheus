@@ -1215,7 +1215,7 @@ namespace MetaMorpheusGUI
             OutputFolderTextBox.Text = Path.Combine(pathOfFirstSpectraFile, @"$DATETIME");
         }
 
-        private void TasksTreeView_MouseDoubleClick(object sender, MouseButtonEventArgs e)
+        private void TasksTreeView_MouseDoubleClick(object sender, EventArgs e)
         {
             var a = sender as TreeView;
             if (a.SelectedItem is PreRunTask preRunTask)
@@ -1635,6 +1635,67 @@ namespace MetaMorpheusGUI
             ContextMenu contextMenu = this.FindResource("AddTaskMenu") as ContextMenu;
             contextMenu.PlacementTarget = sender as Button;
             contextMenu.IsOpen = true;
+        }
+
+        private void TreeViewItem_RightClick(object sender, MouseButtonEventArgs e)
+        {
+            var treeViewItem = (TreeViewItem)sender;
+            var header = treeViewItem.Header.GetType();
+            string contextMenuName;
+
+            if (header == typeof(PreRunTask))
+            {
+                contextMenuName = "TaskContextMenu";
+            }
+            else if (header == typeof(InRunTask))
+            {
+                contextMenuName = "InRunTaskContextMenu";
+            }
+            else if (header == typeof(OutputFileForTreeView))
+            {
+                contextMenuName = "WrittenFileContextMenu";
+            }
+            else
+            {
+                return;
+            }
+
+            ContextMenu contextMenu = FindResource(contextMenuName) as ContextMenu;
+            contextMenu.PlacementTarget = sender as TreeViewItem;
+            contextMenu.IsOpen = true;
+        }
+
+        private void SaveToml_Click(object sender, RoutedEventArgs e)
+        {
+            var menuItem = (MenuItem)sender;
+            var dataContext = (ContextMenu)menuItem.Parent;
+            var treeViewItem = (TreeViewItem)dataContext.PlacementTarget;
+
+            MetaMorpheusTask task;
+
+            if (treeViewItem.Header.GetType() == typeof(PreRunTask))
+            {
+                task = ((PreRunTask)treeViewItem.Header).metaMorpheusTask;
+            }
+            else if (treeViewItem.Header.GetType() == typeof(InRunTask))
+            {
+                task = ((InRunTask)treeViewItem.Header).Task;
+            }
+            else
+            {
+                // if this message ever appears, it's a bug...
+                MessageBox.Show("Unable to save this item as .toml.");
+                return;
+            }
+
+            string filename = task.CommonParameters.TaskDescriptor + ".toml";
+
+            Microsoft.Win32.SaveFileDialog save = new Microsoft.Win32.SaveFileDialog { FileName = filename, AddExtension = true, DefaultExt = ".toml" };
+
+            if (save.ShowDialog() == true)
+            {
+                Toml.WriteFile(task, save.FileName, MetaMorpheusTask.tomlConfig);
+            }
         }
     }
 }

@@ -11,7 +11,7 @@
     <Window.Resources>
         <ResourceDictionary>
             <!--App-wide resources (e.g., colors) can be found in App.xaml-->
-            
+
             <!--Styling for the tab items on the left side-->
             <Style x:Key="TabItemStyle" TargetType="TabItem">
                 <Setter Property="Template">
@@ -163,27 +163,64 @@
 
             <!--Defines the context menu when a task is right-clicked-->
             <ContextMenu x:Key="TaskContextMenu" Style="{StaticResource ContextMenuStyle}">
-                <MenuItem Header="Edit" Click="AddCalibrateTaskButton_Click" />
-                <MenuItem Header="Save as .toml" Click="AddCalibrateTaskButton_Click" />
-                <MenuItem Header="Delete" Click="AddCalibrateTaskButton_Click" />
+                <MenuItem Header="Edit task" Click="TasksTreeView_MouseDoubleClick" />
+                <MenuItem Header="Save as .toml" Click="SaveToml_Click" />
+            </ContextMenu>
+
+            <!--Defines the context menu when a task is right-clicked-->
+            <ContextMenu x:Key="InRunTaskContextMenu" Style="{StaticResource ContextMenuStyle}">
+                <MenuItem Header="Save as .toml" Click="SaveToml_Click" />
             </ContextMenu>
 
             <!--Defines the context menu when a written file is right-clicked-->
             <ContextMenu x:Key="WrittenFileContextMenu" Style="{StaticResource ContextMenuStyle}">
-                <MenuItem Header="Open file" Click="AddCalibrateTaskButton_Click" />
+                <MenuItem Header="Open file" Click="TasksTreeView_MouseDoubleClick" />
                 <MenuItem Header="Open containing folder" Click="AddCalibrateTaskButton_Click" />
-                <MenuItem Header="Delete" Click="AddCalibrateTaskButton_Click" />
             </ContextMenu>
 
             <!--Styles the datagrid for protein databases-->
-            <Style x:Key="ProteinDbDataGridStyle" TargetType="{x:Type DataGrid}" BasedOn="{StaticResource x:DataGridStyle}">
+            <Style x:Key="ProteinDbDataGridStyle" TargetType="DataGrid" BasedOn="{StaticResource x:DataGridStyle}">
                 <Setter Property="ContextMenu" Value="{StaticResource ProteinDatabaseContextMenu}" />
             </Style>
 
             <!--Styles the datagrid for spectra files-->
-            <Style x:Key="SpectraFileDataGridStyle" TargetType="{x:Type DataGrid}" BasedOn="{StaticResource x:DataGridStyle}">
+            <Style x:Key="SpectraFileDataGridStyle" TargetType="DataGrid" BasedOn="{StaticResource x:DataGridStyle}">
                 <Setter Property="ContextMenu" Value="{StaticResource SpectraFileContextMenu}" />
             </Style>
+
+            <Style x:Key="TaskTreeViewStyle" TargetType="TreeViewItem">
+                <EventSetter Event="MouseRightButtonDown" Handler="TreeViewItem_RightClick" />
+            </Style>
+
+            <!--Data templates for the tasks-->
+            <HierarchicalDataTemplate DataType="{x:Type local:InRunTask}" ItemsSource="{Binding Children}">
+                <StackPanel Orientation="Horizontal">
+                    <TextBlock Text="T " />
+                    <TextBlock Text="{Binding DisplayName}" />
+                    <ProgressBar Value="{Binding Progress}" IsIndeterminate="{Binding IsIndeterminate}" Width="100"  Margin="5,0,5,0" />
+                    <TextBlock Text="{Binding Status}" />
+                </StackPanel>
+            </HierarchicalDataTemplate>
+            <HierarchicalDataTemplate DataType="{x:Type local:CollectionForTreeView}" ItemsSource="{Binding Children}">
+                <StackPanel Orientation="Horizontal">
+                    <TextBlock Text="C " />
+                    <TextBlock Text="{Binding DisplayName}" />
+                    <ProgressBar Value="{Binding Progress}" IsIndeterminate="{Binding IsIndeterminate}" Width="100" Margin="5,0,5,0" />
+                    <TextBlock Text="{Binding Status}" />
+                </StackPanel>
+            </HierarchicalDataTemplate>
+            <DataTemplate DataType="{x:Type local:OutputFileForTreeView}">
+                <StackPanel Orientation="Horizontal">
+                    <TextBlock Text="F " />
+                    <TextBlock Text="{Binding DisplayName}" />
+                    <TextBlock Text="{Binding Status}" />
+                </StackPanel>
+            </DataTemplate>
+            <DataTemplate DataType="{x:Type local:PreRunTask}">
+                <StackPanel Orientation="Horizontal">
+                    <TextBlock Text="{Binding DisplayName}" />
+                </StackPanel>
+            </DataTemplate>
         </ResourceDictionary>
     </Window.Resources>
 
@@ -297,36 +334,9 @@
 
                     <!--List of Tasks-->
                     <TreeView x:Name="tasksTreeView" Grid.Row="2" ItemsSource="{Binding}" MouseDoubleClick="TasksTreeView_MouseDoubleClick" Margin="10,0,10,10" BorderBrush="{StaticResource BorderColor}">
-                        <TreeView.Resources>
-                            <HierarchicalDataTemplate DataType="{x:Type local:InRunTask}" ItemsSource="{Binding Children}">
-                                <StackPanel Orientation="Horizontal">
-                                    <TextBlock Text="T " />
-                                    <TextBlock Text="{Binding DisplayName}" />
-                                    <ProgressBar Value="{Binding Progress}" IsIndeterminate="{Binding IsIndeterminate}" Width="100"  Margin="5,0,5,0" />
-                                    <TextBlock Text="{Binding Status}" />
-                                </StackPanel>
-                            </HierarchicalDataTemplate>
-                            <HierarchicalDataTemplate DataType="{x:Type local:CollectionForTreeView}" ItemsSource="{Binding Children}">
-                                <StackPanel Orientation="Horizontal">
-                                    <TextBlock Text="C " />
-                                    <TextBlock Text="{Binding DisplayName}" />
-                                    <ProgressBar Value="{Binding Progress}" IsIndeterminate="{Binding IsIndeterminate}" Width="100" Margin="5,0,5,0" />
-                                    <TextBlock Text="{Binding Status}" />
-                                </StackPanel>
-                            </HierarchicalDataTemplate>
-                            <DataTemplate DataType="{x:Type local:OutputFileForTreeView}">
-                                <StackPanel Orientation="Horizontal">
-                                    <TextBlock Text="F " />
-                                    <TextBlock Text="{Binding DisplayName}" />
-                                    <TextBlock Text="{Binding Status}" />
-                                </StackPanel>
-                            </DataTemplate>
-                            <DataTemplate DataType="{x:Type local:PreRunTask}">
-                                <StackPanel Orientation="Horizontal">
-                                    <TextBlock Text="{Binding DisplayName}" />
-                                </StackPanel>
-                            </DataTemplate>
-                        </TreeView.Resources>
+                        <TreeView.ItemContainerStyle>
+                            <Style TargetType="{x:Type TreeViewItem}" BasedOn="{StaticResource TaskTreeViewStyle}" />
+                        </TreeView.ItemContainerStyle>
                     </TreeView>
                 </Grid>
             </TabItem>
