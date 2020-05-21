@@ -9,6 +9,7 @@ using System.Linq;
 using System.Threading.Tasks;
 using EngineLayer;
 using MassSpectrometry;
+using Chemistry;
 
 namespace EngineLayer.GlycoSearch
 {
@@ -270,6 +271,95 @@ namespace EngineLayer.GlycoSearch
                     break;
                 }
             }
+        }
+
+        /// <summary>
+        /// Deprecated.
+        /// </summary>
+        private List<int> GetGlycanBinsToSearch(Ms2ScanWithSpecificMass scan, List<int>[] FragmentIndex, DissociationType dissociationType)
+        {
+            int obsPreviousFragmentCeilingMz = 0;
+            List<int> binsToSearch = new List<int>();
+
+            foreach (var envelope in scan.ExperimentalFragments)
+            {
+                // assume charge state 1 to calculate mass tolerance
+                double experimentalFragmentMass = envelope.MonoisotopicMass;
+
+                // get theoretical fragment bins within mass tolerance
+                int obsFragmentFloorMass = (int)Math.Floor((CommonParameters.ProductMassTolerance.GetMinimumValue(experimentalFragmentMass)) * FragmentBinsPerDalton);
+                int obsFragmentCeilingMass = (int)Math.Ceiling((CommonParameters.ProductMassTolerance.GetMaximumValue(experimentalFragmentMass)) * FragmentBinsPerDalton);
+
+                // prevents double-counting peaks close in m/z and lower-bound out of range exceptions
+                if (obsFragmentFloorMass < obsPreviousFragmentCeilingMz)
+                {
+                    obsFragmentFloorMass = obsPreviousFragmentCeilingMz;
+                }
+                obsPreviousFragmentCeilingMz = obsFragmentCeilingMass + 1;
+
+                // prevent upper-bound index out of bounds errors;
+                // lower-bound is handled by the previous "if (obsFragmentFloorMass < obsPreviousFragmentCeilingMz)" statement
+                if (obsFragmentCeilingMass >= FragmentIndex.Length)
+                {
+                    obsFragmentCeilingMass = FragmentIndex.Length - 1;
+
+                    if (obsFragmentFloorMass >= FragmentIndex.Length)
+                    {
+                        obsFragmentFloorMass = FragmentIndex.Length - 1;
+                    }
+                }
+
+                // search mass bins within a tolerance
+                for (int fragmentBin = obsFragmentFloorMass; fragmentBin <= obsFragmentCeilingMass; fragmentBin++)
+                {
+                    if (FragmentIndex[fragmentBin] != null)
+                    {
+                        binsToSearch.Add(fragmentBin);
+                    }
+                }
+
+                // add complementary ions
+                if (CommonParameters.AddCompIons)
+                {
+                    //okay, we're not actually adding in complementary m/z peaks, we're doing a shortcut and just straight up adding the bins assuming that they're z=1
+
+                    if (complementaryIonConversionDictionary.TryGetValue(dissociationType, out double protonMassShift)) //TODO: this is broken for EThcD because that method needs two conversions
+                    {
+                        protonMassShift = Chemistry.ClassExtensions.ToMass(protonMassShift, 1);
+                        int compFragmentFloorMass = (int)Math.Round(((scan.PrecursorMass + protonMassShift) * FragmentBinsPerDalton)) - obsFragmentCeilingMass;
+                        int compFragmentCeilingMass = (int)Math.Round(((scan.PrecursorMass + protonMassShift) * FragmentBinsPerDalton)) - obsFragmentFloorMass;
+
+                        // prevent index out of bounds errors
+                        if (compFragmentCeilingMass >= FragmentIndex.Length)
+                        {
+                            compFragmentCeilingMass = FragmentIndex.Length - 1;
+
+                            if (compFragmentFloorMass >= FragmentIndex.Length)
+                            {
+                                compFragmentFloorMass = FragmentIndex.Length - 1;
+                            }
+                        }
+                        if (compFragmentFloorMass < 0)
+                        {
+                            compFragmentFloorMass = 0;
+                        }
+
+                        for (int fragmentBin = compFragmentFloorMass; fragmentBin <= compFragmentCeilingMass; fragmentBin++)
+                        {
+                            if (FragmentIndex[fragmentBin] != null)
+                            {
+                                binsToSearch.Add(fragmentBin);
+                            }
+                        }
+                    }
+                    else
+                    {
+                        throw new NotImplementedException();
+                    }
+                }
+            }
+
+            return binsToSearch;
         }
 
         //For FindOGlycan
