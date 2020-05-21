@@ -1643,13 +1643,9 @@ namespace MetaMorpheusGUI
             var header = treeViewItem.Header.GetType();
             string contextMenuName;
 
-            if (header == typeof(PreRunTask))
+            if (header == typeof(PreRunTask) || header == typeof(InRunTask))
             {
                 contextMenuName = "TaskContextMenu";
-            }
-            else if (header == typeof(InRunTask))
-            {
-                contextMenuName = "InRunTaskContextMenu";
             }
             else if (header == typeof(OutputFileForTreeView))
             {

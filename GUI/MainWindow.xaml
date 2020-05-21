@@ -5,7 +5,7 @@
         xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
         xmlns:local="clr-namespace:MetaMorpheusGUI"
         mc:Ignorable="d"
-        Drop="Window_Drop" AllowDrop="true" Background="#f5f6fa" WindowStartupLocation="CenterScreen" MinHeight="400" MinWidth="800" Height="550" Width="900"
+        Drop="Window_Drop" AllowDrop="true" Background="{StaticResource BackgroundColor}" WindowStartupLocation="CenterScreen" MinHeight="400" MinWidth="800" Height="550" Width="900"
         Loaded="MyWindow_Loaded">
 
     <Window.Resources>
@@ -147,10 +147,9 @@
 
             <!--Defines the context menu when a protein database is right-clicked-->
             <ContextMenu x:Key="ProteinDatabaseContextMenu" Style="{StaticResource ContextMenuStyle}">
-                <MenuItem Header="Set as contaminant database" Click="AddCalibrateTaskButton_Click" />
+                <MenuItem Header="Set as contaminant database" Click="AddCalibrateTaskButton_Click" IsEnabled="{Binding IsEnabled, ElementName=RunTasksButton}" />
                 <MenuItem Header="Open file" Click="AddCalibrateTaskButton_Click" />
                 <MenuItem Header="Open containing folder" Click="AddCalibrateTaskButton_Click" />
-                <MenuItem Header="Delete" Click="AddCalibrateTaskButton_Click" />
             </ContextMenu>
 
             <!--Defines the context menu when a spectra file is right-clicked-->
@@ -158,17 +157,11 @@
                 <MenuItem Header="Set file-specific settings" Click="AddCalibrateTaskButton_Click" />
                 <MenuItem Header="Open file" Click="AddCalibrateTaskButton_Click" />
                 <MenuItem Header="Open containing folder" Click="AddCalibrateTaskButton_Click" />
-                <MenuItem Header="Delete" Click="AddCalibrateTaskButton_Click" />
             </ContextMenu>
 
             <!--Defines the context menu when a task is right-clicked-->
             <ContextMenu x:Key="TaskContextMenu" Style="{StaticResource ContextMenuStyle}">
-                <MenuItem Header="Edit task" Click="TasksTreeView_MouseDoubleClick" />
-                <MenuItem Header="Save as .toml" Click="SaveToml_Click" />
-            </ContextMenu>
-
-            <!--Defines the context menu when a task is right-clicked-->
-            <ContextMenu x:Key="InRunTaskContextMenu" Style="{StaticResource ContextMenuStyle}">
+                <MenuItem Header="Edit task" Click="TasksTreeView_MouseDoubleClick" IsEnabled="{Binding IsEnabled, ElementName=RunTasksButton}" />
                 <MenuItem Header="Save as .toml" Click="SaveToml_Click" />
             </ContextMenu>
 
@@ -188,16 +181,17 @@
                 <Setter Property="ContextMenu" Value="{StaticResource SpectraFileContextMenu}" />
             </Style>
 
+            <!--Styles the task treeview-->
             <Style x:Key="TaskTreeViewStyle" TargetType="TreeViewItem">
                 <EventSetter Event="MouseRightButtonDown" Handler="TreeViewItem_RightClick" />
             </Style>
 
-            <!--Data templates for the tasks-->
+            <!--Data templates for the types displayed in the treeview-->
             <HierarchicalDataTemplate DataType="{x:Type local:InRunTask}" ItemsSource="{Binding Children}">
                 <StackPanel Orientation="Horizontal">
                     <TextBlock Text="T " />
                     <TextBlock Text="{Binding DisplayName}" />
-                    <ProgressBar Value="{Binding Progress}" IsIndeterminate="{Binding IsIndeterminate}" Width="100"  Margin="5,0,5,0" />
+                    <ProgressBar Value="{Binding Progress}" IsIndeterminate="{Binding IsIndeterminate}" Width="100" Margin="5,0,5,0" />
                     <TextBlock Text="{Binding Status}" />
                 </StackPanel>
             </HierarchicalDataTemplate>
@@ -225,49 +219,166 @@
     </Window.Resources>
 
     <!--Window content-->
-    <Grid>
-        <TabControl x:Name="MainWindowTabControl" Grid.Row="0" Background="Transparent" TabStripPlacement="Left" Margin="0,0,0,0" 
-                    SelectionChanged="TabControl_SelectionChanged" BorderThickness="1" BorderBrush="{StaticResource BorderColor}">
-            <TabControl.Resources>
-                <Style TargetType="Grid">
-                    <Setter Property="Background" Value="{StaticResource SideBarMainColor}" />
-                </Style>
-            </TabControl.Resources>
+    <TabControl x:Name="MainWindowTabControl" TabStripPlacement="Left" Margin="0" SelectionChanged="TabControl_SelectionChanged" BorderThickness="1" BorderBrush="{StaticResource BorderColor}">
+        <TabControl.Resources>
+            <Style TargetType="Grid">
+                <!--This defines the *default* style for *all grids in the entire page*-->
+                <!--This is not great but seems necessary to have a proper background on the tab items...-->
+                <Setter Property="Background" Value="{StaticResource SideBarMainColor}" />
+            </Style>
+        </TabControl.Resources>
 
-            <!--About tab-->
-            <TabItem Name="AboutTab" Header="About" TabIndex="0" Style="{StaticResource TabItemStyle}">
-                <Grid Style="{StaticResource PageGridStyle}">
-                    <Grid.RowDefinitions>
-                        <RowDefinition Height="50"/>
-                        <RowDefinition Height="25"/>
-                        <RowDefinition Height="1*"/>
-                    </Grid.RowDefinitions>
+        <!--About tab-->
+        <TabItem Name="AboutTab" Header="About" TabIndex="0" Style="{StaticResource TabItemStyle}">
+            <Grid Style="{StaticResource PageGridStyle}">
+                <Grid.RowDefinitions>
+                    <RowDefinition Height="50"/>
+                    <RowDefinition Height="25"/>
+                    <RowDefinition Height="1*"/>
+                </Grid.RowDefinitions>
 
-                    <!--Header label-->
-                    <Label Content="About" Grid.Row="0" Style="{StaticResource HeaderLabelStyle}" />
-                </Grid>
-            </TabItem>
+                <!--Header label-->
+                <Label Content="About" Grid.Row="0" Style="{StaticResource HeaderLabelStyle}" />
+            </Grid>
+        </TabItem>
 
-            <!--Databases tab-->
-            <TabItem Name="DatabasesTab" Header="Databases" TabIndex="0" Style="{StaticResource TabItemStyle}">
-                <Grid Style="{StaticResource PageGridStyle}">
-                    <Grid.RowDefinitions>
-                        <RowDefinition Height="50"/>
-                        <RowDefinition Height="25"/>
-                        <RowDefinition Height="1*"/>
-                    </Grid.RowDefinitions>
+        <!--Databases tab-->
+        <TabItem Name="DatabasesTab" Header="Databases" TabIndex="0" Style="{StaticResource TabItemStyle}">
+            <Grid Style="{StaticResource PageGridStyle}">
+                <Grid.RowDefinitions>
+                    <RowDefinition Height="50"/>
+                    <RowDefinition Height="25"/>
+                    <RowDefinition Height="1*"/>
+                </Grid.RowDefinitions>
 
-                    <!--Header label-->
-                    <Label Content="Protein Databases" Grid.Row="0" Style="{StaticResource HeaderLabelStyle}" />
+                <!--Header label-->
+                <Label Content="Protein Databases" Grid.Row="0" Style="{StaticResource HeaderLabelStyle}" />
 
-                    <!--Button to add ID files-->
-                    <Button Name="AddDatabaseButton" Grid.Row="1" Content="+ADD DATABASE" Click="AddProteinDatabase_Click" HorizontalAlignment="Right" Style="{StaticResource ImportantButtonStyle}" Margin="0,0,10,0" />
+                <!--Button to add databases-->
+                <Button Name="AddDatabaseButton" Grid.Row="1" Content="+ADD DATABASE" Click="AddProteinDatabase_Click" HorizontalAlignment="Right" Style="{StaticResource ImportantButtonStyle}" Margin="0,0,10,0" />
 
-                    <!--The list of ID files-->
-                    <DataGrid Name="dataGridProteinDatabases" Grid.Row="2" ItemsSource="{Binding}" Style="{StaticResource ProteinDbDataGridStyle}">
+                <!--The list of databases-->
+                <DataGrid Name="dataGridProteinDatabases" Grid.Row="2" ItemsSource="{Binding}" Style="{StaticResource ProteinDbDataGridStyle}">
+                    <DataGrid.Columns>
+                        <!--The rest of the columns-->
+                        <DataGridTextColumn Header="File" Binding="{Binding FilePath}" Width="590" />
+
+                        <!--Defines the "delete" column-->
+                        <DataGridTemplateColumn>
+                            <DataGridTemplateColumn.CellTemplate>
+                                <DataTemplate>
+                                    <Button Click="DeleteFileFromGrid_Click" Style="{StaticResource DeleteFromDataGridButtonStyle}" />
+                                </DataTemplate>
+                            </DataGridTemplateColumn.CellTemplate>
+                        </DataGridTemplateColumn>
+                    </DataGrid.Columns>
+                </DataGrid>
+            </Grid>
+        </TabItem>
+
+        <!--Spectra tab-->
+        <TabItem Name="SpectraTab" Header="Spectra" TabIndex="0" Style="{StaticResource TabItemStyle}">
+            <Grid Style="{StaticResource PageGridStyle}">
+                <Grid.RowDefinitions>
+                    <RowDefinition Height="50"/>
+                    <RowDefinition Height="25"/>
+                    <RowDefinition Height="1*"/>
+                </Grid.RowDefinitions>
+
+                <!--Header label-->
+                <Label Content="Spectra" Grid.Row="0" Style="{StaticResource HeaderLabelStyle}" />
+
+                <!--Button to add spectra files-->
+                <Button Name="AddSpectraButton" Grid.Row="1" Content="+ADD SPECTRA" Click="AddSpectraFile_Click" HorizontalAlignment="Right" Style="{StaticResource ImportantButtonStyle}" Margin="0,0,10,0" />
+                <Button Name="SetFileSpecificSettingsButton" Grid.Row="1" Content="SET FILE-SPECIFIC SETTINGS" Click="AddSpectraFile_Click" HorizontalAlignment="Right" Style="{StaticResource ImportantButtonStyle}" Margin="0,0,211,0" />
+
+                <!--The list of spectra files-->
+                <DataGrid Name="dataGridSpectraFiles" ItemsSource="{Binding}" Grid.Row="2" Style="{StaticResource SpectraFileDataGridStyle}">
+                    <DataGrid.Columns>
+                        <!--The rest of the columns-->
+                        <DataGridTextColumn Header="File" Binding="{Binding FilePath}" Width="590" />
+
+                        <!--Defines the "delete" column-->
+                        <DataGridTemplateColumn>
+                            <DataGridTemplateColumn.CellTemplate>
+                                <DataTemplate>
+                                    <Button Click="DeleteFileFromGrid_Click" Style="{StaticResource DeleteFromDataGridButtonStyle}" />
+                                </DataTemplate>
+                            </DataGridTemplateColumn.CellTemplate>
+                        </DataGridTemplateColumn>
+                    </DataGrid.Columns>
+                </DataGrid>
+            </Grid>
+        </TabItem>
+
+        <!--Workflow tab-->
+        <TabItem Name="TasksTab" Header="Tasks" TabIndex="0" Style="{StaticResource TabItemStyle}">
+            <Grid Style="{StaticResource PageGridStyle}">
+                <Grid.RowDefinitions>
+                    <RowDefinition Height="50"/>
+                    <RowDefinition Height="25"/>
+                    <RowDefinition Height="1*"/>
+                </Grid.RowDefinitions>
+
+                <!--Header label-->
+                <Label Content="Tasks" Grid.Row="0" Style="{StaticResource HeaderLabelStyle}" />
+
+                <!--Button to add tasks-->
+                <Button Name="LoadTaskButton" Grid.Row="1" Content="+ADD TASK" HorizontalAlignment="Right" Click="AddTaskButton" Style="{StaticResource ImportantButtonStyle}" Margin="0,0,10,0" />
+
+                <!--List of tasks-->
+                <TreeView x:Name="tasksTreeView" Grid.Row="2" ItemsSource="{Binding}" MouseDoubleClick="TasksTreeView_MouseDoubleClick" Margin="10,0,10,10" BorderBrush="{StaticResource BorderColor}">
+                    <TreeView.ItemContainerStyle>
+                        <Style TargetType="{x:Type TreeViewItem}" BasedOn="{StaticResource TaskTreeViewStyle}" />
+                    </TreeView.ItemContainerStyle>
+                </TreeView>
+            </Grid>
+        </TabItem>
+
+        <!--Run tab-->
+        <TabItem Name="RunTab" Header="Run" TabIndex="0" Style="{StaticResource TabItemStyle}">
+            <Grid Style="{StaticResource PageGridStyle}">
+                <Grid.RowDefinitions>
+                    <RowDefinition Height="2*" />
+                    <RowDefinition Height="25" />
+                    <RowDefinition Height="50" />
+                    <RowDefinition Height="1*" />
+                </Grid.RowDefinitions>
+
+                <!--This grid holds the 3 summary datagrids at the top-->
+                <Grid Grid.Row="0" Background="{StaticResource BackgroundColor}">
+                    <Grid.ColumnDefinitions>
+                        <ColumnDefinition Width="1*" />
+                        <ColumnDefinition Width="1*" />
+                        <ColumnDefinition Width="1*" />
+                    </Grid.ColumnDefinitions>
+
+                    <!--Protein DB Summary-->
+                    <DataGrid Name="proteinDbSummaryDataGrid" ItemsSource="{Binding}" Grid.Column="0" Margin="10" 
+                              Style="{StaticResource ProteinDbDataGridStyle}" ColumnHeaderStyle="{StaticResource DataGridColumnHeaderStyle}">
                         <DataGrid.Columns>
                             <!--The rest of the columns-->
-                            <DataGridTextColumn Header="File" Binding="{Binding FilePath}" Width="590" />
+                            <DataGridTextColumn Header="Database" Binding="{Binding FilePath}" Width="590" />
+
+                            <!--Defines the "delete" column-->
+                            <DataGridTemplateColumn>
+                                <DataGridTemplateColumn.CellTemplate>
+                                    <DataTemplate>
+                                        <Button Click="DeleteFileFromGrid_Click" Style="{StaticResource DeleteFromDataGridButtonStyle}"/>
+                                    </DataTemplate>
+                                </DataGridTemplateColumn.CellTemplate>
+                            </DataGridTemplateColumn>
+                        </DataGrid.Columns>
+                    </DataGrid>
+                    <Button Grid.Column="0" Width="20" Height="20" HorizontalAlignment="Right" VerticalAlignment="Bottom" Margin="11" Content="+" 
+                                VerticalContentAlignment="Top" Style="{StaticResource ImportantButtonStyle}" Click="AddProteinDatabase_Click" />
+
+                    <!--Spectra file Summary-->
+                    <DataGrid Name="spectraFileSummaryDataGrid" ItemsSource="{Binding}" Grid.Column="1" Margin="10" 
+                              Style="{StaticResource SpectraFileDataGridStyle}" ColumnHeaderStyle="{StaticResource DataGridColumnHeaderStyle}">
+                        <DataGrid.Columns>
+                            <!--The rest of the columns-->
+                            <DataGridTextColumn Header="Spectra File" Binding="{Binding FilePath}" Width="590" />
 
                             <!--Defines the "delete" column-->
                             <DataGridTemplateColumn>
@@ -279,211 +390,96 @@
                             </DataGridTemplateColumn>
                         </DataGrid.Columns>
                     </DataGrid>
-                </Grid>
-            </TabItem>
+                    <Button Grid.Column="1" Width="20" Height="20" HorizontalAlignment="Right" VerticalAlignment="Bottom" Margin="11" Content="+" 
+                                VerticalContentAlignment="Top" Style="{StaticResource ImportantButtonStyle}" Click="AddSpectraFile_Click" />
 
-            <!--Spectra tab-->
-            <TabItem Name="SpectraTab" Header="Spectra" TabIndex="0" Style="{StaticResource TabItemStyle}">
-                <Grid Style="{StaticResource PageGridStyle}">
-                    <Grid.RowDefinitions>
-                        <RowDefinition Height="50"/>
-                        <RowDefinition Height="25"/>
-                        <RowDefinition Height="1*"/>
-                    </Grid.RowDefinitions>
-
-                    <!--Header label-->
-                    <Label Content="Spectra" Grid.Row="0" Style="{StaticResource HeaderLabelStyle}" />
-
-                    <!--Button to add ID files-->
-                    <Button Name="AddSpectraButton" Grid.Row="1" Content="+ADD SPECTRA" Click="AddSpectraFile_Click" HorizontalAlignment="Right" Style="{StaticResource ImportantButtonStyle}" Margin="0,0,10,0" />
-                    <Button Name="SetFileSpecificSettingsButton" Grid.Row="1" Content="SET FILE-SPECIFIC SETTINGS" Click="AddSpectraFile_Click" HorizontalAlignment="Right" Style="{StaticResource ImportantButtonStyle}" Margin="0,0,211,0" />
-
-                    <!--The list of ID files-->
-                    <DataGrid Name="dataGridSpectraFiles" ItemsSource="{Binding}" Grid.Row="2" Style="{StaticResource SpectraFileDataGridStyle}">
-                        <DataGrid.Columns>
-                            <!--The rest of the columns-->
-                            <DataGridTextColumn Header="File" Binding="{Binding FilePath}" Width="590" />
-
-                            <!--Defines the "delete" column-->
-                            <DataGridTemplateColumn>
-                                <DataGridTemplateColumn.CellTemplate>
-                                    <DataTemplate>
-                                        <Button Click="DeleteFileFromGrid_Click" Style="{StaticResource DeleteFromDataGridButtonStyle}" />
-                                    </DataTemplate>
-                                </DataGridTemplateColumn.CellTemplate>
-                            </DataGridTemplateColumn>
-                        </DataGrid.Columns>
-                    </DataGrid>
-                </Grid>
-            </TabItem>
-
-            <!--Workflow tab-->
-            <TabItem Name="TasksTab" Header="Tasks" TabIndex="0" Style="{StaticResource TabItemStyle}">
-                <Grid Style="{StaticResource PageGridStyle}">
-                    <Grid.RowDefinitions>
-                        <RowDefinition Height="50"/>
-                        <RowDefinition Height="25"/>
-                        <RowDefinition Height="1*"/>
-                    </Grid.RowDefinitions>
-
-                    <!--Header label-->
-                    <Label Content="Tasks" Grid.Row="0" Style="{StaticResource HeaderLabelStyle}" />
-
-                    <!--Button to add ID files-->
-                    <Button Name="LoadTaskButton" Grid.Row="1" Content="+ADD TASK" HorizontalAlignment="Right" Click="AddTaskButton" Style="{StaticResource ImportantButtonStyle}" Margin="0,0,10,0" />
-
-                    <!--List of Tasks-->
-                    <TreeView x:Name="tasksTreeView" Grid.Row="2" ItemsSource="{Binding}" MouseDoubleClick="TasksTreeView_MouseDoubleClick" Margin="10,0,10,10" BorderBrush="{StaticResource BorderColor}">
+                    <!--Task Summary-->
+                    <TreeView Name="taskSummaryDataGrid" ItemsSource="{Binding}" Grid.Column="2" Margin="10">
                         <TreeView.ItemContainerStyle>
                             <Style TargetType="{x:Type TreeViewItem}" BasedOn="{StaticResource TaskTreeViewStyle}" />
                         </TreeView.ItemContainerStyle>
                     </TreeView>
-                </Grid>
-            </TabItem>
-
-            <!--Run tab-->
-            <TabItem Name="RunTab" Header="Run" TabIndex="0" Style="{StaticResource TabItemStyle}">
-                <Grid Style="{StaticResource PageGridStyle}">
-                    <Grid.RowDefinitions>
-                        <RowDefinition Height="2*" />
-                        <RowDefinition Height="25" />
-                        <RowDefinition Height="50" />
-                        <RowDefinition Height="1*" />
-                    </Grid.RowDefinitions>
-
-                    <!--This grid holds the 3 summary datagrids at the top-->
-                    <Grid Grid.Row="0" Background="{StaticResource BackgroundColor}">
-                        <Grid.ColumnDefinitions>
-                            <ColumnDefinition Width="1*" />
-                            <ColumnDefinition Width="1*" />
-                            <ColumnDefinition Width="1*" />
-                        </Grid.ColumnDefinitions>
-
-                        <!--Protein DB Summary-->
-                        <DataGrid Name="proteinDbSummaryDataGrid" ItemsSource="{Binding}" Grid.Column="0" Margin="10" 
-                              Style="{StaticResource ProteinDbDataGridStyle}" ColumnHeaderStyle="{StaticResource DataGridColumnHeaderStyle}">
-                            <DataGrid.Columns>
-                                <!--The rest of the columns-->
-                                <DataGridTextColumn Header="Database" Binding="{Binding FilePath}" Width="590" />
-
-                                <!--Defines the "delete" column-->
-                                <DataGridTemplateColumn>
-                                    <DataGridTemplateColumn.CellTemplate>
-                                        <DataTemplate>
-                                            <Button Click="DeleteFileFromGrid_Click" Style="{StaticResource DeleteFromDataGridButtonStyle}"/>
-                                        </DataTemplate>
-                                    </DataGridTemplateColumn.CellTemplate>
-                                </DataGridTemplateColumn>
-                            </DataGrid.Columns>
-                        </DataGrid>
-                        <Button Grid.Column="0" Width="20" Height="20" HorizontalAlignment="Right" VerticalAlignment="Bottom" Margin="11" Content="+" 
-                                VerticalContentAlignment="Top" Style="{StaticResource ImportantButtonStyle}" Click="AddProteinDatabase_Click" />
-
-                        <!--Spectra file Summary-->
-                        <DataGrid Name="spectraFileSummaryDataGrid" ItemsSource="{Binding}" Grid.Column="1" Margin="10" 
-                              Style="{StaticResource SpectraFileDataGridStyle}" ColumnHeaderStyle="{StaticResource DataGridColumnHeaderStyle}">
-                            <DataGrid.Columns>
-                                <!--The rest of the columns-->
-                                <DataGridTextColumn Header="Spectra File" Binding="{Binding FilePath}" Width="590" />
-
-                                <!--Defines the "delete" column-->
-                                <DataGridTemplateColumn>
-                                    <DataGridTemplateColumn.CellTemplate>
-                                        <DataTemplate>
-                                            <Button Click="DeleteFileFromGrid_Click" Style="{StaticResource DeleteFromDataGridButtonStyle}" />
-                                        </DataTemplate>
-                                    </DataGridTemplateColumn.CellTemplate>
-                                </DataGridTemplateColumn>
-                            </DataGrid.Columns>
-                        </DataGrid>
-                        <Button Grid.Column="1" Width="20" Height="20" HorizontalAlignment="Right" VerticalAlignment="Bottom" Margin="11" Content="+" 
-                                VerticalContentAlignment="Top" Style="{StaticResource ImportantButtonStyle}" Click="AddSpectraFile_Click" />
-
-                        <!--Task Summary-->
-                        <TreeView Name="taskSummaryDataGrid" ItemsSource="{Binding}" Grid.Column="2" Margin="10">
-                        </TreeView>
-                        <Button Grid.Column="2" Width="20" Height="20" HorizontalAlignment="Right" VerticalAlignment="Bottom" Margin="11" Content="+" 
+                    <Button Grid.Column="2" Width="20" Height="20" HorizontalAlignment="Right" VerticalAlignment="Bottom" Margin="11" Content="+" 
                                 VerticalContentAlignment="Top" Style="{StaticResource ImportantButtonStyle}" Click="AddTaskButton" />
-                    </Grid>
+                </Grid>
 
-                    <!--Define/open output folder-->
-                    <DockPanel Margin="5,0,10,0" Grid.Row="1" LastChildFill="True">
-                        <Button x:Name="OpenOutputFolderButton" Content="OPEN" Width="60" DockPanel.Dock="Right" 
+                <!--Define/open output folder-->
+                <DockPanel Margin="5,0,10,0" Grid.Row="1" LastChildFill="True">
+                    <Button x:Name="OpenOutputFolderButton" Content="OPEN" Width="60" DockPanel.Dock="Right" 
                                     Click="OpenOutputFolder_Click" Background="{StaticResource SecondaryButtonColor}" Foreground="White" FontSize="12" BorderThickness="0" />
-                        <Label Content="Output Folder:" Foreground="{StaticResource TextColor1}" FontSize="12" />
-                        <TextBox x:Name="OutputFolderTextBox" ToolTip="$DATETIME is automatically replaced by the current date and time" 
+                    <Label Content="Output Folder:" Foreground="{StaticResource TextColor1}" FontSize="12" />
+                    <TextBox x:Name="OutputFolderTextBox" ToolTip="$DATETIME is automatically replaced by the current date and time" 
                                  Background="Transparent" Foreground="{StaticResource TextColor1}" BorderBrush="{StaticResource BorderColor}" BorderThickness="1" FontSize="13" />
-                    </DockPanel>
+                </DockPanel>
 
-                    <!--Run button-->
-                    <Button x:Name="RunTasksButton" Content="RUN METAMORPHEUS" Click="RunAllTasks_Click" FontSize="14" Grid.Row="2" Margin="10" Height="30"
+                <!--Run button-->
+                <Button x:Name="RunTasksButton" Content="RUN METAMORPHEUS" Click="RunAllTasks_Click" FontSize="14" Grid.Row="2" Margin="10" Height="30"
                                 Width="200" Style="{StaticResource ImportantButtonStyle}" />
 
-                    <!--Notifications text box-->
-                    <GroupBox Header="Notifications" Grid.Row="3" Foreground="{StaticResource TextColor1}" BorderThickness="0">
-                        <RichTextBox x:Name="notificationsTextBox" VerticalScrollBarVisibility="Visible" IsReadOnly="True" Background="Transparent" Foreground="{StaticResource TextColor1}">
-                            <RichTextBox.Resources>
-                                <Style TargetType="{x:Type Paragraph}">
-                                    <Setter Property="Margin" Value="0" />
-                                </Style>
-                            </RichTextBox.Resources>
-                        </RichTextBox>
-                    </GroupBox>
-                </Grid>
-            </TabItem>
+                <!--Notifications text box-->
+                <GroupBox Header="Notifications" Grid.Row="3" Foreground="{StaticResource TextColor1}" BorderThickness="0">
+                    <RichTextBox x:Name="notificationsTextBox" VerticalScrollBarVisibility="Visible" IsReadOnly="True" Background="Transparent" Foreground="{StaticResource TextColor1}">
+                        <RichTextBox.Resources>
+                            <Style TargetType="{x:Type Paragraph}">
+                                <Setter Property="Margin" Value="0" />
+                            </Style>
+                        </RichTextBox.Resources>
+                    </RichTextBox>
+                </GroupBox>
+            </Grid>
+        </TabItem>
 
-            <!--Spacer-->
-            <TabItem Style="{StaticResource TabItemStyle}" IsHitTestVisible="False">
-                <TabItem.Header>
-                    <Separator Style="{StaticResource {x:Static ToolBar.SeparatorStyleKey}}" Background="{StaticResource SideBarMainColor}" />
-                </TabItem.Header>
-            </TabItem>
+        <!--Spacer-->
+        <TabItem Style="{StaticResource TabItemStyle}" IsHitTestVisible="False">
+            <TabItem.Header>
+                <Separator Style="{StaticResource {x:Static ToolBar.SeparatorStyleKey}}" Background="{StaticResource SideBarMainColor}" />
+            </TabItem.Header>
+        </TabItem>
 
-            <!--Visualize tab-->
-            <TabItem Name="VisualizeTab" Header="Visualize" TabIndex="0" Style="{StaticResource TabItemStyle}">
-                <Grid Style="{StaticResource PageGridStyle}">
-                    <Grid.RowDefinitions>
-                        <RowDefinition Height="50"/>
-                        <RowDefinition Height="25"/>
-                        <RowDefinition Height="1*"/>
-                    </Grid.RowDefinitions>
+        <!--Visualize tab-->
+        <TabItem Name="VisualizeTab" Header="Visualize" TabIndex="0" Style="{StaticResource TabItemStyle}">
+            <Grid Style="{StaticResource PageGridStyle}">
+                <Grid.RowDefinitions>
+                    <RowDefinition Height="50"/>
+                    <RowDefinition Height="25"/>
+                    <RowDefinition Height="1*"/>
+                </Grid.RowDefinitions>
 
-                    <!--Header label-->
-                    <Label Content="MetaDraw" Grid.Row="0" Style="{StaticResource HeaderLabelStyle}" />
+                <!--Header label-->
+                <Label Content="Visualize" Grid.Row="0" Style="{StaticResource HeaderLabelStyle}" />
 
-                    <!--This tab doesn't actually have any content, it just opens MetaDraw-->
-                    <!--In the future maybe this tab could contain MetaDraw itself-->
-                </Grid>
-            </TabItem>
+                <!--This tab doesn't actually have any content, it just opens MetaDraw-->
+                <!--In the future maybe this tab could contain MetaDraw itself-->
+            </Grid>
+        </TabItem>
 
-            <!--Settings tab-->
-            <TabItem Name="SettingsTab" Header="Settings" TabIndex="0" Style="{StaticResource TabItemStyle}">
-                <Grid Style="{StaticResource PageGridStyle}">
-                    <Grid.RowDefinitions>
-                        <RowDefinition Height="50"/>
-                        <RowDefinition Height="25"/>
-                        <RowDefinition Height="1*"/>
-                    </Grid.RowDefinitions>
+        <!--Settings tab-->
+        <TabItem Name="SettingsTab" Header="Settings" TabIndex="0" Style="{StaticResource TabItemStyle}">
+            <Grid Style="{StaticResource PageGridStyle}">
+                <Grid.RowDefinitions>
+                    <RowDefinition Height="50"/>
+                    <RowDefinition Height="25"/>
+                    <RowDefinition Height="1*"/>
+                </Grid.RowDefinitions>
 
-                    <!--Header label-->
-                    <Label Content="Settings" Grid.Row="0" Style="{StaticResource HeaderLabelStyle}" />
-                </Grid>
-            </TabItem>
+                <!--Header label-->
+                <Label Content="Settings" Grid.Row="0" Style="{StaticResource HeaderLabelStyle}" />
+            </Grid>
+        </TabItem>
 
-            <!--Help tab-->
-            <TabItem Name="HelpTab" Header="Help" TabIndex="0" Style="{StaticResource TabItemStyle}">
-                <Grid Style="{StaticResource PageGridStyle}">
-                    <Grid.RowDefinitions>
-                        <RowDefinition Height="50"/>
-                        <RowDefinition Height="25"/>
-                        <RowDefinition Height="1*"/>
-                    </Grid.RowDefinitions>
+        <!--Help tab-->
+        <TabItem Name="HelpTab" Header="Help" TabIndex="0" Style="{StaticResource TabItemStyle}">
+            <Grid Style="{StaticResource PageGridStyle}">
+                <Grid.RowDefinitions>
+                    <RowDefinition Height="50"/>
+                    <RowDefinition Height="25"/>
+                    <RowDefinition Height="1*"/>
+                </Grid.RowDefinitions>
 
-                    <!--Header label-->
-                    <Label Content="Help" Grid.Row="0" Style="{StaticResource HeaderLabelStyle}" />
+                <!--Header label-->
+                <Label Content="Help" Grid.Row="0" Style="{StaticResource HeaderLabelStyle}" />
 
-                </Grid>
-            </TabItem>
-        </TabControl>
-    </Grid>
+            </Grid>
+        </TabItem>
+    </TabControl>
 </Window>
