@@ -6,6 +6,7 @@ using System;
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
+using MathNet.Numerics.LinearRegression;
 
 namespace TaskLayer
 {
@@ -46,6 +47,9 @@ namespace TaskLayer
                 var allPsmsGly = allPsms.Where(p => p.Routes != null ).OrderByDescending(p => p.Score).ToList();
                 SingleFDRAnalysis(allPsmsGly, commonParameters, new List<string> { taskId });
 
+                var regression = RetentionTimeRegression(allPsmsGly.Where(p=>p.FdrInfo.QValue <= 0.01 && !p.IsContaminant && !p.IsDecoy).ToList());
+                //RetentionTimePrediction(allPsmsGly, regression);
+
                 var writtenFileInter2 = Path.Combine(OutputFolder, "oglyco_psm" + ".tsv");
                 WriteFile.WritePsmGlycoToTsv(allPsmsGly, writtenFileInter2, 2);
 
@@ -82,6 +86,73 @@ namespace TaskLayer
             List<PeptideSpectralMatch> psms = items.Select(p => p as PeptideSpectralMatch).ToList();
             new FdrAnalysisEngine(psms, 0, commonParameters, this.FileSpecificParameters, taskIds).Run();
 
+        }
+
+        public double[] RetentionTimeRegression(List<GlycoSpectralMatch> glycoSpectralMatches)
+        {
+            double[][] xs = new double[glycoSpectralMatches.Count][];
+
+            double[] ys = glycoSpectralMatches.Select(p => p.ScanRetentionTime).ToArray();
+       
+            for (int i = 0; i < glycoSpectralMatches.Count; i++)
+            {
+                var glycanKind = GlycanBox.OGlycanBoxes[glycoSpectralMatches[i].Routes.First().ModBoxId].Kind;
+
+                xs[i] = new double[1 + glycanKind.Length];
+
+                xs[i][0] = glycoSpectralMatches[i].PredictedHydrophobicity;
+
+                for (int j = 1; j <= glycanKind.Length; j++)
+                {
+                    xs[i][j] = glycanKind[j - 1];
+                }   
+            }
+
+            using (StreamWriter output = new StreamWriter(@"E:\MassData\Glycan\Nick_2019_StcE\Rep1\_temp2\2020-05-19-17-12-20\Task1-GlycoSearchTask\RetentionTime.csv"))
+            {
+                for (int i = 0; i < xs.Length; i++)
+                {
+                    string line = "";
+                    for (int j = 0; j < xs[0].Length; j++)
+                    {
+                        line += xs[i][j].ToString() + "\t";
+                    }
+                    line += ys[i].ToString();
+                    output.WriteLine(line);
+                }
+            }
+
+            double[] p = MultipleRegression.QR(xs, ys, intercept: false);
+
+            //double[] p = Fit.MultiDim(xs, ys, intercept: true);
+
+            return p;
+        } 
+
+        public void RetentionTimePrediction(List<GlycoSpectralMatch> glycoSpectralMatches, double[] regression)
+        {
+            foreach (var gsm in glycoSpectralMatches)
+            {
+                var glycanKind = GlycanBox.OGlycanBoxes[gsm.Routes.First().ModBoxId].Kind;
+
+                var xs = new double[1 + glycanKind.Length];
+
+                xs[0] = gsm.PredictedHydrophobicity;
+
+                for (int j = 1; j <= glycanKind.Length; j++)
+                {
+                    xs[j] = glycanKind[j - 1];
+                }
+
+                double prt = regression[0];
+
+                for (int j = 1; j <= xs.Length; j++)
+                {
+                    prt += regression[j] * xs[j - 1];
+                }
+
+                gsm.PredictedRT = prt;
+            }
         }
 
     }

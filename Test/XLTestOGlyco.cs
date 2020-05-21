@@ -16,6 +16,7 @@ using UsefulProteomicsDatabases;
 using MzLibUtil;
 using Nett;
 using EngineLayer.GlycoSearch;
+using MathNet.Numerics.LinearRegression;
 
 namespace Test
 {
@@ -472,6 +473,15 @@ namespace Test
             var route = LocalizationGraph.GetLocalizedPath(localizationGraph, allPaths.First());
 
             Assert.That(route.Mods.First().Item3);
+        }
+
+        [Test]
+        public static void GlycoTest_MultipleLinearRegression()
+        {
+            double[] p = MultipleRegression.QR(
+                new[] { new[] { 1.0, 4.0 }, new[] { 2.0, 5.0 }, new[] { 3.0, 2.0 } },
+                new[] { 15.0, 20, 10 },
+                intercept: true);
         }
 
     }
