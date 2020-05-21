@@ -1,6 +1,7 @@
 ﻿using System.ComponentModel;
 using ViewModels;
 using System.Collections.ObjectModel;
+using System.Windows.Controls;
 
 namespace MetaMorpheusGUI
 {
@@ -25,16 +26,17 @@ namespace MetaMorpheusGUI
             var sampledata = new ItemsControlSampleData()
             {
                 PsmAnnotationViewModel = new PsmAnnotationViewModel(),
-                SpectrumLabel = "Spectra info here"
+                SpectrumLabel = "Spectra info here",
+                TheCanvas = new Canvas()
             };
 
             Data = new ObservableCollection<ItemsControlSampleData>();
             Data.Add(sampledata);
         }
 
-        public void AddNewRow(PsmAnnotationViewModel psmAnnotationViewModel, string annotation)
+        public void AddNewRow(PsmAnnotationViewModel psmAnnotationViewModel, string annotation, Canvas canvas)
         {
-            Data.Add(new ItemsControlSampleData() { PsmAnnotationViewModel = psmAnnotationViewModel, SpectrumLabel = annotation });
+            Data.Add(new ItemsControlSampleData { PsmAnnotationViewModel = psmAnnotationViewModel, SpectrumLabel = annotation, TheCanvas = canvas });
         }
     }
 
@@ -43,6 +45,8 @@ namespace MetaMorpheusGUI
         public PsmAnnotationViewModel PsmAnnotationViewModel { get; set; }
 
         public string SpectrumLabel { get; set; }
+
+        public Canvas TheCanvas { get; set; }
 
     }
 }

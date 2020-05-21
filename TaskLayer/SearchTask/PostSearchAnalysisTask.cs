@@ -607,8 +607,8 @@ namespace TaskLayer
                 // write all individual file results to subdirectory
                 // local protein fdr, global parsimony, global psm fdr
 
-                if ((Parameters.CurrentRawFileList.Count > 1 && Parameters.SearchParameters.WriteIndividualFiles ) 
-                    || Parameters.SearchParameters.WriteMzId || Parameters.SearchParameters.WritePepXml)
+                if (Parameters.CurrentRawFileList.Count > 1 && (Parameters.SearchParameters.WriteIndividualFiles
+                    || Parameters.SearchParameters.WriteMzId || Parameters.SearchParameters.WritePepXml))
                 {
                     Directory.CreateDirectory(Parameters.IndividualResultsOutputFolder);
                 }
@@ -629,7 +629,7 @@ namespace TaskLayer
                     Parameters.SearchTaskResults.AddTaskSummaryText("Target protein groups within 1 % FDR in " + strippedFileName + ": " + subsetProteinGroupsForThisFile.Count(b => b.QValue <= 0.01 && !b.IsDecoy));
 
                     // write individual spectra file protein groups results to tsv
-                    if (Parameters.CurrentRawFileList.Count > 1 && Parameters.SearchParameters.WriteIndividualFiles)
+                    if (Parameters.SearchParameters.WriteIndividualFiles && Parameters.CurrentRawFileList.Count > 1)
                     {
                         writtenFile = Path.Combine(Parameters.IndividualResultsOutputFolder, strippedFileName + "_ProteinGroups.tsv");
                         WriteProteinGroupsToTsv(subsetProteinGroupsForThisFile, writtenFile, new List<string> { Parameters.SearchTaskId, "Individual Spectra Files", fullFilePath }, CommonParameters.QValueOutputFilter);
@@ -640,21 +640,32 @@ namespace TaskLayer
                     {
                         Status("Writing mzID...", new List<string> { Parameters.SearchTaskId, "Individual Spectra Files", fullFilePath });
 
-                        var mzidFilePath = Path.Combine(Parameters.IndividualResultsOutputFolder, strippedFileName + ".mzID");
-                        MzIdentMLWriter.WriteMzIdentMl(psmsForThisFile, subsetProteinGroupsForThisFile, Parameters.VariableModifications, Parameters.FixedModifications, Parameters.SearchParameters.SilacLabels,
+                        string mzidFilePath = Path.Combine(Parameters.OutputFolder, strippedFileName + ".mzID");
+                        if(Parameters.CurrentRawFileList.Count > 1)
+                        {
+                            mzidFilePath = Path.Combine(Parameters.IndividualResultsOutputFolder, strippedFileName + ".mzID");
+                        }                        
+                        MzIdentMLWriter.WriteMzIdentMl(psmsForThisFile.Where(p=>p.FdrInfo.QValue <= CommonParameters.QValueOutputFilter), subsetProteinGroupsForThisFile, Parameters.VariableModifications, Parameters.FixedModifications, Parameters.SearchParameters.SilacLabels,
+
                             new List<Protease> { CommonParameters.DigestionParams.Protease }, CommonParameters.QValueOutputFilter, CommonParameters.ProductMassTolerance,
                             CommonParameters.PrecursorMassTolerance, CommonParameters.DigestionParams.MaxMissedCleavages, mzidFilePath);
 
                         FinishedWritingFile(mzidFilePath, new List<string> { Parameters.SearchTaskId, "Individual Spectra Files", fullFilePath });
                     }
 
+
                     // write pepXML
                     if (Parameters.SearchParameters.WritePepXml)
                     {
                         Status("Writing pepXML...", new List<string> { Parameters.SearchTaskId, "Individual Spectra Files", fullFilePath });
 
-                        var pepXMLFilePath = Path.Combine(Parameters.IndividualResultsOutputFolder, strippedFileName + ".pep.XML");
-                        PepXMLWriter.WritePepXml(psmsForThisFile, Parameters.DatabaseFilenameList, Parameters.VariableModifications, Parameters.FixedModifications,
+                        string pepXMLFilePath = Path.Combine(Parameters.OutputFolder, strippedFileName + ".pep.XML");
+                        if(Parameters.CurrentRawFileList.Count > 1)
+                        {
+                            pepXMLFilePath = Path.Combine(Parameters.IndividualResultsOutputFolder, strippedFileName + ".pep.XML");
+                        }                        
+
+                        PepXMLWriter.WritePepXml(psmsForThisFile.Where(p => p.FdrInfo.QValue <= CommonParameters.QValueOutputFilter).ToList(), Parameters.DatabaseFilenameList, Parameters.VariableModifications, Parameters.FixedModifications,
                             CommonParameters, pepXMLFilePath, CommonParameters.QValueOutputFilter);
 
                         FinishedWritingFile(pepXMLFilePath, new List<string> { Parameters.SearchTaskId, "Individual Spectra Files", fullFilePath });
@@ -1369,7 +1380,7 @@ namespace TaskLayer
             }
         }
 
-        public static void WritePsmsForPercolator(List<PeptideSpectralMatch> psmList, string writtenFileForPercolator, string predefinedSearchType = "standard")
+        private void WritePsmsForPercolator(List<PeptideSpectralMatch> psmList, string writtenFileForPercolator)
         {
             using (StreamWriter output = new StreamWriter(writtenFileForPercolator))
             {
@@ -1383,20 +1394,9 @@ namespace TaskLayer
                     searchType = "standard";
                 }
 
-                if (predefinedSearchType!= "standard")
-                {
-                    searchType = predefinedSearchType;
-                }
-
                 string header = "SpecId\tLabel\tScanNr\t";
-                header += String.Join("\t", PsmData.trainingInfos[searchType]);
-                header += "\tPeptide\tProteins";
-
-                if (searchType == "crosslink")
-                {
-                    header += "\tBeta Peptide\tBeta Proteins";
-                }
-
+                header = header + String.Join("\t", PsmData.trainingInfos[searchType]);
+                header = header + "\tPeptide\tProteins";
 
                 output.WriteLine(header);
 
@@ -1415,29 +1415,20 @@ namespace TaskLayer
                 psmList.OrderByDescending(p => p.Score);
                 foreach (PeptideSpectralMatch psm in psmList.Where(p => p.PsmData_forPEPandPercolator != null))
                 {
-                    output.Write(idNumber.ToString());
-                    idNumber++;
-                    output.Write('\t' + (psm.IsDecoy ? -1 : 1).ToString());
-                    output.Write('\t' + psm.ScanNumber.ToString());
-                    output.Write(psm.PsmData_forPEPandPercolator.ToString(searchType));
-
-                    // HACKY: Ignores all ambiguity
-                    var pwsm = psm.BestMatchingPeptides.First().Peptide;
-                    output.Write('\t' + (pwsm.PreviousAminoAcid + "." + pwsm.FullSequence + "." + pwsm.NextAminoAcid).ToString());
-                    output.Write('\t' + (pwsm.Protein.Accession).ToString());
-
-                    if (searchType == "crosslink")
+                    foreach (var peptide in psm.BestMatchingPeptides)
                     {
-                        var csm = (EngineLayer.CrosslinkSearch.CrosslinkSpectralMatch)psm;
-                        if (csm.BetaPeptide != null)
-                        {
-                            var x = csm.BetaPeptide.BestMatchingPeptides.First().Peptide;
-                            output.Write('\t' + (x.PreviousAminoAcid + "." + x.FullSequence + "." + x.NextAminoAcid).ToString());
-                            output.Write('\t' + (x.Protein.Accession).ToString());
-                        }
-                    }
+                        output.Write(idNumber.ToString());
 
-                    output.WriteLine();
+                        output.Write('\t' + (peptide.Peptide.Protein.IsDecoy ? -1 : 1).ToString());
+                        output.Write('\t' + psm.ScanNumber.ToString());
+                        output.Write(psm.PsmData_forPEPandPercolator.ToString(searchType));
+
+                        output.Write('\t' + (peptide.Peptide.PreviousAminoAcid + "." + peptide.Peptide.FullSequence + "." + peptide.Peptide.NextAminoAcid).ToString());
+                        output.Write('\t' + (peptide.Peptide.Protein.Accession).ToString());
+                        output.WriteLine();
+                    }
+                    idNumber++;
+
                 }
             }
         }
