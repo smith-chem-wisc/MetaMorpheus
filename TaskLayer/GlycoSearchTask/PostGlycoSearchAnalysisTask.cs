@@ -26,12 +26,12 @@ namespace TaskLayer
             {
                 var allPsmsSingle = allPsms.Where(p => p.NGlycan == null ).OrderByDescending(p => p.Score).ToList();
                 SingleFDRAnalysis(allPsmsSingle, commonParameters, new List<string> { taskId });
-                var writtenFileInter1 = Path.Combine(OutputFolder, "single_fdr" + ".tsv");
+                var writtenFileInter1 = Path.Combine(OutputFolder, "single" + ".psmtsv");
                 WriteFile.WritePsmGlycoToTsv(allPsmsSingle, writtenFileInter1, 1);
 
                 var allPsmsGly = allPsms.Where(p => p.NGlycan != null ).OrderByDescending(p => p.Score).ToList();
                 SingleFDRAnalysis(allPsmsGly, commonParameters, new List<string> { taskId });
-                var writtenFileInter2 = Path.Combine(OutputFolder, "nglyco_fdr" + ".tsv");
+                var writtenFileInter2 = Path.Combine(OutputFolder, "nglyco" + ".psmtsv");
                 WriteFile.WritePsmGlycoToTsv(allPsmsGly, writtenFileInter2, 3);
 
                 return MyTaskResults;
@@ -40,13 +40,13 @@ namespace TaskLayer
             {
                 var allPsmsSingle = allPsms.Where(p => p.Routes == null ).OrderByDescending(p => p.Score).ToList();
                 SingleFDRAnalysis(allPsmsSingle, commonParameters, new List<string> { taskId });
-                var writtenFileInter1 = Path.Combine(OutputFolder, "single_psm" + ".tsv");
+                var writtenFileInter1 = Path.Combine(OutputFolder, "single" + ".psmtsv");
                 WriteFile.WritePsmGlycoToTsv(allPsmsSingle, writtenFileInter1, 1);
 
                 var allPsmsGly = allPsms.Where(p => p.Routes != null ).OrderByDescending(p => p.Score).ToList();
                 SingleFDRAnalysis(allPsmsGly, commonParameters, new List<string> { taskId });
 
-                var writtenFileInter2 = Path.Combine(OutputFolder, "oglyco_psm" + ".tsv");
+                var writtenFileInter2 = Path.Combine(OutputFolder, "oglyco" + ".psmtsv");
                 WriteFile.WritePsmGlycoToTsv(allPsmsGly, writtenFileInter2, 2);
 
                 var ProteinLevelLocalization = GlycoProteinParsimony.ProteinLevelGlycoParsimony(allPsmsGly.Where(p=>p.ProteinAccession!=null && p.OneBasedStartResidueInProtein.HasValue).ToList());
@@ -58,17 +58,17 @@ namespace TaskLayer
             {
                 var allPsmsSingle = allPsms.Where(p => p.NGlycan == null && p.Routes == null).OrderByDescending(p => p.Score).ToList();
                 SingleFDRAnalysis(allPsmsSingle, commonParameters, new List<string> { taskId });
-                var writtenFileInter1 = Path.Combine(OutputFolder, "single_psm" + ".tsv");
+                var writtenFileInter1 = Path.Combine(OutputFolder, "single" + ".psmtsv");
                 WriteFile.WritePsmGlycoToTsv(allPsmsSingle, writtenFileInter1, 1);
 
                 var allPsmsNGly = allPsms.Where(p => p.NGlycan != null).OrderByDescending(p => p.Score).ToList();
                 SingleFDRAnalysis(allPsmsNGly, commonParameters, new List<string> { taskId });
-                var writtenFileInter2 = Path.Combine(OutputFolder, "nglyco_psm" + ".tsv");
+                var writtenFileInter2 = Path.Combine(OutputFolder, "nglyco" + ".psmtsv");
                 WriteFile.WritePsmGlycoToTsv(allPsmsNGly, writtenFileInter2, 3);
 
                 var allPsmsOGly = allPsms.Where(p => p.Routes != null).OrderByDescending(p => p.Score).ToList();
                 SingleFDRAnalysis(allPsmsOGly, commonParameters, new List<string> { taskId });
-                var writtenFileInter3 = Path.Combine(OutputFolder, "oglyco_psm" + ".tsv");
+                var writtenFileInter3 = Path.Combine(OutputFolder, "oglyco" + ".psmtsv");
                 WriteFile.WritePsmGlycoToTsv(allPsmsOGly, writtenFileInter3, 2);
 
                 return MyTaskResults;
