@@ -337,7 +337,7 @@ namespace Test
             foreach (var envelope in scans.First().ExperimentalFragments)
             {
                 // assume charge state 1 to calculate mass tolerance
-                double experimentalFragmentMass = envelope.monoisotopicMass;
+                double experimentalFragmentMass = envelope.MonoisotopicMass;
 
                 // get theoretical fragment bins within mass tolerance
                 int obsFragmentFloorMass = (int)Math.Floor((commonParameters.ProductMassTolerance.GetMinimumValue(experimentalFragmentMass)) * 1000);
