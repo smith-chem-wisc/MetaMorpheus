@@ -1177,6 +1177,7 @@ namespace Test
             var results = Path.Combine(outputFolder, @"TestPercolator\Intra_crosslinks_Percolator.tsv");
             var lines = File.ReadAllLines(results);
             Assert.That(lines[0].Equals("SpecId\tLabel\tScanNr\tTotalMatchingFragmentCount\tAbsoluteAverageFragmentMassErrorFromMedian\tPrecursorChargeDiffToMode\tDeltaScore\tAlphaIntensity\tBetaIntensity\tLongestFragmentIonSeries_Alpha\tLongestFragmentIonSeries_Beta\tIsInter\tIsIntra\tPeptide\tProteins\tBeta Peptide\tBeta Proteins"));
+            //The unit test here need manual verify in future.
             Assert.That(lines[1].Equals("DefaultDirection\t-\t-\t1\t-1\t1\t1\t1\t1\t1\t1\t-1\t-1"));
 
             Directory.Delete(outputFolder, true);
