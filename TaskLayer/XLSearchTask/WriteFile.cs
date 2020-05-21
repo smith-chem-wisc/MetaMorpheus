@@ -46,7 +46,7 @@ namespace TaskLayer
         }
 
         //This function is similar to PostSearchAnalysisTask.WritePsmsForPercolator. Except optimized for crosslink.
-        public static void WritePsmsForPercolator(List<PeptideSpectralMatch> psmList, string writtenFileForPercolator, string predefinedSearchType = "crosslink")
+        public static void WritePsmsForPercolator(List<PeptideSpectralMatch> psmList, string writtenFileForPercolator, string predefinedSearchType)
         {
             using (StreamWriter output = new StreamWriter(writtenFileForPercolator))
             {
