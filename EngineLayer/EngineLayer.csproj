@@ -45,10 +45,10 @@
     <None Update="Mods_Glycan\OGlycan\OGlycan.gdb">
       <CopyToOutputDirectory>Always</CopyToOutputDirectory>
     </None>
-    <None Update="Mods_Glycan\OGlycan\Olgycan Database 28 glycans plus Sodium (56 total).txt">
+    <None Update="Mods_Glycan\OGlycan\Olgycan Database 28 glycans plus Sodium 56 total.txt">
       <CopyToOutputDirectory>Always</CopyToOutputDirectory>
     </None>
-    <None Update="Mods_Glycan\OGlycan\Olgycan Database 28 glycans plus Sulfo (56 total).txt">
+    <None Update="Mods_Glycan\OGlycan\Olgycan Database 28 glycans plus Sulfo 56 total.txt">
       <CopyToOutputDirectory>Always</CopyToOutputDirectory>
     </None>
     <None Update="Mods_Glycan\OGlycan\Olgycan Database 28 glycans.txt">
