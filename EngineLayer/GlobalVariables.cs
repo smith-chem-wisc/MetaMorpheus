@@ -86,12 +86,12 @@ namespace EngineLayer
             }
 
             OGlycanLocations = new List<string>();
-            foreach (var glycanFile in Directory.GetFiles(Path.Combine(DataDir, @"Data", @"OGlycan")))
+            foreach (var glycanFile in Directory.GetFiles(Path.Combine(DataDir, @"Mods_Glycan", @"OGlycan")))
             {
                 OGlycanLocations.Add(glycanFile);
             }
             NGlycanLocations = new List<string>();
-            foreach (var glycanFile in Directory.GetFiles(Path.Combine(DataDir, @"Data", @"NGlycan")))
+            foreach (var glycanFile in Directory.GetFiles(Path.Combine(DataDir, @"Mods_Glycan", @"NGlycan")))
             {
                 NGlycanLocations.Add(glycanFile);
             }
