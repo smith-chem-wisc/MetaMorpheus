@@ -109,7 +109,7 @@ namespace Test
             new EverythingRunnerEngine(new List<(string, MetaMorpheusTask)> { ("Task", task) }, new List<string> { spectraFile }, new List<DbForTask> { db }, currentDirecotry).Run();
 
             string outputDirectory = Path.Combine(currentDirecotry, @"Task");
-            //HashSet<string> writtenFiles = new HashSet<string>(Directory.GetFiles(outputDirectory).Select(v => Path.GetFileName(v).Substring(7)));
+
             HashSet<string> writtenFiles = new HashSet<string>(Directory.GetFiles(outputDirectory).Select(v => Path.GetFileName(v)));
 
             //check that the first task wrote everything fine
