@@ -28,13 +28,16 @@ namespace Test
             SearchTask allowFilesTask = new SearchTask();
             allowFilesTask.SearchParameters.WriteIndividualFiles = true;
             allowFilesTask.SearchParameters.CompressIndividualFiles = false;
+            allowFilesTask.SearchParameters.WriteMzId = true;
 
             SearchTask compressFilesTask = new SearchTask();
             compressFilesTask.SearchParameters.WriteIndividualFiles = true;
             compressFilesTask.SearchParameters.CompressIndividualFiles = true;
+            compressFilesTask.SearchParameters.WriteMzId = true;
 
             SearchTask noFilesTask = new SearchTask();
             noFilesTask.SearchParameters.WriteIndividualFiles = false;
+            noFilesTask.SearchParameters.WriteMzId = true;
 
             PeptideWithSetModifications pwsm = new PeptideWithSetModifications("AAFNSGK", null);
             List<(string, MetaMorpheusTask)> tasks = new List<(string, MetaMorpheusTask)> { ("allowFiles", allowFilesTask), ("compressFiles", compressFilesTask), ("noFiles", noFilesTask) };

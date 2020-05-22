@@ -584,6 +584,11 @@ namespace MetaMorpheusGUI
                                     var ye4 = Toml.ReadFile<XLSearchTask>(draggedFilePath, MetaMorpheusTask.tomlConfig);
                                     AddTaskToCollection(ye4);
                                     break;
+
+                                case "GlycoSearch":
+                                    var ye5 = Toml.ReadFile<GlycoSearchTask>(draggedFilePath, MetaMorpheusTask.tomlConfig);
+                                    AddTaskToCollection(ye5);
+                                    break;
                             }
                         }
                         catch (Exception e)
@@ -915,6 +920,16 @@ namespace MetaMorpheusGUI
             }
         }
 
+        private void BtnAddGlycoSearch_Click(object sender, RoutedEventArgs e)
+        {
+            var dialog = new GlycoSearchTaskWindow();
+            if (dialog.ShowDialog() == true)
+            {
+                AddTaskToCollection(dialog.TheTask);
+                UpdateTaskGuiStuff();
+            }
+        }
+
         // deletes the selected task
         private void DeleteSelectedTask(object sender, RoutedEventArgs e)
         {
@@ -1105,6 +1120,7 @@ namespace MetaMorpheusGUI
                 addGPTMDTaskButton.IsEnabled = false;
                 addSearchTaskButton.IsEnabled = false;
                 btnAddCrosslinkSearch.IsEnabled = false;
+                btnAddGlycoSearch.IsEnabled = false;
 
                 AddXML.IsEnabled = false;
                 ClearXML.IsEnabled = false;
@@ -1172,6 +1188,7 @@ namespace MetaMorpheusGUI
             addGPTMDTaskButton.IsEnabled = true;
             addSearchTaskButton.IsEnabled = true;
             btnAddCrosslinkSearch.IsEnabled = true;
+            btnAddGlycoSearch.IsEnabled = true;
             ResetTasksButton.IsEnabled = false;
             OutputFolderTextBox.IsEnabled = true;
 
@@ -1229,6 +1246,13 @@ namespace MetaMorpheusGUI
                         var XLSearchdialog = new XLSearchTaskWindow(preRunTask.metaMorpheusTask as XLSearchTask);
                         XLSearchdialog.ShowDialog();
                         preRunTask.DisplayName = "Task" + (StaticTasksObservableCollection.IndexOf(preRunTask) + 1) + "-" + XLSearchdialog.TheTask.CommonParameters.TaskDescriptor;
+                        tasksTreeView.Items.Refresh();
+                        return;
+
+                    case MyTask.GlycoSearch:
+                        var GlycoSearchdialog = new GlycoSearchTaskWindow(preRunTask.metaMorpheusTask as GlycoSearchTask);
+                        GlycoSearchdialog.ShowDialog();
+                        preRunTask.DisplayName = "Task" + (StaticTasksObservableCollection.IndexOf(preRunTask) + 1) + "-" + GlycoSearchdialog.TheTask.CommonParameters.TaskDescriptor;
                         tasksTreeView.Items.Refresh();
                         return;
                 }

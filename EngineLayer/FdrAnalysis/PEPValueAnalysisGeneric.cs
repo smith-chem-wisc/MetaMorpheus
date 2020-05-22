@@ -80,7 +80,8 @@ namespace EngineLayer
 
             int randomSeed = 42;
 
-            TrainTestData trainTestSplit = mlContext.Data.TrainTestSplit(dataView, testFraction: 0.1, null, randomSeed);
+            double fraction = Math.Min(0.25, 1000000.0 / (double)psms.Count);//make training set 25% of the data up to a training set of one million psms
+            TrainTestData trainTestSplit = mlContext.Data.TrainTestSplit(dataView, testFraction: fraction, null, randomSeed);
             IDataView trainingData = trainTestSplit.TrainSet;
             IDataView testData = trainTestSplit.TestSet;
             var trainer = mlContext.BinaryClassification.Trainers.FastTree(labelColumnName: "Label", featureColumnName: "Features");
@@ -539,7 +540,7 @@ namespace EngineLayer
                             CrosslinkSpectralMatch csm = (CrosslinkSpectralMatch)psms[i];
 
                             bool label;
-                            if (csm.IsDecoy || csm.BetaPeptide.IsDecoy || psm.FdrInfo.QValue > 0.25)
+                            if (csm.IsDecoy || csm.BetaPeptide.IsDecoy)
                             {
                                 label = false;
                                 newPsmData = CreateOnePsmDataEntry(searchType, fileSpecificParameters, psm, sequenceToPsmCount, timeDependantHydrophobicityAverageAndDeviation_unmodified, timeDependantHydrophobicityAverageAndDeviation_modified, fileSpecificMedianFragmentMassErrors, chargeStateMode, csm.BestMatchingPeptides.First().Peptide, trainingVariables, 0, label);
@@ -559,7 +560,7 @@ namespace EngineLayer
                             {
                                 bool label;
                                 double bmpc = psm.BestMatchingPeptides.Count();
-                                if (peptideWithSetMods.Protein.IsDecoy || psm.FdrInfo.QValue > 0.25)
+                                if (peptideWithSetMods.Protein.IsDecoy)
                                 {
                                     label = false;
                                     newPsmData = CreateOnePsmDataEntry(searchType, fileSpecificParameters, psm, sequenceToPsmCount, timeDependantHydrophobicityAverageAndDeviation_unmodified, timeDependantHydrophobicityAverageAndDeviation_modified, fileSpecificMedianFragmentMassErrors, chargeStateMode, peptideWithSetMods, trainingVariables, notch, label);
@@ -843,7 +844,7 @@ namespace EngineLayer
         }
 
         /// <summary>
-        /// At the time when the ~10% of the data gets chosen for training, another 10% gets chosen for evaluation. Then after training,
+        /// At the time when the ~25% of the data gets chosen for training, another 25% gets chosen for evaluation. Then after training,
         /// the effectiveness of the model gets evaluated on the test set. The results of that evaluation are converted to text values called
         /// BinarySearchTreeMetrics and this gets written to the results.tsv
 
