@@ -73,10 +73,12 @@
             <RegistryValue Root="HKCU" Key="Software\SmithGroup\MetaMorpheus" Name="installed" Type="integer" Value="1" KeyPath="yes"/>
           </Component>
           <Directory Id="MetaAppDataFolder" Name="Data" >
-            <Directory Id="MetaAppNGlycanFolder" Name="NGlycan" />
-            <Directory Id="MetaAppOGlycanFolder" Name="OGlycan" />
+            
+            
           </Directory>
           <Directory Id="MetaAppModsFolder" Name="Mods" />
+          <Directory Id="MetaAppNGlycanFolder" Name="NGlycan" />
+          <Directory Id="MetaAppOGlycanFolder" Name="OGlycan" />
           <Directory Id="MetaAppProteolyticDigestionFolder" Name="ProteolyticDigestion" />
           <Directory Id="MetaAppContaminantsFolder" Name="Contaminants" />
         </Directory>
@@ -438,11 +440,11 @@
         <RemoveFolder Id="MetaAppNGlycanFolder" On="both"/>
         <RegistryValue Root="HKCU" Key="Software\SmithGroup\MetaMorpheus" Name="installed" Type="integer" Value="1" KeyPath="yes"/>
       </Component>
-      
+
       <Component Id="Appsrc_Data_NGlycan182.gdb" Guid="1AE1B223-9C67-4378-BA07-ABA31BCE4EAB">
         <Condition>OVERWRITEAPPDATA</Condition>
         <RegistryValue Root="HKCU" Key="Software\SmithGroup\MetaMorpheus" Name="installed" Type="integer" Value="1" KeyPath="yes"/>
-        <File ReadOnly="no" Id="Appsrc_NGlycan182.gdb" Name="NGlycan182.gdb" Source="$(var.GUI_TargetDir)Data\NGlycan\NGlycan182.gdb" />
+        <File ReadOnly="no" Id="Appsrc_NGlycan182.gdb" Name="NGlycan182.gdb" Source="$(var.GUI_TargetDir)Mods\NGlycan\NGlycan182.gdb" />
       </Component>
     </ComponentGroup>
   </Fragment>
@@ -458,36 +460,37 @@
       <Component Id="Appsrc_Data_OGlycan.gdb" Guid="08054759-2D7E-4760-A174-A53E5A77507F">
         <Condition>OVERWRITEAPPDATA</Condition>
         <RegistryValue Root="HKCU" Key="Software\SmithGroup\MetaMorpheus" Name="installed" Type="integer" Value="1" KeyPath="yes"/>
-        <File ReadOnly="no" Id="Appsrc_OGlycan.gdb" Name="OGlycan.gdb" Source="$(var.GUI_TargetDir)Data\OGlycan\OGlycan.gdb" />
+        <File ReadOnly="no" Id="Appsrc_OGlycan.gdb" Name="OGlycan.gdb" Source="$(var.GUI_TargetDir)Mods\OGlycan\OGlycan.gdb" />
       </Component>
       <Component Id="Appsrc_OlgycanDatabase28glycansplusSodium56total.txt" Guid="BCA7AE90-98BA-4F94-9A6A-0BB8486F5532">
         <Condition>OVERWRITEAPPDATA</Condition>
         <RegistryValue Root="HKCU" Key="Software\SmithGroup\MetaMorpheus" Name="installed" Type="integer" Value="1" KeyPath="yes"/>
-        <File ReadOnly="no" Id="Appsrc_OlgycanDatabase28glycansplusSodium56total.txt" Name="Olgycan Database 28 glycans plus Sodium (56 total).txt" Source="$(var.GUI_TargetDir)Data\OGlycan\Olgycan Database 28 glycans plus Sodium (56 total).txt" />
+        <File ReadOnly="no" Id="Appsrc_OlgycanDatabase28glycansplusSodium56total.txt" Name="Olgycan Database 28 glycans plus Sodium 56 total.txt" Source="$(var.GUI_TargetDir)Mods\OGlycan\Olgycan Database 28 glycans plus Sodium 56 total.txt" />
       </Component>
       <Component Id="Appsrc_OlgycanDatabase28glycansplusSulfo56total.txt" Guid="FB4F3975-AC0E-4FFC-8FF1-D3925DF7E316">
         <Condition>OVERWRITEAPPDATA</Condition>
         <RegistryValue Root="HKCU" Key="Software\SmithGroup\MetaMorpheus" Name="installed" Type="integer" Value="1" KeyPath="yes"/>
-        <File ReadOnly="no" Id="Appsrc_OlgycanDatabase28glycansplusSulfo56total.txt" Name="Olgycan Database 28 glycans plus Sulfo (56 total).txt" Source="$(var.GUI_TargetDir)Data\OGlycan\Olgycan Database 28 glycans plus Sulfo (56 total).txt" />
+        <File ReadOnly="no" Id="Appsrc_OlgycanDatabase28glycansplusSulfo56total.txt" Name="Olgycan Database 28 glycans plus Sulfo 56 total.txt" Source="$(var.GUI_TargetDir)Mods\OGlycan\Olgycan Database 28 glycans plus Sulfo 56 total.txt" />
       </Component>
       <Component Id="Appsrc_OlgycanDatabase28glycans.txt" Guid="51746266-C4B9-42D5-AA13-0C07D57122DA">
         <Condition>OVERWRITEAPPDATA</Condition>
         <RegistryValue Root="HKCU" Key="Software\SmithGroup\MetaMorpheus" Name="installed" Type="integer" Value="1" KeyPath="yes"/>
-        <File ReadOnly="no" Id="Appsrc_OlgycanDatabase28glycans.txt" Name="Olgycan Database 28 glycans.txt" Source="$(var.GUI_TargetDir)Data\OGlycan\Olgycan Database 28 glycans.txt" />
+        <File ReadOnly="no" Id="Appsrc_OlgycanDatabase28glycans.txt" Name="Olgycan Database 28 glycans.txt" Source="$(var.GUI_TargetDir)Mods\OGlycan\Olgycan Database 28 glycans.txt" />
       </Component>
       <Component Id="Appsrc_OlgycanDatabase32glycans.txt" Guid="C25BAFAC-583B-4694-BF0A-D2694AE23DB6">
         <Condition>OVERWRITEAPPDATA</Condition>
         <RegistryValue Root="HKCU" Key="Software\SmithGroup\MetaMorpheus" Name="installed" Type="integer" Value="1" KeyPath="yes"/>
-        <File ReadOnly="no" Id="Appsrc_OlgycanDatabase32glycans.txt" Name="Olgycan Database 32 glycans.txt" Source="$(var.GUI_TargetDir)Data\OGlycan\Olgycan Database 32 glycans.txt" />
+        <File ReadOnly="no" Id="Appsrc_OlgycanDatabase32glycans.txt" Name="Olgycan Database 32 glycans.txt" Source="$(var.GUI_TargetDir)Mods\OGlycan\Olgycan Database 32 glycans.txt" />
       </Component>
       <Component Id="Appsrc_OlgycanDatabase36glycanswithMann.txt" Guid="F51F7BC6-6119-459B-ABB9-25408BA1930D">
         <Condition>OVERWRITEAPPDATA</Condition>
         <RegistryValue Root="HKCU" Key="Software\SmithGroup\MetaMorpheus" Name="installed" Type="integer" Value="1" KeyPath="yes"/>
-        <File ReadOnly="no" Id="Appsrc_OlgycanDatabase36glycanswithMann.txt" Name="Olgycan Database 36 glycans with Mann.txt" Source="$(var.GUI_TargetDir)Data\OGlycan\Olgycan Database 36 glycans with Mann.txt" />
+        <File ReadOnly="no" Id="Appsrc_OlgycanDatabase36glycanswithMann.txt" Name="Olgycan Database 36 glycans with Mann.txt" Source="$(var.GUI_TargetDir)Mods\OGlycan\Olgycan Database 36 glycans with Mann.txt" />
       </Component>
     </ComponentGroup>
   </Fragment>
-
+  
+  
   <!--Builds the App ProteolyticDigestion folder-->
   <Fragment>
     <ComponentGroup Id="Appsrc_ProteolyticDigestion_files" Directory="MetaAppProteolyticDigestionFolder">
