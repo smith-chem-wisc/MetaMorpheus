@@ -72,13 +72,11 @@
             <RemoveFolder Id="MetaMorpheusAppFolder" On="uninstall"/>
             <RegistryValue Root="HKCU" Key="Software\SmithGroup\MetaMorpheus" Name="installed" Type="integer" Value="1" KeyPath="yes"/>
           </Component>
-          <Directory Id="MetaAppDataFolder" Name="Data" >
-            
-            
-          </Directory>
-          <Directory Id="MetaAppModsFolder" Name="Mods" />
-          <Directory Id="MetaAppNGlycanFolder" Name="NGlycan" />
-          <Directory Id="MetaAppOGlycanFolder" Name="OGlycan" />
+          <Directory Id="MetaAppDataFolder" Name="Data" />
+          <Directory Id="MetaAppModsFolder" Name="Mods">
+            <Directory Id="MetaAppNGlycanFolder" Name="NGlycan" />
+            <Directory Id="MetaAppOGlycanFolder" Name="OGlycan" />      
+          </Directory> 
           <Directory Id="MetaAppProteolyticDigestionFolder" Name="ProteolyticDigestion" />
           <Directory Id="MetaAppContaminantsFolder" Name="Contaminants" />
         </Directory>
@@ -380,6 +378,12 @@
 
     </ComponentGroup>
 
+
+    
+  </Fragment>
+
+    <!--Build the Mods NGlycan folder-->
+  <Fragment>
     <ComponentGroup Id="Appsrc_NGlycan_files" Directory="MetaAppNGlycanFolder">
       <Component Id="RemoveNGlycan" Guid="676F63E9-1942-444E-BDA1-FCFF732BF308">
         <Condition>OVERWRITEAPPDATA</Condition>
@@ -392,8 +396,11 @@
         <RegistryValue Root="HKCU" Key="Software\SmithGroup\MetaMorpheus" Name="installed" Type="integer" Value="1" KeyPath="yes"/>
         <File ReadOnly="no" Id="Appsrc_NGlycan182.gdb" Name="NGlycan182.gdb" Source="$(var.GUI_TargetDir)Mods\NGlycan\NGlycan182.gdb" />
       </Component>
-    </ComponentGroup>
+    </ComponentGroup>    
+  </Fragment>
 
+<!--Build the Mods OGlycan folder-->
+  <Fragment>
     <ComponentGroup Id="Appsrc_OGlycan_files" Directory="MetaAppOGlycanFolder">
       <Component Id="RemoveOGlycan" Guid="A9489498-459A-4D6A-9337-92BFE9347FBD">
         <Condition>OVERWRITEAPPDATA</Condition>
@@ -432,9 +439,8 @@
         <File ReadOnly="no" Id="Appsrc_OlgycanDatabase36glycanswithMann.txt" Name="Olgycan Database 36 glycans with Mann.txt" Source="$(var.GUI_TargetDir)Mods\OGlycan\Olgycan Database 36 glycans with Mann.txt" />
       </Component>
     </ComponentGroup>
-    
   </Fragment>
-
+  
   <!--Builds the App Data folder-->
   <Fragment>
     <ComponentGroup Id="Appsrc_Data_files" Directory="MetaAppDataFolder">
