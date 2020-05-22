@@ -32,6 +32,7 @@
       <!--App Data Section-->
       <ComponentGroupRef Id="Appsrc_Mods_files" />
       <ComponentGroupRef Id="Appsrc_Data_files" />
+      <ComponentGroupRef Id="Appsrc_Glycan_Mods_files" />
       <ComponentGroupRef Id="Appsrc_NGlycan_files" />
       <ComponentGroupRef Id="Appsrc_OGlycan_files" />
       <ComponentGroupRef Id="Appsrc_ProteolyticDigestion_files" />
@@ -80,6 +81,10 @@
             <!--NGlycan and OGlycan are sub folders of mods. Therefore they are placed inside the "Mods" Directory tags-->
             <Directory Id="MetaAppNGlycanFolder" Name="NGlycan" />
             <Directory Id="MetaAppOGlycanFolder" Name="OGlycan" />          
+          </Directory>
+          
+          <Directory Id ="MetaAppGlycan_ModsFolder" Name="Glycan_Mods">
+            <!--Move the O and N Glycan Mods stuff here-->
           </Directory>
           
           <Directory Id="MetaAppProteolyticDigestionFolder" Name="ProteolyticDigestion" />
@@ -443,6 +448,19 @@
       </Component>
     </ComponentGroup>
   </Fragment>
+
+  <!--Builds the App Glycan_Mods folder-->
+  <Fragment>
+    <ComponentGroup Id="Appsrc_Glycan_Mods_files" Directory="MetaAppGlycan_ModsFolder">
+      <Component Id="RemoveGlycanModsData" Guid="40090707-AEFF-4C5C-9693-F9A11F9D0402">
+        <Condition>OVERWRITEAPPDATA</Condition>
+        <RemoveFolder Id="MetaAppGlycan_ModsFolder" On="both" />
+        <RegistryValue Root="HKCU" Key="Software\SmithGroup\MetaMorpheus" Name="installed" Type="integer" Value="1" KeyPath="yes" />
+      </Component>      
+    </ComponentGroup>
+  </Fragment>
+
+
 
   <!--Builds the App Data folder-->
   <Fragment>

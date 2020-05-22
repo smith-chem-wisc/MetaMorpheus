@@ -98,4 +98,8 @@
     </None>
   </ItemGroup>
 
+  <ItemGroup>
+    <Folder Include="Glycan_Mods\" />
+  </ItemGroup>
+
 </Project>
