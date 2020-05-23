@@ -73,6 +73,7 @@
                                     <RowDefinition Height="1*"/>
                                     <RowDefinition Height="1*"/>
                                     <RowDefinition Height="1*"/>
+                                    <RowDefinition Height="1*"/>
                                 </Grid.RowDefinitions>
                                 <Grid.ColumnDefinitions>
                                     <ColumnDefinition Width="1*"/>
@@ -117,6 +118,7 @@
                                     <TextBox x:Name="TbMaxOGlycanNum" PreviewTextInput="CheckIfNumber" Width="45"/>
                                 </StackPanel>
                                 <CheckBox x:Name="CkbOxoniumIonFilt" Content="OxoniumIonFilt" Grid.Row="3" Grid.Column="1" VerticalAlignment="Center"/>
+                                <CheckBox x:Name="CkbIndexingChildScan" Content="IndexingChildScan" Grid.Row="4" Grid.Column="1" VerticalAlignment="Center"/>
                             </Grid>
                         </Grid>
                     </Expander>

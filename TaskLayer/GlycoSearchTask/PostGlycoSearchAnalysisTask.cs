@@ -47,7 +47,7 @@ namespace TaskLayer
                 var allPsmsGly = allPsms.Where(p => p.Routes != null ).OrderByDescending(p => p.Score).ToList();
                 SingleFDRAnalysis(allPsmsGly, commonParameters, new List<string> { taskId });
 
-                var regression = RetentionTimeRegression(allPsmsGly.Where(p=>p.FdrInfo.QValue <= 0.01 && !p.IsContaminant && !p.IsDecoy).ToList());
+                //var regression = RetentionTimeRegression(allPsmsGly.Where(p=>p.FdrInfo.QValue <= 0.01 && !p.IsContaminant && !p.IsDecoy).ToList());
                 //RetentionTimePrediction(allPsmsGly, regression);
 
                 var writtenFileInter2 = Path.Combine(OutputFolder, "oglyco_psm" + ".tsv");

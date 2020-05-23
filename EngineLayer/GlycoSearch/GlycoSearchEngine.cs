@@ -23,6 +23,7 @@ namespace EngineLayer.GlycoSearch
         private readonly int TopN;
         private readonly int _maxOGlycanNum;
         private readonly bool OxoniumIonFilter; //To filt Oxonium Ion before searching a spectrum as glycopeptides. If we filter spectrum, it must contain oxonium ions such as 204 (HexNAc). 
+        private readonly bool IndexChildScan; //Whether to index the child scan or not is a question.
         private readonly string _oglycanDatabase;
         private readonly string _nglycanDatabase;
 
@@ -33,7 +34,7 @@ namespace EngineLayer.GlycoSearch
 
         public GlycoSearchEngine(List<GlycoSpectralMatch>[] globalCsms, Ms2ScanWithSpecificMass[] listOfSortedms2Scans, List<PeptideWithSetModifications> peptideIndex,
             List<int>[] fragmentIndex, List<int>[] secondFragmentIndex, int currentPartition, CommonParameters commonParameters, List<(string fileName, CommonParameters fileSpecificParameters)> fileSpecificParameters,
-             string oglycanDatabase, string nglycanDatabase, GlycoSearchType glycoSearchType, int glycoSearchTopNum, int maxOGlycanNum, bool oxoniumIonFilter, List<string> nestedIds)
+             string oglycanDatabase, string nglycanDatabase, GlycoSearchType glycoSearchType, int glycoSearchTopNum, int maxOGlycanNum, bool oxoniumIonFilter, bool indexChildScan, List<string> nestedIds)
             : base(null, listOfSortedms2Scans, peptideIndex, fragmentIndex, currentPartition, commonParameters, fileSpecificParameters, new OpenSearchMode(), 0, nestedIds)
         {
             this.GlobalCsms = globalCsms;
@@ -41,6 +42,7 @@ namespace EngineLayer.GlycoSearch
             this.TopN = glycoSearchTopNum;
             this._maxOGlycanNum = maxOGlycanNum;
             this.OxoniumIonFilter = oxoniumIonFilter;
+            this.IndexChildScan = indexChildScan;
             this._oglycanDatabase = oglycanDatabase;
             this._nglycanDatabase = nglycanDatabase;
 
@@ -112,7 +114,7 @@ namespace EngineLayer.GlycoSearch
                     var scan = ListOfSortedMs2Scans[scanIndex];
 
                     // get fragment bins for this scan
-                    List<int> allBinsToSearch = GetBinsToSearch(scan, FragmentIndex, CommonParameters.DissociationType);
+                    List<int> allBinsToSearch = GetGlycanBinsToSearch(scan, FragmentIndex, false);
                   
                     //Limit the high bound limitation, here assume it is possible to has max 3 Da shift. This allows for correcting precursor in the future.
                     var high_bound_limitation = scan.PrecursorMass + 1;
@@ -120,32 +122,34 @@ namespace EngineLayer.GlycoSearch
                     // first-pass scoring
                     IndexedScoring(FragmentIndex, allBinsToSearch, scoringTable, byteScoreCutoff, idsOfPeptidesPossiblyObserved, scan.PrecursorMass, Double.NegativeInfinity, high_bound_limitation, PeptideIndex, MassDiffAcceptor, 0, CommonParameters.DissociationType);
 
-                    //child scan first-pass scoring
-                    //List<int> childBinsToSearch = null;
-                    //if (scan.ChildScans != null && scan.ChildScans.Count > 0 && CommonParameters.MS2ChildScanDissociationType != DissociationType.LowCID)
-                    //{
-                    //    Array.Clear(secondScoringTable, 0, secondScoringTable.Length);
-                    //    childIdsOfPeptidesPossiblyObserved.Clear();
+                    //child scan first - pass scoring
+                    if (IndexChildScan && CommonParameters.MS2ChildScanDissociationType != DissociationType.LowCID
+                        && scan.ChildScans != null && scan.ChildScans.Count > 0)
+                    {
+                        List<int> childBinsToSearch = null;
 
-                    //    childBinsToSearch = new List<int>();
+                        Array.Clear(secondScoringTable, 0, secondScoringTable.Length);
+                        childIdsOfPeptidesPossiblyObserved.Clear();
 
-                    //    foreach (var aChildScan in scan.ChildScans)
-                    //    {
-                    //        var x = GetBinsToSearch(aChildScan, SecondFragmentIndex, CommonParameters.MS2ChildScanDissociationType);
-                    //        childBinsToSearch.AddRange(x);
-                    //    }
+                        childBinsToSearch = new List<int>();
 
-                    //    IndexedScoring(SecondFragmentIndex, childBinsToSearch, secondScoringTable, byteScoreCutoff, childIdsOfPeptidesPossiblyObserved, scan.PrecursorMass, Double.NegativeInfinity, high_bound_limitation, PeptideIndex, MassDiffAcceptor, 0, CommonParameters.MS2ChildScanDissociationType);
+                        foreach (var aChildScan in scan.ChildScans)
+                        {
+                            var x = GetGlycanBinsToSearch(aChildScan, SecondFragmentIndex, false);
+                            childBinsToSearch.AddRange(x);
+                        }
 
-                    //    foreach (var childId in childIdsOfPeptidesPossiblyObserved)
-                    //    {
-                    //        if (!idsOfPeptidesPossiblyObserved.Contains(childId))
-                    //        {
-                    //            idsOfPeptidesPossiblyObserved.Add(childId);
-                    //        }
-                    //        scoringTable[childId] = (byte)(scoringTable[childId] + secondScoringTable[childId]);
-                    //    }
-                    //}
+                        IndexedScoring(SecondFragmentIndex, childBinsToSearch, secondScoringTable, byteScoreCutoff, childIdsOfPeptidesPossiblyObserved, scan.PrecursorMass, Double.NegativeInfinity, high_bound_limitation, PeptideIndex, MassDiffAcceptor, 0, CommonParameters.MS2ChildScanDissociationType);
+
+                        foreach (var childId in childIdsOfPeptidesPossiblyObserved)
+                        {
+                            if (!idsOfPeptidesPossiblyObserved.Contains(childId))
+                            {
+                                idsOfPeptidesPossiblyObserved.Add(childId);
+                            }
+                            scoringTable[childId] = (byte)(scoringTable[childId] + secondScoringTable[childId]);
+                        }
+                    }
 
                     // done with indexed scoring; refine scores and create PSMs
                     if (idsOfPeptidesPossiblyObserved.Any())
@@ -276,7 +280,7 @@ namespace EngineLayer.GlycoSearch
         /// <summary>
         /// Deprecated.
         /// </summary>
-        private List<int> GetGlycanBinsToSearch(Ms2ScanWithSpecificMass scan, List<int>[] FragmentIndex, DissociationType dissociationType)
+        private List<int> GetGlycanBinsToSearch(Ms2ScanWithSpecificMass scan, List<int>[] FragmentIndex, bool AddGlycanShiftBin)
         {
             int obsPreviousFragmentCeilingMz = 0;
             List<int> binsToSearch = new List<int>();
@@ -318,16 +322,18 @@ namespace EngineLayer.GlycoSearch
                     }
                 }
 
-                // add complementary ions
-                if (CommonParameters.AddCompIons)
+                // add glycan add complementary ions
+                if (AddGlycanShiftBin)
                 {
-                    //okay, we're not actually adding in complementary m/z peaks, we're doing a shortcut and just straight up adding the bins assuming that they're z=1
+                    //Here, we assume the fragment mass shifts contains a HexNAc 203.07937 or Cross-ring mass 83.03819. 
+                    //Note this is for HCD or sceHCD spectra of N-Glycan.
+                    //The fragment theory of N-Glycopeptide can be find in pGlyco2 paper.
+                    double[] glycanMassShifts = new double[2] { 203.07937, 83.03819 };
 
-                    if (complementaryIonConversionDictionary.TryGetValue(dissociationType, out double protonMassShift)) //TODO: this is broken for EThcD because that method needs two conversions
-                    {
-                        protonMassShift = Chemistry.ClassExtensions.ToMass(protonMassShift, 1);
-                        int compFragmentFloorMass = (int)Math.Round(((scan.PrecursorMass + protonMassShift) * FragmentBinsPerDalton)) - obsFragmentCeilingMass;
-                        int compFragmentCeilingMass = (int)Math.Round(((scan.PrecursorMass + protonMassShift) * FragmentBinsPerDalton)) - obsFragmentFloorMass;
+                    foreach (var protonMassShift in glycanMassShifts)
+                    {  
+                        int compFragmentFloorMass = obsFragmentFloorMass - (int)Math.Round(protonMassShift * FragmentBinsPerDalton);
+                        int compFragmentCeilingMass = obsFragmentCeilingMass - (int)Math.Round(protonMassShift * FragmentBinsPerDalton);
 
                         // prevent index out of bounds errors
                         if (compFragmentCeilingMass >= FragmentIndex.Length)
@@ -351,10 +357,6 @@ namespace EngineLayer.GlycoSearch
                                 binsToSearch.Add(fragmentBin);
                             }
                         }
-                    }
-                    else
-                    {
-                        throw new NotImplementedException();
                     }
                 }
             }
