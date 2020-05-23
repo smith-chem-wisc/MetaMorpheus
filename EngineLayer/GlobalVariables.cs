@@ -345,26 +345,20 @@ namespace EngineLayer
         // Does the same thing as Process.Start() except it works on .NET Core
         public static void StartProcess(string path, bool useNotepadToOpenToml = false)
         {
+            var p = new Process();
+
+            p.StartInfo = new ProcessStartInfo()
+            {
+                UseShellExecute = true,
+            };
+
             if (useNotepadToOpenToml && Path.GetExtension(path) == ".toml" && RuntimeInformation.IsOSPlatform(OSPlatform.Windows))
             {
-                var p = new Process();
-                p.StartInfo = new ProcessStartInfo()
-                {
-                    UseShellExecute = true,
-                    FileName = "notepad.exe",
-                    Arguments = path
-                };
-                p.Start();
+                p.StartInfo.FileName = "notepad.exe";
+                p.StartInfo.Arguments = path;
             }
-            else
-            {
-                var p = new Process();
-                p.StartInfo = new ProcessStartInfo(path)
-                {
-                    UseShellExecute = true
-                };
-                p.Start();
-            }
+
+            p.Start();
         }
     }
 }
