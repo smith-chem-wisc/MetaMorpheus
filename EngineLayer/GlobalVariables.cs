@@ -86,7 +86,8 @@ namespace EngineLayer
                 AddCrosslinkers(Crosslinker.LoadCrosslinkers(customCrosslinkerLocation));
             }
 
-
+            string monosaccharidePath = Path.Combine(DataDir, @"Glycan_Mods", @"Monosaccharide.tsv");
+            Monosaccharides = Monosaccharide.LoadMonosaccharide(monosaccharidePath);
             OGlycanLocations = new List<string>();
             foreach (var glycanFile in Directory.GetFiles(Path.Combine(DataDir, @"Glycan_Mods", @"OGlycan")))
             {
@@ -194,6 +195,8 @@ namespace EngineLayer
         public static string ExperimentalDesignFileName { get; }
         public static IEnumerable<Crosslinker> Crosslinkers { get { return _KnownCrosslinkers.AsEnumerable(); } }
         public static IEnumerable<char> InvalidAminoAcids { get { return _InvalidAminoAcids.AsEnumerable(); } }
+
+        public static Monosaccharide[] Monosaccharides { get; }
         public static List<string> OGlycanLocations { get; }
         public static List<string> NGlycanLocations { get; }
 
