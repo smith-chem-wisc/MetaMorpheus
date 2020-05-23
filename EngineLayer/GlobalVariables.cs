@@ -350,6 +350,7 @@ namespace EngineLayer
             p.StartInfo = new ProcessStartInfo()
             {
                 UseShellExecute = true,
+                FileName = path
             };
 
             if (useNotepadToOpenToml && Path.GetExtension(path) == ".toml" && RuntimeInformation.IsOSPlatform(OSPlatform.Windows))
