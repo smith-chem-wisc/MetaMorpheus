@@ -57,6 +57,9 @@
     <None Update="Glycan_Mods\NGlycan\NGlycan182.gdb">
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
     </None>
+    <None Update="Glycan_Mods\NGlycan\UserEditableCustomNGlycans.txt">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </None>
     <None Update="Glycan_Mods\OGlycan\OGlycan.gdb">
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
     </None>
@@ -73,6 +76,9 @@
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
     </None>
     <None Update="Glycan_Mods\OGlycan\Olgycan Database 36 glycans with Mann.txt">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </None>
+    <None Update="Glycan_Mods\OGlycan\UserEditableCustomOGlycans.txt">
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
     </None>
     <None Update="Mods\aListOfmods.txt">

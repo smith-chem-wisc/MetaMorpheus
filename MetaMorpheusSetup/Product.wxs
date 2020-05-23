@@ -403,6 +403,13 @@
         <RegistryValue Root="HKCU" Key="Software\SmithGroup\MetaMorpheus" Name="installed" Type="integer" Value="1" KeyPath="yes" />
         <File ReadOnly="no" Id="Appsrc_NGlycan182.gdb" Name="NGlycan182.gdb" Source="$(var.GUI_TargetDir)Glycan_Mods\NGlycan\NGlycan182.gdb" />
       </Component>
+      
+      <!--This is an empty file where users can add their own glycans-->
+      <Component Id="Appsrc_UserEditableCustomNGlycans.gdb" Guid="C434DE9F-0614-4F6D-9078-FBC909278F91">
+        <Condition>OVERWRITEAPPDATA</Condition>
+        <RegistryValue Root="HKCU" Key="Software\SmithGroup\MetaMorpheus" Name="installed" Type="integer" Value="1" KeyPath="yes" />
+        <File ReadOnly="no" Id="Appsrc_UserEditableCustomNGlycans.gdb" Name="UserEditableCustomNGlycans.txt" Source="$(var.GUI_TargetDir)Glycan_Mods\NGlycan\UserEditableCustomNGlycans.txt" />
+      </Component>
     </ComponentGroup>
   </Fragment>
 
@@ -444,6 +451,13 @@
         <Condition>OVERWRITEAPPDATA</Condition>
         <RegistryValue Root="HKCU" Key="Software\SmithGroup\MetaMorpheus" Name="installed" Type="integer" Value="1" KeyPath="yes" />
         <File ReadOnly="no" Id="Appsrc_OlgycanDatabase36glycanswithMann.txt" Name="Olgycan Database 36 glycans with Mann.txt" Source="$(var.GUI_TargetDir)Glycan_Mods\OGlycan\Olgycan Database 36 glycans with Mann.txt" />
+      </Component>
+
+      <!--This is an empty file where users can add their own glycans-->
+      <Component Id="Appsrc_UserEditableCustomOGlycans.txt" Guid="CA08C383-076F-4463-9378-64712B429874">
+        <Condition>OVERWRITEAPPDATA</Condition>
+        <RegistryValue Root="HKCU" Key="Software\SmithGroup\MetaMorpheus" Name="installed" Type="integer" Value="1" KeyPath="yes" />
+        <File ReadOnly="no" Id="Appsrc_UserEditableCustomOGlycans.txt" Name="UserEditableCustomOGlycans.txt" Source="$(var.GUI_TargetDir)Glycan_Mods\OGlycan\UserEditableCustomOGlycans.txt" />
       </Component>
     </ComponentGroup>
   </Fragment>
