@@ -1507,13 +1507,13 @@ namespace MetaMorpheusGUI
 
         private void MenuItem_Click_3(object sender, RoutedEventArgs e)
         {
-            GlobalVariables.StartProcess(Path.Combine(GlobalVariables.DataDir, @"settings.toml"));
+            GlobalVariables.StartProcess(Path.Combine(GlobalVariables.DataDir, @"settings.toml"), useNotepadToOpenToml: true);
             Application.Current.Shutdown();
         }
 
         private void MenuItem_Click_7(object sender, RoutedEventArgs e)
         {
-            GlobalVariables.StartProcess(Path.Combine(GlobalVariables.DataDir, @"GUIsettings.toml"));
+            GlobalVariables.StartProcess(Path.Combine(GlobalVariables.DataDir, @"GUIsettings.toml"), useNotepadToOpenToml: true);
             Application.Current.Shutdown();
         }
 
