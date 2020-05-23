@@ -16,6 +16,7 @@ namespace EngineLayer
         // for now, these are only used for error-checking in the command-line version.
         // compressed versions of the protein databases (e.g., .xml.gz) are also supported
         public static List<string> AcceptedDatabaseFormats = new List<string> { ".fasta", ".fa", ".xml" };
+
         public static List<string> AcceptedSpectraFormats = new List<string> { ".raw", ".mzml", ".mgf" };
 
         private static List<Modification> _AllModsKnown = new List<Modification>();
@@ -27,7 +28,7 @@ namespace EngineLayer
         private static char[] _InvalidAminoAcids = new char[] { 'X', 'B', 'J', 'Z', ':', '|', ';', '[', ']', '{', '}', '(', ')', '+', '-' };
 
         // this affects output labels, etc. and can be changed to "Proteoform" for top-down searches
-        public static string AnalyteType = "Peptide"; 
+        public static string AnalyteType = "Peptide";
 
         static GlobalVariables()
         {
@@ -85,13 +86,14 @@ namespace EngineLayer
                 AddCrosslinkers(Crosslinker.LoadCrosslinkers(customCrosslinkerLocation));
             }
 
+
             OGlycanLocations = new List<string>();
-            foreach (var glycanFile in Directory.GetFiles(Path.Combine(DataDir, @"Data", @"OGlycan")))
+            foreach (var glycanFile in Directory.GetFiles(Path.Combine(DataDir, @"Glycan_Mods", @"OGlycan")))
             {
                 OGlycanLocations.Add(glycanFile);
             }
             NGlycanLocations = new List<string>();
-            foreach (var glycanFile in Directory.GetFiles(Path.Combine(DataDir, @"Data", @"NGlycan")))
+            foreach (var glycanFile in Directory.GetFiles(Path.Combine(DataDir, @"Glycan_Mods", @"NGlycan")))
             {
                 NGlycanLocations.Add(glycanFile);
             }
@@ -123,7 +125,7 @@ namespace EngineLayer
             }
 
             //Add Glycan mod into AllModsKnownDictionary, currently this is for MetaDraw.
-            //The reason why not include Glycan into modification database is for users to apply their own database.      
+            //The reason why not include Glycan into modification database is for users to apply their own database.
             foreach (var path in OGlycanLocations)
             {
                 var og = GlycanDatabase.LoadGlycan(path, false, false);
@@ -134,7 +136,6 @@ namespace EngineLayer
                     {
                         AllModsKnownDictionary.Add(ogmod.IdWithMotif, ogmod);
                     }
-
                 }
             }
             foreach (var path in NGlycanLocations)
@@ -147,7 +148,6 @@ namespace EngineLayer
                     {
                         AllModsKnownDictionary.Add(ogmod.IdWithMotif, ogmod);
                     }
-
                 }
             }
 
@@ -289,7 +289,6 @@ namespace EngineLayer
                 List<Residue> residuesToAdd = new List<Residue>();
                 for (int i = 1; i < aminoAcidLines.Length; i++)
                 {
-
                     string[] line = aminoAcidLines[i].Split('\t').ToArray(); //tsv Name, one letter, monoisotopic, chemical formula
                     if (line.Length >= 4) //check something is there (not a blank line)
                     {
