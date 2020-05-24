@@ -172,21 +172,7 @@ namespace EngineLayer
         //H: C6O5H10 Hexose, N: C8O5NH13 HexNAc, A: C11O8NH17 Neu5Ac, G: C11H17NO9 Neu5Gc, F: C6O4H10 Fucose, 
         //P: PO3H Phosphate, S: SO3H Sulfo, Y: Na Sodium, C:Acetyl for Neu5Ac
         //X: C5H10O5 Xylose
-        //If add more monosacchrades here, please change GetMass, GetKind, GetKindString, GlycanBox constructor, search byte[].
-
-        //private readonly static Dictionary<char, int> CharMassDic = new Dictionary<char, int> {
-        //    { 'H', 16205282 },
-        //    { 'N', 20307937 },
-        //    { 'A', 29109542 },
-        //    { 'G', 30709033 },
-        //    { 'F', 14605791 },
-        //    { 'P', 7996633 },
-        //    { 'S', 7995681 },
-        //    { 'Y', 2298977 },
-        //    { 'C',  4201056 },
-        //    { 'X', 15005282 },
-        //};
-
+        //Related code include: GetMass, GetKind, GetKindString, GlycanBox constructor, search byte[].
         private static Dictionary<char, int> CharMassDic
         {
             get
@@ -195,21 +181,6 @@ namespace EngineLayer
             }
         }
       
-        ////Compitable with Byonic, for loading glycan by Kind.
-        //public readonly static Dictionary<string, Tuple<char, int>> NameCharDic = new Dictionary<string, Tuple<char, int>>
-        //{
-        //    {"Hex", new Tuple<char, int>('H', 0) },
-        //    {"HexNAc", new Tuple<char, int>('N', 1) },
-        //    {"NeuAc", new Tuple<char, int>('A', 2) },
-        //    {"NeuGc", new Tuple<char, int>('G', 3) },
-        //    {"Fuc",  new Tuple<char, int>('F', 4)},
-        //    {"Phospho", new Tuple<char, int>('P', 5)},
-        //    {"Sulfo", new Tuple<char, int>('S', 6) },
-        //    {"Na", new Tuple<char, int>('Y', 7) },
-        //    {"Ac", new Tuple<char, int>('C', 8) },
-        //    {"Xylose", new Tuple<char, int>('X', 9) }
-        //};
-
         public static Dictionary<string, byte> NameIdDic
         {
             get
@@ -476,18 +447,6 @@ namespace EngineLayer
 
         private static int GetMass(string structure)
         {
-            //int y = CharMassDic['H'] * structure.Count(p => p == 'H') +
-            //    CharMassDic['N'] * structure.Count(p => p == 'N') +
-            //    CharMassDic['A'] * structure.Count(p => p == 'A') +
-            //    CharMassDic['G'] * structure.Count(p => p == 'G') +
-            //    CharMassDic['F'] * structure.Count(p => p == 'F') +
-            //    CharMassDic['P'] * structure.Count(p => p == 'P') +
-            //    CharMassDic['S'] * structure.Count(p => p == 'S') +
-            //    CharMassDic['Y'] * structure.Count(p => p == 'Y') +
-            //    CharMassDic['C'] * structure.Count(p => p == 'C') +
-            //    CharMassDic['X'] * structure.Count(p => p == 'X')
-            //    ;
-
             int y = 0;
             for (int i = 0; i < SugarLength; i++)
             {
@@ -498,18 +457,6 @@ namespace EngineLayer
 
         public static int GetMass(byte[] kind)
         {
-            //int mass = CharMassDic['H'] * kind[0] +
-            //CharMassDic['N'] * kind[1] +
-            //CharMassDic['A'] * kind[2] +
-            //CharMassDic['G'] * kind[3] +
-            //CharMassDic['F'] * kind[4] +
-            //CharMassDic['P'] * kind[5] +
-            //CharMassDic['S'] * kind[6] +
-            //CharMassDic['Y'] * kind[7] +
-            //CharMassDic['C'] * kind[8] +
-            //CharMassDic['X'] * kind[9]
-            //;
-
             int mass = 0;
 
             for (int i = 0; i < SugarLength; i++)
@@ -528,19 +475,6 @@ namespace EngineLayer
                 kind[i] = Convert.ToByte(structure.Count(p => p == GlobalVariables.Monosaccharides[i].Symbol));
             }
 
-            //var kind = new byte[] 
-            //{ Convert.ToByte(structure.Count(p => p == 'H')),
-            //    Convert.ToByte(structure.Count(p => p == 'N')),
-            //    Convert.ToByte(structure.Count(p => p == 'A')),
-            //    Convert.ToByte(structure.Count(p => p == 'G')),
-            //    Convert.ToByte(structure.Count(p => p == 'F')),
-            //    Convert.ToByte(structure.Count(p => p == 'P')),
-            //    Convert.ToByte(structure.Count(p => p == 'S')),
-            //    Convert.ToByte(structure.Count(p => p == 'Y')),
-            //    Convert.ToByte(structure.Count(p => p == 'C')),
-            //    Convert.ToByte(structure.Count(p => p == 'X')),
-            //};
-
             return kind;
         }
 
@@ -552,18 +486,6 @@ namespace EngineLayer
             {
                 kindString += Kind[i] == 0 ? "" : GlobalVariables.Monosaccharides[i].Symbol + Kind[i].ToString();
             }
-
-            //string H = Kind[0]==0 ? "" : "H" + Kind[0].ToString();
-            //string N = Kind[1] == 0 ? "" : "N" + Kind[1].ToString();
-            //string A = Kind[2] == 0 ? "" : "A" + Kind[2].ToString();
-            //string G = Kind[3] == 0 ? "" : "G" + Kind[3].ToString();
-            //string F = Kind[4] == 0 ? "" : "F" + Kind[4].ToString();
-            //string P = Kind[5] == 0 ? "" : "P" + Kind[5].ToString();
-            //string S = Kind[6] == 0 ? "" : "S" + Kind[6].ToString();
-            //string Y = Kind[7] == 0 ? "" : "Y" + Kind[7].ToString();
-            //string C = Kind[8] == 0 ? "" : "C" + Kind[8].ToString();
-            //string X = Kind[9] == 0 ? "" : "X" + Kind[9].ToString();
-            //string kindString = H + N + A + G + F + P + S + Y + C + X;
 
             return kindString;
         }
