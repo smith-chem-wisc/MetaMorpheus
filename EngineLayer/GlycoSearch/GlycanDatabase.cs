@@ -341,7 +341,6 @@ namespace EngineLayer
         {
             byte[] aIonKind = new byte[Glycan.SugarLength];
             aIonKind[0] = hexose_count; aIonKind[1] = hexnac_count; aIonKind[4] = fuc_count; aIonKind[9] = xyl_count;
-            //byte[] ionKind = new byte[] { hexose_count, hexnac_count, 0, 0, fuc_count, 0, 0, 0, 0, xyl_count };
 
             int ionMass = Glycan.GetMass(aIonKind);
 
