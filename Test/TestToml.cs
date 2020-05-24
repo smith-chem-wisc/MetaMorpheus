@@ -3,6 +3,7 @@ using MassSpectrometry;
 using MzLibUtil;
 using Nett;
 using NUnit.Framework;
+using Proteomics.ProteolyticDigestion;
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
@@ -111,6 +112,34 @@ namespace Test
 
             Assert.AreEqual("Asp-N", c.DigestionParams.Protease.Name);
             Assert.AreEqual(2, c.DigestionParams.MaxMissedCleavages);
+        }
+
+        [Test]
+        public static void TestBadFileSpecificProtease()
+        {
+            //this test checks for a catch statement (or some other handling) for file-specific toml loading
+            //create a toml with a protease that doesn't exist in the protease.tsv dictionary
+            string proteaseNotInDictionary = "aaa"; //arbitrary. If somebody adds a protease with this name, use a different name
+            string proteaseInDictionary = "trypsin"; //just make sure we are doing this right
+            Assert.IsFalse(ProteaseDictionary.Dictionary.Keys.Contains(proteaseNotInDictionary));
+            Assert.IsTrue(ProteaseDictionary.Dictionary.Keys.Contains(proteaseInDictionary));
+
+            //write the toml
+            //let's use the datafile ok.mgf (arbitrary)
+            File.WriteAllLines(Path.Combine(TestContext.CurrentContext.TestDirectory, @"TestData\ok.toml"), new string[] { "Protease = " + '"' + proteaseNotInDictionary + '"' });
+
+            //create a task with this, we want the run to work and just ignore the bad toml
+            SearchTask task = new SearchTask();
+            //just test it doesn't crash (i.e. the crash is handled)
+            string outputFolder = Path.Combine(TestContext.CurrentContext.TestDirectory, @"BadProteaseTest");
+            Directory.CreateDirectory(outputFolder);
+            task.RunTask(outputFolder, 
+                new List<DbForTask> { new DbForTask(Path.Combine(TestContext.CurrentContext.TestDirectory, @"TestData\okk.xml"), false) },
+                new List<string>{Path.Combine(TestContext.CurrentContext.TestDirectory, @"TestData\ok.mgf") },
+                outputFolder);
+
+            //Clear result files
+            Directory.Delete(outputFolder, true);
         }
 
         [Test]
