@@ -7,7 +7,7 @@ using Proteomics;
 using MassSpectrometry;
 using System.Dynamic;
 using System.Reflection.Metadata;
-
+using System.Text;
 namespace EngineLayer
 {
     public class Monosaccharide
@@ -480,14 +480,13 @@ namespace EngineLayer
 
         public static string GetKindString(byte[] Kind)
         {
-            string kindString = "";
-
+            StringBuilder kindString = new StringBuilder();
             for (int i = 0; i < SugarLength; i++)
             {
-                kindString += Kind[i] == 0 ? "" : GlobalVariables.Monosaccharides[i].Symbol + Kind[i].ToString();
+                kindString.Append(Kind[i] == 0 ? "" : GlobalVariables.Monosaccharides[i].Symbol + Kind[i].ToString());
             }
 
-            return kindString;
+            return kindString.ToString();
         }
 
         #endregion
