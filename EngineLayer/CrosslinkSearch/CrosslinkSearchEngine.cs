@@ -739,7 +739,8 @@ namespace EngineLayer.CrosslinkSearch
             return csm;
         }
 
-        //TO DO: A better method can be implemented in mzLib.
+
+        //This method is used for deciding whether or not to generate a secondFragmentIndex
         public static bool DissociationTypeGenerateSameTypeOfIons(DissociationType d, DissociationType childD)
         {
             if (d == childD)
@@ -751,6 +752,22 @@ namespace EngineLayer.CrosslinkSearch
                 return true;
             }
             if (d == DissociationType.HCD && childD == DissociationType.CID)
+            {
+                return true;
+            }
+            if (d == DissociationType.CID && childD == DissociationType.EThcD)
+            {
+                return true;
+            }
+            if (d == DissociationType.EThcD && childD == DissociationType.CID)
+            {
+                return true;
+            }
+            if (d == DissociationType.HCD && childD == DissociationType.EThcD)
+            {
+                return true;
+            }
+            if (d == DissociationType.EThcD && childD == DissociationType.HCD)
             {
                 return true;
             }

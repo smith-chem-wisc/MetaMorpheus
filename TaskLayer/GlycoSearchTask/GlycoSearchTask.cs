@@ -119,7 +119,16 @@ namespace TaskLayer
                     List<int>[] precursorIndex = null;
                     GenerateIndexes(indexEngine, dbFilenameList, ref peptideIndex, ref fragmentIndex, ref precursorIndex, proteinList, taskId);
 
-                    //The second Fragment index is for 'MS1-HCD_MS1-ETD_MS2s' type of data. If LowCID is used for MS1, ion-index is not allowed to use.
+                    //Indexing strategy for Glycopepitde.
+                    //Generating a second fragment index slow down the program. 
+                    //There are different type of fragmentation combination methods for N-glycopeptides and O-glycopeptides.
+                    //In O-Glycopeptide, we only index b/y fragment ions (HCD, CID, EThcD). Thus we will only generate b/y fragmentIndex, even for HCD-trig-EThcD method.
+                    //Due to the complexity of O-glycan, the ETD ions didn't generate a lot of peptide backbone ions.
+                    //In O-Glycopeptide, if there are paired spectrum, we will let the user to decide if to index the child spectrum if child spectrum contain b/y ions.
+                    //In N-Glycopeptide, we prefer to index paired spectrum. The best choice is still only generate b/y fragmentIndex, even for HCD-trig-EThcD method.
+                    //In N-Glycopeptide, if the fragmentation combination method is HCD-trig-ETD, we will allow user to decide if they want to generate and index c/z fragmentIndex.              
+
+                    //If LowCID is used for MS1, ion-index is not allowed to use.
                     List<int>[] secondFragmentIndex = null;
                     if (combinedParams.MS2ChildScanDissociationType != DissociationType.LowCID
                         && _glycoSearchParameters.IndexingChildScan

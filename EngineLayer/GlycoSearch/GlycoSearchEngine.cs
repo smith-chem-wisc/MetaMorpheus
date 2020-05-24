@@ -115,6 +115,21 @@ namespace EngineLayer.GlycoSearch
 
                     // get fragment bins for this scan
                     List<int> allBinsToSearch = GetGlycanBinsToSearch(scan, FragmentIndex, false);
+
+                    //SecondFragmentIndex will only be used for HCD-trig-ETD data for N-Glycopeptide. 
+                    //If SecondFragmentIndex == null, we only use the b/y FragmentIndex for child scans.
+                    if (IndexChildScan && SecondFragmentIndex == null && scan.ChildScans != null && scan.ChildScans.Count > 0)
+                    {
+                        List<int> childBinsToSearch = new List<int>();      
+
+                        foreach (var aChildScan in scan.ChildScans)
+                        {
+                            var x = GetGlycanBinsToSearch(aChildScan, FragmentIndex, false);
+                            childBinsToSearch.AddRange(x);
+                        }
+
+                        allBinsToSearch.AddRange(childBinsToSearch);
+                    }
                   
                     //Limit the high bound limitation, here assume it is possible to has max 3 Da shift. This allows for correcting precursor in the future.
                     var high_bound_limitation = scan.PrecursorMass + 1;
@@ -123,9 +138,9 @@ namespace EngineLayer.GlycoSearch
                     IndexedScoring(FragmentIndex, allBinsToSearch, scoringTable, byteScoreCutoff, idsOfPeptidesPossiblyObserved, scan.PrecursorMass, Double.NegativeInfinity, high_bound_limitation, PeptideIndex, MassDiffAcceptor, 0, CommonParameters.DissociationType);
 
                     //child scan first - pass scoring
-                    if (IndexChildScan && CommonParameters.MS2ChildScanDissociationType != DissociationType.LowCID
-                        && scan.ChildScans != null && scan.ChildScans.Count > 0)
+                    if (IndexChildScan && SecondFragmentIndex != null && scan.ChildScans != null && scan.ChildScans.Count > 0)
                     {
+                        //SecondFragmentIndex will only be used for HCD-trig-ETD data for N-Glycopeptide. 
                         List<int> childBinsToSearch = null;
 
                         Array.Clear(secondScoringTable, 0, secondScoringTable.Length);
