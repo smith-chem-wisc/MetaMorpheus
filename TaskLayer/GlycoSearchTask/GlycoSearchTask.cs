@@ -165,7 +165,7 @@ namespace TaskLayer
 
             var filteredAllPsms = new List<GlycoSpectralMatch>();
 
-            SSRCalc3 calc = new SSRCalc3("SSRCalc 3.0 (300A)", SSRCalc3.Column.A300);
+            //SSRCalc3 calc = new SSRCalc3("SSRCalc 3.0 (300A)", SSRCalc3.Column.A300);
 
             //For each ms2scan, try to find the best candidate psm from the psms list. Do the localizaiton analysis. Add it into filteredAllPsms.
             foreach (var gsmsPerScan in GsmPerScans.GroupBy(p => p.ScanNumber))
@@ -212,7 +212,7 @@ namespace TaskLayer
                         }
                     }
 
-                    glycoSpectralMatch.PredictedHydrophobicity = calc.ScoreSequence(glycoSpectralMatch.BestMatchingPeptides.First().Peptide);
+                    //glycoSpectralMatch.PredictedHydrophobicity = calc.ScoreSequence(glycoSpectralMatch.BestMatchingPeptides.First().Peptide);
 
                     filteredAllPsms.Add(glycoSpectralMatch);
                 }
