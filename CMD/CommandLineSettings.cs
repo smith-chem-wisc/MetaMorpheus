@@ -143,6 +143,9 @@ namespace MetaMorpheusCommandLine
 
                 XLSearchTask xl = new XLSearchTask();
                 Toml.WriteFile(xl, Path.Combine(folderLocation, @"XLSearchTask.toml"), MetaMorpheusTask.tomlConfig);
+
+                GlycoSearchTask glyco = new GlycoSearchTask();
+                Toml.WriteFile(glyco, Path.Combine(folderLocation, @"GlycoSearchTask.toml"), MetaMorpheusTask.tomlConfig);
             }
             catch (Exception e)
             {
