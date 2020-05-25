@@ -31,15 +31,18 @@ namespace EngineLayer
             string[] trainingVariables = PsmData.trainingInfos[searchType];
 
             //ensure that the order is always stable.
-            psms = psms.OrderByDescending(p => p.Score).ThenBy(p => p.FdrInfo.QValue).ThenBy(p => p.FullSequence).ThenBy(p => p.ProteinAccession).ToList();
+            psms = psms.OrderByDescending(p => p.Score).ThenBy(p => p.FdrInfo.QValue).
+                ThenBy(p => p.FullFilePath).ThenBy(x => x.ScanNumber).ThenBy(p => p.FullSequence).ThenBy(p => p.ProteinAccession).ToList();
 
             //These two dictionaries contain the average and standard deviations of hydrophobicitys measured in 1 minute increments accross each raw
             //file separately. An individully measured hydrobophicty calculated for a specific PSM sequence is compared to these values by computing
-            //the z-score. That z-score is used in the the machine learning.
-            //Separate dictionaries are created for peptides with modifications becuase SSRcalc doesn't really do a good job predicting hyrophobicity
+            //the z-score. That z-score is used as a feature for machine learning.
+            //Separate dictionaries are created for peptides with modifications because SSRcalc doesn't really do a good job predicting hyrophobicity
 
             //The first string in the dictionary is the filename
-            //The value of the dictionary is another dictionary that profiles the hydrophobicity behavior. Each key is a retention time rounded to the nearest minute. The value Tuple is the average and standard deviation, respectively, of the predicted hydrophobicities of the observed peptides eluting at that rounded retention time.
+            //The value of the dictionary is another dictionary that profiles the hydrophobicity behavior. 
+            //Each key is a retention time rounded to the nearest minute. 
+            //The value Tuple is the average and standard deviation, respectively, of the predicted hydrophobicities of the observed peptides eluting at that rounded retention time.
 
             if (trainingVariables.Contains("HydrophobicityZScore"))
             {
@@ -84,9 +87,9 @@ namespace EngineLayer
             TrainTestData trainTestSplit = mlContext.Data.TrainTestSplit(dataView, testFraction: fraction, null, randomSeed);
             IDataView trainingData = trainTestSplit.TrainSet;
             IDataView testData = trainTestSplit.TestSet;
-            var trainer = mlContext.BinaryClassification.Trainers.FastTree(labelColumnName: "Label", featureColumnName: "Features");
+            var trainer = mlContext.BinaryClassification.Trainers.FastTree(labelColumnName: "Label", featureColumnName: "Features", numberOfTrees: 400);
             var pipeline = mlContext.Transforms.Concatenate("Features", trainingVariables)
-                .Append(mlContext.BinaryClassification.Trainers.FastTree(labelColumnName: "Label", featureColumnName: "Features"));
+                .Append(trainer);
             var trainedModel = pipeline.Fit(trainingData); //this is NOT thread safe
 
             int maxThreads = fileSpecificParameters.FirstOrDefault().fileSpecificParameters.MaxThreadsToUsePerFile;
@@ -513,7 +516,11 @@ namespace EngineLayer
             return sequenceToPsmCount;
         }
 
-        public static IEnumerable<PsmData> CreatePsmData(string searchType, List<(string fileName, CommonParameters fileSpecificParameters)> fileSpecificParameters, List<PeptideSpectralMatch> psms, Dictionary<string, int> sequenceToPsmCount, Dictionary<string, Dictionary<int, Tuple<double, double>>> timeDependantHydrophobicityAverageAndDeviation_unmodified, Dictionary<string, Dictionary<int, Tuple<double, double>>> timeDependantHydrophobicityAverageAndDeviation_modified, Dictionary<string, float> fileSpecificMedianFragmentMassErrors, int chargeStateMode, string[] trainingVariables)
+        public static IEnumerable<PsmData> CreatePsmData(string searchType, List<(string fileName, CommonParameters fileSpecificParameters)> fileSpecificParameters,
+            List<PeptideSpectralMatch> psms, Dictionary<string, int> sequenceToPsmCount,
+            Dictionary<string, Dictionary<int, Tuple<double, double>>> timeDependantHydrophobicityAverageAndDeviation_unmodified,
+            Dictionary<string, Dictionary<int, Tuple<double, double>>> timeDependantHydrophobicityAverageAndDeviation_modified,
+            Dictionary<string, float> fileSpecificMedianFragmentMassErrors, int chargeStateMode, string[] trainingVariables)
         {
             object psmDataListLock = new object();
             List<PsmData> psmDataList = new List<PsmData>();
