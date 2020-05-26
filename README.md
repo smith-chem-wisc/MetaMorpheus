@@ -19,14 +19,14 @@ Check out the [wiki page](https://github.com/smith-chem-wisc/MetaMorpheus/wiki) 
 * Calibration: A calibration tool that uses peptides identified by a database search to calibrate the m/z values of all peaks in the spectra. This improves the quality of any subsequent search or analysis of the data.
 * G-PTM-D: Post-translational modification (PTM) discovery, which expands the scope of peptide identifications to include both known and unknown PTMs.
 * Quantification: Ultrafast label-free peptide quantification with FlashLFQ. MS2-identified peptides are used as "seeds" for peakfinding, including PTM-containing peptides.
-* [O-glycopeptide Characterization](https://github.com/smith-chem-wisc/MetaMorpheus/wiki/New-Task:-Searching-for-O-Glycopeptides): O-Pair Search identifies O-glycopeptides using an ion-indexed open modification search and localizes O-glycosites using graph theory and probability-based localization.
+* [O-glycopeptide Characterization](https://github.com/smith-chem-wisc/MetaMorpheus/wiki/1_New-Task:-O-Glyco-Search): O-Pair Search identifies O-glycopeptides using an ion-indexed open modification search and localizes O-glycosites using graph theory and probability-based localization.
 
 ## System Requirements
 
 * Environment:
   * 64-bit operating system
   * .NET Core 3.1:
-     * Windows: https://dotnet.microsoft.com/download/dotnet-core/thank-you/runtime-3.1.3-windows-x64-installer
+     * Windows: https://dotnet.microsoft.com/download/dotnet-core/thank-you/runtime-desktop-3.1.3-windows-x64-installer
      * Mac: https://dotnet.microsoft.com/download/dotnet-core/thank-you/runtime-3.1.3-macos-x64-installer
      * Linux: https://docs.microsoft.com/dotnet/core/install/linux-package-managers
 * Note that the installer (MetaMorpheusInstaller.msi) only works on Windows. The command-line version of MetaMorpheus supports any operating system that supports .NET Core (Windows, MacOS, Linux)

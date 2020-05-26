@@ -213,6 +213,11 @@ namespace MetaMorpheusCommandLine
                         taskList.Add(("Task" + (i + 1) + "XLSearchTask", XlTask));
                         break;
 
+                    case "GlycoSearch":
+                        var GlycoTask = Toml.ReadFile<GlycoSearchTask>(filePath, MetaMorpheusTask.tomlConfig);
+                        taskList.Add(("Task" + (i + 1) + "GlycoSearchTask", GlycoTask));
+                        break;
+
                     default:
                         if (settings.Verbosity == CommandLineSettings.VerbosityType.minimal || settings.Verbosity == CommandLineSettings.VerbosityType.normal)
                         {
