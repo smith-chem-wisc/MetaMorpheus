@@ -431,13 +431,13 @@ namespace TaskLayer
                 switch (writeType)
                 {
                     case 1:
-                        header = GlycoSpectralMatch.GetTabSepHeaderSingle();
+                        header = GlycoSpectralMatch.GetTabSepHeaderGlyco(false, false);
                         break;
                     case 2:
-                        header = GlycoSpectralMatch.GetTabSepHeaderOGlyco();
+                        header = GlycoSpectralMatch.GetTabSepHeaderGlyco(true, true);
                         break;
                     case 3:
-                        header = GlycoSpectralMatch.GetTabSepHeaderNGlyco();
+                        header = GlycoSpectralMatch.GetTabSepHeaderGlyco(true, false);
                         break;
                     default:
                         break;

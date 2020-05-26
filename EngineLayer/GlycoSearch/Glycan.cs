@@ -25,6 +25,8 @@ namespace EngineLayer
 
     public class Glycan
     {
+        public static readonly int CrossRingMass = 8303819;
+
         public Glycan(string struc, int mass, byte[] kind, List<GlycanIon> ions, bool decoy)
         {
             Struc = struc;
@@ -183,9 +185,9 @@ namespace EngineLayer
             }
             if (!isOglycan)
             {
-                glycanIons.Add(new GlycanIon(null, 8303819, new byte[] { 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 }, mass - 8303819)); //Cross-ring mass
+                glycanIons.Add(new GlycanIon(null, CrossRingMass, new byte[] { 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 }, mass - CrossRingMass)); //Cross-ring mass
             }
-            glycanIons.Add(new GlycanIon(null, 0, kind, mass));
+            glycanIons.Add(new GlycanIon(null, 0, new byte[] { 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 }, mass));
 
             Glycan glycan = new Glycan(theGlycanStruct, mass, kind, glycanIons.OrderBy(p => p.IonMass).ToList(), false);
             glycan.GlyId = id;
@@ -463,7 +465,7 @@ namespace EngineLayer
             Dictionary<DissociationType, List<double>> neutralLosses = new Dictionary<DissociationType, List<double>>();
             if (glycan.Ions!=null)
             {
-                List<double> lossMasses = glycan.Ions.Where(p => p.IonMass < 57000000).Select(p => (double)p.LossIonMass / 1E5).OrderBy(p => p).ToList(); //570 is a cutoff for glycan ion size 2N1H, which will generate fragment ions. 
+                List<double> lossMasses = glycan.Ions.Where(p => p.IonMass == CrossRingMass || p.IonMass == 20307937).Select(p => (double)p.LossIonMass / 1E5).OrderBy(p => p).ToList(); //570 is a cutoff for glycan ion size 2N1H, which will generate fragment ions. 
                 neutralLosses.Add(DissociationType.HCD, lossMasses);
                 neutralLosses.Add(DissociationType.CID, lossMasses);
                 neutralLosses.Add(DissociationType.EThcD, lossMasses);

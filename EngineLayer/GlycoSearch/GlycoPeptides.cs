@@ -69,52 +69,50 @@ namespace EngineLayer.GlycoSearch
             return false;
         }
 
-        public static List<Product> GetGlycanYIons(double precursorMass, Glycan glycan)
-        {
-            List<Product> YIons = new List<Product>();
-            YIons.Add(new Product(ProductType.M, FragmentationTerminus.Both, precursorMass - (double)glycan.Mass / 1E5, 0, 0, (double)glycan.Mass/1E5)); //Y0 ion. Glycan totally loss.
-            foreach (var ion in glycan.Ions)
-            {
-                Product product = new Product(ProductType.M, FragmentationTerminus.Both, precursorMass - (double)ion.LossIonMass / 1E5, 0, 0, (double)ion.LossIonMass/1E5);
-                YIons.Add(product);
-            }
-            return YIons;
-        }
+        //public static List<Product> GetGlycanYIons(double precursorMass, Glycan glycan)
+        //{
+        //    List<Product> YIons = new List<Product>();
+        //    foreach (var ion in glycan.Ions)
+        //    {
+        //        Product product = new Product(ProductType.M, FragmentationTerminus.Both, precursorMass - (double)ion.LossIonMass / 1E5, 0, 0, (double)ion.LossIonMass/1E5);
+        //        YIons.Add(product);
+        //    }
+        //    return YIons;
+        //}
 
         public static List<Product> GetGlycanYIons(PeptideWithSetModifications peptide, Glycan glycan)
         {
             double possiblePeptideMass = peptide.MonoisotopicMass;
-            List<Product> YIons = new List<Product>();
-            YIons.Add(new Product(ProductType.M, FragmentationTerminus.Both, possiblePeptideMass + (double)glycan.Mass/1E5, 0, 0, (double)glycan.Mass/1E5));
+            List<Product> YIons = new List<Product>();         
             foreach (var ion in glycan.Ions)
             {
-                Product product = new Product(ProductType.M, FragmentationTerminus.Both, possiblePeptideMass + (double)glycan.Mass/1E5, 0, 0, (double)ion.LossIonMass/1E5);
+                Product product = new Product(ProductType.M, FragmentationTerminus.Both, possiblePeptideMass + (double)ion.IonMass/1E5, 0, 0, (double)ion.LossIonMass/1E5);
                 YIons.Add(product);
             }
             return YIons;
         }
 
-        public static Tuple<int, double, double>[] MatchBestGlycan(Ms2ScanWithSpecificMass theScan, Glycan[] glycans, CommonParameters commonParameters)
-        {
-            Tuple<int, double, double>[] tuples = new Tuple<int, double, double>[glycans.Length]; //Tuple<id, Yion matched score, glycan mass> 
-            //TO DO: Parallel this?
-            for (int i = 0; i < glycans.Length; i++)
-            {
-                if (theScan.PrecursorMass - (double)glycans[i].Mass/1E5 < 350) //Filter large glycans
-                {
-                    continue;
-                }
-                List<Product> YIons = GetGlycanYIons(theScan.PrecursorMass, glycans[i]);
-                List<MatchedFragmentIon> matchedFragmentIons = MetaMorpheusEngine.MatchFragmentIons(theScan, YIons, commonParameters);
-                if (ScanTrimannosylCoreFilter(matchedFragmentIons, glycans[i]))
-                {
-                    var score = MetaMorpheusEngine.CalculatePeptideScore(theScan.TheScan, matchedFragmentIons);
-                    tuples[i] = new Tuple<int, double, double>(i, score, (double)glycans[i].Mass/1E5);
-                }
-            }
+        //public static Tuple<int, double, double>[] MatchBestGlycan(Ms2ScanWithSpecificMass theScan, Glycan[] glycans, CommonParameters commonParameters)
+        //{
+        //    Tuple<int, double, double>[] tuples = new Tuple<int, double, double>[glycans.Length]; //Tuple<id, Yion matched score, glycan mass> 
+        //    //TO DO: Parallel this?
+        //    for (int i = 0; i < glycans.Length; i++)
+        //    {
+        //        if (theScan.PrecursorMass - (double)glycans[i].Mass/1E5 < 350) //Filter large glycans
+        //        {
+        //            continue;
+        //        }
+        //        List<Product> YIons = GetGlycanYIons(theScan.PrecursorMass, glycans[i]);
+        //        List<MatchedFragmentIon> matchedFragmentIons = MetaMorpheusEngine.MatchFragmentIons(theScan, YIons, commonParameters);
+        //        if (ScanTrimannosylCoreFilter(matchedFragmentIons, glycans[i]))
+        //        {
+        //            var score = MetaMorpheusEngine.CalculatePeptideScore(theScan.TheScan, matchedFragmentIons);
+        //            tuples[i] = new Tuple<int, double, double>(i, score, (double)glycans[i].Mass/1E5);
+        //        }
+        //    }
 
-            return tuples;
-        }
+        //    return tuples;
+        //}
 
         public static int BinarySearchGetIndex(double[] massArray, double targetMass)
         {
@@ -151,7 +149,7 @@ namespace EngineLayer.GlycoSearch
             return score;
         }
 
-        public static PeptideWithSetModifications GenerateGlycopeptide(int position, PeptideWithSetModifications peptide, Glycan glycan)
+        public static PeptideWithSetModifications GenerateNGlycopeptide(int position, PeptideWithSetModifications peptide, Glycan glycan)
         {
             Modification modification = Glycan.NGlycanToModification(glycan);
 
@@ -171,6 +169,23 @@ namespace EngineLayer.GlycoSearch
             
             return testPeptide;
 
+        }
+
+        public static List<Product> NGlyGetTheoreticalFragments(DissociationType dissociationType, PeptideWithSetModifications peptide, PeptideWithSetModifications modPeptide, Glycan glycan)
+        {
+            List<Product> products = new List<Product>();
+
+            peptide.Fragment(dissociationType, FragmentationTerminus.Both, products);
+
+            List<Product> modProducts = new List<Product>();
+
+            modPeptide.Fragment(dissociationType, FragmentationTerminus.Both, modProducts);
+
+            var glycanYIons = GlycoPeptides.GetGlycanYIons(peptide, glycan);
+
+            var all = products.Concat(modProducts.Where(p => p.ProductType == ProductType.D || (p.ProductType != ProductType.M && p.NeutralLoss > 0))).Concat(glycanYIons).ToList();
+
+            return all;
         }
 
         #endregion

@@ -549,19 +549,87 @@ namespace EngineLayer.GlycoSearch
             }
         }
 
-        //For Find NGlycan
-        private GlycoSpectralMatch CreateNGsm(Ms2ScanWithSpecificMass theScan, PeptideWithSetModifications glycopeptide, double score, 
-            List<MatchedFragmentIon> bestMatchedIons, Dictionary<int, List<MatchedFragmentIon>> bestChildMathcedIons, double[] oxoniumIonIntensities, 
-            int scanIndex, int iDLow, int ind, int bestSite)
+        //For Find NGlycan. Create NglycoPeptideSpectrumMatch and handle N-Glycan localization. 
+        private GlycoSpectralMatch CreateNGsm(Ms2ScanWithSpecificMass theScan, double[] oxoniumIonIntensities, List<int> modPos, PeptideWithSetModifications[] bestPeptides, 
+            List<MatchedFragmentIon>[] bestMatchedIons, Dictionary<int, List<MatchedFragmentIon>>[] bestChildMathcedIons, double[] bestScores, double[] LocalizationScores, int scanIndex, int iDLow, int ind)
         {
-            var psmGlyco = new GlycoSpectralMatch(glycopeptide, 0, score, scanIndex, theScan, CommonParameters, bestMatchedIons);
-            psmGlyco.ChildMatchedFragmentIons = bestChildMathcedIons;
+            //if (!GlycoPeptides.ScanTrimannosylCoreFilter(matchedIons, NGlycans[iDLow]))
+            //{
+            //    continue;
+            //}
+
+            int bestModIndex = 0;
+
+            //There doesn't contain Level2 for N-Glycopeptide localization Level, since we only consider one glycan on one peptide.
+            LocalizationLevel localizationLevel = LocalizationLevel.Level3;
+            Dictionary<int, double> siteProbability = new Dictionary<int, double>();
+
+            //Assign localization level and localization site probability. 
+            if (modPos.Count > 1)
+            {
+                bestModIndex = Array.IndexOf(bestScores, bestScores.Max());
+
+                //Calculate the site specific localization probability.
+                var p = theScan.TheScan.MassSpectrum.Size * CommonParameters.ProductMassTolerance.GetRange(1000).Width / theScan.TheScan.MassSpectrum.Range.Width;
+                int n = (bestPeptides.First().Length - 1) * 2; //TO DO: theoretical localization fragment ion count.
+
+                foreach (var childScan in theScan.ChildScans)
+                {
+                    p += childScan.TheScan.MassSpectrum.Size * CommonParameters.ProductMassTolerance.GetRange(1000).Width / childScan.TheScan.MassSpectrum.Range.Width;
+                    n += (bestPeptides.First().Length - 1) * 2; //TO DO: theoretical localization fragment ion count.
+                }
+
+                double[] Ps = new double[modPos.Count];
+                for (int i = 0; i < modPos.Count; i++)
+                {                  
+                    double k = LocalizationScores[i]; 
+
+                    //To understand the math, ref to "phosphoRS" papar.    
+                    var cp = 1 / (1 - MathNet.Numerics.Distributions.Binomial.CDF(p, n, k) + MathNet.Numerics.Distributions.Binomial.PMF(p, n, (int)k));
+
+                    Ps[i] = cp;
+                }
+                
+                for (int i = 0; i < modPos.Count; i++)
+                {
+                    siteProbability.Add(modPos[i], Ps[i]/Ps.Sum());
+                }
+
+                //If the best and the second best localization score are the same
+                var x = LocalizationScores.OrderByDescending(p => p).ToList();
+                if (x[0] > x[1])
+                {
+                    localizationLevel = LocalizationLevel.Level1;
+                }
+                //Correct the localization level based on probabity 0.75
+                if (siteProbability.ElementAt(bestModIndex).Value < 0.75)
+                {
+                    localizationLevel = LocalizationLevel.Level1b;
+                }
+                
+            }
+            else
+            {
+                if (LocalizationScores[0] > 1e-9)
+                {
+                    localizationLevel = LocalizationLevel.Level1;
+                }
+                else
+                {
+                    localizationLevel = LocalizationLevel.Level1b;
+                }
+                siteProbability.Add(modPos[0], 1); //If there is only one N-Glycosite, the site probability for the site will be 1. 
+            }
+
+            var psmGlyco = new GlycoSpectralMatch(bestPeptides[bestModIndex], 0, bestScores[bestModIndex], scanIndex, theScan, CommonParameters, bestMatchedIons[bestModIndex]);
+            psmGlyco.ChildMatchedFragmentIons = bestChildMathcedIons[bestModIndex];
             psmGlyco.NGlycan = new List<Glycan> { NGlycans[iDLow] };
-            psmGlyco.GlycanScore = CalculatePeptideScore(theScan.TheScan, bestMatchedIons.Where(p => p.NeutralTheoreticalProduct.ProductType == ProductType.M).ToList());
-            psmGlyco.DiagnosticIonScore = CalculatePeptideScore(theScan.TheScan, bestMatchedIons.Where(p => p.NeutralTheoreticalProduct.ProductType == ProductType.D).ToList());
+            psmGlyco.GlycanScore = CalculatePeptideScore(theScan.TheScan, bestMatchedIons[bestModIndex].Where(p => p.NeutralTheoreticalProduct.ProductType == ProductType.M).ToList());
+            psmGlyco.DiagnosticIonScore = CalculatePeptideScore(theScan.TheScan, bestMatchedIons[bestModIndex].Where(p => p.NeutralTheoreticalProduct.ProductType == ProductType.D).ToList());
             psmGlyco.PeptideScore = psmGlyco.Score - psmGlyco.GlycanScore - psmGlyco.DiagnosticIonScore;
             psmGlyco.Rank = ind;
-            psmGlyco.NGlycanLocalizations = new List<int> { bestSite - 1 }; //TO DO: ambiguity modification site
+            psmGlyco.LocalizationLevel = localizationLevel;
+            psmGlyco.NGlycoSiteSpeciLocalProb = siteProbability;
 
             if (oxoniumIonIntensities[5] <= 0.00000001)
             {
@@ -586,65 +654,63 @@ namespace EngineLayer.GlycoSearch
 
             while (iDLow < NGlycans.Length && PrecusorSearchMode.Within(theScan.PrecursorMass, theScanBestPeptide.MonoisotopicMass + (double)NGlycans[iDLow].Mass / 1E5))
             {
-                double bestLocalizedScore = scoreCutOff;
-                int bestSite = 0;
-                List<MatchedFragmentIon> bestMatchedIons = new List<MatchedFragmentIon>();
-                Dictionary<int, List<MatchedFragmentIon>> bestChildMathcedIons = new Dictionary<int, List<MatchedFragmentIon>>();
-                PeptideWithSetModifications[] peptideWithSetModifications = new PeptideWithSetModifications[1];
-                foreach (int possibleSite in modPos)
+                PeptideWithSetModifications[] bestPeptides = new PeptideWithSetModifications[modPos.Count];
+                List<MatchedFragmentIon>[] bestMatchedIons = new List<MatchedFragmentIon>[modPos.Count];
+                Dictionary<int, List<MatchedFragmentIon>>[] bestChildMathcedIons = new Dictionary<int, List<MatchedFragmentIon>>[modPos.Count];
+                double[] bestScores = new double[modPos.Count];
+                double[] localizationScores = new double[modPos.Count];
+
+                for (int i = 0; i < modPos.Count; i++)
                 {
-                    var testPeptide = GlycoPeptides.GenerateGlycopeptide(possibleSite, theScanBestPeptide, NGlycans[iDLow]);
+                    var possibleSite = modPos[i];
 
-                    List<Product> theoreticalProducts = new List<Product>();
-                    testPeptide.Fragment(CommonParameters.DissociationType, FragmentationTerminus.Both, theoreticalProducts);
-                    theoreticalProducts = theoreticalProducts.Where(p => p.ProductType != ProductType.M).ToList();
-                    theoreticalProducts.AddRange(GlycoPeptides.GetGlycanYIons(theScan.PrecursorMass, NGlycans[iDLow]));
+                    var testPeptide = GlycoPeptides.GenerateNGlycopeptide(possibleSite, theScanBestPeptide, NGlycans[iDLow]);
 
-                    //TO DO: the current MatchFragmentIons only match one charge states.
+                    List<Product> theoreticalProducts = GlycoPeptides.NGlyGetTheoreticalFragments(CommonParameters.DissociationType, theScanBestPeptide, testPeptide, NGlycans[iDLow]);
+
+                    //TO DO: the current MatchFragmentIons only match one charge states. For NGlycopeptide, the Y-ions always contain more than one charge state.
                     var matchedIons = MatchFragmentIons(theScan, theoreticalProducts, CommonParameters);
 
-                    //if (!GlycoPeptides.ScanTrimannosylCoreFilter(matchedIons, NGlycans[iDLow]))
-                    //{
-                    //    continue;
-                    //}
-
                     double score = CalculatePeptideScore(theScan.TheScan, matchedIons);
+
+                    var matchedLocalizationIons = matchedIons.Where(p => p.NeutralTheoreticalProduct.ProductType != ProductType.M && p.NeutralTheoreticalProduct.NeutralLoss > 0).ToList(); //TO DO: Select matched localzation ions
+                    double localizationScore = CalculatePeptideScore(theScan.TheScan, matchedLocalizationIons);
 
                     var allMatchedChildIons = new Dictionary<int, List<MatchedFragmentIon>>();
                     foreach (var childScan in theScan.ChildScans)
                     {
-                        List<Product> theoreticalChildProducts = new List<Product>();
-                        testPeptide.Fragment(CommonParameters.MS2ChildScanDissociationType, FragmentationTerminus.Both, theoreticalChildProducts);
+                        List<Product> theoreticalChildProducts = GlycoPeptides.NGlyGetTheoreticalFragments(CommonParameters.MS2ChildScanDissociationType, theScanBestPeptide, testPeptide, NGlycans[iDLow]);
 
                         var matchedChildIons = MatchFragmentIons(childScan, theoreticalChildProducts, CommonParameters);
+
+                        allMatchedChildIons.Add(childScan.OneBasedScanNumber, matchedChildIons);
 
                         if (matchedChildIons == null)
                         {
                             continue;
                         }
 
-                        allMatchedChildIons.Add(childScan.OneBasedScanNumber, matchedChildIons);
                         double childScore = CalculatePeptideScore(childScan.TheScan, matchedChildIons);
+
+                        var childMatchedLocalizationIons = matchedChildIons.Where(p=>p.NeutralTheoreticalProduct.ProductType!= ProductType.M && p.NeutralTheoreticalProduct.NeutralLoss > 0).ToList(); //TO DO: Select child matched localzation ions
+                        double childLocalizationScore = CalculatePeptideScore(theScan.TheScan, childMatchedLocalizationIons);
 
                         //TO THINK:may think a different way to use childScore
                         score += childScore;
+                        localizationScore += childLocalizationScore;
                     }
 
-                    if (score > bestLocalizedScore)
-                    {
-                        peptideWithSetModifications[0] = testPeptide;
-                        bestLocalizedScore = score;
-                        bestSite = possibleSite;
-                        bestMatchedIons = matchedIons;
-                        bestChildMathcedIons = allMatchedChildIons;
-                    }
-
+                    bestPeptides[i] = testPeptide;
+                    bestMatchedIons[i] = matchedIons;
+                    bestChildMathcedIons[i] = allMatchedChildIons;
+                    bestScores[i] = score;
+                    localizationScores[i] = localizationScore;
                 }
 
-                if (peptideWithSetModifications[0] != null)
+                var psmGlyco = CreateNGsm(theScan, oxoniumIonIntensities, modPos, bestPeptides, bestMatchedIons, bestChildMathcedIons, bestScores, localizationScores, scanIndex, iDLow, ind);
+
+                if (psmGlyco.Score > scoreCutOff)
                 {
-                    var psmGlyco = CreateNGsm(theScan, peptideWithSetModifications[0], bestLocalizedScore, bestMatchedIons, bestChildMathcedIons, oxoniumIonIntensities, scanIndex, iDLow, ind, bestSite);
-                    
                     possibleMatches.Add(psmGlyco);
                 }
 
@@ -793,8 +859,6 @@ namespace EngineLayer.GlycoSearch
 
             return possibleMatches;
         }
-
-
 
     }
 }

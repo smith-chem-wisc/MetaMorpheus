@@ -58,9 +58,9 @@ namespace Test
             Protein pep = new Protein("TKPREEQYNSTYR", "accession");
             DigestionParams digestionParams = new DigestionParams(minPeptideLength: 7);
             var aPeptideWithSetModifications = pep.Digest(digestionParams, new List<Modification>(), new List<Modification>());
-
+            var peptide = aPeptideWithSetModifications.Last();
             string[] motifs = new string[] { "Nxs", "Nxt" };
-            var sites = GlycoSpectralMatch.GetPossibleModSites(aPeptideWithSetModifications.Last(), motifs);
+            var sites = GlycoSpectralMatch.GetPossibleModSites(peptide, motifs);
             Glycan glycan = Glycan.Struct2Glycan("(N(F)(N(H(H(N))(H(N)))))", 0);
 
             
@@ -81,24 +81,30 @@ namespace Test
             var msDataFile = myFileManager.LoadFile(filePath, commonParameters);
             var listOfSortedms2Scans = MetaMorpheusTask.GetMs2Scans(msDataFile, filePath, commonParameters).ToArray();
 
-            var glycanMod = Glycan.NGlycanToModification(glycan);
-            var glycopep = GlycoPeptides.GenerateGlycopeptide(sites[0], aPeptideWithSetModifications.Last(), glycan);
-            List<Product> fragmentIons = new List<Product>();
-            glycopep.Fragment(DissociationType.HCD, FragmentationTerminus.Both, fragmentIons);
+            //var glycanMod = Glycan.NGlycanToModification(glycan);
+            var glycopep = GlycoPeptides.GenerateNGlycopeptide(sites[0], peptide, glycan);
+            List<Product> fragmentIons = GlycoPeptides.NGlyGetTheoreticalFragments(DissociationType.HCD, peptide, glycopep, glycan);
 
-            var glycanYIons = GlycoPeptides.GetGlycanYIons(listOfSortedms2Scans[0].PrecursorMass, glycan);
-            var matchedGlycanYIons = MetaMorpheusEngine.MatchFragmentIons(listOfSortedms2Scans[0], glycanYIons, commonParameters);
+            var glycanYIons0 = GlycoPeptides.GetGlycanYIons(aPeptideWithSetModifications.Last(), glycan);
+            Assert.That(glycanYIons0.Count == 17);
+            var matchedGlycanYIons = MetaMorpheusEngine.MatchFragmentIons(listOfSortedms2Scans[0], glycanYIons0, commonParameters);
             Assert.AreEqual(matchedGlycanYIons.Count, 14);
+
+            //var glycanYIons = GlycoPeptides.GetGlycanYIons(listOfSortedms2Scans[0].PrecursorMass, glycan);
+            //Assert.That(glycanYIons.Count == 17);
+            //var matchedGlycanYIons = MetaMorpheusEngine.MatchFragmentIons(listOfSortedms2Scans[0], glycanYIons, commonParameters);
+            //Assert.AreEqual(matchedGlycanYIons.Count, 14);
 
             //TO DO: The neutroloss is not annotated well.
             var matchedFragmentIons = MetaMorpheusEngine.MatchFragmentIons(listOfSortedms2Scans[0], fragmentIons, commonParameters);
+            Assert.That(matchedFragmentIons.Count == 24);
 
             var coreIons = GlycoPeptides.ScanGetTrimannosylCore(matchedFragmentIons, glycan);
-            Assert.AreEqual(coreIons.Count, 6);
+            Assert.AreEqual(coreIons.Count, 7);
             var filter = GlycoPeptides.ScanTrimannosylCoreFilter(matchedFragmentIons, glycan);
             Assert.AreEqual(filter, true);
-            var NGlycans = GlycanDatabase.LoadGlycan(GlobalVariables.NGlycanLocations[0], true, false);
-            var bestGlycans = GlycoPeptides.MatchBestGlycan(listOfSortedms2Scans[0], NGlycans.ToArray(), commonParameters).Where(p => p != null && p.Item2 >= 2).OrderByDescending(p => p.Item2).Take(100).OrderBy(p => p.Item3).ToArray(); ;
+            //var NGlycans = GlycanDatabase.LoadGlycan(GlobalVariables.NGlycanLocations[0], true, false);
+            //var bestGlycans = GlycoPeptides.MatchBestGlycan(listOfSortedms2Scans[0], NGlycans.ToArray(), commonParameters).Where(p => p != null && p.Item2 >= 2).OrderByDescending(p => p.Item2).Take(100).OrderBy(p => p.Item3).ToArray(); ;
 
         }
 
@@ -140,7 +146,7 @@ namespace Test
             Assert.AreEqual(precusorMatched, 0);
 
             var glycanMod = Glycan.NGlycanToModification(glycan);
-            var glycopep = GlycoPeptides.GenerateGlycopeptide(sites[0], aPeptideWithSetModifications.Last(), glycan);
+            var glycopep = GlycoPeptides.GenerateNGlycopeptide(sites[0], aPeptideWithSetModifications.Last(), glycan);
             List<Product> fragmentIons = new List<Product>();
             glycopep.Fragment(DissociationType.EThcD, FragmentationTerminus.Both, fragmentIons);
                

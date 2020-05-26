@@ -25,13 +25,26 @@ namespace EngineLayer.GlycoSearch
 
         }
 
+        #region Proterties
+
         public int Rank { get; set; }
         public Dictionary<int, List<MatchedFragmentIon>> ChildMatchedFragmentIons { get; set; }
+
+        public double PredictedHydrophobicity { get; set; }
+
+        public double PredictedRT { get; set; }
+
         //Glyco properties
+        public LocalizationLevel LocalizationLevel { get; set; }
+        public double PeptideScore { get; set; } //Scores from only mathced peptide fragments.
+        public double GlycanScore { get; set; } //Scores from only matched Y ions. 
+        public double DiagnosticIonScore { get; set; } //Since every glycopeptide generate DiagnosticIon, it is important to seperate the score. 
+        public double R138vs144 { get; set; } // The intensity ratio of this 138 and 144 could be a signature for O-glycan or N-glycan.
+        //N-Glyco Info
         public List<Glycan> NGlycan { get; set; }  //Identified NGlycan
-        public List<int> NGlycanLocalizations { get; set; }
+        public Dictionary<int, double> NGlycoSiteSpeciLocalProb { get; set; }
 
-
+        //O-Glyco Info
         public List<LocalizationGraph> LocalizationGraphs { get; set; }  //Graph-based Localization information.
         public List<Route> Routes { get; set; } //Localized modification sites and modfication ID.
 
@@ -40,17 +53,10 @@ namespace EngineLayer.GlycoSearch
         public int Thero_n { get; set; } //Scan n value. Used for Localization probability calculation. Ref PhosphoRS paper.
 
         public Dictionary<int, List<Tuple<int, double>>> SiteSpeciLocalProb { get; set; } // Data <modPos, List<glycanId, site probability>>
-        public double PeptideScore { get; set; } //Scores from only mathced peptide fragments.
-        public double GlycanScore { get; set; } //Scores from only matched Y ions. 
-        public double DiagnosticIonScore { get; set; } //Since every glycopeptide generate DiagnosticIon, it is important to seperate the score. 
 
-        public double R138vs144 { get; set; } // The intensity ratio of this 138 and 144 could be a signature for O-glycan or N-glycan.
-        public List<Tuple<int, int, bool>> LocalizedGlycan { get; set; } //<mod site, glycanID, isLocalized> All seen glycans identified.
-        public LocalizationLevel LocalizationLevel { get; set; }  
+        public List<Tuple<int, int, bool>> LocalizedGlycan { get; set; } //<mod site, glycanID, isLocalized> All seen glycans identified 
 
-        public double PredictedHydrophobicity { get; set; }
-
-        public double PredictedRT { get; set; }
+        #endregion
 
         //Motif should be writen with required form
         public static List<int> GetPossibleModSites(PeptideWithSetModifications peptide, string[] motifs)
@@ -116,45 +122,7 @@ namespace EngineLayer.GlycoSearch
             return false;
         }
 
-        public static string GetTabSepHeaderSingle()
-        {
-            var sb = new StringBuilder();
-            sb.Append("File Name" + '\t');
-            sb.Append("Scan Number" + '\t');
-            sb.Append("Retention Time" + '\t');
-            sb.Append("Precursor Scan Number" + '\t');
-            sb.Append("Precursor MZ" + '\t');
-            sb.Append("Precursor Charge" + '\t');
-            sb.Append("Precursor Mass" + '\t');
-
-            sb.Append("Protein Accession" + '\t');
-            sb.Append("Organism" + '\t');
-            sb.Append("Protein Name" + '\t');
-            sb.Append("Start and End Residues In Protein" + '\t');
-            sb.Append("Base Sequence" + '\t');
-            sb.Append("FlankingResidues" + '\t');
-            sb.Append("Full Sequence" + '\t');
-            sb.Append("Number of Mods" + '\t');
-            sb.Append("Peptide Monoisotopic Mass" + '\t');
-            //sb.Append("Predicted Hydrophobicity" + '\t');
-            sb.Append("Score" + '\t');
-            sb.Append("Rank" + '\t');
-
-            sb.Append("Matched Ion Series" + '\t');
-            sb.Append("Matched Ion Mass-To-Charge Ratios" + '\t');
-            sb.Append("Matched Ion Mass Diff (Da)" + '\t');
-            sb.Append("Matched Ion Mass Diff (Ppm)" + '\t');
-            sb.Append("Matched Ion Intensities" + '\t');
-            sb.Append("Matched Ion Counts" + '\t');
-            sb.Append("Decoy/Contaminant/Target" + '\t');
-            sb.Append("QValue" + '\t');
-            sb.Append("PEP" + '\t');
-            sb.Append("PEP_QValue" + '\t');
-
-            return sb.ToString();
-        }
-
-        public static string GetTabSepHeaderOGlyco()
+        public static string GetTabSepHeaderGlyco(bool IsGlycopepitde, bool IsOGlycopeptide)
         {
             var sb = new StringBuilder();
             sb.Append("File Name" + '\t');
@@ -190,72 +158,29 @@ namespace EngineLayer.GlycoSearch
             sb.Append("PEP" + '\t');
             sb.Append("PEP_QValue" + '\t');
 
-            sb.Append("Localization Score" + '\t');
-            sb.Append("Yion Score" + '\t');
-            sb.Append("DiagonosticIon Score" + '\t');
-            sb.Append("Plausible Number Of Glycans" + '\t');
-            sb.Append("Total Glycosylation sites" + '\t');
-            sb.Append("GlycanMass" + '\t');
-            sb.Append("Plausible GlycanComposition" + '\t');
-            sb.Append("N-Glycan motif Check" + '\t');
-            sb.Append("R138/144" + '\t');
-            sb.Append("Plausible GlycanStructure" + '\t');
-            sb.Append("GlycanLocalizationLevel" + '\t');
-            sb.Append("Localized Glycans with Peptide Site Specific Probability" + '\t');
-            sb.Append("Localized Glycans with Protein Site Specific Probability" + '\t');
-            sb.Append("All potential glycan localizations" + '\t');
-            sb.Append("AllSiteSpecificLocalizationProbability" + '\t');
+            if (IsGlycopepitde)
+            {
+                sb.Append("Localization Score" + '\t');
+                sb.Append("Yion Score" + '\t');
+                sb.Append("DiagonosticIon Score" + '\t');
+                sb.Append("Plausible Number Of Glycans" + '\t');
+                sb.Append("Total Glycosylation sites" + '\t');
+                sb.Append("GlycanMass" + '\t');
+                sb.Append("Plausible GlycanComposition" + '\t');
+                sb.Append("N-Glycan motif Check" + '\t');
+                sb.Append("R138/144" + '\t');
+                sb.Append("Plausible GlycanStructure" + '\t');
+                sb.Append("GlycanLocalizationLevel" + '\t');
+                sb.Append("Localized Glycans with Peptide Site Specific Probability" + '\t');
+                sb.Append("Localized Glycans with Protein Site Specific Probability" + '\t');
 
-            return sb.ToString();
-        }
-
-        public static string GetTabSepHeaderNGlyco()
-        {
-            var sb = new StringBuilder();
-            sb.Append("File Name" + '\t');
-            sb.Append("Scan Number" + '\t');
-            sb.Append("Scan Retention Time" + '\t');
-            sb.Append("Precursor Scan Number" + '\t');
-            sb.Append("Precursor MZ" + '\t');
-            sb.Append("Precursor Charge" + '\t');
-            sb.Append("Precursor Mass" + '\t');
-
-            sb.Append("Protein Accession" + '\t');
-            sb.Append("Organism" + '\t');
-            sb.Append("Protein Name" + '\t');
-            sb.Append("Start and End Residues In Protein" + '\t');
-            sb.Append("Base Sequence" + '\t');
-            sb.Append("FlankingResidues" + '\t');
-            sb.Append("Full Sequence" + '\t');
-            sb.Append("Number of Mods" + '\t');
-            sb.Append("Peptide Monoisotopic Mass" + '\t');
-            //sb.Append("Predicted Hydrophobicity" + '\t');
-            sb.Append("Score" + '\t');
-            sb.Append("Rank" + '\t');
-
-            sb.Append("Matched Ion Series" + '\t');
-            sb.Append("Matched Ion Mass-To-Charge Ratios" + '\t');
-            sb.Append("Matched Ion Mass Diff (Da)" + '\t');
-            sb.Append("Matched Ion Mass Diff (Ppm)" + '\t');
-            sb.Append("Matched Ion Intensities" + '\t');
-            sb.Append("Matched Ion Counts" + '\t');
-
-            sb.Append("Decoy/Contaminant/Target" + '\t');
-            sb.Append("QValue" + '\t');
-            sb.Append("PEP" + '\t');
-            sb.Append("PEP_QValue" + '\t');
-
-            sb.Append("Localization Score" + '\t');
-            sb.Append("Yion Score" + '\t');
-            sb.Append("DiagonosticIon Score" + '\t');
-            sb.Append("GlycanMass" + '\t');
-            sb.Append("Plausible GlycanComposition" + '\t');
-            sb.Append("R138/144" + '\t');
-            sb.Append("Plausible GlycanStructure" + '\t');
-            sb.Append("GlycanLocalizationLevel" + '\t');
-            sb.Append("Localized Glycans with Peptide Site Specific Probability" + '\t');
-            sb.Append("Localized Glycans with Protein Site Specific Probability" + '\t');
-
+                if (IsOGlycopeptide)
+                {
+                    sb.Append("All potential glycan localizations" + '\t');
+                    sb.Append("AllSiteSpecificLocalizationProbability" + '\t');
+                }
+            }
+           
             return sb.ToString();
         }
 
@@ -344,15 +269,47 @@ namespace EngineLayer.GlycoSearch
             if (NGlycan != null)
             {            
                 sb.Append(PeptideScore + "\t");
+
                 sb.Append(GlycanScore + "\t");
+
                 sb.Append(DiagnosticIonScore + "\t");
+
+                sb.Append("1" + "\t"); //For N-Glyco, the Plausible Number Of N-Glycan modified is only 1 for now. 
+
+                sb.Append(GetPossibleModSites(BestMatchingPeptides.First().Peptide, new string[] { "Nxt", "Nxs" }).Count() + "\t");
+
                 sb.Append((double)NGlycan.First().Mass / 1E5); sb.Append("\t");
+
                 sb.Append(Glycan.GetKindString(NGlycan.First().Kind)); sb.Append("\t");
+
+                var NSiteExist = MotifExist(BaseSequence, new string[] { "Nxt", "Nxs" });
+                sb.Append(NSiteExist); sb.Append("\t");
+
                 sb.Append(R138vs144.ToString()); sb.Append("\t");
+
                 if (NGlycan.First().Struc!=null)
                 {
                     sb.Append(NGlycan.First().Struc); sb.Append("\t");
                 }
+                else
+                {
+                    sb.Append("\t");
+                }
+
+                sb.Append(LocalizationLevel); sb.Append("\t");
+
+                string peptideProb = "[";
+                string proteinProb = "[";
+                foreach (var pro in NGlycoSiteSpeciLocalProb)
+                {
+                    peptideProb += "(" + pro.Key + ","+ pro.Value.ToString("0.000") + ")";
+                    var protein_site = OneBasedStartResidueInProtein.HasValue ? OneBasedStartResidueInProtein.Value + pro.Key - 2 : -1;
+                    proteinProb += "(" + protein_site + "," + pro.Value.ToString("0.000") + ")";
+                }
+                peptideProb += "]";
+                proteinProb += "]";
+                sb.Append(peptideProb); sb.Append("\t");
+                sb.Append(proteinProb); sb.Append("\t");
             }
 
             if (Routes != null)
