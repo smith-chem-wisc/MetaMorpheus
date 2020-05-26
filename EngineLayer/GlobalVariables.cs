@@ -140,13 +140,13 @@ namespace EngineLayer
             }
             foreach (var path in NGlycanLocations)
             {
-                var og = GlycanDatabase.LoadGlycan(path, false, false);
-                foreach (var g in og)
+                var ng = GlycanDatabase.LoadGlycan(path, false, false);
+                foreach (var g in ng)
                 {
-                    var ogmod = Glycan.OGlycanToModification(g);
-                    if (!AllModsKnownDictionary.ContainsKey(ogmod.IdWithMotif))
+                    var ngmod = Glycan.NGlycanToModification(g);
+                    if (!AllModsKnownDictionary.ContainsKey(ngmod.IdWithMotif))
                     {
-                        AllModsKnownDictionary.Add(ogmod.IdWithMotif, ogmod);
+                        AllModsKnownDictionary.Add(ngmod.IdWithMotif, ngmod);
                     }
                 }
             }

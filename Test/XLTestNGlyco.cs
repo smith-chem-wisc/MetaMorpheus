@@ -85,6 +85,12 @@ namespace Test
             var glycopep = GlycoPeptides.GenerateNGlycopeptide(sites[0], peptide, glycan);
             List<Product> fragmentIons = GlycoPeptides.NGlyGetTheoreticalFragments(DissociationType.HCD, peptide, glycopep, glycan);
 
+            List<Product> etdFragmentIons = GlycoPeptides.NGlyGetTheoreticalFragments(DissociationType.ETD, peptide, glycopep, glycan);
+            List<Product> ethcdFragmentIons = GlycoPeptides.NGlyGetTheoreticalFragments(DissociationType.EThcD, peptide, glycopep, glycan);
+            Assert.That(fragmentIons.Count == 75);
+            Assert.That(etdFragmentIons.Count == 36);
+            Assert.That(ethcdFragmentIons.Count == 99);
+
             var glycanYIons0 = GlycoPeptides.GetGlycanYIons(aPeptideWithSetModifications.Last(), glycan);
             Assert.That(glycanYIons0.Count == 17);
             var matchedGlycanYIons = MetaMorpheusEngine.MatchFragmentIons(listOfSortedms2Scans[0], glycanYIons0, commonParameters);

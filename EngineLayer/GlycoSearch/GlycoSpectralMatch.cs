@@ -35,6 +35,8 @@ namespace EngineLayer.GlycoSearch
         public double PredictedRT { get; set; }
 
         //Glyco properties
+
+        public List<int> ModPos { get; set; }
         public LocalizationLevel LocalizationLevel { get; set; }
         public double PeptideScore { get; set; } //Scores from only mathced peptide fragments.
         public double GlycanScore { get; set; } //Scores from only matched Y ions. 
@@ -276,7 +278,7 @@ namespace EngineLayer.GlycoSearch
 
                 sb.Append("1" + "\t"); //For N-Glyco, the Plausible Number Of N-Glycan modified is only 1 for now. 
 
-                sb.Append(GetPossibleModSites(BestMatchingPeptides.First().Peptide, new string[] { "Nxt", "Nxs" }).Count() + "\t");
+                sb.Append(ModPos.Count() + "\t"); 
 
                 sb.Append((double)NGlycan.First().Mass / 1E5); sb.Append("\t");
 
@@ -296,18 +298,22 @@ namespace EngineLayer.GlycoSearch
                     sb.Append("\t");
                 }
 
+                if (ModPos.Count() ==1)
+                {
+                    LocalizationLevel = NGlycoCorrectLocalizationLevel(ModPos, MatchedFragmentIons, ChildMatchedFragmentIons);
+                }
+
                 sb.Append(LocalizationLevel); sb.Append("\t");
 
-                string peptideProb = "[";
-                string proteinProb = "[";
+                string peptideProb = "";
+                string proteinProb = "";
                 foreach (var pro in NGlycoSiteSpeciLocalProb)
                 {
-                    peptideProb += "(" + pro.Key + ","+ pro.Value.ToString("0.000") + ")";
+                    peptideProb += "[" + pro.Key + ","+ Glycan.GetKindString(NGlycan.First().Kind) + ',' + pro.Value.ToString("0.000") + "]";
                     var protein_site = OneBasedStartResidueInProtein.HasValue ? OneBasedStartResidueInProtein.Value + pro.Key - 2 : -1;
-                    proteinProb += "(" + protein_site + "," + pro.Value.ToString("0.000") + ")";
+                    proteinProb += "[" + protein_site + "," + Glycan.GetKindString(NGlycan.First().Kind) + ',' + pro.Value.ToString("0.000") + "]";
                 }
-                peptideProb += "]";
-                proteinProb += "]";
+
                 sb.Append(peptideProb); sb.Append("\t");
                 sb.Append(proteinProb); sb.Append("\t");
             }
@@ -374,6 +380,8 @@ namespace EngineLayer.GlycoSearch
             return s;
         }
 
+        #region O-glycopeptide Localization
+        //For N-Glycopeptide
         //Output: <int, int, string> <ModBoxId, ModPosition, is localized>; Input: List<Route>
         public static List<Tuple<int, int, bool>> GetLocalizedGlycan(List<Route> OGlycanBoxLocalization, out LocalizationLevel localizationLevel)
         {
@@ -535,5 +543,38 @@ namespace EngineLayer.GlycoSearch
 
             return local;
         }
+
+        #endregion
+
+        #region N-Glycopeptide Localization
+        //For N-Glycopeptide
+        public static LocalizationLevel NGlycoCorrectLocalizationLevel(List<int> modPos, List<MatchedFragmentIon> bestMatchedIons, Dictionary<int, List<MatchedFragmentIon>> bestChildMathcedIons)
+        {
+
+            var localizationLevel = LocalizationLevel.Level1b;
+
+            //correct localization.
+            if (bestMatchedIons.Where(p => (p.NeutralTheoreticalProduct.ProductType == ProductType.b || p.NeutralTheoreticalProduct.ProductType == ProductType.y) && p.NeutralTheoreticalProduct.NeutralLoss > 0).Count() > 0
+                || bestMatchedIons.Where(p => (p.NeutralTheoreticalProduct.ProductType == ProductType.c && p.NeutralTheoreticalProduct.AminoAcidPosition >= modPos[0] -1) || (p.NeutralTheoreticalProduct.ProductType == ProductType.zDot && p.NeutralTheoreticalProduct.AminoAcidPosition <= modPos[0] -1)).Count() > 0)
+            {
+                localizationLevel = LocalizationLevel.Level1;
+            }
+            else
+            {
+                foreach (var childIons in bestChildMathcedIons)
+                {
+                    if (childIons.Value.Where(p => (p.NeutralTheoreticalProduct.ProductType == ProductType.b || p.NeutralTheoreticalProduct.ProductType == ProductType.y) && p.NeutralTheoreticalProduct.NeutralLoss > 0).Count() > 0
+                        || childIons.Value.Where(p => (p.NeutralTheoreticalProduct.ProductType == ProductType.c && p.NeutralTheoreticalProduct.AminoAcidPosition >= modPos[0] -1) || (p.NeutralTheoreticalProduct.ProductType == ProductType.zDot && p.NeutralTheoreticalProduct.AminoAcidPosition <= modPos[0] -1)).Count() > 0)
+                    {
+                        localizationLevel = LocalizationLevel.Level1;
+                        break;
+                    }
+                }
+            }
+            return localizationLevel;
+
+        }
+
+        #endregion
     }
 }

@@ -476,6 +476,7 @@ namespace EngineLayer.GlycoSearch
 
             return psmGlyco;
         }
+        
         private void FindOGlycan(Ms2ScanWithSpecificMass theScan, int scanIndex, int scoreCutOff, PeptideWithSetModifications theScanBestPeptide, int ind, double possibleGlycanMassLow, double[] oxoniumIonIntensities, ref List<GlycoSpectralMatch> possibleMatches)
         {
             int iDLow = GlycoPeptides.BinarySearchGetIndex(GlycanBox.OGlycanBoxes.Select(p => p.Mass).ToArray(), possibleGlycanMassLow);
@@ -551,7 +552,7 @@ namespace EngineLayer.GlycoSearch
 
         //For Find NGlycan. Create NglycoPeptideSpectrumMatch and handle N-Glycan localization. 
         private GlycoSpectralMatch CreateNGsm(Ms2ScanWithSpecificMass theScan, double[] oxoniumIonIntensities, List<int> modPos, PeptideWithSetModifications[] bestPeptides, 
-            List<MatchedFragmentIon>[] bestMatchedIons, Dictionary<int, List<MatchedFragmentIon>>[] bestChildMathcedIons, double[] bestScores, double[] LocalizationScores, int scanIndex, int iDLow, int ind)
+            List<MatchedFragmentIon>[] bestMatchedIons, Dictionary<int, List<MatchedFragmentIon>>[] bestChildMathcedIons, double[] bestScores, double[] LocalizationScores, int theo_n, int scanIndex, int iDLow, int ind)
         {
             //if (!GlycoPeptides.ScanTrimannosylCoreFilter(matchedIons, NGlycans[iDLow]))
             //{
@@ -561,7 +562,7 @@ namespace EngineLayer.GlycoSearch
             int bestModIndex = 0;
 
             //There doesn't contain Level2 for N-Glycopeptide localization Level, since we only consider one glycan on one peptide.
-            LocalizationLevel localizationLevel = LocalizationLevel.Level3;
+            LocalizationLevel localizationLevel = LocalizationLevel.Level1b;
             Dictionary<int, double> siteProbability = new Dictionary<int, double>();
 
             //Assign localization level and localization site probability. 
@@ -570,13 +571,11 @@ namespace EngineLayer.GlycoSearch
                 bestModIndex = Array.IndexOf(bestScores, bestScores.Max());
 
                 //Calculate the site specific localization probability.
-                var p = theScan.TheScan.MassSpectrum.Size * CommonParameters.ProductMassTolerance.GetRange(1000).Width / theScan.TheScan.MassSpectrum.Range.Width;
-                int n = (bestPeptides.First().Length - 1) * 2; //TO DO: theoretical localization fragment ion count.
+                var p = theScan.TheScan.MassSpectrum.Size * CommonParameters.ProductMassTolerance.GetRange(1000).Width / theScan.TheScan.MassSpectrum.Range.Width;        
 
                 foreach (var childScan in theScan.ChildScans)
                 {
-                    p += childScan.TheScan.MassSpectrum.Size * CommonParameters.ProductMassTolerance.GetRange(1000).Width / childScan.TheScan.MassSpectrum.Range.Width;
-                    n += (bestPeptides.First().Length - 1) * 2; //TO DO: theoretical localization fragment ion count.
+                    p += childScan.TheScan.MassSpectrum.Size * CommonParameters.ProductMassTolerance.GetRange(1000).Width / childScan.TheScan.MassSpectrum.Range.Width;             
                 }
 
                 double[] Ps = new double[modPos.Count];
@@ -585,7 +584,7 @@ namespace EngineLayer.GlycoSearch
                     double k = LocalizationScores[i]; 
 
                     //To understand the math, ref to "phosphoRS" papar.    
-                    var cp = 1 / (1 - MathNet.Numerics.Distributions.Binomial.CDF(p, n, k) + MathNet.Numerics.Distributions.Binomial.PMF(p, n, (int)k));
+                    var cp = 1 / (1 - MathNet.Numerics.Distributions.Binomial.CDF(p, theo_n, k) + MathNet.Numerics.Distributions.Binomial.PMF(p, theo_n, (int)k));
 
                     Ps[i] = cp;
                 }
@@ -597,31 +596,18 @@ namespace EngineLayer.GlycoSearch
 
                 //If the best and the second best localization score are the same
                 var x = LocalizationScores.OrderByDescending(p => p).ToList();
-                if (x[0] > x[1])
+                if (x[0] > x[1] && siteProbability.ElementAt(bestModIndex).Value >= 0.75)
                 {
                     localizationLevel = LocalizationLevel.Level1;
                 }
-                //Correct the localization level based on probabity 0.75
-                if (siteProbability.ElementAt(bestModIndex).Value < 0.75)
-                {
-                    localizationLevel = LocalizationLevel.Level1b;
-                }
-                
             }
             else
             {
-                if (LocalizationScores[0] > 1e-9)
-                {
-                    localizationLevel = LocalizationLevel.Level1;
-                }
-                else
-                {
-                    localizationLevel = LocalizationLevel.Level1b;
-                }
                 siteProbability.Add(modPos[0], 1); //If there is only one N-Glycosite, the site probability for the site will be 1. 
             }
 
             var psmGlyco = new GlycoSpectralMatch(bestPeptides[bestModIndex], 0, bestScores[bestModIndex], scanIndex, theScan, CommonParameters, bestMatchedIons[bestModIndex]);
+            psmGlyco.ModPos = modPos;
             psmGlyco.ChildMatchedFragmentIons = bestChildMathcedIons[bestModIndex];
             psmGlyco.NGlycan = new List<Glycan> { NGlycans[iDLow] };
             psmGlyco.GlycanScore = CalculatePeptideScore(theScan.TheScan, bestMatchedIons[bestModIndex].Where(p => p.NeutralTheoreticalProduct.ProductType == ProductType.M).ToList());
@@ -642,6 +628,7 @@ namespace EngineLayer.GlycoSearch
 
             return psmGlyco;
         }
+
         private void FindNGlycan(Ms2ScanWithSpecificMass theScan, int scanIndex, int scoreCutOff, PeptideWithSetModifications theScanBestPeptide, int ind, double possibleGlycanMassLow, double[] oxoniumIonIntensities, ref List<GlycoSpectralMatch> possibleMatches)
         {
             List<int> modPos = GlycoSpectralMatch.GetPossibleModSites(theScanBestPeptide, new string[] { "Nxt", "Nxs" });
@@ -659,6 +646,7 @@ namespace EngineLayer.GlycoSearch
                 Dictionary<int, List<MatchedFragmentIon>>[] bestChildMathcedIons = new Dictionary<int, List<MatchedFragmentIon>>[modPos.Count];
                 double[] bestScores = new double[modPos.Count];
                 double[] localizationScores = new double[modPos.Count];
+                int theo_n = 0; // For site specific probability calculation.
 
                 for (int i = 0; i < modPos.Count; i++)
                 {
@@ -668,18 +656,22 @@ namespace EngineLayer.GlycoSearch
 
                     List<Product> theoreticalProducts = GlycoPeptides.NGlyGetTheoreticalFragments(CommonParameters.DissociationType, theScanBestPeptide, testPeptide, NGlycans[iDLow]);
 
+                    theo_n += theoreticalProducts.Where(p => p.ProductType != ProductType.M && p.ProductType != ProductType.D).Count();
+
                     //TO DO: the current MatchFragmentIons only match one charge states. For NGlycopeptide, the Y-ions always contain more than one charge state.
                     var matchedIons = MatchFragmentIons(theScan, theoreticalProducts, CommonParameters);
 
                     double score = CalculatePeptideScore(theScan.TheScan, matchedIons);
 
-                    var matchedLocalizationIons = matchedIons.Where(p => p.NeutralTheoreticalProduct.ProductType != ProductType.M && p.NeutralTheoreticalProduct.NeutralLoss > 0).ToList(); //TO DO: Select matched localzation ions
+                    var matchedLocalizationIons = matchedIons.Where(p => p.NeutralTheoreticalProduct.ProductType != ProductType.M && p.NeutralTheoreticalProduct.ProductType != ProductType.D).ToList(); //TO DO: Select matched localzation ions
                     double localizationScore = CalculatePeptideScore(theScan.TheScan, matchedLocalizationIons);
 
                     var allMatchedChildIons = new Dictionary<int, List<MatchedFragmentIon>>();
                     foreach (var childScan in theScan.ChildScans)
                     {
                         List<Product> theoreticalChildProducts = GlycoPeptides.NGlyGetTheoreticalFragments(CommonParameters.MS2ChildScanDissociationType, theScanBestPeptide, testPeptide, NGlycans[iDLow]);
+
+                        theo_n += theoreticalChildProducts.Where(p => p.ProductType != ProductType.M && p.ProductType != ProductType.D).Count();
 
                         var matchedChildIons = MatchFragmentIons(childScan, theoreticalChildProducts, CommonParameters);
 
@@ -692,7 +684,7 @@ namespace EngineLayer.GlycoSearch
 
                         double childScore = CalculatePeptideScore(childScan.TheScan, matchedChildIons);
 
-                        var childMatchedLocalizationIons = matchedChildIons.Where(p=>p.NeutralTheoreticalProduct.ProductType!= ProductType.M && p.NeutralTheoreticalProduct.NeutralLoss > 0).ToList(); //TO DO: Select child matched localzation ions
+                        var childMatchedLocalizationIons = matchedChildIons.Where(p=>p.NeutralTheoreticalProduct.ProductType!= ProductType.M && p.NeutralTheoreticalProduct.ProductType != ProductType.D).ToList(); //TO DO: Select child matched localzation ions
                         double childLocalizationScore = CalculatePeptideScore(theScan.TheScan, childMatchedLocalizationIons);
 
                         //TO THINK:may think a different way to use childScore
@@ -707,7 +699,7 @@ namespace EngineLayer.GlycoSearch
                     localizationScores[i] = localizationScore;
                 }
 
-                var psmGlyco = CreateNGsm(theScan, oxoniumIonIntensities, modPos, bestPeptides, bestMatchedIons, bestChildMathcedIons, bestScores, localizationScores, scanIndex, iDLow, ind);
+                var psmGlyco = CreateNGsm(theScan, oxoniumIonIntensities, modPos, bestPeptides, bestMatchedIons, bestChildMathcedIons, bestScores, localizationScores, theo_n, scanIndex, iDLow, ind);
 
                 if (psmGlyco.Score > scoreCutOff)
                 {
