@@ -1356,6 +1356,10 @@ namespace MetaMorpheusGUI
                     {
                         GuiWarnHandler(null, new StringEventArgs("Problem parsing the file-specific toml " + Path.GetFileName(tomlLocation) + "; " + e.Message + "; is the toml from an older version of MetaMorpheus?", null));
                     }
+                    catch (KeyNotFoundException e)
+                    {
+                        GuiWarnHandler(null, new StringEventArgs("Problem parsing the file-specific toml " + Path.GetFileName(tomlLocation) + "; " + e.Message + "; please update the proteases.tsv file and restart MetaMorpheus to use this file-specific toml.", null));
+                    }
                 }
             }
             UpdateSpectraFileGuiStuff();
@@ -1433,11 +1437,22 @@ namespace MetaMorpheusGUI
 
         private void ChangeFileParameters_Click(object sender, RoutedEventArgs e)
         {
-            var dialog = new FileSpecificParametersWindow(SelectedRawFiles);
-            if (dialog.ShowDialog() == true)
+            try
             {
-                var tomlPathsForSelectedFiles = SelectedRawFiles.Select(p => Path.Combine(Directory.GetParent(p.FilePath).ToString(), Path.GetFileNameWithoutExtension(p.FileName)) + ".toml").ToList();
-                UpdateFileSpecificParamsDisplay(tomlPathsForSelectedFiles.ToArray());
+                var dialog = new FileSpecificParametersWindow(SelectedRawFiles);
+                if (dialog.ShowDialog() == true)
+                {
+                    var tomlPathsForSelectedFiles = SelectedRawFiles.Select(p => Path.Combine(Directory.GetParent(p.FilePath).ToString(), Path.GetFileNameWithoutExtension(p.FileName)) + ".toml").ToList();
+                    UpdateFileSpecificParamsDisplay(tomlPathsForSelectedFiles.ToArray());
+                }
+            }
+            catch (MetaMorpheusException ex)
+            {
+                GuiWarnHandler(null, new StringEventArgs("Problem parsing the file-specific toml; " + ex.Message + "; is the toml from an older version of MetaMorpheus?", null));
+            }
+            catch (KeyNotFoundException ex)
+            {
+                GuiWarnHandler(null, new StringEventArgs("Problem parsing the file-specific toml; " + ex.Message + "; please update the proteases.tsv file and restart MetaMorpheus to use this file-specific toml.", null));
             }
         }
 
@@ -1511,13 +1526,13 @@ namespace MetaMorpheusGUI
 
         private void MenuItem_Click_3(object sender, RoutedEventArgs e)
         {
-            GlobalVariables.StartProcess(Path.Combine(GlobalVariables.DataDir, @"settings.toml"));
+            GlobalVariables.StartProcess(Path.Combine(GlobalVariables.DataDir, @"settings.toml"), useNotepadToOpenToml: true);
             Application.Current.Shutdown();
         }
 
         private void MenuItem_Click_7(object sender, RoutedEventArgs e)
         {
-            GlobalVariables.StartProcess(Path.Combine(GlobalVariables.DataDir, @"GUIsettings.toml"));
+            GlobalVariables.StartProcess(Path.Combine(GlobalVariables.DataDir, @"GUIsettings.toml"), useNotepadToOpenToml: true);
             Application.Current.Shutdown();
         }
 
