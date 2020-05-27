@@ -237,6 +237,17 @@ namespace EngineLayer.GlycoSearch
             FirstPathHelper(array, xind, yind, temp);
         }
 
+        //For HCD only spectra, we only want to get a Route that works.
+        public static Route GetAnyOnePath(LocalizationGraph localizationGraph)
+        {
+            Route route = new Route();
+            for (int i = 0; i < localizationGraph.ModBox.NumberOfMods; i++)
+            {
+                route.AddPos(localizationGraph.ModPos[i], localizationGraph.ModBox.ModIds[i], false);
+            }
+            return route;
+        }
+
         //The original path we get is just an array of AdjNode positions. For example, path = [1, 1, 2, 2] means the best nodes are at array[0][1], array[1][1], array[2][2], array[3][2]
         //This function here is to transfer the path into localized Route. Route contains each glycosite with glycanId.
         //Basicly, any change from left to right of the path indicates a modification. For example, the path = [1, 1, 2, 2] which means there is a modification at ModPos[0] and ModPos[2]

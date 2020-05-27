@@ -483,71 +483,96 @@ namespace EngineLayer.GlycoSearch
 
             int[] modPos = GlycoSpectralMatch.GetPossibleModSites(theScanBestPeptide, new string[] { "S", "T" }).OrderBy(p => p).ToArray();
 
-            var localizationScan = theScan;
-            List<Product> products = new List<Product>();
-
-            //For HCD-pd-ETD or CD-pd-EThcD type of data
-            if (theScan.ChildScans.Count > 0 && GlycoPeptides.DissociationTypeContainETD(CommonParameters.MS2ChildScanDissociationType))
-            {
-                localizationScan = theScan.ChildScans.First();
-                theScanBestPeptide.Fragment(DissociationType.ETD, FragmentationTerminus.Both, products);
-            }
-
-            //For ETD type of data
-            if (theScan.ChildScans.Count == 0 && GlycoPeptides.DissociationTypeContainETD(CommonParameters.DissociationType))
-            {
-                theScanBestPeptide.Fragment(DissociationType.ETD, FragmentationTerminus.Both, products);
-            }
-
             //Localization for O-glycopeptides only works on ETD related dissociationtype
             //No localization can be done with MS2-HCD spectrum
-            //TO THINK: there is a special situation. The HCD only scan from  HCD-pd-EThcD data can be a glycopeptide, but there is no ETD, so there is no localization. What to do with this?
             bool is_HCD_only_data = !GlycoPeptides.DissociationTypeContainETD(CommonParameters.DissociationType) && !GlycoPeptides.DissociationTypeContainETD(CommonParameters.MS2ChildScanDissociationType);
-            //if (is_HCD_only_data)
-            //{
-            //    theScanBestPeptide.Fragment(DissociationType.HCD, FragmentationTerminus.Both, products);
-            //}
-
-            double bestLocalizedScore = 0;
-
-            List<LocalizationGraph> localizationGraphs = new List<LocalizationGraph>();
-
-            while (iDLow < GlycanBox.OGlycanBoxes.Count() && (PrecusorSearchMode.Within(theScan.PrecursorMass, theScanBestPeptide.MonoisotopicMass + GlycanBox.OGlycanBoxes[iDLow].Mass)))
+            if (is_HCD_only_data)
             {
-                if (modPos.Length >= GlycanBox.OGlycanBoxes[iDLow].NumberOfMods && GlycoPeptides.OxoniumIonsAnalysis(oxoniumIonIntensities, GlycanBox.OGlycanBoxes[iDLow]))
-                {
-                    LocalizationGraph localizationGraph = new LocalizationGraph(modPos, GlycanBox.OGlycanBoxes[iDLow], GlycanBox.OGlycanBoxes[iDLow].ChildGlycanBoxes, iDLow);
-                    LocalizationGraph.LocalizeOGlycan(localizationGraph, localizationScan, CommonParameters.ProductMassTolerance, products);
+                List<LocalizationGraph> localizationGraphs = new List<LocalizationGraph>();
 
-                    double currentLocalizationScore = localizationGraph.TotalScore;
-                    if (currentLocalizationScore > bestLocalizedScore)
+                while (iDLow < GlycanBox.OGlycanBoxes.Count() && (PrecusorSearchMode.Within(theScan.PrecursorMass, theScanBestPeptide.MonoisotopicMass + GlycanBox.OGlycanBoxes[iDLow].Mass)))
+                {
+                    if (modPos.Length >= GlycanBox.OGlycanBoxes[iDLow].NumberOfMods && GlycoPeptides.OxoniumIonsAnalysis(oxoniumIonIntensities, GlycanBox.OGlycanBoxes[iDLow]))
                     {
-                        bestLocalizedScore = currentLocalizationScore;
-                        localizationGraphs.Clear();
+                        //Construct the localizationGraph, but didn't run the localization. The purpose is to use the GlycanBox Infomation.
+                        LocalizationGraph localizationGraph = new LocalizationGraph(modPos, GlycanBox.OGlycanBoxes[iDLow], GlycanBox.OGlycanBoxes[iDLow].ChildGlycanBoxes, iDLow);
                         localizationGraphs.Add(localizationGraph);
                     }
-                    else if ((is_HCD_only_data || bestLocalizedScore > 0) && (currentLocalizationScore <= bestLocalizedScore + 0.00000001 && currentLocalizationScore >= bestLocalizedScore - 0.00000001))
+
+                    iDLow++;
+                }
+                if (localizationGraphs.Count > 0)
+                {   
+                    var route = LocalizationGraph.GetAnyOnePath(localizationGraphs[0]);
+
+                    var psmGlyco = CreateOGsm(theScan, scanIndex, ind, theScanBestPeptide, route, oxoniumIonIntensities, localizationGraphs);
+
+                    if (psmGlyco.Score > scoreCutOff)
                     {
-                        localizationGraphs.Add(localizationGraph);
+                        possibleMatches.Add(psmGlyco);
                     }
                 }
-
-                iDLow++;
             }
-
-            //In theory, the peptide_localization shouldn't be null, but it is possible that the real score is smaller than indexed score.
-            if (localizationGraphs.Count > 0)
+            else
             {
-                var firstPath = LocalizationGraph.GetFirstPath(localizationGraphs[0].array, localizationGraphs[0].ChildModBoxes);
-                var localizationCandidate = LocalizationGraph.GetLocalizedPath(localizationGraphs[0], firstPath);
+                var localizationScan = theScan;
+                List<Product> products = new List<Product>();
 
-                var psmGlyco = CreateOGsm(theScan, scanIndex, ind, theScanBestPeptide, localizationCandidate, oxoniumIonIntensities, localizationGraphs);
-
-                if (psmGlyco.Score > scoreCutOff)
+                //For HCD-pd-ETD or CD-pd-EThcD type of data
+                if (theScan.ChildScans.Count > 0 && GlycoPeptides.DissociationTypeContainETD(CommonParameters.MS2ChildScanDissociationType))
                 {
-                    possibleMatches.Add(psmGlyco);
+                    localizationScan = theScan.ChildScans.First();
+                    theScanBestPeptide.Fragment(DissociationType.ETD, FragmentationTerminus.Both, products);
+                }
+
+                //For ETD type of data
+                if (theScan.ChildScans.Count == 0 && GlycoPeptides.DissociationTypeContainETD(CommonParameters.DissociationType))
+                {
+                    theScanBestPeptide.Fragment(DissociationType.ETD, FragmentationTerminus.Both, products);
+                }
+
+                double bestLocalizedScore = 0;
+
+                List<LocalizationGraph> localizationGraphs = new List<LocalizationGraph>();
+
+                while (iDLow < GlycanBox.OGlycanBoxes.Count() && (PrecusorSearchMode.Within(theScan.PrecursorMass, theScanBestPeptide.MonoisotopicMass + GlycanBox.OGlycanBoxes[iDLow].Mass)))
+                {
+                    if (modPos.Length >= GlycanBox.OGlycanBoxes[iDLow].NumberOfMods && GlycoPeptides.OxoniumIonsAnalysis(oxoniumIonIntensities, GlycanBox.OGlycanBoxes[iDLow]))
+                    {
+                        LocalizationGraph localizationGraph = new LocalizationGraph(modPos, GlycanBox.OGlycanBoxes[iDLow], GlycanBox.OGlycanBoxes[iDLow].ChildGlycanBoxes, iDLow);
+                        LocalizationGraph.LocalizeOGlycan(localizationGraph, localizationScan, CommonParameters.ProductMassTolerance, products);
+
+                        double currentLocalizationScore = localizationGraph.TotalScore;
+                        if (currentLocalizationScore > bestLocalizedScore)
+                        {
+                            bestLocalizedScore = currentLocalizationScore;
+                            localizationGraphs.Clear();
+                            localizationGraphs.Add(localizationGraph);
+                        }
+                        else if ((is_HCD_only_data || bestLocalizedScore > 0) && (currentLocalizationScore <= bestLocalizedScore + 0.00000001 && currentLocalizationScore >= bestLocalizedScore - 0.00000001))
+                        {
+                            localizationGraphs.Add(localizationGraph);
+                        }
+                    }
+
+                    iDLow++;
+                }
+
+                //In theory, the peptide_localization shouldn't be null, but it is possible that the real score is smaller than indexed score.
+                if (localizationGraphs.Count > 0)
+                {
+                    var firstPath = LocalizationGraph.GetFirstPath(localizationGraphs[0].array, localizationGraphs[0].ChildModBoxes);
+                    var localizationCandidate = LocalizationGraph.GetLocalizedPath(localizationGraphs[0], firstPath);
+
+                    var psmGlyco = CreateOGsm(theScan, scanIndex, ind, theScanBestPeptide, localizationCandidate, oxoniumIonIntensities, localizationGraphs);
+
+                    if (psmGlyco.Score > scoreCutOff)
+                    {
+                        possibleMatches.Add(psmGlyco);
+                    }
                 }
             }
+           
         }
 
         //For Find NGlycan. Create NglycoPeptideSpectrumMatch and handle N-Glycan localization. 
