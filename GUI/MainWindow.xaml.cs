@@ -456,7 +456,7 @@ namespace MetaMorpheusGUI
         /// </summary>
         private void AddSpectraFile_Click(object sender, RoutedEventArgs e)
         {
-            var openPicker = OpenFileDialog("Spectra Files(*.raw;*.mzML;*.mgf)|*.raw;*.mzML;*.mgf");
+            var openPicker = StartOpenFileDialog("Spectra Files(*.raw;*.mzML;*.mgf)|*.raw;*.mzML;*.mgf");
 
             if (openPicker.ShowDialog() == true)
             {
@@ -507,7 +507,7 @@ namespace MetaMorpheusGUI
         /// </summary>
         private void AddProteinDatabase_Click(object sender, RoutedEventArgs e)
         {
-            var openPicker = OpenFileDialog("Database Files|*.xml;*.xml.gz;*.fasta;*.fa");
+            var openPicker = StartOpenFileDialog("Database Files|*.xml;*.xml.gz;*.fasta;*.fa");
 
             if (openPicker.ShowDialog() == true)
             {
@@ -577,112 +577,27 @@ namespace MetaMorpheusGUI
 
         private void AddSearchTaskButton_Click(object sender, RoutedEventArgs e)
         {
-            //check if the default toml has been overwritten
-            SearchTask task = null;
-            string defaultFilePath = Path.Combine(GlobalVariables.DataDir, "DefaultParameters", @"SearchTaskDefault.toml");
-            if (File.Exists(defaultFilePath))
-            {
-                try
-                {
-                    task = Toml.ReadFile<SearchTask>(defaultFilePath, MetaMorpheusTask.tomlConfig);
-                }
-                catch (Exception)
-                {
-                    NotificationHandler(null, new StringEventArgs("Cannot read toml: " + defaultFilePath, null));
-                }
-            }
-
-            var dialog = new SearchTaskWindow(task);
-            if (dialog.ShowDialog() == true)
-            {
-                AddTaskToCollection(dialog.TheTask);
-                UpdateTaskGuiStuff();
-            }
+            AddNewTaskWindow(MyTask.Search);
         }
 
         private void AddCalibrateTaskButton_Click(object sender, RoutedEventArgs e)
         {
-            //check if the default toml has been overwritten
-            CalibrationTask task = null;
-            string defaultFilePath = Path.Combine(GlobalVariables.DataDir, "DefaultParameters", @"CalibrationTaskDefault.toml");
-            if (File.Exists(defaultFilePath))
-            {
-                try
-                {
-                    task = Toml.ReadFile<CalibrationTask>(defaultFilePath, MetaMorpheusTask.tomlConfig);
-                }
-                catch (Exception)
-                {
-                    NotificationHandler(null, new StringEventArgs("Cannot read toml: " + defaultFilePath, null));
-                }
-            }
-
-            var dialog = new CalibrateTaskWindow(task);
-            if (dialog.ShowDialog() == true)
-            {
-                AddTaskToCollection(dialog.TheTask);
-                UpdateTaskGuiStuff();
-            }
+            AddNewTaskWindow(MyTask.Calibrate);
         }
 
         private void AddGPTMDTaskButton_Click(object sender, RoutedEventArgs e)
         {
-            //check if the default toml has been overwritten
-            GptmdTask task = null;
-            string defaultFilePath = Path.Combine(GlobalVariables.DataDir, "DefaultParameters", @"GptmdTaskDefault.toml");
-            if (File.Exists(defaultFilePath))
-            {
-                try
-                {
-                    task = Toml.ReadFile<GptmdTask>(defaultFilePath, MetaMorpheusTask.tomlConfig);
-                }
-                catch (Exception)
-                {
-                    NotificationHandler(null, new StringEventArgs("Cannot read toml: " + defaultFilePath, null));
-                }
-            }
-
-            var dialog = new GptmdTaskWindow(task);
-            if (dialog.ShowDialog() == true)
-            {
-                AddTaskToCollection(dialog.TheTask);
-                UpdateTaskGuiStuff();
-            }
+            AddNewTaskWindow(MyTask.Gptmd);
         }
 
         private void AddCrosslinkTask_Click(object sender, RoutedEventArgs e)
         {
-            //check if the default toml has been overwritten
-            XLSearchTask task = null;
-            string defaultFilePath = Path.Combine(GlobalVariables.DataDir, "DefaultParameters", @"XLSearchTaskDefault.toml");
-            if (File.Exists(defaultFilePath))
-            {
-                try
-                {
-                    task = Toml.ReadFile<XLSearchTask>(defaultFilePath, MetaMorpheusTask.tomlConfig);
-                }
-                catch (Exception)
-                {
-                    NotificationHandler(null, new StringEventArgs("Cannot read toml: " + defaultFilePath, null));
-                }
-            }
-
-            var dialog = new XLSearchTaskWindow(task);
-            if (dialog.ShowDialog() == true)
-            {
-                AddTaskToCollection(dialog.TheTask);
-                UpdateTaskGuiStuff();
-            }
+            AddNewTaskWindow(MyTask.XLSearch);
         }
 
         private void AddGlycoSearchTask_Click(object sender, RoutedEventArgs e)
         {
-            var dialog = new GlycoSearchTaskWindow();
-            if (dialog.ShowDialog() == true)
-            {
-                AddTaskToCollection(dialog.TheTask);
-                UpdateTaskGuiStuff();
-            }
+            AddNewTaskWindow(MyTask.GlycoSearch);
         }
 
         /// <summary>
@@ -697,7 +612,7 @@ namespace MetaMorpheusGUI
 
         private void LoadTask_Click(object sender, RoutedEventArgs e)
         {
-            var openPicker = OpenFileDialog("TOML files(*.toml)|*.toml");
+            var openPicker = StartOpenFileDialog("TOML files(*.toml)|*.toml");
 
             if (openPicker.ShowDialog() == true)
             {
@@ -1329,15 +1244,8 @@ namespace MetaMorpheusGUI
 
         private void UpdateTaskGuiStuff()
         {
-            if (StaticTasksObservableCollection.Count == 0)
+            if (StaticTasksObservableCollection.Count > 0)
             {
-                RunTasksButton.IsEnabled = false;
-            }
-            else
-            {
-                RunTasksButton.IsEnabled = true;
-
-                // this exists so that when a task is deleted, the remaining tasks are renamed to keep the task numbers correct
                 for (int i = 0; i < StaticTasksObservableCollection.Count; i++)
                 {
                     string newName = "Task" + (i + 1) + "-" + StaticTasksObservableCollection[i].metaMorpheusTask.CommonParameters.TaskDescriptor;
@@ -1674,14 +1582,14 @@ namespace MetaMorpheusGUI
             }
         }
 
-        private void AddTaskToCollection(MetaMorpheusTask ye)
+        private void AddTaskToCollection(MetaMorpheusTask taskToAdd)
         {
-            PreRunTask te = new PreRunTask(ye);
-            StaticTasksObservableCollection.Add(te);
-            StaticTasksObservableCollection.Last().DisplayName = "Task" + (StaticTasksObservableCollection.IndexOf(te) + 1) + "-" + ye.CommonParameters.TaskDescriptor;
+            PreRunTask preRunTask = new PreRunTask(taskToAdd);
+            StaticTasksObservableCollection.Add(preRunTask);
+            StaticTasksObservableCollection.Last().DisplayName = "Task" + (StaticTasksObservableCollection.IndexOf(preRunTask) + 1) + "-" + taskToAdd.CommonParameters.TaskDescriptor;
         }
 
-        private OpenFileDialog OpenFileDialog(string filter)
+        private OpenFileDialog StartOpenFileDialog(string filter)
         {
             OpenFileDialog openFileDialog = new OpenFileDialog
             {
@@ -1692,6 +1600,66 @@ namespace MetaMorpheusGUI
             };
 
             return openFileDialog;
+        }
+
+        private void AddNewTaskWindow(MyTask taskType)
+        {
+            Window dialog = null;
+            MetaMorpheusTask task = null;
+            string defaultTomlName = null;
+
+            switch (taskType)
+            {
+                case MyTask.Search: defaultTomlName = "SearchTaskDefault.toml"; break;
+                case MyTask.Calibrate: defaultTomlName = "CalibrationTaskDefault.toml"; break;
+                case MyTask.Gptmd: defaultTomlName = "GptmdTaskDefault.toml"; break;
+                case MyTask.XLSearch: defaultTomlName = "XLSearchTaskDefault.toml"; break;
+                case MyTask.GlycoSearch: defaultTomlName = "GlycoSearchTaskDefault.toml"; break;
+            }
+
+            string defaultFilePath = Path.Combine(GlobalVariables.DataDir, "DefaultParameters", defaultTomlName);
+
+            if (File.Exists(defaultFilePath))
+            {
+                try
+                {
+                    switch (taskType)
+                    {
+                        case MyTask.Search: task = Toml.ReadFile<SearchTask>(defaultFilePath, MetaMorpheusTask.tomlConfig); break;
+                        case MyTask.Calibrate: task = Toml.ReadFile<CalibrationTask>(defaultFilePath, MetaMorpheusTask.tomlConfig); break;
+                        case MyTask.Gptmd: task = Toml.ReadFile<GptmdTask>(defaultFilePath, MetaMorpheusTask.tomlConfig); break;
+                        case MyTask.XLSearch: task = Toml.ReadFile<XLSearchTask>(defaultFilePath, MetaMorpheusTask.tomlConfig); break;
+                        case MyTask.GlycoSearch: task = Toml.ReadFile<GlycoSearchTask>(defaultFilePath, MetaMorpheusTask.tomlConfig); break;
+                    }
+                }
+                catch (Exception)
+                {
+                    NotificationHandler(null, new StringEventArgs("Cannot read toml: " + defaultFilePath, null));
+                }
+            }
+
+            switch (taskType)
+            {
+                case MyTask.Search: dialog = new SearchTaskWindow((SearchTask)task); break;
+                case MyTask.Calibrate: dialog = new CalibrateTaskWindow((CalibrationTask)task); break;
+                case MyTask.Gptmd: dialog = new GptmdTaskWindow((GptmdTask)task); break;
+                case MyTask.XLSearch: dialog = new XLSearchTaskWindow((XLSearchTask)task); break;
+                case MyTask.GlycoSearch: dialog = new GlycoSearchTaskWindow((GlycoSearchTask)task); break;
+            }
+
+            if (dialog.ShowDialog() == true)
+            {
+                switch (taskType)
+                {
+                    case MyTask.Search: AddTaskToCollection(((SearchTaskWindow)dialog).TheTask); break;
+                    case MyTask.Calibrate: AddTaskToCollection(((CalibrateTaskWindow)dialog).TheTask); break;
+                    case MyTask.Gptmd: AddTaskToCollection(((GptmdTaskWindow)dialog).TheTask); break;
+                    case MyTask.XLSearch: AddTaskToCollection(((XLSearchTaskWindow)dialog).TheTask); break;
+                    case MyTask.GlycoSearch: AddTaskToCollection(((GlycoSearchTaskWindow)dialog).TheTask); break;
+                }
+
+                UpdateTaskGuiStuff();
+            }
         }
 
         #endregion
