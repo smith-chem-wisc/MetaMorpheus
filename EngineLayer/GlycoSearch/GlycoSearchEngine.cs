@@ -503,10 +503,10 @@ namespace EngineLayer.GlycoSearch
             //No localization can be done with MS2-HCD spectrum
             //TO THINK: there is a special situation. The HCD only scan from  HCD-pd-EThcD data can be a glycopeptide, but there is no ETD, so there is no localization. What to do with this?
             bool is_HCD_only_data = !GlycoPeptides.DissociationTypeContainETD(CommonParameters.DissociationType) && !GlycoPeptides.DissociationTypeContainETD(CommonParameters.MS2ChildScanDissociationType);
-            if (is_HCD_only_data)
-            {
-                theScanBestPeptide.Fragment(DissociationType.HCD, FragmentationTerminus.Both, products);
-            }
+            //if (is_HCD_only_data)
+            //{
+            //    theScanBestPeptide.Fragment(DissociationType.HCD, FragmentationTerminus.Both, products);
+            //}
 
             double bestLocalizedScore = 0;
 

@@ -176,22 +176,35 @@ namespace TaskLayer
                 {
                     if (glycoSpectralMatch.LocalizationGraphs != null)
                     {
-                        List<Route> localizationCandidates = new List<Route>();
+                        bool is_HCD_only_data = !GlycoPeptides.DissociationTypeContainETD(CommonParameters.DissociationType) && !GlycoPeptides.DissociationTypeContainETD(CommonParameters.MS2ChildScanDissociationType);
 
-                        for (int i = 0; i < glycoSpectralMatch.LocalizationGraphs.Count; i++)
+                        if (is_HCD_only_data)
                         {
-                            var allPathWithMaxScore = LocalizationGraph.GetAllHighestScorePaths(glycoSpectralMatch.LocalizationGraphs[i].array, glycoSpectralMatch.LocalizationGraphs[i].ChildModBoxes);
-
-                            foreach (var path in allPathWithMaxScore)
+                            glycoSpectralMatch.LocalizationLevel = LocalizationLevel.Level3;
+                            if (glycoSpectralMatch.LocalizationGraphs.Count == 1 && glycoSpectralMatch.LocalizationGraphs.First().ModPos.Length == 1)
                             {
-                                var local = LocalizationGraph.GetLocalizedPath(glycoSpectralMatch.LocalizationGraphs[i], path);
-                                local.ModBoxId = glycoSpectralMatch.LocalizationGraphs[i].ModBoxId;
-                                localizationCandidates.Add(local);
+                                glycoSpectralMatch.LocalizationLevel = LocalizationLevel.Level1b;
                             }
+                            
                         }
+                        else
+                        {
+                            List<Route> localizationCandidates = new List<Route>();
 
-                        glycoSpectralMatch.Routes = localizationCandidates;
+                            for (int i = 0; i < glycoSpectralMatch.LocalizationGraphs.Count; i++)
+                            {
+                                var allPathWithMaxScore = LocalizationGraph.GetAllHighestScorePaths(glycoSpectralMatch.LocalizationGraphs[i].array, glycoSpectralMatch.LocalizationGraphs[i].ChildModBoxes);
 
+                                foreach (var path in allPathWithMaxScore)
+                                {
+                                    var local = LocalizationGraph.GetLocalizedPath(glycoSpectralMatch.LocalizationGraphs[i], path);
+                                    local.ModBoxId = glycoSpectralMatch.LocalizationGraphs[i].ModBoxId;
+                                    localizationCandidates.Add(local);
+                                }
+                            }
+
+                            glycoSpectralMatch.Routes = localizationCandidates;
+                        }
                     }
 
                     if (glycoSpectralMatch.Routes != null)

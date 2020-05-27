@@ -43,35 +43,40 @@ namespace TaskLayer
             }
             else if (glycoSearchParameters.GlycoSearchType == GlycoSearchType.OGlycanSearch)
             {
-                var allPsmsSingle = allPsms.Where(p => p.Routes == null ).OrderByDescending(p => p.Score).ToList();
+                var allPsmsSingle = allPsms.Where(p => p.LocalizationGraphs == null ).OrderByDescending(p => p.Score).ToList();
                 SingleFDRAnalysis(allPsmsSingle, commonParameters, new List<string> { taskId });
 
                 var writtenFileSingle = Path.Combine(OutputFolder, "single" + ".psmtsv");
                 WriteFile.WritePsmGlycoToTsv(allPsmsSingle, writtenFileSingle, 1);
                 FinishedWritingFile(writtenFileSingle, new List<string> { taskId });
 
-                var allPsmsGly = allPsms.Where(p => p.Routes != null ).OrderByDescending(p => p.Score).ToList();
+                var allPsmsGly = allPsms.Where(p => p.LocalizationGraphs != null ).OrderByDescending(p => p.Score).ToList();
                 SingleFDRAnalysis(allPsmsGly, commonParameters, new List<string> { taskId });
 
                 var writtenFileOGlyco = Path.Combine(OutputFolder, "oglyco" + ".psmtsv");
                 WriteFile.WritePsmGlycoToTsv(allPsmsGly, writtenFileOGlyco, 2);
                 FinishedWritingFile(writtenFileOGlyco, new List<string> { taskId });
 
-                var ProteinLevelLocalization = GlycoProteinParsimony.ProteinLevelGlycoParsimony(allPsmsGly.Where(p=>p.ProteinAccession!=null && p.OneBasedStartResidueInProtein.HasValue).ToList());
+                bool is_HCD_only_data = !GlycoPeptides.DissociationTypeContainETD(commonParameters.DissociationType) && !GlycoPeptides.DissociationTypeContainETD(commonParameters.MS2ChildScanDissociationType);
 
-                var seen_oglyco_localization_file = Path.Combine(OutputFolder, "seen_oglyco_localization" + ".tsv");
-                WriteFile.WriteSeenProteinGlycoLocalization(ProteinLevelLocalization, seen_oglyco_localization_file);
-                FinishedWritingFile(seen_oglyco_localization_file, new List<string> { taskId });
+                if (!is_HCD_only_data)
+                {
+                    var ProteinLevelLocalization = GlycoProteinParsimony.ProteinLevelGlycoParsimony(allPsmsGly.Where(p => p.ProteinAccession != null && p.OneBasedStartResidueInProtein.HasValue).ToList());
 
-                var protein_oglyco_localization_file = Path.Combine(OutputFolder, "protein_oglyco_localization" + ".tsv");
-                WriteFile.WriteProteinGlycoLocalization(ProteinLevelLocalization, protein_oglyco_localization_file);
-                FinishedWritingFile(protein_oglyco_localization_file, new List<string> { taskId });
+                    var seen_oglyco_localization_file = Path.Combine(OutputFolder, "seen_oglyco_localization" + ".tsv");
+                    WriteFile.WriteSeenProteinGlycoLocalization(ProteinLevelLocalization, seen_oglyco_localization_file);
+                    FinishedWritingFile(seen_oglyco_localization_file, new List<string> { taskId });
+
+                    var protein_oglyco_localization_file = Path.Combine(OutputFolder, "protein_oglyco_localization" + ".tsv");
+                    WriteFile.WriteProteinGlycoLocalization(ProteinLevelLocalization, protein_oglyco_localization_file);
+                    FinishedWritingFile(protein_oglyco_localization_file, new List<string> { taskId });
+                }
 
                 return MyTaskResults;
             }
             else
             {
-                var allPsmsSingle = allPsms.Where(p => p.NGlycan == null && p.Routes == null).OrderByDescending(p => p.Score).ToList();
+                var allPsmsSingle = allPsms.Where(p => p.NGlycan == null && p.LocalizationGraphs == null).OrderByDescending(p => p.Score).ToList();
                 SingleFDRAnalysis(allPsmsSingle, commonParameters, new List<string> { taskId });
 
                 var writtenFileSingle = Path.Combine(OutputFolder, "single" + ".psmtsv");
@@ -85,7 +90,7 @@ namespace TaskLayer
                 WriteFile.WritePsmGlycoToTsv(allPsmsNGly, writtenFileNGlyco, 3);
                 FinishedWritingFile(writtenFileNGlyco, new List<string> { taskId });
 
-                var allPsmsOGly = allPsms.Where(p => p.Routes != null).OrderByDescending(p => p.Score).ToList();
+                var allPsmsOGly = allPsms.Where(p => p.LocalizationGraphs != null).OrderByDescending(p => p.Score).ToList();
                 SingleFDRAnalysis(allPsmsOGly, commonParameters, new List<string> { taskId });
 
                 var writtenFileOGlyco = Path.Combine(OutputFolder, "oglyco" + ".psmtsv");

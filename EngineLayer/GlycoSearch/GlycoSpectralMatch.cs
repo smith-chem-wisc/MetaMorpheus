@@ -318,7 +318,7 @@ namespace EngineLayer.GlycoSearch
                 sb.Append(proteinProb); sb.Append("\t");
             }
 
-            if (Routes != null)
+            if (LocalizationGraphs != null)
             {
                 sb.Append(LocalizationGraphs.First().TotalScore + "\t");
 
@@ -326,7 +326,7 @@ namespace EngineLayer.GlycoSearch
 
                 sb.Append(DiagnosticIonScore + "\t");              
 
-                var glycanBox = GlycanBox.OGlycanBoxes[Routes.First().ModBoxId];
+                var glycanBox = GlycanBox.OGlycanBoxes[LocalizationGraphs.First().ModBoxId];
 
                 sb.Append(glycanBox.NumberOfMods + "\t");
 
@@ -355,19 +355,24 @@ namespace EngineLayer.GlycoSearch
                 }
                 sb.Append("\t");
 
-                sb.Append(CorrectLocalizationLevel(SiteSpeciLocalProb, LocalizationGraphs.First(), Routes.First(), LocalizedGlycan,  LocalizationLevel)) ; sb.Append("\t");
+                if (Routes!=null)
+                {
+                    sb.Append(CorrectLocalizationLevel(SiteSpeciLocalProb, LocalizationGraphs.First(), Routes.First(), LocalizedGlycan, LocalizationLevel)); sb.Append("\t");
 
-                //string localizedGlycan = LocalizedGlycan.Where(p=>p.Item3).Count() > 0 ? "[" + string.Join(",", LocalizedGlycan.Where(p => p.Item3).Select(p => p.Item1.ToString() + "-" + p.Item2.ToString())) + "]" : "";
-                //sb.Append(localizedGlycan); sb.Append("\t");
-                string local_peptide = "";
-                string local_protein = "";
-                LocalizedSiteSpeciLocalInfo(SiteSpeciLocalProb, LocalizedGlycan, OneBasedStartResidueInProtein, ref local_peptide, ref local_protein);
-                sb.Append(local_peptide); sb.Append("\t");
-                sb.Append(local_protein); sb.Append("\t");
+                    string local_peptide = "";
+                    string local_protein = "";
+                    LocalizedSiteSpeciLocalInfo(SiteSpeciLocalProb, LocalizedGlycan, OneBasedStartResidueInProtein, ref local_peptide, ref local_protein);
+                    sb.Append(local_peptide); sb.Append("\t");
+                    sb.Append(local_protein); sb.Append("\t");
 
-                sb.Append(AllLocalizationInfo(Routes)); sb.Append("\t");
+                    sb.Append(AllLocalizationInfo(Routes)); sb.Append("\t");
 
-                sb.Append(SiteSpeciLocalInfo(SiteSpeciLocalProb));
+                    sb.Append(SiteSpeciLocalInfo(SiteSpeciLocalProb));
+                }
+                else
+                {
+                    sb.Append(LocalizationLevel); sb.Append("\t");
+                }
             }
 
             return sb.ToString();
