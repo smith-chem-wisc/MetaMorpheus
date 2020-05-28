@@ -17,7 +17,7 @@
                 <Setter Property="Template">
                     <Setter.Value>
                         <ControlTemplate TargetType="TabItem">
-                            <Grid Height="35" Width="140" Background="{StaticResource SideBarMainColor}">
+                            <Grid Height="35" Width="120" Background="{StaticResource SideBarMainColor}">
                                 <Border Name="Border" Margin="0,0,0,0" Background="Transparent"
                                                 BorderThickness="{TemplateBinding BorderThickness}" BorderBrush="{TemplateBinding BorderBrush}" >
                                     <ContentPresenter 
@@ -32,7 +32,7 @@
 
                             <ControlTemplate.Triggers>
                                 <Trigger Property="IsSelected" Value="True">
-                                    <Setter Property="BorderThickness" Value="0,0,5,0"/>
+                                    <Setter Property="BorderThickness" Value="0,0,7,0"/>
                                     <Setter Property="FontWeight" Value="Bold"/>
                                     <!--Color of tab item text (when selected)-->
                                     <Setter Property="Foreground" Value="{StaticResource TextColor2}"/>
@@ -50,7 +50,7 @@
                 </Setter>
                 <Setter Property="FontSize" Value="14" />
                 <Setter Property="BorderThickness" Value="0" />
-                <Setter Property="Margin" Value="0" />
+                <Setter Property="Margin" Value="0,0,2,0" />
                 <Setter Property="Padding" Value="0" />
             </Style>
 
@@ -223,13 +223,14 @@
     <Grid>
         <Grid.RowDefinitions>
             <RowDefinition Height="1*" />
-            <RowDefinition Height="Auto" MaxHeight="400" />
+            <RowDefinition Height="Auto" />
         </Grid.RowDefinitions>
 
+        <!--Pages-->
         <TabControl x:Name="MainWindowTabControl" Grid.Row="0" TabStripPlacement="Left" Margin="0" SelectionChanged="TabControl_SelectionChanged" BorderThickness="0" BorderBrush="{StaticResource BorderColor}">
             <TabControl.Resources>
                 <Style TargetType="Grid">
-                    <!--This defines the *default* style for *all grids in the entire page*-->
+                    <!--This defines the *default* style for *all grids in the entire tab control*-->
                     <!--This is not great but seems necessary to have a proper background on the tab items...-->
                     <Setter Property="Background" Value="{StaticResource SideBarMainColor}" />
                 </Style>
@@ -489,28 +490,30 @@
             </TabItem>
         </TabControl>
 
-        <!--Notifications text box-->
-        <Grid Grid.Row="1" Background="{StaticResource SideBarMainColor}">
+        <!--Notifications-->
+        <Grid Grid.Row="2" Background="{StaticResource SideBarMainColor}" Margin="0,-1,0,0" >
             <Grid.ColumnDefinitions>
-                <ColumnDefinition Width="140" />
+                <ColumnDefinition Width="120" />
                 <ColumnDefinition Width="*" />
             </Grid.ColumnDefinitions>
 
-            <Expander x:Name="NotificationExpander" Grid.Column="1" Background="{StaticResource BackgroundColor}" BorderThickness="0" FlowDirection="RightToLeft" >
-                <Expander.Header>
-                    <StackPanel>
-                        <TextBlock>Notifications</TextBlock>
-                    </StackPanel>
-                </Expander.Header>
-                
-                <RichTextBox x:Name="notificationsTextBox" VerticalScrollBarVisibility="Visible" IsReadOnly="True" Background="Transparent" Foreground="{StaticResource TextColor1}" Height="100">
-                    <RichTextBox.Resources>
-                        <Style TargetType="{x:Type Paragraph}">
-                            <Setter Property="Margin" Value="0" />
-                        </Style>
-                    </RichTextBox.Resources>
-                </RichTextBox>
-            </Expander>
+            <StackPanel Grid.Column="1" Background="{StaticResource BackgroundColor}" Margin="1,0,0,0">
+                <Expander x:Name="NotificationExpander" Background="{StaticResource BackgroundColor}" FlowDirection="RightToLeft" >
+                    <Expander.Header>
+                        <StackPanel>
+                            <TextBlock>Notifications</TextBlock>
+                        </StackPanel>
+                    </Expander.Header>
+
+                    <RichTextBox x:Name="notificationsTextBox" VerticalScrollBarVisibility="Visible" IsReadOnly="True" Background="Transparent" Foreground="{StaticResource TextColor1}" Height="100" BorderThickness="1">
+                        <RichTextBox.Resources>
+                            <Style TargetType="{x:Type Paragraph}">
+                                <Setter Property="Margin" Value="0" />
+                            </Style>
+                        </RichTextBox.Resources>
+                    </RichTextBox>
+                </Expander>
+            </StackPanel>
         </Grid>
     </Grid>
 </Window>
