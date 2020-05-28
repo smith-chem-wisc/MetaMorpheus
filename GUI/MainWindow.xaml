@@ -149,40 +149,40 @@
             <!--Defines the context menu when a protein database is right-clicked-->
             <ContextMenu x:Key="ProteinDatabaseContextMenu" Style="{StaticResource ContextMenuStyle}">
                 <MenuItem Header="Set as contaminant database" Click="AddCalibrateTaskButton_Click" IsEnabled="{Binding IsEnabled, ElementName=RunTasksButton}" />
-                <MenuItem Header="Open file" Click="OpenFile_Click" />
+                <MenuItem Header="Open file" Click="OpenFile_Click" IsEnabled="{Binding IsEnabled, ElementName=RunTasksButton}" />
                 <MenuItem Header="Open containing folder" Click="OpenContainingFolder_Click" />
             </ContextMenu>
 
             <!--Defines the context menu when a spectra file is right-clicked-->
             <ContextMenu x:Key="SpectraFileContextMenu" Style="{StaticResource ContextMenuStyle}">
                 <MenuItem Header="Set file-specific settings" Click="AddCalibrateTaskButton_Click" IsEnabled="{Binding IsEnabled, ElementName=RunTasksButton}" />
-                <MenuItem Header="Open file" Click="AddCalibrateTaskButton_Click" />
-                <MenuItem Header="Open containing folder" Click="AddCalibrateTaskButton_Click" />
+                <MenuItem Header="Open file" Click="OpenFile_Click" IsEnabled="{Binding IsEnabled, ElementName=RunTasksButton}" />
+                <MenuItem Header="Open containing folder" Click="OpenContainingFolder_Click" />
             </ContextMenu>
 
             <!--Defines the context menu when a task is right-clicked-->
             <ContextMenu x:Key="TaskContextMenu" Style="{StaticResource ContextMenuStyle}">
-                <MenuItem Header="Edit task" Click="TasksTreeView_MouseDoubleClick" IsEnabled="{Binding IsEnabled, ElementName=RunTasksButton}" />
+                <MenuItem Header="Edit task" Click="EditTask_Click" IsEnabled="{Binding IsEnabled, ElementName=RunTasksButton}" />
                 <MenuItem Header="Save as .toml" Click="SaveTask_Click" />
             </ContextMenu>
 
             <!--Defines the context menu when a written file is right-clicked-->
             <ContextMenu x:Key="WrittenFileContextMenu" Style="{StaticResource ContextMenuStyle}">
-                <MenuItem Header="Open file" Click="TasksTreeView_MouseDoubleClick" />
-                <MenuItem Header="Open containing folder" Click="AddCalibrateTaskButton_Click" />
+                <MenuItem Header="Open file" Click="OpenFile_Click" />
+                <MenuItem Header="Open containing folder" Click="OpenContainingFolder_Click" />
             </ContextMenu>
 
-            <!--Styles the datagrid for protein databases-->
-            <Style x:Key="ProteinDbDataGridStyle" TargetType="DataGrid" BasedOn="{StaticResource x:DataGridStyle}">
-                <Setter Property="ContextMenu" Value="{StaticResource ProteinDatabaseContextMenu}" />
-            </Style>
-
-            <!--Styles the datagrid for spectra files-->
-            <Style x:Key="SpectraFileDataGridStyle" TargetType="DataGrid" BasedOn="{StaticResource x:DataGridStyle}">
+            <!--Styles the spectra file datagrid items-->
+            <Style x:Key="SpectraFileDataGridItemStyle" TargetType="DataGridRow">
                 <Setter Property="ContextMenu" Value="{StaticResource SpectraFileContextMenu}" />
             </Style>
 
-            <!--Styles the task treeview-->
+            <!--Styles the protein DB datagrid items-->
+            <Style x:Key="DatabaseDataGridItemStyle" TargetType="DataGridRow">
+                <Setter Property="ContextMenu" Value="{StaticResource ProteinDatabaseContextMenu}" />
+            </Style>
+
+            <!--Styles the task treeview items-->
             <Style x:Key="TaskTreeViewStyle" TargetType="TreeViewItem">
                 <EventSetter Event="MouseRightButtonDown" Handler="TreeViewItem_RightClick" />
             </Style>
@@ -267,8 +267,11 @@
                         IsEnabled="{Binding IsEnabled, ElementName=RunTasksButton}"/>
 
                     <!--The list of databases-->
-                    <DataGrid Name="dataGridProteinDatabases" Grid.Row="2" ItemsSource="{Binding}" Style="{StaticResource ProteinDbDataGridStyle}"
+                    <DataGrid Name="dataGridProteinDatabases" Grid.Row="2" ItemsSource="{Binding}" Style="{StaticResource x:DataGridStyle}"
                           IsReadOnly="{Binding IsEnabled, ElementName=RunTasksButton}">
+                        <DataGrid.RowStyle>
+                            <Style TargetType="{x:Type DataGridRow}" BasedOn="{StaticResource DatabaseDataGridItemStyle}" />
+                        </DataGrid.RowStyle>
                         <DataGrid.Columns>
                             <!--The rest of the columns-->
                             <DataGridTextColumn Header="File" Binding="{Binding FilePath}" Width="590" />
@@ -306,8 +309,11 @@
                         Margin="0,0,211,0" IsEnabled="{Binding IsEnabled, ElementName=RunTasksButton}" />
 
                     <!--The list of spectra files-->
-                    <DataGrid Name="dataGridSpectraFiles" ItemsSource="{Binding}" Grid.Row="2" Style="{StaticResource SpectraFileDataGridStyle}"
+                    <DataGrid Name="dataGridSpectraFiles" ItemsSource="{Binding}" Grid.Row="2" Style="{StaticResource x:DataGridStyle}"
                           IsReadOnly="{Binding IsEnabled, ElementName=RunTasksButton}">
+                        <DataGrid.RowStyle>
+                            <Style TargetType="{x:Type DataGridRow}" BasedOn="{StaticResource SpectraFileDataGridItemStyle}" />
+                        </DataGrid.RowStyle>
                         <DataGrid.Columns>
                             <!--The rest of the columns-->
                             <DataGridTextColumn Header="File" Binding="{Binding FilePath}" Width="590" />
@@ -370,8 +376,11 @@
 
                         <!--Protein DB Summary-->
                         <DataGrid Name="proteinDbSummaryDataGrid" ItemsSource="{Binding}" Grid.Column="0" Margin="10" 
-                              Style="{StaticResource ProteinDbDataGridStyle}" ColumnHeaderStyle="{StaticResource DataGridColumnHeaderStyle}"
+                              Style="{StaticResource x:DataGridStyle}" ColumnHeaderStyle="{StaticResource DataGridColumnHeaderStyle}"
                               IsReadOnly="{Binding IsEnabled, ElementName=RunTasksButton}">
+                            <DataGrid.RowStyle>
+                                <Style TargetType="{x:Type DataGridRow}" BasedOn="{StaticResource DatabaseDataGridItemStyle}" />
+                            </DataGrid.RowStyle>
                             <DataGrid.Columns>
                                 <!--The rest of the columns-->
                                 <DataGridTextColumn Header="Database" Binding="{Binding FilePath}" Width="590" />
@@ -391,8 +400,11 @@
 
                         <!--Spectra file Summary-->
                         <DataGrid Name="spectraFileSummaryDataGrid" ItemsSource="{Binding}" Grid.Column="1" Margin="10" 
-                              Style="{StaticResource SpectraFileDataGridStyle}" ColumnHeaderStyle="{StaticResource DataGridColumnHeaderStyle}"
+                              Style="{StaticResource x:DataGridStyle}" ColumnHeaderStyle="{StaticResource DataGridColumnHeaderStyle}"
                               IsReadOnly="{Binding IsEnabled, ElementName=RunTasksButton}">
+                            <DataGrid.RowStyle>
+                                <Style TargetType="{x:Type DataGridRow}" BasedOn="{StaticResource SpectraFileDataGridItemStyle}" />
+                            </DataGrid.RowStyle>
                             <DataGrid.Columns>
                                 <!--The rest of the columns-->
                                 <DataGridTextColumn Header="Spectra File" Binding="{Binding FilePath}" Width="590" />

@@ -587,6 +587,18 @@ namespace MetaMorpheusGUI
             }
         }
 
+        private void EditTask_Click(object sender, RoutedEventArgs e)
+        {
+            var menuItem = (MenuItem)sender;
+            var dataContext = (ContextMenu)menuItem.Parent;
+            var treeViewItem = (TreeViewItem)dataContext.PlacementTarget;
+
+            if (treeViewItem.Header is PreRunTask preRunTask)
+            {
+                OpenPreRunTaskForEditing(preRunTask);
+            }
+        }
+
         /// <summary>
         /// Event fires when the "Save as .toml" context menu item is clicked.
         /// Can occur in the task tree view.
@@ -825,19 +837,29 @@ namespace MetaMorpheusGUI
         }
 
         /// <summary>
+        /// Event fires when an item in the task treeview is double-clicked.
+        /// </summary>
+        private void TasksTreeView_MouseDoubleClick(object sender, EventArgs e)
+        {
+            var a = sender as TreeView;
+            if (a.SelectedItem is PreRunTask preRunTask)
+            {
+                OpenPreRunTaskForEditing(preRunTask);
+            }
+            else if (a.SelectedItem is OutputFileForTreeView writtenFile)
+            {
+                OpenFile(writtenFile.FullPath);
+            }
+        }
+
+        /// <summary>
         /// Event fires when the "Open containing item" context menu item is clicked.
         /// Can occur on a protein DB, spectra file, or written file.
         /// </summary>
         private void OpenContainingFolder_Click(object sender, RoutedEventArgs e)
         {
-            var menuItem = (MenuItem)sender;
-            var dataContext = (ContextMenu)menuItem.Parent;
-            var treeViewItem = (TreeViewItem)dataContext.PlacementTarget;
-
-            if (treeViewItem.Header is OutputFileForTreeView writtenFile)
-            {
-                OpenFolder(Path.GetDirectoryName(writtenFile.FullPath));
-            }
+            var path = GetPathOfItem(sender, e);
+            OpenFolder(Path.GetDirectoryName(path));
         }
 
         /// <summary>
@@ -846,59 +868,8 @@ namespace MetaMorpheusGUI
         /// </summary>
         private void OpenFile_Click(object sender, RoutedEventArgs e)
         {
-            var menuItem = (MenuItem)sender;
-            var dataContext = (ContextMenu)menuItem.Parent;
-            var treeViewItem = (TreeViewItem)dataContext.PlacementTarget;
-
-            if (treeViewItem.Header is OutputFileForTreeView writtenFile)
-            {
-                OpenFile(writtenFile.FullPath);
-            }
-        }
-
-        /// <summary>
-        /// Event fires when an item in the task treeview is double-clicked.
-        /// </summary>
-        private void TasksTreeView_MouseDoubleClick(object sender, EventArgs e)
-        {
-            var a = sender as TreeView;
-            if (a.SelectedItem is PreRunTask preRunTask)
-            {
-                switch (preRunTask.metaMorpheusTask.TaskType)
-                {
-                    case MyTask.Search:
-
-                        var searchDialog = new SearchTaskWindow(preRunTask.metaMorpheusTask as SearchTask);
-                        searchDialog.ShowDialog();
-                        break;
-
-                    case MyTask.Gptmd:
-                        var gptmddialog = new GptmdTaskWindow(preRunTask.metaMorpheusTask as GptmdTask);
-                        gptmddialog.ShowDialog();
-                        break;
-
-                    case MyTask.Calibrate:
-                        var calibratedialog = new CalibrateTaskWindow(preRunTask.metaMorpheusTask as CalibrationTask);
-                        calibratedialog.ShowDialog();
-                        break;
-
-                    case MyTask.XLSearch:
-                        var XLSearchdialog = new XLSearchTaskWindow(preRunTask.metaMorpheusTask as XLSearchTask);
-                        XLSearchdialog.ShowDialog();
-                        break;
-
-                    case MyTask.GlycoSearch:
-                        var GlycoSearchdialog = new GlycoSearchTaskWindow(preRunTask.metaMorpheusTask as GlycoSearchTask);
-                        GlycoSearchdialog.ShowDialog();
-                        break;
-                }
-
-                UpdateGuiOnPreRunChange();
-            }
-            else if (a.SelectedItem is OutputFileForTreeView writtenFile)
-            {
-                OpenFile(writtenFile.FullPath);
-            }
+            var path = GetPathOfItem(sender, e);
+            OpenFile(path);
         }
 
         /// <summary>
@@ -1631,6 +1602,69 @@ namespace MetaMorpheusGUI
 
                 UpdateGuiOnPreRunChange();
             }
+        }
+
+        private string GetPathOfItem(object sender, RoutedEventArgs e)
+        {
+            var menuItem = (MenuItem)sender;
+            var dataContext = (ContextMenu)menuItem.Parent;
+            string filePathToOpen = null;
+
+            if (dataContext.PlacementTarget is DataGridRow dataGridRow)
+            {
+                // right now this will only open one file... could change to open >1 at once if multi-selected
+                if (dataGridRow.Item is ProteinDbForDataGrid db)
+                {
+                    filePathToOpen = db.FilePath;
+                }
+                else if (dataGridRow.Item is RawDataForDataGrid spectra)
+                {
+                    filePathToOpen = spectra.FilePath;
+                }
+            }
+            else if (dataContext.PlacementTarget is TreeViewItem treeViewItem)
+            {
+                if (treeViewItem.Header is OutputFileForTreeView writtenFile)
+                {
+                    filePathToOpen = writtenFile.FullPath;
+                }
+            }
+
+            return filePathToOpen;
+        }
+
+        private void OpenPreRunTaskForEditing(PreRunTask preRunTask)
+        {
+            switch (preRunTask.metaMorpheusTask.TaskType)
+            {
+                case MyTask.Search:
+
+                    var searchDialog = new SearchTaskWindow(preRunTask.metaMorpheusTask as SearchTask);
+                    searchDialog.ShowDialog();
+                    break;
+
+                case MyTask.Gptmd:
+                    var gptmddialog = new GptmdTaskWindow(preRunTask.metaMorpheusTask as GptmdTask);
+                    gptmddialog.ShowDialog();
+                    break;
+
+                case MyTask.Calibrate:
+                    var calibratedialog = new CalibrateTaskWindow(preRunTask.metaMorpheusTask as CalibrationTask);
+                    calibratedialog.ShowDialog();
+                    break;
+
+                case MyTask.XLSearch:
+                    var XLSearchdialog = new XLSearchTaskWindow(preRunTask.metaMorpheusTask as XLSearchTask);
+                    XLSearchdialog.ShowDialog();
+                    break;
+
+                case MyTask.GlycoSearch:
+                    var GlycoSearchdialog = new GlycoSearchTaskWindow(preRunTask.metaMorpheusTask as GlycoSearchTask);
+                    GlycoSearchdialog.ShowDialog();
+                    break;
+            }
+
+            UpdateGuiOnPreRunChange();
         }
 
         #endregion
