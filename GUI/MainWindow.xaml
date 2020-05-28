@@ -276,7 +276,7 @@
                             <DataGridTemplateColumn>
                                 <DataGridTemplateColumn.CellTemplate>
                                     <DataTemplate>
-                                        <Button Click="DeleteDatabaseOrSpectra_Click" Style="{StaticResource DeleteFromDataGridButtonStyle}" />
+                                        <Button Click="DeleteDatabaseOrSpectraFile_Click" Style="{StaticResource DeleteFromDataGridButtonStyle}" />
                                     </DataTemplate>
                                 </DataGridTemplateColumn.CellTemplate>
                             </DataGridTemplateColumn>
@@ -315,7 +315,7 @@
                             <DataGridTemplateColumn>
                                 <DataGridTemplateColumn.CellTemplate>
                                     <DataTemplate>
-                                        <Button Click="DeleteDatabaseOrSpectra_Click" Style="{StaticResource DeleteFromDataGridButtonStyle}" />
+                                        <Button Click="DeleteDatabaseOrSpectraFile_Click" Style="{StaticResource DeleteFromDataGridButtonStyle}" />
                                     </DataTemplate>
                                 </DataGridTemplateColumn.CellTemplate>
                             </DataGridTemplateColumn>
@@ -379,7 +379,7 @@
                                 <DataGridTemplateColumn>
                                     <DataGridTemplateColumn.CellTemplate>
                                         <DataTemplate>
-                                            <Button Click="DeleteDatabaseOrSpectra_Click" Style="{StaticResource DeleteFromDataGridButtonStyle}"/>
+                                            <Button Click="DeleteDatabaseOrSpectraFile_Click" Style="{StaticResource DeleteFromDataGridButtonStyle}"/>
                                         </DataTemplate>
                                     </DataGridTemplateColumn.CellTemplate>
                                 </DataGridTemplateColumn>
@@ -400,7 +400,7 @@
                                 <DataGridTemplateColumn>
                                     <DataGridTemplateColumn.CellTemplate>
                                         <DataTemplate>
-                                            <Button Click="DeleteDatabaseOrSpectra_Click" Style="{StaticResource DeleteFromDataGridButtonStyle}" />
+                                            <Button Click="DeleteDatabaseOrSpectraFile_Click" Style="{StaticResource DeleteFromDataGridButtonStyle}" />
                                         </DataTemplate>
                                     </DataGridTemplateColumn.CellTemplate>
                                 </DataGridTemplateColumn>
