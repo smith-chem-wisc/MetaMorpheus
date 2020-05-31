@@ -163,8 +163,15 @@ namespace EngineLayer
 
         //There are two ways to represent a glycan in string, one only combination, the other structure.
         //The method generate a glycan by read in a glycan structure string from database.
-        public static Glycan Struct2Glycan(string theGlycanStruct, int id, bool isOglycan = false)
+        public static Glycan Struct2Glycan(string theGlycanStruct, int id, bool ToGenerateIons = true, bool isOglycan = false)
         {
+            if (!ToGenerateIons)
+            {
+                var _kind = GetKind(theGlycanStruct);
+
+                return new Glycan(_kind);
+            }
+
             Node node = Struct2Node(theGlycanStruct);
             List<Node> nodeIons = GetAllChildrenCombination(node);
             int mass = Glycan.GetMass(theGlycanStruct);
@@ -485,6 +492,22 @@ namespace EngineLayer
                 _target: finalMotif,
                 _neutralLosses: neutralLosses,
                 _diagnosticIons: diagnosticIons
+            );
+            return modification;
+        }
+
+        //TO THINK: Is it reasonable to transfer Glycan to Modification the first time Glycan is read in? Which could save time.
+        //Use glycan index and modification index to reduce space.
+        public static Modification _NGlycanToModification(Glycan glycan)
+        {
+            ModificationMotif.TryGetMotif("N", out ModificationMotif finalMotif); //TO DO: only one motif can be write here.
+            var id = Glycan.GetKindString(glycan.Kind);
+            Modification modification = new Modification(
+                _originalId: id,
+                _modificationType: "N-Glycosylation",
+                _monoisotopicMass: (double)glycan.Mass / 1E5,
+                _locationRestriction: "Anywhere.",
+                _target: finalMotif
             );
             return modification;
         }

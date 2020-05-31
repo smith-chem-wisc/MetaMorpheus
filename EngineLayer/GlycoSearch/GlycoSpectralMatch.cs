@@ -42,6 +42,7 @@ namespace EngineLayer.GlycoSearch
         public double GlycanScore { get; set; } //Scores from only matched Y ions. 
         public double DiagnosticIonScore { get; set; } //Since every glycopeptide generate DiagnosticIon, it is important to seperate the score. 
         public double R138vs144 { get; set; } // The intensity ratio of this 138 and 144 could be a signature for O-glycan or N-glycan.
+
         //N-Glyco Info
         public List<Glycan> NGlycan { get; set; }  //Identified NGlycan
         public Dictionary<int, double> NGlycoSiteSpeciLocalProb { get; set; }
@@ -181,6 +182,10 @@ namespace EngineLayer.GlycoSearch
                     sb.Append("All potential glycan localizations" + '\t');
                     sb.Append("AllSiteSpecificLocalizationProbability" + '\t');
                 }
+                else
+                {
+                    sb.Append("IsTargetGlycan" + '\t');
+                }
             }
            
             return sb.ToString();
@@ -316,6 +321,7 @@ namespace EngineLayer.GlycoSearch
 
                 sb.Append(peptideProb); sb.Append("\t");
                 sb.Append(proteinProb); sb.Append("\t");
+                sb.Append(NGlycan.First().Decoy ? 0 : 1); sb.Append("\t");
             }
 
             if (LocalizationGraphs != null)

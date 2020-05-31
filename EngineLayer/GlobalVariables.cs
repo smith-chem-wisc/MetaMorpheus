@@ -143,7 +143,7 @@ namespace EngineLayer
                 var ng = GlycanDatabase.LoadGlycan(path, false, false);
                 foreach (var g in ng)
                 {
-                    var ngmod = Glycan.NGlycanToModification(g);
+                    var ngmod = Glycan._NGlycanToModification(g);
                     if (!AllModsKnownDictionary.ContainsKey(ngmod.IdWithMotif))
                     {
                         AllModsKnownDictionary.Add(ngmod.IdWithMotif, ngmod);

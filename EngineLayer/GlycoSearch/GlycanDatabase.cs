@@ -32,7 +32,7 @@ namespace EngineLayer
             }
             else
             {
-                return LoadStructureGlycan(filePath, IsOGlycanSearch);
+                return LoadStructureGlycan(filePath, ToGenerateIons, IsOGlycanSearch);
             }
         }
 
@@ -86,7 +86,7 @@ namespace EngineLayer
         }
 
         //Load structured Glycan database.
-        public static IEnumerable<Glycan> LoadStructureGlycan(string filePath, bool IsOGlycan)
+        public static IEnumerable<Glycan> LoadStructureGlycan(string filePath, bool ToGenerateIons, bool IsOGlycan)
         {
             using (StreamReader glycans = new StreamReader(filePath))
             {
@@ -94,7 +94,7 @@ namespace EngineLayer
                 while (glycans.Peek() != -1)
                 {
                     string line = glycans.ReadLine();
-                    yield return Glycan.Struct2Glycan(line, id++, IsOGlycan);
+                    yield return Glycan.Struct2Glycan(line, id++, ToGenerateIons, IsOGlycan);
                 }
             }
         }

@@ -35,6 +35,95 @@ namespace EngineLayer.GlycoSearch
             return oxoniumIonsintensities;
         }
 
+        //NGlycopeptide usually contain Y ions with different charge states, especially in sceHCD data. 
+        //The purpose of this function is to try match all Y ion with different charges.  //Not sure about OGlycopeptide
+        public static List<MatchedFragmentIon> GlyMatchOriginFragmentIons(Ms2ScanWithSpecificMass scan, List<Product> theoreticalProducts, CommonParameters commonParameters)
+        {
+            var matchedFragmentIons = new List<MatchedFragmentIon>();
+
+            // if the spectrum has no peaks
+            if (scan.ExperimentalFragments != null && !scan.ExperimentalFragments.Any())
+            {
+                return matchedFragmentIons;
+            }
+
+            // search for ions in the spectrum
+
+            for (int id = 0; id < theoreticalProducts.Count; id++)
+            {
+                var product = theoreticalProducts[id];
+                // unknown fragment mass; this only happens rarely for sequences with unknown amino acids
+                if (double.IsNaN(product.NeutralMass))
+                {
+                    continue;
+                }
+
+                if (product.ProductType == ProductType.M)
+                {
+                    for (int i = 1; i <= scan.PrecursorCharge; i++)
+                    {
+
+                        var closestExperimentalMz = scan.GetClosestExperimentalFragmentMz(product.NeutralMass.ToMz(i), out double? intensity);
+
+                        if (closestExperimentalMz.HasValue && commonParameters.ProductMassTolerance.Within(closestExperimentalMz.Value, product.NeutralMass.ToMz(i)))
+                        {
+                            matchedFragmentIons.Add(new MatchedFragmentIon(ref product, closestExperimentalMz.Value, intensity.Value, i));
+                        }
+                    }
+                }
+
+                else
+                {
+                    // get the closest peak in the spectrum to the theoretical peak
+                    var closestExperimentalMass = scan.GetClosestExperimentalIsotopicEnvelope(product.NeutralMass);
+
+                    // is the mass error acceptable?
+                    if (closestExperimentalMass != null && commonParameters.ProductMassTolerance.Within(closestExperimentalMass.MonoisotopicMass, product.NeutralMass) && closestExperimentalMass.Charge <= scan.PrecursorCharge)
+                    {
+                        matchedFragmentIons.Add(new MatchedFragmentIon(ref product, closestExperimentalMass.MonoisotopicMass.ToMz(closestExperimentalMass.Charge),
+                            closestExperimentalMass.Peaks.First().intensity, closestExperimentalMass.Charge));
+                    }
+                }
+            }
+
+            return matchedFragmentIons;
+        }
+
+        //Find Glycan index or glycanBox index.
+        public static int BinarySearchGetIndex(double[] massArray, double targetMass)
+        {
+            var iD = Array.BinarySearch(massArray, targetMass);
+            if (iD < 0) { iD = ~iD; }
+            else
+            {
+                while (iD - 1 >= 0 && massArray[iD - 1] >= targetMass - 0.00000001)
+                {
+                    iD--;
+                }
+            }
+            return iD;
+        }
+
+        public static bool DissociationTypeContainETD(DissociationType dissociationType)
+        {
+            if (dissociationType == DissociationType.ETD || dissociationType == DissociationType.EThcD)
+            {
+                return true;
+            }
+
+            return false;
+        }
+
+        public static bool DissociationTypeContainHCD(DissociationType dissociationType)
+        {
+            if (dissociationType == DissociationType.HCD || dissociationType == DissociationType.CID || dissociationType == DissociationType.EThcD)
+            {
+                return true;
+            }
+
+            return false;
+        }
+
         #region N-Glyco related functions
 
         public static Dictionary<int, double> ScanGetTrimannosylCore(List<MatchedFragmentIon> matchedFragmentIons, Glycan glycan)
@@ -91,42 +180,6 @@ namespace EngineLayer.GlycoSearch
                 YIons.Add(product);
             }
             return YIons;
-        }
-
-        //public static Tuple<int, double, double>[] MatchBestGlycan(Ms2ScanWithSpecificMass theScan, Glycan[] glycans, CommonParameters commonParameters)
-        //{
-        //    Tuple<int, double, double>[] tuples = new Tuple<int, double, double>[glycans.Length]; //Tuple<id, Yion matched score, glycan mass> 
-        //    //TO DO: Parallel this?
-        //    for (int i = 0; i < glycans.Length; i++)
-        //    {
-        //        if (theScan.PrecursorMass - (double)glycans[i].Mass/1E5 < 350) //Filter large glycans
-        //        {
-        //            continue;
-        //        }
-        //        List<Product> YIons = GetGlycanYIons(theScan.PrecursorMass, glycans[i]);
-        //        List<MatchedFragmentIon> matchedFragmentIons = MetaMorpheusEngine.MatchFragmentIons(theScan, YIons, commonParameters);
-        //        if (ScanTrimannosylCoreFilter(matchedFragmentIons, glycans[i]))
-        //        {
-        //            var score = MetaMorpheusEngine.CalculatePeptideScore(theScan.TheScan, matchedFragmentIons);
-        //            tuples[i] = new Tuple<int, double, double>(i, score, (double)glycans[i].Mass/1E5);
-        //        }
-        //    }
-
-        //    return tuples;
-        //}
-
-        public static int BinarySearchGetIndex(double[] massArray, double targetMass)
-        {
-            var iD = Array.BinarySearch(massArray, targetMass);
-            if (iD < 0) { iD = ~iD; }
-            else
-            {
-                while (iD - 1 >= 0 && massArray[iD-1] >= targetMass - 0.00000001)
-                {
-                    iD--;
-                }
-            }
-            return iD;
         }
 
         public static PeptideWithSetModifications GenerateNGlycopeptide(int position, PeptideWithSetModifications peptide, Glycan glycan)
@@ -210,19 +263,38 @@ namespace EngineLayer.GlycoSearch
             return theoreticalProducts;
         }
 
+        //The oxoniumIonIntensities is related with Glycan.AllOxoniumIons. 
+        //Rules are coded in the function.    
+        public static bool NGlyOxoniumIonsAnalysis(double[] oxoniumIonsintensities, Glycan glycan)
+        {
+            //If a glycopeptide spectrum does not have 292.1027 or 274.0921, then remove all glycans that have sialic acids from the search.
+            if (oxoniumIonsintensities[10] <= 0 && oxoniumIonsintensities[12] <= 0)
+            {
+                if (glycan.Kind[2] != 0 || glycan.Kind[3] != 0)
+                {
+                    return false;
+                }
+            }
+
+            //If a spectrum has 366.1395, remove glycans that do not have HexNAc(1)Hex(1) or more. Here use the total glycan of glycanBox to calculate. 
+            if (oxoniumIonsintensities[14] > 0)
+            {
+                if (glycan.Kind[0] < 1 && glycan.Kind[1] < 1)
+                {
+                    return false;
+                }
+            }
+
+            //Other rules:
+            //A spectrum needs to have 204.0867 to be considered as a glycopeptide.              
+            //Ratio of 138.055 to 144.0655 can seperate O/N glycan.
+
+            return true;
+        }
+
         #endregion
 
         #region O-Glyco related functions
-
-        public static bool DissociationTypeContainETD(DissociationType dissociationType)
-        {
-            if (dissociationType == DissociationType.ETD || dissociationType == DissociationType.EThcD)
-            {
-                return true;
-            }
-
-            return false;
-        }
 
         //TO THINK: filter reasonable fragments here. The final solution is to change mzLib.Proteomics.PeptideWithSetModifications.Fragment
         public static List<Product> OGlyGetTheoreticalFragments(DissociationType dissociationType, PeptideWithSetModifications peptide, PeptideWithSetModifications modPeptide)
@@ -444,7 +516,6 @@ namespace EngineLayer.GlycoSearch
 
             return newFragments;
         }
-
 
         //The oxoniumIonIntensities is related with Glycan.AllOxoniumIons. 
         //Rules are coded in the function.    
