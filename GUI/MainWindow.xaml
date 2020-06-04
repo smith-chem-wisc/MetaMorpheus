@@ -163,7 +163,7 @@
             <!--Defines the context menu when a task is right-clicked-->
             <ContextMenu x:Key="TaskContextMenu" Style="{StaticResource ContextMenuStyle}">
                 <MenuItem Header="Edit task" Click="EditTask_Click" IsEnabled="{Binding IsEnabled, ElementName=RunTasksButton}" />
-                <MenuItem Header="Save as .toml" Click="SaveTask_Click" />
+                <MenuItem Header="Save as .toml" Click="SaveTaskAsToml_Click" />
             </ContextMenu>
 
             <!--Defines the context menu when a written file is right-clicked-->
@@ -268,13 +268,14 @@
 
                     <!--The list of databases-->
                     <DataGrid Name="dataGridProteinDatabases" Grid.Row="2" ItemsSource="{Binding}" Style="{StaticResource x:DataGridStyle}"
-                          IsReadOnly="{Binding IsEnabled, ElementName=RunTasksButton}">
+                          IsReadOnly="{Binding IsEnabled, ElementName=RunTasksButton}" AutoGenerateColumns="False">
                         <DataGrid.RowStyle>
                             <Style TargetType="{x:Type DataGridRow}" BasedOn="{StaticResource DatabaseDataGridItemStyle}" />
                         </DataGrid.RowStyle>
                         <DataGrid.Columns>
                             <!--The rest of the columns-->
-                            <DataGridTextColumn Header="File" Binding="{Binding FilePath}" Width="590" />
+                            <DataGridTextColumn Header="File" Binding="{Binding FilePath}" Width="250" />
+                            <DataGridTextColumn Header="Contaminant" Binding="{Binding Contaminant}" Width="300" />
 
                             <!--Defines the "delete" column-->
                             <DataGridTemplateColumn>
@@ -310,13 +311,14 @@
 
                     <!--The list of spectra files-->
                     <DataGrid Name="dataGridSpectraFiles" ItemsSource="{Binding}" Grid.Row="2" Style="{StaticResource x:DataGridStyle}"
-                          IsReadOnly="{Binding IsEnabled, ElementName=RunTasksButton}">
+                          IsReadOnly="{Binding IsEnabled, ElementName=RunTasksButton}" AutoGenerateColumns="False">
                         <DataGrid.RowStyle>
                             <Style TargetType="{x:Type DataGridRow}" BasedOn="{StaticResource SpectraFileDataGridItemStyle}" />
                         </DataGrid.RowStyle>
                         <DataGrid.Columns>
                             <!--The rest of the columns-->
-                            <DataGridTextColumn Header="File" Binding="{Binding FilePath}" Width="590" />
+                            <DataGridTextColumn Header="File" Binding="{Binding FilePath}" Width="250" />
+                            <DataGridTextColumn Header="File-Specific Parameters" Binding="{Binding Parameters}" Width="300" />
 
                             <!--Defines the "delete" column-->
                             <DataGridTemplateColumn>
@@ -375,57 +377,45 @@
                         </Grid.ColumnDefinitions>
 
                         <!--Protein DB Summary-->
-                        <DataGrid Name="proteinDbSummaryDataGrid" ItemsSource="{Binding}" Grid.Column="0" Margin="10" 
+                        <DataGrid Name="proteinDbSummaryDataGrid" ItemsSource="{Binding}" Grid.Column="0" Margin="5,10,4,10" 
                               Style="{StaticResource x:DataGridStyle}" ColumnHeaderStyle="{StaticResource DataGridColumnHeaderStyle}"
-                              IsReadOnly="{Binding IsEnabled, ElementName=RunTasksButton}">
+                              IsReadOnly="{Binding IsEnabled, ElementName=RunTasksButton}" AutoGenerateColumns="False">
                             <DataGrid.RowStyle>
-                                <Style TargetType="{x:Type DataGridRow}" BasedOn="{StaticResource DatabaseDataGridItemStyle}" />
+                                <Style TargetType="{x:Type DataGridRow}" BasedOn="{StaticResource DatabaseDataGridItemStyle}" >
+                                    <Setter Property="FontSize" Value="11" />
+                                </Style>
                             </DataGrid.RowStyle>
                             <DataGrid.Columns>
-                                <!--The rest of the columns-->
-                                <DataGridTextColumn Header="Database" Binding="{Binding FilePath}" Width="590" />
-
-                                <!--Defines the "delete" column-->
-                                <DataGridTemplateColumn>
-                                    <DataGridTemplateColumn.CellTemplate>
-                                        <DataTemplate>
-                                            <Button Click="DeleteDatabaseOrSpectraFile_Click" Style="{StaticResource DeleteFromDataGridButtonStyle}"/>
-                                        </DataTemplate>
-                                    </DataGridTemplateColumn.CellTemplate>
-                                </DataGridTemplateColumn>
+                                <DataGridTextColumn Header="File" Binding="{Binding FileName}" Width="170" />
+                                <DataGridTextColumn Header="Contam" Binding="{Binding Contaminant}" Width="55" />
                             </DataGrid.Columns>
                         </DataGrid>
                         <Button Grid.Column="0" Width="20" Height="20" HorizontalAlignment="Right" VerticalAlignment="Bottom" Margin="11" Content="+" 
                                 VerticalContentAlignment="Top" Style="{StaticResource ImportantButtonStyle}" Click="AddProteinDatabase_Click" IsEnabled="{Binding IsEnabled, ElementName=RunTasksButton}" />
 
                         <!--Spectra file Summary-->
-                        <DataGrid Name="spectraFileSummaryDataGrid" ItemsSource="{Binding}" Grid.Column="1" Margin="10" 
+                        <DataGrid Name="spectraFileSummaryDataGrid" ItemsSource="{Binding}" Grid.Column="1" Margin="2,10,2,10" 
                               Style="{StaticResource x:DataGridStyle}" ColumnHeaderStyle="{StaticResource DataGridColumnHeaderStyle}"
-                              IsReadOnly="{Binding IsEnabled, ElementName=RunTasksButton}">
+                              IsReadOnly="{Binding IsEnabled, ElementName=RunTasksButton}" AutoGenerateColumns="False">
                             <DataGrid.RowStyle>
-                                <Style TargetType="{x:Type DataGridRow}" BasedOn="{StaticResource SpectraFileDataGridItemStyle}" />
+                                <Style TargetType="{x:Type DataGridRow}" BasedOn="{StaticResource SpectraFileDataGridItemStyle}">
+                                    <Setter Property="FontSize" Value="11" />
+                                </Style>
                             </DataGrid.RowStyle>
                             <DataGrid.Columns>
-                                <!--The rest of the columns-->
-                                <DataGridTextColumn Header="Spectra File" Binding="{Binding FilePath}" Width="590" />
-
-                                <!--Defines the "delete" column-->
-                                <DataGridTemplateColumn>
-                                    <DataGridTemplateColumn.CellTemplate>
-                                        <DataTemplate>
-                                            <Button Click="DeleteDatabaseOrSpectraFile_Click" Style="{StaticResource DeleteFromDataGridButtonStyle}" />
-                                        </DataTemplate>
-                                    </DataGridTemplateColumn.CellTemplate>
-                                </DataGridTemplateColumn>
+                                <DataGridTextColumn Header="File" Binding="{Binding FileName}" Width="170" />
+                                <DataGridTextColumn Header="Params" Binding="{Binding Parameters}" Width="55" />
                             </DataGrid.Columns>
                         </DataGrid>
                         <Button Grid.Column="1" Width="20" Height="20" HorizontalAlignment="Right" VerticalAlignment="Bottom" Margin="11" Content="+" 
                                 VerticalContentAlignment="Top" Style="{StaticResource ImportantButtonStyle}" Click="AddSpectraFile_Click" IsEnabled="{Binding IsEnabled, ElementName=RunTasksButton}" />
 
                         <!--Task Summary-->
-                        <TreeView Name="taskSummaryDataGrid" ItemsSource="{Binding}" Grid.Column="2" Margin="10">
+                        <TreeView Name="taskSummary" ItemsSource="{Binding}" Grid.Column="2" Margin="2,10,5,10">
                             <TreeView.ItemContainerStyle>
-                                <Style TargetType="{x:Type TreeViewItem}" BasedOn="{StaticResource TaskTreeViewStyle}" />
+                                <Style TargetType="{x:Type TreeViewItem}" BasedOn="{StaticResource TaskTreeViewStyle}">
+                                    <Setter Property="FontSize" Value="11" />
+                                </Style>
                             </TreeView.ItemContainerStyle>
                         </TreeView>
                         <Button Grid.Column="2" Width="20" Height="20" HorizontalAlignment="Right" VerticalAlignment="Bottom" Margin="11" Content="+" 
@@ -436,15 +426,25 @@
                     <DockPanel Margin="5,0,10,0" Grid.Row="1" LastChildFill="True">
                         <Button x:Name="OpenOutputFolderButton" Content="OPEN" Width="60" DockPanel.Dock="Right" 
                                     Click="OpenOutputFolder_Click" Background="{StaticResource SecondaryButtonColor}" Foreground="White" FontSize="12" BorderThickness="0" />
+
                         <Label Content="Output Folder:" Foreground="{StaticResource TextColor1}" FontSize="12" />
+
                         <TextBox x:Name="OutputFolderTextBox" ToolTip="$DATETIME is automatically replaced by the current date and time" 
                              Background="Transparent" Foreground="{StaticResource TextColor1}" BorderBrush="{StaticResource BorderColor}" BorderThickness="1" FontSize="13"
                              IsEnabled="{Binding IsEnabled, ElementName=RunTasksButton}"/>
                     </DockPanel>
 
-                    <!--Run button-->
-                    <Button x:Name="RunTasksButton" Content="RUN METAMORPHEUS" Click="RunAllTasks_Click" FontSize="14" Grid.Row="2" Margin="10" Height="30"
+                    <Grid Grid.Row="2" Background="{StaticResource BackgroundColor}">
+                        <!--Run button-->
+                        <Button x:Name="RunTasksButton" Content="RUN METAMORPHEUS" Click="RunAllTasks_Click" FontSize="14" Margin="10" Height="30"
                                 Width="200" Style="{StaticResource ImportantButtonStyle}" />
+
+                        <Button x:Name="ResetTasksButton" Content="RESET TASKS" Click="ResetTasks_Click" FontSize="14" Margin="210,10,10,10" Height="30"
+                                Width="200" Style="{StaticResource ImportantButtonStyle}" />
+
+                        <Button x:Name="CancelTasksButton" Content="CANCEL RUN" Click="CancelTasks_Click" FontSize="14" Margin="-210,10,10,10" Height="30"
+                                Width="200" Style="{StaticResource ImportantButtonStyle}" />
+                    </Grid>
                 </Grid>
             </TabItem>
 
