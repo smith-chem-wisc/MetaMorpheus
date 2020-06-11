@@ -80,14 +80,22 @@ namespace TaskLayer
                 }
             }
 
-            QuantificationAnalysis(allgsms);
-            WriteQuantificationResults();
-
-            var gps = GlycopeptideRRT.ConstructGlycopeptideRRT(allgsms, Parameters.FlashLfqResults);
-            GlycopeptideRRT.PredictRRT(gps);
-            var writtenFileRRT = Path.Combine(Parameters.OutputFolder, "glycopeptideRT" + ".tsv");
-            GlycopeptideRRT.WriteGlycopeptideRRT(gps, writtenFileRRT);
-
+            if (glycoSearchParameters.PerformQuantification || glycoSearchParameters.PerformRelativeRetentionTimePrediction)
+            {
+                QuantificationAnalysis(allgsms);
+                if (glycoSearchParameters.PerformQuantification)
+                {
+                    WriteQuantificationResults();
+                }
+                if (glycoSearchParameters.PerformRelativeRetentionTimePrediction)
+                {
+                    var gps = GlycopeptideRRT.ConstructGlycopeptideRRT(allgsms, Parameters.FlashLfqResults);
+                    GlycopeptideRRT.PredictRRT(gps);
+                    var writtenFileRRT = Path.Combine(Parameters.OutputFolder, "glycopeptideRT" + ".tsv");
+                    GlycopeptideRRT.WriteGlycopeptideRRT(gps, writtenFileRRT);
+                }
+            }
+            
             return MyTaskResults;
         }
 

@@ -17,6 +17,8 @@ namespace TaskLayer
             GlycoSearchTopNum = 50;
             MaximumOGlycanAllowed = 4;
             IndexingChildScan = false;
+            PerformQuantification = false;
+            PerformRelativeRetentionTimePrediction = false;
         }
 
         public string OGlycanDatabasefile { get; set; }
@@ -28,5 +30,9 @@ namespace TaskLayer
         public int MaximumOGlycanAllowed { get; set; }
 
         public bool IndexingChildScan { get; set; }
+
+        public bool PerformQuantification { get; set; }
+
+        public bool PerformRelativeRetentionTimePrediction { get; set; }
     }
 }

@@ -15,7 +15,7 @@ using System.Windows.Input;
 using TaskLayer;
 using UsefulProteomicsDatabases;
 using System.IO;
-
+using Org.BouncyCastle.Crypto.Modes.Gcm;
 
 namespace MetaMorpheusGUI
 {
@@ -123,6 +123,8 @@ namespace MetaMorpheusGUI
             TbMaxOGlycanNum.Text = task._glycoSearchParameters.MaximumOGlycanAllowed.ToString(CultureInfo.InvariantCulture);
             CkbOxoniumIonFilt.IsChecked = task._glycoSearchParameters.OxoniumIonFilt;
             CkbIndexingChildScan.IsChecked = task._glycoSearchParameters.IndexingChildScan;
+            CkbQuantification.IsChecked = task._glycoSearchParameters.PerformQuantification;
+            CkbRelativeRetentionTime.IsChecked = task._glycoSearchParameters.PerformRelativeRetentionTimePrediction;
 
             txtTopNum.Text = task._glycoSearchParameters.GlycoSearchTopNum.ToString(CultureInfo.InvariantCulture);
             CmbOGlycanDatabase.SelectedItem = task._glycoSearchParameters.OGlycanDatabasefile;
@@ -266,6 +268,8 @@ namespace MetaMorpheusGUI
             TheTask._glycoSearchParameters.MaximumOGlycanAllowed = int.Parse(TbMaxOGlycanNum.Text, CultureInfo.InvariantCulture);
             TheTask._glycoSearchParameters.OxoniumIonFilt = CkbOxoniumIonFilt.IsChecked.Value;
             TheTask._glycoSearchParameters.IndexingChildScan = CkbIndexingChildScan.IsChecked.Value;
+            TheTask._glycoSearchParameters.PerformQuantification = CkbQuantification.IsChecked.Value;
+            TheTask._glycoSearchParameters.PerformRelativeRetentionTimePrediction = CkbQuantification.IsChecked.Value;
 
             if (CheckBoxDecoy.IsChecked.Value)
             {
