@@ -8,6 +8,7 @@ using System.Collections.Generic;
 using System.Diagnostics;
 using System.IO;
 using System.Linq;
+using System.Runtime.InteropServices;
 
 namespace EngineLayer
 {
@@ -86,7 +87,8 @@ namespace EngineLayer
                 AddCrosslinkers(Crosslinker.LoadCrosslinkers(customCrosslinkerLocation));
             }
 
-
+            string monosaccharidePath = Path.Combine(DataDir, @"Glycan_Mods", @"Monosaccharide.tsv");
+            Monosaccharides = Monosaccharide.LoadMonosaccharide(monosaccharidePath);
             OGlycanLocations = new List<string>();
             foreach (var glycanFile in Directory.GetFiles(Path.Combine(DataDir, @"Glycan_Mods", @"OGlycan")))
             {
@@ -194,6 +196,8 @@ namespace EngineLayer
         public static string ExperimentalDesignFileName { get; }
         public static IEnumerable<Crosslinker> Crosslinkers { get { return _KnownCrosslinkers.AsEnumerable(); } }
         public static IEnumerable<char> InvalidAminoAcids { get { return _InvalidAminoAcids.AsEnumerable(); } }
+
+        public static Monosaccharide[] Monosaccharides { get; }
         public static List<string> OGlycanLocations { get; }
         public static List<string> NGlycanLocations { get; }
 
@@ -342,13 +346,22 @@ namespace EngineLayer
         }
 
         // Does the same thing as Process.Start() except it works on .NET Core
-        public static void StartProcess(string path)
+        public static void StartProcess(string path, bool useNotepadToOpenToml = false)
         {
             var p = new Process();
-            p.StartInfo = new ProcessStartInfo(path)
+
+            p.StartInfo = new ProcessStartInfo()
             {
-                UseShellExecute = true
+                UseShellExecute = true,
+                FileName = path
             };
+
+            if (useNotepadToOpenToml && Path.GetExtension(path) == ".toml" && RuntimeInformation.IsOSPlatform(OSPlatform.Windows))
+            {
+                p.StartInfo.FileName = "notepad.exe";
+                p.StartInfo.Arguments = path;
+            }
+
             p.Start();
         }
     }

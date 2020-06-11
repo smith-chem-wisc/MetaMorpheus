@@ -422,6 +422,11 @@ namespace EngineLayer.GlycoSearch
 
             foreach (var childScan in theScan.ChildScans)
             {
+                //People always use CID with low res. This special code works for Nic Scott's data. (High-HCD, High-EThcD, Low-CID, High-secHCD)
+                if (childScan.TheScan.DissociationType == DissociationType.CID)
+                {
+                    continue;
+                }
                 var childFragments = GlycoPeptides.OGlyGetTheoreticalFragments(CommonParameters.MS2ChildScanDissociationType, peptide, peptideWithMod);
 
                 var matchedChildIons = MatchFragmentIons(childScan, childFragments, CommonParameters);

@@ -455,12 +455,16 @@
         <Condition>OVERWRITEAPPDATA</Condition>
         <RemoveFolder Id="MetaAppGlycan_ModsFolder" On="both" />
         <RegistryValue Root="HKCU" Key="Software\SmithGroup\MetaMorpheus" Name="installed" Type="integer" Value="1" KeyPath="yes" />
-      </Component>      
+      </Component>    
+
+	  <Component Id="Appsrc_Data_Monosaccharide.tsv" Guid="646A5318-4DBC-4BBA-8F86-1A33EB74BDD9">
+        <Condition>OVERWRITEAPPDATA</Condition>
+        <RegistryValue Root="HKCU" Key="Software\SmithGroup\MetaMorpheus" Name="installed" Type="integer" Value="1" KeyPath="yes" />
+        <File ReadOnly="no" Id="Appsrc_Monosaccharide.tsv" Name="Monosaccharide.tsv" Source="$(var.GUI_TargetDir)Glycan_Mods\Monosaccharide.tsv" />
+      </Component>
     </ComponentGroup>
   </Fragment>
-
-
-
+  
   <!--Builds the App Data folder-->
   <Fragment>
     <ComponentGroup Id="Appsrc_Data_files" Directory="MetaAppDataFolder">

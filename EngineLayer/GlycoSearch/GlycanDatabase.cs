@@ -73,12 +73,12 @@ namespace EngineLayer
 
         public static byte[] String2Kind(string line)
         {
-            byte[] kind = new byte[] { 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 };
+            byte[] kind = new byte[Glycan.SugarLength];
             var x = line.Split(new char[] { '(', ')' });
             int i = 0;
             while (i < x.Length - 1)
             {
-                kind[Glycan.NameCharDic[x[i]].Item2] = byte.Parse(x[i + 1]);
+                kind[Glycan.NameIdDic[x[i]]] = byte.Parse(x[i + 1]);
                 i = i + 2;
             }
 
@@ -123,7 +123,9 @@ namespace EngineLayer
             {
                 if (hexnac_count == 0)
                 {
-                    GlycanIon glycanIon = new GlycanIon(null, 8303819, new byte[] { 0, (byte)hexnac_count, 0, 0, 0, 0, 0, 0, 0, 0, 0 }, glycan_mass - 8303819);
+                    byte[] aIonKind = new byte[Glycan.SugarLength];
+                    aIonKind[1] = (byte)hexnac_count;
+                    GlycanIon glycanIon = new GlycanIon(null, 8303819, aIonKind, glycan_mass - 8303819);
                     glycanIons.Add(glycanIon);
                 }
                 else if (hexnac_count == 1)
@@ -337,11 +339,12 @@ namespace EngineLayer
 
         private static GlycanIon GenerateGlycanIon(byte hexose_count, byte hexnac_count, byte fuc_count, byte xyl_count, int glycan_mass)
         {
-            byte[] ionKind = new byte[] { hexose_count, hexnac_count, 0, 0, fuc_count, 0, 0, 0, 0, xyl_count };
+            byte[] aIonKind = new byte[Glycan.SugarLength];
+            aIonKind[0] = hexose_count; aIonKind[1] = hexnac_count; aIonKind[4] = fuc_count; aIonKind[9] = xyl_count;
 
-            int ionMass = Glycan.GetMass(ionKind);
+            int ionMass = Glycan.GetMass(aIonKind);
 
-            GlycanIon glycanIon = new GlycanIon(null, ionMass, ionKind, glycan_mass - ionMass);
+            GlycanIon glycanIon = new GlycanIon(null, ionMass, aIonKind, glycan_mass - ionMass);
 
             return glycanIon;
         }
