@@ -116,7 +116,7 @@ namespace EngineLayer.GlycoSearch
                     var scan = ListOfSortedMs2Scans[scanIndex];
 
                     // get fragment bins for this scan
-                    List<int> allBinsToSearch = GetGlycanBinsToSearch(scan, FragmentIndex, false);
+                    List<int> allBinsToSearch = GetGlycanBinsToSearch(scan, FragmentIndex, (GlycoSearchType == GlycoSearchType.NGlycanSearch || GlycoSearchType == GlycoSearchType.N_O_GlycanSearch));
 
                     //SecondFragmentIndex will only be used for HCD-trig-ETD data for N-Glycopeptide. 
                     //If SecondFragmentIndex == null, we only use the b/y FragmentIndex for child scans.
@@ -152,7 +152,7 @@ namespace EngineLayer.GlycoSearch
 
                         foreach (var aChildScan in scan.ChildScans)
                         {
-                            var x = GetGlycanBinsToSearch(aChildScan, SecondFragmentIndex, false);
+                            var x = GetGlycanBinsToSearch(aChildScan, SecondFragmentIndex, (GlycoSearchType == GlycoSearchType.NGlycanSearch || GlycoSearchType == GlycoSearchType.N_O_GlycanSearch));
                             childBinsToSearch.AddRange(x);
                         }
 
@@ -696,7 +696,9 @@ namespace EngineLayer.GlycoSearch
                     theo_n += theoreticalProducts.Where(p => p.ProductType != ProductType.M && p.ProductType != ProductType.D).Count();
 
                     //TO DO: the current MatchFragmentIons only match one charge states. For NGlycopeptide, the Y-ions always contain more than one charge state.
-                    var matchedIons = GlycoPeptides.GlyMatchOriginFragmentIons(theScan, theoreticalProducts, CommonParameters);
+                    //var matchedIons = GlycoPeptides.GlyMatchOriginFragmentIons(theScan, theoreticalProducts, CommonParameters);
+                    var matchedIons = MatchFragmentIons(theScan, theoreticalProducts, CommonParameters);
+
 
                     var matchedLocalizationIons = matchedIons.Where(p => p.NeutralTheoreticalProduct.ProductType != ProductType.M && p.NeutralTheoreticalProduct.ProductType != ProductType.D).ToList(); //TO DO: Select matched localzation ions
                     double localizationScore = CalculatePeptideScore(theScan.TheScan, matchedLocalizationIons);
@@ -716,8 +718,9 @@ namespace EngineLayer.GlycoSearch
 
                         theo_n += theoreticalChildProducts.Where(p => p.ProductType != ProductType.M && p.ProductType != ProductType.D).Count();
 
-                        var matchedChildIons = GlycoPeptides.GlyMatchOriginFragmentIons(childScan, theoreticalChildProducts, CommonParameters);
-
+                        //var matchedChildIons = GlycoPeptides.GlyMatchOriginFragmentIons(childScan, theoreticalChildProducts, CommonParameters);
+                        var matchedChildIons = MatchFragmentIons(childScan, theoreticalChildProducts, CommonParameters);
+                     
                         allMatchedChildIons.Add(childScan.OneBasedScanNumber, matchedChildIons);
 
                         if (matchedChildIons == null)

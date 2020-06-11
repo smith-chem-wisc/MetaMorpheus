@@ -16,6 +16,8 @@ using TaskLayer;
 using UsefulProteomicsDatabases;
 using MzLibUtil;
 using Nett;
+using MathNet.Numerics.LinearRegression;
+using MathNet.Numerics.LinearAlgebra;
 
 namespace Test
 {
@@ -270,5 +272,18 @@ namespace Test
      
         }
 
+        [Test]
+        public static void GlyTest_WeightedRegression()
+        {
+            var x = new[] { new[] { 1.0, 4.0 }, new[] { 2.0, 5.0 }, new[] { 3.0, 2.0 } };
+            var y = new[] { 15.0, 20, 10 };
+            var w = new[] { new[] { 1, 0, 0 }, new[] { 0, 1, 0 }, new[] { 0, 0, 1 } };
+            double[] p = MultipleRegression.QR(x, y, intercept: false);
+            Matrix<double> xm = Matrix<double>.Build.Dense(x.Count(), x.First().Length, (i, j) => x[i][j]);
+            Matrix<double> wm = Matrix<double>.Build.Dense(x.Count(), w.First().Length, (i, j) => w[i][j]);
+
+            Vector<double> yv = Vector<double>.Build.Dense(y.Count(), (i) => y[i]);
+            var pv = WeightedRegression.Weighted(xm, yv, wm);
+        }
     }
 }

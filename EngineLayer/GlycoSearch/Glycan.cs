@@ -604,7 +604,10 @@ namespace EngineLayer
             Random random = new Random();
             foreach (var aGlycan in glycans)
             {
+                //Add original glycan
                 allGlycans.Add(aGlycan);
+
+                //Generate decoy glycan by shiftting glycanIons
                 List<GlycanIon> glycanIons = new List<GlycanIon>();
                 foreach (var ion in aGlycan.Ions)
                 {
@@ -613,6 +616,10 @@ namespace EngineLayer
                     glycanIons.Add(glycanIon);
                 }
                 var aDecoyGlycan = new Glycan(aGlycan.Struc, aGlycan.Mass, aGlycan.Kind, glycanIons, true);
+
+                ////Generate decoy glycan by shiftting N-glycan mass
+                //var aDecoyGlycan = new Glycan(aGlycan.Struc, aGlycan.Mass + 2000000, aGlycan.Kind, aGlycan.Ions, true);
+
                 aDecoyGlycan.GlyId = aGlycan.GlyId;
                 allGlycans.Add(aDecoyGlycan);
             }

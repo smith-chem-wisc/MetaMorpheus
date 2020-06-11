@@ -43,6 +43,18 @@ namespace EngineLayer.GlycoSearch
         public double DiagnosticIonScore { get; set; } //Since every glycopeptide generate DiagnosticIon, it is important to seperate the score. 
         public double R138vs144 { get; set; } // The intensity ratio of this 138 and 144 could be a signature for O-glycan or N-glycan.
 
+        public static byte[] GetKind(GlycoSpectralMatch gsm)
+        {
+            if (gsm.NGlycan != null)
+            {
+                return gsm.NGlycan.First().Kind;
+            }
+            else
+            {
+                return GlycanBox.OGlycanBoxes[gsm.LocalizationGraphs.First().ModBoxId].Kind;
+            }
+        }
+
         //N-Glyco Info
         public List<Glycan> NGlycan { get; set; }  //Identified NGlycan
         public Dictionary<int, double> NGlycoSiteSpeciLocalProb { get; set; }
@@ -303,11 +315,6 @@ namespace EngineLayer.GlycoSearch
                     sb.Append("\t");
                 }
 
-                if (ModPos.Count() ==1)
-                {
-                    LocalizationLevel = NGlycoCorrectLocalizationLevel(ModPos, MatchedFragmentIons, ChildMatchedFragmentIons);
-                }
-
                 sb.Append(LocalizationLevel); sb.Append("\t");
 
                 string peptideProb = "";
@@ -363,7 +370,7 @@ namespace EngineLayer.GlycoSearch
 
                 if (Routes!=null)
                 {
-                    sb.Append(CorrectLocalizationLevel(SiteSpeciLocalProb, LocalizationGraphs.First(), Routes.First(), LocalizedGlycan, LocalizationLevel)); sb.Append("\t");
+                    sb.Append(LocalizationLevel); sb.Append("\t");
 
                     string local_peptide = "";
                     string local_protein = "";
@@ -391,8 +398,7 @@ namespace EngineLayer.GlycoSearch
             return s;
         }
 
-        #region O-glycopeptide Localization
-        //For N-Glycopeptide
+        #region O-glycopeptide Localization Output
         //Output: <int, int, string> <ModBoxId, ModPosition, is localized>; Input: List<Route>
         public static List<Tuple<int, int, bool>> GetLocalizedGlycan(List<Route> OGlycanBoxLocalization, out LocalizationLevel localizationLevel)
         {
@@ -482,38 +488,6 @@ namespace EngineLayer.GlycoSearch
             return local;
         }
 
-        //Correct Localization Level based on site specific probability. If LocalizationLevel = 1, and there are site probability lower than 0.75, Correct the level to 1b.
-        public static LocalizationLevel CorrectLocalizationLevel(Dictionary<int, List<Tuple<int, double>>> siteSpeciLocalProb, LocalizationGraph localizationGraph, Route route, List<Tuple<int, int, bool>> localizedGlycan, LocalizationLevel localizationLevel)
-        {
-            if (siteSpeciLocalProb == null || localizationLevel!=LocalizationLevel.Level1)
-            {
-                return localizationLevel;
-            }
-
-            if (localizationGraph.ModPos.Length == 1 && localizationGraph.TotalScore == 0)
-            {
-                return LocalizationLevel.Level1b;
-            }
-
-
-            for (int i = 0; i < localizedGlycan.Count; i++)
-            {
-                var g = localizedGlycan[i];
-                if (siteSpeciLocalProb[g.Item1].Where(p => p.Item1 == g.Item2).First().Item2 < 0.75)
-                {
-                    return LocalizationLevel.Level1b;
-                }
-
-                if (!route.Mods[i].Item3)
-                {
-                    return LocalizationLevel.Level1b;
-                }
-            }
-
-
-            return localizationLevel;
-
-        }
         public static void LocalizedSiteSpeciLocalInfo(Dictionary<int, List<Tuple<int, double>>> siteSpeciLocalProb, List<Tuple<int, int, bool>> localizedGlycan, int? OneBasedStartResidueInProtein, ref string local, ref string local_protein)
         {
             if (siteSpeciLocalProb == null)
@@ -532,6 +506,7 @@ namespace EngineLayer.GlycoSearch
             }
 
         }
+        
         public static string SiteSpeciLocalInfo(Dictionary<int, List<Tuple<int, double>>> siteSpeciLocalProb)
         {
             string local = "";
@@ -553,37 +528,6 @@ namespace EngineLayer.GlycoSearch
             }
 
             return local;
-        }
-
-        #endregion
-
-        #region N-Glycopeptide Localization
-        //For N-Glycopeptide
-        public static LocalizationLevel NGlycoCorrectLocalizationLevel(List<int> modPos, List<MatchedFragmentIon> bestMatchedIons, Dictionary<int, List<MatchedFragmentIon>> bestChildMathcedIons)
-        {
-
-            var localizationLevel = LocalizationLevel.Level1b;
-
-            //correct localization.
-            if (bestMatchedIons.Where(p => (p.NeutralTheoreticalProduct.ProductType == ProductType.b || p.NeutralTheoreticalProduct.ProductType == ProductType.y) && p.NeutralTheoreticalProduct.NeutralLoss > 0).Count() > 0
-                || bestMatchedIons.Where(p => (p.NeutralTheoreticalProduct.ProductType == ProductType.c && p.NeutralTheoreticalProduct.AminoAcidPosition >= modPos[0] -1) || (p.NeutralTheoreticalProduct.ProductType == ProductType.zDot && p.NeutralTheoreticalProduct.AminoAcidPosition <= modPos[0] -1)).Count() > 0)
-            {
-                localizationLevel = LocalizationLevel.Level1;
-            }
-            else
-            {
-                foreach (var childIons in bestChildMathcedIons)
-                {
-                    if (childIons.Value.Where(p => (p.NeutralTheoreticalProduct.ProductType == ProductType.b || p.NeutralTheoreticalProduct.ProductType == ProductType.y) && p.NeutralTheoreticalProduct.NeutralLoss > 0).Count() > 0
-                        || childIons.Value.Where(p => (p.NeutralTheoreticalProduct.ProductType == ProductType.c && p.NeutralTheoreticalProduct.AminoAcidPosition >= modPos[0] -1) || (p.NeutralTheoreticalProduct.ProductType == ProductType.zDot && p.NeutralTheoreticalProduct.AminoAcidPosition <= modPos[0] -1)).Count() > 0)
-                    {
-                        localizationLevel = LocalizationLevel.Level1;
-                        break;
-                    }
-                }
-            }
-            return localizationLevel;
-
         }
 
         #endregion

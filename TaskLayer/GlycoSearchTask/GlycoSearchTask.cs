@@ -12,6 +12,7 @@ using MzLibUtil;
 using EngineLayer.FdrAnalysis;
 using System;
 using Proteomics.RetentionTimePrediction;
+using FlashLFQ;
 
 namespace TaskLayer
 {
@@ -52,6 +53,8 @@ namespace TaskLayer
             List<Protein> proteinList = LoadProteins(taskId, dbFilenameList, true, _glycoSearchParameters.DecoyType, localizeableModificationTypes, CommonParameters);
 
             MyFileManager myFileManager = new MyFileManager(true);
+
+            var fileSpecificCommonParams = fileSettingsList.Select(b => SetAllFileSpecificCommonParams(CommonParameters, b));
 
             int completedFiles = 0;
 
@@ -174,67 +177,40 @@ namespace TaskLayer
 
                 foreach (var glycoSpectralMatch in glycos)
                 {
-                    if (glycoSpectralMatch.LocalizationGraphs != null)
-                    {
-                        bool is_HCD_only_data = !GlycoPeptides.DissociationTypeContainETD(CommonParameters.DissociationType) && !GlycoPeptides.DissociationTypeContainETD(CommonParameters.MS2ChildScanDissociationType);
-
-                        if (is_HCD_only_data)
-                        {
-                            glycoSpectralMatch.LocalizationLevel = LocalizationLevel.Level3;
-                            if (glycoSpectralMatch.LocalizationGraphs.Count == 1 && glycoSpectralMatch.LocalizationGraphs.First().ModPos.Length == 1)
-                            {
-                                glycoSpectralMatch.LocalizationLevel = LocalizationLevel.Level1b;
-                            }
-                            
-                        }
-                        else
-                        {
-                            List<Route> localizationCandidates = new List<Route>();
-
-                            for (int i = 0; i < glycoSpectralMatch.LocalizationGraphs.Count; i++)
-                            {
-                                var allPathWithMaxScore = LocalizationGraph.GetAllHighestScorePaths(glycoSpectralMatch.LocalizationGraphs[i].array, glycoSpectralMatch.LocalizationGraphs[i].ChildModBoxes);
-
-                                foreach (var path in allPathWithMaxScore)
-                                {
-                                    var local = LocalizationGraph.GetLocalizedPath(glycoSpectralMatch.LocalizationGraphs[i], path);
-                                    local.ModBoxId = glycoSpectralMatch.LocalizationGraphs[i].ModBoxId;
-                                    localizationCandidates.Add(local);
-                                }
-                            }
-
-                            glycoSpectralMatch.Routes = localizationCandidates;
-                        }
-                    }
-
-                    if (glycoSpectralMatch.Routes != null)
-                    {
-                        LocalizationLevel localLevel;
-                        glycoSpectralMatch.LocalizedGlycan = GlycoSpectralMatch.GetLocalizedGlycan(glycoSpectralMatch.Routes, out localLevel);
-                        glycoSpectralMatch.LocalizationLevel = localLevel;
-
-                        //Localization PValue.
-                        if (localLevel == LocalizationLevel.Level1 || localLevel == LocalizationLevel.Level2)
-                        {
-                            List<Route> allRoutes = new List<Route>();
-                            foreach (var graph in glycoSpectralMatch.LocalizationGraphs)
-                            {
-                                allRoutes.AddRange(LocalizationGraph.GetAllPaths_CalP(graph, glycoSpectralMatch.ScanInfo_p, glycoSpectralMatch.Thero_n));
-                            }
-                            glycoSpectralMatch.SiteSpeciLocalProb = LocalizationGraph.CalSiteSpecificLocalizationProbability(allRoutes, glycoSpectralMatch.LocalizationGraphs.First().ModPos);
-                        }
-                    }
-
                     //glycoSpectralMatch.PredictedHydrophobicity = calc.ScoreSequence(glycoSpectralMatch.BestMatchingPeptides.First().Peptide);
 
                     filteredAllPsms.Add(glycoSpectralMatch);
                 }
             }
 
-            PostGlycoSearchAnalysisTask postGlycoSearchAnalysisTask = new PostGlycoSearchAnalysisTask();
+            FlashLfqResults flashLfqResults = null;
 
-            postGlycoSearchAnalysisTask.FileSpecificParameters = this.FileSpecificParameters;
-            return postGlycoSearchAnalysisTask.Run(OutputFolder, dbFilenameList, currentRawFileList, taskId, fileSettingsList, filteredAllPsms.OrderByDescending(p => p.Score).ToList(), CommonParameters, _glycoSearchParameters, proteinList, variableModifications, fixedModifications, localizeableModificationTypes, MyTaskResults);
+            PostSearchAnalysisParameters parameters = new PostSearchAnalysisParameters
+            {
+                SearchTaskResults = MyTaskResults,
+                SearchTaskId = taskId,          
+                ProteinList = proteinList,
+                VariableModifications = variableModifications,
+                FixedModifications = fixedModifications,
+                ListOfDigestionParams = new HashSet<DigestionParams>(fileSpecificCommonParams.Select(p => p.DigestionParams)),
+                CurrentRawFileList = currentRawFileList,
+                MyFileManager = myFileManager,
+                OutputFolder = OutputFolder,
+                IndividualResultsOutputFolder = Path.Combine(OutputFolder, "Individual File Results"),
+                FlashLfqResults = flashLfqResults,
+                FileSettingsList = fileSettingsList,
+                DatabaseFilenameList = dbFilenameList
+            };
+
+            PostGlycoSearchAnalysisTask postGlycoSearchAnalysisTask = new PostGlycoSearchAnalysisTask 
+            {
+                Parameters = parameters,
+                FileSpecificParameters = this.FileSpecificParameters,
+                CommonParameters = CommonParameters,
+                
+            };
+
+            return postGlycoSearchAnalysisTask.Run(filteredAllPsms.OrderByDescending(p => p.Score).ToList(),  _glycoSearchParameters, MyTaskResults);
 
         }
 
