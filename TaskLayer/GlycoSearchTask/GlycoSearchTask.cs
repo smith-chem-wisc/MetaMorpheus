@@ -26,13 +26,14 @@ namespace TaskLayer
                 maxPeptideLength: 60
 
             );
+
             CommonParameters = new CommonParameters(
                 precursorMassTolerance: new PpmTolerance(10),
                 ms2childScanDissociationType: DissociationType.EThcD,
                 scoreCutoff: 3,
-                trimMsMsPeaks: false, 
+                trimMsMsPeaks: true, 
                 numberOfPeaksToKeepPerWindow: 1000,
-                minimumAllowedIntensityRatioToBasePeak: 0.01,
+                minimumAllowedIntensityRatioToBasePeak: 0.001,
                 digestionParams: digestPara            
                 
             );

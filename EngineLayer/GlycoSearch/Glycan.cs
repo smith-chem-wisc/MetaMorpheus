@@ -249,9 +249,10 @@ namespace EngineLayer
             if (!isOglycan)
             {
                 byte[] aIonKind = new byte[SugarLength];
-                glycanIons.Add(new GlycanIon(null, 8303819, aIonKind, mass - 8303819)); //Cross-ring mass
+                glycanIons.Add(new GlycanIon(null, CrossRingMass, aIonKind, mass - CrossRingMass)); //Cross-ring mass
             }
-            glycanIons.Add(new GlycanIon(null, 0, new byte[] { 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 }, mass));
+            byte[] zeroKind = new byte[SugarLength];
+            glycanIons.Add(new GlycanIon(null, 0, zeroKind, mass));
 
             Glycan glycan = new Glycan(theGlycanStruct, mass, kind, glycanIons.OrderBy(p => p.IonMass).ToList(), false);
             glycan.GlyId = id;
@@ -531,8 +532,7 @@ namespace EngineLayer
             return modification;
         }
 
-        //TO THINK: Is it reasonable to transfer Glycan to Modification the first time Glycan is read in? Which could save time.
-        //Use glycan index and modification index to reduce space.
+        //This is a simple version of _NGlycanToModification for GlobalVariables read N-glycan
         public static Modification _NGlycanToModification(Glycan glycan)
         {
             ModificationMotif.TryGetMotif("N", out ModificationMotif finalMotif); //TO DO: only one motif can be write here.
