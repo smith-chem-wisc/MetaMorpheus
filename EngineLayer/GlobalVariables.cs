@@ -8,6 +8,7 @@ using System.Collections.Generic;
 using System.Diagnostics;
 using System.IO;
 using System.Linq;
+using System.Runtime.InteropServices;
 
 namespace EngineLayer
 {
@@ -345,13 +346,22 @@ namespace EngineLayer
         }
 
         // Does the same thing as Process.Start() except it works on .NET Core
-        public static void StartProcess(string path)
+        public static void StartProcess(string path, bool useNotepadToOpenToml = false)
         {
             var p = new Process();
-            p.StartInfo = new ProcessStartInfo(path)
+
+            p.StartInfo = new ProcessStartInfo()
             {
-                UseShellExecute = true
+                UseShellExecute = true,
+                FileName = path
             };
+
+            if (useNotepadToOpenToml && Path.GetExtension(path) == ".toml" && RuntimeInformation.IsOSPlatform(OSPlatform.Windows))
+            {
+                p.StartInfo.FileName = "notepad.exe";
+                p.StartInfo.Arguments = path;
+            }
+
             p.Start();
         }
     }
