@@ -93,7 +93,7 @@ namespace TaskLayer
         //The method is from "Retention Time Prediction for Glycopeptides in Reversed-Phase Chromatography for Glycoproteomic Applications"
         //To understand the code, please read the paper first.
         //Basicly, the method create matrix and used MathNet.MultipleRegression for calculation.
-        public static void PredictRRT(List<GlycopeptideRRT> glycopeptideRRTs)
+        public static string PredictRRT(List<GlycopeptideRRT> glycopeptideRRTs)
         {           
             //kind is an arrary contains all the sugar. To build the matrix, we first need to figure out which sugar has been identified in the glycopeptides.
             bool[] ExistSugar = new bool[glycopeptideRRTs.First().Kind.Length];
@@ -112,7 +112,7 @@ namespace TaskLayer
             }
 
             //Group the glycopeptide based on BaseSequence.
-            var gps_byId = glycopeptideRRTs.GroupBy(p => p.BaseSeq);
+            var gps_byId = glycopeptideRRTs.GroupBy(p => p.BaseSeq).Where(p => p.Count() >= 2);
 
             List<double[]> x = new List<double[]>();
 
@@ -120,7 +120,7 @@ namespace TaskLayer
             List<double> intensity = new List<double>();
             int ind = 0;
             //here we decide only the baseSequence with more than 3 glycans will be used for RRT.The size of the matrix is decided of baseSequence count. 
-            int peptideCount = gps_byId.Where(p => p.Count() >= 2).Count();
+            int peptideCount = gps_byId.Count();
             while (ind < peptideCount)
             {
                 var gps = gps_byId.ElementAt(ind);
@@ -143,7 +143,7 @@ namespace TaskLayer
                 ind++;
             }
 
-            //double[] p = MultipleRegression.QR(x.ToArray(), y.ToArray(), intercept: false);
+            //double[] _p = MultipleRegression.QR(x.ToArray(), y.ToArray(), intercept: false);
 
             //var w = new[] { new[] { 1, 0, 0 }, new[] { 0, 1, 0 }, new[] { 0, 0, 1 } };
             double[][] w = new double[x.Count][];
@@ -163,20 +163,35 @@ namespace TaskLayer
             Matrix<double> xm = Matrix<double>.Build.Dense(x.Count(), x.First().Length, (i, j) => x[i][j]);
             Matrix<double> wm = Matrix<double>.Build.Dense(x.Count(), w.First().Length, (i, j) => w[i][j]);
             Vector<double> yv = Vector<double>.Build.Dense(y.Count(), (i) => y[i]);
-            var p = WeightedRegression.Weighted(xm, yv, wm);
 
-            foreach (var gp in glycopeptideRRTs)
+            string predictMessage = "Successfully Predicted Relative Retention Time.";
+
+            try
             {
-                double z = -1.0;
-                if (gp._x!=null)
+                var p = WeightedRegression.Weighted(xm, yv, wm);
+
+                foreach (var gp in glycopeptideRRTs)
                 {
-                    for (int i = 0; i < gp._x.Length; i++)
+                    double z = -1.0;
+                    if (gp._x != null)
                     {
-                        z += p[i] * gp._x[i];
+                        for (int i = 0; i < gp._x.Length; i++)
+                        {
+                            z += p[i] * gp._x[i];
+                        }
                     }
+                    gp.PredictedRetentionTime = z;
                 }
-                gp.PredictedRetentionTime = z;
+                
             }
+            catch (Exception)
+            {
+                predictMessage = "Failed to Predict Relative Retention Time.";
+                //throw;
+            }
+
+            return predictMessage;
+
         }
 
         public static void WriteGlycopeptideRRT(List<GlycopeptideRRT> glycopeptideRRTs, string filepath)

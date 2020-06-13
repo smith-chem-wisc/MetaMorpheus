@@ -90,7 +90,9 @@ namespace TaskLayer
                 if (glycoSearchParameters.PerformRelativeRetentionTimePrediction)
                 {
                     var gps = GlycopeptideRRT.ConstructGlycopeptideRRT(allgsms, Parameters.FlashLfqResults);
-                    GlycopeptideRRT.PredictRRT(gps);
+                    string predictMessage = GlycopeptideRRT.PredictRRT(gps);
+                    MyTaskResults.AddTaskSummaryText(predictMessage);
+
                     var writtenFileRRT = Path.Combine(Parameters.OutputFolder, "glycopeptideRT" + ".tsv");
                     GlycopeptideRRT.WriteGlycopeptideRRT(gps, writtenFileRRT);
                 }
@@ -305,15 +307,15 @@ namespace TaskLayer
                 string filename = "AllQuantified" + GlobalVariables.AnalyteType + "s";
                 WritePeptideQuantificationResultsToTsv(Parameters.FlashLfqResults, Parameters.OutputFolder, filename, new List<string> { Parameters.SearchTaskId });
 
-                // write individual results
-                if (Parameters.CurrentRawFileList.Count > 1)
-                {
-                    foreach (var file in Parameters.FlashLfqResults.Peaks)
-                    {
-                        WritePeakQuantificationResultsToTsv(Parameters.FlashLfqResults, Parameters.IndividualResultsOutputFolder,
-                            file.Key.FilenameWithoutExtension + "_QuantifiedPeaks", new List<string> { Parameters.SearchTaskId, "Individual Spectra Files", file.Key.FullFilePathWithExtension });
-                    }
-                }
+                //// write individual results
+                //if (Parameters.CurrentRawFileList.Count > 1)
+                //{
+                //    foreach (var file in Parameters.FlashLfqResults.Peaks)
+                //    {
+                //        WritePeakQuantificationResultsToTsv(Parameters.FlashLfqResults, Parameters.IndividualResultsOutputFolder,
+                //            file.Key.FilenameWithoutExtension + "_QuantifiedPeaks", new List<string> { Parameters.SearchTaskId, "Individual Spectra Files", file.Key.FullFilePathWithExtension });
+                //    }
+                //}
             }
         }
 
