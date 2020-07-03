@@ -10,6 +10,8 @@
     <!--Properties about the package to be placed in the Summary Information Stream.-->
     <!--These are visible from COM through the IStream interface, and these properties can be seen on the package in Explorer.-->
     <Package Id="*" InstallerVersion="500" Compressed="yes" InstallScope="perMachine" Platform="x64" />
+    <Icon Id="icon.ico" SourceFile="$(var.GUI.TargetDir)..\..\..\Icons\MMnice.ico"/>
+    <Property Id="ARPPRODUCTICON" Value="icon.ico"/>
     <MajorUpgrade AllowSameVersionUpgrades="yes" Schedule="afterInstallValidate" DowngradeErrorMessage="A newer version of MetaMorpheus is already installed." />
 
     <Condition Message="This application is only supported on Windows 7 or higher.">
