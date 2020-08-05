@@ -44,7 +44,7 @@
 
                             <!--Select spectra file-->
                             <DockPanel Grid.Row="0" LastChildFill="True" Grid.ColumnSpan="3" Margin="0 1 0 1">
-                                <Label Content="Spectra file: " Width="70" />
+                                <Label Content="Spectra files: " Width="75" />
                                 <Button Name="resetSpectraFileButton" Content="Reset" DockPanel.Dock="Right" IsEnabled="False" Width="40" Click="resetFilesButton_Click"/>
                                 <Button Name="selectSpectraFileButton" Content="Select" DockPanel.Dock="Right" Click="selectSpectraFileButton_Click" Width="40" />
                                 <Label BorderThickness="1">
@@ -54,7 +54,7 @@
 
                             <!--Select MetaMorpheus output file-->
                             <DockPanel Grid.Row="1" LastChildFill="True" Grid.ColumnSpan="3" Margin="0 1 0 1">
-                                <Label Content="PSM file: " Width="70" />
+                                <Label Content="PSM file: " Width="75" />
                                 <Button Name="resetPsmFileButton" Content="Reset" DockPanel.Dock="Right" IsEnabled="False" Width="40" Click="resetFilesButton_Click"/>
                                 <Button Name="selectPsmFileButton" Content="Select" DockPanel.Dock="Right" Click="selectPsmFileButton_Click" Width="40" />
                                 <Label BorderThickness="1">

@@ -33,7 +33,6 @@ namespace MetaMorpheusGUI
         private PsmAnnotationViewModel mainViewModel;
         private MyFileManager spectraFileManager;
         private List<DynamicDataConnection> MsDataFiles;
-        //private MsDataFile MsDataFile;
         private readonly ObservableCollection<PsmFromTsv> allPsms; // all loaded PSMs
         private readonly ObservableCollection<PsmFromTsv> filteredListOfPsms; // this is the filtered list of PSMs to display (after q-value filter, etc.)
         private readonly Dictionary<string, ObservableCollection<PsmFromTsv>> psmsBySourceFile;  // filtered PSMs grouped by the "file name" field
@@ -431,6 +430,7 @@ namespace MetaMorpheusGUI
                 spectraFileNameLabel.Text = "None Selected";
                 spectraFileNameLabel.ToolTip = null;
                 resetSpectraFileButton.IsEnabled = false;
+                CleanupDynamicConnections();
             }
 
             // clear psm file path, psm data, and stat plot
@@ -462,6 +462,7 @@ namespace MetaMorpheusGUI
         {
             metaDrawGraphicalSettings.Close();
             metaDrawFilterSettings.Close();
+            CleanupDynamicConnections();
         }
 
         private void graphicalSettings_Click(object sender, RoutedEventArgs e)
@@ -511,7 +512,7 @@ namespace MetaMorpheusGUI
             resetSpectraFileButton.IsEnabled = false;
             resetPsmFileButton.IsEnabled = false;
             prgsFeed.IsOpen = true;
-            prgsText.Content = "Loading spectra file...";
+            prgsText.Content = "Loading spectra...";
 
             // Add EventHandlers for popup click-in/click-out behaviour
             Deactivated += new EventHandler(prgsFeed_Deactivator);
@@ -987,6 +988,16 @@ namespace MetaMorpheusGUI
                     plot.Model.DefaultXAxis.FontSize = plot.Model.DefaultFontSize;
                 }
             }
+        }
+
+        private void CleanupDynamicConnections()
+        {
+            foreach (var connection in MsDataFiles)
+            {
+                connection.CloseDynamicConnection();
+            }
+
+            MsDataFiles.Clear();
         }
     }
 }
