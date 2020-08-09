@@ -5,7 +5,7 @@
         xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
         xmlns:local="clr-namespace:MetaMorpheusGUI"
         mc:Ignorable="d"
-        Drop="Window_Drop" AllowDrop="true" Background="{StaticResource BackgroundColor}" WindowStartupLocation="CenterScreen" MinHeight="400" MinWidth="800" Height="550" Width="900"
+        Drop="Window_Drop" AllowDrop="true" Background="{StaticResource BackgroundColor}" WindowStartupLocation="CenterScreen" MinHeight="400" MinWidth="800" Height="550" Width="950"
         Loaded="MyWindow_Loaded">
 
     <Window.Resources>
@@ -17,7 +17,7 @@
                 <Setter Property="Template">
                     <Setter.Value>
                         <ControlTemplate TargetType="TabItem">
-                            <Grid Height="35" Width="120" Background="{StaticResource SideBarMainColor}">
+                            <Grid Height="35" Width="105" Background="{StaticResource SideBarMainColor}">
                                 <Border Name="Border" Margin="0,0,0,0" Background="Transparent"
                                                 BorderThickness="{TemplateBinding BorderThickness}" BorderBrush="{TemplateBinding BorderBrush}" >
                                     <ContentPresenter 
@@ -71,12 +71,14 @@
                 <Setter Property="BorderBrush" Value="{StaticResource BorderColor}"/>
                 <Setter Property="Margin" Value="10,0,10,10"/>
                 <Setter Property="SelectedItem" Value="{Binding SelectedRow, Mode=TwoWay}"/>
+                <Setter Property="HeadersVisibility" Value="Column"/>
+                <Setter Property="GridLinesVisibility" Value="None" />
             </Style>
 
             <!--Styling for the data grid headers-->
             <Style x:Key="DataGridColumnHeaderStyle" TargetType="DataGridColumnHeader">
                 <Setter Property="Background" Value="{StaticResource DataGridHeaderColor}"/>
-                <Setter Property="FontSize" Value="14" />
+                <Setter Property="FontSize" Value="13" />
             </Style>
 
             <!--Styling for the "important" buttons like add task, add DB, etc.-->
@@ -268,14 +270,14 @@
 
                     <!--The list of databases-->
                     <DataGrid Name="dataGridProteinDatabases" Grid.Row="2" ItemsSource="{Binding}" Style="{StaticResource x:DataGridStyle}"
-                          IsReadOnly="{Binding IsEnabled, ElementName=RunTasksButton}" AutoGenerateColumns="False">
+                          IsReadOnly="{Binding IsEnabled, ElementName=RunTasksButton}" AutoGenerateColumns="False" ColumnHeaderStyle="{StaticResource DataGridColumnHeaderStyle}">
                         <DataGrid.RowStyle>
                             <Style TargetType="{x:Type DataGridRow}" BasedOn="{StaticResource DatabaseDataGridItemStyle}" />
                         </DataGrid.RowStyle>
                         <DataGrid.Columns>
                             <!--The rest of the columns-->
                             <DataGridTextColumn Header="File" Binding="{Binding FilePath}" Width="250" />
-                            <DataGridTextColumn Header="Contaminant" Binding="{Binding Contaminant}" Width="300" />
+                            <DataGridTextColumn Header="Contaminant?" Binding="{Binding Contaminant}" Width="300" />
 
                             <!--Defines the "delete" column-->
                             <DataGridTemplateColumn>
@@ -311,7 +313,7 @@
 
                     <!--The list of spectra files-->
                     <DataGrid Name="dataGridSpectraFiles" ItemsSource="{Binding}" Grid.Row="2" Style="{StaticResource x:DataGridStyle}"
-                          IsReadOnly="{Binding IsEnabled, ElementName=RunTasksButton}" AutoGenerateColumns="False">
+                          IsReadOnly="{Binding IsEnabled, ElementName=RunTasksButton}" AutoGenerateColumns="False" ColumnHeaderStyle="{StaticResource DataGridColumnHeaderStyle}">
                         <DataGrid.RowStyle>
                             <Style TargetType="{x:Type DataGridRow}" BasedOn="{StaticResource SpectraFileDataGridItemStyle}" />
                         </DataGrid.RowStyle>
@@ -362,7 +364,7 @@
             <TabItem Name="RunTab" Header="Run" TabIndex="0" Style="{StaticResource TabItemStyle}">
                 <Grid Style="{StaticResource PageGridStyle}">
                     <Grid.RowDefinitions>
-                        <RowDefinition Height="2*" />
+                        <RowDefinition Height="2.5*" />
                         <RowDefinition Height="25" />
                         <RowDefinition Height="50" />
                         <RowDefinition Height="1*" />
@@ -371,9 +373,9 @@
                     <!--This grid holds the 3 summary datagrids at the top-->
                     <Grid Grid.Row="0" Background="{StaticResource BackgroundColor}">
                         <Grid.ColumnDefinitions>
-                            <ColumnDefinition Width="1*" />
-                            <ColumnDefinition Width="1*" />
-                            <ColumnDefinition Width="1*" />
+                            <ColumnDefinition Width="4*" />
+                            <ColumnDefinition Width="4*" />
+                            <ColumnDefinition Width="5*" />
                         </Grid.ColumnDefinitions>
 
                         <!--Protein DB Summary-->
@@ -383,14 +385,15 @@
                             <DataGrid.RowStyle>
                                 <Style TargetType="{x:Type DataGridRow}" BasedOn="{StaticResource DatabaseDataGridItemStyle}" >
                                     <Setter Property="FontSize" Value="11" />
+                                    <Setter Property="FontWeight" Value="SemiBold" />
                                 </Style>
                             </DataGrid.RowStyle>
                             <DataGrid.Columns>
-                                <DataGridTextColumn Header="File" Binding="{Binding FileName}" Width="170" />
+                                <DataGridTextColumn Header="File" Binding="{Binding FileName}" Width="180" />
                                 <DataGridTextColumn Header="Contam" Binding="{Binding Contaminant}" Width="55" />
                             </DataGrid.Columns>
                         </DataGrid>
-                        <Button Grid.Column="0" Width="20" Height="20" HorizontalAlignment="Right" VerticalAlignment="Bottom" Margin="11" Content="+" 
+                        <Button Grid.Column="0" Width="20" Height="20" HorizontalAlignment="Right" VerticalAlignment="Bottom" Margin="11,11,5,11" Content="+" 
                                 VerticalContentAlignment="Top" Style="{StaticResource ImportantButtonStyle}" Click="AddProteinDatabase_Click" IsEnabled="{Binding IsEnabled, ElementName=RunTasksButton}" />
 
                         <!--Spectra file Summary-->
@@ -400,14 +403,15 @@
                             <DataGrid.RowStyle>
                                 <Style TargetType="{x:Type DataGridRow}" BasedOn="{StaticResource SpectraFileDataGridItemStyle}">
                                     <Setter Property="FontSize" Value="11" />
+                                    <Setter Property="FontWeight" Value="SemiBold" />
                                 </Style>
                             </DataGrid.RowStyle>
                             <DataGrid.Columns>
-                                <DataGridTextColumn Header="File" Binding="{Binding FileName}" Width="170" />
+                                <DataGridTextColumn Header="File" Binding="{Binding FileName}" Width="180" />
                                 <DataGridTextColumn Header="Params" Binding="{Binding Parameters}" Width="55" />
                             </DataGrid.Columns>
                         </DataGrid>
-                        <Button Grid.Column="1" Width="20" Height="20" HorizontalAlignment="Right" VerticalAlignment="Bottom" Margin="11" Content="+" 
+                        <Button Grid.Column="1" Width="20" Height="20" HorizontalAlignment="Right" VerticalAlignment="Bottom" Margin="11,11,3,11" Content="+" 
                                 VerticalContentAlignment="Top" Style="{StaticResource ImportantButtonStyle}" Click="AddSpectraFile_Click" IsEnabled="{Binding IsEnabled, ElementName=RunTasksButton}" />
 
                         <!--Task Summary-->
@@ -415,10 +419,11 @@
                             <TreeView.ItemContainerStyle>
                                 <Style TargetType="{x:Type TreeViewItem}" BasedOn="{StaticResource TaskTreeViewStyle}">
                                     <Setter Property="FontSize" Value="11" />
+                                    <Setter Property="FontWeight" Value="SemiBold" />
                                 </Style>
                             </TreeView.ItemContainerStyle>
                         </TreeView>
-                        <Button Grid.Column="2" Width="20" Height="20" HorizontalAlignment="Right" VerticalAlignment="Bottom" Margin="11" Content="+" 
+                        <Button Grid.Column="2" Width="20" Height="20" HorizontalAlignment="Right" VerticalAlignment="Bottom" Margin="11,11,6,11" Content="+" 
                                 VerticalContentAlignment="Top" Style="{StaticResource ImportantButtonStyle}" Click="AddTask_Click" IsEnabled="{Binding IsEnabled, ElementName=RunTasksButton}" />
                     </Grid>
 
@@ -505,7 +510,7 @@
         <!--Notifications-->
         <Grid Grid.Row="2" Background="{StaticResource SideBarMainColor}" Margin="0,-1,0,0" >
             <Grid.ColumnDefinitions>
-                <ColumnDefinition Width="120" />
+                <ColumnDefinition Width="105" />
                 <ColumnDefinition Width="*" />
             </Grid.ColumnDefinitions>
 
@@ -517,7 +522,8 @@
                         </StackPanel>
                     </Expander.Header>
 
-                    <RichTextBox x:Name="notificationsTextBox" VerticalScrollBarVisibility="Visible" IsReadOnly="True" Background="Transparent" Foreground="{StaticResource TextColor1}" Height="100" BorderThickness="1">
+                    <RichTextBox x:Name="notificationsTextBox" VerticalScrollBarVisibility="Visible" IsReadOnly="True" 
+                                 Background="Transparent" Foreground="{StaticResource TextColor1}" Height="100" BorderThickness="1" FlowDirection="LeftToRight">
                         <RichTextBox.Resources>
                             <Style TargetType="{x:Type Paragraph}">
                                 <Setter Property="Margin" Value="0" />
