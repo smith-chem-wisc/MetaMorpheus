@@ -114,6 +114,13 @@
                 <Setter Property="Margin" Value="10,5,0,0"/>
             </Style>
 
+            <Style x:Key="TextBlockStyle" TargetType="TextBlock">
+                <Setter Property="Foreground" Value="{StaticResource TextColor1}"/>
+                <Setter Property="FontSize" Value="12"/>
+                <Setter Property="TextWrapping" Value="WrapWithOverflow" />
+                <Setter Property="Margin" Value="15,0,0,0"/>
+            </Style>
+
             <!--Styling for the context menu to add tasks-->
             <Style x:Key="ContextMenuStyle" TargetType="ContextMenu">
                 <Setter Property="Background" Value="{StaticResource BackgroundColor}"/>
@@ -249,6 +256,22 @@
 
                     <!--Header label-->
                     <Label Content="About" Grid.Row="0" Style="{StaticResource HeaderLabelStyle}" />
+
+                    <!--Text content-->
+                    <TextBlock Grid.Row="3" Style="{StaticResource TextBlockStyle}">
+                            MetaMorpheus is a search program for HPLC-MS/MS proteomics data. It takes a protein database (.xml or .fasta)
+                            as input, as well as spectra files in .mzML, .mgf, or Thermo .raw format.
+                            Visit the 
+                        <Hyperlink NavigateUri="https://github.com/smith-chem-wisc/MetaMorpheus/wiki" RequestNavigate="Hyperlink_RequestNavigate">
+                            wiki
+                        </Hyperlink> 
+                        to learn more.
+                            <LineBreak />
+                            <LineBreak />
+                            <LineBreak />
+                            <LineBreak />
+                            MetaMorpheus uses Thermo's RawFileReader reading tool. Copyright © 2016 by Thermo Fisher Scientific, Inc. All rights reserved.
+                    </TextBlock>
                 </Grid>
             </TabItem>
 
@@ -474,6 +497,10 @@
 
                     <!--This tab doesn't actually have any content, it just opens MetaDraw-->
                     <!--In the future maybe this tab could contain MetaDraw itself-->
+
+                    <TextBlock Grid.Row="3" Style="{StaticResource TextBlockStyle}">
+                            MetaDraw, MetaMorpheus's spectral viewer, will open in a new window.
+                    </TextBlock>
                 </Grid>
             </TabItem>
 
@@ -484,10 +511,13 @@
                         <RowDefinition Height="50"/>
                         <RowDefinition Height="25"/>
                         <RowDefinition Height="1*"/>
+                        <RowDefinition Height="50"/>
                     </Grid.RowDefinitions>
 
                     <!--Header label-->
                     <Label Content="Settings" Grid.Row="0" Style="{StaticResource HeaderLabelStyle}" />
+
+                    
                 </Grid>
             </TabItem>
 
@@ -498,11 +528,95 @@
                         <RowDefinition Height="50"/>
                         <RowDefinition Height="25"/>
                         <RowDefinition Height="1*"/>
+                        <RowDefinition Height="1*"/>
                     </Grid.RowDefinitions>
 
                     <!--Header label-->
                     <Label Content="Help" Grid.Row="0" Style="{StaticResource HeaderLabelStyle}" />
 
+                    <TextBlock Grid.Row="2" Style="{StaticResource TextBlockStyle}">
+                        Please visit our 
+                        <Hyperlink NavigateUri="https://github.com/smith-chem-wisc/MetaMorpheus/wiki" RequestNavigate="Hyperlink_RequestNavigate">
+                            wiki
+                        </Hyperlink>  
+                        to find answers to commonly-asked questions.
+                        
+                        <LineBreak/>
+                        <LineBreak/>
+                        
+                        If you encounter problems or you have a suggestion, please visit  
+                        <Hyperlink NavigateUri="https://github.com/smith-chem-wisc/MetaMorpheus/issues/new" RequestNavigate="Hyperlink_RequestNavigate">
+                            our issues page
+                        </Hyperlink> 
+                        on GitHub and submit a new issue. If you would prefer to keep your correspondence private, you may email us at 
+                        <Hyperlink NavigateUri="null" RequestNavigate="MenuItem_EmailHelp_Click">
+                            mm_support@chem.wisc.edu
+                        </Hyperlink>.
+                    </TextBlock>
+
+                    <Grid Grid.Row="3" Style="{StaticResource PageGridStyle}" Margin="5,0,0,0">
+                        <Grid.RowDefinitions>
+                            <RowDefinition Height="22"/>
+                            <RowDefinition Height="22"/>
+                            <RowDefinition Height="22"/>
+                            <RowDefinition Height="22"/>
+                            <RowDefinition Height="22"/>
+                            <RowDefinition Height="22"/>
+                            <RowDefinition Height="22"/>
+                        </Grid.RowDefinitions>
+
+                        <Grid.ColumnDefinitions>
+                            <ColumnDefinition Width="20"/>
+                            <ColumnDefinition Width="270"/>
+                        </Grid.ColumnDefinitions>
+
+                        <TextBlock Grid.Row="0" Grid.Column="1" Style="{StaticResource TextBlockStyle}" Margin="0">
+                            You may also want to:
+                        </TextBlock>
+
+                        <Button Grid.Row="1" Grid.Column="1" HorizontalContentAlignment="Left" BorderThickness="0" Click="MenuItem_UpdateMetaMorpheus_Click">
+                            <StackPanel Orientation="Horizontal">
+                                <Image Source="Icons/update_20.bmp" Width="20" Height="20" Margin="0,0,5,0"/>
+                                <TextBlock Text="Check for updates" VerticalAlignment="Center" />
+                            </StackPanel>
+                        </Button>
+
+                        <Button Grid.Row="2" Grid.Column="1" HorizontalContentAlignment="Left" BorderThickness="0" Click="MenuItem_Slack_Click">
+                            <StackPanel Orientation="Horizontal">
+                                <Image Source="Icons/Slack_Mark_Web.bmp" Width="20" Height="20" Margin="0,0,5,0"/>
+                                <TextBlock Text="Join the discussion on Slack" VerticalAlignment="Center" />
+                            </StackPanel>
+                        </Button>
+
+                        <Button Grid.Row="3" Grid.Column="1" HorizontalContentAlignment="Left" BorderThickness="0" Click="MenuItem_Twitter_Click">
+                            <StackPanel Orientation="Horizontal">
+                                <Image Source="Icons/Twitter_Logo_Blue.bmp" Width="20" Height="20" Margin="0,0,5,0"/>
+                                <TextBlock Text="Follow us on Twitter" VerticalAlignment="Center" />
+                            </StackPanel>
+                        </Button>
+
+                        <Button Grid.Row="4" Grid.Column="1" HorizontalContentAlignment="Left" BorderThickness="0" Click="MenuItem_YouTube_Click">
+                            <StackPanel Orientation="Horizontal">
+                                <Image Source="Icons/youtube_20.bmp" Width="20" Height="20" Margin="0,0,5,0"/>
+                                <TextBlock Text="Watch YouTube help videos" VerticalAlignment="Center" />
+                            </StackPanel>
+                        </Button>
+
+                        <Button Grid.Row="5" Grid.Column="1" HorizontalContentAlignment="Left" BorderThickness="0" Click="MenuItem_Proxl_Click">
+                            <StackPanel Orientation="Horizontal">
+                                <Image Source="Icons/proxl-ms.bmp" Width="20" Height="20" Margin="0,0,5,0"/>
+                                <TextBlock Text="Visualize crosslinks with proxl" VerticalAlignment="Center" />
+                            </StackPanel>
+                        </Button>
+
+                        <Button Grid.Row="6" Grid.Column="1" HorizontalContentAlignment="Left" BorderThickness="0" Click="MenuItem_ProteomicsNewsBlog_Click">
+                            <StackPanel Orientation="Horizontal">
+                                <Image Source="Icons/Blogger_20.bmp" Width="20" Height="20" Margin="0,0,5,0"/>
+                                <TextBlock Text="Read News in Proteomics Research" VerticalAlignment="Center" />
+                            </StackPanel>
+                        </Button>
+                    </Grid>
+                    
                 </Grid>
             </TabItem>
         </TabControl>

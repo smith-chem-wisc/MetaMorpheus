@@ -15,6 +15,7 @@ using System.Windows;
 using System.Windows.Controls;
 using System.Windows.Documents;
 using System.Windows.Input;
+using System.Windows.Navigation;
 using TaskLayer;
 
 namespace MetaMorpheusGUI
@@ -1062,7 +1063,15 @@ namespace MetaMorpheusGUI
             UpdateMetaMorpheus(printMessageIfThisIsLatestVersion: true);
         }
 
-        private void MenuItem_EmailHelp_Click(object sender, RoutedEventArgs e)
+        /// <summary>
+        /// Opens the requested URL with the user's web browser.
+        /// </summary>
+        private void Hyperlink_RequestNavigate(object sender, RequestNavigateEventArgs e)
+        {
+            GlobalVariables.StartProcess(e.Uri.ToString());
+        }
+
+        private void MenuItem_EmailHelp_Click(object sender, RequestNavigateEventArgs e)
         {
             string mailto = string.Format("mailto:{0}?Subject=MetaMorpheus. Issue:", "mm_support@chem.wisc.edu");
             GlobalVariables.StartProcess(mailto);
