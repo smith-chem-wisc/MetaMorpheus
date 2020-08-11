@@ -188,7 +188,8 @@ namespace MetaMorpheusGUI
 
             if (!GlobalGuiSettings.CheckTaskSettingsValidity(PrecursorMassToleranceTextBox.Text, ProductMassToleranceTextBox.Text, MissedCleavagesTextBox.Text,
                  MaxModificationIsoformsTextBox.Text, MinPeptideLengthTextBox.Text, MaxPeptideLengthTextBox.Text, MaxThreadsTextBox.Text,
-                 maxFragmentMass.Text, fieldNotUsed, fieldNotUsed, fieldNotUsed, fieldNotUsed, null, null, fieldNotUsed, MaxModsPerPeptideTextBox.Text, fieldNotUsed))
+                 fieldNotUsed,fieldNotUsed, fieldNotUsed, fieldNotUsed,fieldNotUsed, fieldNotUsed, fieldNotUsed,
+                 fieldNotUsed, fieldNotUsed, fieldNotUsed, fieldNotUsed,fieldNotUsed))
             {
                 return;
             }

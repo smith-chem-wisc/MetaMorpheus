@@ -396,10 +396,11 @@ namespace MetaMorpheusGUI
             string fieldNotUsed = "1";
 
             if (!GlobalGuiSettings.CheckTaskSettingsValidity(PrecursorMassToleranceTextBox.Text, ProductMassToleranceTextBox.Text, MissedCleavagesTextBox.Text,
-                maxModificationIsoformsTextBox.Text, MinPeptideLengthTextBox.Text, MaxPeptideLengthTextBox.Text, MaxThreadsTextBox.Text, MinScoreAllowed.Text,
-                PeakFindingToleranceTextBox.Text, HistogramBinWidthTextBox.Text, DeconvolutionMaxAssumedChargeStateTextBox.Text, NumberOfPeaksToKeepPerWindowTextBox.Text,
-                MinimumAllowedIntensityRatioToBasePeakTexBox.Text, WindowWidthThomsonsTextBox.Text, NumberOfWindowsTextBox.Text, NumberOfDatabaseSearchesTextBox.Text, 
-                MaxModNumTextBox.Text, MaxFragmentMassTextBox.Text, QValueTextBox.Text, MinScoreAllowed.Text))
+                maxModificationIsoformsTextBox.Text, MinPeptideLengthTextBox.Text, MaxPeptideLengthTextBox.Text, MaxThreadsTextBox.Text,
+                fieldNotUsed, PeakFindingToleranceTextBox.Text, HistogramBinWidthTextBox.Text, fieldNotUsed,
+                fieldNotUsed, fieldNotUsed, WindowWidthThomsonsTextBox.Text,
+                fieldNotUsed, NumberOfDatabaseSearchesTextBox.Text, fieldNotUsed, MaxFragmentMassTextBox.Text,
+                fieldNotUsed))
             {
                 return;
             }
