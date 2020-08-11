@@ -905,7 +905,8 @@
                                             </Grid.ColumnDefinitions>
                                             <StackPanel>
                                                 <StackPanel Orientation="Horizontal">
-                                                    <Label x:Name="minScoreAllowedLabel" Content="Minimum score allowed:" />
+                                                    <Label x:Name="Label" 
+                                                           Content="Minimum score allowed:" />
                                                     <TextBox x:Name="MinScoreAllowed" PreviewTextInput="CheckIfNumber" Width="45" ToolTipService.ShowDuration="999999" ToolTipService.InitialShowDelay="500">
                                                         <TextBox.ToolTip>
                                                             <TextBlock>
