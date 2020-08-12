@@ -29,6 +29,7 @@ namespace MetaMorpheusGUI
         private readonly ObservableCollection<ProteinDbForDataGrid> ProteinDatabases = new ObservableCollection<ProteinDbForDataGrid>();
         private readonly ObservableCollection<PreRunTask> PreRunTasks = new ObservableCollection<PreRunTask>();
         private readonly ObservableCollection<RawDataForDataGrid> SelectedSpectraFiles = new ObservableCollection<RawDataForDataGrid>();
+        private readonly ObservableCollection<ProteinDbForDataGrid> SelectedProteinDatabaseFiles = new ObservableCollection<ProteinDbForDataGrid>();
         private ObservableCollection<InRunTask> InProgressTasks;
 
         public static string NewestKnownMetaMorpheusVersion { get; private set; }
@@ -510,12 +511,6 @@ namespace MetaMorpheusGUI
             }
         }
 
-        private void ClearSpectraFiles_Click(object sender, RoutedEventArgs e)
-        {
-            SpectraFiles.Clear();
-            UpdateOutputFolderTextbox();
-        }
-
         /// <summary>
         /// Event fires when a spectra file is selected.
         /// </summary>
@@ -581,15 +576,64 @@ namespace MetaMorpheusGUI
             }
         }
 
+        /// <summary>
+        /// Event fires when a database file is selected.
+        /// </summary>
+        private void AddSelectedDatabase(object sender, RoutedEventArgs e)
+        {
+            DataGridRow obj = (DataGridRow)sender;
+
+            ProteinDbForDataGrid selectedProteinDb = (ProteinDbForDataGrid)obj.DataContext;
+            SelectedProteinDatabaseFiles.Add(selectedProteinDb);
+        }
+
+        /// <summary>
+        /// Event fires when a database file is deselected.
+        /// </summary>
+        private void RemoveSelectedDatabase(object sender, RoutedEventArgs e)
+        {
+            DataGridRow obj = (DataGridRow)sender;
+            ProteinDbForDataGrid deselectedProteinDbFile = (ProteinDbForDataGrid)obj.DataContext;
+            SelectedProteinDatabaseFiles.Remove(deselectedProteinDbFile);
+        }
+
+        /// <summary>
+        /// Event fires when "Add Contaminants" button is clicked.
+        /// </summary>
+        /// <param name="sender"></param>
+        /// <param name="e"></param>
         private void AddDefaultContaminantDatabase_Click(object sender, RoutedEventArgs e)
         {
             string[] contaminantFiles = Directory.GetFiles(Path.Combine(GlobalVariables.DataDir, "Contaminants"));
             AddPreRunFiles(contaminantFiles);
         }
 
-        private void ClearProteinDatabases_Click(object sender, RoutedEventArgs e)
+        /// <summary>
+        /// Event fires when the "Set as contaminant" button is clicked.
+        /// </summary>
+        public void SetSelectedDatabaseAsContaminant_Click(object sender, RoutedEventArgs e)
         {
-            ProteinDatabases.Clear();
+            foreach (ProteinDbForDataGrid db in SelectedProteinDatabaseFiles)
+            {
+                db.Contaminant = true;
+            }
+
+            dataGridProteinDatabases.Items.Refresh();
+            proteinDbSummaryDataGrid.Items.Refresh();
+        }
+
+        /// <summary>
+        /// Event fires when the "Set as non-contaminant" button is clicked.
+        /// </summary>
+        public void SetSelectedDatabaseAsNonContaminant_Click(object sender, RoutedEventArgs e)
+        {
+            foreach (ProteinDbForDataGrid db in SelectedProteinDatabaseFiles)
+            {
+                db.Contaminant = false;
+            }
+
+            dataGridProteinDatabases.Items.Refresh();
+            proteinDbSummaryDataGrid.Items.Refresh();
         }
 
         /// <summary>
@@ -732,15 +776,6 @@ namespace MetaMorpheusGUI
                 PreRunTasks.Remove(selectedTask);
                 UpdateGuiOnPreRunChange();
             }
-        }
-
-        /// <summary>
-        /// Event fires when the "clear" button is clicked (referring to clearing the tasks).
-        /// </summary>
-        private void ClearTasks_Click(object sender, RoutedEventArgs e)
-        {
-            PreRunTasks.Clear();
-            UpdateGuiOnPreRunChange();
         }
 
         /// <summary>
@@ -994,10 +1029,11 @@ namespace MetaMorpheusGUI
         {
             if (RunTasksButton.IsEnabled)
             {
-                // delete selected task
+                // delete selected task/db/spectra
                 if (e.Key == Key.Delete || e.Key == Key.Back)
                 {
                     DeleteTask_Click(sender, e);
+                    //DeleteSelectedDatabasesOrSpectraFiles_Click(sender, e);
                     e.Handled = true;
                 }
 

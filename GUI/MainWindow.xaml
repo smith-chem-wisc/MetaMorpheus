@@ -91,15 +91,6 @@
                 <Setter Property="FontSize" Value="12"/>
             </Style>
 
-            <!--Styling for the delete (DB, spectra) button-->
-            <Style x:Key="DeleteFromDataGridButtonStyle" TargetType="Button">
-                <Setter Property="Content" Value="Delete" />
-                <Setter Property="Foreground" Value="{StaticResource TextColorDelete}" />
-                <Setter Property="Background" Value="Transparent" />
-                <Setter Property="BorderThickness" Value="0" />
-                <Setter Property="IsEnabled" Value="{Binding IsEnabled, ElementName=RunTasksButton}" />
-            </Style>
-
             <!--Styling for borders-->
             <Style x:Key="x:BorderStyle" TargetType="Border">
                 <Setter Property="BorderBrush" Value="{StaticResource BorderColor}"/>
@@ -115,6 +106,7 @@
                 <Setter Property="Margin" Value="10,5,0,0"/>
             </Style>
 
+            <!--Styling for the "main" text in the About + Help pages-->
             <Style x:Key="TextBlockStyle" TargetType="TextBlock">
                 <Setter Property="Foreground" Value="{StaticResource TextColor1}"/>
                 <Setter Property="FontSize" Value="12"/>
@@ -158,7 +150,8 @@
 
             <!--Defines the context menu when a protein database is right-clicked-->
             <ContextMenu x:Key="ProteinDatabaseContextMenu" Style="{StaticResource ContextMenuStyle}">
-                <MenuItem Header="Set as contaminant database" Click="AddCalibrateTaskButton_Click" IsEnabled="{Binding IsEnabled, ElementName=RunTasksButton}" />
+                <MenuItem Header="Set as contaminant database" Click="SetSelectedDatabaseAsContaminant_Click" IsEnabled="{Binding IsEnabled, ElementName=RunTasksButton}" />
+                <MenuItem Header="Set as non-contaminant database" Click="SetSelectedDatabaseAsNonContaminant_Click" IsEnabled="{Binding IsEnabled, ElementName=RunTasksButton}" />
                 <MenuItem Header="Open file" Click="OpenFile_Click" IsEnabled="{Binding IsEnabled, ElementName=RunTasksButton}" />
                 <MenuItem Header="Open containing folder" Click="OpenContainingFolder_Click" />
             </ContextMenu>
@@ -191,6 +184,8 @@
 
             <!--Styles the protein DB datagrid items-->
             <Style x:Key="DatabaseDataGridItemStyle" TargetType="DataGridRow">
+                <EventSetter Event="Selected" Handler="AddSelectedDatabase" />
+                <EventSetter Event="Unselected" Handler="RemoveSelectedDatabase" />
                 <Setter Property="ContextMenu" Value="{StaticResource ProteinDatabaseContextMenu}" />
             </Style>
 
@@ -294,6 +289,9 @@
                     <Button Name="AddDatabaseButton" Grid.Row="1" Content="+ADD DATABASE" Click="AddProteinDatabase_Click" HorizontalAlignment="Right" Style="{StaticResource ImportantButtonStyle}" Margin="0,0,10,0"
                         IsEnabled="{Binding IsEnabled, ElementName=RunTasksButton}"/>
 
+                    <Button Name="AddDefaultContaminantsButton" Grid.Row="1" Content="ADD DEFAULT CONTAMINANTS" Click="AddDefaultContaminantDatabase_Click" HorizontalAlignment="Right" Style="{StaticResource ImportantButtonStyle}"
+                        Margin="0,0,211,0" IsEnabled="{Binding IsEnabled, ElementName=RunTasksButton}"/>
+
                     <!--The list of databases-->
                     <DataGrid Name="dataGridProteinDatabases" Grid.Row="2" ItemsSource="{Binding}" Style="{StaticResource x:DataGridStyle}"
                           IsReadOnly="{Binding IsEnabled, ElementName=RunTasksButton}" AutoGenerateColumns="False" ColumnHeaderStyle="{StaticResource DataGridColumnHeaderStyle}">
@@ -304,15 +302,6 @@
                             <!--The rest of the columns-->
                             <DataGridTextColumn Header="File" Binding="{Binding FilePath}" Width="450" />
                             <DataGridTextColumn Header="Contaminant?" Binding="{Binding Contaminant}" Width="250" />
-
-                            <!--Defines the "delete" column-->
-                            <DataGridTemplateColumn>
-                                <DataGridTemplateColumn.CellTemplate>
-                                    <DataTemplate>
-                                        <Button Click="DeleteDatabaseOrSpectraFile_Click" Style="{StaticResource DeleteFromDataGridButtonStyle}" />
-                                    </DataTemplate>
-                                </DataGridTemplateColumn.CellTemplate>
-                            </DataGridTemplateColumn>
                         </DataGrid.Columns>
                     </DataGrid>
                 </Grid>
@@ -339,7 +328,7 @@
 
                     <Button Name="SetExperimentalDesignButton" Grid.Row="1" Content="SET EXPERIMENTAL DESIGN" Click="SetExperimentalDesign_Click" HorizontalAlignment="Right" Style="{StaticResource ImportantButtonStyle}"
                         Margin="0,0,412,0" IsEnabled="{Binding IsEnabled, ElementName=RunTasksButton}" />
-                    
+
                     <!--The list of spectra files-->
                     <DataGrid Name="dataGridSpectraFiles" ItemsSource="{Binding}" Grid.Row="2" Style="{StaticResource x:DataGridStyle}"
                           IsReadOnly="{Binding IsEnabled, ElementName=RunTasksButton}" AutoGenerateColumns="False" ColumnHeaderStyle="{StaticResource DataGridColumnHeaderStyle}">
@@ -350,15 +339,6 @@
                             <!--The rest of the columns-->
                             <DataGridTextColumn Header="File" Binding="{Binding FilePath}" Width="450" />
                             <DataGridTextColumn Header="File-Specific Parameters" Binding="{Binding Parameters}" Width="250" />
-
-                            <!--Defines the "delete" column-->
-                            <DataGridTemplateColumn>
-                                <DataGridTemplateColumn.CellTemplate>
-                                    <DataTemplate>
-                                        <Button Click="DeleteDatabaseOrSpectraFile_Click" Style="{StaticResource DeleteFromDataGridButtonStyle}" />
-                                    </DataTemplate>
-                                </DataGridTemplateColumn.CellTemplate>
-                            </DataGridTemplateColumn>
                         </DataGrid.Columns>
                     </DataGrid>
                 </Grid>
@@ -523,7 +503,7 @@
                     <!--Header label-->
                     <Label Content="Settings" Grid.Row="0" Style="{StaticResource HeaderLabelStyle}" />
 
-                    
+
                 </Grid>
             </TabItem>
 
@@ -622,7 +602,7 @@
                             </StackPanel>
                         </Button>
                     </Grid>
-                    
+
                 </Grid>
             </TabItem>
         </TabControl>
