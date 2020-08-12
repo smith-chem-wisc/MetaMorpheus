@@ -47,6 +47,12 @@ DI   HCD:C7 H11 N1 O1
 CF   H2 C2 O1
 DR   Unimod; 1.
 //
+ID   Lactylation
+TG   K
+PP   Anywhere.
+MT   Less Common
+CF   H3 C3 O2
+//
 ID   Formylation
 TG   K
 PP   Anywhere.
