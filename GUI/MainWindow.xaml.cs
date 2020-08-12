@@ -516,6 +516,27 @@ namespace MetaMorpheusGUI
             UpdateOutputFolderTextbox();
         }
 
+        /// <summary>
+        /// Event fires when a spectra file is selected.
+        /// </summary>
+        private void AddSelectedSpectra(object sender, RoutedEventArgs e)
+        {
+            DataGridRow obj = (DataGridRow)sender;
+
+            RawDataForDataGrid selectedSpectraFile = (RawDataForDataGrid)obj.DataContext;
+            SelectedSpectraFiles.Add(selectedSpectraFile);
+        }
+
+        /// <summary>
+        /// Event fires when a spectra file is deselected.
+        /// </summary>
+        private void RemoveSelectedSpectra(object sender, RoutedEventArgs e)
+        {
+            DataGridRow obj = (DataGridRow)sender;
+            RawDataForDataGrid deselectedSpectraFile = (RawDataForDataGrid)obj.DataContext;
+            SelectedSpectraFiles.Remove(deselectedSpectraFile);
+        }
+
         private void SetFileSpecificParameters_Click(object sender, RoutedEventArgs e)
         {
             try

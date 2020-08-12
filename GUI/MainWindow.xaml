@@ -72,7 +72,8 @@
                 <Setter Property="Margin" Value="10,0,10,10"/>
                 <Setter Property="SelectedItem" Value="{Binding SelectedRow, Mode=TwoWay}"/>
                 <Setter Property="HeadersVisibility" Value="Column"/>
-                <Setter Property="GridLinesVisibility" Value="None" />
+                <Setter Property="HorizontalGridLinesBrush" Value="{StaticResource DataGridHeaderColor}"/>
+                <Setter Property="VerticalGridLinesBrush" Value="{StaticResource DataGridHeaderColor}"/>
             </Style>
 
             <!--Styling for the data grid headers-->
@@ -164,7 +165,7 @@
 
             <!--Defines the context menu when a spectra file is right-clicked-->
             <ContextMenu x:Key="SpectraFileContextMenu" Style="{StaticResource ContextMenuStyle}">
-                <MenuItem Header="Set file-specific settings" Click="AddCalibrateTaskButton_Click" IsEnabled="{Binding IsEnabled, ElementName=RunTasksButton}" />
+                <MenuItem Header="Set file-specific settings" Click="SetFileSpecificParameters_Click" IsEnabled="{Binding IsEnabled, ElementName=RunTasksButton}" />
                 <MenuItem Header="Open file" Click="OpenFile_Click" IsEnabled="{Binding IsEnabled, ElementName=RunTasksButton}" />
                 <MenuItem Header="Open containing folder" Click="OpenContainingFolder_Click" />
             </ContextMenu>
@@ -183,6 +184,8 @@
 
             <!--Styles the spectra file datagrid items-->
             <Style x:Key="SpectraFileDataGridItemStyle" TargetType="DataGridRow">
+                <EventSetter Event="Selected" Handler="AddSelectedSpectra" />
+                <EventSetter Event="Unselected" Handler="RemoveSelectedSpectra" />
                 <Setter Property="ContextMenu" Value="{StaticResource SpectraFileContextMenu}" />
             </Style>
 
@@ -299,8 +302,8 @@
                         </DataGrid.RowStyle>
                         <DataGrid.Columns>
                             <!--The rest of the columns-->
-                            <DataGridTextColumn Header="File" Binding="{Binding FilePath}" Width="250" />
-                            <DataGridTextColumn Header="Contaminant?" Binding="{Binding Contaminant}" Width="300" />
+                            <DataGridTextColumn Header="File" Binding="{Binding FilePath}" Width="450" />
+                            <DataGridTextColumn Header="Contaminant?" Binding="{Binding Contaminant}" Width="250" />
 
                             <!--Defines the "delete" column-->
                             <DataGridTemplateColumn>
@@ -331,9 +334,12 @@
                     <Button Name="AddSpectraButton" Grid.Row="1" Content="+ADD SPECTRA" Click="AddSpectraFile_Click" HorizontalAlignment="Right" Style="{StaticResource ImportantButtonStyle}" Margin="0,0,10,0"
                         IsEnabled="{Binding IsEnabled, ElementName=RunTasksButton}"/>
 
-                    <Button Name="SetFileSpecificSettingsButton" Grid.Row="1" Content="SET FILE-SPECIFIC SETTINGS" Click="AddSpectraFile_Click" HorizontalAlignment="Right" Style="{StaticResource ImportantButtonStyle}"
+                    <Button Name="SetFileSpecificSettingsButton" Grid.Row="1" Content="SET FILE-SPECIFIC SETTINGS" Click="SetFileSpecificParameters_Click" HorizontalAlignment="Right" Style="{StaticResource ImportantButtonStyle}"
                         Margin="0,0,211,0" IsEnabled="{Binding IsEnabled, ElementName=RunTasksButton}" />
 
+                    <Button Name="SetExperimentalDesignButton" Grid.Row="1" Content="SET EXPERIMENTAL DESIGN" Click="SetExperimentalDesign_Click" HorizontalAlignment="Right" Style="{StaticResource ImportantButtonStyle}"
+                        Margin="0,0,412,0" IsEnabled="{Binding IsEnabled, ElementName=RunTasksButton}" />
+                    
                     <!--The list of spectra files-->
                     <DataGrid Name="dataGridSpectraFiles" ItemsSource="{Binding}" Grid.Row="2" Style="{StaticResource x:DataGridStyle}"
                           IsReadOnly="{Binding IsEnabled, ElementName=RunTasksButton}" AutoGenerateColumns="False" ColumnHeaderStyle="{StaticResource DataGridColumnHeaderStyle}">
@@ -342,8 +348,8 @@
                         </DataGrid.RowStyle>
                         <DataGrid.Columns>
                             <!--The rest of the columns-->
-                            <DataGridTextColumn Header="File" Binding="{Binding FilePath}" Width="250" />
-                            <DataGridTextColumn Header="File-Specific Parameters" Binding="{Binding Parameters}" Width="300" />
+                            <DataGridTextColumn Header="File" Binding="{Binding FilePath}" Width="450" />
+                            <DataGridTextColumn Header="File-Specific Parameters" Binding="{Binding Parameters}" Width="250" />
 
                             <!--Defines the "delete" column-->
                             <DataGridTemplateColumn>
