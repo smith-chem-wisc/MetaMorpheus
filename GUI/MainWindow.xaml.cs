@@ -776,6 +776,16 @@ namespace MetaMorpheusGUI
                 PreRunTasks.Remove(selectedTask);
                 UpdateGuiOnPreRunChange();
             }
+            else
+            {
+                selectedTask = (PreRunTask)taskSummary.SelectedItem;
+
+                if (selectedTask != null)
+                {
+                    PreRunTasks.Remove(selectedTask);
+                    UpdateGuiOnPreRunChange();
+                }
+            }
         }
 
         /// <summary>

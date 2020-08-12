@@ -12,6 +12,9 @@
         <ResourceDictionary>
             <!--App-wide resources (e.g., colors) can be found in App.xaml-->
 
+            <!--Allows use of "not" for testing for enabled properties-->
+            <local:BooleanInverter x:Key="InvertedBooleanConverter" />
+            
             <!--Styling for the tab items on the left side-->
             <Style x:Key="TabItemStyle" TargetType="TabItem">
                 <Setter Property="Template">
@@ -294,7 +297,7 @@
 
                     <!--The list of databases-->
                     <DataGrid Name="dataGridProteinDatabases" Grid.Row="2" ItemsSource="{Binding}" Style="{StaticResource x:DataGridStyle}"
-                          IsReadOnly="{Binding IsEnabled, ElementName=RunTasksButton}" AutoGenerateColumns="False" ColumnHeaderStyle="{StaticResource DataGridColumnHeaderStyle}">
+                          IsReadOnly="{Binding IsEnabled, ElementName=RunTasksButton, Converter={StaticResource InvertedBooleanConverter}}" AutoGenerateColumns="False" ColumnHeaderStyle="{StaticResource DataGridColumnHeaderStyle}">
                         <DataGrid.RowStyle>
                             <Style TargetType="{x:Type DataGridRow}" BasedOn="{StaticResource DatabaseDataGridItemStyle}" />
                         </DataGrid.RowStyle>
@@ -331,7 +334,7 @@
 
                     <!--The list of spectra files-->
                     <DataGrid Name="dataGridSpectraFiles" ItemsSource="{Binding}" Grid.Row="2" Style="{StaticResource x:DataGridStyle}"
-                          IsReadOnly="{Binding IsEnabled, ElementName=RunTasksButton}" AutoGenerateColumns="False" ColumnHeaderStyle="{StaticResource DataGridColumnHeaderStyle}">
+                          IsReadOnly="{Binding IsEnabled, ElementName=RunTasksButton, Converter={StaticResource InvertedBooleanConverter}}" AutoGenerateColumns="False" ColumnHeaderStyle="{StaticResource DataGridColumnHeaderStyle}">
                         <DataGrid.RowStyle>
                             <Style TargetType="{x:Type DataGridRow}" BasedOn="{StaticResource SpectraFileDataGridItemStyle}" />
                         </DataGrid.RowStyle>
@@ -390,7 +393,7 @@
                         <!--Protein DB Summary-->
                         <DataGrid Name="proteinDbSummaryDataGrid" ItemsSource="{Binding}" Grid.Column="0" Margin="5,10,4,10" 
                               Style="{StaticResource x:DataGridStyle}" ColumnHeaderStyle="{StaticResource DataGridColumnHeaderStyle}"
-                              IsReadOnly="{Binding IsEnabled, ElementName=RunTasksButton}" AutoGenerateColumns="False">
+                              IsReadOnly="{Binding IsEnabled, ElementName=RunTasksButton, Converter={StaticResource InvertedBooleanConverter}}" AutoGenerateColumns="False">
                             <DataGrid.RowStyle>
                                 <Style TargetType="{x:Type DataGridRow}" BasedOn="{StaticResource DatabaseDataGridItemStyle}" >
                                     <Setter Property="FontSize" Value="11" />
@@ -408,7 +411,7 @@
                         <!--Spectra file Summary-->
                         <DataGrid Name="spectraFileSummaryDataGrid" ItemsSource="{Binding}" Grid.Column="1" Margin="2,10,2,10" 
                               Style="{StaticResource x:DataGridStyle}" ColumnHeaderStyle="{StaticResource DataGridColumnHeaderStyle}"
-                              IsReadOnly="{Binding IsEnabled, ElementName=RunTasksButton}" AutoGenerateColumns="False">
+                              IsReadOnly="{Binding IsEnabled, ElementName=RunTasksButton, Converter={StaticResource InvertedBooleanConverter}}" AutoGenerateColumns="False">
                             <DataGrid.RowStyle>
                                 <Style TargetType="{x:Type DataGridRow}" BasedOn="{StaticResource SpectraFileDataGridItemStyle}">
                                     <Setter Property="FontSize" Value="11" />
@@ -502,8 +505,6 @@
 
                     <!--Header label-->
                     <Label Content="Settings" Grid.Row="0" Style="{StaticResource HeaderLabelStyle}" />
-
-
                 </Grid>
             </TabItem>
 
