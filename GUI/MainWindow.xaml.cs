@@ -600,8 +600,6 @@ namespace MetaMorpheusGUI
         /// <summary>
         /// Event fires when "Add Contaminants" button is clicked.
         /// </summary>
-        /// <param name="sender"></param>
-        /// <param name="e"></param>
         private void AddDefaultContaminantDatabase_Click(object sender, RoutedEventArgs e)
         {
             string[] contaminantFiles = Directory.GetFiles(Path.Combine(GlobalVariables.DataDir, "Contaminants"));
@@ -637,34 +635,14 @@ namespace MetaMorpheusGUI
         }
 
         /// <summary>
-        /// Event fires when the "delete" button is clicked on a protein DB or spectra file.
-        /// </summary>
-        private void DeleteDatabaseOrSpectraFile_Click(object sender, RoutedEventArgs e)
-        {
-            RawDataForDataGrid spectraFile = (sender as Button).DataContext as RawDataForDataGrid;
-            if (spectraFile != null)
-            {
-                SpectraFiles.Remove(spectraFile);
-                return;
-            }
-
-            ProteinDbForDataGrid proteinDbFile = (sender as Button).DataContext as ProteinDbForDataGrid;
-            if (proteinDbFile != null)
-            {
-                ProteinDatabases.Remove(proteinDbFile);
-                return;
-            }
-        }
-
-        /// <summary>
         /// Event fires when a data grid row (protein DB or spectra file) is double-clicked.
         /// </summary>
         private void DatabaseOrSpectraFile_DoubleClick(object sender, MouseButtonEventArgs e)
         {
             var dataGridCell = sender as DataGridCell;
 
-            // prevent opening protein DB or spectra files if a run is in progress
-            if ((dataGridCell.DataContext is ProteinDbForDataGrid || dataGridCell.DataContext is RawDataForDataGrid) && !RunTasksButton.IsEnabled)
+            // prevent opening if a run is in progress
+            if (!RunTasksButton.IsEnabled)
             {
                 return;
             }
@@ -1110,11 +1088,6 @@ namespace MetaMorpheusGUI
             }
         }
 
-        private void MenuItem_Wiki_Click(object sender, RoutedEventArgs e)
-        {
-            GlobalVariables.StartProcess(@"https://github.com/smith-chem-wisc/MetaMorpheus/wiki");
-        }
-
         private void MenuItem_YouTube_Click(object sender, RoutedEventArgs e)
         {
             GlobalVariables.StartProcess(@"https://www.youtube.com/playlist?list=PLVk5tTSZ1aWlhNPh7jxPQ8pc0ElyzSUQb");
@@ -1142,11 +1115,6 @@ namespace MetaMorpheusGUI
         {
             string mailto = string.Format("mailto:{0}?Subject=MetaMorpheus. Issue:", "mm_support@chem.wisc.edu");
             GlobalVariables.StartProcess(mailto);
-        }
-
-        private void MenuItem_GitHubIssues_Click(object sender, RoutedEventArgs e)
-        {
-            GlobalVariables.StartProcess(@"https://github.com/smith-chem-wisc/MetaMorpheus/issues/new");
         }
 
         private void MenuItem_Twitter_Click(object sender, RoutedEventArgs e)
@@ -1344,8 +1312,6 @@ namespace MetaMorpheusGUI
                 ResetTasksButton.Visibility = Visibility.Hidden;
                 CancelTasksButton.Visibility = Visibility.Hidden;
             }
-
-            //ChangeFileParameters.IsEnabled = SelectedRawFiles.Count > 0 && LoadTaskButton.IsEnabled;
         }
 
         /// <summary>
