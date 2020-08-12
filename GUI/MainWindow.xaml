@@ -5,16 +5,17 @@
         xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
         xmlns:local="clr-namespace:MetaMorpheusGUI"
         mc:Ignorable="d"
-        Drop="Window_Drop" AllowDrop="true" Background="{StaticResource BackgroundColor}" WindowStartupLocation="CenterScreen" MinHeight="400" MinWidth="800" Height="550" Width="950"
+        Drop="Window_Drop" AllowDrop="true" Background="{StaticResource BackgroundColor}" WindowStartupLocation="CenterScreen" MinHeight="400" 
+        MinWidth="800" Height="550" Width="950"
         Loaded="MyWindow_Loaded">
 
     <Window.Resources>
         <ResourceDictionary>
             <!--App-wide resources (e.g., colors) can be found in App.xaml-->
 
-            <!--Allows use of "not" for testing for enabled properties-->
+            <!--Allows use of "not" (i.e., inverse of true boolean) in binding properties-->
             <local:BooleanInverter x:Key="InvertedBooleanConverter" />
-            
+
             <!--Styling for the tab items on the left side-->
             <Style x:Key="TabItemStyle" TargetType="TabItem">
                 <Setter Property="Template">
@@ -63,28 +64,6 @@
                 <Setter Property="Margin" Value="-3,-2,-2,-2"/>
             </Style>
 
-            <!--Styling for the data grids that store spectra/databases-->
-            <Style x:Key="x:DataGridStyle" TargetType="DataGrid">
-                <Setter Property="Foreground" Value="{StaticResource TextColor1}"/>
-                <Setter Property="Background" Value="{StaticResource DataGridBackgroundColor}"/>
-                <Setter Property="Height" Value="Auto"/>
-                <Setter Property="HorizontalContentAlignment" Value="Stretch"/>
-                <Setter Property="FontSize" Value="12"/>
-                <Setter Property="BorderThickness" Value="1"/>
-                <Setter Property="BorderBrush" Value="{StaticResource BorderColor}"/>
-                <Setter Property="Margin" Value="10,0,10,10"/>
-                <Setter Property="SelectedItem" Value="{Binding SelectedRow, Mode=TwoWay}"/>
-                <Setter Property="HeadersVisibility" Value="Column"/>
-                <Setter Property="HorizontalGridLinesBrush" Value="{StaticResource DataGridHeaderColor}"/>
-                <Setter Property="VerticalGridLinesBrush" Value="{StaticResource DataGridHeaderColor}"/>
-            </Style>
-
-            <!--Styling for the data grid headers-->
-            <Style x:Key="DataGridColumnHeaderStyle" TargetType="DataGridColumnHeader">
-                <Setter Property="Background" Value="{StaticResource DataGridHeaderColor}"/>
-                <Setter Property="FontSize" Value="13" />
-            </Style>
-
             <!--Styling for the "important" buttons like add task, add DB, etc.-->
             <Style x:Key="ImportantButtonStyle" TargetType="Button">
                 <Setter Property="BorderThickness" Value="0"/>
@@ -121,13 +100,13 @@
             <Style x:Key="ContextMenuStyle" TargetType="ContextMenu">
                 <Setter Property="Background" Value="{StaticResource BackgroundColor}"/>
                 <Setter Property="Foreground" Value="{StaticResource TextColor1}"/>
-
                 <Setter Property="OverridesDefaultStyle" Value="True" />
                 <Setter Property="SnapsToDevicePixels" Value="True" />
                 <Setter Property="Template">
                     <Setter.Value>
                         <ControlTemplate TargetType="{x:Type ContextMenu}">
-                            <Border BorderThickness="1" BorderBrush="{StaticResource BorderColor}" x:Name="Border" Background="{StaticResource BackgroundColor}">
+                            <Border BorderThickness="1" BorderBrush="{StaticResource BorderColor}" x:Name="Border" 
+                                    Background="{StaticResource BackgroundColor}">
                                 <StackPanel ClipToBounds="True" Orientation="Vertical" IsItemsHost="True" />
                             </Border>
                             <ControlTemplate.Triggers>
@@ -153,15 +132,18 @@
 
             <!--Defines the context menu when a protein database is right-clicked-->
             <ContextMenu x:Key="ProteinDatabaseContextMenu" Style="{StaticResource ContextMenuStyle}">
-                <MenuItem Header="Set as contaminant database" Click="SetSelectedDatabaseAsContaminant_Click" IsEnabled="{Binding IsEnabled, ElementName=RunTasksButton}" />
-                <MenuItem Header="Set as non-contaminant database" Click="SetSelectedDatabaseAsNonContaminant_Click" IsEnabled="{Binding IsEnabled, ElementName=RunTasksButton}" />
+                <MenuItem Header="Set as contaminant database" Click="SetSelectedDatabaseAsContaminant_Click" 
+                          IsEnabled="{Binding IsEnabled, ElementName=RunTasksButton}" />
+                <MenuItem Header="Set as non-contaminant database" Click="SetSelectedDatabaseAsNonContaminant_Click" 
+                          IsEnabled="{Binding IsEnabled, ElementName=RunTasksButton}" />
                 <MenuItem Header="Open file" Click="OpenFile_Click" IsEnabled="{Binding IsEnabled, ElementName=RunTasksButton}" />
                 <MenuItem Header="Open containing folder" Click="OpenContainingFolder_Click" />
             </ContextMenu>
 
             <!--Defines the context menu when a spectra file is right-clicked-->
             <ContextMenu x:Key="SpectraFileContextMenu" Style="{StaticResource ContextMenuStyle}">
-                <MenuItem Header="Set file-specific settings" Click="SetFileSpecificParameters_Click" IsEnabled="{Binding IsEnabled, ElementName=RunTasksButton}" />
+                <MenuItem Header="Set file-specific settings" Click="SetFileSpecificParameters_Click" 
+                          IsEnabled="{Binding IsEnabled, ElementName=RunTasksButton}" />
                 <MenuItem Header="Open file" Click="OpenFile_Click" IsEnabled="{Binding IsEnabled, ElementName=RunTasksButton}" />
                 <MenuItem Header="Open containing folder" Click="OpenContainingFolder_Click" />
             </ContextMenu>
@@ -178,6 +160,30 @@
                 <MenuItem Header="Open containing folder" Click="OpenContainingFolder_Click" />
             </ContextMenu>
 
+            <!--Styling for the datagrids that store spectra/databases-->
+            <Style x:Key="x:DataGridStyle" TargetType="DataGrid">
+                <Setter Property="Foreground" Value="{StaticResource TextColor1}"/>
+                <Setter Property="Background" Value="{StaticResource DataGridBackgroundColor}"/>
+                <Setter Property="Height" Value="Auto"/>
+                <Setter Property="HorizontalContentAlignment" Value="Stretch"/>
+                <Setter Property="FontSize" Value="12"/>
+                <Setter Property="BorderThickness" Value="1"/>
+                <Setter Property="BorderBrush" Value="{StaticResource BorderColor}"/>
+                <Setter Property="Margin" Value="10,0,10,10"/>
+                <Setter Property="SelectedItem" Value="{Binding SelectedRow, Mode=TwoWay}"/>
+                <Setter Property="HeadersVisibility" Value="Column"/>
+                <Setter Property="HorizontalGridLinesBrush" Value="{StaticResource DataGridHeaderColor}"/>
+                <Setter Property="VerticalGridLinesBrush" Value="{StaticResource DataGridHeaderColor}"/>
+                <Setter Property="IsReadOnly" Value="{Binding IsEnabled, ElementName=RunTasksButton, Converter={StaticResource InvertedBooleanConverter}}"/>
+                <Setter Property="AutoGenerateColumns" Value="False"/>
+            </Style>
+
+            <!--Styling for the datagrid headers-->
+            <Style x:Key="DataGridColumnHeaderStyle" TargetType="DataGridColumnHeader">
+                <Setter Property="Background" Value="{StaticResource DataGridHeaderColor}"/>
+                <Setter Property="FontSize" Value="13" />
+            </Style>
+
             <!--Styles the spectra file datagrid items-->
             <Style x:Key="SpectraFileDataGridItemStyle" TargetType="DataGridRow">
                 <EventSetter Event="Selected" Handler="AddSelectedSpectra" />
@@ -190,6 +196,10 @@
                 <EventSetter Event="Selected" Handler="AddSelectedDatabase" />
                 <EventSetter Event="Unselected" Handler="RemoveSelectedDatabase" />
                 <Setter Property="ContextMenu" Value="{StaticResource ProteinDatabaseContextMenu}" />
+            </Style>
+
+            <Style x:Key="DataGridCellStyle" TargetType="DataGridCell">
+                <EventSetter Event="MouseDoubleClick" Handler="DatabaseOrSpectraFile_DoubleClick"/>
             </Style>
 
             <!--Styles the task treeview items-->
@@ -237,7 +247,8 @@
         </Grid.RowDefinitions>
 
         <!--Pages-->
-        <TabControl x:Name="MainWindowTabControl" Grid.Row="0" TabStripPlacement="Left" Margin="0" SelectionChanged="TabControl_SelectionChanged" BorderThickness="0" BorderBrush="{StaticResource BorderColor}">
+        <TabControl x:Name="MainWindowTabControl" Grid.Row="0" TabStripPlacement="Left" Margin="0" SelectionChanged="TabControl_SelectionChanged" 
+                    BorderThickness="0" BorderBrush="{StaticResource BorderColor}">
             <TabControl.Resources>
                 <Style TargetType="Grid">
                     <!--This defines the *default* style for *all grids in the entire tab control*-->
@@ -289,22 +300,26 @@
                     <Label Content="Protein Databases" Grid.Row="0" Style="{StaticResource HeaderLabelStyle}" />
 
                     <!--Button to add databases-->
-                    <Button Name="AddDatabaseButton" Grid.Row="1" Content="+ADD DATABASE" Click="AddProteinDatabase_Click" HorizontalAlignment="Right" Style="{StaticResource ImportantButtonStyle}" Margin="0,0,10,0"
+                    <Button Name="AddDatabaseButton" Grid.Row="1" Content="+ADD DATABASE" Click="AddProteinDatabase_Click" HorizontalAlignment="Right" 
+                            Style="{StaticResource ImportantButtonStyle}" Margin="0,0,10,0"
                         IsEnabled="{Binding IsEnabled, ElementName=RunTasksButton}"/>
 
-                    <Button Name="AddDefaultContaminantsButton" Grid.Row="1" Content="ADD DEFAULT CONTAMINANTS" Click="AddDefaultContaminantDatabase_Click" HorizontalAlignment="Right" Style="{StaticResource ImportantButtonStyle}"
+                    <Button Name="AddDefaultContaminantsButton" Grid.Row="1" Content="ADD DEFAULT CONTAMINANTS" 
+                            Click="AddDefaultContaminantDatabase_Click" HorizontalAlignment="Right" Style="{StaticResource ImportantButtonStyle}"
                         Margin="0,0,211,0" IsEnabled="{Binding IsEnabled, ElementName=RunTasksButton}"/>
 
                     <!--The list of databases-->
                     <DataGrid Name="dataGridProteinDatabases" Grid.Row="2" ItemsSource="{Binding}" Style="{StaticResource x:DataGridStyle}"
-                          IsReadOnly="{Binding IsEnabled, ElementName=RunTasksButton, Converter={StaticResource InvertedBooleanConverter}}" AutoGenerateColumns="False" ColumnHeaderStyle="{StaticResource DataGridColumnHeaderStyle}">
+                              ColumnHeaderStyle="{StaticResource DataGridColumnHeaderStyle}" >
                         <DataGrid.RowStyle>
                             <Style TargetType="{x:Type DataGridRow}" BasedOn="{StaticResource DatabaseDataGridItemStyle}" />
                         </DataGrid.RowStyle>
+                        <DataGrid.CellStyle>
+                            <Style TargetType="{x:Type DataGridCell}" BasedOn="{StaticResource DataGridCellStyle}" />
+                        </DataGrid.CellStyle>
                         <DataGrid.Columns>
-                            <!--The rest of the columns-->
-                            <DataGridTextColumn Header="File" Binding="{Binding FilePath}" Width="450" />
-                            <DataGridTextColumn Header="Contaminant?" Binding="{Binding Contaminant}" Width="250" />
+                            <DataGridTextColumn Header="File" Binding="{Binding FilePath, Mode=OneWay}" Width="450" />
+                            <DataGridTextColumn Header="Contaminant?" Binding="{Binding Contaminant, Mode=OneWay}" Width="250" />
                         </DataGrid.Columns>
                     </DataGrid>
                 </Grid>
@@ -323,25 +338,27 @@
                     <Label Content="Spectra" Grid.Row="0" Style="{StaticResource HeaderLabelStyle}" />
 
                     <!--Button to add spectra files-->
-                    <Button Name="AddSpectraButton" Grid.Row="1" Content="+ADD SPECTRA" Click="AddSpectraFile_Click" HorizontalAlignment="Right" Style="{StaticResource ImportantButtonStyle}" Margin="0,0,10,0"
+                    <Button Name="AddSpectraButton" Grid.Row="1" Content="+ADD SPECTRA" Click="AddSpectraFile_Click" HorizontalAlignment="Right" 
+                            Style="{StaticResource ImportantButtonStyle}" Margin="0,0,10,0"
                         IsEnabled="{Binding IsEnabled, ElementName=RunTasksButton}"/>
 
-                    <Button Name="SetFileSpecificSettingsButton" Grid.Row="1" Content="SET FILE-SPECIFIC SETTINGS" Click="SetFileSpecificParameters_Click" HorizontalAlignment="Right" Style="{StaticResource ImportantButtonStyle}"
+                    <Button Name="SetFileSpecificSettingsButton" Grid.Row="1" Content="SET FILE-SPECIFIC SETTINGS" Click="SetFileSpecificParameters_Click" 
+                            HorizontalAlignment="Right" Style="{StaticResource ImportantButtonStyle}"
                         Margin="0,0,211,0" IsEnabled="{Binding IsEnabled, ElementName=RunTasksButton}" />
 
-                    <Button Name="SetExperimentalDesignButton" Grid.Row="1" Content="SET EXPERIMENTAL DESIGN" Click="SetExperimentalDesign_Click" HorizontalAlignment="Right" Style="{StaticResource ImportantButtonStyle}"
+                    <Button Name="SetExperimentalDesignButton" Grid.Row="1" Content="SET EXPERIMENTAL DESIGN" Click="SetExperimentalDesign_Click" 
+                            HorizontalAlignment="Right" Style="{StaticResource ImportantButtonStyle}"
                         Margin="0,0,412,0" IsEnabled="{Binding IsEnabled, ElementName=RunTasksButton}" />
 
                     <!--The list of spectra files-->
                     <DataGrid Name="dataGridSpectraFiles" ItemsSource="{Binding}" Grid.Row="2" Style="{StaticResource x:DataGridStyle}"
-                          IsReadOnly="{Binding IsEnabled, ElementName=RunTasksButton, Converter={StaticResource InvertedBooleanConverter}}" AutoGenerateColumns="False" ColumnHeaderStyle="{StaticResource DataGridColumnHeaderStyle}">
+                              ColumnHeaderStyle="{StaticResource DataGridColumnHeaderStyle}">
                         <DataGrid.RowStyle>
                             <Style TargetType="{x:Type DataGridRow}" BasedOn="{StaticResource SpectraFileDataGridItemStyle}" />
                         </DataGrid.RowStyle>
                         <DataGrid.Columns>
-                            <!--The rest of the columns-->
-                            <DataGridTextColumn Header="File" Binding="{Binding FilePath}" Width="450" />
-                            <DataGridTextColumn Header="File-Specific Parameters" Binding="{Binding Parameters}" Width="250" />
+                            <DataGridTextColumn Header="File" Binding="{Binding FilePath, Mode=OneWay}" Width="450" />
+                            <DataGridTextColumn Header="File-Specific Parameters" Binding="{Binding Parameters, Mode=OneWay}" Width="250" />
                         </DataGrid.Columns>
                     </DataGrid>
                 </Grid>
@@ -360,11 +377,13 @@
                     <Label Content="Tasks" Grid.Row="0" Style="{StaticResource HeaderLabelStyle}" />
 
                     <!--Button to add tasks-->
-                    <Button Name="AddTaskButton" Grid.Row="1" Content="+ADD TASK" HorizontalAlignment="Right" Click="AddTask_Click" Style="{StaticResource ImportantButtonStyle}" Margin="0,0,10,0"
+                    <Button Name="AddTaskButton" Grid.Row="1" Content="+ADD TASK" HorizontalAlignment="Right" Click="AddTask_Click" 
+                            Style="{StaticResource ImportantButtonStyle}" Margin="0,0,10,0"
                         IsEnabled="{Binding IsEnabled, ElementName=RunTasksButton}"/>
 
                     <!--List of tasks-->
-                    <TreeView x:Name="tasksTreeView" Grid.Row="2" ItemsSource="{Binding}" MouseDoubleClick="TasksTreeView_MouseDoubleClick" Margin="10,0,10,10" BorderBrush="{StaticResource BorderColor}">
+                    <TreeView x:Name="tasksTreeView" Grid.Row="2" ItemsSource="{Binding}" MouseDoubleClick="TasksTreeView_MouseDoubleClick" 
+                              Margin="10,0,10,10" BorderBrush="{StaticResource BorderColor}">
                         <TreeView.ItemContainerStyle>
                             <Style TargetType="{x:Type TreeViewItem}" BasedOn="{StaticResource TaskTreeViewStyle}" />
                         </TreeView.ItemContainerStyle>
@@ -392,8 +411,7 @@
 
                         <!--Protein DB Summary-->
                         <DataGrid Name="proteinDbSummaryDataGrid" ItemsSource="{Binding}" Grid.Column="0" Margin="5,10,4,10" 
-                              Style="{StaticResource x:DataGridStyle}" ColumnHeaderStyle="{StaticResource DataGridColumnHeaderStyle}"
-                              IsReadOnly="{Binding IsEnabled, ElementName=RunTasksButton, Converter={StaticResource InvertedBooleanConverter}}" AutoGenerateColumns="False">
+                              Style="{StaticResource x:DataGridStyle}" ColumnHeaderStyle="{StaticResource DataGridColumnHeaderStyle}">
                             <DataGrid.RowStyle>
                                 <Style TargetType="{x:Type DataGridRow}" BasedOn="{StaticResource DatabaseDataGridItemStyle}" >
                                     <Setter Property="FontSize" Value="11" />
@@ -401,17 +419,17 @@
                                 </Style>
                             </DataGrid.RowStyle>
                             <DataGrid.Columns>
-                                <DataGridTextColumn Header="File" Binding="{Binding FileName}" Width="180" />
-                                <DataGridTextColumn Header="Contam" Binding="{Binding Contaminant}" Width="55" />
+                                <DataGridTextColumn Header="File" Binding="{Binding FileName, Mode=OneWay}" Width="180" />
+                                <DataGridTextColumn Header="Contam" Binding="{Binding Contaminant, Mode=OneWay}" Width="55" />
                             </DataGrid.Columns>
                         </DataGrid>
                         <Button Grid.Column="0" Width="20" Height="20" HorizontalAlignment="Right" VerticalAlignment="Bottom" Margin="11,11,5,11" Content="+" 
-                                VerticalContentAlignment="Top" Style="{StaticResource ImportantButtonStyle}" Click="AddProteinDatabase_Click" IsEnabled="{Binding IsEnabled, ElementName=RunTasksButton}" />
+                                VerticalContentAlignment="Top" Style="{StaticResource ImportantButtonStyle}" Click="AddProteinDatabase_Click" 
+                                IsEnabled="{Binding IsEnabled, ElementName=RunTasksButton}" />
 
                         <!--Spectra file Summary-->
                         <DataGrid Name="spectraFileSummaryDataGrid" ItemsSource="{Binding}" Grid.Column="1" Margin="2,10,2,10" 
-                              Style="{StaticResource x:DataGridStyle}" ColumnHeaderStyle="{StaticResource DataGridColumnHeaderStyle}"
-                              IsReadOnly="{Binding IsEnabled, ElementName=RunTasksButton, Converter={StaticResource InvertedBooleanConverter}}" AutoGenerateColumns="False">
+                              Style="{StaticResource x:DataGridStyle}" ColumnHeaderStyle="{StaticResource DataGridColumnHeaderStyle}">
                             <DataGrid.RowStyle>
                                 <Style TargetType="{x:Type DataGridRow}" BasedOn="{StaticResource SpectraFileDataGridItemStyle}">
                                     <Setter Property="FontSize" Value="11" />
@@ -419,12 +437,13 @@
                                 </Style>
                             </DataGrid.RowStyle>
                             <DataGrid.Columns>
-                                <DataGridTextColumn Header="File" Binding="{Binding FileName}" Width="180" />
-                                <DataGridTextColumn Header="Params" Binding="{Binding Parameters}" Width="55" />
+                                <DataGridTextColumn Header="File" Binding="{Binding FileName, Mode=OneWay}" Width="180" />
+                                <DataGridTextColumn Header="Params" Binding="{Binding Parameters, Mode=OneWay}" Width="55" />
                             </DataGrid.Columns>
                         </DataGrid>
                         <Button Grid.Column="1" Width="20" Height="20" HorizontalAlignment="Right" VerticalAlignment="Bottom" Margin="11,11,3,11" Content="+" 
-                                VerticalContentAlignment="Top" Style="{StaticResource ImportantButtonStyle}" Click="AddSpectraFile_Click" IsEnabled="{Binding IsEnabled, ElementName=RunTasksButton}" />
+                                VerticalContentAlignment="Top" Style="{StaticResource ImportantButtonStyle}" Click="AddSpectraFile_Click" 
+                                IsEnabled="{Binding IsEnabled, ElementName=RunTasksButton}" />
 
                         <!--Task Summary-->
                         <TreeView Name="taskSummary" ItemsSource="{Binding}" Grid.Column="2" Margin="2,10,5,10">
@@ -436,18 +455,21 @@
                             </TreeView.ItemContainerStyle>
                         </TreeView>
                         <Button Grid.Column="2" Width="20" Height="20" HorizontalAlignment="Right" VerticalAlignment="Bottom" Margin="11,11,6,11" Content="+" 
-                                VerticalContentAlignment="Top" Style="{StaticResource ImportantButtonStyle}" Click="AddTask_Click" IsEnabled="{Binding IsEnabled, ElementName=RunTasksButton}" />
+                                VerticalContentAlignment="Top" Style="{StaticResource ImportantButtonStyle}" Click="AddTask_Click" 
+                                IsEnabled="{Binding IsEnabled, ElementName=RunTasksButton}" />
                     </Grid>
 
                     <!--Define/open output folder-->
                     <DockPanel Margin="5,0,10,0" Grid.Row="1" LastChildFill="True">
                         <Button x:Name="OpenOutputFolderButton" Content="OPEN" Width="60" DockPanel.Dock="Right" 
-                                    Click="OpenOutputFolder_Click" Background="{StaticResource SecondaryButtonColor}" Foreground="White" FontSize="12" BorderThickness="0" />
+                                    Click="OpenOutputFolder_Click" Background="{StaticResource SecondaryButtonColor}" Foreground="White" FontSize="12" 
+                                BorderThickness="0" />
 
                         <Label Content="Output Folder:" Foreground="{StaticResource TextColor1}" FontSize="12" />
 
                         <TextBox x:Name="OutputFolderTextBox" ToolTip="$DATETIME is automatically replaced by the current date and time" 
-                             Background="Transparent" Foreground="{StaticResource TextColor1}" BorderBrush="{StaticResource BorderColor}" BorderThickness="1" FontSize="13"
+                             Background="Transparent" Foreground="{StaticResource TextColor1}" BorderBrush="{StaticResource BorderColor}" BorderThickness="1" 
+                                 FontSize="13"
                              IsEnabled="{Binding IsEnabled, ElementName=RunTasksButton}"/>
                     </DockPanel>
 
