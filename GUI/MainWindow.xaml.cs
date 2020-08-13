@@ -916,33 +916,6 @@ namespace MetaMorpheusGUI
         }
 
         /// <summary>
-        /// Event fires when an item is right-clicked.
-        /// Can occur on a task or written file.
-        /// </summary>
-        private void TreeViewItem_RightClick(object sender, MouseButtonEventArgs e)
-        {
-            var item = GetContextMenuItemDataContext(sender, e);
-            string contextMenuName;
-
-            if (item is PreRunTask || item is InRunTask)
-            {
-                contextMenuName = "TaskContextMenu";
-            }
-            else if (item is OutputFileForTreeView)
-            {
-                contextMenuName = "WrittenFileContextMenu";
-            }
-            else
-            {
-                return;
-            }
-
-            ContextMenu contextMenu = FindResource(contextMenuName) as ContextMenu;
-            contextMenu.PlacementTarget = sender as TreeViewItem;
-            contextMenu.IsOpen = true;
-        }
-
-        /// <summary>
         /// Event fires when an item in the task treeview is double-clicked.
         /// </summary>
         private void TasksTreeView_MouseDoubleClick(object sender, EventArgs e)
@@ -1666,6 +1639,10 @@ namespace MetaMorpheusGUI
                 else if (dataContext.PlacementTarget is TreeViewItem treeViewItem)
                 {
                     return treeViewItem.Header;
+                }
+                else
+                {
+                    return menuItem.DataContext;
                 }
             }
             else if (sender is TreeViewItem treeViewItem)

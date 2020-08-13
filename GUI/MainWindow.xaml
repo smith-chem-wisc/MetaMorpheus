@@ -211,14 +211,9 @@
                 </Style.Triggers>
             </Style>
 
-            <!--Styles the task treeview items-->
-            <Style x:Key="TaskTreeViewStyle" TargetType="TreeViewItem">
-                <EventSetter Event="MouseRightButtonDown" Handler="TreeViewItem_RightClick" />
-            </Style>
-
             <!--Data templates for the types displayed in the treeview-->
             <HierarchicalDataTemplate DataType="{x:Type local:InRunTask}" ItemsSource="{Binding Children}">
-                <StackPanel Orientation="Horizontal">
+                <StackPanel Orientation="Horizontal" ContextMenu="{StaticResource TaskContextMenu}">
                     <TextBlock Text="T " />
                     <TextBlock Text="{Binding DisplayName}" />
                     <ProgressBar Value="{Binding Progress}" IsIndeterminate="{Binding IsIndeterminate}" Width="100" Margin="5,0,5,0" />
@@ -234,14 +229,14 @@
                 </StackPanel>
             </HierarchicalDataTemplate>
             <DataTemplate DataType="{x:Type local:OutputFileForTreeView}">
-                <StackPanel Orientation="Horizontal">
+                <StackPanel Orientation="Horizontal" ContextMenu="{StaticResource WrittenFileContextMenu}">
                     <TextBlock Text="F " />
                     <TextBlock Text="{Binding DisplayName}" />
                     <TextBlock Text="{Binding Status}" />
                 </StackPanel>
             </DataTemplate>
             <DataTemplate DataType="{x:Type local:PreRunTask}">
-                <StackPanel Orientation="Horizontal">
+                <StackPanel Orientation="Horizontal" ContextMenu="{StaticResource TaskContextMenu}">
                     <TextBlock Text="{Binding DisplayName}" />
                 </StackPanel>
             </DataTemplate>
@@ -396,9 +391,6 @@
                     <!--List of tasks-->
                     <TreeView x:Name="tasksTreeView" Grid.Row="2" ItemsSource="{Binding}" MouseDoubleClick="TasksTreeView_MouseDoubleClick" 
                               Margin="10,0,10,10" BorderBrush="{StaticResource BorderColor}">
-                        <TreeView.ItemContainerStyle>
-                            <Style TargetType="{x:Type TreeViewItem}" BasedOn="{StaticResource TaskTreeViewStyle}" />
-                        </TreeView.ItemContainerStyle>
                     </TreeView>
                 </Grid>
             </TabItem>
@@ -463,7 +455,7 @@
                         <!--Task Summary-->
                         <TreeView Name="taskSummary" ItemsSource="{Binding}" Grid.Column="2" Margin="2,10,5,10">
                             <TreeView.ItemContainerStyle>
-                                <Style TargetType="{x:Type TreeViewItem}" BasedOn="{StaticResource TaskTreeViewStyle}">
+                                <Style TargetType="{x:Type TreeViewItem}">
                                     <Setter Property="FontSize" Value="11" />
                                     <Setter Property="FontWeight" Value="SemiBold" />
                                 </Style>
