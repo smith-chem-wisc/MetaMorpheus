@@ -367,6 +367,8 @@ namespace MetaMorpheusGUI
             {
                 dataGridSpectraFiles.Items.Refresh();
 
+                ToggleEnabledButtonsOnStartOrFinishRun(false);
+
                 RunTasksButton.IsEnabled = false;
                 RunTasksButton.Visibility = Visibility.Hidden;
                 ResetTasksButton.IsEnabled = false;
@@ -767,6 +769,8 @@ namespace MetaMorpheusGUI
         /// </summary>
         private void ResetTasks_Click(object sender, RoutedEventArgs e)
         {
+            ToggleEnabledButtonsOnStartOrFinishRun(true);
+
             RunTasksButton.IsEnabled = true;
             RunTasksButton.Visibility = Visibility.Visible;
 
@@ -879,7 +883,6 @@ namespace MetaMorpheusGUI
                     return;
                 }
             }
-            //BtnQuantSet.IsEnabled = false;
 
             // settings are OK to run
             InProgressTasks = new ObservableCollection<InRunTask>();
@@ -990,7 +993,6 @@ namespace MetaMorpheusGUI
                 if (e.Key == Key.Delete || e.Key == Key.Back)
                 {
                     DeleteTask_Click(sender, e);
-                    //DeleteSelectedDatabasesOrSpectraFiles_Click(sender, e);
                     e.Handled = true;
                 }
 
@@ -1711,6 +1713,53 @@ namespace MetaMorpheusGUI
             }
 
             UpdateGuiOnPreRunChange();
+        }
+
+        private void ToggleEnabledButtonsOnStartOrFinishRun(bool enable)
+        {
+            foreach (MenuItem item in ((ContextMenu)this.Resources["ProteinDatabaseContextMenu"]).Items)
+            {
+                switch (item.Header.ToString())
+                {
+                    case "Set as contaminant database": item.IsEnabled = enable; break;
+                    case "Set as non-contaminant database": item.IsEnabled = enable; break;
+                    case "Open file": item.IsEnabled = enable; break;
+                }
+            }
+
+            foreach (MenuItem item in ((ContextMenu)this.Resources["SpectraFileContextMenu"]).Items)
+            {
+                switch (item.Header.ToString())
+                {
+                    case "Set file-specific parameters": item.IsEnabled = enable; break;
+                    case "Open file": item.IsEnabled = enable; break;
+                }
+            }
+
+            foreach (MenuItem item in ((ContextMenu)this.Resources["TaskContextMenu"]).Items)
+            {
+                switch (item.Header.ToString())
+                {
+                    case "Edit task": item.IsEnabled = enable; break;
+                }
+            }
+
+            dataGridProteinDatabases.IsReadOnly = !enable;
+            dataGridSpectraFiles.IsReadOnly = !enable;
+            spectraFileSummaryDataGrid.IsReadOnly = !enable;
+            proteinDbSummaryDataGrid.IsReadOnly = !enable;
+
+            AddDatabaseButton.IsEnabled = enable;
+            AddDefaultContaminantsButton.IsEnabled = enable;
+            AddSpectraButton.IsEnabled = enable;
+            SetFileSpecificSettingsButton.IsEnabled = enable;
+            SetExperimentalDesignButton.IsEnabled = enable;
+            AddTaskButton.IsEnabled = enable;
+            MiniAddProteinDbButton.IsEnabled = enable;
+            MiniAddSpectraButton.IsEnabled = enable;
+            MiniAddTaskButton.IsEnabled = enable;
+            OutputFolderTextBox.IsEnabled = enable;
+            RunTasksButton.IsEnabled = enable;
         }
 
         #endregion

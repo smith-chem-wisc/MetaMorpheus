@@ -132,25 +132,22 @@
 
             <!--Defines the context menu when a protein database is right-clicked-->
             <ContextMenu x:Key="ProteinDatabaseContextMenu" Style="{StaticResource ContextMenuStyle}">
-                <MenuItem Header="Set as contaminant database" Click="SetSelectedDatabaseAsContaminant_Click" 
-                          IsEnabled="{Binding IsEnabled, ElementName=RunTasksButton}" />
-                <MenuItem Header="Set as non-contaminant database" Click="SetSelectedDatabaseAsNonContaminant_Click" 
-                          IsEnabled="{Binding IsEnabled, ElementName=RunTasksButton}" />
-                <MenuItem Header="Open file" Click="OpenFile_Click" IsEnabled="{Binding IsEnabled, ElementName=RunTasksButton}" />
+                <MenuItem Header="Set as contaminant database" Click="SetSelectedDatabaseAsContaminant_Click"/>
+                <MenuItem Header="Set as non-contaminant database" Click="SetSelectedDatabaseAsNonContaminant_Click"/>
+                <MenuItem Header="Open file" Click="OpenFile_Click"/>
                 <MenuItem Header="Open containing folder" Click="OpenContainingFolder_Click" />
             </ContextMenu>
 
             <!--Defines the context menu when a spectra file is right-clicked-->
             <ContextMenu x:Key="SpectraFileContextMenu" Style="{StaticResource ContextMenuStyle}">
-                <MenuItem Header="Set file-specific settings" Click="SetFileSpecificParameters_Click" 
-                          IsEnabled="{Binding IsEnabled, ElementName=RunTasksButton}" />
-                <MenuItem Header="Open file" Click="OpenFile_Click" IsEnabled="{Binding IsEnabled, ElementName=RunTasksButton}" />
+                <MenuItem Header="Set file-specific parameters" Click="SetFileSpecificParameters_Click"/>
+                <MenuItem Header="Open file" Click="OpenFile_Click"/>
                 <MenuItem Header="Open containing folder" Click="OpenContainingFolder_Click" />
             </ContextMenu>
 
             <!--Defines the context menu when a task is right-clicked-->
             <ContextMenu x:Key="TaskContextMenu" Style="{StaticResource ContextMenuStyle}">
-                <MenuItem Header="Edit task" Click="EditTask_Click" IsEnabled="{Binding IsEnabled, ElementName=RunTasksButton}" />
+                <MenuItem Header="Edit task" Click="EditTask_Click"/>
                 <MenuItem Header="Save as .toml" Click="SaveTaskAsToml_Click" />
             </ContextMenu>
 
@@ -174,7 +171,6 @@
                 <Setter Property="HeadersVisibility" Value="Column"/>
                 <Setter Property="HorizontalGridLinesBrush" Value="{StaticResource DataGridHeaderColor}"/>
                 <Setter Property="VerticalGridLinesBrush" Value="{StaticResource DataGridHeaderColor}"/>
-                <Setter Property="IsReadOnly" Value="{Binding IsEnabled, ElementName=RunTasksButton, Converter={StaticResource InvertedBooleanConverter}}"/>
                 <Setter Property="AutoGenerateColumns" Value="False"/>
             </Style>
 
@@ -305,12 +301,11 @@
 
                     <!--Button to add databases-->
                     <Button Name="AddDatabaseButton" Grid.Row="1" Content="+ADD DATABASE" Click="AddProteinDatabase_Click" HorizontalAlignment="Right" 
-                            Style="{StaticResource ImportantButtonStyle}" Margin="0,0,10,0"
-                        IsEnabled="{Binding IsEnabled, ElementName=RunTasksButton}"/>
+                            Style="{StaticResource ImportantButtonStyle}" Margin="0,0,10,0"/>
 
                     <Button Name="AddDefaultContaminantsButton" Grid.Row="1" Content="ADD DEFAULT CONTAMINANTS" 
                             Click="AddDefaultContaminantDatabase_Click" HorizontalAlignment="Right" Style="{StaticResource ImportantButtonStyle}"
-                        Margin="0,0,211,0" IsEnabled="{Binding IsEnabled, ElementName=RunTasksButton}"/>
+                        Margin="0,0,211,0"/>
 
                     <!--The list of databases-->
                     <DataGrid Name="dataGridProteinDatabases" Grid.Row="2" ItemsSource="{Binding}" Style="{StaticResource x:DataGridStyle}"
@@ -343,16 +338,15 @@
 
                     <!--Button to add spectra files-->
                     <Button Name="AddSpectraButton" Grid.Row="1" Content="+ADD SPECTRA" Click="AddSpectraFile_Click" HorizontalAlignment="Right" 
-                            Style="{StaticResource ImportantButtonStyle}" Margin="0,0,10,0"
-                        IsEnabled="{Binding IsEnabled, ElementName=RunTasksButton}"/>
+                            Style="{StaticResource ImportantButtonStyle}" Margin="0,0,10,0"/>
 
                     <Button Name="SetFileSpecificSettingsButton" Grid.Row="1" Content="SET FILE-SPECIFIC SETTINGS" Click="SetFileSpecificParameters_Click" 
                             HorizontalAlignment="Right" Style="{StaticResource ImportantButtonStyle}"
-                        Margin="0,0,211,0" IsEnabled="{Binding IsEnabled, ElementName=RunTasksButton}" />
+                        Margin="0,0,211,0"/>
 
                     <Button Name="SetExperimentalDesignButton" Grid.Row="1" Content="SET EXPERIMENTAL DESIGN" Click="SetExperimentalDesign_Click" 
                             HorizontalAlignment="Right" Style="{StaticResource ImportantButtonStyle}"
-                        Margin="0,0,412,0" IsEnabled="{Binding IsEnabled, ElementName=RunTasksButton}" />
+                        Margin="0,0,412,0"/>
 
                     <!--The list of spectra files-->
                     <DataGrid Name="dataGridSpectraFiles" ItemsSource="{Binding}" Grid.Row="2" Style="{StaticResource x:DataGridStyle}"
@@ -385,8 +379,7 @@
 
                     <!--Button to add tasks-->
                     <Button Name="AddTaskButton" Grid.Row="1" Content="+ADD TASK" HorizontalAlignment="Right" Click="AddTask_Click" 
-                            Style="{StaticResource ImportantButtonStyle}" Margin="0,0,10,0"
-                        IsEnabled="{Binding IsEnabled, ElementName=RunTasksButton}"/>
+                            Style="{StaticResource ImportantButtonStyle}" Margin="0,0,10,0"/>
 
                     <!--List of tasks-->
                     <TreeView x:Name="tasksTreeView" Grid.Row="2" ItemsSource="{Binding}" MouseDoubleClick="TasksTreeView_MouseDoubleClick" 
@@ -427,9 +420,8 @@
                                 <DataGridTextColumn Header="Contam" Binding="{Binding Contaminant, Mode=OneWay}" Width="55" />
                             </DataGrid.Columns>
                         </DataGrid>
-                        <Button Grid.Column="0" Width="20" Height="20" HorizontalAlignment="Right" VerticalAlignment="Bottom" Margin="11,11,5,11" Content="+" 
-                                VerticalContentAlignment="Top" Style="{StaticResource ImportantButtonStyle}" Click="AddProteinDatabase_Click" 
-                                IsEnabled="{Binding IsEnabled, ElementName=RunTasksButton}" />
+                        <Button Name="MiniAddProteinDbButton" Grid.Column="0" Width="20" Height="20" HorizontalAlignment="Right" VerticalAlignment="Bottom" Margin="11,11,5,11" Content="+" 
+                                VerticalContentAlignment="Top" Style="{StaticResource ImportantButtonStyle}" Click="AddProteinDatabase_Click"/>
 
                         <!--Spectra file Summary-->
                         <DataGrid Name="spectraFileSummaryDataGrid" ItemsSource="{Binding}" Grid.Column="1" Margin="2,10,2,10" 
@@ -448,9 +440,8 @@
                                 <DataGridTextColumn Header="Params" Binding="{Binding Parameters, Mode=OneWay}" Width="55" />
                             </DataGrid.Columns>
                         </DataGrid>
-                        <Button Grid.Column="1" Width="20" Height="20" HorizontalAlignment="Right" VerticalAlignment="Bottom" Margin="11,11,3,11" Content="+" 
-                                VerticalContentAlignment="Top" Style="{StaticResource ImportantButtonStyle}" Click="AddSpectraFile_Click" 
-                                IsEnabled="{Binding IsEnabled, ElementName=RunTasksButton}" />
+                        <Button Name="MiniAddSpectraButton" Grid.Column="1" Width="20" Height="20" HorizontalAlignment="Right" VerticalAlignment="Bottom" Margin="11,11,3,11" Content="+" 
+                                VerticalContentAlignment="Top" Style="{StaticResource ImportantButtonStyle}" Click="AddSpectraFile_Click"/>
 
                         <!--Task Summary-->
                         <TreeView Name="taskSummary" ItemsSource="{Binding}" Grid.Column="2" Margin="2,10,5,10">
@@ -461,9 +452,8 @@
                                 </Style>
                             </TreeView.ItemContainerStyle>
                         </TreeView>
-                        <Button Grid.Column="2" Width="20" Height="20" HorizontalAlignment="Right" VerticalAlignment="Bottom" Margin="11,11,6,11" Content="+" 
-                                VerticalContentAlignment="Top" Style="{StaticResource ImportantButtonStyle}" Click="AddTask_Click" 
-                                IsEnabled="{Binding IsEnabled, ElementName=RunTasksButton}" />
+                        <Button Name="MiniAddTaskButton" Grid.Column="2" Width="20" Height="20" HorizontalAlignment="Right" VerticalAlignment="Bottom" Margin="11,11,6,11" Content="+" 
+                                VerticalContentAlignment="Top" Style="{StaticResource ImportantButtonStyle}" Click="AddTask_Click"/>
                     </Grid>
 
                     <!--Define/open output folder-->
@@ -476,8 +466,7 @@
 
                         <TextBox x:Name="OutputFolderTextBox" ToolTip="$DATETIME is automatically replaced by the current date and time" 
                              Background="Transparent" Foreground="{StaticResource TextColor1}" BorderBrush="{StaticResource BorderColor}" BorderThickness="1" 
-                                 FontSize="13"
-                             IsEnabled="{Binding IsEnabled, ElementName=RunTasksButton}"/>
+                                 FontSize="13"/>
                     </DockPanel>
 
                     <Grid Grid.Row="2" Background="{StaticResource BackgroundColor}">
