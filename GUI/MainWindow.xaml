@@ -202,6 +202,15 @@
                 <EventSetter Event="MouseDoubleClick" Handler="DatabaseOrSpectraFile_DoubleClick"/>
             </Style>
 
+            <Style x:Key="SpectraFileDataGridCellStyle" TargetType="DataGridCell" BasedOn="{StaticResource DataGridCellStyle}">
+                <Style.Triggers>
+                    <DataTrigger Binding="{Binding InProgress}" Value="True">
+                        <Setter Property="Foreground" Value="Blue" />
+                        <Setter Property="FontWeight" Value="Bold" />
+                    </DataTrigger>
+                </Style.Triggers>
+            </Style>
+
             <!--Styles the task treeview items-->
             <Style x:Key="TaskTreeViewStyle" TargetType="TreeViewItem">
                 <EventSetter Event="MouseRightButtonDown" Handler="TreeViewItem_RightClick" />
@@ -356,6 +365,9 @@
                         <DataGrid.RowStyle>
                             <Style TargetType="{x:Type DataGridRow}" BasedOn="{StaticResource SpectraFileDataGridItemStyle}" />
                         </DataGrid.RowStyle>
+                        <DataGrid.CellStyle>
+                            <Style TargetType="{x:Type DataGridCell}" BasedOn="{StaticResource SpectraFileDataGridCellStyle}" />
+                        </DataGrid.CellStyle>
                         <DataGrid.Columns>
                             <DataGridTextColumn Header="File" Binding="{Binding FilePath, Mode=OneWay}" Width="450" />
                             <DataGridTextColumn Header="File-Specific Parameters" Binding="{Binding Parameters, Mode=OneWay}" Width="250" />
@@ -436,6 +448,9 @@
                                     <Setter Property="FontWeight" Value="SemiBold" />
                                 </Style>
                             </DataGrid.RowStyle>
+                            <DataGrid.CellStyle>
+                                <Style TargetType="{x:Type DataGridCell}" BasedOn="{StaticResource SpectraFileDataGridCellStyle}" />
+                            </DataGrid.CellStyle>
                             <DataGrid.Columns>
                                 <DataGridTextColumn Header="File" Binding="{Binding FileName, Mode=OneWay}" Width="180" />
                                 <DataGridTextColumn Header="Params" Binding="{Binding Parameters, Mode=OneWay}" Width="55" />

@@ -92,10 +92,6 @@ namespace MetaMorpheusGUI
             {
                 UpdateMetaMorpheus();
             }
-
-            // hide the "InProgress" columns
-            //dataGridProteinDatabases.Columns.Where(p => p.Header != null && p.Header.Equals(nameof(ProteinDbForDataGrid.InProgress))).First().Visibility = Visibility.Hidden;
-            //dataGridSpectraFiles.Columns.Where(p => p.Header != null && p.Header.Equals(nameof(RawDataForDataGrid.InProgress))).First().Visibility = Visibility.Hidden;
         }
 
         #region Events triggered by MetaMorpheus
