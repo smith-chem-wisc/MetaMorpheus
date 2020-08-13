@@ -392,7 +392,8 @@
             <TabItem Name="RunTab" Header="Run" TabIndex="0" Style="{StaticResource TabItemStyle}">
                 <Grid Style="{StaticResource PageGridStyle}">
                     <Grid.RowDefinitions>
-                        <RowDefinition Height="2.5*" />
+                        <RowDefinition Height="4*" />
+                        <RowDefinition Height="20" />
                         <RowDefinition Height="25" />
                         <RowDefinition Height="50" />
                         <RowDefinition Height="1*" />
@@ -401,50 +402,56 @@
                     <!--This grid holds the 3 summary datagrids at the top-->
                     <Grid Grid.Row="0" Background="{StaticResource BackgroundColor}">
                         <Grid.ColumnDefinitions>
-                            <ColumnDefinition Width="4*" />
-                            <ColumnDefinition Width="4*" />
                             <ColumnDefinition Width="5*" />
+                            <ColumnDefinition Width="4*" />
                         </Grid.ColumnDefinitions>
 
-                        <!--Protein DB Summary-->
-                        <DataGrid Name="proteinDbSummaryDataGrid" ItemsSource="{Binding}" Grid.Column="0" Margin="5,10,4,10" 
+                        <Grid Grid.Column="0" Background="{StaticResource BackgroundColor}">
+                            <Grid.RowDefinitions>
+                                <RowDefinition Height="1*" />
+                                <RowDefinition Height="1*" />
+                            </Grid.RowDefinitions>
+
+                            <!--Protein DB Summary-->
+                            <DataGrid Name="proteinDbSummaryDataGrid" ItemsSource="{Binding}" Grid.Row="0" Margin="20,10,5,5" 
                               Style="{StaticResource x:DataGridStyle}" ColumnHeaderStyle="{StaticResource DataGridColumnHeaderStyle}">
-                            <DataGrid.RowStyle>
-                                <Style TargetType="{x:Type DataGridRow}" BasedOn="{StaticResource DatabaseDataGridItemStyle}" >
-                                    <Setter Property="FontSize" Value="11" />
-                                    <Setter Property="FontWeight" Value="SemiBold" />
-                                </Style>
-                            </DataGrid.RowStyle>
-                            <DataGrid.Columns>
-                                <DataGridTextColumn Header="File" Binding="{Binding FileName, Mode=OneWay}" Width="180" />
-                                <DataGridTextColumn Header="Contam" Binding="{Binding Contaminant, Mode=OneWay}" Width="55" />
-                            </DataGrid.Columns>
-                        </DataGrid>
-                        <Button Name="MiniAddProteinDbButton" Grid.Column="0" Width="20" Height="20" HorizontalAlignment="Right" VerticalAlignment="Bottom" Margin="11,11,5,11" Content="+" 
+                                <DataGrid.RowStyle>
+                                    <Style TargetType="{x:Type DataGridRow}" BasedOn="{StaticResource DatabaseDataGridItemStyle}" >
+                                        <Setter Property="FontSize" Value="11" />
+                                        <Setter Property="FontWeight" Value="SemiBold" />
+                                    </Style>
+                                </DataGrid.RowStyle>
+                                <DataGrid.Columns>
+                                    <DataGridTextColumn Header="File" Binding="{Binding FileName, Mode=OneWay}" Width="240" />
+                                    <DataGridTextColumn Header="Contam" Binding="{Binding Contaminant, Mode=OneWay}" Width="180" />
+                                </DataGrid.Columns>
+                            </DataGrid>
+                            <Button Name="MiniAddProteinDbButton" Grid.Row="0" Width="20" Height="20" HorizontalAlignment="Right" VerticalAlignment="Bottom" Margin="0,0,6,6" Content="+" 
                                 VerticalContentAlignment="Top" Style="{StaticResource ImportantButtonStyle}" Click="AddProteinDatabase_Click"/>
 
-                        <!--Spectra file Summary-->
-                        <DataGrid Name="spectraFileSummaryDataGrid" ItemsSource="{Binding}" Grid.Column="1" Margin="2,10,2,10" 
+                            <!--Spectra file Summary-->
+                            <DataGrid Name="spectraFileSummaryDataGrid" ItemsSource="{Binding}" Grid.Row="1" Margin="20,5,5,10" 
                               Style="{StaticResource x:DataGridStyle}" ColumnHeaderStyle="{StaticResource DataGridColumnHeaderStyle}">
-                            <DataGrid.RowStyle>
-                                <Style TargetType="{x:Type DataGridRow}" BasedOn="{StaticResource SpectraFileDataGridItemStyle}">
-                                    <Setter Property="FontSize" Value="11" />
-                                    <Setter Property="FontWeight" Value="SemiBold" />
-                                </Style>
-                            </DataGrid.RowStyle>
-                            <DataGrid.CellStyle>
-                                <Style TargetType="{x:Type DataGridCell}" BasedOn="{StaticResource SpectraFileDataGridCellStyle}" />
-                            </DataGrid.CellStyle>
-                            <DataGrid.Columns>
-                                <DataGridTextColumn Header="File" Binding="{Binding FileName, Mode=OneWay}" Width="180" />
-                                <DataGridTextColumn Header="Params" Binding="{Binding Parameters, Mode=OneWay}" Width="55" />
-                            </DataGrid.Columns>
-                        </DataGrid>
-                        <Button Name="MiniAddSpectraButton" Grid.Column="1" Width="20" Height="20" HorizontalAlignment="Right" VerticalAlignment="Bottom" Margin="11,11,3,11" Content="+" 
+                                <DataGrid.RowStyle>
+                                    <Style TargetType="{x:Type DataGridRow}" BasedOn="{StaticResource SpectraFileDataGridItemStyle}">
+                                        <Setter Property="FontSize" Value="11" />
+                                        <Setter Property="FontWeight" Value="SemiBold" />
+                                    </Style>
+                                </DataGrid.RowStyle>
+                                <DataGrid.CellStyle>
+                                    <Style TargetType="{x:Type DataGridCell}" BasedOn="{StaticResource SpectraFileDataGridCellStyle}" />
+                                </DataGrid.CellStyle>
+                                <DataGrid.Columns>
+                                    <DataGridTextColumn Header="File" Binding="{Binding FileName, Mode=OneWay}" Width="240" />
+                                    <DataGridTextColumn Header="Params" Binding="{Binding Parameters, Mode=OneWay}" Width="180" />
+                                </DataGrid.Columns>
+                            </DataGrid>
+                            <Button Name="MiniAddSpectraButton" Grid.Row="1" Width="20" Height="20" HorizontalAlignment="Right" VerticalAlignment="Bottom" Margin="0,0,6,11" Content="+" 
                                 VerticalContentAlignment="Top" Style="{StaticResource ImportantButtonStyle}" Click="AddSpectraFile_Click"/>
+                        </Grid>
 
                         <!--Task Summary-->
-                        <TreeView Name="taskSummary" ItemsSource="{Binding}" Grid.Column="2" Margin="2,10,5,10">
+                        <TreeView Name="taskSummary" ItemsSource="{Binding}" Grid.Column="2" Margin="2,10,20,10">
                             <TreeView.ItemContainerStyle>
                                 <Style TargetType="{x:Type TreeViewItem}">
                                     <Setter Property="FontSize" Value="11" />
@@ -452,12 +459,12 @@
                                 </Style>
                             </TreeView.ItemContainerStyle>
                         </TreeView>
-                        <Button Name="MiniAddTaskButton" Grid.Column="2" Width="20" Height="20" HorizontalAlignment="Right" VerticalAlignment="Bottom" Margin="11,11,6,11" Content="+" 
+                        <Button Name="MiniAddTaskButton" Grid.Column="1" Width="20" Height="20" HorizontalAlignment="Right" VerticalAlignment="Bottom" Margin="0,0,21,11" Content="+" 
                                 VerticalContentAlignment="Top" Style="{StaticResource ImportantButtonStyle}" Click="AddTask_Click"/>
                     </Grid>
 
                     <!--Define/open output folder-->
-                    <DockPanel Margin="5,0,10,0" Grid.Row="1" LastChildFill="True">
+                    <DockPanel Margin="5,0,10,0" Grid.Row="2" LastChildFill="True">
                         <Button x:Name="OpenOutputFolderButton" Content="OPEN" Width="60" DockPanel.Dock="Right" 
                                     Click="OpenOutputFolder_Click" Background="{StaticResource SecondaryButtonColor}" Foreground="White" FontSize="12" 
                                 BorderThickness="0" />
@@ -469,7 +476,7 @@
                                  FontSize="13"/>
                     </DockPanel>
 
-                    <Grid Grid.Row="2" Background="{StaticResource BackgroundColor}">
+                    <Grid Grid.Row="3" Background="{StaticResource BackgroundColor}">
                         <!--Run button-->
                         <Button x:Name="RunTasksButton" Content="RUN METAMORPHEUS" Click="RunAllTasks_Click" FontSize="14" Margin="10" Height="30"
                                 Width="200" Style="{StaticResource ImportantButtonStyle}" />
