@@ -893,7 +893,7 @@ namespace Test
         {
             XLSearchTask xlSearchTask = new XLSearchTask
             {
-                CommonParameters = new CommonParameters()
+                CommonParameters = new CommonParameters(trimMsMsPeaks: false)
             };
             string myFile = Path.Combine(TestContext.CurrentContext.TestDirectory, @"XlTestData\BSA_DSSO_ETchD6010.mgf");
             string myDatabase = Path.Combine(TestContext.CurrentContext.TestDirectory, @"XlTestData\BSA.fasta");
@@ -1168,7 +1168,8 @@ namespace Test
                 XlSearchParameters = new XlSearchParameters
                 {
                     WriteOutputForPercolator = true
-                }
+                },
+                CommonParameters = new CommonParameters(trimMsMsPeaks: false)
             };
 
             string myFileXl = Path.Combine(TestContext.CurrentContext.TestDirectory, @"XlTestData\BSA_DSSO_ETchD6010.mgf");
