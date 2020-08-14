@@ -97,6 +97,8 @@ namespace EngineLayer
             parsedHeader.Add(PsmTsvHeader.MatchedIonMzRatios, Array.IndexOf(spl, PsmTsvHeader.MatchedIonMzRatios));
             parsedHeader.Add(PsmTsvHeader.QValue, Array.IndexOf(spl, PsmTsvHeader.QValue));
             parsedHeader.Add(PsmTsvHeader.QValueNotch, Array.IndexOf(spl, PsmTsvHeader.QValueNotch));
+            parsedHeader.Add(PsmTsvHeader.PEP, Array.IndexOf(spl, PsmTsvHeader.PEP));
+            parsedHeader.Add(PsmTsvHeader.PEP_QValue, Array.IndexOf(spl, PsmTsvHeader.PEP_QValue));
 
             parsedHeader.Add(PsmTsvHeader.CrossTypeLabel, Array.IndexOf(spl, PsmTsvHeader.CrossTypeLabel));
             parsedHeader.Add(PsmTsvHeader.LinkResiduesLabel, Array.IndexOf(spl, PsmTsvHeader.LinkResiduesLabel));
@@ -114,6 +116,12 @@ namespace EngineLayer
             parsedHeader.Add(PsmTsvHeader.ParentIonsLabel, Array.IndexOf(spl, PsmTsvHeader.ParentIonsLabel));
             parsedHeader.Add(PsmTsvHeader.Ms2ScanRetentionTime, Array.IndexOf(spl, PsmTsvHeader.Ms2ScanRetentionTime));
 
+
+            parsedHeader.Add(PsmTsvHeader_Glyco.GlycanMass, Array.IndexOf(spl, PsmTsvHeader_Glyco.GlycanMass));
+            parsedHeader.Add(PsmTsvHeader_Glyco.GlycanStructure, Array.IndexOf(spl, PsmTsvHeader_Glyco.GlycanStructure));
+            parsedHeader.Add(PsmTsvHeader_Glyco.GlycanComposition, Array.IndexOf(spl, PsmTsvHeader_Glyco.GlycanComposition));
+            parsedHeader.Add(PsmTsvHeader_Glyco.GlycanLocalizationLevel, Array.IndexOf(spl, PsmTsvHeader_Glyco.GlycanLocalizationLevel));
+            parsedHeader.Add(PsmTsvHeader_Glyco.LocalizedGlycan, Array.IndexOf(spl, PsmTsvHeader_Glyco.LocalizedGlycan));
             return parsedHeader;
         }
     }

@@ -1,4 +1,4 @@
-﻿namespace EngineLayer.CrosslinkSearch
+﻿namespace EngineLayer
 {
     public enum PsmCrossType
     {

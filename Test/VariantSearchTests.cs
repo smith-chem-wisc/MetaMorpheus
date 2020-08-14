@@ -93,7 +93,7 @@ namespace Test
 
             st.RunTask(outputFolder, new List<DbForTask> { new DbForTask(xmlName, false) }, new List<string> { mzmlName }, "");
             var psms = File.ReadAllLines(Path.Combine(outputFolder, "AllPSMs.psmtsv"));
-            
+
             Assert.IsTrue(psms.Any(line => line.Contains(containsVariant ? variantPsmShort : "\t")));
 
             Directory.Delete(outputFolder, true);
@@ -160,10 +160,10 @@ namespace Test
             DbForTask disruptiveInsertionVariantDb = new DbForTask(Path.Combine(TestContext.CurrentContext.TestDirectory, @"TestVariantDB_disruptiveInsertion.xml"), false);
             DbForTask conservativeDeletionVariantDb = new DbForTask(Path.Combine(TestContext.CurrentContext.TestDirectory, @"TestVariantDB_conservativeDeletion.xml"), false);
             DbForTask disruptiveDeletionVariantDb = new DbForTask(Path.Combine(TestContext.CurrentContext.TestDirectory, @"TestVariantDB_disruptiveDeletion.xml"), false);
-            DbForTask stopLossVariantDb = new DbForTask(Path.Combine(TestContext.CurrentContext.TestDirectory, @"TestVariantDB_stopLoss.xml"), false);           
+            DbForTask stopLossVariantDb = new DbForTask(Path.Combine(TestContext.CurrentContext.TestDirectory, @"TestVariantDB_stopLoss.xml"), false);
 
-            string raw = Path.Combine(TestContext.CurrentContext.TestDirectory, @"TestVariantPep.mzML"); 
-            
+            string raw = Path.Combine(TestContext.CurrentContext.TestDirectory, @"TestVariantPep.mzML");
+
             EverythingRunnerEngine noVariants = new EverythingRunnerEngine(new List<(string, MetaMorpheusTask)> { ("NoVariantOutput", task) }, new List<string> { raw }, new List<DbForTask> { noVariantDb }, thisTaskOutputFolder);
             EverythingRunnerEngine ambigVariant = new EverythingRunnerEngine(new List<(string, MetaMorpheusTask)> { ("VariantOutput_ambig", task) }, new List<string> { raw }, new List<DbForTask> { ambigVariantDb }, thisTaskOutputFolder);
             EverythingRunnerEngine frameshifVariants = new EverythingRunnerEngine(new List<(string, MetaMorpheusTask)> { ("VariantOutput_frameshift", task) }, new List<string> { raw }, new List<DbForTask> { frameshiftVariantDb }, thisTaskOutputFolder);
@@ -175,7 +175,7 @@ namespace Test
             EverythingRunnerEngine conservativeDeletionVariants = new EverythingRunnerEngine(new List<(string, MetaMorpheusTask)> { ("VariantOutput_conservativeDeletion", task) }, new List<string> { raw }, new List<DbForTask> { conservativeDeletionVariantDb }, thisTaskOutputFolder);
             EverythingRunnerEngine disruptiveDeletionVariants = new EverythingRunnerEngine(new List<(string, MetaMorpheusTask)> { ("VariantOutput_disruptiveDeletion", task) }, new List<string> { raw }, new List<DbForTask> { disruptiveDeletionVariantDb }, thisTaskOutputFolder);
             EverythingRunnerEngine stopLossVariants = new EverythingRunnerEngine(new List<(string, MetaMorpheusTask)> { ("VariantOutput_stopLoss", task) }, new List<string> { raw }, new List<DbForTask> { stopLossVariantDb }, thisTaskOutputFolder);
-            
+
 
             noVariants.Run();
             ambigVariant.Run();
@@ -188,11 +188,11 @@ namespace Test
             conservativeDeletionVariants.Run();
             disruptiveDeletionVariants.Run();
             stopLossVariants.Run();
-            
+
 
             // no variant results files should be generated
             HashSet<string> expectedFiles = new HashSet<string> {
-                "AllPeptides.psmtsv", "AllPSMs.psmtsv", "AllPSMs_FormattedForPercolator.tsv", "prose.txt", "results.txt" };
+                "AllPeptides.psmtsv", "AllPSMs.psmtsv", "AllPSMs_FormattedForPercolator.tab", "prose.txt", "results.txt" };
 
             HashSet<string> files1 = new HashSet<string>(Directory.GetFiles(Path.Combine(thisTaskOutputFolder, "NoVariantOutput")).Select(v => Path.GetFileName(v)));
 
@@ -201,12 +201,12 @@ namespace Test
             var extraFiles = files1.Except(expectedFiles).ToList();
 
             // test that output is what's expected
-            //Assert.That(missingFiles.Count() == 0 && extraFiles.Count() ==0);
+            Assert.That(missingFiles.Count() == 0 && extraFiles.Count() == 0);
 
             HashSet<string> files2 = new HashSet<string>(Directory.GetFiles(Path.Combine(thisTaskOutputFolder, "VariantOutput_frameshift")).Select(v => Path.GetFileName(v)));
             // variant files should be generates
             expectedFiles = new HashSet<string> {
-                "AllPeptides.psmtsv", "AllPSMs.psmtsv", "AllPSMs_FormattedForPercolator.tab", "AllProteinGroups.tsv", "AllQuantifiedPeaks.tsv", "AllQuantifiedPeptides.tsv", "prose.txt", "results.txt", "VariantPeptides.psmtsv", "VariantAnalysisResultSummary.txt", "VariantPSMs.psmtsv" };
+                "AllPeptides.psmtsv", "AllPSMs.psmtsv", "AllPSMs_FormattedForPercolator.tab", "AllProteinGroups.tsv", "AllQuantifiedPeaks.tsv", "AllQuantifiedPeptides.tsv", "prose.txt", "results.txt", "TestVariantPep.mzID", "VariantPeptides.psmtsv", "VariantAnalysisResultSummary.txt", "VariantPSMs.psmtsv" };
 
             // these 2 lines are for debug purposes, so you can see which files you're missing (if any)
             missingFiles = expectedFiles.Except(files2).ToList();
@@ -233,7 +233,7 @@ namespace Test
             Assert.AreEqual("Number of stop gain variant containing peptides at 1% group FDR: 0", checkResults[17]);
             Assert.AreEqual("Number of unique stop gain variants: 0", checkResults[18]);
             Assert.AreEqual("Number of stop loss variant containing peptides at 1% group FDR: 0", checkResults[19]);
-            Assert.AreEqual("Number of unique stop loss variants: 0", checkResults[20]);            
+            Assert.AreEqual("Number of unique stop loss variants: 0", checkResults[20]);
             Assert.AreEqual("Number of variant peptides at 1% group FDR with unambiguous localized modifications: 1", checkResults[21]);
             Assert.AreEqual("Number of variant peptides at 1% group FDR with unambiguous localized modifications at the variant sites : 0", checkResults[22]);
 
@@ -435,10 +435,7 @@ namespace Test
             Assert.AreEqual("Number of variant peptides at 1% group FDR with unambiguous localized modifications: 1", checkResults[21]);
             Assert.AreEqual("Number of variant peptides at 1% group FDR with unambiguous localized modifications at the variant sites : 0", checkResults[22]);
 
-           
-
             Directory.Delete(thisTaskOutputFolder, true);
-
         }
     }
 }

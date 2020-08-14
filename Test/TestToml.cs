@@ -1,7 +1,9 @@
 ﻿using EngineLayer;
+using MassSpectrometry;
 using MzLibUtil;
 using Nett;
 using NUnit.Framework;
+using Proteomics.ProteolyticDigestion;
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
@@ -113,44 +115,58 @@ namespace Test
         }
 
         [Test]
+        public static void TestBadFileSpecificProtease()
+        {
+            //this test checks for a catch statement (or some other handling) for file-specific toml loading
+            //create a toml with a protease that doesn't exist in the protease.tsv dictionary
+            string proteaseNotInDictionary = "aaa"; //arbitrary. If somebody adds a protease with this name, use a different name
+            string proteaseInDictionary = "trypsin"; //just make sure we are doing this right
+            Assert.IsFalse(ProteaseDictionary.Dictionary.Keys.Contains(proteaseNotInDictionary));
+            Assert.IsTrue(ProteaseDictionary.Dictionary.Keys.Contains(proteaseInDictionary));
+
+            //write the toml
+            //let's use the datafile ok.mgf (arbitrary)
+            File.WriteAllLines(Path.Combine(TestContext.CurrentContext.TestDirectory, @"TestData\ok.toml"), new string[] { "Protease = " + '"' + proteaseNotInDictionary + '"' });
+
+            //create a task with this, we want the run to work and just ignore the bad toml
+            SearchTask task = new SearchTask();
+            //just test it doesn't crash (i.e. the crash is handled)
+            string outputFolder = Path.Combine(TestContext.CurrentContext.TestDirectory, @"BadProteaseTest");
+            Directory.CreateDirectory(outputFolder);
+            task.RunTask(outputFolder, 
+                new List<DbForTask> { new DbForTask(Path.Combine(TestContext.CurrentContext.TestDirectory, @"TestData\okk.xml"), false) },
+                new List<string>{Path.Combine(TestContext.CurrentContext.TestDirectory, @"TestData\ok.mgf") },
+                outputFolder);
+
+            //Clear result files
+            Directory.Delete(outputFolder, true);
+        }
+
+        [Test]
         public static void FileSpecificParametersTest()
         {
-            string[] par = { "PrecursorMassTolerance = \"±5.0000 PPM\"", "ProductMassTolerance = \"±5.0000 PPM\"", "Protease = \"Asp-N\"", "MinPeptideLength = 0", "MaxPeptideLength = 0", "MaxMissedCleavages = 0", "MaxModsForPeptide = 0", "DissociationType = \"CID\""/*, "Unrecognized = 0"*/};
-
             var filePath = Path.Combine(TestContext.CurrentContext.TestDirectory, "testFileParams.toml");
 
-            File.WriteAllLines(filePath, par);
-
-            var fileSpecificToml = Toml.ReadFile(Path.Combine(TestContext.CurrentContext.TestDirectory, "testFileParams.toml"), MetaMorpheusTask.tomlConfig);
+            var fileSpecificToml = Toml.ReadFile(filePath, MetaMorpheusTask.tomlConfig);
 
             FileSpecificParameters fsp = new FileSpecificParameters(fileSpecificToml);
-
-            var fff = fsp.Clone();
-            Assert.That(fff.MaxMissedCleavages.Equals(fsp.MaxMissedCleavages));
-            Assert.That(fff.MaxModsForPeptide.Equals(fsp.MaxModsForPeptide));
-            Assert.That(fff.MaxPeptideLength.Equals(fsp.MaxPeptideLength));
-            Assert.That(fff.MinPeptideLength.Equals(fsp.MinPeptideLength));
-            Assert.That(fff.PrecursorMassTolerance.Equals(fsp.PrecursorMassTolerance));
-            Assert.That(fff.ProductMassTolerance.Equals(fsp.ProductMassTolerance));
-            Assert.That(fff.Protease.Equals(fsp.Protease));
-            Assert.That(fff.DissociationType.Equals(fsp.DissociationType));
-            Assert.That(!fff.Equals(fsp));
+            Assert.AreEqual(DissociationType.CID, fsp.DissociationType);
+            Assert.AreEqual(0, fsp.MaxMissedCleavages);
+            Assert.AreEqual(0, fsp.MaxModsForPeptide);
+            Assert.AreEqual(0, fsp.MaxPeptideLength);
+            Assert.AreEqual(0, fsp.MinPeptideLength);
+            Assert.AreEqual(5.0d, fsp.PrecursorMassTolerance.Value);
+            Assert.AreEqual(5.0d, fsp.ProductMassTolerance.Value);
+            Assert.AreEqual("Asp-N", fsp.Protease.Name);
+            Assert.AreEqual("HPLC", fsp.SeparationType.ToString());
 
             FileSpecificParameters.ValidateFileSpecificVariableNames();
 
-            string[] newPar = { "Unrecognized = 0" };
+            filePath = Path.Combine(TestContext.CurrentContext.TestDirectory, "testFileParams_bad.toml");
 
-            File.WriteAllLines(filePath, par);
+            var fileSpecificTomlBad = Toml.ReadFile(filePath, MetaMorpheusTask.tomlConfig);
 
-            var fileSpecificTomlFail = Toml.ReadFile(Path.Combine(TestContext.CurrentContext.TestDirectory, "testFileParams.toml"), MetaMorpheusTask.tomlConfig);
-            try
-            {
-                FileSpecificParameters fspFail = new FileSpecificParameters(fileSpecificTomlFail);
-            } catch(MetaMorpheusException)
-            {
-                
-            }
-
+            Assert.Throws<MetaMorpheusException>(() => new FileSpecificParameters(fileSpecificTomlBad));
         }
     }
 }

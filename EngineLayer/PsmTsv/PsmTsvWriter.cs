@@ -231,7 +231,7 @@ namespace EngineLayer
 
             string theoreticalsSearched = " ";
             s[PsmTsvHeader.TheoreticalsSearched] = theoreticalsSearched;
-            s[PsmTsvHeader.DecoyContaminantTarget] = pepWithModsIsNull ? " " : psm.IsDecoy ? "D" : psm.IsContaminant ? "C" : "T";
+            s[PsmTsvHeader.DecoyContaminantTarget] = pepWithModsIsNull ? " " : Resolve(pepsWithMods.Select(b => b.Protein.IsDecoy ? "D" : b.Protein.IsContaminant ? "C" : "T")).ResolvedString;
         }
 
         /// <summary>
@@ -265,7 +265,7 @@ namespace EngineLayer
 
                 foreach (var productType in matchedIonsGroupedByProductType)
                 {
-                    var products = productType.OrderBy(p => p.NeutralTheoreticalProduct.TerminusFragment.FragmentNumber)
+                    var products = productType.OrderBy(p => p.NeutralTheoreticalProduct.FragmentNumber)
                         .ToList();
 
                     stringBuilders.ForEach(p => p.Append("["));
@@ -281,12 +281,12 @@ namespace EngineLayer
                         if (ion.NeutralTheoreticalProduct.NeutralLoss == 0)
                         {
                             // no neutral loss
-                            ionLabel = ion.NeutralTheoreticalProduct.ProductType + "" + ion.NeutralTheoreticalProduct.TerminusFragment.FragmentNumber + "+" + ion.Charge;
+                            ionLabel = ion.NeutralTheoreticalProduct.ProductType + "" + ion.NeutralTheoreticalProduct.FragmentNumber + "+" + ion.Charge;
                         }
                         else
                         {
                             // ion label with neutral loss
-                            ionLabel = "(" + ion.NeutralTheoreticalProduct.ProductType + "" + ion.NeutralTheoreticalProduct.TerminusFragment.FragmentNumber
+                            ionLabel = "(" + ion.NeutralTheoreticalProduct.ProductType + "" + ion.NeutralTheoreticalProduct.FragmentNumber
                                 + "-" + ion.NeutralTheoreticalProduct.NeutralLoss.ToString("F2") + ")" + "+" + ion.Charge;
                         }
 

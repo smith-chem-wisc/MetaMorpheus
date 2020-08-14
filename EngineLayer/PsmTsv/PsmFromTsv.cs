@@ -5,6 +5,7 @@ using System.Collections.Generic;
 using System.Globalization;
 using System.Linq;
 using System.Text.RegularExpressions;
+using EngineLayer.GlycoSearch;
 
 namespace EngineLayer
 {
@@ -27,6 +28,10 @@ namespace EngineLayer
         public List<MatchedFragmentIon> MatchedIons { get; }
         public Dictionary<int, List<MatchedFragmentIon>> ChildScanMatchedIons { get; } // this is only used in crosslink for now, but in the future will be used for other experiment types
         public double QValue { get; }
+
+        public double PEP { get; }
+
+        public double PEP_QValue { get; }
 
         public double? TotalIonCurrent { get; }
         public double? DeltaScore { get; }
@@ -53,7 +58,6 @@ namespace EngineLayer
         public List<MatchedFragmentIon> VariantCrossingIons { get; }
 
         //For crosslink
-
         public string CrossType { get; }
         public string LinkResidues { get; }
         public int? ProteinLinkSite { get; }
@@ -70,6 +74,13 @@ namespace EngineLayer
         public double? XLTotalScore { get; }
         public string ParentIons { get; }
         public double? RetentionTime { get; }
+
+        //For Glyco
+        public string GlycanStructure { get; set; }
+        public double? GlycanMass { get; set; }
+        public string GlycanComposition { get; set; }
+        public LocalizationLevel? GlycanLocalizationLevel { get; set; }
+        public string LocalizedGlycan { get; set; }
 
         public PsmFromTsv(string line, char[] split, Dictionary<string, int> parsedHeader)
         {
@@ -111,6 +122,8 @@ namespace EngineLayer
             NextAminoAcid = (parsedHeader[PsmTsvHeader.NextAminoAcid] < 0) ? null : spl[parsedHeader[PsmTsvHeader.NextAminoAcid]].Trim();
             QValueNotch = (parsedHeader[PsmTsvHeader.QValueNotch] < 0) ? null : (double?)double.Parse(spl[parsedHeader[PsmTsvHeader.QValueNotch]].Trim(), CultureInfo.InvariantCulture);
             RetentionTime = (parsedHeader[PsmTsvHeader.Ms2ScanRetentionTime] < 0) ? null : (double?)double.Parse(spl[parsedHeader[PsmTsvHeader.Ms2ScanRetentionTime]].Trim(), CultureInfo.InvariantCulture);
+            PEP = double.Parse(spl[parsedHeader[PsmTsvHeader.PEP]].Trim(), CultureInfo.InvariantCulture);
+            PEP_QValue = double.Parse(spl[parsedHeader[PsmTsvHeader.PEP_QValue]].Trim(), CultureInfo.InvariantCulture);
 
             VariantCrossingIons = findVariantCrossingIons();
 
@@ -145,6 +158,17 @@ namespace EngineLayer
             {
                 BetaPeptideChildScanMatchedIons.Remove(Ms2ScanNumber);
             }
+
+            //For Glyco            
+            GlycanMass = (parsedHeader[PsmTsvHeader_Glyco.GlycanMass] < 0) ? null : (double?)double.Parse(spl[parsedHeader[PsmTsvHeader_Glyco.GlycanMass]]);
+            GlycanComposition = (parsedHeader[PsmTsvHeader_Glyco.GlycanComposition] < 0) ? null : spl[parsedHeader[PsmTsvHeader_Glyco.GlycanComposition]];
+            GlycanStructure = (parsedHeader[PsmTsvHeader_Glyco.GlycanStructure] < 0) ? null : spl[parsedHeader[PsmTsvHeader_Glyco.GlycanStructure]];
+            var localizationLevel = (parsedHeader[PsmTsvHeader_Glyco.GlycanLocalizationLevel] < 0) ? null : spl[parsedHeader[PsmTsvHeader_Glyco.GlycanLocalizationLevel]];
+            if (localizationLevel!=null)
+            {
+                GlycanLocalizationLevel = (LocalizationLevel)Enum.Parse(typeof(LocalizationLevel), localizationLevel);
+            }
+            LocalizedGlycan = (parsedHeader[PsmTsvHeader_Glyco.LocalizedGlycan] < 0) ? null : spl[parsedHeader[PsmTsvHeader_Glyco.LocalizedGlycan]];
         }
 
         //Used to remove Silac labels for proper annotation
@@ -219,10 +243,15 @@ namespace EngineLayer
                 {
                     aminoAcidPosition = peptideBaseSequence.Length - fragmentNumber + 1;
                 }
+                
+                Product p = new Product(productType, 
+                    terminus, 
+                    mz.ToMass(z) - DissociationTypeCollection.GetMassShiftFromProductType(productType), 
+                    fragmentNumber, 
+                    aminoAcidPosition, 
+                    neutralLoss);
 
-                var t = new NeutralTerminusFragment(terminus, mz.ToMass(z) - DissociationTypeCollection.GetMassShiftFromProductType(productType), fragmentNumber, aminoAcidPosition);
-                Product p = new Product(productType, t, neutralLoss);
-                matchedIons.Add(new MatchedFragmentIon(p, mz, 1.0, z));
+                matchedIons.Add(new MatchedFragmentIon(ref p, mz, 1.0, z));
             }
 
             return matchedIons;
@@ -282,6 +311,25 @@ namespace EngineLayer
                 }
             }
             return variantCrossingIons;
+        }
+
+        public static List<Tuple<int, string, double>> ReadLocalizedGlycan(string localizedGlycan)
+        {
+            List<Tuple<int, string, double>> tuples = new List<Tuple<int, string, double>>();
+            if (localizedGlycan == null)
+            {
+                return tuples;
+            }
+            var lgs = localizedGlycan.Split(new string[] { "[", "]" }, StringSplitOptions.RemoveEmptyEntries);
+            foreach (var lg in lgs)
+            {
+                var g = lg.Split(',', StringSplitOptions.RemoveEmptyEntries);
+
+                Tuple<int, string, double> tuple = new Tuple<int, string, double>(int.Parse(g[0]), g[1], double.Parse(g[2]));
+                tuples.Add(tuple);
+            }
+
+            return tuples;
         }
     }
 }

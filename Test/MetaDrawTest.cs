@@ -27,7 +27,7 @@ namespace Test
 
             List<PsmFromTsv> parsedPsms = PsmTsvReader.ReadTsv(psmFile, out var warnings);
 
-            Assert.AreEqual(11, parsedPsms.Count);
+            Assert.AreEqual(10, parsedPsms.Count);
             Assert.AreEqual(0, warnings.Count);
 
             Directory.Delete(folderPath, true);
@@ -75,9 +75,6 @@ namespace Test
             // check that variant psm properties are being parsed correctly
             Assert.AreEqual("", psms[0].IdentifiedSequenceVariations);
             Assert.AreEqual("A147T", psms[1].IdentifiedSequenceVariations);
-
-            Assert.AreEqual("", psms[0].IntersectingSequenceVariations);
-            Assert.AreEqual("A147T", psms[1].IntersectingSequenceVariations);
 
             Assert.AreEqual("541-541", psms[0].SpliceSites);
             Assert.AreEqual("", psms[1].SpliceSites);

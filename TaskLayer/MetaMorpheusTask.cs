@@ -24,7 +24,8 @@ namespace TaskLayer
         Search,
         Gptmd,
         Calibrate,
-        XLSearch
+        XLSearch,
+        GlycoSearch
     }
 
     public abstract class MetaMorpheusTask
@@ -53,6 +54,8 @@ namespace TaskLayer
                         .FromToml(tmlString => GetModsFromString(tmlString.Value)))));
 
         protected readonly StringBuilder ProseCreatedWhileRunning = new StringBuilder();
+
+        protected string OutputFolder { get; private set; }
 
         protected MyTaskResults MyTaskResults;
 
@@ -84,6 +87,7 @@ namespace TaskLayer
         public MyTask TaskType { get; set; }
 
         public CommonParameters CommonParameters { get; set; }
+        public List<(string FileName, CommonParameters Parameters)> FileSpecificParameters { get; set; }
 
         public const string IndexFolderName = "DatabaseIndex";
         public const string IndexEngineParamsFileName = "indexEngine.params";
@@ -108,16 +112,18 @@ namespace TaskLayer
             Parallel.ForEach(Partitioner.Create(0, ms2Scans.Length), new ParallelOptions { MaxDegreeOfParallelism = commonParameters.MaxThreadsToUsePerFile },
                 (partitionRange, loopState) =>
                 {
+                    List<(double, int)> precursors = new List<(double, int)>();
+
                     for (int i = partitionRange.Item1; i < partitionRange.Item2; i++)
                     {
                         if (GlobalVariables.StopLoops) { break; }
 
+                        precursors.Clear();
                         MsDataScan ms2scan = ms2Scans[i];
 
-                        List<(double, int)> precursors = new List<(double, int)>();
                         if (ms2scan.OneBasedPrecursorScanNumber.HasValue)
                         {
-                            var precursorSpectrum = myMSDataFile.GetOneBasedScan(ms2scan.OneBasedPrecursorScanNumber.Value);
+                            MsDataScan precursorSpectrum = myMSDataFile.GetOneBasedScan(ms2scan.OneBasedPrecursorScanNumber.Value);
 
                             try
                             {
@@ -136,24 +142,26 @@ namespace TaskLayer
 
                             if (commonParameters.DoPrecursorDeconvolution)
                             {
-                                foreach (var envelope in ms2scan.GetIsolatedMassesAndCharges(
+                                foreach (IsotopicEnvelope envelope in ms2scan.GetIsolatedMassesAndCharges(
                                     precursorSpectrum.MassSpectrum, 1,
                                     commonParameters.DeconvolutionMaxAssumedChargeState,
                                     commonParameters.DeconvolutionMassTolerance.Value,
                                     commonParameters.DeconvolutionIntensityRatio))
                                 {
-                                    var monoPeakMz = envelope.monoisotopicMass.ToMz(envelope.charge);
-                                    precursors.Add((monoPeakMz, envelope.charge));
+                                    double monoPeakMz = envelope.MonoisotopicMass.ToMz(envelope.Charge);
+                                    precursors.Add((monoPeakMz, envelope.Charge));
                                 }
                             }
                         }
 
                         if (commonParameters.UseProvidedPrecursorInfo && ms2scan.SelectedIonChargeStateGuess.HasValue)
                         {
-                            var precursorCharge = ms2scan.SelectedIonChargeStateGuess.Value;
+                            int precursorCharge = ms2scan.SelectedIonChargeStateGuess.Value;
+
                             if (ms2scan.SelectedIonMonoisotopicGuessMz.HasValue)
                             {
                                 double precursorMZ = ms2scan.SelectedIonMonoisotopicGuessMz.Value;
+
                                 if (!precursors.Any(b =>
                                     commonParameters.DeconvolutionMassTolerance.Within(
                                         precursorMZ.ToMass(precursorCharge), b.Item1.ToMass(b.Item2))))
@@ -182,74 +190,83 @@ namespace TaskLayer
                         }
 
                         // get child scans
-                        List<MsDataScan> ms2ChildScans = new List<MsDataScan>();
-                        List<MsDataScan> ms3ChildScans = new List<MsDataScan>();
-                        if (commonParameters.ChildScanDissociationType != DissociationType.Unknown)
+                        List<MsDataScan> ms2ChildScans = null;
+                        List<MsDataScan> ms3ChildScans = null;
+                        if (commonParameters.MS2ChildScanDissociationType != DissociationType.Unknown || commonParameters.MS3ChildScanDissociationType != DissociationType.Unknown)
                         {
                             ms3ChildScans = ms3Scans.Where(p => p.OneBasedPrecursorScanNumber == ms2scan.OneBasedScanNumber).ToList();
 
-                            ms2ChildScans = ms2Scans.Where(p => p.OneBasedPrecursorScanNumber == ms2scan.OneBasedPrecursorScanNumber
+                            ms2ChildScans = ms2Scans.Where(p => p.OneBasedPrecursorScanNumber == ms2scan.OneBasedScanNumber ||
+                            (p.OneBasedPrecursorScanNumber == ms2scan.OneBasedPrecursorScanNumber
                                 && p.OneBasedScanNumber > ms2scan.OneBasedScanNumber
-                                && Math.Abs(p.IsolationMz.Value - ms2scan.IsolationMz.Value) < 0.01).ToList();
+                                && Math.Abs(p.IsolationMz.Value - ms2scan.IsolationMz.Value) < 0.01)).ToList();
                         }
 
                         foreach (var precursor in precursors)
                         {
+                            // assign precursor for this MS2 scan
                             var scan = new Ms2ScanWithSpecificMass(ms2scan, precursor.Item1,
                                 precursor.Item2, fullFilePath, commonParameters, neutralExperimentalFragments);
 
-                            foreach (var ms2ChildScan in ms2ChildScans)
+                            // assign precursors for MS2 child scans
+                            if (ms2ChildScans != null)
                             {
-                                IsotopicEnvelope[] childNeutralExperimentalFragments = null;
-
-                                if (commonParameters.ChildScanDissociationType != DissociationType.LowCID)
+                                foreach (var ms2ChildScan in ms2ChildScans)
                                 {
-                                    childNeutralExperimentalFragments = Ms2ScanWithSpecificMass.GetNeutralExperimentalFragments(ms2ChildScan, commonParameters);
-                                }
+                                    IsotopicEnvelope[] childNeutralExperimentalFragments = null;
 
-                                scan.ChildScans.Add(new Ms2ScanWithSpecificMass(ms2ChildScan, precursor.Item1,
-                                    precursor.Item2, fullFilePath, commonParameters, childNeutralExperimentalFragments));
+                                    if (commonParameters.MS2ChildScanDissociationType != DissociationType.LowCID)
+                                    {
+                                        childNeutralExperimentalFragments = Ms2ScanWithSpecificMass.GetNeutralExperimentalFragments(ms2ChildScan, commonParameters);
+                                    }
+                                    var theChildScan = new Ms2ScanWithSpecificMass(ms2ChildScan, precursor.Item1,
+                                        precursor.Item2, fullFilePath, commonParameters, childNeutralExperimentalFragments);
+                                    scan.ChildScans.Add(theChildScan);
+                                }
                             }
 
-                            foreach (var ms3ChildScan in ms3ChildScans)
+                            // assign precursors for MS3 child scans
+                            if (ms3ChildScans != null)
                             {
-                                int precursorCharge = 1;
-                                var precursorSpectrum = ms2scan;
-
-                                try
+                                foreach (var ms3ChildScan in ms3ChildScans)
                                 {
-                                    ms3ChildScan.RefineSelectedMzAndIntensity(precursorSpectrum.MassSpectrum);
-                                }
-                                catch (MzLibException ex)
-                                {
-                                    Warn("Could not get precursor ion for MS3 scan #" + ms3ChildScan.OneBasedScanNumber + "; " + ex.Message);
-                                    continue;
-                                }
+                                    int precursorCharge = 1;
+                                    double precursorMz = 0;
+                                    var precursorSpectrum = ms2scan;
 
-                                if (ms3ChildScan.SelectedIonMonoisotopicGuessMz.HasValue)
-                                {
-                                    ms3ChildScan.ComputeMonoisotopicPeakIntensity(precursorSpectrum.MassSpectrum);
-                                }
+                                    //In current situation, do we need to perform the following function. 
+                                    //In some weird data, the MS3 scan has mis-leading precursor mass. 
+                                    //MS3 scan is low res in most of the situation, and the matched ions are not scored in a good way.
+                                    //{
+                                    //    ms3ChildScan.RefineSelectedMzAndIntensity(precursorSpectrum.MassSpectrum);
+                                    //    ms3ChildScan.ComputeMonoisotopicPeakIntensity(precursorSpectrum.MassSpectrum);
+                                    //}
 
-                                if (ms3ChildScan.SelectedIonChargeStateGuess.HasValue)
-                                {
-                                    precursorCharge = ms3ChildScan.SelectedIonChargeStateGuess.Value;
-                                }
-                                if (!ms3ChildScan.SelectedIonMonoisotopicGuessMz.HasValue)
-                                {
-                                    Warn("Could not get precursor ion m/z for MS3 scan #" + ms3ChildScan.OneBasedScanNumber);
-                                    continue;
-                                }
+                                    if (ms3ChildScan.SelectedIonMonoisotopicGuessMz.HasValue)
+                                    {
+                                        precursorMz = ms3ChildScan.SelectedIonMonoisotopicGuessMz.Value;
+                                    }
+                                    else if (ms3ChildScan.SelectedIonMZ.HasValue)
+                                    {
+                                        precursorMz = ms3ChildScan.SelectedIonMZ.Value;
+                                    }
 
-                                IsotopicEnvelope[] childNeutralExperimentalFragments = null;
+                                    if (ms3ChildScan.SelectedIonChargeStateGuess.HasValue)
+                                    {
+                                        precursorCharge = ms3ChildScan.SelectedIonChargeStateGuess.Value;
+                                    }
 
-                                if (commonParameters.ChildScanDissociationType != DissociationType.LowCID)
-                                {
-                                    childNeutralExperimentalFragments = Ms2ScanWithSpecificMass.GetNeutralExperimentalFragments(ms3ChildScan, commonParameters);
+                                    IsotopicEnvelope[] childNeutralExperimentalFragments = null;
+
+                                    if (commonParameters.MS3ChildScanDissociationType != DissociationType.LowCID)
+                                    {
+                                        childNeutralExperimentalFragments = Ms2ScanWithSpecificMass.GetNeutralExperimentalFragments(ms3ChildScan, commonParameters);
+                                    }
+                                    var theChildScan = new Ms2ScanWithSpecificMass(ms3ChildScan, precursorMz,
+                                        precursorCharge, fullFilePath, commonParameters, childNeutralExperimentalFragments);
+
+                                    scan.ChildScans.Add(theChildScan);
                                 }
-
-                                scan.ChildScans.Add(new Ms2ScanWithSpecificMass(ms3ChildScan, ms3ChildScan.SelectedIonMonoisotopicGuessMz.Value,
-                                    ms3ChildScan.SelectedIonChargeStateGuess.Value, fullFilePath, commonParameters, childNeutralExperimentalFragments));
                             }
 
                             scansWithPrecursors[i].Add(scan);
@@ -258,24 +275,52 @@ namespace TaskLayer
                 });
 
             var childScanNumbers = new HashSet<int>(scansWithPrecursors.SelectMany(p => p.SelectMany(v => v.ChildScans.Select(x => x.OneBasedScanNumber))));
-            var parentScans = scansWithPrecursors.Where(p => p.Any() && !childScanNumbers.Contains(p.First().OneBasedScanNumber)).SelectMany(v => v);
+            var parentScans = scansWithPrecursors.Where(p => p.Any() && !childScanNumbers.Contains(p.First().OneBasedScanNumber))
+                .SelectMany(v => v)
+                .OrderBy(p => p.OneBasedScanNumber)
+                .ToArray();
 
             // XCorr pre-processing for low-res data. this is here because the parent/child scans may have different
             // resolutions, so this pre-processing must take place after the parent/child scans have been determined
-            foreach (var parentScan in parentScans)
+            if (commonParameters.DissociationType == DissociationType.LowCID || commonParameters.MS2ChildScanDissociationType == DissociationType.LowCID || commonParameters.MS3ChildScanDissociationType == DissociationType.LowCID)
             {
-                if (commonParameters.DissociationType == DissociationType.LowCID && !parentScan.TheScan.MassSpectrum.XcorrProcessed)
-                {
-                    parentScan.TheScan.MassSpectrum.XCorrPrePreprocessing(0, 1969, parentScan.TheScan.IsolationMz.Value);
-                }
-
-                foreach (var childScan in parentScan.ChildScans)
-                {
-                    if (commonParameters.ChildScanDissociationType == DissociationType.LowCID && !childScan.TheScan.MassSpectrum.XcorrProcessed)
+                Parallel.ForEach(Partitioner.Create(0, parentScans.Length), new ParallelOptions { MaxDegreeOfParallelism = commonParameters.MaxThreadsToUsePerFile },
+                    (partitionRange, loopState) =>
                     {
-                        childScan.TheScan.MassSpectrum.XCorrPrePreprocessing(0, 1969, childScan.TheScan.IsolationMz.Value);
-                    }
-                }
+                        for (int i = partitionRange.Item1; i < partitionRange.Item2; i++)
+                        {
+                            if (GlobalVariables.StopLoops) { break; }
+
+                            var parentScan = parentScans[i];
+
+                            if (commonParameters.DissociationType == DissociationType.LowCID && !parentScan.TheScan.MassSpectrum.XcorrProcessed)
+                            {
+                                lock (parentScan.TheScan)
+                                {
+                                    if (!parentScan.TheScan.MassSpectrum.XcorrProcessed)
+                                    {
+                                        parentScan.TheScan.MassSpectrum.XCorrPrePreprocessing(0, 1969, parentScan.TheScan.IsolationMz.Value);
+                                    }
+                                }
+                            }
+
+                            foreach (var childScan in parentScan.ChildScans)
+                            {
+                                if (((childScan.TheScan.MsnOrder == 2 && commonParameters.MS2ChildScanDissociationType == DissociationType.LowCID) ||
+                                (childScan.TheScan.MsnOrder == 3 && commonParameters.MS3ChildScanDissociationType == DissociationType.LowCID))
+                                && !childScan.TheScan.MassSpectrum.XcorrProcessed)
+                                {
+                                    lock (childScan.TheScan)
+                                    {
+                                        if (!childScan.TheScan.MassSpectrum.XcorrProcessed)
+                                        {
+                                            childScan.TheScan.MassSpectrum.XCorrPrePreprocessing(0, 1969, childScan.TheScan.IsolationMz.Value);
+                                        }
+                                    }
+                                }
+                            }
+                        }
+                    });
             }
 
             return parentScans;
@@ -312,15 +357,18 @@ namespace TaskLayer
             Tolerance precursorMassTolerance = fileSpecificParams.PrecursorMassTolerance ?? commonParams.PrecursorMassTolerance;
             Tolerance productMassTolerance = fileSpecificParams.ProductMassTolerance ?? commonParams.ProductMassTolerance;
             DissociationType dissociationType = fileSpecificParams.DissociationType ?? commonParams.DissociationType;
+            string separationType = fileSpecificParams.SeparationType ?? commonParams.SeparationType;
 
             CommonParameters returnParams = new CommonParameters(
                 dissociationType: dissociationType,
                 precursorMassTolerance: precursorMassTolerance,
                 productMassTolerance: productMassTolerance,
                 digestionParams: fileSpecificDigestionParams,
+                separationType: separationType,
 
                 //NEED THESE OR THEY'LL BE OVERWRITTEN
-                childScanDissociationType: commonParams.ChildScanDissociationType,
+                ms2childScanDissociationType: commonParams.MS2ChildScanDissociationType,
+                ms3childScanDissociationType: commonParams.MS3ChildScanDissociationType,
                 doPrecursorDeconvolution: commonParams.DoPrecursorDeconvolution,
                 useProvidedPrecursorInfo: commonParams.UseProvidedPrecursorInfo,
                 deconvolutionIntensityRatio: commonParams.DeconvolutionIntensityRatio,
@@ -351,11 +399,15 @@ namespace TaskLayer
 
         public MyTaskResults RunTask(string output_folder, List<DbForTask> currentProteinDbFilenameList, List<string> currentRawDataFilepathList, string displayName)
         {
+            this.OutputFolder = output_folder;
+            DetermineAnalyteType(CommonParameters);
             StartingSingleTask(displayName);
 
             var tomlFileName = Path.Combine(Directory.GetParent(output_folder).ToString(), "Task Settings", displayName + "config.toml");
             Toml.WriteFile(this, tomlFileName, tomlConfig);
             FinishedWritingFile(tomlFileName, new List<string> { displayName });
+
+            FileSpecificParameters = new List<(string FileName, CommonParameters Parameters)>();
 
             MetaMorpheusEngine.FinishedSingleEngineHandler += SingleEngineHandlerInTask;
             try
@@ -372,10 +424,11 @@ namespace TaskLayer
                     string fileSpecificTomlPath = Path.Combine(directory, Path.GetFileNameWithoutExtension(rawFilePath)) + ".toml";
                     if (File.Exists(fileSpecificTomlPath))
                     {
-                        TomlTable fileSpecificSettings = Toml.ReadFile(fileSpecificTomlPath, tomlConfig);
                         try
                         {
+                            TomlTable fileSpecificSettings = Toml.ReadFile(fileSpecificTomlPath, tomlConfig);
                             fileSettingsList[i] = new FileSpecificParameters(fileSpecificSettings);
+                            FileSpecificParameters.Add((currentRawDataFilepathList[i], SetAllFileSpecificCommonParams(CommonParameters, fileSettingsList[i])));
                         }
                         catch (MetaMorpheusException e)
                         {
@@ -383,6 +436,14 @@ namespace TaskLayer
                             // probably the only time you can get here is if the user modifies the file-specific parameter file in the middle of a run...
                             Warn("Problem parsing the file-specific toml " + Path.GetFileName(fileSpecificTomlPath) + "; " + e.Message + "; is the toml from an older version of MetaMorpheus?");
                         }
+                        catch (KeyNotFoundException e)
+                        {
+                            Warn("Problem parsing the file-specific toml " + Path.GetFileName(fileSpecificTomlPath) + "; " + e.Message + "; please update the proteases.tsv file and restart MetaMorpheus to use this file-specific toml.");
+                        }
+                    }
+                    else // just used common parameters for file specific.
+                    {
+                        FileSpecificParameters.Add((currentRawDataFilepathList[i], CommonParameters));
                     }
                 }
 
@@ -421,9 +482,9 @@ namespace TaskLayer
                 var proseFilePath = Path.Combine(output_folder, "prose.txt");
                 using (StreamWriter file = new StreamWriter(proseFilePath))
                 {
-                    file.Write("The data analysis was performed using MetaMorpheus version " + GlobalVariables.MetaMorpheusVersion + ", available at " + "https://github.com/smith-chem-wisc/MetaMorpheus.");
+                    file.WriteLine("The data analysis was performed using MetaMorpheus version " + GlobalVariables.MetaMorpheusVersion + ", available at " + "https://github.com/smith-chem-wisc/MetaMorpheus.");
                     file.Write(ProseCreatedWhileRunning.ToString());
-                    file.Write(SystemInfo.SystemProse().Replace(Environment.NewLine, "") + " ");
+                    file.WriteLine(SystemInfo.SystemProse().Replace(Environment.NewLine, "") + " ");
                     file.WriteLine("The total time to perform the " + TaskType + " task on " + currentRawDataFilepathList.Count + " spectra file(s) was " + String.Format("{0:0.00}", MyTaskResults.Time.TotalMinutes) + " minutes.");
                     file.WriteLine();
                     file.WriteLine("Published works using MetaMorpheus software are encouraged to cite: Solntsev, S. K.; Shortreed, M. R.; Frey, B. L.; Smith, L. M. Enhanced Global Post-translational Modification Discovery with MetaMorpheus. Journal of Proteome Research. 2018, 17 (5), 1844-1851.");
@@ -643,13 +704,23 @@ namespace TaskLayer
                 }
             }
 
+            // get digestion info from file
+            var storedDigestParams = GetDigestionParamsFromFile(Path.Combine(Path.GetDirectoryName(peptideIndexFileName), "DigestionParameters.toml"));
+
             // get non-serialized information for the peptides (proteins, mod info)
             foreach (var peptide in peptideIndex)
             {
-                peptide.SetNonSerializedPeptideInfo(GlobalVariables.AllModsKnownDictionary, proteinDictionary);
+                peptide.SetNonSerializedPeptideInfo(GlobalVariables.AllModsKnownDictionary, proteinDictionary, storedDigestParams);
             }
 
             return peptideIndex;
+        }
+
+        private static DigestionParams GetDigestionParamsFromFile(string path)
+        {
+            var digestionParams = Toml.ReadFile<DigestionParams>(path, MetaMorpheusTask.tomlConfig);
+
+            return digestionParams;
         }
 
         private static void WriteFragmentIndex(List<int>[] fragmentIndex, string fragmentIndexFileName)
@@ -723,6 +794,8 @@ namespace TaskLayer
             {
                 output.Write(indexEngine);
             }
+
+            Toml.WriteFile(indexEngine.CommonParameters.DigestionParams, Path.Combine(Path.GetDirectoryName(fileName), "DigestionParameters.toml"), tomlConfig);
         }
 
         private static string GenerateOutputFolderForIndices(List<DbForTask> dbFilenameList)
@@ -739,8 +812,39 @@ namespace TaskLayer
 
         public void GenerateIndexes(IndexingEngine indexEngine, List<DbForTask> dbFilenameList, ref List<PeptideWithSetModifications> peptideIndex, ref List<int>[] fragmentIndex, ref List<int>[] precursorIndex, List<Protein> allKnownProteins, string taskId)
         {
+            bool successfullyReadIndices = false;
             string pathToFolderWithIndices = GetExistingFolderWithIndices(indexEngine, dbFilenameList);
-            if (pathToFolderWithIndices == null) //if no indexes exist
+
+            if (pathToFolderWithIndices != null) //if indexes exist
+            {
+                try
+                {
+                    Status("Reading peptide index...", new List<string> { taskId });
+                    peptideIndex = ReadPeptideIndex(Path.Combine(pathToFolderWithIndices, PeptideIndexFileName), allKnownProteins);
+
+                    Status("Reading fragment index...", new List<string> { taskId });
+                    fragmentIndex = ReadFragmentIndex(Path.Combine(pathToFolderWithIndices, FragmentIndexFileName));
+
+                    if (indexEngine.GeneratePrecursorIndex)
+                    {
+                        Status("Reading precursor index...", new List<string> { taskId });
+                        precursorIndex = ReadFragmentIndex(Path.Combine(pathToFolderWithIndices, PrecursorIndexFileName));
+                    }
+
+                    successfullyReadIndices = true;
+                }
+                catch
+                {
+                    // could put something here... this basically is just to prevent a crash if the index was unable to be read.
+
+                    // if the old index couldn't be read, a new one will be generated.
+
+                    // an old index may not be able to be read because of information required by new versions of MetaMorpheus
+                    // that wasn't written by old versions.
+                }
+            }
+
+            if (!successfullyReadIndices) //if we didn't find indexes with the same params
             {
                 var output_folderForIndices = GenerateOutputFolderForIndices(dbFilenameList);
                 Status("Writing params...", new List<string> { taskId });
@@ -755,6 +859,7 @@ namespace TaskLayer
                 precursorIndex = indexResults.PrecursorIndex;
 
                 Status("Writing peptide index...", new List<string> { taskId });
+                //ShrinkPeptideIndex(peptideIndex);
                 var peptideIndexFile = Path.Combine(output_folderForIndices, PeptideIndexFileName);
                 WritePeptideIndex(peptideIndex, peptideIndexFile);
                 FinishedWritingFile(peptideIndexFile, new List<string> { taskId });
@@ -770,20 +875,6 @@ namespace TaskLayer
                     var precursorIndexFile = Path.Combine(output_folderForIndices, PrecursorIndexFileName);
                     WriteFragmentIndex(precursorIndex, precursorIndexFile);
                     FinishedWritingFile(precursorIndexFile, new List<string> { taskId });
-                }
-            }
-            else //if we found indexes with the same params
-            {
-                Status("Reading peptide index...", new List<string> { taskId });
-                peptideIndex = ReadPeptideIndex(Path.Combine(pathToFolderWithIndices, PeptideIndexFileName), allKnownProteins);
-
-                Status("Reading fragment index...", new List<string> { taskId });
-                fragmentIndex = ReadFragmentIndex(Path.Combine(pathToFolderWithIndices, FragmentIndexFileName));
-
-                if (indexEngine.GeneratePrecursorIndex)
-                {
-                    Status("Reading precursor index...", new List<string> { taskId });
-                    precursorIndex = ReadFragmentIndex(Path.Combine(pathToFolderWithIndices, PrecursorIndexFileName));
                 }
             }
         }
@@ -811,6 +902,102 @@ namespace TaskLayer
             {
                 Status("Reading fragment index...", new List<string> { taskId });
                 secondFragmentIndex = ReadFragmentIndex(Path.Combine(pathToFolderWithIndices, SecondFragmentIndexFileName));
+            }
+        }
+
+        public static void DetermineAnalyteType(CommonParameters commonParameters)
+        {
+            // changes the name of the analytes from "peptide" to "proteoform" if the protease is set to top-down
+
+            // TODO: note that this will not function well if the user is using file-specific settings, but it's assumed
+            // that bottom-up and top-down data is not being searched in the same task
+
+            if (commonParameters != null
+                && commonParameters.DigestionParams != null
+                && commonParameters.DigestionParams.Protease != null
+                && commonParameters.DigestionParams.Protease.Name == "top-down")
+            {
+                GlobalVariables.AnalyteType = "Proteoform";
+            }
+            else
+            {
+                GlobalVariables.AnalyteType = "Peptide";
+            }
+        }
+
+        /// <summary>
+        /// Handle ambiguity when two theoretical proteins in the 
+        /// search space have the same accession number.
+        /// The accession must be unique for indexed searches
+        /// 
+        /// RemoveAll is important because it references the location in memory, not the Equals
+        /// </summary>
+        /// <param name="proteins"></param>
+        /// <param name="tcAmbiguity"></param>
+        protected static void SanitizeProteinDatabase(List<Protein> proteins, TargetContaminantAmbiguity tcAmbiguity)
+        {
+            foreach (var accessionGroup in proteins.GroupBy(p => p.Accession))
+            {
+                if (accessionGroup.Count() != 1) //if multiple proteins with the same accession
+                {
+                    List<Protein> proteinsWithThisAccession = accessionGroup.OrderBy(p => p.OneBasedPossibleLocalizedModifications.Count).ThenBy(p => p.ProteolysisProducts.Count()).ToList();
+                    List<Protein> proteinsToRemove = new List<Protein>();
+                    if (tcAmbiguity == TargetContaminantAmbiguity.RenameProtein)
+                    {
+                        int proteinNumber = 1;
+                        Warn("The protein '" + accessionGroup.Key + "' has multiple entries. Protein accessions must be unique. Protein " + accessionGroup.Key + " was renamed.");
+                        foreach (var originalProtein in proteinsWithThisAccession)
+                        {
+                            //accession is private and there's no clone method, so we need to make a whole new protein... TODO: put this in mzlib
+                            //use PROTEIN_D1 instead of PROTEIN_1 so it doesn't look like an isoform (D for Duplicate)
+                            var renamedProtein = new Protein(originalProtein.BaseSequence, originalProtein + "_D" + proteinNumber.ToString(), originalProtein.Organism,
+                                originalProtein.GeneNames.ToList(), originalProtein.OneBasedPossibleLocalizedModifications, originalProtein.ProteolysisProducts.ToList(), originalProtein.Name, originalProtein.FullName,
+                                originalProtein.IsDecoy, originalProtein.IsContaminant, originalProtein.DatabaseReferences.ToList(), originalProtein.SequenceVariations.ToList(), originalProtein.AppliedSequenceVariations,
+                                originalProtein.SampleNameForVariants, originalProtein.DisulfideBonds.ToList(), originalProtein.SpliceSites.ToList(), originalProtein.DatabaseFilePath);
+                            proteins.Add(renamedProtein);
+                            proteins.RemoveAll(p => p == originalProtein);
+                            proteinNumber++;
+                        }
+                    }
+                    else //if (tcAmbiguity == TargetContaminantAmbiguity.RemoveContaminant || tcAmbiguity == TargetContaminantAmbiguity.RemoveTarget)
+                    {
+                        if (tcAmbiguity == TargetContaminantAmbiguity.RemoveContaminant)
+                        {
+                            // remove contaminants
+                            proteinsToRemove = proteinsWithThisAccession.Where(p => p.IsContaminant).ToList();
+                            if (proteinsToRemove.Any())
+                            {
+                                Warn("The protein '" + accessionGroup.Key + "' has multiple entries. Protein accessions must be unique. Contaminant protein " + accessionGroup.Key + " was ignored.");
+                            }
+                        }
+                        else //if (tcAmbiguity == TargetContaminantAmbiguity.RemoveTarget)
+                        {
+                            // remove targets
+                            proteinsToRemove = proteinsWithThisAccession.Where(p => !p.IsDecoy && !p.IsContaminant).ToList();
+                            if (proteinsToRemove.Any())
+                            {
+                                Warn("The protein '" + accessionGroup.Key + "' has multiple entries. Protein accessions must be unique. Target protein " + accessionGroup.Key + " was ignored.");
+                            }
+                        }
+
+                        //remove the proteins specified above
+                        foreach (var protein in proteinsToRemove)
+                        {
+                            if (proteinsWithThisAccession.Count > 1)
+                            {
+                                proteins.RemoveAll(p => p == protein);
+                                proteinsWithThisAccession.RemoveAll(p => p == protein);
+                            }
+                        }
+
+                        // most ambiguity should be handled by now, but for edge cases and decoys:
+                        // remove proteins so that only 1 protein with this accession remains
+                        for (int i = 0; i < proteinsWithThisAccession.Count - 1; i++) //-1 to keep the last one (most mods)
+                        {
+                            proteins.RemoveAll(p => p == proteinsWithThisAccession[i]);
+                        }
+                    }
+                }
             }
         }
     }
