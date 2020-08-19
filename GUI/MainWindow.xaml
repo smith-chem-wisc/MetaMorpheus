@@ -91,9 +91,9 @@
             <!--Styling for the "main" text in the About + Help pages-->
             <Style x:Key="TextBlockStyle" TargetType="TextBlock">
                 <Setter Property="Foreground" Value="{StaticResource TextColor1}"/>
-                <Setter Property="FontSize" Value="12"/>
+                <Setter Property="FontSize" Value="13"/>
                 <Setter Property="TextWrapping" Value="WrapWithOverflow" />
-                <Setter Property="Margin" Value="15,0,0,0"/>
+                <Setter Property="Margin" Value="15,0,10,0"/>
             </Style>
 
             <!--Styling for the context menu to add tasks-->
@@ -122,8 +122,8 @@
             <!--Defines the context menu when "add task" button is clicked-->
             <ContextMenu x:Key="AddTaskMenu" Style="{StaticResource ContextMenuStyle}">
                 <MenuItem Header="Add new calibration task" Click="AddCalibrateTaskButton_Click" />
-                <MenuItem Header="Add new search task" Click="AddSearchTaskButton_Click" />
                 <MenuItem Header="Add new GPTMD task" Click="AddGPTMDTaskButton_Click" />
+                <MenuItem Header="Add new search task" Click="AddSearchTaskButton_Click" />
                 <MenuItem Header="Add new crosslink task" Click="AddCrosslinkTask_Click" />
                 <MenuItem Header="Add new glycopeptide task" Click="AddGlycoSearchTask_Click" />
                 <Separator/>
@@ -271,18 +271,74 @@
 
                     <!--Text content-->
                     <TextBlock Grid.Row="3" Style="{StaticResource TextBlockStyle}">
-                            MetaMorpheus is a search program for HPLC-MS/MS proteomics data. It takes a protein database (.xml or .fasta)
-                            as input, as well as spectra files in .mzML, .mgf, or Thermo .raw format.
-                            Visit the 
+                        MetaMorpheus is a search program for MS/MS proteomics data. It takes a protein database (.xml or .fasta)
+                        as input, as well as spectra files in .mzML, .mgf, or Thermo .raw format. 
+                        
+                        <LineBreak />
+                        <LineBreak />
+                        
+                        After adding input files, the last step is to define a workflow by adding tasks for MetaMorpheus to perform.
+                        
+                        The 
+                        
+                        <Hyperlink NavigateUri="https://pubs.acs.org/doi/10.1021/acs.jproteome.7b00873" RequestNavigate="Hyperlink_RequestNavigate">
+                            calibration
+                        </Hyperlink> 
+                        
+                        task performs mass calibration; the 
+                        
+                        <Hyperlink NavigateUri="https://pubs.acs.org/doi/10.1021/acs.jproteome.6b00034" RequestNavigate="Hyperlink_RequestNavigate">
+                            GPTMD
+                        </Hyperlink>
+                        
+                        task performs PTM discovery; the search task performs a basic search, with 
+                        
+                        <Hyperlink NavigateUri="https://pubs.acs.org/doi/10.1021/acs.jproteome.7b00608" RequestNavigate="Hyperlink_RequestNavigate">
+                            quantification
+                        </Hyperlink>
+                        ,
+                        <Hyperlink NavigateUri="https://pubs.acs.org/doi/10.1021/acs.jproteome.9b00330" RequestNavigate="Hyperlink_RequestNavigate">
+                            multi-protease
+                        </Hyperlink>                       
+                        , and 
+                        
+                        <Hyperlink NavigateUri="http://dx.doi.org/10.2174/1574893615999200429123334" RequestNavigate="Hyperlink_RequestNavigate">
+                            non-specific search
+                        </Hyperlink>
+                        
+                        options; the 
+                        
+                        <Hyperlink NavigateUri="https://pubs.acs.org/doi/10.1021/acs.jproteome.8b00141" RequestNavigate="Hyperlink_RequestNavigate">
+                            XL search
+                        </Hyperlink>
+                        
+                        performs a search for crosslinked peptides; and the 
+                        
+                        <Hyperlink NavigateUri="https://www.biorxiv.org/content/10.1101/2020.05.18.102327v1.abstract" RequestNavigate="Hyperlink_RequestNavigate">
+                            glycopeptide
+                        </Hyperlink> 
+                        
+                        search detects O-linked glycopeptides.
+                        
+                        <LineBreak />
+                        <LineBreak />
+                        
+                        Visit the 
                         <Hyperlink NavigateUri="https://github.com/smith-chem-wisc/MetaMorpheus/wiki" RequestNavigate="Hyperlink_RequestNavigate">
-                            wiki
+                            MetaMorpheus wiki
                         </Hyperlink> 
                         to learn more.
-                            <LineBreak />
-                            <LineBreak />
-                            <LineBreak />
-                            <LineBreak />
-                            MetaMorpheus uses Thermo's RawFileReader reading tool. Copyright © 2016 by Thermo Fisher Scientific, Inc. All rights reserved.
+                        
+                        <LineBreak />
+                        <LineBreak />
+                        <LineBreak />
+                        <LineBreak />
+                        <LineBreak />
+                        <LineBreak />
+                        <LineBreak />
+                        <LineBreak />
+                        
+                        MetaMorpheus uses Thermo's RawFileReader reading tool. Copyright © 2016 by Thermo Fisher Scientific, Inc. All rights reserved.
                     </TextBlock>
                 </Grid>
             </TabItem>
@@ -292,6 +348,7 @@
                 <Grid Style="{StaticResource PageGridStyle}">
                     <Grid.RowDefinitions>
                         <RowDefinition Height="50"/>
+                        <RowDefinition Height="50"/>
                         <RowDefinition Height="25"/>
                         <RowDefinition Height="1*"/>
                     </Grid.RowDefinitions>
@@ -299,16 +356,28 @@
                     <!--Header label-->
                     <Label Content="Protein Databases" Grid.Row="0" Style="{StaticResource HeaderLabelStyle}" />
 
+                    <!--Detail text-->
+                    <TextBlock Grid.Row="1" Style="{StaticResource TextBlockStyle}">
+                        Add 
+                        
+                        <Hyperlink NavigateUri="https://www.uniprot.org/" RequestNavigate="Hyperlink_RequestNavigate">
+                            protein database(s)
+                        </Hyperlink> 
+                        
+                        in .xml or .fasta format. Databases in .xml format can contain post-translational modification (PTM) locations,
+                        whereas .fasta format only contains amino acid sequences.
+                    </TextBlock>
+                    
                     <!--Button to add databases-->
-                    <Button Name="AddDatabaseButton" Grid.Row="1" Content="+ADD DATABASE" Click="AddProteinDatabase_Click" HorizontalAlignment="Right" 
+                    <Button Name="AddDatabaseButton" Grid.Row="2" Content="+ADD DATABASE" Click="AddProteinDatabase_Click" HorizontalAlignment="Right" 
                             Style="{StaticResource ImportantButtonStyle}" Margin="0,0,10,0"/>
 
-                    <Button Name="AddDefaultContaminantsButton" Grid.Row="1" Content="ADD DEFAULT CONTAMINANTS" 
+                    <Button Name="AddDefaultContaminantsButton" Grid.Row="2" Content="ADD DEFAULT CONTAMINANTS" 
                             Click="AddDefaultContaminantDatabase_Click" HorizontalAlignment="Right" Style="{StaticResource ImportantButtonStyle}"
                         Margin="0,0,211,0"/>
 
                     <!--The list of databases-->
-                    <DataGrid Name="dataGridProteinDatabases" Grid.Row="2" ItemsSource="{Binding}" Style="{StaticResource x:DataGridStyle}"
+                    <DataGrid Name="dataGridProteinDatabases" Grid.Row="3" ItemsSource="{Binding}" Style="{StaticResource x:DataGridStyle}"
                               ColumnHeaderStyle="{StaticResource DataGridColumnHeaderStyle}" >
                         <DataGrid.RowStyle>
                             <Style TargetType="{x:Type DataGridRow}" BasedOn="{StaticResource DatabaseDataGridItemStyle}" />
@@ -329,6 +398,7 @@
                 <Grid Style="{StaticResource PageGridStyle}">
                     <Grid.RowDefinitions>
                         <RowDefinition Height="50"/>
+                        <RowDefinition Height="50"/>
                         <RowDefinition Height="25"/>
                         <RowDefinition Height="1*"/>
                     </Grid.RowDefinitions>
@@ -336,20 +406,25 @@
                     <!--Header label-->
                     <Label Content="Spectra" Grid.Row="0" Style="{StaticResource HeaderLabelStyle}" />
 
+                    <!--Detail text-->
+                    <TextBlock Grid.Row="1" Style="{StaticResource TextBlockStyle}">
+                        Add spectra file(s) in .mzML, .mgf, or Thermo .raw format.
+                    </TextBlock>
+                    
                     <!--Button to add spectra files-->
-                    <Button Name="AddSpectraButton" Grid.Row="1" Content="+ADD SPECTRA" Click="AddSpectraFile_Click" HorizontalAlignment="Right" 
+                    <Button Name="AddSpectraButton" Grid.Row="2" Content="+ADD SPECTRA" Click="AddSpectraFile_Click" HorizontalAlignment="Right" 
                             Style="{StaticResource ImportantButtonStyle}" Margin="0,0,10,0"/>
 
-                    <Button Name="SetFileSpecificSettingsButton" Grid.Row="1" Content="SET FILE-SPECIFIC SETTINGS" Click="SetFileSpecificParameters_Click" 
+                    <Button Name="SetFileSpecificSettingsButton" Grid.Row="2" Content="SET FILE-SPECIFIC SETTINGS" Click="SetFileSpecificParameters_Click" 
                             HorizontalAlignment="Right" Style="{StaticResource ImportantButtonStyle}"
                         Margin="0,0,211,0"/>
 
-                    <Button Name="SetExperimentalDesignButton" Grid.Row="1" Content="SET EXPERIMENTAL DESIGN" Click="SetExperimentalDesign_Click" 
+                    <Button Name="SetExperimentalDesignButton" Grid.Row="2" Content="SET EXPERIMENTAL DESIGN" Click="SetExperimentalDesign_Click" 
                             HorizontalAlignment="Right" Style="{StaticResource ImportantButtonStyle}"
                         Margin="0,0,412,0"/>
 
                     <!--The list of spectra files-->
-                    <DataGrid Name="dataGridSpectraFiles" ItemsSource="{Binding}" Grid.Row="2" Style="{StaticResource x:DataGridStyle}"
+                    <DataGrid Name="dataGridSpectraFiles" ItemsSource="{Binding}" Grid.Row="3" Style="{StaticResource x:DataGridStyle}"
                               ColumnHeaderStyle="{StaticResource DataGridColumnHeaderStyle}">
                         <DataGrid.RowStyle>
                             <Style TargetType="{x:Type DataGridRow}" BasedOn="{StaticResource SpectraFileDataGridItemStyle}" />
@@ -370,6 +445,7 @@
                 <Grid Style="{StaticResource PageGridStyle}">
                     <Grid.RowDefinitions>
                         <RowDefinition Height="50"/>
+                        <RowDefinition Height="50"/>
                         <RowDefinition Height="25"/>
                         <RowDefinition Height="1*"/>
                     </Grid.RowDefinitions>
@@ -377,12 +453,17 @@
                     <!--Header label-->
                     <Label Content="Tasks" Grid.Row="0" Style="{StaticResource HeaderLabelStyle}" />
 
+                    <!--Detail text-->
+                    <TextBlock Grid.Row="1" Style="{StaticResource TextBlockStyle}">
+                        Add MetaMorpheus tasks to construct a workflow. Tasks can be saved/loaded as .toml files for repeat use.
+                    </TextBlock>
+
                     <!--Button to add tasks-->
-                    <Button Name="AddTaskButton" Grid.Row="1" Content="+ADD TASK" HorizontalAlignment="Right" Click="AddTask_Click" 
+                    <Button Name="AddTaskButton" Grid.Row="2" Content="+ADD TASK" HorizontalAlignment="Right" Click="AddTask_Click" 
                             Style="{StaticResource ImportantButtonStyle}" Margin="0,0,10,0"/>
 
                     <!--List of tasks-->
-                    <TreeView x:Name="tasksTreeView" Grid.Row="2" ItemsSource="{Binding}" MouseDoubleClick="TasksTreeView_MouseDoubleClick" 
+                    <TreeView x:Name="tasksTreeView" Grid.Row="3" ItemsSource="{Binding}" MouseDoubleClick="TasksTreeView_MouseDoubleClick" 
                               Margin="10,0,10,10" BorderBrush="{StaticResource BorderColor}">
                     </TreeView>
                 </Grid>
@@ -423,7 +504,7 @@
                                 </DataGrid.RowStyle>
                                 <DataGrid.Columns>
                                     <DataGridTextColumn Header="File" Binding="{Binding FileName, Mode=OneWay}" Width="240" />
-                                    <DataGridTextColumn Header="Contam" Binding="{Binding Contaminant, Mode=OneWay}" Width="180" />
+                                    <DataGridTextColumn Header="Contaminant?" Binding="{Binding Contaminant, Mode=OneWay}" Width="180" />
                                 </DataGrid.Columns>
                             </DataGrid>
                             <Button Name="MiniAddProteinDbButton" Grid.Row="0" Width="20" Height="20" HorizontalAlignment="Right" VerticalAlignment="Bottom" Margin="0,0,6,6" Content="+" 
@@ -443,7 +524,7 @@
                                 </DataGrid.CellStyle>
                                 <DataGrid.Columns>
                                     <DataGridTextColumn Header="File" Binding="{Binding FileName, Mode=OneWay}" Width="240" />
-                                    <DataGridTextColumn Header="Params" Binding="{Binding Parameters, Mode=OneWay}" Width="180" />
+                                    <DataGridTextColumn Header="File-Specific Parameters" Binding="{Binding Parameters, Mode=OneWay}" Width="180" />
                                 </DataGrid.Columns>
                             </DataGrid>
                             <Button Name="MiniAddSpectraButton" Grid.Row="1" Width="20" Height="20" HorizontalAlignment="Right" VerticalAlignment="Bottom" Margin="0,0,6,11" Content="+" 
@@ -595,7 +676,12 @@
                         <Hyperlink NavigateUri="https://github.com/smith-chem-wisc/MetaMorpheus/issues/new" RequestNavigate="Hyperlink_RequestNavigate">
                             our issues page
                         </Hyperlink> 
-                        on GitHub and submit a new issue. If you would prefer to keep your correspondence private, you may email us at 
+                        on GitHub and submit a new issue. 
+                        
+                        <LineBreak/>
+                        <LineBreak/>
+                        
+                        If you would prefer to keep your correspondence private, you may email us at 
                         <Hyperlink NavigateUri="null" RequestNavigate="MenuItem_EmailHelp_Click">
                             mm_support@chem.wisc.edu
                         </Hyperlink>.
@@ -610,11 +696,12 @@
                             <RowDefinition Height="22"/>
                             <RowDefinition Height="22"/>
                             <RowDefinition Height="22"/>
+                            <RowDefinition Height="22"/>
                         </Grid.RowDefinitions>
 
                         <Grid.ColumnDefinitions>
                             <ColumnDefinition Width="20"/>
-                            <ColumnDefinition Width="270"/>
+                            <ColumnDefinition Width="330"/>
                         </Grid.ColumnDefinitions>
 
                         <TextBlock Grid.Row="0" Grid.Column="1" Style="{StaticResource TextBlockStyle}" Margin="0">
@@ -624,7 +711,7 @@
                         <Button Grid.Row="1" Grid.Column="1" HorizontalContentAlignment="Left" BorderThickness="0" Click="MenuItem_UpdateMetaMorpheus_Click">
                             <StackPanel Orientation="Horizontal">
                                 <Image Source="Icons/update_20.bmp" Width="20" Height="20" Margin="0,0,5,0"/>
-                                <TextBlock Text="Check for updates" VerticalAlignment="Center" />
+                                <TextBlock Text="Check for MetaMorpheus updates" VerticalAlignment="Center" />
                             </StackPanel>
                         </Button>
 
@@ -656,7 +743,14 @@
                             </StackPanel>
                         </Button>
 
-                        <Button Grid.Row="6" Grid.Column="1" HorizontalContentAlignment="Left" BorderThickness="0" Click="MenuItem_ProteomicsNewsBlog_Click">
+                        <Button Grid.Row="6" Grid.Column="1" HorizontalContentAlignment="Left" BorderThickness="0" Click="MenuItem_Spritz_Click">
+                            <StackPanel Orientation="Horizontal">
+                                <Image Width="20" Height="20" Margin="0,0,5,0"/>
+                                <TextBlock Text="Create sample-specific database with Spritz" VerticalAlignment="Center" />
+                            </StackPanel>
+                        </Button>
+                        
+                        <Button Grid.Row="7" Grid.Column="1" HorizontalContentAlignment="Left" BorderThickness="0" Click="MenuItem_ProteomicsNewsBlog_Click">
                             <StackPanel Orientation="Horizontal">
                                 <Image Source="Icons/Blogger_20.bmp" Width="20" Height="20" Margin="0,0,5,0"/>
                                 <TextBlock Text="Read News in Proteomics Research" VerticalAlignment="Center" />

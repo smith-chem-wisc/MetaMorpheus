@@ -532,6 +532,12 @@ namespace MetaMorpheusGUI
 
         private void SetFileSpecificParameters_Click(object sender, RoutedEventArgs e)
         {
+            if (!SelectedSpectraFiles.Any())
+            {
+                MessageBox.Show("Please select at least one spectra file.");
+                return;
+            }
+
             try
             {
                 var dialog = new FileSpecificParametersWindow(SelectedSpectraFiles);
@@ -865,7 +871,7 @@ namespace MetaMorpheusGUI
                 if (!File.Exists(pathToExperDesign))
                 {
                     MessageBox.Show("Experimental design must be defined for normalization!\n" +
-                        "Click the \"Experimental Design\" button in the bottom left by the spectra files");
+                        "Click the \"Set Experimental Design\" button in the the spectra files tab");
                     return;
                 }
 
@@ -1101,6 +1107,11 @@ namespace MetaMorpheusGUI
         private void MenuItem_Proxl_Click(object sender, RoutedEventArgs e)
         {
             GlobalVariables.StartProcess(@"http://proxl-ms.org/");
+        }
+
+        private void MenuItem_Spritz_Click(object sender, RoutedEventArgs e)
+        {
+            GlobalVariables.StartProcess(@"https://smith-chem-wisc.github.io/Spritz/");
         }
 
         private void MenuItem_OpenDataDir_Click(object sender, RoutedEventArgs e)
