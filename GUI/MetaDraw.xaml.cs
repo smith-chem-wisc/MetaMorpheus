@@ -8,6 +8,7 @@ using System.Collections.Generic;
 using System.Collections.ObjectModel;
 using System.ComponentModel;
 using System.Data;
+using System.Globalization;
 using System.IO;
 using System.Linq;
 using System.Text.RegularExpressions;
@@ -803,7 +804,8 @@ namespace MetaMorpheusGUI
             else
             {
                 int numberOfScansToExport = dataGridScanNums.SelectedItems.Count;
-                string directoryPath = Path.Combine(Path.GetDirectoryName(tsvResultsFilePath), "MetaDrawExport");
+                string directoryPath = Path.Combine(Path.GetDirectoryName(tsvResultsFilePath), "MetaDrawExport", 
+                    DateTime.Now.ToString("yyyy-MM-dd-HH-mm-ss", CultureInfo.InvariantCulture));
 
                 foreach (object selectedItem in dataGridScanNums.SelectedItems)
                 {
@@ -831,6 +833,13 @@ namespace MetaMorpheusGUI
                     if (!Directory.Exists(dir))
                     {
                         Directory.CreateDirectory(dir);
+                    }
+
+                    int i = 2;
+                    while (File.Exists(filePath))
+                    {
+                        filePath = Path.Combine(directoryPath, psm.Ms2ScanNumber + "_" + myString + "_" + i + ".pdf");
+                        i++;
                     }
 
                     DrawPdfAnnotatedBaseSequence(psm, canvas, filePath); // captures the annotation for the pdf
@@ -898,7 +907,7 @@ namespace MetaMorpheusGUI
             PngBitmapEncoder encoder = new PngBitmapEncoder();
             encoder.Frames.Add(BitmapFrame.Create(renderBitmap));
 
-            string tempPath = Path.Combine(Path.GetDirectoryName(tsvResultsFilePath), "MetaDrawExport", "annotation.png");
+            string tempPath = Path.Combine(Path.GetDirectoryName(path), "annotation.png");
 
             using (FileStream file = File.Create(tempPath))
             {
