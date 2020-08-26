@@ -75,7 +75,7 @@ namespace Test
             //    }
             //}
 
-            CommonParameters commonParameters = new CommonParameters(deconvolutionMassTolerance: new PpmTolerance(20));
+            CommonParameters commonParameters = new CommonParameters(deconvolutionMassTolerance: new PpmTolerance(20), trimMsMsPeaks: false);
             string filePath = Path.Combine(TestContext.CurrentContext.TestDirectory, @"GlycoTestData/Glyco_3383.mgf"); //"25170.mgf"
             MyFileManager myFileManager = new MyFileManager(true);
             var msDataFile = myFileManager.LoadFile(filePath, commonParameters);

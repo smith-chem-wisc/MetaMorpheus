@@ -893,7 +893,7 @@ namespace Test
         {
             XLSearchTask xlSearchTask = new XLSearchTask
             {
-                CommonParameters = new CommonParameters()
+                CommonParameters = new CommonParameters(trimMsMsPeaks: false)
             };
             string myFile = Path.Combine(TestContext.CurrentContext.TestDirectory, @"XlTestData\BSA_DSSO_ETchD6010.mgf");
             string myDatabase = Path.Combine(TestContext.CurrentContext.TestDirectory, @"XlTestData\BSA.fasta");
@@ -1168,7 +1168,8 @@ namespace Test
                 XlSearchParameters = new XlSearchParameters
                 {
                     WriteOutputForPercolator = true
-                }
+                },
+                CommonParameters = new CommonParameters(trimMsMsPeaks: false)
             };
 
             string myFileXl = Path.Combine(TestContext.CurrentContext.TestDirectory, @"XlTestData\BSA_DSSO_ETchD6010.mgf");
@@ -1184,7 +1185,7 @@ namespace Test
             var results = Path.Combine(outputFolder, @"TestPercolator\XL_Intralinks_Percolator.txt");
             var lines = File.ReadAllLines(results);
             Assert.That(lines[0].Equals("SpecId\tLabel\tScannr\tScore\tdScore\tCharge\tMass\tPPM\tLenShort\tLenLong\tLenSum\tPeptide\tProtein"));
-            Assert.That(lines[1].Equals("T-1-30.61909926666667\t1\t1\t26.06004534434461\t11.026813997502483\t3\t1994.0520231384269\t0.6649793543976755\t7\t9\t16\t-.EKVLTSSAR2--LSQKFPK4.-\t3336842(211)\t3336842(245)"));
+            Assert.That(lines[1].Equals("T-1-30.61909926666667\t1\t1\t26.06004534434461\t21.06004534434461\t3\t1994.0520231384269\t0.6649793543976755\t7\t9\t16\t-.EKVLTSSAR2--LSQKFPK4.-\t3336842(211)\t3336842(245)"));
 
             Directory.Delete(outputFolder, true);
         }

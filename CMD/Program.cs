@@ -1,6 +1,7 @@
 ﻿using CommandLine;
 using CommandLine.Text;
 using EngineLayer;
+using IO.ThermoRawFileReader;
 using Nett;
 using Proteomics;
 using System;
@@ -141,7 +142,7 @@ namespace MetaMorpheusCommandLine
             if (containsRawFiles && !GlobalVariables.GlobalSettings.UserHasAgreedToThermoRawFileReaderLicence)
             {
                 // write the Thermo RawFileReader licence agreement
-                Console.WriteLine(ThermoRawFileReader.ThermoRawFileReaderLicence.ThermoLicenceText);
+                Console.WriteLine(ThermoRawFileReaderLicence.ThermoLicenceText);
                 Console.WriteLine("\nIn order to search Thermo .raw files, you must agree to the above terms. Do you agree to the above terms? y/n\n");
                 string res = Console.ReadLine().ToLowerInvariant();
                 if (res == "y")
