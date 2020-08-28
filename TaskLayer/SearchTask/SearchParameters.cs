@@ -2,6 +2,7 @@ using System.Collections.Generic;
 using UsefulProteomicsDatabases;
 using EngineLayer;
 using Proteomics;
+using System.Dynamic;
 
 namespace TaskLayer
 {
@@ -27,6 +28,7 @@ namespace TaskLayer
             MaxFragmentSize = 30000.0;
             WriteMzId = true;
             WritePepXml = false;
+            TruncationSearch = false;
 
             ModsToWriteSelection = new Dictionary<string, int>
             {
@@ -80,6 +82,7 @@ namespace TaskLayer
         public double MaximumMassThatFragmentIonScoreIsDoubled { get; set; }
         public bool WriteMzId { get; set; }
         public bool WritePepXml { get; set; }
+        public bool TruncationSearch { get; set; }
         public bool WriteDecoys { get; set; }
         public bool WriteContaminants { get; set; }
         public bool WriteIndividualFiles { get; set; }

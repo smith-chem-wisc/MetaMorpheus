@@ -745,6 +745,14 @@
                                                     </TextBox.ToolTip>
                                                 </TextBox>
                                             </StackPanel>
+
+                                            <CheckBox x:Name="TruncationSearchCheckbox" Content="Search for truncated species" Margin="5 1 1 1" DockPanel.Dock="Top" ToolTipService.ShowDuration="999999" ToolTipService.InitialShowDelay="500">
+                                                <CheckBox.ToolTip>
+                                                    <TextBlock>
+                                                    Searches for truncated proteoforms.
+                                                    </TextBlock>
+                                                </CheckBox.ToolTip>
+                                            </CheckBox>
                                         </StackPanel>
                                     </GroupBox>
                                     <GroupBox Header="Fragment Ion Search Parameters">

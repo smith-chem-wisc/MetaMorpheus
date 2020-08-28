@@ -3,6 +3,7 @@ using EngineLayer.ClassicSearch;
 using EngineLayer.Indexing;
 using EngineLayer.ModernSearch;
 using EngineLayer.NonSpecificEnzymeSearch;
+using EngineLayer.TruncationSearch;
 using FlashLFQ;
 using MassSpectrometry;
 using MzLibUtil;
@@ -163,7 +164,7 @@ namespace TaskLayer
             MyTaskResults = new MyTaskResults(this);
             List<PeptideSpectralMatch> allPsms = new List<PeptideSpectralMatch>();
 
-            //generate an array to store category specific fdr values (for speedy semi/nonspecific searches)
+            //generate an array to store category specific fdr values (for speedy semi/nonspecific searches, and truncation search)
             int numFdrCategories = (int)(Enum.GetValues(typeof(FdrCategory)).Cast<FdrCategory>().Last() + 1); //+1 because it starts at zero
             List<PeptideSpectralMatch>[] allCategorySpecificPsms = new List<PeptideSpectralMatch>[numFdrCategories];
             for (int i = 0; i < numFdrCategories; i++)
@@ -209,6 +210,13 @@ namespace TaskLayer
 
                 PeptideSpectralMatch[] fileSpecificPsms = new PeptideSpectralMatch[arrayOfMs2ScansSortedByMass.Length];
 
+                PeptideSpectralMatch[] possibleTruncationPsms = null;
+
+                if (SearchParameters.TruncationSearch)
+                {
+                    possibleTruncationPsms = new PeptideSpectralMatch[arrayOfMs2ScansSortedByMass.Length];
+                }
+
                 // modern search
                 if (SearchParameters.SearchType == SearchType.Modern)
                 {
@@ -234,6 +242,17 @@ namespace TaskLayer
 
                         new ModernSearchEngine(fileSpecificPsms, arrayOfMs2ScansSortedByMass, peptideIndex, fragmentIndex, currentPartition,
                             combinedParams, this.FileSpecificParameters, massDiffAcceptor, SearchParameters.MaximumMassThatFragmentIonScoreIsDoubled, thisId).Run();
+
+                        if (SearchParameters.TruncationSearch)
+                        {
+                            var truncationMassDiffAcceptor = new IntervalMassDiffAcceptor("", new List<DoubleRange> { new DoubleRange(double.NegativeInfinity, 10) });//ParseSearchMode("interval [-infinity,3]");
+
+                            new TruncationSearchEngine(possibleTruncationPsms, arrayOfMs2ScansSortedByMass, peptideIndex, fragmentIndex, currentPartition,
+                                combinedParams, FileSpecificParameters, truncationMassDiffAcceptor, SearchParameters.MaximumMassThatFragmentIonScoreIsDoubled, thisId).Run();
+
+                            allCategorySpecificPsms[0].AddRange(fileSpecificPsms);
+                            allCategorySpecificPsms[1].AddRange(possibleTruncationPsms);
+                        }
 
                         ReportProgress(new ProgressEventArgs(100, "Done with search " + (currentPartition + 1) + "/" + combinedParams.TotalPartitions + "!", thisId));
                         if (GlobalVariables.StopLoops) { break; }
@@ -349,7 +368,7 @@ namespace TaskLayer
 
             int numNotches = GetNumNotches(SearchParameters.MassDiffAcceptorType, SearchParameters.CustomMdac);
             //resolve category specific fdrs (for speedy semi and nonspecific
-            if (SearchParameters.SearchType == SearchType.NonSpecific)
+            if (SearchParameters.SearchType == SearchType.NonSpecific || SearchParameters.TruncationSearch)
             {
                 allPsms = NonSpecificEnzymeSearchEngine.ResolveFdrCategorySpecificPsms(allCategorySpecificPsms, numNotches, taskId, CommonParameters, FileSpecificParameters);
             }
