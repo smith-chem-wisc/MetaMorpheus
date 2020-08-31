@@ -7,6 +7,7 @@ using EngineLayer;
 using EngineLayer.ClassicSearch;
 using EngineLayer.Indexing;
 using EngineLayer.ModernSearch;
+using EngineLayer.TruncationSearch;
 using IO.MzML;
 using IO.ThermoRawFileReader;
 using MassSpectrometry;
@@ -127,19 +128,7 @@ namespace Test
         [Test]
         public static void TestTruncationSearch()
         {
-            var temp = ThermoRawFileReader.LoadAllStaticData(@"C:\Data\TD Yeast\05-26-17_B7A_yeast_td_fract7_rep1.raw");
-            var ok = temp.GetAllScansList().Where(p => p.OneBasedScanNumber == 1269 || p.OneBasedScanNumber == 1270).ToList();
-
-            var msDataFile = new MsDataFile(ok.ToArray(), new SourceFile(null, null, null, null, null));
-
-            MzmlMethods.CreateAndWriteMyMzmlWithCalibratedSpectra(
-                msDataFile,
-                @"C:\Data\TD Yeast\05-26-17_B7A_yeast_td_fract7_rep1.mzml",
-                false);
-
-            var mzml = Mzml.LoadAllStaticData(@"C:\Data\TD Yeast\05-26-17_B7A_yeast_td_fract7_rep1.mzml");
-
-
+            var mzml = Mzml.LoadAllStaticData(Path.Combine(TestContext.CurrentContext.TestDirectory, @"TopDownTestData\SlicedTruncation.mzML"));
 
             CommonParameters CommonParameters = new CommonParameters(
                 digestionParams: new DigestionParams(protease: "top-down"),
@@ -153,13 +142,11 @@ namespace Test
                 new Protein("MAKSKNHTAHNQTRKAHRNGIKKPKTYKYPSLKGVDPKFRRNHKHALHGTAKALAAAKK", "P05747")
             };
 
-            var myMsDataFile = Mzml.LoadAllStaticData(Path.Combine(TestContext.CurrentContext.TestDirectory, @"TopDownTestData\slicedTDYeastTruncation.mzML"));
-
-            var searchMode = new SinglePpmAroundZeroSearchMode(5);
+            var truncationMassDiffAcceptor = new IntervalMassDiffAcceptor("", new List<DoubleRange> { new DoubleRange(double.NegativeInfinity, 10) });
 
             Tolerance DeconvolutionMassTolerance = new PpmTolerance(5);
 
-            var listOfSortedms2Scans = MetaMorpheusTask.GetMs2Scans(myMsDataFile, null, new CommonParameters()).OrderBy(b => b.PrecursorMass).ToArray();
+            var listOfSortedms2Scans = MetaMorpheusTask.GetMs2Scans(mzml, null, new CommonParameters()).OrderBy(b => b.PrecursorMass).ToArray();
 
             PeptideSpectralMatch[] allPsmsArray = new PeptideSpectralMatch[listOfSortedms2Scans.Length];
 
@@ -167,10 +154,11 @@ namespace Test
                 null, 30000, false, new List<FileInfo>(), TargetContaminantAmbiguity.RemoveContaminant, new List<string>());
             var indexResults = (IndexingResults)indexEngine.Run();
 
-            new ModernSearchEngine(allPsmsArray, listOfSortedms2Scans, indexResults.PeptideIndex, indexResults.FragmentIndex, 0, CommonParameters, null, searchMode, 0, new List<string>()).Run();
+            new TruncationSearchEngine(allPsmsArray, listOfSortedms2Scans, indexResults.PeptideIndex, indexResults.FragmentIndex, 0, 
+                CommonParameters, null, truncationMassDiffAcceptor, 0, new List<string>()).Run();
 
             var psm = allPsmsArray.Where(p => p != null).FirstOrDefault();
-            Assert.That(psm.MatchedFragmentIons.Count == 47);
+            Assert.That(psm.MatchedFragmentIons.Count == 21);
         }
     }
 }

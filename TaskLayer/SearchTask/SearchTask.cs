@@ -245,7 +245,7 @@ namespace TaskLayer
 
                         if (SearchParameters.TruncationSearch)
                         {
-                            var truncationMassDiffAcceptor = new IntervalMassDiffAcceptor("", new List<DoubleRange> { new DoubleRange(double.NegativeInfinity, 10) });//ParseSearchMode("interval [-infinity,3]");
+                            var truncationMassDiffAcceptor = new IntervalMassDiffAcceptor("", new List<DoubleRange> { new DoubleRange(double.NegativeInfinity, 10) });
 
                             new TruncationSearchEngine(possibleTruncationPsms, arrayOfMs2ScansSortedByMass, peptideIndex, fragmentIndex, currentPartition,
                                 combinedParams, FileSpecificParameters, truncationMassDiffAcceptor, SearchParameters.MaximumMassThatFragmentIonScoreIsDoubled, thisId).Run();
