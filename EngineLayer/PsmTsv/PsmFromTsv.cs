@@ -89,7 +89,17 @@ namespace EngineLayer
             //Required properties
             Filename = spl[parsedHeader[PsmTsvHeader.FileName]].Trim();
             Ms2ScanNumber = int.Parse(spl[parsedHeader[PsmTsvHeader.Ms2ScanNumber]]);
-            PrecursorScanNum = int.Parse(spl[parsedHeader[PsmTsvHeader.PrecursorScanNum]].Trim());
+
+            // this will probably not be known in an .mgf data file
+            if (int.TryParse(spl[parsedHeader[PsmTsvHeader.PrecursorScanNum]].Trim(), out int result))
+            {
+                PrecursorScanNum = result; 
+            }
+            else
+            {
+                PrecursorScanNum = 0;
+            }
+
             PrecursorCharge = (int)double.Parse(spl[parsedHeader[PsmTsvHeader.PrecursorCharge]].Trim(), CultureInfo.InvariantCulture);
             PrecursorMz = double.Parse(spl[parsedHeader[PsmTsvHeader.PrecursorMz]].Trim(), CultureInfo.InvariantCulture);
             PrecursorMass = double.Parse(spl[parsedHeader[PsmTsvHeader.PrecursorMass]].Trim(), CultureInfo.InvariantCulture);
@@ -164,7 +174,7 @@ namespace EngineLayer
             GlycanComposition = (parsedHeader[PsmTsvHeader_Glyco.GlycanComposition] < 0) ? null : spl[parsedHeader[PsmTsvHeader_Glyco.GlycanComposition]];
             GlycanStructure = (parsedHeader[PsmTsvHeader_Glyco.GlycanStructure] < 0) ? null : spl[parsedHeader[PsmTsvHeader_Glyco.GlycanStructure]];
             var localizationLevel = (parsedHeader[PsmTsvHeader_Glyco.GlycanLocalizationLevel] < 0) ? null : spl[parsedHeader[PsmTsvHeader_Glyco.GlycanLocalizationLevel]];
-            if (localizationLevel!=null)
+            if (localizationLevel != null)
             {
                 GlycanLocalizationLevel = (LocalizationLevel)Enum.Parse(typeof(LocalizationLevel), localizationLevel);
             }
@@ -241,12 +251,12 @@ namespace EngineLayer
                 {
                     aminoAcidPosition = peptideBaseSequence.Length - fragmentNumber;
                 }
-                
-                Product p = new Product(productType, 
-                    terminus, 
-                    mz.ToMass(z) - DissociationTypeCollection.GetMassShiftFromProductType(productType), 
-                    fragmentNumber, 
-                    aminoAcidPosition, 
+
+                Product p = new Product(productType,
+                    terminus,
+                    mz.ToMass(z) - DissociationTypeCollection.GetMassShiftFromProductType(productType),
+                    fragmentNumber,
+                    aminoAcidPosition,
                     neutralLoss);
 
                 matchedIons.Add(new MatchedFragmentIon(ref p, mz, 1.0, z));
