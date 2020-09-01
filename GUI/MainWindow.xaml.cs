@@ -1,4 +1,5 @@
 using EngineLayer;
+using IO.ThermoRawFileReader;
 using Microsoft.Win32;
 using MzLibUtil;
 using Nett;
@@ -1434,7 +1435,7 @@ namespace MetaMorpheusGUI
                     {
                         // open the Thermo RawFileReader licence agreement
                         var thermoLicenceWindow = new ThermoLicenceAgreementWindow();
-                        thermoLicenceWindow.LicenceText.AppendText(ThermoRawFileReader.ThermoRawFileReaderLicence.ThermoLicenceText);
+                        thermoLicenceWindow.LicenceText.AppendText(ThermoRawFileReaderLicence.ThermoLicenceText);
                         var dialogResult = thermoLicenceWindow.ShowDialog();
 
                         var newGlobalSettings = new GlobalSettings

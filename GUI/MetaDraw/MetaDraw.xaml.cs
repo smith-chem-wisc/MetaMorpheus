@@ -8,6 +8,7 @@ using System.Collections.Generic;
 using System.Collections.ObjectModel;
 using System.ComponentModel;
 using System.Data;
+using System.Globalization;
 using System.IO;
 using System.Linq;
 using System.Text.RegularExpressions;
@@ -32,14 +33,14 @@ namespace MetaMorpheusGUI
         private ItemsControlSampleViewModel itemsControlSampleViewModel;
         private PsmAnnotationViewModel mainViewModel;
         private MyFileManager spectraFileManager;
-        private MsDataFile MsDataFile;
+        private List<DynamicDataConnection> MsDataFiles;
         private readonly ObservableCollection<PsmFromTsv> allPsms; // all loaded PSMs
         private readonly ObservableCollection<PsmFromTsv> filteredListOfPsms; // this is the filtered list of PSMs to display (after q-value filter, etc.)
         private readonly Dictionary<string, ObservableCollection<PsmFromTsv>> psmsBySourceFile;  // filtered PSMs grouped by the "file name" field
         private readonly ObservableCollection<string> sourceFilesList;
         ICollectionView peptideSpectralMatchesView;
         private readonly DataTable propertyView;
-        private string spectraFilePath;
+        private List<string> spectraFilePaths;
         private string tsvResultsFilePath;
         private Dictionary<ProductType, double> productTypeToYOffset;
         private Dictionary<ProductType, Color> productTypeToColor;
@@ -76,6 +77,8 @@ namespace MetaMorpheusGUI
             modificationAnnotationColor = Brushes.Orange;
             metaDrawGraphicalSettings = new MetaDrawGraphicalSettings();
             metaDrawFilterSettings = new MetaDrawFilterSettings();
+            MsDataFiles = new List<DynamicDataConnection>();
+            spectraFilePaths = new List<string>();
             base.Closing += this.OnClosing;
 
             ParentChildScanView.Visibility = Visibility.Collapsed;
@@ -128,15 +131,23 @@ namespace MetaMorpheusGUI
                 case ".raw":
                 case ".mzml":
                 case ".mgf":
-                    if (spectraFilePath == null || !spectraFilePath.Equals(filePath))
+                    if (!spectraFilePaths.Contains(filePath))
                     {
-                        resetFilesButton_Click(resetSpectraFileButton, null);
-                        spectraFilePath = filePath;
-                        spectraFileNameLabel.Text = filePath;
-                        spectraFileNameLabel.ToolTip = filePath;
+                        spectraFilePaths.Add(filePath);
+
+                        if (spectraFilePaths.Count == 1)
+                        {
+                            spectraFileNameLabel.Text = filePath;
+                        }
+                        else
+                        {
+                            spectraFileNameLabel.Text = "[Mouse over to view files]";
+                        }
+
+                        spectraFileNameLabel.ToolTip = string.Join("\n", spectraFilePaths);
                         resetSpectraFileButton.IsEnabled = true;
                     }
-                    break;               
+                    break;
                 case ".tsv":
                 case ".psmtsv":
                     if (tsvResultsFilePath == null || !tsvResultsFilePath.Equals(filePath))
@@ -157,19 +168,20 @@ namespace MetaMorpheusGUI
             }
         }
 
-        private void LoadPsms(string filename, bool loadPsmsOfAllSpectraFiles)
+        private void LoadPsms(string psmtsvFileName, bool loadPsmsOfAllSpectraFiles)
         {
             allPsms.Clear();
 
-            string fileNameWithExtension = Path.GetFileName(spectraFilePath);
-            string fileNameWithoutExtension = Path.GetFileNameWithoutExtension(spectraFilePath);
+            HashSet<string> fileNamesWithExtension = new HashSet<string>(spectraFilePaths.Select(p => Path.GetFileName(p)));
+            HashSet<string> fileNamesWithoutExtension = new HashSet<string>(spectraFilePaths.Select(p => Path.GetFileNameWithoutExtension(p)));
+            HashSet<string> potentiallyCalibratedFileNames = new HashSet<string>(spectraFilePaths.Select(p => Path.GetFileNameWithoutExtension(p) + "-calib"));
 
             try
             {
                 // TODO: print warnings
-                foreach (var psm in PsmTsvReader.ReadTsv(filename, out List<string> warnings))
+                foreach (var psm in PsmTsvReader.ReadTsv(psmtsvFileName, out List<string> warnings))
                 {
-                    if (loadPsmsOfAllSpectraFiles || Path.GetFileName(psm.Filename) == fileNameWithExtension || psm.Filename == fileNameWithExtension || psm.Filename == fileNameWithoutExtension || psm.Filename.Equals(fileNameWithoutExtension + "-calib")) // in case results are from a calibrated file
+                    if (loadPsmsOfAllSpectraFiles || fileNamesWithExtension.Contains(psm.Filename) || fileNamesWithoutExtension.Contains(psm.Filename) || potentiallyCalibratedFileNames.Contains(psm.Filename)) // in case results are from a calibrated file
                     {
                         allPsms.Add(psm);
                     }
@@ -217,9 +229,11 @@ namespace MetaMorpheusGUI
             }
         }
 
-        private void DrawPsm(int oneBasedScanNumber, string fullSequence = null, string fileName = null)
+        private void DrawPsm(int oneBasedScanNumber, string fileName, string fullSequence = null)
         {
-            MsDataScan msDataScanToDraw = MsDataFile.GetOneBasedScan(oneBasedScanNumber);
+            var file = MsDataFiles.First(p => Path.GetFileNameWithoutExtension(p.FilePath) == fileName);
+
+            MsDataScan msDataScanToDraw = file.GetOneBasedScanFromDynamicConnection(oneBasedScanNumber);
             IEnumerable<PsmFromTsv> scanPsms = filteredListOfPsms.Where(p => p.Ms2ScanNumber == oneBasedScanNumber);
 
             if (fullSequence != null)
@@ -238,7 +252,7 @@ namespace MetaMorpheusGUI
 
                 // draw parent scans
                 var parentPsmModel = new PsmAnnotationViewModel();
-                MsDataScan parentScan = MsDataFile.GetOneBasedScan(psmToDraw.Ms2ScanNumber);
+                MsDataScan parentScan = file.GetOneBasedScanFromDynamicConnection(psmToDraw.Ms2ScanNumber);
 
                 parentPsmModel.DrawPeptideSpectralMatch(parentScan, psmToDraw, metaDrawGraphicalSettings.ShowMzValues,
                         metaDrawGraphicalSettings.ShowAnnotationCharges, metaDrawGraphicalSettings.AnnotatedFontSize, metaDrawGraphicalSettings.BoldText);
@@ -256,7 +270,7 @@ namespace MetaMorpheusGUI
                 var allChildScanMatchedIons = psmToDraw.ChildScanMatchedIons;
                 if (psmToDraw.BetaPeptideChildScanMatchedIons != null)
                 {
-                    allChildScanMatchedIons = allChildScanMatchedIons.Concat(psmToDraw.BetaPeptideChildScanMatchedIons).ToDictionary(p=>p.Key, q=>q.Value);
+                    allChildScanMatchedIons = allChildScanMatchedIons.Concat(psmToDraw.BetaPeptideChildScanMatchedIons).ToDictionary(p => p.Key, q => q.Value);
                 }
                 foreach (var childScanMatchedIons in allChildScanMatchedIons)
                 {
@@ -271,7 +285,7 @@ namespace MetaMorpheusGUI
                     List<MatchedFragmentIon> matchedIons = childScanMatchedIons.Value;
 
                     var childPsmModel = new PsmAnnotationViewModel();
-                    MsDataScan childScan = MsDataFile.GetOneBasedScan(scanNumber);
+                    MsDataScan childScan = file.GetOneBasedScanFromDynamicConnection(scanNumber);
 
                     childPsmModel.DrawPeptideSpectralMatch(childScan, psmToDraw, metaDrawGraphicalSettings.ShowMzValues,
                         metaDrawGraphicalSettings.ShowAnnotationCharges, metaDrawGraphicalSettings.AnnotatedFontSize, metaDrawGraphicalSettings.BoldText);
@@ -282,12 +296,12 @@ namespace MetaMorpheusGUI
                         + " Selected Mz: " + childScan.SelectedIonMZ.Value.ToString("0.##")
                         + " RetentionTime: " + childScan.RetentionTime.ToString("0.##");
 
-                    Canvas aCanvas = new Canvas { Height = 60  };
+                    Canvas aCanvas = new Canvas { Height = 60 };
                     DrawAnnotatedBaseSequence(aCanvas, psmToDraw, true);
-          
+
                     itemsControlSampleViewModel.AddNewRow(childPsmModel, childAnnotation, aCanvas);
                 }
-               
+
             }
             else
             {
@@ -335,13 +349,13 @@ namespace MetaMorpheusGUI
                 return;
             }
 
-            if (spectraFilePath == null)
+            if (!spectraFilePaths.Any())
             {
                 MessageBox.Show("Please add a spectra file.");
                 return;
             }
 
-            if (MsDataFile == null)
+            if (!MsDataFiles.Any())
             {
                 MessageBox.Show("Please load spectra file.");
                 return;
@@ -358,7 +372,7 @@ namespace MetaMorpheusGUI
                 {
                     propertyView.Rows.Add(temp[i].Name, string.Join(", ", row.MatchedIons.Select(p => p.Annotation)));
                 }
-                else if(temp[i].Name == nameof(row.VariantCrossingIons))
+                else if (temp[i].Name == nameof(row.VariantCrossingIons))
                 {
                     propertyView.Rows.Add(temp[i].Name, string.Join(", ", row.VariantCrossingIons.Select(p => p.Annotation)));
                 }
@@ -369,7 +383,7 @@ namespace MetaMorpheusGUI
             }
             dataGridProperties.Items.Refresh();
             itemsControlSampleViewModel.Data.Clear();
-            DrawPsm(row.Ms2ScanNumber, row.FullSequence);
+            DrawPsm(row.Ms2ScanNumber, row.Filename, row.FullSequence);
         }
 
         private void selectSpectraFileButton_Click(object sender, RoutedEventArgs e)
@@ -379,7 +393,7 @@ namespace MetaMorpheusGUI
                 Filter = "Spectra Files(*.raw;*.mzML)|*.raw;*.mzML",
                 FilterIndex = 1,
                 RestoreDirectory = true,
-                Multiselect = false
+                Multiselect = true
             };
             if (openFileDialog1.ShowDialog() == true)
             {
@@ -413,10 +427,11 @@ namespace MetaMorpheusGUI
             // clear spectra file path
             if ((sender as Button).Name.Equals(resetSpectraFileButton.Name))
             {
-                spectraFilePath = null;
+                spectraFilePaths.Clear();
                 spectraFileNameLabel.Text = "None Selected";
                 spectraFileNameLabel.ToolTip = null;
                 resetSpectraFileButton.IsEnabled = false;
+                CleanupDynamicConnections();
             }
 
             // clear psm file path, psm data, and stat plot
@@ -441,13 +456,14 @@ namespace MetaMorpheusGUI
             mainViewModel.Model = null;
             BaseDraw.clearCanvas(canvas);
             propertyView.Clear();
-            MsDataFile = null;
+            MsDataFiles.Clear();
         }
 
         private void OnClosing(object sender, CancelEventArgs e)
         {
             metaDrawGraphicalSettings.Close();
             metaDrawFilterSettings.Close();
+            CleanupDynamicConnections();
         }
 
         private void graphicalSettings_Click(object sender, RoutedEventArgs e)
@@ -478,7 +494,7 @@ namespace MetaMorpheusGUI
         {
             // check for validity
             propertyView.Clear();
-            if (spectraFilePath == null)
+            if (!spectraFilePaths.Any())
             {
                 MessageBox.Show("Please add a spectra file.");
                 return;
@@ -497,15 +513,15 @@ namespace MetaMorpheusGUI
             resetSpectraFileButton.IsEnabled = false;
             resetPsmFileButton.IsEnabled = false;
             prgsFeed.IsOpen = true;
-            prgsText.Content = "Loading spectra file...";
+            prgsText.Content = "Loading spectra...";
 
             // Add EventHandlers for popup click-in/click-out behaviour
             Deactivated += new EventHandler(prgsFeed_Deactivator);
             Activated += new EventHandler(prgsFeed_Reactivator);
 
-            var slowProcess = Task<MsDataFile>.Factory.StartNew(() => spectraFileManager.LoadFile(spectraFilePath, new CommonParameters(trimMsMsPeaks: false)));
+            var slowProcess = Task<List<DynamicDataConnection>>.Factory.StartNew(() => spectraFilePaths.Select(p => spectraFileManager.OpenDynamicDataConnection(p)).ToList());
             await slowProcess;
-            MsDataFile = slowProcess.Result;
+            MsDataFiles = slowProcess.Result;
 
             // load the PSMs
             this.prgsText.Content = "Loading PSMs...";
@@ -544,8 +560,8 @@ namespace MetaMorpheusGUI
         private void prgsFeed_Reactivator(object sender, EventArgs e)
         {
             prgsFeed.IsOpen = true;
-        }   
-        
+        }
+
         private void loadFilesButtonStat_Click(object sender, RoutedEventArgs e)
         {
             // check for validity
@@ -650,7 +666,7 @@ namespace MetaMorpheusGUI
 
             // draw modifications
             var peptide = new PeptideWithSetModifications(psm.FullSequence, GlobalVariables.AllModsKnownDictionary);
-            if (psm.GlycanLocalizationLevel!=null)
+            if (psm.GlycanLocalizationLevel != null)
             {
                 var localGlycans = PsmFromTsv.ReadLocalizedGlycan(psm.LocalizedGlycan);
 
@@ -658,7 +674,7 @@ namespace MetaMorpheusGUI
                 {
                     if (mod.Value.ModificationType == "O-Glycosylation")
                     {
-                        if (localGlycans.Where(p=>p.Item1 + 1 == mod.Key).Count() > 0)
+                        if (localGlycans.Where(p => p.Item1 + 1 == mod.Key).Count() > 0)
                         {
                             BaseDraw.circledTxtDraw(canvas, new Point((mod.Key - 1) * spacing - 17, 12), modificationAnnotationColor);
                         }
@@ -668,7 +684,7 @@ namespace MetaMorpheusGUI
                         }
                     }
 
-                   
+
                 }
             }
             else
@@ -788,6 +804,8 @@ namespace MetaMorpheusGUI
             else
             {
                 int numberOfScansToExport = dataGridScanNums.SelectedItems.Count;
+                string directoryPath = Path.Combine(Path.GetDirectoryName(tsvResultsFilePath), "MetaDrawExport", 
+                    DateTime.Now.ToString("yyyy-MM-dd-HH-mm-ss", CultureInfo.InvariantCulture));
 
                 foreach (object selectedItem in dataGridScanNums.SelectedItems)
                 {
@@ -798,7 +816,9 @@ namespace MetaMorpheusGUI
                         tempPsm = psm;
                     }
 
-                    MsDataScan msDataScanToDraw = MsDataFile.GetOneBasedScan(psm.Ms2ScanNumber);
+                    var file = MsDataFiles.First(p => Path.GetFileNameWithoutExtension(p.FilePath) == psm.Filename);
+
+                    MsDataScan msDataScanToDraw = file.GetOneBasedScanFromDynamicConnection(psm.Ms2ScanNumber);
 
                     string myString = illegalInFileName.Replace(psm.FullSequence, "");
 
@@ -807,12 +827,19 @@ namespace MetaMorpheusGUI
                         myString = myString.Substring(0, 30);
                     }
 
-                    string filePath = Path.Combine(Path.GetDirectoryName(tsvResultsFilePath), "MetaDrawExport", psm.Ms2ScanNumber + "_" + myString + ".pdf");
+                    string filePath = Path.Combine(directoryPath, psm.Ms2ScanNumber + "_" + myString + ".pdf");
                     string dir = Path.GetDirectoryName(filePath);
 
                     if (!Directory.Exists(dir))
                     {
                         Directory.CreateDirectory(dir);
+                    }
+
+                    int i = 2;
+                    while (File.Exists(filePath))
+                    {
+                        filePath = Path.Combine(directoryPath, psm.Ms2ScanNumber + "_" + myString + "_" + i + ".pdf");
+                        i++;
                     }
 
                     DrawPdfAnnotatedBaseSequence(psm, canvas, filePath); // captures the annotation for the pdf
@@ -842,13 +869,13 @@ namespace MetaMorpheusGUI
                             List<MatchedFragmentIon> matchedIons = childScanMatchedIons.Value;
 
                             var childPsmModel = new PsmAnnotationViewModel();
-                            MsDataScan childScan = MsDataFile.GetOneBasedScan(scanNumber);
+                            MsDataScan childScan = file.GetOneBasedScanFromDynamicConnection(scanNumber);
 
                             childPsmModel.DrawPeptideSpectralMatch(childScan, psm, metaDrawGraphicalSettings.ShowMzValues,
                                 metaDrawGraphicalSettings.ShowAnnotationCharges, metaDrawGraphicalSettings.AnnotatedFontSize, metaDrawGraphicalSettings.BoldText);
 
-                            string childfilePath = Path.Combine(Path.GetDirectoryName(tsvResultsFilePath), "MetaDrawExport", childScan.OneBasedScanNumber + "_" + myString + ".pdf");
-                            
+                            string childfilePath = Path.Combine(directoryPath, childScan.OneBasedScanNumber + "_" + myString + ".pdf");
+
                             DrawPdfAnnotatedBaseSequence(psm, canvas, childfilePath); // captures the annotation for the pdf
                             childPsmModel.DrawPeptideSpectralMatchPdf(childScan, psm, childfilePath, false);
                         }
@@ -858,9 +885,9 @@ namespace MetaMorpheusGUI
                 dataGridScanNums.SelectedItem = dataGridScanNums.SelectedItem;
 
                 itemsControlSampleViewModel.Data.Clear();
-                DrawPsm(tempPsm.Ms2ScanNumber, tempPsm.FullSequence);
+                DrawPsm(tempPsm.Ms2ScanNumber, tempPsm.Filename, tempPsm.FullSequence);
 
-                MessageBox.Show(string.Format("{0} PDFs exported", numberOfScansToExport));
+                MessageBox.Show(string.Format("{0} PDFs exported to " + directoryPath, numberOfScansToExport));
             }
         }
 
@@ -880,7 +907,7 @@ namespace MetaMorpheusGUI
             PngBitmapEncoder encoder = new PngBitmapEncoder();
             encoder.Frames.Add(BitmapFrame.Create(renderBitmap));
 
-            string tempPath = Path.Combine(Path.GetDirectoryName(tsvResultsFilePath), "MetaDrawExport", "annotation.png");
+            string tempPath = Path.Combine(Path.GetDirectoryName(path), "annotation.png");
 
             using (FileStream file = File.Create(tempPath))
             {
@@ -951,17 +978,17 @@ namespace MetaMorpheusGUI
         // scales the font size down for the x axis labels of the PTM histogram when the window gets too small
         private void PlotViewStat_SizeChanged(object sender, SizeChangedEventArgs e)
         {
-            if(plotsListBox.SelectedItem == null || !plotsListBox.SelectedItem.ToString().Equals("Histogram of PTM Spectral Counts"))
+            if (plotsListBox.SelectedItem == null || !plotsListBox.SelectedItem.ToString().Equals("Histogram of PTM Spectral Counts"))
             {
                 return;
             }
             OxyPlot.Wpf.PlotView plot = sender as OxyPlot.Wpf.PlotView;
-            if(plot != null && plot.Model != null)
+            if (plot != null && plot.Model != null)
             {
                 plot.Model.DefaultXAxis.TitleFontSize = plot.Model.DefaultFontSize; // stops the title from being scaled
                 int count = (int)plot.Model.DefaultXAxis.ActualMaximum;
                 int widthCountRatio = 23;   // maintains this width:number of PTM types ratio
-                if (plot.ActualWidth / count < widthCountRatio) 
+                if (plot.ActualWidth / count < widthCountRatio)
                 {
                     plot.Model.DefaultXAxis.FontSize = plot.Model.DefaultFontSize * (plot.ActualWidth / (count * widthCountRatio));
                 }
@@ -970,6 +997,16 @@ namespace MetaMorpheusGUI
                     plot.Model.DefaultXAxis.FontSize = plot.Model.DefaultFontSize;
                 }
             }
+        }
+
+        private void CleanupDynamicConnections()
+        {
+            foreach (var connection in MsDataFiles)
+            {
+                connection.CloseDynamicConnection();
+            }
+
+            MsDataFiles.Clear();
         }
     }
 }
