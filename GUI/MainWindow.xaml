@@ -136,6 +136,7 @@
                 <MenuItem Header="Set as non-contaminant database" Click="SetSelectedDatabaseAsNonContaminant_Click"/>
                 <MenuItem Header="Open file" Click="OpenFile_Click"/>
                 <MenuItem Header="Open containing folder" Click="OpenContainingFolder_Click" />
+                <MenuItem Header="Delete" Click="Delete_Click" />
             </ContextMenu>
 
             <!--Defines the context menu when a spectra file is right-clicked-->
@@ -143,12 +144,14 @@
                 <MenuItem Header="Set file-specific parameters" Click="SetFileSpecificParameters_Click"/>
                 <MenuItem Header="Open file" Click="OpenFile_Click"/>
                 <MenuItem Header="Open containing folder" Click="OpenContainingFolder_Click" />
+                <MenuItem Header="Delete" Click="Delete_Click" />
             </ContextMenu>
 
             <!--Defines the context menu when a task is right-clicked-->
             <ContextMenu x:Key="TaskContextMenu" Style="{StaticResource ContextMenuStyle}">
                 <MenuItem Header="Edit task" Click="EditTask_Click"/>
                 <MenuItem Header="Save as .toml" Click="SaveTaskAsToml_Click" />
+                <MenuItem Header="Delete" Click="Delete_Click" />
             </ContextMenu>
 
             <!--Defines the context menu when a written file is right-clicked-->
@@ -279,19 +282,28 @@
                         
                         After adding input files, the last step is to define a workflow by adding tasks for MetaMorpheus to perform.
                         
-                        The 
+                        <LineBreak />
+                        <LineBreak />
+                        ● The 
                         
                         <Hyperlink NavigateUri="https://pubs.acs.org/doi/10.1021/acs.jproteome.7b00873" RequestNavigate="Hyperlink_RequestNavigate">
                             calibration
                         </Hyperlink> 
                         
-                        task performs mass calibration; the 
+                        task performs mass calibration; 
                         
+                        <LineBreak />
+                        
+                        ● the
                         <Hyperlink NavigateUri="https://pubs.acs.org/doi/10.1021/acs.jproteome.6b00034" RequestNavigate="Hyperlink_RequestNavigate">
                             GPTMD
                         </Hyperlink>
                         
-                        task performs PTM discovery; the search task performs a basic search, with 
+                        task performs PTM discovery; 
+                        
+                        <LineBreak />
+                        
+                        ● the search task performs a proteomics database search, with 
                         
                         <Hyperlink NavigateUri="https://pubs.acs.org/doi/10.1021/acs.jproteome.7b00608" RequestNavigate="Hyperlink_RequestNavigate">
                             quantification
@@ -306,13 +318,21 @@
                             non-specific search
                         </Hyperlink>
                         
-                        options; the 
+                        options;
+                        
+                        <LineBreak />
+                        
+                        ● the 
                         
                         <Hyperlink NavigateUri="https://pubs.acs.org/doi/10.1021/acs.jproteome.8b00141" RequestNavigate="Hyperlink_RequestNavigate">
                             XL search
                         </Hyperlink>
                         
-                        performs a search for crosslinked peptides; and the 
+                        performs a search for crosslinked peptides; and 
+                        
+                        <LineBreak />
+                        
+                        ● the 
                         
                         <Hyperlink NavigateUri="https://www.biorxiv.org/content/10.1101/2020.05.18.102327v1.abstract" RequestNavigate="Hyperlink_RequestNavigate">
                             glycopeptide
@@ -372,7 +392,7 @@
                     <Button Name="AddDatabaseButton" Grid.Row="2" Content="+ADD DATABASE" Click="AddProteinDatabase_Click" HorizontalAlignment="Right" 
                             Style="{StaticResource ImportantButtonStyle}" Margin="0,0,10,0"/>
 
-                    <Button Name="AddDefaultContaminantsButton" Grid.Row="2" Content="ADD DEFAULT CONTAMINANTS" 
+                    <Button Name="AddDefaultContaminantsButton" Grid.Row="2" Content="+ADD DEFAULT CONTAMINANTS" 
                             Click="AddDefaultContaminantDatabase_Click" HorizontalAlignment="Right" Style="{StaticResource ImportantButtonStyle}"
                         Margin="0,0,211,0"/>
 
@@ -386,7 +406,8 @@
                             <Style TargetType="{x:Type DataGridCell}" BasedOn="{StaticResource DataGridCellStyle}" />
                         </DataGrid.CellStyle>
                         <DataGrid.Columns>
-                            <DataGridTextColumn Header="File" Binding="{Binding FilePath, Mode=OneWay}" Width="450" />
+                            <DataGridTextColumn Header="File" Binding="{Binding FileName, Mode=OneWay}" Width="250" />
+                            <DataGridTextColumn Header="File Path" Binding="{Binding FilePath, Mode=OneWay}" Width="200" />
                             <DataGridTextColumn Header="Contaminant?" Binding="{Binding Contaminant, Mode=OneWay}" Width="250" />
                         </DataGrid.Columns>
                     </DataGrid>
@@ -433,7 +454,8 @@
                             <Style TargetType="{x:Type DataGridCell}" BasedOn="{StaticResource SpectraFileDataGridCellStyle}" />
                         </DataGrid.CellStyle>
                         <DataGrid.Columns>
-                            <DataGridTextColumn Header="File" Binding="{Binding FilePath, Mode=OneWay}" Width="450" />
+                            <DataGridTextColumn Header="File" Binding="{Binding FileName, Mode=OneWay}" Width="250" />
+                            <DataGridTextColumn Header="File Path" Binding="{Binding FilePath, Mode=OneWay}" Width="200" />
                             <DataGridTextColumn Header="File-Specific Parameters" Binding="{Binding Parameters, Mode=OneWay}" Width="250" />
                         </DataGrid.Columns>
                     </DataGrid>
@@ -459,9 +481,27 @@
                     </TextBlock>
 
                     <!--Button to add tasks-->
-                    <Button Name="AddTaskButton" Grid.Row="2" Content="+ADD TASK" HorizontalAlignment="Right" Click="AddTask_Click" 
-                            Style="{StaticResource ImportantButtonStyle}" Margin="0,0,10,0"/>
+                    <Grid Grid.Row="2" Background="{StaticResource BackgroundColor}" Margin="0,0,10,0" HorizontalAlignment="Right">
+                        <Grid.ColumnDefinitions>
+                            <ColumnDefinition Width="150"/>
+                            <ColumnDefinition Width="150"/>
+                            <ColumnDefinition Width="150"/>
+                            <ColumnDefinition Width="150"/>
+                            <ColumnDefinition Width="150"/>
+                        </Grid.ColumnDefinitions>
 
+                        <Button Name="AddCalibTaskButton" Grid.Column="0" Content="+ADD CALIBRATION" HorizontalAlignment="Right" Click="AddCalibrateTaskButton_Click" 
+                            Style="{StaticResource ImportantButtonStyle}" Margin="0,0,1,0" Width="150"/>
+                        <Button Name="AddGptmdTaskButton" Grid.Column="1" Content="+ADD PTM DISCOVERY" HorizontalAlignment="Right" Click="AddGPTMDTaskButton_Click" 
+                            Style="{StaticResource ImportantButtonStyle}" Margin="0,0,1,0" Width="150"/>
+                        <Button Name="AddSearchTaskButton" Grid.Column="2" Content="+ADD SEARCH" HorizontalAlignment="Right" Click="AddSearchTaskButton_Click" 
+                            Style="{StaticResource ImportantButtonStyle}" Margin="0,0,1,0" Width="150"/>
+                        <Button Name="AddXlTaskButton" Grid.Column="3" Content="+ADD XL SEARCH" HorizontalAlignment="Right" Click="AddCrosslinkTask_Click" 
+                            Style="{StaticResource ImportantButtonStyle}" Margin="0,0,1,0" Width="150"/>
+                        <Button Name="AddGlycoTaskButton" Grid.Column="4" Content="+ADD GLYCO SEARCH" HorizontalAlignment="Right" Click="AddGlycoSearchTask_Click" 
+                            Style="{StaticResource ImportantButtonStyle}" Margin="0,0,0,0" Width="150"/>
+                    </Grid>
+                    
                     <!--List of tasks-->
                     <TreeView x:Name="tasksTreeView" Grid.Row="3" ItemsSource="{Binding}" MouseDoubleClick="TasksTreeView_MouseDoubleClick" 
                               Margin="10,0,10,10" BorderBrush="{StaticResource BorderColor}">

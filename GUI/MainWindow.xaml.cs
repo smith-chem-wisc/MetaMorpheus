@@ -706,7 +706,7 @@ namespace MetaMorpheusGUI
 
         private void EditTask_Click(object sender, RoutedEventArgs e)
         {
-            var item = GetContextMenuItemDataContext(sender, e);
+            var item = GetItemDataContext(sender, e);
 
             if (item is PreRunTask preRunTask)
             {
@@ -720,7 +720,7 @@ namespace MetaMorpheusGUI
         /// </summary>
         private void SaveTaskAsToml_Click(object sender, RoutedEventArgs e)
         {
-            var item = GetContextMenuItemDataContext(sender, e);
+            var item = GetItemDataContext(sender, e);
             MetaMorpheusTask task;
 
             if (item is PreRunTask)
@@ -749,25 +749,29 @@ namespace MetaMorpheusGUI
         }
 
         /// <summary>
-        /// Deletes the selected task.
+        /// Deletes the selected item.
         /// </summary>
-        private void DeleteTask_Click(object sender, RoutedEventArgs e)
+        private void Delete_Click(object sender, RoutedEventArgs e)
         {
-            var selectedTask = (PreRunTask)tasksTreeView.SelectedItem;
-            if (selectedTask != null)
+            var item = GetItemDataContext(sender, e);
+
+            if (item == null)
             {
-                PreRunTasks.Remove(selectedTask);
+                return;
+            }
+
+            if (item is PreRunTask)
+            {
+                PreRunTasks.Remove(item as PreRunTask);
                 UpdateGuiOnPreRunChange();
             }
-            else
+            else if (item is RawDataForDataGrid)
             {
-                selectedTask = (PreRunTask)taskSummary.SelectedItem;
-
-                if (selectedTask != null)
-                {
-                    PreRunTasks.Remove(selectedTask);
-                    UpdateGuiOnPreRunChange();
-                }
+                SpectraFiles.Remove(item as RawDataForDataGrid);
+            }
+            else if (item is ProteinDbForDataGrid)
+            {
+                ProteinDatabases.Remove(item as ProteinDbForDataGrid);
             }
         }
 
@@ -999,7 +1003,7 @@ namespace MetaMorpheusGUI
                 // delete selected task/db/spectra
                 if (e.Key == Key.Delete || e.Key == Key.Back)
                 {
-                    DeleteTask_Click(sender, e);
+                    Delete_Click(sender, e);
                     e.Handled = true;
                 }
 
@@ -1639,7 +1643,7 @@ namespace MetaMorpheusGUI
             }
         }
 
-        private object GetContextMenuItemDataContext(object sender, RoutedEventArgs e)
+        private object GetItemDataContext(object sender, RoutedEventArgs e)
         {
             if (sender is MenuItem)
             {
@@ -1667,13 +1671,17 @@ namespace MetaMorpheusGUI
             {
                 return dataGridRow.Item;
             }
+            else if (sender is PreRunTask || sender is FinishedFileForDataGrid || sender is InRunTask || sender is RawDataForDataGrid || sender is ProteinDbForDataGrid)
+            {
+                return sender;
+            }
 
             return null;
         }
 
         private string GetPathOfItem(object sender, RoutedEventArgs e)
         {
-            var item = GetContextMenuItemDataContext(sender, e);
+            var item = GetItemDataContext(sender, e);
             string filePathToOpen = null;
 
             // right now this will only open one file... could change to open >1 at once if multi-selected
@@ -1736,6 +1744,7 @@ namespace MetaMorpheusGUI
                     case "Set as contaminant database": item.IsEnabled = enable; break;
                     case "Set as non-contaminant database": item.IsEnabled = enable; break;
                     case "Open file": item.IsEnabled = enable; break;
+                    case "Delete": item.IsEnabled = enable; break;
                 }
             }
 
@@ -1745,6 +1754,7 @@ namespace MetaMorpheusGUI
                 {
                     case "Set file-specific parameters": item.IsEnabled = enable; break;
                     case "Open file": item.IsEnabled = enable; break;
+                    case "Delete": item.IsEnabled = enable; break;
                 }
             }
 
@@ -1753,6 +1763,7 @@ namespace MetaMorpheusGUI
                 switch (item.Header.ToString())
                 {
                     case "Edit task": item.IsEnabled = enable; break;
+                    case "Delete": item.IsEnabled = enable; break;
                 }
             }
 
@@ -1766,7 +1777,11 @@ namespace MetaMorpheusGUI
             AddSpectraButton.IsEnabled = enable;
             SetFileSpecificSettingsButton.IsEnabled = enable;
             SetExperimentalDesignButton.IsEnabled = enable;
-            AddTaskButton.IsEnabled = enable;
+            AddSearchTaskButton.IsEnabled = enable;
+            AddCalibTaskButton.IsEnabled = enable;
+            AddGptmdTaskButton.IsEnabled = enable;
+            AddXlTaskButton.IsEnabled = enable;
+            AddGlycoTaskButton.IsEnabled = enable;
             MiniAddProteinDbButton.IsEnabled = enable;
             MiniAddSpectraButton.IsEnabled = enable;
             MiniAddTaskButton.IsEnabled = enable;
