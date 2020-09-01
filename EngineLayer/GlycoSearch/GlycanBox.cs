@@ -48,6 +48,7 @@ namespace EngineLayer
 
                     yield return glycanBox;
 
+                    //How to build and applied the decoy glycan box is still unclear and require more investigation.
                     if (buildDecoy)
                     {
                         GlycanBox glycanBox_decoy = new GlycanBox(idCombine.ToArray());

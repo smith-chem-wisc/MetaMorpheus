@@ -25,84 +25,12 @@ namespace Test
     {
         private static GlycanBox[] OGlycanBoxes { get; set; }
 
-
         [OneTimeSetUp]
         public static void Setup()
         {
             GlycanBox.GlobalOGlycans = GlycanDatabase.LoadGlycan(GlobalVariables.OGlycanLocations.Where(p => p.Contains("OGlycan.gdb")).First(), true, true).ToArray();
             GlycanBox.GlobalOGlycanModifications = GlycanBox.BuildGlobalOGlycanModifications(GlycanBox.GlobalOGlycans);
             OGlycanBoxes = GlycanBox.BuildOGlycanBoxes(3).OrderBy(p => p.Mass).ToArray();
-        }
-
-        [Test]
-        public static void OGlycoTest_LoadGlycanBox()
-        {
-            Assert.AreEqual(OGlycanBoxes.Count(), 454);
-        }
-
-        [Test]
-        public static void OGlycoTest_GetK()
-        {
-            List<int> input = new List<int> {1, 2, 3, 4, 5 };
-
-            //Combination test
-            var kcombs = Glycan.GetKCombs(input, 3);
-
-            Assert.AreEqual(kcombs.Count(), 10);
-
-            var allcombs = Glycan.GetKCombs(input, 5);
-
-            Assert.AreEqual(allcombs.Count(), 1);
-
-            //Combination test with repetition
-            var kcombs_rep = Glycan.GetKCombsWithRept(input, 3);
-
-            Assert.AreEqual(kcombs_rep.Count(), 35);
-
-            var allcombs_rep = Glycan.GetKCombsWithRept(input, 5);
-
-            Assert.AreEqual(allcombs_rep.Count(), 126);
-
-            //Permutation test
-            var kperm = Glycan.GetPermutations(input, 3);
-
-            Assert.AreEqual(kperm.Count(), 60);
-
-            var allperm = Glycan.GetPermutations(input, 5).ToList();
-
-            Assert.AreEqual(allperm.Count(), 120);
-
-            //Permutation test with repetition
-            var kperm_rep = Glycan.GetPermutationsWithRept(input, 3);
-
-            Assert.AreEqual(kperm_rep.Count(), 125);
-        }
-
-        [Test]
-        public static void OGlycoTest_OGlycanChildIons()
-        {
-            var glycan = GlycanBox.GlobalOGlycans[5];
-
-            Assert.That(glycan.Ions.Count == 5);
-
-            var kind = glycan.Kind;
-
-            var glycanIons = GlycanDatabase.OGlycanCompositionCombinationChildIons(kind);
-
-            Assert.That(glycanIons.Count() == 6);
-
-            var coreIons = GlycanDatabase.OGlycanCompositionFragments(kind);
-            Assert.That(coreIons.Count() == 6);
-        }
-
-        [Test]
-        public static void OGlycoTest_GetKPerWithDuplicate()
-        {
-            List<int> input = new List<int> { 3, 5, 2, 7};
-            int[] ids = new int[3]{ 2, 2, 3};
-            var perWithDuplicate = GlycoPeptides.GetPermutations(input, ids);
-            var allPermutation = Glycan.GetPermutations(input, ids.Length);
-            Assert.That(perWithDuplicate.Count() == allPermutation.Count()/2);
         }
 
         [Test]

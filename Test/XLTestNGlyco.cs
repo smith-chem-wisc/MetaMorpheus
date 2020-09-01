@@ -25,15 +25,6 @@ namespace Test
     public class XLTestNGlyco
     {
         [Test]
-        public static void GlyTest_GetKindString()
-        {
-            byte[] kind = new byte[Glycan.SugarLength];
-            kind[0] = 3; kind[1] = 4; kind[4] = 1; 
-            string kindString = Glycan.GetKindString(kind);
-            Assert.AreEqual("H3N4F1", kindString);
-        }
-
-        [Test]
         public static void GlyTest_ModificationSites()
         {
             PeptideWithSetModifications pep = new PeptideWithSetModifications("ELNPTPNVEVNVECR", null); 
@@ -186,43 +177,6 @@ namespace Test
         }
 
         [Test]
-        public static void GlyTest_DistinguishGlycans()
-        {
-            Glycan glycan = Glycan.Struct2Glycan("(N(N(H(H(H(H)))(H(H(H(H)))(H(H(H)))))))", 0);
-            Glycan glycan2 = Glycan.Struct2Glycan("(N(N(H(H(H))(H(H(H))(H(H(H(H(H)))))))))", 0);
-
-            var test = Glycan.Equals(glycan, glycan2);
-            Assert.AreEqual(test, true);
-
-            //TO DO: Test the glycan ions. 
-            Glycan glycan3 = Glycan.Struct2Glycan("(N(F)(N(H(H(N(H(N(H(N(H))))))(N(H(N(H(N(F)(H(G))))))))(H(N(H(N(H(N(H(A)))))))(N(F)(H(N(F)(H(N(H)(F))))))))))", 8086);
-            Glycan glycan4 = Glycan.Struct2Glycan("(N(F)(N(H(H(N(H(N(H(N(H))))))(N(H(N(H(N(F)(H(A))))))))(H(N(H(N(H(N(H(G)))))))(N(F)(H(N(F)(H(N(H)(F))))))))))", 8087);
-        }
-
-        [Test]
-        public static void GlyTest_BisectHexNAc()
-        {
-            //The node here is for check the structure of the glycan. 
-            Node node = Glycan.Struct2Node("(N(N(H(N)(H(N)(N))(H(N(H))))))"); //This glycan has a bisect hexnac 
-            Assert.That(node.LeftChild.LeftChild.MiddleChild!=null);
-
-            Glycan glycan = Glycan.Struct2Glycan("(N(N(H(N)(H(N)(N))(H(N(H))))))", 0);
-            Assert.AreEqual(glycan.Ions.Count, 18);
-        }
-
-        [Test]
-        public static void GlyTest_GlycanDecoy()
-        {
-            Glycan glycan = Glycan.Struct2Glycan("(N(N(H(N)(H(N)(N))(H(N(H))))))", 0);
-            var test = Glycan.BuildTargetDecoyGlycans(new Glycan[] { glycan});
-            Assert.AreEqual(test.Last().Decoy, true);
-            foreach (var ion in test.Last().Ions)
-            {
-                Assert.AreEqual(ion.IonMass + ion.LossIonMass, test.Last().Mass);
-            }
-        }
-
-        [Test]
         public static void GlyTest_BinarySearch()
         {
             //This is just to test how binary search works.
@@ -254,24 +208,6 @@ namespace Test
             Assert.AreEqual(tid, 9);          
         }         
 
-        [Test]
-        public static void GlyTest_NGlycanCompositionFragments()
-        {
-            var kind = GlycanDatabase.String2Kind("HexNAc(3)Hex(4)Fuc(2)NeuAc(1)");
-
-            var ions = GlycanDatabase.NGlycanCompositionFragments(kind);
-
-            Glycan glycan = Glycan.Struct2Glycan("(N(F)(N(H(H)(H(N(F)(H(A)))))))", 0);
-
-            var ionMass = ions.Select(p => p.IonMass).ToList();
-
-            var glycanIonmass = glycan.Ions.Select(p => p.IonMass).ToList();
-
-            var overlap = glycanIonmass.Intersect(ionMass).Count();
-
-            Assert.That(overlap == 13);
-     
-        }
 
         [Test]
         public static void GlyTest_WeightedRegression()

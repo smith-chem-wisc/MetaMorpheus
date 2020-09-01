@@ -295,7 +295,7 @@ namespace EngineLayer.GlycoSearch
         }
 
         /// <summary>
-        /// Deprecated.
+        /// Deprecated. (The function is in IndexingEngine, which is now used in Crosslink and Glyco Search)
         /// </summary>
         private List<int> GetGlycanBinsToSearch(Ms2ScanWithSpecificMass scan, List<int>[] FragmentIndex, bool AddGlycanShiftBin)
         {

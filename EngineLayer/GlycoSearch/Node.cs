@@ -1,7 +1,7 @@
 ﻿
 namespace EngineLayer
 {
-
+    //The Node class is used to represent each sugar in glycan. 
     public class Node
     {
         public Node(char v, Node l, Node r, Node m)
