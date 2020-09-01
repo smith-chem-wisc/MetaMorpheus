@@ -10,6 +10,8 @@
     <!--Properties about the package to be placed in the Summary Information Stream.-->
     <!--These are visible from COM through the IStream interface, and these properties can be seen on the package in Explorer.-->
     <Package Id="*" InstallerVersion="500" Compressed="yes" InstallScope="perMachine" Platform="x64" />
+    <Icon Id="icon.ico" SourceFile="$(var.GUI.TargetDir)..\..\..\Icons\MMnice.ico"/>
+    <Property Id="ARPPRODUCTICON" Value="icon.ico"/>
     <MajorUpgrade AllowSameVersionUpgrades="yes" Schedule="afterInstallValidate" DowngradeErrorMessage="A newer version of MetaMorpheus is already installed." />
 
     <Condition Message="This application is only supported on Windows 7 or higher.">
@@ -541,10 +543,10 @@
         <RemoveFolder Id="MetaAppContaminantsFolder" On="both" />
         <RegistryValue Root="HKCU" Key="Software\SmithGroup\MetaMorpheus" Name="installed" Type="integer" Value="1" KeyPath="yes" />
       </Component>
-      <Component Id="Appsrc_Contaminants_MPI_Contaminants.fasta" Guid="d840b7a1-dfce-418a-bd4a-f3805625f53d">
+      <Component Id="Appsrc_Contaminants_MetaMorpheus_Contaminants.xml" Guid="d840b7a1-dfce-418a-bd4a-f3805625f53d">
         <Condition>OVERWRITEAPPDATA</Condition>
         <RegistryValue Root="HKCU" Key="Software\SmithGroup\MetaMorpheus" Name="installed" Type="integer" Value="1" KeyPath="yes" />
-        <File ReadOnly="no" Id="Appsrc_Contaminants_MPI_Contaminants.fasta" Name="MPI_Contaminants.fasta" Source="$(var.GUI_TargetDir)Contaminants\MPI_Contaminants.fasta" />
+        <File ReadOnly="no" Id="Appsrc_Contaminants_MetaMorpheusContaminants.xml" Name="MetaMorpheusContaminants.xml" Source="$(var.GUI_TargetDir)Contaminants\MetaMorpheusContaminants.xml" />
       </Component>
     </ComponentGroup>
   </Fragment>
