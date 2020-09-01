@@ -409,13 +409,13 @@ namespace Test
 
             output = File.ReadAllLines(TestContext.CurrentContext.TestDirectory + @"/TestSilac/AllQuantifiedPeaks.tsv");
             Assert.AreEqual(output.Length, 4); //header, unlabeled, mixed, labeled
-            Assert.IsTrue(output[1].Contains("\tPEPTK(+8.014)IDEK(+8.014)\t")); //test the original is present
-            Assert.IsTrue(output[1].Contains("\t218750\t")); //test intensity
-            Assert.IsTrue(output[2].Contains("\tPEPTK(+1.994)IDEK(+8.014)\t")); //test human readable label (and lack thereof) is present
-            Assert.IsTrue(output[2].Contains("\t875000\t")); //test intensity
-            Assert.IsTrue(output[3].Contains("\tPEPTK(+1.994)IDEK(+1.994)\t")); //test other label is present
-            Assert.IsTrue(output[3].Contains("\t437500\t")); //test intensity
-            Assert.IsTrue(output[3].Contains("silac\t")); //test human readable labels are present
+            Assert.IsTrue(output[3].Contains("\tPEPTK(+8.014)IDEK(+8.014)\t")); //test the original is present
+            Assert.IsTrue(output[3].Contains("\t218750\t")); //test intensity
+            Assert.IsTrue(output[1].Contains("\tPEPTK(+1.994)IDEK(+8.014)\t")); //test human readable label (and lack thereof) is present
+            Assert.IsTrue(output[1].Contains("\t875000\t")); //test intensity
+            Assert.IsTrue(output[2].Contains("\tPEPTK(+1.994)IDEK(+1.994)\t")); //test other label is present
+            Assert.IsTrue(output[2].Contains("\t437500\t")); //test intensity
+            Assert.IsTrue(output[2].Contains("silac\t")); //test human readable labels are present
 
             //Try with conflicting probability values (have a missed cleavage and a non missed cleavage, but set the non missed cleavage past the equilibrium point)
             //test that we don't get negative quantification values after the correction
@@ -500,7 +500,7 @@ namespace Test
 
             string[] output = File.ReadAllLines(TestContext.CurrentContext.TestDirectory + @"/TestSilac/AllQuantifiedPeaks.tsv");
             Assert.IsTrue(output.Length == 4);
-            Assert.IsTrue(output[3].Contains("\tPEPTK(+8.014)IDEK\t") && output[3].Contains("\t875000\t")); //Doesn't matter where the +8.014 is, just matters that it's mixed (one is light, one is heavy)
+            Assert.IsTrue(output[1].Contains("\tPEPTK(+8.014)IDEK\t") && output[1].Contains("\t875000\t")); //Doesn't matter where the +8.014 is, just matters that it's mixed (one is light, one is heavy)
 
             output = File.ReadAllLines(TestContext.CurrentContext.TestDirectory + @"/TestSilac/AllProteinGroups.tsv");
             Assert.IsTrue(output[1].Contains("\t\t\t\t1\t")); //check that no intensity is present when only a single missed cleavage value exists

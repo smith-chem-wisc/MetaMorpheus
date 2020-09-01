@@ -185,7 +185,8 @@ namespace Test
             PeptideSpectralMatch[] allPsmsArray = new PeptideSpectralMatch[listOfSortedms2Scans.Length];
             new ClassicSearchEngine(allPsmsArray, listOfSortedms2Scans, variableModifications, fixedModifications, null, null, null, proteinList, searchModes, CommonParameters, fsp, new List<string>()).Run();
 
-            var indexEngine = new IndexingEngine(proteinList, variableModifications, fixedModifications, null, null, null, 1, DecoyType.None, CommonParameters, fsp, 30000, false, new List<FileInfo>(), new List<string>());
+            var indexEngine = new IndexingEngine(proteinList, variableModifications, fixedModifications, null, null, null, 1, DecoyType.None, CommonParameters,
+                fsp, 30000, false, new List<FileInfo>(), TargetContaminantAmbiguity.RemoveContaminant, new List<string>());
             var indexResults = (IndexingResults)indexEngine.Run();
             MassDiffAcceptor massDiffAcceptor = SearchTask.GetMassDiffAcceptor(CommonParameters.PrecursorMassTolerance, SearchParameters.MassDiffAcceptorType, SearchParameters.CustomMdac);
 
@@ -236,7 +237,8 @@ namespace Test
 
             CommonParameters = new CommonParameters(useDeltaScore: true, digestionParams: new DigestionParams(minPeptideLength: 5));
 
-            indexEngine = new IndexingEngine(proteinList, variableModifications, fixedModifications, null, null, null, 1, DecoyType.None, CommonParameters, fsp, 30000, false, new List<FileInfo>(), new List<string>());
+            indexEngine = new IndexingEngine(proteinList, variableModifications, fixedModifications, null, null, null, 1, DecoyType.None, CommonParameters,
+                fsp, 30000, false, new List<FileInfo>(), TargetContaminantAmbiguity.RemoveContaminant, new List<string>());
             indexResults = (IndexingResults)indexEngine.Run();
             massDiffAcceptor = SearchTask.GetMassDiffAcceptor(CommonParameters.PrecursorMassTolerance, SearchParameters.MassDiffAcceptorType, SearchParameters.CustomMdac);
             allPsmsArrayModern = new PeptideSpectralMatch[listOfSortedms2Scans.Length];
@@ -311,8 +313,6 @@ namespace Test
 
             fileSpecificRetTimeHI_behavior.Add("TaGe_SA_HeLa_04_subset_longestSeq.mzML", HI_Time_avg_dev);
 
-            string[] trainingVariables = new[] { "TotalMatchingFragmentCount", "Intensity", "PrecursorChargeDiffToMode", "DeltaScore", "Notch", "PsmCount", "ModsCount", "MissedCleavagesCount", "Ambiguity", "LongestFragmentIonSeries", "HydrophobicityZScore", "IsVariantPeptide", "IsDeadEnd", "IsLoop" };
-
             int chargeStateMode = 4;
             var (notch, pwsm) = maxScorePsm.BestMatchingPeptides.First();
             Dictionary<string, float> massError = new Dictionary<string, float>
@@ -320,12 +320,12 @@ namespace Test
                 { Path.GetFileName(maxScorePsm.FullFilePath), 0 }
             };
 
-            var maxPsmData = PEP_Analysis.CreateOnePsmDataEntry("standard", fsp, maxScorePsm, sequenceToPsmCount, fileSpecificRetTimeHI_behavior, fileSpecificRetTemHI_behaviorModifiedPeptides, massError, chargeStateMode, pwsm, trainingVariables, notch, !pwsm.Protein.IsDecoy);
+            var maxPsmData = PEP_Analysis.CreateOnePsmDataEntry("standard", fsp, maxScorePsm, sequenceToPsmCount, fileSpecificRetTimeHI_behavior, fileSpecificRetTemHI_behaviorModifiedPeptides, massError, chargeStateMode, pwsm, notch, !pwsm.Protein.IsDecoy);
             Assert.That(maxScorePsm.PeptidesToMatchingFragments.Count - 1, Is.EqualTo(maxPsmData.Ambiguity));
             double normalizationFactor = (double)pwsm.BaseSequence.Length;
             float maxPsmDeltaScore = (float)Math.Round(maxScorePsm.DeltaScore / normalizationFactor * 10.0, 0);
             Assert.That(maxPsmDeltaScore, Is.EqualTo(maxPsmData.DeltaScore).Within(0.05));
-            float maxPsmIntensity = Math.Min(50,(float)Math.Round((maxScorePsm.Score - (int)maxScorePsm.Score) / normalizationFactor * 100.0,0));
+            float maxPsmIntensity = Math.Min(50, (float)Math.Round((maxScorePsm.Score - (int)maxScorePsm.Score) / normalizationFactor * 100.0, 0));
             Assert.That(maxPsmIntensity, Is.EqualTo(maxPsmData.Intensity).Within(0.05));
             Assert.That(maxPsmData.HydrophobicityZScore, Is.EqualTo(52.0).Within(0.05));
             Assert.That(maxScorePsm.BestMatchingPeptides.Select(p => p.Peptide).First().MissedCleavages, Is.EqualTo(maxPsmData.MissedCleavagesCount));
@@ -359,7 +359,7 @@ namespace Test
                     moreNonNullPSMs.Add(psm);
                 }
             }
-          
+
             string metrics = PEP_Analysis.ComputePEPValuesForAllPSMsGeneric(moreNonNullPSMs, "standard", fsp, Path.Combine(TestContext.CurrentContext.TestDirectory, @"TestData\"));
             Assert.GreaterOrEqual(32, trueCount);
 
@@ -393,7 +393,7 @@ namespace Test
             var (vnotch, vpwsm) = variantPSM.BestMatchingPeptides.First();
 
             massError.Add(Path.GetFileName(variantPSM.FullFilePath), 0);
-            PsmData variantPsmData = PEP_Analysis.CreateOnePsmDataEntry("standard", fsp, variantPSM, sequenceToPsmCount, fileSpecificRetTimeHI_behavior, fileSpecificRetTemHI_behaviorModifiedPeptides, massError, chargeStateMode, vpwsm, trainingVariables, vnotch, !maxScorePsm.IsDecoy);
+            PsmData variantPsmData = PEP_Analysis.CreateOnePsmDataEntry("standard", fsp, variantPSM, sequenceToPsmCount, fileSpecificRetTimeHI_behavior, fileSpecificRetTemHI_behaviorModifiedPeptides, massError, chargeStateMode, vpwsm, vnotch, !maxScorePsm.IsDecoy);
 
             Assert.AreEqual((float)1, variantPsmData.IsVariantPeptide);
 
@@ -492,8 +492,6 @@ namespace Test
             Dictionary<string, Dictionary<int, Tuple<double, double>>> fileSpecificRetTimeHI_behavior = new Dictionary<string, Dictionary<int, Tuple<double, double>>>();
             Dictionary<string, Dictionary<int, Tuple<double, double>>> fileSpecificRetTemHI_behaviorModifiedPeptides = new Dictionary<string, Dictionary<int, Tuple<double, double>>>();
 
-            string[] trainingVariables = PsmData.trainingInfos["top-down"];
-
             int chargeStateMode = 4;
             var (notch, pwsm) = maxScorePsm.BestMatchingPeptides.First();
 
@@ -501,7 +499,7 @@ namespace Test
             {
                 { Path.GetFileName(maxScorePsm.FullFilePath), 0 }
             };
-            var maxPsmData = PEP_Analysis.CreateOnePsmDataEntry("top-down", fsp, maxScorePsm, sequenceToPsmCount, fileSpecificRetTimeHI_behavior, fileSpecificRetTemHI_behaviorModifiedPeptides, massError, chargeStateMode, pwsm, trainingVariables, notch, !pwsm.Protein.IsDecoy);
+            var maxPsmData = PEP_Analysis.CreateOnePsmDataEntry("top-down", fsp, maxScorePsm, sequenceToPsmCount, fileSpecificRetTimeHI_behavior, fileSpecificRetTemHI_behaviorModifiedPeptides, massError, chargeStateMode, pwsm, notch, !pwsm.Protein.IsDecoy);
             Assert.That(maxScorePsm.PeptidesToMatchingFragments.Count - 1, Is.EqualTo(maxPsmData.Ambiguity));
             double normalizationFactor = (double)pwsm.BaseSequence.Length / 10.0;
             float maxPsmDeltaScore = (float)Math.Round(maxScorePsm.DeltaScore / normalizationFactor * 10.0, 0);
@@ -680,7 +678,7 @@ namespace Test
             int arrayMax = nonNullPsms.Count;
             psmBloated.AddRange(nonNullPsms.GetRange(2, arrayMax - 2));
             psmBloated.AddRange(nonNullPsms.GetRange(2, arrayMax - 2));
-            PeptideSpectralMatch pp = psmBloated.Where(p => p.ScanRetentionTime < (newRetentionTime + 1)).First();
+            PeptideSpectralMatch pp = psmBloated.OrderBy(p => p.ScanRetentionTime).First();
 
             PeptideWithSetModifications newPwsmTwo = new PeptideWithSetModifications(new Protein("WAGVLPWFPWAAVVWGFWF", "ACCESSION", "ORGANISM"), new DigestionParams(), 1, 2, CleavageSpecificity.Full, "", 0, new Dictionary<int, Modification>(), 0);
             PeptideSpectralMatch newPsmTwo = new PeptideSpectralMatch(newPwsmTwo, pp.BestMatchingPeptides.First().Notch, pp.Score, pp.ScanIndex, mwsm, new CommonParameters(), pp.MatchedFragmentIons);

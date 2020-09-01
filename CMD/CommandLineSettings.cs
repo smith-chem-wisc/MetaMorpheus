@@ -15,13 +15,13 @@ namespace MetaMorpheusCommandLine
         public List<string> Tasks { get; private set; }
         public List<string> Databases { get; private set; }
 
-        [Option('t', HelpText = "Single-task TOMLs (.toml file format)")]
+        [Option('t', HelpText = "Single-task TOMLs (.toml file format); space-delimited")]
         public IEnumerable<string> _tasks { get; set; }
 
-        [Option('d', HelpText = "Protein sequence databases (.fasta, .xml, .fasta.gz, .xml.gz file formats)")]
+        [Option('d', HelpText = "Protein sequence databases (.fasta, .xml, .fasta.gz, .xml.gz file formats); space-delimited")]
         public IEnumerable<string> _databases { get; set; }
 
-        [Option('s', HelpText = "Spectra to analyze (.raw, .mzML, .mgf file formats)")]
+        [Option('s', HelpText = "Spectra to analyze (.raw, .mzML, .mgf file formats); space-delimited")]
         public IEnumerable<string> _spectra { get; set; }
 
         [Option('o', HelpText = "Output folder")]
@@ -30,9 +30,14 @@ namespace MetaMorpheusCommandLine
         [Option('g', HelpText = "Generate default task tomls")]
         public bool GenerateDefaultTomls { get; set; }
 
-        [Option('v', HelpText = "Runs a small test search using a database and yeast data file included with this MetaMorpheus installation")]
+        [Option('v', Default = VerbosityType.normal, HelpText = "Determines how much text is written. Options are no output ('none'), minimal output and errors  ('minimal'), or normal ('normal')")]
+        public VerbosityType Verbosity { get; set; }
+
+        [Option("test", HelpText = "Runs a small test search using a database and yeast data file included with this MetaMorpheus installation")]
         public bool RunMicroVignette { get; set; }
-        
+
+        public enum VerbosityType { none, minimal, normal };
+
         public void ValidateCommandLineSettings()
         {
             Spectra = _spectra == null ? new List<string>() : _spectra.ToList();
@@ -138,6 +143,9 @@ namespace MetaMorpheusCommandLine
 
                 XLSearchTask xl = new XLSearchTask();
                 Toml.WriteFile(xl, Path.Combine(folderLocation, @"XLSearchTask.toml"), MetaMorpheusTask.tomlConfig);
+
+                GlycoSearchTask glyco = new GlycoSearchTask();
+                Toml.WriteFile(glyco, Path.Combine(folderLocation, @"GlycoSearchTask.toml"), MetaMorpheusTask.tomlConfig);
             }
             catch (Exception e)
             {

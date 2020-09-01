@@ -59,7 +59,7 @@ namespace Test
             //ensures that protein out put contins the correct number of proteins to match the folowing conditions.
             // all proteins in DB have baseSequence!=null (not ambiguous)
             // all proteins that belong to a protein group are written to DB
-            Assert.AreEqual(20, proteins.Count);
+            Assert.AreEqual(18, proteins.Count);
             int totalNumberOfMods = proteins.Sum(p => p.OneBasedPossibleLocalizedModifications.Count + p.SequenceVariations.Sum(sv => sv.OneBasedModifications.Count));
 
             //tests that modifications are being done correctly
@@ -326,6 +326,209 @@ namespace Test
             File.Delete(mzmlName);
             File.Delete(xmlName);
             File.Delete(xmlName2);
+        }
+
+        [Test]
+        public static void TestProteinPrunedWithModSelection()
+        {
+            var modToWrite = GlobalVariables.AllModsKnown.Where(p => p.ModificationType == "UniProt" && p.Target.ToString() == "T").First();
+            var modToNotWrite = GlobalVariables.AllModsKnown.Where(p => p.ModificationType == "Common Artifact" && p.Target.ToString() == "X").First();
+
+            var protein1 = new Protein("PEPTIDEKPEPT", "1", oneBasedModifications: new Dictionary<int, List<Modification>> { { 1, new List<Modification> { modToNotWrite } }, { 12, new List<Modification> { modToWrite } } });
+            var protein2 = new Protein("PEPTIDPEPT", "2", oneBasedModifications: new Dictionary<int, List<Modification>> { { 1, new List<Modification> { modToNotWrite } }, { 10, new List<Modification> { modToWrite } } });
+
+            string path = @"temp";
+
+            ProteinDbWriter.WriteXmlDatabase(new Dictionary<string, HashSet<Tuple<int, Modification>>>(), new List<Protein> { protein1, protein2 }, path);
+
+            Directory.CreateDirectory(Path.Combine(TestContext.CurrentContext.TestDirectory, @"PrunedDbTest"));
+
+            Dictionary<string, HashSet<Tuple<int, Modification>>> modList = new Dictionary<string, HashSet<Tuple<int, Modification>>>();
+            var Hash = new HashSet<Tuple<int, Modification>>
+            {
+                new Tuple<int, Modification>(1, modToWrite),
+                new Tuple<int, Modification>(2, modToNotWrite),
+
+            };
+
+            var db = ProteinDbWriter.WriteXmlDatabase(modList, new List<Protein> { protein1, protein2 }, Path.Combine(TestContext.CurrentContext.TestDirectory, @"PrunedDbTest/fakeDb.xml"));
+
+            var peptideObserved = protein1.Digest(new DigestionParams(minPeptideLength: 1), new List<Modification>(), new List<Modification>())
+            .Where(p => p.BaseSequence == "PEPT" && p.AllModsOneIsNterminus.Count > 0).First();
+            PostSearchAnalysisParameters testPostTaskParameters = new PostSearchAnalysisParameters();
+            CommonParameters commonParam = new CommonParameters(useDeltaScore: false);
+            double[,] noiseData = new double[10000, 10000];
+            noiseData[0,0] = 1.0; 
+            List<Proteomics.Fragmentation.MatchedFragmentIon> matchedFragmentIons = new List<Proteomics.Fragmentation.MatchedFragmentIon>() { };
+            MzSpectrum spectrum = new MzSpectrum(noiseData);
+            MsDataScan scan = new MsDataScan(spectrum , 1, 1, true, Polarity.Unknown, 2, new MzLibUtil.MzRange(10, 1000), "", MZAnalyzerType.Orbitrap, 10000, null, noiseData, "");
+            testPostTaskParameters.ProteinList = new List<Protein>() { protein1, protein2 };
+            testPostTaskParameters.AllPsms = new List<PeptideSpectralMatch> { new PeptideSpectralMatch(peptideObserved, 0, 20, 1, new Ms2ScanWithSpecificMass(scan, 100, 1, @"", commonParam), commonParam, matchedFragmentIons) };
+            testPostTaskParameters.SearchParameters = new SearchParameters();
+            testPostTaskParameters.SearchParameters.WritePrunedDatabase = true;
+            testPostTaskParameters.SearchParameters.DoQuantification = false;
+            testPostTaskParameters.SearchParameters.WriteMzId = false;
+            testPostTaskParameters.DatabaseFilenameList = new List<DbForTask>() { new DbForTask(Path.Combine(TestContext.CurrentContext.TestDirectory, @"PrunedDbTest/fakeDb.xml"), false) };
+            testPostTaskParameters.OutputFolder = Path.Combine(TestContext.CurrentContext.TestDirectory, @"PrunedDbTest");
+            Directory.CreateDirectory(Path.Combine(TestContext.CurrentContext.TestDirectory, @"PrunedDbTest/individual"));
+            testPostTaskParameters.IndividualResultsOutputFolder = Path.Combine(TestContext.CurrentContext.TestDirectory, @"PrunedDbTest/individual");
+            int[] stuffForSpectraFile = new int[2];
+            stuffForSpectraFile[0] = 10;
+            stuffForSpectraFile[1] = 10;
+            Dictionary<string, int[]> numSpectraPerFile = new Dictionary<string, int[]>();
+            numSpectraPerFile.Add("", stuffForSpectraFile);
+            testPostTaskParameters.NumMs2SpectraPerFile = numSpectraPerFile;
+
+            MsDataFile myMsDataFile = new TestDataFile(new List<PeptideWithSetModifications>
+            { peptideObserved});
+            string mzmlName = @"newMzml.mzML";
+            IO.MzML.MzmlMethods.CreateAndWriteMyMzmlWithCalibratedSpectra(myMsDataFile, mzmlName, false);
+                        
+            modList.Add("test", Hash);
+            
+            testPostTaskParameters.CurrentRawFileList = new List<string>() { mzmlName };
+
+            SearchTask task5 = new SearchTask
+            {
+                SearchParameters = new SearchParameters
+                {
+                    WritePrunedDatabase = true,
+                    SearchTarget = true,
+                    MassDiffAcceptorType = MassDiffAcceptorType.Exact,
+                },
+                CommonParameters = new CommonParameters()
+            };
+
+            var test = task5.RunTask(Path.Combine(TestContext.CurrentContext.TestDirectory, @"PrunedDbTest"), new List<DbForTask>() { new DbForTask(Path.Combine(TestContext.CurrentContext.TestDirectory, @"PrunedDbTest/fakeDb.xml"),false)}, new List<string>() { mzmlName }, "name");
+            testPostTaskParameters.SearchTaskResults = test;
+           
+            PostSearchAnalysisTask testPostTask = new PostSearchAnalysisTask();
+            testPostTask.Parameters = testPostTaskParameters;
+            testPostTask.CommonParameters = commonParam;
+            testPostTask.FileSpecificParameters = new List<(string FileName, CommonParameters Parameters)> { ("newMzMl.mzml", commonParam) };
+            testPostTask.Run();
+
+            var proteinsLoaded = ProteinDbLoader.LoadProteinXML(path, true, DecoyType.None, GlobalVariables.AllModsKnown, false, new List<string>(), out var unknownMods);
+
+            // assert that mods on proteins are the same before/after task is run
+            Assert.That(protein1.Equals(proteinsLoaded.First(p => p.Accession == "1")));
+            Assert.That(protein2.Equals(proteinsLoaded.First(p => p.Accession == "2")));
+
+            // assert that protein pruned DB has correct proteins mods
+            var proteinPruned = ProteinDbLoader.LoadProteinXML(Path.Combine(TestContext.CurrentContext.TestDirectory, @"PrunedDbTest/fakeDbproteinPruned.xml"), true, DecoyType.None, GlobalVariables.AllModsKnown, false, new List<string>(), out var unknownMods1);
+            Assert.That(proteinPruned.Count().Equals(1));
+            Assert.That(proteinPruned.FirstOrDefault().OneBasedPossibleLocalizedModifications.Count().Equals(1));
+            // assert that mod-pruned DB has correct proteins and mods
+            var modPruned = ProteinDbLoader.LoadProteinXML(Path.Combine(TestContext.CurrentContext.TestDirectory, @"PrunedDbTest/fakeDbpruned.xml"), true, DecoyType.None, GlobalVariables.AllModsKnown, false, new List<string>(), out var unknownMods2);
+            Assert.That(modPruned.Count().Equals(2));
+            Assert.That(modPruned.ElementAt(0).OneBasedPossibleLocalizedModifications.Count().Equals(1));
+            Assert.That(modPruned.ElementAt(1).OneBasedPossibleLocalizedModifications.Count().Equals(1));
+        }
+        [Test]
+        public static void TestProteinPrunedWithModSelectionAndVariants()
+        {
+            var modToWrite = GlobalVariables.AllModsKnown.Where(p => p.ModificationType == "UniProt" && p.Target.ToString() == "T").First();
+            var modToNotWrite = GlobalVariables.AllModsKnown.Where(p => p.ModificationType == "Common Artifact" && p.Target.ToString() == "X").First();
+            Dictionary<int, List<Modification>> variantMods = new Dictionary<int, List<Modification>>();
+            variantMods.Add(1, new List<Modification>(){ modToNotWrite});
+
+            List<SequenceVariation> variants = new List<SequenceVariation> { new SequenceVariation(4, 4, "V", "T", @"20\t41168825\t.\tT\tC\t14290.77\t.\tANN=C|missense_variant|MODERATE|PLCG1|ENSG00000124181|transcript|ENST00000244007.7|protein_coding|22/33|c.2438T>C|p.Ile813Thr|2635/5285|2438/3876|813/1291||\tGT:AD:DP:GQ:PL\t1/1:1,392:393:99:14319,1142,0", variantMods) };
+
+            var protein1 = new Protein("PEPVIDEKPEPT", "1", oneBasedModifications: new Dictionary<int, List<Modification>> { { 1, new List<Modification> { modToNotWrite } }, { 12, new List<Modification> { modToWrite } } }, sequenceVariations: variants);
+            var protein2 = new Protein("PEPIDPEPT", "2", oneBasedModifications: new Dictionary<int, List<Modification>> { { 1, new List<Modification> { modToNotWrite } }, { 9, new List<Modification> { modToWrite } } });
+            var protein1Variants = protein1.GetVariantProteins(1,0);           
+            
+            string path = @"temp";
+
+            var proteinList = new List<Protein> { protein1, protein2};
+            proteinList.AddRange(protein1Variants);
+          
+
+            ProteinDbWriter.WriteXmlDatabase(new Dictionary<string, HashSet<Tuple<int, Modification>>>(), proteinList, path);
+
+            Directory.CreateDirectory(Path.Combine(TestContext.CurrentContext.TestDirectory, @"PrunedDbTestVariant"));
+
+            Dictionary<string, HashSet<Tuple<int, Modification>>> modList = new Dictionary<string, HashSet<Tuple<int, Modification>>>();
+            var Hash = new HashSet<Tuple<int, Modification>>
+            {
+                new Tuple<int, Modification>(1, modToWrite),
+                new Tuple<int, Modification>(2, modToNotWrite),
+
+            };
+
+            var db = ProteinDbWriter.WriteXmlDatabase(modList,  proteinList , Path.Combine(TestContext.CurrentContext.TestDirectory, @"PrunedDbTestVariant/fakeDb.xml"));
+
+            var peptideObserved = protein1Variants.First().Digest(new DigestionParams(minPeptideLength: 1), new List<Modification>(), new List<Modification>())
+            .Where(p => p.BaseSequence == "PEPT").First();
+            PostSearchAnalysisParameters testPostTaskParameters = new PostSearchAnalysisParameters();
+            CommonParameters commonParam = new CommonParameters(useDeltaScore: false);
+            double[,] noiseData = new double[10000, 10000];
+            noiseData[0, 0] = 1.0;
+            List<Proteomics.Fragmentation.MatchedFragmentIon> matchedFragmentIons = new List<Proteomics.Fragmentation.MatchedFragmentIon>() { };
+            MzSpectrum spectrum = new MzSpectrum(noiseData);
+            MsDataScan scan = new MsDataScan(spectrum, 1, 1, true, Polarity.Unknown, 2, new MzLibUtil.MzRange(10, 1000), "", MZAnalyzerType.Orbitrap, 10000, null, noiseData, "");
+            testPostTaskParameters.ProteinList = proteinList;
+            testPostTaskParameters.AllPsms = new List<PeptideSpectralMatch> { new PeptideSpectralMatch(peptideObserved, 0, 20, 1, new Ms2ScanWithSpecificMass(scan, 100, 1, @"", commonParam), commonParam, matchedFragmentIons) };
+            testPostTaskParameters.SearchParameters = new SearchParameters();
+            testPostTaskParameters.SearchParameters.WritePrunedDatabase = true;
+            testPostTaskParameters.SearchParameters.DoQuantification = false;
+            testPostTaskParameters.SearchParameters.WriteMzId = false;
+            testPostTaskParameters.DatabaseFilenameList = new List<DbForTask>() { new DbForTask(Path.Combine(TestContext.CurrentContext.TestDirectory, @"PrunedDbTest/fakeDb.xml"), false) };
+            testPostTaskParameters.OutputFolder = Path.Combine(TestContext.CurrentContext.TestDirectory, @"PrunedDbTest");
+            Directory.CreateDirectory(Path.Combine(TestContext.CurrentContext.TestDirectory, @"PrunedDbTest/individual"));
+            testPostTaskParameters.IndividualResultsOutputFolder = Path.Combine(TestContext.CurrentContext.TestDirectory, @"PrunedDbTest/individual");
+            int[] stuffForSpectraFile = new int[2];
+            stuffForSpectraFile[0] = 10;
+            stuffForSpectraFile[1] = 10;
+            Dictionary<string, int[]> numSpectraPerFile = new Dictionary<string, int[]>();
+            numSpectraPerFile.Add("", stuffForSpectraFile);
+            testPostTaskParameters.NumMs2SpectraPerFile = numSpectraPerFile;
+
+            MsDataFile myMsDataFile = new TestDataFile(new List<PeptideWithSetModifications>
+            { peptideObserved});
+            string mzmlName = @"newMzml.mzML";
+            IO.MzML.MzmlMethods.CreateAndWriteMyMzmlWithCalibratedSpectra(myMsDataFile, mzmlName, false);
+
+            modList.Add("test", Hash);
+
+            testPostTaskParameters.CurrentRawFileList = new List<string>() { mzmlName };
+
+            SearchTask task5 = new SearchTask
+            {
+                SearchParameters = new SearchParameters
+                {
+                    WritePrunedDatabase = true,
+                    SearchTarget = true,
+                    MassDiffAcceptorType = MassDiffAcceptorType.Exact,
+                },
+                CommonParameters = new CommonParameters()
+            };
+
+            var test = task5.RunTask(Path.Combine(TestContext.CurrentContext.TestDirectory, @"PrunedDbTest"), new List<DbForTask>() { new DbForTask(Path.Combine(TestContext.CurrentContext.TestDirectory, @"PrunedDbTest/fakeDb.xml"), false) }, new List<string>() { mzmlName }, "name");
+            testPostTaskParameters.SearchTaskResults = test;
+
+            PostSearchAnalysisTask testPostTask = new PostSearchAnalysisTask();
+            testPostTask.Parameters = testPostTaskParameters;
+            testPostTask.CommonParameters = commonParam;
+            testPostTask.FileSpecificParameters = new List<(string FileName, CommonParameters Parameters)> { ("newMzMl.mzml", commonParam) };
+            testPostTask.Run();
+
+            var proteinsLoaded = ProteinDbLoader.LoadProteinXML(path, true, DecoyType.None, GlobalVariables.AllModsKnown, false, new List<string>(), out var unknownMods);
+
+            // assert that mods on proteins are the same before/after task is run            
+            Assert.AreEqual(protein1Variants.First().Accession, proteinsLoaded.First().Accession);
+            Assert.AreEqual(protein1Variants.First().OneBasedPossibleLocalizedModifications.Count(), proteinsLoaded.First().OneBasedPossibleLocalizedModifications.Count());
+            Assert.AreEqual(protein2.OneBasedPossibleLocalizedModifications.Count(), proteinsLoaded.ElementAt(1).OneBasedPossibleLocalizedModifications.Count());
+           
+            // assert that protein pruned DB has correct proteins mods
+            var proteinPruned = ProteinDbLoader.LoadProteinXML(Path.Combine(TestContext.CurrentContext.TestDirectory, @"PrunedDbTest/fakeDbproteinPruned.xml"), true, DecoyType.None, GlobalVariables.AllModsKnown, false, new List<string>(), out var unknownMods1);
+            Assert.That(proteinPruned.Count().Equals(1));
+            Assert.That(proteinPruned.FirstOrDefault().OneBasedPossibleLocalizedModifications.Count().Equals(1));
+            // assert that mod-pruned DB has correct proteins and mods
+            var modPruned = ProteinDbLoader.LoadProteinXML(Path.Combine(TestContext.CurrentContext.TestDirectory, @"PrunedDbTest/fakeDbpruned.xml"), true, DecoyType.None, GlobalVariables.AllModsKnown, false, new List<string>(), out var unknownMods2);
+            Assert.That(modPruned.Count().Equals(2));
+            Assert.That(modPruned.ElementAt(0).OneBasedPossibleLocalizedModifications.Count().Equals(1));
+            Assert.That(modPruned.ElementAt(1).OneBasedPossibleLocalizedModifications.Count().Equals(1));
         }
     }
 }

@@ -156,7 +156,7 @@ namespace TaskLayer
 
                 // generate calibration function and shift data points
                 Status("Calibrating...", new List<string> { taskId, "Individual Spectra Files" });
-                CalibrationEngine engine = new CalibrationEngine(myMsDataFile, acquisitionResults, CommonParameters, this.FileSpecificParameters, new List<string> { taskId, "Individual Spectra Files", originalUncalibratedFilenameWithoutExtension });
+                CalibrationEngine engine = new CalibrationEngine(myMsDataFile, acquisitionResults, CommonParameters, FileSpecificParameters, new List<string> { taskId, "Individual Spectra Files", originalUncalibratedFilenameWithoutExtension });
                 engine.Run();
 
                 //update file
@@ -168,14 +168,14 @@ namespace TaskLayer
 
                 //generate calibration function and shift data points AGAIN because it's fast and contributes new data
                 Status("Calibrating...", new List<string> { taskId, "Individual Spectra Files" });
-                engine = new CalibrationEngine(myMsDataFile, acquisitionResults, CommonParameters, this.FileSpecificParameters, new List<string> { taskId, "Individual Spectra Files", originalUncalibratedFilenameWithoutExtension });
+                engine = new CalibrationEngine(myMsDataFile, acquisitionResults, CommonParameters, FileSpecificParameters, new List<string> { taskId, "Individual Spectra Files", originalUncalibratedFilenameWithoutExtension });
                 engine.Run();
 
                 //update file
                 myMsDataFile = engine.CalibratedDataFile;
 
                 // write the calibrated mzML file
-                MzmlMethods.CreateAndWriteMyMzmlWithCalibratedSpectra(myMsDataFile, calibratedFilePath, false);
+                MzmlMethods.CreateAndWriteMyMzmlWithCalibratedSpectra(myMsDataFile, calibratedFilePath, true);
                 myFileManager.DoneWithFile(originalUncalibratedFilePath);
 
                 // stats after calibration
@@ -266,14 +266,14 @@ namespace TaskLayer
             Log("Searching with searchMode: " + searchMode, new List<string> { taskId, "Individual Spectra Files", fileNameWithoutExtension });
             Log("Searching with productMassTolerance: " + initProdTol, new List<string> { taskId, "Individual Spectra Files", fileNameWithoutExtension });
 
-            new ClassicSearchEngine(allPsmsArray, listOfSortedms2Scans, variableModifications, fixedModifications, null, null, null, proteinList, searchMode, combinedParameters, this.FileSpecificParameters, new List<string> { taskId, "Individual Spectra Files", fileNameWithoutExtension }).Run();
+            new ClassicSearchEngine(allPsmsArray, listOfSortedms2Scans, variableModifications, fixedModifications, null, null, null, proteinList, searchMode, combinedParameters, FileSpecificParameters, new List<string> { taskId, "Individual Spectra Files", fileNameWithoutExtension }).Run();
             List<PeptideSpectralMatch> allPsms = allPsmsArray.Where(b => b != null).ToList();
 
             allPsms = allPsms.OrderByDescending(b => b.Score)
                 .ThenBy(b => b.PeptideMonisotopicMass.HasValue ? Math.Abs(b.ScanPrecursorMass - b.PeptideMonisotopicMass.Value) : double.MaxValue)
                 .GroupBy(b => (b.FullFilePath, b.ScanNumber, b.PeptideMonisotopicMass)).Select(b => b.First()).ToList();
             
-            new FdrAnalysisEngine(allPsms, searchMode.NumNotches, CommonParameters, this.FileSpecificParameters, new List<string> { taskId, "Individual Spectra Files", fileNameWithoutExtension }).Run();
+            new FdrAnalysisEngine(allPsms, searchMode.NumNotches, CommonParameters, FileSpecificParameters, new List<string> { taskId, "Individual Spectra Files", fileNameWithoutExtension }).Run();
 
             List<PeptideSpectralMatch> goodIdentifications = allPsms.Where(b => b.FdrInfo.QValueNotch < 0.001 && !b.IsDecoy && b.FullSequence != null).ToList();
 
@@ -282,13 +282,23 @@ namespace TaskLayer
                 return new DataPointAquisitionResults(null, new List<PeptideSpectralMatch>(), new List<LabeledDataPoint>(), new List<LabeledDataPoint>(), 0, 0, 0, 0);
             }
 
+            //get the deconvoluted ms2scans for the good identifications
+            List<Ms2ScanWithSpecificMass> goodScans = new List<Ms2ScanWithSpecificMass>();
+            List<PeptideSpectralMatch> unfilteredPsms = allPsmsArray.ToList();
+            foreach(PeptideSpectralMatch psm in goodIdentifications)
+            {
+                goodScans.Add(listOfSortedms2Scans[unfilteredPsms.IndexOf(psm)]);
+            }
+
             DataPointAquisitionResults currentResult = (DataPointAquisitionResults)new DataPointAcquisitionEngine(
                     goodIdentifications,
+                    goodScans,
                     myMsDataFile,
                     initPrecTol,
+                    initProdTol,
                     CalibrationParameters.MinMS1IsotopicPeaksNeededForConfirmedIdentification,
                     CommonParameters,
-                    this.FileSpecificParameters,
+                    FileSpecificParameters,
                     new List<string> { taskId, "Individual Spectra Files", fileNameWithoutExtension }).Run();
 
             return currentResult;
@@ -302,7 +312,10 @@ namespace TaskLayer
             for (int i = 1; i < lines.Length; i++)
             {
                 var split = lines[i].Split('\t');
-                string oldFileName = Path.GetFileNameWithoutExtension(split[0]);
+
+                // GetFileName is used instead of GetFileNameWithoutExtension because 
+                // the Experimental Design file does not include extensions in the file names
+                string oldFileName = Path.GetFileName(split[0]);
                 string newFileName = oldFileName + CalibSuffix;
                 string newline;
 

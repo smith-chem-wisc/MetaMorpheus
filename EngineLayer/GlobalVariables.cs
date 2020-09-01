@@ -8,6 +8,7 @@ using System.Collections.Generic;
 using System.Diagnostics;
 using System.IO;
 using System.Linq;
+using System.Runtime.InteropServices;
 
 namespace EngineLayer
 {
@@ -16,6 +17,7 @@ namespace EngineLayer
         // for now, these are only used for error-checking in the command-line version.
         // compressed versions of the protein databases (e.g., .xml.gz) are also supported
         public static List<string> AcceptedDatabaseFormats = new List<string> { ".fasta", ".fa", ".xml" };
+
         public static List<string> AcceptedSpectraFormats = new List<string> { ".raw", ".mzml", ".mgf" };
 
         private static List<Modification> _AllModsKnown = new List<Modification>();
@@ -27,7 +29,7 @@ namespace EngineLayer
         private static char[] _InvalidAminoAcids = new char[] { 'X', 'B', 'J', 'Z', ':', '|', ';', '[', ']', '{', '}', '(', ')', '+', '-' };
 
         // this affects output labels, etc. and can be changed to "Proteoform" for top-down searches
-        public static string AnalyteType = "Peptide"; 
+        public static string AnalyteType = "Peptide";
 
         static GlobalVariables()
         {
@@ -85,6 +87,18 @@ namespace EngineLayer
                 AddCrosslinkers(Crosslinker.LoadCrosslinkers(customCrosslinkerLocation));
             }
 
+
+            OGlycanLocations = new List<string>();
+            foreach (var glycanFile in Directory.GetFiles(Path.Combine(DataDir, @"Glycan_Mods", @"OGlycan")))
+            {
+                OGlycanLocations.Add(glycanFile);
+            }
+            NGlycanLocations = new List<string>();
+            foreach (var glycanFile in Directory.GetFiles(Path.Combine(DataDir, @"Glycan_Mods", @"NGlycan")))
+            {
+                NGlycanLocations.Add(glycanFile);
+            }
+
             ExperimentalDesignFileName = "ExperimentalDesign.tsv";
 
             UnimodDeserialized = UsefulProteomicsDatabases.Loaders.LoadUnimod(Path.Combine(DataDir, @"Data", @"unimod.xml")).ToList();
@@ -109,6 +123,33 @@ namespace EngineLayer
                     AllModsKnownDictionary.Add(mod.IdWithMotif, mod);
                 }
                 // no error thrown if multiple mods with this ID are present - just pick one
+            }
+
+            //Add Glycan mod into AllModsKnownDictionary, currently this is for MetaDraw.
+            //The reason why not include Glycan into modification database is for users to apply their own database.
+            foreach (var path in OGlycanLocations)
+            {
+                var og = GlycanDatabase.LoadGlycan(path, false, false);
+                foreach (var g in og)
+                {
+                    var ogmod = Glycan.OGlycanToModification(g);
+                    if (!AllModsKnownDictionary.ContainsKey(ogmod.IdWithMotif))
+                    {
+                        AllModsKnownDictionary.Add(ogmod.IdWithMotif, ogmod);
+                    }
+                }
+            }
+            foreach (var path in NGlycanLocations)
+            {
+                var og = GlycanDatabase.LoadGlycan(path, false, false);
+                foreach (var g in og)
+                {
+                    var ogmod = Glycan.OGlycanToModification(g);
+                    if (!AllModsKnownDictionary.ContainsKey(ogmod.IdWithMotif))
+                    {
+                        AllModsKnownDictionary.Add(ogmod.IdWithMotif, ogmod);
+                    }
+                }
             }
 
             RefreshAminoAcidDictionary();
@@ -147,13 +188,15 @@ namespace EngineLayer
         public static UsefulProteomicsDatabases.Generated.obo PsiModDeserialized { get; }
         public static IEnumerable<Modification> AllModsKnown { get { return _AllModsKnown.AsEnumerable(); } }
         public static IEnumerable<string> AllModTypesKnown { get { return _AllModTypesKnown.AsEnumerable(); } }
-        public static Dictionary<string, Modification> AllModsKnownDictionary { get; private set; }
+        public static Dictionary<string, Modification> AllModsKnownDictionary { get; set; }
         public static Dictionary<string, DissociationType> AllSupportedDissociationTypes { get; private set; }
         public static List<string> SeparationTypes { get { return _SeparationTypes; } }
 
         public static string ExperimentalDesignFileName { get; }
         public static IEnumerable<Crosslinker> Crosslinkers { get { return _KnownCrosslinkers.AsEnumerable(); } }
         public static IEnumerable<char> InvalidAminoAcids { get { return _InvalidAminoAcids.AsEnumerable(); } }
+        public static List<string> OGlycanLocations { get; }
+        public static List<string> NGlycanLocations { get; }
 
         public static void AddMods(IEnumerable<Modification> modifications, bool modsAreFromTheTopOfProteinXml)
         {
@@ -247,7 +290,6 @@ namespace EngineLayer
                 List<Residue> residuesToAdd = new List<Residue>();
                 for (int i = 1; i < aminoAcidLines.Length; i++)
                 {
-
                     string[] line = aminoAcidLines[i].Split('\t').ToArray(); //tsv Name, one letter, monoisotopic, chemical formula
                     if (line.Length >= 4) //check something is there (not a blank line)
                     {
@@ -301,13 +343,22 @@ namespace EngineLayer
         }
 
         // Does the same thing as Process.Start() except it works on .NET Core
-        public static void StartProcess(string path)
+        public static void StartProcess(string path, bool useNotepadToOpenToml = false)
         {
             var p = new Process();
-            p.StartInfo = new ProcessStartInfo(path)
+
+            p.StartInfo = new ProcessStartInfo()
             {
-                UseShellExecute = true
+                UseShellExecute = true,
+                FileName = path
             };
+
+            if (useNotepadToOpenToml && Path.GetExtension(path) == ".toml" && RuntimeInformation.IsOSPlatform(OSPlatform.Windows))
+            {
+                p.StartInfo.FileName = "notepad.exe";
+                p.StartInfo.Arguments = path;
+            }
+
             p.Start();
         }
     }

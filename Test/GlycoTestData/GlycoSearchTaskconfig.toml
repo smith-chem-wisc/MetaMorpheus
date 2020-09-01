@@ -1,0 +1,54 @@
+TaskType = "GlycoSearch"
+
+[_glycoSearchParameters]
+GlycanDatabasefile = "OGlycan.gdb"
+IsOGlycoSearch = true
+OxiniumIonFilt = true
+DecoyType = "Reverse"
+GlycoSearchTopNum = 50
+MaximumOGlycanAllowed = 4
+
+[CommonParameters]
+TaskDescriptor = "GlycoSearchTask"
+MaxThreadsToUsePerFile = 39
+ListOfModsFixed = "Common Fixed\tCarbamidomethyl on C\t\tCommon Fixed\tCarbamidomethyl on U"
+ListOfModsVariable = "Common Variable\tOxidation on M\t\tCommon Biological\tAcetylation on X\t\tCommon Artifact\tDeamidation on N"
+DoPrecursorDeconvolution = true
+UseProvidedPrecursorInfo = true
+DeconvolutionIntensityRatio = 3.0
+DeconvolutionMaxAssumedChargeState = 12
+DeconvolutionMassTolerance = "±4.0000 PPM"
+TotalPartitions = 1
+ProductMassTolerance = "±20.0000 PPM"
+PrecursorMassTolerance = "±10.0000 PPM"
+AddCompIons = false
+ScoreCutoff = 3.0
+ReportAllAmbiguity = true
+NumberOfPeaksToKeepPerWindow = 1000
+MinimumAllowedIntensityRatioToBasePeak = 0.01
+NormalizePeaksAccrossAllWindows = false
+TrimMs1Peaks = false
+TrimMsMsPeaks = false
+UseDeltaScore = false
+QValueOutputFilter = 1.0
+CustomIons = []
+AssumeOrphanPeaksAreZ1Fragments = true
+MaxHeterozygousVariants = 4
+MinVariantDepth = 1
+DissociationType = "EThcD"
+SeparationType = "HPLC"
+MS2ChildScanDissociationType = "Unknown"
+MS3ChildScanDissociationType = "Unknown"
+
+[CommonParameters.DigestionParams]
+MaxMissedCleavages = 5
+InitiatorMethionineBehavior = "Variable"
+MinPeptideLength = 5
+MaxPeptideLength = 60
+MaxModificationIsoforms = 1024
+MaxModsForPeptide = 2
+Protease = "StcE-trypsin"
+SearchModeType = "Full"
+FragmentationTerminus = "Both"
+SpecificProtease = "StcE-trypsin"
+GeneratehUnlabeledProteinsForSilac = true

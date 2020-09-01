@@ -2,6 +2,7 @@
 using Newtonsoft.Json.Linq;
 using System;
 using System.Diagnostics;
+using System.Linq;
 using System.Net;
 using System.Net.Http;
 using System.Text;
@@ -17,7 +18,7 @@ namespace MetaMorpheusGUI
         public MetaUpdater()
         {
             InitializeComponent();
-            lbl.Text = "A newer version: " + MainWindow.NewestKnownVersion + " is available!";
+            lbl.Text = "A newer version: " + MainWindow.NewestKnownMetaMorpheusVersion + " is available!";
             ReleaseHandler();
         }
 
@@ -35,25 +36,57 @@ namespace MetaMorpheusGUI
             }
         }
 
+        public static string GetVersionNumbersFromWeb()
+        {
+            // Attempt to get current MetaMorpheus version
+            using (var client = new HttpClient())
+            {
+                client.DefaultRequestHeaders.Add("User-Agent", "Mozilla/5.0 (compatible; MSIE 10.0; Windows NT 6.2; WOW64; Trident/6.0)");
+
+                using (var response = client.GetAsync("https://api.github.com/repos/smith-chem-wisc/MetaMorpheus/releases/latest").Result)
+                {
+                    var json = response.Content.ReadAsStringAsync().Result;
+                    JObject deserialized = JObject.Parse(json);
+                    var assets = deserialized["assets"].Select(b => b["name"].ToString()).ToList();
+                    if (!assets.Contains("MetaMorpheusInstaller.msi"))
+                    {
+                        throw new MetaMorpheusException("A new version of MetaMorpheus was detected, but the files haven't been" +
+                            " uploaded yet. Try again in a few minutes.");
+                    }
+
+                    return deserialized["tag_name"].ToString();
+                }
+            }
+        }
+
         private void InstallerClicked(object sender, RoutedEventArgs e)
         {
             DialogResult = true;
             using (var client = new WebClient())
             {
-                var uri = new Uri(@"https://github.com/smith-chem-wisc/MetaMorpheus/releases/download/" + MainWindow.NewestKnownVersion + @"/MetaMorpheusInstaller.msi");
+                var uri = new Uri(@"https://github.com/smith-chem-wisc/MetaMorpheus/releases/download/" + MainWindow.NewestKnownMetaMorpheusVersion + @"/MetaMorpheusInstaller.msi");
 
+                Exception exception = null;
                 try
                 {
                     var tempDownloadLocation = System.IO.Path.Combine(System.IO.Path.GetTempPath(), "MetaMorpheusInstaller.msi");
+
+                    // download the installer
                     client.DownloadFile(uri, tempDownloadLocation);
-                    Process p = new Process();
-                    p.StartInfo.FileName = tempDownloadLocation;
-                    Application.Current.Shutdown();
-                    p.Start();
+
+                    // start the installer
+                    GlobalVariables.StartProcess(tempDownloadLocation);
                 }
                 catch (Exception ex)
                 {
+                    exception = ex;
                     MessageBox.Show(ex.Message);
+                }
+
+                if (exception == null)
+                {
+                    // close metamorpheus if the installer was started successfully
+                    Application.Current.Shutdown();
                 }
             }
         }
@@ -105,7 +138,7 @@ namespace MetaMorpheusGUI
             DialogResult = true;
             using (var client = new WebClient())
             {
-                var uri = new Uri(@"https://github.com/smith-chem-wisc/MetaMorpheus/releases/download/" + MainWindow.NewestKnownVersion + @"/MetaMorpheusGuiDotNetFrameworkAppveyor.zip");
+                var uri = new Uri(@"https://github.com/smith-chem-wisc/MetaMorpheus/releases/download/" + MainWindow.NewestKnownMetaMorpheusVersion + @"/MetaMorpheusGuiDotNetFrameworkAppveyor.zip");
 
                 try
                 {

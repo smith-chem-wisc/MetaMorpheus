@@ -24,7 +24,8 @@ namespace TaskLayer
         Search,
         Gptmd,
         Calibrate,
-        XLSearch
+        XLSearch,
+        GlycoSearch
     }
 
     public abstract class MetaMorpheusTask
@@ -147,8 +148,8 @@ namespace TaskLayer
                                     commonParameters.DeconvolutionMassTolerance.Value,
                                     commonParameters.DeconvolutionIntensityRatio))
                                 {
-                                    double monoPeakMz = envelope.monoisotopicMass.ToMz(envelope.charge);
-                                    precursors.Add((monoPeakMz, envelope.charge));
+                                    double monoPeakMz = envelope.MonoisotopicMass.ToMz(envelope.Charge);
+                                    precursors.Add((monoPeakMz, envelope.Charge));
                                 }
                             }
                         }
@@ -191,12 +192,12 @@ namespace TaskLayer
                         // get child scans
                         List<MsDataScan> ms2ChildScans = null;
                         List<MsDataScan> ms3ChildScans = null;
-                        if (commonParameters.MS2ChildScanDissociationType!= DissociationType.Unknown || commonParameters.MS3ChildScanDissociationType!= DissociationType.Unknown)
+                        if (commonParameters.MS2ChildScanDissociationType != DissociationType.Unknown || commonParameters.MS3ChildScanDissociationType != DissociationType.Unknown)
                         {
                             ms3ChildScans = ms3Scans.Where(p => p.OneBasedPrecursorScanNumber == ms2scan.OneBasedScanNumber).ToList();
 
                             ms2ChildScans = ms2Scans.Where(p => p.OneBasedPrecursorScanNumber == ms2scan.OneBasedScanNumber ||
-                            (p.OneBasedPrecursorScanNumber == ms2scan.OneBasedPrecursorScanNumber 
+                            (p.OneBasedPrecursorScanNumber == ms2scan.OneBasedPrecursorScanNumber
                                 && p.OneBasedScanNumber > ms2scan.OneBasedScanNumber
                                 && Math.Abs(p.IsolationMz.Value - ms2scan.IsolationMz.Value) < 0.01)).ToList();
                         }
@@ -214,7 +215,7 @@ namespace TaskLayer
                                 {
                                     IsotopicEnvelope[] childNeutralExperimentalFragments = null;
 
-                                    if (commonParameters.MS2ChildScanDissociationType!= DissociationType.LowCID)
+                                    if (commonParameters.MS2ChildScanDissociationType != DissociationType.LowCID)
                                     {
                                         childNeutralExperimentalFragments = Ms2ScanWithSpecificMass.GetNeutralExperimentalFragments(ms2ChildScan, commonParameters);
                                     }
@@ -242,7 +243,7 @@ namespace TaskLayer
                                     //}
 
                                     if (ms3ChildScan.SelectedIonMonoisotopicGuessMz.HasValue)
-                                    {                                       
+                                    {
                                         precursorMz = ms3ChildScan.SelectedIonMonoisotopicGuessMz.Value;
                                     }
                                     else if (ms3ChildScan.SelectedIonMZ.HasValue)
@@ -263,7 +264,7 @@ namespace TaskLayer
                                     }
                                     var theChildScan = new Ms2ScanWithSpecificMass(ms3ChildScan, precursorMz,
                                         precursorCharge, fullFilePath, commonParameters, childNeutralExperimentalFragments);
-       
+
                                     scan.ChildScans.Add(theChildScan);
                                 }
                             }
@@ -304,9 +305,9 @@ namespace TaskLayer
                             }
 
                             foreach (var childScan in parentScan.ChildScans)
-                            {                               
+                            {
                                 if (((childScan.TheScan.MsnOrder == 2 && commonParameters.MS2ChildScanDissociationType == DissociationType.LowCID) ||
-                                (childScan.TheScan.MsnOrder == 3 && commonParameters.MS3ChildScanDissociationType == DissociationType.LowCID)) 
+                                (childScan.TheScan.MsnOrder == 3 && commonParameters.MS3ChildScanDissociationType == DissociationType.LowCID))
                                 && !childScan.TheScan.MassSpectrum.XcorrProcessed)
                                 {
                                     lock (childScan.TheScan)
@@ -435,6 +436,10 @@ namespace TaskLayer
                             // probably the only time you can get here is if the user modifies the file-specific parameter file in the middle of a run...
                             Warn("Problem parsing the file-specific toml " + Path.GetFileName(fileSpecificTomlPath) + "; " + e.Message + "; is the toml from an older version of MetaMorpheus?");
                         }
+                        catch (KeyNotFoundException e)
+                        {
+                            Warn("Problem parsing the file-specific toml " + Path.GetFileName(fileSpecificTomlPath) + "; " + e.Message + "; please update the proteases.tsv file and restart MetaMorpheus to use this file-specific toml.");
+                        }
                     }
                     else // just used common parameters for file specific.
                     {
@@ -477,9 +482,9 @@ namespace TaskLayer
                 var proseFilePath = Path.Combine(output_folder, "prose.txt");
                 using (StreamWriter file = new StreamWriter(proseFilePath))
                 {
-                    file.Write("The data analysis was performed using MetaMorpheus version " + GlobalVariables.MetaMorpheusVersion + ", available at " + "https://github.com/smith-chem-wisc/MetaMorpheus.");
+                    file.WriteLine("The data analysis was performed using MetaMorpheus version " + GlobalVariables.MetaMorpheusVersion + ", available at " + "https://github.com/smith-chem-wisc/MetaMorpheus.");
                     file.Write(ProseCreatedWhileRunning.ToString());
-                    file.Write(SystemInfo.SystemProse().Replace(Environment.NewLine, "") + " ");
+                    file.WriteLine(SystemInfo.SystemProse().Replace(Environment.NewLine, "") + " ");
                     file.WriteLine("The total time to perform the " + TaskType + " task on " + currentRawDataFilepathList.Count + " spectra file(s) was " + String.Format("{0:0.00}", MyTaskResults.Time.TotalMinutes) + " minutes.");
                     file.WriteLine();
                     file.WriteLine("Published works using MetaMorpheus software are encouraged to cite: Solntsev, S. K.; Shortreed, M. R.; Frey, B. L.; Smith, L. M. Enhanced Global Post-translational Modification Discovery with MetaMorpheus. Journal of Proteome Research. 2018, 17 (5), 1844-1851.");
@@ -917,6 +922,82 @@ namespace TaskLayer
             else
             {
                 GlobalVariables.AnalyteType = "Peptide";
+            }
+        }
+
+        /// <summary>
+        /// Handle ambiguity when two theoretical proteins in the 
+        /// search space have the same accession number.
+        /// The accession must be unique for indexed searches
+        /// 
+        /// RemoveAll is important because it references the location in memory, not the Equals
+        /// </summary>
+        /// <param name="proteins"></param>
+        /// <param name="tcAmbiguity"></param>
+        protected static void SanitizeProteinDatabase(List<Protein> proteins, TargetContaminantAmbiguity tcAmbiguity)
+        {
+            foreach (var accessionGroup in proteins.GroupBy(p => p.Accession))
+            {
+                if (accessionGroup.Count() != 1) //if multiple proteins with the same accession
+                {
+                    List<Protein> proteinsWithThisAccession = accessionGroup.OrderBy(p => p.OneBasedPossibleLocalizedModifications.Count).ThenBy(p => p.ProteolysisProducts.Count()).ToList();
+                    List<Protein> proteinsToRemove = new List<Protein>();
+                    if (tcAmbiguity == TargetContaminantAmbiguity.RenameProtein)
+                    {
+                        int proteinNumber = 1;
+                        Warn("The protein '" + accessionGroup.Key + "' has multiple entries. Protein accessions must be unique. Protein " + accessionGroup.Key + " was renamed.");
+                        foreach (var originalProtein in proteinsWithThisAccession)
+                        {
+                            //accession is private and there's no clone method, so we need to make a whole new protein... TODO: put this in mzlib
+                            //use PROTEIN_D1 instead of PROTEIN_1 so it doesn't look like an isoform (D for Duplicate)
+                            var renamedProtein = new Protein(originalProtein.BaseSequence, originalProtein + "_D" + proteinNumber.ToString(), originalProtein.Organism,
+                                originalProtein.GeneNames.ToList(), originalProtein.OneBasedPossibleLocalizedModifications, originalProtein.ProteolysisProducts.ToList(), originalProtein.Name, originalProtein.FullName,
+                                originalProtein.IsDecoy, originalProtein.IsContaminant, originalProtein.DatabaseReferences.ToList(), originalProtein.SequenceVariations.ToList(), originalProtein.AppliedSequenceVariations,
+                                originalProtein.SampleNameForVariants, originalProtein.DisulfideBonds.ToList(), originalProtein.SpliceSites.ToList(), originalProtein.DatabaseFilePath);
+                            proteins.Add(renamedProtein);
+                            proteins.RemoveAll(p => p == originalProtein);
+                            proteinNumber++;
+                        }
+                    }
+                    else //if (tcAmbiguity == TargetContaminantAmbiguity.RemoveContaminant || tcAmbiguity == TargetContaminantAmbiguity.RemoveTarget)
+                    {
+                        if (tcAmbiguity == TargetContaminantAmbiguity.RemoveContaminant)
+                        {
+                            // remove contaminants
+                            proteinsToRemove = proteinsWithThisAccession.Where(p => p.IsContaminant).ToList();
+                            if (proteinsToRemove.Any())
+                            {
+                                Warn("The protein '" + accessionGroup.Key + "' has multiple entries. Protein accessions must be unique. Contaminant protein " + accessionGroup.Key + " was ignored.");
+                            }
+                        }
+                        else //if (tcAmbiguity == TargetContaminantAmbiguity.RemoveTarget)
+                        {
+                            // remove targets
+                            proteinsToRemove = proteinsWithThisAccession.Where(p => !p.IsDecoy && !p.IsContaminant).ToList();
+                            if (proteinsToRemove.Any())
+                            {
+                                Warn("The protein '" + accessionGroup.Key + "' has multiple entries. Protein accessions must be unique. Target protein " + accessionGroup.Key + " was ignored.");
+                            }
+                        }
+
+                        //remove the proteins specified above
+                        foreach (var protein in proteinsToRemove)
+                        {
+                            if (proteinsWithThisAccession.Count > 1)
+                            {
+                                proteins.RemoveAll(p => p == protein);
+                                proteinsWithThisAccession.RemoveAll(p => p == protein);
+                            }
+                        }
+
+                        // most ambiguity should be handled by now, but for edge cases and decoys:
+                        // remove proteins so that only 1 protein with this accession remains
+                        for (int i = 0; i < proteinsWithThisAccession.Count - 1; i++) //-1 to keep the last one (most mods)
+                        {
+                            proteins.RemoveAll(p => p == proteinsWithThisAccession[i]);
+                        }
+                    }
+                }
             }
         }
     }

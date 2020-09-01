@@ -1,6 +1,7 @@
 ﻿using CommandLine;
 using CommandLine.Text;
 using EngineLayer;
+using IO.ThermoRawFileReader;
 using Nett;
 using Proteomics;
 using System;
@@ -15,24 +16,34 @@ namespace MetaMorpheusCommandLine
     public static class Program
     {
         private static bool InProgress;
+        private static CommandLineSettings CommandLineSettings;
 
         private static System.CodeDom.Compiler.IndentedTextWriter MyWriter = new System.CodeDom.Compiler.IndentedTextWriter(Console.Out, "\t");
 
-        public static void Main(string[] args)
+        public static int Main(string[] args)
         {
-            Console.WriteLine("Welcome to MetaMorpheus");
-            Console.WriteLine(GlobalVariables.MetaMorpheusVersion);
+            // an error code of 0 is returned if the program ran successfully.
+            // otherwise, an error code of >0 is returned.
+            // this makes it easier to determine via scripts when the program fails.
+            int errorCode = 0;
 
             var parser = new Parser(with => with.HelpWriter = null);
             var parserResult = parser.ParseArguments<CommandLineSettings>(args);
 
             parserResult
-              .WithParsed<CommandLineSettings>(options => Run(options))
-              .WithNotParsed(errs => DisplayHelp(parserResult, errs));
+              .WithParsed<CommandLineSettings>(options => errorCode = Run(options))
+              .WithNotParsed(errs => errorCode = DisplayHelp(parserResult, errs));
+
+            return errorCode;
         }
 
-        public static void DisplayHelp<T>(ParserResult<T> result, IEnumerable<Error> errs)
+        public static int DisplayHelp<T>(ParserResult<T> result, IEnumerable<Error> errs)
         {
+            Console.WriteLine("Welcome to MetaMorpheus");
+            Console.WriteLine(GlobalVariables.MetaMorpheusVersion);
+
+            int errorCode = 0;
+
             var helpText = HelpText.AutoBuild(result, h =>
             {
                 h.AdditionalNewLineAfterOption = false;
@@ -51,25 +62,50 @@ namespace MetaMorpheusCommandLine
             helpText.AddPostOptionsLine(Environment.NewLine);
 
             Console.WriteLine(helpText);
+
+            if (errs.Any())
+            {
+                errorCode = 1;
+            }
+
+            return errorCode;
         }
 
-        private static void Run(CommandLineSettings settings)
+        private static int Run(CommandLineSettings settings)
         {
+            if (settings.Verbosity == CommandLineSettings.VerbosityType.minimal || settings.Verbosity == CommandLineSettings.VerbosityType.normal)
+            {
+                Console.WriteLine("Welcome to MetaMorpheus");
+                Console.WriteLine(GlobalVariables.MetaMorpheusVersion);
+            }
+
+            int errorCode = 0;
+
             try
             {
                 settings.ValidateCommandLineSettings();
+                CommandLineSettings = settings;
             }
             catch (Exception e)
             {
-                Console.WriteLine("MetaMorpheus encountered the following error:" + Environment.NewLine + e.Message);
-                return;
+                if (settings.Verbosity == CommandLineSettings.VerbosityType.minimal || settings.Verbosity == CommandLineSettings.VerbosityType.normal)
+                {
+                    Console.WriteLine("MetaMorpheus encountered the following error:" + Environment.NewLine + e.Message);
+                }
+                errorCode = 2;
+
+                return errorCode;
             }
 
             if (settings.GenerateDefaultTomls)
             {
-                Console.WriteLine("Generating default tomls at location: " + settings.OutputFolder);
+                if (settings.Verbosity == CommandLineSettings.VerbosityType.minimal || settings.Verbosity == CommandLineSettings.VerbosityType.normal)
+                {
+                    Console.WriteLine("Generating default tomls at location: " + settings.OutputFolder);
+                }
                 CommandLineSettings.GenerateDefaultTaskTomls(settings.OutputFolder);
-                return;
+
+                return errorCode;
             }
 
             // set up microvignette
@@ -106,7 +142,7 @@ namespace MetaMorpheusCommandLine
             if (containsRawFiles && !GlobalVariables.GlobalSettings.UserHasAgreedToThermoRawFileReaderLicence)
             {
                 // write the Thermo RawFileReader licence agreement
-                Console.WriteLine(ThermoRawFileReader.ThermoRawFileReaderLicence.ThermoLicenceText);
+                Console.WriteLine(ThermoRawFileReaderLicence.ThermoLicenceText);
                 Console.WriteLine("\nIn order to search Thermo .raw files, you must agree to the above terms. Do you agree to the above terms? y/n\n");
                 string res = Console.ReadLine().ToLowerInvariant();
                 if (res == "y")
@@ -123,7 +159,8 @@ namespace MetaMorpheusCommandLine
                 else
                 {
                     Console.WriteLine("Thermo licence has been declined. Exiting MetaMorpheus. You can still search .mzML and .mgf files without agreeing to the Thermo licence.");
-                    return;
+                    errorCode = 3;
+                    return errorCode;
                 }
             }
 
@@ -136,7 +173,10 @@ namespace MetaMorpheusCommandLine
                     // print any error messages reading the mods to the console
                     foreach (var error in GlobalVariables.ErrorsReadingMods)
                     {
-                        Console.WriteLine(error);
+                        if (settings.Verbosity == CommandLineSettings.VerbosityType.minimal || settings.Verbosity == CommandLineSettings.VerbosityType.normal)
+                        {
+                            Console.WriteLine(error);
+                        }
                     }
 
                     GlobalVariables.ErrorsReadingMods.Clear();
@@ -174,8 +214,16 @@ namespace MetaMorpheusCommandLine
                         taskList.Add(("Task" + (i + 1) + "XLSearchTask", XlTask));
                         break;
 
+                    case "GlycoSearch":
+                        var GlycoTask = Toml.ReadFile<GlycoSearchTask>(filePath, MetaMorpheusTask.tomlConfig);
+                        taskList.Add(("Task" + (i + 1) + "GlycoSearchTask", GlycoTask));
+                        break;
+
                     default:
-                        Console.WriteLine(toml.Get<string>("TaskType") + " is not a known task type! Skipping.");
+                        if (settings.Verbosity == CommandLineSettings.VerbosityType.minimal || settings.Verbosity == CommandLineSettings.VerbosityType.normal)
+                        {
+                            Console.WriteLine(toml.Get<string>("TaskType") + " is not a known task type! Skipping.");
+                        }
                         break;
                 }
             }
@@ -197,8 +245,15 @@ namespace MetaMorpheusCommandLine
                 }
 
                 var message = "Run failed, Exception: " + e.Message;
-                Console.WriteLine(message);
+
+                if (settings.Verbosity == CommandLineSettings.VerbosityType.minimal || settings.Verbosity == CommandLineSettings.VerbosityType.normal)
+                {
+                    Console.WriteLine(message);
+                }
+                errorCode = 4;
             }
+
+            return errorCode;
         }
 
         private static void WriteMultiLineIndented(string toWrite)
@@ -225,65 +280,102 @@ namespace MetaMorpheusCommandLine
         {
             if (InProgress)
             {
-                MyWriter.WriteLine();
+                if (CommandLineSettings.Verbosity == CommandLineSettings.VerbosityType.normal)
+                {
+                    MyWriter.WriteLine();
+                }
             }
 
             InProgress = false;
-            WriteMultiLineIndented("Starting task: " + e.DisplayName);
-            MyWriter.Indent++;
+
+            if (CommandLineSettings.Verbosity == CommandLineSettings.VerbosityType.normal)
+            {
+                WriteMultiLineIndented("Starting task: " + e.DisplayName);
+                MyWriter.Indent++;
+            }
         }
 
         private static void MyTaskEngine_finishedWritingFileHandler(object sender, SingleFileEventArgs e)
         {
             if (InProgress)
             {
-                MyWriter.WriteLine();
+                if (CommandLineSettings.Verbosity == CommandLineSettings.VerbosityType.normal)
+                {
+                    MyWriter.WriteLine();
+                }
             }
 
             InProgress = false;
-            WriteMultiLineIndented("Finished writing file: " + e.WrittenFile);
+
+            if (CommandLineSettings.Verbosity == CommandLineSettings.VerbosityType.normal)
+            {
+                WriteMultiLineIndented("Finished writing file: " + e.WrittenFile);
+            }
         }
 
         private static void MyTaskEngine_finishedSingleTaskHandler(object sender, SingleTaskEventArgs e)
         {
             if (InProgress)
             {
-                MyWriter.WriteLine();
+                if (CommandLineSettings.Verbosity == CommandLineSettings.VerbosityType.normal || CommandLineSettings.Verbosity == CommandLineSettings.VerbosityType.minimal)
+                {
+                    MyWriter.WriteLine();
+                }
             }
 
             InProgress = false;
-            MyWriter.Indent--;
-            WriteMultiLineIndented("Finished task: " + e.DisplayName);
+            if (CommandLineSettings.Verbosity == CommandLineSettings.VerbosityType.normal || CommandLineSettings.Verbosity == CommandLineSettings.VerbosityType.minimal)
+            {
+                MyWriter.Indent--;
+                WriteMultiLineIndented("Finished task: " + e.DisplayName);
+            }
         }
 
         private static void MyEngine_startingSingleEngineHander(object sender, SingleEngineEventArgs e)
         {
             if (InProgress)
             {
-                MyWriter.WriteLine();
+                if (CommandLineSettings.Verbosity == CommandLineSettings.VerbosityType.normal)
+                {
+                    MyWriter.WriteLine();
+                }
             }
 
             InProgress = false;
-            WriteMultiLineIndented("Starting engine: " + e.MyEngine.GetType().Name + " " + e.MyEngine.GetId());
-            MyWriter.Indent++;
+
+            if (CommandLineSettings.Verbosity == CommandLineSettings.VerbosityType.normal)
+            {
+                WriteMultiLineIndented("Starting engine: " + e.MyEngine.GetType().Name + " " + e.MyEngine.GetId());
+                MyWriter.Indent++;
+            }
         }
 
         private static void MyEngine_finishedSingleEngineHandler(object sender, SingleEngineFinishedEventArgs e)
         {
             if (InProgress)
             {
-                MyWriter.WriteLine();
+                if (CommandLineSettings.Verbosity == CommandLineSettings.VerbosityType.normal)
+                {
+                    MyWriter.WriteLine();
+                }
             }
 
             InProgress = false;
-            WriteMultiLineIndented("Engine results: " + e);
-            MyWriter.Indent--;
-            WriteMultiLineIndented("Finished engine: " + e.MyResults.MyEngine.GetType().Name + " " + e.MyResults.MyEngine.GetId());
+
+            if (CommandLineSettings.Verbosity == CommandLineSettings.VerbosityType.normal)
+            {
+                WriteMultiLineIndented("Engine results: " + e);
+                MyWriter.Indent--;
+                WriteMultiLineIndented("Finished engine: " + e.MyResults.MyEngine.GetType().Name + " " + e.MyResults.MyEngine.GetId());
+            }
         }
 
         private static void MyEngine_outProgressHandler(object sender, ProgressEventArgs e)
         {
-            MyWriter.Write(e.NewProgress + " ");
+            if (CommandLineSettings.Verbosity == CommandLineSettings.VerbosityType.normal)
+            {
+                MyWriter.Write(e.NewProgress + " ");
+            }
             InProgress = true;
         }
 
@@ -291,22 +383,36 @@ namespace MetaMorpheusCommandLine
         {
             if (InProgress)
             {
-                MyWriter.WriteLine();
+                if (CommandLineSettings.Verbosity == CommandLineSettings.VerbosityType.minimal || CommandLineSettings.Verbosity == CommandLineSettings.VerbosityType.normal)
+                {
+                    MyWriter.WriteLine();
+                }
             }
 
             InProgress = false;
-            WriteMultiLineIndented("WARN: " + e.S);
+
+            if (CommandLineSettings.Verbosity == CommandLineSettings.VerbosityType.minimal || CommandLineSettings.Verbosity == CommandLineSettings.VerbosityType.normal)
+            {
+                WriteMultiLineIndented("WARN: " + e.S);
+            }
         }
 
         private static void LogHandler(object sender, StringEventArgs e)
         {
             if (InProgress)
             {
-                MyWriter.WriteLine();
+                if (CommandLineSettings.Verbosity == CommandLineSettings.VerbosityType.normal)
+                {
+                    MyWriter.WriteLine();
+                }
             }
 
             InProgress = false;
-            WriteMultiLineIndented("Log: " + e.S);
+
+            if (CommandLineSettings.Verbosity == CommandLineSettings.VerbosityType.normal)
+            {
+                WriteMultiLineIndented("Log: " + e.S);
+            }
         }
     }
 }
