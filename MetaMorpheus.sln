@@ -3,15 +3,15 @@ Microsoft Visual Studio Solution File, Format Version 12.00
 # Visual Studio Version 16
 VisualStudioVersion = 16.0.29403.142
 MinimumVisualStudioVersion = 10.0.40219.1
-Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "CMD", "CMD\CMD.csproj", "{FD20EBBA-F4C5-40D6-AD61-48A7EB255DAE}"
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "CMD", "CMD\CMD.csproj", "{FD20EBBA-F4C5-40D6-AD61-48A7EB255DAE}"
 EndProject
-Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "GUI", "GUI\GUI.csproj", "{C654FC97-FBD1-43D7-9F61-35FDD1A4E0AD}"
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "GUI", "GUI\GUI.csproj", "{C654FC97-FBD1-43D7-9F61-35FDD1A4E0AD}"
 EndProject
-Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Test", "Test\Test.csproj", "{AB281D9C-2FDC-4998-8C41-37D406ECCDA2}"
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Test", "Test\Test.csproj", "{AB281D9C-2FDC-4998-8C41-37D406ECCDA2}"
 EndProject
-Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "EngineLayer", "EngineLayer\EngineLayer.csproj", "{FFAE3A5E-B5AE-4CD0-ABF9-703C91F1C7D6}"
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "EngineLayer", "EngineLayer\EngineLayer.csproj", "{FFAE3A5E-B5AE-4CD0-ABF9-703C91F1C7D6}"
 EndProject
-Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "TaskLayer", "TaskLayer\TaskLayer.csproj", "{9CD3D75C-4E3C-40AC-A3D8-C32DD528DB7F}"
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "TaskLayer", "TaskLayer\TaskLayer.csproj", "{9CD3D75C-4E3C-40AC-A3D8-C32DD528DB7F}"
 EndProject
 Project("{930C7802-8A8C-48F9-8165-68863BCCD9DD}") = "MetaMorpheusSetup", "MetaMorpheusSetup\MetaMorpheusSetup.wixproj", "{BE72541A-66A4-4958-9D19-56ACC7D3876B}"
 	ProjectSection(ProjectDependencies) = postProject
