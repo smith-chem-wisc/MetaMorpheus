@@ -87,8 +87,10 @@ namespace Test
         {
             SearchTask searchTask = new SearchTask()
             {
+
                 SearchParameters = new SearchParameters
                 {
+                    WriteMzId = true,
                     SearchType = SearchType.NonSpecific,
                     LocalFdrCategories = new List<FdrCategory>
                         {
@@ -106,6 +108,7 @@ namespace Test
 
             List<(string, MetaMorpheusTask)> taskList = new List<(string, MetaMorpheusTask)> { ("TestSemiSpecificSmall", searchTask) };
 
+
             var engine = new EverythingRunnerEngine(taskList, new List<string> { myFile }, new List<DbForTask> { new DbForTask(myDatabase, false) }, Environment.CurrentDirectory);
             engine.Run();
 
@@ -113,7 +116,7 @@ namespace Test
             var output = File.ReadAllLines(outputPath);
             Assert.IsTrue(output.Length == 3);
 
-            var mzId = File.ReadAllLines(Path.Combine(TestContext.CurrentContext.TestDirectory, @"TestSemiSpecificSmall\Individual File Results\tinySemi.mzID"));
+            var mzId = File.ReadAllLines(Path.Combine(TestContext.CurrentContext.TestDirectory, @"TestSemiSpecificSmall\tinySemi.mzID"));
             Assert.That(mzId[115].Equals("          <cvParam name=\"mzML format\" cvRef=\"PSI-MS\" accession=\"MS:1000584\" />"));
             Assert.That(mzId[118].Equals("          <cvParam name=\"mzML unique identifier\" cvRef=\"PSI-MS\" accession=\"MS:1001530\" />"));
             Assert.That(mzId[97].Equals("        <cvParam name=\"pep:FDR threshold\" value=\"0.01\" cvRef=\"PSI-MS\" accession=\"MS:1001448\" />"));
@@ -160,7 +163,7 @@ namespace Test
 
                 string outputPath = Path.Combine(TestContext.CurrentContext.TestDirectory, @"TestSemiSpecific\TestSemiSpecific\AllPSMs.psmtsv");
                 var output = File.ReadAllLines(outputPath);
-                Assert.That(output.Length == 13); //if N is only producing 11 lines, then the c is not being searched with it. //If only 12 lines, maybe missed mono issue
+                Assert.That(output.Length == 12); //if N is only producing 11 lines, then the c is not being searched with it. //Possibly 13 lines if decon changes because of missed mono
             }
             Directory.Delete(outputFolder, true);
         }

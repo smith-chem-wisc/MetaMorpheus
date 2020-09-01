@@ -1,12 +1,12 @@
 ﻿using EngineLayer;
 using IO.Mgf;
 using IO.MzML;
+using IO.ThermoRawFileReader;
 using MassSpectrometry;
 using System;
 using System.Collections.Generic;
 using System.IO;
 using System.IO.Compression;
-using ThermoRawFileReader;
 
 namespace TaskLayer
 {
@@ -55,10 +55,26 @@ namespace TaskLayer
                 }
                 else
                 {
-                    MyMsDataFiles[origDataFile] = ThermoRawFileReaderData.LoadAllStaticData(origDataFile, filter, commonParameters.MaxThreadsToUsePerFile);
+                    MyMsDataFiles[origDataFile] = ThermoRawFileReader.LoadAllStaticData(origDataFile, filter, commonParameters.MaxThreadsToUsePerFile);
                 }
 
                 return MyMsDataFiles[origDataFile];
+            }
+        }
+
+        public DynamicDataConnection OpenDynamicDataConnection(string origDataFile)
+        {
+            if (Path.GetExtension(origDataFile).Equals(".mzML", StringComparison.OrdinalIgnoreCase))
+            {
+                return new MzmlDynamicData(origDataFile);
+            }
+            else if (Path.GetExtension(origDataFile).Equals(".mgf", StringComparison.OrdinalIgnoreCase))
+            {
+                return new MgfDynamicData(origDataFile);
+            }
+            else
+            {
+                return new ThermoDynamicData(origDataFile);
             }
         }
 

@@ -50,7 +50,7 @@ namespace Test
             new ClassicSearchEngine(allPsmsArray, listOfSortedms2Scans, variableModifications, fixedModifications, null, null, null, proteinList, searchMode, CommonParameters, null, new List<string>()).Run();
 
             var psm = allPsmsArray.Where(p => p != null).FirstOrDefault();
-            Assert.That(psm.MatchedFragmentIons.Count > 50);
+            Assert.That(psm.MatchedFragmentIons.Count == 47);
         }
 
         [Test]
@@ -77,14 +77,15 @@ namespace Test
             var listOfSortedms2Scans = MetaMorpheusTask.GetMs2Scans(myMsDataFile, null, new CommonParameters()).OrderBy(b => b.PrecursorMass).ToArray();
 
             PeptideSpectralMatch[] allPsmsArray = new PeptideSpectralMatch[listOfSortedms2Scans.Length];
-            
-            var indexEngine = new IndexingEngine(proteinList, variableModifications, fixedModifications, null, null, null, 1, DecoyType.Reverse, CommonParameters, null, 30000, false, new List<FileInfo>(), new List<string>());
+
+            var indexEngine = new IndexingEngine(proteinList, variableModifications, fixedModifications, null, null, null, 1, DecoyType.Reverse, CommonParameters,
+                null, 30000, false, new List<FileInfo>(), TargetContaminantAmbiguity.RemoveContaminant, new List<string>());
             var indexResults = (IndexingResults)indexEngine.Run();
 
             new ModernSearchEngine(allPsmsArray, listOfSortedms2Scans, indexResults.PeptideIndex, indexResults.FragmentIndex, 0, CommonParameters, null, searchMode, 0, new List<string>()).Run();
-            
+
             var psm = allPsmsArray.Where(p => p != null).FirstOrDefault();
-            Assert.That(psm.MatchedFragmentIons.Count > 50);
+            Assert.That(psm.MatchedFragmentIons.Count == 47);
         }
     }
 }

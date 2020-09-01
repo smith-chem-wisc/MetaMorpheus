@@ -1,9 +1,10 @@
- # <img src="https://user-images.githubusercontent.com/16883585/75211541-da01c680-5749-11ea-9f6c-096dc2ec4dbc.png"> MetaMorpheus: Free, Open-Source PTM Discovery <a href="https://twitter.com/intent/tweet?text=Discover PTMs in bottom-up data with MetaMorpheus https://tinyurl.com/y9an55ah"> <img src="https://user-images.githubusercontent.com/16841846/40389057-efdbfd40-5dd6-11e8-9d9e-68da0e793288.png" alt="Tweet"></a>
+# <img src="https://user-images.githubusercontent.com/16883585/75211541-da01c680-5749-11ea-9f6c-096dc2ec4dbc.png" width="30"/> MetaMorpheus: Free, Open-Source PTM Discovery [![Follow us on Twitter](https://img.shields.io/twitter/follow/smith_chem_wisc?label=Twitter&style=social)](https://twitter.com/smith_chem_wisc)
 
-[![Release](https://img.shields.io/github/release/smith-chem-wisc/metamorpheus.svg?color=purple&style=for-the-badge)](https://github.com/smith-chem-wisc/MetaMorpheus/releases/latest)
+[![Release](https://img.shields.io/github/v/release/smith-chem-wisc/MetaMorpheus)](https://github.com/smith-chem-wisc/MetaMorpheus/releases/latest)
 [![Build status](https://ci.appveyor.com/api/projects/status/0jt31252xny5aoxt/branch/master?svg=true)](https://ci.appveyor.com/project/smith-chem-wisc/metamorpheus/branch/master)
 [![codecov](https://codecov.io/gh/smith-chem-wisc/MetaMorpheus/branch/master/graph/badge.svg)](https://codecov.io/gh/smith-chem-wisc/MetaMorpheus)
 [![Github All Releases](https://img.shields.io/github/downloads/smith-chem-wisc/MetaMorpheus/total.svg)](https://github.com/smith-chem-wisc/MetaMorpheus/releases)
+[![Github All Releases](https://img.shields.io/docker/pulls/smithchemwisc/metamorpheus)](https://hub.docker.com/r/smithchemwisc/metamorpheus/tags?page=1&ordering=last_updated)
 
 Download the current version [here](https://github.com/smith-chem-wisc/MetaMorpheus/releases/latest). For first-time Windows users, choose "MetaMorpheusInstaller.msi" and install MetaMorpheus. Check out our <img src ="https://user-images.githubusercontent.com/16841846/40379523-eb130166-5dbb-11e8-8a03-559599cdd560.png">[getting started video](https://www.youtube.com/watch?v=rNgCDzi7STs&list=PLVk5tTSZ1aWlhNPh7jxPQ8pc0ElyzSUQb) on YouTube 
 
@@ -18,12 +19,17 @@ Check out the [wiki page](https://github.com/smith-chem-wisc/MetaMorpheus/wiki) 
 * Calibration: A calibration tool that uses peptides identified by a database search to calibrate the m/z values of all peaks in the spectra. This improves the quality of any subsequent search or analysis of the data.
 * G-PTM-D: Post-translational modification (PTM) discovery, which expands the scope of peptide identifications to include both known and unknown PTMs.
 * Quantification: Ultrafast label-free peptide quantification with FlashLFQ. MS2-identified peptides are used as "seeds" for peakfinding, including PTM-containing peptides.
+* [O-glycopeptide Characterization](https://github.com/smith-chem-wisc/MetaMorpheus/wiki/1_New-Task:-O-Glyco-Search): O-Pair Search identifies O-glycopeptides using an ion-indexed open modification search and localizes O-glycosites using graph theory and probability-based localization.
 
 ## System Requirements
 
 * Environment:
-  * For .NET Core versions: .NET Core 2.0.0 runtime
-  * For .NET Framework versions: .NET Framework 4.7.1
+  * 64-bit operating system
+  * .NET Core 3.1:
+     * Windows: https://dotnet.microsoft.com/download/dotnet-core/thank-you/runtime-desktop-3.1.3-windows-x64-installer
+     * Mac: https://dotnet.microsoft.com/download/dotnet-core/thank-you/runtime-3.1.3-macos-x64-installer
+     * Linux: https://docs.microsoft.com/dotnet/core/install/linux-package-managers
+* Note that the installer (MetaMorpheusInstaller.msi) only works on Windows. The command-line version of MetaMorpheus supports any operating system that supports .NET Core (Windows, MacOS, Linux)
 * 8 GB RAM recommended
 
 ## Spectra Requirements
@@ -45,11 +51,11 @@ UniProt .XML or .fasta format; may be used in compressed (.gz) format. If you wo
 2. Download the example spectra and database files from [https://uwmadison.box.com/v/MetaMorpheusPublic](https://uwmadison.box.com/s/2u42qp0b8jllywqzeungmjj04gplw5in).
 3. Open MetaMorpheus from the start menu, and drag and drop the .raw spectra files and the UniProt .xml database into MetaMorpheus.
 4. Add a series of Tasks to make a workflow for MetaMorpheus to follow. Drag the .toml files (these files store MetaMorpheus's search parameters) (Task1 - Task5) into the application.
-  * Task1SearchExample.toml - the standard search functionality.
-  * Task2CalibrationExample.toml - will mass-calibrate the spectra file based on high scoring search results and write a new calibrated .mzML file.
-  * Task3SearchExample.toml - searches the newly calibrated data file, which demonstrates improved performance (more PSMs, lower mass errors) and allows for tighter search tolerances.
-  * Task4GptmdExample.toml - searches the calibrated data file to find high-probability PTMs. This search task generates a new .xml protein database with annotated PTM possibilities discovered by G-PTM-D.
-  * Task5SearchExample.toml - searches the calibrated input file against the G-PTM-D .xml database. This search result is the highest confidence in terms of total PSMs and modified peptides.
+  * Task1-SearchTaskconfig.toml - the standard search functionality.
+  * Task2-CalibrateTaskconfig.toml - will mass-calibrate the spectra file based on high scoring search results and write a new calibrated .mzML file.
+  * Task3-SearchTaskconfig.toml - searches the newly calibrated data file, which demonstrates improved performance (more PSMs, lower mass errors) and allows for tighter search tolerances.
+  * Task4-GPTMDTaskconfig.toml - searches the calibrated data file to find high-probability PTMs. This search task generates a new .xml protein database with annotated PTM possibilities discovered by G-PTM-D.
+  * Task5-SearchTaskconfig.toml - searches the calibrated input file against the G-PTM-D .xml database. This search result is the highest confidence in terms of total PSMs and modified peptides.
 5. Click "Run All Tasks!"
 6. As the third task completes, open the results.txt files for the first and third tasks (before and after calibration, respectively). Observe the increase in the number of confident PSMs and identified peptides due to calibration.
 7. As the fifth task completes, open the results.txt files for the third and fifth tasks. Observe the increase in the number of confident PSMs identified due to discovered PTM-containing peptides.
@@ -61,26 +67,26 @@ UniProt .XML or .fasta format; may be used in compressed (.gz) format. If you wo
 4. Select "New Search Task" tab. Specify the Post-Search Parameters (e.g. protein parsimony, quantification). Then "Add the Search Task".
 5. Select "Run all tasks!". This search automatically looks for PTMs uncovered in the G-PTM-D step.
 
-## Test Installation (Windows Command Line)
+## Test Installation (Windows Command Line Executable)
 
-1. Download the latest [release](https://github.com/smith-chem-wisc/MetaMorpheus/releases). Extract "MetaMorpheusDotNetFrameworkAppveyor.zip" using, for example, [7-Zip](http://www.7-zip.org/).
+1. Download the latest [release](https://github.com/smith-chem-wisc/MetaMorpheus/releases). Extract "MetaMorpheus_CommandLine.zip" using, for example, [7-Zip](http://www.7-zip.org/).
 2. Download the example spectra and database files at [https://uwmadison.box.com/v/MetaMorpheusPublic](https://uwmadison.box.com/s/2u42qp0b8jllywqzeungmjj04gplw5in) to the folder with the CMD.exe executable.
 3. Run the command:
 
 ```
-CMD.exe -t Task1SearchExample.toml Task2CalibrationExample.toml Task3SearchExample.toml Task4GptmdExample.toml Task5SearchExample.toml -s 04-30-13_CAST_Frac4_6uL.raw 04-30-13_CAST_Frac5_4uL.raw -d uniprot-mouse-reviewed-3-9-2017.xml.gz uniprot-cRAP-1-24-2018.xml.gz
+CMD.exe -t Task1-SearchTaskconfig.toml Task2-CalibrateTaskconfig.toml Task3-SearchTaskconfig.toml Task4-GPTMDTaskconfig.toml Task5-SearchTaskconfig.toml -s 04-30-13_CAST_Frac4_6uL.raw 04-30-13_CAST_Frac5_4uL.raw -d uniprot-mouse-reviewed-1-24-2018.xml.gz uniprot-cRAP-1-24-2018.xml.gz
 ```
 4. As the third task completes, open the results.txt files for the first and third tasks (before and after calibration). Observe the increase in the number of confident PSMs identified due to calibration.
 5. As the fifth task completes, open the results.txt files for the third and fifth tasks. Observe the increase in the number of confident PSMs identified due to an addition of new plausible PTMs.
 
-## Test Installation (.NET Core)
+## Test Installation (via .NET Core .dll - Linux, OSX, Windows)
 
-1. Download the latest [release](https://github.com/smith-chem-wisc/MetaMorpheus/releases). Extract files from "MetaMorpheusDotNetCoreAppveyor.zip".
+1. Download the latest [release](https://github.com/smith-chem-wisc/MetaMorpheus/releases). Extract files from "MetaMorpheus_CommandLine.zip".
 2. Download the files at [https://uwmadison.box.com/v/MetaMorpheusPublic](https://uwmadison.box.com/s/2u42qp0b8jllywqzeungmjj04gplw5in) to the folder with the CMD.dll file.
 3. Run the command:
 
 ```
-dotnet CMD.dll -t Task1SearchExample.toml Task2CalibrationExample.toml Task3SearchExample.toml Task4GptmdExample.toml Task5SearchExample.toml -s 04-30-13_CAST_Frac4_6uL.raw 04-30-13_CAST_Frac5_4uL.raw -d uniprot-mouse-reviewed-3-9-2017.xml.gz uniprot-cRAP-1-24-2018.xml.gz
+dotnet CMD.dll -t Task1-SearchTaskconfig.toml Task2-CalibrateTaskconfig.toml Task3-SearchTaskconfig.toml Task4-GPTMDTaskconfig.toml Task5-SearchTaskconfig.toml -s 04-30-13_CAST_Frac4_6uL.raw 04-30-13_CAST_Frac5_4uL.raw -d uniprot-mouse-reviewed-1-24-2018.xml.gz uniprot-cRAP-1-24-2018.xml.gz
 ```
 
 ## mzLib

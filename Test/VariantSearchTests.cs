@@ -206,7 +206,7 @@ namespace Test
             HashSet<string> files2 = new HashSet<string>(Directory.GetFiles(Path.Combine(thisTaskOutputFolder, "VariantOutput_frameshift")).Select(v => Path.GetFileName(v)));
             // variant files should be generates
             expectedFiles = new HashSet<string> {
-                "AllPeptides.psmtsv", "AllPSMs.psmtsv", "AllPSMs_FormattedForPercolator.tab", "AllProteinGroups.tsv", "AllQuantifiedPeaks.tsv", "AllQuantifiedPeptides.tsv", "prose.txt", "results.txt", "VariantPeptides.psmtsv", "VariantAnalysisResultSummary.txt", "VariantPSMs.psmtsv" };
+                "AllPeptides.psmtsv", "AllPSMs.psmtsv", "AllPSMs_FormattedForPercolator.tab", "AllProteinGroups.tsv", "AllQuantifiedPeaks.tsv", "AllQuantifiedPeptides.tsv", "prose.txt", "results.txt", "TestVariantPep.mzID", "VariantPeptides.psmtsv", "VariantAnalysisResultSummary.txt", "VariantPSMs.psmtsv" };
 
             // these 2 lines are for debug purposes, so you can see which files you're missing (if any)
             missingFiles = expectedFiles.Except(files2).ToList();
