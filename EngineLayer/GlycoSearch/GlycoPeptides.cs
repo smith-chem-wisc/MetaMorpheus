@@ -36,7 +36,8 @@ namespace EngineLayer.GlycoSearch
         }
 
         //NGlycopeptide usually contain Y ions with different charge states, especially in sceHCD data. 
-        //The purpose of this function is to try match all Y ion with different charges.  //Not sure about OGlycopeptide
+        //The purpose of this function is to try match all Y ion with different charges. The usage of this function requires further investigation. 
+        //Not sure about OGlycopeptide. 
         public static List<MatchedFragmentIon> GlyMatchOriginFragmentIons(Ms2ScanWithSpecificMass scan, List<Product> theoreticalProducts, CommonParameters commonParameters)
         {
             var matchedFragmentIons = new List<MatchedFragmentIon>();

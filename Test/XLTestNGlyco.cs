@@ -70,6 +70,7 @@ namespace Test
             //}
 
             CommonParameters commonParameters = new CommonParameters(deconvolutionMassTolerance: new PpmTolerance(20), trimMsMsPeaks: false);
+            //The data GlycoTestData/Glyco_3383.mgf is sliced from antibody MSQC4 N-glycopeptide study: 02-06-17_MSQC4 In-Solution Trypsin Digestion
             string filePath = Path.Combine(TestContext.CurrentContext.TestDirectory, @"GlycoTestData/Glyco_3383.mgf"); //"25170.mgf"
             MyFileManager myFileManager = new MyFileManager(true);
             var msDataFile = myFileManager.LoadFile(filePath, commonParameters);
@@ -92,8 +93,8 @@ namespace Test
 
             //var glycanYIons = GlycoPeptides.GetGlycanYIons(listOfSortedms2Scans[0].PrecursorMass, glycan);
             //Assert.That(glycanYIons.Count == 17);
-            //var matchedGlycanYIons = MetaMorpheusEngine.MatchFragmentIons(listOfSortedms2Scans[0], glycanYIons, commonParameters);
-            //Assert.AreEqual(matchedGlycanYIons.Count, 14);
+            var matchedGlycanYIons_MultiCharge = GlycoPeptides.GlyMatchOriginFragmentIons(listOfSortedms2Scans[0], glycanYIons0, commonParameters);
+            Assert.AreEqual(matchedGlycanYIons_MultiCharge.Count, 17);
 
             //TO DO: The neutroloss is not annotated well.
             var matchedFragmentIons = MetaMorpheusEngine.MatchFragmentIons(listOfSortedms2Scans[0], fragmentIons, commonParameters);
@@ -170,7 +171,7 @@ namespace Test
             MyFileManager myFileManager = new MyFileManager(true);
             var msDataFile = myFileManager.LoadFile(filePath, commonParameters);
             var listOfSortedms2Scans = MetaMorpheusTask.GetMs2Scans(msDataFile, filePath, commonParameters).ToArray();
-            //Tips: Using debug mode to check the number of oxoniumIons, in this case will be 7.
+            //Tips: Using debug mode to check the number of oxoniumIons, in this case will be 9.
             MassDiffAcceptor massDiffAcceptor = new SinglePpmAroundZeroSearchMode(20);
             var oxoinumIonsExist = GlycoPeptides.ScanOxoniumIonFilter(listOfSortedms2Scans[0], massDiffAcceptor, commonParameters.DissociationType);
             Assert.AreEqual(oxoinumIonsExist.Where(p=>p>0).Count(), 9);
