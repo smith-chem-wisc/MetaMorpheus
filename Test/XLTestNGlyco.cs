@@ -96,6 +96,10 @@ namespace Test
             var matchedGlycanYIons_MultiCharge = GlycoPeptides.GlyMatchOriginFragmentIons(listOfSortedms2Scans[0], glycanYIons0, commonParameters);
             Assert.AreEqual(matchedGlycanYIons_MultiCharge.Count, 17);
 
+            var YIonIndicator = GlycoPeptides.GetIndicatorYIon(peptide.MonoisotopicMass, "NN");
+            var match = GlycoPeptides.MatchIndicatorYIon(listOfSortedms2Scans[0], YIonIndicator, commonParameters);
+            Assert.That(match == true);
+
             //TO DO: The neutroloss is not annotated well.
             var matchedFragmentIons = MetaMorpheusEngine.MatchFragmentIons(listOfSortedms2Scans[0], fragmentIons, commonParameters);
             Assert.That(matchedFragmentIons.Count == 24);
@@ -104,9 +108,6 @@ namespace Test
             Assert.AreEqual(coreIons.Count, 7);
             var filter = GlycoPeptides.ScanTrimannosylCoreFilter(matchedFragmentIons, glycan);
             Assert.AreEqual(filter, true);
-            //var NGlycans = GlycanDatabase.LoadGlycan(GlobalVariables.NGlycanLocations[0], true, false);
-            //var bestGlycans = GlycoPeptides.MatchBestGlycan(listOfSortedms2Scans[0], NGlycans.ToArray(), commonParameters).Where(p => p != null && p.Item2 >= 2).OrderByDescending(p => p.Item2).Take(100).OrderBy(p => p.Item3).ToArray(); ;
-
         }
 
         [Test]

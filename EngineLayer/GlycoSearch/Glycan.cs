@@ -455,7 +455,7 @@ namespace EngineLayer
 
         #region Transfer information
 
-        private static int GetMass(string structure)
+        public static int GetMass(string structure)
         {
             int y = 0;
             for (int i = 0; i < SugarLength; i++)

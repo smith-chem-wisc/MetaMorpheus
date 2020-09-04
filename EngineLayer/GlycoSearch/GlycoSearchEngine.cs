@@ -472,14 +472,15 @@ namespace EngineLayer.GlycoSearch
 
             psmGlyco.LocalizationGraphs = localizationGraphs;
 
-            if (oxoniumIonIntensities[5] <= 0.00000001)
-            {
-                psmGlyco.R138vs144 = 100000000;
-            }
-            else
-            {
-                psmGlyco.R138vs144 = oxoniumIonIntensities[4] / oxoniumIonIntensities[5];
-            }
+            psmGlyco.OxoniumIonIntensity = oxoniumIonIntensities;
+
+            var product_nn = GlycoPeptides.GetIndicatorYIon(peptide.MonoisotopicMass, "NN");
+            psmGlyco.PepHexHexNAc = GlycoPeptides.MatchIndicatorYIon(theScan, product_nn, CommonParameters);
+
+            var product_nh = GlycoPeptides.GetIndicatorYIon(peptide.MonoisotopicMass, "NH");
+            psmGlyco.PepHexNAc2 = GlycoPeptides.MatchIndicatorYIon(theScan, product_nh, CommonParameters);
+
+            //psmGlyco.LongestconcatenatedYion
 
             return psmGlyco;
         }
@@ -649,14 +650,13 @@ namespace EngineLayer.GlycoSearch
             psmGlyco.LocalizationLevel = localizationLevel;
             psmGlyco.NGlycoSiteSpeciLocalProb = siteProbability;
 
-            if (oxoniumIonIntensities[5] <= 0.00000001)
-            {
-                psmGlyco.R138vs144 = 100000000;
-            }
-            else
-            {
-                psmGlyco.R138vs144 = oxoniumIonIntensities[4] / oxoniumIonIntensities[5];
-            }
+            psmGlyco.OxoniumIonIntensity = oxoniumIonIntensities;
+
+            var product_nn = GlycoPeptides.GetIndicatorYIon(bestPeptides[bestModIndex].MonoisotopicMass - psmGlyco.NGlycan.First().Mass/1E5, "NN");
+            psmGlyco.PepHexHexNAc = GlycoPeptides.MatchIndicatorYIon(theScan, product_nn, CommonParameters);
+
+            var product_nh = GlycoPeptides.GetIndicatorYIon(bestPeptides[bestModIndex].MonoisotopicMass - psmGlyco.NGlycan.First().Mass / 1E5, "NH");
+            psmGlyco.PepHexNAc2 = GlycoPeptides.MatchIndicatorYIon(theScan, product_nh, CommonParameters);
 
             return psmGlyco;
         }
@@ -798,38 +798,31 @@ namespace EngineLayer.GlycoSearch
                         continue;
                     }
 
-
                     //Filter by OxoniumIon
+                    ////The oxoniumIonIntensities is related with Glycan.AllOxoniumIons (the [9] is 204). A spectrum needs to have 204.0867 to be considered as a glycopeptide for now.
                     var oxoniumIonIntensities = GlycoPeptides.ScanOxoniumIonFilter(theScan, ProductSearchMode, CommonParameters.DissociationType);
 
                     if (OxoniumIonFilter)
                     {
-                        if (GlycoPeptides.DissociationTypeContainHCD(CommonParameters.MS2ChildScanDissociationType))
-                        {
-                            foreach (var c in theScan.ChildScans)
-                            {
-                                var _childoxo =  GlycoPeptides.ScanOxoniumIonFilter(c, ProductSearchMode, CommonParameters.MS2ChildScanDissociationType);
-                                for (int i = 0; i < oxoniumIonIntensities.Length; i++)
-                                {
-                                    oxoniumIonIntensities[i] += _childoxo[i];
-                                }
-                            }
-                        }
+                        //For the HCD-EThcD type of data, the EThcD spectrum also contains Oxonium Ion. However, it is likely we can ignore these Oxonium ions.
+                        //The code here is not well designed. 
+                        //if (GlycoPeptides.DissociationTypeContainHCD(CommonParameters.MS2ChildScanDissociationType))
+                        //{
+                        //    foreach (var c in theScan.ChildScans)
+                        //    {
+                        //        var _childoxo =  GlycoPeptides.ScanOxoniumIonFilter(c, ProductSearchMode, CommonParameters.MS2ChildScanDissociationType);
+                        //        for (int i = 0; i < oxoniumIonIntensities.Length; i++)
+                        //        {
+                        //            oxoniumIonIntensities[i] += _childoxo[i];
+                        //        }
+                        //    }
+                        //}
 
                         if (oxoniumIonIntensities[OxoniumIon204Index] == 0)
                         {
                             continue;
                         }
                     }
-
-                    ////Filter by OxoniumIon
-                    //var oxoniumIonIntensities = GlycoPeptides.ScanOxoniumIonFilter(theScan, ProductSearchMode, CommonParameters.DissociationType);
-
-                    ////The oxoniumIonIntensities is related with Glycan.AllOxoniumIons (the [9] is 204). A spectrum needs to have 204.0867 to be considered as a glycopeptide for now.
-                    //if (OxoniumIonFilter && oxoniumIonIntensities[OxoniumIon204Index] == 0)
-                    //{
-                    //    continue;
-                    //}
 
                     //Find N-Glycan 
                     FindNGlycan(theScan, scanIndex, scoreCutOff, theScanBestPeptide, ind, possibleGlycanMassLow, oxoniumIonIntensities, ref possibleMatches);
@@ -868,36 +861,17 @@ namespace EngineLayer.GlycoSearch
                     }
 
                     //Filter by OxoniumIon
+                    ////The oxoniumIonIntensities is related with Glycan.AllOxoniumIons (the [9] is 204). A spectrum needs to have 204.0867 to be considered as a glycopeptide for now.
                     var oxoniumIonIntensities = GlycoPeptides.ScanOxoniumIonFilter(theScan, ProductSearchMode, CommonParameters.DissociationType);
 
                     if (OxoniumIonFilter)
                     {
-                        if (GlycoPeptides.DissociationTypeContainHCD(CommonParameters.MS2ChildScanDissociationType))
-                        {
-                            foreach (var c in theScan.ChildScans)
-                            {
-                                var _childoxo = GlycoPeptides.ScanOxoniumIonFilter(c, ProductSearchMode, CommonParameters.MS2ChildScanDissociationType);
-                                for (int i = 0; i < oxoniumIonIntensities.Length; i++)
-                                {
-                                    oxoniumIonIntensities[i] += _childoxo[i];
-                                }
-                            }
-                        }
-
+                        //Check FindNGlycopeptide for ChildScan Oxonium consideration.
                         if (oxoniumIonIntensities[OxoniumIon204Index] == 0)
                         {
                             continue;
                         }
                     }
-
-                    ////Filter by OxoniumIon
-                    //var oxoniumIonIntensities = GlycoPeptides.ScanOxoniumIonFilter(theScan, ProductSearchMode, CommonParameters.DissociationType);
-
-                    ////The oxoniumIonIntensities is related with Glycan.AllOxoniumIons (the [9] is 204). A spectrum needs to have 204.0867 to be considered as a glycopeptide for now.
-                    //if (OxoniumIonFilter && oxoniumIonIntensities[9] == 0)
-                    //{
-                    //    continue;
-                    //}
 
                     //Find O-Glycan
                     FindOGlycan(theScan, scanIndex, scoreCutOff, theScanBestPeptide, ind, possibleGlycanMassLow, oxoniumIonIntensities, ref possibleMatches);
@@ -937,36 +911,17 @@ namespace EngineLayer.GlycoSearch
                     }
 
                     //Filter by OxoniumIon
+                    ////The oxoniumIonIntensities is related with Glycan.AllOxoniumIons (the [9] is 204). A spectrum needs to have 204.0867 to be considered as a glycopeptide for now.
                     var oxoniumIonIntensities = GlycoPeptides.ScanOxoniumIonFilter(theScan, ProductSearchMode, CommonParameters.DissociationType);
 
                     if (OxoniumIonFilter)
                     {
-                        if (GlycoPeptides.DissociationTypeContainHCD(CommonParameters.MS2ChildScanDissociationType))
-                        {
-                            foreach (var c in theScan.ChildScans)
-                            {
-                                var _childoxo = GlycoPeptides.ScanOxoniumIonFilter(c, ProductSearchMode, CommonParameters.MS2ChildScanDissociationType);
-                                for (int i = 0; i < oxoniumIonIntensities.Length; i++)
-                                {
-                                    oxoniumIonIntensities[i] += _childoxo[i];
-                                }
-                            }
-                        }
-
+                        //Check FindNGlycopeptide for ChildScan Oxonium consideration.
                         if (oxoniumIonIntensities[OxoniumIon204Index] == 0)
                         {
                             continue;
                         }
                     }
-
-                    ////Filter by OxoniumIon
-                    //var oxoniumIonIntensities = GlycoPeptides.ScanOxoniumIonFilter(theScan, ProductSearchMode, CommonParameters.DissociationType);
-
-                    ////The oxoniumIonIntensities is related with Glycan.AllOxoniumIons (the [9] is 204). A spectrum needs to have 204.0867 to be considered as a glycopeptide for now.
-                    //if (OxoniumIonFilter && oxoniumIonIntensities[OxoniumIon204Index] == 0)
-                    //{
-                    //    continue;
-                    //}
 
                     //Find N-Glycan 
                     FindNGlycan(theScan, scanIndex, scoreCutOff, theScanBestPeptide, ind, possibleGlycanMassLow, oxoniumIonIntensities, ref possibleMatches);

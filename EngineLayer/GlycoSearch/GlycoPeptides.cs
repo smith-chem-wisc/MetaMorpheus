@@ -7,6 +7,7 @@ using System.Collections.Generic;
 using System.Linq;
 using Chemistry;
 using System.Threading;
+using System.Runtime.InteropServices.ComTypes;
 
 namespace EngineLayer.GlycoSearch
 {
@@ -32,7 +33,38 @@ namespace EngineLayer.GlycoSearch
 
             }
 
+            //Normalize by 204. What will happen if 204 is 0.
+            if (oxoniumIonsintensities[9] != 0)
+            {
+                var x204 = oxoniumIonsintensities[9];
+                for (int i = 0; i < Glycan.AllOxoniumIons.Length; i++)
+                {
+
+                    oxoniumIonsintensities[i] = oxoniumIonsintensities[i] / x204;
+                }
+            }
+
             return oxoniumIonsintensities;
+        }
+
+        public static Product GetIndicatorYIon(double peptideMonomassWithNoGlycan, string glycanString)
+        {
+            Product product = new Product(ProductType.M, FragmentationTerminus.Both, peptideMonomassWithNoGlycan + (double)Glycan.GetMass(glycanString) / 1E5, 0, 0, 0);
+            return product;
+        }
+
+        public static bool MatchIndicatorYIon(Ms2ScanWithSpecificMass scan, Product theoreticalProduct, CommonParameters commonParameters)
+        {
+            List<Product> products = new List<Product>();
+            products.Add(theoreticalProduct);
+            var x = MetaMorpheusEngine.MatchFragmentIons(scan, products, commonParameters).Count();
+
+            foreach (var childScan in scan.ChildScans)
+            {
+                x += MetaMorpheusEngine.MatchFragmentIons(childScan, products, commonParameters).Count();
+            }
+
+            return x > 0;
         }
 
         //NGlycopeptide usually contain Y ions with different charge states, especially in sceHCD data. 
@@ -160,6 +192,7 @@ namespace EngineLayer.GlycoSearch
             return false;
         }
 
+        //This method and the method below apply the some function from different direction. This one maybe deleted in the future.
         //public static List<Product> GetGlycanYIons(double precursorMass, Glycan glycan)
         //{
         //    List<Product> YIons = new List<Product>();
@@ -288,7 +321,7 @@ namespace EngineLayer.GlycoSearch
 
             //Other rules:
             //A spectrum needs to have 204.0867 to be considered as a glycopeptide.              
-            //Ratio of 138.055 to 144.0655 can seperate O/N glycan.
+            //Ratio of 138.055 to 144.0655 can seperate O/N glycan. 
 
             return true;
         }

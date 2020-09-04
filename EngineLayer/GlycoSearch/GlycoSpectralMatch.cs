@@ -41,8 +41,6 @@ namespace EngineLayer.GlycoSearch
         public double PeptideScore { get; set; } //Scores from only mathced peptide fragments.
         public double GlycanScore { get; set; } //Scores from only matched Y ions. 
         public double DiagnosticIonScore { get; set; } //Since every glycopeptide generate DiagnosticIon, it is important to seperate the score. 
-        public double R138vs144 { get; set; } // The intensity ratio of this 138 and 144 could be a signature for O-glycan or N-glycan.
-
         public static byte[] GetKind(GlycoSpectralMatch gsm)
         {
             if (gsm.NGlycan != null)
@@ -54,6 +52,18 @@ namespace EngineLayer.GlycoSearch
                 return GlycanBox.OGlycanBoxes[gsm.LocalizationGraphs.First().ModBoxId].Kind;
             }
         }
+
+        //Glycan type indicator
+        //NGlycan Motif exist. 
+        //The intensity ratio of this 138 and 144 could be a signature for O-glycan or N-glycan.
+
+        public double[] OxoniumIonIntensity { get; set; }       //Please Check Glycan.AllOxoniumIons
+
+        public bool PepHexNAc2 { get; set; } //Yion Pep + 2HexNAc, supposed to be exist more in N-Glycopeptide
+
+        public bool PepHexHexNAc { get; set; } //Yion Pep + Hex + HexNAc, supposed to be only exist in O-Glycopeptide
+
+        public int LongestconcatenatedYion { get; set; } //Currently Simplified with GlycanScore.
 
         //N-Glyco Info
         public List<Glycan> NGlycan { get; set; }  //Identified NGlycan
@@ -181,9 +191,7 @@ namespace EngineLayer.GlycoSearch
                 sb.Append("Plausible Number Of Glycans" + '\t');
                 sb.Append("Total Glycosylation sites" + '\t');
                 sb.Append("GlycanMass" + '\t');
-                sb.Append("Plausible GlycanComposition" + '\t');
-                sb.Append("N-Glycan motif Check" + '\t');
-                sb.Append("R138/144" + '\t');
+                sb.Append("Plausible GlycanComposition" + '\t');               
                 sb.Append("Plausible GlycanStructure" + '\t');
                 sb.Append("GlycanLocalizationLevel" + '\t');
                 sb.Append("Localized Glycans with Peptide Site Specific Probability" + '\t');
@@ -198,6 +206,18 @@ namespace EngineLayer.GlycoSearch
                 {
                     sb.Append("IsTargetGlycan" + '\t');
                 }
+
+                //Glycan Type indicator
+                sb.Append("N-Glycan motif Check" + '\t');
+                sb.Append("R138/144" + '\t');
+                sb.Append("I_168" + '\t');
+                sb.Append("I_186" + '\t');
+                sb.Append("I_366" + '\t');
+                sb.Append("I_274" + '\t');
+                sb.Append("I_292" + '\t');
+                sb.Append("PepHexNAc2" + '\t');
+                sb.Append("PepHexHexNAc" + '\t');
+                sb.Append("NumOfContateYion" + '\t');
             }
            
             return sb.ToString();
@@ -285,6 +305,7 @@ namespace EngineLayer.GlycoSearch
 
             sb.Append("0" + "\t");
 
+
             if (NGlycan != null)
             {            
                 sb.Append(PeptideScore + "\t");
@@ -300,11 +321,6 @@ namespace EngineLayer.GlycoSearch
                 sb.Append((double)NGlycan.First().Mass / 1E5); sb.Append("\t");
 
                 sb.Append(Glycan.GetKindString(NGlycan.First().Kind)); sb.Append("\t");
-
-                var NSiteExist = MotifExist(BaseSequence, new string[] { "Nxt", "Nxs" });
-                sb.Append(NSiteExist); sb.Append("\t");
-
-                sb.Append(R138vs144.ToString()); sb.Append("\t");
 
                 if (NGlycan.First().Struc!=null)
                 {
@@ -348,13 +364,7 @@ namespace EngineLayer.GlycoSearch
                 sb.Append(glycanBox.Mass + "\t");
 
                 sb.Append(Glycan.GetKindString(glycanBox.Kind)); sb.Append("\t");
-
-                var NSiteExist = MotifExist(BaseSequence, new string[] { "Nxt", "Nxs" });
-
-                sb.Append(NSiteExist); sb.Append("\t");
-
-                sb.Append(R138vs144.ToString()); sb.Append("\t");
-
+             
                 //Get glycans
                 var glycans = new Glycan[glycanBox.NumberOfMods];
                 for (int i = 0; i < glycanBox.NumberOfMods; i++)
@@ -380,14 +390,51 @@ namespace EngineLayer.GlycoSearch
 
                     sb.Append(AllLocalizationInfo(Routes)); sb.Append("\t");
 
-                    sb.Append(SiteSpeciLocalInfo(SiteSpeciLocalProb));
+                    sb.Append(SiteSpeciLocalInfo(SiteSpeciLocalProb)); sb.Append("\t");
                 }
                 else
                 {
                     sb.Append(LocalizationLevel); sb.Append("\t");
+                    sb.Append("\t");
+                    sb.Append("\t");
+                    sb.Append("\t");
+                    sb.Append("\t");
                 }
             }
 
+            //Output for Glycan type indicator
+            if (NGlycan != null || LocalizationGraphs != null)
+            {
+                var NSiteExist = MotifExist(BaseSequence, new string[] { "Nxt", "Nxs" });
+                sb.Append(NSiteExist); sb.Append("\t");
+
+                var R138vs144 = 1.0;
+                if (OxoniumIonIntensity[5] <= 0.00000001)
+                {
+                    R138vs144 = 100000000;
+                }
+                else
+                {
+                    R138vs144 = OxoniumIonIntensity[4] / OxoniumIonIntensity[5];
+                }
+
+                sb.Append(R138vs144.ToString()); sb.Append("\t");
+                //Intensity of oxonium ion 168. Please Check Glycan.AllOxoniumIons
+                sb.Append(OxoniumIonIntensity[7].ToString()); sb.Append("\t");
+                //Intensity of oxonium ion 186
+                sb.Append(OxoniumIonIntensity[8].ToString()); sb.Append("\t");
+                //Intensity of oxonium ion 366
+                sb.Append(OxoniumIonIntensity[14].ToString()); sb.Append("\t");
+                //Intensity of oxonium ion 274
+                sb.Append(OxoniumIonIntensity[10].ToString()); sb.Append("\t");
+                //Intensity of oxonium ion 292
+                sb.Append(OxoniumIonIntensity[12].ToString()); sb.Append("\t");
+                sb.Append(PepHexNAc2); sb.Append("\t");
+                sb.Append(PepHexHexNAc); sb.Append("\t");
+                //This here should be LongestconcatenatedYion
+                sb.Append(GlycanScore.ToString()); sb.Append("\t");
+            }
+            
             return sb.ToString();
         }
 
