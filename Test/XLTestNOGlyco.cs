@@ -23,6 +23,14 @@ namespace Test
     [TestFixture]
     public class XLTestNOGlyco
     {
+        [Test]
+        public static void NOGlycoTest_SVM()
+        {
+            string fileIn = @"E:\MassData\Glycan\Nick_2019_StcE\Rep1\_temp2\2020-09-04-23-06-46\Task1-GlycoSearchTask\all.psmtsv";
+            string fileOut = @"E:\MassData\Glycan\Nick_2019_StcE\Rep1\_temp2\2020-09-04-23-06-46\Task1-GlycoSearchTask\svm_report.txt";
 
+            SVM.RunSVM(fileIn, fileOut);
+        
+        }
     }
 }

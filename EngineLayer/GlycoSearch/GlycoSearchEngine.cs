@@ -61,7 +61,7 @@ namespace EngineLayer.GlycoSearch
             {
                 NGlycans = GlycanDatabase.LoadGlycan(GlobalVariables.NGlycanLocations.Where(p => System.IO.Path.GetFileName(p) == _nglycanDatabase).First(), true, false).OrderBy(p => p.Mass).ToArray();
                 //TO THINK: Glycan Decoy database.
-                NGlycans = Glycan.BuildTargetDecoyGlycans(NGlycans);
+                //NGlycans = Glycan.BuildTargetDecoyGlycans(NGlycans);
 
             }
             else if (glycoSearchType == GlycoSearchType.N_O_GlycanSearch)
@@ -72,8 +72,8 @@ namespace EngineLayer.GlycoSearch
 
                 NGlycans = GlycanDatabase.LoadGlycan(GlobalVariables.NGlycanLocations.Where(p => System.IO.Path.GetFileName(p) == _nglycanDatabase).First(), true, false).OrderBy(p => p.Mass).ToArray();
                 //TO THINK: Glycan Decoy database.
-                NGlycans = Glycan.BuildTargetDecoyGlycans(NGlycans);
-                //DecoyGlycans = Glycan.BuildTargetDecoyGlycans(NGlycans);
+                //NGlycans = Glycan.BuildTargetDecoyGlycans(NGlycans);
+
             }
 
         }
@@ -475,10 +475,10 @@ namespace EngineLayer.GlycoSearch
             psmGlyco.OxoniumIonIntensity = oxoniumIonIntensities;
 
             var product_nn = GlycoPeptides.GetIndicatorYIon(peptide.MonoisotopicMass, "NN");
-            psmGlyco.PepHexHexNAc = GlycoPeptides.MatchIndicatorYIon(theScan, product_nn, CommonParameters);
+            psmGlyco.PepNN = GlycoPeptides.MatchIndicatorYIon(theScan, product_nn, CommonParameters);
 
             var product_nh = GlycoPeptides.GetIndicatorYIon(peptide.MonoisotopicMass, "NH");
-            psmGlyco.PepHexNAc2 = GlycoPeptides.MatchIndicatorYIon(theScan, product_nh, CommonParameters);
+            psmGlyco.PepNH = GlycoPeptides.MatchIndicatorYIon(theScan, product_nh, CommonParameters);
 
             //psmGlyco.LongestconcatenatedYion
 
@@ -653,10 +653,10 @@ namespace EngineLayer.GlycoSearch
             psmGlyco.OxoniumIonIntensity = oxoniumIonIntensities;
 
             var product_nn = GlycoPeptides.GetIndicatorYIon(bestPeptides[bestModIndex].MonoisotopicMass - psmGlyco.NGlycan.First().Mass/1E5, "NN");
-            psmGlyco.PepHexHexNAc = GlycoPeptides.MatchIndicatorYIon(theScan, product_nn, CommonParameters);
+            psmGlyco.PepNN = GlycoPeptides.MatchIndicatorYIon(theScan, product_nn, CommonParameters);
 
             var product_nh = GlycoPeptides.GetIndicatorYIon(bestPeptides[bestModIndex].MonoisotopicMass - psmGlyco.NGlycan.First().Mass / 1E5, "NH");
-            psmGlyco.PepHexNAc2 = GlycoPeptides.MatchIndicatorYIon(theScan, product_nh, CommonParameters);
+            psmGlyco.PepNH = GlycoPeptides.MatchIndicatorYIon(theScan, product_nh, CommonParameters);
 
             return psmGlyco;
         }
