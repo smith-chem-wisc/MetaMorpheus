@@ -524,20 +524,19 @@ namespace EngineLayer.GlycoSearch
             else
             {
                 var localizationScan = theScan;
-                List<Product> products = new List<Product>();
 
-                //For HCD-pd-ETD or CD-pd-EThcD type of data
+                //We need to consider which scan should be used for localization.               
+                //For ETD_only or ETD-pd-HCD type of data. Just keep the first scan as localization scan.
+                //For ETD-pd-ETD type of data. There is no implimentation yet. Is there such type of data exist? Is there another type of data.               
+                //For HCD-pd-ETD or CD-pd-EThcD type of data. We should consider the first childScan as localization scan.
                 if (theScan.ChildScans.Count > 0 && GlycoPeptides.DissociationTypeContainETD(CommonParameters.MS2ChildScanDissociationType))
                 {
                     localizationScan = theScan.ChildScans.First();
-                    theScanBestPeptide.Fragment(DissociationType.ETD, FragmentationTerminus.Both, products);
                 }
 
-                //For ETD type of data
-                if (theScan.ChildScans.Count == 0 && GlycoPeptides.DissociationTypeContainETD(CommonParameters.DissociationType))
-                {
-                    theScanBestPeptide.Fragment(DissociationType.ETD, FragmentationTerminus.Both, products);
-                }
+                List<Product> products = new List<Product>();
+                theScanBestPeptide.Fragment(DissociationType.ETD, FragmentationTerminus.Both, products);
+
 
                 double bestLocalizedScore = 0;
 
