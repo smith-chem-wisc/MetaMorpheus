@@ -24,7 +24,7 @@ namespace Test
     public class XLTestNOGlyco
     {
 
-    ////This is not a real test. It is for the local development.
+    ////This is not a real test. It is for the local development. Please comment it before push.
     //    [Test]
     //    public static void NOGlycoTest_SVM()
     //    {
