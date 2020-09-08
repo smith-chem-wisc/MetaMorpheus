@@ -145,7 +145,7 @@
                                             <CheckBox x:Name="CkbIndexingChildScan" Content="Index ChildScan" Grid.Row="1"  VerticalAlignment="Center"/>
                                         </StackPanel>
                                         <StackPanel Orientation="Horizontal" Grid.Row="1" Grid.Column="2" Margin="5">
-                                            <CheckBox x:Name="CkbIndexChildScanWithDiffIndex" Content="Index Childscan with diff inde" Grid.Row="1" VerticalAlignment="Center"/>
+                                            <CheckBox x:Name="CkbIndexChildScanWithDiffIndex" Content="Childscan diff index" Grid.Row="1" VerticalAlignment="Center"/>
                                         </StackPanel>
                                         <StackPanel Orientation="Horizontal" Grid.Row="2" Margin="5">
                                             <CheckBox x:Name="CkbQuantification" Content="Quantification" VerticalAlignment="Center"/>
