@@ -115,29 +115,41 @@ namespace TaskLayer
 
                     Status("Getting fragment dictionary...", new List<string> { taskId });
 
-                    //Only reverse Decoy for glyco search has been tested and are set as fixed parameter.
-                    var indexEngine = new IndexingEngine(proteinListSubset, variableModifications, fixedModifications, null, null, null, 
-                        currentPartition, _glycoSearchParameters.DecoyType, combinedParams, this.FileSpecificParameters, 30000.0, 
-                        false, dbFilenameList.Select(p => new FileInfo(p.FilePath)).ToList(), TargetContaminantAmbiguity.RemoveContaminant, new List<string> { taskId });
-                    List<int>[] fragmentIndex = null;
-                    List<int>[] precursorIndex = null;
-                    GenerateIndexes(indexEngine, dbFilenameList, ref peptideIndex, ref fragmentIndex, ref precursorIndex, proteinList, taskId);
-
                     //Indexing strategy for Glycopepitde.
                     //Generating a second fragment index slow down the program. 
                     //There are different type of fragmentation combination methods for N-glycopeptides and O-glycopeptides.
-                    //In O-Glycopeptide, we only index b/y fragment ions (HCD, CID, EThcD). Thus we will only generate b/y fragmentIndex, even for HCD-trig-EThcD method.
+
+                    //We try to only index b/y fragment ions (HCD, CID, EThcD). Thus we will only generate b/y fragmentIndex. Even for HCD-trig-EThcD or EThcD-pd-HCD method.
                     //Due to the complexity of O-glycan, the ETD ions didn't generate a lot of peptide backbone ions.
-                    //In O-Glycopeptide, if there are paired spectrum, we will let the user to decide if to index the child spectrum if child spectrum contain b/y ions.
-                    //In N-Glycopeptide, we prefer to index paired spectrum. The best choice is still only generate b/y fragmentIndex, even for HCD-trig-EThcD method.
-                    //In N-Glycopeptide, if the fragmentation combination method is HCD-trig-ETD, we will allow user to decide if they want to generate and index c/z fragmentIndex.              
+
+                    //If there are paired spectrum, we will let the user to decide if to index the child spectrum if two indexes should be used. (HCD-trig-ETD)
+                    //These data types require more testing: ETD-pd-HCD.  ETD-pd-EThcD.
+                    var indexParams = combinedParams.Clone();
+                    if (_glycoSearchParameters.Indexing_by_ion 
+                        && (combinedParams.DissociationType == DissociationType.HCD || combinedParams.DissociationType == DissociationType.CID || combinedParams.DissociationType == DissociationType.EThcD))
+                    {
+                        indexParams = CommonParameters.CloneWithNewDissociationType(DissociationType.HCD);
+                    }
+
+                    //Only reverse Decoy for glyco search has been tested and are set as fixed parameter.
+                    var indexEngine = new IndexingEngine(proteinListSubset, variableModifications, fixedModifications, null, null, null, 
+                        currentPartition, _glycoSearchParameters.DecoyType, indexParams, this.FileSpecificParameters, 30000.0, 
+                        false, dbFilenameList.Select(p => new FileInfo(p.FilePath)).ToList(), TargetContaminantAmbiguity.RemoveContaminant, new List<string> { taskId });
+                    List<int>[] fragmentIndex = null;
+                    List<int>[] precursorIndex = null;
+                    GenerateIndexes(indexEngine, dbFilenameList, ref peptideIndex, ref fragmentIndex, ref precursorIndex, proteinList, taskId);      
 
                     //If LowCID is used for MS1, ion-index is not allowed to use.
                     List<int>[] secondFragmentIndex = null;
                     if (combinedParams.MS2ChildScanDissociationType != DissociationType.LowCID
                         && _glycoSearchParameters.IndexingChildScan
-                        && !CrosslinkSearchEngine.DissociationTypeGenerateSameTypeOfIons(combinedParams.DissociationType, combinedParams.MS2ChildScanDissociationType))
+                        && _glycoSearchParameters.IndexingChildScanDiffIndex
+                        && !CrosslinkSearchEngine.DissociationTypeGenerateSameIons(combinedParams.DissociationType, combinedParams.MS2ChildScanDissociationType))
                     {
+                        if (_glycoSearchParameters.Indexing_by_ion && CrosslinkSearchEngine.DissociationTypeGenerateSameIons(DissociationType.HCD, combinedParams.MS2ChildScanDissociationType))
+                        {
+                            continue;
+                        }
                         //Becuase two different type of dissociation methods are used, the parameters are changed with different dissociation type.
                         var secondCombinedParams = CommonParameters.CloneWithNewDissociationType(combinedParams.MS2ChildScanDissociationType);
                         var secondIndexEngine = new IndexingEngine(proteinListSubset, variableModifications, fixedModifications, null, null, null, 

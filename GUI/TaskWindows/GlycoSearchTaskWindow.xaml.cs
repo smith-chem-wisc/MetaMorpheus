@@ -122,7 +122,9 @@ namespace MetaMorpheusGUI
             Rbt_N_O_GlycoSearch.IsChecked = task._glycoSearchParameters.GlycoSearchType == EngineLayer.GlycoSearch.GlycoSearchType.N_O_GlycanSearch;
             TbMaxOGlycanNum.Text = task._glycoSearchParameters.MaximumOGlycanAllowed.ToString(CultureInfo.InvariantCulture);
             CkbOxoniumIonFilt.IsChecked = task._glycoSearchParameters.OxoniumIonFilt;
+            CkbIndex_by_ion.IsChecked = task._glycoSearchParameters.Indexing_by_ion;
             CkbIndexingChildScan.IsChecked = task._glycoSearchParameters.IndexingChildScan;
+            CkbIndexChildScanWithDiffIndex.IsChecked = task._glycoSearchParameters.IndexingChildScanDiffIndex;
             CkbQuantification.IsChecked = task._glycoSearchParameters.PerformQuantification;
             CkbRelativeRetentionTime.IsChecked = task._glycoSearchParameters.PerformRelativeRetentionTimePrediction;
 
@@ -267,7 +269,9 @@ namespace MetaMorpheusGUI
             TheTask._glycoSearchParameters.GlycoSearchTopNum = int.Parse(txtTopNum.Text, CultureInfo.InvariantCulture);
             TheTask._glycoSearchParameters.MaximumOGlycanAllowed = int.Parse(TbMaxOGlycanNum.Text, CultureInfo.InvariantCulture);
             TheTask._glycoSearchParameters.OxoniumIonFilt = CkbOxoniumIonFilt.IsChecked.Value;
+            TheTask._glycoSearchParameters.Indexing_by_ion = CkbIndex_by_ion.IsChecked.Value;
             TheTask._glycoSearchParameters.IndexingChildScan = CkbIndexingChildScan.IsChecked.Value;
+            TheTask._glycoSearchParameters.IndexingChildScanDiffIndex = CkbIndexChildScanWithDiffIndex.IsChecked.Value;
             TheTask._glycoSearchParameters.PerformQuantification = CkbQuantification.IsChecked.Value;
             TheTask._glycoSearchParameters.PerformRelativeRetentionTimePrediction = CkbQuantification.IsChecked.Value;
 

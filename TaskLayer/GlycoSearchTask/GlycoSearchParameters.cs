@@ -16,7 +16,9 @@ namespace TaskLayer
             DecoyType = DecoyType.Reverse;
             GlycoSearchTopNum = 50;
             MaximumOGlycanAllowed = 4;
+            Indexing_by_ion = true;
             IndexingChildScan = false;
+            IndexingChildScanDiffIndex = false;
             PerformQuantification = false;
             PerformRelativeRetentionTimePrediction = false;
         }
@@ -28,9 +30,9 @@ namespace TaskLayer
         public DecoyType DecoyType { get; set; }
         public int GlycoSearchTopNum { get; set; }
         public int MaximumOGlycanAllowed { get; set; }
-
+        public bool Indexing_by_ion { get; set; }
         public bool IndexingChildScan { get; set; }
-
+        public bool IndexingChildScanDiffIndex { get; set; }
         public bool PerformQuantification { get; set; }
 
         public bool PerformRelativeRetentionTimePrediction { get; set; }

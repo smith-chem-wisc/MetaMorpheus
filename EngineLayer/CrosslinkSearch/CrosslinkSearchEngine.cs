@@ -782,6 +782,31 @@ namespace EngineLayer.CrosslinkSearch
             return false;
         }
 
+        public static bool DissociationTypeGenerateSameIons(DissociationType d, DissociationType childD)
+        {
+            if (d == childD)
+            {
+                return true;
+            }
+            if (d == DissociationType.CID && childD == DissociationType.HCD)
+            {
+                return true;
+            }
+            if (d == DissociationType.HCD && childD == DissociationType.CID)
+            {
+                return true;
+            }           
+            if (d == DissociationType.ETD && childD == DissociationType.ECD)
+            {
+                return true;
+            }
+            if (d == DissociationType.ECD && childD == DissociationType.ETD)
+            {
+                return true;
+            }
+            return false;
+        }
+
         public static int BinarySearchGetIndex(double[] massArray, double targetMass)
         {
 

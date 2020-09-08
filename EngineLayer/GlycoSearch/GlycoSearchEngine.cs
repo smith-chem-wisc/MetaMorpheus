@@ -126,7 +126,7 @@ namespace EngineLayer.GlycoSearch
 
                         foreach (var aChildScan in scan.ChildScans)
                         {
-                            var x = GetGlycanBinsToSearch(aChildScan, FragmentIndex, false);
+                            var x = GetGlycanBinsToSearch(aChildScan, FragmentIndex, (GlycoSearchType == GlycoSearchType.NGlycanSearch || GlycoSearchType == GlycoSearchType.N_O_GlycanSearch));
                             childBinsToSearch.AddRange(x);
                         }
 

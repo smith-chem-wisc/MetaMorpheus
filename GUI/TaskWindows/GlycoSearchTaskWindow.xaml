@@ -117,32 +117,44 @@
                                             <TextBox x:Name="TbMaxOGlycanNum" PreviewTextInput="CheckIfNumber" Width="45"/>
                                         </StackPanel>
                                         <CheckBox x:Name="CkbOxoniumIonFilt" Content="OxoniumIonFilt" Grid.Row="3" Grid.Column="1" VerticalAlignment="Center"/>
-                                        
                                     </Grid>
                                 </Grid>
                             </GroupBox>
                             <GroupBox Header="Advanced Parameters">
-                                <Grid>
-                                    <Grid.RowDefinitions>
-                                        <RowDefinition Height="1*"/>
-                                        <RowDefinition Height="1*"/>
-                                        <RowDefinition Height="1*"/>
-                                        <RowDefinition Height="1*"/>
-                                    </Grid.RowDefinitions>
-                                    <StackPanel Orientation="Horizontal" Grid.Row="0" Margin="5">
-                                        <Label Content="Keep top N candidates" />
-                                        <TextBox x:Name="txtTopNum" PreviewTextInput="CheckIfNumber" Width="45" Margin="2" IsEnabled="{Binding IsChecked, ElementName=ckbTopNum}" />
-                                    </StackPanel>
-                                    <StackPanel Orientation="Horizontal" Grid.Row="1" Margin="5">
-                                        <CheckBox x:Name="CkbIndexingChildScan" Content="IndexingChildScan" Grid.Row="1"  VerticalAlignment="Center"/>
-                                    </StackPanel>
-                                    <StackPanel Orientation="Horizontal" Grid.Row="2" Margin="5">
-                                        <CheckBox x:Name="CkbQuantification" Content="Quantification" VerticalAlignment="Center"/>
-                                    </StackPanel>
-                                    <StackPanel Orientation="Horizontal" Grid.Row="3" Margin="5">
-                                        <CheckBox x:Name="CkbRelativeRetentionTime" Content="Relative Retention Time Prediction" VerticalAlignment="Center"/>
-                                    </StackPanel>
-                                </Grid>
+                                <Expander x:Name="GlycoSearchAdvancedExpander">
+                                    <Grid>
+                                        <Grid.RowDefinitions>
+                                            <RowDefinition Height="1*"/>
+                                            <RowDefinition Height="1*"/>
+                                            <RowDefinition Height="1*"/>
+                                            <RowDefinition Height="1*"/>
+                                        </Grid.RowDefinitions>
+                                        <Grid.ColumnDefinitions>
+                                            <ColumnDefinition Width="1*"/>
+                                            <ColumnDefinition Width="1*"/>
+                                            <ColumnDefinition Width="1*"/>
+                                        </Grid.ColumnDefinitions>
+                                        <StackPanel Orientation="Horizontal" Grid.Row="0" Margin="5">
+                                            <Label Content="Keep top N candidates" />
+                                            <TextBox x:Name="txtTopNum" PreviewTextInput="CheckIfNumber" Width="45" Margin="2" IsEnabled="{Binding IsChecked, ElementName=ckbTopNum}" />
+                                        </StackPanel>
+                                        <StackPanel Orientation="Horizontal" Grid.Row="1" Margin="5">
+                                            <CheckBox x:Name="CkbIndex_by_ion" Content="Index b/y ions" Grid.Row="1" VerticalAlignment="Center"/>
+                                        </StackPanel>
+                                        <StackPanel Orientation="Horizontal" Grid.Row="1" Grid.Column="1" Margin="5">
+                                            <CheckBox x:Name="CkbIndexingChildScan" Content="Index ChildScan" Grid.Row="1"  VerticalAlignment="Center"/>
+                                        </StackPanel>
+                                        <StackPanel Orientation="Horizontal" Grid.Row="1" Grid.Column="2" Margin="5">
+                                            <CheckBox x:Name="CkbIndexChildScanWithDiffIndex" Content="Index Childscan with diff inde" Grid.Row="1" VerticalAlignment="Center"/>
+                                        </StackPanel>
+                                        <StackPanel Orientation="Horizontal" Grid.Row="2" Margin="5">
+                                            <CheckBox x:Name="CkbQuantification" Content="Quantification" VerticalAlignment="Center"/>
+                                        </StackPanel>
+                                        <StackPanel Orientation="Horizontal" Grid.Row="3" Margin="5">
+                                            <CheckBox x:Name="CkbRelativeRetentionTime" Content="Relative Retention Time Prediction" VerticalAlignment="Center"/>
+                                        </StackPanel>
+                                    </Grid>
+                                </Expander>
                             </GroupBox>
                         </StackPanel>
                     </Expander>
