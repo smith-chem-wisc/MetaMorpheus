@@ -79,24 +79,6 @@ namespace TaskLayer
                     FinishedWritingFile(protein_oglyco_localization_file, new List<string> { Parameters.SearchTaskId });
                 }
             }
-
-            if (glycoSearchParameters.PerformQuantification || glycoSearchParameters.PerformRelativeRetentionTimePrediction)
-            {
-                QuantificationAnalysis(allgsms);
-                if (glycoSearchParameters.PerformQuantification)
-                {
-                    WriteQuantificationResults();
-                }
-                if (glycoSearchParameters.PerformRelativeRetentionTimePrediction)
-                {
-                    var gps = GlycopeptideRRT.ConstructGlycopeptideRRT(allgsms, Parameters.FlashLfqResults);
-                    string predictMessage = GlycopeptideRRT.PredictRRT(gps);
-                    MyTaskResults.AddTaskSummaryText(predictMessage);
-
-                    var writtenFileRRT = Path.Combine(Parameters.OutputFolder, "glycopeptideRT" + ".tsv");
-                    GlycopeptideRRT.WriteGlycopeptideRRT(gps, writtenFileRRT);
-                }
-            }
             
             return MyTaskResults;
         }
@@ -236,105 +218,6 @@ namespace TaskLayer
                     }
                 }
             }
-        }
-
-        //Quantification analysis
-        private void QuantificationAnalysis(List<GlycoSpectralMatch> allPsms)
-        {
-            // pass quantification parameters to FlashLFQ
-            Status("Quantifying...", Parameters.SearchTaskId);
-
-            // get PSMs to pass to FlashLFQ
-            var unambiguousPsmsBelowOnePercentFdr = allPsms.Where(p =>
-                p.FdrInfo.QValue <= 0.01
-                && p.FdrInfo.QValueNotch <= 0.01
-                && !p.IsDecoy
-                && p.FullSequence != null).ToList(); //if ambiguous, there's no full sequence
-
-            //group psms by file
-            var psmsGroupedByFile = unambiguousPsmsBelowOnePercentFdr.GroupBy(p => p.FullFilePath);
-
-            // construct file info for FlashLFQ
-            var spectraFileInfo = new List<SpectraFileInfo>();
-            foreach (var file in Parameters.CurrentRawFileList)
-            {
-                // experimental design info passed in here for each spectra file
-                spectraFileInfo.Add(new SpectraFileInfo(fullFilePathWithExtension: file, condition: "", biorep: 0, fraction: 0, techrep: 0));
-                Parameters.MyFileManager.DoneWithFile(file);
-            }
-
-            // pass PSM info to FlashLFQ
-            var flashLFQIdentifications = new List<Identification>();
-
-
-            foreach (var spectraFile in psmsGroupedByFile)
-            {
-                var rawfileinfo = spectraFileInfo.Where(p => p.FullFilePathWithExtension.Equals(spectraFile.Key)).First();
-
-                foreach (var psm in spectraFile)
-                {
-                    flashLFQIdentifications.Add(new Identification(rawfileinfo, psm.BaseSequence, psm.FullSequence,
-                        psm.PeptideMonisotopicMass.Value, psm.ScanRetentionTime, psm.ScanPrecursorCharge, new List<FlashLFQ.ProteinGroup>(), useForProteinQuant:false));
-                }
-            }
-
-            // run FlashLFQ
-            var FlashLfqEngine = new FlashLfqEngine(
-                allIdentifications: flashLFQIdentifications,
-                normalize: false,
-                ppmTolerance: 10,
-                matchBetweenRuns: false,
-                silent: true,
-                maxThreads: CommonParameters.MaxThreadsToUsePerFile);
-
-            if (flashLFQIdentifications.Any())
-            {
-                Parameters.FlashLfqResults = FlashLfqEngine.Run();
-            }
-
-
-        }
-
-        //The three functions here are almost the same as in PostSearchAnalysisTask. It is possible to use the same functions.
-        private void WriteQuantificationResults()
-        {
-            //if (Parameters.SearchParameters.DoQuantification && Parameters.FlashLfqResults != null)
-            {
-                // write peaks
-                WritePeakQuantificationResultsToTsv(Parameters.FlashLfqResults, Parameters.OutputFolder, "AllQuantifiedPeaks", new List<string> { Parameters.SearchTaskId });
-
-                // write peptide quant results
-                string filename = "AllQuantified" + GlobalVariables.AnalyteType + "s";
-                WritePeptideQuantificationResultsToTsv(Parameters.FlashLfqResults, Parameters.OutputFolder, filename, new List<string> { Parameters.SearchTaskId });
-
-                //// write individual results
-                //if (Parameters.CurrentRawFileList.Count > 1)
-                //{
-                //    foreach (var file in Parameters.FlashLfqResults.Peaks)
-                //    {
-                //        WritePeakQuantificationResultsToTsv(Parameters.FlashLfqResults, Parameters.IndividualResultsOutputFolder,
-                //            file.Key.FilenameWithoutExtension + "_QuantifiedPeaks", new List<string> { Parameters.SearchTaskId, "Individual Spectra Files", file.Key.FullFilePathWithExtension });
-                //    }
-                //}
-            }
-        }
-
-        private void WritePeptideQuantificationResultsToTsv(FlashLfqResults flashLFQResults, string outputFolder, string fileName, List<string> nestedIds)
-        {
-            var fullSeqPath = Path.Combine(outputFolder, fileName + ".tsv");
-
-            flashLFQResults.WriteResults(null, fullSeqPath, null, null, true);
-
-            FinishedWritingFile(fullSeqPath, nestedIds);
-        }
-
-        private void WritePeakQuantificationResultsToTsv(FlashLfqResults flashLFQResults, string outputFolder, string fileName, List<string> nestedIds)
-        {
-            var peaksPath = Path.Combine(outputFolder, fileName + ".tsv");
-
-            flashLFQResults.WriteResults(peaksPath, null, null, null, true);
-
-            FinishedWritingFile(peaksPath, nestedIds);
         }
 
     }

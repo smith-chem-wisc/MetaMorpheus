@@ -125,8 +125,6 @@ namespace MetaMorpheusGUI
             CkbIndex_by_ion.IsChecked = task._glycoSearchParameters.Indexing_by_ion;
             CkbIndexingChildScan.IsChecked = task._glycoSearchParameters.IndexingChildScan;
             CkbIndexChildScanWithDiffIndex.IsChecked = task._glycoSearchParameters.IndexingChildScanDiffIndex;
-            CkbQuantification.IsChecked = task._glycoSearchParameters.PerformQuantification;
-            CkbRelativeRetentionTime.IsChecked = task._glycoSearchParameters.PerformRelativeRetentionTimePrediction;
 
             txtTopNum.Text = task._glycoSearchParameters.GlycoSearchTopNum.ToString(CultureInfo.InvariantCulture);
             CmbOGlycanDatabase.SelectedItem = task._glycoSearchParameters.OGlycanDatabasefile;
@@ -272,8 +270,6 @@ namespace MetaMorpheusGUI
             TheTask._glycoSearchParameters.Indexing_by_ion = CkbIndex_by_ion.IsChecked.Value;
             TheTask._glycoSearchParameters.IndexingChildScan = CkbIndexingChildScan.IsChecked.Value;
             TheTask._glycoSearchParameters.IndexingChildScanDiffIndex = CkbIndexChildScanWithDiffIndex.IsChecked.Value;
-            TheTask._glycoSearchParameters.PerformQuantification = CkbQuantification.IsChecked.Value;
-            TheTask._glycoSearchParameters.PerformRelativeRetentionTimePrediction = CkbQuantification.IsChecked.Value;
 
             if (CheckBoxDecoy.IsChecked.Value)
             {
