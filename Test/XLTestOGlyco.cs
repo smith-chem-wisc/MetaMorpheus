@@ -235,6 +235,7 @@ namespace Test
         public static void OGlycoTest_Localization2()
         {
             //There may have a bug that MM cannot identify Peptide modified with (HexNAc), This is to test and find the bug.
+            //The data is from Glyco-DIA paper.
             //Get glycanBox
             var glycanBox = OGlycanBoxes[0];
 
@@ -311,7 +312,7 @@ namespace Test
 
             Directory.CreateDirectory(Path.Combine(Environment.CurrentDirectory, @"TESTGlycoData"));
             DbForTask db = new DbForTask(Path.Combine(TestContext.CurrentContext.TestDirectory, @"GlycoTestData/P16150.fasta"), false);
-            string spectraFile = Path.Combine(TestContext.CurrentContext.TestDirectory, @"GlycoTestData\2019_09_16_StcEmix_35trig_EThcD25_rep1_9906.mgf");
+            string spectraFile = Path.Combine(TestContext.CurrentContext.TestDirectory, @"GlycoTestData\2019_09_16_StcEmix_35trig_EThcD25_rep1_4565.mgf");
             new EverythingRunnerEngine(new List<(string, MetaMorpheusTask)> { ("Task", task) }, new List<string> { spectraFile }, new List<DbForTask> { db }, Path.Combine(Environment.CurrentDirectory, @"TESTGlycoData")).Run();
             Directory.Delete(Path.Combine(Environment.CurrentDirectory, @"TESTGlycoData"), true);
         }

@@ -29,7 +29,7 @@ namespace TaskLayer
 
         public MyTaskResults Run(List<GlycoSpectralMatch> allPsms, GlycoSearchParameters glycoSearchParameters, MyTaskResults MyTaskResults)
         {
-            var allPsmsSingle = allPsms.Where(p => p.NGlycan == null).OrderByDescending(p => p.Score).ToList();
+            var allPsmsSingle = allPsms.Where(p => p.NGlycan == null && p.LocalizationGraphs == null).OrderByDescending(p => p.Score).ToList();
             SingleFDRAnalysis(allPsmsSingle, CommonParameters, new List<string> { Parameters.SearchTaskId });
             var allSinglePsmsFdr = allPsmsSingle.Where(p => !p.IsDecoy && p.FdrInfo.QValue <= 0.01).ToList();
 
