@@ -67,6 +67,9 @@
     <None Update="GlycoTestData\2019_09_16_StcEmix_35trig_EThcD25_rep1_4565.mgf">
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
     </None>
+    <None Update="GlycoTestData\GlycoSearchTaskconfig_HCD-pd-EThcD.toml">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </None>
     <None Update="GlycoTestData\GlycoSearchTaskconfig.toml">
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
     </None>

@@ -23,19 +23,18 @@ namespace Test
     [TestFixture]
     public class XLTestNOGlyco
     {
-        [Test]
-        public static void NOGlycoTest_Complicated()
+        private static XLTestDataFile myMsDataFile { get; set; }
+
+        private static IndexingResults indexResults { get; set; }
+
+        [OneTimeSetUp]
+        public static void Setup()
         {
             //Generate parameters
             var digestionParameters = new DigestionParams(protease: "semi-trypsin");
-            
-            var commonParameters = new CommonParameters(doPrecursorDeconvolution:false, dissociationType: DissociationType.HCD, 
-                ms2childScanDissociationType: DissociationType.EThcD, digestionParams: digestionParameters);
 
-            var _glycoSearchParameters = new GlycoSearchParameters
-            {
-                GlycoSearchType = GlycoSearchType.N_O_GlycanSearch
-            };
+            var commonParameters = new CommonParameters(doPrecursorDeconvolution: false, dissociationType: DissociationType.HCD,
+                ms2childScanDissociationType: DissociationType.EThcD, digestionParams: digestionParameters);
 
             //Create databases.
             List<Protein> proteinList = ProteinDbLoader.LoadProteinFasta(Path.Combine(TestContext.CurrentContext.TestDirectory, @"GlycoTestData/P16150.fasta"), true, DecoyType.Reverse, false, ProteinDbLoader.UniprotAccessionRegex, ProteinDbLoader.UniprotFullNameRegex, ProteinDbLoader.UniprotFullNameRegex, ProteinDbLoader.UniprotGeneNameRegex,
@@ -48,16 +47,14 @@ namespace Test
             Modification mod2 = new Modification(_originalId: "Carbamidomethyl of C", _modificationType: "Common Fixed", _target: motif2, _locationRestriction: "Anywhere.", _monoisotopicMass: 57.02146372068994);
             var variableModifications = new List<Modification>() { mod1 };
             var fixedModifications = new List<Modification>() { mod2 };
-            var localizeableModifications = new List<Modification>();
 
             //Run index engine
             var indexEngine = new IndexingEngine(proteinList, variableModifications, fixedModifications, null, null, null, 1, DecoyType.Reverse,
                 commonParameters, null, 30000, false, new List<FileInfo>(), TargetContaminantAmbiguity.RemoveContaminant, new List<string>());
-            var indexResults = (IndexingResults)indexEngine.Run();
-            var indexedFragments = indexResults.FragmentIndex.Where(p => p != null).SelectMany(v => v).ToList();
-   
+            indexResults = (IndexingResults)indexEngine.Run();
+
             //Get MS2 scans.
-            var myMsDataFile = new XLTestDataFile();
+            myMsDataFile = new XLTestDataFile();
 
             {
                 string spectraFile = Path.Combine(TestContext.CurrentContext.TestDirectory, @"GlycoTestData\11898_AIETD.mgf");
@@ -84,13 +81,28 @@ namespace Test
                 myMsDataFile.ReplaceScanArrays(scan.TheScan.MassSpectrum.XArray, scan.TheScan.MassSpectrum.YArray, 4);
             }
 
+        }
 
+        [Test]
+        public static void NOGlycoTest_Complicated()
+        {
+            //Generate parameters
+            var digestionParameters = new DigestionParams(protease: "semi-trypsin");
+            
+            var commonParameters = new CommonParameters(doPrecursorDeconvolution:false, dissociationType: DissociationType.HCD, 
+                ms2childScanDissociationType: DissociationType.EThcD, digestionParams: digestionParameters);
 
-            var listOfSortedms2Scans = MetaMorpheusTask.GetMs2Scans(myMsDataFile, null, commonParameters).ToArray();
+            var _glycoSearchParameters = new GlycoSearchParameters
+            {
+                GlycoSearchType = GlycoSearchType.N_O_GlycanSearch
+            };
+
+            //Get MS2 scans
+            var listOfMs2Scans = MetaMorpheusTask.GetMs2Scans(myMsDataFile, null, commonParameters).ToArray();
 
             //Run GlycoSearchEngine
-            List<GlycoSpectralMatch>[] possiblePsms = new List<GlycoSpectralMatch>[listOfSortedms2Scans.Length];
-            new GlycoSearchEngine(possiblePsms, listOfSortedms2Scans, indexResults.PeptideIndex, indexResults.FragmentIndex, null, 0, 
+            List<GlycoSpectralMatch>[] possiblePsms = new List<GlycoSpectralMatch>[listOfMs2Scans.Length];
+            new GlycoSearchEngine(possiblePsms, listOfMs2Scans, indexResults.PeptideIndex, indexResults.FragmentIndex, null, 0, 
                 commonParameters, null, _glycoSearchParameters.OGlycanDatabasefile, _glycoSearchParameters.NGlycanDatabasefile, _glycoSearchParameters.GlycoSearchType, _glycoSearchParameters.GlycoSearchTopNum,
                         _glycoSearchParameters.MaximumOGlycanAllowed, _glycoSearchParameters.OxoniumIonFilt, _glycoSearchParameters.IndexingChildScan, new List<string> { }).Run();
 
@@ -98,8 +110,42 @@ namespace Test
 
             Assert.That(newPsms[0].FullSequence == "TN[N-Glycosylation:H9N2 on N]SSFIQGFVDHVKEDC[Common Fixed:Carbamidomethyl on C]DR");
             Assert.That(newPsms[1].FullSequence == "T[O-Glycosylation:H1N1 on X]T[O-Glycosylation:H1N1 on X]GSLEPSS[O-Glycosylation:N1 on X]GASGPQVSSVK");
+
+
+            Assert.That(newPsms[0].R138to144 < 1.0);
+            var kind_ngly = GlycoSpectralMatch.GetKind(newPsms[0]);
+            Assert.That(Glycan.GetKindString(kind_ngly) == "H9N2");
+
+
+            Assert.That(newPsms[1].NGlycanMotifExist == false);
+            var kind_ogly = GlycoSpectralMatch.GetKind(newPsms[1]);
+            Assert.That(Glycan.GetKindString(kind_ogly) == "H2N3");
+            var output = newPsms[1].ToString();
+            Assert.That(output.Contains("Leukosialin"));
+
         }
 
+        [Test]
+        public static void NOGlycoTest_Task()
+        {
+            Directory.CreateDirectory(Path.Combine(Environment.CurrentDirectory, @"TESTGlycoData"));
+            string spectraFile = Path.Combine(TestContext.CurrentContext.TestDirectory, @"TESTGlycoData/mzMLfile.mzML");
+            IO.MzML.MzmlMethods.CreateAndWriteMyMzmlWithCalibratedSpectra(myMsDataFile, spectraFile, false);
+
+            var task = Toml.ReadFile<GlycoSearchTask>(Path.Combine(TestContext.CurrentContext.TestDirectory, @"GlycoTestData/GlycoSearchTaskconfig_HCD-pd-EThcD.toml"), MetaMorpheusTask.tomlConfig);
+         
+            DbForTask db = new DbForTask(Path.Combine(TestContext.CurrentContext.TestDirectory, @"GlycoTestData/P16150.fasta"), false);
+
+            new EverythingRunnerEngine(new List<(string, MetaMorpheusTask)> { ("Task", task) }, new List<string> { spectraFile }, new List<DbForTask> { db }, Path.Combine(Environment.CurrentDirectory, @"TESTGlycoData")).Run();
+
+            var resultsPath_nglyco = File.ReadAllLines(Path.Combine(TestContext.CurrentContext.TestDirectory, @"TESTGlycoData/Task/nglyco.psmtsv"));
+            Assert.That(resultsPath_nglyco.Length == 2);
+
+            var resultsPath_oglyco = File.ReadAllLines(Path.Combine(TestContext.CurrentContext.TestDirectory, @"TESTGlycoData/Task/oglyco.psmtsv"));
+            Assert.That(resultsPath_oglyco.Length == 2);
+
+            Directory.Delete(Path.Combine(Environment.CurrentDirectory, @"TESTGlycoData"), true);
+        }
 
         internal class XLTestDataFile : MsDataFile
         {
@@ -110,8 +156,10 @@ namespace Test
                 var intensities = new double[] { };         
                 var ScansHere = new List<MsDataScan>();
 
-                var MassSpectrum1 = new MzSpectrum(mz, intensities, false);
-                ScansHere.Add( new MsDataScan(MassSpectrum1, 1, 1, true, Polarity.Positive, 1, 
+                var mz1 = new double[] { 937.0963, 937.4288, 937.7654, 938.0994, 1030.4214, 1030.6719, 1030.9227, 1031.1735, 1031.4242, 1031.6741 };
+                var intensities1 = new double[] { 2191194.3, 1620103.4, 3470064.5, 807049.2, 828013.6, 1617673.9, 2045691.8, 1464751.9, 825144.2, 599464.8 };
+                var MassSpectrum1 = new MzSpectrum(mz1, intensities1, false);
+                ScansHere.Add(new MsDataScan(MassSpectrum1, 1, 1, true, Polarity.Positive, 1,
                     new MzLibUtil.MzRange(0, 10000), "ff", MZAnalyzerType.Unknown, 1000, 1, null, "scan=1"));
 
                 var MassSpectrum2 = new MzSpectrum(mz, intensities, false);
@@ -122,7 +170,7 @@ namespace Test
                 var MassSpectrum3 = new MzSpectrum(mz, intensities, false);
                 ScansHere.Add(new MsDataScan(MassSpectrum3, 3, 2, true, Polarity.Positive, 1.0,
                     new MzLibUtil.MzRange(0, 10000), "f", MZAnalyzerType.Unknown, 103, 1.0, null, "scan=3", 1030.421508789063,
-                    4, 2045691.75, 1030.421508789063, 2, DissociationType.EThcD, 2, 1030.421508789063));
+                    4, 2045691.75, 1030.421508789063, 2, DissociationType.ETD, 2, 1030.421508789063));
 
 
                 var MassSpectrum4 = new MzSpectrum(mz, intensities, false);
@@ -133,7 +181,7 @@ namespace Test
                 var MassSpectrum5 = new MzSpectrum(mz, intensities, false);
                 ScansHere.Add(new MsDataScan(MassSpectrum5, 5, 2, true, Polarity.Positive, 1.0,
                     new MzLibUtil.MzRange(0, 10000), "f", MZAnalyzerType.Unknown, 103, 1.0, null, "scan=5", 937.096923828125,
-                    3, 3470064.5, 937.096923828125, 2, DissociationType.EThcD, 4, 937.096923828125));
+                    3, 3470064.5, 937.096923828125, 2, DissociationType.ETD, 4, 937.096923828125));
 
                 Scans = ScansHere.ToArray();
             }

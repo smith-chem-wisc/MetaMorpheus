@@ -19,8 +19,6 @@ namespace TaskLayer
             Indexing_by_ion = true;
             IndexingChildScan = false;
             IndexingChildScanDiffIndex = false;
-            PerformQuantification = false;
-            PerformRelativeRetentionTimePrediction = false;
         }
 
         public string OGlycanDatabasefile { get; set; }
@@ -33,8 +31,5 @@ namespace TaskLayer
         public bool Indexing_by_ion { get; set; }
         public bool IndexingChildScan { get; set; }
         public bool IndexingChildScanDiffIndex { get; set; }
-        public bool PerformQuantification { get; set; }
-
-        public bool PerformRelativeRetentionTimePrediction { get; set; }
     }
 }
