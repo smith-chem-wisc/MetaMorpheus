@@ -388,11 +388,41 @@ namespace EngineLayer.GlycoSearch
             var matchedFragmentIons = MatchFragmentIons(theScan, products, CommonParameters);
             double score = CalculatePeptideScore(theScan.TheScan, matchedFragmentIons);
 
+            var allMatchedChildIons = new Dictionary<int, List<MatchedFragmentIon>>();
+
+            foreach (var childScan in theScan.ChildScans)
+            {
+                //People always use CID with low res. This special code works for Nic Scott's data. (High-HCD, High-EThcD, Low-CID, High-secHCD)
+                if (childScan.TheScan.DissociationType == DissociationType.CID)
+                {
+                    continue;
+                }
+
+                List<Product> childFragments = new List<Product>();
+                theScanBestPeptide.Fragment(CommonParameters.MS2ChildScanDissociationType, FragmentationTerminus.Both, childFragments);
+
+                var matchedChildIons = MatchFragmentIons(childScan, childFragments, CommonParameters);
+
+                if (matchedChildIons == null)
+                {
+                    continue;
+                }
+
+                allMatchedChildIons.Add(childScan.OneBasedScanNumber, matchedChildIons);
+                double childScore = CalculatePeptideScore(childScan.TheScan, matchedChildIons);
+
+                //TO THINK:may think a different way to use childScore
+                score += childScore;
+            }
+
             if (score > scoreCutOff)
             {
                 var psmCrossSingle = new GlycoSpectralMatch(theScanBestPeptide, 0, score, scanIndex, theScan, CommonParameters, matchedFragmentIons);
                 psmCrossSingle.Rank = ind;
-
+                if (allMatchedChildIons.Count() >0)
+                {
+                    psmCrossSingle.ChildMatchedFragmentIons = allMatchedChildIons;
+                }
                 possibleMatches.Add(psmCrossSingle);
             }
         }
