@@ -250,8 +250,11 @@ namespace TaskLayer
                             new TruncationSearchEngine(possibleTruncationPsms, arrayOfMs2ScansSortedByMass, peptideIndex, fragmentIndex, currentPartition,
                                 combinedParams, FileSpecificParameters, truncationMassDiffAcceptor, SearchParameters.MaximumMassThatFragmentIonScoreIsDoubled, thisId).Run();
 
-                            allCategorySpecificPsms[0].AddRange(fileSpecificPsms);
-                            allCategorySpecificPsms[1].AddRange(possibleTruncationPsms);
+                            //allCategorySpecificPsms[0].AddRange(fileSpecificPsms);
+                            //allCategorySpecificPsms[1].AddRange(possibleTruncationPsms);
+                            
+                            //DEBUG
+                            fileSpecificPsms = possibleTruncationPsms;
                         }
 
                         ReportProgress(new ProgressEventArgs(100, "Done with search " + (currentPartition + 1) + "/" + combinedParams.TotalPartitions + "!", thisId));
@@ -368,7 +371,7 @@ namespace TaskLayer
 
             int numNotches = GetNumNotches(SearchParameters.MassDiffAcceptorType, SearchParameters.CustomMdac);
             //resolve category specific fdrs (for speedy semi and nonspecific
-            if (SearchParameters.SearchType == SearchType.NonSpecific || SearchParameters.TruncationSearch)
+            if (SearchParameters.SearchType == SearchType.NonSpecific)// || SearchParameters.TruncationSearch)
             {
                 allPsms = NonSpecificEnzymeSearchEngine.ResolveFdrCategorySpecificPsms(allCategorySpecificPsms, numNotches, taskId, CommonParameters, FileSpecificParameters);
             }

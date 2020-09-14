@@ -15,6 +15,8 @@ namespace EngineLayer.TruncationSearch
 {
     public class TruncationSearchEngine : ModernSearchEngine
     {
+        private static readonly double WaterMonoisotopicMass = PeriodicTable.GetElement("H").PrincipalIsotope.AtomicMass * 2 + PeriodicTable.GetElement("O").PrincipalIsotope.AtomicMass;
+
         public TruncationSearchEngine(PeptideSpectralMatch[] globalPsms, Ms2ScanWithSpecificMass[] listOfSortedms2Scans, List<PeptideWithSetModifications> peptideIndex,
             List<int>[] fragmentIndex, int currentPartition, CommonParameters commonParameters, List<(string fileName, CommonParameters fileSpecificParameters)> fileSpecificParameters,
             MassDiffAcceptor massDiffAcceptor, double maximumMassThatFragmentIonScoreIsDoubled, List<string> nestedIds)
@@ -36,6 +38,24 @@ namespace EngineLayer.TruncationSearch
             int maxThreadsPerFile = CommonParameters.MaxThreadsToUsePerFile;
             int[] threads = Enumerable.Range(0, maxThreadsPerFile).ToArray();
 
+            string truncationLabel = "Truncation";
+
+            if (!ProteaseDictionary.Dictionary.ContainsKey(truncationLabel))
+            {
+                ProteaseDictionary.Dictionary.Add(truncationLabel, new Protease(truncationLabel, CleavageSpecificity.None, "", "", new List<DigestionMotif>()));
+            }
+
+            DigestionParams d = new DigestionParams(truncationLabel);
+            double lowestAminoAcidMass = Proteomics.AminoAcidPolymer.Residue.ResidueMonoisotopicMass['G'];
+
+            MassDiffAcceptor massDiffAcceptor = new DotMassDiffAcceptor("",
+                new List<double> {
+                    -1 * Constants.C13MinusC12,
+                    0,
+                    1 * Constants.C13MinusC12
+                },
+            CommonParameters.PrecursorMassTolerance);
+
             Parallel.ForEach(threads, (scanIndex) =>
             {
                 byte[] scoringTable = new byte[PeptideIndex.Count];
@@ -56,7 +76,8 @@ namespace EngineLayer.TruncationSearch
                     IndexScoreScan(scan, scoringTable, byteScoreCutoff, idsOfPeptidesPossiblyObserved, CommonParameters.DissociationType);
 
                     // take indexed-scored peptides and re-score them using the more accurate but slower scoring algorithm
-                    FineScorePeptides(idsOfPeptidesPossiblyObserved, scan, scanIndex, scoringTable, CommonParameters.DissociationType, peptideTheorProducts);
+                    DoTruncationAnalysis(idsOfPeptidesPossiblyObserved, scan, scanIndex, lowestAminoAcidMass, peptideTheorProducts, truncationLabel,
+                        d, massDiffAcceptor);
 
                     //report search progress
                     progress++;
@@ -76,112 +97,98 @@ namespace EngineLayer.TruncationSearch
                 psm.ResolveAllAmbiguities();
             }
 
-            DoTruncationAnalysis(PeptideSpectralMatches, ListOfSortedMs2Scans);
-
             return new MetaMorpheusEngineResults(this);
         }
 
-        private void DoTruncationAnalysis(PeptideSpectralMatch[] psms, Ms2ScanWithSpecificMass[] ms2scans)
+        private void DoTruncationAnalysis(List<int> idsOfPeptidesPossiblyObserved, Ms2ScanWithSpecificMass scan, int scanIndex, double lowestAminoAcidMass,
+            List<Product> peptideTheorProducts, string truncationLabel, DigestionParams digestionParams, MassDiffAcceptor massDiffAcceptor)
         {
-            string truncationLabel = "Truncation";
-
-            if (!ProteaseDictionary.Dictionary.ContainsKey(truncationLabel))
+            foreach (var id in idsOfPeptidesPossiblyObserved)
             {
-                ProteaseDictionary.Dictionary.Add(truncationLabel, new Protease(truncationLabel, CleavageSpecificity.None, "", "", new List<DigestionMotif>()));
-            }
+                PeptideWithSetModifications pep = PeptideIndex[id];
 
-            DigestionParams d = new DigestionParams(truncationLabel);
-            double lowestAminoAcidMass = Proteomics.AminoAcidPolymer.Residue.ResidueMonoisotopicMass['G'];
+                bool possiblyTruncated = pep.MonoisotopicMass - scan.PrecursorMass > lowestAminoAcidMass;
 
-            MassDiffAcceptor massDiffAcceptor = new DotMassDiffAcceptor("",
-                new List<double> {
-                    -1 * Constants.C13MinusC12,
-                    0,
-                    1 * Constants.C13MinusC12
-                },
-            CommonParameters.PrecursorMassTolerance);
-
-            // mass difference must be negative and must be loss of at least one amino acid (G is smallest amino acid)
-            List<PeptideSpectralMatch> possiblyTruncatedPsms = psms.Where(p => p != null && p.FullSequence != null && p.PeptideMonisotopicMass.HasValue &&
-                p.PeptideMonisotopicMass.Value - p.ScanPrecursorMass > lowestAminoAcidMass).ToList();
-
-            Parallel.ForEach(Partitioner.Create(0, possiblyTruncatedPsms.Count),
-                new ParallelOptions { MaxDegreeOfParallelism = CommonParameters.MaxThreadsToUsePerFile },
-                (range, loopState) =>
+                if (!possiblyTruncated)
                 {
-                    List<Product> peptideTheorProducts = new List<Product>();
+                    continue;
+                }
 
-                    for (int i = range.Item1; i < range.Item2; i++)
+                // check for c-terminal truncation
+                double truncatedCTermMass = WaterMonoisotopicMass;
+
+                for (int r = pep.OneBasedStartResidueInProtein; r < pep.OneBasedEndResidueInProtein; r++)
+                {
+                    char aa = pep[r - pep.OneBasedStartResidueInProtein];
+                    truncatedCTermMass += Proteomics.AminoAcidPolymer.Residue.ResidueMonoisotopicMass[aa];
+
+                    int notch = massDiffAcceptor.Accepts(truncatedCTermMass, scan.PrecursorMass);
+                    if (notch >= 0)
                     {
-                        // Stop loop if canceled
-                        if (GlobalVariables.StopLoops)
-                        {
-                            return;
-                        }
+                        var mods = pep.AllModsOneIsNterminus.Where(p => p.Key <= r + 1).ToDictionary(p => p.Key, p => p.Value);
 
-                        PeptideSpectralMatch psm = possiblyTruncatedPsms[i];
-                        Ms2ScanWithSpecificMass scan = ms2scans[psm.ScanIndex];
-                        PeptideWithSetModifications pep = psm.BestMatchingPeptides.First().Peptide;
+                        PeptideWithSetModifications truncatedCTerm = new PeptideWithSetModifications(pep.Protein, digestionParams, pep.OneBasedStartResidueInProtein, r,
+                                CleavageSpecificity.Semi, truncationLabel, pep.MissedCleavages, mods, pep.NumFixedMods);
 
-                        // check for c-terminal truncation
-                        for (int r = pep.OneBasedStartResidueInProtein; r < pep.OneBasedEndResidueInProtein; r++)
-                        {
-                            var mods = pep.AllModsOneIsNterminus.Where(p => p.Key <= r + 1).ToDictionary(p => p.Key, p => p.Value);
-
-                            PeptideWithSetModifications truncatedCTerm = new PeptideWithSetModifications(pep.Protein, d, pep.OneBasedStartResidueInProtein, r,
-                                    CleavageSpecificity.Semi, truncationLabel, pep.MissedCleavages, mods, pep.NumFixedMods);
-
-                            int notch = massDiffAcceptor.Accepts(truncatedCTerm.MonoisotopicMass, psm.ScanPrecursorMass);
-                            if (notch >= 0)
-                            {
-                                truncatedCTerm.Fragment(CommonParameters.DissociationType, FragmentationTerminus.Both, peptideTheorProducts);
-                                List<MatchedFragmentIon> matchedIons = MetaMorpheusEngine.MatchFragmentIons(scan, peptideTheorProducts, CommonParameters);
-                                double thisScore = MetaMorpheusEngine.CalculatePeptideScore(scan.TheScan, matchedIons);
-                                bool meetsScoreCutoff = thisScore >= CommonParameters.ScoreCutoff;
-
-                                if (meetsScoreCutoff && thisScore > psm.Score)
-                                {
-                                    psm.AddOrReplace(truncatedCTerm, thisScore, 0, CommonParameters.ReportAllAmbiguity, matchedIons, 0);
-                                    psm.ResolveAllAmbiguities();
-                                }
-                            }
-                        }
-
-                        // check for n-terminal truncation
-                        for (int r = pep.OneBasedEndResidueInProtein; r > pep.OneBasedStartResidueInProtein; r--)
-                        {
-                            var mods = pep.AllModsOneIsNterminus.Where(p => p.Key >= r + 1).ToDictionary(p => p.Key - r + 1, p => p.Value);
-
-                            PeptideWithSetModifications truncatedNTerm = new PeptideWithSetModifications(pep.Protein, d, r, pep.OneBasedEndResidueInProtein,
-                                    CleavageSpecificity.Semi, truncationLabel, pep.MissedCleavages, mods, pep.NumFixedMods);
-
-                            int notch = massDiffAcceptor.Accepts(truncatedNTerm.MonoisotopicMass, psm.ScanPrecursorMass);
-                            if (notch >= 0)
-                            {
-                                truncatedNTerm.Fragment(CommonParameters.DissociationType, FragmentationTerminus.Both, peptideTheorProducts);
-                                List<MatchedFragmentIon> matchedIons = MetaMorpheusEngine.MatchFragmentIons(scan, peptideTheorProducts, CommonParameters);
-                                double thisScore = MetaMorpheusEngine.CalculatePeptideScore(scan.TheScan, matchedIons);
-                                bool meetsScoreCutoff = thisScore >= CommonParameters.ScoreCutoff && thisScore >= psm.Score;
-
-                                if (meetsScoreCutoff && thisScore > psm.Score)
-                                {
-                                    psm.AddOrReplace(truncatedNTerm, thisScore, 0, CommonParameters.ReportAllAmbiguity, matchedIons, 0);
-                                    psm.ResolveAllAmbiguities();
-                                }
-                            }
-                        }
+                        FineScoreTruncatedPeptide(truncatedCTerm, scan, scanIndex, peptideTheorProducts);
                     }
-                });
+                }
 
-            for (int i = 0; i < psms.Length; i++)
-            {
-                var psm = psms[i];
+                // check for n-terminal truncation
+                double truncatedNTermMass = WaterMonoisotopicMass;
 
-                if (psm == null || psm.FullSequence == null || psm.BestMatchingPeptides.First().Peptide.PeptideDescription != truncationLabel)
+                for (int r = pep.OneBasedEndResidueInProtein; r > pep.OneBasedStartResidueInProtein; r--)
                 {
-                    psms[i] = null;
+                    char aa = pep[r - pep.OneBasedStartResidueInProtein];
+                    truncatedNTermMass += Proteomics.AminoAcidPolymer.Residue.ResidueMonoisotopicMass[aa];
+
+                    int notch = massDiffAcceptor.Accepts(truncatedNTermMass, scan.PrecursorMass);
+
+                    if (notch >= 0)
+                    {
+                        //double modMass = pep.AllModsOneIsNterminus
+                        var mods = pep.AllModsOneIsNterminus.Where(p => p.Key >= r + 1).ToDictionary(p => p.Key - r + 1, p => p.Value);
+
+                        PeptideWithSetModifications truncatedNTerm = new PeptideWithSetModifications(pep.Protein, digestionParams, r, pep.OneBasedEndResidueInProtein,
+                                    CleavageSpecificity.Semi, truncationLabel, pep.MissedCleavages, mods, pep.NumFixedMods);
+                        double tempMass = truncatedNTerm.MonoisotopicMass;
+
+                        if (truncatedNTerm.PreviousAminoAcid == 'M' && truncatedNTerm.OneBasedStartResidueInProtein == 2)
+                        {
+                            continue;
+                        }
+
+                        FineScoreTruncatedPeptide(truncatedNTerm, scan, scanIndex, peptideTheorProducts);
+                    }
                 }
             }
+        }
+
+        private PeptideSpectralMatch FineScoreTruncatedPeptide(PeptideWithSetModifications peptide, Ms2ScanWithSpecificMass scan, int scanIndex, List<Product> peptideTheorProducts)
+        {
+            peptide.Fragment(CommonParameters.DissociationType, FragmentationTerminus.Both, peptideTheorProducts);
+
+            List<MatchedFragmentIon> matchedIons = MatchFragmentIons(scan, peptideTheorProducts, CommonParameters);
+
+            double thisScore = CalculatePeptideScore(scan.TheScan, matchedIons);
+            int notch = MassDiffAcceptor.Accepts(scan.PrecursorMass, peptide.MonoisotopicMass);
+
+            bool meetsScoreCutoff = thisScore >= CommonParameters.ScoreCutoff;
+            bool scoreImprovement = PeptideSpectralMatches[scanIndex] == null || (thisScore - PeptideSpectralMatches[scanIndex].RunnerUpScore) > -PeptideSpectralMatch.ToleranceForScoreDifferentiation;
+
+            if (meetsScoreCutoff && scoreImprovement)
+            {
+                if (PeptideSpectralMatches[scanIndex] == null)
+                {
+                    PeptideSpectralMatches[scanIndex] = new PeptideSpectralMatch(peptide, notch, thisScore, scanIndex, scan, CommonParameters, matchedIons);
+                }
+                else
+                {
+                    PeptideSpectralMatches[scanIndex].AddOrReplace(peptide, thisScore, notch, CommonParameters.ReportAllAmbiguity, matchedIons, 0);
+                }
+            }
+
+            return PeptideSpectralMatches[scanIndex];
         }
     }
 }
