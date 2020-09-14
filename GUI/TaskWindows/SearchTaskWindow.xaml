@@ -458,6 +458,18 @@
                                 </CheckBox>
                                 <TextBox x:Name="QValueTextBox" PreviewTextInput="CheckIfNumber" Margin="10,0,0,0" IsEnabled="{Binding IsChecked, ElementName=QValueCheckBox}" Width="45" Height="23" />
                             </StackPanel>
+                            <StackPanel Orientation="Horizontal">
+                                <Label x:Name="minScoreAllowedLabel" Content="Minimum score allowed:" />
+                                <TextBox x:Name="MinScoreAllowed" PreviewTextInput="CheckIfNumber" Width="45" ToolTipService.ShowDuration="999999" ToolTipService.InitialShowDelay="500">
+                                    <TextBox.ToolTip>
+                                        <TextBlock>
+                                            The minimum MetaMorpheus score allowed for a PSM to be reportable.
+                                            <LineBreak />
+                                            Decreasing this number increases search time.
+                                        </TextBlock>
+                                    </TextBox.ToolTip>
+                                </TextBox>
+                            </StackPanel>
                         </StackPanel>
                         <!--</Expander>-->
                     </GroupBox>
@@ -912,18 +924,6 @@
                                                 <ColumnDefinition Width="1*" />
                                             </Grid.ColumnDefinitions>
                                             <StackPanel>
-                                                <StackPanel Orientation="Horizontal">
-                                                    <Label x:Name="minScoreAllowedLabel" Content="Minimum score allowed:" />
-                                                    <TextBox x:Name="MinScoreAllowed" PreviewTextInput="CheckIfNumber" Width="45" ToolTipService.ShowDuration="999999" ToolTipService.InitialShowDelay="500">
-                                                        <TextBox.ToolTip>
-                                                            <TextBlock>
-                                            The minimum MetaMorpheus score allowed for a PSM to be reportable.
-                                            <LineBreak />
-                                            Decreasing this number increases search time.
-                                                            </TextBlock>
-                                                        </TextBox.ToolTip>
-                                                    </TextBox>
-                                                </StackPanel>
                                                 <StackPanel Orientation="Horizontal">
                                                     <CheckBox x:Name="DeltaScoreCheckBox" Content="Use Delta Scores For FDR"  Margin="5" ToolTipService.ShowDuration="999999" ToolTipService.InitialShowDelay="500">
                                                         <CheckBox.ToolTip>
