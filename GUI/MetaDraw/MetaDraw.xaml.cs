@@ -48,6 +48,8 @@ namespace MetaMorpheusGUI
         private SolidColorBrush modificationAnnotationColor;
         private Regex illegalInFileName = new Regex(@"[\\/:*?""<>|]");
         private ObservableCollection<string> plotTypes;
+        private static List<string> AcceptedSpectraFormats = new List<string> { ".mzml", ".raw", ".mgf" };
+        private static List<string> AcceptedResultsFormats = new List<string> { ".psmtsv", ".tsv" };
 
         public MetaDraw()
         {
@@ -126,45 +128,42 @@ namespace MetaMorpheusGUI
         {
             var theExtension = Path.GetExtension(filePath).ToLower();
 
-            switch (theExtension)
+            if (AcceptedSpectraFormats.Contains(theExtension))
             {
-                case ".raw":
-                case ".mzml":
-                case ".mgf":
-                    if (!spectraFilePaths.Contains(filePath))
-                    {
-                        spectraFilePaths.Add(filePath);
+                if (!spectraFilePaths.Contains(filePath))
+                {
+                    spectraFilePaths.Add(filePath);
 
-                        if (spectraFilePaths.Count == 1)
-                        {
-                            spectraFileNameLabel.Text = filePath;
-                        }
-                        else
-                        {
-                            spectraFileNameLabel.Text = "[Mouse over to view files]";
-                        }
-
-                        spectraFileNameLabel.ToolTip = string.Join("\n", spectraFilePaths);
-                        resetSpectraFileButton.IsEnabled = true;
-                    }
-                    break;
-                case ".tsv":
-                case ".psmtsv":
-                    if (tsvResultsFilePath == null || !tsvResultsFilePath.Equals(filePath))
+                    if (spectraFilePaths.Count == 1)
                     {
-                        resetFilesButton_Click(resetPsmFileButton, null);
-                        tsvResultsFilePath = filePath;
-                        psmFileNameLabel.Text = filePath;
-                        psmFileNameLabel.ToolTip = filePath;
-                        psmFileNameLabelStat.Text = filePath;
-                        psmFileNameLabelStat.ToolTip = filePath;
-                        resetPsmFileButton.IsEnabled = true;
-                        resetPsmFileButtonStat.IsEnabled = true;
+                        spectraFileNameLabel.Text = filePath;
                     }
-                    break;
-                default:
-                    MessageBox.Show("Cannot read file type: " + theExtension);
-                    break;
+                    else
+                    {
+                        spectraFileNameLabel.Text = "[Mouse over to view files]";
+                    }
+
+                    spectraFileNameLabel.ToolTip = string.Join("\n", spectraFilePaths);
+                    resetSpectraFileButton.IsEnabled = true;
+                }
+            }
+            else if (AcceptedResultsFormats.Contains(theExtension))
+            {
+                if (tsvResultsFilePath == null || !tsvResultsFilePath.Equals(filePath))
+                {
+                    resetFilesButton_Click(resetPsmFileButton, null);
+                    tsvResultsFilePath = filePath;
+                    psmFileNameLabel.Text = filePath;
+                    psmFileNameLabel.ToolTip = filePath;
+                    psmFileNameLabelStat.Text = filePath;
+                    psmFileNameLabelStat.ToolTip = filePath;
+                    resetPsmFileButton.IsEnabled = true;
+                    resetPsmFileButtonStat.IsEnabled = true;
+                }
+            }
+            else
+            {
+                MessageBox.Show("Cannot read file type: " + theExtension);
             }
         }
 
@@ -388,9 +387,11 @@ namespace MetaMorpheusGUI
 
         private void selectSpectraFileButton_Click(object sender, RoutedEventArgs e)
         {
+            string filterString = string.Join(";", AcceptedSpectraFormats.Select(p => "*" + p));
+
             Microsoft.Win32.OpenFileDialog openFileDialog1 = new Microsoft.Win32.OpenFileDialog
             {
-                Filter = "Spectra Files(*.raw;*.mzML)|*.raw;*.mzML",
+                Filter = "Spectra Files(" + filterString + ")|" + filterString,
                 FilterIndex = 1,
                 RestoreDirectory = true,
                 Multiselect = true
@@ -406,9 +407,11 @@ namespace MetaMorpheusGUI
 
         private void selectPsmFileButton_Click(object sender, RoutedEventArgs e)
         {
+            string filterString = string.Join(";", AcceptedResultsFormats.Select(p => "*" + p));
+
             Microsoft.Win32.OpenFileDialog openFileDialog1 = new Microsoft.Win32.OpenFileDialog
             {
-                Filter = "Result Files(*.psmtsv)|*.psmtsv",
+                Filter = "Result Files(" + filterString + ")|" + filterString,
                 FilterIndex = 1,
                 RestoreDirectory = true,
                 Multiselect = false
@@ -804,7 +807,7 @@ namespace MetaMorpheusGUI
             else
             {
                 int numberOfScansToExport = dataGridScanNums.SelectedItems.Count;
-                string directoryPath = Path.Combine(Path.GetDirectoryName(tsvResultsFilePath), "MetaDrawExport", 
+                string directoryPath = Path.Combine(Path.GetDirectoryName(tsvResultsFilePath), "MetaDrawExport",
                     DateTime.Now.ToString("yyyy-MM-dd-HH-mm-ss", CultureInfo.InvariantCulture));
 
                 foreach (object selectedItem in dataGridScanNums.SelectedItems)
