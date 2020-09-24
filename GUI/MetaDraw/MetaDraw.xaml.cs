@@ -178,9 +178,9 @@ namespace MetaMorpheusGUI
             try
             {
                 // TODO: print warnings
-                foreach (var psm in PsmTsvReader.ReadTsv(psmtsvFileName, out List<string> warnings))
+                foreach (PsmFromTsv psm in PsmTsvReader.ReadTsv(psmtsvFileName, out List<string> warnings))
                 {
-                    if (loadPsmsOfAllSpectraFiles || fileNamesWithExtension.Contains(psm.Filename) || fileNamesWithoutExtension.Contains(psm.Filename) || potentiallyCalibratedFileNames.Contains(psm.Filename)) // in case results are from a calibrated file
+                    if (loadPsmsOfAllSpectraFiles || fileNamesWithExtension.Contains(psm.FileNameWithoutExtension) || fileNamesWithoutExtension.Contains(psm.FileNameWithoutExtension) || potentiallyCalibratedFileNames.Contains(psm.FileNameWithoutExtension)) // in case results are from a calibrated file
                     {
                         allPsms.Add(psm);
                     }
@@ -216,14 +216,14 @@ namespace MetaMorpheusGUI
 
             foreach (PsmFromTsv psm in filteredListOfPsms)
             {
-                if (psmsBySourceFile.Keys.Contains(psm.Filename))
+                if (psmsBySourceFile.Keys.Contains(psm.FileNameWithoutExtension))
                 {
-                    psmsBySourceFile[psm.Filename].Add(psm);
+                    psmsBySourceFile[psm.FileNameWithoutExtension].Add(psm);
                 }
                 else
                 {
-                    psmsBySourceFile.Add(psm.Filename, new ObservableCollection<PsmFromTsv> { psm });
-                    sourceFilesList.Add(psm.Filename);
+                    psmsBySourceFile.Add(psm.FileNameWithoutExtension, new ObservableCollection<PsmFromTsv> { psm });
+                    sourceFilesList.Add(psm.FileNameWithoutExtension);
                 }
             }
         }
@@ -382,7 +382,7 @@ namespace MetaMorpheusGUI
             }
             dataGridProperties.Items.Refresh();
             itemsControlSampleViewModel.Data.Clear();
-            DrawPsm(row.Ms2ScanNumber, row.Filename, row.FullSequence);
+            DrawPsm(row.Ms2ScanNumber, row.FileNameWithoutExtension, row.FullSequence);
         }
 
         private void selectSpectraFileButton_Click(object sender, RoutedEventArgs e)
@@ -819,7 +819,7 @@ namespace MetaMorpheusGUI
                         tempPsm = psm;
                     }
 
-                    var file = MsDataFiles.First(p => Path.GetFileNameWithoutExtension(p.FilePath) == psm.Filename);
+                    var file = MsDataFiles.First(p => Path.GetFileNameWithoutExtension(p.FilePath) == psm.FileNameWithoutExtension);
 
                     MsDataScan msDataScanToDraw = file.GetOneBasedScanFromDynamicConnection(psm.Ms2ScanNumber);
 
@@ -888,7 +888,7 @@ namespace MetaMorpheusGUI
                 dataGridScanNums.SelectedItem = dataGridScanNums.SelectedItem;
 
                 itemsControlSampleViewModel.Data.Clear();
-                DrawPsm(tempPsm.Ms2ScanNumber, tempPsm.Filename, tempPsm.FullSequence);
+                DrawPsm(tempPsm.Ms2ScanNumber, tempPsm.FileNameWithoutExtension, tempPsm.FullSequence);
 
                 MessageBox.Show(string.Format("{0} PDFs exported to " + directoryPath, numberOfScansToExport));
             }

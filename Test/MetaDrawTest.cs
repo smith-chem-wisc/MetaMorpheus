@@ -102,10 +102,10 @@ namespace Test
                 IEnumerable<string> actualIons = psms[i].VariantCrossingIons.Select(p => p.NeutralTheoreticalProduct.Annotation);
                 foreach (string expectedIon in expected[i])
                     Assert.IsTrue(actualIons.Contains(expectedIon),
-                       "VariantCrossingIons should contain ion " + expectedIon + " in file " + psms[i].Filename + ".");
+                       "VariantCrossingIons should contain ion " + expectedIon + " in file " + psms[i].FileNameWithoutExtension + ".");
                 foreach (string actualIon in actualIons)
                     Assert.IsTrue(expected[i].Contains(actualIon),
-                        "VariantCrossingIons should not contain ion " + actualIon + " in file " + psms[i].Filename + ".");
+                        "VariantCrossingIons should not contain ion " + actualIon + " in file " + psms[i].FileNameWithoutExtension + ".");
             }
         }
     }
