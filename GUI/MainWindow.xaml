@@ -7,7 +7,7 @@
         mc:Ignorable="d"
         Drop="Window_Drop" AllowDrop="true" Background="{StaticResource BackgroundColor}" WindowStartupLocation="CenterScreen" MinHeight="400" 
         MinWidth="800" Height="550" Width="950"
-        Loaded="MyWindow_Loaded">
+        Loaded="MyWindow_Loaded" PreviewKeyDown="Window_PreviewKeyDown">
 
     <Window.Resources>
         <ResourceDictionary>
@@ -542,6 +542,9 @@
                                         <Setter Property="FontWeight" Value="SemiBold" />
                                     </Style>
                                 </DataGrid.RowStyle>
+                                <DataGrid.CellStyle>
+                                    <Style TargetType="{x:Type DataGridCell}" BasedOn="{StaticResource DataGridCellStyle}" />
+                                </DataGrid.CellStyle>
                                 <DataGrid.Columns>
                                     <DataGridTextColumn Header="File" Binding="{Binding FileName, Mode=OneWay}" Width="240" />
                                     <DataGridTextColumn Header="Contaminant?" Binding="{Binding Contaminant, Mode=OneWay}" Width="180" />
@@ -572,7 +575,7 @@
                         </Grid>
 
                         <!--Task Summary-->
-                        <TreeView Name="taskSummary" ItemsSource="{Binding}" Grid.Column="2" Margin="2,10,20,10">
+                        <TreeView Name="taskSummary" ItemsSource="{Binding}" Grid.Column="2" Margin="2,10,20,10" MouseDoubleClick="TasksTreeView_MouseDoubleClick">
                             <TreeView.ItemContainerStyle>
                                 <Style TargetType="{x:Type TreeViewItem}">
                                     <Setter Property="FontSize" Value="11" />

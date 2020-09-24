@@ -43,8 +43,10 @@ namespace MetaMorpheusGUI
 
             dataGridProteinDatabases.DataContext = ProteinDatabases;
             proteinDbSummaryDataGrid.DataContext = ProteinDatabases;
+
             dataGridSpectraFiles.DataContext = SpectraFiles;
             spectraFileSummaryDataGrid.DataContext = SpectraFiles;
+
             tasksTreeView.DataContext = PreRunTasks;
             taskSummary.DataContext = PreRunTasks;
 
@@ -72,8 +74,6 @@ namespace MetaMorpheusGUI
 
             MyFileManager.WarnHandler += NotificationHandler;
             Application.Current.MainWindow.Closing += new CancelEventHandler(MainWindow_Closing);
-
-            KeyDown += new KeyEventHandler(Window_KeyDown);
         }
 
         private void MyWindow_Loaded(object sender, RoutedEventArgs e)
@@ -138,6 +138,7 @@ namespace MetaMorpheusGUI
                 spectraFile.SetInProgress(false);
 
                 dataGridSpectraFiles.Items.Refresh();
+                spectraFileSummaryDataGrid.Items.Refresh();
             }
         }
 
@@ -152,6 +153,7 @@ namespace MetaMorpheusGUI
                 RawDataForDataGrid spectraFile = SpectraFiles.First(b => b.FilePath.Equals(s.S));
                 spectraFile.SetInProgress(true);
                 dataGridSpectraFiles.Items.Refresh();
+                spectraFileSummaryDataGrid.Items.Refresh();
             }
         }
 
@@ -174,6 +176,7 @@ namespace MetaMorpheusGUI
                 }
 
                 dataGridProteinDatabases.Items.Refresh();
+                proteinDbSummaryDataGrid.Items.Refresh();
             }
         }
 
@@ -231,7 +234,10 @@ namespace MetaMorpheusGUI
                 theTask.Status = "Starting...";
 
                 dataGridSpectraFiles.Items.Refresh();
+                spectraFileSummaryDataGrid.Items.Refresh();
+
                 dataGridProteinDatabases.Items.Refresh();
+                proteinDbSummaryDataGrid.Items.Refresh();
             }
         }
 
@@ -249,7 +255,10 @@ namespace MetaMorpheusGUI
                 theTask.Status = "Done!";
 
                 dataGridSpectraFiles.Items.Refresh();
+                spectraFileSummaryDataGrid.Items.Refresh();
+
                 dataGridProteinDatabases.Items.Refresh();
+                proteinDbSummaryDataGrid.Items.Refresh();
             }
         }
 
@@ -354,7 +363,10 @@ namespace MetaMorpheusGUI
             else
             {
                 dataGridSpectraFiles.Items.Refresh();
+                spectraFileSummaryDataGrid.Items.Refresh();
+
                 dataGridProteinDatabases.Items.Refresh();
+                proteinDbSummaryDataGrid.Items.Refresh();
             }
         }
 
@@ -367,6 +379,7 @@ namespace MetaMorpheusGUI
             else
             {
                 dataGridSpectraFiles.Items.Refresh();
+                spectraFileSummaryDataGrid.Items.Refresh();
 
                 ToggleEnabledButtonsOnStartOrFinishRun(false);
 
@@ -391,6 +404,7 @@ namespace MetaMorpheusGUI
                 CancelTasksButton.IsEnabled = false;
 
                 dataGridSpectraFiles.Items.Refresh();
+                spectraFileSummaryDataGrid.Items.Refresh();
             }
         }
 
@@ -644,18 +658,25 @@ namespace MetaMorpheusGUI
         /// </summary>
         private void DatabaseOrSpectraFile_DoubleClick(object sender, MouseButtonEventArgs e)
         {
-            var dataGridCell = sender as DataGridCell;
-
             // prevent opening if a run is in progress
             if (!RunTasksButton.IsEnabled)
             {
                 return;
             }
 
+            var dataContext = GetItemDataContext(sender, e).FirstOrDefault();
+
             // open the file with the default process for this file format
-            if (dataGridCell.Content is TextBlock filePath && filePath != null && !string.IsNullOrEmpty(filePath.Text))
+            if (dataContext != null)
             {
-                OpenFile(filePath.Text);
+                if (dataContext is RawDataForDataGrid spectraFile)
+                {
+                    OpenFile(spectraFile.FilePath);
+                }
+                else if (dataContext is ProteinDbForDataGrid proteinDb)
+                {
+                    OpenFile(proteinDb.FilePath);
+                }
             }
         }
 
@@ -706,7 +727,7 @@ namespace MetaMorpheusGUI
 
         private void EditTask_Click(object sender, RoutedEventArgs e)
         {
-            var item = GetItemDataContext(sender, e);
+            var item = GetItemDataContext(sender, e).FirstOrDefault();
 
             if (item is PreRunTask preRunTask)
             {
@@ -720,7 +741,7 @@ namespace MetaMorpheusGUI
         /// </summary>
         private void SaveTaskAsToml_Click(object sender, RoutedEventArgs e)
         {
-            var item = GetItemDataContext(sender, e);
+            var item = GetItemDataContext(sender, e).FirstOrDefault();
             MetaMorpheusTask task;
 
             if (item is PreRunTask)
@@ -749,11 +770,11 @@ namespace MetaMorpheusGUI
         }
 
         /// <summary>
-        /// Deletes the selected item.
+        /// Deletes the selected item(s).
         /// </summary>
         private void Delete_Click(object sender, RoutedEventArgs e)
         {
-            var item = GetItemDataContext(sender, e);
+            var item = GetItemDataContext(sender, e).FirstOrDefault();
 
             if (item == null)
             {
@@ -767,11 +788,22 @@ namespace MetaMorpheusGUI
             }
             else if (item is RawDataForDataGrid)
             {
-                SpectraFiles.Remove(item as RawDataForDataGrid);
+                foreach (var selectedFile in SelectedSpectraFiles.ToList())
+                {
+                    SpectraFiles.Remove(selectedFile);
+                }
+
+                if (!SpectraFiles.Any())
+                {
+                    OutputFolderTextBox.Text = string.Empty;
+                }
             }
             else if (item is ProteinDbForDataGrid)
             {
-                ProteinDatabases.Remove(item as ProteinDbForDataGrid);
+                foreach (var selectedFile in SelectedProteinDatabaseFiles.ToList())
+                {
+                    ProteinDatabases.Remove(selectedFile);
+                }
             }
         }
 
@@ -812,29 +844,40 @@ namespace MetaMorpheusGUI
         /// </summary>
         private void MoveSelectedTask_Click(object sender, RoutedEventArgs e, bool moveTaskUp)
         {
-            var selectedTask = (PreRunTask)tasksTreeView.SelectedItem;
-            if (selectedTask == null)
+            PreRunTask taskToMove = (PreRunTask)GetItemDataContext(sender, e).FirstOrDefault();
+
+            if (taskToMove == null)
             {
                 return;
             }
 
-            int indexOfSelected = PreRunTasks.IndexOf(selectedTask);
-            int indexToMoveTo = indexOfSelected - 1;
+            int oldPosition = PreRunTasks.IndexOf(taskToMove);
+            int newPosition = oldPosition - 1;
             if (moveTaskUp)
             {
-                indexToMoveTo = indexOfSelected + 1;
+                newPosition = oldPosition + 1;
             }
 
-            if (indexToMoveTo >= 0 && indexToMoveTo < PreRunTasks.Count)
+            if (newPosition >= 0 && newPosition < PreRunTasks.Count)
             {
-                var temp = PreRunTasks[indexToMoveTo];
-                PreRunTasks[indexToMoveTo] = selectedTask;
-                PreRunTasks[indexOfSelected] = temp;
+                var taskThatUsedToBeInThatPosition = PreRunTasks[newPosition];
+                PreRunTasks[newPosition] = taskToMove;
+                PreRunTasks[oldPosition] = taskThatUsedToBeInThatPosition;
 
+                // renames the tasks in the new correct order (Task1, Task2, etc.)
                 UpdateGuiOnPreRunChange();
 
-                var item = tasksTreeView.ItemContainerGenerator.ContainerFromItem(selectedTask);
-                ((TreeViewItem)item).IsSelected = true;
+                var item = tasksTreeView.ItemContainerGenerator.ContainerFromItem(taskToMove);
+                if (item != null)
+                {
+                    ((TreeViewItem)item).IsSelected = true;
+                }
+
+                item = taskSummary.ItemContainerGenerator.ContainerFromItem(taskToMove);
+                if (item != null)
+                {
+                    ((TreeViewItem)item).IsSelected = true;
+                }
             }
         }
 
@@ -995,8 +1038,9 @@ namespace MetaMorpheusGUI
 
         /// <summary>
         /// Handles keyboard input.
+        /// Note: Window_KeyDown is NOT used because it does not seem to capture keyboard input from a DataGrid.
         /// </summary>
-        private void Window_KeyDown(object sender, KeyEventArgs e)
+        private void Window_PreviewKeyDown(object sender, KeyEventArgs e)
         {
             if (RunTasksButton.IsEnabled)
             {
@@ -1287,12 +1331,20 @@ namespace MetaMorpheusGUI
                     PreRunTasks[i].DisplayName = newName;
                 }
                 tasksTreeView.Items.Refresh();
+                taskSummary.Items.Refresh();
             }
 
             dataGridSpectraFiles.CommitEdit(DataGridEditingUnit.Row, true);
+            spectraFileSummaryDataGrid.CommitEdit(DataGridEditingUnit.Row, true);
+
             dataGridProteinDatabases.CommitEdit(DataGridEditingUnit.Row, true);
+            proteinDbSummaryDataGrid.CommitEdit(DataGridEditingUnit.Row, true);
+
             dataGridSpectraFiles.Items.Refresh();
+            spectraFileSummaryDataGrid.Items.Refresh();
+
             dataGridProteinDatabases.Items.Refresh();
+            proteinDbSummaryDataGrid.Items.Refresh();
 
             if (RunTasksButton.IsEnabled)
             {
@@ -1643,62 +1695,86 @@ namespace MetaMorpheusGUI
             }
         }
 
-        private object GetItemDataContext(object sender, RoutedEventArgs e)
+        private IEnumerable<object> GetItemDataContext(object sender, RoutedEventArgs e)
         {
-            if (sender is MenuItem)
+            if (sender is PreRunTask || sender is FinishedFileForDataGrid || sender is InRunTask || sender is RawDataForDataGrid || sender is ProteinDbForDataGrid)
+            {
+                yield return sender;
+            }
+            else if (sender is MenuItem)
             {
                 var menuItem = (MenuItem)sender;
                 var dataContext = (ContextMenu)menuItem.Parent;
 
                 if (dataContext.PlacementTarget is DataGridRow dataGridRow)
                 {
-                    return dataGridRow.Item;
+                    yield return dataGridRow.Item;
                 }
                 else if (dataContext.PlacementTarget is TreeViewItem treeViewItem)
                 {
-                    return treeViewItem.Header;
+                    yield return treeViewItem.Header;
                 }
                 else
                 {
-                    return menuItem.DataContext;
+                    yield return menuItem.DataContext;
                 }
             }
             else if (sender is TreeViewItem treeViewItem)
             {
-                return treeViewItem.Header;
+                yield return treeViewItem.Header;
+            }
+            else if (e.Source is DataGrid grid)
+            {
+                foreach (var item in grid.Items)
+                {
+                    yield return GetItemDataContext(item, null).FirstOrDefault();
+                }
             }
             else if (sender is DataGridRow dataGridRow)
             {
-                return dataGridRow.Item;
+                yield return dataGridRow.Item;
             }
-            else if (sender is PreRunTask || sender is FinishedFileForDataGrid || sender is InRunTask || sender is RawDataForDataGrid || sender is ProteinDbForDataGrid)
+            else if (e.Source is DataGridCell cell)
             {
-                return sender;
+                yield return cell.DataContext;
+            }
+            else if (e.Source is TreeViewItem treeViewItem2)
+            {
+                yield return treeViewItem2.Header;
+            }
+            else if (e.OriginalSource is DataGridCell cell2)
+            {
+                yield return cell2.DataContext;
+            }
+            else if (e.OriginalSource is TreeViewItem treeViewItem3)
+            {
+                yield return treeViewItem3.Header;
             }
 
-            return null;
+            yield return null;
         }
 
         private string GetPathOfItem(object sender, RoutedEventArgs e)
         {
-            var item = GetItemDataContext(sender, e);
-            string filePathToOpen = null;
+            // right now this will only get one filepath... could change multiple if multi-selected
+            var item = GetItemDataContext(sender, e).FirstOrDefault();
 
-            // right now this will only open one file... could change to open >1 at once if multi-selected
+            string path = null;
+
             if (item is ProteinDbForDataGrid db)
             {
-                filePathToOpen = db.FilePath;
+                path = db.FilePath;
             }
             else if (item is RawDataForDataGrid spectra)
             {
-                filePathToOpen = spectra.FilePath;
+                path = spectra.FilePath;
             }
             else if (item is OutputFileForTreeView writtenFile)
             {
-                filePathToOpen = writtenFile.FullPath;
+                path = writtenFile.FullPath;
             }
 
-            return filePathToOpen;
+            return path;
         }
 
         private void OpenPreRunTaskForEditing(PreRunTask preRunTask)
