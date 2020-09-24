@@ -137,6 +137,7 @@
                 <MenuItem Header="Open file" Click="OpenFile_Click"/>
                 <MenuItem Header="Open containing folder" Click="OpenContainingFolder_Click" />
                 <MenuItem Header="Delete" Click="Delete_Click" />
+                <MenuItem Header="Delete all" Click="DeleteAll_Click" />
             </ContextMenu>
 
             <!--Defines the context menu when a spectra file is right-clicked-->
@@ -145,13 +146,17 @@
                 <MenuItem Header="Open file" Click="OpenFile_Click"/>
                 <MenuItem Header="Open containing folder" Click="OpenContainingFolder_Click" />
                 <MenuItem Header="Delete" Click="Delete_Click" />
+                <MenuItem Header="Delete all" Click="DeleteAll_Click" />
             </ContextMenu>
 
             <!--Defines the context menu when a task is right-clicked-->
             <ContextMenu x:Key="TaskContextMenu" Style="{StaticResource ContextMenuStyle}">
                 <MenuItem Header="Edit task" Click="EditTask_Click"/>
                 <MenuItem Header="Save as .toml" Click="SaveTaskAsToml_Click" />
+                <MenuItem Header="Move task up" Click="MoveTaskUp_Click" />
+                <MenuItem Header="Move task down" Click="MoveTaskDown_Click" />
                 <MenuItem Header="Delete" Click="Delete_Click" />
+                <MenuItem Header="Delete all" Click="DeleteAll_Click" />
             </ContextMenu>
 
             <!--Defines the context menu when a written file is right-clicked-->

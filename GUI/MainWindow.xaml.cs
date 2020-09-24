@@ -853,7 +853,7 @@ namespace MetaMorpheusGUI
 
             int oldPosition = PreRunTasks.IndexOf(taskToMove);
             int newPosition = oldPosition - 1;
-            if (moveTaskUp)
+            if (!moveTaskUp)
             {
                 newPosition = oldPosition + 1;
             }
@@ -1051,17 +1051,17 @@ namespace MetaMorpheusGUI
                     e.Handled = true;
                 }
 
-                // move task up
+                // move task down
                 if (e.Key == Key.Add || e.Key == Key.OemPlus)
                 {
-                    MoveSelectedTask_Click(sender, e, true);
+                    MoveSelectedTask_Click(sender, e, false);
                     e.Handled = true;
                 }
 
-                // move task down
+                // move task up
                 if (e.Key == Key.Subtract || e.Key == Key.OemMinus)
                 {
-                    MoveSelectedTask_Click(sender, e, false);
+                    MoveSelectedTask_Click(sender, e, true);
                     e.Handled = true;
                 }
             }
@@ -1202,6 +1202,36 @@ namespace MetaMorpheusGUI
         {
             var dialog = new CustomCrosslinkerWindow();
             dialog.ShowDialog();
+        }
+
+        private void MoveTaskUp_Click(object sender, RoutedEventArgs e)
+        {
+            var item = GetItemDataContext(sender, e).FirstOrDefault();
+            MoveSelectedTask_Click(item, null, moveTaskUp: true);
+        }
+
+        private void MoveTaskDown_Click(object sender, RoutedEventArgs e)
+        {
+            var item = GetItemDataContext(sender, e).FirstOrDefault();
+            MoveSelectedTask_Click(item, null, moveTaskUp: false);
+        }
+
+        private void DeleteAll_Click(object sender, RoutedEventArgs e)
+        {
+            var item = GetItemDataContext(sender, e).FirstOrDefault();
+
+            if (item is PreRunTask task)
+            {
+                PreRunTasks.Clear();
+            }
+            else if (item is ProteinDbForDataGrid db)
+            {
+                ProteinDatabases.Clear();
+            }
+            else if (item is RawDataForDataGrid spectra)
+            {
+                SpectraFiles.Clear();
+            }
         }
 
         #endregion
@@ -1821,6 +1851,7 @@ namespace MetaMorpheusGUI
                     case "Set as non-contaminant database": item.IsEnabled = enable; break;
                     case "Open file": item.IsEnabled = enable; break;
                     case "Delete": item.IsEnabled = enable; break;
+                    case "Delete all": item.IsEnabled = enable; break;
                 }
             }
 
@@ -1831,6 +1862,7 @@ namespace MetaMorpheusGUI
                     case "Set file-specific parameters": item.IsEnabled = enable; break;
                     case "Open file": item.IsEnabled = enable; break;
                     case "Delete": item.IsEnabled = enable; break;
+                    case "Delete all": item.IsEnabled = enable; break;
                 }
             }
 
@@ -1838,8 +1870,11 @@ namespace MetaMorpheusGUI
             {
                 switch (item.Header.ToString())
                 {
+                    case "Move task up": item.IsEnabled = enable; break;
+                    case "Move task down": item.IsEnabled = enable; break;
                     case "Edit task": item.IsEnabled = enable; break;
                     case "Delete": item.IsEnabled = enable; break;
+                    case "Delete all": item.IsEnabled = enable; break;
                 }
             }
 
