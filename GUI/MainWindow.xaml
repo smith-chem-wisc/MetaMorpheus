@@ -7,7 +7,7 @@
         mc:Ignorable="d"
         Drop="Window_Drop" AllowDrop="true" Background="{StaticResource BackgroundColor}" WindowStartupLocation="CenterScreen" MinHeight="400" 
         MinWidth="800" Height="550" Width="950"
-        Loaded="MyWindow_Loaded">
+        Loaded="MyWindow_Loaded" PreviewKeyDown="Window_PreviewKeyDown">
 
     <Window.Resources>
         <ResourceDictionary>
@@ -137,6 +137,7 @@
                 <MenuItem Header="Open file" Click="OpenFile_Click"/>
                 <MenuItem Header="Open containing folder" Click="OpenContainingFolder_Click" />
                 <MenuItem Header="Delete" Click="Delete_Click" />
+                <MenuItem Header="Delete all" Click="DeleteAll_Click" />
             </ContextMenu>
 
             <!--Defines the context menu when a spectra file is right-clicked-->
@@ -145,13 +146,17 @@
                 <MenuItem Header="Open file" Click="OpenFile_Click"/>
                 <MenuItem Header="Open containing folder" Click="OpenContainingFolder_Click" />
                 <MenuItem Header="Delete" Click="Delete_Click" />
+                <MenuItem Header="Delete all" Click="DeleteAll_Click" />
             </ContextMenu>
 
             <!--Defines the context menu when a task is right-clicked-->
             <ContextMenu x:Key="TaskContextMenu" Style="{StaticResource ContextMenuStyle}">
                 <MenuItem Header="Edit task" Click="EditTask_Click"/>
                 <MenuItem Header="Save as .toml" Click="SaveTaskAsToml_Click" />
+                <MenuItem Header="Move task up" Click="MoveTaskUp_Click" />
+                <MenuItem Header="Move task down" Click="MoveTaskDown_Click" />
                 <MenuItem Header="Delete" Click="Delete_Click" />
+                <MenuItem Header="Delete all" Click="DeleteAll_Click" />
             </ContextMenu>
 
             <!--Defines the context menu when a written file is right-clicked-->
@@ -524,17 +529,19 @@
                     <Grid Grid.Row="0" Background="{StaticResource BackgroundColor}">
                         <Grid.ColumnDefinitions>
                             <ColumnDefinition Width="5*" />
+                            <ColumnDefinition Width="5" />
                             <ColumnDefinition Width="4*" />
                         </Grid.ColumnDefinitions>
 
                         <Grid Grid.Column="0" Background="{StaticResource BackgroundColor}">
                             <Grid.RowDefinitions>
                                 <RowDefinition Height="1*" />
+                                <RowDefinition Height="5" />
                                 <RowDefinition Height="1*" />
                             </Grid.RowDefinitions>
 
                             <!--Protein DB Summary-->
-                            <DataGrid Name="proteinDbSummaryDataGrid" ItemsSource="{Binding}" Grid.Row="0" Margin="20,10,5,5" 
+                            <DataGrid Name="proteinDbSummaryDataGrid" ItemsSource="{Binding}" Grid.Row="0" Margin="20,10,0,0" 
                               Style="{StaticResource x:DataGridStyle}" ColumnHeaderStyle="{StaticResource DataGridColumnHeaderStyle}">
                                 <DataGrid.RowStyle>
                                     <Style TargetType="{x:Type DataGridRow}" BasedOn="{StaticResource DatabaseDataGridItemStyle}" >
@@ -542,16 +549,26 @@
                                         <Setter Property="FontWeight" Value="SemiBold" />
                                     </Style>
                                 </DataGrid.RowStyle>
+                                <DataGrid.CellStyle>
+                                    <Style TargetType="{x:Type DataGridCell}" BasedOn="{StaticResource DataGridCellStyle}" />
+                                </DataGrid.CellStyle>
                                 <DataGrid.Columns>
                                     <DataGridTextColumn Header="File" Binding="{Binding FileName, Mode=OneWay}" Width="240" />
                                     <DataGridTextColumn Header="Contaminant?" Binding="{Binding Contaminant, Mode=OneWay}" Width="180" />
                                 </DataGrid.Columns>
                             </DataGrid>
-                            <Button Name="MiniAddProteinDbButton" Grid.Row="0" Width="20" Height="20" HorizontalAlignment="Right" VerticalAlignment="Bottom" Margin="0,0,6,6" Content="+" 
+                            <Button Name="MiniAddProteinDbButton" Grid.Row="0" Width="20" Height="20" HorizontalAlignment="Right" VerticalAlignment="Bottom" Margin="0,0,1,1" Content="+" 
                                 VerticalContentAlignment="Top" Style="{StaticResource ImportantButtonStyle}" Click="AddProteinDatabase_Click"/>
 
+                            <GridSplitter Grid.Row="1"
+                                VerticalAlignment="Center"
+                                HorizontalAlignment="Stretch"
+                                Background="Transparent"
+                                Height="5"
+                                Margin="20,0,0,0"/>
+                            
                             <!--Spectra file Summary-->
-                            <DataGrid Name="spectraFileSummaryDataGrid" ItemsSource="{Binding}" Grid.Row="1" Margin="20,5,5,10" 
+                            <DataGrid Name="spectraFileSummaryDataGrid" ItemsSource="{Binding}" Grid.Row="2" Margin="20,0,0,10" 
                               Style="{StaticResource x:DataGridStyle}" ColumnHeaderStyle="{StaticResource DataGridColumnHeaderStyle}">
                                 <DataGrid.RowStyle>
                                     <Style TargetType="{x:Type DataGridRow}" BasedOn="{StaticResource SpectraFileDataGridItemStyle}">
@@ -567,20 +584,27 @@
                                     <DataGridTextColumn Header="File-Specific Parameters" Binding="{Binding Parameters, Mode=OneWay}" Width="180" />
                                 </DataGrid.Columns>
                             </DataGrid>
-                            <Button Name="MiniAddSpectraButton" Grid.Row="1" Width="20" Height="20" HorizontalAlignment="Right" VerticalAlignment="Bottom" Margin="0,0,6,11" Content="+" 
+                            <Button Name="MiniAddSpectraButton" Grid.Row="2" Width="20" Height="20" HorizontalAlignment="Right" VerticalAlignment="Bottom" Margin="0,0,1,11" Content="+" 
                                 VerticalContentAlignment="Top" Style="{StaticResource ImportantButtonStyle}" Click="AddSpectraFile_Click"/>
                         </Grid>
 
+                        <GridSplitter Grid.Column="1"
+                            VerticalAlignment="Stretch"
+                            HorizontalAlignment="Center"
+                            Background="Transparent"
+                            Width="10"
+                            Margin="0,10,0,10"/>
+
                         <!--Task Summary-->
-                        <TreeView Name="taskSummary" ItemsSource="{Binding}" Grid.Column="2" Margin="2,10,20,10">
+                        <TreeView Name="taskSummary" ItemsSource="{Binding}" Grid.Column="2" Margin="0,10,20,10" MouseDoubleClick="TasksTreeView_MouseDoubleClick">
                             <TreeView.ItemContainerStyle>
                                 <Style TargetType="{x:Type TreeViewItem}">
-                                    <Setter Property="FontSize" Value="11" />
+                                    <Setter Property="FontSize" Value="13" />
                                     <Setter Property="FontWeight" Value="SemiBold" />
                                 </Style>
                             </TreeView.ItemContainerStyle>
                         </TreeView>
-                        <Button Name="MiniAddTaskButton" Grid.Column="1" Width="20" Height="20" HorizontalAlignment="Right" VerticalAlignment="Bottom" Margin="0,0,21,11" Content="+" 
+                        <Button Name="MiniAddTaskButton" Grid.Column="2" Width="20" Height="20" HorizontalAlignment="Right" VerticalAlignment="Bottom" Margin="0,0,21,11" Content="+" 
                                 VerticalContentAlignment="Top" Style="{StaticResource ImportantButtonStyle}" Click="AddTask_Click"/>
                     </Grid>
 

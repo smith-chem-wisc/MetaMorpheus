@@ -6,6 +6,7 @@ using System.Globalization;
 using System.Linq;
 using System.Text.RegularExpressions;
 using EngineLayer.GlycoSearch;
+using System.IO;
 
 namespace EngineLayer
 {
@@ -18,7 +19,7 @@ namespace EngineLayer
 
         public string FullSequence { get; }
         public int Ms2ScanNumber { get; }
-        public string Filename { get; }
+        public string FileNameWithoutExtension { get; }
         public int PrecursorScanNum { get; }
         public int PrecursorCharge { get; }
         public double PrecursorMz { get; }
@@ -87,7 +88,7 @@ namespace EngineLayer
             var spl = line.Split(split);
 
             //Required properties
-            Filename = spl[parsedHeader[PsmTsvHeader.FileName]].Trim();
+            FileNameWithoutExtension = Path.GetFileNameWithoutExtension(spl[parsedHeader[PsmTsvHeader.FileName]].Trim());
             Ms2ScanNumber = int.Parse(spl[parsedHeader[PsmTsvHeader.Ms2ScanNumber]]);
 
             // this will probably not be known in an .mgf data file
