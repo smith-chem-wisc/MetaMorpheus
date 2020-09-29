@@ -664,6 +664,12 @@ namespace MetaMorpheusGUI
                 return;
             }
 
+            // user is probably just checking or unchecking a checkbox, don't open the file
+            if (sender is DataGridCell cell && cell.Column is DataGridCheckBoxColumn)
+            {
+                return;
+            }
+
             var dataContext = GetItemDataContext(sender, e).FirstOrDefault();
 
             // open the file with the default process for this file format
