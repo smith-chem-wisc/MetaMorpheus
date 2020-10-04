@@ -1,9 +1,15 @@
 ﻿using EngineLayer;
+using IO.MzML;
+using IO.ThermoRawFileReader;
 using MassSpectrometry;
 using NUnit.Framework;
 using System;
+using System.Collections.Concurrent;
 using System.Collections.Generic;
+using System.Diagnostics;
 using System.IO;
+using System.Linq;
+using System.Threading.Tasks;
 using TaskLayer;
 
 namespace Test
@@ -79,6 +85,52 @@ namespace Test
             var closestExperimentalMassB = scanB.GetClosestExperimentalIsotopicEnvelope(10);
 
             Assert.IsNull(closestExperimentalMassB);
+        }
+
+        [Test]
+        public static void TestScanStreaming()
+        {
+            string path = @"C:\Data\Yeast\09-04-18_EcoliSpikeInSingleShot1x.mzML";
+
+            Stopwatch stopwatch = new Stopwatch();
+            stopwatch.Start();
+
+            ScanStreamer s = new ScanStreamer(path, new CommonParameters());
+
+            List<string> output = new List<string>();
+
+            Parallel.ForEach(Partitioner.Create(0, 1000000), new ParallelOptions { MaxDegreeOfParallelism = -1 },
+                (range, loopState) =>
+                {
+                    Ms2ScanWithSpecificMass scan;
+
+                    while ((scan = s.NextScan()) != null)
+                    {
+                        lock (output)
+                        {
+                            output.Add(scan.OneBasedScanNumber.ToString());
+                        }
+                    }
+                });
+
+            //Ms2ScanWithSpecificMass scan;
+            //while ((scan = s.NextScan()) != null)
+            //{
+            //    scan = s.NextScan();
+            //}
+
+            stopwatch.Stop();
+            stopwatch.Restart();
+
+            var ff = Mzml.LoadAllStaticData(path);
+            var scans = MetaMorpheusTask.GetMs2Scans(ff, path, new CommonParameters()).ToList();
+
+            foreach (var scan in scans)
+            {
+
+            }
+
+            stopwatch.Stop();
         }
     }
 }
