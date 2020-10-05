@@ -30,7 +30,7 @@ namespace TaskLayer
 
         public MsDataFile LoadFile(string origDataFile, CommonParameters commonParameters)
         {
-            FilteringParams filter = new FilteringParams(commonParameters.NumberOfPeaksToKeepPerWindow, commonParameters.MinimumAllowedIntensityRatioToBasePeak, commonParameters.WindowWidthThomsons, commonParameters.NumberOfWindows, commonParameters.NormalizePeaksAccrossAllWindows, commonParameters.TrimMs1Peaks, commonParameters.TrimMsMsPeaks);
+            var filter = GetFilterParamsFromCommonParams(commonParameters);
 
             if (commonParameters.DissociationType == DissociationType.LowCID || commonParameters.MS2ChildScanDissociationType == DissociationType.LowCID || commonParameters.MS3ChildScanDissociationType == DissociationType.LowCID)
             {
@@ -62,7 +62,7 @@ namespace TaskLayer
             }
         }
 
-        public DynamicDataConnection OpenDynamicDataConnection(string origDataFile)
+        public static DynamicDataConnection OpenDynamicDataConnection(string origDataFile)
         {
             if (Path.GetExtension(origDataFile).Equals(".mzML", StringComparison.OrdinalIgnoreCase))
             {
@@ -76,6 +76,15 @@ namespace TaskLayer
             {
                 return new ThermoDynamicData(origDataFile);
             }
+        }
+
+        public static FilteringParams GetFilterParamsFromCommonParams(CommonParameters commonParameters)
+        {
+            FilteringParams filter = new FilteringParams(commonParameters.NumberOfPeaksToKeepPerWindow, commonParameters.MinimumAllowedIntensityRatioToBasePeak,
+                commonParameters.WindowWidthThomsons, commonParameters.NumberOfWindows, commonParameters.NormalizePeaksAccrossAllWindows,
+                commonParameters.TrimMs1Peaks, commonParameters.TrimMsMsPeaks);
+
+            return filter;
         }
 
         internal void DoneWithFile(string origDataFile)

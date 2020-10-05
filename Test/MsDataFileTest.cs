@@ -1,4 +1,5 @@
 ﻿using EngineLayer;
+using IO.Mgf;
 using IO.MzML;
 using IO.ThermoRawFileReader;
 using MassSpectrometry;
@@ -88,49 +89,83 @@ namespace Test
         }
 
         [Test]
-        public static void TestScanStreaming()
+        [TestCase(@"TestData\SmallCalibratible_Yeast.mzML")]
+        public static void TestScanStreaming(string file)
         {
-            string path = @"C:\Data\Yeast\09-04-18_EcoliSpikeInSingleShot1x.mzML";
+            string path = Path.Combine(TestContext.CurrentContext.TestDirectory, file);
 
-            Stopwatch stopwatch = new Stopwatch();
-            stopwatch.Start();
+            // need to use only 1 thread in this unit test because the order of Ms2ScanWithSpecificMass objects 
+            // in the foreach loop below matters. the MetaMorpheusTask.GetMs2Scans method is parallelized
+            // and does not return scans in a particular order
+            var commonParam = new CommonParameters(maxThreadsToUsePerFile: 1);
 
-            ScanStreamer s = new ScanStreamer(path, new CommonParameters());
+            ScanStreamer s = new ScanStreamer(path, commonParam);
+            var filter = MyFileManager.GetFilterParamsFromCommonParams(commonParam);
 
-            List<string> output = new List<string>();
+            MsDataFile staticFile = null;
 
-            Parallel.ForEach(Partitioner.Create(0, 1000000), new ParallelOptions { MaxDegreeOfParallelism = -1 },
-                (range, loopState) =>
-                {
-                    Ms2ScanWithSpecificMass scan;
-
-                    while ((scan = s.NextScan()) != null)
-                    {
-                        lock (output)
-                        {
-                            output.Add(scan.OneBasedScanNumber.ToString());
-                        }
-                    }
-                });
-
-            //Ms2ScanWithSpecificMass scan;
-            //while ((scan = s.NextScan()) != null)
-            //{
-            //    scan = s.NextScan();
-            //}
-
-            stopwatch.Stop();
-            stopwatch.Restart();
-
-            var ff = Mzml.LoadAllStaticData(path);
-            var scans = MetaMorpheusTask.GetMs2Scans(ff, path, new CommonParameters()).ToList();
-
-            foreach (var scan in scans)
+            var ext = Path.GetExtension(path).ToLowerInvariant();
+            if (ext == ".mzml")
             {
-
+                staticFile = Mzml.LoadAllStaticData(path, filter);
+            }
+            else if (ext == ".raw")
+            {
+                staticFile = ThermoRawFileReader.LoadAllStaticData(path, filter);
+            }
+            else if (ext == ".mgf")
+            {
+                staticFile = Mgf.LoadAllStaticData(path, filter);
             }
 
-            stopwatch.Stop();
+            var staticScans = MetaMorpheusTask.GetMs2Scans(staticFile, path, new CommonParameters()).ToList();
+
+            foreach (Ms2ScanWithSpecificMass staticScan in staticScans)
+            {
+                Ms2ScanWithSpecificMass streamedScan = s.NextScan();
+
+                Assert.That(staticScan.PrecursorMass == streamedScan.PrecursorMass);
+                Assert.That(staticScan.PrecursorCharge == streamedScan.PrecursorCharge);
+                Assert.That(staticScan.OneBasedPrecursorScanNumber == streamedScan.OneBasedPrecursorScanNumber);
+                Assert.That(staticScan.OneBasedScanNumber == streamedScan.OneBasedScanNumber);
+
+                Assert.That(staticScan.ExperimentalFragments.Length == streamedScan.ExperimentalFragments.Length);
+
+                for (int i = 0; i < staticScan.ExperimentalFragments.Length; i++)
+                {
+                    var staticFragment = staticScan.ExperimentalFragments[i];
+                    var dynamicFragment = streamedScan.ExperimentalFragments[i];
+
+                    Assert.That(staticFragment.MonoisotopicMass == dynamicFragment.MonoisotopicMass);
+                    Assert.That(staticFragment.Charge == dynamicFragment.Charge);
+                }
+            }
+
+            Assert.That(s.NextScan() == null);
+
+
+            //string path = @"C:\Data\Yeast\09-04-18_EcoliSpikeInSingleShot1x.mzML";
+
+            //Stopwatch stopwatch = new Stopwatch();
+            //stopwatch.Start();
+
+            //List<string> output = new List<string>();
+
+            //Parallel.ForEach(Partitioner.Create(0, 1000000), new ParallelOptions { MaxDegreeOfParallelism = -1 },
+            //    (range, loopState) =>
+            //    {
+            //        Ms2ScanWithSpecificMass scan;
+
+            //        while ((scan = s.NextScan()) != null)
+            //        {
+            //            lock (output)
+            //            {
+            //                output.Add(scan.OneBasedScanNumber.ToString());
+            //            }
+            //        }
+            //    });
+
+            //stopwatch.Stop();
         }
     }
 }
