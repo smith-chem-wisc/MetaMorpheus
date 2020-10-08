@@ -30,6 +30,11 @@ namespace Test
             // the custom data dir should have data in it
             Assert.That(!Directory.Exists(Path.Combine(customDataDir, @"Data\ptmlist.txt")));
 
+            // reset the data dir to the default one so other unit tests will use that one 
+            // and not the soon-to-be-deleted custom data dir
+            GlobalVariables.UserSpecifiedDataDir = null;
+            GlobalVariables.SetUpGlobalVariables();
+
             // clean up from unit test
             // these 2 lines need to be here to delete the CustomDataDir folder for some reason
             // https://stackoverflow.com/questions/3420737/file-delete-error-the-process-cannot-access-the-file-because-it-is-being-used-b/3421084
@@ -37,6 +42,8 @@ namespace Test
             GC.WaitForPendingFinalizers();
 
             Directory.Delete(customDataDir, true);
+
+            
         }
     }
 }
