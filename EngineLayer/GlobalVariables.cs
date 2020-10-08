@@ -17,8 +17,8 @@ namespace EngineLayer
     {
         // for now, these are only used for error-checking in the command-line version.
         // compressed versions of the protein databases (e.g., .xml.gz) are also supported
-        public static List<string> AcceptedDatabaseFormats;
-        public static List<string> AcceptedSpectraFormats;
+        public static List<string> AcceptedDatabaseFormats { get; private set; }
+        public static List<string> AcceptedSpectraFormats { get; private set; }
 
         private static List<Modification> _AllModsKnown;
         private static HashSet<string> _AllModTypesKnown;
