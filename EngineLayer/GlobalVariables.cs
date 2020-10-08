@@ -197,10 +197,7 @@ namespace EngineLayer
             }
             else //create it so that it can be manipulated
             {
-                if (!new DirectoryInfo(DataDir).Attributes.HasFlag(FileAttributes.ReadOnly))
-                {
-                    WriteAminoAcidsFile();
-                }
+                WriteAminoAcidsFile();
             }
         }
 
@@ -366,7 +363,7 @@ namespace EngineLayer
             {
                 OGlycanLocations.Add(glycanFile);
             }
-            
+
             foreach (var glycanFile in Directory.GetFiles(Path.Combine(DataDir, @"Glycan_Mods", @"NGlycan")))
             {
                 NGlycanLocations.Add(glycanFile);

@@ -42,8 +42,6 @@ namespace Test
             GC.WaitForPendingFinalizers();
 
             Directory.Delete(customDataDir, true);
-
-            
         }
     }
 }
