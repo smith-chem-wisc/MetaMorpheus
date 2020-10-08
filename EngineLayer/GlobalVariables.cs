@@ -50,6 +50,8 @@ namespace EngineLayer
         public static string ExperimentalDesignFileName { get; private set; }
         public static IEnumerable<Crosslinker> Crosslinkers { get { return _KnownCrosslinkers.AsEnumerable(); } }
         public static IEnumerable<char> InvalidAminoAcids { get { return _InvalidAminoAcids.AsEnumerable(); } }
+        public static List<string> OGlycanLocations { get; private set; }
+        public static List<string> NGlycanLocations { get; private set; }
 
         static GlobalVariables()
         {
@@ -71,6 +73,7 @@ namespace EngineLayer
             SetUpDataDirectory();
             LoadCrosslinkers();
             LoadModifications();
+            LoadGlycans();
             LoadCustomAminoAcids();
             SetUpGlobalSettings();
             LoadDissociationTypes();
@@ -325,7 +328,7 @@ namespace EngineLayer
             PsiModDeserialized = Loaders.LoadPsiMod(Path.Combine(DataDir, @"Data", @"PSI-MOD.obo.xml"));
             var formalChargesDictionary = Loaders.GetFormalChargesDictionary(PsiModDeserialized);
             UniprotDeseralized = Loaders.LoadUniprot(Path.Combine(DataDir, @"Data", @"ptmlist.txt"), formalChargesDictionary).ToList();
-            
+
             foreach (var modFile in Directory.GetFiles(Path.Combine(DataDir, @"Mods")))
             {
                 AddMods(PtmListLoader.ReadModsFromFile(modFile, out var errorMods), false);
@@ -341,6 +344,49 @@ namespace EngineLayer
                     AllModsKnownDictionary.Add(mod.IdWithMotif, mod);
                 }
                 // no error thrown if multiple mods with this ID are present - just pick one
+            }
+        }
+
+        private static void LoadGlycans()
+        {
+            OGlycanLocations = new List<string>();
+            NGlycanLocations = new List<string>();
+
+            foreach (var glycanFile in Directory.GetFiles(Path.Combine(DataDir, @"Glycan_Mods", @"OGlycan")))
+            {
+                OGlycanLocations.Add(glycanFile);
+            }
+            
+            foreach (var glycanFile in Directory.GetFiles(Path.Combine(DataDir, @"Glycan_Mods", @"NGlycan")))
+            {
+                NGlycanLocations.Add(glycanFile);
+            }
+
+            //Add Glycan mod into AllModsKnownDictionary, currently this is for MetaDraw.
+            //The reason why not include Glycan into modification database is for users to apply their own database.
+            foreach (var path in OGlycanLocations)
+            {
+                var og = GlycanDatabase.LoadGlycan(path, false, false);
+                foreach (var g in og)
+                {
+                    var ogmod = Glycan.OGlycanToModification(g);
+                    if (!AllModsKnownDictionary.ContainsKey(ogmod.IdWithMotif))
+                    {
+                        AllModsKnownDictionary.Add(ogmod.IdWithMotif, ogmod);
+                    }
+                }
+            }
+            foreach (var path in NGlycanLocations)
+            {
+                var og = GlycanDatabase.LoadGlycan(path, false, false);
+                foreach (var g in og)
+                {
+                    var ogmod = Glycan.OGlycanToModification(g);
+                    if (!AllModsKnownDictionary.ContainsKey(ogmod.IdWithMotif))
+                    {
+                        AllModsKnownDictionary.Add(ogmod.IdWithMotif, ogmod);
+                    }
+                }
             }
         }
 
