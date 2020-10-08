@@ -15,13 +15,13 @@ namespace MetaMorpheusCommandLine
         public List<string> Tasks { get; private set; }
         public List<string> Databases { get; private set; }
 
-        [Option('t', HelpText = "Single-task TOMLs (.toml file format); space-delimited")]
+        [Option('t', Required = true, HelpText = "Single-task TOMLs (.toml file format); space-delimited")]
         public IEnumerable<string> _tasks { get; set; }
 
-        [Option('d', HelpText = "Protein sequence databases (.fasta, .xml, .fasta.gz, .xml.gz file formats); space-delimited")]
+        [Option('d', Required = true, HelpText = "Protein sequence databases (.fasta, .xml, .fasta.gz, .xml.gz file formats); space-delimited")]
         public IEnumerable<string> _databases { get; set; }
 
-        [Option('s', HelpText = "Spectra to analyze (.raw, .mzML, .mgf file formats); space-delimited")]
+        [Option('s', Required = true, HelpText = "Spectra to analyze (.raw, .mzML, .mgf file formats); space-delimited")]
         public IEnumerable<string> _spectra { get; set; }
 
         [Option('o', HelpText = "Output folder")]
@@ -36,7 +36,7 @@ namespace MetaMorpheusCommandLine
         [Option("test", HelpText = "Runs a small test search using a database and yeast data file included with this MetaMorpheus installation")]
         public bool RunMicroVignette { get; set; }
 
-        [Option("mmsettings", HelpText = "Optionally specify a path for MetaMorpheus to store program settings files")]
+        [Option("mmsettings", HelpText = "Path to MetaMorpheus settings")]
         public string CustomDataDirectory { get; set; }
         
         public enum VerbosityType { none, minimal, normal };

@@ -73,13 +73,24 @@ namespace MetaMorpheusCommandLine
 
         private static int Run(CommandLineSettings settings)
         {
+            int errorCode = 0;
+
             if (settings.Verbosity == CommandLineSettings.VerbosityType.minimal || settings.Verbosity == CommandLineSettings.VerbosityType.normal)
             {
                 Console.WriteLine("Welcome to MetaMorpheus");
-                Console.WriteLine(GlobalVariables.MetaMorpheusVersion);
             }
 
-            int errorCode = 0;
+            if (settings.CustomDataDirectory != null)
+            {
+                GlobalVariables.UserSpecifiedDataDir = settings.CustomDataDirectory;
+            }
+
+            GlobalVariables.SetUpGlobalVariables();
+
+            if (settings.Verbosity == CommandLineSettings.VerbosityType.minimal || settings.Verbosity == CommandLineSettings.VerbosityType.normal)
+            {
+                Console.WriteLine(GlobalVariables.MetaMorpheusVersion);
+            }
 
             try
             {
@@ -106,12 +117,6 @@ namespace MetaMorpheusCommandLine
                 CommandLineSettings.GenerateDefaultTaskTomls(settings.OutputFolder);
 
                 return errorCode;
-            }
-
-            if (settings.CustomDataDirectory != null)
-            {
-                GlobalVariables.UserSpecifiedDataDir = settings.CustomDataDirectory;
-                GlobalVariables.SetUpGlobalVariables();
             }
 
             // set up microvignette

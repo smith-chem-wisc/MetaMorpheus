@@ -17,8 +17,8 @@ namespace EngineLayer
     {
         // for now, these are only used for error-checking in the command-line version.
         // compressed versions of the protein databases (e.g., .xml.gz) are also supported
-        public static List<string> AcceptedDatabaseFormats { get; private set; }
-        public static List<string> AcceptedSpectraFormats { get; private set; }
+        public static List<string> AcceptedDatabaseFormats;
+        public static List<string> AcceptedSpectraFormats;
 
         private static List<Modification> _AllModsKnown;
         private static HashSet<string> _AllModTypesKnown;
@@ -54,15 +54,9 @@ namespace EngineLayer
         public static List<string> OGlycanLocations { get; private set; }
         public static List<string> NGlycanLocations { get; private set; }
 
-        static GlobalVariables()
-        {
-            SetUpGlobalVariables();
-        }
-
         public static void SetUpGlobalVariables()
         {
             Loaders.LoadElements();
-
             AcceptedDatabaseFormats = new List<string> { ".fasta", ".fa", ".xml" };
             AcceptedSpectraFormats = new List<string> { ".raw", ".mzml", ".mgf" };
             AnalyteType = "Peptide";
