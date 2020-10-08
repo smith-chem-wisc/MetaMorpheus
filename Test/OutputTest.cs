@@ -28,13 +28,16 @@ namespace Test
             SearchTask allowFilesTask = new SearchTask();
             allowFilesTask.SearchParameters.WriteIndividualFiles = true;
             allowFilesTask.SearchParameters.CompressIndividualFiles = false;
+            allowFilesTask.SearchParameters.WriteMzId = true;
 
             SearchTask compressFilesTask = new SearchTask();
             compressFilesTask.SearchParameters.WriteIndividualFiles = true;
             compressFilesTask.SearchParameters.CompressIndividualFiles = true;
+            compressFilesTask.SearchParameters.WriteMzId = true;
 
             SearchTask noFilesTask = new SearchTask();
             noFilesTask.SearchParameters.WriteIndividualFiles = false;
+            noFilesTask.SearchParameters.WriteMzId = true;
 
             PeptideWithSetModifications pwsm = new PeptideWithSetModifications("AAFNSGK", null);
             List<(string, MetaMorpheusTask)> tasks = new List<(string, MetaMorpheusTask)> { ("allowFiles", allowFilesTask), ("compressFiles", compressFilesTask), ("noFiles", noFilesTask) };
@@ -91,6 +94,38 @@ namespace Test
             writtenFiles = new HashSet<string>(Directory.GetFiles(Path.Combine(outputFolder, "weird")));
             Assert.IsFalse(writtenFiles.Contains("Individual File Results.zip"));
             Directory.Delete(subFolder, true);
+        }
+
+        [Test]
+        public static void TestOpairFileOutput()
+        {
+            var task = Toml.ReadFile<GlycoSearchTask>(Path.Combine(TestContext.CurrentContext.TestDirectory, @"GlycoTestData/GlycoSearchTaskconfig.toml"), MetaMorpheusTask.tomlConfig);
+
+            string currentDirecotry = Path.Combine(Environment.CurrentDirectory, @"TESTGlycoData");
+
+            Directory.CreateDirectory(currentDirecotry);
+            DbForTask db = new DbForTask(Path.Combine(TestContext.CurrentContext.TestDirectory, @"GlycoTestData/P16150.fasta"), false);
+            string spectraFile = Path.Combine(TestContext.CurrentContext.TestDirectory, @"GlycoTestData\2019_09_16_StcEmix_35trig_EThcD25_rep1_9906.mgf");
+            new EverythingRunnerEngine(new List<(string, MetaMorpheusTask)> { ("Task", task) }, new List<string> { spectraFile }, new List<DbForTask> { db }, currentDirecotry).Run();
+
+            string outputDirectory = Path.Combine(currentDirecotry, @"Task");
+
+            HashSet<string> writtenFiles = new HashSet<string>(Directory.GetFiles(outputDirectory).Select(v => Path.GetFileName(v)));
+
+            //check that the first task wrote everything fine
+            HashSet<string> expectedFiles = new HashSet<string>
+            {
+                "oglyco.psmtsv",
+                "prose.txt",
+                "protein_oglyco_localization.tsv",
+                "results.txt",
+                "seen_oglyco_localization.tsv"
+            };
+            
+            //check they're the same
+            Assert.IsTrue(expectedFiles.Except(writtenFiles).Count() == 0);
+
+            Directory.Delete(currentDirecotry, true);
         }
     }
 }

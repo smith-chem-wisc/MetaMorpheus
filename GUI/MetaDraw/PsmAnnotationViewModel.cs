@@ -203,10 +203,22 @@ namespace ViewModels
                 this.Model = Draw(msDataScan, psm);
             }
 
-            var y = Model.DefaultYAxis.ActualMaximum - Model.DefaultYAxis.ActualMaximum * 0.03;
-            var x = Model.DefaultXAxis.ActualMaximum - Model.DefaultXAxis.ActualMaximum * 0.01;
-            var diff = (y - (Model.DefaultYAxis.ActualMaximum * 0.1)) / properties.Length;
-
+            double x = 0;
+            double y = 0;
+            double diff = 0;
+            if (Model.DefaultYAxis != null)
+            {
+                y = Model.DefaultYAxis.ActualMaximum - Model.DefaultYAxis.ActualMaximum * 0.03;
+                x = Model.DefaultXAxis.ActualMaximum - Model.DefaultXAxis.ActualMaximum * 0.01;
+                diff = (y - (Model.DefaultYAxis.ActualMaximum * 0.1)) / properties.Length;
+            }
+            else
+            {
+                y = Model.Axes[1].ActualMaximum - Model.Axes[1].ActualMaximum * 0.03;
+                x = Model.Axes[0].ActualMaximum - Model.Axes[0].ActualMaximum * 0.01;
+                diff = (y - (Model.Axes[1].ActualMaximum * 0.1)) / properties.Length;
+            }
+            
             // properties to include
             string[] propertiesToWrite = {
                 "Filename",
@@ -338,7 +350,7 @@ namespace ViewModels
 
             if (matchedIon.NeutralTheoreticalProduct.NeutralLoss != 0)
             {
-                peakAnnotationText += "-" + matchedIon.NeutralTheoreticalProduct.NeutralLoss.ToString("F2") + " (" + matchedIon.Mz.ToString("F3") + ")";
+                peakAnnotationText += "-" + matchedIon.NeutralTheoreticalProduct.NeutralLoss.ToString("F2");
             }
 
             if (annotateCharge)
