@@ -39,7 +39,7 @@ namespace Test
             Assert.That(GlobalVariables.DataDir == customDataDir);
 
             // the custom data dir should have data in it
-            Assert.That(!Directory.Exists(Path.Combine(customDataDir, @"Data\ptmlist.txt")));
+            Assert.That(File.Exists(Path.Combine(customDataDir, @"Data\ptmlist.txt")));
 
             // reset the data dir to the default one so other unit tests will use that one 
             // and not the soon-to-be-deleted custom data dir
