@@ -15,28 +15,28 @@ namespace MetaMorpheusCommandLine
         public List<string> Tasks { get; private set; }
         public List<string> Databases { get; private set; }
 
-        [Option('t', Required = true, HelpText = "Single-task TOMLs (.toml file format); space-delimited")]
+        [Option('t', HelpText = "Single-task TOMLs (.toml file format); space-delimited")]
         public IEnumerable<string> _tasks { get; set; }
 
-        [Option('d', Required = true, HelpText = "Protein sequence databases (.fasta, .xml, .fasta.gz, .xml.gz file formats); space-delimited")]
+        [Option('d', HelpText = "Protein sequence databases (.fasta, .xml, .fasta.gz, .xml.gz file formats); space-delimited")]
         public IEnumerable<string> _databases { get; set; }
 
-        [Option('s', Required = true, HelpText = "Spectra to analyze (.raw, .mzML, .mgf file formats); space-delimited")]
+        [Option('s', HelpText = "Spectra to analyze (.raw, .mzML, .mgf file formats); space-delimited")]
         public IEnumerable<string> _spectra { get; set; }
 
-        [Option('o', HelpText = "Output folder")]
+        [Option('o', HelpText = "[Optional] Output folder")]
         public string OutputFolder { get; set; }
 
-        [Option('g', HelpText = "Generate default task tomls")]
+        [Option('g', HelpText = "[Optional] Generate default task tomls")]
         public bool GenerateDefaultTomls { get; set; }
 
-        [Option('v', Default = VerbosityType.normal, HelpText = "Determines how much text is written. Options are no output ('none'), minimal output and errors  ('minimal'), or normal ('normal')")]
+        [Option('v', Default = VerbosityType.normal, HelpText = "[Optional] Determines how much text is written. Options are no output ('none'), minimal output and errors  ('minimal'), or normal ('normal')")]
         public VerbosityType Verbosity { get; set; }
 
-        [Option("test", HelpText = "Runs a small test search using a database and yeast data file included with this MetaMorpheus installation")]
+        [Option("test", HelpText = "[Optional] Runs a small test search using a database and yeast data file included with this MetaMorpheus installation")]
         public bool RunMicroVignette { get; set; }
 
-        [Option("mmsettings", HelpText = "Path to MetaMorpheus settings")]
+        [Option("mmsettings", HelpText = "[Optional] Path to MetaMorpheus settings")]
         public string CustomDataDirectory { get; set; }
         
         public enum VerbosityType { none, minimal, normal };
