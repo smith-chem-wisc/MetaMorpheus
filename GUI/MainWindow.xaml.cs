@@ -38,6 +38,7 @@ namespace MetaMorpheusGUI
         public MainWindow()
         {
             InitializeComponent();
+            GlobalVariables.SetUpGlobalVariables();
 
             Title = "MetaMorpheus: version " + GlobalVariables.MetaMorpheusVersion;
 

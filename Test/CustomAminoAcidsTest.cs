@@ -20,7 +20,7 @@ namespace Test
             lines.Add("fake\tf\t60\tC5");
             File.WriteAllLines(aminoAcidPath, lines);
 
-            GlobalVariables.RefreshAminoAcidDictionary(); //read the file
+            GlobalVariables.LoadCustomAminoAcids(); //read the file
 
             //test that we read the new amino acid
             Assert.IsTrue(Residue.TryGetResidue('f', out Residue r));
@@ -31,7 +31,7 @@ namespace Test
             File.WriteAllLines(aminoAcidPath, lines);
             try
             {
-                GlobalVariables.RefreshAminoAcidDictionary(); //read the file
+                GlobalVariables.LoadCustomAminoAcids(); //read the file
                 //we're trying to crash it, so if we didn't, we failed :/
                 Assert.IsTrue(false);
             }
@@ -46,7 +46,7 @@ namespace Test
             File.WriteAllLines(aminoAcidPath, lines);
             try
             {
-                GlobalVariables.RefreshAminoAcidDictionary(); //read the file
+                GlobalVariables.LoadCustomAminoAcids(); //read the file
                 //we're trying to crash it, so if we didn't, we failed :/
                 Assert.IsTrue(false);
             }
