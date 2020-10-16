@@ -9,6 +9,7 @@ using System.Diagnostics;
 using System.IO;
 using System.Linq;
 using System.Runtime.InteropServices;
+using UsefulProteomicsDatabases;
 
 namespace EngineLayer
 {
@@ -16,190 +17,62 @@ namespace EngineLayer
     {
         // for now, these are only used for error-checking in the command-line version.
         // compressed versions of the protein databases (e.g., .xml.gz) are also supported
-        public static List<string> AcceptedDatabaseFormats = new List<string> { ".fasta", ".fa", ".xml" };
+        public static List<string> AcceptedDatabaseFormats { get; private set; }
+        public static List<string> AcceptedSpectraFormats { get; private set; }
 
-        public static List<string> AcceptedSpectraFormats = new List<string> { ".raw", ".mzml", ".mgf" };
+        private static List<Modification> _AllModsKnown;
+        private static HashSet<string> _AllModTypesKnown;
+        private static List<Crosslinker> _KnownCrosslinkers;
 
-        private static List<Modification> _AllModsKnown = new List<Modification>();
-        private static HashSet<string> _AllModTypesKnown = new HashSet<string>();
-        private static List<Crosslinker> _KnownCrosslinkers = new List<Crosslinker>();
-        private static List<string> _SeparationTypes = new List<string>();
 
         //Characters that aren't amino acids, but are reserved for special uses (motifs, delimiters, mods, etc)
-        private static char[] _InvalidAminoAcids = new char[] { 'X', 'B', 'J', 'Z', ':', '|', ';', '[', ']', '{', '}', '(', ')', '+', '-' };
+        private static char[] _InvalidAminoAcids;
 
         // this affects output labels, etc. and can be changed to "Proteoform" for top-down searches
-        public static string AnalyteType = "Peptide";
+        public static string AnalyteType;
 
-        static GlobalVariables()
-        {
-            MetaMorpheusVersion = typeof(GlobalVariables).Assembly.GetName().Version.ToString();
-
-            if (MetaMorpheusVersion.Equals("1.0.0.0"))
-            {
-#if DEBUG
-                MetaMorpheusVersion = "Not a release version. DEBUG.";
-#else
-                MetaMorpheusVersion = "Not a release version.";
-#endif
-            }
-            else
-            {
-                // as of 0.0.277, AppVeyor appends the build number
-                // this is intentional; it's to avoid conflicting AppVeyor build numbers
-                // trim the build number off the version number for displaying/checking versions, etc
-                var foundIndexes = new List<int>();
-                for (int i = 0; i < MetaMorpheusVersion.Length; i++)
-                {
-                    if (MetaMorpheusVersion[i] == '.')
-                    {
-                        foundIndexes.Add(i);
-                    }
-                }
-                MetaMorpheusVersion = MetaMorpheusVersion.Substring(0, foundIndexes.Last());
-            }
-
-            {
-                var pathToProgramFiles = Environment.GetFolderPath(Environment.SpecialFolder.ProgramFiles);
-                if (!String.IsNullOrWhiteSpace(pathToProgramFiles) && AppDomain.CurrentDomain.BaseDirectory.Contains(pathToProgramFiles) && !AppDomain.CurrentDomain.BaseDirectory.Contains("Jenkins"))
-                {
-                    DataDir = Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData), "MetaMorpheus");
-                }
-                else
-                {
-                    DataDir = AppDomain.CurrentDomain.BaseDirectory;
-                }
-            }
-
-            ElementsLocation = Path.Combine(DataDir, @"Data", @"elements.dat");
-            UsefulProteomicsDatabases.Loaders.LoadElements();
-
-            AddSeparationTypes(new List<string> { { "HPLC" }, { "CZE" } });
-
-            // load default crosslinkers
-            string crosslinkerLocation = Path.Combine(DataDir, @"Data", @"Crosslinkers.tsv");
-            AddCrosslinkers(Crosslinker.LoadCrosslinkers(crosslinkerLocation));
-
-            // load custom crosslinkers
-            string customCrosslinkerLocation = Path.Combine(DataDir, @"Data", @"CustomCrosslinkers.tsv");
-            if (File.Exists(customCrosslinkerLocation))
-            {
-                AddCrosslinkers(Crosslinker.LoadCrosslinkers(customCrosslinkerLocation));
-            }
-
-            string monosaccharidePath = Path.Combine(DataDir, @"Glycan_Mods", @"Monosaccharide.tsv");
-            Monosaccharides = Monosaccharide.LoadMonosaccharide(monosaccharidePath);
-            OGlycanLocations = new List<string>();
-            foreach (var glycanFile in Directory.GetFiles(Path.Combine(DataDir, @"Glycan_Mods", @"OGlycan")))
-            {
-                OGlycanLocations.Add(glycanFile);
-            }
-            NGlycanLocations = new List<string>();
-            foreach (var glycanFile in Directory.GetFiles(Path.Combine(DataDir, @"Glycan_Mods", @"NGlycan")))
-            {
-                NGlycanLocations.Add(glycanFile);
-            }
-
-            ExperimentalDesignFileName = "ExperimentalDesign.tsv";
-
-            UnimodDeserialized = UsefulProteomicsDatabases.Loaders.LoadUnimod(Path.Combine(DataDir, @"Data", @"unimod.xml")).ToList();
-            PsiModDeserialized = UsefulProteomicsDatabases.Loaders.LoadPsiMod(Path.Combine(DataDir, @"Data", @"PSI-MOD.obo.xml"));
-            var formalChargesDictionary = UsefulProteomicsDatabases.Loaders.GetFormalChargesDictionary(PsiModDeserialized);
-            UniprotDeseralized = UsefulProteomicsDatabases.Loaders.LoadUniprot(Path.Combine(DataDir, @"Data", @"ptmlist.txt"), formalChargesDictionary).ToList();
-
-            foreach (var modFile in Directory.GetFiles(Path.Combine(DataDir, @"Mods")))
-            {
-                AddMods(UsefulProteomicsDatabases.PtmListLoader.ReadModsFromFile(modFile, out var errorMods), false);
-            }
-
-            AddMods(UniprotDeseralized.OfType<Modification>(), false);
-            AddMods(UnimodDeserialized.OfType<Modification>(), false);
-
-            // populate dictionaries of known mods/proteins for deserialization
-            AllModsKnownDictionary = new Dictionary<string, Modification>();
-            foreach (Modification mod in AllModsKnown)
-            {
-                if (!AllModsKnownDictionary.ContainsKey(mod.IdWithMotif))
-                {
-                    AllModsKnownDictionary.Add(mod.IdWithMotif, mod);
-                }
-                // no error thrown if multiple mods with this ID are present - just pick one
-            }
-
-            //Add Glycan mod into AllModsKnownDictionary, currently this is for MetaDraw.
-            //The reason why not include Glycan into modification database is for users to apply their own database.
-            foreach (var path in OGlycanLocations)
-            {
-                var og = GlycanDatabase.LoadGlycan(path, false, false);
-                foreach (var g in og)
-                {
-                    var ogmod = Glycan.OGlycanToModification(g);
-                    if (!AllModsKnownDictionary.ContainsKey(ogmod.IdWithMotif))
-                    {
-                        AllModsKnownDictionary.Add(ogmod.IdWithMotif, ogmod);
-                    }
-                }
-            }
-            foreach (var path in NGlycanLocations)
-            {
-                var ng = GlycanDatabase.LoadGlycan(path, false, false);
-                foreach (var g in ng)
-                {
-                    var ngmod = Glycan._NGlycanToModification(g);
-                    if (!AllModsKnownDictionary.ContainsKey(ngmod.IdWithMotif))
-                    {
-                        AllModsKnownDictionary.Add(ngmod.IdWithMotif, ngmod);
-                    }
-                }
-            }
-
-            RefreshAminoAcidDictionary();
-
-            string settingsPath = Path.Combine(DataDir, @"settings.toml");
-            if (!File.Exists(settingsPath))
-            {
-                Toml.WriteFile<GlobalSettings>(new GlobalSettings(), settingsPath);
-            }
-
-            GlobalSettings = Toml.ReadFile<GlobalSettings>(settingsPath);
-            AllSupportedDissociationTypes = new Dictionary<string, DissociationType> {
-                { DissociationType.CID.ToString(), DissociationType.CID },
-                { DissociationType.ECD.ToString(), DissociationType.ECD },
-                { DissociationType.ETD.ToString(), DissociationType.ETD },
-                { DissociationType.HCD.ToString(), DissociationType.HCD },
-                { DissociationType.EThcD.ToString(), DissociationType.EThcD },
-                { DissociationType.Custom.ToString(), DissociationType.Custom },
-                { DissociationType.LowCID.ToString(), DissociationType.LowCID}
-
-                // TODO: allow reading from scan header (autodetect dissociation type)
-            };
-        }
-
-        public static List<string> ErrorsReadingMods = new List<string>();
+        public static List<string> ErrorsReadingMods;
 
         // File locations
-        public static string DataDir { get; }
+        public static string DataDir { get; private set; }
+        public static string UserSpecifiedDataDir { get; set; }
 
         public static bool StopLoops { get; set; }
-        public static string ElementsLocation { get; }
-        public static string MetaMorpheusVersion { get; }
+        public static string MetaMorpheusVersion { get; private set; }
         public static GlobalSettings GlobalSettings { get; set; }
-        public static IEnumerable<Modification> UnimodDeserialized { get; }
-        public static IEnumerable<Modification> UniprotDeseralized { get; }
-        public static UsefulProteomicsDatabases.Generated.obo PsiModDeserialized { get; }
+        public static IEnumerable<Modification> UnimodDeserialized { get; private set; }
+        public static IEnumerable<Modification> UniprotDeseralized { get; private set; }
+        public static UsefulProteomicsDatabases.Generated.obo PsiModDeserialized { get; private set; }
         public static IEnumerable<Modification> AllModsKnown { get { return _AllModsKnown.AsEnumerable(); } }
         public static IEnumerable<string> AllModTypesKnown { get { return _AllModTypesKnown.AsEnumerable(); } }
-        public static Dictionary<string, Modification> AllModsKnownDictionary { get; set; }
+        public static Dictionary<string, Modification> AllModsKnownDictionary { get; private set; }
         public static Dictionary<string, DissociationType> AllSupportedDissociationTypes { get; private set; }
-        public static List<string> SeparationTypes { get { return _SeparationTypes; } }
-
-        public static string ExperimentalDesignFileName { get; }
+        public static List<string> SeparationTypes { get; private set; }
+        public static string ExperimentalDesignFileName { get; private set; }
         public static IEnumerable<Crosslinker> Crosslinkers { get { return _KnownCrosslinkers.AsEnumerable(); } }
         public static IEnumerable<char> InvalidAminoAcids { get { return _InvalidAminoAcids.AsEnumerable(); } }
+        public static List<string> OGlycanLocations { get; private set; }
+        public static List<string> NGlycanLocations { get; private set; }
 
-        public static Monosaccharide[] Monosaccharides { get; }
-        public static List<string> OGlycanLocations { get; }
-        public static List<string> NGlycanLocations { get; }
+        public static void SetUpGlobalVariables()
+        {
+            Loaders.LoadElements();
+            AcceptedDatabaseFormats = new List<string> { ".fasta", ".fa", ".xml" };
+            AcceptedSpectraFormats = new List<string> { ".raw", ".mzml", ".mgf" };
+            AnalyteType = "Peptide";
+            _InvalidAminoAcids = new char[] { 'X', 'B', 'J', 'Z', ':', '|', ';', '[', ']', '{', '}', '(', ')', '+', '-' };
+            ExperimentalDesignFileName = "ExperimentalDesign.tsv";
+            SeparationTypes = new List<string> { { "HPLC" }, { "CZE" } };
+
+            SetMetaMorpheusVersion();
+            SetUpDataDirectory();
+            LoadCrosslinkers();
+            LoadModifications();
+            LoadGlycans();
+            LoadCustomAminoAcids();
+            SetUpGlobalSettings();
+            LoadDissociationTypes();
+        }
 
         public static void AddMods(IEnumerable<Modification> modifications, bool modsAreFromTheTopOfProteinXml)
         {
@@ -258,11 +131,6 @@ namespace EngineLayer
             }
         }
 
-        public static void AddSeparationTypes(List<string> separationTypes)
-        {
-            _SeparationTypes.AddRange(separationTypes);
-        }
-
         public static void AddCrosslinkers(IEnumerable<Crosslinker> crosslinkers)
         {
             foreach (var linker in crosslinkers)
@@ -283,7 +151,7 @@ namespace EngineLayer
             }
         }
 
-        public static void RefreshAminoAcidDictionary()
+        public static void LoadCustomAminoAcids()
         {
             //read in all the amino acids (they already exist in mzlib, but there might be synthetic amino acids that need to be included)
             string aminoAcidPath = Path.Combine(DataDir, @"CustomAminoAcids", @"CustomAminoAcids.txt");
@@ -293,6 +161,7 @@ namespace EngineLayer
                 List<Residue> residuesToAdd = new List<Residue>();
                 for (int i = 1; i < aminoAcidLines.Length; i++)
                 {
+
                     string[] line = aminoAcidLines[i].Split('\t').ToArray(); //tsv Name, one letter, monoisotopic, chemical formula
                     if (line.Length >= 4) //check something is there (not a blank line)
                     {
@@ -363,6 +232,194 @@ namespace EngineLayer
             }
 
             p.Start();
+        }
+
+        public static void CopyFilesRecursively(DirectoryInfo source, DirectoryInfo target)
+        {
+            //https://stackoverflow.com/questions/58744/copy-the-entire-contents-of-a-directory-in-c-sharp
+            foreach (DirectoryInfo dir in source.GetDirectories())
+            {
+                CopyFilesRecursively(dir, target.CreateSubdirectory(dir.Name));
+            }
+            foreach (FileInfo file in source.GetFiles())
+            {
+                file.CopyTo(Path.Combine(target.FullName, file.Name));
+            }
+        }
+
+        private static void SetMetaMorpheusVersion()
+        {
+            // get version of this MetaMorpheus instance
+            MetaMorpheusVersion = typeof(GlobalVariables).Assembly.GetName().Version.ToString();
+
+            if (MetaMorpheusVersion.Equals("1.0.0.0"))
+            {
+#if DEBUG
+                MetaMorpheusVersion = "Not a release version. DEBUG.";
+#else
+                MetaMorpheusVersion = "Not a release version.";
+#endif
+            }
+            else
+            {
+                // as of 0.0.277, AppVeyor appends the build number
+                // this is intentional; it's to avoid conflicting AppVeyor build numbers
+                // trim the build number off the version number for displaying/checking versions, etc
+                var foundIndexes = new List<int>();
+                for (int i = 0; i < MetaMorpheusVersion.Length; i++)
+                {
+                    if (MetaMorpheusVersion[i] == '.')
+                    {
+                        foundIndexes.Add(i);
+                    }
+                }
+                MetaMorpheusVersion = MetaMorpheusVersion.Substring(0, foundIndexes.Last());
+            }
+        }
+
+        private static void SetUpDataDirectory()
+        {
+            // get data directory
+            var pathToProgramFiles = Environment.GetFolderPath(Environment.SpecialFolder.ProgramFiles);
+            if (!String.IsNullOrWhiteSpace(pathToProgramFiles) && AppDomain.CurrentDomain.BaseDirectory.Contains(pathToProgramFiles)
+                && !AppDomain.CurrentDomain.BaseDirectory.Contains("Jenkins"))
+            {
+                DataDir = Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData), "MetaMorpheus");
+            }
+            else
+            {
+                DataDir = AppDomain.CurrentDomain.BaseDirectory;
+            }
+
+            if (UserSpecifiedDataDir != null)
+            {
+                if (!Directory.Exists(UserSpecifiedDataDir))
+                {
+                    CopyFilesRecursively(new DirectoryInfo(DataDir), new DirectoryInfo(UserSpecifiedDataDir));
+                }
+
+                DataDir = UserSpecifiedDataDir;
+            }
+        }
+
+        private static void LoadCrosslinkers()
+        {
+            _KnownCrosslinkers = new List<Crosslinker>();
+
+            // load default crosslinkers
+            string crosslinkerLocation = Path.Combine(DataDir, @"Data", @"Crosslinkers.tsv");
+            AddCrosslinkers(Crosslinker.LoadCrosslinkers(crosslinkerLocation));
+
+            // load custom crosslinkers
+            string customCrosslinkerLocation = Path.Combine(DataDir, @"Data", @"CustomCrosslinkers.tsv");
+            if (File.Exists(customCrosslinkerLocation))
+            {
+                AddCrosslinkers(Crosslinker.LoadCrosslinkers(customCrosslinkerLocation));
+            }
+        }
+
+        private static void LoadModifications()
+        {
+            _AllModsKnown = new List<Modification>();
+            _AllModTypesKnown = new HashSet<string>();
+            ErrorsReadingMods = new List<string>();
+            AllModsKnownDictionary = new Dictionary<string, Modification>();
+
+            UnimodDeserialized = Loaders.LoadUnimod(Path.Combine(DataDir, @"Data", @"unimod.xml")).ToList();
+            PsiModDeserialized = Loaders.LoadPsiMod(Path.Combine(DataDir, @"Data", @"PSI-MOD.obo.xml"));
+            var formalChargesDictionary = Loaders.GetFormalChargesDictionary(PsiModDeserialized);
+            UniprotDeseralized = Loaders.LoadUniprot(Path.Combine(DataDir, @"Data", @"ptmlist.txt"), formalChargesDictionary).ToList();
+
+            foreach (var modFile in Directory.GetFiles(Path.Combine(DataDir, @"Mods")))
+            {
+                AddMods(PtmListLoader.ReadModsFromFile(modFile, out var errorMods), false);
+            }
+
+            AddMods(UnimodDeserialized.OfType<Modification>(), false);
+            AddMods(UniprotDeseralized.OfType<Modification>(), false);
+
+            foreach (Modification mod in AllModsKnown)
+            {
+                if (!AllModsKnownDictionary.ContainsKey(mod.IdWithMotif))
+                {
+                    AllModsKnownDictionary.Add(mod.IdWithMotif, mod);
+                }
+                // no error thrown if multiple mods with this ID are present - just pick one
+            }
+        }
+
+        private static void LoadGlycans()
+        {
+            OGlycanLocations = new List<string>();
+            NGlycanLocations = new List<string>();
+
+            foreach (var glycanFile in Directory.GetFiles(Path.Combine(DataDir, @"Glycan_Mods", @"OGlycan")))
+            {
+                OGlycanLocations.Add(glycanFile);
+            }
+
+            foreach (var glycanFile in Directory.GetFiles(Path.Combine(DataDir, @"Glycan_Mods", @"NGlycan")))
+            {
+                NGlycanLocations.Add(glycanFile);
+            }
+
+            //Add Glycan mod into AllModsKnownDictionary, currently this is for MetaDraw.
+            //The reason why not include Glycan into modification database is for users to apply their own database.
+            foreach (var path in OGlycanLocations)
+            {
+                var og = GlycanDatabase.LoadGlycan(path, false, false);
+                foreach (var g in og)
+                {
+                    var ogmod = Glycan.OGlycanToModification(g);
+                    if (!AllModsKnownDictionary.ContainsKey(ogmod.IdWithMotif))
+                    {
+                        AllModsKnownDictionary.Add(ogmod.IdWithMotif, ogmod);
+                    }
+                }
+            }
+            foreach (var path in NGlycanLocations)
+            {
+                var og = GlycanDatabase.LoadGlycan(path, false, false);
+                foreach (var g in og)
+                {
+                    var ogmod = Glycan.OGlycanToModification(g);
+                    if (!AllModsKnownDictionary.ContainsKey(ogmod.IdWithMotif))
+                    {
+                        AllModsKnownDictionary.Add(ogmod.IdWithMotif, ogmod);
+                    }
+                }
+            }
+        }
+
+        private static void LoadDissociationTypes()
+        {
+            // set up dissociation types
+            AllSupportedDissociationTypes = new Dictionary<string, DissociationType> {
+                { DissociationType.CID.ToString(), DissociationType.CID },
+                { DissociationType.ECD.ToString(), DissociationType.ECD },
+                { DissociationType.ETD.ToString(), DissociationType.ETD },
+                { DissociationType.HCD.ToString(), DissociationType.HCD },
+                { DissociationType.EThcD.ToString(), DissociationType.EThcD },
+                { DissociationType.Custom.ToString(), DissociationType.Custom },
+                { DissociationType.LowCID.ToString(), DissociationType.LowCID}
+
+                // TODO: allow reading from scan header (autodetect dissociation type)
+            };
+        }
+
+        private static void SetUpGlobalSettings()
+        {
+            // save/load settings
+            string settingsPath = Path.Combine(DataDir, @"settings.toml");
+            if (!File.Exists(settingsPath) && !new DirectoryInfo(DataDir).Attributes.HasFlag(FileAttributes.ReadOnly))
+            {
+                Toml.WriteFile<GlobalSettings>(new GlobalSettings(), settingsPath);
+            }
+
+            if (File.Exists(settingsPath))
+            {
+                GlobalSettings = Toml.ReadFile<GlobalSettings>(settingsPath);
+            }
         }
     }
 }
