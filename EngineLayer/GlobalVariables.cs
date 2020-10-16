@@ -51,6 +51,7 @@ namespace EngineLayer
         public static string ExperimentalDesignFileName { get; private set; }
         public static IEnumerable<Crosslinker> Crosslinkers { get { return _KnownCrosslinkers.AsEnumerable(); } }
         public static IEnumerable<char> InvalidAminoAcids { get { return _InvalidAminoAcids.AsEnumerable(); } }
+        public static Monosaccharide[] Monosaccharides { get; private set; }
         public static List<string> OGlycanLocations { get; private set; }
         public static List<string> NGlycanLocations { get; private set; }
 
@@ -350,6 +351,9 @@ namespace EngineLayer
 
         private static void LoadGlycans()
         {
+            string monosaccharidePath = Path.Combine(DataDir, @"Glycan_Mods", @"Monosaccharide.tsv");
+            Monosaccharides = Monosaccharide.LoadMonosaccharide(monosaccharidePath);
+
             OGlycanLocations = new List<string>();
             NGlycanLocations = new List<string>();
 
