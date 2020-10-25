@@ -256,7 +256,7 @@ namespace MetaMorpheusCommandLine
                 {
                     if (settings.Verbosity == CommandLineSettings.VerbosityType.minimal || settings.Verbosity == CommandLineSettings.VerbosityType.normal)
                     {
-                        Console.WriteLine("Experimental design file was missing! This must be defined to do normalization");
+                        Console.WriteLine("Experimental design file was missing! This must be defined to do normalization. Download a template from https://github.com/smith-chem-wisc/MetaMorpheus/wiki/Experimental-Design");
                     }
                     return 5;
                 }
@@ -304,31 +304,12 @@ namespace MetaMorpheusCommandLine
                         }
                     }
                 }
-            }
-
-            if (searchTasks.Any(p => p.SearchParameters.Normalize))
-            {
-                if (!File.Exists(pathToExperDesign))
+                else
                 {
                     if (settings.Verbosity == CommandLineSettings.VerbosityType.minimal || settings.Verbosity == CommandLineSettings.VerbosityType.normal)
                     {
-                        Console.WriteLine("Experimental design file was missing! This must be defined to do normalization");
+                        Console.WriteLine("Read ExperimentalDesign.tsv successfully");
                     }
-                    return 5;
-                }
-
-                ExperimentalDesign.ReadExperimentalDesign(pathToExperDesign, startingRawFilenameList, out var errors);
-
-                if (errors.Any())
-                {
-                    if (settings.Verbosity == CommandLineSettings.VerbosityType.minimal || settings.Verbosity == CommandLineSettings.VerbosityType.normal)
-                    {
-                        foreach (var error in errors)
-                        {
-                            Console.WriteLine(error);
-                        }
-                    }
-                    return 5;
                 }
             }
 

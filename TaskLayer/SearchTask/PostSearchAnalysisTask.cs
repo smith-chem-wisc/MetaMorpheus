@@ -191,6 +191,11 @@ namespace TaskLayer
 
             if (File.Exists(assumedExperimentalDesignPath))
             {
+                // copy experimental design file to output folder
+                string writtenFile = Path.Combine(Parameters.OutputFolder, Path.GetFileName(assumedExperimentalDesignPath));
+                File.Copy(assumedExperimentalDesignPath, writtenFile);
+                FinishedWritingFile(writtenFile, new List<string> { Parameters.SearchTaskId });
+
                 spectraFileInfo = ExperimentalDesign.ReadExperimentalDesign(assumedExperimentalDesignPath, Parameters.CurrentRawFileList, out var errors);
 
                 if (errors.Any())
