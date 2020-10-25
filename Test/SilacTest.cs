@@ -56,7 +56,7 @@ namespace Test
             string[] output = File.ReadAllLines(TestContext.CurrentContext.TestDirectory + @"/TestSilac/AllProteinGroups.tsv");
             Assert.AreEqual(output.Length, 2);
             Assert.IsTrue(output[0].Contains("Modification Info List\tIntensity_silac(R+3.988)\tIntensity_silac(R+10.008)")); //test that two files were made and no light file
-            Assert.IsTrue(output[1].Contains("875000\t437500")); //test the heavier intensity is half that of the heavy (per the raw file)
+            Assert.IsTrue(output[1].Contains("1237436.8670764582\t618718.4335382291")); //test the heavier intensity is half that of the heavy (per the raw file)
 
             //test peptides
             output = File.ReadAllLines(TestContext.CurrentContext.TestDirectory + @"/TestSilac/AllQuantifiedPeptides.tsv");
@@ -127,7 +127,7 @@ namespace Test
             string[] output = File.ReadAllLines(TestContext.CurrentContext.TestDirectory + @"/TestSilac/AllProteinGroups.tsv");
             Assert.AreEqual(output.Length, 2);
             Assert.IsTrue(output[0].Contains("Intensity_silac\tIntensity_silac(K+8.014 & R+6.020)")); //test that two files were made
-            Assert.IsTrue(output[1].Contains("1375000\t687500")); //test the heavy intensity is half that of the light (per the raw file)
+            Assert.IsTrue(output[1].Contains("1944543.6482630058\t972271.8241315029")); //test the heavy intensity is half that of the light (per the raw file)
 
             //test peptides
             output = File.ReadAllLines(TestContext.CurrentContext.TestDirectory + @"/TestSilac/AllQuantifiedPeptides.tsv");
@@ -213,7 +213,7 @@ namespace Test
             string[] output = File.ReadAllLines(TestContext.CurrentContext.TestDirectory + @"/TestSilac/AllProteinGroups.tsv");
             Assert.AreEqual(output.Length, 2);
             Assert.IsTrue(output[0].Contains("Intensity_silac\tIntensity_silac(K+8.014)")); //test that two files were made
-            Assert.IsTrue(output[1].Contains("875000\t437500")); //test the heavy intensity is half that of the light (per the raw file)
+            Assert.IsTrue(output[1].Contains("1237436.8670764582\t618718.4335382291")); //test the heavy intensity is half that of the light (per the raw file)
 
             //test peptides
             output = File.ReadAllLines(TestContext.CurrentContext.TestDirectory + @"/TestSilac/AllQuantifiedPeptides.tsv");

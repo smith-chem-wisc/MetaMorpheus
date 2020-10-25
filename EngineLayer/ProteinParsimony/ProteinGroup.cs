@@ -276,7 +276,12 @@ namespace EngineLayer
                         // and the other fractions will be zero. we could find the first/only fraction with an intensity,
                         // but simply summing the fractions is easier than finding the single non-zero value
                         double summedIntensity = sample.Sum(file => IntensitiesByFile[file]);
-                        sb.Append(summedIntensity);
+
+                        if (summedIntensity > 0)
+                        {
+                            sb.Append(summedIntensity);
+                        }
+
                         sb.Append("\t");
                     }
                 }
