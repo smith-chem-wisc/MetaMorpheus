@@ -250,6 +250,62 @@ namespace MetaMorpheusCommandLine
             string pathToExperDesign = Directory.GetParent(startingRawFilenameList.First()).FullName;
             pathToExperDesign = Path.Combine(pathToExperDesign, GlobalVariables.ExperimentalDesignFileName);
 
+            if (!File.Exists(pathToExperDesign))
+            {
+                if (searchTasks.Any(p => p.SearchParameters.Normalize))
+                {
+                    if (settings.Verbosity == CommandLineSettings.VerbosityType.minimal || settings.Verbosity == CommandLineSettings.VerbosityType.normal)
+                    {
+                        Console.WriteLine("Experimental design file was missing! This must be defined to do normalization");
+                    }
+                    return 5;
+                }
+            }
+            else
+            {
+                ExperimentalDesign.ReadExperimentalDesign(pathToExperDesign, startingRawFilenameList, out var errors);
+
+                if (errors.Any())
+                {
+                    if (searchTasks.Any(p => p.SearchParameters.Normalize))
+                    {
+                        if (settings.Verbosity == CommandLineSettings.VerbosityType.minimal || settings.Verbosity == CommandLineSettings.VerbosityType.normal)
+                        {
+                            foreach (var error in errors)
+                            {
+                                Console.WriteLine(error);
+                            }
+                        }
+                        return 5;
+                    }
+                    else
+                    {
+                        if (settings.Verbosity == CommandLineSettings.VerbosityType.minimal || settings.Verbosity == CommandLineSettings.VerbosityType.normal)
+                        {
+                            Console.WriteLine("An experimental design file was found, but an error " +
+                            "occurred reading it. Do you wish to continue with an empty experimental design? (This will delete your experimental design file) y/n" +
+                            "\nThe error was: " + errors.First());
+
+                            var result = Console.ReadLine();
+
+                            if (result.ToLowerInvariant() == "y" || result.ToLowerInvariant() == "yes")
+                            {
+                                File.Delete(pathToExperDesign);
+                            }
+                            else
+                            {
+                                return 5;
+                            }
+                        }
+                        else
+                        {
+                            // just continue on if verbosity is on "none"
+                            File.Delete(pathToExperDesign);
+                        }
+                    }
+                }
+            }
+
             if (searchTasks.Any(p => p.SearchParameters.Normalize))
             {
                 if (!File.Exists(pathToExperDesign))
