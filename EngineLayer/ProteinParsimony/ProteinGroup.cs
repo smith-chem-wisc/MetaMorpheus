@@ -142,9 +142,24 @@ namespace EngineLayer
             sb.Append("Modification Info List" + "\t");
             if (FilesForQuantification != null)
             {
-                for (int i = 0; i < FilesForQuantification.Count; i++)
+                bool unfractionated = FilesForQuantification.Select(p => p.Fraction).Distinct().Count() == 1;
+                bool conditionsDefined = FilesForQuantification.All(p => p.Condition == "Default") || FilesForQuantification.All(p => string.IsNullOrWhiteSpace(p.Condition));
+
+                foreach (var sampleGroup in FilesForQuantification.GroupBy(p => p.Condition))
                 {
-                    sb.Append("Intensity_" + FilesForQuantification[i].FilenameWithoutExtension + '\t');
+                    foreach (var sample in sampleGroup.GroupBy(p => p.BiologicalReplicate).OrderBy(p => p.Key))
+                    {
+                        if (!conditionsDefined && unfractionated)
+                        {
+                            // if the data is unfractionated and the conditions haven't been defined, just use the file name as the intensity header
+                            sb.Append("Intensity_" + sample.First().FilenameWithoutExtension + "\t");
+                        }
+                        else
+                        {
+                            // if the data is fractionated and/or the conditions have been defined, label the header w/ the condition and biorep number
+                            sb.Append("Intensity_" + sample.First().Condition + "_" + (sample.First().BiologicalReplicate + 1) + "\t");
+                        }
+                    }
                 }
             }
             sb.Append("Number of PSMs" + '\t');
@@ -253,17 +268,17 @@ namespace EngineLayer
             // MS1 intensity (retrieved from FlashLFQ in the SearchTask)
             if (IntensitiesByFile != null && FilesForQuantification != null)
             {
-                foreach (var file in FilesForQuantification)
+                foreach (var sampleGroup in FilesForQuantification.GroupBy(p => p.Condition))
                 {
-                    if (IntensitiesByFile[file] > 0)
+                    foreach (var sample in sampleGroup.GroupBy(p => p.BiologicalReplicate).OrderBy(p => p.Key))
                     {
-                        sb.Append(IntensitiesByFile[file]);
+                        // if the samples are fractionated, the protein will only have 1 intensity in the first fraction
+                        // and the other fractions will be zero. we could find the first/only fraction with an intensity,
+                        // but simply summing the fractions is easier than finding the single non-zero value
+                        double summedIntensity = sample.Sum(file => IntensitiesByFile[file]);
+                        sb.Append(summedIntensity);
+                        sb.Append("\t");
                     }
-                    else
-                    {
-                        sb.Append("");
-                    }
-                    sb.Append("\t");
                 }
             }
 
