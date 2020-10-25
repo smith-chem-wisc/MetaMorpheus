@@ -107,6 +107,7 @@ namespace EngineLayer
                 }
                 else if (AllModsKnown.Any(m => m.IdWithMotif == mod.IdWithMotif))
                 {
+                    var test = AllModsKnown.Where(m => m.IdWithMotif == mod.IdWithMotif).ToList();
                     // same ID but different mod types. This can happen if the user names a mod the same as a UniProt mod
                     // this is problematic because if a mod is annotated in the database, all we have to go on is an ID ("description" tag).
                     // so we don't know which mod to use, causing unnecessary ambiguity
@@ -335,9 +336,9 @@ namespace EngineLayer
                 AddMods(PtmListLoader.ReadModsFromFile(modFile, out var errorMods), false);
             }
 
-            AddMods(UnimodDeserialized.OfType<Modification>(), false);
             AddMods(UniprotDeseralized.OfType<Modification>(), false);
-
+            AddMods(UnimodDeserialized.OfType<Modification>(), false);
+            
             foreach (Modification mod in AllModsKnown)
             {
                 if (!AllModsKnownDictionary.ContainsKey(mod.IdWithMotif))
