@@ -177,54 +177,41 @@ namespace TaskLayer
             // pass quantification parameters to FlashLFQ
             Status("Quantifying...", Parameters.SearchTaskId);
 
-            // construct file info for FlashLFQ
-            var spectraFileInfo = new List<SpectraFileInfo>();
-
-            // get experimental design info for normalization
-            if (Parameters.SearchParameters.Normalize)
+            foreach (var file in Parameters.CurrentRawFileList)
             {
-                string assumedExperimentalDesignPath = Directory.GetParent(Parameters.CurrentRawFileList.First()).FullName;
-                assumedExperimentalDesignPath = Path.Combine(assumedExperimentalDesignPath, GlobalVariables.ExperimentalDesignFileName);
+                Parameters.MyFileManager.DoneWithFile(file);
+            }
 
-                if (File.Exists(assumedExperimentalDesignPath))
+            // construct file info for FlashLFQ
+            List<SpectraFileInfo> spectraFileInfo;
+
+            // get experimental design info
+            string pathToFirstSpectraFile = Directory.GetParent(Parameters.CurrentRawFileList.First()).FullName;
+            string assumedExperimentalDesignPath = Path.Combine(pathToFirstSpectraFile, GlobalVariables.ExperimentalDesignFileName);
+
+            if (File.Exists(assumedExperimentalDesignPath))
+            {
+                spectraFileInfo = ExperimentalDesign.ReadExperimentalDesign(assumedExperimentalDesignPath, Parameters.CurrentRawFileList, out var errors);
+
+                if (errors.Any())
                 {
-                    var experimentalDesign = File.ReadAllLines(assumedExperimentalDesignPath)
-                        .ToDictionary(p => p.Split('\t')[0], p => p);
-
-                    foreach (var file in Parameters.CurrentRawFileList)
-                    {
-                        string filename = Path.GetFileNameWithoutExtension(file);
-
-                        var expDesignForThisFile = experimentalDesign[filename];
-                        var split = expDesignForThisFile.Split('\t');
-
-                        string condition = split[1];
-                        int biorep = int.Parse(split[2]);
-                        int fraction = int.Parse(split[3]);
-                        int techrep = int.Parse(split[4]);
-
-                        // experimental design info passed in here for each spectra file
-                        spectraFileInfo.Add(new SpectraFileInfo(fullFilePathWithExtension: file,
-                            condition: condition,
-                            biorep: biorep - 1,
-                            fraction: fraction - 1,
-                            techrep: techrep - 1));
-
-                        Parameters.MyFileManager.DoneWithFile(file);
-                    }
+                    Warn("Error reading experimental design file: " + errors.First() + ". Skipping quantification");
+                    return;
                 }
-                else
-                {
-                    throw new MetaMorpheusException("Could not find experimental design file at location:\n" + assumedExperimentalDesignPath);
-                }
+            }
+            else if (Parameters.SearchParameters.Normalize)
+            {
+                Warn("Could not find experimental design file at " + assumedExperimentalDesignPath + ", which is required for normalization. Skipping quantification");
+                return;
             }
             else
             {
+                spectraFileInfo = new List<SpectraFileInfo>();
+
                 foreach (var file in Parameters.CurrentRawFileList)
                 {
                     // experimental design info passed in here for each spectra file
                     spectraFileInfo.Add(new SpectraFileInfo(fullFilePathWithExtension: file, condition: "", biorep: 0, fraction: 0, techrep: 0));
-                    Parameters.MyFileManager.DoneWithFile(file);
                 }
             }
 
@@ -641,11 +628,11 @@ namespace TaskLayer
                         Status("Writing mzID...", new List<string> { Parameters.SearchTaskId, "Individual Spectra Files", fullFilePath });
 
                         string mzidFilePath = Path.Combine(Parameters.OutputFolder, strippedFileName + ".mzID");
-                        if(Parameters.CurrentRawFileList.Count > 1)
+                        if (Parameters.CurrentRawFileList.Count > 1)
                         {
                             mzidFilePath = Path.Combine(Parameters.IndividualResultsOutputFolder, strippedFileName + ".mzID");
-                        }                        
-                        MzIdentMLWriter.WriteMzIdentMl(psmsForThisFile.Where(p=>p.FdrInfo.QValue <= CommonParameters.QValueOutputFilter), subsetProteinGroupsForThisFile, Parameters.VariableModifications, Parameters.FixedModifications, Parameters.SearchParameters.SilacLabels,
+                        }
+                        MzIdentMLWriter.WriteMzIdentMl(psmsForThisFile.Where(p => p.FdrInfo.QValue <= CommonParameters.QValueOutputFilter), subsetProteinGroupsForThisFile, Parameters.VariableModifications, Parameters.FixedModifications, Parameters.SearchParameters.SilacLabels,
 
                             new List<Protease> { CommonParameters.DigestionParams.Protease }, CommonParameters.QValueOutputFilter, CommonParameters.ProductMassTolerance,
                             CommonParameters.PrecursorMassTolerance, CommonParameters.DigestionParams.MaxMissedCleavages, mzidFilePath);
@@ -660,10 +647,10 @@ namespace TaskLayer
                         Status("Writing pepXML...", new List<string> { Parameters.SearchTaskId, "Individual Spectra Files", fullFilePath });
 
                         string pepXMLFilePath = Path.Combine(Parameters.OutputFolder, strippedFileName + ".pep.XML");
-                        if(Parameters.CurrentRawFileList.Count > 1)
+                        if (Parameters.CurrentRawFileList.Count > 1)
                         {
                             pepXMLFilePath = Path.Combine(Parameters.IndividualResultsOutputFolder, strippedFileName + ".pep.XML");
-                        }                        
+                        }
 
                         PepXMLWriter.WritePepXml(psmsForThisFile.Where(p => p.FdrInfo.QValue <= CommonParameters.QValueOutputFilter).ToList(), Parameters.DatabaseFilenameList, Parameters.VariableModifications, Parameters.FixedModifications,
                             CommonParameters, pepXMLFilePath, CommonParameters.QValueOutputFilter);
@@ -859,21 +846,21 @@ namespace TaskLayer
                                 }
                             }
                         }
-                        
+
                         var oldMods = nonVariantProtein.OneBasedPossibleLocalizedModifications.ToDictionary(p => p.Key, v => v.Value);
                         if (proteinsOriginalModifications.ContainsKey(nonVariantProtein.NonVariantProtein))
                         {
                             foreach (var entry in oldMods)
                             {
-                                 if (proteinsOriginalModifications[nonVariantProtein.NonVariantProtein].ContainsKey(entry.Key))
-                                 {
+                                if (proteinsOriginalModifications[nonVariantProtein.NonVariantProtein].ContainsKey(entry.Key))
+                                {
                                     proteinsOriginalModifications[nonVariantProtein.NonVariantProtein][entry.Key].AddRange(entry.Value);
-                                 }
-                                 else
-                                 {
+                                }
+                                else
+                                {
                                     proteinsOriginalModifications[nonVariantProtein.NonVariantProtein].Add(entry.Key, entry.Value);
-                                 }                                    
-                            }                                
+                                }
+                            }
                         }
                         else
                         {
@@ -884,35 +871,35 @@ namespace TaskLayer
                         nonVariantProtein.OneBasedPossibleLocalizedModifications.Clear();
                         foreach (var kvp in modsToWrite.Where(kv => kv.Key.Item1 == null))
                         {
-                            nonVariantProtein.OneBasedPossibleLocalizedModifications.Add(kvp.Key.Item2, kvp.Value);                                
+                            nonVariantProtein.OneBasedPossibleLocalizedModifications.Add(kvp.Key.Item2, kvp.Value);
                         }
                         foreach (var sv in nonVariantProtein.SequenceVariations)
                         {
-                             var oldVariantModifications = sv.OneBasedModifications.ToDictionary(p => p.Key, v => v.Value);
-                             if (originalSequenceVariantModifications.ContainsKey(sv))
-                             {
-                                  foreach (var entry in oldVariantModifications)
-                                  {
-                                      if (originalSequenceVariantModifications[sv].ContainsKey(entry.Key))
-                                      {
-                                          originalSequenceVariantModifications[sv][entry.Key].AddRange(entry.Value);
-                                      }
-                                      else
-                                      {
-                                          originalSequenceVariantModifications[sv].Add(entry.Key, entry.Value);
-                                      }
-                                  }
-                             }
-                             else
-                             {
-                                  originalSequenceVariantModifications.Add(sv, oldVariantModifications);
-                             }
+                            var oldVariantModifications = sv.OneBasedModifications.ToDictionary(p => p.Key, v => v.Value);
+                            if (originalSequenceVariantModifications.ContainsKey(sv))
+                            {
+                                foreach (var entry in oldVariantModifications)
+                                {
+                                    if (originalSequenceVariantModifications[sv].ContainsKey(entry.Key))
+                                    {
+                                        originalSequenceVariantModifications[sv][entry.Key].AddRange(entry.Value);
+                                    }
+                                    else
+                                    {
+                                        originalSequenceVariantModifications[sv].Add(entry.Key, entry.Value);
+                                    }
+                                }
+                            }
+                            else
+                            {
+                                originalSequenceVariantModifications.Add(sv, oldVariantModifications);
+                            }
 
-                             sv.OneBasedModifications.Clear();
-                             foreach (var kvp in modsToWrite.Where(kv => kv.Key.Item1 != null && kv.Key.Item1.Equals(sv)))
-                             {
-                                 sv.OneBasedModifications.Add(kvp.Key.Item2, kvp.Value);
-                             }
+                            sv.OneBasedModifications.Clear();
+                            foreach (var kvp in modsToWrite.Where(kv => kv.Key.Item1 != null && kv.Key.Item1.Equals(sv)))
+                            {
+                                sv.OneBasedModifications.Add(kvp.Key.Item2, kvp.Value);
+                            }
                         }
 
                     }
@@ -964,7 +951,7 @@ namespace TaskLayer
                             }
                         }
                     }
-                                     
+
                 }
             }
         }
@@ -1021,7 +1008,7 @@ namespace TaskLayer
 
         private void CompressIndividualFileResults()
         {
-            if(Parameters.SearchParameters.CompressIndividualFiles && Directory.Exists(Parameters.IndividualResultsOutputFolder))
+            if (Parameters.SearchParameters.CompressIndividualFiles && Directory.Exists(Parameters.IndividualResultsOutputFolder))
             {
                 ZipFile.CreateFromDirectory(Parameters.IndividualResultsOutputFolder, Parameters.IndividualResultsOutputFolder + ".zip");
                 Directory.Delete(Parameters.IndividualResultsOutputFolder, true);

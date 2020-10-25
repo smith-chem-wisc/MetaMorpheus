@@ -242,6 +242,40 @@ namespace MetaMorpheusCommandLine
             List<string> startingRawFilenameList = settings.Spectra.Select(b => Path.GetFullPath(b)).ToList();
             List<DbForTask> startingXmlDbFilenameList = settings.Databases.Select(b => new DbForTask(Path.GetFullPath(b), IsContaminant(b))).ToList();
 
+            // check that experimental design is defined if normalization is enabled
+            var searchTasks = taskList
+                .Where(p => p.Item2.TaskType == MyTask.Search)
+                .Select(p => (SearchTask)p.Item2);
+
+            string pathToExperDesign = Directory.GetParent(startingRawFilenameList.First()).FullName;
+            pathToExperDesign = Path.Combine(pathToExperDesign, GlobalVariables.ExperimentalDesignFileName);
+
+            if (searchTasks.Any(p => p.SearchParameters.Normalize))
+            {
+                if (!File.Exists(pathToExperDesign))
+                {
+                    if (settings.Verbosity == CommandLineSettings.VerbosityType.minimal || settings.Verbosity == CommandLineSettings.VerbosityType.normal)
+                    {
+                        Console.WriteLine("Experimental design file was missing! This must be defined to do normalization");
+                    }
+                    return 5;
+                }
+
+                ExperimentalDesign.ReadExperimentalDesign(pathToExperDesign, startingRawFilenameList, out var errors);
+
+                if (errors.Any())
+                {
+                    if (settings.Verbosity == CommandLineSettings.VerbosityType.minimal || settings.Verbosity == CommandLineSettings.VerbosityType.normal)
+                    {
+                        foreach (var error in errors)
+                        {
+                            Console.WriteLine(error);
+                        }
+                    }
+                    return 5;
+                }
+            }
+
             EverythingRunnerEngine a = new EverythingRunnerEngine(taskList, startingRawFilenameList, startingXmlDbFilenameList, settings.OutputFolder);
 
             try
