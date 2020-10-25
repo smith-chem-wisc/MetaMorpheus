@@ -6,7 +6,7 @@
         xmlns:local="clr-namespace:MetaMorpheusGUI"
         mc:Ignorable="d"
         KeyDown="KeyPressed"
-        Title="Experimental Design" Height="400" Width="600" WindowStartupLocation="CenterScreen">
+        Title="Experimental Design" Height="400" Width="650" WindowStartupLocation="CenterScreen">
     <Grid>
         <!--Data grid-->
         <DataGrid x:Name="DgQuant" ItemsSource="{Binding}" Grid.Row="1" VerticalAlignment="Stretch" CanUserDeleteRows="False" CanUserAddRows="False" CanUserReorderColumns="False"
