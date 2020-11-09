@@ -54,5 +54,18 @@ namespace Test
 
             Directory.Delete(customDataDir, true);
         }
+
+        [Test]
+        public static void TestCustomFileExtensionGetter()
+        {
+            string test1 = @"C:\myFile.fasta";
+            Assert.That(GlobalVariables.GetFileExtension(test1) == ".fasta");
+
+            string test2 = @"C:\myFile.fasta.gz";
+            Assert.That(GlobalVariables.GetFileExtension(test2) == ".fasta.gz");
+
+            string test3 = @"C:\myFile.11.1.mzML";
+            Assert.That(GlobalVariables.GetFileExtension(test3) == ".mzML");
+        }
     }
 }
