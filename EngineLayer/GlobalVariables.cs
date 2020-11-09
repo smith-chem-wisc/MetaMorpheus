@@ -253,6 +253,7 @@ namespace EngineLayer
         /// </summary>
         public static string GetFileExtension(string fileWithExtension)
         {
+            string extension = string.Empty;
             StringBuilder sb = new StringBuilder();
 
             for (int i = fileWithExtension.Length - 1; i >= 0; i--)
@@ -261,15 +262,18 @@ namespace EngineLayer
 
                 sb.Append(c);
 
-                if (c == '.' && new string(sb.ToString().Reverse().ToArray()) != ".gz")
+                if (c == '.')
                 {
-                    break;
+                    extension = new string(sb.ToString().Reverse().ToArray());
+
+                    if (extension != ".gz" || !fileWithExtension.Substring(0, i).Contains('.'))
+                    {
+                        break;
+                    }
                 }
             }
 
-            string extension = new string(sb.ToString().Reverse().ToArray());
-
-            return extension.Length == fileWithExtension.Length ? "" : extension;
+            return extension;
         }
 
         private static void SetMetaMorpheusVersion()

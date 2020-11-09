@@ -66,6 +66,12 @@ namespace Test
 
             string test3 = @"C:\myFile.11.1.mzML";
             Assert.That(GlobalVariables.GetFileExtension(test3) == ".mzML");
+
+            string test4 = @"C:\myFile.gz";
+            Assert.That(GlobalVariables.GetFileExtension(test4) == ".gz");
+
+            string test5 = @"C:\myFile";
+            Assert.That(GlobalVariables.GetFileExtension(test5) == string.Empty);
         }
     }
 }
