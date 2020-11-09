@@ -249,7 +249,7 @@ namespace EngineLayer
         }
 
         /// <summary>
-        /// Gets the file name with extension, keeping .gz appended for compressed files
+        /// Gets the file extension, keeping .gz appended for compressed files
         /// </summary>
         public static string GetFileExtension(string fileWithExtension)
         {
