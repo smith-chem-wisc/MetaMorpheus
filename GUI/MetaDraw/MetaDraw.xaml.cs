@@ -126,7 +126,7 @@ namespace MetaMorpheusGUI
 
         private void LoadFile(string filePath)
         {
-            var theExtension = Path.GetExtension(filePath).ToLower();
+            var theExtension = GlobalVariables.GetFileExtension(filePath).ToLowerInvariant();
 
             if (AcceptedSpectraFormats.Contains(theExtension))
             {

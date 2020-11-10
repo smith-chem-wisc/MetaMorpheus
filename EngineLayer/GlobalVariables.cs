@@ -9,6 +9,7 @@ using System.Diagnostics;
 using System.IO;
 using System.Linq;
 using System.Runtime.InteropServices;
+using System.Text;
 using UsefulProteomicsDatabases;
 
 namespace EngineLayer
@@ -245,6 +246,34 @@ namespace EngineLayer
             {
                 file.CopyTo(Path.Combine(target.FullName, file.Name));
             }
+        }
+
+        /// <summary>
+        /// Gets the file extension, keeping .gz appended for compressed files
+        /// </summary>
+        public static string GetFileExtension(string fileWithExtension)
+        {
+            string extension = string.Empty;
+            StringBuilder sb = new StringBuilder();
+
+            for (int i = fileWithExtension.Length - 1; i >= 0; i--)
+            {
+                char c = fileWithExtension[i];
+
+                sb.Append(c);
+
+                if (c == '.')
+                {
+                    extension = new string(sb.ToString().Reverse().ToArray());
+
+                    if (extension != ".gz" || !fileWithExtension.Substring(0, i).Contains('.'))
+                    {
+                        break;
+                    }
+                }
+            }
+
+            return extension;
         }
 
         private static void SetMetaMorpheusVersion()

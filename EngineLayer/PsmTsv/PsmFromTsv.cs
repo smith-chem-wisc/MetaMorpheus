@@ -88,13 +88,24 @@ namespace EngineLayer
             var spl = line.Split(split);
 
             //Required properties
-            FileNameWithoutExtension = Path.GetFileNameWithoutExtension(spl[parsedHeader[PsmTsvHeader.FileName]].Trim());
+            FileNameWithoutExtension = spl[parsedHeader[PsmTsvHeader.FileName]].Trim();
+            
+            // remove file format, e.g., .raw, .mzML, .mgf
+            // this is more robust but slower than Path.GetFileNameWithoutExtension
+            if (FileNameWithoutExtension.Contains('.'))
+            {
+                foreach (var knownSpectraFileExtension in GlobalVariables.AcceptedSpectraFormats)
+                {
+                    FileNameWithoutExtension.Replace(knownSpectraFileExtension, string.Empty, StringComparison.InvariantCultureIgnoreCase);
+                }
+            }
+
             Ms2ScanNumber = int.Parse(spl[parsedHeader[PsmTsvHeader.Ms2ScanNumber]]);
 
             // this will probably not be known in an .mgf data file
             if (int.TryParse(spl[parsedHeader[PsmTsvHeader.PrecursorScanNum]].Trim(), out int result))
             {
-                PrecursorScanNum = result; 
+                PrecursorScanNum = result;
             }
             else
             {
