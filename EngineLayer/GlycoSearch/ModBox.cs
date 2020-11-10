@@ -23,7 +23,7 @@ namespace EngineLayer
 
         public double DecoyMass { get; set; }
 
-        public bool TargetDecoy { get; set; }
+        public bool TargetDecoy { get; set; } = true;
 
         public static IEnumerable<ModBox> BuildChildModBoxes(int[] modIds)
         {

@@ -19,6 +19,12 @@ namespace EngineLayer
 
         public static GlycanBox[] OGlycanBoxes { get; set; }
 
+        public static Glycan[] Global_NGlycans { get; set; }
+
+        public static Modification[] Global_NGlycanModifications { get; set; }
+
+        public static (double, int, int)[] NOGlycoIndexes { get; set; } //Tuple is Mass, NGlycan id, OGlycanBox id.
+
         //TO DO: Decoy O-glycan can be created, but the results need to be reasoned.
         //public static int[] SugarShift = new int[]{ -16205282, -20307937, -29109542, -14605791, -30709033, -15005282, -36513219, -40615874, 16205282, 20307937, 29109542, 14605791, 30709033, 15005282, 36513219, 40615874 };
         private readonly static int[] SugarShift = new int[] 
@@ -35,6 +41,7 @@ namespace EngineLayer
         {
             return BuildOGlycanBoxes(maxNum, false);
         }
+
         public static IEnumerable<GlycanBox> BuildOGlycanBoxes(int maxNum, bool buildDecoy)
         {
 
@@ -62,15 +69,24 @@ namespace EngineLayer
 
         //After O-glycans are read in from database, we transfer the glycans into 'Modification' class type for MetaMorpheus to manipulate sequences.
         //In the future we may able to combine the two type together. 
-        public static Modification[] BuildGlobalOGlycanModifications(Glycan[] globalOGlycans)
+        public static IEnumerable<Modification> BuildGlobalOGlycanModifications(Glycan[] globalOGlycans)
         {
-            Modification[] globalOGlycanModifications = new Modification[globalOGlycans.Length];
-
             for (int i = 0; i < GlobalOGlycans.Length; i++)
             {
-                globalOGlycanModifications[i] = Glycan.OGlycanToModification(globalOGlycans[i]);
+                var ogMod = Glycan.OGlycanToModification(globalOGlycans[i]);
+                yield return ogMod;
             }
-            return globalOGlycanModifications;
+
+        }
+
+        public static IEnumerable<Modification> BuildGlobal_NGlycanModifications(Glycan[] globalNGlycans)
+        {
+            for (int i = 0; i < GlobalOGlycans.Length; i++)
+            {
+                var ogMod = Glycan.NGlycanToModification(globalNGlycans[i]);
+                yield return ogMod;
+            }
+
         }
 
         //The function here is to build GlycanBoxes used for LocalizationGraph. 
@@ -98,6 +114,17 @@ namespace EngineLayer
                         yield return glycanBox;
                     }
 
+                }
+            }
+        }
+
+        public static IEnumerable<(double, int, int)> GenerateNOGlycoIndexes(Glycan[] Global_NGlycans, GlycanBox[] OGlycanBoxes)
+        {
+            for (int i = 0; i < Global_NGlycans.Length; i++)
+            {
+                for (int j = 0; j < OGlycanBoxes.Length; j++)
+                {
+                    yield return (Global_NGlycans[i].Mass/1E5 + OGlycanBoxes[j].Mass, i, j);
                 }
             }
         }

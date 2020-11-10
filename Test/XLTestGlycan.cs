@@ -168,6 +168,13 @@ namespace Test
             var kperm_rep = Glycan.GetPermutationsWithRept(input, 3);
 
             Assert.AreEqual(kperm_rep.Count(), 125);
+
+            List<int> input2 = new List<int> {  3, 4, 5, 6, 7 };
+            //Combination test with repetition
+            var kcombs_rep2 = Glycan.GetKCombsWithRept(input2, 3);
+
+            Assert.AreEqual(kcombs_rep2.Count(), 35);
+
         }
 
         [Test]

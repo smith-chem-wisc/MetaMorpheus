@@ -299,12 +299,12 @@ namespace EngineLayer.GlycoSearch
 
         //The oxoniumIonIntensities is related with Glycan.AllOxoniumIons. 
         //Rules are coded in the function.    
-        public static bool NGlyOxoniumIonsAnalysis(double[] oxoniumIonsintensities, Glycan glycan)
+        public static bool NGlyOxoniumIonsAnalysis(double[] oxoniumIonsintensities, byte[] Kind)
         {
             //If a glycopeptide spectrum does not have 292.1027 or 274.0921, then remove all glycans that have sialic acids from the search.
             if (oxoniumIonsintensities[10] <= 0 && oxoniumIonsintensities[12] <= 0)
             {
-                if (glycan.Kind[2] != 0 || glycan.Kind[3] != 0)
+                if (Kind[2] != 0 || Kind[3] != 0)
                 {
                     return false;
                 }
@@ -313,7 +313,7 @@ namespace EngineLayer.GlycoSearch
             //If a spectrum has 366.1395, remove glycans that do not have HexNAc(1)Hex(1) or more. Here use the total glycan of glycanBox to calculate. 
             if (oxoniumIonsintensities[14] > 0)
             {
-                if (glycan.Kind[0] < 1 && glycan.Kind[1] < 1)
+                if (Kind[0] < 1 && Kind[1] < 1)
                 {
                     return false;
                 }
