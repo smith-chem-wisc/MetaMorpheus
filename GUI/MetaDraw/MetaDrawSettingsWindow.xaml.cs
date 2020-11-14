@@ -1,4 +1,5 @@
-﻿using System.ComponentModel;
+﻿using EngineLayer;
+using System.ComponentModel;
 using System.Windows;
 
 namespace MetaMorpheusGUI
@@ -8,19 +9,10 @@ namespace MetaMorpheusGUI
     /// </summary>
     public partial class MetaDrawGraphicalSettings : Window
     {
-        public bool ShowMzValues { get; set; }
-        public bool ShowAnnotationCharges { get; set; }
-        public int AnnotatedFontSize { get; set; }
-        public bool BoldText { get; set; }
-
-        public MetaDrawGraphicalSettings(bool annotateMzs = false, bool annotateCharges = false, int annotatedFontSize = 12, bool boldAnnotations = false)
+        public MetaDrawGraphicalSettings()
         {
             InitializeComponent();
             base.Closing += this.OnClosing;
-            this.ShowMzValues = annotateMzs;
-            this.ShowAnnotationCharges = annotateCharges;
-            this.AnnotatedFontSize = annotatedFontSize;
-            this.BoldText = boldAnnotations;
         }
 
         private void Cancel_Click(object sender, RoutedEventArgs e)
@@ -30,9 +22,9 @@ namespace MetaMorpheusGUI
 
         private void Save_Click(object sender, RoutedEventArgs e)
         {
-            ShowMzValues = MZCheckBox.IsChecked.Value;
-            ShowAnnotationCharges = ChargesCheckBox.IsChecked.Value;
-            BoldText = BoldTextCheckBox.IsChecked.Value;
+            MetaDrawSettings.ShowMzValues = MZCheckBox.IsChecked.Value;
+            MetaDrawSettings.ShowAnnotationCharges = ChargesCheckBox.IsChecked.Value;
+            MetaDrawSettings.BoldText = BoldTextCheckBox.IsChecked.Value;
 
             if (!string.IsNullOrWhiteSpace(TextSizeBox.Text))
             {
@@ -44,7 +36,7 @@ namespace MetaMorpheusGUI
                         return;
                     }
 
-                    AnnotatedFontSize = fontSize;
+                    MetaDrawSettings.AnnotatedFontSize = fontSize;
                 }
                 else
                 {
