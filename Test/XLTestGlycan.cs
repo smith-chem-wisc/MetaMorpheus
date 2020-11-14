@@ -123,13 +123,10 @@ namespace Test
         public static void OGlycoTest_LoadGlycanBox()
         {
             GlycanBox.GlobalOGlycans = GlycanDatabase.LoadGlycan(GlobalVariables.OGlycanLocations.Where(p => p.Contains("OGlycan.gdb")).First(), true, true).ToArray();
-            var OGlycanBoxes = GlycanBox.BuildOGlycanBoxes(3).OrderBy(p => p.Mass).ToArray();
-            Assert.AreEqual(OGlycanBoxes.Count(), 454);
+             GlycanBox.GlobalOGlycanModifications = GlycanBox.BuildGlobalOGlycanModifications(GlycanBox.GlobalOGlycans).ToArray();
 
-            //To build the DecoyOGlycanBox, the number of glycan box will double.
-            //However, how to build and applied the decoy glycan box is still unclear and require more investigation.
-            var OGlycanBoxesWithDeocy = GlycanBox.BuildOGlycanBoxes(3, true).OrderBy(p => p.Mass).ToArray();
-            Assert.That(OGlycanBoxesWithDeocy.Count() == 908);
+            var OGlycanBoxes = GlycanBox.BuildGlycanBoxes(3, GlycanBox.GlobalOGlycans, GlycanBox.GlobalOGlycanModifications).OrderBy(p => p.Mass).ToArray();            
+            Assert.AreEqual(OGlycanBoxes.Count(), 454);
         }
 
         [Test]

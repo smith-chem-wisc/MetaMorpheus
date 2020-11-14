@@ -526,6 +526,7 @@ namespace EngineLayer
                 _monoisotopicMass: (double)glycan.Mass / 1E5,
                 _locationRestriction: "Anywhere.",
                 _target: finalMotif,
+                _featureType: "Nxs/t",
                 _neutralLosses: neutralLosses,
                 _diagnosticIons: diagnosticIons
             );
@@ -542,7 +543,8 @@ namespace EngineLayer
                 _modificationType: "N-Glycosylation",
                 _monoisotopicMass: (double)glycan.Mass / 1E5,
                 _locationRestriction: "Anywhere.",
-                _target: finalMotif
+                _target: finalMotif,
+                _featureType: "Nxs/t"
             );
             return modification;
         }
@@ -573,6 +575,7 @@ namespace EngineLayer
                 _monoisotopicMass: (double)glycan.Mass / 1E5,
                 _locationRestriction: "Anywhere.",
                 _target: finalMotif,
+                _featureType: "S/T",
                 _neutralLosses: neutralLosses,
                 _diagnosticIons: diagnosticIons
             );

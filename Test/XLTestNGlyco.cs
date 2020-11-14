@@ -24,6 +24,24 @@ namespace Test
     [TestFixture]
     public class XLTestNGlyco
     {
+        private static GlycanBox[] NGlycanBoxes { get; set; }
+
+        [OneTimeSetUp]
+        public static void Setup()
+        {
+            GlycanBox.Global_NGlycans = GlycanDatabase.LoadGlycan(GlobalVariables.NGlycanLocations.Where(p => p.Contains("NGlycan182.gdb")).First(), true, true).ToArray();
+            GlycanBox.Global_NGlycanModifications = GlycanBox.BuildGlobal_NGlycanModifications(GlycanBox.Global_NGlycans).ToArray();
+            NGlycanBoxes = GlycanBox.BuildGlycanBoxes(1, GlycanBox.Global_NGlycans, GlycanBox.Global_NGlycanModifications).OrderBy(p => p.Mass).ToArray();
+        }
+
+        [Test]
+        public static void GlyTest_NGlycanBox()
+        {
+            var nGlycanBoxes = GlycanBox.BuildGlycanBoxes(2, GlycanBox.Global_NGlycans, GlycanBox.Global_NGlycanModifications).OrderBy(p => p.Mass).ToArray();
+            Assert.That(nGlycanBoxes.Length == 16835);
+            Assert.That(nGlycanBoxes.First().MotifNeeded.First().Key == "Nxs/t");
+        }
+
         [Test]
         public static void GlyTest_ModificationSites()
         {

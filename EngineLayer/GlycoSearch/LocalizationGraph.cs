@@ -13,6 +13,8 @@ namespace EngineLayer.GlycoSearch
         public AdjNode[][] array { get; set; }
         public int[] ModPos { get; }
 
+        public List<(int, string)> ModPos_N { get; }
+
         public int ModBoxId { get; }
         public ModBox ModBox { get; }
         public ModBox[] ChildModBoxes { get; set; }
@@ -22,6 +24,23 @@ namespace EngineLayer.GlycoSearch
 
         public LocalizationGraph(int[] modPos, ModBox modBox, ModBox[] childModBoxes, int id)
         {
+            ModPos = modPos;
+            ModBox = modBox;
+            ModBoxId = id;
+            ChildModBoxes = childModBoxes;
+
+            //array is localization graph matrix. array is composed of 2d array of node. From left to right, node is build under a glycosite. From up to down, node is build for each child box.
+            array = new AdjNode[modPos.Length][];
+            for (int i = 0; i < modPos.Length; i++)
+            {
+                array[i] = new AdjNode[ChildModBoxes.Length];
+            }
+        }
+
+        public LocalizationGraph(List<(int, string)> modPos_N, ModBox modBox, ModBox[] childModBoxes, int id)
+        {
+            ModPos_N = modPos_N;
+            var modPos = modPos_N.Select(p => p.Item1).ToArray();
             ModPos = modPos;
             ModBox = modBox;
             ModBoxId = id;
@@ -395,21 +414,22 @@ namespace EngineLayer.GlycoSearch
         }
 
         #region LocalizeMod not limited to OGlycan.
-        //Tt is possible to Merge this function to LocalizdOGlycan; but there is possible no need to do that.
+        //Tt is possible to Merge this function to LocalizdOGlycan in the future.
         //The modification problem is turned into a Directed Acyclic Graph. The Graph was build with matrix, and dynamic programming is used.
-        public void LocalizeMod(int[] modPos, SelectedModBox totalBox, SelectedModBox[] boxes, HashSet<int> allPeaks, List<Product> products, PeptideWithSetModifications peptide)
+        public static void LocalizeMod(Glycan[] glycans, LocalizationGraph localizationGraph, Ms2ScanWithSpecificMass theScan, Tolerance productTolerance, List<Product> products)
         {
-            var boxSatisfyBox = BoxSatisfyBox(boxes);
+            var boxSatisfyBox = BoxSatisfyBox(localizationGraph.ChildModBoxes);
 
-            for (int i = 0; i < modPos.Length; i++)
+            for (int i = 0; i < localizationGraph.ModPos_N.Count; i++)
             {
 
-                for (int j = 0; j < boxes.Length; j++)
+                for (int j = 0; j < localizationGraph.ChildModBoxes.Length; j++)
                 {
-                    if (BoxSatisfyModPos(totalBox, boxes[j], modPos[i], peptide))
+                    if (BoxSatisfyModPos(glycans, localizationGraph.ModPos_N, localizationGraph.ModPos[i], (GlycanBox)localizationGraph.ChildModBoxes[j]))
                     {
-                        AdjNode adjNode = new AdjNode(i, j, modPos[i], boxes[j]);
-                        var cost = LocalizationGraph.CalculateCostMod(allPeaks, products, peptide.Length, modPos, i, totalBox, boxes[j], 1000);
+                        AdjNode adjNode = new AdjNode(i, j, localizationGraph.ModPos[i], localizationGraph.ChildModBoxes[j]);
+                        //var cost = LocalizationGraph.CalculateCostMod(allPeaks, products, peptide.Length, localizationGraph.ModPos, i, totalBox, boxes[j], 1000);
+                        var cost = 0;
                         if (i == 0)
                         {
                             //Get cost                             
@@ -421,9 +441,9 @@ namespace EngineLayer.GlycoSearch
                             double maxCost = 0;
                             for (int prej = 0; prej <= j; prej++)
                             {
-                                if (boxSatisfyBox[j][prej] && array[i - 1][prej] != null)
+                                if (boxSatisfyBox[j][prej] && localizationGraph.array[i - 1][prej] != null)
                                 {
-                                    var tempCost = cost + array[i - 1][prej].maxCost;
+                                    var tempCost = cost + localizationGraph.array[i - 1][prej].maxCost;
                                     if (tempCost > maxCost)
                                     {
                                         adjNode.CummulativeSources.Clear();
@@ -446,90 +466,34 @@ namespace EngineLayer.GlycoSearch
                             }
                         }
 
-                        array[i][j] = adjNode;
+                        localizationGraph.array[i][j] = adjNode;
                     }
                 }
 
             }
-        }
-
-        public static double CalculateCostMod(HashSet<int> allPeaksForLocalization, List<Product> products, int peptideLength, int[] modPos, int modInd, ModBox totalBox, ModBox localBox, int FragmentBinsPerDalton)
-        {
-            if (modInd == modPos.Length - 1)
-            {
-                return 0;
-            }
-
-            var localFragmentHash = SelectedModBox.GetLocalFragmentHash(products, peptideLength, modPos, modInd, totalBox, localBox, FragmentBinsPerDalton);
-
-            int currentLocalizationScore = allPeaksForLocalization.Intersect(localFragmentHash).Count();
-
-            return (double)currentLocalizationScore;
         }
 
         //For current ModPos at Ind, is the childbox satify the condition.
         //The function is for ModBox contains Mod that have different motif. 
-        public static bool BoxSatisfyModPos(SelectedModBox totalBox, SelectedModBox childBox, int Ind, PeptideWithSetModifications peptide)
+        public static bool BoxSatisfyModPos(Glycan[] glycans, List<(int, string)> modPos_N, int Ind, GlycanBox childBox)
         {
             //Satisfy left
             foreach (var mn in childBox.MotifNeeded)
             {
-                List<int> possibleModSites = new List<int>();
-
-                ModificationMotif.TryGetMotif(mn.Key, out ModificationMotif motif);
-                Modification modWithMotif = new Modification(_target: motif, _locationRestriction: "Anywhere.");
-
-                for (int r = 0; r < Ind - 1; r++)
-                {
-                    if (peptide.AllModsOneIsNterminus.Keys.Contains(r + 2))
-                    {
-                        continue;
-                    }
-
-                    if (ModificationLocalization.ModFits(modWithMotif, peptide.BaseSequence, r + 1, peptide.Length, r + 1))
-                    {
-                        possibleModSites.Add(r + 2);
-                    }
-                }
-
-                if (possibleModSites.Count < mn.Value.Count)
+                if (modPos_N.Where(p=>p.Item1 <= Ind  && p.Item2 == mn.Key).Count() < mn.Value.Count)
                 {
                     return false;
                 }
             }
 
             //Get compliment box
-            var gx = totalBox.ModIds.GroupBy(p => p).ToDictionary(p => p.Key, p => p.ToList());
-            foreach (var iy in childBox.ModIds)
-            {
-                gx[iy].RemoveAt(gx[iy].Count - 1);
-            }
-            var left = gx.SelectMany(p => p.Value).ToArray();
-
-            var complimentBox = new SelectedModBox(left.ToArray());
+            var compliment = modPos_N.Where(p=>p.Item1 > Ind).Select(p => p.Item1).ToArray();
+            var complimentBox = new GlycanBox(compliment.ToArray(), glycans);
 
             //Satify right
             foreach (var mn in complimentBox.MotifNeeded)
             {
-                List<int> possibleModSites = new List<int>();
-
-                ModificationMotif.TryGetMotif(mn.Key, out ModificationMotif motif);
-                Modification modWithMotif = new Modification(_target: motif, _locationRestriction: "Anywhere.");
-
-                for (int r = Ind - 1; r < peptide.Length; r++)
-                {
-                    if (peptide.AllModsOneIsNterminus.Keys.Contains(r + 2))
-                    {
-                        continue;
-                    }
-
-                    if (ModificationLocalization.ModFits(modWithMotif, peptide.BaseSequence, r + 1, peptide.Length, r + 1))
-                    {
-                        possibleModSites.Add(r + 2);
-                    }
-                }
-
-                if (possibleModSites.Count < mn.Value.Count)
+                if (modPos_N.Where(p => p.Item1 > Ind && p.Item2 == mn.Key).Count() < mn.Value.Count)
                 {
                     return false;
                 }
@@ -538,9 +502,7 @@ namespace EngineLayer.GlycoSearch
             return true;
         }
 
-
         #endregion
-
     }
 
 }
