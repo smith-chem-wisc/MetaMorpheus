@@ -1,9 +1,7 @@
 ﻿using Chemistry;
 using iText.IO.Image;
 using iText.Kernel.Pdf;
-//using iText.Layout;
 using MassSpectrometry;
-using MzLibUtil;
 using mzPlot;
 using OxyPlot;
 using OxyPlot.Annotations;
