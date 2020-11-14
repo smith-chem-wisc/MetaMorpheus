@@ -1,6 +1,6 @@
 ﻿using Chemistry;
-using iText.IO.Image;
-using iText.Kernel.Pdf;
+//using iText.IO.Image;
+//using iText.Kernel.Pdf;
 using MassSpectrometry;
 using mzPlot;
 using OxyPlot;
@@ -26,12 +26,12 @@ namespace EngineLayer
     {
         public MsDataScan Scan { get; protected set; }
         protected PsmFromTsv SpectrumMatch;
-        protected Canvas SequenceDrawingCanvas;//TODO: make protected
+        protected Canvas SequenceDrawingCanvas;
 
         public PeptideSpectrumMatchPlot(OxyPlot.Wpf.PlotView plotView, Canvas sequenceDrawingCanvas, PsmFromTsv psm, MsDataScan scan,
             List<MatchedFragmentIon> matchedFragmentIons, bool annotateProperties = true) : base(plotView)
         {
-            Model.Title = " \n "; // whitespace above the chart to draw the annotated base seq
+            Model.Title = string.Empty;
             Model.Subtitle = string.Empty;
             SpectrumMatch = psm;
             Scan = scan;
@@ -74,25 +74,25 @@ namespace EngineLayer
                 encoder.Save(file);
             }
 
-            // adds base seq annotation to pdf
-            PdfDocument pdfDoc = new PdfDocument(new PdfReader(tempPdfPath), new PdfWriter(path));
+            //// adds base seq annotation to pdf
+            //PdfDocument pdfDoc = new PdfDocument(new PdfReader(tempPdfPath), new PdfWriter(path));
 
-            iText.Layout.Document document = new iText.Layout.Document(pdfDoc);
+            //iText.Layout.Document document = new iText.Layout.Document(pdfDoc);
 
-            ImageData imgData = ImageDataFactory.Create(tempPngPath);
-            iText.Layout.Element.Image img = new iText.Layout.Element.Image(imgData);
-            float h = (float)(SequenceDrawingCanvas.Height * 0.7);
-            float w = (float)(SequenceDrawingCanvas.Width * 0.7);
-            img.SetMarginLeft(25);
-            img.ScaleToFit(w, h);
+            //ImageData imgData = ImageDataFactory.Create(tempPngPath);
+            //iText.Layout.Element.Image img = new iText.Layout.Element.Image(imgData);
+            //float h = (float)(SequenceDrawingCanvas.Height * 0.7);
+            //float w = (float)(SequenceDrawingCanvas.Width * 0.7);
+            //img.SetMarginLeft(25);
+            //img.ScaleToFit(w, h);
 
-            document.Add(img);
+            //document.Add(img);
 
-            document.Close();
-            pdfDoc.Close();
+            //document.Close();
+            //pdfDoc.Close();
 
-            File.Delete(tempPdfPath);
-            File.Delete(tempPngPath);
+            //File.Delete(tempPdfPath);
+            //File.Delete(tempPngPath);
         }
 
         protected void DrawSpectrum()
@@ -374,7 +374,7 @@ namespace EngineLayer
             this.Model.Series.Add(line);
         }
 
-        protected void ZoomAxes(IEnumerable<MatchedFragmentIon> matchedFragmentIons)
+        protected void ZoomAxes(IEnumerable<MatchedFragmentIon> matchedFragmentIons, double yZoom  = 1.2)
         {
             double highestAnnotatedIntensity = 0;
             double highestAnnotatedMz = double.MinValue;
@@ -404,7 +404,7 @@ namespace EngineLayer
 
             if (highestAnnotatedIntensity > 0)
             {
-                this.Model.Axes[1].Zoom(0, highestAnnotatedIntensity * 1.2);
+                this.Model.Axes[1].Zoom(0, highestAnnotatedIntensity * yZoom);
             }
 
             if (highestAnnotatedMz > double.MinValue && lowestAnnotatedMz < double.MaxValue)
