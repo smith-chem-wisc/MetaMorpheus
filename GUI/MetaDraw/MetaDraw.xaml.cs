@@ -360,7 +360,7 @@ namespace MetaMorpheusGUI
                 return;
             }
 
-            // draw the selected PSM
+            // draw the selected PSM 
             propertyView.Clear();
             PsmFromTsv row = (PsmFromTsv)dataGridScanNums.SelectedItem;
             System.Reflection.PropertyInfo[] temp = row.GetType().GetProperties();
