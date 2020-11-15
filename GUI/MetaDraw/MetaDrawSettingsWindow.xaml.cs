@@ -7,17 +7,16 @@ namespace MetaMorpheusGUI
     /// <summary>
     /// Interaction logic for MetaDrawSettingsWindow.xaml
     /// </summary>
-    public partial class MetaDrawGraphicalSettings : Window
+    public partial class MetaDrawSettingsWindow : Window
     {
-        public MetaDrawGraphicalSettings()
+        public MetaDrawSettingsWindow()
         {
             InitializeComponent();
-            base.Closing += this.OnClosing;
         }
 
         private void Cancel_Click(object sender, RoutedEventArgs e)
         {
-            this.Visibility = Visibility.Hidden;
+            DialogResult = false;
         }
 
         private void Save_Click(object sender, RoutedEventArgs e)
@@ -45,16 +44,7 @@ namespace MetaMorpheusGUI
                 }
             }
 
-            this.Visibility = Visibility.Hidden;
-        }
-
-        private void OnClosing(object sender, CancelEventArgs e)
-        {
-            if (this.Visibility == Visibility.Visible)
-            {
-                this.Visibility = Visibility.Hidden;
-                e.Cancel = true;
-            }
+            DialogResult = true;
         }
     }
 }

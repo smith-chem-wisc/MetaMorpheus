@@ -229,6 +229,8 @@ namespace MetaMorpheusGUI
         private void resetFilesButton_Click(object sender, RoutedEventArgs e)
         {
             MetaDrawLogic.CleanUpResources();
+            spectraFileNameLabel.Text = "None Selected";
+            psmFileNameLabel.Text = "None Selected";
         }
 
         private void OnClosing(object sender, CancelEventArgs e)
@@ -238,8 +240,13 @@ namespace MetaMorpheusGUI
 
         private void settings_Click(object sender, RoutedEventArgs e)
         {
-            //TODO: filter after accepting settings
-            //MetaDrawLogic.FilterPsms();
+            var settingsWindow = new MetaDrawSettingsWindow();
+            var result = settingsWindow.ShowDialog();
+
+            if (result == true)
+            {
+                MetaDrawLogic.FilterPsms();
+            }
         }
 
         private async void loadFilesButton_Click(object sender, RoutedEventArgs e)
@@ -302,7 +309,7 @@ namespace MetaMorpheusGUI
         }
 
         /// <summary>
-        /// Deactivates the popup if one clicks out of the main window
+        /// Deactivates the "loading data" popup if one clicks out of the main window
         /// </summary>
         private void prgsFeed_Deactivator(object sender, EventArgs e)
         {
@@ -310,11 +317,56 @@ namespace MetaMorpheusGUI
         }
 
         /// <summary>
-        /// Reactivates the popup if one clicks into the main window
+        /// Reactivates the "loading data" popup if one clicks into the main window
         /// </summary>
         private void prgsFeed_Reactivator(object sender, EventArgs e)
         {
             prgsFeed.IsOpen = true;
+        }
+
+        private void TextBox_TextChanged(object sender, TextChangedEventArgs e)
+        {
+            string txt = (sender as TextBox).Text;
+            MetaDrawLogic.FilterPsmsByString(txt);
+        }
+
+        private void PDFButton_Click(object sender, RoutedEventArgs e)
+        {
+            if (dataGridScanNums.SelectedCells.Count == 0)
+            {
+                MessageBox.Show("Please select at least one scan to export");
+                return;
+            }
+
+            List<PsmFromTsv> items = new List<PsmFromTsv>();
+
+            foreach (var cell in dataGridScanNums.SelectedItems)
+            {
+                var psm = (PsmFromTsv)cell;
+                items.Add(psm);
+            }
+
+            string directoryPath = Path.Combine(Path.GetDirectoryName(MetaDrawLogic.PsmResultFilePaths.First()), "MetaDrawExport",
+                    DateTime.Now.ToString("yyyy-MM-dd-HH-mm-ss", CultureInfo.InvariantCulture));
+
+            MetaDrawLogic.ExportToPdf(plotView, canvas, items, itemsControlSampleViewModel, directoryPath, out var errors);
+
+            if (errors.Any())
+            {
+                MessageBox.Show(errors.First());
+            }
+            else
+            {
+                MessageBox.Show("PDFs exported to: " + directoryPath);
+            }
+        }
+
+        private void SetUpPlots()
+        {
+            foreach (var plot in PlotModelStat.PlotNames)
+            {
+                plotTypes.Add(plot);
+            }
         }
 
         private void loadFilesButtonStat_Click(object sender, RoutedEventArgs e)
@@ -346,25 +398,6 @@ namespace MetaMorpheusGUI
             (sender as Button).IsEnabled = true;
             selectPsmFileButtonStat.IsEnabled = true;
             resetPsmFileButtonStat.IsEnabled = true;
-        }
-
-        private void TextBox_TextChanged(object sender, TextChangedEventArgs e)
-        {
-            string txt = (sender as TextBox).Text;
-            MetaDrawLogic.FilterPsmsByString(txt);
-        }
-
-        private void SetUpPlots()
-        {
-            foreach (var plot in PlotModelStat.PlotNames)
-            {
-                plotTypes.Add(plot);
-            }
-        }
-
-        private void dataGridProperties_SelectedCellsChanged(object sender, SelectedCellsChangedEventArgs e)
-        {
-            (sender as DataGrid).UnselectAll();
         }
 
         private void CreatePlotPdf_Click(object sender, RoutedEventArgs e)
@@ -410,37 +443,6 @@ namespace MetaMorpheusGUI
             MessageBox.Show("PDF Created at " + Path.Combine(fileDirectory, fileName) + "!");
         }
 
-        private void PDFButton_Click(object sender, RoutedEventArgs e)
-        {
-            if (dataGridScanNums.SelectedCells.Count == 0)
-            {
-                MessageBox.Show("Please select at least one scan to export");
-                return;
-            }
-
-            List<PsmFromTsv> items = new List<PsmFromTsv>();
-
-            foreach (var cell in dataGridScanNums.SelectedItems)
-            {
-                var psm = (PsmFromTsv)cell;
-                items.Add(psm);
-            }
-
-            string directoryPath = Path.Combine(Path.GetDirectoryName(MetaDrawLogic.PsmResultFilePaths.First()), "MetaDrawExport",
-                    DateTime.Now.ToString("yyyy-MM-dd-HH-mm-ss", CultureInfo.InvariantCulture));
-
-            MetaDrawLogic.ExportToPdf(plotView, canvas, items, itemsControlSampleViewModel, directoryPath, out var errors);
-
-            if (errors.Any())
-            {
-                MessageBox.Show(errors.First());
-            }
-            else
-            {
-                MessageBox.Show("PDFs exported to: " + directoryPath);
-            }
-        }
-
         private async void PlotSelected(object sender, SelectionChangedEventArgs e)
         {
             var listview = sender as ListView;
@@ -471,15 +473,6 @@ namespace MetaMorpheusGUI
             PlotModelStat plot = await Task.Run(() => new PlotModelStat(plotName, psms, psmsBSF));
             plotViewStat.DataContext = plot;
             PlotViewStat_SizeChanged(plotViewStat, null);
-        }
-
-        private void BtnChangeGridColumns_Click(object sender, RoutedEventArgs e)
-        {
-            //itemsControlSampleViewModel.MyColumnCount++;
-            //if (itemsControlSampleViewModel.MyColumnCount > itemsControlSampleViewModel.Data.Count / 3)
-            //{
-            //    itemsControlSampleViewModel.MyColumnCount = 1;
-            //}
         }
 
         private void selectSourceFileListBox_SelectionChanged(object sender, EventArgs e)
