@@ -430,6 +430,15 @@ namespace MetaMorpheusGUI
                     DateTime.Now.ToString("yyyy-MM-dd-HH-mm-ss", CultureInfo.InvariantCulture));
 
             MetaDrawLogic.ExportToPdf(plotView, canvas, items, itemsControlSampleViewModel, directoryPath, out var errors);
+
+            if (errors.Any())
+            {
+                MessageBox.Show(errors.First());
+            }
+            else
+            {
+                MessageBox.Show("PDFs exported to: " + directoryPath);
+            }
         }
 
         private async void PlotSelected(object sender, SelectionChangedEventArgs e)

@@ -37,6 +37,7 @@ namespace EngineLayer
             Scan = scan;
             SequenceDrawingCanvas = sequenceDrawingCanvas;
             SequenceDrawingCanvas.Height = 60;
+            sequenceDrawingCanvas.Width = 600;
             
             ClearCanvas(SequenceDrawingCanvas);
             DrawSpectrum();
@@ -85,7 +86,7 @@ namespace EngineLayer
 
             ImageData imgData = ImageDataFactory.Create(tempPngPath);
             iText.Layout.Element.Image img = new iText.Layout.Element.Image(imgData);
-            img.SetMarginLeft(-50);
+            img.SetMarginLeft((float)(-1.0 * SequenceDrawingCanvas.Margin.Left) + 10);
             img.SetMarginTop(-30);
             img.ScaleToFit((float)SequenceDrawingCanvas.Width, (float)SequenceDrawingCanvas.Height);
 
@@ -169,7 +170,7 @@ namespace EngineLayer
 
                 canvasWidth = x + 30;
             }
-            SequenceDrawingCanvas.Width = canvasWidth;
+            SequenceDrawingCanvas.Width = Math.Max(SequenceDrawingCanvas.Width, canvasWidth);
 
             // draw the fragment ion annotations on the base sequence
             foreach (var ion in matchedFragmentIons)

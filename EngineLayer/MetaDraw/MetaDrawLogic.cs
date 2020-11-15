@@ -194,7 +194,12 @@ namespace EngineLayer
 
             foreach (var psm in spectrumMatches)
             {
-                DisplaySpectrumMatch(plotView, canvas, psm, parentChildScanPlotsView, out errors);
+                DisplaySpectrumMatch(plotView, canvas, psm, parentChildScanPlotsView, out var displayErrors);
+
+                if (displayErrors != null)
+                {
+                    errors.AddRange(displayErrors);
+                }
 
                 string sequence = illegalInFileName.Replace(psm.FullSequence, string.Empty);
 
@@ -218,7 +223,7 @@ namespace EngineLayer
                 }
             }
 
-            DisplaySpectrumMatch(plotView, canvas, spectrumMatches.First(), parentChildScanPlotsView, out errors);
+            DisplaySpectrumMatch(plotView, canvas, spectrumMatches.First(), parentChildScanPlotsView, out var moreDisplayErrors);
         }
 
         public void FilterPsms()

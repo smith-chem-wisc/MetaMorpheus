@@ -155,7 +155,7 @@
 
                                                     <oxy:PlotView x:Name="ChildPlotView" Model="{Binding Plot.Model}" FontSize="16" FontStretch="Expanded" Grid.Row="1" MinHeight="300"/>
 
-                                                    <ContentPresenter x:Name="ChildCanvas" Content="{Binding TheCanvas}" Grid.Row="2" HorizontalAlignment="Stretch" VerticalAlignment="Stretch"/>
+                                                    <ContentPresenter x:Name="ChildCanvas" Content="{Binding TheCanvas}" Grid.Row="2" HorizontalAlignment="Left" VerticalAlignment="Stretch"/>
                                                 </Grid>
                                             </DataTemplate>
                                         </ItemsControl.ItemTemplate>
