@@ -1,4 +1,5 @@
 ﻿using EngineLayer;
+using MassSpectrometry;
 using NUnit.Framework;
 using OxyPlot.Series;
 using System;
@@ -115,9 +116,9 @@ namespace Test
         }
 
         [Test]
-        public static void LoadSearchTaskResults()
+        public static void MetaDraw_SearchTaskTest()
         {
-            string outputFolder = Path.Combine(TestContext.CurrentContext.TestDirectory, @"TestData\MetaDrawTest_LoadSearchTaskResults");
+            string outputFolder = Path.Combine(TestContext.CurrentContext.TestDirectory, @"MetaDraw_SearchTaskTest");
             string proteinDatabase = Path.Combine(TestContext.CurrentContext.TestDirectory, @"TestData\smalldb.fasta");
             string spectraFile = Path.Combine(TestContext.CurrentContext.TestDirectory, @"TestData\SmallCalibratible_Yeast.mzML");
 
@@ -216,7 +217,123 @@ namespace Test
         [Test]
         public static void LoadXlSearchTaskResults()
         {
+            string outputFolder = Path.Combine(TestContext.CurrentContext.TestDirectory, @"MetaDraw_XlSearchTaskTest");
+            string proteinDatabase = Path.Combine(TestContext.CurrentContext.TestDirectory, @"XlTestData\BSA.fasta");
+            string spectraFile = Path.Combine(TestContext.CurrentContext.TestDirectory, @"XlTestData\ms2mixed_bsa_xlink.mzML");
 
+            // run task
+            CommonParameters commonParameters = new CommonParameters(dissociationType: DissociationType.CID, ms2childScanDissociationType: DissociationType.ETD,
+                trimMsMsPeaks: false);
+
+            Directory.CreateDirectory(outputFolder);
+            var xlSearchTask = new XLSearchTask() { CommonParameters = commonParameters };
+            xlSearchTask.RunTask(outputFolder, new List<DbForTask> { new DbForTask(proteinDatabase, false) }, new List<string> { spectraFile }, "");
+
+            //TODO: test other files (XL_Interlinks.tsv, Deadends.tsv, Looplinks.tsv, SinglePeptides.tsv)
+            var csmFile = Path.Combine(outputFolder, @"XL_Intralinks.tsv");
+
+            // load results into metadraw
+            var metadrawLogic = new MetaDrawLogic();
+            metadrawLogic.SpectraFilePaths.Add(spectraFile);
+            metadrawLogic.PsmResultFilePaths.Add(csmFile);
+            var errors = metadrawLogic.LoadFiles(true, true);
+
+            Assert.That(!errors.Any());
+            Assert.That(metadrawLogic.FilteredListOfPsms.Any());
+
+            // test results filter
+            MetaDrawSettings.QValueFilter = 0.01;
+            MetaDrawSettings.ShowDecoys = false;
+            metadrawLogic.FilterPsms();
+            Assert.That(metadrawLogic.FilteredListOfPsms.All(p => p.DecoyContamTarget == "T"));
+            Assert.That(metadrawLogic.FilteredListOfPsms.All(p => p.QValue <= 0.01));
+
+            // test text search filter (filter by full sequence)
+            string filterString = @"SLGKVGTR";
+            metadrawLogic.FilterPsmsByString(filterString);
+
+            foreach (var filteredPsm in metadrawLogic.PeptideSpectralMatchesView)
+            {
+                var psmObj = (PsmFromTsv)filteredPsm;
+                Assert.That(psmObj.FullSequence.Contains(filterString));
+            }
+
+            // test text search filter (filter by MS2 scan number)
+            filterString = @"2";
+            metadrawLogic.FilterPsmsByString(filterString);
+
+            foreach (var filteredPsm in metadrawLogic.PeptideSpectralMatchesView)
+            {
+                var psmObj = (PsmFromTsv)filteredPsm;
+                Assert.That(psmObj.Ms2ScanNumber.ToString().Contains(filterString));
+            }
+
+            // draw PSM
+            var plotView = new OxyPlot.Wpf.PlotView();
+            var canvas = new Canvas();
+            var parentChildView = new ParentChildScanPlotsView();
+            var csm = metadrawLogic.FilteredListOfPsms.First();
+
+            metadrawLogic.DisplaySpectrumMatch(plotView, canvas, csm, parentChildView, out errors);
+            Assert.That(errors == null || !errors.Any());
+
+            // test that plot was drawn
+            var peak = (LineSeries)plotView.Model.Series[0]; // the first m/z peak
+            var peakPoints = peak.Points;
+            Assert.That(Math.Round(peakPoints[0].X, 2) == 142.12); // m/z
+            Assert.That(Math.Round(peakPoints[1].X, 2) == 142.12);
+            Assert.That((int)peakPoints[0].Y == 0); // intensity
+            Assert.That((int)peakPoints[1].Y == 1114);
+
+            var plotAxes = plotView.Model.Axes;
+            Assert.That(plotAxes.Count == 2);
+
+            // test that base sequence annotation was drawn
+            Assert.That(canvas.Children.Count > 0);
+
+            // test that the plots were drawn in the parent/child view
+            Assert.That(parentChildView.Plots.Count == 2);
+
+            // test parent scan
+            var parentPlot = parentChildView.Plots[0];
+            Assert.That(parentPlot.SpectrumLabel == "Scan: 2 Dissociation Type: CID MsOrder: 2 Selected Mz: 492.02 Retention Time: 23.9");
+            Assert.That(parentPlot.TheCanvas.Children.Count > 0);
+
+            peak = (LineSeries)parentPlot.Plot.Model.Series[0]; // the first m/z peak
+            peakPoints = peak.Points;
+            Assert.That(Math.Round(peakPoints[0].X, 2) == 142.12); // m/z
+            Assert.That(Math.Round(peakPoints[1].X, 2) == 142.12);
+            Assert.That((int)peakPoints[0].Y == 0); // intensity
+            Assert.That((int)peakPoints[1].Y == 1114);
+
+            // test child scan
+            var childPlot = parentChildView.Plots[1];
+            Assert.That(childPlot.SpectrumLabel == "Scan: 3 Dissociation Type: ETD MsOrder: 2 Selected Mz: 492.02 RetentionTime: 23.9");
+            Assert.That(childPlot.TheCanvas.Children.Count > 0);
+
+            peak = (LineSeries)childPlot.Plot.Model.Series[0]; // the first m/z peak
+            peakPoints = peak.Points;
+            Assert.That(Math.Round(peakPoints[0].X, 2) == 122.92); // m/z
+            Assert.That(Math.Round(peakPoints[1].X, 2) == 122.92);
+            Assert.That((int)peakPoints[0].Y == 0); // intensity
+            Assert.That((int)peakPoints[1].Y == 857);
+
+            // write pdf
+            var psmsToExport = metadrawLogic.FilteredListOfPsms.Where(p => p.FullSequence == "SLGKVGTR(4)").ToList();
+            metadrawLogic.ExportToPdf(plotView, canvas, psmsToExport, parentChildView, outputFolder, out errors);
+
+            // test that pdf exists
+            Assert.That(File.Exists(Path.Combine(outputFolder, @"2_SLGKVGTR(4).pdf"))); // parent scan
+            Assert.That(File.Exists(Path.Combine(outputFolder, @"3_SLGKVGTR(4).pdf"))); // child scan
+
+            // clean up resources
+            metadrawLogic.CleanUpResources();
+            Assert.That(!metadrawLogic.FilteredListOfPsms.Any());
+            Assert.That(!metadrawLogic.PsmResultFilePaths.Any());
+            Assert.That(!metadrawLogic.SpectraFilePaths.Any());
+
+            // delete output
+            Directory.Delete(outputFolder, true);
         }
 
         [Test]

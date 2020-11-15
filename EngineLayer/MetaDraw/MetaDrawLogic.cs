@@ -139,7 +139,9 @@ namespace EngineLayer
 
                 if (psm.BetaPeptideChildScanMatchedIons != null)
                 {
-                    allChildScanMatchedIons = allChildScanMatchedIons.Concat(psm.BetaPeptideChildScanMatchedIons).ToDictionary(p => p.Key, q => q.Value);
+                    allChildScanMatchedIons = allChildScanMatchedIons.Concat(psm.BetaPeptideChildScanMatchedIons)
+                        .GroupBy(p => p.Key)
+                        .ToDictionary(p => p.Key, q => q.SelectMany(p => p.Value).ToList());
                 }
 
                 foreach (var childScanMatchedIons in allChildScanMatchedIons)
