@@ -157,21 +157,27 @@ namespace Test
             string filterString = @"QIVHDSGR";
             metadrawLogic.FilterPsmsByString(filterString);
 
+            int c = 0;
             foreach (var filteredPsm in metadrawLogic.PeptideSpectralMatchesView)
             {
                 var psmObj = (PsmFromTsv)filteredPsm;
                 Assert.That(psmObj.FullSequence.Contains(filterString));
+                c++;
             }
+            Assert.That(c > 0);
 
             // test text search filter (filter by MS2 scan number)
             filterString = @"120";
             metadrawLogic.FilterPsmsByString(filterString);
 
+            c = 0;
             foreach (var filteredPsm in metadrawLogic.PeptideSpectralMatchesView)
             {
                 var psmObj = (PsmFromTsv)filteredPsm;
                 Assert.That(psmObj.Ms2ScanNumber.ToString().Contains(filterString));
+                c++;
             }
+            Assert.That(c > 0);
 
             // draw PSM
             var plotView = new OxyPlot.Wpf.PlotView();
@@ -263,21 +269,27 @@ namespace Test
             string filterString = @"SLGKVGTR";
             metadrawLogic.FilterPsmsByString(filterString);
 
+            int c = 0;
             foreach (var filteredPsm in metadrawLogic.PeptideSpectralMatchesView)
             {
                 var psmObj = (PsmFromTsv)filteredPsm;
                 Assert.That(psmObj.FullSequence.Contains(filterString));
+                c++;
             }
+            Assert.That(c > 0);
 
             // test text search filter (filter by MS2 scan number)
             filterString = @"2";
             metadrawLogic.FilterPsmsByString(filterString);
 
+            c = 0;
             foreach (var filteredPsm in metadrawLogic.PeptideSpectralMatchesView)
             {
                 var psmObj = (PsmFromTsv)filteredPsm;
                 Assert.That(psmObj.Ms2ScanNumber.ToString().Contains(filterString));
+                c++;
             }
+            Assert.That(c > 0);
 
             // draw PSM
             var plotView = new OxyPlot.Wpf.PlotView();
@@ -388,24 +400,30 @@ namespace Test
             Assert.That(metadrawLogic.FilteredListOfPsms.All(p => p.QValue <= 0.01));
 
             // test text search filter (filter by full sequence)
-            string filterString = @"STTAVQTPTSGEPLVSTSEPLSSK";
+            string filterString = @"STTAVQ";
             metadrawLogic.FilterPsmsByString(filterString);
 
+            int c = 0;
             foreach (var filteredPsm in metadrawLogic.PeptideSpectralMatchesView)
             {
                 var psmObj = (PsmFromTsv)filteredPsm;
                 Assert.That(psmObj.FullSequence.Contains(filterString));
+                c++;
             }
+            Assert.That(c > 0);
 
             // test text search filter (filter by MS2 scan number)
             filterString = @"2";
             metadrawLogic.FilterPsmsByString(filterString);
 
+            c = 0;
             foreach (var filteredPsm in metadrawLogic.PeptideSpectralMatchesView)
             {
                 var psmObj = (PsmFromTsv)filteredPsm;
                 Assert.That(psmObj.Ms2ScanNumber.ToString().Contains(filterString));
+                c++;
             }
+            Assert.That(c > 0);
 
             // draw PSM
             var plotView = new OxyPlot.Wpf.PlotView();
@@ -437,7 +455,7 @@ namespace Test
             var parentPlot = parentChildView.Plots[0];
             Assert.That(parentPlot.SpectrumLabel == "Scan: 27 Dissociation Type: HCD MsOrder: 2 Selected Mz: 924.12 Retention Time: 32.65");
             int numAnnotatedResidues = psm.BaseSeq.Length;
-            int numAnnotatedIons = psm.MatchedIons.Count(p => p.NeutralTheoreticalProduct.ProductType != ProductType.M 
+            int numAnnotatedIons = psm.MatchedIons.Count(p => p.NeutralTheoreticalProduct.ProductType != ProductType.M
                 && p.NeutralTheoreticalProduct.ProductType != ProductType.D);
             int numAnnotatedMods = psm.FullSequence.Count(p => p == '[');
             Assert.That(parentPlot.TheCanvas.Children.Count == numAnnotatedResidues + numAnnotatedIons + numAnnotatedMods);
@@ -483,6 +501,48 @@ namespace Test
 
             // delete output
             Directory.Delete(outputFolder, true);
+        }
+
+        [Test]
+        public static void TestMetaDrawErrors()
+        {
+            string outputFolder = Path.Combine(TestContext.CurrentContext.TestDirectory, @"TestMetaDrawErrors");
+            string proteinDatabase = Path.Combine(TestContext.CurrentContext.TestDirectory, @"TestData\smalldb.fasta");
+            string spectraFile = Path.Combine(TestContext.CurrentContext.TestDirectory, @"TestData\SmallCalibratible_Yeast.mzML");
+
+            Directory.CreateDirectory(outputFolder);
+
+            // run search task
+            var searchtask = new SearchTask();
+            searchtask.RunTask(outputFolder, new List<DbForTask> { new DbForTask(proteinDatabase, false) }, new List<string> { spectraFile }, "");
+
+            var psmFile = Path.Combine(outputFolder, @"AllPSMs.psmtsv");
+
+            // load results into metadraw (skipping spectra file, to produce an error msg)
+            var metadrawLogic = new MetaDrawLogic();
+            metadrawLogic.PsmResultFilePaths.Add(psmFile);
+
+            // this should produce an error because an expected spectra file is not present
+            var errors = metadrawLogic.LoadFiles(loadSpectra: true, loadPsms: true);
+            Assert.That(errors.Any());
+            Assert.That(!metadrawLogic.FilteredListOfPsms.Any());
+
+            // this should not produce an error because we said not to load spectra
+            errors = metadrawLogic.LoadFiles(loadSpectra: false, loadPsms: true);
+            Assert.That(!errors.Any());
+
+            var psmsFromTsv = PsmTsvReader.ReadTsv(psmFile, out var warnings);
+            var plotView = new OxyPlot.Wpf.PlotView();
+            var canvas = new Canvas();
+            var parentChildScanPlotsView = new ParentChildScanPlotsView();
+
+            // plotting PSM should produce an error because spectra are not loaded
+            metadrawLogic.DisplaySpectrumMatch(plotView, canvas, psmsFromTsv.First(), parentChildScanPlotsView, out errors);
+            Assert.That(errors.Any());
+
+            // export to PDF should produce an error because spectra are not loaded
+            metadrawLogic.ExportToPdf(plotView, canvas, new List<PsmFromTsv> { psmsFromTsv.First() }, parentChildScanPlotsView, outputFolder, out errors);
+            Assert.That(errors.Any());
         }
     }
 }
