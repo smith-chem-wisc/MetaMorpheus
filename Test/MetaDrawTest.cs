@@ -195,7 +195,10 @@ namespace Test
             Assert.That(plotAxes.Count == 2);
 
             // test that base sequence annotation was drawn
-            Assert.That(canvas.Children.Count == psm.BaseSeq.Length + psm.MatchedIons.Count + psm.FullSequence.Count(p => p == '['));
+            int numAnnotatedResidues = psm.BaseSeq.Length;
+            int numAnnotatedIons = psm.MatchedIons.Count;
+            int numAnnotatedMods = psm.FullSequence.Count(p => p == '[');
+            Assert.That(canvas.Children.Count == numAnnotatedResidues + numAnnotatedIons + numAnnotatedMods);
 
             // write pdf
             var psmsToExport = metadrawLogic.FilteredListOfPsms.Where(p => p.FullSequence == "QIVHDSGR").Take(3).ToList();
@@ -305,8 +308,10 @@ namespace Test
             // test parent scan
             var parentPlot = parentChildView.Plots[0];
             Assert.That(parentPlot.SpectrumLabel == "Scan: 2 Dissociation Type: CID MsOrder: 2 Selected Mz: 492.02 Retention Time: 23.9");
-            Assert.That(parentPlot.TheCanvas.Children.Count == 
-                csm.BaseSeq.Length + csm.MatchedIons.Count(p => p.NeutralTheoreticalProduct.ProductType != ProductType.M) + csm.FullSequence.Count(p => p == '['));
+            int numAnnotatedResidues = csm.BaseSeq.Length;
+            int numAnnotatedIons = csm.MatchedIons.Count(p => p.NeutralTheoreticalProduct.ProductType != ProductType.M);
+            int numAnnotatedMods = csm.FullSequence.Count(p => p == '[');
+            Assert.That(parentPlot.TheCanvas.Children.Count == numAnnotatedResidues + numAnnotatedIons + numAnnotatedMods);
 
             peak = (LineSeries)parentPlot.Plot.Model.Series[0]; // the first m/z peak
             peakPoints = peak.Points;
@@ -319,10 +324,11 @@ namespace Test
             var childPlot = parentChildView.Plots[1];
             Assert.That(childPlot.SpectrumLabel == "Scan: 3 Dissociation Type: ETD MsOrder: 2 Selected Mz: 492.02 RetentionTime: 23.9");
             Assert.That(childPlot.TheCanvas.Children.Count > 0);
-            Assert.That(childPlot.TheCanvas.Children.Count == 
-                csm.BaseSeq.Length + csm.ChildScanMatchedIons[3].Concat(csm.BetaPeptideChildScanMatchedIons[3])
-                .Count(p => p.NeutralTheoreticalProduct.ProductType != ProductType.M) 
-                + csm.FullSequence.Count(p => p == '['));
+            numAnnotatedResidues = csm.BaseSeq.Length;
+            numAnnotatedIons = csm.ChildScanMatchedIons[3].Concat(csm.BetaPeptideChildScanMatchedIons[3])
+                .Count(p => p.NeutralTheoreticalProduct.ProductType != ProductType.M);
+            numAnnotatedMods = csm.FullSequence.Count(p => p == '[');
+            Assert.That(childPlot.TheCanvas.Children.Count == numAnnotatedResidues + numAnnotatedIons + numAnnotatedMods);
 
             peak = (LineSeries)childPlot.Plot.Model.Series[0]; // the first m/z peak
             peakPoints = peak.Points;
@@ -352,7 +358,131 @@ namespace Test
         [Test]
         public static void MetaDraw_GlycoSearchTaskWithChildScansTest()
         {
+            string outputFolder = Path.Combine(TestContext.CurrentContext.TestDirectory, @"MetaDraw_GlycoSearchTaskTest");
+            string proteinDatabase = Path.Combine(TestContext.CurrentContext.TestDirectory, @"GlycoTestData\leukosialin.fasta");
+            string spectraFile = Path.Combine(TestContext.CurrentContext.TestDirectory, @"GlycoTestData\sliced_glyco_hcd_ethcd.raw");
 
+            // run task
+            CommonParameters commonParameters = new CommonParameters(dissociationType: DissociationType.HCD, ms2childScanDissociationType: DissociationType.EThcD);
+
+            Directory.CreateDirectory(outputFolder);
+            var glycoSearchTask = new GlycoSearchTask() { CommonParameters = commonParameters };
+            glycoSearchTask.RunTask(outputFolder, new List<DbForTask> { new DbForTask(proteinDatabase, false) }, new List<string> { spectraFile }, "");
+
+            var psmFile = Path.Combine(outputFolder, @"oglyco.psmtsv");
+
+            // load results into metadraw
+            var metadrawLogic = new MetaDrawLogic();
+            metadrawLogic.SpectraFilePaths.Add(spectraFile);
+            metadrawLogic.PsmResultFilePaths.Add(psmFile);
+            var errors = metadrawLogic.LoadFiles(true, true);
+
+            Assert.That(!errors.Any());
+            Assert.That(metadrawLogic.FilteredListOfPsms.Any());
+
+            // test results filter
+            MetaDrawSettings.QValueFilter = 0.01;
+            MetaDrawSettings.ShowDecoys = false;
+            metadrawLogic.FilterPsms();
+            Assert.That(metadrawLogic.FilteredListOfPsms.All(p => p.DecoyContamTarget == "T"));
+            Assert.That(metadrawLogic.FilteredListOfPsms.All(p => p.QValue <= 0.01));
+
+            // test text search filter (filter by full sequence)
+            string filterString = @"STTAVQTPTSGEPLVSTSEPLSSK";
+            metadrawLogic.FilterPsmsByString(filterString);
+
+            foreach (var filteredPsm in metadrawLogic.PeptideSpectralMatchesView)
+            {
+                var psmObj = (PsmFromTsv)filteredPsm;
+                Assert.That(psmObj.FullSequence.Contains(filterString));
+            }
+
+            // test text search filter (filter by MS2 scan number)
+            filterString = @"2";
+            metadrawLogic.FilterPsmsByString(filterString);
+
+            foreach (var filteredPsm in metadrawLogic.PeptideSpectralMatchesView)
+            {
+                var psmObj = (PsmFromTsv)filteredPsm;
+                Assert.That(psmObj.Ms2ScanNumber.ToString().Contains(filterString));
+            }
+
+            // draw PSM
+            var plotView = new OxyPlot.Wpf.PlotView();
+            var canvas = new Canvas();
+            var parentChildView = new ParentChildScanPlotsView();
+            var psm = metadrawLogic.FilteredListOfPsms.First();
+
+            metadrawLogic.DisplaySpectrumMatch(plotView, canvas, psm, parentChildView, out errors);
+            Assert.That(errors == null || !errors.Any());
+
+            // test that plot was drawn
+            var peak = (LineSeries)plotView.Model.Series[0]; // the first m/z peak
+            var peakPoints = peak.Points;
+            Assert.That(Math.Round(peakPoints[0].X, 2) == 101.07); // m/z
+            Assert.That(Math.Round(peakPoints[1].X, 2) == 101.07);
+            Assert.That((int)peakPoints[0].Y == 0); // intensity
+            Assert.That((int)peakPoints[1].Y == 3847);
+
+            var plotAxes = plotView.Model.Axes;
+            Assert.That(plotAxes.Count == 2);
+
+            // test that base sequence annotation was drawn
+            Assert.That(canvas.Children.Count > 0);
+
+            // test that the plots were drawn in the parent/child view
+            Assert.That(parentChildView.Plots.Count == 2);
+
+            // test parent scan
+            var parentPlot = parentChildView.Plots[0];
+            Assert.That(parentPlot.SpectrumLabel == "Scan: 27 Dissociation Type: HCD MsOrder: 2 Selected Mz: 924.12 Retention Time: 32.65");
+            int numAnnotatedResidues = psm.BaseSeq.Length;
+            int numAnnotatedIons = psm.MatchedIons.Count(p => p.NeutralTheoreticalProduct.ProductType != ProductType.M 
+                && p.NeutralTheoreticalProduct.ProductType != ProductType.D);
+            int numAnnotatedMods = psm.FullSequence.Count(p => p == '[');
+            Assert.That(parentPlot.TheCanvas.Children.Count == numAnnotatedResidues + numAnnotatedIons + numAnnotatedMods);
+
+            peak = (LineSeries)parentPlot.Plot.Model.Series[0]; // the first m/z peak
+            peakPoints = peak.Points;
+            Assert.That(Math.Round(peakPoints[0].X, 2) == 101.07); // m/z
+            Assert.That(Math.Round(peakPoints[1].X, 2) == 101.07);
+            Assert.That((int)peakPoints[0].Y == 0); // intensity
+            Assert.That((int)peakPoints[1].Y == 3847);
+
+            // test child scan
+            var childPlot = parentChildView.Plots[1];
+            Assert.That(childPlot.SpectrumLabel == "Scan: 30 Dissociation Type: ETD MsOrder: 2 Selected Mz: 924.12 RetentionTime: 32.66");
+            Assert.That(childPlot.TheCanvas.Children.Count > 0);
+            numAnnotatedResidues = psm.BaseSeq.Length;
+            numAnnotatedIons = psm.ChildScanMatchedIons[30]
+                .Count(p => p.NeutralTheoreticalProduct.ProductType != ProductType.M
+                && p.NeutralTheoreticalProduct.ProductType != ProductType.D);
+            numAnnotatedMods = psm.FullSequence.Count(p => p == '[');
+            Assert.That(childPlot.TheCanvas.Children.Count == numAnnotatedResidues + numAnnotatedIons + numAnnotatedMods);
+
+            peak = (LineSeries)childPlot.Plot.Model.Series[0]; // the first m/z peak
+            peakPoints = peak.Points;
+            Assert.That(Math.Round(peakPoints[0].X, 2) == 126.06); // m/z
+            Assert.That(Math.Round(peakPoints[1].X, 2) == 126.06);
+            Assert.That((int)peakPoints[0].Y == 0); // intensity
+            Assert.That((int)peakPoints[1].Y == 8496);
+
+            // write pdf
+            var psmsToExport = metadrawLogic.FilteredListOfPsms.Where(p => p.FullSequence == "STTAVQTPTSGEPLVST[O-Glycosylation:H1N1 on X]SEPLSSK").ToList();
+            metadrawLogic.ExportToPdf(plotView, canvas, psmsToExport, parentChildView, outputFolder, out errors);
+
+            // test that pdf exists
+            Assert.That(File.Exists(Path.Combine(outputFolder, @"27_STTAVQTPTSGEPLVST[O-Glycosylat.pdf"))); // parent scan
+            Assert.That(File.Exists(Path.Combine(outputFolder, @"30_STTAVQTPTSGEPLVST[O-Glycosylat.pdf"))); // child scan
+
+            // clean up resources
+            metadrawLogic.CleanUpResources();
+            Assert.That(!metadrawLogic.FilteredListOfPsms.Any());
+            Assert.That(!metadrawLogic.PsmResultFilePaths.Any());
+            Assert.That(!metadrawLogic.SpectraFilePaths.Any());
+
+            // delete output
+            Directory.Delete(outputFolder, true);
         }
     }
 }

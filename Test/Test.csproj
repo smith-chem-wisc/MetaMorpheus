@@ -76,6 +76,9 @@
     <None Update="GlycoTestData\id_08-24-19_AC-P_patient146_0p12mg_0p9uL-calib_20086.mgf">
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
     </None>
+    <None Update="GlycoTestData\leukosialin.fasta">
+      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+    </None>
     <None Update="GlycoTestData\P02649.fasta">
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
     </None>
@@ -84,6 +87,9 @@
     </None>
     <None Update="GlycoTestData\Q9C0Y4.fasta">
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </None>
+    <None Update="GlycoTestData\sliced_glyco_hcd_ethcd.raw">
+      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
     </None>
     <None Update="GlycoTestData\yeast_glycan_25170.mgf">
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
