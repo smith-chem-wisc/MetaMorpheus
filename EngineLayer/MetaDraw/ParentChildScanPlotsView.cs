@@ -6,21 +6,10 @@ using EngineLayer;
 
 namespace EngineLayer
 {
-    public class ParentChildScanPlotsView : INotifyPropertyChanged
+    public class ParentChildScanPlotsView
     {
         public ObservableCollection<ParentChildScanPlotTemplate> Plots { get; set; }
-        private int _myColumnCount = 1;
-        public event PropertyChangedEventHandler PropertyChanged = (s, e) => { };
-        public int MyColumnCount
-        {
-            get { return _myColumnCount; }
-            set
-            {
-                _myColumnCount = value;
-                this.PropertyChanged(this, new PropertyChangedEventArgs(nameof(MyColumnCount)));
-            }
-        }
-
+        
         public ParentChildScanPlotsView()
         {
             Plots = new ObservableCollection<ParentChildScanPlotTemplate>();
