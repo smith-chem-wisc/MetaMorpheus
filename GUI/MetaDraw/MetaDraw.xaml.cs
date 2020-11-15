@@ -243,9 +243,22 @@ namespace MetaMorpheusGUI
             var settingsWindow = new MetaDrawSettingsWindow();
             var result = settingsWindow.ShowDialog();
 
+            // save current selected PSM
+            var selectedItem = dataGridScanNums.SelectedItem;
+
             if (result == true)
             {
+                // refresh chart
+                dataGridScanNums_SelectedCellsChanged(null, null);
+
+                // filter based on new settings
                 MetaDrawLogic.FilterPsms();
+            }
+
+            // re-select selected PSM
+            if (selectedItem != null)
+            {
+                dataGridScanNums.SelectedItem = selectedItem;
             }
         }
 

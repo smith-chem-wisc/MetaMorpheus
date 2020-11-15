@@ -13,21 +13,20 @@ namespace EngineLayer
     public static class MetaDrawSettings
     {
         // graphics settings
-        public static Dictionary<ProductType, double> productTypeToYOffset { get; set; }
-        public static Dictionary<ProductType, OxyColor> productTypeToColor { get; set; }
-        public static Dictionary<ProductType, OxyColor> betaProductTypeToColor { get; set; }
-        public static OxyColor variantCrossColor { get; set; } = OxyColors.Green;
+        public static Dictionary<ProductType, double> ProductTypeToYOffset { get; set; }
+        public static Dictionary<ProductType, OxyColor> ProductTypeToColor { get; set; }
+        public static Dictionary<ProductType, OxyColor> BetaProductTypeToColor { get; set; }
+        public static OxyColor VariantCrossColor { get; set; } = OxyColors.Green;
         public static OxyColor UnannotatedPeakColor { get; set; } = OxyColors.LightGray;
         public static SolidColorBrush ModificationAnnotationColor { get; set; } = Brushes.Orange;
-        public static double CanvasPdfExportDpi = 300;
-        public static bool ShowMzValues { get; set; } = false;
-        public static bool ShowAnnotationCharges { get; set; } = false;
+        public static double CanvasPdfExportDpi { get; set; } = 300;
+        public static bool AnnotateMzValues { get; set; } = false;
+        public static bool AnnotateCharges { get; set; } = false;
         public static int AnnotatedFontSize { get; set; } = 12;
-        public static bool BoldText { get; set; } = false;
-
-        public static double StrokeThicknessUnannotated = 0.7;
-        public static double StrokeThicknessAnnotated = 1.0;
-        public static double AnnotatedSequenceTextSpacing = 22;
+        public static bool AnnotationBold { get; set; } = false;
+        public static double StrokeThicknessUnannotated { get; set; } = 0.7;
+        public static double StrokeThicknessAnnotated { get; set; } = 1.0;
+        public static double AnnotatedSequenceTextSpacing { get; set; } = 22;
 
         // filter settings
         public static bool ShowDecoys { get; set; } = false;
@@ -57,29 +56,29 @@ namespace EngineLayer
         private static void InitializeDictionaries()
         {
             // colors of each fragment to annotate
-            productTypeToColor = ((ProductType[])Enum.GetValues(typeof(ProductType))).ToDictionary(p => p, p => OxyColors.Aqua);
-            productTypeToColor[ProductType.b] = OxyColors.Blue;
-            productTypeToColor[ProductType.y] = OxyColors.Purple;
-            productTypeToColor[ProductType.zDot] = OxyColors.Orange;
-            productTypeToColor[ProductType.c] = OxyColors.Gold;
-            productTypeToColor[ProductType.D] = OxyColors.DodgerBlue;
-            productTypeToColor[ProductType.M] = OxyColors.Firebrick;
+            ProductTypeToColor = ((ProductType[])Enum.GetValues(typeof(ProductType))).ToDictionary(p => p, p => OxyColors.Aqua);
+            ProductTypeToColor[ProductType.b] = OxyColors.Blue;
+            ProductTypeToColor[ProductType.y] = OxyColors.Purple;
+            ProductTypeToColor[ProductType.zDot] = OxyColors.Orange;
+            ProductTypeToColor[ProductType.c] = OxyColors.Gold;
+            ProductTypeToColor[ProductType.D] = OxyColors.DodgerBlue;
+            ProductTypeToColor[ProductType.M] = OxyColors.Firebrick;
 
             // colors of each fragment to annotate
-            betaProductTypeToColor = ((ProductType[])Enum.GetValues(typeof(ProductType))).ToDictionary(p => p, p => OxyColors.Aqua);
-            betaProductTypeToColor[ProductType.b] = OxyColors.LightBlue;
-            betaProductTypeToColor[ProductType.y] = OxyColors.MediumPurple;
-            betaProductTypeToColor[ProductType.zDot] = OxyColors.LightGoldenrodYellow;
-            betaProductTypeToColor[ProductType.c] = OxyColors.OrangeRed;
-            betaProductTypeToColor[ProductType.D] = OxyColors.AliceBlue;
-            betaProductTypeToColor[ProductType.M] = OxyColors.LightCoral;
+            BetaProductTypeToColor = ((ProductType[])Enum.GetValues(typeof(ProductType))).ToDictionary(p => p, p => OxyColors.Aqua);
+            BetaProductTypeToColor[ProductType.b] = OxyColors.LightBlue;
+            BetaProductTypeToColor[ProductType.y] = OxyColors.MediumPurple;
+            BetaProductTypeToColor[ProductType.zDot] = OxyColors.LightGoldenrodYellow;
+            BetaProductTypeToColor[ProductType.c] = OxyColors.OrangeRed;
+            BetaProductTypeToColor[ProductType.D] = OxyColors.AliceBlue;
+            BetaProductTypeToColor[ProductType.M] = OxyColors.LightCoral;
 
             // offset for annotation on base sequence
-            productTypeToYOffset = ((ProductType[])Enum.GetValues(typeof(ProductType))).ToDictionary(p => p, p => 0.0);
-            productTypeToYOffset[ProductType.b] = 40;
-            productTypeToYOffset[ProductType.y] = -10;
-            productTypeToYOffset[ProductType.c] = 43.6;
-            productTypeToYOffset[ProductType.zDot] = -13.6;
+            ProductTypeToYOffset = ((ProductType[])Enum.GetValues(typeof(ProductType))).ToDictionary(p => p, p => 0.0);
+            ProductTypeToYOffset[ProductType.b] = 40;
+            ProductTypeToYOffset[ProductType.y] = -10;
+            ProductTypeToYOffset[ProductType.c] = 43.6;
+            ProductTypeToYOffset[ProductType.zDot] = -13.6;
         }
     }
 }

@@ -178,7 +178,7 @@ namespace EngineLayer
                 int residue = ion.NeutralTheoreticalProduct.AminoAcidPosition;
                 string annotation = ion.NeutralTheoreticalProduct.ProductType + "" + ion.NeutralTheoreticalProduct.FragmentNumber;
                 OxyColor oxycolor = SpectrumMatch.VariantCrossingIons.Contains(ion) ?
-                    MetaDrawSettings.variantCrossColor : MetaDrawSettings.productTypeToColor[ion.NeutralTheoreticalProduct.ProductType];
+                    MetaDrawSettings.VariantCrossColor : MetaDrawSettings.ProductTypeToColor[ion.NeutralTheoreticalProduct.ProductType];
                 Color color = Color.FromArgb(oxycolor.A, oxycolor.R, oxycolor.G, oxycolor.B);
 
                 if (ion.NeutralTheoreticalProduct.NeutralLoss != 0)
@@ -187,7 +187,7 @@ namespace EngineLayer
                 }
 
                 double x = residue * MetaDrawSettings.AnnotatedSequenceTextSpacing + 11;
-                double y = yLoc + MetaDrawSettings.productTypeToYOffset[ion.NeutralTheoreticalProduct.ProductType];
+                double y = yLoc + MetaDrawSettings.ProductTypeToYOffset[ion.NeutralTheoreticalProduct.ProductType];
 
                 if (ion.NeutralTheoreticalProduct.Terminus == FragmentationTerminus.C)
                 {
@@ -244,17 +244,17 @@ namespace EngineLayer
 
             if (SpectrumMatch.VariantCrossingIons.Contains(matchedIon))
             {
-                ionColor = MetaDrawSettings.variantCrossColor;
+                ionColor = MetaDrawSettings.VariantCrossColor;
             }
             else
             {
                 if (isBetaPeptide)
                 {
-                    ionColor = MetaDrawSettings.betaProductTypeToColor[matchedIon.NeutralTheoreticalProduct.ProductType];
+                    ionColor = MetaDrawSettings.BetaProductTypeToColor[matchedIon.NeutralTheoreticalProduct.ProductType];
                 }
                 else
                 {
-                    ionColor = MetaDrawSettings.productTypeToColor[matchedIon.NeutralTheoreticalProduct.ProductType];
+                    ionColor = MetaDrawSettings.ProductTypeToColor[matchedIon.NeutralTheoreticalProduct.ProductType];
                 }
             }
 
@@ -291,12 +291,12 @@ namespace EngineLayer
                 peakAnnotationText += "-" + matchedIon.NeutralTheoreticalProduct.NeutralLoss.ToString("F2");
             }
 
-            if (MetaDrawSettings.ShowAnnotationCharges)
+            if (MetaDrawSettings.AnnotateCharges)
             {
                 peakAnnotationText += "+" + matchedIon.Charge;
             }
 
-            if (MetaDrawSettings.ShowMzValues)
+            if (MetaDrawSettings.AnnotateMzValues)
             {
                 peakAnnotationText += " (" + matchedIon.Mz.ToString("F3") + ")";
             }
@@ -304,7 +304,7 @@ namespace EngineLayer
             var peakAnnotation = new TextAnnotation();
             peakAnnotation.Font = "Arial";
             peakAnnotation.FontSize = MetaDrawSettings.AnnotatedFontSize;
-            peakAnnotation.FontWeight = MetaDrawSettings.BoldText ? OxyPlot.FontWeights.Bold : 2.0;
+            peakAnnotation.FontWeight = MetaDrawSettings.AnnotationBold ? OxyPlot.FontWeights.Bold : 2.0;
             peakAnnotation.TextColor = ionColor;
             peakAnnotation.StrokeThickness = 0;
             peakAnnotation.Text = peakAnnotationText;
