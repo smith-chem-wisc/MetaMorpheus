@@ -571,7 +571,7 @@ namespace Test
 
             var psmFile = Path.Combine(outputFolder, @"AllPSMs.psmtsv");
 
-            // load results into metadraw (skipping spectra file, to produce an error msg)
+            // load results into metadraw
             var metadrawLogic = new MetaDrawLogic();
             metadrawLogic.PsmResultFilePaths.Add(psmFile);
             metadrawLogic.SpectraFilePaths.Add(pathWithPeriodInIt);
