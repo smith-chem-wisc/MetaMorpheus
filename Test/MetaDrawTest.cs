@@ -215,7 +215,7 @@ namespace Test
         }
 
         [Test]
-        public static void LoadXlSearchTaskResults()
+        public static void MetaDraw_XlSearchTaskResultsWithChildScansTest()
         {
             string outputFolder = Path.Combine(TestContext.CurrentContext.TestDirectory, @"MetaDraw_XlSearchTaskTest");
             string proteinDatabase = Path.Combine(TestContext.CurrentContext.TestDirectory, @"XlTestData\BSA.fasta");
@@ -334,12 +334,6 @@ namespace Test
 
             // delete output
             Directory.Delete(outputFolder, true);
-        }
-
-        [Test]
-        public static void LoadXlSearchTaskResultsWithChildScans()
-        {
-
         }
 
         [Test]
