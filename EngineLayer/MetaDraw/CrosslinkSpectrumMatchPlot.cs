@@ -15,7 +15,6 @@ namespace EngineLayer
         public CrosslinkSpectrumMatchPlot(OxyPlot.Wpf.PlotView plotView, Canvas sequenceDrawingCanvas, PsmFromTsv csm, MsDataScan scan) 
             : base(plotView, sequenceDrawingCanvas, csm, scan, csm.MatchedIons)
         {
-            //Model.Title = " \n \n \n \n \n "; // whitespace above the chart to draw the annotated base seq
             SequenceDrawingCanvas.Height = 150;
 
             // annotate beta peptide base sequence
