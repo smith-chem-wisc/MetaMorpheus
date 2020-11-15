@@ -1,6 +1,6 @@
 ﻿using Chemistry;
-//using iText.IO.Image;
-//using iText.Kernel.Pdf;
+using iText.IO.Image;
+using iText.Kernel.Pdf;
 using MassSpectrometry;
 using mzPlot;
 using OxyPlot;
@@ -59,11 +59,15 @@ namespace EngineLayer
             string tempPngPath = System.IO.Path.Combine(System.IO.Path.GetDirectoryName(path), "annotation.png");
             base.ExportToPdf(tempPdfPath, width, height);
 
-            // save base seq as PNG
-            SequenceDrawingCanvas.Measure(new Size((int)SequenceDrawingCanvas.Width, SequenceDrawingCanvas.Height));
-            SequenceDrawingCanvas.Arrange(new Rect(new Size((int)SequenceDrawingCanvas.Width, SequenceDrawingCanvas.Height)));
+            // scales for desired DPI
+            double dpiScale = MetaDrawSettings.CanvasPdfExportDpi / 96.0;
 
-            RenderTargetBitmap renderBitmap = new RenderTargetBitmap((int)SequenceDrawingCanvas.Width, (int)SequenceDrawingCanvas.Height, 96, 96, PixelFormats.Pbgra32);
+            // save base seq as PNG
+            SequenceDrawingCanvas.Measure(new Size((int)SequenceDrawingCanvas.Width, (int)SequenceDrawingCanvas.Height));
+            SequenceDrawingCanvas.Arrange(new Rect(new Size((int)SequenceDrawingCanvas.Width, (int)SequenceDrawingCanvas.Height)));
+
+            RenderTargetBitmap renderBitmap = new RenderTargetBitmap((int)(dpiScale * SequenceDrawingCanvas.Width), (int)(dpiScale * SequenceDrawingCanvas.Height), 
+                MetaDrawSettings.CanvasPdfExportDpi, MetaDrawSettings.CanvasPdfExportDpi, PixelFormats.Pbgra32);
 
             renderBitmap.Render(SequenceDrawingCanvas);
             PngBitmapEncoder encoder = new PngBitmapEncoder();
@@ -74,25 +78,25 @@ namespace EngineLayer
                 encoder.Save(file);
             }
 
-            //// adds base seq annotation to pdf
-            //PdfDocument pdfDoc = new PdfDocument(new PdfReader(tempPdfPath), new PdfWriter(path));
+            // adds base seq annotation to pdf
+            PdfDocument pdfDoc = new PdfDocument(new PdfReader(tempPdfPath), new PdfWriter(path));
 
-            //iText.Layout.Document document = new iText.Layout.Document(pdfDoc);
+            iText.Layout.Document document = new iText.Layout.Document(pdfDoc);
 
-            //ImageData imgData = ImageDataFactory.Create(tempPngPath);
-            //iText.Layout.Element.Image img = new iText.Layout.Element.Image(imgData);
-            //float h = (float)(SequenceDrawingCanvas.Height * 0.7);
-            //float w = (float)(SequenceDrawingCanvas.Width * 0.7);
-            //img.SetMarginLeft(25);
-            //img.ScaleToFit(w, h);
+            ImageData imgData = ImageDataFactory.Create(tempPngPath);
+            iText.Layout.Element.Image img = new iText.Layout.Element.Image(imgData);
+            img.SetMarginLeft(-50);
+            img.SetMarginTop(-30);
+            img.ScaleToFit((float)SequenceDrawingCanvas.Width, (float)SequenceDrawingCanvas.Height);
 
-            //document.Add(img);
+            document.Add(img);
 
-            //document.Close();
-            //pdfDoc.Close();
+            document.Close();
+            pdfDoc.Close();
 
-            //File.Delete(tempPdfPath);
-            //File.Delete(tempPngPath);
+            // delete temp files
+            File.Delete(tempPdfPath);
+            File.Delete(tempPngPath);
         }
 
         protected void DrawSpectrum()
@@ -157,10 +161,15 @@ namespace EngineLayer
             }
 
             // draw base sequence
+            double canvasWidth = SequenceDrawingCanvas.Width;
             for (int r = 0; r < baseSequence.Length; r++)
             {
-                DrawText(SequenceDrawingCanvas, new Point(r * MetaDrawSettings.AnnotatedSequenceTextSpacing + 10, yLoc), baseSequence[r].ToString(), Brushes.Black);
+                double x = r * MetaDrawSettings.AnnotatedSequenceTextSpacing + 10;
+                DrawText(SequenceDrawingCanvas, new Point(x, yLoc), baseSequence[r].ToString(), Brushes.Black);
+
+                canvasWidth = x + 30;
             }
+            SequenceDrawingCanvas.Width = canvasWidth;
 
             // draw the fragment ion annotations on the base sequence
             foreach (var ion in matchedFragmentIons)
@@ -309,38 +318,38 @@ namespace EngineLayer
             StringBuilder text = new StringBuilder();
             text.Append("Precursor Charge: ");
             text.Append(SpectrumMatch.PrecursorCharge);
-            text.Append("\n");
+            text.Append("\r\n");
 
             text.Append("Precursor Mass: ");
             text.Append(SpectrumMatch.PrecursorMass.ToString("F3"));
-            text.Append("\n");
+            text.Append("\r\n");
 
             text.Append("Theoretical Mass: ");
             text.Append(double.TryParse(SpectrumMatch.PeptideMonoMass, out var monoMass) ? monoMass.ToString("F3") : SpectrumMatch.PeptideMonoMass);
-            text.Append("\n");
+            text.Append("\r\n");
 
             text.Append("Score: ");
             text.Append(SpectrumMatch.Score.ToString("F3"));
-            text.Append("\n");
+            text.Append("\r\n");
 
             text.Append("Protein Accession: ");
             text.Append(SpectrumMatch.ProteinAccession);
-            text.Append("\n");
+            text.Append("\r\n");
 
             if (SpectrumMatch.ProteinName != null)
             {
                 text.Append("Protein: ");
-                text.Append(SpectrumMatch.ProteinName.Length > 20 ? SpectrumMatch.ProteinName.Substring(0, 20) + "..." : SpectrumMatch.ProteinName);
-                text.Append("\n");
+                text.Append(SpectrumMatch.ProteinName.Length > 20 ? SpectrumMatch.ProteinName.Substring(0, 18) + "..." : SpectrumMatch.ProteinName);
+                text.Append("\r\n");
             }
 
             text.Append("Decoy/Contaminant/Target: ");
             text.Append(SpectrumMatch.DecoyContamTarget);
-            text.Append("\n");
+            text.Append("\r\n");
 
             text.Append("Q-Value: ");
             text.Append(SpectrumMatch.QValue.ToString("F3"));
-            text.Append("\n");
+            text.Append("\r\n");
 
             var annotation = new PlotTextAnnotation()
             {
@@ -493,6 +502,7 @@ namespace EngineLayer
         }
     }
 
+    //TODO: move this to mzLib (https://github.com/smith-chem-wisc/mzLib/blob/master/mzPlot/Annotations/PlotTextAnnotation.cs)
     public class PlotTextAnnotation : Annotation
     {
         public enum RelativeToX { Left, Center, Right }

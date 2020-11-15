@@ -131,7 +131,7 @@
                                                 <RowDefinition Height = "auto" />
                                             </Grid.RowDefinitions>
 
-                                            <Canvas Grid.Row="0" Margin="55 5 0 0" x:Name="canvas" Height="60" Width="600" HorizontalAlignment="Left" VerticalAlignment="Stretch" />
+                                            <Canvas Grid.Row="0" Margin="55 0 0 0" x:Name="canvas" Height="60" Width="600" HorizontalAlignment="Left" VerticalAlignment="Stretch" />
                                         </Grid>
                                     </Grid>
                                 </TabItem>

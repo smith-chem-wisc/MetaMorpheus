@@ -214,9 +214,11 @@ namespace EngineLayer
                         i++;
                     }
 
-                    plot.ExportToPdf(filePath);
+                    plot.ExportToPdf(filePath, plotView.ActualWidth, plotView.ActualHeight);
                 }
             }
+
+            DisplaySpectrumMatch(plotView, canvas, spectrumMatches.First(), parentChildScanPlotsView, out errors);
         }
 
         public void FilterPsms()
