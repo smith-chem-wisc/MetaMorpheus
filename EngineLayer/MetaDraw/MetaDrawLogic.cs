@@ -26,7 +26,7 @@ namespace EngineLayer
     {
         public ObservableCollection<string> PsmResultFilePaths { get; private set; }
         public ObservableCollection<string> SpectraFilePaths { get; private set; }
-        public ObservableCollection<PsmFromTsv> FilteredListOfPsms { get; private set; } // filtered list of PSMs after q-value filter, search filter, etc.
+        public ObservableCollection<PsmFromTsv> FilteredListOfPsms { get; private set; } // filtered list of PSMs after q-value filter, etc.
         public Dictionary<string, ObservableCollection<PsmFromTsv>> PsmsGroupedByFile { get; private set; }
         public object ThreadLocker;
         public ICollectionView PeptideSpectralMatchesView;
