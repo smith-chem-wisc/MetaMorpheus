@@ -291,7 +291,7 @@ namespace EngineLayer
                     {
                         foreach (PsmFromTsv psm in PsmTsvReader.ReadTsv(resultsFile, out List<string> warnings))
                         {
-                            if (fileNamesWithoutExtension.Contains(psm.FileNameWithoutExtension))
+                            if (fileNamesWithoutExtension.Contains(psm.FileNameWithoutExtension) || !haveLoadedSpectra)
                             {
                                 AllPsms.Add(psm);
                             }
@@ -317,7 +317,7 @@ namespace EngineLayer
                 errors.Add("Error reading PSM file:\n" + e.Message);
             }
 
-            if (haveLoadedSpectra && psmsThatDontHaveMatchingSpectraFile.Any())
+            if (psmsThatDontHaveMatchingSpectraFile.Any())
             {
                 foreach (var file in psmsThatDontHaveMatchingSpectraFile.GroupBy(p => p.FileNameWithoutExtension))
                 {
