@@ -227,7 +227,7 @@
         <File Id="src_OxyPlot.Wpf.dll" Name="OxyPlot.Wpf.dll" Source="$(var.GUI_TargetDir)OxyPlot.Wpf.dll" />
       </Component>
       <Component Id="src_itext.barcodes.dll" Guid="4CC3D87C-FA1E-4301-B0B9-4E1EE3DFC4F2">
-        <File Id="src_src_itext.barcodes.dll" Name="src_itext.barcodes.dll" Source="$(var.GUI_TargetDir)src_itext.barcodes.dll" />
+        <File Id="src_itext.barcodes.dll" Name="itext.barcodes.dll" Source="$(var.GUI_TargetDir)itext.barcodes.dll" />
       </Component>
       <Component Id="src_itext.forms.dll" Guid="F2265F92-F292-4158-B85B-632EE831716F">
         <File Id="src_itext.forms.dll" Name="itext.forms.dll" Source="$(var.GUI_TargetDir)itext.forms.dll" />
