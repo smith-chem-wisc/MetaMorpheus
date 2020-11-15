@@ -543,6 +543,61 @@ namespace Test
             // export to PDF should produce an error because spectra are not loaded
             metadrawLogic.ExportToPdf(plotView, canvas, new List<PsmFromTsv> { psmsFromTsv.First() }, parentChildScanPlotsView, outputFolder, out errors);
             Assert.That(errors.Any());
+
+            // clean up resources
+            metadrawLogic.CleanUpResources();
+
+            // delete output
+            Directory.Delete(outputFolder, true);
+        }
+
+        [Test]
+        public static void TestMetaDrawLoadingWithWeirdFileNames()
+        {
+            // test loading when the file has a periods, commas, spaces in the name
+            string outputFolder = Path.Combine(TestContext.CurrentContext.TestDirectory, @"TestMetaDrawLoadingWithWeirdFileNames");
+            string proteinDatabase = Path.Combine(TestContext.CurrentContext.TestDirectory, @"TestData\smalldb.fasta");
+            string spectraFile = Path.Combine(TestContext.CurrentContext.TestDirectory, @"TestData\SmallCalibratible_Yeast.mzML");
+
+            string pathWithPeriodInIt = Path.Combine(TestContext.CurrentContext.TestDirectory, @"TestData\S.m,al. lC,al.ib r.at,i ble_Ye.ast.mzML");
+            File.Copy(spectraFile, pathWithPeriodInIt, true);
+            spectraFile = pathWithPeriodInIt;
+            
+            Directory.CreateDirectory(outputFolder);
+
+            // run search task
+            var searchtask = new SearchTask();
+            searchtask.RunTask(outputFolder, new List<DbForTask> { new DbForTask(proteinDatabase, false) }, new List<string> { spectraFile }, "");
+
+            var psmFile = Path.Combine(outputFolder, @"AllPSMs.psmtsv");
+
+            // load results into metadraw (skipping spectra file, to produce an error msg)
+            var metadrawLogic = new MetaDrawLogic();
+            metadrawLogic.PsmResultFilePaths.Add(psmFile);
+            metadrawLogic.SpectraFilePaths.Add(pathWithPeriodInIt);
+            var errors = metadrawLogic.LoadFiles(true, true);
+            Assert.That(!errors.Any());
+
+            Assert.That(metadrawLogic.FilteredListOfPsms.First().FileNameWithoutExtension == "S.m,al. lC,al.ib r.at,i ble_Ye.ast");
+
+            var plotView = new OxyPlot.Wpf.PlotView();
+            var canvas = new Canvas();
+            var parentChildScanPlotsView = new ParentChildScanPlotsView();
+
+            // plot PSM
+            metadrawLogic.DisplaySpectrumMatch(plotView, canvas, metadrawLogic.FilteredListOfPsms.First(), parentChildScanPlotsView, out errors);
+            Assert.That(errors == null || !errors.Any());
+
+            // export to PDF
+            metadrawLogic.ExportToPdf(plotView, canvas, new List<PsmFromTsv> { metadrawLogic.FilteredListOfPsms.First() }, parentChildScanPlotsView, outputFolder, out errors);
+            Assert.That(!errors.Any());
+
+            // clean up resources
+            metadrawLogic.CleanUpResources();
+
+            // delete output
+            File.Delete(pathWithPeriodInIt);
+            Directory.Delete(outputFolder, true);
         }
     }
 }
