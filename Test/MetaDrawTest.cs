@@ -2,6 +2,7 @@
 using MassSpectrometry;
 using NUnit.Framework;
 using OxyPlot.Series;
+using Proteomics.Fragmentation;
 using System;
 using System.Collections.Generic;
 using System.IO;
@@ -122,8 +123,9 @@ namespace Test
             string proteinDatabase = Path.Combine(TestContext.CurrentContext.TestDirectory, @"TestData\smalldb.fasta");
             string spectraFile = Path.Combine(TestContext.CurrentContext.TestDirectory, @"TestData\SmallCalibratible_Yeast.mzML");
 
-            // run task
             Directory.CreateDirectory(outputFolder);
+
+            // run search task
             var searchtask = new SearchTask();
             searchtask.RunTask(outputFolder, new List<DbForTask> { new DbForTask(proteinDatabase, false) }, new List<string> { spectraFile }, "");
 
@@ -193,7 +195,7 @@ namespace Test
             Assert.That(plotAxes.Count == 2);
 
             // test that base sequence annotation was drawn
-            Assert.That(canvas.Children.Count > 0);
+            Assert.That(canvas.Children.Count == psm.BaseSeq.Length + psm.MatchedIons.Count + psm.FullSequence.Count(p => p == '['));
 
             // write pdf
             var psmsToExport = metadrawLogic.FilteredListOfPsms.Where(p => p.FullSequence == "QIVHDSGR").Take(3).ToList();
@@ -203,6 +205,12 @@ namespace Test
             Assert.That(File.Exists(Path.Combine(outputFolder, @"116_QIVHDSGR.pdf")));
             Assert.That(File.Exists(Path.Combine(outputFolder, @"120_QIVHDSGR.pdf")));
             Assert.That(File.Exists(Path.Combine(outputFolder, @"127_QIVHDSGR.pdf")));
+
+            // test displaying a PSM with a mod
+            var modPsm = metadrawLogic.FilteredListOfPsms.First(p => p.FullSequence.Contains("["));
+            metadrawLogic.DisplaySpectrumMatch(plotView, canvas, modPsm, parentChildView, out errors);
+            Assert.That(errors == null || !errors.Any());
+            Assert.That(canvas.Children.Count == modPsm.BaseSeq.Length + modPsm.MatchedIons.Count + modPsm.FullSequence.Count(p => p == '['));
 
             // clean up resources
             metadrawLogic.CleanUpResources();
@@ -215,7 +223,7 @@ namespace Test
         }
 
         [Test]
-        public static void MetaDraw_XlSearchTaskResultsWithChildScansTest()
+        public static void MetaDraw_XlSearchTaskWithChildScansTest()
         {
             string outputFolder = Path.Combine(TestContext.CurrentContext.TestDirectory, @"MetaDraw_XlSearchTaskTest");
             string proteinDatabase = Path.Combine(TestContext.CurrentContext.TestDirectory, @"XlTestData\BSA.fasta");
@@ -297,7 +305,8 @@ namespace Test
             // test parent scan
             var parentPlot = parentChildView.Plots[0];
             Assert.That(parentPlot.SpectrumLabel == "Scan: 2 Dissociation Type: CID MsOrder: 2 Selected Mz: 492.02 Retention Time: 23.9");
-            Assert.That(parentPlot.TheCanvas.Children.Count > 0);
+            Assert.That(parentPlot.TheCanvas.Children.Count == 
+                csm.BaseSeq.Length + csm.MatchedIons.Count(p => p.NeutralTheoreticalProduct.ProductType != ProductType.M) + csm.FullSequence.Count(p => p == '['));
 
             peak = (LineSeries)parentPlot.Plot.Model.Series[0]; // the first m/z peak
             peakPoints = peak.Points;
@@ -310,6 +319,10 @@ namespace Test
             var childPlot = parentChildView.Plots[1];
             Assert.That(childPlot.SpectrumLabel == "Scan: 3 Dissociation Type: ETD MsOrder: 2 Selected Mz: 492.02 RetentionTime: 23.9");
             Assert.That(childPlot.TheCanvas.Children.Count > 0);
+            Assert.That(childPlot.TheCanvas.Children.Count == 
+                csm.BaseSeq.Length + csm.ChildScanMatchedIons[3].Concat(csm.BetaPeptideChildScanMatchedIons[3])
+                .Count(p => p.NeutralTheoreticalProduct.ProductType != ProductType.M) 
+                + csm.FullSequence.Count(p => p == '['));
 
             peak = (LineSeries)childPlot.Plot.Model.Series[0]; // the first m/z peak
             peakPoints = peak.Points;
@@ -337,7 +350,7 @@ namespace Test
         }
 
         [Test]
-        public static void LoadGlycoSearchTaskResults()
+        public static void MetaDraw_GlycoSearchTaskWithChildScansTest()
         {
 
         }
