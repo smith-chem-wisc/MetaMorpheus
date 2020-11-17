@@ -445,7 +445,7 @@
                                     Output of .mzID requires protein parsimony. Please check "Apply protein parsimony and construct protein groups".
                                 </ToolTipService.ToolTip>
                             </CheckBox>
-                            <!--<CheckBox x:Name="ckbPepXML" Content="Write .pep.XML" />-->
+                            <CheckBox x:Name="ckbPepXML" Content="Write .pep.XML" />
                             <CheckBox x:Name="WriteDecoyCheckBox" Content="Write decoys" />
                             <CheckBox x:Name="WriteContaminantCheckBox" Content="Write contaminants" />
                             <CheckBox x:Name="WriteIndividualResultsCheckBox" Content="Write Individual File Results" />

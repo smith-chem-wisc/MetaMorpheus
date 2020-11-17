@@ -300,6 +300,7 @@ namespace MetaMorpheusGUI
 
             OutputFileNameTextBox.Text = task.CommonParameters.TaskDescriptor;
             CkbMzId.IsChecked = task.SearchParameters.WriteMzId;
+            ckbPepXML.IsChecked = task.SearchParameters.WritePepXml;
             WriteDecoyCheckBox.IsChecked = task.SearchParameters.WriteDecoys;
             WriteContaminantCheckBox.IsChecked = task.SearchParameters.WriteContaminants;
             WriteIndividualResultsCheckBox.IsChecked = task.SearchParameters.WriteIndividualFiles;
@@ -567,6 +568,7 @@ namespace MetaMorpheusGUI
             TheTask.SearchParameters.QuantifyPpmTol = double.Parse(PeakFindingToleranceTextBox.Text, CultureInfo.InvariantCulture);
             TheTask.SearchParameters.SearchTarget = CheckBoxTarget.IsChecked.Value;
             TheTask.SearchParameters.WriteMzId = CkbMzId.IsChecked.Value;
+            TheTask.SearchParameters.WritePepXml = ckbPepXML.IsChecked.Value;
             TheTask.SearchParameters.WriteDecoys = WriteDecoyCheckBox.IsChecked.Value;
             TheTask.SearchParameters.WriteContaminants = WriteContaminantCheckBox.IsChecked.Value;
             TheTask.SearchParameters.WriteIndividualFiles = WriteIndividualResultsCheckBox.IsChecked.Value;
@@ -583,9 +585,7 @@ namespace MetaMorpheusGUI
             else //RenameTCProteinsRadioBox.IsChecked.Value
             {
                 TheTask.SearchParameters.TCAmbiguity = TargetContaminantAmbiguity.RenameProtein;
-            }
-
-            //TheTask.SearchParameters.OutPepXML = ckbPepXML.IsChecked.Value;
+            }            
 
             if (CheckBoxDecoy.IsChecked.Value)
             {
