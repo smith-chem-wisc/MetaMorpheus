@@ -80,7 +80,7 @@ namespace Test
             Assert.AreEqual("T", psm.DecoyContamTarget);
             Assert.AreEqual(502.117, psm.DeltaScore);
             Assert.AreEqual("EIADGLCLEVEGK", psm.EssentialSeq);
-            Assert.AreEqual("sliced_b6", psm.Filename);
+            Assert.AreEqual("sliced_b6", psm.FileNameWithoutExtension);
             Assert.AreEqual("EIADGLC[Common Fixed:Carbamidomethyl on C]LEVEGK", psm.FullSequence);
             Assert.AreEqual("primary:Tpt1, synonym:Trt", psm.GeneName);
             Assert.AreEqual("", psm.IdentifiedSequenceVariations);
