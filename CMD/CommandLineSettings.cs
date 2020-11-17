@@ -127,7 +127,7 @@ namespace MetaMorpheusCommandLine
 
             foreach (string filename in Tasks)
             {
-                string ext = GlobalVariables.GetFileExtension(filename).ToLowerInvariant();
+                string ext = Path.GetExtension(filename).ToLowerInvariant();
 
                 if (ext != ".toml")
                 {
@@ -137,7 +137,9 @@ namespace MetaMorpheusCommandLine
 
             foreach (string filename in Databases)
             {
-                string ext = GlobalVariables.GetFileExtension(filename, getUncompressedExtension: true).ToLowerInvariant();
+                string ext = Path.GetExtension(filename).ToLowerInvariant();
+                bool compressed = ext.EndsWith("gz"); // allows for .bgz and .tgz, too which are used on occasion
+                ext = compressed ? Path.GetExtension(Path.GetFileNameWithoutExtension(filename)).ToLowerInvariant() : ext;
 
                 if (!GlobalVariables.AcceptedDatabaseFormats.Contains(ext))
                 {
@@ -147,7 +149,7 @@ namespace MetaMorpheusCommandLine
 
             foreach (string filename in Spectra)
             {
-                string ext = GlobalVariables.GetFileExtension(filename).ToLowerInvariant();
+                string ext = Path.GetExtension(filename).ToLowerInvariant();
 
                 if (!GlobalVariables.AcceptedSpectraFormats.Contains(ext))
                 {
