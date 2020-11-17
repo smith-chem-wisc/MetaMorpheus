@@ -445,6 +445,7 @@
                                     Output of .mzID requires protein parsimony. Please check "Apply protein parsimony and construct protein groups".
                                 </ToolTipService.ToolTip>
                             </CheckBox>
+                            <CheckBox x:Name="IncludeMotifInModNamesCheckBox" Margin="20 0 0 0" Content="Include motif in mod names" IsEnabled="{Binding IsChecked, ElementName=CkbMzId}" />
                             <!--<CheckBox x:Name="ckbPepXML" Content="Write .pep.XML" />-->
                             <CheckBox x:Name="WriteDecoyCheckBox" Content="Write decoys" />
                             <CheckBox x:Name="WriteContaminantCheckBox" Content="Write contaminants" />
