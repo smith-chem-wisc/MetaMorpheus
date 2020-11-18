@@ -126,7 +126,7 @@ namespace MetaMorpheusGUI
 
         private void LoadFile(string filePath)
         {
-            var theExtension = Path.GetExtension(filePath).ToLower();
+            var theExtension = GlobalVariables.GetFileExtension(filePath).ToLowerInvariant();
 
             if (AcceptedSpectraFormats.Contains(theExtension))
             {
@@ -360,7 +360,7 @@ namespace MetaMorpheusGUI
                 return;
             }
 
-            // draw the selected PSM
+            // draw the selected PSM 
             propertyView.Clear();
             PsmFromTsv row = (PsmFromTsv)dataGridScanNums.SelectedItem;
             System.Reflection.PropertyInfo[] temp = row.GetType().GetProperties();

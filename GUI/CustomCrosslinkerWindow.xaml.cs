@@ -5,6 +5,7 @@ using EngineLayer;
 using System.Collections.Generic;
 using System.Linq;
 using System;
+using System.Globalization;
 
 namespace MetaMorpheusGUI
 {
@@ -46,12 +47,12 @@ namespace MetaMorpheusGUI
             string aminoAcid2 = txtUdXLkerAminoAcids2.Text;
             bool isCleavable = ckbUdXLkerCleavable.IsChecked.Value;
             string dissociationTypes = txtDissociationType.Text.ToUpper();
-            double mass =  double.Parse(txtUdXLkerTotalMs.Text == "" ? "0" : txtUdXLkerTotalMs.Text);
-            double shortMass = double.Parse(txtUdXLkerShortMass.Text == "" ? "0" : txtUdXLkerShortMass.Text);
-            double longMass = double.Parse(txtUdXLkerLongMass.Text == "" ? "0" : txtUdXLkerLongMass.Text);
-            double H2OQuenchMass = txtH2OQuenchMass.Text == "" ? (mass + 18.01052) : double.Parse(txtH2OQuenchMass.Text);
-            double NH2QuenchMass = txtNH2QuenchMass.Text == "" ? (mass + 17.02652) : double.Parse(txtNH2QuenchMass.Text);
-            double TrisQuenchMass = txtTrisQuenchMass.Text == "" ? (mass + 121.07392): double.Parse(txtTrisQuenchMass.Text);
+            double mass =  double.Parse(txtUdXLkerTotalMs.Text == "" ? "0" : txtUdXLkerTotalMs.Text, CultureInfo.InvariantCulture);
+            double shortMass = double.Parse(txtUdXLkerShortMass.Text == "" ? "0" : txtUdXLkerShortMass.Text, CultureInfo.InvariantCulture);
+            double longMass = double.Parse(txtUdXLkerLongMass.Text == "" ? "0" : txtUdXLkerLongMass.Text, CultureInfo.InvariantCulture);
+            double H2OQuenchMass = txtH2OQuenchMass.Text == "" ? (mass + 18.01052) : double.Parse(txtH2OQuenchMass.Text, CultureInfo.InvariantCulture);
+            double NH2QuenchMass = txtNH2QuenchMass.Text == "" ? (mass + 17.02652) : double.Parse(txtNH2QuenchMass.Text, CultureInfo.InvariantCulture);
+            double TrisQuenchMass = txtTrisQuenchMass.Text == "" ? (mass + 121.07392): double.Parse(txtTrisQuenchMass.Text, CultureInfo.InvariantCulture);
 
             if (GlobalVariables.Crosslinkers.Any(p => p.CrosslinkerName.Contains(name)))
             {
