@@ -138,7 +138,7 @@ namespace MetaMorpheusGUI
                     binSize = 0.1;
                     foreach (string key in psmsBySourceFile.Keys)
                     {
-                        numbersBySourceFile.Add(key, psmsBySourceFile[key].Where(p => !p.MassDiffDa.Contains("|") && Math.Round(double.Parse(p.MassDiffDa), 0) == 0).Select(p => double.Parse(p.MassDiffPpm)));
+                        numbersBySourceFile.Add(key, psmsBySourceFile[key].Where(p => !p.MassDiffDa.Contains("|") && Math.Round(double.Parse(p.MassDiffDa, CultureInfo.InvariantCulture), 0) == 0).Select(p => double.Parse(p.MassDiffPpm, CultureInfo.InvariantCulture)));
                         var results = numbersBySourceFile[key].GroupBy(p => roundToBin(p, binSize)).OrderBy(p => p.Key).Select(p => p);
                         dictsBySourceFile.Add(key, results.ToDictionary(p => p.Key.ToString(), v => v.Count()));
                     }
@@ -293,7 +293,7 @@ namespace MetaMorpheusGUI
             };
             List<Tuple<double, double, string>> xy = new List<Tuple<double, double, string>>();
             List<Tuple<double, double, string>> variantxy = new List<Tuple<double, double, string>>();  
-            var filteredList = allPsms.Where(p => !p.MassDiffDa.Contains("|") && Math.Round(double.Parse(p.MassDiffDa), 0) == 0).ToList();
+            var filteredList = allPsms.Where(p => !p.MassDiffDa.Contains("|") && Math.Round(double.Parse(p.MassDiffDa, CultureInfo.InvariantCulture), 0) == 0).ToList();
             var test = allPsms.SelectMany(p => p.MatchedIons.Select(v => v.MassErrorPpm));
             switch (plotType)
             {
@@ -304,11 +304,11 @@ namespace MetaMorpheusGUI
                     {
                         if(psm.IdentifiedSequenceVariations == null || psm.IdentifiedSequenceVariations.Equals(""))
                         {
-                            xy.Add(new Tuple<double, double, string>(double.Parse(psm.MassDiffPpm), (double)psm.RetentionTime, psm.FullSequence));
+                            xy.Add(new Tuple<double, double, string>(double.Parse(psm.MassDiffPpm, CultureInfo.InvariantCulture), (double)psm.RetentionTime, psm.FullSequence));
                         }
                         else
                         {
-                            variantxy.Add(new Tuple<double, double, string>(double.Parse(psm.MassDiffPpm), (double)psm.RetentionTime, psm.FullSequence));
+                            variantxy.Add(new Tuple<double, double, string>(double.Parse(psm.MassDiffPpm, CultureInfo.InvariantCulture), (double)psm.RetentionTime, psm.FullSequence));
                         }
                     }
                     break;

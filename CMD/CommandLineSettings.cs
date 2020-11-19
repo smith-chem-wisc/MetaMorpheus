@@ -21,20 +21,23 @@ namespace MetaMorpheusCommandLine
         [Option('d', HelpText = "Protein sequence databases (.fasta, .xml, .fasta.gz, .xml.gz file formats); space-delimited")]
         public IEnumerable<string> _databases { get; set; }
 
-        [Option('s', HelpText = "Spectra to analyze (.raw, .mzML, .mgf file formats); space-delimited")]
+        [Option('s', HelpText = "Spectra to analyze (.raw, .mzML, .mgf file formats) or folder(s) containing spectra; space-delimited")]
         public IEnumerable<string> _spectra { get; set; }
 
-        [Option('o', HelpText = "Output folder")]
+        [Option('o', HelpText = "[Optional] Output folder")]
         public string OutputFolder { get; set; }
 
-        [Option('g', HelpText = "Generate default task tomls")]
+        [Option('g', HelpText = "[Optional] Generate default task tomls")]
         public bool GenerateDefaultTomls { get; set; }
 
-        [Option('v', Default = VerbosityType.normal, HelpText = "Determines how much text is written. Options are no output ('none'), minimal output and errors  ('minimal'), or normal ('normal')")]
+        [Option('v', Default = VerbosityType.normal, HelpText = "[Optional] Determines how much text is written. Options are no output ('none'), minimal output and errors  ('minimal'), or normal ('normal')")]
         public VerbosityType Verbosity { get; set; }
 
-        [Option("test", HelpText = "Runs a small test search using a database and yeast data file included with this MetaMorpheus installation")]
+        [Option("test", HelpText = "[Optional] Runs a small test search using a database and yeast data file included with this MetaMorpheus installation")]
         public bool RunMicroVignette { get; set; }
+
+        [Option("mmsettings", HelpText = "[Optional] Path to MetaMorpheus settings")]
+        public string CustomDataDirectory { get; set; }
 
         public enum VerbosityType { none, minimal, normal };
 
@@ -79,6 +82,38 @@ namespace MetaMorpheusCommandLine
             {
                 throw new MetaMorpheusException("At least one spectra file must be specified.");
             }
+
+            // add spectra files from specified directories
+            List<string> spectraFromDirectories = new List<string>();
+            foreach (string item in Spectra)
+            {
+                if (Directory.Exists(item))
+                {
+                    string[] directoryFiles = Directory.GetFiles(item);
+
+                    foreach (var file in directoryFiles)
+                    {
+                        if (GlobalVariables.AcceptedSpectraFormats.Contains(GlobalVariables.GetFileExtension(file).ToLowerInvariant()))
+                        {
+                            spectraFromDirectories.Add(file);
+
+                            if (Verbosity == VerbosityType.normal)
+                            {
+                                Console.WriteLine("Found spectra file: " + file);
+                            }
+                        }
+                    }
+                }
+                else if (!File.Exists(item))
+                {
+                    throw new MetaMorpheusException("The following is not a known file or directory: " + item);
+                }
+            }
+
+            Spectra.AddRange(spectraFromDirectories);
+
+            // remove spectra directories, after their spectra files have been added
+            Spectra.RemoveAll(p => Directory.Exists(p));
 
             IEnumerable<string> fileNames = Tasks.Concat(Databases).Concat(Spectra);
 
@@ -143,6 +178,9 @@ namespace MetaMorpheusCommandLine
 
                 XLSearchTask xl = new XLSearchTask();
                 Toml.WriteFile(xl, Path.Combine(folderLocation, @"XLSearchTask.toml"), MetaMorpheusTask.tomlConfig);
+
+                GlycoSearchTask glyco = new GlycoSearchTask();
+                Toml.WriteFile(glyco, Path.Combine(folderLocation, @"GlycoSearchTask.toml"), MetaMorpheusTask.tomlConfig);
             }
             catch (Exception e)
             {
