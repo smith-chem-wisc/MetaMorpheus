@@ -20,7 +20,7 @@ namespace EngineLayer.spectralLibrarySearch
 
         //int i = 1;
 
-        public SpectralLibraryReader(string filePath, LibraryDecoyType libraryDecoyType)
+        public SpectralLibraryReader(string filePath)
         {
             targetSpectralLibrary = new List<Spectrum>();
             decoySpectralLibrary = new List<Spectrum>();
@@ -182,35 +182,9 @@ namespace EngineLayer.spectralLibrarySearch
             {
                 Console.WriteLine("the library doesn't contain any spectrums!");
             }
-            if(libraryDecoyType!=LibraryDecoyType.None)
-           {
-                decoySpectralLibrary = GenerateDecoyLibrary(targetSpectralLibrary, libraryDecoyType);
-                foreach(var x in decoySpectralLibrary)
-                {
-                    SpectralLibraryDictionary.Add(x.SequenceWithCharge + "_" + "Decoy", x);
-                }
-          }
            
         }
 
-
-
-        public List<Spectrum> GenerateDecoyLibrary(List<Spectrum> unsortedSpectralLibrary, LibraryDecoyType decoyType)
-        {
-            var sortedSpectralLibrary = SortSpectralLibrary(unsortedSpectralLibrary);
-            if (decoyType == LibraryDecoyType.None)
-            {
-                return new List<Spectrum>();
-            }
-            else if (decoyType == LibraryDecoyType.Reverse)
-            {
-                return PrecursorSwapDecoyLibraryGeneration(sortedSpectralLibrary);
-            }
-            else
-            {
-                throw new ArgumentException("Decoy type " + decoyType.ToString() + " is not implemented.");
-            }
-        }
         public List<Spectrum> SpectralLibrary { get; set; }
 
         public List<Spectrum> SortSpectralLibrary(List<Spectrum> unsortedSpectralLibrary)
@@ -219,33 +193,7 @@ namespace EngineLayer.spectralLibrarySearch
             return SortedSpectralLibrary;
         }
 
-        public List<Spectrum> PrecursorSwapDecoyLibraryGeneration(List<Spectrum> sortedSpectralLibrary)
-        {
-            var decoySpectralLibrary = new List<Spectrum>();
-            double libraryHalfLenth = sortedSpectralLibrary.Count / 2;
-            int libraryRoundUpHalfLenth = (int)Math.Ceiling(libraryHalfLenth);
-            int libraryRoundDownHalfLenth = (int)libraryHalfLenth;
-            for (int i = 0; i < libraryRoundUpHalfLenth; i++)
-            {
-                int indexOfSwap = i + libraryRoundDownHalfLenth;
-
-                while (indexOfSwap < sortedSpectralLibrary.Count)
-                {
-                    if (Math.Abs(sortedSpectralLibrary[i].PrecursorMz - sortedSpectralLibrary[indexOfSwap].PrecursorMz) > 8)
-                    {
-                        decoySpectralLibrary.Add(new Spectrum(sortedSpectralLibrary[i].SequenceWithCharge, sortedSpectralLibrary[i].Sequence, sortedSpectralLibrary[indexOfSwap].PrecursorMz, sortedSpectralLibrary[indexOfSwap].Charge_state, sortedSpectralLibrary[i].MatchedFragmentIons, true));
-                        decoySpectralLibrary.Add(new Spectrum(sortedSpectralLibrary[indexOfSwap].SequenceWithCharge, sortedSpectralLibrary[indexOfSwap].Sequence,sortedSpectralLibrary[i].PrecursorMz, sortedSpectralLibrary[i].Charge_state, sortedSpectralLibrary[indexOfSwap].MatchedFragmentIons,true));
-                        break;
-                    }
-                    else
-                    {
-                        indexOfSwap = indexOfSwap + 1;
-                    }
-                }
-
-            }
-            return decoySpectralLibrary;
-        }
+        
 
     }
 }
