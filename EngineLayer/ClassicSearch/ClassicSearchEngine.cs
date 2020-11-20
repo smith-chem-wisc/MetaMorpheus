@@ -1,5 +1,4 @@
-﻿using EngineLayer.spectralLibrarySearch;
-using MzLibUtil;
+﻿using MzLibUtil;
 using Proteomics;
 using Proteomics.Fragmentation;
 using Proteomics.ProteolyticDigestion;
@@ -12,6 +11,7 @@ namespace EngineLayer.ClassicSearch
 {
     public class ClassicSearchEngine : MetaMorpheusEngine
     {
+        private readonly Dictionary<string, LibrarySpectrum> SpectralLibrary;
         private readonly MassDiffAcceptor SearchMode;
         private readonly List<Protein> Proteins;
         private readonly List<Modification> FixedModifications;
@@ -21,20 +21,16 @@ namespace EngineLayer.ClassicSearch
         private readonly PeptideSpectralMatch[] PeptideSpectralMatches;
         private readonly Ms2ScanWithSpecificMass[] ArrayOfSortedMS2Scans;
         private readonly double[] MyScanPrecursorMasses;
-        private readonly double[] MyScanPrecursorMonoisotopicPeakMz;
-
-        public List<LibrarySpectrum> SpectralLibrary { get; set; }
-        public SpectralLibrarayMatch[] SpectralLibrarayMatchs;
 
         public ClassicSearchEngine(PeptideSpectralMatch[] globalPsms, Ms2ScanWithSpecificMass[] arrayOfSortedMS2Scans,
-            List<Modification> variableModifications, List<Modification> fixedModifications, List<SilacLabel> silacLabels, SilacLabel startLabel, SilacLabel endLabel, 
-            List<Protein> proteinList, MassDiffAcceptor searchMode, CommonParameters commonParameters, List<(string FileName, CommonParameters Parameters)> fileSpecificParameters, List<string> nestedIds)
+            List<Modification> variableModifications, List<Modification> fixedModifications, List<SilacLabel> silacLabels, SilacLabel startLabel, SilacLabel endLabel,
+            List<Protein> proteinList, MassDiffAcceptor searchMode, CommonParameters commonParameters, List<(string FileName, CommonParameters Parameters)> fileSpecificParameters,
+            Dictionary<string, LibrarySpectrum> spectralLibrary, List<string> nestedIds)
             : base(commonParameters, fileSpecificParameters, nestedIds)
         {
             PeptideSpectralMatches = globalPsms;
             ArrayOfSortedMS2Scans = arrayOfSortedMS2Scans;
             MyScanPrecursorMasses = arrayOfSortedMS2Scans.Select(b => b.PrecursorMass).ToArray();
-            MyScanPrecursorMonoisotopicPeakMz = arrayOfSortedMS2Scans.Select(b => b.PrecursorMonoisotopicPeakMz).ToArray();
             VariableModifications = variableModifications;
             FixedModifications = fixedModifications;
             SilacLabels = silacLabels;
@@ -44,7 +40,7 @@ namespace EngineLayer.ClassicSearch
             }
             Proteins = proteinList;
             SearchMode = searchMode;
-            SpectralLibrarayMatchs = new SpectralLibrarayMatch[globalPsms.Length];
+            SpectralLibrary = spectralLibrary;
         }
 
         protected override MetaMorpheusEngineResults RunSpecific()
@@ -69,40 +65,6 @@ namespace EngineLayer.ClassicSearch
                 int[] threads = Enumerable.Range(0, maxThreadsPerFile).ToArray();
                 Parallel.ForEach(threads, (i) =>
                 {
-                    if (SpectralLibrary.Any())
-                    {
-                        for (; i < SpectralLibrary.Count; i += maxThreadsPerFile)
-                        {
-                            foreach (var spectrum in SpectralLibrary)
-                            {
-                                foreach (ScanWithIndexAndNotchInfo scan in GetAcceptableScansWithLibrary(spectrum.PrecursorMz, SearchMode))
-                                {
-                                    List<MatchedFragmentIon> ObservedMatchedIons = MatchSpectrumPeaks(scan.TheScan, spectrum.MatchedFragmentIons, CommonParameters);
-                                    // calculate the similarity between the matched peaks in experimental spectrum and the library spectrum
-                                    double spectrumDotProductScore = SpectralLibrarySearchFunction.matchedSpectraCompare(spectrum.MatchedFragmentIons, ObservedMatchedIons);
-                                    lock (myLocks[scan.ScanIndex])
-                                    {
-                                        bool scoreImprovement = SpectralLibrarayMatchs[scan.ScanIndex] == null || (spectrumDotProductScore - PeptideSpectralMatches[scan.ScanIndex].RunnerUpScore) > -PeptideSpectralMatch.ToleranceForScoreDifferentiation;
-
-                                        if (scoreImprovement)
-                                        {
-                                            if (SpectralLibrarayMatchs[scan.ScanIndex] == null)
-                                            {
-                                                SpectralLibrarayMatchs[scan.ScanIndex] = new SpectralLibrarayMatch(spectrum, scan.Notch, spectrumDotProductScore, scan.ScanIndex, scan.TheScan, CommonParameters, ObservedMatchedIons, 0);
-                                            }
-                                            else
-                                            {
-                                                SpectralLibrarayMatchs[scan.ScanIndex].AddOrReplace(spectrum, spectrumDotProductScore, scan.Notch, CommonParameters.ReportAllAmbiguity, ObservedMatchedIons, 0);
-                                            }
-                                        }
-
-                                    }
-                                }
-
-
-                            }
-                        }
-                    }
                     var peptideTheorProducts = new List<Product>();
 
                     for (; i < Proteins.Count; i += maxThreadsPerFile)
@@ -117,11 +79,27 @@ namespace EngineLayer.ClassicSearch
 
                             foreach (ScanWithIndexAndNotchInfo scan in GetAcceptableScans(peptide.MonoisotopicMass, SearchMode))
                             {
-                                List<MatchedFragmentIon> matchedIons = MatchFragmentIons(scan.TheScan, peptideTheorProducts, CommonParameters);
+                                List<MatchedFragmentIon> matchedIons = null;
+                                List<MatchedFragmentIon> libraryIons = null;
 
-                                double thisScore = CalculatePeptideScore(scan.TheScan.TheScan, matchedIons);
+                                if (SpectralLibrary != null)
+                                {
+                                    if (!SpectralLibrary.TryGetValue(peptide.FullSequence + "/" + scan.TheScan.PrecursorCharge, out var librarySpectrum))
+                                    {
+                                        continue;
+                                    }
 
-                                bool meetsScoreCutoff = thisScore >= CommonParameters.ScoreCutoff;
+                                    libraryIons = librarySpectrum.MatchedFragmentIons;
+                                    matchedIons = MatchLibraryIons(scan.TheScan, libraryIons, CommonParameters);
+                                }
+                                else
+                                {
+                                    matchedIons = MatchFragmentIons(scan.TheScan, peptideTheorProducts, CommonParameters);
+                                }
+
+                                double thisScore = CalculatePeptideScore(scan.TheScan.TheScan, matchedIons, libraryIons);
+
+                                bool meetsScoreCutoff = thisScore >= CommonParameters.ScoreCutoff || SpectralLibrary != null;
 
                                 // this is thread-safe because even if the score improves from another thread writing to this PSM,
                                 // the lock combined with AddOrReplace method will ensure thread safety
@@ -194,48 +172,9 @@ namespace EngineLayer.ClassicSearch
             }
         }
 
-        //modified based on  GetAcceptableScans(double spectrumMz, MassDiffAcceptor searchMode)
-        private IEnumerable<ScanWithIndexAndNotchInfo> GetAcceptableScansWithLibrary(double spectrumMz, MassDiffAcceptor searchMode)
-        {
-            foreach (AllowedIntervalWithNotch allowedIntervalWithNotch in searchMode.GetAllowedPrecursorMassIntervalsFromTheoreticalMass(spectrumMz).ToList())
-            {
-                DoubleRange allowedInterval = allowedIntervalWithNotch.AllowedInterval;
-                int scanIndex = GetFirstScanWithMzOverOrEqual(allowedInterval.Minimum);
-                if (scanIndex < ArrayOfSortedMS2Scans.Length)
-                {
-                    var scanMz = MyScanPrecursorMonoisotopicPeakMz[scanIndex];
-                    while (scanMz <= allowedInterval.Maximum)
-                    {
-                        var scan = ArrayOfSortedMS2Scans[scanIndex];
-                        yield return new ScanWithIndexAndNotchInfo(scan, allowedIntervalWithNotch.Notch, scanIndex);
-                        scanIndex++;
-                        if (scanIndex == ArrayOfSortedMS2Scans.Length)
-                        {
-                            break;
-                        }
-
-                        scanMz = MyScanPrecursorMonoisotopicPeakMz[scanIndex];
-                    }
-                }
-            }
-        }
-
         private int GetFirstScanWithMassOverOrEqual(double minimum)
         {
             int index = Array.BinarySearch(MyScanPrecursorMasses, minimum);
-            if (index < 0)
-            {
-                index = ~index;
-            }
-
-            // index of the first element that is larger than value
-            return index;
-        }
-
-        //modified based on GetFirstScanWithMassOverOrEqual(double minimum)
-        private int GetFirstScanWithMzOverOrEqual(double minimum)
-        {
-            int index = Array.BinarySearch(MyScanPrecursorMonoisotopicPeakMz, minimum);
             if (index < 0)
             {
                 index = ~index;

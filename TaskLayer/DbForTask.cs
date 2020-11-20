@@ -1,4 +1,6 @@
-﻿namespace TaskLayer
+﻿using EngineLayer;
+
+namespace TaskLayer
 {
     public class DbForTask
     {
@@ -7,14 +9,7 @@
             FilePath = filePath;
             IsContaminant = isContaminant;
             FileName = System.IO.Path.GetFileName(filePath);
-        }
-
-        public DbForTask(string filePath, bool isContaminant, bool isSpectralLibrary)
-        {
-            FilePath = filePath;
-            IsContaminant = isContaminant;
-            IsSpectralLibrary = isSpectralLibrary;
-            FileName = System.IO.Path.GetFileName(filePath);
+            IsSpectralLibrary = GlobalVariables.GetFileExtension(filePath).ToLowerInvariant() == ".msp";
         }
 
         public bool IsSpectralLibrary { get; }

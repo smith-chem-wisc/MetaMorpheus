@@ -1,5 +1,4 @@
 ﻿using EngineLayer;
-using EngineLayer.spectralLibrarySearch;
 using FlashLFQ;
 using Proteomics;
 using Proteomics.ProteolyticDigestion;
@@ -26,6 +25,5 @@ namespace TaskLayer
         public MyFileManager MyFileManager { get; set; }
         public List<DbForTask> DatabaseFilenameList { get; set; }
         public List<string> CurrentRawFileList { get; set; }
-        public List<SpectralLibrarayMatch> SpectralLibrarayMatchs { get; set; }
     }
 }
