@@ -3,7 +3,6 @@ using EngineLayer.ClassicSearch;
 using EngineLayer.Indexing;
 using EngineLayer.ModernSearch;
 using EngineLayer.NonSpecificEnzymeSearch;
-using EngineLayer.spectralLibrarySearch;
 using FlashLFQ;
 using MassSpectrometry;
 using MzLibUtil;
@@ -84,17 +83,6 @@ namespace TaskLayer
 
         protected override MyTaskResults RunSpecific(string OutputFolder, List<DbForTask> dbFilenameList, List<string> currentRawFileList, string taskId, FileSpecificParameters[] fileSettingsList)
         {
-
-            Dictionary<String, LibrarySpectrum> SpectralLibraryDictionary = new Dictionary<String, LibrarySpectrum>();
-            List<SpectralLibrarayMatch> SpectralLibrarayMatchs = new List<SpectralLibrarayMatch>();
-
-            foreach (var file in dbFilenameList)
-            {
-                if (file.IsSpectralLibrary == true)
-                {
-                    SpectralLibraryDictionary = SpectralLibraryReader.ReadSpectralLibrary(file.FilePath);
-                }
-            }
             if (SearchParameters.DoQuantification)
             {
                 // disable quantification if a .mgf is being used
@@ -151,6 +139,9 @@ namespace TaskLayer
             // load proteins
             List<Protein> proteinList = LoadProteins(taskId, dbFilenameList, SearchParameters.SearchTarget, SearchParameters.DecoyType, localizeableModificationTypes, CommonParameters);
             SanitizeProteinDatabase(proteinList, SearchParameters.TCAmbiguity);
+
+            // load spectral libraries
+            var spectralLibrary = LoadSpectralLibraries(taskId, dbFilenameList);
 
             // write prose settings
             ProseCreatedWhileRunning.Append("The following search settings were used: ");
@@ -342,10 +333,8 @@ namespace TaskLayer
                 {
                     Status("Starting search...", thisId);
                     var newClassicSearchEngine = new ClassicSearchEngine(fileSpecificPsms, arrayOfMs2ScansSortedByMass, variableModifications, fixedModifications, SearchParameters.SilacLabels,
-                       SearchParameters.StartTurnoverLabel, SearchParameters.EndTurnoverLabel, proteinList, massDiffAcceptor, combinedParams, this.FileSpecificParameters, thisId);
-                    newClassicSearchEngine.SpectralLibrary = SpectralLibraryDictionary.Select(p => p.Value).ToList();
+                       SearchParameters.StartTurnoverLabel, SearchParameters.EndTurnoverLabel, proteinList, massDiffAcceptor, combinedParams, this.FileSpecificParameters, spectralLibrary, thisId);
                     newClassicSearchEngine.Run();
-                    SpectralLibrarayMatchs = newClassicSearchEngine.SpectralLibrarayMatchs.ToList();
 
                     ReportProgress(new ProgressEventArgs(100, "Done with search!", thisId));
                 }
@@ -376,7 +365,6 @@ namespace TaskLayer
                 SearchParameters = SearchParameters,
                 ProteinList = proteinList,
                 AllPsms = allPsms,
-                SpectralLibrarayMatchs = SpectralLibrarayMatchs,
                 VariableModifications = variableModifications,
                 FixedModifications = fixedModifications,
                 ListOfDigestionParams = new HashSet<DigestionParams>(fileSpecificCommonParams.Select(p => p.DigestionParams)),

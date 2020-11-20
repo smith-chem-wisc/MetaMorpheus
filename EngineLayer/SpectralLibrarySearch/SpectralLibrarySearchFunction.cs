@@ -6,33 +6,27 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Text;
 
-namespace EngineLayer.spectralLibrarySearch
+namespace EngineLayer
 {
     public static class SpectralLibrarySearchFunction
     {
-      
-        //1024TestDoneCompareFunction
-        public static double matchedSpectraCompare(List<MatchedFragmentIon> standardSpectra, List<MatchedFragmentIon> spectraToCompare)
+        public static double CalculateCosineScore(List<MatchedFragmentIon> standardSpectra, List<MatchedFragmentIon> spectraToCompare)
         {
-
             double[] mz1 = standardSpectra.Select(b => b.Mz).ToArray();
             double intensitySum1 = standardSpectra.Select(b => b.Intensity).Sum();
             double[] intensity1 = standardSpectra.Select(b => b.Intensity / intensitySum1).ToArray();
-            //Console.WriteLine(mz1.Length + "  " + intensity1.Length);
             Array.Sort(mz1, intensity1);
 
             double[] mz2 = spectraToCompare.Select(b => b.Mz).ToArray();
             double intensitySum2 = spectraToCompare.Select(b => b.Intensity).Sum();
             double[] intensity2 = spectraToCompare.Select(b => b.Intensity / intensitySum2).ToArray();
             Array.Sort(mz2, intensity2);
-            //Console.WriteLine(mz2.Length + "  " + intensity2.Length);
 
             var commonNumbers = mz1.Union(mz2).ToArray();
             double min = commonNumbers.Min();
             double max = commonNumbers.Max();
             int roundMin = (int)min;
             int roundMax = (int)max + 1;
-            //Console.WriteLine(roundMin + "  " + roundMax);
 
             //convert spectra to vectors
             List<double> vector1 = new List<double>();

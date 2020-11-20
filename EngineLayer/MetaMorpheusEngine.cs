@@ -42,12 +42,13 @@ namespace EngineLayer
 
         public static event EventHandler<ProgressEventArgs> OutProgressHandler;
 
-        public static double CalculatePeptideScore(MsDataScan thisScan, List<MatchedFragmentIon> matchedFragmentIons)
+        public static double CalculatePeptideScore(MsDataScan thisScan, List<MatchedFragmentIon> matchedFragmentIons, List<MatchedFragmentIon> libraryIons = null)
         {
             double score = 0;
 
             if (thisScan.MassSpectrum.XcorrProcessed)
             {
+                // XCorr
                 foreach (var fragment in matchedFragmentIons)
                 {
                     switch (fragment.NeutralTheoreticalProduct.ProductType)
@@ -67,8 +68,14 @@ namespace EngineLayer
                     }
                 }
             }
+            if (libraryIons != null)
+            {
+                // Cosine score (for spectral libraries)
+                return SpectralLibrarySearchFunction.CalculateCosineScore(matchedFragmentIons, libraryIons);
+            }
             else
             {
+                // Morpheus score
                 for (int i = 0; i < matchedFragmentIons.Count; i++)
                 {
                     score += 1 + matchedFragmentIons[i].Intensity / thisScan.TotalIonCurrent;
@@ -78,40 +85,34 @@ namespace EngineLayer
             return score;
         }
 
-        //looking for the matched peaks in expectrimental spectrum
-        public List<MatchedFragmentIon> MatchSpectrumPeaks(Ms2ScanWithSpecificMass scan, List<MatchedFragmentIon> libraryProducts, CommonParameters commonParameters)
+        public List<MatchedFragmentIon> MatchLibraryIons(Ms2ScanWithSpecificMass scan, List<MatchedFragmentIon> libraryProducts, CommonParameters commonParameters)
         {
             var matchedFragmentIons = new List<MatchedFragmentIon>();
-            Tolerance productTolerance = new PpmTolerance(50);
 
             //if the spectrum has no peaks
-            if (scan.ExperimentalFragments != null && !scan.ExperimentalFragments.Any())
+            if (scan.TheScan.MassSpectrum.XArray.Length == 0)
             {
                 return matchedFragmentIons;
             }
 
             // search for ions in the spectrum
-            //foreach (Product product in librarySpectrum)
             for (int i = 0; i < libraryProducts.Count; i++)
             {
-                var product = libraryProducts[i].NeutralTheoreticalProduct;
+                var libraryIon = libraryProducts[i];
+                var libraryNeutralFragment = libraryIon.NeutralTheoreticalProduct;
 
-                // unknown fragment mass; this only happens rarely for sequences with unknown amino acids
-                if (double.IsNaN(libraryProducts[i].Mz))
-                {
-                    continue;
-                }
+                // get the closest peak in the spectrum to the library peak
+                var closestPeakIndex = scan.TheScan.MassSpectrum.GetClosestPeakIndex(libraryProducts[i].Mz);
+                double mz = scan.TheScan.MassSpectrum.XArray[closestPeakIndex];
+                double intensity = scan.TheScan.MassSpectrum.YArray[closestPeakIndex];
 
-                // get the closest peak in the spectrum to the LibrarySpectrum peak
-                var closestExperimentalMz = scan.LibraryGetClosestExperimentalIsotopicEnvelope(libraryProducts[i].Mz);
-             
                 // is the mass error acceptable?
-                if (closestExperimentalMz != null && productTolerance.Within(closestExperimentalMz.MonoisotopicMass.ToMz(closestExperimentalMz.Charge), libraryProducts[i].Mz) && closestExperimentalMz.Charge <= scan.PrecursorCharge)//TODO apply this filter before picking the 
+                if (commonParameters.ProductMassTolerance.Within(mz, libraryProducts[i].Mz))
                 {
-                    matchedFragmentIons.Add(new MatchedFragmentIon(ref product, closestExperimentalMz.MonoisotopicMass.ToMz(closestExperimentalMz.Charge),
-                        closestExperimentalMz.Peaks.First().intensity, closestExperimentalMz.Charge));
+                    matchedFragmentIons.Add(new MatchedFragmentIon(ref libraryNeutralFragment, mz, intensity, libraryIon.Charge));
                 }
             }
+
             return matchedFragmentIons;
         }
 
@@ -119,7 +120,7 @@ namespace EngineLayer
         {
             var matchedFragmentIons = new List<MatchedFragmentIon>();
 
-            if (scan.TheScan.MassSpectrum.XcorrProcessed && scan.TheScan.MassSpectrum.XArray.Length!=0)
+            if (scan.TheScan.MassSpectrum.XcorrProcessed && scan.TheScan.MassSpectrum.XArray.Length != 0)
             {
                 // if the spectrum has no peaks
                 if (scan.TheScan.MassSpectrum.XArray.Length == 0)
@@ -156,7 +157,7 @@ namespace EngineLayer
 
             // search for ions in the spectrum
             //foreach (Product product in theoreticalProducts)
-            for(int i = 0; i < theoreticalProducts.Count; i++)
+            for (int i = 0; i < theoreticalProducts.Count; i++)
             {
                 var product = theoreticalProducts[i];
                 // unknown fragment mass; this only happens rarely for sequences with unknown amino acids

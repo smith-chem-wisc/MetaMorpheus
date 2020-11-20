@@ -93,15 +93,6 @@ namespace EngineLayer
             return ExperimentalFragments[GetClosestFragmentMass(theoreticalNeutralMass)];
         }
 
-        public IsotopicEnvelope LibraryGetClosestExperimentalIsotopicEnvelope(double spectrumMzFromLibrary)
-        {
-            if (TheScan.MassSpectrum.XArray.Length == 0)
-            {
-                return null;
-            }
-            return ExperimentalFragments[GetClosestFragmentMzIndex(spectrumMzFromLibrary).Value];
-        }
-
         public int GetClosestFragmentMass(double mass)
         {
             int index = Array.BinarySearch(DeconvolutedMonoisotopicMasses, mass);
