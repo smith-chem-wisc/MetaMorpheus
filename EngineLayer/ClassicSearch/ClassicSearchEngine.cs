@@ -84,7 +84,7 @@ namespace EngineLayer.ClassicSearch
 
                                 if (SpectralLibrary != null)
                                 {
-                                    if (SpectralLibrary.TryGetValue(peptide.FullSequence + "/" + scan.TheScan.PrecursorCharge, out var librarySpectrum))
+                                    if (!SpectralLibrary.TryGetValue(peptide.FullSequence + "/" + scan.TheScan.PrecursorCharge, out var librarySpectrum))
                                     {
                                         continue;
                                     }
@@ -99,7 +99,7 @@ namespace EngineLayer.ClassicSearch
 
                                 double thisScore = CalculatePeptideScore(scan.TheScan.TheScan, matchedIons, libraryIons);
 
-                                bool meetsScoreCutoff = thisScore >= CommonParameters.ScoreCutoff;
+                                bool meetsScoreCutoff = thisScore >= CommonParameters.ScoreCutoff || SpectralLibrary != null;
 
                                 // this is thread-safe because even if the score improves from another thread writing to this PSM,
                                 // the lock combined with AddOrReplace method will ensure thread safety
