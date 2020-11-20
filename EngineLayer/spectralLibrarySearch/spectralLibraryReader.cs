@@ -9,9 +9,9 @@ namespace EngineLayer.SpectralLibrarySearch
     public static class SpectralLibraryReader
     {
 
-        public static Dictionary<string, Book> ReadSpectralLibrary(string filePath)
+        public static Dictionary<string, SpectralBook> ReadSpectralLibrary(string filePath)
         {
-            Dictionary<string, Book> spectralLibraryDictionary = new Dictionary<string, Book>();
+            Dictionary<string, SpectralBook> spectralLibraryDictionary = new Dictionary<string, SpectralBook>();
             string[] lines;
 
             lines = File.ReadAllLines(filePath);
@@ -103,7 +103,7 @@ namespace EngineLayer.SpectralLibrarySearch
                         }
                     }
                 }
-                spectralLibraryDictionary.Add(sequence + z, new Book(sequence, precursorMz, z, matchedFragmentIons));
+                spectralLibraryDictionary.Add(sequence + z, new SpectralBook(sequence, precursorMz, z, matchedFragmentIons));
             }
 
             return spectralLibraryDictionary;

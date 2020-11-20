@@ -6,9 +6,9 @@ using System.Text;
 namespace EngineLayer.SpectralLibrarySearch
 {
     //A spectral library is composed of books, where each book contains the MS2 spectrum and the ID
-    public class Book
+    public class SpectralBook
     {
-        public Book(string sequence, double precursorMz, int charge_state, List<MatchedFragmentIon> peaks, bool isDecoy=false)
+        public SpectralBook(string sequence, double precursorMz, int charge_state, List<MatchedFragmentIon> peaks, bool isDecoy=false)
         {
             Sequence = sequence;
             PrecursorMz = precursorMz;
