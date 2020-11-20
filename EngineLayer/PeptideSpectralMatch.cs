@@ -110,6 +110,7 @@ namespace EngineLayer
 
                 PeptidesToMatchingFragments.Clear();
                 PeptidesToMatchingFragments.Add(pwsm, matchedFragmentIons);
+                MatchedFragmentIons = matchedFragmentIons;
             }
             else if (newScore - Score > -ToleranceForScoreDifferentiation && reportAllAmbiguity) //else if the same score and ambiguity is allowed
             {

@@ -601,7 +601,7 @@ namespace EngineLayer
         {
             double normalizationFactor = selectedPeptide.BaseSequence.Length;
             float totalMatchingFragmentCount = 0;
-            float intensityFraction = 0;
+            float intensity = 0;
             float chargeDifference = 0;
             float deltaScore = 0;
             float psmCount = 1;
@@ -633,7 +633,7 @@ namespace EngineLayer
                     normalizationFactor /= 10.0;
                 }
                 totalMatchingFragmentCount = (float)(Math.Round(psm.PeptidesToMatchingFragments[selectedPeptide].Count / normalizationFactor * 10, 0));
-                intensityFraction = (float)Math.Min(50, Math.Round((psm.MatchedFragmentIons.Sum(p => p.Intensity) / psm.TotalIonCurrent) / normalizationFactor * 100.0, 0));
+                intensity = (float)Math.Min(50, Math.Round((psm.MatchedFragmentIons.Sum(p => p.Intensity) / psm.TotalIonCurrent) / normalizationFactor * 100.0, 0));
                 chargeDifference = -Math.Abs(chargeStateMode - psm.ScanPrecursorCharge);
                 deltaScore = (float)Math.Round(psm.DeltaScore / normalizationFactor * 10.0, 0);
                 notch = notchToUse;
@@ -734,7 +734,7 @@ namespace EngineLayer
             psm.PsmData_forPEPandPercolator = new PsmData
             {
                 TotalMatchingFragmentCount = totalMatchingFragmentCount,
-                Intensity = intensityFraction,
+                Intensity = intensity,
                 PrecursorChargeDiffToMode = chargeDifference,
                 DeltaScore = deltaScore,
                 Notch = notch,
