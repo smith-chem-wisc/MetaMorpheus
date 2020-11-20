@@ -98,6 +98,8 @@ namespace Test
                 Assert.That(frag.charge == readFrag.Charge);
                 //Assert.That(frag.ppm == readFrag.MassErrorPpm);
             }
+
+            File.Delete(writtenPath);
         }
     }
 }
