@@ -9,6 +9,12 @@ namespace EngineLayer
 {
     public static class SpectralLibraryReader
     {
+        private static Dictionary<string, string> PrositToMetaMorpheusModDictionary = new Dictionary<string, string>
+        {
+            { "Oxidation","[Common Variable:Oxidation on M]" },
+            {"Carbamidomethyl", "[Common Fixed:Carbamidomethyl on C]" }
+        };
+
         public static Dictionary<string, LibrarySpectrum> ReadSpectralLibrary(string filePath)
         {
             Dictionary<string, LibrarySpectrum> spectralLibraryDictionary = new Dictionary<string, LibrarySpectrum>();
@@ -16,106 +22,102 @@ namespace EngineLayer
 
             lines = File.ReadAllLines(filePath);
 
-            //find the lines which contain "name"
-            var nameLines = new List<int>();
-            for (int i = 0; i < lines.Length; i++)
+
+            //set up variables: 
+            string sequence = "";
+            int z = 0;
+            double precursorMz = 0;
+            double rt = 0;
+            List<MatchedFragmentIon> matchedFragmentIons = new List<MatchedFragmentIon>();
+
+            for (int lineIndex = 0; lineIndex < lines.Length; lineIndex++)
             {
-                if (lines[i].Contains("name", StringComparison.OrdinalIgnoreCase))
+                string line = lines[lineIndex];
+                if (line.Substring(0, 4).Equals("Name"))
                 {
-                    nameLines.Add(i);
+                    //this is a new entry, save the old entry
+                    if (lineIndex != 0)
+                    {
+                        LibrarySpectrum librarySpectrum = new LibrarySpectrum(sequence, precursorMz, z, matchedFragmentIons, rt);
+                        spectralLibraryDictionary.Add(librarySpectrum.Name, librarySpectrum);
+                    }
+
+                    //start making new entry
+                    string[] name = line.Substring(6).Split('/');
+                    sequence = name[0];
+                    z = Convert.ToInt32(name[1]);
+                    matchedFragmentIons = new List<MatchedFragmentIon>();
+
+                    //move to the next line for the MW
+                    line = lines[++lineIndex];
+                    precursorMz = Convert.ToDouble(line.Substring(4));
+
+                    //move to the next line for the comment
+                    line = lines[++lineIndex];
+                    //separate by spaces
+                    string[] comments = line.Split(' ');
+                    //see if there's a Mods entry and parse it
+                    foreach (string comment in comments)
+                    {
+                        string[] splitComment = comment.Split('=');
+                        if (splitComment[0].Equals("Mods"))
+                        {
+                            string[] mods = splitComment[1].Split('/');
+                            for (int i = mods.Length - 1; i > 0; i--)
+                            {
+                                string[] modInfo = mods[i].Split(',');
+                                int index = Convert.ToInt32(modInfo[0]);
+                                string mod = modInfo[2];
+                                string metaMorpheusMod = PrositToMetaMorpheusModDictionary[mod];
+                                //add the mod into the sequence
+                                string leftSeq = sequence.Substring(0, index + 1);
+                                string rightSeq = sequence.Substring(index + 1);
+                                sequence = leftSeq + metaMorpheusMod + rightSeq;
+                            }
+                        }
+                        else if (splitComment[0].Equals("iRT"))
+                        {
+                            rt = Convert.ToDouble(splitComment[1]);
+                        }
+                    }
+                    //skip first line of fragment ions
+                    lineIndex++;
+                }
+                else //we're going throught the fragment ions
+                {
+                    string[] fragmentInfo = line.Split("\t").Select(b => b.Trim()).ToArray();
+                    var experMz = double.Parse(fragmentInfo[0], CultureInfo.InvariantCulture);
+                    var experIntensity = double.Parse(fragmentInfo[1], CultureInfo.InvariantCulture);
+                    string[] ionInfo = fragmentInfo[2].Split(new char[] { '/', '\"', ')', '(' }, StringSplitOptions.RemoveEmptyEntries).Select(b => b.Trim()).ToArray();
+                    ionInfo[1] = ionInfo[1].Replace("ppm", "", ignoreCase: true, CultureInfo.InvariantCulture);
+
+                    //TODO: figure out a more robust way to do this
+                    string spectrumPeakProductType = ionInfo[0].ToCharArray()[0].ToString();
+
+                    int fragmentNumber = int.Parse(new string(ionInfo[0].Split(new char[] { '^' })[0].Where(char.IsDigit).ToArray()));
+
+                    int ionCharge = 1;
+                    if (ionInfo[0].Contains('^'))
+                    {
+                        ionCharge = int.Parse(ionInfo[0].Split('^')[1]);
+                    }
+
+                    ProductType peakProductType = (ProductType)Enum.Parse(typeof(ProductType), spectrumPeakProductType, true);
+
+                    //TODO: figure out terminus
+                    FragmentationTerminus terminus = (FragmentationTerminus)Enum.Parse(typeof(FragmentationTerminus), "None", true);
+
+                    //TODO: figure out amino acid position
+                    var product = new Product(peakProductType, terminus, experMz, fragmentNumber, 0, 0);
+
+                    matchedFragmentIons.Add(new MatchedFragmentIon(ref product, experMz, experIntensity, ionCharge));
                 }
             }
-            nameLines.Add(lines.Length);// for the convenience to separate the file to different parts
-
-            for (int i = 0; i < nameLines.Count - 1; i++)
+            //add last entry
+            if (lines.Length != 0)
             {
-                string sequence = "";
-                int z = 1;
-                double precursorMz = 0;
-                double rt = 0;
-                List<MatchedFragmentIon> matchedFragmentIons = new List<MatchedFragmentIon>();
-
-                for (int j = nameLines[i]; j < nameLines[i + 1] - 1; j++)
-                {
-                    // get name of each spectrum
-                    if (lines[j].Contains("name", StringComparison.OrdinalIgnoreCase))
-                    {
-                        string[] name = lines[j].Split(new char[] { ':', '=' }, 2).Select(b => b.Trim()).ToArray();
-                        string sequenceWithCharge = name[1];
-                        string[] sequenceAndCharge = sequenceWithCharge.Split(new char[] { '/' }, 2).Select(b => b.Trim()).ToArray();
-                        sequence = sequenceAndCharge[0];
-                        if (sequenceAndCharge.Length > 1)
-                        {
-                            z = int.Parse(sequenceAndCharge[1]);
-                        }
-                    }
-
-                    // get m/z of the peptide. "MW" is not the molecular weight but is the m/z.
-                    else if ((lines[j].Contains("MW", StringComparison.OrdinalIgnoreCase) ||
-                        lines[j].Contains("Monoisotopic Mass", StringComparison.OrdinalIgnoreCase))
-                        && !lines[j].Contains("comment", StringComparison.OrdinalIgnoreCase))
-                    {
-                        double mw = double.Parse(lines[j].Split(":", 2).Select(b => b.Trim()).ToArray()[1], CultureInfo.InvariantCulture);
-                    }
-
-                    // get information from comment
-                    if (lines[j].Contains("comment", StringComparison.OrdinalIgnoreCase))
-                    {
-                        string[] comment = lines[j].Split(" ").Select(b => b.Trim()).ToArray();
-                        for (int l = 0; l < comment.Length; l++)
-                        {
-                            if (comment[l].Contains("parent", StringComparison.OrdinalIgnoreCase) || comment[l].Contains("precursor", StringComparison.OrdinalIgnoreCase))
-                            {
-                                precursorMz = double.Parse(comment[l].Split(new char[] { ':', '=' }).Select(b => b.Trim()).ToArray()[1], CultureInfo.InvariantCulture);
-                            }
-
-                            if (comment[l].Contains("iRT", StringComparison.OrdinalIgnoreCase) || comment[l].Contains("retention time", StringComparison.OrdinalIgnoreCase))
-                            {
-                                rt = double.Parse(comment[l].Split(new char[] { ':', '=' }).Select(b => b.Trim()).ToArray()[1], CultureInfo.InvariantCulture);
-                            }
-                        }
-                    }
-
-                    else if (lines[j].Contains("peaks", StringComparison.OrdinalIgnoreCase))
-                    {
-                        int numberOfPeaks = int.Parse(lines[j].Split(":").Select(b => b.Trim()).ToArray()[1]);
-
-                        // read each peak 
-                        for (int k = j + 1; k < j + 1 + numberOfPeaks; k++)
-                        {
-                            var peakLine = lines[k];
-
-                            string[] peak = peakLine.Split("\t").Select(b => b.Trim()).ToArray();
-                            var experMz = double.Parse(peak[0], CultureInfo.InvariantCulture);
-                            var experIntensity = double.Parse(peak[1], CultureInfo.InvariantCulture);
-                            string[] ionInfo = peak[2].Split(new char[] { '/', '\"', ')', '(' }, StringSplitOptions.RemoveEmptyEntries).Select(b => b.Trim()).ToArray();
-                            ionInfo[1] = ionInfo[1].Replace("ppm", "", ignoreCase: true, CultureInfo.InvariantCulture);
-
-                            //TODO: figure out a more robust way to do this
-                            var spectrumPeakProductType = ionInfo[0].ToCharArray()[0].ToString();
-
-                            int fragmentNumber = int.Parse(new string(ionInfo[0].Split(new char[] { '^' })[0].Where(Char.IsDigit).ToArray()));
-
-                            int ionCharge = 1;
-                            if (ionInfo[0].Contains('^'))
-                            {
-                                ionCharge = int.Parse(ionInfo[0].Split('^')[1]);
-                            }
-
-                            ProductType peakProductType = (ProductType)Enum.Parse(typeof(ProductType), spectrumPeakProductType, true);
-
-                            //TODO: figure out terminus
-                            FragmentationTerminus terminus = (FragmentationTerminus)Enum.Parse(typeof(FragmentationTerminus), "None", true);
-
-                            //TODO: figure out amino acid position
-                            var product = new Product(peakProductType, terminus, experMz, fragmentNumber, 0, 0);
-
-                            matchedFragmentIons.Add(new MatchedFragmentIon(ref product, experMz, experIntensity, ionCharge));
-                        }
-                    }
-                }
-
-                spectralLibraryDictionary.Add(sequence + z, new LibrarySpectrum(sequence, precursorMz, z, matchedFragmentIons, rt));
+                LibrarySpectrum librarySpectrum = new LibrarySpectrum(sequence, precursorMz, z, matchedFragmentIons, rt);
+                spectralLibraryDictionary.Add(librarySpectrum.Name, librarySpectrum);
             }
 
             return spectralLibraryDictionary;
