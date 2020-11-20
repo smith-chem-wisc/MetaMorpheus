@@ -527,10 +527,15 @@ namespace TaskLayer
         protected Dictionary<string, LibrarySpectrum> LoadSpectralLibraries(string taskId, List<DbForTask> dbFilenameList)
         {
             Status("Loading spectral libraries...", new List<string> { taskId });
-            Dictionary<string, LibrarySpectrum> aggregatedLibraries = new Dictionary<string, LibrarySpectrum>();
+            Dictionary<string, LibrarySpectrum> aggregatedLibraries = null;
 
             foreach (var db in dbFilenameList.Where(p => p.IsSpectralLibrary))
             {
+                if (aggregatedLibraries == null)
+                {
+                    aggregatedLibraries = new Dictionary<string, LibrarySpectrum>();
+                }
+
                 var lib = SpectralLibraryReader.ReadSpectralLibrary(db.FilePath);
 
                 foreach (var item in lib)
