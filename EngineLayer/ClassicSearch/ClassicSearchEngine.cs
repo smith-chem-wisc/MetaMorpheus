@@ -1,4 +1,5 @@
-﻿using MzLibUtil;
+﻿using EngineLayer.spectralLibrarySearch;
+using MzLibUtil;
 using Proteomics;
 using Proteomics.Fragmentation;
 using Proteomics.ProteolyticDigestion;
@@ -20,6 +21,10 @@ namespace EngineLayer.ClassicSearch
         private readonly PeptideSpectralMatch[] PeptideSpectralMatches;
         private readonly Ms2ScanWithSpecificMass[] ArrayOfSortedMS2Scans;
         private readonly double[] MyScanPrecursorMasses;
+        private readonly double[] MyScanPrecursorMonoisotopicPeakMz;
+
+        public List<LibrarySpectrum> SpectralLibrary { get; set; }
+        public SpectralLibrarayMatch[] SpectralLibrarayMatchs;
 
         public ClassicSearchEngine(PeptideSpectralMatch[] globalPsms, Ms2ScanWithSpecificMass[] arrayOfSortedMS2Scans,
             List<Modification> variableModifications, List<Modification> fixedModifications, List<SilacLabel> silacLabels, SilacLabel startLabel, SilacLabel endLabel, 
@@ -29,6 +34,7 @@ namespace EngineLayer.ClassicSearch
             PeptideSpectralMatches = globalPsms;
             ArrayOfSortedMS2Scans = arrayOfSortedMS2Scans;
             MyScanPrecursorMasses = arrayOfSortedMS2Scans.Select(b => b.PrecursorMass).ToArray();
+            MyScanPrecursorMonoisotopicPeakMz = arrayOfSortedMS2Scans.Select(b => b.PrecursorMonoisotopicPeakMz).ToArray();
             VariableModifications = variableModifications;
             FixedModifications = fixedModifications;
             SilacLabels = silacLabels;
@@ -38,6 +44,7 @@ namespace EngineLayer.ClassicSearch
             }
             Proteins = proteinList;
             SearchMode = searchMode;
+            SpectralLibrarayMatchs = new SpectralLibrarayMatch[globalPsms.Length];
         }
 
         protected override MetaMorpheusEngineResults RunSpecific()
@@ -62,6 +69,40 @@ namespace EngineLayer.ClassicSearch
                 int[] threads = Enumerable.Range(0, maxThreadsPerFile).ToArray();
                 Parallel.ForEach(threads, (i) =>
                 {
+                    if (SpectralLibrary.Any())
+                    {
+                        for (; i < SpectralLibrary.Count; i += maxThreadsPerFile)
+                        {
+                            foreach (var spectrum in SpectralLibrary)
+                            {
+                                foreach (ScanWithIndexAndNotchInfo scan in GetAcceptableScansWithLibrary(spectrum.PrecursorMz, SearchMode))
+                                {
+                                    List<MatchedFragmentIon> ObservedMatchedIons = MatchSpectrumPeaks(scan.TheScan, spectrum.MatchedFragmentIons, CommonParameters);
+                                    // calculate the similarity between the matched peaks in experimental spectrum and the library spectrum
+                                    double spectrumDotProductScore = SpectralLibrarySearchFunction.matchedSpectraCompare(spectrum.MatchedFragmentIons, ObservedMatchedIons);
+                                    lock (myLocks[scan.ScanIndex])
+                                    {
+                                        bool scoreImprovement = SpectralLibrarayMatchs[scan.ScanIndex] == null || (spectrumDotProductScore - PeptideSpectralMatches[scan.ScanIndex].RunnerUpScore) > -PeptideSpectralMatch.ToleranceForScoreDifferentiation;
+
+                                        if (scoreImprovement)
+                                        {
+                                            if (SpectralLibrarayMatchs[scan.ScanIndex] == null)
+                                            {
+                                                SpectralLibrarayMatchs[scan.ScanIndex] = new SpectralLibrarayMatch(spectrum, scan.Notch, spectrumDotProductScore, scan.ScanIndex, scan.TheScan, CommonParameters, ObservedMatchedIons, 0);
+                                            }
+                                            else
+                                            {
+                                                SpectralLibrarayMatchs[scan.ScanIndex].AddOrReplace(spectrum, spectrumDotProductScore, scan.Notch, CommonParameters.ReportAllAmbiguity, ObservedMatchedIons, 0);
+                                            }
+                                        }
+
+                                    }
+                                }
+
+
+                            }
+                        }
+                    }
                     var peptideTheorProducts = new List<Product>();
 
                     for (; i < Proteins.Count; i += maxThreadsPerFile)
@@ -153,9 +194,48 @@ namespace EngineLayer.ClassicSearch
             }
         }
 
+        //modified based on  GetAcceptableScans(double spectrumMz, MassDiffAcceptor searchMode)
+        private IEnumerable<ScanWithIndexAndNotchInfo> GetAcceptableScansWithLibrary(double spectrumMz, MassDiffAcceptor searchMode)
+        {
+            foreach (AllowedIntervalWithNotch allowedIntervalWithNotch in searchMode.GetAllowedPrecursorMassIntervalsFromTheoreticalMass(spectrumMz).ToList())
+            {
+                DoubleRange allowedInterval = allowedIntervalWithNotch.AllowedInterval;
+                int scanIndex = GetFirstScanWithMzOverOrEqual(allowedInterval.Minimum);
+                if (scanIndex < ArrayOfSortedMS2Scans.Length)
+                {
+                    var scanMz = MyScanPrecursorMonoisotopicPeakMz[scanIndex];
+                    while (scanMz <= allowedInterval.Maximum)
+                    {
+                        var scan = ArrayOfSortedMS2Scans[scanIndex];
+                        yield return new ScanWithIndexAndNotchInfo(scan, allowedIntervalWithNotch.Notch, scanIndex);
+                        scanIndex++;
+                        if (scanIndex == ArrayOfSortedMS2Scans.Length)
+                        {
+                            break;
+                        }
+
+                        scanMz = MyScanPrecursorMonoisotopicPeakMz[scanIndex];
+                    }
+                }
+            }
+        }
+
         private int GetFirstScanWithMassOverOrEqual(double minimum)
         {
             int index = Array.BinarySearch(MyScanPrecursorMasses, minimum);
+            if (index < 0)
+            {
+                index = ~index;
+            }
+
+            // index of the first element that is larger than value
+            return index;
+        }
+
+        //modified based on GetFirstScanWithMassOverOrEqual(double minimum)
+        private int GetFirstScanWithMzOverOrEqual(double minimum)
+        {
+            int index = Array.BinarySearch(MyScanPrecursorMonoisotopicPeakMz, minimum);
             if (index < 0)
             {
                 index = ~index;

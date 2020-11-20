@@ -1,5 +1,6 @@
 ﻿using Chemistry;
 using MassSpectrometry;
+using MzLibUtil;
 using Proteomics.Fragmentation;
 using System;
 using System.Collections.Generic;
@@ -75,6 +76,43 @@ namespace EngineLayer
             }
 
             return score;
+        }
+
+        //looking for the matched peaks in expectrimental spectrum
+        public List<MatchedFragmentIon> MatchSpectrumPeaks(Ms2ScanWithSpecificMass scan, List<MatchedFragmentIon> libraryProducts, CommonParameters commonParameters)
+        {
+            var matchedFragmentIons = new List<MatchedFragmentIon>();
+            Tolerance productTolerance = new PpmTolerance(50);
+
+            //if the spectrum has no peaks
+            if (scan.ExperimentalFragments != null && !scan.ExperimentalFragments.Any())
+            {
+                return matchedFragmentIons;
+            }
+
+            // search for ions in the spectrum
+            //foreach (Product product in librarySpectrum)
+            for (int i = 0; i < libraryProducts.Count; i++)
+            {
+                var product = libraryProducts[i].NeutralTheoreticalProduct;
+
+                // unknown fragment mass; this only happens rarely for sequences with unknown amino acids
+                if (double.IsNaN(libraryProducts[i].Mz))
+                {
+                    continue;
+                }
+
+                // get the closest peak in the spectrum to the LibrarySpectrum peak
+                var closestExperimentalMz = scan.LibraryGetClosestExperimentalIsotopicEnvelope(libraryProducts[i].Mz);
+             
+                // is the mass error acceptable?
+                if (closestExperimentalMz != null && productTolerance.Within(closestExperimentalMz.MonoisotopicMass.ToMz(closestExperimentalMz.Charge), libraryProducts[i].Mz) && closestExperimentalMz.Charge <= scan.PrecursorCharge)//TODO apply this filter before picking the 
+                {
+                    matchedFragmentIons.Add(new MatchedFragmentIon(ref product, closestExperimentalMz.MonoisotopicMass.ToMz(closestExperimentalMz.Charge),
+                        closestExperimentalMz.Peaks.First().intensity, closestExperimentalMz.Charge));
+                }
+            }
+            return matchedFragmentIons;
         }
 
         public static List<MatchedFragmentIon> MatchFragmentIons(Ms2ScanWithSpecificMass scan, List<Product> theoreticalProducts, CommonParameters commonParameters)

@@ -507,7 +507,7 @@ namespace TaskLayer
             Status("Loading proteins...", new List<string> { taskId });
             int emptyProteinEntries = 0;
             List<Protein> proteinList = new List<Protein>();
-            foreach (var db in dbFilenameList)
+            foreach (var db in dbFilenameList.Where(p => p.IsSpectralLibrary != true))
             {
                 var dbProteinList = LoadProteinDb(db.FilePath, searchTarget, decoyType, localizeableModificationTypes, db.IsContaminant, out Dictionary<string, Modification> unknownModifications, out int emptyProteinEntriesForThisDb, commonParameters);
                 proteinList = proteinList.Concat(dbProteinList).ToList();
