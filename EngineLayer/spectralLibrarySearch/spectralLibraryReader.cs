@@ -103,7 +103,7 @@ namespace EngineLayer.SpectralLibrarySearch
                         }
                     }
                 }
-                spectralLibraryDictionary.Add(sequence + z, new SpectralBook(sequence, precursorMz, z, matchedFragmentIons));
+                spectralLibraryDictionary.Add(sequence + z, new SpectralBook(sequence, precursorMz, z, matchedFragmentIons, rt));
             }
 
             return spectralLibraryDictionary;
