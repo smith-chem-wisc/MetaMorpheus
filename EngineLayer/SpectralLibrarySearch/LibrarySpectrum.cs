@@ -10,13 +10,17 @@ namespace EngineLayer
     /// </summary>
     public class LibrarySpectrum
     {
-        public string SequenceWithCharge { get; set; }
+
         public string Sequence { get; set; }
         public double RetentionTime { get; set; }
         public double PrecursorMz { get; set; }
         public int ChargeState { get; set; }
         public List<MatchedFragmentIon> MatchedFragmentIons { get; set; }
         public bool IsDecoy { get; set; }
+        public string Name
+        {
+            get { return Sequence + "/" + ChargeState; }
+        }
 
         public LibrarySpectrum(string sequence, double precursorMz, int chargeState, List<MatchedFragmentIon> peaks, double rt, bool isDecoy = false)
         {
@@ -26,18 +30,17 @@ namespace EngineLayer
             ChargeState = chargeState;
             IsDecoy = isDecoy;
             RetentionTime = rt;
-            SequenceWithCharge = sequence + chargeState.ToString();
         }
 
         public override string ToString()
         {
             StringBuilder spectrum = new StringBuilder();
-            spectrum.Append("Name: " + Sequence + "/" + ChargeState);
+            spectrum.Append("Name: " + Name);
             spectrum.Append("\nMW: " + PrecursorMz);
             spectrum.Append("\nComment: ");
             spectrum.Append("Parent=" + PrecursorMz);
             spectrum.Append(" Retention Time=" + RetentionTime);
-            spectrum.Append("\nMatched peaks number : " + MatchedFragmentIons.Count + "\n");
+            spectrum.Append("\nMatched peaks number : " + MatchedFragmentIons.Count);
 
             double maxIntensity = MatchedFragmentIons.Select(b => b.Intensity).Max();
 
@@ -45,10 +48,10 @@ namespace EngineLayer
             {
                 double intensityFraction = matchedIon.Intensity / maxIntensity;
 
-                spectrum.Append(matchedIon.Mz + "\t" + intensityFraction + "\t" + "\"" +
+                spectrum.Append("\n"+matchedIon.Mz + "\t" + intensityFraction + "\t" + "\"" +
                     matchedIon.NeutralTheoreticalProduct.ProductType.ToString() +
                     matchedIon.NeutralTheoreticalProduct.FragmentNumber.ToString() + "^" +
-                    matchedIon.Charge + "/" + 0 + "ppm" + "\"" + "\n");
+                    matchedIon.Charge + "/" + 0 + "ppm" + "\"");
             }
 
             return spectrum.ToString();
