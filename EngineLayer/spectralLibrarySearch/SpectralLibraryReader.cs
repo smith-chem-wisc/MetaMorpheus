@@ -22,6 +22,7 @@ namespace EngineLayer
 
             lines = File.ReadAllLines(filePath);
 
+
             //set up variables: 
             string sequence = "";
             int z = 0;

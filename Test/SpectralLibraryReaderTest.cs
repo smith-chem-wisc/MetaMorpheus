@@ -25,6 +25,7 @@ namespace Test
             Assert.IsTrue(testLibraryWithoutDecoy.ContainsKey("M[Common Variable:Oxidation on M]C[Common Fixed:Carbamidomethyl on C]SDSDGLAPPQHLIR/2"));
             
             var test1 = testLibraryWithoutDecoy["ALAVDGAGKPGAEE/2"];
+
             Assert.AreEqual(test1.ChargeState, 2);
 
             var frags = new List<(double mz, double intensity, ProductType ProductType, int fragmentNumber, int charge, double ppm)>
@@ -88,6 +89,7 @@ namespace Test
             Assert.IsTrue(testLibraryWithoutDecoy.ContainsKey("M[Common Variable:Oxidation on M]C[Common Fixed:Carbamidomethyl on C]SDSDGLAPPQHLIR/2"));
 
             test1 = testLibraryWithoutDecoy["ALAVDGAGKPGAEE/2"];
+
             Assert.AreEqual(test1.ChargeState, 2);
 
             for (int i = 0; i < frags.Count; i++)

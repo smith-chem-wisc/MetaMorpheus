@@ -10,6 +10,7 @@ namespace EngineLayer
     /// </summary>
     public class LibrarySpectrum
     {
+
         public string Sequence { get; set; }
         public double RetentionTime { get; set; }
         public double PrecursorMz { get; set; }
