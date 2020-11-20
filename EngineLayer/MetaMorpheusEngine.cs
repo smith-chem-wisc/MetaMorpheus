@@ -46,7 +46,12 @@ namespace EngineLayer
         {
             double score = 0;
 
-            if (thisScan.MassSpectrum.XcorrProcessed)
+            if (libraryIons != null)
+            {
+                // Cosine score (for spectral libraries)
+                return SpectralLibrarySearchFunction.CalculateCosineScore(matchedFragmentIons, libraryIons);
+            }
+            else if (thisScan.MassSpectrum.XcorrProcessed)
             {
                 // XCorr
                 foreach (var fragment in matchedFragmentIons)
@@ -67,11 +72,6 @@ namespace EngineLayer
                             break;
                     }
                 }
-            }
-            if (libraryIons != null)
-            {
-                // Cosine score (for spectral libraries)
-                return SpectralLibrarySearchFunction.CalculateCosineScore(matchedFragmentIons, libraryIons);
             }
             else
             {
