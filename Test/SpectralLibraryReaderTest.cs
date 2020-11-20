@@ -20,9 +20,11 @@ namespace Test
 
             var testLibraryWithoutDecoy = SpectralLibraryReader.ReadSpectralLibrary(path);
 
-            Assert.That(testLibraryWithoutDecoy.Count == 3);
-
-            var test1 = testLibraryWithoutDecoy["ALAVDGAGKPGAEE2"];
+            Assert.That(testLibraryWithoutDecoy.Count == 5);
+            Assert.IsTrue(testLibraryWithoutDecoy.ContainsKey("QSQHM[Common Variable:Oxidation on M]TEVVR/5"));
+            Assert.IsTrue(testLibraryWithoutDecoy.ContainsKey("M[Common Variable:Oxidation on M]C[Common Fixed:Carbamidomethyl on C]SDSDGLAPPQHLIR/2"));
+            
+            var test1 = testLibraryWithoutDecoy["ALAVDGAGKPGAEE/2"];
             Assert.AreEqual(test1.ChargeState, 2);
 
             var frags = new List<(double mz, double intensity, ProductType ProductType, int fragmentNumber, int charge, double ppm)>
@@ -78,12 +80,14 @@ namespace Test
             var str = testLibraryWithoutDecoy.Values.SelectMany(p => p.ToString().Split(new char[] { '\n' }));
             File.WriteAllLines(writtenPath, str);
 
-            // read the library and make sure the results are readable
+            // read the written library and make sure the results are readable
             testLibraryWithoutDecoy = SpectralLibraryReader.ReadSpectralLibrary(writtenPath);
 
-            Assert.That(testLibraryWithoutDecoy.Count == 3);
+            Assert.That(testLibraryWithoutDecoy.Count == 5);
+            Assert.IsTrue(testLibraryWithoutDecoy.ContainsKey("QSQHM[Common Variable:Oxidation on M]TEVVR/5"));
+            Assert.IsTrue(testLibraryWithoutDecoy.ContainsKey("M[Common Variable:Oxidation on M]C[Common Fixed:Carbamidomethyl on C]SDSDGLAPPQHLIR/2"));
 
-            test1 = testLibraryWithoutDecoy["ALAVDGAGKPGAEE2"];
+            test1 = testLibraryWithoutDecoy["ALAVDGAGKPGAEE/2"];
             Assert.AreEqual(test1.ChargeState, 2);
 
             for (int i = 0; i < frags.Count; i++)
