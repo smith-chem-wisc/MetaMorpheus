@@ -3,42 +3,41 @@ using System;
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
+using System.Globalization;
 
-namespace EngineLayer.SpectralLibrarySearch
+namespace EngineLayer
 {
     public static class SpectralLibraryReader
     {
-
-        public static Dictionary<string, SpectralBook> ReadSpectralLibrary(string filePath)
+        public static Dictionary<string, LibrarySpectrum> ReadSpectralLibrary(string filePath)
         {
-            Dictionary<string, SpectralBook> spectralLibraryDictionary = new Dictionary<string, SpectralBook>();
+            Dictionary<string, LibrarySpectrum> spectralLibraryDictionary = new Dictionary<string, LibrarySpectrum>();
             string[] lines;
 
             lines = File.ReadAllLines(filePath);
 
             //find the lines which contain "name"
-            var nameLine = new List<int>();
+            var nameLines = new List<int>();
             for (int i = 0; i < lines.Length; i++)
             {
                 if (lines[i].Contains("name", StringComparison.OrdinalIgnoreCase))
                 {
-                    nameLine.Add(i);
+                    nameLines.Add(i);
                 }
             }
-            nameLine.Add(lines.Length);// for the convenience to separate the file to different parts
+            nameLines.Add(lines.Length);// for the convenience to separate the file to different parts
 
-            //for each spectrum 
-            for (int i = 0; i < nameLine.Count - 1; i++)
+            for (int i = 0; i < nameLines.Count - 1; i++)
             {
                 string sequence = "";
                 int z = 1;
                 double precursorMz = 0;
                 double rt = 0;
                 List<MatchedFragmentIon> matchedFragmentIons = new List<MatchedFragmentIon>();
-                //for each line
-                for (int j = nameLine[i]; j < nameLine[i + 1] - 1; j++)
+
+                for (int j = nameLines[i]; j < nameLines[i + 1] - 1; j++)
                 {
-                    //get name of each spectrum
+                    // get name of each spectrum
                     if (lines[j].Contains("name", StringComparison.OrdinalIgnoreCase))
                     {
                         string[] name = lines[j].Split(new char[] { ':', '=' }, 2).Select(b => b.Trim()).ToArray();
@@ -47,16 +46,16 @@ namespace EngineLayer.SpectralLibrarySearch
                         sequence = sequenceAndCharge[0];
                         if (sequenceAndCharge.Length > 1)
                         {
-                            z = Convert.ToInt32(sequenceAndCharge[1]);
+                            z = int.Parse(sequenceAndCharge[1]);
                         }
                     }
 
-                    //get MW of each spectrum
+                    // get m/z of the peptide. "MW" is not the molecular weight but is the m/z.
                     else if ((lines[j].Contains("MW", StringComparison.OrdinalIgnoreCase) ||
                         lines[j].Contains("Monoisotopic Mass", StringComparison.OrdinalIgnoreCase))
                         && !lines[j].Contains("comment", StringComparison.OrdinalIgnoreCase))
                     {
-                        double mw = Convert.ToDouble(lines[j].Split(":", 2).Select(b => b.Trim()).ToArray()[1]);
+                        double mw = double.Parse(lines[j].Split(":", 2).Select(b => b.Trim()).ToArray()[1], CultureInfo.InvariantCulture);
                     }
 
                     // get information from comment
@@ -67,43 +66,56 @@ namespace EngineLayer.SpectralLibrarySearch
                         {
                             if (comment[l].Contains("parent", StringComparison.OrdinalIgnoreCase) || comment[l].Contains("precursor", StringComparison.OrdinalIgnoreCase))
                             {
-                                precursorMz = Convert.ToDouble(comment[l].Split(new char[] { ':', '=' }).Select(b => b.Trim()).ToArray()[1]);
+                                precursorMz = double.Parse(comment[l].Split(new char[] { ':', '=' }).Select(b => b.Trim()).ToArray()[1], CultureInfo.InvariantCulture);
                             }
 
                             if (comment[l].Contains("iRT", StringComparison.OrdinalIgnoreCase) || comment[l].Contains("retention time", StringComparison.OrdinalIgnoreCase))
                             {
-                                rt = Convert.ToDouble(comment[l].Split(new char[] { ':', '=' }).Select(b => b.Trim()).ToArray()[1]);
+                                rt = double.Parse(comment[l].Split(new char[] { ':', '=' }).Select(b => b.Trim()).ToArray()[1], CultureInfo.InvariantCulture);
                             }
                         }
                     }
 
                     else if (lines[j].Contains("peaks", StringComparison.OrdinalIgnoreCase))
                     {
-                        int numberOfPeaks = Convert.ToInt32(lines[j].Split(":").Select(b => b.Trim()).ToArray()[1]);
+                        int numberOfPeaks = int.Parse(lines[j].Split(":").Select(b => b.Trim()).ToArray()[1]);
 
-                        //load each peak 
+                        // read each peak 
                         for (int k = j + 1; k < j + 1 + numberOfPeaks; k++)
                         {
-                            string[] eachPeak = lines[k].Split("\t").Select(b => b.Trim()).ToArray();
-                            var experMz = double.Parse(eachPeak[0]);
-                            var experIntensity = double.Parse(eachPeak[1]);
-                            string[] ions = eachPeak[2].Split(new char[] { '/', '\"', 'p' }, StringSplitOptions.RemoveEmptyEntries).Select(b => b.Trim()).ToArray();
-                            var spectrumPeakProductType = ions[0].ToCharArray()[0].ToString();
-                            var fragmentNumber = (int)char.GetNumericValue(ions[0].ToCharArray()[1]);
+                            var peakLine = lines[k];
+
+                            string[] peak = peakLine.Split("\t").Select(b => b.Trim()).ToArray();
+                            var experMz = double.Parse(peak[0], CultureInfo.InvariantCulture);
+                            var experIntensity = double.Parse(peak[1], CultureInfo.InvariantCulture);
+                            string[] ionInfo = peak[2].Split(new char[] { '/', '\"', ')', '(' }, StringSplitOptions.RemoveEmptyEntries).Select(b => b.Trim()).ToArray();
+                            ionInfo[1] = ionInfo[1].Replace("ppm", "", ignoreCase: true, CultureInfo.InvariantCulture);
+
+                            //TODO: figure out a more robust way to do this
+                            var spectrumPeakProductType = ionInfo[0].ToCharArray()[0].ToString();
+
+                            int fragmentNumber = int.Parse(new string(ionInfo[0].Split(new char[] { '^' })[0].Where(Char.IsDigit).ToArray()));
+
                             int ionCharge = 1;
-                            if (ions[0].ToCharArray().Length > 3)
+                            if (ionInfo[0].Contains('^'))
                             {
-                                ionCharge = (int)char.GetNumericValue(ions[0].ToCharArray()[3]);
-                            }                        
+                                ionCharge = int.Parse(ionInfo[0].Split('^')[1]);
+                            }
 
                             ProductType peakProductType = (ProductType)Enum.Parse(typeof(ProductType), spectrumPeakProductType, true);
+
+                            //TODO: figure out terminus
                             FragmentationTerminus terminus = (FragmentationTerminus)Enum.Parse(typeof(FragmentationTerminus), "None", true);
+
+                            //TODO: figure out amino acid position
                             var product = new Product(peakProductType, terminus, experMz, fragmentNumber, 0, 0);
+
                             matchedFragmentIons.Add(new MatchedFragmentIon(ref product, experMz, experIntensity, ionCharge));
                         }
                     }
                 }
-                spectralLibraryDictionary.Add(sequence + z, new SpectralBook(sequence, precursorMz, z, matchedFragmentIons, rt));
+
+                spectralLibraryDictionary.Add(sequence + z, new LibrarySpectrum(sequence, precursorMz, z, matchedFragmentIons, rt));
             }
 
             return spectralLibraryDictionary;
