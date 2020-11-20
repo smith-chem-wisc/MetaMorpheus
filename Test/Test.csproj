@@ -151,6 +151,9 @@
     <None Update="TestData\LowResSnip_B6_mouse_11700_117500pruned.xml">
       <CopyToOutputDirectory>Always</CopyToOutputDirectory>
     </None>
+    <None Update="TestData\myPrositLib.msp">
+      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+    </None>
     <None Update="TestData\ok.mgf">
       <CopyToOutputDirectory>Always</CopyToOutputDirectory>
     </None>
