@@ -601,7 +601,7 @@ namespace EngineLayer
         {
             double normalizationFactor = selectedPeptide.BaseSequence.Length;
             float totalMatchingFragmentCount = 0;
-            float intensity = 0;
+            float intensityFraction = 0;
             float chargeDifference = 0;
             float deltaScore = 0;
             float psmCount = 1;
@@ -633,7 +633,7 @@ namespace EngineLayer
                     normalizationFactor /= 10.0;
                 }
                 totalMatchingFragmentCount = (float)(Math.Round(psm.PeptidesToMatchingFragments[selectedPeptide].Count / normalizationFactor * 10, 0));
-                intensity = (float)Math.Min(50, Math.Round((psm.Score - (int)psm.Score) / normalizationFactor * 100.0, 0));
+                intensityFraction = (float)Math.Min(50, Math.Round((psm.MatchedFragmentIons.Sum(p => p.Intensity) / psm.TotalIonCurrent) / normalizationFactor * 100.0, 0));
                 chargeDifference = -Math.Abs(chargeStateMode - psm.ScanPrecursorCharge);
                 deltaScore = (float)Math.Round(psm.DeltaScore / normalizationFactor * 10.0, 0);
                 notch = notchToUse;
@@ -722,8 +722,8 @@ namespace EngineLayer
 
                 deltaScore = (float)Math.Round(csm.DeltaScore / totalNormalizationFactor * 10.0, 0);
                 chargeDifference = -Math.Abs(chargeStateMode - psm.ScanPrecursorCharge);
-                alphaIntensity = (float)Math.Min(100, Math.Round((csm.Score - (int)csm.Score) / alphaNormalizationFactor * 100.0, 0));
-                betaIntensity = csm.BetaPeptide == null ? (float)0 : (float)Math.Min(100.0, Math.Round((csm.BetaPeptide.Score - (int)csm.BetaPeptide.Score) / betaNormalizationFactor * 100.0, 0));
+                alphaIntensity = (float)Math.Min(100, Math.Round((csm.MatchedFragmentIons.Sum(p => p.Intensity) / csm.TotalIonCurrent) / alphaNormalizationFactor * 100.0, 0));
+                betaIntensity = csm.BetaPeptide == null ? (float)0 : (float)Math.Min(100.0, Math.Round((csm.BetaPeptide.MatchedFragmentIons.Sum(p => p.Intensity) / csm.BetaPeptide.TotalIonCurrent) / betaNormalizationFactor * 100.0, 0));
                 longestFragmentIonSeries_Alpha = (float)Math.Round(PeptideSpectralMatch.GetLongestIonSeriesBidirectional(csm.PeptidesToMatchingFragments, selectedAlphaPeptide) / alphaNormalizationFactor * 10.0, 0);
                 longestFragmentIonSeries_Beta = selectedBetaPeptide == null ? (float)0 : PeptideSpectralMatch.GetLongestIonSeriesBidirectional(csm.BetaPeptide.PeptidesToMatchingFragments, selectedBetaPeptide) / betaNormalizationFactor;
                 longestFragmentIonSeries_Beta = (float)Math.Round(longestFragmentIonSeries_Beta * 10.0, 0);
@@ -734,7 +734,7 @@ namespace EngineLayer
             psm.PsmData_forPEPandPercolator = new PsmData
             {
                 TotalMatchingFragmentCount = totalMatchingFragmentCount,
-                Intensity = intensity,
+                Intensity = intensityFraction,
                 PrecursorChargeDiffToMode = chargeDifference,
                 DeltaScore = deltaScore,
                 Notch = notch,
