@@ -2,7 +2,7 @@
 using System.IO;
 using System;
 using System.Linq;
-using EngineLayer.spectralLibrarySearch;
+using EngineLayer.SpectralLibrarySearch;
 using MzLibUtil;
 using TaskLayer;
 using System.Collections.Generic;
@@ -16,10 +16,9 @@ namespace Test
         [Test]
         public static void SpectralReaderWithoutDecpyTest()
         {
-            //
-            var testLibraryWithoutDecoy = new SpectralLibraryReader(Path.Combine(TestContext.CurrentContext.TestDirectory, @"TestData\myPrositLib.msp")).SpectralLibraryDictionary;
-            var test1 = testLibraryWithoutDecoy["ALAVDGAGKPGAEE/2"];
-            Assert.AreEqual(test1.Charge_state, 2);
+            var testLibraryWithoutDecoy = SpectralLibraryReader.ReadSpectralLibrary(Path.Combine(TestContext.CurrentContext.TestDirectory, @"TestData\myPrositLib.msp"));
+            var test1 = testLibraryWithoutDecoy["ALAVDGAGKPGAEE2"];
+            Assert.AreEqual(test1.ChargeState, 2);
             PpmTolerance newTolerance = new PpmTolerance(50);
             Assert.That(newTolerance.Within(test1.PrecursorMz, 642.825));
             Assert.AreEqual(test1.MatchedFragmentIons.Count, 31);
