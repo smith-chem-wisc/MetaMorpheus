@@ -61,7 +61,7 @@ namespace EngineLayer
             {
                 lock (StreamReaders[value.filePath])
                 {
-                    librarySpectrum = GetSpectrumFromLibrary(value.filePath, value.byteOffset);
+                    librarySpectrum = ReadSpectrumFromLibraryFile(value.filePath, value.byteOffset);
 
                     if (librarySpectrum.Name != lookupString)
                     {
@@ -70,14 +70,22 @@ namespace EngineLayer
                     }
 
                     // add this item to the buffer
-                    LibrarySpectrumBuffer.TryAdd(lookupString, librarySpectrum);
-                    LibrarySpectrumBufferList.Enqueue(lookupString);
-
-                    // remove items from buffer if the buffer is at max capacity
-                    if (LibrarySpectrumBuffer.Count > MaxElementsInBuffer)
+                    lock (LibrarySpectrumBuffer)
                     {
-                        var item = LibrarySpectrumBufferList.Dequeue();
-                        LibrarySpectrumBuffer.Remove(item);
+                        lock (LibrarySpectrumBufferList)
+                        {
+                            LibrarySpectrumBuffer.TryAdd(lookupString, librarySpectrum);
+
+                            LibrarySpectrumBufferList.Enqueue(lookupString);
+
+
+                            // remove items from buffer if the buffer is at max capacity
+                            while (LibrarySpectrumBuffer.Count > MaxElementsInBuffer)
+                            {
+                                var item = LibrarySpectrumBufferList.Dequeue();
+                                LibrarySpectrumBuffer.Remove(item);
+                            }
+                        }
                     }
                 }
 
@@ -91,7 +99,7 @@ namespace EngineLayer
         {
             foreach (var item in SequenceToFileAndLocation)
             {
-                yield return GetSpectrumFromLibrary(item.Value.filePath, item.Value.byteOffset);
+                yield return ReadSpectrumFromLibraryFile(item.Value.filePath, item.Value.byteOffset);
             }
         }
 
@@ -113,7 +121,7 @@ namespace EngineLayer
             }
         }
 
-        private LibrarySpectrum GetSpectrumFromLibrary(string path, long byteOffset)
+        private LibrarySpectrum ReadSpectrumFromLibraryFile(string path, long byteOffset)
         {
             if (!StreamReaders.TryGetValue(path, out var reader))
             {

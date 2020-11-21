@@ -344,7 +344,10 @@ namespace TaskLayer
                     allPsms.AddRange(fileSpecificPsms);
                 }
 
-                spectralLibrary.CloseConnections();
+                if (spectralLibrary != null)
+                {
+                    spectralLibrary.CloseConnections();
+                }
 
                 completedFiles++;
                 FinishedDataFile(origDataFile, new List<string> { taskId, "Individual Spectra Files", origDataFile });
