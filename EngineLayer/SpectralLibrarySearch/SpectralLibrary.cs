@@ -70,7 +70,7 @@ namespace EngineLayer
                     }
 
                     // add this item to the buffer
-                    LibrarySpectrumBuffer.Add(lookupString, librarySpectrum);
+                    LibrarySpectrumBuffer.TryAdd(lookupString, librarySpectrum);
                     LibrarySpectrumBufferList.Enqueue(lookupString);
 
                     // remove items from buffer if the buffer is at max capacity
