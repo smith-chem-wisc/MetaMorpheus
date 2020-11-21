@@ -50,7 +50,7 @@ namespace EngineLayer
                 if (librarySpectrum.Name != lookupString)
                 {
                     throw new MetaMorpheusException("Bad spectral library formatting or indexing: Found \""
-                        + librarySpectrum.Name + "\" but expected \"" + sequence + "/" + charge + "\"");
+                        + librarySpectrum.Name + "\" but expected \"" + lookupString + "\"");
                 }
 
                 return true;
@@ -66,7 +66,7 @@ namespace EngineLayer
                     if (librarySpectrum.Name != lookupString)
                     {
                         throw new MetaMorpheusException("Bad spectral library formatting or indexing: Found \""
-                            + librarySpectrum.Name + "\" but expected \"" + sequence + "/" + charge + "\"");
+                            + librarySpectrum.Name + "\" but expected \"" + lookupString + "\"");
                     }
 
                     // add this item to the buffer
