@@ -524,31 +524,21 @@ namespace TaskLayer
             return proteinList;
         }
 
-        protected Dictionary<string, LibrarySpectrum> LoadSpectralLibraries(string taskId, List<DbForTask> dbFilenameList)
+        protected SpectralLibrary LoadSpectralLibraries(string taskId, List<DbForTask> dbFilenameList)
         {
             Status("Loading spectral libraries...", new List<string> { taskId });
-            Dictionary<string, LibrarySpectrum> aggregatedLibraries = null;
 
-            foreach (var db in dbFilenameList.Where(p => p.IsSpectralLibrary))
+            var paths = dbFilenameList.Where(p => p.IsSpectralLibrary).Select(p => p.FilePath).ToList();
+
+            if (!paths.Any())
             {
-                if (aggregatedLibraries == null)
-                {
-                    aggregatedLibraries = new Dictionary<string, LibrarySpectrum>();
-                }
-
-                var lib = SpectralLibraryReader.ReadSpectralLibrary(db.FilePath);
-
-                foreach (var item in lib)
-                {
-                    if (!aggregatedLibraries.ContainsKey(item.Key))
-                    {
-                        aggregatedLibraries.Add(item.Key, item.Value);
-                    }
-                }
+                return null;
             }
 
+            var lib = new SpectralLibrary(paths);
+
             Status("Done loading spectral libraries", new List<string> { taskId });
-            return aggregatedLibraries;
+            return lib;
         }
 
         protected static List<Protein> LoadProteinDb(string fileName, bool generateTargets, DecoyType decoyType, List<string> localizeableModificationTypes, bool isContaminant, out Dictionary<string, Modification> um,

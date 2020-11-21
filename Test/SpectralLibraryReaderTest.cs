@@ -18,13 +18,14 @@ namespace Test
         {
             var path = Path.Combine(TestContext.CurrentContext.TestDirectory, @"TestData\myPrositLib.msp");
 
-            var testLibraryWithoutDecoy = SpectralLibraryReader.ReadSpectralLibrary(path);
+            var testLibraryWithoutDecoy = new SpectralLibrary(new List<string> { path });
+            var librarySpectra = testLibraryWithoutDecoy.GetAllLibrarySpectra().ToList();
 
-            Assert.That(testLibraryWithoutDecoy.Count == 5);
-            Assert.IsTrue(testLibraryWithoutDecoy.ContainsKey("QSQHM[Common Variable:Oxidation on M]TEVVR/5"));
-            Assert.IsTrue(testLibraryWithoutDecoy.ContainsKey("M[Common Variable:Oxidation on M]C[Common Fixed:Carbamidomethyl on C]SDSDGLAPPQHLIR/2"));
-            
-            var test1 = testLibraryWithoutDecoy["ALAVDGAGKPGAEE/2"];
+            Assert.That(librarySpectra.Count == 5);
+            Assert.That(testLibraryWithoutDecoy.TryGetSpectrum("QSQHM[Common Variable:Oxidation on M]TEVVR", 5, out var spectrum));
+            Assert.That(testLibraryWithoutDecoy.TryGetSpectrum("M[Common Variable:Oxidation on M]C[Common Fixed:Carbamidomethyl on C]SDSDGLAPPQHLIR", 2, out spectrum));
+
+            testLibraryWithoutDecoy.TryGetSpectrum("ALAVDGAGKPGAEE", 2, out var test1);
 
             Assert.AreEqual(test1.ChargeState, 2);
 
@@ -78,17 +79,20 @@ namespace Test
 
             // write the library w/ the ToString method
             var writtenPath = Path.Combine(TestContext.CurrentContext.TestDirectory, @"TestData\testLibraryToString.msp");
-            var str = testLibraryWithoutDecoy.Values.SelectMany(p => p.ToString().Split(new char[] { '\n' }));
+            var str = librarySpectra.SelectMany(p => p.ToString().Split(new char[] { '\n' }));
             File.WriteAllLines(writtenPath, str);
 
+            testLibraryWithoutDecoy.CloseConnections();
+
             // read the written library and make sure the results are readable
-            testLibraryWithoutDecoy = SpectralLibraryReader.ReadSpectralLibrary(writtenPath);
+            testLibraryWithoutDecoy = new SpectralLibrary(new List<string> { writtenPath });
+            librarySpectra = testLibraryWithoutDecoy.GetAllLibrarySpectra().ToList();
 
-            Assert.That(testLibraryWithoutDecoy.Count == 5);
-            Assert.IsTrue(testLibraryWithoutDecoy.ContainsKey("QSQHM[Common Variable:Oxidation on M]TEVVR/5"));
-            Assert.IsTrue(testLibraryWithoutDecoy.ContainsKey("M[Common Variable:Oxidation on M]C[Common Fixed:Carbamidomethyl on C]SDSDGLAPPQHLIR/2"));
+            Assert.That(librarySpectra.Count == 5);
+            Assert.That(testLibraryWithoutDecoy.TryGetSpectrum("QSQHM[Common Variable:Oxidation on M]TEVVR", 5, out spectrum));
+            Assert.That(testLibraryWithoutDecoy.TryGetSpectrum("M[Common Variable:Oxidation on M]C[Common Fixed:Carbamidomethyl on C]SDSDGLAPPQHLIR", 2, out spectrum));
 
-            test1 = testLibraryWithoutDecoy["ALAVDGAGKPGAEE/2"];
+            testLibraryWithoutDecoy.TryGetSpectrum("ALAVDGAGKPGAEE", 2, out test1);
 
             Assert.AreEqual(test1.ChargeState, 2);
 
@@ -105,6 +109,7 @@ namespace Test
                 //Assert.That(frag.ppm == readFrag.MassErrorPpm);
             }
 
+            testLibraryWithoutDecoy.CloseConnections();
             File.Delete(writtenPath);
         }
     }

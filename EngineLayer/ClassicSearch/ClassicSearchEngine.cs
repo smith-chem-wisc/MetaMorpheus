@@ -11,7 +11,7 @@ namespace EngineLayer.ClassicSearch
 {
     public class ClassicSearchEngine : MetaMorpheusEngine
     {
-        private readonly Dictionary<string, LibrarySpectrum> SpectralLibrary;
+        private readonly SpectralLibrary SpectralLibrary;
         private readonly MassDiffAcceptor SearchMode;
         private readonly List<Protein> Proteins;
         private readonly List<Modification> FixedModifications;
@@ -25,7 +25,7 @@ namespace EngineLayer.ClassicSearch
         public ClassicSearchEngine(PeptideSpectralMatch[] globalPsms, Ms2ScanWithSpecificMass[] arrayOfSortedMS2Scans,
             List<Modification> variableModifications, List<Modification> fixedModifications, List<SilacLabel> silacLabels, SilacLabel startLabel, SilacLabel endLabel,
             List<Protein> proteinList, MassDiffAcceptor searchMode, CommonParameters commonParameters, List<(string FileName, CommonParameters Parameters)> fileSpecificParameters,
-            Dictionary<string, LibrarySpectrum> spectralLibrary, List<string> nestedIds)
+            SpectralLibrary spectralLibrary, List<string> nestedIds)
             : base(commonParameters, fileSpecificParameters, nestedIds)
         {
             PeptideSpectralMatches = globalPsms;
@@ -84,7 +84,7 @@ namespace EngineLayer.ClassicSearch
 
                                 if (SpectralLibrary != null)
                                 {
-                                    if (!SpectralLibrary.TryGetValue(peptide.FullSequence + "/" + scan.TheScan.PrecursorCharge, out var librarySpectrum))
+                                    if (!SpectralLibrary.TryGetSpectrum(peptide.FullSequence, scan.TheScan.PrecursorCharge, out var librarySpectrum))
                                     {
                                         continue;
                                     }

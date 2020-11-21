@@ -10,16 +10,21 @@ namespace EngineLayer
 {
     public static class SpectralLibrarySearchFunction
     {
-        public static double CalculateCosineScore(List<MatchedFragmentIon> standardSpectra, List<MatchedFragmentIon> spectraToCompare)
+        public static double CalculateCosineScore(List<MatchedFragmentIon> matchedIons, List<MatchedFragmentIon> theoreticalIons)
         {
-            double[] mz1 = standardSpectra.Select(b => b.Mz).ToArray();
-            double intensitySum1 = standardSpectra.Select(b => b.Intensity).Sum();
-            double[] intensity1 = standardSpectra.Select(b => b.Intensity / intensitySum1).ToArray();
+            if (!matchedIons.Any() || !theoreticalIons.Any())
+            {
+                return 0;
+            }
+
+            double[] mz1 = matchedIons.Select(b => b.Mz).ToArray();
+            double intensitySum1 = matchedIons.Select(b => b.Intensity).Sum();
+            double[] intensity1 = matchedIons.Select(b => b.Intensity / intensitySum1).ToArray();
             Array.Sort(mz1, intensity1);
 
-            double[] mz2 = spectraToCompare.Select(b => b.Mz).ToArray();
-            double intensitySum2 = spectraToCompare.Select(b => b.Intensity).Sum();
-            double[] intensity2 = spectraToCompare.Select(b => b.Intensity / intensitySum2).ToArray();
+            double[] mz2 = theoreticalIons.Select(b => b.Mz).ToArray();
+            double intensitySum2 = theoreticalIons.Select(b => b.Intensity).Sum();
+            double[] intensity2 = theoreticalIons.Select(b => b.Intensity / intensitySum2).ToArray();
             Array.Sort(mz2, intensity2);
 
             var commonNumbers = mz1.Union(mz2).ToArray();
