@@ -87,7 +87,7 @@ namespace EngineLayer
         public Tolerance ProductMassTolerance { get; set; } // public setter required for calibration task
         public Tolerance PrecursorMassTolerance { get; set; } // public setter required for calibration task
         public bool AddCompIons { get; private set; }
-        public double ScoreCutoff { get; private set; }
+        public double ScoreCutoff { get; set; } // public setter for spectral library stuff
         public DigestionParams DigestionParams { get; private set; }
         public bool ReportAllAmbiguity { get; private set; }
         public int? NumberOfPeaksToKeepPerWindow { get; private set; }

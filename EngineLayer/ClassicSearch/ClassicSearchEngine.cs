@@ -47,6 +47,12 @@ namespace EngineLayer.ClassicSearch
         {
             Status("Getting ms2 scans...");
 
+            if (SpectralLibrary != null)
+            {
+                //TODO: figure out a better way to do this..
+                CommonParameters.ScoreCutoff = 1e-10;
+            }
+
             double proteinsSearched = 0;
             int oldPercentProgress = 0;
 
@@ -90,16 +96,12 @@ namespace EngineLayer.ClassicSearch
                                     }
 
                                     libraryIons = librarySpectrum.MatchedFragmentIons;
-                                    matchedIons = MatchLibraryIons(scan.TheScan, libraryIons, CommonParameters);
-                                }
-                                else
-                                {
-                                    matchedIons = MatchFragmentIons(scan.TheScan, peptideTheorProducts, CommonParameters);
                                 }
 
-                                double thisScore = CalculatePeptideScore(scan.TheScan.TheScan, matchedIons, libraryIons);
+                                matchedIons = MatchFragmentIons(scan.TheScan, peptideTheorProducts, CommonParameters);
 
-                                bool meetsScoreCutoff = thisScore >= CommonParameters.ScoreCutoff || SpectralLibrary != null;
+                                double thisScore = CalculatePeptideScore(scan.TheScan.TheScan, matchedIons, libraryIons, CommonParameters);
+                                bool meetsScoreCutoff = thisScore >= CommonParameters.ScoreCutoff;
 
                                 // this is thread-safe because even if the score improves from another thread writing to this PSM,
                                 // the lock combined with AddOrReplace method will ensure thread safety

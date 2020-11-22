@@ -10,89 +10,76 @@ namespace EngineLayer
 {
     public static class SpectralLibrarySearchFunction
     {
-        public static double CalculateCosineScore(List<MatchedFragmentIon> matchedIons, List<MatchedFragmentIon> theoreticalIons)
+        public static double CalculateNormalizedSpectralAngle(List<MatchedFragmentIon> theoreticalLibraryIons, MsDataScan scan, CommonParameters commonParameters)
         {
-            if (!matchedIons.Any() || !theoreticalIons.Any())
+            double mzCutoff = 300;
+            int fragmentNumberCutoff = 3;
+
+            // if the spectrum has no peaks
+            if (scan.MassSpectrum.XArray.Length == 0)
             {
                 return 0;
             }
 
-            double[] mz1 = matchedIons.Select(b => b.Mz).ToArray();
-            double intensitySum1 = matchedIons.Select(b => b.Intensity).Sum();
-            double[] intensity1 = matchedIons.Select(b => b.Intensity / intensitySum1).ToArray();
-            Array.Sort(mz1, intensity1);
+            // L2 norm
+            double normalizer = Math.Sqrt(scan.MassSpectrum.YArray.Sum(p => Math.Pow(p, 2)));
 
-            double[] mz2 = theoreticalIons.Select(b => b.Mz).ToArray();
-            double intensitySum2 = theoreticalIons.Select(b => b.Intensity).Sum();
-            double[] intensity2 = theoreticalIons.Select(b => b.Intensity / intensitySum2).ToArray();
-            Array.Sort(mz2, intensity2);
+            var normalizedIntensities = scan.MassSpectrum.YArray.Select(p => Math.Sqrt(p) / normalizer).ToArray();
 
-            var commonNumbers = mz1.Union(mz2).ToArray();
-            double min = commonNumbers.Min();
-            double max = commonNumbers.Max();
-            int roundMin = (int)min;
-            int roundMax = (int)max + 1;
+            Dictionary<int, MatchedFragmentIon> matchedIndices = new Dictionary<int, MatchedFragmentIon>();
 
-            //convert spectra to vectors
-            List<double> vector1 = new List<double>();
-            List<double> vector2 = new List<double>();
-
-            int i = 0; //iterate through mz1
-            int k = 0; //iterate through bin
-            double oneMz = mz1[0];
-            double oneIntensity = intensity1[0];
-            //find where peaks match
-            while (roundMin + k * 0.5 < roundMax)
+            // search for each theoretical ion
+            for (int i = 0; i < theoreticalLibraryIons.Count; i++)
             {
-                List<double> x1 = new List<double>();
-                while (i < mz1.Length && roundMin + k * 0.5 <= oneMz && oneMz < roundMin + k * 0.5 + 0.5)
+                var libraryIon = theoreticalLibraryIons[i];
+
+                // see https://www.nature.com/articles/s41592-019-0426-7
+                // "All non-zero fragment ions (m/z > 300, ion >3, no neutral loss fragment ions) were considered for spectral angle calculation"
+                if (libraryIon.Mz <= mzCutoff || libraryIon.NeutralTheoreticalProduct.FragmentNumber <= fragmentNumberCutoff)
                 {
-                    x1.Add(oneIntensity);
-                    i++;
-                    if (i != mz1.Length)
-                    {
-                        oneMz = mz1[i];
-                        oneIntensity = intensity1[i];
-                    }
+                    continue;
                 }
-                vector1.Add(x1.Sum());
-                k++;
+
+                // get the closest peak in the spectrum to the library peak
+                var closestPeakIndex = scan.MassSpectrum.GetClosestPeakIndex(libraryIon.Mz);
+                double mz = scan.MassSpectrum.XArray[closestPeakIndex];
+
+                // is the mass error acceptable?
+                if (commonParameters.ProductMassTolerance.Within(mz, libraryIon.Mz))
+                {
+                    matchedIndices.TryAdd(i, libraryIon);
+                }
             }
 
-            int j = 0; //iterate through mz2
-            int n = 0; //iterate through bin
-            double twoMz = mz2[0];
-            double twoIntensity = intensity2[0];
-            while (roundMin + n * 0.5 < roundMax)
-            {
-                List<double> x2 = new List<double>();
-                while (j < mz2.Length && roundMin + n * 0.5 <= twoMz && twoMz < roundMin + n * 0.5 + 0.5)
-                {
-                    x2.Add(twoIntensity);
-                    j++;
-                    if (j != mz2.Length)
-                    {
-                        twoMz = mz2[j];
-                        twoIntensity = intensity2[j];
-                    }
-                }
-                vector2.Add(x2.Sum());
-                n++;
-            }
-
-            //numerator of dot product
             double numerator = 0;
-            for (i = 0; i < vector1.Count; i++)
+            double denominatorA = 0;
+            double denominatorB = 0;
+
+            for (int i = 0; i < normalizedIntensities.Length; i++)
             {
-                numerator += vector1[i] * vector2[i];
+                double mz = scan.MassSpectrum.XArray[i];
+                if (mz <= mzCutoff)
+                {
+                    continue;
+                }
+
+                matchedIndices.TryGetValue(i, out var matchedIon);
+
+                double libraryIntensity = matchedIon == null ? 0 : matchedIon.Intensity;
+                double normalizedExperimentalIntensity = normalizedIntensities[i];
+
+                numerator += libraryIntensity * normalizedExperimentalIntensity;
+
+                denominatorA += Math.Pow(libraryIntensity, 2);
+                denominatorB += Math.Pow(normalizedExperimentalIntensity, 2);
             }
 
-            //denominator of dot product
-            double denominator = Math.Sqrt(vector1.Sum(x => x * x)) * Math.Sqrt(vector2.Sum(x => x * x));
+            double denominator = Math.Sqrt(denominatorA) * Math.Sqrt(denominatorB);
+            double dotProduct = denominator > 0 ? numerator / denominator : 0;
 
-            var score = numerator / denominator;
-            return score;
+            double normalizedSpectralAngle = 1 - (2 * Math.Acos(dotProduct) / Math.PI);
+
+            return normalizedSpectralAngle;
         }
-
     }
 }
