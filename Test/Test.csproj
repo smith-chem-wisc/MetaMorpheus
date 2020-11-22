@@ -208,6 +208,9 @@
     <None Update="TestData\XCorrUnitTest.tsv">
       <CopyToOutputDirectory>Always</CopyToOutputDirectory>
     </None>
+    <None Update="TestData\yeast2fake_pdeep_lib.msp">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </None>
     <None Update="testFileParams_bad.toml">
       <CopyToOutputDirectory>Always</CopyToOutputDirectory>
     </None>

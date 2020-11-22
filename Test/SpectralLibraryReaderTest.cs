@@ -107,5 +107,18 @@ namespace Test
 
             File.Delete(writtenPath);
         }
+
+        [Test]
+        public static void SpectralLibraryReader_pDeepMSP()
+        {
+            //pDeepMSP contains protein info.
+            var path = Path.Combine(TestContext.CurrentContext.TestDirectory, @"TestData\yeast2fake_pdeep_lib.msp");
+
+            var testLibraryWithoutDecoy = SpectralLibraryReader.ReadSpectralLibrary_pDeep(path);
+
+            Assert.That(testLibraryWithoutDecoy.Count == 5);
+            Assert.IsTrue(testLibraryWithoutDecoy.ContainsKey("QSQHM[Common Variable:Oxidation on M]TEVVR/5"));
+            Assert.IsTrue(testLibraryWithoutDecoy.ContainsKey("M[Common Variable:Oxidation on M]C[Common Fixed:Carbamidomethyl on C]SDSDGLAPPQHLIR/2"));
+        }
     }
 }
