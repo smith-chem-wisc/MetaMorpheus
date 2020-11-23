@@ -42,16 +42,11 @@ namespace EngineLayer
 
         public static event EventHandler<ProgressEventArgs> OutProgressHandler;
 
-        public static double CalculatePeptideScore(MsDataScan thisScan, List<MatchedFragmentIon> matchedFragmentIons, List<MatchedFragmentIon> libraryIons = null)
+        public static double CalculatePeptideScore(MsDataScan thisScan, List<MatchedFragmentIon> matchedFragmentIons)
         {
             double score = 0;
 
-            if (libraryIons != null)
-            {
-                // Cosine score (for spectral libraries)
-                return SpectralLibrarySearchFunction.CalculateCosineScore(matchedFragmentIons, libraryIons);
-            }
-            else if (thisScan.MassSpectrum.XcorrProcessed)
+            if (thisScan.MassSpectrum.XcorrProcessed)
             {
                 // XCorr
                 foreach (var fragment in matchedFragmentIons)
@@ -83,37 +78,6 @@ namespace EngineLayer
             }
 
             return score;
-        }
-
-        public List<MatchedFragmentIon> MatchLibraryIons(Ms2ScanWithSpecificMass scan, List<MatchedFragmentIon> libraryProducts, CommonParameters commonParameters)
-        {
-            var matchedFragmentIons = new List<MatchedFragmentIon>();
-
-            //if the spectrum has no peaks
-            if (scan.TheScan.MassSpectrum.XArray.Length == 0)
-            {
-                return matchedFragmentIons;
-            }
-
-            // search for ions in the spectrum
-            for (int i = 0; i < libraryProducts.Count; i++)
-            {
-                var libraryIon = libraryProducts[i];
-                var libraryNeutralFragment = libraryIon.NeutralTheoreticalProduct;
-
-                // get the closest peak in the spectrum to the library peak
-                var closestPeakIndex = scan.TheScan.MassSpectrum.GetClosestPeakIndex(libraryProducts[i].Mz);
-                double mz = scan.TheScan.MassSpectrum.XArray[closestPeakIndex];
-                double intensity = scan.TheScan.MassSpectrum.YArray[closestPeakIndex];
-
-                // is the mass error acceptable?
-                if (commonParameters.ProductMassTolerance.Within(mz, libraryProducts[i].Mz))
-                {
-                    matchedFragmentIons.Add(new MatchedFragmentIon(ref libraryNeutralFragment, mz, intensity, libraryIon.Charge));
-                }
-            }
-
-            return matchedFragmentIons;
         }
 
         public static List<MatchedFragmentIon> MatchFragmentIons(Ms2ScanWithSpecificMass scan, List<Product> theoreticalProducts, CommonParameters commonParameters)

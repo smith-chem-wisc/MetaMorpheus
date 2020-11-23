@@ -1,8 +1,10 @@
-﻿using MassSpectrometry;
+﻿using Chemistry;
+using MassSpectrometry;
 using MzLibUtil;
 using Proteomics.Fragmentation;
 using System;
 using System.Collections.Generic;
+using System.IO;
 using System.Linq;
 using System.Text;
 
@@ -10,89 +12,89 @@ namespace EngineLayer
 {
     public static class SpectralLibrarySearchFunction
     {
-        public static double CalculateCosineScore(List<MatchedFragmentIon> matchedIons, List<MatchedFragmentIon> theoreticalIons)
+        public static void CalculateSpectralAngles(SpectralLibrary spectralLibrary, PeptideSpectralMatch[] peptideSpectralMatches,
+            Ms2ScanWithSpecificMass[] arrayOfSortedMs2Scans, CommonParameters commonParameters)
         {
-            if (!matchedIons.Any() || !theoreticalIons.Any())
+            foreach (PeptideSpectralMatch psm in peptideSpectralMatches.Where(p => p != null))
+            {
+                Ms2ScanWithSpecificMass scan = arrayOfSortedMs2Scans[psm.ScanIndex];
+
+                //TODO: spectral angle could be used to disambiguate PSMs. right now for ambiguous PSMs, the spectral angle for only one peptide option is saved
+                foreach (var peptide in psm.PeptidesToMatchingFragments)
+                {
+                    if (spectralLibrary == null || !spectralLibrary.TryGetSpectrum(peptide.Key.FullSequence, scan.PrecursorCharge, out var librarySpectrum))
+                    {
+                        continue;
+                    }
+
+                    double spectralAngle = CalculateNormalizedSpectralAngle(librarySpectrum.MatchedFragmentIons, scan.TheScan, commonParameters);
+
+                    psm.SpectralAngle = spectralAngle;
+                }
+            }
+        }
+
+        /// <summary>
+        /// Calculates the spectral angle, as described by Prosit ( https://www.nature.com/articles/s41592-019-0426-7 ).
+        /// </summary>
+        public static double CalculateNormalizedSpectralAngle(List<MatchedFragmentIon> theoreticalLibraryIons, MsDataScan scan, CommonParameters commonParameters)
+        {
+            double mzCutoff = 300;
+            int fragmentNumberCutoff = 3;
+
+            // if the spectrum has no peaks
+            if (scan.MassSpectrum.XArray.Length == 0)
             {
                 return 0;
             }
 
-            double[] mz1 = matchedIons.Select(b => b.Mz).ToArray();
-            double intensitySum1 = matchedIons.Select(b => b.Intensity).Sum();
-            double[] intensity1 = matchedIons.Select(b => b.Intensity / intensitySum1).ToArray();
-            Array.Sort(mz1, intensity1);
+            Dictionary<MatchedFragmentIon, MatchedFragmentIon> matchedIons = new Dictionary<MatchedFragmentIon, MatchedFragmentIon>();
 
-            double[] mz2 = theoreticalIons.Select(b => b.Mz).ToArray();
-            double intensitySum2 = theoreticalIons.Select(b => b.Intensity).Sum();
-            double[] intensity2 = theoreticalIons.Select(b => b.Intensity / intensitySum2).ToArray();
-            Array.Sort(mz2, intensity2);
-
-            var commonNumbers = mz1.Union(mz2).ToArray();
-            double min = commonNumbers.Min();
-            double max = commonNumbers.Max();
-            int roundMin = (int)min;
-            int roundMax = (int)max + 1;
-
-            //convert spectra to vectors
-            List<double> vector1 = new List<double>();
-            List<double> vector2 = new List<double>();
-
-            int i = 0; //iterate through mz1
-            int k = 0; //iterate through bin
-            double oneMz = mz1[0];
-            double oneIntensity = intensity1[0];
-            //find where peaks match
-            while (roundMin + k * 0.5 < roundMax)
+            // search for each theoretical ion
+            for (int i = 0; i < theoreticalLibraryIons.Count; i++)
             {
-                List<double> x1 = new List<double>();
-                while (i < mz1.Length && roundMin + k * 0.5 <= oneMz && oneMz < roundMin + k * 0.5 + 0.5)
+                var libraryIon = theoreticalLibraryIons[i];
+
+                // see https://www.nature.com/articles/s41592-019-0426-7
+                // "All non-zero fragment ions (m/z > 300, ion >3, no neutral loss fragment ions) were considered for spectral angle calculation"
+                if (libraryIon.Mz <= mzCutoff || libraryIon.NeutralTheoreticalProduct.FragmentNumber <= fragmentNumberCutoff)
                 {
-                    x1.Add(oneIntensity);
-                    i++;
-                    if (i != mz1.Length)
-                    {
-                        oneMz = mz1[i];
-                        oneIntensity = intensity1[i];
-                    }
+                    continue;
                 }
-                vector1.Add(x1.Sum());
-                k++;
-            }
 
-            int j = 0; //iterate through mz2
-            int n = 0; //iterate through bin
-            double twoMz = mz2[0];
-            double twoIntensity = intensity2[0];
-            while (roundMin + n * 0.5 < roundMax)
-            {
-                List<double> x2 = new List<double>();
-                while (j < mz2.Length && roundMin + n * 0.5 <= twoMz && twoMz < roundMin + n * 0.5 + 0.5)
+                // get the closest peak in the spectrum to the library peak
+                var closestPeakIndex = scan.MassSpectrum.GetClosestPeakIndex(libraryIon.Mz);
+                double mz = scan.MassSpectrum.XArray[closestPeakIndex];
+                double experimentalIntensity = scan.MassSpectrum.YArray[closestPeakIndex];
+
+                // is the mass error acceptable?
+                if (commonParameters.ProductMassTolerance.Within(mz.ToMass(libraryIon.Charge), libraryIon.Mz.ToMass(libraryIon.Charge)))
                 {
-                    x2.Add(twoIntensity);
-                    j++;
-                    if (j != mz2.Length)
-                    {
-                        twoMz = mz2[j];
-                        twoIntensity = intensity2[j];
-                    }
+                    var test = new Product(libraryIon.NeutralTheoreticalProduct.ProductType, libraryIon.NeutralTheoreticalProduct.Terminus,
+                        libraryIon.NeutralTheoreticalProduct.NeutralMass, libraryIon.NeutralTheoreticalProduct.FragmentNumber,
+                        libraryIon.NeutralTheoreticalProduct.AminoAcidPosition, libraryIon.NeutralTheoreticalProduct.NeutralLoss);
+
+                    matchedIons.Add(libraryIon, new MatchedFragmentIon(ref test, mz, experimentalIntensity, libraryIon.Charge));
                 }
-                vector2.Add(x2.Sum());
-                n++;
             }
 
-            //numerator of dot product
-            double numerator = 0;
-            for (i = 0; i < vector1.Count; i++)
+            // L2 norm
+            double expNormalizer = Math.Sqrt(matchedIons.Sum(p => Math.Pow(p.Value.Intensity, 2)));
+            double theorNormalizer = Math.Sqrt(theoreticalLibraryIons.Sum(p => Math.Pow(p.Intensity, 2)));
+
+            double dotProduct = 0;
+
+            foreach (var libraryIon in theoreticalLibraryIons)
             {
-                numerator += vector1[i] * vector2[i];
+                if (matchedIons.TryGetValue(libraryIon, out var experIon))
+                {
+                    dotProduct += (libraryIon.Intensity / theorNormalizer) * (experIon.Intensity / expNormalizer);
+                }
             }
 
-            //denominator of dot product
-            double denominator = Math.Sqrt(vector1.Sum(x => x * x)) * Math.Sqrt(vector2.Sum(x => x * x));
+            double normalizedSpectralAngle = 1 - (2 * Math.Acos(dotProduct) / Math.PI);
 
-            var score = numerator / denominator;
-            return score;
+            return normalizedSpectralAngle;
         }
-
     }
 }

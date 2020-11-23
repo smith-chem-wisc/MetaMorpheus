@@ -79,27 +79,15 @@ namespace EngineLayer.ClassicSearch
 
                             foreach (ScanWithIndexAndNotchInfo scan in GetAcceptableScans(peptide.MonoisotopicMass, SearchMode))
                             {
-                                List<MatchedFragmentIon> matchedIons = null;
-                                List<MatchedFragmentIon> libraryIons = null;
-
-                                if (SpectralLibrary != null)
+                                if (SpectralLibrary != null && !SpectralLibrary.ContainsSpectrum(peptide.FullSequence, scan.TheScan.PrecursorCharge))
                                 {
-                                    if (!SpectralLibrary.TryGetSpectrum(peptide.FullSequence, scan.TheScan.PrecursorCharge, out var librarySpectrum))
-                                    {
-                                        continue;
-                                    }
-
-                                    libraryIons = librarySpectrum.MatchedFragmentIons;
-                                    matchedIons = MatchLibraryIons(scan.TheScan, libraryIons, CommonParameters);
-                                }
-                                else
-                                {
-                                    matchedIons = MatchFragmentIons(scan.TheScan, peptideTheorProducts, CommonParameters);
+                                    continue;
                                 }
 
-                                double thisScore = CalculatePeptideScore(scan.TheScan.TheScan, matchedIons, libraryIons);
+                                List<MatchedFragmentIon> matchedIons = MatchFragmentIons(scan.TheScan, peptideTheorProducts, CommonParameters);
 
-                                bool meetsScoreCutoff = thisScore >= CommonParameters.ScoreCutoff || SpectralLibrary != null;
+                                double thisScore = CalculatePeptideScore(scan.TheScan.TheScan, matchedIons);
+                                bool meetsScoreCutoff = thisScore >= CommonParameters.ScoreCutoff;
 
                                 // this is thread-safe because even if the score improves from another thread writing to this PSM,
                                 // the lock combined with AddOrReplace method will ensure thread safety

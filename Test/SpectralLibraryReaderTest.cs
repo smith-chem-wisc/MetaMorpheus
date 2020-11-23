@@ -112,5 +112,41 @@ namespace Test
             testLibraryWithoutDecoy.CloseConnections();
             File.Delete(writtenPath);
         }
+
+        [Test]
+        public static void SpectralLibrarySearchTest()
+        {
+            var testDir = Path.Combine(TestContext.CurrentContext.TestDirectory, @"TestData\SpectralLibrarySearch");
+            var outputDir = Path.Combine(testDir, @"SpectralLibrarySearchTest");
+
+            string library1 = Path.Combine(testDir, @"P16858_target.msp");
+            string library2 = Path.Combine(testDir, @"P16858_decoy.msp");
+            string fastaDb = Path.Combine(testDir, @"P16858.fasta");
+            string spectraFile = Path.Combine(testDir, @"slicedMouse.raw");
+
+            Directory.CreateDirectory(outputDir);
+
+            var searchTask = new SearchTask();
+
+            searchTask.RunTask(outputDir,
+                new List<DbForTask>
+                {
+                    new DbForTask(library1, false),
+                    new DbForTask(library2, false),
+                    new DbForTask(fastaDb, false)
+                },
+                new List<string> { spectraFile },
+                "");
+
+            var results = File.ReadAllLines(Path.Combine(outputDir, @"AllPSMs.psmtsv"));
+            var split = results[0].Split('\t');
+            int ind = Array.IndexOf(split, "Normalized Spectral Angle");
+            Assert.That(ind >= 0);
+
+            var spectralAngle = double.Parse(results[1].Split('\t')[ind]);
+            Assert.That(Math.Round(spectralAngle, 2) == 0.68);
+
+            Directory.Delete(outputDir, true);
+        }
     }
 }

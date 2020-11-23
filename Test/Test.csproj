@@ -187,6 +187,18 @@
     <None Update="TestData\smalldb.fasta">
       <CopyToOutputDirectory>Always</CopyToOutputDirectory>
     </None>
+    <None Update="TestData\SpectralLibrarySearch\P16858.fasta">
+      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+    </None>
+    <None Update="TestData\SpectralLibrarySearch\P16858_decoy.msp">
+      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+    </None>
+    <None Update="TestData\SpectralLibrarySearch\P16858_target.msp">
+      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+    </None>
+    <None Update="TestData\SpectralLibrarySearch\slicedMouse.raw">
+      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+    </None>
     <None Update="TestData\TaGe_SA_HeLa_04_subset_longestSeq.mzML">
       <CopyToOutputDirectory>Always</CopyToOutputDirectory>
     </None>
