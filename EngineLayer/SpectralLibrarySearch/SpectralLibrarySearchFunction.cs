@@ -12,6 +12,31 @@ namespace EngineLayer
 {
     public static class SpectralLibrarySearchFunction
     {
+        public static void CalculateSpectralAngles(SpectralLibrary spectralLibrary, PeptideSpectralMatch[] peptideSpectralMatches, 
+            Ms2ScanWithSpecificMass[] arrayOfSortedMs2Scans, CommonParameters commonParameters)
+        {
+            foreach (PeptideSpectralMatch psm in peptideSpectralMatches.Where(p => p != null))
+            {
+                Ms2ScanWithSpecificMass scan = arrayOfSortedMs2Scans[psm.ScanIndex];
+
+                foreach (var peptide in psm.PeptidesToMatchingFragments)
+                {
+                    if (spectralLibrary == null || !spectralLibrary.TryGetSpectrum(peptide.Key.FullSequence, scan.PrecursorCharge, out var librarySpectrum))
+                    {
+                        psm.PeptidesToSpectralAngle.Add(peptide.Key, 0);
+                        continue;
+                    }
+
+                    double spectralAngle = CalculateNormalizedSpectralAngle(librarySpectrum.MatchedFragmentIons, scan.TheScan, commonParameters);
+
+                    psm.PeptidesToSpectralAngle.Add(peptide.Key, spectralAngle);
+                }
+            }
+        }
+
+        /// <summary>
+        /// Calculates the spectral angle, as described by Prosit ( https://www.nature.com/articles/s41592-019-0426-7 ).
+        /// </summary>
         public static double CalculateNormalizedSpectralAngle(List<MatchedFragmentIon> theoreticalLibraryIons, MsDataScan scan, CommonParameters commonParameters)
         {
             double mzCutoff = 300;
@@ -24,8 +49,6 @@ namespace EngineLayer
             }
 
             Dictionary<MatchedFragmentIon, MatchedFragmentIon> matchedIons = new Dictionary<MatchedFragmentIon, MatchedFragmentIon>();
-
-            //List<string> output = new List<string>();
 
             // search for each theoretical ion
             for (int i = 0; i < theoreticalLibraryIons.Count; i++)
@@ -66,15 +89,8 @@ namespace EngineLayer
                 if (matchedIons.TryGetValue(libraryIon, out var experIon))
                 {
                     dotProduct += (libraryIon.Intensity / theorNormalizer) * (experIon.Intensity / expNormalizer);
-                    //output.Add((libraryIon.Intensity / theorNormalizer) + "\t" + (-1 * experIon.Intensity / expNormalizer));
-                }
-                else
-                {
-                    //output.Add((libraryIon.Intensity / theorNormalizer) + "\t" + 0);
                 }
             }
-
-            //File.WriteAllLines(@"C:\Data\Mouse_SpectralLibraryProsit\" + scan.OneBasedScanNumber + ".tsv", output);
 
             double normalizedSpectralAngle = 1 - (2 * Math.Acos(dotProduct) / Math.PI);
 

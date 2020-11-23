@@ -40,13 +40,23 @@ namespace EngineLayer
             }
         }
 
-        public bool TryGetSpectrum(string sequence, int charge, out LibrarySpectrum librarySpectrum)
+        public bool ContainsSpectrum(string sequence, int charge)
         {
             string lookupString = sequence + "/" + charge;
 
+            return SequenceToFileAndLocation.ContainsKey(lookupString);
+        }
+
+        public bool TryGetSpectrum(string sequence, int charge, out LibrarySpectrum librarySpectrum)
+        {
+            string lookupString = sequence + "/" + charge;
+            librarySpectrum = null;
+
             // look up in buffer to see if this library spectrum was read in already
-            if (LibrarySpectrumBuffer.TryGetValue(lookupString, out librarySpectrum))
+            if (LibrarySpectrumBuffer.TryGetValue(lookupString, out var spectrum))
             {
+                librarySpectrum = spectrum;
+
                 if (librarySpectrum.Name != lookupString)
                 {
                     throw new MetaMorpheusException("Bad spectral library formatting or indexing: Found \""

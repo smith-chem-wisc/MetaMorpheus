@@ -339,19 +339,26 @@ namespace TaskLayer
                     ReportProgress(new ProgressEventArgs(100, "Done with search!", thisId));
                 }
 
+                // calculate/set spectral angles if there is a spectral library being used
+                if (spectralLibrary != null)
+                {
+                    Status("Calculating spectral library similarity...", thisId);
+                }
+                SpectralLibrarySearchFunction.CalculateSpectralAngles(spectralLibrary, fileSpecificPsms, arrayOfMs2ScansSortedByMass, combinedParams);
+
                 lock (psmLock)
                 {
                     allPsms.AddRange(fileSpecificPsms);
                 }
 
-                if (spectralLibrary != null)
-                {
-                    spectralLibrary.CloseConnections();
-                }
-
                 completedFiles++;
                 FinishedDataFile(origDataFile, new List<string> { taskId, "Individual Spectra Files", origDataFile });
                 ReportProgress(new ProgressEventArgs(completedFiles / currentRawFileList.Count, "Searching...", new List<string> { taskId, "Individual Spectra Files" }));
+            }
+
+            if (spectralLibrary != null)
+            {
+                spectralLibrary.CloseConnections();
             }
 
             ReportProgress(new ProgressEventArgs(100, "Done with all searches!", new List<string> { taskId, "Individual Spectra Files" }));

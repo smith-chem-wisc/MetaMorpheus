@@ -116,23 +116,29 @@ namespace Test
         [Test]
         public static void SpectralLibrarySearchTest()
         {
-            //string library1 = @"C:\Data\Mouse_SpectralLibraryProsit\myPrositLib_decoy.msp";
-            //string library2 = @"C:\Data\Mouse_SpectralLibraryProsit\myPrositLib_target.msp";
-            //string fastaDb = @"C:\Data\Mouse_SpectralLibraryProsit\P16858.fasta";
-            //string spectraFile = @"C:\Data\Mouse_SpectralLibraryProsit\slicedMouse.raw";
+            var testDir = Path.Combine(TestContext.CurrentContext.TestDirectory, @"TestData\SpectralLibrarySearch");
+            var outputDir = Path.Combine(testDir, @"SpectralLibrarySearchTest");
 
-            //Directory.CreateDirectory(@"C:\Data\Mouse_SpectralLibraryProsit\unitTestOutput");
+            string library1 = Path.Combine(testDir, @"P16858_target.msp");
+            string library2 = Path.Combine(testDir, @"P16858_decoy.msp");
+            string fastaDb = Path.Combine(testDir, @"P16858.fasta");
+            string spectraFile = Path.Combine(testDir, @"slicedMouse.raw");
 
-            //var searchTask = new SearchTask() { CommonParameters = new CommonParameters(maxThreadsToUsePerFile: 1, scoreCutoff: 0) };
-            //searchTask.RunTask(@"C:\Data\Mouse_SpectralLibraryProsit\unitTestOutput", 
-            //    new List<DbForTask> 
-            //    { 
-            //        new DbForTask(library1, false), 
-            //        new DbForTask(library2, false), 
-            //        new DbForTask(fastaDb, false) 
-            //    }, 
-            //    new List<string> { spectraFile }, 
-            //    "");
+            Directory.CreateDirectory(outputDir);
+
+            var searchTask = new SearchTask();
+
+            searchTask.RunTask(outputDir,
+                new List<DbForTask>
+                {
+                    new DbForTask(library1, false),
+                    new DbForTask(library2, false),
+                    new DbForTask(fastaDb, false)
+                },
+                new List<string> { spectraFile },
+                "");
+
+            Directory.Delete(outputDir, true);
         }
     }
 }

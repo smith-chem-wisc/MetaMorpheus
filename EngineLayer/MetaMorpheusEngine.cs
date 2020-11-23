@@ -42,17 +42,11 @@ namespace EngineLayer
 
         public static event EventHandler<ProgressEventArgs> OutProgressHandler;
 
-        public static double CalculatePeptideScore(MsDataScan thisScan, List<MatchedFragmentIon> matchedFragmentIons, 
-            List<MatchedFragmentIon> libraryIons = null, CommonParameters commonParameters = null)
+        public static double CalculatePeptideScore(MsDataScan thisScan, List<MatchedFragmentIon> matchedFragmentIons)
         {
             double score = 0;
 
-            if (libraryIons != null)
-            {
-                // Cosine score (for spectral libraries)
-                return SpectralLibrarySearchFunction.CalculateNormalizedSpectralAngle(libraryIons, thisScan, commonParameters);
-            }
-            else if (thisScan.MassSpectrum.XcorrProcessed)
+            if (thisScan.MassSpectrum.XcorrProcessed)
             {
                 // XCorr
                 foreach (var fragment in matchedFragmentIons)

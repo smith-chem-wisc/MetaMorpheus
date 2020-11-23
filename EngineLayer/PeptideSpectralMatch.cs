@@ -28,6 +28,7 @@ namespace EngineLayer
             ScanPrecursorMass = scan.PrecursorMass;
             DigestionParams = commonParameters.DigestionParams;
             PeptidesToMatchingFragments = new Dictionary<PeptideWithSetModifications, List<MatchedFragmentIon>>();
+            PeptidesToSpectralAngle = new Dictionary<PeptideWithSetModifications, double>();
             Xcorr = xcorr;
             NativeId = scan.NativeId;
             RunnerUpScore = commonParameters.ScoreCutoff;
@@ -77,6 +78,7 @@ namespace EngineLayer
 
         public DigestionParams DigestionParams { get; }
         public Dictionary<PeptideWithSetModifications, List<MatchedFragmentIon>> PeptidesToMatchingFragments { get; private set; }
+        public Dictionary<PeptideWithSetModifications, double> PeptidesToSpectralAngle { get; private set; }
 
         public IEnumerable<(int Notch, PeptideWithSetModifications Peptide)> BestMatchingPeptides
         {
