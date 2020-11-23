@@ -112,5 +112,27 @@ namespace Test
             testLibraryWithoutDecoy.CloseConnections();
             File.Delete(writtenPath);
         }
+
+        [Test]
+        public static void SpectralLibrarySearchTest()
+        {
+            //string library1 = @"C:\Data\Mouse_SpectralLibraryProsit\myPrositLib_decoy.msp";
+            //string library2 = @"C:\Data\Mouse_SpectralLibraryProsit\myPrositLib_target.msp";
+            //string fastaDb = @"C:\Data\Mouse_SpectralLibraryProsit\P16858.fasta";
+            //string spectraFile = @"C:\Data\Mouse_SpectralLibraryProsit\slicedMouse.raw";
+
+            //Directory.CreateDirectory(@"C:\Data\Mouse_SpectralLibraryProsit\unitTestOutput");
+
+            //var searchTask = new SearchTask() { CommonParameters = new CommonParameters(maxThreadsToUsePerFile: 1, scoreCutoff: 0) };
+            //searchTask.RunTask(@"C:\Data\Mouse_SpectralLibraryProsit\unitTestOutput", 
+            //    new List<DbForTask> 
+            //    { 
+            //        new DbForTask(library1, false), 
+            //        new DbForTask(library2, false), 
+            //        new DbForTask(fastaDb, false) 
+            //    }, 
+            //    new List<string> { spectraFile }, 
+            //    "");
+        }
     }
 }

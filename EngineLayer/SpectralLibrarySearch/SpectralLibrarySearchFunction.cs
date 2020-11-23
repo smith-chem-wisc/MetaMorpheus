@@ -1,8 +1,10 @@
-﻿using MassSpectrometry;
+﻿using Chemistry;
+using MassSpectrometry;
 using MzLibUtil;
 using Proteomics.Fragmentation;
 using System;
 using System.Collections.Generic;
+using System.IO;
 using System.Linq;
 using System.Text;
 
@@ -21,12 +23,9 @@ namespace EngineLayer
                 return 0;
             }
 
-            // L2 norm
-            double normalizer = Math.Sqrt(scan.MassSpectrum.YArray.Sum(p => Math.Pow(p, 2)));
+            Dictionary<MatchedFragmentIon, MatchedFragmentIon> matchedIons = new Dictionary<MatchedFragmentIon, MatchedFragmentIon>();
 
-            var normalizedIntensities = scan.MassSpectrum.YArray.Select(p => Math.Sqrt(p) / normalizer).ToArray();
-
-            Dictionary<int, MatchedFragmentIon> matchedIndices = new Dictionary<int, MatchedFragmentIon>();
+            //List<string> output = new List<string>();
 
             // search for each theoretical ion
             for (int i = 0; i < theoreticalLibraryIons.Count; i++)
@@ -43,39 +42,39 @@ namespace EngineLayer
                 // get the closest peak in the spectrum to the library peak
                 var closestPeakIndex = scan.MassSpectrum.GetClosestPeakIndex(libraryIon.Mz);
                 double mz = scan.MassSpectrum.XArray[closestPeakIndex];
+                double experimentalIntensity = scan.MassSpectrum.YArray[closestPeakIndex];
 
                 // is the mass error acceptable?
-                if (commonParameters.ProductMassTolerance.Within(mz, libraryIon.Mz))
+                if (commonParameters.ProductMassTolerance.Within(mz.ToMass(libraryIon.Charge), libraryIon.Mz.ToMass(libraryIon.Charge)))
                 {
-                    matchedIndices.TryAdd(i, libraryIon);
+                    var test = new Product(libraryIon.NeutralTheoreticalProduct.ProductType, libraryIon.NeutralTheoreticalProduct.Terminus,
+                        libraryIon.NeutralTheoreticalProduct.NeutralMass, libraryIon.NeutralTheoreticalProduct.FragmentNumber,
+                        libraryIon.NeutralTheoreticalProduct.AminoAcidPosition, libraryIon.NeutralTheoreticalProduct.NeutralLoss);
+
+                    matchedIons.Add(libraryIon, new MatchedFragmentIon(ref test, mz, experimentalIntensity, libraryIon.Charge));
                 }
             }
 
-            double numerator = 0;
-            double denominatorA = 0;
-            double denominatorB = 0;
+            // L2 norm
+            double expNormalizer = Math.Sqrt(matchedIons.Sum(p => Math.Pow(p.Value.Intensity, 2)));
+            double theorNormalizer = Math.Sqrt(theoreticalLibraryIons.Sum(p => Math.Pow(p.Intensity, 2)));
 
-            for (int i = 0; i < normalizedIntensities.Length; i++)
+            double dotProduct = 0;
+
+            foreach (var libraryIon in theoreticalLibraryIons)
             {
-                double mz = scan.MassSpectrum.XArray[i];
-                if (mz <= mzCutoff)
+                if (matchedIons.TryGetValue(libraryIon, out var experIon))
                 {
-                    continue;
+                    dotProduct += (libraryIon.Intensity / theorNormalizer) * (experIon.Intensity / expNormalizer);
+                    //output.Add((libraryIon.Intensity / theorNormalizer) + "\t" + (-1 * experIon.Intensity / expNormalizer));
                 }
-
-                matchedIndices.TryGetValue(i, out var matchedIon);
-
-                double libraryIntensity = matchedIon == null ? 0 : matchedIon.Intensity;
-                double normalizedExperimentalIntensity = normalizedIntensities[i];
-
-                numerator += libraryIntensity * normalizedExperimentalIntensity;
-
-                denominatorA += Math.Pow(libraryIntensity, 2);
-                denominatorB += Math.Pow(normalizedExperimentalIntensity, 2);
+                else
+                {
+                    //output.Add((libraryIon.Intensity / theorNormalizer) + "\t" + 0);
+                }
             }
 
-            double denominator = Math.Sqrt(denominatorA) * Math.Sqrt(denominatorB);
-            double dotProduct = denominator > 0 ? numerator / denominator : 0;
+            //File.WriteAllLines(@"C:\Data\Mouse_SpectralLibraryProsit\" + scan.OneBasedScanNumber + ".tsv", output);
 
             double normalizedSpectralAngle = 1 - (2 * Math.Acos(dotProduct) / Math.PI);
 
