@@ -39,8 +39,8 @@ namespace EngineLayer
             spectrum.Append("\nMW: " + PrecursorMz);
             spectrum.Append("\nComment: ");
             spectrum.Append("Parent=" + PrecursorMz);
-            spectrum.Append(" Retention Time=" + RetentionTime);
-            spectrum.Append("\nMatched peaks number : " + MatchedFragmentIons.Count);
+            spectrum.Append(" RT=" + RetentionTime);
+            spectrum.Append("\nNum peaks: " + MatchedFragmentIons.Count);
 
             double maxIntensity = MatchedFragmentIons.Select(b => b.Intensity).Max();
 

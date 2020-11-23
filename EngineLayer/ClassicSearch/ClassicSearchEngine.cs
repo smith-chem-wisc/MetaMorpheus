@@ -11,6 +11,7 @@ namespace EngineLayer.ClassicSearch
 {
     public class ClassicSearchEngine : MetaMorpheusEngine
     {
+        private readonly SpectralLibrary SpectralLibrary;
         private readonly MassDiffAcceptor SearchMode;
         private readonly List<Protein> Proteins;
         private readonly List<Modification> FixedModifications;
@@ -22,8 +23,9 @@ namespace EngineLayer.ClassicSearch
         private readonly double[] MyScanPrecursorMasses;
 
         public ClassicSearchEngine(PeptideSpectralMatch[] globalPsms, Ms2ScanWithSpecificMass[] arrayOfSortedMS2Scans,
-            List<Modification> variableModifications, List<Modification> fixedModifications, List<SilacLabel> silacLabels, SilacLabel startLabel, SilacLabel endLabel, 
-            List<Protein> proteinList, MassDiffAcceptor searchMode, CommonParameters commonParameters, List<(string FileName, CommonParameters Parameters)> fileSpecificParameters, List<string> nestedIds)
+            List<Modification> variableModifications, List<Modification> fixedModifications, List<SilacLabel> silacLabels, SilacLabel startLabel, SilacLabel endLabel,
+            List<Protein> proteinList, MassDiffAcceptor searchMode, CommonParameters commonParameters, List<(string FileName, CommonParameters Parameters)> fileSpecificParameters,
+            SpectralLibrary spectralLibrary, List<string> nestedIds)
             : base(commonParameters, fileSpecificParameters, nestedIds)
         {
             PeptideSpectralMatches = globalPsms;
@@ -38,6 +40,7 @@ namespace EngineLayer.ClassicSearch
             }
             Proteins = proteinList;
             SearchMode = searchMode;
+            SpectralLibrary = spectralLibrary;
         }
 
         protected override MetaMorpheusEngineResults RunSpecific()
@@ -76,10 +79,14 @@ namespace EngineLayer.ClassicSearch
 
                             foreach (ScanWithIndexAndNotchInfo scan in GetAcceptableScans(peptide.MonoisotopicMass, SearchMode))
                             {
+                                if (SpectralLibrary != null && !SpectralLibrary.ContainsSpectrum(peptide.FullSequence, scan.TheScan.PrecursorCharge))
+                                {
+                                    continue;
+                                }
+
                                 List<MatchedFragmentIon> matchedIons = MatchFragmentIons(scan.TheScan, peptideTheorProducts, CommonParameters);
 
                                 double thisScore = CalculatePeptideScore(scan.TheScan.TheScan, matchedIons);
-
                                 bool meetsScoreCutoff = thisScore >= CommonParameters.ScoreCutoff;
 
                                 // this is thread-safe because even if the score improves from another thread writing to this PSM,

@@ -625,6 +625,7 @@ namespace EngineLayer
             float isLoop = 0;
             float isInter = 0;
             float isIntra = 0;
+            float spectralAngle = 0;
 
             if (searchType != "crosslink")
             {
@@ -653,6 +654,7 @@ namespace EngineLayer
                 int closest = psmCountList.OrderBy(item => Math.Abs(psmCount - item)).First();
                 psmCount = closest;
                 isVariantPeptide = PeptideIsVariant(selectedPeptide);
+                spectralAngle = (float)psm.SpectralAngle;
 
                 if (psm.DigestionParams.Protease.Name != "top-down")
                 {
@@ -757,7 +759,9 @@ namespace EngineLayer
                 IsInter = isInter,
                 IsIntra = isIntra,
 
-                Label = label
+                Label = label,
+
+                SpectralAngle = spectralAngle
             };
 
             return psm.PsmData_forPEPandPercolator;
