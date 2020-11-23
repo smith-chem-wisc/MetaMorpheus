@@ -148,5 +148,66 @@ namespace Test
 
             Directory.Delete(outputDir, true);
         }
+
+        [Test]
+        public static void SpectralLibraryWriterTest()
+        {
+            var test = Path.Combine(TestContext.CurrentContext.TestDirectory, @"TestData\spectralLibraryWithFullsequenceFortestWriter.msp");
+            var testLibraryWithoutDecoy = new SpectralLibrary(new List<string> { test });
+            Assert.That(testLibraryWithoutDecoy.TryGetSpectrum("AEGSDVANAVLDGADC[Common Fixed:Carbamidomethyl on C]IMLSGETAK", 3, out var spectrum));
+            Assert.That(testLibraryWithoutDecoy.TryGetSpectrum("MVDENC[Common Fixed:Carbamidomethyl on C]VGFDHTVKPVSDMELETPTDK", 3, out var spectrum2));
+        }
+
+            [Test]
+        public static void TestSpectraCompareAndAverage()
+        {
+            var product = new Product();
+            var a = new MatchedFragmentIon(ref product, 1, 2, 1);
+            var b = new MatchedFragmentIon(ref product, 2, 2, 1);
+            var c = new MatchedFragmentIon(ref product, 3, 2, 1);
+            var d = new MatchedFragmentIon(ref product, 4, 2, 1);
+            var e = new MatchedFragmentIon(ref product, 1, 4, 1);
+            var f = new MatchedFragmentIon(ref product, 2, 4, 1);
+            var g = new MatchedFragmentIon(ref product, 3, 4, 1);
+            var h = new MatchedFragmentIon(ref product, 5, 4, 1);
+       
+            var compare1 = SpectralLibrarySearchFunction.MatchedSpectraCompare(new List<MatchedFragmentIon> { a, b, c }, new List<MatchedFragmentIon> { f, g, h });
+            var compare2 = SpectralLibrarySearchFunction.MatchedSpectraCompare(new List<MatchedFragmentIon> { a, b, c }, new List<MatchedFragmentIon> { a, b, c });
+            var compare3 = SpectralLibrarySearchFunction.MatchedSpectraCompare(new List<MatchedFragmentIon> { a, b, h }, new List<MatchedFragmentIon> { f, e, g });
+            Assert.That(Math.Abs(compare1 - 0.6667) < 0.001);
+            Assert.That(Math.Abs(compare2 - 1) < 0.001);
+            Assert.That(Math.Abs(compare3 - 0.4714) < 0.001);
+
+            //test averageTwoSpectraFunction by Yuling
+            Product b1 = new Product(ProductType.b, FragmentationTerminus.Both, 0, 1, 0, 0);
+            Product b2 = new Product(ProductType.b, FragmentationTerminus.Both, 0, 2, 0, 0);
+            Product b3 = new Product(ProductType.b, FragmentationTerminus.Both, 0, 3, 0, 0);
+            Product b4 = new Product(ProductType.b, FragmentationTerminus.Both, 0, 4, 0, 0);
+            Product b5 = new Product(ProductType.b, FragmentationTerminus.Both, 0, 5, 0, 0);
+            Product y1 = new Product(ProductType.y, FragmentationTerminus.Both, 0, 1, 0, 0);
+            Product y2 = new Product(ProductType.y, FragmentationTerminus.Both, 0, 2, 0, 0);
+            Product y3 = new Product(ProductType.y, FragmentationTerminus.Both, 0, 3, 0, 0);
+            Product y4 = new Product(ProductType.y, FragmentationTerminus.Both, 0, 4, 0, 0);
+            Product y5 = new Product(ProductType.y, FragmentationTerminus.Both, 0, 5, 0, 0);
+
+            var o = new MatchedFragmentIon(ref b1, 1, 3, 1);
+            var p = new MatchedFragmentIon(ref b2, 2, 2, 1);
+            var q = new MatchedFragmentIon(ref b3, 3, 1, 1);
+            var r = new MatchedFragmentIon(ref b1, 4, 2, 2);
+            var s = new MatchedFragmentIon(ref b2, 2, 4, 1);
+            var t = new MatchedFragmentIon(ref b3, 2, 4, 2);
+
+            // all same charge
+            var ave1 = SpectralLibrarySearchFunction.AverageTwoSpectra(new List<MatchedFragmentIon> { o, p, q }, new List<MatchedFragmentIon> { o, p, q });
+            Assert.AreEqual(ave1.Count, 3);
+            Assert.AreEqual(ave1[0], new MatchedFragmentIon(ref b1, 1, 0.5, 1));
+
+            // with different charges
+            var ave2 = SpectralLibrarySearchFunction.AverageTwoSpectra(new List<MatchedFragmentIon> { o, p, q }, new List<MatchedFragmentIon> { r, s, t });
+            Assert.AreEqual(ave2.Count, 5);
+            Assert.AreEqual(ave2[0].Intensity, 0.25);
+            Assert.That(Math.Abs(ave2[1].Intensity - 0.3667) < 0.01);
+
+        }
     }
 }

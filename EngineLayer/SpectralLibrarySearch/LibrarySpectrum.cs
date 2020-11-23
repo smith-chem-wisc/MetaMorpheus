@@ -17,6 +17,8 @@ namespace EngineLayer
         public int ChargeState { get; set; }
         public List<MatchedFragmentIon> MatchedFragmentIons { get; set; }
         public bool IsDecoy { get; set; }
+        public string ModsString { get; set; }
+        public string BaseSequenceWithoutMods { get; set; }
         public string Name
         {
             get { return Sequence + "/" + ChargeState; }
