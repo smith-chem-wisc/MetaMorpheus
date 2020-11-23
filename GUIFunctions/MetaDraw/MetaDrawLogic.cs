@@ -1,4 +1,5 @@
-﻿using IO.Mgf;
+﻿using EngineLayer;
+using IO.Mgf;
 using IO.MzML;
 using IO.ThermoRawFileReader;
 using MassSpectrometry;
@@ -20,7 +21,7 @@ using System.Windows.Controls;
 using System.Windows.Data;
 using System.Windows.Media;
 
-namespace EngineLayer
+namespace GUIFunctions
 {
     public class MetaDrawLogic
     {

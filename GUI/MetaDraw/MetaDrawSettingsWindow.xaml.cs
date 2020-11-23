@@ -1,5 +1,6 @@
 ﻿using EngineLayer;
 using EngineLayer.GlycoSearch;
+using GUIFunctions;
 using System.ComponentModel;
 using System.Windows;
 

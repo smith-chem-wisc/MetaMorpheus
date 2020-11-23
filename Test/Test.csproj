@@ -27,6 +27,7 @@
 
   <ItemGroup>
     <ProjectReference Include="..\EngineLayer\EngineLayer.csproj" />
+    <ProjectReference Include="..\GUIFunctions\GUIFunctions.csproj" />
     <ProjectReference Include="..\TaskLayer\TaskLayer.csproj" />
   </ItemGroup>
 
