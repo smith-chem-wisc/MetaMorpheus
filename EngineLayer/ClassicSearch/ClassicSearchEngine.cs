@@ -40,7 +40,7 @@ namespace EngineLayer.ClassicSearch
             }
             Proteins = proteinList;
             SearchMode = searchMode;
-            SpectralLibrary = spectralLibrary;
+            SpectralLibrary = spectralLibrary; 
         }
 
         protected override MetaMorpheusEngineResults RunSpecific()
