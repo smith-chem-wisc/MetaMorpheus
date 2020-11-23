@@ -138,6 +138,14 @@ namespace Test
                 new List<string> { spectraFile },
                 "");
 
+            var results = File.ReadAllLines(Path.Combine(outputDir, @"AllPSMs.psmtsv"));
+            var split = results[0].Split('\t');
+            int ind = Array.IndexOf(split, "Normalized Spectral Angle");
+            Assert.That(ind >= 0);
+
+            var spectralAngle = double.Parse(results[1].Split('\t')[ind]);
+            Assert.That(Math.Round(spectralAngle, 2) == 0.68);
+
             Directory.Delete(outputDir, true);
         }
     }
