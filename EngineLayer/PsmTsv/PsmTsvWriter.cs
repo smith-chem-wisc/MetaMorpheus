@@ -330,17 +330,13 @@ namespace EngineLayer
 
         internal static void AddMatchScoreData(Dictionary<string, string> s, PeptideSpectralMatch peptide)
         {
-            string spectralAngle = " ";
+            string spectralAngle = peptide == null ? " " : peptide.SpectralAngle.ToString("F4");
             string localizedScores = " ";
             string improvementPossible = " ";
             if (peptide != null && peptide.LocalizedScores != null)
             {
                 localizedScores = GlobalVariables.CheckLengthOfOutput(("[" + string.Join(",", peptide.LocalizedScores.Select(b => b.ToString("F3", CultureInfo.InvariantCulture))) + "]"));
                 improvementPossible = (peptide.LocalizedScores.Max() - peptide.Score).ToString("F3", CultureInfo.InvariantCulture);
-            }
-            if (peptide != null)
-            {
-                spectralAngle = Resolve(peptide.PeptidesToSpectralAngle.Values).ResolvedString;
             }
             s[PsmTsvHeader.SpectralAngle] = spectralAngle;
             s[PsmTsvHeader.LocalizedScores] = localizedScores;

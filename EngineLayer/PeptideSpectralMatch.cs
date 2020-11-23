@@ -28,7 +28,6 @@ namespace EngineLayer
             ScanPrecursorMass = scan.PrecursorMass;
             DigestionParams = commonParameters.DigestionParams;
             PeptidesToMatchingFragments = new Dictionary<PeptideWithSetModifications, List<MatchedFragmentIon>>();
-            PeptidesToSpectralAngle = new Dictionary<PeptideWithSetModifications, double>();
             Xcorr = xcorr;
             NativeId = scan.NativeId;
             RunnerUpScore = commonParameters.ScoreCutoff;
@@ -68,6 +67,7 @@ namespace EngineLayer
 
         public double Score { get; private set; }
         public double Xcorr;
+        public double SpectralAngle { get; set; }
         public string NativeId; // this is a property of the scan. used for mzID writing
 
         public double DeltaScore { get { return (Score - RunnerUpScore); } }
@@ -78,8 +78,7 @@ namespace EngineLayer
 
         public DigestionParams DigestionParams { get; }
         public Dictionary<PeptideWithSetModifications, List<MatchedFragmentIon>> PeptidesToMatchingFragments { get; private set; }
-        public Dictionary<PeptideWithSetModifications, double> PeptidesToSpectralAngle { get; private set; }
-
+        
         public IEnumerable<(int Notch, PeptideWithSetModifications Peptide)> BestMatchingPeptides
         {
             get
@@ -384,6 +383,7 @@ namespace EngineLayer
             IsContaminant = psm.IsContaminant;
             DigestionParams = psm.DigestionParams;
             PeptidesToMatchingFragments = psm.PeptidesToMatchingFragments;
+            SpectralAngle = psm.SpectralAngle;
         }
     }
 }

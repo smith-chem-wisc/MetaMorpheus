@@ -12,24 +12,24 @@ namespace EngineLayer
 {
     public static class SpectralLibrarySearchFunction
     {
-        public static void CalculateSpectralAngles(SpectralLibrary spectralLibrary, PeptideSpectralMatch[] peptideSpectralMatches, 
+        public static void CalculateSpectralAngles(SpectralLibrary spectralLibrary, PeptideSpectralMatch[] peptideSpectralMatches,
             Ms2ScanWithSpecificMass[] arrayOfSortedMs2Scans, CommonParameters commonParameters)
         {
             foreach (PeptideSpectralMatch psm in peptideSpectralMatches.Where(p => p != null))
             {
                 Ms2ScanWithSpecificMass scan = arrayOfSortedMs2Scans[psm.ScanIndex];
 
+                //TODO: spectral angle could be used to disambiguate PSMs. right now for ambiguous PSMs, the spectral angle for only one peptide option is saved
                 foreach (var peptide in psm.PeptidesToMatchingFragments)
                 {
                     if (spectralLibrary == null || !spectralLibrary.TryGetSpectrum(peptide.Key.FullSequence, scan.PrecursorCharge, out var librarySpectrum))
                     {
-                        psm.PeptidesToSpectralAngle.Add(peptide.Key, 0);
                         continue;
                     }
 
                     double spectralAngle = CalculateNormalizedSpectralAngle(librarySpectrum.MatchedFragmentIons, scan.TheScan, commonParameters);
 
-                    psm.PeptidesToSpectralAngle.Add(peptide.Key, spectralAngle);
+                    psm.SpectralAngle = spectralAngle;
                 }
             }
         }
