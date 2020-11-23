@@ -21,7 +21,7 @@ namespace MetaMorpheusCommandLine
         [Option('d', HelpText = "Protein sequence databases (.fasta, .xml, .fasta.gz, .xml.gz file formats); space-delimited")]
         public IEnumerable<string> _databases { get; set; }
 
-        [Option('s', HelpText = "Spectra to analyze (.raw, .mzML, .mgf file formats); space-delimited")]
+        [Option('s', HelpText = "Spectra to analyze (.raw, .mzML, .mgf file formats) or folder(s) containing spectra; space-delimited")]
         public IEnumerable<string> _spectra { get; set; }
 
         [Option('o', HelpText = "[Optional] Output folder")]
@@ -38,7 +38,7 @@ namespace MetaMorpheusCommandLine
 
         [Option("mmsettings", HelpText = "[Optional] Path to MetaMorpheus settings")]
         public string CustomDataDirectory { get; set; }
-        
+
         public enum VerbosityType { none, minimal, normal };
 
         public void ValidateCommandLineSettings()
@@ -82,6 +82,38 @@ namespace MetaMorpheusCommandLine
             {
                 throw new MetaMorpheusException("At least one spectra file must be specified.");
             }
+
+            // add spectra files from specified directories
+            List<string> spectraFromDirectories = new List<string>();
+            foreach (string item in Spectra)
+            {
+                if (Directory.Exists(item))
+                {
+                    string[] directoryFiles = Directory.GetFiles(item);
+
+                    foreach (var file in directoryFiles)
+                    {
+                        if (GlobalVariables.AcceptedSpectraFormats.Contains(GlobalVariables.GetFileExtension(file).ToLowerInvariant()))
+                        {
+                            spectraFromDirectories.Add(file);
+
+                            if (Verbosity == VerbosityType.normal)
+                            {
+                                Console.WriteLine("Found spectra file: " + file);
+                            }
+                        }
+                    }
+                }
+                else if (!File.Exists(item))
+                {
+                    throw new MetaMorpheusException("The following is not a known file or directory: " + item);
+                }
+            }
+
+            Spectra.AddRange(spectraFromDirectories);
+
+            // remove spectra directories, after their spectra files have been added
+            Spectra.RemoveAll(p => Directory.Exists(p));
 
             IEnumerable<string> fileNames = Tasks.Concat(Databases).Concat(Spectra);
 
