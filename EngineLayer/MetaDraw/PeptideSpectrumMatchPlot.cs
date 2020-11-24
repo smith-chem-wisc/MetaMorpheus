@@ -11,6 +11,7 @@ using Proteomics.Fragmentation;
 using Proteomics.ProteolyticDigestion;
 using System;
 using System.Collections.Generic;
+using System.Globalization;
 using System.IO;
 using System.Linq;
 using System.Text;
@@ -29,7 +30,7 @@ namespace EngineLayer
         protected Canvas SequenceDrawingCanvas;
 
         public PeptideSpectrumMatchPlot(OxyPlot.Wpf.PlotView plotView, Canvas sequenceDrawingCanvas, PsmFromTsv psm, MsDataScan scan,
-            List<MatchedFragmentIon> matchedFragmentIons, bool annotateProperties = true) : base(plotView)
+            List<MatchedFragmentIon> matchedFragmentIons, bool annotateProperties = true, LibrarySpectrum librarySpectrum = null) : base(plotView)
         {
             Model.Title = string.Empty;
             Model.Subtitle = string.Empty;
@@ -38,7 +39,7 @@ namespace EngineLayer
             SequenceDrawingCanvas = sequenceDrawingCanvas;
             SequenceDrawingCanvas.Height = 60;
             sequenceDrawingCanvas.Width = 600;
-            
+
             ClearCanvas(SequenceDrawingCanvas);
             DrawSpectrum();
             AnnotateBaseSequence(psm.BaseSeq, psm.FullSequence, 10, matchedFragmentIons);
@@ -50,6 +51,12 @@ namespace EngineLayer
             }
 
             ZoomAxes(matchedFragmentIons);
+
+            if (librarySpectrum != null)
+            {
+                AnnotateLibraryIons(isBetaPeptide: false, librarySpectrum.MatchedFragmentIons);
+            }
+
             RefreshChart();
         }
 
@@ -67,7 +74,7 @@ namespace EngineLayer
             SequenceDrawingCanvas.Measure(new Size((int)SequenceDrawingCanvas.Width, (int)SequenceDrawingCanvas.Height));
             SequenceDrawingCanvas.Arrange(new Rect(new Size((int)SequenceDrawingCanvas.Width, (int)SequenceDrawingCanvas.Height)));
 
-            RenderTargetBitmap renderBitmap = new RenderTargetBitmap((int)(dpiScale * SequenceDrawingCanvas.Width), (int)(dpiScale * SequenceDrawingCanvas.Height), 
+            RenderTargetBitmap renderBitmap = new RenderTargetBitmap((int)(dpiScale * SequenceDrawingCanvas.Width), (int)(dpiScale * SequenceDrawingCanvas.Height),
                 MetaDrawSettings.CanvasPdfExportDpi, MetaDrawSettings.CanvasPdfExportDpi, PixelFormats.Pbgra32);
 
             renderBitmap.Render(SequenceDrawingCanvas);
@@ -132,7 +139,10 @@ namespace EngineLayer
                 MajorTickSize = 2,
                 TitleFontWeight = OxyPlot.FontWeights.Bold,
                 TitleFontSize = 14,
-                AxisTitleDistance = 10
+                AxisTitleDistance = 10,
+                ExtraGridlines = new double[] { 0 },
+                ExtraGridlineColor = OxyColors.Black,
+                ExtraGridlineThickness = 1
             });
 
             // draw all peaks in the scan
@@ -145,11 +155,11 @@ namespace EngineLayer
             }
         }
 
-        protected void AnnotateMatchedIons(bool isBetaPeptide, List<MatchedFragmentIon> matchedFragmentIons)
+        protected void AnnotateMatchedIons(bool isBetaPeptide, List<MatchedFragmentIon> matchedFragmentIons, bool useLiteralPassedValues = false)
         {
             foreach (MatchedFragmentIon matchedIon in matchedFragmentIons)
             {
-                AnnotatePeak(matchedIon, isBetaPeptide);
+                AnnotatePeak(matchedIon, isBetaPeptide, useLiteralPassedValues);
             }
         }
 
@@ -238,7 +248,52 @@ namespace EngineLayer
             }
         }
 
-        protected void AnnotatePeak(MatchedFragmentIon matchedIon, bool isBetaPeptide)
+        protected void AnnotateLibraryIons(bool isBetaPeptide, List<MatchedFragmentIon> libraryIons)
+        {
+            // figure out the sum of the intensities of the matched fragment ions
+            double sumOfMatchedIonIntensities = 0;
+            double sumOfLibraryIntensities = 0;
+            foreach (var libraryIon in libraryIons)
+            {
+                var matchedIon = SpectrumMatch.MatchedIons.FirstOrDefault(p =>
+                    p.NeutralTheoreticalProduct.ProductType == libraryIon.NeutralTheoreticalProduct.ProductType
+                    && p.NeutralTheoreticalProduct.FragmentNumber == libraryIon.NeutralTheoreticalProduct.FragmentNumber);
+
+                if (matchedIon == null)
+                {
+                    continue;
+                }
+
+                int i = Scan.MassSpectrum.GetClosestPeakIndex(libraryIon.Mz);
+                double intensity = Scan.MassSpectrum.YArray[i];
+                sumOfMatchedIonIntensities += intensity;
+                sumOfLibraryIntensities += libraryIon.Intensity;
+            }
+
+            double multiplier = -1 * sumOfMatchedIonIntensities / sumOfLibraryIntensities;
+
+            List<MatchedFragmentIon> mirroredLibraryIons = new List<MatchedFragmentIon>();
+
+            foreach (MatchedFragmentIon libraryIon in libraryIons)
+            {
+                var neutralProduct = new Product(libraryIon.NeutralTheoreticalProduct.ProductType, libraryIon.NeutralTheoreticalProduct.Terminus,
+                    libraryIon.NeutralTheoreticalProduct.NeutralMass, libraryIon.NeutralTheoreticalProduct.FragmentNumber,
+                    libraryIon.NeutralTheoreticalProduct.AminoAcidPosition, libraryIon.NeutralTheoreticalProduct.NeutralLoss);
+
+                mirroredLibraryIons.Add(new MatchedFragmentIon(ref neutralProduct, libraryIon.Mz, multiplier * libraryIon.Intensity, libraryIon.Charge));
+            }
+
+            AnnotateMatchedIons(isBetaPeptide, mirroredLibraryIons, useLiteralPassedValues: true);
+
+            // zoom to accomodate the mirror plot
+            double min = mirroredLibraryIons.Min(p => p.Intensity) * 1.2;
+            this.Model.Axes[1].AbsoluteMinimum = min * 2;
+            this.Model.Axes[1].AbsoluteMaximum = -min * 2;
+            this.Model.Axes[1].Zoom(min, -min);
+            this.Model.Axes[1].LabelFormatter = YAxisLabelFormatter;
+        }
+
+        protected void AnnotatePeak(MatchedFragmentIon matchedIon, bool isBetaPeptide, bool useLiteralPassedValues = false)
         {
             OxyColor ionColor;
 
@@ -259,8 +314,14 @@ namespace EngineLayer
             }
 
             int i = Scan.MassSpectrum.GetClosestPeakIndex(matchedIon.NeutralTheoreticalProduct.NeutralMass.ToMz(matchedIon.Charge));
-            double mz = matchedIon.Mz;
+            double mz = Scan.MassSpectrum.XArray[i];
             double intensity = Scan.MassSpectrum.YArray[i];
+
+            if (useLiteralPassedValues)
+            {
+                mz = matchedIon.Mz;
+                intensity = matchedIon.Intensity;
+            }
 
             // peak annotation
             string prefix = "";
@@ -309,6 +370,7 @@ namespace EngineLayer
             peakAnnotation.StrokeThickness = 0;
             peakAnnotation.Text = peakAnnotationText;
             peakAnnotation.TextPosition = new DataPoint(mz, intensity);
+            peakAnnotation.TextVerticalAlignment = intensity < 0 ? OxyPlot.VerticalAlignment.Top : OxyPlot.VerticalAlignment.Bottom;
             peakAnnotation.TextHorizontalAlignment = OxyPlot.HorizontalAlignment.Center;
 
             DrawPeak(mz, intensity, MetaDrawSettings.StrokeThicknessAnnotated, ionColor, peakAnnotation);
@@ -384,7 +446,7 @@ namespace EngineLayer
             this.Model.Series.Add(line);
         }
 
-        protected void ZoomAxes(IEnumerable<MatchedFragmentIon> matchedFragmentIons, double yZoom  = 1.2)
+        protected void ZoomAxes(IEnumerable<MatchedFragmentIon> matchedFragmentIons, double yZoom = 1.2)
         {
             double highestAnnotatedIntensity = 0;
             double highestAnnotatedMz = double.MinValue;
@@ -412,6 +474,8 @@ namespace EngineLayer
                 }
             }
 
+            this.Model.Axes[1].AbsoluteMinimum = 0;
+
             if (highestAnnotatedIntensity > 0)
             {
                 this.Model.Axes[1].Zoom(0, highestAnnotatedIntensity * yZoom);
@@ -421,6 +485,16 @@ namespace EngineLayer
             {
                 this.Model.Axes[0].Zoom(lowestAnnotatedMz - 100, highestAnnotatedMz + 100);
             }
+        }
+
+        private static string YAxisLabelFormatter(double d)
+        {
+            if (d < 0)
+            {
+                return (-d).ToString("0e-0", CultureInfo.InvariantCulture);
+            }
+
+            return d.ToString("0e-0", CultureInfo.InvariantCulture);
         }
 
         /// <summary>
