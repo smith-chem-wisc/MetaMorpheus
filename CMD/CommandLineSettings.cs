@@ -141,7 +141,7 @@ namespace MetaMorpheusCommandLine
                 bool compressed = ext.EndsWith("gz"); // allows for .bgz and .tgz, too which are used on occasion
                 ext = compressed ? Path.GetExtension(Path.GetFileNameWithoutExtension(filename)).ToLowerInvariant() : ext;
 
-                if (!GlobalVariables.AcceptedDatabaseFormats.Contains(ext))
+                if (!GlobalVariables.AcceptedDatabaseFormats.Contains(ext) && !GlobalVariables.AcceptedSpectralLibraryFormats.Contains(ext))
                 {
                     throw new MetaMorpheusException("Unrecognized protein database file format: " + ext);
                 }

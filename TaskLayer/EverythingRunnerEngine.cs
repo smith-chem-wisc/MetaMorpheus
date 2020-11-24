@@ -87,7 +87,7 @@ namespace TaskLayer
 
                 if (myTaskResults.NewDatabases != null)
                 {
-                    CurrentXmlDbFilenameList = myTaskResults.NewDatabases;
+                    CurrentXmlDbFilenameList = myTaskResults.NewDatabases.Concat(CurrentXmlDbFilenameList.Where(p => p.IsSpectralLibrary)).ToList();
                     NewDBs(myTaskResults.NewDatabases);
                 }
                 if (myTaskResults.NewSpectra != null)

@@ -19,6 +19,7 @@ namespace EngineLayer
         // for now, these are only used for error-checking in the command-line version.
         // compressed versions of the protein databases (e.g., .xml.gz) are also supported
         public static List<string> AcceptedDatabaseFormats { get; private set; }
+        public static List<string> AcceptedSpectralLibraryFormats { get; private set; }
         public static List<string> AcceptedSpectraFormats { get; private set; }
 
         private static List<Modification> _AllModsKnown;
@@ -58,8 +59,9 @@ namespace EngineLayer
         public static void SetUpGlobalVariables()
         {
             Loaders.LoadElements();
-            AcceptedDatabaseFormats = new List<string> { ".fasta", ".fa", ".xml", ".msp" };
+            AcceptedDatabaseFormats = new List<string> { ".fasta", ".fa", ".xml" };
             AcceptedSpectraFormats = new List<string> { ".raw", ".mzml", ".mgf" };
+            AcceptedSpectralLibraryFormats = new List<string> { ".msp" };
             AnalyteType = "Peptide";
             _InvalidAminoAcids = new char[] { 'X', 'B', 'J', 'Z', ':', '|', ';', '[', ']', '{', '}', '(', ')', '+', '-' };
             ExperimentalDesignFileName = "ExperimentalDesign.tsv";

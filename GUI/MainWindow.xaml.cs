@@ -166,7 +166,7 @@ namespace MetaMorpheusGUI
             }
             else
             {
-                foreach (var db in ProteinDatabases)
+                foreach (var db in ProteinDatabases.Where(p => !GlobalVariables.AcceptedSpectralLibraryFormats.Contains(GlobalVariables.GetFileExtension(p.FilePath))))
                 {
                     db.Use = false;
                 }

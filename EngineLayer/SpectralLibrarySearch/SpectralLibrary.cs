@@ -16,9 +16,15 @@ namespace EngineLayer
         private Dictionary<string, (string filePath, long byteOffset)> SequenceToFileAndLocation;
         private Queue<string> LibrarySpectrumBufferList;
         private Dictionary<string, LibrarySpectrum> LibrarySpectrumBuffer;
-        private int MaxElementsInBuffer = 10000;
+        private const int MaxElementsInBuffer = 10000;
         private Dictionary<string, StreamReader> StreamReaders;
         private static Regex IonParserRegex = new Regex(@"^(\D{1,})(\d{1,})(?:[\^]|$)(\d{1,}|$)");
+
+        private readonly char[] nameSplit = new char[] { '/' };
+        private readonly char[] mwSplit = new char[] { ':' };
+        private readonly char[] commentSplit = new char[] { ' ', ':', '=' };
+        private readonly char[] modSplit = new char[] { '=', '/' };
+        private readonly char[] fragmentSplit = new char[] { '\t', '\"', ')', '/' };
 
         private static Dictionary<string, string> PrositToMetaMorpheusModDictionary = new Dictionary<string, string>
         {
@@ -135,13 +141,7 @@ namespace EngineLayer
         {
             if (!StreamReaders.TryGetValue(path, out var reader))
             {
-                throw new MetaMorpheusException("????");
-                //IndexSpectralLibrary(path);
-
-                //if (!StreamReaders.TryGetValue(path, out reader))
-                //{
-                //    // TODO: throw an exception
-                //}
+                throw new MetaMorpheusException("Spectral library not found: " + path);
             }
 
             // seek to the byte of the scan
@@ -154,12 +154,6 @@ namespace EngineLayer
 
         private LibrarySpectrum ReadLibrarySpectrum(StreamReader reader, bool onlyReadHeader = false)
         {
-            char[] nameSplit = new char[] { '/' };
-            char[] mwSplit = new char[] { ':' };
-            char[] commentSplit = new char[] { ' ', ':', '=' };
-            char[] modSplit = new char[] { '=', '/' };
-            char[] fragmentSplit = new char[] { '\t', '\"', ')', '/' };
-
             bool readingPeaks = false;
             string sequence = null;
             int z = 2;

@@ -57,6 +57,8 @@ namespace TaskLayer
 
         protected string OutputFolder { get; private set; }
 
+        protected SpectralLibrary SpectralLibrary { get; private set; }
+
         protected MyTaskResults MyTaskResults;
 
         protected MetaMorpheusTask(MyTask taskType)
@@ -415,6 +417,13 @@ namespace TaskLayer
                 var stopWatch = new Stopwatch();
                 stopWatch.Start();
 
+                if (TaskType == MyTask.Search)
+                {
+                    // load spectral libraries
+                    SpectralLibrary = LoadSpectralLibraries(displayName, currentProteinDbFilenameList);
+                }
+                currentProteinDbFilenameList = currentProteinDbFilenameList.Where(p => !p.IsSpectralLibrary).ToList();
+
                 FileSpecificParameters[] fileSettingsList = new FileSpecificParameters[currentRawDataFilepathList.Count];
                 for (int i = 0; i < currentRawDataFilepathList.Count; i++)
                 {
@@ -458,6 +467,11 @@ namespace TaskLayer
                 }
                 FinishedWritingFile(resultsFileName, new List<string> { displayName });
                 FinishedSingleTask(displayName);
+
+                if (SpectralLibrary != null)
+                {
+                    SpectralLibrary.CloseConnections();
+                }
             }
             catch (Exception e)
             {

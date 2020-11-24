@@ -140,9 +140,6 @@ namespace TaskLayer
             List<Protein> proteinList = LoadProteins(taskId, dbFilenameList, SearchParameters.SearchTarget, SearchParameters.DecoyType, localizeableModificationTypes, CommonParameters);
             SanitizeProteinDatabase(proteinList, SearchParameters.TCAmbiguity);
 
-            // load spectral libraries
-            var spectralLibrary = LoadSpectralLibraries(taskId, dbFilenameList);
-
             // write prose settings
             ProseCreatedWhileRunning.Append("The following search settings were used: ");
             ProseCreatedWhileRunning.Append("protease = " + CommonParameters.DigestionParams.Protease + "; ");
@@ -333,18 +330,18 @@ namespace TaskLayer
                 {
                     Status("Starting search...", thisId);
                     var newClassicSearchEngine = new ClassicSearchEngine(fileSpecificPsms, arrayOfMs2ScansSortedByMass, variableModifications, fixedModifications, SearchParameters.SilacLabels,
-                       SearchParameters.StartTurnoverLabel, SearchParameters.EndTurnoverLabel, proteinList, massDiffAcceptor, combinedParams, this.FileSpecificParameters, spectralLibrary, thisId);
+                       SearchParameters.StartTurnoverLabel, SearchParameters.EndTurnoverLabel, proteinList, massDiffAcceptor, combinedParams, this.FileSpecificParameters, SpectralLibrary, thisId);
                     newClassicSearchEngine.Run();
 
                     ReportProgress(new ProgressEventArgs(100, "Done with search!", thisId));
                 }
 
                 // calculate/set spectral angles if there is a spectral library being used
-                if (spectralLibrary != null)
+                if (SpectralLibrary != null)
                 {
                     Status("Calculating spectral library similarity...", thisId);
                 }
-                SpectralLibrarySearchFunction.CalculateSpectralAngles(spectralLibrary, fileSpecificPsms, arrayOfMs2ScansSortedByMass, combinedParams);
+                SpectralLibrarySearchFunction.CalculateSpectralAngles(SpectralLibrary, fileSpecificPsms, arrayOfMs2ScansSortedByMass, combinedParams);
 
                 lock (psmLock)
                 {
@@ -354,11 +351,6 @@ namespace TaskLayer
                 completedFiles++;
                 FinishedDataFile(origDataFile, new List<string> { taskId, "Individual Spectra Files", origDataFile });
                 ReportProgress(new ProgressEventArgs(completedFiles / currentRawFileList.Count, "Searching...", new List<string> { taskId, "Individual Spectra Files" }));
-            }
-
-            if (spectralLibrary != null)
-            {
-                spectralLibrary.CloseConnections();
             }
 
             ReportProgress(new ProgressEventArgs(100, "Done with all searches!", new List<string> { taskId, "Individual Spectra Files" }));
