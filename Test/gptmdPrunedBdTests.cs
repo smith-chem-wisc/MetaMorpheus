@@ -358,8 +358,9 @@ namespace Test
             PostSearchAnalysisParameters testPostTaskParameters = new PostSearchAnalysisParameters();
             CommonParameters commonParam = new CommonParameters(useDeltaScore: false);
             double[,] noiseData = new double[10000, 10000];
-            noiseData[0,0] = 1.0; 
-            List<Proteomics.Fragmentation.MatchedFragmentIon> matchedFragmentIons = new List<Proteomics.Fragmentation.MatchedFragmentIon>() { };
+            noiseData[0,0] = 1.0;
+            var product = new Proteomics.Fragmentation.Product();
+            List<Proteomics.Fragmentation.MatchedFragmentIon> matchedFragmentIons = new List<Proteomics.Fragmentation.MatchedFragmentIon>() { new Proteomics.Fragmentation.MatchedFragmentIon(ref product,1,2,1) };
             MzSpectrum spectrum = new MzSpectrum(noiseData);
             MsDataScan scan = new MsDataScan(spectrum , 1, 1, true, Polarity.Unknown, 2, new MzLibUtil.MzRange(10, 1000), "", MZAnalyzerType.Orbitrap, 10000, null, noiseData, "");
             testPostTaskParameters.ProteinList = new List<Protein>() { protein1, protein2 };
@@ -464,7 +465,8 @@ namespace Test
             CommonParameters commonParam = new CommonParameters(useDeltaScore: false);
             double[,] noiseData = new double[10000, 10000];
             noiseData[0, 0] = 1.0;
-            List<Proteomics.Fragmentation.MatchedFragmentIon> matchedFragmentIons = new List<Proteomics.Fragmentation.MatchedFragmentIon>() { };
+            var product = new Proteomics.Fragmentation.Product();
+            List<Proteomics.Fragmentation.MatchedFragmentIon> matchedFragmentIons = new List<Proteomics.Fragmentation.MatchedFragmentIon>() { new Proteomics.Fragmentation.MatchedFragmentIon(ref product, 1, 2, 1) };
             MzSpectrum spectrum = new MzSpectrum(noiseData);
             MsDataScan scan = new MsDataScan(spectrum, 1, 1, true, Polarity.Unknown, 2, new MzLibUtil.MzRange(10, 1000), "", MZAnalyzerType.Orbitrap, 10000, null, noiseData, "");
             testPostTaskParameters.ProteinList = proteinList;
