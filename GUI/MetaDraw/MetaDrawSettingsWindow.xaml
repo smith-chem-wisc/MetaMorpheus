@@ -8,6 +8,7 @@
         Title="Graphical Settings" Width="400" SizeToContent="Height" WindowStartupLocation="CenterScreen">
     <StackPanel>
         <StackPanel>
+            <CheckBox Name="DisplayAnnotationsCheckBox" Content="Display ion annotations" Margin="5"/>
             <CheckBox Name="MZCheckBox" Content="Annotate m/z values" Margin="5"/>
             <CheckBox Name="ChargesCheckBox" Content="Annotate charges" Margin="5"/>
             <CheckBox Name="BoldTextCheckBox" Content="Bold text" Margin="5"/>

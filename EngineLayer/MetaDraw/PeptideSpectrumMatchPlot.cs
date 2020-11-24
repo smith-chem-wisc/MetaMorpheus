@@ -373,6 +373,11 @@ namespace EngineLayer
             peakAnnotation.TextVerticalAlignment = intensity < 0 ? OxyPlot.VerticalAlignment.Top : OxyPlot.VerticalAlignment.Bottom;
             peakAnnotation.TextHorizontalAlignment = OxyPlot.HorizontalAlignment.Center;
 
+            if (!MetaDrawSettings.DisplayIonAnnotations)
+            {
+                peakAnnotation.Text = string.Empty;
+            }
+
             DrawPeak(mz, intensity, MetaDrawSettings.StrokeThicknessAnnotated, ionColor, peakAnnotation);
         }
 
@@ -474,8 +479,6 @@ namespace EngineLayer
                 }
             }
 
-            this.Model.Axes[1].AbsoluteMinimum = 0;
-
             if (highestAnnotatedIntensity > 0)
             {
                 this.Model.Axes[1].Zoom(0, highestAnnotatedIntensity * yZoom);
@@ -487,6 +490,12 @@ namespace EngineLayer
             }
         }
 
+        /// <summary>
+        /// This method exists because of the mirror plotting of spectral libraries. Library spectral ions are displayed
+        /// as having negative intensities for easy visualization, but obviously the ions do not actually have negative
+        /// intensities. This formatter is used on the Y-axis (intensity) to turn negative values into positive ones
+        /// so the Y-axis doesn't display negative intensities.
+        /// </summary>
         private static string YAxisLabelFormatter(double d)
         {
             if (d < 0)
