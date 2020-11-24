@@ -20,6 +20,7 @@ namespace EngineLayer
         public static OxyColor UnannotatedPeakColor { get; set; } = OxyColors.LightGray;
         public static SolidColorBrush ModificationAnnotationColor { get; set; } = Brushes.Orange;
         public static double CanvasPdfExportDpi { get; set; } = 300;
+        public static bool DisplayIonAnnotations { get; set; } = true;
         public static bool AnnotateMzValues { get; set; } = false;
         public static bool AnnotateCharges { get; set; } = false;
         public static int AnnotatedFontSize { get; set; } = 12;

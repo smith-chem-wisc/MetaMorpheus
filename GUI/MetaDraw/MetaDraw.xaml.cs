@@ -28,6 +28,7 @@ namespace MetaMorpheusGUI
         private ObservableCollection<string> PsmStatPlotFiles;
         private static List<string> AcceptedSpectraFormats = new List<string> { ".mzml", ".raw", ".mgf" };
         private static List<string> AcceptedResultsFormats = new List<string> { ".psmtsv", ".tsv" };
+        private static List<string> AcceptedSpectralLibraryFormats = new List<string> { ".msp" };
 
         public MetaDraw()
         {
@@ -127,6 +128,14 @@ namespace MetaMorpheusGUI
                     resetPsmFileButtonStat.IsEnabled = true;
                 }
             }
+            else if (AcceptedSpectralLibraryFormats.Contains(theExtension))
+            {
+                // TODO: display this somewhere in the GUI
+                if (!MetaDrawLogic.SpectralLibraryPaths.Contains(filePath))
+                {
+                    MetaDrawLogic.SpectralLibraryPaths.Add(filePath);
+                }
+            }
             else
             {
                 MessageBox.Show("Cannot read file type: " + theExtension);
@@ -208,7 +217,7 @@ namespace MetaMorpheusGUI
 
         private void selectPsmFileButton_Click(object sender, RoutedEventArgs e)
         {
-            string filterString = string.Join(";", AcceptedResultsFormats.Select(p => "*" + p));
+            string filterString = string.Join(";", AcceptedResultsFormats.Concat(AcceptedSpectralLibraryFormats).Select(p => "*" + p));
 
             Microsoft.Win32.OpenFileDialog openFileDialog1 = new Microsoft.Win32.OpenFileDialog
             {

@@ -1,4 +1,5 @@
-﻿using EngineLayer;
+﻿using Chemistry;
+using EngineLayer;
 using MassSpectrometry;
 using NUnit.Framework;
 using OxyPlot.Series;
@@ -562,7 +563,7 @@ namespace Test
             string pathWithPeriodInIt = Path.Combine(TestContext.CurrentContext.TestDirectory, @"TestData\S.m,al. lC,al.ib r.at,i ble_Ye.ast.mzML");
             File.Copy(spectraFile, pathWithPeriodInIt, true);
             spectraFile = pathWithPeriodInIt;
-            
+
             Directory.CreateDirectory(outputFolder);
 
             // run search task
@@ -597,6 +598,134 @@ namespace Test
 
             // delete output
             File.Delete(pathWithPeriodInIt);
+            Directory.Delete(outputFolder, true);
+        }
+
+        [Test]
+        public static void TestMetaDrawWithSpectralLibrary()
+        {
+            string outputFolder = Path.Combine(TestContext.CurrentContext.TestDirectory, @"TestMetaDrawWithSpectraLibrary");
+            string proteinDatabase = Path.Combine(TestContext.CurrentContext.TestDirectory, @"TestData\SpectralLibrarySearch\P16858.fasta");
+            string library1 = Path.Combine(TestContext.CurrentContext.TestDirectory, @"TestData\SpectralLibrarySearch\P16858_target.msp");
+            string library2 = Path.Combine(TestContext.CurrentContext.TestDirectory, @"TestData\SpectralLibrarySearch\P16858_decoy.msp");
+            string spectraFile = Path.Combine(TestContext.CurrentContext.TestDirectory, @"TestData\SpectralLibrarySearch\slicedMouse.raw");
+
+            Directory.CreateDirectory(outputFolder);
+
+            // run search task
+            var searchtask = new SearchTask();
+            searchtask.RunTask(outputFolder,
+                new List<DbForTask>
+                {
+                    new DbForTask(proteinDatabase, false),
+                    new DbForTask(library1, false),
+                    new DbForTask(library2, false),
+                },
+                new List<string> { spectraFile }, "");
+
+            var psmFile = Path.Combine(outputFolder, @"AllPSMs.psmtsv");
+
+            // load results into metadraw
+            var metadrawLogic = new MetaDrawLogic();
+            metadrawLogic.SpectraFilePaths.Add(spectraFile);
+            metadrawLogic.PsmResultFilePaths.Add(psmFile);
+            metadrawLogic.SpectralLibraryPaths.Add(library1);
+            metadrawLogic.SpectralLibraryPaths.Add(library2);
+            var errors = metadrawLogic.LoadFiles(true, true);
+
+            Assert.That(!errors.Any());
+
+            // draw PSM
+            var plotView = new OxyPlot.Wpf.PlotView();
+            var canvas = new Canvas();
+            var parentChildView = new ParentChildScanPlotsView();
+            var psm = metadrawLogic.FilteredListOfPsms.First();
+
+            metadrawLogic.DisplaySpectrumMatch(plotView, canvas, psm, parentChildView, out errors);
+            Assert.That(errors == null || !errors.Any());
+
+            // test that plot was drawn
+            var plotSeries = plotView.Model.Series;
+
+            // test that library peaks were drawn in the mirror plot (these peaks have negative intensities)
+            var mirrorPlotPeaks = plotSeries.Where(p => ((LineSeries)p).Points[1].Y < 0).ToList();
+            Assert.That(mirrorPlotPeaks.Count == 52);
+
+            var plotAxes = plotView.Model.Axes;
+            Assert.That(plotAxes.Count == 2);
+
+            // write pdf
+            var psmsToExport = metadrawLogic.FilteredListOfPsms.Where(p => p.FullSequence == "VIHDNFGIVEGLMTTVHAITATQK").Take(1).ToList();
+            metadrawLogic.ExportToPdf(plotView, canvas, psmsToExport, parentChildView, outputFolder, out errors);
+
+            // test that pdf exists
+            Assert.That(File.Exists(Path.Combine(outputFolder, @"6_VIHDNFGIVEGLMTTVHAITATQK.pdf")));
+
+            // clean up resources
+            metadrawLogic.CleanUpResources();
+            Assert.That(!metadrawLogic.FilteredListOfPsms.Any());
+            Assert.That(!metadrawLogic.PsmResultFilePaths.Any());
+            Assert.That(!metadrawLogic.SpectraFilePaths.Any());
+            Assert.That(!metadrawLogic.SpectralLibraryPaths.Any());
+
+            // delete output
+            Directory.Delete(outputFolder, true);
+        }
+
+        [Test]
+        public static void TestPsmFromTsvIonParsing()
+        {
+            string outputFolder = Path.Combine(TestContext.CurrentContext.TestDirectory, @"TestPsmFromTsvIonParsing");
+            string proteinDatabase = Path.Combine(TestContext.CurrentContext.TestDirectory, @"TestData\SpectralLibrarySearch\P16858.fasta");
+            string spectraFile = Path.Combine(TestContext.CurrentContext.TestDirectory, @"TestData\SpectralLibrarySearch\slicedMouse.raw");
+
+            Directory.CreateDirectory(outputFolder);
+
+            // run search task
+            var searchtask = new SearchTask();
+            searchtask.RunTask(outputFolder,
+                new List<DbForTask>
+                {
+                    new DbForTask(proteinDatabase, false),
+                },
+                new List<string> { spectraFile }, "");
+
+            var psmFile = Path.Combine(outputFolder, @"AllPSMs.psmtsv");
+
+            // load results into metadraw
+            var metadrawLogic = new MetaDrawLogic();
+            metadrawLogic.SpectraFilePaths.Add(spectraFile);
+            metadrawLogic.PsmResultFilePaths.Add(psmFile);
+            var errors = metadrawLogic.LoadFiles(true, true);
+
+            Assert.That(!errors.Any());
+
+            // assert PsmFromTsv matched ion properties
+            var lines = File.ReadAllLines(psmFile);
+            int ind = Array.IndexOf(lines[0].Split('\t'), "Matched Ion Mass-To-Charge Ratios");
+            var ionStrings = lines[1].Split('\t')[ind].Split(new char[] { ',', ';' })
+                .Select(p => p.Trim().Replace("[", string.Empty).Replace("]", string.Empty)).ToList();
+
+            var parsedIons = metadrawLogic.FilteredListOfPsms[0].MatchedIons;
+
+            for (int i = 0; i < ionStrings.Count; i++)
+            {
+                var ionString = ionStrings[i];
+                var parsedIon = parsedIons[i];
+
+                var split = ionString.Split(new char[] { '+', ':' });
+
+                string ion = split[0];
+                int charge = int.Parse(split[1]);
+                double mz = double.Parse(split[2]);
+
+                Assert.That(mz == parsedIon.Mz);
+                Assert.That(mz.ToMass(charge) == parsedIon.NeutralTheoreticalProduct.NeutralMass);
+                Assert.That(charge == parsedIon.Charge);
+                Assert.That(ion == parsedIon.NeutralTheoreticalProduct.ProductType.ToString() + parsedIon.NeutralTheoreticalProduct.FragmentNumber);
+            }
+
+            // delete output
             Directory.Delete(outputFolder, true);
         }
     }

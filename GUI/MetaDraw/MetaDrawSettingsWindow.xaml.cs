@@ -24,6 +24,7 @@ namespace MetaMorpheusGUI
                 CmbGlycanLocalizationLevelEnd.Items.Add(level);
             }
 
+            DisplayAnnotationsCheckBox.IsChecked = MetaDrawSettings.DisplayIonAnnotations;
             MZCheckBox.IsChecked = MetaDrawSettings.AnnotateMzValues;
             ChargesCheckBox.IsChecked = MetaDrawSettings.AnnotateCharges;
             BoldTextCheckBox.IsChecked = MetaDrawSettings.AnnotationBold;
@@ -42,6 +43,7 @@ namespace MetaMorpheusGUI
 
         private void Save_Click(object sender, RoutedEventArgs e)
         {
+            MetaDrawSettings.DisplayIonAnnotations = DisplayAnnotationsCheckBox.IsChecked.Value;
             MetaDrawSettings.AnnotateMzValues = MZCheckBox.IsChecked.Value;
             MetaDrawSettings.AnnotateCharges = ChargesCheckBox.IsChecked.Value;
             MetaDrawSettings.AnnotationBold = BoldTextCheckBox.IsChecked.Value;
