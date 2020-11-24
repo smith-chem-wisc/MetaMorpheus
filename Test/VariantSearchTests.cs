@@ -192,7 +192,7 @@ namespace Test
 
             // no variant results files should be generated
             HashSet<string> expectedFiles = new HashSet<string> {
-                "AllPeptides.psmtsv", "AllPSMs.psmtsv", "AllPSMs_FormattedForPercolator.tab", "prose.txt", "results.txt" };
+                "AllPeptides.psmtsv", "AllPSMs.psmtsv", "AllPSMs_FormattedForPercolator.tab", "prose.txt", "results.txt", "spectralLibrary.msp" };
 
             HashSet<string> files1 = new HashSet<string>(Directory.GetFiles(Path.Combine(thisTaskOutputFolder, "NoVariantOutput")).Select(v => Path.GetFileName(v)));
 
@@ -206,7 +206,7 @@ namespace Test
             HashSet<string> files2 = new HashSet<string>(Directory.GetFiles(Path.Combine(thisTaskOutputFolder, "VariantOutput_frameshift")).Select(v => Path.GetFileName(v)));
             // variant files should be generates
             expectedFiles = new HashSet<string> {
-                "AllPeptides.psmtsv", "AllPSMs.psmtsv", "AllPSMs_FormattedForPercolator.tab", "AllProteinGroups.tsv", "AllQuantifiedPeaks.tsv", "AllQuantifiedPeptides.tsv", "prose.txt", "results.txt", "TestVariantPep.mzID", "VariantPeptides.psmtsv", "VariantAnalysisResultSummary.txt", "VariantPSMs.psmtsv" };
+                "AllPeptides.psmtsv", "AllPSMs.psmtsv", "AllPSMs_FormattedForPercolator.tab", "AllProteinGroups.tsv", "AllQuantifiedPeaks.tsv", "AllQuantifiedPeptides.tsv", "prose.txt", "results.txt", "TestVariantPep.mzID", "VariantPeptides.psmtsv", "VariantAnalysisResultSummary.txt", "VariantPSMs.psmtsv", "spectralLibrary.msp" };
 
             // these 2 lines are for debug purposes, so you can see which files you're missing (if any)
             missingFiles = expectedFiles.Except(files2).ToList();
