@@ -96,7 +96,7 @@ namespace EngineLayer
             {
                 foreach (var knownSpectraFileExtension in GlobalVariables.AcceptedSpectraFormats)
                 {
-                    FileNameWithoutExtension.Replace(knownSpectraFileExtension, string.Empty, StringComparison.InvariantCultureIgnoreCase);
+                    FileNameWithoutExtension = Path.GetFileName(FileNameWithoutExtension.Replace(knownSpectraFileExtension, string.Empty, StringComparison.InvariantCultureIgnoreCase));
                 }
             }
 
