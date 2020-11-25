@@ -57,6 +57,7 @@
 
   <ItemGroup>
     <ProjectReference Include="..\EngineLayer\EngineLayer.csproj" />
+    <ProjectReference Include="..\GuiFunctions\GuiFunctions.csproj" />
     <ProjectReference Include="..\TaskLayer\TaskLayer.csproj" />
   </ItemGroup>
 

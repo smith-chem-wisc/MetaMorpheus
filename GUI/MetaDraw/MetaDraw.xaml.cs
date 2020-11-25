@@ -1,4 +1,5 @@
 using EngineLayer;
+using GuiFunctions;
 using OxyPlot;
 using System;
 using System.Collections.Generic;

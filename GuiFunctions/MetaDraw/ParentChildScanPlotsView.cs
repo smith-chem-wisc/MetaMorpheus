@@ -4,7 +4,7 @@ using System.Windows.Controls;
 using mzPlot;
 using EngineLayer;
 
-namespace EngineLayer
+namespace GuiFunctions
 {
     public class ParentChildScanPlotsView
     {
