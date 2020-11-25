@@ -32,4 +32,9 @@
     <ProjectReference Include="..\TaskLayer\TaskLayer.csproj" />
   </ItemGroup>
 
+  <ItemGroup>
+    <FrameworkReference Include="Microsoft.NETCore.App" />
+    <FrameworkReference Include="Microsoft.WindowsDesktop.App" />
+  </ItemGroup>
+
 </Project>
