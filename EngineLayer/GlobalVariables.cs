@@ -58,7 +58,7 @@ namespace EngineLayer
         public static void SetUpGlobalVariables()
         {
             Loaders.LoadElements();
-            AcceptedDatabaseFormats = new List<string> { ".fasta", ".fa", ".xml" };
+            AcceptedDatabaseFormats = new List<string> { ".fasta", ".fa", ".xml", ".msp" };
             AcceptedSpectraFormats = new List<string> { ".raw", ".mzml", ".mgf" };
             AnalyteType = "Peptide";
             _InvalidAminoAcids = new char[] { 'X', 'B', 'J', 'Z', ':', '|', ';', '[', ']', '{', '}', '(', ')', '+', '-' };

@@ -507,7 +507,7 @@ namespace TaskLayer
             Status("Loading proteins...", new List<string> { taskId });
             int emptyProteinEntries = 0;
             List<Protein> proteinList = new List<Protein>();
-            foreach (var db in dbFilenameList)
+            foreach (var db in dbFilenameList.Where(p => !p.IsSpectralLibrary))
             {
                 var dbProteinList = LoadProteinDb(db.FilePath, searchTarget, decoyType, localizeableModificationTypes, db.IsContaminant, out Dictionary<string, Modification> unknownModifications, out int emptyProteinEntriesForThisDb, commonParameters);
                 proteinList = proteinList.Concat(dbProteinList).ToList();
@@ -522,6 +522,23 @@ namespace TaskLayer
                 Warn("Warning: " + emptyProteinEntries + " empty protein entries ignored");
             }
             return proteinList;
+        }
+
+        protected SpectralLibrary LoadSpectralLibraries(string taskId, List<DbForTask> dbFilenameList)
+        {
+            Status("Loading spectral libraries...", new List<string> { taskId });
+
+            var paths = dbFilenameList.Where(p => p.IsSpectralLibrary).Select(p => p.FilePath).ToList();
+
+            if (!paths.Any())
+            {
+                return null;
+            }
+
+            var lib = new SpectralLibrary(paths);
+
+            Status("Done loading spectral libraries", new List<string> { taskId });
+            return lib;
         }
 
         protected static List<Protein> LoadProteinDb(string fileName, bool generateTargets, DecoyType decoyType, List<string> localizeableModificationTypes, bool isContaminant, out Dictionary<string, Modification> um,

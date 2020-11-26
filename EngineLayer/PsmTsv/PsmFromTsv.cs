@@ -96,7 +96,7 @@ namespace EngineLayer
             {
                 foreach (var knownSpectraFileExtension in GlobalVariables.AcceptedSpectraFormats)
                 {
-                    FileNameWithoutExtension.Replace(knownSpectraFileExtension, string.Empty, StringComparison.InvariantCultureIgnoreCase);
+                    FileNameWithoutExtension = Path.GetFileName(FileNameWithoutExtension.Replace(knownSpectraFileExtension, string.Empty, StringComparison.InvariantCultureIgnoreCase));
                 }
             }
 
@@ -266,7 +266,7 @@ namespace EngineLayer
 
                 Product p = new Product(productType,
                     terminus,
-                    mz.ToMass(z) - DissociationTypeCollection.GetMassShiftFromProductType(productType),
+                    mz.ToMass(z),
                     fragmentNumber,
                     aminoAcidPosition,
                     neutralLoss);

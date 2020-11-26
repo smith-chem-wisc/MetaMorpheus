@@ -226,8 +226,32 @@
       <Component Id="src_OxyPlot.Wpf.dll" Guid="2052508D-D83C-45D7-8C9C-9211F97A8949">
         <File Id="src_OxyPlot.Wpf.dll" Name="OxyPlot.Wpf.dll" Source="$(var.GUI_TargetDir)OxyPlot.Wpf.dll" />
       </Component>
-      <Component Id="src_itextsharp.dll" Guid="C790C1B4-E2BC-4644-8925-6F9CD73E5D75">
-        <File Id="src_itextsharp.dll" Name="itextsharp.dll" Source="$(var.GUI_TargetDir)itextsharp.dll" />
+      <Component Id="src_itext.barcodes.dll" Guid="4CC3D87C-FA1E-4301-B0B9-4E1EE3DFC4F2">
+        <File Id="src_itext.barcodes.dll" Name="itext.barcodes.dll" Source="$(var.GUI_TargetDir)itext.barcodes.dll" />
+      </Component>
+      <Component Id="src_itext.forms.dll" Guid="F2265F92-F292-4158-B85B-632EE831716F">
+        <File Id="src_itext.forms.dll" Name="itext.forms.dll" Source="$(var.GUI_TargetDir)itext.forms.dll" />
+      </Component>
+      <Component Id="src_itext.io.dll" Guid="C183440D-7817-4604-B08B-C32713FE6209">
+        <File Id="src_itext.io.dll" Name="itext.io.dll" Source="$(var.GUI_TargetDir)itext.io.dll" />
+      </Component>
+      <Component Id="src_itext.kernel.dll" Guid="2EA91430-8520-44B3-A1CC-41B55802752F">
+        <File Id="src_itext.kernel.dll" Name="itext.kernel.dll" Source="$(var.GUI_TargetDir)itext.kernel.dll" />
+      </Component>
+      <Component Id="src_itext.layout.dll" Guid="537A10C8-477B-4B1B-8D7F-24BCBBB9AB88">
+        <File Id="src_itext.layout.dll" Name="itext.layout.dll" Source="$(var.GUI_TargetDir)itext.layout.dll" />
+      </Component>
+      <Component Id="src_itext.pdfa.dll" Guid="3C93C9EC-EB51-4D7D-9F71-DEE619442AF8">
+        <File Id="src_itext.pdfa.dll" Name="itext.pdfa.dll" Source="$(var.GUI_TargetDir)itext.pdfa.dll" />
+      </Component>
+      <Component Id="src_itext.sign.dll" Guid="37F6B45B-B6C2-4E6B-9CBD-D3AFDCE3B45B">
+        <File Id="src_itext.sign.dll" Name="itext.sign.dll" Source="$(var.GUI_TargetDir)itext.sign.dll" />
+      </Component>
+      <Component Id="src_itext.styledxmlparser.dll" Guid="105FCEC7-A05E-45CF-8F38-BFA5EFA0559B">
+        <File Id="src_itext.styledxmlparser.dll" Name="itext.styledxmlparser.dll" Source="$(var.GUI_TargetDir)itext.styledxmlparser.dll" />
+      </Component>
+      <Component Id="src_itext.svg.dll" Guid="C49A6ADB-94DD-4223-B97E-884D60EABF82">
+        <File Id="src_itext.svg.dll" Name="itext.svg.dll" Source="$(var.GUI_TargetDir)itext.svg.dll" />
       </Component>
       <Component Id="src_ThermoFisher.CommonCore.BackgroundSubtraction.dll" Guid="F3DA60DB-CF5F-4671-9F3C-1033780261DD">
         <File Id="src_ThermoFisher.CommonCore.BackgroundSubtraction.dll" Name="ThermoFisher.CommonCore.BackgroundSubtraction.dll" Source="$(var.GUI_TargetDir)ThermoFisher.CommonCore.BackgroundSubtraction.dll" />
