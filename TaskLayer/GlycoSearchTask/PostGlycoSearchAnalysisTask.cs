@@ -57,7 +57,7 @@ namespace TaskLayer
                 FinishedWritingFile(writtenFileOGlyco, new List<string> { taskId });
 
                 var ProteinLevelLocalization = GlycoProteinParsimony.ProteinLevelGlycoParsimony(allPsmsGly.Where(p=>p.ProteinAccession!=null && p.OneBasedStartResidueInProtein.HasValue).ToList());
-                
+
                 var seen_oglyco_localization_file = Path.Combine(OutputFolder, "seen_oglyco_localization" + ".tsv");
                 WriteFile.WriteSeenProteinGlycoLocalization(ProteinLevelLocalization, seen_oglyco_localization_file);
                 FinishedWritingFile(seen_oglyco_localization_file, new List<string> { taskId });

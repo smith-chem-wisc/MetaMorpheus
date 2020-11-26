@@ -26,7 +26,7 @@ Check out the [wiki page](https://github.com/smith-chem-wisc/MetaMorpheus/wiki) 
 * Environment:
   * 64-bit operating system
   * .NET Core 3.1:
-     * Windows: https://dotnet.microsoft.com/download/dotnet-core/thank-you/runtime-3.1.3-windows-x64-installer
+     * Windows: https://dotnet.microsoft.com/download/dotnet-core/thank-you/runtime-desktop-3.1.3-windows-x64-installer
      * Mac: https://dotnet.microsoft.com/download/dotnet-core/thank-you/runtime-3.1.3-macos-x64-installer
      * Linux: https://docs.microsoft.com/dotnet/core/install/linux-package-managers
 * Note that the installer (MetaMorpheusInstaller.msi) only works on Windows. The command-line version of MetaMorpheus supports any operating system that supports .NET Core (Windows, MacOS, Linux)
@@ -35,7 +35,7 @@ Check out the [wiki page](https://github.com/smith-chem-wisc/MetaMorpheus/wiki) 
 ## Spectra Requirements
 
 * One of the following formats:
-   * Thermo .raw
+   * Thermo .raw (Windows and Linux only)
    * .mzML file in centroid mode
    * .mgf
 * MS1 and MS2 scans
@@ -51,11 +51,11 @@ UniProt .XML or .fasta format; may be used in compressed (.gz) format. If you wo
 2. Download the example spectra and database files from [https://uwmadison.box.com/v/MetaMorpheusPublic](https://uwmadison.box.com/s/2u42qp0b8jllywqzeungmjj04gplw5in).
 3. Open MetaMorpheus from the start menu, and drag and drop the .raw spectra files and the UniProt .xml database into MetaMorpheus.
 4. Add a series of Tasks to make a workflow for MetaMorpheus to follow. Drag the .toml files (these files store MetaMorpheus's search parameters) (Task1 - Task5) into the application.
-  * Task1SearchExample.toml - the standard search functionality.
-  * Task2CalibrationExample.toml - will mass-calibrate the spectra file based on high scoring search results and write a new calibrated .mzML file.
-  * Task3SearchExample.toml - searches the newly calibrated data file, which demonstrates improved performance (more PSMs, lower mass errors) and allows for tighter search tolerances.
-  * Task4GptmdExample.toml - searches the calibrated data file to find high-probability PTMs. This search task generates a new .xml protein database with annotated PTM possibilities discovered by G-PTM-D.
-  * Task5SearchExample.toml - searches the calibrated input file against the G-PTM-D .xml database. This search result is the highest confidence in terms of total PSMs and modified peptides.
+  * Task1-SearchTaskconfig.toml - the standard search functionality.
+  * Task2-CalibrateTaskconfig.toml - will mass-calibrate the spectra file based on high scoring search results and write a new calibrated .mzML file.
+  * Task3-SearchTaskconfig.toml - searches the newly calibrated data file, which demonstrates improved performance (more PSMs, lower mass errors) and allows for tighter search tolerances.
+  * Task4-GPTMDTaskconfig.toml - searches the calibrated data file to find high-probability PTMs. This search task generates a new .xml protein database with annotated PTM possibilities discovered by G-PTM-D.
+  * Task5-SearchTaskconfig.toml - searches the calibrated input file against the G-PTM-D .xml database. This search result is the highest confidence in terms of total PSMs and modified peptides.
 5. Click "Run All Tasks!"
 6. As the third task completes, open the results.txt files for the first and third tasks (before and after calibration, respectively). Observe the increase in the number of confident PSMs and identified peptides due to calibration.
 7. As the fifth task completes, open the results.txt files for the third and fifth tasks. Observe the increase in the number of confident PSMs identified due to discovered PTM-containing peptides.
@@ -74,7 +74,7 @@ UniProt .XML or .fasta format; may be used in compressed (.gz) format. If you wo
 3. Run the command:
 
 ```
-CMD.exe -t Task1SearchExample.toml Task2CalibrationExample.toml Task3SearchExample.toml Task4GptmdExample.toml Task5SearchExample.toml -s 04-30-13_CAST_Frac4_6uL.raw 04-30-13_CAST_Frac5_4uL.raw -d uniprot-mouse-reviewed-3-9-2017.xml.gz uniprot-cRAP-1-24-2018.xml.gz
+CMD.exe -t Task1-SearchTaskconfig.toml Task2-CalibrateTaskconfig.toml Task3-SearchTaskconfig.toml Task4-GPTMDTaskconfig.toml Task5-SearchTaskconfig.toml -s 04-30-13_CAST_Frac4_6uL.raw 04-30-13_CAST_Frac5_4uL.raw -d uniprot-mouse-reviewed-1-24-2018.xml.gz uniprot-cRAP-1-24-2018.xml.gz
 ```
 4. As the third task completes, open the results.txt files for the first and third tasks (before and after calibration). Observe the increase in the number of confident PSMs identified due to calibration.
 5. As the fifth task completes, open the results.txt files for the third and fifth tasks. Observe the increase in the number of confident PSMs identified due to an addition of new plausible PTMs.
@@ -86,7 +86,7 @@ CMD.exe -t Task1SearchExample.toml Task2CalibrationExample.toml Task3SearchExamp
 3. Run the command:
 
 ```
-dotnet CMD.dll -t Task1SearchExample.toml Task2CalibrationExample.toml Task3SearchExample.toml Task4GptmdExample.toml Task5SearchExample.toml -s 04-30-13_CAST_Frac4_6uL.raw 04-30-13_CAST_Frac5_4uL.raw -d uniprot-mouse-reviewed-3-9-2017.xml.gz uniprot-cRAP-1-24-2018.xml.gz
+dotnet CMD.dll -t Task1-SearchTaskconfig.toml Task2-CalibrateTaskconfig.toml Task3-SearchTaskconfig.toml Task4-GPTMDTaskconfig.toml Task5-SearchTaskconfig.toml -s 04-30-13_CAST_Frac4_6uL.raw 04-30-13_CAST_Frac5_4uL.raw -d uniprot-mouse-reviewed-1-24-2018.xml.gz uniprot-cRAP-1-24-2018.xml.gz
 ```
 
 ## mzLib

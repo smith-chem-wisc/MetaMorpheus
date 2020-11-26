@@ -6,6 +6,7 @@ using System.Globalization;
 using System.Linq;
 using System.Text.RegularExpressions;
 using EngineLayer.GlycoSearch;
+using System.IO;
 
 namespace EngineLayer
 {
@@ -18,7 +19,7 @@ namespace EngineLayer
 
         public string FullSequence { get; }
         public int Ms2ScanNumber { get; }
-        public string Filename { get; }
+        public string FileNameWithoutExtension { get; }
         public int PrecursorScanNum { get; }
         public int PrecursorCharge { get; }
         public double PrecursorMz { get; }
@@ -87,9 +88,30 @@ namespace EngineLayer
             var spl = line.Split(split);
 
             //Required properties
-            Filename = spl[parsedHeader[PsmTsvHeader.FileName]].Trim();
+            FileNameWithoutExtension = spl[parsedHeader[PsmTsvHeader.FileName]].Trim();
+            
+            // remove file format, e.g., .raw, .mzML, .mgf
+            // this is more robust but slower than Path.GetFileNameWithoutExtension
+            if (FileNameWithoutExtension.Contains('.'))
+            {
+                foreach (var knownSpectraFileExtension in GlobalVariables.AcceptedSpectraFormats)
+                {
+                    FileNameWithoutExtension.Replace(knownSpectraFileExtension, string.Empty, StringComparison.InvariantCultureIgnoreCase);
+                }
+            }
+
             Ms2ScanNumber = int.Parse(spl[parsedHeader[PsmTsvHeader.Ms2ScanNumber]]);
-            PrecursorScanNum = int.Parse(spl[parsedHeader[PsmTsvHeader.PrecursorScanNum]].Trim());
+
+            // this will probably not be known in an .mgf data file
+            if (int.TryParse(spl[parsedHeader[PsmTsvHeader.PrecursorScanNum]].Trim(), out int result))
+            {
+                PrecursorScanNum = result;
+            }
+            else
+            {
+                PrecursorScanNum = 0;
+            }
+
             PrecursorCharge = (int)double.Parse(spl[parsedHeader[PsmTsvHeader.PrecursorCharge]].Trim(), CultureInfo.InvariantCulture);
             PrecursorMz = double.Parse(spl[parsedHeader[PsmTsvHeader.PrecursorMz]].Trim(), CultureInfo.InvariantCulture);
             PrecursorMass = double.Parse(spl[parsedHeader[PsmTsvHeader.PrecursorMass]].Trim(), CultureInfo.InvariantCulture);
@@ -160,11 +182,11 @@ namespace EngineLayer
             }
 
             //For Glyco            
-            GlycanMass = (parsedHeader[PsmTsvHeader_Glyco.GlycanMass] < 0) ? null : (double?)double.Parse(spl[parsedHeader[PsmTsvHeader_Glyco.GlycanMass]]);
+            GlycanMass = (parsedHeader[PsmTsvHeader_Glyco.GlycanMass] < 0) ? null : (double?)double.Parse(spl[parsedHeader[PsmTsvHeader_Glyco.GlycanMass]], CultureInfo.InvariantCulture);
             GlycanComposition = (parsedHeader[PsmTsvHeader_Glyco.GlycanComposition] < 0) ? null : spl[parsedHeader[PsmTsvHeader_Glyco.GlycanComposition]];
             GlycanStructure = (parsedHeader[PsmTsvHeader_Glyco.GlycanStructure] < 0) ? null : spl[parsedHeader[PsmTsvHeader_Glyco.GlycanStructure]];
             var localizationLevel = (parsedHeader[PsmTsvHeader_Glyco.GlycanLocalizationLevel] < 0) ? null : spl[parsedHeader[PsmTsvHeader_Glyco.GlycanLocalizationLevel]];
-            if (localizationLevel!=null)
+            if (localizationLevel != null)
             {
                 GlycanLocalizationLevel = (LocalizationLevel)Enum.Parse(typeof(LocalizationLevel), localizationLevel);
             }
@@ -241,12 +263,12 @@ namespace EngineLayer
                 {
                     aminoAcidPosition = peptideBaseSequence.Length - fragmentNumber;
                 }
-                
-                Product p = new Product(productType, 
-                    terminus, 
-                    mz.ToMass(z) - DissociationTypeCollection.GetMassShiftFromProductType(productType), 
-                    fragmentNumber, 
-                    aminoAcidPosition, 
+
+                Product p = new Product(productType,
+                    terminus,
+                    mz.ToMass(z) - DissociationTypeCollection.GetMassShiftFromProductType(productType),
+                    fragmentNumber,
+                    aminoAcidPosition,
                     neutralLoss);
 
                 matchedIons.Add(new MatchedFragmentIon(ref p, mz, 1.0, z));
@@ -323,7 +345,7 @@ namespace EngineLayer
             {
                 var g = lg.Split(',', StringSplitOptions.RemoveEmptyEntries);
 
-                Tuple<int, string, double> tuple = new Tuple<int, string, double>(int.Parse(g[0]), g[1], double.Parse(g[2]));
+                Tuple<int, string, double> tuple = new Tuple<int, string, double>(int.Parse(g[0], CultureInfo.InvariantCulture), g[1], double.Parse(g[2], CultureInfo.InvariantCulture));
                 tuples.Add(tuple);
             }
 
