@@ -2,6 +2,7 @@
 using MassSpectrometry;
 using MzLibUtil;
 using Proteomics.Fragmentation;
+using Proteomics.ProteolyticDigestion;
 using System;
 using System.Collections.Generic;
 using System.IO;
@@ -22,14 +23,20 @@ namespace EngineLayer
                 //TODO: spectral angle could be used to disambiguate PSMs. right now for ambiguous PSMs, the spectral angle for only one peptide option is saved
                 foreach (var peptide in psm.PeptidesToMatchingFragments)
                 {
-                    if (spectralLibrary == null || !spectralLibrary.TryGetSpectrum(peptide.Key.FullSequence, scan.PrecursorCharge, out var librarySpectrum))
+                    if (spectralLibrary != null && peptide.Key.Protein.IsDecoy && !spectralLibrary.ContainsSpectrum(peptide.Key.FullSequence, scan.PrecursorCharge))
                     {
-                        continue;
+                        double spectralAngle = CalculateDecoyNormalizedSpectralAngle(peptide.Key, scan, commonParameters);
+                        psm.SpectralAngle = spectralAngle;
                     }
-
-                    double spectralAngle = CalculateNormalizedSpectralAngle(librarySpectrum.MatchedFragmentIons, scan.TheScan, commonParameters);
-
-                    psm.SpectralAngle = spectralAngle;
+                    else if (spectralLibrary != null && spectralLibrary.TryGetSpectrum(peptide.Key.FullSequence, scan.PrecursorCharge, out var librarySpectrum))
+                    {
+                        double spectralAngle = CalculateNormalizedSpectralAngle(librarySpectrum.MatchedFragmentIons, scan.TheScan, commonParameters);
+                        psm.SpectralAngle = spectralAngle;
+                    }
+                    else
+                    {
+                        psm.SpectralAngle = -1;
+                    }
                 }
             }
         }
@@ -103,13 +110,13 @@ namespace EngineLayer
 
             double[] mz1 = standardSpectra.Select(b => b.Mz).ToArray();
             double intensitySum1 = standardSpectra.Select(b => b.Intensity).Sum();
-            double[] intensity1 = standardSpectra.Select(b => b.Intensity / intensitySum1).ToArray();
+            double[] intensity1 = standardSpectra.Select(b => Math.Sqrt(b.Intensity / intensitySum1)).ToArray();
             //Console.WriteLine(mz1.Length + "  " + intensity1.Length);
             Array.Sort(mz1, intensity1);
 
             double[] mz2 = spectraToCompare.Select(b => b.Mz).ToArray();
             double intensitySum2 = spectraToCompare.Select(b => b.Intensity).Sum();
-            double[] intensity2 = spectraToCompare.Select(b => b.Intensity / intensitySum2).ToArray();
+            double[] intensity2 = spectraToCompare.Select(b => Math.Sqrt(b.Intensity / intensitySum2)).ToArray();
             Array.Sort(mz2, intensity2);
             //Console.WriteLine(mz2.Length + "  " + intensity2.Length);
 
@@ -226,19 +233,82 @@ namespace EngineLayer
                 else if (spectraOneDictionary.ContainsKey(productWithCharge))
                 {
                     Product productOne = spectraOneDictionary[productWithCharge].NeutralTheoreticalProduct;
-                    var oneIon = new MatchedFragmentIon(ref productOne, spectraOneDictionary[productWithCharge].Mz, (spectraOneDictionary[productWithCharge].Intensity / intensitySum1) / 2, spectraOneDictionary[productWithCharge].Charge);
+                    var oneIon = new MatchedFragmentIon(ref productOne, spectraOneDictionary[productWithCharge].Mz, spectraOneDictionary[productWithCharge].Intensity / intensitySum1, spectraOneDictionary[productWithCharge].Charge);
                     averageTwoSpectraResult.Add(oneIon);
                 }
                 else if (spectraTwoDictionary.ContainsKey(productWithCharge))
                 {
                     Product productTwo = spectraTwoDictionary[productWithCharge].NeutralTheoreticalProduct;
-                    var twoIon = new MatchedFragmentIon(ref productTwo, spectraTwoDictionary[productWithCharge].Mz, (spectraTwoDictionary[productWithCharge].Intensity / intensitySum2) / 2, spectraTwoDictionary[productWithCharge].Charge);
+                    var twoIon = new MatchedFragmentIon(ref productTwo, spectraTwoDictionary[productWithCharge].Mz, spectraTwoDictionary[productWithCharge].Intensity / intensitySum2, spectraTwoDictionary[productWithCharge].Charge);
                     averageTwoSpectraResult.Add(twoIon);
                 }
             }
             var testmz1 = averageTwoSpectraResult.Select(b => b.Mz).ToArray();
             var testin1 = averageTwoSpectraResult.Select(b => b.Intensity).ToArray();
             return averageTwoSpectraResult;
+        }
+
+        public static double CalculateDecoyNormalizedSpectralAngle(PeptideWithSetModifications peptide, Ms2ScanWithSpecificMass scan, CommonParameters commonParameters)
+
+        {
+            var theoreticalLibraryIons = new List<Product>();
+            peptide.Fragment(commonParameters.DissociationType, commonParameters.DigestionParams.FragmentationTerminus, theoreticalLibraryIons);
+            double mzCutoff = 300;
+            int fragmentNumberCutoff = 3;
+
+            // if the spectrum has no peaks
+            if (scan.TheScan.MassSpectrum.XArray.Length == 0)
+            {
+                return 0;
+            }
+            List<MatchedFragmentIon> libraryDecoyIons = new List<MatchedFragmentIon>();
+            Dictionary<MatchedFragmentIon, MatchedFragmentIon> matchedIons = new Dictionary<MatchedFragmentIon, MatchedFragmentIon>();
+
+            // search for each theoretical ion
+            for (int i = 0; i < theoreticalLibraryIons.Count; i++)
+            {
+                var libraryIon = theoreticalLibraryIons[i];
+                double theoreticalFragmentMz = Math.Round(libraryIon.NeutralMass.ToMz(1) / 1.0005079, 0) * 1.0005079;
+
+                // see https://www.nature.com/articles/s41592-019-0426-7
+                // "All non-zero fragment ions (m/z > 300, ion >3, no neutral loss fragment ions) were considered for spectral angle calculation"
+                if (libraryIon.NeutralMass <= mzCutoff || libraryIon.FragmentNumber <= fragmentNumberCutoff)
+                {
+                    continue;
+                }
+
+
+
+                // get the closest peak in the spectrum to the library peak
+                var closestExperimentalMass = scan.GetClosestExperimentalIsotopicEnvelope(libraryIon.NeutralMass);
+                if (closestExperimentalMass != null && commonParameters.ProductMassTolerance.Within(closestExperimentalMass.MonoisotopicMass, libraryIon.NeutralMass) && closestExperimentalMass.Charge <= scan.PrecursorCharge)//TODO apply this filter before picking the envelope
+                {
+                    var test = new Product(libraryIon.ProductType, libraryIon.Terminus,
+                        libraryIon.NeutralMass, libraryIon.FragmentNumber,
+                        libraryIon.AminoAcidPosition, libraryIon.NeutralLoss);
+                    libraryDecoyIons.Add(new MatchedFragmentIon(ref libraryIon, theoreticalFragmentMz, 1, 1));
+                    matchedIons.Add(new MatchedFragmentIon(ref libraryIon, theoreticalFragmentMz, 1, 1), new MatchedFragmentIon(ref test, closestExperimentalMass.MonoisotopicMass.ToMz(closestExperimentalMass.Charge), closestExperimentalMass.Peaks.First().intensity, closestExperimentalMass.Charge));
+                }
+
+            }
+
+            // L2 norm
+            double expNormalizer = Math.Sqrt(matchedIons.Sum(p => Math.Pow(p.Value.Intensity, 2)));
+            double theorNormalizer = Math.Sqrt(theoreticalLibraryIons.Sum(p => Math.Pow(1, 2)));
+
+            double dotProduct = 0;
+
+            foreach (var libraryIon in libraryDecoyIons)
+            {
+                if (matchedIons.TryGetValue(libraryIon, out var experIon))
+                {
+                    dotProduct += (libraryIon.Intensity / theorNormalizer) * (experIon.Intensity / expNormalizer);
+                }
+            }
+
+            double normalizedSpectralAngle = 1 - (2 * Math.Acos(dotProduct) / Math.PI);
+
+            return normalizedSpectralAngle;
         }
     }
 }

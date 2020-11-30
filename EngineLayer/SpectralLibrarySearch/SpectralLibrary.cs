@@ -185,7 +185,15 @@ namespace EngineLayer
                     sequence = split[0].Replace("Name:", string.Empty).Trim();
 
                     // get charge
-                    z = int.Parse(split[1].Trim());
+                    try
+                    {
+                        z = int.Parse(split[1].Trim());
+                    }
+                    catch
+                    {
+                        var chargeLine = split[1].ToCharArray();
+                        z = int.Parse(chargeLine[0].ToString());
+                    }
                 }
                 else if (line.StartsWith("MW", StringComparison.InvariantCultureIgnoreCase))
                 {
