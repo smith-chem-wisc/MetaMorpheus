@@ -26,6 +26,7 @@ namespace EngineLayer
     {
         public ObservableCollection<string> PsmResultFilePaths { get; private set; }
         public ObservableCollection<string> SpectraFilePaths { get; private set; }
+        public ObservableCollection<string> SpectralLibraryPaths { get; private set; }
         public ObservableCollection<PsmFromTsv> FilteredListOfPsms { get; private set; } // filtered list of PSMs after q-value filter, etc.
         public Dictionary<string, ObservableCollection<PsmFromTsv>> PsmsGroupedByFile { get; private set; }
         public object ThreadLocker;
@@ -35,11 +36,13 @@ namespace EngineLayer
         private Dictionary<string, DynamicDataConnection> MsDataFiles; // key is file name without extension
         private List<PeptideSpectrumMatchPlot> CurrentlyDisplayedPlots;
         private Regex illegalInFileName = new Regex(@"[\\/:*?""<>|]");
+        private SpectralLibrary SpectralLibrary;
 
         public MetaDrawLogic()
         {
             PsmResultFilePaths = new ObservableCollection<string>();
             SpectraFilePaths = new ObservableCollection<string>();
+            SpectralLibraryPaths = new ObservableCollection<string>();
             FilteredListOfPsms = new ObservableCollection<PsmFromTsv>();
             PsmsGroupedByFile = new Dictionary<string, ObservableCollection<PsmFromTsv>>();
             AllPsms = new List<PsmFromTsv>();
@@ -75,6 +78,10 @@ namespace EngineLayer
                 errors.AddRange(errors2);
             }
 
+            // load spectral libraries
+            LoadSpectralLibraries(out var errors3);
+            errors.AddRange(errors3);
+
             return errors;
         }
 
@@ -96,11 +103,20 @@ namespace EngineLayer
 
             MsDataScan scan = spectraFile.GetOneBasedScanFromDynamicConnection(psm.Ms2ScanNumber);
 
+            LibrarySpectrum librarySpectrum = null;
+
             // plot the annotated spectrum match
             PeptideSpectrumMatchPlot plot;
             if (psm.BetaPeptideBaseSequence == null)
             {
-                plot = new PeptideSpectrumMatchPlot(plotView, canvas, psm, scan, psm.MatchedIons);
+                // get the library spectrum if relevant
+                if (SpectralLibrary != null)
+                {
+                    SpectralLibrary.TryGetSpectrum(psm.FullSequence, psm.PrecursorCharge, out var librarySpectrum1);
+                    librarySpectrum = librarySpectrum1;
+                }
+
+                plot = new PeptideSpectrumMatchPlot(plotView, canvas, psm, scan, psm.MatchedIons, librarySpectrum: librarySpectrum);
             }
             else
             {
@@ -265,6 +281,7 @@ namespace EngineLayer
                 FilteredListOfPsms.Clear();
                 PsmResultFilePaths.Clear();
                 SpectraFilePaths.Clear();
+                SpectralLibraryPaths.Clear();
 
                 foreach (var connection in MsDataFiles)
                 {
@@ -272,6 +289,11 @@ namespace EngineLayer
                 }
 
                 MsDataFiles.Clear();
+
+                if (SpectralLibrary != null)
+                {
+                    SpectralLibrary.CloseConnections();
+                }
             }
         }
 
@@ -367,6 +389,21 @@ namespace EngineLayer
                         // which is an error but not an important one because the data is loaded
                     }
                 }
+            }
+        }
+
+        private void LoadSpectralLibraries(out List<string> errors)
+        {
+            errors = new List<string>();
+
+            try
+            {
+                SpectralLibrary = new SpectralLibrary(SpectralLibraryPaths.ToList());
+            }
+            catch (Exception e)
+            {
+                SpectralLibrary = null;
+                errors.Add("Problem loading spectral library: " + e.Message);
             }
         }
     }

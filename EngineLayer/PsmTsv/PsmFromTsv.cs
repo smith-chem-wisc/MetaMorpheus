@@ -266,7 +266,7 @@ namespace EngineLayer
 
                 Product p = new Product(productType,
                     terminus,
-                    mz.ToMass(z) - DissociationTypeCollection.GetMassShiftFromProductType(productType),
+                    mz.ToMass(z),
                     fragmentNumber,
                     aminoAcidPosition,
                     neutralLoss);
