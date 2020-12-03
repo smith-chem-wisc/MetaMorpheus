@@ -340,6 +340,7 @@ namespace Test
             Assert.AreEqual((float)0, maxPsmData.IsVariantPeptide);
 
             List<PeptideSpectralMatch> psmCopyForCZETest = nonNullPsms.ToList();
+            List<PeptideSpectralMatch> psmCopyForPEPFailure = nonNullPsms.ToList();
 
             PEP_Analysis_Cross_Validation.ComputePEPValuesForAllPSMsGeneric(nonNullPsms, "standard", fsp, Path.Combine(TestContext.CurrentContext.TestDirectory, @"TestData\"));
 
@@ -431,6 +432,11 @@ namespace Test
             }
             metrics = PEP_Analysis_Cross_Validation.ComputePEPValuesForAllPSMsGeneric(moreNonNullPSMsCZE, "standard", fsp, Path.Combine(TestContext.CurrentContext.TestDirectory, @"TestData\"));
             Assert.GreaterOrEqual(32, trueCount);
+
+            //TEST PEP calculation failure
+            psmCopyForPEPFailure.RemoveAll(x => x.IsDecoy);
+            string result = PEP_Analysis_Cross_Validation.ComputePEPValuesForAllPSMsGeneric(psmCopyForPEPFailure, "standard", fsp, Path.Combine(TestContext.CurrentContext.TestDirectory, @"TestData\"));
+            Assert.AreEqual("Posterior error probability analyis failed. This can occur for small data sets when some sample groups are missing positive or negative training examples.", result);
         }
 
         [Test]

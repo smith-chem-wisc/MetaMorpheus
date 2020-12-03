@@ -88,7 +88,14 @@ namespace EngineLayer
                     var myPredictions = trainedModels[groupIndexNumber].Transform(mlContext.Data.LoadFromEnumerable(PSMDataGroups[groupIndexNumber]));
                     CalibratedBinaryClassificationMetrics metrics = mlContext.BinaryClassification.Evaluate(data: myPredictions, labelColumnName: "Label", scoreColumnName: "Score");
 
-                    int ambiguousPeptidesResolved = Compute_PSM_PEP(psms, psmGroupIndices[groupIndexNumber], mlContext, trainedModels[groupIndexNumber], searchType, fileSpecificParameters, sequenceToPsmCount, fileSpecificMedianFragmentMassErrors, chargeStateMode);
+                    //Parallel operation of the following code requires the method to be stored and then read, once for each thread
+                    //if not output directory is specified, the model cannot be stored, and we must force single-threaded operation
+                    if (outputFolder != null)
+                    {
+                        mlContext.Model.Save(trainedModels[groupIndexNumber], dataView.Schema, Path.Combine(outputFolder, "model.zip"));
+                    }
+
+                    int ambiguousPeptidesResolved = Compute_PSM_PEP(psms, psmGroupIndices[groupIndexNumber], mlContext, trainedModels[groupIndexNumber], searchType, fileSpecificParameters, sequenceToPsmCount, fileSpecificMedianFragmentMassErrors, chargeStateMode, outputFolder);
 
                     allMetrics.Add(metrics);
                     sumOfAllAmbiguousPeptidesResolved += ambiguousPeptidesResolved;
@@ -102,7 +109,7 @@ namespace EngineLayer
             }
         }
 
-        private static string AggregateMetricsForOutput(List<CalibratedBinaryClassificationMetrics> allMetrics, int sumOfAllAmbiguousPeptidesResolved)
+        public static string AggregateMetricsForOutput(List<CalibratedBinaryClassificationMetrics> allMetrics, int sumOfAllAmbiguousPeptidesResolved)
         {
             List<double> accuracy = allMetrics.Select(m => m.Accuracy).ToList();
             List<double> areaUnderRocCurve = allMetrics.Select(m => m.AreaUnderRocCurve).ToList();
@@ -158,12 +165,17 @@ namespace EngineLayer
 
         }
 
-        public static int Compute_PSM_PEP(List<PeptideSpectralMatch> psms, List<int> psmIndices, MLContext mLContext, TransformerChain<BinaryPredictionTransformer<Microsoft.ML.Calibrators.CalibratedModelParametersBase<Microsoft.ML.Trainers.FastTree.FastTreeBinaryModelParameters, Microsoft.ML.Calibrators.PlattCalibrator>>> trainedModel, string searchType, List<(string fileName, CommonParameters fileSpecificParameters)> fileSpecificParameters, Dictionary<string, int> sequenceToPsmCount, Dictionary<string, float> fileSpecificMedianFragmentMassErrors, int chargeStateMode)
+        public static int Compute_PSM_PEP(List<PeptideSpectralMatch> psms, List<int> psmIndices, MLContext mLContext, TransformerChain<BinaryPredictionTransformer<Microsoft.ML.Calibrators.CalibratedModelParametersBase<Microsoft.ML.Trainers.FastTree.FastTreeBinaryModelParameters, Microsoft.ML.Calibrators.PlattCalibrator>>> trainedModel, string searchType, List<(string fileName, CommonParameters fileSpecificParameters)> fileSpecificParameters, Dictionary<string, int> sequenceToPsmCount, Dictionary<string, float> fileSpecificMedianFragmentMassErrors, int chargeStateMode, string outputFolder)
         {
             int maxThreads = fileSpecificParameters.FirstOrDefault().fileSpecificParameters.MaxThreadsToUsePerFile;
             object lockObject = new object();
             int ambiguousPeptidesResolved = 0;
 
+            if (String.IsNullOrEmpty(outputFolder))
+            {
+                maxThreads = 1;
+            }
+            
             Parallel.ForEach(Partitioner.Create(0, psmIndices.Count),
                 new ParallelOptions { MaxDegreeOfParallelism = maxThreads },
                 (range, loopState) =>
@@ -171,10 +183,16 @@ namespace EngineLayer
                     // Stop loop if canceled
                     if (GlobalVariables.StopLoops) { return; }
 
-                    ITransformer threadSpecificTrainedModel = trainedModel;
-
-
-
+                    ITransformer threadSpecificTrainedModel;
+                    if(maxThreads == 1)
+                    {
+                        threadSpecificTrainedModel = trainedModel;
+                    }
+                    else
+                    {
+                        threadSpecificTrainedModel = mLContext.Model.Load(Path.Combine(outputFolder, "model.zip"), out DataViewSchema savedModelSchema);
+                    }
+                   
                     // one prediction engine per thread, because the prediction engine is not thread-safe
                     var threadPredictionEngine = mLContext.Model.CreatePredictionEngine<PsmData, TruePositivePrediction>(threadSpecificTrainedModel);
 
