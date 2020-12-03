@@ -19,7 +19,7 @@ using static Microsoft.ML.DataOperationsCatalog;
 
 namespace EngineLayer
 {
-    public static class PEP_Analysis_Cross_Validation
+    public static class PEP_Analysis_Cross_Validation_1
     {
         private static readonly double AbsoluteProbabilityThatDistinguishesPeptides = 0.05;
         private static Dictionary<string, Dictionary<int, Tuple<double, double>>> fileSpecificTimeDependantHydrophobicityAverageAndDeviation_unmodified = new Dictionary<string, Dictionary<int, Tuple<double, double>>>();
@@ -57,6 +57,7 @@ namespace EngineLayer
             Dictionary<string, float> fileSpecificMedianFragmentMassErrors = GetFileSpecificMedianFragmentMassError(psms);
 
             MLContext mlContext = new MLContext();
+
             //the number of groups used for cross-validation is hard-coded at four. Do not change this number without changes other areas of effected code. 
             const int numGroups = 4;
 
@@ -77,7 +78,7 @@ namespace EngineLayer
             int sumOfAllAmbiguousPeptidesResolved = 0;
 
             for (int groupIndexNumber = 0; groupIndexNumber < numGroups; groupIndexNumber++)
-            {
+            {        
                 List<int> allGroupIndexes = Enumerable.Range(0, numGroups).ToList();
                 allGroupIndexes.RemoveAt(groupIndexNumber);
 
@@ -86,7 +87,7 @@ namespace EngineLayer
                 trainedModels[groupIndexNumber] = pipeline.Fit(dataView);
                 var myPredictions = trainedModels[groupIndexNumber].Transform(mlContext.Data.LoadFromEnumerable(PSMDataGroups[groupIndexNumber]));
                 CalibratedBinaryClassificationMetrics metrics = mlContext.BinaryClassification.Evaluate(data: myPredictions, labelColumnName: "Label", scoreColumnName: "Score");
-
+                
                 int ambiguousPeptidesResolved = Compute_PSM_PEP(psms, psmGroupIndices[groupIndexNumber], mlContext, trainedModels[groupIndexNumber], searchType, fileSpecificParameters, sequenceToPsmCount, fileSpecificMedianFragmentMassErrors, chargeStateMode);
 
                 allMetrics.Add(metrics);
@@ -136,7 +137,7 @@ namespace EngineLayer
             s.AppendLine("************************************************************");
             s.AppendLine("*       Metrics for Determination of PEP Using Binary Classification      ");
             s.AppendLine("*-----------------------------------------------------------");
-            s.AppendLine("*       Accuracy:  " + accuracy.Average().ToString());
+            s.AppendLine("*       Accuracy:  " +  accuracy.Average().ToString());
             s.AppendLine("*       Area Under Curve:  " + areaUnderRocCurve.Average().ToString());
             s.AppendLine("*       Area under Precision recall Curve:  " + areaUnderPrecisionRecallCurve.Average().ToString());
             s.AppendLine("*       F1Score:  " + F1Score.Average().ToString());
@@ -157,7 +158,7 @@ namespace EngineLayer
             int maxThreads = fileSpecificParameters.FirstOrDefault().fileSpecificParameters.MaxThreadsToUsePerFile;
             object lockObject = new object();
             int ambiguousPeptidesResolved = 0;
-
+            
             Parallel.ForEach(Partitioner.Create(0, psmIndices.Count),
                 new ParallelOptions { MaxDegreeOfParallelism = maxThreads },
                 (range, loopState) =>
