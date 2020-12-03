@@ -1,4 +1,5 @@
-﻿using MzLibUtil;
+﻿using Chemistry;
+using MzLibUtil;
 using Proteomics;
 using Proteomics.Fragmentation;
 using Proteomics.ProteolyticDigestion;
@@ -112,10 +113,47 @@ namespace EngineLayer.ClassicSearch
                                     }
                                 }
                             }
-                        }
 
-                        // report search progress (proteins searched so far out of total proteins in database)
-                        proteinsSearched++;
+                            List<Product> peptideDecoyProducts = GetDecoyProductsNB(peptideTheorProducts);
+                            Protein decoyProtein = new Protein(peptide.Protein.BaseSequence, "DECOY_" + peptide.Protein.Accession, null, null, null, null, null, null, false, false, null, null, null, null, null, null, "");
+                            PeptideWithSetModifications decoyPeptide = new PeptideWithSetModifications(decoyProtein, new DigestionParams(), peptide.OneBasedStartResidueInProtein, peptide.OneBasedEndResidueInProtein, CleavageSpecificity.Full, peptide.PeptideDescription, peptide.MissedCleavages, new Dictionary<int, Modification>(), peptide.NumFixedMods, null);
+
+                            foreach (ScanWithIndexAndNotchInfo scan in GetAcceptableScans(peptide.MonoisotopicMass, SearchMode))
+                            {
+                                List<MatchedFragmentIon> matchedIons = MatchFragmentIons(scan.TheScan, peptideDecoyProducts, CommonParameters);
+
+                                double thisScore = CalculatePeptideScore(scan.TheScan.TheScan, matchedIons);
+
+                                bool meetsScoreCutoff = thisScore >= CommonParameters.ScoreCutoff;
+
+                                // this is thread-safe because even if the score improves from another thread writing to this PSM,
+                                // the lock combined with AddOrReplace method will ensure thread safety
+                                if (meetsScoreCutoff)
+                                {
+                                    // valid hit (met the cutoff score); lock the scan to prevent other threads from accessing it
+                                    lock (myLocks[scan.ScanIndex])
+                                    {
+                                        bool scoreImprovement = PeptideSpectralMatches[scan.ScanIndex] == null || (thisScore - PeptideSpectralMatches[scan.ScanIndex].RunnerUpScore) > -PeptideSpectralMatch.ToleranceForScoreDifferentiation;
+
+                                        if (scoreImprovement)
+                                        {
+                                            if (PeptideSpectralMatches[scan.ScanIndex] == null)
+                                            {
+                                                PeptideSpectralMatches[scan.ScanIndex] = new PeptideSpectralMatch(decoyPeptide, scan.Notch, thisScore, scan.ScanIndex, scan.TheScan, CommonParameters.DigestionParams, matchedIons, 0);
+                                            }
+                                            else
+                                            {
+                                                PeptideSpectralMatches[scan.ScanIndex].AddOrReplace(decoyPeptide, thisScore, scan.Notch, CommonParameters.ReportAllAmbiguity, matchedIons, 0);
+                                            }
+                                        }
+                                    }
+                                }
+                            }
+
+                    }
+
+                    // report search progress (proteins searched so far out of total proteins in database)
+                    proteinsSearched++;
                         var percentProgress = (int)((proteinsSearched / Proteins.Count) * 100);
 
                         if (percentProgress > oldPercentProgress)
@@ -133,6 +171,86 @@ namespace EngineLayer.ClassicSearch
             }
 
             return new MetaMorpheusEngineResults(this);
+        }
+
+         private List<Product> GetDecoyProductsNB(List<Product> products)
+        {
+            List<Product> peptideTheorProducts = products.Where(p => p.TerminusFragment.Terminus == FragmentationTerminus.N).ToList();
+
+            List<double> masses = peptideTheorProducts.Select(m => m.NeutralMass).ToList();
+            masses = masses.OrderBy(m => m).ToList();
+            List<double> massDifferences = new List<double>();
+            for (int i = 0; i < masses.Count-1; i++)
+            {
+                massDifferences.Add(masses[i + 1] - masses[i]);
+            }
+
+            massDifferences = ShuffleList(massDifferences);
+
+            List<double> newMasses = new List<double>();
+            newMasses.Add(masses.Max());
+            double firstMass = masses.Max();
+            foreach (double massDifference in massDifferences)
+            {
+                firstMass -= massDifference;
+                newMasses.Add(firstMass);
+            }
+
+            List<Product> newProducts = new List<Product>();
+            for (int i = 0; i < peptideTheorProducts.Count; i++)
+            {
+                NeutralTerminusFragment ntfOriginal = peptideTheorProducts[i].TerminusFragment;
+                NeutralTerminusFragment ntfNew = new NeutralTerminusFragment(ntfOriginal.Terminus, newMasses[i], ntfOriginal.FragmentNumber, ntfOriginal.AminoAcidPosition);
+                Product newProduct = new Product(peptideTheorProducts[i].ProductType, ntfNew, peptideTheorProducts[i].NeutralLoss);
+                newProducts.Add(newProduct);
+            }
+
+            newProducts.AddRange(GetDecoyProductsCY(products.Where(p => p.TerminusFragment.Terminus == FragmentationTerminus.C).ToList(), massDifferences));
+
+            return newProducts;
+        }
+
+        private List<Product> GetDecoyProductsCY(List<Product> peptideTheorProducts, List<double> massDifferences)
+        {
+            List<double> masses = peptideTheorProducts.Select(m => m.NeutralMass).ToList();
+            masses = masses.OrderBy(m => m).ToList();
+
+            List<double> newMasses = new List<double>();
+
+            double firstMass = masses.Min() + ChemicalFormula.ParseFormula("H-2O-1").MonoisotopicMass;
+            newMasses.Add(firstMass);
+
+            foreach (double massDifference in massDifferences)
+            {
+                firstMass += (massDifference);
+                newMasses.Add(firstMass);
+            }
+
+            List<Product> newProducts = new List<Product>();
+            for (int i = 0; i < peptideTheorProducts.Count; i++)
+            {
+                NeutralTerminusFragment ntfOriginal = peptideTheorProducts[i].TerminusFragment;
+                NeutralTerminusFragment ntfNew = new NeutralTerminusFragment(ntfOriginal.Terminus, newMasses[i], ntfOriginal.FragmentNumber, ntfOriginal.AminoAcidPosition);
+                Product newProduct = new Product(peptideTheorProducts[i].ProductType, ntfNew, peptideTheorProducts[i].NeutralLoss);
+                newProducts.Add(newProduct);
+            }
+            return newProducts;
+        }
+
+        private List<E> ShuffleList<E>(List<E> inputList)
+        {
+            List<E> randomList = new List<E>();
+
+            Random r = new Random();
+            int randomIndex = 0;
+            while (inputList.Count > 0)
+            {
+                randomIndex = r.Next(0, inputList.Count); //Choose a random object in the list
+                randomList.Add(inputList[randomIndex]); //add it to the new, random list
+                inputList.RemoveAt(randomIndex); //remove to avoid duplicates
+            }
+
+            return randomList; //return the new random list
         }
 
         private IEnumerable<ScanWithIndexAndNotchInfo> GetAcceptableScans(double peptideMonoisotopicMass, MassDiffAcceptor searchMode)

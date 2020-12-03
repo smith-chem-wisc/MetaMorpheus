@@ -33,10 +33,7 @@ namespace EngineLayer
                         double spectralAngle = CalculateNormalizedSpectralAngle(librarySpectrum.MatchedFragmentIons, scan.TheScan, commonParameters);
                         psm.SpectralAngle = spectralAngle;
                     }
-                    else
-                    {
-                        psm.SpectralAngle = -1;
-                    }
+  
                 }
             }
         }

@@ -521,7 +521,7 @@ namespace TaskLayer
             var FilteredPsmList = Parameters.AllPsms
                 .Where(p => p.FdrInfo.QValue <= 0.1
                 && p.FdrInfo.QValueNotch <= CommonParameters.QValueOutputFilter).ToList();
-            FilteredPsmList.RemoveAll(b => b.IsDecoy);
+            //FilteredPsmList.RemoveAll(b => b.IsDecoy);
             FilteredPsmList.RemoveAll(b => b.IsContaminant);
 
             //write spectral library by Yuling 11/14
