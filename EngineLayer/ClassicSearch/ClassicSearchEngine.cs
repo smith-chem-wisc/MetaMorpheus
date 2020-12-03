@@ -175,9 +175,9 @@ namespace EngineLayer.ClassicSearch
 
          private List<Product> GetDecoyProductsNB(List<Product> products)
         {
-            List<Product> peptideTheorProducts = products.Where(p => p.TerminusFragment.Terminus == FragmentationTerminus.N).ToList();
+            List<Product> N_terminalTheoreticalProducts = products.Where(p => p.Terminus == FragmentationTerminus.N).ToList();
 
-            List<double> masses = peptideTheorProducts.Select(m => m.NeutralMass).ToList();
+            List<double> masses = N_terminalTheoreticalProducts.Select(m => m.NeutralMass).ToList();
             masses = masses.OrderBy(m => m).ToList();
             List<double> massDifferences = new List<double>();
             for (int i = 0; i < masses.Count-1; i++)
@@ -197,15 +197,14 @@ namespace EngineLayer.ClassicSearch
             }
 
             List<Product> newProducts = new List<Product>();
-            for (int i = 0; i < peptideTheorProducts.Count; i++)
+            for (int i = 0; i < N_terminalTheoreticalProducts.Count; i++)
             {
-                NeutralTerminusFragment ntfOriginal = peptideTheorProducts[i].TerminusFragment;
-                NeutralTerminusFragment ntfNew = new NeutralTerminusFragment(ntfOriginal.Terminus, newMasses[i], ntfOriginal.FragmentNumber, ntfOriginal.AminoAcidPosition);
-                Product newProduct = new Product(peptideTheorProducts[i].ProductType, ntfNew, peptideTheorProducts[i].NeutralLoss);
+                Product original = N_terminalTheoreticalProducts[i];
+                Product newProduct = new Product(original.ProductType, original.Terminus, newMasses[i], original.FragmentNumber, original.AminoAcidPosition, original.NeutralLoss);
                 newProducts.Add(newProduct);
             }
 
-            newProducts.AddRange(GetDecoyProductsCY(products.Where(p => p.TerminusFragment.Terminus == FragmentationTerminus.C).ToList(), massDifferences));
+            newProducts.AddRange(GetDecoyProductsCY(products.Where(p => p.Terminus == FragmentationTerminus.C).ToList(), massDifferences));
 
             return newProducts;
         }
@@ -229,9 +228,8 @@ namespace EngineLayer.ClassicSearch
             List<Product> newProducts = new List<Product>();
             for (int i = 0; i < peptideTheorProducts.Count; i++)
             {
-                NeutralTerminusFragment ntfOriginal = peptideTheorProducts[i].TerminusFragment;
-                NeutralTerminusFragment ntfNew = new NeutralTerminusFragment(ntfOriginal.Terminus, newMasses[i], ntfOriginal.FragmentNumber, ntfOriginal.AminoAcidPosition);
-                Product newProduct = new Product(peptideTheorProducts[i].ProductType, ntfNew, peptideTheorProducts[i].NeutralLoss);
+                Product original = peptideTheorProducts[i];
+                Product newProduct = new Product(original.ProductType, original.Terminus, newMasses[i], original.FragmentNumber, original.AminoAcidPosition, original.NeutralLoss);
                 newProducts.Add(newProduct);
             }
             return newProducts;
