@@ -139,7 +139,7 @@ namespace EngineLayer.ClassicSearch
                                         {
                                             if (PeptideSpectralMatches[scan.ScanIndex] == null)
                                             {
-                                                PeptideSpectralMatches[scan.ScanIndex] = new PeptideSpectralMatch(decoyPeptide, scan.Notch, thisScore, scan.ScanIndex, scan.TheScan, CommonParameters.DigestionParams, matchedIons, 0);
+                                                PeptideSpectralMatches[scan.ScanIndex] = new PeptideSpectralMatch(decoyPeptide, scan.Notch, thisScore, scan.ScanIndex, scan.TheScan, CommonParameters, matchedIons, 0);
                                             }
                                             else
                                             {
