@@ -127,12 +127,12 @@ namespace EngineLayer
             double logLossAverage = Double.PositiveInfinity;
             double logLossReductionAverage = Double.NegativeInfinity;
 
-            if ((logLoss != null) && (!logLoss.Any()))
+            if ((logLoss != null) && (logLoss.Any()))
             {
                 logLossAverage = logLoss.Average();
             }
 
-            if ((logLossReduction != null) && (!logLossReduction.Any()))
+            if ((logLossReduction != null) && (logLossReduction.Any()))
             {
                 logLossReductionAverage = logLossReduction.Average();
             }
