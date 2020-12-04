@@ -75,7 +75,19 @@ namespace EngineLayer
 
             List<CalibratedBinaryClassificationMetrics> allMetrics = new List<CalibratedBinaryClassificationMetrics>();
             int sumOfAllAmbiguousPeptidesResolved = 0;
-            try
+
+            bool allSetsContainPositiveAndNegativeTrainingExamples = true;
+            int groupNumber = 0;
+            while(allSetsContainPositiveAndNegativeTrainingExamples == true && groupNumber < numGroups)
+            {
+                if (PSMDataGroups[groupNumber].Where(p => p.Label == true).Count() == 0 || PSMDataGroups[groupNumber].Where(p => p.Label == false).Count() == 0)
+                {
+                    allSetsContainPositiveAndNegativeTrainingExamples = false;
+                }
+                groupNumber++;
+            }
+
+            if(allSetsContainPositiveAndNegativeTrainingExamples)
             {
                 for (int groupIndexNumber = 0; groupIndexNumber < numGroups; groupIndexNumber++)
                 {
@@ -103,9 +115,9 @@ namespace EngineLayer
 
                 return AggregateMetricsForOutput(allMetrics, sumOfAllAmbiguousPeptidesResolved);
             }
-            catch
+            else
             {
-                return "Posterior error probability analyis failed. This can occur for small data sets when some sample groups are missing positive or negative training examples.";
+                return "Posterior error probability analysis failed. This can occur for small data sets when some sample groups are missing positive or negative training examples.";
             }
         }
 
@@ -171,6 +183,8 @@ namespace EngineLayer
             object lockObject = new object();
             int ambiguousPeptidesResolved = 0;
 
+            //the trained model is not threadsafe. Therefore, to use the same model for each thread saved the model to disk. Then each thread reads its own copy of the model back from disk.
+            //If there is no output folder specified, then this can't happen. We set maxthreads eqaul to one and use the model that gets passed into the method.
             if (String.IsNullOrEmpty(outputFolder))
             {
                 maxThreads = 1;
@@ -237,7 +251,7 @@ namespace EngineLayer
             return ambiguousPeptidesResolved;
         }
 
-        public static List<int>[] Get_PSM_Group_Indices(int count, int numGroups)
+        public static List<int>[] Get_PSM_Group_Indices(int psmsCount, int numGroups)
         {
             List<int>[] groupsOfIndicies = new List<int>[numGroups];
             for (int i = 0; i < numGroups; i++)
@@ -246,10 +260,10 @@ namespace EngineLayer
             }
 
             int myIndex = 0;
-            while (myIndex < count)
+            while (myIndex < psmsCount)
             {
                 int subIndex = 0;
-                while (subIndex < numGroups && myIndex < count)
+                while (subIndex < numGroups && myIndex < psmsCount)
                 {
                     groupsOfIndicies[subIndex].Add(myIndex);
                     subIndex++;
