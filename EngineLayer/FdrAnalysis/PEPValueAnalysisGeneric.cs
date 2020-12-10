@@ -60,7 +60,7 @@ namespace EngineLayer
             //the number of groups used for cross-validation is hard-coded at four. Do not change this number without changes other areas of effected code. 
             const int numGroups = 4;
 
-            List<int>[] psmGroupIndices = Get_PSM_Group_Indices(psms.Count, numGroups);
+            List<int>[] psmGroupIndices = Get_PSM_Group_Indices(psms, numGroups);
             IEnumerable<PsmData>[] PSMDataGroups = new IEnumerable<PsmData>[numGroups];
             for (int i = 0; i < numGroups; i++)
             {
@@ -251,7 +251,9 @@ namespace EngineLayer
             return ambiguousPeptidesResolved;
         }
 
-        public static List<int>[] Get_PSM_Group_Indices(int psmsCount, int numGroups)
+        //we add the indexes of the targets and decoys to the groups separately in the hope that we'll get at least one target and one decoy in each group.
+        //then training can possibly be more successful.
+        public static List<int>[] Get_PSM_Group_Indices(List<PeptideSpectralMatch> psms, int numGroups)
         {
             List<int>[] groupsOfIndicies = new List<int>[numGroups];
             for (int i = 0; i < numGroups; i++)
@@ -259,18 +261,54 @@ namespace EngineLayer
                 groupsOfIndicies[i] = new List<int>();
             }
 
-            int myIndex = 0;
-            while (myIndex < psmsCount)
+            List<int> targetPsmIndexes = new List<int>();
+            List<int> decoyPsmIndexes = new List<int>();
+
+            for (int i = 0; i < psms.Count; i++)
             {
-                int subIndex = 0;
-                while (subIndex < numGroups && myIndex < psmsCount)
+
+                    if (psms[i].IsDecoy)
+                    {
+                        decoyPsmIndexes.Add(i);
+                    }
+                    else
+                    {
+                        targetPsmIndexes.Add(i);
+                    }
+                
+            }
+            
+
+            int myIndex = 0;
+            if(decoyPsmIndexes.Count > 0)
+            {
+                while (myIndex < decoyPsmIndexes.Count)
                 {
-                    groupsOfIndicies[subIndex].Add(myIndex);
-                    subIndex++;
-                    myIndex++;
+                    int subIndex = 0;
+                    while (subIndex < numGroups && myIndex < decoyPsmIndexes.Count)
+                    {
+                        groupsOfIndicies[subIndex].Add(decoyPsmIndexes[myIndex]);
+                        subIndex++;
+                        myIndex++;
+                    }
                 }
             }
-
+            
+            myIndex = 0;
+            if(targetPsmIndexes.Count > 0)
+            {
+                while (myIndex < targetPsmIndexes.Count)
+                {
+                    int subIndex = 0;
+                    while (subIndex < numGroups && myIndex < targetPsmIndexes.Count)
+                    {
+                        groupsOfIndicies[subIndex].Add(targetPsmIndexes[myIndex]);
+                        subIndex++;
+                        myIndex++;
+                    }
+                }
+            }
+            
             return groupsOfIndicies;
         }
 
