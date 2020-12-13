@@ -374,8 +374,8 @@ namespace EngineLayer.GlycoSearch
 
         public static PeptideWithSetModifications OGlyGetTheoreticalPeptide(int[] theModPositions, PeptideWithSetModifications peptide, GlycanBox glycanBox)
         {
-            Modification[] modifications = new Modification[glycanBox.NumberOfMods];
-            for (int i = 0; i < glycanBox.NumberOfMods; i++)
+            Modification[] modifications = new Modification[glycanBox.ModCount];
+            for (int i = 0; i < glycanBox.ModCount; i++)
             {
                 modifications[i] = GlycanBox.GlobalOGlycanModifications[glycanBox.ModIds.ElementAt(i)];
             }
@@ -496,24 +496,23 @@ namespace EngineLayer.GlycoSearch
             return fragmentHash;
         }
 
-        //Find FragmentHash for current box at modInd. 
-        //y-ion didn't change for O-Glycopeptide.
-        public static List<double> GetLocalFragment(List<Product> products, int[] modPoses, int modInd, ModBox OGlycanBox, ModBox localOGlycanBox)
+        //Find FragmentMass for the fragments that contain localization Information.
+        public static List<double> GetLocalFragment(List<Product> products, int modInd, int childBoxInd, LocalizationGraph localizationGraph)
         {
             List<double> newFragments = new List<double>();
-            var local_c_fragments = products.Where(p => p.ProductType == ProductType.c && p.AminoAcidPosition >= modPoses[modInd] - 1 && p.AminoAcidPosition < modPoses[modInd + 1] - 1).ToList();
+            var local_c_fragments = products.Where(p => p.ProductType == ProductType.c && p.AminoAcidPosition >= localizationGraph.ModPos[modInd] - 1 && p.AminoAcidPosition < localizationGraph.ModPos[modInd + 1] - 1).ToList();
 
             foreach (var c in local_c_fragments)
             {
-                var newMass = c.NeutralMass + localOGlycanBox.Mass;
+                var newMass = c.NeutralMass + localizationGraph.ChildModBoxes[childBoxInd].Mass;
                 newFragments.Add(newMass);
             }
 
-            var local_z_fragments = products.Where(p => p.ProductType == ProductType.zDot && p.AminoAcidPosition >= modPoses[modInd] && p.AminoAcidPosition < modPoses[modInd + 1]).ToList();
+            var local_z_fragments = products.Where(p => p.ProductType == ProductType.zDot && p.AminoAcidPosition >= localizationGraph.ModPos[modInd] && p.AminoAcidPosition < localizationGraph.ModPos[modInd + 1]).ToList();
 
             foreach (var z in local_z_fragments)
             {
-                var newMass = z.NeutralMass + (OGlycanBox.Mass - localOGlycanBox.Mass);
+                var newMass = z.NeutralMass + (localizationGraph.ModBox.Mass - localizationGraph.ChildModBoxes[childBoxInd].Mass);
                 newFragments.Add(newMass);
             }
 
@@ -581,5 +580,6 @@ namespace EngineLayer.GlycoSearch
         }
 
         #endregion
+
     }
 }

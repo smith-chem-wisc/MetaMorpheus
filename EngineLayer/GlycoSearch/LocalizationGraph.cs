@@ -13,7 +13,7 @@ namespace EngineLayer.GlycoSearch
         public AdjNode[][] array { get; set; }
         public int[] ModPos { get; }
 
-        public List<(int, string)> ModPos_N { get; }
+        public string[] BoxMotifs { get; }
 
         public int ModBoxId { get; }
         public ModBox ModBox { get; }
@@ -22,7 +22,7 @@ namespace EngineLayer.GlycoSearch
         public double NoLocalCost{get; set;} //Note that we have node for each glycosite, the matched ions before the first node and after the last node is scored here.
         public double TotalScore { get; set; } //Total score is the score of matched ions that are used for localization. For O-glycan, it is the score of all matched c/zDot ions. 
 
-        public LocalizationGraph(int[] modPos, ModBox modBox, ModBox[] childModBoxes, int id)
+        public LocalizationGraph(int[] modPos, ModBox modBox, ModBox[] childModBoxes, int id = 0)
         {
             ModPos = modPos;
             ModBox = modBox;
@@ -37,11 +37,10 @@ namespace EngineLayer.GlycoSearch
             }
         }
 
-        public LocalizationGraph(List<(int, string)> modPos_N, ModBox modBox, ModBox[] childModBoxes, int id)
+        public LocalizationGraph(int[] modPos, string[] modMotifs, ModBox modBox, ModBox[] childModBoxes, int id = 0)
         {
-            ModPos_N = modPos_N;
-            var modPos = modPos_N.Select(p => p.Item1).ToArray();
             ModPos = modPos;
+            BoxMotifs = modMotifs;
             ModBox = modBox;
             ModBoxId = id;
             ChildModBoxes = childModBoxes;
@@ -51,6 +50,10 @@ namespace EngineLayer.GlycoSearch
             for (int i = 0; i < modPos.Length; i++)
             {
                 array[i] = new AdjNode[ChildModBoxes.Length];
+                for (int j = 0; j < ChildModBoxes.Length; j++)
+                {
+                    array[i][j] = new AdjNode(i, j, ModPos[i], ChildModBoxes[j]);
+                }
             }
         }
 
@@ -68,14 +71,15 @@ namespace EngineLayer.GlycoSearch
 
                 for (int j = 0; j < localizationGraph.ChildModBoxes.Length; j++)
                 {
-                    if (localizationGraph.ChildModBoxes[j].NumberOfMods <= maxLength && localizationGraph.ChildModBoxes[j].NumberOfMods >= minlength)
+                    if (localizationGraph.ChildModBoxes[j].ModCount <= maxLength && localizationGraph.ChildModBoxes[j].ModCount >= minlength)
                     {
                         AdjNode adjNode = new AdjNode(i, j, localizationGraph.ModPos[i], localizationGraph.ChildModBoxes[j]);
 
                         double cost = 0;
                         if (i != localizationGraph.ModPos.Length - 1)
-                        {              
-                            var fragments = GlycoPeptides.GetLocalFragment(products, localizationGraph.ModPos, i, localizationGraph.ModBox, localizationGraph.ChildModBoxes[j]);
+                        {
+                            //var fragments = GlycoPeptides.GetLocalFragment(products, localizationGraph.ModPos, i, localizationGraph.ModBox, localizationGraph.ChildModBoxes[j]);
+                            var fragments = GlycoPeptides.GetLocalFragment(products, i,j, localizationGraph);
                             cost = CalculateCost(theScan, productTolerance, fragments);
                         }
 
@@ -84,7 +88,7 @@ namespace EngineLayer.GlycoSearch
                         if (i == 0)
                         {
                             //Get cost                             
-                            adjNode.maxCost = cost;
+                            adjNode.CummulativeCost = cost;
                         }
                         else
                         {
@@ -96,7 +100,7 @@ namespace EngineLayer.GlycoSearch
                                 {
                                     adjNode.AllSources.Add(prej);
 
-                                    var tempCost = cost + localizationGraph.array[i - 1][prej].maxCost;
+                                    var tempCost = cost + localizationGraph.array[i - 1][prej].CummulativeCost;
                                     if (tempCost > maxCost)
                                     {
                                         adjNode.CummulativeSources.Clear();
@@ -113,7 +117,7 @@ namespace EngineLayer.GlycoSearch
                                 }
                             }
 
-                             adjNode.maxCost = maxCost;
+                             adjNode.CummulativeCost = maxCost;
 
                         }
 
@@ -126,7 +130,7 @@ namespace EngineLayer.GlycoSearch
             var unlocalFragments = GlycoPeptides.GetUnlocalFragment(products, localizationGraph.ModPos, localizationGraph.ModBox);
             var noLocalScore = CalculateCost(theScan, productTolerance, unlocalFragments);
             localizationGraph.NoLocalCost = noLocalScore;
-            localizationGraph.TotalScore = localizationGraph.array[localizationGraph.ModPos.Length - 1][localizationGraph.ChildModBoxes.Length - 1].maxCost + noLocalScore;
+            localizationGraph.TotalScore = localizationGraph.array[localizationGraph.ModPos.Length - 1][localizationGraph.ChildModBoxes.Length - 1].CummulativeCost + noLocalScore;
         }
 
         //Based on our implementation of Graph localization. We need to calculate cost between two nearby nodes (glycosites) 
@@ -178,7 +182,7 @@ namespace EngineLayer.GlycoSearch
                 bool[] idBoxes = new bool[childBoxes.Length];
                 for (int j = 0; j <= i; j++)
                 {
-                    if (childBoxes[i].NumberOfMods <= childBoxes[j].NumberOfMods + 1 && (childBoxes[j].NumberOfMods ==0 || TryGetLeft(childBoxes[i].ModIds, childBoxes[j].ModIds)))
+                    if (childBoxes[i].ModCount <= childBoxes[j].ModCount + 1 && (childBoxes[j].ModCount == 0 || TryGetLeft(childBoxes[i].ModIds, childBoxes[j].ModIds)))
                     {
                         idBoxes[j] = true;
                     }
@@ -260,7 +264,7 @@ namespace EngineLayer.GlycoSearch
         public static Route GetAnyOnePath(LocalizationGraph localizationGraph)
         {
             Route route = new Route();
-            for (int i = 0; i < localizationGraph.ModBox.NumberOfMods; i++)
+            for (int i = 0; i < localizationGraph.ModBox.ModCount; i++)
             {
                 route.AddPos(localizationGraph.ModPos[i], localizationGraph.ModBox.ModIds[i], false);
             }
@@ -413,93 +417,200 @@ namespace EngineLayer.GlycoSearch
             return probabilityMatrix;
         }
 
-        #region LocalizeMod not limited to OGlycan.
+        #region LocalizeMod
         //Tt is possible to Merge this function to LocalizdOGlycan in the future.
         //The modification problem is turned into a Directed Acyclic Graph. The Graph was build with matrix, and dynamic programming is used.
-        public static void LocalizeMod(Glycan[] glycans, LocalizationGraph localizationGraph, Ms2ScanWithSpecificMass theScan, Tolerance productTolerance, List<Product> products)
+        //The Graph is designed to be able to run multiple cycles for different scans.
+        public static void LocalizeMod(LocalizationGraph localizationGraph, Ms2ScanWithSpecificMass theScan, Tolerance productTolerance, List<Product> products)
         {
             var boxSatisfyBox = BoxSatisfyBox(localizationGraph.ChildModBoxes);
 
-            for (int i = 0; i < localizationGraph.ModPos_N.Count; i++)
+            for (int i = 0; i < localizationGraph.ModPos.Length; i++)
             {
-
                 for (int j = 0; j < localizationGraph.ChildModBoxes.Length; j++)
                 {
-                    if (BoxSatisfyModPos(glycans, localizationGraph.ModPos_N, localizationGraph.ModPos[i], (GlycanBox)localizationGraph.ChildModBoxes[j]))
+                    if (BoxSatisfyModPos(localizationGraph.BoxMotifs, i, localizationGraph.ModBox, localizationGraph.ChildModBoxes[j]))
                     {
-                        AdjNode adjNode = new AdjNode(i, j, localizationGraph.ModPos[i], localizationGraph.ChildModBoxes[j]);
-                        //var cost = LocalizationGraph.CalculateCostMod(allPeaks, products, peptide.Length, localizationGraph.ModPos, i, totalBox, boxes[j], 1000);
-                        var cost = 0;
+                        var fragments = GetLocalFragment(products, i, j, localizationGraph);
+                        var cost = CalculateCost(theScan, productTolerance, fragments);
+
+                        localizationGraph.array[i][j].CurrentCost += cost;
+
                         if (i == 0)
                         {
                             //Get cost                             
-                            adjNode.maxCost = cost;
-
+                            localizationGraph.array[i][j].CummulativeCost += cost;
                         }
                         else
                         {
-                            double maxCost = 0;
+                            double cmuCost = localizationGraph.array[i][j].CummulativeCost;
                             for (int prej = 0; prej <= j; prej++)
                             {
-                                if (boxSatisfyBox[j][prej] && localizationGraph.array[i - 1][prej] != null)
+                                if (boxSatisfyBox[j][prej])
                                 {
-                                    var tempCost = cost + localizationGraph.array[i - 1][prej].maxCost;
-                                    if (tempCost > maxCost)
+                                    var tempCost = cost + localizationGraph.array[i - 1][prej].CummulativeCost;
+                                    if (tempCost > cmuCost)
                                     {
-                                        adjNode.CummulativeSources.Clear();
+                                        localizationGraph.array[i][j].CummulativeSources.Clear();
 
 
-                                        adjNode.CummulativeSources.Add(prej);
+                                        localizationGraph.array[i][j].CummulativeSources.Add(prej);
 
-                                        maxCost = tempCost;
+                                        cmuCost = tempCost;
                                     }
-                                    else if (tempCost == maxCost)
+                                    else if (tempCost == cmuCost)
                                     {
-                                        adjNode.CummulativeSources.Add(prej);
+                                        localizationGraph.array[i][j].CummulativeSources.Add(prej);
 
                                     }
                                 }
                             }
-                            //if (adjNode.Costs.Any())
-                            {
-                                adjNode.maxCost = maxCost;
-                            }
+
+                            localizationGraph.array[i][j].CummulativeCost = cmuCost;
                         }
 
-                        localizationGraph.array[i][j] = adjNode;
                     }
                 }
 
             }
+
+            var unlocalFragments = GetUnlocalFragment(products, localizationGraph.ModPos, localizationGraph.ModBox);
+            var noLocalScore = CalculateCost(theScan, productTolerance, unlocalFragments);
+            localizationGraph.NoLocalCost = noLocalScore;
+            localizationGraph.TotalScore = localizationGraph.array[localizationGraph.ModPos.Length - 1][localizationGraph.ChildModBoxes.Length - 1].CummulativeCost + noLocalScore;
         }
 
         //For current ModPos at Ind, is the childbox satify the condition.
         //The function is for ModBox contains Mod that have different motif. 
-        public static bool BoxSatisfyModPos(Glycan[] glycans, List<(int, string)> modPos_N, int Ind, GlycanBox childBox)
+        public static bool BoxSatisfyModPos(string[] modMotifs, int ind, ModBox modBox, ModBox childBox)
         {
+            List<string> leftMotifs = modMotifs.Take(ind+1).ToList();
+            List<string> rightMotifs = modMotifs.Skip(ind+1).ToList();
+
             //Satisfy left
-            foreach (var mn in childBox.MotifNeeded)
+            foreach (var mn in childBox.ModMotfis) //TO THINK: a potential waste of cycle exist.
             {
-                if (modPos_N.Where(p=>p.Item1 <= Ind  && p.Item2 == mn.Key).Count() < mn.Value.Count)
+                if (!leftMotifs.Contains(mn))
                 {
                     return false;
                 }
+                leftMotifs.Remove(mn);
             }
 
-            //Get compliment box
-            var compliment = modPos_N.Where(p=>p.Item1 > Ind).Select(p => p.Item1).ToArray();
-            var complimentBox = new GlycanBox(compliment.ToArray(), glycans);
-
-            //Satify right
-            foreach (var mn in complimentBox.MotifNeeded)
+            //Get compliment box motifs
+            List<string> complimentMotif = modBox.ModMotfis.ToList();
+            foreach (var mn in childBox.ModMotfis)
             {
-                if (modPos_N.Where(p => p.Item1 > Ind && p.Item2 == mn.Key).Count() < mn.Value.Count)
+                if (!complimentMotif.Contains(mn))
                 {
                     return false;
                 }
+                complimentMotif.Remove(mn);
+            }
+
+            //Satify right
+            foreach (var mn in complimentMotif)
+            {
+                if (!rightMotifs.Contains(mn))
+                {
+                    return false;
+                }
+                rightMotifs.Remove(mn);
             }
 
             return true;
+        }
+
+        //Find FragmentMass for the fragments that contain localization Information.
+        public static List<double> GetLocalFragment(List<Product> products, int modInd, int childBoxInd, LocalizationGraph localizationGraph)
+        {
+            List<double> newFragments = new List<double>();
+
+            var local_c_fragments = products.Where(p => p.ProductType == ProductType.c && p.AminoAcidPosition >= localizationGraph.ModPos[modInd] - 1 && p.AminoAcidPosition < localizationGraph.ModPos[modInd + 1] - 1).ToList();
+            foreach (var c in local_c_fragments)
+            {
+                var newMass = c.NeutralMass + localizationGraph.ChildModBoxes[childBoxInd].Mass;
+                newFragments.Add(newMass);
+            }
+
+            var local_z_fragments = products.Where(p => p.ProductType == ProductType.zDot && p.AminoAcidPosition >= localizationGraph.ModPos[modInd] && p.AminoAcidPosition < localizationGraph.ModPos[modInd + 1]).ToList();
+
+            foreach (var z in local_z_fragments)
+            {
+                var newMass = z.NeutralMass + (localizationGraph.ModBox.Mass - localizationGraph.ChildModBoxes[childBoxInd].Mass);
+                newFragments.Add(newMass);
+            }
+
+            var local_b_fragments = products.Where(p => p.ProductType == ProductType.b && p.AminoAcidPosition >= localizationGraph.ModPos[modInd] - 1 && p.AminoAcidPosition < localizationGraph.ModPos[modInd + 1] - 1).ToList();
+            foreach (var b in local_b_fragments)
+            {
+                var newMass = b.NeutralMass + localizationGraph.ChildModBoxes[childBoxInd].Mass;
+                newFragments.Add(newMass);
+            }
+
+            var local_y_fragments = products.Where(p => p.ProductType == ProductType.y && p.AminoAcidPosition >= localizationGraph.ModPos[modInd] && p.AminoAcidPosition < localizationGraph.ModPos[modInd + 1]).ToList();
+
+            foreach (var y in local_y_fragments)
+            {
+                var newMass = y.NeutralMass + (localizationGraph.ModBox.Mass - localizationGraph.ChildModBoxes[childBoxInd].Mass);
+                newFragments.Add(newMass);
+            }
+
+            return newFragments;
+        }
+
+        //Find FragmentMass for the fragments that doesn't contain localization Information. For example, "A|TAABBS|B", c1 and c7, z1 and z7, z8 ion don't contain localization information.
+        public static List<double> GetUnlocalFragment(List<Product> products, int[] modPoses, ModBox OGlycanBox)
+        {
+            var mass = OGlycanBox.Mass;
+
+            List<double> newFragments = new List<double>();
+
+            var c_fragments = products.Where(p => p.ProductType == ProductType.c && p.AminoAcidPosition < modPoses.First() - 1).Select(p => p.NeutralMass);
+            newFragments.AddRange(c_fragments);
+
+            var c_fragments_shift = products.Where(p => p.ProductType == ProductType.c && p.AminoAcidPosition >= modPoses.Last() - 1).Select(p => p.NeutralMass);
+
+            foreach (var c in c_fragments_shift)
+            {
+                var newMass = c + mass;
+                newFragments.Add(newMass);
+            }
+
+            var z_fragments = products.Where(p => p.ProductType == ProductType.zDot && p.AminoAcidPosition > modPoses.Last() - 1).Select(p => p.NeutralMass);
+            newFragments.AddRange(z_fragments);
+
+            var z_fragments_shift = products.Where(p => p.ProductType == ProductType.zDot && p.AminoAcidPosition < modPoses.First() - 1).Select(p => p.NeutralMass);
+
+            foreach (var z in z_fragments_shift)
+            {
+                var newMass = z + mass;
+                newFragments.Add(newMass);
+            }
+
+            var b_fragments = products.Where(p => p.ProductType == ProductType.b && p.AminoAcidPosition < modPoses.First() - 1).Select(p => p.NeutralMass);
+            newFragments.AddRange(b_fragments);
+
+            var b_fragments_shift = products.Where(p => p.ProductType == ProductType.b && p.AminoAcidPosition >= modPoses.Last() - 1).Select(p => p.NeutralMass);
+
+            foreach (var b in b_fragments_shift)
+            {
+                var newMass = b + mass;
+                newFragments.Add(newMass);
+            }
+
+            var y_fragments = products.Where(p => p.ProductType == ProductType.y && p.AminoAcidPosition > modPoses.Last() - 1).Select(p => p.NeutralMass);
+            newFragments.AddRange(y_fragments);
+
+            var y_fragments_shift = products.Where(p => p.ProductType == ProductType.y && p.AminoAcidPosition < modPoses.First() - 1).Select(p => p.NeutralMass);
+
+            foreach (var y in y_fragments_shift)
+            {
+                var newMass = y + mass;
+                newFragments.Add(newMass);
+            }
+
+            return newFragments;
         }
 
         #endregion

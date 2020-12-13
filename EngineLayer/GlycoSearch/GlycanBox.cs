@@ -125,8 +125,7 @@ namespace EngineLayer
                 {
                     GlycanBox glycanBox = new GlycanBox(idCombine.ToArray(), glycans);
                     SetMotifNeeded(glycanBox, allModifications);
-                    glycanBox.TargetDecoy = true;
-                    glycanBox.ChildGlycanBoxes = BuildChildGlycanBoxes(glycanBox.NumberOfMods, glycanBox.ModIds, glycans).ToArray();
+                    glycanBox.ChildGlycanBoxes = BuildChildGlycanBoxes(glycanBox.ModCount, glycanBox.ModIds, glycans).ToArray();
 
                     yield return glycanBox;
                 }

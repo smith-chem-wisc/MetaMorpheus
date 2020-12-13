@@ -359,7 +359,7 @@ namespace EngineLayer.GlycoSearch
 
                 var glycanBox = GlycanBox.OGlycanBoxes[LocalizationGraphs.First().ModBoxId];
 
-                sb.Append(glycanBox.NumberOfMods + "\t");
+                sb.Append(glycanBox.ModCount + "\t");
 
                 sb.Append(LocalizationGraphs.First().ModPos.Length + "\t");
 
@@ -368,8 +368,8 @@ namespace EngineLayer.GlycoSearch
                 sb.Append(Glycan.GetKindString(glycanBox.Kind)); sb.Append("\t");
              
                 //Get glycans
-                var glycans = new Glycan[glycanBox.NumberOfMods];
-                for (int i = 0; i < glycanBox.NumberOfMods; i++)
+                var glycans = new Glycan[glycanBox.ModCount];
+                for (int i = 0; i < glycanBox.ModCount; i++)
                 {
                     glycans[i] = GlycanBox.GlobalOGlycans[glycanBox.ModIds[i]];
                 }

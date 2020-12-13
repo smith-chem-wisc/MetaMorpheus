@@ -25,7 +25,7 @@ namespace EngineLayer.GlycoSearch
         //sources are represented by index. Only track ones with highest cummulative cost
         public List<int> CummulativeSources { get; set; } = new List<int>();
 
-        public double maxCost { get; set; }
+        public double CummulativeCost { get; set; }
 
         public double CurrentCost { get; set; }
 

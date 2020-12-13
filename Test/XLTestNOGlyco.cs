@@ -23,7 +23,7 @@ namespace Test
     [TestFixture]
     public class XLTestNOGlyco
     {
-        private static XLTestDataFile myMsDataFile { get; set; }
+        private static TestDataFile myMsDataFile { get; set; }
 
         private static IndexingResults indexResults { get; set; }
 
@@ -54,7 +54,7 @@ namespace Test
             indexResults = (IndexingResults)indexEngine.Run();
 
             //Get MS2 scans.
-            myMsDataFile = new XLTestDataFile();
+            myMsDataFile = new TestDataFile();
 
             {
                 string spectraFile = Path.Combine(TestContext.CurrentContext.TestDirectory, @"GlycoTestData\11898_AIETD.mgf");
@@ -147,10 +147,10 @@ namespace Test
             Directory.Delete(Path.Combine(Environment.CurrentDirectory, @"TESTGlycoData"), true);
         }
 
-        internal class XLTestDataFile : MsDataFile
+        internal class TestDataFile : MsDataFile
         {
             //Create fake N-OGlyco MS data. Including: Full Scan, HCD-pd-EThcd (N-glycopeptide), HCD-pd-EThcD (O-glycopeptide), HCD (single peptide). 
-            public XLTestDataFile() : base(2, new SourceFile(null, null, null, null, null))
+            public TestDataFile() : base(2, new SourceFile(null, null, null, null, null))
             {
                 var mz = new double[] {  };
                 var intensities = new double[] { };         
