@@ -64,9 +64,20 @@
                                             <RowDefinition Height="1*"/>
                                         </Grid.RowDefinitions>
                                         <StackPanel Orientation="Horizontal" Margin="10" HorizontalAlignment="Stretch">
-                                            <RadioButton x:Name="RbtOGlycoSearch" Content="O-Glycopeptide Search " GroupName="GlycoSearch" VerticalAlignment="Center"/>
-                                            <RadioButton x:Name="RbtNGlycoSearch" Visibility="Visible"  Content="N-Glycopeptide Search " GroupName="GlycoSearch" VerticalAlignment="Center"/>
-                                            <RadioButton x:Name="Rbt_N_O_GlycoSearch" Visibility="Visible"  Content="N-O-Glyco-peptide Search " GroupName="GlycoSearch" VerticalAlignment="Center"/>
+                                            <RadioButton x:Name="RbtOGlycoSearch" Content="O-Glycopeptide Search     " GroupName="GlycoSearch" VerticalAlignment="Center"/>
+                                            <RadioButton x:Name="RbtNGlycoSearch" Visibility="Visible"  Content="N-Glycopeptide Search     " GroupName="GlycoSearch" VerticalAlignment="Center"/>
+                                            <RadioButton x:Name="Rbt_N_O_GlycoSearch" Visibility="Visible"  Content="N-O-Glyco-peptide Search" GroupName="GlycoSearch" VerticalAlignment="Center"/>
+                                            <CheckBox x:Name="CkbMixedGlycoAllowed" Content="Mixed Glycan allowed"  VerticalAlignment="Center" IsEnabled="{Binding ElementName=Rbt_N_O_GlycoSearch, Path=IsChecked}">
+                                                <CheckBox.Style>
+                                                    <Style TargetType="CheckBox">
+                                                        <Style.Triggers>
+                                                            <DataTrigger Binding="{Binding IsChecked, ElementName=Rbt_N_O_GlycoSearch}" Value="False">
+                                                                <Setter Property="IsChecked" Value="False"/>
+                                                            </DataTrigger>
+                                                        </Style.Triggers>
+                                                    </Style>
+                                                </CheckBox.Style>
+                                            </CheckBox>
                                         </StackPanel>
                                     </Grid>
                                     <Grid Grid.Row="1">
@@ -82,16 +93,30 @@
                                             <ColumnDefinition Width="1*"/>
                                         </Grid.ColumnDefinitions>
 
-                                        <StackPanel Orientation="Horizontal" Grid.Row="0" Grid.Column="0">
+                                        <StackPanel Orientation="Horizontal" Grid.Row="0" Grid.Column="0" Margin="5">
                                             <Label Content="O-Glycan Database"/>
                                             <ComboBox x:Name="CmbOGlycanDatabase"/>
                                         </StackPanel>
-                                        <StackPanel Orientation="Horizontal" Grid.Row="0" Grid.Column="1">
+                                        <StackPanel Orientation="Horizontal" Grid.Row="0" Grid.Column="1" Margin="5">
                                             <Label Content="N-Glycan Database"/>
                                             <ComboBox x:Name="CmbNGlycanDatabase"/>
                                         </StackPanel>
-                            
-                                        <StackPanel Orientation="Horizontal" Margin="5" Grid.Row="2">
+                                        <StackPanel Orientation="Horizontal" Grid.Row="2" Margin="5">
+                                            <Label Content="Maximum OGlycan Allowed"/>
+                                            <TextBox x:Name="TbMaxOGlycanNum" PreviewTextInput="CheckIfNumber" Width="45"/>
+                                        </StackPanel>
+                                        <StackPanel Orientation="Horizontal" Grid.Row="2" Grid.Column="1" Margin="5">
+                                            <Label Content="Maximum NGlycan Allowed"/>
+                                            <TextBox x:Name="TbMaxNGlycanNum" PreviewTextInput="CheckIfNumber" Width="45"/>
+                                        </StackPanel>
+                                        <StackPanel Orientation="Horizontal" Grid.Row="3" Margin="10">
+                                            
+                                        </StackPanel>
+                                        <StackPanel Orientation="Horizontal" Grid.Row="3" Margin="10">
+                                            <CheckBox x:Name="CkbOxoniumIonFilt" Content="OxoniumIonFilt" Grid.Row="3" Grid.Column="1" VerticalAlignment="Center"/>
+                                        </StackPanel>
+                    
+                                        <StackPanel Orientation="Horizontal" Margin="5" Grid.Row="4">
                                             <Label Content="Data Type    "/>
                                             <Label x:Name="ionsToSearchLabel" Content="Dissociation Type" ToolTipService.ShowDuration="999999" ToolTipService.InitialShowDelay="500">
                                                 <Label.ToolTip>
@@ -102,7 +127,7 @@
                                             </Label>
                                             <ComboBox x:Name="DissociationTypeComboBox" HorizontalAlignment="Center" VerticalAlignment="Center" DropDownClosed="CustomFragmentationHandler"/>
                                         </StackPanel>
-                                        <StackPanel Orientation="Horizontal" Grid.Row="2" Grid.Column="1" Margin="5">
+                                        <StackPanel Orientation="Horizontal" Grid.Row="4" Grid.Column="1" Margin="5">
                                             <Label x:Name="childScanIonsToSearchLabel" Content="Child Scan Dissocation" ToolTipService.ShowDuration="999999" ToolTipService.InitialShowDelay="500">
                                                 <Label.ToolTip>
                                                     <TextBlock>
@@ -112,11 +137,7 @@
                                             </Label>
                                             <ComboBox x:Name="ChildScanDissociationTypeComboBox" AllowDrop="False" HorizontalAlignment="Center" VerticalAlignment="Center" DropDownClosed="CustomFragmentationHandler"/>
                                         </StackPanel>
-                                        <StackPanel Orientation="Horizontal" Grid.Row="3">
-                                            <Label Content="Maximum OGlycan Allowed"/>
-                                            <TextBox x:Name="TbMaxOGlycanNum" PreviewTextInput="CheckIfNumber" Width="45"/>
-                                        </StackPanel>
-                                        <CheckBox x:Name="CkbOxoniumIonFilt" Content="OxoniumIonFilt" Grid.Row="3" Grid.Column="1" VerticalAlignment="Center"/>
+                                        
                                     </Grid>
                                 </Grid>
                             </GroupBox>
