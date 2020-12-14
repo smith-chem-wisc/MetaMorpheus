@@ -35,14 +35,6 @@ namespace Test
         }
 
         [Test]
-        public static void GlyTest_NGlycanBox()
-        {
-            var nGlycanBoxes = GlycanBox.BuildGlycanBoxes(2, GlycanBox.Global_NGlycans, GlycanBox.Global_NGlycanModifications).OrderBy(p => p.Mass).ToArray();
-            Assert.That(nGlycanBoxes.Length == 16835);
-            Assert.That(nGlycanBoxes.First().MotifNeeded.First().Key == "Nxs/t");
-        }
-
-        [Test]
         public static void GlyTest_ModificationSites()
         {
             PeptideWithSetModifications pep = new PeptideWithSetModifications("ELNPTPNVEVNVECR", null); 

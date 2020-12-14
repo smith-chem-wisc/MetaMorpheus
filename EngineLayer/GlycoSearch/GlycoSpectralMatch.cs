@@ -346,7 +346,6 @@ namespace EngineLayer.GlycoSearch
 
                 sb.Append(peptideProb); sb.Append("\t");
                 sb.Append(proteinProb); sb.Append("\t");
-                //sb.Append(NGlycan.First().Decoy ? 0 : 1); sb.Append("\t");
             }
 
             if (LocalizationGraphs != null)

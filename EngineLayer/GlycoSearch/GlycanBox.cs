@@ -83,25 +83,14 @@ namespace EngineLayer
 
         public int NGlycanCount { get; set; }
 
-        //key: motif, value: all ids for this motif
-        public Dictionary<string, List<int>> MotifNeeded { get; set; }
-
         public static void SetMotifNeeded(GlycanBox glycanBox, Modification[] allModifications)
         {
-            Dictionary<string, List<int>> aa = new Dictionary<string, List<int>>();
-            foreach (var id in glycanBox.ModIds)
+            string[] motifs = new string[glycanBox.ModIds.Length];
+            for (int i = 0; i < glycanBox.ModIds.Length; i++)
             {
-                var mod = allModifications[id];
-                if (aa.ContainsKey(mod.FeatureType))
-                {
-                    aa[mod.FeatureType].Add(id);
-                }
-                else
-                {
-                    aa.Add(mod.FeatureType, new List<int> { id });
-                }
+                motifs[i] = allModifications[glycanBox.ModIds[i]].FeatureType;
             }
-            glycanBox.MotifNeeded = aa;
+            glycanBox.ModMotfis = motifs;
         }
 
         //TO DO: Decoy O-glycan can be created, but the results need to be reasoned.
@@ -116,7 +105,7 @@ namespace EngineLayer
         };
 
         //After O-glycans are read in from database, we build combinations of glycans into GlycanBox. The maxNum is maximum glycans allowed on one peptides.
-        public static IEnumerable<GlycanBox> BuildGlycanBoxes(int maxNum, Glycan[] glycans, Modification[] allModifications)
+        public static IEnumerable<GlycanBox> BuildGlycanBoxes(int maxNum, Glycan[] glycans, Modification[] modifications)
         {
 
             for (int i = 1; i <= maxNum; i++)
@@ -124,8 +113,8 @@ namespace EngineLayer
                 foreach (var idCombine in Glycan.GetKCombsWithRept(Enumerable.Range(0, glycans.Length), i))
                 {
                     GlycanBox glycanBox = new GlycanBox(idCombine.ToArray(), glycans);
-                    SetMotifNeeded(glycanBox, allModifications);
-                    glycanBox.ChildGlycanBoxes = BuildChildGlycanBoxes(glycanBox.ModCount, glycanBox.ModIds, glycans).ToArray();
+                    SetMotifNeeded(glycanBox, modifications);
+                    glycanBox.ChildGlycanBoxes = BuildChildGlycanBoxes(glycanBox.ModIds, glycans, modifications).ToArray();
 
                     yield return glycanBox;
                 }
@@ -146,13 +135,13 @@ namespace EngineLayer
 
         //The function here is to build GlycanBoxes used for LocalizationGraph. 
         //In LocalizationGraph matrix, for each AdjNode, it represent a ChildOGlycanBox here at certain glycosite.
-        public static IEnumerable<GlycanBox> BuildChildGlycanBoxes(int maxNum, int[] glycanIds, Glycan[] glycans)
+        public static IEnumerable<GlycanBox> BuildChildGlycanBoxes(int[] glycanIds, Glycan[] glycans, Modification[] modifications)
         {
             yield return new GlycanBox(new int[0], glycans);
             HashSet<string> seen = new HashSet<string>();
-            for (int i = 1; i <= maxNum; i++)
+            for (int i = 1; i <= glycanIds.Length; i++)
             {
-                foreach (var idCombine in Glycan.GetKCombs(Enumerable.Range(0, maxNum), i))
+                foreach (var idCombine in Glycan.GetKCombs(Enumerable.Range(0, glycanIds.Length), i))
                 {
                     List<int> ids = new List<int>();
                     foreach (var id in idCombine)
@@ -165,7 +154,7 @@ namespace EngineLayer
                         seen.Add(string.Join(",", ids.Select(p => p.ToString())));
 
                         GlycanBox glycanBox = new GlycanBox(ids.ToArray(), glycans);
-
+                        SetMotifNeeded(glycanBox, modifications);
                         yield return glycanBox;
                     }
 

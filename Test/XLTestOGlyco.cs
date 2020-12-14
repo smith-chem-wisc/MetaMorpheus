@@ -186,7 +186,7 @@ namespace Test
             peptide.Fragment(DissociationType.ETD, FragmentationTerminus.Both, products);
 
             int[] modPos = GlycoSpectralMatch.GetPossibleModSites(peptide, new string[] { "S", "T" }).OrderBy(v=>v).ToArray();
-            var boxes = GlycanBox.BuildChildGlycanBoxes(3, glycanBox.ModIds, GlycanBox.GlobalOGlycans).ToArray();
+            var boxes = GlycanBox.BuildChildGlycanBoxes(glycanBox.ModIds, GlycanBox.GlobalOGlycans, GlycanBox.GlobalOGlycanModifications).ToArray();
             Assert.That(boxes.Count() == 6);
 
             //Get Unlocal Fragment
@@ -246,7 +246,7 @@ namespace Test
             peptide.Fragment(DissociationType.ETD, FragmentationTerminus.Both, products);
 
             int[] modPos = GlycoSpectralMatch.GetPossibleModSites(peptide, new string[] { "S", "T" }).OrderBy(p => p).ToArray();
-            var boxes = GlycanBox.BuildChildGlycanBoxes(glycanBox.ModCount, glycanBox.ModIds, GlycanBox.GlobalOGlycans).ToArray();
+            var boxes = GlycanBox.BuildChildGlycanBoxes( glycanBox.ModIds, GlycanBox.GlobalOGlycans, GlycanBox.GlobalOGlycanModifications).ToArray();
 
             //Load scan.
             CommonParameters commonParameters = new CommonParameters(dissociationType: DissociationType.ETD, trimMsMsPeaks: false);
@@ -336,9 +336,12 @@ namespace Test
             Directory.Delete(Path.Combine(Environment.CurrentDirectory, @"TESTGlycoData"), true);
         }
 
+
         [Test]
         public static void OGlycoTest_LocalizeMod()
         {
+            //This test proves that the LocalizeMod method is the same as LocalizeOGlycan. 
+
             //Get glycanBox
             var glycanBox = OGlycanBoxes[19];
 
@@ -349,7 +352,7 @@ namespace Test
             peptide.Fragment(DissociationType.ETD, FragmentationTerminus.Both, products);
 
             int[] modPos = GlycoSpectralMatch.GetPossibleModSites(peptide, new string[] { "S", "T" }).OrderBy(v => v).ToArray();
-            var boxes = GlycanBox.BuildChildGlycanBoxes(3, glycanBox.ModIds, GlycanBox.GlobalOGlycans).ToArray();
+            var boxes = GlycanBox.BuildChildGlycanBoxes(glycanBox.ModIds, GlycanBox.GlobalOGlycans, GlycanBox.GlobalOGlycanModifications).ToArray();
             Assert.That(boxes.Count() == 6);
 
             //Get Unlocal Fragment
@@ -369,36 +372,21 @@ namespace Test
             var matchedKnownFragmentIons = MetaMorpheusEngine.MatchFragmentIons(scans.First(), knownProducts, commonParameters);
 
             //Graph Localization
-            //LocalizationGraph localizationGraph = new LocalizationGraph(modPos, glycanBox, boxes, -1);
-            //LocalizationGraph.LocalizeOGlycan(localizationGraph, scans.First(), commonParameters.ProductMassTolerance, products);
-            //var allPaths = LocalizationGraph.GetAllHighestScorePaths(localizationGraph.array, localizationGraph.ChildModBoxes);
-            //var knowPath = new int[8] { 2, 4, 4, 4, 5, 5, 5, 5 };
-            //Assert.That(Enumerable.SequenceEqual(knowPath, allPaths[0]));
-
-            //LocalizeMod
-            var boxMotifs = new string[] { "S/T","S/T", "S/T", "S/T", "S/T", "S/T", "S/T", "S/T" };
-            LocalizationGraph localizationGraph = new LocalizationGraph(modPos, boxMotifs, glycanBox, boxes, -1); 
-            LocalizationGraph.LocalizeMod(localizationGraph, scans.First(), commonParameters.ProductMassTolerance, products);
+            LocalizationGraph localizationGraph = new LocalizationGraph(modPos, glycanBox, boxes, -1);
+            LocalizationGraph.LocalizeOGlycan(localizationGraph, scans.First(), commonParameters.ProductMassTolerance, products);
             var allPaths = LocalizationGraph.GetAllHighestScorePaths(localizationGraph.array, localizationGraph.ChildModBoxes);
             var knowPath = new int[8] { 2, 4, 4, 4, 5, 5, 5, 5 };
             Assert.That(Enumerable.SequenceEqual(knowPath, allPaths[0]));
 
-            //Get localized Route
-            var local = LocalizationGraph.GetLocalizedPath(localizationGraph, allPaths.First());
-            Assert.That(Enumerable.SequenceEqual(local.Mods.Select(v => v.Item1), new List<int> { 2, 3, 10 }));
-            Assert.That(Enumerable.SequenceEqual(local.Mods.Select(v => v.Item2), new List<int> { 1, 1, 0 }));
+            //LocalizeMod
+            var boxMotifs = new string[] { "S/T","S/T", "S/T", "S/T", "S/T", "S/T", "S/T", "S/T" };
+            LocalizationGraph localizationGraph0 = new LocalizationGraph(modPos, boxMotifs, glycanBox, boxes, -1); 
+            LocalizationGraph.LocalizeMod(localizationGraph0, scans.First(), commonParameters.ProductMassTolerance, products.Where(v => v.ProductType == ProductType.c || v.ProductType == ProductType.zDot).ToList());
+            var allPaths0 = LocalizationGraph.GetAllHighestScorePaths(localizationGraph0.array, localizationGraph0.ChildModBoxes);
+            var knowPath0 = new int[8] { 2, 4, 4, 4, 5, 5, 5, 5 };
+            Assert.That(Enumerable.SequenceEqual(knowPath0, allPaths0[0]));
 
-
-            //Get all paths, calculate PScore and calculate position probability. 
-            var p = scans.First().TheScan.MassSpectrum.Size * commonParameters.ProductMassTolerance.GetRange(1000).Width / scans.First().TheScan.MassSpectrum.Range.Width;
-            var n = knownProducts.Where(v => v.ProductType == ProductType.c || v.ProductType == ProductType.zDot).Count();
-            var allPathWithWeights = LocalizationGraph.GetAllPaths_CalP(localizationGraph, p, n);
-            Assert.That(allPathWithWeights.Count == 168);
-
-            //Calculate Site Specific Localization Probability
-            var y = LocalizationGraph.CalSiteSpecificLocalizationProbability(allPathWithWeights, localizationGraph.ModPos);
-            Assert.That(y.Count == 8);
-            Assert.That(y.First().Value[1].Item2 > 0.99);
+            Assert.That(localizationGraph.TotalScore < localizationGraph0.TotalScore + 0.00001 && localizationGraph.TotalScore > localizationGraph0.TotalScore - 0.00001);
 
         }
 

@@ -431,8 +431,12 @@ namespace EngineLayer.GlycoSearch
                 {
                     if (BoxSatisfyModPos(localizationGraph.BoxMotifs, i, localizationGraph.ModBox, localizationGraph.ChildModBoxes[j]))
                     {
-                        var fragments = GetLocalFragment(products, i, j, localizationGraph);
-                        var cost = CalculateCost(theScan, productTolerance, fragments);
+                        double cost = 0;
+                        if (i != localizationGraph.ModPos.Length - 1)
+                        {
+                            var fragments = GetLocalFragment(products, i, j, localizationGraph);
+                            cost = CalculateCost(theScan, productTolerance, fragments);
+                        }
 
                         localizationGraph.array[i][j].CurrentCost += cost;
 
@@ -448,7 +452,10 @@ namespace EngineLayer.GlycoSearch
                             {
                                 if (boxSatisfyBox[j][prej])
                                 {
+                                    localizationGraph.array[i][j].AllSources.Add(prej);
+
                                     var tempCost = cost + localizationGraph.array[i - 1][prej].CummulativeCost;
+
                                     if (tempCost > cmuCost)
                                     {
                                         localizationGraph.array[i][j].CummulativeSources.Clear();
@@ -466,7 +473,7 @@ namespace EngineLayer.GlycoSearch
                                 }
                             }
 
-                            localizationGraph.array[i][j].CummulativeCost = cmuCost;
+                            localizationGraph.array[i][j].CummulativeCost += cmuCost;
                         }
 
                     }
@@ -476,7 +483,7 @@ namespace EngineLayer.GlycoSearch
 
             var unlocalFragments = GetUnlocalFragment(products, localizationGraph.ModPos, localizationGraph.ModBox);
             var noLocalScore = CalculateCost(theScan, productTolerance, unlocalFragments);
-            localizationGraph.NoLocalCost = noLocalScore;
+            localizationGraph.NoLocalCost += noLocalScore;
             localizationGraph.TotalScore = localizationGraph.array[localizationGraph.ModPos.Length - 1][localizationGraph.ChildModBoxes.Length - 1].CummulativeCost + noLocalScore;
         }
 
@@ -488,25 +495,32 @@ namespace EngineLayer.GlycoSearch
             List<string> rightMotifs = modMotifs.Skip(ind+1).ToList();
 
             //Satisfy left
-            foreach (var mn in childBox.ModMotfis) //TO THINK: a potential waste of cycle exist.
+            if (childBox.ModMotfis!=null)
             {
-                if (!leftMotifs.Contains(mn))
+                foreach (var mn in childBox.ModMotfis) //TO THINK: a potential waste of cycle exist.
                 {
-                    return false;
+                    if (!leftMotifs.Contains(mn))
+                    {
+                        return false;
+                    }
+                    leftMotifs.Remove(mn);
                 }
-                leftMotifs.Remove(mn);
             }
 
             //Get compliment box motifs
             List<string> complimentMotif = modBox.ModMotfis.ToList();
-            foreach (var mn in childBox.ModMotfis)
+            if (childBox.ModMotfis != null)
             {
-                if (!complimentMotif.Contains(mn))
+                foreach (var mn in childBox.ModMotfis)
                 {
-                    return false;
+                    if (!complimentMotif.Contains(mn))
+                    {
+                        return false;
+                    }
+                    complimentMotif.Remove(mn);
                 }
-                complimentMotif.Remove(mn);
             }
+
 
             //Satify right
             foreach (var mn in complimentMotif)
