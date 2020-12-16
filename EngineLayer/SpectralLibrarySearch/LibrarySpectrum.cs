@@ -1,4 +1,5 @@
 ﻿using Proteomics.Fragmentation;
+using Proteomics.ProteolyticDigestion;
 using System.Collections.Generic;
 using System.Linq;
 using System.Text;
@@ -19,6 +20,7 @@ namespace EngineLayer
         public bool IsDecoy { get; set; }
         public string ModsString { get; set; }
         public string BaseSequenceWithoutMods { get; set; }
+
         public string Name
         {
             get { return Sequence + "/" + ChargeState; }
@@ -50,7 +52,7 @@ namespace EngineLayer
             {
                 double intensityFraction = matchedIon.Intensity / maxIntensity;
 
-                spectrum.Append("\n"+matchedIon.Mz + "\t" + intensityFraction + "\t" + "\"" +
+                spectrum.Append("\n" + matchedIon.Mz + "\t" + intensityFraction + "\t" + "\"" +
                     matchedIon.NeutralTheoreticalProduct.ProductType.ToString() +
                     matchedIon.NeutralTheoreticalProduct.FragmentNumber.ToString() + "^" +
                     matchedIon.Charge + "/" + 0 + "ppm" + "\"");
@@ -58,5 +60,7 @@ namespace EngineLayer
 
             return spectrum.ToString();
         }
+
+
     }
 }

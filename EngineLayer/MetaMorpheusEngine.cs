@@ -138,6 +138,8 @@ namespace EngineLayer
                 {
                     matchedFragmentIons.Add(new MatchedFragmentIon(ref product, closestExperimentalMass.MonoisotopicMass.ToMz(closestExperimentalMass.Charge),
                         closestExperimentalMass.Peaks.First().intensity, closestExperimentalMass.Charge));
+                    var test1 = product.NeutralMass.ToMz(closestExperimentalMass.Charge);
+                    var test2 = closestExperimentalMass.MonoisotopicMass.ToMz(closestExperimentalMass.Charge);
                 }
             }
             if (commonParameters.AddCompIons)

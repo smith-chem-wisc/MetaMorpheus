@@ -34,7 +34,8 @@ namespace EngineLayer
 
             AddOrReplace(peptide, score, notch, true, matchedFragmentIons, xcorr);
         }
-
+        
+        public string targetBeforeReverseTodecoy { get;set; }
         public ChemicalFormula ModsChemicalFormula { get; private set; } // these fields will be null if they are ambiguous
         public string FullSequence { get; private set; }
         public string EssentialSequence { get; private set; }

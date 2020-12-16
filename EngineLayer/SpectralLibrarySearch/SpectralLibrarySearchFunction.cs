@@ -20,22 +20,53 @@ namespace EngineLayer
             {
                 Ms2ScanWithSpecificMass scan = arrayOfSortedMs2Scans[psm.ScanIndex];
 
-                //TODO: spectral angle could be used to disambiguate PSMs. right now for ambiguous PSMs, the spectral angle for only one peptide option is saved
-                foreach (var peptide in psm.PeptidesToMatchingFragments)
+                //try
+                //{
+                    //TODO: spectral angle could be used to disambiguate PSMs. right now for ambiguous PSMs, the spectral angle for only one peptide option is saved
+                    foreach (var peptide in psm.PeptidesToMatchingFragments)
+                    {
+                        if (spectralLibrary != null && !peptide.Key.Protein.Accession.Contains("DECOY") && spectralLibrary.TryGetSpectrum(peptide.Key.FullSequence, scan.PrecursorCharge, out var librarySpectrum))
+                        {
+                            double spectralAngle = CalculateNormalizedSpectralAngle(librarySpectrum.MatchedFragmentIons, scan.TheScan, commonParameters);
+                            psm.SpectralAngle = spectralAngle;
+                        }
+                        else if (spectralLibrary != null && peptide.Key.Protein.Accession.Contains("DECOY") && spectralLibrary.TryGetSpectrum(spectralLibrary.DecoyTargetPairs[peptide.Key].FullSequence, scan.PrecursorCharge, out var targetlibrarySpectrum))
+                        {
+                            var decoyPeptideTheorProducts = new List<Product>();
+                            peptide.Key.Fragment(commonParameters.DissociationType, commonParameters.DigestionParams.FragmentationTerminus, decoyPeptideTheorProducts);
+                            var decoylibrarySpectrum = GetDecoyLibrarySpectrumFromTargetByReverse(targetlibrarySpectrum, decoyPeptideTheorProducts);
+                            double spectralAngle = CalculateNormalizedSpectralAngle(decoylibrarySpectrum, scan.TheScan, commonParameters);
+                            psm.SpectralAngle = spectralAngle;
+                        }
+                    }
+                //}
+                //catch
+                //{
+
+                //}
+            }
+        }
+
+        public static List<MatchedFragmentIon> GetDecoyLibrarySpectrumFromTargetByReverse(LibrarySpectrum targetSpectrum, List<Product> decoyPeptideTheorProducts)
+        {
+            var decoyFragmentIons = new List<MatchedFragmentIon>();
+            //var decoyPeptideTheorProducts = new List<Product>();
+            //int[] newAAlocations = new int[targetPeptide.BaseSequence.Length];
+            //PeptideWithSetModifications decoy = DecoyOnTheFly.GetReverseDecoyFromTarget(targetPeptide, newAAlocations);
+            //decoy.Fragment(CommonParameters.DissociationType, CommonParameters.DigestionParams.FragmentationTerminus, decoyPeptideTheorProducts);
+            foreach (var targetIon in targetSpectrum.MatchedFragmentIons)
+            {
+                foreach (var decoyPeptideTheorIon in decoyPeptideTheorProducts)
                 {
-                    if (spectralLibrary != null && peptide.Key.Protein.IsDecoy && !spectralLibrary.ContainsSpectrum(peptide.Key.FullSequence, scan.PrecursorCharge))
+                    if (targetIon.NeutralTheoreticalProduct.ProductType == decoyPeptideTheorIon.ProductType && targetIon.NeutralTheoreticalProduct.FragmentNumber == decoyPeptideTheorIon.FragmentNumber)
                     {
-                        double spectralAngle = CalculateDecoyNormalizedSpectralAngle(peptide.Key, scan, commonParameters);
-                        psm.SpectralAngle = spectralAngle;
+                        double decoyFragmentMz = decoyPeptideTheorIon.NeutralMass.ToMz(targetIon.Charge);
+                        Product temProduct = decoyPeptideTheorIon;
+                        decoyFragmentIons.Add(new MatchedFragmentIon(ref temProduct, decoyFragmentMz, targetIon.Intensity, targetIon.Charge));
                     }
-                    else if (spectralLibrary != null && spectralLibrary.TryGetSpectrum(peptide.Key.FullSequence, scan.PrecursorCharge, out var librarySpectrum))
-                    {
-                        double spectralAngle = CalculateNormalizedSpectralAngle(librarySpectrum.MatchedFragmentIons, scan.TheScan, commonParameters);
-                        psm.SpectralAngle = spectralAngle;
-                    }
-  
                 }
             }
+            return decoyFragmentIons;
         }
 
         /// <summary>

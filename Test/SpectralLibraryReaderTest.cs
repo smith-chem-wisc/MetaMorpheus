@@ -7,6 +7,9 @@ using MzLibUtil;
 using TaskLayer;
 using System.Collections.Generic;
 using Proteomics.Fragmentation;
+using Proteomics;
+using Proteomics.ProteolyticDigestion;
+using Chemistry;
 
 namespace Test
 {
@@ -158,7 +161,7 @@ namespace Test
             Assert.That(testLibraryWithoutDecoy.TryGetSpectrum("MVDENC[Common Fixed:Carbamidomethyl on C]VGFDHTVKPVSDMELETPTDK", 3, out var spectrum2));
         }
 
-            [Test]
+        [Test]
         public static void TestSpectraCompareAndAverage()
         {
             var product = new Product();
@@ -170,7 +173,7 @@ namespace Test
             var f = new MatchedFragmentIon(ref product, 2, 4, 1);
             var g = new MatchedFragmentIon(ref product, 3, 4, 1);
             var h = new MatchedFragmentIon(ref product, 5, 4, 1);
-       
+
             var compare1 = SpectralLibrarySearchFunction.MatchedSpectraCompare(new List<MatchedFragmentIon> { a, b, c }, new List<MatchedFragmentIon> { f, g, h });
             var compare2 = SpectralLibrarySearchFunction.MatchedSpectraCompare(new List<MatchedFragmentIon> { a, b, c }, new List<MatchedFragmentIon> { a, b, c });
             var compare3 = SpectralLibrarySearchFunction.MatchedSpectraCompare(new List<MatchedFragmentIon> { a, b, h }, new List<MatchedFragmentIon> { f, e, g });
@@ -209,5 +212,36 @@ namespace Test
             Assert.That(Math.Abs(ave2[1].Intensity - 0.3667) < 0.01);
 
         }
-    }
+
+        [Test]
+        public static void TestDecoySpectralLibraryGeneration()
+        {
+            Product b1 = new Product(ProductType.b, FragmentationTerminus.Both, 1, 1, 0, 0);
+            Product b2 = new Product(ProductType.b, FragmentationTerminus.Both, 2, 2, 0, 0);
+            Product b3 = new Product(ProductType.b, FragmentationTerminus.Both, 3, 3, 0, 0);
+            Product b4 = new Product(ProductType.b, FragmentationTerminus.Both, 4, 4, 0, 0);
+            Product b5 = new Product(ProductType.b, FragmentationTerminus.Both, 5, 5, 0, 0);
+            Product y1 = new Product(ProductType.y, FragmentationTerminus.Both, 1, 1, 0, 0);
+            Product y2 = new Product(ProductType.y, FragmentationTerminus.Both, 2, 2, 0, 0);
+            Product y3 = new Product(ProductType.y, FragmentationTerminus.Both, 3, 3, 0, 0);
+            Product y4 = new Product(ProductType.y, FragmentationTerminus.Both, 4, 4, 0, 0);
+            Product y5 = new Product(ProductType.y, FragmentationTerminus.Both, 5, 5, 0, 0);
+            var o = new MatchedFragmentIon(ref b1, 1, 3, 1);
+            var p = new MatchedFragmentIon(ref b2, 2, 2, 2);
+            var q = new MatchedFragmentIon(ref b3, 3, 1, 1);
+            var r = new MatchedFragmentIon(ref y1, 4, 2, 2);
+            var s = new MatchedFragmentIon(ref y2, 2, 4, 1);
+            var t = new MatchedFragmentIon(ref y3, 2, 4, 2);
+            var test1LibrarySpectrum = new LibrarySpectrum("ABCD", 1, 3,
+                new List<MatchedFragmentIon> { o, p, q, r, s, t }, 0);
+            var test1TheoProducts = new List<Product> { b1, b2, b3, y1, y2, y3 };
+            var decotTest1 = SpectralLibrarySearchFunction.GetDecoyLibrarySpectrumFromTargetByReverse(test1LibrarySpectrum, test1TheoProducts);
+            Assert.That(decotTest1[0].Intensity == 3);
+            Assert.That(decotTest1[1].Intensity == 2);
+            Assert.That(decotTest1[2].Intensity == 1);
+            Assert.That(decotTest1[1].Mz == b2.NeutralMass.ToMz(decotTest1[1].Charge));
+        }
+
+
+}
 }

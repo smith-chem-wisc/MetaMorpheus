@@ -563,7 +563,7 @@ namespace TaskLayer
                 spectrumLibrary.Add(standSpectrum);
             }
 
-            WriteSpectralLibrary(spectrumLibrary, Parameters.OutputFolder);
+            //WriteSpectralLibrary(spectrumLibrary, Parameters.OutputFolder);
         }
         private void WritePsmResults()
         {

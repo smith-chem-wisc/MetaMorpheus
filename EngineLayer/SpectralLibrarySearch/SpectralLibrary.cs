@@ -1,5 +1,6 @@
 ﻿using MzLibUtil;
 using Proteomics.Fragmentation;
+using Proteomics.ProteolyticDigestion;
 using System;
 using System.Collections.Generic;
 using System.Globalization;
@@ -19,6 +20,7 @@ namespace EngineLayer
         private int MaxElementsInBuffer = 10000;
         private Dictionary<string, StreamReader> StreamReaders;
         private static Regex IonParserRegex = new Regex(@"^(\D{1,})(\d{1,})(?:[\^]|$)(\d{1,}|$)");
+        public Dictionary<PeptideWithSetModifications, PeptideWithSetModifications> DecoyTargetPairs;
 
         private static Dictionary<string, string> PrositToMetaMorpheusModDictionary = new Dictionary<string, string>
         {
@@ -33,6 +35,7 @@ namespace EngineLayer
             LibrarySpectrumBufferList = new Queue<string>();
             LibrarySpectrumBuffer = new Dictionary<string, LibrarySpectrum>();
             StreamReaders = new Dictionary<string, StreamReader>();
+            DecoyTargetPairs = new Dictionary<PeptideWithSetModifications, PeptideWithSetModifications>();
 
             foreach (var path in LibraryPaths)
             {
