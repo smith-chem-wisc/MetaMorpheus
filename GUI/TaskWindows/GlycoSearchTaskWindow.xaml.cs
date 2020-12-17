@@ -121,6 +121,7 @@ namespace MetaMorpheusGUI
             RbtNGlycoSearch.IsChecked = task._glycoSearchParameters.GlycoSearchType == EngineLayer.GlycoSearch.GlycoSearchType.NGlycanSearch;
             Rbt_N_O_GlycoSearch.IsChecked = task._glycoSearchParameters.GlycoSearchType == EngineLayer.GlycoSearch.GlycoSearchType.N_O_GlycanSearch;
             TbMaxOGlycanNum.Text = task._glycoSearchParameters.MaximumOGlycanAllowed.ToString(CultureInfo.InvariantCulture);
+            TbMaxNGlycanNum.Text = task._glycoSearchParameters.MaximumNGlycanAllowed.ToString(CultureInfo.InvariantCulture);
             CkbOxoniumIonFilt.IsChecked = task._glycoSearchParameters.OxoniumIonFilt;
             CkbMixedGlycoAllowed.IsChecked = task._glycoSearchParameters.MixedGlycoAllowed;
             CkbIndex_by_ion.IsChecked = task._glycoSearchParameters.Indexing_by_ion;
@@ -267,6 +268,7 @@ namespace MetaMorpheusGUI
             TheTask._glycoSearchParameters.NGlycanDatabasefile = CmbNGlycanDatabase.SelectedItem.ToString();
             TheTask._glycoSearchParameters.GlycoSearchTopNum = int.Parse(txtTopNum.Text, CultureInfo.InvariantCulture);
             TheTask._glycoSearchParameters.MaximumOGlycanAllowed = int.Parse(TbMaxOGlycanNum.Text, CultureInfo.InvariantCulture);
+            TheTask._glycoSearchParameters.MaximumNGlycanAllowed = int.Parse(TbMaxNGlycanNum.Text, CultureInfo.InvariantCulture);
             TheTask._glycoSearchParameters.OxoniumIonFilt = CkbOxoniumIonFilt.IsChecked.Value;
             TheTask._glycoSearchParameters.MixedGlycoAllowed = CkbMixedGlycoAllowed.IsChecked.Value;
             TheTask._glycoSearchParameters.Indexing_by_ion = CkbIndex_by_ion.IsChecked.Value;

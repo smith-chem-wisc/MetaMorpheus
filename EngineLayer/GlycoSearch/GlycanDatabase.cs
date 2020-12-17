@@ -10,7 +10,7 @@ namespace EngineLayer
     public static class GlycanDatabase
     {
         //Load Glycan. Generally, glycan-ions should be generated for N-Glycopepitdes which produce Y-ions; MS method couldn't produce o-glycan-ions.
-        public static IEnumerable<Glycan> LoadGlycan(string filePath, bool ToGenerateIons, bool IsOGlycanSearch)
+        public static IEnumerable<Glycan> LoadGlycan(string filePath, bool ToGenerateIons, bool IsLoadOGlycan)
         {
             bool isKind = true;
             using (StreamReader lines = new StreamReader(filePath))
@@ -28,11 +28,11 @@ namespace EngineLayer
 
             if (isKind)
             {
-                return LoadKindGlycan(filePath, ToGenerateIons, IsOGlycanSearch);
+                return LoadKindGlycan(filePath, ToGenerateIons, IsLoadOGlycan);
             }
             else
             {
-                return LoadStructureGlycan(filePath, ToGenerateIons, IsOGlycanSearch);
+                return LoadStructureGlycan(filePath, ToGenerateIons, IsLoadOGlycan);
             }
         }
 

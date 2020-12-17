@@ -499,6 +499,15 @@ namespace EngineLayer
             return kindString.ToString();
         }
 
+        public static double GetNGlycanLocalMass(int countOfNGlycan)
+        {
+            byte[] kind = new byte[SugarLength];
+            kind[0] = (byte)countOfNGlycan;
+
+            int mass = GetMass(kind);
+            return (double)mass / 1E5;
+        }
+
         #endregion
 
         //TO THINK: Is it reasonable to transfer Glycan to Modification the first time Glycan is read in? Which could save time.

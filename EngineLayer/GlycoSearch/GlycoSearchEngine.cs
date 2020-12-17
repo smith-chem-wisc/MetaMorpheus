@@ -23,6 +23,7 @@ namespace EngineLayer.GlycoSearch
         private GlycoSearchType GlycoSearchType;
         private readonly int TopN;
         private readonly int _maxOGlycanNum;
+        private readonly int _maxNGlycanNum;
         private readonly bool OxoniumIonFilter; //To filt Oxonium Ion before searching a spectrum as glycopeptides. If we filter spectrum, it must contain oxonium ions such as 204 (HexNAc). 
         private readonly bool IndexChildScan; //Whether to index the child scan or not is a question.
         private readonly string _oglycanDatabase;
@@ -35,13 +36,14 @@ namespace EngineLayer.GlycoSearch
 
         public GlycoSearchEngine(List<GlycoSpectralMatch>[] globalCsms, Ms2ScanWithSpecificMass[] listOfSortedms2Scans, List<PeptideWithSetModifications> peptideIndex,
             List<int>[] fragmentIndex, List<int>[] secondFragmentIndex, int currentPartition, CommonParameters commonParameters, List<(string fileName, CommonParameters fileSpecificParameters)> fileSpecificParameters,
-             string oglycanDatabase, string nglycanDatabase, GlycoSearchType glycoSearchType, int glycoSearchTopNum, int maxOGlycanNum, bool oxoniumIonFilter, bool indexChildScan, List<string> nestedIds)
+             string oglycanDatabase, string nglycanDatabase, GlycoSearchType glycoSearchType, int glycoSearchTopNum, int maxOGlycanNum, int maxNGlycanNum, bool oxoniumIonFilter, bool indexChildScan, List<string> nestedIds)
             : base(null, listOfSortedms2Scans, peptideIndex, fragmentIndex, currentPartition, commonParameters, fileSpecificParameters, new OpenSearchMode(), 0, nestedIds)
         {
             this.GlobalCsms = globalCsms;
             this.GlycoSearchType = glycoSearchType;
             this.TopN = glycoSearchTopNum;
             this._maxOGlycanNum = maxOGlycanNum;
+            this._maxNGlycanNum = maxNGlycanNum;
             this.OxoniumIonFilter = oxoniumIonFilter;
             this.IndexChildScan = indexChildScan;
             this._oglycanDatabase = oglycanDatabase;
@@ -75,8 +77,8 @@ namespace EngineLayer.GlycoSearch
                 GlycanBox.Global_NGlycanModifications = GlycanBox.BuildGlobal_NGlycanModifications(GlycanBox.Global_NGlycans).ToArray();
 
                 GlycanBox.Global_NOGlycans = GlycanBox.GlobalOGlycans.Concat(GlycanBox.Global_NGlycans).ToArray();
-                GlycanBox.AllModifications = GlycanBox.GlobalOGlycanModifications.Concat(GlycanBox.Global_NGlycanModifications).ToArray();
-                GlycanBox.AllModBoxes = GlycanBox.Build_NOGlycanBoxes(GlycanBox.Global_NOGlycans, _maxOGlycanNum, 1, GlycanBox.GlobalOGlycans.Length, GlycanBox.Global_NGlycans.Length).OrderBy(p => p.Mass).ToArray();
+                GlycanBox.Global_NOGlycanMods = GlycanBox.GlobalOGlycanModifications.Concat(GlycanBox.Global_NGlycanModifications).ToArray();
+                GlycanBox.AllModBoxes = GlycanBox.Build_NOGlycanBoxes(GlycanBox.Global_NOGlycans, GlycanBox.Global_NOGlycanMods,  _maxOGlycanNum, 1, GlycanBox.GlobalOGlycans.Length, GlycanBox.Global_NGlycans.Length).OrderBy(p => p.Mass).ToArray();
                 
             }
         }
@@ -197,13 +199,9 @@ namespace EngineLayer.GlycoSearch
                         {
                             gsms = FindOGlycopeptideHashLocal(scan, idsOfPeptidesTopN, scanIndex, (int)byteScoreCutoff);    
                         }
-                        else if(GlycoSearchType == GlycoSearchType.NGlycanSearch)
-                        {                     
-                            gsms = FindNGlycopeptide(scan, idsOfPeptidesTopN, scanIndex, (int)byteScoreCutoff);
-                        }
                         else
                         {
-                            gsms = Find_N_O_Glycopeptide(scan, idsOfPeptidesTopN, scanIndex, (int)byteScoreCutoff);
+                            gsms = FindGlycopeptide(scan, idsOfPeptidesTopN, scanIndex, (int)byteScoreCutoff);
                         }
 
 
@@ -739,7 +737,7 @@ namespace EngineLayer.GlycoSearch
                 List<Product> etdProducts = new List<Product>();
                 theScanBestPeptide.Fragment(DissociationType.ETD, FragmentationTerminus.Both, etdProducts);
 
-                LocalizationGraph localizationGraph = new LocalizationGraph(modPos, GlycanBox.NGlycanBoxes[iDLow], GlycanBox.NGlycanBoxes[iDLow].ChildGlycanBoxes, iDLow);
+                LocalizationGraph localizationGraph = new LocalizationGraph(modPos, modMotifs, GlycanBox.NGlycanBoxes[iDLow], GlycanBox.NGlycanBoxes[iDLow].ChildGlycanBoxes, iDLow);
 
                 List<Product> mainProducts = new List<Product>();
                 if (GlycoPeptides.DissociationTypeContainHCD(CommonParameters.DissociationType))
@@ -750,7 +748,8 @@ namespace EngineLayer.GlycoSearch
                 {
                     mainProducts.AddRange(etdProducts);
                 }
-                LocalizationGraph.LocalizeMod(localizationGraph, theScan, CommonParameters.ProductMassTolerance, mainProducts);
+
+                LocalizationGraph.LocalizeMod(localizationGraph, theScan, CommonParameters.ProductMassTolerance, mainProducts, GlycoPeptides.GetLocalFragmentNGlycan, GlycoPeptides.GetUnlocalFragmentNGlycan);
 
                 if (theScan.ChildScans.Count > 0)
                 {
@@ -769,7 +768,7 @@ namespace EngineLayer.GlycoSearch
                         }
 
                         //run the same graph multiple times!
-                        LocalizationGraph.LocalizeMod(localizationGraph, childScan, CommonParameters.ProductMassTolerance, etdProducts);
+                        LocalizationGraph.LocalizeMod(localizationGraph, childScan, CommonParameters.ProductMassTolerance, etdProducts, GlycoPeptides.GetLocalFragmentNGlycan, GlycoPeptides.GetUnlocalFragmentNGlycan);
                     }
                 }
 
@@ -877,7 +876,7 @@ namespace EngineLayer.GlycoSearch
                 {
                     mainProducts.AddRange(etdProducts);
                 }
-                LocalizationGraph.LocalizeMod(localizationGraph, theScan, CommonParameters.ProductMassTolerance, mainProducts);
+                LocalizationGraph.LocalizeMod(localizationGraph, theScan, CommonParameters.ProductMassTolerance, mainProducts, GlycoPeptides.GetLocalFragmentNGlycan, GlycoPeptides.GetUnlocalFragmentNGlycan);
                 
                 if (theScan.ChildScans.Count > 0)
                 {
@@ -896,7 +895,7 @@ namespace EngineLayer.GlycoSearch
                         }
 
                         //run the same graph multiple times!
-                        LocalizationGraph.LocalizeMod(localizationGraph, childScan, CommonParameters.ProductMassTolerance, etdProducts);
+                        LocalizationGraph.LocalizeMod(localizationGraph, childScan, CommonParameters.ProductMassTolerance, etdProducts, GlycoPeptides.GetLocalFragmentNGlycan, GlycoPeptides.GetUnlocalFragmentNGlycan);
                     }                   
                 }
 
@@ -929,70 +928,7 @@ namespace EngineLayer.GlycoSearch
 
             return;
         }
-
-        private List<GlycoSpectralMatch> FindNGlycopeptide(Ms2ScanWithSpecificMass theScan, List<int> idsOfPeptidesPossiblyObserved, int scanIndex, int scoreCutOff)
-        {
-            List<GlycoSpectralMatch> possibleMatches = new List<GlycoSpectralMatch>();
-
-            for (int ind = 0; ind < idsOfPeptidesPossiblyObserved.Count; ind++)
-            {
-                var theScanBestPeptide = PeptideIndex[idsOfPeptidesPossiblyObserved[ind]];
-
-                //Considering coisolation, it doesn't mean it must from a glycopeptide even the scan contains oxonium ions.
-                if (PrecusorSearchMode.Within(theScan.PrecursorMass, theScanBestPeptide.MonoisotopicMass))
-                {
-                    FindSingle(theScan, scanIndex, scoreCutOff, theScanBestPeptide, ind, ref possibleMatches);
-                }
-                else
-                {
-                    //Filter by glycanBoxes mass difference.
-                    var possibleGlycanMassLow = PrecusorSearchMode.GetMinimumValue(theScan.PrecursorMass) - theScanBestPeptide.MonoisotopicMass;
-
-                    var possibleGlycanMassHigh = PrecusorSearchMode.GetMaximumValue(theScan.PrecursorMass) - theScanBestPeptide.MonoisotopicMass;
-
-                    if (possibleGlycanMassHigh < (double)GlycanBox.Global_NGlycans.First().Mass/1E5 || possibleGlycanMassLow > (double)GlycanBox.Global_NGlycans.Last().Mass/1E5)
-                    {
-                        continue;
-                    }
-
-                    //Filter by OxoniumIon
-                    ////The oxoniumIonIntensities is related with Glycan.AllOxoniumIons (the [9] is 204). A spectrum needs to have 204.0867 to be considered as a glycopeptide for now.
-                    var oxoniumIonIntensities = GlycoPeptides.ScanOxoniumIonFilter(theScan, ProductSearchMode, CommonParameters.DissociationType);
-
-                    if (OxoniumIonFilter)
-                    {
-                        //For the HCD-EThcD type of data, the EThcD spectrum also contains Oxonium Ion. However, it is likely we can ignore these Oxonium ions.
-                        //The code here is not well designed. 
-                        //if (GlycoPeptides.DissociationTypeContainHCD(CommonParameters.MS2ChildScanDissociationType))
-                        //{
-                        //    foreach (var c in theScan.ChildScans)
-                        //    {
-                        //        var _childoxo =  GlycoPeptides.ScanOxoniumIonFilter(c, ProductSearchMode, CommonParameters.MS2ChildScanDissociationType);
-                        //        for (int i = 0; i < oxoniumIonIntensities.Length; i++)
-                        //        {
-                        //            oxoniumIonIntensities[i] += _childoxo[i];
-                        //        }
-                        //    }
-                        //}
-
-                        if (oxoniumIonIntensities[OxoniumIon204Index] == 0)
-                        {
-                            continue;
-                        }
-                    }
-
-                    //Find N-Glycan 
-                    FindNGlycan(theScan, scanIndex, scoreCutOff, theScanBestPeptide, ind, possibleGlycanMassLow, oxoniumIonIntensities, ref possibleMatches);
-
-                }             
-            }
-
-            if (possibleMatches.Count != 0)
-            {
-                possibleMatches = possibleMatches.OrderByDescending(p => p.Score).ToList();
-            }
-            return possibleMatches;
-        }
+        
         private List<GlycoSpectralMatch> FindOGlycopeptideHashLocal(Ms2ScanWithSpecificMass theScan, List<int> idsOfPeptidesPossiblyObserved, int scanIndex, int scoreCutOff)
         {
             List<GlycoSpectralMatch> possibleMatches = new List<GlycoSpectralMatch>();
@@ -1042,7 +978,8 @@ namespace EngineLayer.GlycoSearch
 
             return possibleMatches;
         }
-        private List<GlycoSpectralMatch> Find_N_O_Glycopeptide(Ms2ScanWithSpecificMass theScan, List<int> idsOfPeptidesPossiblyObserved, int scanIndex, int scoreCutOff)
+ 
+        private List<GlycoSpectralMatch> FindGlycopeptide(Ms2ScanWithSpecificMass theScan, List<int> idsOfPeptidesPossiblyObserved, int scanIndex, int scoreCutOff)
         {
             List<GlycoSpectralMatch> possibleMatches = new List<GlycoSpectralMatch>();
 
@@ -1057,16 +994,6 @@ namespace EngineLayer.GlycoSearch
                 }
                 else if (theScan.PrecursorMass - theScanBestPeptide.MonoisotopicMass >= 100) //Filter out unknow non-glycan modifications.
                 {
-                    //Filter by glycanBoxes mass difference.
-                    var possibleGlycanMassLow = PrecusorSearchMode.GetMinimumValue(theScan.PrecursorMass) - theScanBestPeptide.MonoisotopicMass;
-
-                    var possibleGlycanMassHigh = PrecusorSearchMode.GetMaximumValue(theScan.PrecursorMass) - theScanBestPeptide.MonoisotopicMass;
-
-                    if (possibleGlycanMassHigh < GlycanBox.OGlycanBoxes.First().Mass)
-                    {
-                        continue;
-                    }
-
                     //Filter by OxoniumIon
                     ////The oxoniumIonIntensities is related with Glycan.AllOxoniumIons (the [9] is 204). A spectrum needs to have 204.0867 to be considered as a glycopeptide for now.
                     var oxoniumIonIntensities = GlycoPeptides.ScanOxoniumIonFilter(theScan, ProductSearchMode, CommonParameters.DissociationType);
@@ -1080,15 +1007,49 @@ namespace EngineLayer.GlycoSearch
                         }
                     }
 
-                    //Find N-Glycan 
-                    FindNGlycan(theScan, scanIndex, scoreCutOff, theScanBestPeptide, ind, possibleGlycanMassLow, oxoniumIonIntensities, ref possibleMatches);
+                    //Filter by glycanBoxes mass difference.
+                    var possibleGlycanMassLow = PrecusorSearchMode.GetMinimumValue(theScan.PrecursorMass) - theScanBestPeptide.MonoisotopicMass;
 
-                    //Find O-Glycan
-                    FindOGlycan(theScan, scanIndex, scoreCutOff, theScanBestPeptide, ind, possibleGlycanMassLow, oxoniumIonIntensities, ref possibleMatches);
+                    var possibleGlycanMassHigh = PrecusorSearchMode.GetMaximumValue(theScan.PrecursorMass) - theScanBestPeptide.MonoisotopicMass;
 
-                    //Find NO-Glycan 
-                    Find_NOGlycan(theScan, scanIndex, scoreCutOff, theScanBestPeptide, ind, possibleGlycanMassLow, oxoniumIonIntensities, ref possibleMatches);
+                    if (GlycoSearchType == GlycoSearchType.OGlycanSearch)
+                    {
+                        if (possibleGlycanMassHigh < GlycanBox.OGlycanBoxes.First().Mass || possibleGlycanMassLow > GlycanBox.OGlycanBoxes.Last().Mass)
+                        {
+                            continue;
+                        }
 
+                        //Find O-Glycan
+                        FindOGlycan(theScan, scanIndex, scoreCutOff, theScanBestPeptide, ind, possibleGlycanMassLow, oxoniumIonIntensities, ref possibleMatches);
+
+                    }
+                    else if (GlycoSearchType == GlycoSearchType.NGlycanSearch)
+                    {
+                        if (possibleGlycanMassHigh < GlycanBox.NGlycanBoxes.First().Mass || possibleGlycanMassLow > GlycanBox.NGlycanBoxes.Last().Mass)
+                        {
+                            continue;
+                        }
+
+                        //Find N-Glycan 
+                        FindNGlycan(theScan, scanIndex, scoreCutOff, theScanBestPeptide, ind, possibleGlycanMassLow, oxoniumIonIntensities, ref possibleMatches);
+                    }
+                    else if (GlycoSearchType == GlycoSearchType.N_O_GlycanSearch)
+                    {
+                        if (possibleGlycanMassHigh < GlycanBox.AllModBoxes.First().Mass || possibleGlycanMassLow > GlycanBox.AllModBoxes.Last().Mass)
+                        {
+                            continue;
+                        }
+
+                        //Find N-Glycan 
+                        FindNGlycan(theScan, scanIndex, scoreCutOff, theScanBestPeptide, ind, possibleGlycanMassLow, oxoniumIonIntensities, ref possibleMatches);
+
+                        //Find O-Glycan
+                        FindOGlycan(theScan, scanIndex, scoreCutOff, theScanBestPeptide, ind, possibleGlycanMassLow, oxoniumIonIntensities, ref possibleMatches);
+
+                        //Find NO-Glycan 
+                        Find_NOGlycan(theScan, scanIndex, scoreCutOff, theScanBestPeptide, ind, possibleGlycanMassLow, oxoniumIonIntensities, ref possibleMatches);
+
+                    }
                 }
 
                 if (possibleMatches.Count != 0)

@@ -421,7 +421,9 @@ namespace EngineLayer.GlycoSearch
         //Tt is possible to Merge this function to LocalizdOGlycan in the future.
         //The modification problem is turned into a Directed Acyclic Graph. The Graph was build with matrix, and dynamic programming is used.
         //The Graph is designed to be able to run multiple cycles for different scans.
-        public static void LocalizeMod(LocalizationGraph localizationGraph, Ms2ScanWithSpecificMass theScan, Tolerance productTolerance, List<Product> products)
+        public static void LocalizeMod(LocalizationGraph localizationGraph, Ms2ScanWithSpecificMass theScan, Tolerance productTolerance, List<Product> products, 
+            Func<List<Product>,int, int, LocalizationGraph, List<double>> getLocalFragment, 
+            Func<List<Product>, int[], ModBox, List<double>> getUnLocalFragment)
         {
             var boxSatisfyBox = BoxSatisfyBox(localizationGraph.ChildModBoxes);
 
@@ -434,7 +436,7 @@ namespace EngineLayer.GlycoSearch
                         double cost = 0;
                         if (i != localizationGraph.ModPos.Length - 1)
                         {
-                            var fragments = GetLocalFragment(products, i, j, localizationGraph);
+                            var fragments = getLocalFragment(products, i, j, localizationGraph);
                             cost = CalculateCost(theScan, productTolerance, fragments);
                         }
 
@@ -481,7 +483,7 @@ namespace EngineLayer.GlycoSearch
 
             }
 
-            var unlocalFragments = GetUnlocalFragment(products, localizationGraph.ModPos, localizationGraph.ModBox);
+            var unlocalFragments = getUnLocalFragment(products, localizationGraph.ModPos, localizationGraph.ModBox);
             var noLocalScore = CalculateCost(theScan, productTolerance, unlocalFragments);
             localizationGraph.NoLocalCost += noLocalScore;
             localizationGraph.TotalScore = localizationGraph.array[localizationGraph.ModPos.Length - 1][localizationGraph.ChildModBoxes.Length - 1].CummulativeCost + noLocalScore;
@@ -533,98 +535,6 @@ namespace EngineLayer.GlycoSearch
             }
 
             return true;
-        }
-
-        //Find FragmentMass for the fragments that contain localization Information.
-        public static List<double> GetLocalFragment(List<Product> products, int modInd, int childBoxInd, LocalizationGraph localizationGraph)
-        {
-            List<double> newFragments = new List<double>();
-
-            var local_c_fragments = products.Where(p => p.ProductType == ProductType.c && p.AminoAcidPosition >= localizationGraph.ModPos[modInd] - 1 && p.AminoAcidPosition < localizationGraph.ModPos[modInd + 1] - 1).ToList();
-            foreach (var c in local_c_fragments)
-            {
-                var newMass = c.NeutralMass + localizationGraph.ChildModBoxes[childBoxInd].Mass;
-                newFragments.Add(newMass);
-            }
-
-            var local_z_fragments = products.Where(p => p.ProductType == ProductType.zDot && p.AminoAcidPosition >= localizationGraph.ModPos[modInd] && p.AminoAcidPosition < localizationGraph.ModPos[modInd + 1]).ToList();
-
-            foreach (var z in local_z_fragments)
-            {
-                var newMass = z.NeutralMass + (localizationGraph.ModBox.Mass - localizationGraph.ChildModBoxes[childBoxInd].Mass);
-                newFragments.Add(newMass);
-            }
-
-            var local_b_fragments = products.Where(p => p.ProductType == ProductType.b && p.AminoAcidPosition >= localizationGraph.ModPos[modInd] - 1 && p.AminoAcidPosition < localizationGraph.ModPos[modInd + 1] - 1).ToList();
-            foreach (var b in local_b_fragments)
-            {
-                var newMass = b.NeutralMass + localizationGraph.ChildModBoxes[childBoxInd].Mass;
-                newFragments.Add(newMass);
-            }
-
-            var local_y_fragments = products.Where(p => p.ProductType == ProductType.y && p.AminoAcidPosition >= localizationGraph.ModPos[modInd] && p.AminoAcidPosition < localizationGraph.ModPos[modInd + 1]).ToList();
-
-            foreach (var y in local_y_fragments)
-            {
-                var newMass = y.NeutralMass + (localizationGraph.ModBox.Mass - localizationGraph.ChildModBoxes[childBoxInd].Mass);
-                newFragments.Add(newMass);
-            }
-
-            return newFragments;
-        }
-
-        //Find FragmentMass for the fragments that doesn't contain localization Information. For example, "A|TAABBS|B", c1 and c7, z1 and z7, z8 ion don't contain localization information.
-        public static List<double> GetUnlocalFragment(List<Product> products, int[] modPoses, ModBox OGlycanBox)
-        {
-            var mass = OGlycanBox.Mass;
-
-            List<double> newFragments = new List<double>();
-
-            var c_fragments = products.Where(p => p.ProductType == ProductType.c && p.AminoAcidPosition < modPoses.First() - 1).Select(p => p.NeutralMass);
-            newFragments.AddRange(c_fragments);
-
-            var c_fragments_shift = products.Where(p => p.ProductType == ProductType.c && p.AminoAcidPosition >= modPoses.Last() - 1).Select(p => p.NeutralMass);
-
-            foreach (var c in c_fragments_shift)
-            {
-                var newMass = c + mass;
-                newFragments.Add(newMass);
-            }
-
-            var z_fragments = products.Where(p => p.ProductType == ProductType.zDot && p.AminoAcidPosition > modPoses.Last() - 1).Select(p => p.NeutralMass);
-            newFragments.AddRange(z_fragments);
-
-            var z_fragments_shift = products.Where(p => p.ProductType == ProductType.zDot && p.AminoAcidPosition < modPoses.First() - 1).Select(p => p.NeutralMass);
-
-            foreach (var z in z_fragments_shift)
-            {
-                var newMass = z + mass;
-                newFragments.Add(newMass);
-            }
-
-            var b_fragments = products.Where(p => p.ProductType == ProductType.b && p.AminoAcidPosition < modPoses.First() - 1).Select(p => p.NeutralMass);
-            newFragments.AddRange(b_fragments);
-
-            var b_fragments_shift = products.Where(p => p.ProductType == ProductType.b && p.AminoAcidPosition >= modPoses.Last() - 1).Select(p => p.NeutralMass);
-
-            foreach (var b in b_fragments_shift)
-            {
-                var newMass = b + mass;
-                newFragments.Add(newMass);
-            }
-
-            var y_fragments = products.Where(p => p.ProductType == ProductType.y && p.AminoAcidPosition > modPoses.Last() - 1).Select(p => p.NeutralMass);
-            newFragments.AddRange(y_fragments);
-
-            var y_fragments_shift = products.Where(p => p.ProductType == ProductType.y && p.AminoAcidPosition < modPoses.First() - 1).Select(p => p.NeutralMass);
-
-            foreach (var y in y_fragments_shift)
-            {
-                var newMass = y + mass;
-                newFragments.Add(newMass);
-            }
-
-            return newFragments;
         }
 
         #endregion

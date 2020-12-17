@@ -326,6 +326,98 @@ namespace EngineLayer.GlycoSearch
             return true;
         }
 
+        //Find FragmentMass for the fragments that contain localization Information.
+        public static List<double> GetLocalFragmentNGlycan(List<Product> products, int modInd, int childBoxInd, LocalizationGraph localizationGraph)
+        {
+            List<double> newFragments = new List<double>();
+
+            var local_c_fragments = products.Where(p => p.ProductType == ProductType.c && p.AminoAcidPosition >= localizationGraph.ModPos[modInd] - 1 && p.AminoAcidPosition < localizationGraph.ModPos[modInd + 1] - 1).ToList();
+            foreach (var c in local_c_fragments)
+            {
+                var newMass = c.NeutralMass + localizationGraph.ChildModBoxes[childBoxInd].Mass;
+                newFragments.Add(newMass);
+            }
+
+            var local_z_fragments = products.Where(p => p.ProductType == ProductType.zDot && p.AminoAcidPosition >= localizationGraph.ModPos[modInd] && p.AminoAcidPosition < localizationGraph.ModPos[modInd + 1]).ToList();
+
+            foreach (var z in local_z_fragments)
+            {
+                var newMass = z.NeutralMass + (localizationGraph.ModBox.Mass - localizationGraph.ChildModBoxes[childBoxInd].Mass);
+                newFragments.Add(newMass);
+            }
+
+            var local_b_fragments = products.Where(p => p.ProductType == ProductType.b && p.AminoAcidPosition >= localizationGraph.ModPos[modInd] - 1 && p.AminoAcidPosition < localizationGraph.ModPos[modInd + 1] - 1).ToList();
+            foreach (var b in local_b_fragments)
+            {
+                var newMass = b.NeutralMass + ((GlycanBox)localizationGraph.ChildModBoxes[childBoxInd]).NGlycanCount;
+                newFragments.Add(newMass);
+            }
+
+            var local_y_fragments = products.Where(p => p.ProductType == ProductType.y && p.AminoAcidPosition >= localizationGraph.ModPos[modInd] && p.AminoAcidPosition < localizationGraph.ModPos[modInd + 1]).ToList();
+
+            foreach (var y in local_y_fragments)
+            {
+                var newMass = y.NeutralMass + (localizationGraph.ModBox.Mass - localizationGraph.ChildModBoxes[childBoxInd].Mass);
+                newFragments.Add(newMass);
+            }
+
+            return newFragments;
+        }
+
+        //Find FragmentMass for the fragments that doesn't contain localization Information. For example, "A|TAABBS|B", c1 and c7, z1 and z7, z8 ion don't contain localization information.
+        public static List<double> GetUnlocalFragmentNGlycan(List<Product> products, int[] modPoses, ModBox modBox)
+        {
+            var mass = modBox.Mass;
+
+            List<double> newFragments = new List<double>();
+
+            var c_fragments = products.Where(p => p.ProductType == ProductType.c && p.AminoAcidPosition < modPoses.First() - 1).Select(p => p.NeutralMass);
+            newFragments.AddRange(c_fragments);
+
+            var c_fragments_shift = products.Where(p => p.ProductType == ProductType.c && p.AminoAcidPosition >= modPoses.Last() - 1).Select(p => p.NeutralMass);
+
+            foreach (var c in c_fragments_shift)
+            {
+                var newMass = c + mass;
+                newFragments.Add(newMass);
+            }
+
+            var z_fragments = products.Where(p => p.ProductType == ProductType.zDot && p.AminoAcidPosition > modPoses.Last() - 1).Select(p => p.NeutralMass);
+            newFragments.AddRange(z_fragments);
+
+            var z_fragments_shift = products.Where(p => p.ProductType == ProductType.zDot && p.AminoAcidPosition < modPoses.First() - 1).Select(p => p.NeutralMass);
+
+            foreach (var z in z_fragments_shift)
+            {
+                var newMass = z + mass;
+                newFragments.Add(newMass);
+            }
+
+            var b_fragments = products.Where(p => p.ProductType == ProductType.b && p.AminoAcidPosition < modPoses.First() - 1).Select(p => p.NeutralMass);
+            newFragments.AddRange(b_fragments);
+
+            var b_fragments_shift = products.Where(p => p.ProductType == ProductType.b && p.AminoAcidPosition >= modPoses.Last() - 1).Select(p => p.NeutralMass);
+            double nlocalMass = Glycan.GetNGlycanLocalMass(((GlycanBox)modBox).NGlycanCount);
+            foreach (var b in b_fragments_shift)
+            {
+                var newMass = b + nlocalMass;
+                newFragments.Add(newMass);
+            }
+
+            var y_fragments = products.Where(p => p.ProductType == ProductType.y && p.AminoAcidPosition > modPoses.Last() - 1).Select(p => p.NeutralMass);
+            newFragments.AddRange(y_fragments);
+
+            var y_fragments_shift = products.Where(p => p.ProductType == ProductType.y && p.AminoAcidPosition < modPoses.First() - 1).Select(p => p.NeutralMass);
+
+            foreach (var y in y_fragments_shift)
+            {
+                var newMass = y + nlocalMass;
+                newFragments.Add(newMass);
+            }
+
+            return newFragments;
+        }
+
         #endregion
 
         #region O-Glyco related functions
@@ -420,46 +512,6 @@ namespace EngineLayer.GlycoSearch
                 peptide.OneBasedEndResidueInProtein, peptide.CleavageSpecificityForFdrCategory, peptide.PeptideDescription, peptide.MissedCleavages, testMods, peptide.NumFixedMods);
 
             return testPeptide;
-        }
-
-        //The function here is to calculate permutation localization which could be used to compare with Graph-Localization.
-        public static List<int[]> GetPermutations(List<int> allModPos, int[] glycanBoxId)
-        {
-            var length = glycanBoxId.Length;
-            var indexes = Enumerable.Range(0, length).ToArray();
-            int[] orderGlycan = new int[length];
-
-            List<int[]> permutateModPositions = new List<int[]>();
-
-            var combinations = Glycan.GetKCombs(allModPos, length);
-        
-            foreach (var com in combinations)
-            {
-                var permutation = Glycan.GetPermutations(com, length);
-
-                HashSet<string> keys = new HashSet<string>();
-
-                foreach (var per in permutation)
-                {
-                    Array.Sort(indexes);
-
-                    var orderedPer = per.ToArray();
-                    Array.Sort(orderedPer, indexes);
-                                                         
-                    for (int i = 0; i < length; i++)
-                    {
-                        orderGlycan[i] = glycanBoxId[indexes[i]];
-                    }
-                    var key = string.Join(",", orderGlycan.Select(p => p.ToString()));
-                    if (!keys.Contains(key))
-                    {
-                        keys.Add(key);
-                        permutateModPositions.Add(per.ToArray());
-                    }
-                }
-            }
-
-            return permutateModPositions;
         }
 
         //The purpose of the funtion is to generate hash fragment ions without generate the PeptideWithMod. keyValuePair key:GlycanBoxId, Value:mod sites
@@ -577,6 +629,50 @@ namespace EngineLayer.GlycoSearch
             //Ratio of 138.055 to 144.0655 can seperate O/N glycan.
 
             return true;
+        }
+
+        #endregion
+
+        #region O-Glyco related functions
+
+        //The function here is to calculate permutation localization which could be used to compare with Graph-Localization.
+        public static List<int[]> GetPermutations(List<int> allModPos, int[] glycanBoxId)
+        {
+            var length = glycanBoxId.Length;
+            var indexes = Enumerable.Range(0, length).ToArray();
+            int[] orderGlycan = new int[length];
+
+            List<int[]> permutateModPositions = new List<int[]>();
+
+            var combinations = Glycan.GetKCombs(allModPos, length);
+
+            foreach (var com in combinations)
+            {
+                var permutation = Glycan.GetPermutations(com, length);
+
+                HashSet<string> keys = new HashSet<string>();
+
+                foreach (var per in permutation)
+                {
+                    Array.Sort(indexes);
+
+                    var orderedPer = per.ToArray();
+                    Array.Sort(orderedPer, indexes);
+
+                    for (int i = 0; i < length; i++)
+                    {
+                        orderGlycan[i] = glycanBoxId[indexes[i]];
+                    }
+                    var key = string.Join(",", orderGlycan.Select(p => p.ToString()));
+                    if (!keys.Contains(key))
+                    {
+                        keys.Add(key);
+                        permutateModPositions.Add(per.ToArray());
+                    }
+                }
+            }
+
+            return permutateModPositions;
         }
 
         #endregion

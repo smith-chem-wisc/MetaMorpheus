@@ -103,8 +103,10 @@ namespace Test
             //Run GlycoSearchEngine
             List<GlycoSpectralMatch>[] possiblePsms = new List<GlycoSpectralMatch>[listOfMs2Scans.Length];
             new GlycoSearchEngine(possiblePsms, listOfMs2Scans, indexResults.PeptideIndex, indexResults.FragmentIndex, null, 0, 
-                commonParameters, null, _glycoSearchParameters.OGlycanDatabasefile, _glycoSearchParameters.NGlycanDatabasefile, _glycoSearchParameters.GlycoSearchType, _glycoSearchParameters.GlycoSearchTopNum,
-                        _glycoSearchParameters.MaximumOGlycanAllowed, _glycoSearchParameters.OxoniumIonFilt, _glycoSearchParameters.IndexingChildScan, new List<string> { }).Run();
+                commonParameters, null, _glycoSearchParameters.OGlycanDatabasefile, _glycoSearchParameters.NGlycanDatabasefile, 
+                _glycoSearchParameters.GlycoSearchType, _glycoSearchParameters.GlycoSearchTopNum,
+                _glycoSearchParameters.MaximumOGlycanAllowed, _glycoSearchParameters.MaximumNGlycanAllowed, 
+                _glycoSearchParameters.OxoniumIonFilt, _glycoSearchParameters.IndexingChildScan, new List<string> { }).Run();
 
             var newPsms = possiblePsms.Where(p => p != null).Select(p => p.First()).ToList();
 

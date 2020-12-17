@@ -28,41 +28,30 @@ namespace EngineLayer
 
         public static Glycan[] Global_NOGlycans { get; set; }
 
-        public static Modification[] AllModifications;
+        public static Modification[] Global_NOGlycanMods;
 
         public static GlycanBox[] AllModBoxes;
 
         //
-        public GlycanBox(int[] ids, Glycan[] glycans) : base(ids)
+        public GlycanBox(int[] ids, Glycan[] glycans, Modification[] modifications) : base(ids)
         {
             byte[] kind = new byte[Glycan.SugarLength];
-            foreach (var id in ModIds)
+            foreach (var id in ids)
             {
                 for (int i = 0; i < kind.Length; i++)
                 {
                     kind[i] += glycans[id].Kind[i];
                 }
-            }
-            Kind = kind;
-            Mass = (double)Glycan.GetMass(Kind) / 1E5;
 
-        }
-
-        public GlycanBox(int[] ids, Glycan[] glycans, int glycoFlag) : base(ids)
-        {
-            byte[] kind = new byte[Glycan.SugarLength];
-            foreach (var id in ModIds)
-            {
-                for (int i = 0; i < kind.Length; i++)
+                if (modifications[id].FeatureType == "Nxs/t")
                 {
-                    kind[i] += glycans[id].Kind[i];
+                    NGlycanCount++;
                 }
             }
             Kind = kind;
-
             Mass = (double)Glycan.GetMass(Kind) / 1E5;
 
-            GlycoFlag = glycoFlag;
+            
         }
 
         public GlycanBox[] ChildGlycanBoxes { get; set; }
@@ -76,8 +65,6 @@ namespace EngineLayer
         }
 
         public byte[] Kind { get; private set; }
-
-        public int GlycoFlag { get; set; }
 
         public int OGlycanCount { get; set; }
 
@@ -112,7 +99,7 @@ namespace EngineLayer
             {
                 foreach (var idCombine in Glycan.GetKCombsWithRept(Enumerable.Range(0, glycans.Length), i))
                 {
-                    GlycanBox glycanBox = new GlycanBox(idCombine.ToArray(), glycans);
+                    GlycanBox glycanBox = new GlycanBox(idCombine.ToArray(), glycans, modifications);
                     SetMotifNeeded(glycanBox, modifications);
                     glycanBox.ChildGlycanBoxes = BuildChildGlycanBoxes(glycanBox.ModIds, glycans, modifications).ToArray();
 
@@ -137,7 +124,7 @@ namespace EngineLayer
         //In LocalizationGraph matrix, for each AdjNode, it represent a ChildOGlycanBox here at certain glycosite.
         public static IEnumerable<GlycanBox> BuildChildGlycanBoxes(int[] glycanIds, Glycan[] glycans, Modification[] modifications)
         {
-            yield return new GlycanBox(new int[0], glycans);
+            yield return new GlycanBox(new int[0], glycans, modifications);
             HashSet<string> seen = new HashSet<string>();
             for (int i = 1; i <= glycanIds.Length; i++)
             {
@@ -153,7 +140,7 @@ namespace EngineLayer
                     {
                         seen.Add(string.Join(",", ids.Select(p => p.ToString())));
 
-                        GlycanBox glycanBox = new GlycanBox(ids.ToArray(), glycans);
+                        GlycanBox glycanBox = new GlycanBox(ids.ToArray(), glycans, modifications);
                         SetMotifNeeded(glycanBox, modifications);
                         yield return glycanBox;
                     }
@@ -172,13 +159,13 @@ namespace EngineLayer
 
         }
 
-        public static IEnumerable<GlycanBox> Build_NOGlycanBoxes(Glycan[] glycans, int OGlycoMaxNum, int NGlycoMaxNum, int GlobalOGlycanNumber, int GlobalNGlycoNumber)
+        public static IEnumerable<GlycanBox> Build_NOGlycanBoxes(Glycan[] glycans, Modification[] modifications, int OGlycoMaxNum, int NGlycoMaxNum, int GlobalOGlycanNumber, int GlobalNGlycoNumber)
         {
             for (int i = 1; i <= OGlycoMaxNum; i++)
             {
                 foreach (var idCombine in Glycan.GetKCombsWithRept(Enumerable.Range(0, GlobalOGlycanNumber), i))
                 {
-                    GlycanBox o_modBox = new GlycanBox(idCombine.ToArray(), glycans, 1);
+                    GlycanBox o_modBox = new GlycanBox(idCombine.ToArray(), glycans, modifications);
 
                     yield return o_modBox;
 
@@ -186,13 +173,13 @@ namespace EngineLayer
                     {
                         foreach (var jdCombine in Glycan.GetKCombsWithRept(Enumerable.Range(GlobalOGlycanNumber, GlobalNGlycoNumber), j))
                         {
-                            GlycanBox n_modBox = new GlycanBox(jdCombine.ToArray(), glycans, 2);
+                            GlycanBox n_modBox = new GlycanBox(jdCombine.ToArray(), glycans, modifications);
 
                             yield return n_modBox;
 
                             var ijdCombine = idCombine.Concat(jdCombine);
 
-                            GlycanBox no_modBox = new GlycanBox(ijdCombine.ToArray(), glycans, 3);
+                            GlycanBox no_modBox = new GlycanBox(ijdCombine.ToArray(), glycans, modifications);
 
                             yield return no_modBox;
 
