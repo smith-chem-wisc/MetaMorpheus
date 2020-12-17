@@ -177,9 +177,9 @@ namespace Test
             var compare1 = SpectralLibrarySearchFunction.MatchedSpectraCompare(new List<MatchedFragmentIon> { a, b, c }, new List<MatchedFragmentIon> { f, g, h });
             var compare2 = SpectralLibrarySearchFunction.MatchedSpectraCompare(new List<MatchedFragmentIon> { a, b, c }, new List<MatchedFragmentIon> { a, b, c });
             var compare3 = SpectralLibrarySearchFunction.MatchedSpectraCompare(new List<MatchedFragmentIon> { a, b, h }, new List<MatchedFragmentIon> { f, e, g });
-            Assert.That(Math.Abs(compare1 - 0.6667) < 0.001);
+            Assert.That(Math.Abs(compare1-0.6667)<0.001);
             Assert.That(Math.Abs(compare2 - 1) < 0.001);
-            Assert.That(Math.Abs(compare3 - 0.4714) < 0.001);
+            Assert.That(Math.Abs(compare3-0.5774)<0.001);
 
             //test averageTwoSpectraFunction by Yuling
             Product b1 = new Product(ProductType.b, FragmentationTerminus.Both, 0, 1, 0, 0);
@@ -201,15 +201,15 @@ namespace Test
             var t = new MatchedFragmentIon(ref b3, 2, 4, 2);
 
             // all same charge
-            var ave1 = SpectralLibrarySearchFunction.AverageTwoSpectra(new List<MatchedFragmentIon> { o, p, q }, new List<MatchedFragmentIon> { o, p, q });
+            var ave1 = SpectralLibrarySearchFunction.AverageTwoSpectra(new List<MatchedFragmentIon> { o, p, q }, new List<MatchedFragmentIon> { o, p, q },2);
             Assert.AreEqual(ave1.Count, 3);
             Assert.AreEqual(ave1[0], new MatchedFragmentIon(ref b1, 1, 0.5, 1));
 
             // with different charges
-            var ave2 = SpectralLibrarySearchFunction.AverageTwoSpectra(new List<MatchedFragmentIon> { o, p, q }, new List<MatchedFragmentIon> { r, s, t });
+            var ave2 = SpectralLibrarySearchFunction.AverageTwoSpectra(new List<MatchedFragmentIon> { o, p, q }, new List<MatchedFragmentIon> { r, s, t },3);
             Assert.AreEqual(ave2.Count, 5);
-            Assert.AreEqual(ave2[0].Intensity, 0.25);
-            Assert.That(Math.Abs(ave2[1].Intensity - 0.3667) < 0.01);
+            Assert.That(Math.Abs(ave2[0].Intensity-0.33333)< 0.001);
+            Assert.That(Math.Abs(ave2[1].Intensity - 0.35556) < 0.001);
 
         }
 

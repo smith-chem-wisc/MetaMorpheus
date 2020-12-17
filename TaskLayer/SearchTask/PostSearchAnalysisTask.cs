@@ -521,7 +521,8 @@ namespace TaskLayer
             var FilteredPsmList = Parameters.AllPsms
                 .Where(p => p.FdrInfo.QValue <= 0.1
                 && p.FdrInfo.QValueNotch <= CommonParameters.QValueOutputFilter).ToList();
-            //FilteredPsmList.RemoveAll(b => b.IsDecoy);
+            FilteredPsmList.RemoveAll(b => b.BestMatchingPeptides.First().Peptide.Protein.Accession.Contains("DECOY"));
+            FilteredPsmList.RemoveAll(b => b.IsDecoy);
             FilteredPsmList.RemoveAll(b => b.IsContaminant);
 
             //write spectral library by Yuling 11/14
@@ -544,17 +545,21 @@ namespace TaskLayer
                 double standPrecursurMz = x.Value[0].ScanPrecursorMonoisotopicPeakMz;
                 double standRt = x.Value[0].ScanRetentionTime;
                 int a = 0;
+                int PsmsNum = 1;
                 while (a < x.Value.Count - 1)
                 {
                     //Console.WriteLine(x.Key + "   " + this.matchedSpectraCompare(standspctra, x.Value[a + 1].MatchedFragmentIons));
                     var spectrumTocompare = x.Value[a + 1].MatchedFragmentIons;
 
                     var compareScore = SpectralLibrarySearchFunction.MatchedSpectraCompare(standspctra, spectrumTocompare);
+                    var testScore = SpectralLibrarySearchFunction.CalculatePsmsNormalizedSpectralAngle(standspctra, spectrumTocompare);
                     if (compareScore > 0.90)
                     {
-                        standspctra = SpectralLibrarySearchFunction.AverageTwoSpectra(standspctra, spectrumTocompare);
-                        standPrecursurMz = (standPrecursurMz + x.Value[a + 1].ScanPrecursorMonoisotopicPeakMz) / 2;
-                        standRt = (standRt + x.Value[a + 1].ScanRetentionTime) / 2;
+                        PsmsNum++;
+                        standspctra = SpectralLibrarySearchFunction.AverageTwoSpectra(standspctra, spectrumTocompare, PsmsNum);
+
+                        standPrecursurMz = standPrecursurMz * (1 - (1.0 / PsmsNum)) + x.Value[a + 1].ScanPrecursorMonoisotopicPeakMz / PsmsNum;
+                        standRt = standRt * (1 - (1.0 / PsmsNum)) + x.Value[a + 1].ScanRetentionTime / PsmsNum;
                     }
                     a++;
                 }
@@ -564,6 +569,21 @@ namespace TaskLayer
             }
 
             //WriteSpectralLibrary(spectrumLibrary, Parameters.OutputFolder);
+
+            //fortesting
+            var allspectra = new List<LibrarySpectrum>();
+            foreach (var x in PsmsGroupByPeptideAndCharge)
+            {
+                if(x.Value.Count>1)
+                {
+                    foreach(var each in x.Value)
+                    {
+                        allspectra.Add(new LibrarySpectrum(each.FullSequence, each.ScanPrecursorMonoisotopicPeakMz, each.ScanPrecursorCharge, each.MatchedFragmentIons, each.ScanRetentionTime));
+                    }
+                }
+                
+            }
+            WriteAllspectra(allspectra, Parameters.OutputFolder);
         }
         private void WritePsmResults()
         {

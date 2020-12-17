@@ -90,9 +90,11 @@ namespace EngineLayer.ClassicSearch
                                     continue;
                                 }
                                 // we need a function to get the original target sequence of a decoy peptide
+
                                 if (SpectralLibrary != null && !SpectralLibrary.DecoyTargetPairs.ContainsKey(decoy))
                                 {
-                                    SpectralLibrary.DecoyTargetPairs.Add(decoy, peptide);
+                                                                                                                                                                                                                                                                                                                                                                                                                              
+                                      SpectralLibrary.DecoyTargetPairs.Add(decoy, peptide);
                                 }
                               
                                 List<MatchedFragmentIon> matchedIons = MatchFragmentIons(scan.TheScan, peptideTheorProducts, CommonParameters);

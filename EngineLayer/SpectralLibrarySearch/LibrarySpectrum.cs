@@ -36,6 +36,32 @@ namespace EngineLayer
             RetentionTime = rt;
         }
 
+        //public override string ToString()
+        //{
+        //    StringBuilder spectrum = new StringBuilder();
+        //    spectrum.Append("Name: " + Name);
+        //    spectrum.Append("\nMW: " + PrecursorMz);
+        //    spectrum.Append("\nComment: ");
+        //    spectrum.Append("Parent=" + PrecursorMz);
+        //    spectrum.Append(" RT=" + RetentionTime);
+        //    spectrum.Append("\nNum peaks: " + MatchedFragmentIons.Count);
+
+        //    double maxIntensity = MatchedFragmentIons.Select(b => b.Intensity).Max();
+
+        //    foreach (MatchedFragmentIon matchedIon in MatchedFragmentIons)
+        //    {
+        //        double intensityFraction = matchedIon.Intensity / maxIntensity;
+
+        //        spectrum.Append("\n" + matchedIon.Mz + "\t" + intensityFraction + "\t" + "\"" +
+        //            matchedIon.NeutralTheoreticalProduct.ProductType.ToString() +
+        //            matchedIon.NeutralTheoreticalProduct.FragmentNumber.ToString() + "^" +
+        //            matchedIon.Charge + "/" + 0 + "ppm" + "\"");
+        //    }
+
+        //    return spectrum.ToString();
+        //}
+
+        //test
         public override string ToString()
         {
             StringBuilder spectrum = new StringBuilder();
@@ -47,10 +73,11 @@ namespace EngineLayer
             spectrum.Append("\nNum peaks: " + MatchedFragmentIons.Count);
 
             double maxIntensity = MatchedFragmentIons.Select(b => b.Intensity).Max();
+            double sumIntensity = MatchedFragmentIons.Select(b => b.Intensity).Sum();
 
             foreach (MatchedFragmentIon matchedIon in MatchedFragmentIons)
             {
-                double intensityFraction = matchedIon.Intensity / maxIntensity;
+                double intensityFraction = matchedIon.Intensity / sumIntensity;
 
                 spectrum.Append("\n" + matchedIon.Mz + "\t" + intensityFraction + "\t" + "\"" +
                     matchedIon.NeutralTheoreticalProduct.ProductType.ToString() +
