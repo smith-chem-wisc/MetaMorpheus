@@ -47,7 +47,8 @@ namespace Test
             var fsp = new List<(string fileName, CommonParameters fileSpecificParameters)>();
             fsp.Add(("", CommonParameters));
             PeptideSpectralMatch[] allPsmsArray = new PeptideSpectralMatch[listOfSortedms2Scans.Length];
-            new ClassicSearchEngine(allPsmsArray, listOfSortedms2Scans, variableModifications, fixedModifications, null, null, null, proteinList, searchModes, CommonParameters, fsp, new List<string>()).Run();
+            new ClassicSearchEngine(allPsmsArray, listOfSortedms2Scans, variableModifications, fixedModifications, null, null, null, 
+                proteinList, searchModes, CommonParameters, fsp, null, new List<string>()).Run();
 
             CommonParameters CommonParameters2 = new CommonParameters(
                 digestionParams: new DigestionParams(protease: protease.Name, maxMissedCleavages: 0, minPeptideLength: 1),
@@ -56,7 +57,8 @@ namespace Test
             var fsp2 = new List<(string fileName, CommonParameters fileSpecificParameters)>();
             fsp2.Add(("", CommonParameters2));
             PeptideSpectralMatch[] allPsmsArray2 = new PeptideSpectralMatch[listOfSortedms2Scans.Length];
-            new ClassicSearchEngine(allPsmsArray2, listOfSortedms2Scans, variableModifications, fixedModifications, null, null, null, proteinList, searchModes, CommonParameters2, fsp2, new List<string>()).Run();
+            new ClassicSearchEngine(allPsmsArray2, listOfSortedms2Scans, variableModifications, fixedModifications, null, null, null, 
+                proteinList, searchModes, CommonParameters2, fsp2, null, new List<string>()).Run();
 
             double scoreT = allPsmsArray2[0].Score;
             double scoreF = allPsmsArray[0].Score;
