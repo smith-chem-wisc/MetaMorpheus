@@ -29,7 +29,7 @@ namespace TaskLayer
 
         public MyTaskResults Run(List<GlycoSpectralMatch> allPsms, GlycoSearchParameters glycoSearchParameters, MyTaskResults MyTaskResults)
         {
-            var allPsmsSingle = allPsms.Where(p => p.NGlycan == null && p.LocalizationGraphs == null).OrderByDescending(p => p.Score).ToList();
+            var allPsmsSingle = allPsms.Where(p =>  p.LocalizationGraphs == null).OrderByDescending(p => p.Score).ToList();
             SingleFDRAnalysis(allPsmsSingle, CommonParameters, new List<string> { Parameters.SearchTaskId });
             var allSinglePsmsFdr = allPsmsSingle.Where(p => !p.IsDecoy && p.FdrInfo.QValue <= 0.01).ToList();
 
@@ -39,20 +39,19 @@ namespace TaskLayer
 
             List<GlycoSpectralMatch> allgsms = new List<GlycoSpectralMatch>();
 
-            if (glycoSearchParameters.GlycoSearchType == GlycoSearchType.NGlycanSearch || glycoSearchParameters.GlycoSearchType == GlycoSearchType.N_O_GlycanSearch)
+            if (glycoSearchParameters.GlycoSearchType == GlycoSearchType.NGlycanSearch)
             {
-                var allPsmsNGly = allPsms.Where(p => p.NGlycan != null).OrderByDescending(p => p.Score).ToList();
+                var allPsmsNGly = allPsms.Where(p => p.LocalizationGraphs != null).OrderByDescending(p => p.Score).ToList();
                 SingleFDRAnalysis(allPsmsNGly, CommonParameters, new List<string> { Parameters.SearchTaskId });
                 var allNgsmsFdr = allPsmsNGly.Where(p => !p.IsDecoy && p.FdrInfo.QValue <= 0.01).ToList();
-                NGlycoCorrectLocalizationLevel(allNgsmsFdr);
+                //NGlycoLocalizationCalculation(allNgsmsFdr, CommonParameters);
                 allgsms.AddRange(allNgsmsFdr);
 
                 var writtenFileNGlyco = Path.Combine(Parameters.OutputFolder, "nglyco" + ".psmtsv");
                 WriteFile.WritePsmGlycoToTsv(allNgsmsFdr, writtenFileNGlyco, 3);
                 FinishedWritingFile(writtenFileNGlyco, new List<string> { Parameters.SearchTaskId });
             }
-
-            if (glycoSearchParameters.GlycoSearchType == GlycoSearchType.OGlycanSearch || glycoSearchParameters.GlycoSearchType == GlycoSearchType.N_O_GlycanSearch)
+            else if (glycoSearchParameters.GlycoSearchType == GlycoSearchType.OGlycanSearch)
             {
                 var allPsmsOGly = allPsms.Where(p => p.LocalizationGraphs != null).OrderByDescending(p => p.Score).ToList();
                 SingleFDRAnalysis(allPsmsOGly, CommonParameters, new List<string> { Parameters.SearchTaskId });
@@ -79,7 +78,7 @@ namespace TaskLayer
                     FinishedWritingFile(protein_oglyco_localization_file, new List<string> { Parameters.SearchTaskId });
                 }
             }
-            
+
             return MyTaskResults;
         }
 
@@ -190,6 +189,61 @@ namespace TaskLayer
             }
         }
 
+        //Glyco Localization
+        private static void NGlycoLocalizationCalculation(List<GlycoSpectralMatch> gsms, CommonParameters CommonParameters)
+        {
+            foreach (var glycoSpectralMatch in gsms)
+            {
+                if (glycoSpectralMatch.LocalizationGraphs == null)
+                {
+                    continue;
+                }
+
+                if (glycoSpectralMatch.LocalizationGraphs != null)
+                {
+                    List<Route> localizationCandidates = new List<Route>();
+
+                    for (int i = 0; i < glycoSpectralMatch.LocalizationGraphs.Count; i++)
+                    {
+                        var allPathWithMaxScore = LocalizationGraph.GetAllHighestScorePaths(glycoSpectralMatch.LocalizationGraphs[i].array, glycoSpectralMatch.LocalizationGraphs[i].ChildModBoxes);
+
+                        foreach (var path in allPathWithMaxScore)
+                        {
+                            var local = LocalizationGraph.GetLocalizedPath(glycoSpectralMatch.LocalizationGraphs[i], path);
+                            local.ModBoxId = glycoSpectralMatch.LocalizationGraphs[i].ModBoxId;
+                            localizationCandidates.Add(local);
+                        }
+                    }
+
+                    glycoSpectralMatch.Routes = localizationCandidates;
+
+                }
+
+                if (glycoSpectralMatch.Routes != null)
+                {
+                    LocalizationLevel localLevel;
+                    glycoSpectralMatch.LocalizedGlycan = GlycoSpectralMatch.GetLocalizedGlycan(glycoSpectralMatch.Routes, out localLevel);
+                    glycoSpectralMatch.LocalizationLevel = localLevel;
+
+                    //Localization PValue.
+                    if (localLevel == LocalizationLevel.Level1 || localLevel == LocalizationLevel.Level2)
+                    {
+                        List<Route> allRoutes = new List<Route>();
+                        foreach (var graph in glycoSpectralMatch.LocalizationGraphs)
+                        {
+                            allRoutes.AddRange(LocalizationGraph.GetAllPaths_CalP(graph, glycoSpectralMatch.ScanInfo_p, glycoSpectralMatch.Thero_n));
+                        }
+                        glycoSpectralMatch.SiteSpeciLocalProb = LocalizationGraph.CalSiteSpecificLocalizationProbability(allRoutes, glycoSpectralMatch.LocalizationGraphs.First().ModPos);
+                    }
+                }
+
+                CorrectLocalizationLevel(glycoSpectralMatch);
+
+            }
+        }
+
+
+        //Deprecated function. 
         //For N-Glycopeptide localzation Level.
         public static void NGlycoCorrectLocalizationLevel(List<GlycoSpectralMatch> ngsms)
         {

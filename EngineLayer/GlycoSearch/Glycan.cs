@@ -517,7 +517,8 @@ namespace EngineLayer
             Dictionary<DissociationType, List<double>> neutralLosses = new Dictionary<DissociationType, List<double>>();
             if (glycan.Ions!=null)
             {
-                List<double> lossMasses = glycan.Ions.Where(p => p.IonMass == CrossRingMass || p.IonMass == 20307937).Select(p => (double)p.LossIonMass / 1E5).OrderBy(p => p).ToList(); //570 is a cutoff for glycan ion size 2N1H, which will generate fragment ions. 
+                //TO THINK: Should we consider to keep CrossRingMass: p.IonMass == CrossRingMass
+                List<double> lossMasses = glycan.Ions.Where(p => p.IonMass == 20307937).Select(p => (double)p.LossIonMass / 1E5).OrderBy(p => p).ToList(); 
                 neutralLosses.Add(DissociationType.HCD, lossMasses);
                 neutralLosses.Add(DissociationType.CID, lossMasses);
                 neutralLosses.Add(DissociationType.EThcD, lossMasses);

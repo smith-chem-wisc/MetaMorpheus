@@ -115,13 +115,11 @@ namespace Test
 
 
             Assert.That(newPsms[0].R138to144 < 1.0);
-            var kind_ngly = GlycoSpectralMatch.GetKind(newPsms[0]);
-            Assert.That(Glycan.GetKindString(kind_ngly) == "H9N2");
+            Assert.That(Glycan.GetKindString(newPsms[0].FirstGlycanBox.Kind) == "H9N2");
 
 
             Assert.That(newPsms[1].NGlycanMotifExist == false);
-            var kind_ogly = GlycoSpectralMatch.GetKind(newPsms[1]);
-            Assert.That(Glycan.GetKindString(kind_ogly) == "H2N3");
+            Assert.That(Glycan.GetKindString(newPsms[1].FirstGlycanBox.Kind) == "H2N3");
             var output = newPsms[1].ToString();
             Assert.That(output.Contains("Leukosialin"));
 

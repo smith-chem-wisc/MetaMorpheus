@@ -24,22 +24,30 @@ namespace Test
     [TestFixture]
     public class XLTestNGlyco
     {
-        private static GlycanBox[] NGlycanBoxes { get; set; }
+        //private static GlycanBox[] NGlycanBoxes { get; set; }
+
+        //[OneTimeSetUp]
+        //public static void Setup()
+        //{
+        //    GlycanBox.Global_NGlycans = GlycanDatabase.LoadGlycan(GlobalVariables.NGlycanLocations.Where(p => p.Contains("NGlycan182.gdb")).First(), true, true).ToArray();
+        //    GlycanBox.Global_NGlycanModifications = GlycanBox.BuildGlobal_NGlycanModifications(GlycanBox.Global_NGlycans).ToArray();
+        //    NGlycanBoxes = GlycanBox.BuildGlycanBoxes(1, GlycanBox.Global_NGlycans, GlycanBox.Global_NGlycanModifications).OrderBy(p => p.Mass).ToArray();
+        //}
+        private static TestDataFile myMsDataFile { get; set; }
 
         [OneTimeSetUp]
         public static void Setup()
         {
-            GlycanBox.Global_NGlycans = GlycanDatabase.LoadGlycan(GlobalVariables.NGlycanLocations.Where(p => p.Contains("NGlycan182.gdb")).First(), true, true).ToArray();
-            GlycanBox.Global_NGlycanModifications = GlycanBox.BuildGlobal_NGlycanModifications(GlycanBox.Global_NGlycans).ToArray();
-            NGlycanBoxes = GlycanBox.BuildGlycanBoxes(1, GlycanBox.Global_NGlycans, GlycanBox.Global_NGlycanModifications).OrderBy(p => p.Mass).ToArray();
+            myMsDataFile = new TestDataFile();
         }
+
 
         [Test]
         public static void GlyTest_ModificationSites()
         {
             PeptideWithSetModifications pep = new PeptideWithSetModifications("ELNPTPNVEVNVECR", null); 
             string[] motifs = new string[] { "Nxs", "Nxt"};
-            var sites = GlycoSpectralMatch.GetPossibleModSites(pep, motifs);
+            var sites = GlycoPeptides.GetPossibleModSites(pep, motifs);
             Assert.That(sites.Count() == 1 && sites[0] == 4);
 
             ModificationMotif.TryGetMotif("C", out ModificationMotif motif1);
@@ -47,12 +55,12 @@ namespace Test
             ModificationMotif.TryGetMotif("N", out ModificationMotif motif2);
             Modification mod2 = new Modification(_originalId: "Test of N", _modificationType: "Common Fixed", _target: motif2, _locationRestriction: "Anywhere.");
             var testN = new PeptideWithSetModifications("C[Common Fixed:Carbamidomethyl of C]N[Common Fixed:Test of N]SSDQPKL[Common Fixed:Carbamidomethyl of C]NLSGIETP", new Dictionary<string, Modification> { { "Carbamidomethyl of C", mod1 }, { "Test of N", mod2 } });
-            var testSites = GlycoSpectralMatch.GetPossibleModSites(testN, motifs);
+            var testSites = GlycoPeptides.GetPossibleModSites(testN, motifs);
             Assert.That(testSites.Count() == 1 && testSites[0] == 11);
 
 
             var testC = new PeptideWithSetModifications("TELAAYLSC[Common Fixed:Carbamidomethyl of C]NATK", new Dictionary<string, Modification> { { "Carbamidomethyl of C", mod1 }});
-            var testCSites = GlycoSpectralMatch.GetPossibleModSites(testC, motifs);
+            var testCSites = GlycoPeptides.GetPossibleModSites(testC, motifs);
             Assert.That(testCSites.Count() == 1 && testSites[0] == 11);
         }
 
@@ -64,9 +72,9 @@ namespace Test
             var aPeptideWithSetModifications = pep.Digest(digestionParams, new List<Modification>(), new List<Modification>());
             var peptide = aPeptideWithSetModifications.Last();
             string[] motifs = new string[] { "Nxs", "Nxt" };
-            var sites = GlycoSpectralMatch.GetPossibleModSites(peptide, motifs);
+            var sites = GlycoPeptides.GetPossibleModSites(peptide, motifs);
             Glycan glycan = Glycan.Struct2Glycan("(N(F)(N(H(H(N))(H(N)))))", 0);
-
+            var glycanMod = Glycan.NGlycanToModification(glycan);
             
             //using (StreamWriter output = new StreamWriter(Path.Combine(TestContext.CurrentContext.TestDirectory, "GlycanFragmentions.txt")))
             //{
@@ -87,16 +95,16 @@ namespace Test
             var listOfSortedms2Scans = MetaMorpheusTask.GetMs2Scans(msDataFile, filePath, commonParameters).ToArray();
 
             //var glycanMod = Glycan.NGlycanToModification(glycan);
-            var glycopep = GlycoPeptides.GenerateNGlycopeptide(sites[0], peptide, glycan);
-            List<Product> fragmentIons = GlycoPeptides.NGlyGetTheoreticalFragments(DissociationType.HCD, peptide, glycopep, glycan);
+            var glycopep = GlycoPeptides.GenerateNGlycopeptide(sites.ToArray(), peptide, new Modification[]{ glycanMod });
+            List<Product> fragmentIons = GlycoPeptides.NGlyGetTheoreticalFragments(DissociationType.HCD, peptide, glycopep, sites.ToArray(), new Glycan[]{ glycan });
 
-            List<Product> etdFragmentIons = GlycoPeptides.NGlyGetTheoreticalFragments(DissociationType.ETD, peptide, glycopep, glycan);
-            List<Product> ethcdFragmentIons = GlycoPeptides.NGlyGetTheoreticalFragments(DissociationType.EThcD, peptide, glycopep, glycan);
-            Assert.That(fragmentIons.Count == 75);
+            List<Product> etdFragmentIons = GlycoPeptides.NGlyGetTheoreticalFragments(DissociationType.ETD, peptide, glycopep, sites.ToArray(), new Glycan[] { glycan });
+            List<Product> ethcdFragmentIons = GlycoPeptides.NGlyGetTheoreticalFragments(DissociationType.EThcD, peptide, glycopep, sites.ToArray(), new Glycan[] { glycan });
+            Assert.That(fragmentIons.Count == 63);
             Assert.That(etdFragmentIons.Count == 36);
-            Assert.That(ethcdFragmentIons.Count == 99);
+            Assert.That(ethcdFragmentIons.Count == 87);
 
-            var glycanYIons0 = GlycoPeptides.GetGlycanYIons(aPeptideWithSetModifications.Last(), glycan);
+            var glycanYIons0 = GlycoPeptides.GetGlycanYIons(aPeptideWithSetModifications.Last(), new Glycan[] { glycan });
             Assert.That(glycanYIons0.Count == 17);
             var matchedGlycanYIons = MetaMorpheusEngine.MatchFragmentIons(listOfSortedms2Scans[0], glycanYIons0, commonParameters);
             Assert.AreEqual(matchedGlycanYIons.Count, 14);
@@ -143,7 +151,7 @@ namespace Test
             var aPeptideWithSetModifications = pep.Digest(digestionParams, fixedModifications, new List<Modification>());
 
             string[] motifs = new string[] { "Nxs", "Nxt" };
-            var sites = GlycoSpectralMatch.GetPossibleModSites(aPeptideWithSetModifications.Last(), motifs);
+            var sites = GlycoPeptides.GetPossibleModSites(aPeptideWithSetModifications.Last(), motifs);
             Glycan glycan = Glycan.Struct2Glycan("(N(N(H(H(H(H)))(H(H(H(H(H))))))))", 0);
 
             Tolerance tolerance = new PpmTolerance(20);
@@ -158,7 +166,7 @@ namespace Test
             Assert.AreEqual(precusorMatched, 0);
 
             var glycanMod = Glycan.NGlycanToModification(glycan);
-            var glycopep = GlycoPeptides.GenerateNGlycopeptide(sites[0], aPeptideWithSetModifications.Last(), glycan);
+            var glycopep = GlycoPeptides.GenerateNGlycopeptide(sites.ToArray(), aPeptideWithSetModifications.Last(), new Modification[] { glycanMod });
             List<Product> fragmentIons = new List<Product>();
             glycopep.Fragment(DissociationType.EThcD, FragmentationTerminus.Both, fragmentIons);
                
@@ -220,7 +228,6 @@ namespace Test
             Assert.AreEqual(tid, 9);          
         }         
 
-
         [Test]
         public static void GlyTest_WeightedRegression()
         {
@@ -233,6 +240,113 @@ namespace Test
 
             Vector<double> yv = Vector<double>.Build.Dense(y.Count(), (i) => y[i]);
             var pv = WeightedRegression.Weighted(xm, yv, wm);
+        }
+
+        [Test]
+        public static void GlyTest_GraphLocal()
+        {
+            Glycan glycan = Glycan.Struct2Glycan("(N(F)(N(H(H(N))(H(N)))))", 0);
+            Glycan glycan1 = Glycan.Struct2Glycan("(N(F)(N(H(H)(H))))", 1);
+            Glycan[] glycans = new Glycan[2] { glycan, glycan1 };
+            Modification[] modifications = new Modification[2] { Glycan.NGlycanToModification(glycan), Glycan.NGlycanToModification(glycan1) };
+
+            Protein pep = new Protein("TKNSTPREEQYNSTYR", "accession");
+            DigestionParams digestionParams = new DigestionParams(minPeptideLength: 7);
+            var aPeptideWithSetModifications = pep.Digest(digestionParams, new List<Modification>(), new List<Modification>());
+            var peptide = aPeptideWithSetModifications.Last();
+            string[] motifs = new string[] { "Nxs", "Nxt" };
+            var sites = GlycoPeptides.GetPossibleModSites(peptide, motifs);
+
+            CommonParameters commonParameters = new CommonParameters(deconvolutionMassTolerance: new PpmTolerance(20), trimMsMsPeaks: false);
+
+            //var glycanMod = Glycan.NGlycanToModification(glycan);
+            var glycopep = GlycoPeptides.GenerateNGlycopeptide(sites.ToArray(), peptide, modifications);
+            List<Product> fragmentIons = GlycoPeptides.NGlyGetTheoreticalFragments(DissociationType.HCD, peptide, glycopep, sites.ToArray(), new Glycan[] { glycan });
+            Assert.That(fragmentIons.Count == 81);
+
+            //TO DO: The neutroloss is not annotated well.
+            //var matchedFragmentIons = MetaMorpheusEngine.MatchFragmentIons(listOfSortedms2Scans[0], fragmentIons, commonParameters);
+            //Assert.That(matchedFragmentIons.Count == 24);
+
+            //Use Graph Localization method
+            int[] n_modPos = GlycoPeptides.GetPossibleModSites(peptide, new string[] { "Nxt", "Nxs" }).OrderBy(p => p).ToArray();
+
+            int[] modPos = new int[n_modPos.Length];
+            string[] modMotifs = new string[n_modPos.Length];
+            int ip = 0;
+            foreach (var n in n_modPos)
+            {
+                modPos[ip] = n;
+                modMotifs[ip] = "Nxs/t";
+                ip++;
+            }
+
+            Array.Sort(modPos, modMotifs);
+            int[] ids = new int[1] { 0 };
+            GlycanBox glycanBox = new GlycanBox(ids, modMotifs, glycans, modifications);
+            glycanBox.ChildGlycanBoxes = GlycanBox.BuildChildGlycanBoxes(glycanBox.ModIds, glycans, modifications).ToArray();
+            LocalizationGraph localizationGraph = new LocalizationGraph(modPos, modMotifs, glycanBox, glycanBox.ChildGlycanBoxes);
+            List<Product> hcdProducts = new List<Product>();
+            peptide.Fragment(DissociationType.HCD, FragmentationTerminus.Both, hcdProducts);
+            //LocalizationGraph.LocalizeMod(localizationGraph, listOfSortedms2Scans[0], commonParameters.ProductMassTolerance, hcdProducts, 
+            //    GlycoPeptides.GetLocalFragmentNGlycan, GlycoPeptides.GetUnlocalFragmentNGlycan);
+
+            
+        }
+
+        internal class TestDataFile : MsDataFile
+        {
+            //Create fake N-Glyco MS data. Including: Full Scan, HCD-pd-HCD (N-glycopeptide). 
+            public TestDataFile() : base(2, new SourceFile(null, null, null, null, null))
+            {
+                var mz = new double[] { };
+                var intensities = new double[] { };
+                var ScansHere = new List<MsDataScan>();
+
+                var mz1 = new double[] { 1030.4214, 1030.6719, 1030.9227, 1031.1735, 1031.4242, 1031.6741 };
+                var intensities1 = new double[] { 828013.6, 1617673.9, 2045691.8, 1464751.9, 825144.2, 599464.8 };
+                var MassSpectrum1 = new MzSpectrum(mz1, intensities1, false);
+                ScansHere.Add(new MsDataScan(MassSpectrum1, 1, 1, true, Polarity.Positive, 1,
+                    new MzLibUtil.MzRange(0, 10000), "ff", MZAnalyzerType.Unknown, 1000, 1, null, "scan=1"));
+
+                var MassSpectrum2 = new MzSpectrum(mz, intensities, false);
+                ScansHere.Add(new MsDataScan(MassSpectrum2, 2, 2, true, Polarity.Positive, 1.0,
+                    new MzLibUtil.MzRange(0, 10000), "f", MZAnalyzerType.Unknown, 112, 1.0, null, "scan=2", 1030.421508789063,
+                    4, 2045691.75, 1030.421508789063, 2, DissociationType.HCD, null, 1030.421508789063));
+
+                var MassSpectrum3 = new MzSpectrum(mz, intensities, false);
+                ScansHere.Add(new MsDataScan(MassSpectrum3, 3, 2, true, Polarity.Positive, 1.0,
+                    new MzLibUtil.MzRange(0, 10000), "f", MZAnalyzerType.Unknown, 103, 1.0, null, "scan=3", 1030.421508789063,
+                    4, 2045691.75, 1030.421508789063, 2, DissociationType.HCD, 2, 1030.421508789063));
+
+                Scans = ScansHere.ToArray();
+            }
+
+            public static string FilePath
+            {
+                get
+                {
+                    return "GlycoTestDataFile";
+                }
+            }
+
+            public static string Name
+            {
+                get
+                {
+                    return "GlycoTestDataFile";
+                }
+            }
+
+            public void ReplaceScanArrays(double[] mz, double[] intensities, int i)
+            {
+                MzSpectrum massSpectrum = new MzSpectrum(mz, intensities, false);
+                Scans[i] = new MsDataScan(massSpectrum, Scans[i].OneBasedScanNumber, Scans[i].MsnOrder, Scans[i].IsCentroid,
+                    Scans[i].Polarity, Scans[i].RetentionTime, Scans[i].ScanWindowRange, Scans[i].ScanFilter, Scans[i].MzAnalyzer,
+                    massSpectrum.SumOfAllY, Scans[i].InjectionTime, null, Scans[i].NativeId, Scans[i].SelectedIonMZ, Scans[i].SelectedIonChargeStateGuess,
+                    Scans[i].SelectedIonIntensity, Scans[i].IsolationMz, Scans[i].IsolationWidth, Scans[i].DissociationType, Scans[i].OneBasedPrecursorScanNumber,
+                    Scans[i].SelectedIonMonoisotopicGuessMz);
+            }
         }
     }
 }

@@ -35,25 +35,61 @@ namespace EngineLayer.GlycoSearch
         public double PredictedRT { get; set; }
 
         //Glyco properties
-
         public List<int> ModPos { get; set; }
         public LocalizationLevel LocalizationLevel { get; set; }
         public double PeptideScore { get; set; } //Scores from only mathced peptide fragments.
         public double GlycanScore { get; set; } //Scores from only matched Y ions. 
         public double DiagnosticIonScore { get; set; } //Since every glycopeptide generate DiagnosticIon, it is important to seperate the score. 
-        public static byte[] GetKind(GlycoSpectralMatch gsm)
+        public static GlycanBox GetFirstGraphGlycanBox(GlycoSpectralMatch gsm)
         {
-            if (gsm.NGlycan != null)
+
+            if (gsm.GlycanType == 0)
             {
-                return gsm.NGlycan.First().Kind;
+                return GlycanBox.OGlycanBoxes[gsm.LocalizationGraphs.First().ModBoxId];
+            }
+            else if (gsm.GlycanType == 1)
+            {
+                return GlycanBox.NGlycanBoxes[gsm.LocalizationGraphs.First().ModBoxId];
             }
             else
             {
-                return GlycanBox.OGlycanBoxes[gsm.LocalizationGraphs.First().ModBoxId].Kind;
+                return GlycanBox.AllModBoxes[gsm.LocalizationGraphs.First().ModBoxId];
+            }
+
+        }
+
+        public static Glycan[] GetFirstGraphGlycans(GlycoSpectralMatch gsm, GlycanBox glycanBox)
+        {
+            var glycans = new Glycan[glycanBox.ModCount];
+            if (gsm.GlycanType == 0)
+            {
+                for (int i = 0; i < glycanBox.ModCount; i++)
+                {
+                    glycans[i] = GlycanBox.GlobalOGlycans[glycanBox.ModIds[i]];
+                }
+                return glycans;
+            }
+            else if (gsm.GlycanType == 1)
+            {
+                for (int i = 0; i < glycanBox.ModCount; i++)
+                {
+                    glycans[i] = GlycanBox.Global_NGlycans[glycanBox.ModIds[i]];
+                }
+                return glycans;
+            }
+            else
+            {
+                for (int i = 0; i < glycanBox.ModCount; i++)
+                {
+                    glycans[i] = GlycanBox.Global_NOGlycans[glycanBox.ModIds[i]];
+                }
+                return glycans;
             }
         }
 
         //Glycan type indicator
+        public int GlycanType { get; set; } //GlycanType == 0, NGlycopeptide; GlycanType == 1, OGlycopeptide; GlycanType = 2, MixGlycopeptide.
+
         public bool NGlycanMotifExist { get; set; } //NGlycan Motif exist. 
 
         public double R138to144 { get; set; } //The intensity ratio of this 138 and 144 could be a signature for O-glycan or N-glycan.
@@ -67,8 +103,8 @@ namespace EngineLayer.GlycoSearch
         public int LongestconcatenatedYion { get; set; } //Currently Simplified with GlycanScore.
 
         //N-Glyco Info
-        public List<Glycan> NGlycan { get; set; }  //Identified NGlycan
-        public Dictionary<int, double> NGlycoSiteSpeciLocalProb { get; set; }
+        //public List<Glycan> NGlycan { get; set; }  //Identified NGlycan
+        //public Dictionary<int, double> NGlycoSiteSpeciLocalProb { get; set; }
 
         //O-Glyco Info
         public List<LocalizationGraph> LocalizationGraphs { get; set; }  //Graph-based Localization information.
@@ -83,70 +119,6 @@ namespace EngineLayer.GlycoSearch
         public List<Tuple<int, int, bool>> LocalizedGlycan { get; set; } //<mod site, glycanID, isLocalized> All seen glycans identified 
 
         #endregion
-
-        //Motif should be writen with required form
-        public static List<int> GetPossibleModSites(PeptideWithSetModifications peptide, string[] motifs)
-        {
-            List<int> possibleModSites = new List<int>();
-
-            List<Modification> modifications = new List<Modification>();
-
-            foreach (var mtf in motifs)
-            {
-                if (ModificationMotif.TryGetMotif(mtf, out ModificationMotif aMotif))
-                {
-                    Modification modWithMotif = new Modification(_target: aMotif, _locationRestriction: "Anywhere.");
-                    modifications.Add(modWithMotif);
-                }
-            }
-
-            foreach (var modWithMotif in modifications)
-            {
-                for (int r = 0; r < peptide.Length; r++)
-                {
-                    if (peptide.AllModsOneIsNterminus.Keys.Contains(r+2))
-                    {
-                        continue;
-                    }
-                    
-                    //FullSequence is used here to avoid duplicated modification on same sites?
-                    if (ModificationLocalization.ModFits(modWithMotif, peptide.BaseSequence, r + 1, peptide.Length, r + 1))
-                    {
-                        possibleModSites.Add(r + 2);
-                    }
-                }
-            }
-
-            return possibleModSites;
-        }
-
-        public static bool MotifExist(string baseSeq, string[] motifs)
-        {
-            List<Modification> modifications = new List<Modification>();
-
-            foreach (var mtf in motifs)
-            {
-                if (ModificationMotif.TryGetMotif(mtf, out ModificationMotif aMotif))
-                {
-                    Modification modWithMotif = new Modification(_target: aMotif, _locationRestriction: "Anywhere.");
-                    modifications.Add(modWithMotif);
-                }
-            }
-
-            foreach (var modWithMotif in modifications)
-            {
-                for (int r = 0; r < baseSeq.Length; r++)
-                {
-                    //Modification is not considered.                  
-                    if (ModificationLocalization.ModFits(modWithMotif, baseSeq, r + 1, baseSeq.Length, r + 1))
-                    {
-                        return true;
-                    }
-                }
-            }
-
-            return false;
-        }
 
         public static string GetTabSepHeaderGlyco(bool IsGlycopepitde, bool IsOGlycopeptide)
         {
@@ -198,18 +170,13 @@ namespace EngineLayer.GlycoSearch
                 sb.Append("Localized Glycans with Peptide Site Specific Probability" + '\t');
                 sb.Append("Localized Glycans with Protein Site Specific Probability" + '\t');
 
-                if (IsOGlycopeptide)
-                {
-                    sb.Append("All potential glycan localizations" + '\t');
-                    sb.Append("AllSiteSpecificLocalizationProbability" + '\t');
-                }
-                //else
-                //{
-                //    sb.Append("IsTargetGlycan" + '\t');
-                //}
+
+                sb.Append("All potential glycan localizations" + '\t');
+                sb.Append("AllSiteSpecificLocalizationProbability" + '\t');
+
 
                 //Glycan Type indicator
-                sb.Append("IsNGlycoPeptide" + '\t');
+                sb.Append("GlycanType" + '\t');
                 sb.Append("N-Glycan motif Check" + '\t');
                 sb.Append("R138/144" + '\t');
                 sb.Append("I_168" + '\t');
@@ -303,50 +270,9 @@ namespace EngineLayer.GlycoSearch
 
             sb.Append(FdrInfo!=null? FdrInfo.QValue.ToString() : "-1" );  sb.Append("\t");
 
-            sb.Append("0" + "\t");
+            sb.Append("0" + "\t"); //PEP
 
-            sb.Append("0" + "\t");
-
-
-            if (NGlycan != null)
-            {            
-                sb.Append(PeptideScore + "\t");
-
-                sb.Append(GlycanScore + "\t");
-
-                sb.Append(DiagnosticIonScore + "\t");
-
-                sb.Append("1" + "\t"); //For N-Glyco, the Plausible Number Of N-Glycan modified is only 1 for now. 
-
-                sb.Append(ModPos.Count() + "\t"); 
-
-                sb.Append((double)NGlycan.First().Mass / 1E5); sb.Append("\t");
-
-                sb.Append(Glycan.GetKindString(NGlycan.First().Kind)); sb.Append("\t");
-
-                if (NGlycan.First().Struc!=null)
-                {
-                    sb.Append(NGlycan.First().Struc); sb.Append("\t");
-                }
-                else
-                {
-                    sb.Append("\t");
-                }
-
-                sb.Append(LocalizationLevel); sb.Append("\t");
-
-                string peptideProb = "";
-                string proteinProb = "";
-                foreach (var pro in NGlycoSiteSpeciLocalProb)
-                {
-                    peptideProb += "[" + pro.Key + ","+ Glycan.GetKindString(NGlycan.First().Kind) + ',' + pro.Value.ToString("0.000") + "]";
-                    var protein_site = OneBasedStartResidueInProtein.HasValue ? OneBasedStartResidueInProtein.Value + pro.Key - 2 : -1;
-                    proteinProb += "[" + protein_site + "," + Glycan.GetKindString(NGlycan.First().Kind) + ',' + pro.Value.ToString("0.000") + "]";
-                }
-
-                sb.Append(peptideProb); sb.Append("\t");
-                sb.Append(proteinProb); sb.Append("\t");
-            }
+            sb.Append("0" + "\t");  //PEP_QValue
 
             if (LocalizationGraphs != null)
             {
@@ -354,9 +280,9 @@ namespace EngineLayer.GlycoSearch
 
                 sb.Append(GlycanScore + "\t");
 
-                sb.Append(DiagnosticIonScore + "\t");              
+                sb.Append(DiagnosticIonScore + "\t");
 
-                var glycanBox = GlycanBox.OGlycanBoxes[LocalizationGraphs.First().ModBoxId];
+                var glycanBox = GetFirstGraphGlycanBox(this);
 
                 sb.Append(glycanBox.ModCount + "\t");
 
@@ -365,13 +291,9 @@ namespace EngineLayer.GlycoSearch
                 sb.Append(glycanBox.Mass + "\t");
 
                 sb.Append(Glycan.GetKindString(glycanBox.Kind)); sb.Append("\t");
-             
+
                 //Get glycans
-                var glycans = new Glycan[glycanBox.ModCount];
-                for (int i = 0; i < glycanBox.ModCount; i++)
-                {
-                    glycans[i] = GlycanBox.GlobalOGlycans[glycanBox.ModIds[i]];
-                }
+                var glycans = GetFirstGraphGlycans(this, glycanBox);
 
                 if (glycans.First().Struc!=null)
                 {
@@ -404,10 +326,10 @@ namespace EngineLayer.GlycoSearch
             }
 
             //Output for Glycan type indicator
-            if (NGlycan != null || LocalizationGraphs != null)
+            if (LocalizationGraphs != null)
             {
-                sb.Append(NGlycan!=null); sb.Append("\t");
-                var NSiteExist = MotifExist(BaseSequence, new string[] { "Nxt", "Nxs" });
+                sb.Append(GlycanType); sb.Append("\t");
+                var NSiteExist = GlycoPeptides.MotifExist(BaseSequence, new string[] { "Nxt", "Nxs" });
                 sb.Append(NSiteExist); sb.Append("\t");
 
                 var R138vs144 = 1.0;
@@ -436,7 +358,7 @@ namespace EngineLayer.GlycoSearch
                 //This here should be LongestconcatenatedYion
                 sb.Append(GlycanScore.ToString()); sb.Append("\t");
             }
-            
+
             return sb.ToString();
         }
 
