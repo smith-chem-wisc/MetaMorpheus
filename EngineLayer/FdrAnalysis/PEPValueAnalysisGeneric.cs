@@ -15,7 +15,6 @@ using System.IO;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
-using static Microsoft.ML.DataOperationsCatalog;
 
 namespace EngineLayer
 {
@@ -40,8 +39,8 @@ namespace EngineLayer
             //Separate dictionaries are created for peptides with modifications because SSRcalc doesn't really do a good job predicting hyrophobicity
 
             //The first string in the dictionary is the filename
-            //The value of the dictionary is another dictionary that profiles the hydrophobicity behavior. 
-            //Each key is a retention time rounded to the nearest minute. 
+            //The value of the dictionary is another dictionary that profiles the hydrophobicity behavior.
+            //Each key is a retention time rounded to the nearest minute.
             //The value Tuple is the average and standard deviation, respectively, of the predicted hydrophobicities of the observed peptides eluting at that rounded retention time.
 
             if (trainingVariables.Contains("HydrophobicityZScore"))
@@ -57,7 +56,7 @@ namespace EngineLayer
             Dictionary<string, float> fileSpecificMedianFragmentMassErrors = GetFileSpecificMedianFragmentMassError(psms);
 
             MLContext mlContext = new MLContext();
-            //the number of groups used for cross-validation is hard-coded at four. Do not change this number without changes other areas of effected code. 
+            //the number of groups used for cross-validation is hard-coded at four. Do not change this number without changes other areas of effected code.
             const int numGroups = 4;
 
             List<int>[] psmGroupIndices = Get_PSM_Group_Indices(psms, numGroups);
@@ -78,7 +77,7 @@ namespace EngineLayer
 
             bool allSetsContainPositiveAndNegativeTrainingExamples = true;
             int groupNumber = 0;
-            while(allSetsContainPositiveAndNegativeTrainingExamples == true && groupNumber < numGroups)
+            while (allSetsContainPositiveAndNegativeTrainingExamples == true && groupNumber < numGroups)
             {
                 if (PSMDataGroups[groupNumber].Where(p => p.Label == true).Count() == 0 || PSMDataGroups[groupNumber].Where(p => p.Label == false).Count() == 0)
                 {
@@ -87,7 +86,7 @@ namespace EngineLayer
                 groupNumber++;
             }
 
-            if(allSetsContainPositiveAndNegativeTrainingExamples)
+            if (allSetsContainPositiveAndNegativeTrainingExamples)
             {
                 for (int groupIndexNumber = 0; groupIndexNumber < numGroups; groupIndexNumber++)
                 {
@@ -134,7 +133,6 @@ namespace EngineLayer
             List<double> negativePrecision = allMetrics.Select(m => m.NegativePrecision).ToList();
             List<double> negativeRecall = allMetrics.Select(m => m.NegativeRecall).ToList();
 
-
             // log-loss can stochastically take on a value of infinity.
             // correspondingly, log-loss reduction can be negative infinity.
             // when this happens for one or more of the metrics, it can lead to uninformative numbers.
@@ -174,7 +172,6 @@ namespace EngineLayer
             s.AppendLine("*       Count of Ambiguous Peptides Removed:  " + sumOfAllAmbiguousPeptidesResolved.ToString());
             s.AppendLine("************************************************************");
             return s.ToString();
-
         }
 
         public static int Compute_PSM_PEP(List<PeptideSpectralMatch> psms, List<int> psmIndices, MLContext mLContext, TransformerChain<BinaryPredictionTransformer<Microsoft.ML.Calibrators.CalibratedModelParametersBase<Microsoft.ML.Trainers.FastTree.FastTreeBinaryModelParameters, Microsoft.ML.Calibrators.PlattCalibrator>>> trainedModel, string searchType, List<(string fileName, CommonParameters fileSpecificParameters)> fileSpecificParameters, Dictionary<string, int> sequenceToPsmCount, Dictionary<string, float> fileSpecificMedianFragmentMassErrors, int chargeStateMode, string outputFolder)
@@ -189,7 +186,7 @@ namespace EngineLayer
             {
                 maxThreads = 1;
             }
-            
+
             Parallel.ForEach(Partitioner.Create(0, psmIndices.Count),
                 new ParallelOptions { MaxDegreeOfParallelism = maxThreads },
                 (range, loopState) =>
@@ -198,7 +195,7 @@ namespace EngineLayer
                     if (GlobalVariables.StopLoops) { return; }
 
                     ITransformer threadSpecificTrainedModel;
-                    if(maxThreads == 1)
+                    if (maxThreads == 1)
                     {
                         threadSpecificTrainedModel = trainedModel;
                     }
@@ -206,7 +203,7 @@ namespace EngineLayer
                     {
                         threadSpecificTrainedModel = mLContext.Model.Load(Path.Combine(outputFolder, "model.zip"), out DataViewSchema savedModelSchema);
                     }
-                   
+
                     // one prediction engine per thread, because the prediction engine is not thread-safe
                     var threadPredictionEngine = mLContext.Model.CreatePredictionEngine<PsmData, TruePositivePrediction>(threadSpecificTrainedModel);
 
@@ -266,21 +263,18 @@ namespace EngineLayer
 
             for (int i = 0; i < psms.Count; i++)
             {
-
-                    if (psms[i].IsDecoy)
-                    {
-                        decoyPsmIndexes.Add(i);
-                    }
-                    else
-                    {
-                        targetPsmIndexes.Add(i);
-                    }
-                
+                if (psms[i].IsDecoy)
+                {
+                    decoyPsmIndexes.Add(i);
+                }
+                else
+                {
+                    targetPsmIndexes.Add(i);
+                }
             }
-            
 
             int myIndex = 0;
-            if(decoyPsmIndexes.Count > 0)
+            if (decoyPsmIndexes.Count > 0)
             {
                 while (myIndex < decoyPsmIndexes.Count)
                 {
@@ -293,9 +287,9 @@ namespace EngineLayer
                     }
                 }
             }
-            
+
             myIndex = 0;
-            if(targetPsmIndexes.Count > 0)
+            if (targetPsmIndexes.Count > 0)
             {
                 while (myIndex < targetPsmIndexes.Count)
                 {
@@ -308,7 +302,7 @@ namespace EngineLayer
                     }
                 }
             }
-            
+
             return groupsOfIndicies;
         }
 
