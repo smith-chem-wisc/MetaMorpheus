@@ -15,7 +15,7 @@ namespace TaskLayer
             MixedGlycoAllowed = false;
             OxoniumIonFilt = true;
             DecoyType = DecoyType.Reverse;
-            GlycoSearchTopNum = 50;
+            GlycoSearchTopNum = 20;
             MaximumOGlycanAllowed = 4;
             MaximumNGlycanAllowed = 1;
             Indexing_by_ion = true;

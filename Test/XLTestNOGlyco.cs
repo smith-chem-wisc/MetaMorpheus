@@ -104,7 +104,7 @@ namespace Test
             List<GlycoSpectralMatch>[] possiblePsms = new List<GlycoSpectralMatch>[listOfMs2Scans.Length];
             new GlycoSearchEngine(possiblePsms, listOfMs2Scans, indexResults.PeptideIndex, indexResults.FragmentIndex, null, 0, 
                 commonParameters, null, _glycoSearchParameters.OGlycanDatabasefile, _glycoSearchParameters.NGlycanDatabasefile, 
-                _glycoSearchParameters.GlycoSearchType, _glycoSearchParameters.GlycoSearchTopNum,
+                _glycoSearchParameters.GlycoSearchType, _glycoSearchParameters.MixedGlycoAllowed, _glycoSearchParameters.GlycoSearchTopNum,
                 _glycoSearchParameters.MaximumOGlycanAllowed, _glycoSearchParameters.MaximumNGlycanAllowed, 
                 _glycoSearchParameters.OxoniumIonFilt, _glycoSearchParameters.IndexingChildScan, new List<string> { }).Run();
 
@@ -115,11 +115,11 @@ namespace Test
 
 
             Assert.That(newPsms[0].R138to144 < 1.0);
-            Assert.That(Glycan.GetKindString(newPsms[0].FirstGlycanBox.Kind) == "H9N2");
+            Assert.That(Glycan.GetKindString(GlycoSpectralMatch.GetFirstGraphGlycanBox(newPsms[0]).Kind) == "H9N2");
 
 
             Assert.That(newPsms[1].NGlycanMotifExist == false);
-            Assert.That(Glycan.GetKindString(newPsms[1].FirstGlycanBox.Kind) == "H2N3");
+            Assert.That(Glycan.GetKindString(GlycoSpectralMatch.GetFirstGraphGlycanBox(newPsms[1]).Kind) == "H2N3");
             var output = newPsms[1].ToString();
             Assert.That(output.Contains("Leukosialin"));
 
@@ -145,6 +145,33 @@ namespace Test
             Assert.That(resultsPath_oglyco.Length == 2);
 
             Directory.Delete(Path.Combine(Environment.CurrentDirectory, @"TESTGlycoData"), true);
+        }
+
+        [Test]
+        public static void NOGlycoTest_GlycanBox()
+        {
+            var _maxOGlycanNum = 2;
+            var _maxNGlycanNum = 1;
+            var MixedGlycanAllowed = true;
+
+            GlycanBox.GlobalOGlycans = GlycanDatabase.LoadGlycan(GlobalVariables.OGlycanLocations.Where(p => p.Contains("OGlycan.gdb")).First(), true, true).ToArray();
+            GlycanBox.GlobalOGlycanMods = GlycanBox.BuildGlobalOGlycanMods(GlycanBox.GlobalOGlycans).ToArray();
+            GlycanBox.OGlycanBoxes = GlycanBox.BuildGlycanBoxes(_maxOGlycanNum, GlycanBox.GlobalOGlycans, GlycanBox.GlobalOGlycanMods).OrderBy(p => p.Mass).ToArray();
+
+            GlycanBox.GlobalNGlycans = GlycanDatabase.LoadGlycan(GlobalVariables.NGlycanLocations.Where(p => p.Contains("NGlycan182.gdb")).First(), true, false).ToArray();
+            GlycanBox.GlobalNGlycanMods = GlycanBox.BuildGlobalNGlycanMods(GlycanBox.GlobalNGlycans).ToArray();
+            GlycanBox.NGlycanBoxes = GlycanBox.BuildGlycanBoxes(_maxNGlycanNum, GlycanBox.GlobalNGlycans, GlycanBox.GlobalNGlycanMods).OrderBy(p => p.Mass).ToArray();
+
+            if (MixedGlycanAllowed)
+            {
+                GlycanBox.GlobalMixedGlycans = GlycanBox.GlobalOGlycans.Concat(GlycanBox.GlobalNGlycans).ToArray();
+                GlycanBox.GlobalMixedGlycanMods = GlycanBox.GlobalOGlycanMods.Concat(GlycanBox.GlobalNGlycanMods).ToArray();
+                GlycanBox.MixedModBoxes = GlycanBox.BuildMixedGlycanBoxes(GlycanBox.GlobalMixedGlycans, GlycanBox.GlobalMixedGlycanMods, _maxOGlycanNum, 1, GlycanBox.GlobalOGlycans.Length, GlycanBox.GlobalNGlycans.Length).OrderBy(p => p.Mass).ToArray();
+            }
+
+            Assert.That(GlycanBox.OGlycanBoxes.Count() == 90); //12 + 12*(12+1)/2 = 90
+            Assert.That(GlycanBox.NGlycanBoxes.Count() == 182);
+            Assert.That(GlycanBox.MixedModBoxes.Count() == 16380);
         }
 
         internal class TestDataFile : MsDataFile

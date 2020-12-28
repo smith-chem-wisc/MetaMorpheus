@@ -8,15 +8,6 @@ using Proteomics;
 
 namespace EngineLayer.GlycoSearch
 {
-    //Localization of multiple glycans on one peptides can be divide into the following groups based on the quanlity of the localization. Similar to Proteomform Level.
-    public enum LocalizationLevel
-    {
-        Level1,
-        Level1b,
-        Level2,
-        Level3
-    }
-
     public class GlycoSpectralMatch : PeptideSpectralMatch
     {
         public GlycoSpectralMatch(PeptideWithSetModifications theBestPeptide, int notch, double score, int scanIndex, Ms2ScanWithSpecificMass scan, CommonParameters commonParameters, List<MatchedFragmentIon> matchedFragmentIons)
@@ -43,17 +34,17 @@ namespace EngineLayer.GlycoSearch
         public static GlycanBox GetFirstGraphGlycanBox(GlycoSpectralMatch gsm)
         {
 
-            if (gsm.GlycanType == 0)
+            if (gsm.GlycanType == GlycoType.OGlycoPep)
             {
                 return GlycanBox.OGlycanBoxes[gsm.LocalizationGraphs.First().ModBoxId];
             }
-            else if (gsm.GlycanType == 1)
+            else if (gsm.GlycanType == GlycoType.NGlycoPep)
             {
                 return GlycanBox.NGlycanBoxes[gsm.LocalizationGraphs.First().ModBoxId];
             }
             else
             {
-                return GlycanBox.AllModBoxes[gsm.LocalizationGraphs.First().ModBoxId];
+                return GlycanBox.MixedModBoxes[gsm.LocalizationGraphs.First().ModBoxId];
             }
 
         }
@@ -61,7 +52,7 @@ namespace EngineLayer.GlycoSearch
         public static Glycan[] GetFirstGraphGlycans(GlycoSpectralMatch gsm, GlycanBox glycanBox)
         {
             var glycans = new Glycan[glycanBox.ModCount];
-            if (gsm.GlycanType == 0)
+            if (gsm.GlycanType == GlycoType.OGlycoPep)
             {
                 for (int i = 0; i < glycanBox.ModCount; i++)
                 {
@@ -69,11 +60,11 @@ namespace EngineLayer.GlycoSearch
                 }
                 return glycans;
             }
-            else if (gsm.GlycanType == 1)
+            else if (gsm.GlycanType == GlycoType.NGlycoPep)
             {
                 for (int i = 0; i < glycanBox.ModCount; i++)
                 {
-                    glycans[i] = GlycanBox.Global_NGlycans[glycanBox.ModIds[i]];
+                    glycans[i] = GlycanBox.GlobalNGlycans[glycanBox.ModIds[i]];
                 }
                 return glycans;
             }
@@ -81,20 +72,20 @@ namespace EngineLayer.GlycoSearch
             {
                 for (int i = 0; i < glycanBox.ModCount; i++)
                 {
-                    glycans[i] = GlycanBox.Global_NOGlycans[glycanBox.ModIds[i]];
+                    glycans[i] = GlycanBox.GlobalMixedGlycans[glycanBox.ModIds[i]];
                 }
                 return glycans;
             }
         }
 
         //Glycan type indicator
-        public int GlycanType { get; set; } //GlycanType == 0, NGlycopeptide; GlycanType == 1, OGlycopeptide; GlycanType = 2, MixGlycopeptide.
+        public GlycoType GlycanType { get; set; } 
 
         public bool NGlycanMotifExist { get; set; } //NGlycan Motif exist. 
 
         public double R138to144 { get; set; } //The intensity ratio of this 138 and 144 could be a signature for O-glycan or N-glycan.
 
-        public double[] OxoniumIonIntensity { get; set; }       //Please Check Glycan.AllOxoniumIons
+        public double[] OxoniumIonIntensity { get; set; } //Please Check Glycan.AllOxoniumIons
 
         public bool PepNN { get; set; } //Yion Pep + 2HexNAc, supposed to be exist more in N-Glycopeptide
 
@@ -307,7 +298,19 @@ namespace EngineLayer.GlycoSearch
 
                     string local_peptide = "";
                     string local_protein = "";
-                    LocalizedSiteSpeciLocalInfo(SiteSpeciLocalProb, LocalizedGlycan, OneBasedStartResidueInProtein, ref local_peptide, ref local_protein);
+                    if (GlycanType == GlycoType.OGlycoPep)
+                    {
+                        LocalizedSiteSpeciLocalInfo(SiteSpeciLocalProb, LocalizedGlycan, OneBasedStartResidueInProtein, GlycanBox.GlobalOGlycans, ref local_peptide, ref local_protein);
+                    }
+                    else if (GlycanType == GlycoType.NGlycoPep)
+                    {
+                        LocalizedSiteSpeciLocalInfo(SiteSpeciLocalProb, LocalizedGlycan, OneBasedStartResidueInProtein, GlycanBox.GlobalNGlycans, ref local_peptide, ref local_protein);
+                    }
+                    else
+                    {
+                        LocalizedSiteSpeciLocalInfo(SiteSpeciLocalProb, LocalizedGlycan, OneBasedStartResidueInProtein, GlycanBox.GlobalMixedGlycans, ref local_peptide, ref local_protein);
+                    }
+
                     sb.Append(local_peptide); sb.Append("\t");
                     sb.Append(local_protein); sb.Append("\t");
 
@@ -459,7 +462,7 @@ namespace EngineLayer.GlycoSearch
             return local;
         }
 
-        public static void LocalizedSiteSpeciLocalInfo(Dictionary<int, List<Tuple<int, double>>> siteSpeciLocalProb, List<Tuple<int, int, bool>> localizedGlycan, int? OneBasedStartResidueInProtein, ref string local, ref string local_protein)
+        public static void LocalizedSiteSpeciLocalInfo(Dictionary<int, List<Tuple<int, double>>> siteSpeciLocalProb, List<Tuple<int, int, bool>> localizedGlycan, int? OneBasedStartResidueInProtein, Glycan[] globalGlycans, ref string local, ref string local_protein)
         {
             if (siteSpeciLocalProb == null)
             {
@@ -470,10 +473,10 @@ namespace EngineLayer.GlycoSearch
             {
                 var x = siteSpeciLocalProb[loc.Item1].Where(p => p.Item1 == loc.Item2).First().Item2;
                 var peptide_site = loc.Item1 - 1;
-                local += "[" + peptide_site + "," + GlycanBox.GlobalOGlycans[loc.Item2].Composition + "," + x.ToString("0.000") + "]";
+                local += "[" + peptide_site + "," + globalGlycans[loc.Item2].Composition + "," + x.ToString("0.000") + "]";
 
                 var protein_site = OneBasedStartResidueInProtein.HasValue ? OneBasedStartResidueInProtein.Value + loc.Item1 - 2 : -1;
-                local_protein += "[" + protein_site + "," + GlycanBox.GlobalOGlycans[loc.Item2].Composition + "," + x.ToString("0.000") + "]";
+                local_protein += "[" + protein_site + "," + globalGlycans[loc.Item2].Composition + "," + x.ToString("0.000") + "]";
             }
 
         }

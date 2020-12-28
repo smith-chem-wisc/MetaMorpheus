@@ -39,21 +39,9 @@ namespace TaskLayer
 
             List<GlycoSpectralMatch> allgsms = new List<GlycoSpectralMatch>();
 
-            if (glycoSearchParameters.GlycoSearchType == GlycoSearchType.NGlycanSearch)
+            if (glycoSearchParameters.GlycoSearchType == GlycoSearchType.OGlycanSearch || glycoSearchParameters.GlycoSearchType == GlycoSearchType.N_O_GlycanSearch)
             {
-                var allPsmsNGly = allPsms.Where(p => p.LocalizationGraphs != null).OrderByDescending(p => p.Score).ToList();
-                SingleFDRAnalysis(allPsmsNGly, CommonParameters, new List<string> { Parameters.SearchTaskId });
-                var allNgsmsFdr = allPsmsNGly.Where(p => !p.IsDecoy && p.FdrInfo.QValue <= 0.01).ToList();
-                //NGlycoLocalizationCalculation(allNgsmsFdr, CommonParameters);
-                allgsms.AddRange(allNgsmsFdr);
-
-                var writtenFileNGlyco = Path.Combine(Parameters.OutputFolder, "nglyco" + ".psmtsv");
-                WriteFile.WritePsmGlycoToTsv(allNgsmsFdr, writtenFileNGlyco, 3);
-                FinishedWritingFile(writtenFileNGlyco, new List<string> { Parameters.SearchTaskId });
-            }
-            else if (glycoSearchParameters.GlycoSearchType == GlycoSearchType.OGlycanSearch)
-            {
-                var allPsmsOGly = allPsms.Where(p => p.LocalizationGraphs != null).OrderByDescending(p => p.Score).ToList();
+                var allPsmsOGly = allPsms.Where(p => p.GlycanType == GlycoType.OGlycoPep).OrderByDescending(p => p.Score).ToList();
                 SingleFDRAnalysis(allPsmsOGly, CommonParameters, new List<string> { Parameters.SearchTaskId });
                 var allOgsmsFdr = allPsmsOGly.Where(p => !p.IsDecoy && p.FdrInfo.QValue <= 0.01).ToList();
                 OGlycoLocalizationCalculation(allOgsmsFdr, CommonParameters);
@@ -77,6 +65,21 @@ namespace TaskLayer
                     WriteFile.WriteProteinGlycoLocalization(ProteinLevelLocalization, protein_oglyco_localization_file);
                     FinishedWritingFile(protein_oglyco_localization_file, new List<string> { Parameters.SearchTaskId });
                 }
+            }
+            
+            if (glycoSearchParameters.GlycoSearchType == GlycoSearchType.NGlycanSearch || glycoSearchParameters.GlycoSearchType == GlycoSearchType.N_O_GlycanSearch)
+            {
+                //TO THINK: a mixed glycopeptide has more properties similar to a NGlycopeptide.
+                var allPsmsNGly = allPsms.Where(p => p.GlycanType == GlycoType.NGlycoPep || p.GlycanType == GlycoType.MixedGlycoPep).OrderByDescending(p => p.Score).ToList();
+                SingleFDRAnalysis(allPsmsNGly, CommonParameters, new List<string> { Parameters.SearchTaskId });
+                var allNgsmsFdr = allPsmsNGly.Where(p => !p.IsDecoy && p.FdrInfo.QValue <= 0.01).ToList();
+                //NGlycoLocalizationCalculation(allNgsmsFdr, CommonParameters);
+                OGlycoLocalizationCalculation(allNgsmsFdr, CommonParameters);
+                allgsms.AddRange(allNgsmsFdr);
+
+                var writtenFileNGlyco = Path.Combine(Parameters.OutputFolder, "nglyco" + ".psmtsv");
+                WriteFile.WritePsmGlycoToTsv(allNgsmsFdr, writtenFileNGlyco, 3);
+                FinishedWritingFile(writtenFileNGlyco, new List<string> { Parameters.SearchTaskId });
             }
 
             return MyTaskResults;

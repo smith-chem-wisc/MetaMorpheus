@@ -96,10 +96,10 @@ namespace Test
 
             //var glycanMod = Glycan.NGlycanToModification(glycan);
             var glycopep = GlycoPeptides.GenerateNGlycopeptide(sites.ToArray(), peptide, new Modification[]{ glycanMod });
-            List<Product> fragmentIons = GlycoPeptides.NGlyGetTheoreticalFragments(DissociationType.HCD, peptide, glycopep, sites.ToArray(), new Glycan[]{ glycan });
+            List<Product> fragmentIons = GlycoPeptides.GlyGetTheoreticalFragments(GlycoType.NGlycoPep, DissociationType.HCD, peptide, glycopep, sites.ToArray(), new Glycan[]{ glycan });
 
-            List<Product> etdFragmentIons = GlycoPeptides.NGlyGetTheoreticalFragments(DissociationType.ETD, peptide, glycopep, sites.ToArray(), new Glycan[] { glycan });
-            List<Product> ethcdFragmentIons = GlycoPeptides.NGlyGetTheoreticalFragments(DissociationType.EThcD, peptide, glycopep, sites.ToArray(), new Glycan[] { glycan });
+            List<Product> etdFragmentIons = GlycoPeptides.GlyGetTheoreticalFragments(GlycoType.NGlycoPep, DissociationType.ETD, peptide, glycopep, sites.ToArray(), new Glycan[] { glycan });
+            List<Product> ethcdFragmentIons = GlycoPeptides.GlyGetTheoreticalFragments(GlycoType.NGlycoPep, DissociationType.EThcD, peptide, glycopep, sites.ToArray(), new Glycan[] { glycan });
             Assert.That(fragmentIons.Count == 63);
             Assert.That(etdFragmentIons.Count == 36);
             Assert.That(ethcdFragmentIons.Count == 87);
@@ -261,7 +261,7 @@ namespace Test
 
             //var glycanMod = Glycan.NGlycanToModification(glycan);
             var glycopep = GlycoPeptides.GenerateNGlycopeptide(sites.ToArray(), peptide, modifications);
-            List<Product> fragmentIons = GlycoPeptides.NGlyGetTheoreticalFragments(DissociationType.HCD, peptide, glycopep, sites.ToArray(), new Glycan[] { glycan });
+            List<Product> fragmentIons = GlycoPeptides.GlyGetTheoreticalFragments(GlycoType.NGlycoPep, DissociationType.HCD, peptide, glycopep, sites.ToArray(), new Glycan[] { glycan });
             Assert.That(fragmentIons.Count == 81);
 
             //TO DO: The neutroloss is not annotated well.

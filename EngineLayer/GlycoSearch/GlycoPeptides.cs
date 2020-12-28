@@ -218,6 +218,85 @@ namespace EngineLayer.GlycoSearch
             return testPeptide;
         }
 
+        public static List<Product> GlyGetTheoreticalFragments(GlycoType glycanType, DissociationType dissociationType, PeptideWithSetModifications peptide, PeptideWithSetModifications modPeptide, int[] n_modPos, Glycan[] glycans)
+        {
+            Glycan glycan = new Glycan(Glycan.GetKind("N"));
+            Modification[] modifications = new Modification[n_modPos.Length];
+            for (int i = 0; i < n_modPos.Length; i++)
+            {
+                modifications[i] = Glycan.NGlycanToModification(glycan);
+            }
+            PeptideWithSetModifications neutrallossPeptide = GenerateNGlycopeptide(n_modPos, peptide, modifications);
+
+
+            List<Product> theoreticalProducts = new List<Product>();
+            HashSet<double> masses = new HashSet<double>();
+            List<Product> products = new List<Product>();
+
+            if (dissociationType == DissociationType.HCD || dissociationType == DissociationType.CID)
+            {
+                peptide.Fragment(dissociationType, FragmentationTerminus.Both, products);
+
+                List<Product> modProducts = new List<Product>();
+
+                modPeptide.Fragment(dissociationType, FragmentationTerminus.Both, modProducts);
+
+                products.AddRange(modProducts.Where(p => p.ProductType == ProductType.D));
+
+                if (glycanType != GlycoType.OGlycoPep)
+                {
+                    List<Product> nlProducts = new List<Product>();
+                    neutrallossPeptide.Fragment(dissociationType, FragmentationTerminus.Both, nlProducts);
+                    products.AddRange(nlProducts.Where(p => p.ProductType != ProductType.D || (p.ProductType != ProductType.M)));
+
+                    var glycanYIons = GlycoPeptides.GetGlycanYIons(peptide, glycans);
+                    products.AddRange(glycanYIons);
+                }                         
+            }
+            else if (dissociationType == DissociationType.ETD)
+            {
+                modPeptide.Fragment(dissociationType, FragmentationTerminus.Both, products);
+            }
+            else if (dissociationType == DissociationType.EThcD)
+            {
+                peptide.Fragment(DissociationType.HCD, FragmentationTerminus.Both, products);
+
+                List<Product> modProducts = new List<Product>();
+
+                modPeptide.Fragment(DissociationType.HCD, FragmentationTerminus.Both, modProducts);
+
+                products.AddRange(modProducts.Where(p => p.ProductType == ProductType.D));
+
+                if (glycanType != GlycoType.OGlycoPep)
+                {
+                    List<Product> nlProducts = new List<Product>();
+                    neutrallossPeptide.Fragment(DissociationType.HCD, FragmentationTerminus.Both, nlProducts);
+                    products.AddRange(nlProducts.Where(p => p.ProductType != ProductType.D || (p.ProductType != ProductType.M)));
+
+                    var glycanYIons = GlycoPeptides.GetGlycanYIons(peptide, glycans);
+                    products.AddRange(glycanYIons);
+                }
+
+                List<Product> etdProducts = new List<Product>();
+
+                modPeptide.Fragment(DissociationType.ETD, FragmentationTerminus.Both, etdProducts);
+
+                products.AddRange(etdProducts.Where(p => p.ProductType != ProductType.y));
+
+            }
+
+            foreach (var fragment in products)
+            {
+                if (!masses.Contains(fragment.NeutralMass))
+                {
+                    masses.Add(fragment.NeutralMass);
+                    theoreticalProducts.Add(fragment);
+                }
+            }
+
+            return theoreticalProducts;
+        }
+
         #endregion
 
         #region N-Glyco related functions
@@ -280,6 +359,11 @@ namespace EngineLayer.GlycoSearch
 
         public static PeptideWithSetModifications GenerateNGlycopeptide(int[] modPos, PeptideWithSetModifications peptide, Modification[] modifications)
         {
+            if (modPos.Length == 0)
+            {
+                return null;
+            }
+
             Dictionary<int, Modification> testMods = new Dictionary<int, Modification>();
             for (int i = 0; i < modPos.Length; i++)
             {
@@ -297,82 +381,6 @@ namespace EngineLayer.GlycoSearch
             return testPeptide;
         }
 
-        public static List<Product> NGlyGetTheoreticalFragments(DissociationType dissociationType, PeptideWithSetModifications peptide, PeptideWithSetModifications modPeptide, int[] modPos, Glycan[] glycans)
-        {
-            Glycan glycan = new Glycan(Glycan.GetKind("N"));
-            Modification[] modifications = new Modification[modPos.Length];
-            for (int i = 0; i < modPos.Length; i++)
-            {
-                modifications[i] = Glycan.NGlycanToModification(glycan);
-            }
-            PeptideWithSetModifications neutrallossPeptide = GenerateNGlycopeptide(modPos, peptide, modifications);
-
-
-            List<Product> theoreticalProducts = new List<Product>();
-            HashSet<double> masses = new HashSet<double>();
-            List<Product> products = new List<Product>();
-
-            if (dissociationType == DissociationType.HCD || dissociationType == DissociationType.CID)
-            {
-                peptide.Fragment(dissociationType, FragmentationTerminus.Both, products);
-
-                List<Product> modProducts = new List<Product>();
-
-                modPeptide.Fragment(dissociationType, FragmentationTerminus.Both, modProducts);
-
-                List<Product> nlProducts = new List<Product>();
-
-                neutrallossPeptide.Fragment(dissociationType, FragmentationTerminus.Both, nlProducts);
-
-                products.AddRange(modProducts.Where(p => p.ProductType == ProductType.D));
-                products.AddRange(nlProducts.Where(p => p.ProductType != ProductType.D || (p.ProductType != ProductType.M)));
-
-                var glycanYIons = GlycoPeptides.GetGlycanYIons(peptide, glycans);
-
-                products.AddRange(glycanYIons);
-
-            }
-            else if (dissociationType == DissociationType.ETD)
-            {
-                modPeptide.Fragment(dissociationType, FragmentationTerminus.Both, products);
-            }
-            else if (dissociationType == DissociationType.EThcD)
-            {
-                peptide.Fragment(DissociationType.HCD, FragmentationTerminus.Both, products);
-
-                List<Product> modProducts = new List<Product>();
-
-                modPeptide.Fragment(DissociationType.HCD, FragmentationTerminus.Both, modProducts);
-
-                List<Product> nlProducts = new List<Product>();
-
-                neutrallossPeptide.Fragment(DissociationType.HCD, FragmentationTerminus.Both, nlProducts);
-
-                products.AddRange(modProducts.Where(p => p.ProductType == ProductType.D));
-                products.AddRange(nlProducts.Where(p => p.ProductType != ProductType.D || (p.ProductType != ProductType.M)));
-
-                List<Product> etdProducts = new List<Product>();
-
-                modPeptide.Fragment(DissociationType.ETD, FragmentationTerminus.Both, etdProducts);
-
-                products.AddRange(etdProducts.Where(p => p.ProductType != ProductType.y));
-
-                var glycanYIons = GlycoPeptides.GetGlycanYIons(peptide, glycans);
-
-                products.AddRange(glycanYIons);
-            }
-
-            foreach (var fragment in products)
-            {
-                if (!masses.Contains(fragment.NeutralMass))
-                {
-                    masses.Add(fragment.NeutralMass);
-                    theoreticalProducts.Add(fragment);
-                }
-            }
-
-            return theoreticalProducts;
-        }
 
         //The oxoniumIonIntensities is related with Glycan.AllOxoniumIons. 
         //Rules are coded in the function.    
