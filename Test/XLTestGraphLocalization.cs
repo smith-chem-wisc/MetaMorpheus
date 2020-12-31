@@ -50,13 +50,13 @@ namespace Test
                 for (int j = 0; j < childBox.Length; j++)
                 {
                     localizationGraph.array[i][j] = new AdjNode(i, j, modPos[i], childBox[j]);
-                    localizationGraph.array[i][j].CummulativeSources = new List<int> { j };
+                    localizationGraph.array[i][j].CummulativeSources = new HashSet<int> { j };
                     localizationGraph.array[i][j].CummulativeCost = 1;
                 }
             }
-            localizationGraph.array[2][5].CummulativeSources = new List<int> { 4, 5 };
+            localizationGraph.array[2][5].CummulativeSources = new HashSet<int> { 4, 5 };
 
-            localizationGraph.array[1][4].CummulativeSources = new List<int> { 2, 4 };
+            localizationGraph.array[1][4].CummulativeSources = new HashSet<int> { 2, 4 };
 
             var allPaths = LocalizationGraph.GetAllHighestScorePaths(localizationGraph.array, childBox);
 
@@ -84,7 +84,7 @@ namespace Test
                 for (int j = 0; j < childBox.Length; j++)
                 {
                     localizationGraph.array[i][j] = new AdjNode(i, j, modPos[i], childBox[j]);
-                    localizationGraph.array[i][j].CummulativeSources = new List<int> { j };
+                    localizationGraph.array[i][j].CummulativeSources = new HashSet<int> { j };
                 }
             }
             localizationGraph.TotalScore = 1;
@@ -133,9 +133,9 @@ namespace Test
 
             //Test Get First path
             //mod on site 2 and site 3.
-            graph.array[1][1].CummulativeSources = new List<int> { 0 };
-            graph.array[2][3].CummulativeSources = new List<int> { 1 };
-            graph.array[3][3].CummulativeSources = new List<int> { 3 };
+            graph.array[1][1].CummulativeSources = new HashSet<int> { 0 };
+            graph.array[2][3].CummulativeSources = new HashSet<int> { 1 };
+            graph.array[3][3].CummulativeSources = new HashSet<int> { 3 };
             var path = LocalizationGraph.GetFirstPath(graph.array, childBox);
             Assert.That(path[0] == 0 && path[1] == 1 && path[2] == 3 && path[3] == 3);
         }

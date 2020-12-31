@@ -88,6 +88,8 @@ namespace EngineLayer
     {
         public static readonly int CrossRingMass = 8303819;
 
+        public static readonly double HexNAcMass = 203.07937;
+
         public Glycan(string struc, int mass, byte[] kind, List<GlycanIon> ions, bool decoy)
         {
             Struc = struc;
@@ -499,54 +501,13 @@ namespace EngineLayer
             return kindString.ToString();
         }
 
-        public static double GetNGlycanLocalMass(int countOfNGlycan)
-        {
-            byte[] kind = new byte[SugarLength];
-            kind[0] = (byte)countOfNGlycan;
-
-            int mass = GetMass(kind);
-            return (double)mass / 1E5;
-        }
-
         #endregion
 
         //TO THINK: Is it reasonable to transfer Glycan to Modification the first time Glycan is read in? Which could save time.
         //Use glycan index and modification index to reduce space.
         public static Modification NGlycanToModification(Glycan glycan)
         {
-            Dictionary<DissociationType, List<double>> neutralLosses = new Dictionary<DissociationType, List<double>>();
-            if (glycan.Ions!=null)
-            {
-                //TO THINK: Should we consider to keep CrossRingMass: p.IonMass == CrossRingMass
-                List<double> lossMasses = glycan.Ions.Where(p => p.IonMass == 20307937).Select(p => (double)p.LossIonMass / 1E5).OrderBy(p => p).ToList(); 
-                neutralLosses.Add(DissociationType.HCD, lossMasses);
-                neutralLosses.Add(DissociationType.CID, lossMasses);
-                neutralLosses.Add(DissociationType.EThcD, lossMasses);
-            }
-
-            Dictionary<DissociationType, List<double>> diagnosticIons = new Dictionary<DissociationType, List<double>>();
-            diagnosticIons.Add(DissociationType.HCD, glycan.DiagnosticIons.Select(p => (double)p / 1E5).ToList());
-            diagnosticIons.Add(DissociationType.CID, glycan.DiagnosticIons.Select(p => (double)p / 1E5).ToList());
-            diagnosticIons.Add(DissociationType.EThcD, glycan.DiagnosticIons.Select(p => (double)p / 1E5).ToList());
-            ModificationMotif.TryGetMotif("N", out ModificationMotif finalMotif); //TO DO: only one motif can be write here.
-            var id = Glycan.GetKindString(glycan.Kind);
-            Modification modification = new Modification(
-                _originalId: id,
-                _modificationType: "N-Glycosylation",
-                _monoisotopicMass: (double)glycan.Mass / 1E5,
-                _locationRestriction: "Anywhere.",
-                _target: finalMotif,
-                _featureType: "Nxs/t",
-                _neutralLosses: neutralLosses,
-                _diagnosticIons: diagnosticIons
-            );
-            return modification;
-        }
-
-        //This is a simple version of _NGlycanToModification for GlobalVariables read N-glycan
-        public static Modification _NGlycanToModification(Glycan glycan)
-        {
-            ModificationMotif.TryGetMotif("N", out ModificationMotif finalMotif); //TO DO: only one motif can be write here.
+            ModificationMotif.TryGetMotif("N", out ModificationMotif finalMotif); //TO THINK: only one motif can be write here.
             var id = Glycan.GetKindString(glycan.Kind);
             Modification modification = new Modification(
                 _originalId: id,

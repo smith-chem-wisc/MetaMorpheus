@@ -29,8 +29,8 @@ namespace Test
         public static void Setup()
         {
             GlycanBox.GlobalOGlycans = GlycanDatabase.LoadGlycan(GlobalVariables.OGlycanLocations.Where(p => p.Contains("OGlycan.gdb")).First(), true, true).ToArray();
-            GlycanBox.GlobalOGlycanModifications = GlycanBox.BuildGlobalOGlycanModifications(GlycanBox.GlobalOGlycans).ToArray();
-            OGlycanBoxes = GlycanBox.BuildGlycanBoxes(3, GlycanBox.GlobalOGlycans, GlycanBox.GlobalOGlycanModifications).OrderBy(p => p.Mass).ToArray();
+            GlycanBox.GlobalOGlycanMods = GlycanBox.BuildGlobalOGlycanMods(GlycanBox.GlobalOGlycans).ToArray();
+            OGlycanBoxes = GlycanBox.BuildGlycanBoxes(3, GlycanBox.GlobalOGlycans, GlycanBox.GlobalOGlycanMods).OrderBy(p => p.Mass).ToArray();
         }
 
         [Test]
@@ -91,7 +91,7 @@ namespace Test
 
             List<int> modPos = GlycoPeptides.GetPossibleModSites(peptide, new string[] { "S", "T" });
 
-            var peptideWithMod = GlycoPeptides.GlyGetTheoreticalPeptide(modPos.ToArray(), peptide, OGlycanBoxes[8], GlycanBox.GlobalOGlycanModifications);
+            var peptideWithMod = GlycoPeptides.GlyGetTheoreticalPeptide(modPos.ToArray(), peptide, OGlycanBoxes[8], GlycanBox.GlobalOGlycanMods);
             Assert.That(peptideWithMod.FullSequence == "PT[O-Glycosylation:N1A1 on X]LFKNVS[O-Glycosylation:N1 on X]LYK");
 
             var fragments_hcd = GlycoPeptides.OGlyGetTheoreticalFragments(DissociationType.HCD, peptide, peptideWithMod);
@@ -110,7 +110,7 @@ namespace Test
 
             List<int> modPos = new List<int> { 2, 8 };
 
-            var peptideWithMod = GlycoPeptides.GlyGetTheoreticalPeptide(modPos.ToArray(), peptide, OGlycanBoxes[24], GlycanBox.GlobalOGlycanModifications);
+            var peptideWithMod = GlycoPeptides.GlyGetTheoreticalPeptide(modPos.ToArray(), peptide, OGlycanBoxes[24], GlycanBox.GlobalOGlycanMods);
             Assert.That(peptideWithMod.FullSequence == "T[O-Glycosylation:H1N1 on X]VYLGAS[O-Glycosylation:H1N1A1 on X]K");
 
             var fragments_etd = GlycoPeptides.OGlyGetTheoreticalFragments(DissociationType.ETD, peptide, peptideWithMod);
@@ -128,52 +128,6 @@ namespace Test
         }
 
         [Test]
-        public static void OGlycoTest_FragmentIonsHash()
-        {
-            //Get glycanBox
-            var glycanBox = OGlycanBoxes[8];
-
-            Protein protein = new Protein("PTLFKNVSLYK", "");
-            var peptide = protein.Digest(new DigestionParams(), new List<Modification>(), new List<Modification>()).First();
-
-            List<int> modPos = GlycoPeptides.GetPossibleModSites(peptide, new string[] { "S", "T" });
-
-            var peptideWithMod = GlycoPeptides.GlyGetTheoreticalPeptide(modPos.ToArray(), peptide, glycanBox, GlycanBox.GlobalOGlycanModifications);
-            Assert.That(peptideWithMod.FullSequence == "PT[O-Glycosylation:N1A1 on X]LFKNVS[O-Glycosylation:N1 on X]LYK");
-
-            //The following code prove that the default Fragment method doesn't work for O-glycopeptide due to neutral losses.
-            var fragments_hcd = new List<Product>();
-                peptide.Fragment(DissociationType.HCD, FragmentationTerminus.Both, fragments_hcd);
-            var fragmentsMod_hcd = new List<Product>();
-                peptideWithMod.Fragment(DissociationType.HCD, FragmentationTerminus.Both, fragmentsMod_hcd); 
-            Assert.That(fragments_hcd.Count() == 20);
-            Assert.That(fragmentsMod_hcd.Count() == 61); //The Fragments also contain neutral loss ions. 
-
-            var frag_ments_etd = new List<Product>();
-                peptide.Fragment(DissociationType.ETD, FragmentationTerminus.Both, frag_ments_etd);
-            var fragmentsMod_etd = new List<Product>();
-                peptideWithMod.Fragment(DissociationType.ETD, FragmentationTerminus.Both, fragmentsMod_etd);
-
-            //Tuple<int, int[]> keyValuePair represents: <glycanBoxId, glycanModPositions> 
-            Tuple<int, int[]> keyValuePairs = new Tuple<int, int[]>(8, modPos.ToArray());
-
-            var fragments_etd_origin = GlycoPeptides.GetFragmentHash(frag_ments_etd, new Tuple<int, int[]>(0, null), OGlycanBoxes, 1000);
-
-            var fragmentsHash_etd = GlycoPeptides.GetFragmentHash(frag_ments_etd, keyValuePairs, OGlycanBoxes, 1000);
-
-            var fragmentsMod_etd_origin = GlycoPeptides.GetFragmentHash(fragmentsMod_etd, new Tuple<int, int[]>(0, null), OGlycanBoxes, 1000);
-
-            var overlap = fragmentsHash_etd.Intersect(fragments_etd_origin).Count();
-
-            Assert.That(overlap == 14);
-
-            var overlap2 = fragmentsHash_etd.Intersect(fragmentsMod_etd_origin).Count();
-
-            //ETD didn't change y ions.
-            Assert.That(overlap2 == 23);
-        }
-
-        [Test]
         public static void OGlycoTest_Localization()
         {
             //Get glycanBox
@@ -186,12 +140,12 @@ namespace Test
             peptide.Fragment(DissociationType.ETD, FragmentationTerminus.Both, products);
 
             int[] modPos = GlycoPeptides.GetPossibleModSites(peptide, new string[] { "S", "T" }).OrderBy(v=>v).ToArray();
-            var boxes = GlycanBox.BuildChildGlycanBoxes(glycanBox.ModIds, GlycanBox.GlobalOGlycans, GlycanBox.GlobalOGlycanModifications).ToArray();
+            var boxes = GlycanBox.BuildChildGlycanBoxes(glycanBox.ModIds, GlycanBox.GlobalOGlycans, GlycanBox.GlobalOGlycanMods).ToArray();
             Assert.That(boxes.Count() == 6);
 
             //Get Unlocal Fragment
             var unlocalCost = GlycoPeptides.GetUnlocalFragment(products, modPos, glycanBox);
-            Assert.That(unlocalCost.Count == 4); //Basicly, the unlocal are c/z ions that don't localize glycosylation. 
+            Assert.That(unlocalCost.Count == 5); //Basicly, the unlocal are c/z ions that don't localize glycosylation. 
 
             //Get scan
             CommonParameters commonParameters = new CommonParameters(dissociationType: DissociationType.EThcD, trimMsMsPeaks:false);
@@ -200,7 +154,7 @@ namespace Test
             var scans = MetaMorpheusTask.GetMs2Scans(file, spectraFile, commonParameters).ToArray();
 
             //Known peptideWithMod match.
-            var peptideWithMod = GlycoPeptides.GlyGetTheoreticalPeptide(new int[3] { 10, 2, 3}, peptide, glycanBox, GlycanBox.GlobalOGlycanModifications);
+            var peptideWithMod = GlycoPeptides.GlyGetTheoreticalPeptide(new int[3] { 10, 2, 3}, peptide, glycanBox, GlycanBox.GlobalOGlycanMods);
             Assert.That(peptideWithMod.FullSequence == "T[O-Glycosylation:H1N1 on X]T[O-Glycosylation:H1N1 on X]GSLEPSS[O-Glycosylation:N1 on X]GASGPQVSSVK");
             List<Product> knownProducts = GlycoPeptides.OGlyGetTheoreticalFragments(DissociationType.EThcD, peptide, peptideWithMod);
             var matchedKnownFragmentIons = MetaMorpheusEngine.MatchFragmentIons(scans.First(), knownProducts, commonParameters);
@@ -208,6 +162,9 @@ namespace Test
             //Graph Localization
             LocalizationGraph localizationGraph = new LocalizationGraph(modPos, glycanBox, boxes, -1);
             LocalizationGraph.LocalizeOGlycan(localizationGraph, scans.First(), commonParameters.ProductMassTolerance, products);
+            var pepScore = MetaMorpheusEngine.CalculatePeptideScore(scans.First().TheScan, matchedKnownFragmentIons.Where(p=>p.NeutralTheoreticalProduct.ProductType == ProductType.c || p.NeutralTheoreticalProduct.ProductType == ProductType.zDot).ToList());
+            Assert.That((int)pepScore == (int)localizationGraph.TotalScore); //TO THINK: the two score should be the same.
+
             var allPaths = LocalizationGraph.GetAllHighestScorePaths(localizationGraph.array, localizationGraph.ChildModBoxes);
             var knowPath = new int[8] {2, 4, 4, 4, 5, 5, 5, 5 };
             Assert.That(Enumerable.SequenceEqual(knowPath, allPaths[0]));
@@ -246,7 +203,7 @@ namespace Test
             peptide.Fragment(DissociationType.ETD, FragmentationTerminus.Both, products);
 
             int[] modPos = GlycoPeptides.GetPossibleModSites(peptide, new string[] { "S", "T" }).OrderBy(p => p).ToArray();
-            var boxes = GlycanBox.BuildChildGlycanBoxes( glycanBox.ModIds, GlycanBox.GlobalOGlycans, GlycanBox.GlobalOGlycanModifications).ToArray();
+            var boxes = GlycanBox.BuildChildGlycanBoxes( glycanBox.ModIds, GlycanBox.GlobalOGlycans, GlycanBox.GlobalOGlycanMods).ToArray();
 
             //Load scan.
             CommonParameters commonParameters = new CommonParameters(dissociationType: DissociationType.ETD, trimMsMsPeaks: false);
@@ -255,7 +212,7 @@ namespace Test
             var scans = MetaMorpheusTask.GetMs2Scans(file, spectraFile, commonParameters).ToArray();
 
             //Known peptideWithMod match.
-            var peptideWithMod = GlycoPeptides.GlyGetTheoreticalPeptide(new int[1] {4}, peptide, glycanBox, GlycanBox.GlobalOGlycanModifications);
+            var peptideWithMod = GlycoPeptides.GlyGetTheoreticalPeptide(new int[1] {4}, peptide, glycanBox, GlycanBox.GlobalOGlycanMods);
             Assert.That(peptideWithMod.FullSequence == "AAT[O-Glycosylation:N1 on X]VGSLAGQPLQER");
             //List<Product> knownProducts = peptideWithMod.Fragment(DissociationType.EThcD, FragmentationTerminus.Both).ToList();
             List<Product> knownProducts = GlycoPeptides.OGlyGetTheoreticalFragments(DissociationType.ETD, peptide, peptideWithMod);
@@ -303,6 +260,19 @@ namespace Test
 
             Assert.That(Enumerable.SequenceEqual(local.Mods.Select(p=>p.Item1), new List<int> { 4}));
             Assert.That(Enumerable.SequenceEqual(local.Mods.Select(p => p.Item2), new List<int> { 0 }));
+
+            //Graph Localization Mod
+            string[] modMotifs = new string[modPos.Length];
+            int ip = 0;
+            foreach (var n in modPos)
+            {
+                modPos[ip] = n;
+                modMotifs[ip] = "S/T";
+                ip++;
+            }
+            LocalizationGraph localizationGraphMod = new LocalizationGraph(modPos, modMotifs, glycanBox, boxes);
+
+            LocalizationGraph.LocalizeMod(localizationGraphMod, scans.First(), commonParameters.ProductMassTolerance, products, GlycoPeptides.GetLocalFragmentGlycan, GlycoPeptides.GetUnlocalFragmentGlycan);
         }
 
         [Test]
@@ -352,12 +322,12 @@ namespace Test
             peptide.Fragment(DissociationType.ETD, FragmentationTerminus.Both, products);
 
             int[] modPos = GlycoPeptides.GetPossibleModSites(peptide, new string[] { "S", "T" }).OrderBy(v => v).ToArray();
-            var boxes = GlycanBox.BuildChildGlycanBoxes(glycanBox.ModIds, GlycanBox.GlobalOGlycans, GlycanBox.GlobalOGlycanModifications).ToArray();
+            var boxes = GlycanBox.BuildChildGlycanBoxes(glycanBox.ModIds, GlycanBox.GlobalOGlycans, GlycanBox.GlobalOGlycanMods).ToArray();
             Assert.That(boxes.Count() == 6);
 
             //Get Unlocal Fragment
             var unlocalCost = GlycoPeptides.GetUnlocalFragment(products, modPos, glycanBox);
-            Assert.That(unlocalCost.Count == 4); //Basicly, the unlocal are c/z ions that don't localize glycosylation. 
+            Assert.That(unlocalCost.Count == 5); //Basicly, the unlocal are c/z ions that don't localize glycosylation. 
 
             //Get scan
             CommonParameters commonParameters = new CommonParameters(dissociationType: DissociationType.EThcD, trimMsMsPeaks: false);
@@ -366,7 +336,7 @@ namespace Test
             var scans = MetaMorpheusTask.GetMs2Scans(file, spectraFile, commonParameters).ToArray();
 
             //Known peptideWithMod match.
-            var peptideWithMod = GlycoPeptides.GlyGetTheoreticalPeptide(new int[3] { 10, 2, 3 }, peptide, glycanBox, GlycanBox.GlobalOGlycanModifications);
+            var peptideWithMod = GlycoPeptides.GlyGetTheoreticalPeptide(new int[3] { 10, 2, 3 }, peptide, glycanBox, GlycanBox.GlobalOGlycanMods);
             Assert.That(peptideWithMod.FullSequence == "T[O-Glycosylation:H1N1 on X]T[O-Glycosylation:H1N1 on X]GSLEPSS[O-Glycosylation:N1 on X]GASGPQVSSVK");
             List<Product> knownProducts = GlycoPeptides.OGlyGetTheoreticalFragments(DissociationType.EThcD, peptide, peptideWithMod);
             var matchedKnownFragmentIons = MetaMorpheusEngine.MatchFragmentIons(scans.First(), knownProducts, commonParameters);
@@ -380,10 +350,13 @@ namespace Test
 
             //LocalizeMod
             var boxMotifs = new string[] { "S/T","S/T", "S/T", "S/T", "S/T", "S/T", "S/T", "S/T" };
-            LocalizationGraph localizationGraph0 = new LocalizationGraph(modPos, boxMotifs, glycanBox, boxes, -1); 
-            LocalizationGraph.LocalizeMod(localizationGraph0, scans.First(), commonParameters.ProductMassTolerance, 
-                products.Where(v => v.ProductType == ProductType.c || v.ProductType == ProductType.zDot).ToList(),
-                GlycoPeptides.GetLocalFragment, GlycoPeptides.GetUnlocalFragment);
+            LocalizationGraph localizationGraph0 = new LocalizationGraph(modPos, boxMotifs, glycanBox, boxes, -1);
+            //LocalizationGraph.LocalizeMod(localizationGraph0, scans.First(), commonParameters.ProductMassTolerance, 
+            //    products.Where(v => v.ProductType == ProductType.c || v.ProductType == ProductType.zDot).ToList(),
+            //    GlycoPeptides.GetLocalFragment, GlycoPeptides.GetUnlocalFragment);
+            LocalizationGraph.LocalizeMod(localizationGraph0, scans.First(), commonParameters.ProductMassTolerance,
+    products.Where(v => v.ProductType == ProductType.c || v.ProductType == ProductType.zDot).ToList(),
+    GlycoPeptides.GetLocalFragmentGlycan, GlycoPeptides.GetUnlocalFragmentGlycan);
             var allPaths0 = LocalizationGraph.GetAllHighestScorePaths(localizationGraph0.array, localizationGraph0.ChildModBoxes);
             var knowPath0 = new int[8] { 2, 4, 4, 4, 5, 5, 5, 5 };
             Assert.That(Enumerable.SequenceEqual(knowPath0, allPaths0[0]));

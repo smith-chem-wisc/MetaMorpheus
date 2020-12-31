@@ -386,7 +386,7 @@ namespace EngineLayer
                 var og = GlycanDatabase.LoadGlycan(path, false, false);
                 foreach (var g in og)
                 {
-                    var ogmod = Glycan.OGlycanToModification(g);
+                    var ogmod = Glycan.NGlycanToModification(g);
                     if (!AllModsKnownDictionary.ContainsKey(ogmod.IdWithMotif))
                     {
                         AllModsKnownDictionary.Add(ogmod.IdWithMotif, ogmod);

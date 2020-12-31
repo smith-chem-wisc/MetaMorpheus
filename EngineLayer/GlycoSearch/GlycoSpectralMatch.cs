@@ -286,10 +286,11 @@ namespace EngineLayer.GlycoSearch
                 //Get glycans
                 var glycans = GetFirstGraphGlycans(this, glycanBox);
 
-                if (glycans.First().Struc!=null)
-                {
-                    sb.Append(string.Join(",", glycans.Select(p => p.Struc.ToString()).ToArray())); 
-                }
+                //if (glycans.First().Struc!=null)
+                //{
+                //    sb.Append(string.Join(",", glycans.Select(p => p.Struc.ToString()).ToArray())); 
+                //}
+                sb.Append(string.Join(",", glycans.Select(p => p.Composition).ToArray()));
                 sb.Append("\t");
 
                 if (Routes!=null)

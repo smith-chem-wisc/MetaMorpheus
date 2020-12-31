@@ -8,7 +8,7 @@ using MassSpectrometry;
 
 namespace EngineLayer
 {
-    //One peptide can have several o-glycans. The combined glycans are grouped as a glycan box. Used for localization. 
+    //One peptide can have several glycans. The combined glycans are grouped as a glycan box. Used for localization. 
     //GlycanBox -- A defined combination of glycans will be considered to modify on one peptide. 
     //The GlycanBoxMass is the total mass of all glycans on the peptide
     public class GlycanBox:ModBox
@@ -73,7 +73,7 @@ namespace EngineLayer
 
         public int NGlycanCount { get; set; }
 
-        //TO DO: Decoy O-glycan can be created, but the results need to be reasoned.
+        //TO THINK: Decoy O-glycan can be created, but the results need to be reasoned.
         //public static int[] SugarShift = new int[]{ -16205282, -20307937, -29109542, -14605791, -30709033, -15005282, -36513219, -40615874, 16205282, 20307937, 29109542, 14605791, 30709033, 15005282, 36513219, 40615874 };
         private readonly static int[] SugarShift = new int[] 
         {
@@ -142,7 +142,7 @@ namespace EngineLayer
                     if (!seen.Contains(string.Join(",", ids.Select(p => p.ToString()))))
                     {
                         seen.Add(string.Join(",", ids.Select(p => p.ToString())));
-                        var motifs = GetGlycanBoxMotifs(idCombine.ToArray(), modifications);
+                        var motifs = GetGlycanBoxMotifs(ids.ToArray(), modifications);
                         GlycanBox glycanBox = new GlycanBox(ids.ToArray(), motifs, glycans, modifications);
                         yield return glycanBox;
                     }
@@ -167,20 +167,13 @@ namespace EngineLayer
             {
                 foreach (var idCombine in Glycan.GetKCombsWithRept(Enumerable.Range(0, GlobalOGlycanNumber), i))
                 {
-                    var motifs = GetGlycanBoxMotifs(idCombine.ToArray(), modifications);
-
                     for (int j = 1; j <= NGlycoMaxNum; j++)
                     {
                         foreach (var jdCombine in Glycan.GetKCombsWithRept(Enumerable.Range(GlobalOGlycanNumber, GlobalNGlycoNumber), j))
                         {
-                            var n_motifs = GetGlycanBoxMotifs(jdCombine.ToArray(), modifications);
-
-
                             var ijdCombine = idCombine.Concat(jdCombine).ToArray();
 
                             var no_motifs = GetGlycanBoxMotifs(ijdCombine, modifications);
-
-                            //Array.Sort(ijdCombine, no_motifs); //TO THINK: Do I need to sort it.
 
                             GlycanBox no_modBox = new GlycanBox(ijdCombine.ToArray(), no_motifs, glycans, modifications);
 

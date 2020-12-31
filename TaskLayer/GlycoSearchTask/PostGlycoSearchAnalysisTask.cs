@@ -31,7 +31,8 @@ namespace TaskLayer
         {
             var allPsmsSingle = allPsms.Where(p =>  p.LocalizationGraphs == null).OrderByDescending(p => p.Score).ToList();
             SingleFDRAnalysis(allPsmsSingle, CommonParameters, new List<string> { Parameters.SearchTaskId });
-            var allSinglePsmsFdr = allPsmsSingle.Where(p => !p.IsDecoy && p.FdrInfo.QValue <= 0.01).ToList();
+            //var allSinglePsmsFdr = allPsmsSingle.Where(p => !p.IsDecoy && p.FdrInfo.QValue <= 0.01).ToList();
+            var allSinglePsmsFdr = allPsmsSingle.Where(p => p.FdrInfo.QValue <= 0.05).ToList();
 
             var writtenFileSingle = Path.Combine(Parameters.OutputFolder, "single" + ".psmtsv");
             WriteFile.WritePsmGlycoToTsv(allSinglePsmsFdr, writtenFileSingle, 1);
@@ -43,7 +44,8 @@ namespace TaskLayer
             {
                 var allPsmsOGly = allPsms.Where(p => p.GlycanType == GlycoType.OGlycoPep).OrderByDescending(p => p.Score).ToList();
                 SingleFDRAnalysis(allPsmsOGly, CommonParameters, new List<string> { Parameters.SearchTaskId });
-                var allOgsmsFdr = allPsmsOGly.Where(p => !p.IsDecoy && p.FdrInfo.QValue <= 0.01).ToList();
+                //var allOgsmsFdr = allPsmsOGly.Where(p => !p.IsDecoy && p.FdrInfo.QValue <= 0.01).ToList();
+                var allOgsmsFdr = allPsmsOGly.Where(p => p.FdrInfo.QValue <= 0.05).ToList();
                 OGlycoLocalizationCalculation(allOgsmsFdr, CommonParameters);
                 allgsms.AddRange(allOgsmsFdr);
 
@@ -72,7 +74,8 @@ namespace TaskLayer
                 //TO THINK: a mixed glycopeptide has more properties similar to a NGlycopeptide.
                 var allPsmsNGly = allPsms.Where(p => p.GlycanType == GlycoType.NGlycoPep || p.GlycanType == GlycoType.MixedGlycoPep).OrderByDescending(p => p.Score).ToList();
                 SingleFDRAnalysis(allPsmsNGly, CommonParameters, new List<string> { Parameters.SearchTaskId });
-                var allNgsmsFdr = allPsmsNGly.Where(p => !p.IsDecoy && p.FdrInfo.QValue <= 0.01).ToList();
+                //var allNgsmsFdr = allPsmsNGly.Where(p => !p.IsDecoy && p.FdrInfo.QValue <= 0.01).ToList();
+                var allNgsmsFdr = allPsmsNGly.Where(p => !p.IsDecoy && p.FdrInfo.QValue <= 0.05).ToList();
                 //NGlycoLocalizationCalculation(allNgsmsFdr, CommonParameters);
                 OGlycoLocalizationCalculation(allNgsmsFdr, CommonParameters);
                 allgsms.AddRange(allNgsmsFdr);
@@ -192,6 +195,7 @@ namespace TaskLayer
             }
         }
 
+        //Deprecated function. 
         //Glyco Localization
         private static void NGlycoLocalizationCalculation(List<GlycoSpectralMatch> gsms, CommonParameters CommonParameters)
         {
@@ -245,8 +249,6 @@ namespace TaskLayer
             }
         }
 
-
-        //Deprecated function. 
         //For N-Glycopeptide localzation Level.
         public static void NGlycoCorrectLocalizationLevel(List<GlycoSpectralMatch> ngsms)
         {

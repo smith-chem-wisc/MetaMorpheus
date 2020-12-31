@@ -57,83 +57,8 @@ namespace EngineLayer.GlycoSearch
             }
         }
 
-        //The modification problem is turned into a Directed Acyclic Graph. The Graph was build with matrix, and dynamic programming is used.
-        //The function goes through the AdjNode[][] array from left to right, assign weight to each AdjNode, keep track of the heaviest previous AdjNode.
-        public static void LocalizeOGlycan(LocalizationGraph localizationGraph, Ms2ScanWithSpecificMass theScan, Tolerance productTolerance, List<Product> products)
-        {
-            var boxSatisfyBox = BoxSatisfyBox(localizationGraph.ChildModBoxes);
-
-            for (int i = 0; i < localizationGraph.ModPos.Length; i++)
-            {
-                //maxLength: the most mods we can have up to current mod pos; minlengtt: the least mods we can have up to current mod pos.
-                int maxLength = i + 1;
-                int minlength = localizationGraph.ModBox.ModIds.Length - (localizationGraph.ModPos.Length - 1 - i);
-
-                for (int j = 0; j < localizationGraph.ChildModBoxes.Length; j++)
-                {
-                    if (localizationGraph.ChildModBoxes[j].ModCount <= maxLength && localizationGraph.ChildModBoxes[j].ModCount >= minlength)
-                    {
-                        AdjNode adjNode = new AdjNode(i, j, localizationGraph.ModPos[i], localizationGraph.ChildModBoxes[j]);
-
-                        double cost = 0;
-                        if (i != localizationGraph.ModPos.Length - 1)
-                        {
-                            //var fragments = GlycoPeptides.GetLocalFragment(products, localizationGraph.ModPos, i, localizationGraph.ModBox, localizationGraph.ChildModBoxes[j]);
-                            var fragments = GlycoPeptides.GetLocalFragment(products, i,j, localizationGraph);
-                            cost = CalculateCost(theScan, productTolerance, fragments);
-                        }
-
-                        adjNode.CurrentCost = cost;
-                        //The first line of the graph didnot have Sources.
-                        if (i == 0)
-                        {
-                            //Get cost                             
-                            adjNode.CummulativeCost = cost;
-                        }
-                        else
-                        {
-                            double maxCost = 0;
-                            for (int prej = 0; prej <= j; prej++)
-                            {
-                                //Check if a previous AdjNode exist and the current AdjNode could link to previous AdjNode. 
-                                if (boxSatisfyBox[j][prej] && localizationGraph.array[i - 1][prej] != null)
-                                {
-                                    adjNode.AllSources.Add(prej);
-
-                                    var tempCost = cost + localizationGraph.array[i - 1][prej].CummulativeCost;
-                                    if (tempCost > maxCost)
-                                    {
-                                        adjNode.CummulativeSources.Clear();
-                
-                                        adjNode.CummulativeSources.Add(prej);
-             
-                                        maxCost = tempCost;
-                                    }
-                                    else if (tempCost == maxCost)
-                                    {
-                                        adjNode.CummulativeSources.Add(prej);              
-                                    }
-
-                                }
-                            }
-
-                             adjNode.CummulativeCost = maxCost;
-
-                        }
-
-                        localizationGraph.array[i][j] = adjNode;
-                    }
-                }
-
-            }
-
-            var unlocalFragments = GlycoPeptides.GetUnlocalFragment(products, localizationGraph.ModPos, localizationGraph.ModBox);
-            var noLocalScore = CalculateCost(theScan, productTolerance, unlocalFragments);
-            localizationGraph.NoLocalCost = noLocalScore;
-            localizationGraph.TotalScore = localizationGraph.array[localizationGraph.ModPos.Length - 1][localizationGraph.ChildModBoxes.Length - 1].CummulativeCost + noLocalScore;
-        }
-
         //Based on our implementation of Graph localization. We need to calculate cost between two nearby nodes (glycosites) 
+        // refer to the method MetaMorpheusEngine.CalculatePeptideScore().
         public static double CalculateCost(Ms2ScanWithSpecificMass theScan, Tolerance productTolerance, List<double> fragments)
         {
             double score = 0;
@@ -418,7 +343,7 @@ namespace EngineLayer.GlycoSearch
         }
 
         #region LocalizeMod
-        //Tt is possible to Merge this function to LocalizdOGlycan in the future.
+        //The Graph localization can be used for any type of modification.
         //The modification problem is turned into a Directed Acyclic Graph. The Graph was build with matrix, and dynamic programming is used.
         //The Graph is designed to be able to run multiple cycles for different scans.
         public static void LocalizeMod(LocalizationGraph localizationGraph, Ms2ScanWithSpecificMass theScan, Tolerance productTolerance, List<Product> products, 
@@ -452,7 +377,7 @@ namespace EngineLayer.GlycoSearch
                             double cmuCost = localizationGraph.array[i][j].CummulativeCost;
                             for (int prej = 0; prej <= j; prej++)
                             {
-                                if (boxSatisfyBox[j][prej])
+                                if (boxSatisfyBox[j][prej] && (i-1==0 || localizationGraph.array[i - 1][prej].AllSources.Count() > 0))
                                 {
                                     localizationGraph.array[i][j].AllSources.Add(prej);
 
@@ -461,7 +386,6 @@ namespace EngineLayer.GlycoSearch
                                     if (tempCost > cmuCost)
                                     {
                                         localizationGraph.array[i][j].CummulativeSources.Clear();
-
 
                                         localizationGraph.array[i][j].CummulativeSources.Add(prej);
 
@@ -486,7 +410,8 @@ namespace EngineLayer.GlycoSearch
             var unlocalFragments = getUnLocalFragment(products, localizationGraph.ModPos, localizationGraph.ModBox);
             var noLocalScore = CalculateCost(theScan, productTolerance, unlocalFragments);
             localizationGraph.NoLocalCost += noLocalScore;
-            localizationGraph.TotalScore = localizationGraph.array[localizationGraph.ModPos.Length - 1][localizationGraph.ChildModBoxes.Length - 1].CummulativeCost + noLocalScore;
+            localizationGraph.TotalScore += localizationGraph.array[localizationGraph.ModPos.Length - 1][localizationGraph.ChildModBoxes.Length - 1].CummulativeCost + noLocalScore;
+
         }
 
         //For current ModPos at Ind, is the childbox satify the condition.
@@ -535,6 +460,86 @@ namespace EngineLayer.GlycoSearch
             }
 
             return true;
+        }
+
+        #endregion
+
+        #region Original O-Pair Search, plan to be deprecated.
+
+        //The modification problem is turned into a Directed Acyclic Graph. The Graph was build with matrix, and dynamic programming is used.
+        //The function goes through the AdjNode[][] array from left to right, assign weight to each AdjNode, keep track of the heaviest previous AdjNode.
+        public static void LocalizeOGlycan(LocalizationGraph localizationGraph, Ms2ScanWithSpecificMass theScan, Tolerance productTolerance, List<Product> products)
+        {
+            var boxSatisfyBox = BoxSatisfyBox(localizationGraph.ChildModBoxes);
+
+            for (int i = 0; i < localizationGraph.ModPos.Length; i++)
+            {
+                //maxLength: the most mods we can have up to current mod pos; minlengtt: the least mods we can have up to current mod pos.
+                int maxLength = i + 1;
+                int minlength = localizationGraph.ModBox.ModIds.Length - (localizationGraph.ModPos.Length - 1 - i);
+
+                for (int j = 0; j < localizationGraph.ChildModBoxes.Length; j++)
+                {
+                    if (localizationGraph.ChildModBoxes[j].ModCount <= maxLength && localizationGraph.ChildModBoxes[j].ModCount >= minlength)
+                    {
+                        AdjNode adjNode = new AdjNode(i, j, localizationGraph.ModPos[i], localizationGraph.ChildModBoxes[j]);
+
+                        double cost = 0;
+                        if (i != localizationGraph.ModPos.Length - 1)
+                        {
+                            //var fragments = GlycoPeptides.GetLocalFragment(products, localizationGraph.ModPos, i, localizationGraph.ModBox, localizationGraph.ChildModBoxes[j]);
+                            var fragments = GlycoPeptides.GetLocalFragment(products, i, j, localizationGraph);
+                            cost = CalculateCost(theScan, productTolerance, fragments);
+                        }
+
+                        adjNode.CurrentCost = cost;
+                        //The first line of the graph didnot have Sources.
+                        if (i == 0)
+                        {
+                            //Get cost                             
+                            adjNode.CummulativeCost = cost;
+                        }
+                        else
+                        {
+                            double maxCost = 0;
+                            for (int prej = 0; prej <= j; prej++)
+                            {
+                                //Check if a previous AdjNode exist and the current AdjNode could link to previous AdjNode. 
+                                if (boxSatisfyBox[j][prej] && localizationGraph.array[i - 1][prej] != null)
+                                {
+                                    adjNode.AllSources.Add(prej);
+
+                                    var tempCost = cost + localizationGraph.array[i - 1][prej].CummulativeCost;
+                                    if (tempCost > maxCost)
+                                    {
+                                        adjNode.CummulativeSources.Clear();
+
+                                        adjNode.CummulativeSources.Add(prej);
+
+                                        maxCost = tempCost;
+                                    }
+                                    else if (tempCost == maxCost)
+                                    {
+                                        adjNode.CummulativeSources.Add(prej);
+                                    }
+
+                                }
+                            }
+
+                            adjNode.CummulativeCost = maxCost;
+
+                        }
+
+                        localizationGraph.array[i][j] = adjNode;
+                    }
+                }
+
+            }
+
+            var unlocalFragments = GlycoPeptides.GetUnlocalFragment(products, localizationGraph.ModPos, localizationGraph.ModBox);
+            var noLocalScore = CalculateCost(theScan, productTolerance, unlocalFragments);
+            localizationGraph.NoLocalCost = noLocalScore;
+            localizationGraph.TotalScore = localizationGraph.array[localizationGraph.ModPos.Length - 1][localizationGraph.ChildModBoxes.Length - 1].CummulativeCost + noLocalScore;
         }
 
         #endregion
