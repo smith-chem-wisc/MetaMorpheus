@@ -11,7 +11,7 @@ namespace EngineLayer.GlycoSearch
 
         //Tuple<int, int, double> mod pos, glycan id, local peak exist
         //For the local peak exist, the idea is that, in the localization graph matrix, if the node is detected as a mod, then the node score and the previous node has a current score >0.
-        public List<Tuple<int, int, bool>> Mods { get; private set; } = new List<Tuple<int, int, bool>>();
+        public List<GlycoSite> Mods { get; private set; } = new List<GlycoSite>();
 
         public double Score { get; set; }
 
@@ -19,7 +19,7 @@ namespace EngineLayer.GlycoSearch
 
         public void AddPos(int pos, int id, bool localPeakExist)
         {
-            Mods.Add(new Tuple<int, int, bool>(pos, id, localPeakExist));
+            Mods.Add(new GlycoSite(pos, id, localPeakExist));
         }
 
     }

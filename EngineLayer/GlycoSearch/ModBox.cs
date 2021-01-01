@@ -8,11 +8,6 @@ namespace EngineLayer
     {
         //One peptide can have several modifications. The combined modifications are grouped as a modification box. Used for localization. 
         //ModBox -- a defined combination of modifications will be considered to modify on one peptide. The box means the combined group of modification. 
-        public ModBox(int[] modIds)
-        {
-            ModIds = modIds;
-            ModCount = modIds.Length;
-        }
         public ModBox(int[] modIds, string[] modMotifs)
         {
             ModIds = modIds;

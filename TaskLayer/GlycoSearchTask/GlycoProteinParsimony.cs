@@ -2,6 +2,7 @@
 using System.Collections.Generic;
 using System.Text;
 using System.Linq;
+using EngineLayer;
 using EngineLayer.GlycoSearch;
 
 namespace TaskLayer
@@ -10,13 +11,15 @@ namespace TaskLayer
     {
         //id: ProteinAccession, ProtienPos, GlycanId.islocalized, minQValue, maxProb
 
-        public GlycoProteinParsimony(string proteinAccess, int proteinPos, char aminoAcid, bool isLocalized, double minQValue, LocalizationLevel bestLocalizeLevel, double maxProb)
+        public GlycoProteinParsimony(string proteinAccess, int proteinPos, char aminoAcid, string glycanCom, bool isLocalized, double minQValue, LocalizationLevel bestLocalizeLevel, double maxProb)
         {
             ProteinAccession = proteinAccess;
 
             ProteinPos = proteinPos;
 
             AminoAcid = aminoAcid;
+
+            GlycanCom = glycanCom;
 
             IsLocalized = isLocalized;
 
@@ -31,6 +34,8 @@ namespace TaskLayer
         public int ProteinPos { get; }
 
         public char AminoAcid { get; }
+
+        public string GlycanCom { get; }
 
         public bool IsLocalized { get; set; }
 
@@ -56,25 +61,39 @@ namespace TaskLayer
                 {
                     foreach (var local in gsm.LocalizedGlycan)
                     {
-                        int proteinPos = local.Item1 + gsm.OneBasedStartResidueInProtein.Value - 2;
+                        string glycanCom = "";
+                        if (gsm.GlycanType == GlycoType.OGlycoPep)
+                        {
+                            glycanCom = GlycanBox.GlobalOGlycans[local.GlycanID].Composition;
+                        }
+                        else if (gsm.GlycanType == GlycoType.NGlycoPep)
+                        {
+                            glycanCom = GlycanBox.GlobalNGlycans[local.GlycanID].Composition;
+                        }
+                        else
+                        {
+                            glycanCom = GlycanBox.GlobalMixedGlycans[local.GlycanID].Composition;
+                        }
 
-                        string proPosId = gsm.ProteinAccession + "-" + proteinPos.ToString() + "-" + local.Item2;
+                        int proteinPos = local.ModSite + gsm.OneBasedStartResidueInProtein.Value - 2;
+
+                        string proPosId = gsm.ProteinAccession + "-" + proteinPos.ToString() + "-" + glycanCom;
 
                         double prob = -1;
-                        if (gsm.SiteSpeciLocalProb != null && gsm.SiteSpeciLocalProb.ContainsKey(local.Item1))
+                        if (gsm.SiteSpeciLocalProb != null && gsm.SiteSpeciLocalProb.ContainsKey(local.ModSite))
                         {
-                            prob = gsm.SiteSpeciLocalProb[local.Item1].Where(p => p.Item1 == local.Item2).FirstOrDefault().Item2;
+                            prob = gsm.SiteSpeciLocalProb[local.ModSite].Where(p => p.Item1 == local.GlycanID).FirstOrDefault().Item2;
                         }
 
 
                         if (!localizedGlycan.ContainsKey(proPosId))
                         {
-                            GlycoProteinParsimony gpp = new GlycoProteinParsimony(gsm.ProteinAccession, proteinPos, gsm.BaseSequence[local.Item1-2], local.Item3, gsm.FdrInfo.QValue, gsm.LocalizationLevel, prob);
+                            GlycoProteinParsimony gpp = new GlycoProteinParsimony(gsm.ProteinAccession, proteinPos, gsm.BaseSequence[local.ModSite - 2], glycanCom, local.IsLocalized, gsm.FdrInfo.QValue, gsm.LocalizationLevel, prob);
                             localizedGlycan.Add(proPosId, gpp);
                         }
                         else
                         {
-                            bool islocalized = (local.Item3 || localizedGlycan[proPosId].IsLocalized);
+                            bool islocalized = (local.IsLocalized || localizedGlycan[proPosId].IsLocalized);
                             double minQValue = localizedGlycan[proPosId].MinQValue > gsm.FdrInfo.QValue ? gsm.FdrInfo.QValue : localizedGlycan[proPosId].MinQValue;
                             double maxProb = localizedGlycan[proPosId].MaxProbability > prob ? localizedGlycan[proPosId].MaxProbability : prob;
                             var localLevel = localizedGlycan[proPosId].BestLocalizeLevel < gsm.LocalizationLevel ? localizedGlycan[proPosId].BestLocalizeLevel : gsm.LocalizationLevel;

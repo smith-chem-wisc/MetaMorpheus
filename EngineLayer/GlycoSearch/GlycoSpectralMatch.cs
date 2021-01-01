@@ -107,11 +107,11 @@ namespace EngineLayer.GlycoSearch
 
         public Dictionary<int, List<Tuple<int, double>>> SiteSpeciLocalProb { get; set; } // Data <modPos, List<glycanId, site probability>>
 
-        public List<Tuple<int, int, bool>> LocalizedGlycan { get; set; } //<mod site, glycanID, isLocalized> All seen glycans identified 
+        public List<GlycoSite> LocalizedGlycan { get; set; } 
 
         #endregion
 
-        public static string GetTabSepHeaderGlyco(bool IsGlycopepitde, bool IsOGlycopeptide)
+        public static string GetTabSepHeaderGlyco(bool IsGlycopepitde)
         {
             var sb = new StringBuilder();
             sb.Append("File Name" + '\t');
@@ -374,62 +374,6 @@ namespace EngineLayer.GlycoSearch
         }
 
         #region O-glycopeptide Localization Output
-        //Output: <int, int, string> <ModBoxId, ModPosition, is localized>; Input: List<Route>
-        public static List<Tuple<int, int, bool>> GetLocalizedGlycan(List<Route> OGlycanBoxLocalization, out LocalizationLevel localizationLevel)
-        {
-            List<Tuple<int, int, bool>> localizedGlycan = new List<Tuple<int, int, bool>>();
-
-            //Dictionary<string, int>: modsite-id, count
-            Dictionary<string, int> seenModSite = new Dictionary<string, int>();
-
-            foreach (var ogl in OGlycanBoxLocalization)
-            {
-                foreach (var og in ogl.Mods)
-                {
-                    var k = og.Item1.ToString() + "-" + og.Item2.ToString();
-                    if (seenModSite.ContainsKey(k))
-                    {
-                        seenModSite[k] += 1;
-                    }
-                    else
-                    {
-                        seenModSite.Add(k, 1);
-                    }
-                }
-            }
-
-            localizationLevel = LocalizationLevel.Level3;
-            if (OGlycanBoxLocalization.Count == 1)
-            {
-                localizationLevel = LocalizationLevel.Level1;
-            }
-            else if (OGlycanBoxLocalization.Count > 1)
-            {
-                if (seenModSite.Values.Where(p => p == OGlycanBoxLocalization.Count).Count() > 0)
-                {
-                    localizationLevel = LocalizationLevel.Level2;
-                }
-                else
-                {
-                    localizationLevel = LocalizationLevel.Level3;
-                }
-            }
-
-            foreach (var seenMod in seenModSite)
-            {
-                if (seenMod.Value == OGlycanBoxLocalization.Count)
-                {
-                    localizedGlycan.Add(new Tuple<int, int, bool>(int.Parse(seenMod.Key.Split('-')[0]), int.Parse(seenMod.Key.Split('-')[1]), true));
-                }
-                else
-                {
-                    localizedGlycan.Add(new Tuple<int, int, bool>(int.Parse(seenMod.Key.Split('-')[0]), int.Parse(seenMod.Key.Split('-')[1]), false));
-                }
-            }
-
-            return localizedGlycan;
-        }
-
         public static string AllLocalizationInfo(List<Route> OGlycanBoxLocalization)
         {
             string local = "";
@@ -450,7 +394,7 @@ namespace EngineLayer.GlycoSearch
             {
                 var ogl = OGlycanBoxLocalization[i];
                 local += "{@" + ogl.ModBoxId.ToString() + "[";
-                var g = string.Join(",", ogl.Mods.Select(p => (p.Item1 - 1).ToString() + "-" + p.Item2.ToString()));
+                var g = string.Join(",", ogl.Mods.Select(p => (p.ModSite - 1).ToString() + "-" + p.GlycanID.ToString()));
                 local += g + "]}";
                 i++;
             }
@@ -463,21 +407,21 @@ namespace EngineLayer.GlycoSearch
             return local;
         }
 
-        public static void LocalizedSiteSpeciLocalInfo(Dictionary<int, List<Tuple<int, double>>> siteSpeciLocalProb, List<Tuple<int, int, bool>> localizedGlycan, int? OneBasedStartResidueInProtein, Glycan[] globalGlycans, ref string local, ref string local_protein)
+        public static void LocalizedSiteSpeciLocalInfo(Dictionary<int, List<Tuple<int, double>>> siteSpeciLocalProb, List<GlycoSite> localizedGlycan, int? OneBasedStartResidueInProtein, Glycan[] globalGlycans, ref string local, ref string local_protein)
         {
             if (siteSpeciLocalProb == null)
             {
                 return;
             }
 
-            foreach (var loc in localizedGlycan.Where(p => p.Item3))
+            foreach (var loc in localizedGlycan.Where(p => p.IsLocalized))
             {
-                var x = siteSpeciLocalProb[loc.Item1].Where(p => p.Item1 == loc.Item2).First().Item2;
-                var peptide_site = loc.Item1 - 1;
-                local += "[" + peptide_site + "," + globalGlycans[loc.Item2].Composition + "," + x.ToString("0.000") + "]";
+                var x = siteSpeciLocalProb[loc.ModSite].Where(p => p.Item1 == loc.GlycanID).First().Item2;
+                var peptide_site = loc.ModSite - 1;
+                local += "[" + peptide_site + "," + globalGlycans[loc.GlycanID].Composition + "," + x.ToString("0.000") + "]";
 
-                var protein_site = OneBasedStartResidueInProtein.HasValue ? OneBasedStartResidueInProtein.Value + loc.Item1 - 2 : -1;
-                local_protein += "[" + protein_site + "," + globalGlycans[loc.Item2].Composition + "," + x.ToString("0.000") + "]";
+                var protein_site = OneBasedStartResidueInProtein.HasValue ? OneBasedStartResidueInProtein.Value + loc.ModSite - 2 : -1;
+                local_protein += "[" + protein_site + "," + globalGlycans[loc.GlycanID].Composition + "," + x.ToString("0.000") + "]";
             }
 
         }

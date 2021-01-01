@@ -283,10 +283,10 @@ namespace EngineLayer.GlycoSearch
             Modification[] modifications = new Modification[theModPositions.Mods.Count];
             for (int i = 0; i < theModPositions.Mods.Count; i++)
             {
-                modifications[i] = globalMods[theModPositions.Mods[i].Item2];
+                modifications[i] = globalMods[theModPositions.Mods[i].GlycanID];
             }
 
-            return GlyGetTheoreticalPeptide(theModPositions.Mods.Select(p=>p.Item1).ToArray(), peptide, modifications);
+            return GlyGetTheoreticalPeptide(theModPositions.Mods.Select(p=>p.ModSite).ToArray(), peptide, modifications);
         }
 
         public static List<Product> GlyGetTheoreticalFragments(GlycoType glycanType, DissociationType dissociationType, PeptideWithSetModifications peptide, PeptideWithSetModifications modPeptide, List<int> NPos, Glycan[] glycans)

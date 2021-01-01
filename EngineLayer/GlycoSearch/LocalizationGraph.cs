@@ -13,7 +13,7 @@ namespace EngineLayer.GlycoSearch
         public AdjNode[][] array { get; set; }
         public int[] ModPos { get; }
 
-        public string[] BoxMotifs { get; }
+        public string[] ModMotifs { get; }
 
         public int ModBoxId { get; }
         public ModBox ModBox { get; }
@@ -22,25 +22,25 @@ namespace EngineLayer.GlycoSearch
         public double NoLocalCost{get; set;} //Note that we have node for each glycosite, the matched ions before the first node and after the last node is scored here.
         public double TotalScore { get; set; } //Total score is the score of matched ions that are used for localization. For O-glycan, it is the score of all matched c/zDot ions. 
 
-        public LocalizationGraph(int[] modPos, ModBox modBox, ModBox[] childModBoxes, int id = 0)
-        {
-            ModPos = modPos;
-            ModBox = modBox;
-            ModBoxId = id;
-            ChildModBoxes = childModBoxes;
+        //public LocalizationGraph(int[] modPos, ModBox modBox, ModBox[] childModBoxes, int id = 0)
+        //{
+        //    ModPos = modPos;
+        //    ModBox = modBox;
+        //    ModBoxId = id;
+        //    ChildModBoxes = childModBoxes;
 
-            //array is localization graph matrix. array is composed of 2d array of node. From left to right, node is build under a glycosite. From up to down, node is build for each child box.
-            array = new AdjNode[modPos.Length][];
-            for (int i = 0; i < modPos.Length; i++)
-            {
-                array[i] = new AdjNode[ChildModBoxes.Length];
-            }
-        }
+        //    //array is localization graph matrix. array is composed of 2d array of node. From left to right, node is build under a glycosite. From up to down, node is build for each child box.
+        //    array = new AdjNode[modPos.Length][];
+        //    for (int i = 0; i < modPos.Length; i++)
+        //    {
+        //        array[i] = new AdjNode[ChildModBoxes.Length];
+        //    }
+        //}
 
         public LocalizationGraph(int[] modPos, string[] modMotifs, ModBox modBox, ModBox[] childModBoxes, int id = 0)
         {
             ModPos = modPos;
-            BoxMotifs = modMotifs;
+            ModMotifs = modMotifs;
             ModBox = modBox;
             ModBoxId = id;
             ChildModBoxes = childModBoxes;
@@ -185,6 +185,7 @@ namespace EngineLayer.GlycoSearch
             FirstPathHelper(array, xind, yind, temp);
         }
 
+        //Only used for OGlyco, plan to be deprecated.
         //For HCD only spectra, we only want to get a Route that works.
         public static Route GetAnyOnePath(LocalizationGraph localizationGraph)
         {
@@ -312,9 +313,9 @@ namespace EngineLayer.GlycoSearch
                 {
                     foreach (var m in routes[j].Mods)
                     {
-                        if (m.Item1 == modPos[i])
+                        if (m.ModSite == modPos[i])
                         {
-                            matrix[i][j] = new Tuple<int, int, double>(m.Item1, m.Item2, routes[j].ReversePScore);
+                            matrix[i][j] = new Tuple<int, int, double>(m.ModSite, m.GlycanID, routes[j].ReversePScore);
                         }
                     }
                 }
@@ -356,7 +357,7 @@ namespace EngineLayer.GlycoSearch
             {
                 for (int j = 0; j < localizationGraph.ChildModBoxes.Length; j++)
                 {
-                    if (BoxSatisfyModPos(localizationGraph.BoxMotifs, i, localizationGraph.ModBox, localizationGraph.ChildModBoxes[j]))
+                    if (BoxSatisfyModPos(localizationGraph.ModMotifs, i, localizationGraph.ModBox, localizationGraph.ChildModBoxes[j]))
                     {
                         double cost = 0;
                         if (i != localizationGraph.ModPos.Length - 1)
@@ -480,6 +481,7 @@ namespace EngineLayer.GlycoSearch
 
                 for (int j = 0; j < localizationGraph.ChildModBoxes.Length; j++)
                 {
+                    localizationGraph.array[i][j] = null;
                     if (localizationGraph.ChildModBoxes[j].ModCount <= maxLength && localizationGraph.ChildModBoxes[j].ModCount >= minlength)
                     {
                         AdjNode adjNode = new AdjNode(i, j, localizationGraph.ModPos[i], localizationGraph.ChildModBoxes[j]);

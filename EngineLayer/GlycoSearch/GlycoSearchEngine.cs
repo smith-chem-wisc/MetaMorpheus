@@ -434,7 +434,7 @@ namespace EngineLayer.GlycoSearch
             {
                 glycans[i] = globalglycans[((GlycanBox)localizationGraphs.First().ModBox).ModIds[i]];
             }
-            List<int> npos = localization.Mods.Select(p => p.Item1).ToArray().Intersect(n_modpos).ToList();
+            List<int> npos = localization.Mods.Select(p => p.ModSite).ToArray().Intersect(n_modpos).ToList();
 
             var fragmentsForEachGlycoPeptide = GlycoPeptides.GlyGetTheoreticalFragments(glycanType, CommonParameters.DissociationType, peptide, peptideWithMod, npos, glycans);
 
@@ -871,8 +871,12 @@ namespace EngineLayer.GlycoSearch
         {
             int iDLow = GlycoPeptides.BinarySearchGetIndex(GlycanBox.OGlycanBoxes.Select(p => p.Mass).ToArray(), possibleGlycanMassLow);
 
-            int[] modPos = GlycoPeptides.GetPossibleModSites(theScanBestPeptide, new string[] { "S", "T" }).OrderBy(p => p).ToArray();
+            int[] o_modPos = GlycoPeptides.GetPossibleModSites(theScanBestPeptide, new string[] { "S", "T" }).OrderBy(p => p).ToArray();
 
+            var glycanType = GlycoType.OGlycoPep;
+            int[] modPos;
+            string[] modMotifs;
+            GetModPosMotif(glycanType, null, o_modPos, out modPos, out modMotifs);
             //Localization for O-glycopeptides only works on ETD related dissociationtype
             //No localization can be done with MS2-HCD spectrum
             bool is_HCD_only_data = !GlycoPeptides.DissociationTypeContainETD(CommonParameters.DissociationType) && !GlycoPeptides.DissociationTypeContainETD(CommonParameters.MS2ChildScanDissociationType);
@@ -885,7 +889,7 @@ namespace EngineLayer.GlycoSearch
                     if (modPos.Length >= GlycanBox.OGlycanBoxes[iDLow].ModCount && GlycoPeptides.OxoniumIonsAnalysis(oxoniumIonIntensities, GlycanBox.OGlycanBoxes[iDLow]))
                     {
                         //Construct the localizationGraph, but didn't run the localization. The purpose is to use the GlycanBox Infomation.
-                        LocalizationGraph localizationGraph = new LocalizationGraph(modPos, GlycanBox.OGlycanBoxes[iDLow], GlycanBox.OGlycanBoxes[iDLow].ChildGlycanBoxes, iDLow);
+                        LocalizationGraph localizationGraph = new LocalizationGraph(modPos, modMotifs, GlycanBox.OGlycanBoxes[iDLow], GlycanBox.OGlycanBoxes[iDLow].ChildGlycanBoxes, iDLow);
                         localizationGraphs.Add(localizationGraph);
                     }
 
@@ -928,7 +932,7 @@ namespace EngineLayer.GlycoSearch
                 {
                     if (modPos.Length >= GlycanBox.OGlycanBoxes[iDLow].ModCount && GlycoPeptides.OxoniumIonsAnalysis(oxoniumIonIntensities, GlycanBox.OGlycanBoxes[iDLow]))
                     {
-                        LocalizationGraph localizationGraph = new LocalizationGraph(modPos, GlycanBox.OGlycanBoxes[iDLow], GlycanBox.OGlycanBoxes[iDLow].ChildGlycanBoxes, iDLow);
+                        LocalizationGraph localizationGraph = new LocalizationGraph(modPos, modMotifs, GlycanBox.OGlycanBoxes[iDLow], GlycanBox.OGlycanBoxes[iDLow].ChildGlycanBoxes, iDLow);
                         LocalizationGraph.LocalizeOGlycan(localizationGraph, localizationScan, CommonParameters.ProductMassTolerance, products);
 
                         double currentLocalizationScore = localizationGraph.TotalScore;

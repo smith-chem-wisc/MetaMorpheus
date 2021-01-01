@@ -431,13 +431,10 @@ namespace TaskLayer
                 switch (writeType)
                 {
                     case 1:
-                        header = GlycoSpectralMatch.GetTabSepHeaderGlyco(false, false);
+                        header = GlycoSpectralMatch.GetTabSepHeaderGlyco(false);
                         break;
                     case 2:
-                        header = GlycoSpectralMatch.GetTabSepHeaderGlyco(true, true);
-                        break;
-                    case 3:
-                        header = GlycoSpectralMatch.GetTabSepHeaderGlyco(true, false);
+                        header = GlycoSpectralMatch.GetTabSepHeaderGlyco(true);
                         break;
                     default:
                         break;
@@ -463,10 +460,10 @@ namespace TaskLayer
                 {
                     var x = item.Key.Split('-');
                     output.WriteLine(
-                        x[0] + "\t" +
-                        x[1] + "\t" +
+                        item.Value.ProteinAccession + "\t" +
+                        item.Value.ProteinPos + "\t" +
                         item.Value.AminoAcid + "\t" +
-                        GlycanBox.GlobalOGlycans[int.Parse(x[2])].Composition + "\t" +
+                        item.Value.GlycanCom + "\t" +
                         item.Value.IsLocalized + "\t" +
                         item.Value.MinQValue.ToString("0.000") + "\t" +
                         item.Value.BestLocalizeLevel + "\t" +
@@ -485,16 +482,17 @@ namespace TaskLayer
             Dictionary<string, HashSet<string>> localizedglycans = new Dictionary<string, HashSet<string>>();
             foreach (var item in glycoProteinParsimony.Where(p=>p.Value.IsLocalized && p.Value.MinQValue <= 0.01))
             {
-                var x = item.Key.Split('-');
-                var key = x[0] + "-" + x[1];
+                //var x = item.Key.Split('-');
+                //var key = x[0] + "-" + x[1];
+                var key = item.Value.ProteinAccession + "-" + item.Value.ProteinPos + "-" + item.Value.AminoAcid;
                 if ( localizedglycans.ContainsKey(key))
                 {
-                    localizedglycans[key].Add(x[2]);
+                    localizedglycans[key].Add(item.Value.GlycanCom);
                 }
                 else
                 {
                     localizedglycans[key] = new HashSet<string>();
-                    localizedglycans[key].Add(x[2]);
+                    localizedglycans[key].Add(item.Value.GlycanCom);
                 }
 
             }
@@ -502,15 +500,16 @@ namespace TaskLayer
             var writtenFile = Path.Combine(outputPath);
             using (StreamWriter output = new StreamWriter(writtenFile))
             {
-                output.WriteLine("Protein Accession\tModification Site\tLocalized Glycan Number\tLocalized Glycans");
+                output.WriteLine("Protein Accession\tModification Site\tModification AminoAcid\tLocalized Glycan Number\tLocalized Glycans");
                 foreach (var local in localizedglycans.OrderBy(p => p.Key))
                 {
                     var x = local.Key.Split('-');
                     output.WriteLine(
                         x[0] + "\t" +
                         x[1] + "\t" +
+                        x[2] + "\t" +
                         local.Value.Count() + "\t" +
-                        String.Join(",", local.Value.Select(p=> GlycanBox.GlobalOGlycans[int.Parse(p)].Composition))
+                        String.Join(",", local.Value)
                         );
                 }
             }

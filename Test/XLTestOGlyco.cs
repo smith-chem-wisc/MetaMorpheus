@@ -160,7 +160,8 @@ namespace Test
             var matchedKnownFragmentIons = MetaMorpheusEngine.MatchFragmentIons(scans.First(), knownProducts, commonParameters);
 
             //Graph Localization
-            LocalizationGraph localizationGraph = new LocalizationGraph(modPos, glycanBox, boxes, -1);
+            var boxMotifs = new string[] { "S/T", "S/T", "S/T", "S/T", "S/T", "S/T", "S/T", "S/T" };
+            LocalizationGraph localizationGraph = new LocalizationGraph(modPos, boxMotifs, glycanBox, boxes, -1);
             LocalizationGraph.LocalizeOGlycan(localizationGraph, scans.First(), commonParameters.ProductMassTolerance, products);
             var pepScore = MetaMorpheusEngine.CalculatePeptideScore(scans.First().TheScan, matchedKnownFragmentIons.Where(p=>p.NeutralTheoreticalProduct.ProductType == ProductType.c || p.NeutralTheoreticalProduct.ProductType == ProductType.zDot).ToList());
             Assert.That((int)pepScore == (int)localizationGraph.TotalScore); //TO THINK: the two score should be the same.
@@ -171,8 +172,8 @@ namespace Test
 
             //Get localized Route
             var local = LocalizationGraph.GetLocalizedPath(localizationGraph, allPaths.First());
-            Assert.That(Enumerable.SequenceEqual(local.Mods.Select(v=>v.Item1), new List<int>{ 2, 3, 10}));
-            Assert.That(Enumerable.SequenceEqual(local.Mods.Select(v => v.Item2), new List<int> { 1, 1, 0 }));
+            Assert.That(Enumerable.SequenceEqual(local.Mods.Select(v=>v.ModSite), new List<int>{ 2, 3, 10}));
+            Assert.That(Enumerable.SequenceEqual(local.Mods.Select(v => v.GlycanID), new List<int> { 1, 1, 0 }));
 
 
             //Get all paths, calculate PScore and calculate position probability. 
@@ -247,7 +248,8 @@ namespace Test
 
 
             //Graph Localization
-            LocalizationGraph localizationGraph = new LocalizationGraph(modPos, glycanBox, boxes, -1);
+            var boxMotifs = new string[] { "S/T", "S/T" };
+            LocalizationGraph localizationGraph = new LocalizationGraph(modPos, boxMotifs, glycanBox, boxes, -1);
 
             LocalizationGraph.LocalizeOGlycan(localizationGraph, scans.First(), commonParameters.ProductMassTolerance, products);
 
@@ -258,8 +260,8 @@ namespace Test
 
             var local = LocalizationGraph.GetLocalizedPath(localizationGraph, allPaths.First());
 
-            Assert.That(Enumerable.SequenceEqual(local.Mods.Select(p=>p.Item1), new List<int> { 4}));
-            Assert.That(Enumerable.SequenceEqual(local.Mods.Select(p => p.Item2), new List<int> { 0 }));
+            Assert.That(Enumerable.SequenceEqual(local.Mods.Select(p=>p.ModSite), new List<int> { 4}));
+            Assert.That(Enumerable.SequenceEqual(local.Mods.Select(p => p.GlycanID), new List<int> { 0 }));
 
             //Graph Localization Mod
             string[] modMotifs = new string[modPos.Length];
@@ -342,14 +344,14 @@ namespace Test
             var matchedKnownFragmentIons = MetaMorpheusEngine.MatchFragmentIons(scans.First(), knownProducts, commonParameters);
 
             //Graph Localization
-            LocalizationGraph localizationGraph = new LocalizationGraph(modPos, glycanBox, boxes, -1);
+            var boxMotifs = new string[] { "S/T", "S/T", "S/T", "S/T", "S/T", "S/T", "S/T", "S/T" };
+            LocalizationGraph localizationGraph = new LocalizationGraph(modPos, boxMotifs, glycanBox, boxes, -1);
             LocalizationGraph.LocalizeOGlycan(localizationGraph, scans.First(), commonParameters.ProductMassTolerance, products);
             var allPaths = LocalizationGraph.GetAllHighestScorePaths(localizationGraph.array, localizationGraph.ChildModBoxes);
             var knowPath = new int[8] { 2, 4, 4, 4, 5, 5, 5, 5 };
             Assert.That(Enumerable.SequenceEqual(knowPath, allPaths[0]));
 
             //LocalizeMod
-            var boxMotifs = new string[] { "S/T","S/T", "S/T", "S/T", "S/T", "S/T", "S/T", "S/T" };
             LocalizationGraph localizationGraph0 = new LocalizationGraph(modPos, boxMotifs, glycanBox, boxes, -1);
             //LocalizationGraph.LocalizeMod(localizationGraph0, scans.First(), commonParameters.ProductMassTolerance, 
             //    products.Where(v => v.ProductType == ProductType.c || v.ProductType == ProductType.zDot).ToList(),

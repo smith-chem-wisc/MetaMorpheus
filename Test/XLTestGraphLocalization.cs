@@ -43,7 +43,7 @@ namespace Test
             string[] motifs = new string[3] { "X", "X", "X" };
             var modBox = new ModBox(ids, motifs);
             var childBox = ModBox.BuildChildModBoxes(ids, motifs).ToArray();
-            LocalizationGraph localizationGraph = new LocalizationGraph(modPos, modBox, childBox, 0);
+            LocalizationGraph localizationGraph = new LocalizationGraph(modPos, motifs, modBox, childBox, 0);
 
             for (int i = 0; i < modPos.Length; i++)
             {
@@ -77,7 +77,7 @@ namespace Test
             string[] motifs = new string[1] { "X" };
             var modBox = new ModBox(ids, motifs);
             var childBox = ModBox.BuildChildModBoxes(ids, motifs).ToArray();
-            LocalizationGraph localizationGraph = new LocalizationGraph(modPos, modBox, childBox, 0);
+            LocalizationGraph localizationGraph = new LocalizationGraph(modPos, motifs, modBox, childBox, 0);
 
             for (int i = 0; i < modPos.Length; i++)
             {
@@ -93,21 +93,22 @@ namespace Test
 
             var route = LocalizationGraph.GetLocalizedPath(localizationGraph, allPaths.First());
 
-            Assert.That(route.Mods.First().Item3);
+            Assert.That(route.Mods.First().IsLocalized);
         }
 
         [Test]
         public static void GraphTest_Graph()
         {          
             int[] modPos = new int[4] { 1,2,3,4 };
+            string[] modmotifs = new string[4] { "X", "X", "X", "X" };
             int[] modIds = new int[2] { 8, 9 }; //modIds can be any number, just to index mod in real modification array.
-            string[] motifs = new string[2] { "X", "Y" }; 
+            string[] motifs = new string[2] { "X", "X" }; 
 
             ModBox modBox = new ModBox(modIds, motifs);
             var childBox = ModBox.BuildChildModBoxes(modIds, motifs).ToArray();
             Assert.That(childBox.Count() == 4);
 
-            LocalizationGraph graph = new LocalizationGraph(modPos, modBox, childBox, 0);
+            LocalizationGraph graph = new LocalizationGraph(modPos, modmotifs, modBox, childBox, 0);
 
             for (int i = 0; i < graph.ModPos.Length; i++)
             {
@@ -128,7 +129,7 @@ namespace Test
 
             //Test route and GetAnyOnePath.
             var route = LocalizationGraph.GetAnyOnePath(graph);
-            Assert.That(route.Mods.First().Item1 == 1 && route.Mods.First().Item2 == 8);
+            Assert.That(route.Mods.First().ModSite == 1 && route.Mods.First().GlycanID == 8);
             Assert.That(route.Score == 0);
 
             //Test Get First path

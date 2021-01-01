@@ -256,7 +256,7 @@ namespace MetaMorpheusGUI
             }
             else if (RbtNGlycoSearch.IsChecked.Value)
             {
-                TheTask._glycoSearchParameters.GlycoSearchType = EngineLayer.GlycoSearch.GlycoSearchType.NGlycanSearch;
+                TheTask._glycoSearchParameters.GlycoSearchType = EngineLayer.GlycoSearch.GlycoSearchType.NGlycanSearch;;
             }
             else if (Rbt_N_O_GlycoSearch.IsChecked.Value)
             {
@@ -485,6 +485,11 @@ namespace MetaMorpheusGUI
                     //if not an entry, don't update the other box.
                 }
             }
+        }
+
+        private void RbtNotNOGlycoSearch_Click(object sender, RoutedEventArgs e)
+        {
+            CkbMixedGlycoAllowed.IsChecked = false;
         }
     }
 }

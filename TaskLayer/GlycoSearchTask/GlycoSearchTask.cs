@@ -32,8 +32,8 @@ namespace TaskLayer
                 ms2childScanDissociationType: DissociationType.EThcD,
                 scoreCutoff: 3,
                 trimMsMsPeaks: true, 
-                numberOfPeaksToKeepPerWindow: 1000,
-                minimumAllowedIntensityRatioToBasePeak: 0.001,
+                numberOfPeaksToKeepPerWindow: 500,
+                minimumAllowedIntensityRatioToBasePeak: 0.01,
                 digestionParams: digestPara            
                 
             );
