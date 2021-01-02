@@ -93,11 +93,7 @@ namespace EngineLayer.GlycoSearch
 
         public int LongestconcatenatedYion { get; set; } //Currently Simplified with GlycanScore.
 
-        //N-Glyco Info
-        //public List<Glycan> NGlycan { get; set; }  //Identified NGlycan
-        //public Dictionary<int, double> NGlycoSiteSpeciLocalProb { get; set; }
-
-        //O-Glyco Info
+        //Glyco Info
         public List<LocalizationGraph> LocalizationGraphs { get; set; }  //Graph-based Localization information.
         public List<Route> Routes { get; set; } //Localized modification sites and modfication ID.
 
@@ -373,35 +369,35 @@ namespace EngineLayer.GlycoSearch
             return s;
         }
 
-        #region O-glycopeptide Localization Output
-        public static string AllLocalizationInfo(List<Route> OGlycanBoxLocalization)
+        #region Glycopeptide Localization Output
+        public static string AllLocalizationInfo(List<Route> routes)
         {
             string local = "";
 
-            if (OGlycanBoxLocalization == null || OGlycanBoxLocalization.Count == 0)
+            if (routes == null || routes.Count == 0)
             {
                 return local;
             }
             //Some GSP have a lot paths, in which case only output first 10 paths and the total number of the paths.
             int maxOutputPath = 10;
-            if (OGlycanBoxLocalization.Count <= maxOutputPath)
+            if (routes.Count <= maxOutputPath)
             {
-                maxOutputPath = OGlycanBoxLocalization.Count;
+                maxOutputPath = routes.Count;
             }
 
             int i = 0;
             while (i < maxOutputPath)
             {
-                var ogl = OGlycanBoxLocalization[i];
+                var ogl = routes[i];
                 local += "{@" + ogl.ModBoxId.ToString() + "[";
                 var g = string.Join(",", ogl.Mods.Select(p => (p.ModSite - 1).ToString() + "-" + p.GlycanID.ToString()));
                 local += g + "]}";
                 i++;
             }
 
-            if (OGlycanBoxLocalization.Count > maxOutputPath)
+            if (routes.Count > maxOutputPath)
             {
-                local += "... In Total:" + OGlycanBoxLocalization.Count.ToString() + " Paths";
+                local += "... In Total:" + routes.Count.ToString() + " Paths";
             }
 
             return local;

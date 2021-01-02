@@ -482,8 +482,6 @@ namespace TaskLayer
             Dictionary<string, HashSet<string>> localizedglycans = new Dictionary<string, HashSet<string>>();
             foreach (var item in glycoProteinParsimony.Where(p=>p.Value.IsLocalized && p.Value.MinQValue <= 0.01))
             {
-                //var x = item.Key.Split('-');
-                //var key = x[0] + "-" + x[1];
                 var key = item.Value.ProteinAccession + "-" + item.Value.ProteinPos + "-" + item.Value.AminoAcid;
                 if ( localizedglycans.ContainsKey(key))
                 {
@@ -511,6 +509,77 @@ namespace TaskLayer
                         local.Value.Count() + "\t" +
                         String.Join(",", local.Value)
                         );
+                }
+            }
+        }
+
+
+        public static void WriteProteinInfo(List<GlycoSpectralMatch> allPsms, string outputPath)
+        {
+            //TO THINK: how to solve ambiguity. 
+            Dictionary<string, List<GlycoSpectralMatch>> proteins = allPsms.GroupBy(p => p.ProteinAccession).ToDictionary(p => p.Key, p => p.ToList());
+
+            var writtenFile = Path.Combine(outputPath);
+            using (StreamWriter output = new StreamWriter(writtenFile))
+            {
+                output.WriteLine("UniprotID\tPSMsLocalized\tUniqPepsLocalized\tUniqSeqLocalized\tGlycoSitesLocalized\tNsitesLocalized\tOsitesLocalized\t#LocalizedGlycans\tLocalizedGlycans\t" +
+                    "PSMsAll\tUniqPepsAll\tUniqSeqAll\tGlycoSitesAll\tNsitesAll\tOsitesAll\t#AllGlycans\tAllGlycans\tSinglePsms");
+                foreach (var pro in proteins.OrderBy(p => p.Key))
+                {
+                    var glycoProteinParsimony = GlycoProteinParsimony.ProteinLevelGlycoParsimony(pro.Value.Where(p=>p.GlycanType != GlycoType.SinglePep).ToList());
+
+                    Dictionary<string, HashSet<string>> localizedglycans = new Dictionary<string, HashSet<string>>();
+                    foreach (var item in glycoProteinParsimony.Where(p => p.Value.IsLocalized && p.Value.MinQValue <= 0.01))
+                    {
+                        var key = item.Value.ProteinAccession + "-" + item.Value.ProteinPos + "-" + item.Value.AminoAcid;
+                        if (localizedglycans.ContainsKey(key))
+                        {
+                            localizedglycans[key].Add(item.Value.GlycanCom);
+                        }
+                        else
+                        {
+                            localizedglycans[key] = new HashSet<string>();
+                            localizedglycans[key].Add(item.Value.GlycanCom);
+                        }
+                    }
+
+                    Dictionary<string, HashSet<string>> allglycans = new Dictionary<string, HashSet<string>>();
+                    foreach (var item in glycoProteinParsimony.Where(p => p.Value.MinQValue <= 0.01))
+                    {
+                        var key = item.Value.ProteinAccession + "-" + item.Value.ProteinPos + "-" + item.Value.AminoAcid;
+                        if (allglycans.ContainsKey(key))
+                        {
+                            allglycans[key].Add(item.Value.GlycanCom);
+                        }
+                        else
+                        {
+                            allglycans[key] = new HashSet<string>();
+                            allglycans[key].Add(item.Value.GlycanCom);
+                        }
+                    }
+
+                    output.WriteLine(
+                        pro.Key + "\t" +
+                        pro.Value.Count(p => p.GlycanType != GlycoType.SinglePep && p.LocalizationLevel != LocalizationLevel.Level3) + "\t" +
+                        pro.Value.Where(p => p.GlycanType != GlycoType.SinglePep && p.LocalizationLevel != LocalizationLevel.Level3).Select(p=>p.FullSequence).ToHashSet().Count() + "\t" +
+                        pro.Value.Where(p => p.GlycanType != GlycoType.SinglePep && p.LocalizationLevel != LocalizationLevel.Level3).Select(p=>p.BaseSequence).ToHashSet().Count() + "\t" +
+                        localizedglycans.Count() + "\t" +
+                        localizedglycans.Where(p => p.Key.Contains("-N")).Count() + "\t" +
+                        localizedglycans.Where(p => p.Key.Contains("-S") || p.Key.Contains("-T")).Count() + "\t" +
+                        localizedglycans.Values.ToHashSet().Count() + "\t" +
+                        String.Join(",", localizedglycans.Values.SelectMany(p => p).ToHashSet()) + "\t" +
+
+
+                        pro.Value.Count() + "\t" +
+                        pro.Value.Select(p => p.FullSequence).ToHashSet().Count() + "\t" +
+                        pro.Value.Select(p => p.BaseSequence).ToHashSet().Count() + "\t" +
+                        allglycans.Count() + "\t" +
+                        allglycans.Where(p => p.Key.Contains("-N")).Count() + "\t" +
+                        allglycans.Where(p => p.Key.Contains("-S") || p.Key.Contains("-T")).Count() + "\t" +
+                        allglycans.Values.ToHashSet().Count() + "\t" +
+                        String.Join(",", allglycans.Values.SelectMany(p=>p).ToHashSet()) + "\t" +
+                        pro.Value.Count(p => p.GlycanType == GlycoType.SinglePep)
+                        ); 
                 }
             }
         }

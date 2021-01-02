@@ -147,7 +147,7 @@
                                         </Grid.ColumnDefinitions>
                                         <StackPanel Orientation="Horizontal" Grid.Row="0" Margin="5">
                                             <Label Content="Keep top N candidates" />
-                                            <TextBox x:Name="txtTopNum" PreviewTextInput="CheckIfNumber" Width="45" Margin="2" IsEnabled="{Binding IsChecked, ElementName=ckbTopNum}" />
+                                            <TextBox x:Name="txtTopNum" PreviewTextInput="CheckIfNumber" Width="45" Margin="2"/>
                                         </StackPanel>
                                         <StackPanel Orientation="Horizontal" Grid.Row="1" Margin="5">
                                             <CheckBox x:Name="CkbIndex_by_ion" Content="Index b/y ions" Grid.Row="1" VerticalAlignment="Center"/>
