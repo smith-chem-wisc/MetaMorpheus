@@ -53,7 +53,6 @@ namespace EngineLayer
             Dictionary<string, int> sequenceToPsmCount = GetSequenceToPSMCount(psms);
             int chargeStateMode = GetChargeStateMode(psms);
 
-
             Dictionary<string, float> fileSpecificMedianFragmentMassErrors = GetFileSpecificMedianFragmentMassError(psms);
 
             MLContext mlContext = new MLContext();
@@ -275,32 +274,28 @@ namespace EngineLayer
             }
 
             int myIndex = 0;
-            if (decoyPsmIndexes.Count > 0)
+
+            while (myIndex < decoyPsmIndexes.Count)
             {
-                while (myIndex < decoyPsmIndexes.Count)
+                int subIndex = 0;
+                while (subIndex < numGroups && myIndex < decoyPsmIndexes.Count)
                 {
-                    int subIndex = 0;
-                    while (subIndex < numGroups && myIndex < decoyPsmIndexes.Count)
-                    {
-                        groupsOfIndicies[subIndex].Add(decoyPsmIndexes[myIndex]);
-                        subIndex++;
-                        myIndex++;
-                    }
+                    groupsOfIndicies[subIndex].Add(decoyPsmIndexes[myIndex]);
+                    subIndex++;
+                    myIndex++;
                 }
             }
 
             myIndex = 0;
-            if (targetPsmIndexes.Count > 0)
+
+            while (myIndex < targetPsmIndexes.Count)
             {
-                while (myIndex < targetPsmIndexes.Count)
+                int subIndex = 0;
+                while (subIndex < numGroups && myIndex < targetPsmIndexes.Count)
                 {
-                    int subIndex = 0;
-                    while (subIndex < numGroups && myIndex < targetPsmIndexes.Count)
-                    {
-                        groupsOfIndicies[subIndex].Add(targetPsmIndexes[myIndex]);
-                        subIndex++;
-                        myIndex++;
-                    }
+                    groupsOfIndicies[subIndex].Add(targetPsmIndexes[myIndex]);
+                    subIndex++;
+                    myIndex++;
                 }
             }
 
