@@ -34,6 +34,7 @@
 
   <ItemGroup>
     <FrameworkReference Include="Microsoft.NETCore.App" />
+    <FrameworkReference Include="Microsoft.WindowsDesktop.App" />
   </ItemGroup>
 
 </Project>
