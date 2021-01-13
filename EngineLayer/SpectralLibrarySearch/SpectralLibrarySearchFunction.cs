@@ -30,7 +30,7 @@ namespace EngineLayer
                             double spectralAngle = CalculateNormalizedSpectralAngle(librarySpectrum.MatchedFragmentIons, scan.TheScan, commonParameters);
                             psm.SpectralAngle = spectralAngle;
                         }
-                        else if (spectralLibrary != null && peptide.Key.Protein.Accession.Contains("DECOY") && spectralLibrary.TryGetSpectrum(spectralLibrary.DecoyTargetPairs[peptide.Key].FullSequence, scan.PrecursorCharge, out var targetlibrarySpectrum))
+                        else if (spectralLibrary != null && peptide.Key.Protein.Accession.Contains("DECOY") && spectralLibrary.DecoyTargetPairs.ContainsKey(peptide.Key) && spectralLibrary.TryGetSpectrum(spectralLibrary.DecoyTargetPairs[peptide.Key].FullSequence, scan.PrecursorCharge, out var targetlibrarySpectrum))
                         {
                             var decoyPeptideTheorProducts = new List<Product>();
                             peptide.Key.Fragment(commonParameters.DissociationType, commonParameters.DigestionParams.FragmentationTerminus, decoyPeptideTheorProducts);
@@ -153,10 +153,10 @@ namespace EngineLayer
             }
 
             // L2 norm
-            double sumOfspectrumIntensity = Math.Sqrt(matchedIons.Sum(p => p.Value.Intensity));
-            double expNormalizer = Math.Sqrt(matchedIons.Sum(p => Math.Pow(p.Value.Intensity / sumOfspectrumIntensity, 2)));
-            double sumOfstandardIntensity = Math.Sqrt(standardSpectrum.Sum(p => p.Intensity));
-            double theorNormalizer = Math.Sqrt(standardSpectrum.Sum(p => Math.Pow(p.Intensity/ sumOfstandardIntensity, 2)));
+            //double sumOfspectrumIntensity = Math.Sqrt(matchedIons.Sum(p => p.Value.Intensity));
+            double expNormalizer = Math.Sqrt(matchedIons.Sum(p => Math.Pow(p.Value.Intensity, 2)));
+            //double sumOfstandardIntensity = Math.Sqrt(standardSpectrum.Sum(p => p.Intensity));
+            double theorNormalizer = Math.Sqrt(standardSpectrum.Sum(p => Math.Pow(p.Intensity, 2)));
 
             double dotProduct = 0;
 
@@ -164,9 +164,9 @@ namespace EngineLayer
             {
                 if (matchedIons.TryGetValue(standIon, out var Ion))
                 {
-                    var standIntensity = standIon.Intensity / sumOfstandardIntensity;
-                    var intensity = Ion.Intensity / sumOfspectrumIntensity;
-                    dotProduct += (standIntensity / theorNormalizer) * (intensity / expNormalizer);
+                    //var standIntensity = standIon.Intensity / sumOfstandardIntensity;
+                    //var intensity = Ion.Intensity / sumOfspectrumIntensity;
+                    dotProduct += (standIon.Intensity / theorNormalizer) * (Ion.Intensity / expNormalizer);
                 }
             }
 
@@ -262,7 +262,7 @@ namespace EngineLayer
             return score;
         }
 
-        public static List<MatchedFragmentIon> AverageTwoSpectra(List<MatchedFragmentIon> spectraOne, List<MatchedFragmentIon> spectraTwo, int PsmsNum)
+        public static (List<MatchedFragmentIon>, Dictionary<string, int>) AverageTwoSpectra(List<MatchedFragmentIon> spectraOne, List<MatchedFragmentIon> spectraTwo, Dictionary<string, int> ConsensusSpectraPeaksNumPair)
         {
             Dictionary<String, MatchedFragmentIon> averagedPeaksDictionary = new Dictionary<String, MatchedFragmentIon>();
             var averageTwoSpectraResult = new List<MatchedFragmentIon>();
@@ -270,6 +270,8 @@ namespace EngineLayer
             Dictionary<String, MatchedFragmentIon> spectraTwoDictionary = new Dictionary<String, MatchedFragmentIon>();
             double intensitySum1 = spectraOne.Select(b => b.Intensity).Sum();
             double intensitySum2 = spectraTwo.Select(b => b.Intensity).Sum();
+            double intensityMax1 = spectraOne.Select(b => b.Intensity).Max();
+            double intensityMax2 = spectraTwo.Select(b => b.Intensity).Max();
             foreach (var ionOne in spectraOne)
             {
                 var productWithChargeInOne = ionOne.NeutralTheoreticalProduct.ProductType.ToString() + ionOne.NeutralTheoreticalProduct.FragmentNumber + "^" + ionOne.Charge;
@@ -292,16 +294,27 @@ namespace EngineLayer
                 }
 
             }
-
+          
             //Tolerance tolerance = new PpmTolerance(40);
             foreach (var productWithCharge in AllproductWithCharge)
             {
                 if (spectraOneDictionary.ContainsKey(productWithCharge) && spectraTwoDictionary.ContainsKey(productWithCharge))
                 {
-                    var newMz = spectraOneDictionary[productWithCharge].Mz * (1 - (1.0 / PsmsNum)) + spectraTwoDictionary[productWithCharge].Mz / PsmsNum;
-                    var normInten1 = spectraOneDictionary[productWithCharge].Intensity / intensitySum1;
-                    var normInten2 = spectraTwoDictionary[productWithCharge].Intensity / intensitySum2;
-                    var newNorIntensity = normInten1 * (1 - (1.0 / PsmsNum)) + normInten2 / PsmsNum;
+                    if (ConsensusSpectraPeaksNumPair != null && ConsensusSpectraPeaksNumPair.ContainsKey(productWithCharge))
+                    {
+                        ConsensusSpectraPeaksNumPair[productWithCharge] = ConsensusSpectraPeaksNumPair[productWithCharge] + 1;
+                    }
+                    else
+                    {
+                        ConsensusSpectraPeaksNumPair.Add(productWithCharge, 2);
+                    }
+                    int peaksNum = ConsensusSpectraPeaksNumPair[productWithCharge];
+                    var newMz = spectraOneDictionary[productWithCharge].Mz * (1 - (1.0 / peaksNum)) + spectraTwoDictionary[productWithCharge].Mz / peaksNum;
+                    //var normInten1 = spectraOneDictionary[productWithCharge].Intensity / intensitySum1;
+                    //var normInten2 = spectraTwoDictionary[productWithCharge].Intensity / intensitySum2;
+                    var normInten1 = spectraOneDictionary[productWithCharge].Intensity / intensityMax1;
+                    var normInten2 = spectraTwoDictionary[productWithCharge].Intensity / intensityMax2;
+                    var newNorIntensity = normInten1 * (1 - (1.0 / peaksNum)) + normInten2 / peaksNum;
                     Product product = spectraOneDictionary[productWithCharge].NeutralTheoreticalProduct;
                     var newIon = new MatchedFragmentIon(ref product, newMz, newNorIntensity, spectraOneDictionary[productWithCharge].Charge);
                     averageTwoSpectraResult.Add(newIon);
@@ -309,21 +322,25 @@ namespace EngineLayer
                 else if (spectraOneDictionary.ContainsKey(productWithCharge))
                 {
                     Product productOne = spectraOneDictionary[productWithCharge].NeutralTheoreticalProduct;
-                    var normInten1 = spectraOneDictionary[productWithCharge].Intensity / intensitySum1;
-                    var oneIon = new MatchedFragmentIon(ref productOne, spectraOneDictionary[productWithCharge].Mz, normInten1 * (1 - (1.0 / PsmsNum)), spectraOneDictionary[productWithCharge].Charge);
+                    //var normInten1 = spectraOneDictionary[productWithCharge].Intensity / intensitySum1;
+                    var normInten1 = spectraOneDictionary[productWithCharge].Intensity / intensityMax1;
+                    //var oneIon = new MatchedFragmentIon(ref productOne, spectraOneDictionary[productWithCharge].Mz, normInten1 * (1 - (1.0 / PsmsNum)), spectraOneDictionary[productWithCharge].Charge);
+                    var oneIon = new MatchedFragmentIon(ref productOne, spectraOneDictionary[productWithCharge].Mz, normInten1, spectraOneDictionary[productWithCharge].Charge);
                     averageTwoSpectraResult.Add(oneIon);
                 }
                 else if (spectraTwoDictionary.ContainsKey(productWithCharge))
                 {
                     Product productTwo = spectraTwoDictionary[productWithCharge].NeutralTheoreticalProduct;
-                    var normInten2 = spectraTwoDictionary[productWithCharge].Intensity / intensitySum2;
-                    var twoIon = new MatchedFragmentIon(ref productTwo, spectraTwoDictionary[productWithCharge].Mz, normInten2 / PsmsNum, spectraTwoDictionary[productWithCharge].Charge);
+                    //var normInten2 = spectraTwoDictionary[productWithCharge].Intensity / intensitySum2;
+                    var normInten2 = spectraTwoDictionary[productWithCharge].Intensity / intensityMax2;
+                    //var twoIon = new MatchedFragmentIon(ref productTwo, spectraTwoDictionary[productWithCharge].Mz, normInten2 / PsmsNum, spectraTwoDictionary[productWithCharge].Charge);
+                    var twoIon = new MatchedFragmentIon(ref productTwo, spectraTwoDictionary[productWithCharge].Mz, normInten2, spectraTwoDictionary[productWithCharge].Charge);
                     averageTwoSpectraResult.Add(twoIon);
                 }
             }
             var testmz1 = averageTwoSpectraResult.Select(b => b.Mz).ToArray();
             var testin1 = averageTwoSpectraResult.Select(b => b.Intensity).ToArray();
-            return averageTwoSpectraResult;
+            return (averageTwoSpectraResult, ConsensusSpectraPeaksNumPair);
         }
 
         public static double CalculateDecoyNormalizedSpectralAngle(PeptideWithSetModifications peptide, Ms2ScanWithSpecificMass scan, CommonParameters commonParameters)

@@ -25,7 +25,7 @@ namespace TaskLayer
         public PostSearchAnalysisParameters Parameters { get; set; }
         private List<EngineLayer.ProteinGroup> ProteinGroups { get; set; }
         private IEnumerable<IGrouping<string, PeptideSpectralMatch>> PsmsGroupedByFile { get; set; }
-
+       
         public PostSearchAnalysisTask()
             : base(MyTask.Search)
         {
@@ -545,45 +545,59 @@ namespace TaskLayer
                 double standPrecursurMz = x.Value[0].ScanPrecursorMonoisotopicPeakMz;
                 double standRt = x.Value[0].ScanRetentionTime;
                 int a = 0;
+                var ConsensusSpectraPeaksNumPair = new Dictionary<string, int>();
                 int PsmsNum = 1;
                 while (a < x.Value.Count - 1)
                 {
                     //Console.WriteLine(x.Key + "   " + this.matchedSpectraCompare(standspctra, x.Value[a + 1].MatchedFragmentIons));
                     var spectrumTocompare = x.Value[a + 1].MatchedFragmentIons;
+                    //if (x.Value[0].FullSequence.Contains("HAEGTFTSDVSSYLEGQAAK"))
+                    //{
+
+                    //}
 
                     var compareScore = SpectralLibrarySearchFunction.MatchedSpectraCompare(standspctra, spectrumTocompare);
                     var testScore = SpectralLibrarySearchFunction.CalculatePsmsNormalizedSpectralAngle(standspctra, spectrumTocompare);
-                    if (compareScore > 0.90)
+                    if (compareScore > 0.95)
                     {
                         PsmsNum++;
-                        standspctra = SpectralLibrarySearchFunction.AverageTwoSpectra(standspctra, spectrumTocompare, PsmsNum);
+                        var pairResult = SpectralLibrarySearchFunction.AverageTwoSpectra(standspctra, spectrumTocompare, ConsensusSpectraPeaksNumPair);
+                        standspctra = pairResult.Item1;
+                        ConsensusSpectraPeaksNumPair = pairResult.Item2;
 
                         standPrecursurMz = standPrecursurMz * (1 - (1.0 / PsmsNum)) + x.Value[a + 1].ScanPrecursorMonoisotopicPeakMz / PsmsNum;
                         standRt = standRt * (1 - (1.0 / PsmsNum)) + x.Value[a + 1].ScanRetentionTime / PsmsNum;
                     }
                     a++;
                 }
+                foreach(var s in ConsensusSpectraPeaksNumPair)
+                {
+                    if(s.Value < 0.6 * PsmsNum)
+                    {
+                        standspctra.RemoveAll(b => (b.NeutralTheoreticalProduct.ProductType.ToString() + b.NeutralTheoreticalProduct.FragmentNumber + "^" + b.Charge) == s.Key);
+                    }
+                }
                 var standSpectrum = new LibrarySpectrum(x.Value[0].FullSequence, standPrecursurMz, x.Value[0].ScanPrecursorCharge, standspctra, standRt);
                 standSpectrum.BaseSequenceWithoutMods = x.Value[0].BaseSequence;
                 spectrumLibrary.Add(standSpectrum);
             }
 
-            //WriteSpectralLibrary(spectrumLibrary, Parameters.OutputFolder);
+            WriteSpectralLibrary(spectrumLibrary, Parameters.OutputFolder);
 
             //fortesting
-            var allspectra = new List<LibrarySpectrum>();
-            foreach (var x in PsmsGroupByPeptideAndCharge)
-            {
-                if(x.Value.Count>1)
-                {
-                    foreach(var each in x.Value)
-                    {
-                        allspectra.Add(new LibrarySpectrum(each.FullSequence, each.ScanPrecursorMonoisotopicPeakMz, each.ScanPrecursorCharge, each.MatchedFragmentIons, each.ScanRetentionTime));
-                    }
-                }
+            //var allspectra = new List<LibrarySpectrum>();
+            //foreach (var x in PsmsGroupByPeptideAndCharge)
+            //{
+            //    if(x.Value.Count>1)
+            //    {
+            //        foreach(var each in x.Value)
+            //        {
+            //            allspectra.Add(new LibrarySpectrum(each.FullSequence, each.ScanPrecursorMonoisotopicPeakMz, each.ScanPrecursorCharge, each.MatchedFragmentIons, each.ScanRetentionTime));
+            //        }
+            //    }
                 
-            }
-            WriteAllspectra(allspectra, Parameters.OutputFolder);
+            //}
+            //WriteAllspectra(allspectra, Parameters.OutputFolder);
         }
         private void WritePsmResults()
         {

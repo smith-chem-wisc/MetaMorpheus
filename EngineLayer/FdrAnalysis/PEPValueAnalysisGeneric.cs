@@ -625,7 +625,7 @@ namespace EngineLayer
             float isLoop = 0;
             float isInter = 0;
             float isIntra = 0;
-            float spectralAngle = 0;
+            float spectralAngle = (float)double.NaN;
 
             if (searchType != "crosslink")
             {

@@ -77,7 +77,8 @@ namespace EngineLayer
 
             foreach (MatchedFragmentIon matchedIon in MatchedFragmentIons)
             {
-                double intensityFraction = matchedIon.Intensity / sumIntensity;
+                //double intensityFraction = matchedIon.Intensity / sumIntensity;
+                double intensityFraction = matchedIon.Intensity / maxIntensity;
 
                 spectrum.Append("\n" + matchedIon.Mz + "\t" + intensityFraction + "\t" + "\"" +
                     matchedIon.NeutralTheoreticalProduct.ProductType.ToString() +

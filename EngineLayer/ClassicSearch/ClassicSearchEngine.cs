@@ -12,7 +12,8 @@ namespace EngineLayer.ClassicSearch
 {
     public class ClassicSearchEngine : MetaMorpheusEngine
     {
-        private readonly SpectralLibrary SpectralLibrary;
+        public SpectralLibrary SpectralLibrary { get; set; }
+        public Dictionary<PeptideWithSetModifications, PeptideWithSetModifications> decoyTargetPairs;
         private readonly MassDiffAcceptor SearchMode;
         private readonly List<Protein> Proteins;
         private readonly List<Modification> FixedModifications;
@@ -50,9 +51,10 @@ namespace EngineLayer.ClassicSearch
 
             double proteinsSearched = 0;
             int oldPercentProgress = 0;
+            decoyTargetPairs = new Dictionary<PeptideWithSetModifications, PeptideWithSetModifications>();
 
-            // one lock for each MS2 scan; a scan can only be accessed by one thread at a time
-            var myLocks = new object[PeptideSpectralMatches.Length];
+              // one lock for each MS2 scan; a scan can only be accessed by one thread at a time
+              var myLocks = new object[PeptideSpectralMatches.Length];
             for (int i = 0; i < myLocks.Length; i++)
             {
                 myLocks[i] = new object();
@@ -82,21 +84,23 @@ namespace EngineLayer.ClassicSearch
                             PeptideWithSetModifications decoy = DecoyOnTheFly.GetReverseDecoyFromTarget(peptide, newAAlocations);
                             decoy.Fragment(CommonParameters.DissociationType, CommonParameters.DigestionParams.FragmentationTerminus, decoyPeptideTheorProducts);
 
+                            // we need a function to get the original target sequence of a decoy peptide
+
+                                if (!decoyTargetPairs.ContainsKey(decoy) )
+                                {
+                                   decoyTargetPairs.Add(decoy, peptide);
+                                }
+                          
+
+
 
                             foreach (ScanWithIndexAndNotchInfo scan in GetAcceptableScans(peptide.MonoisotopicMass, SearchMode))
                             {
-                                if (SpectralLibrary != null && !SpectralLibrary.ContainsSpectrum(peptide.FullSequence, scan.TheScan.PrecursorCharge))
-                                {
-                                    continue;
-                                }
-                                // we need a function to get the original target sequence of a decoy peptide
-
-                                if (SpectralLibrary != null && !SpectralLibrary.DecoyTargetPairs.ContainsKey(decoy))
-                                {
-                                                                                                                                                                                                                                                                                                                                                                                                                              
-                                      SpectralLibrary.DecoyTargetPairs.Add(decoy, peptide);
-                                }
-                              
+                                //if (SpectralLibrary != null && !SpectralLibrary.ContainsSpectrum(peptide.FullSequence, scan.TheScan.PrecursorCharge))
+                                //{
+                                //    continue;
+                                //}
+                                
                                 List<MatchedFragmentIon> matchedIons = MatchFragmentIons(scan.TheScan, peptideTheorProducts, CommonParameters);
                                 List<MatchedFragmentIon> decoyMatchedIons = MatchFragmentIons(scan.TheScan, decoyPeptideTheorProducts, CommonParameters);
 
@@ -147,7 +151,6 @@ namespace EngineLayer.ClassicSearch
                                 
                             }
                         }
-
                         // report search progress (proteins searched so far out of total proteins in database)
                         proteinsSearched++;
                         var percentProgress = (int)((proteinsSearched / Proteins.Count) * 100);
@@ -164,6 +167,10 @@ namespace EngineLayer.ClassicSearch
             foreach (PeptideSpectralMatch psm in PeptideSpectralMatches.Where(p => p != null))
             {
                 psm.ResolveAllAmbiguities();
+            }
+            if (SpectralLibrary != null)
+            {
+                SpectralLibrary.DecoyTargetPairs = decoyTargetPairs;
             }
 
             return new MetaMorpheusEngineResults(this);

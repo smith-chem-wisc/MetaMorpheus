@@ -3,6 +3,7 @@ using EngineLayer.FdrAnalysis;
 using Proteomics;
 using Proteomics.Fragmentation;
 using Proteomics.ProteolyticDigestion;
+using System;
 using System.Collections.Generic;
 using System.Linq;
 
@@ -31,6 +32,7 @@ namespace EngineLayer
             Xcorr = xcorr;
             NativeId = scan.NativeId;
             RunnerUpScore = commonParameters.ScoreCutoff;
+            SpectralAngle = Double.NaN;
 
             AddOrReplace(peptide, score, notch, true, matchedFragmentIons, xcorr);
         }
