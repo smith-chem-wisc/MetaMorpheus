@@ -445,7 +445,6 @@
                                     Output of .mzID requires protein parsimony. Please check "Apply protein parsimony and construct protein groups".
                                 </ToolTipService.ToolTip>
                             </CheckBox>
-                            <CheckBox x:Name="IncludeMotifInModNamesCheckBox" Margin="20 0 0 0" Content="Include motif in mod names" IsEnabled="{Binding IsChecked, ElementName=CkbMzId}" />
                             <!--<CheckBox x:Name="ckbPepXML" Content="Write .pep.XML" />-->
                             <CheckBox x:Name="WriteDecoyCheckBox" Content="Write decoys" />
                             <CheckBox x:Name="WriteContaminantCheckBox" Content="Write contaminants" />
@@ -1015,6 +1014,31 @@
                                             </DataGrid>
                                         </StackPanel>
                                     </GroupBox>
+                                </StackPanel>
+                            </Expander>
+                        </GroupBox>
+                        <GroupBox Header="Output Options" DockPanel.Dock="Top" ScrollViewer.CanContentScroll="True">
+                            <Expander x:Name="OutputExpander" Collapsed="ApmdExpander_Collapsed">
+                                <Expander.Style>
+                                    <Style TargetType="Expander">
+                                        <Setter Property="Header" Value="Some output properties..." />
+                                        <Style.Triggers>
+                                            <Trigger Property="IsExpanded" Value="True">
+                                                <Setter Property="Header" Value="Hide" />
+                                            </Trigger>
+                                        </Style.Triggers>
+                                    </Style>
+                                </Expander.Style>
+
+                                <StackPanel>
+                                    <CheckBox x:Name="IncludeMotifInModNamesCheckBox" Margin="20 0 0 0" 
+                                              Content="Include mod motifs in .mzID" IsEnabled="{Binding IsChecked, ElementName=CkbMzId}" >
+                                        <ToolTipService.ToolTip>
+                                            <TextBlock>
+                                                Checking this box will append the modification motif onto modification names in the .mzID output, e.g. "Carbamidomethylation on C"
+                                            </TextBlock>
+                                        </ToolTipService.ToolTip>
+                                    </CheckBox>
                                 </StackPanel>
                             </Expander>
                         </GroupBox>
