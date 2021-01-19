@@ -58,7 +58,7 @@ namespace EngineLayer
         public static void SetUpGlobalVariables()
         {
             Loaders.LoadElements();
-            AcceptedDatabaseFormats = new List<string> { ".fasta", ".fa", ".xml" };
+            AcceptedDatabaseFormats = new List<string> { ".fasta", ".fa", ".xml", ".msp" };
             AcceptedSpectraFormats = new List<string> { ".raw", ".mzml", ".mgf" };
             AnalyteType = "Peptide";
             _InvalidAminoAcids = new char[] { 'X', 'B', 'J', 'Z', ':', '|', ';', '[', ']', '{', '}', '(', ')', '+', '-' };
@@ -226,7 +226,7 @@ namespace EngineLayer
                 FileName = path
             };
 
-            if (useNotepadToOpenToml && Path.GetExtension(path) == ".toml" && RuntimeInformation.IsOSPlatform(OSPlatform.Windows))
+            if (useNotepadToOpenToml && Path.GetExtension(path).ToLowerInvariant() == ".toml" && RuntimeInformation.IsOSPlatform(OSPlatform.Windows))
             {
                 p.StartInfo.FileName = "notepad.exe";
                 p.StartInfo.Arguments = path;
@@ -249,9 +249,9 @@ namespace EngineLayer
         }
 
         /// <summary>
-        /// Gets the file extension, keeping .gz appended for compressed files
+        /// Gets the file extension, with the option to keep .gz appended for compressed files
         /// </summary>
-        public static string GetFileExtension(string fileWithExtension)
+        public static string GetFileExtension(string fileWithExtension, bool getUncompressedExtension = true)
         {
             string extension = string.Empty;
             StringBuilder sb = new StringBuilder();
@@ -266,14 +266,42 @@ namespace EngineLayer
                 {
                     extension = new string(sb.ToString().Reverse().ToArray());
 
-                    if (extension != ".gz" || !fileWithExtension.Substring(0, i).Contains('.'))
+                    if (!extension.ToLowerInvariant().EndsWith("gz") || extension.Count(p => p == '.') >= 2)
                     {
                         break;
                     }
                 }
             }
 
+            if (getUncompressedExtension && extension.ToLowerInvariant().EndsWith("gz"))
+            {
+                int indexOfGz = extension.ToLowerInvariant().IndexOf("gz");
+
+                for (int i = indexOfGz; i >= 0; i--)
+                {
+                    if (extension[i] == '.')
+                    {
+                        extension = extension.Substring(0, i);
+                        break;
+                    }
+                }
+            }
+
             return extension;
+        }
+
+        public static string GetFilenameWithoutExtension(string path)
+        {
+            Path.GetFileNameWithoutExtension("");
+            var filename = Path.GetFileName(path);
+            string extension = GetFileExtension(filename, getUncompressedExtension: false);
+
+            if (extension == string.Empty)
+            {
+                return filename;
+            }
+
+            return filename.Replace(extension, string.Empty);
         }
 
         private static void SetMetaMorpheusVersion()

@@ -35,7 +35,7 @@ Check out the [wiki page](https://github.com/smith-chem-wisc/MetaMorpheus/wiki) 
 ## Spectra Requirements
 
 * One of the following formats:
-   * Thermo .raw
+   * Thermo .raw (Windows and Linux only)
    * .mzML file in centroid mode
    * .mgf
 * MS1 and MS2 scans

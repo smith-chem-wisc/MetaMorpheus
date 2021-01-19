@@ -175,7 +175,8 @@ namespace EngineLayer.FdrAnalysis
                         searchType = "top-down";
                     }
 
-                    myAnalysisResults.BinarySearchTreeMetrics = PEP_Analysis.ComputePEPValuesForAllPSMsGeneric(AllPsms, searchType, this.FileSpecificParameters, this.OutputFolder);
+                    myAnalysisResults.BinarySearchTreeMetrics = PEP_Analysis_Cross_Validation.ComputePEPValuesForAllPSMsGeneric(AllPsms, searchType, this.FileSpecificParameters, this.OutputFolder);
+
                     Compute_PEPValue_Based_QValue(AllPsms);
                 }
             }
@@ -187,7 +188,7 @@ namespace EngineLayer.FdrAnalysis
 
             if (AnalysisType == "crosslink" && AllPsms.Count > 100)
             {
-                myAnalysisResults.BinarySearchTreeMetrics = PEP_Analysis.ComputePEPValuesForAllPSMsGeneric(AllPsms, "crosslink", this.FileSpecificParameters, this.OutputFolder);
+                myAnalysisResults.BinarySearchTreeMetrics = PEP_Analysis_Cross_Validation.ComputePEPValuesForAllPSMsGeneric(AllPsms, "crosslink", this.FileSpecificParameters, this.OutputFolder);
                 Compute_PEPValue_Based_QValue(AllPsms);
             }
         }
