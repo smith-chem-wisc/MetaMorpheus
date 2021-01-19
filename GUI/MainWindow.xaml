@@ -7,7 +7,7 @@
         mc:Ignorable="d"
         Drop="Window_Drop" AllowDrop="true" Background="{StaticResource BackgroundColor}" WindowStartupLocation="CenterScreen" MinHeight="400" 
         MinWidth="800" Height="550" Width="950"
-        Loaded="MyWindow_Loaded" PreviewKeyDown="Window_PreviewKeyDown">
+        Loaded="MyWindow_Loaded">
 
     <Window.Resources>
         <ResourceDictionary>
@@ -403,7 +403,7 @@
 
                     <!--The list of databases-->
                     <DataGrid Name="dataGridProteinDatabases" Grid.Row="3" ItemsSource="{Binding}" Style="{StaticResource x:DataGridStyle}"
-                              ColumnHeaderStyle="{StaticResource DataGridColumnHeaderStyle}" >
+                              ColumnHeaderStyle="{StaticResource DataGridColumnHeaderStyle}" PreviewKeyDown="Window_PreviewKeyDown" >
                         <DataGrid.RowStyle>
                             <Style TargetType="{x:Type DataGridRow}" BasedOn="{StaticResource DatabaseDataGridItemStyle}" />
                         </DataGrid.RowStyle>
@@ -452,7 +452,7 @@
 
                     <!--The list of spectra files-->
                     <DataGrid Name="dataGridSpectraFiles" ItemsSource="{Binding}" Grid.Row="3" Style="{StaticResource x:DataGridStyle}"
-                              ColumnHeaderStyle="{StaticResource DataGridColumnHeaderStyle}">
+                              ColumnHeaderStyle="{StaticResource DataGridColumnHeaderStyle}" PreviewKeyDown="Window_PreviewKeyDown">
                         <DataGrid.RowStyle>
                             <Style TargetType="{x:Type DataGridRow}" BasedOn="{StaticResource SpectraFileDataGridItemStyle}" />
                         </DataGrid.RowStyle>
@@ -511,7 +511,7 @@
                     
                     <!--List of tasks-->
                     <TreeView x:Name="tasksTreeView" Grid.Row="3" ItemsSource="{Binding}" MouseDoubleClick="TasksTreeView_MouseDoubleClick" 
-                              Margin="10,0,10,10" BorderBrush="{StaticResource BorderColor}">
+                              Margin="10,0,10,10" BorderBrush="{StaticResource BorderColor}" PreviewKeyDown="Window_PreviewKeyDown">
                     </TreeView>
                 </Grid>
             </TabItem>
@@ -544,7 +544,7 @@
 
                             <!--Protein DB Summary-->
                             <DataGrid Name="proteinDbSummaryDataGrid" ItemsSource="{Binding}" Grid.Row="0" Margin="20,10,0,0" 
-                              Style="{StaticResource x:DataGridStyle}" ColumnHeaderStyle="{StaticResource DataGridColumnHeaderStyle}">
+                              Style="{StaticResource x:DataGridStyle}" ColumnHeaderStyle="{StaticResource DataGridColumnHeaderStyle}" PreviewKeyDown="Window_PreviewKeyDown">
                                 <DataGrid.RowStyle>
                                     <Style TargetType="{x:Type DataGridRow}" BasedOn="{StaticResource DatabaseDataGridItemStyle}" >
                                         <Setter Property="FontSize" Value="11" />
@@ -572,7 +572,7 @@
                             
                             <!--Spectra file Summary-->
                             <DataGrid Name="spectraFileSummaryDataGrid" ItemsSource="{Binding}" Grid.Row="2" Margin="20,0,0,10" 
-                              Style="{StaticResource x:DataGridStyle}" ColumnHeaderStyle="{StaticResource DataGridColumnHeaderStyle}">
+                              Style="{StaticResource x:DataGridStyle}" ColumnHeaderStyle="{StaticResource DataGridColumnHeaderStyle}" PreviewKeyDown="Window_PreviewKeyDown">
                                 <DataGrid.RowStyle>
                                     <Style TargetType="{x:Type DataGridRow}" BasedOn="{StaticResource SpectraFileDataGridItemStyle}">
                                         <Setter Property="FontSize" Value="11" />
@@ -600,7 +600,8 @@
                             Margin="0,10,0,10"/>
 
                         <!--Task Summary-->
-                        <TreeView Name="taskSummary" ItemsSource="{Binding}" Grid.Column="2" Margin="0,10,20,10" MouseDoubleClick="TasksTreeView_MouseDoubleClick">
+                        <TreeView Name="taskSummary" ItemsSource="{Binding}" Grid.Column="2" Margin="0,10,20,10" MouseDoubleClick="TasksTreeView_MouseDoubleClick"
+                                  PreviewKeyDown="Window_PreviewKeyDown">
                             <TreeView.ItemContainerStyle>
                                 <Style TargetType="{x:Type TreeViewItem}">
                                     <Setter Property="FontSize" Value="13" />
