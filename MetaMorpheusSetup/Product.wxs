@@ -157,6 +157,12 @@
       <Component Id="src_EngineLayer.pdb" Guid="8f9592a4-02b1-4462-a259-f7aa41d890a4">
         <File Id="src_EngineLayer.pdb" Name="EngineLayer.pdb" Source="$(var.GUI_TargetDir)EngineLayer.pdb" />
       </Component>
+      <Component Id="src_GUIFunctions.dll" Guid="947D4AD8-213D-4FF2-B863-92B7AFCBF533">
+        <File Id="src_GUIFunctions.dll" Name="GUIFunctions.dll" Source="$(var.GUI_TargetDir)GUIFunctions.dll" />
+      </Component>
+      <Component Id="src_GUIFunctions.pdb" Guid="F12F9001-1B3D-433D-8C9F-C8BA91A06074">
+        <File Id="src_GUIFunctions.pdb" Name="GUIFunctions.pdb" Source="$(var.GUI_TargetDir)GUIFunctions.pdb" />
+      </Component>
       <Component Id="src_FlashLFQ.dll" Guid="69e33379-5301-49db-8913-4d777ed5a5f9">
         <File Id="src_FlashLFQ.dll" Name="FlashLFQ.dll" Source="$(var.GUI_TargetDir)FlashLFQ.dll" />
       </Component>

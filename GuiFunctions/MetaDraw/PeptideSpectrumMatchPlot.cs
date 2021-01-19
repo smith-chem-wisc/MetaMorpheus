@@ -1,4 +1,5 @@
 ﻿using Chemistry;
+using EngineLayer;
 using iText.IO.Image;
 using iText.Kernel.Pdf;
 using MassSpectrometry;
@@ -21,7 +22,7 @@ using System.Windows.Media;
 using System.Windows.Media.Imaging;
 using System.Windows.Shapes;
 
-namespace EngineLayer
+namespace GuiFunctions
 {
     public class PeptideSpectrumMatchPlot : Plot
     {
