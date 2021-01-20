@@ -25,5 +25,10 @@
             <Setter Property="Foreground" Value="{StaticResource TextColor2}"/>
             <Setter Property="FontSize" Value="12"/>
         </Style>-->
+
+        <Style x:Key="InternalGridStyle" TargetType="Grid">
+            <Setter Property="Background" Value="{StaticResource BackgroundColor}"/>
+            <Setter Property="Margin" Value="0,0,0,0"/>
+        </Style>
     </Application.Resources>
 </Application>

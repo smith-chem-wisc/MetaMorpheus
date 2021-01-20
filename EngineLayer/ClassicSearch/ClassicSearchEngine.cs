@@ -1,5 +1,6 @@
 ﻿using MzLibUtil;
 using Proteomics;
+using Proteomics.AminoAcidPolymer;
 using Proteomics.Fragmentation;
 using Proteomics.ProteolyticDigestion;
 using System;
@@ -100,6 +101,13 @@ namespace EngineLayer.ClassicSearch
 
                                         if (scoreImprovement)
                                         {
+                                            //debug
+                                            List<Product> internalFragments = new List<Product>();
+                                            PredictInternalFragments(peptide, internalFragments);                                          
+                                            List<MatchedFragmentIon> matchedInternalIons = MatchFragmentIons(scan.TheScan, internalFragments, CommonParameters);
+                                            matchedIons.AddRange(matchedInternalIons);
+                                            //
+
                                             if (PeptideSpectralMatches[scan.ScanIndex] == null)
                                             {
                                                 PeptideSpectralMatches[scan.ScanIndex] = new PeptideSpectralMatch(peptide, scan.Notch, thisScore, scan.ScanIndex, scan.TheScan, CommonParameters, matchedIons, 0);
@@ -133,6 +141,67 @@ namespace EngineLayer.ClassicSearch
             }
 
             return new MetaMorpheusEngineResults(this);
+        }
+
+        private static void PredictInternalFragments(PeptideWithSetModifications peptide, List<Product> products)
+        {
+            const int MIN_ALLOWED_LENGTH = 5; //must be greater than 0
+            string baseSequence = peptide.BaseSequence;
+            products.Clear();
+
+            for (int n = 1; n < baseSequence.Length - MIN_ALLOWED_LENGTH-1; n++)
+            {
+                double fragmentMass = 0;
+                //populate with smallest possible fragment from this starting residue
+                for(int i=0; i<MIN_ALLOWED_LENGTH; i++)
+                {
+                    if (Residue.TryGetResidue(baseSequence[n+i], out Residue residue))
+                    {
+                        fragmentMass += residue.MonoisotopicMass;
+
+                        // add side-chain mod
+                        if (peptide.AllModsOneIsNterminus.TryGetValue(n + i + 2, out Modification mod))
+                        {
+                            fragmentMass += mod.MonoisotopicMass.Value;
+                        }
+                    }
+                    else
+                    {
+                        fragmentMass = double.NaN;
+                    }
+                }
+                //add smallest fragment
+                products.Add(new Product(ProductType.M, //FIXME: product type should be "by", should create options for additional internal fragments, i.e. cz, cy, bz, etc
+                             FragmentationTerminus.None,
+                             fragmentMass,
+                             MIN_ALLOWED_LENGTH,
+                             n,
+                             0));
+
+                for (int c = n + MIN_ALLOWED_LENGTH; c < baseSequence.Length - 1; c++)
+                {
+                    if (Residue.TryGetResidue(baseSequence[c], out Residue residue))
+                    {
+                        fragmentMass += residue.MonoisotopicMass;
+                        // add side-chain mod
+                        if (peptide.AllModsOneIsNterminus.TryGetValue(c + 2, out Modification mod))
+                        {
+                            fragmentMass += mod.MonoisotopicMass.Value;
+                        }
+                        //add new fragment
+                        products.Add(new Product(ProductType.M, //FIXME: product type should be "by", should create options for additional internal fragments, i.e. cz, cy, bz, etc
+                                     FragmentationTerminus.None,
+                                     fragmentMass,
+                                     c-n+1,
+                                     n,
+                                     0));
+                    }
+                    else
+                    {
+                        fragmentMass = double.NaN;
+                    }
+                }
+            }
         }
 
         private IEnumerable<ScanWithIndexAndNotchInfo> GetAcceptableScans(double peptideMonoisotopicMass, MassDiffAcceptor searchMode)

@@ -33,7 +33,7 @@ namespace MetaMorpheusGUI
         public MetaDraw()
         {
             UsefulProteomicsDatabases.Loaders.LoadElements();
-
+            
             InitializeComponent();
 
             MetaDrawLogic = new MetaDrawLogic();
@@ -56,7 +56,6 @@ namespace MetaMorpheusGUI
             base.Closing += this.OnClosing;
 
             ParentChildScanView.Visibility = Visibility.Collapsed;
-            ParentScanView.Visibility = Visibility.Collapsed;
 
             PsmStatPlotFiles = new ObservableCollection<string>();
             selectSourceFileListBox.DataContext = PsmStatPlotFiles;
@@ -157,15 +156,16 @@ namespace MetaMorpheusGUI
             // draw the PSM
             MetaDrawLogic.DisplaySpectrumMatch(plotView, canvas, psm, itemsControlSampleViewModel, out var errors);
 
+            //draw the sequence coverage
+            MetaDrawLogic.DrawSequenceCoverageMap(psm, map);
+
             if (psm.ChildScanMatchedIons != null)
             {
                 ParentChildScanView.Visibility = Visibility.Visible;
-                ParentScanView.Visibility = Visibility.Visible;
             }
             else
             {
                 ParentChildScanView.Visibility = Visibility.Collapsed;
-                ParentScanView.Visibility = Visibility.Collapsed;
             }
 
             if (errors != null && errors.Any())
@@ -538,6 +538,12 @@ namespace MetaMorpheusGUI
                     plot.Model.DefaultXAxis.FontSize = plot.Model.DefaultFontSize;
                 }
             }
+        }
+
+        private void annotationSizeChanged(object sender, SizeChangedEventArgs e)
+        {
+            mapViewer.Height = .8 * SequenceAnnotationGrid.ActualHeight;
+            mapViewer.Width = .99 * SequenceAnnotationGrid.ActualWidth;
         }
     }
 }

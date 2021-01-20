@@ -111,6 +111,7 @@
                                 <RowDefinition Height="Auto" />
                             </Grid.RowDefinitions>
                             <TabControl Grid.Row="0">
+                                <!--MS2 Scan Annotations-->
                                 <TabItem Header="Parent Scan View" Name="ParentScanView">
                                     <Grid Name="PsmAnnotationGrid">
                                         <Grid.RowDefinitions>
@@ -177,6 +178,55 @@
 
                                     </ItemsControl>
                                 </TabItem>
+
+                                <!--Sequence Coverage Annotation-->
+                                <TabItem Header="Sequence Coverage" Name="SequenceCoverageAnnotationView">
+                                    <Grid Grid.Row="1" Name="SequenceAnnotationGrid" SizeChanged="annotationSizeChanged" Style="{StaticResource InternalGridStyle}">
+                                        <Grid.RowDefinitions>
+                                            <RowDefinition Height = "35"></RowDefinition>
+                                            <RowDefinition Height = "*"></RowDefinition>
+                                            <RowDefinition Height="5"></RowDefinition>
+                                            <RowDefinition Height = "30"></RowDefinition>
+                                        </Grid.RowDefinitions>
+
+                                        <!--Header label-->
+                                        <Label Content="Sequence Coverage Map" Grid.Row="0" />
+                                        <ScrollViewer Grid.Row="1" Name="mapViewer" HorizontalAlignment="Center" VerticalAlignment="Center" 
+                                  CanContentScroll="True" VerticalScrollBarVisibility="Auto" HorizontalScrollBarVisibility="Auto" Width="775">
+                                            <Grid Name="mapGrid" Background="White">
+                                                <Grid.RowDefinitions>
+                                                    <RowDefinition Height=" 2*" ></RowDefinition>
+                                                    <RowDefinition Height=" *"></RowDefinition>
+                                                </Grid.RowDefinitions>
+                                                <Canvas x:Name="map" Grid.Row="0" Background="White"></Canvas>
+                                                <Canvas x:Name="legend" Grid.Row ="1" Width ="700" Height="300" Background="White" VerticalAlignment="Top" HorizontalAlignment="Left">
+                                                    <Grid Name="legendGrid" Background="White" VerticalAlignment="Top" HorizontalAlignment="Left"/>
+                                                </Canvas>
+                                            </Grid>
+
+                                        </ScrollViewer>
+
+
+                                    </Grid>
+
+                                    <!--<Grid Name="SequenceAnnotationGrid" SizeChanged="annotationSizeChanged">
+                                        <Grid.RowDefinitions>
+                                            <RowDefinition Height = "auto" />
+                                        </Grid.RowDefinitions>
+
+                                        --><!--Canvas for drawing base sequence annotation--><!--
+                                        <ScrollViewer Grid.Row="0" Name="mapViewer" HorizontalAlignment="Center" VerticalAlignment="Center" 
+                                  CanContentScroll="True" VerticalScrollBarVisibility="Visible" HorizontalScrollBarVisibility="Visible" Width="775" Height="480" >
+                                            <Grid Name="MapGrid" Background="White">
+                                                <Grid.RowDefinitions>
+                                                    <RowDefinition Height = "*" />
+                                                </Grid.RowDefinitions>
+                                                <Canvas Grid.Row="0" Width="700" x:Name="map" Background="White"/>
+                                            </Grid>
+                                        </ScrollViewer>
+                                    </Grid>-->
+                                </TabItem>
+
                             </TabControl>
 
                             <!--Detailed PSM properties-->
