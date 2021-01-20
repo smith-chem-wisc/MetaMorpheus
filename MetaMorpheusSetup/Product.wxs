@@ -319,6 +319,12 @@
       <Component Id="src_OpenMcdf.Extensions.dll" Guid="69004206-94FD-4342-A98D-70560B41C7B3">
         <File Id="src_OpenMcdf.Extensions.dll" Name="OpenMcdf.Extensions.dll" Source="$(var.GUI_TargetDir)OpenMcdf.Extensions.dll" />
       </Component>
+      <Component Id="src_System.CodeDom.dll" Guid="6C2021B6-7218-4C00-9EE5-351B1A03D0A2">
+        <File Id="src_System.CodeDom.dll" Name="System.CodeDom.dll" Source="$(var.GUI_TargetDir)System.CodeDom.dll" />
+      </Component>
+      <Component Id="src_Common.Logging.Core.dll" Guid="894B4A68-17E7-48A5-B2C6-74C33CD08979">
+        <File Id="src_Common.Logging.Core.dll" Name="Common.Logging.Core.dll" Source="$(var.GUI_TargetDir)Common.Logging.Core.dll" />
+      </Component>
       <Component Id="src_MetaMorpheusGUI.deps.json" Guid="B5A6A934-76F0-407D-85D9-9DA45109B815">
         <File Id="src_MetaMorpheusGUI.deps.json" Name="MetaMorpheusGUI.deps.json" Source="$(var.GUI_TargetDir)MetaMorpheusGUI.deps.json" />
       </Component>
