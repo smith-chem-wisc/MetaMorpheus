@@ -62,6 +62,7 @@
         public const string QValueNotch = "QValue Notch";
         public const string PEP = "PEP";
         public const string PEP_QValue = "PEP_QValue";
+        public const string SpectralAngle = "Normalized Spectral Angle";
 
         // Crosslinks
         public const string CrossTypeLabel = "Cross Type";

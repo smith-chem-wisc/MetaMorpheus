@@ -29,18 +29,18 @@ namespace Test
             Modification am = new Modification(_originalId: "Ammonia loss");
             List<Modification> real = new List<Modification> { ac, am };
 
-            Assert.IsTrue(PEP_Analysis.ContainsModificationsThatShiftMobility(real));
-            Assert.AreEqual(2, PEP_Analysis.CountModificationsThatShiftMobility(real));
+            Assert.IsTrue(PEP_Analysis_Cross_Validation.ContainsModificationsThatShiftMobility(real));
+            Assert.AreEqual(2, PEP_Analysis_Cross_Validation.CountModificationsThatShiftMobility(real));
 
             Modification fac = new Modification(_originalId: "fake Acetylation");
             Modification fam = new Modification(_originalId: "fake Ammonia loss");
             List<Modification> fake = new List<Modification> { fac, fam };
 
-            Assert.IsFalse(PEP_Analysis.ContainsModificationsThatShiftMobility(fake));
-            Assert.AreEqual(0, PEP_Analysis.CountModificationsThatShiftMobility(fake));
+            Assert.IsFalse(PEP_Analysis_Cross_Validation.ContainsModificationsThatShiftMobility(fake));
+            Assert.AreEqual(0, PEP_Analysis_Cross_Validation.CountModificationsThatShiftMobility(fake));
 
-            Assert.IsTrue(PEP_Analysis.ContainsModificationsThatShiftMobility(real.Concat(fake)));
-            Assert.AreEqual(2, PEP_Analysis.CountModificationsThatShiftMobility(real.Concat(fake)));
+            Assert.IsTrue(PEP_Analysis_Cross_Validation.ContainsModificationsThatShiftMobility(real.Concat(fake)));
+            Assert.AreEqual(2, PEP_Analysis_Cross_Validation.CountModificationsThatShiftMobility(real.Concat(fake)));
         }
 
         [Test]
@@ -183,7 +183,8 @@ namespace Test
 
             //check better when using delta
             PeptideSpectralMatch[] allPsmsArray = new PeptideSpectralMatch[listOfSortedms2Scans.Length];
-            new ClassicSearchEngine(allPsmsArray, listOfSortedms2Scans, variableModifications, fixedModifications, null, null, null, proteinList, searchModes, CommonParameters, fsp, new List<string>()).Run();
+            new ClassicSearchEngine(allPsmsArray, listOfSortedms2Scans, variableModifications, fixedModifications, null, null, null, 
+                proteinList, searchModes, CommonParameters, fsp, null, new List<string>()).Run();
 
             var indexEngine = new IndexingEngine(proteinList, variableModifications, fixedModifications, null, null, null, 1, DecoyType.None, CommonParameters,
                 fsp, 30000, false, new List<FileInfo>(), TargetContaminantAmbiguity.RemoveContaminant, new List<string>());
@@ -233,7 +234,8 @@ namespace Test
 
             //check no change when using delta
             allPsmsArray = new PeptideSpectralMatch[listOfSortedms2Scans.Length];
-            new ClassicSearchEngine(allPsmsArray, listOfSortedms2Scans, variableModifications, fixedModifications, null, null, null, proteinList, searchModes, CommonParameters, fsp, new List<string>()).Run();
+            new ClassicSearchEngine(allPsmsArray, listOfSortedms2Scans, variableModifications, fixedModifications, null, null, null, 
+                proteinList, searchModes, CommonParameters, fsp, null, new List<string>()).Run();
 
             CommonParameters = new CommonParameters(useDeltaScore: true, digestionParams: new DigestionParams(minPeptideLength: 5));
 
@@ -271,12 +273,14 @@ namespace Test
 
             var myMsDataFile = myFileManager.LoadFile(origDataFile, CommonParameters);
             var searchModes = new SinglePpmAroundZeroSearchMode(5);
-            List<Protein> proteinList = ProteinDbLoader.LoadProteinFasta(Path.Combine(TestContext.CurrentContext.TestDirectory, @"TestData\hela_snip_for_unitTest.fasta"), true, DecoyType.Reverse, false, ProteinDbLoader.UniprotAccessionRegex, ProteinDbLoader.UniprotFullNameRegex, ProteinDbLoader.UniprotFullNameRegex, ProteinDbLoader.UniprotGeneNameRegex,
-                    ProteinDbLoader.UniprotOrganismRegex, out var dbErrors, -1);
+            List<Protein> proteinList = ProteinDbLoader.LoadProteinFasta(Path.Combine(TestContext.CurrentContext.TestDirectory, @"TestData\hela_snip_for_unitTest.fasta"), true, DecoyType.Reverse, false, out var dbErrors, ProteinDbLoader.UniprotAccessionRegex, ProteinDbLoader.UniprotFullNameRegex, ProteinDbLoader.UniprotFullNameRegex, ProteinDbLoader.UniprotGeneNameRegex,
+                    ProteinDbLoader.UniprotOrganismRegex, -1);
             var listOfSortedms2Scans = MetaMorpheusTask.GetMs2Scans(myMsDataFile, @"TestData\TaGe_SA_HeLa_04_subset_longestSeq.mzML", CommonParameters).OrderBy(b => b.PrecursorMass).ToArray();
             PeptideSpectralMatch[] allPsmsArray = new PeptideSpectralMatch[listOfSortedms2Scans.Length];
-            new ClassicSearchEngine(allPsmsArray, listOfSortedms2Scans, variableModifications, fixedModifications, null, null, null, proteinList, searchModes, CommonParameters, fsp, new List<string>()).Run();
-            FdrAnalysisResults fdrResultsClassicDelta = (FdrAnalysisResults)(new FdrAnalysisEngine(allPsmsArray.Where(p => p != null).ToList(), 1, CommonParameters, fsp, new List<string>()).Run());
+            new ClassicSearchEngine(allPsmsArray, listOfSortedms2Scans, variableModifications, fixedModifications, null, null, null, 
+                proteinList, searchModes, CommonParameters, fsp, null, new List<string>()).Run();
+            FdrAnalysisResults fdrResultsClassicDelta = (FdrAnalysisResults)(new FdrAnalysisEngine(allPsmsArray.Where(p => p != null).ToList(), 1, 
+                CommonParameters, fsp, new List<string>()).Run());
 
             var nonNullPsms = allPsmsArray.Where(p => p != null).ToList();
             var nonNullPsmsOriginalCopy = allPsmsArray.Where(p => p != null).ToList();
@@ -320,7 +324,7 @@ namespace Test
                 { Path.GetFileName(maxScorePsm.FullFilePath), 0 }
             };
 
-            var maxPsmData = PEP_Analysis.CreateOnePsmDataEntry("standard", fsp, maxScorePsm, sequenceToPsmCount, fileSpecificRetTimeHI_behavior, fileSpecificRetTemHI_behaviorModifiedPeptides, massError, chargeStateMode, pwsm, notch, !pwsm.Protein.IsDecoy);
+            var maxPsmData = PEP_Analysis_Cross_Validation.CreateOnePsmDataEntry("standard", fsp, maxScorePsm, sequenceToPsmCount, fileSpecificRetTimeHI_behavior, fileSpecificRetTemHI_behaviorModifiedPeptides, massError, chargeStateMode, pwsm, notch, !pwsm.Protein.IsDecoy);
             Assert.That(maxScorePsm.PeptidesToMatchingFragments.Count - 1, Is.EqualTo(maxPsmData.Ambiguity));
             double normalizationFactor = (double)pwsm.BaseSequence.Length;
             float maxPsmDeltaScore = (float)Math.Round(maxScorePsm.DeltaScore / normalizationFactor * 10.0, 0);
@@ -336,8 +340,10 @@ namespace Test
             Assert.AreEqual((float)0, maxPsmData.IsVariantPeptide);
 
             List<PeptideSpectralMatch> psmCopyForCZETest = nonNullPsms.ToList();
+            List<PeptideSpectralMatch> psmCopyForPEPFailure = nonNullPsms.ToList();
+            List<PeptideSpectralMatch> psmCopyForNoOutputFolder = nonNullPsms.ToList();
 
-            PEP_Analysis.ComputePEPValuesForAllPSMsGeneric(nonNullPsms, "standard", fsp, Path.Combine(TestContext.CurrentContext.TestDirectory, @"TestData\"));
+            PEP_Analysis_Cross_Validation.ComputePEPValuesForAllPSMsGeneric(nonNullPsms, "standard", fsp, Path.Combine(TestContext.CurrentContext.TestDirectory, @"TestData\"));
 
             int trueCount = 0;
 
@@ -360,7 +366,7 @@ namespace Test
                 }
             }
 
-            string metrics = PEP_Analysis.ComputePEPValuesForAllPSMsGeneric(moreNonNullPSMs, "standard", fsp, Path.Combine(TestContext.CurrentContext.TestDirectory, @"TestData\"));
+            string metrics = PEP_Analysis_Cross_Validation.ComputePEPValuesForAllPSMsGeneric(moreNonNullPSMs, "standard", fsp, Path.Combine(TestContext.CurrentContext.TestDirectory, @"TestData\"));
             Assert.GreaterOrEqual(32, trueCount);
 
             //Test Variant Peptide as Input is identified as such as part of PEP calculation input much of the next several lines simply necessry to create a psm.
@@ -393,7 +399,7 @@ namespace Test
             var (vnotch, vpwsm) = variantPSM.BestMatchingPeptides.First();
 
             massError.Add(Path.GetFileName(variantPSM.FullFilePath), 0);
-            PsmData variantPsmData = PEP_Analysis.CreateOnePsmDataEntry("standard", fsp, variantPSM, sequenceToPsmCount, fileSpecificRetTimeHI_behavior, fileSpecificRetTemHI_behaviorModifiedPeptides, massError, chargeStateMode, vpwsm, vnotch, !maxScorePsm.IsDecoy);
+            PsmData variantPsmData = PEP_Analysis_Cross_Validation.CreateOnePsmDataEntry("standard", fsp, variantPSM, sequenceToPsmCount, fileSpecificRetTimeHI_behavior, fileSpecificRetTemHI_behaviorModifiedPeptides, massError, chargeStateMode, vpwsm, vnotch, !maxScorePsm.IsDecoy);
 
             Assert.AreEqual((float)1, variantPsmData.IsVariantPeptide);
 
@@ -404,7 +410,7 @@ namespace Test
 
             fsp.Add((origDataFile, cp));
 
-            PEP_Analysis.ComputePEPValuesForAllPSMsGeneric(psmCopyForCZETest, "standard", fsp, Path.Combine(TestContext.CurrentContext.TestDirectory, @"TestData\"));
+            PEP_Analysis_Cross_Validation.ComputePEPValuesForAllPSMsGeneric(psmCopyForCZETest, "standard", fsp, Path.Combine(TestContext.CurrentContext.TestDirectory, @"TestData\"));
             trueCount = 0;
 
             foreach (var item in psmCopyForCZETest.Where(p => p != null))
@@ -425,8 +431,18 @@ namespace Test
                     moreNonNullPSMsCZE.Add(psm);
                 }
             }
-            metrics = PEP_Analysis.ComputePEPValuesForAllPSMsGeneric(moreNonNullPSMsCZE, "standard", fsp, Path.Combine(TestContext.CurrentContext.TestDirectory, @"TestData\"));
+            metrics = PEP_Analysis_Cross_Validation.ComputePEPValuesForAllPSMsGeneric(moreNonNullPSMsCZE, "standard", fsp, Path.Combine(TestContext.CurrentContext.TestDirectory, @"TestData\"));
             Assert.GreaterOrEqual(32, trueCount);
+
+            //TEST PEP calculation failure
+            psmCopyForPEPFailure.RemoveAll(x => x.IsDecoy);
+            string result = PEP_Analysis_Cross_Validation.ComputePEPValuesForAllPSMsGeneric(psmCopyForPEPFailure, "standard", fsp, Path.Combine(TestContext.CurrentContext.TestDirectory, @"TestData\"));
+            Assert.AreEqual("Posterior error probability analysis failed. This can occur for small data sets when some sample groups are missing positive or negative training examples.", result);
+
+            //Run PEP with no output folder;
+            //There is no assertion here. We simply want to show that PEP calculation does not fail with null folder.
+            string outputFolder = null;
+            string nullOutputFolderResults = PEP_Analysis_Cross_Validation.ComputePEPValuesForAllPSMsGeneric(psmCopyForNoOutputFolder, "standard", fsp, outputFolder);
         }
 
         [Test]
@@ -440,8 +456,9 @@ namespace Test
 
             var variableModifications = new List<Modification>();
             var fixedModifications = new List<Modification>();
-            List<Protein> proteinList = ProteinDbLoader.LoadProteinFasta(Path.Combine(TestContext.CurrentContext.TestDirectory, @"TestData\HeLaFakeTopDown.fasta"), true, DecoyType.Reverse, false, ProteinDbLoader.UniprotAccessionRegex, ProteinDbLoader.UniprotFullNameRegex, ProteinDbLoader.UniprotFullNameRegex, ProteinDbLoader.UniprotGeneNameRegex,
-                    ProteinDbLoader.UniprotOrganismRegex, out var dbErrors, -1);
+            List<Protein> proteinList = ProteinDbLoader.LoadProteinFasta(Path.Combine(TestContext.CurrentContext.TestDirectory, @"TestData\HeLaFakeTopDown.fasta"), true, DecoyType.Reverse, false, out var dbErrors,
+                ProteinDbLoader.UniprotAccessionRegex, ProteinDbLoader.UniprotFullNameRegex, ProteinDbLoader.UniprotFullNameRegex, ProteinDbLoader.UniprotGeneNameRegex,
+                    ProteinDbLoader.UniprotOrganismRegex, -1);
 
             var origDataFile = Path.Combine(TestContext.CurrentContext.TestDirectory, @"TestData\TaGe_SA_HeLa_04_subset_longestSeq.mzML");
 
@@ -458,11 +475,12 @@ namespace Test
             var listOfSortedms2Scans = MetaMorpheusTask.GetMs2Scans(myMsDataFile, origDataFile, new CommonParameters()).OrderBy(b => b.PrecursorMass).ToArray();
 
             PeptideSpectralMatch[] allPsmsArray = new PeptideSpectralMatch[listOfSortedms2Scans.Length];
-            new ClassicSearchEngine(allPsmsArray, listOfSortedms2Scans, variableModifications, fixedModifications, null, null, null, proteinList, searchMode, CommonParameters, fsp, new List<string>()).Run();
+            new ClassicSearchEngine(allPsmsArray, listOfSortedms2Scans, variableModifications, fixedModifications, null, null, null, 
+                proteinList, searchMode, CommonParameters, fsp, null, new List<string>()).Run();
             var nonNullPsms = allPsmsArray.Where(p => p != null).ToList();
             List<PeptideSpectralMatch> moreNonNullPSMs = new List<PeptideSpectralMatch>();
 
-            int reps = 3;
+            int reps = 10;
             for (int i = 0; i < reps; i++)
             {
                 foreach (PeptideSpectralMatch psm in nonNullPsms)
@@ -471,7 +489,7 @@ namespace Test
                 }
             }
 
-            FdrAnalysisResults fdrResultsClassicDelta = (FdrAnalysisResults)(new FdrAnalysisEngine(moreNonNullPSMs.Where(p => p != null).ToList(), 1, CommonParameters, fsp, new List<string>(), analysisType: "PSM", outputFolder: Path.Combine(TestContext.CurrentContext.TestDirectory, @"TestData\")).Run());
+            FdrAnalysisResults fdrResultsClassicDelta = (FdrAnalysisResults)(new FdrAnalysisEngine(moreNonNullPSMs.Where(p => p != null).OrderByDescending(s=>s.Score).ToList(), 1, CommonParameters, fsp, new List<string>(), analysisType: "PSM", outputFolder: Path.Combine(TestContext.CurrentContext.TestDirectory, @"TestData\")).Run());
 
             var maxScore = nonNullPsms.Select(n => n.Score).Max();
             PeptideSpectralMatch maxScorePsm = nonNullPsms.Where(n => n.Score == maxScore).First();
@@ -499,7 +517,7 @@ namespace Test
             {
                 { Path.GetFileName(maxScorePsm.FullFilePath), 0 }
             };
-            var maxPsmData = PEP_Analysis.CreateOnePsmDataEntry("top-down", fsp, maxScorePsm, sequenceToPsmCount, fileSpecificRetTimeHI_behavior, fileSpecificRetTemHI_behaviorModifiedPeptides, massError, chargeStateMode, pwsm, notch, !pwsm.Protein.IsDecoy);
+            var maxPsmData = PEP_Analysis_Cross_Validation.CreateOnePsmDataEntry("top-down", fsp, maxScorePsm, sequenceToPsmCount, fileSpecificRetTimeHI_behavior, fileSpecificRetTemHI_behaviorModifiedPeptides, massError, chargeStateMode, pwsm, notch, !pwsm.Protein.IsDecoy);
             Assert.That(maxScorePsm.PeptidesToMatchingFragments.Count - 1, Is.EqualTo(maxPsmData.Ambiguity));
             double normalizationFactor = (double)pwsm.BaseSequence.Length / 10.0;
             float maxPsmDeltaScore = (float)Math.Round(maxScorePsm.DeltaScore / normalizationFactor * 10.0, 0);
@@ -537,7 +555,7 @@ namespace Test
             List<(int notch, PeptideWithSetModifications pwsm)> bestMatchingPeptidesToRemove = new List<(int notch, PeptideWithSetModifications pwsm)>();
             List<double> pepValuePredictions = new List<double> { 1.0d, 0.99d, 0.9d };
 
-            PEP_Analysis.GetIndiciesOfPeptidesToRemove(indiciesOfPeptidesToRemove, pepValuePredictions);
+            PEP_Analysis_Cross_Validation.GetIndiciesOfPeptidesToRemove(indiciesOfPeptidesToRemove, pepValuePredictions);
             Assert.AreEqual(1, indiciesOfPeptidesToRemove.Count);
             Assert.AreEqual(2, indiciesOfPeptidesToRemove.FirstOrDefault());
             Assert.AreEqual(2, pepValuePredictions.Count);
@@ -550,7 +568,7 @@ namespace Test
                 peptides.Add(bmp.Peptide);
             }
 
-            PEP_Analysis.RemoveBestMatchingPeptidesWithLowPEP(psm, indiciesOfPeptidesToRemove, notches, peptides, pepValuePredictions, ref ambiguousPeptidesRemovedCount);
+            PEP_Analysis_Cross_Validation.RemoveBestMatchingPeptidesWithLowPEP(psm, indiciesOfPeptidesToRemove, notches, peptides, pepValuePredictions, ref ambiguousPeptidesRemovedCount);
             Assert.AreEqual(1, ambiguousPeptidesRemovedCount);
             Assert.AreEqual(2, psm.BestMatchingPeptides.Select(b => b.Notch).ToList().Count);
         }
@@ -567,13 +585,13 @@ namespace Test
             averagesCommaStandardDeviations.Add(2, new Tuple<double, double>(1.0d, 1.1d));//will NOT get removed becuase its perfectly fine
             averagesCommaStandardDeviations.Add(3, new Tuple<double, double>(1.0d, 10.0d));//will  get removed becuase its too big
 
-            PEP_Analysis.GetStDevsToChange(stDevsToChange, averagesCommaStandardDeviations, globalStDev);
+            PEP_Analysis_Cross_Validation.GetStDevsToChange(stDevsToChange, averagesCommaStandardDeviations, globalStDev);
             Assert.That(stDevsToChange.ContainsKey(0));
             Assert.That(stDevsToChange.ContainsKey(1));
             Assert.That(stDevsToChange.ContainsKey(3));
             Assert.AreEqual(3, stDevsToChange.Keys.Count);
 
-            PEP_Analysis.UpdateOutOfRangeStDevsWithGlobalAverage(stDevsToChange, averagesCommaStandardDeviations);
+            PEP_Analysis_Cross_Validation.UpdateOutOfRangeStDevsWithGlobalAverage(stDevsToChange, averagesCommaStandardDeviations);
 
             Assert.AreEqual(1.0d, averagesCommaStandardDeviations[0].Item2);
             Assert.AreEqual(1.0d, averagesCommaStandardDeviations[1].Item2);
@@ -596,8 +614,9 @@ namespace Test
 
             var myMsDataFile = myFileManager.LoadFile(origDataFile, CommonParameters);
             var searchModes = new SinglePpmAroundZeroSearchMode(5);
-            List<Protein> proteinList = ProteinDbLoader.LoadProteinFasta(Path.Combine(TestContext.CurrentContext.TestDirectory, @"TestData\hela_snip_for_unitTest.fasta"), true, DecoyType.Reverse, false, ProteinDbLoader.UniprotAccessionRegex, ProteinDbLoader.UniprotFullNameRegex, ProteinDbLoader.UniprotFullNameRegex, ProteinDbLoader.UniprotGeneNameRegex,
-                    ProteinDbLoader.UniprotOrganismRegex, out var dbErrors, -1);
+            List<Protein> proteinList = ProteinDbLoader.LoadProteinFasta(Path.Combine(TestContext.CurrentContext.TestDirectory, @"TestData\hela_snip_for_unitTest.fasta"), true, DecoyType.Reverse, false, out var dbErrors,
+                ProteinDbLoader.UniprotAccessionRegex, ProteinDbLoader.UniprotFullNameRegex, ProteinDbLoader.UniprotFullNameRegex, ProteinDbLoader.UniprotGeneNameRegex,
+                    ProteinDbLoader.UniprotOrganismRegex, -1);
             var listOfSortedms2Scans = MetaMorpheusTask.GetMs2Scans(myMsDataFile, @"TestData\TaGe_SA_HeLa_04_subset_longestSeq.mzML", CommonParameters).OrderBy(b => b.PrecursorMass).ToArray();
 
             Ms2ScanWithSpecificMass topMs2Scan = listOfSortedms2Scans[395];
@@ -618,7 +637,8 @@ namespace Test
             extendedArray = extendedArray.OrderBy(b => b.PrecursorMass).ToArray();
 
             PeptideSpectralMatch[] allPsmsArray = new PeptideSpectralMatch[extendedArray.Length];
-            new ClassicSearchEngine(allPsmsArray, extendedArray, variableModifications, fixedModifications, null, null, null, proteinList, searchModes, CommonParameters, fsp, new List<string>()).Run();
+            new ClassicSearchEngine(allPsmsArray, extendedArray, variableModifications, fixedModifications, null, null, null, 
+                proteinList, searchModes, CommonParameters, fsp, null, new List<string>()).Run();
 
             List<PeptideSpectralMatch> nonNullPsms = allPsmsArray.Where(p => p != null).ToList();
             nonNullPsms = nonNullPsms.OrderByDescending(p => p.Score).ToList();
@@ -646,8 +666,9 @@ namespace Test
 
             var myMsDataFile = myFileManager.LoadFile(origDataFile, CommonParameters);
             var searchModes = new SinglePpmAroundZeroSearchMode(5);
-            List<Protein> proteinList = ProteinDbLoader.LoadProteinFasta(Path.Combine(TestContext.CurrentContext.TestDirectory, @"TestData\hela_snip_for_unitTest.fasta"), true, DecoyType.Reverse, false, ProteinDbLoader.UniprotAccessionRegex, ProteinDbLoader.UniprotFullNameRegex, ProteinDbLoader.UniprotFullNameRegex, ProteinDbLoader.UniprotGeneNameRegex,
-                    ProteinDbLoader.UniprotOrganismRegex, out var dbErrors, -1);
+            List<Protein> proteinList = ProteinDbLoader.LoadProteinFasta(Path.Combine(TestContext.CurrentContext.TestDirectory, @"TestData\hela_snip_for_unitTest.fasta"), true, DecoyType.Reverse, false, out var dbErrors, 
+                ProteinDbLoader.UniprotAccessionRegex, ProteinDbLoader.UniprotFullNameRegex, ProteinDbLoader.UniprotFullNameRegex, ProteinDbLoader.UniprotGeneNameRegex,
+                    ProteinDbLoader.UniprotOrganismRegex, -1);
             var listOfSortedms2Scans = MetaMorpheusTask.GetMs2Scans(myMsDataFile, @"TestData\TaGe_SA_HeLa_04_subset_longestSeq.mzML", CommonParameters).OrderBy(b => b.PrecursorMass).ToArray();
 
             //adding a new scan that creates a psm at an isolated retention time. This will ultimately cause PEP to replace its retention time standard deviation "Z-score" with the global average.
@@ -669,7 +690,8 @@ namespace Test
             extendedArray = extendedArray.OrderBy(b => b.PrecursorMass).ToArray();
 
             PeptideSpectralMatch[] allPsmsArray = new PeptideSpectralMatch[extendedArray.Length];
-            new ClassicSearchEngine(allPsmsArray, extendedArray, variableModifications, fixedModifications, null, null, null, proteinList, searchModes, CommonParameters, fsp, new List<string>()).Run();
+            new ClassicSearchEngine(allPsmsArray, extendedArray, variableModifications, fixedModifications, null, null, null,
+                proteinList, searchModes, CommonParameters, fsp, null, new List<string>()).Run();
 
             List<PeptideSpectralMatch> nonNullPsms = allPsmsArray.Where(p => p != null).ToList();
             nonNullPsms = nonNullPsms.OrderByDescending(p => p.Score).ToList();
@@ -729,7 +751,7 @@ namespace Test
         {
             string searchType = "standard";
             string[] trainingInfoStandard = PsmData.trainingInfos[searchType];
-            string[] expectedTrainingInfoStandard = new[] { "TotalMatchingFragmentCount", "Intensity", "PrecursorChargeDiffToMode", "DeltaScore", "Notch", "PsmCount", "ModsCount", "AbsoluteAverageFragmentMassErrorFromMedian", "MissedCleavagesCount", "Ambiguity", "LongestFragmentIonSeries", "ComplementaryIonCount", "HydrophobicityZScore", "IsVariantPeptide", "IsDeadEnd", "IsLoop" };
+            string[] expectedTrainingInfoStandard = new[] { "TotalMatchingFragmentCount", "Intensity", "PrecursorChargeDiffToMode", "DeltaScore", "Notch", "PsmCount", "ModsCount", "AbsoluteAverageFragmentMassErrorFromMedian", "MissedCleavagesCount", "Ambiguity", "LongestFragmentIonSeries", "ComplementaryIonCount", "HydrophobicityZScore", "IsVariantPeptide", "IsDeadEnd", "IsLoop", "SpectralAngle" };
             Assert.AreEqual(expectedTrainingInfoStandard, trainingInfoStandard);
 
             searchType = "top-down";
@@ -774,9 +796,10 @@ namespace Test
                 IsInter = 20,
                 IsIntra = 21,
                 Label = false,
+                SpectralAngle = 22
             };
 
-            string standardToString = "\t0\t1\t2\t3\t4\t5\t6\t7\t8\t9\t10\t11\t12\t13\t18\t19";
+            string standardToString = "\t0\t1\t2\t3\t4\t5\t6\t7\t8\t9\t10\t11\t12\t13\t18\t19\t22";
             Assert.AreEqual(standardToString, pd.ToString("standard"));
 
             string topDownToString = "\t0\t1\t2\t3\t4\t5\t6\t7\t9\t10\t11";

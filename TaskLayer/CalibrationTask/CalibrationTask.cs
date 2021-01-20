@@ -175,7 +175,7 @@ namespace TaskLayer
                 myMsDataFile = engine.CalibratedDataFile;
 
                 // write the calibrated mzML file
-                MzmlMethods.CreateAndWriteMyMzmlWithCalibratedSpectra(myMsDataFile, calibratedFilePath, true);
+                MzmlMethods.CreateAndWriteMyMzmlWithCalibratedSpectra(myMsDataFile, calibratedFilePath, false);
                 myFileManager.DoneWithFile(originalUncalibratedFilePath);
 
                 // stats after calibration
@@ -266,7 +266,8 @@ namespace TaskLayer
             Log("Searching with searchMode: " + searchMode, new List<string> { taskId, "Individual Spectra Files", fileNameWithoutExtension });
             Log("Searching with productMassTolerance: " + initProdTol, new List<string> { taskId, "Individual Spectra Files", fileNameWithoutExtension });
 
-            new ClassicSearchEngine(allPsmsArray, listOfSortedms2Scans, variableModifications, fixedModifications, null, null, null, proteinList, searchMode, combinedParameters, FileSpecificParameters, new List<string> { taskId, "Individual Spectra Files", fileNameWithoutExtension }).Run();
+            new ClassicSearchEngine(allPsmsArray, listOfSortedms2Scans, variableModifications, fixedModifications, null, null, null, proteinList, searchMode, combinedParameters, 
+                FileSpecificParameters, null, new List<string> { taskId, "Individual Spectra Files", fileNameWithoutExtension }).Run();
             List<PeptideSpectralMatch> allPsms = allPsmsArray.Where(b => b != null).ToList();
 
             allPsms = allPsms.OrderByDescending(b => b.Score)

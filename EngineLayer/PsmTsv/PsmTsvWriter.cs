@@ -212,7 +212,7 @@ namespace EngineLayer
             s[PsmTsvHeader.ProteinAccession] = pepWithModsIsNull ? " " : (psm.ProteinAccession != null ? psm.ProteinAccession : Resolve(pepsWithMods.Select(b => b.Protein.Accession), psm.FullSequence).ResolvedString);
             s[PsmTsvHeader.ProteinName] = pepWithModsIsNull ? " " : Resolve(pepsWithMods.Select(b => b.Protein.FullName), psm.FullSequence).ResolvedString;
             s[PsmTsvHeader.GeneName] = pepWithModsIsNull ? " " : Resolve(pepsWithMods.Select(b => string.Join(", ", b.Protein.GeneNames.Select(d => $"{d.Item1}:{d.Item2}"))), psm.FullSequence).ResolvedString;
-            s[PsmTsvHeader.OrganismName] = pepWithModsIsNull ? " " : Resolve(pepsWithMods.Select(b => b.Protein.Organism)).ResolvedString;            
+            s[PsmTsvHeader.OrganismName] = pepWithModsIsNull ? " " : Resolve(pepsWithMods.Select(b => b.Protein.Organism)).ResolvedString;
             s[PsmTsvHeader.IdentifiedSequenceVariations] = pepWithModsIsNull ? " " :
                 Resolve(pepsWithMods.Select(b => string.Join(", ", b.Protein.AppliedSequenceVariations
                     .Where(av => b.IntersectsAndIdentifiesVariation(av).identifies)
@@ -243,7 +243,7 @@ namespace EngineLayer
         private static bool Includes(PeptideWithSetModifications pep, SpliceSite site)
         {
             return pep.OneBasedStartResidueInProtein <= site.OneBasedBeginPosition && pep.OneBasedEndResidueInProtein >= site.OneBasedEndPosition;
-        }        
+        }
 
         internal static void AddMatchedIonsData(Dictionary<string, string> s, List<MatchedFragmentIon> matchedIons)
         {
@@ -330,6 +330,7 @@ namespace EngineLayer
 
         internal static void AddMatchScoreData(Dictionary<string, string> s, PeptideSpectralMatch peptide)
         {
+            string spectralAngle = peptide == null ? " " : peptide.SpectralAngle.ToString("F4");
             string localizedScores = " ";
             string improvementPossible = " ";
             if (peptide != null && peptide.LocalizedScores != null)
@@ -337,6 +338,7 @@ namespace EngineLayer
                 localizedScores = GlobalVariables.CheckLengthOfOutput(("[" + string.Join(",", peptide.LocalizedScores.Select(b => b.ToString("F3", CultureInfo.InvariantCulture))) + "]"));
                 improvementPossible = (peptide.LocalizedScores.Max() - peptide.Score).ToString("F3", CultureInfo.InvariantCulture);
             }
+            s[PsmTsvHeader.SpectralAngle] = spectralAngle;
             s[PsmTsvHeader.LocalizedScores] = localizedScores;
             s[PsmTsvHeader.ImprovementPossible] = improvementPossible;
 
@@ -348,6 +350,7 @@ namespace EngineLayer
             string qValueNotch = " ";
             string PEP = " ";
             string PEP_Qvalue = " ";
+
             if (peptide != null && peptide.FdrInfo != null)
             {
                 cumulativeTarget = peptide.FdrInfo.CumulativeTarget.ToString(CultureInfo.InvariantCulture);
