@@ -1,5 +1,6 @@
 ﻿using Chemistry;
 using EngineLayer;
+using GuiFunctions;
 using MassSpectrometry;
 using NUnit.Framework;
 using OxyPlot.Series;

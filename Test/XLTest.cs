@@ -363,8 +363,9 @@ namespace Test
             };
 
             //Create databases contain two protein.
-            List<Protein> proteinList = ProteinDbLoader.LoadProteinFasta(Path.Combine(TestContext.CurrentContext.TestDirectory, @"XlTestData/YeastPol2.fasta"), true, DecoyType.Reverse, false, ProteinDbLoader.UniprotAccessionRegex, ProteinDbLoader.UniprotFullNameRegex, ProteinDbLoader.UniprotFullNameRegex, ProteinDbLoader.UniprotGeneNameRegex,
-                    ProteinDbLoader.UniprotOrganismRegex, out var dbErrors, -1);
+            List<Protein> proteinList = ProteinDbLoader.LoadProteinFasta(Path.Combine(TestContext.CurrentContext.TestDirectory, @"XlTestData/YeastPol2.fasta"), true, DecoyType.Reverse, false, out var dbErrors,
+                ProteinDbLoader.UniprotAccessionRegex, ProteinDbLoader.UniprotFullNameRegex, ProteinDbLoader.UniprotFullNameRegex, ProteinDbLoader.UniprotGeneNameRegex,
+                    ProteinDbLoader.UniprotOrganismRegex, -1);
 
             ModificationMotif.TryGetMotif("M", out ModificationMotif motif1);
             Modification mod1 = new Modification(_originalId: "Oxidation of M", _modificationType: "Common Variable", _target: motif1, _locationRestriction: "Anywhere.", _monoisotopicMass: 15.99491461957);
@@ -761,10 +762,10 @@ namespace Test
             Assert.AreEqual(0, unnasignedCrossType);
             Assert.AreEqual(100, inter);
             Assert.AreEqual(89, intra);
-            Assert.AreEqual(233, single);
+            Assert.AreEqual(232, single);
             Assert.AreEqual(9, loop);
             Assert.AreEqual(0, deadend);
-            Assert.AreEqual(50, deadendH2O);
+            Assert.AreEqual(49, deadendH2O);
             Assert.AreEqual(0, deadendNH2);
             Assert.AreEqual(0, deadendTris);
         }
@@ -1185,7 +1186,7 @@ namespace Test
             var results = Path.Combine(outputFolder, @"TestPercolator\XL_Intralinks_Percolator.txt");
             var lines = File.ReadAllLines(results);
             Assert.That(lines[0].Equals("SpecId\tLabel\tScannr\tScore\tdScore\tCharge\tMass\tPPM\tLenShort\tLenLong\tLenSum\tPeptide\tProtein"));
-            Assert.That(lines[1].Equals("T-1-30.61909926666667\t1\t1\t26.06004534434461\t21.06004534434461\t3\t1994.0520231384269\t0.6649793543976755\t7\t9\t16\t-.EKVLTSSAR2--LSQKFPK4.-\t3336842(211)\t3336842(245)"));
+            Assert.That(lines[1].Equals("T-1-30.61909926666667\t1\t1\t26.06004534434461\t21.06004534434461\t3\t1994.0520231384269\t0.6649793543976755\t7\t9\t16\t-.EKVLTSSAR2--LSQKFPK4.-\tP02769(211)\tP02769(245)"));
 
             Directory.Delete(outputFolder, true);
         }
