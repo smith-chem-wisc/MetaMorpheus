@@ -752,7 +752,7 @@ namespace EngineLayer
                 ComplementaryIonCount = complementaryIonCount,
                 HydrophobicityZScore = hydrophobicityZscore,
                 IsVariantPeptide = Convert.ToSingle(isVariantPeptide),
-                
+                HasSpectralAngle = Convert.ToSingle(hasSpectralAngle),
                 AlphaIntensity = alphaIntensity,
                 BetaIntensity = betaIntensity,
                 LongestFragmentIonSeries_Alpha = longestFragmentIonSeries_Alpha,
@@ -764,7 +764,7 @@ namespace EngineLayer
 
                 Label = label,
 
-                SpectralAngle = spectralAngle,
+                SpectralAngle = spectralAngle
             };
 
             return psm.PsmData_forPEPandPercolator;

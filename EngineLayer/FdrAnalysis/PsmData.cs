@@ -43,7 +43,7 @@ namespace EngineLayer.FdrAnalysis
             { "IsInter", -1 },
             { "IsIntra", -1 },
             { "SpectralAngle", 1 },
-            { "HasSpectralAngle", -1 }
+            { "HasSpectralAngle", 1 }
             }.ToImmutableDictionary();
 
         public string ToString(string searchType)
