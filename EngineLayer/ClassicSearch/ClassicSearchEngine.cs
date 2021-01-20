@@ -86,21 +86,25 @@ namespace EngineLayer.ClassicSearch
 
                             // we need a function to get the original target sequence of a decoy peptide
 
-                                if (!decoyTargetPairs.ContainsKey(decoy) )
+                            lock (decoyTargetPairs)
+                            {
+                                if (!decoyTargetPairs.ContainsKey(decoy))
                                 {
-                                   decoyTargetPairs.Add(decoy, peptide);
+                                    decoyTargetPairs.Add(decoy, peptide);
                                 }
-                          
+                            }
+
 
 
 
                             foreach (ScanWithIndexAndNotchInfo scan in GetAcceptableScans(peptide.MonoisotopicMass, SearchMode))
                             {
+
                                 //if (SpectralLibrary != null && !SpectralLibrary.ContainsSpectrum(peptide.FullSequence, scan.TheScan.PrecursorCharge))
                                 //{
                                 //    continue;
                                 //}
-                                
+
                                 List<MatchedFragmentIon> matchedIons = MatchFragmentIons(scan.TheScan, peptideTheorProducts, CommonParameters);
                                 List<MatchedFragmentIon> decoyMatchedIons = MatchFragmentIons(scan.TheScan, decoyPeptideTheorProducts, CommonParameters);
 

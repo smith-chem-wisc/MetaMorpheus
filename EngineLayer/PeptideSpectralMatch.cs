@@ -33,7 +33,7 @@ namespace EngineLayer
             NativeId = scan.NativeId;
             RunnerUpScore = commonParameters.ScoreCutoff;
             SpectralAngle = Double.NaN;
-
+            //SpectralAngle = 0;
             AddOrReplace(peptide, score, notch, true, matchedFragmentIons, xcorr);
         }
         

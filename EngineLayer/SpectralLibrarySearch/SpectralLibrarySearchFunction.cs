@@ -25,12 +25,12 @@ namespace EngineLayer
                     //TODO: spectral angle could be used to disambiguate PSMs. right now for ambiguous PSMs, the spectral angle for only one peptide option is saved
                     foreach (var peptide in psm.PeptidesToMatchingFragments)
                     {
-                        if (spectralLibrary != null && !peptide.Key.Protein.Accession.Contains("DECOY") && spectralLibrary.TryGetSpectrum(peptide.Key.FullSequence, scan.PrecursorCharge, out var librarySpectrum))
+                        if (spectralLibrary != null && !peptide.Key.Protein.IsDecoy && spectralLibrary.TryGetSpectrum(peptide.Key.FullSequence, scan.PrecursorCharge, out var librarySpectrum))
                         {
                             double spectralAngle = CalculateNormalizedSpectralAngle(librarySpectrum.MatchedFragmentIons, scan.TheScan, commonParameters);
                             psm.SpectralAngle = spectralAngle;
                         }
-                        else if (spectralLibrary != null && peptide.Key.Protein.Accession.Contains("DECOY") && spectralLibrary.DecoyTargetPairs.ContainsKey(peptide.Key) && spectralLibrary.TryGetSpectrum(spectralLibrary.DecoyTargetPairs[peptide.Key].FullSequence, scan.PrecursorCharge, out var targetlibrarySpectrum))
+                        else if (spectralLibrary != null && peptide.Key.Protein.IsDecoy && spectralLibrary.DecoyTargetPairs.ContainsKey(peptide.Key) && spectralLibrary.TryGetSpectrum(spectralLibrary.DecoyTargetPairs[peptide.Key].FullSequence, scan.PrecursorCharge, out var targetlibrarySpectrum))
                         {
                             var decoyPeptideTheorProducts = new List<Product>();
                             peptide.Key.Fragment(commonParameters.DissociationType, commonParameters.DigestionParams.FragmentationTerminus, decoyPeptideTheorProducts);
