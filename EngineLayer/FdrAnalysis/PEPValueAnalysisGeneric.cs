@@ -790,7 +790,7 @@ namespace EngineLayer
         private static bool PsmHasSpectralAngle(PeptideSpectralMatch psm)
         {
             bool hasSpectralAngle = false;
-            if (psm.SpectralAngle!=Double.NaN)
+            if (psm.SpectralAngle>=0)
             {
                 hasSpectralAngle = true;
             }
