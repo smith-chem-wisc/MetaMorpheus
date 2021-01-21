@@ -23,7 +23,7 @@ using System.Windows.Media;
 
 namespace GuiFunctions
 {
-    public class MetaDrawLogic
+    public class MetaDrawLogic 
     {
         public ObservableCollection<string> PsmResultFilePaths { get; private set; }
         public ObservableCollection<string> SpectraFilePaths { get; private set; }
