@@ -337,6 +337,9 @@
       <Component Id="src_Microsoft.Extensions.DependencyModel.dll" Guid="3137EB45-DE67-4CA2-96B3-58B621E520DF">
         <File Id="src_Microsoft.Extensions.DependencyModel.dll" Name="Microsoft.Extensions.DependencyModel.dll" Source="$(var.GUI_TargetDir)Microsoft.Extensions.DependencyModel.dll" />
       </Component>
+      <Component Id="src_Microsoft.Win32.SystemEvents.dll'" Guid="E6A7E29B-AAB4-4144-9A2F-7D36CC5D1DED">
+        <File Id="src_Microsoft.Win32.SystemEvents.dll'" Name="Microsoft.Win32.SystemEvents.dll'" Source="$(var.GUI_TargetDir)Microsoft.Win32.SystemEvents.dll'" />
+      </Component>
       <Component Id="src_mzPlot.dll" Guid="01851FB5-6148-4AFC-9C51-5FED01E9E49C">
         <File Id="src_mzPlot.dll" Name="mzPlot.dll" Source="$(var.GUI_TargetDir)mzPlot.dll" />
       </Component>
