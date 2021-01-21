@@ -325,6 +325,18 @@
       <Component Id="src_Common.Logging.Core.dll" Guid="894B4A68-17E7-48A5-B2C6-74C33CD08979">
         <File Id="src_Common.Logging.Core.dll" Name="Common.Logging.Core.dll" Source="$(var.GUI_TargetDir)Common.Logging.Core.dll" />
       </Component>
+      <Component Id="src_Common.Logging.dll" Guid="B543DE60-4AE9-4C43-88A7-1B1F752D7171">
+        <File Id="src_Common.Logging.dll" Name="Common.Logging.dll" Source="$(var.GUI_TargetDir)Common.Logging.dll" />
+      </Component>
+      <Component Id="src_BouncyCastle.Crypto.dll" Guid="54F72A71-C672-4655-95AA-4D32C9983A7D">
+        <File Id="src_BouncyCastle.Crypto.dll" Name="BouncyCastle.Crypto.dll" Source="$(var.GUI_TargetDir)BouncyCastle.Crypto.dll" />
+      </Component>
+      <Component Id="src_Microsoft.DotNet.PlatformAbstractions.dll" Guid="F42DEDAA-6D88-4D5B-AB51-C472617F2C5F">
+        <File Id="src_Microsoft.DotNet.PlatformAbstractions.dll" Name="Microsoft.DotNet.PlatformAbstractions.dll" Source="$(var.GUI_TargetDir)Microsoft.DotNet.PlatformAbstractions.dll" />
+      </Component>
+      <Component Id="src_Microsoft.Extensions.DependencyModel.dll" Guid="3137EB45-DE67-4CA2-96B3-58B621E520DF">
+        <File Id="src_Microsoft.Extensions.DependencyModel.dll" Name="Microsoft.Extensions.DependencyModel.dll" Source="$(var.GUI_TargetDir)Microsoft.Extensions.DependencyModel.dll" />
+      </Component>
       <Component Id="src_mzPlot.dll" Guid="01851FB5-6148-4AFC-9C51-5FED01E9E49C">
         <File Id="src_mzPlot.dll" Name="mzPlot.dll" Source="$(var.GUI_TargetDir)mzPlot.dll" />
       </Component>
