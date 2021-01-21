@@ -1,5 +1,11 @@
-## Base image is the Alpine Linux distro with .NET Core runtime
+## Base image is the Windows Nano Server with .NET Core runtime
 FROM mcr.microsoft.com/dotnet/runtime:3.1.11-nanoserver-1809 AS build
+
+ENV chocolateyUseWindowsCompression false
+
+RUN powershell -Command \
+    iex ((new-object net.webclient).DownloadString('https://chocolatey.org/install.ps1')); \
+    choco feature disable --name showDownloadProgress
 
 ## Copies contents of the installer folder into the Docker image
 ADD /InstalledFiles/ /metamorpheus/
