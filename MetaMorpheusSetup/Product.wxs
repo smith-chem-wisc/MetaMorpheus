@@ -332,6 +332,9 @@
       <Component Id="src_System.Collections.Immutable.dll" Guid="DA1FE5F5-4409-4B41-8A26-E30DAD497458">
         <File Id="src_System.Collections.Immutable.dll" Name="System.Collections.Immutable.dll" Source="$(var.GUI_TargetDir)System.Collections.Immutable.dll" />
       </Component>
+      <Component Id="src_System.Runtime.CompilerServices.Unsafe.dll" Guid="B6CEE0EA-3F5C-47F1-9A70-166C92F29F54">
+        <File Id="src_System.Runtime.CompilerServices.Unsafe.dll" Name="System.Runtime.CompilerServices.Unsafe.dll" Source="$(var.GUI_TargetDir)System.Runtime.CompilerServices.Unsafe.dll" />
+      </Component>
       <Component Id="src_Common.Logging.Core.dll" Guid="894B4A68-17E7-48A5-B2C6-74C33CD08979">
         <File Id="src_Common.Logging.Core.dll" Name="Common.Logging.Core.dll" Source="$(var.GUI_TargetDir)Common.Logging.Core.dll" />
       </Component>
