@@ -335,6 +335,9 @@
       <Component Id="src_System.Runtime.CompilerServices.Unsafe.dll" Guid="B6CEE0EA-3F5C-47F1-9A70-166C92F29F54">
         <File Id="src_System.Runtime.CompilerServices.Unsafe.dll" Name="System.Runtime.CompilerServices.Unsafe.dll" Source="$(var.GUI_TargetDir)System.Runtime.CompilerServices.Unsafe.dll" />
       </Component>
+      <Component Id="src_System.Threading.Tasks.Dataflow.dll" Guid="59753FAC-C8EA-45D8-9E17-12764F56E624">
+        <File Id="src_System.Threading.Tasks.Dataflow.dll" Name="System.Threading.Tasks.Dataflow.dll" Source="$(var.GUI_TargetDir)System.Threading.Tasks.Dataflow.dll" />
+      </Component>
       <Component Id="src_Common.Logging.Core.dll" Guid="894B4A68-17E7-48A5-B2C6-74C33CD08979">
         <File Id="src_Common.Logging.Core.dll" Name="Common.Logging.Core.dll" Source="$(var.GUI_TargetDir)Common.Logging.Core.dll" />
       </Component>
