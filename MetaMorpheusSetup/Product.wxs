@@ -63,6 +63,12 @@
               <Directory Id="NativeMathDllFolder_native" Name="native">
               </Directory>
             </Directory>
+            <Directory Id="WindowDllFolder_win" Name="win">
+              <Directory Id="WindowDllFolder_lib" Name="lib">
+                <Directory Id="WindowDllFolder_netcoreapp3.0" Name="netcoreapp3.0">                  
+                </Directory>
+              </Directory>
+            </Directory>
           </Directory>
         </Directory>
       </Directory>
@@ -336,10 +342,7 @@
       </Component>
       <Component Id="src_Microsoft.Extensions.DependencyModel.dll" Guid="3137EB45-DE67-4CA2-96B3-58B621E520DF">
         <File Id="src_Microsoft.Extensions.DependencyModel.dll" Name="Microsoft.Extensions.DependencyModel.dll" Source="$(var.GUI_TargetDir)Microsoft.Extensions.DependencyModel.dll" />
-      </Component>
-      <Component Id="src_Microsoft.Win32.SystemEvents.dll" Guid="E6A7E29B-AAB4-4144-9A2F-7D36CC5D1DED">
-        <File Id="src_Microsoft.Win32.SystemEvents.dll" Name="Microsoft.Win32.SystemEvents.dll" Source="$(var.GUI_TargetDir)\runtimes\win\lib\netcoreapp3.0\Microsoft.Win32.SystemEvents.dll" />
-      </Component>
+      </Component>      
       <Component Id="src_mzPlot.dll" Guid="01851FB5-6148-4AFC-9C51-5FED01E9E49C">
         <File Id="src_mzPlot.dll" Name="mzPlot.dll" Source="$(var.GUI_TargetDir)mzPlot.dll" />
       </Component>
@@ -389,6 +392,14 @@
       <Component Id="src_LdaNative.dll" Guid="2FDBD232-12A0-43D6-A54D-06FFC627CE23">
         <File Id="src_LdaNative.dll" Name="LdaNative.dll" Source="$(var.GUI_TargetDir)runtimes\win-x64\native\LdaNative.dll" />
       </Component>
+    </ComponentGroup>
+    <ComponentGroup Id="ExecutablesAndLibrariesComponentGroup3" Directory="WindowsDllFolder_netcoreapp3.0">
+      <Component Id="src_Microsoft.Win32.SystemEvents.dll" Guid="E6A7E29B-AAB4-4144-9A2F-7D36CC5D1DED">
+        <File Id="src_Microsoft.Win32.SystemEvents.dll" Name="Microsoft.Win32.SystemEvents.dll" Source="$(var.GUI_TargetDir)\runtimes\win\lib\netcoreapp3.0\Microsoft.Win32.SystemEvents.dll" />
+      </Component>
+      <Component Id="src_System.Drawing.Common.dll" Guid="91B55013-24ED-4C9D-BB7B-55144426C90F">
+        <File Id="src_System.Drawing.Common.dll" Name="System.Drawing.Common.dll" Source="$(var.GUI_TargetDir)\runtimes\win\lib\netcoreapp3.0\System.Drawing.Common.dll" />
+      </Component>      
     </ComponentGroup>
   </Fragment>
 
