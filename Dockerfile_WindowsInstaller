@@ -1,11 +1,13 @@
 ## Base image is the Windows Nano Server with .NET Core runtime
-FROM mcr.microsoft.com/dotnet/runtime:3.1.11-nanoserver-1809 AS build
+FROM mcr.microsoft.com/powershell:7.1.1-nanoserver-1809 AS build
 
 ENV chocolateyUseWindowsCompression false
 
 RUN powershell -Command \
     iex ((new-object net.webclient).DownloadString('https://chocolatey.org/install.ps1')); \
     choco feature disable --name showDownloadProgress
+	
+RUN choco install dotnetcore3-desktop-runtime
 
 ## Copies contents of the installer folder into the Docker image
 ADD /InstalledFiles/ /metamorpheus/
