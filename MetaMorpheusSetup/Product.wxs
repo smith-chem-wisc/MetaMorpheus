@@ -28,6 +28,7 @@
       <!-- ComponentGroupRef creates a reference to a ComponentGroup in another Fragment-->
       <ComponentGroupRef Id="ExecutablesAndLibrariesComponentGroup" />
       <ComponentGroupRef Id="ExecutablesAndLibrariesComponentGroup2" />
+      <ComponentGroupRef Id="ExecutablesAndLibrariesComponentGroup3" />
       <!--ComponentRef creates a reference to a Component element in another Fragment-->
       <ComponentRef Id="MetaMorpheusProgramMenuFolderComponent" />
 
