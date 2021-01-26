@@ -47,7 +47,8 @@ namespace Test
             var fsp = new List<(string fileName, CommonParameters fileSpecificParameters)>();
             fsp.Add(("", CommonParameters));
             PeptideSpectralMatch[] allPsmsArray = new PeptideSpectralMatch[listOfSortedms2Scans.Length];
-            new ClassicSearchEngine(allPsmsArray, listOfSortedms2Scans, variableModifications, fixedModifications, null, null, null, proteinList, searchModes, CommonParameters, fsp, new List<string>()).Run();
+            new ClassicSearchEngine(allPsmsArray, listOfSortedms2Scans, variableModifications, fixedModifications, null, null, null, 
+                proteinList, searchModes, CommonParameters, fsp, null, new List<string>()).Run();
 
             CommonParameters CommonParameters2 = new CommonParameters(
                 digestionParams: new DigestionParams(protease: protease.Name, maxMissedCleavages: 0, minPeptideLength: 1),
@@ -56,7 +57,8 @@ namespace Test
             var fsp2 = new List<(string fileName, CommonParameters fileSpecificParameters)>();
             fsp2.Add(("", CommonParameters2));
             PeptideSpectralMatch[] allPsmsArray2 = new PeptideSpectralMatch[listOfSortedms2Scans.Length];
-            new ClassicSearchEngine(allPsmsArray2, listOfSortedms2Scans, variableModifications, fixedModifications, null, null, null, proteinList, searchModes, CommonParameters2, fsp2, new List<string>()).Run();
+            new ClassicSearchEngine(allPsmsArray2, listOfSortedms2Scans, variableModifications, fixedModifications, null, null, null, 
+                proteinList, searchModes, CommonParameters2, fsp2, null, new List<string>()).Run();
 
             double scoreT = allPsmsArray2[0].Score;
             double scoreF = allPsmsArray[0].Score;
@@ -280,6 +282,28 @@ namespace Test
             // without complementary ions
             PeptideSpectralMatch[] allPsmsArray = new PeptideSpectralMatch[listOfSortedms2Scans.Length];
             var mse = new ModernSearchEngine(allPsmsArray, listOfSortedms2Scans, indexResults.PeptideIndex, indexResults.FragmentIndex, 0, cp, fsp, massDiffAcceptor, SearchParameters.MaximumMassThatFragmentIonScoreIsDoubled, new List<string>()).Run();
+        }
+
+        [Test]
+        public static void AddCompIonsMzOutput()
+        {
+            PeptideWithSetModifications pwsm = new PeptideWithSetModifications("ASDFASDF",null);
+            Ms2ScanWithSpecificMass testScan = MetaMorpheusTask.GetMs2Scans(new TestDataFile(pwsm), null, new CommonParameters()).OrderBy(b => b.PrecursorMass).First();
+
+            CommonParameters cp = new CommonParameters(addCompIons: true);
+            List<Product> theoreticalIons = new List<Product>();
+            pwsm.Fragment(cp.DissociationType, FragmentationTerminus.Both, theoreticalIons);
+            List<MatchedFragmentIon> matchedIons = MetaMorpheusEngine.MatchFragmentIons(testScan, theoreticalIons, cp);
+
+            //check that the matchedIons have m/z values that are similar to their neutral mass. 
+            //There was an "issue" where the saved m/z was the original experimental peak (which is the complementary of the added ion). 
+            //A fix was introduced to save a "fake" m/z for the added ion
+            foreach(MatchedFragmentIon ion in matchedIons)
+            {
+                Assert.IsTrue(ion.NeutralTheoreticalProduct.NeutralMass < ion.Mz);
+                Assert.IsTrue(ion.NeutralTheoreticalProduct.NeutralMass + 2 > ion.Mz);
+            }
+
         }
     }
 }

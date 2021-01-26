@@ -1,5 +1,6 @@
 ﻿using Chemistry;
 using MassSpectrometry;
+using MzLibUtil;
 using Proteomics.Fragmentation;
 using System;
 using System.Collections.Generic;
@@ -47,6 +48,7 @@ namespace EngineLayer
 
             if (thisScan.MassSpectrum.XcorrProcessed)
             {
+                // XCorr
                 foreach (var fragment in matchedFragmentIons)
                 {
                     switch (fragment.NeutralTheoreticalProduct.ProductType)
@@ -68,6 +70,7 @@ namespace EngineLayer
             }
             else
             {
+                // Morpheus score
                 for (int i = 0; i < matchedFragmentIons.Count; i++)
                 {
                     score += 1 + matchedFragmentIons[i].Intensity / thisScan.TotalIonCurrent;
@@ -81,7 +84,7 @@ namespace EngineLayer
         {
             var matchedFragmentIons = new List<MatchedFragmentIon>();
 
-            if (scan.TheScan.MassSpectrum.XcorrProcessed && scan.TheScan.MassSpectrum.XArray.Length!=0)
+            if (scan.TheScan.MassSpectrum.XcorrProcessed && scan.TheScan.MassSpectrum.XArray.Length != 0)
             {
                 // if the spectrum has no peaks
                 if (scan.TheScan.MassSpectrum.XArray.Length == 0)
@@ -118,7 +121,7 @@ namespace EngineLayer
 
             // search for ions in the spectrum
             //foreach (Product product in theoreticalProducts)
-            for(int i = 0; i < theoreticalProducts.Count; i++)
+            for (int i = 0; i < theoreticalProducts.Count; i++)
             {
                 var product = theoreticalProducts[i];
                 // unknown fragment mass; this only happens rarely for sequences with unknown amino acids
@@ -158,8 +161,10 @@ namespace EngineLayer
                     // is the mass error acceptable?
                     if (commonParameters.ProductMassTolerance.Within(closestExperimentalMass.MonoisotopicMass, compIonMass) && closestExperimentalMass.Charge <= scan.PrecursorCharge)
                     {
-                        matchedFragmentIons.Add(new MatchedFragmentIon(ref product, closestExperimentalMass.MonoisotopicMass.ToMz(closestExperimentalMass.Charge),
-                            closestExperimentalMass.TotalIntensity, closestExperimentalMass.Charge));
+                        //found the peak, but we don't want to save that m/z because it's the complementary of the observed ion that we "added". Need to create a fake ion instead.
+                        double mz = (scan.PrecursorMass + protonMassShift - closestExperimentalMass.MonoisotopicMass).ToMz(closestExperimentalMass.Charge);
+
+                        matchedFragmentIons.Add(new MatchedFragmentIon(ref product, mz, closestExperimentalMass.TotalIntensity, closestExperimentalMass.Charge));
                     }
                 }
             }
