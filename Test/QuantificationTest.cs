@@ -104,6 +104,39 @@ namespace Test
 
             Assert.That(errors.Any());
 
+            // test situation where experimental design does not contain a file (should produce an error)
+            spectraFiles.Clear();
+            spectraFiles.Add(new FlashLFQ.SpectraFileInfo(Path.Combine(outputFolder, @"myFile.1.raw"), "condition1", 0, 0, 0));
+            ExperimentalDesign.WriteExperimentalDesignToFile(spectraFiles);
+            spectraFiles.Add(new FlashLFQ.SpectraFileInfo(Path.Combine(outputFolder, @"myFile.2.raw"), "condition1", 1, 0, 0));
+
+            readIn = ExperimentalDesign.ReadExperimentalDesign(Path.Combine(outputFolder, @"ExperimentalDesign.tsv"),
+                spectraFiles.Select(p => p.FullFilePathWithExtension).ToList(), out errors);
+
+            Assert.That(errors.Any());
+
+            // tests for error messages if experimental design file has non-integer bioreps/techreps/fractions
+            List<string> output = new List<string> { "FileName\tCondition\tBiorep\tFraction\tTechrep" };
+
+            output.Add("myFile.1.raw\tcondition1\ta\t0\t0");
+            File.WriteAllLines(Path.Combine(outputFolder, @"ExperimentalDesign.tsv"), output);
+            readIn = ExperimentalDesign.ReadExperimentalDesign(Path.Combine(outputFolder, @"ExperimentalDesign.tsv"),
+                spectraFiles.Select(p => p.FullFilePathWithExtension).ToList(), out errors);
+            Assert.That(errors.Any());
+
+            output[1] = "myFile.1.raw\tcondition1\t0\ta\t0";
+            File.WriteAllLines(Path.Combine(outputFolder, @"ExperimentalDesign.tsv"), output);
+            readIn = ExperimentalDesign.ReadExperimentalDesign(Path.Combine(outputFolder, @"ExperimentalDesign.tsv"),
+                spectraFiles.Select(p => p.FullFilePathWithExtension).ToList(), out errors);
+            Assert.That(errors.Any());
+
+            output[1] = "myFile.1.raw\tcondition1\t0\t0\ta";
+            File.WriteAllLines(Path.Combine(outputFolder, @"ExperimentalDesign.tsv"), output);
+            readIn = ExperimentalDesign.ReadExperimentalDesign(Path.Combine(outputFolder, @"ExperimentalDesign.tsv"),
+                spectraFiles.Select(p => p.FullFilePathWithExtension).ToList(), out errors);
+            Assert.That(errors.Any());
+
+            // tests complete. delete output directory
             Directory.Delete(outputFolder, true);
         }
     }
