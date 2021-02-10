@@ -113,14 +113,25 @@ namespace EngineLayer.GlycoSearch
         //Rules are coded in the function.    
         public static bool OxoniumIonsAnalysis(double[] oxoniumIonsintensities, GlycanBox glycanBox)
         {
-            //If a glycopeptide spectrum does not have 292.1027 or 274.0921, then remove all glycans that have sialic acids from the search.
+            //If a glycopeptide spectrum does not have 292.1027 or 274.0921, then remove all glycans that have NeuAc from the search.
             if (oxoniumIonsintensities[10] <= 0 && oxoniumIonsintensities[12] <= 0)
             {
-                if (glycanBox.Kind[2] != 0 || glycanBox.Kind[3] != 0)
+                if (glycanBox.Kind[2] != 0 )
                 {
                     return false;
                 }
             }
+
+            //If a glycopeptide spectrum does not have 290.0870 or 308.0976, then remove all glycans that have NeuGc from the search.
+            if (oxoniumIonsintensities[11] <= 0 && oxoniumIonsintensities[13] <= 0)
+            {
+                if (glycanBox.Kind[3] != 0)
+                {
+                    return false;
+                }
+            }
+
+            //pGlyco3 paper also mentioned the ion 243.0264304315 which is important for phospho-Hex (phoH) exist.
 
             //If a spectrum has 366.1395, remove glycans that do not have HexNAc(1)Hex(1) or more. Here use the total glycan of glycanBox to calculate. 
             if (oxoniumIonsintensities[14] > 0)
