@@ -37,8 +37,8 @@ namespace Test
                 ms2childScanDissociationType: DissociationType.EThcD, digestionParams: digestionParameters);
 
             //Create databases.
-            List<Protein> proteinList = ProteinDbLoader.LoadProteinFasta(Path.Combine(TestContext.CurrentContext.TestDirectory, @"GlycoTestData/P16150.fasta"), true, DecoyType.Reverse, false, ProteinDbLoader.UniprotAccessionRegex, ProteinDbLoader.UniprotFullNameRegex, ProteinDbLoader.UniprotFullNameRegex, ProteinDbLoader.UniprotGeneNameRegex,
-        ProteinDbLoader.UniprotOrganismRegex, out var dbErrors, -1);
+            List<Protein> proteinList = ProteinDbLoader.LoadProteinFasta(Path.Combine(TestContext.CurrentContext.TestDirectory, @"GlycoTestData/P16150.fasta"), true, DecoyType.Reverse, false, out var dbErrors, ProteinDbLoader.UniprotAccessionRegex, ProteinDbLoader.UniprotFullNameRegex, ProteinDbLoader.UniprotFullNameRegex, ProteinDbLoader.UniprotGeneNameRegex,
+        ProteinDbLoader.UniprotOrganismRegex, -1);
 
             //Create modification.
             ModificationMotif.TryGetMotif("M", out ModificationMotif motif1);

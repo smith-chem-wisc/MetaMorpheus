@@ -199,6 +199,12 @@ namespace EngineLayer
         public readonly static int[] AllOxoniumIons = new int[]
         {10902895, 11503951, 12605550, 12703952, 13805550, 14406607, 16306064, 16806607, 18607663, 20408720, 27409268, 29008759, 29210324, 30809816, 36614002, 65723544, 67323035};
 
+        //pGlyco3: N(1), N(2), N(2)H(1), N(2)H(2), N(2)H(3), N(1)F(1), N(2)F(1)
+        public readonly static double[] NYCoreIons = new double[] { 203.079373, 406.158745, 568.211568, 730.264392, 892.317215, 349.137281, 552.216654 };
+
+        //pGlyco3: N(1), N(2), N(1)H(1), N(1)A(1), N(1)G(1)
+        public readonly static double[] OYCoreIons = new double[] { 203.079373, 406.158745, 365.13219, 494,17479, 510.16970 };
+
         //TrimannosylCore is only useful for N-Glyco peptides.
         public readonly static Dictionary<int, double> TrimannosylCores = new Dictionary<int, double>
         {

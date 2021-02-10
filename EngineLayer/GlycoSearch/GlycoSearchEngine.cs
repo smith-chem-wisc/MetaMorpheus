@@ -626,6 +626,18 @@ namespace EngineLayer.GlycoSearch
                     continue;
                 }
 
+                if (glycanType != GlycoType.OGlycoPep && GlycoPeptides.YCoreIonsFilter(theScan, theScanBestPeptide, globalBoxes[iDLow], ProductSearchMode)<2)
+                {
+                    iDLow++;
+                    continue;
+                }
+
+                if (glycanType != GlycoType.NGlycoPep && GlycoPeptides.YCoreIonsFilter(theScan, theScanBestPeptide, globalBoxes[iDLow], ProductSearchMode) < 1)
+                {
+                    iDLow++;
+                    continue;
+                }
+
                 //Peptide HCD fragments for graph localization.
                 List<Product> hcdProducts = new List<Product>();
                 theScanBestPeptide.Fragment(DissociationType.HCD, FragmentationTerminus.Both, hcdProducts);

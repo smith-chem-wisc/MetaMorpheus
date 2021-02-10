@@ -149,6 +149,42 @@ namespace EngineLayer.GlycoSearch
             return true;
         }
 
+        //According to pGlyco3, under HCD N-glycopeptide contain >=2 core ions. O-Glycopeptide contains >=1 core ions. 
+        //Such a filter can remove a lot of unnecessary searches.
+        public static int YCoreIonsFilter(Ms2ScanWithSpecificMass theScan, PeptideWithSetModifications theScanBestPeptide, GlycanBox glycanBox, MassDiffAcceptor massDiffAcceptor)
+        {
+            HashSet<double> ycores = new HashSet<double>();
+
+            if(glycanBox.NGlycanCount > 0)
+            {
+                foreach (var gmass in Glycan.NYCoreIons)
+                {
+                    double mz = theScanBestPeptide.MonoisotopicMass + gmass;
+                    ycores.Add(mz);
+                }           
+            }
+            if(glycanBox.OGlycanCount > 0)
+            {
+                foreach (var gmass in Glycan.OYCoreIons)
+                {
+                    double mz = theScanBestPeptide.MonoisotopicMass + gmass;
+                    ycores.Add(mz);
+                }
+            }
+
+            int count = 0;
+            foreach (var c in ycores)
+            {         
+                var envelope = theScan.GetClosestExperimentalIsotopicEnvelope(c);
+                if (massDiffAcceptor.Accepts(envelope.MonoisotopicMass, c) >= 0)
+                {
+                    count++;
+                }
+            }
+
+            return count;
+        }
+
         //Get specific glycan Y ions such 'NN' or 'NH'.
         public static Product GetIndicatorYIon(double peptideMonomassWithNoGlycan, string glycanString)
         {
