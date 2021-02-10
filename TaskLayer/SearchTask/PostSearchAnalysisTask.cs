@@ -575,10 +575,17 @@ namespace TaskLayer
         {
             if (Parameters.SearchParameters.DoParsimony)
             {
+                string fileName = "AllProteinGroups.tsv";
+
+                if (Parameters.SearchParameters.DoQuantification)
+                {
+                    fileName = "AllQuantifiedProteinGroups.tsv";
+                }
+
                 //set peptide output values
                 ProteinGroups.ForEach(x => x.GetIdentifiedPeptidesOutput(Parameters.SearchParameters.SilacLabels));
                 // write protein groups to tsv
-                string writtenFile = Path.Combine(Parameters.OutputFolder, "AllProteinGroups.tsv");
+                string writtenFile = Path.Combine(Parameters.OutputFolder, fileName);
                 WriteProteinGroupsToTsv(ProteinGroups, writtenFile, new List<string> { Parameters.SearchTaskId }, CommonParameters.QValueOutputFilter);
 
                 //If SILAC and no light, we need to update the psms (which were found in the "light" file) and say they were found in the "heavy" file)
