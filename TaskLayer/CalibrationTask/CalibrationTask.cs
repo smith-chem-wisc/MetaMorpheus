@@ -175,7 +175,7 @@ namespace TaskLayer
                 myMsDataFile = engine.CalibratedDataFile;
 
                 // write the calibrated mzML file
-                MzmlMethods.CreateAndWriteMyMzmlWithCalibratedSpectra(myMsDataFile, calibratedFilePath, false);
+                MzmlMethods.CreateAndWriteMyMzmlWithCalibratedSpectra(myMsDataFile, calibratedFilePath, CalibrationParameters.WriteIndexedMzml);
                 myFileManager.DoneWithFile(originalUncalibratedFilePath);
 
                 // stats after calibration

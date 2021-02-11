@@ -6,14 +6,24 @@
         xmlns:local="clr-namespace:MetaMorpheusGUI"
         mc:Ignorable="d"
         KeyDown="KeyPressed"
-        Title="Experimental Design" Height="400" Width="600" WindowStartupLocation="CenterScreen">
+        Title="Experimental Design" Height="400" Width="650" WindowStartupLocation="CenterScreen">
     <Grid>
         <!--Data grid-->
-        <DataGrid x:Name="DgQuant" ItemsSource="{Binding}" Grid.Row="1" VerticalAlignment="Stretch"/>
-        
+        <DataGrid x:Name="DgQuant" ItemsSource="{Binding}" Grid.Row="1" VerticalAlignment="Stretch" CanUserDeleteRows="False" CanUserAddRows="False" CanUserReorderColumns="False"
+                  AutoGenerateColumns="False" KeyDown="DgQuant_KeyDown">
+            <DataGrid.Columns>
+                <DataGridTextColumn Header="File" Binding="{Binding FileNameWithExtension}" Width="200" />
+                <DataGridTextColumn Header="Condition" Binding="{Binding Condition}" Width="100" />
+                <DataGridTextColumn Header="Biological Rep" Binding="{Binding Biorep}" Width="100" />
+                <DataGridTextColumn Header="Fraction" Binding="{Binding Fraction}" Width="100" />
+                <DataGridTextColumn Header="Technical Rep" Binding="{Binding Techrep}" Width="100" />
+            </DataGrid.Columns>
+        </DataGrid>
+
         <!--Save/cancel buttons-->
         <StackPanel Orientation="Horizontal" HorizontalAlignment="Center" Grid.Row="3" Height="25" VerticalAlignment="Bottom">
             <Button x:Name="BtnSaveQuant" Content="Save Experimental Design" Click="BtnSaveQuant_Click"/>
+            <Button x:Name="DeleteExperDesignButton" Content="Clear" Click="DeleteExperDesignButton_Click"/>
             <Button x:Name="BtnCancelQuant" Content="Cancel" Click="BtnCancelQuant_Click"/>
         </StackPanel>
     </Grid>

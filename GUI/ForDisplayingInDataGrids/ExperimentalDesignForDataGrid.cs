@@ -9,32 +9,17 @@ namespace MetaMorpheusGUI
 {
     public class ExperimentalDesignForDataGrid
     {
-        public ExperimentalDesignForDataGrid(string filename)
+        public ExperimentalDesignForDataGrid(string fullFilePathWithExtension)
         {
-            FileName = Path.GetFileNameWithoutExtension(filename);
+            FullFilePathWithExtension = fullFilePathWithExtension;
+            FileNameWithExtension = Path.GetFileName(fullFilePathWithExtension);
         }
 
-        public string FileName { get; private set; }      
+        public string FullFilePathWithExtension { get; private set; }
+        public string FileNameWithExtension { get; private set; }
         public string Condition { get; set; }
         public string Biorep { get; set; }
         public string Fraction { get; set; }
         public string Techrep { get; set; }
-
-        public void SetQconditionText(string text)
-        {
-            Condition = text;
-        }
-        public void SetQbioRepText(string text)
-        {
-            Biorep = text;
-        }
-        public void SetQfractionText(string text)
-        {
-            Fraction = text;
-        }
-        public void SetQtechRepText(string text)
-        {
-            Techrep = text;
-        }
     }
 }
