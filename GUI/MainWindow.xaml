@@ -394,6 +394,10 @@
                     </TextBlock>
                     
                     <!--Button to add databases-->
+                    <Button x:Name="DownloadUniProtDatabaseButton" Grid.Row="2" Content="+Download UniProt Database" Click="DownloadUniProtDatabase_Click" HorizontalAlignment="Left" 
+                            Style="{StaticResource ImportantButtonStyle}" Margin="0,0,10,0" />
+
+
                     <Button Name="AddDatabaseButton" Grid.Row="2" Content="+ADD DATABASE" Click="AddProteinDatabase_Click" HorizontalAlignment="Right" 
                             Style="{StaticResource ImportantButtonStyle}" Margin="0,0,10,0"/>
 

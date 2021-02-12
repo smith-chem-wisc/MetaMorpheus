@@ -1922,5 +1922,11 @@ namespace MetaMorpheusGUI
         }
 
         #endregion
+
+        private void DownloadUniProtDatabase_Click(object sender, RoutedEventArgs e)
+        {
+            DownloadUniProtDatabaseWindow uniProtDatabaseWindow = new DownloadUniProtDatabaseWindow();
+            uniProtDatabaseWindow.Show();
+        }
     }
 }
