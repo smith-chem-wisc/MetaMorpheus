@@ -94,5 +94,47 @@ namespace Test
             Directory.Delete(outputFolder, true);
             Directory.Delete(Path.Combine(TestContext.CurrentContext.TestDirectory, @"Task Settings"), true);
         }
+
+        [Test]
+        [TestCase("filename1.1.mzML")]
+        public static void ExperimentalDesignCalibrationAndSearch(string nonCalibratedFile)
+        {
+            // set up output directories
+            string unitTestFolder = Path.Combine(TestContext.CurrentContext.TestDirectory, @"ExperimentalDesignCalibrationAndSearch");
+            string outputFolder = Path.Combine(unitTestFolder, @"TaskOutput");
+            Directory.CreateDirectory(unitTestFolder);
+            Directory.CreateDirectory(outputFolder);
+
+            // set up original spectra file (input to calibration)
+            string nonCalibratedFilePath = Path.Combine(unitTestFolder, nonCalibratedFile);
+            File.Copy(Path.Combine(TestContext.CurrentContext.TestDirectory, @"TestData\SmallCalibratible_Yeast.mzML"), nonCalibratedFilePath, true);
+
+            // set up original experimental design (input to calibration)
+            SpectraFileInfo fileInfo = new SpectraFileInfo(nonCalibratedFilePath, "condition", 0, 0, 0);
+            var experimentalDesignFilePath = ExperimentalDesign.WriteExperimentalDesignToFile(new List<SpectraFileInfo> { fileInfo });
+
+            // set up tasks (calibration + search)
+            CalibrationTask calibrationTask = new CalibrationTask();
+            SearchTask searchTask = new SearchTask();
+
+            // protein db
+            string myDatabase = Path.Combine(TestContext.CurrentContext.TestDirectory, @"TestData\smalldb.fasta");
+
+            // run the tasks
+            EverythingRunnerEngine a = new EverythingRunnerEngine(
+                new List<(string, MetaMorpheusTask)> { ("", calibrationTask), ("", searchTask) }, 
+                new List<string> { nonCalibratedFilePath }, 
+                new List<DbForTask> { new DbForTask(myDatabase, false) },
+                outputFolder);
+
+            a.Run();
+
+            // test to see if quantification ran correctly
+            Assert.That(File.Exists(Path.Combine(outputFolder, @"AllQuantifiedPeptides.tsv")));
+            Assert.That(File.Exists(Path.Combine(outputFolder, @"ExperimentalDesign.tsv")));
+
+            // clean up
+            Directory.Delete(unitTestFolder, true);
+        }
     }
 }
