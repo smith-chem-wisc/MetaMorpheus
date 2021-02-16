@@ -193,9 +193,16 @@ namespace TaskLayer
             {
                 // copy experimental design file to output folder
                 string writtenFile = Path.Combine(Parameters.OutputFolder, Path.GetFileName(assumedExperimentalDesignPath));
-                File.Copy(assumedExperimentalDesignPath, writtenFile, overwrite: true);
-                FinishedWritingFile(writtenFile, new List<string> { Parameters.SearchTaskId });
-
+                try
+                {
+                    File.Copy(assumedExperimentalDesignPath, writtenFile, overwrite: true);
+                    FinishedWritingFile(writtenFile, new List<string> { Parameters.SearchTaskId });
+                }
+                catch (Exception e)
+                {
+                    Warn("Could not copy Experimental Design file to search task output. That's ok, the search will continue");
+                }
+                
                 spectraFileInfo = ExperimentalDesign.ReadExperimentalDesign(assumedExperimentalDesignPath, Parameters.CurrentRawFileList, out var errors);
 
                 if (errors.Any())
