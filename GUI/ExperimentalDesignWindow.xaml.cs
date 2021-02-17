@@ -200,6 +200,14 @@ namespace MetaMorpheusGUI
 
                     try
                     {
+                        // selected cell is in the "File" column
+                        if (columnIndex == 0)
+                        {
+                            listOfSpectraFiles[i + rowIndex].Condition = pastedCells[1];
+                            listOfSpectraFiles[i + rowIndex].Biorep = pastedCells[2];
+                            listOfSpectraFiles[i + rowIndex].Fraction = pastedCells[3];
+                            listOfSpectraFiles[i + rowIndex].Techrep = pastedCells[4];
+                        }
                         // selected cell is in the "Condition" column
                         if (columnIndex == 1)
                         {
