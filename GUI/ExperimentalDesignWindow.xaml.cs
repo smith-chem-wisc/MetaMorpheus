@@ -166,9 +166,81 @@ namespace MetaMorpheusGUI
             InitializeExperDesign();
         }
 
-        private void DgQuant_KeyDown(object sender, KeyEventArgs e)
+        private void Paste(object sender, ExecutedRoutedEventArgs e)
         {
+            var selectedCell = DgQuant.SelectedCells.FirstOrDefault();
+            if (selectedCell == null)
+            {
+                return;
+            }
 
+            var selectedSpectraFile = (ExperimentalDesignForDataGrid)selectedCell.Item;
+            var listOfSpectraFiles = DgQuant.ItemContainerGenerator.Items.Select(p => (ExperimentalDesignForDataGrid)p).ToList();
+
+            int rowIndex = listOfSpectraFiles.IndexOf(selectedSpectraFile);
+            int columnIndex = DgQuant.Columns.IndexOf(selectedCell.Column);
+
+            // get data from clipboard in text format
+            // clipboardRawData will be null if the data on the clipboard is not text
+            object clipboardRawData = System.Windows.Clipboard.GetDataObject().GetData(DataFormats.Text);
+
+            if (clipboardRawData != null)
+            {
+                string pastedText = clipboardRawData as string;
+
+                // each line is delimited by a newline and/or return character
+                var pastedLines = pastedText.Split(new char[] { '\r', '\n' }).Where(p => !string.IsNullOrWhiteSpace(p)).ToList();
+
+                for (int i = 0; i < pastedLines.Count && i + rowIndex < listOfSpectraFiles.Count; i++)
+                {
+                    var pastedLine = pastedLines[i];
+
+                    // each element in the line is delimited by tabs or commas
+                    var pastedCells = pastedLine.Split(new char[] { '\t', ',' });
+
+                    try
+                    {
+                        // selected cell is in the "File" column
+                        if (columnIndex == 0)
+                        {
+                            listOfSpectraFiles[i + rowIndex].Condition = pastedCells[1];
+                            listOfSpectraFiles[i + rowIndex].Biorep = pastedCells[2];
+                            listOfSpectraFiles[i + rowIndex].Fraction = pastedCells[3];
+                            listOfSpectraFiles[i + rowIndex].Techrep = pastedCells[4];
+                        }
+                        // selected cell is in the "Condition" column
+                        if (columnIndex == 1)
+                        {
+                            listOfSpectraFiles[i + rowIndex].Condition = pastedCells[0];
+                            listOfSpectraFiles[i + rowIndex].Biorep = pastedCells[1];
+                            listOfSpectraFiles[i + rowIndex].Fraction = pastedCells[2];
+                            listOfSpectraFiles[i + rowIndex].Techrep = pastedCells[3];
+                        }
+                        // selected cell is in the "Biorep" column
+                        if (columnIndex == 2)
+                        {
+                            listOfSpectraFiles[i + rowIndex].Biorep = pastedCells[0];
+                            listOfSpectraFiles[i + rowIndex].Fraction = pastedCells[1];
+                            listOfSpectraFiles[i + rowIndex].Techrep = pastedCells[2];
+                        }
+                        // selected cell is in the "Fraction" column
+                        if (columnIndex == 3)
+                        {
+                            listOfSpectraFiles[i + rowIndex].Fraction = pastedCells[0];
+                            listOfSpectraFiles[i + rowIndex].Techrep = pastedCells[1];
+                        }
+                        // selected cell is in the "Techrep" column
+                        if (columnIndex == 4)
+                        {
+                            listOfSpectraFiles[i + rowIndex].Techrep = pastedCells[0];
+                        }
+                    }
+                    catch (Exception)
+                    {
+                        // don't really need to print a warning
+                    }
+                }
+            }
         }
     }
 }

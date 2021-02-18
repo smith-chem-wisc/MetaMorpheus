@@ -89,7 +89,7 @@ namespace EngineLayer
             return expDesign;
         }
 
-        public static void WriteExperimentalDesignToFile(List<SpectraFileInfo> spectraFileInfos)
+        public static string WriteExperimentalDesignToFile(List<SpectraFileInfo> spectraFileInfos)
         {
             var dir = Directory.GetParent(spectraFileInfos.First().FullFilePathWithExtension).FullName;
             var filePath = Path.Combine(dir, GlobalVariables.ExperimentalDesignFileName);
@@ -108,12 +108,13 @@ namespace EngineLayer
                         "\t" + (spectraFile.TechnicalReplicate + 1));
                 }
             }
+
+            return filePath;
         }
 
         /// <summary>
         /// Checks for errors in the experimental design. Will return null if there are no errors.
         /// </summary>
-        /// 
         public static string GetErrorsInExperimentalDesign(List<SpectraFileInfo> spectraFileInfos)
         {
             // check for correct iteration of integer values and duplicates

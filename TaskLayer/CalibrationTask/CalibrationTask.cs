@@ -2,6 +2,7 @@ using EngineLayer;
 using EngineLayer.Calibration;
 using EngineLayer.ClassicSearch;
 using EngineLayer.FdrAnalysis;
+using FlashLFQ;
 using IO.MzML;
 using MassSpectrometry;
 using MzLibUtil;
@@ -65,7 +66,7 @@ namespace TaskLayer
             };
 
             var myFileManager = new MyFileManager(true);
-            List<string> spectraFilesAfterCalibration = new List<string>();
+            List<string> unsuccessfullyCalibratedFilePaths = new List<string>();
 
             for (int spectraFileIndex = 0; spectraFileIndex < currentRawFileList.Count; spectraFileIndex++)
             {
@@ -144,7 +145,7 @@ namespace TaskLayer
 
                 if (couldNotFindEnoughDatapoints)
                 {
-                    spectraFilesAfterCalibration.Add(Path.GetFileNameWithoutExtension(currentRawFileList[spectraFileIndex]));
+                    unsuccessfullyCalibratedFilePaths.Add(Path.GetFileNameWithoutExtension(currentRawFileList[spectraFileIndex]));
                     ReportProgress(new ProgressEventArgs(100, "Failed to calibrate!", new List<string> { taskId, "Individual Spectra Files", originalUncalibratedFilenameWithoutExtension }));
                     continue;
                 }
@@ -206,7 +207,6 @@ namespace TaskLayer
                 FinishedWritingFile(newTomlFileName, new List<string> { taskId, "Individual Spectra Files", originalUncalibratedFilenameWithoutExtension });
 
                 // finished calibrating this file
-                spectraFilesAfterCalibration.Add(Path.GetFileNameWithoutExtension(calibratedFilePath));
                 FinishedWritingFile(calibratedFilePath, new List<string> { taskId, "Individual Spectra Files", originalUncalibratedFilenameWithoutExtension });
                 MyTaskResults.NewSpectra.Add(calibratedFilePath);
                 MyTaskResults.NewFileSpecificTomls.Add(newTomlFileName);
@@ -220,7 +220,7 @@ namespace TaskLayer
 
             if (File.Exists(assumedPathToExperDesign))
             {
-                WriteNewExperimentalDesignFile(assumedPathToExperDesign, OutputFolder, spectraFilesAfterCalibration);
+                WriteNewExperimentalDesignFile(assumedPathToExperDesign, OutputFolder, currentRawFileList, unsuccessfullyCalibratedFilePaths);
             }
 
             // finished calibrating all files for the task
@@ -266,14 +266,14 @@ namespace TaskLayer
             Log("Searching with searchMode: " + searchMode, new List<string> { taskId, "Individual Spectra Files", fileNameWithoutExtension });
             Log("Searching with productMassTolerance: " + initProdTol, new List<string> { taskId, "Individual Spectra Files", fileNameWithoutExtension });
 
-            new ClassicSearchEngine(allPsmsArray, listOfSortedms2Scans, variableModifications, fixedModifications, null, null, null, proteinList, searchMode, combinedParameters, 
+            new ClassicSearchEngine(allPsmsArray, listOfSortedms2Scans, variableModifications, fixedModifications, null, null, null, proteinList, searchMode, combinedParameters,
                 FileSpecificParameters, null, new List<string> { taskId, "Individual Spectra Files", fileNameWithoutExtension }).Run();
             List<PeptideSpectralMatch> allPsms = allPsmsArray.Where(b => b != null).ToList();
 
             allPsms = allPsms.OrderByDescending(b => b.Score)
                 .ThenBy(b => b.PeptideMonisotopicMass.HasValue ? Math.Abs(b.ScanPrecursorMass - b.PeptideMonisotopicMass.Value) : double.MaxValue)
                 .GroupBy(b => (b.FullFilePath, b.ScanNumber, b.PeptideMonisotopicMass)).Select(b => b.First()).ToList();
-            
+
             new FdrAnalysisEngine(allPsms, searchMode.NumNotches, CommonParameters, FileSpecificParameters, new List<string> { taskId, "Individual Spectra Files", fileNameWithoutExtension }).Run();
 
             List<PeptideSpectralMatch> goodIdentifications = allPsms.Where(b => b.FdrInfo.QValueNotch < 0.001 && !b.IsDecoy && b.FullSequence != null).ToList();
@@ -286,7 +286,7 @@ namespace TaskLayer
             //get the deconvoluted ms2scans for the good identifications
             List<Ms2ScanWithSpecificMass> goodScans = new List<Ms2ScanWithSpecificMass>();
             List<PeptideSpectralMatch> unfilteredPsms = allPsmsArray.ToList();
-            foreach(PeptideSpectralMatch psm in goodIdentifications)
+            foreach (PeptideSpectralMatch psm in goodIdentifications)
             {
                 goodScans.Add(listOfSortedms2Scans[unfilteredPsms.IndexOf(psm)]);
             }
@@ -305,43 +305,43 @@ namespace TaskLayer
             return currentResult;
         }
 
-        private static void WriteNewExperimentalDesignFile(string assumedPathToExperDesign, string outputFolder, List<string> spectraFilesAfterCalibration)
+        private static void WriteNewExperimentalDesignFile(string pathToOldExperDesign, string outputFolder, List<string> originalUncalibratedFileNamesWithExtension,
+            List<string> unsuccessfullyCalibratedFilePaths)
         {
-            var lines = File.ReadAllLines(assumedPathToExperDesign);
-            List<string> newExperimentalDesignOutput = new List<string> { lines[0] };
+            var oldExperDesign = ExperimentalDesign.ReadExperimentalDesign(pathToOldExperDesign, originalUncalibratedFileNamesWithExtension, out var errors);
 
-            for (int i = 1; i < lines.Length; i++)
+            if (errors.Any())
             {
-                var split = lines[i].Split('\t');
-
-                // GetFileName is used instead of GetFileNameWithoutExtension because 
-                // the Experimental Design file does not include extensions in the file names
-                string oldFileName = Path.GetFileName(split[0]);
-                string newFileName = oldFileName + CalibSuffix;
-                string newline;
-
-                if (!spectraFilesAfterCalibration.Contains(newFileName))
+                foreach (var error in errors)
                 {
-                    // file was not successfully calibrated
-                    newline = oldFileName + "\t";
+                    Warn(error);
+                }
+
+                return;
+            }
+
+            var newExperDesign = new List<SpectraFileInfo>();
+
+            foreach (var uncalibratedSpectraFile in oldExperDesign)
+            {
+                var originalUncalibratedFilePath = uncalibratedSpectraFile.FullFilePathWithExtension;
+                var originalUncalibratedFilenameWithoutExtension = GlobalVariables.GetFilenameWithoutExtension(originalUncalibratedFilePath);
+                string calibratedFilePath = Path.Combine(outputFolder, originalUncalibratedFilenameWithoutExtension + CalibSuffix + ".mzML");
+
+                var calibratedSpectraFile = new SpectraFileInfo(calibratedFilePath, 
+                    uncalibratedSpectraFile.Condition, uncalibratedSpectraFile.BiologicalReplicate, uncalibratedSpectraFile.TechnicalReplicate, uncalibratedSpectraFile.Fraction);
+
+                if (unsuccessfullyCalibratedFilePaths.Contains(uncalibratedSpectraFile.FullFilePathWithExtension))
+                {
+                    newExperDesign.Add(uncalibratedSpectraFile);
                 }
                 else
                 {
-                    // file was successfully calibrated
-                    newline = newFileName + "\t";
+                    newExperDesign.Add(calibratedSpectraFile);
                 }
-
-                // add condition, biorep, etc info
-                for (int j = 1; j < split.Length; j++)
-                {
-                    newline += split[j] + "\t";
-                }
-
-                // write the line
-                newExperimentalDesignOutput.Add(newline);
             }
 
-            File.WriteAllLines(Path.Combine(outputFolder, GlobalVariables.ExperimentalDesignFileName), newExperimentalDesignOutput);
+            ExperimentalDesign.WriteExperimentalDesignToFile(newExperDesign);
         }
     }
 }
