@@ -6,7 +6,7 @@
         xmlns:local="clr-namespace:MetaMorpheusGUI"
         mc:Ignorable="d"
         KeyDown="KeyPressed"
-        Title="Search Task" Width="750" Height="725" WindowStartupLocation="CenterScreen">
+        Title="Search Task" Width="750" Height="7025" WindowStartupLocation="CenterScreen">
     <Window.Resources>
         <local:BooleanInverter x:Key="InvertedBooleanConverter" />
 
@@ -786,7 +786,26 @@
                                                 Search for theoretical ions from the C-Terminus. The specific ion series are specified through the dissociation type.
                                                         </TextBlock>
                                                     </CheckBox.ToolTip>
+                                                </CheckBox>                                                
+                                            </StackPanel>
+                                            <StackPanel Orientation="Horizontal" Margin="5,0,0,5">
+                                                <CheckBox x:Name="InternalIonsCheckBox" Content="Internal Ions" Margin="5,0,0,5" DockPanel.Dock="Top" ToolTipService.ShowDuration="999999" ToolTipService.InitialShowDelay="500" IsChecked="False">
+                                                    <CheckBox.ToolTip>
+                                                        <TextBlock>
+                                                Search for theoretical internal fragment ions AFTER scoring. These ions are useful for localizing PTMs, but are not used during scoring.
+                                                        </TextBlock>
+                                                    </CheckBox.ToolTip>
                                                 </CheckBox>
+                                                <Label x:Name="minInternalFragmentLengthLabel" Content="Min Internal Length:" Margin="18,-6,0,0" />
+                                                <TextBox x:Name="MinInternalFragmentLengthTextBox" PreviewTextInput="CheckIfNumber" Width="45" IsEnabled="{Binding IsChecked, ElementName=InternalIonsCheckBox}" ToolTipService.ShowDuration="999999" ToolTipService.InitialShowDelay="500">
+                                                    <TextBox.ToolTip>
+                                                        <TextBlock>
+                                                        Minimum length (number of amino acids) allowed for an internal fragment ion. 
+                                                            <LineBreak/>
+                                                            Small internal fragments can be uninformative and computationally expensive.
+                                                        </TextBlock>
+                                                    </TextBox.ToolTip>
+                                                </TextBox>
                                             </StackPanel>
                                             <StackPanel Orientation="Horizontal" Margin="5">
                                                 <Label x:Name="maxFragmentSize" Content="Max Fragment Mass (Da):" Width="146" />

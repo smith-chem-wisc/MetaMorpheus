@@ -20,6 +20,7 @@ using System.Windows;
 using System.Windows.Controls;
 using System.Windows.Data;
 using System.Windows.Media;
+using System.Windows.Shapes;
 
 namespace GuiFunctions
 {
@@ -202,6 +203,194 @@ namespace GuiFunctions
             }
         }
 
+        //draw the sequence coverage map, write out the protein seqeunce, overlay modifications, and display matched fragments
+        public void DrawSequenceCoverageMap(PsmFromTsv psm, Canvas map)
+        {
+            int spacing = 20;
+
+            map.Children.Clear();
+
+            //TODO: add fragments
+
+            var mapTitle = "";
+
+            const int startHeight = 40;
+            const int heightIncrement = 5;
+            int height = startHeight;
+
+            //draw sequence
+            TextDrawing(map, new Point(0, height), mapTitle, Brushes.Black);
+
+
+            for (int r = 0; r < psm.BaseSeq.Length; r++)
+            {
+                TextDrawing(map, new Point(r * spacing + 10, height), psm.BaseSeq[r].ToString().ToUpper(), Brushes.Black);
+            }
+
+            List<bool[]> index = new List<bool[]>();
+
+            List<Product> orderedFragments = new List<Product>();
+            List<Product> unorderedFragments = psm.MatchedIons.Select(x => x.NeutralTheoreticalProduct).ToList();
+            //add N-terminal
+            orderedFragments.AddRange(unorderedFragments.Where(x => x.Terminus == FragmentationTerminus.N));
+            //add C-terminal in reverse order
+            orderedFragments.AddRange(unorderedFragments.Where(x => x.Terminus == FragmentationTerminus.C).OrderByDescending(x => x.FragmentNumber));
+            //add internal fragments
+            //asdf
+            orderedFragments.AddRange(unorderedFragments.Where(x => x.Terminus == FragmentationTerminus.None).OrderByDescending(x => x.FragmentNumber));
+
+
+            //foreach matched fragment
+            foreach (Product fragment in orderedFragments)
+            {
+                var terminus = fragment.Terminus;
+                int length = fragment.FragmentNumber;
+                //TODO fill in values
+                int start = 0;
+                int end = 0;
+
+                //if internal fragment
+                if (terminus == FragmentationTerminus.None)
+                {
+                    start = fragment.AminoAcidPosition;
+                    end = start + fragment.FragmentNumber;
+                }
+                else
+                {
+                    start = terminus == FragmentationTerminus.N ? 0 : psm.BaseSeq.Length - length;
+                    end = start + length;
+                }
+
+                //see if the fragment can fit on an existing line without overlap
+                bool availableLine = false;
+                int heightForThisFragment = height;
+                for (int lineNumber = 0; lineNumber < index.Count; lineNumber++)
+                {
+                    bool[] line = index[lineNumber];
+                    for (int i = start; i <= end; i++)
+                    {
+                        //if a space is already occupied
+                        if (line[i])
+                        {
+                            break;
+                        }
+                        //if we made it to the end without hitting an occupied spot, use this line
+                        else if (i == end)
+                        {
+                            availableLine = true;
+                        }
+                    }
+                    if (availableLine)
+                    {
+                        //we're using this line, fill in the spaces
+                        for (int i = start; i <= end; i++)
+                        {
+                            line[i] = true;
+                        }
+                        heightForThisFragment = startHeight + lineNumber * heightIncrement;
+                        break;
+                    }
+                }
+
+                if (!availableLine)
+                {
+                    bool[] line = new bool[psm.BaseSeq.Length + 1];
+                    for (int i = start; i <= end; i++)
+                    {
+                        line[i] = true;
+                    }
+                    index.Add(line);
+                    height += heightIncrement;
+                }
+
+                Highlight(start, end, map, heightForThisFragment, Colors.Blue, true, true, true, spacing);
+            }
+
+            //totalHeight += splitSeq.Count() * 100;
+            map.Height = height + 100;
+            map.Width = spacing * psm.BaseSeq.Length + 100;
+        }
+
+
+        public static void TextDrawing(Canvas map, Point loc, string txt, Brush clr)
+        {
+            TextBlock tb = new TextBlock();
+            tb.Foreground = clr;
+            tb.Text = txt;
+            tb.FontSize = 15;
+            if (clr == Brushes.Black)
+            {
+                tb.FontWeight = System.Windows.FontWeights.Bold;
+            }
+            else
+            {
+                tb.FontWeight = System.Windows.FontWeights.ExtraBold;
+            }
+            tb.FontFamily = new FontFamily("Arial"); // monospaced font
+
+            Canvas.SetTop(tb, loc.Y);
+            Canvas.SetLeft(tb, loc.X);
+            Panel.SetZIndex(tb, 2); //lower priority
+            map.Children.Add(tb);
+            map.UpdateLayout();
+        }
+
+        public static void Highlight(int start, int end, Canvas map,
+       int height, Color clr, bool unique, bool startPep, bool endPep, int spacing)
+        {
+            // highlight peptide
+            if (unique)
+            {
+                peptideLineDrawing(map, new Point(start * spacing + 7, height),
+                    new Point(end * spacing - 7, height), clr, false, startPep, endPep);
+            }
+            else
+            {
+                peptideLineDrawing(map, new Point(start * spacing + 7, height),
+                    new Point(end * spacing - 7, height), clr, true, startPep, endPep);
+            }
+        }
+
+        public static void peptideLineDrawing(Canvas cav, Point start, Point end, Color clr, bool shared, bool pepStart, bool pepEnd)
+        {
+
+            // draw top
+            Line top = new Line();
+            top.Stroke = new SolidColorBrush(clr);
+            if (pepStart == false)
+            {
+                top.X1 = start.X - 10;
+            }
+            else
+            {
+                top.X1 = start.X;
+            }
+
+            if (pepEnd == false)
+            {
+                top.X2 = end.X + 21;
+            }
+            else
+            {
+                top.X2 = end.X + 11;
+            }
+
+            top.Y1 = start.Y + 20;
+            top.Y2 = end.Y + 20;
+            top.StrokeThickness = 3.25;
+            top.StrokeStartLineCap = PenLineCap.Round;
+            top.StrokeEndLineCap = PenLineCap.Round;
+
+            if (shared)
+            {
+                top.Stroke.Opacity = 0.35;
+            }
+
+            cav.Children.Add(top);
+
+            Canvas.SetZIndex(top, 1); //on top of any other things in canvas
+        }
+
         public void ExportToPdf(PlotView plotView, Canvas canvas, List<PsmFromTsv> spectrumMatches, ParentChildScanPlotsView parentChildScanPlotsView, string directory, out List<string> errors)
         {
             errors = new List<string>();
@@ -229,12 +418,12 @@ namespace GuiFunctions
 
                 foreach (var plot in CurrentlyDisplayedPlots)
                 {
-                    string filePath = Path.Combine(directory, plot.Scan.OneBasedScanNumber + "_" + sequence + ".pdf");
+                    string filePath = System.IO.Path.Combine(directory, plot.Scan.OneBasedScanNumber + "_" + sequence + ".pdf");
 
                     int i = 2;
                     while (File.Exists(filePath))
                     {
-                        filePath = Path.Combine(directory, plot.Scan.OneBasedScanNumber + "_" + sequence + "_" + i + ".pdf");
+                        filePath = System.IO.Path.Combine(directory, plot.Scan.OneBasedScanNumber + "_" + sequence + "_" + i + ".pdf");
                         i++;
                     }
 
@@ -303,7 +492,7 @@ namespace GuiFunctions
             errors = new List<string>();
 
             HashSet<string> fileNamesWithoutExtension = new HashSet<string>(
-                SpectraFilePaths.Select(p => Path.GetFileName(p.Replace(GlobalVariables.GetFileExtension(p), string.Empty))));
+                SpectraFilePaths.Select(p => System.IO.Path.GetFileName(p.Replace(GlobalVariables.GetFileExtension(p), string.Empty))));
             List<PsmFromTsv> psmsThatDontHaveMatchingSpectraFile = new List<PsmFromTsv>();
 
             try
@@ -360,7 +549,7 @@ namespace GuiFunctions
                 lock (ThreadLocker)
                 {
                     var fileNameWithoutExtension = filepath.Replace(GlobalVariables.GetFileExtension(filepath), string.Empty);
-                    fileNameWithoutExtension = Path.GetFileName(fileNameWithoutExtension);
+                    fileNameWithoutExtension = System.IO.Path.GetFileName(fileNameWithoutExtension);
 
                     DynamicDataConnection spectraFile = null;
                     string extension = GlobalVariables.GetFileExtension(filepath);

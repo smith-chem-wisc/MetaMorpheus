@@ -21,9 +21,10 @@ namespace EngineLayer.ClassicSearch
         private readonly PeptideSpectralMatch[] PeptideSpectralMatches;
         private readonly Ms2ScanWithSpecificMass[] ArrayOfSortedMS2Scans;
         private readonly double[] MyScanPrecursorMasses;
+        private readonly int MinInternalFragmentLength;
 
         public ClassicSearchEngine(PeptideSpectralMatch[] globalPsms, Ms2ScanWithSpecificMass[] arrayOfSortedMS2Scans,
-            List<Modification> variableModifications, List<Modification> fixedModifications, List<SilacLabel> silacLabels, SilacLabel startLabel, SilacLabel endLabel,
+            List<Modification> variableModifications, List<Modification> fixedModifications, List<SilacLabel> silacLabels, SilacLabel startLabel, SilacLabel endLabel, int minInternalFragmentLength,
             List<Protein> proteinList, MassDiffAcceptor searchMode, CommonParameters commonParameters, List<(string FileName, CommonParameters Parameters)> fileSpecificParameters,
             SpectralLibrary spectralLibrary, List<string> nestedIds)
             : base(commonParameters, fileSpecificParameters, nestedIds)
@@ -38,6 +39,7 @@ namespace EngineLayer.ClassicSearch
             {
                 TurnoverLabels = (startLabel, endLabel);
             }
+            MinInternalFragmentLength = minInternalFragmentLength;
             Proteins = proteinList;
             SearchMode = searchMode;
             SpectralLibrary = spectralLibrary;
@@ -100,6 +102,15 @@ namespace EngineLayer.ClassicSearch
 
                                         if (scoreImprovement)
                                         {
+                                            //add internal fragments if selected
+                                            if (MinInternalFragmentLength != 0)
+                                            {
+                                                List<Product> internalFragments = new List<Product>();
+                                                peptide.FragmentInternally(CommonParameters.DissociationType, MinInternalFragmentLength, internalFragments);
+                                                List<MatchedFragmentIon> matchedInternalIons = MatchFragmentIons(scan.TheScan, internalFragments, CommonParameters);
+                                                matchedIons.AddRange(matchedInternalIons);
+                                            }
+
                                             if (PeptideSpectralMatches[scan.ScanIndex] == null)
                                             {
                                                 PeptideSpectralMatches[scan.ScanIndex] = new PeptideSpectralMatch(peptide, scan.Notch, thisScore, scan.ScanIndex, scan.TheScan, CommonParameters, matchedIons, 0);

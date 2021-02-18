@@ -48,7 +48,7 @@ namespace Test
                     maxMissedCleavages: 0,
                     minPeptideLength: 1,
                     initiatorMethionineBehavior: InitiatorMethionineBehavior.Retain));
-            ClassicSearchEngine cse = new ClassicSearchEngine(globalPsms, arrayOfSortedMS2Scans, new List<Modification>(), new List<Modification>(), null, null, null, 
+            ClassicSearchEngine cse = new ClassicSearchEngine(globalPsms, arrayOfSortedMS2Scans, new List<Modification>(), new List<Modification>(), null, null, null, 0,
                 new List<Protein> { prot }, new OpenSearchMode(), CommonParameters, null, null, new List<string>());
 
             cse.Run();
@@ -83,7 +83,7 @@ namespace Test
                     minPeptideLength: 1,
                     maxModificationIsoforms: int.MaxValue,
                     initiatorMethionineBehavior: InitiatorMethionineBehavior.Retain));
-            ClassicSearchEngine cse = new ClassicSearchEngine(globalPsms, arrayOfSortedMS2Scans, new List<Modification>(), new List<Modification>(), null, null, null, 
+            ClassicSearchEngine cse = new ClassicSearchEngine(globalPsms, arrayOfSortedMS2Scans, new List<Modification>(), new List<Modification>(), null, null, null, 0,
                 new List<Protein> { prot }, new OpenSearchMode(), CommonParameters, null, null, new List<string>());
 
             cse.Run();
@@ -119,7 +119,7 @@ namespace Test
                     minPeptideLength: 1,
                     maxModificationIsoforms: int.MaxValue,
                     initiatorMethionineBehavior: InitiatorMethionineBehavior.Retain));
-            ClassicSearchEngine cse = new ClassicSearchEngine(globalPsms, arrayOfSortedMS2Scans, new List<Modification>(), new List<Modification>(), null, null, null,
+            ClassicSearchEngine cse = new ClassicSearchEngine(globalPsms, arrayOfSortedMS2Scans, new List<Modification>(), new List<Modification>(), null, null, null, 0,
                 new List<Protein> { prot }, new OpenSearchMode(), CommonParameters, null, null, new List<string>());
 
             cse.Run();
@@ -180,7 +180,7 @@ namespace Test
             Ms2ScanWithSpecificMass[] arrayOfSortedMS2Scans = { new Ms2ScanWithSpecificMass(scan, 0, 0, null, new CommonParameters()) };
             CommonParameters CommonParameters = new CommonParameters(productMassTolerance: new PpmTolerance(5), scoreCutoff: 1, digestionParams: new DigestionParams(maxMissedCleavages: 0, minPeptideLength: 1, maxModificationIsoforms: int.MaxValue, initiatorMethionineBehavior: InitiatorMethionineBehavior.Retain));
 
-            ClassicSearchEngine cse = new ClassicSearchEngine(globalPsms, arrayOfSortedMS2Scans, new List<Modification>(), new List<Modification>(), null, null, null,
+            ClassicSearchEngine cse = new ClassicSearchEngine(globalPsms, arrayOfSortedMS2Scans, new List<Modification>(), new List<Modification>(), null, null, null, 0,
                 new List<Protein> { prot }, new OpenSearchMode(), CommonParameters, null, null, new List<string>());
 
             cse.Run();
