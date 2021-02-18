@@ -32,7 +32,7 @@ namespace Test
             var psms = Path.Combine(thisTaskOutputFolder, "Task", "AllPSMs.psmtsv");
 
             Assert.AreEqual(3, File.ReadLines(psms).Count());
-            var protGroups = Path.Combine(thisTaskOutputFolder, "Task", "AllProteinGroups.tsv");
+            var protGroups = Path.Combine(thisTaskOutputFolder, "Task", "AllQuantifiedProteinGroups.tsv");
 
             Assert.AreEqual(2, File.ReadLines(protGroups).Count());
             Directory.Delete(outputFolder, true);
@@ -59,7 +59,7 @@ namespace Test
             var psms = Path.Combine(thisTaskOutputFolder, "Task", "AllPSMs.psmtsv");
 
             Assert.AreEqual(3, File.ReadLines(psms).Count());
-            var protGroups = Path.Combine(thisTaskOutputFolder, "Task", "AllProteinGroups.tsv");
+            var protGroups = Path.Combine(thisTaskOutputFolder, "Task", "AllQuantifiedProteinGroups.tsv");
 
             Assert.AreEqual(2, File.ReadLines(protGroups).Count());
             Directory.Delete(outputFolder, true);

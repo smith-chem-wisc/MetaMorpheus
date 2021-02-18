@@ -4,37 +4,37 @@ using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 using System.IO;
+using System.ComponentModel;
 
 namespace MetaMorpheusGUI
 {
-    public class ExperimentalDesignForDataGrid
+    public class ExperimentalDesignForDataGrid : INotifyPropertyChanged
     {
-        public ExperimentalDesignForDataGrid(string filename)
+        public ExperimentalDesignForDataGrid(string fullFilePathWithExtension)
         {
-            FileName = Path.GetFileNameWithoutExtension(filename);
+            FullFilePathWithExtension = fullFilePathWithExtension;
+            FileNameWithExtension = Path.GetFileName(fullFilePathWithExtension);
         }
 
-        public string FileName { get; private set; }      
-        public string Condition { get; set; }
-        public string Biorep { get; set; }
-        public string Fraction { get; set; }
-        public string Techrep { get; set; }
+        public string FullFilePathWithExtension { get; private set; }
+        public string FileNameWithExtension { get; private set; }
+        public string Condition { get { return _condition; } set { _condition = value; RaisePropertyChanged("Condition"); } }
+        public string Biorep { get { return _biorep; } set { _biorep = value; RaisePropertyChanged("Biorep"); } }
+        public string Fraction { get { return _fraction; } set { _fraction = value; RaisePropertyChanged("Fraction"); } }
+        public string Techrep { get { return _techrep; } set { _techrep = value; RaisePropertyChanged("Techrep"); } }
 
-        public void SetQconditionText(string text)
+        private string _condition;
+        private string _biorep;
+        private string _fraction;
+        private string _techrep;
+
+        public event PropertyChangedEventHandler PropertyChanged;
+        private void RaisePropertyChanged(string propertyName)
         {
-            Condition = text;
-        }
-        public void SetQbioRepText(string text)
-        {
-            Biorep = text;
-        }
-        public void SetQfractionText(string text)
-        {
-            Fraction = text;
-        }
-        public void SetQtechRepText(string text)
-        {
-            Techrep = text;
+            if (this.PropertyChanged != null)
+            {
+                this.PropertyChanged(this, new PropertyChangedEventArgs(propertyName));
+            }
         }
     }
 }
