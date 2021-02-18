@@ -429,6 +429,13 @@
         <RegistryValue Root="HKCU" Key="Software\SmithGroup\MetaMorpheus" Name="installed" Type="integer" Value="1" KeyPath="yes" />
       </Component>
 
+      <!-- availableUniProtProteomes.txt -->
+      <Component Id="Appsrc_Proteomes_availableUniProtProteomes.txt" Guid="89F6BBC1-4668-4F9C-A52B-69603CE418C1">
+        <File ReadOnly="no" Id="Appsrc_Proteomes_availableUniProtProteomes.txt" Name="availableUniProtProteomes.txt" Source="$(var.GUI_TargetDir)Proteomes\availableUniProtProteomes.txt" />
+        <Condition>OVERWRITEAPPDATA</Condition>
+        <RegistryValue Root="HKCU" Key="Software\SmithGroup\MetaMorpheus" Name="installed" Type="integer" Value="1" KeyPath="yes" />
+      </Component>
+      
       <!-- glyco.txt -->
       <Component Id="Appsrc_Mods_glyco.txt" Guid="1707b26b-070e-46d5-9632-f1bc8bf4d281">
         <Condition>OVERWRITEAPPDATA</Condition>

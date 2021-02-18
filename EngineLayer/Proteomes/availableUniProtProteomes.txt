@@ -1,0 +1,7 @@
+Proteome ID	Organism	Organism ID	Protein count	BUSCO	CPD
+UP000274163	Alternaria alternata fusarivirus 1	1935440	3		Outlier
+UP000124990	Porcine reproductive and respiratory syndrome virus (strain HB-1) (PRRSV)	300563	6		Standard
+UP000184188	Penicilliopsis zonata CBS 506.65 (Strain: CBS 506.65)	1073090	9870	C:97.2%[S:97%,D:0.3%],F:0.9%,M:1.9%,n:4191	Standard
+UP000008479	Murine polyomavirus (strain A2) (MPyV) (Strain: A2)	10636	5		Standard
+UP000203944	Sweet potato pakakuy virus	2034762	5		Standard
+UP000208087	Wenzhou shrimp virus 6 (Strain: WZRBX43423)	1923653	2		Standard
