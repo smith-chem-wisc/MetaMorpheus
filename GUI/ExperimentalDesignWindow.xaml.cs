@@ -1,4 +1,5 @@
 ﻿using EngineLayer;
+using FlashLFQ;
 using System;
 using System.Collections.Generic;
 using System.Collections.ObjectModel;
@@ -14,33 +15,49 @@ namespace MetaMorpheusGUI
     /// </summary>
     public partial class ExperimentalDesignWindow : Window
     {
-        private readonly ObservableCollection<ExperimentalDesignForDataGrid> spectraFilesQuantSets = new ObservableCollection<ExperimentalDesignForDataGrid>();
+        private readonly ObservableCollection<ExperimentalDesignForDataGrid> SpectraFileExperimentalDesign;
+        private readonly ObservableCollection<RawDataForDataGrid> SpectraFiles;
         private string outputPath;
 
         public ExperimentalDesignWindow(ObservableCollection<RawDataForDataGrid> spectraFilesObservableCollection)
         {
             InitializeComponent();
+            SpectraFileExperimentalDesign = new ObservableCollection<ExperimentalDesignForDataGrid>();
+            this.SpectraFiles = spectraFilesObservableCollection;
+            InitializeExperDesign();
+        }
 
-            foreach (var item in spectraFilesObservableCollection.Where(p => p.Use).Select(p => p.FilePath))
+        private void InitializeExperDesign()
+        {
+            SpectraFileExperimentalDesign.Clear();
+
+            foreach (var item in SpectraFiles.Where(p => p.Use).Select(p => p.FilePath))
             {
-                spectraFilesQuantSets.Add(new ExperimentalDesignForDataGrid(item));
+                SpectraFileExperimentalDesign.Add(new ExperimentalDesignForDataGrid(item));
             }
 
-            if (spectraFilesObservableCollection.Any())
+            if (SpectraFileExperimentalDesign.Any())
             {
-                outputPath = Directory.GetParent(spectraFilesObservableCollection.Where(p => p.Use).First().FilePath).FullName;
+                outputPath = Directory.GetParent(SpectraFileExperimentalDesign.First().FullFilePathWithExtension).FullName;
                 outputPath = Path.Combine(outputPath, GlobalVariables.ExperimentalDesignFileName);
             }
 
-            DgQuant.DataContext = spectraFilesQuantSets;
+            DgQuant.DataContext = SpectraFileExperimentalDesign;
 
-            try
+            // read/set existing experimental design
+            var filePaths = SpectraFileExperimentalDesign.Select(p => p.FullFilePathWithExtension).ToList();
+            var existingDesign = ExperimentalDesign.ReadExperimentalDesign(outputPath, filePaths, out var errors);
+            foreach (SpectraFileInfo fileInfo in existingDesign)
             {
-                ReadExperDesignFromTsv(outputPath);
-            }
-            catch (Exception ex)
-            {
-                MessageBox.Show("Could not read existing experimental design file!\n\n" + ex.Message);
+                ExperimentalDesignForDataGrid match = SpectraFileExperimentalDesign.FirstOrDefault(p => p.FullFilePathWithExtension == fileInfo.FullFilePathWithExtension);
+
+                if (match != null)
+                {
+                    match.Condition = fileInfo.Condition;
+                    match.Biorep = (fileInfo.BiologicalReplicate + 1).ToString();
+                    match.Techrep = (fileInfo.TechnicalReplicate + 1).ToString();
+                    match.Fraction = (fileInfo.Fraction + 1).ToString();
+                }
             }
         }
 
@@ -61,7 +78,10 @@ namespace MetaMorpheusGUI
 
             try
             {
-                WriteExperDesignToTsv(outputPath);
+                var fileInfos = SpectraFileExperimentalDesign
+                    .Select(p => new SpectraFileInfo(p.FullFilePathWithExtension, p.Condition, int.Parse(p.Biorep) - 1, int.Parse(p.Techrep) - 1, int.Parse(p.Fraction) - 1))
+                    .ToList();
+                ExperimentalDesign.WriteExperimentalDesignToFile(fileInfos);
             }
             catch (Exception ex)
             {
@@ -77,63 +97,10 @@ namespace MetaMorpheusGUI
             DialogResult = false;
         }
 
-        private void WriteExperDesignToTsv(string filePath)
-        {
-            using (StreamWriter output = new StreamWriter(filePath))
-            {
-                output.WriteLine("FileName\tCondition\tBiorep\tFraction\tTechrep");
-                foreach (var spectraFile in spectraFilesQuantSets)
-                {
-                    output.WriteLine(spectraFile.FileName +
-                        "\t" + spectraFile.Condition +
-                        "\t" + spectraFile.Biorep +
-                        "\t" + spectraFile.Fraction +
-                        "\t" + spectraFile.Techrep);
-                }
-            }
-        }
-
-        private void ReadExperDesignFromTsv(string filePath)
-        {
-            if (!File.Exists(filePath))
-            {
-                return;
-            }
-
-            var lines = File.ReadAllLines(filePath);
-            Dictionary<string, int> typeToIndex = new Dictionary<string, int>();
-
-            for (int l = 0; l < lines.Length; l++)
-            {
-                var split = lines[l].Split('\t');
-                if (l == 0)
-                {
-                    foreach (var type in split)
-                    {
-                        typeToIndex.Add(type, Array.IndexOf(split, type));
-                    }
-                }
-                else
-                {
-                    ExperimentalDesignForDataGrid file = spectraFilesQuantSets.Where(p => p.FileName == split[typeToIndex["FileName"]]).FirstOrDefault();
-
-                    if (file == null)
-                    {
-                        continue;
-                    }
-
-                    file.Condition = split[typeToIndex["Condition"]];
-                    file.Biorep = split[typeToIndex["Biorep"]];
-                    file.Fraction = split[typeToIndex["Fraction"]];
-                    file.Techrep = split[typeToIndex["Techrep"]];
-                }
-            }
-        }
-
         public string CheckForExperimentalDesignErrors()
         {
             // check for basic parsing
-            foreach (var item in spectraFilesQuantSets)
+            foreach (var item in SpectraFileExperimentalDesign)
             {
                 if (string.IsNullOrEmpty(item.Condition))
                 {
@@ -173,69 +140,106 @@ namespace MetaMorpheusGUI
             }
 
             // check for correct iteration of integer values and duplicates
-            var conditions = spectraFilesQuantSets.GroupBy(p => p.Condition);
+            var items = SpectraFileExperimentalDesign
+                .Select(p => new SpectraFileInfo(p.FullFilePathWithExtension, p.Condition, int.Parse(p.Biorep) - 1, int.Parse(p.Techrep) - 1, int.Parse(p.Fraction) - 1))
+                .ToList();
+            var error = ExperimentalDesign.GetErrorsInExperimentalDesign(items);
 
-            foreach (var condition in conditions)
-            {
-                var temp = condition.OrderBy(p => p.Biorep).ThenBy(p => p.Fraction).ThenBy(p => p.Techrep);
-                int numB = temp.Max(p => int.Parse(p.Biorep));
-
-                // check bioreps are in order
-                for (int b = 1; b <= numB; b++)
-                {
-                    var biorepFiles = temp.Where(p => int.Parse(p.Biorep) == b);
-
-                    if (!biorepFiles.Any())
-                    {
-                        return "Condition \"" + condition.Key + "\" biorep " + b + " is missing!";
-                    }
-
-                    // check fractions are in order
-                    int numF = biorepFiles.Max(p => int.Parse(p.Fraction));
-
-                    for (int f = 1; f <= numF; f++)
-                    {
-                        var fractionFiles = biorepFiles.Where(p => int.Parse(p.Fraction) == f);
-
-                        if (!fractionFiles.Any())
-                        {
-                            return "Condition \"" + condition.Key + "\" biorep " + b + " fraction " + f + " is missing!";
-                        }
-
-                        // check techreps are in order
-                        int numT = fractionFiles.Max(p => int.Parse(p.Techrep));
-
-                        for (int t = 1; t <= numT; t++)
-                        {
-                            var techrepFiles = fractionFiles.Where(p => int.Parse(p.Techrep) == t);
-
-                            if (!techrepFiles.Any())
-                            {
-                                return "Condition \"" + condition.Key + "\" biorep " + b + " fraction " + f + " techrep " + t + " is missing!";
-                            }
-
-                            if (techrepFiles.Count() > 1)
-                            {
-                                return "Duplicates are not allowed:\n" +
-                                    "Condition \"" + condition.Key + "\" biorep " + b + " fraction " + f + " techrep " + t;
-                            }
-                        }
-                    }
-                }
-            }
-
-            return null;
+            return error;
         }
 
         private void KeyPressed(object sender, KeyEventArgs e)
         {
-            if (e.Key == Key.Return)
-            {
-                BtnSaveQuant_Click(sender, e);
-            }
-            else if (e.Key == Key.Escape)
+            if (e.Key == Key.Escape)
             {
                 BtnCancelQuant_Click(sender, e);
+            }
+        }
+
+        private void DeleteExperDesignButton_Click(object sender, RoutedEventArgs e)
+        {
+            if (File.Exists(outputPath))
+            {
+                File.Delete(outputPath);
+            }
+
+            InitializeExperDesign();
+        }
+
+        private void Paste(object sender, ExecutedRoutedEventArgs e)
+        {
+            var selectedCell = DgQuant.SelectedCells.FirstOrDefault();
+            if (selectedCell == null)
+            {
+                return;
+            }
+
+            var selectedSpectraFile = (ExperimentalDesignForDataGrid)selectedCell.Item;
+            var listOfSpectraFiles = DgQuant.ItemContainerGenerator.Items.Select(p => (ExperimentalDesignForDataGrid)p).ToList();
+
+            int rowIndex = listOfSpectraFiles.IndexOf(selectedSpectraFile);
+            int columnIndex = DgQuant.Columns.IndexOf(selectedCell.Column);
+
+            // get data from clipboard in text format
+            // clipboardRawData will be null if the data on the clipboard is not text
+            object clipboardRawData = System.Windows.Clipboard.GetDataObject().GetData(DataFormats.Text);
+
+            if (clipboardRawData != null)
+            {
+                string pastedText = clipboardRawData as string;
+
+                // each line is delimited by a newline and/or return character
+                var pastedLines = pastedText.Split(new char[] { '\r', '\n' }).Where(p => !string.IsNullOrWhiteSpace(p)).ToList();
+
+                for (int i = 0; i < pastedLines.Count && i + rowIndex < listOfSpectraFiles.Count; i++)
+                {
+                    var pastedLine = pastedLines[i];
+
+                    // each element in the line is delimited by tabs or commas
+                    var pastedCells = pastedLine.Split(new char[] { '\t', ',' });
+
+                    try
+                    {
+                        // selected cell is in the "File" column
+                        if (columnIndex == 0)
+                        {
+                            listOfSpectraFiles[i + rowIndex].Condition = pastedCells[1];
+                            listOfSpectraFiles[i + rowIndex].Biorep = pastedCells[2];
+                            listOfSpectraFiles[i + rowIndex].Fraction = pastedCells[3];
+                            listOfSpectraFiles[i + rowIndex].Techrep = pastedCells[4];
+                        }
+                        // selected cell is in the "Condition" column
+                        if (columnIndex == 1)
+                        {
+                            listOfSpectraFiles[i + rowIndex].Condition = pastedCells[0];
+                            listOfSpectraFiles[i + rowIndex].Biorep = pastedCells[1];
+                            listOfSpectraFiles[i + rowIndex].Fraction = pastedCells[2];
+                            listOfSpectraFiles[i + rowIndex].Techrep = pastedCells[3];
+                        }
+                        // selected cell is in the "Biorep" column
+                        if (columnIndex == 2)
+                        {
+                            listOfSpectraFiles[i + rowIndex].Biorep = pastedCells[0];
+                            listOfSpectraFiles[i + rowIndex].Fraction = pastedCells[1];
+                            listOfSpectraFiles[i + rowIndex].Techrep = pastedCells[2];
+                        }
+                        // selected cell is in the "Fraction" column
+                        if (columnIndex == 3)
+                        {
+                            listOfSpectraFiles[i + rowIndex].Fraction = pastedCells[0];
+                            listOfSpectraFiles[i + rowIndex].Techrep = pastedCells[1];
+                        }
+                        // selected cell is in the "Techrep" column
+                        if (columnIndex == 4)
+                        {
+                            listOfSpectraFiles[i + rowIndex].Techrep = pastedCells[0];
+                        }
+                    }
+                    catch (Exception)
+                    {
+                        // don't really need to print a warning
+                    }
+                }
             }
         }
     }
