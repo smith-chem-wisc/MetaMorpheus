@@ -333,7 +333,7 @@ namespace TaskLayer
                 {
                     Status("Starting search...", thisId);
                     var newClassicSearchEngine = new ClassicSearchEngine(fileSpecificPsms, arrayOfMs2ScansSortedByMass, variableModifications, fixedModifications, SearchParameters.SilacLabels,
-                       SearchParameters.StartTurnoverLabel, SearchParameters.EndTurnoverLabel, proteinList, massDiffAcceptor, combinedParams, this.FileSpecificParameters, spectralLibrary, thisId);
+                       SearchParameters.StartTurnoverLabel, SearchParameters.EndTurnoverLabel, SearchParameters.MinAllowedInternalFragmentLength, proteinList, massDiffAcceptor, combinedParams, FileSpecificParameters, spectralLibrary, thisId);
                     newClassicSearchEngine.Run();
 
                     ReportProgress(new ProgressEventArgs(100, "Done with search!", thisId));

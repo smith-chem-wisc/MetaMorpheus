@@ -131,7 +131,7 @@ namespace EngineLayer
         public void RemoveThisAmbiguousPeptide(int notch, PeptideWithSetModifications pwsm)
         {
             _BestMatchingPeptides.Remove((notch, pwsm));
-            this.ResolveAllAmbiguities();
+            ResolveAllAmbiguities();
         }
 
         public override string ToString()

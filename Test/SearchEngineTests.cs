@@ -46,7 +46,7 @@ namespace Test
             var listOfSortedms2Scans = MetaMorpheusTask.GetMs2Scans(myMsDataFile, null, new CommonParameters()).OrderBy(b => b.PrecursorMass).ToArray();
 
             PeptideSpectralMatch[] allPsmsArray = new PeptideSpectralMatch[listOfSortedms2Scans.Length];
-            new ClassicSearchEngine(allPsmsArray, listOfSortedms2Scans, variableModifications, fixedModifications, null, null, null,
+            new ClassicSearchEngine(allPsmsArray, listOfSortedms2Scans, variableModifications, fixedModifications, null, null, null, 0,
                 proteinList, searchModes, CommonParameters, null, null, new List<string>()).Run();
 
             // Single search mode
@@ -276,7 +276,7 @@ namespace Test
             }
 
             PeptideSpectralMatch[] allPsmsArray = new PeptideSpectralMatch[listOfSortedXcorrms2Scans.Length];
-            new ClassicSearchEngine(allPsmsArray, listOfSortedXcorrms2Scans, variableModifications, fixedModifications, null, null, null, 
+            new ClassicSearchEngine(allPsmsArray, listOfSortedXcorrms2Scans, variableModifications, fixedModifications, null, null, null, 0,
                 proteinList, searchModes, CommonParameters, null, null, new List<string>()).Run();
 
             Assert.IsTrue(listOfSortedXcorrms2Scans[0].TheScan.MassSpectrum.XcorrProcessed);
@@ -327,7 +327,7 @@ namespace Test
             var listOfSortedms2Scans = MetaMorpheusTask.GetMs2Scans(myMsDataFile, null, new CommonParameters()).OrderBy(b => b.PrecursorMass).ToArray();
 
             PeptideSpectralMatch[] allPsmsArray = new PeptideSpectralMatch[listOfSortedms2Scans.Length];
-            new ClassicSearchEngine(allPsmsArray, listOfSortedms2Scans, variableModifications, fixedModifications, null, null, null, 
+            new ClassicSearchEngine(allPsmsArray, listOfSortedms2Scans, variableModifications, fixedModifications, null, null, null, 0,
                 proteinList, searchModes, CommonParameters, null, null, new List<string>()).Run();
 
             // Single search mode
@@ -632,7 +632,7 @@ namespace Test
             var fsp = new List<(string, CommonParameters)>();
             fsp.Add(("sliced_b6.mzML", CommonParameters));
 
-            new ClassicSearchEngine(allPsmsArray, listOfSortedXcorrms2Scans, variableModifications, fixedModifications, null, null, null, 
+            new ClassicSearchEngine(allPsmsArray, listOfSortedXcorrms2Scans, variableModifications, fixedModifications, null, null, null, 0,
                 proteinList, searchModes, CommonParameters, fsp, null, new List<string>()).Run();
 
             var nonNullPsms = allPsmsArray.Where(p => p != null).ToList();
@@ -824,7 +824,7 @@ namespace Test
             PeptideSpectralMatch[] allPsmsArray = allPsmsArrays[0];
 
             //Classic
-            new ClassicSearchEngine(allPsmsArray, listOfSortedms2Scans, variableModifications, fixedModifications, null, null, null, 
+            new ClassicSearchEngine(allPsmsArray, listOfSortedms2Scans, variableModifications, fixedModifications, null, null, null, 0,
                 proteinList, searchModes, CommonParameters, null, null, new List<string>()).Run();
 
             //Modern
@@ -1556,7 +1556,7 @@ namespace Test
             var listOfSortedms2Scans = MetaMorpheusTask.GetMs2Scans(myMsDataFile, null, new CommonParameters()).OrderBy(b => b.PrecursorMass).ToArray();
 
             PeptideSpectralMatch[] allPsmsArray = new PeptideSpectralMatch[listOfSortedms2Scans.Length];
-            new ClassicSearchEngine(allPsmsArray, listOfSortedms2Scans, variableModifications, fixedModifications, null, null, null, 
+            new ClassicSearchEngine(allPsmsArray, listOfSortedms2Scans, variableModifications, fixedModifications, null, null, null, 0,
                 proteinList, searchModes, CommonParameters, null, null, new List<string>()).Run();
 
             //////////////////////////////
@@ -1574,7 +1574,7 @@ namespace Test
             var listOfSortedms2Scans2 = MetaMorpheusTask.GetMs2Scans(myMsDataFile, null, new CommonParameters()).OrderBy(b => b.PrecursorMass).ToArray();
 
             PeptideSpectralMatch[] allPsmsArray2 = new PeptideSpectralMatch[listOfSortedms2Scans.Length];
-            new ClassicSearchEngine(allPsmsArray2, listOfSortedms2Scans2, variableModifications, fixedModifications, null, null, null, 
+            new ClassicSearchEngine(allPsmsArray2, listOfSortedms2Scans2, variableModifications, fixedModifications, null, null, null, 0,
                 proteinList, searchModes, CommonParameters2, null, null, new List<string>()).Run();
             // Single search mode
             Assert.AreEqual(1, allPsmsArray2.Length);
@@ -1694,7 +1694,7 @@ namespace Test
 
             //Search the scan against the protein
             PeptideSpectralMatch[] allPsmsArray = new PeptideSpectralMatch[1];
-            new ClassicSearchEngine(allPsmsArray, scans, new List<Modification>(), new List<Modification>(), null, null, null, 
+            new ClassicSearchEngine(allPsmsArray, scans, new List<Modification>(), new List<Modification>(), null, null, null, 0,
                 proteins, new SinglePpmAroundZeroSearchMode(20), new CommonParameters(dissociationType: DissociationType.CID), null, null, new List<string>()).Run();
 
             //Process the results

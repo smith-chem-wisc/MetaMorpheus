@@ -61,7 +61,7 @@ namespace Test
             var listOfSortedms2Scans = MetaMorpheusTask.GetMs2Scans(myMsDataFile, null, new CommonParameters(deconvolutionIntensityRatio: 50)).OrderBy(b => b.PrecursorMass).ToArray();
             
             PeptideSpectralMatch[] allPsmsArray = new PeptideSpectralMatch[listOfSortedms2Scans.Length]; ;
-            new ClassicSearchEngine(allPsmsArray, listOfSortedms2Scans, variableModifications, fixedModifications, null, null, null, 
+            new ClassicSearchEngine(allPsmsArray, listOfSortedms2Scans, variableModifications, fixedModifications, null, null, null, 0,
                 proteinList, searchModes, CommonParameters, fsp, null, new List<string>()).Run();
 
             // Two matches for this single scan! Corresponding to two co-isolated masses

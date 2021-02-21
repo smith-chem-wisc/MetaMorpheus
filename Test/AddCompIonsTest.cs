@@ -47,7 +47,7 @@ namespace Test
             var fsp = new List<(string fileName, CommonParameters fileSpecificParameters)>();
             fsp.Add(("", CommonParameters));
             PeptideSpectralMatch[] allPsmsArray = new PeptideSpectralMatch[listOfSortedms2Scans.Length];
-            new ClassicSearchEngine(allPsmsArray, listOfSortedms2Scans, variableModifications, fixedModifications, null, null, null, 
+            new ClassicSearchEngine(allPsmsArray, listOfSortedms2Scans, variableModifications, fixedModifications, null, null, null, 0,
                 proteinList, searchModes, CommonParameters, fsp, null, new List<string>()).Run();
 
             CommonParameters CommonParameters2 = new CommonParameters(
@@ -57,7 +57,7 @@ namespace Test
             var fsp2 = new List<(string fileName, CommonParameters fileSpecificParameters)>();
             fsp2.Add(("", CommonParameters2));
             PeptideSpectralMatch[] allPsmsArray2 = new PeptideSpectralMatch[listOfSortedms2Scans.Length];
-            new ClassicSearchEngine(allPsmsArray2, listOfSortedms2Scans, variableModifications, fixedModifications, null, null, null, 
+            new ClassicSearchEngine(allPsmsArray2, listOfSortedms2Scans, variableModifications, fixedModifications, null, null, null, 0,
                 proteinList, searchModes, CommonParameters2, fsp2, null, new List<string>()).Run();
 
             double scoreT = allPsmsArray2[0].Score;
