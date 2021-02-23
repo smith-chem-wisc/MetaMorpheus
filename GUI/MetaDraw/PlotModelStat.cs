@@ -34,7 +34,7 @@ namespace MetaMorpheusGUI
         private static Dictionary<ProductType, OxyColor> productTypeDrawColors = new Dictionary<ProductType, OxyColor>
         {
             { ProductType.b, OxyColors.Blue },
-            { ProductType.y, OxyColors.Purple },
+            { ProductType.y, OxyColors.DarkRed },
             { ProductType.c, OxyColors.Gold },
             { ProductType.zPlusOne, OxyColors.Orange },
             { ProductType.D, OxyColors.DodgerBlue },

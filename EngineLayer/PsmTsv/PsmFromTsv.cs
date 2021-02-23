@@ -15,7 +15,6 @@ namespace EngineLayer
         private static readonly Regex PositionParser = new Regex(@"(\d+)\s+to\s+(\d+)");
         private static readonly Regex VariantParser = new Regex(@"[a-zA-Z]+(\d+)([a-zA-Z]+)");
         private static readonly Regex IonParser = new Regex(@"([a-zA-Z]+)(\d+)");
-        private static readonly char[] MzSplit = { '[', ',', ']', ';' };
 
         public string FullSequence { get; }
         public int Ms2ScanNumber { get; }
@@ -223,57 +222,91 @@ namespace EngineLayer
 
         private static List<MatchedFragmentIon> ReadFragmentIonsFromString(string matchedMzString, string peptideBaseSequence)
         {
-            var peaks = matchedMzString.Split(MzSplit, StringSplitOptions.RemoveEmptyEntries).Select(v => v.Trim())
-                .ToList();
-            peaks.RemoveAll(p => p.Contains("\""));
-
             List<MatchedFragmentIon> matchedIons = new List<MatchedFragmentIon>();
 
-            foreach (var peak in peaks)
+            if (matchedMzString.Length > 2) //check if there's an ion
             {
-                var split = peak.Split(new char[] { '+', ':' });
+                var peaks = matchedMzString.Substring(1, matchedMzString.Length-2) //remove the brackets on the ends
+                    .Replace("];[",", ") //replace delimiter between ion series with the delimiter used between ions
+                    .Split(", ") //split by delimiter between ions
+                    .ToList();
+                peaks.RemoveAll(p => p.Contains("\""));
 
-                string ionTypeAndNumber = split[0];
-                Match result = IonParser.Match(ionTypeAndNumber);
-
-                ProductType productType = (ProductType)Enum.Parse(typeof(ProductType), result.Groups[1].Value);
-
-                int fragmentNumber = int.Parse(result.Groups[2].Value);
-                int z = int.Parse(split[1]);
-                double mz = double.Parse(split[2], CultureInfo.InvariantCulture);
-                double neutralLoss = 0;
-
-                // check for neutral loss
-                if (ionTypeAndNumber.Contains("-"))
+                foreach (var peak in peaks)
                 {
-                    string temp = ionTypeAndNumber.Replace("(", "");
-                    temp = temp.Replace(")", "");
-                    var split2 = temp.Split('-');
-                    neutralLoss = double.Parse(split2[1], CultureInfo.InvariantCulture);
+                    var split = peak.Split(new char[] { '+', ':' }); //TODO: needs update for negative charges that doesn't break internal fragment ions or neutral losses
+
+                    int fragmentNumber = 0;
+                    int secondaryFragmentNumber = 0;
+                    ProductType productType = ProductType.b;
+                    ProductType? secondaryProductType = null;
+                    FragmentationTerminus terminus = FragmentationTerminus.None; //default for internal fragments
+                    double mz = 0;
+                    int z = 0;
+                    int aminoAcidPosition = 0;
+                    double neutralLoss = 0;
+
+                    //get theoretical fragment
+                    string ionTypeAndNumber = split[0];
+                    //if an internal fragment
+                    if (ionTypeAndNumber.Contains("["))
+                    {
+                        string[] internalSplit = split[0].Split('[');
+                        string[] productSplit = internalSplit[0].Split("I");
+                        string[] positionSplit = internalSplit[1].Replace("]", "").Split('-');
+                        productType = (ProductType)Enum.Parse(typeof(ProductType), productSplit[0]);
+                        secondaryProductType = (ProductType)Enum.Parse(typeof(ProductType), productSplit[1]);
+                        fragmentNumber = int.Parse(positionSplit[0]);
+                        secondaryFragmentNumber = int.Parse(positionSplit[1]);
+                        aminoAcidPosition = secondaryFragmentNumber - fragmentNumber;
+                    }
+                    else //terminal fragment
+                    {
+                        Match result = IonParser.Match(ionTypeAndNumber);
+
+                        productType = (ProductType)Enum.Parse(typeof(ProductType), result.Groups[1].Value);
+
+                        fragmentNumber = int.Parse(result.Groups[2].Value);
+
+                        // check for neutral loss  
+                        if (ionTypeAndNumber.Contains("("))
+                        {
+                            string temp = ionTypeAndNumber.Replace("(", "");
+                            temp = temp.Replace(")", "");
+                            var split2 = temp.Split('-');
+                            neutralLoss = double.Parse(split2[1], CultureInfo.InvariantCulture);
+                        }
+
+                        //get terminus
+                        if (TerminusSpecificProductTypes.ProductTypeToFragmentationTerminus.ContainsKey(productType))
+                        {
+                            terminus = TerminusSpecificProductTypes.ProductTypeToFragmentationTerminus[productType];
+                        }
+
+                        //get amino acid position
+                        aminoAcidPosition = fragmentNumber;
+                        if (terminus == FragmentationTerminus.C)
+                        {
+                            aminoAcidPosition = peptideBaseSequence.Length - fragmentNumber;
+                        }
+                    }
+
+                    //get charge and mz
+                    z = int.Parse(split[1]);
+                    mz = double.Parse(split[2], CultureInfo.InvariantCulture);
+
+                    Product p = new Product(productType,
+                        terminus,
+                        mz.ToMass(z),
+                        fragmentNumber,
+                        aminoAcidPosition,
+                        neutralLoss,
+                        secondaryProductType, 
+                        secondaryFragmentNumber);
+
+                    matchedIons.Add(new MatchedFragmentIon(ref p, mz, 1.0, z));
                 }
-
-                FragmentationTerminus terminus = FragmentationTerminus.None;
-                if (TerminusSpecificProductTypes.ProductTypeToFragmentationTerminus.ContainsKey(productType))
-                {
-                    terminus = TerminusSpecificProductTypes.ProductTypeToFragmentationTerminus[productType];
-                }
-
-                int aminoAcidPosition = fragmentNumber;
-                if (terminus == FragmentationTerminus.C)
-                {
-                    aminoAcidPosition = peptideBaseSequence.Length - fragmentNumber;
-                }
-
-                Product p = new Product(productType,
-                    terminus,
-                    mz.ToMass(z),
-                    fragmentNumber,
-                    aminoAcidPosition,
-                    neutralLoss);
-
-                matchedIons.Add(new MatchedFragmentIon(ref p, mz, 1.0, z));
             }
-
             return matchedIons;
         }
 

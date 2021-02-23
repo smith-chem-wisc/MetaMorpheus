@@ -154,12 +154,12 @@ namespace MetaMorpheusGUI
 
             PsmFromTsv psm = (PsmFromTsv)dataGridScanNums.SelectedItem;
 
-            // draw the PSM
+            // draw the annotated spectrum
             MetaDrawLogic.DisplaySpectrumMatch(plotView, canvas, psm, itemsControlSampleViewModel, out var errors);
 
             //draw the sequence coverage
             MetaDrawLogic.DrawSequenceCoverageMap(psm, map);
-
+            
             if (psm.ChildScanMatchedIons != null)
             {
                 ParentChildScanView.Visibility = Visibility.Visible;
@@ -270,6 +270,13 @@ namespace MetaMorpheusGUI
             {
                 dataGridScanNums.SelectedItem = selectedItem;
             }
+
+            //DEBUG
+            for (int i = 0; i < 100; i++)
+            {
+                MetaDrawLogic.Highlight(0, 100, map, i * 20, System.Windows.Media.Colors.Blue, true, true, true, 20);
+            }
+
         }
 
         private async void loadFilesButton_Click(object sender, RoutedEventArgs e)

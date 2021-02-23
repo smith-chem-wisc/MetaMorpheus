@@ -191,16 +191,13 @@
                                         <!--Header label-->
                                         <Label Content="Sequence Coverage Map" Grid.Row="0" />
                                         <ScrollViewer Grid.Row="1" Name="mapViewer" HorizontalAlignment="Center" VerticalAlignment="Center" 
-                                  CanContentScroll="True" VerticalScrollBarVisibility="Auto" HorizontalScrollBarVisibility="Auto" Width="775">
+                                  CanContentScroll="True" VerticalScrollBarVisibility="Auto" HorizontalScrollBarVisibility="Auto" Height ="400" Width="850">
                                             <Grid Name="mapGrid" Background="White">
                                                 <Grid.RowDefinitions>
                                                     <RowDefinition Height=" 2*" ></RowDefinition>
                                                     <RowDefinition Height=" *"></RowDefinition>
                                                 </Grid.RowDefinitions>
-                                                <Canvas x:Name="map" Grid.Row="0" Background="White"></Canvas>
-                                                <Canvas x:Name="legend" Grid.Row ="1" Width ="700" Height="300" Background="White" VerticalAlignment="Top" HorizontalAlignment="Left">
-                                                    <Grid Name="legendGrid" Background="White" VerticalAlignment="Top" HorizontalAlignment="Left"/>
-                                                </Canvas>
+                                                <Canvas x:Name="map" Grid.Row="0" Background="White"></Canvas>                                               
                                             </Grid>
                                         </ScrollViewer>
                                     </Grid>

@@ -109,6 +109,7 @@ namespace GuiFunctions
 
             // plot the annotated spectrum match
             PeptideSpectrumMatchPlot plot;
+            //if not crosslinked
             if (psm.BetaPeptideBaseSequence == null)
             {
                 // get the library spectrum if relevant
@@ -120,7 +121,7 @@ namespace GuiFunctions
 
                 plot = new PeptideSpectrumMatchPlot(plotView, canvas, psm, scan, psm.MatchedIons, librarySpectrum: librarySpectrum);
             }
-            else
+            else //crosslinked
             {
                 plot = new CrosslinkSpectrumMatchPlot(plotView, canvas, psm, scan);
             }
@@ -203,121 +204,98 @@ namespace GuiFunctions
             }
         }
 
-        //draw the sequence coverage map, write out the protein seqeunce, overlay modifications, and display matched fragments
+        //draw the sequence coverage map: write out the sequence, overlay modifications, and display matched fragments
         public void DrawSequenceCoverageMap(PsmFromTsv psm, Canvas map)
         {
-            int spacing = 20;
-
             map.Children.Clear();
 
-            //TODO: add fragments
-
-            var mapTitle = "";
-
-            const int startHeight = 40;
+            int spacing = 20;
+            const int startHeight = 140;
             const int heightIncrement = 5;
             int height = startHeight;
+            int peptideLength = psm.BaseSeq.Length;
+            Color nColor = Colors.Blue;
+            Color cColor = Colors.DarkRed;
+            Color internalColor = Colors.Purple;
 
-            //draw sequence
-            TextDrawing(map, new Point(0, height), mapTitle, Brushes.Black);
-
-
+            //draw sequence text
             for (int r = 0; r < psm.BaseSeq.Length; r++)
             {
-                TextDrawing(map, new Point(r * spacing + 10, height), psm.BaseSeq[r].ToString().ToUpper(), Brushes.Black);
+                TextDrawing(map, new Point(r * spacing + 10, height-30), (r+1).ToString(), Brushes.Black, 8);
+                TextDrawing(map, new Point(r * spacing + 10, height-15), (psm.BaseSeq.Length-r).ToString(), Brushes.Black, 8);
+                TextDrawing(map, new Point(r * spacing + 10, height), psm.BaseSeq[r].ToString(), Brushes.Black, 16);
             }
 
+            //draw lines for each matched fragment
             List<bool[]> index = new List<bool[]>();
 
-            List<Product> orderedFragments = new List<Product>();
             List<Product> unorderedFragments = psm.MatchedIons.Select(x => x.NeutralTheoreticalProduct).ToList();
-            //add N-terminal
-            orderedFragments.AddRange(unorderedFragments.Where(x => x.Terminus == FragmentationTerminus.N));
-            //add C-terminal in reverse order
-            orderedFragments.AddRange(unorderedFragments.Where(x => x.Terminus == FragmentationTerminus.C).OrderByDescending(x => x.FragmentNumber));
+            //N-terminal
+            List<Product> nTermFragments = unorderedFragments.Where(x => x.Terminus == FragmentationTerminus.N).ToList();
+            //C-terminal in reverse order
+            List<Product> cTermFragments = unorderedFragments.Where(x => x.Terminus == FragmentationTerminus.C).OrderByDescending(x => x.FragmentNumber).ToList();
             //add internal fragments
-            //asdf
-            orderedFragments.AddRange(unorderedFragments.Where(x => x.Terminus == FragmentationTerminus.None).OrderByDescending(x => x.FragmentNumber));
+            List<Product> internalFragments = unorderedFragments.Where(x => x.Terminus == FragmentationTerminus.None).OrderBy(x => x.FragmentNumber).ToList();
 
+            //indexes to navigate terminal ions
+            int n = 0;
+            int c = 0;
+            int heightForThisFragment = height; //location to draw a fragment
 
-            //foreach matched fragment
-            foreach (Product fragment in orderedFragments)
+            //line up terminal fragments so that complementary ions are paired on the same line
+            while (n < nTermFragments.Count && c < cTermFragments.Count)
             {
-                var terminus = fragment.Terminus;
-                int length = fragment.FragmentNumber;
-                //TODO fill in values
-                int start = 0;
-                int end = 0;
-
-                //if internal fragment
-                if (terminus == FragmentationTerminus.None)
+                Product nProduct = nTermFragments[n];
+                Product cProduct = cTermFragments[c];
+                int expectedComplementary = peptideLength - nProduct.FragmentNumber;
+                if(cProduct.FragmentNumber == expectedComplementary)
                 {
-                    start = fragment.AminoAcidPosition;
-                    end = start + fragment.FragmentNumber;
+                    Highlight(0, nProduct.FragmentNumber, map, heightForThisFragment, nColor, true, true, true, spacing);                    
+                    Highlight(peptideLength - cProduct.FragmentNumber, peptideLength, map, heightForThisFragment, cColor, true, true, true, spacing);
+                    n++;
+                    c++;
+                }
+                else if (cProduct.FragmentNumber<expectedComplementary)
+                {
+                    Highlight(0, nProduct.FragmentNumber, map, heightForThisFragment, nColor, true, true, true, spacing);
+                    n++;
                 }
                 else
                 {
-                    start = terminus == FragmentationTerminus.N ? 0 : psm.BaseSeq.Length - length;
-                    end = start + length;
+                    Highlight(peptideLength - cProduct.FragmentNumber, peptideLength, map, heightForThisFragment, cColor, true, true, true, spacing);
+                    c++;
                 }
-
-                //see if the fragment can fit on an existing line without overlap
-                bool availableLine = false;
-                int heightForThisFragment = height;
-                for (int lineNumber = 0; lineNumber < index.Count; lineNumber++)
-                {
-                    bool[] line = index[lineNumber];
-                    for (int i = start; i <= end; i++)
-                    {
-                        //if a space is already occupied
-                        if (line[i])
-                        {
-                            break;
-                        }
-                        //if we made it to the end without hitting an occupied spot, use this line
-                        else if (i == end)
-                        {
-                            availableLine = true;
-                        }
-                    }
-                    if (availableLine)
-                    {
-                        //we're using this line, fill in the spaces
-                        for (int i = start; i <= end; i++)
-                        {
-                            line[i] = true;
-                        }
-                        heightForThisFragment = startHeight + lineNumber * heightIncrement;
-                        break;
-                    }
-                }
-
-                if (!availableLine)
-                {
-                    bool[] line = new bool[psm.BaseSeq.Length + 1];
-                    for (int i = start; i <= end; i++)
-                    {
-                        line[i] = true;
-                    }
-                    index.Add(line);
-                    height += heightIncrement;
-                }
-
-                Highlight(start, end, map, heightForThisFragment, Colors.Blue, true, true, true, spacing);
+                heightForThisFragment += heightIncrement;
+            }
+            for (; n < nTermFragments.Count; n++)
+            {
+                Highlight(0, nTermFragments[n].FragmentNumber, map, heightForThisFragment, nColor, true, true, true, spacing);
+                heightForThisFragment += heightIncrement;
+            }
+            for (; c < cTermFragments.Count; c++)
+            {
+                Highlight(peptideLength - cTermFragments[c].FragmentNumber, peptideLength, map, heightForThisFragment, cColor, true, true, true, spacing);
+                heightForThisFragment += heightIncrement;
             }
 
-            //totalHeight += splitSeq.Count() * 100;
+            //internal fragments
+            foreach (Product fragment in internalFragments)
+            {
+                Highlight(fragment.FragmentNumber, fragment.SecondaryFragmentNumber, map, heightForThisFragment, internalColor, true, true, true, spacing);
+                heightForThisFragment += heightIncrement;
+            }
+
             map.Height = height + 100;
             map.Width = spacing * psm.BaseSeq.Length + 100;
         }
 
 
-        public static void TextDrawing(Canvas map, Point loc, string txt, Brush clr)
+        public static void TextDrawing(Canvas map, Point loc, string txt, Brush clr, int fontSize)
         {
             TextBlock tb = new TextBlock();
             tb.Foreground = clr;
             tb.Text = txt;
-            tb.FontSize = 15;
+            tb.FontSize = fontSize;
             if (clr == Brushes.Black)
             {
                 tb.FontWeight = System.Windows.FontWeights.Bold;
@@ -353,7 +331,6 @@ namespace GuiFunctions
 
         public static void peptideLineDrawing(Canvas cav, Point start, Point end, Color clr, bool shared, bool pepStart, bool pepEnd)
         {
-
             // draw top
             Line top = new Line();
             top.Stroke = new SolidColorBrush(clr);
