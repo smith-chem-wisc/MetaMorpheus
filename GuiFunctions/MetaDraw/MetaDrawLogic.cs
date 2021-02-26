@@ -205,92 +205,155 @@ namespace GuiFunctions
         }
 
         //draw the sequence coverage map: write out the sequence, overlay modifications, and display matched fragments
-        public void DrawSequenceCoverageMap(PsmFromTsv psm, Canvas map)
+        public void DrawSequenceCoverageMap(PsmFromTsv psm, Canvas sequenceText, Canvas map)
         {
             map.Children.Clear();
+            sequenceText.Children.Clear();
 
             int spacing = 20;
-            const int startHeight = 140;
+            const int textHeight = 140;
             const int heightIncrement = 5;
-            int height = startHeight;
+            const int xShift = 10;
             int peptideLength = psm.BaseSeq.Length;
+
+            //intensity arrays for each ion type
+            double[] nIntensityArray = new double[peptideLength - 1];
+            double[] cIntensityArray = new double[peptideLength - 1];
+            double[] internalIntensityArray = new double[peptideLength - 1];
+
+            //colors for annotation
             Color nColor = Colors.Blue;
-            Color cColor = Colors.DarkRed;
+            Color cColor = Colors.Red;
             Color internalColor = Colors.Purple;
 
             //draw sequence text
             for (int r = 0; r < psm.BaseSeq.Length; r++)
             {
-                TextDrawing(map, new Point(r * spacing + 10, height-30), (r+1).ToString(), Brushes.Black, 8);
-                TextDrawing(map, new Point(r * spacing + 10, height-15), (psm.BaseSeq.Length-r).ToString(), Brushes.Black, 8);
-                TextDrawing(map, new Point(r * spacing + 10, height), psm.BaseSeq[r].ToString(), Brushes.Black, 16);
+                TextDrawing(sequenceText, new Point(r * spacing + xShift, textHeight - 30), (r+1).ToString(), Brushes.Black, 8);
+                TextDrawing(sequenceText, new Point(r * spacing + xShift, textHeight - 15), (psm.BaseSeq.Length-r).ToString(), Brushes.Black, 8);
+                TextDrawing(sequenceText, new Point(r * spacing + xShift, textHeight), psm.BaseSeq[r].ToString(), Brushes.Black, 16);
             }
 
             //draw lines for each matched fragment
             List<bool[]> index = new List<bool[]>();
 
-            List<Product> unorderedFragments = psm.MatchedIons.Select(x => x.NeutralTheoreticalProduct).ToList();
             //N-terminal
-            List<Product> nTermFragments = unorderedFragments.Where(x => x.Terminus == FragmentationTerminus.N).ToList();
+            List<MatchedFragmentIon> nTermFragments = psm.MatchedIons.Where(x => x.NeutralTheoreticalProduct.Terminus == FragmentationTerminus.N).ToList();
             //C-terminal in reverse order
-            List<Product> cTermFragments = unorderedFragments.Where(x => x.Terminus == FragmentationTerminus.C).OrderByDescending(x => x.FragmentNumber).ToList();
+            List<MatchedFragmentIon> cTermFragments = psm.MatchedIons.Where(x => x.NeutralTheoreticalProduct.Terminus == FragmentationTerminus.C).OrderByDescending(x => x.NeutralTheoreticalProduct.FragmentNumber).ToList();
             //add internal fragments
-            List<Product> internalFragments = unorderedFragments.Where(x => x.Terminus == FragmentationTerminus.None).OrderBy(x => x.FragmentNumber).ToList();
+            List<MatchedFragmentIon> internalFragments = psm.MatchedIons.Where(x => x.NeutralTheoreticalProduct.Terminus == FragmentationTerminus.None).OrderBy(x => x.NeutralTheoreticalProduct.FragmentNumber).ToList();
 
             //indexes to navigate terminal ions
             int n = 0;
             int c = 0;
-            int heightForThisFragment = height; //location to draw a fragment
+            int heightForThisFragment = 70; //location to draw a fragment
 
             //line up terminal fragments so that complementary ions are paired on the same line
             while (n < nTermFragments.Count && c < cTermFragments.Count)
             {
-                Product nProduct = nTermFragments[n];
-                Product cProduct = cTermFragments[c];
-                int expectedComplementary = peptideLength - nProduct.FragmentNumber;
-                if(cProduct.FragmentNumber == expectedComplementary)
+                MatchedFragmentIon nProduct = nTermFragments[n];
+                MatchedFragmentIon cProduct = cTermFragments[c];
+                int expectedComplementary = peptideLength - nProduct.NeutralTheoreticalProduct.FragmentNumber;
+                //if complementary pair
+                if(cProduct.NeutralTheoreticalProduct.FragmentNumber == expectedComplementary)
                 {
-                    Highlight(0, nProduct.FragmentNumber, map, heightForThisFragment, nColor, true, true, true, spacing);                    
-                    Highlight(peptideLength - cProduct.FragmentNumber, peptideLength, map, heightForThisFragment, cColor, true, true, true, spacing);
+                    //plot sequences
+                    DrawHorizontalLine(0, nProduct.NeutralTheoreticalProduct.FragmentNumber, map, heightForThisFragment, nColor, spacing);
+                    DrawHorizontalLine(peptideLength - cProduct.NeutralTheoreticalProduct.FragmentNumber, peptideLength, map, heightForThisFragment, cColor, spacing);
+
+                    //record intensities
+                    nIntensityArray[nProduct.NeutralTheoreticalProduct.FragmentNumber - 1] += nProduct.Intensity;
+                    cIntensityArray[peptideLength - cProduct.NeutralTheoreticalProduct.FragmentNumber - 1] += cProduct.Intensity;
+
+                    //increment indexes
                     n++;
                     c++;
                 }
-                else if (cProduct.FragmentNumber<expectedComplementary)
+                //if n-terminal ion is present without complementary
+                else if (cProduct.NeutralTheoreticalProduct.FragmentNumber < expectedComplementary)
                 {
-                    Highlight(0, nProduct.FragmentNumber, map, heightForThisFragment, nColor, true, true, true, spacing);
+                    DrawHorizontalLine(0, nProduct.NeutralTheoreticalProduct.FragmentNumber, map, heightForThisFragment, nColor, spacing);
+                    nIntensityArray[nProduct.NeutralTheoreticalProduct.FragmentNumber - 1] += nProduct.Intensity;
                     n++;
                 }
+                //if c-terminal ion is present without complementary
                 else
                 {
-                    Highlight(peptideLength - cProduct.FragmentNumber, peptideLength, map, heightForThisFragment, cColor, true, true, true, spacing);
+                    DrawHorizontalLine(peptideLength - cProduct.NeutralTheoreticalProduct.FragmentNumber, peptideLength, map, heightForThisFragment, cColor, spacing);
+                    cIntensityArray[peptideLength - cProduct.NeutralTheoreticalProduct.FragmentNumber - 1] += cProduct.Intensity;
                     c++;
                 }
                 heightForThisFragment += heightIncrement;
             }
+            //wrap up leftover fragments without complementary pairs
             for (; n < nTermFragments.Count; n++)
             {
-                Highlight(0, nTermFragments[n].FragmentNumber, map, heightForThisFragment, nColor, true, true, true, spacing);
+                MatchedFragmentIon nProduct = nTermFragments[n];
+                DrawHorizontalLine(0, nProduct.NeutralTheoreticalProduct.FragmentNumber, map, heightForThisFragment, nColor, spacing);
+                nIntensityArray[nProduct.NeutralTheoreticalProduct.FragmentNumber - 1] += nProduct.Intensity;
                 heightForThisFragment += heightIncrement;
             }
             for (; c < cTermFragments.Count; c++)
             {
-                Highlight(peptideLength - cTermFragments[c].FragmentNumber, peptideLength, map, heightForThisFragment, cColor, true, true, true, spacing);
+                MatchedFragmentIon cProduct = cTermFragments[c];
+                DrawHorizontalLine(peptideLength - cProduct.NeutralTheoreticalProduct.FragmentNumber, peptideLength, map, heightForThisFragment, cColor, spacing);
+                cIntensityArray[peptideLength - cProduct.NeutralTheoreticalProduct.FragmentNumber - 1] += cProduct.Intensity;
                 heightForThisFragment += heightIncrement;
             }
 
             //internal fragments
-            foreach (Product fragment in internalFragments)
+            foreach (MatchedFragmentIon fragment in internalFragments)
             {
-                Highlight(fragment.FragmentNumber, fragment.SecondaryFragmentNumber, map, heightForThisFragment, internalColor, true, true, true, spacing);
+                DrawHorizontalLine(fragment.NeutralTheoreticalProduct.FragmentNumber, fragment.NeutralTheoreticalProduct.SecondaryFragmentNumber, map, heightForThisFragment, internalColor, spacing);
+                internalIntensityArray[fragment.NeutralTheoreticalProduct.FragmentNumber-1] += fragment.Intensity; 
+                internalIntensityArray[fragment.NeutralTheoreticalProduct.SecondaryFragmentNumber-1] += fragment.Intensity;
                 heightForThisFragment += heightIncrement;
             }
 
-            map.Height = height + 100;
+            map.Height = heightForThisFragment + 100;
             map.Width = spacing * psm.BaseSeq.Length + 100;
+            sequenceText.Width = spacing * psm.BaseSeq.Length + 100;
+
+            ////PLOT INTENSITY HISTOGRAM////
+            double[] intensityArray = new double[peptideLength - 1];
+            for(int i=0; i<intensityArray.Length; i++)
+            {
+                intensityArray[i] = nIntensityArray[i] + cIntensityArray[i] + internalIntensityArray[i];
+            }
+
+            double maxIntensity = intensityArray.Max();
+
+            //foreach cleavage site
+            for(int i=0; i<intensityArray.Length; i++)
+            {
+                //if anything
+                if (intensityArray[i] > 0)
+                {
+                    int x = (i + 1) * spacing + 7;
+                    //n-terminal
+                    int nY = 100- (int)Math.Round(nIntensityArray[i] * 100 / maxIntensity, 0);
+                    if (nY != 100)
+                    {
+                        DrawVerticalLine(104, nY+4, sequenceText, (i+1) * spacing+5, nColor);
+                    }
+                    //c-terminal
+                    int cY = nY-(int)Math.Round(cIntensityArray[i] * 100 / maxIntensity, 0);
+                    if (nY != cY)
+                    {
+                        DrawVerticalLine(nY+2, cY+2, sequenceText, (i + 1) * spacing + 5, cColor);
+                    }
+                    //internal
+                    int iY = cY - (int)Math.Round(internalIntensityArray[i] * 100 / maxIntensity, 0);
+                    if (cY != iY)
+                    {
+                        DrawVerticalLine(cY, iY, sequenceText, (i + 1) * spacing + 5, internalColor);
+                    }
+                }
+            }
         }
 
-
-        public static void TextDrawing(Canvas map, Point loc, string txt, Brush clr, int fontSize)
+        public static void TextDrawing(Canvas sequenceText, Point loc, string txt, Brush clr, int fontSize)
         {
             TextBlock tb = new TextBlock();
             tb.Foreground = clr;
@@ -309,63 +372,40 @@ namespace GuiFunctions
             Canvas.SetTop(tb, loc.Y);
             Canvas.SetLeft(tb, loc.X);
             Panel.SetZIndex(tb, 2); //lower priority
-            map.Children.Add(tb);
-            map.UpdateLayout();
+            sequenceText.Children.Add(tb);
+            sequenceText.UpdateLayout();
         }
 
-        public static void Highlight(int start, int end, Canvas map,
-       int height, Color clr, bool unique, bool startPep, bool endPep, int spacing)
+        public static void DrawHorizontalLine(int start, int end, Canvas map,
+       int height, Color clr, int spacing)
         {
-            // highlight peptide
-            if (unique)
-            {
-                peptideLineDrawing(map, new Point(start * spacing + 7, height),
-                    new Point(end * spacing - 7, height), clr, false, startPep, endPep);
-            }
-            else
-            {
-                peptideLineDrawing(map, new Point(start * spacing + 7, height),
-                    new Point(end * spacing - 7, height), clr, true, startPep, endPep);
-            }
+            DrawLine(map, new Point(start * spacing + 7, height),
+                new Point(end * spacing +4, height), clr);
         }
 
-        public static void peptideLineDrawing(Canvas cav, Point start, Point end, Color clr, bool shared, bool pepStart, bool pepEnd)
+        public static void DrawVerticalLine(int start, int end, Canvas map,
+      int x, Color clr)
         {
-            // draw top
-            Line top = new Line();
-            top.Stroke = new SolidColorBrush(clr);
-            if (pepStart == false)
-            {
-                top.X1 = start.X - 10;
-            }
-            else
-            {
-                top.X1 = start.X;
-            }
+            DrawLine(map, new Point(x, start),
+                new Point(x, end), clr);
+        }
 
-            if (pepEnd == false)
-            {
-                top.X2 = end.X + 21;
-            }
-            else
-            {
-                top.X2 = end.X + 11;
-            }
+        public static void DrawLine(Canvas cav, Point start, Point end, Color clr)
+        {
+            Line line = new Line();
+            line.Stroke = new SolidColorBrush(clr);
 
-            top.Y1 = start.Y + 20;
-            top.Y2 = end.Y + 20;
-            top.StrokeThickness = 3.25;
-            top.StrokeStartLineCap = PenLineCap.Round;
-            top.StrokeEndLineCap = PenLineCap.Round;
+            line.X1 = start.X;
+            line.X2 = end.X;
+            line.Y1 = start.Y;
+            line.Y2 = end.Y;
+            line.StrokeThickness = 3.25;
+            line.StrokeStartLineCap = PenLineCap.Round;
+            line.StrokeEndLineCap = PenLineCap.Round;
 
-            if (shared)
-            {
-                top.Stroke.Opacity = 0.35;
-            }
+            cav.Children.Add(line);
 
-            cav.Children.Add(top);
-
-            Canvas.SetZIndex(top, 1); //on top of any other things in canvas
+            Canvas.SetZIndex(line, 1); //on top of any other things in canvas
         }
 
         public void ExportToPdf(PlotView plotView, Canvas canvas, List<PsmFromTsv> spectrumMatches, ParentChildScanPlotsView parentChildScanPlotsView, string directory, out List<string> errors)
