@@ -99,6 +99,9 @@
     <None Update="Proteomes\availableUniProtProteomes.txt">
       <CopyToOutputDirectory>Always</CopyToOutputDirectory>
     </None>
+    <None Update="Proteomes\availableUniProtProteomes.txt.gz">
+      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+    </None>
   </ItemGroup>
 
 </Project>
