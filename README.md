@@ -15,9 +15,9 @@ Check out the [wiki page](https://github.com/smith-chem-wisc/MetaMorpheus/wiki) 
 
 ## Major Features
 
-* Database Search: A robust search algorithm that identifies peptides by their fragmentation spectra. Watch our [Search task YouTube video](https://www.youtube.com/watch?v=sUM12UBJNuA)
-* Calibration: A calibration tool that uses peptides identified by a database search to calibrate the m/z values of all peaks in the spectra. This improves the quality of any subsequent search or analysis of the data. Watch our [calibration task YouTube video](https://www.youtube.com/watch?v=_LfiOqqqj8Q).
-* G-PTM-D: Post-translational modification (PTM) discovery, which expands the scope of peptide identifications to include both known and unknown PTMs. Watch our [GPTMD task YouTube video](https://www.youtube.com/watch?v=fXGT4XExLBo).
+* Database Search: A robust search algorithm that identifies peptides by their fragmentation spectra. Watch our <img src ="https://user-images.githubusercontent.com/16841846/40379523-eb130166-5dbb-11e8-8a03-559599cdd560.png">[Search task YouTube video](https://www.youtube.com/watch?v=sUM12UBJNuA)
+* Calibration: A calibration tool that uses peptides identified by a database search to calibrate the m/z values of all peaks in the spectra. This improves the quality of any subsequent search or analysis of the data. Watch our <img src ="https://user-images.githubusercontent.com/16841846/40379523-eb130166-5dbb-11e8-8a03-559599cdd560.png">[calibration task YouTube video](https://www.youtube.com/watch?v=_LfiOqqqj8Q).
+* G-PTM-D: Post-translational modification (PTM) discovery, which expands the scope of peptide identifications to include both known and unknown PTMs. Watch our <img src ="https://user-images.githubusercontent.com/16841846/40379523-eb130166-5dbb-11e8-8a03-559599cdd560.png">[GPTMD task YouTube video](https://www.youtube.com/watch?v=fXGT4XExLBo).
 * Quantification: Ultrafast label-free peptide quantification with FlashLFQ. MS2-identified peptides are used as "seeds" for peakfinding, including PTM-containing peptides.
 * [O-glycopeptide Characterization](https://github.com/smith-chem-wisc/MetaMorpheus/wiki/1_New-Task:-O-Glyco-Search): O-Pair Search identifies O-glycopeptides using an ion-indexed open modification search and localizes O-glycosites using graph theory and probability-based localization.
 
