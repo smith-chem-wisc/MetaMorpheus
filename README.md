@@ -18,7 +18,7 @@ Check out the [wiki page](https://github.com/smith-chem-wisc/MetaMorpheus/wiki) 
 * Database Search: A robust search algorithm that identifies peptides by their fragmentation spectra. Watch our <img src ="https://user-images.githubusercontent.com/16841846/40379523-eb130166-5dbb-11e8-8a03-559599cdd560.png">[Search task YouTube video](https://www.youtube.com/watch?v=sUM12UBJNuA)
 * Calibration: A calibration tool that uses peptides identified by a database search to calibrate the m/z values of all peaks in the spectra. This improves the quality of any subsequent search or analysis of the data. Watch our <img src ="https://user-images.githubusercontent.com/16841846/40379523-eb130166-5dbb-11e8-8a03-559599cdd560.png">[calibration task YouTube video](https://www.youtube.com/watch?v=_LfiOqqqj8Q).
 * G-PTM-D: Post-translational modification (PTM) discovery, which expands the scope of peptide identifications to include both known and unknown PTMs. Watch our <img src ="https://user-images.githubusercontent.com/16841846/40379523-eb130166-5dbb-11e8-8a03-559599cdd560.png">[GPTMD task YouTube video](https://www.youtube.com/watch?v=fXGT4XExLBo).
-* Quantification: Ultrafast label-free peptide quantification with FlashLFQ. MS2-identified peptides are used as "seeds" for peakfinding, including PTM-containing peptides.
+* Quantification: Ultrafast label-free peptide quantification with FlashLFQ. MS2-identified peptides are used as "seeds" for peakfinding, including PTM-containing peptides. Watch our <img src ="https://user-images.githubusercontent.com/16841846/40379523-eb130166-5dbb-11e8-8a03-559599cdd560.png">[Label-free quantification with MetaMorpheus](https://www.youtube.com/watch?v=jgXRuExtuRI) video on YouTube.
 * [O-glycopeptide Characterization](https://github.com/smith-chem-wisc/MetaMorpheus/wiki/1_New-Task:-O-Glyco-Search): O-Pair Search identifies O-glycopeptides using an ion-indexed open modification search and localizes O-glycosites using graph theory and probability-based localization.
 
 ## System Requirements
@@ -69,6 +69,7 @@ UniProt .XML or .fasta format; may be used in compressed (.gz) format. If you wo
 
 ## Test Installation (Windows Command Line Executable)
 
+Please watch our <img src ="https://user-images.githubusercontent.com/16841846/40379523-eb130166-5dbb-11e8-8a03-559599cdd560.png">["How to run MetaMorpheus command line](https://www.youtube.com/watch?v=hYLe4NwZNWU) video on YouTube 
 1. Download the latest [release](https://github.com/smith-chem-wisc/MetaMorpheus/releases). Extract "MetaMorpheus_CommandLine.zip" using, for example, [7-Zip](http://www.7-zip.org/).
 2. Download the example spectra and database files at [https://uwmadison.box.com/v/MetaMorpheusPublic](https://uwmadison.box.com/s/2u42qp0b8jllywqzeungmjj04gplw5in) to the folder with the CMD.exe executable.
 3. Run the command:
