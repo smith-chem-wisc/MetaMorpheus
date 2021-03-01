@@ -16,6 +16,15 @@ namespace EngineLayer
 {
     public static class GlobalVariables
     {
+        //DEBUG
+        public static double MinCorr { get; set; }
+        public static double MinFracIntensity { get; set; }
+        public static int MinPrecursorIsotopePeaks { get; set; }
+        public static int MinFragmentIsotopePeaks { get; set; }
+        public static double DeconIntensityRatio { get; set; }
+        public static double SignalToNoiseRequired { get; set; }
+
+
         // for now, these are only used for error-checking in the command-line version.
         // compressed versions of the protein databases (e.g., .xml.gz) are also supported
         public static List<string> AcceptedDatabaseFormats { get; private set; }
@@ -394,7 +403,7 @@ namespace EngineLayer
 
             AddMods(UniprotDeseralized.OfType<Modification>(), false);
             AddMods(UnimodDeserialized.OfType<Modification>(), false);
-            
+
             foreach (Modification mod in AllModsKnown)
             {
                 if (!AllModsKnownDictionary.ContainsKey(mod.IdWithMotif))

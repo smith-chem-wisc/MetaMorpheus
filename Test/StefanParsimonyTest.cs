@@ -155,7 +155,7 @@ namespace Test
             Protein protein1 = new Protein("MATSIK", "protein1", isDecoy: true);
             Protein protein2 = new Protein("MATSIK", "protein2");
 
-            IEnumerable<Modification> allKnownFixedModifications = new List<Modification>();
+            List<Modification> allKnownFixedModifications = new List<Modification>();
             DigestionParams digestionParams = new DigestionParams(minPeptideLength: 5);
             List<Modification> variableModifications = new List<Modification>();
             var pep1 = protein1.Digest(digestionParams, allKnownFixedModifications, variableModifications).First();
@@ -203,7 +203,7 @@ namespace Test
             Protein targetProtein = new Protein("KFDSA", "protein");
             Protein decoyProtein = new Protein("ASDFK", "DECOY_protein", isDecoy: true);
 
-            IEnumerable<Modification> allKnownFixedModifications = new List<Modification>();
+            List<Modification> allKnownFixedModifications = new List<Modification>();
             DigestionParams digestionParams = new DigestionParams(minPeptideLength: 5);
             List<Modification> variableModifications = new List<Modification>();
             PeptideWithSetModifications fillerPep = fillerProtein.Digest(digestionParams, allKnownFixedModifications, variableModifications).First();

@@ -142,14 +142,26 @@ namespace TaskLayer
 
                             if (commonParameters.DoPrecursorDeconvolution)
                             {
-                                foreach (IsotopicEnvelope envelope in ms2scan.GetIsolatedMassesAndCharges(
-                                    precursorSpectrum.MassSpectrum, 1,
-                                    commonParameters.DeconvolutionMaxAssumedChargeState,
-                                    commonParameters.DeconvolutionMassTolerance.Value,
-                                    commonParameters.DeconvolutionIntensityRatio))
+                                if (ms2scan.IsolationRange != null)
                                 {
-                                    double monoPeakMz = envelope.MonoisotopicMass.ToMz(envelope.Charge);
-                                    precursors.Add((monoPeakMz, envelope.Charge));
+                                    var isolationRange = ms2scan.IsolationRange;
+                                    double extraRange = 50;
+
+                                    foreach (var envelope in precursorSpectrum.MassSpectrum.Deconvolute(
+                                        new MzRange(isolationRange.Minimum - extraRange, isolationRange.Maximum + extraRange),
+                                        1, 
+                                        commonParameters.DeconvolutionMaxAssumedChargeState, 
+                                        10, 
+                                        GlobalVariables.DeconIntensityRatio, 
+                                        GlobalVariables.MinPrecursorIsotopePeaks,
+                                        GlobalVariables.MinCorr, 
+                                        GlobalVariables.MinFracIntensity, 
+                                        GlobalVariables.SignalToNoiseRequired)
+                                        .Where(b => b.Peaks.Any(cc => isolationRange.Contains(cc.mz))))
+                                    {
+                                        double monoPeakMz = envelope.MonoisotopicMass.ToMz(envelope.Charge);
+                                        precursors.Add((monoPeakMz, envelope.Charge));
+                                    }
                                 }
                             }
                         }
@@ -554,7 +566,7 @@ namespace TaskLayer
             if (theExtension.Equals(".fasta") || theExtension.Equals(".fa"))
             {
                 um = null;
-                proteinList = ProteinDbLoader.LoadProteinFasta(fileName, generateTargets, decoyType, isContaminant, out dbErrors, 
+                proteinList = ProteinDbLoader.LoadProteinFasta(fileName, generateTargets, decoyType, isContaminant, out dbErrors,
                     ProteinDbLoader.UniprotAccessionRegex, ProteinDbLoader.UniprotFullNameRegex, ProteinDbLoader.UniprotFullNameRegex, ProteinDbLoader.UniprotGeneNameRegex,
                     ProteinDbLoader.UniprotOrganismRegex, commonParameters.MaxThreadsToUsePerFile);
             }

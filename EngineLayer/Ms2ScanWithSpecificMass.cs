@@ -60,7 +60,8 @@ namespace EngineLayer
             int maxZ = 10;
 
             var neutralExperimentalFragmentMasses = scan.MassSpectrum.Deconvolute(scan.MassSpectrum.Range,
-                minZ, maxZ, commonParam.DeconvolutionMassTolerance.Value, commonParam.DeconvolutionIntensityRatio).ToList();
+                minZ, maxZ, 10, GlobalVariables.DeconIntensityRatio, GlobalVariables.MinFragmentIsotopePeaks,
+                GlobalVariables.MinCorr, GlobalVariables.MinFracIntensity, GlobalVariables.SignalToNoiseRequired).ToList();
 
             if (commonParam.AssumeOrphanPeaksAreZ1Fragments)
             {
@@ -76,7 +77,7 @@ namespace EngineLayer
                     {
                         neutralExperimentalFragmentMasses.Add(new IsotopicEnvelope(
                             new List<(double mz, double intensity)> { (mz, intensity) },
-                            mz.ToMass(1), 1, intensity, 0, 0));
+                            mz.ToMass(1), 1, intensity, 0, bestMassIndex: 0));
                     }
                 }
             }

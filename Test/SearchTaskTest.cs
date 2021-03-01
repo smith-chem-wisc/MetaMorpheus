@@ -1,6 +1,7 @@
 ﻿using EngineLayer;
 using MassSpectrometry;
 using MzLibUtil;
+using Nett;
 using NUnit.Framework;
 using Proteomics;
 using Proteomics.Fragmentation;
@@ -399,7 +400,7 @@ namespace Test
 
             ModificationMotif.TryGetMotif("T", out var motif);
 
-            Modification fakeMod = new Modification(_originalId: "FAKE", _accession: "FAKE_MOD_ACCESSION", _modificationType: "fake", 
+            Modification fakeMod = new Modification(_originalId: "FAKE", _accession: "FAKE_MOD_ACCESSION", _modificationType: "fake",
                 _target: motif, _locationRestriction: "Anywhere.", _monoisotopicMass: 0,
                 _databaseReference: new Dictionary<string, IList<string>> { { "PSI-MOD", new List<string> { "FAKE_MOD_ACCESSION" } } });
 
@@ -432,6 +433,67 @@ namespace Test
             Assert.That(found);
 
             File.Delete(path);
+        }
+
+        [Test]
+        public static void DeconParamGlobalOptimization()
+        {
+            //double minCorr = 0.2;
+            //double minFracIntensity = 0.2;
+            //int minPeaks = 2;
+            //double deconIntensityRatio = 10;
+            //double signalToNoiseRequired = 1;
+
+            string spectraFile1 = @"C:\Data\LVS_TD_Yeast\05-26-17_B7A_yeast_td_fract7_rep1.raw";
+            string spectraFile2 = @"C:\Data\LVS_TD_Yeast\05-26-17_B7A_yeast_td_fract7_rep2.raw";
+
+            string database1 = @"C:\Data\LVS_TD_Yeast\uniprot-proteome%3AUP000002311.xml";
+            string database2 = @"C:\Users\rmillikin\AppData\Local\MetaMorpheus\Contaminants\MetaMorpheusContaminants.xml";
+
+            string taskToml = @"C:\Data\LVS_TD_Yeast\Task1-SearchTaskconfig.toml";
+            var task = Toml.ReadFile<SearchTask>(taskToml, MetaMorpheusTask.tomlConfig);
+
+            GlobalVariables.MinCorr = 0.5;
+            GlobalVariables.MinFracIntensity = 0.5;
+            GlobalVariables.MinPrecursorIsotopePeaks = 2;
+            GlobalVariables.MinFragmentIsotopePeaks = 2;
+            GlobalVariables.DeconIntensityRatio = 6;
+            GlobalVariables.SignalToNoiseRequired = 2;
+
+            string outputFolder = @"C:\Data\LVS_TD_Yeast\Optimization2";
+            task.RunTask(outputFolder, new List<DbForTask> { new DbForTask(database1, false), new DbForTask(database2, true) }, new List<string> { spectraFile1, spectraFile2 }, "");
+
+            //for (double minCorr = 0.3; minCorr <= 0.6; minCorr += 0.1)
+            //{
+            //    for (double minFracIntensity = 0.3; minFracIntensity <= 0.6; minFracIntensity += 0.1)
+            //    {
+            //        for (int minPeaks = 2; minPeaks <= 3; minPeaks += 1)
+            //        {
+            //            for (double intensityRatio = 7; intensityRatio >= 3; intensityRatio -= 1)
+            //            {
+            //                for (double snRequired = 0; snRequired <= 3; snRequired += 0.5)
+            //                {
+            //                    string outputFolder = Path.Combine(@"C:\Data\LVS_TD_Yeast\GlobalOptimization",
+            //                        "CR" + minCorr.ToString("F1") +
+            //                        "FI" + minFracIntensity.ToString("F1") +
+            //                        "PK" + minPeaks.ToString("F1") +
+            //                        "IN" + intensityRatio.ToString("F1") +
+            //                        "SN" + snRequired.ToString("F1"));
+
+            //                    Directory.CreateDirectory(outputFolder);
+
+            //                    GlobalVariables.MinCorr = minCorr;
+            //                    GlobalVariables.MinFracIntensity = minFracIntensity;
+            //                    GlobalVariables.MinPeaks = minPeaks;
+            //                    GlobalVariables.DeconIntensityRatio = intensityRatio;
+            //                    GlobalVariables.SignalToNoiseRequired = snRequired;
+
+            //                    task.RunTask(outputFolder, new List<DbForTask> { new DbForTask(database1, false), new DbForTask(database2, true) }, new List<string> { spectraFile1, spectraFile2 }, "");
+            //                }
+            //            }
+            //        }
+            //    }
+            //}
         }
     }
 }
