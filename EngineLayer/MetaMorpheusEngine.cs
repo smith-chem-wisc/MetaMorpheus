@@ -161,8 +161,10 @@ namespace EngineLayer
                     // is the mass error acceptable?
                     if (commonParameters.ProductMassTolerance.Within(closestExperimentalMass.MonoisotopicMass, compIonMass) && closestExperimentalMass.Charge <= scan.PrecursorCharge)
                     {
-                        matchedFragmentIons.Add(new MatchedFragmentIon(ref product, closestExperimentalMass.MonoisotopicMass.ToMz(closestExperimentalMass.Charge),
-                            closestExperimentalMass.TotalIntensity, closestExperimentalMass.Charge));
+                        //found the peak, but we don't want to save that m/z because it's the complementary of the observed ion that we "added". Need to create a fake ion instead.
+                        double mz = (scan.PrecursorMass + protonMassShift - closestExperimentalMass.MonoisotopicMass).ToMz(closestExperimentalMass.Charge);
+
+                        matchedFragmentIons.Add(new MatchedFragmentIon(ref product, mz, closestExperimentalMass.TotalIntensity, closestExperimentalMass.Charge));
                     }
                 }
             }
