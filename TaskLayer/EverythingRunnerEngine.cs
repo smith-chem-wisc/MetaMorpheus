@@ -26,8 +26,7 @@ namespace TaskLayer
             CurrentRawDataFilenameList = startingRawFilenameList;
             CurrentXmlDbFilenameList = startingXmlDbFilenameList;
             OrfCallingTables = orfCallingTables;
-            CPM = cpmThreshold;
-            Console.WriteLine("Test 1:" + CPM);
+            CPM = cpmThreshold;            
         }
 
         public static event EventHandler<StringEventArgs> FinishedWritingAllResultsFileHandler;

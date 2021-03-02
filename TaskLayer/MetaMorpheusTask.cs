@@ -448,8 +448,7 @@ namespace TaskLayer
                 }
 
                 if (this is SearchTask s)
-                {
-                    Console.WriteLine("Test2:" + cpmThreshold);
+                {                    
                     s.RunSpecific(output_folder, currentProteinDbFilenameList, currentRawDataFilepathList, displayName, fileSettingsList, cpmThreshold, orfCallingTables);                    
                 }
                 else
