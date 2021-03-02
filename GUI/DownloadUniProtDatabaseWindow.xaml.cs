@@ -30,5 +30,15 @@ namespace MetaMorpheusGUI
             ////Dictionary<string, string> uniprotProteoms = ProteinDbRetriever.UniprotProteomesList(downloadedFilePath);
             //Dictionary<string, string> uniprotProteoms = ProteinDbRetriever.UniprotProteomesList(filepath);
         }
+
+        private void downloadProteomeButton_Click(object sender, RoutedEventArgs e)
+        {
+
+        }
+
+        private void lookUpProteome_Click(object sender, RoutedEventArgs e)
+        {
+
+        }
     }
 }
