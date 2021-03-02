@@ -136,7 +136,7 @@ namespace Test
                     new DbForTask(fastaDb, false)
                 },
                 new List<string> { spectraFile },
-                "");
+                "", 25.0);
 
             var results = File.ReadAllLines(Path.Combine(outputDir, @"AllPSMs.psmtsv"));
             var split = results[0].Split('\t');

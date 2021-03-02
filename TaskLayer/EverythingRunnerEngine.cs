@@ -15,14 +15,18 @@ namespace TaskLayer
         private string OutputFolder;
         private List<string> CurrentRawDataFilenameList;
         private List<DbForTask> CurrentXmlDbFilenameList;
+        private List<string> OrfCallingTables;
+        private double CPM;
 
-        public EverythingRunnerEngine(List<(string, MetaMorpheusTask)> taskList, List<string> startingRawFilenameList, List<DbForTask> startingXmlDbFilenameList, string outputFolder)
+        public EverythingRunnerEngine(List<(string, MetaMorpheusTask)> taskList, List<string> startingRawFilenameList, List<DbForTask> startingXmlDbFilenameList, string outputFolder, double cpmThreshold, List<string> orfCallingTables = null)
         {
             TaskList = taskList;
             OutputFolder = outputFolder.Trim('"');
 
             CurrentRawDataFilenameList = startingRawFilenameList;
             CurrentXmlDbFilenameList = startingXmlDbFilenameList;
+            OrfCallingTables = orfCallingTables;
+            CPM = cpmThreshold;            
         }
 
         public static event EventHandler<StringEventArgs> FinishedWritingAllResultsFileHandler;
@@ -83,7 +87,7 @@ namespace TaskLayer
                     Directory.CreateDirectory(outputFolderForThisTask);
 
                 // Actual task running code
-                var myTaskResults = ok.Item2.RunTask(outputFolderForThisTask, CurrentXmlDbFilenameList, CurrentRawDataFilenameList, ok.Item1);
+                var myTaskResults = ok.Item2.RunTask(outputFolderForThisTask, CurrentXmlDbFilenameList, CurrentRawDataFilenameList, ok.Item1, CPM, OrfCallingTables);
 
                 if (myTaskResults.NewDatabases != null)
                 {

@@ -40,7 +40,7 @@ namespace TaskLayer
 
         public GlycoSearchParameters _glycoSearchParameters { get; set; }
 
-        protected override MyTaskResults RunSpecific(string OutputFolder, List<DbForTask> dbFilenameList, List<string> currentRawFileList, string taskId, FileSpecificParameters[] fileSettingsList)
+        protected override MyTaskResults RunSpecific(string OutputFolder, List<DbForTask> dbFilenameList, List<string> currentRawFileList, string taskId, FileSpecificParameters[] fileSettingsList, double cpmThreshold, List<string> orfCallingTables = null)
         {
             MyTaskResults = new MyTaskResults(this);
             List<List<GlycoSpectralMatch>> ListOfGsmsPerMS2Scan = new List<List<GlycoSpectralMatch>>();

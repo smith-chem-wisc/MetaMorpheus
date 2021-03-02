@@ -44,10 +44,10 @@ namespace Test
 
             public void Run(string dbPath)
             {
-                RunSpecific("", new List<DbForTask> { new DbForTask(dbPath, false) }, null, "", null);
+                RunSpecific("", new List<DbForTask> { new DbForTask(dbPath, false) }, null, "", null, 25.0);
             }
 
-            protected override MyTaskResults RunSpecific(string OutputFolder, List<DbForTask> dbFilenameList, List<string> currentRawFileList, string taskId, FileSpecificParameters[] fileSettingsList)
+            protected override MyTaskResults RunSpecific(string OutputFolder, List<DbForTask> dbFilenameList, List<string> currentRawFileList, string taskId, FileSpecificParameters[] fileSettingsList, double cpmThreshold, List<string> orfData = null)
             {
                 LoadProteins("", dbFilenameList, true, DecoyType.None, new List<string>(), new CommonParameters());
                 return null;

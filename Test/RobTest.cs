@@ -113,7 +113,7 @@ namespace Test
             }
 
             // run parsimony
-            ProteinParsimonyEngine parsimonyEngine = new ProteinParsimonyEngine(psms, false, new CommonParameters(), null, new List<string>());
+            ProteinParsimonyEngine parsimonyEngine = new ProteinParsimonyEngine(psms, false, new CommonParameters(), null, false, 25.0, new List<string>());
             var parsimonyResults = (ProteinParsimonyResults)parsimonyEngine.Run();
             var proteinGroups = parsimonyResults.ProteinGroups;
 
@@ -243,7 +243,7 @@ namespace Test
 
             psms.ForEach(p => p.ResolveAllAmbiguities());
 
-            ProteinParsimonyEngine engine = new ProteinParsimonyEngine(psms, true, new CommonParameters(), null, new List<string> { "ff" });
+            ProteinParsimonyEngine engine = new ProteinParsimonyEngine(psms, true, new CommonParameters(), null, false,  25.0, new List<string> { "ff" });
             var cool = (ProteinParsimonyResults)engine.Run();
             var proteinGroups = cool.ProteinGroups;
 

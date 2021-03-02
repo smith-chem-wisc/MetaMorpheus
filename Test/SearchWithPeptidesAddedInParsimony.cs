@@ -79,7 +79,7 @@ namespace Test
 
             st.RunTask(outputFolder,
                 new List<DbForTask> { new DbForTask(xmlName, false) },
-                new List<string> { mzmlName }, "");
+                new List<string> { mzmlName }, "", 25.0);
             Directory.Delete(outputFolder, true);
             File.Delete(mzmlName);
             File.Delete(xmlName);

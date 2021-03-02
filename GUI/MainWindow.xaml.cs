@@ -985,7 +985,7 @@ namespace MetaMorpheusGUI
             EverythingRunnerEngine a = new EverythingRunnerEngine(InProgressTasks.Select(b => (b.DisplayName, b.Task)).ToList(),
                 SpectraFiles.Where(b => b.Use).Select(b => b.FilePath).ToList(),
                 ProteinDatabases.Where(b => b.Use).Select(b => new DbForTask(b.FilePath, b.Contaminant)).ToList(),
-                outputFolder);
+                outputFolder, 25.0);
 
             var t = new Task(a.Run);
             t.ContinueWith(EverythingRunnerExceptionHandler, TaskContinuationOptions.OnlyOnFaulted);

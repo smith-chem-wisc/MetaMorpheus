@@ -98,7 +98,7 @@ namespace Test
 
             string outputFolder = Path.Combine(TestContext.CurrentContext.TestDirectory, @"TestEverythingRunner");
             // RUN!
-            var engine = new EverythingRunnerEngine(taskList, new List<string> { mzmlName }, new List<DbForTask> { new DbForTask(xmlName, false) }, outputFolder);
+            var engine = new EverythingRunnerEngine(taskList, new List<string> { mzmlName }, new List<DbForTask> { new DbForTask(xmlName, false) }, outputFolder, 25.0);
             engine.Run();
             File.Delete(Path.Combine(TestContext.CurrentContext.TestDirectory, mzmlName));
             File.Delete(Path.Combine(TestContext.CurrentContext.TestDirectory, xmlName));
@@ -199,7 +199,7 @@ namespace Test
 
             string outputFolder = Path.Combine(TestContext.CurrentContext.TestDirectory, @"TestMultipleFilesRunner");
             // RUN!
-            var engine = new EverythingRunnerEngine(taskList, new List<string> { mzmlName1, mzmlName2 }, new List<DbForTask> { new DbForTask(xmlName, false) }, outputFolder);
+            var engine = new EverythingRunnerEngine(taskList, new List<string> { mzmlName1, mzmlName2 }, new List<DbForTask> { new DbForTask(xmlName, false) }, outputFolder, 25.0);
             engine.Run();
             Directory.Delete(outputFolder, true);
             File.Delete(xmlName);
@@ -274,7 +274,7 @@ namespace Test
             Directory.CreateDirectory(outputFolder);
 
             // RUN!
-            var theStringResult = task.RunTask(outputFolder, new List<DbForTask> { new DbForTask(xmlName, false) }, new List<string> { mzmlName }, "taskId1").ToString();
+            var theStringResult = task.RunTask(outputFolder, new List<DbForTask> { new DbForTask(xmlName, false) }, new List<string> { mzmlName }, "taskId1", 25.0).ToString();
             Assert.IsTrue(theStringResult.Contains("All target PSMS within 1% FDR: 1"));
             Directory.Delete(outputFolder, true);
             File.Delete(xmlName);
@@ -337,7 +337,7 @@ namespace Test
             Directory.CreateDirectory(outputFolder);
 
             // RUN!
-            var theStringResult = task1.RunTask(outputFolder, new List<DbForTask> { new DbForTask(xmlName, false) }, new List<string> { mzmlName }, "taskId1").ToString();
+            var theStringResult = task1.RunTask(outputFolder, new List<DbForTask> { new DbForTask(xmlName, false) }, new List<string> { mzmlName }, "taskId1", 25.0).ToString();
             Assert.IsTrue(theStringResult.Contains("Modifications added: 1"));
             Directory.Delete(outputFolder, true);
             File.Delete(xmlName);
@@ -414,7 +414,7 @@ namespace Test
             IO.MzML.MzmlMethods.CreateAndWriteMyMzmlWithCalibratedSpectra(myMsDataFile, mzmlName, false);
 
             string outputFolder = Path.Combine(TestContext.CurrentContext.TestDirectory, @"TestMultipleFilesRunner");
-            var engine = new EverythingRunnerEngine(taskList, new List<string> { mzmlName }, new List<DbForTask> { new DbForTask(xmlName, false) }, outputFolder);
+            var engine = new EverythingRunnerEngine(taskList, new List<string> { mzmlName }, new List<DbForTask> { new DbForTask(xmlName, false) }, outputFolder, 25.0);
             engine.Run();
 
             string line;
@@ -449,8 +449,8 @@ namespace Test
             DbForTask db2 = new DbForTask(Path.Combine(TestContext.CurrentContext.TestDirectory, "TestData", @"DbForPrunedDb.fasta"), false);
             string raw = Path.Combine(TestContext.CurrentContext.TestDirectory, @"sliced-raw.mzML");
             string raw2 = Path.Combine(TestContext.CurrentContext.TestDirectory, "TestData", @"PrunedDbSpectra.mzml");
-            EverythingRunnerEngine singleMassSpectraFile = new EverythingRunnerEngine(new List<(string, MetaMorpheusTask)> { ("SingleMassSpectraFileOutput", task) }, new List<string> { raw }, new List<DbForTask> { db }, thisTaskOutputFolder);
-            EverythingRunnerEngine multipleMassSpectraFiles = new EverythingRunnerEngine(new List<(string, MetaMorpheusTask)> { ("MultipleMassSpectraFileOutput", task) }, new List<string> { raw, raw2 }, new List<DbForTask> { db, db2 }, thisTaskOutputFolder);
+            EverythingRunnerEngine singleMassSpectraFile = new EverythingRunnerEngine(new List<(string, MetaMorpheusTask)> { ("SingleMassSpectraFileOutput", task) }, new List<string> { raw }, new List<DbForTask> { db }, thisTaskOutputFolder, 25.0);
+            EverythingRunnerEngine multipleMassSpectraFiles = new EverythingRunnerEngine(new List<(string, MetaMorpheusTask)> { ("MultipleMassSpectraFileOutput", task) }, new List<string> { raw, raw2 }, new List<DbForTask> { db, db2 }, thisTaskOutputFolder, 25.0);
 
             singleMassSpectraFile.Run();
             multipleMassSpectraFiles.Run();
@@ -546,7 +546,7 @@ namespace Test
             string fastaName = @"TestData\DbForPrunedDb.fasta";
             string outputFolder = Path.Combine(TestContext.CurrentContext.TestDirectory, @"TestPepXmlOutput");
 
-            var engine = new EverythingRunnerEngine(taskList, new List<string> { mzmlName }, new List<DbForTask> { new DbForTask(fastaName, false) }, outputFolder);
+            var engine = new EverythingRunnerEngine(taskList, new List<string> { mzmlName }, new List<DbForTask> { new DbForTask(fastaName, false) }, outputFolder, 25.0);
             engine.Run();
 
             string outputPepXmlPath = Path.Combine(outputFolder, @"TestPepXmlOutput\PrunedDbSpectra.pep.XML");
@@ -574,7 +574,7 @@ namespace Test
             string fastaName = @"TestData\DbForPrunedDb.fasta";
             string outputFolder = Path.Combine(TestContext.CurrentContext.TestDirectory, @"TestPepXmlOutput");
 
-            var engine = new EverythingRunnerEngine(taskList, new List<string> { mzmlName }, new List<DbForTask> { new DbForTask(fastaName, false) }, outputFolder);
+            var engine = new EverythingRunnerEngine(taskList, new List<string> { mzmlName }, new List<DbForTask> { new DbForTask(fastaName, false) }, outputFolder, 25.0);
             engine.Run();
 
             string classicPath = Path.Combine(outputFolder, @"ClassicSearch\AllPSMs.psmtsv");

@@ -62,7 +62,7 @@ namespace Test
             psmsForParsimony.Add(psm2);
 
             // apply parsimony
-            ProteinParsimonyEngine pae = new ProteinParsimonyEngine(psmsForParsimony, modPeptidesAreUnique, new CommonParameters(), null, new List<string>());
+            ProteinParsimonyEngine pae = new ProteinParsimonyEngine(psmsForParsimony, modPeptidesAreUnique, new CommonParameters(), null, false, 25.0, new List<string>());
 
             // because the two chosen peptides are the same, we should end up with both protein accessions still in the list
             var proteinParsimonyResult = (ProteinParsimonyResults)pae.Run();
@@ -129,7 +129,7 @@ namespace Test
             psmsForParsimony.Add(psm2);
 
             // apply parsimony
-            ProteinParsimonyEngine pae = new ProteinParsimonyEngine(psmsForParsimony, modPeptidesAreUnique, new CommonParameters(), null, new List<string>());
+            ProteinParsimonyEngine pae = new ProteinParsimonyEngine(psmsForParsimony, modPeptidesAreUnique, new CommonParameters(), null, false, 25.0, new List<string>());
 
             // because the two chosen peptides are the same, we should end up with both protein accessions still in the list
             var proteinParsimonyResult = (ProteinParsimonyResults)pae.Run();
@@ -177,7 +177,7 @@ namespace Test
             psms.ForEach(p => p.SetFdrValues(0, 0, 0, 0, 0, 0, 0, 0));
 
             // apply parsimony
-            ProteinParsimonyEngine pae = new ProteinParsimonyEngine(psms, false, new CommonParameters(), null, new List<string>());
+            ProteinParsimonyEngine pae = new ProteinParsimonyEngine(psms, false, new CommonParameters(), null, false, 25.0, new List<string>());
 
             // because the two chosen peptides are the same, we should end up with both protein accessions still in the list
             var proteinParsimonyResult = (ProteinParsimonyResults)pae.Run();
@@ -225,7 +225,7 @@ namespace Test
             psms.ForEach(p => p.SetFdrValues(0, 0, 0, 0, 0, 0, 0, 0));
 
             // apply parsimony
-            ProteinParsimonyEngine pae = new ProteinParsimonyEngine(psms, false, new CommonParameters(), null, new List<string>());
+            ProteinParsimonyEngine pae = new ProteinParsimonyEngine(psms, false, new CommonParameters(), null, false, 25.0, new List<string>());
             ProteinParsimonyResults proteinParsimonyResult = (ProteinParsimonyResults)pae.Run();
             ProteinScoringAndFdrEngine proteinScoringEngine = new ProteinScoringAndFdrEngine(proteinParsimonyResult.ProteinGroups, psms, false, true, true, new CommonParameters(), null, new List<string>());
             ProteinScoringAndFdrResults results = (ProteinScoringAndFdrResults)proteinScoringEngine.Run();

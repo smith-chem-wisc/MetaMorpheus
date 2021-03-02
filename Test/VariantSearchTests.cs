@@ -91,7 +91,7 @@ namespace Test
             string outputFolder = Path.Combine(TestContext.CurrentContext.TestDirectory, $"TestSearchWithVariants{proteinIdx.ToString()}");
             Directory.CreateDirectory(outputFolder);
 
-            st.RunTask(outputFolder, new List<DbForTask> { new DbForTask(xmlName, false) }, new List<string> { mzmlName }, "");
+            st.RunTask(outputFolder, new List<DbForTask> { new DbForTask(xmlName, false) }, new List<string> { mzmlName }, "", 25.0);
             var psms = File.ReadAllLines(Path.Combine(outputFolder, "AllPSMs.psmtsv"));
 
             Assert.IsTrue(psms.Any(line => line.Contains(containsVariant ? variantPsmShort : "\t")));
@@ -133,7 +133,7 @@ namespace Test
                 CommonParameters = new CommonParameters(scoreCutoff: 1, digestionParams: new DigestionParams(minPeptideLength: 2), precursorMassTolerance: new PpmTolerance(20)),
             };
 
-            st.RunTask(outputFolder, new List<DbForTask> { new DbForTask(xmlName, false) }, new List<string> { mzmlName }, "");
+            st.RunTask(outputFolder, new List<DbForTask> { new DbForTask(xmlName, false) }, new List<string> { mzmlName }, "", 25.0);
             var psms = File.ReadAllLines(Path.Combine(outputFolder, "AllPSMs.psmtsv"));
 
             //Assert.IsTrue(psms.Any(line => line.Contains($"\t{variantPsmShort}\t" + (containsVariant ? variantPsmShort : "\t"))));
@@ -164,17 +164,17 @@ namespace Test
 
             string raw = Path.Combine(TestContext.CurrentContext.TestDirectory, @"TestVariantPep.mzML");
 
-            EverythingRunnerEngine noVariants = new EverythingRunnerEngine(new List<(string, MetaMorpheusTask)> { ("NoVariantOutput", task) }, new List<string> { raw }, new List<DbForTask> { noVariantDb }, thisTaskOutputFolder);
-            EverythingRunnerEngine ambigVariant = new EverythingRunnerEngine(new List<(string, MetaMorpheusTask)> { ("VariantOutput_ambig", task) }, new List<string> { raw }, new List<DbForTask> { ambigVariantDb }, thisTaskOutputFolder);
-            EverythingRunnerEngine frameshifVariants = new EverythingRunnerEngine(new List<(string, MetaMorpheusTask)> { ("VariantOutput_frameshift", task) }, new List<string> { raw }, new List<DbForTask> { frameshiftVariantDb }, thisTaskOutputFolder);
-            EverythingRunnerEngine missenseVariants = new EverythingRunnerEngine(new List<(string, MetaMorpheusTask)> { ("VariantOutput_missense", task) }, new List<string> { raw }, new List<DbForTask> { missenseVariantDb }, thisTaskOutputFolder);
-            EverythingRunnerEngine SNVmissenseVariants = new EverythingRunnerEngine(new List<(string, MetaMorpheusTask)> { ("VariantOutput_SNVmissense", task) }, new List<string> { raw }, new List<DbForTask> { SNVmissenseVariantDb }, thisTaskOutputFolder);
-            EverythingRunnerEngine stopGainedVariants = new EverythingRunnerEngine(new List<(string, MetaMorpheusTask)> { ("VariantOutput_stopGained", task) }, new List<string> { raw }, new List<DbForTask> { stopGainedVariantDb }, thisTaskOutputFolder);
-            EverythingRunnerEngine conservativeInsertionVariants = new EverythingRunnerEngine(new List<(string, MetaMorpheusTask)> { ("VariantOutput_conservativeInsertion", task) }, new List<string> { raw }, new List<DbForTask> { conservativeInsertionVariantDb }, thisTaskOutputFolder);
-            EverythingRunnerEngine disruptiveInsertionVariants = new EverythingRunnerEngine(new List<(string, MetaMorpheusTask)> { ("VariantOutput_disruptiveInsertion", task) }, new List<string> { raw }, new List<DbForTask> { disruptiveInsertionVariantDb }, thisTaskOutputFolder);
-            EverythingRunnerEngine conservativeDeletionVariants = new EverythingRunnerEngine(new List<(string, MetaMorpheusTask)> { ("VariantOutput_conservativeDeletion", task) }, new List<string> { raw }, new List<DbForTask> { conservativeDeletionVariantDb }, thisTaskOutputFolder);
-            EverythingRunnerEngine disruptiveDeletionVariants = new EverythingRunnerEngine(new List<(string, MetaMorpheusTask)> { ("VariantOutput_disruptiveDeletion", task) }, new List<string> { raw }, new List<DbForTask> { disruptiveDeletionVariantDb }, thisTaskOutputFolder);
-            EverythingRunnerEngine stopLossVariants = new EverythingRunnerEngine(new List<(string, MetaMorpheusTask)> { ("VariantOutput_stopLoss", task) }, new List<string> { raw }, new List<DbForTask> { stopLossVariantDb }, thisTaskOutputFolder);
+            EverythingRunnerEngine noVariants = new EverythingRunnerEngine(new List<(string, MetaMorpheusTask)> { ("NoVariantOutput", task) }, new List<string> { raw }, new List<DbForTask> { noVariantDb }, thisTaskOutputFolder, 25.0);
+            EverythingRunnerEngine ambigVariant = new EverythingRunnerEngine(new List<(string, MetaMorpheusTask)> { ("VariantOutput_ambig", task) }, new List<string> { raw }, new List<DbForTask> { ambigVariantDb }, thisTaskOutputFolder, 25.0);
+            EverythingRunnerEngine frameshifVariants = new EverythingRunnerEngine(new List<(string, MetaMorpheusTask)> { ("VariantOutput_frameshift", task) }, new List<string> { raw }, new List<DbForTask> { frameshiftVariantDb }, thisTaskOutputFolder, 25.0);
+            EverythingRunnerEngine missenseVariants = new EverythingRunnerEngine(new List<(string, MetaMorpheusTask)> { ("VariantOutput_missense", task) }, new List<string> { raw }, new List<DbForTask> { missenseVariantDb }, thisTaskOutputFolder, 25.0);
+            EverythingRunnerEngine SNVmissenseVariants = new EverythingRunnerEngine(new List<(string, MetaMorpheusTask)> { ("VariantOutput_SNVmissense", task) }, new List<string> { raw }, new List<DbForTask> { SNVmissenseVariantDb }, thisTaskOutputFolder, 25.0);
+            EverythingRunnerEngine stopGainedVariants = new EverythingRunnerEngine(new List<(string, MetaMorpheusTask)> { ("VariantOutput_stopGained", task) }, new List<string> { raw }, new List<DbForTask> { stopGainedVariantDb }, thisTaskOutputFolder, 25.0);
+            EverythingRunnerEngine conservativeInsertionVariants = new EverythingRunnerEngine(new List<(string, MetaMorpheusTask)> { ("VariantOutput_conservativeInsertion", task) }, new List<string> { raw }, new List<DbForTask> { conservativeInsertionVariantDb }, thisTaskOutputFolder, 25.0);
+            EverythingRunnerEngine disruptiveInsertionVariants = new EverythingRunnerEngine(new List<(string, MetaMorpheusTask)> { ("VariantOutput_disruptiveInsertion", task) }, new List<string> { raw }, new List<DbForTask> { disruptiveInsertionVariantDb }, thisTaskOutputFolder, 25.0);
+            EverythingRunnerEngine conservativeDeletionVariants = new EverythingRunnerEngine(new List<(string, MetaMorpheusTask)> { ("VariantOutput_conservativeDeletion", task) }, new List<string> { raw }, new List<DbForTask> { conservativeDeletionVariantDb }, thisTaskOutputFolder, 25.0);
+            EverythingRunnerEngine disruptiveDeletionVariants = new EverythingRunnerEngine(new List<(string, MetaMorpheusTask)> { ("VariantOutput_disruptiveDeletion", task) }, new List<string> { raw }, new List<DbForTask> { disruptiveDeletionVariantDb }, thisTaskOutputFolder, 25.0);
+            EverythingRunnerEngine stopLossVariants = new EverythingRunnerEngine(new List<(string, MetaMorpheusTask)> { ("VariantOutput_stopLoss", task) }, new List<string> { raw }, new List<DbForTask> { stopLossVariantDb }, thisTaskOutputFolder, 25.0);
 
 
             noVariants.Run();

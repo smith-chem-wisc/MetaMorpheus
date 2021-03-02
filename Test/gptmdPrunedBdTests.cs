@@ -52,7 +52,7 @@ namespace Test
             string mzmlName = @"TestData\PrunedDbSpectra.mzml";
             string fastaName = @"TestData\DbForPrunedDb.fasta";
             string outputFolder = Path.Combine(TestContext.CurrentContext.TestDirectory, @"TestPrunedGeneration");
-            var engine = new EverythingRunnerEngine(taskList, new List<string> { mzmlName }, new List<DbForTask> { new DbForTask(fastaName, false) }, outputFolder);
+            var engine = new EverythingRunnerEngine(taskList, new List<string> { mzmlName }, new List<DbForTask> { new DbForTask(fastaName, false) }, outputFolder, 25.0);
             engine.Run();
             string final = Path.Combine(MySetUpClass.outputFolder, "task2", "DbForPrunedDbGPTMDproteinPruned.xml");
             List<Protein> proteins = ProteinDbLoader.LoadProteinXML(final, true, DecoyType.Reverse, new List<Modification>(), false, new List<string>(), out var ok);
@@ -165,7 +165,7 @@ namespace Test
             //run!
             string outputFolder = Path.Combine(TestContext.CurrentContext.TestDirectory, @"TestPrunedDatabase");
             var engine = new EverythingRunnerEngine(taskList, new List<string> { mzmlName },
-                new List<DbForTask> { new DbForTask(xmlName, false) }, outputFolder);
+                new List<DbForTask> { new DbForTask(xmlName, false) }, outputFolder, 25.0);
             engine.Run();
 
             string final = Path.Combine(MySetUpClass.outputFolder, "task1", "okkkpruned.xml");
@@ -298,7 +298,7 @@ namespace Test
             //make sure this runs correctly
             //run!
             string outputFolder = Path.Combine(TestContext.CurrentContext.TestDirectory, @"TestUserModSelectionInPrunedDB");
-            var engine = new EverythingRunnerEngine(taskList, new List<string> { mzmlName }, new List<DbForTask> { new DbForTask(xmlName, false) }, outputFolder);
+            var engine = new EverythingRunnerEngine(taskList, new List<string> { mzmlName }, new List<DbForTask> { new DbForTask(xmlName, false) }, outputFolder, 25.0);
             engine.Run();
             string final = Path.Combine(MySetUpClass.outputFolder, "task5", "selectedModspruned.xml");
             var proteins = ProteinDbLoader.LoadProteinXML(final, true, DecoyType.Reverse, new List<Modification>(), false, new List<string>(), out ok);
@@ -399,7 +399,7 @@ namespace Test
                 CommonParameters = new CommonParameters()
             };
 
-            var test = task5.RunTask(Path.Combine(TestContext.CurrentContext.TestDirectory, @"PrunedDbTest"), new List<DbForTask>() { new DbForTask(Path.Combine(TestContext.CurrentContext.TestDirectory, @"PrunedDbTest/fakeDb.xml"),false)}, new List<string>() { mzmlName }, "name");
+            var test = task5.RunTask(Path.Combine(TestContext.CurrentContext.TestDirectory, @"PrunedDbTest"), new List<DbForTask>() { new DbForTask(Path.Combine(TestContext.CurrentContext.TestDirectory, @"PrunedDbTest/fakeDb.xml"),false)}, new List<string>() { mzmlName }, "name", 25.0);
             testPostTaskParameters.SearchTaskResults = test;
            
             PostSearchAnalysisTask testPostTask = new PostSearchAnalysisTask();
@@ -504,7 +504,7 @@ namespace Test
                 CommonParameters = new CommonParameters()
             };
 
-            var test = task5.RunTask(Path.Combine(TestContext.CurrentContext.TestDirectory, @"PrunedDbTest"), new List<DbForTask>() { new DbForTask(Path.Combine(TestContext.CurrentContext.TestDirectory, @"PrunedDbTest/fakeDb.xml"), false) }, new List<string>() { mzmlName }, "name");
+            var test = task5.RunTask(Path.Combine(TestContext.CurrentContext.TestDirectory, @"PrunedDbTest"), new List<DbForTask>() { new DbForTask(Path.Combine(TestContext.CurrentContext.TestDirectory, @"PrunedDbTest/fakeDb.xml"), false) }, new List<string>() { mzmlName }, "name", 25.0);
             testPostTaskParameters.SearchTaskResults = test;
 
             PostSearchAnalysisTask testPostTask = new PostSearchAnalysisTask();

@@ -41,7 +41,7 @@ namespace Test
             };
             //run!
 
-            var engine = new EverythingRunnerEngine(taskList, new List<string> { mgfName }, new List<DbForTask> { new DbForTask(xmlName, false) }, outputFolder);
+            var engine = new EverythingRunnerEngine(taskList, new List<string> { mgfName }, new List<DbForTask> { new DbForTask(xmlName, false) }, outputFolder, 25.0);
             engine.Run();
             //Just don't crash! There should also be at least one psm at 1% FDR, but can't check for that.
             Directory.Delete(outputFolder, true);
