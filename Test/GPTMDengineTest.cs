@@ -190,7 +190,7 @@ namespace Test
 
             //run!
             var engine = new EverythingRunnerEngine(taskList, new List<string> { mzmlName },
-                new List<DbForTask> { new DbForTask(xmlName, false) }, Environment.CurrentDirectory);
+                new List<DbForTask> { new DbForTask(xmlName, false) }, Environment.CurrentDirectory, 25.0);
             engine.Run();
         }
 

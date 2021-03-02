@@ -1,6 +1,7 @@
 ﻿using FlashLFQ;
 using Proteomics;
 using Proteomics.ProteolyticDigestion;
+using System;
 using System.Collections.Generic;
 using System.Globalization;
 using System.Linq;
@@ -169,6 +170,8 @@ namespace EngineLayer
             sb.Append("Protein QValue" + '\t');
             sb.Append("Best Peptide Score" + '\t');
             sb.Append("Best Peptide Notch QValue");
+            sb.Append("ORF CPM" + '\t');
+            sb.Append("Relative ORF abundance");
             return sb.ToString();
         }
 
@@ -325,6 +328,50 @@ namespace EngineLayer
             // best peptide q value
             sb.Append(BestPeptideQValue);
             sb.Append("\t");
+
+            List<double> groupCPMs = new List<double>();
+
+            if (GlobalVariables.ProteinToProteogenomicInfo.Any())
+            {
+                for (int i = 0; i < ListOfProteinsOrderedByAccession.Count; i++)
+                {
+                    Protein protein = ListOfProteinsOrderedByAccession[i];
+
+                    if (GlobalVariables.ProteinToProteogenomicInfo.TryGetValue(protein.Accession, out LongReadInfo proteogenomicInfo))
+                    {
+                        sb.Append(proteogenomicInfo.ToString());
+                        groupCPMs.Add(proteogenomicInfo.CPM);
+                    }
+                    else
+                    {
+                        sb.Append("No ORF info");
+                        groupCPMs.Add(0);
+                    }
+
+                    if (i != ListOfProteinsOrderedByAccession.Count - 1)
+                    {
+                        sb.Append("|");
+                    }
+                }
+            }
+            sb.Append("\t");
+
+            List<string> relativeCPM = new List<string>();
+            double totalCPM = groupCPMs.Sum();
+            if (totalCPM != 0)
+            {
+                foreach (var cpm in groupCPMs)
+                {
+                    double relative = cpm / totalCPM;
+                    relative = Math.Round(relative, 4);
+                    relativeCPM.Add(relative.ToString());
+                }
+                sb.Append(String.Join('|', relativeCPM));
+            }
+            else
+            {
+                sb.Append("N/A");
+            }
 
             return sb.ToString();
         }

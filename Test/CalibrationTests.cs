@@ -35,7 +35,7 @@ namespace Test
 
             // run calibration
             CalibrationTask calibrationTask = new CalibrationTask();
-            calibrationTask.RunTask(outputFolder, new List<DbForTask> { new DbForTask(myDatabase, false) }, new List<string> { nonCalibratedFilePath }, "test");
+            calibrationTask.RunTask(outputFolder, new List<DbForTask> { new DbForTask(myDatabase, false) }, new List<string> { nonCalibratedFilePath }, "test", 25.0);
 
             // test new experimental design written by calibration
             var newExpDesignPath = Path.Combine(outputFolder, @"ExperimentalDesign.tsv");
@@ -81,7 +81,7 @@ namespace Test
             string myDatabase = Path.Combine(TestContext.CurrentContext.TestDirectory, @"TestData\LowResSnip_B6_mouse_11700_117500pruned.xml");
             Directory.CreateDirectory(outputFolder);
 
-            calibrationTask.RunTask(outputFolder, new List<DbForTask> { new DbForTask(myDatabase, false) }, new List<string> { myFile }, "test");
+            calibrationTask.RunTask(outputFolder, new List<DbForTask> { new DbForTask(myDatabase, false) }, new List<string> { myFile }, "test", 25.0);
             Assert.That(File.Exists(Path.Combine(outputFolder, @"sliced_b6-calib.mzML")));
             Assert.That(File.Exists(Path.Combine(outputFolder, @"sliced_b6-calib.toml")));
             var lines = File.ReadAllLines(Path.Combine(outputFolder, @"sliced_b6-calib.toml"));
@@ -125,7 +125,7 @@ namespace Test
                 new List<(string, MetaMorpheusTask)> { ("", calibrationTask), ("", searchTask) }, 
                 new List<string> { nonCalibratedFilePath }, 
                 new List<DbForTask> { new DbForTask(myDatabase, false) },
-                outputFolder);
+                outputFolder, 25.0);
 
             a.Run();
 

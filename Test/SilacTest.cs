@@ -50,7 +50,7 @@ namespace Test
 
             string outputFolder = Path.Combine(TestContext.CurrentContext.TestDirectory, @"TestSilac");
             Directory.CreateDirectory(outputFolder);
-            var theStringResult = task.RunTask(outputFolder, new List<DbForTask> { new DbForTask(xmlName, false) }, new List<string> { mzmlName }, "taskId1").ToString();
+            var theStringResult = task.RunTask(outputFolder, new List<DbForTask> { new DbForTask(xmlName, false) }, new List<string> { mzmlName }, "taskId1", 25.0).ToString();
 
             //test proteins
             string[] output = File.ReadAllLines(TestContext.CurrentContext.TestDirectory + @"/TestSilac/AllQuantifiedProteinGroups.tsv");
@@ -121,7 +121,7 @@ namespace Test
 
             string outputFolder = Path.Combine(TestContext.CurrentContext.TestDirectory, @"TestSilac");
             Directory.CreateDirectory(outputFolder);
-            task.RunTask(outputFolder, new List<DbForTask> { new DbForTask(xmlName, false) }, new List<string> { mzmlName }, "taskId1");
+            task.RunTask(outputFolder, new List<DbForTask> { new DbForTask(xmlName, false) }, new List<string> { mzmlName }, "taskId1", 25.0);
 
             //test proteins
             string[] output = File.ReadAllLines(TestContext.CurrentContext.TestDirectory + @"/TestSilac/AllQuantifiedProteinGroups.tsv");
@@ -163,7 +163,7 @@ namespace Test
             IO.MzML.MzmlMethods.CreateAndWriteMyMzmlWithCalibratedSpectra(myMsDataFile1, mzmlName, false);
 
             Directory.CreateDirectory(outputFolder);
-            task.RunTask(outputFolder, new List<DbForTask> { new DbForTask(xmlName, false) }, new List<string> { mzmlName }, "taskId1");
+            task.RunTask(outputFolder, new List<DbForTask> { new DbForTask(xmlName, false) }, new List<string> { mzmlName }, "taskId1", 25.0);
 
             //Clear the old files
             Directory.Delete(outputFolder, true);
@@ -204,7 +204,7 @@ namespace Test
 
             string outputFolder = Path.Combine(TestContext.CurrentContext.TestDirectory, @"TestSilac");
             Directory.CreateDirectory(outputFolder);
-            var theStringResult = task.RunTask(outputFolder, new List<DbForTask> { new DbForTask(xmlName, false) }, new List<string> { mzmlName, mzmlName2 }, "taskId1").ToString();
+            var theStringResult = task.RunTask(outputFolder, new List<DbForTask> { new DbForTask(xmlName, false) }, new List<string> { mzmlName, mzmlName2 }, "taskId1", 25.0).ToString();
 
             Assert.IsTrue(theStringResult.Contains("All target PSMS within 1% FDR: 2")); //it's not a psm, it's a MBR feature. 2 because there are two files, but not 4 because MBR != psm
 
@@ -250,7 +250,7 @@ namespace Test
             ProteinDbWriter.WriteXmlDatabase(new Dictionary<string, HashSet<Tuple<int, Modification>>>(), new List<Protein> { theProtein, theProtein2 }, xmlName);
 
             Directory.CreateDirectory(outputFolder);
-            theStringResult = task.RunTask(outputFolder, new List<DbForTask> { new DbForTask(xmlName, false) }, new List<string> { mzmlName }, "taskId1").ToString();
+            theStringResult = task.RunTask(outputFolder, new List<DbForTask> { new DbForTask(xmlName, false) }, new List<string> { mzmlName }, "taskId1", 25.0).ToString();
 
             output = File.ReadAllLines(TestContext.CurrentContext.TestDirectory + @"/TestSilac/AllPSMs.psmtsv");
             Assert.IsTrue(output[1].Contains("silac\t")); //test the filename was NOT modified (it was for proteins, but we don't want it for peptides)
@@ -269,7 +269,7 @@ namespace Test
             ProteinDbWriter.WriteXmlDatabase(new Dictionary<string, HashSet<Tuple<int, Modification>>>(), new List<Protein> { theProtein, theProtein2 }, xmlName);
 
             Directory.CreateDirectory(outputFolder);
-            theStringResult = task.RunTask(outputFolder, new List<DbForTask> { new DbForTask(xmlName, false) }, new List<string> { mzmlName }, "taskId1").ToString();
+            theStringResult = task.RunTask(outputFolder, new List<DbForTask> { new DbForTask(xmlName, false) }, new List<string> { mzmlName }, "taskId1", 25.0).ToString();
 
             output = File.ReadAllLines(TestContext.CurrentContext.TestDirectory + @"/TestSilac/AllPSMs.psmtsv");
             Assert.IsTrue(output[1].Contains("accession1|accession2")
@@ -314,7 +314,7 @@ namespace Test
 
             string outputFolder = Path.Combine(TestContext.CurrentContext.TestDirectory, @"TestSilac");
             Directory.CreateDirectory(outputFolder);
-            var theStringResult = task.RunTask(outputFolder, new List<DbForTask> { new DbForTask(xmlName, false) }, new List<string> { mzmlName }, "taskId1").ToString();
+            var theStringResult = task.RunTask(outputFolder, new List<DbForTask> { new DbForTask(xmlName, false) }, new List<string> { mzmlName }, "taskId1", 25.0).ToString();
             //No assertions, just checking it didn't crash
 
             //delete files
@@ -361,7 +361,7 @@ namespace Test
 
             string outputFolder = Path.Combine(TestContext.CurrentContext.TestDirectory, @"TestSilac");
             Directory.CreateDirectory(outputFolder);
-            task.RunTask(outputFolder, new List<DbForTask> { new DbForTask(xmlName, false) }, new List<string> { mzmlName, mzmlName2 }, "taskId1").ToString();
+            task.RunTask(outputFolder, new List<DbForTask> { new DbForTask(xmlName, false) }, new List<string> { mzmlName, mzmlName2 }, "taskId1", 25.0).ToString();
 
             string[] output = File.ReadAllLines(TestContext.CurrentContext.TestDirectory + @"/TestSilac/AllQuantifiedPeptides.tsv");
             Assert.IsTrue(output[1].Contains("PEPTKIDEK\t")); //test the unlabeled is present
@@ -397,7 +397,7 @@ namespace Test
 
             myMsDataFile1 = new TestDataFile(mixedPeptide, massDifferences);
             IO.MzML.MzmlMethods.CreateAndWriteMyMzmlWithCalibratedSpectra(myMsDataFile1, mzmlName, false);
-            task.RunTask(outputFolder, new List<DbForTask> { new DbForTask(xmlName, false) }, new List<string> { mzmlName }, "taskId1").ToString();
+            task.RunTask(outputFolder, new List<DbForTask> { new DbForTask(xmlName, false) }, new List<string> { mzmlName }, "taskId1", 25.0).ToString();
 
             output = File.ReadAllLines(TestContext.CurrentContext.TestDirectory + @"/TestSilac/AllQuantifiedPeptides.tsv");
             Assert.IsTrue(output[1].Contains("PEPTKIDEK\t")); //test the unlabeled is present
@@ -437,7 +437,7 @@ namespace Test
             };
             myMsDataFile1 = new TestDataFile(peptides, massDifferences, intensities);
             IO.MzML.MzmlMethods.CreateAndWriteMyMzmlWithCalibratedSpectra(myMsDataFile1, mzmlName, false);
-            task.RunTask(outputFolder, new List<DbForTask> { new DbForTask(xmlName, false) }, new List<string> { mzmlName }, "taskId1").ToString();
+            task.RunTask(outputFolder, new List<DbForTask> { new DbForTask(xmlName, false) }, new List<string> { mzmlName }, "taskId1", 25.0).ToString();
 
             output = File.ReadAllLines(TestContext.CurrentContext.TestDirectory + @"/TestSilac/AllQuantifiedPeptides.tsv");
             Assert.IsTrue(output[1].Contains("PEPEPEPTK\t")); //test the unlabeled is present
@@ -460,7 +460,7 @@ namespace Test
                     SearchType = SearchType.Modern
                 }
             };
-            task.RunTask(outputFolder, new List<DbForTask> { new DbForTask(xmlName, false) }, new List<string> { mzmlName }, "taskId1").ToString();
+            task.RunTask(outputFolder, new List<DbForTask> { new DbForTask(xmlName, false) }, new List<string> { mzmlName }, "taskId1", 25.0).ToString();
 
             //delete files
             Directory.Delete(outputFolder, true);
@@ -496,7 +496,7 @@ namespace Test
 
             string outputFolder = Path.Combine(TestContext.CurrentContext.TestDirectory, @"TestSilac");
             Directory.CreateDirectory(outputFolder);
-            var theStringResult = task.RunTask(outputFolder, new List<DbForTask> { new DbForTask(xmlName, false) }, new List<string> { mzmlName }, "taskId1").ToString();
+            var theStringResult = task.RunTask(outputFolder, new List<DbForTask> { new DbForTask(xmlName, false) }, new List<string> { mzmlName }, "taskId1", 25.0).ToString();
 
             string[] output = File.ReadAllLines(TestContext.CurrentContext.TestDirectory + @"/TestSilac/AllQuantifiedPeaks.tsv");
             Assert.IsTrue(output.Length == 4);
@@ -554,7 +554,7 @@ namespace Test
 
             string outputFolder = Path.Combine(TestContext.CurrentContext.TestDirectory, @"TestSilac");
             Directory.CreateDirectory(outputFolder);
-            task.RunTask(outputFolder, new List<DbForTask> { new DbForTask(xmlName, false) }, new List<string> { mzmlName }, "taskId1").ToString();
+            task.RunTask(outputFolder, new List<DbForTask> { new DbForTask(xmlName, false) }, new List<string> { mzmlName }, "taskId1", 25.0).ToString();
             //Just don't crash
             //This unit test doesn't (currently) include the array of peaks for the possible combinations of labels.
             //Only a single peak is found, and because there's no heavy/light, it's unable to produce a ratio, so NaN values are returned.
@@ -598,7 +598,7 @@ namespace Test
 
             string outputFolder = Path.Combine(TestContext.CurrentContext.TestDirectory, @"TestSilac");
             Directory.CreateDirectory(outputFolder);
-            task.RunTask(outputFolder, new List<DbForTask> { new DbForTask(xmlName, false) }, new List<string> { mzmlName }, "taskId1").ToString();
+            task.RunTask(outputFolder, new List<DbForTask> { new DbForTask(xmlName, false) }, new List<string> { mzmlName }, "taskId1", 25.0).ToString();
             string[] output = File.ReadAllLines(TestContext.CurrentContext.TestDirectory + @"/TestSilac/AllQuantifiedPeptides.tsv");
             Assert.IsTrue(output[1].Contains("\t12250000\t6125000\t")); //check that it's 2:1 and not 5:3 like it would be for apex
 
@@ -607,7 +607,7 @@ namespace Test
             massDifferences = new List<List<double>> { new List<double> { (heavyLysine.MonoisotopicMass - lightLysine.MonoisotopicMass) } }; //must be reset, since the method below edits it
             myMsDataFile1 = new TestDataFile(lightPeptide, massDifferences, precursorIntensities, 2);
             IO.MzML.MzmlMethods.CreateAndWriteMyMzmlWithCalibratedSpectra(myMsDataFile1, mzmlName, false);
-            task.RunTask(outputFolder, new List<DbForTask> { new DbForTask(xmlName, false) }, new List<string> { mzmlName }, "taskId1").ToString();
+            task.RunTask(outputFolder, new List<DbForTask> { new DbForTask(xmlName, false) }, new List<string> { mzmlName }, "taskId1", 25.0).ToString();
             output = File.ReadAllLines(TestContext.CurrentContext.TestDirectory + @"/TestSilac/AllQuantifiedPeptides.tsv");
             Assert.IsTrue(output[1].Contains("\t24500000\t12250000\t")); //intensities will be twice as large as before, but still the same ratio
 

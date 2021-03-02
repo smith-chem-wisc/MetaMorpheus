@@ -20,7 +20,7 @@ namespace Test
 
             XLSearchTask xLSearch = new XLSearchTask();
             xLSearch.XlSearchParameters.CrosslinkAtCleavageSite = true;
-            xLSearch.RunTask(outputFolder, new List<DbForTask> { new DbForTask(myDatabase, false) }, new List<string> { myFile }, "test");
+            xLSearch.RunTask(outputFolder, new List<DbForTask> { new DbForTask(myDatabase, false) }, new List<string> { myFile }, "test", 25.0);
 
             var resultsPath = File.ReadAllLines(Path.Combine(outputFolder, @"XL_Intralinks.tsv"));
             var sections = resultsPath[1].Split('\t');

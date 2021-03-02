@@ -28,7 +28,7 @@ namespace Test
             // run all tasks
             DbForTask db = new DbForTask(myDatabase, false);
             List<(string, MetaMorpheusTask)> taskList = new List<(string, MetaMorpheusTask)> { ("TestSearchBY", task1), ("TestSearchCZ", task2), ("TestSearchBCZ", task3) };
-            var engine = new EverythingRunnerEngine(taskList, new List<string> { myFile }, new List<DbForTask> { new DbForTask(myDatabase, false) }, outputFolder);
+            var engine = new EverythingRunnerEngine(taskList, new List<string> { myFile }, new List<DbForTask> { new DbForTask(myDatabase, false) }, outputFolder, 25.0);
             engine.Run();
 
             // read generated toml settings and make sure custom fragmentations match are handled properly for each task

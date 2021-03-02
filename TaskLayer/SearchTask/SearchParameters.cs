@@ -54,6 +54,8 @@ namespace TaskLayer
             WriteIndividualFiles = true;
             LocalFdrCategories = new List<FdrCategory> { FdrCategory.FullySpecific };
             TCAmbiguity = TargetContaminantAmbiguity.RemoveContaminant;
+            UseOrfCallingInfoInProteinInference = false;
+            CPMThreshold = 25.0;
         }
 
         public bool DisposeOfFileWhenDone { get; set; }
@@ -88,5 +90,7 @@ namespace TaskLayer
         public SilacLabel StartTurnoverLabel { get; set; } //used for SILAC turnover experiments
         public SilacLabel EndTurnoverLabel { get; set; } //used for SILAC turnover experiments
         public TargetContaminantAmbiguity TCAmbiguity { get; set; }
+        public bool UseOrfCallingInfoInProteinInference { get; set; }
+        public double CPMThreshold { get; set; }
     }
 }

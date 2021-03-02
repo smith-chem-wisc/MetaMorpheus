@@ -249,7 +249,7 @@ namespace Test
                 }
             }
 
-            new EverythingRunnerEngine(new List<(string, MetaMorpheusTask)> { ("Task", task) }, new List<string> { raw }, new List<DbForTask> { db }, Path.Combine(Environment.CurrentDirectory, @"TESTXlTestData")).Run();
+            new EverythingRunnerEngine(new List<(string, MetaMorpheusTask)> { ("Task", task) }, new List<string> { raw }, new List<DbForTask> { db }, Path.Combine(Environment.CurrentDirectory, @"TESTXlTestData"), 25.0).Run();
             Directory.Delete(Path.Combine(Environment.CurrentDirectory, @"TESTXlTestData"), true);
         }
 
@@ -860,8 +860,8 @@ namespace Test
             };
             Directory.CreateDirectory(outputFolder);
 
-            xLSearchTask.RunTask(outputFolder, new List<DbForTask> { new DbForTask(myDatabaseXl, false) }, new List<string> { myFileXl }, "test");
-            xLSearchTask2.RunTask(outputFolder, new List<DbForTask> { new DbForTask(myDatabaseXl, false) }, new List<string> { myFileXl }, "test");
+            xLSearchTask.RunTask(outputFolder, new List<DbForTask> { new DbForTask(myDatabaseXl, false) }, new List<string> { myFileXl }, "test", 25.0);
+            xLSearchTask2.RunTask(outputFolder, new List<DbForTask> { new DbForTask(myDatabaseXl, false) }, new List<string> { myFileXl }, "test", 25.0);
             Directory.Delete(outputFolder, true);
             Directory.Delete(Path.Combine(TestContext.CurrentContext.TestDirectory, @"Task Settings"), true);
         }
@@ -877,7 +877,7 @@ namespace Test
 
             Directory.CreateDirectory(outputFolder);
 
-            xLSearchTask.RunTask(outputFolder, new List<DbForTask> { new DbForTask(myDatabaseXl, false) }, new List<string> { myFileXl }, "test");
+            xLSearchTask.RunTask(outputFolder, new List<DbForTask> { new DbForTask(myDatabaseXl, false) }, new List<string> { myFileXl }, "test", 25.0);
             var lines = File.ReadAllLines(Path.Combine(outputFolder, @"Deadends.tsv"));
             Assert.That(lines.Length == 2);
             Assert.That(lines[1].Contains("Dead"));
@@ -904,9 +904,9 @@ namespace Test
             Directory.CreateDirectory(folderPath);
 
             //creates .params files if they do not exist
-            xlSearchTask.RunTask(folderPath, new List<DbForTask> { db }, new List<string> { myFile }, "normal");
+            xlSearchTask.RunTask(folderPath, new List<DbForTask> { db }, new List<string> { myFile }, "normal", 25.0);
             //tests .params files
-            xlSearchTask.RunTask(folderPath, new List<DbForTask> { db }, new List<string> { myFile }, "normal");
+            xlSearchTask.RunTask(folderPath, new List<DbForTask> { db }, new List<string> { myFile }, "normal", 25.0);
 
             var baseDir = Path.GetDirectoryName(db.FilePath);
             var directory = new DirectoryInfo(baseDir);
@@ -919,7 +919,7 @@ namespace Test
                 }
             }
             //tests without .params files
-            xlSearchTask.RunTask(folderPath, new List<DbForTask> { db }, new List<string> { myFile }, "normal");
+            xlSearchTask.RunTask(folderPath, new List<DbForTask> { db }, new List<string> { myFile }, "normal", 25.0);
 
             var lines = File.ReadAllLines(Path.Combine(folderPath, @"XL_Intralinks.tsv"));
             Assert.That(lines.Length == 2);
@@ -1180,7 +1180,7 @@ namespace Test
 
             List<(string, MetaMorpheusTask)> taskList = new List<(string, MetaMorpheusTask)> { ("TestPercolator", xlst) };
 
-            var engine = new EverythingRunnerEngine(taskList, new List<string> { myFileXl }, new List<DbForTask> { db }, outputFolder);
+            var engine = new EverythingRunnerEngine(taskList, new List<string> { myFileXl }, new List<DbForTask> { db }, outputFolder, 25.0);
             engine.Run();
 
             var results = Path.Combine(outputFolder, @"TestPercolator\XL_Intralinks_Percolator.txt");

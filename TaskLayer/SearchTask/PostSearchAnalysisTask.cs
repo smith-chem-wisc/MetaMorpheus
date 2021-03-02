@@ -81,7 +81,7 @@ namespace TaskLayer
             return Parameters.SearchTaskResults;
         }
 
-        protected override MyTaskResults RunSpecific(string OutputFolder, List<DbForTask> dbFilenameList, List<string> currentRawFileList, string taskId, FileSpecificParameters[] fileSettingsList)
+        protected override MyTaskResults RunSpecific(string OutputFolder, List<DbForTask> dbFilenameList, List<string> currentRawFileList, string taskId, FileSpecificParameters[] fileSettingsList, double cpmThreshold, List<string> orfCallingTables = null)
         {
             MyTaskResults = new MyTaskResults(this);
             return null;
@@ -128,7 +128,7 @@ namespace TaskLayer
             List<PeptideSpectralMatch> psmsForProteinParsimony = Parameters.AllPsms;
 
             // run parsimony
-            ProteinParsimonyResults proteinAnalysisResults = (ProteinParsimonyResults)(new ProteinParsimonyEngine(psmsForProteinParsimony, Parameters.SearchParameters.ModPeptidesAreDifferent, CommonParameters, this.FileSpecificParameters, new List<string> { Parameters.SearchTaskId }).Run());
+            ProteinParsimonyResults proteinAnalysisResults = (ProteinParsimonyResults)(new ProteinParsimonyEngine(psmsForProteinParsimony, Parameters.SearchParameters.ModPeptidesAreDifferent, CommonParameters, this.FileSpecificParameters, Parameters.SearchParameters.UseOrfCallingInfoInProteinInference, Parameters.SearchParameters.CPMThreshold, new List<string> { Parameters.SearchTaskId }).Run());
 
             // score protein groups and calculate FDR
             ProteinScoringAndFdrResults proteinScoringAndFdrResults = (ProteinScoringAndFdrResults)new ProteinScoringAndFdrEngine(proteinAnalysisResults.ProteinGroups, psmsForProteinParsimony,

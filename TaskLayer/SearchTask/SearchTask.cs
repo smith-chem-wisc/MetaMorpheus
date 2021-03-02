@@ -81,7 +81,7 @@ namespace TaskLayer
             }
         }
 
-        protected override MyTaskResults RunSpecific(string OutputFolder, List<DbForTask> dbFilenameList, List<string> currentRawFileList, string taskId, FileSpecificParameters[] fileSettingsList)
+        protected override MyTaskResults RunSpecific(string OutputFolder, List<DbForTask> dbFilenameList, List<string> currentRawFileList, string taskId, FileSpecificParameters[] fileSettingsList, double cpmThreshold, List<string> orfCallingTables = null)
         {
             if (SearchParameters.DoQuantification)
             {
@@ -137,7 +137,8 @@ namespace TaskLayer
             LoadModifications(taskId, out var variableModifications, out var fixedModifications, out var localizeableModificationTypes);
 
             // load proteins
-            List<Protein> proteinList = LoadProteins(taskId, dbFilenameList, SearchParameters.SearchTarget, SearchParameters.DecoyType, localizeableModificationTypes, CommonParameters);
+            List<Protein> proteinList = LoadProteins(taskId, dbFilenameList, SearchParameters.SearchTarget, SearchParameters.DecoyType, localizeableModificationTypes, CommonParameters,
+                 orfCallingTables);
             SanitizeProteinDatabase(proteinList, SearchParameters.TCAmbiguity);
 
             // load spectral libraries
@@ -369,6 +370,8 @@ namespace TaskLayer
             {
                 allPsms = NonSpecificEnzymeSearchEngine.ResolveFdrCategorySpecificPsms(allCategorySpecificPsms, numNotches, taskId, CommonParameters, FileSpecificParameters);
             }
+
+            SearchParameters.CPMThreshold = cpmThreshold;
 
             PostSearchAnalysisParameters parameters = new PostSearchAnalysisParameters
             {

@@ -49,7 +49,7 @@ namespace Test
             MzmlMethods.CreateAndWriteMyMzmlWithCalibratedSpectra(datafile, pathOne, false);
             MzmlMethods.CreateAndWriteMyMzmlWithCalibratedSpectra(datafile, pathTwo, false);
 
-            new EverythingRunnerEngine(tasks, new List<string> { pathOne, pathTwo }, new List<DbForTask> { db }, outputFolder).Run();
+            new EverythingRunnerEngine(tasks, new List<string> { pathOne, pathTwo }, new List<DbForTask> { db }, outputFolder, 25.0).Run();
 
             //check that the first task wrote everything fine
             HashSet<string> expectedFiles = new HashSet<string>
@@ -89,7 +89,7 @@ namespace Test
             SearchTask weirdTask = new SearchTask();
             weirdTask.SearchParameters.CompressIndividualFiles = true;
             weirdTask.SearchParameters.WriteMzId = false;
-            new EverythingRunnerEngine(new List<(string, MetaMorpheusTask)> { ("weird", weirdTask) }, new List<string> { pathOne }, new List<DbForTask> { db }, outputFolder).Run();
+            new EverythingRunnerEngine(new List<(string, MetaMorpheusTask)> { ("weird", weirdTask) }, new List<string> { pathOne }, new List<DbForTask> { db }, outputFolder, 25.0).Run();
             //check that a zip was not created
             writtenFiles = new HashSet<string>(Directory.GetFiles(Path.Combine(outputFolder, "weird")));
             Assert.IsFalse(writtenFiles.Contains("Individual File Results.zip"));
@@ -106,7 +106,7 @@ namespace Test
             Directory.CreateDirectory(currentDirecotry);
             DbForTask db = new DbForTask(Path.Combine(TestContext.CurrentContext.TestDirectory, @"GlycoTestData/P16150.fasta"), false);
             string spectraFile = Path.Combine(TestContext.CurrentContext.TestDirectory, @"GlycoTestData\2019_09_16_StcEmix_35trig_EThcD25_rep1_9906.mgf");
-            new EverythingRunnerEngine(new List<(string, MetaMorpheusTask)> { ("Task", task) }, new List<string> { spectraFile }, new List<DbForTask> { db }, currentDirecotry).Run();
+            new EverythingRunnerEngine(new List<(string, MetaMorpheusTask)> { ("Task", task) }, new List<string> { spectraFile }, new List<DbForTask> { db }, currentDirecotry, 25.0).Run();
 
             string outputDirectory = Path.Combine(currentDirecotry, @"Task");
 

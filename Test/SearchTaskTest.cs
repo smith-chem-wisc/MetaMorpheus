@@ -109,7 +109,7 @@ namespace Test
             List<(string, MetaMorpheusTask)> taskList = new List<(string, MetaMorpheusTask)> { ("TestSemiSpecificSmall", searchTask) };
 
 
-            var engine = new EverythingRunnerEngine(taskList, new List<string> { myFile }, new List<DbForTask> { new DbForTask(myDatabase, false) }, Environment.CurrentDirectory);
+            var engine = new EverythingRunnerEngine(taskList, new List<string> { myFile }, new List<DbForTask> { new DbForTask(myDatabase, false) }, Environment.CurrentDirectory, 25.0);
             engine.Run();
 
             string outputPath = Path.Combine(TestContext.CurrentContext.TestDirectory, @"TestSemiSpecificSmall\AllPSMs.psmtsv");
@@ -158,7 +158,7 @@ namespace Test
 
                 List<(string, MetaMorpheusTask)> taskList = new List<(string, MetaMorpheusTask)> { ("TestSemiSpecific", searchTask) };
 
-                var engine = new EverythingRunnerEngine(taskList, new List<string> { myFile }, new List<DbForTask> { new DbForTask(myDatabase, false) }, outputFolder);
+                var engine = new EverythingRunnerEngine(taskList, new List<string> { myFile }, new List<DbForTask> { new DbForTask(myDatabase, false) }, outputFolder, 25.0);
                 engine.Run();
 
                 string outputPath = Path.Combine(TestContext.CurrentContext.TestDirectory, @"TestSemiSpecific\TestSemiSpecific\AllPSMs.psmtsv");
@@ -196,7 +196,7 @@ namespace Test
 
             // run the task
             Directory.CreateDirectory(folderPath);
-            searchTask.RunTask(folderPath, new List<DbForTask> { db }, new List<string> { myFile }, "normal");
+            searchTask.RunTask(folderPath, new List<DbForTask> { db }, new List<string> { myFile }, "normal", 25.0);
 
             Directory.Delete(folderPath, true);
 
@@ -205,7 +205,7 @@ namespace Test
 
             // run the task
             Directory.CreateDirectory(folderPath);
-            searchTask.RunTask(folderPath, new List<DbForTask> { db }, new List<string> { myFile }, "normal");
+            searchTask.RunTask(folderPath, new List<DbForTask> { db }, new List<string> { myFile }, "normal", 25.0);
 
             // PSMs should be present but no quant output
             Assert.That(!File.Exists(Path.Combine(folderPath, "AllQuantifiedPeptides.tsv")));
@@ -235,7 +235,7 @@ namespace Test
             DbForTask db = new DbForTask(myDatabase, false);
             Directory.CreateDirectory(folderPath);
 
-            searchTask.RunTask(folderPath, new List<DbForTask> { db }, new List<string> { myFile }, "normal");
+            searchTask.RunTask(folderPath, new List<DbForTask> { db }, new List<string> { myFile }, "normal", 25.0);
             Directory.Delete(folderPath, true);
         }
 
@@ -262,7 +262,7 @@ namespace Test
             DbForTask db = new DbForTask(myDatabase, true);
             Directory.CreateDirectory(folderPath);
 
-            searchTask.RunTask(folderPath, new List<DbForTask> { db }, new List<string> { myFile }, "normal");
+            searchTask.RunTask(folderPath, new List<DbForTask> { db }, new List<string> { myFile }, "normal", 25.0);
 
             Assert.That(File.ReadAllLines(Path.Combine(folderPath, @"DbForPrunedDbproteinPruned.xml")).Length > 0);
             Assert.That(File.ReadAllLines(Path.Combine(folderPath, @"DbForPrunedDbPruned.xml")).Length > 0);
@@ -284,7 +284,7 @@ namespace Test
             Directory.CreateDirectory(folderPath);
 
             // search something with multiple hits of the same peptide to see if peptide FDR is calculated at the end
-            new SearchTask().RunTask(folderPath, new List<DbForTask> { db }, new List<string> { myFile, myFile2 }, "normal");
+            new SearchTask().RunTask(folderPath, new List<DbForTask> { db }, new List<string> { myFile, myFile2 }, "normal", 25.0);
             List<string> columns = null;
             int cumDecoys = 0;
             int cumTargets = 0;

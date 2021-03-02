@@ -31,7 +31,7 @@ namespace Test
             DbForTask db = new DbForTask(myDatabase, false);
             Directory.CreateDirectory(folderPath);
 
-            searchTask.RunTask(folderPath, new List<DbForTask> { db }, new List<string> { myFile }, "metadraw");
+            searchTask.RunTask(folderPath, new List<DbForTask> { db }, new List<string> { myFile }, "metadraw", 25.0);
             string psmFile = Directory.GetFiles(folderPath).First(f => f.Contains("AllPSMs.psmtsv"));
 
             List<PsmFromTsv> parsedPsms = PsmTsvReader.ReadTsv(psmFile, out var warnings);
@@ -63,7 +63,7 @@ namespace Test
             DbForTask db = new DbForTask(myDatabase, false);
             Directory.CreateDirectory(folderPath);
 
-            searchTask.RunTask(folderPath, new List<DbForTask> { db }, new List<string> { myFile }, "metadraw");
+            searchTask.RunTask(folderPath, new List<DbForTask> { db }, new List<string> { myFile }, "metadraw", 25.0);
 
             string psmFile = Directory.GetFiles(folderPath).First(f => f.Contains("XL_Intralinks.tsv"));
 
@@ -129,7 +129,7 @@ namespace Test
 
             // run search task
             var searchtask = new SearchTask();
-            searchtask.RunTask(outputFolder, new List<DbForTask> { new DbForTask(proteinDatabase, false) }, new List<string> { spectraFile }, "");
+            searchtask.RunTask(outputFolder, new List<DbForTask> { new DbForTask(proteinDatabase, false) }, new List<string> { spectraFile }, "", 25.0);
 
             var psmFile = Path.Combine(outputFolder, @"AllPSMs.psmtsv");
 
@@ -246,7 +246,7 @@ namespace Test
 
             Directory.CreateDirectory(outputFolder);
             var xlSearchTask = new XLSearchTask() { CommonParameters = commonParameters };
-            xlSearchTask.RunTask(outputFolder, new List<DbForTask> { new DbForTask(proteinDatabase, false) }, new List<string> { spectraFile }, "");
+            xlSearchTask.RunTask(outputFolder, new List<DbForTask> { new DbForTask(proteinDatabase, false) }, new List<string> { spectraFile }, "", 25.0);
 
             //TODO: test other files (XL_Interlinks.tsv, Deadends.tsv, Looplinks.tsv, SinglePeptides.tsv)
             var csmFile = Path.Combine(outputFolder, @"XL_Intralinks.tsv");
@@ -381,7 +381,7 @@ namespace Test
 
             Directory.CreateDirectory(outputFolder);
             var glycoSearchTask = new GlycoSearchTask() { CommonParameters = commonParameters };
-            glycoSearchTask.RunTask(outputFolder, new List<DbForTask> { new DbForTask(proteinDatabase, false) }, new List<string> { spectraFile }, "");
+            glycoSearchTask.RunTask(outputFolder, new List<DbForTask> { new DbForTask(proteinDatabase, false) }, new List<string> { spectraFile }, "", 25.0);
 
             var psmFile = Path.Combine(outputFolder, @"oglyco.psmtsv");
 
@@ -516,7 +516,7 @@ namespace Test
 
             // run search task
             var searchtask = new SearchTask();
-            searchtask.RunTask(outputFolder, new List<DbForTask> { new DbForTask(proteinDatabase, false) }, new List<string> { spectraFile }, "");
+            searchtask.RunTask(outputFolder, new List<DbForTask> { new DbForTask(proteinDatabase, false) }, new List<string> { spectraFile }, "", 25.0);
 
             var psmFile = Path.Combine(outputFolder, @"AllPSMs.psmtsv");
 
@@ -569,7 +569,7 @@ namespace Test
 
             // run search task
             var searchtask = new SearchTask();
-            searchtask.RunTask(outputFolder, new List<DbForTask> { new DbForTask(proteinDatabase, false) }, new List<string> { spectraFile }, "");
+            searchtask.RunTask(outputFolder, new List<DbForTask> { new DbForTask(proteinDatabase, false) }, new List<string> { spectraFile }, "", 25.0);
 
             var psmFile = Path.Combine(outputFolder, @"AllPSMs.psmtsv");
 
@@ -622,7 +622,7 @@ namespace Test
                     new DbForTask(library1, false),
                     new DbForTask(library2, false),
                 },
-                new List<string> { spectraFile }, "");
+                new List<string> { spectraFile }, "", 25.0);
 
             var psmFile = Path.Combine(outputFolder, @"AllPSMs.psmtsv");
 
@@ -689,7 +689,7 @@ namespace Test
                 {
                     new DbForTask(proteinDatabase, false),
                 },
-                new List<string> { spectraFile }, "");
+                new List<string> { spectraFile }, "", 25.0);
 
             var psmFile = Path.Combine(outputFolder, @"AllPSMs.psmtsv");
 

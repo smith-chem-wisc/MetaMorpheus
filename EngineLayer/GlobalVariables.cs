@@ -17,6 +17,13 @@ namespace EngineLayer
 {
     public static class GlobalVariables
     {
+
+        // this is kind of hacky to have a global dictionary for this info.. it would be
+        // better to edit the protein object to have its own proteogenomic long read info
+        // but this would require editing mzLib which is more work than it's worth at this stage.
+        // TODO: change this so the protein object in mzLib has long read info as a variable
+        public static Dictionary<string, LongReadInfo> ProteinToProteogenomicInfo;
+
         // for now, these are only used for error-checking in the command-line version.
         // compressed versions of the protein databases (e.g., .xml.gz) are also supported
         public static List<string> AcceptedDatabaseFormats { get; private set; }

@@ -397,7 +397,7 @@ namespace TaskLayer
             return returnParams;
         }
 
-        public MyTaskResults RunTask(string output_folder, List<DbForTask> currentProteinDbFilenameList, List<string> currentRawDataFilepathList, string displayName)
+        public MyTaskResults RunTask(string output_folder, List<DbForTask> currentProteinDbFilenameList, List<string> currentRawDataFilepathList, string displayName, double cpmThreshold, List<string> orfCallingTables = null)
         {
             this.OutputFolder = output_folder;
             DetermineAnalyteType(CommonParameters);
@@ -447,7 +447,16 @@ namespace TaskLayer
                     }
                 }
 
-                RunSpecific(output_folder, currentProteinDbFilenameList, currentRawDataFilepathList, displayName, fileSettingsList);
+                if (this is SearchTask s)
+                {
+                    Console.WriteLine("Test2:" + cpmThreshold);
+                    s.RunSpecific(output_folder, currentProteinDbFilenameList, currentRawDataFilepathList, displayName, fileSettingsList, cpmThreshold, orfCallingTables);                    
+                }
+                else
+                {
+                    RunSpecific(output_folder, currentProteinDbFilenameList, currentRawDataFilepathList, displayName, fileSettingsList, cpmThreshold);
+                }
+
                 stopWatch.Stop();
                 MyTaskResults.Time = stopWatch.Elapsed;
                 var resultsFileName = Path.Combine(output_folder, "results.txt");
@@ -502,7 +511,7 @@ namespace TaskLayer
             return MyTaskResults;
         }
 
-        protected List<Protein> LoadProteins(string taskId, List<DbForTask> dbFilenameList, bool searchTarget, DecoyType decoyType, List<string> localizeableModificationTypes, CommonParameters commonParameters)
+        protected List<Protein> LoadProteins(string taskId, List<DbForTask> dbFilenameList, bool searchTarget, DecoyType decoyType, List<string> localizeableModificationTypes, CommonParameters commonParameters, List<string> pathsToOrfCallingFiles = null)
         {
             Status("Loading proteins...", new List<string> { taskId });
             int emptyProteinEntries = 0;
@@ -521,6 +530,9 @@ namespace TaskLayer
             {
                 Warn("Warning: " + emptyProteinEntries + " empty protein entries ignored");
             }
+
+            LoadProteogenomicsInfo(pathsToOrfCallingFiles, proteinList, commonParameters);
+
             return proteinList;
         }
 
@@ -603,7 +615,7 @@ namespace TaskLayer
             OutProgressHandler?.Invoke(this, v);
         }
 
-        protected abstract MyTaskResults RunSpecific(string OutputFolder, List<DbForTask> dbFilenameList, List<string> currentRawFileList, string taskId, FileSpecificParameters[] fileSettingsList);
+        protected abstract MyTaskResults RunSpecific(string OutputFolder, List<DbForTask> dbFilenameList, List<string> currentRawFileList, string taskId, FileSpecificParameters[] fileSettingsList, double cpmThreshold, List<string> orfCallingTables = null);
 
         protected void FinishedWritingFile(string path, List<string> nestedIDs)
         {
@@ -643,6 +655,59 @@ namespace TaskLayer
         protected void NewCollection(string displayName, List<string> nestedIds)
         {
             NewCollectionHandler?.Invoke(this, new StringEventArgs(displayName, nestedIds));
+        }
+
+        private static void LoadProteogenomicsInfo(List<string> pathsToOrfCallingFiles, List<Protein> proteinList, CommonParameters commonParameters)
+        {
+            GlobalVariables.ProteinToProteogenomicInfo = new Dictionary<string, LongReadInfo>();
+
+            if (pathsToOrfCallingFiles != null)
+            {
+                foreach (string file in pathsToOrfCallingFiles)
+                {
+                    string[] fileLines = File.ReadAllLines(file);
+
+                    string[] header = fileLines[0].Split(new char[] { '\t' }).Select(p => p.ToLowerInvariant()).ToArray();
+
+                    int indexOfAccession = Array.IndexOf(header, "base_acc".ToLowerInvariant());
+                    int indexOfCpm = Array.IndexOf(header, "CPM".ToLowerInvariant());
+
+                    Parallel.ForEach(Partitioner.Create(1, fileLines.Count() - 1),
+                        new ParallelOptions { MaxDegreeOfParallelism = commonParameters.MaxThreadsToUsePerFile },
+                        (range, loopState) =>
+                        {
+                            for (int i = range.Item1; i < range.Item2; i++)
+                            {
+                                string line = fileLines[i];
+                                string[] split = line.Split(new char[] { '\t' });
+
+                                string accession = split[indexOfAccession];
+                                string cpmString = split[indexOfCpm];
+
+                                if (!double.TryParse(cpmString, out double cpm))
+                                {
+                                    throw new MetaMorpheusException("Could not parse CPM: " + cpmString + " on line " + (i + 1));
+                                }
+
+                                LongReadInfo longReadInfo = new LongReadInfo(accession, cpm);
+
+                                lock (GlobalVariables.ProteinToProteogenomicInfo)
+                                {
+                                    if (!GlobalVariables.ProteinToProteogenomicInfo.TryAdd(accession, longReadInfo))
+                                    {
+                                        throw new MetaMorpheusException("The protein accession " + accession + " occurred twice in the protein database! This is not allowed when using ORF calling data");
+                                    }
+
+                                    // add decoy stuff...
+                                    var decoyProtein = "DECOY_" + accession;
+                                    GlobalVariables.ProteinToProteogenomicInfo.Add(decoyProtein, longReadInfo);
+                                }
+
+                            }
+
+                        });
+                }
+            }
         }
 
         private static List<string> GetModsTypesFromString(string value)

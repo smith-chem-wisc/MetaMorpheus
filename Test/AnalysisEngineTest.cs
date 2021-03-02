@@ -105,7 +105,7 @@ namespace Test
         {
             //code coverage unit test for an unused abstract method in post search analysis
             var task = new PostSearchAnalysisTask();
-            task.RunTask(TestContext.CurrentContext.TestDirectory, new List<DbForTask>(), new List<string>(), "");
+            task.RunTask(TestContext.CurrentContext.TestDirectory, new List<DbForTask>(), new List<string>(), "", 25.0);
         }
     }
 }

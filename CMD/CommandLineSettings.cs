@@ -14,6 +14,8 @@ namespace MetaMorpheusCommandLine
         public List<string> Spectra { get; private set; }
         public List<string> Tasks { get; private set; }
         public List<string> Databases { get; private set; }
+        public List<string> OrfCallingTables { get; private set; }
+        public double CPM { get; private set; }
 
         [Option('t', HelpText = "Single-task TOMLs (.toml file format); space-delimited")]
         public IEnumerable<string> _tasks { get; set; }
@@ -29,6 +31,12 @@ namespace MetaMorpheusCommandLine
 
         [Option('g', HelpText = "[Optional] Generate default task tomls")]
         public bool GenerateDefaultTomls { get; set; }
+
+        [Option("orf", HelpText = "[Optional] ORF calling tables (.tsv format)")]
+        public IEnumerable<string> _orfCallingTables { get; set; }
+
+        [Option("cpm", HelpText = "[Optional] CPM threshold for the Rescue and Resolve protein inference algorithm. If no value is supplied a default of 25 CPM will be used.")]
+        public string _cpm { get; set; }
 
         [Option('v', Default = VerbosityType.normal, HelpText = "[Optional] Determines how much text is written. Options are no output ('none'), minimal output and errors  ('minimal'), or normal ('normal')")]
         public VerbosityType Verbosity { get; set; }
@@ -46,10 +54,38 @@ namespace MetaMorpheusCommandLine
             Spectra = _spectra == null ? new List<string>() : _spectra.ToList();
             Tasks = _tasks == null ? new List<string>() : _tasks.ToList();
             Databases = _databases == null ? new List<string>() : _databases.ToList();
+            OrfCallingTables = _orfCallingTables == null ? null : _orfCallingTables.ToList();
+            CPM = _cpm == null ? 25.0 : Convert.ToDouble(_cpm);
 
             if ((GenerateDefaultTomls || RunMicroVignette) && OutputFolder == null)
             {
                 throw new MetaMorpheusException("An output path must be specified with the -o parameter.");
+            }
+            
+
+            if (OrfCallingTables != null)
+            {
+                foreach (var path in OrfCallingTables)
+                {
+                    if (!File.Exists(path))
+                    {
+                        throw new MetaMorpheusException("The following file does not exist: " + path);
+                    }
+
+                    string ext = Path.GetExtension(path).ToLowerInvariant();
+
+                    if (ext != ".tsv")
+                    {
+                        throw new MetaMorpheusException("Unrecognized file format for ORF calling table, must be .tsv");
+                    }
+                }
+
+                Console.WriteLine("Successfully found " + OrfCallingTables.Count + " ORF calling tables");
+            }
+
+            if (_cpm != null && OrfCallingTables != null)
+            {
+                Console.WriteLine("CPM threshold of " + CPM + " will be used.");
             }
 
             if (GenerateDefaultTomls || RunMicroVignette)

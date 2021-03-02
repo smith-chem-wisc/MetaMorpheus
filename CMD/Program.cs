@@ -313,7 +313,7 @@ namespace MetaMorpheusCommandLine
                 }
             }
 
-            EverythingRunnerEngine a = new EverythingRunnerEngine(taskList, startingRawFilenameList, startingXmlDbFilenameList, settings.OutputFolder);
+            EverythingRunnerEngine a = new EverythingRunnerEngine(taskList, startingRawFilenameList, startingXmlDbFilenameList, settings.OutputFolder, settings.CPM, settings.OrfCallingTables);
 
             try
             {
