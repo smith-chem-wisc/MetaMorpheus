@@ -5,7 +5,7 @@
         xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
         xmlns:local="clr-namespace:MetaMorpheusGUI"
         mc:Ignorable="d"
-        Title="Download UniProt Proteome" Height="250" Width="800">
+        Title="DownloadUniProtDatabaseWindow" Height="350" Width="800" FontWeight="Bold">
     <Grid>
         
         <!--first define columns-->
@@ -16,19 +16,34 @@
             
         </Grid.ColumnDefinitions>
         
-        <!--define rows for each column separately-->
+        <!--define rows for each column separately and then fill them each with content separately-->
         <Grid Grid.Column="0">
             <Grid.RowDefinitions>
                 <RowDefinition Height="30"></RowDefinition>
-                <RowDefinition Height="30"></RowDefinition>
                 <RowDefinition Height="1*"></RowDefinition>
             </Grid.RowDefinitions>
-            <d:Label Content="List of Available Proteomes" Grid.Row="0" HorizontalAlignment="Center" FontWeight="Bold"/>
-            <d:DockPanel HorizontalAlignment="Stretch" Grid.Row="1" LastChildFill="True">
-                <d:Label Content="Search" DockPanel.Dock="Left" FontWeight="Bold"/>
-                <d:TextBox DockPanel.Dock="Left" x:Name="proteomesSearchBox"/>
-            </d:DockPanel>
-            <d:DataGrid Grid.Row="2" x:Name="availableProteomesDataGrid"/>
+            <!--<Label Content="List of Available Proteomes" Grid.Row="0" HorizontalAlignment="Center" FontWeight="Bold"/>-->
+            <DockPanel HorizontalAlignment="Stretch" Grid.Row="0" LastChildFill="True">
+                <Label Content="Search" DockPanel.Dock="Left" FontWeight="Bold"/>
+                <TextBox DockPanel.Dock="Left" TextChanged="proteomesSearchBox_TextChanged" x:Name="proteomesSearchBox" Margin="2 2 2 2"/>
+            </DockPanel>
+            <!--<DataGrid Grid.Row="2" x:Name="availableProteomesDataGrid" Margin="2 2 2 2"/>-->
+            <GroupBox Header="Available Proteomes" Name="gbSpectra" Grid.Row="1">
+                <Grid>
+                    <Grid.RowDefinitions>
+                        <RowDefinition Height="1*"/>
+                    </Grid.RowDefinitions>
+
+                    <DataGrid x:Name="dataGridScanNums" Grid.Row="0" AutoGenerateColumns="False" VerticalAlignment="Stretch" ItemsSource="{Binding}"
+                                              ScrollViewer.CanContentScroll="True" IsReadOnly="True" Margin="0,0,0,0" SelectedCellsChanged="dataGridScanNums_SelectedCellsChanged" 
+                                              CanUserDeleteRows="false" CanUserAddRows="false">
+                        <DataGrid.Columns>
+                            <DataGridTextColumn Header="Proteome ID" Binding="{Binding Ms2ScanNumber}" Width="100"></DataGridTextColumn>
+                            <DataGridTextColumn Header="Organism Name" Binding="{Binding FullSequence}" Width="1*"></DataGridTextColumn>
+                        </DataGrid.Columns>
+                    </DataGrid>
+                </Grid>
+            </GroupBox>
         </Grid>
 
         
@@ -40,19 +55,19 @@
                 <RowDefinition Height="60"></RowDefinition>
             </Grid.RowDefinitions>
 
-            <d:DockPanel HorizontalAlignment="Stretch" Grid.Row="1" LastChildFill="True">
-                <d:Label Content="Custom Id" DockPanel.Dock="Left" FontWeight="Bold"/>
-                <d:Button Content="Look Up" DockPanel.Dock="Right" Name="lookUpProteome" Click="lookUpProteome_Click" FontWeight="Bold" Background="Blue" Foreground="White"/>
-                <d:TextBox DockPanel.Dock="Left" x:Name="customIdBox"/>
+            <DockPanel HorizontalAlignment="Stretch" Grid.Row="1" LastChildFill="True">
+                <Label Content="Custom Id" DockPanel.Dock="Left" FontWeight="Bold"/>
+                <Button Content="Look Up" DockPanel.Dock="Right" Name="lookUpProteome" Click="lookUpProteome_Click" FontWeight="Bold" Background="Blue" Foreground="White" Margin="2 2 2 2"/>
+                <TextBox DockPanel.Dock="Left" x:Name="customIdBox"/>
                 
-            </d:DockPanel>
-            <d:StackPanel Grid.Row="2" Orientation="Vertical" Margin="20 20 0 0">
-                <d:CheckBox x:Name="reviewedCheckBox" Content="Reviewed" IsChecked="True"/>
-                <d:CheckBox x:Name="compressedCheckBox" Content="Compressed" IsChecked="True"/>
-                <d:CheckBox x:Name="xmlBox" Content="XML" IsChecked="True" />
-                <d:CheckBox x:Name="addIsoformsCheckBox" Content="Add Isoforms" IsChecked="True" />
-            </d:StackPanel>
-            <d:Button Content="Download Proteome" Name="downloadProteomeButton" Click="downloadProteomeButton_Click" Grid.Row="3" FontWeight="Bold" Background="Blue" Foreground="White"/>
+            </DockPanel>
+            <StackPanel Grid.Row="2" Orientation="Vertical" Margin="20 20 0 0">
+                <CheckBox x:Name="reviewedCheckBox" Content="Reviewed" IsChecked="True" Height="25"/>
+                <CheckBox x:Name="compressedCheckBox" Content="Compressed" IsChecked="True" Height="25"/>
+                <CheckBox x:Name="xmlBox" Content="XML" IsChecked="True" Height="25"/>
+                <CheckBox x:Name="addIsoformsCheckBox" Content="Add Isoforms" IsChecked="True" Height="25"/>
+            </StackPanel>
+            <Button Content="Download Proteome" Name="downloadProteomeButton" Click="downloadProteomeButton_Click" Grid.Row="3" FontWeight="Bold" Background="Blue" Foreground="White" Margin="2 2 2 2"/>
         </Grid>
     </Grid>
 </Window>
