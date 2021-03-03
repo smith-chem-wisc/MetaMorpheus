@@ -384,6 +384,31 @@
                         </StackPanel>
                     </Expander>
                 </GroupBox>
+                <GroupBox Header="Output Options" DockPanel.Dock="Top">
+                    <Expander x:Name="outputOptionsExpander">
+                        <StackPanel>
+                            <Grid>
+                                <Grid.ColumnDefinitions>
+                                    <ColumnDefinition Width="1*" />
+                                    <ColumnDefinition Width="1*" />
+                                </Grid.ColumnDefinitions>
+                                <StackPanel Grid.Column="0">
+                                    <StackPanel Orientation="Horizontal" Margin="5">
+                                        <CheckBox x:Name="writeIndexMzmlCheckbox" Content="Write indexed .mzML" ToolTipService.ShowDuration="999999" ToolTipService.InitialShowDelay="500">
+                                            <CheckBox.ToolTip>
+                                                <TextBlock>
+                                                    Enabling this setting will write an index of scans to the end of the calibrated .mzML file written by this task. 
+                                                    <LineBreak/>
+                                                    This enables fast lookup of particular scans instead of having to load the entire file. Useful for visualizing search results.
+                                                </TextBlock>
+                                            </CheckBox.ToolTip>
+                                        </CheckBox>
+                                    </StackPanel>
+                                </StackPanel>
+                            </Grid>
+                        </StackPanel>
+                    </Expander>
+                </GroupBox>
                 <!--<GroupBox Header="Calibration Parameters" DockPanel.Dock="Top">
                     <Expander x:Name="CalibrationExpander">
                         <StackPanel>

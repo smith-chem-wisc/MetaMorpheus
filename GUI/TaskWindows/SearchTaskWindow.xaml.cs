@@ -466,7 +466,7 @@ namespace MetaMorpheusGUI
             {
                 PrecursorMassTolerance = new PpmTolerance(double.Parse(PrecursorMassToleranceTextBox.Text, CultureInfo.InvariantCulture));
             }
-            TheTask.SearchParameters.MaxFragmentSize = Double.Parse(MaxFragmentMassTextBox.Text, CultureInfo.InvariantCulture);
+            TheTask.SearchParameters.MaxFragmentSize = double.Parse(MaxFragmentMassTextBox.Text, CultureInfo.InvariantCulture);
 
             var listOfModsVariable = new List<(string, string)>();
             foreach (var heh in VariableModTypeForTreeViewObservableCollection)

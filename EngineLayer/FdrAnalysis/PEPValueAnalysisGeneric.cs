@@ -15,11 +15,10 @@ using System.IO;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
-using static Microsoft.ML.DataOperationsCatalog;
 
 namespace EngineLayer
 {
-    public static class PEP_Analysis
+    public static class PEP_Analysis_Cross_Validation
     {
         private static readonly double AbsoluteProbabilityThatDistinguishesPeptides = 0.05;
         private static Dictionary<string, Dictionary<int, Tuple<double, double>>> fileSpecificTimeDependantHydrophobicityAverageAndDeviation_unmodified = new Dictionary<string, Dictionary<int, Tuple<double, double>>>();
@@ -40,8 +39,8 @@ namespace EngineLayer
             //Separate dictionaries are created for peptides with modifications because SSRcalc doesn't really do a good job predicting hyrophobicity
 
             //The first string in the dictionary is the filename
-            //The value of the dictionary is another dictionary that profiles the hydrophobicity behavior. 
-            //Each key is a retention time rounded to the nearest minute. 
+            //The value of the dictionary is another dictionary that profiles the hydrophobicity behavior.
+            //Each key is a retention time rounded to the nearest minute.
             //The value Tuple is the average and standard deviation, respectively, of the predicted hydrophobicities of the observed peptides eluting at that rounded retention time.
 
             if (trainingVariables.Contains("HydrophobicityZScore"))
@@ -57,58 +56,138 @@ namespace EngineLayer
             Dictionary<string, float> fileSpecificMedianFragmentMassErrors = GetFileSpecificMedianFragmentMassError(psms);
 
             MLContext mlContext = new MLContext();
-            IDataView dataView = mlContext.Data.LoadFromEnumerable(CreatePsmData(searchType, fileSpecificParameters, psms, sequenceToPsmCount, fileSpecificTimeDependantHydrophobicityAverageAndDeviation_unmodified, fileSpecificTimeDependantHydrophobicityAverageAndDeviation_modified, fileSpecificMedianFragmentMassErrors, chargeStateMode));
+            //the number of groups used for cross-validation is hard-coded at four. Do not change this number without changes other areas of effected code.
+            const int numGroups = 4;
 
-            //
-            // Summary:
-            //     Split the dataset into the train set and test set according to the given fraction.
-            //     Respects the samplingKeyColumnName if provided.
-            //
-            // Parameters:
-            //   data:
-            //     The dataset to split.
-            //
-            //   testFraction:
-            //     The fraction of data to go into the test set.
-            //
-            //   samplingKeyColumnName:
-            //     Name of a column to use for grouping rows. If two examples share the same value
-            //     of the samplingKeyColumnName, they are guaranteed to appear in the same subset
-            //     (train or test). This can be used to ensure no label leakage from the train to
-            //     the test set. If null no row grouping will be performed.
-            //
-            //   seed:
-            //     Seed for the random number generator used to select rows for the train-test split.
-            //     The seed, '42', is not random but fixed for consistancy. According to the supercomputer Deep Thought the answer to the question of life, the universe and everything was 42 (in Douglas Adam’s Hitchhikers Guide to the Galaxy).
+            List<int>[] psmGroupIndices = Get_PSM_Group_Indices(psms, numGroups);
+            IEnumerable<PsmData>[] PSMDataGroups = new IEnumerable<PsmData>[numGroups];
+            for (int i = 0; i < numGroups; i++)
+            {
+                PSMDataGroups[i] = CreatePsmData(searchType, fileSpecificParameters, psms, psmGroupIndices[i], sequenceToPsmCount, fileSpecificTimeDependantHydrophobicityAverageAndDeviation_unmodified, fileSpecificTimeDependantHydrophobicityAverageAndDeviation_modified, fileSpecificMedianFragmentMassErrors, chargeStateMode);
+            }
 
-            int randomSeed = 42;
+            TransformerChain<BinaryPredictionTransformer<Microsoft.ML.Calibrators.CalibratedModelParametersBase<Microsoft.ML.Trainers.FastTree.FastTreeBinaryModelParameters, Microsoft.ML.Calibrators.PlattCalibrator>>>[] trainedModels = new TransformerChain<BinaryPredictionTransformer<Microsoft.ML.Calibrators.CalibratedModelParametersBase<Microsoft.ML.Trainers.FastTree.FastTreeBinaryModelParameters, Microsoft.ML.Calibrators.PlattCalibrator>>>[numGroups];
 
-            double fraction = Math.Min(0.25, 1000000.0 / (double)psms.Count);//make training set 25% of the data up to a training set of one million psms
-            TrainTestData trainTestSplit = mlContext.Data.TrainTestSplit(dataView, testFraction: fraction, null, randomSeed);
-            IDataView trainingData = trainTestSplit.TrainSet;
-            IDataView testData = trainTestSplit.TestSet;
             var trainer = mlContext.BinaryClassification.Trainers.FastTree(labelColumnName: "Label", featureColumnName: "Features", numberOfTrees: 400);
             var pipeline = mlContext.Transforms.Concatenate("Features", trainingVariables)
                 .Append(trainer);
-            var trainedModel = pipeline.Fit(trainingData); //this is NOT thread safe
 
-            int maxThreads = fileSpecificParameters.FirstOrDefault().fileSpecificParameters.MaxThreadsToUsePerFile;
-            object lockObject = new object();
+            List<CalibratedBinaryClassificationMetrics> allMetrics = new List<CalibratedBinaryClassificationMetrics>();
+            int sumOfAllAmbiguousPeptidesResolved = 0;
 
-            //Parallel operation of the following code requires the method to be stored and then read, once for each thread
-            //if not output directory is specified, the model cannot be stored, and we must force single-threaded operation
-            if (outputFolder != null)
+            bool allSetsContainPositiveAndNegativeTrainingExamples = true;
+            int groupNumber = 0;
+            while (allSetsContainPositiveAndNegativeTrainingExamples == true && groupNumber < numGroups)
             {
-                mlContext.Model.Save(trainedModel, trainingData.Schema, Path.Combine(outputFolder, "model.zip"));
+                if (PSMDataGroups[groupNumber].Where(p => p.Label == true).Count() == 0 || PSMDataGroups[groupNumber].Where(p => p.Label == false).Count() == 0)
+                {
+                    allSetsContainPositiveAndNegativeTrainingExamples = false;
+                }
+                groupNumber++;
+            }
+
+            if (allSetsContainPositiveAndNegativeTrainingExamples)
+            {
+                for (int groupIndexNumber = 0; groupIndexNumber < numGroups; groupIndexNumber++)
+                {
+                    List<int> allGroupIndexes = Enumerable.Range(0, numGroups).ToList();
+                    allGroupIndexes.RemoveAt(groupIndexNumber);
+
+                    //concat doesn't work in a loop, therefore I had to hard code the concat to group 3 out of 4 lists. if the const int numGroups value is changed, then the concat has to be changed accordingly.
+                    IDataView dataView = mlContext.Data.LoadFromEnumerable(PSMDataGroups[allGroupIndexes[0]].Concat(PSMDataGroups[allGroupIndexes[1]].Concat(PSMDataGroups[allGroupIndexes[2]])));
+                    trainedModels[groupIndexNumber] = pipeline.Fit(dataView);
+                    var myPredictions = trainedModels[groupIndexNumber].Transform(mlContext.Data.LoadFromEnumerable(PSMDataGroups[groupIndexNumber]));
+                    CalibratedBinaryClassificationMetrics metrics = mlContext.BinaryClassification.Evaluate(data: myPredictions, labelColumnName: "Label", scoreColumnName: "Score");
+
+                    //Parallel operation of the following code requires the method to be stored and then read, once for each thread
+                    //if not output directory is specified, the model cannot be stored, and we must force single-threaded operation
+                    if (outputFolder != null)
+                    {
+                        mlContext.Model.Save(trainedModels[groupIndexNumber], dataView.Schema, Path.Combine(outputFolder, "model.zip"));
+                    }
+
+                    int ambiguousPeptidesResolved = Compute_PSM_PEP(psms, psmGroupIndices[groupIndexNumber], mlContext, trainedModels[groupIndexNumber], searchType, fileSpecificParameters, sequenceToPsmCount, fileSpecificMedianFragmentMassErrors, chargeStateMode, outputFolder);
+
+                    allMetrics.Add(metrics);
+                    sumOfAllAmbiguousPeptidesResolved += ambiguousPeptidesResolved;
+                }
+
+                return AggregateMetricsForOutput(allMetrics, sumOfAllAmbiguousPeptidesResolved);
             }
             else
+            {
+                return "Posterior error probability analysis failed. This can occur for small data sets when some sample groups are missing positive or negative training examples.";
+            }
+        }
+
+        public static string AggregateMetricsForOutput(List<CalibratedBinaryClassificationMetrics> allMetrics, int sumOfAllAmbiguousPeptidesResolved)
+        {
+            List<double> accuracy = allMetrics.Select(m => m.Accuracy).ToList();
+            List<double> areaUnderRocCurve = allMetrics.Select(m => m.AreaUnderRocCurve).ToList();
+            List<double> areaUnderPrecisionRecallCurve = allMetrics.Select(m => m.AreaUnderPrecisionRecallCurve).ToList();
+            List<double> F1Score = allMetrics.Select(m => m.F1Score).ToList();
+            List<double> logLoss = allMetrics.Select(m => m.LogLoss).ToList();
+            List<double> logLossReduction = allMetrics.Select(m => m.LogLossReduction).ToList();
+            List<double> positivePrecision = allMetrics.Select(m => m.PositivePrecision).ToList();
+            List<double> positiveRecall = allMetrics.Select(m => m.PositiveRecall).ToList();
+            List<double> negativePrecision = allMetrics.Select(m => m.NegativePrecision).ToList();
+            List<double> negativeRecall = allMetrics.Select(m => m.NegativeRecall).ToList();
+
+            // log-loss can stochastically take on a value of infinity.
+            // correspondingly, log-loss reduction can be negative infinity.
+            // when this happens for one or more of the metrics, it can lead to uninformative numbers.
+            // so, unless they are all infinite, we remove them from the average. If they are all infinite, we report that.
+
+            logLoss.RemoveAll(x => x == Double.PositiveInfinity);
+            logLossReduction.RemoveAll(x => x == Double.NegativeInfinity);
+
+            double logLossAverage = Double.PositiveInfinity;
+            double logLossReductionAverage = Double.NegativeInfinity;
+
+            if ((logLoss != null) && (logLoss.Any()))
+            {
+                logLossAverage = logLoss.Average();
+            }
+
+            if ((logLossReduction != null) && (logLossReduction.Any()))
+            {
+                logLossReductionAverage = logLossReduction.Average();
+            }
+
+            StringBuilder s = new StringBuilder();
+            s.AppendLine();
+            s.AppendLine("************************************************************");
+            s.AppendLine("*       Metrics for Determination of PEP Using Binary Classification      ");
+            s.AppendLine("*-----------------------------------------------------------");
+            s.AppendLine("*       Accuracy:  " + accuracy.Average().ToString());
+            s.AppendLine("*       Area Under Curve:  " + areaUnderRocCurve.Average().ToString());
+            s.AppendLine("*       Area under Precision recall Curve:  " + areaUnderPrecisionRecallCurve.Average().ToString());
+            s.AppendLine("*       F1Score:  " + F1Score.Average().ToString());
+            s.AppendLine("*       LogLoss:  " + logLossAverage.ToString());
+            s.AppendLine("*       LogLossReduction:  " + logLossReductionAverage.ToString());
+            s.AppendLine("*       PositivePrecision:  " + positivePrecision.Average().ToString());
+            s.AppendLine("*       PositiveRecall:  " + positiveRecall.Average().ToString());
+            s.AppendLine("*       NegativePrecision:  " + negativePrecision.Average().ToString());
+            s.AppendLine("*       NegativeRecall:  " + negativeRecall.Average().ToString());
+            s.AppendLine("*       Count of Ambiguous Peptides Removed:  " + sumOfAllAmbiguousPeptidesResolved.ToString());
+            s.AppendLine("************************************************************");
+            return s.ToString();
+        }
+
+        public static int Compute_PSM_PEP(List<PeptideSpectralMatch> psms, List<int> psmIndices, MLContext mLContext, TransformerChain<BinaryPredictionTransformer<Microsoft.ML.Calibrators.CalibratedModelParametersBase<Microsoft.ML.Trainers.FastTree.FastTreeBinaryModelParameters, Microsoft.ML.Calibrators.PlattCalibrator>>> trainedModel, string searchType, List<(string fileName, CommonParameters fileSpecificParameters)> fileSpecificParameters, Dictionary<string, int> sequenceToPsmCount, Dictionary<string, float> fileSpecificMedianFragmentMassErrors, int chargeStateMode, string outputFolder)
+        {
+            int maxThreads = fileSpecificParameters.FirstOrDefault().fileSpecificParameters.MaxThreadsToUsePerFile;
+            object lockObject = new object();
+            int ambiguousPeptidesResolved = 0;
+
+            //the trained model is not threadsafe. Therefore, to use the same model for each thread saved the model to disk. Then each thread reads its own copy of the model back from disk.
+            //If there is no output folder specified, then this can't happen. We set maxthreads eqaul to one and use the model that gets passed into the method.
+            if (String.IsNullOrEmpty(outputFolder))
             {
                 maxThreads = 1;
             }
 
-            int ambiguousPeptidesRemovedCount = 0;
-
-            Parallel.ForEach(Partitioner.Create(0, psms.Count),
+            Parallel.ForEach(Partitioner.Create(0, psmIndices.Count),
                 new ParallelOptions { MaxDegreeOfParallelism = maxThreads },
                 (range, loopState) =>
                 {
@@ -116,25 +195,23 @@ namespace EngineLayer
                     if (GlobalVariables.StopLoops) { return; }
 
                     ITransformer threadSpecificTrainedModel;
-
-                    if (outputFolder != null)
+                    if (maxThreads == 1)
                     {
-                        threadSpecificTrainedModel = mlContext.Model.Load(Path.Combine(outputFolder, "model.zip"), out DataViewSchema savedModelSchema);
+                        threadSpecificTrainedModel = trainedModel;
                     }
                     else
                     {
-                        // single-threaded, prediction model was not saved to hard disk
-                        threadSpecificTrainedModel = trainedModel;
+                        threadSpecificTrainedModel = mLContext.Model.Load(Path.Combine(outputFolder, "model.zip"), out DataViewSchema savedModelSchema);
                     }
 
                     // one prediction engine per thread, because the prediction engine is not thread-safe
-                    var threadPredictionEngine = mlContext.Model.CreatePredictionEngine<PsmData, TruePositivePrediction>(threadSpecificTrainedModel);
+                    var threadPredictionEngine = mLContext.Model.CreatePredictionEngine<PsmData, TruePositivePrediction>(threadSpecificTrainedModel);
 
                     int ambigousPeptidesRemovedinThread = 0;
 
                     for (int i = range.Item1; i < range.Item2; i++)
                     {
-                        PeptideSpectralMatch psm = psms[i];
+                        PeptideSpectralMatch psm = psms[psmIndices[i]];
 
                         if (psm != null)
                         {
@@ -165,25 +242,64 @@ namespace EngineLayer
 
                     lock (lockObject)
                     {
-                        ambiguousPeptidesRemovedCount += ambigousPeptidesRemovedinThread;
+                        ambiguousPeptidesResolved += ambigousPeptidesRemovedinThread;
                     }
                 });
+            return ambiguousPeptidesResolved;
+        }
 
-            var predictions = trainedModel.Transform(testData);
-
-            CalibratedBinaryClassificationMetrics metrics;
-            try
+        //we add the indexes of the targets and decoys to the groups separately in the hope that we'll get at least one target and one decoy in each group.
+        //then training can possibly be more successful.
+        public static List<int>[] Get_PSM_Group_Indices(List<PeptideSpectralMatch> psms, int numGroups)
+        {
+            List<int>[] groupsOfIndicies = new List<int>[numGroups];
+            for (int i = 0; i < numGroups; i++)
             {
-                metrics = mlContext.BinaryClassification.Evaluate(data: predictions, labelColumnName: "Label", scoreColumnName: "Score");
-                return PrintBinaryClassificationMetrics(trainer.ToString(), metrics, ambiguousPeptidesRemovedCount);
-            }
-            catch
-            {
-                return "";
+                groupsOfIndicies[i] = new List<int>();
             }
 
-            //if you want to save a model, you can use this example
-            //mlContext.Model.Save(trainedModel, trainingData.Schema, @"C:\Users\User\Downloads\TrainedModel.zip");
+            List<int> targetPsmIndexes = new List<int>();
+            List<int> decoyPsmIndexes = new List<int>();
+
+            for (int i = 0; i < psms.Count; i++)
+            {
+                if (psms[i].IsDecoy)
+                {
+                    decoyPsmIndexes.Add(i);
+                }
+                else
+                {
+                    targetPsmIndexes.Add(i);
+                }
+            }
+
+            int myIndex = 0;
+
+            while (myIndex < decoyPsmIndexes.Count)
+            {
+                int subIndex = 0;
+                while (subIndex < numGroups && myIndex < decoyPsmIndexes.Count)
+                {
+                    groupsOfIndicies[subIndex].Add(decoyPsmIndexes[myIndex]);
+                    subIndex++;
+                    myIndex++;
+                }
+            }
+
+            myIndex = 0;
+
+            while (myIndex < targetPsmIndexes.Count)
+            {
+                int subIndex = 0;
+                while (subIndex < numGroups && myIndex < targetPsmIndexes.Count)
+                {
+                    groupsOfIndicies[subIndex].Add(targetPsmIndexes[myIndex]);
+                    subIndex++;
+                    myIndex++;
+                }
+            }
+
+            return groupsOfIndicies;
         }
 
         public static void RemoveBestMatchingPeptidesWithLowPEP(PeptideSpectralMatch psm, List<int> indiciesOfPeptidesToRemove, List<int> notches, List<PeptideWithSetModifications> pwsmList, List<double> pepValuePredictions, ref int ambiguousPeptidesRemovedCount)
@@ -517,7 +633,7 @@ namespace EngineLayer
         }
 
         public static IEnumerable<PsmData> CreatePsmData(string searchType, List<(string fileName, CommonParameters fileSpecificParameters)> fileSpecificParameters,
-            List<PeptideSpectralMatch> psms, Dictionary<string, int> sequenceToPsmCount,
+            List<PeptideSpectralMatch> psms, List<int> psmIndicies, Dictionary<string, int> sequenceToPsmCount,
             Dictionary<string, Dictionary<int, Tuple<double, double>>> timeDependantHydrophobicityAverageAndDeviation_unmodified,
             Dictionary<string, Dictionary<int, Tuple<double, double>>> timeDependantHydrophobicityAverageAndDeviation_modified,
             Dictionary<string, float> fileSpecificMedianFragmentMassErrors, int chargeStateMode)
@@ -528,7 +644,7 @@ namespace EngineLayer
             int maxThreads = fileSpecificParameters.FirstOrDefault().fileSpecificParameters.MaxThreadsToUsePerFile;
             int[] threads = Enumerable.Range(0, maxThreads).ToArray();
 
-            Parallel.ForEach(Partitioner.Create(0, psms.Count),
+            Parallel.ForEach(Partitioner.Create(0, psmIndicies.Count),
                 new ParallelOptions { MaxDegreeOfParallelism = maxThreads },
                 (range, loopState) =>
                 {
@@ -536,7 +652,7 @@ namespace EngineLayer
                     List<double> localPsmOrder = new List<double>();
                     for (int i = range.Item1; i < range.Item2; i++)
                     {
-                        PeptideSpectralMatch psm = psms[i];
+                        PeptideSpectralMatch psm = psms[psmIndicies[i]];
 
                         // Stop loop if canceled
                         if (GlobalVariables.StopLoops) { return; }
@@ -552,7 +668,7 @@ namespace EngineLayer
                                 label = false;
                                 newPsmData = CreateOnePsmDataEntry(searchType, fileSpecificParameters, psm, sequenceToPsmCount, timeDependantHydrophobicityAverageAndDeviation_unmodified, timeDependantHydrophobicityAverageAndDeviation_modified, fileSpecificMedianFragmentMassErrors, chargeStateMode, csm.BestMatchingPeptides.First().Peptide, 0, label);
                             }
-                            else if (!csm.IsDecoy && !csm.BetaPeptide.IsDecoy && psm.FdrInfo.QValue <= 0.01)
+                            else if (!csm.IsDecoy && !csm.BetaPeptide.IsDecoy && psm.FdrInfo.QValue <= 0.0005)
                             {
                                 label = true;
                                 newPsmData = CreateOnePsmDataEntry(searchType, fileSpecificParameters, psm, sequenceToPsmCount, timeDependantHydrophobicityAverageAndDeviation_unmodified, timeDependantHydrophobicityAverageAndDeviation_modified, fileSpecificMedianFragmentMassErrors, chargeStateMode, csm.BestMatchingPeptides.First().Peptide, 0, label);
@@ -572,7 +688,7 @@ namespace EngineLayer
                                     label = false;
                                     newPsmData = CreateOnePsmDataEntry(searchType, fileSpecificParameters, psm, sequenceToPsmCount, timeDependantHydrophobicityAverageAndDeviation_unmodified, timeDependantHydrophobicityAverageAndDeviation_modified, fileSpecificMedianFragmentMassErrors, chargeStateMode, peptideWithSetMods, notch, label);
                                 }
-                                else if (!peptideWithSetMods.Protein.IsDecoy && psm.FdrInfo.QValue <= 0.01)
+                                else if (!peptideWithSetMods.Protein.IsDecoy && psm.FdrInfo.QValue <= 0.005)
                                 {
                                     label = true;
                                     newPsmData = CreateOnePsmDataEntry(searchType, fileSpecificParameters, psm, sequenceToPsmCount, timeDependantHydrophobicityAverageAndDeviation_unmodified, timeDependantHydrophobicityAverageAndDeviation_modified, fileSpecificMedianFragmentMassErrors, chargeStateMode, peptideWithSetMods, notch, label);
@@ -625,6 +741,7 @@ namespace EngineLayer
             float isLoop = 0;
             float isInter = 0;
             float isIntra = 0;
+            float spectralAngle = 0;
 
             if (searchType != "crosslink")
             {
@@ -653,6 +770,7 @@ namespace EngineLayer
                 int closest = psmCountList.OrderBy(item => Math.Abs(psmCount - item)).First();
                 psmCount = closest;
                 isVariantPeptide = PeptideIsVariant(selectedPeptide);
+                spectralAngle = (float)psm.SpectralAngle;
 
                 if (psm.DigestionParams.Protease.Name != "top-down")
                 {
@@ -757,7 +875,9 @@ namespace EngineLayer
                 IsInter = isInter,
                 IsIntra = isIntra,
 
-                Label = label
+                Label = label,
+
+                SpectralAngle = spectralAngle
             };
 
             return psm.PsmData_forPEPandPercolator;
@@ -848,32 +968,6 @@ namespace EngineLayer
             }
 
             return massErrors.Average();
-        }
-
-        /// <summary>
-        /// At the time when the ~25% of the data gets chosen for training, another 25% gets chosen for evaluation. Then after training,
-        /// the effectiveness of the model gets evaluated on the test set. The results of that evaluation are converted to text values called
-        /// BinarySearchTreeMetrics and this gets written to the results.tsv
-
-        public static string PrintBinaryClassificationMetrics(string name, CalibratedBinaryClassificationMetrics metrics, int ambiguousPeptidesRemovedCount)
-        {
-            StringBuilder s = new StringBuilder();
-            s.AppendLine("************************************************************");
-            s.AppendLine("*       Metrics for Determination of PEP Using Binary Classification      ");
-            s.AppendLine("*-----------------------------------------------------------");
-            s.AppendLine("*       Accuracy:  " + metrics.Accuracy.ToString());
-            s.AppendLine("*       Area Under Curve:  " + metrics.AreaUnderRocCurve.ToString());
-            s.AppendLine("*       Area under Precision recall Curve:  " + metrics.AreaUnderPrecisionRecallCurve.ToString());
-            s.AppendLine("*       F1Score:  " + metrics.F1Score.ToString());
-            s.AppendLine("*       LogLoss:  " + metrics.LogLoss.ToString());
-            s.AppendLine("*       LogLossReduction:  " + metrics.LogLossReduction.ToString());
-            s.AppendLine("*       PositivePrecision:  " + metrics.PositivePrecision.ToString());
-            s.AppendLine("*       PositiveRecall:  " + metrics.PositiveRecall.ToString());
-            s.AppendLine("*       NegativePrecision:  " + metrics.NegativePrecision.ToString());
-            s.AppendLine("*       NegativeRecall:  " + metrics.NegativeRecall.ToString());
-            s.AppendLine("*       Count of Ambiguous Peptides Removed:  " + ambiguousPeptidesRemovedCount.ToString());
-            s.AppendLine("************************************************************");
-            return s.ToString();
         }
     }
 }

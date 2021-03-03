@@ -1,6 +1,7 @@
 ﻿using System.Collections.Generic;
 using System.IO;
 using MassSpectrometry;
+using System.Globalization;
 
 namespace EngineLayer
 {
@@ -100,20 +101,20 @@ namespace EngineLayer
             {
                 cleavable = false;
             }
-  
+
             Crosslinker crosslinker = new Crosslinker(
                 crosslinkerName: split[0],
                 crosslinkerModSites: split[1],
                 crosslinkerModSites2: split[2],
                 cleavable: cleavable,
                 dissociationTypes: split[4],
-                totalMass: double.Parse(split[5]),
-                cleaveMassShort: double.Parse(split[6]),
-                cleaveMassLong: double.Parse(split[7]),
-                loopMass: double.Parse(split[5]),
-                deadendMassH2O: double.Parse(split[8]),
-                deadendMassNH2: double.Parse(split[9]),
-                deadendMassTris: double.Parse(split[10]));
+                totalMass: double.Parse(split[5], CultureInfo.InvariantCulture),
+                cleaveMassShort: double.Parse(split[6], CultureInfo.InvariantCulture),
+                cleaveMassLong: double.Parse(split[7], CultureInfo.InvariantCulture),
+                loopMass: double.Parse(split[5], CultureInfo.InvariantCulture),
+                deadendMassH2O: double.Parse(split[8], CultureInfo.InvariantCulture),
+                deadendMassNH2: double.Parse(split[9], CultureInfo.InvariantCulture),
+                deadendMassTris: double.Parse(split[10], CultureInfo.InvariantCulture));
 
             return crosslinker;
         }
@@ -136,7 +137,7 @@ namespace EngineLayer
         public string ToString(bool writeCrosslinker)
         {
             if (writeCrosslinker)
-            {               
+            {
                 return (CrosslinkerName + "\t" + CrosslinkerModSites + "\t" + CrosslinkerModSites2 + "\t" + Cleavable + "\t" + DissociationTypes2String(CleaveDissociationTypes) + "\t" + TotalMass + "\t" + CleaveMassShort + "\t"
                     + CleaveMassLong + "\t" + DeadendMassH2O + "\t" + DeadendMassNH2 + "\t" + DeadendMassTris);
             }
