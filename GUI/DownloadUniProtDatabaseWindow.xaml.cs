@@ -23,22 +23,32 @@ namespace MetaMorpheusGUI
     /// </summary>
     public partial class DownloadUniProtDatabaseWindow : Window
     {
-        List<string> filteredStrings = new List<string>();
-        public object ThreadLocker;
-        public ObservableCollection<string> FilteredListOfPsms { get; private set; }
-        public ICollectionView PeptideSpectralMatchesView;
-        private readonly DataTable propertyView;
+
+
+        //List<string> filteredStrings = new List<string>();
+        //public object ThreadLocker;
+        //public ObservableCollection<string> FilteredListOfPsms { get; private set; }
+        //public ICollectionView PeptideSpectralMatchesView;
+        //private readonly DataTable propertyView;
         public DownloadUniProtDatabaseWindow()
         {
             InitializeComponent();
-            BindingOperations.EnableCollectionSynchronization(filteredStrings, ThreadLocker);
+            foreach (var item in EngineLayer.GlobalVariables.AvailableUniProtProteomes)
+            {
+                availableProteomesListbox.Items.Add(item.Value);
+            }
 
-            propertyView = new DataTable();
-            propertyView.Columns.Add("Name", typeof(string));
-            propertyView.Columns.Add("Value", typeof(string));
-            //dataGridProperties.DataContext = propertyView.DefaultView;
 
-            dataGridScanNums.DataContext = PeptideSpectralMatchesView;
+            
+            //BindingOperations.EnableCollectionSynchronization(filteredStrings, ThreadLocker);
+            
+
+            //propertyView = new DataTable();
+            //propertyView.Columns.Add("Name", typeof(string));
+            ////propertyView.Columns.Add("Value", typeof(string));
+            ////dataGridProperties.DataContext = propertyView.DefaultView;
+
+            //dataGridScanNums.DataContext = PeptideSpectralMatchesView;
         }
 
         private void downloadProteomeButton_Click(object sender, RoutedEventArgs e)
@@ -74,7 +84,12 @@ namespace MetaMorpheusGUI
             }
         }
 
-        private void dataGridScanNums_SelectedCellsChanged(object sender, SelectedCellsChangedEventArgs e)
+        //private void dataGridScanNums_SelectedCellsChanged(object sender, SelectedCellsChangedEventArgs e)
+        //{
+
+        //}
+
+        private void ListBox_SelectionChanged(object sender, SelectionChangedEventArgs e)
         {
 
         }

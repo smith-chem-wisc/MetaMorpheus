@@ -33,15 +33,16 @@
                     <Grid.RowDefinitions>
                         <RowDefinition Height="1*"/>
                     </Grid.RowDefinitions>
+                    <ListBox x:Name="availableProteomesListbox" Grid.Row="0" VerticalAlignment="Stretch" ItemsSource="{Binding}" ScrollViewer.CanContentScroll="True" Margin="2 2 2 2" SelectionChanged="ListBox_SelectionChanged"/>
 
-                    <DataGrid x:Name="dataGridScanNums" Grid.Row="0" AutoGenerateColumns="False" VerticalAlignment="Stretch" ItemsSource="{Binding}"
+                    <!--<DataGrid x:Name="dataGridScanNums" Grid.Row="0" AutoGenerateColumns="False" VerticalAlignment="Stretch" ItemsSource="{Binding}"
                                               ScrollViewer.CanContentScroll="True" IsReadOnly="True" Margin="0,0,0,0" SelectedCellsChanged="dataGridScanNums_SelectedCellsChanged" 
                                               CanUserDeleteRows="false" CanUserAddRows="false">
                         <DataGrid.Columns>
                             <DataGridTextColumn Header="Proteome ID" Binding="{Binding Ms2ScanNumber}" Width="100"></DataGridTextColumn>
                             <DataGridTextColumn Header="Organism Name" Binding="{Binding FullSequence}" Width="1*"></DataGridTextColumn>
                         </DataGrid.Columns>
-                    </DataGrid>
+                    </DataGrid>-->
                 </Grid>
             </GroupBox>
         </Grid>
