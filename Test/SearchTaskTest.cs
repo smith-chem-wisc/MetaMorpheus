@@ -431,7 +431,7 @@ namespace Test
             }
             Assert.That(found);
 
-            File.Delete(path);
+            File.Delete(path); 
         }
     }
 }
