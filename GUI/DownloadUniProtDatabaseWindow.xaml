@@ -33,7 +33,8 @@
                     <Grid.RowDefinitions>
                         <RowDefinition Height="1*"/>
                     </Grid.RowDefinitions>
-                    <ListBox x:Name="availableProteomesListbox" Grid.Row="0" VerticalAlignment="Stretch" ItemsSource="{Binding}" ScrollViewer.CanContentScroll="True" Margin="2 2 2 2" SelectionChanged="ListBox_SelectionChanged"/>
+                    <ListBox x:Name="availableProteomesListbox" Grid.Row="0" VerticalAlignment="Stretch" ItemsSource="{Binding filteredProteomes}" ScrollViewer.CanContentScroll="True" Margin="2 2 2 2" 
+                             SelectionChanged="availableProteomesListbox_SelectionChanged" SelectionMode="Single"/>
 
                     <!--<DataGrid x:Name="dataGridScanNums" Grid.Row="0" AutoGenerateColumns="False" VerticalAlignment="Stretch" ItemsSource="{Binding}"
                                               ScrollViewer.CanContentScroll="True" IsReadOnly="True" Margin="0,0,0,0" SelectedCellsChanged="dataGridScanNums_SelectedCellsChanged" 
@@ -56,17 +57,17 @@
                 <RowDefinition Height="60"></RowDefinition>
             </Grid.RowDefinitions>
 
-            <DockPanel HorizontalAlignment="Stretch" Grid.Row="1" LastChildFill="True">
-                <Label Content="Custom Id" DockPanel.Dock="Left" FontWeight="Bold"/>
-                <Button Content="Look Up" DockPanel.Dock="Right" Name="lookUpProteome" Click="lookUpProteome_Click" FontWeight="Bold" Background="Blue" Foreground="White" Margin="2 2 2 2"/>
-                <TextBox DockPanel.Dock="Left" x:Name="customIdBox"/>
+            <DockPanel HorizontalAlignment="Stretch" Grid.Row="0" LastChildFill="True">
+                <Label Content="Selected Proteome" DockPanel.Dock="Left" FontWeight="Bold"/>
+                <!--<Button Content="Look Up" DockPanel.Dock="Right" Name="lookUpProteome" Click="lookUpProteome_Click" FontWeight="Bold" Background="Blue" Foreground="White" Margin="2 2 2 2"/>-->
+                <TextBox DockPanel.Dock="Left" x:Name="selectedProteomeBox"/>
                 
             </DockPanel>
             <StackPanel Grid.Row="2" Orientation="Vertical" Margin="20 20 0 0">
                 <CheckBox x:Name="reviewedCheckBox" Content="Reviewed" IsChecked="True" Height="25"/>
                 <CheckBox x:Name="compressedCheckBox" Content="Compressed" IsChecked="True" Height="25"/>
                 <CheckBox x:Name="xmlBox" Content="XML" IsChecked="True" Height="25"/>
-                <CheckBox x:Name="addIsoformsCheckBox" Content="Add Isoforms" IsChecked="True" Height="25"/>
+                <CheckBox x:Name="addIsoformsCheckBox" Content="Add Isoforms" IsChecked="False" Height="25"/>
             </StackPanel>
             <Button Content="Download Proteome" Name="downloadProteomeButton" Click="downloadProteomeButton_Click" Grid.Row="3" FontWeight="Bold" Background="Blue" Foreground="White" Margin="2 2 2 2"/>
         </Grid>

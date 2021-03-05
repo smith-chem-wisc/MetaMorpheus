@@ -1,20 +1,11 @@
-﻿using MzLibUtil;
-using System;
-using System.Collections.Generic;
+﻿using System.Collections.Generic;
 using System.Collections.ObjectModel;
-using System.ComponentModel;
-using System.Data;
 using System.IO;
-using System.Text;
+using System.Linq;
 using System.Windows;
 using System.Windows.Controls;
-using System.Windows.Data;
-using System.Windows.Documents;
-using System.Windows.Input;
-using System.Windows.Media;
-using System.Windows.Media.Imaging;
-using System.Windows.Shapes;
 using UsefulProteomicsDatabases;
+
 
 namespace MetaMorpheusGUI
 {
@@ -23,75 +14,115 @@ namespace MetaMorpheusGUI
     /// </summary>
     public partial class DownloadUniProtDatabaseWindow : Window
     {
+        private List<string> availableProteomes = new List<string>();
+        private ObservableCollection<string> filteredProteomes = new ObservableCollection<string>();
+        private string selectedProteome;
 
-
-        //List<string> filteredStrings = new List<string>();
-        //public object ThreadLocker;
-        //public ObservableCollection<string> FilteredListOfPsms { get; private set; }
-        //public ICollectionView PeptideSpectralMatchesView;
-        //private readonly DataTable propertyView;
         public DownloadUniProtDatabaseWindow()
         {
             InitializeComponent();
-            foreach (var item in EngineLayer.GlobalVariables.AvailableUniProtProteomes)
+            availableProteomes.Clear();
+            filteredProteomes.Clear();
+            LoadAvailableProteomes();
+
+            foreach (var item in availableProteomes)
             {
-                availableProteomesListbox.Items.Add(item.Value);
+                filteredProteomes.Add(item);
             }
 
+            availableProteomesListbox.ItemsSource = filteredProteomes;
+        }
 
-            
-            //BindingOperations.EnableCollectionSynchronization(filteredStrings, ThreadLocker);
-            
-
-            //propertyView = new DataTable();
-            //propertyView.Columns.Add("Name", typeof(string));
-            ////propertyView.Columns.Add("Value", typeof(string));
-            ////dataGridProperties.DataContext = propertyView.DefaultView;
-
-            //dataGridScanNums.DataContext = PeptideSpectralMatchesView;
+        private void LoadAvailableProteomes()
+        {
+            foreach (var item in EngineLayer.GlobalVariables.AvailableUniProtProteomes)
+            {
+                availableProteomes.Add(item.Value);
+            }
         }
 
         private void downloadProteomeButton_Click(object sender, RoutedEventArgs e)
         {
-            
+            if (string.IsNullOrEmpty(selectedProteome) == false && availableProteomes.Contains(selectedProteome))
+            {
+                ProteinDbRetriever.ProteomeFormat format = new ProteinDbRetriever.ProteomeFormat();
+                if(xmlBox.IsChecked == true)
+                {
+                    format = ProteinDbRetriever.ProteomeFormat.xml;
+                }
+                else
+                {
+                    format = ProteinDbRetriever.ProteomeFormat.fasta;
+                }
+                ProteinDbRetriever.Reviewed reviewed = new ProteinDbRetriever.Reviewed();
+                if (reviewedCheckBox.IsChecked == true)
+                {
+                    reviewed = ProteinDbRetriever.Reviewed.yes;
+                }
+                else
+                {
+                    reviewed = ProteinDbRetriever.Reviewed.no;
+                }
+                ProteinDbRetriever.Compress compressed;
+                if(compressedCheckBox.IsChecked == true)
+                {
+                    compressed = ProteinDbRetriever.Compress.yes;
+                }
+                else
+                {
+                    compressed = ProteinDbRetriever.Compress.no;
+                }
+                ProteinDbRetriever.IncludeIsoforms isoforms;
+                if(addIsoformsCheckBox.IsChecked == true)
+                {
+                    isoforms = ProteinDbRetriever.IncludeIsoforms.yes;
+                }
+                else
+                {
+                    isoforms = ProteinDbRetriever.IncludeIsoforms.no;
+                }
+
+                ProteinDbRetriever.RetrieveProteome(GetProteomeId(selectedProteome), @"E:\junk", format, reviewed, compressed, isoforms);
+                this.Close();
+            }
         }
 
-        private void lookUpProteome_Click(object sender, RoutedEventArgs e)
+
+        public string GetProteomeId(string selectedProteome)
         {
-
+            return (EngineLayer.GlobalVariables.AvailableUniProtProteomes.FirstOrDefault(x => x.Value == selectedProteome).Key);
         }
-
         //any time text is changed in the search box, we want to filter the list displayed in the gridview
         private void proteomesSearchBox_TextChanged(object sender, TextChangedEventArgs e)
         {
             string searchText = (sender as TextBox).Text;
-            FilterProteomesByString(searchText);
+
+            if (string.IsNullOrEmpty(searchText) == false)
+            {
+                filteredProteomes.Clear();
+                foreach (var item in availableProteomes)
+                {
+                    if (item.ToUpper().StartsWith(searchText.ToUpper()) || item.ToUpper().Contains(searchText.ToUpper()))
+                    {
+                        filteredProteomes.Add(item);
+                    }
+                    else if (searchText == "")
+                    {
+                        filteredProteomes.Add(item);
+                    }
+                }
+            }
         }
 
-        public void FilterProteomesByString(string searchText)
+        private void availableProteomesListbox_SelectionChanged(object sender, SelectionChangedEventArgs e)
         {
-            if (searchText == "")
+            if (availableProteomesListbox.SelectedItem == null)
             {
-                //PeptideSpectralMatchesView.Filter = null;
+                return;
             }
-            else
-            {
-                //PeptideSpectralMatchesView.Filter = obj =>
-                //{
-                //    PsmFromTsv psm = obj as PsmFromTsv;
-                //    return ((psm.Ms2ScanNumber.ToString()).StartsWith(searchString) || psm.FullSequence.ToUpper().Contains(searchString.ToUpper()));
-                //};
-            }
-        }
 
-        //private void dataGridScanNums_SelectedCellsChanged(object sender, SelectedCellsChangedEventArgs e)
-        //{
-
-        //}
-
-        private void ListBox_SelectionChanged(object sender, SelectionChangedEventArgs e)
-        {
-
+            selectedProteome = (string)availableProteomesListbox.SelectedItem;
+            selectedProteomeBox.Text = selectedProteome;
         }
     }
 }
