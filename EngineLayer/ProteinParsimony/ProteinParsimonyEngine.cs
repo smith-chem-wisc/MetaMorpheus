@@ -355,7 +355,16 @@ namespace EngineLayer
                 }
 
                 var ProteinTranscriptAbundance = GlobalVariables.ProteinToProteogenomicInfo;
-                List<Protein> toRescue = candidateRescueProteins.Where(p => ProteinTranscriptAbundance[p.Accession].CPM >= _cpmThreshold).ToList();
+                List<Protein> toRescue = new List<Protein>();
+                foreach (var protein in candidateRescueProteins)
+                {
+                    double proteinWeight = GlobalVariables.ProteinToProteogenomicInfo.ContainsKey(protein.Accession) ?
+                                                                GlobalVariables.ProteinToProteogenomicInfo[protein.Accession].CPM : 0;
+                    if (proteinWeight >= _cpmThreshold)
+                    {
+                        toRescue.Add(protein);
+                    }
+                }
                 foreach (var protein in toRescue)
                 {
                     if (protein.IsDecoy == false)
