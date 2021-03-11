@@ -143,13 +143,13 @@ namespace EngineLayer
             if (FilesForQuantification != null)
             {
                 bool unfractionated = FilesForQuantification.Select(p => p.Fraction).Distinct().Count() == 1;
-                bool conditionsDefined = FilesForQuantification.All(p => p.Condition == "Default") || FilesForQuantification.All(p => string.IsNullOrWhiteSpace(p.Condition));
+                bool conditionsUndefined = FilesForQuantification.All(p => p.Condition == "Default") || FilesForQuantification.All(p => string.IsNullOrWhiteSpace(p.Condition));
 
                 foreach (var sampleGroup in FilesForQuantification.GroupBy(p => p.Condition))
                 {
                     foreach (var sample in sampleGroup.GroupBy(p => p.BiologicalReplicate).OrderBy(p => p.Key))
                     {
-                        if (!conditionsDefined && unfractionated)
+                        if (conditionsUndefined && unfractionated)
                         {
                             // if the data is unfractionated and the conditions haven't been defined, just use the file name as the intensity header
                             sb.Append("Intensity_" + sample.First().FilenameWithoutExtension + "\t");
