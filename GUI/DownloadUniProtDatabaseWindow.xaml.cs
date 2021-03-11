@@ -7,6 +7,7 @@ using System.Net;
 using System.Windows;
 using System.Windows.Controls;
 using UsefulProteomicsDatabases;
+using static UsefulProteomicsDatabases.ProteinDbRetriever;
 
 namespace MetaMorpheusGUI
 {
@@ -44,61 +45,37 @@ namespace MetaMorpheusGUI
 
         private void DownloadProteomeWithProgress(string DownloadLink, string TargetPath)
         {
-            Stream remoteStream = null;
-            Stream localStream = null;
-            WebResponse response = null;
-
-            try
+            using (WebClient Client = new WebClient())
             {
-                double TotalBytesToReceive = 0;
-                var SizewebRequest = HttpWebRequest.Create(new Uri(DownloadLink));
-                SizewebRequest.Method = "HEAD";
-
-                using (var webResponse = SizewebRequest.GetResponse())
-                {
-                    var fileSize = webResponse.Headers.Get("Content-Length");
-                    TotalBytesToReceive = Convert.ToDouble(fileSize);
-                }
-
                 ProgressBarIndeterminate progress = new ProgressBarIndeterminate
                 {
                     WindowStartupLocation = WindowStartupLocation.CenterScreen
                 };
                 progress.Show();
-
-                WebRequest request = WebRequest.Create(DownloadLink);
-                if (request != null)
+                System.Threading.Tasks.Task.Factory.StartNew(() =>
                 {
-                    response = request.GetResponse();
-                    if (response != null)
-                    {
-                        remoteStream = response.GetResponseStream();
-                        string filePath = TargetPath;
-                        localStream = File.Create(filePath);
-                        byte[] buffer = new byte[1024];
-                        int bytesRead = 0;
-                        do
-                        {
-                            bytesRead = remoteStream.Read(buffer, 0, buffer.Length);
-                            localStream.Write(buffer, 0, bytesRead);
+                    Client.DownloadFile(DownloadLink, TargetPath);
+                }).ContinueWith(task =>
+                {
+                    progress.Close();
+                }, System.Threading.CancellationToken.None, System.Threading.Tasks.TaskContinuationOptions.None, System.Threading.Tasks.TaskScheduler.FromCurrentSynchronizationContext());
+            }
+        }
 
-                        } while (bytesRead > 0);
-
-
-                    }
+        public static string GetQueryString(string proteomeID, ProteomeFormat format, Reviewed reviewed, Compress compress, IncludeIsoforms include)
+        {
+                string htmlQueryString = "";
+                if (format == ProteomeFormat.fasta)
+                {
+                    //TODO if reviewed is no that we should get everything, not just the unreviewed
+                    htmlQueryString = "https://www.uniprot.org/uniprot/?query=proteome:" + proteomeID + " reviewed:" + reviewed + "&compress=" + compress + "&format=" + format + "&include:" + include;
                 }
-                progress.Close();
-            }
-            catch (Exception ex)
-            {
-                string myException = ex.ToString();
-            }
-            finally
-            {
-                if (response != null) response.Close();
-                if (remoteStream != null) remoteStream.Close();
-                if (localStream != null) localStream.Close();
-            }
+                else if (format == ProteomeFormat.xml)
+                {                   
+                    htmlQueryString = "https://www.uniprot.org/uniprot/?query=proteome:" + proteomeID + " reviewed:" + reviewed + "&compress=" + compress + "&format=" + format;
+                }
+
+            return htmlQueryString;
         }
 
         private void downloadProteomeButton_Click(object sender, RoutedEventArgs e)
@@ -152,7 +129,7 @@ namespace MetaMorpheusGUI
                 {
                     compressed = ProteinDbRetriever.Compress.no;
                 }
-                string htmlQueryString = ProteinDbRetriever.RetrieveProteome(GetProteomeId(selectedProteome), @"E:\junk", format, reviewed, compressed, isoforms);
+                string htmlQueryString = GetQueryString(GetProteomeId(selectedProteome), format, reviewed, compressed, isoforms);
 
                 DownloadProteomeWithProgress(htmlQueryString, absolutePathToStorageDirectory + filename);
 

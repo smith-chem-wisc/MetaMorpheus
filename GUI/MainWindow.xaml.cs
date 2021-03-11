@@ -1925,8 +1925,9 @@ namespace MetaMorpheusGUI
 
         private void DownloadUniProtDatabase_Click(object sender, RoutedEventArgs e)
         {
-            DownloadUniProtDatabaseWindow uniProtDatabaseWindow = new DownloadUniProtDatabaseWindow();
-            
+            DownloadUniProtDatabaseWindow uniProtDatabaseWindow = new DownloadUniProtDatabaseWindow 
+            { WindowStartupLocation = WindowStartupLocation.CenterScreen };;
+
             uniProtDatabaseWindow.Show();
         }
     }
