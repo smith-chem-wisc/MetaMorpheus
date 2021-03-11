@@ -143,7 +143,7 @@ namespace EngineLayer
             if (FilesForQuantification != null)
             {
                 bool unfractionated = FilesForQuantification.Select(p => p.Fraction).Distinct().Count() == 1;
-                bool conditionsUndefined = FilesForQuantification.All(p => p.Condition == "Default") || FilesForQuantification.All(p => string.IsNullOrWhiteSpace(p.Condition));
+                bool conditionsUndefined = FilesForQuantification.All(p => string.IsNullOrEmpty(p.Condition));
 
                 foreach (var sampleGroup in FilesForQuantification.GroupBy(p => p.Condition))
                 {
