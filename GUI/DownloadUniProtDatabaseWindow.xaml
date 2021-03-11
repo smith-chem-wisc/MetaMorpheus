@@ -60,16 +60,19 @@
             <DockPanel HorizontalAlignment="Stretch" Grid.Row="0" LastChildFill="True">
                 <Label Content="Selected Proteome" DockPanel.Dock="Left" FontWeight="Bold"/>
                 <!--<Button Content="Look Up" DockPanel.Dock="Right" Name="lookUpProteome" Click="lookUpProteome_Click" FontWeight="Bold" Background="Blue" Foreground="White" Margin="2 2 2 2"/>-->
-                <TextBox DockPanel.Dock="Left" x:Name="selectedProteomeBox"/>
+                <TextBox DockPanel.Dock="Left" Name="selectedProteomeBox" IsReadOnly="True"/>
                 
             </DockPanel>
+            <!--<DockPanel Grid.Row="1">
+                <ProgressBar Minimum="0" Maximum="100" x:Name="ProgressBar" Height="20" Margin="5" IsIndeterminate="True"/>
+            </DockPanel>-->
             <StackPanel Grid.Row="2" Orientation="Vertical" Margin="20 20 0 0">
                 <CheckBox x:Name="reviewedCheckBox" Content="Reviewed" IsChecked="True" Height="25"/>
                 <CheckBox x:Name="compressedCheckBox" Content="Compressed" IsChecked="True" Height="25"/>
                 <CheckBox x:Name="xmlBox" Content="XML" IsChecked="True" Height="25"/>
                 <CheckBox x:Name="addIsoformsCheckBox" Content="Add Isoforms" IsChecked="False" Height="25"/>
             </StackPanel>
-            <Button Content="Download Proteome" Name="downloadProteomeButton" Click="downloadProteomeButton_Click" Grid.Row="3" FontWeight="Bold" Background="Blue" Foreground="White" Margin="2 2 2 2"/>
+            <Button Content="Download Proteome" Name="downloadProteomeButton" Click="downloadProteomeButton_Click" Grid.Row="3" FontWeight="Bold" Background="Blue" Foreground="White" Margin="2 2 2 2" ToolTip="Downloads can take several minutes"/>
         </Grid>
     </Grid>
 </Window>
