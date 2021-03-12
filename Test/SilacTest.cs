@@ -187,14 +187,15 @@ namespace Test
             };
 
             List<PeptideWithSetModifications> lightPeptide = new List<PeptideWithSetModifications> { new PeptideWithSetModifications("PEPTIDEK", new Dictionary<string, Modification>()) }; //has the additional, but not the original
-            List<List<double>> massDifferences = new List<List<double>> { new List<double> { (heavyLysine.MonoisotopicMass - lightLysine.MonoisotopicMass) } };
+            List<List<double>> massDifferences1 = new List<List<double>> { new List<double> { (heavyLysine.MonoisotopicMass - lightLysine.MonoisotopicMass) } };
+            List<List<double>> massDifferences2 = new List<List<double>> { new List<double> { (heavyLysine.MonoisotopicMass - lightLysine.MonoisotopicMass) } };
 
-            MsDataFile myMsDataFile1 = new TestDataFile(lightPeptide, massDifferences);
+            MsDataFile myMsDataFile1 = new TestDataFile(lightPeptide, massDifferences1);
             string mzmlName = @"silac.mzML";
             IO.MzML.MzmlMethods.CreateAndWriteMyMzmlWithCalibratedSpectra(myMsDataFile1, mzmlName, false);
 
             //create another file to test the handling is done correctly
-            MsDataFile myMsDataFile2 = new TestDataFile(lightPeptide, massDifferences);
+            MsDataFile myMsDataFile2 = new TestDataFile(lightPeptide, massDifferences2);
             string mzmlName2 = @"silacPart2.mzML";
             IO.MzML.MzmlMethods.CreateAndWriteMyMzmlWithCalibratedSpectra(myMsDataFile2, mzmlName2, false);
 
@@ -213,10 +214,7 @@ namespace Test
             string[] output = File.ReadAllLines(TestContext.CurrentContext.TestDirectory + @"/TestSilac/AllQuantifiedProteinGroups.tsv");
             Assert.AreEqual(output.Length, 2);
             Assert.IsTrue(output[0].Contains("Intensity_silac\tIntensity_silacPart2\tIntensity_silac(K+8.014)\tIntensity_silacPart2(K+8.014)")); //test that two files were made
-
-            //TODO: the heavy peptide in "silacPart2" seems to be missing even though this spectra file is a copy of "silac"?
-            //Assert.IsTrue(output[1].Contains("875000\t875000\t437500\t437500")); //test the heavy intensity is half that of the light (per the raw file)
-            Assert.IsTrue(output[1].Contains("875000\t875000\t437500")); //test the heavy intensity is half that of the light (per the raw file)
+            Assert.IsTrue(output[1].Contains("1237436.8670764582\t1237436.8670764582\t618718.4335382291\t618718.4335382291")); //test the heavy intensity is half that of the light (per the raw file)
 
             //test peptides
             output = File.ReadAllLines(TestContext.CurrentContext.TestDirectory + @"/TestSilac/AllQuantifiedPeptides.tsv");
@@ -244,8 +242,8 @@ namespace Test
 
             //make a heavy peptide
             List<PeptideWithSetModifications> heavyPeptide = new List<PeptideWithSetModifications> { new PeptideWithSetModifications("PEPTIDEa", new Dictionary<string, Modification>()) }; //has the additional, but not the original
-            massDifferences = new List<List<double>> { new List<double> { (lightLysine.MonoisotopicMass - heavyLysine.MonoisotopicMass) } }; //have to reset because it gets modified
-            myMsDataFile1 = new TestDataFile(heavyPeptide, massDifferences);
+            massDifferences1 = new List<List<double>> { new List<double> { (lightLysine.MonoisotopicMass - heavyLysine.MonoisotopicMass) } }; //have to reset because it gets modified
+            myMsDataFile1 = new TestDataFile(heavyPeptide, massDifferences1);
             IO.MzML.MzmlMethods.CreateAndWriteMyMzmlWithCalibratedSpectra(myMsDataFile1, mzmlName, false);
 
             //make an ambiguous database
