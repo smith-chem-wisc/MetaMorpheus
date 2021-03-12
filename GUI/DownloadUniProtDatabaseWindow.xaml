@@ -5,6 +5,7 @@
         xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
         xmlns:local="clr-namespace:MetaMorpheusGUI"
         mc:Ignorable="d"
+        Closing="Window_Closing"
         Title="DownloadUniProtDatabaseWindow" Height="350" Width="800" FontWeight="Bold">
     <Grid>
         
@@ -27,7 +28,7 @@
                 <Label Content="Search" DockPanel.Dock="Left" FontWeight="Bold"/>
                 <TextBox DockPanel.Dock="Left" TextChanged="proteomesSearchBox_TextChanged" x:Name="proteomesSearchBox" Margin="2 2 2 2"/>
             </DockPanel>
-            <!--<DataGrid Grid.Row="2" x:Name="availableProteomesDataGrid" Margin="2 2 2 2"/>-->
+
             <GroupBox Header="Available Proteomes" Name="gbSpectra" Grid.Row="1">
                 <Grid>
                     <Grid.RowDefinitions>
@@ -35,15 +36,6 @@
                     </Grid.RowDefinitions>
                     <ListBox x:Name="availableProteomesListbox" Grid.Row="0" VerticalAlignment="Stretch" ItemsSource="{Binding filteredProteomes}" ScrollViewer.CanContentScroll="True" Margin="2 2 2 2" 
                              SelectionChanged="availableProteomesListbox_SelectionChanged" SelectionMode="Single"/>
-
-                    <!--<DataGrid x:Name="dataGridScanNums" Grid.Row="0" AutoGenerateColumns="False" VerticalAlignment="Stretch" ItemsSource="{Binding}"
-                                              ScrollViewer.CanContentScroll="True" IsReadOnly="True" Margin="0,0,0,0" SelectedCellsChanged="dataGridScanNums_SelectedCellsChanged" 
-                                              CanUserDeleteRows="false" CanUserAddRows="false">
-                        <DataGrid.Columns>
-                            <DataGridTextColumn Header="Proteome ID" Binding="{Binding Ms2ScanNumber}" Width="100"></DataGridTextColumn>
-                            <DataGridTextColumn Header="Organism Name" Binding="{Binding FullSequence}" Width="1*"></DataGridTextColumn>
-                        </DataGrid.Columns>
-                    </DataGrid>-->
                 </Grid>
             </GroupBox>
         </Grid>
@@ -59,20 +51,17 @@
 
             <DockPanel HorizontalAlignment="Stretch" Grid.Row="0" LastChildFill="True">
                 <Label Content="Selected Proteome" DockPanel.Dock="Left" FontWeight="Bold"/>
-                <!--<Button Content="Look Up" DockPanel.Dock="Right" Name="lookUpProteome" Click="lookUpProteome_Click" FontWeight="Bold" Background="Blue" Foreground="White" Margin="2 2 2 2"/>-->
                 <TextBox DockPanel.Dock="Left" Name="selectedProteomeBox" IsReadOnly="True"/>
                 
             </DockPanel>
-            <!--<DockPanel Grid.Row="1">
-                <ProgressBar Minimum="0" Maximum="100" x:Name="ProgressBar" Height="20" Margin="5" IsIndeterminate="True"/>
-            </DockPanel>-->
+
             <StackPanel Grid.Row="2" Orientation="Vertical" Margin="20 20 0 0">
-                <CheckBox x:Name="reviewedCheckBox" Content="Reviewed" IsChecked="True" Height="25"/>
-                <CheckBox x:Name="compressedCheckBox" Content="Compressed" IsChecked="True" Height="25"/>
-                <CheckBox x:Name="xmlBox" Content="XML" IsChecked="True" Height="25"/>
-                <CheckBox x:Name="addIsoformsCheckBox" Content="Add Isoforms" IsChecked="False" Height="25"/>
+                <CheckBox x:Name="reviewedCheckBox" Content="Reviewed" IsChecked="True" Height="25" ToolTip="Unchecking the box will retrieve both reviewed and unreviewed" ToolTipService.ShowOnDisabled="true"/>
+                <CheckBox x:Name="compressedCheckBox" Content="Compressed" IsChecked="True" Height="25" ToolTip="Compressed (.gz) will download faster and work directly with MetaMorpheus" ToolTipService.ShowOnDisabled="true"/>
+                <CheckBox x:Name="xmlBox" Content="XML" IsChecked="True" Height="25" ToolTip="XML format will include UniProt annotated PTMs. Unchecking the box will retrieve the FASTA format" ToolTipService.ShowOnDisabled="true"/>
+                <CheckBox x:Name="addIsoformsCheckBox" Content="Add Isoforms" IsChecked="False" Height="25" ToolTip="Isoforms can be retrieved only in combination with FASTA formatted files. Isoforms are generally included in the XML format file." ToolTipService.ShowOnDisabled="true"/>
             </StackPanel>
-            <Button Content="Download Proteome" Name="downloadProteomeButton" Click="downloadProteomeButton_Click" Grid.Row="3" FontWeight="Bold" Background="Blue" Foreground="White" Margin="2 2 2 2" ToolTip="Downloads can take several minutes"/>
+            <Button Content="Download Proteome" Name="downloadProteomeButton" Click="downloadProteomeButton_Click" Grid.Row="3" FontWeight="Bold" Background="Blue" Foreground="White" Margin="2 2 2 2" ToolTip="Downloads can take several minutes" ToolTipService.ShowOnDisabled="true"/>
         </Grid>
     </Grid>
 </Window>

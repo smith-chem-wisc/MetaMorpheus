@@ -1927,8 +1927,16 @@ namespace MetaMorpheusGUI
         {
             DownloadUniProtDatabaseWindow uniProtDatabaseWindow = new DownloadUniProtDatabaseWindow 
             { WindowStartupLocation = WindowStartupLocation.CenterScreen };;
-
+            
             uniProtDatabaseWindow.Show();
+            uniProtDatabaseWindow.Closed += UniProtDatabaseWindow_Closed;
         }
+
+        private void UniProtDatabaseWindow_Closed(object sender, EventArgs e)
+        {
+            //ProteinDatabases.Add(new ProteinDbForDataGrid(DownloadUniProtDatabaseWindow.DownloadUniProtDatabaseWindow));
+        }
+
+
     }
 }

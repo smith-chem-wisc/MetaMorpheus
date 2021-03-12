@@ -1,5 +1,4 @@
-﻿using System;
-using System.Collections.Generic;
+﻿using System.Collections.Generic;
 using System.Collections.ObjectModel;
 using System.IO;
 using System.Linq;
@@ -16,6 +15,12 @@ namespace MetaMorpheusGUI
     /// </summary>
     public partial class DownloadUniProtDatabaseWindow : Window
     {
+        public string DownloadedProteomeFullPath
+        {
+            get { return downloadedProteomeFullPath; }
+        }
+
+        private string downloadedProteomeFullPath = "";
         private List<string> availableProteomes = new List<string>();
         private ObservableCollection<string> filteredProteomes = new ObservableCollection<string>();
         private string selectedProteome;
@@ -60,20 +65,32 @@ namespace MetaMorpheusGUI
                     progress.Close();
                 }, System.Threading.CancellationToken.None, System.Threading.Tasks.TaskContinuationOptions.None, System.Threading.Tasks.TaskScheduler.FromCurrentSynchronizationContext());
             }
+            
+            if (File.Exists(TargetPath))
+            {
+                this.AddDownloadedProteome(TargetPath);
+            }
         }
 
         public static string GetQueryString(string proteomeID, ProteomeFormat format, Reviewed reviewed, Compress compress, IncludeIsoforms include)
         {
-                string htmlQueryString = "";
-                if (format == ProteomeFormat.fasta)
+            string htmlQueryString = "";
+            if (format == ProteomeFormat.fasta)
+            {
+
+                if (reviewed == Reviewed.yes)
                 {
-                    //TODO if reviewed is no that we should get everything, not just the unreviewed
                     htmlQueryString = "https://www.uniprot.org/uniprot/?query=proteome:" + proteomeID + " reviewed:" + reviewed + "&compress=" + compress + "&format=" + format + "&include:" + include;
                 }
-                else if (format == ProteomeFormat.xml)
-                {                   
-                    htmlQueryString = "https://www.uniprot.org/uniprot/?query=proteome:" + proteomeID + " reviewed:" + reviewed + "&compress=" + compress + "&format=" + format;
+                else
+                {
+                    htmlQueryString = "https://www.uniprot.org/uniprot/?query=proteome:" + proteomeID + "&compress=" + compress + "&format=" + format + "&include:" + include;
                 }
+            }
+            else if (format == ProteomeFormat.xml)
+            {
+                htmlQueryString = "https://www.uniprot.org/uniprot/?query=proteome:" + proteomeID + " reviewed:" + reviewed + "&compress=" + compress + "&format=" + format;
+            }
 
             return htmlQueryString;
         }
@@ -84,7 +101,6 @@ namespace MetaMorpheusGUI
             {
                 string absolutePathToStorageDirectory = "E:\\junk";
                 string filename = "\\" + GetProteomeId(selectedProteome);
-                
 
                 ProteinDbRetriever.Reviewed reviewed = new ProteinDbRetriever.Reviewed();
                 if (reviewedCheckBox.IsChecked == true)
@@ -97,7 +113,7 @@ namespace MetaMorpheusGUI
                     reviewed = ProteinDbRetriever.Reviewed.no;
                     filename += "_unreviewed";
                 }
-                
+
                 ProteinDbRetriever.IncludeIsoforms isoforms;
                 if (addIsoformsCheckBox.IsChecked == true)
                 {
@@ -173,6 +189,11 @@ namespace MetaMorpheusGUI
 
             selectedProteome = (string)availableProteomesListbox.SelectedItem;
             selectedProteomeBox.Text = selectedProteome;
+        }
+
+        private string Window_Closing(object sender, System.ComponentModel.CancelEventArgs e)
+        {
+            return downloadedProteomeFullPath;
         }
     }
 }
