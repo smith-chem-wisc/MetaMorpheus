@@ -3,6 +3,7 @@ using Proteomics;
 using Proteomics.ProteolyticDigestion;
 using System.Collections.Generic;
 using System.Globalization;
+using System.IO;
 using System.Linq;
 using System.Text;
 
@@ -145,11 +146,14 @@ namespace EngineLayer
                 bool unfractionated = FilesForQuantification.Select(p => p.Fraction).Distinct().Count() == 1;
                 bool conditionsUndefined = FilesForQuantification.All(p => string.IsNullOrEmpty(p.Condition));
 
+                // this is a hacky way to test for SILAC-labeled data...
+                bool nonExistantFile = FilesForQuantification.Any(p => !File.Exists(p.FullFilePathWithExtension));
+
                 foreach (var sampleGroup in FilesForQuantification.GroupBy(p => p.Condition))
                 {
                     foreach (var sample in sampleGroup.GroupBy(p => p.BiologicalReplicate).OrderBy(p => p.Key))
                     {
-                        if (conditionsUndefined && unfractionated)
+                        if ((conditionsUndefined && unfractionated) || nonExistantFile)
                         {
                             // if the data is unfractionated and the conditions haven't been defined, just use the file name as the intensity header
                             sb.Append("Intensity_" + sample.First().FilenameWithoutExtension + "\t");
