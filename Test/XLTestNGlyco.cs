@@ -110,6 +110,9 @@ namespace Test
             var filter = GlycoPeptides.ScanTrimannosylCoreFilter(matchedFragmentIons, glycan);
             Assert.AreEqual(filter, true);
 
+            //Test new score functions.
+            var pg3score = GlycoPeptides.CalculateGlycoPeptideScore(matchedFragmentIons, fragmentIons, commonParameters);
+
             //Use Graph Localization method
             int[] n_modPos = GlycoPeptides.GetPossibleModSites(peptide, new string[] { "Nxt", "Nxs" }).OrderBy(p => p).ToArray();
             int[] modPos = new int[n_modPos.Length];
