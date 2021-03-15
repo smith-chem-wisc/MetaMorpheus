@@ -27,7 +27,7 @@ namespace MetaMorpheusGUI
     public partial class MainWindow : Window
     {
         private readonly ObservableCollection<RawDataForDataGrid> SpectraFiles = new ObservableCollection<RawDataForDataGrid>();
-        private readonly ObservableCollection<ProteinDbForDataGrid> ProteinDatabases = new ObservableCollection<ProteinDbForDataGrid>();
+        private ObservableCollection<ProteinDbForDataGrid> ProteinDatabases = new ObservableCollection<ProteinDbForDataGrid>();
         private readonly ObservableCollection<PreRunTask> PreRunTasks = new ObservableCollection<PreRunTask>();
         private readonly ObservableCollection<RawDataForDataGrid> SelectedSpectraFiles = new ObservableCollection<RawDataForDataGrid>();
         private readonly ObservableCollection<ProteinDbForDataGrid> SelectedProteinDatabaseFiles = new ObservableCollection<ProteinDbForDataGrid>();
@@ -1925,16 +1925,26 @@ namespace MetaMorpheusGUI
 
         private void DownloadUniProtDatabase_Click(object sender, RoutedEventArgs e)
         {
-            DownloadUniProtDatabaseWindow uniProtDatabaseWindow = new DownloadUniProtDatabaseWindow 
+            ProteinDbForDataGrid newProteinDatabase = new ProteinDbForDataGrid();
+            DownloadUniProtDatabaseWindow uniProtDatabaseWindow = new DownloadUniProtDatabaseWindow() 
             { WindowStartupLocation = WindowStartupLocation.CenterScreen };;
             
             uniProtDatabaseWindow.Show();
             uniProtDatabaseWindow.Closed += UniProtDatabaseWindow_Closed;
+            AddNewProteome(uniProtDatabaseWindow.DownloadedFilepath);
+        }
+
+        private void AddNewProteome(string downloadedFilepath)
+        {
+            ProteinDatabases.Add(new ProteinDbForDataGrid(downloadedFilepath));
+            dataGridProteinDatabases.Items.Refresh();
+            proteinDbSummaryDataGrid.Items.Refresh();
         }
 
         private void UniProtDatabaseWindow_Closed(object sender, EventArgs e)
         {
-            //ProteinDatabases.Add(new ProteinDbForDataGrid(DownloadUniProtDatabaseWindow.DownloadUniProtDatabaseWindow));
+            dataGridProteinDatabases.Items.Refresh();
+            proteinDbSummaryDataGrid.Items.Refresh();
         }
 
 

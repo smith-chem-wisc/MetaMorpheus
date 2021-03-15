@@ -7,6 +7,10 @@ namespace MetaMorpheusGUI
     {
         #region Public Constructors
 
+        public ProteinDbForDataGrid()
+        {
+
+        }
         public ProteinDbForDataGrid(string FilePath)
         {
             Use = true;
@@ -18,6 +22,8 @@ namespace MetaMorpheusGUI
             }
             FileName = Path.GetFileName(FilePath);
         }
+
+
 
         public ProteinDbForDataGrid(DbForTask uu)
         {

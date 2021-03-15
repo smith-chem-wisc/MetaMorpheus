@@ -15,18 +15,15 @@ namespace MetaMorpheusGUI
     /// </summary>
     public partial class DownloadUniProtDatabaseWindow : Window
     {
-        public string DownloadedProteomeFullPath
-        {
-            get { return downloadedProteomeFullPath; }
-        }
 
-        private string downloadedProteomeFullPath = "";
         private List<string> availableProteomes = new List<string>();
         private ObservableCollection<string> filteredProteomes = new ObservableCollection<string>();
         private string selectedProteome;
-
+        private string _downloadedProteomeFullPath;
+        public string DownloadedFilepath { get { return _downloadedProteomeFullPath; } }
         public DownloadUniProtDatabaseWindow()
         {
+
             InitializeComponent();
             availableProteomes.Clear();
             filteredProteomes.Clear();
@@ -39,6 +36,7 @@ namespace MetaMorpheusGUI
 
             availableProteomesListbox.ItemsSource = filteredProteomes;
         }
+
 
         private void LoadAvailableProteomes()
         {
@@ -68,7 +66,7 @@ namespace MetaMorpheusGUI
             
             if (File.Exists(TargetPath))
             {
-                this.AddDownloadedProteome(TargetPath);
+                _downloadedProteomeFullPath = TargetPath;
             }
         }
 
@@ -191,9 +189,9 @@ namespace MetaMorpheusGUI
             selectedProteomeBox.Text = selectedProteome;
         }
 
-        private string Window_Closing(object sender, System.ComponentModel.CancelEventArgs e)
-        {
-            return downloadedProteomeFullPath;
-        }
+        //private string Window_Closing(object sender, System.ComponentModel.CancelEventArgs e)
+        //{
+        //    return "";
+        //}
     }
 }
