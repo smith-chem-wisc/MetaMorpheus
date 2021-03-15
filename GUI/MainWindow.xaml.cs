@@ -32,7 +32,7 @@ namespace MetaMorpheusGUI
         private readonly ObservableCollection<RawDataForDataGrid> SelectedSpectraFiles = new ObservableCollection<RawDataForDataGrid>();
         private readonly ObservableCollection<ProteinDbForDataGrid> SelectedProteinDatabaseFiles = new ObservableCollection<ProteinDbForDataGrid>();
         private ObservableCollection<InRunTask> InProgressTasks;
-
+        public string newProteome;
         public static string NewestKnownMetaMorpheusVersion { get; private set; }
 
         public MainWindow()
@@ -1925,26 +1925,22 @@ namespace MetaMorpheusGUI
 
         private void DownloadUniProtDatabase_Click(object sender, RoutedEventArgs e)
         {
-            ProteinDbForDataGrid newProteinDatabase = new ProteinDbForDataGrid();
-            DownloadUniProtDatabaseWindow uniProtDatabaseWindow = new DownloadUniProtDatabaseWindow() 
-            { WindowStartupLocation = WindowStartupLocation.CenterScreen };;
-            
+            DownloadUniProtDatabaseWindow uniProtDatabaseWindow = new DownloadUniProtDatabaseWindow(ref this.newProteome);
+            uniProtDatabaseWindow.WindowStartupLocation = WindowStartupLocation.CenterScreen;            
             uniProtDatabaseWindow.Show();
-            uniProtDatabaseWindow.Closed += UniProtDatabaseWindow_Closed;
-            AddNewProteome(uniProtDatabaseWindow.DownloadedFilepath);
+            uniProtDatabaseWindow.Closed += delegate(object sender,EventArgs e){ UniProtDatabaseWindow_Closed(sender, e, this.newProteome); };           
         }
 
         private void AddNewProteome(string downloadedFilepath)
         {
-            ProteinDatabases.Add(new ProteinDbForDataGrid(downloadedFilepath));
+            ProteinDatabases.Add(new ProteinDbForDataGrid(newProteome));
             dataGridProteinDatabases.Items.Refresh();
             proteinDbSummaryDataGrid.Items.Refresh();
         }
 
-        private void UniProtDatabaseWindow_Closed(object sender, EventArgs e)
+        private void UniProtDatabaseWindow_Closed(object sender, EventArgs e, string myNewProteome)
         {
-            dataGridProteinDatabases.Items.Refresh();
-            proteinDbSummaryDataGrid.Items.Refresh();
+            AddNewProteome(myNewProteome);
         }
 
 

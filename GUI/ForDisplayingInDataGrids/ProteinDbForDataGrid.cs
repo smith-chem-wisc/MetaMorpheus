@@ -7,10 +7,6 @@ namespace MetaMorpheusGUI
     {
         #region Public Constructors
 
-        public ProteinDbForDataGrid()
-        {
-
-        }
         public ProteinDbForDataGrid(string FilePath)
         {
             Use = true;

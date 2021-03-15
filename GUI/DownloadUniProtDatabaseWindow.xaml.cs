@@ -20,10 +20,9 @@ namespace MetaMorpheusGUI
         private ObservableCollection<string> filteredProteomes = new ObservableCollection<string>();
         private string selectedProteome;
         private string _downloadedProteomeFullPath;
-        public string DownloadedFilepath { get { return _downloadedProteomeFullPath; } }
-        public DownloadUniProtDatabaseWindow()
+        public DownloadUniProtDatabaseWindow(ref string newProteome)
         {
-
+            newProteome = _downloadedProteomeFullPath;
             InitializeComponent();
             availableProteomes.Clear();
             filteredProteomes.Clear();
@@ -146,6 +145,8 @@ namespace MetaMorpheusGUI
                 string htmlQueryString = GetQueryString(GetProteomeId(selectedProteome), format, reviewed, compressed, isoforms);
 
                 DownloadProteomeWithProgress(htmlQueryString, absolutePathToStorageDirectory + filename);
+
+                _downloadedProteomeFullPath = absolutePathToStorageDirectory + filename;
 
                 this.Close();
             }
