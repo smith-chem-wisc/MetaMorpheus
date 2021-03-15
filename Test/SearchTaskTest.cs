@@ -170,7 +170,7 @@ namespace Test
 
         /// <summary>
         /// Tests that normalization in a search task works properly with an Experimental Design file read in,
-        /// and crashes when that file is absent
+        /// and skips quantification when that file is absent
         /// </summary>
         [Test]
         public static void PostSearchNormalizeTest()
@@ -185,22 +185,32 @@ namespace Test
 
             string myFile = Path.Combine(TestContext.CurrentContext.TestDirectory, @"TestData\PrunedDbSpectra.mzml");
             string myDatabase = Path.Combine(TestContext.CurrentContext.TestDirectory, @"TestData\DbForPrunedDb.fasta");
-            string folderPath = Path.Combine(TestContext.CurrentContext.TestDirectory, @"TestNormalization");
-            string filePath = Path.Combine(TestContext.CurrentContext.TestDirectory, @"TestData\ExperimentalDesign.tsv");
-            using (StreamWriter output = new StreamWriter(filePath))
+            string folderPath = Path.Combine(TestContext.CurrentContext.TestDirectory, @"TestNormalizationExperDesign");
+            string experimentalDesignFile = Path.Combine(TestContext.CurrentContext.TestDirectory, @"TestData\ExperimentalDesign.tsv");
+            using (StreamWriter output = new StreamWriter(experimentalDesignFile))
             {
                 output.WriteLine("FileName\tCondition\tBiorep\tFraction\tTechrep");
-                output.WriteLine("PrunedDbSpectra" + "\t" + "condition" + "\t" + "1" + "\t" + "1" + "\t" + "1");
+                output.WriteLine("PrunedDbSpectra.mzml" + "\t" + "condition" + "\t" + "1" + "\t" + "1" + "\t" + "1");
             }
             DbForTask db = new DbForTask(myDatabase, false);
-            Directory.CreateDirectory(folderPath);
 
+            // run the task
+            Directory.CreateDirectory(folderPath);
             searchTask.RunTask(folderPath, new List<DbForTask> { db }, new List<string> { myFile }, "normal");
 
-            File.Delete(filePath);
+            Directory.Delete(folderPath, true);
 
-            Assert.That(() => searchTask.RunTask(folderPath, new List<DbForTask> { db }, new List<string> { myFile }, "normal"),
-               Throws.TypeOf<MetaMorpheusException>());
+            // delete the exper design and try again. this should skip quantification
+            File.Delete(experimentalDesignFile);
+
+            // run the task
+            Directory.CreateDirectory(folderPath);
+            searchTask.RunTask(folderPath, new List<DbForTask> { db }, new List<string> { myFile }, "normal");
+
+            // PSMs should be present but no quant output
+            Assert.That(!File.Exists(Path.Combine(folderPath, "AllQuantifiedPeptides.tsv")));
+            Assert.That(File.Exists(Path.Combine(folderPath, "AllPSMs.psmtsv")));
+
             Directory.Delete(folderPath, true);
         }
 

@@ -457,7 +457,7 @@ namespace Test
 
             // test single file output. With only 1 file, all results including mzid get written to the parent directory.
             HashSet<string> expectedFiles = new HashSet<string> {
-                "AllPeptides.psmtsv", "AllProteinGroups.tsv", "AllPSMs.psmtsv", "AllPSMs_FormattedForPercolator.tab", "AllQuantifiedPeaks.tsv",
+                "AllPeptides.psmtsv", "AllQuantifiedProteinGroups.tsv", "AllPSMs.psmtsv", "AllPSMs_FormattedForPercolator.tab", "AllQuantifiedPeaks.tsv",
                 "AllQuantifiedPeptides.tsv", "prose.txt", "results.txt", "sliced-raw.mzID" };
 
             HashSet<string> files = new HashSet<string>(Directory.GetFiles(Path.Combine(thisTaskOutputFolder, "SingleMassSpectraFileOutput")).Select(v => Path.GetFileName(v)));
@@ -471,7 +471,7 @@ namespace Test
 
             // test multi file output. With multiple files, .mzid results are inside a folder.
             expectedFiles = new HashSet<string> {
-                "AllPeptides.psmtsv", "AllProteinGroups.tsv", "AllPSMs.psmtsv", "AllPSMs_FormattedForPercolator.tab", "AllQuantifiedPeaks.tsv",
+                "AllPeptides.psmtsv", "AllQuantifiedProteinGroups.tsv", "AllPSMs.psmtsv", "AllPSMs_FormattedForPercolator.tab", "AllQuantifiedPeaks.tsv",
                 "AllQuantifiedPeptides.tsv", "prose.txt", "results.txt"};
             files = new HashSet<string>(Directory.GetFiles(Path.Combine(thisTaskOutputFolder, "MultipleMassSpectraFileOutput")).Select(v => Path.GetFileName(v)));
             missingFiles = expectedFiles.Except(files);

@@ -28,6 +28,7 @@
       <!-- ComponentGroupRef creates a reference to a ComponentGroup in another Fragment-->
       <ComponentGroupRef Id="ExecutablesAndLibrariesComponentGroup" />
       <ComponentGroupRef Id="ExecutablesAndLibrariesComponentGroup2" />
+      <ComponentGroupRef Id="ExecutablesAndLibrariesComponentGroup3" />
       <!--ComponentRef creates a reference to a Component element in another Fragment-->
       <ComponentRef Id="MetaMorpheusProgramMenuFolderComponent" />
 
@@ -61,6 +62,12 @@
           <Directory Id="NativeMathDllFolder_runtimes" Name="runtimes">
             <Directory Id="NativeMathDllFolder_win_x64" Name="win-x64">
               <Directory Id="NativeMathDllFolder_native" Name="native">
+              </Directory>
+            </Directory>
+            <Directory Id="WindowDllFolder_win" Name="win">
+              <Directory Id="WindowDllFolder_lib" Name="lib">
+                <Directory Id="WindowDllFolder_netcoreapp3.0" Name="netcoreapp3.0">                  
+                </Directory>
               </Directory>
             </Directory>
           </Directory>
@@ -156,6 +163,12 @@
       </Component>
       <Component Id="src_EngineLayer.pdb" Guid="8f9592a4-02b1-4462-a259-f7aa41d890a4">
         <File Id="src_EngineLayer.pdb" Name="EngineLayer.pdb" Source="$(var.GUI_TargetDir)EngineLayer.pdb" />
+      </Component>
+      <Component Id="src_GUIFunctions.dll" Guid="947D4AD8-213D-4FF2-B863-92B7AFCBF533">
+        <File Id="src_GUIFunctions.dll" Name="GUIFunctions.dll" Source="$(var.GUI_TargetDir)GUIFunctions.dll" />
+      </Component>
+      <Component Id="src_GUIFunctions.pdb" Guid="F12F9001-1B3D-433D-8C9F-C8BA91A06074">
+        <File Id="src_GUIFunctions.pdb" Name="GUIFunctions.pdb" Source="$(var.GUI_TargetDir)GUIFunctions.pdb" />
       </Component>
       <Component Id="src_FlashLFQ.dll" Guid="69e33379-5301-49db-8913-4d777ed5a5f9">
         <File Id="src_FlashLFQ.dll" Name="FlashLFQ.dll" Source="$(var.GUI_TargetDir)FlashLFQ.dll" />
@@ -313,6 +326,36 @@
       <Component Id="src_OpenMcdf.Extensions.dll" Guid="69004206-94FD-4342-A98D-70560B41C7B3">
         <File Id="src_OpenMcdf.Extensions.dll" Name="OpenMcdf.Extensions.dll" Source="$(var.GUI_TargetDir)OpenMcdf.Extensions.dll" />
       </Component>
+      <Component Id="src_System.CodeDom.dll" Guid="6C2021B6-7218-4C00-9EE5-351B1A03D0A2">
+        <File Id="src_System.CodeDom.dll" Name="System.CodeDom.dll" Source="$(var.GUI_TargetDir)System.CodeDom.dll" />
+      </Component>
+      <Component Id="src_System.Collections.Immutable.dll" Guid="DA1FE5F5-4409-4B41-8A26-E30DAD497458">
+        <File Id="src_System.Collections.Immutable.dll" Name="System.Collections.Immutable.dll" Source="$(var.GUI_TargetDir)System.Collections.Immutable.dll" />
+      </Component>
+      <Component Id="src_System.Runtime.CompilerServices.Unsafe.dll" Guid="B6CEE0EA-3F5C-47F1-9A70-166C92F29F54">
+        <File Id="src_System.Runtime.CompilerServices.Unsafe.dll" Name="System.Runtime.CompilerServices.Unsafe.dll" Source="$(var.GUI_TargetDir)System.Runtime.CompilerServices.Unsafe.dll" />
+      </Component>
+      <Component Id="src_System.Threading.Tasks.Dataflow.dll" Guid="59753FAC-C8EA-45D8-9E17-12764F56E624">
+        <File Id="src_System.Threading.Tasks.Dataflow.dll" Name="System.Threading.Tasks.Dataflow.dll" Source="$(var.GUI_TargetDir)System.Threading.Tasks.Dataflow.dll" />
+      </Component>
+      <Component Id="src_Common.Logging.Core.dll" Guid="894B4A68-17E7-48A5-B2C6-74C33CD08979">
+        <File Id="src_Common.Logging.Core.dll" Name="Common.Logging.Core.dll" Source="$(var.GUI_TargetDir)Common.Logging.Core.dll" />
+      </Component>
+      <Component Id="src_Common.Logging.dll" Guid="B543DE60-4AE9-4C43-88A7-1B1F752D7171">
+        <File Id="src_Common.Logging.dll" Name="Common.Logging.dll" Source="$(var.GUI_TargetDir)Common.Logging.dll" />
+      </Component>
+      <Component Id="src_BouncyCastle.Crypto.dll" Guid="54F72A71-C672-4655-95AA-4D32C9983A7D">
+        <File Id="src_BouncyCastle.Crypto.dll" Name="BouncyCastle.Crypto.dll" Source="$(var.GUI_TargetDir)BouncyCastle.Crypto.dll" />
+      </Component>
+      <Component Id="src_Microsoft.DotNet.PlatformAbstractions.dll" Guid="F42DEDAA-6D88-4D5B-AB51-C472617F2C5F">
+        <File Id="src_Microsoft.DotNet.PlatformAbstractions.dll" Name="Microsoft.DotNet.PlatformAbstractions.dll" Source="$(var.GUI_TargetDir)Microsoft.DotNet.PlatformAbstractions.dll" />
+      </Component>
+      <Component Id="src_Microsoft.Extensions.DependencyModel.dll" Guid="3137EB45-DE67-4CA2-96B3-58B621E520DF">
+        <File Id="src_Microsoft.Extensions.DependencyModel.dll" Name="Microsoft.Extensions.DependencyModel.dll" Source="$(var.GUI_TargetDir)Microsoft.Extensions.DependencyModel.dll" />
+      </Component>      
+      <Component Id="src_mzPlot.dll" Guid="01851FB5-6148-4AFC-9C51-5FED01E9E49C">
+        <File Id="src_mzPlot.dll" Name="mzPlot.dll" Source="$(var.GUI_TargetDir)mzPlot.dll" />
+      </Component>
       <Component Id="src_MetaMorpheusGUI.deps.json" Guid="B5A6A934-76F0-407D-85D9-9DA45109B815">
         <File Id="src_MetaMorpheusGUI.deps.json" Name="MetaMorpheusGUI.deps.json" Source="$(var.GUI_TargetDir)MetaMorpheusGUI.deps.json" />
       </Component>
@@ -360,6 +403,14 @@
         <File Id="src_LdaNative.dll" Name="LdaNative.dll" Source="$(var.GUI_TargetDir)runtimes\win-x64\native\LdaNative.dll" />
       </Component>
     </ComponentGroup>
+    <ComponentGroup Id="ExecutablesAndLibrariesComponentGroup3" Directory="WindowDllFolder_netcoreapp3.0">
+      <Component Id="src_Microsoft.Win32.SystemEvents.dll" Guid="E6A7E29B-AAB4-4144-9A2F-7D36CC5D1DED">
+        <File Id="src_Microsoft.Win32.SystemEvents.dll" Name="Microsoft.Win32.SystemEvents.dll" Source="$(var.GUI_TargetDir)\runtimes\win\lib\netcoreapp3.0\Microsoft.Win32.SystemEvents.dll" />
+      </Component>
+      <Component Id="src_System.Drawing.Common.dll" Guid="91B55013-24ED-4C9D-BB7B-55144426C90F">
+        <File Id="src_System.Drawing.Common.dll" Name="System.Drawing.Common.dll" Source="$(var.GUI_TargetDir)\runtimes\win\lib\netcoreapp3.0\System.Drawing.Common.dll" />
+      </Component>      
+    </ComponentGroup>
   </Fragment>
 
   <!--Build the App Mods folder-->
@@ -390,6 +441,13 @@
         <Condition>OVERWRITEAPPDATA</Condition>
         <RegistryValue Root="HKCU" Key="Software\SmithGroup\MetaMorpheus" Name="installed" Type="integer" Value="1" KeyPath="yes" />
         <File ReadOnly="no" Id="Appsrc_Mods_Mods.txt" Name="Mods.txt" Source="$(var.GUI_TargetDir)Mods\Mods.txt" />
+      </Component>
+
+      <!-- ProteaseMods.txt -->
+      <Component Id="Appsrc_Mods_ProteaseMods.txt" Guid="D95A127E-AD27-49CA-91B1-B7BD55B4CFBA">
+        <Condition>OVERWRITEAPPDATA</Condition>
+        <RegistryValue Root="HKCU" Key="Software\SmithGroup\MetaMorpheus" Name="installed" Type="integer" Value="1" KeyPath="yes" />
+        <File ReadOnly="no" Id="Appsrc_Mods_ProteaseMods.txt" Name="ProteaseMods.txt" Source="$(var.GUI_TargetDir)Mods\ProteaseMods.txt" />
       </Component>
 
       <!-- substitutions.txt -->
