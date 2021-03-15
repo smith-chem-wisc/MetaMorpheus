@@ -57,7 +57,7 @@ namespace TaskLayer
                     continue;
                 }
 
-                if (gsm.LocalizedGlycan.Count > 0)
+                if (gsm.LocalizedGlycan!=null && gsm.LocalizedGlycan.Count > 0)
                 {
                     foreach (var local in gsm.LocalizedGlycan)
                     {

@@ -90,9 +90,10 @@ namespace EngineLayer.GlycoSearch
 
                 if (glycoSpectralMatch.LocalizationGraphs != null)
                 {
-                    bool is_HCD_only_data = !GlycoPeptides.DissociationTypeContainETD(CommonParameters.DissociationType) && !GlycoPeptides.DissociationTypeContainETD(CommonParameters.MS2ChildScanDissociationType);
-
-                    if (is_HCD_only_data)
+                    //TO DO: The is_HCD_only_data is not totally correct. 
+                    if (glycoSpectralMatch.GlycanType == GlycoType.OGlycoPep &&
+                        !GlycoPeptides.DissociationTypeContainETD(CommonParameters.DissociationType) && 
+                        !GlycoPeptides.DissociationTypeContainETD(CommonParameters.MS2ChildScanDissociationType))
                     {
                         glycoSpectralMatch.LocalizationLevel = LocalizationLevel.Level3;
                         if (glycoSpectralMatch.LocalizationGraphs.Count == 1 && glycoSpectralMatch.LocalizationGraphs.First().ModPos.Length == 1)

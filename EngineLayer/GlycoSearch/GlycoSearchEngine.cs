@@ -1146,7 +1146,7 @@ namespace EngineLayer.GlycoSearch
                     globalglycans = GlycanBox.GlobalMixedGlycans;
                 }
 
-                var gsm = _CreateGsm(gsmcds.First(), theScan, scanIndex, null, scoreCutOff, globalBoxes, globalglycans, globalmods);
+                var gsm = _CreateGsm(gsmcds.First(), theScan, scanIndex, oxoniumIonIntensities, scoreCutOff, globalBoxes, globalglycans, globalmods);
 
                 gsms.Add(gsm);
             }
@@ -1209,7 +1209,7 @@ namespace EngineLayer.GlycoSearch
                         //Find O-Glycan use the original function.
                         //FindOGlycan(theScan, scanIndex, scoreCutOff, pepId, theScanBestPeptide, ind, possibleGlycanMassLow, oxoniumIonIntensities, ref gsmCandidates);
                         _FindGlycan(theScan, scanIndex, scoreCutOff, pepId, theScanBestPeptide, ind, possibleGlycanMassLow, possibleGlycanMassHigh, oxoniumIonIntensities,
-                            GlycoType.OGlycoPep, GlycanBox.GlobalNGlycans, GlycanBox.GlobalNGlycanMods, GlycanBox.NGlycanBoxes, ref gsmCandidates);
+                            GlycoType.OGlycoPep, GlycanBox.GlobalOGlycans, GlycanBox.GlobalOGlycanMods, GlycanBox.OGlycanBoxes, ref gsmCandidates);;
                     }
 
                     if (GlycoSearchType == GlycoSearchType.NGlycanSearch || GlycoSearchType == GlycoSearchType.N_O_GlycanSearch)
