@@ -20,9 +20,10 @@ namespace MetaMorpheusGUI
         private ObservableCollection<string> filteredProteomes = new ObservableCollection<string>();
         private string selectedProteome;
         private string _downloadedProteomeFullPath;
-        public DownloadUniProtDatabaseWindow(ref string newProteome)
+        private ObservableCollection<ProteinDbForDataGrid> proteinDatabases;
+        public DownloadUniProtDatabaseWindow(ObservableCollection<ProteinDbForDataGrid> ProteinDatabases)
         {
-            newProteome = _downloadedProteomeFullPath;
+            proteinDatabases = ProteinDatabases;
             InitializeComponent();
             availableProteomes.Clear();
             filteredProteomes.Clear();
@@ -147,6 +148,8 @@ namespace MetaMorpheusGUI
                 DownloadProteomeWithProgress(htmlQueryString, absolutePathToStorageDirectory + filename);
 
                 _downloadedProteomeFullPath = absolutePathToStorageDirectory + filename;
+
+                proteinDatabases.Add(new ProteinDbForDataGrid(_downloadedProteomeFullPath));
 
                 this.Close();
             }

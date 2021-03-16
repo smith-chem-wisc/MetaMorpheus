@@ -3,7 +3,7 @@ using TaskLayer;
 
 namespace MetaMorpheusGUI
 {
-    internal class ProteinDbForDataGrid
+    public class ProteinDbForDataGrid
     {
         #region Public Constructors
 

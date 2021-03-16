@@ -1925,24 +1925,16 @@ namespace MetaMorpheusGUI
 
         private void DownloadUniProtDatabase_Click(object sender, RoutedEventArgs e)
         {
-            DownloadUniProtDatabaseWindow uniProtDatabaseWindow = new DownloadUniProtDatabaseWindow(ref this.newProteome);
+            DownloadUniProtDatabaseWindow uniProtDatabaseWindow = new DownloadUniProtDatabaseWindow(ProteinDatabases);
             uniProtDatabaseWindow.WindowStartupLocation = WindowStartupLocation.CenterScreen;            
             uniProtDatabaseWindow.Show();
-            uniProtDatabaseWindow.Closed += delegate(object sender,EventArgs e){ UniProtDatabaseWindow_Closed(sender, e, this.newProteome); };           
+            uniProtDatabaseWindow.Closed += UniProtDatabaseWindow_Closed;         
         }
 
-        private void AddNewProteome(string downloadedFilepath)
+        private void UniProtDatabaseWindow_Closed(object sender, EventArgs e)
         {
-            ProteinDatabases.Add(new ProteinDbForDataGrid(newProteome));
             dataGridProteinDatabases.Items.Refresh();
             proteinDbSummaryDataGrid.Items.Refresh();
         }
-
-        private void UniProtDatabaseWindow_Closed(object sender, EventArgs e, string myNewProteome)
-        {
-            AddNewProteome(myNewProteome);
-        }
-
-
     }
 }
