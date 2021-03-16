@@ -399,7 +399,7 @@ namespace Test
 
             ModificationMotif.TryGetMotif("T", out var motif);
 
-            Modification fakeMod = new Modification(_originalId: "FAKE", _accession: "FAKE_MOD_ACCESSION", _modificationType: "fake", 
+            Modification fakeMod = new Modification(_originalId: "FAKE", _accession: "FAKE_MOD_ACCESSION", _modificationType: "fake",
                 _target: motif, _locationRestriction: "Anywhere.", _monoisotopicMass: 0,
                 _databaseReference: new Dictionary<string, IList<string>> { { "PSI-MOD", new List<string> { "FAKE_MOD_ACCESSION" } } });
 
@@ -432,6 +432,65 @@ namespace Test
             Assert.That(found);
 
             File.Delete(path);
+        }
+
+        /// <summary>
+        /// 
+        /// </summary>
+        [Test]
+        public static void TestAutodetectDissocationTypeFromScanHeader()
+        {
+            SearchTask searchTask = new SearchTask()
+            {
+                SearchParameters = new SearchParameters
+                {
+                    DoQuantification = false // quant disabled just to save some time
+                },
+
+                // use DissociationType.Unknown as the dissociation type. this signals to the search that the dissociation type
+                // should be taken from the scan header on a scan-specific basis
+                CommonParameters = new CommonParameters(dissociationType: DissociationType.Unknown)
+            };
+
+            string myFile = Path.Combine(TestContext.CurrentContext.TestDirectory, @"TestData\SmallCalibratible_Yeast.mzML");
+            string myDatabase = Path.Combine(TestContext.CurrentContext.TestDirectory, @"TestData\smalldb.fasta");
+            string folderPath = Path.Combine(TestContext.CurrentContext.TestDirectory, @"TestAutodetectDissocationTypeFromScanHeader");
+
+            DbForTask db = new DbForTask(myDatabase, false);
+
+            // run the task
+            var autoTaskFolder = Path.Combine(folderPath, @"Autodetect");
+            Directory.CreateDirectory(autoTaskFolder);
+            searchTask.RunTask(autoTaskFolder, new List<DbForTask> { db }, new List<string> { myFile }, "");
+
+            // run identical task but select the CID dissociation type
+            // TODO: this appears to be a bug.. the file is actually HCD, not CID. need to fix the scan header interpreter in mzLib.
+            var cidTaskFolder = Path.Combine(folderPath, @"CID");
+            Directory.CreateDirectory(cidTaskFolder);
+            searchTask = new SearchTask()
+            {
+                SearchParameters = new SearchParameters
+                {
+                    DoQuantification = false
+                },
+
+                CommonParameters = new CommonParameters(dissociationType: DissociationType.CID)
+            };
+
+            searchTask.RunTask(cidTaskFolder, new List<DbForTask> { db }, new List<string> { myFile }, "");
+
+            // check search results
+            var psmFileAutodetect = File.ReadAllLines(Path.Combine(autoTaskFolder, "AllPSMs.psmtsv"));
+            var psmFileCid = File.ReadAllLines(Path.Combine(cidTaskFolder, "AllPSMs.psmtsv"));
+
+            Assert.That(psmFileAutodetect.Length == psmFileCid.Length);
+
+            for (int i = 0; i < psmFileAutodetect.Length; i++)
+            {
+                Assert.That(psmFileAutodetect[i].Equals(psmFileCid[i]));
+            }
+
+            Directory.Delete(folderPath, true);
         }
     }
 }
