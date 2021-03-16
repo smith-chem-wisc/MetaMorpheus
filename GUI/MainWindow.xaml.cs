@@ -32,7 +32,6 @@ namespace MetaMorpheusGUI
         private readonly ObservableCollection<RawDataForDataGrid> SelectedSpectraFiles = new ObservableCollection<RawDataForDataGrid>();
         private readonly ObservableCollection<ProteinDbForDataGrid> SelectedProteinDatabaseFiles = new ObservableCollection<ProteinDbForDataGrid>();
         private ObservableCollection<InRunTask> InProgressTasks;
-        public string newProteome;
         public static string NewestKnownMetaMorpheusVersion { get; private set; }
 
         public MainWindow()
@@ -1935,6 +1934,11 @@ namespace MetaMorpheusGUI
         {
             dataGridProteinDatabases.Items.Refresh();
             proteinDbSummaryDataGrid.Items.Refresh();
+        }
+
+        private void OpenProteomesFolder_Click(object sender, RoutedEventArgs e)
+        {
+            OpenFolder(Path.Combine(GlobalVariables.DataDir, @"Proteomes"));
         }
     }
 }

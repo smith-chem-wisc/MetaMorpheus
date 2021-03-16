@@ -26,7 +26,7 @@
             <!--<Label Content="List of Available Proteomes" Grid.Row="0" HorizontalAlignment="Center" FontWeight="Bold"/>-->
             <DockPanel HorizontalAlignment="Stretch" Grid.Row="0" LastChildFill="True">
                 <Label Content="Search" DockPanel.Dock="Left" FontWeight="Bold"/>
-                <TextBox DockPanel.Dock="Left" TextChanged="proteomesSearchBox_TextChanged" x:Name="proteomesSearchBox" Margin="2 2 2 2"/>
+                <TextBox DockPanel.Dock="Left" TextChanged="ProteomesSearchBox_TextChanged" x:Name="proteomesSearchBox" Margin="2 2 2 2"/>
             </DockPanel>
 
             <GroupBox Header="Available Proteomes" Name="gbSpectra" Grid.Row="1">

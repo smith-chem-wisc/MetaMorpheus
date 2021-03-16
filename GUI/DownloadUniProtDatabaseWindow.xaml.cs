@@ -1,4 +1,5 @@
-﻿using System.Collections.Generic;
+﻿using EngineLayer;
+using System.Collections.Generic;
 using System.Collections.ObjectModel;
 using System.IO;
 using System.Linq;
@@ -15,15 +16,14 @@ namespace MetaMorpheusGUI
     /// </summary>
     public partial class DownloadUniProtDatabaseWindow : Window
     {
-
         private List<string> availableProteomes = new List<string>();
         private ObservableCollection<string> filteredProteomes = new ObservableCollection<string>();
         private string selectedProteome;
-        private string _downloadedProteomeFullPath;
         private ObservableCollection<ProteinDbForDataGrid> proteinDatabases;
+
         public DownloadUniProtDatabaseWindow(ObservableCollection<ProteinDbForDataGrid> ProteinDatabases)
         {
-            proteinDatabases = ProteinDatabases;
+            proteinDatabases = ProteinDatabases; // passed by reference from the MainWindow.xaml. downloaded database created here is added to this collection
             InitializeComponent();
             availableProteomes.Clear();
             filteredProteomes.Clear();
@@ -36,7 +36,6 @@ namespace MetaMorpheusGUI
 
             availableProteomesListbox.ItemsSource = filteredProteomes;
         }
-
 
         private void LoadAvailableProteomes()
         {
@@ -61,13 +60,19 @@ namespace MetaMorpheusGUI
                 }).ContinueWith(task =>
                 {
                     progress.Close();
+                    if (ProteomeDownloaded(TargetPath))
+                    {
+                        FileInfo fi = new FileInfo(TargetPath);
+                        if(fi.Length > 0)
+                        {
+                            proteinDatabases.Add(new ProteinDbForDataGrid(TargetPath));
+                        }
+                    }
+                    this.Close();
                 }, System.Threading.CancellationToken.None, System.Threading.Tasks.TaskContinuationOptions.None, System.Threading.Tasks.TaskScheduler.FromCurrentSynchronizationContext());
             }
+
             
-            if (File.Exists(TargetPath))
-            {
-                _downloadedProteomeFullPath = TargetPath;
-            }
         }
 
         public static string GetQueryString(string proteomeID, ProteomeFormat format, Reviewed reviewed, Compress compress, IncludeIsoforms include)
@@ -75,7 +80,6 @@ namespace MetaMorpheusGUI
             string htmlQueryString = "";
             if (format == ProteomeFormat.fasta)
             {
-
                 if (reviewed == Reviewed.yes)
                 {
                     htmlQueryString = "https://www.uniprot.org/uniprot/?query=proteome:" + proteomeID + " reviewed:" + reviewed + "&compress=" + compress + "&format=" + format + "&include:" + include;
@@ -97,7 +101,7 @@ namespace MetaMorpheusGUI
         {
             if (string.IsNullOrEmpty(selectedProteome) == false && availableProteomes.Contains(selectedProteome))
             {
-                string absolutePathToStorageDirectory = "E:\\junk";
+                string absolutePathToStorageDirectory = Path.Combine(GlobalVariables.DataDir, @"Proteomes");
                 string filename = "\\" + GetProteomeId(selectedProteome);
 
                 ProteinDbRetriever.Reviewed reviewed = new ProteinDbRetriever.Reviewed();
@@ -146,13 +150,12 @@ namespace MetaMorpheusGUI
                 string htmlQueryString = GetQueryString(GetProteomeId(selectedProteome), format, reviewed, compressed, isoforms);
 
                 DownloadProteomeWithProgress(htmlQueryString, absolutePathToStorageDirectory + filename);
-
-                _downloadedProteomeFullPath = absolutePathToStorageDirectory + filename;
-
-                proteinDatabases.Add(new ProteinDbForDataGrid(_downloadedProteomeFullPath));
-
-                this.Close();
             }
+        }
+
+        private bool ProteomeDownloaded(string downloadedProteomeFullPath)
+        {
+            return File.Exists(downloadedProteomeFullPath);
         }
 
         private string GetProteomeId(string selectedProteome)
@@ -161,7 +164,7 @@ namespace MetaMorpheusGUI
         }
 
         //any time text is changed in the search box, we want to filter the list displayed in the gridview
-        private void proteomesSearchBox_TextChanged(object sender, TextChangedEventArgs e)
+        private void ProteomesSearchBox_TextChanged(object sender, TextChangedEventArgs e)
         {
             string searchText = (sender as TextBox).Text;
 
