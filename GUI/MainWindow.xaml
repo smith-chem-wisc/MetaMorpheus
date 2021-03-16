@@ -818,7 +818,7 @@
 
                         <Button Grid.Row="6" Grid.Column="1" HorizontalContentAlignment="Left" BorderThickness="0" Click="MenuItem_Spritz_Click">
                             <StackPanel Orientation="Horizontal">
-                                <Image Width="20" Height="20" Margin="0,0,5,0"/>
+                                <Image Source="/Icons/spritz20.png" Width="20" Height="20" Margin="0,0,5,0"/>
                                 <TextBlock Text="Create sample-specific database with Spritz" VerticalAlignment="Center" />
                             </StackPanel>
                         </Button>

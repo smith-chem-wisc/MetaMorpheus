@@ -1135,7 +1135,7 @@ namespace MetaMorpheusGUI
 
         private void MenuItem_YouTube_Click(object sender, RoutedEventArgs e)
         {
-            GlobalVariables.StartProcess(@"https://www.youtube.com/playlist?list=PLVk5tTSZ1aWlhNPh7jxPQ8pc0ElyzSUQb");
+            GlobalVariables.StartProcess(@"https://www.youtube.com/playlist?list=PLVk5tTSZ1aWlYiTvJbRj6hjVDq4qH3w__");
         }
 
         private void MenuItem_ProteomicsNewsBlog_Click(object sender, RoutedEventArgs e)
