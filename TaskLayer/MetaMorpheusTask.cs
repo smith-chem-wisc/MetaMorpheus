@@ -234,8 +234,8 @@ namespace TaskLayer
                                     double precursorMz = 0;
                                     var precursorSpectrum = ms2scan;
 
-                                    //In current situation, do we need to perform the following function. 
-                                    //In some weird data, the MS3 scan has mis-leading precursor mass. 
+                                    //In current situation, do we need to perform the following function.
+                                    //In some weird data, the MS3 scan has mis-leading precursor mass.
                                     //MS3 scan is low res in most of the situation, and the matched ions are not scored in a good way.
                                     //{
                                     //    ms3ChildScan.RefineSelectedMzAndIntensity(precursorSpectrum.MassSpectrum);
@@ -410,8 +410,8 @@ namespace TaskLayer
             FileSpecificParameters = new List<(string FileName, CommonParameters Parameters)>();
 
             MetaMorpheusEngine.FinishedSingleEngineHandler += SingleEngineHandlerInTask;
-            //try
-            //{
+            try
+            {
                 var stopWatch = new Stopwatch();
                 stopWatch.Start();
 
@@ -458,25 +458,25 @@ namespace TaskLayer
                 }
                 FinishedWritingFile(resultsFileName, new List<string> { displayName });
                 FinishedSingleTask(displayName);
-            //}
-            //catch (Exception e)
-            //{
-            //    MetaMorpheusEngine.FinishedSingleEngineHandler -= SingleEngineHandlerInTask;
-            //    var resultsFileName = Path.Combine(output_folder, "results.txt");
-            //    e.Data.Add("folder", output_folder);
-            //    using (StreamWriter file = new StreamWriter(resultsFileName))
-            //    {
-            //        file.WriteLine(GlobalVariables.MetaMorpheusVersion.Equals("1.0.0.0") ? "MetaMorpheus: Not a release version" : "MetaMorpheus: version " + GlobalVariables.MetaMorpheusVersion);
-            //        file.WriteLine(SystemInfo.CompleteSystemInfo()); //OS, OS Version, .Net Version, RAM, processor count, MSFileReader .dll versions X3
-            //        file.Write("e: " + e);
-            //        file.Write("e.Message: " + e.Message);
-            //        file.Write("e.InnerException: " + e.InnerException);
-            //        file.Write("e.Source: " + e.Source);
-            //        file.Write("e.StackTrace: " + e.StackTrace);
-            //        file.Write("e.TargetSite: " + e.TargetSite);
-            //    }
-            //    throw;
-            //}
+            }
+            catch (Exception e)
+            {
+                MetaMorpheusEngine.FinishedSingleEngineHandler -= SingleEngineHandlerInTask;
+                var resultsFileName = Path.Combine(output_folder, "results.txt");
+                e.Data.Add("folder", output_folder);
+                using (StreamWriter file = new StreamWriter(resultsFileName))
+                {
+                    file.WriteLine(GlobalVariables.MetaMorpheusVersion.Equals("1.0.0.0") ? "MetaMorpheus: Not a release version" : "MetaMorpheus: version " + GlobalVariables.MetaMorpheusVersion);
+                    file.WriteLine(SystemInfo.CompleteSystemInfo()); //OS, OS Version, .Net Version, RAM, processor count, MSFileReader .dll versions X3
+                    file.Write("e: " + e);
+                    file.Write("e.Message: " + e.Message);
+                    file.Write("e.InnerException: " + e.InnerException);
+                    file.Write("e.Source: " + e.Source);
+                    file.Write("e.StackTrace: " + e.StackTrace);
+                    file.Write("e.TargetSite: " + e.TargetSite);
+                }
+                throw;
+            }
 
             {
                 var proseFilePath = Path.Combine(output_folder, "prose.txt");
@@ -554,7 +554,7 @@ namespace TaskLayer
             if (theExtension.Equals(".fasta") || theExtension.Equals(".fa"))
             {
                 um = null;
-                proteinList = ProteinDbLoader.LoadProteinFasta(fileName, generateTargets, decoyType, isContaminant, out dbErrors, 
+                proteinList = ProteinDbLoader.LoadProteinFasta(fileName, generateTargets, decoyType, isContaminant, out dbErrors,
                     ProteinDbLoader.UniprotAccessionRegex, ProteinDbLoader.UniprotFullNameRegex, ProteinDbLoader.UniprotFullNameRegex, ProteinDbLoader.UniprotGeneNameRegex,
                     ProteinDbLoader.UniprotOrganismRegex, commonParameters.MaxThreadsToUsePerFile);
             }
@@ -944,10 +944,10 @@ namespace TaskLayer
         }
 
         /// <summary>
-        /// Handle ambiguity when two theoretical proteins in the 
+        /// Handle ambiguity when two theoretical proteins in the
         /// search space have the same accession number.
         /// The accession must be unique for indexed searches
-        /// 
+        ///
         /// RemoveAll is important because it references the location in memory, not the Equals
         /// </summary>
         /// <param name="proteins"></param>
