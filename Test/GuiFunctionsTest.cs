@@ -10,6 +10,13 @@ namespace Test
     public static class GuiFunctionsTest
     {
         [Test]
+        [TestCase("UP000000625", true, false, false, true, "https://www.uniprot.org/uniprot/?query=proteome:UP000000625 reviewed:yes&compress=yes&format=fasta&include:no")]
+        [TestCase("UP000000625", false, true, false, true, "https://www.uniprot.org/uniprot/?query=proteome:UP000000625&compress=yes&format=fasta&include:yes")]
+        [TestCase("UP000000625", false, true, false, false, "https://www.uniprot.org/uniprot/?query=proteome:UP000000625&compress=no&format=fasta&include:yes")]
+        [TestCase("UP000000625", false, false, false, true, "https://www.uniprot.org/uniprot/?query=proteome:UP000000625&compress=yes&format=fasta&include:no")]
+        [TestCase("UP000000625", false, false, false, false, "https://www.uniprot.org/uniprot/?query=proteome:UP000000625&compress=no&format=fasta&include:no")]
+        [TestCase("UP000000625", false, false, true, true, "https://www.uniprot.org/uniprot/?query=proteome:UP000000625&compress=yes&format=xml&include:no")]
+        [TestCase("UP000000625", false, false, true, false, "https://www.uniprot.org/uniprot/?query=proteome:UP000000625&compress=no&format=xml&include:no")]
         [TestCase("UP000000625", true, true, true, true, "https://www.uniprot.org/uniprot/?query=proteome:UP000000625 reviewed:yes&compress=yes&format=xml&include:yes")]
         [TestCase("UP000000625", true, true, true, false, "https://www.uniprot.org/uniprot/?query=proteome:UP000000625 reviewed:yes&compress=no&format=xml&include:yes")]
         [TestCase("UP000000625", true, true, false, true, "https://www.uniprot.org/uniprot/?query=proteome:UP000000625 reviewed:yes&compress=yes&format=fasta&include:yes")]
