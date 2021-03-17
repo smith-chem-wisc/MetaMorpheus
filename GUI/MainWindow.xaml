@@ -371,6 +371,12 @@
             <!--Databases tab-->
             <TabItem Name="DatabasesTab" Header="Databases" TabIndex="0" Style="{StaticResource TabItemStyle}">
                 <Grid Style="{StaticResource PageGridStyle}">
+                    <Grid.ColumnDefinitions>
+                        <ColumnDefinition Width="*"></ColumnDefinition>
+                        <ColumnDefinition Width="*"></ColumnDefinition>
+                        <ColumnDefinition Width="*"></ColumnDefinition>
+                        <ColumnDefinition Width="*"></ColumnDefinition>
+                    </Grid.ColumnDefinitions>
                     <Grid.RowDefinitions>
                         <RowDefinition Height="50"/>
                         <RowDefinition Height="50"/>
@@ -379,10 +385,10 @@
                     </Grid.RowDefinitions>
 
                     <!--Header label-->
-                    <Label Content="Protein Databases" Grid.Row="0" Style="{StaticResource HeaderLabelStyle}" />
+                    <Label Content="Protein Databases" Grid.Row="0" Style="{StaticResource HeaderLabelStyle}" Grid.ColumnSpan="4"/>
 
                     <!--Detail text-->
-                    <TextBlock Grid.Row="1" Style="{StaticResource TextBlockStyle}">
+                    <TextBlock Grid.Row="1" Style="{StaticResource TextBlockStyle}" Grid.ColumnSpan="4">
                         Add 
                         
                         <Hyperlink NavigateUri="https://www.uniprot.org/" RequestNavigate="Hyperlink_RequestNavigate">
@@ -394,19 +400,13 @@
                     </TextBlock>
                     
                     <!--Button to add databases-->
-                    <Button x:Name="DownloadUniProtDatabaseButton" Grid.Row="2" Content="+Download UniProt Database" Click="DownloadUniProtDatabase_Click" HorizontalAlignment="Left" 
-                            Style="{StaticResource ImportantButtonStyle}" Margin="0,0,10,0" />
-
-                    <Button x:Name="OpenProteomesFolder" Grid.Row="2" Content="Open Proteomes Folder" Click="OpenProteomesFolder_Click" HorizontalAlignment="Center" Style="{StaticResource ImportantButtonStyle}" Margin="0,0,10,0"/>
-                    <Button Name="AddDatabaseButton" Grid.Row="2" Content="+ADD DATABASE" Click="AddProteinDatabase_Click" HorizontalAlignment="Right" 
-                            Style="{StaticResource ImportantButtonStyle}" Margin="0,0,10,0"/>
-
-                    <Button Name="AddDefaultContaminantsButton" Grid.Row="2" Content="+ADD DEFAULT CONTAMINANTS" 
-                            Click="AddDefaultContaminantDatabase_Click" HorizontalAlignment="Right" Style="{StaticResource ImportantButtonStyle}"
-                        Margin="0,0,211,0"/>
+                    <Button Name="DownloadUniProtDatabaseButton" Grid.Row="2" Grid.Column="0" Content="+Download UniProt Proteome" Click="DownloadUniProtDatabase_Click" Style="{StaticResource ImportantButtonStyle}" Margin="0,0,10,0" />
+                    <Button Name="OpenProteomesFolder" Grid.Row="2" Grid.Column="1" Content="+Open Proteomes Folder" Click="OpenProteomesFolder_Click" Style="{StaticResource ImportantButtonStyle}" Margin="0,0,10,0"/>
+                    <Button Name="AddDatabaseButton" Grid.Row="2" Grid.Column="2" Content="+Add Proteome" Click="AddProteinDatabase_Click" Style="{StaticResource ImportantButtonStyle}" Margin="0,0,10,0"/>
+                    <Button Name="AddDefaultContaminantsButton" Grid.Row="2" Grid.Column="3" Content="+Add Default Contaminants" Click="AddDefaultContaminantDatabase_Click" Style="{StaticResource ImportantButtonStyle}" Margin="0,0,10,0"/>
 
                     <!--The list of databases-->
-                    <DataGrid Name="dataGridProteinDatabases" Grid.Row="3" ItemsSource="{Binding}" Style="{StaticResource x:DataGridStyle}"
+                    <DataGrid Name="dataGridProteinDatabases" Grid.Row="3" Grid.ColumnSpan="4" ItemsSource="{Binding}" Style="{StaticResource x:DataGridStyle}"
                               ColumnHeaderStyle="{StaticResource DataGridColumnHeaderStyle}" PreviewKeyDown="Window_PreviewKeyDown" >
                         <DataGrid.RowStyle>
                             <Style TargetType="{x:Type DataGridRow}" BasedOn="{StaticResource DatabaseDataGridItemStyle}" />
