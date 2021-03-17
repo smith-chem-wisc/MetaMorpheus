@@ -1,4 +1,5 @@
 ﻿using EngineLayer;
+using GuiFunctions.Databases;
 using System.Collections.Generic;
 using System.Collections.ObjectModel;
 using System.IO;
@@ -6,8 +7,6 @@ using System.Linq;
 using System.Net;
 using System.Windows;
 using System.Windows.Controls;
-using UsefulProteomicsDatabases;
-using static UsefulProteomicsDatabases.ProteinDbRetriever;
 
 namespace MetaMorpheusGUI
 {
@@ -20,6 +19,7 @@ namespace MetaMorpheusGUI
         private ObservableCollection<string> filteredProteomes = new ObservableCollection<string>();
         private string selectedProteome;
         private ObservableCollection<ProteinDbForDataGrid> proteinDatabases;
+        private string AbsolutePathToStorageDirectory = Path.Combine(GlobalVariables.DataDir, @"Proteomes");
 
         public DownloadUniProtDatabaseWindow(ObservableCollection<ProteinDbForDataGrid> ProteinDatabases)
         {
@@ -63,7 +63,7 @@ namespace MetaMorpheusGUI
                     if (ProteomeDownloaded(TargetPath))
                     {
                         FileInfo fi = new FileInfo(TargetPath);
-                        if(fi.Length > 0)
+                        if (fi.Length > 0)
                         {
                             proteinDatabases.Add(new ProteinDbForDataGrid(TargetPath));
                         }
@@ -71,85 +71,15 @@ namespace MetaMorpheusGUI
                     this.Close();
                 }, System.Threading.CancellationToken.None, System.Threading.Tasks.TaskContinuationOptions.None, System.Threading.Tasks.TaskScheduler.FromCurrentSynchronizationContext());
             }
-
-            
         }
 
-        public static string GetQueryString(string proteomeID, ProteomeFormat format, Reviewed reviewed, Compress compress, IncludeIsoforms include)
+        private void DownloadProteomeButton_Click(object sender, RoutedEventArgs e)
         {
-            string htmlQueryString = "";
-            if (format == ProteomeFormat.fasta)
+            if (!string.IsNullOrEmpty(selectedProteome) && availableProteomes.Contains(selectedProteome))
             {
-                if (reviewed == Reviewed.yes)
-                {
-                    htmlQueryString = "https://www.uniprot.org/uniprot/?query=proteome:" + proteomeID + " reviewed:" + reviewed + "&compress=" + compress + "&format=" + format + "&include:" + include;
-                }
-                else
-                {
-                    htmlQueryString = "https://www.uniprot.org/uniprot/?query=proteome:" + proteomeID + "&compress=" + compress + "&format=" + format + "&include:" + include;
-                }
-            }
-            else if (format == ProteomeFormat.xml)
-            {
-                htmlQueryString = "https://www.uniprot.org/uniprot/?query=proteome:" + proteomeID + " reviewed:" + reviewed + "&compress=" + compress + "&format=" + format;
-            }
-
-            return htmlQueryString;
-        }
-
-        private void downloadProteomeButton_Click(object sender, RoutedEventArgs e)
-        {
-            if (string.IsNullOrEmpty(selectedProteome) == false && availableProteomes.Contains(selectedProteome))
-            {
-                string absolutePathToStorageDirectory = Path.Combine(GlobalVariables.DataDir, @"Proteomes");
-                string filename = "\\" + GetProteomeId(selectedProteome);
-
-                ProteinDbRetriever.Reviewed reviewed = new ProteinDbRetriever.Reviewed();
-                if (reviewedCheckBox.IsChecked == true)
-                {
-                    reviewed = ProteinDbRetriever.Reviewed.yes;
-                    filename += "_reviewed";
-                }
-                else
-                {
-                    reviewed = ProteinDbRetriever.Reviewed.no;
-                    filename += "_unreviewed";
-                }
-
-                ProteinDbRetriever.IncludeIsoforms isoforms;
-                if (addIsoformsCheckBox.IsChecked == true)
-                {
-                    isoforms = ProteinDbRetriever.IncludeIsoforms.yes;
-                    filename += "_isoform";
-                }
-                else
-                {
-                    isoforms = ProteinDbRetriever.IncludeIsoforms.no;
-                }
-                ProteinDbRetriever.ProteomeFormat format = new ProteinDbRetriever.ProteomeFormat();
-                if (xmlBox.IsChecked == true)
-                {
-                    format = ProteinDbRetriever.ProteomeFormat.xml;
-                    filename += ".xml";
-                }
-                else
-                {
-                    format = ProteinDbRetriever.ProteomeFormat.fasta;
-                    filename += ".fasta";
-                }
-                ProteinDbRetriever.Compress compressed;
-                if (compressedCheckBox.IsChecked == true)
-                {
-                    compressed = ProteinDbRetriever.Compress.yes;
-                    filename += ".gz";
-                }
-                else
-                {
-                    compressed = ProteinDbRetriever.Compress.no;
-                }
-                string htmlQueryString = GetQueryString(GetProteomeId(selectedProteome), format, reviewed, compressed, isoforms);
-
-                DownloadProteomeWithProgress(htmlQueryString, absolutePathToStorageDirectory + filename);
+                string filename = DownloadUniProtDatabaseFunctions.GetUniprotFilename(GetProteomeId(selectedProteome), reviewedCheckBox.IsChecked.Value, addIsoformsCheckBox.IsChecked.Value, xmlBox.IsChecked.Value, compressedCheckBox.IsChecked.Value);
+                string htmlQueryString = DownloadUniProtDatabaseFunctions.GetUniProtHtmlQueryString(GetProteomeId(selectedProteome), reviewedCheckBox.IsChecked.Value, addIsoformsCheckBox.IsChecked.Value, xmlBox.IsChecked.Value, compressedCheckBox.IsChecked.Value);
+                DownloadProteomeWithProgress(htmlQueryString, AbsolutePathToStorageDirectory + filename);
             }
         }
 
@@ -160,7 +90,7 @@ namespace MetaMorpheusGUI
 
         private string GetProteomeId(string selectedProteome)
         {
-            return (EngineLayer.GlobalVariables.AvailableUniProtProteomes.FirstOrDefault(x => x.Value == selectedProteome).Key);
+            return (GlobalVariables.AvailableUniProtProteomes.FirstOrDefault(x => x.Value == selectedProteome).Key);
         }
 
         //any time text is changed in the search box, we want to filter the list displayed in the gridview
@@ -185,7 +115,7 @@ namespace MetaMorpheusGUI
             }
         }
 
-        private void availableProteomesListbox_SelectionChanged(object sender, SelectionChangedEventArgs e)
+        private void AvailableProteomesListbox_SelectionChanged(object sender, SelectionChangedEventArgs e)
         {
             if (availableProteomesListbox.SelectedItem == null)
             {
@@ -195,10 +125,5 @@ namespace MetaMorpheusGUI
             selectedProteome = (string)availableProteomesListbox.SelectedItem;
             selectedProteomeBox.Text = selectedProteome;
         }
-
-        //private string Window_Closing(object sender, System.ComponentModel.CancelEventArgs e)
-        //{
-        //    return "";
-        //}
     }
 }

@@ -35,7 +35,7 @@
                         <RowDefinition Height="1*"/>
                     </Grid.RowDefinitions>
                     <ListBox x:Name="availableProteomesListbox" Grid.Row="0" VerticalAlignment="Stretch" ItemsSource="{Binding filteredProteomes}" ScrollViewer.CanContentScroll="True" Margin="2 2 2 2" 
-                             SelectionChanged="availableProteomesListbox_SelectionChanged" SelectionMode="Single"/>
+                             SelectionChanged="AvailableProteomesListbox_SelectionChanged" SelectionMode="Single"/>
                 </Grid>
             </GroupBox>
         </Grid>
@@ -56,12 +56,12 @@
             </DockPanel>
 
             <StackPanel Grid.Row="2" Orientation="Vertical" Margin="20 20 0 0">
-                <CheckBox x:Name="reviewedCheckBox" Content="Reviewed" IsChecked="True" Height="25" ToolTip="Unchecking the box will retrieve both reviewed and unreviewed" ToolTipService.ShowOnDisabled="true"/>
+                <CheckBox x:Name="reviewedCheckBox" Content="Reviewed Only" IsChecked="True" Height="25" ToolTip="Unchecking the box will retrieve both reviewed and unreviewed" ToolTipService.ShowOnDisabled="true"/>
                 <CheckBox x:Name="compressedCheckBox" Content="Compressed" IsChecked="True" Height="25" ToolTip="Compressed (.gz) will download faster and work directly with MetaMorpheus" ToolTipService.ShowOnDisabled="true"/>
                 <CheckBox x:Name="xmlBox" Content="XML" IsChecked="True" Height="25" ToolTip="XML format will include UniProt annotated PTMs. Unchecking the box will retrieve the FASTA format" ToolTipService.ShowOnDisabled="true"/>
                 <CheckBox x:Name="addIsoformsCheckBox" Content="Add Isoforms" IsChecked="False" Height="25" ToolTip="Isoforms can be retrieved only in combination with FASTA formatted files. Isoforms are generally included in the XML format file." ToolTipService.ShowOnDisabled="true"/>
             </StackPanel>
-            <Button Content="Download Proteome" Name="downloadProteomeButton" Click="downloadProteomeButton_Click" Grid.Row="3" FontWeight="Bold" Background="Blue" Foreground="White" Margin="2 2 2 2" ToolTip="Downloads can take several minutes" ToolTipService.ShowOnDisabled="true"/>
+            <Button Content="Download Proteome" Name="downloadProteomeButton" Click="DownloadProteomeButton_Click" Grid.Row="3" FontWeight="Bold" Background="Blue" Foreground="White" Margin="2 2 2 2" ToolTip="Downloads can take several minutes" ToolTipService.ShowOnDisabled="true"/>
         </Grid>
     </Grid>
 </Window>
