@@ -67,6 +67,7 @@ namespace MetaMorpheusGUI
                         {
                             proteinDatabases.Add(new ProteinDbForDataGrid(TargetPath));
                         }
+                        File.SetCreationTime(TargetPath, System.DateTime.Now); //this is needed because overwriting an old file will not update the file creation time
                     }
                     this.Close();
                 }, System.Threading.CancellationToken.None, System.Threading.Tasks.TaskContinuationOptions.None, System.Threading.Tasks.TaskScheduler.FromCurrentSynchronizationContext());
