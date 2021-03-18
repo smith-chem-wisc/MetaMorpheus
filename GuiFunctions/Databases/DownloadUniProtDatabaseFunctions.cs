@@ -10,131 +10,42 @@ namespace GuiFunctions.Databases
     {
         public static string GetUniProtHtmlQueryString(string proteomeID, bool reviewed, bool isoforms, bool xmlFormat, bool compressed)
         {
-            StringBuilder sb = new StringBuilder();
-            sb.Append("https://www.uniprot.org/uniprot/?query=proteome:" + proteomeID + " ");
+            StringBuilder htmlQueryString = new StringBuilder();
+            htmlQueryString.Append("https://www.uniprot.org/uniprot/?query=proteome:" + proteomeID + " ");
 
             if (!xmlFormat) //fasta
             {
-                sb.Append("&format=fasta");
-                if (reviewed)
-                {
-                    sb.Append("&reviewed:yes");
-                    if (isoforms)
-                    {
-                        sb.Append("&include:yes");
-                        if (compressed)
-                        {
-                            sb.Append("&compress=yes");
-                        }
-                        else //not compressed
-                        {
-                            sb.Append("&compress=no");
-                        }
-                    }
-                    else//no isoforms
-                    {
-                        sb.Append("&include:no");
-                        if (compressed)
-                        {
-                            sb.Append("&compress=yes");
-                        }
-                        else //not compressed
-                        {
-                            sb.Append("&compress=no");
-                        }
-                    }
-                }
-                else //revied and unreviewed both
-                {
-                    //we don't need to append anything if we want both reviewed and unreviewed
-                    if (isoforms)
-                    {
-                        sb.Append("&include:yes");
-                        if (compressed)
-                        {
-                            sb.Append("&compress=yes");
-                        }
-                        else //not compressed
-                        {
-                            sb.Append("&compress=no");
-                        }
-                    }
-                    else//no isoforms
-                    {
-                        sb.Append("&include:no");
-                        if (compressed)
-                        {
-                            sb.Append("&compress=yes");
-                        }
-                        else //not compressed
-                        {
-                            sb.Append("&compress=no");
-                        }
-                    }
-                }
+                htmlQueryString.Append("&format=fasta");
             }
-            else //xml -- currently isoforms are automatically included (I think)
+            else
             {
-                sb.Append("&format=xml");
-                if (reviewed)
-                {
-                    sb.Append("&reviewed:yes");
-                    if (isoforms)
-                    {
-                        sb.Append("&include:yes");
-                        if (compressed)
-                        {
-                            sb.Append("&compress=yes");
-                        }
-                        else //not compressed
-                        {
-                            sb.Append("&compress=no");
-                        }
-                    }
-                    else//no isoforms
-                    {
-                        sb.Append("&include:no");
-                        if (compressed)
-                        {
-                            sb.Append("&compress=yes");
-                        }
-                        else //not compressed
-                        {
-                            sb.Append("&compress=no");
-                        }
-                    }
-                }
-                else //revied and unreviewed both
-                {
-                    //we don't need to append anything if we want both reviewed and unreviewed
-                    if (isoforms)
-                    {
-                        sb.Append("&include:yes");
-                        if (compressed)
-                        {
-                            sb.Append("&compress=yes");
-                        }
-                        else //not compressed
-                        {
-                            sb.Append("&compress=no");
-                        }
-                    }
-                    else//no isoforms
-                    {
-                        sb.Append("&include:no");
-                        if (compressed)
-                        {
-                            sb.Append("&compress=yes");
-                        }
-                        else //not compressed
-                        {
-                            sb.Append("&compress=no");
-                        }
-                    }
-                }
+                htmlQueryString.Append("&format=xml");
             }
 
-            return sb.ToString();
+            if (reviewed)
+            {
+                htmlQueryString.Append("&reviewed:yes");
+            }
+
+            if (isoforms)
+            {
+                htmlQueryString.Append("&include:yes");
+            }
+            else
+            {
+                htmlQueryString.Append("&include:no");
+            }
+
+            if (compressed)
+            {
+                htmlQueryString.Append("&compress=yes");
+            }
+            else
+            {
+                htmlQueryString.Append("&compress=no");
+            }
+
+            return htmlQueryString.ToString();
         }
 
         public static string GetUniprotFilename(string uniprotProteomeId, bool reviewed, bool isoforms, bool xmlFormat, bool compressed)
