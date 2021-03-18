@@ -463,10 +463,9 @@ namespace Test
             Directory.CreateDirectory(autoTaskFolder);
             searchTask.RunTask(autoTaskFolder, new List<DbForTask> { db }, new List<string> { myFile }, "");
 
-            // run identical task but select the CID dissociation type
-            // TODO: this appears to be a bug.. the file is actually HCD, not CID. need to fix the scan header interpreter in mzLib.
-            var cidTaskFolder = Path.Combine(folderPath, @"CID");
-            Directory.CreateDirectory(cidTaskFolder);
+            // run identical task but select the HCD dissociation type instead of autodetect
+            var hcdTaskFolder = Path.Combine(folderPath, @"HCD");
+            Directory.CreateDirectory(hcdTaskFolder);
             searchTask = new SearchTask()
             {
                 SearchParameters = new SearchParameters
@@ -474,22 +473,23 @@ namespace Test
                     DoQuantification = false
                 },
 
-                CommonParameters = new CommonParameters(dissociationType: DissociationType.CID)
+                CommonParameters = new CommonParameters(dissociationType: DissociationType.HCD)
             };
 
-            searchTask.RunTask(cidTaskFolder, new List<DbForTask> { db }, new List<string> { myFile }, "");
+            searchTask.RunTask(hcdTaskFolder, new List<DbForTask> { db }, new List<string> { myFile }, "");
 
             // check search results
             var psmFileAutodetect = File.ReadAllLines(Path.Combine(autoTaskFolder, "AllPSMs.psmtsv"));
-            var psmFileCid = File.ReadAllLines(Path.Combine(cidTaskFolder, "AllPSMs.psmtsv"));
+            var psmFileHcd = File.ReadAllLines(Path.Combine(hcdTaskFolder, "AllPSMs.psmtsv"));
 
-            Assert.That(psmFileAutodetect.Length == psmFileCid.Length);
+            Assert.That(psmFileAutodetect.Length == psmFileHcd.Length);
 
             for (int i = 0; i < psmFileAutodetect.Length; i++)
             {
-                Assert.That(psmFileAutodetect[i].Equals(psmFileCid[i]));
+                Assert.That(psmFileAutodetect[i].Equals(psmFileHcd[i]));
             }
 
+            // clean up
             Directory.Delete(folderPath, true);
         }
     }
