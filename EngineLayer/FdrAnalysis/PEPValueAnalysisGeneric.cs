@@ -625,9 +625,9 @@ namespace EngineLayer
             float isLoop = 0;
             float isInter = 0;
             float isIntra = 0;
-            bool hasSpectralAngle = false;
-            float spectralAngle = (float)double.NaN;
-            //float spectralAngle = -1;
+            float hasSpectralAngle = 0;
+           // float spectralAngle = (float)double.NaN;
+            float spectralAngle = -1;
             if (searchType != "crosslink")
             {
                 if (searchType == "top-down")
@@ -655,8 +655,12 @@ namespace EngineLayer
                 int closest = psmCountList.OrderBy(item => Math.Abs(psmCount - item)).First();
                 psmCount = closest;
                 isVariantPeptide = PeptideIsVariant(selectedPeptide);
-                spectralAngle = (float)psm.SpectralAngle;
-                hasSpectralAngle = PsmHasSpectralAngle(psm);
+                if(PsmHasSpectralAngle(psm))
+                {
+                    spectralAngle = (float)psm.SpectralAngle;
+                    hasSpectralAngle = 1;
+                }
+                
                 
 
                 if (psm.DigestionParams.Protease.Name != "top-down")

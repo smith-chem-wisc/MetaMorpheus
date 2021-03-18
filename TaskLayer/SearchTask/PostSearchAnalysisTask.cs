@@ -59,7 +59,7 @@ namespace TaskLayer
                    .GroupBy(b => (b.FullFilePath, b.ScanNumber, b.PeptideMonisotopicMass)).Select(b => b.First()).ToList();
 
                 CalculatePsmFdr();
-            }
+            } 
 
             DoMassDifferenceLocalizationAnalysis();
             ProteinAnalysis();
@@ -70,6 +70,11 @@ namespace TaskLayer
             HistogramAnalysis();
             WritePsmResults();
             SpectralLibraryGeneration();
+            //SpectralLibraryGeneration(Parameters.SpectralLibrary);
+            if (Parameters.SpectralLibrary != null)
+            {
+                Parameters.SpectralLibrary.CloseConnections();
+            }
             WriteProteinResults();
             WriteQuantificationResults();
             WritePrunedDatabase();
@@ -515,13 +520,15 @@ namespace TaskLayer
             }
         }
 
-        //write spectral library by Yuling 11/14
+        //write spectral library by Yuling 03/16
         private void SpectralLibraryGeneration()
         {
             var FilteredPsmList = Parameters.AllPsms
-                .Where(p => p.FdrInfo.QValue <= 0.1
+                .Where(p => p.FdrInfo.QValue <= 0.01 && p.FdrInfo.PEP < 0.5
                 && p.FdrInfo.QValueNotch <= CommonParameters.QValueOutputFilter).ToList();
-            FilteredPsmList.RemoveAll(b => b.BestMatchingPeptides.First().Peptide.Protein.Accession.Contains("DECOY"));
+            //var FilteredPsmList = Parameters.AllPsms
+            //    .Where(p => p.FdrInfo.QValueNotch <= CommonParameters.QValueOutputFilter).ToList();
+            //FilteredPsmList.RemoveAll(b => b.BestMatchingPeptides.First().Peptide.Protein.Accession.Contains("DECOY"));
             FilteredPsmList.RemoveAll(b => b.IsDecoy);
             FilteredPsmList.RemoveAll(b => b.IsContaminant);
 
@@ -529,7 +536,7 @@ namespace TaskLayer
             Dictionary<String, List<PeptideSpectralMatch>> PsmsGroupByPeptideAndCharge = new Dictionary<String, List<PeptideSpectralMatch>>();
             foreach (var x in FilteredPsmList)
             {
-                List<PeptideSpectralMatch> psmsWithsinglePeptide = Parameters.AllPsms.Where(b => b.FullSequence == x.FullSequence).OrderByDescending(p => p.Score).ToList();
+                List<PeptideSpectralMatch> psmsWithsinglePeptide = FilteredPsmList.Where(b => b.FullSequence == x.FullSequence).OrderByDescending(p => p.Score).ToList();
                 String peptideWithChargeState = x.FullSequence + "/" + x.ScanPrecursorCharge;
                 List<PeptideSpectralMatch> psmsWithsinglePeptideAndSameCharge = psmsWithsinglePeptide.Where(b => b.ScanPrecursorCharge == x.ScanPrecursorCharge).OrderByDescending(p => p.Score).ToList();
                 if (!PsmsGroupByPeptideAndCharge.ContainsKey(peptideWithChargeState))
@@ -541,45 +548,79 @@ namespace TaskLayer
             var spectrumLibrary = new List<LibrarySpectrum>();
             foreach (var x in PsmsGroupByPeptideAndCharge)
             {
-                List<MatchedFragmentIon> standspctra = x.Value[0].MatchedFragmentIons;
-                double standPrecursurMz = x.Value[0].ScanPrecursorMonoisotopicPeakMz;
-                double standRt = x.Value[0].ScanRetentionTime;
-                int a = 0;
-                var ConsensusSpectraPeaksNumPair = new Dictionary<string, int>();
-                int PsmsNum = 1;
-                while (a < x.Value.Count - 1)
+                List < PeptideSpectralMatch> psmsForLibrary = new List<PeptideSpectralMatch>();
+                if (x.Value.Count > 2)
                 {
-                    //Console.WriteLine(x.Key + "   " + this.matchedSpectraCompare(standspctra, x.Value[a + 1].MatchedFragmentIons));
-                    var spectrumTocompare = x.Value[a + 1].MatchedFragmentIons;
-                    //if (x.Value[0].FullSequence.Contains("HAEGTFTSDVSSYLEGQAAK"))
+                    int a = 0;
+                    int b = 0;
+                    var ConsensusSpectraPeaksNumPair = new Dictionary<string, int>();
+                    //int PsmsNum = 1;
+                    List<double> eachSaTotal = new List<double>();
+                    while (b < 10 && b < x.Value.Count)
+                    {
+                        int c = 0;
+                        List<MatchedFragmentIon> possibleStandard = x.Value[b].MatchedFragmentIons.Where(p => p.Charge == 1).ToList();
+                        List<double> saTotal = new List<double>();
+                        while (c < 10 && c < x.Value.Count)
+                        {
+                            var saOne = SpectralLibrarySearchFunction.CalculateNormalizedSpectralAngle(possibleStandard, x.Value[c].MsDataScan, x.Value[c], CommonParameters);
+                            var sasaOne = SpectralLibrarySearchFunction.CalculatePsmsNormalizedSpectralAngle(possibleStandard.Where(p => p.Charge == 1).ToList(), x.Value[c].MatchedFragmentIons.Where(p => p.Charge == 1).ToList());
+                            var sasasaOne = SpectralLibrarySearchFunction.CalculatePsmsNormalizedSpectralAngle(x.Value[c].MatchedFragmentIons.Where(p => p.Charge == 1).ToList(), x.Value[c].MatchedFragmentIons.Where(p => p.Charge == 1).ToList());
+                            saTotal.Add(saOne);
+                            c++;
+                        }
+                        eachSaTotal.Add(saTotal.Average());
+                        b++;
+                    }
+                    //if (eachSaTotal.Max() > 0.5)
                     //{
+                        int standardIndex = eachSaTotal.IndexOf(eachSaTotal.Max());
 
+                        List<MatchedFragmentIon> standspctra = x.Value[standardIndex].MatchedFragmentIons.Where(p => p.Charge == 1).ToList();
+                        psmsForLibrary.Add(x.Value[standardIndex]);
+                        double standPrecursurMz = x.Value[standardIndex].ScanPrecursorMonoisotopicPeakMz;
+                        double standRt = x.Value[standardIndex].ScanRetentionTime;
+                        Dictionary<string, (List<double>, List<double>)> allMatchedIons = new Dictionary<string, (List<double>, List<double>)>();
+                    while (a < x.Value.Count - 1)
+                    {
+                        //Console.WriteLine(x.Key + "   " + this.matchedSpectraCompare(standspctra, x.Value[a + 1].MatchedFragmentIons));
+                        var spectrumTocompare = x.Value[a].MatchedFragmentIons.Where(p => p.Charge == 1).ToList();
+                        //if (x.Value[0].FullSequence.Contains("TTGIVMDSGDGVTHTVPIYEGYALPHAILR"))
+                        //{
+
+                        //}
+
+                        //var compareScore = SpectralLibrarySearchFunction.MatchedSpectraCompare(standspctra, spectrumTocompare);
+                        var testScore1 = SpectralLibrarySearchFunction.CalculatePsmsNormalizedSpectralAngle(x.Value[standardIndex].MatchedFragmentIons.Where(p => p.Charge == 1).ToList(), spectrumTocompare);
+                        //var testscore2 = SpectralLibrarySearchFunction.CalculatePsmsNormalizedSpectralAngle(x.Value[standardIndex].MatchedFragmentIons.Where(p => p.Charge == 1).ToList(), spectrumTocompare.Where(p => p.Charge == 1).ToList());
+                        var testScore = SpectralLibrarySearchFunction.CalculateNormalizedSpectralAngle(standspctra, x.Value[a].MsDataScan, x.Value[a], CommonParameters);
+                        //var sa = SpectralLibrarySearchFunction.CalculateNormalizedSpectralAngle(standspctra, x.Value[a + 1].MsDataScan, CommonParameters);
+                        if (testScore > 0.67 && a != standardIndex)
+                        {
+                            psmsForLibrary.Add(x.Value[a]);
+                            x.Value[a].ScoreForLibraryGeneration = testScore;
+                        }
+
+                        //if (testScore > 0.67 && a != standardIndex && a < 5)
+                        //{
+                        //    standspctra = SpectralLibrarySearchFunction.newAverageTwoSpectra(standspctra, x.Value[a].LibraryMatchedFragments);
+                        //    standPrecursurMz = (standPrecursurMz + x.Value[a].ScanPrecursorMonoisotopicPeakMz) / 2;
+                        //    standRt = (standRt + x.Value[a].ScanRetentionTime) / 2;
+                        //}
+                        a++;
+                    }
+                    //if(psmsForLibrary.Count>1||(psmsForLibrary.Count==1&& eachSaTotal.Max()>0.5))
+                    //{
+                        var standSpectrum = SpectralLibrarySearchFunction.ConvertingPsmsToConcensusSpectrum(psmsForLibrary);
+                        //var standSpectrum = new LibrarySpectrum(x.Value[0].FullSequence, standPrecursurMz, x.Value[0].ScanPrecursorCharge, standspctra, standRt);
+                        standSpectrum.BaseSequenceWithoutMods = x.Value[0].BaseSequence;
+                        spectrumLibrary.Add(standSpectrum);
                     //}
-
-                    var compareScore = SpectralLibrarySearchFunction.MatchedSpectraCompare(standspctra, spectrumTocompare);
-                    var testScore = SpectralLibrarySearchFunction.CalculatePsmsNormalizedSpectralAngle(standspctra, spectrumTocompare);
-                    if (compareScore > 0.95)
-                    {
-                        PsmsNum++;
-                        var pairResult = SpectralLibrarySearchFunction.AverageTwoSpectra(standspctra, spectrumTocompare, ConsensusSpectraPeaksNumPair);
-                        standspctra = pairResult.Item1;
-                        ConsensusSpectraPeaksNumPair = pairResult.Item2;
-
-                        standPrecursurMz = standPrecursurMz * (1 - (1.0 / PsmsNum)) + x.Value[a + 1].ScanPrecursorMonoisotopicPeakMz / PsmsNum;
-                        standRt = standRt * (1 - (1.0 / PsmsNum)) + x.Value[a + 1].ScanRetentionTime / PsmsNum;
+                        
                     }
-                    a++;
-                }
-                foreach(var s in ConsensusSpectraPeaksNumPair)
-                {
-                    if(s.Value < 0.6 * PsmsNum)
-                    {
-                        standspctra.RemoveAll(b => (b.NeutralTheoreticalProduct.ProductType.ToString() + b.NeutralTheoreticalProduct.FragmentNumber + "^" + b.Charge) == s.Key);
-                    }
-                }
-                var standSpectrum = new LibrarySpectrum(x.Value[0].FullSequence, standPrecursurMz, x.Value[0].ScanPrecursorCharge, standspctra, standRt);
-                standSpectrum.BaseSequenceWithoutMods = x.Value[0].BaseSequence;
-                spectrumLibrary.Add(standSpectrum);
+                //}
+
+
             }
 
             WriteSpectralLibrary(spectrumLibrary, Parameters.OutputFolder);
@@ -588,14 +629,193 @@ namespace TaskLayer
             //var allspectra = new List<LibrarySpectrum>();
             //foreach (var x in PsmsGroupByPeptideAndCharge)
             //{
-            //    if(x.Value.Count>1)
+            //    if (x.Value.Count > 1)
             //    {
-            //        foreach(var each in x.Value)
+            //        foreach (var each in x.Value)
+            //        {
+            //            allspectra.Add(new LibrarySpectrum(each.FullSequence, each.ScanPrecursorMonoisotopicPeakMz, each.ScanPrecursorCharge, each.MatchedFragmentIons.Where(p => p.Charge == 1).ToList(), each.ScanRetentionTime));
+            //        }
+            //    }
+
+            //}
+            //WriteAllspectra(allspectra, Parameters.OutputFolder);
+        }
+        //write spectral library by Yuling 11/14
+        private void SpectralLibraryGeneration(SpectralLibrary spectralLibrary)
+        {
+            var FilteredPsmList = Parameters.AllPsms
+                .Where(p => p.FdrInfo.QValue <= 0.01
+                && p.FdrInfo.QValueNotch <= CommonParameters.QValueOutputFilter && p.SpectralAngle > 0.7 ).ToList();
+            //var FilteredPsmList = Parameters.AllPsms
+            //    .Where(p => p.FdrInfo.QValue <= 0.01
+            //    && p.FdrInfo.QValueNotch <= 0.0001 ).ToList();
+            //FilteredPsmList.RemoveAll(b => b.BestMatchingPeptides.First().Peptide.Protein.Accession.Contains("DECOY"));
+            FilteredPsmList.RemoveAll(b => b.IsDecoy);
+            FilteredPsmList.RemoveAll(b => b.IsContaminant);
+
+
+            //write spectral library by Yuling 11/14
+            Dictionary<String, List<PeptideSpectralMatch>> PsmsGroupByPeptideAndCharge = new Dictionary<String, List<PeptideSpectralMatch>>();
+            foreach (var x in FilteredPsmList)
+            {
+                List<PeptideSpectralMatch> psmsWithsinglePeptide = FilteredPsmList.Where(b => b.FullSequence == x.FullSequence).OrderByDescending(p => p.Score).ToList();
+                String peptideWithChargeState = x.FullSequence + "/" + x.ScanPrecursorCharge;
+                List<PeptideSpectralMatch> psmsWithsinglePeptideAndSameCharge = psmsWithsinglePeptide.Where(b => b.ScanPrecursorCharge == x.ScanPrecursorCharge).OrderBy(p => p.SpectralAngle).ToList();
+                if (!PsmsGroupByPeptideAndCharge.ContainsKey(peptideWithChargeState))
+                {
+                    PsmsGroupByPeptideAndCharge.Add(peptideWithChargeState, psmsWithsinglePeptideAndSameCharge);
+                }
+            }
+
+            Dictionary<String, LibrarySpectrum> spectrumLibrary = new Dictionary<String, LibrarySpectrum>();
+
+            foreach (var x in PsmsGroupByPeptideAndCharge)
+            {
+                //string single_pdeep = @"g:\yuling\SLSpaper\testData\pdeepTTGIVMDSGDGVTHTVPIYEGYALPHAILR.msp";
+                //var single_pdeepLibrary = new SpectralLibrary(new List<string> { single_pdeep });
+                //single_pdeepLibrary.TryGetSpectrum("TTGIVMDSGDGVTHTVPIYEGYALPHAILR", x.Value[0].ScanPrecursorCharge, out var pdeepSpectrum);
+                int aa = 0;
+                //var standSpectrum = new LibrarySpectrum(x.Value[0].FullSequence, x.Value[0].ScanPrecursorMonoisotopicPeakMz, x.Value[0].ScanPrecursorCharge, x.Value[0].LibraryMatchedFragments, x.Value[0].ScanRetentionTime);
+                var tempStand = x.Value[0].LibraryMatchedFragments;
+                double tempMz = x.Value[0].ScanPrecursorMonoisotopicPeakMz;
+                double temTime = x.Value[0].ScanRetentionTime;
+                while (aa < x.Value.Count - 1)
+                {
+                    tempStand = SpectralLibrarySearchFunction.newAverageTwoSpectra(tempStand, x.Value[aa + 1].LibraryMatchedFragments);
+                    //var test = SpectralLibrarySearchFunction.CalculatePsmsNormalizedSpectralAngle(pdeepSpectrum.MatchedFragmentIons, tempStand);
+                    tempMz = (tempMz + x.Value[aa + 1].ScanPrecursorMonoisotopicPeakMz) / 2;
+                    temTime = (temTime + x.Value[aa + 1].ScanRetentionTime) / 2;
+                    aa++;
+                }
+                var standSpectrum = new LibrarySpectrum(x.Value[0].FullSequence, tempMz, x.Value[0].ScanPrecursorCharge, tempStand, temTime);
+                //if (x.Value.Count == 1)
+                //{
+                //    var standSpectrum = new LibrarySpectrum(x.Value[0].FullSequence, x.Value[0].ScanPrecursorMonoisotopicPeakMz, x.Value[0].ScanPrecursorCharge, x.Value[0].MatchedFragmentIons, x.Value[0].ScanRetentionTime);
+                //}
+                //else if (x.Value.Count == 2)
+                //{
+                //    var standspctra = SpectralLibrarySearchFunction.newAverageTwoSpectra(x.Value[0].MatchedFragmentIons, x.Value[1].MatchedFragmentIons);
+                //    var standSpectrum = new LibrarySpectrum(x.Value[0].FullSequence, x.Value[0].ScanPrecursorMonoisotopicPeakMz, x.Value[0].ScanPrecursorCharge, standspctra, x.Value[0].ScanRetentionTime);
+                //}
+                //else
+                //{
+                //    //List<MatchedFragmentIon> standspctra = x.Value[1].MatchedFragmentIons;
+                //    //double standPrecursurMz = x.Value[0].ScanPrecursorMonoisotopicPeakMz;
+                //    //double standRt = x.Value[0].ScanRetentionTime;
+                //    int a = 0;
+                //    int b = 0;
+                //    var ConsensusSpectraPeaksNumPair = new Dictionary<string, int>();
+                //    int PsmsNum = 1;
+                //    List<double> eachSaTotal = new List<double>();
+                //    while (b < x.Value.Count - 1 && b < 5)
+                //    {
+                //        int c = 0;
+                //        var possibleStandard = x.Value[b].MatchedFragmentIons;
+                //        double saTotal = 0;
+                //        while (c < x.Value.Count - 1 && c < 5)
+                //        {
+                            //var saOne = SpectralLibrarySearchFunction.CalculateNormalizedSpectralAngle(possibleStandard, x.Value[c].MsDataScan, CommonParameters);
+                //            saTotal = saTotal + saOne;
+                //            c++;
+                //        }
+                //        eachSaTotal.Add(saTotal);
+                //        b++;
+                //    }
+                //    int standardIndex = eachSaTotal.IndexOf(eachSaTotal.Max());
+
+                //    List<MatchedFragmentIon> standspctra = x.Value[standardIndex].MatchedFragmentIons;
+                //    double standPrecursurMz = x.Value[standardIndex].ScanPrecursorMonoisotopicPeakMz;
+                //    double standRt = x.Value[standardIndex].ScanRetentionTime;
+                //    Dictionary<string, (List<double>, List<double>)> allMatchedIons = new Dictionary<string, (List<double>, List<double>)>();
+                //    while (a < x.Value.Count - 1)
+                //    {
+                //        //Console.WriteLine(x.Key + "   " + this.matchedSpectraCompare(standspctra, x.Value[a + 1].MatchedFragmentIons));
+                //        var spectrumTocompare = x.Value[a].MatchedFragmentIons;
+                //        //if (x.Value[0].FullSequence.Contains("HAEGTFTSDVSSYLEGQAAK"))
+                //        //{
+
+                //        //}
+
+                //        var compareScore = SpectralLibrarySearchFunction.MatchedSpectraCompare(standspctra, spectrumTocompare);
+                //        var testScore = SpectralLibrarySearchFunction.CalculatePsmsNormalizedSpectralAngle(x.Value[standardIndex].MatchedFragmentIons, spectrumTocompare);
+                //        var sa = SpectralLibrarySearchFunction.CalculateNormalizedSpectralAngle(standspctra, x.Value[a + 1].MsDataScan, CommonParameters);
+                //        //if (testScore > 0.7 && a == standardIndex - 1)
+                //        //{
+                //        //    foreach (var eachIon in x.Value[a + 1].MatchedFragmentIons)
+                //        //    {
+                //        //        String newKey = eachIon.NeutralTheoreticalProduct.ProductType.ToString() + eachIon.NeutralTheoreticalProduct.FragmentNumber+"^" + eachIon.Charge;
+                //        //        if (!allMatchedIons.ContainsKey(newKey))
+                //        //        {
+                //        //            var newIntensity = new List<double>();
+                //        //            var newMz = new List<double>();
+                //        //            newIntensity.Add(eachIon.Intensity);
+                //        //            newMz.Add(eachIon.Mz);
+                //        //            allMatchedIons.Add(newKey, (newIntensity, newMz));
+                //        //        }
+                //        //        else
+                //        //        {
+                //        //            allMatchedIons[newKey].Item1.Add(eachIon.Intensity);
+                //        //            allMatchedIons[newKey].Item1.Add(eachIon.Mz);
+                //        //        }
+                //        //    }
+                //        //    PsmsNum++;
+
+                //        //}
+
+                //        //string single_pdeep = @"g:\yuling\SLSpaper\testData\single_pdeep.msp";
+                //       // var single_pdeepLibrary = new SpectralLibrary(new List<string> { single_pdeep });
+                //        //single_pdeepLibrary.TryGetSpectrum("VTDEILHLVPNIDNFR", 3, out var pdeepSpectrum);
+                //        if (testScore > 0.7 && a != standardIndex)
+                //        {
+                //            PsmsNum++;
+                //            //var pairResult = SpectralLibrarySearchFunction.newAverageTwoSpectra(standspctra, spectrumTocompare, ConsensusSpectraPeaksNumPair);
+                //            //standspctra = pairResult.Item1;
+                //            //ConsensusSpectraPeaksNumPair = pairResult.Item2;
+                //            standspctra = SpectralLibrarySearchFunction.newAverageTwoSpectra(standspctra, spectrumTocompare);
+                //            //single_pdeepLibrary.TryGetSpectrum("VTDEILHLVPNIDNFR", 3, out var pdeepSpectrum);
+                //            //var sss = SpectralLibrarySearchFunction.CalculatePsmsNormalizedSpectralAngle(pdeepSpectrum.MatchedFragmentIons, standspctra);
+                //            //standPrecursurMz = standPrecursurMz * (1 - (1.0 / PsmsNum)) + x.Value[a + 1].ScanPrecursorMonoisotopicPeakMz / PsmsNum;
+                //            //standRt = standRt * (1 - (1.0 / PsmsNum)) + x.Value[a + 1].ScanRetentionTime / PsmsNum;
+                //        }
+                //        a++;
+                //    }
+                //    //foreach(var s in ConsensusSpectraPeaksNumPair)
+                //    //{
+                //    //    if(s.Value < 0.6 * PsmsNum)
+                //    //    {
+                //    //        standspctra.RemoveAll(b => (b.NeutralTheoreticalProduct.ProductType.ToString() + b.NeutralTheoreticalProduct.FragmentNumber + "^" + b.Charge) == s.Key);
+                //    //    }
+                //    //}
+                //    var standSpectrum = new LibrarySpectrum(x.Value[0].FullSequence, standPrecursurMz, x.Value[0].ScanPrecursorCharge, standspctra, standRt);
+                //}
+                standSpectrum.BaseSequenceWithoutMods = x.Value[0].BaseSequence;
+                spectrumLibrary.Add(x.Key, standSpectrum);
+            }
+            var allSpectraInLibrary = spectralLibrary.GetAllLibrarySpectra();
+            foreach (var librarySpectrum in allSpectraInLibrary)
+            {
+                String newKey = librarySpectrum.Sequence + "/" + librarySpectrum.ChargeState;
+                if (!spectrumLibrary.ContainsKey(newKey))
+                {
+                    spectrumLibrary.Add(newKey, librarySpectrum);
+                }
+
+            }
+
+            WriteSpectralLibrary(spectrumLibrary.Values.ToList(), Parameters.OutputFolder);
+
+            //fortesting
+            //var allspectra = new List<LibrarySpectrum>();
+            //foreach (var x in PsmsGroupByPeptideAndCharge)
+            //{
+            //    if (x.Value.Count > 1)
+            //    {
+            //        foreach (var each in x.Value)
             //        {
             //            allspectra.Add(new LibrarySpectrum(each.FullSequence, each.ScanPrecursorMonoisotopicPeakMz, each.ScanPrecursorCharge, each.MatchedFragmentIons, each.ScanRetentionTime));
             //        }
             //    }
-                
+
             //}
             //WriteAllspectra(allspectra, Parameters.OutputFolder);
         }

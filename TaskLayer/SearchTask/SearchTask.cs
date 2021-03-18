@@ -356,10 +356,10 @@ namespace TaskLayer
                 ReportProgress(new ProgressEventArgs(completedFiles / currentRawFileList.Count, "Searching...", new List<string> { taskId, "Individual Spectra Files" }));
             }
 
-            if (spectralLibrary != null)
-            {
-                spectralLibrary.CloseConnections();
-            }
+            //if (spectralLibrary != null)
+            //{
+            //    spectralLibrary.CloseConnections();
+            //}
 
             ReportProgress(new ProgressEventArgs(100, "Done with all searches!", new List<string> { taskId, "Individual Spectra Files" }));
 
@@ -388,7 +388,9 @@ namespace TaskLayer
                 FlashLfqResults = flashLfqResults,
                 FileSettingsList = fileSettingsList,
                 NumMs2SpectraPerFile = numMs2SpectraPerFile,
-                DatabaseFilenameList = dbFilenameList
+                DatabaseFilenameList = dbFilenameList,
+                SpectralLibrary = spectralLibrary
+
             };
             PostSearchAnalysisTask postProcessing = new PostSearchAnalysisTask
             {

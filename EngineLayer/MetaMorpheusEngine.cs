@@ -130,16 +130,24 @@ namespace EngineLayer
                     continue;
                 }
 
-                // get the closest peak in the spectrum to the theoretical peak
-                var closestExperimentalMass = scan.GetClosestExperimentalIsotopicEnvelope(product.NeutralMass);
 
-                // is the mass error acceptable?
-                if (closestExperimentalMass != null && commonParameters.ProductMassTolerance.Within(closestExperimentalMass.MonoisotopicMass, product.NeutralMass) && closestExperimentalMass.Charge <= scan.PrecursorCharge)//TODO apply this filter before picking the envelope
+                // get the closest peak in the spectrum to the theoretical peak
+                var charge1_closestExperimentalMass = scan.GetClosestExperimentalIsotopicEnvelopeWithChargeState1(product.NeutralMass);
+                if (charge1_closestExperimentalMass != null && commonParameters.ProductMassTolerance.Within(charge1_closestExperimentalMass.MonoisotopicMass, product.NeutralMass) && charge1_closestExperimentalMass.Charge == 1)//TODO apply this filter before picking the envelope
                 {
-                    matchedFragmentIons.Add(new MatchedFragmentIon(ref product, closestExperimentalMass.MonoisotopicMass.ToMz(closestExperimentalMass.Charge),
-                        closestExperimentalMass.Peaks.First().intensity, closestExperimentalMass.Charge));
-                    var test1 = product.NeutralMass.ToMz(closestExperimentalMass.Charge);
-                    var test2 = closestExperimentalMass.MonoisotopicMass.ToMz(closestExperimentalMass.Charge);
+                    matchedFragmentIons.Add(new MatchedFragmentIon(ref product, charge1_closestExperimentalMass.MonoisotopicMass.ToMz(1),
+                        charge1_closestExperimentalMass.Peaks.First().intensity, 1));
+                }
+                else
+                {
+                    var closestExperimentalMass = scan.GetClosestExperimentalIsotopicEnvelope(product.NeutralMass);
+
+                    // is the mass error acceptable?
+                    if (closestExperimentalMass != null && commonParameters.ProductMassTolerance.Within(closestExperimentalMass.MonoisotopicMass, product.NeutralMass) && closestExperimentalMass.Charge <= scan.PrecursorCharge)//TODO apply this filter before picking the envelope
+                    {
+                        matchedFragmentIons.Add(new MatchedFragmentIon(ref product, closestExperimentalMass.MonoisotopicMass.ToMz(closestExperimentalMass.Charge),
+                            closestExperimentalMass.Peaks.First().intensity, closestExperimentalMass.Charge));
+                    }
                 }
             }
             if (commonParameters.AddCompIons)

@@ -610,6 +610,43 @@ namespace TaskLayer
 
             }
         }
+        //protected static void WriteSpectralLibrary(Dictionary<string, (List<double>, List<double>)> spectrumLibrary, string outputFolder)
+        //{
+
+        //    string spectrumFilePath = outputFolder + "\\spectralLibrary.msp";
+        //    using (StreamWriter output = new StreamWriter(spectrumFilePath))
+        //    {
+
+
+        //        foreach (var x in spectrumLibrary)
+        //        {
+        //            StringBuilder spectrum = new StringBuilder();
+        //            spectrum.Append("Name: ");
+        //            spectrum.Append("\nMW: ");
+        //            spectrum.Append("\nComment: ");
+        //            spectrum.Append("Parent=");
+        //            spectrum.Append(" RT=");
+        //            spectrum.Append("\nNum peaks: " + spectrumLibrary.Count);
+
+        //            double maxIntensity = MatchedFragmentIons.Select(b => b.Intensity).Max();
+        //            double sumIntensity = MatchedFragmentIons.Select(b => b.Intensity).Sum();
+
+        //            foreach (MatchedFragmentIon matchedIon in MatchedFragmentIons)
+        //            {
+        //                //double intensityFraction = matchedIon.Intensity / sumIntensity;
+        //                double intensityFraction = matchedIon.Intensity / maxIntensity;
+
+        //                spectrum.Append("\n" + matchedIon.Mz + "\t" + intensityFraction + "\t" + "\"" +
+        //                    matchedIon.NeutralTheoreticalProduct.ProductType.ToString() +
+        //                    matchedIon.NeutralTheoreticalProduct.FragmentNumber.ToString() + "^" +
+        //                    matchedIon.Charge + "/" + 0 + "ppm" + "\"");
+        //            }
+        //            output.WriteLine(x.ToString());
+        //        }
+
+        //    }
+        //}
+
         //forTestingLibraryGeneration
         protected static void WriteAllspectra(List<LibrarySpectrum> spectrumLibrary, string outputFolder)
         {

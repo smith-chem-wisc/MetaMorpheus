@@ -1,5 +1,6 @@
 ﻿using Chemistry;
 using EngineLayer.FdrAnalysis;
+using MassSpectrometry;
 using Proteomics;
 using Proteomics.Fragmentation;
 using Proteomics.ProteolyticDigestion;
@@ -33,10 +34,13 @@ namespace EngineLayer
             NativeId = scan.NativeId;
             RunnerUpScore = commonParameters.ScoreCutoff;
             SpectralAngle = Double.NaN;
+            MsDataScan = scan.TheScan;
             //SpectralAngle = 0;
             AddOrReplace(peptide, score, notch, true, matchedFragmentIons, xcorr);
         }
-        
+        public double ScoreForLibraryGeneration { get; set; }
+        public List<MatchedFragmentIon> LibraryMatchedFragments { get; set; }
+        public MsDataScan MsDataScan { get; set; }
         public string targetBeforeReverseTodecoy { get;set; }
         public ChemicalFormula ModsChemicalFormula { get; private set; } // these fields will be null if they are ambiguous
         public string FullSequence { get; private set; }

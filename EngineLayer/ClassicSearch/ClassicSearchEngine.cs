@@ -79,6 +79,10 @@ namespace EngineLayer.ClassicSearch
                         // digest each protein into peptides and search for each peptide in all spectra within precursor mass tolerance
                         foreach (PeptideWithSetModifications peptide in Proteins[i].Digest(CommonParameters.DigestionParams, FixedModifications, VariableModifications, SilacLabels, TurnoverLabels))
                         {
+                            //if (peptide.FullSequence != "TTGIVMDSGDGVTHTVPIYEGYALPHAILR" && peptide.FullSequence != "VTDEILHLVPNIDNFR")
+                            //{
+                            //    continue;
+                            //}
                             peptide.Fragment(CommonParameters.DissociationType, CommonParameters.DigestionParams.FragmentationTerminus, peptideTheorProducts);
                             int[] newAAlocations = new int[peptide.BaseSequence.Length];
                             PeptideWithSetModifications decoy = DecoyOnTheFly.GetReverseDecoyFromTarget(peptide, newAAlocations);

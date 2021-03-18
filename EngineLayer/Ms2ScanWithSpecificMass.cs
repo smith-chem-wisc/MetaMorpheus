@@ -92,7 +92,16 @@ namespace EngineLayer
             }
             return ExperimentalFragments[GetClosestFragmentMass(theoreticalNeutralMass)];
         }
-
+        public IsotopicEnvelope GetClosestExperimentalIsotopicEnvelopeWithChargeState1(double theoreticalNeutralMass)
+        {
+            var Charge1_ExperimentalFragments = ExperimentalFragments.ToList().Where(p => p.Charge == 1).ToArray();
+            double[] Charge1_DeconvolutedMonoisotopicMasses = Charge1_ExperimentalFragments.Select(p => p.MonoisotopicMass).ToArray();
+            if (Charge1_DeconvolutedMonoisotopicMasses.Length == 0)
+            {
+                return null;
+            }
+            return Charge1_ExperimentalFragments[GetClosestFragmentMass_charge1(theoreticalNeutralMass, Charge1_DeconvolutedMonoisotopicMasses)];
+        }
         public int GetClosestFragmentMass(double mass)
         {
             int index = Array.BinarySearch(DeconvolutedMonoisotopicMasses, mass);
@@ -113,7 +122,26 @@ namespace EngineLayer
 
             return index - 1;
         }
+        public int GetClosestFragmentMass_charge1(double mass, double[] Charge1_DeconvolutedMonoisotopicMasses)
+        {
+            int index = Array.BinarySearch(Charge1_DeconvolutedMonoisotopicMasses, mass);
+            if (index >= 0)
+            {
+                return index;
+            }
+            index = ~index;
 
+            if (index == Charge1_DeconvolutedMonoisotopicMasses.Length)
+            {
+                return index - 1;
+            }
+            if (index == 0 || mass - Charge1_DeconvolutedMonoisotopicMasses[index - 1] > Charge1_DeconvolutedMonoisotopicMasses[index] - mass)
+            {
+                return index;
+            }
+
+            return index - 1;
+        }
         public double? GetClosestExperimentalFragmentMz(double theoreticalMz, out double? intensity)
         {
             if (TheScan.MassSpectrum.XArray.Length == 0)
