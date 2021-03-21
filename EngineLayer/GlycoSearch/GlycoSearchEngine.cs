@@ -26,6 +26,7 @@ namespace EngineLayer.GlycoSearch
         private readonly int _maxOGlycanNum;
         private readonly int _maxNGlycanNum;
         private readonly bool OxoniumIonFilter; //To filt Oxonium Ion before searching a spectrum as glycopeptides. If we filter spectrum, it must contain oxonium ions such as 204 (HexNAc). 
+        private readonly bool FilterYcore = false;
         private readonly bool IndexChildScan; //Whether to index the child scan or not is a question.
         private readonly string _oglycanDatabase;
         private readonly string _nglycanDatabase;
@@ -1159,7 +1160,6 @@ namespace EngineLayer.GlycoSearch
         {
             List<GlycoSpectraMatchCandidate> gsmCandidates = new List<GlycoSpectraMatchCandidate>();
             
-            var oxo204check = false;
 
             for (int ind = 0; ind < idsOfPeptidesPossiblyObserved.Count; ind++)
             {
@@ -1173,6 +1173,8 @@ namespace EngineLayer.GlycoSearch
                 }
                 else if (theScan.PrecursorMass - theScanBestPeptide.MonoisotopicMass >= 100) //Filter out unknow non-glycan modifications.
                 {
+                    var oxo204check = false;
+
                     //Filter by glycanBoxes mass difference.
                     var possibleGlycanMassLow = PrecusorSearchMode.GetMinimumValue(theScan.PrecursorMass) - theScanBestPeptide.MonoisotopicMass;
 
@@ -1200,10 +1202,13 @@ namespace EngineLayer.GlycoSearch
                         }
 
                         //Filter Ycore
-                        var FilterYcore = false;
-                        if (FilterYcore && GlycoPeptides.YCoreIonsFilter(theScan, theScanBestPeptide, GlycoType.OGlycoPep, ProductSearchMode) < 1)
+                        if (FilterYcore)
                         {
-                            continue;
+                            var ycore_count = GlycoPeptides.YCoreIonsFilter(theScan, theScanBestPeptide, GlycoType.OGlycoPep, ProductSearchMode);
+                            if (ycore_count < 2)
+                            {
+                                continue;
+                            }
                         }
 
                         //Find O-Glycan use the original function.
@@ -1234,10 +1239,13 @@ namespace EngineLayer.GlycoSearch
                         }
 
                         //Filter Ycore
-                        var FilterYcore = false;
-                        if(FilterYcore && GlycoPeptides.YCoreIonsFilter(theScan, theScanBestPeptide, GlycoType.NGlycoPep, ProductSearchMode) < 2)
+                        if(FilterYcore)
                         {
-                            continue;
+                            var ycore_count = GlycoPeptides.YCoreIonsFilter(theScan, theScanBestPeptide, GlycoType.NGlycoPep, ProductSearchMode);
+                            if (ycore_count < 2)
+                            {
+                                continue;
+                            }                 
                         }
 
                         //Find N-Glycan 
@@ -1267,10 +1275,13 @@ namespace EngineLayer.GlycoSearch
                         }
 
                         //Filter Ycore
-                        var FilterYcore = false;
-                        if (FilterYcore && GlycoPeptides.YCoreIonsFilter(theScan, theScanBestPeptide, GlycoType.NGlycoPep, ProductSearchMode) < 2)
+                        if (FilterYcore)
                         {
-                            continue;
+                            var ycore_count = GlycoPeptides.YCoreIonsFilter(theScan, theScanBestPeptide, GlycoType.MixedGlycoPep, ProductSearchMode);
+                            if (ycore_count < 2)
+                            {
+                                continue;
+                            }
                         }
 
                         _FindGlycan(theScan, scanIndex, scoreCutOff, pepId, theScanBestPeptide, ind, possibleGlycanMassLow, possibleGlycanMassHigh, oxoniumIonIntensities,
@@ -1414,6 +1425,12 @@ namespace EngineLayer.GlycoSearch
                 var fragments_hcd_peptide = GlycoPeptides.GlyGetTheoreticalHCDFragments(glycanType, CommonParameters.DissociationType, theScanBestPeptide, n_modPos, glycans);
 
                 var matchedIons = MatchFragmentIons(theScan, fragments_hcd_peptide, CommonParameters);
+
+                //Filter Y core ions.
+                if(GlycoPeptides.ScanTrimannosylCoreFilter(matchedIons, glycanType))
+                {
+                    return;
+                }
 
                 //double score = CalculatePeptideScore(theScan.TheScan, matchedIons);
                 double score = GlycoPeptides.CalculatePeptideScore(matchedIons, fragments_hcd_peptide, CommonParameters);

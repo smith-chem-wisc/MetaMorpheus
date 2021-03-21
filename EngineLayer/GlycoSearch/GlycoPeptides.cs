@@ -704,13 +704,19 @@ namespace EngineLayer.GlycoSearch
 
         #region N-Glyco related functions
 
-        public static Dictionary<int, double> ScanGetTrimannosylCore(List<MatchedFragmentIon> matchedFragmentIons, Glycan glycan)
+        public static Dictionary<int, double> ScanGetTrimannosylCore(List<MatchedFragmentIon> matchedFragmentIons, GlycoType glycoType)
         {
             Dictionary<int, double> cores = new Dictionary<int, double>();
 
             foreach (var fragment in matchedFragmentIons.Where(p => p.NeutralTheoreticalProduct.ProductType == ProductType.M))
             {
-                if (Glycan.TrimannosylCores.ContainsKey((int)fragment.NeutralTheoreticalProduct.NeutralLoss))
+                var TrimannosylCores = Glycan.TrimannosylCores_OGlycan;
+                if (glycoType == GlycoType.NGlycoPep || glycoType == GlycoType.MixedGlycoPep)
+                {
+                    TrimannosylCores = Glycan.TrimannosylCores;
+                }
+
+                if (TrimannosylCores.ContainsKey((int)fragment.NeutralTheoreticalProduct.NeutralLoss))
                 {
                     var pair = Glycan.TrimannosylCores.Where(p => p.Key == (int)fragment.NeutralTheoreticalProduct.NeutralLoss).FirstOrDefault();
                     if (!cores.ContainsKey(pair.Key))
@@ -723,14 +729,14 @@ namespace EngineLayer.GlycoSearch
             return cores;
         }
 
-        public static bool ScanTrimannosylCoreFilter(List<MatchedFragmentIon> matchedFragmentIons, Glycan glycan)
+        public static bool ScanTrimannosylCoreFilter(List<MatchedFragmentIon> matchedFragmentIons, GlycoType glycoType)
         {
-            Dictionary<int, double> cores = ScanGetTrimannosylCore(matchedFragmentIons, glycan);
-            if (cores.Count > 2)
+            Dictionary<int, double> cores = ScanGetTrimannosylCore(matchedFragmentIons, glycoType);
+            if (glycoType == GlycoType.OGlycoPep && cores.Count >= 1)
             {
                 return true;
             }
-            else if (cores.Keys.Contains(83) && cores.Keys.Contains(203))
+            else if ((glycoType == GlycoType.NGlycoPep || glycoType == GlycoType.MixedGlycoPep) && cores.Count >= 2)
             {
                 return true;
             }
