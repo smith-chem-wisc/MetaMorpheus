@@ -268,16 +268,19 @@ namespace EngineLayer
         public static SpectraFileInfo GetHeavyFileInfo(SpectraFileInfo originalFile, SilacLabel label)
         {
             string heavyFileName = originalFile.FilenameWithoutExtension + "(" + label.OriginalAminoAcid + label.MassDifference;
+            string heavyCondition = originalFile.Condition + "(" + label.OriginalAminoAcid + label.MassDifference;
             if (label.AdditionalLabels != null)
             {
                 foreach (SilacLabel additionaLabel in label.AdditionalLabels)
                 {
                     heavyFileName += LABEL_DELIMITER + additionaLabel.OriginalAminoAcid + additionaLabel.MassDifference;
+                    heavyCondition += LABEL_DELIMITER + additionaLabel.OriginalAminoAcid + additionaLabel.MassDifference;
                 }
             }
             heavyFileName += ")." + originalFile.FullFilePathWithExtension.Split('.').Last(); //add extension
+            heavyCondition += ")";
 
-            return new SpectraFileInfo(heavyFileName, originalFile.Condition, originalFile.BiologicalReplicate, originalFile.TechnicalReplicate, originalFile.Fraction);
+            return new SpectraFileInfo(heavyFileName, heavyCondition, originalFile.BiologicalReplicate, originalFile.TechnicalReplicate, originalFile.Fraction);
         }
 
         public static HashSet<FlashLFQ.ProteinGroup> CleanPastProteinQuant(HashSet<FlashLFQ.ProteinGroup> originalProteinGroups)
@@ -339,7 +342,7 @@ namespace EngineLayer
                         string extension = pathArray.Last();
                         string filePathWithoutExtension = fullPathWithExtension.Substring(0, fullPathWithExtension.Length - extension.Length - 1); //-1 removes the '.'
                         SpectraFileInfo lightInfo = new SpectraFileInfo(filePathWithoutExtension + "_Original." + extension, info.Condition, info.BiologicalReplicate, info.TechnicalReplicate, info.Fraction);
-                        SpectraFileInfo heavyInfo = new SpectraFileInfo(filePathWithoutExtension + "_NewlySynthesized." + extension, info.Condition, info.BiologicalReplicate, info.TechnicalReplicate, info.Fraction);
+                        SpectraFileInfo heavyInfo = new SpectraFileInfo(filePathWithoutExtension + "_NewlySynthesized." + extension, info.Condition + "_NewlySynthesized", info.BiologicalReplicate, info.TechnicalReplicate, info.Fraction);
                         originalToLabeledFileInfoDictionary[info] = new List<SpectraFileInfo> { lightInfo, heavyInfo };
                         flashLfqResults.SpectraFiles.Add(lightInfo);
                         flashLfqResults.SpectraFiles.Add(heavyInfo);
@@ -441,7 +444,7 @@ namespace EngineLayer
                 }
 
                 //Do protein quant
-                flashLfqResults.CalculateProteinResultsTop3(true);
+                flashLfqResults.CalculateProteinResultsMedianPolish(true);
 
                 //update proteingroups to have all files for quantification
                 if (proteinGroups != null)
