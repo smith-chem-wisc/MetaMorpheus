@@ -392,17 +392,17 @@
                         Add 
                         
                         <Hyperlink NavigateUri="https://www.uniprot.org/" RequestNavigate="Hyperlink_RequestNavigate">
-                            protein database(s)
+                            reference proteome(s)
                         </Hyperlink> 
                         
-                        in .xml or .fasta format. Databases in .xml format can contain post-translational modification (PTM) locations,
+                        in .xml or .fasta format. Reference proteomes in .xml format can contain post-translational modification (PTM) locations,
                         whereas .fasta format only contains amino acid sequences.
                     </TextBlock>
                     
                     <!--Button to add databases-->
                     <Button Name="DownloadUniProtDatabaseButton" Grid.Row="2" Grid.Column="0" Content="+Download UniProt Proteome" Click="DownloadUniProtDatabase_Click" Style="{StaticResource ImportantButtonStyle}" Margin="0,0,10,0" />
-                    <Button Name="OpenProteomesFolder" Grid.Row="2" Grid.Column="1" Content="+Open Proteomes Folder" Click="OpenProteomesFolder_Click" Style="{StaticResource ImportantButtonStyle}" Margin="0,0,10,0"/>
-                    <Button Name="AddDatabaseButton" Grid.Row="2" Grid.Column="2" Content="+Add Proteome" Click="AddProteinDatabase_Click" Style="{StaticResource ImportantButtonStyle}" Margin="0,0,10,0"/>
+                    <Button Name="OpenProteomesFolder" Grid.Row="2" Grid.Column="1" Content="+Stored Reference Proteomes" Click="OpenProteomesFolder_Click" Style="{StaticResource ImportantButtonStyle}" Margin="0,0,10,0"/>
+                    <Button Name="AddDatabaseButton" Grid.Row="2" Grid.Column="2" Content="+Add Local Proteome" Click="AddProteinDatabase_Click" Style="{StaticResource ImportantButtonStyle}" Margin="0,0,10,0"/>
                     <Button Name="AddDefaultContaminantsButton" Grid.Row="2" Grid.Column="3" Content="+Add Default Contaminants" Click="AddDefaultContaminantDatabase_Click" Style="{StaticResource ImportantButtonStyle}" Margin="0,0,10,0"/>
 
                     <!--The list of databases-->
