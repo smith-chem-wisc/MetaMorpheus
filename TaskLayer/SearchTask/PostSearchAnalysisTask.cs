@@ -202,7 +202,7 @@ namespace TaskLayer
                 {
                     Warn("Could not copy Experimental Design file to search task output. That's ok, the search will continue");
                 }
-                
+
                 spectraFileInfo = ExperimentalDesign.ReadExperimentalDesign(assumedExperimentalDesignPath, Parameters.CurrentRawFileList, out var errors);
 
                 if (errors.Any())
@@ -220,10 +220,12 @@ namespace TaskLayer
             {
                 spectraFileInfo = new List<SpectraFileInfo>();
 
-                foreach (var file in Parameters.CurrentRawFileList)
+                for (int i = 0; i < Parameters.CurrentRawFileList.Count; i++)
                 {
+                    var file = Parameters.CurrentRawFileList[i];
+
                     // experimental design info passed in here for each spectra file
-                    spectraFileInfo.Add(new SpectraFileInfo(fullFilePathWithExtension: file, condition: "", biorep: 0, fraction: 0, techrep: 0));
+                    spectraFileInfo.Add(new SpectraFileInfo(fullFilePathWithExtension: file, condition: "", biorep: i, fraction: 0, techrep: 0));
                 }
             }
 
