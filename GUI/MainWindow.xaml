@@ -371,12 +371,6 @@
             <!--Databases tab-->
             <TabItem Name="DatabasesTab" Header="Databases" TabIndex="0" Style="{StaticResource TabItemStyle}">
                 <Grid Style="{StaticResource PageGridStyle}">
-                    <Grid.ColumnDefinitions>
-                        <ColumnDefinition Width="*"></ColumnDefinition>
-                        <ColumnDefinition Width="*"></ColumnDefinition>
-                        <ColumnDefinition Width="*"></ColumnDefinition>
-                        <ColumnDefinition Width="*"></ColumnDefinition>
-                    </Grid.ColumnDefinitions>
                     <Grid.RowDefinitions>
                         <RowDefinition Height="50"/>
                         <RowDefinition Height="50"/>
@@ -398,12 +392,19 @@
                         in .xml or .fasta format. Reference proteomes in .xml format can contain post-translational modification (PTM) locations,
                         whereas .fasta format only contains amino acid sequences.
                     </TextBlock>
-                    
-                    <!--Button to add databases-->
-                    <Button Name="DownloadUniProtDatabaseButton" Grid.Row="2" Grid.Column="0" Content="+Download UniProt Proteome" Click="DownloadUniProtDatabase_Click" Style="{StaticResource ImportantButtonStyle}" Margin="0,0,10,0" />
-                    <Button Name="OpenProteomesFolder" Grid.Row="2" Grid.Column="1" Content="+Stored Reference Proteomes" Click="OpenProteomesFolder_Click" Style="{StaticResource ImportantButtonStyle}" Margin="0,0,10,0"/>
-                    <Button Name="AddDatabaseButton" Grid.Row="2" Grid.Column="2" Content="+Add Local Proteome" Click="AddProteinDatabase_Click" Style="{StaticResource ImportantButtonStyle}" Margin="0,0,10,0"/>
-                    <Button Name="AddDefaultContaminantsButton" Grid.Row="2" Grid.Column="3" Content="+Add Default Contaminants" Click="AddDefaultContaminantDatabase_Click" Style="{StaticResource ImportantButtonStyle}" Margin="0,0,10,0"/>
+
+                    <!--Buttons to add databases-->
+                    <Button Name="DownloadUniProtDatabaseButton" Grid.Row="2" Content="DOWNLOAD PROTEOME" 
+                        Click="DownloadUniProtDatabase_Click" Style="{StaticResource ImportantButtonStyle}" Margin="10,0,0,0" HorizontalAlignment="Left" />
+
+                    <Button Name="OpenProteomesFolder" Grid.Row="2" Content="OPEN PROTEOMES FOLDER" 
+                        Click="OpenProteomesFolder_Click" Style="{StaticResource ImportantButtonStyle}" Margin="211,0,0,0" HorizontalAlignment="Left"/>
+
+                    <Button Name="AddDatabaseButton" Grid.Row="2" Content="+ADD PROTEOME" 
+                        Click="AddProteinDatabase_Click" Style="{StaticResource ImportantButtonStyle}" Margin="0,0,10,0" HorizontalAlignment="Right"/>
+
+                    <Button Name="AddDefaultContaminantsButton" Grid.Row="2" Content="+ADD DEFAULT CONTAMINANTS" 
+                        Click="AddDefaultContaminantDatabase_Click" Style="{StaticResource ImportantButtonStyle}" Margin="0,0,211,0" HorizontalAlignment="Right"/>
 
                     <!--The list of databases-->
                     <DataGrid Name="dataGridProteinDatabases" Grid.Row="3" Grid.ColumnSpan="4" ItemsSource="{Binding}" Style="{StaticResource x:DataGridStyle}"
@@ -441,7 +442,7 @@
                     <TextBlock Grid.Row="1" Style="{StaticResource TextBlockStyle}">
                         Add spectra file(s) in .mzML, .mgf, or Thermo .raw format.
                     </TextBlock>
-                    
+
                     <!--Button to add spectra files-->
                     <Button Name="AddSpectraButton" Grid.Row="2" Content="+ADD SPECTRA" Click="AddSpectraFile_Click" HorizontalAlignment="Right" 
                             Style="{StaticResource ImportantButtonStyle}" Margin="0,0,10,0"/>
@@ -512,7 +513,7 @@
                         <Button Name="AddGlycoTaskButton" Grid.Column="4" Content="+ADD GLYCO SEARCH" HorizontalAlignment="Right" Click="AddGlycoSearchTask_Click" 
                             Style="{StaticResource ImportantButtonStyle}" Margin="0,0,0,0" Width="150"/>
                     </Grid>
-                    
+
                     <!--List of tasks-->
                     <TreeView x:Name="tasksTreeView" Grid.Row="3" ItemsSource="{Binding}" MouseDoubleClick="TasksTreeView_MouseDoubleClick" 
                               Margin="10,0,10,10" BorderBrush="{StaticResource BorderColor}" PreviewKeyDown="Window_PreviewKeyDown">
@@ -573,7 +574,7 @@
                                 Background="Transparent"
                                 Height="5"
                                 Margin="20,0,0,0"/>
-                            
+
                             <!--Spectra file Summary-->
                             <DataGrid Name="spectraFileSummaryDataGrid" ItemsSource="{Binding}" Grid.Row="2" Margin="20,0,0,10" 
                               Style="{StaticResource x:DataGridStyle}" ColumnHeaderStyle="{StaticResource DataGridColumnHeaderStyle}" PreviewKeyDown="Window_PreviewKeyDown">
@@ -822,7 +823,7 @@
                                 <TextBlock Text="Create sample-specific database with Spritz" VerticalAlignment="Center" />
                             </StackPanel>
                         </Button>
-                        
+
                         <Button Grid.Row="7" Grid.Column="1" HorizontalContentAlignment="Left" BorderThickness="0" Click="MenuItem_ProteomicsNewsBlog_Click">
                             <StackPanel Orientation="Horizontal">
                                 <Image Source="Icons/Blogger_20.bmp" Width="20" Height="20" Margin="0,0,5,0"/>

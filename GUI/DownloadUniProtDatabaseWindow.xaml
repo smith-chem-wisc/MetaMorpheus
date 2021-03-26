@@ -61,7 +61,10 @@
                 <CheckBox x:Name="xmlBox" Content="XML" IsChecked="True" Height="25" ToolTip="XML format will include UniProt annotated PTMs. Unchecking the box will retrieve the FASTA format" ToolTipService.ShowOnDisabled="true"/>
                 <CheckBox x:Name="addIsoformsCheckBox" Content="Add Isoforms" IsChecked="False" Height="25" ToolTip="Isoforms can be retrieved only in combination with FASTA formatted files. Isoforms are generally included in the XML format file." ToolTipService.ShowOnDisabled="true"/>
             </StackPanel>
-            <Button Content="Download Reference Proteome" Name="downloadProteomeButton" Click="DownloadProteomeButton_Click" Grid.Row="3" FontWeight="Bold" Background="Blue" Foreground="White" Margin="2 2 2 2" ToolTip="Downloads can take several minutes" ToolTipService.ShowOnDisabled="true"/>
+            
+            <Button Content="DOWNLOAD" Name="downloadProteomeButton" Click="DownloadProteomeButton_Click" Grid.Row="3" Width="200"
+                Background="{StaticResource AccentColor}" Foreground="{StaticResource TextColor2}" Margin="10" 
+                ToolTip="Downloads can take several minutes" ToolTipService.ShowOnDisabled="true" BorderThickness="0"/>
         </Grid>
     </Grid>
 </Window>
