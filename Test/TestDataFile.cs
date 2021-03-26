@@ -173,6 +173,8 @@ namespace Test
         //numPeaksSeparatedByZeroes is used in some tests to evaluate that the silac quantification is using only ms1s where both a heavy and a light are evaluated.
         //The last obnoxiously long parameter allows for flashLFQ to quantify larger peptides. The default envelope has 3 isotopes with intensities of 1, 0.5, 0.25.
         //If this parameter is true, then 4 isotopes with intensities of 1, 1, 0.5, and 0.25 will be generated.
+
+        // **BE CAREFUL WITH THE listLabelMassDifferences variable! it is modified in this code. don't re-use the same variable within a unit test, create a new one.
         public TestDataFile(List<PeptideWithSetModifications> pwsms, List<List<double>> listLabelMassDifferences,
             List<List<double>> listPrecursorIntensities = null, int numPeaksSeparatedByZeroes = 1, bool largePeptideSoDoubleFirstPeakIntensityAndAddAnotherPeak = false)
             : base(2, new SourceFile(@"no nativeID format", "mzML format", null, "SHA-1", @"C:\fake.mzML", null))
