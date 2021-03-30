@@ -447,9 +447,9 @@ namespace Test
                     DoQuantification = false // quant disabled just to save some time
                 },
 
-                // use DissociationType.Unknown as the dissociation type. this signals to the search that the dissociation type
+                // use DissociationType.Autodetect as the dissociation type. this signals to the search that the dissociation type
                 // should be taken from the scan header on a scan-specific basis
-                CommonParameters = new CommonParameters(dissociationType: DissociationType.Unknown)
+                CommonParameters = new CommonParameters(dissociationType: DissociationType.Autodetect)
             };
 
             string myFile = Path.Combine(TestContext.CurrentContext.TestDirectory, @"TestData\SmallCalibratible_Yeast.mzML");

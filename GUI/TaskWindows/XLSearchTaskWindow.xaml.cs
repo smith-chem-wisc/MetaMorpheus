@@ -70,7 +70,7 @@ namespace MetaMorpheusGUI
             MS2ChildScanDissociationTypeComboBox.Items.Add("Null");
             MS3ChildScanDissociationTypeComboBox.Items.Add("Null");
 
-            foreach (var dissassociationType in GlobalVariables.AllSupportedDissociationTypes.Where(p => p.Value != DissociationType.Unknown))
+            foreach (var dissassociationType in GlobalVariables.AllSupportedDissociationTypes.Where(p => p.Value != DissociationType.Autodetect))
             {
                 DissociationTypeComboBox.Items.Add(dissassociationType.Key);
                 MS2ChildScanDissociationTypeComboBox.Items.Add(dissassociationType.Key);

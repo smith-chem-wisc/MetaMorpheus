@@ -558,7 +558,7 @@ namespace MetaMorpheusGUI
                 TheTask.SearchParameters.SearchType = SearchType.NonSpecific;
             }
 
-            if (TheTask.SearchParameters.SearchType != SearchType.Classic && dissociationType == DissociationType.Unknown)
+            if (TheTask.SearchParameters.SearchType != SearchType.Classic && dissociationType == DissociationType.Autodetect)
             {
                 MessageBox.Show("Autodetection of dissociation type from scan headers is only available for classic search. Please choose a different dissociation type or search mode");
                 return;

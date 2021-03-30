@@ -69,9 +69,9 @@ namespace EngineLayer.ClassicSearch
                     var fragmentsForDissociationTypes = new Dictionary<DissociationType, List<Product>>();
 
                     // check if we're supposed to autodetect dissociation type from the scan header or not
-                    if (CommonParameters.DissociationType == DissociationType.Unknown)
+                    if (CommonParameters.DissociationType == DissociationType.Autodetect)
                     {
-                        foreach (var item in GlobalVariables.AllSupportedDissociationTypes.Where(p => p.Value != DissociationType.Unknown))
+                        foreach (var item in GlobalVariables.AllSupportedDissociationTypes.Where(p => p.Value != DissociationType.Autodetect))
                         {
                             fragmentsForDissociationTypes.Add(item.Value, new List<Product>());
                         }
@@ -101,7 +101,7 @@ namespace EngineLayer.ClassicSearch
                                     continue;
                                 }
 
-                                var dissociationType = CommonParameters.DissociationType == DissociationType.Unknown ?
+                                var dissociationType = CommonParameters.DissociationType == DissociationType.Autodetect ?
                                     scan.TheScan.TheScan.DissociationType.Value : CommonParameters.DissociationType;
 
                                 if (!fragmentsForDissociationTypes.TryGetValue(dissociationType, out var peptideTheorProducts))

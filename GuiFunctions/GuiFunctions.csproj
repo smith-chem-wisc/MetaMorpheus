@@ -10,7 +10,7 @@
 
   <ItemGroup>
     <PackageReference Include="itext7" Version="7.1.13" />
-    <PackageReference Include="mzLib" Version="1.0.489" />
+    <PackageReference Include="mzLib" Version="1.0.490" />
     <PackageReference Include="OxyPlot.Wpf" Version="2.0.0" />
   </ItemGroup>
 

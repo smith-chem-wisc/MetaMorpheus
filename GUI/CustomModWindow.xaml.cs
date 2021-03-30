@@ -38,7 +38,7 @@ namespace MetaMorpheusGUI
             }
 
             foreach (DissociationType type in GlobalVariables.AllSupportedDissociationTypes.Values
-                .Where(p => p != DissociationType.Unknown && p != DissociationType.Custom))
+                .Where(p => p != DissociationType.Autodetect && p != DissociationType.Custom))
             {
                 dissociationTypeComboBox.Items.Add(type);
             }

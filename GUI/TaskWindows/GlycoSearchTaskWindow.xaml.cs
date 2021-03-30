@@ -66,7 +66,7 @@ namespace MetaMorpheusGUI
         private void PopulateChoices()
         {
             ChildScanDissociationTypeComboBox.Items.Add("Null");
-            foreach (var dissassociationType in GlobalVariables.AllSupportedDissociationTypes.Where(p => p.Value != DissociationType.Unknown))
+            foreach (var dissassociationType in GlobalVariables.AllSupportedDissociationTypes.Where(p => p.Value != DissociationType.Autodetect))
             {
                 DissociationTypeComboBox.Items.Add(dissassociationType.Key);
                 ChildScanDissociationTypeComboBox.Items.Add(dissassociationType.Key);
