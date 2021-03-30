@@ -49,6 +49,7 @@ namespace EngineLayer
         public static IEnumerable<Modification> AllModsKnown { get { return _AllModsKnown.AsEnumerable(); } }
         public static IEnumerable<string> AllModTypesKnown { get { return _AllModTypesKnown.AsEnumerable(); } }
         public static Dictionary<string, Modification> AllModsKnownDictionary { get; private set; }
+        public static Dictionary<string, string> AvailableUniProtProteomes { get; private set; }
         public static Dictionary<string, DissociationType> AllSupportedDissociationTypes { get; private set; }
         public static List<string> SeparationTypes { get; private set; }
         public static string ExperimentalDesignFileName { get; private set; }
@@ -75,6 +76,7 @@ namespace EngineLayer
             LoadCustomAminoAcids();
             SetUpGlobalSettings();
             LoadDissociationTypes();
+            LoadAvailableProteomes();
         }
 
         public static void AddMods(IEnumerable<Modification> modifications, bool modsAreFromTheTopOfProteinXml)
@@ -469,6 +471,10 @@ namespace EngineLayer
             };
         }
 
+        private static void LoadAvailableProteomes()
+        {
+            AvailableUniProtProteomes = ProteinDbRetriever.UniprotProteomesList(Path.Combine(DataDir,@"Proteomes",@"availableUniProtProteomes.txt.gz"));
+        }
         private static void SetUpGlobalSettings()
         {
             // save/load settings
