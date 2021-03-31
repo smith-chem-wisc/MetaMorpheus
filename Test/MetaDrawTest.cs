@@ -412,7 +412,7 @@ namespace Test
                 Assert.That(psmObj.FullSequence.Contains(filterString));
                 c++;
             }
-            Assert.That(c > 0);
+            Assert.Greater(c, 0);
 
             // test text search filter (filter by MS2 scan number)
             filterString = @"2";
@@ -425,7 +425,7 @@ namespace Test
                 Assert.That(psmObj.Ms2ScanNumber.ToString().Contains(filterString));
                 c++;
             }
-            Assert.That(c > 0);
+            Assert.Greater(c, 0);
 
             // draw PSM
             var plotView = new OxyPlot.Wpf.PlotView();
@@ -445,47 +445,48 @@ namespace Test
             Assert.That((int)peakPoints[1].Y == 3847);
 
             var plotAxes = plotView.Model.Axes;
-            Assert.That(plotAxes.Count == 2);
+            Assert.AreEqual(2, plotAxes.Count);
 
             // test that base sequence annotation was drawn
-            Assert.That(canvas.Children.Count > 0);
+            Assert.Greater(canvas.Children.Count, 0);
 
             // test that the plots were drawn in the parent/child view
-            Assert.That(parentChildView.Plots.Count == 2);
+            Assert.AreEqual(2, parentChildView.Plots.Count);
 
             // test parent scan
             var parentPlot = parentChildView.Plots[0];
-            Assert.That(parentPlot.SpectrumLabel == "Scan: 27 Dissociation Type: HCD MsOrder: 2 Selected Mz: 924.12 Retention Time: 32.65");
+            Assert.AreEqual("Scan: 27 Dissociation Type: HCD MsOrder: 2 Selected Mz: 924.12 Retention Time: 32.65", parentPlot.SpectrumLabel);
             int numAnnotatedResidues = psm.BaseSeq.Length;
             int numAnnotatedIons = psm.MatchedIons.Count(p => p.NeutralTheoreticalProduct.ProductType != ProductType.M
                 && p.NeutralTheoreticalProduct.ProductType != ProductType.D);
             int numAnnotatedMods = psm.FullSequence.Count(p => p == '[');
-            Assert.That(parentPlot.TheCanvas.Children.Count == numAnnotatedResidues + numAnnotatedIons + numAnnotatedMods);
+            Assert.AreEqual(numAnnotatedResidues + numAnnotatedIons + numAnnotatedMods, parentPlot.TheCanvas.Children.Count);
 
             peak = (LineSeries)parentPlot.Plot.Model.Series[0]; // the first m/z peak
             peakPoints = peak.Points;
-            Assert.That(Math.Round(peakPoints[0].X, 2) == 101.07); // m/z
-            Assert.That(Math.Round(peakPoints[1].X, 2) == 101.07);
-            Assert.That((int)peakPoints[0].Y == 0); // intensity
-            Assert.That((int)peakPoints[1].Y == 3847);
+            Assert.AreEqual(101.07, Math.Round(peakPoints[0].X, 2)); // m/z
+            Assert.AreEqual(101.07, (Math.Round(peakPoints[1].X, 2)));
+            Assert.AreEqual(0, (int)peakPoints[0].Y); // intensity
+            Assert.AreEqual(3847, (int)peakPoints[1].Y);
 
             // test child scan
             var childPlot = parentChildView.Plots[1];
-            Assert.That(childPlot.SpectrumLabel == "Scan: 30 Dissociation Type: ETD MsOrder: 2 Selected Mz: 924.12 RetentionTime: 32.66");
-            Assert.That(childPlot.TheCanvas.Children.Count > 0);
+            Assert.AreEqual("Scan: 30 Dissociation Type: EThcD MsOrder: 2 Selected Mz: 924.12 RetentionTime: 32.66",
+                childPlot.SpectrumLabel);
+            Assert.Greater(childPlot.TheCanvas.Children.Count, 0);
             numAnnotatedResidues = psm.BaseSeq.Length;
             numAnnotatedIons = psm.ChildScanMatchedIons[30]
                 .Count(p => p.NeutralTheoreticalProduct.ProductType != ProductType.M
                 && p.NeutralTheoreticalProduct.ProductType != ProductType.D);
             numAnnotatedMods = psm.FullSequence.Count(p => p == '[');
-            Assert.That(childPlot.TheCanvas.Children.Count == numAnnotatedResidues + numAnnotatedIons + numAnnotatedMods);
+            Assert.AreEqual(numAnnotatedResidues + numAnnotatedIons + numAnnotatedMods, childPlot.TheCanvas.Children.Count);
 
             peak = (LineSeries)childPlot.Plot.Model.Series[0]; // the first m/z peak
             peakPoints = peak.Points;
-            Assert.That(Math.Round(peakPoints[0].X, 2) == 126.06); // m/z
-            Assert.That(Math.Round(peakPoints[1].X, 2) == 126.06);
-            Assert.That((int)peakPoints[0].Y == 0); // intensity
-            Assert.That((int)peakPoints[1].Y == 8496);
+            Assert.AreEqual(126.06, Math.Round(peakPoints[0].X, 2)); // m/z
+            Assert.AreEqual(126.06, Math.Round(peakPoints[1].X, 2));
+            Assert.AreEqual(0, (int)peakPoints[0].Y); // intensity
+            Assert.AreEqual(8496, (int)peakPoints[1].Y);
 
             // write pdf
             var psmsToExport = metadrawLogic.FilteredListOfPsms.Where(p => p.FullSequence == "STTAVQTPTSGEPLVST[O-Glycosylation:H1N1 on X]SEPLSSK").ToList();
