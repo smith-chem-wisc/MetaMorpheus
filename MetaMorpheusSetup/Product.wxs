@@ -386,6 +386,9 @@
       <Component Id="src_CommandLine.dll" Guid="7B810D27-CAC0-41A8-90A2-D1594A678BC9">
         <File Id="src_CommandLine.dll" Name="CommandLine.dll" Source="$(var.CMD_TargetDir)CommandLine.dll" />
       </Component>
+      <Component Id="src_System.CodeDom.dll" Guid="1B73E617-4ED9-4C86-894A-F3C2D826FC09">
+        <File Id="src_System.CodeDom.dll" Name="System.CodeDom.dll" Source="$(var.CMD_TargetDir)System.CodeDom.dll" />
+      </Component>
     </ComponentGroup>
 
     <!--Runtime Components-->
