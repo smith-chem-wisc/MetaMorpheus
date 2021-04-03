@@ -1,5 +1,5 @@
 ## Base image is the Alpine Linux distro with .NET Core runtime
-FROM mcr.microsoft.com/dotnet/sdk:5.0-alpine
+FROM mcr.microsoft.com/dotnet/runtime:5.0-alpine
 
 ## Copies contents of the build folder into the Docker image
 ADD CMD/bin/Release/net5.0/ /metamorpheus/
