@@ -464,9 +464,10 @@ namespace EngineLayer
                 { DissociationType.HCD.ToString(), DissociationType.HCD },
                 { DissociationType.EThcD.ToString(), DissociationType.EThcD },
                 { DissociationType.Custom.ToString(), DissociationType.Custom },
-                { DissociationType.LowCID.ToString(), DissociationType.LowCID}
+                { DissociationType.LowCID.ToString(), DissociationType.LowCID},
 
-                // TODO: allow reading from scan header (autodetect dissociation type)
+                // allow reading from scan header (autodetect dissociation type)
+                { DissociationType.Autodetect.ToString(), DissociationType.Autodetect}
             };
         }
 

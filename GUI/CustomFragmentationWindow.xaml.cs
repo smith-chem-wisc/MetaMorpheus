@@ -46,6 +46,8 @@ namespace MetaMorpheusGUI
             knownProductTypes.Remove(ProductType.D);
             knownProductTypes.Remove(ProductType.M);
             knownProductTypes.Remove(ProductType.zPlusOne);
+            knownProductTypes.Remove(ProductType.Ycore);
+            knownProductTypes.Remove(ProductType.Y);
 
             foreach (ProductType productType in knownProductTypes)
             {
