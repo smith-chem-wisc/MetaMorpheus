@@ -149,8 +149,8 @@ namespace EngineLayer.GlycoSearch
             return true;
         }
 
-        //According to pGlyco3, under HCD N-glycopeptide contain >=2 core ions. O-Glycopeptide contains >=1 core ions. 
-        //Such a filter can remove a lot of unnecessary searches.
+        //The function may be dreprecated.
+        //TO THINK: it now seems like unnecessary to filter the YCore before match the glycopeptide.
         public static int YCoreIonsFilter(Ms2ScanWithSpecificMass theScan, PeptideWithSetModifications theScanBestPeptide, GlycoType glycoType, MassDiffAcceptor massDiffAcceptor)
         {
             HashSet<double> ycores = new HashSet<double>();
@@ -241,7 +241,7 @@ namespace EngineLayer.GlycoSearch
             return false;
         }
 
-        public static double CalculatePeptideScore(List<MatchedFragmentIon> matchedFragmentIons, List<Product> theoreticalProducts, CommonParameters commonParameters, double g = 0.70)
+        public static double CalculateSinglePeptideScore(List<MatchedFragmentIon> matchedFragmentIons, List<Product> theoreticalProducts, CommonParameters commonParameters, double g = 0.70)
         {
             //The function is using pGlyco score equation.
             double score = 0;
@@ -261,41 +261,44 @@ namespace EngineLayer.GlycoSearch
             return score;
         }
 
-        public static double CalculateGlycoPeptideScore(List<MatchedFragmentIon> matchedFragmentIons, List<Product> theoreticalProducts, CommonParameters commonParameters, double a = 0.56, double b = 1.42, double g = 0.70, double w = 0.35)
+        public static double CalculatePeptideScore(List<MatchedFragmentIon> matchedFragmentIons, List<Product> theoreticalProducts, CommonParameters commonParameters, double a = 0.56, double b = 1.42, double g = 0.70, double w = 0.35)
         {
             //The function is using pGlyco score equation.
             double score = 0;
             double score_g = 0;
             double score_p = 0;
 
-            double match_ycores_count = 0;
-            var theo_ycores_count = theoreticalProducts.Count(p => p.ProductType == ProductType.M );
+            double match_count = matchedFragmentIons.Count(p => p.NeutralTheoreticalProduct.ProductType != ProductType.D);
+            var theo_count = theoreticalProducts.Count(p => p.ProductType != ProductType.D);
 
-            double match_y_count = 0;
-            var theo_y_count = theoreticalProducts.Count(p => p.ProductType == ProductType.M);
+            double match_ycores_count = 0;
+            var theo_ycores_count = theoreticalProducts.Count(p => p.ProductType == ProductType.Ycore );
 
             double match_peps_count = 0;  
-            var theo_peps_count = theoreticalProducts.Count(p => p.ProductType != ProductType.M && p.ProductType != ProductType.D);
+            var theo_peps_count = theoreticalProducts.Count(p => p.ProductType != ProductType.Ycore && p.ProductType != ProductType.Y && p.ProductType != ProductType.D);
 
-            foreach (var m in matchedFragmentIons.Where(p => p.NeutralTheoreticalProduct.ProductType == ProductType.M))
+            foreach (var m in matchedFragmentIons.Where(p => p.NeutralTheoreticalProduct.ProductType == ProductType.Ycore))
             {
                 score_g += Math.Log10(m.Intensity)
                     * (1 - Math.Pow(m.MassErrorPpm / commonParameters.ProductMassTolerance.Value, 4));
                 match_ycores_count++;
             }
 
-            foreach(var m in matchedFragmentIons.Where(p => p.NeutralTheoreticalProduct.ProductType != ProductType.M && p.NeutralTheoreticalProduct.ProductType != ProductType.D))
+            foreach(var m in matchedFragmentIons.Where(p => p.NeutralTheoreticalProduct.ProductType != ProductType.Ycore
+                && p.NeutralTheoreticalProduct.ProductType != ProductType.Y
+                && p.NeutralTheoreticalProduct.ProductType != ProductType.D))
             {
                 score_p += Math.Log10(m.Intensity) * (1 - Math.Pow(m.MassErrorPpm / commonParameters.ProductMassTolerance.Value, 4));
                 match_peps_count++;
             }
 
-            score = w * score_g * Math.Pow(match_y_count / theo_y_count, a) 
+            score = w * score_g * Math.Pow(match_count / theo_count, a) 
                 * Math.Pow(match_ycores_count / theo_ycores_count, b)
                 + (1 - w) * score_p * Math.Pow(match_peps_count / theo_peps_count, g);
 
             return score;
         }
+
 
         #region Glycopeptide and fragmentation functions
 
@@ -317,12 +320,12 @@ namespace EngineLayer.GlycoSearch
                     masses.Add(ion.IonMass);
                     if ( Glycan.NYCoreIntIons.Contains(ion.IonMass))
                     {
-                        Product product = new Product(ProductType.M, FragmentationTerminus.Both, possiblePeptideMass + (double)ion.IonMass / 1E5, 0, 0, (double)ion.IonMass / 1E5);
+                        Product product = new Product(ProductType.Ycore, FragmentationTerminus.Both, possiblePeptideMass + (double)ion.IonMass / 1E5, 0, 0, (double)ion.IonMass / 1E5);
                         YIons.Add(product);                    
                     }
                     else
                     {
-                        Product product = new Product(ProductType.M, FragmentationTerminus.Both, possiblePeptideMass + (double)ion.IonMass / 1E5, 0, 0, (double)ion.IonMass / 1E5);
+                        Product product = new Product(ProductType.Y, FragmentationTerminus.Both, possiblePeptideMass + (double)ion.IonMass / 1E5, 0, 0, (double)ion.IonMass / 1E5);
                         YIons.Add(product);
                     }
 
@@ -507,15 +510,13 @@ namespace EngineLayer.GlycoSearch
         }
 
 
-        public static List<Product> GlyGetTheoreticalHCDFragments(GlycoType glycanType, DissociationType dissociationType, PeptideWithSetModifications peptide, List<int> NPos, Glycan[] glycans)
+        public static List<Product> GlyGetPepHCDFragments(GlycoType glycanType, DissociationType dissociationType, PeptideWithSetModifications peptide, List<int> NPos, Glycan[] glycans)
         {
-            List<Product> theoreticalProducts = new List<Product>();
-            HashSet<double> masses = new HashSet<double>();
             List<Product> products = new List<Product>();
 
-            if (dissociationType == DissociationType.HCD || dissociationType == DissociationType.CID)
+            if (dissociationType == DissociationType.HCD || dissociationType == DissociationType.CID || dissociationType == DissociationType.EThcD)
             {
-                peptide.Fragment(dissociationType, FragmentationTerminus.Both, products);
+                peptide.Fragment(DissociationType.HCD, FragmentationTerminus.Both, products);
 
                 if (glycanType == GlycoType.NGlycoPep || glycanType == GlycoType.MixedGlycoPep)
                 {
@@ -546,64 +547,23 @@ namespace EngineLayer.GlycoSearch
                     products.AddRange(shiftProducts);
                 }
 
-                products.AddRange(GetOxoniumIons(glycans));
-
-                products.AddRange(GetGlycanYIons(peptide, glycans));
-
-            }
-            else if (dissociationType == DissociationType.EThcD)
-            {
-                peptide.Fragment(DissociationType.HCD, FragmentationTerminus.Both, products);
-
-                if (glycanType == GlycoType.NGlycoPep || glycanType == GlycoType.MixedGlycoPep)
-                {
-                    List<Product> shiftProducts = new List<Product>();
-
-                    foreach (var pd in products)
-                    {
-                        if (pd.ProductType == ProductType.b)
-                        {
-                            int count = NPos.Count(p => p > pd.AminoAcidPosition);
-                            if (count > 0)
-                            {
-                                Product b = new Product(pd.ProductType, pd.Terminus, pd.NeutralMass + Glycan.HexNAcMass, pd.FragmentNumber, pd.AminoAcidPosition, Glycan.HexNAcMass);
-                                shiftProducts.Add(b);
-                            }
-                        }
-                        else if (pd.ProductType == ProductType.y)
-                        {
-                            int count = NPos.Count(p => p < pd.AminoAcidPosition);
-                            if (count > 0)
-                            {
-                                Product y = new Product(pd.ProductType, pd.Terminus, pd.NeutralMass + Glycan.HexNAcMass, pd.FragmentNumber, pd.AminoAcidPosition, Glycan.HexNAcMass);
-                                shiftProducts.Add(y);
-                            }
-                        }
-                    }
-
-                    products.AddRange(shiftProducts);
-                }
-
-                List<Product> etdProducts = new List<Product>();
-
-                products.AddRange(etdProducts.Where(p => p.ProductType != ProductType.y));
-
-                products.AddRange(GetOxoniumIons(glycans));
-
                 products.AddRange(GetGlycanYIons(peptide, glycans));
 
             }
 
-            foreach (var fragment in products)
-            {
-                if (!masses.Contains(fragment.NeutralMass))
-                {
-                    masses.Add(fragment.NeutralMass);
-                    theoreticalProducts.Add(fragment);
-                }
-            }
+            //TO THINK: How necessary to remove the products with shared mass?
+            //List<Product> theoreticalProducts = new List<Product>();
+            //HashSet<double> masses = new HashSet<double>();
+            //foreach (var fragment in products)
+            //{
+            //    if (!masses.Contains(fragment.NeutralMass))
+            //    {
+            //        masses.Add(fragment.NeutralMass);
+            //        theoreticalProducts.Add(fragment);
+            //    }
+            //}
 
-            return theoreticalProducts;
+            return products;
         }
         //Find FragmentMass for the fragments that contain localization Information.
         public static List<double> GetLocalFragmentGlycan(List<Product> products, int modInd, int childBoxInd, LocalizationGraph localizationGraph)
@@ -700,50 +660,24 @@ namespace EngineLayer.GlycoSearch
             return newFragments;
         }
 
-        #endregion
-
-        #region N-Glyco related functions
-
-        public static Dictionary<int, double> ScanGetTrimannosylCore(List<MatchedFragmentIon> matchedFragmentIons, GlycoType glycoType)
-        {
-            Dictionary<int, double> cores = new Dictionary<int, double>();
-
-            foreach (var fragment in matchedFragmentIons.Where(p => p.NeutralTheoreticalProduct.ProductType == ProductType.M))
-            {
-                var TrimannosylCores = Glycan.TrimannosylCores_OGlycan;
-                if (glycoType == GlycoType.NGlycoPep || glycoType == GlycoType.MixedGlycoPep)
-                {
-                    TrimannosylCores = Glycan.TrimannosylCores;
-                }
-
-                if (TrimannosylCores.ContainsKey((int)fragment.NeutralTheoreticalProduct.NeutralLoss))
-                {
-                    var pair = Glycan.TrimannosylCores.Where(p => p.Key == (int)fragment.NeutralTheoreticalProduct.NeutralLoss).FirstOrDefault();
-                    if (!cores.ContainsKey(pair.Key))
-                    {
-                        cores.Add(pair.Key, pair.Value);
-                    }
-                }
-
-            }
-            return cores;
-        }
-
+        //According to pGlyco3, under HCD N-glycopeptide contain >=2 core ions. O-Glycopeptide contains >=1 core ions. 
+        //Such a filter can remove a lot of unnecessary searches.
         public static bool ScanTrimannosylCoreFilter(List<MatchedFragmentIon> matchedFragmentIons, GlycoType glycoType)
         {
-            Dictionary<int, double> cores = ScanGetTrimannosylCore(matchedFragmentIons, glycoType);
-            if (glycoType == GlycoType.OGlycoPep && cores.Count >= 1)
+            if (glycoType == GlycoType.OGlycoPep && matchedFragmentIons.Count(p=>p.Annotation.Contains("Ycore")) >= 1)
             {
                 return true;
             }
-            else if ((glycoType == GlycoType.NGlycoPep || glycoType == GlycoType.MixedGlycoPep) && cores.Count >= 2)
+            else if ((glycoType == GlycoType.NGlycoPep || glycoType == GlycoType.MixedGlycoPep) 
+                && matchedFragmentIons.Count(p => p.Annotation.Contains("Ycore")) >= 2)
             {
                 return true;
             }
             return false;
-        }     
+        }
 
         #endregion
+
 
         #region O-Glyco related functions, plan to be deprecated.
 
@@ -845,6 +779,7 @@ namespace EngineLayer.GlycoSearch
 
         #endregion
 
+
         #region Functions are not used now, could be useful in the future. 
 
         //NGlycopeptide usually contain Y ions with different charge states, especially in sceHCD data. 
@@ -871,7 +806,7 @@ namespace EngineLayer.GlycoSearch
                     continue;
                 }
 
-                if (product.ProductType == ProductType.M)
+                if (product.ProductType == ProductType.Y || product.ProductType == ProductType.Ycore)
                 {
                     for (int i = 1; i <= scan.PrecursorCharge; i++)
                     {

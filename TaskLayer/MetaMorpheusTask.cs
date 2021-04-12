@@ -97,7 +97,7 @@ namespace TaskLayer
         public const string SecondFragmentIndexFileName = "secondFragmentIndex.ind";
         public const string PrecursorIndexFileName = "precursorIndex.ind";
 
-        public static IEnumerable<Ms2ScanWithSpecificMass> GetMs2Scans(MsDataFile myMSDataFile, string fullFilePath, CommonParameters commonParameters)
+        public static List<Ms2ScanWithSpecificMass>[] _GetMs2Scans(MsDataFile myMSDataFile, string fullFilePath, CommonParameters commonParameters)
         {
             var msNScans = myMSDataFile.GetAllScansList().Where(x => x.MsnOrder > 1).ToArray();
             var ms2Scans = msNScans.Where(p => p.MsnOrder == 2).ToArray();
@@ -106,7 +106,7 @@ namespace TaskLayer
 
             if (!ms2Scans.Any())
             {
-                return new List<Ms2ScanWithSpecificMass>();
+                return scansWithPrecursors;
             }
 
             Parallel.ForEach(Partitioner.Create(0, ms2Scans.Length), new ParallelOptions { MaxDegreeOfParallelism = commonParameters.MaxThreadsToUsePerFile },
@@ -273,6 +273,18 @@ namespace TaskLayer
                         }
                     }
                 });
+
+            return scansWithPrecursors;
+        }
+
+        public static IEnumerable<Ms2ScanWithSpecificMass> GetMs2Scans(MsDataFile myMSDataFile, string fullFilePath, CommonParameters commonParameters)
+        {
+            var scansWithPrecursors = _GetMs2Scans(myMSDataFile,  fullFilePath, commonParameters);
+
+            if (scansWithPrecursors.Length == 0)
+            {
+                return new List<Ms2ScanWithSpecificMass>();
+            }
 
             var childScanNumbers = new HashSet<int>(scansWithPrecursors.SelectMany(p => p.SelectMany(v => v.ChildScans.Select(x => x.OneBasedScanNumber))));
             var parentScans = scansWithPrecursors.Where(p => p.Any() && !childScanNumbers.Contains(p.First().OneBasedScanNumber))

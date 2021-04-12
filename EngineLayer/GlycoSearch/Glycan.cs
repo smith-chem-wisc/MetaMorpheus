@@ -201,40 +201,13 @@ namespace EngineLayer
 
         //pGlyco3: N(1), N(2), N(2)H(1), N(2)H(2), N(2)H(3), N(1)F(1), N(2)F(1)
         public readonly static double[] NYCoreIons = new double[] { 203.079373, 406.158745, 568.211568, 730.264392, 892.317215, 349.137281, 552.216654 };
-        //pGlyco3: N(1), N(2), N(1)H(1), N(1)A(1), N(1)G(1)
+        //pGlyco3: H(1), N(1), N(2), N(1)H(1), N(1)A(1), N(1)G(1)
         public readonly static double[] OYCoreIons = new double[] { 162.05282, 203.079373, 406.158745, 365.13219, 494.17479, 510.16970 };
 
-        private readonly static string[] NYcores = new string[] { "N", "NN", "NNH", "NNHH", "NNHHH", "NF", "NNF" };
+        private readonly static string[] NYcores = new string[] { "", "N", "NN", "NNH", "NNHH", "NNHHH", "NF", "NNF" };
         public readonly static int[] NYCoreIntIons = NYcores.Select(p => Glycan.GetMass(p)).ToArray();
-        private readonly static string[] OYcores = new string[] { "N", "H", "NN", "NH", "NA", "NG" };
+        private readonly static string[] OYcores = new string[] { "", "N", "H", "NN", "NH", "NA", "NG" };
         public readonly static int[] OYCoreIntIons = OYcores.Select(p => Glycan.GetMass(p)).ToArray();
-
-        //TrimannosylCore is only useful for N-Glyco peptides.
-        public readonly static Dictionary<int, double> TrimannosylCores = new Dictionary<int, double>
-        {
-            //Each of the mass represent as a N-Glycan core. 
-            { 0, 0}, //Y0
-            { 83, 83.038194}, //Y*
-            { 203, 203.079373}, //Y1    (N)
-            { 406, 406.158745}, //Y2    (N2)
-            { 365, 365.13219}, //Y3    (N2H2)
-            { 494, 494.17479}, //Y4    (N2H2)
-            { 510, 510.16970}, //Y5    (N2H3)
-        };
-
-        //TrimannosylCore is only useful for N-Glyco peptides.
-        public readonly static Dictionary<int, double> TrimannosylCores_OGlycan = new Dictionary<int, double>
-        {
-            //Each of the mass represent as a N-Glycan core. 
-            { 0, 0}, //Y0
-            { 162, 162.05282 }, //  (H)  
-            { 203, 203.079373}, //  (N)
-            { 406, 406.158745}, //  (N2)
-            { 568, 568.211568}, //  (N1H1)
-            { 730, 730.264392}, //  (N1A1)
-            { 892, 892.317215}, //  (N1G1)
-
-        };
 
         #endregion
 

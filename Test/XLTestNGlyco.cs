@@ -105,13 +105,12 @@ namespace Test
             var matchedFragmentIons = MetaMorpheusEngine.MatchFragmentIons(listOfSortedms2Scans[0], fragmentIons, commonParameters);
             Assert.That(matchedFragmentIons.Count == 24);
 
-            var coreIons = GlycoPeptides.ScanGetTrimannosylCore(matchedFragmentIons, GlycoType.NGlycoPep);
-            Assert.AreEqual(coreIons.Count, 7); 
+            Assert.That(matchedFragmentIons.Count(p=>p.Annotation.Contains("Ycore")) == 6);
             var filter = GlycoPeptides.ScanTrimannosylCoreFilter(matchedFragmentIons, GlycoType.NGlycoPep);
             Assert.AreEqual(filter, true);
 
             //Test new score functions.
-            var pg3score = GlycoPeptides.CalculateGlycoPeptideScore(matchedFragmentIons, fragmentIons, commonParameters);
+            var pg3score = GlycoPeptides.CalculatePeptideScore(matchedFragmentIons, fragmentIons, commonParameters);
 
             //Use Graph Localization method
             int[] n_modPos = GlycoPeptides.GetPossibleModSites(peptide, new string[] { "Nxt", "Nxs" }).OrderBy(p => p).ToArray();
@@ -295,8 +294,6 @@ namespace Test
             var matchedFragmentIons = MetaMorpheusEngine.MatchFragmentIons(listOfSortedms2Scans[0], fragmentIons, commonParameters);
             Assert.That(matchedFragmentIons.Count == 34);
 
-            var coreIons = GlycoPeptides.ScanGetTrimannosylCore(matchedFragmentIons, GlycoType.NGlycoPep);
-            Assert.AreEqual(coreIons.Count, 7); 
             var filter = GlycoPeptides.ScanTrimannosylCoreFilter(matchedFragmentIons, GlycoType.NGlycoPep);
             Assert.AreEqual(filter, true);
 

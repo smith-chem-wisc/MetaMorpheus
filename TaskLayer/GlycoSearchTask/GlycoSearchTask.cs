@@ -102,75 +102,167 @@ namespace TaskLayer
                 MsDataFile myMsDataFile = myFileManager.LoadFile(origDataFile, combinedParams);
 
                 Status("Getting ms2 scans...", thisId);
-
-                Ms2ScanWithSpecificMass[] arrayOfMs2ScansSortedByMass = GetMs2Scans(myMsDataFile, origDataFile, combinedParams).OrderBy(b => b.PrecursorMass).ToArray();
-                List<GlycoSpectralMatch>[] newCsmsPerMS2ScanPerFile = new List<GlycoSpectralMatch>[arrayOfMs2ScansSortedByMass.Length];
+                
+                Ms2ScanWithSpecificMass[] _arrayOfMs2ScansSortedByMass = GetMs2Scans(myMsDataFile, origDataFile, combinedParams).OrderBy(b => b.PrecursorMass).ToArray();
                 myFileManager.DoneWithFile(origDataFile);
-                for (int currentPartition = 0; currentPartition < CommonParameters.TotalPartitions; currentPartition++)
+          
+                var count = 0;
+                while (count < _arrayOfMs2ScansSortedByMass.Length)
                 {
-                    List<PeptideWithSetModifications> peptideIndex = null;
-
-                    //When partition, the proteinList will be split for each Thread.
-                    List<Protein> proteinListSubset = proteinList.GetRange(currentPartition * proteinList.Count() / combinedParams.TotalPartitions, ((currentPartition + 1) * proteinList.Count() / combinedParams.TotalPartitions) - (currentPartition * proteinList.Count() / combinedParams.TotalPartitions));
-
-                    Status("Getting fragment dictionary...", new List<string> { taskId });
-
-                    //Indexing strategy for Glycopepitde.
-                    //Generating a second fragment index slow down the program. 
-                    //There are different type of fragmentation combination methods for N-glycopeptides and O-glycopeptides.
-
-                    //We try to only index b/y fragment ions (HCD, CID, EThcD). Thus we will only generate b/y fragmentIndex. Even for HCD-trig-EThcD or EThcD-pd-HCD method.
-                    //Due to the complexity of O-glycan, the ETD ions didn't generate a lot of peptide backbone ions.
-
-                    //If there are paired spectrum, we will let the user to decide if to index the child spectrum if two indexes should be used. (HCD-trig-ETD)
-                    //These data types require more testing: ETD-pd-HCD.  ETD-pd-EThcD.
-                    var indexParams = combinedParams.Clone();
-                    if (_glycoSearchParameters.Indexing_by_ion 
-                        && (combinedParams.DissociationType == DissociationType.HCD || combinedParams.DissociationType == DissociationType.CID || combinedParams.DissociationType == DissociationType.EThcD))
+                    var partition = 1000;
+                    if (_arrayOfMs2ScansSortedByMass.Length - count > partition)
                     {
-                        indexParams = CommonParameters.CloneWithNewDissociationType(DissociationType.HCD);
+                        partition = _arrayOfMs2ScansSortedByMass.Length - count;
                     }
 
-                    //Only reverse Decoy for glyco search has been tested and are set as fixed parameter.
-                    var indexEngine = new IndexingEngine(proteinListSubset, variableModifications, fixedModifications, null, null, null, 
-                        currentPartition, _glycoSearchParameters.DecoyType, indexParams, this.FileSpecificParameters, 30000.0, 
-                        false, dbFilenameList.Select(p => new FileInfo(p.FilePath)).ToList(), TargetContaminantAmbiguity.RemoveContaminant, new List<string> { taskId });
-                    List<int>[] fragmentIndex = null;
-                    List<int>[] precursorIndex = null;
-                    GenerateIndexes(indexEngine, dbFilenameList, ref peptideIndex, ref fragmentIndex, ref precursorIndex, proteinList, taskId);      
+                    var arrayOfMs2ScansSortedByMass = _arrayOfMs2ScansSortedByMass[count..(count + partition)];
 
-                    //If LowCID is used for MS1, ion-index is not allowed to use.
-                    List<int>[] secondFragmentIndex = null;
-                    if (combinedParams.MS2ChildScanDissociationType != DissociationType.LowCID
-                        && _glycoSearchParameters.IndexingChildScan
-                        && _glycoSearchParameters.IndexingChildScanDiffIndex
-                        && !CrosslinkSearchEngine.DissociationTypeGenerateSameIons(combinedParams.DissociationType, combinedParams.MS2ChildScanDissociationType))
+                    //var arrayOfMs2ScansSortedByMass = _arrayOfMs2ScansSortedByMass.Skip(count).Take(1000).ToArray();
+
+                    List<GlycoSpectralMatch>[] newCsmsPerMS2ScanPerFile = new List<GlycoSpectralMatch>[arrayOfMs2ScansSortedByMass.Length];
+                    for (int currentPartition = 0; currentPartition < CommonParameters.TotalPartitions; currentPartition++)
                     {
-                        if (_glycoSearchParameters.Indexing_by_ion && CrosslinkSearchEngine.DissociationTypeGenerateSameIons(DissociationType.HCD, combinedParams.MS2ChildScanDissociationType))
+                        List<PeptideWithSetModifications> peptideIndex = null;
+
+                        //When partition, the proteinList will be split for each Thread.
+                        List<Protein> proteinListSubset = proteinList.GetRange(currentPartition * proteinList.Count() / combinedParams.TotalPartitions, ((currentPartition + 1) * proteinList.Count() / combinedParams.TotalPartitions) - (currentPartition * proteinList.Count() / combinedParams.TotalPartitions));
+
+                        Status("Getting fragment dictionary...", new List<string> { taskId });
+
+                        //Indexing strategy for Glycopepitde.
+                        //Generating a second fragment index slow down the program. 
+                        //There are different type of fragmentation combination methods for N-glycopeptides and O-glycopeptides.
+
+                        //We try to only index b/y fragment ions (HCD, CID, EThcD). Thus we will only generate b/y fragmentIndex. Even for HCD-trig-EThcD or EThcD-pd-HCD method.
+                        //Due to the complexity of O-glycan, the ETD ions didn't generate a lot of peptide backbone ions.
+
+                        //If there are paired spectrum, we will let the user to decide if to index the child spectrum if two indexes should be used. (HCD-trig-ETD)
+                        //These data types require more testing: ETD-pd-HCD.  ETD-pd-EThcD.
+                        var indexParams = combinedParams.Clone();
+                        if (_glycoSearchParameters.Indexing_by_ion
+                            && (combinedParams.DissociationType == DissociationType.HCD || combinedParams.DissociationType == DissociationType.CID || combinedParams.DissociationType == DissociationType.EThcD))
                         {
-                            continue;
+                            indexParams = CommonParameters.CloneWithNewDissociationType(DissociationType.HCD);
                         }
-                        //Becuase two different type of dissociation methods are used, the parameters are changed with different dissociation type.
-                        var secondCombinedParams = CommonParameters.CloneWithNewDissociationType(combinedParams.MS2ChildScanDissociationType);
-                        var secondIndexEngine = new IndexingEngine(proteinListSubset, variableModifications, fixedModifications, null, null, null, 
-                            currentPartition, _glycoSearchParameters.DecoyType, secondCombinedParams, this.FileSpecificParameters, 30000.0, 
+
+                        //Only reverse Decoy for glyco search has been tested and are set as fixed parameter.
+                        var indexEngine = new IndexingEngine(proteinListSubset, variableModifications, fixedModifications, null, null, null,
+                            currentPartition, _glycoSearchParameters.DecoyType, indexParams, this.FileSpecificParameters, 30000.0,
                             false, dbFilenameList.Select(p => new FileInfo(p.FilePath)).ToList(), TargetContaminantAmbiguity.RemoveContaminant, new List<string> { taskId });
-                        GenerateSecondIndexes(indexEngine, secondIndexEngine, dbFilenameList, ref secondFragmentIndex, proteinList, taskId);
+                        List<int>[] fragmentIndex = null;
+                        List<int>[] precursorIndex = null;
+                        GenerateIndexes(indexEngine, dbFilenameList, ref peptideIndex, ref fragmentIndex, ref precursorIndex, proteinList, taskId);
+
+                        //If LowCID is used for MS1, ion-index is not allowed to use.
+                        List<int>[] secondFragmentIndex = null;
+                        if (combinedParams.MS2ChildScanDissociationType != DissociationType.LowCID
+                            && _glycoSearchParameters.IndexingChildScan
+                            && _glycoSearchParameters.IndexingChildScanDiffIndex
+                            && !CrosslinkSearchEngine.DissociationTypeGenerateSameIons(combinedParams.DissociationType, combinedParams.MS2ChildScanDissociationType))
+                        {
+                            if (_glycoSearchParameters.Indexing_by_ion && CrosslinkSearchEngine.DissociationTypeGenerateSameIons(DissociationType.HCD, combinedParams.MS2ChildScanDissociationType))
+                            {
+                                continue;
+                            }
+                            //Becuase two different type of dissociation methods are used, the parameters are changed with different dissociation type.
+                            var secondCombinedParams = CommonParameters.CloneWithNewDissociationType(combinedParams.MS2ChildScanDissociationType);
+                            var secondIndexEngine = new IndexingEngine(proteinListSubset, variableModifications, fixedModifications, null, null, null,
+                                currentPartition, _glycoSearchParameters.DecoyType, secondCombinedParams, this.FileSpecificParameters, 30000.0,
+                                false, dbFilenameList.Select(p => new FileInfo(p.FilePath)).ToList(), TargetContaminantAmbiguity.RemoveContaminant, new List<string> { taskId });
+                            GenerateSecondIndexes(indexEngine, secondIndexEngine, dbFilenameList, ref secondFragmentIndex, proteinList, taskId);
+                        }
+
+                        Status("Searching files...", taskId);
+                        new GlycoSearchEngine(newCsmsPerMS2ScanPerFile, arrayOfMs2ScansSortedByMass, peptideIndex, fragmentIndex,
+                            secondFragmentIndex, currentPartition, combinedParams, this.FileSpecificParameters,
+                            _glycoSearchParameters.OGlycanDatabasefile, _glycoSearchParameters.NGlycanDatabasefile,
+                            _glycoSearchParameters.GlycoSearchType, _glycoSearchParameters.MixedGlycoAllowed,
+                            _glycoSearchParameters.GlycoSearchTopNum, _glycoSearchParameters.MaximumOGlycanAllowed,
+                            _glycoSearchParameters.MaximumNGlycanAllowed, _glycoSearchParameters.OxoniumIonFilt, _glycoSearchParameters.IndexingChildScan, thisId).Run();
+
+                        ReportProgress(new ProgressEventArgs(100, "Done with search " + (currentPartition + 1) + "/" + CommonParameters.TotalPartitions + "!", thisId));
+                        if (GlobalVariables.StopLoops) { break; }
                     }
 
-                    Status("Searching files...", taskId);
-                    new GlycoSearchEngine(newCsmsPerMS2ScanPerFile, arrayOfMs2ScansSortedByMass, peptideIndex, fragmentIndex, 
-                        secondFragmentIndex, currentPartition, combinedParams, this.FileSpecificParameters,
-                        _glycoSearchParameters.OGlycanDatabasefile, _glycoSearchParameters.NGlycanDatabasefile, 
-                        _glycoSearchParameters.GlycoSearchType, _glycoSearchParameters.MixedGlycoAllowed,
-                        _glycoSearchParameters.GlycoSearchTopNum, _glycoSearchParameters.MaximumOGlycanAllowed, 
-                        _glycoSearchParameters.MaximumNGlycanAllowed, _glycoSearchParameters.OxoniumIonFilt, _glycoSearchParameters.IndexingChildScan, thisId).Run();
+                    ListOfGsmsPerMS2Scan.AddRange(newCsmsPerMS2ScanPerFile.Where(p => p != null).ToList());
 
-                    ReportProgress(new ProgressEventArgs(100, "Done with search " + (currentPartition + 1) + "/" + CommonParameters.TotalPartitions + "!", thisId));
-                    if (GlobalVariables.StopLoops) { break; }
+                    for (int i = count; i < count + partition; i++)
+                    {
+                        _arrayOfMs2ScansSortedByMass[i] = null;
+                    }
+                    count += partition;
                 }
 
-                ListOfGsmsPerMS2Scan.AddRange(newCsmsPerMS2ScanPerFile.Where(p => p != null).ToList());
+
+                //var _arrayOfMs2ScansSortedByMass = arrayOfMs2ScansSortedByMass;
+                //List<GlycoSpectralMatch>[] newCsmsPerMS2ScanPerFile = new List<GlycoSpectralMatch>[arrayOfMs2ScansSortedByMass.Length];           
+                //for (int currentPartition = 0; currentPartition < CommonParameters.TotalPartitions; currentPartition++)
+                //{
+                //    List<PeptideWithSetModifications> peptideIndex = null;
+
+                //    //When partition, the proteinList will be split for each Thread.
+                //    List<Protein> proteinListSubset = proteinList.GetRange(currentPartition * proteinList.Count() / combinedParams.TotalPartitions, ((currentPartition + 1) * proteinList.Count() / combinedParams.TotalPartitions) - (currentPartition * proteinList.Count() / combinedParams.TotalPartitions));
+
+                //    Status("Getting fragment dictionary...", new List<string> { taskId });
+
+                //    //Indexing strategy for Glycopepitde.
+                //    //Generating a second fragment index slow down the program. 
+                //    //There are different type of fragmentation combination methods for N-glycopeptides and O-glycopeptides.
+
+                //    //We try to only index b/y fragment ions (HCD, CID, EThcD). Thus we will only generate b/y fragmentIndex. Even for HCD-trig-EThcD or EThcD-pd-HCD method.
+                //    //Due to the complexity of O-glycan, the ETD ions didn't generate a lot of peptide backbone ions.
+
+                //    //If there are paired spectrum, we will let the user to decide if to index the child spectrum if two indexes should be used. (HCD-trig-ETD)
+                //    //These data types require more testing: ETD-pd-HCD.  ETD-pd-EThcD.
+                //    var indexParams = combinedParams.Clone();
+                //    if (_glycoSearchParameters.Indexing_by_ion 
+                //        && (combinedParams.DissociationType == DissociationType.HCD || combinedParams.DissociationType == DissociationType.CID || combinedParams.DissociationType == DissociationType.EThcD))
+                //    {
+                //        indexParams = CommonParameters.CloneWithNewDissociationType(DissociationType.HCD);
+                //    }
+
+                //    //Only reverse Decoy for glyco search has been tested and are set as fixed parameter.
+                //    var indexEngine = new IndexingEngine(proteinListSubset, variableModifications, fixedModifications, null, null, null, 
+                //        currentPartition, _glycoSearchParameters.DecoyType, indexParams, this.FileSpecificParameters, 30000.0, 
+                //        false, dbFilenameList.Select(p => new FileInfo(p.FilePath)).ToList(), TargetContaminantAmbiguity.RemoveContaminant, new List<string> { taskId });
+                //    List<int>[] fragmentIndex = null;
+                //    List<int>[] precursorIndex = null;
+                //    GenerateIndexes(indexEngine, dbFilenameList, ref peptideIndex, ref fragmentIndex, ref precursorIndex, proteinList, taskId);      
+
+                //    //If LowCID is used for MS1, ion-index is not allowed to use.
+                //    List<int>[] secondFragmentIndex = null;
+                //    if (combinedParams.MS2ChildScanDissociationType != DissociationType.LowCID
+                //        && _glycoSearchParameters.IndexingChildScan
+                //        && _glycoSearchParameters.IndexingChildScanDiffIndex
+                //        && !CrosslinkSearchEngine.DissociationTypeGenerateSameIons(combinedParams.DissociationType, combinedParams.MS2ChildScanDissociationType))
+                //    {
+                //        if (_glycoSearchParameters.Indexing_by_ion && CrosslinkSearchEngine.DissociationTypeGenerateSameIons(DissociationType.HCD, combinedParams.MS2ChildScanDissociationType))
+                //        {
+                //            continue;
+                //        }
+                //        //Becuase two different type of dissociation methods are used, the parameters are changed with different dissociation type.
+                //        var secondCombinedParams = CommonParameters.CloneWithNewDissociationType(combinedParams.MS2ChildScanDissociationType);
+                //        var secondIndexEngine = new IndexingEngine(proteinListSubset, variableModifications, fixedModifications, null, null, null, 
+                //            currentPartition, _glycoSearchParameters.DecoyType, secondCombinedParams, this.FileSpecificParameters, 30000.0, 
+                //            false, dbFilenameList.Select(p => new FileInfo(p.FilePath)).ToList(), TargetContaminantAmbiguity.RemoveContaminant, new List<string> { taskId });
+                //        GenerateSecondIndexes(indexEngine, secondIndexEngine, dbFilenameList, ref secondFragmentIndex, proteinList, taskId);
+                //    }
+
+                //    Status("Searching files...", taskId);
+                //    new GlycoSearchEngine(newCsmsPerMS2ScanPerFile, arrayOfMs2ScansSortedByMass, peptideIndex, fragmentIndex, 
+                //        secondFragmentIndex, currentPartition, combinedParams, this.FileSpecificParameters,
+                //        _glycoSearchParameters.OGlycanDatabasefile, _glycoSearchParameters.NGlycanDatabasefile, 
+                //        _glycoSearchParameters.GlycoSearchType, _glycoSearchParameters.MixedGlycoAllowed,
+                //        _glycoSearchParameters.GlycoSearchTopNum, _glycoSearchParameters.MaximumOGlycanAllowed, 
+                //        _glycoSearchParameters.MaximumNGlycanAllowed, _glycoSearchParameters.OxoniumIonFilt, _glycoSearchParameters.IndexingChildScan, thisId).Run();
+
+                //    ReportProgress(new ProgressEventArgs(100, "Done with search " + (currentPartition + 1) + "/" + CommonParameters.TotalPartitions + "!", thisId));
+                //    if (GlobalVariables.StopLoops) { break; }
+                //}
+
+                //ListOfGsmsPerMS2Scan.AddRange(newCsmsPerMS2ScanPerFile.Where(p => p != null).ToList());
+
+
 
                 completedFiles++;
                 ReportProgress(new ProgressEventArgs(completedFiles / currentRawFileList.Count, "Searching...", new List<string> { taskId, "Individual Spectra Files" }));
