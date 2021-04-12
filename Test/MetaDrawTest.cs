@@ -471,7 +471,7 @@ namespace Test
 
             // test child scan
             var childPlot = parentChildView.Plots[1];
-            Assert.That(childPlot.SpectrumLabel == "Scan: 30 Dissociation Type: ETD MsOrder: 2 Selected Mz: 924.12 RetentionTime: 32.66");
+            Assert.That(childPlot.SpectrumLabel == "Scan: 30 Dissociation Type: EThcD MsOrder: 2 Selected Mz: 924.12 RetentionTime: 32.66");
             Assert.That(childPlot.TheCanvas.Children.Count > 0);
             numAnnotatedResidues = psm.BaseSeq.Length;
             numAnnotatedIons = psm.ChildScanMatchedIons[30]
