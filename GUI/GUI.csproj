@@ -27,6 +27,26 @@
   </PropertyGroup>
 
   <ItemGroup>
+    <None Remove="Icons\Blogger.bmp" />
+    <None Remove="Icons\Blogger_20.bmp" />
+    <None Remove="Icons\git.bmp" />
+    <None Remove="Icons\git_20.bmp" />
+    <None Remove="Icons\mail.bmp" />
+    <None Remove="Icons\mail_20.bmp" />
+    <None Remove="Icons\MMnice.ico" />
+    <None Remove="Icons\proxl-ms.bmp" />
+    <None Remove="Icons\Slack_Mark_Web.bmp" />
+    <None Remove="Icons\spritz20.png" />
+    <None Remove="Icons\Twitter_Logo_Blue.bmp" />
+    <None Remove="Icons\update.bmp" />
+    <None Remove="Icons\update_20.bmp" />
+    <None Remove="Icons\wiki.bmp" />
+    <None Remove="Icons\wiki_20.bmp" />
+    <None Remove="Icons\youtube-256.bmp" />
+    <None Remove="Icons\youtube_20.bmp" />
+  </ItemGroup>
+
+  <ItemGroup>
     <PackageReference Include="MarkdownSharp" Version="2.0.5" />
     <PackageReference Include="MathNet.Numerics" Version="4.15.0" />
     <PackageReference Include="MathNet.Numerics.MKL.Win" Version="2.5.0" />
@@ -35,7 +55,7 @@
     <PackageReference Include="Microsoft.ML.DataView" Version="1.3.1" />
     <PackageReference Include="Microsoft.ML.FastTree" Version="1.3.1" />
     <PackageReference Include="Microsoft.NETCore.App" Version="2.2.8" />
-    <PackageReference Include="mzLib" Version="1.0.484" />
+    <PackageReference Include="mzLib" Version="1.0.490" />
     <PackageReference Include="Nett" Version="0.13.0" />
     <PackageReference Include="Newtonsoft.Json" Version="12.0.3" />
     <PackageReference Include="OxyPlot.Core" Version="2.0.0" />
@@ -62,37 +82,47 @@
   </ItemGroup>
 
   <ItemGroup>
+    <Resource Include="Icons\Blogger.bmp" />
+    <Resource Include="Icons\Blogger_20.bmp">
+      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+    </Resource>
+    <Resource Include="Icons\git.bmp" />
+    <Resource Include="Icons\git_20.bmp">
+      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+    </Resource>
+    <Resource Include="Icons\mail.bmp" />
+    <Resource Include="Icons\mail_20.bmp">
+      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+    </Resource>
+    <Resource Include="Icons\MMnice.ico">
+      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+    </Resource>
+    <Resource Include="Icons\proxl-ms.bmp">
+      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+    </Resource>
+    <Resource Include="Icons\Slack_Mark_Web.bmp">
+      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+    </Resource>
+    <Resource Include="Icons\spritz20.png" />
+    <Resource Include="Icons\Twitter_Logo_Blue.bmp">
+      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+    </Resource>
+    <Resource Include="Icons\update.bmp" />
+    <Resource Include="Icons\update_20.bmp">
+      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+    </Resource>
+    <Resource Include="Icons\wiki.bmp" />
+    <Resource Include="Icons\wiki_20.bmp">
+      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+    </Resource>
+    <Resource Include="Icons\youtube-256.bmp" />
+    <Resource Include="Icons\youtube_20.bmp">
+      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+    </Resource>
+  </ItemGroup>
+
+  <ItemGroup>
     <None Update="app.manifest">
-      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
-    </None>
-    <None Update="Icons\Blogger_20.bmp">
-      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
-    </None>
-    <None Update="Icons\git_20.bmp">
-      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
-    </None>
-    <None Update="Icons\mail_20.bmp">
-      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
-    </None>
-    <None Update="Icons\MMnice.ico">
-      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
-    </None>
-    <None Update="Icons\proxl-ms.bmp">
-      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
-    </None>
-    <None Update="Icons\Slack_Mark_Web.bmp">
-      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
-    </None>
-    <None Update="Icons\Twitter_Logo_Blue.bmp">
-      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
-    </None>
-    <None Update="Icons\update_20.bmp">
-      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
-    </None>
-    <None Update="Icons\wiki_20.bmp">
-      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
-    </None>
-    <None Update="Icons\youtube_20.bmp">
       <CopyToOutputDirectory>Always</CopyToOutputDirectory>
     </None>
   </ItemGroup>

@@ -429,6 +429,13 @@
         <RegistryValue Root="HKCU" Key="Software\SmithGroup\MetaMorpheus" Name="installed" Type="integer" Value="1" KeyPath="yes" />
       </Component>
 
+      <!-- availableUniProtProteomes.txt -->
+      <Component Id="Appsrc_Proteomes_availableUniProtProteomes.txt.gz" Guid="89F6BBC1-4668-4F9C-A52B-69603CE418C1">
+        <File ReadOnly="yes" Id="Appsrc_Proteomes_availableUniProtProteomes.txt" Name="availableUniProtProteomes.txt.gz" Source="$(var.GUI_TargetDir)Proteomes\availableUniProtProteomes.txt.gz" />
+        <Condition>OVERWRITEAPPDATA</Condition>
+        <RegistryValue Root="HKCU" Key="Software\SmithGroup\MetaMorpheus" Name="installed" Type="integer" Value="1" KeyPath="yes" />
+      </Component>
+      
       <!-- glyco.txt -->
       <Component Id="Appsrc_Mods_glyco.txt" Guid="1707b26b-070e-46d5-9632-f1bc8bf4d281">
         <Condition>OVERWRITEAPPDATA</Condition>
@@ -441,6 +448,13 @@
         <Condition>OVERWRITEAPPDATA</Condition>
         <RegistryValue Root="HKCU" Key="Software\SmithGroup\MetaMorpheus" Name="installed" Type="integer" Value="1" KeyPath="yes" />
         <File ReadOnly="no" Id="Appsrc_Mods_Mods.txt" Name="Mods.txt" Source="$(var.GUI_TargetDir)Mods\Mods.txt" />
+      </Component>
+
+      <!-- ProteaseMods.txt -->
+      <Component Id="Appsrc_Mods_ProteaseMods.txt" Guid="D95A127E-AD27-49CA-91B1-B7BD55B4CFBA">
+        <Condition>OVERWRITEAPPDATA</Condition>
+        <RegistryValue Root="HKCU" Key="Software\SmithGroup\MetaMorpheus" Name="installed" Type="integer" Value="1" KeyPath="yes" />
+        <File ReadOnly="no" Id="Appsrc_Mods_ProteaseMods.txt" Name="ProteaseMods.txt" Source="$(var.GUI_TargetDir)Mods\ProteaseMods.txt" />
       </Component>
 
       <!-- substitutions.txt -->

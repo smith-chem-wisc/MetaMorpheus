@@ -27,12 +27,11 @@ namespace MetaMorpheusGUI
     public partial class MainWindow : Window
     {
         private readonly ObservableCollection<RawDataForDataGrid> SpectraFiles = new ObservableCollection<RawDataForDataGrid>();
-        private readonly ObservableCollection<ProteinDbForDataGrid> ProteinDatabases = new ObservableCollection<ProteinDbForDataGrid>();
+        private ObservableCollection<ProteinDbForDataGrid> ProteinDatabases = new ObservableCollection<ProteinDbForDataGrid>();
         private readonly ObservableCollection<PreRunTask> PreRunTasks = new ObservableCollection<PreRunTask>();
         private readonly ObservableCollection<RawDataForDataGrid> SelectedSpectraFiles = new ObservableCollection<RawDataForDataGrid>();
         private readonly ObservableCollection<ProteinDbForDataGrid> SelectedProteinDatabaseFiles = new ObservableCollection<ProteinDbForDataGrid>();
         private ObservableCollection<InRunTask> InProgressTasks;
-
         public static string NewestKnownMetaMorpheusVersion { get; private set; }
 
         public MainWindow()
@@ -1136,7 +1135,7 @@ namespace MetaMorpheusGUI
 
         private void MenuItem_YouTube_Click(object sender, RoutedEventArgs e)
         {
-            GlobalVariables.StartProcess(@"https://www.youtube.com/playlist?list=PLVk5tTSZ1aWlhNPh7jxPQ8pc0ElyzSUQb");
+            GlobalVariables.StartProcess(@"https://www.youtube.com/playlist?list=PLVk5tTSZ1aWlYiTvJbRj6hjVDq4qH3w__");
         }
 
         private void MenuItem_ProteomicsNewsBlog_Click(object sender, RoutedEventArgs e)
@@ -1922,5 +1921,24 @@ namespace MetaMorpheusGUI
         }
 
         #endregion
+
+        private void DownloadUniProtDatabase_Click(object sender, RoutedEventArgs e)
+        {
+            DownloadUniProtDatabaseWindow uniProtDatabaseWindow = new DownloadUniProtDatabaseWindow(ProteinDatabases);
+            uniProtDatabaseWindow.WindowStartupLocation = WindowStartupLocation.CenterScreen;            
+            uniProtDatabaseWindow.Show();
+            uniProtDatabaseWindow.Closed += UniProtDatabaseWindow_Closed;         
+        }
+
+        private void UniProtDatabaseWindow_Closed(object sender, EventArgs e)
+        {
+            dataGridProteinDatabases.Items.Refresh();
+            proteinDbSummaryDataGrid.Items.Refresh();
+        }
+
+        private void OpenProteomesFolder_Click(object sender, RoutedEventArgs e)
+        {
+            OpenFolder(Path.Combine(GlobalVariables.DataDir, @"Proteomes"));
+        }
     }
 }
