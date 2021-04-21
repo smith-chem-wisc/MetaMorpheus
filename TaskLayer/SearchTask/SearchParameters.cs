@@ -27,6 +27,7 @@ namespace TaskLayer
             MaxFragmentSize = 30000.0;
             WriteMzId = true;
             WritePepXml = false;
+            IncludeModMotifInMzid = false;
 
             ModsToWriteSelection = new Dictionary<string, int>
             {
@@ -88,5 +89,6 @@ namespace TaskLayer
         public SilacLabel StartTurnoverLabel { get; set; } //used for SILAC turnover experiments
         public SilacLabel EndTurnoverLabel { get; set; } //used for SILAC turnover experiments
         public TargetContaminantAmbiguity TCAmbiguity { get; set; }
+        public bool IncludeModMotifInMzid { get; set; }
     }
 }
