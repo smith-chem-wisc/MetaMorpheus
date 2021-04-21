@@ -376,7 +376,7 @@ namespace Test
 
             MzIdentMLWriter.WriteMzIdentMl(new List<PeptideSpectralMatch> { psm }, new List<ProteinGroup>(), new List<Modification>(),
                 new List<Modification>(), new List<SilacLabel>(), new List<Protease>(), 0, new PpmTolerance(20), new PpmTolerance(20),
-                0, path);
+                0, path, true);
 
             var file = File.ReadAllLines(path);
             bool found = false;
@@ -418,13 +418,29 @@ namespace Test
 
             MzIdentMLWriter.WriteMzIdentMl(new List<PeptideSpectralMatch> { psm }, new List<ProteinGroup>(), new List<Modification>(),
                 new List<Modification>(), new List<SilacLabel>(), new List<Protease>(), 0, new PpmTolerance(20), new PpmTolerance(20),
-                0, path);
+                0, path, true);
 
             var file = File.ReadAllLines(path);
             bool found = false;
             foreach (var line in file)
             {
                 if (line.Contains("FAKE on T") && line.Contains("PSI-MOD:" + resIdAccession))
+                {
+                    found = true;
+                }
+            }
+            Assert.That(found);
+
+            // test again w/ NOT appending motifs onto mod names
+            MzIdentMLWriter.WriteMzIdentMl(new List<PeptideSpectralMatch> { psm }, new List<ProteinGroup>(), new List<Modification>(),
+                new List<Modification>(), new List<SilacLabel>(), new List<Protease>(), 0, new PpmTolerance(20), new PpmTolerance(20),
+                0, path, false);
+
+            file = File.ReadAllLines(path);
+            found = false;
+            foreach (var line in file)
+            {
+                if (line.Contains("FAKE") && !line.Contains(" on ") && line.Contains("PSI-MOD:" + resIdAccession))
                 {
                     found = true;
                 }
