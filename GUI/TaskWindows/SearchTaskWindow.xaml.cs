@@ -235,7 +235,7 @@ namespace MetaMorpheusGUI
                 }
             }
 
-
+            
             CheckBoxQuantifyUnlabeledForSilac.IsChecked = task.CommonParameters.DigestionParams.GeneratehUnlabeledProteinsForSilac;
             PeakFindingToleranceTextBox.Text = task.SearchParameters.QuantifyPpmTol.ToString(CultureInfo.InvariantCulture);
             CheckBoxMatchBetweenRuns.IsChecked = task.SearchParameters.MatchBetweenRuns;
@@ -304,6 +304,7 @@ namespace MetaMorpheusGUI
             WriteContaminantCheckBox.IsChecked = task.SearchParameters.WriteContaminants;
             WriteIndividualResultsCheckBox.IsChecked = task.SearchParameters.WriteIndividualFiles;
             CompressIndividualResultsCheckBox.IsChecked = task.SearchParameters.CompressIndividualFiles;
+            IncludeMotifInModNamesCheckBox.IsChecked = task.SearchParameters.IncludeModMotifInMzid;
 
             foreach (var mod in task.CommonParameters.ListOfModsFixed)
             {
@@ -577,6 +578,7 @@ namespace MetaMorpheusGUI
             TheTask.SearchParameters.WriteContaminants = WriteContaminantCheckBox.IsChecked.Value;
             TheTask.SearchParameters.WriteIndividualFiles = WriteIndividualResultsCheckBox.IsChecked.Value;
             TheTask.SearchParameters.CompressIndividualFiles = CompressIndividualResultsCheckBox.IsChecked.Value;
+            TheTask.SearchParameters.IncludeModMotifInMzid = IncludeMotifInModNamesCheckBox.IsChecked.Value;
 
             if (RemoveContaminantRadioBox.IsChecked.Value)
             {

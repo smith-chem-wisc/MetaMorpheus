@@ -1017,6 +1017,31 @@
                                 </StackPanel>
                             </Expander>
                         </GroupBox>
+                        <GroupBox Header="Output Options" DockPanel.Dock="Top" ScrollViewer.CanContentScroll="True">
+                            <Expander x:Name="OutputExpander" Collapsed="ApmdExpander_Collapsed">
+                                <Expander.Style>
+                                    <Style TargetType="Expander">
+                                        <Setter Property="Header" Value="Some output properties..." />
+                                        <Style.Triggers>
+                                            <Trigger Property="IsExpanded" Value="True">
+                                                <Setter Property="Header" Value="Hide" />
+                                            </Trigger>
+                                        </Style.Triggers>
+                                    </Style>
+                                </Expander.Style>
+
+                                <StackPanel>
+                                    <CheckBox x:Name="IncludeMotifInModNamesCheckBox" Margin="20 0 0 0" 
+                                              Content="Include mod motifs in .mzID" IsEnabled="{Binding IsChecked, ElementName=CkbMzId}" >
+                                        <ToolTipService.ToolTip>
+                                            <TextBlock>
+                                                Checking this box will append the modification motif onto modification names in the .mzID output, e.g. "Carbamidomethylation on C"
+                                            </TextBlock>
+                                        </ToolTipService.ToolTip>
+                                    </CheckBox>
+                                </StackPanel>
+                            </Expander>
+                        </GroupBox>
                     </StackPanel>
                 </Expander>
                 <!-- END ADVANCED SETTINGS -->
