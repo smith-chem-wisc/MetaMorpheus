@@ -15,7 +15,9 @@ namespace TaskLayer
 {
     public static class MzIdentMLWriter
     {
-        public static void WriteMzIdentMl(IEnumerable<PeptideSpectralMatch> psms, List<EngineLayer.ProteinGroup> groups, List<Modification> variableMods, List<Modification> fixedMods, List<SilacLabel> silacLabels, List<Protease> proteases, double qValueFilter, Tolerance productTolerance, Tolerance parentTolerance, int missedCleavages, string outputPath)
+        public static void WriteMzIdentMl(IEnumerable<PeptideSpectralMatch> psms, List<EngineLayer.ProteinGroup> groups, List<Modification> variableMods, 
+            List<Modification> fixedMods, List<SilacLabel> silacLabels, List<Protease> proteases, double qValueFilter, Tolerance productTolerance, 
+            Tolerance parentTolerance, int missedCleavages, string outputPath, bool appendMotifToModNames)
         {
             psms = psms.Where(p => p.FdrInfo.QValue <= qValueFilter && p.FdrInfo.QValueNotch <= qValueFilter);
 
@@ -349,7 +351,7 @@ namespace TaskLayer
                                 monoisotopicMassDeltaSpecified = true,
                                 cvParam = new mzIdentML110.Generated.CVParamType[1]
                                 {
-                                    GetUnimodCvParam(mod.Value)
+                                    GetUnimodCvParam(mod.Value, appendMotifToModNames)
                                 }
                             };
                             mod_id++;
@@ -595,7 +597,7 @@ namespace TaskLayer
                     residues = mod.Target.ToString(),
                     cvParam = new mzIdentML110.Generated.CVParamType[1]
                     {
-                        GetUnimodCvParam(mod)
+                        GetUnimodCvParam(mod, appendMotifToModNames)
                     }
                 };
                 mod_index++;
@@ -610,7 +612,7 @@ namespace TaskLayer
                     residues = mod.Target.ToString(),
                     cvParam = new mzIdentML110.Generated.CVParamType[1]
                     {
-                        GetUnimodCvParam(mod)
+                        GetUnimodCvParam(mod, appendMotifToModNames)
                     }
                 };
                 mod_index++;
@@ -730,14 +732,14 @@ namespace TaskLayer
             writer.Close();
         }
 
-        private static mzIdentML110.Generated.CVParamType GetUnimodCvParam(Modification mod)
+        private static mzIdentML110.Generated.CVParamType GetUnimodCvParam(Modification mod, bool appendMotifToModNames)
         {
             if (mod.DatabaseReference != null && mod.DatabaseReference.ContainsKey("Unimod"))
             {
                 return new mzIdentML110.Generated.CVParamType()
                 {
                     accession = "UNIMOD:" + mod.DatabaseReference["Unimod"].First(),
-                    name = mod.IdWithMotif,
+                    name = appendMotifToModNames ? mod.IdWithMotif : mod.OriginalId,
                     cvRef = "PSI-MS",
                 };
             }
@@ -747,7 +749,7 @@ namespace TaskLayer
                 return new mzIdentML110.Generated.CVParamType()
                 {
                     accession = "RESID:" + mod.DatabaseReference["RESID"].First(),
-                    name = mod.IdWithMotif,
+                    name = appendMotifToModNames ? mod.IdWithMotif : mod.OriginalId,
                     cvRef = "PSI-MS",
                 };
             }
@@ -757,7 +759,7 @@ namespace TaskLayer
                 return new mzIdentML110.Generated.CVParamType()
                 {
                     accession = "PSI-MOD:" + mod.DatabaseReference["PSI-MOD"].First(),
-                    name = mod.IdWithMotif,
+                    name = appendMotifToModNames ? mod.IdWithMotif : mod.OriginalId,
                     cvRef = "PSI-MS",
                 };
             }
@@ -767,7 +769,7 @@ namespace TaskLayer
                 accession = "MS:1001460",
                 name = "unknown modification",
                 cvRef = "UNIMOD",
-                value = mod.IdWithMotif,
+                value = appendMotifToModNames ? mod.IdWithMotif : mod.OriginalId,
             };
         }
     }
