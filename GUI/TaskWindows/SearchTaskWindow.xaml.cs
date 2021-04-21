@@ -96,7 +96,7 @@ namespace MetaMorpheusGUI
             {
                 DissociationTypeComboBox.Items.Add(dissassociationType);
             }
-            
+
 
             foreach (string separationType in GlobalVariables.SeparationTypes)
             {
@@ -559,6 +559,12 @@ namespace MetaMorpheusGUI
                 TheTask.SearchParameters.SearchType = SearchType.NonSpecific;
             }
 
+            if (TheTask.SearchParameters.SearchType != SearchType.Classic && dissociationType == DissociationType.Autodetect)
+            {
+                MessageBox.Show("Autodetection of dissociation type from scan headers is only available for classic search. Please choose a different dissociation type or search mode");
+                return;
+            }
+
             TheTask.SearchParameters.DoParsimony = CheckBoxParsimony.IsChecked.Value;
             TheTask.SearchParameters.NoOneHitWonders = CheckBoxNoOneHitWonders.IsChecked.Value;
             TheTask.SearchParameters.DoQuantification = !CheckBoxNoQuant.IsChecked.Value;
@@ -779,7 +785,7 @@ namespace MetaMorpheusGUI
         {
             string proteaseName = ((Protease)ProteaseComboBox.SelectedItem).Name;
             MissedCleavagesTextBox.IsEnabled = !proteaseName.Equals("top-down");
-            
+
             if (AutomaticallyAskAndOrUpdateParametersBasedOnProtease)
             {
                 switch (proteaseName)

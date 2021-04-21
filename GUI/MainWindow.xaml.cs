@@ -27,12 +27,11 @@ namespace MetaMorpheusGUI
     public partial class MainWindow : Window
     {
         private readonly ObservableCollection<RawDataForDataGrid> SpectraFiles = new ObservableCollection<RawDataForDataGrid>();
-        private readonly ObservableCollection<ProteinDbForDataGrid> ProteinDatabases = new ObservableCollection<ProteinDbForDataGrid>();
+        private ObservableCollection<ProteinDbForDataGrid> ProteinDatabases = new ObservableCollection<ProteinDbForDataGrid>();
         private readonly ObservableCollection<PreRunTask> PreRunTasks = new ObservableCollection<PreRunTask>();
         private readonly ObservableCollection<RawDataForDataGrid> SelectedSpectraFiles = new ObservableCollection<RawDataForDataGrid>();
         private readonly ObservableCollection<ProteinDbForDataGrid> SelectedProteinDatabaseFiles = new ObservableCollection<ProteinDbForDataGrid>();
         private ObservableCollection<InRunTask> InProgressTasks;
-
         public static string NewestKnownMetaMorpheusVersion { get; private set; }
 
         public MainWindow()
@@ -913,7 +912,6 @@ namespace MetaMorpheusGUI
             }
 
             // check that experimental design is defined if normalization is enabled
-            // TODO: move all of this over to EverythingRunnerEngine
             var searchTasks = PreRunTasks
                 .Where(p => p.metaMorpheusTask.TaskType == MyTask.Search)
                 .Select(p => (SearchTask)p.metaMorpheusTask);
@@ -921,27 +919,41 @@ namespace MetaMorpheusGUI
             string pathToExperDesign = Directory.GetParent(SpectraFiles.First().FilePath).FullName;
             pathToExperDesign = Path.Combine(pathToExperDesign, GlobalVariables.ExperimentalDesignFileName);
 
-            foreach (var searchTask in searchTasks.Where(p => p.SearchParameters.Normalize))
+            if (!File.Exists(pathToExperDesign))
             {
-                if (!File.Exists(pathToExperDesign))
+                if (searchTasks.Any(p => p.SearchParameters.Normalize))
                 {
                     MessageBox.Show("Experimental design must be defined for normalization!\n" +
-                        "Click the \"Set Experimental Design\" button in the the spectra files tab");
+                    "Click the \"Set Experimental Design\" button in the the spectra files tab");
                     return;
                 }
+            }
+            else
+            {
+                ExperimentalDesign.ReadExperimentalDesign(pathToExperDesign, SpectraFiles.Select(p => p.FilePath).ToList(), out var errors);
 
-                // check that experimental design is OK (spectra files may have been added after exper design was defined)
-                // TODO: experimental design might still have flaws if user edited the file manually, need to check for this
-                var experDesign = File.ReadAllLines(pathToExperDesign).ToDictionary(p => p.Split('\t')[0], p => p);
-                var filesToUse = new HashSet<string>(SpectraFiles.Select(p => Path.GetFileNameWithoutExtension(p.FileName)));
-                var experDesignFilesDefined = new HashSet<string>(experDesign.Keys);
-
-                var undefined = filesToUse.Except(experDesignFilesDefined);
-
-                if (undefined.Any())
+                if (errors.Any())
                 {
-                    MessageBox.Show("Need to define experimental design parameters for file: " + undefined.First());
-                    return;
+                    if (searchTasks.Any(p => p.SearchParameters.Normalize))
+                    {
+                        MessageBox.Show(errors.First());
+                        return;
+                    }
+                    else
+                    {
+                        var result = MessageBox.Show("An experimental design file was found, but an error " +
+                            "occurred reading it. Do you wish to continue with an empty experimental design?" +
+                            "\nThe error was: " + errors.First(), "Error", MessageBoxButton.YesNo);
+
+                        if (result == MessageBoxResult.Yes)
+                        {
+                            File.Delete(pathToExperDesign);
+                        }
+                        else
+                        {
+                            return;
+                        }
+                    }
                 }
             }
 
@@ -1123,7 +1135,7 @@ namespace MetaMorpheusGUI
 
         private void MenuItem_YouTube_Click(object sender, RoutedEventArgs e)
         {
-            GlobalVariables.StartProcess(@"https://www.youtube.com/playlist?list=PLVk5tTSZ1aWlhNPh7jxPQ8pc0ElyzSUQb");
+            GlobalVariables.StartProcess(@"https://www.youtube.com/playlist?list=PLVk5tTSZ1aWlYiTvJbRj6hjVDq4qH3w__");
         }
 
         private void MenuItem_ProteomicsNewsBlog_Click(object sender, RoutedEventArgs e)
@@ -1909,5 +1921,24 @@ namespace MetaMorpheusGUI
         }
 
         #endregion
+
+        private void DownloadUniProtDatabase_Click(object sender, RoutedEventArgs e)
+        {
+            DownloadUniProtDatabaseWindow uniProtDatabaseWindow = new DownloadUniProtDatabaseWindow(ProteinDatabases);
+            uniProtDatabaseWindow.WindowStartupLocation = WindowStartupLocation.CenterScreen;            
+            uniProtDatabaseWindow.Show();
+            uniProtDatabaseWindow.Closed += UniProtDatabaseWindow_Closed;         
+        }
+
+        private void UniProtDatabaseWindow_Closed(object sender, EventArgs e)
+        {
+            dataGridProteinDatabases.Items.Refresh();
+            proteinDbSummaryDataGrid.Items.Refresh();
+        }
+
+        private void OpenProteomesFolder_Click(object sender, RoutedEventArgs e)
+        {
+            OpenFolder(Path.Combine(GlobalVariables.DataDir, @"Proteomes"));
+        }
     }
 }
