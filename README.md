@@ -26,7 +26,7 @@ Check out the [wiki page](https://github.com/smith-chem-wisc/MetaMorpheus/wiki) 
 * Environment:
   * 64-bit operating system
   * .NET Core 5.0:
-     * Windows: https://dotnet.microsoft.com/download/dotnet/thank-you/runtime-5.0.4-windows-x64-installer
+     * Windows: https://dotnet.microsoft.com/download/dotnet/thank-you/runtime-desktop-5.0.4-windows-x64-installer
      * Mac: https://dotnet.microsoft.com/download/dotnet/thank-you/runtime-5.0.4-macos-x64-installer
      * Linux: https://docs.microsoft.com/dotnet/core/install/linux-package-managers
 * Note that the installer (MetaMorpheusInstaller.msi) only works on Windows. The command-line version of MetaMorpheus supports any operating system that supports .NET Core (Windows, MacOS, Linux)
