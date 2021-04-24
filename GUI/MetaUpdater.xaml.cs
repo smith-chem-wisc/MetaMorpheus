@@ -7,6 +7,7 @@ using System.Net;
 using System.Net.Http;
 using System.Text;
 using System.Windows;
+using System.IO;
 
 namespace MetaMorpheusGUI
 {
@@ -15,10 +16,22 @@ namespace MetaMorpheusGUI
     /// </summary>
     public partial class MetaUpdater : Window
     {
+        private DotnetVersion DotnetVersion { get; } = new DotnetVersion();
+        private bool HasClickedDownloadDotnet { get; set; }
+
         public MetaUpdater()
         {
             InitializeComponent();
             lbl.Text = "A newer version: " + MainWindow.NewestKnownMetaMorpheusVersion + " is available!";
+            if (!SameFrameworkVersionAsWeb())
+            {
+                btn_DownloadNewDotnet.Content = $"Download required .NET version, .NET {DotnetVersion.VersionFetchedFromWeb}";
+                btn_DownloadAndRun.IsEnabled = false;
+            }
+            else
+            {
+                btn_DownloadNewDotnet.Visibility = Visibility.Hidden;
+            }
             ReleaseHandler();
         }
 
@@ -59,6 +72,13 @@ namespace MetaMorpheusGUI
             }
         }
 
+        private bool SameFrameworkVersionAsWeb()
+        {
+            // Attempt to get next MetaMorpheus Framework version
+            string url = @"https://github.com/smith-chem-wisc/MetaMorpheus/blob/" + MainWindow.NewestKnownMetaMorpheusVersion + @"/README.md";
+            return DotnetVersion.IsSameAsLatestWebVersion(url);
+        }
+
         private void InstallerClicked(object sender, RoutedEventArgs e)
         {
             DialogResult = true;
@@ -69,7 +89,7 @@ namespace MetaMorpheusGUI
                 Exception exception = null;
                 try
                 {
-                    var tempDownloadLocation = System.IO.Path.Combine(System.IO.Path.GetTempPath(), "MetaMorpheusInstaller.msi");
+                    var tempDownloadLocation = Path.Combine(Path.GetTempPath(), "MetaMorpheusInstaller.msi");
 
                     // download the installer
                     client.DownloadFile(uri, tempDownloadLocation);
@@ -159,6 +179,22 @@ namespace MetaMorpheusGUI
         private void NoClicked(object semder, RoutedEventArgs e)
         {
             DialogResult = false;
+        }
+
+        private void DownloadNewDotnetVersion(object sender, RoutedEventArgs e)
+        {
+            if (!HasClickedDownloadDotnet)
+            {
+                Process.Start($"https://dotnet.microsoft.com/download/dotnet/thank-you/runtime-desktop-{DotnetVersion.VersionFetchedFromWeb}-windows-x64-installer");
+                btn_DownloadAndRun.Content = "Refresh";
+                HasClickedDownloadDotnet = true;
+            }
+            else
+            {
+                // refresh the status of whether the version is available on the machine
+                // message box with that there was an error if not
+                // enable download&run button and hide this button if so
+            }
         }
     }
 }

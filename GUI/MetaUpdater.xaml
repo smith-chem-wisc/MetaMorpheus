@@ -9,8 +9,9 @@
     <StackPanel>
         <TextBlock Name="lbl" TextWrapping="Wrap" FontSize="15" VerticalAlignment="Top" Margin="5" />
         <WebBrowser Height="327" Name="releases"/>
-        <Button Content="Download and run installer" FontSize="13" Margin="5" Click="InstallerClicked" />
+        <Button Name="btn_DownloadAndRun" Content="Download and run installer" FontSize="13" Margin="5" Click="InstallerClicked" />
         <!--<Button Content="Download and open portable version .zip " FontSize="13" Margin="5" Click="PortableClicked" />-->
-        <Button Content="Not interested" FontSize="13" Margin="5" Click="NoClicked" />
+        <Button Name="btn_NotInterested" Content="Not interested" FontSize="13" Margin="5" Click="NoClicked" />
+        <Button Name="btn_DownloadNewDotnet" Content="Download new dotnet version" FontSize="13" Margin="5" Click="DownloadNewDotnetVersion"/>
     </StackPanel>
 </Window>
