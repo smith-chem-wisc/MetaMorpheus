@@ -98,11 +98,17 @@ namespace TaskLayer
                 List<CrosslinkSpectralMatch>[] newCsmsPerMS2ScanPerFile = new List<CrosslinkSpectralMatch>[arrayOfMs2ScansSortedByMass.Length];
 
                 myFileManager.DoneWithFile(origDataFile);
+
+                //Candidates: currentPartition, peptide Index, score 
+                List<(int, int, int)>[] candidates = new List<(int, int, int)>[arrayOfMs2ScansSortedByMass.Length];
+                bool[,][] betaCandidateIndices = new bool[arrayOfMs2ScansSortedByMass.Length, CommonParameters.TotalPartitions][];
+
+
+                //First round search.
                 for (int currentPartition = 0; currentPartition < CommonParameters.TotalPartitions; currentPartition++)
                 {
                     List<PeptideWithSetModifications> peptideIndex = null;
 
-                    //When partition, the proteinList will be split for each Thread.
                     List<Protein> proteinListSubset = proteinList.GetRange(currentPartition * proteinList.Count() / combinedParams.TotalPartitions, ((currentPartition + 1) * proteinList.Count() / combinedParams.TotalPartitions) - (currentPartition * proteinList.Count() / combinedParams.TotalPartitions));
 
                     Status("Getting fragment dictionary...", new List<string> { taskId });
@@ -118,7 +124,7 @@ namespace TaskLayer
 
                     //The second Fragment index is for 'MS1-HCD_MS1-ETD_MS2s' type of data. If LowCID is used for MS1, ion-index is not allowed to use.
                     List<int>[] secondFragmentIndex = null;
-                    if (combinedParams.MS2ChildScanDissociationType != DissociationType.LowCID
+                    if (combinedParams.MS2ChildScanDissociationType != DissociationType.LowCID && combinedParams.MS2ChildScanDissociationType!= DissociationType.Unknown
                     && !CrosslinkSearchEngine.DissociationTypeGenerateSameTypeOfIons(combinedParams.DissociationType, combinedParams.MS2ChildScanDissociationType))
                     {
                         //Becuase two different type of dissociation methods are used, the parameters are changed with different dissociation type.
@@ -130,12 +136,63 @@ namespace TaskLayer
                     }
 
                     Status("Searching files...", taskId);
-                    new CrosslinkSearchEngine(newCsmsPerMS2ScanPerFile, arrayOfMs2ScansSortedByMass, peptideIndex, fragmentIndex, secondFragmentIndex, currentPartition,
+                    var crosslinkSearch1stRound = new CrosslinkSearchEngine(newCsmsPerMS2ScanPerFile, arrayOfMs2ScansSortedByMass, peptideIndex, fragmentIndex, secondFragmentIndex, currentPartition,
                         combinedParams, this.FileSpecificParameters, crosslinker, XlSearchParameters.CrosslinkSearchTopNum, XlSearchParameters.CrosslinkAtCleavageSite, XlSearchParameters.XlQuench_H2O,
-                        XlSearchParameters.XlQuench_NH2, XlSearchParameters.XlQuench_Tris, thisId).Run();
+                        XlSearchParameters.XlQuench_NH2, XlSearchParameters.XlQuench_Tris, thisId, candidates, betaCandidateIndices, -1, null);
+
+                    crosslinkSearch1stRound.FirstRoundSearch();
 
                     ReportProgress(new ProgressEventArgs(100, "Done with search " + (currentPartition + 1) + "/" + CommonParameters.TotalPartitions + "!", thisId));
                     if (GlobalVariables.StopLoops) { break; }
+                }
+
+                //Pair the crosslink between two partitions. 
+                for (int currentPartition = 0; currentPartition < CommonParameters.TotalPartitions; currentPartition++)
+                {
+                    List<PeptideWithSetModifications> peptideIndex_a = null;
+
+                    List<Protein> proteinListSubset_a = proteinList.GetRange(currentPartition * proteinList.Count() / combinedParams.TotalPartitions, ((currentPartition + 1) * proteinList.Count() / combinedParams.TotalPartitions) - (currentPartition * proteinList.Count() / combinedParams.TotalPartitions));
+
+                    Status("Getting fragment dictionary...", new List<string> { taskId });
+
+                    var indexEngine_a = new IndexingEngine(proteinListSubset_a, variableModifications, fixedModifications, null, null, null, currentPartition,
+                        UsefulProteomicsDatabases.DecoyType.Reverse, combinedParams, this.FileSpecificParameters, 30000.0, false,
+                        dbFilenameList.Select(p => new FileInfo(p.FilePath)).ToList(), TargetContaminantAmbiguity.RemoveContaminant, new List<string> { taskId });
+
+                    List<int>[] precursorIndex_a = null;
+                    GenerateIndexes_PeptideOnly(indexEngine_a, dbFilenameList, ref peptideIndex_a, ref precursorIndex_a, proteinList, taskId);
+
+                    for (int nextPartition = 0; nextPartition < CommonParameters.TotalPartitions; nextPartition++)
+                    {
+                        List<PeptideWithSetModifications> peptideIndex_b = null;
+
+                        if(currentPartition == nextPartition)
+                        {
+                            peptideIndex_b = peptideIndex_a;
+                        }
+                        else
+                        {
+                            List<Protein> proteinListSubset_b = proteinList.GetRange(nextPartition * proteinList.Count() / combinedParams.TotalPartitions, ((nextPartition + 1) * proteinList.Count() / combinedParams.TotalPartitions) - (nextPartition * proteinList.Count() / combinedParams.TotalPartitions));
+
+                            Status("Getting fragment dictionary...", new List<string> { taskId });
+
+                            var indexEngine_b = new IndexingEngine(proteinListSubset_b, variableModifications, fixedModifications, null, null, null, nextPartition,
+                                UsefulProteomicsDatabases.DecoyType.Reverse, combinedParams, this.FileSpecificParameters, 30000.0, false,
+                                dbFilenameList.Select(p => new FileInfo(p.FilePath)).ToList(), TargetContaminantAmbiguity.RemoveContaminant, new List<string> { taskId });
+
+                            List<int>[] precursorIndex_b = null;
+                            GenerateIndexes_PeptideOnly(indexEngine_b, dbFilenameList, ref peptideIndex_b, ref precursorIndex_b, proteinList, taskId);
+
+                        }
+
+                        Status("Searching files...", taskId);
+                        var crosslinkSearch2ndRound = new CrosslinkSearchEngine(newCsmsPerMS2ScanPerFile, arrayOfMs2ScansSortedByMass, peptideIndex_a, null, null, currentPartition,
+                            combinedParams, this.FileSpecificParameters, crosslinker, XlSearchParameters.CrosslinkSearchTopNum, XlSearchParameters.CrosslinkAtCleavageSite, XlSearchParameters.XlQuench_H2O,
+                            XlSearchParameters.XlQuench_NH2, XlSearchParameters.XlQuench_Tris, thisId, candidates, betaCandidateIndices, nextPartition, peptideIndex_b);
+
+                        crosslinkSearch2ndRound.Run();
+
+                    }
                 }
 
                 foreach (var psmsPerFile in newCsmsPerMS2ScanPerFile)

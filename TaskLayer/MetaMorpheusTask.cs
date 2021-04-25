@@ -908,6 +908,43 @@ namespace TaskLayer
             }
         }
 
+        public void GenerateIndexes_PeptideOnly(IndexingEngine indexEngine, List<DbForTask> dbFilenameList, ref List<PeptideWithSetModifications> peptideIndex, ref List<int>[] precursorIndex, List<Protein> allKnownProteins, string taskId)
+        {
+            bool successfullyReadIndices = false;
+            string pathToFolderWithIndices = GetExistingFolderWithIndices(indexEngine, dbFilenameList);
+
+            if (pathToFolderWithIndices != null) //if indexes exist
+            {
+                try
+                {
+                    Status("Reading peptide index...", new List<string> { taskId });
+                    peptideIndex = ReadPeptideIndex(Path.Combine(pathToFolderWithIndices, PeptideIndexFileName), allKnownProteins);
+
+                    if (indexEngine.GeneratePrecursorIndex)
+                    {
+                        Status("Reading precursor index...", new List<string> { taskId });
+                        precursorIndex = ReadFragmentIndex(Path.Combine(pathToFolderWithIndices, PrecursorIndexFileName));
+                    }
+
+                    successfullyReadIndices = true;
+                }
+                catch
+                {
+                    // could put something here... this basically is just to prevent a crash if the index was unable to be read.
+
+                    // if the old index couldn't be read, a new one will be generated.
+
+                    // an old index may not be able to be read because of information required by new versions of MetaMorpheus
+                    // that wasn't written by old versions.
+                }
+            }
+
+            if (!successfullyReadIndices) //if we didn't find indexes with the same params
+            {
+                // This is for the second round search, so successfullyReadIndices must be true, otherwise there are problems.
+            }
+        }
+
         public void GenerateSecondIndexes(IndexingEngine indexEngine, IndexingEngine secondIndexEngine, List<DbForTask> dbFilenameList, ref List<int>[] secondFragmentIndex, List<Protein> allKnownProteins, string taskId)
         {
             string pathToFolderWithIndices = GetExistingFolderWithIndices(indexEngine, dbFilenameList);
