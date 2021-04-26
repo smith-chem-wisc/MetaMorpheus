@@ -26,8 +26,9 @@ namespace TaskLayer
             );
             CommonParameters = new CommonParameters(
                 precursorMassTolerance: new PpmTolerance(10),
-                scoreCutoff: 2,
-                numberOfPeaksToKeepPerWindow: 1000,
+                scoreCutoff: 3,
+                numberOfPeaksToKeepPerWindow: 200,
+                //addCompIons: true,
                 digestionParams: digestPara
             );
 

@@ -99,7 +99,7 @@ namespace EngineLayer.CrosslinkSearch
             int oldPercentProgress = 0;
             ReportProgress(new ProgressEventArgs(oldPercentProgress, "Performing crosslink search... " + CurrentPartition + "/" + CommonParameters.TotalPartitions, NestedIds));
 
-            byte byteScoreCutoff = 3;
+            byte byteScoreCutoff = (byte)CommonParameters.ScoreCutoff;
             int maxThreadsPerFile = CommonParameters.MaxThreadsToUsePerFile;
 
             int[] threads = Enumerable.Range(0, maxThreadsPerFile).ToArray();
@@ -187,7 +187,7 @@ namespace EngineLayer.CrosslinkSearch
                             Candidates[scanIndex].Add((CurrentPartition - 1, id, scoringTable[id]));
                         }
 
-                        if (Candidates[scanIndex].Count() > TopN)
+                        if (CommonParameters.TotalPartitions > 1 && Candidates[scanIndex].Count() > TopN)
                         {
                             var cs = Candidates[scanIndex].OrderByDescending(p => p.Item3).ToList();
 
