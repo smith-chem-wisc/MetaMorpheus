@@ -148,5 +148,96 @@ namespace Test
 
             Directory.Delete(outputDir, true);
         }
+
+        [Test]
+        public static void SpectralLibraryReaderTestNeutralLoss()
+        {
+            var path = Path.Combine(TestContext.CurrentContext.TestDirectory, @"TestData\SpectralLibrarySearch\spectralLibraryNeutralLossTest.msp");
+
+            var testLibraryWithoutDecoy = new SpectralLibrary(new List<string> { path });
+            var librarySpectra = testLibraryWithoutDecoy.GetAllLibrarySpectra().ToList();
+            Assert.That(librarySpectra[0].MatchedFragmentIons[9].NeutralTheoreticalProduct.NeutralLoss == 97.976895573);
+            Assert.That(librarySpectra[0].MatchedFragmentIons[11].NeutralTheoreticalProduct.NeutralLoss == 97.976895573);
+            Assert.That(librarySpectra[0].MatchedFragmentIons[13].NeutralTheoreticalProduct.NeutralLoss == 97.976895573);
+            Assert.That(librarySpectra[0].MatchedFragmentIons[23].NeutralTheoreticalProduct.NeutralLoss == 97.976895573);
+        }
+
+        [Test]
+        public static void SpectralLibraryReaderTest_pDeep()
+        {
+            var path = Path.Combine(TestContext.CurrentContext.TestDirectory, @"TestData\SpectralLibrarySearch\yeast2fake_pdeep_lib.msp");
+
+            var testLibraryWithoutDecoy = new SpectralLibrary(new List<string> { path });
+            var librarySpectra = testLibraryWithoutDecoy.GetAllLibrarySpectra().ToList();
+
+            Assert.That(librarySpectra.Count == 5);
+            Assert.That(testLibraryWithoutDecoy.TryGetSpectrum("VGIVPGEVIAPGM[Common Variable:Oxidation on M]R", 3, out var spectrum));
+            Assert.That(testLibraryWithoutDecoy.TryGetSpectrum("C[Common Fixed:Carbamidomethyl on C]TSC[Common Fixed:Carbamidomethyl on C]NGQGIKFVTR", 3, out spectrum));
+
+            testLibraryWithoutDecoy.TryGetSpectrum("YHPDKNPSEEAAEK", 3, out var test1);
+
+            Assert.AreEqual(test1.ChargeState, 3);
+
+            var frags = new List<(double mz, double intensity, ProductType ProductType, int fragmentNumber, int charge, double ppm)>
+            {
+                (301.1295080000, 10000.0, ProductType.b, 2, 1, 0.0),
+                (657.8122378432, 1102.3, ProductType.y, 12, 2, 0.0),
+                (974.4425296863, 1476.0, ProductType.y, 9, 1, 0.0),
+                (860.3996026863, 7228.2, ProductType.y, 8, 1, 0.0),
+                (763.3468386863, 1201.9, ProductType.y, 7, 1, 0.0),
+                (418.2296246863, 1178.9, ProductType.y, 4, 1, 0.0),
+                (347.1925106863, 1042.8, ProductType.y, 3, 1, 0.0)
+            };
+
+            for (int i = 0; i < frags.Count; i++)
+            {
+                var frag = frags[i];
+                var readFrag = test1.MatchedFragmentIons[i];
+
+                Assert.That(frag.mz == readFrag.Mz);
+                Assert.That(frag.intensity == readFrag.Intensity);
+                Assert.That(frag.ProductType == readFrag.NeutralTheoreticalProduct.ProductType);
+                Assert.That(frag.fragmentNumber == readFrag.NeutralTheoreticalProduct.FragmentNumber);
+                Assert.That(frag.charge == readFrag.Charge);
+                //Assert.That(frag.ppm == readFrag.MassErrorPpm);
+            }
+
+            // write the library w/ the ToString method
+            var writtenPath = Path.Combine(TestContext.CurrentContext.TestDirectory, @"TestData\testLibraryToString.msp");
+            var str = librarySpectra.SelectMany(p => p.ToString().Split(new char[] { '\n' }));
+            File.WriteAllLines(writtenPath, str);
+
+            testLibraryWithoutDecoy.CloseConnections();
+
+            // read the written library and make sure the results are readable
+            testLibraryWithoutDecoy = new SpectralLibrary(new List<string> { writtenPath });
+            librarySpectra = testLibraryWithoutDecoy.GetAllLibrarySpectra().ToList();
+
+            Assert.That(librarySpectra.Count == 5);
+            Assert.That(testLibraryWithoutDecoy.TryGetSpectrum("VGIVPGEVIAPGM[Common Variable:Oxidation on M]R", 3, out spectrum));
+            Assert.That(testLibraryWithoutDecoy.TryGetSpectrum("C[Common Fixed:Carbamidomethyl on C]TSC[Common Fixed:Carbamidomethyl on C]NGQGIKFVTR", 3, out spectrum));
+
+            testLibraryWithoutDecoy.TryGetSpectrum("YHPDKNPSEEAAEK", 3, out test1);
+
+            Assert.AreEqual(test1.ChargeState, 3);
+            double maxOfIntensity = frags.Select(p => p.intensity).ToList().Max();
+            for (int i = 0; i < frags.Count; i++)
+            {
+                var frag = frags[i];
+                var readFrag = test1.MatchedFragmentIons[i];
+
+                Assert.That(frag.mz == readFrag.Mz);
+                Assert.That((frag.intensity/ maxOfIntensity) == readFrag.Intensity);
+                Assert.That(frag.ProductType == readFrag.NeutralTheoreticalProduct.ProductType);
+                Assert.That(frag.fragmentNumber == readFrag.NeutralTheoreticalProduct.FragmentNumber);
+                Assert.That(frag.charge == readFrag.Charge);
+                //Assert.That(frag.ppm == readFrag.MassErrorPpm);
+            }
+
+            testLibraryWithoutDecoy.CloseConnections();
+            File.Delete(writtenPath);
+        }
+
     }
+    
 }
