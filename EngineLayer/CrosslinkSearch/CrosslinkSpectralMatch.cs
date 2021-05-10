@@ -14,6 +14,7 @@ namespace EngineLayer.CrosslinkSearch
         {
             //The XLTotalScore is set here because some CSMs are not crosslinks and we need this score to be non-zero.
             XLTotalScore = score;
+            
         }
 
         public CrosslinkSpectralMatch BetaPeptide { get; set; }
@@ -33,6 +34,15 @@ namespace EngineLayer.CrosslinkSearch
         public int? XlProteinPosLoop { get; private set; }
         public new double DeltaScore { get { return (XLTotalScore - SecondBestXlScore); } }
 
+        public void AddMatchingPepWithSameFullSeq(PeptideWithSetModifications pwsm, List<MatchedFragmentIon> matchedFragmentIons)
+        {
+            if(_BestMatchingPeptides.First().Pwsm.FullSequence == pwsm.FullSequence && _BestMatchingPeptides.Count(p=>p.Pwsm.Protein.Accession == pwsm.Protein.Accession) ==0)
+            {
+                _BestMatchingPeptides.Add((0, pwsm));
+                PeptidesToMatchingFragments.Add(pwsm, matchedFragmentIons);
+            }
+        }
+        
         public bool IsIntraCsm()
         {
             //The pair "ProteinA and Decoy_ProteinA" is count for intra-crosslink. 
