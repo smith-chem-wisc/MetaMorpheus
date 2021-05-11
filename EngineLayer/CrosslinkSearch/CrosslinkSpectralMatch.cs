@@ -34,12 +34,12 @@ namespace EngineLayer.CrosslinkSearch
         public int? XlProteinPosLoop { get; private set; }
         public new double DeltaScore { get { return (XLTotalScore - SecondBestXlScore); } }
 
-        public void AddMatchingPepWithSameFullSeq(PeptideWithSetModifications pwsm, List<MatchedFragmentIon> matchedFragmentIons)
+        public static void AddMatchingPepWithSameFullSeq(CrosslinkSpectralMatch csm, PeptideWithSetModifications pwsm, List<MatchedFragmentIon> matchedFragmentIons)
         {
-            if(_BestMatchingPeptides.First().Pwsm.FullSequence == pwsm.FullSequence && _BestMatchingPeptides.Count(p=>p.Pwsm.Protein.Accession == pwsm.Protein.Accession) ==0)
+            if(csm._BestMatchingPeptides.First().Pwsm.FullSequence == pwsm.FullSequence && csm._BestMatchingPeptides.Count(p=>p.Pwsm.Protein.Accession == pwsm.Protein.Accession) ==0)
             {
-                _BestMatchingPeptides.Add((0, pwsm));
-                PeptidesToMatchingFragments.Add(pwsm, matchedFragmentIons);
+                csm._BestMatchingPeptides.Add((0, pwsm));
+                csm.PeptidesToMatchingFragments.Add(pwsm, matchedFragmentIons);
             }
         }
         
@@ -78,7 +78,7 @@ namespace EngineLayer.CrosslinkSearch
 
         public void ResolveProteinPosAmbiguitiesForXl()
         {
-            if (CrossType == PsmCrossType.Cross)
+            if (CrossType == PsmCrossType.Cross || CrossType == PsmCrossType.Intra || CrossType == PsmCrossType.Inter)
             {
                 // alpha peptide crosslink residue in the protein
                 XlProteinPos = OneBasedStartResidueInProtein == null ? (int?)null : OneBasedStartResidueInProtein.Value + LinkPositions[0] - 1;

@@ -96,7 +96,8 @@ namespace TaskLayer
 
                 Status("Getting ms2 scans...", thisId);
 
-                Ms2ScanWithSpecificMass[] arrayOfMs2ScansSortedByMass = GetMs2Scans(myMsDataFile, origDataFile, combinedParams).OrderBy(b => b.PrecursorMass).ToArray();
+                Ms2ScanWithSpecificMass[] arrayOfMs2ScansSortedByMass = GetMs2ScansWrapByScanNum(myMsDataFile, origDataFile, combinedParams, out List<List<(double, int, double)>> precursorss).ToArray();
+
                 List<CrosslinkSpectralMatch>[] newCsmsPerMS2ScanPerFile = new List<CrosslinkSpectralMatch>[arrayOfMs2ScansSortedByMass.Length];
 
                 myFileManager.DoneWithFile(origDataFile);
@@ -139,7 +140,7 @@ namespace TaskLayer
                     Status("Searching files...", taskId);
                     var crosslinkSearch1stRound = new CrosslinkSearchEngine(newCsmsPerMS2ScanPerFile, arrayOfMs2ScansSortedByMass, peptideIndex, fragmentIndex, secondFragmentIndex, currentPartition,
                         combinedParams, this.FileSpecificParameters, XlSearchParameters.Crosslinker, XlSearchParameters.CrosslinkSearchTopNum, XlSearchParameters.CrosslinkAtCleavageSite, XlSearchParameters.XlQuench_H2O,
-                        XlSearchParameters.XlQuench_NH2, XlSearchParameters.XlQuench_Tris, thisId, candidates, betaCandidateIndices, -1, null);
+                        XlSearchParameters.XlQuench_NH2, XlSearchParameters.XlQuench_Tris, thisId, candidates, betaCandidateIndices, -1, null, precursorss);
 
                     crosslinkSearch1stRound.FirstRoundSearch();
 
@@ -189,14 +190,13 @@ namespace TaskLayer
                         Status("Searching files...", taskId);
                         var crosslinkSearch2ndRound = new CrosslinkSearchEngine(newCsmsPerMS2ScanPerFile, arrayOfMs2ScansSortedByMass, peptideIndex_a, null, null, currentPartition,
                             combinedParams, this.FileSpecificParameters, XlSearchParameters.Crosslinker, XlSearchParameters.CrosslinkSearchTopNum, XlSearchParameters.CrosslinkAtCleavageSite, XlSearchParameters.XlQuench_H2O,
-                            XlSearchParameters.XlQuench_NH2, XlSearchParameters.XlQuench_Tris, thisId, candidates, betaCandidateIndices, nextPartition, peptideIndex_b);
+                            XlSearchParameters.XlQuench_NH2, XlSearchParameters.XlQuench_Tris, thisId, candidates, betaCandidateIndices, nextPartition, peptideIndex_b, precursorss);
 
                         crosslinkSearch2ndRound.Run();
 
                     }
                 }
 
-                //postXLSearchAnalysis for each file.
                 List<List<CrosslinkSpectralMatch>> _ListOfCsmsPerMS2ScanParsimony = new List<List<CrosslinkSpectralMatch>>();
 
                 //For every Ms2Scans, each have a list of candidates psms. The allPsms from CrosslinkSearchEngine is the list (all ms2scans) of list (each ms2scan) of psm (all candidate psm).
