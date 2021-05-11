@@ -113,7 +113,111 @@ namespace EngineLayer
 
             return index - 1;
         }
+        public IsotopicEnvelope[] GetClosestExperimentalIsotopicEnvelopeList(double minimumMass, double maxMass)
+        {
 
+            if (DeconvolutedMonoisotopicMasses.Length == 0)
+            {
+                return null;
+            }
+            if (DeconvolutedMonoisotopicMasses[0] > maxMass || DeconvolutedMonoisotopicMasses.Last() < minimumMass)
+            {
+                return null;
+            }
+            int startIndex = GetClosestFragmentMassMinimum(minimumMass);
+            int endIndex = GetClosestFragmentMassMaximum(maxMass);
+            int length = endIndex - startIndex + 1;
+            if (length < 1)
+            {
+                return null;
+            }
+            IsotopicEnvelope[] isotopicEnvelopes = ExperimentalFragments.Skip(startIndex).Take(length).ToArray();
+            return isotopicEnvelopes;
+        }
+        public int GetClosestFragmentMassMinimum(double massMinimum)
+        {
+            int index = Array.BinarySearch(DeconvolutedMonoisotopicMasses, massMinimum);
+            if (index >= 0)
+            {
+                if (DeconvolutedMonoisotopicMasses[index] >= massMinimum || index == DeconvolutedMonoisotopicMasses.Length - 1)
+                {
+                    return index;
+                }
+                else
+                {
+                    return index + 1;
+                }
+
+            }
+            index = ~index;
+
+            if (index == DeconvolutedMonoisotopicMasses.Length)
+            {
+                return index - 1;
+            }
+            if (index == 0 || massMinimum - DeconvolutedMonoisotopicMasses[index - 1] > DeconvolutedMonoisotopicMasses[index] - massMinimum)
+            {
+                if (DeconvolutedMonoisotopicMasses[index] >= massMinimum || index == DeconvolutedMonoisotopicMasses.Length - 1)
+                {
+                    return index;
+                }
+                else
+                {
+                    return index + 1;
+                }
+            }
+            if (DeconvolutedMonoisotopicMasses[index - 1] >= massMinimum)
+            {
+                return index - 1;
+            }
+            else
+            {
+                return index;
+            }
+
+        }
+        public int GetClosestFragmentMassMaximum(double massMax)
+        {
+            int index = Array.BinarySearch(DeconvolutedMonoisotopicMasses, massMax);
+            if (index >= 0)
+            {
+                if (DeconvolutedMonoisotopicMasses[index] <= massMax || index == DeconvolutedMonoisotopicMasses.Length - 1)
+                {
+                    return index;
+                }
+                else
+                {
+                    return index - 1;
+                }
+
+            }
+            index = ~index;
+
+            if (index == DeconvolutedMonoisotopicMasses.Length)
+            {
+                return index - 1;
+            }
+            if (index == 0 || massMax - DeconvolutedMonoisotopicMasses[index - 1] > DeconvolutedMonoisotopicMasses[index] - massMax)
+            {
+                if (DeconvolutedMonoisotopicMasses[index] <= massMax || index == DeconvolutedMonoisotopicMasses.Length - 1)
+                {
+                    return index;
+                }
+                else
+                {
+                    return index - 1;
+                }
+            }
+            if (DeconvolutedMonoisotopicMasses[index - 1] <= massMax)
+            {
+                return index - 1;
+            }
+            else
+            {
+                return index - 2;
+            }
+
+        }
         public double? GetClosestExperimentalFragmentMz(double theoreticalMz, out double? intensity)
         {
             if (TheScan.MassSpectrum.XArray.Length == 0)

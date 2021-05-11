@@ -48,7 +48,7 @@ namespace Test
 
             PeptideSpectralMatch[] allPsmsArray = new PeptideSpectralMatch[listOfSortedms2Scans.Length];
             new ClassicSearchEngine(allPsmsArray, listOfSortedms2Scans, variableModifications, fixedModifications, null, null, null, 
-                proteinList, searchMode, CommonParameters, null, null, new List<string>()).Run();
+                proteinList, searchMode, CommonParameters, null, null, new List<string>(),false).Run();
 
             var psm = allPsmsArray.Where(p => p != null).FirstOrDefault();
             Assert.That(psm.MatchedFragmentIons.Count == 47);
