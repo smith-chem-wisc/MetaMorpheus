@@ -35,9 +35,25 @@
       <RefProjectOutputGroups>Binaries;Content;Satellites</RefProjectOutputGroups>
       <RefTargetDir>INSTALLFOLDER</RefTargetDir>
     </ProjectReference>
+    <ProjectReference Include="..\EngineLayer\EngineLayer.csproj">
+      <Name>EngineLayer</Name>
+      <Project>{ffae3a5e-b5ae-4cd0-abf9-703c91f1c7d6}</Project>
+      <Private>True</Private>
+      <DoNotHarvest>True</DoNotHarvest>
+      <RefProjectOutputGroups>Binaries;Content;Satellites</RefProjectOutputGroups>
+      <RefTargetDir>INSTALLFOLDER</RefTargetDir>
+    </ProjectReference>
     <ProjectReference Include="..\GUI\GUI.csproj">
       <Name>GUI</Name>
-      <Project>{57b2a726-cca9-432e-b74a-2efa962d1a74}</Project>
+      <Project>{c654fc97-fbd1-43d7-9f61-35fdd1a4e0ad}</Project>
+      <Private>True</Private>
+      <DoNotHarvest>True</DoNotHarvest>
+      <RefProjectOutputGroups>Binaries;Content;Satellites</RefProjectOutputGroups>
+      <RefTargetDir>INSTALLFOLDER</RefTargetDir>
+    </ProjectReference>
+    <ProjectReference Include="..\TaskLayer\TaskLayer.csproj">
+      <Name>TaskLayer</Name>
+      <Project>{9cd3d75c-4e3c-40ac-a3d8-c32dd528db7f}</Project>
       <Private>True</Private>
       <DoNotHarvest>True</DoNotHarvest>
       <RefProjectOutputGroups>Binaries;Content;Satellites</RefProjectOutputGroups>
