@@ -10,8 +10,8 @@
     <!--Properties about the package to be placed in the Summary Information Stream.-->
     <!--These are visible from COM through the IStream interface, and these properties can be seen on the package in Explorer.-->
     <Package Id="*" InstallerVersion="500" Compressed="yes" InstallScope="perMachine" Platform="x64" />
-    <Icon Id="icon.ico" SourceFile="$(var.GUI.TargetDir)..\..\..\Icons\MMnice.ico"/>
-    <Property Id="ARPPRODUCTICON" Value="icon.ico"/>
+    <Icon Id="icon.ico" SourceFile="$(var.GUI.TargetDir)..\..\..\Icons\MMnice.ico" />
+    <Property Id="ARPPRODUCTICON" Value="icon.ico" />
     <MajorUpgrade AllowSameVersionUpgrades="yes" Schedule="afterInstallValidate" DowngradeErrorMessage="A newer version of MetaMorpheus is already installed." />
 
     <Condition Message="This application is only supported on Windows 7 or higher.">
@@ -27,8 +27,9 @@
     <Feature Id="ProductFeature" Level="1">
       <!-- ComponentGroupRef creates a reference to a ComponentGroup in another Fragment-->
       <ComponentGroupRef Id="ExecutablesAndLibrariesComponentGroup" />
-      <ComponentGroupRef Id="ExecutablesAndLibrariesComponentGroup2" />
-      <ComponentGroupRef Id="ExecutablesAndLibrariesComponentGroup3" />
+      <ComponentGroupRef Id="NativeMathComponents" />
+      <ComponentGroupRef Id="MathNumerics_x64" />
+      <ComponentGroupRef Id="RefComponents" />
       <!--ComponentRef creates a reference to a Component element in another Fragment-->
       <ComponentRef Id="MetaMorpheusProgramMenuFolderComponent" />
 
@@ -39,6 +40,7 @@
       <ComponentGroupRef Id="Appsrc_NGlycan_files" />
       <ComponentGroupRef Id="Appsrc_OGlycan_files" />
       <ComponentGroupRef Id="Appsrc_ProteolyticDigestion_files" />
+      <ComponentGroupRef Id="Appsrc_Proteomes_files" />
       <ComponentGroupRef Id="Appsrc_Contaminants_files" />
       <ComponentGroupRef Id="ExcelDefaults" />
       <ComponentRef Id="RemoveApp" />
@@ -61,18 +63,14 @@
         <Directory Id="MetaMorpheusInstallFolder" Name="MetaMorpheus">
           <Directory Id="NativeMathDllFolder_runtimes" Name="runtimes">
             <Directory Id="NativeMathDllFolder_win_x64" Name="win-x64">
-              <Directory Id="NativeMathDllFolder_native" Name="native">
-              </Directory>
-            </Directory>
-            <Directory Id="WindowDllFolder_win" Name="win">
-              <Directory Id="WindowDllFolder_lib" Name="lib">
-                <Directory Id="WindowDllFolder_netcoreapp3.0" Name="netcoreapp3.0">                  
-                </Directory>
-              </Directory>
+              <Directory Id="NativeMathDllFolder_win_x64_native" Name="native"/>
             </Directory>
           </Directory>
+          <Directory Id="MathNumericsFolder_x64" Name="x64"/>
+          <Directory Id="RefFolder" Name="ref"/>
         </Directory>
       </Directory>
+      
       <Directory Id="ProgramMenuFolder">
         <Directory Id="MetaMorpheusProgramMenuFolder" Name="MetaMorpheus" />
       </Directory>
@@ -84,19 +82,27 @@
             <RemoveFolder Id="MetaMorpheusAppFolder" On="uninstall" />
             <RegistryValue Root="HKCU" Key="Software\SmithGroup\MetaMorpheus" Name="installed" Type="integer" Value="1" KeyPath="yes" />
           </Component>
+          
+          <!--Data folder-->
           <Directory Id="MetaAppDataFolder" Name="Data" />
+
+          <!--Mods Folder-->
+          <Directory Id="MetaAppModsFolder" Name="Mods"/>
           
-          <Directory Id="MetaAppModsFolder" Name="Mods">                                
-          </Directory>
-          
-          <Directory Id ="MetaAppGlycan_ModsFolder" Name="Glycan_Mods">
-            <!--NGlycan and OGlycan are sub folders of mods. Therefore they are placed inside the "Mods" Directory tags-->
+          <!--NGlycan and OGlycan are not sub folders of mods-->
+          <Directory Id="MetaAppGlycan_ModsFolder" Name="Glycan_Mods">
             <Directory Id="MetaAppNGlycanFolder" Name="NGlycan" />
             <Directory Id="MetaAppOGlycanFolder" Name="OGlycan" />
           </Directory>
-          
+
+          <!--ProteolyticDigestion Folder-->
           <Directory Id="MetaAppProteolyticDigestionFolder" Name="ProteolyticDigestion" />
+          
+          <!--Contaminants Folder-->
           <Directory Id="MetaAppContaminantsFolder" Name="Contaminants" />
+
+          <!--Proteomes Folder-->
+          <Directory Id="MetaAppProteomesFolder" Name="Proteomes" />
         </Directory>
       </Directory>
       <!--End user local app data folders-->
@@ -114,13 +120,10 @@
       <Publish Dialog="MaintenanceWelcomeDlg" Control="Next" Event="NewDialog" Value="MyMaintenanceTypeDlg">1</Publish>
       <Publish Dialog="MyMaintenanceTypeDlg" Control="Back" Event="NewDialog" Value="MaintenanceWelcomeDlg" Order="1">1</Publish>
       <!--<Publish Dialog="MyMaintenanceTypeDlg" Control="Next" Event="NewDialog" Value="ExitDialog" Order="1">1</Publish>-->
-      <Publish Dialog="ExitDialog"
-        Control="Finish"
-        Event="DoAction"
-        Value="LaunchApplication">WIXUI_EXITDIALOGOPTIONALCHECKBOX = 1 and NOT Installed</Publish>
+      <Publish Dialog="ExitDialog" Control="Finish" Event="DoAction" Value="LaunchApplication">WIXUI_EXITDIALOGOPTIONALCHECKBOX = 1 and NOT Installed</Publish>
     </UI>
 
-    <CustomAction Id='LaunchFile' FileKey='MetaMorpheusGUI.exe' ExeCommand='' Return="asyncNoWait" />
+    <CustomAction Id="LaunchFile" FileKey="MetaMorpheusGUI.exe" ExeCommand="" Return="asyncNoWait" />
     <Property Id="OVERWRITEAPPDATA" Value="1" />
     <Property Id="WIXUI_MONDO" Value="INSTALLFOLDER" />
     <Property Id="WIXUI_EXITDIALOGOPTIONALCHECKBOXTEXT" Value="Launch MetaMorpheus" />
@@ -136,6 +139,7 @@
 
   <!--Executables and libraries-->
   <Fragment>
+    <!--GUI and app components-->
     <ComponentGroup Id="ExecutablesAndLibrariesComponentGroup" Directory="MetaMorpheusInstallFolder">
       <Component Id="MetaMorpheusGUI.exe" Guid="63370d96-1880-40ab-8525-685ccf64326f">
         <File Id="MetaMorpheusGUI.exe" Name="MetaMorpheusGUI.exe" Source="$(var.GUI_TargetDir)MetaMorpheusGUI.exe" />
@@ -183,7 +187,7 @@
         <File Id="src_MetaMorpheusGUI.pdb" Name="MetaMorpheusGUI.pdb" Source="$(var.GUI_TargetDir)MetaMorpheusGUI.pdb" />
       </Component>
       <Component Id="src_mzIdentML.dll" Guid="cb1200d2-2356-4664-8968-bff79c83eeac">
-        <File Id="src_mzIdentML.dll" Name="mzIdentML.dll" Source="$(var.GUI_TargetDir)mzIdentML.dll" />
+        <File Id="src_mzIdentML.dll" Name="MzIdentML.dll" Source="$(var.GUI_TargetDir)MzIdentML.dll" />
       </Component>
       <Component Id="src_MzLibUtil.dll" Guid="9475fcb2-63bd-490c-8441-17a1760869ac">
         <File Id="src_MzLibUtil.dll" Name="MzLibUtil.dll" Source="$(var.GUI_TargetDir)MzLibUtil.dll" />
@@ -198,7 +202,7 @@
         <File Id="src_Nett.dll" Name="Nett.dll" Source="$(var.GUI_TargetDir)Nett.dll" />
       </Component>
       <Component Id="src_pepXML.dll" Guid="9a086709-4b5d-4711-aec0-9a8a9ba7b886">
-        <File Id="src_pepXML.dll" Name="pepXML.dll" Source="$(var.GUI_TargetDir)pepXML.dll" />
+        <File Id="src_pepXML.dll" Name="PepXML.dll" Source="$(var.GUI_TargetDir)PepXML.dll" />
       </Component>
       <Component Id="src_Proteomics.dll" Guid="e0bd6f66-afa5-49fa-a17c-2a24164f600d">
         <File Id="src_Proteomics.dll" Name="Proteomics.dll" Source="$(var.GUI_TargetDir)Proteomics.dll" />
@@ -215,20 +219,20 @@
       <Component Id="src_SharpLearning.DecisionTrees.dll" Guid="b3c202a8-795d-4198-b927-0fcd02d8ae05">
         <File Id="src_SharpLearning.DecisionTrees.dll" Name="SharpLearning.DecisionTrees.dll" Source="$(var.GUI_TargetDir)SharpLearning.DecisionTrees.dll" />
       </Component>
+      <Component Id="src_SharpLearning.GradientBoost.dll" Guid="fa74c4c2-c704-486e-9b07-a4f2099bb284">
+        <File Id="src_SharpLearning.GradientBoost.dll" Name="SharpLearning.GradientBoost.dll" Source="$(var.GUI_TargetDir)SharpLearning.GradientBoost.dll" />
+      </Component>
       <Component Id="src_SharpLearning.InputOutput.dll" Guid="357e6a45-5852-474d-aceb-e05942958ae6">
         <File Id="src_SharpLearning.InputOutput.dll" Name="SharpLearning.InputOutput.dll" Source="$(var.GUI_TargetDir)SharpLearning.InputOutput.dll" />
       </Component>
       <Component Id="src_SharpLearning.Metrics.dll" Guid="9ec3dd96-8228-49db-98e7-4288845b63a4">
         <File Id="src_SharpLearning.Metrics.dll" Name="SharpLearning.Metrics.dll" Source="$(var.GUI_TargetDir)SharpLearning.Metrics.dll" />
       </Component>
-      <Component Id="src_SharpLearning.RandomForest.dll" Guid="f86fdc0c-6a23-4e4f-803b-0012aaa418e7">
-        <File Id="src_SharpLearning.RandomForest.dll" Name="SharpLearning.RandomForest.dll" Source="$(var.GUI_TargetDir)SharpLearning.RandomForest.dll" />
-      </Component>
       <Component Id="src_SharpLearning.Optimization.dll" Guid="3C9AC945-8AE8-4A81-AC1B-1BE7E6DF6DE0">
         <File Id="src_SharpLearning.Optimization.dll" Name="SharpLearning.Optimization.dll" Source="$(var.GUI_TargetDir)SharpLearning.Optimization.dll" />
       </Component>
-      <Component Id="src_SharpLearning.GradientBoost.dll" Guid="F76D5154-5F85-4692-9A6B-B822EA1CB4DE">
-        <File Id="src_SharpLearning.GradientBoost.dll" Name="SharpLearning.GradientBoost.dll" Source="$(var.GUI_TargetDir)SharpLearning.GradientBoost.dll" />
+      <Component Id="src_SharpLearning.RandomForest.dll" Guid="f86fdc0c-6a23-4e4f-803b-0012aaa418e7">
+        <File Id="src_SharpLearning.RandomForest.dll" Name="SharpLearning.RandomForest.dll" Source="$(var.GUI_TargetDir)SharpLearning.RandomForest.dll" />
       </Component>
       <Component Id="src_Mgf.dll" Guid="B4EB5CEA-CFCA-40C7-A915-DB3B9EF53775">
         <File Id="src_Mgf.dll" Name="Mgf.dll" Source="$(var.GUI_TargetDir)Mgf.dll" />
@@ -326,18 +330,6 @@
       <Component Id="src_OpenMcdf.Extensions.dll" Guid="69004206-94FD-4342-A98D-70560B41C7B3">
         <File Id="src_OpenMcdf.Extensions.dll" Name="OpenMcdf.Extensions.dll" Source="$(var.GUI_TargetDir)OpenMcdf.Extensions.dll" />
       </Component>
-      <Component Id="src_System.CodeDom.dll" Guid="6C2021B6-7218-4C00-9EE5-351B1A03D0A2">
-        <File Id="src_System.CodeDom.dll" Name="System.CodeDom.dll" Source="$(var.GUI_TargetDir)System.CodeDom.dll" />
-      </Component>
-      <Component Id="src_System.Collections.Immutable.dll" Guid="DA1FE5F5-4409-4B41-8A26-E30DAD497458">
-        <File Id="src_System.Collections.Immutable.dll" Name="System.Collections.Immutable.dll" Source="$(var.GUI_TargetDir)System.Collections.Immutable.dll" />
-      </Component>
-      <Component Id="src_System.Runtime.CompilerServices.Unsafe.dll" Guid="B6CEE0EA-3F5C-47F1-9A70-166C92F29F54">
-        <File Id="src_System.Runtime.CompilerServices.Unsafe.dll" Name="System.Runtime.CompilerServices.Unsafe.dll" Source="$(var.GUI_TargetDir)System.Runtime.CompilerServices.Unsafe.dll" />
-      </Component>
-      <Component Id="src_System.Threading.Tasks.Dataflow.dll" Guid="59753FAC-C8EA-45D8-9E17-12764F56E624">
-        <File Id="src_System.Threading.Tasks.Dataflow.dll" Name="System.Threading.Tasks.Dataflow.dll" Source="$(var.GUI_TargetDir)System.Threading.Tasks.Dataflow.dll" />
-      </Component>
       <Component Id="src_Common.Logging.Core.dll" Guid="894B4A68-17E7-48A5-B2C6-74C33CD08979">
         <File Id="src_Common.Logging.Core.dll" Name="Common.Logging.Core.dll" Source="$(var.GUI_TargetDir)Common.Logging.Core.dll" />
       </Component>
@@ -365,8 +357,11 @@
       <Component Id="src_MetaMorpheusGUI.runtimeconfig.json" Guid="74373586-8FF6-4E06-9108-7648B8590005">
         <File Id="src_MetaMorpheusGUI.runtimeconfig.json" Name="MetaMorpheusGUI.runtimeconfig.json" Source="$(var.GUI_TargetDir)MetaMorpheusGUI.runtimeconfig.json" />
       </Component>
+      <Component Id="MetaMorpheusGUI.dll.config" Guid="84f9e2f4-79d4-47c0-a2c9-aa7dbcb2b0fd">
+        <File Id="MetaMorpheusGUI.dll.config" Name="MetaMorpheusGUI.dll.config" Source="$(var.GUI_TargetDir)MetaMorpheusGUI.dll.config" />
+      </Component>
 
-      <!--Command-Line Components-->
+      <!--Commandline Components-->
       <Component Id="src_CMD.deps.json" Guid="92190CCF-0138-4F0B-9356-02C914D5A439">
         <File Id="src_CMD.deps.json" Name="CMD.deps.json" Source="$(var.CMD_TargetDir)CMD.deps.json" />
       </Component>
@@ -391,8 +386,13 @@
       <Component Id="src_CommandLine.dll" Guid="7B810D27-CAC0-41A8-90A2-D1594A678BC9">
         <File Id="src_CommandLine.dll" Name="CommandLine.dll" Source="$(var.CMD_TargetDir)CommandLine.dll" />
       </Component>
+      <Component Id="src_System.CodeDom.dll" Guid="1B73E617-4ED9-4C86-894A-F3C2D826FC09">
+        <File Id="src_System.CodeDom.dll" Name="System.CodeDom.dll" Source="$(var.CMD_TargetDir)System.CodeDom.dll" />
+      </Component>
     </ComponentGroup>
-    <ComponentGroup Id="ExecutablesAndLibrariesComponentGroup2" Directory="NativeMathDllFolder_native">
+
+    <!--Runtime Components-->
+    <ComponentGroup Id="NativeMathComponents" Directory="NativeMathDllFolder_win_x64_native">
       <Component Id="src_CpuMathNative.dll" Guid="436C233C-5BCD-4386-90C7-F2AC489B09CF">
         <File Id="src_CpuMathNative.dll" Name="CpuMathNative.dll" Source="$(var.GUI_TargetDir)runtimes\win-x64\native\CpuMathNative.dll" />
       </Component>
@@ -403,13 +403,22 @@
         <File Id="src_LdaNative.dll" Name="LdaNative.dll" Source="$(var.GUI_TargetDir)runtimes\win-x64\native\LdaNative.dll" />
       </Component>
     </ComponentGroup>
-    <ComponentGroup Id="ExecutablesAndLibrariesComponentGroup3" Directory="WindowDllFolder_netcoreapp3.0">
-      <Component Id="src_Microsoft.Win32.SystemEvents.dll" Guid="E6A7E29B-AAB4-4144-9A2F-7D36CC5D1DED">
-        <File Id="src_Microsoft.Win32.SystemEvents.dll" Name="Microsoft.Win32.SystemEvents.dll" Source="$(var.GUI_TargetDir)\runtimes\win\lib\netcoreapp3.0\Microsoft.Win32.SystemEvents.dll" />
+    
+    <!--Other x64 Components-->
+    <ComponentGroup Id="MathNumerics_x64" Directory="MathNumericsFolder_x64">
+      <Component Id="src_libiomp5md.dll" Guid="CB28608B-0F60-4002-B0E3-F8A151DCD871">
+        <File Id="src_libiomp5md.dll" Name="libiomp5md.dll" Source="$(var.GUI_TargetDir)x64\libiomp5md.dll" />
       </Component>
-      <Component Id="src_System.Drawing.Common.dll" Guid="91B55013-24ED-4C9D-BB7B-55144426C90F">
-        <File Id="src_System.Drawing.Common.dll" Name="System.Drawing.Common.dll" Source="$(var.GUI_TargetDir)\runtimes\win\lib\netcoreapp3.0\System.Drawing.Common.dll" />
-      </Component>      
+      <Component Id="srcMathNet.Numerics.MKL.dll" Guid="9384C245-B63C-48EF-B5DA-8AB2C04A6B27">
+        <File Id="src_MathNet.Numerics.MKL.dll" Name="MathNet.Numerics.MKL.dll" Source="$(var.GUI_TargetDir)x64\MathNet.Numerics.MKL.dll" />
+      </Component>
+    </ComponentGroup>
+    
+    <!--Ref components-->
+    <ComponentGroup Id="RefComponents" Directory="RefFolder">
+      <Component Id="ref_MetaMorpheusGUI.dll" Guid="AA2CF3C9-0027-4F1F-B3E4-0BDEAE5F9366">
+        <File Id="ref_MetaMorpheusGUI.dll" Name="MetaMorpheusGUI.dll" Source="$(var.GUI_TargetDir)ref\MetaMorpheusGUI.dll" />
+      </Component>
     </ComponentGroup>
   </Fragment>
 
@@ -425,13 +434,6 @@
       <!-- aListOfmods.txt -->
       <Component Id="Appsrc_Mods_aListOfmods.txt" Guid="0aa9b5ed-b47d-4a78-93b1-49ebc104d011">
         <File ReadOnly="no" Id="Appsrc_Mods_aListOfmods.txt" Name="aListOfmods.txt" Source="$(var.GUI_TargetDir)Mods\aListOfmods.txt" />
-        <Condition>OVERWRITEAPPDATA</Condition>
-        <RegistryValue Root="HKCU" Key="Software\SmithGroup\MetaMorpheus" Name="installed" Type="integer" Value="1" KeyPath="yes" />
-      </Component>
-
-      <!-- availableUniProtProteomes.txt -->
-      <Component Id="Appsrc_Proteomes_availableUniProtProteomes.txt.gz" Guid="89F6BBC1-4668-4F9C-A52B-69603CE418C1">
-        <File ReadOnly="yes" Id="Appsrc_Proteomes_availableUniProtProteomes.txt" Name="availableUniProtProteomes.txt.gz" Source="$(var.GUI_TargetDir)Proteomes\availableUniProtProteomes.txt.gz" />
         <Condition>OVERWRITEAPPDATA</Condition>
         <RegistryValue Root="HKCU" Key="Software\SmithGroup\MetaMorpheus" Name="installed" Type="integer" Value="1" KeyPath="yes" />
       </Component>
@@ -488,7 +490,6 @@
         <RemoveFolder Id="MetaAppNGlycanFolder" On="both" />
         <RegistryValue Root="HKCU" Key="Software\SmithGroup\MetaMorpheus" Name="installed" Type="integer" Value="1" KeyPath="yes" />
       </Component>
-
       <Component Id="Appsrc_Data_NGlycan182.gdb" Guid="1AE1B223-9C67-4378-BA07-ABA31BCE4EAB">
         <Condition>OVERWRITEAPPDATA</Condition>
         <RegistryValue Root="HKCU" Key="Software\SmithGroup\MetaMorpheus" Name="installed" Type="integer" Value="1" KeyPath="yes" />
@@ -505,7 +506,6 @@
         <RemoveFolder Id="MetaAppOGlycanFolder" On="both" />
         <RegistryValue Root="HKCU" Key="Software\SmithGroup\MetaMorpheus" Name="installed" Type="integer" Value="1" KeyPath="yes" />
       </Component>
-
       <Component Id="Appsrc_Data_OGlycan.gdb" Guid="08054759-2D7E-4760-A174-A53E5A77507F">
         <Condition>OVERWRITEAPPDATA</Condition>
         <RegistryValue Root="HKCU" Key="Software\SmithGroup\MetaMorpheus" Name="installed" Type="integer" Value="1" KeyPath="yes" />
@@ -550,8 +550,6 @@
     </ComponentGroup>
   </Fragment>
 
-
-
   <!--Builds the App Data folder-->
   <Fragment>
     <ComponentGroup Id="Appsrc_Data_files" Directory="MetaAppDataFolder">
@@ -590,7 +588,6 @@
         <RegistryValue Root="HKCU" Key="Software\SmithGroup\MetaMorpheus" Name="installed" Type="integer" Value="1" KeyPath="yes" />
         <File ReadOnly="no" Id="Appsrc_Crosslinkers.tsv" Name="Crosslinkers.tsv" Source="$(var.GUI_TargetDir)Data\Crosslinkers.tsv" />
       </Component>
-
       <Component Id="Appsrc_Data_SmallCalibratible_Yeast.mzML" Guid="8CA11AAC-0D36-4E99-BD37-E119003270FA">
         <Condition>OVERWRITEAPPDATA</Condition>
         <RegistryValue Root="HKCU" Key="Software\SmithGroup\MetaMorpheus" Name="installed" Type="integer" Value="1" KeyPath="yes" />
@@ -636,9 +633,26 @@
     </ComponentGroup>
   </Fragment>
 
+  <!--Build the Proteomes folder-->
+  <Fragment>
+    <ComponentGroup Id="Appsrc_Proteomes_files" Directory="MetaAppProteomesFolder">
+      <Component Id="RemoveProteomes" Guid="CE2297F1-81E4-4268-9976-50A5A48C391D">
+        <Condition>OVERWRITEAPPDATA</Condition>
+        <RemoveFolder Id="MetaAppProteomesFolder" On="both" />
+        <RegistryValue Root="HKCU" Key="Software\SmithGroup\MetaMorpheus" Name="installed" Type="integer" Value="1" KeyPath="yes" />
+      </Component>
+      <Component Id="Appsrc_Proteomes_availableUniProtProteomes.txt.gz" Guid="89F6BBC1-4668-4F9C-A52B-69603CE418C1">
+        <File ReadOnly="yes" Id="Appsrc_Proteomes_availableUniProtProteomes.txt" Name="availableUniProtProteomes.txt.gz" Source="$(var.GUI_TargetDir)Proteomes\availableUniProtProteomes.txt.gz" />
+        <Condition>OVERWRITEAPPDATA</Condition>
+        <RegistryValue Root="HKCU" Key="Software\SmithGroup\MetaMorpheus" Name="installed" Type="integer" Value="1" KeyPath="yes" />
+      </Component>
+    </ComponentGroup>
+  </Fragment>
+
+  <!--Excel Default actions-->
   <Fragment>
     <ComponentGroup Id="ExcelDefaults">
-      <Component Id ="ExcelDefault" Directory="ProgramFiles64Folder" Guid="{D6A1CF31-27C8-4DCB-A92F-D36D6EDB7C70}" Permanent="yes">
+      <Component Id="ExcelDefault" Directory="ProgramFiles64Folder" Guid="{D6A1CF31-27C8-4DCB-A92F-D36D6EDB7C70}" Permanent="yes">
         <Condition> EXCELDEFAULTPROPERTY</Condition>
         <RemoveRegistryKey Action="removeOnInstall" Root="HKCU" Key="Software\Microsoft\Windows\CurrentVersion\Explorer\FileExts\.tsv" />
         <RegistryKey Root="HKCU" Key="Software\Microsoft\Windows\CurrentVersion\Explorer\FileExts\.tsv\OpenWithList">
@@ -657,7 +671,7 @@
           <RegistryValue Name="psmtsv_auto_file" Value="0000" Type="binary" />
         </RegistryKey>
       </Component>
-      <Component Id ="ExcelDefault2" Directory="ProgramFiles64Folder" Guid="{A19A382C-8DD8-4A03-8DE8-66973C197A98}" Permanent="yes">
+      <Component Id="ExcelDefault2" Directory="ProgramFiles64Folder" Guid="{A19A382C-8DD8-4A03-8DE8-66973C197A98}" Permanent="yes">
         <Condition><![CDATA[EXCELSELECT<>"1"]]> </Condition>
         <RemoveRegistryKey Action="removeOnInstall" Root="HKCU" Key="Software\Classes\tsv_auto_file\shell\open\command" />
         <RegistryKey Root="HKCU" Key="Software\Classes\tsv_auto_file\shell\open\command">
@@ -675,16 +689,8 @@
   <Fragment>
     <Component Id="MetaMorpheusProgramMenuFolderComponent" Directory="MetaMorpheusProgramMenuFolder" Guid="c68bc3b0-cc4f-48ed-9ea0-25dbd7492292">
       <RegistryValue Root="HKCU" Key="Software\SmithGroup\MetaMorpheus" Name="installed" Type="integer" Value="1" KeyPath="yes" />
-      <Shortcut Id="AppStartMenuSC"
-                Name="MetaMorpheus"
-                Description="Shortcut to App"
-                Target="[#MetaMorpheusGUI.exe]"
-                WorkingDirectory="MetaMorpheusInstallFolder" />
-      <Shortcut Id="UninstallProduct"
-                Name="Uninstall MetaMorpheus"
-                Description="Uninstalls My Application"
-                Target="[System64Folder]msiexec.exe"
-                Arguments="/x [ProductCode]" />
+      <Shortcut Id="AppStartMenuSC" Name="MetaMorpheus" Description="Shortcut to App" Target="[#MetaMorpheusGUI.exe]" WorkingDirectory="MetaMorpheusInstallFolder" />
+      <Shortcut Id="UninstallProduct" Name="Uninstall MetaMorpheus" Description="Uninstalls My Application" Target="[System64Folder]msiexec.exe" Arguments="/x [ProductCode]" />
       <RemoveFolder Id="MetaMorpheusProgramMenuFolder" On="both" />
     </Component>
   </Fragment>
