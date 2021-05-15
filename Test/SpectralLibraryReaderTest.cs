@@ -7,6 +7,9 @@ using MzLibUtil;
 using TaskLayer;
 using System.Collections.Generic;
 using Proteomics.Fragmentation;
+using Proteomics.ProteolyticDigestion;
+using Proteomics;
+using MassSpectrometry;
 
 namespace Test
 {
@@ -148,5 +151,84 @@ namespace Test
 
             Directory.Delete(outputDir, true);
         }
+        [Test]
+        public static void TestDecoyOnTheFlyBottomUp()
+        {
+            //test decoy generation without modification
+            List<Modification> mods1 = new List<Modification>();
+            CommonParameters commonParameters1 = new CommonParameters();
+            PeptideWithSetModifications target1 = new Protein("PEPTIDE", "TARGET").Digest(commonParameters1.DigestionParams, mods1, mods1).First();
+            int[] newAAlocations1 = new int[target1.BaseSequence.Length];
+            PeptideWithSetModifications decoy1 = DecoyOnTheFly.GetReverseDecoyFromTarget(target1, newAAlocations1);
+            Assert.That(decoy1.FullSequence == "EDITPEP");
+            Assert.That(decoy1.Protein.IsDecoy);
+
+            //test decoy generation with modification 
+            List<Modification> mods2 = new List<Modification>();
+            ModificationMotif.TryGetMotif("D", out var motif);
+            Modification m = new Modification("TEST", "", "OK", null, motif, "Anywhere.", null, 20);
+            mods2.Add(m);
+            PeptideWithSetModifications target2 = new Protein("PEPTIDE", "TARGET").Digest(commonParameters1.DigestionParams, mods2, mods1).First();
+            int[] newAAlocations2 = new int[target2.BaseSequence.Length];
+            PeptideWithSetModifications decoy2 = DecoyOnTheFly.GetReverseDecoyFromTarget(target2, newAAlocations2);
+            Assert.That(decoy2.FullSequence == "ED[OK:TEST on D]ITPEP");
+            Assert.That(decoy2.Protein.IsDecoy);
+
+            //test decoy generation with modification in the digestion motif
+            List<Modification> mods3 = new List<Modification>();
+            ModificationMotif.TryGetMotif("K", out var motif3);
+            Modification m3 = new Modification("TEST", "", "OK", null, motif3, "Anywhere.", null, 20);
+            mods3.Add(m3);
+            PeptideWithSetModifications target3 = new Protein("PEPTIDEK", "TARGET").Digest(commonParameters1.DigestionParams, mods3, mods1).First();
+            int[] newAAlocations3 = new int[target3.BaseSequence.Length];
+            PeptideWithSetModifications decoy3 = DecoyOnTheFly.GetReverseDecoyFromTarget(target3, newAAlocations3);
+            Assert.That(decoy3.FullSequence == "EDITPEPK[OK:TEST on K]");
+            Assert.That(decoy3.Protein.IsDecoy);
+
+        }
+
+        [Test]
+        public static void TestDecoyOnTheFlyTopDown()
+        {
+
+            CommonParameters CommonParameters = new CommonParameters(
+              digestionParams: new DigestionParams(protease: "top-down"),
+              scoreCutoff: 1,
+              assumeOrphanPeaksAreZ1Fragments: false);
+
+            MetaMorpheusTask.DetermineAnalyteType(CommonParameters);
+
+            // test output file name (should be proteoform and not peptide)
+            Assert.That(GlobalVariables.AnalyteType == "Proteoform");
+
+            var variableModifications = new List<Modification>();
+            var fixedModifications = new List<Modification>();
+            var proteinList = new List<Protein>
+            {
+                new Protein("MPKVYSYQEVAEHNGPENFWIIIDDKVYDVSQFKDEHPGGDEIIMDLGGQDATESFVDIGHSDEALRLLKGLYIGDVDKTSERVSVEKVSTSENQSKGSGTLVVILAILMLGVAYYLLNE", "P40312")
+            };
+
+            //test decoy generation without modification
+            List<Modification> mods1 = new List<Modification>();
+            PeptideWithSetModifications target1 = proteinList.First().Digest(CommonParameters.DigestionParams, mods1, mods1).First();
+            int[] newAAlocations1 = new int[target1.BaseSequence.Length];
+            PeptideWithSetModifications decoy1 = DecoyOnTheFly.GetReverseDecoyFromTarget(target1, newAAlocations1);
+            Assert.That(decoy1.FullSequence == "ENLLYYAVGLMLIALIVVLTGSGKSQNESTSVKEVSVRESTKDVDGIYLGKLLRLAEDSHGIDVFSETADQGGLDMIIEDGGPHEDKFQSVDYVKDDIIIWFNEPGNHEAVEQYSYVKPM");
+            Assert.That(decoy1.Protein.IsDecoy);
+
+            //test decoy generation with modification 
+            List<Modification> mods2 = new List<Modification>();
+            ModificationMotif.TryGetMotif("A", out var motif);
+            Modification m = new Modification("TEST", "", "OK", null, motif, "Anywhere.", null, 20);
+            mods2.Add(m);
+            PeptideWithSetModifications target2 = proteinList.First().Digest(CommonParameters.DigestionParams, mods2, mods1).First();
+            int[] newAAlocations2 = new int[target2.BaseSequence.Length];
+            PeptideWithSetModifications decoy2 = DecoyOnTheFly.GetReverseDecoyFromTarget(target2, newAAlocations2);
+            Assert.That(decoy2.FullSequence == "ENLLYYA[OK:TEST on A]VGLMLIA[OK:TEST on A]LIVVLTGSGKSQNESTSVKEVSVRESTKDVDGIYLGKLLRLA[OK:TEST on A]EDSHGIDVFSETA[OK:TEST on A]DQGGLDMIIEDGGPHEDKFQSVDYVKDDIIIWFNEPGNHEA[OK:TEST on A]VEQYSYVKPM");
+            Assert.That(decoy2.Protein.IsDecoy);
+
+
+        }
+
     }
 }
