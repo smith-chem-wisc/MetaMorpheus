@@ -66,13 +66,13 @@ namespace Test
 
             string myPsmString = myPsm.ToString();
             string[] myPsmStringSplit = myPsmString.Split('\t');
-            string ppmErrorString = myPsmStringSplit[23];
+            string ppmErrorString = myPsmStringSplit[24];
 
             //The two different mods produce two separate mass errors, which are both then reported
             Assert.AreEqual("0.00|11801.30", ppmErrorString);
 
             //Make sure we see produt ion neutral losses in the output.
-            string matchedIonSeries = myPsmStringSplit[38];
+            string matchedIonSeries = myPsmStringSplit[39];
             Assert.AreEqual("[(b1-5.00)+1]", matchedIonSeries);
 
 
@@ -90,7 +90,7 @@ namespace Test
 
             myPsmString = myPsm.ToString();
             myPsmStringSplit = myPsmString.Split('\t');
-            ppmErrorString = myPsmStringSplit[23];
+            ppmErrorString = myPsmStringSplit[24];
 
             Assert.AreEqual("0.00", ppmErrorString);
         }
