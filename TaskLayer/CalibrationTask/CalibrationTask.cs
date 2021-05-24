@@ -160,8 +160,12 @@ namespace TaskLayer
                 CalibrationEngine engine = new CalibrationEngine(myMsDataFile, acquisitionResults, CommonParameters, FileSpecificParameters, new List<string> { taskId, "Individual Spectra Files", originalUncalibratedFilenameWithoutExtension });
                 engine.Run();
 
+                //Use adjacent ms1 peaks to improve mass accuracy
+                AggregationEngine aggEngine = new AggregationEngine(engine.CalibratedDataFile, CommonParameters, new List<string> { taskId, "Individual Spectra Files", originalUncalibratedFilenameWithoutExtension });
+                aggEngine.Run();
+
                 //update file
-                myMsDataFile = engine.CalibratedDataFile;
+                myMsDataFile = aggEngine.AggregatedDataFile;
 
                 // do another search to evaluate calibration results
                 Status("Post-calibration search...", new List<string> { taskId, "Individual Spectra Files" });
