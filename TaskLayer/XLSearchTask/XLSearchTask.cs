@@ -98,7 +98,8 @@ namespace TaskLayer
 
                 Ms2ScanWithSpecificMass[] arrayOfMs2ScansSortedByMass = GetMs2ScansWrapByScanNum(myMsDataFile, origDataFile, combinedParams, out List<List<(double, int, double)>> precursorss).ToArray();
 
-                List<CrosslinkSpectralMatch>[] newCsmsPerMS2ScanPerFile = new List<CrosslinkSpectralMatch>[arrayOfMs2ScansSortedByMass.Length];
+                //var descendingComparer = Comparer<double>.Create((x, y) => y.CompareTo(x));
+                SortedList<double, CrosslinkSpectralMatch>[] newCsmsPerMS2ScanPerFile = new SortedList<double, CrosslinkSpectralMatch>[arrayOfMs2ScansSortedByMass.Length];
 
                 myFileManager.DoneWithFile(origDataFile);
 
@@ -201,32 +202,14 @@ namespace TaskLayer
 
                 //For every Ms2Scans, each have a list of candidates psms. The allPsms from CrosslinkSearchEngine is the list (all ms2scans) of list (each ms2scan) of psm (all candidate psm).
                 //The allPsmsList is same as allPsms after ResolveAmbiguities.
-                foreach (var csmsPerScan in newCsmsPerMS2ScanPerFile.Where(p=>p!=null))
+                foreach (var csmsPerScan in newCsmsPerMS2ScanPerFile.Where(p=>p!=null && p.Count > 0))
                 {
-                    foreach (var csm in csmsPerScan)
+                    foreach (var csm in csmsPerScan.Values)
                     {
-                        csm.ResolveAllAmbiguities();
-                        if (csm.BetaPeptide != null)
-                        {
-                            csm.BetaPeptide.ResolveAllAmbiguities();
-                        }
-                        csm.ResolveProteinPosAmbiguitiesForXl();
-
-                        //Assign PsmCrossType.Cross to Intra or Inter.
-                        if (csm.CrossType == PsmCrossType.Cross)
-                        {
-                            if (csm.IsIntraCsm())
-                            {
-                                csm.CrossType = PsmCrossType.Intra;
-                            }
-                            else
-                            {
-                                csm.CrossType = PsmCrossType.Inter;
-                            }
-                        }
+                        CrosslinkSpectralMatch.ResolveProteinPosAmbiguitiesForXl(csm);                  
                     }
 
-                    _ListOfCsmsPerMS2ScanParsimony.Add(csmsPerScan);
+                    _ListOfCsmsPerMS2ScanParsimony.Add(csmsPerScan.Values.ToList());
                 }
 
                 _ListOfCsmsPerMS2ScanParsimony = SortListsOfCsms(_ListOfCsmsPerMS2ScanParsimony, CommonParameters);
@@ -289,6 +272,7 @@ namespace TaskLayer
 
             return csmsPerScan;
         }
-       
+        
     }
+
 }

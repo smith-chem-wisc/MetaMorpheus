@@ -21,6 +21,22 @@ namespace EngineLayer.CrosslinkSearch
 
         public List<int> LinkPositions { get; set; }
         public double XLTotalScore { get; set; }    //alpha + beta psmCross.
+
+        public double ReXLTotalScore
+        {
+            get
+            {
+                if (XLTotalScore!= 0)
+                {
+                    return 1 / XLTotalScore;
+
+                }
+                else
+                {
+                    return 0;
+                }
+            }
+        }
         public double SecondBestXlScore { get; set; } // score of the second-best CSM; this is used to calculate delta score
         public int XlRank { get; set; }   //Rank after indexing score. Could be used for PEP
         public int ParentIonExistNum { get; set; }
@@ -43,23 +59,23 @@ namespace EngineLayer.CrosslinkSearch
             }
         }
         
-        public bool IsIntraCsm()
+        public static bool IsIntraCsm(CrosslinkSpectralMatch csm)
         {
             //The pair "ProteinA and Decoy_ProteinA" is count for intra-crosslink. 
-            if (this.ProteinAccession != null && this.BetaPeptide.ProteinAccession != null)
+            if (csm.ProteinAccession != null && csm.BetaPeptide.ProteinAccession != null)
             {
-                if (this.ProteinAccession == this.BetaPeptide.ProteinAccession || 
-                    this.ProteinAccession == "DECOY_"+ this.BetaPeptide.ProteinAccession || 
-                    this.BetaPeptide.ProteinAccession == "DECOY_" + this.ProteinAccession)
+                if (csm.ProteinAccession == csm.BetaPeptide.ProteinAccession ||
+                    csm.ProteinAccession == "DECOY_"+ csm.BetaPeptide.ProteinAccession ||
+                    csm.BetaPeptide.ProteinAccession == "DECOY_" + csm.ProteinAccession)
                 {
                     return true;
                 }
             }
 
-            if (this.ProteinAccession == null)
+            if (csm.ProteinAccession == null)
             {
-                var alphaProteins = BestMatchingPeptides.Select(p => p.Peptide.Protein.Accession).ToList();
-                var betaProteins = BetaPeptide.BestMatchingPeptides.Select(p => p.Peptide.Protein.Accession).ToList();
+                var alphaProteins = csm.BestMatchingPeptides.Select(p => p.Peptide.Protein.Accession).ToList();
+                var betaProteins = csm.BetaPeptide.BestMatchingPeptides.Select(p => p.Peptide.Protein.Accession).ToList();
 
                 foreach (var alpha in alphaProteins)
                 {
@@ -76,25 +92,44 @@ namespace EngineLayer.CrosslinkSearch
             return false;
         }
 
-        public void ResolveProteinPosAmbiguitiesForXl()
+        public static void ResolveProteinPosAmbiguitiesForXl(CrosslinkSpectralMatch csm)
         {
-            if (CrossType == PsmCrossType.Cross || CrossType == PsmCrossType.Intra || CrossType == PsmCrossType.Inter)
+            csm.ResolveAllAmbiguities();
+            if (csm.BetaPeptide != null)
+            {
+                csm.BetaPeptide.ResolveAllAmbiguities();
+            }
+
+            //Assign PsmCrossType.Cross to Intra or Inter.
+            if (csm.CrossType == PsmCrossType.Cross)
+            {
+                if (IsIntraCsm(csm))
+                {
+                    csm.CrossType = PsmCrossType.Intra;
+                }
+                else
+                {
+                    csm.CrossType = PsmCrossType.Inter;
+                }
+            }
+
+            if (csm.CrossType == PsmCrossType.Cross || csm.CrossType == PsmCrossType.Intra || csm.CrossType == PsmCrossType.Inter)
             {
                 // alpha peptide crosslink residue in the protein
-                XlProteinPos = OneBasedStartResidueInProtein == null ? (int?)null : OneBasedStartResidueInProtein.Value + LinkPositions[0] - 1;
+                csm.XlProteinPos = csm.OneBasedStartResidueInProtein == null ? (int?)null : csm.OneBasedStartResidueInProtein.Value + csm.LinkPositions[0] - 1;
 
                 // beta crosslink residue in protein
-                BetaPeptide.XlProteinPos = BetaPeptide.OneBasedStartResidueInProtein == null ? (int?)null : BetaPeptide.OneBasedStartResidueInProtein.Value + BetaPeptide.LinkPositions[0] - 1;
+                csm.BetaPeptide.XlProteinPos = csm.BetaPeptide.OneBasedStartResidueInProtein == null ? (int?)null : csm.BetaPeptide.OneBasedStartResidueInProtein.Value + csm.BetaPeptide.LinkPositions[0] - 1;
             }
-            else if (CrossType == PsmCrossType.DeadEnd || CrossType == PsmCrossType.DeadEndH2O || CrossType == PsmCrossType.DeadEndNH2 || CrossType == PsmCrossType.DeadEndTris)
+            else if (csm.CrossType == PsmCrossType.DeadEnd || csm.CrossType == PsmCrossType.DeadEndH2O || csm.CrossType == PsmCrossType.DeadEndNH2 || csm.CrossType == PsmCrossType.DeadEndTris)
             {
-                XlProteinPos = OneBasedStartResidueInProtein == null ? (int?)null : OneBasedStartResidueInProtein.Value + LinkPositions[0] - 1;
+                csm.XlProteinPos = csm.OneBasedStartResidueInProtein == null ? (int?)null : csm.OneBasedStartResidueInProtein.Value + csm.LinkPositions[0] - 1;
             }
-            else if (CrossType == PsmCrossType.Loop)
+            else if (csm.CrossType == PsmCrossType.Loop)
             {
-                XlProteinPos = OneBasedStartResidueInProtein == null ? (int?)null : OneBasedStartResidueInProtein.Value + LinkPositions[0] - 1;
+                csm.XlProteinPos = csm.OneBasedStartResidueInProtein == null ? (int?)null : csm.OneBasedStartResidueInProtein.Value + csm.LinkPositions[0] - 1;
 
-                XlProteinPosLoop = OneBasedStartResidueInProtein == null ? (int?)null : OneBasedStartResidueInProtein.Value + LinkPositions[1] - 1;
+                csm.XlProteinPosLoop = csm.OneBasedStartResidueInProtein == null ? (int?)null : csm.OneBasedStartResidueInProtein.Value + csm.LinkPositions[1] - 1;
             }
         }
 
@@ -423,5 +458,8 @@ namespace EngineLayer.CrosslinkSearch
             PsmTsvWriter.AddMatchedIonsData(s, matchedFragmentIons);
             return s;
         }
+
+
+
     }
 }

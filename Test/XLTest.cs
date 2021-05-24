@@ -181,7 +181,7 @@ namespace Test
             //Generate crosslinker, which is DSSO here.
             Crosslinker crosslinker = GlobalVariables.Crosslinkers.Where(p => p.CrosslinkerName == "DSSO").First();
 
-            List<CrosslinkSpectralMatch>[] possiblePsms = new List<CrosslinkSpectralMatch>[listOfSortedms2Scans.Length];
+            SortedList<double, CrosslinkSpectralMatch>[] possiblePsms = new SortedList<double, CrosslinkSpectralMatch>[listOfSortedms2Scans.Length];
             List<(int, int, int)>[] candidates = new List<(int, int, int)>[listOfSortedms2Scans.Length];
             bool[,][] betaCandidateIndices = new bool[listOfSortedms2Scans.Length, 1][];
 
@@ -192,16 +192,11 @@ namespace Test
             XLEngine.FirstRoundSearch();
             XLEngine.Run();
 
-            var newPsms = possiblePsms.Where(p => p != null).Select(p => p.First()).ToList();
+            var newPsms = possiblePsms.Where(p => p != null).Select(p => p.First().Value).ToList();
             foreach (var item in newPsms)
             {
-                item.ResolveAllAmbiguities();
-                if (item.BetaPeptide != null)
-                {
-                    item.BetaPeptide.ResolveAllAmbiguities();
-                }
                 item.SetFdrValues(0, 0, 0, 0, 0, 0, 0, 0);
-                item.ResolveProteinPosAmbiguitiesForXl();
+                CrosslinkSpectralMatch.ResolveProteinPosAmbiguitiesForXl(item);
             }
 
             List<(string fileName, CommonParameters fileSpecificParameters)> fsp = new List<(string fileName, CommonParameters fileSpecificParameters)> { ("filename", commonParameters) };
@@ -422,7 +417,7 @@ namespace Test
             //Generate crosslinker, which is DSS here.
             Crosslinker crosslinker = GlobalVariables.Crosslinkers.Where(p => p.CrosslinkerName == "DSS").First();
 
-            List<CrosslinkSpectralMatch>[] possiblePsms = new List<CrosslinkSpectralMatch>[listOfSortedms2Scans.Length];
+            SortedList<double, CrosslinkSpectralMatch>[] possiblePsms = new SortedList<double, CrosslinkSpectralMatch>[listOfSortedms2Scans.Length];
 
             List<(int, int, int)>[] candidates = new List<(int, int, int)>[listOfSortedms2Scans.Length];
             bool[,][] betaCandidateIndices = new bool[listOfSortedms2Scans.Length, 1][];
@@ -433,45 +428,22 @@ namespace Test
             XLEngine.FirstRoundSearch();
             XLEngine.Run();
 
-            var nonNullCsmsStillLists = possiblePsms.Where(p => p != null).ToList();
-
             #region Parsimony and assign crosslink
 
             List<List<CrosslinkSpectralMatch>> ListOfCsmsPerMS2ScanParsimony = new List<List<CrosslinkSpectralMatch>>();
-            foreach (var csmsPerScan in nonNullCsmsStillLists)
+            foreach (var csmsPerScan in possiblePsms.Where(p => p != null && p.Count > 0))
             {
-                foreach (var csm in csmsPerScan)
+                foreach (var csm in csmsPerScan.Values)
                 {
-                    csm.ResolveAllAmbiguities();
-                    if (csm.BetaPeptide != null)
-                    {
-                        csm.BetaPeptide.ResolveAllAmbiguities();
-                    }
-                    csm.ResolveProteinPosAmbiguitiesForXl();
-
-                    //Assign PsmCrossType.Cross to Intra or Inter.
-                    if (csm.CrossType == PsmCrossType.Cross)
-                    {
-                        if (csm.IsIntraCsm())
-                        {
-                            csm.CrossType = PsmCrossType.Intra;
-                        }
-                        else
-                        {
-                            csm.CrossType = PsmCrossType.Inter;
-                        }
-                    }
+                    CrosslinkSpectralMatch.ResolveProteinPosAmbiguitiesForXl(csm);
                 }
 
-                ListOfCsmsPerMS2ScanParsimony.Add(csmsPerScan);
-
+                ListOfCsmsPerMS2ScanParsimony.Add(csmsPerScan.Values.ToList());
             }
-
-            nonNullCsmsStillLists = ListOfCsmsPerMS2ScanParsimony;
 
             #endregion Parsimony and assign crosslink
 
-            nonNullCsmsStillLists = XLSearchTask.SortListsOfCsms(nonNullCsmsStillLists, commonParameters);
+            var nonNullCsmsStillLists = XLSearchTask.SortListsOfCsms(ListOfCsmsPerMS2ScanParsimony, commonParameters);
             foreach (List<CrosslinkSpectralMatch> xlinkCsmList in nonNullCsmsStillLists.Where(x => x.First().XLTotalScore > 0))
             {
                 if (xlinkCsmList != null && xlinkCsmList.Any() && xlinkCsmList.Count > 1)
@@ -535,12 +507,12 @@ namespace Test
                 }
             }
 
-            Assert.AreEqual(434, inter);
-            Assert.AreEqual(216, intra);
-            Assert.AreEqual(317, single);
+            Assert.AreEqual(435, inter);
+            Assert.AreEqual(215, intra);
+            Assert.AreEqual(320, single);
             Assert.AreEqual(18, loop);
             Assert.AreEqual(0, deadend);
-            Assert.AreEqual(82, deadendH2O);
+            Assert.AreEqual(79, deadendH2O);
             Assert.AreEqual(0, deadendNH2);
             Assert.AreEqual(0, deadendTris);
             Assert.AreEqual(0, unnasignedCrossType);
@@ -603,10 +575,10 @@ namespace Test
 
             Assert.AreEqual(56, inter);
             Assert.AreEqual(83, intra);
-            Assert.AreEqual(230, single);
+            Assert.AreEqual(232, single);
             Assert.AreEqual(9, loop);
             Assert.AreEqual(0, deadend);
-            Assert.AreEqual(62, deadendH2O);
+            Assert.AreEqual(60, deadendH2O);
             Assert.AreEqual(0, deadendNH2);
             Assert.AreEqual(0, deadendTris);
             Assert.AreEqual(0, unnasignedCrossType);
@@ -784,12 +756,12 @@ namespace Test
             }
 
             Assert.AreEqual(0, unnasignedCrossType);
-            Assert.AreEqual(83, inter);
-            Assert.AreEqual(89, intra);
-            Assert.AreEqual(242, single);
-            Assert.AreEqual(9, loop);
+            Assert.AreEqual(81, inter);
+            Assert.AreEqual(99, intra);
+            Assert.AreEqual(247, single);
+            Assert.AreEqual(10, loop);
             Assert.AreEqual(0, deadend);
-            Assert.AreEqual(67, deadendH2O);
+            Assert.AreEqual(64, deadendH2O);
             Assert.AreEqual(0, deadendNH2);
             Assert.AreEqual(0, deadendTris);
         }
@@ -851,7 +823,7 @@ namespace Test
             var crosslinker = xlSearchParameters.Crosslinker;
 
             //TwoPassCrosslinkSearchEngine.Run().
-            List<CrosslinkSpectralMatch>[] possiblePsms = new List<CrosslinkSpectralMatch>[listOfSortedms2Scans.Length];
+            SortedList<double, CrosslinkSpectralMatch>[] possiblePsms = new SortedList<double, CrosslinkSpectralMatch>[listOfSortedms2Scans.Length];
             List<(int, int, int)>[] candidates = new List<(int, int, int)>[listOfSortedms2Scans.Length];
             bool[,][] betaCandidateIndices = new bool[listOfSortedms2Scans.Length, 1][];
 
@@ -1080,7 +1052,7 @@ namespace Test
         public static void TestDeadendTris()
         {
             Protein protein = new Protein("PEPTIDE", "");
-            var csms = new List<CrosslinkSpectralMatch>[1];
+            var csms = new SortedList<double, CrosslinkSpectralMatch>[1];
 
             // generate the scan with the deadend mod peptide's fragments
             var scans = new Ms2ScanWithSpecificMass[1];
@@ -1116,9 +1088,9 @@ namespace Test
             XLEngine.FirstRoundSearch();
             XLEngine.Run();
 
-            CrosslinkSpectralMatch csm = csms.First().First();
+            CrosslinkSpectralMatch csm = csms.First().First().Value;
             csm.ResolveAllAmbiguities();
-            csm.ResolveProteinPosAmbiguitiesForXl();
+            CrosslinkSpectralMatch.ResolveProteinPosAmbiguitiesForXl(csm);
             Assert.That(csm.XlProteinPos == 4);
             Assert.That(csm.CrossType == PsmCrossType.DeadEndTris);
             Assert.That(csm.MatchedFragmentIons.Count == 12);
@@ -1234,7 +1206,7 @@ namespace Test
         {
             XLSearchTask xlst = new XLSearchTask();
             Protein protein = new Protein("PEPTIDE", "");
-            var csms = new List<CrosslinkSpectralMatch>[1];
+            var csms = new SortedList<double, CrosslinkSpectralMatch>[1];
 
             // generate the scan with the deadend mod peptide's fragments
             var scans = new Ms2ScanWithSpecificMass[1];
@@ -1267,10 +1239,10 @@ namespace Test
             XLEngine.FirstRoundSearch();
             XLEngine.Run();
 
-            csms.First()[0].ResolveAllAmbiguities();
-            csms.First()[0].SetFdrValues(0, 0, 0.1, 0, 0, 0, 0, 0);
+            csms[0].First().Value.ResolveAllAmbiguities();
+            csms[0].First().Value.SetFdrValues(0, 0, 0.1, 0, 0, 0, 0, 0);
 
-            WriteFile.WritePepXML_xl(csms.SelectMany(p => p).ToList(), new List<Protein>(), "", new List<Modification> { deadend }, new List<Modification> { deadend }, new List<string>(), TestContext.CurrentContext.TestDirectory, "test", new CommonParameters(), new XlSearchParameters { Crosslinker = crosslinker });
+            WriteFile.WritePepXML_xl(csms.SelectMany(p => p.Values).ToList(), new List<Protein>(), "", new List<Modification> { deadend }, new List<Modification> { deadend }, new List<string>(), TestContext.CurrentContext.TestDirectory, "test", new CommonParameters(), new XlSearchParameters { Crosslinker = crosslinker });
             File.Delete(Path.Combine(TestContext.CurrentContext.TestDirectory, @"test.pep.XML"));
         }
 
@@ -1326,7 +1298,7 @@ namespace Test
             var secondIndexingResults = (IndexingResults)new IndexingEngine(new List<Protein> { bsa }, new List<Modification>(), new List<Modification>(),
                 null, null, null, 0, DecoyType.None, secondCombinedParams, fsp2, 5000, false, new List<FileInfo>(), TargetContaminantAmbiguity.RemoveContaminant, new List<string>()).Run();
 
-            var csms = new List<CrosslinkSpectralMatch>[1];
+            var csms = new SortedList<double, CrosslinkSpectralMatch>[1];
 
             List<(int, int, int)>[] candidates = new List<(int, int, int)>[scans.Length];
             bool[,][] betaCandidateIndices = new bool[scans.Length, 1][];
@@ -1335,34 +1307,13 @@ namespace Test
                 candidates, betaCandidateIndices, 0, indexingResults.PeptideIndex, precursorss);
             XLEngine.FirstRoundSearch();
             XLEngine.Run();
-
-
-            foreach (var c in csms.First())
-            {
-                c.ResolveAllAmbiguities();
-                if (c.BetaPeptide != null)
-                {
-                    c.BetaPeptide.ResolveAllAmbiguities();
-                }
-
-                if (c.CrossType == PsmCrossType.Cross)
-                {
-                    if (c.IsIntraCsm())
-                    {
-                        c.CrossType = PsmCrossType.Intra;
-                    }
-                    else
-                    {
-                        c.CrossType = PsmCrossType.Inter;
-                    }
-                }
-            }
-
+          
             //This function is important for crosslink protein ambiguious assignment.
-            var csm = csms.First().OrderByDescending(p=>p.XLTotalScore).First();
-            var isIntra = csm.IsIntraCsm();
+            var csm = csms.First().Values.OrderByDescending(p=>p.XLTotalScore).First();
+            CrosslinkSpectralMatch.ResolveProteinPosAmbiguitiesForXl(csm);
+            var isIntra = CrosslinkSpectralMatch.IsIntraCsm(csm);
             Assert.That(isIntra == true);
-            csm.ResolveProteinPosAmbiguitiesForXl();
+            
             Assert.That(csm.XlProteinPos == 455 && csm.BetaPeptide.XlProteinPos == 211);
 
             // test parent scan (CID)
@@ -1429,7 +1380,7 @@ namespace Test
             var indexingResults = (IndexingResults)new IndexingEngine(new List<Protein> { bsa }, new List<Modification>(), fixedMods,
                null, null, null, 0, DecoyType.None, commonParameters, fsp, 5000, false, new List<FileInfo>(), TargetContaminantAmbiguity.RemoveContaminant, new List<string>()).Run();
 
-            var csms = new List<CrosslinkSpectralMatch>[2];
+            var csms = new SortedList<double, CrosslinkSpectralMatch>[2];
 
             List<(int, int, int)>[] candidates = new List<(int, int, int)>[scans.Length];
             bool[,][] betaCandidateIndices = new bool[scans.Length, 1][];
@@ -1439,7 +1390,7 @@ namespace Test
             XLEngine.FirstRoundSearch();
             XLEngine.Run();
 
-            var csm = csms.First()[0];
+            var csm = csms[0].First().Value;
             csm.ResolveAllAmbiguities();
             if (csm.BetaPeptide != null)
             {
