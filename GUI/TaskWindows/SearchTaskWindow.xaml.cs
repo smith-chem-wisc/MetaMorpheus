@@ -96,7 +96,7 @@ namespace MetaMorpheusGUI
             {
                 DissociationTypeComboBox.Items.Add(dissassociationType);
             }
-            
+
 
             foreach (string separationType in GlobalVariables.SeparationTypes)
             {
@@ -235,7 +235,7 @@ namespace MetaMorpheusGUI
                 }
             }
 
-
+            
             CheckBoxQuantifyUnlabeledForSilac.IsChecked = task.CommonParameters.DigestionParams.GeneratehUnlabeledProteinsForSilac;
             PeakFindingToleranceTextBox.Text = task.SearchParameters.QuantifyPpmTol.ToString(CultureInfo.InvariantCulture);
             CheckBoxMatchBetweenRuns.IsChecked = task.SearchParameters.MatchBetweenRuns;
@@ -304,6 +304,7 @@ namespace MetaMorpheusGUI
             WriteContaminantCheckBox.IsChecked = task.SearchParameters.WriteContaminants;
             WriteIndividualResultsCheckBox.IsChecked = task.SearchParameters.WriteIndividualFiles;
             CompressIndividualResultsCheckBox.IsChecked = task.SearchParameters.CompressIndividualFiles;
+            IncludeMotifInModNamesCheckBox.IsChecked = task.SearchParameters.IncludeModMotifInMzid;
 
             foreach (var mod in task.CommonParameters.ListOfModsFixed)
             {
@@ -558,6 +559,12 @@ namespace MetaMorpheusGUI
                 TheTask.SearchParameters.SearchType = SearchType.NonSpecific;
             }
 
+            if (TheTask.SearchParameters.SearchType != SearchType.Classic && dissociationType == DissociationType.Autodetect)
+            {
+                MessageBox.Show("Autodetection of dissociation type from scan headers is only available for classic search. Please choose a different dissociation type or search mode");
+                return;
+            }
+
             TheTask.SearchParameters.DoParsimony = CheckBoxParsimony.IsChecked.Value;
             TheTask.SearchParameters.NoOneHitWonders = CheckBoxNoOneHitWonders.IsChecked.Value;
             TheTask.SearchParameters.DoQuantification = !CheckBoxNoQuant.IsChecked.Value;
@@ -571,6 +578,7 @@ namespace MetaMorpheusGUI
             TheTask.SearchParameters.WriteContaminants = WriteContaminantCheckBox.IsChecked.Value;
             TheTask.SearchParameters.WriteIndividualFiles = WriteIndividualResultsCheckBox.IsChecked.Value;
             TheTask.SearchParameters.CompressIndividualFiles = CompressIndividualResultsCheckBox.IsChecked.Value;
+            TheTask.SearchParameters.IncludeModMotifInMzid = IncludeMotifInModNamesCheckBox.IsChecked.Value;
 
             if (RemoveContaminantRadioBox.IsChecked.Value)
             {
@@ -777,7 +785,7 @@ namespace MetaMorpheusGUI
         {
             string proteaseName = ((Protease)ProteaseComboBox.SelectedItem).Name;
             MissedCleavagesTextBox.IsEnabled = !proteaseName.Equals("top-down");
-            
+
             if (AutomaticallyAskAndOrUpdateParametersBasedOnProtease)
             {
                 switch (proteaseName)

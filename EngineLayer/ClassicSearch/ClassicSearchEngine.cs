@@ -1,4 +1,5 @@
-﻿using MzLibUtil;
+﻿using MassSpectrometry;
+using MzLibUtil;
 using Proteomics;
 using Proteomics.Fragmentation;
 using Proteomics.ProteolyticDigestion;
@@ -65,7 +66,20 @@ namespace EngineLayer.ClassicSearch
                 int[] threads = Enumerable.Range(0, maxThreadsPerFile).ToArray();
                 Parallel.ForEach(threads, (i) =>
                 {
-                    var peptideTheorProducts = new List<Product>();
+                    var fragmentsForDissociationTypes = new Dictionary<DissociationType, List<Product>>();
+
+                    // check if we're supposed to autodetect dissociation type from the scan header or not
+                    if (CommonParameters.DissociationType == DissociationType.Autodetect)
+                    {
+                        foreach (var item in GlobalVariables.AllSupportedDissociationTypes.Where(p => p.Value != DissociationType.Autodetect))
+                        {
+                            fragmentsForDissociationTypes.Add(item.Value, new List<Product>());
+                        }
+                    }
+                    else
+                    {
+                        fragmentsForDissociationTypes.Add(CommonParameters.DissociationType, new List<Product>());
+                    }
 
                     for (; i < Proteins.Count; i += maxThreadsPerFile)
                     {
@@ -75,13 +89,31 @@ namespace EngineLayer.ClassicSearch
                         // digest each protein into peptides and search for each peptide in all spectra within precursor mass tolerance
                         foreach (PeptideWithSetModifications peptide in Proteins[i].Digest(CommonParameters.DigestionParams, FixedModifications, VariableModifications, SilacLabels, TurnoverLabels))
                         {
-                            peptide.Fragment(CommonParameters.DissociationType, CommonParameters.DigestionParams.FragmentationTerminus, peptideTheorProducts);
+                            foreach (var fragmentSet in fragmentsForDissociationTypes)
+                            {
+                                fragmentSet.Value.Clear();
+                            }
 
                             foreach (ScanWithIndexAndNotchInfo scan in GetAcceptableScans(peptide.MonoisotopicMass, SearchMode))
                             {
                                 if (SpectralLibrary != null && !SpectralLibrary.ContainsSpectrum(peptide.FullSequence, scan.TheScan.PrecursorCharge))
                                 {
                                     continue;
+                                }
+
+                                var dissociationType = CommonParameters.DissociationType == DissociationType.Autodetect ?
+                                    scan.TheScan.TheScan.DissociationType.Value : CommonParameters.DissociationType;
+
+                                if (!fragmentsForDissociationTypes.TryGetValue(dissociationType, out var peptideTheorProducts))
+                                {
+                                    //TODO: print some kind of warning here. the scan header dissociation type was unknown
+                                    continue;
+                                }
+
+                                // check if we've already generated theoretical fragments for this peptide+dissociation type
+                                if (peptideTheorProducts.Count == 0)
+                                {
+                                    peptide.Fragment(dissociationType, CommonParameters.DigestionParams.FragmentationTerminus, peptideTheorProducts);
                                 }
 
                                 List<MatchedFragmentIon> matchedIons = MatchFragmentIons(scan.TheScan, peptideTheorProducts, CommonParameters);
