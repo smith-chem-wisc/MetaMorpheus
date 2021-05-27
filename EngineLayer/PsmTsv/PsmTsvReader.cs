@@ -78,6 +78,7 @@ namespace EngineLayer
             parsedHeader.Add(PsmTsvHeader.Notch, Array.IndexOf(spl, PsmTsvHeader.Notch));
             parsedHeader.Add(PsmTsvHeader.BaseSequence, Array.IndexOf(spl, PsmTsvHeader.BaseSequence));
             parsedHeader.Add(PsmTsvHeader.EssentialSequence, Array.IndexOf(spl, PsmTsvHeader.EssentialSequence));
+            parsedHeader.Add(PsmTsvHeader.AmbiguityLevel, Array.IndexOf(spl, PsmTsvHeader.AmbiguityLevel));
             parsedHeader.Add(PsmTsvHeader.MissedCleavages, Array.IndexOf(spl, PsmTsvHeader.MissedCleavages));
             parsedHeader.Add(PsmTsvHeader.PeptideMonoMass, Array.IndexOf(spl, PsmTsvHeader.PeptideMonoMass));
             parsedHeader.Add(PsmTsvHeader.MassDiffDa, Array.IndexOf(spl, PsmTsvHeader.MassDiffDa));
