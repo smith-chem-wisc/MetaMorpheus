@@ -727,8 +727,11 @@ namespace Test
                 Assert.That(ion == parsedIon.NeutralTheoreticalProduct.ProductType.ToString() + parsedIon.NeutralTheoreticalProduct.FragmentNumber);
             }
 
+            //check that the proteoform classification was correct
+            Assert.IsTrue(metadrawLogic.FilteredListOfPsms[0].AmbiguityLevel.Equals("1"));
+
             // delete output
             Directory.Delete(outputFolder, true);
-        }
+        }       
     }
 }
