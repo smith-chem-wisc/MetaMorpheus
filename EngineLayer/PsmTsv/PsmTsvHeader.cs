@@ -20,6 +20,7 @@
         public const string BaseSequence = "Base Sequence";
         public const string FullSequence = "Full Sequence";
         public const string EssentialSequence = "Essential Sequence";
+        public const string AmbiguityLevel = "Ambiguity Level";
         public const string PsmCount = "PSM Count (unambiguous, <0.01 q-value)";
         public const string Mods = "Mods";
         public const string ModsChemicalFormulas = "Mods Chemical Formulas";
@@ -62,6 +63,7 @@
         public const string QValueNotch = "QValue Notch";
         public const string PEP = "PEP";
         public const string PEP_QValue = "PEP_QValue";
+        public const string SpectralAngle = "Normalized Spectral Angle";
 
         // Crosslinks
         public const string CrossTypeLabel = "Cross Type";

@@ -1,4 +1,4 @@
-﻿<Window x:Class="MetaMorpheusGUI.MetaDrawGraphicalSettings"
+﻿<Window x:Class="MetaMorpheusGUI.MetaDrawSettingsWindow"
         xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
         xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
         xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
@@ -8,15 +8,28 @@
         Title="Graphical Settings" Width="400" SizeToContent="Height" WindowStartupLocation="CenterScreen">
     <StackPanel>
         <StackPanel>
+            <CheckBox Name="DisplayAnnotationsCheckBox" Content="Display ion annotations" Margin="5"/>
             <CheckBox Name="MZCheckBox" Content="Annotate m/z values" Margin="5"/>
             <CheckBox Name="ChargesCheckBox" Content="Annotate charges" Margin="5"/>
+            <CheckBox Name="BoldTextCheckBox" Content="Bold text" Margin="5"/>
+            <CheckBox Name="DecoysCheckBox" Content="Show decoys" Margin="5" />
+            <CheckBox Name="ContaminantsCheckBox" Content="Show contaminants" Margin="5" />
 
+            <StackPanel Orientation="Horizontal">
+                <Label Content="Filter to q-value:" Margin="5"/>
+                <TextBox Name ="qValueBox" Width="60" Height="24" />
+            </StackPanel>
+            
+            <StackPanel Orientation="Horizontal">
+                <Label Content="Glycan Localization Level:" Margin="5"/>
+                <ComboBox Name="CmbGlycanLocalizationLevelStart" Height="24" />
+                <ComboBox Name="CmbGlycanLocalizationLevelEnd" Height="24" />
+            </StackPanel>
+            
             <StackPanel Orientation="Horizontal" Margin="5">
                 <Label Content="Text size:" />
                 <TextBox Name ="TextSizeBox" Width="60" Height="24" />
             </StackPanel>
-
-            <CheckBox Name="BoldTextCheckBox" Content="Bold text" Margin="5"/>
 
             <StackPanel Orientation="Horizontal" VerticalAlignment="Bottom" HorizontalAlignment="Center" >
                 <Button x:Name="Save" Content="Save" Click="Save_Click" FontSize="15" Width="100" Margin="0,5" />

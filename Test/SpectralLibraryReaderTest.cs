@@ -18,13 +18,14 @@ namespace Test
         {
             var path = Path.Combine(TestContext.CurrentContext.TestDirectory, @"TestData\myPrositLib.msp");
 
-            var testLibraryWithoutDecoy = SpectralLibraryReader.ReadSpectralLibrary(path);
+            var testLibraryWithoutDecoy = new SpectralLibrary(new List<string> { path });
+            var librarySpectra = testLibraryWithoutDecoy.GetAllLibrarySpectra().ToList();
 
-            Assert.That(testLibraryWithoutDecoy.Count == 5);
-            Assert.IsTrue(testLibraryWithoutDecoy.ContainsKey("QSQHM[Common Variable:Oxidation on M]TEVVR/5"));
-            Assert.IsTrue(testLibraryWithoutDecoy.ContainsKey("M[Common Variable:Oxidation on M]C[Common Fixed:Carbamidomethyl on C]SDSDGLAPPQHLIR/2"));
-            
-            var test1 = testLibraryWithoutDecoy["ALAVDGAGKPGAEE/2"];
+            Assert.That(librarySpectra.Count == 5);
+            Assert.That(testLibraryWithoutDecoy.TryGetSpectrum("QSQHM[Common Variable:Oxidation on M]TEVVR", 5, out var spectrum));
+            Assert.That(testLibraryWithoutDecoy.TryGetSpectrum("M[Common Variable:Oxidation on M]C[Common Fixed:Carbamidomethyl on C]SDSDGLAPPQHLIR", 2, out spectrum));
+
+            testLibraryWithoutDecoy.TryGetSpectrum("ALAVDGAGKPGAEE", 2, out var test1);
 
             Assert.AreEqual(test1.ChargeState, 2);
 
@@ -78,17 +79,20 @@ namespace Test
 
             // write the library w/ the ToString method
             var writtenPath = Path.Combine(TestContext.CurrentContext.TestDirectory, @"TestData\testLibraryToString.msp");
-            var str = testLibraryWithoutDecoy.Values.SelectMany(p => p.ToString().Split(new char[] { '\n' }));
+            var str = librarySpectra.SelectMany(p => p.ToString().Split(new char[] { '\n' }));
             File.WriteAllLines(writtenPath, str);
 
+            testLibraryWithoutDecoy.CloseConnections();
+
             // read the written library and make sure the results are readable
-            testLibraryWithoutDecoy = SpectralLibraryReader.ReadSpectralLibrary(writtenPath);
+            testLibraryWithoutDecoy = new SpectralLibrary(new List<string> { writtenPath });
+            librarySpectra = testLibraryWithoutDecoy.GetAllLibrarySpectra().ToList();
 
-            Assert.That(testLibraryWithoutDecoy.Count == 5);
-            Assert.IsTrue(testLibraryWithoutDecoy.ContainsKey("QSQHM[Common Variable:Oxidation on M]TEVVR/5"));
-            Assert.IsTrue(testLibraryWithoutDecoy.ContainsKey("M[Common Variable:Oxidation on M]C[Common Fixed:Carbamidomethyl on C]SDSDGLAPPQHLIR/2"));
+            Assert.That(librarySpectra.Count == 5);
+            Assert.That(testLibraryWithoutDecoy.TryGetSpectrum("QSQHM[Common Variable:Oxidation on M]TEVVR", 5, out spectrum));
+            Assert.That(testLibraryWithoutDecoy.TryGetSpectrum("M[Common Variable:Oxidation on M]C[Common Fixed:Carbamidomethyl on C]SDSDGLAPPQHLIR", 2, out spectrum));
 
-            test1 = testLibraryWithoutDecoy["ALAVDGAGKPGAEE/2"];
+            testLibraryWithoutDecoy.TryGetSpectrum("ALAVDGAGKPGAEE", 2, out test1);
 
             Assert.AreEqual(test1.ChargeState, 2);
 
@@ -105,20 +109,44 @@ namespace Test
                 //Assert.That(frag.ppm == readFrag.MassErrorPpm);
             }
 
+            testLibraryWithoutDecoy.CloseConnections();
             File.Delete(writtenPath);
         }
 
         [Test]
-        public static void SpectralLibraryReader_pDeepMSP()
+        public static void SpectralLibrarySearchTest()
         {
-            //pDeepMSP contains protein info.
-            var path = Path.Combine(TestContext.CurrentContext.TestDirectory, @"TestData\yeast2fake_pdeep_lib.msp");
+            var testDir = Path.Combine(TestContext.CurrentContext.TestDirectory, @"TestData\SpectralLibrarySearch");
+            var outputDir = Path.Combine(testDir, @"SpectralLibrarySearchTest");
 
-            var testLibraryWithoutDecoy = SpectralLibraryReader.ReadSpectralLibrary_pDeep(path);
+            string library1 = Path.Combine(testDir, @"P16858_target.msp");
+            string library2 = Path.Combine(testDir, @"P16858_decoy.msp");
+            string fastaDb = Path.Combine(testDir, @"P16858.fasta");
+            string spectraFile = Path.Combine(testDir, @"slicedMouse.raw");
 
-            Assert.That(testLibraryWithoutDecoy.Count == 5);
-            Assert.IsTrue(testLibraryWithoutDecoy.ContainsKey("QSQHM[Common Variable:Oxidation on M]TEVVR/5"));
-            Assert.IsTrue(testLibraryWithoutDecoy.ContainsKey("M[Common Variable:Oxidation on M]C[Common Fixed:Carbamidomethyl on C]SDSDGLAPPQHLIR/2"));
+            Directory.CreateDirectory(outputDir);
+
+            var searchTask = new SearchTask();
+
+            searchTask.RunTask(outputDir,
+                new List<DbForTask>
+                {
+                    new DbForTask(library1, false),
+                    new DbForTask(library2, false),
+                    new DbForTask(fastaDb, false)
+                },
+                new List<string> { spectraFile },
+                "");
+
+            var results = File.ReadAllLines(Path.Combine(outputDir, @"AllPSMs.psmtsv"));
+            var split = results[0].Split('\t');
+            int ind = Array.IndexOf(split, "Normalized Spectral Angle");
+            Assert.That(ind >= 0);
+
+            var spectralAngle = double.Parse(results[1].Split('\t')[ind]);
+            Assert.That(Math.Round(spectralAngle, 2) == 0.68);
+
+            Directory.Delete(outputDir, true);
         }
     }
 }

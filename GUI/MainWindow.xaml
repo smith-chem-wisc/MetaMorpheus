@@ -7,7 +7,7 @@
         mc:Ignorable="d"
         Drop="Window_Drop" AllowDrop="true" Background="{StaticResource BackgroundColor}" WindowStartupLocation="CenterScreen" MinHeight="400" 
         MinWidth="800" Height="550" Width="950"
-        Loaded="MyWindow_Loaded" PreviewKeyDown="Window_PreviewKeyDown">
+        Loaded="MyWindow_Loaded">
 
     <Window.Resources>
         <ResourceDictionary>
@@ -379,31 +379,36 @@
                     </Grid.RowDefinitions>
 
                     <!--Header label-->
-                    <Label Content="Protein Databases" Grid.Row="0" Style="{StaticResource HeaderLabelStyle}" />
+                    <Label Content="Protein Databases" Grid.Row="0" Style="{StaticResource HeaderLabelStyle}" Grid.ColumnSpan="4"/>
 
                     <!--Detail text-->
-                    <TextBlock Grid.Row="1" Style="{StaticResource TextBlockStyle}">
+                    <TextBlock Grid.Row="1" Style="{StaticResource TextBlockStyle}" Grid.ColumnSpan="4">
                         Add 
                         
                         <Hyperlink NavigateUri="https://www.uniprot.org/" RequestNavigate="Hyperlink_RequestNavigate">
-                            protein database(s)
+                            reference proteome(s)
                         </Hyperlink> 
                         
-                        in .xml or .fasta format. Databases in .xml format can contain post-translational modification (PTM) locations,
+                        in .xml or .fasta format. Reference proteomes in .xml format can contain post-translational modification (PTM) locations,
                         whereas .fasta format only contains amino acid sequences.
                     </TextBlock>
-                    
-                    <!--Button to add databases-->
-                    <Button Name="AddDatabaseButton" Grid.Row="2" Content="+ADD DATABASE" Click="AddProteinDatabase_Click" HorizontalAlignment="Right" 
-                            Style="{StaticResource ImportantButtonStyle}" Margin="0,0,10,0"/>
+
+                    <!--Buttons to add databases-->
+                    <Button Name="DownloadUniProtDatabaseButton" Grid.Row="2" Content="DOWNLOAD PROTEOME" 
+                        Click="DownloadUniProtDatabase_Click" Style="{StaticResource ImportantButtonStyle}" Margin="10,0,0,0" HorizontalAlignment="Left" />
+
+                    <Button Name="OpenProteomesFolder" Grid.Row="2" Content="OPEN PROTEOMES FOLDER" 
+                        Click="OpenProteomesFolder_Click" Style="{StaticResource ImportantButtonStyle}" Margin="211,0,0,0" HorizontalAlignment="Left"/>
+
+                    <Button Name="AddDatabaseButton" Grid.Row="2" Content="+ADD PROTEOME" 
+                        Click="AddProteinDatabase_Click" Style="{StaticResource ImportantButtonStyle}" Margin="0,0,10,0" HorizontalAlignment="Right"/>
 
                     <Button Name="AddDefaultContaminantsButton" Grid.Row="2" Content="+ADD DEFAULT CONTAMINANTS" 
-                            Click="AddDefaultContaminantDatabase_Click" HorizontalAlignment="Right" Style="{StaticResource ImportantButtonStyle}"
-                        Margin="0,0,211,0"/>
+                        Click="AddDefaultContaminantDatabase_Click" Style="{StaticResource ImportantButtonStyle}" Margin="0,0,211,0" HorizontalAlignment="Right"/>
 
                     <!--The list of databases-->
-                    <DataGrid Name="dataGridProteinDatabases" Grid.Row="3" ItemsSource="{Binding}" Style="{StaticResource x:DataGridStyle}"
-                              ColumnHeaderStyle="{StaticResource DataGridColumnHeaderStyle}" >
+                    <DataGrid Name="dataGridProteinDatabases" Grid.Row="3" Grid.ColumnSpan="4" ItemsSource="{Binding}" Style="{StaticResource x:DataGridStyle}"
+                              ColumnHeaderStyle="{StaticResource DataGridColumnHeaderStyle}" PreviewKeyDown="Window_PreviewKeyDown" >
                         <DataGrid.RowStyle>
                             <Style TargetType="{x:Type DataGridRow}" BasedOn="{StaticResource DatabaseDataGridItemStyle}" />
                         </DataGrid.RowStyle>
@@ -437,7 +442,7 @@
                     <TextBlock Grid.Row="1" Style="{StaticResource TextBlockStyle}">
                         Add spectra file(s) in .mzML, .mgf, or Thermo .raw format.
                     </TextBlock>
-                    
+
                     <!--Button to add spectra files-->
                     <Button Name="AddSpectraButton" Grid.Row="2" Content="+ADD SPECTRA" Click="AddSpectraFile_Click" HorizontalAlignment="Right" 
                             Style="{StaticResource ImportantButtonStyle}" Margin="0,0,10,0"/>
@@ -452,7 +457,7 @@
 
                     <!--The list of spectra files-->
                     <DataGrid Name="dataGridSpectraFiles" ItemsSource="{Binding}" Grid.Row="3" Style="{StaticResource x:DataGridStyle}"
-                              ColumnHeaderStyle="{StaticResource DataGridColumnHeaderStyle}">
+                              ColumnHeaderStyle="{StaticResource DataGridColumnHeaderStyle}" PreviewKeyDown="Window_PreviewKeyDown">
                         <DataGrid.RowStyle>
                             <Style TargetType="{x:Type DataGridRow}" BasedOn="{StaticResource SpectraFileDataGridItemStyle}" />
                         </DataGrid.RowStyle>
@@ -508,10 +513,10 @@
                         <Button Name="AddGlycoTaskButton" Grid.Column="4" Content="+ADD GLYCO SEARCH" HorizontalAlignment="Right" Click="AddGlycoSearchTask_Click" 
                             Style="{StaticResource ImportantButtonStyle}" Margin="0,0,0,0" Width="150"/>
                     </Grid>
-                    
+
                     <!--List of tasks-->
                     <TreeView x:Name="tasksTreeView" Grid.Row="3" ItemsSource="{Binding}" MouseDoubleClick="TasksTreeView_MouseDoubleClick" 
-                              Margin="10,0,10,10" BorderBrush="{StaticResource BorderColor}">
+                              Margin="10,0,10,10" BorderBrush="{StaticResource BorderColor}" PreviewKeyDown="Window_PreviewKeyDown">
                     </TreeView>
                 </Grid>
             </TabItem>
@@ -544,7 +549,7 @@
 
                             <!--Protein DB Summary-->
                             <DataGrid Name="proteinDbSummaryDataGrid" ItemsSource="{Binding}" Grid.Row="0" Margin="20,10,0,0" 
-                              Style="{StaticResource x:DataGridStyle}" ColumnHeaderStyle="{StaticResource DataGridColumnHeaderStyle}">
+                              Style="{StaticResource x:DataGridStyle}" ColumnHeaderStyle="{StaticResource DataGridColumnHeaderStyle}" PreviewKeyDown="Window_PreviewKeyDown">
                                 <DataGrid.RowStyle>
                                     <Style TargetType="{x:Type DataGridRow}" BasedOn="{StaticResource DatabaseDataGridItemStyle}" >
                                         <Setter Property="FontSize" Value="11" />
@@ -569,10 +574,10 @@
                                 Background="Transparent"
                                 Height="5"
                                 Margin="20,0,0,0"/>
-                            
+
                             <!--Spectra file Summary-->
                             <DataGrid Name="spectraFileSummaryDataGrid" ItemsSource="{Binding}" Grid.Row="2" Margin="20,0,0,10" 
-                              Style="{StaticResource x:DataGridStyle}" ColumnHeaderStyle="{StaticResource DataGridColumnHeaderStyle}">
+                              Style="{StaticResource x:DataGridStyle}" ColumnHeaderStyle="{StaticResource DataGridColumnHeaderStyle}" PreviewKeyDown="Window_PreviewKeyDown">
                                 <DataGrid.RowStyle>
                                     <Style TargetType="{x:Type DataGridRow}" BasedOn="{StaticResource SpectraFileDataGridItemStyle}">
                                         <Setter Property="FontSize" Value="11" />
@@ -600,7 +605,8 @@
                             Margin="0,10,0,10"/>
 
                         <!--Task Summary-->
-                        <TreeView Name="taskSummary" ItemsSource="{Binding}" Grid.Column="2" Margin="0,10,20,10" MouseDoubleClick="TasksTreeView_MouseDoubleClick">
+                        <TreeView Name="taskSummary" ItemsSource="{Binding}" Grid.Column="2" Margin="0,10,20,10" MouseDoubleClick="TasksTreeView_MouseDoubleClick"
+                                  PreviewKeyDown="Window_PreviewKeyDown">
                             <TreeView.ItemContainerStyle>
                                 <Style TargetType="{x:Type TreeViewItem}">
                                     <Setter Property="FontSize" Value="13" />
@@ -813,11 +819,11 @@
 
                         <Button Grid.Row="6" Grid.Column="1" HorizontalContentAlignment="Left" BorderThickness="0" Click="MenuItem_Spritz_Click">
                             <StackPanel Orientation="Horizontal">
-                                <Image Width="20" Height="20" Margin="0,0,5,0"/>
+                                <Image Source="/Icons/spritz20.png" Width="20" Height="20" Margin="0,0,5,0"/>
                                 <TextBlock Text="Create sample-specific database with Spritz" VerticalAlignment="Center" />
                             </StackPanel>
                         </Button>
-                        
+
                         <Button Grid.Row="7" Grid.Column="1" HorizontalContentAlignment="Left" BorderThickness="0" Click="MenuItem_ProteomicsNewsBlog_Click">
                             <StackPanel Orientation="Horizontal">
                                 <Image Source="Icons/Blogger_20.bmp" Width="20" Height="20" Margin="0,0,5,0"/>

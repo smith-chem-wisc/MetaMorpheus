@@ -68,6 +68,7 @@ namespace MetaMorpheusGUI
             PrecursorMassToleranceTextBox.Text = task.CommonParameters.PrecursorMassTolerance.Value.ToString(CultureInfo.InvariantCulture);
             PrecursorMassToleranceComboBox.SelectedIndex = task.CommonParameters.PrecursorMassTolerance is AbsoluteTolerance ? 0 : 1;
             CustomFragmentationWindow = new CustomFragmentationWindow(task.CommonParameters.CustomIons);
+            writeIndexMzmlCheckbox.IsChecked = task.CalibrationParameters.WriteIndexedMzml;
 
             //writeIntermediateFilesCheckBox.IsChecked = task.CalibrationParameters.WriteIntermediateFiles;
 
@@ -291,6 +292,7 @@ namespace MetaMorpheusGUI
                 TheTask.CommonParameters = commonParamsToSave;
             }
 
+            TheTask.CalibrationParameters.WriteIndexedMzml = writeIndexMzmlCheckbox.IsChecked.Value;
             DialogResult = true;
         }
 
@@ -375,9 +377,9 @@ namespace MetaMorpheusGUI
                         {
                             MaxPeptideLengthTextBox.Text = "25";
                         }
-                        break;                    
+                        break;
                     case "top-down":
-                        if(UpdateGUISettings.UseTopDownRecommendedSettings())
+                        if (UpdateGUISettings.UseTopDownRecommendedSettings())
                         {
                             //many variables are not present in the calibrate task gui, but we modify them when saving
                             //uncheck all variable mods

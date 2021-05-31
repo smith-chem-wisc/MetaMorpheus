@@ -3,6 +3,7 @@ using MassSpectrometry;
 using Nett;
 using Proteomics;
 using Proteomics.AminoAcidPolymer;
+using Proteomics.ProteolyticDigestion;
 using System;
 using System.Collections.Generic;
 using System.Diagnostics;
@@ -24,6 +25,7 @@ namespace EngineLayer
         private static List<Modification> _AllModsKnown;
         private static HashSet<string> _AllModTypesKnown;
         private static List<Crosslinker> _KnownCrosslinkers;
+        public static List<Modification> ProteaseMods = new List<Modification>();
 
 
         //Characters that aren't amino acids, but are reserved for special uses (motifs, delimiters, mods, etc)
@@ -47,6 +49,7 @@ namespace EngineLayer
         public static IEnumerable<Modification> AllModsKnown { get { return _AllModsKnown.AsEnumerable(); } }
         public static IEnumerable<string> AllModTypesKnown { get { return _AllModTypesKnown.AsEnumerable(); } }
         public static Dictionary<string, Modification> AllModsKnownDictionary { get; private set; }
+        public static Dictionary<string, string> AvailableUniProtProteomes { get; private set; }
         public static Dictionary<string, DissociationType> AllSupportedDissociationTypes { get; private set; }
         public static List<string> SeparationTypes { get; private set; }
         public static string ExperimentalDesignFileName { get; private set; }
@@ -58,7 +61,7 @@ namespace EngineLayer
         public static void SetUpGlobalVariables()
         {
             Loaders.LoadElements();
-            AcceptedDatabaseFormats = new List<string> { ".fasta", ".fa", ".xml" };
+            AcceptedDatabaseFormats = new List<string> { ".fasta", ".fa", ".xml", ".msp" };
             AcceptedSpectraFormats = new List<string> { ".raw", ".mzml", ".mgf" };
             AnalyteType = "Peptide";
             _InvalidAminoAcids = new char[] { 'X', 'B', 'J', 'Z', ':', '|', ';', '[', ']', '{', '}', '(', ')', '+', '-' };
@@ -73,6 +76,7 @@ namespace EngineLayer
             LoadCustomAminoAcids();
             SetUpGlobalSettings();
             LoadDissociationTypes();
+            LoadAvailableProteomes();
         }
 
         public static void AddMods(IEnumerable<Modification> modifications, bool modsAreFromTheTopOfProteinXml)
@@ -392,9 +396,9 @@ namespace EngineLayer
                 AddMods(PtmListLoader.ReadModsFromFile(modFile, out var errorMods), false);
             }
 
-            AddMods(UnimodDeserialized.OfType<Modification>(), false);
             AddMods(UniprotDeseralized.OfType<Modification>(), false);
-
+            AddMods(UnimodDeserialized.OfType<Modification>(), false);
+            
             foreach (Modification mod in AllModsKnown)
             {
                 if (!AllModsKnownDictionary.ContainsKey(mod.IdWithMotif))
@@ -403,6 +407,8 @@ namespace EngineLayer
                 }
                 // no error thrown if multiple mods with this ID are present - just pick one
             }
+            ProteaseMods = UsefulProteomicsDatabases.PtmListLoader.ReadModsFromFile(Path.Combine(DataDir, @"Mods", @"ProteaseMods.txt"), out var errors).ToList();
+            ProteaseDictionary.Dictionary = ProteaseDictionary.LoadProteaseDictionary(Path.Combine(DataDir, @"ProteolyticDigestion", @"proteases.tsv"), ProteaseMods);
         }
 
         private static void LoadGlycans()
@@ -458,12 +464,17 @@ namespace EngineLayer
                 { DissociationType.HCD.ToString(), DissociationType.HCD },
                 { DissociationType.EThcD.ToString(), DissociationType.EThcD },
                 { DissociationType.Custom.ToString(), DissociationType.Custom },
-                { DissociationType.LowCID.ToString(), DissociationType.LowCID}
+                { DissociationType.LowCID.ToString(), DissociationType.LowCID},
 
-                // TODO: allow reading from scan header (autodetect dissociation type)
+                // allow reading from scan header (autodetect dissociation type)
+                { DissociationType.Autodetect.ToString(), DissociationType.Autodetect}
             };
         }
 
+        private static void LoadAvailableProteomes()
+        {
+            AvailableUniProtProteomes = ProteinDbRetriever.UniprotProteomesList(Path.Combine(DataDir,@"Proteomes",@"availableUniProtProteomes.txt.gz"));
+        }
         private static void SetUpGlobalSettings()
         {
             // save/load settings

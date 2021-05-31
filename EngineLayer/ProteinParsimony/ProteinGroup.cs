@@ -3,6 +3,7 @@ using Proteomics;
 using Proteomics.ProteolyticDigestion;
 using System.Collections.Generic;
 using System.Globalization;
+using System.IO;
 using System.Linq;
 using System.Text;
 
@@ -142,9 +143,31 @@ namespace EngineLayer
             sb.Append("Modification Info List" + "\t");
             if (FilesForQuantification != null)
             {
-                for (int i = 0; i < FilesForQuantification.Count; i++)
+                bool unfractionated = FilesForQuantification.Select(p => p.Fraction).Distinct().Count() == 1;
+                bool conditionsUndefined = FilesForQuantification.All(p => string.IsNullOrEmpty(p.Condition));
+
+                // this is a hacky way to test for SILAC-labeled data...
+                // Currently SILAC will report 1 column of intensities per label per spectra file, and is NOT summarized
+                // into biorep-level intensity values. the SILAC code uses the "condition" field to organize this info,
+                // even if the experimental design is not defined by the user. So the following bool is a way to distinguish
+                // between experimental design being used in SILAC automatically vs. being defined by the user
+                bool silacExperimentalDesign = FilesForQuantification.Any(p => !File.Exists(p.FullFilePathWithExtension));
+
+                foreach (var sampleGroup in FilesForQuantification.GroupBy(p => p.Condition))
                 {
-                    sb.Append("Intensity_" + FilesForQuantification[i].FilenameWithoutExtension + '\t');
+                    foreach (var sample in sampleGroup.GroupBy(p => p.BiologicalReplicate).OrderBy(p => p.Key))
+                    {
+                        if ((conditionsUndefined && unfractionated) || silacExperimentalDesign)
+                        {
+                            // if the data is unfractionated and the conditions haven't been defined, just use the file name as the intensity header
+                            sb.Append("Intensity_" + sample.First().FilenameWithoutExtension + "\t");
+                        }
+                        else
+                        {
+                            // if the data is fractionated and/or the conditions have been defined, label the header w/ the condition and biorep number
+                            sb.Append("Intensity_" + sample.First().Condition + "_" + (sample.First().BiologicalReplicate + 1) + "\t");
+                        }
+                    }
                 }
             }
             sb.Append("Number of PSMs" + '\t');
@@ -253,17 +276,22 @@ namespace EngineLayer
             // MS1 intensity (retrieved from FlashLFQ in the SearchTask)
             if (IntensitiesByFile != null && FilesForQuantification != null)
             {
-                foreach (var file in FilesForQuantification)
+                foreach (var sampleGroup in FilesForQuantification.GroupBy(p => p.Condition))
                 {
-                    if (IntensitiesByFile[file] > 0)
+                    foreach (var sample in sampleGroup.GroupBy(p => p.BiologicalReplicate).OrderBy(p => p.Key))
                     {
-                        sb.Append(IntensitiesByFile[file]);
+                        // if the samples are fractionated, the protein will only have 1 intensity in the first fraction
+                        // and the other fractions will be zero. we could find the first/only fraction with an intensity,
+                        // but simply summing the fractions is easier than finding the single non-zero value
+                        double summedIntensity = sample.Sum(file => IntensitiesByFile[file]);
+
+                        if (summedIntensity > 0)
+                        {
+                            sb.Append(summedIntensity);
+                        }
+
+                        sb.Append("\t");
                     }
-                    else
-                    {
-                        sb.Append("");
-                    }
-                    sb.Append("\t");
                 }
             }
 

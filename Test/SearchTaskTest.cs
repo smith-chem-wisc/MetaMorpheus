@@ -170,7 +170,7 @@ namespace Test
 
         /// <summary>
         /// Tests that normalization in a search task works properly with an Experimental Design file read in,
-        /// and crashes when that file is absent
+        /// and skips quantification when that file is absent
         /// </summary>
         [Test]
         public static void PostSearchNormalizeTest()
@@ -185,22 +185,32 @@ namespace Test
 
             string myFile = Path.Combine(TestContext.CurrentContext.TestDirectory, @"TestData\PrunedDbSpectra.mzml");
             string myDatabase = Path.Combine(TestContext.CurrentContext.TestDirectory, @"TestData\DbForPrunedDb.fasta");
-            string folderPath = Path.Combine(TestContext.CurrentContext.TestDirectory, @"TestNormalization");
-            string filePath = Path.Combine(TestContext.CurrentContext.TestDirectory, @"TestData\ExperimentalDesign.tsv");
-            using (StreamWriter output = new StreamWriter(filePath))
+            string folderPath = Path.Combine(TestContext.CurrentContext.TestDirectory, @"TestNormalizationExperDesign");
+            string experimentalDesignFile = Path.Combine(TestContext.CurrentContext.TestDirectory, @"TestData\ExperimentalDesign.tsv");
+            using (StreamWriter output = new StreamWriter(experimentalDesignFile))
             {
                 output.WriteLine("FileName\tCondition\tBiorep\tFraction\tTechrep");
-                output.WriteLine("PrunedDbSpectra" + "\t" + "condition" + "\t" + "1" + "\t" + "1" + "\t" + "1");
+                output.WriteLine("PrunedDbSpectra.mzml" + "\t" + "condition" + "\t" + "1" + "\t" + "1" + "\t" + "1");
             }
             DbForTask db = new DbForTask(myDatabase, false);
-            Directory.CreateDirectory(folderPath);
 
+            // run the task
+            Directory.CreateDirectory(folderPath);
             searchTask.RunTask(folderPath, new List<DbForTask> { db }, new List<string> { myFile }, "normal");
 
-            File.Delete(filePath);
+            Directory.Delete(folderPath, true);
 
-            Assert.That(() => searchTask.RunTask(folderPath, new List<DbForTask> { db }, new List<string> { myFile }, "normal"),
-               Throws.TypeOf<MetaMorpheusException>());
+            // delete the exper design and try again. this should skip quantification
+            File.Delete(experimentalDesignFile);
+
+            // run the task
+            Directory.CreateDirectory(folderPath);
+            searchTask.RunTask(folderPath, new List<DbForTask> { db }, new List<string> { myFile }, "normal");
+
+            // PSMs should be present but no quant output
+            Assert.That(!File.Exists(Path.Combine(folderPath, "AllQuantifiedPeptides.tsv")));
+            Assert.That(File.Exists(Path.Combine(folderPath, "AllPSMs.psmtsv")));
+
             Directory.Delete(folderPath, true);
         }
 
@@ -366,7 +376,7 @@ namespace Test
 
             MzIdentMLWriter.WriteMzIdentMl(new List<PeptideSpectralMatch> { psm }, new List<ProteinGroup>(), new List<Modification>(),
                 new List<Modification>(), new List<SilacLabel>(), new List<Protease>(), 0, new PpmTolerance(20), new PpmTolerance(20),
-                0, path);
+                0, path, true);
 
             var file = File.ReadAllLines(path);
             bool found = false;
@@ -389,7 +399,7 @@ namespace Test
 
             ModificationMotif.TryGetMotif("T", out var motif);
 
-            Modification fakeMod = new Modification(_originalId: "FAKE", _accession: "FAKE_MOD_ACCESSION", _modificationType: "fake", 
+            Modification fakeMod = new Modification(_originalId: "FAKE", _accession: "FAKE_MOD_ACCESSION", _modificationType: "fake",
                 _target: motif, _locationRestriction: "Anywhere.", _monoisotopicMass: 0,
                 _databaseReference: new Dictionary<string, IList<string>> { { "PSI-MOD", new List<string> { "FAKE_MOD_ACCESSION" } } });
 
@@ -408,7 +418,7 @@ namespace Test
 
             MzIdentMLWriter.WriteMzIdentMl(new List<PeptideSpectralMatch> { psm }, new List<ProteinGroup>(), new List<Modification>(),
                 new List<Modification>(), new List<SilacLabel>(), new List<Protease>(), 0, new PpmTolerance(20), new PpmTolerance(20),
-                0, path);
+                0, path, true);
 
             var file = File.ReadAllLines(path);
             bool found = false;
@@ -421,7 +431,82 @@ namespace Test
             }
             Assert.That(found);
 
+            // test again w/ NOT appending motifs onto mod names
+            MzIdentMLWriter.WriteMzIdentMl(new List<PeptideSpectralMatch> { psm }, new List<ProteinGroup>(), new List<Modification>(),
+                new List<Modification>(), new List<SilacLabel>(), new List<Protease>(), 0, new PpmTolerance(20), new PpmTolerance(20),
+                0, path, false);
+
+            file = File.ReadAllLines(path);
+            found = false;
+            foreach (var line in file)
+            {
+                if (line.Contains("FAKE") && !line.Contains(" on ") && line.Contains("PSI-MOD:" + resIdAccession))
+                {
+                    found = true;
+                }
+            }
+            Assert.That(found);
+
             File.Delete(path);
+        }
+
+        /// <summary>
+        /// 
+        /// </summary>
+        [Test]
+        public static void TestAutodetectDissocationTypeFromScanHeader()
+        {
+            SearchTask searchTask = new SearchTask()
+            {
+                SearchParameters = new SearchParameters
+                {
+                    DoQuantification = false // quant disabled just to save some time
+                },
+
+                // use DissociationType.Autodetect as the dissociation type. this signals to the search that the dissociation type
+                // should be taken from the scan header on a scan-specific basis
+                CommonParameters = new CommonParameters(dissociationType: DissociationType.Autodetect)
+            };
+
+            string myFile = Path.Combine(TestContext.CurrentContext.TestDirectory, @"TestData\SmallCalibratible_Yeast.mzML");
+            string myDatabase = Path.Combine(TestContext.CurrentContext.TestDirectory, @"TestData\smalldb.fasta");
+            string folderPath = Path.Combine(TestContext.CurrentContext.TestDirectory, @"TestAutodetectDissocationTypeFromScanHeader");
+
+            DbForTask db = new DbForTask(myDatabase, false);
+
+            // run the task
+            var autoTaskFolder = Path.Combine(folderPath, @"Autodetect");
+            Directory.CreateDirectory(autoTaskFolder);
+            searchTask.RunTask(autoTaskFolder, new List<DbForTask> { db }, new List<string> { myFile }, "");
+
+            // run identical task but select the HCD dissociation type instead of autodetect
+            var hcdTaskFolder = Path.Combine(folderPath, @"HCD");
+            Directory.CreateDirectory(hcdTaskFolder);
+            searchTask = new SearchTask()
+            {
+                SearchParameters = new SearchParameters
+                {
+                    DoQuantification = false
+                },
+
+                CommonParameters = new CommonParameters(dissociationType: DissociationType.HCD)
+            };
+
+            searchTask.RunTask(hcdTaskFolder, new List<DbForTask> { db }, new List<string> { myFile }, "");
+
+            // check search results
+            var psmFileAutodetect = File.ReadAllLines(Path.Combine(autoTaskFolder, "AllPSMs.psmtsv"));
+            var psmFileHcd = File.ReadAllLines(Path.Combine(hcdTaskFolder, "AllPSMs.psmtsv"));
+
+            Assert.That(psmFileAutodetect.Length == psmFileHcd.Length);
+
+            for (int i = 0; i < psmFileAutodetect.Length; i++)
+            {
+                Assert.That(psmFileAutodetect[i].Equals(psmFileHcd[i]));
+            }
+
+            // clean up
+            Directory.Delete(folderPath, true);
         }
     }
 }

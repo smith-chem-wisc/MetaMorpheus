@@ -63,7 +63,7 @@ namespace MetaMorpheusCommandLine
 
             Console.WriteLine(helpText);
 
-            if (errs.Any())
+            if (errs.Any(x => x.Tag != ErrorType.HelpRequestedError))
             {
                 errorCode = 1;
             }
@@ -241,6 +241,77 @@ namespace MetaMorpheusCommandLine
 
             List<string> startingRawFilenameList = settings.Spectra.Select(b => Path.GetFullPath(b)).ToList();
             List<DbForTask> startingXmlDbFilenameList = settings.Databases.Select(b => new DbForTask(Path.GetFullPath(b), IsContaminant(b))).ToList();
+
+            // check that experimental design is defined if normalization is enabled
+            var searchTasks = taskList
+                .Where(p => p.Item2.TaskType == MyTask.Search)
+                .Select(p => (SearchTask)p.Item2);
+
+            string pathToExperDesign = Directory.GetParent(startingRawFilenameList.First()).FullName;
+            pathToExperDesign = Path.Combine(pathToExperDesign, GlobalVariables.ExperimentalDesignFileName);
+
+            if (!File.Exists(pathToExperDesign))
+            {
+                if (searchTasks.Any(p => p.SearchParameters.Normalize))
+                {
+                    if (settings.Verbosity == CommandLineSettings.VerbosityType.minimal || settings.Verbosity == CommandLineSettings.VerbosityType.normal)
+                    {
+                        Console.WriteLine("Experimental design file was missing! This must be defined to do normalization. Download a template from https://github.com/smith-chem-wisc/MetaMorpheus/wiki/Experimental-Design");
+                    }
+                    return 5;
+                }
+            }
+            else
+            {
+                ExperimentalDesign.ReadExperimentalDesign(pathToExperDesign, startingRawFilenameList, out var errors);
+
+                if (errors.Any())
+                {
+                    if (searchTasks.Any(p => p.SearchParameters.Normalize))
+                    {
+                        if (settings.Verbosity == CommandLineSettings.VerbosityType.minimal || settings.Verbosity == CommandLineSettings.VerbosityType.normal)
+                        {
+                            foreach (var error in errors)
+                            {
+                                Console.WriteLine(error);
+                            }
+                        }
+                        return 5;
+                    }
+                    else
+                    {
+                        if (settings.Verbosity == CommandLineSettings.VerbosityType.minimal || settings.Verbosity == CommandLineSettings.VerbosityType.normal)
+                        {
+                            Console.WriteLine("An experimental design file was found, but an error " +
+                            "occurred reading it. Do you wish to continue with an empty experimental design? (This will delete your experimental design file) y/n" +
+                            "\nThe error was: " + errors.First());
+
+                            var result = Console.ReadLine();
+
+                            if (result.ToLowerInvariant() == "y" || result.ToLowerInvariant() == "yes")
+                            {
+                                File.Delete(pathToExperDesign);
+                            }
+                            else
+                            {
+                                return 5;
+                            }
+                        }
+                        else
+                        {
+                            // just continue on if verbosity is on "none"
+                            File.Delete(pathToExperDesign);
+                        }
+                    }
+                }
+                else
+                {
+                    if (settings.Verbosity == CommandLineSettings.VerbosityType.minimal || settings.Verbosity == CommandLineSettings.VerbosityType.normal)
+                    {
+                        Console.WriteLine("Read ExperimentalDesign.tsv successfully");
+                    }
+                }
+            }
 
             EverythingRunnerEngine a = new EverythingRunnerEngine(taskList, startingRawFilenameList, startingXmlDbFilenameList, settings.OutputFolder);
 

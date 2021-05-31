@@ -45,7 +45,11 @@ namespace MetaMorpheusGUI
             var knownProductTypes = Enum.GetValues(typeof(ProductType)).Cast<ProductType>().ToList();
             knownProductTypes.Remove(ProductType.D);
             knownProductTypes.Remove(ProductType.M);
+            knownProductTypes.Remove(ProductType.Y);
+            knownProductTypes.Remove(ProductType.Ycore);
             knownProductTypes.Remove(ProductType.zPlusOne);
+            knownProductTypes.Remove(ProductType.Ycore);
+            knownProductTypes.Remove(ProductType.Y);
 
             foreach (ProductType productType in knownProductTypes)
             {

@@ -53,10 +53,10 @@ namespace Test
             var theStringResult = task.RunTask(outputFolder, new List<DbForTask> { new DbForTask(xmlName, false) }, new List<string> { mzmlName }, "taskId1").ToString();
 
             //test proteins
-            string[] output = File.ReadAllLines(TestContext.CurrentContext.TestDirectory + @"/TestSilac/AllProteinGroups.tsv");
+            string[] output = File.ReadAllLines(TestContext.CurrentContext.TestDirectory + @"/TestSilac/AllQuantifiedProteinGroups.tsv");
             Assert.AreEqual(output.Length, 2);
             Assert.IsTrue(output[0].Contains("Modification Info List\tIntensity_silac(R+3.988)\tIntensity_silac(R+10.008)")); //test that two files were made and no light file
-            Assert.IsTrue(output[1].Contains("875000\t437500")); //test the heavier intensity is half that of the heavy (per the raw file)
+            Assert.IsTrue(output[1].Contains("1237436.8670764582\t618718.4335382291")); //test the heavier intensity is half that of the heavy (per the raw file)
 
             //test peptides
             output = File.ReadAllLines(TestContext.CurrentContext.TestDirectory + @"/TestSilac/AllQuantifiedPeptides.tsv");
@@ -124,10 +124,10 @@ namespace Test
             task.RunTask(outputFolder, new List<DbForTask> { new DbForTask(xmlName, false) }, new List<string> { mzmlName }, "taskId1");
 
             //test proteins
-            string[] output = File.ReadAllLines(TestContext.CurrentContext.TestDirectory + @"/TestSilac/AllProteinGroups.tsv");
+            string[] output = File.ReadAllLines(TestContext.CurrentContext.TestDirectory + @"/TestSilac/AllQuantifiedProteinGroups.tsv");
             Assert.AreEqual(output.Length, 2);
             Assert.IsTrue(output[0].Contains("Intensity_silac\tIntensity_silac(K+8.014 & R+6.020)")); //test that two files were made
-            Assert.IsTrue(output[1].Contains("1375000\t687500")); //test the heavy intensity is half that of the light (per the raw file)
+            Assert.IsTrue(output[1].Contains("1944543.6482630058\t972271.8241315029")); //test the heavy intensity is half that of the light (per the raw file)
 
             //test peptides
             output = File.ReadAllLines(TestContext.CurrentContext.TestDirectory + @"/TestSilac/AllQuantifiedPeptides.tsv");
@@ -187,14 +187,15 @@ namespace Test
             };
 
             List<PeptideWithSetModifications> lightPeptide = new List<PeptideWithSetModifications> { new PeptideWithSetModifications("PEPTIDEK", new Dictionary<string, Modification>()) }; //has the additional, but not the original
-            List<List<double>> massDifferences = new List<List<double>> { new List<double> { (heavyLysine.MonoisotopicMass - lightLysine.MonoisotopicMass) } };
+            List<List<double>> massDifferences1 = new List<List<double>> { new List<double> { (heavyLysine.MonoisotopicMass - lightLysine.MonoisotopicMass) } };
+            List<List<double>> massDifferences2 = new List<List<double>> { new List<double> { (heavyLysine.MonoisotopicMass - lightLysine.MonoisotopicMass) } };
 
-            MsDataFile myMsDataFile1 = new TestDataFile(lightPeptide, massDifferences);
+            MsDataFile myMsDataFile1 = new TestDataFile(lightPeptide, massDifferences1);
             string mzmlName = @"silac.mzML";
             IO.MzML.MzmlMethods.CreateAndWriteMyMzmlWithCalibratedSpectra(myMsDataFile1, mzmlName, false);
 
             //create another file to test the handling is done correctly
-            MsDataFile myMsDataFile2 = new TestDataFile(lightPeptide, massDifferences);
+            MsDataFile myMsDataFile2 = new TestDataFile(lightPeptide, massDifferences2);
             string mzmlName2 = @"silacPart2.mzML";
             IO.MzML.MzmlMethods.CreateAndWriteMyMzmlWithCalibratedSpectra(myMsDataFile2, mzmlName2, false);
 
@@ -210,10 +211,10 @@ namespace Test
 
             ///Normal Peptide
             //test proteins
-            string[] output = File.ReadAllLines(TestContext.CurrentContext.TestDirectory + @"/TestSilac/AllProteinGroups.tsv");
+            string[] output = File.ReadAllLines(TestContext.CurrentContext.TestDirectory + @"/TestSilac/AllQuantifiedProteinGroups.tsv");
             Assert.AreEqual(output.Length, 2);
-            Assert.IsTrue(output[0].Contains("Intensity_silac\tIntensity_silac(K+8.014)")); //test that two files were made
-            Assert.IsTrue(output[1].Contains("875000\t437500")); //test the heavy intensity is half that of the light (per the raw file)
+            Assert.IsTrue(output[0].Contains("Intensity_silac\tIntensity_silacPart2\tIntensity_silac(K+8.014)\tIntensity_silacPart2(K+8.014)")); //test that two files were made
+            Assert.IsTrue(output[1].Contains("1237436.8670764582\t1237436.8670764582\t618718.4335382291\t618718.4335382291")); //test the heavy intensity is half that of the light (per the raw file)
 
             //test peptides
             output = File.ReadAllLines(TestContext.CurrentContext.TestDirectory + @"/TestSilac/AllQuantifiedPeptides.tsv");
@@ -241,8 +242,8 @@ namespace Test
 
             //make a heavy peptide
             List<PeptideWithSetModifications> heavyPeptide = new List<PeptideWithSetModifications> { new PeptideWithSetModifications("PEPTIDEa", new Dictionary<string, Modification>()) }; //has the additional, but not the original
-            massDifferences = new List<List<double>> { new List<double> { (lightLysine.MonoisotopicMass - heavyLysine.MonoisotopicMass) } }; //have to reset because it gets modified
-            myMsDataFile1 = new TestDataFile(heavyPeptide, massDifferences);
+            massDifferences1 = new List<List<double>> { new List<double> { (lightLysine.MonoisotopicMass - heavyLysine.MonoisotopicMass) } }; //have to reset because it gets modified
+            myMsDataFile1 = new TestDataFile(heavyPeptide, massDifferences1);
             IO.MzML.MzmlMethods.CreateAndWriteMyMzmlWithCalibratedSpectra(myMsDataFile1, mzmlName, false);
 
             //make an ambiguous database
@@ -446,7 +447,7 @@ namespace Test
             Assert.IsTrue(output[1].Contains("\t2625000\t6125000\t")); //test the light intensity is not negative.
             Assert.IsTrue(output[2].Contains("\t10500000\t5250000\t")); //test intensities. The observation is 9/6/3.
 
-            output = File.ReadAllLines(TestContext.CurrentContext.TestDirectory + @"/TestSilac/AllProteinGroups.tsv");
+            output = File.ReadAllLines(TestContext.CurrentContext.TestDirectory + @"/TestSilac/AllQuantifiedProteinGroups.tsv");
             //test sequence coverage and output worked from multiple labels
             Assert.IsTrue(output[1].Contains("\tPEPEPEPTK(+1.994)|PEPTK(+8.014)IDEK(+8.014)\t\t2\t2\t0.78261\tPEPEPEPTKidekPEPTKIDEKa\tPEPEPEPTKidekPEPTKIDEKa\t"));
 
@@ -502,7 +503,7 @@ namespace Test
             Assert.IsTrue(output.Length == 4);
             Assert.IsTrue(output[1].Contains("\tPEPTK(+8.014)IDEK\t") && output[1].Contains("\t875000\t")); //Doesn't matter where the +8.014 is, just matters that it's mixed (one is light, one is heavy)
 
-            output = File.ReadAllLines(TestContext.CurrentContext.TestDirectory + @"/TestSilac/AllProteinGroups.tsv");
+            output = File.ReadAllLines(TestContext.CurrentContext.TestDirectory + @"/TestSilac/AllQuantifiedProteinGroups.tsv");
             Assert.IsTrue(output[1].Contains("\t\t\t\t1\t")); //check that no intensity is present when only a single missed cleavage value exists
             Assert.IsTrue(output[1].Contains("\t1\tPEPTKIDEK\tPEPTKIDEK\t")); //check that the sequence coverage isn't PEPTaIDEa
             Assert.IsTrue(output[1].Contains("\t1\tPEPTKIDEK(+8.014)\t")); //check that the peptide id'd has the +8
