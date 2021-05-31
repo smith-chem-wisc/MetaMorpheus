@@ -3,7 +3,7 @@ using TaskLayer;
 
 namespace MetaMorpheusGUI
 {
-    internal class ProteinDbForDataGrid
+    public class ProteinDbForDataGrid
     {
         #region Public Constructors
 
@@ -18,6 +18,8 @@ namespace MetaMorpheusGUI
             }
             FileName = Path.GetFileName(FilePath);
         }
+
+
 
         public ProteinDbForDataGrid(DbForTask uu)
         {
