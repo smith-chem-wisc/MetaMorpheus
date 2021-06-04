@@ -348,7 +348,9 @@ namespace EngineLayer
                     }
                     var allPeptidesFromUniqueProteinsSet = allPeptidesFromUniqueProteinsList.ToHashSet();
                     var sharedPepsForProt = proteinToPepSeqMatch[protein.Key];
-                    if (sharedPepsForProt.IsProperSubsetOf(allPeptidesFromUniqueProteinsSet))
+                    //here if i just make it so that the shared protein has to overlap with the peptides from unique instead of fully overlapping ---
+                    // would that fix the issue? would it cause any problems?
+                    if (sharedPepsForProt.Overlaps(allPeptidesFromUniqueProteinsSet))
                     {
                         candidateRescueProteins.Add(protein.Key);
                     }
@@ -569,7 +571,7 @@ namespace EngineLayer
 
                                                 var a = proteinToPepSeqMatch[otherProtein];
                                                 var b = proteinToPepSeqMatch[parsimonyProtein];
-                                                var sub = a.IsProperSubsetOf(b);
+                                                var sub = a.Overlaps(b);
                                                 if (sub)
                                                 {
                                                     if (otherProteinWeight >= _cpmThreshold)

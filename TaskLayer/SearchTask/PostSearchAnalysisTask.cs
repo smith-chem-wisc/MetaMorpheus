@@ -1441,21 +1441,22 @@ namespace TaskLayer
 
         private void WriteProteinGroupsToTsv(List<EngineLayer.ProteinGroup> proteinGroups, string filePath, List<string> nestedIds, double qValueCutoff)
         {
-            if (proteinGroups != null && proteinGroups.Any())
+            var distinctProteinGroups = proteinGroups.Distinct().ToList();
+            if (distinctProteinGroups != null && distinctProteinGroups.Any())
             {
                 using (StreamWriter output = new StreamWriter(filePath))
                 {
-                    output.WriteLine(proteinGroups.First().GetTabSeparatedHeader());
-                    for (int i = 0; i < proteinGroups.Count; i++)
+                    output.WriteLine(distinctProteinGroups.First().GetTabSeparatedHeader());
+                    for (int i = 0; i < distinctProteinGroups.Count; i++)
                     {
-                        if ((!Parameters.SearchParameters.WriteDecoys && proteinGroups[i].IsDecoy) ||
-                            (!Parameters.SearchParameters.WriteContaminants && proteinGroups[i].IsContaminant))
+                        if ((!Parameters.SearchParameters.WriteDecoys && distinctProteinGroups[i].IsDecoy) ||
+                            (!Parameters.SearchParameters.WriteContaminants && distinctProteinGroups[i].IsContaminant))
                         {
                             continue;
                         }
-                        else if (proteinGroups[i].QValue <= qValueCutoff)
+                        else if (distinctProteinGroups[i].QValue <= qValueCutoff)
                         {
-                            output.WriteLine(proteinGroups[i]);
+                            output.WriteLine(distinctProteinGroups[i]);
                         }
                     }
                 }
