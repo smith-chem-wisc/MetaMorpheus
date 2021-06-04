@@ -186,7 +186,7 @@ namespace EngineLayer
             //TL;DR 99% of the protein output is from the Picked TDS, but a small fraction is from the Classic TDS.
             sortedProteinGroups.AddRange(rescuedProteins.Where(x => !x.IsDecoy));
 
-            return sortedProteinGroups.OrderBy(b => b.QValue).ToList();
+            return sortedProteinGroups.Distinct().OrderBy(b => b.QValue).ToList();
         }
 
         private void AssignQValuesToProteins(List<ProteinGroup> sortedProteinGroups)
