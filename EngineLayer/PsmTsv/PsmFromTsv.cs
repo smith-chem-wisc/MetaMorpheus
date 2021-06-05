@@ -39,6 +39,7 @@ namespace EngineLayer
         public string Notch { get; }
         public string BaseSeq { get; }
         public string EssentialSeq { get; }
+        public string AmbiguityLevel { get; }
         public string MissedCleavage { get; }
         public string PeptideMonoMass { get; }
         public string MassDiffDa { get; }
@@ -89,7 +90,7 @@ namespace EngineLayer
 
             //Required properties
             FileNameWithoutExtension = spl[parsedHeader[PsmTsvHeader.FileName]].Trim();
-            
+
             // remove file format, e.g., .raw, .mzML, .mgf
             // this is more robust but slower than Path.GetFileNameWithoutExtension
             if (FileNameWithoutExtension.Contains('.'))
@@ -122,6 +123,7 @@ namespace EngineLayer
             DecoyContamTarget = spl[parsedHeader[PsmTsvHeader.DecoyContaminantTarget]].Trim();
             QValue = double.Parse(spl[parsedHeader[PsmTsvHeader.QValue]].Trim(), CultureInfo.InvariantCulture);
             MatchedIons = (spl[parsedHeader[PsmTsvHeader.MatchedIonMzRatios]].StartsWith("{")) ? ReadChildScanMatchedIons(spl[parsedHeader[PsmTsvHeader.MatchedIonMzRatios]].Trim(), BaseSeq).First().Value : ReadFragmentIonsFromString(spl[parsedHeader[PsmTsvHeader.MatchedIonMzRatios]].Trim(), BaseSeq);
+            AmbiguityLevel = (parsedHeader[PsmTsvHeader.AmbiguityLevel] < 0) ? null : spl[parsedHeader[PsmTsvHeader.AmbiguityLevel]].Trim();
 
             //For general psms
             TotalIonCurrent = (parsedHeader[PsmTsvHeader.TotalIonCurrent] < 0) ? null : (double?)double.Parse(spl[parsedHeader[PsmTsvHeader.TotalIonCurrent]].Trim(), CultureInfo.InvariantCulture);
@@ -146,7 +148,6 @@ namespace EngineLayer
             RetentionTime = (parsedHeader[PsmTsvHeader.Ms2ScanRetentionTime] < 0) ? null : (double?)double.Parse(spl[parsedHeader[PsmTsvHeader.Ms2ScanRetentionTime]].Trim(), CultureInfo.InvariantCulture);
             PEP = double.Parse(spl[parsedHeader[PsmTsvHeader.PEP]].Trim(), CultureInfo.InvariantCulture);
             PEP_QValue = double.Parse(spl[parsedHeader[PsmTsvHeader.PEP_QValue]].Trim(), CultureInfo.InvariantCulture);
-
             VariantCrossingIons = findVariantCrossingIons();
 
             //For crosslinks
