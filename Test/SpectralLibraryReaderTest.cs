@@ -248,11 +248,15 @@ namespace Test
             var librarySpectra = testLibraryWithoutDecoy.GetAllLibrarySpectra().ToList();
 
             Assert.That(librarySpectra.Count == 5);
-            Assert.That(testLibraryWithoutDecoy.TryGetSpectrum("VGIVPGEVIAPGM[Common Variable:Oxidation on M]R", 3, out var spectrum));
-            Assert.That(testLibraryWithoutDecoy.TryGetSpectrum("C[Common Fixed:Carbamidomethyl on C]TSC[Common Fixed:Carbamidomethyl on C]NGQGIKFVTR", 3, out spectrum));
+            Assert.That(testLibraryWithoutDecoy.TryGetSpectrum("VGIVPGEVIAPGM[Common Variable:Oxidation on M]R", 3, out var spectrum1));
+            Assert.That(testLibraryWithoutDecoy.TryGetSpectrum("C[Common Fixed:Carbamidomethyl on C]TSC[Common Fixed:Carbamidomethyl on C]NGQGIKFVTR", 3, out var spectrum2));
+            Assert.AreEqual(spectrum2.PrecursorMz, 543.2608252287667);
+            Assert.AreEqual(spectrum2.RetentionTime, 2789.812255859375);
 
             testLibraryWithoutDecoy.TryGetSpectrum("YHPDKNPSEEAAEK", 3, out var test1);
 
+            Assert.AreEqual(test1.PrecursorMz, 538.9179945621);
+            Assert.AreEqual(test1.RetentionTime, 1361.375244140625);
             Assert.AreEqual(test1.ChargeState, 3);
 
             var frags = new List<(double mz, double intensity, ProductType ProductType, int fragmentNumber, int charge, double ppm)>
@@ -291,11 +295,16 @@ namespace Test
             librarySpectra = testLibraryWithoutDecoy.GetAllLibrarySpectra().ToList();
 
             Assert.That(librarySpectra.Count == 5);
-            Assert.That(testLibraryWithoutDecoy.TryGetSpectrum("VGIVPGEVIAPGM[Common Variable:Oxidation on M]R", 3, out spectrum));
-            Assert.That(testLibraryWithoutDecoy.TryGetSpectrum("C[Common Fixed:Carbamidomethyl on C]TSC[Common Fixed:Carbamidomethyl on C]NGQGIKFVTR", 3, out spectrum));
+            Assert.That(testLibraryWithoutDecoy.TryGetSpectrum("VGIVPGEVIAPGM[Common Variable:Oxidation on M]R", 3, out var spectrum3));
+            Assert.That(testLibraryWithoutDecoy.TryGetSpectrum("C[Common Fixed:Carbamidomethyl on C]TSC[Common Fixed:Carbamidomethyl on C]NGQGIKFVTR", 3, out var spectrum4));
+            Assert.AreEqual(spectrum4.PrecursorMz, 543.2608252287667);
+            Assert.AreEqual(spectrum4.RetentionTime, 2789.812255859375);
+
 
             testLibraryWithoutDecoy.TryGetSpectrum("YHPDKNPSEEAAEK", 3, out test1);
 
+            Assert.AreEqual(test1.PrecursorMz, 538.9179945621);
+            Assert.AreEqual(test1.RetentionTime, 1361.375244140625);
             Assert.AreEqual(test1.ChargeState, 3);
             double maxOfIntensity = frags.Select(p => p.intensity).ToList().Max();
             for (int i = 0; i < frags.Count; i++)

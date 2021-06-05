@@ -410,41 +410,22 @@ namespace EngineLayer
                     }
 
                 }
-                else if (line.StartsWith("MW", StringComparison.InvariantCultureIgnoreCase))
-                {
-                    split = line.Split(mwSplit);
-
-                    // get precursor m/z
-                    precursorMz = double.Parse(split[1].Trim(), CultureInfo.InvariantCulture);
-                }
                 else if (line.StartsWith("Comment", StringComparison.InvariantCultureIgnoreCase))
                 {
                     split = line.Split(commentSplit);
 
-                    // get precursor m/z if not defined yet
-                    if (precursorMz == 0)
+                    // get precursor m/z in comment
+                    int indOfParent = Array.IndexOf(split, "Parent");
+                    if (indOfParent > 0)
                     {
-                        int indOfParent = Array.IndexOf(split, "Parent");
-                        if (indOfParent > 0)
-                        {
-                            precursorMz = double.Parse(split[indOfParent + 1]);
-                        }
+                        precursorMz = double.Parse(split[indOfParent + 1]);
                     }
 
                     // get RT
-                    int indOfRt = Array.IndexOf(split, "iRT");
+                    int indOfRt = Array.IndexOf(split, "RTInSeconds");
                     if (indOfRt > 0)
                     {
                         rt = double.Parse(split[indOfRt + 1]);
-                    }
-                    else
-                    {
-                        indOfRt = Array.IndexOf(split, "RT");
-
-                        if (indOfRt > 0)
-                        {
-                            rt = double.Parse(split[indOfRt + 1]);
-                        }
                     }
                 }
                 else if (line.StartsWith("Num peaks", StringComparison.InvariantCultureIgnoreCase))
