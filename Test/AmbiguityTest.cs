@@ -99,8 +99,8 @@ namespace Test
             //check that the psm file shows it's both a target and a contaminant
             string psmLine = File.ReadAllLines(Path.Combine(outputFolder, "task1", "AllPSMs.psmtsv"))[1];
             string[] splitLine = psmLine.Split('\t');
-            Assert.IsTrue(splitLine[30].Equals("N|Y")); //column "Contaminant"
-            Assert.IsTrue(splitLine[37].Equals("T|C")); //column "Decoy/Contaminant/Target"
+            Assert.IsTrue(splitLine[31].Equals("N|Y")); //column "Contaminant"
+            Assert.IsTrue(splitLine[38].Equals("T|C")); //column "Decoy/Contaminant/Target"
 
 
             //KEEP ONLY TARGET
@@ -118,8 +118,8 @@ namespace Test
             //check that the psm file shows it's both a target and a contaminant
             psmLine = File.ReadAllLines(Path.Combine(outputFolder, "task1", "AllPSMs.psmtsv"))[1];
             splitLine = psmLine.Split('\t');
-            Assert.IsTrue(splitLine[30].Equals("N")); //column "Contaminant"
-            Assert.IsTrue(splitLine[37].Equals("T")); //column "Decoy/Contaminant/Target"
+            Assert.IsTrue(splitLine[31].Equals("N")); //column "Contaminant"
+            Assert.IsTrue(splitLine[38].Equals("T")); //column "Decoy/Contaminant/Target"
 
 
             //KEEP ONLY CONTAMINANT
@@ -137,8 +137,8 @@ namespace Test
             //check that the psm file shows it's both a target and a contaminant
             psmLine = File.ReadAllLines(Path.Combine(outputFolder, "task1", "AllPSMs.psmtsv"))[1];
             splitLine = psmLine.Split('\t');
-            Assert.IsTrue(splitLine[30].Equals("Y")); //column "Contaminant"
-            Assert.IsTrue(splitLine[37].Equals("C")); //column "Decoy/Contaminant/Target"
+            Assert.IsTrue(splitLine[31].Equals("Y")); //column "Contaminant"
+            Assert.IsTrue(splitLine[38].Equals("C")); //column "Decoy/Contaminant/Target"
 
 
             Directory.Delete(outputFolder, true);
