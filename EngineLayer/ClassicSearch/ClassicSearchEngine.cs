@@ -194,7 +194,7 @@ namespace EngineLayer.ClassicSearch
                             {
 
                                 int[] newAAlocations = new int[peptide.BaseSequence.Length];
-                                PeptideWithSetModifications decoy = DecoyOnTheFly.GetReverseDecoyFromTarget(peptide, newAAlocations);
+                                PeptideWithSetModifications decoy = peptide.GetReverseDecoyFromTarget(newAAlocations);
 
                                 // we need a function to get the original target sequence of a decoy peptide
                                 if (SpectralLibrary != null)
