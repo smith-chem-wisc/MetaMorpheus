@@ -80,6 +80,13 @@ namespace EngineLayer
             return score;
         }
 
+        //Used only when user wants to generate spectral library.
+        //Normal search only looks for one match ion for one fragment, and if it accepts it then it doesn't try to look for different charge states of that same fragment. 
+        //The score will be the number of matched ions and plus some fraction calculated by intensity(matchedFragmentIons[i].Intensity / thisScan.TotalIonCurrent).
+        //Like b1, b2, b3 will have score 3.xxx;But when generating library, we need look for match ions with all charges.So we will have b1,b2,b3, b1^2, b2^3. If using 
+        //the normal scoring function, the score will be 5.xxxx, which is not proper. The score for b1 and b1^2 should also be 1 plus some some fraction calculated by intensity, 
+        //because they are matching the same fragment ion just with different charges. So b1, b2, b3, b1^2, b2^3 should be also 3.xxx(but a little higher than b1, b2, b3 as 
+        //the fraction part) rather than 5.xxx.
         public static double CalculateAllChargesPeptideScore(MsDataScan thisScan, List<MatchedFragmentIon> matchedFragmentIons)
         {
             double score = 0;
@@ -221,10 +228,13 @@ namespace EngineLayer
             return matchedFragmentIons;
         }
 
+        //Used only when user wants to generate spectral library.
+        //Normal search only looks for one match ion for one fragment, and if it accepts it then it doesn't try to look for different charge states of that same fragment. 
+        //But for library generation, we need find all the matched peaks with all the different charges.
         public static List<MatchedFragmentIon> MatchFragmentIonsOfAllCharges(Ms2ScanWithSpecificMass scan, List<Product> theoreticalProducts, CommonParameters commonParameters)
         {
             var matchedFragmentIons = new List<MatchedFragmentIon>();
-            var Ions = new List<string>();
+            var ions = new List<string>();
            
             // if the spectrum has no peaks
             if (scan.ExperimentalFragments != null && !scan.ExperimentalFragments.Any())
@@ -233,31 +243,30 @@ namespace EngineLayer
             }
 
             // search for ions in the spectrum
-            //foreach (Product product in theoreticalProducts)
-            for (int i = 0; i < theoreticalProducts.Count; i++)
+            foreach (Product product in theoreticalProducts)
             {
-                var product = theoreticalProducts[i];
                 // unknown fragment mass; this only happens rarely for sequences with unknown amino acids
                 if (double.IsNaN(product.NeutralMass))
                 {
                     continue;
                 }
 
+                //get the range we can accept 
                 var minMass = commonParameters.ProductMassTolerance.GetMinimumValue(product.NeutralMass);
                 var maxMass = commonParameters.ProductMassTolerance.GetMaximumValue(product.NeutralMass);
                 var closestExperimentalMassList = scan.GetClosestExperimentalIsotopicEnvelopeList(minMass, maxMass);
                 if (closestExperimentalMassList != null)
                 {
                     foreach (var x in closestExperimentalMassList)
-
                     {
-                        String Ion = product.ProductType.ToString() + product.FragmentNumber + "^" + x.Charge + "-" + product.NeutralLoss;
-                        if (x != null && !Ions.Contains(Ion) && commonParameters.ProductMassTolerance.Within(x.MonoisotopicMass, product.NeutralMass) && x.Charge <= scan.PrecursorCharge)//TODO apply this filter before picking the envelope
+                        String ion = $"{product.ProductType.ToString()}{ product.FragmentNumber}^{x.Charge}-{product.NeutralLoss}";
+                        if (x != null && !ions.Contains(ion) && commonParameters.ProductMassTolerance.Within(x.MonoisotopicMass, product.NeutralMass) && x.Charge <= scan.PrecursorCharge)//TODO apply this filter before picking the envelope
                         {
-                            matchedFragmentIons.Add(new MatchedFragmentIon(ref product, x.MonoisotopicMass.ToMz(x.Charge),
+                            Product temProduct = product;
+                            matchedFragmentIons.Add(new MatchedFragmentIon(ref temProduct, x.MonoisotopicMass.ToMz(x.Charge),
                                 x.Peaks.First().intensity, x.Charge));
 
-                            Ions.Add(Ion);
+                            ions.Add(ion);
                         }
                     }
                 }

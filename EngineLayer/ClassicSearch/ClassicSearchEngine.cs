@@ -23,12 +23,12 @@ namespace EngineLayer.ClassicSearch
         private readonly Ms2ScanWithSpecificMass[] ArrayOfSortedMS2Scans;
         private readonly double[] MyScanPrecursorMasses;
         public Dictionary<PeptideWithSetModifications, PeptideWithSetModifications> decoyTargetPairs;
-        private readonly bool WriteSpetrcalLibrary;
+        private readonly bool WriteSpectralLibrary;
 
         public ClassicSearchEngine(PeptideSpectralMatch[] globalPsms, Ms2ScanWithSpecificMass[] arrayOfSortedMS2Scans,
             List<Modification> variableModifications, List<Modification> fixedModifications, List<SilacLabel> silacLabels, SilacLabel startLabel, SilacLabel endLabel,
             List<Protein> proteinList, MassDiffAcceptor searchMode, CommonParameters commonParameters, List<(string FileName, CommonParameters Parameters)> fileSpecificParameters,
-            SpectralLibrary spectralLibrary, List<string> nestedIds, bool writeSpetrcalLibrary)
+            SpectralLibrary spectralLibrary, List<string> nestedIds, bool writeSpectralLibrary)
             : base(commonParameters, fileSpecificParameters, nestedIds)
         {
             PeptideSpectralMatches = globalPsms;
@@ -44,7 +44,7 @@ namespace EngineLayer.ClassicSearch
             Proteins = proteinList;
             SearchMode = searchMode;
             SpectralLibrary = spectralLibrary;
-            WriteSpetrcalLibrary = writeSpetrcalLibrary;
+            WriteSpectralLibrary = writeSpectralLibrary;
         }
 
         protected override MetaMorpheusEngineResults RunSpecific()
@@ -65,7 +65,8 @@ namespace EngineLayer.ClassicSearch
 
             if (Proteins.Any())
             {
-                if (WriteSpetrcalLibrary == false)
+                //If not to generate a spectral library, the search engine would perform the normal search, which means nothing is changed in this condition.
+                if (WriteSpectralLibrary == false)
                 {
                     int maxThreadsPerFile = CommonParameters.MaxThreadsToUsePerFile;
                     int[] threads = Enumerable.Range(0, maxThreadsPerFile).ToArray();
@@ -163,6 +164,8 @@ namespace EngineLayer.ClassicSearch
                         }
                     });
                 }
+                // If to generate a spectral library, the search engine would perform a new search way. Two main parts are: 1. They would try to find all the matched ions with all different charges; 
+                //2. A new score function would be used: CalculateAllChargesPeptideScore( can see the details in the header of this method)
                 else
                 {
                     int maxThreadsPerFile = CommonParameters.MaxThreadsToUsePerFile;
@@ -196,7 +199,7 @@ namespace EngineLayer.ClassicSearch
                                 int[] newAAlocations = new int[peptide.BaseSequence.Length];
                                 PeptideWithSetModifications decoy = peptide.GetReverseDecoyFromTarget(newAAlocations);
 
-                                // we need a function to get the original target sequence of a decoy peptide
+                                // we need a function to get the original target sequence of a decoy peptide for later use: generate decoy library 
                                 if (SpectralLibrary != null)
                                 {
                                     lock (decoyTargetPairs)
@@ -249,7 +252,6 @@ namespace EngineLayer.ClassicSearch
                                     double thisScore = CalculateAllChargesPeptideScore(scan.TheScan.TheScan, matchedIons);
                                     double decoyScore = CalculateAllChargesPeptideScore(scan.TheScan.TheScan, decoyMatchedIons);
 
-                                    //bool meetsScoreCutoff = thisScore >= CommonParameters.ScoreCutoff;
                                     bool meetsScoreCutoff = Math.Max(thisScore, decoyScore) >= CommonParameters.ScoreCutoff;
 
                                     // this is thread-safe because even if the score improves from another thread writing to this PSM,
