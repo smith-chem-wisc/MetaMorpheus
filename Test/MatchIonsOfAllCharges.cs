@@ -201,7 +201,7 @@ namespace Test
             //test normal conditions, find the closest index which is smaller than the given max mass 
             Assert.AreEqual(ms2ScanTest.GetClosestFragmentMassMaximum(100.2), 1);
             Assert.AreEqual(ms2ScanTest.GetClosestFragmentMassMaximum(111.4), 8);
-            Assert.AreEqual(ms2ScanTest.GetClosestFragmentMassMinimum(152.05972487589443), 35);
+            Assert.AreEqual(ms2ScanTest.GetClosestFragmentMassMaximum(152.05972487589443), 35);
 
             //test when all the masses are not in the given range
             //test when all the masses are too small
