@@ -91,47 +91,23 @@ namespace EngineLayer
         {
             double score = 0;
 
-            if (thisScan.MassSpectrum.XcorrProcessed)
+            // Morpheus score
+            List<String> ions = new List<String>();
+            for (int i = 0; i < matchedFragmentIons.Count; i++)
             {
-                // XCorr
-                foreach (var fragment in matchedFragmentIons)
+                String ion = $"{ matchedFragmentIons[i].NeutralTheoreticalProduct.ProductType.ToString()}{  matchedFragmentIons[i].NeutralTheoreticalProduct.FragmentNumber}";
+                if (ions.Contains(ion))
                 {
-                    switch (fragment.NeutralTheoreticalProduct.ProductType)
-                    {
-                        case ProductType.aDegree:
-                        case ProductType.aStar:
-                        case ProductType.bDegree:
-                        case ProductType.bStar:
-                        case ProductType.yDegree:
-                        case ProductType.yStar:
-                            score += 0.01 * fragment.Intensity;
-                            break;
-
-                        default:
-                            score += 1 * fragment.Intensity;
-                            break;
-                    }
+                    score += matchedFragmentIons[i].Intensity / thisScan.TotalIonCurrent;
                 }
-            }
-            else
-            {
-                // Morpheus score
-                List<String> Ions = new List<String>();
-                for (int i = 0; i < matchedFragmentIons.Count; i++)
+                else
                 {
-                    String Ion = matchedFragmentIons[i].NeutralTheoreticalProduct.ProductType.ToString() + matchedFragmentIons[i].NeutralTheoreticalProduct.FragmentNumber;
-                    if (Ions.Contains(Ion))
-                    {
-                        score += matchedFragmentIons[i].Intensity / thisScan.TotalIonCurrent;
-                    }
-                    else
-                    {
-                        score += 1 + matchedFragmentIons[i].Intensity / thisScan.TotalIonCurrent;
-                        Ions.Add(Ion);
-                    }
-
+                    score += 1 + matchedFragmentIons[i].Intensity / thisScan.TotalIonCurrent;
+                    ions.Add(ion);
                 }
+
             }
+           
 
             return score;
         }
