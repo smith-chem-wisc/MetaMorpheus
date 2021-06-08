@@ -15,6 +15,7 @@ using TaskLayer;
 using UsefulProteomicsDatabases;
 using Chemistry;
 using System;
+using MassSpectrometry;
 
 namespace Test
 {
@@ -46,6 +47,7 @@ namespace Test
 
             //search by new method of looking for all charges 
             PeptideSpectralMatch[] allPsmsArray = new PeptideSpectralMatch[listOfSortedms2Scans.Length];
+            
             new ClassicSearchEngine(allPsmsArray, listOfSortedms2Scans, variableModifications, fixedModifications, null, null, null,
                 proteinList, searchMode, CommonParameters, null, null, new List<string>(), true).Run();
             var psm = allPsmsArray.Where(p => p != null).ToList();
@@ -153,6 +155,79 @@ namespace Test
                     }
                 }
             }
+        }
+
+        [Test]
+        public static void TestLookingForAcceptableIsotopicEnvelopes()
+        {
+            CommonParameters CommonParameters = new CommonParameters();
+
+            MetaMorpheusTask.DetermineAnalyteType(CommonParameters);
+
+            var variableModifications = new List<Modification>();
+            var fixedModifications = new List<Modification>();
+
+            var proteinList = new List<Protein>
+            {
+                new Protein("AAAHSSLK", ""),new Protein("RQPAQPR", ""),new Protein("EKAEAEAEK", "")
+            };
+            var myMsDataFile = Mzml.LoadAllStaticData(Path.Combine(TestContext.CurrentContext.TestDirectory, @"TestData\SmallCalibratible_Yeast.mzML"));
+
+
+            var searchMode = new SinglePpmAroundZeroSearchMode(5);
+
+            Tolerance DeconvolutionMassTolerance = new PpmTolerance(5);
+
+            var listOfSortedms2Scans = MetaMorpheusTask.GetMs2Scans(myMsDataFile, null, new CommonParameters()).OrderBy(b => b.PrecursorMass).ToArray();
+
+            var ms2ScanTest = listOfSortedms2Scans[0];
+
+            //test when all the masses are smaller than min mass
+            Assert.AreEqual(ms2ScanTest.GetClosestFragmentMassMinimum(100),0);
+            //test when all the mass are bigger than min mass
+            Assert.AreEqual(ms2ScanTest.GetClosestFragmentMassMinimum(582), ms2ScanTest.ExperimentalFragments.Length);
+
+            //test normal conditions, find the closest index which is bigger than the given min mass 
+            Assert.AreEqual(ms2ScanTest.GetClosestFragmentMassMinimum(100.1),2);
+            Assert.AreEqual(ms2ScanTest.GetClosestFragmentMassMinimum(111.1), 9);
+            Assert.AreEqual(ms2ScanTest.GetClosestFragmentMassMinimum(152.05972487589443),35);
+
+
+            //test when all the masses are bigger than the given max mass
+            Assert.AreEqual(ms2ScanTest.GetClosestFragmentMassMaximum(100), -1);
+            //test when all the masses are smaller than the given max mass
+            Assert.AreEqual(ms2ScanTest.GetClosestFragmentMassMaximum(582), ms2ScanTest.ExperimentalFragments.Length - 1);
+
+            //test normal conditions, find the closest index which is smaller than the given max mass 
+            Assert.AreEqual(ms2ScanTest.GetClosestFragmentMassMaximum(100.2), 1);
+            Assert.AreEqual(ms2ScanTest.GetClosestFragmentMassMaximum(111.4), 8);
+            Assert.AreEqual(ms2ScanTest.GetClosestFragmentMassMinimum(152.05972487589443), 35);
+
+            //test when all the masses are not in the given range
+            //test when all the masses are too small
+            var test1 = ms2ScanTest.GetClosestExperimentalIsotopicEnvelopeList(50, 95);
+            Assert.AreEqual(test1, null);
+            //test when all the masses are too big
+            var test2 = ms2ScanTest.GetClosestExperimentalIsotopicEnvelopeList(582, 682);
+            Assert.AreEqual(test2, null);
+            //test when the mass which is bigger than given min mass is bigger than the mass which is smaller than the given max mass
+            //for example: the mass array is [1,2,3,4,5], the given min mass is 2.2, the given max mass is 2.8
+            var test3 = ms2ScanTest.GetClosestExperimentalIsotopicEnvelopeList(110, 111);
+            Assert.AreEqual(test3, null);
+
+
+            //test normal conditions:look for IsotopicEnvelopes which are in the range of acceptable mass 
+            var test4 = ms2ScanTest.GetClosestExperimentalIsotopicEnvelopeList(120, 130);
+            Assert.AreEqual(ms2ScanTest.GetClosestFragmentMassMinimum(120), 15);
+            Assert.AreEqual(ms2ScanTest.GetClosestFragmentMassMaximum(130), 23);
+            IsotopicEnvelope[] expected4 = ms2ScanTest.ExperimentalFragments.Skip(15).Take(9).ToArray();
+            Assert.AreEqual(test4, expected4);
+
+            var test5 = ms2ScanTest.GetClosestExperimentalIsotopicEnvelopeList(400, 500);
+            Assert.AreEqual(ms2ScanTest.GetClosestFragmentMassMinimum(400), 150);
+            Assert.AreEqual(ms2ScanTest.GetClosestFragmentMassMaximum(500), 156);
+            IsotopicEnvelope[] expected5 = ms2ScanTest.ExperimentalFragments.Skip(150).Take(7).ToArray();
+            Assert.AreEqual(test5, expected5);
         }
 
     }

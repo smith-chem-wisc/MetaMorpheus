@@ -113,6 +113,8 @@ namespace EngineLayer
 
             return index - 1;
         }
+
+        //look for IsotopicEnvelopes which are in the range of acceptable mass 
         public IsotopicEnvelope[] GetClosestExperimentalIsotopicEnvelopeList(double minimumMass, double maxMass)
         {
 
@@ -120,6 +122,8 @@ namespace EngineLayer
             {
                 return null;
             }
+            
+            //if no mass is in this range, then return null
             if (DeconvolutedMonoisotopicMasses[0] > maxMass || DeconvolutedMonoisotopicMasses.Last() < minimumMass)
             {
                 return null;
@@ -127,6 +131,7 @@ namespace EngineLayer
             int startIndex = GetClosestFragmentMassMinimum(minimumMass);
             int endIndex = GetClosestFragmentMassMaximum(maxMass);
             int length = endIndex - startIndex + 1;
+
             if (length < 1)
             {
                 return null;
@@ -134,89 +139,33 @@ namespace EngineLayer
             IsotopicEnvelope[] isotopicEnvelopes = ExperimentalFragments.Skip(startIndex).Take(length).ToArray();
             return isotopicEnvelopes;
         }
+
+        //look for the closest index which is bigger than acceptable minimun mass
+        //if all the mass in the array are smaller than the minimum mass, then return DeconvolutedMonoisotopicMasses.Length, which means no mass is acceptable
         public int GetClosestFragmentMassMinimum(double massMinimum)
         {
             int index = Array.BinarySearch(DeconvolutedMonoisotopicMasses, massMinimum);
             if (index >= 0)
             {
-                if (DeconvolutedMonoisotopicMasses[index] >= massMinimum || index == DeconvolutedMonoisotopicMasses.Length - 1)
-                {
-                    return index;
-                }
-                else
-                {
-                    return index + 1;
-                }
-
+                return index;
             }
             index = ~index;
 
-            if (index == DeconvolutedMonoisotopicMasses.Length)
-            {
-                return index - 1;
-            }
-            if (index == 0 || massMinimum - DeconvolutedMonoisotopicMasses[index - 1] > DeconvolutedMonoisotopicMasses[index] - massMinimum)
-            {
-                if (DeconvolutedMonoisotopicMasses[index] >= massMinimum || index == DeconvolutedMonoisotopicMasses.Length - 1)
-                {
-                    return index;
-                }
-                else
-                {
-                    return index + 1;
-                }
-            }
-            if (DeconvolutedMonoisotopicMasses[index - 1] >= massMinimum)
-            {
-                return index - 1;
-            }
-            else
-            {
-                return index;
-            }
-
+            return index;
         }
+
+        //look for the closest index which is smaller than acceptable maximum mass
+        //if all the mass in the array are bigger than the maximum mass, then return -1, which means no mass is acceptable
         public int GetClosestFragmentMassMaximum(double massMax)
         {
             int index = Array.BinarySearch(DeconvolutedMonoisotopicMasses, massMax);
             if (index >= 0)
             {
-                if (DeconvolutedMonoisotopicMasses[index] <= massMax || index == DeconvolutedMonoisotopicMasses.Length - 1)
-                {
-                    return index;
-                }
-                else
-                {
-                    return index - 1;
-                }
-
+                 return index;
             }
             index = ~index;
 
-            if (index == DeconvolutedMonoisotopicMasses.Length)
-            {
-                return index - 1;
-            }
-            if (index == 0 || massMax - DeconvolutedMonoisotopicMasses[index - 1] > DeconvolutedMonoisotopicMasses[index] - massMax)
-            {
-                if (DeconvolutedMonoisotopicMasses[index] <= massMax || index == DeconvolutedMonoisotopicMasses.Length - 1)
-                {
-                    return index;
-                }
-                else
-                {
-                    return index - 1;
-                }
-            }
-            if (DeconvolutedMonoisotopicMasses[index - 1] <= massMax)
-            {
-                return index - 1;
-            }
-            else
-            {
-                return index - 2;
-            }
-
+            return index - 1;
         }
         public double? GetClosestExperimentalFragmentMz(double theoreticalMz, out double? intensity)
         {
