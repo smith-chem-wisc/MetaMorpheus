@@ -243,7 +243,8 @@ namespace Test
 
             var proteinList = new List<Protein>
             {
-                new Protein("NTRIEELK", ""),new Protein("AVNSISLK", ""),new Protein("EKAEAEAEK", "")
+                new Protein ("KKAEDGINK",""),new Protein("AVNSISLK", ""),new Protein("EKAEAEAEK", ""), new Protein("DITANLR",""), new Protein("QNAIGTAK",""),
+                new Protein("FHKSQLNK",""),new Protein ("KQVAQWNK",""),new Protein ("NTRIEELK",""),
             };
             var myMsDataFile = Mzml.LoadAllStaticData(Path.Combine(TestContext.CurrentContext.TestDirectory, @"TestData\SmallCalibratible_Yeast.mzML"));
 
@@ -260,10 +261,19 @@ namespace Test
             new ClassicSearchEngine(allPsmsArray, listOfSortedms2Scans, variableModifications, fixedModifications, null, null, null,
                 proteinList, searchMode, CommonParameters, null, null, new List<string>(), true).Run();
             var psm = allPsmsArray.Where(p => p != null).ToList();
-            Assert.That(psm[0].IsDecoy==true);
-            Assert.That(psm[0].FullSequence=="LSISNVAK");
+
+            Assert.That(psm[0].IsDecoy==false);
+            Assert.That(psm[0].FullSequence == "DITANLR");
+            Assert.That(psm[1].IsDecoy == true);
+            Assert.That(psm[1].FullSequence == "LSISNVAK");
             Assert.That(psm[2].IsDecoy == true);
-            Assert.That(psm[2].FullSequence == "LEREITNK");
+            Assert.That(psm[2].FullSequence == "LSISNVAK");
+            Assert.That(psm[3].IsDecoy == false);
+            Assert.That(psm[3].FullSequence == "KKAEDGINK");
+            Assert.That(psm[4].IsDecoy == false);
+            Assert.That(psm[4].FullSequence == "EKAEAEAEK");
+            Assert.That(psm[5].IsDecoy == false);
+            Assert.That(psm[5].FullSequence == "EKAEAEAEK");
         }
 
     }
