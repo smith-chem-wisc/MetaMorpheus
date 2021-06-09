@@ -262,6 +262,7 @@ namespace Test
                 proteinList, searchMode, CommonParameters, null, null, new List<string>(), true).Run();
             var psm = allPsmsArray.Where(p => p != null).ToList();
 
+            //
             Assert.That(psm[0].IsDecoy==false);
             Assert.That(psm[0].FullSequence == "DITANLR");
             Assert.That(psm[1].IsDecoy == true);
