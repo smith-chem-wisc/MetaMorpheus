@@ -394,7 +394,7 @@ namespace GuiFunctions
             text.Append("\r\n");
 
             text.Append("Theoretical Mass: ");
-            text.Append(double.TryParse(SpectrumMatch.PeptideMonoMass, out var monoMass) ? monoMass.ToString("F3") : SpectrumMatch.PeptideMonoMass);
+            text.Append(double.TryParse(SpectrumMatch.PeptideMonoMass, NumberStyles.Any, CultureInfo.InvariantCulture, out var monoMass) ? monoMass.ToString("F3") : SpectrumMatch.PeptideMonoMass);
             text.Append("\r\n");
 
             text.Append("Score: ");
