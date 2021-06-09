@@ -185,7 +185,7 @@ namespace EngineLayer.ClassicSearch
                                                         PeptideSpectralMatches[scan.ScanIndex] = new PeptideSpectralMatch(decoy, scan.Notch, decoyScore, scan.ScanIndex, scan.TheScan, CommonParameters, decoyMatchedIons, 0);
 
                                                     }
-                                                }
+                                                } 
                                                 else
                                                 {
                                                     if (thisScore >= decoyScore)

@@ -20,7 +20,7 @@ using MassSpectrometry;
 namespace Test
 {
     [TestFixture]
-    public class MatchIonsOfAllCharges
+    public class SearchEngineForWritingSpectralLibraryTest
     {
         [Test]
         public static void TestMatchIonsOfAllChargesBottomUp()
@@ -47,7 +47,7 @@ namespace Test
 
             //search by new method of looking for all charges 
             PeptideSpectralMatch[] allPsmsArray = new PeptideSpectralMatch[listOfSortedms2Scans.Length];
-            
+
             new ClassicSearchEngine(allPsmsArray, listOfSortedms2Scans, variableModifications, fixedModifications, null, null, null,
                 proteinList, searchMode, CommonParameters, null, null, new List<string>(), true).Run();
             var psm = allPsmsArray.Where(p => p != null).ToList();
@@ -75,9 +75,9 @@ namespace Test
             Assert.That(psm_oneCharge[1].MatchedFragmentIons.Count == 12);
             var differences = psm[1].MatchedFragmentIons.Except(psm_oneCharge[1].MatchedFragmentIons);
             psm[1].BestMatchingPeptides.First().Peptide.Fragment(CommonParameters.DissociationType, CommonParameters.DigestionParams.FragmentationTerminus, peptideTheorProducts);
-            foreach(var ion in differences)
+            foreach (var ion in differences)
             {
-                foreach(var product in peptideTheorProducts)
+                foreach (var product in peptideTheorProducts)
                 {
                     if (product.Annotation.ToString().Equals(ion.NeutralTheoreticalProduct.Annotation.ToString()))
                     {
@@ -125,7 +125,7 @@ namespace Test
 
             var psm = allPsmsArray.Where(p => p != null).FirstOrDefault();
             Assert.That(psm.MatchedFragmentIons.Count == 62);
-           
+
 
             //search by old method of looking for only one charge 
             PeptideSpectralMatch[] allPsmsArray_oneCharge = new PeptideSpectralMatch[listOfSortedms2Scans.Length];
@@ -183,14 +183,14 @@ namespace Test
             var ms2ScanTest = listOfSortedms2Scans[0];
 
             //test when all the masses are smaller than min mass
-            Assert.AreEqual(ms2ScanTest.GetClosestFragmentMassMinimum(100),0);
-            //test when all the mass are bigger than min mass
+            Assert.AreEqual(ms2ScanTest.GetClosestFragmentMassMinimum(100), 0);
+            //test when all the masses are bigger than min mass
             Assert.AreEqual(ms2ScanTest.GetClosestFragmentMassMinimum(582), ms2ScanTest.ExperimentalFragments.Length);
 
             //test normal conditions, find the closest index which is bigger than the given min mass 
-            Assert.AreEqual(ms2ScanTest.GetClosestFragmentMassMinimum(100.1),2);
+            Assert.AreEqual(ms2ScanTest.GetClosestFragmentMassMinimum(100.1), 2);
             Assert.AreEqual(ms2ScanTest.GetClosestFragmentMassMinimum(111.1), 9);
-            Assert.AreEqual(ms2ScanTest.GetClosestFragmentMassMinimum(152.05972487589443),35);
+            Assert.AreEqual(ms2ScanTest.GetClosestFragmentMassMinimum(152.05972487589443), 35);
 
 
             //test when all the masses are bigger than the given max mass
@@ -210,6 +210,7 @@ namespace Test
             //test when all the masses are too big
             var test2 = ms2ScanTest.GetClosestExperimentalIsotopicEnvelopeList(582, 682);
             Assert.AreEqual(test2, null);
+
             //test when the mass which is bigger than given min mass is bigger than the mass which is smaller than the given max mass
             //for example: the mass array is [1,2,3,4,5], the given min mass is 2.2, the given max mass is 2.8
             var test3 = ms2ScanTest.GetClosestExperimentalIsotopicEnvelopeList(110, 111);
@@ -228,6 +229,41 @@ namespace Test
             Assert.AreEqual(ms2ScanTest.GetClosestFragmentMassMaximum(500), 156);
             IsotopicEnvelope[] expected5 = ms2ScanTest.ExperimentalFragments.Skip(150).Take(7).ToArray();
             Assert.AreEqual(test5, expected5);
+        }
+
+        [Test]
+        public static void TestReverseDecoyGenerationDuringSearch()
+        {
+            CommonParameters CommonParameters = new CommonParameters();
+
+            MetaMorpheusTask.DetermineAnalyteType(CommonParameters);
+
+            var variableModifications = new List<Modification>();
+            var fixedModifications = new List<Modification>();
+
+            var proteinList = new List<Protein>
+            {
+                new Protein("NTRIEELK", ""),new Protein("AVNSISLK", ""),new Protein("EKAEAEAEK", "")
+            };
+            var myMsDataFile = Mzml.LoadAllStaticData(Path.Combine(TestContext.CurrentContext.TestDirectory, @"TestData\SmallCalibratible_Yeast.mzML"));
+
+
+            var searchMode = new SinglePpmAroundZeroSearchMode(5);
+
+            Tolerance DeconvolutionMassTolerance = new PpmTolerance(5);
+
+            var listOfSortedms2Scans = MetaMorpheusTask.GetMs2Scans(myMsDataFile, null, new CommonParameters()).OrderBy(b => b.PrecursorMass).ToArray();
+
+            //search by new method of looking for all charges 
+            PeptideSpectralMatch[] allPsmsArray = new PeptideSpectralMatch[listOfSortedms2Scans.Length];
+
+            new ClassicSearchEngine(allPsmsArray, listOfSortedms2Scans, variableModifications, fixedModifications, null, null, null,
+                proteinList, searchMode, CommonParameters, null, null, new List<string>(), true).Run();
+            var psm = allPsmsArray.Where(p => p != null).ToList();
+            Assert.That(psm[0].IsDecoy==true);
+            Assert.That(psm[0].FullSequence=="LSISNVAK");
+            Assert.That(psm[2].IsDecoy == true);
+            Assert.That(psm[2].FullSequence == "LEREITNK");
         }
 
     }
