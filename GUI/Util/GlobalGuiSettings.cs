@@ -277,7 +277,7 @@ namespace MetaMorpheusGUI
 
             public static bool CheckHistogramBinWidth(string text)
             {
-                if (!float.TryParse(text, out float binWidth) || binWidth < 0 || binWidth > 1)
+                if (!double.TryParse(text, NumberStyles.Any, CultureInfo.InvariantCulture, out double binWidth) || binWidth < 0 || binWidth > 1)
                 {
                     MessageBox.Show("The histogram bin width must be between zero and one Daltons. \n You entered " + '"' + text + '"');
                     return false;
