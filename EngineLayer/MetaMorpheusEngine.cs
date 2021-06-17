@@ -2,10 +2,13 @@
 using MassSpectrometry;
 using MzLibUtil;
 using Proteomics.Fragmentation;
+using Proteomics.ProteolyticDigestion;
 using System;
+using System.Collections.Concurrent;
 using System.Collections.Generic;
 using System.Diagnostics;
 using System.Linq;
+using System.Threading.Tasks;
 
 namespace EngineLayer
 {
@@ -42,8 +45,13 @@ namespace EngineLayer
 
         public static event EventHandler<ProgressEventArgs> OutProgressHandler;
 
-        public static double CalculatePeptideScore(MsDataScan thisScan, List<MatchedFragmentIon> matchedFragmentIons)
+        public static double CalculatePeptideScore(MsDataScan thisScan, List<MatchedFragmentIon> matchedFragmentIons, bool fragmentsCanHaveDifferentCharges = false)
         {
+            if(fragmentsCanHaveDifferentCharges)
+            {
+                return CalculateAllChargesPeptideScore(thisScan, matchedFragmentIons);
+            }
+
             double score = 0;
 
             if (thisScan.MassSpectrum.XcorrProcessed)
@@ -87,7 +95,7 @@ namespace EngineLayer
         //the normal scoring function, the score will be 5.xxxx, which is not proper. The score for b1 and b1^2 should also be 1 plus some some fraction calculated by intensity, 
         //because they are matching the same fragment ion just with different charges. So b1, b2, b3, b1^2, b2^3 should be also 3.xxx(but a little higher than b1, b2, b3 as 
         //the fraction part) rather than 5.xxx.
-        public static double CalculateAllChargesPeptideScore(MsDataScan thisScan, List<MatchedFragmentIon> matchedFragmentIons)
+        private static double CalculateAllChargesPeptideScore(MsDataScan thisScan, List<MatchedFragmentIon> matchedFragmentIons)
         {
             double score = 0;
 
@@ -107,13 +115,18 @@ namespace EngineLayer
                 }
 
             }
-           
+
 
             return score;
         }
 
-        public static List<MatchedFragmentIon> MatchFragmentIons(Ms2ScanWithSpecificMass scan, List<Product> theoreticalProducts, CommonParameters commonParameters)
+        public static List<MatchedFragmentIon> MatchFragmentIons(Ms2ScanWithSpecificMass scan, List<Product> theoreticalProducts, CommonParameters commonParameters, bool matchAllCharges = false)
         {
+            if (matchAllCharges)
+            {
+                return MatchFragmentIonsOfAllCharges(scan, theoreticalProducts, commonParameters);
+            }
+
             var matchedFragmentIons = new List<MatchedFragmentIon>();
 
             if (scan.TheScan.MassSpectrum.XcorrProcessed && scan.TheScan.MassSpectrum.XArray.Length != 0)
@@ -207,11 +220,11 @@ namespace EngineLayer
         //Used only when user wants to generate spectral library.
         //Normal search only looks for one match ion for one fragment, and if it accepts it then it doesn't try to look for different charge states of that same fragment. 
         //But for library generation, we need find all the matched peaks with all the different charges.
-        public static List<MatchedFragmentIon> MatchFragmentIonsOfAllCharges(Ms2ScanWithSpecificMass scan, List<Product> theoreticalProducts, CommonParameters commonParameters)
+        private static List<MatchedFragmentIon> MatchFragmentIonsOfAllCharges(Ms2ScanWithSpecificMass scan, List<Product> theoreticalProducts, CommonParameters commonParameters)
         {
             var matchedFragmentIons = new List<MatchedFragmentIon>();
             var ions = new List<string>();
-           
+
             // if the spectrum has no peaks
             if (scan.ExperimentalFragments != null && !scan.ExperimentalFragments.Any())
             {

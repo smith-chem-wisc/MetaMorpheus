@@ -244,7 +244,7 @@ namespace Test
             var proteinList = new List<Protein>
             {
                 new Protein ("KKAEDGINK",""),new Protein("AVNSISLK", ""),new Protein("EKAEAEAEK", ""), new Protein("DITANLR",""), new Protein("QNAIGTAK",""),
-                new Protein("FHKSQLNK",""),new Protein ("KQVAQWNK",""),new Protein ("NTRIEELK",""),
+                new Protein("FHKSQLNK",""),new Protein ("KQVAQWNK",""),new Protein ("NTRIEELK",""),new Protein("RQPAQPR", ""),
             };
             var myMsDataFile = Mzml.LoadAllStaticData(Path.Combine(TestContext.CurrentContext.TestDirectory, @"TestData\SmallCalibratible_Yeast.mzML"));
 
@@ -255,25 +255,86 @@ namespace Test
 
             var listOfSortedms2Scans = MetaMorpheusTask.GetMs2Scans(myMsDataFile, null, new CommonParameters()).OrderBy(b => b.PrecursorMass).ToArray();
 
-            //search by new method of looking for all charges 
-            PeptideSpectralMatch[] allPsmsArray = new PeptideSpectralMatch[listOfSortedms2Scans.Length];
 
-            new ClassicSearchEngine(allPsmsArray, listOfSortedms2Scans, variableModifications, fixedModifications, null, null, null,
+            var path = Path.Combine(TestContext.CurrentContext.TestDirectory, @"TestData\myPrositLib.msp");
+
+            var testLibrary = new SpectralLibrary(new List<string> { path });
+
+
+
+            //test when doing spectral library search without generating library
+            PeptideSpectralMatch[] allPsmsArray1 = new PeptideSpectralMatch[listOfSortedms2Scans.Length];
+            new ClassicSearchEngine(allPsmsArray1, listOfSortedms2Scans, variableModifications, fixedModifications, null, null, null,
+                proteinList, searchMode, CommonParameters, null, testLibrary, new List<string>(), false).Run();
+            var psm1 = allPsmsArray1.Where(p => p != null).ToList();
+            Assert.That(psm1[0].IsDecoy == false && psm1[0].FullSequence == "DITANLR");
+            Assert.That(psm1[1].IsDecoy == true && psm1[1].FullSequence == "LSISNVAK");
+            Assert.That(psm1[2].IsDecoy == true&& psm1[2].FullSequence == "LSISNVAK");
+            Assert.That(psm1[3].IsDecoy == false&& psm1[3].FullSequence == "RQPAQPR");
+            Assert.That(psm1[4].IsDecoy == false&& psm1[4].FullSequence == "KKAEDGINK");
+            Assert.That(psm1[5].IsDecoy == false&& psm1[5].FullSequence == "EKAEAEAEK");
+            Assert.That(psm1[6].IsDecoy == false&& psm1[6].FullSequence == "EKAEAEAEK");
+
+
+            proteinList.Add(new Protein("LSISNVAK", "", isDecoy: true));
+            //test when doing spectral library search with generating library; non spectral search won't generate decoy by "decoy on the fly" , so proteinlist used by non spectral library search would contain decoys
+            PeptideSpectralMatch[] allPsmsArray2 = new PeptideSpectralMatch[listOfSortedms2Scans.Length];
+            new ClassicSearchEngine(allPsmsArray2, listOfSortedms2Scans, variableModifications, fixedModifications, null, null, null,
+                proteinList, searchMode, CommonParameters, null, testLibrary, new List<string>(), true).Run();
+            var psm2 = allPsmsArray2.Where(p => p != null).ToList();
+            Assert.That(psm2[0].IsDecoy == false && psm2[0].FullSequence == "DITANLR");
+            Assert.That(psm2[1].IsDecoy == true && psm2[1].FullSequence == "LSISNVAK");
+            Assert.That(psm2[2].IsDecoy == true && psm2[2].FullSequence == "LSISNVAK");
+            Assert.That(psm2[3].IsDecoy == false && psm2[3].FullSequence == "RQPAQPR");
+            Assert.That(psm2[4].IsDecoy == false && psm2[4].FullSequence == "KKAEDGINK");
+            Assert.That(psm2[5].IsDecoy == false && psm2[5].FullSequence == "EKAEAEAEK");
+            Assert.That(psm2[6].IsDecoy == false && psm2[6].FullSequence == "EKAEAEAEK");
+
+            //test when doing non spectral library search without generating library
+            PeptideSpectralMatch[] allPsmsArray3 = new PeptideSpectralMatch[listOfSortedms2Scans.Length];
+            new ClassicSearchEngine(allPsmsArray3, listOfSortedms2Scans, variableModifications, fixedModifications, null, null, null,
+                proteinList, searchMode, CommonParameters, null, null, new List<string>(), false).Run();
+            var psm3 = allPsmsArray3.Where(p => p != null).ToList();
+            Assert.That(psm3[0].IsDecoy == false && psm3[0].FullSequence == "DITANLR");
+            Assert.That(psm3[1].IsDecoy == true && psm3[1].FullSequence == "LSISNVAK");
+            Assert.That(psm3[2].IsDecoy == true && psm3[2].FullSequence == "LSISNVAK");
+            Assert.That(psm3[3].IsDecoy == false && psm3[3].FullSequence == "RQPAQPR");
+            Assert.That(psm3[4].IsDecoy == false && psm3[4].FullSequence == "KKAEDGINK");
+            Assert.That(psm3[5].IsDecoy == false && psm3[5].FullSequence == "EKAEAEAEK");
+            Assert.That(psm3[6].IsDecoy == false && psm3[6].FullSequence == "EKAEAEAEK");
+
+
+            //test when doing non spectral library search with generating library
+            PeptideSpectralMatch[] allPsmsArray4 = new PeptideSpectralMatch[listOfSortedms2Scans.Length];
+            new ClassicSearchEngine(allPsmsArray4, listOfSortedms2Scans, variableModifications, fixedModifications, null, null, null,
                 proteinList, searchMode, CommonParameters, null, null, new List<string>(), true).Run();
-            var psm = allPsmsArray.Where(p => p != null).ToList();
+            var psm4 = allPsmsArray4.Where(p => p != null).ToList();
+            Assert.That(psm4[0].IsDecoy == false && psm4[0].FullSequence == "DITANLR");
+            Assert.That(psm4[1].IsDecoy == true && psm4[1].FullSequence == "LSISNVAK");
+            Assert.That(psm4[2].IsDecoy == true && psm4[2].FullSequence == "LSISNVAK");
+            Assert.That(psm4[3].IsDecoy == false && psm4[3].FullSequence == "RQPAQPR");
+            Assert.That(psm4[4].IsDecoy == false && psm4[4].FullSequence == "KKAEDGINK");
+            Assert.That(psm4[5].IsDecoy == false && psm4[5].FullSequence == "EKAEAEAEK");
+            Assert.That(psm4[6].IsDecoy == false && psm4[6].FullSequence == "EKAEAEAEK");
 
-            Assert.That(psm[0].IsDecoy==false);
-            Assert.That(psm[0].FullSequence == "DITANLR");
-            Assert.That(psm[1].IsDecoy == true);
-            Assert.That(psm[1].FullSequence == "LSISNVAK");
-            Assert.That(psm[2].IsDecoy == true);
-            Assert.That(psm[2].FullSequence == "LSISNVAK");
-            Assert.That(psm[3].IsDecoy == false);
-            Assert.That(psm[3].FullSequence == "KKAEDGINK");
-            Assert.That(psm[4].IsDecoy == false);
-            Assert.That(psm[4].FullSequence == "EKAEAEAEK");
-            Assert.That(psm[5].IsDecoy == false);
-            Assert.That(psm[5].FullSequence == "EKAEAEAEK");
+
+            //compare psm's target/decoy results in 4 conditions. they should be same as new decoy methods shouldn't change the t/d results
+            for (int i=0; i<psm1.Count;i++)
+            {
+                Assert.That(psm1[i].FullSequence == psm2[i].FullSequence && psm3[i].FullSequence == psm3[i].FullSequence && psm2[i].FullSequence == psm3[i].FullSequence);
+                Assert.That(psm1[i].IsDecoy == psm2[i].IsDecoy && psm3[i].IsDecoy == psm3[i].IsDecoy && psm2[i].IsDecoy == psm3[i].IsDecoy);
+            }
+
+            //compare MetaMorpheus scores in 4 conditions; for some psms, they should have a little higher score when "generating library" as they switch to all charges ions matching function
+            for (int j = 0; j < psm1.Count; j++)
+            {
+               if(psm1[j].FullSequence == psm2[j].FullSequence && psm1[j].MatchedFragmentIons.Count != psm2[j].MatchedFragmentIons.Count)
+                {
+                    Assert.That(psm1[j].Score < psm2[j].Score);
+                }
+            }
+
+
         }
 
     }
